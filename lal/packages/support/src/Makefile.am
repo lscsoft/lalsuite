@@ -6,18 +6,27 @@ libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
-  StreamVectorInput.c StreamVectorSequenceInput.c LALInitBarycenter.c \
-  LALXMGRInterface.c
+  StringToken.c StringConvert.c \
+  StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
+  StreamSeriesInput.c StreamSeriesOutput.c \
+  LALInitBarycenter.c LALXMGRInterface.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
-  ReadFrequencySeries.c ReadTimeSeries.c
+  ReadFrequencySeries.c ReadTimeSeries.c \
+  StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
+  StreamSeriesInput.c StreamSeriesOutput.c
 
 EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
 	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
 	     ReadFrequencySeries.m4 LALReadFrequencySeries.m4\
              snprintf_LICENSE.txt snprintf_README \
-             ReadTimeSeries.m4 LALReadTimeSeries.m4
+             ReadTimeSeries.m4 LALReadTimeSeries.m4 \
+             StreamVectorInput.m4 LALReadVector.m4 \
+             StreamVectorSequenceInput.m4 LALReadVectorSequence.m4 \
+             StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexSequence.m4 \
+             StreamSeriesInput.m4 LALReadSeries.m4 \
+             StreamSeriesOutput.m4 LALWriteSeries.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
@@ -39,3 +48,17 @@ ReadFrequencySeries.c: ReadFrequencySeries.m4 LALReadFrequencySeries.m4
 ReadTimeSeries.c: ReadTimeSeries.m4 LALReadTimeSeries.m4
 	m4 ReadTimeSeries.m4 > ReadTimeSeries.c
 
+StreamVectorInput.c: StreamVectorInput.m4 LALReadVector.m4
+	m4 StreamVectorInput.m4 > StreamVectorInput.c
+
+StreamVectorSequenceInput.c: StreamVectorSequenceInput.m4 LALReadVectorSequence.m4
+	m4 StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c
+
+StreamSequenceInput.c: StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexSequence.m4
+	m4 StreamSequenceInput.m4 > StreamSequenceInput.c
+
+StreamSeriesInput.c: StreamSeriesInput.m4 LALReadSeries.m4
+	m4 -P StreamSeriesInput.m4 > StreamSeriesInput.c
+
+StreamSeriesOutput.c: StreamSeriesOutput.m4 LALWriteSeries.m4
+	m4 -P StreamSeriesOutput.m4 > StreamSeriesOutput.c

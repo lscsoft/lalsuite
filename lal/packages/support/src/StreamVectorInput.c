@@ -8,7 +8,7 @@ $Id$
 \subsection{Module \texttt{StreamVectorInput.c}}
 \label{ss:StreamVectorInput.c}
 
-Reads data from a single line in a file.
+Reads data from a single line in an input stream.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -25,34 +25,56 @@ Reads data from a single line in a file.
 
 \subsubsection*{Description}
 
-These routines read data from the I/O stream \verb@*stream@ until an
-end-of-line or end-of-file is reached.  (The line can be of arbitrary
-length; the data is temporarily stored in a linked list of buffers.)
-Once read, a LAL vector structure \verb@**vector@ is created and the
-data stored in it.  The routine passes back a pointer to the new
-structure.
+These routines read ASCII data from the I/O stream \verb@*stream@
+until a newline or the end-of-input is reached.  (The line can be of
+arbitrary length; the data is temporarily stored in a linked list of
+buffers.)  Once read, a LAL vector structure \verb@**vector@ is
+created and the data stored in it.  The routine passes back a pointer
+to the new structure.  For the numerical routines, the \verb@strict@
+parameter determines whether the routine will do strict error checking
+based on the contents of the input stream (see below).
 
 The basic routine in this module is \verb@LALCHARReadVector()@, which
-simply stores bytes read from \verb@*stream@ until the next
-end-of-line byte, or the end of the file.  The vector includes the
-end-of-line byte (if present), and also an explicit \verb@'\0'@ byte
-at the end.  This routine \emph{can} be used to read a binary data
-stream, but this is not particularly meaningful since binary files are
-not logically divided into ``lines''.
+simply stores bytes read from \verb@*stream@ until the next newline
+character \verb@'\n'@, null character \verb@'\0'@, or the end of the
+input as determined by the \verb@feof()@ function.  The vector
+includes the newline (if present), and also an explicit \verb@'\0'@ at
+the end, if one was not already present.  This routine should
+\emph{not} be used to read a binary data stream, which are not
+logically divided into `lines'.  Unless it aborts due to invalid
+arguments or failed memory allocation, \verb@LALCHARReadVector()@ will
+always return successfully regardless of the contents of the input
+stream; \verb@*vector@ will created containing at least a single
+\verb@'\0'@ terminator, if nothing else.
 
 The other routines in this module use \verb@LALCHARReadVector()@ to
-read a line, and then parse it into numerical datatypes using the C
-routine \verb@sscanf()@.  The stream must be an ASCII text stream
-containing whitespace-separated numbers in a format recognized by
-\verb@sscanf()@.  A \verb@#@ sign at the beginning of a line, or a
-\verb@%@ sign anywhere in the line, indicates that the remainder of
-the line is a comment and will be ignored.
+read a line, and then parse it into numerical datatypes using the
+corresponding routine in the \verb@StringConvert.c@ module.
+Conversion stops when the routine encounters a character that cannot
+be parsed as part of a number.  If \verb@strict@ is 0, the routine
+will fail only due to invalid arguments or memory allocation failure,
+not from a poorly-formatted input stream; if no numbers are read,
+\verb@*vector@ will remain \verb@NULL@, but no error will be reported.
+(In this mode, the calling routine should always test the output
+before trying to dereference it, in order to avoid segmentation
+violations.)  If \verb@strict@ is nonzero, the routine will report an
+error if the input stream was poorly formatted, either an \verb@ELEN@
+error if no numbers were read, or \verb@EFMT@ if a character was
+encountered that was neither part of a parseable number nor
+whitespace.
+
+Note that \verb@strict@=0 allows an input stream to contain blank
+lines or comments.  A comment begins with any character that cannot
+occur in a valid number, which will cause the numerical parser to skip
+the rest of the line.  The usual comment delimiters are \verb@'#'@ and
+\verb@'%'@, but any character except \verb@'+'@ \verb@'-'@,
+\verb@'e'@, \verb@'E'@, \verb@'.'@, digits, and whitespace will work.
 
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALCalloc()                     LALFree()
+LALMalloc()                     LALFree()
 LALCHARCreateVector()           LALCHARDestroyVector()
 LALI2CreateVector()             LALU2CreateVector()
 LALI4CreateVector()             LALU4CreateVector()
@@ -69,81 +91,27 @@ LALWarning()
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/StringInput.h>
 #include <lal/StreamInput.h>
 
-NRCSID(STREAMVECTORINPUTC,"$Id$");
-
-/* Define macros for determining the sscanf() format specifier. */
-#define INTFORMAT( format, size )                                    \
-do {                                                                 \
-  if ( (size) == sizeof( short ) )                                   \
-    (format) = "%hi";                                                \
-  else if ( (size) == sizeof( int ) )                                \
-    (format) = "%i";                                                 \
-  else if ( (size) == sizeof( long ) )                               \
-    (format) = "%li";                                                \
-  else if ( (size) == sizeof( long long ) )                          \
-    (format) = "%Li";                                                \
-  else {                                                             \
-    CHAR msg[64];                                                    \
-    sprintf( msg, "Using default format %%i for type INT%u",         \
-	     (size) );                                               \
-    LALWarning( stat, msg );                                         \
-    (format) = "%i";                                                 \
-  }                                                                  \
-} while(0)
-
-#define UINTFORMAT( format, size )                                   \
-do {                                                                 \
-  if ( (size) == sizeof( unsigned short ) )                          \
-    (format) = "%hu";                                                \
-  else if ( (size) == sizeof( unsigned int ) )                       \
-    (format) = "%u";                                                 \
-  else if ( (size) == sizeof( unsigned long ) )                      \
-    (format) = "%lu";                                                \
-  else if ( (size) == sizeof( unsigned long long ) )                 \
-    (format) = "%Lu";                                                \
-  else {                                                             \
-    CHAR msg[64];                                                    \
-    sprintf( msg, "Using default format %%u for type INT%u",         \
-	     (size) );                                               \
-    LALWarning( stat, msg );                                         \
-    (format) = "%u";                                                 \
-  }                                                                  \
-} while(0)
-
-#define REALFORMAT( format, size )                                   \
-do {                                                                 \
-  if ( (size) == sizeof( float ) )                                   \
-    (format) = "%f";                                                 \
-  else if ( (size) == sizeof( double ) )                             \
-    (format) = "%lf";                                                \
-  else if ( (size) == sizeof( long double ) )                        \
-    (format) = "%Lf";                                                \
-  else {                                                             \
-    CHAR msg[64];                                                    \
-    sprintf( msg, "Using default format %%f for type REAL%u",        \
-	     (size) );                                               \
-    LALWarning( stat, msg );                                         \
-    (format) = "%f";                                                 \
-  }                                                                  \
-} while(0)
+NRCSID( STREAMVECTORINPUTC, "$Id$" );
 
 /* Define linked-list of buffers for storing an arbitrary number of
    arbitrary datatypes. */
 #define BUFFSIZE 16
 typedef union tagBuffer {
-  CHAR ch[BUFFSIZE];
-  INT2 i2[BUFFSIZE/2];
-  INT4 i4[BUFFSIZE/4];
-  INT8 i8[BUFFSIZE/8];
-  UINT2 u2[BUFFSIZE/2];
-  UINT4 u4[BUFFSIZE/4];
-  UINT8 u8[BUFFSIZE/8];
-  REAL4 s[BUFFSIZE/4];
-  REAL8 d[BUFFSIZE/8];
+  CHAR CH[BUFFSIZE];
+  INT2 I2[BUFFSIZE/2];
+  INT4 I4[BUFFSIZE/4];
+  INT8 I8[BUFFSIZE/8];
+  UINT2 U2[BUFFSIZE/2];
+  UINT4 U4[BUFFSIZE/4];
+  UINT8 U8[BUFFSIZE/8];
+  REAL4 S[BUFFSIZE/4];
+  REAL8 D[BUFFSIZE/8];
 } Buffer;
 typedef struct tagBufferList {
   Buffer buf;
@@ -161,10 +129,6 @@ if ( headPtr ) {                                                     \
     herePtr = nextPtr;                                               \
   }                                                                  \
 } else (void)(0)
-
-/* Define the set of whitespace characters. */
-static char
-whitespace[] = { ' ', '\f', '\n', '\r', '\t', '\v', EOF, '\0' };
 
 static const BufferList empty;
 
@@ -188,31 +152,32 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
 
   /* Read into the first buffer at the head of the list, and see if
      more needs to be read. */
-  if ( !( fgets( head.buf.ch, BUFFSIZE, stream ) ) )
+  if ( !( fgets( head.buf.CH, BUFFSIZE, stream ) ) )
     done = 1;
-  nTot = head.size = strlen( head.buf.ch );
+  nTot = head.size = strlen( head.buf.CH );
   done |= ( head.size < BUFFSIZE - 1 );
-  done |= ( head.buf.ch[BUFFSIZE-2] == '\n' );
+  done |= ( head.buf.CH[BUFFSIZE-2] == '\n' );
   here = &head;
 
-  /* If we haven't yet read the EOL or EOF character... */
+  /* If we haven't yet reached the end of the line or file... */
   while ( !done ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    memset( here, 0, sizeof(BufferList) );
 
     /* Read into the next buffer, and see if more needs to be read. */
-    if ( !( fgets( here->buf.ch, BUFFSIZE, stream ) ) )
+    if ( !( fgets( here->buf.CH, BUFFSIZE, stream ) ) )
       done = 1;
     fflush( stream );
-    nTot += here->size = strlen( here->buf.ch );
+    nTot += here->size = strlen( here->buf.CH );
     done |= ( here->size < BUFFSIZE - 1 );
-    done |= ( here->buf.ch[BUFFSIZE-2] == '\n' );
+    done |= ( here->buf.CH[BUFFSIZE-2] == '\n' );
   }
 
   /* Finished reading the line.  Now allocate **vector.  Include space
@@ -226,7 +191,7 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
   here = &head;
   data = (*vector)->data;
   while ( here ) {
-    memcpy( data, here->buf.ch, here->size );
+    memcpy( data, here->buf.CH, here->size );
     data += here->size;
     here = here->next;
   }
@@ -241,14 +206,13 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALI2ReadVector( LALStatus *stat, INT2Vector **vector, FILE *stream )
+LALI2ReadVector ( LALStatus *stat, INT2Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
+  CHAR *start, *end;       /* pointers to start and end of a token */
   INT2 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
@@ -261,89 +225,92 @@ LALI2ReadVector( LALStatus *stat, INT2Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 2 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.i2 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ ) {
+    LALStringToI2 ( stat->statusPtr, head.buf.I2 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.i2 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ ) {
+      LALStringToI2 ( stat->statusPtr, here->buf.I2 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALI2CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALI2CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    INT2 *hereData = here->buf.i2;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      INT2 *hereData = here->buf.I2;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -355,14 +322,13 @@ LALI2ReadVector( LALStatus *stat, INT2Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALI4ReadVector( LALStatus *stat, INT4Vector **vector, FILE *stream )
+LALI4ReadVector ( LALStatus *stat, INT4Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
+  CHAR *start, *end;       /* pointers to start and end of a token */
   INT4 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
@@ -375,89 +341,92 @@ LALI4ReadVector( LALStatus *stat, INT4Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 4 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.i4 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+    LALStringToI4 ( stat->statusPtr, head.buf.I4 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.i4 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+      LALStringToI4 ( stat->statusPtr, here->buf.I4 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALI4CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALI4CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    INT4 *hereData = here->buf.i4;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      INT4 *hereData = here->buf.I4;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -469,14 +438,13 @@ LALI4ReadVector( LALStatus *stat, INT4Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALI8ReadVector( LALStatus *stat, INT8Vector **vector, FILE *stream )
+LALI8ReadVector ( LALStatus *stat, INT8Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
+  CHAR *start, *end;       /* pointers to start and end of a token */
   INT8 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
@@ -489,89 +457,92 @@ LALI8ReadVector( LALStatus *stat, INT8Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 8 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.i8 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+    LALStringToI8 ( stat->statusPtr, head.buf.I8 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.i8 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+      LALStringToI8 ( stat->statusPtr, here->buf.I8 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALI8CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALI8CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    INT8 *hereData = here->buf.i8;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      INT8 *hereData = here->buf.I8;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -583,15 +554,14 @@ LALI8ReadVector( LALStatus *stat, INT8Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALU2ReadVector( LALStatus *stat, UINT2Vector **vector, FILE *stream )
+LALU2ReadVector ( LALStatus *stat, UINT2Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
-  UINT2 *data;             /* pointer to converted data */
+  CHAR *start, *end;       /* pointers to start and end of a token */
+  UINT2 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
 
@@ -603,89 +573,92 @@ LALU2ReadVector( LALStatus *stat, UINT2Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 2 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.u2 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ ) {
+    LALStringToU2 ( stat->statusPtr, head.buf.U2 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.u2 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/2 ); i++ ) {
+      LALStringToU2 ( stat->statusPtr, here->buf.U2 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALU2CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALU2CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    UINT2 *hereData = here->buf.u2;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      UINT2 *hereData = here->buf.U2;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -697,15 +670,14 @@ LALU2ReadVector( LALStatus *stat, UINT2Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALU4ReadVector( LALStatus *stat, UINT4Vector **vector, FILE *stream )
+LALU4ReadVector ( LALStatus *stat, UINT4Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
-  CHARVector *line = NULL; /* the line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  CHARVector *line = NULL; /* a line of text stored as a CHARVector */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
-  UINT4 *data;             /* pointer to converted data */
+  CHAR *start, *end;       /* pointers to start and end of a token */
+  UINT4 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
 
@@ -717,89 +689,92 @@ LALU4ReadVector( LALStatus *stat, UINT4Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 4 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.u4 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+    LALStringToU4 ( stat->statusPtr, head.buf.U4 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.u4 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+      LALStringToU4 ( stat->statusPtr, here->buf.U4 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALU4CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALU4CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    UINT4 *hereData = here->buf.u4;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      UINT4 *hereData = here->buf.U4;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -811,15 +786,14 @@ LALU4ReadVector( LALStatus *stat, UINT4Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALU8ReadVector( LALStatus *stat, UINT8Vector **vector, FILE *stream )
+LALU8ReadVector ( LALStatus *stat, UINT8Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
-  UINT8 *data;             /* pointer to converted data */
+  CHAR *start, *end;       /* pointers to start and end of a token */
+  UINT8 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
 
@@ -831,89 +805,92 @@ LALU8ReadVector( LALStatus *stat, UINT8Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  INTFORMAT( format, 8 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.u8 + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+    LALStringToU8 ( stat->statusPtr, head.buf.U8 + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.u8 + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+      LALStringToU8 ( stat->statusPtr, here->buf.U8 + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALU8CreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALU8CreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    UINT8 *hereData = here->buf.u8;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      UINT8 *hereData = here->buf.U8;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */
@@ -925,129 +902,14 @@ LALU8ReadVector( LALStatus *stat, UINT8Vector **vector, FILE *stream )
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
-LALSReadVector( LALStatus *stat, REAL4Vector **vector, FILE *stream )
+LALSReadVector ( LALStatus *stat, REAL4Vector **vector, FILE *stream, BOOLEAN strict )
 { /* </lalVerbatim> */
   UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
-  CHARVector *line = NULL; /* the line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
-  BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
-  REAL4 *data;             /* pointer to converted data */
-  BOOLEAN more = 1;        /* whether or not to read more numbers */
-  UINT4 nTot = 0;          /* total number of numbers read */
-
-  INITSTATUS( stat, "LALSReadVector", STREAMVECTORINPUTC );
-  ATTATCHSTATUSPTR( stat );
-
-  /* Check for valid input arguments. */
-  ASSERT( stream, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
-  ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
-  ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
-
-  /* Determine the format for sscanf(). */
-  REALFORMAT( format, 4 );
-
-  /* Read the line of text as a CHARVector. */
-  TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
-
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.s + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
-      more = 0;
-
-  /* Read into remaining buffers. */
-  here = &head;
-  while ( more ) {
-
-    /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
-      FREEBUFFERLIST( head.next );
-      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-      ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
-    }
-    here = here->next;
-
-    /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.s + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
-	more = 0;
-  }
-
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
-  }
-
-  /* Allocate **vector. */
-  LALSCreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
-
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
-  here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    REAL4 *hereData = here->buf.s;
-    while ( j-- )
-      *(data++) = *(hereData++);
-    here = here->next;
-  }
-
-  /* Free buffer list and exit. */
-  FREEBUFFERLIST( head.next );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-}
-
-
-/* <lalVerbatim file="StreamVectorInputCP"> */
-void
-LALDReadVector( LALStatus *stat, REAL8Vector **vector, FILE *stream )
-{ /* </lalVerbatim> */
-  UINT4 i;                 /* an index */
-  const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = empty;    /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
-  CHAR *token;             /* pointer to a number to be converted */
-  REAL8 *data;             /* pointer to converted data */
+  CHAR *start, *end;       /* pointers to start and end of a token */
+  REAL4 *data;              /* pointer to converted data */
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
 
@@ -1059,89 +921,208 @@ LALDReadVector( LALStatus *stat, REAL8Vector **vector, FILE *stream )
   ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
 
-  /* Determine the format for sscanf(). */
-  REALFORMAT( format, 8 );
-
   /* Read the line of text as a CHARVector. */
   TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
 
-  /* Scan for comment delimiters. */
-  if ( line->data[0] == '#' )
-    line->data[0] = '\0';
-  else
-    for ( i = 0; i < line->length; i++ )
-      if ( line->data[i] == '%' )
-	line->data[i] = '\0';
-
-  /* Read into the first buffer. */
-  token = strtok( line->data, whitespace );
-  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-    if ( token )
-    {
-      if ( sscanf( token, format, head.buf.d + i ) != 1 )
-	more = 0;
-      else {
-	nTot++;
-	head.size++;
-	token = strtok( NULL, whitespace );
-      }
-    }
-    else
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+    LALStringToS ( stat->statusPtr, head.buf.S + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
       more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
 
   /* Read into remaining buffers. */
   here = &head;
   while ( more ) {
 
     /* Allocate next buffer. */
-    here->next = (BufferList *)LALCalloc( 1, sizeof(BufferList) );
-    if ( !here->next ) {
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
+    here = here->next;
+    if ( !here ) {
       FREEBUFFERLIST( head.next );
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
       ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
     }
-    here = here->next;
+    here->size = 0;
+    here->next = NULL;
 
     /* Read into the next buffer, and see if more needs to be read. */
-    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ )
-      if ( token )
-      {
-	if ( sscanf( token, format, here->buf.d + i ) != 1 )
-	  more = 0;
-	else {
-	  nTot++;
-	  here->size++;
-	  token = strtok( NULL, whitespace );
-	}
-      }
-      else
+    for ( i = 0; more && ( i < BUFFSIZE/4 ); i++ ) {
+      LALStringToS ( stat->statusPtr, here->buf.S + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
 	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
   }
 
-  /* Line has been parsed into numbers, so free it and return an error
-     if no numbers were parsed. */
-  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-  if ( nTot == 0 ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
   }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 
   /* Allocate **vector. */
-  LALDCreateVector( stat->statusPtr, vector, nTot );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
+  if ( nTot > 0 ) {
+    LALSCreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
 
-  /* Copy buffer list into (*vector)->data, and set
-     (*vector)->length. */
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      REAL4 *hereData = here->buf.S;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
+  }
+
+  /* Free buffer list and exit. */
+  FREEBUFFERLIST( head.next );
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}
+
+
+/* <lalVerbatim file="StreamVectorInputCP"> */
+void
+LALDReadVector ( LALStatus *stat, REAL8Vector **vector, FILE *stream, BOOLEAN strict )
+{ /* </lalVerbatim> */
+  UINT4 i;                 /* an index */
+  CHARVector *line = NULL; /* a line of text stored as a CHARVector */
+  BufferList head = empty; /* head of linked list of buffers */
+  BufferList *here;        /* pointer to current position in list */
+  CHAR *start, *end;       /* pointers to start and end of a token */
+  REAL8 *data;              /* pointer to converted data */
+  BOOLEAN more = 1;        /* whether or not to read more numbers */
+  UINT4 nTot = 0;          /* total number of numbers read */
+
+  INITSTATUS( stat, "LALDReadVector", STREAMVECTORINPUTC );
+  ATTATCHSTATUSPTR( stat );
+
+  /* Check for valid input arguments. */
+  ASSERT( stream, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
+  ASSERT( vector, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
+  ASSERT( !*vector, stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
+
+  /* Read the line of text as a CHARVector. */
+  TRY( LALCHARReadVector( stat->statusPtr, &line, stream ), stat );
+
+  /* Read into first buffer, and see if more needs to be read. */
+  start = end = line->data;
+  for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+    LALStringToD ( stat->statusPtr, head.buf.D + i, start, &end );
+    BEGINFAIL( stat )
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    ENDFAIL( stat );
+    if ( start == end )
+      more = 0;
+    else {
+      nTot++;
+      head.size++;
+      start = end;
+    }
+  }
+
+  /* Read into remaining buffers. */
   here = &head;
-  data = (*vector)->data;
-  while ( here ) {
-    UINT4 j = here->size;
-    REAL8 *hereData = here->buf.d;
-    while ( j-- )
-      *(data++) = *(hereData++);
+  while ( more ) {
+
+    /* Allocate next buffer. */
+    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
     here = here->next;
+    if ( !here ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
+    }
+    here->size = 0;
+    here->next = NULL;
+
+    /* Read into the next buffer, and see if more needs to be read. */
+    for ( i = 0; more && ( i < BUFFSIZE/8 ); i++ ) {
+      LALStringToD ( stat->statusPtr, here->buf.D + i, start, &end );
+      BEGINFAIL( stat ) {
+	FREEBUFFERLIST( head.next );
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      } ENDFAIL( stat );
+      if ( start == end )
+	more = 0;
+      else {
+	nTot++;
+	here->size++;
+	start = end;
+      }
+    }
+  }
+
+  /* Check for formatting problems, if required, and free the line. */
+  if ( strict ) {
+    if ( nTot == 0 ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_ELEN, STREAMINPUTH_MSGELEN );
+    }
+    while ( isspace( *end ) )
+      end++;
+    if ( *end != '\0' ) {
+      FREEBUFFERLIST( head.next );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EFMT, STREAMINPUTH_MSGEFMT );
+    }
+  }
+  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+
+  /* Allocate **vector. */
+  if ( nTot > 0 ) {
+    LALDCreateVector ( stat->statusPtr, vector, nTot );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head.next );
+    ENDFAIL( stat );
+
+    /* Copy buffer list into (*vector)->data, and set
+       (*vector)->length. */
+    here = &head;
+    data = (*vector)->data;
+    while ( here ) {
+      UINT4 j = here->size;
+      REAL8 *hereData = here->buf.D;
+      while ( j-- )
+	*(data++) = *(hereData++);
+      here = here->next;
+    }
   }
 
   /* Free buffer list and exit. */

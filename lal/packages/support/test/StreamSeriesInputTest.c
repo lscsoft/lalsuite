@@ -1,20 +1,19 @@
-/********************************* <lalVerbatim file="StreamInputTestCV">
+/************************ <lalVerbatim file="StreamSeriesInputTestCV">
 Author: Creighton, T. D.
 $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 
-\subsection{Program \texttt{StreamInputTest.c}}
-\label{ss:StreamInputTest.c}
+\subsection{Program \texttt{StreamSeriesInputTest.c}}
+\label{ss:StreamSeriesInputTest.c}
 
 Reads a \verb@REAL4VectorSequence@ from a file.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-StreamInputTest [-o outfile] [-d debuglevel] [-t]
-                [-v {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d} infile]
-                [-s {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
+StreamSeriesInputTest [-o outfile] [-d debuglevel] [-t]
+        [{-s | -v | -a | -f} {i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -40,7 +39,7 @@ from standard input (\emph{not} from a file named \verb@stdin@).
 \item[\texttt{-s}] As \verb@-v@, above, except that the file contents
 are parsed by the routines \verb@LAL<datatype>ReadSequence()@.  If
 neither \verb@-v@ nor \verb@-s@ is specified,
-\verb@-v s StreamInput.dat@ is assumed (this file is provided with the
+\verb@-v s StreamSeriesInput.dat@ is assumed (this file is provided with the
 distribution so that running the code with no arguments, \'a la
 \verb@make check@, will perform a nontrivial test of the algorithm).
 \end{itemize}
@@ -60,15 +59,15 @@ type-dependent format.
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define STREAMINPUTTESTC_ENORM 0
-#define STREAMINPUTTESTC_ESUB  1
-#define STREAMINPUTTESTC_EARG  2
-#define STREAMINPUTTESTC_EFILE 3
+#define STREAMSERIESINPUTTESTC_ENORM 0
+#define STREAMSERIESINPUTTESTC_ESUB  1
+#define STREAMSERIESINPUTTESTC_EARG  2
+#define STREAMSERIESINPUTTESTC_EFILE 3
 
-#define STREAMINPUTTESTC_MSGENORM "Normal exit"
-#define STREAMINPUTTESTC_MSGESUB  "Subroutine failed"
-#define STREAMINPUTTESTC_MSGEARG  "Error parsing arguments"
-#define STREAMINPUTTESTC_MSGEFILE "Could not open file"
+#define STREAMSERIESINPUTTESTC_MSGENORM "Normal exit"
+#define STREAMSERIESINPUTTESTC_MSGESUB  "Subroutine failed"
+#define STREAMSERIESINPUTTESTC_MSGEARG  "Error parsing arguments"
+#define STREAMSERIESINPUTTESTC_MSGEFILE "Could not open file"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Uses}
@@ -99,7 +98,7 @@ LALZReadSequence()              LALZDestroyVector()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{StreamInputTestCV}}
+\vfill{\footnotesize\input{StreamSeriesInputTestCV}}
 
 ******************************************************* </lalLaTeX> */
 
@@ -110,14 +109,16 @@ LALZReadSequence()              LALZDestroyVector()
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
+#include <lal/Units.h>
 #include <lal/SeqFactories.h>
 #include <lal/StreamInput.h>
+#include <lal/StreamOutput.h>
 
-NRCSID(STREAMINPUTTESTC,"$Id$");
+NRCSID(STREAMSERIESINPUTTESTC,"$Id$");
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
-#define INFILE "StreamInput.data"
+#define INFILE "StreamSeriesInput.data"
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-d debuglevel] [-t]\n"        \
@@ -134,8 +135,8 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, STREAMINPUTTESTC, statement ? statement : \
-                 "", (msg) );                                        \
+		 __LINE__, STREAMSERIESINPUTTESTC,                   \
+		 statement ? statement : "", (msg) );                \
 }                                                                    \
 else (void)(0)
 
@@ -144,16 +145,16 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 STREAMINPUTTESTC, (statement) );                    \
+		 STREAMSERIESINPUTTESTC, (statement) );              \
 }                                                                    \
 else (void)(0)
 
 #define SUB( func, statusptr )                                       \
 if ( (func), (statusptr)->statusCode )                               \
 {                                                                    \
-  ERROR( STREAMINPUTTESTC_ESUB, STREAMINPUTTESTC_MSGESUB,            \
+  ERROR( STREAMSERIESINPUTTESTC_ESUB, STREAMSERIESINPUTTESTC_MSGESUB,\
          "Function call \"" #func "\" failed:" );                    \
-  return STREAMINPUTTESTC_ESUB;                                      \
+  return STREAMSERIESINPUTTESTC_ESUB;                                \
 }                                                                    \
 else (void)(0)
 
@@ -231,21 +232,6 @@ do {                                                                 \
 } while (0)
 
 /* Macros for printing sequences and vector sequences. */
-#define PRINTCHARVECTORSEQUENCE                                      \
-do {                                                                 \
-  if ( fpOut )                                                       \
-    for ( i = 0; i < values->length; i++ ) {                         \
-      for ( j = 0; j < dim; j++ ) {                                  \
-	int c = (int)( values->data[i*dim+j] );                      \
-	if ( isgraph( c ) )                                          \
-	  fputc( c, fpOut );                                         \
-	else                                                         \
-	  fputc( (int)(' '), fpOut );                                \
-      }                                                              \
-      fputc( (int)('\n'), fpOut );                                   \
-    }                                                                \
-} while (0)
-
 #define PRINTVECTORSEQUENCE                                          \
 do {                                                                 \
   if ( fpOut )                                                       \
@@ -257,13 +243,6 @@ do {                                                                 \
       }                                                              \
       fprintf( fpOut, "\n" );                                        \
     }                                                                \
-} while (0)
-
-#define PRINTCHARSEQUENCE                                            \
-do {                                                                 \
-  if ( fpOut )                                                       \
-    for ( i = 0; i < values->length; i++ )                           \
-      fputc( (int)( values->data[i] ), fpOut );                      \
 } while (0)
 
 #define PRINTSEQUENCE                                                \
@@ -295,6 +274,29 @@ char *lalWatch;
 int
 main(int argc, char **argv)
 {
+#if 1
+  static LALStatus stat;       /* top-level status structure */
+  FILE *fp;
+  REAL8FrequencySeries series;
+
+  lalDebugLevel = 7;
+
+  if ( argc != 3 ) {
+    fprintf( stderr, "%s: Does nothing at present\n", *argv );
+    return 0;
+  }
+  memset( &series, 0, sizeof(REAL8FrequencySeries) );
+  fp = fopen( argv[1], "r" );
+  SUB( LALDReadFSeries( &stat, &series, fp ), &stat );
+  fclose( fp );
+  fp = fopen( argv[2], "w" );
+  SUB( LALDWriteFSeries( &stat, fp, &series ), &stat );
+  fclose( fp );
+  SUB( LALDDestroyVector( &stat, &(series.data) ), &stat );
+  LALCheckMemoryLeaks();
+  return 0;
+
+#else
   static LALStatus stat;       /* top-level status structure */
   INT4 arg;                    /* index over command-line options */
   UINT4 i, j;                  /* indecies */
@@ -309,6 +311,9 @@ main(int argc, char **argv)
   FILE *fpOut = NULL;          /* output file pointer */
   clock_t start = 0, stop = 0; /* data input timestamps */
 
+
+
+
   /* Parse argument list.  arg stores the current position. */
   arg = 1;
   while ( arg < argc ) {
@@ -318,9 +323,9 @@ main(int argc, char **argv)
 	arg++;
 	outfile = argv[arg++];
       } else {
-	ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
+	ERROR( STREAMSERIESINPUTTESTC_EARG, STREAMSERIESINPUTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return STREAMINPUTTESTC_EARG;
+        return STREAMSERIESINPUTTESTC_EARG;
       }
     }
     /* Parse debug level option. */
@@ -329,9 +334,9 @@ main(int argc, char **argv)
 	arg++;
 	lalDebugLevel = atoi( argv[arg++] );
       } else {
-	ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
+	ERROR( STREAMSERIESINPUTTESTC_EARG, STREAMSERIESINPUTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return STREAMINPUTTESTC_EARG;
+        return STREAMSERIESINPUTTESTC_EARG;
       }
     }
     /* Parse timing option. */
@@ -347,9 +352,9 @@ main(int argc, char **argv)
 	infile = argv[arg++];
 	vector = 1;
       } else {
-	ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
+	ERROR( STREAMSERIESINPUTTESTC_EARG, STREAMSERIESINPUTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return STREAMINPUTTESTC_EARG;
+        return STREAMSERIESINPUTTESTC_EARG;
       }
     }
     /* Parse plain sequence input option. */
@@ -360,34 +365,34 @@ main(int argc, char **argv)
 	infile = argv[arg++];
 	vector = 0;
       } else {
-	ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
+	ERROR( STREAMSERIESINPUTTESTC_EARG, STREAMSERIESINPUTTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return STREAMINPUTTESTC_EARG;
+        return STREAMSERIESINPUTTESTC_EARG;
       }
     }
     /* Check for unrecognized options. */
     else {
-      ERROR( STREAMINPUTTESTC_EARG, STREAMINPUTTESTC_MSGEARG, 0 );
+      ERROR( STREAMSERIESINPUTTESTC_EARG, STREAMSERIESINPUTTESTC_MSGEARG, 0 );
       LALPrintError( USAGE, *argv );
-      return STREAMINPUTTESTC_EARG;
+      return STREAMSERIESINPUTTESTC_EARG;
     }
   } /* End of argument parsing loop. */
 
   /* Open input and output files. */
   if ( strcmp( infile, "stdin" ) ) {
     if ( !( fpIn = LALOpenDataFile( infile ) ) ) {
-      ERROR( STREAMINPUTTESTC_EFILE, "- " STREAMINPUTTESTC_MSGEFILE,
+      ERROR( STREAMSERIESINPUTTESTC_EFILE, "- " STREAMSERIESINPUTTESTC_MSGEFILE,
 	     infile );
-      return STREAMINPUTTESTC_EFILE;
+      return STREAMSERIESINPUTTESTC_EFILE;
     }
   } else
     fpIn = stdin;
   if ( outfile ) {
     if ( strcmp( outfile, "stdout" ) ) {
       if ( !( fpOut = fopen( outfile, "w" ) ) ) {
-	ERROR( STREAMINPUTTESTC_EFILE, "- " STREAMINPUTTESTC_MSGEFILE,
+	ERROR( STREAMSERIESINPUTTESTC_EFILE, "- " STREAMSERIESINPUTTESTC_MSGEFILE,
 	       outfile );
-	return STREAMINPUTTESTC_EFILE;
+	return STREAMSERIESINPUTTESTC_EFILE;
       }
     } else
       fpOut = stdout;
@@ -587,6 +592,9 @@ main(int argc, char **argv)
   if ( outfile && strcmp( outfile, "stdout" ) )
     fclose( fpOut );
   LALCheckMemoryLeaks();
-  INFO( STREAMINPUTTESTC_MSGENORM );
-  return STREAMINPUTTESTC_ENORM;
+  INFO( STREAMSERIESINPUTTESTC_MSGENORM );
+  return STREAMSERIESINPUTTESTC_ENORM;
+
+#endif
+
 }
