@@ -1011,7 +1011,9 @@ void LALInspiralSpinModulatedWave(
 void LALInspiralSpinModulateWaveForInjection(
      LALStatus *status,
      CoherentGW *waveform,
-     InspiralTemplate *params);
+     InspiralTemplate *params,
+     PPNParamStruc  *ppnParams
+     );
 
 
 /*  <lalLaTeX>
