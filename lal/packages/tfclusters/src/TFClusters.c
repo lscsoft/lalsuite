@@ -841,17 +841,10 @@ LALClustersPowerThreshold (
       P0 += dir->rho[in->f[i][j]];
     }
      
-    /*
     po -= P0;
-    */
 
     incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
     CHECKSTATUSPTR (status);
-
-    incgam(status->statusPtr, (float)in->sizes[i], P0, &norm);
-    CHECKSTATUSPTR (status);
-
-    prob /= norm;
 
     if(prob < dir->alpha) { /* we have a winner */
 
