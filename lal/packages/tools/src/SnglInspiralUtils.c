@@ -191,7 +191,9 @@ LALCompareSnglInspiral (
 {
   INT8 ta, tb;
   REAL4 dm1, dm2;
+  REAL4 dpsi0, dpsi3;
   REAL4 sigmaRatio;
+  Approximant approximant;
 
   INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -204,27 +206,49 @@ LALCompareSnglInspiral (
   /* compate on triggger time coincidence */
   if ( labs( ta - tb ) < params->dt )
   {
-    dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
-    dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
-
-    /* compare mass1 and mass2 parameters */
-    if ( dm1 <= params->dm && dm2 <= params->dm )
+    if ( approximant == BCV )
     {
-      if ( fabs( 
-            (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
-            ) < params->epsilon / bPtr->snr + params->kappa )
+      dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
+      dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
+
+      if ( dpsi0 <= params->dpsi0 && dpsi3 <= params->dpsi3 )
       {
-        params->match = 1;
-        LALInfo( status, "Triggers are coincident in eff_distance" );
+	params->match = 1;
+	LALInfo( status, "Triggers are coincident in psi0 and psi3" );
       }
       else
       {
-        LALInfo( status, "Triggers fail eff_distance coincidence test" );
+	LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
+      }
+    }
+    else if ( approximant == TaylorF2 )
+    {  
+      dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
+      dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
+
+      /* compare mass1 and mass2 parameters */
+      if ( dm1 <= params->dm && dm2 <= params->dm )
+      {
+        if ( fabs( 
+              (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
+              ) < params->epsilon / bPtr->snr + params->kappa )
+        {
+          params->match = 1;
+          LALInfo( status, "Triggers are coincident in eff_distance" );
+        }
+        else
+        {
+          LALInfo( status, "Triggers fail eff_distance coincidence test" );
+        }
+      }
+      else
+      {
+        LALInfo( status, "Triggers fail mass coincidence test" );
       }
     }
     else
     {
-      LALInfo( status, "Triggers fail mass coincidence test" );
+      LALInfo( status, "error: unknown waveform approximant\n" );
     }
   }
   else
@@ -236,61 +260,6 @@ LALCompareSnglInspiral (
   RETURN (status);
 }
 
-
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-LALCompareSnglInspiralBCV (
-    LALStatus                *status,
-    SnglInspiralTable        *aPtr,
-    SnglInspiralTable        *bPtr,
-    SnglInspiralAccuracy     *params
-    )
-/* </lalVerbatim> */
-{
-  INT8 ta, tb;
-  REAL4 dpsi0, dpsi3;
-  REAL4 sigmaRatio;
-
-  INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  params->match = 0;
-
-  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
-  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
-
-  /* compate on triggger time coincidence */
-  if ( labs( ta - tb ) < params->dt )
-  {
-   dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
-   dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
-
-   /* compare psi0 and psi3 parameters */
-   if ( dpsi0 <= params->dpsi0 && dpsi3 <= params->dpsi3 )
-   {
-      LALInfo( status, "Triggers pass the psi-coincidence test" );
-    }
-    else if ( dpsi0 <= params->dpsi0 && !(dpsi3 <= params->dpsi3) )
-    {
-      LALInfo( status, "Triggers fail psi3-coincidence test" );
-    }
-    else if ( !(dpsi0 <= params->dpsi0) && dpsi3 <= params->dpsi3 )
-    {
-      LALInfo( status, "Triggers fail psi0-coincidence test" );
-    }
-    else 
-    {
-      LALInfo( status, "Triggers fail psi-coincidence test" );
-    }
-  }
-  else
-  {
-    LALInfo( status, "Triggers fails time coincidence test" );
-  }
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
