@@ -17,7 +17,7 @@
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 
-RCSID ("$Id");
+RCSID ("$Id$");
 
 /* Error codes and messages */
 /* <lalErrTable file="MAKEFAKEDATACErrorTable"> */
