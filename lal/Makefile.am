@@ -19,3 +19,4 @@ cvs-clean: maintainer-clean
 	rm -f configure.in
 	rm -f aclocal.m4
 	rm -f testscript.log
+	rm -f config.cache
