@@ -105,7 +105,11 @@ LALTFCRiceThreshold ( LALStatus *status,
 			   thr->varRe[i] + thr->varIm[i],
 			   thr->eGoal);
 
+    /*
     if(numError) {ABORT(status,TFCTHRESHOLDSH_ENERR,TFCTHRESHOLDSH_MSGENERR);}
+    */
+    
+    if(numError) {rho[i] = 1e30;}
   }
 
   /* Normal exit */
