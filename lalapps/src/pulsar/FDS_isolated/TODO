@@ -1,8 +1,10 @@
-TODO
+TODO (ComputeFStatistic-related)
 -----
-* clarify priorities between Alpha+AlphaBand.. and skyRegion
+* get rid of year-specification on command-line if possible (use ranges 00-04..)
 
-* implement new user-variable handling
+* quick-fix for mesh-covering problem at the equator?
+
+* clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion
 
 * metric-stuff
 	- debug, compare
@@ -21,3 +23,4 @@ done
 * write metric wrapper for Ptole and Coherent
 * adapt config-file more to python config-syntax
 * specify sky-regions by polygon 
+* implement new user-variable handling
