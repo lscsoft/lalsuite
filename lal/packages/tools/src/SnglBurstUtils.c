@@ -438,7 +438,16 @@ XLALCompareSimBurstAndSnglBurst(
 {
 	INT8 ta;
 
-	ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
+	if(! strcmp("ZENITH",(*a)->coordinates))
+	  ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
+	else {
+	  if(! strcmp("H1",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->h_peak_time);
+	  else if(! strcmp("H2",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->h_peak_time);
+	  else if(! strcmp("L1",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->l_peak_time);
+	}
 
 	return((start_time(*b) < ta) && (ta < end_time(*b)) && (lo_freq(*b) < (*a)->freq) && ((*a)->freq < hi_freq(*b)));
 }
