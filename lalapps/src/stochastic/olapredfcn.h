@@ -41,9 +41,8 @@ enum
   LALBarIndexAURIGA,
   LALBarIndexNAUTILUS,
   LALBarIndexEXPLORER,
-  LALBarIndexALLEGROOLD,
+  LALBarIndexALLEGRO,
   LALBarIndexNIOBE,
-  LALBarIndexALLEGRONEW,
   LALNumCachedBars
 };
 
