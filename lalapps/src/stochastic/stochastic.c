@@ -77,6 +77,7 @@ static int apply_mask_flag;
 static int high_pass_flag;
 static int overlap_hann_flag;
 static int recentre_flag;
+static int cc_spectra_flag;
 extern int vrbflg;
 
 /* xml comment/tags */
@@ -1061,18 +1062,23 @@ INT4 main(INT4 argc, CHAR *argv[])
       ccIn.responseFunctionTwo = responseTwo;
       ccIn.optimalFilter = optFilter;
 
-      if (vrbflg)
-        fprintf(stdout, "Generating cross correlation spectrum...\n");
+      if (cc_spectra_flag)
+      {
+        if (vrbflg)
+          fprintf(stdout, "Generating cross correlation spectrum...\n");
 
-      /* calculate cc spectrum */
-      LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
-            ccSpectrum, &ccIn, epochsMatch), &status);
+        /* calculate cc spectrum */
+        LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
+              ccSpectrum, &ccIn, epochsMatch), &status);
 
-      /* save out cc spectra as frame */
-      if (vrbflg)
-        fprintf(stdout, "Saving ccSpectra to frame...\n");
-      write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, gpsAnalysisTime, \
-          segmentDuration);
+        /* save out cc spectra as frame */
+        if (vrbflg)
+        {
+          fprintf(stdout, "Saving ccSpectra to frame...\n");
+          write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
+              gpsAnalysisTime, segmentDuration);
+        }
+      }
       
       /* cc statistic */
       LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
@@ -1180,6 +1186,17 @@ INT4 main(INT4 argc, CHAR *argv[])
         PROGRAM_NAME);
     LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
         "--recentre");
+    LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+    LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
+  }
+  if (cc_spectra_flag)
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                      calloc(1, sizeof(ProcessParamsTable));
+    LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+        PROGRAM_NAME);
+    LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, \
+        "--cc-spectra");
     LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
     LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, " ");
   }
@@ -1371,8 +1388,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --alpha N                     exponent on filter spectrum\n"\
   " --f-ref N                     reference frequency for filter spectrum\n"\
   " --omega0 N                    reference omega_0 for filter spectrum\n"\
-  " --comment STRING              set the process table to STRING\n"\
-  " --user-tag STRING             set the process_params usertag to STRING\n"
+  " --comment STRING              set the process table comment to STRING\n"\
+  " --user-tag STRING             set the process_params usertag to STRING\n"\
+  " --cc-spectra                  save out cross correlation spectra\n"
 
 /* parse command line options */
 void parse_options(INT4 argc, CHAR *argv[])
@@ -1395,7 +1413,8 @@ void parse_options(INT4 argc, CHAR *argv[])
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
       {"verbose", no_argument, &vrbflg, 1},
-      {"recentre", no_argument, &recentre_flag,1},
+      {"recentre", no_argument, &recentre_flag, 1},
+      {"cc-spectra", no_argument, &cc_spectra_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"gps-start-time", required_argument, 0, 'b'},
