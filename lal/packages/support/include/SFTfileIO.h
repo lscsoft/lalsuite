@@ -128,25 +128,23 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_EHEADER 	3
 #define SFTFILEIOH_EVERSION 	4
 #define SFTFILEIOH_EVAL 	5
-#define SFTFILEIOH_ESEEK 	9
-#define SFTFILEIOH_EREAD 	10
-#define SFTFILEIOH_EWRITE 	11
+#define SFTFILEIOH_EENDIAN 	6
 #define SFTFILEIOH_ENONULL 	12
 #define SFTFILEIOH_EFREQBAND 	13
 #define SFTFILEIOH_EMEM 	14
+#define SFTFILEIOH_EGLOB 	15
 
 #define SFTFILEIOH_MSGENULL 	"Null pointer"
-#define SFTFILEIOH_MSGEFILE 	"Could not open file"
+#define SFTFILEIOH_MSGEFILE 	"Error in file-IO"
 #define SFTFILEIOH_MSGEHEADER 	"Incorrect header in file"
 #define SFTFILEIOH_MSGEVERSION 	"This SFT-version is not currently supported"
 #define SFTFILEIOH_MSGEVAL  	"Invalid value"
-#define SFTFILEIOH_MSGESEEK 	"fseek failed"
-#define SFTFILEIOH_MSGEREAD 	"fread failed"
-#define SFTFILEIOH_MSGEWRITE 	"fwrite failed"
-
-#define SFTFILEIOH_MSGENONULL  "Output pointer not NULL"
+#define SFTFILEIOH_MSGEENDIAN 	"Wrong endian encoding of SFT (not supported yet"
+#define SFTFILEIOH_MSGENONULL  	"Output pointer not NULL"
 #define SFTFILEIOH_MSGEFREQBAND "Required frequency-band is not in SFT"
 #define SFTFILEIOH_MSGEMEM 	"Out of memory"
+#define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
+
 /* </lalErrTable>  */
 
 
@@ -167,14 +165,14 @@ NRCSID (SFTFILEIOH, "$Id$");
  */
 
 /* this header currently corresponds to SFT-spec v 1.0 */
-  typedef struct tagSFTHeader {
-    REAL8  version;
-    INT4   gpsSeconds;
-    INT4   gpsNanoSeconds;
-    REAL8  timeBase;
-    INT4   fminBinIndex;
-    INT4   length;  
-  } SFTHeader;
+typedef struct tagSFTHeader {
+  REAL8  version;
+  INT4   gpsSeconds;
+  INT4   gpsNanoSeconds;
+  REAL8  timeBase;
+  INT4   fminBinIndex;
+  INT4   length;  
+} SFTHeader;
 
 /* just for reference: this is the FrequencySeries type:
  * {
@@ -201,6 +199,7 @@ void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname)
 void LALReadSFTtype (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTtoFile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
+void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fmin, REAL8 fmax, const CHAR *glob);
 
 
 #ifdef  __cplusplus

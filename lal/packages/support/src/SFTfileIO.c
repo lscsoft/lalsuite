@@ -34,6 +34,9 @@ Routines for reading SFT binary files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
 
+Will be written soon! :)
+
+Watch this space.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
@@ -49,14 +52,29 @@ LALHO()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 *********************************************** </lalLaTeX> */
+#include <sys/types.h>
+#include <dirent.h>
 
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
 
 
+
+/* for private use: a vector of 'strings' */
+typedef struct {
+  UINT4 length;
+  CHAR **data;
+} StringVector;
+
+/* prototypes for internal helper functions */
+static StringVector *find_files (const CHAR *globdir);
+static void DestroyStringVector (StringVector *strings);
+
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
-static void ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header);
+
+/* number of bytes in SFT-header v1.0 */
+static const size_t header_len_v1 = 32;	
 
 /*
  * The functions that make up the guts of this module
@@ -64,18 +82,19 @@ static void ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header);
 
 
 /*----------------------------------------------------------------------*/
-
-/* *******************************  <lalVerbatim file="SFTfileIOD"> */
+/* <lalVerbatim file="SFTfileIOD"> */
 void LALReadSFTheader (LALStatus  *status,
                        SFTHeader   *header,
 		       const CHAR  *fname)
-{ /*   *********************************************  </lalVerbatim> */
+{ /* </lalVerbatim> */
   
-  FILE     *fp = NULL;
+  FILE *fp = NULL;
   SFTHeader  header1;
-  size_t    errorcode;
-  
-  /* --------------------------------------------- */
+  CHAR *rawheader = NULL;
+  CHAR *ptr = NULL;
+  REAL8 version;
+  BOOLEAN swapEndian = 0;
+
   INITSTATUS (status, "LALReadSFTHeader", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
   
@@ -87,45 +106,384 @@ void LALReadSFTheader (LALStatus  *status,
   fp = fopen( fname, "r");
   ASSERT (fp, status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
   
-  /* read the header */
-  errorcode = fread( (void *)&header1, sizeof(SFTHeader), 1, fp);
-  ASSERT (errorcode ==1, status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  /* read version-number */
+  if  (fread (&version, sizeof(version), 1, fp) != 1) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
 
-  if (header1.version != 1) {
+  /* check endian-ness */
+  if (version > 1000000) {
+    endian_swap ((CHAR*)&version, sizeof(version), 1);
+    swapEndian = 1;
+  }
+
+  /* check compatibility of version with this function */
+  if (version != 1) {
     ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
   }
 
-  header->version     = header1.version;
-  header->gpsSeconds = header1.gpsSeconds;
-  header->gpsNanoSeconds = header1.gpsNanoSeconds;
-  header->timeBase       = header1.timeBase;
-  header->fminBinIndex   = header1.fminBinIndex ;
-  header->length     = header1.length ;
+  /* big-endian not yet supported */
+  if (swapEndian) {
+    ABORT (status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
+  }
+
+  /* read the header */
+  rawheader = LALCalloc (1, header_len_v1);
+  if (rawheader == NULL) {
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+  }
   
+  rewind (fp);	/* go back to start */
+  if (fread( rawheader, header_len_v1, 1, fp) != 1) {
+    LALFree (rawheader);
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
   fclose(fp);
+
+  /* now fill-in the header-struct with the appropriate fields */
+  /* NOTE: we have to do it this way, because the struct can have 
+   * padding in memory, so the fields are not guaranteed to lie 'close'
+   */
+  ptr = rawheader;
+  header1.version	= *(REAL8*) ptr;
+  ptr += sizeof(REAL8);
+  header1.gpsSeconds 	= *(INT4*) ptr;
+  ptr += sizeof(INT4);
+  header1.gpsNanoSeconds= *(INT4*) ptr;
+  ptr += sizeof(INT4);
+  header1.timeBase      = *(REAL8*) ptr;
+  ptr += sizeof(REAL8);
+  header1.fminBinIndex  = *(INT4*) ptr;
+  ptr += sizeof(INT4);
+  header1.length     	= *(INT4*) ptr;
+
+  LALFree (rawheader);
+
+  /* ----- do some consistency-checks on the header-fields: ----- */
+
+  /* 1. version has to be an integer! */
+  if ( header1.version - (UINT4)(header1.version) != 0) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* 2. gps_sec and gps_nsec >= 0 */
+  if ( (header1.gpsSeconds < 0) || (header1.gpsNanoSeconds <0) ) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* 3. tbase > 0 */
+  if ( header1.timeBase <= 0 ) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* 4. fminindex >= 0 */
+  if (header1.fminBinIndex < 0) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+  
+  /* 5. nsamples >= 0 */
+  if (header1.length < 0) {
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* ok, the SFT-header seems consistent, so let's return it */
+  *header = header1;
   
   DETATCHSTATUSPTR (status);
-  /* normal exit */
   RETURN (status);
 
 } /* LALReadSFTheader() */
 
-/* ------------------------------------------------------------*/
-/* *******************************  <lalVerbatim file="SFTfileIOD"> */
-void LALReadSFTtype(LALStatus  *status,
-		    SFTtype    *sft,    /* asumed  memory is allocated  */
-		    const CHAR       *fname,
-		    INT4       fminBinIndex)
-{ /*   *********************************************  </lalVerbatim> */
+
 
-  FILE        *fp = NULL;
-  SFTHeader  header1;
-  size_t     errorcode;
-  INT4       offset;
-  INT4       length;
-  REAL8      deltaF,timeBase;
+/*----------------------------------------------------------------------
+ * Read a given frequency-range from an SFT-file into a memory struct SFTtype
+ *
+ * NOTE: currently only SFT-spec v1.0 is supported! 
+ *
+ * NOTE2: this is a convenience wrapper for LALReadSFTheader() and LALReadSFTdata()
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOD"> */
+void
+LALReadSFTfile (LALStatus *stat, 
+		SFTtype **sft, 		/* output SFT */
+		REAL8 fmin, 		/* lower frequency-limit */
+		REAL8 fmax,		/* upper frequency-limit */
+		const CHAR *fname)	/* filename */
+{ /* </lalVerbatim> */
+  SFTHeader  header;		/* SFT file-header version1 */
+  REAL8 deltaF;
+  UINT4 readlen;
+  INT4 fminBinIndex, fmaxBinIndex;
+  SFTtype *outputSFT = NULL;
+  UINT4 i;
+  REAL4 renorm;
+
+  INITSTATUS (stat, "LALReadSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (stat); 
   
-  /* --------------------------------------------- */
+  ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fmin < fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+
+  /* read the header */
+  TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
+
+  /* ----- figure out which data we want to read ----- */
+  deltaF = 1.0 / header.timeBase;
+
+  /* find the right frequency-bin and number of bins
+   * The rounding here is chosen such that the required 
+   * frequency-interval is _guaranteed_ to lie within the 
+   * returned range  */
+  fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
+  fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
+
+  readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
+
+  /* allocate the final SFT to be returned */
+  TRY ( LALCreateSFTtype (stat->statusPtr, &outputSFT, readlen), stat);
+
+
+  /* and read it, using the lower-level function: */
+  LALReadSFTtype (stat->statusPtr, outputSFT, fname, fminBinIndex);
+  BEGINFAIL (stat) {
+    LALDestroySFTtype (stat->statusPtr, &outputSFT);
+  } ENDFAIL (stat);
+
+
+  /***************************************************
+   * FIXME: questionable renormalization follows... to be clarified
+   ***************************************************/
+  renorm = 1.0 * readlen / header.length;
+  /* **************************************************/
+
+  /* let's re-normalize and fill data into output-vector */
+  for (i=0; i < readlen; i++)
+    {
+      outputSFT->data->data[i].re *= renorm;
+      outputSFT->data->data[i].im *= renorm;
+    }    
+
+  /* that's it: return */
+  *sft = outputSFT;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN(stat);
+
+} /* LALReadSFTfile() */
+
+
+
+/* ----------------------------------------------------------------------
+ * read a whole bunch of SFTs at once: given a vector of filenames, return
+ * a vector of SFTs
+ *
+ * the input-glob is a bit special: the file-part is interpreted as a 
+ * match-string: so test1/thisdir/SFT  found match all "*SFt* files
+ * in test1/thisdir/
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOD"> */
+void
+LALReadSFTfiles (LALStatus *stat,
+		 SFTVector **sftvect,
+		 REAL8 fmin,
+		 REAL8 fmax,
+		 const CHAR *globdir)
+{ /* </lalVerbatim> */
+
+  UINT4 i, numSFTs;
+  SFTVector *out = NULL;
+  SFTtype *sft = NULL;
+  StringVector *fnames;
+
+  INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
+  ATTATCHSTATUSPTR (stat); 
+  
+  ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fmin < fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+
+
+  /* make filelist 
+   * NOTE: we don't use glob() as it was reported to fail under condor */
+  if ( (fnames = find_files (globdir)) == NULL) {
+    ABORT (stat, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
+  }
+
+  numSFTs = fnames->length;
+
+  for (i=0; i < numSFTs; i++)
+    {
+      LALReadSFTfile (stat->statusPtr, &sft, fmin, fmax, fnames->data[i]);
+      BEGINFAIL (stat) {
+	if (out) LALDestroySFTVector (stat->statusPtr, &out);
+      } ENDFAIL (stat);
+      /* this is a bit tricky: first we need to read one SFT to know how
+       * many frequency-bins we need */
+      if (out == NULL) {
+	LALCreateSFTVector (stat->statusPtr, &out, numSFTs, sft->data->length);
+      }
+	
+      /* transfer the returned SFT into the SFTVector 
+       * this is a bit complicated by the fact that it's a vector
+       * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
+       */
+      LALCopySFTtype (stat->statusPtr, &(out->data[i]), sft);
+      BEGINFAIL (stat) {
+	LALDestroySFTVector (stat->statusPtr, &out);
+	LALDestroySFTtype (stat->statusPtr, &sft);
+      } ENDFAIL (stat);
+
+      LALDestroySFTtype (stat->statusPtr, &sft);
+
+    } /* for i < numSFTs */
+
+  DestroyStringVector (fnames);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALReadSFTfiles () */
+
+
+
+/* ----------------------------------------------------------------------*/
+/* function to write an entire SFT to a file 
+ * 
+ * NOTE: currently only SFT-spec v1.0 is supported
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOD"> */
+void
+LALWriteSFTtoFile (LALStatus  *status,
+		   const SFTtype *sft,
+		   const CHAR *outfname)
+{ /* </lalVerbatim> */
+
+  FILE  *fp = NULL;
+  COMPLEX8  *inData;
+  INT4  i;
+  UINT4 datalen;
+  REAL4  *rawdata;
+  CHAR *rawheader, *ptr;
+  SFTHeader header;
+
+  INITSTATUS (status, "LALWriteSFTtoFile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);   
+ 
+  /*   Make sure the arguments are not NULL and perform basic checks*/ 
+  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
+
+  /* fill in the header information */
+  header.version = 1.0;
+  header.gpsSeconds = sft->epoch.gpsSeconds;
+  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+  header.timeBase = 1.0 / sft->deltaF;
+  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
+  header.length = sft->data->length; 
+
+  /* build raw header for writing to disk */
+  rawheader = LALCalloc (1, header_len_v1);
+  if (rawheader == NULL) {
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+  }
+  ptr = rawheader;
+  *(REAL8*) ptr = header.version;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.gpsSeconds;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.gpsNanoSeconds;
+  ptr += sizeof (INT4);
+  *(REAL8*) ptr = header.timeBase;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.fminBinIndex;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.length; 
+
+  /* write data into a contiguous REAL4-array */
+  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
+
+  rawdata = LALCalloc (1, datalen);
+  if (rawdata == NULL) {
+    LALFree (rawheader);
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+  }
+
+  inData = sft->data->data;
+  for ( i = 0; i < header.length; i++)
+    {
+      rawdata[2 * i]     = inData[i].re;
+      rawdata[2 * i + 1] = inData[i].im;
+    } /* for i < length */
+
+
+  /* open the file for writing */
+  fp = fopen(outfname, "wb");
+  if (fp == NULL) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+  }
+
+  /* write the header*/
+  if( fwrite( rawheader, header_len_v1, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+  
+  /* write the data */
+  if (fwrite( rawdata, datalen, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+
+  /* done */
+  fclose(fp);
+  LALFree (rawheader);
+  LALFree (rawdata);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTtoFile() */
+
+/* ------------------------------------------------------------
+ * this is a function for low-level SFT data-reading:
+ * the SFT-data is read starting from fminBinIndex and filled
+ * into the pre-allocate vector sft of length N
+ *
+ * NOTE: !! NO re-normalization is done here!! this remains up
+ *       to the caller of this function!!
+ *
+ *------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOD"> */
+void
+LALReadSFTtype(LALStatus *status,
+	       SFTtype    *sft,    /* asumed  memory is allocated  */
+	       const CHAR *fname,
+	       INT4 fminBinIndex)
+{ /* </lalVerbatim> */
+  FILE        *fp = NULL;
+  SFTHeader  header;
+  UINT4 offset, readlen;
+  REAL4 *rawdata = NULL;
+  REAL8 version;
+  BOOLEAN swapEndian = 0;
+  UINT4 i;
+
   INITSTATUS (status, "LALReadSFTtype", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
   
@@ -134,286 +492,93 @@ void LALReadSFTtype(LALStatus  *status,
   ASSERT (sft->data, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
   ASSERT (fname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
   
-  /* opening the SFT binary file */
-  fp = fopen( fname, "r");
-  ASSERT (fp, status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
-  
-  /* read the header */
-  errorcode = fread( (void *)&header1, sizeof(SFTHeader), 1, fp);
-  ASSERT (errorcode == 1,      status, SFTFILEIOH_EHEADER, SFTFILEIOH_MSGEHEADER);
-  if (header1.version != 1) {
-    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
-  }
-  
-  /* check that the data we want is in the file and it is correct */
-  ASSERT (header1.timeBase > 0.0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  /* Read header */
+  TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
 
-  timeBase = header1.timeBase;
-  deltaF  = 1.0/timeBase;
 
-  sft->deltaF  = deltaF;
-  sft->f0      = fminBinIndex*deltaF;
-  sft->epoch.gpsSeconds     = header1.gpsSeconds;
-  sft->epoch.gpsNanoSeconds = header1.gpsNanoSeconds;
-  
-  offset = fminBinIndex - header1.fminBinIndex;
-  ASSERT (offset >= 0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);  
-
-  length=sft->data->length;
-    
-  if (length > 0){
-    COMPLEX8  *dataIn1 = NULL;
-    COMPLEX8  *dataIn;
-    COMPLEX8  *dataOut;
-    INT4      n;
-    REAL4     factor;
-    
-    ASSERT (sft->data->data, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-    ASSERT (header1.length >= offset+length, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-    dataIn1 = (COMPLEX8 *)LALMalloc(length*sizeof(COMPLEX8) );
-    /* skip offset data points and read the required amount of data */
-    ASSERT (0 == fseek(fp, offset * sizeof(COMPLEX8), SEEK_CUR), status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL); 
-    errorcode = fread( (void *)dataIn1, length*sizeof(COMPLEX8), 1, fp);
-
-    dataIn = dataIn1;
-    dataOut = sft->data->data;
-    n= length;
-    
-    /* is this correct  ? */
-    /* or if the data is normalized properly, there will be no need to consider. */
-    factor = ((REAL4)length)/ ((REAL4) header1.length);
-    
-    /* let's normalize */
-    while (n-- >0){
-      dataOut->re = dataIn->re*factor;
-      dataOut->im = dataIn->im*factor;
-      ++dataOut;
-      ++dataIn;
-    }    
-    LALFree(dataIn1);    
-  }
-  
-  fclose(fp);
-  
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
-
-/* ----------------------------------------------------------------------*/
-/* *******************************  <lalVerbatim file="SFTfileIOD"> */
-void
-LALWriteSFTtoFile (LALStatus  *status,
-		   const SFTtype    *sft,
-		   const CHAR       *outfname)
-{/*   *********************************************  </lalVerbatim> */
-  /* function to write an entire SFT to a file which has been read previously*/
-  
-  FILE  *fp = NULL;
-  COMPLEX8  *inData;
-  SFTHeader  header;
-  INT4  i;
-  REAL4  *rawdata;
-
-  /* --------------------------------------------- */
-  INITSTATUS (status, "WriteSFTtoFile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);   
- 
-  /*   Make sure the arguments are not NULL and perform basic checks*/ 
-  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (sft->data->length > 0,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (sft->data->data,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (sft->deltaF, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
-
-  /* fill in the header information */
-  header.version = 1.0;
-  header.gpsSeconds = sft->epoch.gpsSeconds;
-  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-  header.timeBase = 1.0 / sft->deltaF;
-  header.fminBinIndex = (INT4)floor(sft->f0 / sft->deltaF + 0.5);
-  header.length = sft->data->length; 
-
-  /* open the file for writing */
-  fp = fopen(outfname, "wb");
-  if (fp == NULL) {
-    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+  /* check that the required frequency-interval is part of the SFT */
+  readlen = sft->data->length;
+  if ( (fminBinIndex < header.fminBinIndex) 
+       || (fminBinIndex + (INT4)readlen > header.fminBinIndex + header.length) ) {
+    ABORT (status, SFTFILEIOH_EFREQBAND, SFTFILEIOH_MSGEFREQBAND);
   }
 
-  /* write the header*/
-  if( fwrite((void* )&header, sizeof(header), 1, fp) != 1) {
-    ABORT (status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
-  }
+  /* how many frequency-bins to skip */
+  offset = fminBinIndex - header.fminBinIndex;
 
-  /* write data into a contiguous REAL4-array */
-  rawdata = LALCalloc (1, 2* header.length * sizeof(REAL4));
-  if (rawdata == NULL) {
-    fclose (fp);
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
-  }
-
-  inData = sft->data->data;
-  for ( i = 0; i < header.length; i++)
-    {
-      rawdata[2 * i] = inData[i].re;
-      rawdata[2 * i + 1] = inData[i].im;
-    }
-  
-  if (fwrite( rawdata, 2 * header.length * sizeof(REAL4), 1, fp) != 1) {
-    ABORT (status, SFTFILEIOH_EWRITE, SFTFILEIOH_MSGEWRITE);
-  }
-  LALFree (rawdata);
-  fclose(fp);
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-
-} /* WriteSFTtoFile() */
-
-/*----------------------------------------------------------------------
- * Reinhards draft versions of SFT IO functions, 
- * which combines Alicia's ReadSFTbinHeader1() and ReadSFTtype()
- *----------------------------------------------------------------------*/
-
-/* <lalVerbatim file="SFTfileIOD"> */
-void
-LALReadSFTfile (LALStatus *status, 
-		SFTtype **sft, 		/* output SFT */
-		REAL8 fmin, 		/* lower frequency-limit */
-		REAL8 fmax,		/* upper frequency-limit */
-		const CHAR *fname)	/* filename */
-{ /* </lalVerbatim> */
-  FILE     *fp = NULL;
-  SFTHeader  header;		/* SFT file-header version1 */
-  REAL8 deltaF, f0, Band;
-  UINT4 offset0, offset1, SFTlen;
-  SFTtype *outputSFT;
-  UINT4 i;
-  REAL4 renorm;
-  BOOLEAN swapEndian = 0;
-  REAL8 version;
-  REAL4 *rawdata = NULL;
-
-  INITSTATUS (status, "ReadSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status); 
-  
-  ASSERT (sft, status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sft == NULL, status, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fname,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  
-  /* opening the SFT binary file */
+  /* open file for reading */
   if ( (fp = fopen( fname, "rb")) == NULL) {
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
-  
-  /* read the header */
-  if (fread( &header, sizeof(header), 1, fp) != 1) {
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  /* read version-number and check endianness */
+  if (fread (&version, sizeof(version), 1, fp) != 1) {
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
-  version = header.version;
-  /* check endian-ness and SFT-version */
   if (version > 1000000) {
     endian_swap ((CHAR*)&version, sizeof(version), 1);
     swapEndian = 1;
   }
-
-  /* this is currently only supporting SFT version 1.0 ! */
-  if (version > 1.0) {
+  /* only SFT-spec v1.0 currently supported! */
+  if (version != 1) {	
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
   }
-  
-  /* do byte-swapping for header if needed */
+  /* big-endian currently not supported */
   if (swapEndian) {
-    TRY ( ByteSwapSFTHeader (status->statusPtr, &header), status);
-  }
-   
-  deltaF = 1.0 / header.timeBase;
-  f0 = header.fminBinIndex * deltaF;
-  Band = header.length * deltaF;
-
-  /* check that the required frequency-interval is part of the SFT */
-  if ( (fmin < f0) || (fmax > f0 + Band) ) {
-    ABORT (status, SFTFILEIOH_EFREQBAND, SFTFILEIOH_MSGEFREQBAND);
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
   }
 
-  /* find the right bin offsets to read data from */
-  /* the rounding here is chosen such that the required 
-   * frequency-interval is _guaranteed_ to lie within the 
-   * returned range 
-   */
-  offset0 = (UINT4)((fmin - f0) / deltaF);	/* round this down */
-  offset1 = (UINT4) ceil((fmax - f0) / deltaF);	/* round this up! */
-  SFTlen = offset1 - offset0;
-
-  /* skip offset data points and read the required amount of data */
-  if (fseek(fp, offset0 * sizeof(COMPLEX8), SEEK_CUR) != 0) {
-    ABORT (status, SFTFILEIOH_ESEEK, SFTFILEIOH_MSGESEEK);
+  /* skip SFT-header in file */
+  rewind (fp);
+  if (fseek(fp, header_len_v1, SEEK_SET) != 0) {
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
-  
-  /* now allocate the SFT to be returned */
-  outputSFT = LALCalloc (1, sizeof(SFTtype) );
-  if (outputSFT == NULL) {
-    fclose(fp);
+
+  /* skip offset data points to the correct frequency-bin */
+  if (fseek(fp, offset * 2 * sizeof(REAL4), SEEK_CUR) != 0) {
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+
+  /* ----- prepare memory for data-reading ----- */
+  rawdata = LALCalloc (1, 2 * readlen *sizeof(REAL4) );
+  if (rawdata == NULL) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);
   }
-  LALCCreateVector (status->statusPtr, &(outputSFT->data), SFTlen);
-  BEGINFAIL (status) {
-    fclose(fp);
-    LALFree (outputSFT);
-  } ENDFAIL (status);
 
-  rawdata = LALCalloc (1, 2*SFTlen*sizeof(REAL4));
-  if (rawdata == NULL)
-    {
-      LALCDestroyVector (status->statusPtr, &(outputSFT->data));
-      LALFree (outputSFT);
-      ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);
-    }
-
-  /* careful here: the data-vector contains a COMPLEX8-struct, so
-     we better don't rely on memory-alignment and read into a
-     REAL4 array first */
-  if (fread( rawdata, 2*SFTlen * sizeof(REAL4), 1, fp) != 1) {
+  /* we don't rely on memory-packing, so we read into a REAL4 array first */
+  if (fread( rawdata, 2 * readlen * sizeof(REAL4), 1, fp) != 1) {
     fclose(fp);
-    LALCDestroyVector (status->statusPtr, &(outputSFT->data));
-    LALFree (outputSFT);
     LALFree (rawdata);
-    ABORT (status, SFTFILEIOH_EREAD, SFTFILEIOH_MSGEREAD);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
   fclose(fp);
 
-  /* do endian byte-swapping on the data if required */
-  if ( swapEndian )
-    endian_swap ( (CHAR*)rawdata, sizeof(REAL4), 2 * SFTlen);
-
-  /* is this correct  ? */
-  /* FIXME: double-check this !! */
-  renorm = 1.0 * SFTlen / header.length;
-    
-  /* let's re-normalize and fill data into output-vector */
-  for (i=0; i < SFTlen; i++)
+  /* now fill data into output-vector */
+  for (i=0; i < readlen; i++)
     {
-      outputSFT->data->data[i].re = renorm * rawdata[2 * i];
-      outputSFT->data->data[i].im = renorm * rawdata[2 * i + 1];
+      sft->data->data[i].re = rawdata[2 * i];
+      sft->data->data[i].im = rawdata[2 * i + 1];
     }    
   
   LALFree (rawdata);
 
   /* now fill in the header-info */
-  outputSFT->deltaF  = deltaF;
-  outputSFT->f0      = f0 + offset0 * deltaF;
-  outputSFT->epoch.gpsSeconds     = header.gpsSeconds;
-  outputSFT->epoch.gpsNanoSeconds = header.gpsNanoSeconds;
+  strncpy (sft->name, fname, LALNameLength);
+  sft->name[LALNameLength - 1 ] = '\0';	/* make sure it's 0-terminated */
+  sft->deltaF  			= 1.0 / header.timeBase;
+  sft->f0      			= fminBinIndex / header.timeBase;
+  sft->epoch.gpsSeconds     	= header.gpsSeconds;
+  sft->epoch.gpsNanoSeconds 	= header.gpsNanoSeconds;
+
   
-  /* that's it: return */
-  *sft = outputSFT;
-
   DETATCHSTATUSPTR (status);
-  RETURN(status);
+  RETURN (status);
 
-} /* LALReadSFTfile() */
+} /* LALReadSFTtype() */
+
 
 /***********************************************************************
  * internal helper functions
@@ -445,31 +610,109 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 
 } /* endian swap */
 
+
 /*----------------------------------------------------------------------
- * do correct byte-swapping for a whole SFT-header
- * 
- * currently only SFT-v1.0 is supported
+ * glob() has been reported to fail under condor, so we use our own
+ * function to get a filelist from a directory, using a sub-pattern.
+ *
+ * This is not really a glob, but a "trick": the globdir is interpreted as
+ *  "directory/pattern", ie. we actually match "directory/ *pattern*"
+ *
  *----------------------------------------------------------------------*/
-void
-ByteSwapSFTHeader (LALStatus *stat, SFTHeader *header)
+StringVector *
+find_files (const CHAR *globdir)
 {
-  INITSTATUS (stat, "LALByteSwapSFTHeader", SFTFILEIOC);
+  CHAR *dname, *ptr1, *ptr2;
+  CHAR fpattern[512];
+  size_t dirlen;
+  DIR *dir;
+  struct dirent *entry;
+  CHAR **filelist = NULL; 
+  UINT4 numFiles = 0;
+  StringVector *ret = NULL;
+  UINT4 j;
 
-  /* we have to do this one by one, because memory-alignment
-   * is not guaranteed !! 
-   */
-  endian_swap ((CHAR*)&(header->version), sizeof(header->version), 1);
+  ptr1 = strrchr (globdir, '/');
+  
+  if (ptr1) 
+    dirlen = (size_t)(ptr1 - globdir) + 1;
+  else
+    dirlen = 2;   /* for "." */
 
-  if (header->version > 1) {
-    ABORT (stat, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+  if ( (dname = LALCalloc (1, dirlen)) == NULL) {
+    return (NULL);
   }
+  if (ptr1) {
+    strncpy (dname, globdir, dirlen);
+    dname[dirlen-1] = '\0';
+  }
+  else
+    strcpy (dname, ".");
+  
+  /* copy the rest as a substring for matching */
+  ptr2 = ptr1 + 1;
+  strcpy (fpattern, ptr2);
 
-  endian_swap ((CHAR*)&(header->gpsSeconds), sizeof(header->gpsSeconds), 1);
-  endian_swap ((CHAR*)&(header->gpsNanoSeconds), sizeof(header->gpsNanoSeconds), 1);
-  endian_swap ((CHAR*)&(header->timeBase), sizeof(header->timeBase), 1);
-  endian_swap ((CHAR*)&(header->fminBinIndex), sizeof(header->fminBinIndex), 1);
-  endian_swap ((CHAR*)&(header->length), sizeof(header->length), 1);
+  /* now go through the filelist in this directory */
+  if ( (dir = opendir(dname)) == NULL)
+    {
+      LALPrintError ("Can't open data-directory `%s`\n", dname);
+      LALFree (dname);
+      return (NULL);
+    }
 
-  RETURN (stat);
+  while ( (entry = readdir (dir)) != NULL )
+    {
+      if ( strstr (entry->d_name, fpattern) ) 	/* found a matching file */
+	{
+	  numFiles ++;
+	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
+	    return (NULL);
+	  }
+	  
+	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, strlen(entry->d_name) + 1 )) == NULL) {
+	    for (j=0; j < numFiles; j++)
+	      LALFree (filelist[j]);
+	    LALFree (filelist);
+	    return (NULL);
+	  }
 
-} /* ByteSwapSFTHeader() */
+	  strcpy(filelist[numFiles-1], entry->d_name);
+	}
+
+    } /* while more directory entries */
+
+  closedir (dir);
+
+  /* ok, did we find anything? */
+  if (numFiles == 0)
+    return (NULL);
+
+  if ( (ret = LALCalloc (1, sizeof (StringVector) )) == NULL) 
+    {
+      for (j=0; j<numFiles; j++)
+	LALFree (filelist[j]);
+      LALFree (filelist);
+      return (NULL);
+    }
+
+  ret->length = numFiles;
+  ret->data = filelist;
+
+  return (ret);
+
+} /* find_files() */
+
+
+void
+DestroyStringVector (StringVector *strings)
+{
+  UINT4 i;
+
+  for (i=0; i < strings->length; i++)
+    LALFree (strings->data[i]);
+  
+  LALFree (strings->data);
+  LALFree (strings);
+
+} /* DestroyStringVector () */

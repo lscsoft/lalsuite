@@ -128,17 +128,13 @@ char *lalWatch;
 /* ----------------------------------------------------------------------*/
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
-  static SFTHeader      header;
   SFTtype *sft1 = NULL;
   SFTtype *sft2 = NULL;
-  static SFTtype sft0;
-  REAL8 fmin, fmax, f0;
+  REAL8 fmin, fmax;
     
   const CHAR *fname;               /* The input filename */
   const CHAR *outfname;           /* output sft file name */
   INT4 arg;                         /* Argument counter */
-  UINT4  length;
-  UINT4 offset0, offset1, fminindex;
  
   fname = INFILE;
   outfname = OUTFILE;
@@ -177,10 +173,6 @@ int main(int argc, char *argv[]){
     }
   } /* End of argument parsing loop. */
   /******************************************************************/
-  
-  /* Reinhard: ReadSFTheader() and ReadSFTtype() cannot easily be extended
-   * to do endian byte-swapping, so we de-activate their tests
-   * if the machine is not litte-endian */
   fmin = 1008.5;
   fmax = 1009.1;
 
@@ -213,48 +205,9 @@ int main(int argc, char *argv[]){
     return SFTFILEIOTESTC_ESFTDIFF;
   }
 
-  printf ("Testing LALReadSFtheader() and LALReadSFTtype()\n");
-  SUB( LALReadSFTheader( &status, &header, fname),  &status );
-  f0 = header.fminBinIndex / header.timeBase;
-  offset0 = (UINT4) ((fmin-f0) * header.timeBase);
-  offset1 = (UINT4) ceil ( (fmax-f0) * header.timeBase );
-  length = offset1 - offset0;
-  fminindex = header.fminBinIndex + offset0;
-  sft0.data = NULL;
-  SUB( LALCCreateVector (&status, &(sft0.data), length),  &status ); 
-  SUB( LALReadSFTtype( &status, &sft0, fname, fminindex),  &status );
-  sft0.deltaF  = 1.0 / header.timeBase;
-  sft0.f0      = f0 + offset0 / header.timeBase;
-  sft0.epoch.gpsSeconds     = header.gpsSeconds;
-  sft0.epoch.gpsNanoSeconds = header.gpsNanoSeconds;
+  LALDestroySFTtype (&status, &sft1);
+  LALDestroySFTtype (&status, &sft2);
 
-
-  /* compare sft0 and sft1 */
-  if ( (sft1->epoch.gpsSeconds != sft0.epoch.gpsSeconds)
-       || (sft1->epoch.gpsNanoSeconds != sft0.epoch.gpsNanoSeconds)  )
-    {
-      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-      return SFTFILEIOTESTC_ESFTDIFF;
-    }
-  if ( (sft1->f0 != sft0.f0) || (sft1->deltaF != sft0.deltaF) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( sft1->data->length != sft0.data->length) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-  if ( memcmp (sft1->data->data, sft0.data->data, sft1->data->length) ) {
-    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
-    return SFTFILEIOTESTC_ESFTDIFF;
-  }
-
-  SUB( LALCDestroyVector (&status, &(sft0.data) ), &status);
-  SUB( LALCDestroyVector (&status, &(sft1->data) ), &status);
-  SUB( LALCDestroyVector (&status, &(sft2->data) ),  &status );
-  LALFree ( sft1 );
-  LALFree ( sft2 );
-  
   LALCheckMemoryLeaks(); 
 
   INFO( SFTFILEIOTESTC_MSGENORM );
