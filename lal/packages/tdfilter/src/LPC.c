@@ -3,6 +3,7 @@
 #include <lal/LALError.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/RealFFT.h>
+#include <string.h>
 
 NRCSID (LPCC, "$Id$");
 

@@ -2,6 +2,7 @@
 #define _LPC_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
