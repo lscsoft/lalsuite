@@ -51,7 +51,7 @@
 #include <lal/FindChirpChisq.h>
 #include <lal/FindChirpEngine.h>
 
-#define PROGRAM_NAME "lalapps_inspiral"
+#define PROGRAM_NAME "inspiral"
 
 #define USAGE \
 "lalapps_inspiral is a stand alone code for performing matched filtering\n" \
