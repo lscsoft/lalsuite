@@ -2,7 +2,6 @@
 % $Id$
 %
 \color{black}
-\chapter{How to get, build and use software for the LSC Data Grid} 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Getting and installing the software}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -240,10 +239,10 @@ conflicts between changes if they arise.  Obtain the LAL package from the CVS
 repository as follows:  
 \begin{verbatim}
 cd $LALPREFIX/src
-cvs -d $LALCVS login
+cvs -d $LSCSOFTCVS login
 \end{verbatim}
 At this point,  you will be asked for a password.  The password for the
-\verb+anonymous+ user is \verb+lal+. If you have your own username, use the
+\verb+anonymous+ user is \verb+lscsoft+. If you have your own username, use the
 password that you have been given.
 The version of LAL that is checked-out is identified by the argument
 to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
@@ -254,7 +253,7 @@ number as \verb+X.Y+. You may also replace \verb+HEAD+ by a specific tag name,
 for example if you want to download the \verb+iulgroup_20040219+ tagged
 version.
 \begin{verbatim}
-cvs -d $LALCVS checkout -rHEAD lal
+cvs -d $LSCSOFTCVS checkout -rHEAD lal
 \end{verbatim}
 You have now obtained the latest development version of LAL.
 
@@ -307,7 +306,7 @@ that the directories \verb+LALPREFIX+ and \verb+$LALPREFIX/src+ exist.
 Obtain the LALApps package from the CVS repository as follows:  
 \begin{verbatim}
 cd $LALPREFIX/src
-cvs -d $LALCVS login
+cvs -d $LSCSOFTCVS login
 \end{verbatim}
 At this point,  you will be asked for a password.  The password for the
 \verb+anonymous+ user is \verb+lal+. If you have your own username, use the
@@ -321,7 +320,7 @@ number as \verb+X.Y+. You may also replace \verb+HEAD+ by a specific tag name,
 for example if you want to download the \verb+iulgroup_20040226+ tagged
 version.
 \begin{verbatim}
-cvs -d $LALCVS checkout -rHEAD lalapps
+cvs -d $LSCSOFTCVS checkout -rHEAD lalapps
 \end{verbatim}
 You have now obtained the latest development version of LALApps if you used
 \verb+HEAD+ or the specified tagged version.

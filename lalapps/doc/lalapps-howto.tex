@@ -1,0 +1,65 @@
+%
+% $Id$
+%
+%
+% $Id$
+%
+\documentclass[11pt]{ligodcc}
+\usepackage{color}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{makeidx}
+\usepackage{moreverb}
+\usepackage{times}
+\usepackage{verbatim}
+\usepackage{hyperref}
+\usepackage{boxedminipage}
+\usepackage{longtable}
+\usepackage{multirow}
+
+\let\keepverbatim\verbatim
+\def\verbatim{\small\color{blue}\keepverbatim}
+\newcommand{\mdc}[1]{{\tt ldas\_mdc#1\/}}
+\newcommand{\datacon}[1]{{\tt datacon#1\/}}
+\newcommand{\mpiAPI}{\texttt{mpiAPI}}
+\newcommand{\wrapperAPI}{\texttt{wrapperAPI}}
+\newcommand{\lalwrapper}{\texttt{LALWrapper}}
+\newcommand{\lal}{\textsc{LAL}}
+\newcommand{\lalapps}{\textsc{LALApps}}
+
+\bibliographystyle{lalapps}
+
+\makeindex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\date{\today}
+\ligodoc{T01XXXXXX}{Z}
+\ligodocdist{LSC and LIGO}
+\title{\textsc{how-to} get started with LAL and LALApps}
+\author{Warren Anderson, Patrick Brady, Duncan Brown, Jolien Creighton}
+\rcsid$Id$
+\maketitle
+
+\tableofcontents
+\pagebreak
+\color{black}
+%\chapter{How to get, build and use software for the LSC Data Grid} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+This document provides basic information for users and developers of
+LAL and LALApss software.   As a user,  it is assumed that you or your
+system administrator has installed LAL/LALApps in a standard location
+on your system.   As a developer,  it is assumed that you have
+super-user access on the system that you intend to use for
+development.   
+
+\clearpage
+\input{part_howto}
+
+\end{document}

@@ -10,7 +10,7 @@ TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst part_howto.tex \
                  pipeline-module.tex power.tex ring.tex
 
 ## Don't edit below here (unless you know what you're doing)
-INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
+INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps lalapps-howto.pdf
 MOSTLYCLEANFILES = *.log *.ilg *.blg *.out
 CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.toc hello.c AUTHORS.tex
 DISTCLEANFILES = $(INSTALLFILES)
@@ -38,6 +38,11 @@ dvi-local:
 	${MKIND} lalapps
 	${LATEX} lalapps
 	test ! -f lalapps.dvi || ${DVIPS} lalapps -o
+	${LATEX} lalapps-howto
+	${LATEX} lalapps-howto
+	${MKIND} lalapps-howto
+	${LATEX} lalapps-howto
+	test ! -f lalapps-howto.dvi || ${DVIPS} lalapps-howto -o
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)
