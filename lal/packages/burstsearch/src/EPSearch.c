@@ -709,9 +709,6 @@ void EPConditionData(
         EPDataSegment *dummySegment = dataSegVec->data + i;
         INT4 ptsPerSeg = 2 * params->initParams->numPoints;
 
-        /* this should be set to a unique number for each segment   */
-        dummySegment->number = i;
-
         /* copy the ifodmro */
         for ( j = 0; j < ptsPerSeg ; ++j)
         {

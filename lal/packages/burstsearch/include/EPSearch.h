@@ -108,7 +108,6 @@ tagEPDataSegment
 {
   REAL4TimeSeries              *data;
   COMPLEX8FrequencySeries      *resp;
-  INT4                          number;
   REAL4IIRFilter               *preprocessing_filter;
 }
 EPDataSegment;
