@@ -364,6 +364,7 @@ LALTimeSortSearchSummary (
   if ( ! numSumms )
   {
     LALWarning( status, "No summs in list to sort" );
+    DETATCHSTATUSPTR (status);
     RETURN( status );
   }
 
@@ -502,13 +503,13 @@ LALCheckOutTimeFromSearchSummary (
     if ( outStartNS < startTimeNS )    
     {
       /* file starts before requested start time */
+      LALGPStoINT8( status->statusPtr, &outEndNS, 
+          &(thisSearchSumm->out_end_time) );
+      CHECKSTATUSPTR( status );
+
       if ( outEndNS > startTimeNS )
       {
         /* file is partially in requested times, update unsearchedStart */
-        LALGPStoINT8( status->statusPtr, &outEndNS, 
-            &(thisSearchSumm->out_end_time) );
-        CHECKSTATUSPTR( status );
-
         unsearchedStartNS = outEndNS;
       }
     }
@@ -536,7 +537,7 @@ LALCheckOutTimeFromSearchSummary (
   }
 
   /* check that we got to the end of the requested time */
-  if ( unsearchedStartNS < outEndNS )
+  if ( unsearchedStartNS < endTimeNS )
   {
     ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
   }
@@ -688,6 +689,7 @@ LALTimeSortSummValue (
   if ( ! numSumms )
   {
     LALWarning( status, "No summs in list to sort" );
+    DETATCHSTATUSPTR (status);
     RETURN( status );
   }
 
