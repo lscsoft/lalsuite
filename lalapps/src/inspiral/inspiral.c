@@ -418,7 +418,6 @@ int main( int argc, char *argv[] )
     }
   }
 
-
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
 
@@ -436,16 +435,20 @@ int main( int argc, char *argv[] )
     }
   }
 
-  /* save the minimal match of the bank in the process params                */
-  /* create the table entry with calloc() since it will be freed with free() */
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
-    calloc( 1, sizeof(ProcessParamsTable) ); 
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-      PROGRAM_NAME );
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
-      bankHead->minMatch );
+  if ( numTmplts )
+  {
+    /* save the minimal match of the bank in the process params: create */
+    /* the table entry with calloc() since it will be freed with free() */
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
+      calloc( 1, sizeof(ProcessParamsTable) ); 
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--minimal-match" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
+        bankHead->minMatch );
+  }
 
   /* create the linked list of template nodes for coarse templates */
   for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
