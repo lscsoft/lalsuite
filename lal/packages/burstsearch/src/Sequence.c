@@ -4,6 +4,7 @@ $Id$
 </lalVerbatim>
  */
 
+#include <string.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -93,10 +94,11 @@ void LALCreateCOMPLEX8Sequence(
 {
 	INITSTATUS(status, "LALCreateCOMPLEX8Sequence", SEQUENCEC);
 
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
 	*output = XLALCreateCOMPLEX8Sequence(length);
 
-	if(!*output)
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
@@ -132,10 +134,11 @@ void LALCreateREAL4Sequence(
 {
 	INITSTATUS(status, "LALCreateREAL4Sequence", SEQUENCEC);
 
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
 	*output = XLALCreateREAL4Sequence(length);
 
-	if(!*output)
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
@@ -171,10 +174,46 @@ void LALCutREAL4Sequence(
 {
 	INITSTATUS(status, "LALCutREAL4Sequence", SEQUENCEC);
 
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
 	*output = XLALCutREAL4Sequence(input, first, length);
 
-	if(!*output)
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+
+	RETURN(status);
+}
+
+
+REAL4Sequence *XLALShrinkREAL4Sequence(
+	REAL4Sequence *sequence,
+	size_t first,
+	size_t length
+)
+{
+	if(sequence && sequence->data) {
+		memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
+		realloc(sequence->data, length * sizeof(*sequence->data));
+		sequence->length = length;
+	}
+
+	return(sequence);
+}
+
+
+void LALShrinkREAL4Sequence(
+	LALStatus *status,
+	REAL4Sequence **sequence,
+	size_t first,
+	size_t length
+)
+{
+	INITSTATUS(status, "LALCutREAL4Sequence", SEQUENCEC);
+
+	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
+	*sequence = XLALShrinkREAL4Sequence(*sequence, first, length);
+
+	ASSERT(*sequence != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }

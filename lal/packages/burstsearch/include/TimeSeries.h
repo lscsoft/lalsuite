@@ -81,4 +81,17 @@ void LALCutREAL4TimeSeries(
 	size_t num_samples
 );
 
+REAL4TimeSeries *XLALShrinkREAL4TimeSeries(
+	REAL4TimeSeries *series,
+	size_t first_sample,
+	size_t num_samples
+);
+
+void LALShrinkREAL4TimeSeries(
+	LALStatus *status,
+	REAL4TimeSeries **series,
+	size_t first_sample,
+	size_t num_samples
+);
+
 #endif  /* _TIMESERIES_H */

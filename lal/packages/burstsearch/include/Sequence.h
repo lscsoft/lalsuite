@@ -61,4 +61,17 @@ void LALCutREAL4Sequence(
 	size_t length
 );
 
+REAL4Sequence *XLALShrinkREAL4Sequence(
+	REAL4Sequence *sequence,
+	size_t first,
+	size_t length
+);
+
+void LALShrinkREAL4Sequence(
+	LALStatus *status,
+	REAL4Sequence **sequence,
+	size_t first,
+	size_t length
+);
+
 #endif  /* _SEQUENCE_H */

@@ -83,7 +83,10 @@ COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries(
 		return(NULL);
 	}
 
-	strncpy(new->name, name, LALNameLength);
+	if(new->name)
+		strncpy(new->name, name, LALNameLength);
+	else
+		*new->name = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaF = deltaF;
@@ -107,10 +110,11 @@ void LALCreateCOMPLEX8FrequencySeries(
 {
 	INITSTATUS(status, "LALCreateCOMPLEX8FrequencySeries", FREQUENCYSERIESC);
 
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
 	*output = XLALCreateCOMPLEX8FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
 
-	if(!*output)
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
@@ -136,7 +140,10 @@ REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
 		return(NULL);
 	}
 
-	strncpy(new->name, name, LALNameLength);
+	if(new->name)
+		strncpy(new->name, name, LALNameLength);
+	else
+		*new->name = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaF = deltaF;
@@ -160,10 +167,11 @@ void LALCreateREAL4FrequencySeries(
 {
 	INITSTATUS(status, "LALCreateREAL4FrequencySeries", FREQUENCYSERIESC);
 
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
 	*output = XLALCreateREAL4FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
 
-	if(!*output)
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
