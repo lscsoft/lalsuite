@@ -227,7 +227,7 @@ void LALTappRpnTdomTime (LALStatus *status,
 
 
   ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->order >= 4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->order <= 4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   switch (params->order) {
      case newtonian:
      case oneHalfPN:
@@ -302,7 +302,9 @@ void LALTappRpnTdomTime (LALStatus *status,
   tmax = tc - dt;
   fold = 0.0;
 
-  while (output2.frequency<fHigh && t<tmax && output2.frequency>fold) 
+/*  while (output2.frequency<fHigh && t<tmax && output2.frequency>fold) 
+*/
+  while (output2.frequency<fHigh && t<tmax) 
   {
     fold = output2.frequency;
     v = pow(output2.frequency*LAL_PI*totalMass, oneby3);
