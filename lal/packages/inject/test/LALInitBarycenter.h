@@ -28,7 +28,6 @@ data files.
 #define _LALINITBARYCENTER_H
 
 #include <lal/LALBarycenter.h>
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -37,10 +36,11 @@ NRCSID (LALINITBARYCENTERH,"$Id$");
 
 /* <lalErrTable file="LALInitBarycenterHErrorTable"> */
 #define LALINITBARYCENTERH_EOPEN 1
+
 #define LALINITBARYCENTERH_EEPHFILE 32
 
 #define LALINITBARYCENTERH_MSGEOPEN "Could not open ephemeris file."
-#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading ephemeris file."
+#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file."
 /* </lalErrTable> */
 
 /* <lalLaTeX>

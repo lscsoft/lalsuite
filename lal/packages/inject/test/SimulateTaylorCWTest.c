@@ -106,6 +106,7 @@ gravitational-wave channel.
 #define SIMULATETAYLORCWTESTC_EFILE  4
 #define SIMULATETAYLORCWTESTC_EINPUT 5
 #define SIMULATETAYLORCWTESTC_EMEM   6
+#define SIMULATETAYLORCWTESTC_EPRINT 7
 
 #define SIMULATETAYLORCWTESTC_MSGENORM  "Normal exit"
 #define SIMULATETAYLORCWTESTC_MSGESUB   "Subroutine failed"
@@ -114,6 +115,7 @@ gravitational-wave channel.
 #define SIMULATETAYLORCWTESTC_MSGEFILE  "Could not open file"
 #define SIMULATETAYLORCWTESTC_MSGEINPUT "Error reading file"
 #define SIMULATETAYLORCWTESTC_MSGEMEM   "Out of memory"
+#define SIMULATETAYLORCWTESTC_MSGEPRINT "Wrote past end of message string"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
@@ -647,9 +649,19 @@ main(int argc, char **argv)
       }
       SUB( LALGenerateTaylorCW( &stat, &waveform, &params ), &stat );
       if ( params.dfdt > 2.0 ) {
+	/* LALSnprintf() can't seem to print floating-point formats.
         LALSnprintf( message, MSGLEN,
                      "Waveform sampling interval is too large:\n"
                      "\tmaximum df*dt = %f", params.dfdt );
+	*/
+	INT4 code = sprintf( message,
+			     "Waveform sampling interval is too large:\n"
+			     "\tmaximum df*dt = %f", params.dfdt );
+	if ( code >= MSGLEN || code < 0 ) {
+	  ERROR( SIMULATETAYLORCWTESTC_EPRINT,
+		 SIMULATETAYLORCWTESTC_MSGEPRINT, 0 );
+	  return SIMULATETAYLORCWTESTC_EPRINT;
+	}
         WARNING( message );
       }
       SUB( LALSCreateVector( &stat, &(signal.data), npt ), &stat );
@@ -713,6 +725,8 @@ main(int argc, char **argv)
        &stat );
   LALFree( detector.transfer );
   if ( site ) {
+    LALFree( detector.ephemerides->earth );
+    LALFree( detector.ephemerides->sun );
     LALFree( detector.ephemerides );
     LALFree( detector.site );
   }

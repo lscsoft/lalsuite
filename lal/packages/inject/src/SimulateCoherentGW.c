@@ -460,18 +460,57 @@ LALSimulateCoherentGW( LALStatus        *stat,
   polDt = output->deltaT/( 2.0*dtPolBy2 );
   nMax = (UINT4)( output->data->length*polDt ) + 3;
   memset( &polResponse, 0, sizeof( LALDetAMResponseSeries ) );
-  LALSCreateVector( stat->statusPtr, &( polResponse.pPlus ), nMax );
-  BEGINFAIL( stat )
+  polResponse.pPlus = (REAL4TimeSeries *)
+    LALMalloc( sizeof(REAL4TimeSeries) );
+  polResponse.pCross = (REAL4TimeSeries *)
+    LALMalloc( sizeof(REAL4TimeSeries) );
+  polResponse.pScalar = (REAL4TimeSeries *)
+    LALMalloc( sizeof(REAL4TimeSeries) );
+  if ( !polResponse.pPlus || !polResponse.pCross ||
+       !polResponse.pScalar ) {
+    if ( polResponse.pPlus )
+      LALFree( polResponse.pPlus );
+    if ( polResponse.pCross )
+      LALFree( polResponse.pCross );
+    if ( polResponse.pScalar )
+      LALFree( polResponse.pScalar );
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-  ENDFAIL( stat );
-  LALSCreateVector( stat->statusPtr, &( polResponse.pCross ), nMax );
+  }
+  memset( polResponse.pPlus, 0, sizeof(REAL4TimeSeries) );
+  memset( polResponse.pCross, 0, sizeof(REAL4TimeSeries) );
+  memset( polResponse.pScalar, 0, sizeof(REAL4TimeSeries) );
+  LALSCreateVector( stat->statusPtr, &( polResponse.pPlus->data ),
+		    nMax );
   BEGINFAIL( stat ) {
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
+    LALFree( polResponse.pScalar );
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
   } ENDFAIL( stat );
-  plusData = polResponse.pPlus->data;
-  crossData = polResponse.pCross->data;
+  LALSCreateVector( stat->statusPtr, &( polResponse.pCross->data ),
+		    nMax );
+  BEGINFAIL( stat ) {
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
+    LALFree( polResponse.pScalar );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+  } ENDFAIL( stat );
+  LALSCreateVector( stat->statusPtr, &( polResponse.pScalar->data ),
+		    nMax );
+  BEGINFAIL( stat ) {
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
+    LALFree( polResponse.pScalar );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+  } ENDFAIL( stat );
+  plusData = polResponse.pPlus->data->data;
+  crossData = polResponse.pCross->data->data;
   if ( detector->site ) {
     LALSource polSource;     /* position and polarization angle */
     LALDetAndSource input;            /* response input structure */
@@ -488,27 +527,20 @@ LALSimulateCoherentGW( LALStatus        *stat,
     params.nSample = nMax;
 
     /* Compute table of responses. */
-    LALSCreateVector( stat->statusPtr, &( polResponse.pScalar ), nMax );
-    BEGINFAIL( stat ) {
-      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	   stat );
-      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	   stat );
-    } ENDFAIL( stat );
     LALComputeDetAMResponseSeries( stat->statusPtr, &polResponse,
 				   &input, &params );
     BEGINFAIL( stat ) {
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pScalar->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+      LALFree( polResponse.pScalar );
       TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	   stat );
-      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	   stat );
-      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pScalar ) ),
-	   stat );
     } ENDFAIL( stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pScalar ) ),
-	 stat );
   } else {
     /* No detector site, so just simulate response to hplus. */
     for ( i = 0; i < nMax; i++ ) {
@@ -516,6 +548,10 @@ LALSimulateCoherentGW( LALStatus        *stat,
       crossData[i] = 0.0;
     }
   }
+  /* Free memory for the unused scalar mode. */
+  TRY( LALSDestroyVector( stat->statusPtr,
+			  &( polResponse.pScalar->data ) ), stat );
+  LALFree( polResponse.pScalar );
 
   /* Decompose the transfer function into an amplitude and phase
      response. */
@@ -523,49 +559,59 @@ LALSimulateCoherentGW( LALStatus        *stat,
   LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   LALCVectorAngle( stat->statusPtr, phiTemp,
 		   detector->transfer->data );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   LALSCreateVector( stat->statusPtr, &phiTransfer, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
   LALSCreateVector( stat->statusPtr, &aTransfer, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   LALCVectorAbs( stat->statusPtr, aTransfer,
 		 detector->transfer->data );
@@ -573,10 +619,12 @@ LALSimulateCoherentGW( LALStatus        *stat,
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-	 stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pPlus->data ) ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr,
+			    &( polResponse.pCross->data ) ), stat );
+    LALFree( polResponse.pPlus );
+    LALFree( polResponse.pCross );
   } ENDFAIL( stat );
   phiTransData = phiTransfer->data;
   aTransData = aTransfer->data;
@@ -790,10 +838,12 @@ LALSimulateCoherentGW( LALStatus        *stat,
   TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
-       stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
-       stat );
+  TRY( LALSDestroyVector( stat->statusPtr,
+			  &( polResponse.pPlus->data ) ), stat );
+  TRY( LALSDestroyVector( stat->statusPtr,
+			  &( polResponse.pCross->data ) ), stat );
+  LALFree( polResponse.pPlus );
+  LALFree( polResponse.pCross );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

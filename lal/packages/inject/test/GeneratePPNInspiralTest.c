@@ -46,17 +46,19 @@ default no output is produced).
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define GENERATEPPNINSPIRALTESTC_ENORM 0
-#define GENERATEPPNINSPIRALTESTC_ESUB  1
-#define GENERATEPPNINSPIRALTESTC_EARG  2
-#define GENERATEPPNINSPIRALTESTC_EVAL  3
-#define GENERATEPPNINSPIRALTESTC_EFILE 4
+#define GENERATEPPNINSPIRALTESTC_ENORM  0
+#define GENERATEPPNINSPIRALTESTC_ESUB   1
+#define GENERATEPPNINSPIRALTESTC_EARG   2
+#define GENERATEPPNINSPIRALTESTC_EVAL   3
+#define GENERATEPPNINSPIRALTESTC_EFILE  4
+#define GENERATEPPNINSPIRALTESTC_EPRINT 5
 
-#define GENERATEPPNINSPIRALTESTC_MSGENORM "Normal exit"
-#define GENERATEPPNINSPIRALTESTC_MSGESUB  "Subroutine failed"
-#define GENERATEPPNINSPIRALTESTC_MSGEARG  "Error parsing arguments"
-#define GENERATEPPNINSPIRALTESTC_MSGEVAL  "Input argument out of valid range"
-#define GENERATEPPNINSPIRALTESTC_MSGEFILE "Could not open file"
+#define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"
+#define GENERATEPPNINSPIRALTESTC_MSGESUB   "Subroutine failed"
+#define GENERATEPPNINSPIRALTESTC_MSGEARG   "Error parsing arguments"
+#define GENERATEPPNINSPIRALTESTC_MSGEVAL   "Input argument out of valid range"
+#define GENERATEPPNINSPIRALTESTC_MSGEFILE  "Could not open file"
+#define GENERATEPPNINSPIRALTESTC_MSGEPRINT "Wrote past end of message string"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
@@ -383,11 +385,23 @@ main(int argc, char **argv)
 	       params.termDescription );
   INFO( message );
 
-  /* Print coalescence phase. */
+  /* Print coalescence phase.
   LALSnprintf( message, MSGLENGTH,
 	       "Waveform ends %.3f cycles before coalescence",
 	       -waveform.phi->data->data[waveform.phi->data->length-1]
-	       / (REAL4)( LAL_TWOPI ) );
+	       / (REAL4)( LAL_TWOPI ) ); */
+  {
+    INT4 code = sprintf( message,
+			 "Waveform ends %.3f cycles before coalescence",
+			 -waveform.phi->data->data[waveform.phi->data->length
+						  -1]
+			 / (REAL4)( LAL_TWOPI ) );
+    if ( code >= MSGLENGTH || code < 0 ) {
+      ERROR( GENERATEPPNINSPIRALTESTC_EPRINT,
+	     GENERATEPPNINSPIRALTESTC_MSGEPRINT, 0 );
+      return GENERATEPPNINSPIRALTESTC_EPRINT;
+    }
+  }
   INFO( message );
 
   /* Check if sampling interval was too large. */
