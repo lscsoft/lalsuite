@@ -210,7 +210,7 @@ AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 AM_CONDITIONAL(METAIO, test x$dataflow = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
-AM_CONDITIONAL(QTHREAD, text x$qthread = xtrue)
+AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
