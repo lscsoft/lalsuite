@@ -6,9 +6,6 @@ check_PROGRAMS = 	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           StochasticOptimalFilterNormalizationTest \
           OverlapReductionFunctionTest          StochasticInverseNoiseTest \
-          DirichletTest        \
-	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
-	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest \
           AstroOmegaTest
 
 #                   SFalseAlarmTest       SFalseDismissalTest  \
@@ -57,16 +54,6 @@ StochasticInverseNoiseTest_LDADD = $(top_builddir)/packages/support/src/liblalsu
 # DFalseDismissalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 # DFDismissalVsFAlarmTest_SOURCES = DFDismissalVsFAlarmTest.c
 # DFDismissalVsFAlarmTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-DirichletTest_SOURCES = DirichletTest.c
-DirichletTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c CheckStatus.c
-SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-DCoarseGrainFrequencySeriesTest_SOURCES = DCoarseGrainFrequencySeriesTest.c CheckStatus.c
-DCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c CheckStatus.c
-CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-ZCoarseGrainFrequencySeriesTest_SOURCES = ZCoarseGrainFrequencySeriesTest.c CheckStatus.c
-ZCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 AstroOmegaTest_SOURCES = AstroOmegaTest.c
 AstroOmegaTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
@@ -78,17 +65,13 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           \
           StochasticOptimalFilterNormalizationTest   StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
-          DirichletTest        \
-	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
-	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest \
           AstroOmegaTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #           DFalseDismissalTest   DFDismissalVsFAlarmTest
 
-EXTRA_DIST = CheckStatus.c CheckStatus.h pipeline spectrum1.in spectrum2.in \
-             response1.in response2.in
+EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in
 
 MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
 DISTCLEANFILES = *.tex

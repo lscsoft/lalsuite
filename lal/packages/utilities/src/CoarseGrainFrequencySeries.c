@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{CoarseGrainFrequencySeries.c}}
-\label{stochastic:ss:CoarseGrainFrequencySeries.c}
+\label{utilities:ss:CoarseGrainFrequencySeries.c}
 
 ``Coarse grains'' a frequency series to produce a series with a lower
 frequncy resolution.
@@ -45,7 +45,7 @@ $$
 The central idea in our definitions of coarse graining will thus be
 the correspondence
 \begin{equation}
-  \label{stochastic:e:coarse}
+  \label{utilities:e:coarse}
   h_k \approx \frac{1}{\delta f} 
   \int_{f_k-\delta f/2}^{f_k+\delta f/2} h(f)\,df  
 \end{equation}
@@ -57,7 +57,7 @@ $f'_0$ and frequency spacing $\delta f'$.  Focussing on the $k$th
 element of the coarse-grained series, which represents a frequency
 range from $f_k-\delta f/2$ to $f_k+\delta f/2$, we consider the
 elements of the fine-grained series whose frequency ranges overlap
-with this.  (Fig.~\ref{stochastic:f:coarse})
+with this.  (Fig.~\ref{utilities:f:coarse})
 \begin{figure}[htbp]
   \begin{center}
     \begin{picture}(200,60)(-50,0)
@@ -76,7 +76,7 @@ with this.  (Fig.~\ref{stochastic:f:coarse})
     \end{picture}
   \end{center}  
   \caption{Coarse graining a frequency series}
-  \label{stochastic:f:coarse}
+  \label{utilities:f:coarse}
 \end{figure}
 We define $\ell^{\scriptstyle{\rm min}}_k$ and $\ell^{\scriptstyle{\rm
     min}}_k$ to be the indices of the first and last elements of
@@ -103,15 +103,15 @@ graining ratio $\rho = \delta f / \delta f'$,
   \Omega + \left(k+\frac{1}{2}\right) \rho - \frac{1}{2}
 \ .
 \end{eqnarray*}
-Examination of Fig.~\ref{stochastic:f:coarse} shows that
+Examination of Fig.~\ref{utilities:f:coarse} shows that
 $\ell^{\scriptstyle{\rm min}}_k$ is the smallest integer not less than
 $\lambda^{\scriptstyle{\rm min}}_k$ and $\ell^{\scriptstyle{\rm
     min}}_k$ is the largest integer not greater than
 $\lambda^{\scriptstyle{\rm min}}_k$.
 
 With these definitions, approximating the integral in
-(\ref{stochastic:e:coarse}) gives
-\begin{equation}\label{stochastic:e:coarseapprox}
+(\ref{utilities:e:coarse}) gives
+\begin{equation}\label{utilities:e:coarseapprox}
 h_k = \frac{1}{\rho}
 \left(
   (\ell^{\scriptstyle{\rm min}}_k - \lambda^{\scriptstyle{\rm min}}_k)
@@ -148,7 +148,7 @@ negative-frequency elements in the fine-grained series.
 \subsubsection*{Algorithm}
 
 These routines move through the output series, using
-(\ref{stochastic:e:coarseapprox}) to add up the contributions from the
+(\ref{utilities:e:coarseapprox}) to add up the contributions from the
 bins in the fine-grained series.
 
 \subsubsection*{Uses}
@@ -184,7 +184,7 @@ strncpy()
 ******************************************************* </lalLaTeX> */ 
 /**************************** <lalLaTeX file="CoarseGrainFrequencySeriesCB">
 
-% \bibitem{stochastic:}
+% \bibitem{utilities:}
 
 ******************************************************* </lalLaTeX> */ 
 #include <lal/LALStdlib.h>

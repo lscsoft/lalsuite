@@ -153,8 +153,8 @@ LALUnitCompare()
   this limit, the Dirichlet kernels (which appear in an exact
   expression for the standard cross-correlation statistic, when
   evaluated in discrete time \cite{stochastic:Finn:2001}; see also
-  Sec.~\ref{stochastic:ss:Dirichlet.c}) may be replaced by Dirac delta
-  functions.
+  the documentation for the module Dirichlet.c in the utilities package)
+  may be replaced by Dirac delta functions.
 \item The units of the input series are checked for consistency; since
   \cite{stochastic:Allen:1999}
   \begin{equation}

@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{Dirichlet.h}}
-\label{stochastic:s:Dirichlet.h}
+\label{utilities:s:Dirichlet.h}
 
 Provides prototype and error code information for \texttt{LALDirichlet()},
 a routine which calculates the values of the Dirichlet kernel

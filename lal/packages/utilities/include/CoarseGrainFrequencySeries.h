@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{CoarseGrainFrequencySeries.h}}
-\label{stochastic:s:CoarseGrainFrequencySeries.h}
+\label{utilities:s:CoarseGrainFrequencySeries.h}
 
 Provides prototype, structure and error code information for routines
 which coarse-grain a frequency series.

@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Program \texttt{SCoarseGrainFrequencySeriesTest.c}}
-\label{stochastic:ss:SCoarseGrainFrequencySeriesTest.c}
+\label{utilities:ss:SCoarseGrainFrequencySeriesTest.c}
 
 Test suite for \texttt{LALSCoarseGrainFrequencySeries()}.
 
@@ -32,7 +32,7 @@ This program tests the routine
 frequency series.
 
 First, it tests that the correct error codes 
-(\textit{cf.}\ Sec.~\ref{stochastic:s:CoarseGrainFrequencySeries.h})
+(\textit{cf.}\ Sec.~\ref{utilities:s:CoarseGrainFrequencySeries.h})
 are generated for the following error conditions (tests in
 \textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
 the corresponding checks in the code are made using the ASSERT macro):

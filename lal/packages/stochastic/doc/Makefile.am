@@ -1,8 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 DOCSOURCEFILES = stochastic.tex \
-  stochasticDirichletFig1.eps stochasticDirichletFig1.pdf \
-  stochasticDirichletFig2.eps stochasticDirichletFig2.pdf \
-  stochasticDirichletFig3.eps stochasticDirichletFig3.pdf \
   stochasticOmegaGWQuadratic.eps stochasticOmegaGWQuadratic.pdf \
   stochasticOverlapGEO600TAMA300.eps stochasticOverlapGEO600TAMA300.pdf \
   stochasticOverlapLHOGEO600.eps stochasticOverlapLHOGEO600.pdf \

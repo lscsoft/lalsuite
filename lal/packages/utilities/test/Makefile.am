@@ -1,5 +1,8 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest
+check_PROGRAMS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest \
+          DirichletTest        \
+	  SCoarseGrainFrequencySeriesTest    DCoarseGrainFrequencySeriesTest \
+	  CCoarseGrainFrequencySeriesTest    ZCoarseGrainFrequencySeriesTest
 RandomTest_SOURCES = RandomTest.c
 RandomTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 MersenneRandomTest_SOURCES = MersenneRandomTest.c
@@ -14,8 +17,22 @@ SortTest_SOURCES = SortTest.c
 SortTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ODETest_SOURCES = ODETest.c
 ODETest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+DirichletTest_SOURCES = DirichletTest.c
+DirichletTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c CheckStatus.c
+SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+DCoarseGrainFrequencySeriesTest_SOURCES = DCoarseGrainFrequencySeriesTest.c CheckStatus.c
+DCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c CheckStatus.c
+CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+ZCoarseGrainFrequencySeriesTest_SOURCES = ZCoarseGrainFrequencySeriesTest.c CheckStatus.c
+ZCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+EXTRA_DIST = CheckStatus.c CheckStatus.h
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest
+TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest InterpolateTest SortTest ODETest \
+          DirichletTest        \
+	  SCoarseGrainFrequencySeriesTest  DCoarseGrainFrequencySeriesTest \
+	  CCoarseGrainFrequencySeriesTest  ZCoarseGrainFrequencySeriesTest
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
