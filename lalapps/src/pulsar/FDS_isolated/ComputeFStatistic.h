@@ -35,32 +35,26 @@ possible to the users request, but are not the same.  Don't use these variables!
 
 
 
-/* 
- *this structure holds all configuration-settings for the code, including the 
- * user-input variables, but also derived ones 
+/** Configuration settings required for and defining a coherent pulsar search.
+ * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  CHAR EphemEarth[MAXFILENAMELENGTH];
-  CHAR EphemSun[MAXFILENAMELENGTH];
-  INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
-
-  INT4 SpinImax;
-  INT4 ifmax;
-  INT4 ifmin;
-
-  REAL8 dFreq;
-  REAL8 tsft;
-  INT4 SFTno;
-
-  INT4 nsamples;
-  INT4 Ti;        /* GPS seconds of first SFT */
-  INT4 Tf;        /* GPS seconds of last SFT */
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-
-  LALDetector Detector;         /* Our detector*/
-  EphemerisData *edat;		/* ephemeris data */
-
-  CHAR *skyRegion;		/* sky-region (polygon) to search over */
+  CHAR EphemEarth[MAXFILENAMELENGTH];	/**< filename of earth-ephemeris data */
+  CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
+  INT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
+  INT4 SpinImax;		/**< number of spindown-bins to compute F for */
+  INT4 ifmax;			/**< highest frequency-bin needed in calculation */
+  INT4 ifmin;			/**< lowest frequency-bin needed */
+  REAL8 dFreq;			/**< frequency resolution */
+  REAL8 tsft;			/**< length of an SFT in seconds */
+  INT4 SFTno;			/**< number of SFTs in input */
+  INT4 nsamples;		/**< number of frequency-bins in an SFT */
+  INT4 Ti;	        	/**< GPS seconds of start of observation */
+  INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
+  CHAR filelist[MAXFILES][MAXFILENAMELENGTH]; /**< array of filenames to load SFTs from */
+  LALDetector Detector;         /**< Our detector*/
+  EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
+  CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
 } ConfigVariables;
   
 struct headertag {
