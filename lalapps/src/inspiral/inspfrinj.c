@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: insp_inject.c
+ * File Name: inspfinj.c
  *
  * Author: Fairhurst, S. (based on inspiral.c by Brown, D.A.)
  * 
@@ -165,12 +165,12 @@ int main( int argc, char *argv[] )
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   UINT4 k,n;
   CHAR  fname[FILENAME_MAX];
-  UINT4 numPoints;
+  UINT4 numPoints = 0;
   REAL8 tsLength;
   INT8  durationNS	= 0;
   CalibrationUpdateParams inj_calfacts;
-  REAL4 inj_alpha;
-  REAL4 inj_alphabeta;
+  REAL4 inj_alpha = 0;
+  REAL4 inj_alphabeta = 0;
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
 
