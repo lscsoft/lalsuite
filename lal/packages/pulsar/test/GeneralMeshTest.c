@@ -1,0 +1,585 @@
+/************************************** <lalVerbatim file="GeneralMeshTestCV">
+Author: Jones, D. I.,   Owen, B. J.  
+$Id$
+********************************************************** </lalVerbatim> */
+ 
+/**************************************************************** <lalLaTeX>
+ 
+\subsection{Program \texttt{GeneralMeshTest.c}}
+\label{ss:GeneralMeshTest}
+ 
+Tests and showcases the combination of a LAL metric function (of the
+user's specification) and \texttt{TwoDMesh} modules by producing a
+template mesh.
+ 
+\subsubsection*{Usage}
+\begin{verbatim}
+GeneralMeshTest
+\end{verbatim}
+ 
+\subsubsection*{Description}
+
+The \texttt{-a} option determines which LAL metric code is used.  The
+options are: 
+
+\hspace{1cm} 1 = PtoleMetric (default), 
+
+\hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic), 
+
+\hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
+
+The \texttt{-b} option sets the beginning GPS time of integration to
+the option argument. (Default is $731265908$ seconds, chosen to lie
+within the S2 run).
+
+The \texttt{-c} option determins the center of the patch.  This option
+is hardcoded to use equatorial coordinates and the argument should be
+given in hh:mm:ss:dd:mm:ss format.  (Default is the center of the
+globular cluster 47 Tuc).
+
+The \texttt{-d} option sets the detector to the option argument. The
+options are: 
+ 
+\hspace{1cm} 1 = LIGO Hanford 
+
+\hspace{1cm} 2 = LIGO Livingston
+
+\hspace{1cm} 3 = VIRGO 
+
+\hspace{1cm} 4 = GEO600 (default)
+
+\hspace{1cm} 5 = TAMA300 
+
+The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
+
+The \texttt{-f} option sets the maximum frequency of integration (in Hz) to the
+option argument. (The default value is 1000.)
+
+The \texttt{-l} option determines the limits in right ascension and
+declination of the rectangular region over which the mesh is computed.  
+The argument should be given in degrees as
+RA(min):RA(max):dec(min):dec(max).  (The defalut is the octant of the
+sky defined by $0 < {\rm RA} < 90$ and $0< {\rm dec} < 85$;this avoids the
+coordinate singularity at the poles.)
+
+The \texttt{-m} option sets the maximum mismatch of the mesh to the option
+argument. (Default is 0.02.)
+
+The \texttt{-n} option sets the maximum number of nodes in the mesh to the
+option argument. (Default is $10^6$.)
+
+The texttt{-p} option causes the coordinates of the nodes to be written to 
+a file \texttt{mesh.dat}, for the benifit of users who don't have 
+\texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
+with the angles in degrees.
+
+The \texttt{-r} option sets the radius (in arcminutes) of the circular
+sky patch.  If you specify radius zero you will get a search over a
+rectangular region whose limits in RA and dec are specified by the
+\texttt{-l} option.  (The default value is the radius of the globular
+cluster 47 Tuc).
+
+The \texttt{-t} option sets the duration of integration in seconds. (The 
+default is $39600$ seconds $= 11$ hours, which is chosen because it is of 
+the right size for S2 analyses).
+
+The \texttt{-x} option makes a plot of the mesh points on the sky patch using a
+system call to \texttt{xmgrace}. If \texttt{xmgrace} is not installed on your
+system, this option will not work. The plot goes to a file \texttt{mesh.agr}.
+
+\subsubsection*{Exit Codes}
+************************************************ </lalLaTeX><lalErrTable> */
+#define GENERALMESHTESTC_EMEM 1
+#define GENERALMESHTESTC_ERNG 2
+#define GENERALMESHTESTC_EFIO 3
+#define GENERALMESHTESTC_EOPT 4
+#define GENERALMESHTESTC_EMET 5
+
+#define GENERALMESHTESTC_MSGEMEM "memory (de)allocation error"
+#define GENERALMESHTESTC_MSGERNG "value out of range"
+#define GENERALMESHTESTC_MSGEFIO "file I/O error"
+#define GENERALMESHTESTC_MSGEOPT "unknown command-line option"
+#define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
+/************************************************** </lalErrTable><lalLaTeX>
+ 
+\subsubsection*{Algorithm}
+ 
+\subsubsection*{Uses}
+
+\begin{verbatim}
+lalDebugLevel                LALDCreateVector()
+LALCheckMemoryLeaks()        LALDDestroyVector()
+LALProjectMetric()           LALGetEarthTimes()
+LALPtoleMetric()             LALInitBarycenter()
+LALCreateTwoDMesh()          LALDestroyTwoDMesh()
+LALFree()                    LALCoherentMetric()
+\end{verbatim}     
+
+          
+ 
+\subsubsection*{Notes}
+
+For most regions of parameter space the three metric codes seem to
+agree well.  However, for short (less than one day) runs, they are all
+capable of returning (unphysical) negative determinant metrics for
+points very close to the equator.
+
+
+\vfill{\footnotesize\input{GeneralMeshTestCV}}
+ 
+************************************************************* </lalLaTeX> */
+
+
+#include <math.h>
+#include <stdio.h>
+#include <lal/AVFactories.h>
+#include <lal/LALXMGRInterface.h>
+#include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
+#include <lal/TwoDMesh.h>
+#include <lal/LALBarycenter.h>
+
+
+
+NRCSID( GENERALMESHTESTC, "$Id$" );
+
+/* BEN: These aren't used right now, but should be. */
+#define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
+#define MAX_DURATION (3.16e7)           /* one year; arbitrary */
+#define MIN_FREQ     1e2                /* more or less arbitrary */
+#define MAX_FREQ     1e4                /* more or less arbitrary */
+
+/* IAN: Clumsy way of specifying rectangular search region if */
+/* the r=0 option is invoked.                                 */
+REAL4 ra_min;      
+REAL4 ra_max;     
+REAL4 dec_min;      
+REAL4 dec_max;      
+
+
+char *optarg = NULL;     /* option argument for getopt() */
+int  lalDebugLevel = 0;  /* default value */
+int  metric_code;        /* Which metric code to use: */
+                         /* 1 = Ptolemetric */
+                         /* 2 = CoherentMetric + DTBarycenter */
+                         /* 3 = CoherentMetric + DTEphemeris  */
+
+
+
+void getRange( LALStatus *, REAL4 [2], REAL4, void * );
+void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
+
+/* BEN: This is a cheat. Should make a search area structure. */
+static SkyPosition center;  /* center of search */
+REAL4              radius;  /* radius of search, in arcminutes */
+
+REAL8Vector *tevlambda;   /* (f, a, d) input for CoherentMetric */
+                          /* I've made it global so getMetric can see it */ 
+                             
+int main( int argc, char **argv )
+{
+  static LALStatus     stat;      /* status structure */
+  INT2                 opt;       /* command-line option character */
+  BOOLEAN              errors;    /* whether or not to showcase error traps */
+  BOOLEAN              grace;     /* whether or not to graph using xmgrace */
+  BOOLEAN              nonGrace;  /* whether or not to write to data file */
+  TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
+  static TwoDMeshParamStruc mesh; /* mesh parameters */
+  static PtoleMetricIn search;    /* more mesh parameters */
+  REAL4                mismatch;  /* mismatch threshold of mesh */
+  UINT4                maxNodes;  /* maximum nodes in mesh */
+  int                  begin;     /* start time of integration (seconds) */
+  REAL4                duration;  /* duration of integration (seconds) */
+  REAL4                fMax;      /* maximum frequency of search */
+  FILE                *fp;        /* where to write a plot */
+  static MetricParamStruc tevparam;  /* Input structure for CoherentMetric */
+  PulsarTimesParamStruc tevpulse; /* Input structure for CoherentMetric */
+                                  /* (this is a member of tevparam) */
+  EphemerisData       *eph;       /* To store ephemeris data */
+  int                  detector;  /* Which detector to use: */
+                                  /* 1 = Hanford,  2 = Livingston,  */
+                                  /* 3 = Virgo,  4 = GEO,  5 = TAMA */
+  float a, b, c, d, e, f;         /* To specify center of search region */
+  
+  
+  /* Set default values. */
+  metric_code = 1;
+  errors = 0; /* BEN: this is unused right now */
+  grace = 0;
+  nonGrace = 0;
+  begin = 731265908;
+  duration = 1e5;
+  fMax = 1e3;
+  mismatch = .02;
+  maxNodes = 1e6;
+  /* This is (roughly) the center of globular cluster 47 Tuc. */
+  center.system = COORDINATESYSTEM_EQUATORIAL;
+  center.longitude = (24.1/60)*LAL_PI_180;
+  center.latitude = -(72+5./60)*LAL_PI_180;
+  radius = 24.0/60*LAL_PI_180;
+  detector = 4;
+  ra_min = 0.0;
+  ra_max = LAL_PI_2;
+  dec_min = 0.0;
+  dec_max = LAL_PI_2;
+
+  /* Parse and sanity-check the command-line options. */
+  while( (opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pr:t:x" )) != -1 )
+  {
+    switch( opt )
+    {
+      /*float a, b, c, d, e, f;*/
+    case '?':
+      return GENERALMESHTESTC_EOPT;
+    case 'a':
+      metric_code = atoi( optarg );
+      break;
+    case 'b':
+      begin = atoi( optarg );
+      break;
+    case 'c':
+      if( sscanf( optarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
+      {
+        fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
+        return GENERALMESHTESTC_EOPT;
+      }
+      center.longitude = (15*a+b/60+c/3600)*LAL_PI_180;
+      center.latitude = (d+e/60+f/3600)*LAL_PI_180;
+      break;
+    case 'd':
+      detector = atoi( optarg );
+      break;
+    case 'e':
+      lalDebugLevel = 1;
+      break;
+    case 'f':
+      fMax = atof( optarg );
+      break;
+    case 'l':
+      if( sscanf( optarg, "%f:%f:%f:%f", 
+		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
+	{
+	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees" );
+	}
+      ra_min  *= LAL_PI_180;
+      ra_max  *= LAL_PI_180;
+      dec_min *= LAL_PI_180;
+      dec_max *= LAL_PI_180;
+      break;
+    case 'm':
+      mismatch = atof( optarg );
+      break;
+    case 'n':
+      maxNodes = atoi( optarg );
+      break;
+    case 'p':
+      nonGrace = 1;
+      break;
+    case 'r':
+      radius = LAL_PI_180/60*atof( optarg );
+      if( radius < 0 ) {
+        fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+                 GENERALMESHTESTC_MSGERNG );
+        return GENERALMESHTESTC_ERNG;
+      }
+      break;
+    case 't':
+      duration = atof( optarg );
+      if( duration < MIN_DURATION || duration > MAX_DURATION ) {
+	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+                 GENERALMESHTESTC_MSGERNG );
+        return GENERALMESHTESTC_ERNG;
+      }
+      break;
+    case 'x':
+      grace = 1;
+      break;
+    } /* switch( opt ) */
+  } /* while( getopt... ) */
+
+
+  /* Set the mesh input parameters. */
+  mesh.mThresh = mismatch;
+  mesh.nIn = maxNodes;
+  mesh.getRange = getRange;
+  mesh.getMetric = getMetric;
+  if(metric_code==1)
+    mesh.metricParams = (void *) &search;
+  if(metric_code==2 || metric_code==3)
+    mesh.metricParams = (void *) &tevparam;
+  if( radius == 0 ) 
+    {
+      mesh.domain[0] = dec_min;
+      mesh.domain[1] = dec_max;
+      /* I don't understand this line*/
+      if(metric_code==1)
+	mesh.rangeParams = (void *) &search;
+      if(metric_code==2 || metric_code==3)
+	{
+	  mesh.rangeParams = (void *) &tevparam;
+	}
+    }
+  else 
+    {
+      mesh.domain[0] = center.latitude - radius;
+      mesh.domain[1] = center.latitude + radius;
+      mesh.rangeParams = NULL;
+    }
+
+
+  /* Set detector location */
+  if(detector==1)
+    tevpulse.site = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  if(detector==2)
+    tevpulse.site = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if(detector==3)
+    tevpulse.site = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  if(detector==4)
+    tevpulse.site = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if(detector==5)
+    tevpulse.site = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+
+  search.site = tevpulse.site.frDetector;
+  tevpulse.latitude = search.site.vertexLatitudeRadians;
+  tevpulse.longitude = search.site.vertexLongitudeRadians;
+
+
+  /* Ptolemetric constants */
+  search.position.system = COORDINATESYSTEM_EQUATORIAL;
+  search.spindown = NULL;
+  search.epoch.gpsSeconds = begin;
+  search.epoch.gpsNanoSeconds = 0;
+  search.duration = duration;
+  search.maxFreq = fMax;
+
+
+  /* CoherentMetric constants */
+  tevlambda = NULL;
+  LALDCreateVector( &stat, &tevlambda, 3 );
+  tevlambda->data[0] = fMax;
+  tevparam.constants = &tevpulse;
+  tevparam.n = 1;
+  tevparam.errors = 0;
+  tevparam.start = 0; /* start time relative to epoch */
+  tevpulse.t0 = 0.0;  /* Irrelavant */
+  tevpulse.epoch.gpsSeconds = begin;
+  tevpulse.epoch.gpsNanoSeconds = 0;
+  tevparam.deltaT = duration;
+
+
+  /* To fill in the fields tevpulse.tMidnight & tevpulse.tAutumn */
+  LALGetEarthTimes( &stat, &tevpulse );
+
+  /* Read in ephemeris data from files: */
+  eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  eph->ephiles.earthEphemeris = "/usr/center/horizon/jones/no-backup/share/lal/earth03.dat";
+  eph->ephiles.sunEphemeris = "/usr/center/horizon/jones/no-backup/share/lal/sun03.dat";
+  eph->leap = 14; /* Ben: Is this right for 2003? Automate. */
+ 
+
+  LALInitBarycenter( &stat, eph );
+  
+  tevpulse.ephemeris = *eph;
+ 
+  /* Choose CoherentMetric timing function */
+  if(metric_code==1)
+    {
+      printf("Using PtoleMetric()\n");
+    }
+  if(metric_code==2)
+    {
+      printf("Using CoherentMetric() with the BTBaryPtolemaic timing function\n");
+      tevparam.dtCanon = LALDTBaryPtolemaic;
+    }
+  if(metric_code==3)
+    {
+      printf("Using CoherentMetric() with the DTEphemeris timing function\n");
+      tevparam.dtCanon = LALDTEphemeris;
+    }
+
+
+  /* Create mesh */
+  firstNode = NULL;
+  LALCreateTwoDMesh( &stat, &firstNode, &mesh );
+  if( stat.statusCode )
+    return stat.statusCode;
+  printf( "created %d nodes\n", mesh.nOut );
+
+
+  /* Create xmgrace plot, if required */
+  if(grace)
+    {
+      TwoDMeshNode *node;
+      fp = popen( "xmgrace -pipe", "w" );
+      if( !fp )
+	return GENERALMESHTESTC_EFIO;
+      fprintf( fp, "@xaxis label \"Right ascension (degrees)\"\n" );
+      fprintf( fp, "@yaxis label \"Declination (degrees)\"\n" );
+      fprintf( fp, "@s0 line type 0\n");
+      fprintf( fp, "@s0 symbol 8\n");
+      fprintf( fp, "@s0 symbol size 0.300000\n");
+      for( node = firstNode; node; node = node->next )
+      fprintf( fp, "%e %e\n", 
+	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
+      fclose( fp );
+    }
+
+
+  /* Write what we've got to file mesh.dat, if required */
+  if( nonGrace )
+  {
+    TwoDMeshNode *node;
+    fp = fopen( "mesh.dat", "w" );
+    if( !fp )
+      return GENERALMESHTESTC_EFIO;
+
+    for( node = firstNode; node; node = node->next )
+      fprintf( fp, "%e %e\n", 
+	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
+    fclose( fp );
+  }
+
+  /* Clean up and leave. */
+  LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
+  printf( "destroyed %d nodes\n", mesh.nOut );
+  if( stat.statusCode )
+    return GENERALMESHTESTC_EMEM;
+
+  LALDDestroyVector( &stat, &tevlambda );
+
+  LALFree( eph->ephemE );
+  if( stat.statusCode )
+  {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMESHTESTC_MSGEMEM );
+    return GENERALMESHTESTC_EMEM;
+  }
+  LALFree( eph->ephemS );
+  if( stat.statusCode )
+  {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMESHTESTC_MSGEMEM );
+    return GENERALMESHTESTC_EMEM;
+  }
+  LALFree( eph );
+ if( stat.statusCode )
+  {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMESHTESTC_MSGEMEM );
+    return GENERALMESHTESTC_EMEM;
+  }
+
+
+  LALCheckMemoryLeaks();
+  return 0;
+} /* main() */
+
+
+/* This is the parameter range function as required by TwoDMesh. */
+
+void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
+{
+  /* Set up shop. */
+  INITSTATUS( stat, "getRange", GENERALMESHTESTC );
+  ATTATCHSTATUSPTR( stat );
+  
+  /* Search a circle. BEN: The 1.001 is a kludge. */
+  y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
+				  - pow( x-center.latitude, 2 ) );
+  y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
+				  - pow( x-center.latitude, 2 ) );
+    
+  if( unused ) 
+    {
+      y[0] = ra_min;
+      y[1] = ra_max;
+    }
+
+  /*
+  printf("x = %le,  y[0] = %le,  y[1] = %le\n", (double)x, (double)y[0],
+	 (double)y[1]);
+  */
+
+  /* Clean up and leave. */
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+} /* getRange() */
+
+
+/* This is the wrapped metric function as required by TwoDMesh. */
+
+void getMetric( LALStatus *stat,
+                REAL4 g[3],
+                REAL4 x[2],
+                void *params )
+{
+
+  REAL8Vector      *metric = NULL;   /* for output of metric */
+  PtoleMetricIn    *Ppatch = NULL;   /* pointer for PtoleMetric params */
+  MetricParamStruc *Cpatch = NULL;   /* pointer for CoherentMetric params */
+  REAL8             determinant;     /* Determinant of projected metric */
+
+
+  if(metric_code==1)
+    Ppatch = params;
+  
+  if(metric_code==2 || metric_code==3)
+    Cpatch = params;
+  
+
+  /* Set up shop. */
+  INITSTATUS( stat, "getMetric", GENERALMESHTESTC );
+  ATTATCHSTATUSPTR( stat );
+  TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
+  
+  /* Translate input. */
+  if(metric_code==1)
+    {
+      Ppatch->position.longitude = x[1];
+      Ppatch->position.latitude =  x[0];
+    }
+  
+  if(metric_code==2 || metric_code==3)
+    {
+      tevlambda->data[1] = x[1];
+      tevlambda->data[2] = x[0];
+    }
+  
+
+  /* Call the real metric function. */
+  if(metric_code==1)
+    LALPtoleMetric( stat->statusPtr, metric, Ppatch );
+  if(metric_code==2 || metric_code==3)
+     LALCoherentMetric( stat->statusPtr, metric, tevlambda, Cpatch );
+
+  BEGINFAIL( stat )
+    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  ENDFAIL( stat );
+  LALProjectMetric( stat->statusPtr, metric, 0 );
+  BEGINFAIL( stat )
+    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  ENDFAIL( stat );
+
+  determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
+  if(determinant < 0.0)
+    {
+      printf( "%s line %d: %s\n", __FILE__, __LINE__,
+	      GENERALMESHTESTC_MSGEMET );
+      return GENERALMESHTESTC_EMET;
+    }
+
+
+
+  /* Translate output. */
+  g[1] = metric->data[2];
+  g[0] = metric->data[5];
+  g[2] = metric->data[4];
+ 
+  
+  /* Clean up and leave. */
+  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+  
+
+} /* getMetric() */
