@@ -71,7 +71,7 @@ static REAL4            fLow            = 40.0;
 static REAL4            rhosqThresh     = 100.0;
 static REAL4            chisqThresh     = 0.001;
 static REAL4            mass            = 1.4;
-static REAL4            dynRange        = 1.0;
+static REAL4            dynRange        = 0.0; /* default = 1.0; */
 
 static INT4		loopCount       = 0;
 
@@ -464,8 +464,8 @@ fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
       tmplt->approximant = BCVSpin;
       
       tmplt->fFinal 	= 1000;
-      tmplt->psi0       = 944071;
-      tmplt->psi3       = -2982;
+      tmplt->psi0       = 205008;
+      tmplt->psi3       = -1619;
 
 fprintf (stdout, "deltaT (testfile) = %e \n", deltaT);
 fprintf (stdout, "fLow (testfile) = %e \n", fLow);
