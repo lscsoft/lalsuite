@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LIBRARIES = liblal.a
-liblal_a_SOURCES = RealFFT.c
+liblal_a_SOURCES = ComplexFFT.c RealFFT.c
 
 LIBLAL = $(top_srcdir)/lib/liblal.a
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include

@@ -21,8 +21,8 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _RealFFT_H
-#define _RealFFT_H
+#ifndef _REALFFT_H
+#define _REALFFT_H
 
 #include "LALDatatypes.h"
 
@@ -166,4 +166,4 @@ RealSequencePowerSpectrum (
 }
 #endif
 
-#endif /* _RealFFT_H */
+#endif /* _REALFFT_H */

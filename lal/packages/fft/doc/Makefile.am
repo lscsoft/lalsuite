@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-TEXFILES = RealFFT.tex
-DVIFILES = RealFFT.dvi
+TEXFILES = ComplexFFT.tex RealFFT.tex
+DVIFILES = ComplexFFT.dvi RealFFT.dvi
 SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
 CLEANFILES = *.dvi
