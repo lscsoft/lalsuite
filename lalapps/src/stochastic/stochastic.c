@@ -118,7 +118,7 @@ REAL4 omegaRef = 1;
 /* monte carlo parameters */
 REAL4 scaleFactor = -1;
 INT4 seed = -1;
-INT4 NLoop = -1;
+INT4 NLoop = 1;
 
 /* window parameters */
 INT4 hannDuration = -1;
@@ -1002,7 +1002,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           if (verbose_flag)
           {
             fprintf(stdout, "First Pass\ninterval %d out of %d\n", \
-                interLoop, numIntervals);
+                interLoop + 1, numIntervals);
           }
 
           /* read first interval and get response functions */
@@ -2628,11 +2628,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
     if (seed == -1)
     {
       fprintf(stderr, "--seed must be specified\n");
-      exit(1);
-    }
-    if (NLoop == -1)
-    {
-      fprintf(stderr, "--trials must be specified\n");
       exit(1);
     }
   }
