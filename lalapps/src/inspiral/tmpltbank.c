@@ -33,6 +33,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
+#include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Window.h>
@@ -341,9 +342,12 @@ int main ( int argc, char *argv[] )
   /* write the scaled strain spectrum data to a file */
   if ( writeStrainSpec )
   {
+#if 0
     strcpy( spec.name, chan.name );
     outFrame = fr_add_proc_REAL8FrequencySeries( outFrame, 
         &(bankIn.shf), "strain/sqrtHz", "STRAIN_PSD" );
+#endif
+    LALDPrintFrequencySeries( &(bankIn.shf), "strainspectrum.txt" );
   }
 
   /* bank generation parameters */
@@ -459,6 +463,13 @@ int main ( int argc, char *argv[] )
         process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   LALFree( proctable.processTable );
+
+  /* erase the first empty process params entry */
+  {
+    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
+    procparams.processParamsTable = procparams.processParamsTable->next;
+    LALFree( emptyPPtable );
+  }
 
   /* write the process params table */
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
