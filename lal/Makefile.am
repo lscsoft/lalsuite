@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 SUBDIRS = include packages doc lib
 CLEANFILES = $(top_builddir)/include/*.h
-EXTRA_DIST = lalspec.pdf
+EXTRA_DIST = README.contrib lalspec.pdf
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.
