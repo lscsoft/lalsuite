@@ -207,6 +207,9 @@ tagInspiralTemplate
  InspiralTemplate;
 /* </lalVerbatim>  */
 
+/* <lalLaTeX>
+\index{\texttt{InspiralTemplate}}
+</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
 typedef struct
@@ -369,6 +372,9 @@ tagrk4In
 rk4In;
 /* </lalVerbatim>  */
 
+/* <lalLaTeX>
+\index{\texttt{rk4In}}
+</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
 typedef struct
@@ -595,6 +601,259 @@ void LALPrintTimeseries(
 \newpage\input{LALRungeKutta4C}
 </lalLaTeX>  */
 
+void LALRungeKutta4(
+  LALStatus *,
+  REAL8Vector *,
+  rk4In *,
+  void *);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave2C}
+</lalLaTeX>  */
+
+void LALInspiralWave2(
+  LALStatus *status,
+  REAL4Vector *signal,
+  InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave2TemplatesC}
+</lalLaTeX>  */
+
+void LALInspiralWave2Templates (
+  LALStatus *status,
+  REAL4Vector *signal1, 
+  REAL4Vector *signal2, 
+  InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralTiming2C}
+</lalLaTeX>  */
+
+void LALInspiralTiming2_0PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_1PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_2PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_3PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_4PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+
+void LALInspiralTiming2_5PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_6PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+void LALInspiralTiming2_7PN (
+   LALStatus *,
+   REAL8 *toff,
+   REAL8 f,
+   void *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhasing3C}
+</lalLaTeX>  */
+
+void LALInspiralPhasing2_0PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_1PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_2PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_3PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_4PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_5PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_6PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing2_7PN (
+   LALStatus *status,
+   REAL8 *phase, 
+   REAL8 v,
+   expnCoeffs *ak);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave3C}
+</lalLaTeX>  */
+
+void LALInspiralWave3 (
+   LALStatus *status,
+   REAL4Vector *signal, 
+   InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave3TemplatesC}
+</lalLaTeX>  */
+
+void LALInspiralWave3Templates (
+   LALStatus *status,
+   REAL4Vector *signal1, 
+   REAL4Vector *signal2, 
+   InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralFrequency3C}
+</lalLaTeX>  */
+
+void LALInspiralFrequency3_0PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_1PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_2PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_3PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_4PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_5PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_6PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralFrequency3_7PN (
+   LALStatus *status,
+   REAL8 *frequency,
+   REAL8 td,
+   expnCoeffs *ak);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhasing3C}
+</lalLaTeX>  */
+
+void LALInspiralPhasing3_0PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_1PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_2PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_3PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_4PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_5PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_6PN (
+   LALStatus *,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+
+void LALInspiralPhasing3_7PN (
+   LALStatus *status,
+   REAL8 *phase,
+   REAL8 td,
+   expnCoeffs *ak);
+=======
 void LALRungeKutta4(
   LALStatus *,
   REAL8Vector *,
