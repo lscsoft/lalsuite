@@ -334,34 +334,24 @@ LALAddFloatToGPS(
     )
 /*  </lalVerbatim> */
 {
-  INT8 tmp_gps_ns, delta_t_sec, delta_t_ns;
+  LIGOTimeGPS tmp_gps;		/* allow startGPS == outputGPS */
+  INT4 secs, ns;
+  REAL8 tmp;
 
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
-  ATTATCHSTATUSPTR( status );
 
-  LALGPStoINT8( status->statusPtr, &tmp_gps_ns, startGPS );
-  CHECKSTATUSPTR( status );
+  secs = (INT4)(deltaT);
+  tmp = (deltaT - (REAL8) secs) * oneBillion  + 0.5;
+  ns = (INT4) floor( tmp );	/* careful with rounding!*/
 
-  if ( deltaT < 0 )
-  {
-    delta_t_sec = (INT8) ceil( deltaT );
-    delta_t_ns = (-1000000000LL + (INT8) 
-      floor( (deltaT - (REAL8) delta_t_sec) * oneBillion + 0.5));
-  }
-  else
-  {
-    delta_t_sec = (INT8) floor( deltaT );
-    delta_t_ns = (INT8) 
-      floor( (deltaT - (REAL8) delta_t_sec) * oneBillion + 0.5);
-  }
+  tmp_gps.gpsSeconds = startGPS->gpsSeconds + secs;
+  tmp_gps.gpsNanoSeconds = startGPS->gpsNanoSeconds + ns;
 
-  tmp_gps_ns += delta_t_sec * 1000000000LL + delta_t_ns;
+   /* assign the computed values */
+  *outputGPS = tmp_gps;
 
-  LALINT8toGPS( status->statusPtr, outputGPS, &tmp_gps_ns );
-  CHECKSTATUSPTR( status );
-
-  DETATCHSTATUSPTR( status );
   RETURN( status );
+
 } /* LALAddFloatToGPS() */
 
 

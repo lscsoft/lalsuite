@@ -25,6 +25,51 @@ NRCSID (LALTESTINCREMENTGPSC, "$Id$");
 
 #define LONGESTSTR 256
 
+/* Error codes and messages */
+
+/************** <lalErrTable file="LALTESTINCREMENTGPSCErrorTable"> */
+#define LALTESTINCREMENTGPSC_ENORM 	0
+#define LALTESTINCREMENTGPSC_ESUB  	1
+
+#define LALTESTINCREMENTGPSC_MSGENORM "Normal exit"
+#define LALTESTINCREMENTGPSC_MSGESUB  "LAL Subroutine failed"
+/******************************************** </lalErrTable> */
+
+
+/*********************************************************************/
+/* Macros for printing errors & testing subroutines (from Creighton) */
+/*********************************************************************/
+
+#define ERROR( code, msg, statement )                                \
+do {                                                                 \
+  if ( lalDebugLevel & LALERROR )                                    \
+    LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
+                   "        %s %s\n", (code), *argv, __FILE__,       \
+              __LINE__, LALTESTINCREMENTGPSC, statement ? statement :  \
+                   "", (msg) );                                      \
+} while (0)
+
+#define INFO( statement )                                            \
+do {                                                                 \
+  if ( lalDebugLevel & LALINFO )                                     \
+    LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
+                   "        %s\n", *argv, __FILE__, __LINE__,        \
+              LALTESTINCREMENTGPSC, (statement) );                     \
+} while (0)
+
+#define SUB( func, statusptr )                                       \
+do {                                                                 \
+  if ( (func), (statusptr)->statusCode ) {                           \
+    ERROR( LALTESTINCREMENTGPSC_ESUB, LALTESTINCREMENTGPSC_MSGESUB,      \
+           "Function call \"" #func "\" failed:" );                  \
+    return LALTESTINCREMENTGPSC_ESUB;                                  \
+  }                                                                  \
+} while (0)
+/******************************************************************/
+
+
+
+
 
 /* module-scope variable */
 BOOLEAN verbose_p = FALSE;
@@ -145,6 +190,43 @@ int main(int argc, char **argv)
   if (!increment_gps_ok(&status, &deltaT, &gps, &expected_gps))
     return FAILURE;
 
+  /*----------------------------------------------------------------------*/
+  /* test LALAddFloatToGPS() and LALDeltaFloatGPS() */
+  {
+    LIGOTimeGPS gps1, gps2, gpsTest;
+    REAL8 deltaT1, deltaT0;
+
+    gps1.gpsSeconds = 714153733;
+    gps1.gpsNanoSeconds = 23421234;
+
+    gps2.gpsSeconds = 715615153;
+    gps2.gpsNanoSeconds = 712343412;
+    /* now use DeltaFloatGPS to calculate the difference in seconds */
+    SUB ( LALDeltaFloatGPS (&status, &deltaT1, &gps1, &gps2), &status);
+    /* this is the correct result */
+    deltaT0 = -1461420.688922178;
+    if (deltaT0 != deltaT1) {
+      LALPrintError ("Failure in LALDeltaFloatGPS(): got %20.9f instead of %20.9f\n", deltaT1, deltaT0);
+      return FAILURE;
+    }
+    /* now see if deltaT1 takes us from gps1 to gps2 and vice-versa */
+    SUB (LALAddFloatToGPS (&status, &gpsTest, &gps2, deltaT1), &status);
+    if ( (gpsTest.gpsSeconds != gps1.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps1.gpsNanoSeconds) ) {
+      LALPrintError ("Failure in 1.)LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps1.gpsSeconds, gps1.gpsNanoSeconds);
+      return FAILURE; 
+    }
+    /* no go the other direction..*/
+    deltaT1 = -deltaT1;
+    SUB (LALAddFloatToGPS (&status, &gpsTest, &gps1, deltaT1), &status);
+    if ( (gpsTest.gpsSeconds != gps2.gpsSeconds) || (gpsTest.gpsNanoSeconds != gps2.gpsNanoSeconds) ) {
+      LALPrintError ("Failure in 2.)LALAddFloatToGPS(): got %d.%09ds instead of %d.%09ds\n", 
+		     gpsTest.gpsSeconds, gpsTest.gpsNanoSeconds, gps2.gpsSeconds, gps2.gpsNanoSeconds);
+      return FAILURE;
+    }
+    
+  } /* testing LALAddFloatToGPS() and LALDeltaFloatGPS() */
+  /*----------------------------------------------------------------------*/
 
   /* try passing the same pointer to struct as input and output */
   gps.gpsSeconds     =    0;

@@ -599,7 +599,7 @@ LALCompareGPS (LALStatus *status,
 
 
 void
-LALAddFloatToGPS (LALStatus             *stat,
+LALAddFloatToGPS (LALStatus             *status,
 		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
 		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
 		  REAL8 		deltaT); 	/* input: interval to increment by in seconds*/

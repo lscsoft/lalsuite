@@ -30,7 +30,8 @@ TestGPStoFloat_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(t
 TestIncrementGPS_SOURCES = TestIncrementGPS.c
 TestIncrementGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC TestUTCtoGPS #TestLeapSecs TestGPStoFloat
+TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC TestUTCtoGPS TestLeapSecs TestGPStoFloat \
+	TestIncrementGPS
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
