@@ -60,6 +60,7 @@ LALCheckMemoryLeaks()
 #include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/SeqFactories.h>
+#include <lal/PrintVector.h>
 #include <lal/LALRunningMedian.h>
 
 NRCSID( LALRUNNINGMEDIANTESTC, "$Id$" );
@@ -104,6 +105,23 @@ char*argv0;
 #define compare_double( x, y ) \
 ( ( y == 0 ? ( x == 0 ? 0 : fabs((x-y)/x) ) : fabs((x-y)/y) ) > TOLERANCE )
 #endif
+
+
+/* prototypes */
+
+int compare_double( double x, double y );
+int compare_single( float x, float y );
+static int rngmed_sortindex(const void *elem1, const void *elem2);
+int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose);
+int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALRunningMedianPar param, BOOLEAN verbose);
+
+
+struct rngmed_val_index {
+  REAL8 data;
+  UINT8 index;
+};
+
+
 int compare_double( double x, double y )
 {
   double diff;
@@ -126,6 +144,8 @@ int compare_double( double x, double y )
   }
   return 0;
 }
+
+
 int compare_single( float x, float y )
 {
   float diff;
@@ -148,11 +168,6 @@ int compare_single( float x, float y )
   }
   return 0;
 }
-
-struct rngmed_val_index {
-  REAL8 data;
-  UINT8 index;
-};
 
 static int rngmed_sortindex(const void *elem1, const void *elem2){
   /*Used in running qsort*/
@@ -179,7 +194,7 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
 /* Test the LALDRunningMedian (REAL8Sequence) function by
    comparing the reults to individaully calculated medians */
 
-  REAL8 ratio, median;
+  REAL8 median;
   REAL8Sequence *medians=NULL;
   struct rngmed_val_index *index_block;
   UINT4 i,k;
@@ -206,8 +221,9 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
 
   /* allocate memory for calculating single medians */
   index_block = (struct rngmed_val_index *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index));
-  if(!index_block)
+  if(!index_block) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   /* compare all medians */
   for(i=0;i<length-param.blocksize+1;i++) {
@@ -254,7 +270,7 @@ int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALR
 /* Test the LALSRunningMedian (REAL4Sequence) function by
    comparing the reults to individaully calculated medians */
 
-  REAL4 ratio, median;
+  REAL4 median;
   REAL4Sequence *medians=NULL;
   struct rngmed_val_index *index_block;
   UINT4 i,k;
@@ -281,8 +297,9 @@ int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALR
 
   /* allocate memory for calculating single medians */
   index_block = (struct rngmed_val_index *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index));
-  if(!index_block)
+  if(!index_block) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   /* compare all medians */
   for(i=0;i<length-param.blocksize+1;i++) {
@@ -370,11 +387,13 @@ int main( int argc, char **argv )
 
   /* create test input */
   LALSCreateVector( &stat, &input4, length );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
   LALDCreateVector( &stat, &input8, length );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
   for(i=0;i<length;i++)
     input4->data[i] = (input8->data[i] = (double)rand()/(double)RAND_MAX);
 
@@ -387,27 +406,31 @@ int main( int argc, char **argv )
 
   /* create median vectors */
   LALDCreateVector( &stat, &medians8, length - blocksize + 1 );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
   LALSCreateVector( &stat, &medians4, length - blocksize + 1 );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   /* blocksize = 0 checks */
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO) {
     printf("  PASS: LALSRunningMedian blocksize =0 results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO) {
     printf("  PASS: LALDRunningMedian blocksize =0 results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
 
   /* blocksize = 2 checks */
@@ -416,17 +439,19 @@ int main( int argc, char **argv )
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO) {
     printf("  PASS: LALSRunningMedian blocksize =2 results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EZERO) {
     printf("  PASS: LALDRunningMedian blocksize =2 results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
 
   /* blocksize too large checks */
@@ -435,17 +460,19 @@ int main( int argc, char **argv )
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_ELARGE)
+  if(stat.statusCode == LALRUNNINGMEDIANH_ELARGE) {
     printf("  PASS: LALSRunningMedian blocksize > input length results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_ELARGE)
+  if(stat.statusCode == LALRUNNINGMEDIANH_ELARGE) {
     printf("  PASS: LALDRunningMedian blocksize > input length results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
         } /* if ( ! lalNoDebug ) */
 #endif /* LAL_NDEBUG */
@@ -462,40 +489,46 @@ int main( int argc, char **argv )
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,NULL,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_ENULL)
+  if(stat.statusCode == LALRUNNINGMEDIANH_ENULL) {
     printf("  PASS: LALSRunningMedian NULL input results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
   
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,NULL,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_ENULL)
+  if(stat.statusCode == LALRUNNINGMEDIANH_ENULL) {
     printf("  PASS: LALDRunningMedian NULL input results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   /* median array size checks */
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,NULL,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALSRunningMedian NULL medians results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,NULL,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALDRunningMedian NULL medians results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   /* destroy median test vectors */
   LALDDestroyVector(&stat,&medians8);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
   LALSDestroyVector(&stat,&medians4);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   /* test median vectors with wrong size */
 
@@ -503,67 +536,79 @@ int main( int argc, char **argv )
   /* too small by one */
 
   LALSCreateVector( &stat, &medians4, length - blocksize );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALSRunningMedian with too small median array results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   LALSDestroyVector(&stat,&medians4);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   LALDCreateVector( &stat, &medians8, length - blocksize );
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALDRunningMedian with too small median array results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   LALDDestroyVector(&stat,&medians8);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
 
   /* too large by one */
 
   LALSCreateVector( &stat, &medians4, length - blocksize + 2);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALSRunningMedian(&stat,medians4,input4,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALSRunningMedian with too large median array results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   LALSDestroyVector(&stat,&medians4);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   LALDCreateVector( &stat, &medians8, length - blocksize + 2);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
   memset(&stat, 0, sizeof(LALStatus));
   LALDRunningMedian(&stat,medians8,input8,param);
-  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED)
+  if(stat.statusCode == LALRUNNINGMEDIANH_EIMED) {
     printf("  PASS: LALDRunningMedian with too large median array results in error\n");
-  else
+  } else {
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
+  }
 
   LALDDestroyVector(&stat,&medians8);
-  if( stat.statusCode )
+  if( stat.statusCode ) {
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
+  }
 
         } /* if ( ! lalNoDebug ) */
 #endif /* LAL_NDEBUG */
@@ -574,28 +619,32 @@ int main( int argc, char **argv )
 
   /* test normal operation */
 
-  if(testDRunningMedian(&stat,input8,length,param,verbose))
+  if(testDRunningMedian(&stat,input8,length,param,verbose)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
-  else
+  } else {
     printf("  PASS: LALDRunningMedian(%d,%d)\n",length,param.blocksize);
+  }
 
-  if(testSRunningMedian(&stat,input4,length,param,verbose))
+  if(testSRunningMedian(&stat,input4,length,param,verbose)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
-  else
+  } else {
     printf("  PASS: LALSRunningMedian(%d,%d)\n",length,param.blocksize);
+  }
 
   /* decrement the blocksize for the next two test to check for even/odd errors */
   param.blocksize--;
 
-  if(testDRunningMedian(&stat,input8,length,param,verbose))
+  if(testDRunningMedian(&stat,input8,length,param,verbose)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
-  else
+  } else {
     printf("  PASS: LALDRunningMedian(%d,%d)\n",length,param.blocksize);
+  }
 
-  if(testSRunningMedian(&stat,input4,length,param,verbose))
+  if(testSRunningMedian(&stat,input4,length,param,verbose)) {
     EXIT( LALRUNNINGMEDIANTESTC_EFALSE, argv0, LALRUNNINGMEDIANTESTC_MSGEFALSE );
-  else
+  } else {
     printf("  PASS: LALSRunningMedian(%d,%d)\n",length,param.blocksize);
+  }
 
 
   /* free dummy input memory */
