@@ -123,7 +123,9 @@ sinca_job.set_sub_file( basename + '.sinca' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the name of the run in the calibration file
-mkcalfac_job.add_opt(cp.get('pipeline','run'),' ')
+mkcalfac_job.add_opt('run',cp.get('pipeline','run'))
+mkcalfac_job.add_opt('version',cp.get('mkcalfac','version'))
+mkcalfac_job.add_opt('ifo',cp.get('pipeline','ifo'))
 
 # set up incas for single ifo mode
 sinca_job.add_opt('single-summ-value',' ')
@@ -215,21 +217,22 @@ for seg in data:
       insp.set_ifo(ifo)
       insp.set_cache(df.get_output())
       insp.set_bank(subbank)
-      insp.add_var_opt('user-tag',"%2.2d" % i)
+      insp.set_user_tag('user-tag',"%2.2d" % i)
+      i = i + 1
       insp.add_parent(split)
       dag.add_node(insp)
       sub_insp.append(insp)
 
     # create the inca that stitches the inspiral jobs back together
     sinca = inspiral.IncaNode(sinca_job)
+    sinca.set_ifo_a(ifo)
+    sinca.set_start(chunk.start())
+    sinca.set_end(chunk.end())
     for insp in sub_insp:
-      sinca.set_ifo_a(ifo)
-      sinca.set_start(chunk.start())
-      sinca.set_end(chunk.end())
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
-      dag.add_node(sinca)
-      sinca_nodes.append(sinca)
+    dag.add_node(sinca)
+    sinca_nodes.append(sinca)
 
 # use inca to concatenate all the inspiral files and dump result in /cluster
 inca = inspiral.IncaNode(inca_job)

@@ -45,5 +45,20 @@ class MkCalFacNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.__ifo = None
+
+  def set_ifo(self,ifo):
+    """
+    Set the ifo name.
+    @param ifo: two letter ifo code (e.g. L1, H1 or H2).
+    """
+    self.__ifo = ifo
+    self.add_var_opt('ifo', ifo)
+
+  def get_ifo(self):
+    """
+    Returns the two letter IFO code for this node.
+    """
+    return self.__ifo
 
 

@@ -285,6 +285,12 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('bank-file', bank)
     self.add_input_file(bank)
 
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+
+  def get_user_tag(self):
+    return self.__usertag
+
   def get_output(self):
     """
     Returns the file name of output from the inspiral code. This must be kept
