@@ -1,0 +1,89 @@
+\section{Program \texttt{lalapps\_tmpltbank}}
+\label{program:lalapps-tmpltbank}
+\idx[Program]{lalapps\_tmpltbank}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
+
+\item[Synopsis]
+\begin{verbatim}
+  --help                       display this message
+  --verbose                    print progress information
+  --debug-level LEVEL          set the LAL debug level to LEVEL
+  --user-tag STRING            set the process_params usertag to STRING
+  --comment STRING             set the process table comment to STRING
+
+  --gps-start-time SEC         GPS second of data start time
+  --gps-end-time SEC           GPS second of data end time
+  --pad-data T                 pad the data start and end time by T seconds
+
+  --frame-cache                obtain frame data from LAL frame cache FILE
+  --calibration-cache FILE     obtain calibration from LAL frame cache FILE
+  --channel-name CHAN          read data from interferometer channel CHAN
+
+  --sample-rate F              filter data at F Hz, downsampling if necessary
+  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]
+
+  --disable-high-pass          turn off the IIR highpass filter
+  --enable-high-pass F         high pass data above F Hz using an IIR filter
+  --spectrum-type TYPE         use PSD estimator TYPE [mean|median]
+
+  --segment-length N           set data segment length to N points
+  --number-of-segments N       set number of data segments to N
+
+  --low-frequency-cutoff F     do not filter below F Hz
+  --high-frequency-cutoff F    upper frequency cutoff in Hz
+
+  --minimum-mass MASS          set minimum component mass of bank to MASS
+  --maximum-mass MASS          set maximum component mass of bank to MASS
+  --minimal-match M            generate bank with minimal match M
+
+  --order ORDER                set post-Newtonian order of the waveform to ORDER
+                                 (newtonian|oneHalfPN|onePN|onePointFivePN|
+                                 twoPN|twoPointFive|threePN|threePointFivePN)
+  --approximant APPROX         set approximant of the waveform to APPROX
+                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|
+                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)
+  --space SPACE                grid up template bank with mass parameters SPACE
+                                 (Tau0Tau2|Tau0Tau3)
+
+  --write-raw-data             write raw data to a frame file
+  --write-response             write the computed response function to a frame
+  --write-spectrum             write the uncalibrated psd to a frame
+  --write-strain-spectrum      write the calibrated strain psd to a text file
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
+template banks for LIGO data with the LAL bank package.  The code generates a
+calibrated power spectrum at the specified time for the requested channel and
+uses this to compute the template bank.  See the LAL bank package
+documentation for detailed information on the algorithms used to generate the
+banks.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_tmpltbank \
+--gps-start-time 734357353 --gps-end-time 734358377 \
+--frame-cache cache/L-734357345-734361107.cache \
+--segment-length 1048576 --number-of-segments 7 \
+--pad-data 7 --sample-rate 4096 --resample-filter ldas \
+--enable-high-pass 5.000000e+01 --spectrum-type median
+--low-frequency-cutoff 7.000000e+01 --high-frequency-cutoff 2.048000e+03 \
+--minimum-mass 1.000000e+00  --maximum-mass 3.000000e+00 \
+--minimal-match 9.700000e-01 --calibration-cache  \
+/ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
+--space Tau0Tau3 --approximant TaylorT1 --order twoPN \
+--channel-name L1:LSC-AS_Q --debug-level 33
+\end{verbatim}
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+

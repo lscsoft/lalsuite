@@ -1,0 +1,237 @@
+\section{Program \texttt{lalapps\_sire}}
+\label{program:lalapps-sire}
+\idx[Program]{lalapps\_sire}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_sire$ --- single inspiral trigger reader and inspiral injections
+analysis
+
+\item[Synopsis]
+\verb$lalapps_sire$ \quad
+[\texttt{--help}]
+[\texttt{--verbose}]
+[\texttt{--debug-level} \textsc{level}] \newline
+%
+[\texttt{--user-tag} \textsc{usertag}] 
+[\texttt{--comment} \textsc{comment}] \newline
+%
+(\texttt{--glob} \textsc{globfiles} $|$ \texttt{--input} \textsc{inputfile})
+\texttt{--output} \textsc{outfile}
+[\texttt{--summary-file} \textsc{summfile}] \newline
+%
+(\texttt{--playground-only} $|$ 
+\texttt{--exclude-playground} $|$
+\texttt{--all-data})\newline
+%
+[\texttt{--snr-threshold} \textsc{$\rho_\ast$}]\quad
+[\texttt{--cluster-algorithm} \textsc{choice}
+\texttt{--cluster-time} \textsc{$t_\mathrm{coinc}$}]\newline
+%
+[\texttt{--injection-file} \textsc{injfile} 
+\texttt{--injection-coincidence} \textsc{$t_\mathrm{inj}$}\newline
+\quad[\texttt{--missed-injections} \textsc{missedfile}]
+[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}]\newline
+%
+[\texttt{--tama-output} \textsc{tamafile}] \quad
+[\texttt{--disable-trig-start-time}]
+
+\item[Description] 
+\verb$lalapps_sire$ processes the LIGO lightweight XML files produced by the
+standalone inspiral analysis code \verb$lalapps_inspiral$ or the inspiral
+coincidence analysis code \verb$lalapps_inca$. It can be used to concatenate
+individual \verb$sngl_inspiral$ tables from multiple XML files which contain a
+\verb$search_summary$ table into a single XML file. This may be performed with
+or without clustering and signal-to-noise ratio cuts. It can also write a
+summary file containing the number of triggers and the total time analyzed,
+computed from the \verb$search_summary$ table.
+
+The list of input files may be specified by either of POSIX system glob,
+\textsc{globfiles}, or by giving the path to a text file, \textsc{inputfile},
+that contains relative or absolute paths to the required input files.
+
+If the \texttt{--injection-file} option is specified, \verb$lalapps_sire$ also
+reads in a list of \verb$sim_inspiral$ rows from the file \textsc{injfile}.
+It determines how may of the injections have a trigger coincident to within
+$t_\mathrm{inj}$ milliseconds. The output file, \textsc{outfile}, will contain
+\verb$sim_inspiral$ rows for all coincident (found) events. The summary file
+will contain numbers of missed and found events and the efficiency of
+detection of the injections.  Only injections that are within the input data
+times are processed, so the injection file can span a time larger than the
+input data and efficiencies will be correct. Missed injections can be written
+to the file \textsc{missedfile}, if desired.
+
+Note that the default LAL debug level for \verb$lalapps_sire$ is $33$, rather
+than the usual $1$. This turns of memory allocation and leak checking to
+increase the speed of run time. The \texttt{--debug-level} option can be used
+to increase the level of debug checking used by the LAL functions.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Optional. Print a help message to the standard output
+and then exit with status code $0$.
+
+\item[\texttt{--verbose}] Print progress information to the standard output 
+while executing.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug level
+to \textsc{level}. Note that the default debug level is $33$ which includes
+LAL error checking but excludes memory checking.  To enable memory checking
+set the debug level to 1.
+
+\item[\texttt{--user-tag} \textsc{usertag}] Optional. Add the user tag string 
+\textsc{usertag} to the \verb$process_params$ table in the output XML file.
+
+\item[\texttt{--comment} \textsc{comment}] Optional. Add the string
+\textsc{comment} to the \verb$process$ table in the output XML file.
+
+\item[\texttt{--glob} \textsc{globfiles}] Must be given if the
+\texttt{--input} option is not used. Read the input triggers from the
+LIGO lightweight XML files that match the regular expression
+\textsc{globfiles}. The POSIX system call \verb$glob()$ is used to determine
+which files are read in. Mutually exclusive with the \texttt{--input} option.
+
+\item[\texttt{--input} \textsc{inputfile}] Must be given if the
+\texttt{--glob} option is not used. Read the input triggers from the list of
+LIGO lightweight XML files in \textsc{inputfile} which must be a plain text
+file containing relative or absolute paths to the files.  Mutually exclusive
+with the \texttt{--glob} option.
+
+\item[\texttt{--output} \textsc{outfile}] Required. Write the concatenated
+\verb$sngl_inspiral$ tables to the LIGO lightweight XML file \textsc{outfile}.
+If injection analysis is performed the \verb$sim_inspiral$ rows from the input
+injection file that are coincident with a trigger are also written to this
+file (i.e. the found injections).
+
+\item[\texttt{--playground-only}] Analyze \emph{only} triggers (and
+injections) that \emph{are} in playground times specified by the post-S1
+playground algorithm.
+
+\item[\texttt{--exclude-playground}] Analyze \emph{only} triggers (and
+injections) that \emph{are not} in playground times specified by the post-S1
+playground algorithm.
+
+\item[\texttt{--all-data}] Analyze \emph{all} triggers (and injections) from
+the input files.
+
+\item[\texttt{--snr-threshold} \textsc{$\rho_\ast$}] Optional. Discard all
+input triggers that have a signal-to-noise ratio $\rho < \rho_\ast$.
+
+\item[\texttt{--cluster-algorithm} \textsc{choice}] Optional. Use the
+clustering algorithm \textsc{choice} to cluster the \verb$sngl_inspiral$ rows
+in the output file before writing them to disk. The options for
+\textsc{choice} are \verb$snr_and_chisq$, \verb$snrsq_over_chisq$ or
+\verb$snr$. The clustering is performed by the LAL function
+\verb$LALClusterSnglInspiralTable()$ and documentation for the clustering can
+be found in the \texttt{tools} package of the LAL Software Documentation.
+
+\item[\texttt{--cluster-time} \textsc{$t_\mathrm{coinc}$}] Required if the 
+\texttt{--cluster-algorithm} option is specified. Use the time window
+$t_\mathrm{coinc}$ for the clustering algorithm.
+
+\item[\texttt{--injection-file} \textsc{injfile}] Optional. If this option is
+given, \verb$lalapps_sire$ reads in \verb$sim_inspiral$ rows from the file
+\textsc{injfile} and performs an injection alaysis of the triggers.
+
+\item[\texttt{--injection-coincidence} \textsc{$t_\mathrm{inj}$}] Required if
+the \texttt{--injection-file} option is specified. Set the injection
+coincidence window to $\pm t_\mathrm{inj}$ milliseconds.
+
+\item[\texttt{--missed-injections} \textsc{missedfile}] Optional, can only be
+specified if \texttt{--injection-file} has been specified. If any injections
+are \emph{not} found, write the \verb$sim_inspiral$ rows for these missed
+injections to the LIGO lightweight file \textsc{missedfile}.
+
+\item[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}] Optional,
+can only be specified if \texttt{--injection-file} has been specified.
+Increment the end times of the injections read from \textsc{injfile} by
+$t_\mathrm{hardware}$ seconds. Used for injection analysis of hardware
+injections where the input \verb$sim_inspiral$ rows contain the time offset of
+the injection from  $t_\mathrm{hardware}$.
+
+\item[\texttt{--tama-output} \textsc{tamafile}] Optional, if specified produces
+an output text file \textsc{tamafile} for use in collaboration with TAMA, in
+addition to the usual LIGO lightweight XML file.  The following quantities are
+recorded for each trigger in the text file:
+
+\begin{itemize}
+\item trigger time (as a double precision real)
+\item total mass, $M_{\mathrm{TOT}}$
+\item the mass ratio, $\eta$
+\item the signal to noise ratio, $\rho$
+\item the value of $\chi^2$
+\item the effective distance to the trigger, $d_{eff}$.
+\end{itemize}
+
+
+\item[\texttt{--disable-trig-start-time}] Optional, should only be used by
+maintainers. Disable checking of the \texttt{--trig-start-time} option in the
+input files. \emph{Using this option may caused total analyzed times to be
+reported incorrectly.} See note in algorithm section below.
+\end{entry}
+
+\item[Example 1] Read in all playground triggers files from the current
+directory that match the expression 
+\begin{verbatim}
+L1-INSPIRAL_INJ-7*
+\end{verbatim}
+Discard all triggers below signal-to-noise ratio $10$ and report the number of
+injections from file 
+\begin{verbatim}
+HL-INJECTIONS_45-729273613-5094000.xml
+\end{verbatim}
+that are coincident to within $20$ milliseconds with the remaining triggers.
+Write an XML file containing the coincident triggers and injections, an XML
+file containing the injections not coincident with a trigger and a text
+summary file of the analysis, which will contain the total time analyzed and
+the efficiency. Report the progress to the standard output and perform LAL
+memory checking:
+\begin{verbatim}
+lalapps_sire \
+--glob "L1-INSPIRAL_INJ-7*" --output out_10.xml --summary-file summ_10.txt \
+--playground-only --verbose --debug-level 1 --snr-threshold 10.0 \
+--injection-file HL-INJECTIONS_45-729273613-5094000.xml \
+--injection-coincidence 20 --missed-injections missed_10.xml
+\end{verbatim}
+
+\item[Example 2] Read in all the XML files from the list in the plain text
+file \verb$H1-INSPIRAL.txt$ and discard all the triggers that \emph{are} in
+the playground. Write the remaining triggers to the XML file
+\verb$H1-INSPIRAL.xml$ and write a text summary file containing the time
+analyzed to \verb$H1-INSPIRAL_summary.txt$:
+\begin{verbatim}
+lalapps_sire \
+--input H1-INSPIRAL.txt --exclude-playground \
+--output H1-INSPIRAL.xml --summary-file H1-INSPIRAL_summary.txt
+\end{verbatim}
+
+\item[Notes]
+\begin{enumerate}
+\item The post-S1 playground algorithm is defined to be
+\begin{equation}
+t \ \textrm{is playground} \iff t - 729273613 < 600 (\textrm{mod}\ 6370).
+\end{equation}
+
+\item If a given trigger \verb$end_time,end_time_ns$, $t_\mathrm{trig}$ is
+coincident to within $\pm t_\mathrm{inj}$ seconds of an injection \emph{site}
+end time, given by \verb$h_end_time,h_end_time_ns$ or
+\verb$l_end_time,l_end_time_ns$ then the injection is considered to be found
+and the trigger coincident with an injection.
+
+\item Early versions of the inspiral code contained a bug that causes the
+\verb$out_start_time$ column of the \verb$search_summary$ table to be set
+incorrectly if a non-zero \texttt{--trig-start-time} option is specified.
+\verb$lalapps_sire$ corrects for this by checking for the value of
+\texttt{--trig-start-time} in the \verb$process_params$ table and using it to
+override the value of \verb$out_start_time$ in the \verb$search_summary$
+table. To disable this behaviour, use the \texttt{--disable-trig-start-time}
+option. Note that specifying this option may cause some analyzed data times to
+be double counted and so the amount of analyzed data will be incorrectly
+reported.
+\end{enumerate}
+
+\item[Author] 
+Patrick Brady, Duncan Brown and Steve Fairhurst
+\end{entry}
+
+

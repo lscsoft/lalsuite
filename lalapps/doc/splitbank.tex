@@ -1,0 +1,95 @@
+\section{Program \texttt{lalapps\_splitbank}}
+\label{program:lalapps-splitbank}
+\idx[Program]{lalapps\_splitbank}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_splitbank$ --- splits a template bank file into several smaller
+files
+
+\item[Synopsis]
+\verb$lalapps_splitbank$ 
+[\verb$--help$]
+[\verb$--verbose$]
+[\verb$--version$]
+[\verb$--debug-level$ \textsc{level}] \newline
+[\verb$--user-tag$ \textsc{string}]
+[\verb$--comment$ \textsc{string}] \newline
+\verb$--bank-file$ \textsc{file}
+\verb$--number-of-banks$ \textsc{n}
+\verb$--minimal-match$ \textsc{m}
+
+\item[Description] 
+\verb$lalapps_splitbank$ splits a LIGO\_LW XML file containing inspiral
+templates in a \texttt{sngl\_inspiral} table into several smaller bank
+files. This allows a template bank to be split across several inspiral 
+jobs and then recombined with \texttt{lalapps\_inca} or
+\texttt{lalapps\_sire}.
+
+The name of the output template bank files is derived from the name of 
+the input bank file and the number of files that the bank should be split
+into. For example, if the input bank file:\\
+\begin{center}
+\texttt{H1-TRIGBANK\_L1-729330491-2048.xml}\\
+\end{center}
+is split into 3 output files, then these will be named:\\
+\begin{center}
+\texttt{H1-TRIGBANK\_L1\_00-729330491-2048.xml}\\
+\texttt{H1-TRIGBANK\_L1\_01-729330491-2048.xml}\\
+\texttt{H1-TRIGBANK\_L1\_02-729330491-2048.xml}\\
+\end{center}
+The naming convention is to insert the bank file number after the usertag part
+of the filename and before the GPS start time part of the file name.
+
+In the case that the input file contains no templates, empty output bank files
+are generated. This is done since DAGman does not implement decision rules
+yet, so the nodes in the DAG must be identical regardless of the data flowing
+through them.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Optional. Print a usage summary and exit.
+
+\item[\texttt{--verbose}] Optional. Print debugging information to the
+standard output while executing.
+
+\item[\texttt{--version}] Optional.  Print the CVS id and exit.
+
+\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag in
+the \texttt{process\_params} table to \textsc{string}. Note that this does
+not set the user tag in the output filename, as it does in other inspiral
+pipeline tools. The output filename is derived strictly from the number of
+output banks and the input bank file name.
+
+\item[\texttt{--comment} \textsc{string}] Optional. Set the comment column in
+the output \texttt{process} table to \textsc{string}.
+
+\item[\texttt{--bank-file} \textsc{file}] Required. Read the templates from
+the \texttt{sngl\_inspiral} table in \textsc{file}.
+
+\item[\texttt{--number-of-banks} \textsc{n}] Required. Split the input
+template banks into \textsc{n} output bank files.
+
+\item[\texttt{--minimal-match} \textsc{m}] Required. Set the minimal match of
+the output template bank file to \textsc{m}.
+\end{entry}
+
+\item[Example]
+\begin{verbatim}
+lalapps_splitbank --bank-file L1-TMPLTBANK-732488741-2048.xml \
+--number-of-banks 3 --minimal-match 0.97
+\end{verbatim}
+
+\item[Algorithm]
+\texttt{lalapps\_splitbank} counts the number of templates in the input file.
+It increments this by one and divides by the number of template banks to
+generate using standard integer division. This gives the upper limit on the
+number of templates in a single output file.
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+

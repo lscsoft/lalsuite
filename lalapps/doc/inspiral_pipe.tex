@@ -1,0 +1,75 @@
+\section{Program \texttt{lalapps\_inspiral\_pipe}}
+\label{program:inspiral-pipeline}
+\idx[Program]{inspiral\_pipeline.py}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspiral_pipe$ --- python script to generate Condor DAGs to
+run the inspiral pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
+  -d, --datafind           run LALdataFind to create frame cache files
+  -t, --template-bank      run lalapps_tmpltbank to generate a template bank
+  -i, --inspiral           run lalapps_inspiral on the first IFO
+  -T, --triggered-bank     run lalapps_trigtotmplt to generate a triggered bank
+  -I, --triggered-inspiral run lalapps_inspiral on the second IFO
+  -C, --coincidence        run lalapps_inca on the triggers from both IFOs
+
+  -j, --injections         add simulated inspirals from injection file
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+\end{verbatim}
+
+\item[Description] \verb$lalapps_inspiral_pipe$ generates a Condor DAG to run
+the inspiral analysis pipeline. The configuration file should specify the
+parameters needed to run the jobs and must be specified with the
+\verb$--config-file$ option.  A file containing science segments to be
+analyzed should be specified in the \verb$[input]$ section of the
+configuration file with a line such as
+\begin{verbatim}
+segments = S2H1L1v03_selectedsegs.txt
+\end{verbatim}
+This should contain four whitespace separated columns:
+\begin{verbatim}
+  segment_id    gps_start_time  gps_end_time    duration
+\end{verbatim}
+that define the science segments to be used. Lines starting with an octothorpe
+are ignored.
+
+The analysis chunk size is determined from the number of data segments and
+their length and overlap specified in config file. A chunk length is typically
+this is 1024 seconds for S2.  The chunks start and stop times are computed
+from the science segment times and used to build the DAG.
+
+The once the DAG file has been created it should be submitted to the Condor
+pool with the \verb$condor_submit_dag$ command.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Display a brief usage summary.
+\end{entry}
+
+\item[Example]
+Generate a DAG to run an inspiral search on the first IFO. The generated
+DAG is then submitted with \texttt{condor\_submit\_dag}
+\begin{verbatim}
+lalapps_inspiral_pipe --log-path /people/duncan/dag_logs \
+--datafind --template-bank --inspiral --playground-only \
+--config-file l1_s2.ini
+
+condor_submit_dag l1_s2.dag
+\end{verbatim}
+
+\item[Author] 
+Duncan Brown
+\end{entry}
+

@@ -3,110 +3,167 @@
 \idx[Program]{lalapps\_inspinj}
 
 \begin{entry}
-
 \item[Name]
-\verb$lalapps_inspinj$ --- produces inspiral injection ILWD files
+\verb$lalapps_inspinj$ --- produces inspiral injection data files.
 
 \item[Synopsis]
-\verb$lalapps_inspinj$ [\verb$-h$] [\verb$-V$] [\verb$-v$]
-[\verb$-d$ \textit{dbglvl}]
-[\verb$-m$ \textit{mmin}\texttt{-}\textit{mmax}]
-[\verb$-r$ \textit{range}]
-[\verb$-s$ \textit{seed}]
-[\verb$-t$ \textit{tstart}\texttt{-}\textit{tend}]
-[\verb$-u$ \textit{tstep}]
+\verb$lalapps_inspinj$ \quad
+%
+[\texttt{--help}]\quad
+\texttt{--source-file} \textsc{sfile} \quad
+\texttt{--mass-file} \textsc{mfile}\newline
+%
+[\texttt{--gps-start-time} \textsc{tstart}]\quad 
+[\texttt{--gps-end-time} \textsc{tend}]\newline
+%
+[\texttt{--time-step} \textsc{tstep}]
+[\texttt{--time-interval} \textsc{tinterval}]\newline
+%
+[\texttt{--seed} \textsc{seed}]\quad
+[\texttt{--waveform} \textsc{wave}]\quad
+[\texttt{--usertag} \textsc{tag}]\newline
+%
+[\texttt{--tama-output}]\quad
+[\texttt{--ilwd}]
 
-\item[Description]
-\verb$lalapps_inspinj$ produces  two  files,  injepochs.ilwd  and
-injparams.ilwd,  that contain, respectively, the GPS times suitable for
-inspiral injections, and the intrinsic inspiral signal parameters to be used
-for those injections.
+\item[Description] 
+\verb$lalapps_inspinj$
+generates a number of inspiral  parameters suitable  for using in a Monte
+Carlo injection to test the efficiency of a inspiral search.  The  various
+parameters (detailed  below)  are randomly chosen and are appropriate for a
+particular population of binary neutron stars  whose spatial  distribution
+includes the Milky Way and a number of extragalactic objects that are  input
+in  a  datafile.  The  possible  mass pairs for the binary neutron star com-
+panions are also specified in a (different) datafile.
 
-The  data  files  are  in  ILWD  format.   The  file injepochs.ilwd contains a
-sequence of integer pairs representing  the  injection GPS time in seconds and
-residual nano-seconds.  The file injparams.ilwd contains  the  intrinsic binary
-parameters for each injection, which is a sequence of eight real numbers
-representing  (in  order)  (1)  the total mass of the binary system (in solar
-masses), (2) the dimensionless reduced mass --- reduced mass per unit  total
-mass ---  in the range from 0 (extreme mass ratio) to 0.25 (equal masses), (3)
-the distance to the system in  meters, (4)  the  inclination  of  the  binary
-system orbit to the plane of the sky in radians, (5) the colaescence phase  in
-radians,  (6) the longitude to the direction of the source in radians, (7) the
-latitude  to  the  direction  of  the source  in  radians, and (8) the
-polarization angle of the source in radians.
-
+The output of this program  is  a  list  of  the  injected events,  starting
+at  the specified start time and ending at the specified end time.  One 
+injection with random inspiral parameters will be made every specified time
+step, and will be randomly placed within the specified time interval.  
+The output is written to a file name in the standard inspiral pipeline format:
+\begin{center}
+\begin{verbatim}
+HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+\end{verbatim}
+\end{center}
+where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
+\verb$SEED$ is the  value  of  the random number seed chosen and 
+\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
+the file covers. The file is in the standard LIGO lightweight XML format
+containing a \texttt{sim\_inspiral} table that describes the injections.
+In addition, an ASCII log file called \verb$injlog.txt$ is also written.
+If a \texttt{--user-tag} is not specified on the command line, the
+\texttt{\_USERTAG} part of the filename will be omitted.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{-h}]
-Print a help message.
-\item[\texttt{-V}]
-Print the version information.
-\item[\texttt{-v}]
-Verbose output.
-\item[\texttt{-d} \textit{dbglvl}]
-Set LAL debug level to \textit{dbglvl}.
-\item[\texttt{-m} \textit{mmin}\texttt{-}\textit{mmax}]
-Set minimum and maximum of the range of masses  for the  binary companions (in
-solar masses).  (Default is 1.3--1.5.)
-\item[\texttt{-r} \textit{range}]
-Set the maximum distance range for the binary system (in kpc).  (Default is
-1.0.)
-\item[\texttt{-s} \textit{seed}]
-Set  the random number generator seed.  (Default of 0 gets the seed from the
-system clock.)
-\item[\texttt{-t} \textit{tstart}\texttt{-}\textit{tend}]
-Set the time interval for injection times  (in  GPS seconds).  (Default is
-600000000--600010240.)
-\item[\texttt{-u} \textit{tstep}]
-Set  the mean time step size in seconds for uniform time steps if positive or
-Poisson  time  steps  if negative.   (Default is $100/\pi = 31.8309886183791$.)
+\item[\texttt{--help}] Print a help message.
+
+\item[\texttt{--source-file} \textsc{sfile}]
+Optional. Data file containing spatial distribution of  extragalactic  objects.
+Default  is  the file \verb+inspsrcs.dat+ provided by LALApps.
+
+\item[\texttt{--mass-file} \textsc{mfile}]
+Optional. Data file containing mass pairs  for  the binary  neutron  star
+companions.   Default is the file \verb+BNSMasses.dat+ provided by LALApps.
+
+\item[\texttt{--gps-start-time} \textsc{tstart}]
+Optional.  Start time of the injection data to be created. Defaults to the
+start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
+
+\item[\texttt{--gps-end-time} \textsc{tend}]
+Optional. End time of the injection data to be created. Defaults to the end of
+S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+
+\item[\texttt{--time-step} \textsc{tstep}]
+Optional. Sets the time step interval between injections. The injections will
+occur with an average spacing of \textsc{tstep} seconds. Defaults to 
+$2630/\pi$.
+
+\item[\texttt{--time-interval} \textsc{tinterval}]
+Optional. Sets the time interval during which an injection can occur. 
+Injections are uniformly distributed over the interval.  Setting \textsc{tstep}
+to $6370$ and \textsc{tinterval} to 600 guarantees there will be one injection
+into each playground segment and they will be randomly distributed within the
+playground times.
+
+\item[\texttt{--seed} \textsc{seed}]
+Optional. Seed the random number generator with the integer \textsc{seed}.
+Defaults to $1$.
+
+\item[\texttt{--waveform} \textsc{wave}]
+Optional. The string \textsc{wave} will be written into the \texttt{waveform}
+column of the \texttt{sim\_inspiral} table output. This is used by the
+inspiral code to determine which type of waveforms it should inject into the
+data. Defaults is \texttt{GeneratePPNtwoPN}.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
+
+\item[\texttt{--tama-output}]
+Optional.  If this option is given, \verb+lalapps_inspinj+ also produces a 
+text output file:
+\begin{center}
+\begin{verbatim}
+HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
+\end{verbatim}
+\end{center}
+which contains the following fields:
+
+\begin{itemize}
+\item geocentric end time
+\item Hanford end time
+\item Livingston end time
+\item Tama end time
+\item total mass, $M_{\mathrm{TOT}}$
+\item mass ratio, $\eta$
+\item distance to source (in Mpc)
+\item longitude
+\item latitude
+\item inclination
+\item coalescence phase
+\item polarization
+\end{itemize}
+
+In the above, all times are recorded as double precision real numbers and all
+angles are in radians.  
+
+\item[\texttt{--ilwd}] Optional. If this option is given,
+\verb+lalapps_inspinj+ also produces two ILWD-format files, injepochs.ilwd and
+injparams.ilwd, that contain, respectively, the  GPS  times  suitable for
+inspiral injections, and the intrinsic inspiral signal parameters to be used
+for  those injections.
+
+The  file  injepochs.ilwd  contains  a sequence of integer pairs representing
+the injection GPS time in  seconds  and residual  nano-seconds.   The file
+injparams.ilwd contains the intrinsic binary parameters for each injection,
+which is  a  sequence  of  eight  real  numbers representing (in order) (1) the
+total mass of the binary system  (in  solar masses),  (2)  the  dimensionless
+reduced mass --- reduced mass per unit total mass --- in the range from  0
+(extreme mass  ratio)  to  0.25 (equal masses), (3) the distance to the system
+in meters, (4) the inclination  of  the  binary system  orbit  to the plane of
+the sky in radians, (5) the coalescence phase in radians, (6)  the  longitude
+to  the direction  of  the  source in radians, (7) the latitude to the
+direction of the source in radians, (8) and the polar- ization angle of the
+source in radians.
 \end{entry}
 
-\item[Debug levels]
-The LAL debug level can be specified as an integer or as a string of flags:
-\begin{entry}
-\item[\texttt{NDEBUG}]
-No debugging information is printed and memory debugging code is disabled.
-\item[\texttt{ERROR}]
-Error messages are printed.
-\item[\texttt{WARNING}]
-Warning messages are printed.
-\item[\texttt{INFO}]
-Information messages are printed.
-\item[\texttt{TRACE}]
-Function call tracing messages are printed.
-\item[\texttt{MEMINFO}]
-Memory  allocation  information messages are printed.
-\item[\texttt{MEMDBG}]
-Debugging of memory allocation routines is enabled but no messages are printed.
-\end{entry}
-The following composite levels are available:
-\begin{entry}
-\item[\texttt{MSGLVL1}]
-Equivalent to \verb$ERROR$
-\item[\texttt{MSGLVL2}]
-Equivalent to \verb$ERROR | WARNING$
-\item[\texttt{MSGLVL3}]
-Equivalent to \verb$ERROR | WARNING | INFO$
-\item[\texttt{ALLDBG}]
-All debugging messages are printed.
-\end{entry}
-
-For example, the command
-\begin{indented}
-\verb$lalapps_inspinj -d "ERROR | INFO"$
-\end{indented}
-will set the debug level so that error and information messages are printed.
+\item[Example]
+\begin{verbatim}
+lalapps_inspinj --seed 45\
+--source-file inspsrcs.dat --mass-file BNSMasses.dat
+\end{verbatim}
 
 \item[Environment]\leavevmode
-
 \begin{entry}
-\item[\texttt{LAL\_DEBUG\_LEVEL}]
-Default LAL debug level to use.
+\item[LALAPPS\_DATA\_PATH] Directory to look for the default mass
+file \verb+BNSMasses.dat+ and the default source file \verb+inspsrcs.dat+.
 \end{entry}
 
-\item[Author]
-Jolien Creighton
 
+\item[Author] 
+Jolien Creighton, Patrick Brady, Duncan Brown
 \end{entry}
+
+

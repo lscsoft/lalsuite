@@ -1,0 +1,174 @@
+\section{Program \texttt{lalapps\_inspmultiawg}}
+\label{program:lalapps-inspmultiawg}
+\idx[Program]{lalapps\_inspmultiawg}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspmultiawg$ --- injects specified inspiral chirps into zero
+data.  Intended for producing the hardware injection data.
+
+\item[Synopsis]
+\begin{verbatim}
+--help               display this message
+--source SFILE       source file containing details of injection
+--actuation ACTFILE  file containing the actuation function
+--darm2inj DCFACTOR  calibration between darm_ctrl and injection point
+--summary SUMFILE    write details of injections to file
+--ifo IFO            name of interferomter (optional)
+--flow FSTART        start frequency of injection (default 40 Hz)
+--fhigh FSTOP        end frequency of injection (default: end at ISCO)
+--smooth QFAC        ringdown the end of the injection with Q factor Qfac
+--length LENGTH      length of the data (default 64 seconds)
+--samplerate FREQ    rate at which data is sampled (default 16384Hz)
+--debug-level DEBUG  the lal debug level
+--user-tag TAG       user-tag added to output file names
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_inspmultiawg$ injects inspiral chirps into zero data.  The 
+details of several chirps can be specified using the command \verb$--source$,  
+otherwise, a single inspiral of two 1.4 solar mass neutron stars will be 
+injected.  Each chirp is injected into a new file containing zero data of
+$\texttt{LENGTH}$ seconds, sampled at $\texttt{FREQ}$ Hz, and each injection begins at the beginning of the data.  The actuation function can be provided in
+$\texttt{ACTFILE}$.  Additionally, there is a parameter $\texttt{DCFACTOR}$ 
+which is used to convert between the actuation function and the "response 
+function" between ETM\_EXC and strain.  The chirp is output to a file
+named
+\begin{verbatim}
+TAG_inspiral_NUMBER_IFO.out
+\end{verbatim}
+where $\texttt{TAG}$ is the user-tag, $\texttt{IFO}$ is the name of the 
+interferometer, and $\texttt{NUMBER}$ is the injection number.  A summary of
+the injections performed can be saved in $\texttt{SUMFILE}$.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--sourcefile} \textsc{sfile}] Optional.  Reads source information 
+from the file \textsc{sfile}.  If absent, it injects a single 
+1.4$M_\odot$--1.4$M_\odot$ inspiral, optimally oriented, at a distance
+of $1.0 \textrm{Mpc}$.
+
+\item[\texttt{--actuation} \textsc{actfile}] Optional. Reads a detector
+ actuation function from the file \textsc{actfile}.  If absent, it generates 
+raw dimensionless strain.  The actuation function should contain 3 columns; frequency, followed by amplitude and phase. 
+
+
+\item[\texttt{--darm2inj} \textsc{dcfactor}] Optional.  Multiplicative
+factor used in calculating the response function from the actuation
+function.  More specifically, the actuation function is given by 
+%
+\begin{equation}
+   x_{C} = A(f) \times \mathrm{DARM}\_\mathrm{CRTL} \, .
+\end{equation}
+%
+while we are taking the response function to be:
+%
+\begin{equation}
+   h(f) = R(f) \times \mathrm{ETM}\_\mathrm{EXC} \, .
+\end{equation}
+%
+Then, $\textsc{dcfactor}$ is given by
+%
+\begin{equation}
+   A(f) = \mathrm{DCFACTOR} \times R(f) \, .
+\end{equation}
+
+\item[\texttt{--smooth} \textsc{qfac}]  Optional.  This will smooth out
+the end of the injected inspiral.  After the inspiral, the frequency of
+the waveform will be held constant while the amplitude is exponentially
+decreased as $a = a_{\mathrm{final}} \exp(- \pi f_{\mathrm{final}} t /
+\textsc{qfac})$.  Here, $t$ is the amount of time after the end of the
+inspiral.
+
+\item[\texttt{--summary} \textsc{sumfile}] Optional. The \textsc{sumfile} format
+is LIGO lightweight XML with \texttt{process}, \texttt{process\_params} and
+\texttt{sim\_inspiral} tables.  The \texttt{sim\_inspiral} table contains
+details of all the injections performed.  The details of the injection are
+obtained from the source file.
+
+\item[\texttt{--length} \textsc{sec}] Optional.  Specify the length of data into
+which the signal will be injected.  The default is 64 seconds.
+
+\item[\texttt{--samplerate} \textsc{freq}] Optional.  Specify the rate at which
+the data is sampled.  The default is 16384 Hz.
+
+\item[\texttt{--ifo} \textsc{ifo}] Optional.  Give the name of the
+interferometer for which the injections are intended.  This is only used in
+naming the output files.
+
+\item[\texttt{--user-tag} \textsc{tag}] Optional.  A user-tag which is
+used in naming the output files.
+
+\item[\texttt{--flow} \textsc{fstart}] Optional.  Give the start frequency
+\textsc{fstart} for the inspiral.  The default is 40 Hz
+
+\item[\texttt{--fhigh} \textsc{fstop}] Optional.  Give the end frequency
+\textsc{fstop} for the inspiral.  The default behaviour is that the inspiral
+will continue to ISCO.  If set to a negative number, the generator will use its
+absolute value as the terminating frequency, but will ignore post-Newtonian
+breakdown. 
+
+\item[\texttt{--debug-level} \textsc{debug}]  Optional.  Set the LAL debug
+level.  The default is 33.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\paragraph{Format for \texttt{sourcefile}:} The source file consists
+of any number of lines of data, each specifying a chirp waveform.
+Each line must begin with a character code (\verb@CHAR@ equal to one
+of \verb@'i'@, \verb@'f'@, or \verb@'c'@), followed by 6
+whitespace-delimited numerical fields: the epoch of the chirp
+(\verb@INT8@ seconds), the two binary masses (\verb@REAL4@
+$M_\odot$), the distance to the source (\verb@REAL4@ Mpc), and the
+source's inclination and phase at coalescence (\verb@REAL4@ degrees).
+The character codes have the following meanings:
+\begin{itemize}
+\item[\texttt{'i'}] The epoch represents the GPS time of the start of
+the chirp waveform.
+\item[\texttt{'f'}] The epoch represents the GPS time of the end of
+the chirp waveform.
+\item[\texttt{'c'}] The epoch represents the GPS time when the
+binaries would coalesce in the point-mass approximation.
+\end{itemize}
+Since the injection is started at time $t=0$, it is recommended that the
+\texttt{'i'} option is used.
+
+Thus a typical input line for two $1.4M_\odot$ objects at 1.1 Mpc
+inclined $30^\circ$ with an initial phase of $45^\circ$, beginning at
+70 seconds (after the start of the injections), will have the following line in the input
+file:
+\begin{verbatim}
+i 70 1.4 1.4 1.1 30.0 45.0
+\end{verbatim}
+The time parameter (in this case 70 sec) does not affect the output data in any
+way.  It is simply stored in the \texttt{sim\_inspiral} table of the
+\textsc{sumfile}, in order to make analysis of the injections easier.
+
+\paragraph{Format for \texttt{actfile}:} The actuation function $A(f)$
+gives the transformation from DARM\_CTRL to $X_{C}$ via $X_{C} = A(f) 
+\times \mathrm{DARM}\_\mathrm{CRTL}$.   It is combined with
+\textsc{dcfactor} as desribed above to give the response function from
+the exitation channel to strain as
+$\tilde{h}(f)=R(f) \times \mathrm{ETM}_\mathrm{EXC}(f)$.  This is inverted internally 
+to give the \emph{transfer function} $T(f)=1/R(f)$. 
+
+The format for \verb@actfile@ is three columns of \verb@REAL4@ data giving the 
+frequency followed by the amplitude and phase of the actuation function
+at that frequency.  This is the format which is produced by the
+calibration team.
+
+\paragraph{Format for the data output:} The data output in the files
+\verb$TAG_inspiral_NUMBER_IFO.txt$ is a single column of \verb$REAL4$ ADC data.
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspmultiawg --source s3.sources \
+--actuation E10-H1-ACTUATION.txt --darm2inj 8000\ 
+--summary summ.xml --ifo H1 --smooth 5
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
+
