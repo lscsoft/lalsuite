@@ -693,6 +693,14 @@ append responseFile "\t\t\}"
     set cet [ expr $etime ]
     set ctimes $cst-$cet
 
+#########################################################################
+## Calibration Stuff
+#########################################################################
+
+if { $start_time < 734400013 } {
+
+    ## S2
+
     #set FTypeCALFAC "CAL_FAC"
     #set FTypeCALFAC $FType
 #    set FTypeCALFAC SenseMonitor_$IFO2
@@ -756,6 +764,82 @@ append responseFile "\t\t\}"
                         h1oloopf = float(h1oloop);
                         h1oloopf = complex(h1oloopf);
 "
+}
+
+
+
+
+if { $start_time > 734400013 } {
+
+    ## S3
+
+    set FTypeCALFAC CAL_FAC_V01
+    append FTypeCALFAC "_$IFO2"
+
+    # Magic times for calibration
+    set l1caltimes "753424982-753425045"
+
+    set h1caltimes "757806384-757806447"
+
+    set h2caltimes "758175883-758175946"
+
+    ## get caltimes for the right IFO
+    set caltimes $ifo2
+    append caltimes "caltimes" 
+    set caltimes [ set $caltimes ]
+
+    ## set ref frame type
+    if { $IFO2 == "L1" } {
+	set CALREFTYPE "CAL_REF_V01P1_L1"
+    } else {
+	set CALREFTYPE "CAL_REF_V01_$IFO2"
+    }
+
+    ## define frame query
+    set frqueryREF " { $CALREFTYPE $IFO {} $caltimes Proc($IFO2:CAL-CAV_GAIN!0!7000.0001!,$IFO2:CAL-RESPONSE!0!7000.0001!) } "
+    } 
+
+    ## set calibration channel name
+    set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
+    set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
+    set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
+    set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
+
+    ## get alpha's/beta's
+    set frqueryFAC " { $FTypeCALFAC $IFO {} $ctimes Proc($IFO2:CAL-OLOOP_FAC,$IFO2:CAL-CAV_FAC) } "
+
+    ## datacond aliases for calibration
+    set calaliases "                   h1oloop  = $h1oloop;
+                   h1cavfac = $h1cavfac;
+                   h1gain   = $h1gain;
+                   h1resp   = $h1resp;"
+
+
+    ## datacond algorithms for calibration
+    set calalgo "
+                        cavfac = float(h1cavfac);
+                        cavfaccplx = complex(cavfac);
+
+                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor);
+
+                        oloop = float(h1oloop);
+                        oloopcplx = complex(oloop);
+
+                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor);
+                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain);
+                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response);
+
+                        h1cavfacf = float(h1cavfac);
+                        h1cavfacf = complex(h1cavfacf);
+
+                        h1oloopf = float(h1oloop);
+                        h1oloopf = complex(h1oloopf);
+"
+}
+
+
+
+
 
     if { [ info exists NoCalibration ] } {
 	set frqueryREF ""
