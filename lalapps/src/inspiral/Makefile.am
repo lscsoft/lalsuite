@@ -6,19 +6,20 @@ COHERESRC = coherent_inspiral.c
 INCASRC = inca.c
 SIRESRC = sire.c
 INSPINJSRC = inspinj.c
+MINJSRC = minj.c
 SPLITBANKSRC = splitbank.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire \
                lalapps_inspinj lalapps_splitbank \
-               lalapps_coherent_inspiral
+               lalapps_minj
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
-lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
+lalapps_minj_SOURCES = $(MINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 else
 bin_PROGRAMS = 
@@ -42,7 +43,7 @@ lalapps_inspiral_pipe_tama: inspiral_pipe_tama.in
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(SIRESRC) \
+             $(SIRESRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \

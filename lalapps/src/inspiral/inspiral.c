@@ -1472,20 +1472,21 @@ int main( int argc, char *argv[] )
       candleTmpltNorm *= distNorm * distNorm;
 
       candle.sigmasq = 4.0 * ( (REAL4) chan.deltaT / (REAL4) numPoints );
-      candle.sigmasq *= candleTmpltNorm * fcSegVec->data->segNorm;
+      candle.sigmasq *= candleTmpltNorm * 
+        fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1];
 
       candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
 
       if ( vrbflg ) 
       {
         fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
-            "candle.rhosq = %e\nchan.deltaT = %e\n"
-            "numPoints = %d\nfcSegVec->data->segNorm = %e\n"
-            "candleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n"
+            "candle.rhosq = %e\nchan.deltaT = %e\nnumPoints = %d\n"
+            "fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1]"
+            " = %e\ncandleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n"
             "candle.sigmasq = %e\n",
             m, mu, candle.rhosq, chan.deltaT, numPoints, 
-            fcSegVec->data->segNorm, candleTmpltNorm, candle.effDistance,
-            candle.sigmasq );
+            fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1], 
+            candleTmpltNorm, candle.effDistance, candle.sigmasq );
         fflush( stdout );
       }
     }
