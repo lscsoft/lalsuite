@@ -16,6 +16,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/Random.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -108,6 +109,7 @@ double srate = -1;
 int bmin = -1;
 int bmax = -1;
 int verbose;
+int strain_data;
 
 /* flags for writing output */
 int write_raw_data;
@@ -118,6 +120,22 @@ int write_data_segments;
 int write_filter_output;
 int write_format = frame_format;
 FrameH *write_frame;
+
+/* flags for internal tests */
+int test_zero_data;
+int test_gaussian_data;
+int test_white_spectrum;
+int test_unit_response;
+int test_inject;
+
+/* internal test injection parameters */
+int test_inject_sec;
+int test_inject_nan;
+float test_inject_freq;
+float test_inject_qual;
+float test_inject_ampl;
+float test_inject_phase;
+
 
 const char *fpars;
 int         fargc = 1;
@@ -163,8 +181,30 @@ int main( int argc, char *argv[] )
   vrbmsg( "call LALRingSearchInit" );
   LAL_CALL( LALRingSearchInit( &status, &params, fargv, fargc ), &status );
 
-  /* set IFO name */
+  /* set IFO name and other filter (test) parameters */
   strncpy( params->ifoName, frchan, 2 );
+  if ( test_zero_data )
+    params->testZeroData = 1;
+  if ( test_gaussian_data && test_white_spectrum ) /* use unity spec method */
+  {
+    if ( ! ( srate > 0 ) )
+    {
+      fprintf( stderr, "sample rate must be set (use --sample-rate)\n" );
+      exit( 1 );
+    }
+    params->avgSpecMeth = useUnity;
+    params->avgSpecNorm = 2.0 / srate;
+  }
+  if ( test_inject ) /* injection test parameters */
+  {
+    params->testInject = 1;
+    params->testInjectTime.gpsSeconds     = test_inject_sec;
+    params->testInjectTime.gpsNanoSeconds = test_inject_nan;
+    params->testInjectFreq                = test_inject_freq;
+    params->testInjectQual                = test_inject_qual;
+    params->testInjectAmpl                = test_inject_ampl;
+    params->testInjectPhase               = test_inject_phase;
+  }
 
   /* get data and response function; write to files if requested */
   data.channel  = get_data( params->segmentSize, params->ifoName );
@@ -175,6 +215,23 @@ int main( int argc, char *argv[] )
   /* condition data */
   vrbmsg( "call LALRingSearchConditionData" );
   LAL_CALL( LALRingSearchConditionData( &status, params, &data ), &status );
+
+  /* write data to file if required */
+  if ( write_data )
+  {
+    if ( write_format == frame_format )
+    {
+      LALSnprintf( data.channel->name, sizeof( data.channel->name ), "%s_PROC", frchan );
+      vrbmsg( "writing data to frame" );
+      write_frame = fr_add_proc_REAL4TimeSeries( write_frame, data.channel );
+    }
+    else
+    {
+      const char *fname = "ring-proc-data.dat";
+      vrbmsg( "writing data to file %s", fname );
+      LALSPrintTimeSeries( data.channel, fname );
+    }
+  }
 
   /* write inverse spectrum and/or data segments if required */
   if ( write_inverse_spectrum )
@@ -515,6 +572,7 @@ int parse_options( int argc, char **argv )
   {
     /* these options set a flag */
     { "verbose", no_argument, &vrbflg, 1 },
+    { "strain-data", no_argument, &strain_data, 1 },
     /* these options don't set a flag */
     { "help",    no_argument, 0, 'h' },
     { "version", no_argument, 0, 'V' },
@@ -561,10 +619,16 @@ int parse_options( int argc, char **argv )
     { "write-inverse-spectrum", no_argument, &write_inverse_spectrum, 1 },
     { "write-data-segments",    no_argument, &write_data_segments,    1 },
     { "write-filter-output",    no_argument, &write_filter_output,    1 },
+    /* these options are for internal tests */
+    { "test-zero-data",         no_argument,    &test_zero_data,        1 },
+    { "test-gaussian-data",     no_argument,    &test_gaussian_data,    1 },
+    { "test-white-spectrum",    no_argument,    &test_white_spectrum,   1 },
+    { "test-unit-response",     no_argument,    &test_unit_response,    1 },
+    { "test-inject",            required_argument,      0,      'T' },
     /* nul terminate */
     { 0, 0, 0, 0 }
   };
-  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:U:w:z:Z:";
+  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:T:U:w:z:Z:";
 
   program  = argv[0];
   fargv[0] = my_strdup( program );
@@ -573,6 +637,7 @@ int parse_options( int argc, char **argv )
   {
     int option_index = 0; /* getopt_long stores long option here */
     int c;
+    int n;
 
     c = getopt_long_only( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
@@ -645,6 +710,18 @@ int parse_options( int argc, char **argv )
         break;
       case 's': /* sample-rate */
         srate = atof( optarg );
+        break;
+      case 'T': /* test-inject */
+        n = sscanf( optarg, "%d.%d,%f,%f,%f,%f",
+            &test_inject_sec, &test_inject_nan, &test_inject_freq,
+            &test_inject_qual, &test_inject_ampl, &test_inject_phase );
+        if ( n != 6 )
+        {
+          fprintf( stderr, "invalid format for --test-inject\n" );
+          fprintf( stderr, "required format is sec.nan,freq,qual,ampl,phase\n");
+          exit( 1 );
+        }
+        test_inject = 1;
         break;
       case 'U': /* user-tag: do nothing with this! */
         break;
@@ -776,54 +853,79 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
   /* allocate memory */
   channel = my_calloc( 1, sizeof( *channel ) );
 
-  /* get frame data */
-  chanin.name = frchan;
-  chanin.type = ADCDataChannel;
-  if ( frdata ) /* open data cache to get frame files */
+  if ( test_gaussian_data ) /* generate white gaussian noise */
   {
-    FrCache *cache = NULL;
-    vrbmsg( "get data from cache file %s", frdata );
-    LAL_CALL( LALFrCacheImport( &status, &cache, frdata ), &status );
-    LAL_CALL( LALFrCacheOpen( &status, &stream, cache ), &status );
-    LAL_CALL( LALDestroyFrCache( &status, &cache ), &status );
-  }
-  else /* get frame files from specified path and pattern */
-  {
-    int mode = LAL_FR_VERBOSE_MODE; /* fails if bad time request / data gaps */
-    vrbmsg( "get data from frame files %s/%s", frpath, frptrn );
-    LAL_CALL( LALFrOpen( &status, &stream, frpath, frptrn ), &status );
-    LAL_CALL( LALFrSetMode( &status, mode, stream ), &status );
-  }
-  if ( tstart.gpsSeconds || tstart.gpsNanoSeconds )
-  {
-    vrbmsg( "seek to gps time %d.%09d",
-        tstart.gpsSeconds, tstart.gpsNanoSeconds );
-    LAL_CALL( LALFrSeek( &status, &tstart, stream ), &status );
-    if ( tend.gpsSeconds || tend.gpsNanoSeconds )
+    RandomParams *rpar = NULL;
+    if ( ! ( srate > 0 ) )
     {
-      INT8 ns;
-      ns  = tend.gpsSeconds - tstart.gpsSeconds;
-      ns *= 1000000000;
-      ns += tend.gpsNanoSeconds - tstart.gpsNanoSeconds;
-      if ( ns > 0 )
-        duration = 1e-9 * ns;
+      fprintf( stderr, "sample rate must be set (use --sample-rate)\n" );
+      exit( 1 );
     }
+    npts = duration * srate;
+    LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
+    LAL_CALL( LALCreateRandomParams( &status, &rpar, 0 ), &status );
+    LAL_CALL( LALNormalDeviates( &status, channel->data, rpar ), &status );
+    LAL_CALL( LALDestroyRandomParams( &status, &rpar ), &status );
+    strncpy( channel->name, frchan, sizeof( channel->name ) );
+    channel->epoch       = tstart;
+    channel->deltaT      = 1.0 / srate;
+    channel->sampleUnits = lalADCCountUnit;
+  }
+  else /* read real data */
+  {
+    /* get frame data */
+    chanin.name = frchan;
+    chanin.type = ADCDataChannel;
+    if ( frdata ) /* open data cache to get frame files */
+    {
+      FrCache *cache = NULL;
+      vrbmsg( "get data from cache file %s", frdata );
+      LAL_CALL( LALFrCacheImport( &status, &cache, frdata ), &status );
+      LAL_CALL( LALFrCacheOpen( &status, &stream, cache ), &status );
+      LAL_CALL( LALDestroyFrCache( &status, &cache ), &status );
+    }
+    else /* get frame files from specified path and pattern */
+    {
+      int mode = LAL_FR_VERBOSE_MODE; /* fails if bad time request/data gaps */
+      vrbmsg( "get data from frame files %s/%s", frpath, frptrn );
+      LAL_CALL( LALFrOpen( &status, &stream, frpath, frptrn ), &status );
+      LAL_CALL( LALFrSetMode( &status, mode, stream ), &status );
+    }
+    if ( tstart.gpsSeconds || tstart.gpsNanoSeconds )
+    {
+      vrbmsg( "seek to gps time %d.%09d",
+          tstart.gpsSeconds, tstart.gpsNanoSeconds );
+      LAL_CALL( LALFrSeek( &status, &tstart, stream ), &status );
+      if ( tend.gpsSeconds || tend.gpsNanoSeconds )
+      {
+        INT8 ns;
+        ns  = tend.gpsSeconds - tstart.gpsSeconds;
+        ns *= 1000000000;
+        ns += tend.gpsNanoSeconds - tstart.gpsNanoSeconds;
+        if ( ns > 0 )
+          duration = 1e-9 * ns;
+      }
+    }
+
+    /* get the data */
+    vrbmsg( "read %f seconds of data", duration );
+
+    /* call first time to get sample rate */
+    LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+        &status );
+    /* compute how much data we need to get and allocate memory */
+    npts = duration / channel->deltaT;
+    LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
+    /* get the data */
+    LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+        &status );
+    /* close the frame file */
+    LAL_CALL( LALFrClose( &status, &stream ), &status );
   }
 
-  /* get the data */
-  vrbmsg( "read %f seconds of data", duration );
-
-  /* call first time to get sample rate */
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
-      &status );
-  /* compute how much data we need to get and allocate memory */
-  npts = duration / channel->deltaT;
-  LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
-  /* get the data */
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
-      &status );
-  /* close the frame file */
-  LAL_CALL( LALFrClose( &status, &stream ), &status );
+  /* if this is strain data, correct the units */
+  if ( strain_data )
+    channel->sampleUnits = lalStrainUnit;
 
   /* write this data to file if required */
   if ( write_raw_data )
@@ -894,22 +996,6 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
     vrbmsg( "resizing data duration to %f seconds", duration );
   }
 
-  /* write this data to file if required */
-  if ( write_data )
-  {
-    if ( write_format == frame_format )
-    {
-      LALSnprintf( channel->name, sizeof( channel->name ), "%s_PROC", frchan );
-      vrbmsg( "writing data to frame" );
-      write_frame = fr_add_proc_REAL4TimeSeries( write_frame, channel );
-    }
-    else
-    {
-      const char *fname = "ring-proc-data.dat";
-      vrbmsg( "writing data to file %s", fname );
-      LALSPrintTimeSeries( channel, fname );
-    }
-  }
 
   return channel;
 }
@@ -936,7 +1022,18 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
   strncpy( response->name, "response", sizeof( response->name ) );
   response->epoch = tstart;
 
-  if ( frcalib ) /* use calibration cache file to extract & update response */
+  if ( strain_data ) /* strain data: response function should be unity */
+  {
+    UINT4 i;
+    for ( i = 0; i < response->data->length; ++i ) /* set response to unity */
+    {
+      response->data->data[i].re = 1;
+      response->data->data[i].im = 0;
+    }
+    /* response is dimensionless */
+    memset( &response->sampleUnits, 0, sizeof( response->sampleUnits ) );
+  }
+  else if ( frcalib ) /* use calibration cache to extract & update response */
   {
     vrbmsg( "get calibration data from frames in cache file %s", frcalib );
     memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
@@ -1128,6 +1225,7 @@ const char *usgfmt =
 "  --frame-cache      datcache\n\t\tdata frame cache file [don't use cache]\n\n"
 "  --frame-files pattern\n\t\tframe file to use [*.gwf]\n\n"
 "  --frame-path path\n\t\tpath to look for frame files [.]\n\n"
+"  --strain-data\n\t\tdata is strain data (use unit response)\n\n"
 "  --bank-start-template bmin\n\t\tfirst template of bank to use [0]\n\n"
 "  --bank-end-tempate bmax\n\t\tlast template of bank to use [last]\n\n"
 "  --inject-file injfile\n\t\tLIGOLw XML file containing injection parameters\n\n"
@@ -1144,6 +1242,12 @@ const char *usgfmt =
 "  --write-inverse-spectrum\n\t\twrite inverse spectrum computed\n\n"
 "  --write-data-segments\n\t\twrite conditioned data segments\n\n"
 "  --write-filter-output\n\t\twrite matched filter output\n\n"
+"Internal Test Options\n\n"
+"  --test-zero-data\n\t\tzero the data before performing the search\n\n"
+"  --test-gaussian-data\n\t\tgenerate white Gaussian data\n\n"
+"  --test-white-spectrum\n\t\tuse an exact white spectrum for Gaussian data\n\n"
+"  --test-unit-response\n\t\tuse a constant unit response function\n\n"
+"  --test-inject sec.nan,freq,qual,ampl,phase\n\t\tperform internal test injection\n\n"
 "Filter Parameters [defaults in brackets; otherwise required]\n\n"
 "  --filter-params parfile\n\t\tread filter parameters from file [none]\n\n"
 "  --filter-segsz npts\n\t\tset size of segments to analyze to npts\n\n"
