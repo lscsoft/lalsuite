@@ -292,18 +292,17 @@ int main(int argc, char **argv)
 
 
     /*****************************************************************
-     * find the first trigger after coincidence start time
+     * find the first trigger after coincidence start time for ifo A
      *****************************************************************/
     if (verbose) fprintf(stdout,"Moving to first trigger in window\n");
-    for(j=0 ; j<2 ; j++)
-    {
-        currentTrigger[j] = inspiralEventList[j];
+    
+    currentTrigger[0] = inspiralEventList[0];
+    currentTrigger[1] = inspiralEventList[1];
 
-        while (currentTrigger[j] != NULL && 
-                (currentTrigger[j]->end_time.gpsSeconds < startCoincidence) )
-        {
-            currentTrigger[j] = currentTrigger[j]->next;
-        }
+    while (currentTrigger[0] != NULL && 
+            (currentTrigger[0]->end_time.gpsSeconds < startCoincidence) )
+    {
+        currentTrigger[0] = currentTrigger[0]->next;
     }
 
 
@@ -311,6 +310,7 @@ int main(int argc, char **argv)
      * outer loop over triggers from interferometer A
      ****************************************************************/
     if (verbose) fprintf(stdout,"Start loop over ifo A\n");
+
     while ( (currentTrigger[0] != NULL) && 
             (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
     {
