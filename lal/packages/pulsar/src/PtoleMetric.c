@@ -17,11 +17,14 @@ approximation.  Both the Earth's spin and orbit are included.
 
 \subsubsection*{Description}
 
-This function computes metric components in a way that yields results very
-similar to those of \texttt{CoherentMetric} called with the output of
-\texttt{TBaryPtolemaic}. The CPU demand, however, is less, and the metric
-components can be expressed analytically, lending themselves to better
-understanding of the behavior of the parameter space.  
+This function computes metric components in a way that yields results
+very similar to those of \texttt{CoherentMetric} called with the
+output of \texttt{TBaryPtolemaic}. The CPU demand, however, is less,
+and the metric components can be expressed analytically, lending
+themselves to better understanding of the behavior of the parameter
+space.  For short durations (less than about 70000 seconds) a Taylor
+series expansion is used to improve the accuracy with which several
+terms are computed.
 
 \subsubsection*{Algorithm}
 
@@ -124,7 +127,11 @@ REAL8 D_sin_p_o_minus_s;
 REAL8 D_p_o_minus_s;
 REAL8 D_cos_p_o_plus_s;
 REAL8 D_cos_p_o_minus_s;
-
+/* Quantities related to the short-time Tatlor expansions : */
+REAL8 D_p_o_crit;       /* The orbital phase BELOW which series used.  */ 
+REAL8 sum1, sum2, sum3;
+REAL8 next1, next2, next3;
+ INT2 j_max;  /* Number of terms in series */
 
 
 INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
@@ -227,92 +234,139 @@ phi_o_f   = phi_o_i + omega_o*T;
 D_p_o     = omega_o*T;
 sin_p_o   = sin(phi_o_f);
 cos_p_o   = cos(phi_o_f);
-D_sin_p_o = sin(phi_o_f) - sin(phi_o_i);
-D_cos_p_o = cos(phi_o_f) - cos(phi_o_i);
-D_sin_2p_o = sin(2*phi_o_f) - sin(2*phi_o_i);
-D_cos_2p_o = cos(2*phi_o_f) - cos(2*phi_o_i);
+D_sin_p_o = (sin(phi_o_f) - sin(phi_o_i))/D_p_o;
+D_cos_p_o = (cos(phi_o_f) - cos(phi_o_i))/D_p_o;
+D_sin_2p_o = (sin(2*phi_o_f) - sin(2*phi_o_i))/2.0/D_p_o;
+D_cos_2p_o = (cos(2*phi_o_f) - cos(2*phi_o_i))/2.0/D_p_o;
 
 /* Quantities involving the spin phase: */
 phi_s_f    = phi_s_i + omega_s*T;
 D_p_s      = omega_s*T;
 sin_p_s    = sin(phi_s_f);
 cos_p_s    = cos(phi_s_f);
-D_sin_p_s  = sin(phi_s_f) - sin(phi_s_i);
-D_cos_p_s  = cos(phi_s_f) - cos(phi_s_i);
-D_sin_2p_s = sin(2*phi_s_f) - sin(2*phi_s_i);
-D_cos_2p_s = cos(2*phi_s_f) - cos(2*phi_s_i);
+D_sin_p_s  = (sin(phi_s_f) - sin(phi_s_i))/D_p_s;
+D_cos_p_s  = (cos(phi_s_f) - cos(phi_s_i))/D_p_s;
+D_sin_2p_s = (sin(2*phi_s_f) - sin(2*phi_s_i))/2.0/D_p_s;
+D_cos_2p_s = (cos(2*phi_s_f) - cos(2*phi_s_i))/2.0/D_p_s;
 
 /* Some mixed quantities: */
-D_sin_p_o_plus_s  = sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i);
+D_sin_p_o_plus_s  
+  = (sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
 D_p_o_plus_s      = D_p_o + D_p_s;
-D_sin_p_o_minus_s = sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i);
+D_sin_p_o_minus_s 
+  = (sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
 D_p_o_minus_s     = D_p_o - D_p_s;
-D_cos_p_o_plus_s  = cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i);
-D_cos_p_o_minus_s = cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i);
+D_cos_p_o_plus_s  
+  = (cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
+D_cos_p_o_minus_s 
+  = (cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
+
+
+
+/***************************************************************/
+/* Small D_p_o overwrite:                                      */
+/***************************************************************/
+ j_max = 7;
+ D_p_o_crit = 1.4e-2; /* This corresponds to about 70000 seconds */
+
+ sum1  = next1 = D_p_o/2.0;
+ sum2  = next2 = D_p_o/3.0/2.0;
+ sum3  = next3 = D_p_o;
+
+ for(j=1; j<=j_max; j++)
+   {
+     next1 *= -pow(D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
+     sum1  += next1; 
+     next2 *= -pow(D_p_o,2.0)/(2.0*j+2.0)/(2.0*j+3.0);
+     sum2  += next2; 
+     next3 *= -pow(2.0*D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
+     sum3  += next3;
+   }
+ 
+ if(D_p_o < D_p_o_crit)
+   {
+     D_sin_p_o = sin(phi_o_f)*sum1 + cos(phi_o_f)*sin(D_p_o)/D_p_o;
+     D_cos_p_o = cos(phi_o_f)*sum1 - sin(phi_o_f)*sin(D_p_o)/D_p_o;
+     D_sin_2p_o 
+       = sin(2.0*phi_o_f)*sum3 + cos(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
+     D_cos_2p_o 
+       = cos(2.0*phi_o_f)*sum3 - sin(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
+   }
+/****************************************************************/
+
 
 /* The A[i] quantities: */
 A[1] = 
-R_o*D_sin_p_o/D_p_o + R_s*cos_l*D_sin_p_s/D_p_s;
+R_o*D_sin_p_o + R_s*cos_l*D_sin_p_s;
 
 A[2] = 
-R_o*cos_i*D_cos_p_o/D_p_o + R_s*cos_l*D_cos_p_s/D_p_s;
+R_o*cos_i*D_cos_p_o + R_s*cos_l*D_cos_p_s;
 
 A[3] =
--R_o*sin_i*D_cos_p_o/D_p_o + R_s*sin_l;
+-R_o*sin_i*D_cos_p_o + R_s*sin_l;
 
 A[4] =
-R_o*(sin_p_o/D_p_o + D_cos_p_o/D_p_o/D_p_o);
+R_o*(sin_p_o/D_p_o + D_cos_p_o/D_p_o);
 
 A[5] =
-R_s*(sin_p_s/D_p_s + D_cos_p_s/D_p_s/D_p_s);
+R_s*(sin_p_s/D_p_s + D_cos_p_s/D_p_s);
 
 A[6] =
-R_o*(-cos_p_o/D_p_o + D_sin_p_o/D_p_o/D_p_o);
+R_o*(-cos_p_o/D_p_o + D_sin_p_o/D_p_o);
+
+/* Special overwrite for A4 and A6: *********************/
+ if(D_p_o < D_p_o_crit)
+   {
+     A[4] = R_o*(cos(phi_o_f)*sum1/D_p_o + sin(phi_o_f)*sum2);
+     A[6] = R_o*(sin(phi_o_f)*sum1/D_p_o - cos(phi_o_f)*sum2);
+   }
+ /***********************************************************/
 
 A[7] =
-R_s*(-cos_p_s/D_p_s + D_sin_p_s/D_p_s/D_p_s);
+R_s*(-cos_p_s/D_p_s + D_sin_p_s/D_p_s);
 
 A[8] =
-R_o*R_o*(1 + D_sin_2p_o/2/D_p_o);
+R_o*R_o*(1 + D_sin_2p_o);
 
 A[9] =
-R_o*R_s*(D_sin_p_o_minus_s/D_p_o_minus_s + D_sin_p_o_plus_s/D_p_o_plus_s);
+R_o*R_s*(D_sin_p_o_minus_s + D_sin_p_o_plus_s);
 
 A[10] =
-R_s*R_s*(1 + D_sin_2p_s/2/D_p_s);
+R_s*R_s*(1 + D_sin_2p_s);
 
 A[11] =
-R_o*R_o*D_cos_2p_o/2/D_p_o;
+R_o*R_o*D_cos_2p_o;
 
 A[12] =
-R_o*R_s*(-D_cos_p_o_minus_s/D_p_o_minus_s + D_cos_p_o_plus_s/D_p_o_plus_s);
+R_o*R_s*(-D_cos_p_o_minus_s + D_cos_p_o_plus_s);
 
 A[13] =
-R_o*R_s*(D_cos_p_o_minus_s/D_p_o_minus_s + D_cos_p_o_plus_s/D_p_o_plus_s);
+R_o*R_s*(D_cos_p_o_minus_s + D_cos_p_o_plus_s);
 
 A[14] =
-R_s*R_s*D_cos_2p_s/2/D_p_s;
+R_s*R_s*D_cos_2p_s;
 
 A[15] =
-R_o*R_o*(1 - D_sin_2p_o/2/D_p_o);
+R_o*R_o*(1 - D_sin_2p_o);
 
 A[16] =
-R_o*R_s*(D_sin_p_o_minus_s/D_p_o_minus_s - D_sin_p_o_plus_s/D_p_o_plus_s);
+R_o*R_s*(D_sin_p_o_minus_s - D_sin_p_o_plus_s);
 
 A[17] =
-R_s*R_s*(1 - D_sin_2p_s/2/D_p_s);
+R_s*R_s*(1 - D_sin_2p_s);
 
 A[18] =
-R_o*R_s*D_sin_p_o/D_p_o;
+R_o*R_s*D_sin_p_o;
 
 A[19] =
-R_s*R_s*D_sin_p_s/D_p_s;
+R_s*R_s*D_sin_p_s;
 
 A[20] =
-R_o*R_s*D_cos_p_o/D_p_o;
+R_o*R_s*D_cos_p_o;
 
 A[21] =
-R_s*R_s*D_cos_p_s/D_p_s;
+R_s*R_s*D_cos_p_s;
+
 
 /* The B[i] quantities: */
 B[1] =
