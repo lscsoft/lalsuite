@@ -505,27 +505,36 @@ files of inspiral triggers allowing cuts and clustering.
 
 \item[Synopsis]
 \verb$lalapps_snglInspiralReader$ 
-\verb$--input$ \textsc{infile} \verb$--outfile$ \textsc{outfile}     
+\verb$--input$ \textsc{infile} \verb$--table$ \textsc{tablename} 
+\verb$--outfile$ \textsc{outfile}
 [\verb$--snrstar$ \textsc{snrstar}] [\verb$--noplayground$] 
-[\verb$--sort$] [\verb$--cluster$ \textsc{msec}] [\verb$--help$]
+[\verb$--sort$] [\verb$--cluster$ \textsc{msec}] 
+[\verb$--clusterchoice$ \textsc{choicenumber}] [\verb$--help$]
 
 \item[Description] 
 \verb$lalapps_snglInspiralReader$ processes triggers from the inspiral
 search code.   The \textsc{infile} should contain a list of the XML
-files containing the triggers;  the format is one filename per line.
+files containing the triggers;  the format is one filename per line. 
 The default behavior outputs triggers during playground
 times to the file \textsc{outfile};  to obtain all triggers,  use the 
 \verb$--noplayground$ flag.    To apply a cut on SNR,  use the flag 
 \verb$--snrstar$ \textsc{snrstar}:  only triggers with $\texttt{SNR} 
 > \textsc{snrstar}$ will be recorded.    Events can also be clustered
 within \textsc{msec} msec,   in which case the \verb$--sort$ flag is
-recommended unless you are certain that the triggers are time-ordered.
+recommended unless you are certain that the triggers are time-ordered.  
+There is a choice of several clustering algorithms, which can be selected
+using \textsc{choicenumber}.
+
 
 \item[Options]\leavevmode
 \begin{entry}
 \item[\texttt{--input} \textsc{infile}] Required.  A file containing a
 list of LIGO lightweight XML files with triggers to be processed.  The
 format of \textsc{infile} is one file name per line.
+
+\item[\texttt{--table} \textsc{tablename}] Required.  The name of the 
+XML table containing the inspiral events, this will usually be 
+\texttt{sngl\_inspiral}.
 
 \item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
 to be used for output.  The output format is LIGO lightweight XML with
@@ -544,13 +553,26 @@ clustering).
 
 \item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
 within \textsc{msec} msec window.   The clustering algorithm
-identifies the first trigger in a cluster,  then displaces it if its
-\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
+identifies the first trigger in a cluster, then displaces it if another 
+trigger within the clustering window satisfies the appropriate condition 
+(described below).
+
+\item[\texttt{--clusterchoice} \textsc{choicenumber}]  Optional.  This
+determines which condition will be used in clustering of the triggers.  
+The default is 0.  The choices are \textsc{choicenumber} $=0$ --- displace
+event if its \textsc{snr} is exceeded by an event with a smaller 
+\textsc{chisq}; \textsc{choicenumber} $=1$ --- displace event if the quantity
+$(\textsc{snr})^{2}/\textsc{chisq}$ is exceeded by a subsequent event's.
 
 \item[\texttt{--help}] Optional.  Print a help message.
 \end{entry}
 
 \item[Example]
+\begin{verbatim}
+lalapps_snglInspiralReader --input xmlfilelist \
+--table sngl_inspiral --outfile my.xml --snrstar 8.0 \
+--sort --cluster 20 clusterchoice 1
+\end{verbatim}
 
 \item[Author] 
 Patrick Brady
