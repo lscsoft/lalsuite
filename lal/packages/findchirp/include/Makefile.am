@@ -7,7 +7,6 @@ pkginclude_HEADERS = FindChirp.h \
                      FindChirpSP.h \
                      FindChirpExch.h \
                      FindChirpEngine.h \
-                     FindChirpView.h \
 		     TwoInterfFindChirp.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
