@@ -578,129 +578,160 @@ Display version information and exit.
 \item[\option{--verbose}]
 Enable the output of informational messages.
 
-\item[\option{--debug-level} \parm{N}]
+\item[\option{--debug-level}~\parm{N}]
 Sets the LAL debug level to \parm{N}. The default value is
 \texttt{LALMSGLVL2}, displaying error and warning messages. A useful
 setting is 65 which turns off memory padding, but keeps memory tracking
 and error messages. If you want to turn off memory tracking completly,
 then use 33.
 
-\item[\option{--user-tag}~\parm{TAG}]
-Set the user tag to the string \parm{TAG}. This string must not contain
-spaces or dashes (``-''). This string will appear in the name of the
-file to which output information is written, and is recorded in the
+\item[\option{--user-tag}~\parm{STRING}]
+Set the user tag to the string \parm{STRING}. This string must not
+contain spaces or dashes (``-''). This string will appear in the name of
+the file to which output information is written, and is recorded in the
 various XML tables within the file.
 
-\item[\option{--gps-start-time} \parm{N}]
+\item[\option{--comment}~\parm{STRING}]
+Set the process table comment to \parm{STRING}
+
+\item[\option{--output-dir}~\parm{DIR}]
+Set the output directory for search results to \parm{DIR}
+
+\item[\option{--cc-spectra}]
+Save out cross correlation spectra as frame files.
+
+\item[\option{--bayesian}]
+Perform bayesian search.
+
+\item[\option{--gps-start-time}~\parm{N}]
 Sets the GPS time from which data should be read to \parm{N}
 
-\item[\option{--gps-end-time} \parm{N}]
+\item[\option{--gps-end-time}~\parm{N}]
 Sets the GPS time to which data should be read to \parm{N}
 
-\item[\option{--interval-duration} \parm{N}]
+\item[\option{--interval-duration}~\parm{N}]
 Sets the interval duration to \parm{N}
 
-\item[\option{--segment-duration} \parm{N}]
+\item[\option{--segment-duration}~\parm{N}]
 Sets the segment duration to \parm{N}
 
-\item[\option{--resample-rate} \parm{N}]
+\item[\option{--resample-rate}~\parm{N}]
 Down-convert the input data stream to a sample rate of \parm{N} samples
 per second prior to analysis.  This can be used to reduce the number of CPU
 cycles required to analyze a given quantity of input data.
 
-\item[\option{--f-min} \parm{N}]
+\item[\option{--f-min}~\parm{N}]
 Sets the minimum frequency of the search band to \parm{N}
 
-\item[\option{--f-max} \parm{N}]
+\item[\option{--f-max}~\parm{N}]
 Sets the maximum frequency of the search band to \parm{N}
 
-\item[\option{--ifo-one} \parm{IFO}]
+\item[\option{--ifo-one}~\parm{IFO}]
 Sets the IFO for the first stream to be \parm{IFO}, currently supported
 IFO's are H1, H2, L1 and G1
 
-\item[\option{--ifo-two} \parm{IFO}]
+\item[\option{--ifo-two}~\parm{IFO}]
 Sets the IFO for the second stream to be \parm{IFO}, currently supported
 IFO's are H1, H2, L1 and G1
 
-\item[\option{--channel-one} \parm{CHANNEL}]
+\item[\option{--channel-one}~\parm{CHANNEL}]
 Sets the channel for the first stream to be \parm{CHANNEL}
 
-\item[\option{--channel-two} \parm{CHANNEL}]
+\item[\option{--channel-two}~\parm{CHANNEL}]
 Sets the channel for the second stream to be \parm{CHANNEL}
 
-\item[\option{--frame-cache-one} \parm{FILE}]
+\item[\option{--frame-cache-one}~\parm{FILE}]
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{FILE} for the first detector.  LAL frame cache files
 are explained in the ``framedata'' package in LAL and can be constructed
 by making calls to \prog{LSCdataFind} on some systems.
 
-\item[\option{--frame-cache-two} \parm{FILE}]
+\item[\option{--frame-cache-two}~\parm{FILE}]
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{FILE} for the second detector.  LAL frame cache files
 are explained in the ``framedata'' package in LAL and can be constructed
 by making calls to \prog{LSCdataFind} on some systems.
 
-\item[\option{--calibration-cache-one} \parm{FILE}]
+\item[\option{--calibration-cache-one}~\parm{FILE}]
 Specify the location of calibration information for the first detector.
 \parm{FILE} gives the path to a LAL-format frame cache file describing
 locations of \texttt{.gwf} frame files that provide the calibration data
 ($\alpha$ and $\beta$ coefficients) for the analysis.  Frame cache files
 are explained in the ``framedata'' package in LAL.
 
-\item[\option{--calibration-cache-two} \parm{FILE}]
+\item[\option{--calibration-cache-two}~\parm{FILE}]
 Specify the location of calibration information for the second detector.
 \parm{FILE} gives the path to a LAL-format frame cache file describing
 locations of \texttt{.gwf} frame files that provide the calibration data
 ($\alpha$ and $\beta$ coefficients) for the analysis.  Frame cache files
 are explained in the ``framedata'' package in LAL.
 
-\item[\option{--calibration-offset} \parm{N}]
+\item[\option{--calibration-offset}~\parm{N}]
 Sets the calibration offset to \parm{N}
+
 \item[\option{--apply-mask}]
 Apply frequency masking
-\item[\option{--mask-bin} \parm{N}]
+
+\item[\option{--mask-bin}~\parm{N}]
 Set the number of bins to mask per frequency to \parm{N}
+
 \item[\option{--overlap-hann}]
 Use overlapping Hann windows for data segments
-\item[\option{--hann-duration} \parm{N}]
+
+\item[\option{--hann-duration}~\parm{N}]
 Set the Hann duration of the data segment window to \parm{N}, 0 for
 Rectangular windowing, 1 for Tukey windowing and 60 for Hann windowing
+
 \item[\option{--high-pass-filter}]
 Apply a high pass filter to the input data
-\item[\option{--hpf-frequency} \parm{N}]
+
+\item[\option{--hpf-frequency}~\parm{N}]
 Set the knee frequency of the high pass filter to \parm{N}
-\item[\option{--hpf-attenuation} \parm{N}]
+
+\item[\option{--hpf-attenuation}~\parm{N}]
 Set the attenuation coefficent for the high pass filter to \parm{N}
-\item[\option{--hpf-order} \parm{N}]
+
+\item[\option{--hpf-order}~\parm{N}]
 Sets the high pass filter order to \parm{N}
+
 \item[\option{--recentre}]
 Centre the data
+
 \item[\option{--middle-segment}]
 Include the middle segment in the power spectra estimation
+
 \item[\option{--inject}]
 Perform signal injection
-\item[\option{--scale-factor} \parm{N}]
+
+\item[\option{--scale-factor}~\parm{N}]
 Set the scale factor for injections to \parm{N}
-\item[\option{--seed} \parm{N}]
+
+\item[\option{--seed}~\parm{N}]
 Set the random seed for injections to \parm{N}
-\item[\option{--trials} \parm{N}]
+
+\item[\option{--trials}~\parm{N}]
 Set the number of trials for injections to \parm{N}
-\item[\option{--output-dir} \parm{DIR}]
-Set the output directory for search results to \parm{DIR}
-\item[\option{--test}]
-Save out intermediate products
-\item[\option{--test-interval} \parm{N}]
-Save out interval \parm{N}
-\item[\option{--test-segment} \parm{N}]
-Save out segment \parm{N}
-\item[\option{--test-trial} \parm{N}]
-Save out trial \parm{N}
-\item[\option{--geo-hpf-frequency} \parm{N}]
+
+\item[\option{--geo-hpf-frequency}~\parm{N}]
 Set the knee frequency for the GEO high pass filter to \parm{N}
-\item[\option{--geo-hpf-attenuation} \parm{N}]
+
+\item[\option{--geo-hpf-attenuation}~\parm{N}]
 Set the attenuation coefficient for the GEO high pass filter to \parm{N}
-\item[\option{--geo-hpf-order} \parm{N}]
+
+\item[\option{--geo-hpf-order}~\parm{N}]
 Set the GEO high pass filter order to \parm{N}
+
+\item[\option{--alpha}~\parm{N}]
+Exponent for $\Omega_{\mathrm{GW}}$ for construction of the optimal
+filter.
+
+\item[\option{--f-ref}~\parm{N}]
+Reference frequency for $\Omega_{\mathrm{GW}}$ for the construction of
+the optimal filter.
+
+\item[\option{--omega0}~\parm{N}]
+Reference $\Omega_0$ for $\Omega_{\mathrm{GW}}$ for the construction of
+the optimal filter.
 \end{entry}
 
 \item[Example]
