@@ -159,7 +159,7 @@ int main ()
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include <lal/AstroOmega.h>
+#include "../include/AstroOmega.h"
 
 NRCSID (ASTROOMEGAC, "$Id$");
 
