@@ -632,6 +632,14 @@ LALStochasticCrossCorrelationSpectrum(
   ENDFAIL( status ); 
 
   TRY(LALCDestroyVector(status->statusPtr, &(h1StarH2Coarse.data)), status);
+
+  /* Fill fields of output frequency series */
+
+  output->deltaF = input->optimalFilter->deltaF;
+  output->epoch = input->hBarTildeOne->epoch;
+  output->f0 = input->optimalFilter->f0;
+  strncpy( output->name, "Integrand of cross-correlation statistic",
+           LALNameLength );
   
   /* Set output units */  
   unitPair1.unitOne = input->hBarTildeOne->sampleUnits;
