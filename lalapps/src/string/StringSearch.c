@@ -86,6 +86,7 @@ RCSID( "StringSearch $Id$");
 /* STRUCTURES */
 struct CommandLineArgsTag {
   REAL4 flow;                 /* Low frequency cut-off */
+  REAL8 samplerate;           /* desired sample rate */
   REAL4 fbanklow;             /* Template bank low frequency cut-off */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO xml injection file */
@@ -169,7 +170,7 @@ int AddInjections(struct CommandLineArgsTag CLA);
 int ProcessData2(struct CommandLineArgsTag CLA);
 
 /* DownSamples data */
-int DownSample();
+int DownSample(struct CommandLineArgsTag CLA);
 
 /* Computes the average spectrum  */
 int AvgSpectrum(struct CommandLineArgsTag CLA);
@@ -211,7 +212,7 @@ int main(int argc,char *argv[])
      if (ProcessData2(CommandLineArgs)) return 3;
    }
 
- if (DownSample()) return 5;
+ if (DownSample(CommandLineArgs)) return 5;
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -481,7 +482,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	  vtilde->data[p].im *= GV.StringFilter.data->data[p]*GV.ht_proc.deltaT;
 	}
 
-
       /* loop over templates  */
       for (m = 0; m < NTemplates; m++)
 	{
@@ -493,8 +493,10 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	  LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
 	  TESTSTATUS( &status );
 
-	  /* normalise the result by template normalisation and multiply by df (not inluded in LALReverseRealFFT) 
-	   factor of 2 is from match-filter definition */
+	  /* normalise the result by template normalisation and multiply by 
+	     df (not inluded in LALReverseRealFFT)  factor of 2 is from 
+	     match-filter definition */
+
 	  for ( p = 0 ; p < (int)vector->length; p++ )
 	    {
 	      vector->data[p] *= 2.0 * GV.StringFilter.deltaF / strtemplate[m].norm;
@@ -617,7 +619,8 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   if(CLA.TruncSecs != 0.0) 
     {
       memset( vector->data + (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5), 0,
-	      ( vector->length -  2* (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) * sizeof( *vector->data ) );
+	      ( vector->length -  2* (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) 
+	      * sizeof( *vector->data ) );
     }
   
   LALForwardRealFFT( &status, vtilde, vector,  GV.fplan);
@@ -633,7 +636,8 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
 
 
   /* set all values below the cutoff frequency to 0 */
-  memset( GV.StringFilter.data->data, 0, f_cutoff_index  * sizeof( *GV.StringFilter.data->data ) );
+  memset( GV.StringFilter.data->data, 0, f_cutoff_index  * 
+	  sizeof( *GV.StringFilter.data->data ) );
 
   LALCDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
@@ -698,12 +702,12 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int DownSample()
+int DownSample(struct CommandLineArgsTag CLA)
 {
   ResampleTSParams resamplepar;
 
   memset( &resamplepar, 0, sizeof( resamplepar ) );
-  resamplepar.deltaT     = GV.ht_proc.deltaT * 4.0;
+  resamplepar.deltaT     = 1.0/CLA.samplerate;
   resamplepar.filterType = defaultButterworth;
 
   LALResampleREAL4TimeSeries( &status, &GV.ht_proc, &resamplepar );
@@ -865,6 +869,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"injection-file",      required_argument, NULL,           'i'},
     {"no-of-segments",      required_argument, NULL,           'N'},
     {"settling-time",       required_argument, NULL,           'T'},
+    {"sample-rate",         required_argument, NULL,           's'},
     {"cusp-search",                no_argument, NULL,         'c' },
     {"kink-search",                no_argument, NULL,         'k' },
     {"test-gaussian-data",         no_argument, NULL,          'n' },
@@ -872,7 +877,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:";
+  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -900,7 +905,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->threshold=0.0;
   CLA->fakenoiseflag=0;
   CLA->whitespectrumflag=0;
-  
+  CLA->whitespectrumflag=0;
+  CLA->samplerate=4096.0;
+ 
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
 
@@ -920,6 +927,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
+      ADD_PROCESS_PARAM("float");
+      break;
+    case 's':
+      /* low frequency cutoff */
+      CLA->samplerate=atof(optarg);
       ADD_PROCESS_PARAM("float");
       break;
     case 'b':
@@ -992,6 +1004,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n and -i. One of -k or -c must be specified. They are:\n");
       fprintf(stdout,"\t--low-freq-cutoff (-f)\t\tFLOAT\t Low frequency cut-off.\n");
+      fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
       fprintf(stdout,"\t--bank-low-freq-cutoff (-b)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
