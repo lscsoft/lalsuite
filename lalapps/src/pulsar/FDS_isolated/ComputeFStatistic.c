@@ -14,21 +14,23 @@
 #include "DopplerScan.h"
 
 #include "ConfigFile.h"
-
-/* #define DEBG_FAFB                 */
-/* #define DEBG_ESTSIGPAR */
-/* #define DEBG_MAIN  */
-/* #define DEBG_SGV */
+/*
+#define DEBG_FAFB                
+#define DEBG_ESTSIGPAR
+#define DEBG_MAIN 
+#define DEBG_SGV 
+*/
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 #define FILE_FSTATS
 #define FILE_FMAX
-/* #define FILE_FLINES */
-/* #define FILE_FTXT */
-/* #define FILE_PSD */
-/* #define FILE_PSDLINES */
-/* #define FILE_SPRNG */
-
+/*
+#define FILE_FLINES
+#define FILE_FTXT 
+#define FILE_PSD 
+#define FILE_PSDLINES 
+#define FILE_SPRNG 
+*/
 
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
@@ -205,7 +207,7 @@ int main(int argc,char *argv[])
 	    {
 	      /* medianbias is 1 if GV.SignalOnly=1 */ 
 	      fprintf(stdout,"%20.10f %e %20.17f %20.17f %20.17f\n",
-		      GV.Freq+i*GV.dFreq,  DemodParams->spinDwn[0],
+		      userInput.Freq+i*userInput.dFreq,  DemodParams->spinDwn[0],
 		      Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
 	    }
 #endif
@@ -391,7 +393,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A1\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-		irec,GV.Freq+irec*GV.dFreq,A1,A1test);
+		irec,userInput.Freq+irec*userInput.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
 		fabs(A1-A1test)/fabs(A1));
 	exit(1);
@@ -399,7 +401,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A2\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-		irec,GV.Freq+irec*GV.dFreq,A2,A2test);
+		irec,userInput.Freq+irec*userInput.dFreq,A2,A2test);
 	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
 		fabs(A2-A2test)/fabs(A2));
 	exit(1);
@@ -407,7 +409,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A3\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-		irec,GV.Freq+irec*GV.dFreq,A3,A3test);
+		irec,userInput.Freq+irec*userInput.dFreq,A3,A3test);
 	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
 		fabs(A3-A3test)/fabs(A3));
 	exit(1);
@@ -415,7 +417,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A4\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-		irec,GV.Freq+irec*GV.dFreq,A1,A1test);
+		irec,userInput.Freq+irec*userInput.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
 		fabs(A4-A4test)/fabs(A4));
 	exit(1);
@@ -430,7 +432,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
 	fprintf(stderr,"Something is wrong with Estimate in F\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-		irec,GV.Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
+		irec,userInput.Freq+irec*userInput.dFreq,Fstat.F[irec],Ftest);
 	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
 		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
 	exit(1);
@@ -459,7 +461,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 			    +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
 				    -C*sin(4.0*psi_mle)));
       fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-	      A,B,C,GV.Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
+	      A,B,C,userInput.Freq+irec*userInput.dFreq,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -575,7 +577,7 @@ int writeFaFb(INT4 *maxIndex)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-	      GV.Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
+	      userInput.Freq+index*userInput.dFreq,Fstat.F[index]*bias*bias,
 	      DemodParams->spinDwn[0], Alpha, Delta,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
@@ -1109,8 +1111,8 @@ SetGlobalVariables(ConfigVariables *cfg)
     fprintf(stdout,"\n");
     fprintf(stdout,"# SFT time baseline:                  %f min\n",header.tbase/60.0);
     fprintf(stdout,"# SFT freq resolution:                %f Hz\n",df);
-    fprintf(stdout,"# Starting search frequency:          %f Hz\n",cfg->Freq);
-    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",cfg->FreqBand);
+    fprintf(stdout,"# Starting search frequency:          %f Hz\n",userInput.Freq);
+    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",userInput.FreqBand);
     fprintf(stdout,"# no of SFT in a DeFT:                %f\n",ceil((1.0*(cfg->Tf - cfg->Ti))/header.tbase));
     fprintf(stdout,"# Actual # of SFTs:                   %d\n",cfg->SFTno);
     fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
@@ -1331,7 +1333,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 
 #ifdef FILE_FMAX_DEBG    
 /*    print the output */
-  err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",GV.Freq,
+  err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",userInput.Freq,
 	      Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
 #endif
   LALFree(indexes);
@@ -1451,7 +1453,7 @@ INT4 EstimatePSDLines(void)
      /*  PSD.txt file contains freq, PSD, noise floor   */
      for (i=0;i<nbins;i++){ 
        REAL4 freq;
-       REAL8 r0,r1,r2;
+       REAL8 r0,r1;
        freq=(GV.ifmin+i)/GV.tsft;
        r0=Sp->data[i];
        r1=FloorSp->data[i];
@@ -1526,7 +1528,7 @@ INT4 EstimatePSDLines(void)
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
      REAL4 freq;
-     REAL8 r0,r1,r2;
+     REAL8 r0,r1;
      freq=(GV.ifmin+i)/GV.tsft;
      r0=Sp->data[i];
      r1=FloorSp->data[i];
@@ -1568,7 +1570,7 @@ INT4 EstimateFLines(void)
   INT4 nbins=GV.FreqImax;                /* Number of points in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
+  /* INT2 windowSize=(0.01/userInput.dFreq);               0.1 is 1E-4*1000 */
   INT2 windowSize=100;
   REAL4 THR=10.0;
   
@@ -1663,7 +1665,7 @@ INT4 EstimateFLines(void)
      /*  F.txt file contains freq, F, noise floor of F   */
      for (i=0;i<nbins;i++){ 
        REAL4 freq;
-       REAL8 r0,r1,r2;
+       REAL8 r0,r1;
        freq=userInput.Freq + i*userInput.dFreq;
        r0=F1->data[i];
        r1=FloorF1->data[i];
@@ -1744,7 +1746,7 @@ INT4 EstimateFLines(void)
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
      REAL4 freq;
-     REAL8 r0,r1,r2;
+     REAL8 r0,r1;
      freq=userInput.Freq + i*userInput.dFreq;
      r0=F1->data[i];
      r1=FloorF1->data[i];
