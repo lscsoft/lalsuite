@@ -133,7 +133,7 @@ tagFrStream
 
 static int strsort( const void *p1, const void *p2 )
 {
-  return strcmp( *((char * const *)p1), *((char * const *)p2) );
+  return strcmp( *((const char * const *)p1), *((const char * const *)p2) );
 }
 
 static int list_files( char ***flist, const char *dirname, const char *pattern )
@@ -629,7 +629,7 @@ static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
     char *name, char *comment, char *unitx, char *unity, int datatype,
     double rate, double fshift, double dx, unsigned int npts )
 {
-  FrVect *vect = FrVectNew1D( name, datatype, npts, dx, unitx, unity );
+  struct FrVect *vect = FrVectNew1D( name, datatype, npts, dx, unitx, unity );
   if ( ! vect ) return NULL;
   if ( chtype == ProcDataChannel )
   {
