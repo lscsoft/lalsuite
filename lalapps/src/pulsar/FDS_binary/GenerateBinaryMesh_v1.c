@@ -13,18 +13,16 @@
 #include "GenerateBinaryMesh_v1.h"
 
 CLargs CLA;
-REAL8 sma_GLOBAL;
 LIGOTimeGPS tperi_GLOBAL;
 LIGOTimeGPS tstartSSB;
 EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for barycentering */
 LALDetector Detector;              /* Our detector*/
 EarthState earth;
-EmissionTime emit;
 LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
 INT4 leap;
 static LALStatus status;
 
-int FreeMem();
+int FreeMem(void);
 int GenerateMesh(REAL4VectorSequence **,XYparameterspace *,Metric *);
 int SetupPspaceParams(RTparameterspace *,XYparameterspace *);
 int GenMetricComp(REAL8 *,REAL8 *,Metric *);
@@ -32,9 +30,9 @@ int CheckRTBoundary(REAL8 *,LIGOTimeGPS *,RTparameterspace *);
 int ConvertMesh(REAL4VectorSequence **,RTMesh *,RTparameterspace *);
 int OutputRTMesh(RTMesh *,Metric *, RTparameterspace *);
 int ReadCommandLine(int argc,char *argv[]);
-int ConvertTperitoPhase();
-int SetupBaryInput();
-int CheckInput();
+int ConvertTperitoPhase(void);
+int SetupBaryInput(void);
+int CheckInput(void);
 int GetSSBTime(LIGOTimeGPS *, LIGOTimeGPS *);
 
 int main(int argc, char **argv){
@@ -71,7 +69,7 @@ int main(int argc, char **argv){
 
 /***********************************************************************************/
 
-int FreeMem()
+int FreeMem(void)
 {
  
   /* Here we just free up the memory that has yet to be freed */

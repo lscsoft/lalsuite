@@ -12,9 +12,9 @@
 #include "GenerateBinaryMesh_v1.h"
 
 /* define the following so they are visible to the root finding routine */
-REAL8 sma_GLOBAL;
-REAL8 period_GLOBAL;
-LALStatus status;
+static REAL8 sma_GLOBAL;
+static REAL8 period_GLOBAL;
+LALStatus empty_status;
 
 static void OrbPhaseFunc(LALStatus *, REAL8 *, REAL8, void *);
 
@@ -22,7 +22,7 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
 {
 
   /* this routine takes a location in XY space and converts it to a location in RT space */   
-
+  LALStatus status = empty_status;
   LALTimeInterval interval;
   REAL8 alpha;
   REAL8 Torb;
@@ -78,7 +78,7 @@ int ConvertRTperitoXY(RTPLocation *RTPloc, XYLocation *XYloc, REAL8 *alpha)
 {
 
   /* this routine takes a point in RT space and converts it to XY space */
- 
+  LALStatus status = empty_status;
   DFindRootIn input;
   LALTimeInterval deltaT;
   REAL8 deltaTorb;
