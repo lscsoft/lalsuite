@@ -5,7 +5,7 @@
 /*                                                                               */
 /*                       University of Glasgow - last modified 26/03/2004        */
 /*********************************************************************************/
-$Id$ 
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -479,24 +479,24 @@ the variable condor is defined, then read in the first argument pulsar_name from
   if (iL1)
   { 
    output1.mChiSquare = NULL;
-   LALCreateVector( &status, &output1.mChiSquare,params1.meshH0[2]*params1.meshCosIota[2]*params1.meshPhase[2]*params1.meshPsi[2]);
+   LALDCreateVector( &status, &output1.mChiSquare,params1.meshH0[2]*params1.meshCosIota[2]*params1.meshPhase[2]*params1.meshPsi[2]);
   }
   
   if (iH1)
   {
     output2.mChiSquare = NULL;
-    LALCreateVector( &status, &output2.mChiSquare,params2.meshH0[2]*params2.meshCosIota[2]*params2.meshPhase[2]*params2.meshPsi[2]);
+    LALDCreateVector( &status, &output2.mChiSquare,params2.meshH0[2]*params2.meshCosIota[2]*params2.meshPhase[2]*params2.meshPsi[2]);
   }
   
   if (iH2)
   {
     output3.mChiSquare = NULL;
-    LALCreateVector( &status, &output3.mChiSquare,params3.meshH0[2]*params3.meshCosIota[2]*params3.meshPhase[2]*params3.meshPsi[2]);
+    LALDCreateVector( &status, &output3.mChiSquare,params3.meshH0[2]*params3.meshCosIota[2]*params3.meshPhase[2]*params3.meshPsi[2]);
   }
   if (iGEO)
   {    
     output4.mChiSquare = NULL;
-    LALCreateVector( &status, &output4.mChiSquare,params4.meshH0[2]*params4.meshCosIota[2]*params4.meshPhase[2]*params4.meshPsi[2]);
+    LALDCreateVector( &status, &output4.mChiSquare,params4.meshH0[2]*params4.meshCosIota[2]*params4.meshPhase[2]*params4.meshPsi[2]);
   }
   
   /* allocate memory for pdfs */
@@ -1005,7 +1005,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
     if (flag == 1) LALZDestroyVector(&status, &input1_chi.B);
     else if (flag ==2)  LALZDestroyVector(&status, &input1.B);
     
-    LALDestroyVector(&status, &output1.mChiSquare); 
+    LALDDestroyVector(&status, &output1.mChiSquare); 
     LALDestroyVector(&status, &prob1.pdf); LALDestroyVector(&status, &prob1.cdf);
     LALDestroyVector(&status, &prob1.pdfPhase); LALDestroyVector(&status, &prob1.cdfPhase);
     LALDestroyVector(&status, &prob1.pdfPsi); LALDestroyVector(&status, &prob1.cdfPsi);
@@ -1015,7 +1015,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
   if (iH1){
     if (flag == 1) LALZDestroyVector(&status, &input2_chi.B);
     else if (flag == 2) LALZDestroyVector(&status, &input2.B); 
-    LALDestroyVector(&status, &output2.mChiSquare); 
+    LALDDestroyVector(&status, &output2.mChiSquare); 
     LALDestroyVector(&status, &prob2.pdf); LALDestroyVector(&status, &prob2.cdf);
     LALDestroyVector(&status, &prob2.pdfPhase); LALDestroyVector(&status, &prob2.cdfPhase);
     LALDestroyVector(&status, &prob2.pdfPsi); LALDestroyVector(&status, &prob2.cdfPsi);
@@ -1025,7 +1025,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
   if (iH2){
     if (flag == 1) LALZDestroyVector(&status, &input3_chi.B); 
     else if (flag == 2) LALZDestroyVector(&status, &input3.B); 
-    LALDestroyVector(&status, &output3.mChiSquare); 
+    LALDDestroyVector(&status, &output3.mChiSquare); 
     LALDestroyVector(&status, &prob3.pdf); LALDestroyVector(&status, &prob3.cdf);
     LALDestroyVector(&status, &prob3.pdfPhase); LALDestroyVector(&status, &prob3.cdfPhase);
     LALDestroyVector(&status, &prob3.pdfPsi); LALDestroyVector(&status, &prob3.cdfPsi);
@@ -1035,7 +1035,7 @@ the variable condor is defined, then read in the first argument pulsar_name from
   if (iGEO){
     if (flag == 1) LALZDestroyVector(&status, &input4_chi.B); 
     else if (flag == 2) LALZDestroyVector(&status, &input4.B); 
-    LALDestroyVector(&status, &output4.mChiSquare); 
+    LALDDestroyVector(&status, &output4.mChiSquare); 
     LALDestroyVector(&status, &prob4.pdf); LALDestroyVector(&status, &prob4.cdf);
     LALDestroyVector(&status, &prob4.pdfPhase); LALDestroyVector(&status, &prob4.cdfPhase);
     LALDestroyVector(&status, &prob4.pdfPsi); LALDestroyVector(&status, &prob4.cdfPsi);

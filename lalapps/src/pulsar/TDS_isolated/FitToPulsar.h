@@ -109,7 +109,7 @@ tagCoarseFitOutput
   REAL8 phase;           /* best fit phase */
   REAL8 psi;             /* best fit psi (polarization angle) */
   REAL8 chiSquare;       /* value of min chi square */
-  REAL4Vector *mChiSquare;  /* matrix with chi square values*/
+  REAL8Vector *mChiSquare;  /* matrix with chi square values*/
 } CoarseFitOutput;
 
 typedef struct
