@@ -105,7 +105,8 @@ LALFindChirpSPTemplateInit (
       FINDCHIRPSPH_ENUMZ, FINDCHIRPSPH_MSGENUMZ );
 
   /* check that we are making a waveform that we know about */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV )
+  if ( params->approximant != TaylorF2 && params->approximant != BCV
+       && params->approximant != BCVSpin )
   {
     ABORT( status, FINDCHIRPSPH_EUAPX, FINDCHIRPSPH_MSGEUAPX );
   }
