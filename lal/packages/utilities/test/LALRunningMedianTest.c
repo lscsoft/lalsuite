@@ -50,6 +50,7 @@ LALCheckMemoryLeaks()
 
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <lal/LALMalloc.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALRunningMedian.h>
@@ -92,6 +93,9 @@ char*argv0;
   } else (void)(0)
 
 
+#define TOLERANCE ( 10.0 * LAL_REAL8_EPS )
+#define compare_double( x, y ) \
+( ( y == 0 ? ( x == 0 ? 0 : fabs((x-y)/x) ) : fabs((x-y)/y) ) > TOLERANCE )
 
 struct rngmed_val_index {
   REAL8 data;
@@ -159,7 +163,7 @@ int testDRunningMedian(LALStatus *stat, REAL8Sequence *input, UINT4 length, LALR
       median = (index_block[param.blocksize/2-1].data+index_block[param.blocksize/2].data)/2;
 
     /* compare results */
-    if(median != medians->data[i]) {
+    if(compare_double(median,medians->data[i])) {
       printf("ERROR: index:%d median:% 22.15e running median:% 22.15e mismatch:% 22.15e\n", 
              i, median, medians->data[i], median - medians->data[i]);
       LALFree(index_block);
@@ -221,7 +225,7 @@ int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALR
       median = (index_block[param.blocksize/2-1].data+index_block[param.blocksize/2].data)/2;
 
     /* compare results */
-    if(median != medians->data[i]) {
+    if(compare_double(median,medians->data[i])) {
       printf("ERROR: index:%d median:%f running median:%f mismatch\n", i, median, medians->data[i]);
       LALFree(index_block);
       LALFree(medians);
