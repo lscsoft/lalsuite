@@ -641,6 +641,7 @@ LALClusterSnglInspiralTable (
          )
       {
         memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
+        thisEvent->event_id = NULL;
       }
 
       /* otherwise just dump this event from cluster */
