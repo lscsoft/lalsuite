@@ -2346,7 +2346,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         if (stat(outputFilePath, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "File does not exist: (%s specified)\n", \
+              "Directory does not exist: (%s specified)\n", \
               long_options[option_index].name, outputFilePath);
           exit(1);
         }
