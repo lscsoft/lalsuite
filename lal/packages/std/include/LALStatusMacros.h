@@ -337,6 +337,24 @@
 #ifndef _LALSTATUSMACROS_H
 #define _LALSTATUSMACROS_H
 
+#ifndef _LALCONFIG_H
+#include "LALConfig.h"
+#ifndef _LALCONFIG_H
+#define _LALCONFIG_H
+#endif
+#endif
+
+#ifdef STDC_HEADERS
+# ifndef _STRING_H
+#   include <string.h>
+#   ifndef _STRING_H
+#     define _STRING_H
+#   endif
+# endif
+#else
+# error "ERROR: non ansi standard headers"
+#endif
+
 #ifndef _LALMALLOC_H
 #include "LALMalloc.h"
 #ifndef _LALMALLOC_H
