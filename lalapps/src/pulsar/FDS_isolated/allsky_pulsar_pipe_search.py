@@ -99,6 +99,7 @@ d_search = cp.get('fstat-params','d_search')
 data1 = cp.get('fstat-params','data1')
 data2 = cp.get('fstat-params','data2')
 Fth = cp.get('fstat-params','Fth')
+wings = cp.get('fstat-params','wings')
 
 # -------------------------------------------------------------------------------- #
 
@@ -139,14 +140,14 @@ shutil.copy(sun,subdir)
 # ------------------------- run the F-statistic code ----------------------------- # 
 
 # starting frequency for this job
-freq = float(start_freq) + float(job_id) * float(freq_band)
+freq = float(start_freq) + float(job_id) * float(freq_band) - float(wings)
 
 # first ifo
 ifo=ifo1
 data=data1
 
 # define command line for run on first ifo
-cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',freq_band,\
+cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(freq),'-b',str(float(freq_band)+2*float(wings)),\
                       '-I',ifo,'-r',df,a_search,d_search,\
                       '-D',data,'-E . -y 00-04 -F',Fth,'-o',''.join(['-',ifo,'-',str(freq)])])
 
