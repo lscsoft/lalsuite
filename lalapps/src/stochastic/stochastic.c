@@ -632,8 +632,8 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   StochasticOptimalFilterNormalizationOutput norm_output;
   StochasticOptimalFilterNormalizationParameters norm_params;
   StochasticOptimalFilterCalInput input;
-  REAL4WithUnits norm_lambda;
-  REAL4WithUnits norm_variance;
+  REAL4WithUnits normalisation;
+  REAL4WithUnits variance;
 
   /* set parameters for normalisation */
   norm_params.fRef = fRef;
@@ -648,16 +648,16 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   norm_input.inverseNoisePSD2 = psd_two;
 
   /* set normalisation output */
-  norm_output.normalization = &norm_lambda;
-  norm_output.variance = &norm_variance;
+  norm_output.normalization = &normalisation;
+  norm_output.variance = &variance;
 
   /* calculate variance and normalisation for the optimal filter */
   LAL_CALL(LALStochasticOptimalFilterNormalization(status, \
         &norm_output, &norm_input, &norm_params), status);
 
   /* get theoretical sigma */
-  *sigma = sqrt((REAL8)(segmentDuration * norm_variance.value * \
-        pow(10, norm_variance.units.powerOfTen)));
+  *sigma = sqrt((REAL8)(segmentDuration * variance.value * \
+        pow(10, variance.units.powerOfTen)));
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "filter", \
@@ -672,7 +672,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
 
   /* generate optimal filter */
   LAL_CALL(LALStochasticOptimalFilterCal(status, series, &input, \
-        &norm_lambda), status);
+        &normalisation), status);
 
   return(series);
 }
