@@ -30,42 +30,38 @@ LALSUP = lalsupport
 
 THELIBS = -l$(LALSUP) -l$(LLAL) -lm -L$(LAL_LIB)
 
-p=./timer/cycle_counter/Intel/GCC/
-m=../hough/objs_exe/
+#p=./timer/cycle_counter/Intel/GCC/
+#m=../hough/objs_exe/
 
 # ----------------------------------------------------------
 # compiler options
 
-CFLAGS =  -O2 -static -I$(LAL_INCLUDE) -I$p
+CFLAGS =  -O2 -static -I$(LAL_INCLUDE) 
 #CFLAGS =  -Wall -g -static -I$(LAL_INCLUDE) -I$p
 # -----------------------------------------------------------
 # default target
-all: DriveHoughColor DriveHoughColor_velo
+all: DriveHoughColor_v2
 
 # -----------------------------------------------------------
 #  produce object files
 
-DriveHoughColor.o: DriveHoughColor.c DriveHoughColor.h
-	$(CC) -c $(CFLAGS) DriveHoughColor.c
 
-DriveHoughColor_velo.o: DriveHoughColor_velo.c DriveHoughColor.h
-	$(CC) -c $(CFLAGS) DriveHoughColor_velo.c
+DriveHoughColor_v2.o: DriveHoughColor_v2.c DriveHoughColor.h
+	$(CC) -c $(CFLAGS) DriveHoughColor_v2.c
 
 # -----------------------------------------------------------
 # link tests code
 # -----------------------------------------------------------
 
-DriveHoughColor:  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor.o 
-	$(CC) $(CFLAGS) -o $@  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor.o $(THELIBS)
 
-DriveHoughColor_velo:  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor_velo.o  
-	$(CC) $(CFLAGS) -o $@  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor_velo.o $(THELIBS)
+DriveHoughColor_v2: SFTbin.o PeakSelect.o DriveHoughColor_v2.o  
+	$(CC) $(CFLAGS) -o $@   SFTbin.o PeakSelect.o DriveHoughColor_v2.o $(THELIBS)
 
 
 # -----------------------------------------------------------
 # cleaning...
 clean:
-	rm -f DriveHoughColor.o DriveHoughColor DriveHoughColor_velo.o DriveHoughColor_velo
+	rm -f  DriveHoughColor_v2.o DriveHoughColor_v2
 
 
 

@@ -37,7 +37,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALHough.h>
 #include <lal/RngMedBias.h>
-#include <lal/RunningMedian.h>
+#include <lal/LALRunningMedian.h>
 #include <lal/Velocity.h>
 #include <lal/Statistics.h>
 

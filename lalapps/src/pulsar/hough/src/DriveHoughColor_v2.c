@@ -1204,7 +1204,7 @@ void PrintHoughEvents (LALStatus       *status,
   xSide = ht->xSide;
   ySide = ht->ySide; 
   
-  f0=(ht->f0bin)*(ht->deltaF);
+  f0=(ht->f0Bin)*(ht->deltaF);
   
   for(yPos =0; yPos<ySide; yPos++){
     for(xPos =0; xPos<xSide; xPos++){
@@ -1226,59 +1226,3 @@ void PrintHoughEvents (LALStatus       *status,
 }    
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /* >>>>>>>>>>>>>>Remove this last one. Not used any more<<<<<<<<<<<<< */
-/******************************************************************/
-/*  estimate psd from periodogram using runing-median  */
-/*  this is just a wrapper to Mohanty's rngmed */
-/******************************************************************/
-void Periodo2PSDrng (LALStatus  *status,
-                     REAL8Periodogram1    *psd,
-                     REAL8Periodogram1    *peri,
-		     UINT2                *blocksRNG){ 
-
-  INT4   length, j;
-  UINT2  blockSize, nblocks2;
-  REAL8  *data;
-  REAL8  *medians;
-  
-  /* --------------------------------------------- */
-  INITSTATUS (status, "Periodo2PSDrng", DRIVEHOUGHCOLORC);
-  ATTATCHSTATUSPTR (status);
-
-  /*   Make sure the arguments are not NULL: */
-  ASSERT (psd,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (peri, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (blocksRNG, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-
-  psd->epoch.gpsSeconds     = peri->epoch.gpsSeconds;
-  psd->epoch.gpsNanoSeconds = peri->epoch.gpsNanoSeconds;
-  psd->timeBase     = peri->timeBase;
-  psd->fminBinIndex = peri->fminBinIndex;
-  
-  length = peri->length;
-  blockSize = *blocksRNG;
-  
-  ASSERT (length==psd->length,  status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
-  ASSERT (blockSize,  status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
-  ASSERT (blockSize<=length, status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
-  
-  if (length > 0){
-    ASSERT (peri->data,   status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-    ASSERT (psd->data,   status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-    
-    data=peri->data;
-    nblocks2 = floor(blockSize/2.0);
-    medians = psd->data+nblocks2;
-    
-    /* calling Mohanty's function. It is not LAL compliant */
-    rngmed(data, length, blockSize, medians);
-    
-    for (j=0; j<nblocks2 ; ++j){psd->data[j] = medians[0]; }
-    for (j=nblocks2+length-blockSize+1; j<length ; ++j){
-      psd->data[j] = medians[length-blockSize];
-    }     
-  }
-  
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
