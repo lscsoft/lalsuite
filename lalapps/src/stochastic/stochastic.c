@@ -306,6 +306,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* recentre */
   if (recentre_flag)
   {
+    if (vrbflg)
+      fprintf(stdout, "Recentring within data stream...\n");
+
     durationEff = numSegments * segmentDuration;
     extrasec = duration - durationEff;
     startTime += extrasec / 2;
