@@ -621,9 +621,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
   if (uvar_outputLabel)
     strcat(Paramfilename,uvar_outputLabel);
   
-  if(!(fpMLEParam=fopen(Paramfilename,"w")))
+  if(!(fpMLEParam=fopen(Paramfilename,"w"))) {
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
-
+    return 1;
+  }
 
   norm=2.0*sqrt(GV.tsft)/(GV.tsft*GV.SFTno);
 
@@ -652,15 +653,15 @@ int EstimateSignalParameters(INT4 * maxIndex)
       ampratio=Asq/h0mleSq;
 
 
-      if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) 
-	{
-	  fprintf(stderr,"Imaginary Cos[iota]; cannot compute parameters");
-	  fprintf(stderr,"in the EstimateSignalParameters routine");
-	  fprintf(stderr,"in ComputeFStatistic code");
-	  fprintf(stderr,"Now exitting...");
-	  /* 	  break; */
-	  return 1;
-	}
+      if(ampratio<0.25-error_tol||ampratio>2.0+error_tol) {
+	fprintf(stderr,
+		"Imaginary Cos[iota]; cannot compute parameters\n"
+		"in the EstimateSignalParameters routine\n"
+		"in ComputeFStatistic code\n"
+		"Now exiting...\n");
+	/* 	  break; */
+	return 1;
+      }
 
       if(fabs(ampratio-0.25)<error_tol) {
 	mu_mle =0.0;
@@ -2080,21 +2081,21 @@ INT4 EstimatePSDLines(LALStatus *status)
 #ifdef FILE_PSD
   /*  file contains freq, PSD, noise floor */
   if(!(outfile=fopen("PSD.txt","w"))){
-    printf("Cannot open PSD.txt file");
+    fprintf(stderr, "Cannot open PSD.txt file");
     return 1;
   } 
 #endif 
 #ifdef FILE_PSDLINES
   /*  file contains freq, PSD, noise floor,lines */
   if(!(outfile1=fopen("PSDLines.txt","w"))){
-    printf("Cannot open PSD.txt file");
+    fprintf(stderr, "Cannot open PSD.txt file");
     return 1;
   }
 #endif
 
   /* Allocate memory for input & output */
   /* if (!(Sp = (double *) calloc(nbins,sizeof(double)))){ */
-  /*   printf("Memory allocation failure"); */
+  /*   fprintf(stderr, "Memory allocation failure"); */
   /*   return 0; */
   /* } */
   
@@ -2186,12 +2187,12 @@ INT4 EstimatePSDLines(LALStatus *status)
    } /* if outliers->Noutliers==0 */
   
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
-     printf("Memory allocation failure for SpClusterParams");
+     fprintf(stderr, "Memory allocation failure for SpClusterParams");
      return 1;
    }
 
    if (!(clustersInput=(ClustersInput *)LALMalloc(sizeof(ClustersInput)))){ 
-     printf("Memory allocation failure for SpClusters");
+     fprintf(stderr, "Memory allocation failure for SpClusters");
      return 1;
    }
       
@@ -2202,9 +2203,8 @@ INT4 EstimatePSDLines(LALStatus *status)
    clustersInput->outliersParams= outliersParams;
    clustersInput->outliers      = outliers;     
    
-   j=DetectClusters(clustersInput, SpClParams, SpLines);
-   if (j!=0){
-     printf("DetectClusters problem");
+   if ((j=DetectClusters(clustersInput, SpClParams, SpLines))) {
+     fprintf(stderr, "DetectClusters problem");
      return 1;
    }
       
@@ -2305,14 +2305,14 @@ INT4 EstimateFLines(LALStatus *status)
 #ifdef FILE_FTXT
   /*  file contains freq, PSD, noise floor */
   if(!(outfile=fopen("F.txt","w"))){
-    printf("Cannot open F.txt file\n");
+    fprintf(stderr, "Cannot open F.txt file\n");
     return 1;
   }
 #endif
   /*  file contanis freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
   if(!(outfile1=fopen("FLines.txt","w"))){
-    printf("Cannot open FLines.txt file\n");
+    fprintf(stderr, "Cannot open FLines.txt file\n");
     return 1;
   }
 #endif
@@ -2398,13 +2398,13 @@ INT4 EstimateFLines(LALStatus *status)
 
    /* if outliers are found get ready to identify clusters of outliers*/
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
-     printf("Memory allocation failure for SpClusterParams");
+     fprintf(stderr, "Memory allocation failure for SpClusterParams");
      return 1;
    }
 
    
    if (!(clustersInput=(ClustersInput *)LALMalloc(sizeof(ClustersInput)))){ 
-     printf("Memory allocation failure for SpClusters");
+     fprintf(stderr, "Memory allocation failure for SpClusters");
      return 1;
    }
       
@@ -2417,9 +2417,8 @@ INT4 EstimateFLines(LALStatus *status)
    
    /* clusters of outliers in F get written in SpLines which is */
    /* the global highFLines*/
-   j=DetectClusters(clustersInput, SpClParams, SpLines);
-   if (j!=0){
-     printf("DetectClusters problem");
+   if ((j=DetectClusters(clustersInput, SpClParams, SpLines))) {
+     fprintf(stderr, "DetectClusters problem");
      return 1;
    }
    
@@ -2510,12 +2509,12 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   nbins=(INT2)nbins;
 
   if(!(N= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    printf("Memory allocation failure");
-    return 0;
+    fprintf(stderr, "Memory allocation failure");
+    return 1;
   }
    if(!(Sp1= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    printf("Memory allocation failure");
-    return 0;
+    fprintf(stderr, "Memory allocation failure");
+    return 1;
   }
 
    /*
