@@ -318,6 +318,7 @@ class CondorDAGNode:
     self.__bad_macro_chars = re.compile(r'[_-]')
     self.__output_files = []
     self.__input_files = []
+    self.__vds_group = None
     self.set_name()
 
   def __repr__(self):
@@ -400,6 +401,18 @@ class CondorDAGNode:
 
     return self.__output_files
 
+  def set_vds_group(self,group):
+    """
+    Set the name of the VDS group key when generating a DAX
+    @param group: name of group for thus nore
+    """
+    self.__vds_group = str(group)
+
+  def get_vds_group(self):
+    """
+    Returns the VDS group key for this node
+    """
+    return self.__vds_group
 
   def add_macro(self,name,value):
     """
@@ -787,10 +800,21 @@ class CondorDAG:
 
         template = """\
 <job id="%s" namespace="ligo" name="%s" version="1.0" level="1" dv-name="%s">
+"""
+        xml = template % (id_tag, executable, node_name, cmd_line)
+
+        # write the group if this node has one
+        if node.get_vds_group():
+          template = """\
+     <profile namespace="vds" key="group">%s</group>
+"""
+          xml = xml + template % (node.get_vds_group())
+
+        template = """\
      <argument>%s
      </argument>\
 """
-        xml = template % (id_tag, executable, node_name, cmd_line)
+        xml = xml + template % (cmd_line)
 
         print >>dagfile, xml
 

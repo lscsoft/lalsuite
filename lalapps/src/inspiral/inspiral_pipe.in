@@ -258,6 +258,9 @@ first_df2 = None
 # create a list to store the inspiral jobs
 insp_nodes = []
 
+# set the vds group to zero
+group = 0
+
 for seg in data:
   if not do_dax:
     # find all the data
@@ -340,6 +343,7 @@ for seg in data:
     bank.set_start(chunk.start())
     bank.set_end(chunk.end())
     bank.set_ifo(ifo1)
+    bank.set_vds_group(group)
 
     # calibration and cache files pointing to calibration:
     #
@@ -406,6 +410,7 @@ for seg in data:
     insp1.add_var_opt('snr-threshold',ifo1_snr)
     insp1.add_var_opt('chisq-threshold',ifo1_chisq)
     insp1.set_ifo(ifo1)
+    insp1.set_vds_group(group)
 
     if not do_dax:
         insp1.calibration()
@@ -456,6 +461,7 @@ for seg in data:
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.add_var_arg(insp1.get_output())
     trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
+    trigbank.set_vds_group(group)
 
     if do_inspiral:
       trigbank.add_parent(insp1)
@@ -466,6 +472,7 @@ for seg in data:
     insp2.set_start(chunk.start())
     insp2.set_end(chunk.end())
     insp2.set_ifo(ifo2)
+    insp2.set_vds_group(group)
     if not do_dax:
         insp2.calibration()
     else:
@@ -491,6 +498,9 @@ for seg in data:
 
     # add the two inspiral jobs for this chunk to the stored list
     seg_insp_nodes.append(tuple([insp1,insp2]))
+
+    # increment the vds group counter for the next chunk
+    group += 1
 
   # add the inspiral jobs for this segment to the list
   insp_nodes.append(seg_insp_nodes)
