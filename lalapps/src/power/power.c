@@ -66,6 +66,7 @@ static struct {
 	int cluster;                /* TRUE == perform clustering          */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
+	REAL8 fcorner;              /* GEO high pass corner freq, in Hz    */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
 	INT4 printData;
@@ -97,9 +98,6 @@ CHAR *injectionFile;                /* file with list of injections        */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
 ResampleTSFilter resampFiltType;
 
-/* GEO data high pass corner freq. */
-REAL8 fcorner;                      /* corner frequency in Hz              */
-
 
 /*
  * ============================================================================
@@ -130,12 +128,110 @@ static size_t window_commensurate(size_t psdlength, size_t windowlength, size_t 
 
 /*
  * ============================================================================
- *                       Fill an array with white noise
+ *                                   Input
+ * ============================================================================
+ */
+
+static REAL4TimeSeries *get_geo_data(
+	LALStatus *stat,
+	FrStream *stream,
+	LIGOTimeGPS epoch,
+	size_t length,
+	EPSearchParams *params
+)
+{
+	PassBandParamStruc highpassParam;
+	REAL4 fsafety = 0;
+	REAL4TimeSeries *series;
+	REAL8TimeSeries *geoSeries;
+	size_t i;
+
+	/* create and initialize the time series vector */
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, params->channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+
+	/* get the data */
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
+	geoSeries->epoch = epoch;
+	LAL_CALL(LALFrSeek(stat, &geoSeries->epoch, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
+
+	/* high pass filter before casting REAL8 to REAL4 */
+	highpassParam.nMax = 4;
+	fsafety = params->tfTilingInput->flow - 10.0;
+	highpassParam.f2 = fsafety > options.fcorner ? options.fcorner : fsafety;
+	highpassParam.f1 = -1.0;
+	highpassParam.a2 = 0.1;
+	highpassParam.a1 = -1.0;
+	LAL_CALL(LALButterworthREAL8TimeSeries(stat, geoSeries, &highpassParam), stat);
+
+	/* copy data into a REAL4 time series */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, geoSeries->name, geoSeries->epoch, geoSeries->f0, geoSeries->deltaT, geoSeries->sampleUnits, geoSeries->data->length), stat);
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] = geoSeries->data->data[i];
+	LAL_CALL(LALDestroyREAL8TimeSeries(stat, geoSeries), stat);
+
+	return(series);
+}
+
+static REAL4TimeSeries *get_ligo_data(
+	LALStatus *stat,
+	FrStream *stream,
+	LIGOTimeGPS epoch,
+	size_t length,
+	EPSearchParams *params
+)
+{
+	REAL4TimeSeries *series;
+
+	/* create and initialize the time series vector */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, params->channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+
+	/* get the data */
+	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
+	series->epoch = epoch;
+	LAL_CALL(LALFrSeek(stat, &series->epoch, stream), stat);
+	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
+
+	return(series);
+}
+
+static REAL4TimeSeries *get_time_series(LALStatus *stat, const char *dirname, const char *cachefile, LIGOTimeGPS epoch, EPSearchParams *params, size_t length)
+{
+	REAL4TimeSeries *series;
+	FrStream *stream = NULL;
+	FrCache *frameCache = NULL;
+
+	/* Open frame stream */
+	if(dirname)
+		LAL_CALL(LALFrOpen(stat, &stream, dirname, "*.gwf"), stat);
+	else if(cachefile) {
+		LAL_CALL(LALFrCacheImport(stat, &frameCache, cachefile), stat);
+		LAL_CALL(LALFrCacheOpen(stat, &stream, frameCache), stat);
+		LAL_CALL(LALDestroyFrCache(stat, &frameCache), stat);
+	} else
+		return(NULL);
+
+	/* Get the data */
+	if(geodata)
+		series = get_geo_data(stat, stream, epoch, length, params);
+	else
+		series = get_ligo_data(stat, stream, epoch, length, params);
+
+	/* Clean up */
+	LAL_CALL(LALFrClose(stat, &stream), stat);
+
+	return(series);
+}
+
+
+/*
+ * ============================================================================
+ *                    Fill a time series with white noise
  * ============================================================================
  */
 
 static void makeWhiteNoise(
-	LALStatus        *status,
+	LALStatus        *stat,
 	REAL4TimeSeries  *series,
 	INT4              seed,
 	REAL4             amplitude
@@ -144,23 +240,22 @@ static void makeWhiteNoise(
 	size_t i;
 	static RandomParams *rparams = NULL;
 
-	INITSTATUS(status, "makeWhiteNoise", POWERC);
-	ATTATCHSTATUSPTR(status);
-
 	/* generate Gaussian white noise with unit variance */
-	LALCreateRandomParams(status->statusPtr, &rparams, seed);
-	CHECKSTATUSPTR(status);
-	LALNormalDeviates(status->statusPtr, series->data, rparams);
-	CHECKSTATUSPTR(status);
-	LALDestroyRandomParams(status->statusPtr, &rparams);
-	CHECKSTATUSPTR(status);
+	LAL_CALL(LALCreateRandomParams(stat, &rparams, seed), stat);
+	LAL_CALL(LALNormalDeviates(stat, series->data, rparams), stat);
+	LAL_CALL(LALDestroyRandomParams(stat, &rparams), stat);
 
 	/* apply gain factor to noise in time series */
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] *= amplitude;
 
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+	/* verbosity */
+	if(options.verbose) {
+		REAL4 norm = 0.0;
+		for(i = 0; i < series->data->length; i++)
+			norm += series->data->data[i] * series->data->data[i];
+		fprintf(stderr, "the norm is %e\n", sqrt(norm / series->data->length));
+	}
 }
 
 
@@ -242,14 +337,7 @@ int main( int argc, char *argv[])
 	LALStatus                 stat;
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
-	FrStream                 *stream = NULL;
-	FrCache                  *frameCache = NULL;
-	PassBandParamStruc        highpassParam;
-	REAL4                     fsafety = 0;
-	CalibrationUpdateParams   calfacts;
-	LIGOTimeGPS               tmpEpoch = {0, 0};
-	LALTimeInterval           tmpInterval;
-	REAL8                     tmpOffset = 0.0;
+	LIGOTimeGPS               epoch = {0, 0};
 	REAL4                     minFreq = 0.0;
 	size_t                    start_sample;
 	int                       usedNumPoints;
@@ -266,9 +354,6 @@ int main( int argc, char *argv[])
 	MetadataTable             procTable;
 	MetadataTable             procparams;
 	MetadataTable             searchsumm;
-
-	/* units and other things */
-	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 
 	/* Which error handler to use */
@@ -301,122 +386,45 @@ int main( int argc, char *argv[])
 	/* the number of nodes for a standalone job is always 1 */
 	searchsumm.searchSummaryTable->nnodes = 1;
 
+	/* store the input start and end times */
+	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
+	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
+
 	/*set the min. freq to be searched for */
 	minFreq = params.tfTilingInput->flow;
 
 
-    /*
-     * Loop over data small enough to fit into memory 
-     */
+	/*
+	 * Loop over data small enough to fit into memory 
+	 */
 
-    tmpEpoch = options.startEpoch;
-    for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)) {
+	epoch = options.startEpoch;
+	for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)) {
+		/* tell operator how we are doing */
+		if(options.verbose)
+			fprintf(stderr, "%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
 
-      /* tell operator how we are doing */
-      if(options.verbose)
-        fprintf(stderr, "%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
+		/* compute the number of points to use in this run */
+		numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
+		if(options.verbose)
+			fprintf(stderr, "reading %i points...\n", numPoints);
 
-      /* compute the number of points to use in this run */
-      numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
+		/************************************************************
+		 * GET AND CONDITION THE DATA                               *
+		 ************************************************************/
 
-      if(options.verbose)
-        fprintf(stderr, "reading %i points...\n", numPoints);
+		series = get_time_series(&stat, dirname, cachefile, epoch, &params, numPoints);
 
-      /*******************************************************************
-       * GET AND CONDITION THE DATA                                       *
-       *******************************************************************/
-
-      /* only try to load frame if name is specified */
-      if (dirname || cachefile)
-      {
-        REAL8 tmpTime=0;
-
-        if(dirname)
-          /* Open frame stream */
-          LAL_CALL(LALFrOpen(&stat, &stream, dirname, "*.gwf"), &stat);
-        else if(cachefile) {
-          /* Open frame cache */
-          LAL_CALL(LALFrCacheImport(&stat, &frameCache, cachefile), &stat);
-          LAL_CALL(LALFrCacheOpen(&stat, &stream, frameCache), &stat);
-          LAL_CALL(LALDestroyFrCache(&stat, &frameCache), &stat);
-        }
-        /*
-         * Determine information about the channel and seek to the
-         * right place in the fram files 
-         */
-        if(geodata) {
-          REAL8TimeSeries *geoSeries;
-          size_t i;
-
-          /* create and initialize the time series vector */
-	  LAL_CALL(LALCreateREAL8TimeSeries(&stat, &geoSeries, params.channelName, tmpEpoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
-
-          /* get the data */
-          LAL_CALL(LALFrGetREAL8TimeSeries(&stat, geoSeries, &channelIn, stream), &stat);
-          geoSeries->epoch = tmpEpoch;
-          LAL_CALL(LALFrSeek(&stat, &geoSeries->epoch, stream), &stat);
-          LAL_CALL(LALFrGetREAL8TimeSeries(&stat, geoSeries, &channelIn, stream), &stat);
-
-          /* high pass filter before casting REAL8 to REAL4 */
-          highpassParam.nMax = 4;
-          fsafety = params.tfTilingInput->flow - 10.0;
-          highpassParam.f2 = fsafety > fcorner ? fcorner : fsafety;
-          highpassParam.f1 = -1.0;
-          highpassParam.a2 = 0.1;
-          highpassParam.a1 = -1.0;
-          LAL_CALL(LALButterworthREAL8TimeSeries(&stat, geoSeries, &highpassParam), &stat);
-
-	  /* copy data into a REAL4 time series */
-          LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, geoSeries->name, geoSeries->epoch, geoSeries->f0, geoSeries->deltaT, geoSeries->sampleUnits, geoSeries->data->length), &stat);
-          for(i = 0; i < series->data->length; i++)
-            series->data->data[i] = geoSeries->data->data[i];
-          LAL_CALL(LALDestroyREAL8TimeSeries(&stat, geoSeries), &stat);
-        } else {
-          /* create and initialize the time series vector */
-          LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, tmpEpoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
-
-          /* get the data */
-          LAL_CALL(LALFrGetREAL4TimeSeries(&stat, series, &channelIn, stream), &stat);
-          series->epoch = tmpEpoch;
-          LAL_CALL(LALFrSeek(&stat, &series->epoch, stream), &stat);
-          LAL_CALL(LALFrGetREAL4TimeSeries(&stat, series, &channelIn, stream), &stat);
-        }
-
-        /* store the start time of the raw channel in the search summary */
-        if(!(searchsumm.searchSummaryTable->in_start_time.gpsSeconds)) 
-          searchsumm.searchSummaryTable->in_start_time = series->epoch;
-
-        /* store the stop time of the raw channel in the search summary */
-        LAL_CALL(LALGPStoFloat(&stat, &tmpTime, &series->epoch), &stat);
-        tmpTime += series->deltaT * series->data->length;
-        LAL_CALL(LALFloatToGPS(&stat, &(searchsumm.searchSummaryTable->in_end_time), &tmpTime), &stat);
-
-        /* close the frame stream */
-        LAL_CALL( LALFrClose( &stat, &stream ), &stat);
-      }
-
-      /* populate time series with white noise if specified */
-      if(whiteNoise) {
-        if(!series) {
-          size_t i;
-          LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, tmpEpoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
-          for(i = 0; i < series->data->length; i++)
-            series->data->data[i] = 1.0;
-        }
-        makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
-        if(options.verbose) {
-          REAL4 norm=0;
-          UINT4 j ;
-          /* PRB - The normalization constant */
-          norm = 0.0;
-          for(j = 0; j < series->data->length; j++) {
-            REAL4 re = series->data->data[j];
-            norm += (re*re);
-          }
-          norm = sqrt(norm / series->data->length);
-          fprintf(stderr, "the norm is %e\n", norm);
-        }
-      }
+		/* populate time series with white noise if requested */
+		if(whiteNoise) {
+			if(!series) {
+				size_t i;
+				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
+				for(i = 0; i < series->data->length; i++)
+					series->data->data[i] = 1.0;
+			}
+			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
+		}
 
       /* write diagnostic info to disk */
       if(options.printData)
@@ -425,8 +433,9 @@ int main( int argc, char *argv[])
       /* create storage for the response function */
       if(calCacheFile) {
         size_t i;
+        const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&stat, &resp, channelIn.name, tmpEpoch, 0.0, (REAL8) frameSampleRate / (REAL8) numPoints, strainPerCount, numPoints / 2 + 1), &stat);
+	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&stat, &resp, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) numPoints, strainPerCount, numPoints / 2 + 1), &stat);
 
         /* generate the response function for the current time */
         if(options.verbose) 
@@ -438,7 +447,8 @@ int main( int argc, char *argv[])
             resp->data->data[i].re = 1.0;
             resp->data->data[i].im = 0.0;
         } else {
-          memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+          CalibrationUpdateParams calfacts;
+          memset(&calfacts, 0, sizeof(calfacts));
           calfacts.ifo = ifo;
           LAL_CALL(LALExtractFrameResponse(&stat, resp, calCacheFile, &calfacts), &stat);
         }
@@ -471,12 +481,10 @@ int main( int argc, char *argv[])
 
         LAL_CALL(LALBurstInjectSignals(&stat, series, injections, resp), &stat); 
 
-        while (injections)
-        {
-          SimBurstTable *thisEvent;
-          thisEvent = injections;
+        while(injections) {
+          SimBurstTable *thisEvent = injections;
           injections = injections->next;
-          LALFree( thisEvent );
+          LALFree(thisEvent);
         }
 
         if(options.verbose)
@@ -491,6 +499,8 @@ int main( int argc, char *argv[])
 
       if(mdcCacheFile) {
         REAL4TimeSeries *mdcSeries;
+	FrStream *stream = NULL;
+	FrCache *frameCache = NULL;
         size_t i;
 
         if(options.verbose)
@@ -506,7 +516,7 @@ int main( int argc, char *argv[])
 
         /* get the mdc signal data */
         LAL_CALL(LALFrGetREAL4TimeSeries( &stat, mdcSeries, &mdcchannelIn, stream), &stat);
-        mdcSeries->epoch = tmpEpoch;
+        mdcSeries->epoch = epoch;
         LAL_CALL(LALFrSeek(&stat, &mdcSeries->epoch, stream), &stat);
         LAL_CALL(LALFrGetREAL4TimeSeries(&stat, mdcSeries, &mdcchannelIn, stream), &stat);
 
@@ -527,21 +537,20 @@ int main( int argc, char *argv[])
         LAL_CALL(LALFrClose(&stat, &stream), &stat);
       }
 
-      /* Finally call condition data */
-      LAL_CALL(EPConditionData(&stat, series, minFreq, 1.0/targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
+		/*
+		 * Condition data.
+		 */
 
-      /* add information about times to summary table */
-      {
-        REAL8 tmpTime=0;
+		LAL_CALL(EPConditionData(&stat, series, minFreq, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
 
-        /* store the 'actual' start and end time (accounting for the 
-         * corruption at the begining & end) in the search summary */
-        LAL_CALL(LALGPStoFloat(&stat, &tmpTime, &series->epoch), &stat);
-        if(!(searchsumm.searchSummaryTable->out_start_time.gpsSeconds))
-          LAL_CALL(LALFloatToGPS( &stat, &(searchsumm.searchSummaryTable->out_start_time), &tmpTime), &stat);
-        tmpTime += series->deltaT * series->data->length;
-        LAL_CALL(LALFloatToGPS(&stat, &(searchsumm.searchSummaryTable->out_end_time), &tmpTime), &stat);
-      }
+		/*
+		 * Update the analyzed start and end times.
+		 */
+
+		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
+			searchsumm.searchSummaryTable->out_start_time = series->epoch;
+		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * series->data->length), &stat);
+
 
 		/***********************************************
 		 * DO THE SEARCH                               *
@@ -579,9 +588,7 @@ int main( int argc, char *argv[])
 		 * Reset for next run
 		 */
 
-		tmpOffset = (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate;
-		LAL_CALL(LALFloatToInterval(&stat, &tmpInterval, &tmpOffset), &stat);
-		LAL_CALL(LALIncrementGPS(&stat, &tmpEpoch, &tmpEpoch, &tmpInterval), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, resp), &stat);
 	}
@@ -865,6 +872,7 @@ void parse_command_line(
 
 	options.cluster = FALSE;
 	options.comment = "";
+	options.fcorner = 100.0;
 	options.FilterCorruption = -1;
 	options.noiseAmpl = 1.0;
 	options.printData = FALSE;
@@ -875,7 +883,6 @@ void parse_command_line(
 	cachefile = NULL;
 	calCacheFile = NULL;
 	dirname = NULL;
-	fcorner = 100.0;
 	frameSampleRate = 0;
 	geodata = FALSE;
 	memset(ifo, 0, sizeof(ifo));
@@ -962,8 +969,8 @@ void parse_command_line(
 		break;
 
 		case 'J':
-		fcorner = atof(optarg);
-		if(fcorner <= 0) {
+		options.fcorner = atof(optarg);
+		if(options.fcorner <= 0) {
 			print_bad_argument(argv[0], long_options[option_index].name, "must be > 0");
 			exit(1);
 		}
