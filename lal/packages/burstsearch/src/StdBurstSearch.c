@@ -521,50 +521,48 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/**                           bandwidth                         **/
 	/*****************************************************************/
 /******** <lalLaTeX file="StdBurstSearchC"> ********
-\item To estimate the bandwidth, the power measurements in the bandwidth identified by the ETG are added in decreasing order until 50\% of the total power in the ETG band is achieved. The difference between the maximum and the minimum frequencies used in the sum is the bandwidth measurement.
+\item The bandwidth is the smallest band containing the peak frequency such that 50% of the estimated purst power is in that band.
 ********* </lalLaTeX> ********/
 
 	if(FPower) {
 	  REAL8 tPower = 0.0;
-	  REAL8 thr, ts;
-	  INT4Vector *idx = NULL;
-	  INT4 lo,hi;
-
-	  LALI4CreateVector(status->statusPtr, &idx, FPower->length);
-	  CHECKSTATUSPTR (status);
-
-	  for(l=0;l<FPower->length;l++) {
-	    tPower += FPower->data[l];
+	  REAL8 thr;
+	  INT4 pind, sdur, tdel;
+	  INT4 msdur, mpeak = mfi - llo;
+	  
+	  msdur = FPower->length - mpeak;
+	  if(mpeak < msdur) {
+	    msdur = mpeak;
 	  }
 
+	  for(sdur=0;sdur<FPower->length;sdur++) {
+	    tPower += FPower->data[sdur];
+	  }
 	  thr = tPower * (1.0 - bandwidthPF);
 
-	  LALDHeapIndex(status->statusPtr, idx, FPower); /* note: this doesn't sort FPower!! INEFFICIENT!! */
-	  CHECKSTATUSPTR (status);
-
-	  LALDHeapSort(status->statusPtr, FPower);
-	  CHECKSTATUSPTR (status);
-
-	  for(ts=0.0, l=0;l<FPower->length;l++) {
-	    ts += FPower->data[l];
-	    if(ts > thr) {break;}
-	  }
-
-	  if(l == FPower->length) {
-	    bandwidth = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime);
-	  } else {
-	    for(lo=hi=idx->data[l];l<FPower->length;l++) {
-	      if(idx->data[l]<lo) {lo = idx->data[l];}
-	      if(hi<idx->data[l]) {hi = idx->data[l];}
+	  for(sdur = 1; sdur < msdur; sdur++) {
+	    tPower = 0.0;
+	    for(pind = mpeak - sdur + 1; pind < mpeak; pind++) {
+	      tPower += FPower->data[pind];
 	    }
 
-	    bandwidth = (1+hi-lo) / (data->data->deltaT * (REAL4)bptr->nTime);
+	    if(tPower >= thr) {
+	      break;
+	    }
+
+	    for(tdel = 1; tdel < sdur; tdel++) {
+	      tPower -= FPower->data[mpeak - sdur + tdel];
+	      tPower += FPower->data[mpeak + tdel];
+
+	      if(tPower >= thr) {
+		break;
+	      }
+	    }
+
 	  }
 
-	  LALI4DestroyVector(status->statusPtr, &idx);
-	  CHECKSTATUSPTR (status);
-	} else {
-	  bandwidth = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime);
+	  bandwidth = (REAL4)sdur / (data->data->deltaT * (REAL4)bptr->nTime);
+
 	}
 
 	if(FPower) {
@@ -884,45 +882,43 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  if(FPower) {
 	    REAL8 tPower = 0.0;
-	    REAL8 thr, ts;
-	    INT4Vector *idx = NULL;
-	    INT4 lo,hi;
-
-	    LALI4CreateVector(status->statusPtr, &idx, FPower->length);
-	    CHECKSTATUSPTR (status);
-
-	    for(l=0;l<FPower->length;l++) {
-	      tPower += FPower->data[l];
+	    REAL8 thr;
+	    INT4 pind, sdur, tdel;
+	    INT4 msdur, mpeak = mfi - llo - 1;
+	  
+	    msdur = FPower->length - mpeak;
+	    if(mpeak < msdur) {
+	      msdur = mpeak;
 	    }
 
+	    for(sdur=0;sdur<FPower->length;sdur++) {
+	      tPower += FPower->data[sdur];
+	    }
 	    thr = tPower * (1.0 - durationPF);
 
-	    LALDHeapIndex(status->statusPtr, idx, FPower);
-	    CHECKSTATUSPTR (status);
-
-	    LALDHeapSort(status->statusPtr, FPower);
-	    CHECKSTATUSPTR (status);
-
-	    for(ts=0.0, l=0;l<FPower->length;l++) {
-	      ts += FPower->data[l];
-	      if(ts > thr) {break;}
-	    }
-
-	    if(l == FPower->length) {
-	      duration = data->data->deltaT;
-	    } else {
-	      for(lo=hi=idx->data[l];l<FPower->length;l++) {
-		if(idx->data[l]<lo) {lo = idx->data[l];}
-		if(hi<idx->data[l]) {hi = idx->data[l];}
+	    for(sdur = 1; sdur < msdur; sdur++) {
+	      tPower = 0.0;
+	      for(pind = mpeak - sdur + 1; pind < mpeak; pind++) {
+		tPower += FPower->data[pind];
 	      }
 
-	      duration = (1+hi-lo) * data->data->deltaT;
+	      if(tPower >= thr) {
+		break;
+	      }
+
+	    for(tdel = 1; tdel < sdur; tdel++) {
+	      tPower -= FPower->data[mpeak - sdur + tdel];
+	      tPower += FPower->data[mpeak + tdel];
+
+	      if(tPower >= thr) {
+		break;
+	      }
 	    }
 
-	    LALI4DestroyVector(status->statusPtr, &idx);
-	    CHECKSTATUSPTR (status);
-	  } else {
-	    duration = data->data->deltaT;
+	  }
+
+	  duration = (REAL4)sdur * data->data->deltaT;
+
 	  }
 
 	  if(FPower) {
@@ -939,13 +935,17 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	/**                         confidence                          **/
 	/*****************************************************************/
 /******** <lalLaTeX file="StdBurstSearchC"> ********
-\item The confidence is the log10 of the minimum of the confidence calculated in the time domain and in the frequency domain.
+\item The confidence is the log10 of the confidence calculated in the frequency domain.
 ********* </lalLaTeX> ********/
+/*
 	if(llikf < llikt) {
 	  confidence = llikf;
 	} else {
 	  confidence = llikt;
 	}
+*/
+	confidence = llikf;
+
 	confidence /= log(10.0);
 
       }
