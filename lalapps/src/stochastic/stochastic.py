@@ -166,4 +166,111 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     out = out + "stochastic" + '-' + str(self.get_start()) + '-' + str(self.get_stop())
     return out + '.xml'
 
+class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  An LSCdataFind job used to locate data. The static options are
+  read from the section [datafind] in the ini file. The stdout from
+  LSCdataFind contains the paths to the frame files and is directed to a file
+  in the cache directory named by site and GPS start and end times. The stderr
+  is directed to the logs directory. The job always runs in the scheduler
+  universe. The path to the executable is determined from the ini file.
+  """
+  def __init__(self,cache_dir,log_dir,config_file):
+    """
+    @param cache_dir: the directory to write the output lal cache files to.
+    @param log_dir: the directory to write the stderr file to.
+    @param config_file: ConfigParser object containing the path to the LSCdataFind
+    executable in the [condor] section and a [datafind] section from which
+    the LSCdataFind options are read.
+    """
+    self.__executable = config_file.get('condor','datafind')
+    self.__universe = 'scheduler'
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,config_file)
+    self.__cache_dir = cache_dir
+
+    for sec in ['datafind']:
+      self.add_ini_opts(config_file,sec)
+    
+    # we need a lal cache for files on the localhost
+    self.add_opt('match','localhost')
+    self.add_opt('lal-cache','')
+    self.add_opt('url-type','file')
+
+    self.add_condor_cmd('environment',
+      """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH);LSC_DATAFIND_SERVER=$ENV(LSC_DATAFIND_SERVER)""" )
+
+    self.set_stderr_file(log_dir + '/datafind-$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file(self.__cache_dir + '/$(macroobservatory)-$(macrogpsstarttime)-$(macrogpsendtime).cache')
+    self.set_sub_file('datafind.sub')
+
+  def get_cache_dir(self):
+    """
+    returns the directroy that the cache files are written to.
+    """
+    return self.__cache_dir
+
+
+class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A DataFindNode runs an instance of LSCdataFind in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that can run an instance of LALdataFind.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__start = 0
+    self.__end = 0
+    self.__observatory = None
+    self.__output = None
+    self.__job = job
+   
+  def __set_output(self):
+    """
+    Private method to set the file to write the cache to. Automaticaly set
+    once the ifo, start and end times have been set.
+    """
+    if self.__start and self.__end and self.__observatory:
+      self.__output = self.__job.get_cache_dir() + '/' + self.__observatory + '-'  
+      self.__output += str(self.__start) + '-' + str(self.__end) + '.cache'
+      self.add_output_file(self.__output)
+
+  def set_start(self,time):
+    """
+    Set the start time of the datafind query.
+    @param time: GPS start time of query.
+    """
+    self.add_var_opt('gps-start-time', time)
+    self.__start = time
+    self.__set_output()
+
+  def set_end(self,time):
+    """
+    Set the end time of the datafind query.
+    @param time: GPS end time of query.
+    """
+    self.add_var_opt('gps-end-time', time)
+    self.__end = time
+    self.__set_output()
+
+  def set_observatory(self,obs):
+    """
+    Set the IFO to retrieve data for. Since the data from both Hanford 
+    interferometers is stored in the same frame file, this takes the first 
+    letter of the IFO (e.g. L or H) and passes it to the --observatory option
+    of LSCdataFind.
+    @param obs: IFO to obtain data for.
+    """
+    self.add_var_opt('observatory',obs)
+    self.__observatory = obs
+    self.__set_output()
+
+  def get_output(self):
+    """
+    Return the output file, i.e. the file containing the frame cache data.
+    """
+    return self.__output
+
 # vim: et

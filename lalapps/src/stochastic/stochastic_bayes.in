@@ -131,7 +131,7 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename + '.dag')
 
 # create the Condor jobs that will be used in the DAG
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
+df_job = stochastic.LSCDataFindJob('cache','logs',cp)
 stoch_job = stochastic.StochasticJob(cp)
 
 # set file names
@@ -180,7 +180,7 @@ prev_df = None
 # loop through the analysis data
 for seg in data:
   # find the data with LSCdataFind
-  df1 = pipeline.LSCDataFindNode(df_job)
+  df1 = stochastic.LSCDataFindNode(df_job)
   df1.set_start(seg.start())
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
@@ -190,7 +190,7 @@ for seg in data:
 
   # find data with LSCdataFind for different detector
   if ifo1[0] != ifo2[0]:
-    df2 = pipeline.LSCDataFindNode(df_job)
+    df2 = stochastic.LSCDataFindNode(df_job)
     df2.set_start(seg.start())
     df2.set_end(seg.end())
     df2.set_observatory(ifo2[0])
