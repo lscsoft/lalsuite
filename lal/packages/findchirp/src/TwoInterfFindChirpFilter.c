@@ -690,8 +690,10 @@ LALTwoInterfFindChirpFilterInit (
   
   if ( params->initParams1->createRhosqVec )
     {
+      outputPtr->filterParams1->rhosqVec = (REAL4TimeSeries *) 
+        LALCalloc( 1, sizeof(REAL4TimeSeries) );
       LALCreateVector (status->statusPtr, 
-		       &(outputPtr->filterParams1->rhosqVec), 
+		       &(outputPtr->filterParams1->rhosqVec->data), 
 		       params->initParams1->numPoints);
       BEGINFAIL( status )
 	{
@@ -736,14 +738,17 @@ LALTwoInterfFindChirpFilterInit (
   
   if ( params->initParams2->createRhosqVec )
     {
+      outputPtr->filterParams2->rhosqVec = (REAL4TimeSeries *) 
+        LALCalloc( 1, sizeof(REAL4TimeSeries) );
       LALCreateVector (status->statusPtr, 
-		       &(outputPtr->filterParams2->rhosqVec), 
+		       &(outputPtr->filterParams2->rhosqVec->data), 
 		       params->initParams2->numPoints);
       BEGINFAIL( status )
 	{
 	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->rhosqVec) ), 
+				 &(outputPtr->filterParams1->rhosqVec->data) ), 
 	       status );
+          LALFree( outputPtr->filterParams1->rhosqVec );
 	  TRY( LALDestroyVector( status->statusPtr, 
 				 &(outputPtr->filterParams2->chisqVec) ), 
 	       status );
@@ -795,11 +800,13 @@ LALTwoInterfFindChirpFilterInit (
       BEGINFAIL( status )
 	{
 	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams2->rhosqVec) ), 
+				 &(outputPtr->filterParams2->rhosqVec->data) ), 
 	       status );
+          LALFree( outputPtr->filterParams2->rhosqVec );
 	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->rhosqVec) ), 
+				 &(outputPtr->filterParams1->rhosqVec->data) ), 
 	       status );
+          LALFree( outputPtr->filterParams1->rhosqVec );
 	  TRY( LALDestroyVector( status->statusPtr, 
 				 &(outputPtr->filterParams2->chisqVec) ), 
 	       status );
@@ -960,15 +967,17 @@ LALTwoInterfFindChirpFilterFinalize (
   if ( outputPtr->filterParams1->rhosqVec )
     {
       LALDestroyVector( status->statusPtr, 
-			&(outputPtr->filterParams1->rhosqVec) );
+			&(outputPtr->filterParams1->rhosqVec->data) );
       CHECKSTATUSPTR( status );
+      LALFree( outputPtr->filterParams1->rhosqVec );
     }    
   
   if ( outputPtr->filterParams2->rhosqVec )
     {
       LALDestroyVector( status->statusPtr, 
-			&(outputPtr->filterParams2->rhosqVec) );
+			&(outputPtr->filterParams2->rhosqVec->data) );
       CHECKSTATUSPTR( status );
+      LALFree( outputPtr->filterParams2->rhosqVec );
     }    
   
   
@@ -1297,7 +1306,7 @@ LALTwoInterfFindChirpFilterSegment (
   
   /* if full snrsq vector for detector 1 is required, set it to zero */
   if ( params->filterParams1->rhosqVec )
-    memset( params->filterParams1->rhosqVec->data, 0, 
+    memset( params->filterParams1->rhosqVec->data->data, 0, 
 	    numPoints * sizeof( REAL4 ) );
   
   /* normalization */

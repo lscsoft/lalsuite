@@ -422,7 +422,7 @@ tagFindChirpFilterParams
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qtildeVec;
   ComplexFFTPlan               *invPlan;
-  REAL4Vector                  *rhosqVec;
+  REAL4TimeSeries              *rhosqVec;
   REAL4Vector                  *chisqVec;
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;

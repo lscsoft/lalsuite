@@ -320,7 +320,9 @@ LALFindChirpFilterInit (
 
   if ( params->createRhosqVec )
   {
-    LALCreateVector (status->statusPtr, &(outputPtr->rhosqVec), 
+    outputPtr->rhosqVec = (REAL4TimeSeries *) 
+      LALCalloc( 1, sizeof(REAL4TimeSeries) );
+    LALCreateVector (status->statusPtr, &(outputPtr->rhosqVec->data), 
         params->numPoints);
     BEGINFAIL( status )
     {
@@ -434,8 +436,10 @@ LALFindChirpFilterFinalize (
 
   if ( outputPtr->rhosqVec )
   {
-    LALDestroyVector( status->statusPtr, &(outputPtr->rhosqVec) );
+    LALDestroyVector( status->statusPtr, &(outputPtr->rhosqVec->data) );
     CHECKSTATUSPTR( status );
+
+    LALFree( outputPtr->rhosqVec );
   }    
 
 
@@ -525,6 +529,8 @@ LALFindChirpFilterSegment (
   /* if a rhosqVec vector has been created, check we can store data in it */
   if ( params->rhosqVec ) 
   {
+    ASSERT( params->rhosqVec->data->data, status, 
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     ASSERT( params->rhosqVec->data, status, 
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
@@ -671,7 +677,7 @@ LALFindChirpFilterSegment (
 
   /* if full snrsq vector is required, set it to zero */
   if ( params->rhosqVec )
-    memset( params->rhosqVec->data, 0, numPoints * sizeof( REAL4 ) );
+    memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
   /* normalisation */
   params->norm = norm = 
@@ -683,10 +689,16 @@ LALFindChirpFilterSegment (
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
   {
+    snprintf( params->rhosqVec->name, LALNameLength * sizeof(CHAR),
+        "%s:rhosq:output", input->segment->data->name );
+    memcpy( &(params->rhosqVec->epoch), &(input->segment->data->epoch), 
+        sizeof(LIGOTimeGPS) );
+    params->rhosqVec->deltaT = input->segment->deltaT;
+
     for ( j = 0; j < numPoints; ++j )
     {
       REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
-      params->rhosqVec->data[j] = norm * modqsq;
+      params->rhosqVec->data->data[j] = norm * modqsq;
     }
   }
 
