@@ -5,19 +5,6 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 
-
-DRAFT DOCUMENTATION
-
-Right now this test file read an input xml file and for each valid line it computes
- the approriate waveform. Those waveforms are either produce within the inject package 
-(PPN waveform) or within the inspiral package. 
-
-
-Then the function LALGeneralInspiral create the amplitude, freq and phi vectors needed for further
-injection including the data itself (noise, h(t)) 
-
-
-
 \subsection{Program \texttt{InterfaceTest.c}}
 \label{ss:InterfaceTest.c}
 
@@ -25,19 +12,27 @@ Interface to generate any kind of gravitational waves signal.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-InterfaceTest [-p parameterfile] 
+\texttt{InterfaceTest}
 \end{verbatim}
 
 \subsubsection*{Description}
+Right now this test file read an input xml (injection.xml) file and for 
+each valid line it computes the approriate waveform. Those waveforms are 
+either produce within the inject package (PPN waveform) or within the 
+inspiral package (TaylorT[1,2,3], EOB, SpinTaylor, PadeT1). 
 
+Then the function LALGeneralInspiral create the amplitude, freq and phi 
+vectors needed for further injection including the data itself (noise, h(t)) 
 
-\subsubsection*{Exit codes}
-
-\subsubsection*{Algorithm}
+Finally, the injections are stored in a vector which is saved in "injection.dat"
+file.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-liste des fonctions utilisees
+
+
+
+
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -45,40 +40,31 @@ liste des fonctions utilisees
 \vfill{\footnotesize\input{InterfaceTestCV}}
 
 ******************************************************* </lalLaTeX><lalErrTable> */
-
-#define INTERFACETESTC_ENORM 0
-#define INTERFACETESTC_ESUB  1
-#define INTERFACETESTC_EARG  2
-#define INTERFACETESTC_EVAL  3
-#define INTERFACETESTC_EFILE 4
-#define INTERFACETESTC_EMEM  5
+#define INTERFACETESTC_ENORM 	0
+#define INTERFACETESTC_ESUB  	1
+#define INTERFACETESTC_EARG  	2
+#define INTERFACETESTC_EVAL  	3
+#define INTERFACETESTC_EFILE 	4
+#define INTERFACETESTC_EMEM  	5
 #define INTERFACETESTC_EINJECT  6
 
-
-
-#define INTERFACETESTC_MSGENORM "Normal exit"
-#define INTERFACETESTC_MSGESUB  "Subroutine failed"
-#define INTERFACETESTC_MSGEARG  "Error parsing arguments"
-#define INTERFACETESTC_MSGEVAL  "Input argument out of valid range"
-#define INTERFACETESTC_MSGEFILE "Could not open file"
-#define INTERFACETESTC_MSGEMEM  "Out of memory"
-#define INTERFACETESTC_MSGEINJECT  "No valid injection to do ... ? "
-
+#define INTERFACETESTC_MSGENORM 	"Normal exit"
+#define INTERFACETESTC_MSGESUB  	"Subroutine failed"
+#define INTERFACETESTC_MSGEARG  	"Error parsing arguments"
+#define INTERFACETESTC_MSGEVAL  	"Input argument out of valid range"
+#define INTERFACETESTC_MSGEFILE 	"Could not open file"
+#define INTERFACETESTC_MSGEMEM  	"Out of memory"
+#define INTERFACETESTC_MSGEINJECT  	"No valid injection to do ... ? "
 /* </lalErrTable><lalLaTeX>*/
-
 
 /* --- the names of the files to be used --- */
 #define INTERFACETEST_INJECTIONXMLFILE    "injection.xml"
 #define INTERFACETEST_INJECTIONOUTPUTFILE "injection.dat"
 
-
-
 /* --- include files --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <FrameL.h>
-
 
 
 #include <lal/GenerateInspiral.h>
@@ -135,40 +121,34 @@ int main(int argc, char **argv)
   UINT4 	startTime;
   UINT4		endTime;
   UINT4 	k;
-  UINT4 	numPoints 	= 524288 * 2 / 16; /* arbitrary length of the data*/
+  UINT4 	numPoints 	= 524288  ; /* arbitrary length of the data*/
   UINT4         numInjections   = 0; /* by default no injection. */
-  REAL8 	sampling	= 2048.;
-  
- static  LALStatus 	status 		;
-  
+  REAL8 	sampling	= 2048.;  
+  static  LALStatus 	status;
   /* injection structure */
- SimInspiralTable    *injections = NULL;
- SimInspiralTable    *thisInj    = NULL;
- 
+  SimInspiralTable    *injections = NULL;
+  SimInspiralTable    *thisInj    = NULL;
   /* the data */
   REAL4TimeSeries               ts ; /* A time series to store the injection */
   COMPLEX8FrequencySeries       fs ; /* A freq series to store the psd 	*/
-
   FILE		*output;             /* output result*/
-
   
    /* --- for debugging --- */
-  lalDebugLevel = 1;
+  lalDebugLevel = 7 ;
   program       = *argv;
-
-  
 
   /* --- Start Main part here --- */
   /* First, we test if the injection xml file exist */
-  if ((output 	= fopen(INTERFACETEST_INJECTIONXMLFILE,"r")) == NULL)
-    {
-      ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
-      exit(0);
-    }
-  else fclose(output); /*if it exist let's close it */
+  if ((output	= fopen(INTERFACETEST_INJECTIONXMLFILE,"r")) == NULL){
+	ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
+	exit(0);
+  }
+  else {
+	fclose(output); /*if it exist let's close it */
+  }
+
   /* then let's start to open the output file */
-  if ((output 	= fopen(INTERFACETEST_INJECTIONOUTPUTFILE,"w")) == NULL)
-    {
+  if ((output 	= fopen(INTERFACETEST_INJECTIONOUTPUTFILE,"w")) == NULL){
       ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
       exit(0);
     }
@@ -185,7 +165,7 @@ int main(int argc, char **argv)
   /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
   ts.epoch.gpsSeconds 	= 729273610;		       /* gps time of the time series		*/
   startTime 		= 729273610;		       /* start time and end time of ..	*/	
-  endTime   		= startTime + 100;	       /* ..injection; should be in agreement..*/
+  endTime   		= startTime + 200;	       /* ..injection; should be in agreement..*/
   						       /* ..with the xml file			*/ 
   ts.sampleUnits 	= lalADCCountUnit;	       /*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       /* sampling				*/
@@ -223,11 +203,10 @@ int main(int argc, char **argv)
   
 
   /* --- now we save the results --- */
-  for (k=0; k<numPoints; k++){
+  for (k = 0; k < numPoints; k++){
     fprintf(output,"%15.12lf %e\n",  (float)k/sampling, ts.data->data[k]);
   }
   fclose(output);
-  
   
   SUB( LALSDestroyVector( &status, &(ts.data) ), &status );
   SUB( LALCDestroyVector( &status, &(fs.data) ), &status );
@@ -235,12 +214,10 @@ int main(int argc, char **argv)
   /* --- and finally free memory --- */
   while ( injections )
     {
-      thisInj = injections;
-      injections = injections->next;
-      LALFree( thisInj );
+      thisInj 		= injections;
+      injections 	= injections->next;
+      LALFree(thisInj);
     }
-
-
 
   LALCheckMemoryLeaks();
   return 0;
