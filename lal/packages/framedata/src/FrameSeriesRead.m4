@@ -17,6 +17,7 @@ ifelse(TYPE,`INT2',`define(`FRDATA',`dataS')')
 define(`STYPE',`format(`%sTimeSeries',TYPE)')
 define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
 define(`FUNC',`format(`LALFrGet%s',STYPE)')
+define(`FUNCM',`format(`LALFrGet%sMetadata',STYPE)')
 define(`FSFUNC',`format(`LALFrGet%s',FSTYPE)')
 
 /* <lalVerbatim file="FrameSeriesCP"> */
@@ -294,4 +295,37 @@ FUNC (
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
+}
+
+
+/* <lalVerbatim file="FrameSeriesCP"> */
+void
+FUNCM (
+    LALStatus		*status,
+    STYPE	*series,
+    FrChanIn		*chanin,
+    FrStream		*stream
+    )
+{ /* </lalVerbatim> */
+  void *sequence;
+                                                                                
+  INITSTATUS (status, "FUNCM", FRAMESERIESC);
+  ATTACHSTATUSPTR (status);
+
+  ASSERT (series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
+  ASSERT (stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
+                                                                                
+  /* save the sequence address, then wipe the series structure */
+  sequence = series->data;
+  memset (series, 0, sizeof(*series));
+
+  /* call FUNC to populate the series' metadata */
+  FUNC (status, series, chanin, stream);
+  CHECKSTATUSPTR (status);
+
+  /* restore the sequence address */
+  series->data = sequence;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 }

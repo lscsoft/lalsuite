@@ -12,19 +12,33 @@
  * \subsubsection*{Prototypes}
  * \input{FrameSeriesCP}
  * \idx{LALFrGetINT2TimeSeries}
+ * \idx{LALFrGetINT2TimeSeriesMetadata}
  * \idx{LALFrGetINT4TimeSeries}
+ * \idx{LALFrGetINT4TimeSeriesMetadata}
  * \idx{LALFrGetINT8TimeSeries}
+ * \idx{LALFrGetINT8TimeSeriesMetadata}
  * \idx{LALFrGetREAL4TimeSeries}
+ * \idx{LALFrGetREAL4TimeSeriesMetadata}
  * \idx{LALFrGetREAL8TimeSeries}
+ * \idx{LALFrGetREAL8TimeSeriesMetadata}
  * \idx{LALFrGetCOMPLEX8TimeSeries}
+ * \idx{LALFrGetCOMPLEX8TimeSeriesMetadata}
  * \idx{LALFrGetCOMPLEX16TimeSeries}
+ * \idx{LALFrGetCOMPLEX16TimeSeriesMetadata}
  * \idx{LALFrGetINT2FrequencySeries}
+ * \idx{LALFrGetINT2FrequencySeriesMetadata}
  * \idx{LALFrGetINT4FrequencySeries}
+ * \idx{LALFrGetINT4FrequencySeriesMetadata}
  * \idx{LALFrGetINT8FrequencySeries}
+ * \idx{LALFrGetINT8FrequencySeriesMetadata}
  * \idx{LALFrGetREAL4FrequencySeries}
+ * \idx{LALFrGetREAL4FrequencySeriesMetadata}
  * \idx{LALFrGetREAL8FrequencySeries}
+ * \idx{LALFrGetREAL8FrequencySeriesMetadata}
  * \idx{LALFrGetCOMPLEX8FrequencySeries}
+ * \idx{LALFrGetCOMPLEX8FrequencySeriesMetadata}
  * \idx{LALFrGetCOMPLEX16FrequencySeries}
+ * \idx{LALFrGetCOMPLEX16FrequencySeriesMetadata}
  * \idx{LALFrWriteINT2TimeSeries}
  * \idx{LALFrWriteINT4TimeSeries}
  * \idx{LALFrWriteINT8TimeSeries}
@@ -43,6 +57,17 @@
  * the frame stream.  If no space has been allocated (so that the data field
  * is \texttt{NULL}), then only the channel information is returned in the
  * time series (e.g., the start time of the next data and the time step size).
+ *
+ * Because it is good coding practice to not tinker directly with the innards
+ * of structures like time series, the behaviour described above is undesirable
+ * whereby the time series reading functions do useful things when part of the
+ * time series structures passed into them is not initialized.  To address
+ * this, the routines
+ * \texttt{LALFrGet}$\langle\mbox{datatype}\rangle$\texttt{TimeSeriesMetadata()}
+ * are provided.  These routines accept a fully initialized time series
+ * structure, and poplulate only the metadata from the frame stream.  New code
+ * should be written to use \emph{these} functions when only the time series
+ * meta data is desired.
  *
  * The routine \texttt{LALFrGetTimeSeriesType} returns the type of the time
  * series corresponding to the specified channel.  This is needed if it is not
