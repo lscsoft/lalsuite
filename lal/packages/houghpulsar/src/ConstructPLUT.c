@@ -1201,17 +1201,17 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
     }
     else{ 
 	/* generic case */
-      REAL8 y1,y2,slope;
+      REAL8 myy1,y2,slope;
       slope = cot(alpha);
-      y1  = slope*(xA-patch->xMin)+yA;
+      myy1  = slope*(xA-patch->xMin)+yA;
       y2  = slope*(xA-patch->xMax)+yA;
       
-      if (  ( (y1 >= patch->yMin) || (y2 >= patch->yMin) ) 
-	    && ( (y1 <= patch->yMax) || (y2 <= patch->yMax) ) ){ 
+      if (  ( (myy1 >= patch->yMin) || (y2 >= patch->yMin) ) 
+	    && ( (myy1 <= patch->yMax) || (y2 <= patch->yMax) ) ){ 
 	REAL8 yupper,ylower;
 	noIn   = 1;
-	yupper = MAX(y1,y2);
-	ylower = MIN(y1,y2); /* or  ylower=y1+y2-yupper  */
+	yupper = MAX(myy1,y2);
+	ylower = MIN(myy1,y2); /* or  ylower=myy1+y2-yupper  */
 	yupper = MIN(yupper,patch->yMax);
 	ylower = MAX(ylower,patch->yMin);
 	yymin  = ceil(ylower/patch->deltaY+patch->ySide*0.5-0.5);
@@ -1947,7 +1947,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
 
   if( yc < patch->yMax ){
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
     
     /* setting the yymax value */
     /* in case of no over-flow problems !!! */
@@ -1965,12 +1965,12 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       if( x1 > patch->xMax ){
         kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
 	kkpos= fabs(kkpos);
-	y1 = yc + sqrt(kkpos);
+	myy1 = yc + sqrt(kkpos);
 
-	/* y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
-	if( y1>=patch->yMin ){
+	/* myy1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
+	if( myy1>=patch->yMin ){
 	  noIn1 = 1;
-	  yymax = floor((REAL4) (y1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
+	  yymax = floor((REAL4) (myy1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
 	}
       }
     }
@@ -1980,7 +1980,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
 
   if( yc > patch->yMin ){
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
 
     /*setting the yymin value */
     kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
@@ -1995,13 +1995,13 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       if( x1 > patch->xMax ){
         kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
 	kkpos= fabs(kkpos);
-	y1 = yc - sqrt(kkpos);
+	myy1 = yc - sqrt(kkpos);
 
-	/* y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
+	/* myy1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
 	
-	if( y1<=patch->yMax ){
+	if( myy1<=patch->yMax ){
 	  noIn2 = 1;
-	  yymin = ceil((REAL4) (y1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
+	  yymin = ceil((REAL4) (myy1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
 	}
       }
     }
@@ -2012,7 +2012,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
 
   if ( noIn1 && (!noIn2) ){ 
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
     
     noIn = 1;
     kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
@@ -2024,9 +2024,9 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
       kkpos= fabs(kkpos);
-      y1 = yc + sqrt(kkpos);
-      /*y1 = yc + sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
-      yymin = ceil( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
+      myy1 = yc + sqrt(kkpos);
+      /*myy1 = yc + sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+      yymin = ceil( (REAL4) (myy1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
     }
   }
 
@@ -2034,7 +2034,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   if ( (! noIn1) && noIn2 ){ 
     /* the value yymax, needs to be set correctly */
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
  
     noIn = 1;   
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
@@ -2046,10 +2046,10 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
       kkpos= fabs(kkpos);
-      y1 = yc - sqrt(kkpos);
+      myy1 = yc - sqrt(kkpos);
 
-      /*y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
-      yymax = floor( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
+      /*myy1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+      yymax = floor( (REAL4) (myy1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
     }
   }
 
@@ -2119,7 +2119,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
   
   if( yc < patch->yMax ){
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
 
     /* in case of no over-flow problems !!! */
     
@@ -2136,14 +2136,14 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       if( x1 < patch->xMin ){
         kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
         kkpos= fabs(kkpos);
-        y1 = yc + sqrt(kkpos);
+        myy1 = yc + sqrt(kkpos);
      
-	/*y1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
-	if( y1>=patch->yMin ){
+	/*myy1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+	if( myy1>=patch->yMin ){
 	  noIn1  = 1;
-	  yymax = floor((REAL4) (y1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
+	  yymax = floor((REAL4) (myy1/patch->deltaY-0.5) + (REAL4) (0.5*patch->ySide));
 
-	  /* yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);*/
+	  /* yymax = floor(myy1/patch->deltaY+patch->ySide/2.-0.5);*/
 	}
       }
     }
@@ -2154,7 +2154,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
  /*********************************************************/
 
   if( yc > patch->yMin ){
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
     
     kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
     kkpos= fabs(kkpos);
@@ -2168,14 +2168,14 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       if( x1 < patch->xMin ){
         kkpos = (radius-(patch->xMin-xc))*(radius+(patch->xMin-xc));
         kkpos= fabs(kkpos);
-        y1 = yc - sqrt(kkpos);
+        myy1 = yc - sqrt(kkpos);
 	
-	/* y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
-	if( y1<=patch->yMax ){
+	/* myy1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));*/
+	if( myy1<=patch->yMax ){
 	  noIn2  = 1;
-	  yymin = ceil((REAL4) (y1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
+	  yymin = ceil((REAL4) (myy1/patch->deltaY-0.5)+(REAL4)(0.5*patch->ySide));
 
-	  /* yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);*/
+	  /* yymin = ceil(myy1/patch->deltaY+patch->ySide/2.-0.5);*/
 	}
       }
     }
@@ -2186,7 +2186,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
   
   if ( noIn1 && (!noIn2) ){ 
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
     
     noIn = 1;
     kkpos= (radius-(yc-ylower) )*(radius+(yc-ylower) );
@@ -2198,11 +2198,11 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
       kkpos= fabs(kkpos);
-      y1 = yc + sqrt(kkpos);
+      myy1 = yc + sqrt(kkpos);
 
-      /* y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
-      /* yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 ); */
-      yymin = ceil( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
+      /* myy1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/
+      /* yymin = ceil( myy1/patch->deltaY+patch->ySide/2.-0.5 ); */
+      yymin = ceil( (REAL4) (myy1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide) );
 
     }
   }
@@ -2211,7 +2211,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   if ( (! noIn1) && noIn2 ){ 
     /* the value yymax, needs to be set correctly */
-    REAL8 x1,y1;
+    REAL8 x1,myy1;
  
     noIn = 1;
     kkpos= (radius-(yupper-yc) )*(radius+(yupper-yc) );
@@ -2222,11 +2222,11 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
       /* the value yymin, needs to be set correctly */
       kkpos = (radius-(patch->xMax-xc))*(radius+(patch->xMax-xc));
       kkpos= fabs(kkpos);
-      y1 = yc - sqrt(kkpos);
+      myy1 = yc - sqrt(kkpos);
 
-      /* y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/     
-      /* yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 ); */
-      yymax = floor( (REAL4) (y1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
+      /* myy1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));*/     
+      /* yymax = floor( myy1/patch->deltaY+patch->ySide/2.-0.5 ); */
+      yymax = floor( (REAL4) (myy1/patch->deltaY-0.5)+ (REAL4)(0.5*patch->ySide));
 
     }
   }
@@ -2277,7 +2277,7 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   for(jj=yymin; jj<=yymax; ++jj){
     REAL8   realx, kkpos;
-    INT4    index;
+    INT4    myindex;
     
     kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
     kkpos= fabs(kkpos);
@@ -2285,9 +2285,9 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     
     /*realx = xc - sqrt( radius*radius 
     	- (yc-patch->yCoor[jj])*(yc-patch->yCoor[jj]) ); */
-    index = ceil((REAL4) (realx/patch->deltaX-0.5)+ (REAL4)(0.5*patch->xSide) );
-    if( index<0 ) index=0;
-    column[jj] = index;
+    myindex = ceil((REAL4) (realx/patch->deltaX-0.5)+ (REAL4)(0.5*patch->xSide) );
+    if( myindex<0 ) myindex=0;
+    column[jj] = myindex;
   }
  
  return;
@@ -2306,7 +2306,7 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 
   for(jj=yymin; jj<=yymax; ++jj){
     REAL8  realx,kkpos;
-    INT4   index;
+    INT4   myindex;
     
     kkpos = (radius-(yc-patch->yCoor[jj]) )*(radius+ (yc-patch->yCoor[jj]));
     kkpos= fabs(kkpos);
@@ -2314,9 +2314,9 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     
     /*realx = xc + sqrt( radius*radius 
     	- (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) ); */
-    index = ceil((REAL4)(realx/patch->deltaX-0.5)+(REAL4)(0.5*patch->xSide));
-    if( index > patch->xSide-1 ) index=patch->xSide;
-    column[jj] = index;
+    myindex = ceil((REAL4)(realx/patch->deltaX-0.5)+(REAL4)(0.5*patch->xSide));
+    if( myindex > patch->xSide-1 ) myindex=patch->xSide;
+    column[jj] = myindex;
   }
 
  return;

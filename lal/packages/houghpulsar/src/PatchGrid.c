@@ -385,7 +385,7 @@ void LALHOUGHFillPatchGrid (LALStatus      *status,
 
   INT4    i;
   REAL8   xMin, xMax, x1;
-  REAL8   yMin, yMax, y1;
+  REAL8   yMin, yMax, myy1;
   REAL8   *xCoord;
   REAL8   *yCoord; 
   /* --------------------------------------------- */
@@ -437,10 +437,10 @@ void LALHOUGHFillPatchGrid (LALStatus      *status,
     x1+= deltaX;
   }
   
-  y1=yMin;
+  myy1=yMin;
   for (i=0;i<ySide;++i){
-    yCoord[i] = y1;
-    y1+= deltaY;
+    yCoord[i] = myy1;
+    myy1+= deltaY;
   }
 
  /* -------------------------------------------   */

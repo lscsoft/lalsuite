@@ -280,7 +280,7 @@ void LALStereoProjectPolar(LALStatus           *status,
 			   REAL8UnitPolarCoor  *in)  
 { /*  ************************************************ </lalVerbatim> */
  
-  REAL8   gamma;
+  REAL8   mygamma;
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoProjectPolar", STEREOGRAPHICC);
   ATTATCHSTATUSPTR (status); 
@@ -293,8 +293,8 @@ void LALStereoProjectPolar(LALStatus           *status,
   /* -------------------------------------------   */
   
   out->alpha = in->alpha;
-  gamma = LAL_PI_4 + 0.5*(in->delta);
-  out->radius = 2.0 * tan(gamma); /* positive or negative ! */
+  mygamma = LAL_PI_4 + 0.5*(in->delta);
+  out->radius = 2.0 * tan(mygamma); /* positive or negative ! */
   /* -------------------------------------------   */
   
   DETATCHSTATUSPTR (status);
@@ -313,7 +313,7 @@ void LALStereoProjectCart(LALStatus           *status,
 			  REAL8UnitPolarCoor  *in )
 { /*  ************************************************ </lalVerbatim> */
  
-  REAL8   gamma;
+  REAL8   mygamma;
   REAL8   alpha, radius;
   /* --------------------------------------------- */
   INITSTATUS (status, "LALStereoProjectCart", STEREOGRAPHICC);
@@ -327,8 +327,8 @@ void LALStereoProjectCart(LALStatus           *status,
   /* -------------------------------------------   */
   
   alpha = in->alpha;
-  gamma = LAL_PI_4 + 0.5*(in->delta);
-  radius = 2.0 * tan(gamma); /* positive or negative */
+  mygamma = LAL_PI_4 + 0.5*(in->delta);
+  radius = 2.0 * tan(mygamma); /* positive or negative */
 
   out->x = radius * cos(alpha);
   out->y = radius * sin(alpha);
