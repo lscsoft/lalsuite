@@ -2,7 +2,7 @@
 # $Id$
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
-                lalapps_donald lalapps_snglInspiralReader \
+                lalapps_donald \
 		lalapps_inspinj_find lalapps_gpstogmst lalapps_inspmultiawg
 else
 LALMETAIOPROGRAMS = 
@@ -29,7 +29,6 @@ lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
 lalapps_donald_SOURCES = donald.c donald.h event_utils.c event_utils.h
 lalapps_ivana_SOURCES = ivana.c
-lalapps_snglInspiralReader_SOURCES = snglInspiralReader.c event_utils.c event_utils.h
 lalapps_inspinj_find_SOURCES = inspinj_find.c event_utils.c event_utils.h
 lalapps_inspmultiawg_SOURCES = inspmultiawg.c 
 endif
