@@ -2,7 +2,7 @@
 \label{program:lalapps-tmpltbank}
 \idx[Program]{lalapps\_tmpltbank}
 
-\subsubsection{Synopsis}
+\item[Synopsis]
 \noindent \verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
 \begin{verbatim}
 
@@ -33,7 +33,7 @@
 
 \end{verbatim}
 
-\subsubsection{Options}
+\item[Options]
 \noindent The following command line arguments are available when running tmpltbank.c
 \\
 \begin{entry}
@@ -107,7 +107,7 @@ optimistc option.  Someday the data will be so good we won't need high pass filt
 \item[\option{--minimal-match} \textsc{ M}] The minimal match M between templates in the 
 bank and all possible signals in the parameter space. 
 \item[\option{--order} \textsc{ ORDER}] This sets the post-Newtonian order of the waveform to
-ORDER.  The options are 
+ORDER.   
 \item[\option{--approximant} \textsc{ APPROX}] Sets the approximant of the waveform to APPROX
 \item[\option{--space} \textsc{ SPACE}] In order to make the template bank coordinates nice
 and friendly these parameters are used instead of masses.  
@@ -117,7 +117,7 @@ and friendly these parameters are used instead of masses.
 \item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
 \end{entry}
 
-\subsubsection{Description}
+\item[Description]
 \begin{entry} 
 \noindent \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
 template banks for LIGO or GEO data with the LAL bank package.  The code 
@@ -134,12 +134,13 @@ the space that the template bank will be laid on. The output of the code is
 an xml file and the bank is contained in a \verb$sngl_inspiral$ table. The code has
 also the capability of outputing the raw data, the response function and the
 calibrated and unclibrated power spectra to frame files.
-\\
 See the LAL bank package
 documentation for detailed information on the algorithms used to generate the
 template banks.
 \end{entry}
-\subsubsection{Example}
+
+\item[Example]
+
 \begin{verbatim}
 lalapps_tmpltbank \
 --gps-start-time 734357353 --gps-end-time 734358377 \
@@ -156,6 +157,6 @@ lalapps_tmpltbank \
 
 \end{verbatim}
 
-\subsubsection{Author}
+\item[Author]
 \noindent Duncan Brown
 
