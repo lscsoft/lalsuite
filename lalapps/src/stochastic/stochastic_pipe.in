@@ -156,8 +156,8 @@ data.make_chunks(max_length)
 data.make_short_chunks_from_unused(min_length)
 
 # get the ifos
-ifo1 = cp.get('interferometers','ifo1')
-ifo2 = cp.get('interferometers','ifo2')
+ifo1 = cp.get('datafind','ifo-one')
+ifo2 = cp.get('datafind','ifo-two')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
