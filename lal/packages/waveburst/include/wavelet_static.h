@@ -901,7 +901,7 @@ static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *righ
 
 static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4FrequencySeries *right)
 {
-  int i;
+  UINT4 i;
 
   (*left)=(REAL4FrequencySeries*)LALCalloc(1,sizeof(REAL4FrequencySeries));
   (*left)->data=(REAL4Sequence*)LALCalloc(1,sizeof(REAL4Sequence));
@@ -1989,7 +1989,7 @@ static void _clusterProperties(ClusterWavelet *w)
   double a,b;
   double delta_t, delta_f;
   double x;
-  int N,M,min,max;
+  UINT4 N,M,min,max;
   Slice s;
 
   delta_t=w->wavelet->data->deltaT*(1<<w->wavelet->level);
@@ -2192,7 +2192,7 @@ static void _clusterProperties(ClusterWavelet *w)
 static REAL4 _noise(ClusterWavelet *w, INT4 number)
 {
   REAL4 noise=0.0;
-  int i,j;
+  UINT4 i;
   int freq;
 
   for(i=0;i<w->volumes[number];i++)
@@ -3394,7 +3394,7 @@ static void _inverseFWT(Wavelet *w, int level, int layer, const double *pLPF, co
 
 static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input)
 {
-  int i,j;
+  UINT4 i,j;
   Slice S;
 
   output->w->pMaskCount=input->another->pMaskCount;
