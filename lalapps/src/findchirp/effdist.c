@@ -4,6 +4,7 @@
 #include <lal/LALConstants.h>
 
 #define NLINES 16000
+#define SNR 8.0
 
 #define USAGE "Usage: %s [options]\n"\
         "--help                           Print this help message\n" \
@@ -96,7 +97,7 @@ int main ( int argc, char *argv[])
     }
 
     /* print the information to stderr */
-    d_optimal= arm_length*ins_amp*sqrt(2.0 * dum1)/8.0, ins_amp;
+    d_optimal= arm_length*ins_amp*sqrt(2.0 * dum1)/SNR;
     fprintf(stderr,"Sensitive to optimally oriented binary at %0.4f Mpc\n",
             d_optimal);
     fprintf(stderr,"Effective sensitivity over sky %0.4f Mpc\n",
