@@ -18,9 +18,16 @@
 #include <string.h>
 #include <time.h>
 #include <config.h>
+#include <lalapps.h>
+#include <processtable.h>
 #include <lal/LALStdlib.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/Date.h>
 
-INT4 lalDebugLevel = LALMSGLVL3;
+int snprintf(char *str, size_t size, const  char  *format, ...);
+
+RCSID( "$Id$" );
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846  /* pi */
@@ -31,11 +38,16 @@ INT4 lalDebugLevel = LALMSGLVL3;
 #define MPC ( 1e6 * PC )
 #define GPC ( 1e9 * PC )
 
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "inspinj_s1"
 
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, numElem };
 
 FILE *fplog;
+ProcessParamsTable   *this_proc_param;
 
 
 /*
@@ -305,6 +317,15 @@ int inj_params( double *injPar )
     sprintf( fname, "%s/%s", path ? path : PREFIX "/" PACKAGE "/share",
         basename );
     fp = fopen( fname, "r" );
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      LALCalloc( 1, sizeof(ProcessParamsTable) );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--bns-masses-path" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "lstring" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, fname );
+
     if ( ! fp )
     {
       fprintf( stderr, "Could not find file %s\n", fname );
@@ -360,12 +381,36 @@ int main( int argc, char *argv[] )
   size_t ninj;
   size_t inj;
   FILE *fp;
+  int rand_seed;
+
+  /* xml output data */
+  CHAR                  fname[256];
+  LALStatus             status = blank_status;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+  MetadataTable         proctable;
+  MetadataTable         procparams;
+  MetadataTable         injections;
+  LIGOLwXMLStream       xmlfp;
+
+  lalDebugLevel = LALMSGLVL3;
+
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) 
+    LALCalloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+        &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+    LALCalloc( 1, sizeof(ProcessParamsTable) );
+
+  injections.simInspiralTable = NULL;
 
   tlisthead.tinj = tinj;
   tlisthead.next = NULL;
   /* sanity check on arguments; if one argument, use it as random seed */
   if ( argc == 1 )
-    seed_random( 1001 );
+    seed_random( (rand_seed = 1001) );
   else
   {
     if ( argc == 2 )
@@ -378,7 +423,7 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "Usage: %s [seed]\n", argv[0] );
           return 1;
         }
-      seed_random( atoi( argv[1] ) );
+      seed_random( (rand_seed = atoi( argv[1] )) );
     }
     else
     {
@@ -386,6 +431,12 @@ int main( int argc, char *argv[] )
       return 1;
     }
   }
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+      "%s", PROGRAM_NAME );
+  snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+      "--bns-masses-path" );
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "lstring" );
+  snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, fname );
 
   /* open logfile for injection parameters */
   fplog = fopen( "injlog.txt", "w" );
@@ -497,6 +548,35 @@ int main( int argc, char *argv[] )
   fputs( "</ilwd>\n", fp );
   fclose( fp );
   fclose( fplog );
+
+  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+  snprintf( fname, sizeof(fname), "injections-%d.xml", rand_seed );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
+
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+        &accuracy ), &status );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 
+        process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
+        process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+
+  if ( injections.simInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
+          sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+  }
+  
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
   return 0;
 }
