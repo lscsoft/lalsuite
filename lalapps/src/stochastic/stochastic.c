@@ -2217,10 +2217,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get deltaF for optimal filter */
   deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
 
-  /* initialize calibration gps time structure */
-  gpsCalibTime.gpsSeconds = startTime + calibOffset;
-  gpsCalibTime.gpsNanoSeconds = 0;
-
   /* set length for data segments */
   intervalLength = intervalDuration * resampleRate;
   segmentLength = segmentDuration * resampleRate;
@@ -2308,9 +2304,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* is this the analysis segment? */
       if (segLoop == segMiddle)
-      {
         gpsAnalysisTime = gpsSegStartTime;
-      }
 
       if (vrbflg)
       {
@@ -2366,7 +2360,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     for (i = 0; i < filterLength; i++)
     {
       /* average */
-      if (middle_segment_flag == 0)
+      if (!middle_segment_flag)
       {
         calPsdOne->data[i] /= (REAL4)(segsInInt - 1);
         calPsdTwo->data[i] /= (REAL4)(segsInInt - 1);
@@ -2394,7 +2388,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsAnalysisTime.gpsSeconds);
     }
 
-    /* cut analysis segment from series */
+    /* cut analysis segment from full series */
     segmentOne = cut_time_series(&status, seriesOne, gpsAnalysisTime, \
         segmentDuration);
     segmentTwo = cut_time_series(&status, seriesTwo, gpsAnalysisTime, \
@@ -2420,7 +2414,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* cc statistic */
     y = cc_statistic(ccSpectrum);
 
-    /* save */
+    /* display results */
     if (vrbflg)
     {
       fprintf(stdout, "Interval %d\n", interLoop + 1);
