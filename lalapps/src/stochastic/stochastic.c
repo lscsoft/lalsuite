@@ -63,7 +63,7 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "lalapps_stochastic"
+#define PROGRAM_NAME "stochastic"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
