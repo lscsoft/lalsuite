@@ -407,6 +407,11 @@ LALWriteLIGOLwXMLTable (
     case sngl_inspiral_table:
       while( tablePtr.snglInspiralTable )
       {
+        UINT8 id = 0;
+        if ( tablePtr.snglInspiralTable->event_id )
+        {
+          id = tablePtr.snglInspiralTable->event_id->id;
+        }
         FIRST_TABLE_ROW
         fprintf( xml->fp, SNGL_INSPIRAL_ROW,
             tablePtr.snglInspiralTable->ifo,
@@ -447,7 +452,8 @@ LALWriteLIGOLwXMLTable (
             tablePtr.snglInspiralTable->snr,
             tablePtr.snglInspiralTable->chisq,
             tablePtr.snglInspiralTable->chisq_dof,
-            tablePtr.snglInspiralTable->sigmasq
+            tablePtr.snglInspiralTable->sigmasq,
+            id
             );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
       }

@@ -678,6 +678,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"chisq",                   -1, 36},
     {"chisq_dof",               -1, 37},
     {"sigmasq",                 -1, 38},
+    {"event_id",                -1, 39},
     {NULL,                       0, 0}
   };
 
@@ -707,8 +708,17 @@ LALSnglInspiralTableFromLIGOLw (
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      MetaioClose(env);
-      return -1;
+      
+      if ( ! strcmp(tableDir[i].name, "event_id") )
+      {
+        fprintf( stderr, 
+            "The event_id column is not populated, continuing anyway\n");
+      }
+      else
+      {
+        MetaioClose(env);
+        return -1;
+      }
     }
   }
 
@@ -753,7 +763,8 @@ LALSnglInspiralTableFromLIGOLw (
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-
+        UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+        
         if ( tableDir[j].idx == 0 )
         {
           LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
@@ -912,6 +923,16 @@ LALSnglInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 38 )
         {
           thisEvent->sigmasq = r8colData;
+        }
+        else if ( tableDir[j].idx == 39 )
+        {
+          if ( tableDir[j].pos > 0 && i8colData )
+          {
+            thisEvent->event_id = (EventIDColumn *) 
+              LALCalloc( 1, sizeof(EventIDColumn) );
+            thisEvent->event_id->id = i8colData;
+            thisEvent->event_id->snglInspiralTable = thisEvent;
+          }
         }
         else
         {
