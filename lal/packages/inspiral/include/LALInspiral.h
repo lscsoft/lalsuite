@@ -129,6 +129,24 @@ by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a f
 \item \texttt{BCVSpin:} Detection template family of Buonanno, Chen and 
                     Vallisneri including  spin effects\cite{BCV03b}. Outputs a frequency-domain wave.
 \end{itemize}
+\input{LALInputMassesH}
+\texttt{InputMasses:}
+This structure is one of the members of the \texttt{InspiralTemplate} 
+structure. 
+
+
+A user can specify the parameters of a binary using any of the
+following combination of {\it masses:}
+\begin{itemize}
+\item \texttt{m1Andm2:} component masses
+\item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
+\item \texttt{totalMassAndMu:} total mass and reduced mass
+\item \texttt{t01:} unused; shouldn't be used.
+\item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
+\item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and 
+\item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
+\item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
+\end{itemize}
 
 
 \item \texttt{InspiralTemplate:}
