@@ -203,6 +203,7 @@ int main( int argc, char *argv[] )
         step = a.step;
         tbeg = a.tbeg;
       }
+#if 0
       code = write_ilwd( ailwd, &a );
       if ( code )
       {
@@ -215,6 +216,7 @@ int main( int argc, char *argv[] )
         fprintf( stderr, "Error: could not write file %s\n", abilwd );
         return 1;
       }
+#endif
       /* correct the end times */
       epoch_add( &a.tend, &a.tbeg, a.step * a.size );
       epoch_add( &ab.tend, &ab.tbeg, ab.step * ab.size );

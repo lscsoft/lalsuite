@@ -226,6 +226,7 @@ int main( int argc, char *argv[] )
       }
       epoch_add( &R.tend, &R.tbeg, (R.size - 1)/(R.step * R.size) );
       epoch_add( &C.tend, &C.tbeg, (C.size - 1)/(C.step * C.size) );
+#if 0
       code = write_ilwd( Rilwd, &R );
       if ( code )
       {
@@ -238,6 +239,7 @@ int main( int argc, char *argv[] )
         fprintf( stderr, "Error: could not write file %s\n", Cilwd );
         return 1;
       }
+#endif
       if ( ! frfile )
       {
         char fname[256];
