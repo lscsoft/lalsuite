@@ -94,7 +94,7 @@ REAL8 uvar_startTime;
 REAL8 uvar_refTime;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
-CHAR *uvar_noiseDir;
+CHAR *uvar_noiseSFTs;
 BOOLEAN uvar_doWindowing;
 BOOLEAN uvar_binaryoutput;
 BOOLEAN uvar_nomagic;
@@ -196,6 +196,63 @@ main(int argc, char *argv[])
   params.duration     	= (UINT4) ceil(GV.duration); /* length of time-series in seconds */
   params.samplingRate 	= 2.0 * uvar_Band;	/* sampling rate of time-series (= 2 * frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
+
+  /*================================================================================*/
+  /* test new function SimulatePulsarSignal() */
+#if 0
+  {
+    REAL8 LMST, GMST;	/* local mean sidereal time */
+    LALPlaceAndGPS place_and_gps;
+    LALMSTUnitsAndAcc units_and_acc;
+    LALDate date;
+    CHARVector *dateString = NULL;
+    LIGOTimeGPS gps;
+    LALFrDetector det = params.site->frDetector;
+    REAL8 zeta;
+    REAL8TimeSeries *Tseries8 = NULL;
+  
+    LAL_CALL ( LALCHARCreateVector (&status, &dateString, 64), &status);	/* ARGHHHH ..... */
+
+    units_and_acc.accuracy = LALLEAPSEC_STRICT;
+    units_and_acc.units =   MST_DEG;	/* return-format of LMST */
+ 
+    place_and_gps.p_detector = params.site;
+    place_and_gps.p_gps = &(params.startTimeGPS);
+
+    /*
+    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
+    LAL_CALL (LALUTCtoGPS (&status, &gps, &date, &(units_and_acc.accuracy)), &status);
+    */
+                                                    
+    LAL_CALL (LALGPStoLMST1 (&status, &LMST, &place_and_gps, &units_and_acc), &status);
+
+    LAL_CALL (LALGPStoGMST1 (&status, &GMST, &(params.startTimeGPS), &units_and_acc), &status);
+
+    LAL_CALL (LALGPStoUTC (&status, &date, &(params.startTimeGPS), &(units_and_acc.accuracy) ), &status);
+    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
+    printf ("DEBUG: GPS= %d, UTC = %s\n", params.startTimeGPS.gpsSeconds, dateString->data);
+    LAL_CALL ( LALDateString (&status, dateString, &date), &status);
+
+    printf ("DEBUG: Start-time: GPS= %d, UTC= %s; long=%f deg (x=%f, y=%f), LMST = %f, GMST = %f\n", 
+	    params.startTimeGPS.gpsSeconds, dateString->data, 
+	    (REAL8) (params.site->frDetector.vertexLongitudeRadians * (REAL8)LAL_180_PI), 
+	    params.site->location[0], params.site->location[1],
+	    LMST, GMST );
+
+    printf ("atan2 (y, x) = %f deg\n", atan2 (params.site->location[1], params.site->location[0]) * (REAL8)LAL_180_PI);
+
+
+    zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
+    if(params.site->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
+    printf ("\nDEBUG: xArmAzimuth - yArmAzimut = %.10f, sin zeta = %f\n",
+	  det.xArmAzimuthRadians -  det.yArmAzimuthRadians, zeta );
+
+    LAL_CALL (LALSimulatePulsarSignal (&status, &Tseries8, &params), &status);
+
+  }
+#endif
+  /*================================================================================*/
+
 
   /*----------------------------------------
    * generate the heterodyned time-series 
@@ -424,28 +481,20 @@ InitMakefakedata (LALStatus *stat,
 
 
   /* EITHER add Gaussian noise OR real noise-sft's */
-  if ( LALUserVarWasSet(&uvar_noiseDir) && LALUserVarWasSet(&uvar_noiseSigma) )
+  if ( LALUserVarWasSet(&uvar_noiseSFTs) && LALUserVarWasSet(&uvar_noiseSigma) )
     {
-      LALPrintError ("\nERROR: only one of 'noiseDir' or 'noiseSigma' can be specified!\n\n");
+      LALPrintError ("\nERROR: only one of 'noiseSFTs' or 'noiseSigma' can be specified!\n\n");
       ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
 
   /* if real noise-SFTs: load them in now */
-  if ( uvar_noiseDir && LALUserVarWasSet (&uvar_noiseDir))
+  if ( uvar_noiseSFTs && LALUserVarWasSet (&uvar_noiseSFTs))
     {
-      CHAR *fpat;
-      REAL8 fmin, fmax;
-      if( (fpat = LALCalloc (1, strlen(uvar_noiseDir) + 10)) == NULL) {
-	LALPrintError ("\nOut of memory, .. arghhh\n\n");
-	ABORT (stat, MAKEFAKEDATAC_ESUB, MAKEFAKEDATAC_MSGESUB);
-      }
-      strcpy (fpat, uvar_noiseDir);
-      strcat (fpat, "/*SFT*");		/* use search-pattern of makefakedata_v2 */
-      fmin = cfg->fmin_eff;
-      fmax = fmin + uvar_Band;
-      TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fmin, fmax, 0, fpat), stat);
-      LALFree (fpat);
-    } /* if uvar_noisedir */
+      REAL8 fMin, fMax;
+      fMin = cfg->fmin_eff;
+      fMax = fMin + uvar_Band;
+      TRY ( LALReadSFTfiles (stat->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), stat);
+    } /* if uvar_noiseSFTs */
 
 
   /* catch (yet) unsupported options */
@@ -484,7 +533,7 @@ InitUserVars (LALStatus *stat)
   uvar_f3dot = 0.0;
 
   uvar_noiseSigma = 0;
-  uvar_noiseDir = NULL;
+  uvar_noiseSFTs = NULL;
 
   /* now register all our user-variable */
 
@@ -511,7 +560,7 @@ InitUserVars (LALStatus *stat)
   LALregREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
   LALregREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
   LALregREALUserVar(stat,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
-  LALregSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with 'real' noise SFTs");  
+  LALregSTRINGUserVar(stat, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
   /* the orbital parameters */
   LALregREALUserVar(stat,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
