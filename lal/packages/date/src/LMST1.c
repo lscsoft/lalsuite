@@ -376,8 +376,9 @@ LALLMST1 (LALStatus             *status,
 { /* </lalVerbatim> */
   REAL8 gmst;
   REAL8 day = 0;
-  REAL8 longitude =
-    p_place_and_date->p_detector->frDetector.vertexLongitudeDegrees;
+  REAL8 longitude = LAL_180_PI *
+    atan2(p_place_and_date->p_detector->location[1],
+          p_place_and_date->p_detector->location[0]);
 
   INITSTATUS (status, "LALLMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
