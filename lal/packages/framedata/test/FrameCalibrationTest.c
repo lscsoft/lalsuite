@@ -118,6 +118,8 @@ int main( int argc, char *argv[] )
   UINT4                 sampleRate = 4096;
   CHAR                  ifo[3];
   CHAR                  outFile[LALNameLength];
+  LIGOTimeGPS duration	= {0,0};
+
 
   COMPLEX8FrequencySeries       response;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -152,7 +154,7 @@ int main( int argc, char *argv[] )
     }
 
     /* create the response function */
-    LALExtractFrameResponse( &status, &response, calCacheName, ifo );
+    LALExtractFrameResponse( &status, &response, calCacheName, ifo, &duration );
     if ( status.statusCode == FRAMECALIBRATIONH_EOREF )
     {
       if ( verbose )
