@@ -48,14 +48,16 @@ NRCSID (SEQFACTORIESH, "$Id$");
 
 #define SEQFACTORIESH_ESLENGTH  1
 #define SEQFACTORIESH_EVLENGTH  2
-#define SEQFACTORIESH_EVPTR     4
-#define SEQFACTORIESH_EUPTR     8
-#define SEQFACTORIESH_EDPTR    16
-#define SEQFACTORIESH_EINPTR   32
-#define SEQFACTORIESH_EMALLOC  64
+#define SEQFACTORIESH_EALENGTH  4
+#define SEQFACTORIESH_EVPTR     8
+#define SEQFACTORIESH_EUPTR    16
+#define SEQFACTORIESH_EDPTR    32
+#define SEQFACTORIESH_EINPTR   64
+#define SEQFACTORIESH_EMALLOC 128
 
 #define SEQFACTORIESH_MSGESLENGTH "Illegal sequence length."
 #define SEQFACTORIESH_MSGEVLENGTH "Illegal vector length."
+#define SEQFACTORIESH_MSGEALENGTH "Illegal array dimension."
 #define SEQFACTORIESH_MSGEVPTR    "Null sequence handle."
 #define SEQFACTORIESH_MSGEUPTR    "Non-null sequence pointer."
 #define SEQFACTORIESH_MSGEDPTR    "Null sequence data."
@@ -92,6 +94,30 @@ typedef struct tagCreateVectorSequenceIn {
   UINT4 vectorLength;
 } CreateVectorSequenceIn;
 
+
+/* <lalLaTeX>
+
+\begin{verbatim}
+CreateArraySequenceIn
+\end{verbatim}
+\idx[Type]{CreateArraySequenceIn}
+
+\noindent This structure stores the input required for creating an array
+sequence.  This input includes the length of the sequence (i.e., the number of
+array) and the dimensions of each array index.  The fields are:
+
+\begin{description}
+\item[\texttt{UINT4 length}] The sequence length.
+\item[\texttt{UINT4Vector *dimLength}] The dimensions of each array
+index (the same for every array in the sequence).
+\end{description}
+
+</lalLaTeX> */
+
+typedef struct tagCreateArraySequenceIn {
+  UINT4 length;
+  UINT4Vector *dimLength;
+} CreateArraySequenceIn;
 
 
 /* Function prototypes. */
@@ -187,10 +213,75 @@ void LALCDestroyVectorSequence(LALStatus *,
 void LALZDestroyVectorSequence(LALStatus *, 
 			     COMPLEX16VectorSequence **);
 
+/* <lalLaTeX>
+\newpage\input{ArraySequenceFactoriesC}
+</lalLaTeX> */
+
+void LALCreateArraySequence(LALStatus *, 
+                             REAL4ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALI2CreateArraySequence(LALStatus *, 
+			     INT2ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALI4CreateArraySequence(LALStatus *, 
+			     INT4ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALI8CreateArraySequence(LALStatus *, 
+			     INT8ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALU2CreateArraySequence(LALStatus *, 
+			     UINT2ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALU4CreateArraySequence(LALStatus *, 
+			     UINT4ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALU8CreateArraySequence(LALStatus *, 
+			     UINT8ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALSCreateArraySequence(LALStatus *, 
+			     REAL4ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALDCreateArraySequence(LALStatus *, 
+			     REAL8ArraySequence **,
+			     CreateArraySequenceIn *);
+void LALCCreateArraySequence(LALStatus *, 
+			     COMPLEX8ArraySequence **, 
+			     CreateArraySequenceIn *);
+void LALZCreateArraySequence(LALStatus *, 
+			     COMPLEX16ArraySequence **, 
+			     CreateArraySequenceIn *);
+
+void LALDestroyArraySequence (LALStatus *, 
+                             REAL4ArraySequence **);
+void LALI2DestroyArraySequence(LALStatus *, 
+			     INT2ArraySequence **);
+void LALI4DestroyArraySequence(LALStatus *, 
+			     INT4ArraySequence **);
+void LALI8DestroyArraySequence(LALStatus *, 
+			     INT8ArraySequence **);
+void LALU2DestroyArraySequence(LALStatus *, 
+			     UINT2ArraySequence **);
+void LALU4DestroyArraySequence(LALStatus *, 
+			     UINT4ArraySequence **);
+void LALU8DestroyArraySequence(LALStatus *, 
+			     UINT8ArraySequence **);
+void LALSDestroyArraySequence(LALStatus *, 
+			     REAL4ArraySequence **);
+void LALDDestroyArraySequence(LALStatus *, 
+			     REAL8ArraySequence **);
+void LALCDestroyArraySequence(LALStatus *, 
+			     COMPLEX8ArraySequence **);
+void LALZDestroyArraySequence(LALStatus *, 
+			     COMPLEX16ArraySequence **);
+
 /* Test program. */
 
 /* <lalLaTeX>
 \newpage\input{VectorSequenceFactoriesTestC}
+</lalLaTeX> */
+
+/* <lalLaTeX>
+\newpage\input{ArraySequenceFactoriesTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus
