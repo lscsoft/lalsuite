@@ -1,16 +1,6 @@
-
 /* *****************************************************************************
  * Author: Cokelaer, T. and Sathyaprakash, B. S.
  * ************************************************************************** */
-
-/* to do
- * put the check loop inside the main loop by forcing ntrials to be=1 
- * and force to use only one template equalk to the signal
- * 3 - print in a file 3d correlation*/
-
-/* --- some includes --- */
-
-
 #include "BankEfficiency.h"
 
 /* --- version information --- */
@@ -18,6 +8,9 @@ NRCSID( BANKEFFICIENCYC, "$Id$");
 RCSID(  "$Id$");
 
 
+/* --- the main program --- */
+size_t nHisto = 200;
+double minHisto = 0., maxHisto = 20.;
 
 int
 main (INT4 argc, CHAR **argv ) 
@@ -89,6 +82,12 @@ main (INT4 argc, CHAR **argv )
   float 			*bankEfficiencyOverlapInTime;			
   RandomParams                 *randParams = NULL;
   INT4                          seed = 3;
+
+  
+  gsl_histogram * histogramNoise = gsl_histogram_alloc (200);
+  
+  gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
+
 
   /* --- main code start here --- */ 
   /* --- Debugging level --- */
@@ -312,12 +311,12 @@ main (INT4 argc, CHAR **argv )
       
       /*	LALCreateRandomInjection(otherIn, randIn, signal);*/
       randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
-      /*randIn.param.fCutoff 		= coarseBankIn.fUpper; 			      /* What kind of parameters do we use ?*/
       if (otherIn.signal == BCV) 
 	randIn.param.massChoice = psi0Andpsi3;
       else
-	{
-          randIn.param.massChoice = m1Andm2;
+	{ 
+	  randIn.param.fCutoff 		= coarseBankIn.fUpper; 			      
+         randIn.param.massChoice = m1Andm2;
 	  randIn.param.massChoice = totalMassUAndEta;
 	}
       /* Let's compute the random parameters of the waveform to inject*/
@@ -457,7 +456,12 @@ main (INT4 argc, CHAR **argv )
 					     otherIn, 
 					     &OverlapOutputThisTemplate), 
 			   &status);
-
+		  /* fill histogram with correlation output*/
+		  if (otherIn.PrintSNRHisto){
+		    for (i=0; i<correlation.length; i++){
+		      gsl_histogram_increment(histogramNoise, correlation.data[i]);
+		    }
+		  }
 
 		  break;
 		case InQuadrature:
@@ -634,8 +638,11 @@ main (INT4 argc, CHAR **argv )
   
 
 
-
-
+  if (otherIn.PrintSNRHisto){
+    Foutput=  fopen("BE_histo.dat","w");
+    gsl_histogram_fprintf(Foutput, histogramNoise, "%f", "%g");
+    fclose(Foutput);
+  }
 
 
 
@@ -662,6 +669,9 @@ main (INT4 argc, CHAR **argv )
    
    LALDestroyRealFFTPlan(&status,&fwdp);
    LALDestroyRealFFTPlan(&status,&revp);
+
+   gsl_histogram_free(histogramNoise);
+
    LALCheckMemoryLeaks();    
    
    
@@ -787,7 +797,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->PrintOverlap 	= BANKEFFICIENCY_PRINTOVERLAP;
   otherIn->PrintBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
   otherIn->PrintBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
-
+  otherIn->PrintSNRHisto = BANKEFFICIENCY_PRINTSNRHISTO;
   otherIn->PrintFilter  	= BANKEFFICIENCY_PRINTFILTER;
   otherIn->PrintPsd             = BANKEFFICIENCY_PRINTPSD;
   otherIn->overlapMethod	= AlphaMaximization;
@@ -933,6 +943,7 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],"--print-psd")	        ==0)  	 otherIn->PrintPsd 		= 1;
       else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1; 
       else if ( strcmp(argv[i],"--print-bank-overlap")	==0)  	 otherIn->PrintBankOverlap 	= 1;
+      else if ( strcmp(argv[i],"--print-snr-histo") ==0) otherIn->PrintSNRHisto 	= 1;
       else if ( strcmp(argv[i],"--print-template")	==0)  	 otherIn->PrintTemplate 	= 1;
       else if ( strcmp(argv[i],"--print-bank")		==0) 	 otherIn->PrintBank		= 1;
       else if ( strcmp(argv[i],"--print-bank-xml")	==0) 	 otherIn->PrintBankXml	        = 1;
@@ -1129,6 +1140,8 @@ void Help(	InspiralCoarseBankIn   coarseBankIn,
   fprintf(stderr,"     --print-bank-overlap    : Print the overlap given by each template (default=no printing)		\n");
 
   fprintf(stderr,"     --print-bank	: Print the bank in ascii format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEASCII);
+  fprintf(stderr,"     --print-snr-histo  : Print histogram of all the snr output (%d)	\n",  BANKEFFICIENCY_PRINTSNRHISTO);
+
   fprintf(stderr,"     --print-bank-xml	: Print the bank in xml format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEXML);
   fprintf(stderr,"    --print-result-xml  : Print result in xml format (%s)		\n",  BANKEFFICIENCY_PRINTRESULT_FILEXML);
 
@@ -1263,7 +1276,7 @@ void
 PrintResults( ResultIn result)
 {
 
-  fprintf(stdout, "%9.2f %9.2f %9.2f  %9.2f %9.2f %9.2f %7.2f %7.2f %7.2f  %e %e  %e %e %e %e    %6.3f %e %e %e  %d %d    %6.3f %e %e %e  %d %d %d\n",
+  fprintf(stdout, "%e %e %e %e %e %e  %7.2f %7.2f %7.2f  %e %e  %e %e %e %e    %7.5f %e %e %e  %d %d    %7.5f %e %e %e  %d %d %d\n",
 	  result.psi0_trigger, 
 	  result.psi3_trigger,
 	  result.psi0_triggerC, 
@@ -1545,7 +1558,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 			     REAL4Vector             *Filter2,
 			     BCVMaximizationMatrix    matrix,
 			     OtherParamIn             otherIn ,
-			     OverlapOutputIn              *OverlapOutput
+			     OverlapOutputIn          *OverlapOutput
 		  	     )
      /*  </lalVerbatim>  */
 {
@@ -1648,7 +1661,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   /* some output for debugging, checking ... */
   if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting)
     {
-      Foutput = fopen( "BE_Overlap.dat", "w");
+      Foutput = fopen( "BE_Filter.dat", "w");
       for (i=0; i< x1.length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x1.data[i]));
       fprintf(Foutput,"&\n");	       
@@ -1673,11 +1686,10 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   alphaMax = pow(corrin.fCutoff, -2./3.);
 
   thetab = fabs(-(a11 * alphaMax)/(a22+a21*alphaMax));
-  thetab =  atan(thetab);
-
-  rho                = 0.;
+  thetab = atan(thetab);
+  rho    = 0.;
  
-  /*  fprintf(stderr,"%e %e %e %e %e %e\n", alphaMax , thetab, corrin.fCutoff, a11, a22, a21);*/
+  /*fprintf(stderr,"%e %e %e %e %e %e\n", alphaMax , thetab, corrin.fCutoff, a11, a22, a21);*/
 
   /* Once we have the 4 correlations, we can search for the
    * maximum of correlation and compute the final SNR */
@@ -1720,15 +1732,15 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       
       if (otherIn.alphaFConstraint == ALPHAFConstraint){
 	
-	if ((-thetab<thetav && thetav<0)||(LAL_PI-thetab<thetav && thetav<LAL_PI)){	  
+	if ((-2*thetab<thetav && thetav<0)||(LAL_PI-2*thetab<thetav && thetav<LAL_PI)){	  
 	  rhoConstraint = rhoUnconstraint;
 	  w = thetav;
 	}
-	else if ((0<thetav && thetav<thetab/2) || (-LAL_PI<thetav && thetav<-LAL_PI+thetab/2.)){
+	else if ((0 < thetav && thetav < 3*thetab) || (-LAL_PI<thetav && thetav<-LAL_PI+3*thetab)){
 	  rhoConstraint = sqrt((V0 + V1)/2.);	  
 	  w = 0.;
 	}
-	else if( (-LAL_PI-thetab/2. < thetav && thetav<-thetab)||( thetab/2.<thetav &&thetav<LAL_PI-thetab)){
+	else if( (-LAL_PI+3*thetab < thetav && thetav<-2*thetab)||( thetab*3<thetav &&thetav<LAL_PI-2*thetab)){
 	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
 	  w = 1.;
 	}
@@ -1738,7 +1750,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	    w = -1;
 	  }
       	  
-	 if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting) {
+	 if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto) {
 	   correlation->data[i] = rhoConstraint;
 	 }
 
@@ -1760,7 +1772,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
       } 
       else{ /*no constraint on alphaF here, we keep only results with respect to unconstraint formulaes*/
-	if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting) {
+	if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto) {
 	  correlation->data[i] = rhoUnconstraint;
 	}
 	
@@ -1776,21 +1788,22 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   
   
   /* Finally get the alpha value corresponding to the best rho */ 
-  alphaConstraint = -(matrix.a22 * tan(phaseConstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseConstraint));
+
+  alphaConstraint = -(matrix.a22 * .5*tan(phaseConstraint)) 				
+    / (matrix.a11 + matrix.a21* .5*tan(phaseConstraint));
   
-  alphaUnconstraint = -(matrix.a22 * tan(phaseUnconstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseUnconstraint));
+  alphaUnconstraint = -(matrix.a22 * .5*tan(phaseUnconstraint)) 				
+    / (matrix.a11 + matrix.a21* .5*tan(phaseUnconstraint));
 
  
   OverlapOutput->rhoMaxConstraint     = rhoMaxConstraint;
   OverlapOutput->rhoBinConstraint     = rhoBinConstraint;
-  OverlapOutput->alphaConstraint     = alphaConstraint;
+  OverlapOutput->alphaConstraint      = alphaConstraint;
   OverlapOutput->phaseConstraint      = phaseConstraint;
   OverlapOutput->rhoMaxUnconstraint   = rhoMaxUnconstraint;
   OverlapOutput->rhoBinUnconstraint   = rhoBinUnconstraint;
-  OverlapOutput->alphaUnconstraint   = alphaUnconstraint;
-  OverlapOutput->phaseUnconstraint      = phaseUnconstraint;
+  OverlapOutput->alphaUnconstraint    = alphaUnconstraint;
+  OverlapOutput->phaseUnconstraint    = phaseUnconstraint;
 
 
 
@@ -1845,14 +1858,14 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     
     Foutput=fopen("BE_alpha.dat","w");
     for (i=0; i< correlation->length; i++){
-      alpha = -(matrix.a22 * tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
-	/ (matrix.a11 + matrix.a21* tan(phaseV.data[i]));
+      alpha = -(matrix.a22 * .5*tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
+	/ (matrix.a11 + matrix.a21* .5*tan(phaseV.data[i]));
       fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,alpha*pow(corrin.fCutoff,2./3.));
     }
     fclose(Foutput);
 
     /*print overlap, combinaison of the x_i filters*/
-    Foutput=fopen("BE_Overlap.dat","a+");
+    Foutput=fopen("BE_Overlap.dat","w");
     for (i=0; i< correlation->length; i++){
       fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(correlation->data[i]));
     }
@@ -2017,7 +2030,17 @@ PrintBankOverlap(
 		)
 {
 
+
+/*to avoid warnings */
+int temp, temp3;
+float temp2,temp1;
+
+temp = sizeBank;
+temp1=*overlap;
+temp2 = (*list)[0].metric.g00;
+temp3 = coarseBankIn.numFcutTemplates;
 }
+
 #if 0
 FILE 		*output1;
   FILE 		*output2;
