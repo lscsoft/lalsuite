@@ -3125,10 +3125,8 @@ void sighandler(int sig){
 	  exit (COMPUTEFSTAT_EXIT_USER);
 	}
       else
-	{     
-	  fprintf (stdout, "APP DEBUG: got kill-signal %d times. Will exit at 4th time\n", killcounter);fflush(stdout);
-	  return;
-	}
+	return;
+
     } /* termination signals */
 
   if (mystat)
