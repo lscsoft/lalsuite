@@ -418,6 +418,11 @@ m4 ArrayFactories.m4 > ArrayFactories.c
 m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c
 cd ../../..
 
+cd packages/factories/include
+m4 SeqFactoriesH.m4 > SeqFactories.h
+m4 AVFactoriesH.m4 > AVFactories.h
+cd ../../..
+
 cd packages/factories/test
 m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c
 m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c
@@ -431,7 +436,9 @@ m4 MatrixMultiply.m4 > MatrixMultiply.c
 m4 MatrixPower.m4 > MatrixPower.c
 m4 MiscMatlab.m4 > MiscMatlab.c
 m4 VectorIndexRangeC.m4 > VectorIndexRange.c
-cd ../include
+cd ../../..
+
+cd packages/vectorops/include
 m4 VectorIndexRangeH.m4 > VectorIndexRange.h
 cd ../../..
 
