@@ -87,9 +87,8 @@ CHAR * obsvdatafile = "FaFbObsv.txt";
 CHAR * testdatafile = "FaFbTest.txt";
 
 /* flag */
-INT2 freqshiftflag=1; /* Turn on the frequency shift */
 INT2 verboseflag=0; /* verbose flag */
-INT2 computeProbFlag=0;
+INT2 computeProbFlag=0; 
 
 /*-----------------------------------------------------------------*/
 /*                                                                 */
@@ -234,10 +233,14 @@ INT2 HandleComArg(INT4 argc, CHAR *argv[])
   /* scan through the list of arguments on the command line 
      and get the input data filename*/
   
-  while (!errflg && ((c = getopt(argc, argv,"hSo:t:s:v:"))!=-1)) {
+  while (!errflg && ((c = getopt(argc, argv,"hpo:t:v:"))!=-1)) {
     switch (c) {
+   case 'C':
+      /* Verbose Output for debugging */
+      computeProbFlag=atoi(optarg);
+      break;
     case 'v':
-      /* Output Fstat as a function of frequency */
+      /* Verbose Output for debugging */
       verboseflag=atoi(optarg);
       break;
     case 'o':
@@ -248,21 +251,16 @@ INT2 HandleComArg(INT4 argc, CHAR *argv[])
       /* Name of test data file */
       testdatafile=optarg;
       break;
-    case 'S':
-      /* Turn off the frequency shift */
-      freqshiftflag=0;
-      break;
     case 'h':
       /* help */
-      fprintf(stderr,"Usage: FstatShapeTest [-hSv] [-o <>][-t <>]\n");
+      fprintf(stderr,"Usage: FstatShapeTest [-hv] [-o <>][-t <>]\n");
       fprintf(stderr,
 	      "-o: <CHAR STRING:FaFbObsv.txt> File <filename> includes the observed data to be vetoed.\n");
       fprintf(stderr,
 	      "-t: <CHAR STRING:FaFbTest.txt> File <filename> includes the veto signal: \n");
       fprintf(stderr,"FstatSphapeTest -v : Output in a verbose way. Mainly for debugging.\n");
-      fprintf(stderr,"FstatSphapeTest -S : Do NOT make the frequency shift\n");
       fprintf(stderr,"FstatSphapeTest -h : Show this help\n");
-      fprintf(stderr,"Example: ./FstatShapeTest -o dat1 -t dat2\n");
+      fprintf(stderr,"Example: ./FstatShapeTest -o <ObservedDataFile> -t <VetoDataFile>\n");
       exit(0);
       break;
     default:
