@@ -330,7 +330,31 @@ finally install the new binary RPMs
 
 6.4.3 Installing from Debian packages
 
-[to be filled in by Kipp and Woody]
+Add the following to your /etc/apt/sources.list:
+
+  deb http://www.lsc-group.phys.uwm.edu/lal/debian/ sarge main contrib non-free
+  deb-src http://www.lsc-group.phys.uwm.edu/lal/debian/ sarge main contrib non-free
+
+This will give you access to the Frame and MetaIO .debs that Kipp Cannon is
+maintaining.
+
+Make sure the following packages are installed. You can do this with dselect,
+first updating the list of available packages and then adding them in the
+"select" stage:
+
+  pkg-config
+  fftw3-dev
+  fftw3
+  libgsl0-dev
+  libgsl0
+
+  libframe-dev
+  libframe0
+  libmetaio-dev
+  libmetaio0
+
+The last four are from Kipp's repository (see above) and the others are a
+regular part of Sarge.
 
 
 ------------------------------------------------------------------------------
