@@ -29,8 +29,6 @@ int main(int argc, char *argv[])
     LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
 
-    REPORTSTATUS(&stat);
-
     if (argc == 2)
       lalDebugLevel = atoi(argv[1]);
     
@@ -81,7 +79,6 @@ int main(int argc, char *argv[])
         return stat.statusCode;
       }
 
-    /* Fuckin' Solaris gets segmentation fault when calling strftime() */
     /*strftime(refstr, 64, "%Hh %Mm %S", &(mstdate.unixDate)); */
     /*sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);*/
     /*strcat(refstr, tmpstr+1); /* remove leading 0 */
