@@ -593,7 +593,7 @@ int writeFaFb(INT4 *maxIndex)
 
   for (irec=0;irec<highFLines->Nclusters;irec++){
     sprintf(clusterno,".%03d",irec+1);
-    strcpy(filename,filebasename);
+    strcpy(filename,FaFbfilename);
     strcat(filename,clusterno);
 
     if((fp=fopen(filename,"w"))==NULL) {
