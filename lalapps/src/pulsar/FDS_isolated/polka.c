@@ -220,6 +220,7 @@ int main(int argc,char *argv[])
 	{
 	  REAL8 Alpha2=CList2.Alpha[indices2f[f]],Delta2=CList2.Delta[indices2f[f]];
 	  REAL8 n1[3],n2[3],AngularDistance;
+	  REAL8 cosAngularDistance;
 	  
 	  n1[0]=cos(Alpha1)*cos(Delta1);
 	  n1[1]=sin(Alpha1)*cos(Delta1);
@@ -229,7 +230,12 @@ int main(int argc,char *argv[])
 	  n2[1]=sin(Alpha2)*cos(Delta2);
 	  n2[2]=sin(Delta2);
 
-	  AngularDistance=acos((float)(n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2]));
+	  cosAngularDistance=n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
+	  if (cosAngularDistance  >  1.0) cosAngularDistance =  1.0;
+	  if (cosAngularDistance  < -1.0) cosAngularDistance = -1.0;
+
+	  AngularDistance=acos((float) cosAngularDistance);
+
 	  difff=fabs(f1 - CList2.f[indices2f[f]]);
 
 	  /* check difference in frequencies because we're not guaranteed 
