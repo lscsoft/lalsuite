@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env @PYTHONPROG@
 
 """
 Query a metadata catalog using metadata for the list of 
