@@ -68,6 +68,7 @@ RCSID("$Id$");
 "  --cluster-algorithm CHOICE   use trigger clustering algorithm CHOICE\n"\
 "                               [ snr_and_chisq | snrsq_over_chisq | snr ]\n"\
 "  --cluster-time T             cluster triggers with T ms window\n"\
+"  --ifo-cut IFO                only keep triggers from IFO\n"\
 "\n"\
 "Injection analysis:\n"\
 "  --injection-file FILE        read injection parameters from FILE\n"\
@@ -113,6 +114,7 @@ int main( int argc, char *argv[] )
   extern int vrbflg;
   CHAR *userTag = NULL;
   CHAR comment[LIGOMETA_COMMENT_MAX];
+  char *ifoName = NULL;
   char *inputGlob = NULL;
   char *inputFileName = NULL;
   char *outputFileName = NULL;
@@ -227,6 +229,7 @@ int main( int argc, char *argv[] )
       {"snr-threshold",           required_argument,      0,              's'},
       {"cluster-algorithm",       required_argument,      0,              'C'},
       {"cluster-time",            required_argument,      0,              't'},
+      {"ifo-cut",                 required_argument,      0,              'd'},
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-coincidence",   required_argument,      0,              'T'},
       {"missed-injections",       required_argument,      0,              'm'},
@@ -240,7 +243,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "hzZ:c:g:i:o:j:S:s:C:Vt:I:T:m:H:D", 
+    c = getopt_long_only ( argc, argv, "hzZ:c:d:g:i:o:j:S:s:C:Vt:I:T:m:H:D", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -415,6 +418,13 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'd':
+        optarg_len = strlen( optarg ) + 1;
+        ifoName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ifoName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+        
       case 'T':
         /* injection coincidence time is specified on command line in ms */
         inject_dt = (INT8) atoi( optarg );
@@ -1051,6 +1061,19 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
+  /*
+   *
+   * keep only event from requested ifo
+   *
+   */
+
+  if ( ifoName )
+  {
+    if ( vrbflg ) fprintf( stdout, 
+        "keeping only triggers from %s, discarding others...", ifoName );
+    LAL_CALL( LALIfoCutSingleInspiral( &stat, &eventHead, ifoName ), &stat );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+  }
 
   /*
    *
