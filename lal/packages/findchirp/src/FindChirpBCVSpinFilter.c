@@ -67,7 +67,6 @@ LALFindChirpBCVSpinFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,             
     FindChirpDataParams        *fcDataParams
- /*   FindChirpSegmentVector     *fcSegVec,*/
   )
 /* </lalVerbatim> */
 {
@@ -79,34 +78,29 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 deltaF;
   REAL4                 modqsqThresh;
   REAL4                 rhosqThresh;
-  UINT4                 eventStartIdx  = 0;
-  REAL4                 chirpTime      = 0;
-  COMPLEX8             *qtilde         = NULL; 
-  COMPLEX8             *qtildeBCVSpin1 = NULL; 
-  COMPLEX8             *qtildeBCVSpin2 = NULL; 
-  COMPLEX8             *q              = NULL; 
-  COMPLEX8             *qBCVSpin1      = NULL;
-  COMPLEX8             *qBCVSpin2      = NULL;
-  COMPLEX8             *tmpltSignal    = NULL;
-  SnglInspiralTable    *thisEvent      = NULL;
+  UINT4                 eventStartIdx    = 0;
+  REAL4                 chirpTime        = 0;
+  COMPLEX8             *qtilde           = NULL; 
+  COMPLEX8             *qtildeBCVSpin1   = NULL; 
+  COMPLEX8             *qtildeBCVSpin2   = NULL; 
+  COMPLEX8             *q                = NULL; 
+  COMPLEX8             *qBCVSpin1        = NULL;
+  COMPLEX8             *qBCVSpin2        = NULL;
+  COMPLEX8             *tmpltSignal      = NULL;
+  SnglInspiralTable    *thisEvent        = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
-  
-  REAL4                 templateNorm;
-  COMPLEX8              *wtilde;  
+  COMPLEX8             *wtilde;  
   COMPLEX8             *inputData1;
-
   REAL4			rhoSq;
   REAL4 		rho = 0.0;
   REAL4                 invRho;
   REAL4                 alphaFac;
   REAL4                 alphaFac1;
-
+  REAL4 		m;
   REAL4			maxRho;
   UINT4			maxRhoCount;
-
   REAL4                 normFac;
   REAL4                 normFacSq;
-
   REAL4   		alpha1;
   REAL4                 alpha2;
   REAL4                 alpha3;
@@ -114,34 +108,29 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 alpha5;
   REAL4                 alpha6;
   REAL4                 alphaSumSq;
-              
-     
-  FILE     		*fpRho =  NULL;
-  FILE                  *fpRho1 = NULL; 
-  FILE                  *fpRecon =  NULL;
-  FILE                  *fpalphaSumSq = NULL;
-  FILE                  *fpqtilde = NULL;
-  FILE                  *fpqtildeBCVSpin1 = NULL;
-  FILE                  *fpqtildeBCVSpin2 = NULL;
+  RealFFTPlan          *prev             = NULL;
+  REAL4Vector          *hVec 	         = NULL;
+  REAL4Vector          *HVec             = NULL;
+  REAL8                *A1Vec            = NULL;
+  REAL8                *A2Vec            = NULL;
+  REAL8                *A3Vec            = NULL;
+  REAL4                 factor;
+  REAL4                 normData;
+  REAL4                 invRootNormData;
+  int                   doTest;
+  
+  FILE     	       *fpRho            = NULL;
+  FILE                 *fpRho1           = NULL; 
+  FILE                 *fpRecon          = NULL;
+  FILE                 *fpalphaSumSq     = NULL;
+  FILE                 *fpqtilde         = NULL;
+  FILE                 *fpqtildeBCVSpin1 = NULL;
+  FILE                 *fpqtildeBCVSpin2 = NULL;
   FILE                  *fpq = NULL;
   FILE                  *fpqBCVSpin1 = NULL;
   FILE                  *fpqBCVSpin2 = NULL;
   FILE                  *fpStrain1Re = NULL;
   FILE                  *fpStrain1Im = NULL;
-
-  RealFFTPlan           *prev = NULL;
-  REAL4Vector           *hVec = NULL;
-  REAL4Vector           *HVec = NULL;
-
-  REAL8           *A1Vec = NULL;
-  REAL8           *A2Vec = NULL;
-  REAL8           *A3Vec = NULL;
- 
-  REAL4                 factor; 
-  REAL4                 normData;
-  REAL4                 invRootNormData;
-
-  int                   doTest;
   
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -220,7 +209,7 @@ LALFindChirpBCVSpinFilterSegment (
    * Choose level of output
    */
 
-  doTest = 1; /* 1 writes out many files, useful for testing */
+  doTest = 0; /* 1 writes out many files, useful for testing */
      
   if (doTest ==1)
   {	  
@@ -238,45 +227,34 @@ LALFindChirpBCVSpinFilterSegment (
   	fpRho1           = fopen ("rho1.dat", "w");
   }	
   
-  /* workspace vectors */
-  q         = params->qVec->data;
-  qBCVSpin1 = params->qVecBCVSpin1->data;
-  qBCVSpin2 = params->qVecBCVSpin2->data; 
-
-  qtilde         = params->qtildeVec->data;
-  qtildeBCVSpin1 = params->qtildeVecBCVSpin1->data;
-  qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data; 
-  
-  numPoints = params->qVec->length; 
   /* template and data */
-  tmpltSignal   = input->fcTmplt->data->data;  /* this is expPsi */
-  templateNorm  = input->fcTmplt->tmpltNorm;   
-  deltaT        = params->deltaT;
-  deltaF  =  1.0/((REAL4)numPoints * deltaT);
+  inputData1    = input->segment->data->data->data; /* data */
+  tmpltSignal   = input->fcTmplt->data->data;       /* expPsi */
+  wtilde        = fcDataParams->wtildeVec->data;    /* inverse psd */
  
+  numPoints     = params->qVec->length; 
+  normFac       = 4./numPoints;
+  normFacSq     = pow(normFac, 2);
+  deltaT        = params->deltaT;
+  deltaF        =  1.0/((REAL4)numPoints * deltaT);
+ 
+  /* amplitude vectors calculated in LALFindChirpBCVSpinTemplate() */
   A1Vec = input->fcTmplt->A1BCVSpin->data;
   A2Vec = input->fcTmplt->A2BCVSpin->data;
   A3Vec = input->fcTmplt->A3BCVSpin->data;
-  
-
+    
+  /* workspace vectors */
+  q              = params->qVec->data;
+  qBCVSpin1      = params->qVecBCVSpin1->data;
+  qBCVSpin2      = params->qVecBCVSpin2->data;
+                                                                                                                            
+  qtilde         = params->qtildeVec->data;
+  qtildeBCVSpin1 = params->qtildeVecBCVSpin1->data;
+  qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data;
   
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
-  
-  normFac       = 4./numPoints;
-  normFacSq     = pow(normFac, 2);
-
-  wtilde = fcDataParams->wtildeVec->data;
-  
-  /*
-   * initialising outputData vectors to
-   * calibrated detector output as calc in LAL..Data()
-   * note lack of exponential terms, these are
-   * calc in LALFindChirpBCVSpinTemplate()
-   */
-
-  inputData1 = input->segment->data->data->data;
  
   if (doTest ==1)
   {
@@ -289,13 +267,6 @@ LALFindChirpBCVSpinFilterSegment (
   		fprintf (fpStrain1Im, "%d\t%e\n", k, inputData1[k].im);
   	} 
   }
- 
-  /*
-   *
-   * compute qtilde, qtildeBCVSpin1 and qtildeBCVSpin2
-   *
-   */
-
 
   /* finding cross product of data with itself,  
      to be used for normalisation later  */
@@ -364,6 +335,13 @@ LALFindChirpBCVSpinFilterSegment (
   memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin2, 0, numPoints * sizeof(COMPLEX8) );
 
+  /*
+   *
+   * Compute qtilde, qtildeBCVSpin1, qtildeBCVSpin2
+   *
+   */
+
+  
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
@@ -576,7 +554,7 @@ LALFindChirpBCVSpinFilterSegment (
                 alphaFac1 = normFac / maxRho;
 
 		fprintf (stdout, "normFac      = %e\n", normFac);
-		fprintf (stdout, "normFacSq      = %e\n", normFacSq);
+		fprintf (stdout, "normFacSq    = %e\n", normFacSq);
 		fprintf (stdout, "maxRho       = %e \n", maxRho);
 		fprintf (stdout, "alphaFac1    = %e\n", alphaFac1);
 		fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);
@@ -600,7 +578,7 @@ LALFindChirpBCVSpinFilterSegment (
 		alphaSumSq = pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2) 
             		   + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
 
-		fprintf (stdout, "alphaSumSq       = %e \n", alphaSumSq);
+		fprintf (stdout, "alphaSumSq   = %e \n", alphaSumSq);
 
 		/*calc freq domain waveform, store in qtilde[k]  */
 
@@ -824,19 +802,17 @@ LALFindChirpBCVSpinFilterSegment (
                 	/* record the beta value */
                		/* eventually beta will be provided FROM 
 				the template bank */
-                	/*thisEvent->beta = beta; */
-                        /* copy the template into the event */
+                	thisEvent->beta   = input->tmplt->beta; 
           		thisEvent->psi0   = (REAL4) input->tmplt->psi0;
           		thisEvent->psi3   = (REAL4) input->tmplt->psi3;
           		/* chirp mass in units of M_sun */
           		thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
             		pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
-          		/*m =  fabs(thisEvent->psi3) /	
+          		m =  fabs(thisEvent->psi3) /	
 	                (16.0 * LAL_MTSUN_SI * LAL_PI 
-			* LAL_PI * thisEvent->psi0) ;*/
-          	
-                	/*thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
-              		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );*/
+			* LAL_PI * thisEvent->psi0) ;
+          	        thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
+              		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
           		thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
                         
 		if (doTest ==1)
@@ -849,8 +825,9 @@ LALFindChirpBCVSpinFilterSegment (
 			fprintf (stdout, "alpha4 %e\n", alpha4);
 			fprintf (stdout, "alpha5 %e\n", alpha5);
 			fprintf (stdout, "alpha6 %e\n", alpha6);
-			/*fprintf (stdout, "fFinal %e\n", fFinal);
-			fprintf (stdout, "beta   %e\n", beta);*/
+			fprintf (stdout, "fFinal %e\n", input->tmplt->fFinal);
+			/*UNCOMMENT NEXT LINE WHEN CODE IS READY TO READ beta */
+			/*fprintf (stdout, "beta   %e\n", input->tmplt->beta);*/
 			fprintf (stdout, "psi0   %e\n", input->tmplt->psi0);
 			fprintf (stdout, "psi3   %e\n", input->tmplt->psi3);
 		}	
@@ -877,9 +854,8 @@ LALFindChirpBCVSpinFilterSegment (
           	{
             	thisEvent->chisq     = 0;
             	thisEvent->chisq_dof = 0;
-          	}*/
-
-          	/*isEvent->sigmasq = sqrt( norm / a1 );
+          	
+          	thisEvent->sigmasq = sqrt( norm / a1 );
           	thisEvent->eff_distance =
             	input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
           	thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) /
