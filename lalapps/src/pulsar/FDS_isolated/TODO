@@ -1,15 +1,11 @@
 TODO
 -----
-
-* activate cvs-log for lalapps/pulsar
+* clarify priorities between Alpha+AlphaBand.. and skyRegion
 
 * metric-stuff
 	- debug, compare
-	- write metric wrapper for Ptole and Coherent
 
 * work on more general tiling
-
-* specify sky-regions by lines (in progress)
 
 
 done
@@ -19,9 +15,7 @@ done
 * print grid + metric infos for debugging
 * find round-off errors? (-> gcc O2, 1e-5, seems known)
 * use config-file
-
-Issues to discuss with Ben,Ian,Map,..
-----------------------------------------
-
-* Ben/Ian: adapt PtoleMetric parameter structure to Coherent metric?
-   (-> maybe a local wrapper will be good enough?!)
+* activate cvs-log for lalapps/pulsar
+* write metric wrapper for Ptole and Coherent
+* adapt config-file more to python config-syntax
+* specify sky-regions by polygon 

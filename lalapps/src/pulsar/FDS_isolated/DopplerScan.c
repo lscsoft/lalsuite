@@ -754,8 +754,7 @@ pointInPolygon ( SkyPosition *point, SkyRegion *polygon )
 	    / (vertex[(i+1)%N].latitude-vertex[i].latitude);
 
 	  /* intersection lies to the right of point */
-	  if (point->longitude <
- xinter)	
+	  if (point->longitude < xinter)	
 	    inside = !inside; /* flip state */
 
 	} /* for candidate edges */
@@ -807,6 +806,13 @@ ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input)
   if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
     ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
+
+  region->lowerLeft.longitude = LAL_TWOPI;
+  region->lowerLeft.latitude  = LAL_PI/2.0;
+
+  region->upperRight.longitude = 0;
+  region->upperRight.latitude  = -LAL_PI/2;
+
 
   /* and parse list of vertices from input-string */
   pos = input;

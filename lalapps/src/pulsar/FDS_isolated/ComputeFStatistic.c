@@ -123,7 +123,6 @@ int main(int argc,char *argv[])
 	     a, d + Dd );
   }
 
-
   InitDopplerScan ( &status, &thisScan, scanInit);
 
   LALFree (scanInit.skyRegion);
