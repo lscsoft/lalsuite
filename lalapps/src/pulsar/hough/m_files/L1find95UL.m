@@ -8,7 +8,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear
 
-Detector = 'L1';
+Detector = 'H1';
 
 fileoutput = strcat(Detector,'95UL');
 fid = fopen(fileoutput, 'w');

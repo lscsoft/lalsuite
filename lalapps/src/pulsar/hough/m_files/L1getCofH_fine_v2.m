@@ -8,7 +8,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-Detector = 'L1';
+Detector = 'H1';
 
 fileoutput = strcat(Detector,'outCH2');
 fid = fopen(fileoutput, 'w');
@@ -44,6 +44,8 @@ filepre = strcat(filepath,'/MC_');
 filepre = strcat(filepre,Detector);
 filepre = strcat(filepre,'_');
 
+
+
 for bandnumber=0:Nbands-1
 
   bn=bandnumber+1;  
@@ -61,7 +63,9 @@ for bandnumber=0:Nbands-1
   MC_FreqVals = parvals(1:length(Ncount0(:,1)),2);
   clear parvals
 
-  vetoindices = find((mod(MC_FreqVals,1) > 0.04 & mod(MC_FreqVals,1) < 0.21) | (mod(MC_FreqVals,1) > 0.29 & mod(MC_FreqVals,1) < 0.46) | (mod(MC_FreqVals,1) > 0.54 &mod(MC_FreqVals,1) < 0.71) | (mod(MC_FreqVals,1) > 0.79 & mod(MC_FreqVals,1) < 0.96)); 
+  % use doppler wing to veto frequencies 
+  dopp = fmax(bn)*0.0001;
+  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50-dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp)); 
   clear MC_FreqVals
 
   nMonteCarlos=length(vetoindices);

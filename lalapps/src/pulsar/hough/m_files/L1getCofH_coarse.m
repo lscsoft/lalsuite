@@ -9,7 +9,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-Detector = 'L1';
+Detector = 'H1';
 
 fileoutput = strcat(Detector,'kkoutput');
 fid = fopen(fileoutput, 'w');
@@ -55,8 +55,11 @@ for bandnumber = 1:Nbands; %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
 
+   %maximum doppler shift for this band 
+   dopp_wing(bandnumber)  = fmax*0.0001;
+   dopp = dopp_wing(bandnumber);
 % this is not very elegant but should work for now
-   indices = find (FreqValues >= fmin & FreqValues <=fmax & ((mod(FreqValues,1) > 0.04 & mod(FreqValues,1) < 0.21) | (mod(FreqValues,1) > 0.29 & mod(FreqValues,1) < 0.46) | (mod(FreqValues,1) > 0.54 &mod(FreqValues,1) < 0.71) | (mod(FreqValues,1) > 0.79 & mod(FreqValues,1) < 0.96) ));
+   indices = find (FreqValues >= fmin & FreqValues <=fmax & ((mod(FreqValues,1) > dopp & mod(FreqValues,1) < 0.25-dopp) | (mod(FreqValues,1) > 0.25+dopp & mod(FreqValues,1) < 0.50-dopp) | (mod(FreqValues,1) > 0.50+dopp &mod(FreqValues,1) < 0.75-dopp) | (mod(FreqValues,1) > 0.75+dopp & mod(FreqValues,1) < 1.0-dopp) ));
    Nmax(bandnumber) = max( MaxValues(indices));
    bandnumber
 end
@@ -87,8 +90,11 @@ for bandnumber=0:Nbands-1
 
 
   clear parvals     
-
-  vetoindices = find((mod(MC_FreqVals,1) > 0.04 & mod(MC_FreqVals,1) < 0.21) | (mod(MC_FreqVals,1) > 0.29 & mod(MC_FreqVals,1) < 0.46) | (mod(MC_FreqVals,1) > 0.54 &mod(MC_FreqVals,1) < 0.71) | (mod(MC_FreqVals,1) > 0.79 & mod(MC_FreqVals,1) < 0.96)); 
+  
+  %use doppler wing calculated earlier--note that here the band index
+  %starts from 0 and not from 1 as before
+  dopp = dopp_wing(bandnumber + 1);
+  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50+dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp)); 
   
   clear MC_FreqVals
 

@@ -5,7 +5,7 @@
 
 clear
 
-Detector = 'L1';
+Detector = 'H1';
 fileinput = strcat(Detector,'kkoutput');
 fileoutput = strcat(Detector,'h0newband');
 fid = fopen(fileoutput, 'w');
