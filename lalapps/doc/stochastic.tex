@@ -151,6 +151,217 @@ variances.
 
 \end{enumerate}
 
+\subsection{Definitions and Equations}
+
+The data $r_i[k]$ are the raw (uncalibrated) detector outputs at
+discrete times $t_k \equiv k \, \delta t$:
+
+\begin{equation}
+r_i[k] \equiv r_i(t_k),
+\end{equation}
+
+where $k = 0, 1, 2, \cdots$, $\delta t$ is the sampling period, and $i$
+labels the detector. The time-series data corresponding to the $I$-th
+segment is denoted $r_{iI}[k]$, where $k = 0, 1, \cdots, N-1$ runs over
+the total number of samples in the segment. The windowed, zero-padded
+data are:
+
+\begin{equation}
+g_{iI}[k] \equiv \left\{ \begin{array}{cl}
+w_i[k] r_{iI}[k] & k = 0, \cdots, N-1 \\
+0 & k = N, \cdots, 2N-1,
+\end{array} \right.
+\end{equation}
+
+where $w_i[k]$ is the window function for the $i$-th detector. The
+Fourier transform of this data series is:
+
+\begin{equation}
+\widetilde{g}_{iI}[q] \equiv \sum_{k = 0}^{2N-1} \delta t g_{iI}[k]
+\exp \left[ \frac{-i 2 \pi k q}{2N} \right],
+\end{equation}
+
+where $N = T_{\mathrm{seg}}/\delta t$ is the number of data points in a
+segment, and $q = 0, 1, \cdots, 2N-1$. The coarse grained (binned)
+cross-spectrum is formed as follows:
+
+\begin{equation}
+\mathcal{G}_{I}[\ell] \equiv \frac{1}{n_b} \sum_{q = n_b \ell -m}^{n_b
+\ell + m} \widetilde{g}^*_{1I}[q] \widetilde{g}_{2I}[q],
+\end{equation}
+
+where $\ell_{\mathrm{min}} \le \ell \le \ell_{\mathrm{max}}$, $n_b = 2
+T_{\mathrm{seg}} \delta f$ is the number of frequency values being
+binned, and $m = (n_b - 1) / 2$. The index $\ell$ labels the discrete
+frequencies, $f_{\ell} \equiv \ell \delta f$. The cross-correlation
+values are calculated as:
+
+\begin{equation}
+Y_{I} \equiv 2 \mathrm{Re} \left[ \sum_{\ell =
+\ell_{\mathrm{min}}}^{\ell_{\mathrm{max}}} \delta f \widetilde
+Q_I[\ell] \mathcal{G}_{I}[\ell] \right].
+\end{equation}
+
+The calibration response function $\widetilde R_i(f)$ (units of
+counts/strain) converts the raw data to equivalent strain: $\widetilde
+s_i(f) = \widetilde R_i^{-1}(f) \widetilde r_i(f)$.
+The fully calibrated power spectra are denoted by $P_{iI}$ (units of
+strain$^2/$Hz), and the half-calibrated power spectra are:
+$\widetilde R_{iI} \cdot P_{iI}$.
+
+The optimal filter $\widetilde Q_I$ for the case
+$\Omega_{\mathrm{GW}}(f) \equiv \Omega_0 = $ const is constructed as:
+
+\begin{equation}
+\widetilde Q_I[\ell] \equiv {\cal N}_I \frac{\gamma[\ell]}{|f_\ell|^3
+(\widetilde R_{1I}[\ell] P_{1I}[\ell])^{\ast} (\widetilde R_{2I}[\ell]
+P_{2I}[\ell])}
+\end{equation}
+
+where $\gamma[\ell] \equiv \gamma(f_\ell)$, and $\widetilde R_{iI}[\ell]
+\equiv \widetilde R_{iI}(f_\ell)$. The normalization factor ${\cal N}_I$
+is:
+
+\begin{equation}
+{\cal N}_I = \frac{20\pi^2}{3H_{100}^2} \frac{1}{\overline{w_1w_2}}
+\times \left[2 \sum_{\ell = \ell_{\mathrm{min}}}^{\ell_{\mathrm{max}}}
+\delta f \frac{\gamma^2[\ell]}{f_\ell^6 P_{1I}[\ell] P_{2I}[\ell]}
+\right]^{-1}.
+\end{equation}
+
+The theoretical variance is calculated as:
+
+\begin{equation}
+\sigma_{Y_{I}}^2 = T_{\mathrm{seg}} \left( \frac{10 \pi^2}{3 H_{100}^2}
+\right)^2 \frac{\overline{w_1^2 w_2^2}}{(\overline{w_1w_2})^2} \times
+\left[ 2 \sum_{\ell=\ell_{\mathrm{min}}}^{\ell_{\mathrm{max}}} \delta\ f
+\frac{\gamma^2[\ell]}{f_\ell^6 P_{1I}[\ell] P_{2I}[\ell]} \right]^{-1}.
+\end{equation}
+
+The windowing factors are:
+
+\begin{eqnarray}
+\overline{w_1w_2} & \equiv & \frac{1}{N}\sum_{k=0}^{N-1}w_1[k]w_2[k], \\
+\overline{w_1^2 w_2^2} & \equiv & \frac{1}{N}\sum_{k = 0}^{N -
+	1}w_1^2[k] w_2^2[k].
+\end{eqnarray}
+
+The weighted average of the set of $Y_I$ is computed as:
+
+\begin{equation}
+Y_{\mathrm{opt}} \equiv \frac{\sum_I \sigma_{Y_{I}}^{-2} Y_{I}} {\sum_I
+\sigma_{Y_{I}}^{-2}},
+\end{equation}
+
+giving an estimate for the stochastic background of:
+
+\begin{equation}
+\widehat \Omega_0 h^2_{100} = Y_{\mathrm{opt}}/T_{\mathrm{seg}}.
+\end{equation}
+
+The statistical error bar on this estimate is:
+
+\begin{equation}
+\widehat \sigma_{\Omega} = \frac{1}{T_{\mathrm{seg}}}
+\frac{1}{\sqrt{\sum_I \sigma_{Y_{I}}^{-2}}}.
+\end{equation}
+
+We also define the spectra:
+
+\begin{eqnarray}
+\widetilde Y_{I}[\ell] & \equiv & \widetilde Q_I[\ell]\,{\cal
+	G}_{I}[\ell], \\
+\widetilde Y_{\mathrm{opt}}[\ell] & \equiv & \frac{\sum_I
+\sigma_{Y_{I}}^{-2} \widetilde Y_{I}[\ell]}{\sum_I \sigma_{Y_{I}}^{-2}}.
+\end{eqnarray}
+
+If 50\% overlapping windows are used, the above expressions for
+$Y_{\mathrm{opt}}$, $\widehat \Omega_0 h_{100}^2$, $\widehat
+\sigma_{\Omega}$, and $\widetilde Y_{\mathrm{opt}}[\ell]$ need to be
+modified to take into account the correlations in the $Y_I$ values
+formed from overlapping data segments. To do this, consider splitting up
+the full data set into blocks of contiguous data of length $\ge
+T_{\mathrm{seg}}$, where each block is not contiguous with any other
+block. We will call one such block of data a ``job", and denote
+different jobs by the index $J$. For a given job $J$, assume there are
+$I=1, 2, \cdots, M$ segments of length $T_{\rm seg}$ contained within.
+Then for 50\% overlapping windows, there will be $2M-1$
+cross-correlation statistic values $Y_I$ and theoretical variances
+$\sigma^2_{Y_I}$. The weighted average of this set of $Y_I$ values is
+denoted $Y_{\mathrm{opt}, J}$ and is given by:
+
+\begin{equation}
+Y_{\mathrm{opt}, J} \equiv \frac{\sum_{I \in J}\sigma_{Y_{I}}^{-2}
+Y_{I}}{\sum_{I \in J} \sigma_{Y_{I}}^{-2}},
+\end{equation}
+
+The theoretical variance for this weighted average is:
+
+\begin{equation}
+\label{e:theorvar_overlap}
+\sigma_{Y_{\mathrm{opt}, J}}^2 = \frac{1}{\sum_{I \in J}
+\sigma_{Y_{I}}^{-2}} \left[ \frac{\overline{w_{\mathrm{ovl}, 1}^2
+w_{\mathrm{ovl}, 2}^2}}{\overline{w_1^2 w_2^2}} \left(\frac{2M-2}{2M-1}
+\right) + \frac{1}{2M-1} \left( M + \sum_{\mathrm{Even} I \in J}
+\frac{\frac{1}{2} (\sigma^4_{Y_{I-1}} +
+\sigma^4_{Y_{I+1}})}{\sigma^4_{Y_I}} \right) \right],
+\end{equation}
+
+where
+
+\begin{equation}
+\overline{w_{1,{\rm ovl}}^2 w_{2,{\rm ovl}}^2} \equiv
+\frac{1}{N/2}\sum_{k=N/2}^{N-1} (w_1[k] w_1[k-N/2]) (w_2[k] w_2[k-N/2]).
+\end{equation}
+
+The first term in square brackets in Equation~\ref{e:theorvar_overlap}
+represents the increase in the variance of $Y_{\mathrm{opt}, J}$
+(relative to $1/{\sum_{I \in J} \sigma_{Y_{I}}^{-2}}$) due to
+correlations in the overlapping data segments, while the second term
+allows for possible non-stationarity in the detector noise. (For
+stationary data, the second term is equal to one.) Note that for 50\%
+overlapping rectangular windows, the first term in square braces equals
+$(2M-2)/(2M-1)$; for 50\% overlapping ``box car" windows that equal
+unity for only the middle-half of each data segment, this term is zero;
+while for 50\% overlapping Hann windows, this expression is
+approximately $(3/35)*(2M-2)/(2M-1)$.
+
+Since different jobs $J$ are not contiguous, we can define
+
+\begin{equation}
+Y_{\mathrm{opt}} \equiv \frac{\sum_J \sigma_{Y_{\mathrm{opt}, J}}^{-2}
+Y_{\mathrm{opt}, J}}{\sum_J \sigma_{Y_{\mathrm{opt}, J}}^{-2}},
+\end{equation}
+
+giving an estimate for the stochastic background of:
+
+\begin{equation}
+\widehat \Omega_0 h^2_{100} = Y_{\mathrm{opt}}/T_{\mathrm{seg}},
+\end{equation}
+
+and statistical error bar:
+
+\begin{equation}
+\widehat \sigma_{\Omega} = \frac{1}{T_{\mathrm{seg}}}
+\frac{1}{\sqrt{\sum_J \sigma_{Y_{\mathrm{opt}, J}}^{-2}}}.
+\end{equation}
+
+The optimally weighted spectrum is:
+
+\begin{equation}
+\widetilde Y_{\mathrm{opt}}[\ell] \equiv \frac{\sum_J
+\sigma_{Y_{\mathrm{opt}, J}}^{-2} \widetilde Y_{\mathrm{opt},
+	J}[\ell]}{\sum_J \sigma_{Y_{\mathrm{opt}, J}}^{-2}},
+\end{equation}
+
+where
+
+\begin{equation}
+\widetilde Y_{\mathrm{opt}, J}[\ell] \equiv \frac{\sum_{I \in J}
+\sigma_{Y_{I}}^{-2} \widetilde Y_{I}[\ell]}{\sum_{I \in J}
+\sigma_{Y_{I}}^{-2}},
+\end{equation}
+
 \clearpage
 \section{Program \prog{lalapps\_stochastic\_pipe}}
 \label{program:lalapps-stochastic-pipe}
