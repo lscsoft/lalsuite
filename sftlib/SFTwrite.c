@@ -11,6 +11,10 @@ void printerror(int err);
 void dosystem(const char *command);
 void modify_bytes(const char *filename, int byte_offset, const char *new_value, int nbytes);
 int isbigendian(void);
+void modify_checksum(const char *filename, unsigned long long newchecksum);
+void swap2(char *location);
+void swap4(char *location);
+void swap8(char *location);
 
 
 /* function definitions */
@@ -18,6 +22,33 @@ int isbigendian(void){
   short i=0x0100;
   char *tmp=(char *)&i;
   return *tmp;
+}
+
+/* swap 2, 4 or 8 bytes.  Point to low address */
+void swap2(char *location){
+  char tmp=*location;
+  *location=*(location+1);
+  *(location+1)=tmp;
+  return;
+}
+  
+void swap4(char *location){
+  char tmp=*location;
+  *location=*(location+3);
+  *(location+3)=tmp;
+  swap2(location+1);
+  return;
+}
+                                                                                                                  
+void swap8(char *location){
+  char tmp=*location;
+  *location=*(location+7);
+  *(location+7)=tmp;
+  tmp=*(location+1);
+  *(location+1)=*(location+6);
+  *(location+6)=tmp;
+  swap4(location+2);
+  return;
 }
 
 FILE *openfile(const char* name) {
@@ -49,6 +80,10 @@ void dosystem(const char *command) {
 
 void modify_bytes(const char *filename, int byte_offset, const char *new_value, int nbytes) {
   FILE *fp=fopen(filename, "rb+");
+  if (!new_value) {
+    fprintf(stderr, "modify_byes() called with null pointer for new data!\n");
+    exit(SFTENULLFP);
+  }
   if (!fp) {
     if (errno)
       perror("Unable to open file for writing");
@@ -72,6 +107,14 @@ void modify_bytes(const char *filename, int byte_offset, const char *new_value, 
   return;
 }
 
+void modify_checksum(const char *filename, unsigned long long newchecksum) {
+  if (isbigendian())
+    swap8((char *)&newchecksum);
+  modify_bytes(filename, 32, (char *)&newchecksum, 8);
+  return;
+}
+
+
 /* define some detectors for convenience */
 #define DET1 "H1"
 #define DET2 "L1"
@@ -79,7 +122,6 @@ void modify_bytes(const char *filename, int byte_offset, const char *new_value, 
 int main(void) {
   FILE *fp;
   float data[]={1.0, 0.0, 2.0, -1.0, 3.0, -2.0, 4.0, -3.0};
-  unsigned long long crc64;
   
   printerror(WriteSFT(fp=openfile("SFT-test1"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test1", data)); fclose(fp);
   printerror(WriteSFT(fp=openfile("SFT-test2"), 12345+60,       6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test2", data)); fclose(fp);
@@ -105,14 +147,17 @@ int main(void) {
   modify_bytes("SFT-bad6", 48, "T", 1);
   /* Nonexistent detector (change H1 to I1) checksum */
   dosystem("cat SFT-test1 > SFT-bad7");
-  if (isbigendian())
-    crc64=8968959151175565348;
-  else
-    crc64=2594301065140926588;
-  modify_bytes("SFT-bad7", 32, (const char *)&crc64, 8);
   modify_bytes("SFT-bad7", 40, "I", 1);
+  modify_checksum("SFT-bad7", 2594301065140926588ULL);
+  /* SFT with comment containing hidden data */
+  dosystem("cat SFT-test1 > SFT-bad8");
+  modify_bytes("SFT-bad8", 49, "", 1);
+  modify_checksum("SFT-bad8", 9546122005026447583ULL);
+  /* SFT with comment no terminating null character containing hidden data */
+  printerror(WriteSFT(fp=openfile("SFT-bad9"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test567", data)); fclose(fp);
+  modify_bytes("SFT-bad9", 55, "8", 1);
+  modify_checksum("SFT-bad9", 8104828364422822013ULL);
 
-  
   printf("To test SFTs, do for example:\n"
 	 "./SFTvalidate SFT-good SFT-test[1234567]\n"
 	 "./SFTvalidate SFT-bad1\n"
@@ -122,6 +167,8 @@ int main(void) {
 	 "./SFTvalidate SFT-bad5\n"
 	 "./SFTvalidate SFT-bad6\n"
 	 "./SFTvalidate SFT-bad7\n"
+	 "./SFTvalidate SFT-bad8\n"
+	 "./SFTvalidate SFT-bad9\n"
 	 "(checking exit status after each command) or you can also try\n"
 	 "./SFTdumpheader SFT-good SFT-test[1234567]\n"
 	 "./SFTdumpheader SFT-bad1\n"
@@ -131,6 +178,8 @@ int main(void) {
 	 "./SFTdumpheader SFT-bad5\n"
 	 "./SFTdumpheader SFT-bad6\n"
 	 "./SFTdumpheader SFT-bad7\n"
+	 "./SFTdumpheader SFT-bad8\n"
+	 "./SFTdumpheader SFT-bad9\n"
 	 "or you can also replace SFTdumpheader with SFTdumpall.\n");
 
   return 0;

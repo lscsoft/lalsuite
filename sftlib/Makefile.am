@@ -33,5 +33,5 @@ docs_DATA       =      README \
 
 EXTRA_DIST      =      $(docs_DATA)
 
-CLEANFILES      =      SFT-test[1-7] SFT-bad[1-7] SFT-good
+CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-good
 
