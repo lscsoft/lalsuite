@@ -5,7 +5,7 @@
 ##
 ## This requires the software installed in the pre-install to have been 
 ## built and installed. LAL will be built in the directory specified by
-## the environment variable LAL_LOCATION.
+## the environment variable "LAL_LOCATION".
 ##
 ## If the software was not installed in a standard location, such as
 ## "/usr" or "/usr/local", then the location of the software must be specified.
