@@ -78,7 +78,8 @@ CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
 REAL4 noiseAmpl;                    /* gain factor for white noise         */
 INT4 seed;                          /* set non-zero to generate noise      */
-INT4 numPoints;                     /* number of samples from frames       */
+INT4 maxSeriesLength;               /* RAM-limited input length            */
+size_t psdAverageLength;            /* number of samples to use for PSD    */
 INT4 totalNumPoints;                /* total number of points to analyze   */
 UINT4 totalNumSegs;                 /* total number of segments to analyze */
 LIGOTimeGPS startEpoch;             /* gps start time                      */
@@ -135,19 +136,20 @@ int main( int argc, char *argv[])
     static LALStatus      stat;
     LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-    EPSearchParams       *params        = NULL;
-    FrStream             *stream        = NULL;
-    FrCache              *frameCache    = NULL;
-    CHAR                  fname[256];
-    PassBandParamStruc    highpassParam;
-    REAL4                 fsafety=0;
+    EPSearchParams         *params = NULL;
+    FrStream               *stream = NULL;
+    FrCache                *frameCache = NULL;
+    CHAR                    fname[256];
+    PassBandParamStruc      highpassParam;
+    REAL4                   fsafety = 0;
     CalibrationUpdateParams calfacts;
-    LIGOTimeGPS		  tmpEpoch = { 0, 0};
-    LALTimeInterval tmpInterval;
-    REAL8                 tmpOffset = 0.0;
-    REAL4                 minFreq = 0.0;    
-    int                   start_sample;
-    int                   usedNumPoints = 0;
+    LIGOTimeGPS		    tmpEpoch = {0, 0};
+    LALTimeInterval         tmpInterval;
+    REAL8                   tmpOffset = 0.0;
+    REAL4                   minFreq = 0.0;    
+    int                     start_sample;
+    int                     usedNumPoints;
+    INT4                    numPoints;  /* number of samples from frames */
 
     /* data storage */
     REAL4TimeSeries            series;
@@ -221,22 +223,19 @@ int main( int argc, char *argv[])
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
      ******************************************************************/
-    while((totalNumPoints - usedNumPoints) > (int) (2 * params->ovrlap * (frameSampleRate / targetSampleRate))){
+    for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * params->windowShift * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * params->windowShift * (frameSampleRate / targetSampleRate)) {
 
       /* tell operator how we are doing */
       if (verbose){
-        fprintf(stdout,"%i points analysed && %i points left\n",usedNumPoints,totalNumPoints-usedNumPoints);
+        fprintf(stdout,"%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
       }
 
-      /* compute the number of points in a chunk */
-      numPoints = min(params->numSegments,(totalNumPoints - usedNumPoints)) ;
+      /* compute the number of points to use in this run */
+      numPoints = min(maxSeriesLength, (totalNumPoints - usedNumPoints));
 
       if(verbose) {
-        fprintf(stdout,"read in %i points\n",numPoints);
+        fprintf(stdout,"reading %i points...\n", numPoints);
       }
-      
-      /* count the no. of points that are being used */
-      usedNumPoints += numPoints;
 
       /* create and initialize the time series vector */
       series.data = NULL;
@@ -529,25 +528,26 @@ int main( int argc, char *argv[])
       if (verbose)
 	fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
 
-      /* first check if the params->segDutyCycle of data are available or not?
-       * If not, then set the params->segDutyCycle to be equal to the length of
-       * data available 
+      /* first check if the psdAverageLength of data are available or not?  If
+       * not, then set the psdAverageLength to be equal to the length of data
+       * available 
        */
-      if(params->segDutyCycle > series.data->length)
-	      params->segDutyCycle = series.data->length;
 
-      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->ovrlap); start_sample += params->segDutyCycle - 3 * params->ovrlap) {
+      if(psdAverageLength > series.data->length)
+	      psdAverageLength = series.data->length;
+
+      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->windowShift); start_sample += psdAverageLength - 3 * params->windowShift) {
         REAL4TimeSeries *interval;
 
-	/* if the no. of points left is less than the params->segDutyCycle then
-	 * move the epoch back so that it can cut out params->segDutyCycle of
-	 * data 
+	/* if the no. of points left is less than the psdAverageLength
+	 * then move the epoch back so that it can cut out
+	 * params->psdAvaregeLength of data 
 	 */
 
-	if(series.data->length - start_sample < params->segDutyCycle)
-	  start_sample = series.data->length - params->segDutyCycle;
+	if(series.data->length - start_sample < psdAverageLength)
+	  start_sample = series.data->length - psdAverageLength;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, params->segDutyCycle), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, psdAverageLength), &stat);
 	
         if (verbose)
           fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
@@ -562,27 +562,22 @@ int main( int argc, char *argv[])
 
  
       /* compute the start time for the next chunk */
-      tmpOffset = (REAL8)(numPoints - 2 * (params->ovrlap*(frameSampleRate/targetSampleRate)))/((REAL8)frameSampleRate);
+      tmpOffset = (REAL8)(numPoints - 2 * (params->windowShift * (frameSampleRate/targetSampleRate)))/((REAL8)frameSampleRate);
       LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
             &tmpOffset), &stat );
       LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
             &tmpInterval), &stat );
 
-      /*recalculate the used no. of points considering the 
-       *fact that we moved back by 2*params->ovrlap
-       *when we calculated the offset in the previous step
-       */
-      usedNumPoints -= 2*params->ovrlap*(frameSampleRate/targetSampleRate);
+      /* increment by the no. of points that were used */
+      usedNumPoints += 
       
      /* clean up memory from that run */
-      LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
-      if ( calCacheFile )
-      {
-        LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
-      }
+      LAL_CALL(LALSDestroyVector(&stat, &(series.data)), &stat);
+      if(calCacheFile)
+        LAL_CALL(LALCDestroyVector(&stat, &(resp.data)), &stat);
     } 
     /*******************************************************************
-     * while (totalNumSegs>0){..  ends here
+     * outer-most loop ends here
      *******************************************************************/
 
     if(cachefile)
@@ -698,7 +693,6 @@ static void print_usage(char *program)
 "	 --min-freq-bin <nfbin>\n" \
 "	 --min-time-bin <ntbin>\n" \
 "	 --noise-amplitude <amplitude>\n" \
-"	 --npts <npoints>\n" \
 "	 --nsigma <sigma>\n" \
 "	[--printData]\n" \
 "	[--printSpectrum]\n" \
@@ -707,13 +701,14 @@ static void print_usage(char *program)
 "	 --ram-limit <MebiBytes>\n" \
 "	 --resample-filter <filter type>\n" \
 "	 --seed <seed>\n" \
-"	 --shift-points <samples>\n" \
 "	 --target-sample-rate <Hz>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--user-tag <comment>]\n" \
 "	[--verbose]\n" \
-"	 --window <window>\n", program);
+"	 --window <window>\n" \
+"	 --window-length <samples>\n" \
+"	 --window-shift <samples>\n", program);
 }
 
 static void print_bad_argument(const char *prog, const char *arg, const char *msg)
@@ -799,7 +794,6 @@ void initializeEPSearch(
 		{"min-freq-bin",        required_argument, NULL,           'T'},
 		{"min-time-bin",        required_argument, NULL,           'U'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
-		{"npts",                required_argument, NULL,           'W'},
 		{"nsigma",              required_argument, NULL,           'X'},
 		{"printData",           no_argument,       &printData,     TRUE},
 		{"printSpectrum",       no_argument,       &printSpectrum, TRUE},
@@ -808,13 +802,14 @@ void initializeEPSearch(
 		{"ram-limit",           required_argument, NULL,           'a'},
 		{"resample-filter",     required_argument, NULL,           'b'},
 		{"seed",                required_argument, NULL,           'c'},
-		{"shift-points",        required_argument, NULL,           'd'},
 		{"target-sample-rate",  required_argument, NULL,           'e'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
 		{"user-tag",            required_argument, NULL,           'h'},
 		{"verbose",             no_argument,       &verbose,       TRUE},
 		{"window",              required_argument, NULL,           'i'},
+		{"window-length",       required_argument, NULL,           'W'},
+		{"window-shift",        required_argument, NULL,           'd'},
 		{NULL, 0, NULL, 0}
 	};
 
@@ -828,12 +823,13 @@ void initializeEPSearch(
 		exit(1);
 	}
 
-	(*params)->tfTilingInput = LALMalloc(sizeof(CreateTFTilingIn));
-	(*params)->compEPInput = LALMalloc(sizeof(ComputeExcessPowerIn));
+	(*params)->tfTilingInput = LALMalloc(sizeof(*(*params)->tfTilingInput));
+	(*params)->compEPInput = LALMalloc(sizeof(*(*params)->compEPInput));
 	if(!(*params)->tfTilingInput || !(*params)->compEPInput) {
 		LALFree((*params)->tfTilingInput);
 		LALFree((*params)->compEPInput);
-		LALFree(*params); *params = NULL;
+		LALFree(*params);
+		*params = NULL;
 		print_alloc_fail(argv[0], "");
 		exit(1);
 	}
@@ -843,7 +839,9 @@ void initializeEPSearch(
 	 */
 
 	(*params)->channelName = NULL;
+	(*params)->eventLimit = 999;
 	(*params)->tfTilingInput->maxTileBand = 64.0;
+	(*params)->windowShift = 0;
 
 	cachefile = NULL;
 	calCacheFile = NULL;
@@ -857,9 +855,9 @@ void initializeEPSearch(
 	mdcCacheFile = NULL;
 	mdcparams = NULL;
 	noiseAmpl = 1.0;
-	numPoints = 4096;
 	printData = FALSE;
 	printSpectrum = FALSE;
+	psdAverageLength = 0;
 	resampFiltType = -1;
 	seed = 1;
 	sineBurst = FALSE;
@@ -921,13 +919,13 @@ void initializeEPSearch(
 		break;
 
 		case 'F':
-		(*params)->events2Master = atoi(optarg);
-		if((*params)->events2Master < 1 || (*params)->events2Master > 999) {
-			sprintf(msg, "must be in range [1,999] (%i specified)", (*params)->events2Master);
+		(*params)->eventLimit = atoi(optarg);
+		if((*params)->eventLimit < 1 || (*params)->eventLimit > 999) {
+			sprintf(msg, "must be in range [1,999] (%i specified)", (*params)->eventLimit);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit( 1 );
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->events2Master);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->eventLimit);
 		break;
 
 		case 'G':
@@ -1089,13 +1087,13 @@ void initializeEPSearch(
 		break;
 
 		case 'W':
-		(*params)->numPoints = atoi(optarg);
-		if((*params)->numPoints <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", (*params)->numPoints);
+		(*params)->windowLength = atoi(optarg);
+		if((*params)->windowLength <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", (*params)->windowLength);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->numPoints);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->windowLength);
 		break;
 
 		case 'X':
@@ -1124,8 +1122,8 @@ void initializeEPSearch(
 		break;
 
 		case 'Z':
-		(*params)->segDutyCycle = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", (*params)->segDutyCycle);
+		psdAverageLength = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", psdAverageLength);
 		break;
 
 		case 'a':
@@ -1162,8 +1160,8 @@ void initializeEPSearch(
 		break;
 
 		case 'd':
-		(*params)->ovrlap = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", (*params)->ovrlap);
+		(*params)->windowShift = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->windowShift);
 		break;
 
 		case 'e':
@@ -1236,7 +1234,9 @@ void initializeEPSearch(
 	 * Check for missing parameters
 	 */
 
-	if(!gpsStartTimeNS || !gpsStopTimeNS || !frameSampleRate || !targetSampleRate || !ram) {
+	if(!gpsStartTimeNS || !gpsStopTimeNS || !frameSampleRate ||
+	!targetSampleRate || !ram || !psdAverageLength ||
+	!(*params)->windowShift) {
 		print_missing_argument(argv[0], "<FIXME>");
 		exit(1);
 	}
@@ -1246,15 +1246,35 @@ void initializeEPSearch(
 	 */
 
 	/*
-	 * Perform some clean up.
+	 * Convert the start and stop epochs, along with the sample rate, to a
+	 * total number of samples to analyze.
 	 */
 
 	LAL_CALL(LALINT8toGPS(&stat, &startEpoch, &gpsStartTimeNS), &stat);
 	LAL_CALL(LALINT8toGPS(&stat, &stopEpoch, &gpsStopTimeNS), &stat);
 	totalNumPoints = DeltaGPStoINT8(&stat, &stopEpoch, &startEpoch) * frameSampleRate / 1000000000L;
 
+	/*
+	 * Convert the amount of available RAM to a limit on the length of a
+	 * time series to read in.
+	 */
+
+	maxSeriesLength = ram / (4 * sizeof(REAL4));
+
+	/*
+	 * Ensure the psdAverageLength is comensurate with the analysis window
+	 * length and shift.
+	 */
+
+	psdAverageLength = ((psdAverageLength - (*params)->windowLength) / (*params)->windowShift) * (*params)->windowShift + (*params)->windowLength;
+	if(verbose)
+		fprintf(stderr, "%s: using %d for --psd-average-points\n", argv[0], psdAverageLength);
+
+	/*
+	 * Miscellaneous chores.
+	 */
+
 	(*params)->cluster = cluster;
-	(*params)->numSegments = ram / (4 * sizeof(REAL4));
 	(*params)->printSpectrum = printSpectrum;
 }
 

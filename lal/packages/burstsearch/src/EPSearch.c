@@ -100,13 +100,13 @@ static void ComputeAverageSpectrum(
 	ATTATCHSTATUSPTR(status);
 
 	winParams.type = params->windowType;
-	winParams.length = 2 * params->numPoints;
+	winParams.length = 2 * params->windowLength;
 	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
 	CHECKSTATUSPTR(status);
 	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
 	CHECKSTATUSPTR(status);
 
-	spec_params.overlap = spec_params.window->data->length - params->ovrlap;
+	spec_params.overlap = spec_params.window->data->length - params->windowShift;
 	spec_params.method = params->method;
 
 	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
@@ -140,7 +140,7 @@ static void TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTa
 	LALInfo(status->statusPtr, "Converting times into sngl_burst events");
 	CHECKSTATUSPTR (status);
 
-	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->events2Master); tile = tile->nextTile, numevents++) {
+	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->eventLimit); tile = tile->nextTile, numevents++) {
 		*event = LALMalloc(sizeof(**event));
 
 		LALTFTileToBurstEvent(status->statusPtr, *event, tile, epoch, params); 
@@ -181,7 +181,7 @@ EPSearch (
     ASSERT(burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
     /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->numPoints + 1);
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength + 1);
     CHECKSTATUSPTR(status);
     ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
     CHECKSTATUSPTR(status);
@@ -197,36 +197,33 @@ EPSearch (
     }
 
     /* assign temporary memory for the frequency data */
-    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->numPoints + 1);
+    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength + 1);
     CHECKSTATUSPTR(status);
 
     /* create the dft params */
     winParams.type = params->windowType;
-    winParams.length = 2 * params->numPoints;
+    winParams.length = 2 * params->windowLength;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR(status);
 
     /* loop over data applying excess power method */
-    for(start_sample = 0; start_sample <= tseries->data->length - lround(2.0 / tseries->deltaT); start_sample += params->ovrlap)
+    for(start_sample = 0; start_sample <= tseries->data->length - 2 * params->windowLength; start_sample += params->windowShift)
     {
-      /* Cut out two sec long time series */
-      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, lround(2.0 / tseries->deltaT));
+      /* extract two windowLengths from the time series */
+      LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, 2 * params->windowLength);
       CHECKSTATUSPTR(status);
 
-      /* compute the DFT of input time series: NOTE:We are using
-       * the timeseries directly to compute the spectrum: Saikat
-       * (20040823)
-       */
+      /* compute its DFT */
       LALInfo(status->statusPtr, "Computing the frequency series");
       CHECKSTATUSPTR(status);
       LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
       CHECKSTATUSPTR(status);
   
-      /* delete the timeseries */
+      /* delete it */
       LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
       CHECKSTATUSPTR(status);
 
-      /* normalize the data stream so that rms of Re or Im is 1 */
+      /* normalize the spectrum so that rms of Re or Im is 1 */
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         REAL4 tmpVar;
@@ -452,13 +449,9 @@ void EPInitSearch(
      */
 
     /* Number of data points in a segment */
-    (*params)->numPoints        = atoi( argv[1] );
-    /* Number of overlapping data segments */
-    (*params)->numSegments      = atoi( argv[2] );
-    /* Number of segments sent to slave */
-    (*params)->segDutyCycle     = atoi( argv[12] ); 
+    (*params)->windowLength                 = atoi( argv[1] );
     /* Overlap betweeen segments (# of points) */
-    (*params)->ovrlap                       = atoi( argv[3] );  
+    (*params)->windowShift                  = atoi( argv[3] );  
     /* Identify events with alpha less that this value */
     (*params)->alphaThreshold               = atof( argv[13] ); 
     /* Amount of overlap between neighboring TF tiles */
@@ -478,7 +471,7 @@ void EPInitSearch(
     /* default alpha value for tiles with sigma < numSigmaMin */
     (*params)->compEPInput->alphaDefault    = atof( argv[11] ); 
     /* EK - Max. number of events to communicate to master */
-    (*params)->events2Master                = atoi( argv[14] );
+    (*params)->eventLimit                   = atoi( argv[14] );
     /* EK - Channel name to process (e.g. "ifodmro") */
     strcpy( (*params)->channelName, argv[15] );
     /* Spectrum method to use */
@@ -590,7 +583,7 @@ void EPConditionData(
     LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
     CHECKSTATUSPTR (status);
             
-    LALShrinkREAL4TimeSeries(status->statusPtr, series, params->ovrlap, series->data->length - 2*params->ovrlap);
+    LALShrinkREAL4TimeSeries(status->statusPtr, series, params->windowShift, series->data->length - 2*params->windowShift);
     CHECKSTATUSPTR (status);
     /****************************************************************
      * 

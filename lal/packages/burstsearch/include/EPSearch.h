@@ -104,19 +104,17 @@ NRCSID (EPSEARCHH, "$Id$");
 typedef struct
 tagEPSearchParams
 {
-  CHAR                         *channelName;
-  BOOLEAN                       cluster;
-  BOOLEAN                       printSpectrum;
-  INT4                          events2Master;
-  UINT4                         numPoints;
-  UINT4                         numSegments;
-  UINT4                         segDutyCycle;
-  UINT4                         ovrlap;
-  REAL8                         alphaThreshold;
-  AvgSpecMethod                 method;
-  CreateTFTilingIn             *tfTilingInput;
-  ComputeExcessPowerIn         *compEPInput;
-  WindowType                    windowType;
+	CHAR                  *channelName;
+	BOOLEAN                cluster;
+	BOOLEAN                printSpectrum;
+	INT4                   eventLimit;
+	UINT4                  windowLength;
+	UINT4                  windowShift;
+	REAL8                  alphaThreshold;
+	AvgSpecMethod          method;
+	CreateTFTilingIn      *tfTilingInput;
+	ComputeExcessPowerIn  *compEPInput;
+	WindowType             windowType;
 }
 EPSearchParams;
 
