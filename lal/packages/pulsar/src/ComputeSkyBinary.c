@@ -58,8 +58,6 @@ LALDBisectionFindRoot()
 
 NRCSID (COMPUTESKYBINARYC, "$Id$");
 
-static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
-static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 t, void *tr0);
 
 static REAL8 a;      /* semi major axis */
@@ -79,18 +77,18 @@ void ComputeSkyBinary	(LALStatus	*status,
   
 
 	INT4	m, n, nP;
-	REAL8	t;
 	REAL8	dTbary;
+	LALTimeInterval dTBaryInterval;
+	LALTimeInterval HalfSFT;
+	REAL8 HalfSFTfloat;
 	REAL8   dTbarySP;
-	REAL8	tBary;
-	REAL8	tB0;
-	REAL8   Tperi0;
 	REAL8   dTperi;
 	REAL8   dTcoord;
 	REAL8   Tdotbin;
 	REAL8   basedTperi;
 	DFindRootIn input;
 	REAL8 tr0;
+	REAL8 acc;
 
  INITSTATUS (status, "ComputeSkyBinary", COMPUTESKYBINARYC);
  ATTATCHSTATUSPTR(status);
@@ -112,16 +110,23 @@ void ComputeSkyBinary	(LALStatus	*status,
  ASSERT(params->OrbitalPeriod>0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
  ASSERT(params->OrbitalEccentricity>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
  ASSERT((params->ArgPeriapse>=0)&&(params->ArgPeriapse<=LAL_TWOPI), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- /* ASSERT(params->TperiapseSSB!=NULL, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA); */
+ ASSERT(params->TperiapseSSB.gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA); 
+ ASSERT((params->TperiapseSSB.gpsNanoSeconds>=0)&&(params->TperiapseSSB.gpsNanoSeconds<1e9), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
 
- /* set orbital variables */
- a=params->SemiMajorAxis;
- Period=params->OrbitalPeriod;
- ecc=params->OrbitalEccentricity;
- parg=params->ArgPeriapse;
- Tperi.gpsSeconds=params->TperiapseSSB.gpsSeconds;
- Tperi.gpsNanoSeconds=params->TperiapseSSB.gpsNanoSeconds;
+ /* Here we redefine the orbital variables for ease of use */
+ a=params->SemiMajorAxis;  /* This is the projected semi-major axis of the orbit normalised by the speed of light */
+ Period=params->OrbitalPeriod;  /* This is the period of the orbit in seconds */
+ ecc=params->OrbitalEccentricity;  /* This is the eccentricity of the orbit */
+ parg=params->ArgPeriapse;  /* This is the argument of periapse defining the angular location of the source at periapsis */
+                            /* measured relative to the ascending node */
+ Tperi.gpsSeconds=params->TperiapseSSB.gpsSeconds;  /* This is the GPS time as measured in the SSB of the observed */
+ Tperi.gpsNanoSeconds=params->TperiapseSSB.gpsNanoSeconds;  /* periapse passage of the source */
+
+ /* Convert half the SFT length to a LALTimeInterval for later use */
+ HalfSFTfloat=params->tSFT/2.0;
+ LALFloatToInterval(status,&HalfSFT,&HalfSFTfloat);
  
+ /* Here we check that the GPS timestamps are greater than zero */
  for(n=0;n<params->mObsSFT;n++)
    {
      ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, 	COMPUTESKYBINARYH_MSGENEGA);
@@ -137,79 +142,73 @@ void ComputeSkyBinary	(LALStatus	*status,
  /* prepare params input sky position structure */
  params->baryinput->alpha=params->skyPos[iSkyCoh];
  params->baryinput->delta=params->skyPos[iSkyCoh+1];
- 
- /* Setup barycentric time at start of observation (first timestamp) */
- LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps),params->edat);   
- LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
- TimeToFloat(&tB0, &(params->emit->te));
- /* printf("first time stamp time in SSB frame tB0 = %lf\n",tB0); */ 
- 
- /* calculate phase model coefficients explained in documentation at some point */
+  
+ /* calculate phase model coefficients p and q which are defined in the ComputeSkyBinary header LAL documentation  */
  p=((LAL_TWOPI/(Period*1.0))*a*sqrt(1-(ecc*ecc))*cos(parg))-ecc;
  q=(LAL_TWOPI/(Period*1.0))*a*sin(parg);
- /* printf("p = %le, q = %le\n",p,q); */
-
- /* convert input periapse passage time to a float */
- TimeToFloat(&Tperi0, &(Tperi));
- /* printf("input time of periapse passage in SSB frame Tperi0 = %lf\n",Tperi0); */ 
+ 
+ /* Calculate the required accuracy for the root finding procedure in the main loop */
+ acc=LAL_TWOPI*(REAL8)ACC/Period;   /* ACC is defined in ComputeSkyBinary.h and represents the required */
+                                    /* timing precision in seconds (roughly)*/
 
  /* begin loop over SFT's */
  for (n=0; n<params->mObsSFT; n++) 
    {
-     /* Calculate the detector time at the mid point of current SFT */
-     t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT;    
-     FloatToTime(&(params->baryinput->tgps), &t);
-
-     /* Convert this mid point detector time into barycentric time */
+     /* Calculate the detector time at the mid point of current SFT ( T(i)+(tsft/2) ) using LAL functions */
+     LALIncrementGPS(status,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
+     
+     /* Convert this mid point detector time into barycentric time (SSB) */
      LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);    
      LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);       
 
-     /* Calculate the time difference since the orbit epoch (observed periapse passage) in barycentric time */    
-     TimeToFloat(&tBary, &(params->emit->te));	
-     dTbary=tBary-Tperi0;  
-     /* printf("SSB time of timestamp tbary = %lf\n",tBary); */
-     /* printf("SSB time since periapse passage dTbary = %lf\n",dTbary); */ 
-
-     /* make sure that it is less than a single period (SP) for use in the root finding procedure */
-     dTbarySP=Period*((dTbary/(1.0*Period))-floor(dTbary/(1.0*Period)));
+     /* Calculate the time difference since the observed periapse passage in barycentric time (SSB). */ 
+     /* This time difference, when converted to REAL8, should lose no precision unless we are dealing */
+     /* with periods >~ 1 Year */
+     LALDeltaGPS(status,&dTBaryInterval,&(params->emit->te),&Tperi); 
+     LALIntervalToFloat(status,&dTbary,&dTBaryInterval);
+          
+     /* Calculate the time since the last periapse passage ( < Single Period (SP) ) */
+     dTbarySP=Period*((dTbary/(1.0*Period))-(REAL8)floor(dTbary/(1.0*Period)));
      
-     /* Calculate number of full orbits completed since orbit epoch */
+     /* Calculate number of full orbits completed since the input observed periapse passage */
      nP=(INT4)floor(dTbary/(1.0*Period));
-     /* printf("New SSB time since periapse passage dTbary = %lf\n",dTbary); */
-
+     
      /* begin root finding procedure */
-     tr0 = dTbarySP;
-     input.function = Ft;
-     input.xmin = 0.0;
+     tr0 = dTbarySP;        /* we wish to find the value of the eccentric amomoly E coresponding to the time */
+                            /* since the last periapse passage */
+     input.function = Ft;   /* This is the name of the function we must solve to find E */
+     input.xmin = 0.0;      /* We know that E will be found between 0 and 2PI */
      input.xmax = LAL_TWOPI;
-     input.xacc = 1E-12;
-
+     input.xacc = acc;      /* The accuracy of the root finding procedure */
+                                        
      /* expand domain until a root is bracketed */
      LALDBracketRoot(status->statusPtr,&input,&tr0); 
 
-     /* bisect domain to find eccentric anomoly E corresponding to the current timestamp */
+     /* bisect domain to find eccentric anomoly E corresponding to the current midpoint timestamp */
      LALDBisectionFindRoot(status->statusPtr,&E,&input,&tr0); 
     
-     /* retarded time interval since input orbit epoch */ 
+     /* Now we calculate the time interval since the input periapse passage as measured at the source */ 
      dTperi=(Period/LAL_TWOPI)*(E-(ecc*sin(E)))+((REAL8)nP*Period); 
-     /* printf("time since orbit epoch in retarded frame dTperi %lf\n",dTperi); */
-
-     /* calculate dtbin/dtssb */
+     
+     /* The following quantity is the derivative of the time coordinate measured at the source with */
+     /* respect to the time coordinate measured in the SSB */
      dTcoord=(1.0-(ecc*cos(E)))/(1.0+(p*cos(E))-(q*sin(E)));  
 
-     /* calculate dtbin/dtdet */
+     /* The following quantity is the derivitive of the time coordinate measured in the SSB with */
+     /* respect to the time coordinate measured at the chosen detector.  It was calculated via the */
+     /* last call to LALBarycenter. */
      Tdotbin = params->emit->tDot*dTcoord;   
-     /* printf("dTcoord = %le, Tdotbin = %le\n",dTcoord,Tdotbin); */
-
+     
      /* Loop over all spin down orders plus 0th order (f0) */
+     /* In this loop we calculate the SkyConstants defined in the documentation as A_{s,alpha} and B_{s,alpha} */
      for (m=0; m<params->spinDwnOrder+1; m++)     
        {
+	 /* raise the quantity dTperi to the power m */
 	 basedTperi = pow(dTperi, (REAL8)m);
 	 /* Calculate A coefficients */
 	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTperi*dTperi-0.5*params->tSFT*basedTperi*Tdotbin;
 	 /* Calculate B coefficients */
 	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*basedTperi*Tdotbin;
-	 /* printf("A = %le, B = %le\n",skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m],skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]); */
        }    
    } 
 
@@ -218,37 +217,15 @@ void ComputeSkyBinary	(LALStatus	*status,
  RETURN(status);
 }
 
-
-/* Internal routines */
-static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps)
-{
-  INT4 x, y;
-
-  x=tgps->gpsSeconds;
-  y=tgps->gpsNanoSeconds;
-  *f=(REAL8)x+(REAL8)y*1.e-9;
-}
-
-static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
-{
-  REAL8 temp0, temp2, temp3;
-  REAL8 temp1, temp4;
-  
-  temp0 = floor(*f);     /* this is tgps.S */
-  temp1 = (*f) * 1.e10;
-  temp2 = fmod(temp1, 1.e10);
-  temp3 = fmod(temp1, 1.e2); 
-  temp4 = (temp2-temp3) * 0.1;
-
-  tgps->gpsSeconds = (INT4)temp0;
-  tgps->gpsNanoSeconds = (INT4)temp4;
-}
+/**************************************************************************************************/
 
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
 {
   INITSTATUS(status, "Ft", "Function Ft()");
   ASSERT(tr0,status, 1, "Null pointer");
-  /* this is the function relating the observed time since periapse in the SSB to the eccentric anomoly E */
+
+  /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
+
   *tr = *(REAL8 *)tr0*(-1.0) + (Period/LAL_TWOPI)*(lE+(p*sin(lE))+q*(cos(lE)-1.0));
   RETURN(status);
 }
