@@ -1979,8 +1979,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentShift;
   INT4 padData;
   LIGOTimeGPS gpsCalibTime;
-  REAL4TimeSeries *segmentOne;
-  REAL4TimeSeries *segmentTwo;
+  REAL4TimeSeries *segmentOne = NULL;
+  REAL4TimeSeries *segmentTwo = NULL;
   REAL4Vector *segOne[100], *segTwo[100];
 
   /* simulated signal structures */
@@ -2054,7 +2054,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line options */
   parse_options(argc, argv);
 
-  /* get xml file name */
+  /* get xml file basename */
   if (userTag)
   {
     LALSnprintf(baseName, FILENAME_MAX, "%s%s-STOCHASTIC_%s_%d-%d", \
@@ -2138,17 +2138,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set length for data segments */
   intervalLength = intervalDuration * resampleRate;
   segmentLength = segmentDuration * resampleRate;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for data segments...\n");
-
-  /* allocate memory for data segments */
-  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOne, "segmentOne", \
-        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
-        segmentLength), &status);
-  LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwo, "segmentTwo", \
-        gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
-        segmentLength), &status);
 
   /* allocate memory for temporary segments - to be re-worked */
   for (i = 0; i < segsInInt; i++)
@@ -2295,8 +2284,6 @@ INT4 main(INT4 argc, CHAR *argv[])
                       (segLoop * segmentDuration))), &status);
         LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
               (REAL8)segmentDuration), &status);
-        segmentOne->epoch = gpsSegStartTime;
-        segmentTwo->epoch = gpsSegStartTime;
 
         /* is this the analysis segment */
         if (segLoop == segMiddle)
