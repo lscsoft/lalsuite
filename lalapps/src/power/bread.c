@@ -336,20 +336,26 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
  * file.  Return the time (seconds) encompassed by the file.
  */
 
-static INT4 read_search_summary(char *filename, FILE *fpout)
+static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end, FILE *fpout)
 {
 	SearchSummaryTable *searchSummary = NULL;
 	SearchSummaryTable *tmp;
-	INT4 start;
-	INT4 end;
+	INT4 local_start, local_end;
+
+	/* allow for NULL pointers if the calling code doesn't care about these
+	 * results */
+	if(!start)
+		start = &local_start;
+	if(!end)
+		end = &local_end;
 
 	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
 
-	start = searchSummary->in_start_time.gpsSeconds;
-	end = searchSummary->in_end_time.gpsSeconds;
+	*start = searchSummary->in_start_time.gpsSeconds;
+	*end = searchSummary->in_end_time.gpsSeconds;
 
 	if(fpout)
-		fprintf(fpout, "%d  %d  %d\n", start, end, end - start);
+		fprintf(fpout, "%d  %d  %d\n", *start, *end, *end - *start);
 
 	while(searchSummary) {
 		tmp = searchSummary;
@@ -357,7 +363,7 @@ static INT4 read_search_summary(char *filename, FILE *fpout)
 		LALFree(tmp);
 	}
 
-	return(end - start);
+	return(*end - *start);
 }
 
 
@@ -547,7 +553,7 @@ int main(int argc, char **argv)
 		 * Read the search summary table
 		 */
 
-		timeAnalyzed += read_search_summary(line, fpout);
+		timeAnalyzed += read_search_summary_start_end(line, NULL, NULL, fpout);
 
 		/*
 		 * Read the Sngl_Burst table
