@@ -28,21 +28,12 @@ fields specified in \verb@GeneratePPNInspiral.h@, and sets all of the
 post${}^2$-Newtonian waveform is generated; i.e.\ $p_0=1$, $p_1=0$,
 $p_2=1$, $p_3=1$, $p_4=1$, $p_{5+}=0$.
 
-In the \verb@*output@ structure, the fields \verb@output->a@ and
-\verb@output->phi@ must exist, since the routine uses
-\verb@output->a->deltaT@ and \verb@output->phi->deltaT@ to determine
-the sampling rate.  Their values \emph{must} be the same.  The fields
-\verb@output->a->epoch@ and \verb@output->phi->epoch@ are arbitrary,
-but must also be the same.  If \verb@output->a->data@ and
-\verb@output->phi->data@ are both set, \emph{and}
-\verb@output->a->data->vectorLength@=2, \emph{and}
-\verb@output->phi->data->vectorLength@=1, \emph{and}
-\verb@output->a->data->length@=\verb@output->phi->data->length@, then
-these arrays will be filled with the waveform (and padded with zeros
-if the waveform terminates before the end of the array).  Otherwise,
-\verb@output->a->data@ and \verb@output->phi->data@ will be destroyed
-(if necessary) and reallocated to a length appropriate to the waveform
-generated.  No other fields in \verb@*output@ are examined or changed.
+In the \verb@*output@ structure, the field \verb@output->h@ is
+ignored, but all other pointer fields must be set to \verb@NULL@.  The
+function will create and allocate space for \verb@output->a@,
+\verb@output->f@, and \verb@output->phi@ as necessary.  The
+\verb@output->shift@ field will remain set to \verb@NULL@, as it is
+not required to describe a nonprecessing binary.
 
 \subsubsection*{Algorithm}
 
@@ -151,23 +142,20 @@ Once we have $x_\mathrm{start}$, we can find $\Theta_\mathrm{start}$,
 and begin incrementing it; at each timestep we compute $x$ and hence
 $f$, $\phi$, $A_+$, and $A_\times$ according to
 Eqs.~\ref{eq:ppn-freq}, \ref{eq:ppn-phi}, \ref{eq:ppn-aplus},
-and~\ref{eq:ppn-across}.  If valid output arrays were provided in
-\verb@*output@, these will be filled; otherwise the routine
-progressively creates a list of length-1024 arrays and fills them.
-The process stops when any of the following occurs:
+and~\ref{eq:ppn-across}.  The routine progressively creates a list of
+length-1024 arrays and fills them.  The process stops when any of the
+following occurs:
 \begin{enumerate}
 \item The frequency exceeds the requested termination frequency.
-\item The number of steps reaches the length of the provided arrays
-(if valid arrays were provided), or the suggested maximum length in
-\verb@*params@, whichever is less.
+\item The number of steps reaches the suggested maximum length in
+\verb@*params@.
 \item The frequency is no longer increasing.
 \item The parameter $x>x_\mathrm{max}$.
 \item We run out of memory.
 \end{enumerate}
 In the last case an error is returned; otherwise the waveform is
-deemed ``complete''.  If arrays were provided any remaining space is
-padded with zeros; otherwise, output arrays are created of the
-appropriate length and are filled with the data.
+deemed ``complete''.  Output arrays are created of the appropriate
+length and are filled with the data.
 
 Internally, the routine keeps a list of all coefficients, as well as a
 list of booleans indicating which terms are nonzero.  The latter
@@ -187,8 +175,7 @@ with an appropriate assignment of \verb@params->ppn@, but you do so at
 your own risk!
 
 This routine also performs no sanity checking on the requested
-sampling interval $\Delta
-t=$\verb@output->a->deltaT@=\verb@output->phi->deltaT@, because this
+sampling interval $\Delta t=$\verb@params->deltaT@, because this
 depends very much on how one intends to use the generated waveform.
 If you plan to generate actual wave functions $h_{+,\times}(t)$ at the
 same sample rate, then you will generally want a sampling interval
@@ -200,14 +187,14 @@ generate actual wave functions by linear interpolation of the
 amplitude and phase data, which then need only be sampled on
 timescales $\sim\dot{f}^{-1/2}$ rather than $\sim f^{-1}$.  More
 precisely, we would like our interpolated phase to differ from the
-actual phase by no more than some specified amount, say $\pi$ radians.
-The largest deviation from linear phase evolution will typically be on
-the order of $\Delta\phi\approx(1/2)\ddot{\phi}(\Delta
+actual phase by no more than some specified amount, say $\pi/2$
+radians.  The largest deviation from linear phase evolution will
+typically be on the order of $\Delta\phi\approx(1/2)\ddot{\phi}(\Delta
 t/2)^2\approx(\pi/4)\Delta f\Delta t$, where $\Delta f$ is the
 frequency shift over the timestep.  Thus in general we would like to
 have
 $$
-\Delta f \Delta t \lessim 4
+\Delta f \Delta t \lessim 2
 $$
 for our linear interpolation to be valid.  This routine helps out by
 setting the output parameter field \verb@params->dfdt@ equal to the
@@ -314,6 +301,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 typedef struct tagPPNInspiralBuffer {
   REAL4 a[2*BUFFSIZE];               /* amplitude data */
   REAL4 phi[BUFFSIZE];               /* phase data */
+  REAL4 f[BUFFSIZE];                 /* frequency data */
   struct tagPPNInspiralBuffer *next; /* next buffer in list */
 } PPNInspiralBuffer;
 
@@ -357,17 +345,16 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   REAL4 apFac, acFac;  /* extra factor in plus and cross amplitudes */
 
   /* Integration parameters. */
-  BOOLEAN buffer;  /* whether we are buffering the data in a list */
   UINT4 i;         /* index over PN terms */
   UINT4 j;         /* index of leading nonzero PN term */
   UINT4 n, nMax;   /* index over timesteps, and its maximum + 1 */
   UINT4 nNext;     /* index where next buffer starts */
-  REAL8 t, dt;     /* dimensionless time and increment */
+  REAL8 t, t0, dt; /* dimensionless time, start time, and increment */
   REAL4 x, xStart, xMax; /* x = t^(-1/8), and its maximum range */
   REAL4 y, yStart, yMax; /* normalized frequency and its range */
   REAL4 yOld, dyMax;     /* previous timestep y, and maximum y - yOld */
   REAL4 x2, x3;          /* x^2 and x^3 */
-  REAL4 *a, *phi;        /* pointers to amplitude and phase data */
+  REAL4 *a, *f, *phi;    /* pointers to generated data */
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
 
   INITSTATUS( stat, "LALGeneratePPNInspiral", GENERATEPPNINSPIRALC );
@@ -382,33 +369,21 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   b0 = b1 = b2 = b3 = b4 = b5 = 0;
   c0 = c1 = c2 = c3 = c4 = c5 = d0 = d1 = d2 = d3 = d4 = d5 = 0.0;
 
-  /* Make sure parameter structures and their fields exist. */
+  /* Make sure parameter and output structures exist. */
   ASSERT( params, stat, GENERATEPPNINSPIRALH_ENUL,
 	  GENERATEPPNINSPIRALH_MSGENUL );
   ASSERT( output, stat, GENERATEPPNINSPIRALH_ENUL,
 	  GENERATEPPNINSPIRALH_MSGENUL );
-  if ( !( ( output->a ) && ( output->phi ) ) ) {
-    ABORT( stat, GENERATEPPNINSPIRALH_ESIG,
-	   GENERATEPPNINSPIRALH_MSGESIG );
-  }
 
-  /* Make sure timing data in *output is consistent. */
-  if ( ( output->a->deltaT != output->phi->deltaT ) ||
-       ( output->a->epoch.gpsSeconds !=
-	 output->phi->epoch.gpsSeconds ) ||
-       ( output->a->epoch.gpsNanoSeconds !=
-	 output->phi->epoch.gpsNanoSeconds ) ) {
-    ABORT( stat, GENERATEPPNINSPIRALH_ETBAD,
-	   GENERATEPPNINSPIRALH_MSGETBAD );
-  }
-
-  /* See whether output->a and output->phi are set up to store the
-     data, or whether we'll have to buffer it. */
-  buffer = !( output->a->data ) || !( output->phi->data ) ||
-    !( output->a->data->data ) || !( output->phi->data->data ) ||
-    ( output->a->data->length != output->phi->data->length ) ||
-    ( output->a->data->vectorLength != 2 ) ||
-    ( output->phi->data->vectorLength != 1 );
+  /* Make sure output fields don't exist. */
+  ASSERT( !( output->a ), stat, GENERATEPPNINSPIRALH_EOUT,
+	  GENERATEPPNINSPIRALH_MSGEOUT );
+  ASSERT( !( output->f ), stat, GENERATEPPNINSPIRALH_EOUT,
+	  GENERATEPPNINSPIRALH_MSGEOUT );
+  ASSERT( !( output->phi ), stat, GENERATEPPNINSPIRALH_EOUT,
+	  GENERATEPPNINSPIRALH_MSGEOUT );
+  ASSERT( !( output->shift ), stat, GENERATEPPNINSPIRALH_EOUT,
+	  GENERATEPPNINSPIRALH_MSGEOUT );
 
   /* Get PN parameters, if they are specified; otherwise use
      post2-Newtonian. */
@@ -450,7 +425,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 
   /* Compute frequency, phase, and amplitude factors. */
   fFac = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  dt = -output->a->deltaT * eta / ( 5.0*LAL_MTSUN_SI*mTot );
+  dt = -params->deltaT * eta / ( 5.0*LAL_MTSUN_SI*mTot );
   ASSERT( dt < 0.0, stat, GENERATEPPNINSPIRALH_ETBAD,
 	  GENERATEPPNINSPIRALH_MSGETBAD );
   f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;
@@ -600,7 +575,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 
   /* Compute initial dimensionless time, and record actual initial
      frequency in case it is different. */
-  t = pow( xStart, -8.0 );
+  t0 = pow( xStart, -8.0 );
   FREQ( yStart, xStart );
   if ( yStart >= yMax ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EFBAD,
@@ -613,30 +588,22 @@ LALGeneratePPNInspiral( LALStatus     *stat,
    *******************************************************************/
 
   /* Set up data pointers and storage. */
-  if ( buffer ) {
-    here = head =
-      (PPNInspiralBuffer *)LALMalloc( sizeof(PPNInspiralBuffer) );
-    if ( !here ) {
-      ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
-	     GENERATEPPNINSPIRALH_MSGEMEM );
-    }
-    here->next = NULL;
-    a = here->a;
-    phi = here->phi;
-    nMax = (UINT4)( -1 );
-    if ( params->lengthIn > 0 )
-      nMax = params->lengthIn;
-    nNext = BUFFSIZE;
-    if ( nNext > nMax )
-      nNext = nMax;
-  } else {
-    a = output->a->data->data;
-    phi = output->phi->data->data;
-    nMax = output->a->data->length;
-    if ( ( params->lengthIn > 0 ) && ( nMax > params->lengthIn ) )
-      nMax = params->lengthIn;
-    nNext = nMax;
+  here = head = (PPNInspiralBuffer *)
+    LALMalloc( sizeof(PPNInspiralBuffer) );
+  if ( !here ) {
+    ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
+	   GENERATEPPNINSPIRALH_MSGEMEM );
   }
+  here->next = NULL;
+  a = here->a;
+  f = here->f;
+  phi = here->phi;
+  nMax = (UINT4)( -1 );
+  if ( params->lengthIn > 0 )
+    nMax = params->lengthIn;
+  nNext = BUFFSIZE;
+  if ( nNext > nMax )
+    nNext = nMax;
 
   /* Start integrating!  Inner loop exits each time a new buffer is
      required.  Outer loop has no explicit test; when a termination
@@ -644,6 +611,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
      goto statement.  All goto statements jump to the terminate: label
      at the end of the outer loop. */
   n = 0;
+  t = t0;
   dyMax = 0.0;
   y = yOld = 0.0;
   x = xStart;
@@ -674,6 +642,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       }
       if ( y - yOld > dyMax )
 	dyMax = y - yOld;
+      *(f++) = fFac*y;
 
       /* Compute the amplitude from the frequency. */
       f2a = pow( f2aFac*y, TWOTHIRDS );
@@ -698,7 +667,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 
       /* Increment the timestep. */
       n++;
-      t += dt;
+      t = t0 + n*dt;
       yOld = y;
       if ( t < 0.0625 ) {
 	params->termCode = GENERATEPPNINSPIRALH_ERTOOSMALL;
@@ -708,8 +677,8 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       x = pow( t, -0.125 );
     }
 
-    /* We've either filled the buffer (if we were buffering) or we've
-       exceeded the maximum length.  If the latter, we're done! */
+    /* We've either filled the buffer or we've exceeded the maximum
+       length.  If the latter, we're done! */
     if ( n >= nMax ) {
       params->termCode = GENERATEPPNINSPIRALH_ELENGTH;
       params->termDescription = GENERATEPPNINSPIRALH_MSGELENGTH;
@@ -727,6 +696,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
     }
     here->next = NULL;
     a = here->a;
+    f = here->f;
     phi = here->phi;
     nNext += BUFFSIZE;
     if ( nNext > nMax )
@@ -743,73 +713,101 @@ LALGeneratePPNInspiral( LALStatus     *stat,
  terminate:
 
   /* First, set remaining output parameter fields. */
-  params->dfdt = dyMax*fFac*output->a->deltaT;
+  params->dfdt = dyMax*fFac*params->deltaT;
   params->fStop = yOld*fFac;
   params->length = n;
 
-  /* If data was being buffered, we need to allocate the output
-     REAL4VectorSequence structures and pack the data into them. */
-  if ( buffer ) {
+  /* Allocate the output structures. */
+  if ( ( output->a = (REAL4TimeVectorSeries *)
+	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+    FREELIST( head );
+    ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
+	   GENERATEPPNINSPIRALH_MSGEMEM );
+  }
+  memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
+  if ( ( output->f = (REAL4TimeSeries *)
+	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+    FREELIST( head );
+    LALFree( output->a ); output->a = NULL;
+    ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
+	   GENERATEPPNINSPIRALH_MSGEMEM );
+  }
+  memset( output->f, 0, sizeof(REAL4TimeSeries) );
+  if ( ( output->phi = (REAL4TimeSeries *)
+	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+    FREELIST( head );
+    LALFree( output->a ); output->a = NULL;
+    LALFree( output->f ); output->f = NULL;
+    ABORT( stat, GENERATEPPNINSPIRALH_EMEM,
+	   GENERATEPPNINSPIRALH_MSGEMEM );
+  }
+  memset( output->phi, 0, sizeof(REAL4TimeSeries) );
+
+  /* Allocate the output data fields. */
+  {
     CreateVectorSequenceIn in;
     in.length = n;
-
-    /* First, though, we should destroy anything already there. */
-    if ( output->a->data ) {
-      TRY( LALSDestroyVectorSequence( stat->statusPtr,
-				      &( output->a->data ) ), stat );
-    }
-    if ( output->phi->data ) {
-      TRY( LALSDestroyVectorSequence( stat->statusPtr,
-				      &( output->phi->data ) ), stat );
-    }
-
-    /* Now try creating them. */
     in.vectorLength = 2;
-    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ),
-			      &in );
-    BEGINFAIL( stat )
-      FREELIST( head );
-    ENDFAIL( stat );
-    in.vectorLength = 1;
-    LALSCreateVectorSequence( stat->statusPtr, &( output->phi->data ),
-			      &in );
+    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ), &in );
     BEGINFAIL( stat ) {
-      TRY( LALSDestroyVectorSequence( stat->statusPtr,
-				      &( output->a->data ) ), stat );
       FREELIST( head );
+      LALFree( output->a );   output->a = NULL;
+      LALFree( output->f );   output->f = NULL;
+      LALFree( output->phi ); output->phi = NULL;
     } ENDFAIL( stat );
-
-    /* Structures have been successfully allocated; now fill them.  We
-       deallocate the list as we go along. */
-    a = output->a->data->data;
-    phi = output->phi->data->data;
-    here = head;
-    while ( here && ( n > 0 ) ) {
-      PPNInspiralBuffer *last = here;
-      UINT4 nCopy = BUFFSIZE;
-      if ( nCopy > n )
-	nCopy = n;
-      memcpy( a, here->a, 2*nCopy*sizeof(REAL4) );
-      memcpy( phi, here->phi, nCopy*sizeof(REAL4) );
-      a += 2*nCopy;
-      phi += nCopy;
-      n -= nCopy;
-      here = here->next;
-      LALFree( last );
-    }
-
-    /* This shouldn't happen, but free any extra buffers in the
-       list. */
-    FREELIST( here );
+    LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
+    BEGINFAIL( stat ) {
+      TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->a->data ) ),
+	   stat );
+      FREELIST( head );
+      LALFree( output->a );   output->a = NULL;
+      LALFree( output->f );   output->f = NULL;
+      LALFree( output->phi ); output->phi = NULL;
+    } ENDFAIL( stat );
+    LALSCreateVector( stat->statusPtr, &( output->phi->data ), n );
+    BEGINFAIL( stat ) {
+      TRY( LALSDestroyVectorSequence( stat->statusPtr, &( output->a->data ) ),
+	   stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
+	   stat );
+      FREELIST( head );
+      LALFree( output->a );   output->a = NULL;
+      LALFree( output->f );   output->f = NULL;
+      LALFree( output->phi ); output->phi = NULL;
+    } ENDFAIL( stat );
   }
 
-  /* So that's what to do if the data was buffered.  Otherwise, we've
-     been filling the output arrays all along, so we just need to pad
-     them out with zeros. */
-  else if ( n < nMax ) {
-    memset( a, 0, 2*( nMax - n )*sizeof(REAL4) );
-    memset( phi, 0, ( nMax - n )*sizeof(REAL4) );
+  /* Structures have been successfully allocated; now fill them.  We
+     deallocate the list as we go along. */
+  output->position = params->position;
+  output->psi = params->psi;
+  output->a->epoch = output->f->epoch = output->phi->epoch
+    = params->epoch;
+  output->a->deltaT = output->f->deltaT = output->phi->deltaT
+    = params->deltaT;
+  a = output->a->data->data;
+  f = output->f->data->data;
+  phi = output->phi->data->data;
+  here = head;
+  while ( here && ( n > 0 ) ) {
+    PPNInspiralBuffer *last = here;
+    UINT4 nCopy = BUFFSIZE;
+    if ( nCopy > n )
+      nCopy = n;
+    memcpy( a, here->a, 2*nCopy*sizeof(REAL4) );
+    memcpy( f, here->f, nCopy*sizeof(REAL4) );
+    memcpy( phi, here->phi, nCopy*sizeof(REAL4) );
+    a += 2*nCopy;
+    f += nCopy;
+    phi += nCopy;
+    n -= nCopy;
+    here = here->next;
+    LALFree( last );
   }
+
+  /* This shouldn't happen, but free any extra buffers in the
+     list. */
+  FREELIST( here );
 
   /* Everything's been stored and cleaned up, so there's nothing left
      to do but quit! */

@@ -21,12 +21,12 @@ Computes the input parameters for a PPN inspiral.
 
 This function takes a Galactic location and pair of masses from
 \verb@*input@ and uses them to set the \verb@PPNParamStruc@ fields
-\verb@output->ra@, \verb@output->dec@, \verb@output->mTot@,
-\verb@output->eta@, and \verb@output->d@.  The fields
-\verb@output->psi@, \verb@output->inc@, and \verb@output->phi@ are set
-randomly and uniformly using the random sequence specified by
-\verb@*params@; if \verb@*params@=\verb@NULL@ a new sequence is
-started internally using the current execution time as a seed.
+\verb@output->position@, \verb@output->mTot@, \verb@output->eta@, and
+\verb@output->d@.  The fields \verb@output->psi@, \verb@output->inc@,
+and \verb@output->phi@ are set randomly and uniformly using the random
+sequence specified by \verb@*params@; if \verb@*params@=\verb@NULL@ a
+new sequence is started internally using the current execution time as
+a seed.
 
 The other \verb@PPNParamStruc@ input fields are not touched by this
 routine, and must be specified externally before generating a waveform
@@ -137,8 +137,7 @@ LALGetInspiralParams( LALStatus                  *stat,
   /* Compute equatorial coordinates. */
   TRY( LALGalacticToEquatorial( stat->statusPtr, &direction,
 				&direction ), stat );
-  output->ra = direction.longitude;
-  output->dec = direction.latitude;
+  output->position = direction;
   output->d = max*d;
 
   /* If we haven't been given a random sequence, generate one. */

@@ -42,6 +42,22 @@ the two nearest time samples in \verb@*signal@.  Injection is only
 performed over the range in times that \verb@*output@ and
 \verb@*signal@ overlap; other values in \verb@*output@ are untouched.
 
+An unfortunate side effect of the interpolation is that it effectively
+convolves the signal with a triangular function of width $2\Delta t$,
+where $\Delta t$ is the sampling interval of the signal.  This
+resultis in a low-pass filter with an attenuation factor of $\sim0.8$
+at frequencies $\sim1/4\Delta t$.  There are two ways around this:
+\begin{enumerate}
+\item Sample your waveform at a rate at least 8 times its highest
+frequency (i.e.\ $4\times$ the Nyquist rate).  This is the preferred
+method.
+\item If your waveform is sampled at exactly the same sampling
+interval as the data into which it will be injected, you should adjust
+the epochs to ensure that the waveform samples are precisely aligned
+with the data samples.  In this case, no interpolation will occur.
+\end{enumerate}
+
+
 \subsubsection*{Uses}
 \begin{verbatim}
 LALCreateRandomParams()

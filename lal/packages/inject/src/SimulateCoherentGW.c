@@ -19,9 +19,9 @@ Computes the response of a detector to a coherent gravitational wave.
 
 \subsubsection*{Description}
 
-This function takes an adiabatically-varying gravitational waveform
-given in \verb@*signal@, and estimates the corresponding response of
-the detector whose polarization response and transfer function are
+This function takes a quasiperiodic gravitational waveform given in
+\verb@*signal@, and estimates the corresponding response of the
+detector whose polarization response and transfer function are
 specified in \verb@*detector@.  The result is stored in
 \verb@*output@.
 
@@ -31,6 +31,9 @@ period and sampling rate for which the response is required.  For the
 input signal, \verb@signal->h@ is ignored, and the signal is treated
 as zero at any time for which either \verb@signal->a@ or
 \verb@signal->phi@ is not defined.
+
+This routine will convert \verb@signal->position@ to equatorial
+coordinates, if necessary.
 
 \subsubsection*{Algorithm}
 
@@ -59,24 +62,26 @@ values.  Again, this guarantees a fractional accuracy of
 $\lessim(\pi^2/2)(1\mathrm{min}/1\mathrm{day})^2\sim2\times10^{-6}$.
 
 Next, the frequency response of the detector is estimated in the
-adiabatic limit as follows:
+quasiperiodic limit as follows:
 \begin{itemize}
 \item At each sample point in \verb@*output@, the propagation delay is
-computed and added to the sample time, and the instantaneous amplitude
-$A_+$ and phase $\phi_+$ are found by interpolating the nearest values
-in \verb@signal->a@ and \verb@signal->phi@, respectively.  The
-instantaneous frequency is estimated by differencing the two nearest
-values of $\phi_+$, as $f\approx\Delta\phi_+/2\pi\Delta t$.
+computed and added to the sample time, and the instantaneous
+amplitudes $A_1$, $A_2$, frequency $f$, phase $\phi$, and polarization
+shift $\Phi$ are found by interpolating the nearest values in
+\verb@signal->a@, \verb@signal->f@, \verb@signal->phi@, and
+\verb@signal->shift@, respectively.  If \verb@signal->f@ is not
+defined at that point in time, then $f$ is estimated by differencing
+the two nearest values of $\phi$, as $f\approx\Delta\phi/2\pi\Delta
+t$.  If \verb@signal->shift@ is not defined, then $\Phi$ is treated as
+zero.
 \item The complex transfer function of the detector at this frequency
 is found by interpolating \verb@detector->transfer@.  The amplitude of
-the transfer function is multiplied with $A_+$, the phase of the
-transfer function is added to $\phi_+$, and the plus-contribution
-$o_+$ to the detector output is computed as $o_+=A_+\cos\phi_+$.
-\item The response to the cross-mode polarization is computed
-similarly, with the exception that if \verb@signal->a@ contains only
-one polarization amplitude then it is assumed that $A_\times=A_+$, and
-if \verb@signal->phi@ contains only one polarization phase then it is
-assumed that $\phi_\times=\phi_+-\pi/2$.
+the transfer function is multiplied with $A_1$ and $A_2$, and the phase of the
+transfer function is added to $\phi$,
+\item The plus and cross contributions $o_+$, $o_\times$ to the
+detector output are computed as in Eqs.~\ref{eq:quasiperiodic-hplus}
+and~\ref{eq:quasiperiodic-hcross} of \verb@SimulateCoherentGW.h@, but
+using the response-adjusted amplitudes and phase.
 \item The final detector response $o$ is computed as
 $o=(o_+F_+)+(o_\times F_\times)$.
 \end{itemize}
@@ -129,12 +134,11 @@ LALWarning()
 #include <lal/DetectorSite.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-/* Hack until date header is installed first...
 #include <lal/Date.h>
-*/
-#include "Date.h"
+#include <lal/TimeDelay.h>
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
+#include <lal/SkyCoordinates.h>
 
 #define POLDT   60 /* (integral) number of seconds between table
 		      entries for polarization response */
@@ -168,28 +172,29 @@ LALSimulateCoherentGW( LALStatus        *stat,
 		       CoherentGW       *signal,
 		       DetectorResponse *detector )
 { /* </lalVerbatim> */
-  INT4 aDim, phiDim; /* dimension of amplitude and phase vectors */
-  INT4 i, n;         /* index over output->data, and its final value */
-  INT4 nMax;         /* used to store limits on index ranges */
-  REAL4 *outData;    /* pointer to output data */
-  REAL8 radius;      /* radius of the Earth in lightseconds */
-  CreateVectorSequenceIn in; /* structure for creating vectors and
-                                vector sequences */
+  INT4 i, n;          /* index over output->data, and its final value */
+  INT4 nMax;          /* used to store limits on index ranges */
+  INT4 fInit, fFinal; /* index range for which signal->f is defined */
+  INT4 shiftInit, shiftFinal; /* ditto for signal->shift */
+  REAL4 *outData;             /* pointer to output data */
+  REAL8 delayMin, delayMax;   /* min and max values of time delay */
+  CreateVectorSequenceIn in;  /* structure for creating vectors and
+				 vector sequences */
   BOOLEAN fFlag = 0; /* 1 if frequency left detector->transfer range */
-  LIGOTimeGPS gpsTime; /* current detector time */
+  BOOLEAN pFlag = 0; /* 1 if frequency was estimated from phase */
 
-  /* The amplitude, phase, polarization response, and propagation
-     delay are stored in arrays that must be interpolated.  For a
-     quantity x, we define a pointer xData to the data array.  At some
-     time t measured in units of output->deltaT, the interpolation
-     point in xData is given by ( xOff + t*xDt ), where xOff is an
-     offset and xDt is a relative sampling rate. */
+  /* The amplitude, frequency, phase, polarization shift, polarization
+     response, and propagation delay are stored in arrays that must be
+     interpolated.  For a quantity x, we define a pointer xData to the
+     data array.  At some time t measured in units of output->deltaT,
+     the interpolation point in xData is given by ( xOff + t*xDt ),
+     where xOff is an offset and xDt is a relative sampling rate. */
   REAL4VectorSequence *polResponse = NULL;
   REAL8Vector *delay = NULL;
-  REAL4 *aData, *phiData, *polData;
+  REAL4 *aData, *fData, *phiData, *shiftData, *polData;
   REAL8 *delayData;
-  REAL8 aOff, phiOff, polOff, delayOff;
-  REAL8 aDt, phiDt, polDt, delayDt;
+  REAL8 aOff, fOff, phiOff, shiftOff, polOff, delayOff;
+  REAL8 aDt, fDt, phiDt, shiftDt, polDt, delayDt;
 
   /* Frequencies in the detector transfer function are interpolated
      similarly, except everything is normalized with respect to
@@ -198,14 +203,13 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL4Vector *phiTransfer = NULL;
   REAL4Vector *phiTemp = NULL;
   REAL4 *aTransData, *phiTransData;
-  REAL8 fOff;
-  REAL8 df;
+  REAL8 f0;
+  REAL8 phiFac, fFac;
 
   /* Variables required by the TCENTRE() macro, above. */
   REAL4 realIndex;
   INT4 intIndex;
   REAL4 indexFrac;
-
 
   INITSTATUS( stat, "LALSimulateCoherentGW", SIMULATECOHERENTGWC );
   ATTATCHSTATUSPTR( stat );
@@ -229,6 +233,18 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( signal->phi->data->data, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  if ( signal->f ) {
+    ASSERT( signal->f->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+    ASSERT( signal->f->data->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  }
+  if ( signal->shift ) {
+    ASSERT( signal->shift->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+    ASSERT( signal->shift->data->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  }
   ASSERT( detector, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( detector->transfer, stat,
@@ -237,13 +253,6 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( detector->transfer->data->data, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
-  if ( !( detector->site ) ) {
-    LALInfo( stat, "Detector site absent; simulating h_plus with no"
-	     " propagation delays." );
-  } else {
-    LALWarning( stat, "Detector site structure not yet implemented!"
-		"  Treating as if absent." );
-  }
   ASSERT( output, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( output->data, stat,
@@ -251,16 +260,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
   ASSERT( output->data->data, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
 
-  /* Define temporary variables to access the dimensions and data of
-     signal->a and signal->phi, as well as detector->transfer. */
-  aDim = signal->a->data->vectorLength;
-  aData = signal->a->data->data;
-  phiDim = signal->phi->data->vectorLength;
-  phiData = signal->phi->data->data;
-  outData = output->data->data;
-  ASSERT( ( aDim == 1 ) || ( aDim == 2 ), stat,
-	  SIMULATECOHERENTGWH_EDIM, SIMULATECOHERENTGWH_MSGEDIM );
-  ASSERT( ( phiDim == 1 ) || ( phiDim == 2 ), stat,
+  /* Check dimensions of amplitude array. */
+  ASSERT( signal->a->data->vectorLength == 2, stat,
 	  SIMULATECOHERENTGWH_EDIM, SIMULATECOHERENTGWH_MSGEDIM );
 
   /* Make sure we never divide by zero. */
@@ -268,72 +269,130 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   ASSERT( signal->phi->deltaT != 0.0, stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-  ASSERT( detector->transfer->deltaF != 0.0, stat,
-	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   aDt = output->deltaT / signal->a->deltaT;
   phiDt = output->deltaT / signal->a->deltaT;
-  df = 1.0 /
-    ( LAL_TWOPI*signal->phi->deltaT*detector->transfer->deltaF );
-  fOff = detector->transfer->f0/detector->transfer->deltaF;
   ASSERT( aDt != 0.0, stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   ASSERT( phiDt != 0.0, stat,
 	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+  if ( signal->f ) {
+    ASSERT( signal->f->deltaT != 0.0, stat,
+	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+    fDt = output->deltaT / signal->f->deltaT;
+    ASSERT( fDt != 0.0, stat,
+	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+  } else
+    fDt = 0.0;
+  if ( signal->shift ) {
+    ASSERT( signal->shift->deltaT != 0.0, stat,
+	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+    shiftDt = output->deltaT / signal->shift->deltaT;
+    ASSERT( shiftDt != 0.0, stat,
+	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+  } else
+    shiftDt = 0.0;
+  ASSERT( detector->transfer->deltaF != 0.0, stat,
+	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+  fFac = 1.0 / detector->transfer->deltaF;
+  phiFac = fFac / ( LAL_TWOPI*signal->phi->deltaT );
+  f0 = detector->transfer->f0/detector->transfer->deltaF;
+
+  /* Define temporary variables to access the data of signal->a,
+     signal->f, and signal->phi, as well as detector->transfer. */
+  aData = signal->a->data->data;
+  phiData = signal->phi->data->data;
+  outData = output->data->data;
+  if ( signal->f )
+    fData = signal->f->data->data;
+  else
+    fData = NULL;
+  if ( signal->shift )
+    shiftData = signal->shift->data->data;
+  else
+    shiftData = NULL;
 
   /* Generate the table of propagation delays. */
   delayDt = output->deltaT/DELAYDT;
-  in.length = (INT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
+  in.length = (UINT4)( output->data->length*output->deltaT/DELAYDT )
+    + 3;
   TRY( LALDCreateVector( stat->statusPtr, &delay, in.length ), stat );
   delayData = delay->data;
+  if ( detector->site ) {
+    SkyPosition source;      /* position of source on sky */
+    LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
+    LALPlaceAndGPS event;    /* spacetime point where we compute delay */
+    DetTimeAndASource input; /* input to time delay function */
 
-  /* At present this part is disabled! */
-  radius = 0.0;
-  if ( 0 ) {
-    /*    radius = ( LAL_REARTH_SI/LAL_C_SI )*cos( detector->latitude ) /
-	  output->deltaT;*/
-    gpsTime.gpsSeconds = output->epoch.gpsSeconds - DELAYDT/2;
-    gpsTime.gpsNanoSeconds = output->epoch.gpsNanoSeconds;
-    for ( i = 0; i < (INT4)( in.length ); i++ ) {
-      LIGOTimeUnix unixTime; /* Unix time at current point */
-      LALDate date;          /* LALDate time at current point */
-      REAL8 lmst;            /* siderial time at current point (radians) */
-      LALGPStoU( stat->statusPtr, &unixTime, &gpsTime );
+    /* Arrange nested pointers, and set initial values. */
+    event.p_detector = detector->site;
+    event.p_gps = &gpsTime;
+    input.p_det_and_time = &event;
+    input.p_source = &source;
+    gpsTime = output->epoch;
+    gpsTime.gpsSeconds -= DELAYDT/2;
+    delayMin = delayMax = LAL_REARTH_SI / ( LAL_C_SI*output->deltaT );
+    delayMin *= -1;
+
+    /* Convert source position to equatorial coordinates. */
+    source = signal->position;
+    if ( source.system != COORDINATESYSTEM_EQUATORIAL ) {
+      ConvertSkyParams params; /* parameters for conversion */
+      EarthPosition location;  /* location of detector */
+      params.gpsTime = &gpsTime;
+      params.system = COORDINATESYSTEM_EQUATORIAL;
+      if ( source.system == COORDINATESYSTEM_HORIZON ) {
+	params.zenith = &( location.geodetic );
+	location.x = detector->site->location[0];
+	location.y = detector->site->location[1];
+	location.z = detector->site->location[2];
+	LALGeodeticToGeocentric( stat->statusPtr, &location );
+	BEGINFAIL( stat )
+	  TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+	ENDFAIL( stat );
+      }
+      LALConvertSkyCoordinates( stat->statusPtr, &source, &source,
+				&params );
       BEGINFAIL( stat )
 	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
       ENDFAIL( stat );
-      LALUtime( stat->statusPtr, &date, &unixTime );
+    }
+
+    /* Compute table. */
+    for ( i = 0; (UINT4)( i ) < in.length; i++ ) {
+      REAL8 tDelay; /* propagation time */
+      LALTimeDelayFromEarthCenter( stat->statusPtr, &tDelay, &input );
       BEGINFAIL( stat )
 	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
       ENDFAIL( stat );
-      /*
-	LALLMST1( stat->statusPtr, &lmst, &date, detector->longitude,
-	MST_RAD );
-      */
-      lmst = 0;
-      BEGINFAIL( stat )
-	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-      delayData[i] = radius*cos( lmst - signal->ra );
+      /* TimeDelayFromEarthCenter() measures propagation delay from
+         geocentre to detector, which is the opposite of what we want.
+         We also want it normalized. */
+      tDelay /= -output->deltaT;
+      delayData[i] = tDelay;
+      if ( tDelay < delayMin )
+	delayMin = tDelay;
+      if ( tDelay > delayMax )
+	delayMax = tDelay;
       gpsTime.gpsSeconds += DELAYDT;
     }
-  }
-
-  /* This is the temporary kludge. */
-  else {
-    for ( i = 0; i < (INT4)( in.length ); i++ )
-      delayData[i] = 0.0;
+  } else {
+    LALInfo( stat, "Detector site absent; simulating h_plus with no"
+	     " propagation delays." );
+    memset( delayData, 0, in.length*sizeof(REAL8) );
+    delayMin = delayMax = 0.0;
   }
 
   /* Generate the table of polarization response functions. */
   polDt = output->deltaT/POLDT;
-  in.length = (INT4)( output->data->length*output->deltaT/POLDT ) + 3;
+  in.length = (UINT4)( output->data->length*output->deltaT/POLDT )
+    + 3;
   in.vectorLength = 2;
   LALSCreateVectorSequence( stat->statusPtr, &polResponse, &in );
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   ENDFAIL( stat );
   polData = polResponse->data;
-  for ( i = 0; i < 2*(INT4)( in.length ); i+=2 ) {
+  for ( i = 0; (UINT4)( i ) < 2*in.length; i+=2 ) {
     /* This is a temporary kludge... */
     polData[i] = 1.0;
     polData[i+1] = 0.0;
@@ -405,20 +464,38 @@ LALSimulateCoherentGW( LALStatus        *stat,
   phiOff += ( output->epoch.gpsNanoSeconds -
 	      signal->phi->epoch.gpsNanoSeconds ) * 1.0e-9 /
     signal->phi->deltaT;
+  if ( signal->f ) {
+    fOff = ( output->epoch.gpsSeconds -
+	     signal->f->epoch.gpsSeconds ) /
+      signal->f->deltaT;
+    fOff += ( output->epoch.gpsNanoSeconds -
+	      signal->f->epoch.gpsNanoSeconds ) * 1.0e-9 /
+      signal->f->deltaT;
+  } else
+    fOff = 0.0;
+  if ( signal->shift ) {
+    shiftOff = ( output->epoch.gpsSeconds -
+		 signal->shift->epoch.gpsSeconds ) /
+      signal->shift->deltaT;
+    shiftOff += ( output->epoch.gpsNanoSeconds -
+		  signal->shift->epoch.gpsNanoSeconds ) * 1.0e-9 /
+      signal->shift->deltaT;
+  } else
+    shiftOff = 0.0;
   polOff = 0.5;
   delayOff = 0.5;
 
   /* Compute initial value of i, ensuring that we will never index
      signal->a or signal->phi below their range. */
   i = 0;
-  if ( aOff + ( i - radius )*aDt < 0.0 ) {
-    i = (INT4)( -aOff/aDt - radius );
+  if ( aOff + ( i + delayMin )*aDt < 0.0 ) {
+    i = (INT4)( -aOff/aDt + delayMin );
     while ( ( i < (INT4)( output->data->length ) ) &&
 	    ( aOff + TCENTRE( i )*aDt < 0.0 ) )
       i++;
   }
-  if ( phiOff + ( i - radius )*phiDt < 0.0 ) {
-    i = (INT4)( -phiOff/phiDt - radius );
+  if ( phiOff + ( i + delayMin )*phiDt < 0.0 ) {
+    i = (INT4)( -phiOff/phiDt + delayMin );
     while ( ( i < (INT4)( output->data->length ) ) && 
 	    ( phiOff + TCENTRE( i )*phiDt < 0.0 ) )
       i++;
@@ -433,15 +510,15 @@ LALSimulateCoherentGW( LALStatus        *stat,
      signal->a or signal->phi above their range. */
   n = output->data->length - 1;
   nMax = signal->a->data->length - 1;
-  if ( aOff + ( n + radius )*aDt > nMax ) {
-    n = (INT4)( ( nMax - aOff )/aDt + radius + 1.0 );
+  if ( aOff + ( n + delayMax )*aDt > nMax ) {
+    n = (INT4)( ( nMax - aOff )/aDt + delayMax + 1.0 );
     while ( ( n >= 0 ) &&
 	    ( aOff + TCENTRE( n )*aDt >= nMax ) )
       n--;
   }
   nMax = signal->phi->data->length - 1;
-  if ( phiOff + ( n + radius )*phiDt > nMax ) {
-    n = (INT4)( ( nMax - phiOff )/phiDt + radius + 1.0 );
+  if ( phiOff + ( n + delayMax )*phiDt > nMax ) {
+    n = (INT4)( ( nMax - phiOff )/phiDt + delayMax + 1.0 );
     while ( ( n >= 0 ) &&
 	    ( phiOff + TCENTRE( n )*phiDt >= nMax ) )
       n--;
@@ -451,6 +528,36 @@ LALSimulateCoherentGW( LALStatus        *stat,
 		" time series." );
   if ( n >= (INT4)( output->data->length ) )
     n = output->data->length - 1;
+
+  /* Compute the values of i for which signal->f is given. */
+  if ( signal->f ) {
+    fInit = (INT4)( -fOff/fDt + delayMin );
+    while ( ( fInit < (INT4)( output->data->length ) ) &&
+	    ( fOff + TCENTRE( fInit )*fDt < 0.0 ) )
+      fInit++;
+    fFinal = (INT4)( ( nMax - fOff )/fDt + delayMax + 1.0 );
+    while ( ( fFinal >= 0 ) &&
+	    ( fOff + TCENTRE( fFinal )*fDt >= nMax ) )
+      fFinal--;
+  } else {
+    fInit = n + 1;
+    fFinal = i - 1;
+  }
+
+  /* Compute the values of i for which signal->shift is given. */
+  if ( signal->shift ) {
+    shiftInit = (INT4)( -shiftOff/shiftDt + delayMin );
+    while ( ( shiftInit < (INT4)( output->data->length ) ) &&
+	    ( shiftOff + TCENTRE( shiftInit )*shiftDt < 0.0 ) )
+      shiftInit++;
+    shiftFinal = (INT4)( ( nMax - shiftOff )/shiftDt + delayMax + 1.0 );
+    while ( ( shiftFinal >= 0 ) &&
+	    ( shiftOff + TCENTRE( shiftFinal )*shiftDt >= nMax ) )
+      shiftFinal--;
+  } else {
+    shiftInit = n + 1;
+    shiftFinal = i - 1;
+  }
 
   /* Set output to zero where the signal is not defined. */
   if ( i > 0 )
@@ -465,52 +572,52 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Start computing responses. */
   for ( ; i <= n; i++ ) {
     REAL8 iCentre = TCENTRE( i );  /* value of i + propagation delays */
-    REAL8 x;                       /* interpolation point in arrays */
-    INT4 j;                        /* array index preceding x */
-    REAL4 frac;                    /* value of x - j */
-    REAL4 aPlus, aCross;           /* current signal amplitudes */
-    REAL4 phiPlus, phiCross = 0.0; /* current signal phases */
-    REAL4 fPlus, fCross = 0.0;     /* current signal frequencies */
-    REAL4 aTrans, phiTrans;        /* values of the transfer function */
+    REAL8 x;                /* interpolation point in arrays */
+    INT4 j;                 /* array index preceding x */
+    REAL4 frac;             /* value of x - j */
+    REAL4 a1, a2;           /* current signal amplitudes */
+    REAL4 phi = 0.0;        /* current signal phase */
+    REAL4 f = 0.0;          /* current signal frequency */
+    REAL4 shift = 0.0;      /* current signal polarization shift */
+    REAL4 aTrans, phiTrans; /* current values of the transfer function */
+    REAL4 oPlus, oCross;    /* current output amplitudes */
 
     /* Interpolate the signal amplitude. */
     x = aOff + iCentre*aDt;
     j = (INT4)floor( x );
     frac = (REAL4)( x - j );
-    if ( aDim == 2 ) {
-      j *= 2;
-      aPlus = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
-      aCross = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
-    } else {
-      aPlus = frac*aData[j+1] + ( 1.0 - frac )*aData[j];
-      aCross = aPlus;
+    j *= 2;
+    a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
+    a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
+
+    /* Interpolate the polarization shift. */
+    if ( ( i < shiftInit ) || ( i > shiftFinal ) )
+      shift = 0.0;
+    else {
+      x = shiftOff + iCentre*shiftDt;
+      j = (INT4)floor( x );
+      frac = (REAL4)( x - j );
+      shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
     /* Interpolate the signal phase, and find the frequency. */
     x = phiOff + iCentre*phiDt;
     j = (INT4)floor( x );
     frac = (REAL4)( x - j );
-    if ( phiDim == 2 ) {
-      j *= 2;
-      phiPlus = frac*phiData[j+2] + ( 1.0 - frac )*phiData[j];
-      fPlus = ( phiData[j+2] - phiData[j] )*df;
-      phiCross = frac*phiData[j+3] + ( 1.0 - frac )*phiData[j+1];
-      fCross = ( phiData[j+3] - phiData[j+1] )*df;
+    phi = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
+    if ( ( i < fInit ) || ( i > fFinal ) ) {
+      f = ( phiData[j+1] - phiData[j] )*phiFac;
+      pFlag = 1;
     } else {
-      phiPlus = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
-      fPlus = ( phiData[j+1] - phiData[j] )*df;
+      x = fOff + iCentre*fDt;
+      j = (INT4)floor( x );
+      frac = (REAL4)( x - j );
+      f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+      f *= fFac;
     }
 
-    /* Interpolate the polarization response. */
-    x = polOff + iCentre*polDt;
-    j = (INT4)floor( x );
-    frac = (REAL4)( x - j );
-    j *= 2;
-    aPlus *= frac*polData[j+2] + ( 1.0 - frac )*polData[j];
-    aCross *= frac*polData[j+3] + ( 1.0 - frac )*polData[j+1];
-
-    /* Interpolate the transfer function and compute the output. */
-    x = fPlus - fOff;
+    /* Interpolate the transfer function. */
+    x = f - f0;
     if ( ( x < 0.0 ) || ( x >= nMax ) ) {
       aTrans = 0.0;
       phiTrans = 0.0;
@@ -521,35 +628,33 @@ LALSimulateCoherentGW( LALStatus        *stat,
       aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
       phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
     }
-    aPlus *= aTrans;
-    phiPlus += phiTrans;
-    if ( phiDim == 2 ) {
-      x = fCross - fOff;
-      if ( ( x < 0.0 ) || ( x >= nMax ) ) {
-	aTrans = 0.0;
-	phiTrans = 0.0;
-	fFlag = 1;
-      } else {
-	j = (INT4)floor( x );
-	frac = (REAL4)( x - j );
-	aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
-	phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
-      }
-      aCross *= aTrans;
-      phiCross += phiTrans;
-      outData[i] = aPlus*cos( phiPlus ) + aCross*cos( phiCross );
-    } else {
-      aCross *= aTrans;
-      outData[i] = aPlus*cos( phiPlus ) + aCross*sin( phiPlus );
-    }
+    a1 *= aTrans;
+    a2 *= aTrans;
+    phi += phiTrans;
+
+    /* Compute components of output. */
+    oPlus = a1*cos( shift )*cos( phi ) - a2*sin( shift )*sin( phi );
+    oCross = a1*sin( shift )*cos( phi ) + a2*cos( shift )*sin( phi );
+
+    /* Interpolate the polarization response, and compute output. */
+    x = polOff + iCentre*polDt;
+    j = (INT4)floor( x );
+    frac = (REAL4)( x - j );
+    j *= 2;
+    oPlus *= frac*polData[j+2] + ( 1.0 - frac )*polData[j];
+    oCross *= frac*polData[j+3] + ( 1.0 - frac )*polData[j+1];
+    outData[i] = oPlus + oCross;
   }
 
   /* Warn if we ever stepped outside of the frequency domain of the
-     transfer function. */
+     transfer function, or if we had to estimate f from phi. */
   if ( fFlag )
     LALWarning( stat, "Signal passed outside of the frequency domain"
 		" of the transfer function (transfer function is"
 		" treated as zero outside its specified domain)" );
+  if ( pFlag )
+    LALInfo( stat, "Signal frequency was estimated by differencing"
+	     " the signal phase" );
 
   /* Cleanup and exit. */
   TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );

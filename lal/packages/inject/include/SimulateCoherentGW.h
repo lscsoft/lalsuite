@@ -5,6 +5,9 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 
+\providecommand{\bm}[1]{\mbox{\boldmath$#1$\unboldmath}}
+\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
+
 \section{Header \texttt{SimulateCoherentGW.h}}
 \label{s:SimulateCoherentGW.h}
 
@@ -20,64 +23,211 @@ This header covers generic routines and structures to represent and
 simulate the effects of a plane gravitational wave propagating from a
 distinct point on the sky.
 
-Any plane gravitational wave can be represented by a direction of
-propagation (e.g. by the right ascension and declination of its source
-on the sky), and by the instantaneous values $h_+(t)$, $h_\times(t)$
-of its plus and cross polarizations as functions of time.  However,
-representing these functions smoothly as sampled time series can
-require very high sampling rates, and many signals of astrophysical
-interest can be characterized much more coarsely.  A good generic
-representation of a gravitational waveform should allow for other more
-natural characterizations.
+Any plane gravitational wave is specified by a direction
+$\bm{\hat{n}}$ to its apparent source (i.e.\ opposite to its direction
+of propagation), and by the inistantaneous values $h_+(t)$,
+$h_\times(t)$ of its plus and cross polarizations as functions of
+(retarded) time $t=t_0+\bm{\hat{n}}\cdot(\bm{x}-\bm{x}_0)$, where
+$t_0$ is the time measured at some local reference point $\bm{x}_0$,
+and $t$ is the time measured by a synchronized clock at $\bm{x}$.  We
+adopt the standard meaning of the instantaneous strain amplitudes
+$h_{+,\times}$: in some reference transverse $x$-$y$ coordinate system
+oriented such that $\bm{\hat{x}}\times\bm{\hat{y}}=-\bm{\hat{n}}$
+points in the direction of propagation, two free observers originally
+separated by a displacement $(x,y)$ will experience an additional
+tidal displacement $\delta x=(xh_+ + yh_\times)/2$, $\delta
+y=(xh_\times - yh_+)/2$.
 
-In many cases a waveform is ``coherent'' or ``adiabatic''; i.e.\ one
-can define amplitudes $A_{+,\times}(t)$ and frequencies
-$f_{+,\times(t)}$ that vary over timescales much longer than
-$h_{+,\times}(t)$, such that
+\paragraph{Quasiperiodic waves:} Most astrophysical sources of
+gravitational radiation are described as \emph{quasiperiodic} (or,
+less accurately, as ``adiabatic''), in that they can be said to have
+an instantaneous frequency, amplitude, and polarization, all of which
+vary on timescales much longer than a wave period. Mathematically we
+write this as:
 $$
-h_{+,\times}(t) = A_{+,\times}(t) \cos\phi_{+,\times}(t) \; ,
+h_{+,\times}(t) = A_{+,\times}(t)\cos\phi(t)
+	+ B_{+,\times}(t)\sin\phi(t) \; ,
 $$
-where $\phi_{+,\times}(t)=2\pi\int f_{+,\times}(t)\,dt$.  Obviously,
-the two amplitudes and frequencies are not uniquely defined from the
-two waveforms $h_{+,\times}(t)$; one requires the notion of
-adiabaticity to define a ``natural'' choice of instantaneous frequency
-and amplitude.  However, many signals of interest are coherent in this
-sense.  The structure \verb@CoherentGW@, below, allows waves to be
-represented in this highly-undersampled way by specifying
-$A_{+,\times}(t)$ and $\phi_{+,\times}(t)$ instead of
-$h_{+,\times}(t)$.
+\begin{wrapfigure}{r}{0.47\textwidth}
+\vspace{-4ex}
+\begin{center}
+\resizebox{0.42\textwidth}{!}{\includegraphics{inject_phase_diagram}} \\
+\parbox{0.42\textwidth}{\caption{\label{fig:phase-diagram}
+Polarization phase diagram for a quasiperiodic gravitational wave.
+The phase point $p(t)$ traces out the indicated ellipse in the
+$h_+,h_\times$ plane; the parameters $A_1$, $A_2$, and $\Phi$
+remain roughly constant over many cycles in $\phi$.}}
+\end{center}
+\vspace{-2ex}
+\end{wrapfigure}
+where $\phi(t)=2\pi\int f(t)\,dt$, and the \emph{evolution timescale}
+$\tau=\min\{A/\dot{A},B/\dot{B},f/\dot{f}\}$ is much greater than
+$h/\dot{h}\sim1/f$.  Obviously it is mathematically impossible for the
+physical functions $h_{+,\times}(t)$ to specify uniquely more than two
+other functions of time; we rely on the notion of quasiperiodicity to
+define ``natural'' choices of instantaneous frequency and amplitude.
+The ambiguity in this choice is on the order of the amount that these
+quantities change over a cycle.
 
-Furthermore, most coherent astrophysical waves come from rotating
-systems, which produce waveforms that are circularly polarized about
-the axis of rotation.  According to the standard polarization
-convention given in Fig.~7 of~\cite{Will_C:1996}, where the $z$-axis
-points in the direction of propagation, the reference $x$-axis for the
-+ and $\times$ polarization tensors is the ascending line of nodes
-between the plane transverse to $z$ and the invariant plane of
-rotation (i.e.\ it is a ray formed by the the intersection of the
-transverse and invariant rotation planes, oriented such that the
-rotation of the system carries bodies in the $+z$ direction as they
-cross that ray).  In this scheme, $h_+(t)$ and $h_\times(t)$ are
-uniformly $90^\circ$ out of phase.  The structure \verb@CoherentGW@
-therefore allows one to specify a single phase function $\phi_+(t)$,
-on the assumption that $\phi_\times(t)=\phi_+(t)-90^\circ$.
+While the above formula appears to have five degrees of freedom (two
+quadrature amplitudes $A$ and $B$ for each polarization, plus a common
+phase function $\phi$), there is a degeneracy between the two
+quadrature amplitudes and a shift in phase.  One could simply treat
+each polarization independently and represent the system with two
+amplitude functions $A_{+,\times}$ and two phase functions
+$\phi_{+,\times}$, but we would like to preserve the notion that the
+phases of the two waveforms derive from a single underlying
+instantaneous frequency.  We therefore write the waveforms in terms of
+two polarization amplitudes $A_1(t)$ and $A_2(t)$, a single phase
+function $\phi(t)$, and a polarization shift $\Phi(t)$:
+\begin{eqnarray}
+\label{eq:quasiperiodic-hplus}
+h_+(t) & = & A_1(t)\cos\Phi(t)\cos\phi(t)
+		- A_2(t)\sin\Phi(t)\sin\phi(t) \; , \\
+\label{eq:quasiperiodic-hcross}
+h_\times(t) & = & A_1(t)\sin\Phi(t)\cos\phi(t)
+		+ A_2(t)\cos\Phi(t)\sin\phi(t) \; .
+\end{eqnarray}
+The physical meaning of these functions is shown in
+Fig.~\ref{fig:phase-diagram}.
 
-In addition to the coordinate convention defining the + and $\times$
-polarization tensors, we impose the following additional conventions.
-Sky positions refer to the normal geocentric right ascension (measured
-east along the equatorial plane from the vernal equinox) and
-declination (measured north from the equatorial plane).  The
-polarization angle $\psi$ follows the convention specified in
-Appendix~B in~\cite{Anderson_W:2000}, which is as follows: Define the
-line of nodes as the intersection between the equatorial plane and the
-plane transverse to the wave propagation, and the ascending node as
-the ray from the origin along this line such that a point, rotating in
-the right-hand sense about the propagation direction $z$, moves from
-south to north as it crosses that ray.  Then $\psi$ is the angle
-between the ascending node and the $x$-axis defined above, measured in
-the right-hand sense about the $z$-axis.  Routines using the
-\verb@CoherentGW@ structure (below) with different conventions should
-document those conventions.
+There is a close relationship between the polarization shift $\Phi$
+and the orientation of the $x$-$y$ coordinates used to define our
+polarization basis: if we rotate the $x$ and $y$ axes by an angle
+$\Delta\psi$, we change $\Phi$ by an amount $-2\Delta\psi$.  (The
+factor of 2 comes from the fact that the + and $\times$ modes are
+quadrupolar: a + mode rotated $45^\circ$ is a $\times$ mode, and a
+mode rotated $90^\circ$ is the opposite of itself.)  We use the
+\emph{polarization angle} $\psi$ to define the orientation of the
+$x$-axis of the polarization basis relative to an Earth-fixed
+reference frame (see the coordinate conventions below).  If $\Phi$ is
+constant, one can redefine $\psi$ such that $\Phi=0$; however, when
+$\Phi$ changes with time, we would nonetheless like our polarization
+basis to remain fixed.  We therefore retain the constant $\psi$ and
+the function $\Phi(t)$ as distinct quantities.
+
+The advantage of this quasiperiodic representation of a gravitational
+wave is that a physical sampling of the parameters $A_1$, $A_2$,
+$\phi$, and $\Phi$ need only be done on timescales $\Delta
+t\lessim\tau$, whereas the actual wave functions $h_{+,\times}$ need
+to be sampled on timescales $\Delta t\lessim1/f$.
+
+The following coordinate conventions are assumed:
+\begin{enumerate}
+\item Fig.~7 of~\cite{Will_C:1996} defines standard coordinate
+conventions for nonprecessing binaries, and by extension, for any
+fixed-axis rotating source: If $\bm{\hat{z}}$ points in the direction
+of wave propagation (away from the source), and $\bm{\hat{l}}$ points
+in the (constant) direction of the source's angular momentum vector,
+then the $x$-$y$ coordinates used to define the + and $\times$
+polarizations are given by $\bm{\hat{x}}=|\csc
+i|\bm{\hat{z}}\times\bm{\hat{l}}$ and
+$\bm{\hat{y}}=\bm{\hat{z}}\times\bm{\hat{x}}$, where
+$i=\arccos(\bm{\hat{z}}\cdot\bm{\hat{l}})$ is the inclination angle
+between $\bm{\hat{l}}$ and $\bm{\hat{z}}$.  Such a system will
+generically have $A_1(t)=A(t)(1+\cos^2i)$, $A_2(t)=2A(t)\cos i$,
+$\Phi(t)=0$, and $f(t)>0$ (i.e.\ $\phi(t)$ increasing with time).  For
+precessing systems, prescriptions for $\bm{\hat{x}}$ and
+$\bm{\hat{y}}$ become ambiguous, but they \emph{must} be fixed; the
+relations for $A_1$, $A_2$, and $\Phi$ will no longer be maintained.
+
+\item Appendix~B of~\cite{Anderson_W:2000} defines a convention for
+the overal polarization angle $\psi$: Let $\bm{\hat{N}}$ be the
+direction of the Earth's north celestial pole, and define the
+direction of the \emph{ascending node}
+$\bm{\hat{\Omega}}=|\csc\alpha|\bm{\hat{N}}\times\bm{\hat{z}}$, where
+$\alpha$ is the right ascension of the source.  Then $\psi$ is the
+angle, right-handed about $\bm{\hat{z}}$, from $\bm{\hat{\Omega}}$ to
+$\bm{\hat{x}}$.
+
+\item The direction of propagation of the wave is defined by the right
+ascension $\alpha$ and declination $\delta$ of the \emph{source}, as
+seen from the point of measurement.  See \verb@SkyCoordinates.h@ for a
+definition of these quantities.  We expect that these will be
+effectively constant for almost any gravitational wave source of
+interest.
+\end{enumerate}
+
+\paragraph{The polarization response:} The relative strain induced in
+the test masses of a detector by a passing gravitational wave depends
+not only on the amplitudes $h_{+,\times}$ of the gravitational wave,
+but also on the design of the detector and its orientation with
+relative to the $x$-$y$ coordinate system used to define the + and
+$\times$ polarizations.  For a given detector, the response to each
+polarization thus depends on the right ascension $\alpha$, declination
+$\delta$, and polarization angle $\psi$ of the source (which define
+the orientation of the + and $\times$ polarization axes relative to
+the Earth), and on the time $t$ (which determines the orientation of
+the detector as the Earth rotates).  The strain $h(t)$ induced in the
+detector is thus given by two polarization response functions
+$F_{+,\times}(\alpha,\delta,\psi;t)$ by:
+$$
+h(t) = h_+(t)F_+(\alpha,\delta,\psi;t) +
+	h_\times(t)F_\times(\alpha,\delta,\psi;t) \; .
+$$
+We will not discuss the computation of these functions $F_{+,\times}$,
+as these are covered in the package \verb@???@.
+
+\paragraph{The transfer function:} All gravitational wave detectors
+incorporate a set of analog and digital filters that convert a
+gravitational excitation on the test masses into a measurable output
+time series.  The effects of these functions are aggregated into a
+complex-valued \emph{transfer function} ${\cal T}(f)$, which gives the
+instrumental response (in units of ``counts'' from an
+analog$\rightarrow$digital converter) to gravitational waves of unit
+amplitued at the frequency $f$.  Specifically, if the strain exerted
+on the antenna is given by $h(t)=\mathrm{Re}[{\cal H}e^{2\pi ift}]$
+(where the complex amplitude $\cal H$ includes the phase of the wave),
+then the ADC output of the instrument is given by:
+$$
+o(t) = \mathrm{Re}\left[ {\cal T}(f) {\cal H}e^{2\pi ift} \right] \; .
+$$
+The transfer function has a strong frequency dependence in order to
+``whiten'' the highly-coloured instrumental noise, and thus preserve
+instrumental sensitivity across a broad band of frequencies.
+
+We note that although the transfer function measures the response of
+the instrument to a gravitational wave, the term \emph{response
+function} refers to inverse transformation of taking an instrumental
+response and computing a gravitational waveform; that is, ${\cal
+R}(f)=1/{\cal T}(f)$.  This confusing bit of nomenclature arises from
+the fact that most data analysis deals with extracting gravitational
+waveforms from the instrumental output, rather than injecting
+waveforms into the output.
+
+For quasiperiodic waveforms with a well-defined instantaneous
+frequency $f(t)$ and phase $\phi(t)$, we can compute the response of
+the instrument entirely in the time domain in the adiabatic limit: if
+our instrumental excitation is a linear superposition of waveforms
+$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]$, then the output is a
+superposition of waves of the form
+$$
+o(t) \approx \mathrm{Re}\left[ {\cal T}\{f(t)\}
+	{\cal H}(t)e^{i\phi(t)} \right] \; .
+$$
+This expression is approximate to the extent that ${\cal T}(f)$ varies
+over the range $f\pm1/\tau$, where $\tau$ is the evolution timescale
+of ${\cal H}(t)$ and $f(t)$.  Since the transfer function and
+polarization response (above) are linear operators, we can apply them
+in either order.
+
+\paragraph{A note on terminology:} We use the word ``coherent'' in the
+name of this header in the loosest possible sense, refering to any
+wave with a well-defined direction of propagation, whose wave
+amplitudes $h_{+,\times}$ are deterministic functions of retarded
+time.  Given a knowledge of these parameters, such a waveform is
+amenable to ``coherent'' detection in a network of detectors, through
+time-shifted matched filtering.
+
+However, coherence is often used to refer to a more restricted class
+of waveforms that are ``effectively monochromatic'' over some
+coherence timescale $t_\mathrm{coh}$; i.e.\ in any timespan
+$t_\mathrm{coh}$ there is a fixed-frequency sinusoid that is never
+more than $90^\circ$ out of phase with the waveform.  This is more
+retrictive even than our concept of quasiperiodic waves; for
+smoothly-varying waveforms one has $t_\mathrm{coh}\sim\dot{f}^{-1/2}$,
+which is much shorter than the evolution timescale $\tau\sim
+f/\dot{f}$ (provided $\tau\gg1/f$, as we have assumed).
 
 ******************************************************* </lalLaTeX> */
 
@@ -86,6 +236,7 @@ document those conventions.
 
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
+#include <lal/SkyCoordinates.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -104,65 +255,70 @@ NRCSID( SIMULATECOHERENTGWH, "$Id$" );
 #define SIMULATECOHERENTGWH_MSGENUL "Unexpected null pointer in arguments"
 #define SIMULATECOHERENTGWH_MSGEBAD "A sampling interval is (effectively) zero"
 #define SIMULATECOHERENTGWH_MSGESIG "Input signal must specify amplitude and phase functions"
-#define SIMULATECOHERENTGWH_MSGEDIM "Amplitude and phase must be 1- or 2-dimensional vectors"
+#define SIMULATECOHERENTGWH_MSGEDIM "Amplitude must be a 2-dimensional vector"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-CoherentGW
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{CoherentGW}}
 \index{\texttt{CoherentGW}}
 
 \noindent This structure stores a representation of a plane
 gravitational wave propagating from a particular point on the sky.
 Several alternate representations are permitted to allow a more
-natural characterization of coherent waveforms.  The fields are:
+natural characterization of quasiperiodic waveforms.  The fields are:
 
 \begin{description}
-\item[\texttt{REAL4 ra, dec}] The right ascension and declination of
-the point from which the wave is propagating, in radians.
+\item[\texttt{SkyPosition position}] The location of the source in the
+sky.  This should be in equatorial celestial coordinates, but routines
+may be able to do the conversion.
 
 \item[\texttt{REAL4 psi}] The polarization angle $\psi$, in radians,
 as defined in Appendix~B of~\cite{Anderson_W:2000}.
 
 \item[\texttt{REAL4TimeVectorSeries *h}] A time-sampled
 two-dimensional vector storing the waveforms $h_+(t)$ and
-$h_\times(t)$.
+$h_\times(t)$, in dimensionless strain.
 
 \item[\texttt{REAL4TimeVectorSeries *a}] A time-sampled
-two-dimensional vector storing the amplitudes $A_+(t)$ and
-$A_\times(t)$.  Optionally, the vector can be one-dimensional, in
-which case it is assumed that the polarizations have equal amplitude.
+two-dimensional vector storing the amplitudes $A_1(t)$ and $A_2(t)$,
+in dimensionless strain.
 
-\item[\texttt{REAL4TimeVectorSeries *phi}] A time-sampled
-two-dimensional vector storing the phase functions $\phi_+(t)$ and
-$\phi_\times(t)$, in radians.  Optionally, the vector can be
-one-dimensional, in which case it is assumed that waveform is
-circularly polarized with $\phi_{\times}=\phi_{+}-\pi/2$.
+\item[\texttt{REAL4TimeSeries *f}] A time-sampled sequence storing the
+instantaneous frequency $f(t)$, in Hz.
+
+\item[\texttt{REAL4TimeSeries *phi}] A time-sampled sequence storing
+the phase function $\phi(t)$, in radians.
+
+\item[\texttt{REAL4TimeSeries *shift}] A time-sampled sequence storing
+the polarization shift $\Phi(t)$, in radians.
 \end{description}
 
-\noindent It is permitted to set \verb@*h@ while leaving
-\verb@a=phi=NULL@, or to set \verb@*a@ and \verb@*phi@ while leaving
-\verb@h=NULL@, but if all three are specified then they must be
-consistent over any time period of overlap.  Furthermore, \verb@*a@
-and \verb@*phi@ are only meaningful over time periods where
-\emph{both} are defined.
+\noindent It is permissible to set only some of the
+\verb@REAL4TimeSeries@ or \verb@REAL4TimeVectorSeries@ fields above,
+but the waveform is treated as being zero except during those times
+when either \verb@h@, or both \verb@a@ and \verb@phi@, are defined.
+Where \verb@shift@ is not specified, it is assumed that $\Phi$ is
+zero; where \verb@f@ is not specified but \verb@phi@ is, $f(t)$ can be
+computed as $\dot{\phi}(t)/2\pi$.  Where \verb@f@ and \verb@phi@
+overlap, or where \verb@h@ and any other time series overlap, they
+must be defined consistently.
 
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagCoherentGW {
-  REAL4 ra, dec;              /* sky position of source */
-  REAL4 psi;                  /* polarization angle of source */
-  REAL4TimeVectorSeries *h;   /* sampled waveforms h_+, h_x */
-  REAL4TimeVectorSeries *a;   /* amplitudes A_+, A_x */
-  REAL4TimeVectorSeries *phi; /* phase functions phi_+, phi_x */
+  SkyPosition position;     /* sky position of source */
+  REAL4 psi;                /* polarization angle of source */
+  REAL4TimeVectorSeries *h; /* sampled waveforms h_+, h_x */
+  REAL4TimeVectorSeries *a; /* amplitudes A_+, A_x */
+  REAL4TimeSeries *f;       /* instantaneous frequency */
+  REAL4TimeSeries *phi;     /* phase function */
+  REAL4TimeSeries *shift;   /* polarization shift Phi */
 } CoherentGW;
 
 /********************************************************** <lalLaTeX>
 
-\begin{verbatim}
-DetectorResponse
-\end{verbatim}
+\subsubsection*{Structure \texttt{DetectorResponse}}
 \index{\texttt{CoherentGW}}
 
 \noindent This structure contains information required to determine
@@ -174,9 +330,10 @@ are:
 frequency-dependent transfer function of the interferometer, in ADC
 counts per unit strain amplitude at any given frequency.
 
-\item[\texttt{??? *detector}] A structure storing site and
-polarization information, used to compute the polarization response at
-any time.  This structure has yet to be defined.
+\item[\texttt{LALDetector *detector}] A structure storing site and
+polarization information, used to compute the polarization response
+and the propagation delay.  If absent, the response will be computed
+to the plus mode waveform with no time delay.
 \end{description}
 
 ******************************************************* </lalLaTeX> */

@@ -332,6 +332,37 @@ typedef struct tagEarthPosition {
   SkyPosition geocentric;
 } EarthPosition;
 
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Structure \texttt{ConvertSkyParams}}
+\index{\texttt{EarthPosition}}
+
+This structure stores parameters for the function
+\verb@LALConvertSkyPosition()@.  The fields are:
+
+\begin{description}
+\item[\texttt{CoordinateSystem system}] The coordinate system to which
+one is transforming.
+
+\item[\texttt{SkyPosition *zenith}] The position of the zenith of the
+horizon coordinate system; may be \verb@NULL@ if one is neither
+converting to nor from a horizon system.
+
+\item[\texttt{LIGOTimeGPS *gpsTime}] The GPS time for conversions
+between Earth-fixed and sky-fixed coordinates; may be \verb@NULL@ if
+no such conversion is required (or if one is transforming to or from
+horizon coordinates and \verb@*zenith@ is given in the sky-fixed
+equatorial system).
+\end{description}
+
+******************************************************* </lalLaTeX> */
+
+typedef struct tagConvertSkyParams {
+  CoordinateSystem system;
+  SkyPosition *zenith;
+  LIGOTimeGPS *gpsTime;
+} ConvertSkyParams;
+
 /* <lalLaTeX>
 \vfill{\footnotesize\input{SkyCoordinatesHV}}
 </lalLaTeX> */
@@ -394,6 +425,15 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location );
 
 void
 LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location );
+
+/* <lalLaTeX>
+\newpage\input{SkyCoordinatesC}
+</lalLaTeX> */
+void
+LALConvertSkyCoordinates( LALStatus        *stat,
+			  SkyPosition      *output,
+			  SkyPosition      *input,
+			  ConvertSkyParams *params );
 
 /* <lalLaTeX>
 %\newpage\input{SkyCoordinatesTestC}

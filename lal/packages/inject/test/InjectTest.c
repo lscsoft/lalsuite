@@ -310,6 +310,10 @@ main(int argc, char **argv)
   INT2TimeSeries output;     /* detector ACD output */
   CHAR outname[NAMELENGTH];  /* name of current output file */
 
+  /* Meaningless initializations to shut gcc up. */
+  deltaT = f0 = deltaF = NULL;
+  epoch = NULL;
+  transferLength = 0;
 
   /*******************************************************************
    *                                                                 *
@@ -584,7 +588,6 @@ main(int argc, char **argv)
   while ( ( nOut < inLength ) && ( nSource < sourceLength ) &&
 	  ( t < tFinal ) ) {
     CoherentGW waveform;              /* gravitational waveform */
-    REAL4TimeVectorSeries a, phi;     /* fields of waveform */
     REAL4TimeSeries signal;           /* detector response */
 
     /* Compute the waveform. */
@@ -620,13 +623,9 @@ main(int argc, char **argv)
       ppnParams.fStopIn = FSTOP;
       ppnParams.ppn = NULL;
       ppnParams.lengthIn = 0;
-      a.deltaT = phi.deltaT = DTSAMPLE;
-      a.data = phi.data = NULL;
-      I8ToLIGOTimeGPS( &(a.epoch), t );
-      phi.epoch = a.epoch;
-      waveform.h = NULL;
-      waveform.a = &a;
-      waveform.phi = &phi;
+      ppnParams.deltaT = DTSAMPLE;
+      I8ToLIGOTimeGPS( &(ppnParams.epoch), t );
+      memset( &waveform, 0, sizeof(CoherentGW) );
 
 
       /* DEBUG:
@@ -639,7 +638,7 @@ main(int argc, char **argv)
       /* Generate waveform. */
       SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
 	   &stat );
-      if ( ppnParams.dfdt > 4.0 ) {
+      if ( ppnParams.dfdt > 2.0 ) {
 	INFO( "Waveform sampling interval may be too large." );
       }
 
@@ -720,8 +719,8 @@ main(int argc, char **argv)
 	 &stat );
     SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
 	 &stat );
-    SUB( LALSDestroyVectorSequence( &stat, &(waveform.phi->data) ),
-	 &stat );
+    SUB( LALSDestroyVector( &stat, &(waveform.f->data) ), &stat );
+    SUB( LALSDestroyVector( &stat, &(waveform.phi->data) ), &stat );
 
 
 

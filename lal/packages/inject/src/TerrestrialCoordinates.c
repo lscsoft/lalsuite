@@ -15,8 +15,8 @@ Converts among equatorial, geographic, and horizon coordinates.
 \input{TerrestrialCoordinatesCP}
 \index{\texttt{LALEquatorialToGeographic()}}
 \index{\texttt{LALGeographicToEquatorial()}}
-\index{\texttt{LALGeographicToHorizon()}}
-\index{\texttt{LALHorizonToGeographic()}}
+\index{\texttt{LALSystemToHorizon()}}
+\index{\texttt{LALHorizonToSystem()}}
 
 \subsubsection*{Description}
 
@@ -40,7 +40,9 @@ system}; the routine checks to see that \verb@input->system@ and
 \verb@zenith->system@ agree.  Normally this routine is used to convert
 from \emph{geographic} latitude and longitude to a horizon system, in
 which case \verb@*zenith@ simply stores the geographic (geodetic)
-coordinates of the observer.
+coordinates of the observer; if converting from equatorial
+coordinates, \verb@zenith->longitude@ should store the local mean
+sidereal time of the horizon system.
 
 The function \verb@LALHorizonToSystem()@ does the reverse of the
 above, transforming coordinates from horizon coordinates to either

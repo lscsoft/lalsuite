@@ -166,7 +166,7 @@ int lalDebugLevel = 0;
 
 /* Global constants. */
 #define MSGLEN (256)    /* maximum length of warning/info messages */
-#define FSTART (30.0)   /* initial frequency of waveform */
+#define FSTART (25.0)   /* initial frequency of waveform */
 #define FSTOP  (2000.0) /* termination frequency of waveform */
 #define DELTAT (0.01)   /* sampling interval of amplitude and phase */
 
@@ -526,7 +526,6 @@ main(int argc, char **argv)
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
     CoherentGW waveform;           /* amplitude and phase structure */
-    REAL4TimeVectorSeries a, phi;  /* amplitude and phase functions */
     REAL4TimeSeries signal;        /* GW signal */
     REAL8 time;                    /* length of GW signal */
     CHAR message[MSGLEN];          /* warning/info messages */
@@ -540,29 +539,27 @@ main(int argc, char **argv)
       ppnParams.d = dist*LAL_PC_SI*1000.0;
       ppnParams.inc = inc*LAL_PI/180.0;
       ppnParams.phi = phic*LAL_PI/180.0;
-      I8ToLIGOTimeGPS( &( a.epoch ), epoch );
+      I8ToLIGOTimeGPS( &( ppnParams.epoch ), epoch );
     } else {
       ppnParams.mTot = M1 + M2;
       ppnParams.eta = M1*M2/( ppnParams.mTot*ppnParams.mTot );
       ppnParams.d = DIST;
       ppnParams.inc = INC;
       ppnParams.phi = PHIC;
-      I8ToLIGOTimeGPS( &( a.epoch ), EPOCH );
+      I8ToLIGOTimeGPS( &( ppnParams.epoch ), EPOCH );
     }
 
     if ( ok ) {
       /* Set up other parameter structures. */
-      ppnParams.ra = ppnParams.dec = ppnParams.psi = 0.0;
+      ppnParams.position.latitude = ppnParams.position.longitude = 0.0;
+      ppnParams.position.system = COORDINATESYSTEM_EQUATORIAL;
+      ppnParams.psi = 0.0;
       ppnParams.fStartIn = FSTART;
       ppnParams.fStopIn = FSTOP;
       ppnParams.lengthIn = 0;
       ppnParams.ppn = NULL;
-      phi.epoch = a.epoch;
-      phi.deltaT = a.deltaT = DELTAT;
-      phi.data = a.data = NULL;
-      waveform.a = &a;
-      waveform.phi = &phi;
-      waveform.h = NULL;
+      ppnParams.deltaT = DELTAT;
+      memset( &waveform, 0, sizeof(CoherentGW) );
 
       /* Generate waveform. */
       SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
@@ -570,16 +567,16 @@ main(int argc, char **argv)
       sprintf( message, "%d: %s", ppnParams.termCode,
 	       ppnParams.termDescription );
       INFO( message );
-      if ( ppnParams.dfdt > 4.0 ) {
+      if ( ppnParams.dfdt > 2.0 ) {
 	sprintf( message, "Waveform sampling interval is too large:\n"
 		 "\tmaximum df*dt = %f", ppnParams.dfdt );
 	WARNING( message );
       }
 
       /* Generate and inject signal. */
-      signal.epoch = a.epoch;
+      signal.epoch = waveform.a->epoch;
       signal.epoch.gpsSeconds -= 1;
-      signal.deltaT = output.deltaT;
+      signal.deltaT = output.deltaT/4.0;
       signal.data = NULL;
       time = waveform.a->data->length*DELTAT + 2.0;
       time /= signal.deltaT;
@@ -589,8 +586,13 @@ main(int argc, char **argv)
 				  &detector ), &stat );
       SUB( LALSI2InjectTimeSeries( &stat, &output, &signal, params ),
 	   &stat );
-      SUB( LALSDestroyVectorSequence( &stat, &( a.data ) ), &stat );
-      SUB( LALSDestroyVectorSequence( &stat, &( phi.data ) ), &stat );
+      SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
+	   &stat );
+      SUB( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );
+      SUB( LALSDestroyVector( &stat, &( waveform.phi->data ) ), &stat );
+      LALFree( waveform.a );
+      LALFree( waveform.f );
+      LALFree( waveform.phi );
       SUB( LALSDestroyVector( &stat, &( signal.data ) ), &stat );
     }
 

@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 DOCSOURCEFILES = inject.tex \
+  inject_phase_diagram.eps inject_phase_diagram.pdf \
   inject_ecliptic.eps inject_ecliptic.pdf \
   inject_galactic.eps inject_galactic.pdf \
   inject_geodetic.eps inject_geodetic.pdf \

@@ -4,7 +4,8 @@ libinject_la_SOURCES =	\
 	GetInspiralParams.c \
 	GeneratePPNInspiral.c	SimulateCoherentGW.c \
 	InjectVector.c		InjectTimeSeries.c \
-	CelestialCoordinates.c	TerrestrialCoordinates.c
+	CelestialCoordinates.c	TerrestrialCoordinates.c \
+	SkyCoordinates.c
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

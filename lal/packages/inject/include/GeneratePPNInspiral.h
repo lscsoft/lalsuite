@@ -134,6 +134,7 @@ h_\times(t) & = & A_+(t)\sin\phi(t) \; .
 
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
+#include <lal/SkyCoordinates.h>
 #include <lal/Random.h>
 
 #ifdef  __cplusplus
@@ -147,7 +148,7 @@ NRCSID( GENERATEPPNINSPIRALH, "$Id$" );
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */
 #define GENERATEPPNINSPIRALH_ENUL  1
-#define GENERATEPPNINSPIRALH_ESIG  2
+#define GENERATEPPNINSPIRALH_EOUT  2
 #define GENERATEPPNINSPIRALH_ETBAD 3
 #define GENERATEPPNINSPIRALH_EFBAD 4
 #define GENERATEPPNINSPIRALH_EPBAD 5
@@ -156,8 +157,8 @@ NRCSID( GENERATEPPNINSPIRALH, "$Id$" );
 #define GENERATEPPNINSPIRALH_EMEM  8
 
 #define GENERATEPPNINSPIRALH_MSGENUL  "Unexpected null pointer in arguments"
-#define GENERATEPPNINSPIRALH_MSGESIG  "output->a or output->phi does not exist"
-#define GENERATEPPNINSPIRALH_MSGETBAD "output->a and output->phi have inconsisten epochs/sample rates"
+#define GENERATEPPNINSPIRALH_MSGEOUT  "output field a, f, phi, or shift already exists"
+#define GENERATEPPNINSPIRALH_MSGETBAD "Bad sampling interval"
 #define GENERATEPPNINSPIRALH_MSGEFBAD "Bad starting frequency; could not get valid start time"
 #define GENERATEPPNINSPIRALH_MSGEPBAD "Bad post-Newtonian parameters"
 #define GENERATEPPNINSPIRALH_MSGEMBAD "Bad masses"
@@ -203,11 +204,13 @@ success.
 
 \bigskip\noindent\textit{Passed fields:}
 \begin{description}
-\item[\texttt{REAL8 ra, dec}] The right ascension and declination of
-the source, in radians.
+\item[\texttt{SkyPosition position}] The location of the source on the
+sky, normally in equatorial coordinates.
 
 \item[\texttt{REAL4 psi}] The polarization angle of the source, in
 radians.
+
+\item[\texttt{LIGOTimeGPS epoch}] The start time of the output series.
 \end{description}
 
 \medskip\noindent\textit{Input fields:}
@@ -229,6 +232,9 @@ sight, in radians.
 \item[\texttt{REAL4 phi}] The phase at coalescence $\phi_c$ (or
 arbitrary reference phase for a post${}^{5/2}$-Newtonian
 approximation), in radians.
+
+\item[\texttt{REAL8 deltaT}] The requested sampling interval of the
+waveform, in s.
 
 \item[\texttt{REAL4 fStartIn}] The requested starting frequency of the
 waveform, in Hz.
@@ -270,8 +276,9 @@ description (above).
 
 typedef struct tagPPNParamStruc {
   /* Passed parameters. */
-  REAL8 ra, dec;    /* right ascension and declination (radians) */
-  REAL4 psi;        /* polarization angle (radians) */
+  SkyPosition position; /* location of source on sky */
+  REAL4 psi;            /* polarization angle (radians) */
+  LIGOTimeGPS epoch;    /* start time of output time series */
 
   /* Input parameters. */
   REAL4 mTot;       /* total system mass (Msun) */
@@ -279,6 +286,7 @@ typedef struct tagPPNParamStruc {
   REAL4 d;          /* distance (metres) */
   REAL4 inc;        /* inclination angle (radians) */
   REAL4 phi;        /* coalescence phase (radians) */
+  REAL8 deltaT;     /* requested sampling interval (s) */
   REAL4 fStartIn;   /* requested start frequency (Hz) */
   REAL4 fStopIn;    /* requested stop frequency (Hz) */
   UINT4 lengthIn;   /* maximum length of waveform */
