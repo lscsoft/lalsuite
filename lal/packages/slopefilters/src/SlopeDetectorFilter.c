@@ -324,6 +324,7 @@ LALSlopeDetectorFilter( LALStatus          *status,
 	   SLOPEDETECTORFILTERH_MSGEDATATOOSHORT );
   }
 
+  /* printf("CODE: At div by zero point, ntaps is %u\n",ntaps); */
   /* check that the number of taps is not zero */
   if ( ntaps == 0 ) {
     ABORT( status, SLOPEDETECTORFILTERH_EDIVBYZERO, 
@@ -384,6 +385,7 @@ LALSlopeLineFitFilter( LALStatus                *status,
   REAL4*             dataout;
   REAL4              calculated_slope,calculated_offset,sigmaa,sigmab,alpha; 
   REAL4              xnorma, xnormb;
+  REAL4              nreal;
 
   /******* FUNCTION BODY ********************************/
 
@@ -403,7 +405,9 @@ LALSlopeLineFitFilter( LALStatus                *status,
     ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP, 
 	   SLOPEDETECTORFILTERH_MSGEHISTNULLP );
   }
-  if ( (fparams.forder < 1) || 
+  /* filter order needs to be at least two for slope detector filters */
+  /* since you can't fit the slope off one data point */
+  if ( (fparams.forder < 2) || 
        (fparams.forder > MAX_SLOPE_DETECTOR_FILTER_ORDER ) ) {
     ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
 	   SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
@@ -417,6 +421,7 @@ LALSlopeLineFitFilter( LALStatus                *status,
   datalength = input_data->length;
   datain = input_data->data;
   dataout = output_data->data;
+  nreal = (REAL4)fparams.forder;
 
   if ( dataout == NULL ) {
     ABORT( status, SLOPEDETECTORFILTERH_EINPUTNULLP, 
@@ -438,12 +443,11 @@ LALSlopeLineFitFilter( LALStatus                *status,
   /* run filter */  
 
   /* calculate overall normalization to get output in counts per second */
-  normalization = 12 / ((REAL4)fparams.forder * 
+  normalization = 12 / (nreal * 
 			fparams.sampling_period_s *
-			(fparams.forder * fparams.forder - 1));
+			(nreal * nreal - 1));
 
-  meant = fparams.sampling_period_s *
-    (fparams.forder - 1) / 2;
+  meant = fparams.sampling_period_s * ( nreal - 1 ) / 2;
   
   /* loop over input data */
   for(i=0;i<(datalength-fparams.forder+1);++i) {
@@ -457,7 +461,7 @@ LALSlopeLineFitFilter( LALStatus                *status,
 
     /* calculate slope, needed for all filter outputs */
     calculated_slope
-      = normalization * (sumxt - meant * sumx );
+      = normalization * (sumxt - meant * sumx / fparams.sampling_period_s );
 
     switch( fparams.function_select ) {
     case FILTER_OUTPUT_SLOPE:
@@ -466,21 +470,20 @@ LALSlopeLineFitFilter( LALStatus                *status,
       break;
     case FILTER_OUTPUT_OFFSET:
       /* the output is the offset */
-      dataout[i] = sumx / fparams.forder - calculated_slope * meant;
+      dataout[i] = sumx / nreal - calculated_slope * meant;
       break;
     case FILTER_OUTPUT_ALF:
       /* output data is a nonlinear function of slope and offset */
-      sigmaa = (REAL4)sqrt ( (double)12 / (double)((fparams.forder * 
-		     (fparams.forder*fparams.forder - 1) *
-		     fparams.sampling_period_s * fparams.sampling_period_s )) );
-      sigmab = (REAL4)sqrt ( (double)(4 * fparams.forder + 2) / 
-		      (double)(fparams.forder * (fparams.forder - 1) ) );
-      calculated_offset = sumx / fparams.forder - calculated_slope * meant;
-      alpha = -sqrt( (3/2) * (fparams.forder + 1) / (2*fparams.forder - 1) );
+      sigmaa = (1 / fparams.sampling_period_s) * (REAL4)sqrt 
+	( 12 / (    (REAL8)nreal * ( (REAL8)nreal*(REAL8)nreal - 1) )    ) ;
+      sigmab = (REAL4)sqrt ( (4 * (REAL8)nreal + 2) / 
+		      ( (REAL8)nreal * ( (REAL8)nreal - 1 ) ) );
+      calculated_offset = sumx / nreal - calculated_slope * meant;
+      alpha = ( 0 - sqrt( 1.5 * ( (REAL8)nreal + 1) / ( 2*(REAL8)nreal + 1 ) ) );
       xnorma = calculated_slope / sigmaa;
       xnormb = calculated_offset / sigmab;
-      dataout[i] = ( ( xnorma*xnorma + xnormb*xnormb - 2*alpha*xnorma*xnormb )/
-		     ( 1 - alpha * alpha) );
+      dataout[i] = ( ( xnorma*xnorma + xnormb*xnormb - 2*alpha*xnorma*xnormb ) /
+		     ( 1 - alpha * alpha ) );
       break;
     default:
       ABORT( status, SLOPEDETECTORFILTERH_EINVALIDACTION, 
@@ -516,6 +519,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 
   REAL4* datain;
   REAL4* dataout;
+  REAL4 nreal;
   UINT4 datalength,i,j;
 
   INITSTATUS( status, "LALSlopeConvolutionFilter", SLOPEDETECTORFILTERC );
@@ -590,9 +594,12 @@ LALSlopeConvolutionFilter( LALStatus                *status,
       ABORT( status, SLOPEDETECTORFILTERH_EBINOFFINVALID, 
 	     SLOPEDETECTORFILTERH_MSGEBINOFFINVALID );
     }
+    nreal = (REAL4)fparams.forder;
+    /*printf("CODE: nreal = %f\n",nreal);*/
     /* create the filter taps */
-    for(i=0;i<fparams.forder-1;++i) {
-      *(fparams.tap + i) = (REAL4)(1 / fparams.forder);
+    for(i=0;i<fparams.forder;++i) {
+      *(fparams.tap + i) = 1/nreal;
+      /*printf("CODE: tap %d is %f.\n",i,*(fparams.tap + i));*/
     }
     /* set the taps bit */
     *(fparams.taps_set) = 1;
@@ -656,7 +663,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 	     SLOPEDETECTORFILTERH_MSGETAPSNULLP );
     }
     /* check that the history buffer pointer is not null */
-    if ( (fparams.history) != NULL ) {
+    if ( (fparams.history) == NULL ) {
       ABORT( status, SLOPEDETECTORFILTERH_EHISTNULLP, 
 	     SLOPEDETECTORFILTERH_MSGEHISTNULLP );
     }
@@ -666,7 +673,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
       /* calculate convolution for each input data point */
       dataout[i]=0;
       for(j=0;j<fparams.forder;++j) {
-	dataout[i]+=(*(fparams.tap + j))*datain[i+j];
+	dataout[i]+=fparams.tap[j]*datain[i+j];
       }
 
     }
@@ -689,23 +696,26 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 
 void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   UINT4 i;
-  REAL4 midbin,sigbins;
-  midbin = ((REAL4)ntaps - 1)/2;
-  sigbins = midbin / GAUSSIAN_TAPS_NSIGMA_AT_EDGE;
+  REAL8 midbin,sigbins,offs;
+  midbin = ((REAL8)ntaps - 1)/2;
+  sigbins = midbin / (REAL8)GAUSSIAN_TAPS_NSIGMA_AT_EDGE;
   for(i=0;i<ntaps;++i) {
-    tap[i] = exp( - ( ((REAL4)i - (midbin+binoffset)) * 
-	       ((REAL4)i - (midbin+binoffset)) ) /
-	   (2 * sigbins * sigbins) );
+    offs = (REAL8)i;
+    tap[i] = (REAL4)exp( - (offs - (midbin+(REAL8)binoffset)) * 
+			 (offs - (midbin+(REAL8)binoffset)) /
+			 (2 * sigbins * sigbins) );
   }
   return;
 }
 
 void CreatePeriodSineTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   UINT4 i;
-  REAL4 midbin,sigbins;
-  midbin = ((REAL4)ntaps - 1)/2;
+  REAL8 midbin,sigbins;
+  REAL8 offs;
+  midbin = ((REAL8)ntaps - 1)/2;
   for(i=0;i<ntaps;++i) {
-    tap[i] = (REAL4)sin((double)((i - (midbin+binoffset))*SLOPE_PI/midbin) );
+    offs = (REAL8)i;
+    tap[i] = (REAL4)sin( (offs - (midbin+(REAL8)binoffset))*SLOPE_PI/midbin );
   }
   return;
 }
