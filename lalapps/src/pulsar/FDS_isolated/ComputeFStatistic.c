@@ -3628,12 +3628,17 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	 * we will use this fact in the following! 
 	 */
 	xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];	/* >= 0 !! */
-	/* this will now be assumed positive, but we double-check this
-	 * for now to be sure: 
-	 */
+	
+	/* this will now be assumed positive, but we double-check this to be sure */
 	if ( xTemp < 0 )
 	  {
 	    fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
+	    fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
+		     i, xTemp, f, alpha, tempInt1[alpha]);
+	    fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
+		     skyConst[ tempInt1[ alpha ] ], xSum[ alpha ]);
+	    fprintf (stderr, "\n*** PLEASE report this bug to pulgroup@gravity.phys.uwm.edu *** \n\n");
+
 	    exit (COMPUTEFSTAT_EXIT_DEMOD);
 	  }
 
