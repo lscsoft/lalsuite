@@ -123,11 +123,11 @@ int main(int argc, char* argv[]) {
       fileno++;
     else if (starttimes[fileno]==starttimes[fileno-1])
       fprintf(stderr,"Identical timestamps:\n%d: %s\n%d: %s\n",
-	      starttimes[fileno], filenames[fileno], starttimes[fileno+1], filenames[fileno+1]);
+	      starttimes[fileno], filenames[fileno], starttimes[fileno-1], filenames[fileno-1]);
     else {
       fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%d: %s\n%d: %s\n",
 	      fileno+1, argv[2], starttimes[fileno], filenames[fileno], 
-	      starttimes[fileno+1], filenames[fileno+1]);
+	      starttimes[fileno-1], filenames[fileno-1]);
       exit(1);
     }
   };
