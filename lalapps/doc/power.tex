@@ -207,12 +207,18 @@ is the width of abin.
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
-lalapps_power --npts 2048 --nseg 719 --olap 1024 --olapfctr 3 \
-    --minfbin 2 --mintbin 2 --flow 100.0 --delf 1.0 --lngth 512 --nsigma 2.0 \
-    --alphdef 0.5 --segdcle 32 --threshold 1.0e-13 --etomstr 10 \
-    --channel S1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
-    --epoch  693768279 0 --numpts 1048576 --printSpectrum --noise 1 11 \
-    --outfile sim-inj.xml
+lalapps_snglBurstHistogram --input files.txt --freq 100.0 1000.0 25.0
+\end{verbatim}
+This will read in the xml files listed in files (see below) and
+construct a frequency histogram with lowest frequency 100 Hz,  highest
+frequency 1000 Hz and bin width 25 Hz.   The file \verb$files.txt$
+must contain a list of XML files.  Here are the first few lines from
+such a file:
+\begin{verbatim}
+simtest-693768279-11.xml
+simtest-693768311-21.xml
+simtest-693768343-31.xml
+simtest-693768375-41.xml
 \end{verbatim}
 
 \item[Author]
