@@ -50,60 +50,49 @@ use of the stereographic projection.
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Static global variables}
-
-The patch-time-frequency Look Up Table\\
-\verb@static HOUGHptfLUT   *LookUpTable;@\\
-
- \noindent The patch limits with respect to the centers of the last pixels\\
-\verb@static REAL8   LUTxMin;@\\
-\verb@static REAL8   LUTxMax;@\\
-\verb@static REAL8   LUTyMin;@\\
-\verb@static REAL8   LUTyMax;@\\
-
- \noindent Coordiantes of the pixel centers, in the projected plane \\
-\verb@static REAL8    *Xcoor;@\\
-\verb@static REAL8    *Ycoor;@\\
-\verb@static REAL8    DIFFX, DIFFY, INVDIFFX, INVDIFFY;@\\
-
-\noindent \verb@static UINT2   LUTxSide, LUTySide;@
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Static function declarations}
 \begin{verbatim}
-static void PLUTInitialize(UINT2);
-static void FillPLUT(HOUGHParamPLUT *,UINT2, UINT2);
-static void CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *);
-static void CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *);
-static void DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *);
-static void DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *);
+static void PLUTInitialize(HOUGHptfLUT  *);
+static void FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void CheckLeftCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                            HOUGHPatchGrid *);
+static void CheckRightCircle(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                             HOUGHPatchGrid *);
+static void DrawRightCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+                            HOUGHPatchGrid *);
+static void DrawLeftCircle(REAL8, REAL8, REAL8, INT4, INT4, COORType *, 
+                           HOUGHPatchGrid *);
 static void CheckLineCase(REAL8, REAL8, REAL8, REAL8 *, INT4 *);
 static void FindExactLine(REAL8, REAL8, REAL8 *, REAL8 *);
 static void FindLine(REAL8, REAL8, REAL8, REAL8 *, REAL8 *);
-static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *);
-static void DrawLine(REAL8, REAL8, REAL8, INT4, INT4, COORType *);
-static void Fill1Column(INT4, INT4*);
-static void FillCaseN1(INT4, INT4, INT4);
-static void FillCaseN2(INT4, INT4);
-static void FillCaseN3(INT4, INT4, INT4, INT4 *);
-static void FillCaseN4(INT4, INT4);
-static void FillCaseN5(INT4, INT4, INT4);
-static void FillCaseN6(INT4, INT4, INT4);
-static void FillCaseN7(INT4, INT4);
-static void FillCaseN8(INT4, INT4);
-static void Fill1ColumnAnor(INT4);
-static void FillCaseA1(INT4, INT4, INT4);
-static void FillCaseA2(INT4, INT4, INT4);
-static void FillCaseA3(INT4, INT4, INT4);
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *,INT4 *,INT4 *);
-static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4,
-                             REAL8*, INT4*, INT4 *, INT4*);
-static void FollowCircleCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, REAL8,
-                             INT4 *,INT4 *,INT4 *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *);
-static void FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *);
+static void CheckLineIntersection(REAL8, REAL8, REAL8, INT4 *, INT4 *, INT4 *, 
+                                  HOUGHPatchGrid *);
+static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
+static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN4(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN5(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseN6(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN7(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN8(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+                              HOUGHptfLUT *, HOUGHPatchGrid *);
+static void SecondCircleCase(INT4, INT4*, REAL8, REAL8, REAL8, INT4, REAL8 *,
+                             INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+                             INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+                            HOUGHPatchGrid *);
+static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+                           HOUGHPatchGrid *);
+static void FollowLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, REAL8, INT4, INT4 *, 
+                           HOUGHptfLUT *, HOUGHPatchGrid *);
 \end{verbatim}
 
 
@@ -205,61 +194,53 @@ NRCSID (CONSTRUCTPLUTC, "$Id$");
  */
 
 
-/* the patch-time-frequency Look Up Table */
-static HOUGHptfLUT   *LookUpTable;
-
-/* the patch limits with respect to the centers of the last pixels */
-static REAL8   LUTxMin;
-static REAL8   LUTxMax;
-static REAL8   LUTyMin;
-static REAL8   LUTyMax;
-
-/* coordiantes of the pixel centers, in the projected plane */
-static REAL8    *Xcoor;
-static REAL8    *Ycoor;
-
-static REAL8    DIFFX, DIFFY, INVDIFFX, INVDIFFY;
-
-/* to be changed */
-static UINT2   LUTxSide, LUTySide;
-
-
 /*
  * 5.f) Static function declarations
  */
 
-static void PLUTInitialize(UINT2);
-static void FillPLUT(HOUGHParamPLUT *, UINT2, UINT2);
+static void PLUTInitialize(HOUGHptfLUT  *);
+static void FillPLUT(HOUGHParamPLUT *, HOUGHptfLUT *, HOUGHPatchGrid *);
 
-static void CheckLeftCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *);
-static void CheckRightCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *);
-static void DrawRightCircle(REAL8,REAL8,REAL8,INT4,INT4, COORType *);
-static void DrawLeftCircle(REAL8,REAL8,REAL8,INT4,INT4,COORType *);
+static void CheckLeftCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+                          HOUGHPatchGrid *);
+static void CheckRightCircle(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+                           HOUGHPatchGrid *);
+static void DrawRightCircle(REAL8,REAL8,REAL8,INT4,INT4, COORType *, 
+                          HOUGHPatchGrid *);
+static void DrawLeftCircle(REAL8,REAL8,REAL8,INT4,INT4,COORType *, 
+                         HOUGHPatchGrid *);
 static void CheckLineCase(REAL8, REAL8, REAL8,REAL8 *, INT4 *);
 static void FindExactLine(REAL8,REAL8,REAL8 *,REAL8 *);
 static void FindLine(REAL8,REAL8,REAL8,REAL8 *,REAL8 *);
-static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *);
-static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *);
-static void Fill1Column(INT4, INT4*);
-static void FillCaseN1(INT4, INT4, INT4);
-static void FillCaseN2(INT4, INT4);
-static void FillCaseN3(INT4, INT4, INT4, INT4 *);
-static void FillCaseN4(INT4, INT4);
-static void FillCaseN5(INT4, INT4, INT4);
-static void FillCaseN6(INT4, INT4, INT4);
-static void FillCaseN7(INT4, INT4);
-static void FillCaseN8(INT4, INT4);
-static void Fill1ColumnAnor(INT4);
-static void FillCaseA1(INT4, INT4, INT4);
-static void FillCaseA2(INT4, INT4, INT4);
-static void FillCaseA3(INT4, INT4, INT4);
+static void CheckLineIntersection(REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *, 
+                                HOUGHPatchGrid *);
+static void DrawLine(REAL8, REAL8, REAL8,INT4, INT4, COORType *, HOUGHPatchGrid *);
+static void Fill1Column(INT4, INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN1(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN2(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN3(INT4, INT4, INT4, INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN4(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN5(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseN6(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN7(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseN8(INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void Fill1ColumnAnor(INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FillCaseA1(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseA2(INT4, INT4, INT4, HOUGHptfLUT *);
+static void FillCaseA3(INT4, INT4, INT4, HOUGHptfLUT *, HOUGHPatchGrid *);
 
-static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *);
-static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,INT4,REAL8*,INT4*,INT4 *,INT4*);
-static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,INT4 *,INT4 *);
-static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *);
-static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *);
-static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *);
+static void InitialCircleCase(INT4 *,REAL8, REAL8, REAL8, REAL8 *, INT4 *, INT4 *, 
+                            HOUGHptfLUT *, HOUGHPatchGrid *);
+static void SecondCircleCase(INT4, INT4*,REAL8,REAL8, REAL8,INT4,REAL8*,
+                           INT4*,INT4 *,INT4*, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void FollowCircleCase(INT4,INT4 *,REAL8,REAL8,REAL8,REAL8,REAL8,INT4 *,
+                           INT4 *,INT4 *, HOUGHptfLUT *, HOUGHPatchGrid *);
+static void InitialLineCase(INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+                          HOUGHPatchGrid *);
+static void SecondLineCase(INT4, INT4 *, REAL8, REAL8, REAL8, INT4 *, HOUGHptfLUT *, 
+                         HOUGHPatchGrid *);
+static void FollowLineCase(INT4, INT4 *,REAL8, REAL8, REAL8,REAL8,INT4,INT4 *, 
+                         HOUGHptfLUT *, HOUGHPatchGrid *);
 
 
 /*
@@ -291,38 +272,15 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 
   f0Bin =  par->f0Bin;
 
- /* -------------------------------------------   */
- /* setting Global variables & fields  */
-
-   LookUpTable = lut;
-   
- /*LookUpTable->timeIndex = ; */
-  LookUpTable->deltaF = par->deltaF;
-  LookUpTable->f0Bin  = f0Bin;
-  LookUpTable->nFreqValid = PIXERR * f0Bin *VEPI/VTOT;
-  
-  LUTxMin = patch->xMin;
-  LUTxMax = patch->xMax;
-  LUTyMin = patch->yMin;
-  LUTyMax = patch->yMax;
-
-  Xcoor = patch->xCoor; 
-  Ycoor = patch->yCoor;
-
-  DIFFX = patch->deltaX;
-  DIFFY = patch->deltaY;
-  INVDIFFX = 1./ DIFFX;
-  INVDIFFY = 1./ DIFFY;
-
-  LUTxSide = patch->xSide;
-  LUTySide = patch->ySide;
+  lut->deltaF = par->deltaF;
+  lut->f0Bin  = f0Bin;
+  lut->nFreqValid = PIXERR * f0Bin *VEPI/VTOT;
 
   /* -------------------------------------------   */
   
-  PLUTInitialize(lut->maxNBins);  
-  FillPLUT(par, lut->maxNBins, lut->maxNBorders);
-  
-  /* *lut= LookUpTable; old!!!  */
+  PLUTInitialize(lut);  
+  FillPLUT(par, lut, patch);
+ 
   
   /* Make sure number of bins makes sense with the dimensions  */
   ASSERT (lut->nBin >0, status, LUTH_ESIZE, LUTH_MSGESIZE);
@@ -353,17 +311,21 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 /*               June 7, 2001                                  */
 /***************************************************************/
 
-static void  PLUTInitialize(UINT2 maxNBins){
+static void  PLUTInitialize(HOUGHptfLUT  *lut){
   UINT2  i;
+  UINT2 maxNBins;
+  
+  maxNBins = lut->maxNBins;
+  
   for(i=0;i<maxNBins;++i){
-    LookUpTable->bin[i].leftB1  = 0;
-    LookUpTable->bin[i].rightB1 = 0;
-    LookUpTable->bin[i].leftB2  = 0;
-    LookUpTable->bin[i].rightB2 = 0;
-    LookUpTable->bin[i].piece1max = -1; 
-    LookUpTable->bin[i].piece1min = 0;
-    LookUpTable->bin[i].piece2max = -1;
-    LookUpTable->bin[i].piece2min = 0;
+    lut->bin[i].leftB1  = 0;
+    lut->bin[i].rightB1 = 0;
+    lut->bin[i].leftB2  = 0;
+    lut->bin[i].rightB2 = 0;
+    lut->bin[i].piece1max = -1; 
+    lut->bin[i].piece1min = 0;
+    lut->bin[i].piece2max = -1;
+    lut->bin[i].piece2min = 0;
   }
   return;
 }
@@ -420,8 +382,8 @@ static void  PLUTInitialize(UINT2 maxNBins){
 /*                   draw line */
 /*         otherwise draw a circle */
 /* ******************************************************************* */
-/* a pixel j , corresponds to x(j)= DIFFX*(0.5+j- LUTxSide/2.) */
-/* the nearest center of a pixel is j = round[ x/DIFFX +LUTxSide/2.-0.5]  */
+/* a pixel j , corresponds to x(j)= patch->deltaX*(0.5+j- patch->xSide/2.) */
+/* the nearest center of a pixel is j = round[ x/patch->deltaX +patch->xSide/2.-0.5]  */
 /* ******************************************************************* */
 /* The way to convert k into the bin index is the following:    */
 /*    for k>=0, binindex= k                                     */
@@ -430,7 +392,8 @@ static void  PLUTInitialize(UINT2 maxNBins){
 /* This will be used when reading the peakgram!                 */ 
 /* ******************************************************************* */
 
-static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
+static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
+                    HOUGHPatchGrid  *patch){
 
   /********************************************************/
   /*    variables that need to be calculated before       */
@@ -444,7 +407,9 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
   REAL8 epsilon;    /* = LINERR *8.0d-8 * f0/df          */
 
   /********************************************************/
-
+  UINT2 maxNBins;
+  UINT2 maxNBorders;
+  
   INT4 lastBorder =0;  /* counter of the last build border */ 
   INT4 currentBin =0;  /* counter of the bin studied       */
 
@@ -469,7 +434,9 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
   REAL8 eps;
 
   /********************************************************/
-
+  maxNBins = lut->maxNBins;
+  maxNBorders = lut->maxNBorders;
+  
   alpha = par->xi.alpha;
   delta = par->xi.delta;
   cosDelta = par->cosDelta;
@@ -503,12 +470,12 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
 
     if( lineCase ){
  	/* line case */
-      InitialLineCase(&lastBorder,alpha,delta,eps, &ifailPlus);
+      InitialLineCase(&lastBorder,alpha,delta,eps, &ifailPlus,lut, patch);
       directionPlus = -1;
     } else{
       /* circle case */
       InitialCircleCase(&lastBorder,alpha, ang1, ang2,  
-			&rcOldPlus, &directionPlus, &ifailPlus);
+			&rcOldPlus, &directionPlus, &ifailPlus,lut, patch);
     }    
   }
   
@@ -555,18 +522,19 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
       if( lineCase ){
  	/* line case */
 	FollowLineCase(currentBin, &lastBorder,alpha,delta,eps,
-		       rcOldPlus, directionPlus, &ifailPlus);
+		       rcOldPlus, directionPlus, &ifailPlus,lut, patch);
       } else{
 	/* circle case */
 	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic, 
-			 rcOldPlus, &pathology, &directionPlus, &ifailPlus);
+			 rcOldPlus, &pathology, &directionPlus, 
+			 &ifailPlus, lut, patch);
       }    
     }
     
     if(pathology){
-      Fill1Column(currentBin, &lastBorder);
+      Fill1Column(currentBin, &lastBorder, lut, patch);
     }else{
-      Fill1ColumnAnor(currentBin); /* not yet coded */
+      Fill1ColumnAnor(currentBin, lut, patch); 
     }
   }
   
@@ -594,7 +562,8 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
     
     if( lineCase ){
       /* line case */
-      SecondLineCase(currentBin,&lastBorder,alpha,delta,eps, &ifailMinus);
+      SecondLineCase(currentBin,&lastBorder,alpha,delta,eps, &ifailMinus,
+                     lut, patch);
       directionMinus = -1;
       pathology = 0;  
     } else{
@@ -602,7 +571,8 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
       pathology = 1; /* provisionally */
       SecondCircleCase(currentBin, &lastBorder,alpha, ang1, ang2, 
 		       directionPlus, &rcOldMinus, 
-		       &pathology, &directionMinus, &ifailMinus);
+		       &pathology, &directionMinus, 
+		       &ifailMinus, lut, patch);
     }    
   }
 
@@ -613,9 +583,9 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
   /********************************************************/
 
   if(pathology){
-    Fill1Column(0, &lastBorder);
+    Fill1Column(0, &lastBorder,lut, patch);
   }else{
-    Fill1ColumnAnor(0); /* not yet coded */
+    Fill1ColumnAnor(0, lut, patch);
   }
 
   /********************************************************/
@@ -658,18 +628,19 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
       if( lineCase ){
     	/* line case */
 	FollowLineCase(currentBin, &lastBorder,alpha,delta,eps,
-		       rcOldMinus, directionMinus, &ifailMinus);
+		       rcOldMinus, directionMinus, &ifailMinus,lut, patch);
       } else{
 	/* circle case */
 	FollowCircleCase(currentBin, &lastBorder,alpha, ang1, ang2,rCritic, 
-			 rcOldMinus, &pathology, &directionMinus, &ifailMinus);
+			 rcOldMinus, &pathology, &directionMinus, 
+			 &ifailMinus, lut, patch);
       }    
     }
     
     if(pathology){
-      Fill1Column(currentBin, &lastBorder);
+      Fill1Column(currentBin, &lastBorder, lut, patch);
     }else{
-      Fill1ColumnAnor(currentBin); /* not yet coded */
+      Fill1ColumnAnor(currentBin, lut, patch); 
     }
   }
   
@@ -677,8 +648,8 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
   /* set iniBin,nBin  etc */
   /********************************************************/
 
-  LookUpTable->nBin = currentBin+1;
-  LookUpTable->iniBin = nBinPos-currentBin;
+  lut->nBin = currentBin+1;
+  lut->iniBin = nBinPos-currentBin;
 
    return;
 }
@@ -704,7 +675,8 @@ static void  FillPLUT(HOUGHParamPLUT  *par, UINT2 maxNBins, UINT2 maxNBorders){
 /****************************************************************/
 
 static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta, 
-		     REAL8 eps, INT4 *ifailP){
+		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT  *lut,
+		     HOUGHPatchGrid  *patch){
 
 
   INT4 lastBorder;
@@ -719,7 +691,7 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 
  /************************************************/
   FindLine(alpha, delta, eps, &xA, &yA);
-  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
+  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn, patch);
 
   if( noIn ==0 ){
     *ifailP = 0;    /* =1 (ok), =0 (stop) */
@@ -727,11 +699,11 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
   }
   ++lastBorder;
 
-  LookUpTable->border[lastBorder].yUpper = yymax;
-  LookUpTable->border[lastBorder].yLower = yymin;
+  lut->border[lastBorder].yUpper = yymax;
+  lut->border[lastBorder].yLower = yymin;
 
   DrawLine(alpha, xA, yA, yymin, yymax,
-	   &LookUpTable->border[lastBorder].xPixel[0] );
+	   &lut->border[lastBorder].xPixel[0] , patch);
 
   /************************************************/
 
@@ -739,13 +711,13 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
       (alpha == -LAL_PI*0.5) ){       /* horizontal line */
 
     if( yA < 0 ){ /* convention */
-      LookUpTable->bin[0].rightB1 = lastBorder;
-      LookUpTable->bin[1].leftB1  = lastBorder;
-      LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+      lut->bin[0].rightB1 = lastBorder;
+      lut->bin[1].leftB1  = lastBorder;
+      lut->border[lastBorder].yCenter = 0; /*or smaller*/
     } else {
-      LookUpTable->bin[0].leftB2  = lastBorder;
-      LookUpTable->bin[1].rightB2 = lastBorder;
-      LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+      lut->bin[0].leftB2  = lastBorder;
+      lut->bin[1].rightB2 = lastBorder;
+      lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
     }
   } 
   else { /* non- horizontal line */
@@ -759,23 +731,23 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
     } 
 
     if( xRel < 0 ){
-      LookUpTable->bin[0].leftB2 = lastBorder;
-      LookUpTable->bin[1].rightB2= lastBorder;
+      lut->bin[0].leftB2 = lastBorder;
+      lut->bin[1].rightB2= lastBorder;
 
       if ( slope < 0 ){
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
 
     } else {
-      LookUpTable->bin[0].rightB1 = lastBorder;
-      LookUpTable->bin[1].leftB1  = lastBorder;
+      lut->bin[0].rightB1 = lastBorder;
+      lut->bin[1].leftB1  = lastBorder;
       
       if ( slope > 0 ){
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
     }
   } /* end non-horizontal line */
@@ -808,7 +780,8 @@ static void InitialLineCase(INT4  *lastBorderP, REAL8 alpha, REAL8  delta,
 
 static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP, 
 		    REAL8 alpha, REAL8  delta, 
-		     REAL8 eps, INT4 *ifailP){
+		     REAL8 eps, INT4 *ifailP, HOUGHptfLUT *lut,
+		     HOUGHPatchGrid  *patch){
 
   /* we are for sure in a pathological case. Border names are
      changed accordingly */
@@ -825,7 +798,7 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
 
  /************************************************/
   FindLine(alpha, delta, eps, &xA, &yA);
-  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
+  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn, patch);
 
   if( noIn ==0 ){
     *ifailP = 0;  /* =1 (ok), =0 (stop) */
@@ -833,11 +806,11 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
   }
   ++lastBorder;
 
-  LookUpTable->border[lastBorder].yUpper = yymax;
-  LookUpTable->border[lastBorder].yLower = yymin;
+  lut->border[lastBorder].yUpper = yymax;
+  lut->border[lastBorder].yLower = yymin;
 
   DrawLine(alpha, xA, yA, yymin, yymax,
-	   &LookUpTable->border[lastBorder].xPixel[0] );
+	   &lut->border[lastBorder].xPixel[0], patch );
 
   /************************************************/
   /* all are pathological cases. The code is similar to the 
@@ -848,13 +821,13 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
       (alpha == -LAL_PI*0.5) ){       /* horizontal line */
 
     if( yA < 0 ){ /* convention */
-      LookUpTable->bin[0].rightB2= lastBorder; /* modified */
-      LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
-      LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+      lut->bin[0].rightB2= lastBorder; /* modified */
+      lut->bin[currentBin+1].leftB1 = lastBorder;
+      lut->border[lastBorder].yCenter = 0; /*or smaller*/
     } else {
-      LookUpTable->bin[0].leftB1 = lastBorder; /* modified */
-      LookUpTable->bin[currentBin+1].rightB2= lastBorder;
-      LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+      lut->bin[0].leftB1 = lastBorder; /* modified */
+      lut->bin[currentBin+1].rightB2= lastBorder;
+      lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
     }
   } 
   else { /* non- horizontal line */
@@ -868,23 +841,23 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
     } 
 
     if( xRel < 0 ){
-      LookUpTable->bin[0].leftB1   = lastBorder; /* modified */
-      LookUpTable->bin[currentBin+1].rightB2= lastBorder;
+      lut->bin[0].leftB1   = lastBorder; /* modified */
+      lut->bin[currentBin+1].rightB2= lastBorder;
 
       if ( slope < 0 ){
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
 
     } else {
-      LookUpTable->bin[0].rightB2  = lastBorder; /* modified */
-      LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
+      lut->bin[0].rightB2  = lastBorder; /* modified */
+      lut->bin[currentBin+1].leftB1 = lastBorder;
       
       if ( slope > 0 ){
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
     }
   } /* end non-horizontal line */
@@ -919,7 +892,8 @@ static void SecondLineCase(INT4 currentBin, INT4  *lastBorderP,
 
 static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 		    REAL8 alpha, REAL8  delta, REAL8 eps,REAL8 rcOld, 
-		    INT4 direction, INT4 *ifailP){
+		    INT4 direction, INT4 *ifailP, HOUGHptfLUT *lut,
+		    HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   
@@ -932,7 +906,7 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 
   /************************************************/
   FindLine(alpha, delta, eps, &xA, &yA);
-  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn);
+  CheckLineIntersection(alpha, xA, yA, &yymin, &yymax, &noIn, patch);
 
   if( noIn ==0 ){
     *ifailP = 0; /* =1 (ok), =0 (stop) */
@@ -940,11 +914,11 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
   }
   ++lastBorder;
 
-  LookUpTable->border[lastBorder].yUpper = yymax;
-  LookUpTable->border[lastBorder].yLower = yymin;
+  lut->border[lastBorder].yUpper = yymax;
+  lut->border[lastBorder].yLower = yymin;
 
   DrawLine(alpha, xA, yA, yymin, yymax,
-	   &LookUpTable->border[lastBorder].xPixel[0] );
+	   &lut->border[lastBorder].xPixel[0] , patch);
 
   /************************************************/
   if( direction == 1 ){ 
@@ -959,17 +933,17 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
     if( (alpha == LAL_PI*0.5) || (alpha == LAL_PI*1.5) ||
 	(alpha == -LAL_PI*0.5) ){       /* horizontal line */
 
-      LookUpTable->bin[currentBin].leftB1   = lastBorder;
-      LookUpTable->bin[currentBin+1].rightB1= lastBorder;
+      lut->bin[currentBin].leftB1   = lastBorder;
+      lut->bin[currentBin+1].rightB1= lastBorder;
 
       /* alternatively, one can also set two extra borders */
-      /*  LookUpTable->bin[currentBin].rightB2  = lastBorder; */
-      /*  LookUpTable->bin[currentBin+1].leftB2 = lastBorder; */
+      /*  lut->bin[currentBin].rightB2  = lastBorder; */
+      /*  lut->bin[currentBin+1].leftB2 = lastBorder; */
 
       if( ycOld < yA ){
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
 	  
     } 
@@ -984,23 +958,23 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
       } 
 
       if( xRel < xcOld ){
-	LookUpTable->bin[currentBin].leftB1   = lastBorder;
-	LookUpTable->bin[currentBin+1].rightB1= lastBorder;
+	lut->bin[currentBin].leftB1   = lastBorder;
+	lut->bin[currentBin+1].rightB1= lastBorder;
 
 	if ( slope > 0 ){
-	  LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	  lut->border[lastBorder].yCenter = 0; /*or smaller*/
 	} else {
-	  LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	  lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
 	}
 
       } else {
-	LookUpTable->bin[currentBin].rightB2  = lastBorder;
-	LookUpTable->bin[currentBin+1].leftB2 = lastBorder;
+	lut->bin[currentBin].rightB2  = lastBorder;
+	lut->bin[currentBin+1].leftB2 = lastBorder;
 
 	if ( slope < 0 ){
-	  LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	  lut->border[lastBorder].yCenter = 0; /*or smaller*/
 	} else {
-	  LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	  lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
 	}
       }
     } /* end non-horizontal line */
@@ -1019,13 +993,13 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
 	(alpha == -LAL_PI*0.5) ){       /* horizontal line */
 
       if( yA < 0 ){ /* convention */
-	LookUpTable->bin[currentBin].rightB1  = lastBorder;
-	LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
-	LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	lut->bin[currentBin].rightB1  = lastBorder;
+	lut->bin[currentBin+1].leftB1 = lastBorder;
+	lut->border[lastBorder].yCenter = 0; /*or smaller*/
       } else {
-	LookUpTable->bin[currentBin].leftB2   = lastBorder;
-	LookUpTable->bin[currentBin+1].rightB2= lastBorder;
-	LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	lut->bin[currentBin].leftB2   = lastBorder;
+	lut->bin[currentBin+1].rightB2= lastBorder;
+	lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
       }
     } 
     else { /* non- horizontal line */
@@ -1039,23 +1013,23 @@ static void FollowLineCase(INT4 currentBin, INT4  *lastBorderP,
       } 
 
       if( xRel < 0 ){
-	LookUpTable->bin[currentBin].leftB2   = lastBorder;
-	LookUpTable->bin[currentBin+1].rightB2= lastBorder;
+	lut->bin[currentBin].leftB2   = lastBorder;
+	lut->bin[currentBin+1].rightB2= lastBorder;
 
 	if ( slope < 0 ){
-	  LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	  lut->border[lastBorder].yCenter = 0; /*or smaller*/
 	} else {
-	  LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	  lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
 	}
 
       } else {
-	LookUpTable->bin[currentBin].rightB1  = lastBorder;
-	LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
+	lut->bin[currentBin].rightB1  = lastBorder;
+	lut->bin[currentBin+1].leftB1 = lastBorder;
 
 	if ( slope > 0 ){
-	  LookUpTable->border[lastBorder].yCenter = 0; /*or smaller*/
+	  lut->border[lastBorder].yCenter = 0; /*or smaller*/
 	} else {
-	  LookUpTable->border[lastBorder].yCenter = LUTySide -1;/*or bigger */
+	  lut->border[lastBorder].yCenter = patch->ySide -1;/*or bigger */
 	}
       }
     } /* end non-horizontal line */
@@ -1183,7 +1157,8 @@ return;
 /*********************************************************/
 
 static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA, 
-		      INT4 *yyminP, INT4 *yymaxP, INT4 *noInP){
+		      INT4 *yyminP, INT4 *yymaxP, INT4 *noInP,
+		      HOUGHPatchGrid  *patch){
  
   INT4 yymin,yymax,noIn;
   yymin = 0;
@@ -1192,20 +1167,20 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 
   if ((alpha == 0) || (alpha == LAL_PI) || (alpha == -LAL_PI) ){ 
     /* vertical line */
-    if ((LUTxMin <= xA) && (LUTxMax >= xA)){
+    if ((patch->xMin <= xA) && (patch->xMax >= xA)){
       noIn  = 1;
       yymin = 0;
-      yymax = LUTySide-1;
+      yymax = patch->ySide-1;
     }
   }
   else{
     if ( (alpha == LAL_PI*0.5) || (alpha == LAL_PI*1.5) ||
 	 (alpha == -LAL_PI*0.5) ){
       /* horizontal line */
-      if ((LUTyMin <= yA) && (LUTyMax >= yA)){
+      if ((patch->yMin <= yA) && (patch->yMax >= yA)){
 	noIn  = 1;
-	yymin =  ceil(yA/DIFFY+LUTySide*0.5-0.5);
-	yymax = floor(yA/DIFFY+LUTySide*0.5-0.5);
+	yymin =  ceil(yA/patch->deltaY+patch->ySide*0.5-0.5);
+	yymax = floor(yA/patch->deltaY+patch->ySide*0.5-0.5);
 	/* Note  yymax < yymin,   to identify an horizontal line!
 	   If the area to mark is above (arriba), mark yymin and higher. 
 	   If the area to mark is below (abajo), mark yymax and lower.*/
@@ -1215,19 +1190,19 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 	/* generic case */
       REAL8 y1,y2,slope;
       slope = cot(alpha);
-      y1  = slope*(xA-LUTxMin)+yA;
-      y2  = slope*(xA-LUTxMax)+yA;
+      y1  = slope*(xA-patch->xMin)+yA;
+      y2  = slope*(xA-patch->xMax)+yA;
       
-      if (  ( (y1 >= LUTyMin) || (y2 >= LUTyMin) ) 
-	    && ( (y1 <= LUTyMax) || (y2 <= LUTyMax) ) ){ 
+      if (  ( (y1 >= patch->yMin) || (y2 >= patch->yMin) ) 
+	    && ( (y1 <= patch->yMax) || (y2 <= patch->yMax) ) ){ 
 	REAL8 yupper,ylower;
 	noIn   = 1;
 	yupper = MAX(y1,y2);
 	ylower = MIN(y1,y2); /* or  ylower=y1+y2-yupper  */
-	yupper = MIN(yupper,LUTyMax);
-	ylower = MAX(ylower,LUTyMin);
-	yymin  = ceil(ylower/DIFFY+LUTySide*0.5-0.5);
-	yymax  =floor(yupper/DIFFY+LUTySide*0.5-0.5);
+	yupper = MIN(yupper,patch->yMax);
+	ylower = MAX(ylower,patch->yMin);
+	yymin  = ceil(ylower/patch->deltaY+patch->ySide*0.5-0.5);
+	yymax  =floor(yupper/patch->deltaY+patch->ySide*0.5-0.5);
 	/* in case of a pseudo-horizontal line (yymax < yymin) */
 	/* we use the same convention as in the horizontal case */
       }
@@ -1246,12 +1221,13 @@ static void CheckLineIntersection(REAL8 alpha, REAL8 xA, REAL8 yA,
 /*   Subroutine to draw non-horizontal lines!                    */
 /*****************************************************************/
 static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA, 
-	      INT4 yymin, INT4 yymax, COORType  *column){
+	      INT4 yymin, INT4 yymax, COORType  *column,
+	      HOUGHPatchGrid  *patch){
 
   INT4 jj;
   
-  column[yymin] = LUTxSide;
-  column[yymax] = LUTxSide;
+  column[yymin] = patch->xSide;
+  column[yymax] = patch->xSide;
 
   /* the if-else, is not really needed, just to avoid repeating
      the ceil when not necessary! */
@@ -1260,7 +1236,7 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
    /* vertical line */
    INT4  xpixel;
 
-   xpixel = ceil(xA/DIFFX+LUTxSide*0.5-0.5);
+   xpixel = ceil(xA/patch->deltaX+patch->xSide*0.5-0.5);
    for(jj=yymin;jj<=yymax;++jj){
      column[jj] = xpixel;
    }
@@ -1274,8 +1250,8 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 
    for(jj=yymin;jj<=yymax;++jj){  
      /* will not be executed in the horizontal case */    
-     xofy = xA + tanalpha*( yA- Ycoor[jj] );
-     column[jj] = ceil(xofy/DIFFX+LUTxSide*0.5-0.5);
+     xofy = xA + tanalpha*( yA- patch->yCoor[jj] );
+     column[jj] = ceil(xofy/patch->deltaX+patch->xSide*0.5-0.5);
    }
  }
  
@@ -1306,7 +1282,9 @@ static void DrawLine(REAL8 alpha, REAL8 xA, REAL8 yA,
 
 static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 		      REAL8 ang1, REAL8  ang2,  
-		      REAL8 *rcOldP, INT4 *directionP, INT4 *ifailP){
+		      REAL8 *rcOldP, INT4 *directionP, 
+		      INT4 *ifailP, HOUGHptfLUT *lut, 
+		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 direction;    /* +1, or -1 */
@@ -1328,9 +1306,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 
  /************************************************/
   /* check for exclusion of intersection of the circle with the patch*/
-  if( ( yc+radius < LUTyMin ) || ( yc-radius > LUTyMax )  ||
-      ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
-      ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
+  if( ( yc+radius < patch->yMin ) || ( yc-radius > patch->yMax )  ||
+      ( xc+radius < patch->xMin ) || ( xc-radius > patch->xMax )  ||
+      ( sqrt(patch->xMax*patch->xMax + patch->yMax*patch->yMax) + radius < fabs(rc) ) ){
     /* no intersection */
     *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
@@ -1351,46 +1329,46 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
     pieces = 0;
 
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
-	LookUpTable->bin[0].rightB1= lastBorder;
-	LookUpTable->bin[1].leftB1 = lastBorder;
+		       &lut->border[lastBorder].xPixel[0] , patch);
+	lut->bin[0].rightB1= lastBorder;
+	lut->bin[1].leftB1 = lastBorder;
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
-	LookUpTable->bin[0].leftB2  = lastBorder;
-	LookUpTable->bin[1].rightB2 = lastBorder;
+		       &lut->border[lastBorder].xPixel[0], patch );
+	lut->bin[0].leftB2  = lastBorder;
+	lut->bin[1].rightB2 = lastBorder;
       }
     }
 
@@ -1409,48 +1387,48 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
    
     pieces = 0;
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0] , patch);
        
-	LookUpTable->bin[0].leftB1 = lastBorder;
-	LookUpTable->bin[1].rightB1= lastBorder;
+	lut->bin[0].leftB1 = lastBorder;
+	lut->bin[1].rightB1= lastBorder;
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0], patch );
 	
-	LookUpTable->bin[0].rightB2= lastBorder;
-	LookUpTable->bin[1].leftB2 = lastBorder;
+	lut->bin[0].rightB2= lastBorder;
+	lut->bin[1].leftB2 = lastBorder;
       }
     }
 
@@ -1494,7 +1472,9 @@ static void InitialCircleCase(INT4  *lastBorderP, REAL8 alpha,
 static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP, 
 		      REAL8 alpha, REAL8 ang1, REAL8  ang2, 
 		      INT4 directionPlus, REAL8 *rcOldP, 
-		      INT4 *pathologyP,INT4 *directionP, INT4 *ifailP){
+		      INT4 *pathologyP,INT4 *directionP, 
+		      INT4 *ifailP, HOUGHptfLUT *lut, 
+		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
@@ -1517,9 +1497,9 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 
  /************************************************/
   /* check for exclusion of intersection of the circle with the patch*/
-  if( ( yc+radius < LUTyMin ) || ( yc-radius > LUTyMax )  ||
-      ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
-      ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
+  if( ( yc+radius < patch->yMin ) || ( yc-radius > patch->yMax )  ||
+      ( xc+radius < patch->xMin ) || ( xc-radius > patch->xMax )  ||
+      ( sqrt(patch->xMax*patch->xMax + patch->yMax*patch->yMax) + radius < fabs(rc) ) ){
     /* no intersection */
     *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
@@ -1543,54 +1523,54 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
     pieces = 0;
 
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0] , patch);
 	if ( pathology ){
-	  LookUpTable->bin[0].rightB1 = lastBorder;
+	  lut->bin[0].rightB1 = lastBorder;
 	} else{
-	  LookUpTable->bin[0].rightB2 = lastBorder; /* modified */
+	  lut->bin[0].rightB2 = lastBorder; /* modified */
 	}
-	LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
+	lut->bin[currentBin+1].leftB1 = lastBorder;
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0], patch );
 	if ( pathology ){
-	  LookUpTable->bin[0].leftB2 = lastBorder;
+	  lut->bin[0].leftB2 = lastBorder;
 	} else{
-	  LookUpTable->bin[0].leftB1 = lastBorder; /*modified */
+	  lut->bin[0].leftB1 = lastBorder; /*modified */
 	}
-	LookUpTable->bin[currentBin+1].rightB2 = lastBorder;
+	lut->bin[currentBin+1].rightB2 = lastBorder;
       }
     }
 
@@ -1609,48 +1589,48 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
    
     pieces = 0;
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0] , patch);
        
-	LookUpTable->bin[0].leftB1   = lastBorder;
-	LookUpTable->bin[currentBin+1].rightB1= lastBorder;
+	lut->bin[0].leftB1   = lastBorder;
+	lut->bin[currentBin+1].rightB1= lastBorder;
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0], patch );
 	
-	LookUpTable->bin[0].rightB2  = lastBorder;
-	LookUpTable->bin[currentBin+1].leftB2 = lastBorder;
+	lut->bin[0].rightB2  = lastBorder;
+	lut->bin[currentBin+1].leftB2 = lastBorder;
       }
     }
 
@@ -1697,7 +1677,8 @@ static void SecondCircleCase(INT4 currentBin, INT4  *lastBorderP,
 static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 		      REAL8 ang1, REAL8  ang2, REAL8 rCritic, 
 		      REAL8 rcOld, INT4 *pathologyP, 
-		      INT4 *directionP, INT4 *ifailP){
+		      INT4 *directionP, INT4 *ifailP, HOUGHptfLUT *lut, 
+		      HOUGHPatchGrid  *patch){
 
   INT4 lastBorder;
   INT4 pathology;    /* =1 (normal), =0 (anormal) */
@@ -1722,9 +1703,9 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 
   /************************************************/
   /* check for exclusion of intersection of the circle with the patch*/
-  if( ( yc+radius < LUTyMin ) || ( yc-radius > LUTyMax )  ||
-      ( xc+radius < LUTxMin ) || ( xc-radius > LUTxMax )  ||
-      ( sqrt(LUTxMax*LUTxMax + LUTyMax*LUTyMax) + radius < fabs(rc) ) ){
+  if( ( yc+radius < patch->yMin ) || ( yc-radius > patch->yMax )  ||
+      ( xc+radius < patch->xMin ) || ( xc-radius > patch->xMax )  ||
+      ( sqrt(patch->xMax*patch->xMax + patch->yMax*patch->yMax) + radius < fabs(rc) ) ){
     /* no intersection */
     *ifailP = 0;  /* =1 (ok), =0 (stop) */
     return;
@@ -1739,46 +1720,46 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
     pieces = 0;
 
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
-	LookUpTable->bin[currentBin].rightB1  = lastBorder;
-	LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
+		       &lut->border[lastBorder].xPixel[0] , patch);
+	lut->bin[currentBin].rightB1  = lastBorder;
+	lut->bin[currentBin+1].leftB1 = lastBorder;
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
-	LookUpTable->bin[currentBin].leftB2    = lastBorder;
-	LookUpTable->bin[currentBin+1].rightB2 = lastBorder;
+		       &lut->border[lastBorder].xPixel[0], patch );
+	lut->bin[currentBin].leftB2    = lastBorder;
+	lut->bin[currentBin+1].rightB2 = lastBorder;
       }
     }
 
@@ -1805,55 +1786,55 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 
     pieces = 0;
     /* check left circle */
-    if( xc >= LUTxMin ){ /* draw ( ? */
+    if( xc >= patch->xMin ){ /* draw ( ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckLeftCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawLeftCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0] , patch);
 	if( pathology ){
-	  LookUpTable->bin[currentBin].leftB1   = lastBorder;
-	  LookUpTable->bin[currentBin+1].rightB1= lastBorder;
+	  lut->bin[currentBin].leftB1   = lastBorder;
+	  lut->bin[currentBin+1].rightB1= lastBorder;
 	} else {
-	  LookUpTable->bin[currentBin].rightB2  = lastBorder;
-	  LookUpTable->bin[currentBin+1].leftB1 = lastBorder;
+	  lut->bin[currentBin].rightB2  = lastBorder;
+	  lut->bin[currentBin+1].leftB1 = lastBorder;
 	}
       }
     }
     
     /* check right circle */
-    if( xc <= LUTxMax){ /* draw ) ? */
+    if( xc <= patch->xMax){ /* draw ) ? */
       INT4 yymax;
       INT4 yymin;
       INT4 noIn; /* if no intersection occurs noIn=0 */
 
-      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn);
+      CheckRightCircle(xc,yc,radius, &yymin, &yymax, &noIn, patch);
       if(noIn){
 	++pieces;
 	++lastBorder;
 
-	LookUpTable->border[lastBorder].yUpper = yymax;
-	LookUpTable->border[lastBorder].yLower = yymin;
-	LookUpTable->border[lastBorder].yCenter = 
-	             rint( yc/DIFFY + LUTySide*0.5 -0.5);
+	lut->border[lastBorder].yUpper = yymax;
+	lut->border[lastBorder].yLower = yymin;
+	lut->border[lastBorder].yCenter = 
+	             rint( yc/patch->deltaY + patch->ySide*0.5 -0.5);
 	DrawRightCircle(xc,yc,radius,yymin,yymax,
-		       &LookUpTable->border[lastBorder].xPixel[0] );
+		       &lut->border[lastBorder].xPixel[0] , patch);
 	if( pathology ){
-	  LookUpTable->bin[currentBin].rightB2  = lastBorder;
-	  LookUpTable->bin[currentBin+1].leftB2 = lastBorder;
+	  lut->bin[currentBin].rightB2  = lastBorder;
+	  lut->bin[currentBin+1].leftB2 = lastBorder;
 	} else {
-	  LookUpTable->bin[currentBin].leftB1   = lastBorder;
-	  LookUpTable->bin[currentBin+1].rightB2= lastBorder;
+	  lut->bin[currentBin].leftB1   = lastBorder;
+	  lut->bin[currentBin+1].rightB2= lastBorder;
 	}
       }
     }
@@ -1896,7 +1877,7 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 
 /*********************************************************/
 /*  Subroutine to check if the left part of a circle     */
-/*  intersects the patch (assuming xc>=LUTxMin)          */
+/*  intersects the patch (assuming xc>=patch->xMin)          */
 /*  Output:                                              */
 /*     information if intersects the patch:              */
 /*               noIn =0 no intersection                  */
@@ -1905,14 +1886,15 @@ static void FollowCircleCase(INT4 currentBin, INT4  *lastBorderP, REAL8 alpha,
 /*********************************************************/
 
 static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
-		     INT4 *yyminP, INT4 *yymaxP, INT4 *noInP){
+		     INT4 *yyminP, INT4 *yymaxP, INT4 *noInP,
+		     HOUGHPatchGrid  *patch){
   
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL8 yupper;
  
-  if(xc < LUTxMin) return;  /* non optimized */
+  if(xc < patch->xMin) return;  /* non optimized */
   
   /*********************************************************/
   noIn = 0;
@@ -1923,37 +1905,37 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /* Reduction of the interval to look at */
   /*********************************************************/
 
-  ylower = MAX( LUTyMin, yc-radius);
-  yupper = MIN( LUTyMax, yc+radius);
+  ylower = MAX( patch->yMin, yc-radius);
+  yupper = MIN( patch->yMax, yc+radius);
 
  /* convert  to the values of the 'near' y-pixel */  
-  yymax  = floor(yupper/DIFFY+LUTySide/2.-0.5);
+  yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
   
   
 
-  yymin  = ceil(ylower/DIFFY+LUTySide/2.-0.5);
+  yymin  = ceil(ylower/patch->deltaY+patch->ySide/2.-0.5);
   
 
   /*********************************************************/
   /* looking at the upper-left quadrant */
   /*********************************************************/
 
-  if( yc < LUTyMax ){
+  if( yc < patch->yMax ){
     REAL8 x1,y1;
     
     /* setting the yymax value */
     /* in case of no over-flow problems !!! */
     x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));
 
-    if( (x1 >= LUTxMin) && (x1 <= LUTxMax) ){
+    if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn1= 1; /* does intersect and yymax is the value to return! */
     }
     else{
-      if( x1 > LUTxMax ){
-	y1 = yc + sqrt( radius*radius -(LUTxMax-xc)*(LUTxMax-xc));
-	if( y1>=LUTyMin ){
+      if( x1 > patch->xMax ){
+	y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+	if( y1>=patch->yMin ){
 	  noIn1 = 1;
-	  yymax = floor(y1/DIFFY+LUTySide/2.-0.5);
+	  yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);
 	}
       }
     }
@@ -1962,20 +1944,20 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /* looking at the lower-left quadrant */
   /*********************************************************/
 
-  if( yc > LUTyMin ){
+  if( yc > patch->yMin ){
     REAL8 x1,y1;
 
     /*setting the yymin value */
     x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));
-    if( (x1 >= LUTxMin) && (x1 <= LUTxMax) ){
+    if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn2 = 1; /* does intersect and yymin is the value to return! */
     }
     else{
-      if( x1 > LUTxMax ){
-	y1 = yc - sqrt( radius*radius -(LUTxMax-xc)*(LUTxMax-xc));
-	if( y1<=LUTyMax ){
+      if( x1 > patch->xMax ){
+	y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+	if( y1<=patch->yMax ){
 	  noIn2 = 1;
-	  yymin = ceil(y1/DIFFY+LUTySide/2.-0.5);
+	  yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);
 	}
       }
     }
@@ -1990,10 +1972,10 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     
     noIn = 1;
     x1 = xc - sqrt( radius*radius -(yc-ylower)*(yc-ylower));
-    if( x1 < LUTxMin ){    
+    if( x1 < patch->xMin ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc + sqrt( radius*radius -(LUTxMin-xc)*(LUTxMin-xc));
-      yymin = ceil( y1/DIFFY+LUTySide/2.-0.5 );
+      y1 = yc + sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+      yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 );
     }
   }
 
@@ -2005,10 +1987,10 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
  
    noIn = 1;
     x1 = xc - sqrt( radius*radius -(yupper-yc)*(yupper-yc));
-    if( x1 < LUTxMin ){    
+    if( x1 < patch->xMin ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc - sqrt( radius*radius -(LUTxMin-xc)*(LUTxMin-xc));
-      yymax = floor( y1/DIFFY+LUTySide/2.-0.5 );
+      y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+      yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 );
     }
   }
 
@@ -2040,14 +2022,15 @@ return;
 
 
 static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
-		     INT4 *yyminP, INT4 *yymaxP, INT4 *noInP){
+		     INT4 *yyminP, INT4 *yymaxP, INT4 *noInP,
+		     HOUGHPatchGrid  *patch){
 
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL8 yupper;
  
-  if( xc > LUTxMax ) return;  /* non optimized */
+  if( xc > patch->xMax ) return;  /* non optimized */
 
  /*********************************************************/
   noIn = 0;
@@ -2057,35 +2040,35 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /*********************************************************/
   /* Reduction of the interval to look at */
   /*********************************************************/
-  ylower = MAX( LUTyMin, yc-radius);
-  yupper = MIN( LUTyMax, yc+radius);
+  ylower = MAX( patch->yMin, yc-radius);
+  yupper = MIN( patch->yMax, yc+radius);
 
   /* convert to the value of the 'near' y-pixel */ 
-  yymax  = floor(yupper/DIFFY+LUTySide/2.-0.5);
+  yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
  
   
-  yymin  = ceil(ylower/DIFFY+LUTySide/2.-0.5);
+  yymin  = ceil(ylower/patch->deltaY+patch->ySide/2.-0.5);
   
   
   /*********************************************************/
   /* looking at the upper-right quadrant */
   /*********************************************************/
   
-  if( yc < LUTyMax ){
+  if( yc < patch->yMax ){
     REAL8 x1,y1;
 
     /* in case of no over-flow problems !!! */
     x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc));
 
-    if( (x1 >= LUTxMin) && (x1 <= LUTxMax) ){
+    if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn1 = 1; /* does intersect and yymax is the value to return! */
     }
     else{
-      if( x1 < LUTxMin ){
-	y1 = yc + sqrt(radius*radius -(LUTxMin-xc)*(LUTxMin-xc));
-	if( y1>=LUTyMin ){
+      if( x1 < patch->xMin ){
+	y1 = yc + sqrt(radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+	if( y1>=patch->yMin ){
 	  noIn1  = 1;
-	  yymax = floor(y1/DIFFY+LUTySide/2.-0.5);
+	  yymax = floor(y1/patch->deltaY+patch->ySide/2.-0.5);
 	}
       }
     }
@@ -2095,19 +2078,19 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     /* looking at the lower-right quadrant */
  /*********************************************************/
 
-  if( yc > LUTyMin ){
+  if( yc > patch->yMin ){
     REAL8 x1,y1;
 
     x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));
-    if( (x1 >= LUTxMin) && (x1 <= LUTxMax) ){
+    if( (x1 >= patch->xMin) && (x1 <= patch->xMax) ){
       noIn2 = 1; /* does intersect and yymin is the value to return! */
     }
     else{
-      if( x1 < LUTxMin ){
-	y1 = yc - sqrt( radius*radius -(LUTxMin-xc)*(LUTxMin-xc));
-	if( y1<=LUTyMax ){
+      if( x1 < patch->xMin ){
+	y1 = yc - sqrt( radius*radius -(patch->xMin-xc)*(patch->xMin-xc));
+	if( y1<=patch->yMax ){
 	  noIn2  = 1;
-	  yymin = ceil(y1/DIFFY+LUTySide/2.-0.5);
+	  yymin = ceil(y1/patch->deltaY+patch->ySide/2.-0.5);
 	}
       }
     }
@@ -2122,10 +2105,10 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
     
     noIn = 1;
     x1 = xc + sqrt( radius*radius -(yc-ylower)*(yc-ylower));
-    if( x1 > LUTxMax ){    
+    if( x1 > patch->xMax ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc + sqrt( radius*radius -(LUTxMax-xc)*(LUTxMax-xc));
-      yymin = ceil( y1/DIFFY+LUTySide/2.-0.5 );
+      y1 = yc + sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+      yymin = ceil( y1/patch->deltaY+patch->ySide/2.-0.5 );
     }
   }
 
@@ -2137,10 +2120,10 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
  
    noIn = 1;
     x1 = xc + sqrt( radius*radius -(yupper-yc)*(yupper-yc));
-    if( x1 > LUTxMax ){    
+    if( x1 > patch->xMax ){    
       /* the value yymin, needs to be set correctly */
-      y1 = yc - sqrt( radius*radius -(LUTxMax-xc)*(LUTxMax-xc));
-      yymax = floor( y1/DIFFY+LUTySide/2.-0.5 );
+      y1 = yc - sqrt( radius*radius -(patch->xMax-xc)*(patch->xMax-xc));
+      yymax = floor( y1/patch->deltaY+patch->ySide/2.-0.5 );
     }
   }
 
@@ -2184,14 +2167,15 @@ return;
 /****************************************************************/
 
 static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius, 
-		   INT4 yymin, INT4 yymax, COORType *column){
+		   INT4 yymin, INT4 yymax, COORType *column,
+		   HOUGHPatchGrid  *patch){
   INT4 jj;
 
   for(jj=yymin; jj<=yymax; ++jj){
     REAL8   realx;
     INT4    index;
-    realx = xc - sqrt( radius*radius - (yc-Ycoor[jj])*( yc-Ycoor[jj]) );
-    index = ceil(realx*INVDIFFX+LUTxSide/2. -0.5);
+    realx = xc - sqrt( radius*radius - (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) );
+    index = ceil(realx/patch->deltaX+patch->xSide/2. -0.5);
     if( index<0 ) index=0;
     column[jj] = index;
   }
@@ -2206,15 +2190,16 @@ static void DrawLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 /****************************************************************/
 
 static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
-		    INT4 yymin, INT4 yymax, COORType *column){
+		    INT4 yymin, INT4 yymax, COORType *column,
+		    HOUGHPatchGrid  *patch){
   INT4 jj;
 
   for(jj=yymin; jj<=yymax; ++jj){
     REAL8  realx;
     INT4   index;
-    realx = xc + sqrt( radius*radius - (yc-Ycoor[jj])*( yc-Ycoor[jj]) );
-    index = ceil(realx*INVDIFFX+LUTxSide/2. -0.5);
-    if( index > LUTxSide-1 ) index=LUTxSide;
+    realx = xc + sqrt( radius*radius - (yc-patch->yCoor[jj])*( yc-patch->yCoor[jj]) );
+    index = ceil(realx/patch->deltaX+patch->xSide/2. -0.5);
+    if( index > patch->xSide-1 ) index=patch->xSide;
     column[jj] = index;
   }
 
@@ -2241,7 +2226,8 @@ static void DrawRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
 /* Normal case: for circles and lines. NOT the pathological one */
 /****************************************************************/
 
-static void Fill1Column(INT4 currentBin, INT4 *lastBorderP){
+static void Fill1Column(INT4 currentBin, INT4 *lastBorderP, 
+                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
 
   INT4 lb1,rb1,lb2,rb2; /* The border index. If zero means that */
         /* it does not intersect the patch, or nothing to clip */
@@ -2249,20 +2235,20 @@ static void Fill1Column(INT4 currentBin, INT4 *lastBorderP){
 
   lastBorder = *lastBorderP;
 
-  lb1 = LookUpTable->bin[currentBin].leftB1;
-  rb1 = LookUpTable->bin[currentBin].rightB1;
-  lb2 = LookUpTable->bin[currentBin].leftB2;
-  rb2 = LookUpTable->bin[currentBin].rightB2;
+  lb1 = lut->bin[currentBin].leftB1;
+  rb1 = lut->bin[currentBin].rightB1;
+  lb2 = lut->bin[currentBin].leftB2;
+  rb2 = lut->bin[currentBin].rightB2;
 
   /************************************************************/
   /* we want to set the values                                */
-  /*              LookUpTable->bin[currentBin].piece*          */
+  /*              lut->bin[currentBin].piece*          */
   /* and if needed  set:                                      */
   /*      ++lastBorder;                                       */
-  /*      LookUpTable->bin[currentBin].rightB1 = lastBorder;   */
-  /*      LookUpTable->border[lastBorder].yUpper               */
-  /*      LookUpTable->border[lastBorder].yLower               */
-  /*      LookUpTable->border[lastBorder].xPixel[***] = 0;     */
+  /*      lut->bin[currentBin].rightB1 = lastBorder;   */
+  /*      lut->border[lastBorder].yUpper               */
+  /*      lut->border[lastBorder].yLower               */
+  /*      lut->border[lastBorder].xPixel[***] = 0;     */
   /************************************************************/
 
 
@@ -2270,48 +2256,48 @@ static void Fill1Column(INT4 currentBin, INT4 *lastBorderP){
   /* could be improved using nested if's */
 
   if( lb1 && rb1 ){
-    FillCaseN1(lb1,rb1,currentBin);
+    FillCaseN1(lb1,rb1,currentBin, lut, patch);
     return;
   }
 
   if(lb1 && !(rb1) && !(lb2) ){
-    FillCaseN2(lb1, currentBin);
+    FillCaseN2(lb1, currentBin, lut, patch);
     return;
   }
 
   if(lb1 && !(rb1) && lb2 ){
-    FillCaseN3(lb1,lb2, currentBin, &lastBorder);
+    FillCaseN3(lb1,lb2, currentBin, &lastBorder, lut, patch);
     *lastBorderP = lastBorder;
     return;
   }
 
   if(!(lb1) && rb1 && !(rb2) ){
-    FillCaseN4(rb1, currentBin);
+    FillCaseN4(rb1, currentBin, lut, patch);
     return;
   }
 
   if(!(lb1) && rb1 && rb2){
-    FillCaseN5(rb1,rb2, currentBin);
+    FillCaseN5(rb1,rb2, currentBin, lut);
     return;
   }
 
   if(!(lb1) && !(rb1) && lb2 && rb2){
-    FillCaseN6(lb2,rb2, currentBin);
+    FillCaseN6(lb2,rb2, currentBin, lut, patch);
     return;
   }
 
   if(!(lb1) && !(rb1) && lb2 && !(rb2)){
-    FillCaseN7(lb2, currentBin);
+    FillCaseN7(lb2, currentBin, lut, patch);
     return;
   }
 
   if(!(lb1) && !(rb1) && !(lb2) && rb2){
-    FillCaseN8(rb2, currentBin);
+    FillCaseN8(rb2, currentBin, lut, patch);
     return;
   }
 
   if(!(currentBin) &&!(lb1) && !(rb1) && !(lb2) && !(rb2)){
-    LookUpTable->bin[0].piece1max = LUTySide-1;
+    lut->bin[0].piece1max = patch->ySide-1;
     return;
   }
 
@@ -2323,39 +2309,40 @@ static void Fill1Column(INT4 currentBin, INT4 *lastBorderP){
 /***************************************************************/
 /* case: ( lb1 && rb1 )  */
 /***************************************************************/
-static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin){
+static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin,
+                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb1UpY,lb1LoY;
   INT4 rb1UpY,rb1LoY;
   INT4 yCl,yCr;
 
-  lb1UpY = LookUpTable->border[lb1].yUpper;
-  lb1LoY = LookUpTable->border[lb1].yLower;
+  lb1UpY = lut->border[lb1].yUpper;
+  lb1LoY = lut->border[lb1].yLower;
 
-  if( (lb1UpY == LUTySide-1) && (lb1LoY == 0) ) return;
+  if( (lb1UpY == patch->ySide-1) && (lb1LoY == 0) ) return;
 
-  rb1UpY = LookUpTable->border[rb1].yUpper;
-  rb1LoY = LookUpTable->border[rb1].yLower;
+  rb1UpY = lut->border[rb1].yUpper;
+  rb1LoY = lut->border[rb1].yLower;
  
-  yCl = LookUpTable->border[lb1].yCenter;
-  yCr = LookUpTable->border[rb1].yCenter;
+  yCl = lut->border[lb1].yCenter;
+  yCr = lut->border[rb1].yCenter;
 
   if( lb1LoY > yCl ){
-    LookUpTable->bin[currentBin].piece1max = lb1LoY-1;
+    lut->bin[currentBin].piece1max = lb1LoY-1;
     if( rb1LoY > yCr ){
-      LookUpTable->bin[currentBin].piece1min = rb1LoY;
+      lut->bin[currentBin].piece1min = rb1LoY;
     }
     /*     else{  */   /* already initialized */
-    /*       LookUpTable->bin[currentBin].piece1min = 0; } */
+    /*       lut->bin[currentBin].piece1min = 0; } */
     return;
   }
 
   if( lb1UpY < yCl ){
-    LookUpTable->bin[currentBin].piece1min = lb1UpY+1;
+    lut->bin[currentBin].piece1min = lb1UpY+1;
     if( rb1UpY < yCr ){
-      LookUpTable->bin[currentBin].piece1max = rb1UpY;
+      lut->bin[currentBin].piece1max = rb1UpY;
     }
     else{ 
-      LookUpTable->bin[currentBin].piece1max = LUTySide-1;
+      lut->bin[currentBin].piece1max = patch->ySide-1;
     }
    }
 
@@ -2365,23 +2352,24 @@ static void FillCaseN1(INT4 lb1, INT4 rb1, INT4 currentBin){
 /***************************************************************/
 /* case: (lb1 && !(rb1) && !(lb2) ) */
 /***************************************************************/
-static void FillCaseN2(INT4 lb1, INT4 currentBin){
+static void FillCaseN2(INT4 lb1, INT4 currentBin, 
+                     HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb1UpY,lb1LoY;
   INT4 yCl;
 
-  lb1UpY = LookUpTable->border[lb1].yUpper;
-  lb1LoY = LookUpTable->border[lb1].yLower;
-  yCl = LookUpTable->border[lb1].yCenter;
+  lb1UpY = lut->border[lb1].yUpper;
+  lb1LoY = lut->border[lb1].yLower;
+  yCl = lut->border[lb1].yCenter;
 
   if( lb1LoY > yCl ){
-      LookUpTable->bin[currentBin].piece1max = lb1LoY-1;
-      /*  LookUpTable->bin[currentBin].piece1min = 0; */
+      lut->bin[currentBin].piece1max = lb1LoY-1;
+      /*  lut->bin[currentBin].piece1min = 0; */
       return;
   }
 
   if( lb1UpY < yCl ){
-      LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-      LookUpTable->bin[currentBin].piece1min = lb1UpY+1;
+      lut->bin[currentBin].piece1max = patch->ySide-1;
+      lut->bin[currentBin].piece1min = lb1UpY+1;
   }
   return;
 }
@@ -2389,7 +2377,8 @@ static void FillCaseN2(INT4 lb1, INT4 currentBin){
 /***************************************************************/
 /* case: (lb1 && !(rb1) && lb2 ) */
 /***************************************************************/
-static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP){
+static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP,
+                     HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lastBorder;
   INT4 lb1UpY,lb1LoY;
   INT4 lb2UpY,lb2LoY;
@@ -2397,35 +2386,35 @@ static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP){
   INT4 k;
 
   lastBorder = *lastBorderP;
-  lb1UpY = LookUpTable->border[lb1].yUpper;
-  lb1LoY = LookUpTable->border[lb1].yLower;
-  yCl = LookUpTable->border[lb1].yCenter;
-  lb2UpY = LookUpTable->border[lb2].yUpper;
-  lb2LoY = LookUpTable->border[lb2].yLower;
+  lb1UpY = lut->border[lb1].yUpper;
+  lb1LoY = lut->border[lb1].yLower;
+  yCl = lut->border[lb1].yCenter;
+  lb2UpY = lut->border[lb2].yUpper;
+  lb2LoY = lut->border[lb2].yLower;
 
   if( lb1LoY > yCl ){
-    LookUpTable->bin[currentBin].piece1max = lb1LoY-1;
-    LookUpTable->bin[currentBin].piece1min = lb2UpY+1;
-    LookUpTable->bin[currentBin].piece2max = lb2LoY-1;
-    /*  LookUpTable->bin[currentBin].piece2min = 0; */
+    lut->bin[currentBin].piece1max = lb1LoY-1;
+    lut->bin[currentBin].piece1min = lb2UpY+1;
+    lut->bin[currentBin].piece2max = lb2LoY-1;
+    /*  lut->bin[currentBin].piece2min = 0; */
     return;
   } 
 
   if( lb1UpY < yCl ){
-    LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-    LookUpTable->bin[currentBin].piece1min = lb2UpY+1;
-    LookUpTable->bin[currentBin].piece2max = lb2LoY-1;
-    LookUpTable->bin[currentBin].piece2min = lb1UpY+1; 
+    lut->bin[currentBin].piece1max = patch->ySide-1;
+    lut->bin[currentBin].piece1min = lb2UpY+1;
+    lut->bin[currentBin].piece2max = lb2LoY-1;
+    lut->bin[currentBin].piece2min = lb1UpY+1; 
     return;
   }
   
   /* adding a ficticious border rb1 to correct the lb1 effects */
   ++lastBorder;                                      
-  LookUpTable->bin[currentBin].rightB1 = lastBorder;  
-  LookUpTable->border[lastBorder].yUpper = lb2UpY;              
-  LookUpTable->border[lastBorder].yLower = lb2LoY;  
+  lut->bin[currentBin].rightB1 = lastBorder;  
+  lut->border[lastBorder].yUpper = lb2UpY;              
+  lut->border[lastBorder].yLower = lb2LoY;  
   for( k=lb2LoY; k<=lb2UpY;++k){          
-    LookUpTable->border[lastBorder].xPixel[k] = 0;    
+    lut->border[lastBorder].xPixel[k] = 0;    
   }
   *lastBorderP = lastBorder;
 
@@ -2435,28 +2424,29 @@ static void FillCaseN3(INT4 lb1, INT4 lb2, INT4 currentBin, INT4 *lastBorderP){
 /***************************************************************/
 /* case: (!(lb1) && rb1 && !(rb2) ) */
 /***************************************************************/
-static void FillCaseN4(INT4 rb1, INT4 currentBin){
+static void FillCaseN4(INT4 rb1, INT4 currentBin, 
+                     HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 rb1UpY,rb1LoY;
   INT4 yCr;
   
-  rb1UpY = LookUpTable->border[rb1].yUpper;
-  rb1LoY = LookUpTable->border[rb1].yLower;
-  yCr = LookUpTable->border[rb1].yCenter;
+  rb1UpY = lut->border[rb1].yUpper;
+  rb1LoY = lut->border[rb1].yLower;
+  yCr = lut->border[rb1].yCenter;
   
   if( rb1UpY < yCr ){
-    LookUpTable->bin[currentBin].piece1max = rb1UpY;
-    /*  LookUpTable->bin[currentBin].piece1min = 0; */
+    lut->bin[currentBin].piece1max = rb1UpY;
+    /*  lut->bin[currentBin].piece1min = 0; */
     return;
   }
   
   if( rb1LoY > yCr ){
-    LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-    LookUpTable->bin[currentBin].piece1min = rb1LoY;
+    lut->bin[currentBin].piece1max = patch->ySide-1;
+    lut->bin[currentBin].piece1min = rb1LoY;
     return;
   } 
 
-  LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-  /*  LookUpTable->bin[currentBin].piece1min = 0; */
+  lut->bin[currentBin].piece1max = patch->ySide-1;
+  /*  lut->bin[currentBin].piece1min = 0; */
 
   return;
 }
@@ -2464,31 +2454,32 @@ static void FillCaseN4(INT4 rb1, INT4 currentBin){
 /***************************************************************/
 /* case: (!(lb1) && rb1 && rb2 ) */
 /***************************************************************/
-static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin){
+static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin, 
+                     HOUGHptfLUT *lut){
   INT4 rb1UpY,rb1LoY;
   INT4 rb2UpY,rb2LoY;
   INT4 yCr;
   
-  rb1UpY = LookUpTable->border[rb1].yUpper;
-  rb1LoY = LookUpTable->border[rb1].yLower;
-  yCr = LookUpTable->border[rb1].yCenter;
-  rb2UpY = LookUpTable->border[rb2].yUpper;
-  rb2LoY = LookUpTable->border[rb2].yLower;
+  rb1UpY = lut->border[rb1].yUpper;
+  rb1LoY = lut->border[rb1].yLower;
+  yCr = lut->border[rb1].yCenter;
+  rb2UpY = lut->border[rb2].yUpper;
+  rb2LoY = lut->border[rb2].yLower;
 
   if( rb1UpY < yCr ){
-    LookUpTable->bin[currentBin].piece1max = rb1UpY;
-    LookUpTable->bin[currentBin].piece1min = rb2LoY; 
+    lut->bin[currentBin].piece1max = rb1UpY;
+    lut->bin[currentBin].piece1min = rb2LoY; 
     return;
   }
   
   if( rb1LoY > yCr ){
-    LookUpTable->bin[currentBin].piece1max = rb2UpY;
-    LookUpTable->bin[currentBin].piece1min = rb1LoY;
+    lut->bin[currentBin].piece1max = rb2UpY;
+    lut->bin[currentBin].piece1min = rb1LoY;
     return;
   } 
 
-  LookUpTable->bin[currentBin].piece1max = rb2UpY;
-  LookUpTable->bin[currentBin].piece1min = rb2LoY;
+  lut->bin[currentBin].piece1max = rb2UpY;
+  lut->bin[currentBin].piece1min = rb2LoY;
 
   return;
 }
@@ -2497,38 +2488,39 @@ static void  FillCaseN5(INT4 rb1, INT4 rb2, INT4 currentBin){
 /***************************************************************/
 /* case: (!(lb1) && !(rb1) && lb2 && rb2) */
 /***************************************************************/
-static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin){
+static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin, 
+                     HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb2UpY,lb2LoY;
   INT4 rb2UpY,rb2LoY;
   INT4 yCl,yCr;
 
-  lb2UpY = LookUpTable->border[lb2].yUpper;
-  lb2LoY = LookUpTable->border[lb2].yLower;
+  lb2UpY = lut->border[lb2].yUpper;
+  lb2LoY = lut->border[lb2].yLower;
 
-  if( (lb2UpY == LUTySide-1) && (lb2LoY == 0) ) return;
+  if( (lb2UpY == patch->ySide-1) && (lb2LoY == 0) ) return;
 
-  rb2UpY = LookUpTable->border[rb2].yUpper;
-  rb2LoY = LookUpTable->border[rb2].yLower;
-  yCl = LookUpTable->border[lb2].yCenter;
-  yCr = LookUpTable->border[rb2].yCenter;
+  rb2UpY = lut->border[rb2].yUpper;
+  rb2LoY = lut->border[rb2].yLower;
+  yCl = lut->border[lb2].yCenter;
+  yCr = lut->border[rb2].yCenter;
 
   if( lb2UpY >= yCl ){
-    LookUpTable->bin[currentBin].piece1min = lb2UpY+1;
+    lut->bin[currentBin].piece1min = lb2UpY+1;
     if( rb2UpY >= yCr ){
-      LookUpTable->bin[currentBin].piece1max = rb2UpY;
+      lut->bin[currentBin].piece1max = rb2UpY;
     }
     else{
-      LookUpTable->bin[currentBin].piece1max = LUTySide-1;
+      lut->bin[currentBin].piece1max = patch->ySide-1;
     }
   }
 
   if( lb2LoY <= yCl ){
-    LookUpTable->bin[currentBin].piece2max = lb2LoY-1;
+    lut->bin[currentBin].piece2max = lb2LoY-1;
     if( rb2LoY <= yCr){
-      LookUpTable->bin[currentBin].piece2min = rb2LoY;
+      lut->bin[currentBin].piece2min = rb2LoY;
     }
     /*   else{ */
-    /*    LookUpTable->bin[currentBin].piece2min = 0; } */
+    /*    lut->bin[currentBin].piece2min = 0; } */
   }
   
   return;
@@ -2537,22 +2529,23 @@ static void  FillCaseN6(INT4 lb2, INT4 rb2, INT4 currentBin){
 /***************************************************************/
 /* case:  (!(lb1) && !(rb1) && lb2 && !(rb2)) */
 /***************************************************************/
-static void FillCaseN7(INT4 lb2, INT4 currentBin){
+static void FillCaseN7(INT4 lb2, INT4 currentBin, 
+            HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 lb2UpY,lb2LoY;
   INT4 yCl;
 
-  lb2UpY = LookUpTable->border[lb2].yUpper;
-  lb2LoY = LookUpTable->border[lb2].yLower;
-  yCl = LookUpTable->border[lb2].yCenter;
+  lb2UpY = lut->border[lb2].yUpper;
+  lb2LoY = lut->border[lb2].yLower;
+  yCl = lut->border[lb2].yCenter;
 
   if( lb2UpY >= yCl ){
-    LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-    LookUpTable->bin[currentBin].piece1min = lb2UpY+1;
+    lut->bin[currentBin].piece1max = patch->ySide-1;
+    lut->bin[currentBin].piece1min = lb2UpY+1;
   }
 
   if( lb2LoY <= yCl ){
-    LookUpTable->bin[currentBin].piece2max = lb2LoY-1;
-    /* LookUpTable->bin[currentBin].piece2min = 0; */
+    lut->bin[currentBin].piece2max = lb2LoY-1;
+    /* lut->bin[currentBin].piece2min = 0; */
   }
 
   return;
@@ -2561,23 +2554,24 @@ static void FillCaseN7(INT4 lb2, INT4 currentBin){
 /***************************************************************/
 /* case:  (!(lb1) && !(rb1) && !(lb2) && rb2) */
 /***************************************************************/
-static void  FillCaseN8(INT4 rb2, INT4 currentBin){
+static void  FillCaseN8(INT4 rb2, INT4 currentBin, 
+                      HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
   INT4 rb2UpY,rb2LoY;
   INT4 yCr;
 
-  rb2UpY = LookUpTable->border[rb2].yUpper;
-  rb2LoY = LookUpTable->border[rb2].yLower;
-  yCr = LookUpTable->border[rb2].yCenter;
+  rb2UpY = lut->border[rb2].yUpper;
+  rb2LoY = lut->border[rb2].yLower;
+  yCr = lut->border[rb2].yCenter;
 
-  LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-  /* LookUpTable->bin[currentBin].piece1min = 0; */
+  lut->bin[currentBin].piece1max = patch->ySide-1;
+  /* lut->bin[currentBin].piece1min = 0; */
 
   if( rb2UpY >= yCr){
-    LookUpTable->bin[currentBin].piece1max = rb2UpY;
+    lut->bin[currentBin].piece1max = rb2UpY;
   }
 
   if( rb2LoY <= yCr){
-    LookUpTable->bin[currentBin].piece1min = rb2LoY;
+    lut->bin[currentBin].piece1min = rb2LoY;
   }
 
   return;
@@ -2605,7 +2599,8 @@ static void  FillCaseN8(INT4 rb2, INT4 currentBin){
 /* Anormal case: for circles and lines. The pathological case */
 /****************************************************************/
 
-static void Fill1ColumnAnor(INT4 currentBin){
+static void Fill1ColumnAnor(INT4 currentBin, HOUGHptfLUT *lut,
+                          HOUGHPatchGrid  *patch){
 
   /* It will be similar to the non-pathological case.
      Note that here  the circles have very large radius.
@@ -2621,14 +2616,14 @@ static void Fill1ColumnAnor(INT4 currentBin){
       just to avoid border having the same name */
 
 
-  lb1 = LookUpTable->bin[currentBin].leftB1;
-  rb1 = LookUpTable->bin[currentBin].rightB1;
-  lb2 = LookUpTable->bin[currentBin].leftB2;
-  rb2 = LookUpTable->bin[currentBin].rightB2;
+  lb1 = lut->bin[currentBin].leftB1;
+  rb1 = lut->bin[currentBin].rightB1;
+  lb2 = lut->bin[currentBin].leftB2;
+  rb2 = lut->bin[currentBin].rightB2;
 
   /************************************************************/
   /* we want to set the values                                */
-  /*              LookUpTable->bin[currentBin].piece*          */
+  /*              lut->bin[currentBin].piece*          */
   /************************************************************/
 
 
@@ -2636,48 +2631,48 @@ static void Fill1ColumnAnor(INT4 currentBin){
   /* call the proper case to correct the border effect */
  
  if( rb1 && !(rb2) && !(lb1) ){
-    FillCaseN4(rb1,currentBin);
+    FillCaseN4(rb1,currentBin, lut, patch);
     return;
   }
 
  if( !(rb1)&& lb2 && !(rb2) && !(lb1) ){
-    FillCaseN7(lb2,currentBin);
+    FillCaseN7(lb2,currentBin, lut, patch);
     return;
   }
  
  if( !(rb1)&& !(lb2) && rb2 ){
-    FillCaseN4(rb2,currentBin);
+    FillCaseN4(rb2,currentBin, lut, patch);
     return;
   }
 
  if( !(rb1)&& !(lb2) && !(rb2) && lb1 ){
-    FillCaseN7(lb1,currentBin);
+    FillCaseN7(lb1,currentBin, lut, patch);
     return;
   }
  /************************************************************/
    
  if( rb1 && rb2 ){
-    FillCaseA1(rb1,rb2,currentBin);
+    FillCaseA1(rb1,rb2,currentBin, lut);
     return;
   }
 
  if( !(rb1)&& lb2 && !(rb2) && lb1 ){
-    FillCaseA2(lb1,lb2,currentBin);
+    FillCaseA2(lb1,lb2,currentBin, lut);
     return;
   }
  
   if( !(rb2) && lb1 && rb1 ){
-    FillCaseA3(lb1,rb1,currentBin);
+    FillCaseA3(lb1,rb1,currentBin, lut, patch);
     return;
   }
 
   if( !(rb1)&& lb2 && rb2 ){
-    FillCaseA3(lb2,rb2,currentBin);
+    FillCaseA3(lb2,rb2,currentBin, lut, patch);
     return;
   }
   
   if(!(currentBin) && !(lb1) && !(rb1) && !(lb2) && !(rb2)){
-    LookUpTable->bin[0].piece1max = LUTySide-1;
+    lut->bin[0].piece1max = patch->ySide-1;
     return;
   }
   
@@ -2687,27 +2682,28 @@ static void Fill1ColumnAnor(INT4 currentBin){
 /***************************************************************/
 /* case: ( rb1 && rb2 )  */
 /***************************************************************/
-static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin){
+static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin, 
+                     HOUGHptfLUT *lut){
   INT4 rb1UpY,rb1LoY;
   INT4 rb2UpY,rb2LoY;
   INT4 yCr1;
 
-  rb1UpY = LookUpTable->border[rb1].yUpper;
-  rb1LoY = LookUpTable->border[rb1].yLower;
-  yCr1 = LookUpTable->border[rb1].yCenter;
+  rb1UpY = lut->border[rb1].yUpper;
+  rb1LoY = lut->border[rb1].yLower;
+  yCr1 = lut->border[rb1].yCenter;
 
-  rb2UpY = LookUpTable->border[rb2].yUpper;
-  rb2LoY = LookUpTable->border[rb2].yLower;
+  rb2UpY = lut->border[rb2].yUpper;
+  rb2LoY = lut->border[rb2].yLower;
 
   /* since the circles are big, number of case are simplifyed */
   /* more cases will appear in a general case with small radius */
 
   if( yCr1 < rb1UpY ){
-    LookUpTable->bin[currentBin].piece1max = rb2UpY;
-    LookUpTable->bin[currentBin].piece1min = rb1LoY;
+    lut->bin[currentBin].piece1max = rb2UpY;
+    lut->bin[currentBin].piece1min = rb1LoY;
   } else {
-    LookUpTable->bin[currentBin].piece1max = rb1UpY;
-    LookUpTable->bin[currentBin].piece1min = rb2LoY;
+    lut->bin[currentBin].piece1max = rb1UpY;
+    lut->bin[currentBin].piece1min = rb2LoY;
   }
   
   return;
@@ -2716,27 +2712,28 @@ static void FillCaseA1(INT4 rb1, INT4 rb2, INT4 currentBin){
 /***************************************************************/
 /* case: ( !(rb1)&& lb2 && !(rb2) && lb1 )  */
 /***************************************************************/
-static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin){
+static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin, 
+                     HOUGHptfLUT *lut){
   INT4 lb1UpY,lb1LoY;
   INT4 lb2UpY,lb2LoY;
   INT4 yCl1;
 
-  lb1UpY = LookUpTable->border[lb1].yUpper;
-  lb1LoY = LookUpTable->border[lb1].yLower;
-  yCl1 = LookUpTable->border[lb1].yCenter;
+  lb1UpY = lut->border[lb1].yUpper;
+  lb1LoY = lut->border[lb1].yLower;
+  yCl1 = lut->border[lb1].yCenter;
 
-  lb2UpY = LookUpTable->border[lb2].yUpper;
-  lb2LoY = LookUpTable->border[lb2].yLower;
+  lb2UpY = lut->border[lb2].yUpper;
+  lb2LoY = lut->border[lb2].yLower;
 
   /* since the circles are big, number of case are simplifyed */
   /* more cases will appear in the general case */
 
   if( yCl1 < lb1UpY ){
-    LookUpTable->bin[currentBin].piece1max = lb2LoY-1;
-    LookUpTable->bin[currentBin].piece1min = lb1UpY+1;
+    lut->bin[currentBin].piece1max = lb2LoY-1;
+    lut->bin[currentBin].piece1min = lb1UpY+1;
   } else {
-    LookUpTable->bin[currentBin].piece1max = lb1LoY-1;
-    LookUpTable->bin[currentBin].piece1min = lb2UpY+1;
+    lut->bin[currentBin].piece1max = lb1LoY-1;
+    lut->bin[currentBin].piece1min = lb2UpY+1;
   }
 
   return;
@@ -2745,43 +2742,44 @@ static void FillCaseA2(INT4 lb1, INT4 lb2, INT4 currentBin){
 /***************************************************************/
 /* case: ( !(rb2) && lb1 && rb1 ) or  ( !(rb1)&& lb2 && rb2 ) */
 /***************************************************************/
-static void FillCaseA3(INT4 lb1, INT4 rb1, INT4 currentBin){
+static void FillCaseA3(INT4 lb1, INT4 rb1, INT4 currentBin, 
+                     HOUGHptfLUT *lut, HOUGHPatchGrid  *patch){
 
   /* here we should code all possible cases with no exceptions */
   INT4 rb1UpY,rb1LoY;
   INT4 lb1UpY,lb1LoY;
   INT4 yCr1, yCl1;
 
-  rb1UpY = LookUpTable->border[rb1].yUpper;
-  rb1LoY = LookUpTable->border[rb1].yLower;
-  yCr1 = LookUpTable->border[rb1].yCenter;
+  rb1UpY = lut->border[rb1].yUpper;
+  rb1LoY = lut->border[rb1].yLower;
+  yCr1 = lut->border[rb1].yCenter;
 
-  lb1UpY = LookUpTable->border[lb1].yUpper;
-  lb1LoY = LookUpTable->border[lb1].yLower;
-  yCl1 = LookUpTable->border[lb1].yCenter;
+  lb1UpY = lut->border[lb1].yUpper;
+  lb1LoY = lut->border[lb1].yLower;
+  yCl1 = lut->border[lb1].yCenter;
 
 
-  if( (lb1UpY == LUTySide-1) && (lb1LoY == 0)) return;
+  if( (lb1UpY == patch->ySide-1) && (lb1LoY == 0)) return;
 
   /* provisional settings */
   if( lb1UpY > yCl1 ){
-    LookUpTable->bin[currentBin].piece1max = LUTySide-1;
-    LookUpTable->bin[currentBin].piece1min = lb1UpY+1;
+    lut->bin[currentBin].piece1max = patch->ySide-1;
+    lut->bin[currentBin].piece1min = lb1UpY+1;
   }
 
   if( lb1LoY < yCl1 ){
-    LookUpTable->bin[currentBin].piece2max = lb1LoY-1;
-    /* LookUpTable->bin[currentBin].piece2min = 0; */
+    lut->bin[currentBin].piece2max = lb1LoY-1;
+    /* lut->bin[currentBin].piece2min = 0; */
   }
 
   /* corrections */
   if ( rb1LoY > yCr1 ){
-    LookUpTable->bin[currentBin].piece2min = rb1LoY;
+    lut->bin[currentBin].piece2min = rb1LoY;
     return;
   }
 
   if ( rb1UpY < yCr1 ) {
-    LookUpTable->bin[currentBin].piece1max = rb1UpY;
+    lut->bin[currentBin].piece1max = rb1UpY;
   }
 
   return;
