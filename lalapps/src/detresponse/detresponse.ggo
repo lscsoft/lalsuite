@@ -31,7 +31,13 @@ option "start-time-nanosec"    n   "GPS nanoseconds field of start time of obser
 option "nsample"               u   "number of samples" int no
 option "sampling-interval"     i   "sampling time interval, in seconds" double no
 
-# misc. options
+# option specifying the output format
+#  'am' -> ascii matrix, multiple file (default)
+#  'af' -> ascii flat, multiple file
+#  'al' -> ascii, single file, single line
+#  'b'  -> binary, multiple file
 option "format"                F   "output format" string default="am" no
+
+# misc. options
 option "verbosity"             v   "verbosity level for debugging" int default="0" no
 option "debug"                 e   "debug level" int default="0" no
