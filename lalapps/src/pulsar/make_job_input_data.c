@@ -118,8 +118,6 @@ int main(int argc, char* argv[]) {
       exit(1); 
     }
 
-    /* the magic 16 in the next line follows from the file-naming convention above! */
-    starttimes[fileno]=atoi(filenames[fileno]+strlen(filenames[fileno])-16);
     fileno++;
   };
 
