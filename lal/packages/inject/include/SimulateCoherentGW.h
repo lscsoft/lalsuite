@@ -334,7 +334,8 @@ are:
 \begin{description}
 \item[\texttt{COMPLEX8FrequencySeries *transfer}] The
 frequency-dependent transfer function of the interferometer, in ADC
-counts per unit strain amplitude at any given frequency.
+counts per unit strain amplitude at any given frequency.  If absent,
+the response will be given in raw strain rather than ADC output.
 
 \item[\texttt{LALDetector *site}] A structure storing site and
 polarization information, used to compute the polarization response

@@ -131,9 +131,38 @@ LALUnwrapREAL4Angle()
 
 \subsubsection*{Notes}
 
+The major computational hit in this routine comes from computing the
+sine and cosine of the phase angle in
+Eqs.~\ref{eq:quasiperiodic-hplus} and~\ref{eq:quasiperiodic-hcross} of
+\verb@SimulateCoherentGW.h@.  For better online performance, these can
+be replaced by other (approximate) trig functions.  Presently the code
+uses the native \verb@libm@ functions by default, or the function
+\verb@sincosp()@ in \verb@libsunmath@ \emph{if} this function is
+available \emph{and} the constant \verb@ONLINE@ is defined.
+Differences at the level of 0.01 begin to appear only for phase
+arguments greater than $10^{14}$ or so (corresponding to over 500
+years between phase epoch and observation time for frequencies of
+around 1kHz).
+
+To activate this feature, be sure that \verb@sunmath.h@ and
+\verb@libsunmath@ are on your system, and add \verb@-DONLINE@ to the
+\verb@--with-extra-cppflags@ configuration argument.  In future this
+flag may be used to turn on other efficient trig algorithms on other
+(non-Solaris) platforms.
+
 \vfill{\footnotesize\input{SimulateCoherentGWCV}}
 
 ******************************************************* </lalLaTeX> */
+
+/* Use more efficient trig routines for solaris, if available and
+   requested. */
+#include <config.h>
+#ifdef HAVE_SUNMATH_H
+#include <sunmath.h>
+#if defined HAVE_LIBSUNMATH && defined ONLINE
+#define USE_SINCOSP 1
+#endif
+#endif     
 
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -186,6 +215,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
   SkyPosition source;         /* source sky position */
+  BOOLEAN transfer;  /* 1 if transfer function is specified */
   BOOLEAN fFlag = 0; /* 1 if frequency left detector->transfer range */
   BOOLEAN pFlag = 0; /* 1 if frequency was estimated from phase */
 
@@ -208,9 +238,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL4Vector *aTransfer = NULL;
   REAL4Vector *phiTransfer = NULL;
   REAL4Vector *phiTemp = NULL;
-  REAL4 *aTransData, *phiTransData;
-  REAL8 f0;
-  REAL8 phiFac, fFac;
+  REAL4 *aTransData = NULL, *phiTransData = NULL;
+  REAL8 f0 = 1.0;
+  REAL8 phiFac = 1.0, fFac = 1.0;
 
   /* Heterodyning phase factor LAL_TWOPI*output->f0*output->deltaT,
      and phase offset at the start of the series
@@ -258,12 +288,12 @@ LALSimulateCoherentGW( LALStatus        *stat,
   }
   ASSERT( detector, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
-  ASSERT( detector->transfer, stat,
-	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
-  ASSERT( detector->transfer->data, stat,
-	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
-  ASSERT( detector->transfer->data->data, stat,
-	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  if ( ( transfer = ( detector->transfer != NULL ) ) ) {
+    ASSERT( detector->transfer->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+    ASSERT( detector->transfer->data->data, stat,
+	    SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
+  }
   ASSERT( output, stat,
 	  SIMULATECOHERENTGWH_ENUL, SIMULATECOHERENTGWH_MSGENUL );
   ASSERT( output->data, stat,
@@ -302,11 +332,13 @@ LALSimulateCoherentGW( LALStatus        *stat,
 	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   } else
     shiftDt = 0.0;
-  ASSERT( detector->transfer->deltaF != 0.0, stat,
-	  SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
-  fFac = 1.0 / detector->transfer->deltaF;
-  phiFac = fFac / ( LAL_TWOPI*signal->phi->deltaT );
-  f0 = detector->transfer->f0/detector->transfer->deltaF;
+  if ( transfer ) {
+    ASSERT( detector->transfer->deltaF != 0.0, stat,
+	    SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+    fFac = 1.0 / detector->transfer->deltaF;
+    phiFac = fFac / ( LAL_TWOPI*signal->phi->deltaT );
+    f0 = detector->transfer->f0/detector->transfer->deltaF;
+  }
   heteroFac = LAL_TWOPI*output->f0*output->deltaT;
   phi0 = (REAL8)( output->epoch.gpsSeconds -
 		  detector->heterodyneEpoch.gpsSeconds );
@@ -339,16 +371,19 @@ LALSimulateCoherentGW( LALStatus        *stat,
       ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
 	      SIMULATECOHERENTGWH_MSGEUNIT );
     }
-    pair.unitOne = &(signal->a->sampleUnits);
-    pair.unitTwo = &(detector->transfer->sampleUnits);
-    TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
-			  &pair ), stat );
+    if ( transfer ) {
+      pair.unitOne = &(signal->a->sampleUnits);
+      pair.unitTwo = &(detector->transfer->sampleUnits);
+      TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
+			    &pair ), stat );
+    } else
+      output->sampleUnits = signal->a->sampleUnits;
     LALSnprintf( output->name, LALNameLength, "response to %s",
 		 signal->a->name );
   }
 
   /* Define temporary variables to access the data of signal->a,
-     signal->f, and signal->phi, as well as detector->transfer. */
+     signal->f, and signal->phi. */
   aData = signal->a->data->data;
   phiData = signal->phi->data->data;
   outData = output->data->data;
@@ -582,79 +617,81 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Decompose the transfer function into an amplitude and phase
      response. */
-  nMax = detector->transfer->data->length;
-  LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  LALCVectorAngle( stat->statusPtr, phiTemp,
+  if ( transfer ) {
+    nMax = detector->transfer->data->length;
+    LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    LALCVectorAngle( stat->statusPtr, phiTemp,
+		     detector->transfer->data );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    LALSCreateVector( stat->statusPtr, &phiTransfer, nMax );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
+    LALSCreateVector( stat->statusPtr, &aTransfer, nMax );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    LALCVectorAbs( stat->statusPtr, aTransfer,
 		   detector->transfer->data );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  LALSCreateVector( stat->statusPtr, &phiTransfer, nMax );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-  LALSCreateVector( stat->statusPtr, &aTransfer, nMax );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  LALCVectorAbs( stat->statusPtr, aTransfer,
-		 detector->transfer->data );
-  BEGINFAIL( stat ) {
-    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pPlus->data ) ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr,
-			    &( polResponse.pCross->data ) ), stat );
-    LALFree( polResponse.pPlus );
-    LALFree( polResponse.pCross );
-  } ENDFAIL( stat );
-  phiTransData = phiTransfer->data;
-  aTransData = aTransfer->data;
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pPlus->data ) ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr,
+			      &( polResponse.pCross->data ) ), stat );
+      LALFree( polResponse.pPlus );
+      LALFree( polResponse.pCross );
+    } ENDFAIL( stat );
+    phiTransData = phiTransfer->data;
+    aTransData = aTransfer->data;
+  }
 
   /* Compute offsets for interpolating the signal, delay, and
      response functions. */
@@ -803,7 +840,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Keep track of the frequency range of the transfer function, so
      that we don't try to interpolate it out of its range. */
-  nMax = detector->transfer->data->length - 1;
+  if ( transfer )
+    nMax = detector->transfer->data->length - 1;
 
   /* Start computing responses. */
   for ( ; i <= n; i++ ) {
@@ -817,6 +855,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
     REAL4 shift = 0.0;      /* current signal polarization shift */
     REAL4 aTrans, phiTrans; /* current values of the transfer function */
     REAL4 oPlus, oCross;    /* current output amplitudes */
+#if USE_SINCOSP
+    REAL8 sp, cp, ss, cs;   /* sine and cosine of shift and phase */
+#endif
 
     /* Interpolate the signal amplitude. */
     x = aOff + iCentre*aDt;
@@ -836,41 +877,51 @@ LALSimulateCoherentGW( LALStatus        *stat,
       shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
-    /* Interpolate the signal phase, and find the frequency. */
+    /* Interpolate the signal phase, and apply any heterodyning. */
     x = phiOff + iCentre*phiDt;
     j = (INT4)floor( x );
     frac = (REAL4)( x - j );
     phi = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
-    if ( ( i < fInit ) || ( i > fFinal ) ) {
-      f = ( phiData[j+1] - phiData[j] )*phiFac;
-      pFlag = 1;
-    } else {
-      x = fOff + iCentre*fDt;
-      j = (INT4)floor( x );
-      frac = (REAL4)( x - j );
-      f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
-      f *= fFac;
-    }
+    phi -= heteroFac*i + phi0;
 
-    /* Interpolate the transfer function. */
-    x = f - f0;
-    if ( ( x < 0.0 ) || ( x >= nMax ) ) {
-      aTrans = 0.0;
-      phiTrans = 0.0;
-      fFlag = 1;
-    } else {
-      j = (INT4)floor( x );
-      frac = (REAL4)( x - j );
-      aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
-      phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
+    /* Compute the frequency and apply the transfer function. */
+    if ( transfer ) {
+      if ( ( i < fInit ) || ( i > fFinal ) ) {
+	f = ( phiData[j+1] - phiData[j] )*phiFac;
+	pFlag = 1;
+      } else {
+	x = fOff + iCentre*fDt;
+	j = (INT4)floor( x );
+	frac = (REAL4)( x - j );
+	f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+	f *= fFac;
+      }
+      x = f - f0;
+      if ( ( x < 0.0 ) || ( x >= nMax ) ) {
+	aTrans = 0.0;
+	phiTrans = 0.0;
+	fFlag = 1;
+      } else {
+	j = (INT4)floor( x );
+	frac = (REAL4)( x - j );
+	aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
+	phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
+      }
+      a1 *= aTrans;
+      a2 *= aTrans;
+      phi += phiTrans;
     }
-    a1 *= aTrans;
-    a2 *= aTrans;
-    phi += phiTrans - heteroFac*i - phi0;
 
     /* Compute components of output. */
+#if USE_SINCOSP
+    sincosp( shift, &ss, &cs );
+    sincosp( phi, &sp, &cp );
+    oPlus  = a1*cs*cp - a2*ss*sp;
+    oCross = a1*ss*cp + a2*cs*sp;
+#else
     oPlus = a1*cos( shift )*cos( phi ) - a2*sin( shift )*sin( phi );
     oCross = a1*sin( shift )*cos( phi ) + a2*cos( shift )*sin( phi );
+#endif
 
     /* Interpolate the polarization response, and compute output. */
     x = polOff + i*polDt;
@@ -893,8 +944,10 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Cleanup and exit. */
   TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-  TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
+  if ( transfer ) {
+    TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
+  }
   TRY( LALSDestroyVector( stat->statusPtr,
 			  &( polResponse.pPlus->data ) ), stat );
   TRY( LALSDestroyVector( stat->statusPtr,
