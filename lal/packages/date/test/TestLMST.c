@@ -80,12 +80,18 @@ int main(int argc, char *argv[])
         REPORTSTATUS(&stat);
         return stat.statusCode;
       }
-    
-    strftime(refstr, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+
+    /* Fuckin' Solaris gets segmentation fault when calling strftime() */
+    /*strftime(refstr, 64, "%Hh %Mm %S", &(mstdate.unixDate)); */
+    /*sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);*/
+    /*strcat(refstr, tmpstr+1); /* remove leading 0 */
+    /*printf("   get: %s\n", refstr);*/
+
+    sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
+            mstdate.unixDate.tm_min, mstdate.unixDate.tm_sec);
     sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);
-    strcat(refstr, tmpstr+1); /* remove leading 0 */
+    strcat(refstr, tmpstr+1);
     printf("   get: %s\n", refstr);
-    
 
     sprintf(tmpstr, "03h 39m 21.2738s");
     printf("expect: %s\n", tmpstr);
