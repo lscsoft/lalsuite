@@ -288,6 +288,8 @@ int main(int argc, char *argv[]){
 
       /* write the sft */
       SUB( LALWriteSFTfile( &status, sft, tempstr2),  &status );
+
+      LALDestroySFTtype (&status, &sft);
     }
 
 
@@ -307,8 +309,6 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.leftWing);
       LALFree(harmonics.rightWing);
     }
-
-  LALDestroySFTtype (&status, &sft);
 
   LALCheckMemoryLeaks(); 
 
