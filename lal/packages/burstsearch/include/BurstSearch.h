@@ -42,18 +42,6 @@ tagBurstEventList
 }
 BurstEventList;
 
-typedef struct
-tagSnglBurstAccuracy
-{
-  INT4  match;
-  REAL4 dRhoPlus;
-  REAL4 dRhoMinus;
-  INT8  dtime;
-  REAL4 dm;
-
-}
-SnglBurstAccuracy;
-
 #ifdef  __cplusplus
 }
 #endif

@@ -52,6 +52,18 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
 #include <lal/LIGOMetadataTables.h>
 
+typedef struct
+tagSnglBurstAccuracy
+{
+  INT4  match;
+  REAL4 dRhoPlus;
+  REAL4 dRhoMinus;
+  INT8  dtime;
+  REAL4 dm;
+
+}
+SnglBurstAccuracy;
+
 void
 LALSortSnglInspiral(
     LALStatus          *status,
@@ -82,6 +94,14 @@ int
 LALCompareSnglBurstByTime(
     const void *a,
     const void *b
+    );
+
+void
+LALCompareSnglBurst(
+    LALStatus                *status,
+    SnglBurstTable        *aPtr,
+    SnglBurstTable        *bPtr,
+    SnglBurstAccuracy     *params
     );
 
 #if 0
