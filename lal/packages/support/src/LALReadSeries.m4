@@ -42,7 +42,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
   DATA *data;        /* pointer to data in buffers */
   TYPE *sData;       /* pointer to data in output sequence */
   STYPE sCopy; /* internal copy of series */
-  int numRead ;      /* number of values read by parsing subroutine */
+  int numRead; /* number of values read by parsing subroutine */
 
   INITSTATUS( stat, "SFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
@@ -207,6 +207,21 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 	else
 	  length = tempLength;
       }
+
+      /* Parse datatype field. */
+#ifndef NDEBUG
+      else if ( !strcmp( start, "datatype" ) ) {
+	if ( lalDebugLevel & LALWARNING ) {
+	  while ( !isspace( *endValue ) && *endValue != '\0' )
+	    endValue++;
+	  *endValue = '\0';
+	  if ( strcmp( startValue, "STYPE" ) ) {
+	    LALWarning( stat, "STYPE data expected" );
+	    LALPrintError( "\t%s data being read\n", startValue );
+	  }
+	}
+      }
+#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -418,18 +433,18 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 void
 VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList *head;        /* head of linked list of buffers */
-  BufferList *here;        /* pointer to current position in list */
+  BufferList *head;  /* pointer to head of linked list of buffers */
+  BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
-  CHAR *start, *end;       /* start and end of a token on a line */
-  UINT4 length = 0;        /* number of sequence elements to be read */
-  UINT4 vectorLength = 0;  /* number of components per element */
-  UINT4 nTot = 0, n;       /* number of data read, and countdown index */
-  DATA *data;              /* pointer to data in buffers */
-  TYPE *sData;             /* pointer to data in output sequence */
+  CHAR *start, *end; /* start and end of a token on a line */
+  UINT4 length = 0;  /* number of sequence elements to be read */
+  UINT4 vectorLength = 0; /* number of components per element */
+  UINT4 nTot = 0, n; /* number of data read, and countdown index */
+  DATA *data;        /* pointer to data in buffers */
+  TYPE *sData;       /* pointer to data in output sequence */
   VTYPE sCopy; /* internal copy of series */
   CreateVectorSequenceIn in; /* structure to create sequence */
-  int numRead = 1; /* number of values read per call of fscanf() */
+  int numRead; /* number of values read per call of fscanf() */
 
   INITSTATUS( stat, "VFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
@@ -607,6 +622,21 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 	else
 	  vectorLength = tempLength;
       }
+
+      /* Parse datatype field. */
+#ifndef NDEBUG
+      else if ( !strcmp( start, "datatype" ) ) {
+	if ( lalDebugLevel & LALWARNING ) {
+	  while ( !isspace( *endValue ) && *endValue != '\0' )
+	    endValue++;
+	  *endValue = '\0';
+	  if ( strcmp( startValue, "VTYPE" ) ) {
+	    LALWarning( stat, "VTYPE data expected" );
+	    LALPrintError( "\t%s data being read\n", startValue );
+	  }
+	}
+      }
+#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -887,20 +917,19 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 void
 AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList head;         /* head of linked list of buffers */
-  BufferList *here;        /* pointer to current position in list */
+  BufferList *head;  /* pointer to head of linked list of buffers */
+  BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
-  CHAR *start, *end;       /* start and end of a token on a line */
-  UINT4 length = 0;        /* number of sequence elements to be read */
-  UINT4 arrayDim = 0;      /* number of components per element */
+  CHAR *start, *end; /* start and end of a token on a line */
+  UINT4 length = 0;  /* number of sequence elements to be read */
+  UINT4 nTot = 0, n; /* number of data read, and countdown index */
+  UINT4 arrayDim = 0; /* number of components per element */
   UINT4Vector *dimLength = NULL; /* number of components per index */
-  DATA *data;              /* pointer to data in buffers */
-  TYPE *sData;             /* pointer to data in output sequence */
+  DATA *data;        /* pointer to data in buffers */
+  TYPE *sData;       /* pointer to data in output sequence */
   ATYPE sCopy; /* internal copy of series */
   CreateArraySequenceIn in; /* structure to create sequence */
-  size_t nTot = 0; /* total number of values read */
-  size_t nMax, n;  /* # of values in buffer, and countdown index */
-  int numRead = 1; /* number of values read per call of fscanf() */
+  int numRead; /* number of values read per call of fscanf() */
 
   INITSTATUS( stat, "AFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
@@ -909,12 +938,16 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
   ASSERT( stream, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( series, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !(series->data), stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
-
-  sCopy = *series;
+#if COMPLEX
+  ASSERT( 2*(BUFFSIZE/SIZE/2) == BUFFSIZE/SIZE, stat,
+	  STREAMINPUTH_EBUF, STREAMINPUTH_MSGEBUF );
+#endif
 
   /*******************************************************************
    * PARSE METADATA HEADER                                           *
    *******************************************************************/
+
+  sCopy = *series;
 
   /* Skip over blank lines; start points to the first non-whitespace
      character (or '\0' if there are none). */
@@ -1100,19 +1133,27 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 
       /* Parse dimLength field. */
       else if ( !strcmp( start, "dimLength" ) ) {
-	UINT4 *dData = head.buf.U4;
-	here = &head;
+	UINT4 *dData;
+	here = head = (BufferList *)LALMalloc( sizeof(BufferList) );
+	if ( !here ) {
+	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	  if ( dimLength ) {
+	    TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ),
+		 stat );
+	  }
+	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
+	}
 	here->next = NULL;
+	dData = here->buf.U4;
 	n = BUFFSIZE/4;
 	endValue = startValue;
-	startValue = NULL;
 	/* Read components into the buffer list. */
-	while ( endValue != startValue ) {
+	do {
 	  do {
 	    LALStringToU4( stat->statusPtr, dData++,
 			   startValue = endValue, &endValue );
 	    BEGINFAIL( stat ) {
-	      FREEBUFFERLIST( head.next );
+	      FREEBUFFERLIST( head );
 	      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 	      if ( dimLength ) {
 		TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ),
@@ -1122,8 +1163,9 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	  } while ( endValue != startValue && --n );
 	  if ( !n ) {
 	    here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	    if ( !(here->next) ) {
-	      FREEBUFFERLIST( head.next );
+	    here = here->next;
+	    if ( !here ) {
+	      FREEBUFFERLIST( head );
 	      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 	      if ( dimLength ) {
 		TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ),
@@ -1131,14 +1173,12 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	      }
 	      ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
 	    }
-	    here = here->next;
 	    here->next = NULL;
 	    dData = here->buf.U4;
-	    nTot += BUFFSIZE/4;
-	    n = BUFFSIZE/4;
+	    nTot += n = BUFFSIZE/4;
 	  } else
 	    nTot += BUFFSIZE/4 - n;
-	}
+	} while ( endValue != startValue );
 	/* Copy components into dimLength vector. */
 	if ( nTot == 0 )
 	  LALWarning( stat, LALREADSERIESC_HEADER "dimLength" );
@@ -1150,10 +1190,10 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	  dimLength = NULL;
 	  LALU4CreateVector( stat->statusPtr, &dimLength, nTot );
 	  BEGINFAIL( stat ) {
-	    FREEBUFFERLIST( head.next );
+	    FREEBUFFERLIST( head );
 	    TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 	  } ENDFAIL( stat );
-	  here = &head;
+	  here = head;
 	  dData = dimLength->data;
 	  n = BUFFSIZE/4;
 	  if ( n > nTot )
@@ -1169,10 +1209,24 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	  }
 	}
 	/* dimLength is complete, so reset everything else. */
-	FREEBUFFERLIST( head.next );
-	head.next = NULL;
+	FREEBUFFERLIST( head );
 	nTot = 0;
       }
+
+      /* Parse datatype field. */
+#ifndef NDEBUG
+      else if ( !strcmp( start, "datatype" ) ) {
+	if ( lalDebugLevel & LALWARNING ) {
+	  while ( !isspace( *endValue ) && *endValue != '\0' )
+	    endValue++;
+	  *endValue = '\0';
+	  if ( strcmp( startValue, "ATYPE" ) ) {
+	    LALWarning( stat, "ATYPE data expected" );
+	    LALPrintError( "\t%s data being read\n", startValue );
+	  }
+	}
+      }
+#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -1206,6 +1260,8 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
    * PARSE DATA                                                      *
    *******************************************************************/
 
+  end = start;
+
   /* Make sure dimLength exists, and is consistent with arrayDim (if
      specified). */
   if ( !dimLength ) {
@@ -1224,214 +1280,193 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
     arrayDim = dim;
   }
 
-  /* Prepare data buffer. */
-  here = &head;
-  here->next = NULL;
-  data = here->buf.DATACODE;
-  end = start;
-  start = NULL;
-  nMax = BUFFSIZE/SIZE;
-#if COMPLEX
-  arrayDim *= 2;
-#endif
-  length *= arrayDim;
-
-  /* If length was specified, read data until it is reached.  Start
-     with the line currently in memory. */
+  /* If length is given, we can simply allocate the required block of
+     memory and parse data into it. */
   if ( length > 0 ) {
-    if ( nMax > length - nTot )
-      nMax = length - nTot;
-    n = nMax;
-    while ( end != start && nTot < length ) {
-      do {
-	STRINGTODATA ( stat->statusPtr, data++, start = end, &end );
-	BEGINFAIL( stat ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-	} ENDFAIL( stat );
-      } while ( end != start && --n );
-      if ( !n && nMax + nTot < length ) {
-	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
-	}
-	here = here->next;
-	here->next = NULL;
-	data = here->buf.DATACODE;
-	nTot += nMax;
-	nMax = BUFFSIZE/SIZE;
-	if ( nMax > length - nTot )
-	  nMax = length - nTot;
-	n = nMax;
-      } else {
-	nTot += nMax - n;
-	data--;
-      }
-    }
+    in.length = length;
+    in.dimLength = dimLength;
+    ACREATE ( stat->statusPtr, &(sCopy.data), &in );
+    BEGINFAIL( stat ) {
+      TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    } ENDFAIL( stat );
+    TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+    sData = sCopy.data->data;
 
-    /* Read the remaining data using fscanf(). */
+    /* Begin with line in memory. */
+    n = length*arrayDim;
+    numRead = 0;
+#if COMPLEX
+    do {
+      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+		     &end );
+      BEGINFAIL( stat ) {
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+      } ENDFAIL( stat );
+      if ( start != end ) {
+	numRead = 1;
+	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+		       &end );
+	BEGINFAIL( stat ) {
+	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	  TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	} ENDFAIL( stat );
+	if ( start != end ) {
+	  numRead = 0;
+	  sData++;
+	}
+      }
+    } while ( end != start && --n );
+#else
+    do {
+      STRINGTODATA ( stat->statusPtr, sData++, start = end, &end );
+      BEGINFAIL( stat ) {
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+      } ENDFAIL( stat );
+    } while ( end != start && --n );
+    sData--;
+#endif
+
+    /* Read remaining data with fscanf(). */
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-    while ( nTot < length ) {
-      do
-	numRead = fscanf( stream, "%" FMT, data++ );
-      while ( numRead == 1 && --n );
-      if ( numRead != 1 ) {
-	FREEBUFFERLIST( head.next );
-	TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+#if COMPLEX
+    if ( numRead == 1 ) {
+      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
-      nTot += nMax - n;
-      if ( nTot < length ) {
-	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
-	}
-	here = here->next;
-	here->next = NULL;
-	data = here->buf.DATACODE;
-	nMax = BUFFSIZE/SIZE;
-	if ( nMax > length - nTot )
-	  nMax = length - nTot;
-	n = nMax;
-      }
+      sData++;
+      n--;
     }
+    while ( n-- ) {
+      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
+      }
+      sData++;
+    }
+#else
+    while ( n-- )
+      if ( fscanf( stream, "%" FMT, sData++ ) != 1 ) {
+	TRY( ADESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
+      }
+#endif
   }
 
-  /* Otherwise, just read to the end of the file.  Start with the line
-     currently in memory. */
+
+  /* If length was not specified, we must read data into buffers until
+     we know how many there are. */
   else {
-    n = nMax;
-    while ( end != start ) {
+    here = head = (BufferList *)LALMalloc( sizeof(BufferList) );
+    if ( !here ) {
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
+    }
+    here->next = NULL;
+    data = here->buf.DATACODE;
+    n = BUFFSIZE/SIZE;
+
+    /* Read from the line currently in memory. */
+    do {
       do {
 	STRINGTODATA ( stat->statusPtr, data++, start = end, &end );
 	BEGINFAIL( stat ) {
-	  FREEBUFFERLIST( head.next );
+	  FREEBUFFERLIST( head );
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
 	} ENDFAIL( stat );
       } while ( end != start && --n );
       if ( !n ) {
 	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
+	here = here->next;
+	if ( !here ) {
+	  FREEBUFFERLIST( head );
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
 	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
 	}
-	here = here->next;
 	here->next = NULL;
 	data = here->buf.DATACODE;
-	nTot += nMax;
-	n = nMax = BUFFSIZE/SIZE;
-      } else {
-	nTot += nMax - n;
+	length += n = BUFFSIZE/SIZE;
+      } else
 	data--;
-      }
-    }
+    } while ( end != start );
 
     /* Read the remaining data using fscanf(). */
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-    while ( numRead == 1 ) {
+    do {
       do
 	numRead = fscanf( stream, "%" FMT, data++ );
       while ( numRead == 1 && --n );
-      nTot += nMax - n;
+      length += BUFFSIZE/SIZE - n;
       if ( !n ) {
 	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+	here = here->next;
+	if ( !here ) {
+	  FREEBUFFERLIST( head );
 	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
 	}
-	here = here->next;
 	here->next = NULL;
-	nMax = BUFFSIZE/SIZE;
 	data = here->buf.DATACODE;
-	n = nMax;
+	n = BUFFSIZE/SIZE;
       }
-    }
-  }
+    } while ( numRead == 1 );
 
-
-  /*******************************************************************
-   * STORE DATA                                                      *
-   *******************************************************************/
-
-  /* Create the sequence to store the data. */
-  length = nTot/arrayDim;
-  nTot = length*arrayDim;
+    /* Create the data sequence, and copy the data into it. */
+    length /= arrayDim;
 #if COMPLEX
-  arrayDim /= 2;
+    length /= 2;
 #endif
-  if ( !length ) {
-    FREEBUFFERLIST( head.next );
-    TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-    ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
-  }
-  in.length = length;
-  in.dimLength = dimLength;
-  ACREATE ( stat->statusPtr, &(sCopy.data), &in );
-  BEGINFAIL( stat ) {
-    FREEBUFFERLIST( head.next );
-    TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-  } ENDFAIL( stat );
-  TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
-
-  /* Start with head of list. */
-  here = &head;
-  data = here->buf.DATACODE;
-  sData = sCopy.data->data;
-  nMax = BUFFSIZE/SIZE;
-  if ( nMax > nTot )
-    nMax = nTot;
-  while ( nTot ) {
-#if COMPLEX
-    /* For complex types, data need to be copied pairwise. */
-    n = nMax/2;
-    nTot -= 2*n;
-    while ( n-- ) {
-      sData->re = *(data++);
-      (sData++)->im = *(data++);
+    if ( !length ) {
+      FREEBUFFERLIST( head );
+      ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
     }
-    if ( 2*(nMax/2) < nMax ) {
-      /* Buffer boundary splits real and imaginary parts. */
-      sData->re = *data;
-      here = here->next;
-      data = here->buf.DATACODE;
-      (sData++)->im = *(data++);
-      nTot -= 2;
-      nMax = BUFFSIZE/SIZE - 1;
-      if ( nMax > nTot )
-	nMax = nTot;
-    } else {
-      /* Buffer boundary doesn't split real and imaginary parts. */
-    here = here->next;
+    in.length = length;
+    in.dimLength = dimLength;
+    ACREATE ( stat->statusPtr, &(sCopy.data), &in );
+    BEGINFAIL( stat ) {
+      FREEBUFFERLIST( head );
+      TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+    } ENDFAIL( stat );
+    TRY( LALU4DestroyVector( stat->statusPtr, &dimLength ), stat );
+    here = head;
     data = here->buf.DATACODE;
-    nMax = BUFFSIZE/SIZE;
-    if ( nMax > nTot )
-      nMax = nTot;
-  }
+    sData = sCopy.data->data;
+    length *= arrayDim;
+    n = BUFFSIZE/SIZE;
+    while ( length ) {
+#if COMPLEX
+      n /= 2;
+      if ( n > length )
+	n = length;
+      length -= n;
+      while ( n-- ) {
+	sData->re = *(data++);
+	(sData++)->im = *(data++);
+      }
+      here = here->next;
+      if ( here )
+	data = here->buf.DATACODE;
+      n = BUFFSIZE/SIZE;
 #else
-    /* For base types, data can be copied directly. */
-    memcpy( sData, here->buf.DATACODE, nMax*sizeof( TYPE ) );
-    sData += nMax;
-    nTot -= nMax;
-    here = here->next;
-    nMax = BUFFSIZE/SIZE;
-    if ( nMax > nTot )
-      nMax = nTot;
+      if ( n > length )
+	n = length;
+      memcpy( sData, here->buf.DATACODE, n*sizeof( TYPE ) );
+      sData += n;
+      length -= n;
+      here = here->next;
+      if ( here )
+	data = here->buf.DATACODE;
+      n = BUFFSIZE/SIZE;
 #endif
+    }
+    FREEBUFFERLIST( head );
   }
 
   /* Data have been stored successfully.  So, clean up and exit. */
   *series = sCopy;
-  FREEBUFFERLIST( head.next );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
@@ -1440,17 +1475,16 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 void
 FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList head;   /* head of linked list of buffers */
+  BufferList *head;  /* pointer to head of linked list of buffers */
   BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
   CHAR *start, *end; /* start and end of a token on a line */
   UINT4 length = 0;  /* number of sequence elements to be read */
+  UINT4 n;           /* countdown index over elements read */
   DATA *data;        /* pointer to data in buffers */
   TYPE *sData;       /* pointer to data in output sequence */
   FTYPE sCopy; /* internal copy of series */
-  size_t nTot = 0;   /* total number of values read */
-  size_t nMax, n;    /* # of values in buffer, and countdown index */
-  int numRead = 1;   /* number of values read per call of fscanf() */
+  int numRead; /* number of values read per call of fscanf() */
 
   INITSTATUS( stat, "FFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
@@ -1459,12 +1493,16 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
   ASSERT( stream, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( series, stat, STREAMINPUTH_ENUL, STREAMINPUTH_MSGENUL );
   ASSERT( !(series->data), stat, STREAMINPUTH_EOUT, STREAMINPUTH_MSGEOUT );
-
-  sCopy = *series;
+#if COMPLEX
+  ASSERT( 2*(BUFFSIZE/SIZE/2) == BUFFSIZE/SIZE, stat,
+	  STREAMINPUTH_EBUF, STREAMINPUTH_MSGEBUF );
+#endif
 
   /*******************************************************************
    * PARSE METADATA HEADER                                           *
    *******************************************************************/
+
+  sCopy = *series;
 
   /* Skip over blank lines; start points to the first non-whitespace
      character (or '\0' if there are none). */
@@ -1611,6 +1649,21 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 	  length = tempLength;
       }
 
+      /* Parse datatype field. */
+#ifndef NDEBUG
+      else if ( !strcmp( start, "datatype" ) ) {
+	if ( lalDebugLevel & LALWARNING ) {
+	  while ( !isspace( *endValue ) && *endValue != '\0' )
+	    endValue++;
+	  *endValue = '\0';
+	  if ( strcmp( startValue, "FTYPE" ) ) {
+	    LALWarning( stat, "FTYPE data expected" );
+	    LALPrintError( "\t%s data being read\n", startValue );
+	  }
+	}
+      }
+#endif
+
       /* No other recognized tags; ignore anything else. */
     }
 
@@ -1633,201 +1686,186 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
    * PARSE DATA                                                      *
    *******************************************************************/
 
-  /* Prepare data buffer. */
-  here = &head;
-  here->next = NULL;
-  data = here->buf.DATACODE;
   end = start;
-  start = NULL;
-  nMax = BUFFSIZE/SIZE;
+
+  /* If length is given, we can simply allocate the required block of
+     memory and parse data into it. */
+  if ( length > 0 ) {
+    SCREATE ( stat->statusPtr, &(sCopy.data), length );
+    BEGINFAIL( stat ) {
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+    } ENDFAIL( stat );
+    sData = sCopy.data->data;
+
+    /* Begin with line in memory. */
+    n = length;
+    numRead = 0;
 #if COMPLEX
-  length *= 2;
+    do {
+      STRINGTODATA ( stat->statusPtr, &(sData->re), start = end,
+		     &end );
+      BEGINFAIL( stat ) {
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+      } ENDFAIL( stat );
+      if ( start != end ) {
+	numRead = 1;
+	STRINGTODATA ( stat->statusPtr, &(sData->im), start = end,
+		       &end );
+	BEGINFAIL( stat ) {
+	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	  TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	} ENDFAIL( stat );
+	if ( start != end ) {
+	  numRead = 0;
+	  sData++;
+	}
+      }
+    } while ( end != start && --n );
+#else
+    do {
+      STRINGTODATA ( stat->statusPtr, sData++, start = end, &end );
+      BEGINFAIL( stat ) {
+	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+      } ENDFAIL( stat );
+    } while ( end != start && --n );
+    sData--;
 #endif
 
-  /* If length was specified, read data until it is reached.  Start
-     with the line currently in memory. */
-  if ( length > 0 ) {
-    if ( nMax > length - nTot )
-      nMax = length - nTot;
-    n = nMax;
-    while ( end != start && nTot < length ) {
-      do {
-	STRINGTODATA ( stat->statusPtr, data++, start = end, &end );
-	BEGINFAIL( stat ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	} ENDFAIL( stat );
-      } while ( end != start && --n );
-      if ( !n && nMax + nTot < length ) {
-	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
-	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
-	}
-	here = here->next;
-	here->next = NULL;
-	data = here->buf.DATACODE;
-	nTot += nMax;
-	nMax = BUFFSIZE/SIZE;
-	if ( nMax > length - nTot )
-	  nMax = length - nTot;
-	n = nMax;
-      } else {
-	nTot += nMax - n;
-	data--;
-      }
-    }
-
-    /* Read the remaining data using fscanf(). */
+    /* Read remaining data with fscanf(). */
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-    while ( nTot < length ) {
-      do
-	numRead = fscanf( stream, "%" FMT, data++ );
-      while ( numRead == 1 && --n );
-      if ( numRead != 1 ) {
-	FREEBUFFERLIST( head.next );
+#if COMPLEX
+    if ( numRead == 1 ) {
+      if ( fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }
-      nTot += nMax - n;
-      if ( nTot < length ) {
-	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
-	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
-	}
-	here = here->next;
-	here->next = NULL;
-	data = here->buf.DATACODE;
-	nMax = BUFFSIZE/SIZE;
-	if ( nMax > length - nTot )
-	  nMax = length - nTot;
-	n = nMax;
-      }
+      sData++;
+      n--;
     }
+    while ( n-- ) {
+      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
+      }
+      sData++;
+    }
+#else
+    while ( n-- )
+      if ( fscanf( stream, "%" FMT, sData++ ) != 1 ) {
+	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
+	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
+      }
+#endif
   }
 
-  /* Otherwise, just read to the end of the file.  Start with the line
-     currently in memory. */
+
+  /* If length was not specified, we must read data into buffers until
+     we know how many there are. */
   else {
-    n = nMax;
-    while ( end != start ) {
+    here = head = (BufferList *)LALMalloc( sizeof(BufferList) );
+    if ( !here ) {
+      TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
+      ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
+    }
+    here->next = NULL;
+    data = here->buf.DATACODE;
+    n = BUFFSIZE/SIZE;
+
+    /* Read from the line currently in memory. */
+    do {
       do {
 	STRINGTODATA ( stat->statusPtr, data++, start = end, &end );
 	BEGINFAIL( stat ) {
-	  FREEBUFFERLIST( head.next );
+	  FREEBUFFERLIST( head );
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 	} ENDFAIL( stat );
       } while ( end != start && --n );
       if ( !n ) {
 	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
+	here = here->next;
+	if ( !here ) {
+	  FREEBUFFERLIST( head );
 	  TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
 	}
-	here = here->next;
 	here->next = NULL;
 	data = here->buf.DATACODE;
-	nTot += nMax;
-	n = nMax = BUFFSIZE/SIZE;
-      } else {
-	nTot += nMax - n;
+	length += n = BUFFSIZE/SIZE;
+      } else
 	data--;
-      }
-    }
+    } while ( end != start );
 
     /* Read the remaining data using fscanf(). */
     TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
-    while ( numRead == 1 ) {
+    do {
       do
 	numRead = fscanf( stream, "%" FMT, data++ );
       while ( numRead == 1 && --n );
-      nTot += nMax - n;
+      length += BUFFSIZE/SIZE - n;
       if ( !n ) {
 	here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
-	if ( !(here->next) ) {
-	  FREEBUFFERLIST( head.next );
+	here = here->next;
+	if ( !here ) {
+	  FREEBUFFERLIST( head );
 	  ABORT( stat, STREAMINPUTH_EMEM, STREAMINPUTH_MSGEMEM );
 	}
-	here = here->next;
 	here->next = NULL;
-	nMax = BUFFSIZE/SIZE;
 	data = here->buf.DATACODE;
-	n = nMax;
+	n = BUFFSIZE/SIZE;
       }
-    }
-  }
+    } while ( numRead == 1 );
 
-
-  /*******************************************************************
-   * STORE DATA                                                      *
-   *******************************************************************/
-
-  /* Create the sequence to store the data. */
-  length = nTot;
+    /* Create the data sequence, and copy the data into it. */
 #if COMPLEX
-  length /= 2;
-  nTot = length*2;
+    length /= 2;
 #endif
-  if ( !length ) {
-    FREEBUFFERLIST( head.next );
-    ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
-  }
-  SCREATE ( stat->statusPtr, &(sCopy.data), length );
-  BEGINFAIL( stat )
-    FREEBUFFERLIST( head.next );
-  ENDFAIL( stat );
-
-  /* Start with head of list. */
-  here = &head;
-  data = here->buf.DATACODE;
-  sData = sCopy.data->data;
-  nMax = BUFFSIZE/SIZE;
-  if ( nMax > nTot )
-    nMax = nTot;
-  while ( nTot ) {
-#if COMPLEX
-    /* For complex types, data need to be copied pairwise. */
-    n = nMax/2;
-    nTot -= 2*n;
-    while ( n-- ) {
-      sData->re = *(data++);
-      (sData++)->im = *(data++);
+    if ( !length ) {
+      FREEBUFFERLIST( head );
+      ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
     }
-    if ( 2*(nMax/2) < nMax ) {
-      /* Buffer boundary splits real and imaginary parts. */
-      sData->re = *data;
-      here = here->next;
-      data = here->buf.DATACODE;
-      (sData++)->im = *(data++);
-      nTot -= 2;
-      nMax = BUFFSIZE/SIZE - 1;
-      if ( nMax > nTot )
-	nMax = nTot;
-    } else {
-      /* Buffer boundary doesn't split real and imaginary parts. */
-    here = here->next;
+    SCREATE ( stat->statusPtr, &(sCopy.data), length );
+    BEGINFAIL( stat )
+      FREEBUFFERLIST( head );
+    ENDFAIL( stat );
+
+    here = head;
     data = here->buf.DATACODE;
-    nMax = BUFFSIZE/SIZE;
-    if ( nMax > nTot )
-      nMax = nTot;
-  }
+    sData = sCopy.data->data;
+    n = BUFFSIZE/SIZE;
+    while ( length ) {
+#if COMPLEX
+      n /= 2;
+      if ( n > length )
+	n = length;
+      length -= n;
+      while ( n-- ) {
+	sData->re = *(data++);
+	(sData++)->im = *(data++);
+      }
+      here = here->next;
+      if ( here )
+	data = here->buf.DATACODE;
+      n = BUFFSIZE/SIZE;
 #else
-    /* For base types, data can be copied directly. */
-    memcpy( sData, here->buf.DATACODE, nMax*sizeof( TYPE ) );
-    sData += nMax;
-    nTot -= nMax;
-    here = here->next;
-    nMax = BUFFSIZE/SIZE;
-    if ( nMax > nTot )
-      nMax = nTot;
+      if ( n > length )
+	n = length;
+      memcpy( sData, here->buf.DATACODE, n*sizeof( TYPE ) );
+      sData += n;
+      length -= n;
+      here = here->next;
+      if ( here )
+	data = here->buf.DATACODE;
+      n = BUFFSIZE/SIZE;
 #endif
+    }
+    FREEBUFFERLIST( head );
   }
 
   /* Data have been stored successfully.  So, clean up and exit. */
   *series = sCopy;
-  FREEBUFFERLIST( head.next );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

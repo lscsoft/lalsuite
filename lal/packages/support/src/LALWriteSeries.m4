@@ -42,6 +42,11 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
    * PRINT METADATA HEADER                                           *
    *******************************************************************/
 
+  /* Print the datatype. */
+  if ( fprintf( stream, "# datatype = STYPE\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+  }
+
   /* Print the name. */
   {
     CHAR *cData = series->name; /* pointer to name data */
@@ -165,6 +170,11 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   /*******************************************************************
    * PRINT METADATA HEADER                                           *
    *******************************************************************/
+
+  /* Print the datatype. */
+  if ( fprintf( stream, "# datatype = VTYPE\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+  }
 
   /* Print the name. */
   {
@@ -311,6 +321,11 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   /*******************************************************************
    * PRINT METADATA HEADER                                           *
    *******************************************************************/
+
+  /* Print the datatype. */
+  if ( fprintf( stream, "# datatype = ATYPE\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+  }
 
   /* Print the name. */
   {
@@ -463,6 +478,11 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
   /*******************************************************************
    * PRINT METADATA HEADER                                           *
    *******************************************************************/
+
+  /* Print the datatype. */
+  if ( fprintf( stream, "# datatype = FTYPE\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
+  }
 
   /* Print the name. */
   {

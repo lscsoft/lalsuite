@@ -1,3 +1,4 @@
+changecom(`/*',`*/')dnl
 /*************************** <lalVerbatim file="StreamSeriesOutputCV">
 Author: Creighton, T. D.
 $Id$
@@ -14,69 +15,69 @@ Writes a time or frequency series to an output stream.
 \vspace{0.1in}
 \begin{verbatim}
 void
-LAL<typecode>WriteTimeSeries( LALStatus            *stat,
-                              FILE                 *stream,
-                              <datatype>TimeSeries *series )
+LAL<typecode>WriteTSeries( LALStatus            *stat,
+                           FILE                 *stream,
+                           <datatype>TimeSeries *series )
 
 void
-LAL<typecode>WriteTimeVectorSeries( LALStatus                  *stat,
-                                    FILE                       *stream,
-                                    <datatype>TimeVectorSeries *series )
+LAL<typecode>WriteTVectorSeries( LALStatus                  *stat,
+                                 FILE                       *stream,
+                                 <datatype>TimeVectorSeries *series )
 
 void
-LAL<typecode>WriteTimeArraySeries( LALStatus                 *stat,
+LAL<typecode>WriteTArraySeries( LALStatus                 *stat,
                                    FILE                      *stream,
                                    <datatype>TimeArraySeries *series )
 
 void
-LAL<typecode>WriteFrequencySeries( LALStatus                 *stat,
-                                   FILE                      *stream,
-                                   <datatype>FrequencySeries *series )
+LAL<typecode>WriteFSeries( LALStatus                 *stat,
+                           FILE                      *stream,
+                           <datatype>FrequencySeries *series )
 \end{verbatim}
 
-\idx{LALI2WriteTimeSeries()}
-\idx{LALI4WriteTimeSeries()}
-\idx{LALI8WriteTimeSeries()}
-\idx{LALU2WriteTimeSeries()}
-\idx{LALU4WriteTimeSeries()}
-\idx{LALU8WriteTimeSeries()}
-\idx{LALSWriteTimeSeries()}
-\idx{LALDWriteTimeSeries()}
-\idx{LALCWriteTimeSeries()}
-\idx{LALZWriteTimeSeries()}
+\idx{LALI2WriteTSeries()}
+\idx{LALI4WriteTSeries()}
+\idx{LALI8WriteTSeries()}
+\idx{LALU2WriteTSeries()}
+\idx{LALU4WriteTSeries()}
+\idx{LALU8WriteTSeries()}
+\idx{LALSWriteTSeries()}
+\idx{LALDWriteTSeries()}
+\idx{LALCWriteTSeries()}
+\idx{LALZWriteTSeries()}
 
-\idx{LALI2WriteTimeVectorSeries()}
-\idx{LALI4WriteTimeVectorSeries()}
-\idx{LALI8WriteTimeVectorSeries()}
-\idx{LALU2WriteTimeVectorSeries()}
-\idx{LALU4WriteTimeVectorSeries()}
-\idx{LALU8WriteTimeVectorSeries()}
-\idx{LALSWriteTimeVectorSeries()}
-\idx{LALDWriteTimeVectorSeries()}
-\idx{LALCWriteTimeVectorSeries()}
-\idx{LALZWriteTimeVectorSeries()}
+\idx{LALI2WriteTVectorSeries()}
+\idx{LALI4WriteTVectorSeries()}
+\idx{LALI8WriteTVectorSeries()}
+\idx{LALU2WriteTVectorSeries()}
+\idx{LALU4WriteTVectorSeries()}
+\idx{LALU8WriteTVectorSeries()}
+\idx{LALSWriteTVectorSeries()}
+\idx{LALDWriteTVectorSeries()}
+\idx{LALCWriteTVectorSeries()}
+\idx{LALZWriteTVectorSeries()}
 
-\idx{LALI2WriteTimeArraySeries()}
-\idx{LALI4WriteTimeArraySeries()}
-\idx{LALI8WriteTimeArraySeries()}
-\idx{LALU2WriteTimeArraySeries()}
-\idx{LALU4WriteTimeArraySeries()}
-\idx{LALU8WriteTimeArraySeries()}
-\idx{LALSWriteTimeArraySeries()}
-\idx{LALDWriteTimeArraySeries()}
-\idx{LALCWriteTimeArraySeries()}
-\idx{LALZWriteTimeArraySeries()}
+\idx{LALI2WriteTArraySeries()}
+\idx{LALI4WriteTArraySeries()}
+\idx{LALI8WriteTArraySeries()}
+\idx{LALU2WriteTArraySeries()}
+\idx{LALU4WriteTArraySeries()}
+\idx{LALU8WriteTArraySeries()}
+\idx{LALSWriteTArraySeries()}
+\idx{LALDWriteTArraySeries()}
+\idx{LALCWriteTArraySeries()}
+\idx{LALZWriteTArraySeries()}
 
-\idx{LALI2WriteFrequencySeries()}
-\idx{LALI4WriteFrequencySeries()}
-\idx{LALI8WriteFrequencySeries()}
-\idx{LALU2WriteFrequencySeries()}
-\idx{LALU4WriteFrequencySeries()}
-\idx{LALU8WriteFrequencySeries()}
-\idx{LALSWriteFrequencySeries()}
-\idx{LALDWriteFrequencySeries()}
-\idx{LALCWriteFrequencySeries()}
-\idx{LALZWriteFrequencySeries()}
+\idx{LALI2WriteFSeries()}
+\idx{LALI4WriteFSeries()}
+\idx{LALI8WriteFSeries()}
+\idx{LALU2WriteFSeries()}
+\idx{LALU4WriteFSeries()}
+\idx{LALU8WriteFSeries()}
+\idx{LALSWriteFSeries()}
+\idx{LALDWriteFSeries()}
+\idx{LALCWriteFSeries()}
+\idx{LALZWriteFSeries()}
 
 \subsubsection*{Description}
 
@@ -90,20 +91,15 @@ For each of these prototype templates there are in fact 10 separate
 routines corresponding to all the atomic datatypes \verb@<datatype>@
 (except \verb@CHAR@) referred to by \verb@<typecode>@:
 \begin{center}
-\begin{tabular}{|c@{qquad}c|}
+\begin{tabular}{|c@{\qquad}c|c@{\qquad}c|}
 \hline
-\tt <typecode> & \tt <datatype> \\
+\tt <typecode> & \tt <datatype> & \tt <typecode> & \tt <datatype> \\
 \hline
-\tt I2 & \tt     INT2  \\
-\tt I4 & \tt     INT4  \\
-\tt I8 & \tt     INT8  \\
-\tt U2 & \tt    UINT2  \\
-\tt U4 & \tt    UINT4  \\
-\tt U8 & \tt    UINT8  \\
-\tt  S & \tt    REAL4  \\
-\tt  D & \tt    REAL8  \\
-\tt  C & \tt COMPLEX8  \\
-\tt  Z & \tt COMPLEX16 \\
+\tt I2 & \tt  INT2 & \tt U2 & \tt    UINT2  \\
+\tt I4 & \tt  INT4 & \tt U4 & \tt    UINT4  \\
+\tt I8 & \tt  INT8 & \tt U8 & \tt    UINT8  \\
+\tt  S & \tt REAL4 & \tt  C & \tt COMPLEX8  \\
+\tt  D & \tt REAL8 & \tt  Z & \tt COMPLEX16 \\
 \hline
 \end{tabular}
 \end{center}
@@ -124,19 +120,20 @@ metadata header, consisting of multiple lines of the form:
 in some standard format (below).  The following metadata fields will
 be written, one per line, based on the type of \verb@*series@:
 
-\begin{itemize}
-\item[\texttt{<datatype>TimeSeries}:] \verb@name@, \verb@epoch@,
-\verb@deltaT@, \verb@f0@, \verb@sampleUnits@, \verb@length@
-\item[\texttt{<datatype>TimeVectorSeries}:] \verb@name@, \verb@epoch@,
-\verb@deltaT@, \verb@f0@, \verb@sampleUnits@, \verb@length@,
-\verb@vectorLength@
-\item[\texttt{<datatype>TimeArraySeries}:] \verb@name@, \verb@epoch@,
-\verb@deltaT@, \verb@f0@, \verb@sampleUnits@, \verb@length@,
-\verb@dimLength@, \verb@arrayDim@
-\item[\texttt{<datatype>FrequencySeries}:] \verb@name@, \verb@epoch@,
-\verb@deltaT@, \verb@f0@, \verb@deltaF@, \verb@sampleUnits@,
+\begin{description}
+\item[\texttt{<datatype>TimeSeries}:] \verb@datatype@, \verb@name@,
+\verb@epoch@, \verb@deltaT@, \verb@f0@, \verb@sampleUnits@,
 \verb@length@
-\end{itemize}
+\item[\texttt{<datatype>TimeVectorSeries}:] \verb@datatype@,
+\verb@name@, \verb@epoch@, \verb@deltaT@, \verb@f0@,
+\verb@sampleUnits@, \verb@length@, \verb@vectorLength@
+\item[\texttt{<datatype>TimeArraySeries}:] \verb@datatype@,
+\verb@name@, \verb@epoch@, \verb@deltaT@, \verb@f0@,
+\verb@sampleUnits@, \verb@length@, \verb@dimLength@, \verb@arrayDim@
+\item[\texttt{<datatype>FrequencySeries}:] \verb@datatype@,
+\verb@name@, \verb@epoch@, \verb@deltaT@, \verb@f0@, \verb@deltaF@,
+\verb@sampleUnits@, \verb@length@
+\end{description}
 
 \noindent After all metadata have been written, the contents of
 \verb@series->data->data@ will be written in standard integer or
@@ -159,7 +156,11 @@ equal the number of lines following the metadata header.
 \paragraph{Format for metadata fields:} Here we summarize briefly the
 format for the individual field values in the metadata header.
 
-\begin{itemize}
+\begin{description}
+\item[\texttt{datatype}:] \textit{value} is a string (\emph{not}
+surrounded by quotes) corresponding to the type of \verb@*series@;
+e.g.\ \verb@COMPLEX8FrequencySeries@.
+
 \item[\texttt{name}:] \textit{value} is a string surrounded by quotes
 \verb@"@ representing \verb@series->name@.  At present,
 \verb@series->name@ will be truncated before any occurence of
@@ -200,7 +201,7 @@ number of components; it is not given as separate metadata.
 is a single \verb@UINT4@ representing \verb@series->data->arrayDim@.
 If the array sequence was properly constructed, this will equal the
 product of the components of \verb@dimLength@, above.
-\end{itemize}
+\end{description}
 
 \subsubsection*{Algorithm}
 
@@ -225,8 +226,6 @@ LALCHARReadVector()                     LALCHARDestroyVector()
 #include <lal/StreamOutput.h>
 
 NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
-
-changecom(`/*',`*/')
 
 define(`TYPECODE',`I2')dnl
 include(`LALWriteSeries.m4')dnl
