@@ -36,6 +36,7 @@
 
 RCSID( "$Id$");
 
+#define BOINC_DEBUGGING_ENABLED 1
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 
@@ -2934,6 +2935,17 @@ int main(int argc, char *argv[]){
 
   globargc=argc;
   globargv=argv;
+
+#if BOINC_DEBUGGING_ENABLED && defined(__GNUC__)
+  {
+    char commandstring[256];
+    /* char *cmd_name = argv[0]; */
+    pid_t process_id=getpid();
+    sprintf(commandstring,"ddd %s %d &","../../projects/albert*/einstein*" ,process_id);
+    system(commandstring);
+    sleep(20);
+  }
+#endif
 
   /* install signal handler (for ALL threads) for catching
      Segmentation violations, floating point exceptions, Bus
