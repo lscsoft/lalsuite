@@ -255,10 +255,10 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 
     } /* switch (metric) */
 
-  LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
-      
+
   if (lalDebugLevel)
     {
+      LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
       TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), &meshpar ), stat);
     }
 
