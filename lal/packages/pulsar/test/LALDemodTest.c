@@ -908,7 +908,10 @@ int main(int argc, char **argv)
   * of 10ksec, the value changes significantly.  
   */
   {
-    LIGOTimeGPS midTS[mObsSFT];
+    LIGOTimeGPS *midTS;  /* MODIFIED BY JOLIEN: DYNAMIC MEMORY ALLOCATION */
+    midTS = LALCalloc( mObsSFT, sizeof( *midTS ) );
+    if ( ! midTS )
+      return fprintf( stderr, "Allocation error near line %d", __LINE__ ), 1;
 
     for(k=0; k<mObsSFT; k++)
       {
@@ -920,6 +923,7 @@ int main(int argc, char **argv)
       }
     /* Compute the AM coefficients */
     LALComputeAM(&status, &amc, midTS, amParams);
+    LALFree( midTS );
   }
 
   /***** DEMODULATE SIGNAL *****/
