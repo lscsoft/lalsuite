@@ -209,7 +209,7 @@ InitDopplerScan( LALStatus *stat,
       thisPoint = scan->skyRegion.lowerLeft;	/* start from lower-left corner */
 
       step_delta = init.metricMismatch;	/* delta step-size is fixed */
-      cos_delta = cos (thisPoint.latitude);
+      cos_delta = fabs(cos (thisPoint.latitude));
 
       node = &head;		/* start our grid with an empty head */
 
@@ -235,7 +235,7 @@ InitDopplerScan( LALStatus *stat,
 	    {
 	      thisPoint.longitude = scan->skyRegion.lowerLeft.longitude;
 	      thisPoint.latitude += step_delta;	
-	      cos_delta = cos (thisPoint.latitude);
+	      cos_delta = fabs (cos (thisPoint.latitude));
 	    } 
 
 	  /* this it the break-condition: are we done yet? */
