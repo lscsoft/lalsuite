@@ -2806,15 +2806,15 @@ void worker() {
   retval=boincmain(a1,globargv);
   /* handle old-style command line for backward compatibility */
   if(a1<globargc) {
-    strncpy(chkptfile1,ckp_fname,260);
-    if !(retval){
+    strncpy(ckptfile1,ckp_fname,260);
+    if (!retval){
       /* find second // delimiter */ 
       for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
       if(a2==globargc)
 	retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
       else
 	retval=boincmain(a2-a1-1,&(globargv[a1+1]));
-      if !(retval)
+      if (!retval)
 	retval=polka(globargv-a2-1,&(globargv[a2+1]));
     }
     /* remove checkpoint-files */
