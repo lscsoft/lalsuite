@@ -15,21 +15,28 @@ Provides macros for handling the LAL status structure.
 #include "LALStatusMacros.h"
 \end{verbatim}
 
-\noindent This header defines a number of macros for interacting with
-the LAL status structure \verb@Status@.  The intent is simultaneously
-to standardize the error reporting, and to make the reporting as
-transparent as possible to people coding individual routines.
+\noindent This header provides macros and functions for tracking and
+reporting the runtime status of a program.  The intent is
+simultaneously to standardize the error reporting, and to make the
+reporting as transparent as possible to people coding individual
+routines.
 
-The following summarized everything the common programmer needs to
-know in order to follow LAL standard error reporting.  It can be
-treated as a primer on LAL coding conventions.
+\subsection{Status-reporting objects}
+\label{ss:status-reporting-objects}
 
-\subsection*{The \texttt{Status} structure}
+LAL routines make use of two objects in reporting their current
+status: the status structure \verb@Status@, and the global integer
+\verb@debuglevel@.  These two objects are described in the following
+sections.
 
-The \verb@Status@ structure is the standard LAL structure for
-reporting progress and errors; it is described in
-Sec.~\ref{ss:status-structure} of the header \verb@LALDatatypes.h@.
-For completeness, we explain the fields of this structure below:
+\subsubsection{The \texttt{Status} structure}
+
+LAL routines store their current execution status in a linked list of
+structures of type \verb@Status@, with each node in the list
+representing a subroutine in the current calling sequence.  The
+\verb@Status@ structure is described in Sec.~\ref{ss:status-structure}
+of the header \verb@LALDatatypes.h@, but for completeness, we explain
+its fields below:
 \begin{description}
 \item[\texttt{INT4 statusCode}] A code indicating the exit status of a
 function.  0 represents a normal exit.  Negative values are reserved
@@ -98,7 +105,101 @@ to \verb@NULL@. \\
 \end{tabular}
 \end{center}
 
-\subsection*{LAL function calls}
+\subsubsection{The \texttt{debuglevel}}
+
+The \verb@debuglevel@ is a global variable, set at runtime, that
+determines how much and what kind of debugging information will be
+reported.  It is declared as an \verb@extern int@ in the header
+\verb@LALStatusMacros.h@, and is therefore accessible in any standard
+LAL module that includes this header.  Note, however, that it is
+declared to be of the C type \verb@int@, which is usually but not
+always a 32-bit integer (on some systems it may only be 16 bits).
+
+The value of \verb@debuglevel@ should be thought of not as a number,
+but as a \emph{bit mask}, wherein each bit in the binary
+representation turns on or off a specific type of status reporting.
+At present, there are five types of status reporting, each associated
+with a bit in \verb@debuglevel@.
+
+\paragraph{Error messages} tell the operator that a computation has
+terminated abnormally, and has failed to produce an acceptable result.
+Normally this is associated with assigning a non-zero
+\verb@statusCode@; an error message is printed automatically whenever
+a function exits with non-zero \verb@statusCode@.
+
+\paragraph{Warning messages} tell the user that a computation is
+working, but with unusual behaviour that might indicate an unreliable
+or meaningless result.  Warnings do not normally result in a non-zero
+\verb@statusCode@.
+
+\paragraph{Information messages} tell the operator that the
+computation is proceeding as expected, and simply provide additional
+information about its progress.
+
+\paragraph{Tracing messages} are printed automatically a subroutine
+is called or returned; they simply track the current sequence of
+function calls.
+
+\paragraph{Memory information messages} are a special type of
+information message; they tell the operator when and how much memory
+is allocated or freed from the memory heap.
+
+\paragraph{}The module \verb@LALError.c@ defines functions for
+printing each of these types of status message.  Each type of message
+is turned on by setting the corrsponding bit in \verb@debuglevel@ to
+1, and is suppressed by setting the bit to 0.  This header file
+\verb@#define@s flags with numerical values designed to switch on the
+appropriate bits.  Combinations of bits can be switched on by
+combining these flags using the bitwise-\textit{or} operator,
+\verb@|@.  The flags are defined as follows:
+
+\begin{center}
+\begin{tabular}{|lccl|}
+\hline
+Flag & Binary & Decimal & Meaning \\
+\hline
+\multicolumn{4}{|l|}{\it Primitive flags} \\
+\tt LALNDEBUG   & 0\ldots00000 &  0 & No debugging or status messages \\
+\tt LALERROR    & 0\ldots00001 &  1 & Turn on error messages \\
+\tt LALWARNING  & 0\ldots00010 &  2 & Turn on warning messages \\
+\tt LALINFO     & 0\ldots00100 &  4 & Turn on info messages \\
+\tt LALTRACE    & 0\ldots01000 &  8 & Turn on tracing messages \\
+\tt LALMEMINFO  & 0\ldots10000 & 16 & Turn on memory messages \\
+\tt LALMEMDBG   & 1\ldots00000 & $2^{N-1}$ & Turn on debugging without
+messages \\
+\multicolumn{4}{|l|}{\it Combination flags} \\
+\tt LALMSGLVL1  & 0\ldots00001 &  1 & Error messages only \\
+\tt LALMSGLVL2  & 0\ldots00011 &  3 & Error and warning messages \\
+\tt LALMSGLVL3  & 0\ldots00111 &  7 & Error, warning, and info messages \\
+\tt LALMEMTRACE & 0\ldots11000 & 24 & Memory and tracing messages \\
+\tt LALALLDBG   & 1\ldots11111 & $2^N-1$ & All messages and debugging \\
+\hline
+\end{tabular}
+\end{center}
+
+Here $N$ is the number of bits in the statndard C type \verb@int@ on
+the particular system.  The $N^\mathrm{th}$, or most significant, bit
+of \verb@debuglevel@ has a special meaning, in that it is not
+associated with any type of status message.  However, certain pieces
+of debugging or error-tracking code --- such as the memory leak
+detection code in \verb@LALMalloc.c@ --- do not write status messages
+and are not associated with a \verb@debuglevel@ bit; instead, these
+pieces of code are turned on for \emph{any} nonzero value of
+\verb@debuglevel@.  Switching on only the $N^\mathrm{th}$ bit with
+\verb@LALMEMDBG@ activates this code without turning on any other
+error reporting.
+
+To turn debugging code on or off at compile time (rather than
+runtime), see Sec.~\ref{ss:compilation-flags}, below.
+
+\subsection{Using the status tools}
+\label{ss:using-status-tools}
+
+The following summarizes everything the common programmer needs to
+know in order to follow LAL standard error reporting.  It can be
+treated as a primer on LAL coding conventions.
+
+\subsubsection{LAL function calls}
 
 All functions should have return type void.  The first argument of any
 function should be a pointer to a structure of type \verb@Status@.
@@ -110,12 +211,12 @@ Since the function has no return code, it must report all errors or
 failure through the status structure.  A function that is passed a
 \verb@NULL@ pointer in place of the status pointer should terminate
 the program with a \verb@SIGABRT@ signal, as this is its only way to
-report the error.  However, this is the only circumstance under which
-a function sould deliberately raise a signal.  In all other cases the
-error should be trapped, reported in the status structure, and control
-returned to the calling routine.
+report the error.  However, this is one of the few circumstances under
+which a function sould deliberately raise a signal.  In all other
+cases the error should be trapped, reported in the status structure,
+and control returned to the calling routine.
 
-\subsection*{Assigning an RCS \texttt{\$Id\$} string}
+\subsubsection{Assigning an RCS \texttt{\$Id\$} string}
 
 Every source file should have a unique character string identifying
 that version of that file.  The standard convention, for a file
@@ -130,7 +231,7 @@ file \verb@LALRCSID.h@):
 \noindent where \texttt{\$Id\$} is expanded by RCS to give the full
 name and version number of the source file.
 
-\subsection*{Initializing the status structure}
+\subsubsection{Initializing the status structure}
 
 The first instruction in any function, after variable declarations,
 should be the macro \verb@INITSTATUS()@, which takes three arguments:
@@ -145,23 +246,25 @@ default) nominal execution.  If \verb@stat@ is null, the macro causes
 the program to terminate with a \verb@SIGABRT@ signal, as described
 above.
 
-\subsection*{Normal return from a function}
+\subsubsection{Normal return from a function}
 
 Upon completion, the function should issue the macro \verb@RETURN()@,
 which takes one argument: the function's status pointer.
 \begin{verbatim}
 RETURN( stat );
 \end{verbatim}
-This takes the place of any return statements, and may also log status
-reports to some suitable log file (often \verb@stderr@), depending on
-implementation and the value of a global \verb@debuglevel@ parameter.
-Typically \verb@RETURN()@ is used only for successful completion, with
-other macros \verb@ABORT()@, \verb@ASSERT()@, \verb@CHECKSTATUSPTR()@,
-and \verb@TRY()@ being used to report failure.  However, it is
-possible for the programmer to assign the fields of \verb@stat@ by
-hand, and then issue \verb@RETURN()@.
+This takes the place of any return statements.  If
+\verb@stat->statusCode@ is non-zero, the macro calls \verb@LALError()@
+(see \verb@LALError.c@) to log \verb@stat->statusDescription@ and
+other information, depending on implementation and the value of
+\verb@debuglevel@.  Typically \verb@RETURN()@ is used only for
+successful completion, with other macros \verb@ABORT()@,
+\verb@ASSERT()@, \verb@CHECKSTATUSPTR()@, and \verb@TRY()@ being used
+to report failure.  However, it is possible for the programmer to
+assign the fields of \verb@*stat@ by hand, and then issue
+\verb@RETURN()@.
 
-\subsection*{Abnormal return from a function}
+\subsubsection{Abnormal return from a function}
 
 The standard method to terminate a function unsuccessfully is with the
 \verb@ABORT()@ macro, which takes three arguments: the status pointer,
@@ -169,10 +272,10 @@ the status code, and the status description string.  Normally the
 various error codes and descriptions will be constants defined in the
 function's header file \verb@MyHeader.h@:
 \begin{verbatim}
-ABORT( stat, MYHEADER_EMYERR, MYHEADER_MSGEMYERR );
+ABORT( stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
 \end{verbatim}
-where the error code \verb@MYHEADER_EMYERR@ and the error message
-\verb@MYHEADER_MSGEMYERR@ are defined in \verb@MyHeader.h@.  This
+where the error code \verb@MYHEADERH_EMYERR@ and the error message
+\verb@MYHEADERH_MSGEMYERR@ are defined in \verb@MyHeader.h@.  This
 standard LAL naming convention for error messages prevents namespace
 conflicts between different header files.  Like \verb@RETURN()@,
 \verb@ABORT()@ correctly handles any status logging required by the
@@ -180,34 +283,37 @@ implementation and the \verb@debuglevel@.  Note that \verb@ABORT()@
 does \emph{not} raise a \verb@SIGABRT@ signal, but instead returns
 control to the calling routine.
 
-\subsection*{Error checking within a function}
+\subsubsection{Error checking within a function}
 
 Another way to indicate an unsuccessful termination is with the macro
 \verb@ASSERT()@, which takes as arguments a test statement, a status
 pointer, a status code, and a status description.  The statement
-\verb@ASSERT(assertion,...);@ is in all ways equivalent to the
-statement \verb@if(!assertion) ABORT(...);@, except on a failure the
-\verb@ASSERT()@ macro will also log the failed assertion.  In the
-above example, one might have:
+\verb@ASSERT( assertion, ... );@ is in all ways equivalent to the
+statement \verb@if ( !assertion ) ABORT( ... );@, except on a failure
+the \verb@ASSERT()@ macro will also report the failed assertion.  In
+the above example, one might have:
 \begin{verbatim}
-ASSERT( assertion, stat, MYHEADER_EMYERR, MYHEADER_MSGEMYERR );
+ASSERT( assertion, stat, MYHEADERH_EMYERR, MYHEADERH_MSGEMYERR );
 \end{verbatim}
-Coding purists argue that \verb@ASSERT()@ should be used only to trap
-coding errors rather than runtime errors, which would be trapped using
-\verb@ABORT()@.  In other words, the assertion should always test true
-in the final debugged program.  At present this coding practice is not
-enforced by the LAL standard.  However, programmers should be aware of
-the side effects of using \verb@ASSERT()@ to exit a function in normal
-runtime.
 
-For example, it is an error to allocate dynamic memory to local
-variables in a function and then fail to free it before returning.
-Thus, if you have dynamically allocated memory, you cannot then use
-\verb@ASSERT()@ for runtime error checking, as this does not permit
-you to free the memory before returning.  Instead, you must check the
+One subtle but important point is that the \verb@ASSERT()@ should be
+used only to trap coding errors, rather than runtime errors, which
+would be trapped using \verb@ABORT()@.  In other words, the assertion
+should always test true in the final debugged program.  This is vital
+because certain compilation flags will remove all \verb@ASSERT()@
+macros at compile time, in order to speed execution of the final code.
+See Sec.~\ref{ss:compilation-flags}, below.
+
+Programmers should also be aware that using \verb@ASSERT()@ to exit a
+function in normal runtime can have serious side effects.  For
+example, it is an error to allocate dynamic memory to local variables
+in a function and then fail to free it before returning.  Thus, if you
+have dynamically allocated memory, you cannot then use \verb@ASSERT()@
+for runtime error checking, as this does not permit you to free the
+memory before returning.  Instead, you must explicitly check the
 assertion, and, if it fails, free the memory and call \verb@ABORT()@.
 
-\subsection*{Calling subroutines}
+\subsubsection{Calling subroutines}
 
 If the function is to call other LAL functions as subroutines, four
 more macros are used to report possible errors arising in these
@@ -225,8 +331,8 @@ ATTATCHSTATUSPTR( stat );
 \end{verbatim}
 This allocates \verb@stat->statusPtr@, which is the status pointer
 that will be handed down into any and all subroutines.  If the pointer
-has already been allocated, \verb@ATTATCHSTATUSPTR()@ will abort, as
-this is symptomatic of a coding error.
+has already been allocated, \verb@ATTATCHSTATUSPTR()@ will raise a
+\verb@SIGABRT@, as this is symptomatic of a coding error.
 
 In most cases \verb@ATTATCHSTATUSPTR()@ need only be called once in a
 given function, immediately after \verb@INITSTATUS()@, no matter how
@@ -236,10 +342,10 @@ In that case, the function should detatch the status pointer using
 \verb@DETATCHSTATUSPTR()@ (below), and then re-attatch it.
 
 The macro \verb@ATTATCHSTATUSPTR()@ sets the status code to be $-1$
-and the status message to be \verb@Recursive error@.  These flags are
-unset when \verb@DETATCHSTATUSPTR()@ (below) is called.  This is so
-that a use of \verb@RETURN()@ prior to detatching the status pointer
-will yield an error.
+and the status message to be \verb@"Recursive error"@.  These flags
+are unset when \verb@DETATCHSTATUSPTR()@ (below) is called.  This is
+so that a use of \verb@RETURN()@ prior to detatching the status
+pointer will yield an error.
 
 \item When a subroutine is called, it should be handed the
 \verb@statusPtr@ field of the calling function's status structure, to
@@ -283,13 +389,14 @@ current function (not the subroutines) as its argument:
 \begin{verbatim}
 DETATCHSTATUSPTR( stat );
 \end{verbatim}
-This simply deallocates \verb@stat->statusPtr@ and sets it to
-\verb@NULL@.  It is an error to exit the function with non-\verb@NULL@
-\verb@statusPtr@, unless the exit was due to a subroutine failure.
-\verb@ABORT()@ and \verb@ASSERT()@ check for this automatically; the
-only place you normally need to call \verb@DETATCHSTATUSPTR()@ is
-immediately before \verb@RETURN()@.  This macro also sets the status
-code and the status message to nominal values.
+This simply deallocates \verb@stat->statusPtr@ (and any subsequent
+structures in the list), and sets it to \verb@NULL@.  It is an error
+to exit the function with non-\verb@NULL@ \verb@statusPtr@, unless the
+exit was due to a subroutine failure.  \verb@ABORT()@ and
+\verb@ASSERT()@ check for this automatically; the only place you
+normally need to call \verb@DETATCHSTATUSPTR()@ is immediately before
+\verb@RETURN()@.  This macro also sets the status code and the status
+message to nominal values.
 
 Additionally, if a function successfully works around an error
 reported by a subroutine, it should call \verb@DETATCHSTATUSPTR()@ and
@@ -298,27 +405,57 @@ calling another subroutine.
 
 \end{enumerate}
 
-\subsection*{Reporting the current status}
+\subsubsection{Issuing status messages}
 
-The \verb@REPORTSTATUS()@ macro is used to issue a current status
-report from the current function; the report is printed to
-\verb@stderr@ or some other implementation-specific stream used for
-error reporting.  \verb@REPORTSTATUS()@ takes the current status
-pointer as its argument, and iteratively reports down any chain of
-non-\verb@NULL@ \verb@statusPtr@ structures passed back by
-subroutines.
+The module \verb@LALError.c@ defines the functions \verb@LALError()@,
+\verb@LALWarning()@, \verb@LALInfo()@, and \verb@LALTrace()@ to issue
+various types of status message.  This is the preferred means of
+printing status messages, since each type of message can be activated
+or suppressed by setting \verb@debuglevel@ appropriately.  In fact,
+\verb@LALError()@ and \verb@LALTrace()@ are called automatically by
+the status macros whenever they are required, so most LAL modules will
+explicitly invoke only the \verb@LALWarning()@ and \verb@LALInfo()@
+functions.
 
-\subsection*{Setting the top-level \texttt{Status} structure and
-	\texttt{debuglevel}}
+\verb@LALStatusMacros.h@ provides a macro, \verb@REPORTSTATUS()@,
+which is used to report the current state of the \verb@Status@ list.
+It takes a status pointer as its argument:
+\begin{verbatim}
+REPORTSTATUS( stat );
+\end{verbatim}
+This macro iteratively prints the contents of \verb@stat@ and all
+subsequent structures in the list to the error log.
 
-The top-level main function must set a global variable
-\verb@debuglevel@, of standard C/C++ type \verb@int@ (not
-\verb@INT4@).  It is invoked in this header as an \verb@extern@
-variable, and controls the amount of error logging performed by the
-various status macros.  The program should also declare an empty (all
-fields set to zero) status structure to pass to its LAL functions.
-The \verb@Status@ structure need only be declared and initialized
-once, no matter how many LAL functions are called.  For example:
+The action of \verb@REPORTSTATUS()@ is not suppressed by any value of
+\verb@debuglevel@.  Therefore, as a rule, it should only be called by
+test programs, not by LAL routines intended for use in production
+code.
+
+\subsubsection{Setting the initial \texttt{Status} structure and
+global \texttt{debuglevel}}
+
+As mentioned above, any module including \verb@LALStatusMacros.h@
+includes the global variable \verb@debuglevel@ as an
+\verb@extern int@.  At least one module in the final executable
+program must have a global \emph{declaration} of \verb@int debuglevel@
+(not \verb@extern int@), and assign \verb@debuglevel@ a value.  In
+most cases \verb@debuglevel@ will be declared in the module containing
+the \verb@main()@ function, and will be assigned a value on
+declaration or from command-line arguments to \verb@main()@.
+Alternatively, if the LAL functions are to be embedded in a non-LAL
+program, \verb@debuglevel@ can be declared and set in the topmost
+module that calls LAL functions.
+
+A \verb@Status@ structure should also be declared as a local variable
+in the \verb@main()@ function of a LAL program, or in the topmost
+function calling LAL functions withing a non-LAL program, to pass in
+its LAL function calls.  The structure must be empty (all fields set
+to zero) before being passed into a function.  The \verb@Status@
+structure need only be declared and initialized once, no matter how
+many LAL functions are called.
+
+Thus a typical LAL program might look something like the following:
+
 \begin{verbatim}
 int debuglevel = 1;
 
@@ -327,28 +464,17 @@ int main( int argc, char **argv )
   static Status stat;
   MyFunction( &stat );
   REPORTSTATUS( &stat );
-  return 0;
+  return stat.statusCode;
 }
 \end{verbatim}
 
-A \verb@debuglevel@ of 0 means that no error logging will occur with
-any of the status macros, with the exception of \verb@REPORTSTATUS()@.
-A \verb@debuglevel@ of 1 means that a status message will be logged
-(usually to \verb@stderr@) whenever a function terminates abnormally
-(i.e.\ with non-zero \verb@statusCode@).  Any other value of
-\verb@debuglevel@ means that a status message will be logged even when
-functions exit nominally.  Programmers may also explicitly invoke
-\verb@extern int debuglevel@ in their code to determine the verbosity
-of their own error and warning messages.
+Please note that all status macros described above can force a return
+from the calling routine.  This is a Bad Thing if the calling routine
+is \verb@main()@, since \verb@main()@ must normally return \verb@int@
+rather than \verb@void@.  It is therefore recommended that none of
+these macros except \verb@REPORTSTATUS()@ be used at the top level.
 
-Please note that all status macros with the exception of
-\verb@REPORTSTATUS()@ can force a return from the calling routine.
-This is a Bad Thing if the calling routine is \verb@main()@, since
-\verb@main()@ must normally return \verb@int@ rather than \verb@void@.
-It is therefore recommended that none of these macros other than
-\verb@REPORTSTATUS()@ be used at the top level.
-
-\subsection*{Non-confomant functions}
+\subsubsection{Non-confomant functions}
 
 These standards apply only to functions that will be publicly
 available in the LAL libraries.  Within a module, a programmer may
@@ -357,6 +483,88 @@ standards, provided these routines are only visible within that
 module.  Such functions should be declared as \verb@static@ to ensure
 this.  A publicly-visible non-conformant function requires special
 dispensation.
+
+\subsection{Compilation flags}
+\label{ss:compilation-flags}
+
+LAL provides two flags that can be used to exclude or modify debugging
+code at compile time.  Although these flags are typically
+\verb@#define@d or \verb@#undef@ined globally and can affect many
+modules (notably modules in the \verb@support@ package), their primary
+effect is on the debugging and status-reporting tools defined in this
+header.  The two flags are named \verb@NDEBUG@ and \verb@NOLALMACROS@.
+
+\subsubsection{The \texttt{NDEBUG} flag}
+
+Setting the \verb@NDEBUG@ flag turns off debugging and error-reporting
+code, in order to get condensed production-line programs.  As far as
+error reporting is concerned, setting the \verb@NDEBUG@ flag at
+compile time is similar to setting \verb@debuglevel@ equal to zero at
+runtime, in that it suppresses all status messages and memory leak
+detection.  However, the \verb@NDEBUG@ flag accoplishes this by
+telling the compiler preprocessor to remove the relevant code from the
+object file, thus eliminating frequent and unnecessary tests on
+\verb@debuglevel@.
+
+Compiling with the \verb@NDEBUG@ flag set also removes all
+\verb@ASSERT()@ macros from the object code, in keeping with the
+philosophy that \verb@ASSERT()@ statements should only be used to
+catch coding bugs, not runtime errors.
+
+\subsubsection{The \texttt{NOLALMACROS} flag}
+
+Setting the \verb@NOLALMACROS@ flag replaces the status-handling
+macros described above with actual functions that accomplish the same
+results.  These functions are defined in the module \verb@LALError.c@.
+Function calls introduce computational and memory overheads that are
+absent in macros, since macro replacement occurs at compile time.
+However, there are circumstances in which one might want to use
+function calls rather than macro replacement.
+
+For example, debuggers typically cannot step through the individual
+instructions within a macro.  If a conflict somehow arose between a
+particular piece of code and its status macros, this conflict would be
+easier to catch and resolve by replacing the macros with function
+calls into which the debugger could step.
+
+\subsubsection{Using the compilation flags}
+
+There are three ways to set these flags when compiling LAL programs or
+libraries.
+
+When compiling your own modules, the flags can be set using one or
+more \verb@#define@ statements within the module or its header file:
+\begin{verbatim}
+#define NDEBUG
+#define NOLALMACROS
+\end{verbatim}
+To restrict the scope of these flags, they should later be unset using
+the corresponding \verb@#undef@ statements.
+
+Alternatively, these can be set in the \verb@Makefile@ or when
+compiling.  The syntax for most UNIX C compilers is something like the
+following:
+\begin{verbatim}
+> gcc ... -DNDEBUG -DNOLALMACROS ...
+\end{verbatim}
+
+If you want to compile a large number of modules, or the entire
+library, under the effects of one or more of these flags, you will not
+want to go through and modify every header or \verb@Makefile@.
+Instead, you may add either \verb@-DNDEBUG@ or \verb@-DNOLALMACROS@
+(or both) to the environment variable \verb@CPPFLAGS@.  They will then
+automatically be set for all compilations done in that environment.
+The command for doing this in \verb@sh@ or \verb@bash@ shells is:
+\begin{verbatim}
+> CPPFLAGS="$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+\end{verbatim}
+while in \verb@csh@ or \verb@tcsh@ shells it is:
+\begin{verbatim}
+> setenv CPPFLAGS "$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+\end{verbatim}
+Note that if you plan to do further LAL code development on the same
+system, you may want to keep two versions of the library around: one
+with the flag(s) set and one without.
 
 \subsection*{Notes}
 
@@ -382,6 +590,11 @@ integer value, with no additional overhead from function calling and
 parameter passing.  Thus programmers can be encouraged to include
 extensive error trapping in all their routines, without having to
 worry about compromising performance.
+
+It should be mentioned that, for these reasons, compiling a module
+with the \verb@NOLALMACROS@ flag above does not actually eliminate the
+status handling macros.  Rather, the macros are modified to call
+specialized functions that do most (but not all) of the processing.
 
 \subsection*{Example: A LAL primer}
 
@@ -444,230 +657,195 @@ NRCSID (LALSTATUSMACROSH, "$Id$");
 
 extern int debuglevel;
 
-#define INITSTATUS( statusptr, funcname, id )                         \
-do                                                                    \
-{                                                                     \
-  INT4 level;                                                         \
-  if(!(statusptr))                                                    \
-    {                                                                 \
-      CHAR msg[1024];                                                 \
-      sprintf(msg,"Abort: function %s, file %s, line %d, %s\n"        \
-	      "       Null status pointer passed to function\n",      \
-	      (funcname),__FILE__,__LINE__,(id));                     \
-      LALAbort(msg);                                                  \
-    }                                                                 \
-  if((statusptr)->statusPtr) /* this may cause a memory leak */       \
-    {                                                                 \
-      if(!(statusptr)->level) (statusptr)->level = 1;                 \
-      (statusptr)->Id        = (id);                                  \
-      (statusptr)->function  = (funcname);                            \
-      (statusptr)->statusPtr = NULL; /* warning: dislocated memory */ \
-      ABORT(statusptr,-2,"INITSTATUS: non-null status pointer");      \
-    }                                                                 \
-  level = (statusptr)->level;                                         \
-  memset((statusptr),0,sizeof(Status));                               \
-  (statusptr)->level    = level > 0 ? level : 1 ;                     \
-  (statusptr)->Id       = (id);                                       \
-  (statusptr)->function = (funcname);                                 \
-} while (0)
+#ifndef NOLALMACROS
 
-#define RETURN(statusptr)                                             \
-do                                                                    \
-{                                                                     \
-  (statusptr)->file=__FILE__;                                         \
-  (statusptr)->line=__LINE__;                                         \
-  if(debuglevel==0 ||((debuglevel==1)&&((statusptr)->statusCode==0))) \
-    {                                                                 \
-      return;                                                         \
-    }                                                                 \
-  else if((statusptr)->statusCode==0)                                 \
-    {                                                                 \
-      LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
-      LALPrintError("function %s, file %s, line %d, %s\n",            \
-	      (statusptr)->function,(statusptr)->file,                \
-              (statusptr)->line,(statusptr)->Id);                     \
-      return;                                                         \
-    }                                                                 \
-  else                                                                \
-    {                                                                 \
-      LALPrintError("Error[%d] %d: ", (statusptr)->level,             \
-              (statusptr)->statusCode);                               \
-      LALPrintError("function %s, file %s, line %d, %s\n",            \
-              (statusptr)->function, (statusptr)->file,               \
-              (statusptr)->line, (statusptr)->Id);                    \
-      LALPrintError("          %s\n",(statusptr)->statusDescription); \
-      return;                                                         \
-    }                                                                 \
-} while (0)
+#define INITSTATUS( statusptr, funcname, id )                                 \
+  if ( (statusptr) )                                                          \
+  {                                                                           \
+    INT4 level = (statusptr)->level ;                                         \
+    INT4 statp = (statusptr)->statusPtr ? 1 : 0 ;                             \
+    memset( (statusptr), 0, sizeof( Status ) ); /* possible memory leak */    \
+    (statusptr)->level    = level > 0 ? level : 1 ;                           \
+    (statusptr)->Id       = (id);                                             \
+    (statusptr)->function = (funcname);                                       \
+    SETSTATUSFILELINE( statusptr );                                           \
+    (void) LALTrace( statusptr, 0 );                                          \
+    if ( statp )                                                              \
+    {                                                                         \
+      ABORT( statusptr, -2, "INITSTATUS: non-null status pointer" );          \
+    }                                                                         \
+  }                                                                           \
+  else                                                                        \
+    LALAbort( "Abort: function %s, file %s, line %d, %s\n"                    \
+              "       Null status pointer passed to function\n",              \
+              (funcname), __FILE__, __LINE__, (id) )
 
-#define ABORT(statusptr,code,mesg)                                    \
-do                                                                    \
-{                                                                     \
-  (statusptr)->file=__FILE__;                                         \
-  (statusptr)->line=__LINE__;                                         \
-  (statusptr)->statusCode=(code);                                     \
-  (statusptr)->statusDescription=(mesg);                              \
-  if((statusptr)->statusPtr)                                          \
-    {                                                                 \
-      LALFree((statusptr)->statusPtr);                                \
-      (statusptr)->statusPtr=NULL;                                    \
-    }                                                                 \
-  if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))                 \
-    {                                                                 \
-      return;                                                         \
-    }                                                                 \
-  else if((code)==0)                                                  \
-    {                                                                 \
-      LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
-      LALPrintError("function %s, file %s, line %d, %s\n",            \
-	      (statusptr)->function,(statusptr)->file,                \
-              (statusptr)->line,(statusptr)->Id);                     \
-      return;                                                         \
-    }                                                                 \
-  else                                                                \
-    {                                                                 \
-      LALPrintError("Error[%d] %d: ", (statusptr)->level,(code));     \
-      LALPrintError("function %s, file %s, line %d, %s\n",            \
-              (statusptr)->function, (statusptr)->file,               \
-              (statusptr)->line, (statusptr)->Id);                    \
-      LALPrintError("         %s\n", (mesg));                         \
-      return;                                                         \
-    }                                                                 \
-} while (0)
+#define RETURN( statusptr )                                                   \
+  if ( 1 )                                                                    \
+  {                                                                           \
+    SETSTATUSFILELINE( statusptr );                                           \
+    if ( (statusptr)->statusCode )                                            \
+      (void) LALError( statusptr, "RETURN:" );                                \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+  else
 
-#define ASSERT(assertion,statusptr,code,mesg)                         \
-do                                                                    \
-{                                                                     \
-  if(!(assertion))                                                    \
-    {                                                                 \
-      (statusptr)->file=__FILE__;                                     \
-      (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode=(code);                                 \
-      (statusptr)->statusDescription=(mesg);                          \
-      if((statusptr)->statusPtr)                                      \
-	{                                                             \
-	  LALFree((statusptr)->statusPtr);                            \
-	  (statusptr)->statusPtr=NULL;                                \
-	}                                                             \
-      if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))             \
-	{                                                             \
-	  return;                                                     \
-	}                                                             \
-      else if((code)==0)                                              \
-	{                                                             \
-          LALPrintError("Nominal[%d]: ", (statusptr)->level);         \
-          LALPrintError("function %s, file %s, line %d, %s\n",        \
-	          (statusptr)->function,(statusptr)->file,            \
-                  (statusptr)->line,(statusptr)->Id);                 \
-	  return;                                                     \
-	}                                                             \
-      else                                                            \
-	{                                                             \
-          LALPrintError("Error[%d] %d: ", (statusptr)->level,(code)); \
-          LALPrintError("function %s, file %s, line %d, %s\n",        \
-                  (statusptr)->function, (statusptr)->file,           \
-                  (statusptr)->line, (statusptr)->Id);                \
-          LALPrintError("         Assertion %s failed: %s\n",         \
-                  #assertion, (mesg));                                \
-	  return;                                                     \
-	}                                                             \
-    }                                                                 \
-} while (0)
+#define ATTATCHSTATUSPTR(statusptr)                                           \
+  if ( !(statusptr)->statusPtr )                                              \
+  {                                                                           \
+    (statusptr)->statusPtr = (Status *) LALCalloc( 1, sizeof( Status ) );     \
+    if ( !(statusptr)->statusPtr )                                            \
+    {                                                                         \
+      ABORT( statusptr, -4, "ATTATCHSTATUSPTR: memory allocation error" );    \
+    }                                                                         \
+    (statusptr)->statusPtr->level = (statusptr)->level + 1;                   \
+  }                                                                           \
+  else                                                                        \
+    ABORT( statusptr, -2, "ATTATCHSTATUSPTR: non-null status pointer" )
 
-#define ATTATCHSTATUSPTR(statusptr)                                   \
-do                                                                    \
-{                                                                     \
-  ASSERT(!(statusptr)->statusPtr,statusptr,-2,                        \
-	 "ATTATCHSTATUSPTR: non-null status pointer");                \
-  (statusptr)->statusPtr=(Status *)LALCalloc(1,sizeof(Status));       \
-  ASSERT((statusptr)->statusPtr,statusptr,-4,                         \
-	 "ATTATCHSTATUSPTR: memory allocation error");                \
-  (statusptr)->statusPtr->level=(statusptr)->level + 1;               \
-  (statusptr)->statusCode = -1;                                       \
-  (statusptr)->statusDescription="Recursive error";                   \
-} while (0)
+#define DETATCHSTATUSPTR( statusptr )                                         \
+  if ( (statusptr)->statusPtr )                                               \
+  {                                                                           \
+    FREESTATUSPTR( statusptr );                                               \
+    (statusptr)->statusCode = 0;                                              \
+    (statusptr)->statusDescription = NULL;                                    \
+  }                                                                           \
+  else                                                                        \
+    ABORT( statusptr, -8, "DETATCHSTATUSPTR: null status pointer" )
 
-#define DETATCHSTATUSPTR(statusptr)                                   \
-do                                                                    \
-{                                                                     \
-  Status *ptr=(statusptr)->statusPtr;                                 \
-  ASSERT(ptr,statusptr,-8,"DETATCHSTATUSPTR: null status pointer");   \
-  while (ptr)                                                         \
-  {                                                                   \
-    Status *next=ptr->statusPtr;                                      \
-    LALFree(ptr);                                                     \
-    ptr=next;                                                         \
-  }                                                                   \
-  (statusptr)->statusPtr=NULL;                                        \
-  (statusptr)->statusCode = 0;                                        \
-  (statusptr)->statusDescription=NULL;                                \
-} while (0)
+#define ABORT( statusptr, code, mesg )                                        \
+  if ( 1 )                                                                    \
+  {                                                                           \
+    if ( statusptr->statusPtr ) FREESTATUSPTR( statusptr );                   \
+    SETSTATUS( statusptr, code, mesg );                                       \
+    if ( code )                                                               \
+      (void) LALError( statusptr, "ABORT:" );                                 \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+  else
 
-#define TRY(func,statusptr)                                           \
-do                                                                    \
-{                                                                     \
-  (func);                                                             \
-  if((statusptr)->statusPtr->statusCode)                              \
-    {                                                                 \
-      (statusptr)->file=__FILE__;                                     \
-      (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode= -1;                                    \
-      (statusptr)->statusDescription="Recursive error";               \
-      if(debuglevel>0)                                                \
-	{                                                             \
-          LALPrintError("Error[%d] %d: ", (statusptr)->level, -1);    \
-          LALPrintError("function %s, file %s, line %d, %s\n",        \
-                  (statusptr)->function, (statusptr)->file,           \
-                  (statusptr)->line, (statusptr)->Id);                \
-          LALPrintError("          Function call %s failed\n",        \
-                  #func);                                             \
-	}                                                             \
-      return;                                                         \
-    }                                                                 \
-} while (0)
+#ifdef NDEBUG
+#define ASSERT( assertion, statusptr, code, mesg )
+#else
+#define ASSERT( assertion, statusptr, code, mesg )                            \
+  if ( !(assertion) )                                                         \
+  {                                                                           \
+    if ( statusptr->statusPtr )                                               \
+      FREESTATUSPTR( statusptr );                                             \
+    SETSTATUS( statusptr, code, mesg );                                       \
+    (void) LALError( statusptr, "Assertion \"" #assertion "\" failed:" );     \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+  else
+#endif
 
-#define CHECKSTATUSPTR(statusptr)                                     \
-do                                                                    \
-{                                                                     \
-  if((statusptr)->statusPtr->statusCode)                              \
-    {                                                                 \
-      (statusptr)->file=__FILE__;                                     \
-      (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode= -1;                                    \
-      (statusptr)->statusDescription="Recursive error";               \
-      if(debuglevel>0)                                                \
-	{                                                             \
-          LALPrintError("Error[%d] %d: ", (statusptr)->level, -1);    \
-          LALPrintError("function %s, file %s, line %d, %s\n",        \
-                  (statusptr)->function, (statusptr)->file,           \
-                  (statusptr)->line, (statusptr)->Id);                \
-	  LALPrintError("          Function call failed\n");          \
-	}                                                             \
-      return;                                                         \
-    }                                                                 \
-} while (0)
+#define TRY( func, statusptr )                                                \
+  if ( (func), (statusptr)->statusPtr->statusCode )                           \
+  {                                                                           \
+    SETSTATUS( statusptr, -1, "Recursive error" );                            \
+    (void) LALError( statusptr, "Function call \"" #func "\" failed:" );      \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+  else
 
-#define REPORTSTATUS(statusptr)                                       \
-do                                                                    \
-{                                                                     \
-  Status *ptr;                                                        \
-  for(ptr=(statusptr);ptr;ptr=(ptr->statusPtr))                       \
-    {                                                                 \
-      LALPrintError("\nLevel %i: %s\n",ptr->level,ptr->Id);           \
-      if (ptr->statusCode)                                            \
-      {                                                               \
-        LALPrintError("\tStatus code %i: %s\n",ptr->statusCode,       \
-	              ptr->statusDescription);                        \
-      }                                                               \
-      else                                                            \
-      {                                                               \
-        LALPrintError("\tStatus code 0: Nominal\n");                  \
-      }                                                               \
-      LALPrintError("\tfunction %s, file %s, line %i\n",              \
-                    ptr->function,ptr->file,ptr->line);               \
-    }                                                                 \
-} while (0)
+#define CHECKSTATUSPTR( statusptr )                                           \
+  if ( (statusptr)->statusPtr->statusCode )                                   \
+  {                                                                           \
+    SETSTATUS( statusptr, -1, "Recursive error" );                            \
+    (void) LALError( statusptr, "CHECKSTATUSPTR:" );                          \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+  else
 
+#define FREESTATUSPTR( statusptr )                                            \
+  do                                                                          \
+  {                                                                           \
+    Status *next = (statusptr)->statusPtr->statusPtr;                         \
+    LALFree( (statusptr)->statusPtr );                                        \
+    (statusptr)->statusPtr = next;                                            \
+  }                                                                           \
+  while ( (statusptr)->statusPtr )
+
+#define SETSTATUSFILELINE( statusptr ) \
+  ( ( void ) ( (statusptr)->file = __FILE__, (statusptr)->line = __LINE__ ) )
+
+#define SETSTATUS( statusptr, code, mesg )                                    \
+  ( SETSTATUSFILELINE( statusptr ),                                           \
+    (statusptr)->statusDescription = (mesg),                                  \
+    (statusptr)->statusCode = (code) )
+
+#define REPORTSTATUS( statusptr )                                             \
+  do                                                                          \
+  {                                                                           \
+    Status *ptr;                                                              \
+    for ( ptr = (statusptr); ptr; ptr = ptr->statusPtr )                      \
+    {                                                                         \
+      LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );               \
+      if ( ptr->statusCode )                                                  \
+      {                                                                       \
+        LALPrintError( "\tStatus code %i: %s\n", ptr->statusCode,             \
+                       ptr->statusDescription );                              \
+      }                                                                       \
+      else                                                                    \
+      {                                                                       \
+        LALPrintError( "\tStatus code 0: Nominal\n" );                        \
+      }                                                                       \
+      LALPrintError( "\tfunction %s, file %s, line %i\n",                     \
+                     ptr->function, ptr->file, ptr->line );                   \
+    }                                                                         \
+  } while ( 0 )
+
+#else /* NOLALMACROS */
+
+#define INITSTATUS( statusptr, funcname, id ) \
+  if ( LALInitStatus( statusptr, funcname, id, __FILE__, __LINE__ ) ) return
+
+#define RETURN( statusptr ) \
+  if ( LALPrepareReturn( statusptr, __FILE__, __LINE__ ), 1 ) return
+
+#define ATTATCHSTATUSPTR( statusptr ) \
+  if ( LALAttatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return
+
+#define DETATCHSTATUSPTR( statusptr ) \
+  if ( LALDetatchStatusPtr( statusptr, __FILE__, __LINE__ ) ) return
+
+#define ABORT( statusptr, code, mesg ) \
+  if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return
+
+#ifdef NDEBUG
+#define ASSERT( assertion, statusptr, code, mesg )
+#else
+#define ASSERT( assertion, statusptr, code, mesg )                            \
+  if ( !(assertion) )                                                         \
+  {                                                                           \
+    LALPrepareAssertFail( statusptr, code, mesg,                              \
+                          "Assertion \"" #assertion "\" failed:",             \
+                          __FILE__, __LINE__ );                               \
+    return;                                                                   \
+  }                                                                           \
+  else
+#endif
+
+#define TRY( func, statusptr )                                                \
+  do                                                                          \
+  {                                                                           \
+    (func);                                                                   \
+    if ( LALCheckStatusPtr( statusptr, "Function call \"" #func "\" failed:", \
+                            __FILE__, __LINE__ ) )                            \
+      return;                                                                 \
+  }                                                                           \
+  while ( 0 )
+
+#define CHECKSTATUSPTR( statusptr )                                           \
+  if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) )\
+    return
+  
+#endif /* NOLALMACROS */
 
 #ifdef  __cplusplus
 }
