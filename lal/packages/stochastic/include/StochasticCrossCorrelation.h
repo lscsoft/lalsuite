@@ -119,7 +119,8 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 \end{center}
 \caption{\label{stochastic:f:CrossCorrFlowchart} Relationship among
   the modules dependent on \texttt{StochasticCrossCorrelation.h},
-  which are used to calculate the cross-correlation statistic $Y$ from
+  which are used to calculate the cross-correlation statistic $Y$
+  and its theoretical variance per unit time $\sigma^2/T$ from
   (whitened) stretches of data $h^{\scriptstyle{\rm W}}_1(t)$,
   $h^{\scriptstyle{\rm W}}_2(t)$, from two detectors, using metadata
   on the power spectral densities $P^{\scriptstyle{\rm W}}_1(f)$,
