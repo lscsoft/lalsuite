@@ -24,12 +24,16 @@ greater than the minimum length required to store a wave of parameters as in {\t
 
 
 This module first calls {\tt LALInspiralChooseModel,} which gives the length of the 
-waveform in seconds. Multiplying this by the sampling rate {\tt params.tSampling}
-gives the minimum number of samples needed to hold the waveform. To this are added the
-number of bins of leading and trailing zeroes requested by the user in 
+waveform in seconds. That function returns an estimated waveform length. However, the 
+length might not be appropriate in some extreme cases (large masses and large lower 
+cut-off frequency). It is especially true in the EOB case. Therefore, we introduce 
+two constants namely LALINSPIRAL\_LENGTHOVERESTIMATION (in percentage) which 
+overestimate the length of the waveform and LALINSPIRAL\_MINIMALWAVELENGTH which is
+the minimal waveform length in seconds. Multiplying this by the sampling rate 
+{\tt params.tSampling} gives the minimum number of samples needed to hold the waveform. 
+To this are added the number of bins of leading and trailing zeroes requested by the user in 
 {\tt params.nStartPad} and {\tt params.nEndPad.} The resulting number is rounded to
-an upward power of 2 and returned in {\tt length}. Note that this {\tt length} is good enough
-for all waveforms except EOB.
+an upward power of 2 and returned in {\tt length}. 
 
 \subsubsection*{Algorithm}
 
@@ -41,15 +45,6 @@ LALInspiralSetup\\
 LALInspiralChooseModel
 }
 
-\subsubsection*{Notes}
-\begin{itemize}
-\item Sometimes waveforms of type {\tt EOB} might require an array larger than
-the length returned by this function. It is desirable to use a vector
-of size 2 times greater than returned by this code for EOB waveforms.
-
-\item It would be safer if a call to the {\tt LALInspiralTemplate} is made
-before calling this function.
-\end{itemize}
 \vfill{\footnotesize\input{LALInspiralWaveLengthCV}}
 
 </lalLaTeX>  */
@@ -57,7 +52,9 @@ before calling this function.
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
-#define INSPIRAL_MINIMALWAVELENGTH 64
+#define  LALINSPIRAL_LENGTHOVERESTIMATION  0.1       /* 10 % */
+#define  LALINSPIRAL_MINIMALWAVELENGTH     0.03125   /* 64 bins with a 2048Hz sampling*/
+
 
 NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
 
@@ -92,8 +89,8 @@ LALInspiralWaveLength(
       then we return the length otherwise length is zero*/
    if (status->statusPtr->statusCode == 0){
 	   /*we add a minimal value and 10 % of overestimation */
-      	   x	= 1.1 * (ak.tn) * params.tSampling + params.nStartPad 
-   		   + params.nEndPad + INSPIRAL_MINIMALWAVELENGTH;
+      	   x	= (1.+ LALINSPIRAL_LENGTHOVERESTIMATION) * (ak.tn + LALINSPIRAL_MINIMALWAVELENGTH ) * params.tSampling 
+	     + params.nStartPad + params.nEndPad;
 	   ndx 	= ceil(log10(x)/log10(2.));
       	   *length = pow(2, ndx);
      
