@@ -36,6 +36,159 @@ following section.
 \newpage\input{LALAtomicDatatypesH}
 </lalLaTeX> */
 #include <lal/LALAtomicDatatypes.h>
+
+/**** <lalLaTeX>
+ * \newpage
+ * \subsection{Atomic datatypes codes}
+ * \label{ss:atomic-datatype-codes}
+ * \idx[Constant]{LAL\_1\_BYTE\_TYPE\_SIZE}
+ * \idx[Constant]{LAL\_2\_BYTE\_TYPE\_SIZE}
+ * \idx[Constant]{LAL\_4\_BYTE\_TYPE\_SIZE}
+ * \idx[Constant]{LAL\_8\_BYTE\_TYPE\_SIZE}
+ * \idx[Constant]{LAL\_16\_BYTE\_TYPE\_SIZE}
+ * \idx[Constant]{LAL\_TYPE\_SIZE\_MASK}
+ * \idx[Constant]{LAL\_FLTPT\_TYPE\_FLAG}
+ * \idx[Constant]{LAL\_CMPLX\_TYPE\_FLAG}
+ * \idx[Constant]{LAL\_UNSGN\_TYPE\_FLAG}
+ * \idx[Constant]{LAL\_CHAR\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_I2\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_I4\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_I8\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_UCHAR\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_U2\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_U4\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_U8\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_S\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_D\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_C\_TYPE\_CODE}
+ * \idx[Constant]{LAL\_Z\_TYPE\_CODE}
+ * \idx[Type]{LALTYPECODE}
+ *
+ * The following constants specify the size, in bytes, of the atomic datatype.
+ *
+ * \begin{center}
+ * \begin{tabular}{|lcl|}
+ * \hline
+ * Name & Octal Value & Description \\
+ * \hline
+ * \tt LAL\_1\_BYTE\_TYPE\_SIZE & 000 & 1 byte type \\
+ * \tt LAL\_2\_BYTE\_TYPE\_SIZE & 001 & 2 byte type \\
+ * \tt LAL\_4\_BYTE\_TYPE\_SIZE & 002 & 4 byte type \\
+ * \tt LAL\_8\_BYTE\_TYPE\_SIZE & 003 & 8 byte type \\
+ * \tt LAL\_16\_BYTE\_TYPE\_SIZE & 004 & 16 byte type \\
+ * \tt LAL\_TYPE\_SIZE\_MASK & 007 & Mask for byte type size fields \\
+ * \hline
+ * \end{tabular}
+ * \end{center}
+ *
+ * \noindent
+ * The constant \verb+LAL_TYPE_SIZE_MASK+ is useful in extracting the size
+ * information from other type attributes.  For example, the size, in bytes,
+ * of an atomic datatype can be found using something like the following:
+ * \begin{verbatim}
+ * UINT4 code = LAL_S_TYPE_CODE;
+ * UINT4 size = 1U << ( code & LAL_TYPE_SIZE_MASK );
+ * \end{verbatim}
+ *
+ * \vspace{3ex}
+ *
+ * The following constants are flags describing the type attributes.  A type
+ * is either an integer or a floating-point, either purely real or complex,
+ * and, if integer, is either signed or unsigned.
+ *
+ * \begin{center}
+ * \begin{tabular}{|lcl|}
+ * \hline
+ * Name & Octal Value & Description \\
+ * \hline
+ * \tt LAL\_FLTPT\_TYPE\_FLAG & 010 & Floating-point (not integer) type \\
+ * \tt LAL\_CMPLX\_TYPE\_FLAG & 020 & Complex (not purely real) type \\
+ * \tt LAL\_UNSGN\_TYPE\_FLAG & 040 & Unsigned (no sign info) type \\
+ * \hline
+ * \end{tabular}
+ * \end{center}
+ *
+ * To get the actual type, these flags are combined together and with the
+ * type size constants using the bitwise-or operator (\verb+|+).  For example,
+ * an eight-byte floating point number would be
+ * \verb+LAL_8_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG+.
+ * Conceivably you could have a complex type made from a pair of unsigned
+ * one-byte integers that would be specified as
+ * \verb+LAL_1_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_UNSGN_TYPE_FLAG+.
+ * Fortunately, there are none of these in LAL.  Attribues of a particular
+ * type can be extracted using the bitwise-and operator.  For example:
+ * \begin{verbatim}
+ * UINT4 code = LAL_S_TYPE_CODE;
+ * UINT4 isfloat = ( code & LAL_FLTPT_TYPE_FLAG );
+ * UINT4 iscmplx = ( code & LAL_CMPLX_TYPE_FLAG );
+ * \end{verbatim}
+ *
+ * \vspace{3ex}
+ *
+ * The following constants correspond to the types that actually exist in LAL.
+ * Their enumeration is the type \verb+LALTYPECODE+.
+ * \begin{center}
+ * \begin{tabular}{|lcl|}
+ * \hline
+ * Name & Octal Value & Corresponding Type \\
+ * \hline
+ * \tt LAL\_CHAR\_TYPE\_CODE & 000 & \tt CHAR \\
+ * \tt LAL\_I2\_TYPE\_CODE & 001 & \tt INT2 \\
+ * \tt LAL\_I4\_TYPE\_CODE & 002 & \tt INT4 \\
+ * \tt LAL\_I8\_TYPE\_CODE & 003 & \tt INT8 \\
+ * \tt LAL\_UCHAR\_TYPE\_CODE & 040 & \tt UCHAR \\
+ * \tt LAL\_U2\_TYPE\_CODE & 041 & \tt UINT2 \\
+ * \tt LAL\_U4\_TYPE\_CODE & 042 & \tt UINT4 \\
+ * \tt LAL\_U8\_TYPE\_CODE & 043 & \tt UINT8 \\
+ * \tt LAL\_S\_TYPE\_CODE & 012 & \tt REAL4 \\
+ * \tt LAL\_D\_TYPE\_CODE & 013 & \tt REAL8 \\
+ * \tt LAL\_C\_TYPE\_CODE & 033 & \tt COMPLEX8 \\
+ * \tt LAL\_Z\_TYPE\_CODE & 034 & \tt COMPLEX16 \\
+ * \hline
+ * \end{tabular}
+ * \end{center}
+ *
+ **** </lalLaTeX> */
+
+/* constants */
+/* type size constants */
+enum
+{
+  LAL_1_BYTE_TYPE_SIZE  = 000,   /*      0 = 0 */
+  LAL_2_BYTE_TYPE_SIZE  = 001,   /*      1 = 1 */
+  LAL_4_BYTE_TYPE_SIZE  = 002,   /*     10 = 2 */
+  LAL_8_BYTE_TYPE_SIZE  = 003,   /*     11 = 3 */
+  LAL_16_BYTE_TYPE_SIZE = 004,   /*    100 = 4 */
+  LAL_TYPE_SIZE_MASK    = 007    /*    111 = 7 */
+};
+
+/* type flag constants */
+enum
+{
+  LAL_FLTPT_TYPE_FLAG   = 010,   /*   1000 =  8 */
+  LAL_CMPLX_TYPE_FLAG   = 020,   /*  10000 = 16 */
+  LAL_UNSGN_TYPE_FLAG   = 040,   /* 100000 = 32 */
+};
+
+/* type codes */
+typedef enum
+{
+  LAL_CHAR_TYPE_CODE    = LAL_1_BYTE_TYPE_SIZE, /* 0 */
+  LAL_I2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE, /* 1 */
+  LAL_I4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE, /* 2 */
+  LAL_I8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE, /* 3 */
+  LAL_UCHAR_TYPE_CODE   = LAL_1_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 32 */
+  LAL_U2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 33 */
+  LAL_U4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 34 */
+  LAL_U8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 35 */
+  LAL_S_TYPE_CODE       = LAL_4_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /* 18 */
+  LAL_D_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /* 19 */
+  LAL_C_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,     /* 27 */
+  LAL_Z_TYPE_CODE       = LAL_16_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,    /* 28 */
+}
+LALTYPECODE;
+
+
 #include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
