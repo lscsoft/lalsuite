@@ -209,7 +209,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         raise StochasticError, "Start time, end time, ifo one or ifo " \
           "two has not been set"
 
-    basename = self.get_ifo_one() + self.get_ifo_two() + '-' 'stochastic'
+    basename = self.get_ifo_one() + self.get_ifo_two() + '-' + 'stochastic'
 
     if self.__usertag:
       basename += '_' + self.__usertag
