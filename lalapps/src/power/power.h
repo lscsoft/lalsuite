@@ -16,7 +16,6 @@
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
-#include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/BurstSearch.h>
 #include <lal/LIGOMetadataTables.h>

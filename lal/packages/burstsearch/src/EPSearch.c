@@ -10,7 +10,6 @@ $Id$
 #include <lal/BandPassTimeSeries.h>
 #include <lal/BurstSearch.h>
 #include <lal/Date.h>
-#include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
 #include <lal/FrequencySeries.h>

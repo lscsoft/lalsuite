@@ -43,7 +43,6 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 #include <lal/IIRFilter.h>
-#include <lal/EPData.h>
 #include <lal/EPSearch.h>
 
 
