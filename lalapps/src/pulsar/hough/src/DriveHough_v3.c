@@ -99,9 +99,14 @@ int main(int argc, char *argv[]){
   CHAR   *logstr=NULL; 
   CHAR   filehisto[256]; 
   CHAR   filestats[256]; 
+  CHAR   filestar[256];
 
   /* miscellaneous */
-  INT4   houghThreshold, nfSizeCylinder, iHmap, nSpin1Max;;
+  INT4   houghThreshold, nfSizeCylinder, iHmap, nSpin1Max;
+  /* the maximum number count */
+  UINT4  *nStar = NULL; 
+  /* where the max occurs */
+  REAL8  *freqStar=NULL, *alphaStar=NULL, *deltaStar=NULL, *fdotStar=NULL; 
   UINT4  mObsCoh;
   INT8   f0Bin, fLastBin, fBin;
   REAL8  alpha, delta, timeBase, deltaF, f1jump;
@@ -110,6 +115,7 @@ int main(int argc, char *argv[]){
   UINT2  maxNBins, maxNBorders;
   CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
   FILE   *fp1 = NULL;
+  FILE   *fpStar = NULL;  
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -423,6 +429,20 @@ int main(int argc, char *argv[]){
     length =  uvar_fSearchBand*timeBase; 
     fLastBin = f0Bin+length;   /* final frequency to be analyzed */
 
+    /* use this value of length to allocate memory for nstar, fstar etc. */
+    nStar = (UINT4 *)LALMalloc((length + 1)*sizeof(UINT4));
+    freqStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    alphaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    deltaStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+    fdotStar = (REAL8 *)LALMalloc((length + 1)*sizeof(REAL8));
+
+    {
+      INT4 starIndex;
+      for( starIndex = 0; starIndex < length + 1; starIndex++)
+	nStar[starIndex] = 0;
+    }
+
+    /* calculate the wings to be added due to doppler shift etc. */
     fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
     length = 1 + length + 2*fWings;
 
@@ -594,40 +614,42 @@ int main(int argc, char *argv[]){
   /*  Writing the time & detector-velocity corresponding to each SFT  */
   /* ****************************************************************/
   
-/*     {  */
-/*       UINT4   j;  */
-/*       FILE   *fp = NULL;  */
-      
-/*       fp = fopen( "velocityOut.c", "w");  */
-/*       if (fp==NULL){  */
-/* 	fprintf(stderr,"Unable to open velocity file for writing\n");  */
-/* 	return 1;  */
-/*       }  */
-/*       /\*     read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
-/*       for (j=0; j<mObsCoh;++j){  */
-/* 	fprintf(fp, "%d %d %g %g %g %g %g %g\n",  */
-/* 		timeV.time[j].gpsSeconds, timeV.time[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
-/* 		velV.data[j].z, velVmid.data[j].x, velVmid.data[j].y, velVmid.data[j].z );  */
-	
-/* 	fflush(fp);  */
-/*       }  */
-/*       fclose(fp);  */
-      
-      /*     fp = fopen( fnameTime, "w");  */
-      /*       if (fp==NULL){  */
-      /* 	fprintf(stderr,"Unable to open file %s\n for writing",fnameTime);  */
-      /*         return 1; /\* stop the program *\/ */
-      /*       }  */
-      /*       /\* read data format:  INT4 INT4 *\/ */
-      /*       for (j=0; j<mObsCoh;++j){  */
-      /* 	fprintf(fp, "%d %d \n",  */
-      /* 		(timeV.time[j].gpsSeconds),  */
-      /* 		(timeV.time[j].gpsNanoSeconds) );  */
-      
-      /* 	fflush(fp);  */
-      /*       }  */
-      /*       fclose(fp);  */
-   /*  }  */
+  /*     {  */
+  /*       UINT4   j;  */
+  /*       FILE   *fp = NULL;  */
+  
+  /*       fp = fopen( "velocityOut.c", "w");  */
+  /*       if (fp==NULL){  */
+  /* 	fprintf(stderr,"Unable to open velocity file for writing\n");  */
+  /* 	return 1;  */
+  /*       }  */
+  /*       /\*     read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
+  /*       for (j=0; j<mObsCoh;++j){  */
+  /* 	fprintf(fp, "%d %d %g %g %g %g %g %g\n",  */
+  /* 		timeV.time[j].gpsSeconds, timeV.time[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
+  /* 		velV.data[j].z, velVmid.data[j].x, velVmid.data[j].y, velVmid.data[j].z );  */
+  
+  /* 	fflush(fp);  */
+  /*       }  */
+  /*       fclose(fp);  */
+  
+  /*     fp = fopen( fnameTime, "w");  */
+  /*       if (fp==NULL){  */
+  /* 	fprintf(stderr,"Unable to open file %s\n for writing",fnameTime);  */
+  /*         return 1; /\* stop the program *\/ */
+  /*       }  */
+  /*       /\* read data format:  INT4 INT4 *\/ */
+  /*       for (j=0; j<mObsCoh;++j){  */
+  /* 	fprintf(fp, "%d %d \n",  */
+  /* 		(timeV.time[j].gpsSeconds),  */
+  /* 		(timeV.time[j].gpsNanoSeconds) );  */
+  
+  /* 	fflush(fp);  */
+  /*       }  */
+  /*       fclose(fp);  */
+  /*  }  */
+  
+
   
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
@@ -667,9 +689,11 @@ int main(int argc, char *argv[]){
 	  }
       }
 
+
       /* create the base filenames for the stats, histo and event files and template files*/
       strcat( filestats, uvar_fbasenameOut);
-      strcpy(filehisto, filestats);
+      strcpy( filehisto, filestats);
+
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
 #endif
@@ -688,6 +712,7 @@ int main(int argc, char *argv[]){
       /*setlinebuf(fp1);*/ /*line buffered on */  
       setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
 
+
 #ifdef PRINTEVENTS
       /* create and open the events list file */
       strcat(  fileEvents, "events");
@@ -696,7 +721,8 @@ int main(int argc, char *argv[]){
 	fprintf(stderr,"Unable to find file %s\n", fileEvents);
 	return DRIVEHOUGHCOLOR_EFILE;
       }
-      setlinebuf(fpEvents); /*line buffered on */  
+      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+      /*setlinebuf(fpEvents);*/ /*line buffered on */  
 #endif
 
 
@@ -708,7 +734,8 @@ int main(int argc, char *argv[]){
 	fprintf(stderr, "Unable to create file %s\n", fileTemplates);
 	return DRIVEHOUGHCOLOR_EFILE;
       }
-      setlinebuf(fpTemplates); /*line buffered on */   
+      setvbuf(fp1, (char *)NULL, _IOLBF, 0);      
+      /*setlinebuf(fpTemplates);*/ /*line buffered on */   
 #endif 
 
       /* ****************************************************************/
@@ -878,20 +905,30 @@ int main(int argc, char *argv[]){
 	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
 	  SUB( Stereo2SkyLocation (&status, &sourceLocation, 
 				   stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-	  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+		  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
-	  
+
+	  if (stats.maxCount > nStar[fBinSearch-f0Bin])
+	    {
+	      nStar[fBinSearch-f0Bin] = stats.maxCount;
+	      freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
+	      alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
+	      deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
+	      fdotStar[fBinSearch-f0Bin] = 0;
+	    }
+       	  
 	  /* ********************* print results *********************** */
 	  
 #ifdef PRINTMAPS
 	  if( PrintHmap2m_file( &ht, uvar_dirnameOut, iHmap ) ) return 5;
 #endif 
 	  
-
+ 
 	  fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
 		  iHmap, sourceLocation.alpha, sourceLocation.delta,
 		  stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
 		  (fBinSearch*deltaF) );
+          
 #ifdef PRINTEVENTS
 	  SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
 				 &patch, &parDem), &status );
@@ -932,6 +969,17 @@ int main(int argc, char *argv[]){
 	      SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 	      
+
+	      if (stats.maxCount > nStar[fBinSearch-f0Bin])
+		{
+		  nStar[fBinSearch-f0Bin] = stats.maxCount;
+		  freqStar[fBinSearch-f0Bin] = fBinSearch*deltaF;
+		  alphaStar[fBinSearch-f0Bin] = sourceLocation.alpha;
+		  deltaStar[fBinSearch-f0Bin] = sourceLocation.delta;
+		  fdotStar[fBinSearch-f0Bin] = ht.spinRes.data[0];
+		}
+
+
 	      /* ***** print results *********************** */
 	      
 #ifdef PRINTMAPS
@@ -1004,7 +1052,7 @@ int main(int argc, char *argv[]){
       fclose(fpTemplates);
 #endif
      
-      
+
       /******************************************************************/
       /* Free memory allocated inside skypatches loop */
       /******************************************************************/
@@ -1026,6 +1074,50 @@ int main(int argc, char *argv[]){
     } /* finish loop over skypatches */
 
 
+  /* create the directory for writing nstar */
+  strcpy( filestar, uvar_dirnameOut);
+  strcat( filestar, "/nstarfiles/");
+  errno = 0;
+  {
+    /* check whether file can be created or if it exists already 
+       if not then exit */
+    INT4 mkdir_result;
+    mkdir_result = mkdir(filestar, S_IRWXU | S_IRWXG | S_IRWXO);
+    if ( (mkdir_result == -1) && (errno != EEXIST) )
+      {
+	fprintf(stderr, "unable to create nstar directory\n");
+	return 1;  /* stop the program */
+      }
+  }
+  strcat( filestar, uvar_fbasenameOut);
+  strcat( filestar, "nstar");
+
+
+  /* open the nstar file for writing */
+  fpStar=fopen(filestar,"w");
+  if ( !fpStar ){
+    fprintf(stderr,"Unable to find file %s for writing\n", filestar);
+    return DRIVEHOUGHCOLOR_EFILE;
+  }
+  /*setlinebuf(fp1);*/ /*line buffered on */  
+  setvbuf(fpStar, (char *)NULL, _IOLBF, 0);      
+
+
+  /* write the nstar resulta */
+  {
+    INT4 starIndex;
+    /* we don't record the nstar for the last bin */
+    for(starIndex = 0; starIndex < fLastBin - f0Bin; starIndex++)
+      {
+	fprintf(fpStar, "%d %f %f %f %g \n", nStar[starIndex], freqStar[starIndex], 
+		alphaStar[starIndex], deltaStar[starIndex], fdotStar[starIndex] );
+      }
+  }
+
+
+  /* close nstar file */
+  fclose(fpStar);
+
   /* free memory allocated outside skypatches loop */ 
   {
     UINT4 j;
@@ -1041,6 +1133,12 @@ int main(int argc, char *argv[]){
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
+
+  LALFree(nStar);
+  LALFree(alphaStar);
+  LALFree(deltaStar);
+  LALFree(freqStar);
+  LALFree(fdotStar);
 
   SUB (LALDestroyUserVars(&status), &status);
 	
@@ -1263,12 +1361,12 @@ void PrintHoughEvents (LALStatus       *status,
         TRY( Stereo2SkyLocation(status->statusPtr, 
 				&sourceLocation,xPos,yPos,patch, parDem), status);
 	if (ht->spinRes.length) {
-	  fprintf(fpEvents, "%d %f %f %f %g \n", 
+	  fprintf(fpEvents, "%d %g %g %g %g \n", 
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0, ht->spinRes.data[0]);
 	}
 	else {
-	  fprintf(fpEvents, "%d %f %f %f %g \n", 
+	  fprintf(fpEvents, "%d %g %g %g %g \n", 
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0,0.00);
 	}
