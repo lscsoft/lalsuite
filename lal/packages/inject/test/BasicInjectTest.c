@@ -623,6 +623,7 @@ main(int argc, char **argv)
       signal.epoch = waveform.a->epoch;
       signal.epoch.gpsSeconds -= 1;
       signal.deltaT = output.deltaT/4.0;
+      signal.f0 = 0;
       signal.data = NULL;
       time = ( time + 2.0 )/signal.deltaT;
       SUB( LALSCreateVector( &stat, &( signal.data ), (UINT4)time ),
