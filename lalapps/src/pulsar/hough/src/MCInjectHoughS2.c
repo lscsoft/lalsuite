@@ -516,8 +516,8 @@ int main(int argc, char *argv[]){
 	SUB( CheckLines (&status, &flag, &lines2, sampFreq), &status); 
 	if ( flag>0 ) counter++;
       }
-    /* exit if less than 10% of band is good */
-    if (counter < 10 )
+    /* exit if more than 90% is covered by lines */
+    if (counter > 90 )
       {
 	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
 	exit(0);
