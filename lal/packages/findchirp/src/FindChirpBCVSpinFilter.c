@@ -209,7 +209,7 @@ LALFindChirpBCVSpinFilterSegment (
    * Choose level of output
    */
 
-  doTest = 1; /* 1 writes out many files, useful for testing */
+  doTest = 0; /* 1 writes out many files, useful for testing */
      
   if (doTest ==1)
   {	  
