@@ -204,15 +204,15 @@ for seg in data:
     stoch.set_calibration_one(ifo1,chunk.start())
     stoch.set_calibration_two(ifo2,chunk.start())
 
-  # add dependancy on LSCdataFind jobs, if required
-  if do_datafind:
-    stoch.add_parent(df1)
-    if ifo1[0] != ifo2[0]:
-      stoch.add_parent(df2)
+    # add dependancy on LSCdataFind jobs, if required
+    if do_datafind:
+      stoch.add_parent(df1)
+      if ifo1[0] != ifo2[0]:
+        stoch.add_parent(df2)
 
-  # add stochastic node
-  if do_stochastic:
-    dag.add_node(stoch)
+    # add stochastic node
+    if do_stochastic:
+      dag.add_node(stoch)
 
 # write out the DAG
 dag.write_sub_files()
