@@ -69,34 +69,25 @@ BOOLEAN FILE_FSTATS = 1;
 /* for getpid() */
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "BOINC/boinc_api.h"
+
+#if !NO_BOINC_GRAPHICS
+#include "BOINC/graphics_api.h"
+#endif
+
 #define fopen boinc_fopen
 int boincmain(int argc, char *argv[]);
 
-#ifndef __cplusplus
-typedef int bool;
-#endif
+extern double fraction_done;
+void use_boinc_filename1(char** orig_name);
+void use_boinc_filename0(char* orig_name);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-FILE *boinc_fopen(const char *path, const char *mode);
-extern int boinc_init();
-extern int boinc_finish(int);
-extern int boinc_resolve_filename(const char*, char*, int len);
-extern int boinc_fraction_done(double fraction_complete);
-void use_boinc_filename1(char** orig_name);
-void use_boinc_filename0(char* orig_name);
-int boinc_time_to_checkpoint();
-void boinc_checkpoint_completed();
-
-#if !NO_BOINC_GRAPHICS
-/* for current search position, used in starsphere.C revision 4.6 or greater */
-extern int boinc_init_graphics(void (*worker)());
-extern int boinc_finish_graphics();
+  /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
-extern double fraction_done;
-#endif
-
 #ifdef __cplusplus
 }
 #endif
