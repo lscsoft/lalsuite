@@ -1,0 +1,33 @@
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: tmpltbank.h
+ *
+ * Author: Brown, D. A.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+#include <errno.h>
+#include <lalapps.h>
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+#include <lal/LALInspiral.h>
+#include <lal/LALInspiralBank.h>
+
+#define PROGRAM_NAME "lalapps_tmpltbank"
+
+#define USAGE \
+"go fish"
+
