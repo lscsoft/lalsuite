@@ -565,7 +565,7 @@ int main(int argc, char **argv)
 
 		switch (c) {
 		case 0:
-			/* if this option set a flag */
+			/* this option sets a flag */
 			break;
 
 		case 'a':
@@ -582,7 +582,7 @@ int main(int argc, char **argv)
 
 		case 'd':
 			/* the confidence must be smaller than this number */
-			options.maxConfidenceFlag = 1;
+			options.maxConfidenceFlag = TRUE;
 			options.maxConfidence = atof(optarg);
 			break;
 
@@ -598,13 +598,13 @@ int main(int argc, char **argv)
 
 		case 'g':
 			/* only events with centralfreq greater than this are selected */
-			options.minCentralfreqFlag = 1;
+			options.minCentralfreqFlag = TRUE;
 			options.minCentralfreq = atof(optarg);
 			break;
 
 		case 'h':
 			/* only events with centralfreq less than this are selected */
-			options.maxCentralfreqFlag = 1;
+			options.maxCentralfreqFlag = TRUE;
 			options.maxCentralfreq = atof(optarg);
 			break;
 
