@@ -29,18 +29,18 @@ West) before installing this package.
           Then you must set a few environment variables before continuing.
           If you are using sh (or bash):
 
-          LIBRARY_PATH=/home/alice/lib
-          CFLAGS=-I/home/alice/include
+          LIBS=-L/home/alice/lib
+          CPPFLAGS=-I/home/alice/include
 
           If you are using csh (or tcsh):
 
-          setenv LIBRARY_PATH /home/alice/lib
-          setenv CFLAGS -I/home/alice/include
+          setenv LIBS -L/home/alice/lib
+          setenv CPPFLAGS -I/home/alice/include
 
     0.3.  To install the FrameL library (optional) go to the mgr directory of
           the frame library directory structure and run the compilation script
           makecc.  If you install the FrameL in a non-standard location, you
-          will need to set the LIBRARY_PATH and CFLAGS variables so that the
+          will need to set the LIBS and CPPFLAGS variables so that the
           library and include files are accessible (as above).
 
     0.4.  Install the MPICH implementation of MPI (optional).  Then set the
@@ -162,3 +162,5 @@ Troubleshooting:
 
 * If you need to re-run configure after it has failed while checking for a
   working FFTW, FrameL, or MPI, make sure to remove the file config.cache.
+
+
