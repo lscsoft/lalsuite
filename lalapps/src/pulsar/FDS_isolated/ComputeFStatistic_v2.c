@@ -336,15 +336,15 @@ int main(int argc,char *argv[])
 	  
 	  /* regular grid or not? */
 	  if ( uvar_gridType == GRID_FLAT )
-	    fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
+	    fprintf (fpOut, "grid = %d x %d \n", nAlpha, nDelta);
 	  else
 	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
 	  
 	  fprintf (fpOut, 
 		   "format = ascii\n"
-		   "field = locations, Fstat\n"
-		   "structure = 3-vector, scalar\n"
-		   "dependency = positions, positions\n"
+		   "field = freqs, locations, Fstat\n"
+		   "structure = scalar, 2-vector, scalar\n"
+		   "dependency = positions, positions, positions\n"
 		   "interleaving = field\n"
 		   "end\n" );
 	}
