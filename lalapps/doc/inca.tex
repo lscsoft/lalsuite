@@ -8,117 +8,114 @@
 
 \item[Synopsis]
 \begin{verbatim}
-  --help                    display this message
-  --verbose                 print progress information
-  --version                 print version information and exit
-  --debug-level LEVEL       set the LAL debug level to LEVEL
-  --user-tag STRING         set the process_params usertag to STRING
-  --ifo-tag STRING          set the ifo-tag to STRING - for file naming
-  --comment STRING          set the process table comment to STRING
+ [--help ] 
+ [--verbose ]
+ [--version ] 
+ [--debug-level LEVEL ]
+ [--user-tag USERTAG ]
+ [--ifo-tag IFOTAG ]
+ [--comment STRING ] 
  
-  --gps-start-time SEC      GPS second of data start time
-  --gps-end-time SEC        GPS second of data end time
+  --gps-start-time GPSSTARTTIME      
+  --gps-end-time GPSENDTIME       
  
-  --silde-time SEC          slide all triggers of IFOB by SEC
-  --slide-time-ns NS        slide all triggers of IFOB by NS
+ [--silde-time SLIDE_SEC ]
+ [--slide-time-ns SLIDE_NS ] 
  
-  --ifo-a IFOA              name of first ifo (e.g. L1, H1 or H2)
-  --ifo-b IFOB              name of second ifo (e.g. L1, H1 or H2)
+  --ifo-a IFOA              
+  --ifo-b IFOB             
  
-  --triggered-bank FILE     write a triggered bank insted of doing inca
-  --minimal-match M         set minimal match of triggered bank to M
+ [--single-ifo ]
+ [--triggered-bank TRIGBANKFILE]
+ [--minimal-match M ]
  
-  --epsilon ERROR           set effective distance test epsilon (default 2)
-  --kappa ERROR             set effective distance test kappa (default 0.01)
-  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)
-  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger
-  --paramenter-test TEST    set the desired parameters to test coincidence
-                            for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)
-                            for triggered bank (m1_and_m2|psi0_and_psi3)
-  --dm Dm                   mass coincidence window (default 0)
-  --dpsi0 Dpsi0             psi0 coincidence window
-  --dpsi3 Dpsi3             psi3 coincidence window
-  --dmchirp Dmchirp         mchirp coincidence window
-  --deta  Deta              eta coincidence window
-  --dt Dt                   time coincidence window (milliseconds)
+ [--epsilon EPSILON ]
+ [--kappa KAPPA ]
+ [--ifo-b-snr-threshold B_SNR]
+ [--ifo-b-range-cut ]
  
-  --no-playground           do not select triggers from playground
-  --playground-only         only use triggers that are in playground
-  --write-uniq-triggers     make sure triggers from IFO A are unique
+  --paramenter-test TEST   
+ [--dm DM ]  
+ [--dpsi0 DPSI0 ]
+ [--dpsi3 DPSI3 ]
+ [--dmchirp DM_CHIRP ]
+ [--deta  DETA ]
+ [--dt DT ]
+ 
+ [--no-playground ]
+ [--playground-only ]
+ [--write-uniq-triggers ]
 
 \end{verbatim}
 
 \textsc{(LIGO Lightweight XML files)}
 
-\item[Description --- Coincidence Testing] 
+\item[Description --- General] 
 
-\verb$lalapps_inca$ performs coincidence on triggers from the inspiral search
-code.  At present it works for only two interferometers.  The names of the two
-interferometers must be given. Output is written to LIGO lightweight XML files.
-Two XML output files are written.  The output files contain \texttt{process},
-\texttt{process\_params} and \texttt{search\_summary} tables that describe the
-search. The primary ifo output file contains the triggers from \textsc{IFOA}
-that are found to be in coincidence with triggers in \textsc{IFOB}. The
-secondary output file contains the triggers from \textsc{IFOB} that are found
-to be in coincidence with the triggers from \textsc{IFOA}.  Each trigger in the
-\textsc{IFOA} file corresponds to the coincident trigger in the \textsc{IFOB}
-file, so there may be duplicate \textsc{IFOA} triggers.  To prevent this,
-specify the \verb$--write-uniq-triggers$ option.
+\verb$lalapps_inca$ runs in three distinct modes.  The first is to
+perform coincidence between triggers from two distinct interferomters.
+The second is to create a triggered templatebank from a list of inspiral
+triggers.  The third is to create a list of triggers from a single
+interferometer in a specified time interval.  The way to run the code in
+these three ways is descibed below.
 
-The output files are named in the standard way for inspiral pipeline output.
-The primary triggers are in a file named\\
-\begin{center}
-\texttt{IFOA-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
-\end{center}
-and the secondary triggers are in a file named\\
-\begin{center}
-\texttt{IFOB-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
-\end{center}
 
-If a \texttt{--user-tag} or \texttt{--ifo-tag} is not specified on the command
-line, the \texttt{\_USERTAG} or \texttt{\_IFOTAG} part of the filename will be
-omitted.
+\item[Description --- Coincidence Testing]
 
-The default behaviour outputs triggers during playground times only. To obtain
-those triggers that are not in the playground, use the \verb$--no-playground$
-flag.     
+We begin with the two interferometer coincidence testing.  This is the
+default behaviour of the code.  It takes in triggers from two
+interferometers and returns those which pass both time and mass
+coincidence tests.  The two interferometers are specified with the
+\texttt{ifo-a} and \texttt{ifo-b} arguments. The triggers are read in
+from a list of LIGO Lightweight XML files given after the last command
+line argument.  This list must contain at least one from each of the two
+interferometers.  The triggers from these files are read in, and only
+those triggers which lie in the interval between \textsc{GPSSTARTTIME} and
+\textsc{GPSENDTIME} are kept. The default behaviour is to keep only
+playground triggers (this can be explicitly requested with the
+\texttt{playground-only} option).  By specifying
+\texttt{no-playground}, only non-playground triggers are kept.  The
+triggers from the two interferometers are then tested for time and mass
+coincidence.  Two triggers are considered time coincident if their end
+times differ by less than \textsc{dt} milliseconds.  If a time slide has
+been specified, then \textsc{SLIDE\_SEC} seconds plus \textsc{SLIDE\_NS}
+nanoseconds is added to the recorded time of each trigger in
+\textsc{IFOB} before testing for time coincidence.  Triggers are then
+tested for mass coincidence using one of three tests
+\texttt{(m1\_and\_m2 | mchirp\_and\_eta | psi0\_and\_psi3)}.  If
+\texttt{m1\_and\_m2} is specified then both the mass1 and mass2 fields
+of the triggers must differ by less than the specified \textsc{DM}.  If
+\texttt{mchirp\_and\_eta} is specified then the chirp masses must differ
+by less than \textsc{DM\_CHIRP} and the mass ratios $\eta$ must differ
+by less then \textsc{DETA}.  Finally, if \textsc{psi0\_and\_psi3} is
+specified the \texttt{psi0} and \texttt{psi3} fields of the trigger must
+differ by less than \textsc{PSI0} and \textsc{PSI3}.  
 
-\texttt{lalapps\_inca} tests for coincidence in time as well as another set of
-trigger parameters.  The allowed parameter choices are specified by
-\verb$--parameter-test$ \texttt{TEST}, where \texttt{TEST} is one of
-m1\_and\_m2, psi0\_and\_psi3, mchirp\_and\_eta.  \texttt{lalapps\_inca} calls
-the LAL function \texttt{LALCompareSnglInspiral()} to test if two triggers are
-coincident. This first tests that the time of the triggers is coincidence to
-within $\delta t$.  It then tests that the other parameters of the trigger are
-coincident within the input ranges provided.  Additionally, if demanding
-coincidence over m1 and m2, it then tests to that 
+Additionally, if demanding coincidence over m1 and m2, it then tests to
+that 
 %
-\begin{equation} 
-  \frac{\left|D_\mathrm{IFOA} - D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} < 
-  \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  
-\end{equation}
+\begin{equation} \frac{\left|D_\mathrm{IFOA} -
+  D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} <
+  \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  \end{equation}
 % 
 This is equivalent to testing that 
 %
-\begin{equation}\label{snrtest} 
-  \left|\rho_\mathrm{IFOB} - \hat{\rho}_\mathrm{IFOB}\right| < 
-  \epsilon + \kappa\rho_\mathrm{IFOB},
-\end{equation} 
+\begin{equation}\label{snrtest} \left|\rho_\mathrm{IFOB} -
+\hat{\rho}_\mathrm{IFOB}\right| < \epsilon + \kappa\rho_\mathrm{IFOB},
+  \end{equation} 
 %
 where 
 %
-\begin{equation} 
-  \hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
-  {\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA} \, .  
-\end{equation} 
+\begin{equation} \hat{\rho}_\mathrm{IFOB} = \frac{\sigma_\mathrm{IFOB}}
+{\sigma_\mathrm{IFOA}} \rho_\mathrm{IFOA} \, .  \end{equation} 
 %
-If all the tests are passed, the events are considered to be coincident and
-written to the output file.
+If all the tests are passed, the events are considered to be coincident
+and written to the output file.
 
 The \texttt{--ifo-b-range-cut} option performs a test similar to
 (\ref{snrtest}) above to see whether we should expect a trigger in
-\textsc{IFOB}.  There are three possibilities, which depend upon the value of
-the \textsc{SNRSTAR} threshold for \textsc{IFOB}, denoted
+\textsc{IFOB}.  There are three possibilities, which depend upon the
+value of the \textsc{SNRSTAR} threshold for \textsc{IFOB}, denoted
 $\rho_\mathrm{IFOB}^{*}$.
 
 \begin{enumerate}
@@ -143,8 +140,8 @@ so we look for a coincident trigger.  We only keep the
   \frac{(\hat{\rho}_\mathrm{IFOB} + \epsilon)} {1 - \kappa} .
 \end{equation}
 %
-We search \textsc{IFOB} for triggers and record a coincident trigger if found.
-Otherwise, we just record the \textsc{IFOA} trigger.
+We search \textsc{IFOB} for triggers and record a coincident trigger if
+found.  Otherwise, we just record the \textsc{IFOA} trigger.
 
 \item In this case, the trigger is not visible to \textsc{IFOB}:
 %
@@ -155,38 +152,101 @@ Otherwise, we just record the \textsc{IFOA} trigger.
 %
 We do not search \textsc{IFOB}, but do keep the trigger from \textsc{IFOA}.
 
+
 \end{enumerate}
+
+The triggers which survive coincidence are output to two LIGO
+lightweight XML files.  Two XML output files are written.  The output
+files contain \texttt{process}, \texttt{process\_params} and
+\texttt{search\_summary} tables that describe the search. The primary
+ifo output file contains the triggers from \textsc{IFOA} that are found
+to be in coincidence with triggers in \textsc{IFOB}. The secondary
+output file contains the triggers from \textsc{IFOB} that are found to
+be in coincidence with the triggers from \textsc{IFOA}.  Each trigger in
+the \textsc{IFOA} file corresponds to the coincident trigger in the
+\textsc{IFOB} file, so there may be duplicate \textsc{IFOA} triggers.
+To prevent this, specify the \texttt{write-uniq-triggers} option.
+
+The output files are named in the standard way for inspiral pipeline output.
+The primary triggers are in a file named\\
+\begin{center}
+\texttt{IFOA-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+and the secondary triggers are in a file named\\
+\begin{center}
+\texttt{IFOB-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+
+If a \texttt{--user-tag} or \texttt{--ifo-tag} is not specified on the
+command line, the \textsc{\_USERTAG} or \texttt{\_IFOTAG} part of the
+filename will be omitted.
+
 
 \item[Description --- Triggered Bank] 
   
-If the option \verb$--triggered-bank$ is specified, then \texttt{lalapps\_inca}
-will produce a triggered template bank from the input xml files.  In this case,
-the code expects triggers from only a single interferometer, {IFOA}.  The
-triggered bank is formed by first sorting the templates in time, and discarding
-any which are before the time specified with \verb$--gps-start-time$ or after
-the time specified with \verb$--gps-end-time$.  The templates are then sorted
-according to the given \verb$--parameter-test$, which must be one of m1\_and\_m2
-or psi0\_and\_psi3.  Duplicate templates are discarded and what remains is
-output to the \texttt{FILE} specified by the \verb$--triggered-bank$ argument.
-The output file contain \texttt{process}, \texttt{process\_params},
-\texttt{search\_summary} and \texttt{sngl\_inspiral} tables.  
+If the \texttt{triggered-bank} option is specified, then
+\texttt{lalapps\_inca} will produce a triggered template bank from the
+input xml files.  In this case, the code expects triggers from only a
+single interferometer, {IFOA}.  The triggered bank is formed by first
+sorting the templates in time, and discarding any which are before the
+\textsc{GPSSTARTTIME} or after the time specified \textsc{GPSENDTIME}.
+The templates are then sorted according to the given
+\texttt{parameter-test}, which must be one of \texttt{m1\_and\_m2} or
+\texttt{psi0\_and\_psi3}.  Duplicate templates (those with identical m1
+    and m2 or psio and psi3) are discarded and what
+remains is output to the \texttt{TRIGBANKFILE} specified by the
+\verb$--triggered-bank$ argument.  The output file contain
+\texttt{process}, \texttt{process\_params}, \texttt{search\_summary} and
+\texttt{sngl\_inspiral} tables.  
+
+\item[Description --- Single IFO mode]
+
+If the \texttt{single-ifo} option is specified, then
+\texttt{lalapps\_inca} reads in triggers from a single interferometer
+and returns those within the specified time window.  The time window is
+specified by \textsc{GPSSTARTTIME} and \textsc{GPSENDTIME}.
+By default, the program returns only playground triggers.  This
+behaviour can be explicitly requested with the \texttt{playground-only}
+flag.  If \texttt{no-playground} is specified then only those triggers
+outside the playground are written to the output file.
+
+The output file is named in the standard way for inspiral pipeline output.
+The triggers are in a file named\\
+\begin{center}
+\texttt{IFOA-INCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+
+If a \texttt{--user-tag} or \texttt{--ifo-tag} is not specified on the
+command line, the \textsc{\_USERTAG} or \texttt{\_IFOTAG} part of the
+filename will be omitted.  The triggers are stored in a
+\texttt{sngl\_inspiral} table.  The output file also contains
+\texttt{process}, \texttt{process\_params} and \texttt{search\_summary}
+tables that describe the search.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--no-playground}] Optional.  Record all triggers that are
-not in playground data.  The default behavior returns only those triggers
-which lie in the playground data set.  
+
+\item[\texttt{--triggered-bank} \texttt{TRIGBANKFILE}] Optional.  Run
+inca in triggered bank mode.  Output the triggered bank to a file named
+\texttt{TRIGBANKFILE}.
+
+\item[\texttt{--single-ifo}] Optional.  Run inca in single ifo mode.
 
 \item[\texttt{--playground-only}] Optional.  Record only triggers that
 occur in the playground times.  This is the default behavior.
+
+\item[\texttt{--no-playground}] Optional.  Record all triggers that are
+not in playground data.  The default behavior returns only those triggers
+which lie in the playground data set.  
 
 \item[\texttt{--ifo-a} \textsc{IFOA}] Required. This is the name of the
 interferometer to use as the interferometer A in the coincidence algorithm.
 It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
-\item[\texttt{--ifo-b} \textsc{IFOB}] Required. This is the name of the
-interferometer to use as the interferometer B in the coincidence algorithm.
-It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
+\item[\texttt{--ifo-b} \textsc{IFOB}] Required for coincidence, not for
+trigbank or single ifo. This is the name of the interferometer to use as
+the interferometer B in the coincidence algorithm.  It must be a two
+letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
 \item[\texttt{--epsilon} \textsc{$\epsilon$}] Optional. Set the value of
 $\epsilon$ in the effective distance test. If not given the default of
@@ -196,64 +256,90 @@ $\epsilon = 2$ will be used.
 $\kappa$ in the effective distance test. If not given the default of
 $\kappa= 0.01$ will be used.
 
+\item[\texttt{--ifo-b-range-cut}] Optional.  Use effective distance test
+to see whether \textsc{IFOB} has a chance of seeing trigger before
+performing the search.
+
 \item[\texttt{--ifo-b-snr-threshold} \textsc{SNRSTAR}] Optional.  Set the 
 value of the signal to noise threshold for \textsc{IFOB}.  This is used in
-determining which triggers \textsc{IFOB} has a chance to see.  The default
-value 
+determining which triggers \textsc{IFOB} has a chance to see.  If not
+specified, the default value of 6 is used.
 
-\item[\texttt{--ifo-b-range-cut}] Optional.  Use effective distance test to
-see whether \textsc{IFOB} has a chance of seeing trigger before performing 
-the search.
-
-\item[\texttt{--parameter-test} TEST] Required. Choose which parameters to use 
-when testing for coincidence (m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta).  
-Depending on which test is chosen, the allowed windows on the appropriate 
-parameters should be set as described below.
+\item[\texttt{--parameter-test} TEST] Required. Choose which parameters
+to use when testing for coincidence
+(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta).  Depending on which test
+is chosen, the allowed windows on the appropriate parameters should be
+set as described below.
 
 \item[\texttt{--dm} \textsc{$\delta m$}] Optional. Accept triggers as
-coincident if both m1 and m2 agree within $\delta m$.  If not
-supplied,  then $\delta m = 0$.
+coincident if both m1 and m2 agree within $\delta m$.  If not supplied,
+	   then $\delta m = 0$.
 
-\item[\texttt{--dpsi0} \textsc{$\delta \psi_0$}] Optional. Accept triggers as
-coincident if \textsc{$\psi_0$} parameters agree within $\delta \psi_0$.  If not
-supplied,  then $\delta  \psi_0 = 0$.
+\item[\texttt{--dpsi0} \textsc{$\delta \psi_0$}] Optional. Accept
+triggers as coincident if \textsc{$\psi_0$} parameters agree within
+$\delta \psi_0$.  If not supplied,  then $\delta  \psi_0 = 0$.
 
-\item[\texttt{--dpsi3} \textsc{$\delta \psi_3$}] Optional. Accept triggers as
-coincident if \textsc{$\psi_3$} parameters agree within $\delta \psi_3$. 
- If not supplied,  then $\delta  \psi_3 = 0$.
+\item[\texttt{--dpsi3} \textsc{$\delta \psi_3$}] Optional. Accept
+triggers as coincident if \textsc{$\psi_3$} parameters agree within
+$\delta \psi_3$.  If not supplied,  then $\delta  \psi_3 = 0$.
 
-\item[\texttt{--dmchirp} \textsc{$\delta mchirp$}] Optional. Accept triggers as
-coincident if mchirp agrees within $\delta mchirp$.  If not
+\item[\texttt{--dmchirp} \textsc{$\delta mchirp$}] Optional. Accept
+triggers as coincident if mchirp agrees within $\delta mchirp$.  If not
 supplied,  then $\delta mchirp = 0$.
 
-\item[\texttt{--deta} \textsc{$\delta \eta$}] Optional. Accept triggers as
-coincident if $eta$ agrees within $\delta \eta$.  If not
-supplied,  then $\delta \eta = 0$.
+\item[\texttt{--deta} \textsc{$\delta \eta$}] Optional. Accept triggers
+as coincident if $eta$ agrees within $\delta \eta$.  If not supplied,
+then $\delta \eta = 0$.
 
 \item[\texttt{--dt} \textsc{$\delta t$}] Optional. Accept triggers as
-coincident if their end times agree within $\delta t$ milliseconds.  If not
-supplied,  then $\textsc{$\delta t$} = 0$.
+coincident if their end times agree within $\delta t$ milliseconds.  If
+not supplied,  then $\textsc{$\delta t$} = 0$.
 
-\item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Look for
-coincident triggers with end times after \textsc{GPS seconds}.
+\item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Look
+for coincident triggers with end times after \textsc{GPS seconds}.
 
 \item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  Look for
 coincident triggers with end times before \textsc{GPS seconds}.
 
-\item[\texttt{--write-uniq-triggers}] Optional.  The default behavior is to
-only write all triggers from IFO A. However, a trigger from IFO A
-may match two or more triggers from IFO B, so it may be duplicated in the 
+\item[\texttt{--slide-time}] \textsc{SLIDE\_SEC} Optional.  Slide the
+triggers from \textsc{IFOB} forwards in time by  \textsc{SLIDE\_SEC}
+seconds before testing for coincidence.  Only used in the coincidence
+testing mode of inca.
+
+\item[\texttt{--slide-time-ns}] \textsc{SLIDE\_NS} Optional.  Slide the
+triggers from \textsc{IFOB} forwards in time by  \textsc{SLIDE\_NS} nano
+seconds before testing for coincidence.  Only used in the coincidence
+testing mode of inca.
+
+\item[\texttt{--write-uniq-triggers}] Optional.  The default behavior is
+to only write all triggers from IFO A. However, a trigger from IFO A may
+match two or more triggers from IFO B, so it may be duplicated in the
 output. Specifying this option causes only unique IFO A triggers to be
 written.
 
-\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string} to the
-comment field in the process table. If not specified, no comment is added. 
+\item[\texttt{--minimal-match} \textsc{M}] Optional.  If running in triggered
+bank mode, set the minimal match in the output file to \textsc{M}.
 
-\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
-job to be \textsc{string}. May also be specified on the command line as 
-\texttt{-userTag} for LIGO database compatibility.
+\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
+to the comment field in the process table. If not specified, no comment
+is added. 
 
-\item[\texttt{--help}] Optional.  Print a help message.
+\item[\texttt{--user-tag} \textsc{USERTAG}] Optional. Set the user tag
+for this job to be \textsc{USERTAG}. May also be specified on the command
+line as \texttt{-userTag} for LIGO database compatibility.  This will
+affect the naming of the output file.
+
+\item[\texttt{--ifo-tag} \textsc{IFOTAG}] Optional. Set the user tag for
+this job to be \textsc{IFOTAG}.  This will affect the naming of the
+output file.
+
+\item[\texttt{--verbose}] Enable the output of informational messages.
+
+
+\item[\texttt{--help}] Optional.  Print a help message and exit.
+
+\item[\texttt{--version}] Optional.  Print out the author, CVS version and
+tag information and exit.
 
 \item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
 level to \textsc{level}. If not specified the default is 1.
