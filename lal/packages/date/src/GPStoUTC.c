@@ -318,14 +318,12 @@ static int days_in_month(const LALDate *p_utcDate)
   case 9:
   case 11:
     return 31;
-    break;
 
   case 3:
   case 5:
   case 8:
   case 10:
     return 30;
-    break;
 
   case 1:
     if (days_in_year(p_utcDate) == 366)
