@@ -17,6 +17,7 @@
 
 \makeindex
 
+\def\rcs#1{\def\next##1#1{\mbox{##1}}\next}
 \newfont{\lsdfont}{cmbx10 at 72pt}
 
 \begin{document}
@@ -32,6 +33,7 @@
 \hspace{-2em}
 \raisebox{-0.5ex}{\textcolor{blue}{\lsdfont D}\hspace{-0.2em}ocumentation}}
 \author{\bf Members of the LSC}
+\date{RCS \rcs$Revision$, \rcs$Date$; Compiled \today}
 \maketitle
 
 
