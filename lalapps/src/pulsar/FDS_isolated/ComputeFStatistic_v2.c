@@ -195,8 +195,11 @@ void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 void writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
+void 
+refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms);
 
-void NewLALDemod (LALStatus *stat, FStatisticBand **FBand, const SFTVector *sfts, const computeFStatPar *params);
+void NewLALDemod (LALStatus *, FStatisticBand **FBand, const SFTVector *sfts, const computeFStatPar *params);
+
 void
 computeFStat(LALStatus *, 
 	     FStatisticBand **FBand,
@@ -1774,3 +1777,110 @@ writeFBand(LALStatus *stat, const FStatisticBand *FBand, const CHAR *fname)
   RETURN( stat );
 
 } /* writeCOMPLEX16Vector() */
+
+
+
+/** Interpolate frequency-series to newLen frequency-bins.
+ *  This is using DFT-interpolation (derived from zero-padding).
+ */
+void
+refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms)
+{
+  UINT4 oldLen, k;
+  REAL8 Rlk_Re, Rlk_Im, Xd_Re, Xd_Im;
+  REAL8 Yk_Re, Yk_Im;
+  REAL8 phase, phaseN;
+  REAL8 x;
+  REAL8 a, b, c, d, Ooa;
+  UINT4 lstar;
+  INT4 l;
+  COMPLEX16Vector *ret = NULL;
+
+  INITSTATUS( stat, "refineCOMPLEX16Vector", rcsid );  
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( out, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( in, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *out == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( newLen > 0, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  oldLen = in->length;
+
+  TRY (LALZCreateVector (stat->statusPtr, &ret, newLen), stat);
+
+  for (k=0; k <= newLen - 1; k++)
+    {
+      Yk_Re = Yk_Im = 0;
+
+      lstar = (UINT4)(1.0*k * oldLen / newLen + 0.5);
+
+      for (l = (INT4)lstar - Dterms; l <= (INT4)(lstar + Dterms); l++)
+	{
+	  if ( l < 0 || l >= (INT4)oldLen)
+	    continue;
+
+	  Xd_Re = in->data[l].re;
+	  Xd_Im = in->data[l].im;
+
+	  /* treat special case of all summands being 1: happens if x is integer */
+	  x = 1.0 * l * newLen - k * oldLen;
+	  x /= 1.0 * oldLen * newLen;
+	  if ( x == (INT4)x )
+	    {
+	      Rlk_Re = oldLen;
+	      Rlk_Im = 0;
+	    }
+	  else
+	    { 	  /* otherwise: calculate geometric sum: */
+	      phase = 2.0 * LAL_PI * x;
+	      phaseN = phase * oldLen;
+	      
+	      a = 1.0 - cos(phase);
+	      Ooa = 1.0 / a;
+	      b = 1.0 - cos(phaseN);
+	      c = sin(phase);
+	      d = sin(phaseN);
+	      
+	      Rlk_Re = 0.5*(b + c*d*Ooa);
+	      Rlk_Im = 0.5*(c*b*Ooa - d);
+	    }
+
+	  Yk_Re += Xd_Re*Rlk_Re - Xd_Im*Rlk_Im;
+	  Yk_Im += Xd_Im*Rlk_Re + Xd_Re*Rlk_Im;
+
+	} /* for k <= N-1 */
+
+      ret->data[k].re = Yk_Re / oldLen;
+      ret->data[k].im = Yk_Im / oldLen;
+
+    }  /* for k <= M-1 */
+
+  *out = ret;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+} /* refineCOMPLEX16Vector() */
+
+
+/*
+============
+va ['stolen' from Quake2 (GPL'ed)]
+
+does a varargs printf into a temp buffer, so I don't need to have
+varargs versions of all text functions.
+FIXME: make this buffer size safe someday
+============
+*/
+const char *va(const char *format, ...)
+{
+        va_list         argptr;
+        static char     string[1024];
+
+        va_start (argptr, format);
+        vsprintf (string, format,argptr);
+        va_end (argptr);
+
+        return string;
+}
+
+

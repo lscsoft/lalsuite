@@ -151,8 +151,6 @@ void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 void writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
 void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
 
-void refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms);
-
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */
