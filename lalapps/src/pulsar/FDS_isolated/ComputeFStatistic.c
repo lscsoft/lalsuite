@@ -2777,8 +2777,8 @@ int globargc=0;
 char **globargv=NULL;
 
 void worker() {
+#ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
-  
 #if BOINC_COMPRESS
   /* compress the file if it exists */
   if (uvar_useCompression && !retval) {
@@ -2794,7 +2794,18 @@ void worker() {
     }
   } /* if useCompression && ok */
 #endif
-  
+#else
+  int a1,a2,retval;
+  /* find first // delimiter */ 
+  for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3);a1++);
+  retval=boincmain(a1,globargv);
+  if !(retval){
+    for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3);a2++);
+    retval=boincmain(a2-a1-1,&(globargv[a1+1]));
+    if !(retval)
+      retval=polka(globargv-a2-1,&(globargv[a2+1]));
+  }
+#endif
   boinc_finish(retval);
   return;
 }
