@@ -45,6 +45,7 @@ RCSID("$Id$");
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
+"  --version                    print the CVS version string\n"\
 "\n"\
 "Input data source:\n"\
 "  --glob GLOB                  use pattern GLOB to determine the input files\n"\
@@ -218,6 +219,7 @@ int main( int argc, char *argv[] )
       {"user-tag",                required_argument,      0,              'Z'},
       {"userTag",                 required_argument,      0,              'Z'},
       {"comment",                 required_argument,      0,              'c'},
+      {"version",                 no_argument,            0,              'V'},
       {"glob",                    required_argument,      0,              'g'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
@@ -238,7 +240,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long ( argc, argv, "hzZ:c:g:i:o:S:s:c:t:I:T:m:H:D", 
+    c = getopt_long ( argc, argv, "hzZ:c:g:i:o:S:s:c:Vt:I:T:m:H:D", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -299,6 +301,11 @@ int main( int argc, char *argv[] )
         {
           LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 'V':
+        fprintf( stdout, "%s:\n" CVS_REVISION " " CVS_DATE, argv[0] );
+        exit( 0 );
         break;
 
       case 'g':
