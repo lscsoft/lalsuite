@@ -73,8 +73,8 @@ extern int   optind;
 
 int lalDebugLevel = 0;
 int verbose       = 0;
-UINT4 m = 1; /* number of random trials */
-UINT4 n = 0; /* size of each transform  */
+UINT4 m_ = 1; /* number of random trials */
+UINT4 n_ = 0; /* size of each transform  */
 
 static void
 Usage( const char *program, int exitflag );
@@ -111,6 +111,8 @@ int main( int argc, char *argv[] )
   REAL8           tol;
 
   UINT4 nmax;
+  UINT4 m;
+  UINT4 n;
   UINT4 i;
   UINT4 j;
   UINT4 k;
@@ -119,6 +121,8 @@ int main( int argc, char *argv[] )
   FILE *fp;
 
   ParseOptions( argc, argv );
+  m = m_;
+  n = n_;
 
   fp = verbose ? stdout : NULL ;  
 
@@ -393,11 +397,11 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'n': /* set FFT size */
-        n = atoi( optarg );
+        n_ = atoi( optarg );
         break;
 
       case 'm': /* set number of trials */
-        m = atoi( optarg );
+        m_ = atoi( optarg );
         break;
 
       case 'd': /* set debug level */
@@ -432,7 +436,8 @@ ParseOptions( int argc, char *argv[] )
 }
 
 
-void LALDFT(
+static void
+LALDFT(
     LALStatus      *status,
     COMPLEX8Vector *output,
     COMPLEX8Vector *input,

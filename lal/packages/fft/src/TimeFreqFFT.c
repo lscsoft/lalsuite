@@ -117,6 +117,7 @@
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
+#include <lal/AVFactories.h>
 #include <lal/TimeFreqFFT.h>
 
 NRCSID( TIMEFREQFFTC, "$Id$" );

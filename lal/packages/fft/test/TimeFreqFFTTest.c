@@ -48,6 +48,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
+#include <lal/AVFactories.h>
 #include <lal/Units.h>
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
@@ -91,7 +92,7 @@ int main( int argc, char *argv[] )
   RealFFTPlan    *revRealPlan    = NULL;
   ComplexFFTPlan *fwdComplexPlan = NULL;
   ComplexFFTPlan *revComplexPlan = NULL;
-  RandomParams   *rand           = NULL;
+  RandomParams   *randpar        = NULL;
 
   UINT4 j;
 
@@ -116,7 +117,7 @@ int main( int argc, char *argv[] )
   LALCreateReverseComplexFFTPlan( &status, &revComplexPlan, n, 0 );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCreateRandomParams( &status, &rand, 0 );
+  LALCreateRandomParams( &status, &randpar, 0 );
   TestStatus( &status, CODES( 0 ), 1 );
 
 
@@ -131,7 +132,7 @@ int main( int argc, char *argv[] )
   x.deltaT = dt;
   x.sampleUnits = lalMeterUnit;
   LALSnprintf( x.name, sizeof( x.name ), "x" );
-  LALNormalDeviates( &status, x.data, rand );
+  LALNormalDeviates( &status, x.data, randpar );
   TestStatus( &status, CODES( 0 ), 1 );
   for ( j = 0; j < n; ++j ) /* add a 60 Hz line */
   {
@@ -165,7 +166,7 @@ int main( int argc, char *argv[] )
     REAL4Vector tmp;
     tmp.length = 2 * z.data->length;
     tmp.data   = (REAL4 *)z.data->data;
-    LALNormalDeviates( &status, &tmp, rand );
+    LALNormalDeviates( &status, &tmp, randpar );
   }
   for ( j = 0; j < n; ++j ) /* add a 50 Hz line and a 500 Hz ringdown */
   {
@@ -185,7 +186,7 @@ int main( int argc, char *argv[] )
   TestStatus( &status, CODES( 0 ), 1 );
   LALCPrintTimeSeries( &z, "zz.out" );
 
-  LALDestroyRandomParams( &status, &rand );
+  LALDestroyRandomParams( &status, &randpar );
   TestStatus( &status, CODES( 0 ), 1 );
 
   LALDestroyRealFFTPlan( &status, &fwdRealPlan );
