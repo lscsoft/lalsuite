@@ -12,10 +12,12 @@ version=0.8
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters"
+#lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters"
+lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters"
 
 # Packages compiled only with --enable-mpi
-lal_pkg_list_mpi="comm findchirp"
+#lal_pkg_list_mpi="comm findchirp"
+lal_pkg_list_mpi="comm"
 
 # Packages compiled only with --enable-frame
 lal_pkg_list_frame="framedata"
@@ -23,10 +25,13 @@ lal_pkg_list_frame="framedata"
 # Packages compiled only with --enable-mpi and --enable-frame
 lal_pkg_list_frame_mpi=""
 
+# Packages that are omitted
+lal_pkg_list_omit="timefreq findchirp"
+
 ## Do not edit below here!
 
 # All packages
-lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi"
+lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi $lal_pkg_list_omit"
 
 #lal_pkgout_list=`for pkg in $lal_pkg_list; do pkgdir=packages/$pkg; echo -n "$pkgdir/Makefile $pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk $pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk $pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk $pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk " ; done`
 #lal_out_list="Makefile doc/Makefile doc/laldoc/Makefile doc/autodoc/Makefile include/Makefile include/lal/Makefile lib/Makefile packages/Makefile $lal_pkgout_list "
@@ -157,6 +162,14 @@ else
 AC_MSG_RESULT(no)
 fi
 rm -f conflatextest.*
+
+dnl Set needed compiler flags
+AC_MSG_CHECKING([for additional compiler flags])
+case "${host_os}" in
+  solaris*) CFLAGS="-D_POSIX_C_SOURCE=200101L"
+  AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
+  *) AC_MSG_RESULT(none);;
+esac
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)

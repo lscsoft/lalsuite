@@ -462,9 +462,6 @@ LALTwoInterfFindChirpFilterInit (
 				  &(outputPtr->filterParams2->invPlan), 
 				  params->initParams2->numPoints, 0); 
   
-  LALEstimateInvComplexFFTPlan( status->statusPtr, 
-				&(outputPtr->filterParams2->invPlan), 
-				params->initParams2->numPoints);
   BEGINFAIL( status )
     {
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
