@@ -19,8 +19,90 @@ $Id$
 \section{Header \texttt{FindChirp.h}}
 \label{s:FindChirp.h}
 
-Provides core protypes, structures and functions to filter interferometer data
-for binary inspiral chirps.
+\noindent Provides core protypes, structures and functions to filter
+interferometer data for binary inspiral chirps.  The important definitions
+are as follows:
+
+\begin{enumerate}
+\item The equation for a stationary phase 2-pN inspiral chirp
+\begin{equation}
+\tilde{h_c}(f_k) = \left(\frac{5\mu}{96M_\odot}\right)^{\frac{1}{2}}
+                   \left(\frac{M}{\pi^2M_\odot}\right)^{\frac{1}{3}}
+                   f_k^{-\frac{7}{6}} T_\odot^{-\frac{1}{6}}
+                   \exp\left(i\Psi(f_k;M,\eta)\right)
+\end{equation}
+where
+\begin{equation}
+\Psi(f_k;M,\eta) = C_0 x_k \left(C_{2.0} + x_k \left(C_{1.5} 
+             + x_k \left(C_{1.0} + x_k^2 \right)\right)\right),
+\end{equation}
+\begin{equation}
+x_k = \left(\pi M f_k\right)^\frac{1}{3},
+\end{equation}
+and the post-Newtonian coefficents are
+\begin{eqnarray}
+C_{0} &=& \frac{3}{128\eta} \\
+C_{1.0} &=& \frac{3\,715}{756} + \frac{55\eta}{9} \\
+C_{1.5} &=& -16\pi \\
+C_{2.0} &=& \frac{15\,293\,365}{508\,032} + \frac{27\,145\eta}{504} +
+            \frac{3\,085\eta^2}{72}
+\end{eqnarray}
+
+\item Signal-to-noise ratio $\rho$. We actually compute $\rho^2$:
+given by
+\begin{equation}
+\rho^2(t_j) = \frac{16}{\sigma^2} \left( \frac{\Delta t}{N} \right)^2
+              \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2 d^2 A^2(M,\eta)
+  \left|\sum_{k=0}^{N/2} e^{2\pi ijk/N}
+       \frac{d R\tilde{v}_k k^{-\frac{7}{6}} e^{-i\Psi(f_k;M,\eta)}}
+         {|d R|^2 S_v(|f_k|)}
+  \right|^2
+\end{equation}
+
+\item The matched filter normalization $\sigma^2$:
+\begin{equation}
+\sigma^2 = 4 \left(\frac{\Delta T}{N}\right)
+           \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2 d^2 A^2(M,\eta)
+           \sum_{k=0}^{N/2} \frac{k^{-\frac{7}{3}}}{|dR|^2S_v(|f_k|)}
+\end{equation}
+
+\item The effective distance to a source $D_\mathrm{eff}$:
+\begin{equation}
+D_\mathrm{eff} = \frac{\sigma^2}{\rho^2}
+\end{equation}
+
+\item The template dependent normalization
+\begin{equation}
+\mathtt{tmpltNorm} = \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2
+                     d^2 A^2(M,\eta)
+\end{equation}
+
+\item The segment dependent normalization
+\begin{equation}
+\mathtt{segNorm} = \sum_{k=0}^{N/2} \frac{k^{-\frac{7}{3}}}{|dR|^2 S_v(|f_k|)}
+\end{equation}
+
+\item The un-normalized matched filter output
+\begin{equation}
+q_j = \sum_{k=0}^{N/2} e^{2\pi ijk/N} 
+      \frac{ dR \tilde{v}_k k^{-\frac{7}{6}} e^{-i\Psi(f_k;M,\eta)}}
+           {|dR|^2 S_v(|f_k|)}
+\end{equation}
+\end{enumerate}
+
+Then the quantities that we compute in the code are just:
+\begin{equation}
+\rho^2(t_j) = \frac{16}{\sigma^2}\left(\frac{\delta T}{N}\right)^2
+\cdot\mathtt{tmpltNorm}\cdot|q_j|^2,
+\end{equation}
+\begin{equation}
+\sigma^2 = 4\left(\frac{\Delta t}{N}\right)^2 \cdot
+           \mathtt{tmpltNorm}\cdot\mathtt{segNorm}
+\end{equation}
+and
+\begin{equation}
+D_\mathrm{eff} = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
+\end{equation}
 
 \subsection*{Synopsis}
 
