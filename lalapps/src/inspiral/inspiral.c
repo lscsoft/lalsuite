@@ -865,9 +865,8 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS, 
             &(fcSegVec->data[i].data->epoch) ), &status );
       fcSegEndTimeNS = fcSegStartTimeNS + (INT8)
-        ( (REAL8) fcSegVec->data[i].data->data->length * 
-          1e9 * fcSegVec->data[i].deltaT );
-     
+        ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
+
       /* skip segment if it is not contained in the trig start or end times */
       if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
           (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) )
@@ -885,7 +884,7 @@ int main( int argc, char *argv[] )
       {
         if ( vrbflg ) fprintf( stdout, 
             "filtering segment %d/%d [%lld-%lld] "
-            "againt template %d/%d (%e,%e)\n", 
+            "against template %d/%d (%e,%e)\n", 
             fcSegVec->data[i].number,  fcSegVec->length,
             fcSegStartTimeNS, fcSegEndTimeNS,
             tmpltCurrent->tmpltPtr->number, numTmplts,
