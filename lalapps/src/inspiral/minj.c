@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <config.h>
 
 #if !defined HAVE_GSL_GSL_FFT_REAL_H || !defined HAVE_LIBGSL
 int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
@@ -22,7 +23,6 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
-#include <config.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <gsl/gsl_errno.h>
@@ -53,7 +53,7 @@ RCSID( "$Id$" );
 "lalapps_minj [options]\n"\
 "\nDefaults are shown in brackets\n\n" \
 "  --help                   display this message\n"\
-"  --verbose                    print progress information\n"\
+"  --verbose                print mass and galactocentic cartesian coordinates\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
 "  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
@@ -570,6 +570,9 @@ int main( int argc, char *argv[] )
           &(galacticPar.geocentEndTime), &gpsEndTime ), &status );
 
   } /* end loop over injection times */
+
+  /* destroy random parameters */
+  LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
 
 
   /*
