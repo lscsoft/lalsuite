@@ -374,16 +374,20 @@ static REAL4FrequencySeries *omega_gw(LALStatus *status,
     REAL4 omega_ref,
     UINT4 length,
     REAL8 f0,
-    REAL8 deltaF,
-    LIGOTimeGPS gps_time)
+    REAL8 deltaF)
 {
   /* variables */
   REAL4FrequencySeries *series;
   StochasticOmegaGWParameters omega_params;
+  LIGOTimeGPS epoch;
+
+  /* set epoch */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
 
   /* create and initialise frequency series */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", \
-        gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
+        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
   omega_params.alpha = exponent;
@@ -405,17 +409,21 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     REAL8 f0,
     REAL8 deltaF,
     INT4 site_one,
-    INT4 site_two,
-    LIGOTimeGPS gps_time)
+    INT4 site_two)
 {
   /* variables */
   REAL4FrequencySeries *series;
   OverlapReductionFunctionParameters overlap_params;
   LALDetectorPair detectors;
+  LIGOTimeGPS epoch;
+
+  /* set epoch */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
 
   /* create and initialise frequency series */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "Overlap", \
-        gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
+        epoch, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
   overlap_params.length = length;
@@ -436,7 +444,7 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 /* helper function to increment the seconds component of a gps time with
  * an integer */
 static LIGOTimeGPS increment_gps(LALStatus *status,
-    LIGOTimeGPS gps_time,
+    LIGOTimeGPS epoch,
     INT4 increment)
 {
   /* variables */
@@ -448,7 +456,7 @@ static LIGOTimeGPS increment_gps(LALStatus *status,
   interval.nanoSeconds = 0;
 
   /* increment GPS time */
-  LAL_CALL(LALIncrementGPS(status, &result, &gps_time, &interval), status);
+  LAL_CALL(LALIncrementGPS(status, &result, &epoch, &interval), status);
 
   return(result);
 }
@@ -485,7 +493,7 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
 static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
     CHAR *ifo_one,
     CHAR *ifo_two,
-    LIGOTimeGPS gps_time,
+    LIGOTimeGPS epoch,
     INT4 duration)
 {
   /* variables */
@@ -503,7 +511,7 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   /* set frame filename */
   LALSnprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
   LALSnprintf(fname, sizeof(fname), "%s-ccSpectra-%d-%d.gwf", source, \
-      gps_time.gpsSeconds, duration);
+      epoch.gpsSeconds, duration);
 
   /* setup frame file */
   frfile = FrFileONew(fname, 0);
@@ -512,8 +520,8 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   frame = FrameHNew(source);
   frame->run = 0;
   frame->frame = 0;
-  frame->GTimeS = gps_time.gpsSeconds;
-  frame->GTimeN = gps_time.gpsNanoSeconds;
+  frame->GTimeS = epoch.gpsSeconds;
+  frame->GTimeN = epoch.gpsNanoSeconds;
   frame->dt = duration;
 
   /* allocate memory for frame */
@@ -713,7 +721,7 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   XLALDestroyREAL4Window(window);
 
   return(psd);
-}  
+}
 
 /* display usage information */
 static void display_usage()
@@ -1903,7 +1911,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* generate omegaGW */
     MComegaGW = omega_gw(&status, alpha, fRef, omegaRef, MCfreqLength, 0, \
-        MCdeltaF, gpsStartTime);
+        MCdeltaF);
 
     /* response functions */
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
@@ -2027,13 +2035,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (vrbflg)
     fprintf(stdout, "Generating the overlap reduction function...\n");
   overlap = overlap_reduction_function(&status, filterLength, fMin, deltaF, \
-      siteOne, siteTwo, gpsStartTime);
+      siteOne, siteTwo);
 
   /* generage omegaGW */
   if (vrbflg)
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
   omegaGW = omega_gw(&status, alpha, fRef, omegaRef, filterLength, \
-      fMin, deltaF, gpsStartTime);
+      fMin, deltaF);
 
   /* frequency mask */
   if (apply_mask_flag)
