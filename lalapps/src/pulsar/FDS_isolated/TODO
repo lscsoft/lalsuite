@@ -1,19 +1,21 @@
 TODO (ComputeFStatistic-related)
------
+-----------------------------------
 * test/compare various metrics
     + find/fix problem with Ephemeris-metric
 
 * get rid of year-specification on command-line if possible (use ranges 00-04..)
 
-* quick-fix for mesh-covering problem at the equator?
-
 * work on more general tiling
 
-* modify ComputeFStat so that the search parameters can be refered to
+* modify ComputeFStat so that the search parameters can be referred to
   any arbitrary epoch and not just to the epoch of the first sample of the
   analyzed data set (as is now).
 
 * move to using SFT-IO lib
+
+* determine detector from SFTs?
+
+* prepare 'unified' F-stat code for binary+isolated
 
 done
 ----
@@ -31,3 +33,4 @@ done
 * clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion!! (done: mutually exclusive)
 * complete use of Ephemeris-metric
 * commit stripped-down version of "test-SFTs" to allow everybody running testFstat-script
+* quick-fix for mesh-covering problem at the equator?
