@@ -46,6 +46,8 @@ LALFindChirpCreateTmpltNode (
 
   (*tmpltNode)->prev     = NULL;
   (*tmpltNode)->next     = NULL;
+  (*tmpltNode)->level    = tmplt->level;
+  (*tmpltNode)->inserted = 0;
   (*tmpltNode)->tmpltPtr = tmplt;
 
   /* link the list */
