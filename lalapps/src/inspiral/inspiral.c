@@ -1622,8 +1622,8 @@ int main( int argc, char *argv[] )
           else if ( approximant == BCVSpin )
           {
             LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
-                  &eventList, fcFilterInput, fcFilterParams, fcDataParams, 
-                  fcSegVec, dataSegVec), &status );
+                  &eventList, fcFilterInput, fcFilterParams, fcDataParams 
+                  ), &status );
           } 
           else
           {
