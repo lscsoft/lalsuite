@@ -128,7 +128,9 @@ INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
 INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
+INT4  globFrameData     = 0;            /* glob *.gwf to get frame data */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
+CHAR  *frInType         = NULL;         /* type of data frames          */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
@@ -206,8 +208,10 @@ int main( int argc, char *argv[] )
 
   /* frame input data */
   FrCache      *frInCache = NULL;
+  FrCache      *frGlobCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
+  FrCacheSieve  sieve;
 
   /* frame output data */
   struct FrFile *frOutFile  = NULL;
@@ -514,16 +518,53 @@ int main( int argc, char *argv[] )
   /* copy the start time into the GEO time series */
   geoChan.epoch = chan.epoch;
 
-  /* open a frame cache or files */
-  if ( frInCacheName )
+  if ( globFrameData )
   {
-    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
-    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+    if ( vrbflg ) fprintf( stdout, 
+        "globbing for *.gwf frame files of type %s in current directory\n",
+        frInType );
+
+    frGlobCache = NULL;
+
+    /* create a frame cache by globbing all *.gwf files in the pwd */
+    LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, NULL, NULL ), 
+        &status );
+
+    /* check we globbed at least one frame file */
+    if ( ! frGlobCache->numFrameFiles )
+    {
+      fprintf( stderr, "error: no frame file files of type %s found\n",
+          frInType );
+      exit( 1 );
+    }
+    
+    /* sieve out the requested data type */
+    memset( &sieve, 0, sizeof(FrCacheSieve) );
+    sieve.dscRegEx = frInType;
+    LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
+        &status );
+
+    /* check we got at least one frame file back after the sieve */
+    if ( ! frInCache->numFrameFiles )
+    {
+      fprintf( stderr, "error: no frame files of type %s globbed as input\n",
+          frInType );
+      exit( 1 );
+    }
+
+    LALFree( frGlobCache );
   }
   else
   {
-    LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+    if ( vrbflg ) fprintf( stdout, 
+        "reading frame file locations from cache file: %s\n", frInCacheName );
+
+    /* read a frame cache from the specified file */
+    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
   }
+
+  /* open the input data frame stream from the frame cache */
+  LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
   /* set the mode of the frame stream to fail on gaps or time errors */
   frStream->mode = LAL_FR_VERBOSE_MODE;
@@ -2211,8 +2252,11 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --slide-time T               slide data start epoch by T seconds\n"\
 "  --slide-time-ns T            slide data start epoch by T nanoseconds\n"\
 "\n"\
+"  --glob-frame-data            glob *.gwf files in the pwd to obtain frame data\n"\
+"  --frame-type TAG             input data is contained in frames of type TAG\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
 "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
@@ -2292,6 +2336,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
     {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
+    {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2327,6 +2372,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"high-pass-order",         required_argument, 0,                'H'},
     {"high-pass-attenuation",   required_argument, 0,                'T'},
     {"frame-cache",             required_argument, 0,                'u'},
+    {"frame-type",              required_argument, 0,                'S'},
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
     {"pad-data",                required_argument, 0,                'x'},
@@ -2376,7 +2422,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:T:U:V:W:X:Y:Z:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z:"
         "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:",
         long_options, &option_index );
 
@@ -2965,6 +3011,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'S':
+        optarg_len = strlen( optarg ) + 1;
+        frInType = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( frInType, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       case 'v':
         /* create storage for the calibration frame cache name */
         optarg_len = strlen( optarg ) + 1;
@@ -3465,17 +3518,62 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  /* check that the frame caches have been specified */
-  if ( ! frInCacheName )
+  /* check that we can correctly obtain the input frame data */
+  if ( globFrameData )
   {
-    fprintf( stderr, "--frame-cache must be specified\n" );
-    exit( 1 );
+    if ( frInCacheName )
+    {
+      fprintf( stderr, 
+          "--frame-cache must not be specified when globbing frame data\n" );
+      exit( 1 );
+    }
+
+    if ( ! frInType )
+    {
+      fprintf( stderr, 
+          "--frame-type must be specified when globbing frame data\n" );
+      exit( 1 );
+    }
   }
+  else
+  {
+    if ( ! frInCacheName )
+    {
+      fprintf( stderr, 
+          "--frame-cache must be specified when not globbing frame data\n" );
+      exit( 1 );
+    }
+
+    if ( frInType )
+    {
+      fprintf( stderr, "--frame-type must not be specified when obtaining "
+          "frame data from a cache file\n" );
+      exit( 1 );
+    }
+  }
+
+  /* record the glob frame data option in the process params */
+  if ( globFrameData )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-frame-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
+  
+  /* check that the calibration frame cache has been specified */
   if ( ! cal_data && ! calCacheName )
   {
     fprintf( stderr, "--calibration-cache must be specified\n" );
     exit( 1 );
   }
+
+  /* check that a template bank has been specified */
   if ( ! bankFileName )
   {
     fprintf( stderr, "--bank-file must be specified\n" );
