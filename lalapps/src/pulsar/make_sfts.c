@@ -280,8 +280,15 @@ int main(int argc,char *argv[]){
     /* read in correct data */
     before=errno;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
-    if (errno!=before)
+    if (errno!=before){
+      char command[256];
       pout("System error when reading Frame data: %s\n", strerror(errno));
+      pout("Following is output of ls -l on files\n");
+      sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
+      system(command);
+      return 3;
+    }
+    
     if (frvect == NULL) {
       pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       continue;
