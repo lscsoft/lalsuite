@@ -9,6 +9,10 @@
 \usepackage{times}
 \usepackage{verbatim}
 \usepackage{hyperref}
+\usepackage{boxedminipage}
+\usepackage{longtable}
+\usepackage{multirow}
+
 
 \geometry{letterpaper,margin=1in}
 
@@ -44,6 +48,7 @@
   \ifthenelse{\equal{#1}{xxx}}{\index{#2@\texttt{#2}}}%
   {\index{#2@\texttt{#2}}\index{#1!#2@\texttt{#2}}}}
 
+\newlength{\BCL} % base class length, for base trees.
 
 \newcommand\lal{\textsc{lal}}  
 \newcommand\lalapps{\textsc{lalapps}}  
@@ -472,6 +477,10 @@ This is the source code for the program \verb$lalapps_hello$:
 \listinginput[10]{1}{hello.c}
 \end{indented}
 
+\newpage
+\input{pipeline-module}
+
+\clearpage
 \chapter{LALApps programs}
 
 This chapter describes the programs that are part of the LALApps package.
