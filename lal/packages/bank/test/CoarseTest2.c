@@ -122,7 +122,7 @@ main(int argc, char **argv)
   }
   fprintf(fpr, "&\n");
 
-  coarseIn.approximant = SpinTaylorT3;
+  coarseIn.approximant = EOB;
   LALInspiralCreateCoarseBank(&status, &list2, &nlist2, coarseIn);
   
   {
