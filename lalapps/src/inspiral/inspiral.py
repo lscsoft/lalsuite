@@ -66,6 +66,8 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     for sec in ['data','tmpltbank']:
       self.add_ini_opts(cp,sec)
+  
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
@@ -92,6 +94,8 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['data','inspiral']:
       self.add_ini_opts(cp,sec)
 
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
     self.set_stdout_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inspiral.sub')
@@ -116,6 +120,8 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     
     for sec in ['trigtotmplt']:
       self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     
     self.set_stdout_file('logs/trigtotmplt-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/trigtotmplt-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
@@ -141,6 +147,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     
     for sec in ['inca']:
       self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     self.set_stdout_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
