@@ -48,9 +48,29 @@ extern "C" {
 #pragma }
 #endif
 
+#include <lal/LIGOMetadataTables.h>
+
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
-#include <lal/LIGOMetadataTables.h>
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
+#define LIGOMETADATAUTILSH_ENULL 1
+#define LIGOMETADATAUTILSH_ENNUL 2
+#define LIGOMETADATAUTILSH_ETIME 3
+#define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
+#define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
+#define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
+/* </lalErrTable> */
+
+#if 0
+<lalLaTeX>
+\subsection*{Types}
+</lalLaTeX>
+#endif
 
 
 /*
@@ -90,6 +110,22 @@ tagSnglBurstAccuracy
 
 }
 SnglBurstAccuracy;
+
+
+/*
+ *
+ * general manipulation functions
+ *
+ */
+
+
+void
+LALPlaygroundInSearchSummary (
+    LALStatus          *status,
+    SearchSummaryTable *ssTable,
+    LIGOTimeGPS        *inPlayTime,
+    LIGOTimeGPS        *outPlayTime
+    );
 
 
 /*
@@ -181,6 +217,7 @@ LALClusterSnglBurstTable (
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
 
 \newpage
+\input{LIGOMetadataUtilsC}
 \input{SnglInspiralUtilsC}
 </lalLaTeX>
 #endif
