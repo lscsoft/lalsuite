@@ -107,69 +107,35 @@ void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 	}
 }
 
-static int ModifiedforClustering(
-				 SnglBurstTable *prevEvent, 
-				 SnglBurstTable *thisEvent
-				 )
+static int ModifiedforClustering(SnglBurstTable *prevEvent, SnglBurstTable *thisEvent)
 {
-  INT8 ta1, ta2, tb1, tb2, ta_p, tb_p;
-  REAL4 fa1, fa2, fb1, fb2; 
-  LALStatus status; 
-  INT8  epsilon = 10;
+	REAL4 fa1, fa2, fb1, fb2;
+	LALStatus status;
+	REAL8 deltaT;
+	REAL8 epsilon = 1e-8;	/* seconds */
 
+	memset(&status, 0, sizeof(status));
 
-  memset( &status, 0, sizeof(LALStatus) );
+	/* compute difference in peak times */
+	LALDeltaFloatGPS(&status, &deltaT, &prevEvent->peak_time, &thisEvent->peak_time);
 
-  /*compute the start, stop & peak times of the prevEvent */
-  LALGPStoINT8(&status, &ta1, &(prevEvent->start_time));
-  ta2 = ta1 + ( NANOSEC * prevEvent->duration );
-  LALGPStoINT8(&status, &ta_p, &(prevEvent->peak_time));
+	/* compute the start and stop frequencies of the prevEvent */
+	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
+	fa2 = fa1 + prevEvent->bandwidth;
 
-  /* compute the start and stop frequencies of the prevEvent */
-  fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
-  fa2 = fa1 + prevEvent->bandwidth;
+	/* compute the start and stop frequencies of the thisEvent */
+	fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
+	fb2 = fb1 + thisEvent->bandwidth;
 
-  /*compute the start, stop & peak times of the thisEvent */
-  LALGPStoINT8(&status, &tb1, &(thisEvent->start_time));
-  tb2 = tb1 + ( NANOSEC * thisEvent->duration );
-  LALGPStoINT8(&status, &tb_p, &(thisEvent->peak_time));
-
-  /* compute the start and stop frequencies of the thisEvent */
-  fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
-  fb2 = fb1 + thisEvent->bandwidth;
-
-  if ( llabs(ta_p - tb_p) < epsilon )
-    {
-      if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) 
-	 || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
-        {
-          /* set the lower & higher frequencies of the cluster */ 
-          fa1 = fb1 < fa1 ? fb1 : fa1 ;
-          fa2 = fb2 > fa2 ? fb2 : fa2 ;
-          prevEvent->central_freq = 0.5 * (fa1 + fa2);
-          prevEvent->bandwidth = (fa2 - fa1);
-
-	  /*set the start & end times of the cluster */
-          ta1 = tb1 < ta1 ? tb1 : ta1;
-          ta2 = tb2 > ta2 ? tb2 : ta2 ;
-          LALINT8toGPS(&status, &(prevEvent->start_time), &ta1);
-          prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
-	   
-	  /* set the amplitude, snr, conf. & peak time */
-	  if ( prevEvent->amplitude < thisEvent->amplitude )
-            {
-	      prevEvent->amplitude = thisEvent->amplitude;
-	      prevEvent->snr = thisEvent->snr;
-	      prevEvent->peak_time = thisEvent->peak_time;
-	      prevEvent->confidence = thisEvent->confidence;
-            }
-	  return 1;
+	if((fabs(deltaT) < epsilon) &&
+	   ( (fb1 >= fa1 && fb1 <= fa2) ||
+	     (fb2 >= fa1 && fb2 <= fa2) ||
+	     (fa1 >= fb1 && fa1 <= fb2) ||
+	     (fa2 >= fb1 && fa2 <= fb2) )) {
+		XLALClusterSnglBurst(prevEvent, thisEvent);
+		return 1;
 	}
-      else 
 	return 0;
-    }
-  else 
-    return 0;
 }
 
 
