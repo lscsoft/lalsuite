@@ -56,6 +56,7 @@ int main( int argc, char *argv[] )
   UINT4 inj;
   int   opt;
   FILE *fp;
+  FILE *fpData;
 
   /* parse options */
   while ( 0 < ( opt = getopt( argc, argv, "hVvd:m:r:s:t:u:" ) ) )
@@ -149,8 +150,11 @@ int main( int argc, char *argv[] )
     tlistelem->tinj = tinj;
     ++ninj;
   }
-
+  
   /* output first sequence */
+
+  fpData = fopen( "injepochs.dat", "w" );
+  fputs( "# end_time\tend_time_ns\n", fpData );
 
   fp = fopen( "injepochs.ilwd", "w" );
   fputs( "<?ilwd?>\n", fp );
@@ -168,21 +172,28 @@ int main( int argc, char *argv[] )
 
   fprintf( fp, "\t<int_4u name='data' ndim='2' dims='2,%d' units='s,ns'>", ninj );
   fprintf( fp, "%d 0", startTime );
+  fprintf( fpData, "%d\t0\n", startTime );
   tlistelem = tlisthead->next;
   for ( inj = 1; inj < ninj; ++inj )
   {
     UINT4 tsec = (UINT4)( tlistelem->tinj / 1000000000 );
     UINT4 tnan = (UINT4)( tlistelem->tinj % 1000000000 );
     fprintf( fp, " %d %d", tsec, tnan );
+    fprintf( fpData, "%d\t%d\n", tsec, tnan );
     tlistelem = tlistelem->next;
   }
   fprintf( fp, "</int_4u>\n" );
 
   fputs( "</ilwd>\n", fp );
   fclose( fp );
+  fclose( fpData );
+
 
 
   /* output second sequence */
+  fpData = fopen( "injparams.dat", "w" );
+  fputs( "# mass1\tmass2\tdistance\n", fpData );
+
   fp = fopen( "injparams.ilwd", "w" );
   fputs( "<?ilwd?>\n", fp );
   fputs( "<ilwd name='injparams::sequence' size='7'>\n", fp );
@@ -236,7 +247,16 @@ int main( int argc, char *argv[] )
     injPar[lonElem]  = atan2( y, x );
     injPar[latElem]  = atan( z / r );
     injPar[psiElem]  = 2 * LAL_PI * u5;
+#if 0
+    injPar[incElem]  = 0;
+    injPar[phiElem]  = 0;
+    injPar[lonElem]  = 0;
+    injPar[latElem]  = 0;
+    injPar[psiElem]  = 0;
+#endif
 
+    fprintf( fpData, "%e\t%e\t%e\n", m1, m2, 
+        injPar[distElem] / (1e6 * LAL_PC_SI) );
     fprintf( fp, "%s%e", inj ? " " : "", injPar[0] );
     for ( elem = 1; elem < numElem; ++elem )
       fprintf( fp, " %e", injPar[elem] );
@@ -245,6 +265,7 @@ int main( int argc, char *argv[] )
 
   fputs( "</ilwd>\n", fp );
   fclose( fp );  
+  fclose( fpData );
 
   /* free memory */
   while ( tlisthead )
