@@ -282,7 +282,7 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  for (j = 0; j <= cSequenceIn->length;j++)
+  for (j = 0; j < cSequenceIn->length;j++)
   {
     if ((cSequenceIn->data[j].re ? 
 	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
@@ -416,7 +416,7 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  for (j = 0; j <= zSequenceIn->length;j++)
+  for (j = 0; j < zSequenceIn->length;j++)
   {
     if ((zSequenceIn->data[j].re ?
 	fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
@@ -591,7 +591,7 @@ int main( void )
   }
 
 
-  for (j = 0; j <= dSequenceIn->length;j++)
+  for (j = 0; j < dSequenceIn->length;j++)
   {
     if ((dSequenceIn->data[j] ? 
 	 fabs((dSequenceIn->data[j] - dSequenceOut->data[j])
@@ -758,7 +758,7 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  for (j = 0; j <= sSequenceIn->length;j++)
+  for (j = 0; j < sSequenceIn->length;j++)
   {
     if ((sSequenceIn->data[j] ? 
 	 fabs((sSequenceIn->data[j] - sSequenceOut->data[j])
@@ -986,7 +986,7 @@ int main( void )
 	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
-  for (j = 0; j <= sSequenceIn->length;j++)
+  for (j = 0; j < sSequenceIn->length;j++)
   {
     if ((sSequenceIn->data[j] ? 
 	 fabs((sSequenceIn->data[j] - sSequenceOut->data[j])
@@ -1151,7 +1151,7 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  for (j = 0; j <= zSequenceIn->length;j++)
+  for (j = 0; j < zSequenceIn->length;j++)
   {
     if ((zSequenceIn->data[j].re ? 
 	 fabs((zSequenceIn->data[j].re - zSequenceOut->data[j].re)
@@ -1324,7 +1324,7 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  for (j = 0; j <= dSequenceIn->length;j++)
+  for (j = 0; j < dSequenceIn->length;j++)
   {
     if ((dSequenceIn->data[j] ? 
 	 fabs((dSequenceIn->data[j] - dSequenceOut->data[j])
@@ -1483,7 +1483,7 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  for (j = 0; j <= cSequenceIn->length;j++)
+  for (j = 0; j < cSequenceIn->length;j++)
   {
     if ((cSequenceIn->data[j].re ? 
 	 fabs((cSequenceIn->data[j].re - cSequenceOut->data[j].re)
