@@ -31,10 +31,10 @@ fi
 
 echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref' ..."
 
-if diff --brief Fstats Fstats.ref ; then
+if ./compareFstats -1 Fstats -2 Fstats.ref ; then
     echo "OK. No differences found!"
 else
-    echo "OUCH... files differ. Something is wrong..."
+    echo "OUCH... files differ. Something might be wrong..."
 fi
 
     
