@@ -201,6 +201,8 @@ CalibrationUpdateParams;
 typedef
 struct StrainOutTag {
   REAL8TimeSeries h;         /* timeseries containing h(t) */
+  REAL8TimeSeries hC;         /* timeseries containing the control signal */
+  REAL8TimeSeries hR;         /* timeseries containing the residual signal */
   COMPLEX16TimeSeries alpha; /* alpha time series */
   COMPLEX16TimeSeries beta;  /* beta time series */
 } StrainOut;
@@ -221,12 +223,13 @@ struct StrainInTag {
   INT4 AADelay;            /* Overall analog actuation function delay */
   REAL8IIRFilter *AX;      /* Digital filters for x arm actuation function */
   REAL8IIRFilter *AY;      /* Digital filters for y arm actuation function */
-  REAL8IIRFilter *G;       /* Digital servo filters */
   INT4 NCinv;              /* Numbers of filters of each type */
   INT4 NAA;
   INT4 NAX;
   INT4 NAY;
-  INT4 NG;
+  INT4 delta;
+  INT4 testsensing;
+  INT4 wings;               /* size of wings in seconds */
 } StrainIn;
 
 typedef
@@ -271,45 +274,35 @@ void LALComputeStrain(
     StrainIn               *input
     );
 
-void XLALGetFactors(
+void LALGetFactors(
     LALStatus              *status,
     StrainOut              *output,    
     StrainIn               *input
     );
 
+void LALFIRFilter(LALStatus *status, 
+		   REAL8TimeSeries *tseries, 
+		   REAL8IIRFilter *FIR);
+
+void LALMakeFIRLP(LALStatus *status, 
+		  REAL8IIRFilter *G, 
+		  int USF);
+
+void LALMakeFIRHP(LALStatus *status, 
+		  REAL8IIRFilter *G);
+
+void LALCopyFilter(LALStatus *status, 
+		   REAL8IIRFilter **F2, 
+		   REAL8IIRFilter *F1, 
+		   int ORDER);
+
+void LALFreeFilter(LALStatus *status, 
+		   REAL8IIRFilter *F2, 
+		   int ORDER);
+
 int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output);
 int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output);
 int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
-
-void XLALReadFilters(
-     LALStatus *status, 
-     REAL8IIRFilter **Cinv, 
-     REAL8IIRFilter **G,
-     REAL8IIRFilter **AA,
-     REAL8IIRFilter **AX,
-     REAL8IIRFilter **AY,
-     char *fname,
-     int GPS,
-     int *USF,
-     int *NC, 
-     int *NG, 
-     int *NAA, 
-     int *NAX, 
-     int *NAY, 
-     int *CD, 
-     int *AAD);
-
-void XLALWriteFilters(
-     LALStatus *status, 
-     REAL8IIRFilter *Cinv, 
-     REAL8IIRFilter *G,
-     REAL8IIRFilter *AA,
-     REAL8IIRFilter *AX,
-     REAL8IIRFilter *AY,
-     char *fname,
-     int GPS,
-     int USF,
-     int NC, int NG, int NAA, int NAX, int NAY, int CD, int AAD);
 
 
 #ifdef  __cplusplus
