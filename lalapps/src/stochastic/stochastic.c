@@ -1090,6 +1090,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       thisStoch->start_time.gpsNanoSeconds = gpsAnalysisTime.gpsNanoSeconds;
       thisStoch->duration.gpsSeconds = segmentDuration;
       thisStoch->duration.gpsNanoSeconds = 0;
+      thisStoch->f_min = fMin;
+      thisStoch->f_max = fMax;
       thisStoch->cc_stat = y;
       thisStoch->cc_sigma = sqrt(varTheo);
     }
