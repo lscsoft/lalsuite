@@ -46,7 +46,6 @@ typedef struct tagPSDEstimatorInput {
 
 typedef struct tagPSDEstimatorParams {
 	INT4 psdTempLength;
-	LALUnit psdUnits;
 	INT4 filterLength;
 	INT4 numFMin;
 	AverageSpectrumParams *psdParams;

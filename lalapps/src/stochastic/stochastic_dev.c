@@ -161,8 +161,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for PSDs */
   PSDEstimatorInput psdInputOne;
   PSDEstimatorInput psdInputTwo;
-  PSDEstimatorParams psdParamsOne;
-  PSDEstimatorParams psdParamsTwo;
+  PSDEstimatorParams psdEstParams;
   INT4 overlapPSDLength;
   INT4 psdTempLength;
   INT4 windowPSDLength;
@@ -175,7 +174,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries psdTempTwo;
   REAL4FrequencySeries psdOne;
   REAL4FrequencySeries psdTwo;
-  LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* response functions */
   COMPLEX8FrequencySeries responseTempOneA;
@@ -422,16 +420,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   numFMax = (UINT4)(fMax / deltaF);
   filterLength = numFMax - numFMin + 1;
 
-  /* set metadata fields for PSDs */
-  strncpy(psdTempOne.name, "psdTempOne", LALNameLength);
-  strncpy(psdTempTwo.name, "psdTempTwo", LALNameLength);
-  psdTempOne.sampleUnits = psdUnits;
-  psdTempTwo.sampleUnits = psdUnits;
-  psdTempOne.deltaF = deltaF;
-  psdTempTwo.deltaF = deltaF;
-  psdTempOne.f0 = 0;
-  psdTempTwo.f0 = 0;
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for PSDs...\n");
@@ -448,17 +436,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       psdTempOne.data->length * sizeof(*psdTempOne.data->data));
   memset(psdTempTwo.data->data, 0, \
       psdTempTwo.data->length * sizeof(*psdTempTwo.data->data));
-
-  /* reduced frequency band PSDs */
-  /* set metadata fields for reduced frequency band PSDs */
-  strncpy(psdOne.name, "psdOne", LALNameLength);
-  strncpy(psdTwo.name, "psdTwo", LALNameLength);
-  psdOne.deltaF = deltaF;
-  psdTwo.deltaF = deltaF;
-  psdOne.f0 = fMin;
-  psdTwo.f0 = fMin;
-  psdOne.sampleUnits = psdUnits;
-  psdTwo.sampleUnits = psdUnits;
 
   if (vrbflg)
   {
@@ -481,6 +458,20 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdParams.plan = NULL;
   psdParams.window = NULL;
 
+  /* set psd inputs */
+  psdInputOne.segmentA = &segmentOneA;
+  psdInputOne.segmentC = &segmentOneC;
+  psdInputOne.responseA = &responseOneA;
+  psdInputOne.responseC = &responseOneC;
+  psdInputTwo.segmentA = &segmentTwoA;
+  psdInputTwo.segmentC = &segmentTwoC;
+  psdInputTwo.responseA = &responseTwoA;
+  psdInputTwo.responseC = &responseTwoC;
+  psdEstParams.psdTempLength = psdTempLength;
+  psdEstParams.filterLength = filterLength;
+  psdEstParams.psdParams = &psdParams;
+  psdEstParams.numFMin = numFMin;
+
   if (vrbflg)
   {
     fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
@@ -501,32 +492,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
-
-  /* set metadata fields for response functions */
-  strncpy(responseTempOneA.name, "responseTempOneA", LALNameLength);
-  strncpy(responseTempOneB.name, "responseTempOneB", LALNameLength);
-  strncpy(responseTempOneC.name, "responseTempOneC", LALNameLength);
-  strncpy(responseTempTwoA.name, "responseTempTwoA", LALNameLength);
-  strncpy(responseTempTwoB.name, "responseTempTwoB", LALNameLength);
-  strncpy(responseTempTwoC.name, "responseTempTwoC", LALNameLength);
-  responseTempOneA.sampleUnits = countPerAttoStrain;
-  responseTempOneB.sampleUnits = countPerAttoStrain;
-  responseTempOneC.sampleUnits = countPerAttoStrain;
-  responseTempTwoA.sampleUnits = countPerAttoStrain;
-  responseTempTwoB.sampleUnits = countPerAttoStrain;
-  responseTempTwoC.sampleUnits = countPerAttoStrain;
-  responseTempOneA.deltaF = deltaF;
-  responseTempOneB.deltaF = deltaF;
-  responseTempOneC.deltaF = deltaF;
-  responseTempTwoA.deltaF = deltaF;
-  responseTempTwoB.deltaF = deltaF;
-  responseTempTwoC.deltaF = deltaF;
-  responseTempOneA.f0 = 0;
-  responseTempOneB.f0 = 0;
-  responseTempOneC.f0 = 0;
-  responseTempTwoA.f0 = 0;
-  responseTempTwoB.f0 = 0;
-  responseTempTwoC.f0 = 0;
 
   if (vrbflg)
   {
@@ -1187,31 +1152,15 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Estimating PSDs...\n");
     }
 
-    /* set psd inputs */
-    psdInputOne.segmentA = &segmentOneA;
-    psdInputOne.segmentC = &segmentOneC;
-    psdInputOne.responseA = &responseOneA;
-    psdInputOne.responseC = &responseOneC;
-    psdInputTwo.segmentA = &segmentTwoA;
-    psdInputTwo.segmentC = &segmentTwoC;
-    psdInputTwo.responseA = &responseTwoA;
-    psdInputTwo.responseC = &responseTwoC;
-    psdParamsOne.psdTempLength = psdTempLength;
-    psdParamsOne.psdUnits = psdUnits;
-    psdParamsOne.filterLength = filterLength;
-    psdParamsOne.psdParams = &psdParams;
-    psdParamsOne.numFMin = numFMin;
-    psdParamsTwo.psdTempLength = psdTempLength;
-    psdParamsTwo.psdUnits = psdUnits;
-    psdParamsTwo.filterLength = filterLength;
-    psdParamsTwo.psdParams = &psdParams;
-    psdParamsTwo.numFMin = numFMin;
+    /* set epoch */
+    calInvPSDOne.epoch = segmentOneB.epoch;
+    calInvPSDTwo.epoch = segmentOneB.epoch;
 
     /* estimate psds */
     LAL_CALL( psdEstimator(&status, calInvPSDOne, psdInputOne, \
-          psdParamsOne), &status );
+          psdEstParams), &status );
     LAL_CALL( psdEstimator(&status, calInvPSDTwo, psdInputTwo, \
-          psdParamsTwo), &status );
+          psdEstParams), &status );
 
     /* output the results */
     if (debug_flag)
@@ -1745,7 +1694,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               highPassAtten);
           exit(1);
         }
-        
+
         break;
 
       case 'P':
@@ -2084,7 +2033,7 @@ static void readDataPair(LALStatus *status,
   CHECKSTATUSPTR( status );
   memset(dataStreamOne.data->data, 0, \
       dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
-  
+
   if (vrbflg)
   {
     fprintf(stdout, "Opening first frame cache...\n");
@@ -2278,16 +2227,6 @@ static void psdEstimator(LALStatus *status,
   INITSTATUS( status, "psdEstimator", STOCHASTICDEVC );
   ATTATCHSTATUSPTR( status );
 
-  /* set psd metadata fields */
-  strncpy(psdTempA.name, "psdTempA", LALNameLength);
-  strncpy(psdTempC.name, "psdTempC", LALNameLength);
-  psdTempA.sampleUnits = params.psdUnits;
-  psdTempC.sampleUnits = params.psdUnits;
-  psdTempA.deltaF = deltaF;
-  psdTempC.deltaF = deltaF;
-  psdTempA.f0 = 0;
-  psdTempC.f0 = 0;
-
   /* allocate memory for psd data structures */
   psdTempA.data = NULL;
   psdTempC.data = NULL;
@@ -2300,16 +2239,6 @@ static void psdEstimator(LALStatus *status,
   memset(psdTempC.data->data, 0, \
       psdTempC.data->length * sizeof(&psdTempC.data->data));
 
-  /* set reduced frequency band psd metadata */
-  strncpy(psdA.name, "psdA", LALNameLength);
-  strncpy(psdC.name, "psdC", LALNameLength);
-  psdA.sampleUnits = params.psdUnits;
-  psdC.sampleUnits = params.psdUnits;
-  psdA.deltaF = deltaF;
-  psdC.deltaF = deltaF;
-  psdA.f0 = fMin;
-  psdC.f0 = fMin;
-
   /* allocate memory for reduced band psd data structures */
   psdA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
   psdC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
@@ -2318,10 +2247,10 @@ static void psdEstimator(LALStatus *status,
 
   /* compute uncalibrated PSDs */
   LALREAL4AverageSpectrum(status->statusPtr, &psdTempA, input.segmentA, \
-        params.psdParams);
+      params.psdParams);
   CHECKSTATUSPTR( status );
   LALREAL4AverageSpectrum(status->statusPtr, &psdTempC, input.segmentC, \
-        params.psdParams);
+      params.psdParams);
   CHECKSTATUSPTR( status );
 
   /* reduce to the optimal filter frequency range */
