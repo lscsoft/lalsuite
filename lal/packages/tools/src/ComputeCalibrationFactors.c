@@ -219,6 +219,9 @@ void LALComputeCalibrationFactors(
   alphabeta.re *= -1; /* change the sign of alpha*beta */
   alphabeta.im *= -1;
 
+  H.re *= -1.0;
+  H.im *= -1.0;
+
   /* ------------------------------- compute alpha ----------------------------------------- */
 
   cdiv( &RA, &AS_Q, &EXC );
