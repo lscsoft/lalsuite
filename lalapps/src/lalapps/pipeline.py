@@ -874,6 +874,22 @@ class ScienceSegment:
     """
     return self.__segment[2]
 
+  def set_start(self,t):
+    """
+    Override the GPS start time (and set the duration) of this ScienceSegment.
+    t = new GPS start time.
+    """
+    self.__segment[3] += self.__segment[1] - t
+    self.__segment[1] = t
+
+  def set_end(self,t):
+    """
+    Override the GPS end time (and set the duration) of this ScienceSegment.
+    t = new GPS end time.
+    """
+    self.__segment[3] -= self.__segment[2] - t
+    self.__segment[2] = t
+
   def dur(self):
     """
     Returns the length (duration) in seconds of this ScienceSegment.
