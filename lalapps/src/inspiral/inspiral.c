@@ -274,27 +274,27 @@ int main( int argc, char *argv[] )
   if ( userTag && ifoTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s_%s-%d-%d", ifo, 
-	ifoTag, userTag, gpsStartTime.gpsSeconds, 
-	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
-    }
-    else if ( userTag && !ifoTag )
-    {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
-	userTag,  gpsStartTime.gpsSeconds, 
-	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else if ( !userTag && ifoTag )
-    {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
-	  ifoTag,  gpsStartTime.gpsSeconds, 
-	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
-    }
-    else
-    {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL-%d-%d", ifo,
-	  gpsStartTime.gpsSeconds, 
-	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );     
-    }
+        ifoTag, userTag, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+  }
+  else if ( userTag && !ifoTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
+        userTag,  gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else if ( !userTag && ifoTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
+        ifoTag,  gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+  }
+  else
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL-%d-%d", ifo,
+        gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );     
+  }
 
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
