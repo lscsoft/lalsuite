@@ -1,6 +1,6 @@
 #!/bin/sh
 d=${srcdir:-.}
-cmd="./lalapps_ring -v -d 1 -f $d/\*.F -r $d/response.asc -i $d/filterpar.in -o events.out"
+cmd="./lalapps_ring --verbose --debug-level=1 --frame-path=$d --frame-files=\*.F --response-file=$d/response.asc --sample-rate=1024 --filter-params=$d/filterpar.in"
 echo $cmd
 eval $cmd || exit $?
 #sed -n '/#/p' events.out \
