@@ -1,3 +1,7 @@
+September 22, 2004
+------------------
+Added new section: SFT File Naming Convention
+
 September 17, 2004
 ------------------
 After discussion with the pulsar search group, added detector type to
@@ -341,3 +345,128 @@ and 	data_0 = data_1 =0+0i
  	data_3 = ...= data_4=0+0i
 
 
+SFT File Naming Convention
+--------------------------
+
+1) SFT file names are to follow the conventions of LIGO technical
+document LIGO-T010150-00-E, "Naming Convention for Frame Files which are
+to be Processed by LDAS," for class 2 frames, except with an extension
+of .sft rather than .gwf:
+
+S-D-G-T.sft,
+
+where
+
+S is the source of the data = an uppercase single letter designation of
+the site, e.g., G (GEO), H (Hanford), L (Livingston), T (TAMA), or V
+(Virgo).
+
+D is a description = any string consisting of alphanumeric characters
+plus underscore (_), plus (+), and number (#). In particular, the
+characters dot (.), dash (-), and space are prohibited, as is any
+description consisting of a single uppercase letter, which is reserved
+for use by class 1 raw frames.
+
+G is the GPS time at the beginning of the first SFT in the file (an
+integer number of seconds). This is either a 9-digit or 10-digit number.
+(If the beginning of the data is not aligned with an exact GPS second,
+then the filename should contain the exact GPS second just before the
+beginning of the data.)
+
+T is the total time interval covered by the file, in seconds.  If only 1
+SFT is in the file, then T is tbase in the header.  For multiple SFTs,
+if the data is aligned with exact GPS seconds, then T is simply the
+number of seconds between the beginning of the first SFT and the end of
+the last SFT. If the data is not aligned with exact GPS seconds, then T
+should be calculated from the exact GPS second just before the start of
+the first SFT to the exact GPS second just after the end of the last
+SFT. Data gaps (i.e., non-contiguous SFTs within a file) are permitted,
+though the SFTs in the file must be time ordered.
+
+2. Note that even though SFTs do exist outside the LDAS diskcache,
+adopting the class 2 frame naming convention (except for the extension)
+ensures that all SFTs can be indexed by LDAS and other tools adopting
+the LDAS conventions. Note that LDAS v1.2.0 allows a list of extensions
+as a diskcachAPI resource variable. Thus LDAS v1.2.0 and higher can
+automatically index SFTs with names as specified here.
+
+3. SFT file names will follow these additional rules for the description
+field D:
+
+a. The description field, D, for SFTs will be an underscore "_"
+delimited alphanumeric string with these subfields:
+
+D = numSFTs_IFO_SFTtype[_Misc],
+
+numSFTs is the number of SFTs in the file.
+
+IFO is a two character abbreviation of the interferometer data used to
+generated the SFT, e.g., G1, H1, H2, L1, T1, or V1.  This field must
+always begin with an uppercase letter.
+
+SFTtype is the type of SFT(s) in the file, and must be a concatenation
+of tbase, units, and SFT, e.g., 30mSFT for 30 minute SFTs, 60sSFT for 60
+second SFTs.  Note that this information is redundant but required since
+it ensures that SFTs of a given type are indexed uniquely (many scripts
+and programs use the D field as an index; see also comment b below). It
+is also permissible to append an optional SFT version number after SFT:
+e.g., 30mSFTv2 for 30 minute SFTs with version 2 headers.
+
+Misc is an optional field that contains any other pertinent information
+about the SFTs, e.g., the run name, the input channel name, the
+calibration version, the data quality version, the frequency band,
+etc.... This field can be anything the group or individual that
+generates SFTs wants to include in the name, and should be used to
+distinguish a set of SFTs as unique from other sets for the same site,
+IFO, SFTtype, and GPS times. Possible examples of the Misc subfield are:
+
+i. S1: The SFT is from the S1 Science run.
+
+ii. S2v1Cal: The SFT is from S2 data using v1 calibration.
+
+iii. S3ASQv3Calv5DQ: The SFTs was generated from the LSC-AS_Q channel
+using v3 of the calibration and v5 of the data quality segments.  (Note
+that LIGO channel names contain prohibited characters; thus if channels
+names are included in the Misc subfield a nickname or abbreviation must
+be used.)
+
+iv. S4hot: The SFT is from the S4 run using calibrated h(t).
+
+b. Even though some of the information required in the description
+field, D, is redundant, many scripts and programs (such as LSCdataFind
+and the LDAS diskcacheAPI) rely on this field, plus the GPS interval and
+source letter, to find files. The required subfields of D will ensure
+that SFTs files are uniquely identified by these scripts and programs.
+
+c. Example SFT files names
+
+i. A 30 minute H2 SFT:
+
+H-1_H2_30mSFT-735627918-1800.sft
+
+ii. A 30 minute H2 SFT with explicit designation of its v2 header:
+
+H-1_H2_30mSFTv2-735627918-1800.sft
+
+iii. A 30 minute S2 H1 SFT:
+
+H-1_H1_30mSFT_S2-733467931-1800.sft
+
+iv. A file with 1887 30 minute H1 SFTs for the 352 to 353 Hz frequency
+band, (with gaps in time):
+
+H-1887_H1_30mSFT_352to353Hzband-733467931-4622400.sft
+
+v. A 30 minute S3 GEO SFTs produced from h(t):
+
+G-1_G1_30mSFT_S3hot-732465218-1800.sft
+
+vi. A 60 second S2 L1 SFT from the L1:LSC-AS_Q channel for v2 of the
+calibration and version 6 of the data quality segments:
+
+L-1_L1_60sSFT_S2ASQv2Calv6DQ-788901256-60.sft
+
+d. Thus note that Misc is left as an arbitrary subfield of the D field
+in this specification to allow flexibility.  It is up to the groups
+using SFTs to agree on the information to include in this subfield for
+the generation of SFTs for each run.
