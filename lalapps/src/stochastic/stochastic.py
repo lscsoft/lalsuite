@@ -77,12 +77,6 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('ifo-one', ifo)
     self.__ifo_one = ifo
 
-  def get_ifo_one(self):
-    """
-    Returns the IFO code of the first interferometer.
-    """
-    return self.__ifo_one
-
   def set_ifo_two(self, ifo):
     """
     Set the interferometer code to use as IFO Two.
@@ -90,12 +84,6 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     self.add_var_opt('ifo-two', ifo)
     self.__ifo_two = ifo
-
-  def get_ifo_two(self):
-    """
-    Returns the IFO code of the second interferometer.
-    """
-    return self.__ifo_two
 
   def set_cache_one(self,file):
     """
