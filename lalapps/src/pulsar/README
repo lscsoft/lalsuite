@@ -14,7 +14,7 @@ modifications.
 
 *********************************************************************
 
-================================================================================
+==========================================================================
 
 STEP 0
 GENERATE LIST OF ALL LIGO DATA ON THE CLUSTER
@@ -36,15 +36,16 @@ combined into a single text file called alldata, where S2 will be
 replaced by the run name.  [Note: You can monitor the initial action
 of this script by using tail alldata.]
 
-Second, it makes four lists of data (S2.LLO.full.sorted,
-S2.LLO.RDS.sorted, S2.LHO.full.sorted, S2.LHO.RDS.sorted) which are
-sorted by GPS time.  S2 is replaced by the run name.
+Second, it makes six lists of data (S2.LLO.full.sorted,
+S2.LLO.RDS.sorted, S2.LHO.full.sorted, S2.LHO.RDS.sorted,
+S2.LHO.NDAS.sorted S2.LLO.NDAS.sorted) which are sorted by GPS time.
+S2 is replaced by the run name.
 
 INPUTS:  listing of "*.gwf" files under /netdat[ac]/s001 - /netdat[ac]/s296
 OUTPUTS: alldata, S2.LLO.full.sorted,  S2.LHO.full.sorted, S2.LLO.RDS.sorted,
-         S2.LHO.RDS.sorted  S2.LHO.NRDS.sorted S2.LLO.NRDS.sorted
+         S2.LHO.RDS.sorted  S2.LHO.NDAS.sorted S2.LLO.NDAS.sorted
          
-================================================================================
+============================================================================
 
 STEP 1:
 GENERATE A LIST OF ALL THE LOCKED SEGMENTS TO MAKE SFTS
