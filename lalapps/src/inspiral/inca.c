@@ -131,7 +131,7 @@ int main( int argc, char *argv[] )
   INT4	keep_a_trig = 0;
   INT4	dont_search_b = 0;
   INT4  isPlay = 0;
-  INT8  ta, tb, tp;
+  INT8  ta, tb;
   INT4  numTriggers[MAXIFO];
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
@@ -579,7 +579,6 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-
   /* check for minimal match when doing a triggered bank */
   if ( trigBankFile && minMatch < 0 )
   {
@@ -587,15 +586,16 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  /* check that a playground option is not specified if doing a slide */
-  if ( slideDataNS && havePlgOpt )
+  /* check that a playground option is not specified if */
+  /* doing a slide or a trig bank                       */
+  if ( ( trigBankFile || slideDataNS ) && havePlgOpt )
   {
     fprintf( stderr, "--playground-only or --no-playground should not "
 	"be specified for a time slide\n" );
     exit( 1 );
   }
 
-  /* fill the comment, if a user has specified on, or leave it blank */
+  /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
@@ -1241,7 +1241,7 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
 	&status );
 
-    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &tp ), &status );
+    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
 
     if ( vrbflg )
     {
