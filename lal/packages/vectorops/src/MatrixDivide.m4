@@ -4,7 +4,7 @@ $Id$
 ********* </lalVerbatim> ********/
 
 /******************************* <lalLaTeX file="MatrixDivideC">
-\section{Module \texttt{MatrixDivide.c}}
+\subsection{Module \texttt{MatrixDivide.c}}
 \label{s:MatrixDivide.c}
 
 This file is dedicated to reproducing the matlab function " ./ ".  This file

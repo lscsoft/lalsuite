@@ -4,7 +4,7 @@ $Id$
 ********* </lalVerbatim> ********/
 
 /******************************* <lalLaTeX file="MatrixPowerC">
-\section{Module \texttt{MatrixPower.c}}
+\subsection{Module \texttt{MatrixPower.c}}
 \label{s:MatrixPower.c}
 This file is dedicated to reproducing the matlab function " \verb+.^+ ".  This file
 has several declarations of the same function taking all forms of available

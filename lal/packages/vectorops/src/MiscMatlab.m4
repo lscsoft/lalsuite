@@ -4,7 +4,7 @@ $Id$
 ********* </lalVerbatim> ********/
 
 /******************************* <lalLaTeX file="MiscMatlabC">
-\section{Module \texttt{MiscMatlab.c}}
+\subsection{Module \texttt{MiscMatlab.c}}
 \label{s:MiscMatlab.c}
 
 This file reproduces the last few matlab functions that we needed for our purposes.

@@ -4,7 +4,7 @@ $Id$
 ********* </lalVerbatim> ********/
 
 /******************************* <lalLaTeX file="MatrixMultiplyC">
-\section{Module \texttt{MatrixMultiply.c}}
+\subsection{Module \texttt{MatrixMultiply.c}}
 \label{s:MatrixMultiply.c}
 
 This file is dedicated to reproducing the matlab function " .* ".  This file
