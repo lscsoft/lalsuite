@@ -60,6 +60,74 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 </lalLaTeX>
 #endif
 
+static int ModifiedforClustering(
+				 SnglBurstTable *prevEvent, 
+				 SnglBurstTable *thisEvent
+				 )
+{
+  INT8 ta1, ta2, tb1, tb2, ta_p, tb_p;
+  REAL4 fa1, fa2, fb1, fb2; 
+  LALStatus status; 
+  INT8  epsilon = 10;
+
+
+  memset( &status, 0, sizeof(LALStatus) );
+
+  /*compute the start, stop & peak times of the prevEvent */
+  LALGPStoINT8(&status, &ta1, &(prevEvent->start_time));
+  ta2 = ta1 + ( NANOSEC * prevEvent->duration );
+  LALGPStoINT8(&status, &ta_p, &(prevEvent->peak_time));
+
+  /* compute the start and stop frequencies of the prevEvent */
+  fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
+  fa2 = fa1 + prevEvent->bandwidth;
+
+  /*compute the start, stop & peak times of the thisEvent */
+  LALGPStoINT8(&status, &tb1, &(thisEvent->start_time));
+  tb2 = tb1 + ( NANOSEC * thisEvent->duration );
+  LALGPStoINT8(&status, &tb_p, &(thisEvent->peak_time));
+
+  /* compute the start and stop frequencies of the prevEvent */
+  fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
+  fb2 = fb1 + thisEvent->bandwidth;
+
+  if ( llabs(ta_p - tb_p) < epsilon )
+    {
+      if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) 
+	 || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
+        {
+          /* set the lower & higher frequencies of the cluster */ 
+          fa1 = fb1 < fa1 ? fb1 : fa1 ;
+          fa2 = fb2 > fa2 ? fb2 : fa2 ;
+          prevEvent->central_freq = 0.5 * (fa1 + fa2);
+          prevEvent->bandwidth = (fa2 - fa1);
+
+	  /*set the start & end times of the cluster */
+          ta1 = tb1 < ta1 ? tb1 : ta1;
+          ta2 = tb2 > ta2 ? tb2 : ta2 ;
+          LALINT8toGPS(&status, &(prevEvent->start_time), &ta1);
+          prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
+	   
+	  /* set the amplitude, snr, conf. & peak time */
+	  if ( prevEvent->amplitude < thisEvent->amplitude )
+            {
+	      prevEvent->amplitude = thisEvent->amplitude;
+	      prevEvent->snr = thisEvent->snr;
+	      prevEvent->peak_time = thisEvent->peak_time;
+	      prevEvent->confidence = thisEvent->confidence;
+            }
+	  return 1;
+	}
+      else 
+	return 0;
+    }
+  else 
+    return 0;
+}
+
+
+
+
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALSortSnglBurst(
@@ -286,145 +354,52 @@ LALClusterSnglBurstTable (
 {
   SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL,*startEvent=NULL;
   INT4 i, j;
-  INT4 n = 1;
-  INT4 tmpnum;
-  REAL4 msp_duration;
+  INT4 numModEvent = 1;
+
 
   INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
   ATTATCHSTATUSPTR (status);
 
-  thisEvent = burstEvent->next;
-  prevEvent = burstEvent;
+
   startEvent = burstEvent;
-  msp_duration=startEvent->duration;
+  thisEvent = burstEvent->next;
+
   while (thisEvent != NULL)
   {
-    INT8 tb1, tb2;
-    REAL4 fb1, fb2;
-
-    LALGPStoINT8(status->statusPtr, &tb1, &(thisEvent->start_time));
-    CHECKSTATUSPTR(status);
-    tb2 = tb1 + ( NANOSEC * thisEvent->duration );
-    fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
-    fb2 = fb1 + thisEvent->bandwidth;
-
     prevEvent = startEvent;
-
-    for (i = n; i > 0; i--)
-    {   
-      INT8 ta1, ta2;
-      REAL4 fa1, fa2;
-
-      /*compute the time in nanosec for each event trigger */
-      LALGPStoINT8(status->statusPtr, &ta1, &(prevEvent->start_time));
-      CHECKSTATUSPTR(status);
-      ta2 = ta1 + ( NANOSEC * prevEvent->duration );
-
-      /* compute the start and stop frequencies */
-      fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
-      fa2 = fa1 + prevEvent->bandwidth;
-
-      /* find overlapping events */
-      if (((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) 
-          || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
-      {
-        if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) 
-            || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
-        {
-          /* set the lower & higher frequencies of the cluster */ 
-          fa1 = fb1 < fa1 ? fb1 : fa1 ;
-          fa2 = fb2 > fa2 ? fb2 : fa2 ;
-          prevEvent->central_freq = 0.5 * (fa1 + fa2);
-          prevEvent->bandwidth = (fa2 - fa1);
-
-          /* compare the confidence and use the most confident event
-	   * to determine the peak time.   
-	   * However if all but the first line is commented then it is 
-	   * most likely that amplitude/snr is being considered for the
-	   * determination of peak time
-	   */
-
-          if ( prevEvent->confidence > thisEvent->confidence )
-          {
-            prevEvent->confidence = thisEvent->confidence;
-	    /* prevEvent->amplitude = thisEvent->amplitude;
-            prevEvent->snr = thisEvent->snr;
-            prevEvent->peak_time = thisEvent->peak_time;
-            msp_duration = thisEvent->duration;*/
-          }
-	  /*  else if( prevEvent->confidence == thisEvent->confidence )
-          {/*if equal confidence use the one with shortest duration 
-            if( msp_duration > thisEvent->duration )
-            {
-              prevEvent->peak_time = thisEvent->peak_time;
-              prevEvent->amplitude = thisEvent->amplitude;
-              prevEvent->snr = thisEvent->snr;
-              msp_duration = thisEvent->duration;
-            }
-	    }*/
-
-          /*set the start & end times of the cluster */
-          ta1 = tb1 < ta1 ? tb1 : ta1;
-          ta2 = tb2 > ta2 ? tb2 : ta2 ;
-          LALINT8toGPS(status->statusPtr, &(prevEvent->start_time), &ta1);
-          CHECKSTATUSPTR(status);
-          prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
-
-          /* If amplitude/snr is used to compare instead of confidence. 
-	   * However if want to use confidence then comment the lines 
-	   * below and uncomment the appropriate line above.
-	   */
-
-	  if ( prevEvent->amplitude < thisEvent->amplitude )
-            {
-            prevEvent->amplitude = thisEvent->amplitude;
-            prevEvent->snr = thisEvent->snr;
-            prevEvent->peak_time = thisEvent->peak_time;
-            }
-
-          /*find the next event to compare */
-          for(j=1; j < i; j++)
-          {		   
-            prevEvent = prevEvent->next;
-          }
-          prevEvent->next = thisEvent->next;
-          LALFree(thisEvent);
-          break;
-        }
-        else 
-        {
-          /* otherwise keep this as a unique trigger */
-          prevEvent = prevEvent->next;
-          if ( i==1 )
-          {
-            n++;
-          } 
-        }
+    
+    for (i = numModEvent; i > 0; i--)
+      {   
+	if (ModifiedforClustering(prevEvent,thisEvent))
+	  {
+	    for (j = i; j > 1; j--)
+	      {
+		prevEvent = prevEvent->next;
+	      }
+	    prevEvent->next = thisEvent->next;
+	    LALFree(thisEvent);
+	    break;
+	  }
+	else
+	  prevEvent = prevEvent->next;
       }
-      else 
-      {
-        /* otherwise keep this as a unique trigger */  
-        prevEvent = prevEvent->next;
-        if ( i==1 )
-        {
-          n++;
-        }
-      }
-    }
+
+    if (i == 0)
+      numModEvent++;
+
     thisEvent = prevEvent->next;    
   }
-
-
-  tmpnum = 1;
+  
   /*count the number of events in the modified list */
 
   while (startEvent != NULL)
   {
+    numModEvent = 1;
     startEvent = startEvent->next;
-    tmpnum++;
+    numModEvent++;
   }
 
-  *nevents = tmpnum;
+  *nevents = numModEvent;
 
   /* normal exit */
   DETATCHSTATUSPTR (status);
