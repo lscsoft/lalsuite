@@ -306,24 +306,11 @@ main (int argc, char *argv[])
 
 
 
-  /*  Maximum iterations exceeded error  */
-
-
-  if (verbose)
-  {
-    printf ("\n----- Maximum iterations exceeded Error: Code 4 (2 times) \n");
-  }
-
-  input1.dof = 1000;
-  input1.chi2 = 1000;
-  LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_FAIL_ERR), 1);
-
-
-  /* 
-   *  There is no test here for the second ASSERT for this error
-   *  in LALChisqCdf() since I could not find a set of parameters
-   *  which caused this condition to occur.
+  /*
+   * 
+   *  Maximum iterations exceeded error: this test no longer performed
+   *  since GSL is used to compute these distributions
+   *
    */
 
 
