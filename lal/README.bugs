@@ -1,4 +1,4 @@
-The LAL Bug Reporting System can be accessed at the URL
+The LAL and LALApps Bug Reporting System can be accessed at the URL
 
   http://www.lsc-group.phys.uwm.edu/lal/bugs.html
 
@@ -8,5 +8,13 @@ Anyone can enter to create or query bug reports using:
   Username: anonymous
   Password: anonymous
 
-Only those individuals responsible for a particular package have the ability
-to edit or close a bug report.
+To edit or close bug reports, you will need you own username and password for
+the bug reporting system. This can be obtained by sending an email to
+
+   duncan@gravity.phys.uwm.edu
+
+or 
+
+   jolien@gravity.phys.uwm.edu
+
+with your requested username. A password will be sent back to you.
