@@ -6,12 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-/*#include <getopt.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <math.h>
-*/
 #include <FrameL.h>
 
 #include <lalapps.h>
@@ -37,7 +31,6 @@
 #include <lal/FindChirpEngine.h>
 #include <lal/PrintFTSeries.h>
 
-#include "inspiral.h"
 
 RCSID(  "$Id$");
 
