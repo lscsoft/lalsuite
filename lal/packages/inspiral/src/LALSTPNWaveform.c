@@ -7,7 +7,43 @@
  *-----------------------------------------------------------------------
  */
 
+/*</lalVerbatim>  */
 
+/*  <lalLaTeX>
+
+\subsection{Module \texttt{LALSTPNWaveform.c}}
+
+Module to generate STPN waveforms
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALSTPNWaveformForInjectionCP}
+\index{\verb&LALSTPNWaveformForInjection()&}
+\begin{itemize}
+\item {\tt inject\_hc:} Output containing the 0-phase inspiral waveform.
+\item {\tt inject\_hp:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt inject\_phase:} Output containing the phase of inspiral waveform.
+\item {\tt inject\_freq:} Output containing the frequency of inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
+
+
+\subsubsection*{Description}
+
+\subsubsection*{Algorithm}
+
+
+\subsubsection*{Uses}
+\begin{verbatim}
+   LALSTPNderivatives
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+
+\vfill{\footnotesize\input{LALSTPNWaveformCV}}
+
+</lalLaTeX>  */
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -34,13 +70,29 @@ typedef struct LALSTPNstructparams {
 
 /* my function to set STPN derivatives*/
 
+
+
 void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams) {
 
-    REAL8 s,omega,LNhx,LNhy,LNhz,LNmag,S1x,S1y,S1z,S2x,S2y,S2z;
-    REAL8 alphadotcosi,tmpx,tmpy,tmpz,dotLNS1,dotLNS2,crossx,crossy,crossz;
-    REAL8 ds,domega,domeganew,dLNhx,dLNhy,dLNhz,dS1x,dS1y,dS1z,dS2x,dS2y,dS2z;
+    REAL8 s;
+    REAL8 omega;
+    REAL8 LNhx,LNhy,LNhz,LNmag;
+    REAL8 S1x,S1y,S1z;
+    REAL8 S2x,S2y,S2z;
+    REAL8 alphadotcosi;
+    REAL8 tmpx,tmpy,tmpz;
+    REAL8 dotLNS1,dotLNS2;
+    REAL8 crossx,crossy,crossz;
+    REAL8 ds,domega,domeganew;
+    REAL8 dLNhx,dLNhy,dLNhz;
+    REAL8 dS1x,dS1y,dS1z;
+    REAL8 dS2x,dS2y,dS2z;
+    REAL8 omega2;
     LALSTPNparams *params = (LALSTPNparams*)mparams;
 
+    REAL8 v, v2, v3, v4, v7, v11;
+
+    /* --- computation start here --- */
     s     = values->data[0];
     omega = values->data[1];
       
@@ -57,19 +109,31 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     S2z  = values->data[10];
 
     /* domega: could be optimized by computing omega^(1/3) and then multiplying it*/
+    /* Thomas comments: in order to improve the speed I introduced the variable v and 
+     * replace the previous* function by a new one taken into account that variable.
+     * the idea is to avoid most of the pow function which are quite slow*/
 
-    domeganew = params->wdotnew * pow(omega,11.0/3.0);
 
+    v = pow(omega, 1.0/3.0);
+    v2 = v * v;
+    v3 = v2 * v;
+    v4 = v3 * v;     /* effectively used farther */
+    v7 = v4 * v3;    /* effectively used farther */
+    v11 = v7 * v4;   /* effectively used farther */
+    
+    domeganew = params->wdotnew * v11;
+
+    
     domega =
-	params->wdotorb[0] + 
-	params->wdotorb[1] * pow(omega,1.0/3.0) +
-	params->wdotorb[2] * pow(omega,2.0/3.0) +
-	params->wdotorb[3] * omega +
-	params->wdotorb[4] * pow(omega,4.0/3.0) +
-	params->wdotorb[5] * pow(omega,5.0/3.0) +
-	params->wdotorb[6] * omega * omega +
-	params->wdotorb[7] * omega * omega * log(omega) +
-	params->wdotorb[8] * pow(omega,7.0/3.0);
+	params->wdotorb[0] 
+	+ v * (params->wdotorb[1]  
+	+ v * ( params->wdotorb[2]  
+	+ v * ( params->wdotorb[3] 
+	+ v * (	params->wdotorb[4] 
+	+ v * (	params->wdotorb[5] 
+	+ v * ( params->wdotorb[6] 
+	+ v * ( params->wdotorb[7] *  log(omega) 
+	+ v * ( params->wdotorb[8] ) ) ) ) ) ) ) );
 
     domega += params->wspin15 * omega * 
 	( LNhx * (113.0 * S1x + 113.0 * S2x + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x) +
@@ -79,7 +143,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
     dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
 
-    domega += params->wspin20 * pow(omega,4.0/3.0) *
+    domega += params->wspin20 * v4 *
 	( 247.0 * (S1x*S2x + S1y*S2y + S1z*S2z) -
 	  721.0 * dotLNS1 * dotLNS2 );
 
@@ -87,13 +151,15 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 
     /* dLN, 1.5PN*/
 
+    omega2 = omega * omega;
+
     tmpx = (4.0 + 3.0*params->m2m1) * S1x + (4.0 + 3.0*params->m1m2) * S2x;
     tmpy = (4.0 + 3.0*params->m2m1) * S1y + (4.0 + 3.0*params->m1m2) * S2y;
     tmpz = (4.0 + 3.0*params->m2m1) * S1z + (4.0 + 3.0*params->m1m2) * S2z;
 
-    dLNhx = params->LNhdot15 * omega * omega * (-tmpz*LNhy + tmpy*LNhz);
-    dLNhy = params->LNhdot15 * omega * omega * (-tmpx*LNhz + tmpz*LNhx);
-    dLNhz = params->LNhdot15 * omega * omega * (-tmpy*LNhx + tmpx*LNhy);
+    dLNhx = params->LNhdot15 * omega2 * (-tmpz*LNhy + tmpy*LNhz);
+    dLNhy = params->LNhdot15 * omega2 * (-tmpx*LNhz + tmpz*LNhx);
+    dLNhz = params->LNhdot15 * omega2 * (-tmpy*LNhx + tmpx*LNhy);
 
     /* dLN, 2PN*/
 
@@ -101,21 +167,21 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     tmpy = dotLNS2 * S1y + dotLNS1 * S2y;
     tmpz = dotLNS2 * S1z + dotLNS1 * S2z;
 
-    dLNhx += params->LNhdot20 * pow(omega,7.0/3.0) * (-tmpz*LNhy + tmpy*LNhz);
-    dLNhy += params->LNhdot20 * pow(omega,7.0/3.0) * (-tmpx*LNhz + tmpz*LNhx);
-    dLNhz += params->LNhdot20 * pow(omega,7.0/3.0) * (-tmpy*LNhx + tmpx*LNhy);
+    dLNhx += params->LNhdot20 * v7 * (-tmpz*LNhy + tmpy*LNhz);
+    dLNhy += params->LNhdot20 * v7 * (-tmpx*LNhz + tmpz*LNhx);
+    dLNhz += params->LNhdot20 * v7 * (-tmpy*LNhx + tmpx*LNhy);
 
     /* dS1, 1.5PN*/
 
-    LNmag = params->eta * pow(omega,-1.0/3.0);
+    LNmag = params->eta / v ;
 
     crossx = (LNhy*S1z - LNhz*S1y);
     crossy = (LNhz*S1x - LNhx*S1z);
     crossz = (LNhx*S1y - LNhy*S1x);
 
-    dS1x = params->S1dot15 * omega * omega * LNmag * crossx;
-    dS1y = params->S1dot15 * omega * omega * LNmag * crossy;
-    dS1z = params->S1dot15 * omega * omega * LNmag * crossz;
+    dS1x = params->S1dot15 * omega2 * LNmag * crossx;
+    dS1y = params->S1dot15 * omega2 * LNmag * crossy;
+    dS1z = params->S1dot15 * omega2 * LNmag * crossz;
 
     /* dS1, 2PN*/
 
@@ -123,11 +189,11 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     tmpy = S1x*S2z - S1z*S2x;
     tmpz = S1y*S2x - S1x*S2y;
 
-    dS1x += params->Sdot20 * omega * omega *
+    dS1x += params->Sdot20 * omega2 *
 	(tmpx - 3.0 * dotLNS2 * crossx);
-    dS1y += params->Sdot20 * omega * omega *
+    dS1y += params->Sdot20 * omega2 *
 	(tmpy - 3.0 * dotLNS2 * crossy);
-    dS1z += params->Sdot20 * omega * omega *
+    dS1z += params->Sdot20 * omega2 *
 	(tmpz - 3.0 * dotLNS2 * crossz);
 
     /* dS2, 1.5PN*/
@@ -136,15 +202,15 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     crossy = (-LNhx*S2z + LNhz*S2x);
     crossz = (-LNhy*S2x + LNhx*S2y);
 
-    dS2x = params->S2dot15 * omega * omega * LNmag * crossx;
-    dS2y = params->S2dot15 * omega * omega * LNmag * crossy;
-    dS2z = params->S2dot15 * omega * omega * LNmag * crossz;
+    dS2x = params->S2dot15 * omega2 * LNmag * crossx;
+    dS2y = params->S2dot15 * omega2 * LNmag * crossy;
+    dS2z = params->S2dot15 * omega2 * LNmag * crossz;
 
     /* dS2, 2PN*/
 
-    dS2x += params->Sdot20 * omega * omega * (-tmpx - 3.0 * dotLNS1 * crossx);
-    dS2y += params->Sdot20 * omega * omega * (-tmpy - 3.0 * dotLNS1 * crossy);
-    dS2z += params->Sdot20 * omega * omega * (-tmpz - 3.0 * dotLNS1 * crossz);
+    dS2x += params->Sdot20 * omega2 * (-tmpx - 3.0 * dotLNS1 * crossx);
+    dS2y += params->Sdot20 * omega2 * (-tmpy - 3.0 * dotLNS1 * crossy);
+    dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * dotLNS1 * crossz);
 
     /* -? the original equations had one additional spin term*/
 
@@ -171,9 +237,6 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     dvalues->data[10]= dS2z;
 }
 
-/* -? not sure what this does (what's the "CP"?);
-   changed "LALEOBWaveformForInjectionCP" to "LALSTPNWaveformForInjectionCP" */
-
 /*  <lalVerbatim file="LALSTPNWaveformForInjectionCP"> */
 void 
 LALSTPNWaveformForInjection (
@@ -184,49 +247,50 @@ LALSTPNWaveformForInjection (
 { 
   /* </lalVerbatim> */
 
-  /* -? I have been a bit arbitrary in declaring some things as REAL8 and some as REAL4;*/
-  /*    I hope it does not matter*/
-  
   /* declare model parameters*/
-  REAL8 m1, m2, mTot, eta, mu;
-  REAL4 norb, nspn, nspnevl, thetahat;
-
+  
   LALSTPNparams STPNparameters;
   LALSTPNparams *mparams;
 
   /* declare code parameters and variables*/
-  INT4 nn = 11;              /* number of dynamical variables*/
-  INT4 count;                /* integration steps performed*/
-  rk4In in4;                 /* used to setup the Runge-Kutta integration*/
-  REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
+  INT4 		nn = 11;              /* number of dynamical variables*/
+  INT4 		count;                /* integration steps performed*/
+  INT4 		length;               /* memory allocation structure*/
+  INT4 		j;                    /* counter*/
+  
+  rk4In 	in4;                 /* used to setup the Runge-Kutta integration*/
+  
+  expnCoeffs 	ak;
+  expnFunc 	func;
 
-  INT4 length;               /* memory allocation structure*/
-  REAL4Vector *a = NULL;
-  REAL4Vector *ff = NULL ;
-  REAL8Vector *phi = NULL;
-  REAL4Vector *shift = NULL;
+  REAL4Vector 	*a 	= NULL;
+  REAL4Vector 	*ff 	= NULL ;
+  REAL4Vector 	*shift 	= NULL;
 
-  REAL8 lengths, chirpm, m;
+  REAL8Vector 	*phi 	= NULL;
+  REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
 
-  REAL8 t;                   /* time (units of total mass)*/
-
-  INT4 j;                    /* counter*/
-  REAL8 phiC;                /* temp var for final phase*/
-  CreateVectorSequenceIn in; /* used to set the CoherentGW structure*/
-
-  /* declare units*/
-  REAL8 unitHz, dt;
+  REAL8 	lengths;
+  REAL8		chirpm;
+  REAL8 	m;
+  REAL8 	t;                   /* time (units of total mass)*/
+  REAL8 	phiC;                /* temp var for final phase*/
+  REAL8 	unitHz;
+  REAL8  	dt;
   REAL8 LNhztol = 1.0e-8;
-
   /* declare initial values of dynamical variables*/
-  REAL8 initphi, initf, initLNhx, initLNhy, initLNhz, initS1x, initS1y, initS1z, initS2x, initS2y, initS2z;
-
+  REAL8 initphi;
+  REAL8 initLNhx, initLNhy, initLNhz;
+  REAL8 initS1x, initS1y, initS1z;
+  REAL8 initS2x, initS2y, initS2z;
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
-  REAL8 alpha, i, omegadot;
+  REAL8 alpha, omegadot;
   REAL8 f2a, apcommon;
 
-  /* -? I am not too sure what this does. How should it be changed? */
+  CreateVectorSequenceIn in; /* used to set the CoherentGW structure*/
+
+
 
   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
   ATTATCHSTATUSPTR(status);
@@ -293,67 +357,38 @@ LALSTPNWaveformForInjection (
      struct tagInspiralTemplate *fine;
      } InspiralTemplate; */
 
-  m1 = params->mass1;
-  m2 = params->mass2;
 
-  mTot =  m1 + m2;
-  params->totalMass = mTot;
+ /* Make sure parameter and waveform structures exist. */
+  ASSERT(params, status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL);
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  /* Make sure waveform fields don't exist. */
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
-  eta = (m1 * m2) / (mTot * mTot);
-  params->eta = eta;
 
-  mu = eta * mTot;
-  params->mu = mu;
+  LALInspiralParameterCalc(status->statusPtr, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralSetup (status->statusPtr, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+  CHECKSTATUSPTR(status);
+  
 
-  /* -- where should we get this from?*/
-
-  thetahat = 0.0;
-
-  /* -- I hope this is in Hz*/
-
-  initf = params->fLower;
-
-  /* PN-order switches*/
-
-  switch(params->order) {
-
-  case twoPN:
-      norb = 2.0;
-      nspn = 2.0;
-      nspnevl = 2.0;
-      break;
-  case twoPointFivePN:
-      norb = 2.5;
-      nspn = 2.5;
-      nspnevl = 2.5;
-      break;
-  case threePN:
-      norb = 3.0;
-      nspn = 3.0;
-      nspnevl = 3.0;
-      break;
-  default:
-  case threePointFivePN:
-      norb = 3.5;
-      nspn = 3.5;
-      nspnevl = 3.5;
-      break;
-  }
 
   mparams = &STPNparameters;
 
   /* -? I hope the units in the following are correct*/
-  apcommon = -4.0 * mu * LAL_MRSUN_SI/params->distance;
-
-  /* set code parameters*/
+  apcommon = -4.0 * params->mu * LAL_MRSUN_SI/params->distance;
 
   /* set units*/
 
-  m = mTot * LAL_MTSUN_SI;
-  unitHz = mTot * LAL_MTSUN_SI * (REAL8)LAL_PI;
+  m = params->totalMass * LAL_MTSUN_SI;
+  unitHz = params->totalMass * LAL_MTSUN_SI * (REAL8)LAL_PI;
 
   /* -? dt is set from params; but Thomas' code also contained instructions to*/
-  /*    set it as -1. * eta / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );*/
+  /*    set it as -1. * eta / ( params->tSampling * 5.0*LAL_MTSUN_SI*params->totalMass );*/
 
   /*    tSampling is in Hz, so dt is in seconds*/
 
@@ -364,58 +399,37 @@ LALSTPNWaveformForInjection (
 
   /* -- length in seconds from Newtonian formula; chirpm in seconds*/
 
-  chirpm = mTot * LAL_MTSUN_SI * pow(eta,3.0/5.0);
-  lengths = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) * pow(chirpm*initf,-5.0/3.0) / initf;
+/*  chirpm = params->totalMass * LAL_MTSUN_SI * pow(params->eta,3.0/5.0);*/
+  lengths = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
+	  * pow(params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0/3.0) / params->fLower;
 
   length = ceil(log10(lengths/dt)/log10(2.0));
   length = pow(2,length);
 
+
   /* set initial values of dynamical variables*/
 
   initphi = 0.0; /* -? see code at the end; initial phase is disabled for the moment*/
-
-  /* -- initial omega is set from initf*/
 
   /* note that Theta0 cannot be 0.0!*/
   initLNhx = sin(params->orbitTheta0)*cos(params->orbitPhi0);
   initLNhy = sin(params->orbitTheta0)*sin(params->orbitPhi0);
   initLNhz = cos(params->orbitTheta0);
 
-  initS1x = params->spin1[0] * (m1 * m1) / (mTot * mTot);
-  initS1y = params->spin1[1] * (m1 * m1) / (mTot * mTot);
-  initS1z = params->spin1[2] * (m1 * m1) / (mTot * mTot);
+  initS1x = params->spin1[0] * (params->mass1 * params->mass1) / (params->totalMass * params->totalMass);
+  initS1y = params->spin1[1] * (params->mass1 * params->mass1) / (params->totalMass * params->totalMass);
+  initS1z = params->spin1[2] * (params->mass1 * params->mass1) / (params->totalMass * params->totalMass);
 
-  initS2x = params->spin2[0] * (m2 * m2) / (mTot * mTot);
-  initS2y = params->spin2[1] * (m2 * m2) / (mTot * mTot);
-  initS2z = params->spin2[2] * (m2 * m2) / (mTot * mTot);
+  initS2x = params->spin2[0] * (params->mass2 * params->mass2) / (params->totalMass * params->totalMass);
+  initS2y = params->spin2[1] * (params->mass2 * params->mass2) / (params->totalMass * params->totalMass);
+  initS2z = params->spin2[2] * (params->mass2 * params->mass2) / (params->totalMass * params->totalMass);
   
-  /* -? this set of assertions is probably incomplete */
-
-  /* Make sure parameter and waveform structures exist. */
-
-  ASSERT(params,   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
-
-  /* Make sure waveform fields don't exist. */
-
-  ASSERT(!( waveform->a ),     status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(!( waveform->f ),     status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(!( waveform->phi ),   status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(!( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  /* Some params should be greater than 0. Fine */
-
-  ASSERT(params,                 status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params->fLower > 0.,    status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
   /* and now we can allocate memory for some time series */
 
   LALSCreateVector(status->statusPtr, &ff, length);
   CHECKSTATUSPTR(status);
 
-  LALSCreateVector(status->statusPtr, &a, 2*length);
+  LALSCreateVector(status->statusPtr, &a, 2 * length);
   CHECKSTATUSPTR(status);
 
   LALDCreateVector(status->statusPtr, &phi, length);
@@ -436,52 +450,71 @@ LALSTPNWaveformForInjection (
     ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
   }
 
-  values.data = &dummy.data[0];
-  dvalues.data = &dummy.data[nn];
-  newvalues.data = &dummy.data[2*nn];
-  yt.data = &dummy.data[3*nn];
-  dym.data = &dummy.data[4*nn];
-  dyt.data = &dummy.data[5*nn];
+  values.data 		= &dummy.data[0];
+  dvalues.data 		= &dummy.data[nn];
+  newvalues.data 	= &dummy.data[2*nn];
+  yt.data 		= &dummy.data[3*nn];
+  dym.data 		= &dummy.data[4*nn];
+  dyt.data 		= &dummy.data[5*nn];
   
   /* setup coefficients for PN equations*/
 
-  mparams->wdotnew = (96.0/5.0) * eta;
+  mparams->m2m1 = params->mass2 / params->mass1;
+  mparams->m1m2 = params->mass1 / params->mass2;
+  mparams->eta = params->eta;
+  mparams->wdotnew = (96.0/5.0) * params->eta;
 
-  mparams->wdotorb[0] = 1.0;                                                                       /* 0PN*/
-  mparams->wdotorb[1] = 0.0;                                                                       /* 0.5PN*/
-  mparams->wdotorb[2] = norb < 1.0 ? 0.0 : ( -(1.0/336.0) * (743.0 + 924.0*eta) );                 /* 1PN*/
-  mparams->wdotorb[3] = norb < 1.5 ? 0.0 : ( 4.0 * LAL_PI );                                       /* 1.5PN*/
-  mparams->wdotorb[4] = norb < 2.0 ? 0.0 : ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 ); /* 2PN*/
-  mparams->wdotorb[5] = norb < 2.5 ? 0.0 : ( -(1.0/672.0) * LAL_PI * (4159.0 + 14532.0*eta) );     /* 2.5PN*/
-  mparams->wdotorb[6] = norb < 3.0 ? 0.0 : ( (16447322263.0/139708800.0)
-					     - (1712.0/105.0)*0.577216 /* EulerGamma*/
-					     - (273811877.0/1088640.0)*eta - (88.0/3.0)*thetahat*eta 
-					     + (541.0/806.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
-					     + (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
-					     - (856.0/105.0)*log(16.0) );                          /* 3PN*/
-  mparams->wdotorb[7] = norb < 3.0 ? 0.0 : ( -(1712.0/315.0) );                                    /* 3PN*/
-  mparams->wdotorb[8] = norb < 3.5 ? 0.0 : (LAL_PI/12096.0) * (-13245.0 + 661775.0*eta + 599156.0*eta*eta); /* 3.5PN*/
+
+  for (j = newtonian; j <= 8; j++)
+    mparams->wdotorb[j] = ak.ST[j];
   
-  mparams->wspin15 = nspn < 1.5 ? 0.0 : ( -(1.0/12.0) );
-  mparams->wspin20 = nspn < 2.0 ? 0.0 : ( -(1.0/48.0) / eta );
+  switch (params->order){
+  case     newtonian:
+  case     oneHalfPN:
+  case     onePN:
+    for (j = params->order + 1; j <= 8; j++)
+      mparams->wdotorb[j] = 0;    
+    mparams->wspin15 	= 0.0;
+    mparams->LNhdot15 	= 0.0;
+    mparams->S1dot15 	= 0.0;
+    mparams->S2dot15 	= 0.0;
+    mparams->wspin20 	= 0.0;
+    mparams->LNhdot20 	= 0.0;
+    mparams->Sdot20 	= 0.0;
+    break; 
+  case     onePointFivePN:
+    for (j = params->order + 1; j <= 8; j++)
+      mparams->wdotorb[j] = 0;
+    mparams->wspin15 	= -(1.0/12.0);    
+    mparams->LNhdot15 	= 0.5;
+    mparams->S1dot15 	= (4.0 + 3.0 * params->mass2/params->mass1) / 2.0 ;
+    mparams->S2dot15 	= (4.0 + 3.0 * params->mass1/params->mass2) / 2.0 ;   
+    mparams->wspin20 	= 0.0;
+    mparams->LNhdot20 	= 0.0;
+    mparams->Sdot20 	= 0.0;
+    break; 
+  case     twoPN:
+  case     twoPointFivePN:
+  case     threePN:
+  case     threePointFivePN:
+    for (j = params->order +1; j <= 8; j++)
+      mparams->wdotorb[j] = 0;    
+    mparams->wspin15 	= -(1.0/12.0);    
+    mparams->wspin20 	= -(1.0/48.0) / params->eta ;
+    mparams->LNhdot20 	= -1.5 / params->eta;
+    mparams->Sdot20 	= 0.5;
+    mparams->LNhdot15 	= 0.5;
+    mparams->S1dot15 	= (4.0 + 3.0 * params->mass2/params->mass1) / 2.0 ;
+    mparams->S2dot15 	= (4.0 + 3.0 * params->mass1/params->mass2) / 2.0 ;    
+    break;
+  }
   
-  mparams->m2m1 = m2/m1;
-  mparams->m1m2 = m1/m2;
-  
-  mparams->eta = eta;
-
-  mparams->LNhdot15 = nspnevl < 1.5 ? 0.0 : 0.5;
-  mparams->LNhdot20 = nspnevl < 2.0 ? 0.0 : ( -1.5/eta );
-
-  mparams->S1dot15 = nspnevl < 1.5 ? 0.0 : ( (4.0 + 3.0*m2/m1)/2.0 );
-  mparams->S2dot15 = nspnevl < 1.5 ? 0.0 : ( (4.0 + 3.0*m1/m2)/2.0 );
-
-  mparams->Sdot20 = nspnevl < 2.0 ? 0.0 : 0.5;
+    
 
   /* setup initial conditions for dynamical variables*/
 
   vphi = initphi;
-  omega = initf * unitHz;
+  omega = params->fLower * unitHz;
 
   LNhx = initLNhx;
   LNhy = initLNhy;
@@ -526,14 +559,14 @@ LALSTPNWaveformForInjection (
      INT4 n
      - "funcParams": void pointer to some parameters needed by derivatives */
 
-  in4.function = LALSTPNderivatives;
-  in4.y = &values;
-  in4.dydx = &dvalues;
-  in4.h = dt/m;
-  in4.n = nn;
-  in4.yt = &yt;
-  in4.dym = &dym;
-  in4.dyt = &dyt;
+  in4.function 	= LALSTPNderivatives;
+  in4.y 	= &values;
+  in4.dydx 	= &dvalues;
+  in4.h 	= dt/m;
+  in4.n 	= nn;
+  in4.yt 	= &yt;
+  in4.dym 	= &dym;
+  in4.dyt 	= &dyt;
 
   /* main integration loop*/
 
@@ -663,6 +696,7 @@ LALSTPNWaveformForInjection (
 
   in.length = (UINT4)count;
   in.vectorLength = 2;
+  
   LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
   CHECKSTATUSPTR(status);      
   LALSCreateVector( status->statusPtr, &( waveform->f->data ), count);
@@ -681,19 +715,19 @@ LALSTPNWaveformForInjection (
  
   waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT = waveform->shift->deltaT = dt;
 
-  waveform->a->sampleUnits = lalStrainUnit;
-  waveform->f->sampleUnits = lalHertzUnit;
-  waveform->phi->sampleUnits = lalDimensionlessUnit;
-  waveform->shift->sampleUnits = lalDimensionlessUnit;
+  waveform->a->sampleUnits 	= lalStrainUnit;
+  waveform->f->sampleUnits 	= lalHertzUnit;
+  waveform->phi->sampleUnits	= lalDimensionlessUnit;
+  waveform->shift->sampleUnits 	= lalDimensionlessUnit;
 
   /* -? should add this ? 
      waveform->position = params->position;
      waveform->psi = params->psi; */
 
-  LALSnprintf( waveform->a->name, LALNameLength, "STPN inspiral amplitudes" );
-  LALSnprintf( waveform->f->name, LALNameLength, "STPN inspiral frequency" );  
-  LALSnprintf( waveform->phi->name, LALNameLength, "STPN inspiral phase" );  
-  LALSnprintf( waveform->shift->name, LALNameLength, "STPN inspiral polshift" );
+  LALSnprintf( waveform->a->name, 	LALNameLength, "STPN inspiral amplitudes" );
+  LALSnprintf( waveform->f->name, 	LALNameLength, "STPN inspiral frequency" );  
+  LALSnprintf( waveform->phi->name, 	LALNameLength, "STPN inspiral phase" );  
+  LALSnprintf( waveform->shift->name, 	LALNameLength, "STPN inspiral polshift" );
 
   params->tC = count / params->tSampling ;
 
@@ -708,9 +742,9 @@ LALSTPNWaveformForInjection (
   LALFree(shift->data);
   LALFree(a->data);
   LALFree(ff->data);
-  LALFree(phi->data);
- 
+  LALFree(phi->data); 
   LALFree(dummy.data);
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
