@@ -49,6 +49,9 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+#include <lal/Sequence.h>
+#include <lal/TimeSeries.h>
+#include <lal/FrequencySeries.h>
 
 #include <lalapps.h>
 
@@ -145,8 +148,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 streamLength;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
-  REAL4TimeSeries streamOne;
-  REAL4TimeSeries streamTwo;
+  REAL4TimeSeries *streamOne;
+  REAL4TimeSeries *streamTwo;
 
   /* data structures for intevals */
   INT4 numIntervals;
@@ -298,34 +301,17 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get stream length */
   streamLength = streamDuration * resampleRate;
 
-  /* set metadata fields for data streams */
-  strncpy(streamOne.name, "streamOne", LALNameLength);
-  strncpy(streamTwo.name, "streamTwo", LALNameLength);
-  streamOne.sampleUnits = lalADCCountUnit;
-  streamTwo.sampleUnits = lalADCCountUnit;
-  streamOne.epoch = gpsStartTime;
-  streamTwo.epoch = gpsStartTime;
-  streamOne.deltaT = 1./(REAL8)resampleRate;
-  streamTwo.deltaT = 1./(REAL8)resampleRate;
-  streamOne.f0 = 0;
-  streamTwo.f0 = 0;
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for data streams...\n");
   }
 
-  /* allocate memory for data streams */
-  streamOne.data = NULL;
-  streamTwo.data = NULL;
-  LAL_CALL( LALSCreateVector(&status, &(streamOne.data), streamLength), \
-      &status );
-  LAL_CALL( LALSCreateVector(&status, &(streamTwo.data), streamLength), \
-      &status );
-  memset(streamOne.data->data, 0, \
-      streamOne.data->length * sizeof(*streamOne.data->data));
-  memset(streamTwo.data->data, 0, \
-      streamTwo.data->length * sizeof(*streamTwo.data->data));
+  LAL_CALL( LALCreateREAL4TimeSeries(&status, &streamOne, "streamOne", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        streamLength), &status);
+  LAL_CALL( LALCreateREAL4TimeSeries(&status, &streamTwo, "streamTwo", \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        streamLength), &status);
 
   /* set stream input parameters */
   streamParams.duration = streamDuration;
@@ -341,8 +327,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamParams.resampleRate = resampleRate;
 
   /* set stream data structures */
-  streamPair.streamOne = &streamOne;
-  streamPair.streamTwo = &streamTwo;
+  streamPair.streamOne = streamOne;
+  streamPair.streamTwo = streamTwo;
 
   /* set length for data intervals */
   intervalLength = intervalDuration * resampleRate;
@@ -350,8 +336,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set metadata fields for data intervals */
   strncpy(intervalOne.name, "intervalOne", LALNameLength);
   strncpy(intervalTwo.name, "intervalTwo", LALNameLength);
-  intervalOne.sampleUnits = streamOne.sampleUnits;
-  intervalTwo.sampleUnits = streamOne.sampleUnits;
+  intervalOne.sampleUnits = streamOne->sampleUnits;
+  intervalTwo.sampleUnits = streamOne->sampleUnits;
   intervalOne.deltaT = 1./(REAL8)resampleRate;
   intervalTwo.deltaT = 1./(REAL8)resampleRate;
   intervalOne.f0 = 0;
@@ -378,12 +364,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(segmentTwoA.name, "segmentTwoA", LALNameLength);
   strncpy(segmentTwoB.name, "segmentTwoB", LALNameLength);
   strncpy(segmentTwoC.name, "segmentTwoC", LALNameLength);
-  segmentOneA.sampleUnits = streamOne.sampleUnits;
-  segmentOneB.sampleUnits = streamOne.sampleUnits;
-  segmentOneC.sampleUnits = streamOne.sampleUnits;
-  segmentTwoA.sampleUnits = streamTwo.sampleUnits;
-  segmentTwoB.sampleUnits = streamTwo.sampleUnits;
-  segmentTwoC.sampleUnits = streamTwo.sampleUnits;
+  segmentOneA.sampleUnits = streamOne->sampleUnits;
+  segmentOneB.sampleUnits = streamOne->sampleUnits;
+  segmentOneC.sampleUnits = streamOne->sampleUnits;
+  segmentTwoA.sampleUnits = streamTwo->sampleUnits;
+  segmentTwoB.sampleUnits = streamTwo->sampleUnits;
+  segmentTwoC.sampleUnits = streamTwo->sampleUnits;
   segmentOneA.deltaT = 1./(REAL8)resampleRate;
   segmentOneB.deltaT = 1./(REAL8)resampleRate;
   segmentOneC.deltaT = 1./(REAL8)resampleRate;
@@ -977,8 +963,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* save */
   if (debug_flag)
   {
-    LALSPrintTimeSeries(&streamOne, "stream1.dat");
-    LALSPrintTimeSeries(&streamTwo, "stream2.dat");
+    LALSPrintTimeSeries(streamOne, "stream1.dat");
+    LALSPrintTimeSeries(streamTwo, "stream2.dat");
   }
 
   if (vrbflg)
@@ -989,9 +975,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* high pass filter */
   if (high_pass_flag)
   {
-    LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamOne, \
+    LAL_CALL( LALButterworthREAL4TimeSeries( &status, streamOne, \
           &highPassParam ), &status );
-    LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamTwo, \
+    LAL_CALL( LALButterworthREAL4TimeSeries( &status, streamTwo, \
           &highPassParam ), &status );
   }
 
@@ -1041,23 +1027,23 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* build interval */
-    intervalOne.data->data = streamOne.data->data + (j * \
+    intervalOne.data->data = streamOne->data->data + (j * \
         segmentShift * resampleRate);
-    intervalTwo.data->data = streamTwo.data->data + (j * \
+    intervalTwo.data->data = streamTwo->data->data + (j * \
         segmentShift * resampleRate);
 
     /* build segments */
-    segmentOneA.data->data = streamOne.data->data + \
+    segmentOneA.data->data = streamOne->data->data + \
       (resampleRate * j * segmentShift);
-    segmentOneB.data->data = streamOne.data->data + \
+    segmentOneB.data->data = streamOne->data->data + \
       (resampleRate * ((j * segmentShift) + segmentDuration));
-    segmentOneC.data->data = streamOne.data->data + \
+    segmentOneC.data->data = streamOne->data->data + \
       (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
-    segmentTwoA.data->data = streamTwo.data->data + \
+    segmentTwoA.data->data = streamTwo->data->data + \
       (resampleRate * j * segmentShift);
-    segmentTwoB.data->data = streamTwo.data->data + \
+    segmentTwoB.data->data = streamTwo->data->data + \
       (resampleRate * ((j * segmentShift) + segmentDuration));
-    segmentTwoC.data->data = streamTwo.data->data + \
+    segmentTwoC.data->data = streamTwo->data->data + \
       (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
 
     /* output the results */
@@ -1298,8 +1284,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALFree(segmentTwoA.data);
   LALFree(segmentTwoB.data);
   LALFree(segmentTwoC.data);
-  LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
+  LAL_CALL( LALDestroyREAL4TimeSeries(&status, streamOne), &status );
+  LAL_CALL( LALDestroyREAL4TimeSeries(&status, streamTwo), &status );
   LALFree(psdOne.data);
   LALFree(psdTwo.data);
   LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
