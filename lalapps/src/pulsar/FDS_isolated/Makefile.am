@@ -8,8 +8,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 ##AM_LDFLAGS = -all-static
 
 if FRAME
-#FRAMEPROGRAMS = lalapps_FrComputeFStatistic
-FRAMEPROGRAMS = 
+FRAMEPROGRAMS = lalapps_FrComputeFStatistic
 else
 FRAMEPROGRAMS = 
 endif
