@@ -40,14 +40,18 @@ The coherent statistic will be defined here.
 #ifndef _COHERENTINSPIRALH_H
 #define _COHERENTINSPIRALH_H
 
+#include <lal/LALRCSID.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
 #include <lal/LALDatatypes.h>
-#include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
+#include <lal/FindChirp.h>
+#include <lal/TwoInterfFindChirp.h>
 #include <lal/LALInspiralBank.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/FindChirpChisq.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -74,6 +78,9 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_ERHOT 9
 #define COHERENTINSPIRALH_ECHIT 10
 #define COHERENTINSPIRALH_ESMSM 11
+#define COHERENTINSPIRALH_ENDET 12
+#define COHERENTINSPIRALH_EGDET 13
+#define COHERENTINSPIRALH_EZDET 14
 #define COHERENTINSPIRALH_MSGENULL "Null pointer"
 #define COHERENTINSPIRALH_MSGENNUL "Non-null pointer"
 #define COHERENTINSPIRALH_MSGEALOC "Memory allocation error"
@@ -85,6 +92,9 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 #define COHERENTINSPIRALH_MSGERHOT "coherentSNR threshold is negative"
 #define COHERENTINSPIRALH_MSGECHIT "Chisq threshold is negative"
 #define COHERENTINSPIRALH_MSGESMSM "Size mismatch between vectors"
+#define COHERENTINSPIRALH_MSGENDET "Number of detectors is 1; it should be greater than 1 and less than 4"
+#define COHERENTINSPIRALH_MSGEGDET "Number of detectors is > 4; it should be greater than 1 and less than 4"
+#define COHERENTINSPIRALH_MSGEZDET "Number of detectors is 0; it should be greater than 1 and less than 4"
 /* </lalErrTable> */
 
 
@@ -93,14 +103,132 @@ NRCSID (COHERENTINSPIRALH, "$Id$");
 \subsection*{Types}
 </lalLaTeX>
 #endif
+/* structure for describing a binary insipral event */
+/* <lalVerbatim file="TwoInterfFindChirpHTwoInterfInspiralEvent"> */
+typedef struct
+tagInspiralEventVector
+{
+  UINT4                                  numDetectors;
+  InspiralEvent                         *event; /* ordered list of events*/
+}
+InspiralEventVector;
+
+typedef struct
+tagCoherentInspiralEvent
+{
+  CHAR                                   ifos[LIGOMETA_IFOS_MAX];
+  UINT4                                  eventId;
+  UINT4                                  timeIndex;
+  REAL4                                  mass1;
+  REAL4                                  mass2;
+  REAL4                                  cohSNR;
+  REAL4                                  theta;
+  REAL4                                  phi;
+  LIGOTimeGPS                            time;
+  /*CHECK InspiralEventVector                   *inspEventVec; */
+  struct tagCoherentInspiralEvent       *next;
+}
+CoherentInspiralEvent;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{TwoInterfInspiralEvent}}
+\idx[Type]{TwoInterfInspiralEvent}
+
+%\input{TwoInterfFindChirpHTwoInterfInspiralEvent}
+
+\noindent This structure describes inspiral events in the data of a pair 
+of detectors found by \texttt{TwoInterffindchirp}.
+The fields are:
+
+\begin{description}
+\item[\texttt{UINT4 twoInterfId}] A unique number assigned by the filter 
+routine to each network event it finds.
+
+\item[\texttt{UINT4 segmentNumber}] The id number of the 
+\texttt{FindChirpDataSegment} in the fiducial detector (chosen
+as detector 1 here) in which the event was found.
+
+\item[\texttt{LIGOTimeGPS time}] The GPS time in the fiducial detector at 
+which the event occured.
+
+\item[\texttt{UINT4 timeIndex}] The index in the fiducial detector at 
+which the event occured in the array containing the filter output.
+
+\item[\texttt{REAL4 snrsq}] The value of network $\rho^2$ for the event.
+
+\item[\texttt{InspiralEvent event1}] A pointer to a structure of type 
+\texttt{InspiralEvent} to allow the construction of a linked list of events
+in detector 1.
+
+\item[\texttt{InspiralEvent event2}] Similar to the \texttt{event1} structure,
+but for constructing a linked list of events
+in detector 2.
+
+\item[\texttt{struct tagTwoInterfInspiralEvent *next}] A pointer to a 
+structure of type \texttt{InspiralEvent} to allow the construction of 
+a linked list of network events.
+\end{description}
+</lalLaTeX>
+#endif
 
 /* --- parameter structure for the coherent inspiral filtering function ---- */
 /* <lalVerbatim file="CoherentInspiralHCoherentInspiralFilterParams"> */
 typedef struct
+tagCoherentInspiralInitParams
+{
+  UINT4                         numDetectors;
+  UINT4                         numSegments;
+  UINT4                         numPoints;
+  UINT4                         numBeamPoints;
+  BOOLEAN                       cohSNROut;
+}
+CoherentInspiralInitParams;
+/* </lalVerbatim> */
+
+typedef struct
+tagDetectorVector
+{
+  UINT4                   numDetectors;
+  LALDetector            *detector;
+}
+DetectorVector;
+/* </lalVerbatim> */
+
+
+typedef struct
+tagDetectorBeamArray
+{
+  UINT4                    numBeamPoints;
+  REAL4TimeSeries         *thetaPhiVs;/* 4D array: theta,phi,v+,v- */ 
+}
+DetectorBeamArray;
+
+
+typedef struct
+tagCoherentInspiralBeamVector
+{
+  UINT4                   numDetectors;
+  DetectorBeamArray      *detBeamArray;
+}
+CoherentInspiralBeamVector;
+
+
+typedef struct
 tagCoherentInspiralFilterParams
 {
+  INT4                          numTmplts;
+  UINT4                         maximiseOverChirp;
+  UINT4                         numDetectors;
+  UINT4                         numSegments;
   UINT4                         numPoints;
+  UINT4                         numBeamPoints;
+  REAL4                         fLow;
+  REAL4                         deltaT;
   REAL4                         cohSNRThresh;
+  BOOLEAN                       cohSNROut;
+  UINT2Vector                  *detIDVec;
+  DetectorVector               *detectorVec;
   REAL4TimeSeries              *cohSNRVec;
 }
 CoherentInspiralFilterParams;
@@ -125,6 +253,9 @@ coherent signal to noise
 ratio square, $\rho^2$, on. If the signal to noise exceeds this value, then a
 candidate event is generated. Must be $\ge 0$ on entry.
 
+\item[\texttt{DetectorVector   detectors}] This structure is defined below. It specifies the detectors on which
+the coherent search is being performed.
+
 \item[\texttt{REAL4Vector *cohSNRVec}] Pointer to a vector that is set to
 $\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
 
@@ -132,13 +263,12 @@ $\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
 </lalLaTeX>
 #endif
 
-
 /* --- input to the CoherentInspiral filtering functions --------- */
 /* <lalVerbatim file="CoherentInspiralHCoherentInspiralZVector"> */
 typedef struct
 tagCoherentInspiralZVector
 {
-  UINT4                   length;
+  UINT4                   numDetectors;
   COMPLEX8TimeSeries     *zData;
 }
 CoherentInspiralZVector;
@@ -179,7 +309,9 @@ the 6 interferometers.
 typedef struct
 tagCoherentInspiralFilterInput
 {
-  CoherentInspiralZVector   *multiZData;
+  InspiralTemplate            *tmplt;
+  CoherentInspiralBeamVector  *beamVec;
+  CoherentInspiralZVector     *multiZData;
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
@@ -214,6 +346,38 @@ of COMPLEX8TimeSeries, namely, \texttt{CoherentInspiralZVector}.
 
 /*
  *
+ * function prototypes for memory management functions
+ .*
+ */
+
+void
+LALCoherentInspiralFilterInputInit (
+    LALStatus                       *status,
+    CoherentInspiralFilterInput    **input,
+    CoherentInspiralInitParams      *params
+    );
+
+void
+LALCoherentInspiralFilterInputFinalize (
+    LALStatus                       *status,
+    CoherentInspiralFilterInput    **input
+    );
+
+void
+LALCoherentInspiralFilterParamsInit (
+    LALStatus                       *status,
+    CoherentInspiralFilterParams   **output,
+    CoherentInspiralInitParams      *params
+    );
+
+void
+LALCoherentInspiralFilterParamsFinalize (
+    LALStatus                       *status,
+    CoherentInspiralFilterParams   **output
+    );
+
+/*
+ *
  * function prototypes for coherent inspiral filter function
  *
  */
@@ -221,14 +385,14 @@ of COMPLEX8TimeSeries, namely, \texttt{CoherentInspiralZVector}.
 
 #if 0
 <lalLaTeX>
-\newpage\input{CoherentInspiralFilterC}
+\newpage\input{CoherentInspiralHV}
 </lalLaTeX>
 #endif
 
 void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
-    MultiInspiralTable                   **eventList,
+    CoherentInspiralEvent                **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params
     );
