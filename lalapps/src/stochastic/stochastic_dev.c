@@ -68,6 +68,7 @@ int optind;
 static int apply_mask_flag;
 static int high_pass_flag;
 static int overlap_hann_flag;
+static int debug_flag;
 extern int vrbflg;
 
 /* sampling parameters */
@@ -636,7 +637,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* save window */
-  if (vrbflg)
+  if (debug_flag)
   {
     LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
   }
@@ -722,7 +723,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         &ORFparams), &status );
 
   /* save */
-  if (vrbflg)
+  if (debug_flag)
   {
     LALSPrintFrequencySeries(&overlap, "overlap.dat");
   }
@@ -853,10 +854,14 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* get appropriate band */
     mask.data->data = maskTemp.data->data + numFMin;
 
-    if (vrbflg)
+    if (debug_flag)
     {
       LALSPrintFrequencySeries(&mask, "mask.dat");
-      fprintf(stdout, "Applying frequency mask to spectrum..\n");
+    }
+
+    if (vrbflg)
+    {
+      fprintf(stdout, "Applying frequency mask to spectrum...\n");
     }
 
     /* apply mask to omegaGW */
@@ -867,7 +872,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* save */
-  if (vrbflg)
+  if (debug_flag)
   {
     LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");
   }
@@ -937,7 +942,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   readDataPair(&status, &streamPair, &streamParams);
 
   /* save */
-  if (vrbflg)
+  if (debug_flag)
   {
     LALSPrintTimeSeries(&streamOne, "stream1.dat");
     LALSPrintTimeSeries(&streamTwo, "stream2.dat");
@@ -1006,7 +1011,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       (resampleRate * ((j * intervalShift) + segmentDuration));
 
     /* output the results */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALSPrintTimeSeries(&intervalOne, "interval1.dat");
       LALSPrintTimeSeries(&intervalTwo, "interval2.dat");
@@ -1026,7 +1031,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           &zeroPadParams), &status );
 
     /* save */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALCPrintFrequencySeries(&hBarTildeOne, "hBarTilde1.dat");
       LALCPrintFrequencySeries(&hBarTildeTwo, "hBarTilde2.dat");
@@ -1053,7 +1058,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     psdTwo.data->data = psdTempTwo.data->data + numFMin;
 
     /* output the results */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALSPrintFrequencySeries(&psdOne, "psd1.dat");
       LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
@@ -1090,7 +1095,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     responseTwo.data->data = responseTempTwo.data->data + numFMin;
 
     /* output the results */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALCPrintFrequencySeries(&responseOne, "response1.dat");
       LALCPrintFrequencySeries(&responseTwo, "response2.dat");
@@ -1108,7 +1113,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           &inverseNoiseInTwo), &status );
 
     /* save */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALSPrintFrequencySeries(&calInvPSDOne, "inPSD1.dat");
       LALSPrintFrequencySeries(&calInvPSDTwo, "inPSD2.dat");
@@ -1147,7 +1152,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           &normLambda), &status );
 
     /* save */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALCPrintFrequencySeries(&optFilter, "optFilter.dat");
     }
@@ -1162,7 +1167,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           &ccIn, epochsMatch), &status );
 
     /* save */
-    if (vrbflg)
+    if (debug_flag)
     {
       LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
     }
@@ -1242,6 +1247,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --help                        print this message\n"\
   " --version                     display version\n"\
   " --verbose                     verbose mode\n"\
+  " --debug                       save out intermediate products\n"\
   " --debug-level N               set lalDebugLevel\n"\
   " --gps-start-time N            GPS start time\n"\
   " --gps-end-time N              GPS end time\n"\
@@ -1282,6 +1288,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
       {"verbose", no_argument, &vrbflg, 1},
+      {"debug", no_argument, &debug_flag, 1},
       /* options that don't set a flag */
       {"mask-bin", required_argument, 0, 'b'},
       {"help", no_argument, 0, 'h'},
