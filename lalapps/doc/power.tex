@@ -320,46 +320,46 @@ simulated data.
 
 \item[Synopsis]
 \prog{lalapps\_power}
-\option{--bandwidth} \parm{bandwidth}
-[\option{--calibration-cache} \parm{cache file}]
-\option{--channel-name} \parm{string}
+\option{--bandwidth}~\parm{bandwidth}
+[\option{--calibration-cache}~\parm{cache file}]
+\option{--channel-name}~\parm{string}
 [\option{--cluster}]
-[\option{--debug-level} \parm{level}]
-\option{--default-alpha} \parm{alpha}
-[\option{--event-limit} \parm{count}]
-\option{--filter-corruption} \parm{samples}
-\option{--frame-cache} \parm{cache file}
-\option{--frame-dir} \parm{directory}
-\option{--frame-sample-rate} \parm{Hz}
-[\option{--geodata} \parm{high pass corner frequency}]
-\option{--gps-end-time} \parm{seconds}
-\option{--gps-end-time-ns} \parm{nanoseconds}
-\option{--gps-start-time} \parm{seconds}
-\option{--gps-start-time-ns} \parm{nanoseconds}
+[\option{--debug-level}~\parm{level}]
+\option{--default-alpha}~\parm{alpha}
+[\option{--event-limit}~\parm{count}]
+\option{--filter-corruption}~\parm{samples}
+\option{--frame-cache}~\parm{cache file}
+\option{--frame-dir}~\parm{directory}
+\option{--frame-sample-rate}~\parm{Hz}
+[\option{--geodata}~\parm{high pass corner frequency}]
+\option{--gps-end-time}~\parm{seconds}
+\option{--gps-end-time-ns}~\parm{nanoseconds}
+\option{--gps-start-time}~\parm{seconds}
+\option{--gps-start-time-ns}~\parm{nanoseconds}
 [\option{--help}]
-[\option{--injection-file} \parm{file name}]
-\option{--low-freq-cutoff} \parm{flow}
-[\option{--mdc-cache} \parm{cache file}]
-[\option{--mdc-channel} \parm{channel name}]
-\option{--min-freq-bin} \parm{nfbin}
-\option{--min-time-bin} \parm{ntbin}
-[\option{--noise-amplitude} \parm{amplitude}]
-\option{--nsigma} \parm{sigma}
+[\option{--injection-file}~\parm{file name}]
+\option{--low-freq-cutoff}~\parm{Hz}
+[\option{--mdc-cache}~\parm{cache file}]
+[\option{--mdc-channel}~\parm{channel name}]
+\option{--min-freq-bin}~\parm{nfbin}
+\option{--min-time-bin}~\parm{ntbin}
+[\option{--noise-amplitude}~\parm{amplitude}]
+\option{--nsigma}~\parm{sigma}
 [\option{--printData}]
 [\option{--printSpectrum}]
-\option{--psd-average-method} \parm{method}
-\option{--psd-average-points} \parm{samples}
-[\option{--ram-limit} \parm{MebiBytes}]
-\option{--resample-filter} \parm{filter type}
-[\option{--seed} \parm{seed}]
-\option{--target-sample-rate} \parm{Hz}
-\option{--tile-overlap-factor} \parm{factor}
-\option{--threshold} \parm{threshold}
-[\option{--user-tag} \parm{comment}]
+\option{--psd-average-method}~\parm{method}
+\option{--psd-average-points}~\parm{samples}
+[\option{--ram-limit}~\parm{MebiBytes}]
+\option{--resample-filter}~\parm{filter type}
+[\option{--seed}~\parm{seed}]
+\option{--target-sample-rate}~\parm{Hz}
+\option{--tile-overlap-factor}~\parm{factor}
+\option{--threshold}~\parm{threshold}
+[\option{--user-tag}~\parm{comment}]
 [\option{--verbose}]
-\option{--window} \parm{window}
-\option{--window-length} \parm{samples}
-\option{--window-shift} \parm{samples}
+\option{--window}~\parm{window}
+\option{--window-length}~\parm{samples}
+\option{--window-shift}~\parm{samples}
 
 \item[Description] 
 \prog{lalapps\_power} performs an excess power analysis on real or
@@ -387,8 +387,8 @@ providing a list of injections to be made;  this injections list must be in
 LIGO lightweight format and can be generated using the \prog{lalapps\_binj}
 program described in Sec.~\ref{program:lalapps-binj}. 
 
-The output data is written as \prog{sngl\_burst} triggers in LIGO
-lightweight XML files.   The files are named according to a standardized
+The output data is written as \verb|sngl_burst| triggers in LIGO
+lightweight XML files.  The files are named according to a standardized
 naming convention
 \begin{quote}
 \{IFO\}-\{comment\}-POWER-\{GPS Start Time\}-\{duration\}.xml
@@ -405,8 +405,8 @@ not include spaces and should use underscores instead.
 \item[Options]\leavevmode
 \begin{entry}
 \item[\option{--bandwidth} \parm{bandwidth}]
-This option sets the bandwidth in which the search is to be performed.  The
-integer parameter \parm{bandwidth} is related to the physical bandwidth by
+Set the bandwidth in which the search is to be performed.  The integer
+parameter \parm{bandwidth} is related to the physical bandwidth by the
 formula
 \[
 \mbox{\parm{bandwidth}}
@@ -414,15 +414,16 @@ formula
 \]
 
 \item[\option{--calibration-cache} \parm{cache file}]
-\parm{cache file} specifies the path to a LAL format frame cache file in
-which is described the locations of the \texttt{.gwf} frame files needed to
-provide the calibration data ($\alpha$ and $\beta$ coefficients) for the
-analysis.  Cache files are explained in the ``framedata'' package in LAL.
+Specify the location of calibration information.  \parm{cache file} gives
+the path to a LAL-format frame cache file describing locations of
+\texttt{.gwf} frame files that provide the calibration data ($\alpha$ and
+$\beta$ coefficients) for the analysis.  Frame cache files are explained in
+the ``framedata'' package in LAL.
 
 \item[\option{--channel-name} \parm{string}]
 Set the name of the data channel to analyze to \parm{string}.  This must
 match the name of one of the data channels in the input frame files.  For
-example, \verb|H2:LSC-AS_Q|.
+example, ``\verb|H2:LSC-AS_Q|''.
 
 \item[\option{--cluster}]
 Enable a clustering algorithm.  The result is the reduction of overlapping
@@ -441,161 +442,213 @@ padding, but keeps memory tracking and error messages.  If you want to turn
 off memory tracking completely, then use 33.
 
 \item[\option{--default-alpha} \parm{alpha}]
-Set the default alpha value for tiles with sigma < numSigmaMin to
+Set the default alpha value for tiles with sigma $<$ numSigmaMin to
 \parm{alpha}.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--event-limit} \parm{count}]
 Limit the number of events reported in each time interval corresponding to
-the PSD average length to \parm{count}.
+the PSD average length to \parm{count}.  The default value is 999.
 
 \item[\option{--filter-corruption} \parm{samples}]
+The input time series data is passed through a conditioning filter prior to
+analysis.  Generally, the conditioning filter should be expected to corrupt
+some amount of the beginning and end of the time series due to edge
+effects.  This parameter tells the code how much data, in samples, should
+be ignored from the start and end of the time series.  A reasonable value
+is 0.5 seconds worth of data.
 
 \item[\option{--frame-cache} \parm{cache file}]
 Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
 cache file \parm{cache file}.  LAL frame cache files are explained in the
 ``framedata'' package in LAL and can be constructed by making calls to
-\prog{LSCDataFind} on some systems.
+\prog{LSCDataFind} on some systems.  If both \option{--frame-cache} and
+\option{--frame-dir} are specified, \option{--frame-dir} will be used.  If
+neither \option{--frame-cache} nor \option{--frame-dir} are provided, then
+\option{--noise-amplitude} must be given in order to force the creation of
+simulated noise.
 
 \item[\option{--frame-dir} \parm{directory}]
+Use the \texttt{.gwf} frame files found in \parm{directory} for input.  If
+both \option{--frame-cache} and \option{--frame-dir} are specified,
+\option{--frame-dir} will be used.  If neither \option{--frame-cache} nor
+\option{--frame-dir} are provided, then \option{--noise-amplitude} must be
+given in order to force the creation of simulated noise.
 
 \item[\option{--frame-sample-rate} \parm{Hz}]
+Set the sample rate of the data found in the input frame files to \parm{Hz}
+samples per second.  \emph{Note:} This parameter must match the actual data
+rate found in the files;  the code's behaviour is undefined if this
+condition is not met.  The existance of this parameter is an unfortunate
+side-effect of the code's input logic, and there is an on-going effort to
+remove the need to specify this information on the command line.  A future
+version of this program will be able to obtain this information directly
+from the input files.
 
 \item[\option{--geodata} \parm{high pass corner frequency}]
-\item[\texttt{--geodata} \textsc{geofreq}] If the code is to run on GEO
-data instead of LIGO data. The argument corresponds to the high pass corner
-frequency. 
+Enable the processing of data from the GEO detector.  Data from the GEO
+detector is not high-pass filtered and is stored in IEEE double-precision
+format.  This program uses IEEE single-precision internally, so the
+low-frequency noise present in the original data needs to be removed prior
+to the reduction of sample precision or signal fidelity will be lost.
+\parm{high pass corner frequency} sets the cut-off frequency of the
+high-pass filter to be used.
 
 \item[\option{--gps-end-time} \parm{seconds}]
-\item[\texttt{--gps-end-time} \textsc{sec}] The GPS time
-corresponding to the end of the time series read from frames.  
+Set the integer part of the GPS time up to which input data should be read
+to \parm{seconds}.
 
 \item[\option{--gps-end-time-ns} \parm{nanoseconds}]
-\item[\texttt{--gps-end-time-ns} \textsc{nsec}] The number of
-nanoseconds after \textsc{sec} for the time series read from frames.
+Set the fractional part of the GPS time up to which input data should be
+read to \parm{nanoseconds}.
 
 \item[\option{--gps-start-time} \parm{seconds}]
-\item[\texttt{--gps-start-time} \textsc{sec}] The GPS time
-corresponding to the start of the time series read from frames.  Note:  
-$\textsc{olap}$ points are discarded at the beginning and end of the
-data to avoid data corrupted by the low-pass filtering.
+Set the integer part of the GPS time from which to start reading input data
+to \parm{seconds}.
 
 \item[\option{--gps-start-time-ns} \parm{nanoseconds}]
-\item[\texttt{--gps-start-time-ns} \textsc{nsec}] The number of
-nanoseconds after \textsc{sec} for the time series read from frames. 
+Set the fractional part of the GPS time from which to start reading input
+data to \parm{seconds}.
 
 \item[\option{--help}]
+Display a usage message and exit.
 
 \item[\option{--injection-file} \parm{file name}]
-\item[\texttt{--injfile} \textsc{injfile}]  A LIGO lightweight XML
-file containing a list of injections to be made.   The file should
-contain a \verb+sim_burst+ table which is used to determine
-information about the types of injections to be made.    This file may
-be constructed by hand,  or once can use the \verb+lalapps_binj+
-program described in Sec. \ref{program:lalapps-binj}.   
+Use \parm{file name} as a LIGO lightweight XML file containing a list of
+injections to be made.   The file should contain a \verb+sim_burst+ table
+which is used to set information about the types of injections to be made.
+This file may be constructed by hand, or one can use the
+\verb+lalapps_binj+ program described in Section
+\ref{program:lalapps-binj}.   
 
-\item[\option{--low-freq-cutoff} \parm{flow}]
-\item[\texttt{--flow} \textsc{flow}] Lowest frequency in Hz to be searched;
-a real number.  This is obviously $f_{\mathrm{low}}$ Hz from our
-description of the desired signal parameters above.
+\item[\option{--low-freq-cutoff} \parm{Hz}]
+Set the lowest frequency at which to search for gravitational waves to
+\parm{Hz}.  This parameter is $f_{\mathrm{low}}$ from our description of
+the desired signal parameters above.
 
 \item[\option{--mdc-cache} \parm{cache file}]
-\item[\texttt{--mdccache} \textsc{mdccache}] If one wants to use the 
-signal only MDC frames for injections.
+Use \parm{cache file} as a LAL format frame cache file describing the
+locations of MDC frames to be used for injections.
 
 \item[\option{--mdc-channel} \parm{channel name}]
-\item[\texttt{--mdcchannel} \textsc{mdcchannel}] This corresponds to 
-the channel of the signal only MDC frames. 
+Use the data found in the channel \parm{channel name} in the MDC frames for
+injections.
 
 \item[\option{--min-freq-bin} \parm{nfbin}]
-\item[\texttt{--minfbin} \textsc{minfbin}] Smallest extent in frequency of
-TF tiles to search;  must be an integer.  A reasonable value for this
-parameter is $2$.   The product $\mbox{\textsc{minfbin}} \times
-\mbox{\textsc{mintbin}}$ is the minimum time-frequency volume to be
-searched.  See LAL \texttt{burstsearch} package for details.
+Set the smallest extent in frequency of TF tiles to search to the integer
+\parm{nfbin}.  A reasonable value for this parameter is $2$.  The product
+$\mbox{\textsc{minfbin}} \times \mbox{\textsc{mintbin}}$ is the minimum
+time-frequency volume to be searched.  See LAL ``burstsearch'' package for
+details.
 
 \item[\option{--min-time-bin} \parm{ntbin}]
-\item[\texttt{--mintbin} \textsc{mintbin}] Smallest extent in time of TF
-tiles to search;  must be an integer. A reasonable value for this parameter
-is $2$.   The product $\mbox{\textsc{minfbin}} \times
-\mbox{\textsc{mintbin}}$ is the minimum time-frequency volume to be
-searched.  See LAL \texttt{burstsearch} package for details.
+Set the smallest extent in time of TF tiles to search to the integer
+\parm{ntbin}.  A reasonable value for this parameter is $2$.   The product
+$\mbox{\textsc{minfbin}} \times \mbox{\textsc{mintbin}}$ is the minimum
+time-frequency volume to be searched.  See LAL ``burstsearch'' package for
+details.
 
 \item[\option{--noise-amplitude} \parm{amplitude}]
+If this parameter is provided, then Gaussian white noise will be mixed with
+the input data.  If neither \option{--frame-cache} nor \option{--frame-dir}
+is provided, then the noise will be the only data analyzed.
 
 \item[\option{--nsigma} \parm{sigma}]
-\item[\texttt{--nsigma} \textsc{nsigma}] threshold number of sigma; a real
-number.  Currently see LAL \texttt{burstsearch} package for details.
+The threshold of the number of sigma to the floating point number
+\parm{sigma}.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--printData}]
-\item[\texttt{--printData}] Print out the time series that is read in
-by the code.
+Print the input time series at various stages of conditioning to data files
+for diagnostic purposes.  Generally a version of the input time series is
+dumped before and after each round of injections is made.
 
 \item[\option{--printSpectrum}]
-\item[\texttt{--printSpectrum}] Print out the power spectrum to a
-file.   Note:  this needs to be enhanced.  AT present it give some
-help with debugging and understanding the data.
+Print the average PSD measured over each PSD interval as well as the
+frequency-domain representation of each analysis window to data files.
+This is used for diagnostics.
 
 \item[\option{--psd-average-method} \parm{method}]
-\item[\texttt{--spectype} \textsc{spectype}] Spectrum estimator for
-whitening data;  a character string [\texttt{useMean}, \texttt{useMedian}].
+Set the averaging method used in determining the average power spectral
+density to \parm{method}.  This can be one of ``useMean'', ``useMedian'',
+or ``useUnity''.
 
 \item[\option{--psd-average-points} \parm{samples}]
-\item[\texttt{--segdcle} \textsc{segdcle}] Number of segments analyzed at a
-time;  must be an integer.  The current code uses \textsc{segdcle}
-overlapping segments to compute the average (or median) power spectral
-estimate for use inside the code.
+Use \parm{samples} samples from the input time series to estimate the
+average power spectral density of the detector's noise.  The average PSD is
+used to whiten the data prior to applying the excess power statistic.  The
+number of samples used for estimating the average PSD must be commensurate
+with the analysis window length and analysis window spacing --- i.e.\ an
+integer number of analysis windows must fit in the data used to estimate
+the average PSD --- however this program will automatically round the
+actual number of samples used down to the nearest integer for which this is
+true.  This elliminates the need of the user to carefully determine a valid
+number for this parameter, allowing him/her to instead select a number that
+matches the observed length of time for which the instrument's noise is
+stationary.
 
 \item[\option{--ram-limit} \parm{MebiBytes}]
 The start and stop GPS times may encompass a greater quantity of data than
-can be analyzed at once due to RAM limitations.  This parameter tells the
-code how much RAM, in MebiBytes, is available on the machine, which it uses
-to heursitically guess at a maximum time series length that should be read.
-The code then loops over the data, processing it in chunks of this size,
-until it has completed the analysis.
+can be analyzed at once due to RAM limitations.  This parameter can be used
+to tell the code how much RAM, in MebiBytes, is available on the machine,
+which it then uses to heursitically guess at a maximum time series length
+that should be read.  The code then loops over the input data, processing
+it in chunks of this size, until it has completed the analysis.  If this
+parameter is not supplied, then the entire time series for the segment
+identified by the GPS start and end times will be loaded into RAM.
 
 \item[\option{--resample-filter} \parm{filter type}]
+Set the type of filter used in the data rate down-conversion to
+\parm{filter type}.  This can be ``butterworth'' or ``ldas''.
 
 \item[\option{--seed} \parm{seed}]
+When mixing noise into the input data, use \parm{seed} to seed the random
+number generator.
 
 \item[\option{--target-sample-rate} \parm{Hz}]
+Down-convert the input data stream to a sample rate of \parm{Hz} samples
+per second prior to analysis.  This can be used to reduce the number of CPU
+cycles required to analyze a given quantity of input data.  \emph{Note:}
+All other parameters are given with respect to \emph{this} sample rate.
+For example, the number of samples used to estimate the average PSD as
+given by \option{--psd-average-points} refers to the time series following
+date rate down-conversion.
 
 \item[\option{--tile-overlap-factor} \parm{factor}]
 This parameter influences the amount of overlap between neighboring
 time-frequency tiles.  It must be an integer.  A reasonable value for this
-parameter is 3.  See the LAL \texttt{burstsearch} package for more
-information.
+parameter is 3.  See the LAL ``burstsearch'' package for more information.
 
 \item[\option{--threshold} \parm{threshold}]
-\item[\texttt{--threshold} \textsc{threshold}] Identify events with alpha
-less than this; a real number.  Currently see LAL \texttt{burstsearch}
-package for details.
+Set the threshold in alpha for which above which identified events should
+be discarded.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--user-tag} \parm{comment}]
-\item[\texttt{--user-tag} \textsc{comment}] A user defined comment string.
-It should be less than 256 characters and should not contain spaces
-(replace spaces by underscores).  This string will appear in the name of
-the file to which output information is written.
+Set the user tag to the string \parm{comment}.  This string must not
+contain spaces or dashes (``-'').  underscores.  This string will appear in
+the name of the file to which output information is written, and is
+recorded in the various XML tables within the file.
 
 \item[\option{--verbose}]
-\item[\texttt{--verbose}] Print out informational messages as the code
-runs.
+Enable the output of informational messages.
 
 \item[\option{--window} \parm{window}]
-\item[\texttt{--window} \textsc{window}] Type of window to use on the data;
-must be an integer.  [Possible values are:  0=Rectangular, 1=Hann,
-2=Welch, 3=Bartlett, 4=Parzen, 5=Papoulis, 6=Hamming.]
+Set the type of window to use when extracting an analysis window from the
+time series to the LAL window corresponding to the integer parameter
+\parm{window}.  See the LAL package ``window'' for a description of the
+window that corresponds to each integer window type.
 
 \item[\option{--window-length} \parm{samples}]
-This determines the number of samples in each analysis window.  Only the
-central half of the window will be analyzed, the rest is used as padding to
-avoid corruption at certain stages of the analysis.
+Set the number of samples to use for an analysis window to \parm{samples}.
+Only the central half of the window will be analyzed, the first quarter and
+last quarter of the window are used as padding to avoid corruption at
+certain stages of the analysis.
 
 \item[\option{--window-shift} \parm{samples}]
-The number of samples each analysis window is shifted with respect to the
-previous window.  This is typically set to one quarter the window length
-(i.e.\ half the length of data that is actually analyzed).  For example, if
-you wish the code to analyze the data in 1 second windows, you need to set
-this parameter to the number of samples corresponding to 2 seconds of data.
+Set the number of samples each analysis window is shifted with respect to
+the previous window to \parm{samples}.  This is typically set to one
+quarter the window length (i.e.\ half the length of data that is actually
+analyzed).  For example, if you wish the code to analyze the data in 1
+second windows, you need to set this parameter to the number of samples
+corresponding to 2 seconds of data.
 
 \end{entry}
 
