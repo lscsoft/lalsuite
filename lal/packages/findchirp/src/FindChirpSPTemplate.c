@@ -578,24 +578,3 @@ LALFindChirpBCVTemplate (
   RETURN( status );
 }
 
-
-
-/*documenation later*/
-void
-LALFindChirpBCVSpinTemplate (
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *tmplt,
-    FindChirpSPTmpltParams     *params
-		)
-
-{
-/*declaration*/
-  INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSPTEMPLATEC );
-  ATTATCHSTATUSPTR( status );
-
-  /*code*/
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
