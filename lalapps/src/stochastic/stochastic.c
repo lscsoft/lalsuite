@@ -775,7 +775,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {
         /* get segment start/end time */
         gpsSegStartTime = increment_gps(&status, gpsStartTime, \
-            (interLoop + segLoop) * segmentDuration);
+            (interLoop * segmentShift) + (segLoop * segmentDuration));
         gpsSegEndTime = increment_gps(&status, gpsSegStartTime, \
             segmentDuration);
         segmentOne->epoch = gpsSegStartTime;
@@ -2156,9 +2156,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
   /* hann duration */
   if (overlap_hann_flag)
   {
-    fprintf(stderr, "Overlapping Hann windows are currently unsupported!\n");
-    exit(1);
-
     if (hannDuration != -1)
     {
       fprintf(stderr, "Overlapping Hann windows specified, --hann-duration " \
