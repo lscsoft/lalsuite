@@ -69,33 +69,15 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 #define GENERATEINSPIRAL_SOURCETHETA 1.
 #define GENERATEINSPIRAL_SOURCEPHI   2.
 
-#define GENERATEINSPIRAL_SPIN1X      1. 
-#define GENERATEINSPIRAL_SPIN1Y      1.
-#define GENERATEINSPIRAL_SPIN1Z      1.
 
-#define GENERATEINSPIRAL_SPIN2X      1. 
-#define GENERATEINSPIRAL_SPIN2Y      1. 
-#define GENERATEINSPIRAL_SPIN2Z      1. 
-
-#define GENERATEINSPIRAL_ORBITTHETA0 1.
-#define GENERATEINSPIRAL_ORBITPHI0   0. 
-
-/* idem for CW waveform*/
-#define GENERATEINSPIRAL_F0         100.
-#define GENERATEINSPIRAL_ARG         0.
-#define GENERATEINSPIRAL_UDOT        0.5
-#define GENERATEINSPIRAL_RP          0.5
-#define GENERATEINSPIRAL_E           0.   
-#define GENERATEINSPIRAL_ALPHA       0.
+#define GENERATEINSPIRAL_DEFAULT_FLOWER 40
 
 /* A reference number for the method already 
  * implemented in the injection package. Should add PPN to 
  * the inspiral strucutre. The two others are useless here a
  * */
 typedef enum {  
-   PPN       	= 101,
-   SpinOrbitCW	= 102,
-   TaylorCW  	= 103
+   PPN       	= 101
  } Method;
 
 /*  <lalLaTeX>

@@ -98,12 +98,13 @@
 #include <lal/Units.h>
 
 
+
 void 
 LALInspiralDummyWaveformForInjection (
-				      LALStatus        *status,
-				      CoherentGW       *waveform,
-				      InspiralTemplate *params,
-				      PPNParamStruc    *ppnParams
+				      LALStatus		*status,
+				      CoherentGW	*waveform,
+				      InspiralTemplate	*params,
+				      PPNParamStruc	*ppnParams
 				      ) ;
 
 NRCSID( GENERATEINSPIRALC, 
@@ -114,9 +115,9 @@ NRCSID( GENERATEINSPIRALC,
 /* <lalVerbatim file="LALGenerateInspiralCP"> */
 void LALGenerateInspiral(
 			LALStatus		*status,
-			CoherentGW            *waveform,
-			SimInspiralTable      *thisEvent,
-			PPNParamStruc         *ppnParams
+			CoherentGW		*waveform,
+			SimInspiralTable	*thisEvent,
+			PPNParamStruc		*ppnParams
 						)
 /* </lalVerbatim> */
 {
@@ -370,7 +371,7 @@ void LALGenerateInspiralGetApproxFromString(LALStatus *status,
 
 
 /* That function is just a copy and paste of FindChirpSimulation.c 
- * code related to the injection of PPN event.
+ * code related to the injection of PPN event. (Nov.2004. Thomas Cokelaer)
  */
 /* <lalVerbatim file="LALGenerateInspiralPopulatePPNCP"> */
 void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
@@ -378,6 +379,8 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
 				     SimInspiralTable      *thisEvent)
 /* </lalVerbatim> */
 {
+  CHAR warnMsg[1024]; 
+
 
   INITSTATUS( 	status, 
 		" LALGenerateInspiralPopulatePPN", 
@@ -392,11 +395,11 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   ppnParams->phi  = thisEvent->coa_phase;
   
   /* frequency cutoffs */
-  if (thisEvent->fLower >0 ){
-    ppnParams->fStartIn = thisEvent->fLower;   
+  if (thisEvent->f_lower >0 ){
+    ppnParams->fStartIn = thisEvent->f_lower;   
   }
   else {
-    ppnParams->fStartIn = 40.;
+    ppnParams->fStartIn = GENERATEINSPIRAL_DEFAULT_FLOWER;
   }
   ppnParams->fStopIn  = -1.0 /  /* fCutoff of the inspiral package ?? why negative ?*/
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
@@ -406,9 +409,28 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   ppnParams->position.latitude    = thisEvent->latitude;
   ppnParams->position.system      = COORDINATESYSTEM_EQUATORIAL;
   ppnParams->psi                  = thisEvent->polarization;
-  ppnParams->epoch.gpsSeconds     = 0;  /* Is it correct ? */ 
-  ppnParams->epoch.gpsNanoSeconds = 0;  /* Is it correct ? */
+  ppnParams->epoch.gpsSeconds     = 0;  
+  ppnParams->epoch.gpsNanoSeconds = 0;  
   
+  LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+	       "Injected waveform parameters:\n"
+	       "ppnParams->mTot = %e\n"
+	       "ppnParams->eta = %e\n"
+	       "ppnParams->d = %e\n"
+	       "ppnParams->inc = %e\n"
+	       "ppnParams->phi = %e\n"
+	       "ppnParams->psi = %e\n"
+	       "ppnParams->position.longitude = %e\n"
+	       "ppnParams->position.latitude = %e\n", 
+	       ppnParams->mTot, 
+	       ppnParams->eta, 
+	       ppnParams->d,
+	       ppnParams->inc,
+	       ppnParams->phi,
+	       ppnParams->psi, 
+	       ppnParams->position.longitude, 
+	       ppnParams->position.latitude );
+  LALInfo( status, warnMsg );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
@@ -434,6 +456,8 @@ void LALGenerateInspiralPopulateInspiral(LALStatus		*status,
   /* --- Let's fill the inspiral structure now --- */
   inspiralParams->mass1	     	=  thisEvent->mass1;  	/* masses 1 */
   inspiralParams->mass2	     	=  thisEvent->mass2;  	/* masses 2 */
+
+  
   inspiralParams->fLower	=  ppnParams->fStartIn; /* lower cutoff 
 							   frequency */
   inspiralParams->fCutoff	= 1./ (ppnParams->deltaT)/2.-1;  
