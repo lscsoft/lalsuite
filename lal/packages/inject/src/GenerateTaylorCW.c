@@ -232,7 +232,8 @@ LALGenerateTaylorCW( LALStatus          *stat,
     j = 0;
     while ( j < nSpin ) {
       f += fSpin[j]*tPow;
-      phi += fSpin[j]*( tPow*=t )/( ++j + 1.0 );
+      phi += fSpin[j]*( tPow*=t )/( j + 2.0 );
+      j++;
     }
     f *= f0;
     phi *= twopif0;

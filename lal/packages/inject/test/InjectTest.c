@@ -504,7 +504,7 @@ main(int argc, char **argv)
   /* If there's no infile, set parameters from #defined constants. */
   else {
     inLength = 1;
-    id = (UINT4 *)LALMalloc( sizeof(UINT4) );
+    id = (INT4 *)LALMalloc( sizeof(UINT4) );
     tStart = (INT8 *)LALMalloc( sizeof(INT8) );
     tStop = (INT8 *)LALMalloc( sizeof(INT8) );
     if ( !( tStart && tStop ) ) {

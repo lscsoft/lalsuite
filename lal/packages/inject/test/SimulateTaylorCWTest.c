@@ -55,7 +55,7 @@ Taylor coefficients are defined (\verb@INT8@ nanoseconds), followed by
 7 or more whitespace-delimited \verb@REAL8@ numbers: the + and
 $\times$ wave amplitudes (dimensionless strain) and polarization angle
 $\psi$ (degrees), the right ascension and declination (degrees), the
-initial frequency (Hz) and phase (degrees), followed by zero or more
+initial phase (degrees) and frequency (Hz), followed by zero or more
 Taylor coefficients $f_k$ (Hz${}^k$).  Note that the wave amplitudes
 and polarization angle are read as \verb@REAL8@, but are later cast to
 \verb@REAL4@.
@@ -581,8 +581,8 @@ main(int argc, char **argv)
 	params.psi = LAL_PI*input->data[2]/180.0;
 	params.position.longitude = LAL_PI*input->data[3]/180.0;
 	params.position.latitude = LAL_PI*input->data[4]/180.0;
-	params.f0 = input->data[5];
-	params.phi0 = input->data[6];
+	params.phi0 = LAL_PI*input->data[5]/180.0;
+	params.f0 = input->data[6];
 	if ( input->length > 7 ) {
 	  SUB( LALDCreateVector( &stat, &(params.f),
 				 input->length - 7 ), &stat );
@@ -609,13 +609,16 @@ main(int argc, char **argv)
       REAL8 t = (1.0e-9)*(REAL4)( tStart - epoch ); /* time shift */
       REAL8 tN = 1.0;   /* t raised to various powers */
       REAL8 fFac = 1.0; /* fractional change in frequency */
+      REAL8 tFac = 1.0; /* time integral of fFac */
       REAL8 *fData = params.f->data; /* pointer to coeficients */
       for ( i = 0; i < length; i++ ) {
 	REAL8 tM = 1.0; /* t raised to various powers */
 	fFac += fData[i]*( tN *= t );
+	tFac += fData[i]*tN/( i + 2.0 );
 	for ( j = i + 1; j < length; j++ )
 	  fData[i] += choose( j + 1, i + 1 )*fData[j]*( tM *= t );
       }
+      params.phi0 += LAL_TWOPI*params.f0*t*tFac;
       params.f0 *= fFac;
       for ( i = 0; i < length; i++ )
 	fData[i] /= fFac;
