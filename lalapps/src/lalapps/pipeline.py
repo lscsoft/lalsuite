@@ -738,6 +738,12 @@ class ScienceSegment:
     return '<ScienceSegment: id %d, start %d, end %d, dur %d, unused %d>' % (
     self.id(),self.start(),self.end(),self.dur(),self.__unused)
 
+  def __cmp__(self,other):
+    """
+    ScienceSegments are compared by the GPS start time of the segment.
+    """
+    return cmp(self.start(),other.start())
+
   def make_chunks_bad_play(self,length=0,overlap=0,play=0,sl=0):
     """
     Divides the science segment into chunks of length seconds overlapped by
@@ -847,7 +853,6 @@ class ScienceData:
   """
   def __init__(self):
     self.__sci_segs = []
-    self.__sci_times = []
     self.__file = None
 
   def __getitem__(self,i):
@@ -882,7 +887,6 @@ class ScienceData:
     octothorpe = re.compile(r'\A#')
     for line in open(file):
       if not octothorpe.match(line) and int(line.split()[3]) >= min_length:
-        self.__sci_times.append(tuple(map(int,line.split())))
         (id,st,en,du) = map(int,line.split())
 
         # slide the data if doing a background estimation
@@ -895,17 +899,6 @@ class ScienceData:
         x = ScienceSegment(tuple([id,st,en,du]))
         self.__sci_segs.append(x)
 
-  def make_chunks_bad_play(self,length,overlap,play,sl=0):
-    """
-    Divide each ScienceSegment contained in this object into AnalysisChunks.
-    length = length of chunk in seconds.
-    overlap = overlap between segments.
-    play = if true, only generate chunks that overlap with S2 playground data.
-    sl = slide by sl seconds before determining playground data.
-    """
-    for seg in self.__sci_segs:
-      seg.make_chunks_bad_play(length,overlap,play,sl)
-
   def make_chunks(self,length,overlap,play,sl=0):
     """
     Divide each ScienceSegment contained in this object into AnalysisChunks.
@@ -917,30 +910,6 @@ class ScienceData:
     for seg in self.__sci_segs:
       seg.make_chunks(length,overlap,play,sl)
 
-  def make_chunks_from_unused_bad_play(
-    self,length,trig_overlap,play,min_length,sl=0):
-    """
-    Create an extra chunk that uses up the unused data in the science
-    segment.
-    length = length of chunk in seconds.
-    trig_overlap = length of time start generating triggers before the
-    start of the unused data.
-    play = if true, only generate chunks that overlap with S2 playground data.
-    min_length = the unused data must be greater than min_length to make a
-    chunk.
-    sl = slide by sl seconds before determining playground data.
-    """
-    for seg in self.__sci_segs:
-      # if there is unused data longer than the minimum chunk length
-      if seg.unused() > min_length:
-        start = seg.end() - length
-        end = seg.end()
-        middle = start + length / 2
-        if (not play) or ( play 
-          and ( s2play(start-sl) or s2play(middle-sl) or s2play(end-sl) ) ):
-          seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
-        seg.set_unused(0)
-      
   def make_chunks_from_unused(
     self,length,trig_overlap,play,min_length,sl=0):
     """
@@ -963,3 +932,189 @@ class ScienceData:
         if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
+
+  def intersection(self, other):
+    """
+    Replaces the ScienceSegments contained in this instance of ScienceData
+    with the intersection of those in the instance other. Returns the number
+    of segments in the intersection.
+    other = ScienceData to use to generate the intersection
+    """
+
+    # we only deal with the case of two lists here
+    length1 = len(self)
+    length2 = len(other)
+
+    # initialize list of output segments
+    ostart = -1
+    outlist = []
+    iseg2 = -1
+    start2 = -1
+    stop2 = -1
+
+    for seg1 in self:
+      start1 = seg1.start()
+      stop1 = seg1.end()
+      id = seg1.id()
+
+      # loop over segments from the second list which overlap this segment
+      while start2 < stop1:
+        if stop2 > start1:
+          # these overlap
+
+          # find the overlapping range
+          if start1 < start2:
+            ostart = start2
+          else:
+            ostart = start1
+          if stop1 > stop2:
+            ostop = stop2
+          else:
+            ostop = stop1
+
+          x = ScienceSegment(tuple([id, ostart, ostop, ostop-ostart]))
+          outlist.append(x)
+
+          if stop2 > stop1:
+            break
+
+        # step forward
+        iseg2 += 1
+        if iseg2 < len(other):
+          seg2 = other[iseg2]
+          start2 = seg2.start()
+          stop2 = seg2.end()
+        else:
+          # pseudo-segment in the far future
+          start2 = 2000000000
+          stop2 = 2000000000
+
+    # save the intersection and return the length
+    self.__sci_segs = outlist
+    return len(self)
+
+
+  def union(self, other):
+    """
+    Replaces the ScienceSegments contained in this instance of ScienceData
+    with the union of those in the instance other. Returns the number of
+    ScienceSegments in the union.
+    other = ScienceData to use to generate the intersection
+    """
+
+    # we only deal with the case of two lists here
+    length1 = len(self)
+    length2 = len(other)
+
+    # initialize list of output segments
+    ostart = -1
+    seglist = []
+
+    i1 = -1
+    i2 = -1
+    start1 = -1
+    start2 = -1
+    id = -1
+    
+    while 1:
+      # if necessary, get a segment from list 1
+      if start1 == -1:
+        i1 += 1
+        if i1 < length1:
+          start1 = self[i1].start()
+          stop1 = self[i1].end()
+          id = self[i1].id()
+        elif i2 == length2:
+          break
+
+      # if necessary, get a segment from list 2
+      if start2 == -1:
+        i2 += 1
+        if i2 < length2:
+          start2 = other[i2].start()
+          stop= other[i2].end()
+        elif i2 == length2:
+          break
+
+      # pick the earlier segment from the two lists
+      if start1 > -1 and ( start2 == -1 or start1 <= start2):
+        ustart = start1
+        ustop = stop1
+        # mark this segment has having been consumed
+        start1 = -1
+      elif start2 > -1:
+        ustart = start2
+        ustop = stop2
+        # mark this segment has having been consumed
+        start2 = -1
+      else:
+        break
+
+      # if the output segment is blank, initialize it; otherwise, see
+      # whether the new segment extends it or is disjoint
+      if ostart == -1:
+        ostart = ustart
+        ostop = ustop
+      elif ustart <= ostop:
+        if ustop > ostop:
+          # this extends the output segment
+          ostop = ustop
+        else:
+          # This lies entirely within the current output segment
+          pass
+      else:
+         # flush the current output segment, and replace it with the
+         # new segment
+         x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
+         seglist.append(x)
+         ostart = ustart
+         ostop = ustop
+
+    # flush out the final output segment (if any)
+    if ostart != -1:
+      x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
+      seglist.append(x)
+
+    self.__sci_segs = seglist
+    return len(self)
+
+
+  def coalesce(self):
+    """
+    Coalesces any adjacent ScienceSegments. Returns the number of 
+    ScienceSegments in the coalesced list.
+    """
+
+    # check for an empty list
+    if len(self) == 0:
+      return 0
+
+    # sort the list of science segments
+    self.__sci_segs.sort()
+
+    # coalesce the list, checking each segment for validity as we go
+    outlist = []
+    ostop = -1
+
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      id = self.id()
+      if start > stop:
+        # disconnected, so flush out the existing segment (if any)
+        if ostop >= 0:
+          x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
+          outlist.append(x)
+        ostart = start
+        ostop = stop
+      elif stop > start:
+        # extend the current segment
+        ostop = stop
+
+    # flush out the final segment (if any)
+    if ostop >= 0:
+      x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
+      outlist.append(x)
+
+    self.__sci_segs = outlist
+    return len(self)
