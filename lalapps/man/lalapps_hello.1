@@ -1,0 +1,97 @@
+.TH LAL_HELLO 1 "11 July 2001" LALApps LALApps
+.SH NAME
+lalapps_hello - prints "hello LSC!"
+
+.SH SYNOPSIS
+.B lalapps_hello
+.RB [ \-h ]
+.RB [ \-V ]
+.RB [ \-v ]
+.RB [ \-d 
+.IR dbglvl ] 
+.RB [ \-o 
+.IR outfile ] 
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_hello\fP prints "hello LSC!" to the screen or to an output file.
+
+.SH OPTIONS
+.TP
+.BI \-h
+Print a help message.
+.TP
+.BI \-V
+Print the version information.
+.TP
+.BI \-v
+Verbose output.
+.TP
+.BI \-d " dbglvl"
+Set LAL debug level to \fIdbglvl\fP.
+.TP
+.BI \-o " outfile"
+Write the output to file \fIoutfile\fP.
+
+.SH DEBUG LEVELS
+The LAL debug level can be specified as an integer or as a string of flags:
+.RS
+.TP
+.B NDEBUG
+No debugging information is printed and memory debugging code is disabled.
+.TP
+.B ERROR
+Error messages are printed.
+.TP
+.B WARNING
+Warning messages are printed.
+.TP
+.B INFO
+Information messages are printed.
+.TP
+.B TRACE
+Function call tracing messages are printed.
+.TP
+.B MEMINFO
+Memory allocation information messages are printed.
+.TP
+.B MEMDBG
+Debugging of memory allocation routines is enabled but no messages are printed.
+.RE
+.PP
+
+The following composite levels are available:
+.RS
+.TP
+.B MSGLVL1
+Equivalent to
+.B ERROR
+.TP
+.B MSGLVL2
+Equivalent to
+.B ERROR | WARNING
+.TP
+.B MSGLVL3
+Equivalent to
+.B ERROR | WARNING | INFO
+.TP
+.B ALLDBG
+All debugging messages are printed.
+.RE
+.PP
+
+For example, the command
+.PP
+.RS
+lalapps_hello -d "ERROR | INFO"
+.RE
+.PP
+will set the debug level so that error and information messages are printed.
+
+.SH ENVIRONMENT
+.TP
+.BR LAL_DEBUG_LEVEL
+Default LAL debug level to use.
+
+.SH AUTHOR
+Jolien Creighton

@@ -1,0 +1,13 @@
+## Process this file with automake to produce Makefile.in
+SUBDIRS = src doc man
+EXTRA_DIST = acconfig.h
+
+# cvs-clean: more than maintainer-clean, this cleans
+# everything not in the cvs archive.
+cvs-clean: maintainer-clean
+	rm -f Makefile.in
+	rm -f */Makefile.in
+	rm -f src/stamp-h.in
+	rm -f src/config.h.in
+	rm -f configure
+	rm -f aclocal.m4

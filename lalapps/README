@@ -1,0 +1,170 @@
+This is LALApps version 0.1.
+
+Instructions to get, compile, and install LALApps from the CVS repository:
+
+  0.  Get and install LAL
+      (see http://www.lsc-group.phys.uwm.edu/lal)
+
+  1.  Get LALApps and bootstrap it
+
+        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal login
+
+      (the password is lal)
+
+        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal checkout lalapps
+        cd lalapps
+        ./00boot
+
+      (you will need m4, aclocal, autoheader, automake, and autoconf)
+
+  2.  Configure LALApps
+
+        ./configure
+
+      Some useful options to configure:
+
+          --prefix=PREFIX
+              install in PREFIX rather than /usr/local
+
+          --with-extra-cppflags=CPPFLAGS
+              additional preprocessor flags (usually -I or -D flags)
+
+          --with-extra-cppflags=CFLAGS
+              additional compiler flags
+
+          --with-extra-ldflags=LDFLAGS
+              additional linker flags
+
+          --with-extra-libs=LIBS
+              additional library flags (usually -l or -L flags)
+
+
+  3.  Build and install LALApps
+
+        make
+        make dvi
+        make install
+
+
+  4.  Uninstall or cleanup (if desired) using
+
+        make uninstall
+
+      or
+      
+        make distclean
+
+      respectively.
+
+
+
+Please read the INSTALL file for additional help on installation.
+
+
+
+*******************************************************************************
+
+
+                      INSTRUCTIONS FOR CONTRIBUTORS
+
+
+
+LALApps is rather free-form.  If you like uniformity, I recommend that you copy
+what is already there.  If you like to do your own thing, that's fine too.
+Here are the essential instructions.
+
+
+1. Sources:
+
+   Put your sources in the src subdirectory.  Sources include all your .c files
+   and all your .h files.
+
+   Edit the Makefile.am so that your program is built.  The program that is
+   built should have a name like lalapps_myprog.  This is so that you don't
+   clobber another program that somewhat may have installed with the same name.
+   Suppose your sources are myprog.c and myprog.h.  Then the Makefile.am should
+   have the line
+
+     lalapps_myprog_SOURCES = myprog.c myprog.h
+
+   If you also use some of the functionality in lalapps.c and lalapps.h then
+   you should have
+
+     lalapps_myprog_SOURCES = myprog.c myprog.h lalapps.c lalapps.h
+
+   Finally, be sure to add lalapps_myprog to the bin_PROGRAMS variable.
+
+
+2. Documentation:
+
+   Documentation is essential if you want anyone to use your program.  The
+   documentation is located in the doc subdirectory.
+   
+   The way to document your program is to write a texfile to be included in the
+   lalapps texfile lalapps.tex.  You would write a texfile called myprog.tex.
+   It should start with:
+
+     \section{Program \texttt{lalapps\_myprog}}
+     \idx[Program]{lalapps\_myprog}
+
+   and go from there.
+
+   Then you need to get lalapps.tex to include it.  Down near the bottom of
+   the file lalapps.tex you should add the line
+
+     \include{myprog}
+
+   (the location is obvious).
+
+   Finally, edit the Makefile.am so that myprog.tex appears as one of the
+   TEXSOURCEFILES.
+
+   If you have figures, make sure that you have both a pdf and eps version.
+   If you only have an eps figure, myfig.eps, create a pdf version using the
+   command
+
+     epstopdf myfig
+
+   To load the figure in the documentation, use the LaTeX command
+
+     \includegraphics{myfig}
+
+   (note: no extension).  Also be sure that myfig.eps and myfig.pdf both appear
+   in the TEXSOURCEFILES line of Makefile.am.
+
+
+3. Manual pages: (optional)
+
+   If you want a man page installed for your program, put it in the man
+   subdirectory.  Also add it to the MANS line in the Makefile.am.
+
+
+4. Make sure it works:
+
+   Try building the program using
+
+     make
+
+   the documentation using
+
+     make dvi
+
+   and installing everything using
+
+     make install
+
+   then clean everything up using
+
+     make cvs-clean
+
+   If one of these things fails, and it is because of something you did,
+   fix it before committing your changes to the cvs repository.
+
+   If everything works, then you can add your files to the cvs repository.  Use
+   cvs add to add each file that is needed.  Then do a cvs commit to actually
+   put them in.
+
+   If you are really paranoid, checkout a brand new copy of lalapps from the
+   cvs repository and make sure that things work.  This will let you know if
+   you forgot to add a critical file.
+

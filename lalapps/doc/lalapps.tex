@@ -1,0 +1,476 @@
+\documentclass[oneside]{book}
+\usepackage{color}
+\usepackage{fancyhdr}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{ifthen}
+\usepackage{makeidx}
+\usepackage{moreverb}
+\usepackage{times}
+\usepackage{verbatim}
+
+\geometry{letterpaper,margin=1in}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\bf\nouppercase\rightmark}
+\rhead{\bf Page\space\thepage}
+
+\newenvironment{entry}%
+  {\begin{list}{}{\renewcommand{\makelabel}[1]%
+    {\parbox[b]{\labelwidth}{\makebox[0pt][l]{\textbf{##1}}\\}}%
+    \setlength{\labelwidth}{1em}%
+    \setlength{\labelsep}{1em}%
+    \setlength{\leftmargin}{2em}%
+    \setlength{\topsep}{\medskipamount}%
+    \setlength{\itemsep}{\medskipamount}%
+    \setlength{\parsep}{\medskipamount}%
+    \setlength{\listparindent}{0pt}}}
+  {\end{list}}
+\newenvironment{indented}%
+  {\begin{list}{}{\setlength{\leftmargin}{2em}}%
+    \setlength{\itemsep}{\medskipamount}%
+    \setlength{\parsep}{\medskipamount}%
+    \setlength{\listparindent}{0pt}\item}
+  {\end{list}}
+
+\let\keepttfamily\ttfamily
+\def\ttfamily{\color{blue}\keepttfamily}
+\def\listinglabel#1{\llap
+  {\scriptsize\color{black}\the#1}\hskip\listingoffset\relax}
+
+\newcommand\idx[2][xxx]{%
+  \ifthenelse{\equal{#1}{xxx}}{\index{#2@\texttt{#2}}}%
+  {\index{#2@\texttt{#2}}\index{#1!#2@\texttt{#2}}}}
+
+\makeindex
+
+\begin{document}
+
+\frontmatter
+
+\title{LALApps --- LSC Algorithm Library Applications}
+\author{Various Contributors}
+\maketitle
+
+\tableofcontents
+
+\mainmatter
+
+\chapter{LALApps utilities}
+
+Several utilities (macros, global variables, and functions) are provided to
+assist in writing programs in LALApps, and for maintaining a standard
+look-and-feel.  This chapter describes these utilities and concludes with
+the listing of an example program.
+
+\newpage
+\section{Header \texttt{lalapps.h}}
+\label{header:lalapps}
+
+\begin{indented}
+Provides utilities for writing programs for LALApps.
+
+Several macros, global variables, and function prototypes are given that will
+assist in writing LALApps programs, and will aid in maintaining a standard
+look-and-feel.
+
+To use these utilities, include the header \verb$lalapps.h$ and make sure the
+program links to the object \verb$lalapps.o$.
+\end{indented}
+
+\newpage
+\subsection{Function \texttt{set\_debug\_level}}
+\label{function:set-debug-level}
+\idx[Function]{set\_debug\_level}
+\index{Debug Level}
+\idx[Variable]{lalDebugLevel}
+\idx[Debug Level]{lalDebugLevel}
+\idx[Debug Level]{NDEBUG}
+\idx[Debug Level]{ERROR}
+\idx[Debug Level]{WARNING}
+\idx[Debug Level]{INFO}
+\idx[Debug Level]{TRACE}
+\idx[Debug Level]{MEMINFO}
+\idx[Debug Level]{MEMDBG}
+\idx[Debug Level]{MSGLVL1}
+\idx[Debug Level]{MSGLVL2}
+\idx[Debug Level]{MSGLVL3}
+\idx[Debug Level]{ALLDBG}
+\idx[Environment]{LAL\_DEBUG\_LEVEL}
+
+\begin{entry}
+
+\item[Name]
+
+\verb$set_debug_level$ --- sets the LAL debug level
+
+\item[Synopsis]
+
+\begin{verbatim}
+#include <lalapps.h>
+extern int lalDebugLevel;
+int set_debug_level( const char *s );
+\end{verbatim}
+
+\item[Description]
+
+The function \verb$set_debug_level$ sets the LAL debug level to a value
+determined by the string \verb$s$, which can be an absolute debug level
+(a string representing an integer) or a string of LAL debug level flags.
+Allowed flags are:
+\begin{indented}
+\begin{entry}
+\item[NDEBUG]
+  No debugging information is printed and memory debugging code is disabled.
+\item[ERROR]
+  Error messages are printed.
+\item[WARNING]
+  Warning messages are printed.
+\item[INFO]
+  Information messages are printed.
+\item[TRACE]
+  Function call tracing messages are printed.
+\item[MEMINFO]
+  Memory allocation information messages are printed.
+\item[MEMDBG]
+  Debugging of memory allocation routines is enabled bug no messages are
+  printed.
+\end{entry}
+\end{indented}
+The following pre-defined composite levels are available:
+\begin{indented}
+\begin{entry}
+\item[MSGLVL1]
+  Equivalent to \verb$ERROR$.
+\item[MSGLVL2]
+  Equivalent to \verb$ERROR | WARNING$.
+\item[MSGLVL3]
+  Equivalent to \verb$ERROR | WARNING | INFO$.
+\item[ALLDBG]
+  All debugging messages are printed.
+\end{entry}
+\end{indented}
+
+If the argument to \verb$set_debug_level$ is \verb$NULL$, then the string
+stored in the environment variable \verb$LAL_DEBUG_LEVEL$ is used.  If this
+environment is not defined, or if no flags or values are specified in the
+string, the debug level is set to 0, which is equivalent to \verb$NDEBUG$.
+(This is also the default value for \verb$lalDebugLevel$ unless it is set to
+some other value.)
+
+For example, the statement
+\begin{indented}
+\verb$set_debug_level( "ERROR | INFO" );$
+\end{indented}
+will set the debug level so that error and information messages are printed
+(but not warning messages).  Another example is the statement
+\begin{indented}
+\verb$set_debug_level( "2" );$
+\end{indented}
+which would set the debug level to 2 (warning messages are printed).
+
+\item[Return Value]
+
+The return value is the (integer) debug level that is assigned to
+\verb$lalDebugLevel$.
+
+\item[Environment]
+\leavevmode
+\begin{entry}
+\item[\texttt{LAL\_DEBUG\_LEVEL}]
+  Default LAL debug level string to use.
+\end{entry}
+
+\end{entry}
+
+\newpage
+\subsection{Function \texttt{clear\_status}}
+\label{function:clear-status}
+\idx[Function]{clear\_status}
+\idx[Variable]{blank\_status}
+
+\begin{entry}
+
+\item[Name]
+\verb$clear_status$ --- clears the LAL status structure after a failed LAL
+function call
+
+\item[Synopsis]
+\begin{verbatim}
+#include <lalapps.h>
+extern const LALStatus blank_status;
+int clear_status( LALStatus *status );
+\end{verbatim}
+
+\item[Description]
+Clears the LAL status structure and iteratively frees attatched (sic) any
+linked status structures.  This is to be used after a failed LAL function
+call to restore the status structure to a useable form.  The structure
+\verb$blank_status$ contains a blank status structure that can be used to
+initialize a status structure in the program.
+
+\item[Example]
+
+The following program calls a routine \verb$LALFailUnlessNegative$ twice,
+once with a positive argument (which causes the routine to fail) and once
+with a negative argument (which causes the routine to pass).  The function
+\verb$clear_status$ is used to clean up the status structure after the
+failure and the constant structure \verb$blank_status$ is used to initialize
+the status structure.
+
+\begin{indented}
+\begin{verbatim}
+#include <lalapps.h>
+#include <lal/LALStdlib.h>
+
+extern const LALStatus blank_status;
+
+void LALFailUnlessNegative( LALStatus *status, INT4 n )
+{
+  INITSTATUS( status, "LALFail", "$Id$" );
+  ATTATCHSTATUSPTR( status );
+  ASSERT( n, status, 1, "Non-negative n" );
+  if ( n > 0 )
+  {
+    TRY( LALFailUnlessNegative( status->statusPtr, n - 1 ), status );
+  }
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+int main( void )
+{
+  LALStatus status = blank_status;
+  LALFailUnlessNegative( &status, 5 );
+  clear_status( &status );
+  LALFailUnlessNegative( &status, -2 );
+  return status.statusCode;
+}
+\end{verbatim}
+\end{indented}
+
+\end{entry}
+
+
+\newpage
+\subsection{Macro \texttt{RCSID}}
+\label{macro:RCSID}
+\idx[Macro]{RCSID}
+\idx[Variable]{rcsid}
+
+\begin{entry}
+
+\item[Name]
+
+\verb$RCSID$ --- set the RCS Id variable
+
+\item[Synopsis]
+
+\begin{verbatim}
+#include <lalapps.h>
+#ifndef RCSID
+#define RCSID( id ) static volatile const char *rcsid = (id)
+#endif
+\end{verbatim}
+
+\item[Description]
+
+\verb$RCSID$ sets the static (i.e., internal-linkage) variable \verb$rcsid$
+to the RCS Id string, \$\relax Id\$, which is given as the argument \verb$id$.
+The string \$\relax Id\$ is expanded by RCS to contain the identification of
+the source file along with its revision number.
+For example:
+\begin{indented}
+\verb+RCSID("$+\verb+Id+\verb+$");+
+\end{indented}
+
+\end{entry}
+
+\newpage
+\subsection{Macro \texttt{PRINT\_VERSION}}
+\label{macro:PRINT-VERSION}
+\idx[Macro]{PRINT\_VERSION}
+
+\begin{entry}
+
+\item[Name]
+\verb$PRINT_VERSION$ --- prints the LALApps version of the program
+
+\item[Synopsis]
+\begin{verbatim}
+#include <lalapps.h>
+static volatile const char *rcsid="$Id$";
+#ifndef PRINT_VERSION
+#define PRINT_VERSION( program ) \
+  fprintf( stderr, PACKAGE " %s version " VERSION "\n%s\n", program, rcsid )
+#endif
+\end{verbatim}
+
+\item[Description]
+\verb$PRINT_VERSION$ prints the version information for \verb$program$ in a
+standard format, along with the RCS Id information.  For example, for the
+program \verb$lalapps_hello$, the version information
+\begin{indented}
+\verb+lalapps hello version 0.1+\\
+\verb+$+\verb+Id+\verb+$+
+\end{indented}
+is printed with the command \verb$lalapps_hello -V$.  The source code to
+print this is
+\begin{indented}
+\verb$PRINT_VERSION( "hello" );$
+\end{indented}
+
+Note that \verb$PRINT_VERSION$ requires the string variable \verb$rcsid$ to be
+set.
+
+\end{entry}
+
+\newpage
+\subsection{Macro \texttt{LAL\_CALL}}
+\label{macro:LAL-CALL}
+\idx[Macro]{LAL\_CALL}
+\idx[Variable]{vrblvl}
+\idx[Function]{lal\_errhandler}
+\idx[Type]{lal\_errhandler\_t}
+\index{Error Handler}
+\idx[Error Handler]{LAL\_ERR\_DFLT}
+\idx[Error Handler]{LAL\_ERR\_ABRT}
+\idx[Error Handler]{LAL\_ERR\_EXIT}
+\idx[Error Handler]{LAL\_ERR\_RTRN}
+
+\begin{entry}
+
+\item[Name]
+\verb$LAL_CALL$ --- call a LAL routine and handle any errors
+
+\item[Synopsis]
+\begin{verbatim}
+#include <lalapps.h>
+
+extern int vrblvl;
+extern int ( *lal_errhandler )( LALStatus *stat, const char *func,
+    const char *file, const int line, volatile const char *id );
+extern lal_errhandler_t lal_errhandler;
+
+static volatile const char *rcsid="$Id$";
+
+#ifndef LAL_CALL
+#define LAL_CALL( function, statusptr ) \
+  ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,rcsid))
+#endif
+\end{verbatim}
+
+\item[Description]
+\verb$LAL_CALL$ executes the LAL function \verb$function$ and executes the
+error handler \verb$lal_errhandler$, which examines the status structure
+\verb$statusptr$ to see if an error occurred.  Typically the error handler
+will return with value 0 if there was no error; otherwise it will print a trace
+of the execution stack and then perform a specific action.  The action
+performed depends on the error handler, which can be set to one of the
+following:
+\begin{indented}
+\begin{entry}
+\item[\texttt{LAL\_ERR\_DFLT}]
+  The default error handler (same as \verb$LAL_ERR_ABRT$).
+\item[\texttt{LAL\_ERR\_ABRT}]
+  Raises \verb$SIGABRT$ if there is an error.
+\item[\texttt{LAL\_ERR\_EXIT}]
+  Exits with the returned status code if there is an error.
+\item[\texttt{LAL\_ERR\_RTRN}]
+  Returns the status code.
+\end{entry}
+\end{indented}
+
+Note that \verb$LAL_CALL$ requires the string variable \verb$rcsid$ to be set.
+
+\item[Return Value]
+If \verb$LAL_CALL$ returns (rather than terminating execution), the return
+value is equal to the status code returned by the LAL function.
+
+\item[Example]
+The following example program illustrates the use of \verb$LAL_CALL$.
+The routine \verb$LALInvert$ is called incorrectly twice.  The first time
+the division by zero error is caught.  The second time, the unexpected null
+pointer error is not caught and the default error handler aborts the program.
+\begin{indented}
+\begin{verbatim}
+#include <stdlib.h>
+#include <lalapps.h>
+#include <lal/LALStdlib.h>
+
+RCSID( "$Id$" );
+
+extern int vrblvl;
+extern const LALStatus blank_status;
+
+void LALInvert( LALStatus *status, REAL4 *y, REAL4 x )
+{
+  INITSTATUS( status, "LALInvert", rcsid );
+  ASSERT( y, status, 1, "Null pointer" );
+  if ( input == 0 )
+  {
+    ABORT( status, 1, "Division by zero" );
+  }
+  *y = 1 / x;
+  RETURN( status );
+}
+
+int main( void )
+{
+  LALStatus status = blank_status;
+  REAL4 x;
+  int code;
+
+  vrblvl = 1;
+
+  lal_errhandler = LAL_ERR_RTRN;
+  code = LAL_CALL( LALInvert( &status, &x, 0 ), &status );
+  if ( code == 2 )
+  {
+    puts( "division by zero" );
+    clear_status( &status );
+  }
+  else if ( code )
+  {
+    exit( code );
+  }
+
+  lal_errhandler = LAL_ERR_DFLT;
+  LAL_CALL( LALInvert( &status, NULL, 1 ), &status );
+
+  return 0;
+}
+\end{verbatim}
+\end{indented}
+
+\end{entry}
+
+\newpage
+\section{Source \texttt{hello.c}}
+\label{source:hello.c}
+\idx[Source]{hello.c}
+
+\begin{indented}
+This is the source code for the program \verb$lalapps_hello$:
+
+\listinginput[10]{1}{hello.c}
+\end{indented}
+
+\chapter{LALApps programs}
+
+This chapter describes the programs that are part of the LALApps package.
+
+
+%%
+%% INCLUDE YOUR DOCUMENTATION BELOW
+%%
+
+\include{hello}
+
+
+\backmatter
+
+\printindex
+
+\end{document}
