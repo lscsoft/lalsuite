@@ -670,7 +670,7 @@ int main( int argc, char *argv[] )
 
 
     /* set the source and waveform fields */
-    LALSnprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "GRC" );
+    LALSnprintf( this_inj->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR), "???" );
     memcpy( this_inj->waveform, waveform, LIGOMETA_WAVEFORM_MAX *
         sizeof(CHAR));
 
@@ -730,11 +730,11 @@ int main( int argc, char *argv[] )
           &(this_inj->l_end_time), time_diff_ns ), &status);
 
     /* temporarily, populate the fields for the */
-    /* GEO, TAMA and VIRGO effective distances  */
+    /* GEO, TAMA and VIRGO times                */
 
-    this_inj->g_end_time = this_inj->geocent_end_time;
-    this_inj->v_end_time = this_inj->geocent_end_time;
-    this_inj->t_end_time = this_inj->geocent_end_time;
+    memset( &(this_inj->g_end_time), 0,sizeof(&(this_inj->l_end_time)) ); 
+    memset( &(this_inj->t_end_time), 0,sizeof(&(this_inj->l_end_time)) );
+    memset( &(this_inj->v_end_time), 0,sizeof(&(this_inj->l_end_time)) );
 
      /*
      * compute the effective distance of the inspiral
@@ -768,9 +768,9 @@ int main( int argc, char *argv[] )
      /* temporarily, populate the fields for the */
      /* GEO, TAMA and VIRGO effective distances  */
 
-     this_inj->eff_dist_g = 2.0 * this_inj->distance;
-     this_inj->eff_dist_v = 2.0 * this_inj->distance;
-     this_inj->eff_dist_t = 2.0 * this_inj->distance;
+     memset( &(this_inj->eff_dist_g), 0, sizeof(&(this_inj->eff_dist_g)) );
+     memset( &(this_inj->eff_dist_t), 0, sizeof(&(this_inj->eff_dist_g)) );
+     memset( &(this_inj->eff_dist_v), 0, sizeof(&(this_inj->eff_dist_g)) );
 
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
