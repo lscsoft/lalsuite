@@ -349,6 +349,8 @@ tagMultiInspiralTable
   LIGOTimeGPS   impulse_time;
   REAL4         amplitude;
   REAL4         eff_distance;
+  REAL4         ifo1_eff_distance;
+  REAL4         ifo2_eff_distance;
   REAL4         coa_phase;
   REAL4         mass1;
   REAL4         mass2;
@@ -361,6 +363,8 @@ tagMultiInspiralTable
   REAL4         tau5;
   REAL4         ttotal;
   REAL4         snr;
+  REAL4         ifo1_snr;
+  REAL4         ifo2_snr;
   REAL4         chisq;
   INT4          chisq_dof;
   REAL4         sigmasq;
