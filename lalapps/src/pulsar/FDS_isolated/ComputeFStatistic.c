@@ -5,6 +5,7 @@
 /*                                                                               */
 /*                 Albert Einstein Institute/UWM - started September 2002        */
 /*********************************************************************************/
+#include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
 
@@ -13,7 +14,7 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-#include <lal/UserInput.h>
+
 
 NRCSID( COMPUTEFSTATISTIC, "$Id$");
 
@@ -77,7 +78,7 @@ FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
 DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
 LALFstat Fstat;
-INT4 lalDebugLevel=0,i,a,d,s,irec;
+INT4 lalDebugLevel=0; /* ,i,a,d,s; *//* ,irec; */
 static LALStatus status;
 AMCoeffs amc;
 REAL8 MeanOneOverSh=0.0;
@@ -114,6 +115,7 @@ INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 
+void initUserVars (LALStatus *stat);
 /* make it a bit easier for us to register all the user-variables in a constistent way */
 #define regUserVar(name,type,option,help) LALRegisterUserVar(stat, #name, type, option, help, &(uvar_ ## name)) 
 
@@ -164,6 +166,7 @@ int main(int argc,char *argv[])
   DopplerScanInit scanInit;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
+  INT4 i, s;
 
   /*----------------------------------------------------------------------
    * ok, this is awkward, but the LALDebugLevel has to be set _first thing_, 
@@ -583,7 +586,6 @@ int writeFaFb(INT4 *maxIndex)
 {
   INT4 irec,jrec;
   INT4 index,krec=0;
-  CHAR filebasename[]="FaFb"; /* Base of the output file name */
   CHAR filename[256];         /* Base of the output file name */
   CHAR noiseswitch[16];
   CHAR clusterno[16];
@@ -1382,8 +1384,8 @@ int compare(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=Fstat.F[*(int *)ip];
-  dj=Fstat.F[*(int *)jp];
+  di=Fstat.F[*(const int *)ip];
+  dj=Fstat.F[*(const int *)jp];
 
   if (di<dj)
     return 1;

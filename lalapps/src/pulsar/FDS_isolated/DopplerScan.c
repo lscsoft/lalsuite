@@ -503,7 +503,7 @@ printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshPa
   UINT4 set, i;
   UINT4 dim;
   PtoleMetricIn *metricPar = (PtoleMetricIn*)meshpar->metricParams;
-  CHAR *xmgrHeader = 
+  const CHAR *xmgrHeader = 
     "@version 50103\n"
     "@title \"Sky-grid\"\n"
     "@world xmin -0.1\n"
