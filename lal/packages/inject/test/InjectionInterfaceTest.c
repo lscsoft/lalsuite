@@ -38,26 +38,26 @@ file.
 \vfill{\footnotesize\input{InterfaceTestCV}}
 
 </lalLaTeX><lalErrTable> */
-#define INTERFACETESTC_ENORM 	0
-#define INTERFACETESTC_ESUB  	1
-#define INTERFACETESTC_EARG  	2
-#define INTERFACETESTC_EVAL  	3
-#define INTERFACETESTC_EFILE 	4
-#define INTERFACETESTC_EMEM  	5
-#define INTERFACETESTC_EINJECT  6
+#define INJECTIONINTERFACETESTC_ENORM 	0
+#define INJECTIONINTERFACETESTC_ESUB  	1
+#define INJECTIONINTERFACETESTC_EARG  	2
+#define INJECTIONINTERFACETESTC_EVAL  	3
+#define INJECTIONINTERFACETESTC_EFILE 	4
+#define INJECTIONINTERFACETESTC_EMEM  	5
+#define INJECTIONINTERFACETESTC_EINJECT  6
 
-#define INTERFACETESTC_MSGENORM 	"Normal exit"
-#define INTERFACETESTC_MSGESUB  	"Subroutine failed"
-#define INTERFACETESTC_MSGEARG  	"Error parsing arguments"
-#define INTERFACETESTC_MSGEVAL  	"Input argument out of valid range"
-#define INTERFACETESTC_MSGEFILE 	"Could not open file"
-#define INTERFACETESTC_MSGEMEM  	"Out of memory"
-#define INTERFACETESTC_MSGEINJECT  	"No valid injection to do ... ? "
-/* </lalErrTable><lalLaTeX>*/
+#define INJECTIONINTERFACETESTC_MSGENORM 	"Normal exit"
+#define INJECTIONINTERFACETESTC_MSGESUB  	"Subroutine failed"
+#define INJECTIONINTERFACETESTC_MSGEARG  	"Error parsing arguments"
+#define INJECTIONINTERFACETESTC_MSGEVAL  	"Input argument out of valid range"
+#define INJECTIONINTERFACETESTC_MSGEFILE 	"Could not open file"
+#define INJECTIONINTERFACETESTC_MSGEMEM  	"Out of memory"
+#define INJECTIONINTERFACETESTC_MSGEINJECT  	"No valid injection to do ... ? "
+/* </lalErrTable>*/
 
 /* --- the names of the files to be used --- */
-#define INTERFACETEST_INJECTIONXMLFILE    "injection.xml"
-#define INTERFACETEST_INJECTIONOUTPUTFILE "injection.dat"
+#define INJECTIONINTERFACETEST_INJECTIONXMLFILE    "injection.xml"
+#define INJECTIONINTERFACETEST_INJECTIONOUTPUTFILE "injection.dat"
 
 /* --- include files --- */
 #include <stdio.h>
@@ -85,7 +85,7 @@ file.
 #include <lal/FindChirp.h>
 #include <lal/PrintFTSeries.h>
 
-NRCSID( INTERFACETESTC, "$Id$" );
+NRCSID( INJECTIONINTERFACETESTC, "$Id$" );
 
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
@@ -93,7 +93,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, INTERFACETESTC, statement ? statement :   \
+		 __LINE__, INJECTIONINTERFACETESTC, statement ? statement :   \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)
@@ -102,9 +102,9 @@ while (0)
 do                                                                   \
 if ( (func), (statusptr)->statusCode )                               \
 {                                                                    \
-  ERROR( INTERFACETESTC_ESUB, INTERFACETESTC_MSGESUB,                \
+  ERROR( INJECTIONINTERFACETESTC_ESUB, INJECTIONINTERFACETESTC_MSGESUB,                \
          "Function call \"" #func "\" failed:" );                    \
-  exit( INTERFACETESTC_ESUB );                                       \
+  exit( INJECTIONINTERFACETESTC_ESUB );                                       \
 }                                                                    \
 while (0)
 
@@ -137,8 +137,8 @@ int main(int argc, char **argv)
 
   /* --- Start Main part here --- */
   /* First, we test if the injection xml file exist */
-  if ((output	= fopen(INTERFACETEST_INJECTIONXMLFILE,"r")) == NULL){
-	ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
+  if ((output	= fopen(INJECTIONINTERFACETEST_INJECTIONXMLFILE,"r")) == NULL){
+	ERROR(INJECTIONINTERFACETESTC_EFILE,INJECTIONINTERFACETESTC_MSGEFILE, 0);
 	exit(0);
   }
   else {
@@ -146,8 +146,8 @@ int main(int argc, char **argv)
   }
 
   /* then let's start to open the output file */
-  if ((output 	= fopen(INTERFACETEST_INJECTIONOUTPUTFILE,"w")) == NULL){
-      ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
+  if ((output 	= fopen(INJECTIONINTERFACETEST_INJECTIONOUTPUTFILE,"w")) == NULL){
+      ERROR(INJECTIONINTERFACETESTC_EFILE,INJECTIONINTERFACETESTC_MSGEFILE, 0);
       exit(0);
     }
     
@@ -186,14 +186,14 @@ int main(int argc, char **argv)
    
   /* --- read injection  here --- */
   SUB(numInjections = SimInspiralTableFromLIGOLw( &injections, 
-						  INTERFACETEST_INJECTIONXMLFILE,
+						  INJECTIONINTERFACETEST_INJECTIONXMLFILE,
 						  startTime,
 						  endTime), &status);
 
   /* any injection to do ? */
   if ( numInjections <= 0 )
     {
-      ERROR(INTERFACETESTC_EINJECT, INTERFACETESTC_MSGEINJECT, 0);
+      ERROR(INJECTIONINTERFACETESTC_EINJECT, INJECTIONINTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );
     }
 

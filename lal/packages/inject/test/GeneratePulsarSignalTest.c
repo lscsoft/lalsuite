@@ -43,8 +43,8 @@ not the phases.
 #define GENERATEPULSARSIGNALTESTC_MSGENORM  "Normal exit"
 #define GENERATEPULSARSIGNALTESTC_MSGEIFO   "IFO not supported"
 #define GENERATEPULSARSIGNALTESTC_MSGEMOD   "SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs"
-#define GENERATEPULSARSIGNALTESTC_MSGEEBIN  "SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin"
-#define GENERATEPULSARSIGNALTESTC_MSGEEBINS "SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often"
+#define GENERATEPULSARSIGNALTESTC_MSGEBIN  "SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin"
+#define GENERATEPULSARSIGNALTESTC_MSGEBINS "SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Notes}
@@ -656,7 +656,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           }
           /* 10/12/04 gam; turn on test above and add test below */
           if ( fabs(((REAL8)(jMaxMod - jFastMaxMod))) >  1.1 ) {
-            ABORT( status, GENERATEPULSARSIGNALTESTC_EBIN,   GENERATEPULSARSIGNALTESTC_MSGEEBIN);
+            ABORT( status, GENERATEPULSARSIGNALTESTC_EBIN,   GENERATEPULSARSIGNALTESTC_MSGEBIN);
           }
        } /* END for(i = 0; i < numSFTs; i++) */
        #ifdef PRINT_OVERALLMAXDIFFSFTPOWER
@@ -694,7 +694,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   /* 10/12/04 gam; check if too many bin errors */
   epsBinErrorRate = 0.20;  /* 10/12/04 gam; maximum allowed bin errors */  
   if ( (((REAL4)binErrorCount)/((REAL4)testNumber)) > epsBinErrorRate ) {
-            ABORT( status, GENERATEPULSARSIGNALTESTC_EBINS, GENERATEPULSARSIGNALTESTC_MSGEEBINS);
+            ABORT( status, GENERATEPULSARSIGNALTESTC_EBINS, GENERATEPULSARSIGNALTESTC_MSGEBINS);
   }
   
   #ifdef INCLUDE_RANDVAL_MISMATCH
