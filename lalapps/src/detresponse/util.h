@@ -12,9 +12,6 @@
 FILE *xfopen(const char *path, const char *mode);
 int   xfclose(FILE *stream);
 
-/* wrap strncpy(3) */
-char *mystrlcpy(char *dst, const char *src, size_t len);
-
 /* print detector parameters */
 void PrintLALDetector(LALDetector * const detector);
 
@@ -24,10 +21,12 @@ void print_source(const LALSource * source);
 /* print time info */
 void print_time_info(const LALTimeIntervalAndNSample * time_info);
 
-/* wrapped strncpy() to guarantee NUL termination */
-char *mystrlcpy(char *dst, const char *src, size_t len);
-
 int mystrncasecmp(char *s1, char *s2, unsigned int n);
+
+/* strlcpy is non-standard, so emulate it here */
+size_t mystrlcpy(char *dst, const char *src, size_t size);
+/* strlcat is non-standard, so emulate it here */
+size_t mystrlcat(char *dst, const char *src, size_t size);
 
 void square_timeseries(REAL4TimeSeries *ts);
 void add_timeseries(REAL4TimeSeries * sum, REAL4TimeSeries * a,

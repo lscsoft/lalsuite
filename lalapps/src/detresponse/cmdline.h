@@ -33,6 +33,8 @@ struct gengetopt_args_info
   int start_time_nanosec_arg;	/* GPS nanoseconds field of start time of observation (default='0').  */
   int nsample_arg;	/* number of samples.  */
   double sampling_interval_arg;	/* sampling time interval, in seconds.  */
+  int n_ra_arg;	/* Number of grid points in RA (default='256').  */
+  int n_dec_arg;	/* Number of grid points in Dec (default='64').  */
   char * format_arg;	/* output format (default='mam').  */
   char * output_dir_arg;	/* Output directory (default='.').  */
   int verbosity_arg;	/* verbosity level for debugging (default='0').  */
@@ -54,6 +56,8 @@ struct gengetopt_args_info
   int start_time_nanosec_given ;	/* Whether start-time-nanosec was given.  */
   int nsample_given ;	/* Whether nsample was given.  */
   int sampling_interval_given ;	/* Whether sampling-interval was given.  */
+  int n_ra_given ;	/* Whether n-ra was given.  */
+  int n_dec_given ;	/* Whether n-dec was given.  */
   int format_given ;	/* Whether format was given.  */
   int output_dir_given ;	/* Whether output-dir was given.  */
   int verbosity_given ;	/* Whether verbosity was given.  */

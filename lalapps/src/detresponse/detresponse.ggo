@@ -36,15 +36,21 @@ option "start-time-nanosec"    n   "GPS nanoseconds field of start time of obser
 option "nsample"               u   "number of samples" int no
 option "sampling-interval"     i   "sampling time interval, in seconds" double no
 
+# options to specify the grid parameters
+option "n-ra"	-	"Number of grid points in RA" int default="256" yes
+option "n-dec"	-	"Number of grid points in Dec" int default="64" yes
+
 # option specifying the output format
 #  3 chars:
 #   1. 's' or 'm' -> single file, or multiple file
 #   2. 'a' or 'b' -> ascii or binary
-#   3. 'l', 'f' or 'm' -> line, flat or matrix (applies only to ascii; binary is unformatted)
+#   3. 'l', 'f', 'm', 't' -> line, flat, matrix, triplets (applies only to ascii;
+#                                binary is unformatted)
+#                         "line" means flat, with the GPS time as the first entry in the line
+#                             (instead of in a comment line)
 #                         "flat" means the matrix of values is flattened to a single line
 #                         "matrix" means the matrix is formatted in the obvious format
-#                         "line" means flat, with the GPS time as the first entry in the line
-#                         (instead of in a comment line)
+#                         "triplets" means the matrix is a last of triplets (Dec, RA, z-value)
 option "format"      F   "output format" string default="mam" no
 option "output-dir"	O	"Output directory" string default="." no
 

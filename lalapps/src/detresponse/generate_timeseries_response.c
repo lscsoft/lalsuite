@@ -78,13 +78,13 @@ void generate_timeseries_response(LALStatus * status)
     print_source(&source);
 
   (void)mystrlcpy(cross_file_name, args_info.source_name_arg, LALNameLength);
-  (void)strncat(cross_file_name, "_cross.txt",
+  (void)mystrlcat(cross_file_name, "_cross.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
   (void)mystrlcpy(plus_file_name, args_info.source_name_arg, LALNameLength);
-  (void)strncat(plus_file_name, "_plus.txt",
+  (void)mystrlcat(plus_file_name, "_plus.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
   (void)mystrlcpy(sum_file_name, args_info.source_name_arg, LALNameLength);
-  (void)strncat(sum_file_name, "_sum.txt",
+  (void)mystrlcat(sum_file_name, "_sum.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
     
   if ((lalDebugLevel & 1) && (verbosity_level & 4))

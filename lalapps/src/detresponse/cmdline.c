@@ -58,6 +58,8 @@ cmdline_parser_print_help (void)
   printf("  -n, --start-time-nanosec=INT    GPS nanoseconds field of start time of \n                                    observation  (default=`0')\n");
   printf("  -u, --nsample=INT               number of samples\n");
   printf("  -i, --sampling-interval=DOUBLE  sampling time interval, in seconds\n");
+  printf("      --n-ra=INT                  Number of grid points in RA  (default=`256')\n");
+  printf("      --n-dec=INT                 Number of grid points in Dec  (default=`64')\n");
   printf("  -F, --format=STRING             output format  (default=`mam')\n");
   printf("  -O, --output-dir=STRING         Output directory  (default=`.')\n");
   printf("  -v, --verbosity=INT             verbosity level for debugging  (default=`0')\n");
@@ -105,6 +107,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->start_time_nanosec_given = 0 ;
   args_info->nsample_given = 0 ;
   args_info->sampling_interval_given = 0 ;
+  args_info->n_ra_given = 0 ;
+  args_info->n_dec_given = 0 ;
   args_info->format_given = 0 ;
   args_info->output_dir_given = 0 ;
   args_info->verbosity_given = 0 ;
@@ -113,6 +117,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->source_name_arg = gengetopt_strdup("NONAME_SOURCE") ;\
   args_info->detector_arg = NULL; \
   args_info->start_time_nanosec_arg = 0 ;\
+  args_info->n_ra_arg = 256 ;\
+  args_info->n_dec_arg = 64 ;\
   args_info->format_arg = gengetopt_strdup("mam") ;\
   args_info->output_dir_arg = gengetopt_strdup(".") ;\
   args_info->verbosity_arg = 0 ;\
@@ -148,6 +154,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { "start-time-nanosec",	1, NULL, 'n' },
         { "nsample",	1, NULL, 'u' },
         { "sampling-interval",	1, NULL, 'i' },
+        { "n-ra",	1, NULL, 0 },
+        { "n-dec",	1, NULL, 0 },
         { "format",	1, NULL, 'F' },
         { "output-dir",	1, NULL, 'O' },
         { "verbosity",	1, NULL, 'v' },
@@ -378,6 +386,34 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
 
 
         case 0:	/* Long option with no short option */
+          /* Number of grid points in RA.  */
+          if (strcmp (long_options[option_index].name, "n-ra") == 0)
+          {
+            if (args_info->n_ra_given)
+              {
+                fprintf (stderr, "%s: `--n-ra' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->n_ra_given = 1;
+            args_info->n_ra_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
+          /* Number of grid points in Dec.  */
+          else if (strcmp (long_options[option_index].name, "n-dec") == 0)
+          {
+            if (args_info->n_dec_given)
+              {
+                fprintf (stderr, "%s: `--n-dec' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->n_dec_given = 1;
+            args_info->n_dec_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
 
         case '?':	/* Invalid option.  */
           /* `getopt_long' already printed an error message.  */
@@ -415,6 +451,16 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   if (! args_info->start_time_sec_given)
     {
       fprintf (stderr, "%s: '--start-time-sec' ('-s') option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->n_ra_given)
+    {
+      fprintf (stderr, "%s: '--n-ra' option required\n", CMDLINE_PARSER_PACKAGE);
+      missing_required_options = 1;
+    }
+  if (! args_info->n_dec_given)
+    {
+      fprintf (stderr, "%s: '--n-dec' option required\n", CMDLINE_PARSER_PACKAGE);
       missing_required_options = 1;
     }
   if ( missing_required_options )

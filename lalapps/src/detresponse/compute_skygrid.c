@@ -5,15 +5,15 @@
 #include <ctype.h>
 #include "config.h"
 #include "detresponse.h"
+#include "skygrid.h"
 
 /*
- * TODO: make file names depend on name of source, and of detector
+ * TODO: 
+ *   1. make file names depend on name of source, and of detector
+ *       
  */
 
-static const INT4 grid_lim = NUM_RA * NUM_DEC;
-static const INT4 dec_lim  = (NUM_DEC - 1)/2;
-
-static const double rad2deg = 180./LAL_PI;
+static const double rad2deg = 180./(double)LAL_PI;
 static const double     eps = 23.5;
 static const double  clight = 2.998e8;
 
@@ -64,18 +64,17 @@ static double doppler(LALStatus * status,
   *     // 0=x,1=y,2=z 
     *     s[0]=sinTheta*cos(alpha);   */
   
-  sin_theta = sin(LAL_PI/2. - source_loc->latitude);   
-  e_source[2] = cos(LAL_PI/2. - source_loc->latitude);
+  sin_theta = sin(LAL_PI_2 - source_loc->latitude);   
+  e_source[2] = cos(LAL_PI_2 - source_loc->latitude);
   e_source[1] = sin_theta * sin(source_loc->longitude);
   e_source[0] = sin_theta * cos(source_loc->longitude);
-  
-  /* printf("ALOHA: %e %e\n", source_loc->longitude, 
-    source_loc->latitude); */
   
   LALDetectorVel(status, velocity, gps, inputs);
   
   for (i = 0; i < 3; ++i)
     doppler_factor += velocity[i] * e_source[i];
+
+  /* printf("doppler_factor = %20.14e\n", doppler_factor); */
   
   LALCheckMemoryLeaks();
   
@@ -83,6 +82,7 @@ static double doppler(LALStatus * status,
 }
 
 
+#if 0
 static double approx_doppler(LIGOTimeGPS * gps,    
                              double alpha, double dalpha,
                              double delta, double ddelta)
@@ -97,6 +97,7 @@ static double approx_doppler(LIGOTimeGPS * gps,
   /* alpha = RA of source */
   
 }
+#endif
 
 
 static double relval(double ra, double dec, int i, int nrelvals)
@@ -151,6 +152,13 @@ static double relval(double ra, double dec, int i, int nrelvals)
   return retval;
 }
 
+
+/*
+ * NOTES on gridding the sky:
+ *   - want to not close the circle in RA
+ *   - want to not reach the poles in Dec
+ *
+ */
 void compute_skygrid(LALStatus * status)
 {
   LALDetector             detector;
@@ -162,18 +170,21 @@ void compute_skygrid(LALStatus * status)
   LIGOTimeGPS             start_time;
   LALTimeInterval         time_interval;
   AvgVelPar               detectorvel_inputs;     /* yea yea I know */
-  skygrid_t               grid_cros_sq;  
-  skygrid_t               grid_plus_sq;
-  skygrid_t               grid_sum_sq;
-  skygrid_t               grid_relfreq;
+  skygrid_t               grid_cros_sq = NULL;  
+  skygrid_t               grid_plus_sq = NULL;
+  skygrid_t               grid_sum_sq = NULL;
+  skygrid_t               grid_relfreq = NULL;
   CHAR                    cross_file_name[LALNameLength];
   CHAR                    plus_file_name[LALNameLength];
   CHAR                    sum_file_name[LALNameLength];
   CHAR                    relfreq_file_name[LALNameLength];
   CHAR                    dottimestamp[LALNameLength];
   CHAR                    outfile_suffix[5];
-  INT4                    i, j, k, cnt;
-  FILE                  * timesfile;
+  UINT4                   i, j, k, cnt;
+  UINT4                   num_ra;
+  UINT4                   num_dec;
+  REAL8                   Pi_num_ra;
+  FILE                  * timesfile = NULL;
   
   /* null out strings */
   cross_file_name[0] = '\0';
@@ -182,7 +193,19 @@ void compute_skygrid(LALStatus * status)
   relfreq_file_name[0] = '\0';
   outfile_suffix[0] = '\0';
 
+  /* initialize skygrid_t stuff */
+  init_skygrid(status);
+
+  /* useful numbers */
+  num_ra = args_info.n_ra_arg;
+  num_dec = args_info.n_dec_arg;
+  Pi_num_ra = (REAL8)LAL_PI / (REAL8)num_ra;
   
+  /* allocate skygrids */
+  (void *)alloc_skygrid(status, &grid_cros_sq);
+  (void *)alloc_skygrid(status, &grid_plus_sq);
+  (void *)alloc_skygrid(status, &grid_sum_sq);
+  (void *)alloc_skygrid(status, &grid_relfreq);
   
   /* 
    * set up detector 
@@ -279,8 +302,6 @@ void compute_skygrid(LALStatus * status)
     }
   }
 
-  
-  
   /*
    * set up output file suffixes
    */
@@ -288,11 +309,11 @@ void compute_skygrid(LALStatus * status)
   if (tolower(args_info.format_arg[1]) == 'a')
   {
     if (tolower(args_info.format_arg[2]) != 'l')
-      (void)mystrlcpy(outfile_suffix, ".txt", LALNameLength);
+      (void *)mystrlcpy(outfile_suffix, ".txt", LALNameLength);
   }
   else
   {
-    (void)mystrlcpy(outfile_suffix, ".dat", LALNameLength);
+    (void *)mystrlcpy(outfile_suffix, ".dat", LALNameLength);
   }
   
   /* set up inputs to LALDetectorVel() */
@@ -318,10 +339,10 @@ void compute_skygrid(LALStatus * status)
     snprintf(sum_file_name,LALNameLength,"%s/whole_sky_sum", args_info.output_dir_arg);
     snprintf(relfreq_file_name,LALNameLength,"%s/whole_sky_relfreq", args_info.output_dir_arg);
     
-    (void)strncat(cross_file_name, outfile_suffix, LALNameLength);
-    (void)strncat(plus_file_name, outfile_suffix, LALNameLength);
-    (void)strncat(sum_file_name, outfile_suffix, LALNameLength);  
-    (void)strncat(relfreq_file_name, outfile_suffix, LALNameLength);  
+    (void)mystrlcat(cross_file_name, outfile_suffix, LALNameLength);
+    (void)mystrlcat(plus_file_name, outfile_suffix, LALNameLength);
+    (void)mystrlcat(sum_file_name, outfile_suffix, LALNameLength);  
+    (void)mystrlcat(relfreq_file_name, outfile_suffix, LALNameLength);  
     
     if (lalDebugLevel && (verbosity_level & 4))
     {
@@ -331,32 +352,44 @@ void compute_skygrid(LALStatus * status)
       printf("relfreq_file_name = %s\n", relfreq_file_name);
     }    
     
-    for (j = 0; j < NUM_RA; ++j)
+    Pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
+    for (j = 0; j < num_ra; ++j)
     {
-      source.equatorialCoords.longitude =
-      (REAL8)j/(REAL8)NUM_RA * ((REAL8)LAL_TWOPI);
-      
-      for (i = -dec_lim; i <= dec_lim; ++i)
+      source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*(REAL8)j);
+
+      /*
+      printf("j = %d\n", j);
+      printf("RA = % f\n", source.equatorialCoords.longitude);
+      */
+
+      for (i = 0; i < num_dec; ++i)
       {
-        cnt = j*NUM_DEC + i + dec_lim;
-        source.equatorialCoords.latitude = asin((REAL8)i/(REAL8)dec_lim);
-        
+        cnt = j*num_dec + i;
+        source.equatorialCoords.latitude = 
+          asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
+
+        /*
+        printf("\ti = %d\n", i);
+        printf("\tcnt = %d\n", cnt);
+        printf("\tDec = % f\n", source.equatorialCoords.latitude / LAL_PI * 180.);
+        */
+
         LALComputeDetAMResponse(status, &response, &det_and_source,
                                 &gps_and_acc);
         
-        grid_cros_sq[cnt] = response.cross * response.cross;
-        grid_plus_sq[cnt] = response.plus  * response.plus;
-        grid_sum_sq[cnt]  = grid_cros_sq[cnt] + grid_plus_sq[cnt];
-        grid_relfreq[cnt] = doppler(status, &(gps_and_acc.gps), 
+        grid_cros_sq->data[cnt] = response.cross * response.cross;
+        grid_plus_sq->data[cnt] = response.plus  * response.plus;
+        grid_sum_sq->data[cnt]  = grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt];
+        grid_relfreq->data[cnt] = doppler(status, &(gps_and_acc.gps), 
                                     &detectorvel_inputs, 
                                     &(source.equatorialCoords));
       }
     }
-    
-    skygrid_print(&(gps_and_acc.gps), grid_cros_sq, cross_file_name);
-    skygrid_print(&(gps_and_acc.gps), grid_plus_sq, plus_file_name);
-    skygrid_print(&(gps_and_acc.gps), grid_sum_sq, sum_file_name);
-    skygrid_print(&(gps_and_acc.gps), grid_relfreq, relfreq_file_name);
+
+    skygrid_print(status, &(gps_and_acc.gps), grid_cros_sq, cross_file_name);
+    skygrid_print(status, &(gps_and_acc.gps), grid_plus_sq, plus_file_name);
+    skygrid_print(status, &(gps_and_acc.gps), grid_sum_sq, sum_file_name);
+    skygrid_print(status, &(gps_and_acc.gps), grid_relfreq, relfreq_file_name);
   }
   else if (args_info.timeseries_given)
   {
@@ -375,39 +408,37 @@ void compute_skygrid(LALStatus * status)
     snprintf(relfreq_file_name,LALNameLength,"%s/ser_whole_sky_relfreq", args_info.output_dir_arg);
     
     /* zero out arrays */
-    skygrid_zero(grid_cros_sq);
-    skygrid_zero(grid_plus_sq);
-    skygrid_zero(grid_sum_sq);
-    skygrid_zero(grid_relfreq);
+    skygrid_zero(status, grid_cros_sq);
+    skygrid_zero(status, grid_plus_sq);
+    skygrid_zero(status, grid_sum_sq);
+    skygrid_zero(status, grid_relfreq);
     
     snprintf(times_file_name,LALNameLength,"%s/times.txt", args_info.output_dir_arg);
     timesfile = xfopen(times_file_name, "w");
     
-    for (k = 0; k < (int)args_info.nsample_arg; ++k)
+    for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
       fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
       snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
       
-      for (j = 0; j < NUM_RA; ++j)
+      for (j = 0; j < num_ra; ++j)
       {
-        source.equatorialCoords.longitude =
-        (REAL8)j/(NUM_RA - 1.) * ((REAL8)LAL_TWOPI);
-        
-        /* printf("%10.6f\n", source.equatorialCoords.longitude); */
-        
-        for (i = -dec_lim; i <= dec_lim; ++i)
+        source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
+  
+        for (i = 0; i < num_dec; ++i)
         {
-          cnt = j*NUM_DEC + i + dec_lim;
-          source.equatorialCoords.latitude = asin((REAL8)i/(REAL8)dec_lim);
+          cnt = j*num_dec + i;
+          source.equatorialCoords.latitude = 
+            asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
           LALComputeDetAMResponse(status, &response, &det_and_source,
                                   &gps_and_acc);
           
-          grid_cros_sq[cnt] = response.cross * response.cross;
-          grid_plus_sq[cnt] = response.plus  * response.plus;
-          grid_sum_sq[cnt]  = (grid_cros_sq[cnt] + grid_plus_sq[cnt]);
+          grid_cros_sq->data[cnt] = response.cross * response.cross;
+          grid_plus_sq->data[cnt] = response.plus  * response.plus;
+          grid_sum_sq->data[cnt]  = (grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt]);
           
-          grid_relfreq[cnt] = doppler(status, &(gps_and_acc.gps), 
+          grid_relfreq->data[cnt] = doppler(status, &(gps_and_acc.gps), 
                                       &detectorvel_inputs, 
                                       &(source.equatorialCoords));
         }
@@ -434,25 +465,21 @@ void compute_skygrid(LALStatus * status)
       if ((args_info.format_arg[0]=='m') ||
           (args_info.format_arg[0]=='M'))
       {
-        (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
-        (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
-        (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
-        (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+        (void)mystrlcat(ser_cross_file_name, dottimestamp, LALNameLength);
+        (void)mystrlcat(ser_plus_file_name, dottimestamp, LALNameLength);
+        (void)mystrlcat(ser_sum_file_name, dottimestamp, LALNameLength);  
+        (void)mystrlcat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+
+        (void)mystrlcat(ser_cross_file_name, outfile_suffix, LALNameLength);
+        (void)mystrlcat(ser_plus_file_name, outfile_suffix, LALNameLength);
+        (void)mystrlcat(ser_sum_file_name, outfile_suffix, LALNameLength);  
+        (void)mystrlcat(ser_relfreq_file_name, outfile_suffix, LALNameLength);  
       }
       
-      /* al files have no format suffix */
-      if (!(strncasecmp(&(args_info.format_arg[1]), "al", LALNameLength) == 0))
-      {
-        (void)strncat(ser_cross_file_name, outfile_suffix, LALNameLength);
-        (void)strncat(ser_plus_file_name, outfile_suffix, LALNameLength);
-        (void)strncat(ser_sum_file_name, outfile_suffix, LALNameLength);  
-        (void)strncat(ser_relfreq_file_name, outfile_suffix, LALNameLength);
-      }
-      
-      skygrid_print(&(gps_and_acc.gps), grid_cros_sq, ser_cross_file_name);
-      skygrid_print(&(gps_and_acc.gps), grid_plus_sq, ser_plus_file_name);
-      skygrid_print(&(gps_and_acc.gps), grid_sum_sq, ser_sum_file_name);
-      skygrid_print(&(gps_and_acc.gps), grid_relfreq, ser_relfreq_file_name);
+      skygrid_print(status, &(gps_and_acc.gps), grid_cros_sq, ser_cross_file_name);
+      skygrid_print(status, &(gps_and_acc.gps), grid_plus_sq, ser_plus_file_name);
+      skygrid_print(status, &(gps_and_acc.gps), grid_sum_sq, ser_sum_file_name);
+      skygrid_print(status, &(gps_and_acc.gps), grid_relfreq, ser_relfreq_file_name);
     } 
     fclose(timesfile);    
   }
@@ -469,45 +496,45 @@ void compute_skygrid(LALStatus * status)
     /* al files have no format suffix */
     if (!(strncasecmp(args_info.format_arg, "al", LALNameLength) == 0))
     {
-      (void)strncat(cross_file_name, dottimestamp, LALNameLength);
-      (void)strncat(plus_file_name, dottimestamp, LALNameLength);
-      (void)strncat(sum_file_name, dottimestamp, LALNameLength);  
-      (void)strncat(relfreq_file_name, dottimestamp, LALNameLength);  
+      (void)mystrlcat(cross_file_name, dottimestamp, LALNameLength);
+      (void)mystrlcat(plus_file_name, dottimestamp, LALNameLength);
+      (void)mystrlcat(sum_file_name, dottimestamp, LALNameLength);  
+      (void)mystrlcat(relfreq_file_name, dottimestamp, LALNameLength);  
     
-      (void)strncat(cross_file_name, outfile_suffix, LALNameLength);
-      (void)strncat(plus_file_name, outfile_suffix, LALNameLength);
-      (void)strncat(sum_file_name, outfile_suffix, LALNameLength); 
-      (void)strncat(relfreq_file_name, outfile_suffix, LALNameLength); 
+      (void)mystrlcat(cross_file_name, outfile_suffix, LALNameLength);
+      (void)mystrlcat(plus_file_name, outfile_suffix, LALNameLength);
+      (void)mystrlcat(sum_file_name, outfile_suffix, LALNameLength); 
+      (void)mystrlcat(relfreq_file_name, outfile_suffix, LALNameLength); 
     }
     
     /* zero out arrays */
-    skygrid_zero(grid_cros_sq);
-    skygrid_zero(grid_plus_sq);
-    skygrid_zero(grid_sum_sq);
-    skygrid_zero(grid_relfreq);
+    skygrid_zero(status, grid_cros_sq);
+    skygrid_zero(status, grid_plus_sq);
+    skygrid_zero(status, grid_sum_sq);
+    skygrid_zero(status, grid_relfreq);
     
-    for (k = 0; k < args_info.nsample_arg; ++k)
+    for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
-      for (j = 0; j < NUM_RA; ++j)
+      for (j = 0; j < num_ra; ++j)
       {
-        source.equatorialCoords.longitude =
-        (REAL8)j/(REAL8)NUM_RA * ((REAL8)LAL_TWOPI);
-        
-        for (i = -dec_lim; i <= dec_lim; ++i)
+        source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
+
+        for (i = 0; i < num_dec; ++i)
         {
-          cnt = j*NUM_DEC + i + dec_lim;
-          source.equatorialCoords.latitude = asin((REAL8)i/(REAL8)dec_lim);
+          cnt = j*num_dec + i;
+          source.equatorialCoords.latitude = 
+            asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
           
           LALComputeDetAMResponse(status, &response, &det_and_source,
                                   &gps_and_acc);
           
-          grid_cros_sq[cnt] += response.cross * response.cross /
+          grid_cros_sq->data[cnt] += response.cross * response.cross /
             args_info.nsample_arg;
-          grid_plus_sq[cnt] += response.plus  * response.plus /
+          grid_plus_sq->data[cnt] += response.plus  * response.plus /
             args_info.nsample_arg;
-          grid_sum_sq[cnt]  += (grid_cros_sq[cnt] + grid_plus_sq[cnt]) /
+          grid_sum_sq->data[cnt]  += (grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt]) /
             args_info.nsample_arg;
-          grid_relfreq[cnt] += doppler(status, &(gps_and_acc.gps), 
+          grid_relfreq->data[cnt] += doppler(status, &(gps_and_acc.gps), 
                                        &detectorvel_inputs, 
                                        &(source.equatorialCoords));
         }
@@ -517,16 +544,60 @@ void compute_skygrid(LALStatus * status)
                       &time_interval);
     }
     
-    skygrid_print(&start_time, grid_cros_sq, cross_file_name);
-    skygrid_print(&start_time, grid_plus_sq, plus_file_name);
-    skygrid_print(&start_time, grid_sum_sq, sum_file_name);
-    skygrid_print(&start_time, grid_relfreq, relfreq_file_name);
+    skygrid_print(status, &start_time, grid_cros_sq, cross_file_name);
+    skygrid_print(status, &start_time, grid_plus_sq, plus_file_name);
+    skygrid_print(status, &start_time, grid_sum_sq, sum_file_name);
+    skygrid_print(status, &start_time, grid_relfreq, relfreq_file_name);
   }
 
   LALFree(detectorvel_inputs.edat);
+  
+  free_skygrid(status, &grid_cros_sq);
+  free_skygrid(status, &grid_plus_sq);
+  free_skygrid(status, &grid_sum_sq);
+  free_skygrid(status, &grid_relfreq);
+  
+  cleanup_skygrid(status);
     
   LALCheckMemoryLeaks();
   
   return;
+} /* END: compute_skygrid() */
+
+
+/*
+static double
+ab1(double y_front, double y_back, double delta)
+{
+  return ((y_front - y_back) / (2. * delta));
 }
 
+static double
+ab2(double y_center, double y_front, double y_back, double delta)
+{
+  return ((y_front + y_back - 2.*y_center)/(delta * delta));
+}
+
+
+compute_approx_doppler_coeffs()
+{
+  double delta_ra = LAL_PI / (REAL8)num_ra;
+  double delta_sin_dec = 1. / (REAL8)num_dec;
+  double delta_dec = asin(delta_sin_dec);
+
+  double a1, a2, b1, b2;
+
+  for (j = 0; j < num_ra; ++j)
+  {
+    source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
+
+    for (i = 0; i < num_dec; ++i)
+    {
+      cnt = j*num_dec + i;
+      source.equatorialCoords.latitude = 
+        asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
+
+    }
+  }
+}
+*/

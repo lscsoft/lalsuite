@@ -44,9 +44,6 @@ void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
 void generate_timeseries_response(LALStatus * status);
 void compute_skygrid(LALStatus * status);
 
-void multiply_vectors(REAL4Vector * out,
-                      const REAL4Vector * a, const REAL4Vector * b);
-
 /* globals */
 extern int lalDebugLevel;
 extern int verbosity_level;

@@ -33,28 +33,31 @@
 #include "util.h"
 #include "cmdline.h"
 
-/* number of grid points in declination and right ascension */
-#define NUM_DEC 23
-#define NUM_RA  73
+#define DR_ANGULAR_OFFSET 0.005
+#define DR_TWOPI ((1. - DR_ANGULAR_OFFSET) * LAL_TWOPI)
 
 extern struct gengetopt_args_info args_info;
 
-typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
+typedef REAL8Array * skygrid_t;
 
-REAL4 skygrid_avg(const skygrid_t response);
-void  skygrid_square(skygrid_t square, const skygrid_t input);
-REAL4 skygrid_rms(const skygrid_t input);
-void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
-INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
-void  skygrid_print(const LIGOTimeGPS * gps, const skygrid_t input,
+void init_skygrid(LALStatus *status);
+skygrid_t * alloc_skygrid(LALStatus *status, skygrid_t *g);
+void free_skygrid(LALStatus *status, skygrid_t *skygrid);
+void cleanup_skygrid(LALStatus *status);
+REAL4 skygrid_avg(LALStatus *status, const skygrid_t response);
+void  skygrid_square(LALStatus *status, skygrid_t square, const skygrid_t input);
+REAL4 skygrid_rms(LALStatus *status, const skygrid_t input);
+void  skygrid_sqrt(LALStatus *status, skygrid_t result, const skygrid_t input);
+INT4  skygrid_copy(LALStatus *status, skygrid_t dest, const skygrid_t src);
+void  skygrid_print(LALStatus *status, const LIGOTimeGPS * gps, const skygrid_t input,
                     const char * filename);
-void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
-void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
-void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
-void  skygrid_zero(skygrid_t a);
+void  skygrid_fabs(LALStatus *status, skygrid_t absgrid, const skygrid_t input);
+void  skygrid_add(LALStatus *status, skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_subtract(LALStatus *status, skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_scalar_mult(LALStatus *status, skygrid_t result, const skygrid_t a, REAL8 b);
+void  skygrid_zero(LALStatus *status, skygrid_t a);
 
-void multiply_vectors(REAL4Vector * out,
+void multiply_vectors(LALStatus *status, REAL4Vector * out,
                       const REAL4Vector * a, const REAL4Vector * b);
 
 #endif
