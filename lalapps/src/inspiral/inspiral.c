@@ -171,7 +171,8 @@ INT4  stopTemplate      = -1;           /* index of last template       */
 INT4  numChisqBins      = -1;           /* number of chisq bins         */
 REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
-INT4  eventCluster      = -1;           /* perform chirplen clustering  */
+Clustering clusterMethod;               /* chosen clustering algorithm  */  /*XXX*/
+REAL4 clusterWindow     = -1;           /* cluster over time window     */  /*XXX*/
 Approximant approximant;                /* waveform approximant         */
 
 /* generic simulation parameters */
@@ -1406,10 +1407,9 @@ int main( int argc, char *argv[] )
     fcInitParams->numSegments  = 1;
     fcInitParams->ovrlap       = 0;
 
-    /* set the thresholds and clustering option for the bank sim */
+    /* set the thresholds for the bank sim */
     snrThresh    = 0;
     chisqThresh  = LAL_REAL4_MAX;
-    eventCluster = 1;
 
     /* set low frequency cutoff index of the psd and    */
     /* the value the psd at cut                         */
@@ -1490,14 +1490,18 @@ int main( int argc, char *argv[] )
 
   LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
       &status );
+
   LAL_CALL( LALFindChirpChisqVetoInit( &status, fcFilterParams->chisqParams, 
         fcInitParams->numChisqBins, fcInitParams->numPoints ), 
       &status );
 
+  /* initialize findchirp clustering params */     /*XXX*/
+  fcFilterParams->clusterMethod = clusterMethod;   /*XXX*/
+  fcFilterParams->clusterWindow = clusterWindow;   /*XXX*/
+
   /* parse the thresholds */
   fcFilterParams->rhosqThresh = snrThresh * snrThresh;
   fcFilterParams->chisqThresh = chisqThresh;
-  fcFilterParams->maximiseOverChirp = eventCluster;
 
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -1896,7 +1900,7 @@ int main( int argc, char *argv[] )
             outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
                 &chisqts, "none", chisqStr );
           }
-
+if ( vrbflg ) fprintf (stdout, "epoch = %d\n",fcFilterInput->segment->data->epoch );
         }
         else
         {
@@ -2465,8 +2469,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
-"  --enable-event-cluster       turn on maximization over chirp length\n"\
-"  --disable-event-cluster      turn off maximization over chirp length\n"\
+"  --cluster-method             set clustering type to maximize over chirp with\n"\
+"  --cluster-window             set length of clustering time window if required\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
@@ -2502,8 +2506,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"enable-event-cluster",    no_argument,       &eventCluster,     1 },
-    {"disable-event-cluster",   no_argument,       &eventCluster,     0 },
     {"enable-output",           no_argument,       &enableOutput,     1 },
     {"disable-output",          no_argument,       &enableOutput,     0 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
@@ -2566,6 +2568,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"userTag",                 required_argument, 0,                'Z'},
     {"ifo-tag",                 required_argument, 0,                'I'},
     {"version",                 no_argument,       0,                'V'},
+    {"cluster-method",          required_argument, 0,                '*'},  /*XXX*/
+    {"cluster-window",          required_argument, 0,                '#'},  /*XXX*/
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -2579,6 +2583,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   int c;
   INT4 haveDynRange = 0;
   INT4 haveApprox = 0;
+  INT4 haveClusterMethod = 0;
   INT4 haveBankSimApprox = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   LALStatus             status = blank_status;
@@ -3402,6 +3407,45 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         exit( 0 );
         break;
 
+      case '*':								/*XXX*/
+        if ( ! strcmp( "none", optarg ) )
+        {
+          clusterMethod = noClustering;
+        }
+	else if ( ! strcmp( "template", optarg ) )
+        {
+ 	  clusterMethod = tmplt;
+	} 
+        else if ( ! strcmp( "window", optarg ) )
+        {
+ 	  clusterMethod = window;
+	} 
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown clustering method: "
+              "%s (must be 'none', 'template' or 'window')\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+	haveClusterMethod = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '#':								/*XXX*/
+        clusterWindow = (REAL4) atof( optarg );
+        if ( clusterWindow <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "clustering time window is less than or equal to 0 secs: "
+              "(%f secs specified)\n",
+              long_options[option_index].name, clusterWindow );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", clusterWindow );
+        break;
+
+
       case '?':
         exit( 1 );
         break;
@@ -3450,42 +3494,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--enable-output or --disable-output "
         "argument must be specified\n" );
     exit( 1 );
-  }
-
-  /* check event cluster option */
-  if ( eventCluster == 1 )
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--enable-event-cluster" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
-  }
-  else if ( eventCluster == 0 )
-  {
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      calloc( 1, sizeof(ProcessParamsTable) );
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--disable-event-cluster" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
-  }
-  else if ( bankSim )
-  {
-    /* event cluster is not needed for template bank simulation */
-    fprintf( stderr, "WARNING: performing template bank testing\n" );
-  }
-  else
-  {
-    fprintf( stderr, "--enable-event-cluster or "
-        "--disable-event-cluster argument must be specified\n" );
-    exit( 1 );
-  }
+  } 
 
   /* check inject-overhead option */
   if ( injectOverhead )
@@ -3683,6 +3692,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( specType < 0 )
   {
     fprintf( stderr, "--spectrum-type must be specified\n" );
+    exit( 1 );
+  }
+  if ( clusterWindow * sampleRate > numPoints )				/*XXX*/
+  {
+    fprintf( stderr, "--cluster-window must be less than "
+	"--segment-length\n" );
+    exit( 1 );
+  }
+  if ( ! haveClusterMethod )
+  {
+    fprintf( stderr, "--cluster-method must be specified\n" );
+    exit( 1 );
+  }
+  if ( clusterMethod == window && clusterWindow == -1 )
+  {
+    fprintf( stderr, "--cluster-window must be specified "
+ 	"if --clustering method 'window' chosen\n" );
     exit( 1 );
   }
   if ( invSpecTrunc < 0 )
