@@ -645,7 +645,7 @@ int main( int argc, char *argv[] )
   size_t inj;
   FILE *fp = NULL;
   int rand_seed = 1;
-  int ilwd = 0;
+  static int ilwd = 0;
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
