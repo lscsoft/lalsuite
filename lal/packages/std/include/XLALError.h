@@ -77,13 +77,15 @@ static REAL8 UNUSED XLALREAL8FailNaN( void )
 /* tests if a value is an XLAL REAL4 failure NaN */
 static int UNUSED XLALIsREAL4FailNaN( REAL4 val )
 {
-  return ( *(INT4 *)(&val) == XLAL_REAL4_FAIL_NAN_INT );
+  void *p = &val;
+  return ( *(INT4 *)p == XLAL_REAL4_FAIL_NAN_INT );
 }
 
 /* tests if a value is an XLAL REAL8 failure NaN */
 static int UNUSED XLALIsREAL8FailNaN( REAL8 val )
 {
-  return ( *(INT8 *)(&val) == XLAL_REAL8_FAIL_NAN_INT );
+  void *p = &val;
+  return ( *(INT8 *)p == XLAL_REAL8_FAIL_NAN_INT );
 }
 #undef UNUSED
 
