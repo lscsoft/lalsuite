@@ -117,9 +117,9 @@ LALInspiralWave1(
    dym.data = &dummy.data[4*n];
    dyt.data = &dummy.data[5*n];
    
-   params->nStartPad = 0;
+   /*params->nStartPad = 0;
    params->nEndPad 	= 0.0;
-
+*/
    m = ak.totalmass;
    dt = 1./params->tSampling;
    fu = params->fCutoff;
@@ -183,11 +183,11 @@ LALInspiralWave1(
    in4.dyt = &dyt;
 
    count = 0;
-  /* while (count < params->nStartPad) 
+   while (count < params->nStartPad) 
    {
        *(signal->data + count) = 0.;
        count++;
-   }*/
+   }
 
    t = 0.0;
    piM = LAL_PI * m;
@@ -349,12 +349,12 @@ LALInspiralWave1Templates(
    in4.dyt = &dyt;
 
    count = 0;
-   params->nStartPad = 0;
-   /*while (count < params->nStartPad) 
+/*   params->nStartPad = 0;*/
+   while (count < params->nStartPad) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;
       count++;
-   }*/
+   }
 
    t = 0.0;
    do {

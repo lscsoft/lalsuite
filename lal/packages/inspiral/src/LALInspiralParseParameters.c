@@ -159,6 +159,30 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	}/* SpinTaylor is not available here only for inject package*/
       else if (strcmp(argv[i], "--order")==0){
 	params->order = atoi(argv[++i]);}
+      else if (strcmp(argv[i], "--nStartPad")==0){
+	params->nStartPad = atoi(argv[++i]);}
+      else if (strcmp(argv[i], "--nEndPad")==0){
+	params->nEndPad = atoi(argv[++i]);}
+      else if (strcmp(argv[i],"--mass1")==0){
+	params->mass1 = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--mass2")==0){
+	params->mass2 = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--massChoice")==0){
+	if (strcmp(argv[++i],"masses")==0){
+	  params->massChoice = m1Andm2;}
+	else if (strcmp(argv[i],"psi")==0){ 
+	  params->massChoice = psi0Andpsi3;}
+      }
+      else if (strcmp(argv[i],"--fCutoff")==0){
+	params->fCutoff = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--fFinal")==0){
+	params->fFinal = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--fLower")==0){
+	params->fLower = atof(argv[++i]);}
+      else if (strcmp(argv[i],"--tSampling")==0){
+	params->tSampling = atof(argv[++i]); }
+      else if (strcmp(argv[i],"--distance")==0){
+	params->distance = atof(argv[++i]); }
       else if (strcmp(argv[i],"--mass1")==0){
 	params->mass1 = atof(argv[++i]);}
       else if (strcmp(argv[i],"--mass2")==0){
@@ -454,6 +478,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--distance    \n");
   fprintf(stderr,"--startPhase  \n");
   fprintf(stderr,"--startTime   \n");
+
   fprintf(stderr,"--zeta2       (EOB 3PN)\n");
   fprintf(stderr,"--omegaS      (EOB 3PN)\n");
 

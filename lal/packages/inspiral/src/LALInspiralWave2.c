@@ -92,7 +92,7 @@ LALInspiralWave2(
   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  params->nStartPad = 0;
+/*  params->nStartPad = 0;*/
   
   LALInspiralSetup(status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);

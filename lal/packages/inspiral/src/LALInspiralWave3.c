@@ -105,7 +105,7 @@ LALInspiralWave3 (
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  params->nStartPad = 0; 
+/*  params->nStartPad = 0; */
 
   LALInspiralSetup (status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);

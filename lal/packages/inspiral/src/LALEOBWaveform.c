@@ -665,9 +665,9 @@ LALEOBWaveform (
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
 
-   params->nStartPad=0.0;
+/*   params->nStartPad=0.0;
    params->nEndPad=0.0;
-   
+  */ 
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, 
    	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 /*   ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, 
@@ -857,11 +857,11 @@ switch (params->order)
 
    t = 0.0;
    count = 0;
-  /* while (count < params->nStartPad)
+   while (count < params->nStartPad)
    {
       *(signal->data + count) = 0.;
       count++;
-   }*/
+   }
 
    t = 0.0;
    /* Choose rOld larger than r now; it doesn't matter how large; just 
