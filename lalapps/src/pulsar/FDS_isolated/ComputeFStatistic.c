@@ -2818,9 +2818,9 @@ void worker() {
       if(a2==globargc)
 	retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
       else
-	retval=boincmain(a2-a1-1,&(globargv[a1+1]));
+	retval=boincmain(a2-a1,&(globargv[a1]));
       if (!retval)
-	retval=polka(globargc - a2 - 1, &(globargv[a2+1]));
+	retval=polka(globargc-a2, &(globargv[a2]));
     }
     /* remove checkpoint-files */
     remove (ckp_fname);
