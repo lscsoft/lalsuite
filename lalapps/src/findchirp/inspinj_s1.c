@@ -101,30 +101,44 @@ double my_urandom( void )
 /* computes Greenwich mean sidereal time in radians (2pi rad per day) */
 double greenwich_mean_sidereal_time( int gpssec, int gpsnan, int taiutc )
 {
-  int seconds; /* second of the day */
-  double t; /* time of day in fraction of entire day */
-  double TpU; /* teporal solar based unit */
+  /* cf. S. Aoki et al., A&A 105, 359 (1982) eqs. 13 & 19 */
+  /* also cf. http://aa.usno.navy.mil */
+  /* Note: 00h UT 01 Jan 2000 has JD=2451544.5 and GPS=630720013 */
+  const double JD_12h_01_Jan_2000     = 2451545.0;
+  const double JD_00h_01_Jan_2000     = 2451544.5;
+  const double GPS_00h_01_Jan_2000    = 630720013;
+  const double TAIUTC_00h_01_Jan_2000 = 32; /* leap seconds: TAI - UTC */
+
+  double t;
+  double dpU;
+  double TpU;
   double gmst;
 
-  seconds  = gpssec - 630720013; /* 630720013 is 0h 1Jan 2000 */
-  seconds += taiutc - 32;
-  seconds %= 24 * 3600; /* second of the day */
-  t = ( seconds + 1e-9 * gpsnan ) / ( 24.0 * 3600.0 );
+  /* compute number of seconds since 00h UT 01 Jan 2000 */
+  t  = gpssec - GPS_00h_01_Jan_2000;
+  t += 1e-9 * gpsnan;
+  t += taiutc - TAIUTC_00h_01_Jan_2000;
 
-  /* TpU is time since 12h Jan 0, 2000 = Dec 31, 1999 12:00 (noon) */
-  TpU  = gpssec - 630676813; /* 630676813 is GPS time of 12h UTC 31 Dec 1999 */
-  TpU += taiutc - 32; /* TAI - UTC = 32 on 31 Dec 1999 */
-  TpU += 1e-9 * gpsnan;
-  TpU /= 36525.0 * 24.0 * 3600.0; /* TpU measured in centuries of 36525 days */
+  /* compute number of days since 12h UT 01 Jan 2000 */
+  dpU  = floor( t / ( 24.0 * 3600.0 ) ); /* full days since 0h UT 01 Jan 2000 */
+  dpU += JD_00h_01_Jan_2000 - JD_12h_01_Jan_2000; /* i.e., -0.5 */
 
-  gmst  = 0.0929 * TpU;
-  gmst += 8640184.8138;
-  gmst *= TpU;
-  gmst /= 24.0 * 3600.0; /* convert from seconds to fractions of a day */
-  gmst += 0.279057325232;
-  gmst += t * 1.002737909265; /* + 5.89e-11 TU */
-  gmst  = fmod( gmst, 1.0 ); /* put in range 0 to 1 */
-  gmst *= 2 * M_PI; /* convert to radians (2pi rad per day) */
+  /* compute number of centuries since 12h UT 31 Dec 1899 */
+  TpU = dpU / 36525.0;
+
+  /* compute the gmst at 0h of the current day */
+  gmst = 24110.54841
+    + TpU * ( 8640184.812866
+        + TpU * ( 0.093104
+          - TpU * 6.2e-6 ) ); /* seconds */
+
+  /* add the sidereal time since the start of the day */
+  t = fmod( t, 24.0 * 3600.0 ); /* seconds since start of day */
+  gmst += t * 1.002737909350795; /* corrections omitted */
+
+  /* convert to fractions of a day and to radians */
+  gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
+  gmst *= 2.0 * M_PI; /* radians */
   return gmst;
 }
 
@@ -314,7 +328,7 @@ int inj_params( double *injPar )
   m2 = m2arr[i];
   injPar[mTotElem] = m1 + m2;
   injPar[etaElem]  = m1 * m2 / ( ( m1 + m2 ) * ( m1 + m2 ) );
-  injPar[incElem]  = -0.5 * M_PI + M_PI * my_urandom();
+  injPar[incElem]  = acos( -1.0 + 2.0 * my_urandom() );
   injPar[phiElem]  = 2 * M_PI * my_urandom();
   injPar[psiElem]  = 2 * M_PI * my_urandom();
   injPar[distElem] = dist;
