@@ -185,10 +185,13 @@ LALGeneratePulsarSignal (LALStatus *stat,
   else
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
-
-  /* we need pulsar reference-time in SSB frame(!): tRef is in UTC -> convert  */
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->pulsar.tRef, params), stat);
-  sourceParams.spinEpoch = tmpTime;
+  if ( params->pulsar.tRef.gpsSeconds != 0)
+    sourceParams.spinEpoch = params->pulsar.tRef;   /* pulsar reference-time in SSB frame (TDB) */
+  else	/* if not given: use startTime converted to SSB as tRef ! */
+    {
+      TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
+      sourceParams.spinEpoch = tmpTime;
+    }
 
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 
@@ -250,13 +253,17 @@ LALGeneratePulsarSignal (LALStatus *stat,
   detector.ephemerides = params->ephemerides;
 
   /* similar to the spirit of makefakedata_v2, we use the pulsar reference-time 
-   * as t_h, so that several time-series generated for the same pulsar would be 
-   * guaranteed to have consistent heterodyning.
+   * as t_h if given, so that several time-series generated for the same pulsar would be 
+   * guaranteed to have consistent heterodyning. If tRef not given, use startTime.
    *
    * However, we round this to integer-seconds to allow simplifications concerning
    * the necessary phase-correction in the final SFTs. (see docu)
    */
-  detector.heterodyneEpoch = params->pulsar.tRef;
+  if ( params->pulsar.tRef.gpsSeconds != 0)
+    detector.heterodyneEpoch = params->pulsar.tRef;
+  else
+    detector.heterodyneEpoch = params->startTimeGPS;
+
   detector.heterodyneEpoch.gpsNanoSeconds = 0;	/* make sure this only has seconds */
   
   /* ok, we  need to prepare the output time-series */
