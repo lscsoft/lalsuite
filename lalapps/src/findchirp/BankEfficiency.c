@@ -134,9 +134,9 @@ main (  int argc, char **argv )
    /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
    coarseIn.psi0Min = 1.e0;
-   coarseIn.psi0Max = 2.5e5;
-   coarseIn.psi3Min = -2.2e3;
-   coarseIn.psi3Max = 1.e1;
+   coarseIn.psi0Max = 3e5;
+   coarseIn.psi3Min = -3.5e3;
+   coarseIn.psi3Max = 0;
    coarseIn.alpha = 0.L;
    coarseIn.numFcutTemplates = 5;
    coarseIn.approximant = template;
@@ -337,7 +337,7 @@ main (  int argc, char **argv )
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
    
-   /* if (!quietFlag) */
+    if (!quietFlag) 
    {
    	fprintf(stdout, "#---------------------------------------------------------------\n");
 	fprintf(stdout, "#Number of Coarse Bank Templates=%d\n",nlist);
@@ -359,6 +359,7 @@ main (  int argc, char **argv )
    while (ntrials--) 
    {
       randIn.param.approximant = approx;
+      randIn.param.fCutoff = coarseIn.fUpper;;
       if (approx==BCV) 
 	      randIn.param.massChoice = psi0Andpsi3;
       else
