@@ -1,3 +1,17 @@
+#ifndef _CLUSTERS_H  /* Double-include protection. */
+#define _CLUSTERS_H
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+#include <lal/LALDatatypes.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
+#include <lal/LALBarycenter.h>
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -55,8 +69,9 @@ int DetectClusters(ClustersInput *input, ClustersParams *params, Clusters *outpu
 int ComputeOutliers(OutliersInput *outliersInput, OutliersParams *outlierParams, Outliers *outliers);
 int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output);
 
+#ifdef  __cplusplus
+}
+#endif  
+/* C++ protection. */
 
-
-
-
-
+#endif  /* Double-include protection. */
