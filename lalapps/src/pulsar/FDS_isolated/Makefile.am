@@ -16,7 +16,7 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
-	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh lalapps_monteint
+	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh lalapps_monteint lalapps_skynet
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
 
@@ -46,6 +46,8 @@ lalapps_makeInvetofile_SOURCES=makeInvetofile.c
 lalapps_extractSFTband_SOURCES=extractSFTband.c
 
 lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
+
+lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
