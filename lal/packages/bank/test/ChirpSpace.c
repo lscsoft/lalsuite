@@ -38,8 +38,8 @@ int main () {
       if (p.totalMass > totalMmax) break;
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,
@@ -58,8 +58,8 @@ int main () {
       LALInspiralParameterCalc (&status, &p);
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,
@@ -77,8 +77,8 @@ int main () {
       LALInspiralParameterCalc (&status, &p);
       printf("%e %e %e %e %e %e %e %e %e %e %e\n", 
          p.t0,
-         p.t2,
          p.t3,
+         p.t2,
          p.mass2,
          p.mass1, 
          p.t4,

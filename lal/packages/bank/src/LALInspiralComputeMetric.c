@@ -65,10 +65,10 @@ chirp times} $\tau_{k}$, and then the phase $\Psi$ may be written in the form
 \end{equation}
 where the $\tau_{k}$ are given by
 \begin{equation}
-\tau_{0} = \frac{5}{256} \eta v_{0}^{5}
+\tau_{0} = \frac{5}{256 \eta v_{0}^{5}}
 \end{equation}
 \begin{equation}
-\tau_{2} = \frac{5}{192} \eta v_{0}^{3} \left( \frac{743}{336} + \frac{11}{4} \eta \right)
+\tau_{2} = \frac{5}{192 \eta v_{0}^{3}} \left( \frac{743}{336} + \frac{11}{4} \eta \right)
 \end{equation}
 \begin{equation}
 \tau_{3} = \frac{\pi}{8 \eta v_{0}^{2}}

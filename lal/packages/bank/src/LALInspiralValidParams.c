@@ -146,45 +146,49 @@ void LALInspiralValidParams(LALStatus            *status,
                             InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
-  static InspiralTemplate Pars;
+  InspiralTemplate *Pars=NULL;
 
+  Pars = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate));
   INITSTATUS (status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC);
   ATTATCHSTATUSPTR(status);
   ASSERT (bankParams.x0 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (bankParams.x1 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.fLower > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
   *valid = 0;
 
 /* First set the chirp times of Pars to be as in bankParams */
-  Pars.t0 = bankParams.x0;
-  Pars.fLower = coarseIn.fLower;
+  Pars->t0 = bankParams.x0;
+  Pars->fLower = coarseIn.fLower;
   switch (coarseIn.space) {
      case Tau0Tau2:
-        Pars.t2 = bankParams.x1;
-        Pars.massChoice = t02;
+        Pars->t2 = bankParams.x1;
+        Pars->massChoice = t02;
         break;
      case Tau0Tau3:
-        Pars.t3 = bankParams.x1;
-        Pars.massChoice = t03;
+        Pars->t3 = bankParams.x1;
+        Pars->massChoice = t03;
         break;
    }
 
 /* Compute all the parameters, including masses, corresponding to (t0,t2/t3) */
 
-  LALInspiralParameterCalc(status->statusPtr, &Pars); CHECKSTATUSPTR(status);
+  LALInspiralParameterCalc(status->statusPtr, Pars); CHECKSTATUSPTR(status);
 
 /* If the masses are in the correct range accept as valid parameters */
 
-  if (Pars.mass1 > coarseIn.mMin &&
-      Pars.mass2 > coarseIn.mMin &&
-      Pars.totalMass < coarseIn.MMax &&
-      Pars.eta <= 0.25 && 
-      Pars.eta > coarseIn.etamin) 
+  if (Pars->mass1 > coarseIn.mMin &&
+      Pars->mass2 > coarseIn.mMin &&
+      Pars->totalMass < coarseIn.MMax &&
+      Pars->eta <= 0.25 && 
+      Pars->eta > coarseIn.etamin) 
   {
        *valid = 1;
   }
 
+  LALFree(Pars);
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

@@ -66,7 +66,7 @@ void LALInspiralSetSearchLimits (LALStatus               *status,
 {  /*  </lalVerbatim>  */
 
 
-   static InspiralTemplate Pars1, Pars2, Pars3;
+   InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL;
 
    INITSTATUS (status, "LALInspiralSetSearchLimits", LALINSPIRALSETSEARCHLIMITSC);
    ATTATCHSTATUSPTR(status);
@@ -81,25 +81,29 @@ void LALInspiralSetSearchLimits (LALStatus               *status,
    ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
 
+   Pars1 = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate));
+   Pars2 = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate));
+   Pars3 = (InspiralTemplate *) LALMalloc(sizeof(InspiralTemplate));
+
 /* Initiate three parameter vectors consistent with the coarseIn structure */
 
-   LALInspiralSetParams(status->statusPtr, &Pars1, coarseIn); CHECKSTATUSPTR(status);
-   LALInspiralSetParams(status->statusPtr, &Pars2, coarseIn); CHECKSTATUSPTR(status);
-   LALInspiralSetParams(status->statusPtr, &Pars3, coarseIn); CHECKSTATUSPTR(status);
+   LALInspiralSetParams(status->statusPtr, Pars1, coarseIn); CHECKSTATUSPTR(status);
+   LALInspiralSetParams(status->statusPtr, Pars2, coarseIn); CHECKSTATUSPTR(status);
+   LALInspiralSetParams(status->statusPtr, Pars3, coarseIn); CHECKSTATUSPTR(status);
 
-   Pars1.massChoice = Pars2.massChoice = Pars3.massChoice = m1Andm2;
+   Pars1->massChoice = Pars2->massChoice = Pars3->massChoice = m1Andm2;
 
 /* Calculate the value of the parameters at the three corners of the search space */
 
-   Pars1.mass1 = Pars1.mass2 = coarseIn.MMax/2.;
-   LALInspiralParameterCalc(status->statusPtr, &Pars1); CHECKSTATUSPTR(status);
+   Pars1->mass1 = Pars1->mass2 = coarseIn.MMax/2.;
+   LALInspiralParameterCalc(status->statusPtr, Pars1); CHECKSTATUSPTR(status);
    
-   Pars2.mass1 = Pars2.mass2 = coarseIn.mMin;
-   LALInspiralParameterCalc(status->statusPtr, &Pars2); CHECKSTATUSPTR(status);
+   Pars2->mass1 = Pars2->mass2 = coarseIn.mMin;
+   LALInspiralParameterCalc(status->statusPtr, Pars2); CHECKSTATUSPTR(status);
    
-   Pars3.mass1 = coarseIn.mMin;
-   Pars3.mass2 = (coarseIn.MMax - coarseIn.mMin);
-   LALInspiralParameterCalc(status->statusPtr, &Pars3); CHECKSTATUSPTR(status);
+   Pars3->mass1 = coarseIn.mMin;
+   Pars3->mass2 = (coarseIn.MMax - coarseIn.mMin);
+   LALInspiralParameterCalc(status->statusPtr, Pars3); CHECKSTATUSPTR(status);
 
 
 /* Find the minimum and maximum values of the parameters and set 
@@ -107,19 +111,22 @@ void LALInspiralSetSearchLimits (LALStatus               *status,
    corresponding to m1 = m2 = MMax/2, i.e., Pars1 structure.
 */
 
-   bankParams->x0 = bankParams->x0Min = Pars1.t0;
-   bankParams->x0Max = Pars2.t0;
+   bankParams->x0 = bankParams->x0Min = Pars1->t0;
+   bankParams->x0Max = Pars2->t0;
 
    switch (coarseIn.space) {
       case Tau0Tau2:
-         bankParams->x1 = bankParams->x1Min = Pars1.t2;
-         bankParams->x1Max = (Pars2.t2 > Pars3.t2) ? Pars2.t2 : Pars3.t2;
+         bankParams->x1 = bankParams->x1Min = Pars1->t2;
+         bankParams->x1Max = (Pars2->t2 > Pars3->t2) ? Pars2->t2 : Pars3->t2;
          break;
       case Tau0Tau3:
-         bankParams->x1 = bankParams->x1Min = Pars1.t3;
-         bankParams->x1Max = (Pars2.t3 > Pars3.t3) ? Pars2.t3 : Pars3.t3;
+         bankParams->x1 = bankParams->x1Min = Pars1->t3;
+         bankParams->x1Max = (Pars2->t3 > Pars3->t3) ? Pars2->t3 : Pars3->t3;
          break;
    }
+   LALFree(Pars1);
+   LALFree(Pars2);
+   LALFree(Pars3);
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }

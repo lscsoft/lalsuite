@@ -13,8 +13,10 @@ LALInspiralSetParams.c\
 LALInspiralSetSearchLimits.c\
 LALInspiralUpdateParams.c\
 LALInspiralValidParams.c\
+LALInspiralValidTemplate.c\
 LALInverse3.c\
-LALMatrixTransform.c
+LALMatrixTransform.c\
+LALRectangleVertices.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

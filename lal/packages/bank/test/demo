@@ -1,6 +1,9 @@
 #
-make CoarseTest
 make ChirpSpace
+make CoarseTest
+make CoarseTest2
 ./CoarseTest > CoarseTest.out
+./CoarseTest2 > CoarseTest2.out
 ./ChirpSpace > ChirpSpace.out
-xmgr -par CoarseTest.par ChirpSpace.out CoarseTest.out
+xmgr -par CoarseTest.par ChirpSpace.out CoarseTest.out &
+xmgr -par CoarseTest2.par ChirpSpace.out CoarseTest2.out &

@@ -7,7 +7,23 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralCreateCoarseBank.c}}
 
-Module to create a coarse grid of templates.
+The coarse grid algorithm works in two stages: 
+After computing the minimum and maximum chirp-times corresponding to the
+search space: $(\tau_0^{\rm min}, \tau_0^{\rm max}),$
+$(\tau_2^{\rm min}, \tau_2^{\rm max})$ (or\footnote{In what follows
+we will only mention $\tau_3$; however, the algorithm is itself valid,
+and has been implemented, in the case of $(\tau_0,\tau_2)$ too. However,
+we recommend that the space $\tau_0$-$\tau_3$ be used.}
+$(\tau_3^{\rm min}, \tau_3^{\rm max})$) the algorithm
+
+\begin{enumerate}
+\item chooses a lattice of templates along the equal mass curve and then
+
+\item lays a rectangular grid in the rectangular region defined by
+the minimum and maximum values of the chirp-times and retain only
+if (a) the point lies in the parameter space, OR (b) one of the
+vertices defined by the rectangle lies in the parameter space.
+\end{enumerate}
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -15,21 +31,140 @@ Module to create a coarse grid of templates.
 \idx{LALInspiralCreateCoarseBank()}
 
 \subsubsection*{Description}
-The function first lays a set of templates along the $\eta=1/4$ curve
-and then a grid in the $\tau_0$--$\tau_2$ space or $\tau_0$--$\tau_3$ space,
-depending on the choice of \texttt{coarseIn.space=Tau0Tau2} or \texttt{Tau0Tau3}
+\paragraph*{Templates along the equal mass curve}
+The algorithm works in two
+stages: In the first stage, templates are built along the equal
+mass (that is, $\eta=1/4$) curve starting from the minimum value
+of the Newtonian chirp-time and stopping at its maximum value. 
+Given the $n$~th template at $O$ with parameters $(\tau_0^{(n)},\tau_3^{(n)}),$
+and given also the distance between templates in our preferred coordinates
+$(D\tau_0^{(n)},D\tau_3^{(n)}),$
+consider lines $\tau_0 = \tau_0^{(n)} + D\tau_0^{(n)}$ 
+($QA$ of Fig.~\ref{fig:equal mass algo}) and
+$\tau_3 = \tau_3^{(n)} + D\tau_3^{(n)}$ 
+($PB$ of Fig.~\ref{fig:equal mass algo}).
+\begin{figure}[h]
+\begin{center}
+\includegraphics[angle=-90,width=4.0 true in]{LALInspiralBankHequalmass}
+\end{center}
+\caption{Algorithm sketching the placement of templates along $\eta=1/4$ curve.}
+\label{fig:equal mass algo}
+\end{figure}
+The template next to 
+$(\tau_0^{(n)},\tau_3^{(n)}),$ on the equal mass curve, must lie
+either along $PB$ or along $QA$ (cf. Fig.~\ref{fig:equal mass algo}) in order
+that all the signals that may lie on $OAB$ 
+are spanned by at least one of the two templates.  Clearly, if we were
+to place the $(n+1)$~th template at $B,$ some of the signals won't
+have the required minimal match. However, placing the $(n+1)$~th template at
+$A$ suffices our requirement. 
+(Note, however, that there is
+no guarantee that this will always work; it works only if the curve
+along which templates are being laid is a slowly varying function.)
+To locate the $(n+1)$~th template we
+compute the following pairs of coordinates:
+\begin{eqnarray}
+\tau_0^{(n+1)} = \tau_0^{(n)} + D\tau_0^{(n)}, \ \ 
+\tau_3^{(n+1)} =  4A_3 \left ( \frac{\tau_0^{(n+1)}}{4A_0} \right )^{2/5}
+\nonumber \\
+\tau_3^{(n+1)} = \tau_3^{(n)} + D\tau_3^{(n)}, \ \ 
+\tau_0^{(n+1)} =  4A_0 \left ( \frac{\tau_3^{(n+1)}}{4A_3} \right )^{5/2},
+\end{eqnarray}
+where 
+\begin{equation}
+A_0=\frac{5}{256 (\pi f_0)^{8/3}}, \ \ A_3=\frac{\pi}{8 (\pi f_0)^{5/3}}.
+\end{equation}
+Of the two pairs, the required pair is the one that is closer to the 
+starting point $(\tau_0^{(n)},\tau_3^{(n)}).$ 
+
+\paragraph*{Templates in the rest of the parameter space}
+In the second stage, the algorithm begins again at the point 
+$(\tau_0^{\rm min}, \tau_3^{\rm min}),$ 
+corresponding distance between templates
+$(D\tau_0^{\rm min}, D\tau_3^{\rm min}),$ and chooses a rectangular lattice
+of templates in the rectangular region defined by 
+$(\tau_0^{\rm min}, \tau_3^{\rm min})$ 
+$(\tau_0^{\rm max}, \tau_3^{\rm min})$ 
+$(\tau_0^{\rm max}, \tau_3^{\rm max})$  and
+$(\tau_0^{\rm min}, \tau_3^{\rm max})$. 
+The implementation of the algorithm along the equal mass curve and
+in a rectangular lattice in the rest of the parameter space is shown 
+plotted in Fig.~\ref{fig:coarse}, where the templates
+chosen are represented as points.  
+\begin{figure}[h]
+\begin{center}
+\includegraphics[angle=-90,width=4.5 true in]{LALInspiralBankHCoarse2}
+\caption{Algorithm sketching the construction of a rectangular lattice of templates.}
+\label{fig:coarse}
+\end{center}
+\end{figure}
+
 
 \subsubsection*{Algorithm}
+
+The algorithm to lay templates along the equal-mass curve is as follows:
+\begin{obeylines}
+\texttt{
+\hskip 1 true cm Begin at $\tau_0 = \tau_0^{\rm min}$ 
+\hskip 1 true cm do while $(\tau_0 < \tau_0^{\rm max})$
+\hskip 1 true cm \{
+\hskip 2 true cm $\tau_0^A = \tau_0 + D\tau_0, \ \ \tau_3^A = 4A_3 \left ( {\tau_0^A}/{4A_0} \right )^{2/5}$ 
+\hskip 2 true cm $\tau_3^B = \tau_3 + D\tau_3, \ \ \tau_0^B = 4A_0 \left ( {\tau_3^B}/{4A_3} \right )^{5/2}$ 
+\hskip 2 true cm if ($(\tau_0^A,\tau_3^A)$ is closer $(\tau_0,\tau_3)$ than $(\tau_0^B,\tau_3^B)$)
+\hskip 2 true cm \{
+\hskip 3 true cm $\tau_0 = \tau_0^A, \tau_3 = \tau_3^A$ 
+\hskip 2 true cm \}
+\hskip 2 true cm else
+\hskip 2 true cm \{
+\hskip 3 true cm $\tau_0 = \tau_0^B, \tau_3 = \tau_3^B$ 
+\hskip 2 true cm \}
+\hskip 2 true cm Add $(\tau_0, \tau_3)$ to InspiralTemplateList
+\hskip 2 true cm numTemplates++
+\hskip 2 true cm Compute metric at $(\tau_0, \tau_3)$
+\hskip 2 true cm Compute distance between templates at  new point: $(D\tau_0, D\tau_3)$ 
+\hskip 1 true cm \}
+}
+\end{obeylines}
+
+The algorithm to lay templates in the rest of the parameter space
+is as follows:
+\begin{obeylines}
+\texttt{
+\hskip 1 true cm Begin at $\tau_0 = \tau_0^{\rm min}, \tau_3 = \tau_3^{\rm min}$ 
+\hskip 1 true cm Compute metric at $(\tau_0, \tau_3)$
+\hskip 1 true cm Compute distance between templates at  new point: $(D\tau_0, D\tau_3)$
+\hskip 1 true cm Add $(\tau_0, \tau_3)$ to InspiralTemplateList
+\hskip 1 true cm numTemplates++
+\hskip 1 true cm do while ($\tau_3 <= \tau_3^{\rm max}$)
+\hskip 1 true cm \{
+\hskip 2 true cm do while ($\tau_0 <= \tau_0^{\rm max}$)
+\hskip 2 true cm \{
+\hskip 3 true cm if ($(\tau_0, \tau_3)$ is inside the parameter space)
+\hskip 3 true cm \{
+\hskip 4 true cm Compute metric at ($\tau_0, \tau_3$)
+\hskip 4 true cm Compute distance between templates at  new point: ($D\tau_0, D\tau_3$) 
+\hskip 4 true cm Add ($\tau_0, \tau_3$) to InspiralTemplateList
+\hskip 4 true cm numTemplates++
+\hskip 3 true cm \}
+\hskip 3 true cm Increment $\tau_0:$ $\tau_0 = \tau_0 + D\tau_0$ 
+\hskip 2 true cm \}
+\hskip 2 true cm Increment $\tau_3:$ $\tau_3 = \tau_3 + D\tau_3$ 
+\hskip 2 true cm Get next template along $\tau_3={\rm const.}$: $(\tau_0, \tau_3)$
+\hskip 1 true cm \}
+}
+\end{obeylines}
 
 
 \subsubsection*{Uses}
 \begin{verbatim}
 LALInspiralNextTemplate()
+LALInspiralParameterCalc()
 LALInspiralSetParams()
 LALInspiralSetSearchLimits()
 LALInspiralComputeParams()
 LALInspiralComputeMetric()
 LALInspiralUpdateParams()
+LALInspiralValidTemplate()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -52,11 +187,11 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
                                  InspiralCoarseBankIn coarseIn) 
 {  /*  </lalVerbatim>  */
 
-  static InspiralBankParams bankPars, bankParsOld;
-  static InspiralTemplate tempPars;
-  static InspiralMetric metric;
-  static INT4 validPars, pass;
-  static REAL8 a25, x01, x02, x11, x12, dist1, dist2, ndx1, ndx2;
+  InspiralBankParams bankPars, bankParsOld;
+  InspiralTemplate *tempPars;
+  InspiralMetric metric;
+  INT4 validPars, pass;
+  REAL8 a25, x01, x02, x11, x12, dist1, dist2, ndx1, ndx2;
 
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
@@ -74,45 +209,34 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
 /* Number of templates is nlist */
   *nlist = 0;
 
-/* Set the elemets of the metric and tempPars structures in 
+/* Set the elements of the metric and tempPars structures in 
    conformity with the coarseIn structure */
 
+  tempPars = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate));
   metric.NoisePsd = coarseIn.NoisePsd;
   metric.space = coarseIn.space;
   metric.iflso = coarseIn.iflso;
-  LALInspiralSetParams(status->statusPtr, &tempPars, coarseIn);
+  LALInspiralSetParams(status->statusPtr, tempPars, coarseIn);
   CHECKSTATUSPTR(status);
 
 /* Identify the boundary of search and parameters for the first lattice point */
   LALInspiralSetSearchLimits(status->statusPtr, &bankPars, coarseIn);
   CHECKSTATUSPTR(status);
-  tempPars.totalMass = coarseIn.MMax;
-  tempPars.eta = 0.25;
-  tempPars.fLower = coarseIn.fLower;
-  tempPars.massChoice = totalMassAndEta; 
-  LALInspiralParameterCalc(status->statusPtr, &tempPars);
-/*
-  LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, coarseIn);
-  CHECKSTATUSPTR(status);
-*/
+  tempPars->totalMass = coarseIn.MMax;
+  tempPars->eta = 0.25;
+  tempPars->ieta = 1.L;
+  tempPars->fLower = coarseIn.fLower;
+  tempPars->massChoice = totalMassAndEta; 
+  LALInspiralParameterCalc(status->statusPtr, tempPars);
 
 /* Compute the metric at this point, update bankPars and add it to the list */
   pass = 1;
-  LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, pass);
+  LALInspiralComputeMetric(status->statusPtr, &metric, *tempPars, pass);
   CHECKSTATUSPTR(status);
   pass = coarseIn.iflso;
   LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
   CHECKSTATUSPTR(status);
 
-  if (!(*list = (InspiralTemplateList*) 
-	LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
-    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-  }
-
-  (*list)[*nlist].ID = *nlist; 
-  (*list)[*nlist].params = tempPars; 
-  (*list)[*nlist].metric = metric; ++(*nlist); 
-  
   /* First lay templates along the equal mass curve; i.e. eta=1/4. 
      Choose the constant and the index converting the chirp times to
      one another along the curve depending on whether the templates
@@ -121,14 +245,14 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
 
   switch (coarseIn.space) {
   case Tau0Tau2:
-    ndx1 = 0.6;
-    ndx2 = 1./ndx1;
-    a25 = pow(64./5., ndx1)*(2435./8064.)/pow(LAL_PI*coarseIn.fLower,.4);
+    ndx1 = 0.6L;
+    ndx2 = 1.L/ndx1;
+    a25 = pow(64.L/5.L, ndx1)*(2435.L/8064.L)/pow(LAL_PI*coarseIn.fLower,.4L);
     break;
   case Tau0Tau3:
-    a25 = LAL_PI_2 * pow(64./5., .4)/pow(LAL_PI * coarseIn.fLower, .6);
-    ndx1 = 0.4;
-    ndx2 = 2.5;
+    a25 = LAL_PI_2 * pow(64.L/5.L, .4L)/pow(LAL_PI * coarseIn.fLower, .6L);
+    ndx1 = 0.4L;
+    ndx2 = 2.5L;
     break;
   }
   
@@ -138,8 +262,8 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
     x11 = a25 * pow(x01,ndx1);
     x12 = bankPars.x1 + bankPars.dx1;
     x02 = pow(x12/a25,ndx2);
-    dist1 = pow(bankPars.x0 - x01,2.) + pow(bankPars.x1 - x11, 2.);
-    dist2 = pow(bankPars.x0 - x02,2.) + pow(bankPars.x1 - x12, 2.);
+    dist1 = pow(bankPars.x0 - x01,2.L) + pow(bankPars.x1 - x11, 2.L);
+    dist2 = pow(bankPars.x0 - x02,2.L) + pow(bankPars.x1 - x12, 2.L);
     if (dist1 < dist2) {
       bankPars.x0 = x01;
       bankPars.x1 = x11;
@@ -148,12 +272,12 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
       bankPars.x1 = x12;
     }
     /* If this is a valid point add it to our list */
-    LALInspiralValidParams(status->statusPtr, &validPars, bankPars, coarseIn); 
+    LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn); 
     CHECKSTATUSPTR(status);
     if (validPars) {
-      LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, coarseIn);
+      LALInspiralComputeParams(status->statusPtr, tempPars, bankPars, coarseIn);
       CHECKSTATUSPTR(status);
-      LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, pass);
+      LALInspiralComputeMetric(status->statusPtr, &metric, *tempPars, pass);
       CHECKSTATUSPTR(status);
       LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
       CHECKSTATUSPTR(status);
@@ -164,9 +288,9 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
       if (!(*list = (InspiralTemplateList*) 
             LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
 	ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-      }
+       }
       (*list)[*nlist].ID = *nlist; 
-      (*list)[*nlist].params = tempPars; 
+      (*list)[*nlist].params = *tempPars; 
       (*list)[*nlist].metric = metric; 
       ++(*nlist); 
     }
@@ -176,64 +300,53 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
   bankPars = bankParsOld;
   
   /* Loop along x1 and x0 coordinates until maximum values are reached */
-  while ( (bankPars.x1 += bankPars.dx1) <= bankPars.x1Max) {
-    
+  while (bankPars.x1 <= bankPars.x1Max) {
+
+    /* step along the tau0 axis until the boundary is reached */
+
+    while (bankPars.x0 <= bankPars.x0Max) 
+    {
+    /* If this is a valid point add it to our list */
+
+      LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn); 
+      CHECKSTATUSPTR(status);
+      if (validPars) 
+      {
+	LALInspiralComputeParams(status->statusPtr, tempPars, bankPars, coarseIn);
+	CHECKSTATUSPTR(status);
+	LALInspiralComputeMetric(status->statusPtr, &metric, *tempPars, pass);
+	CHECKSTATUSPTR(status);
+	LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
+	CHECKSTATUSPTR(status);
+	if (!(*list = (InspiralTemplateList*) 
+	  LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) 
+        {
+	  ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	}
+	(*list)[*nlist].ID = *nlist; 
+	(*list)[*nlist].params = *tempPars; 
+	(*list)[*nlist].metric = metric; 
+	++(*nlist); 
+      }
+      bankPars.x0 += bankPars.dx0;
+    }
+    bankPars = bankParsOld;
+    bankPars.x1 += bankPars.dx1;
     /* Find the t0 coordinate of the next template close to the t2/t3 axis */
     LALInspiralNextTemplate(status->statusPtr, &bankPars, metric);
     CHECKSTATUSPTR(status);
 
     /* Hop along t0-axis until t0 is inside the region of interest or quit */
-      LALInspiralValidParams(status->statusPtr, &validPars, bankPars, coarseIn);
+    LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn);
+    CHECKSTATUSPTR(status);
+    while (validPars==0 && bankPars.x0 < bankPars.x0Max) {
+      bankPars.x0 += bankPars.dx0;
+      LALInspiralValidTemplate(status->statusPtr, &validPars, bankPars, coarseIn);
       CHECKSTATUSPTR(status);
-      while (validPars==0 && bankPars.x0 < bankPars.x0Max) {
-	bankPars.x0 += bankPars.dx0;
-	LALInspiralValidParams(status->statusPtr, &validPars, bankPars, coarseIn);
-	CHECKSTATUSPTR(status);
-      }
-      
-      /* If this is a valid point, compute the parameter and metric at 
-	 this point; add it to our list*/
-      if (validPars) {
-	LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, coarseIn); 
-	CHECKSTATUSPTR(status);
-	LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, pass);  
-	CHECKSTATUSPTR(status);
-	LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-	CHECKSTATUSPTR(status);
-	if (!(*list = (InspiralTemplateList*) 
-	      LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
-	  ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	}
-	(*list)[*nlist].ID = *nlist; 
-	(*list)[*nlist].params = tempPars; 
-	(*list)[*nlist].metric = metric; 
-	++(*nlist); 
-      }
-      
-      /* step along the tau0 axis until the boundary is reached */
-      while ((bankPars.x0 += bankPars.dx0) <= bankPars.x0Max) {
-	
-	/* If this is a valid point add it to our list */
-	LALInspiralValidParams(status->statusPtr, &validPars, bankPars, coarseIn); 
-	CHECKSTATUSPTR(status);
-	if (validPars) {
-	  LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, coarseIn);
-	  CHECKSTATUSPTR(status);
-	  LALInspiralComputeMetric(status->statusPtr, &metric, tempPars, pass);
-	  CHECKSTATUSPTR(status);
-	  LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
-	  CHECKSTATUSPTR(status);
-	  if (!(*list = (InspiralTemplateList*) 
-		LALRealloc(*list, sizeof(InspiralTemplateList)*(*nlist+1)))) {
-	    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-	  }
-	  (*list)[*nlist].ID = *nlist; 
-	  (*list)[*nlist].params = tempPars; 
-	  (*list)[*nlist].metric = metric; 
-	  ++(*nlist); 
-	}
-      }
+    }
+    bankParsOld = bankPars;
   } 
+  LALFree(tempPars);
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }

@@ -58,68 +58,75 @@ INT4 lalDebugLevel=0;
 int 
 main ( void )
 {
-   InspiralTemplateList *list=NULL;
-   InspiralTemplateList *list2=NULL;
-   static LALStatus status;
-   static InspiralCoarseBankIn coarseIn;
-   static InspiralFineBankIn   fineIn;
-   static INT4 i, j, nlist, flist;
+   InspiralTemplateList *coarseList=NULL;
+   InspiralTemplateList *fineList=NULL;
+   LALStatus* status = LALCalloc(1, sizeof(*status));
+   InspiralCoarseBankIn *coarseIn=NULL;
+   InspiralFineBankIn   *fineIn=NULL;
+   INT4 i, j, clist, flist;
 
-   coarseIn.mMin = 1.0;
-   coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.90;
-   coarseIn.mmFine = 0.99;
-   coarseIn.fLower = 40.;
-   coarseIn.fUpper = 2000;
-   coarseIn.iflso = 0;
-   coarseIn.tSampling = 4096.;
-   coarseIn.NoisePsd = LALLIGOIPsd;
-   coarseIn.order = twoPN;
-   coarseIn.space = Tau0Tau3;
-   coarseIn.method = one;
-   coarseIn.approximant = taylor;
-   coarseIn.domain = TimeDomain;
+   coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
+   fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
+
+   coarseIn->mMin = 1.0;
+   coarseIn->MMax = 40.0;
+   coarseIn->mmCoarse = 0.80;
+   coarseIn->mmFine = 0.97;
+   coarseIn->fLower = 40.;
+   coarseIn->fUpper = 1024L;
+   coarseIn->iflso = 0;
+   coarseIn->tSampling = 4000L;
+   coarseIn->NoisePsd = LALLIGOIPsd;
+   coarseIn->order = twoPN;
+   coarseIn->approximant = TaylorT1;
+   coarseIn->space = Tau0Tau3;
 /* minimum value of eta */
-   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
-      pow(coarseIn.MMax,2.);
+   coarseIn->etamin = coarseIn->mMin * ( coarseIn->MMax - coarseIn->mMin) /
+      pow(coarseIn->MMax,2.);
 
-   LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
+   coarseIn->iflso = 0.;
+   LALInspiralCreateCoarseBank(status, &coarseList, &clist, *coarseIn);
 
-   fprintf(stderr, "nlist=%d\n",nlist);
-   for (i=0; i<nlist; i++) {
+   fprintf(stderr, "clist=%d\n",clist);
+   for (i=0; i<clist; i++) 
+   {
       printf("%e %e %e %e %e %e %e\n", 
-         list[i].params.t0, 
-         list[i].params.t2, 
-         list[i].params.t3, 
-         list[i].params.totalMass,
-         list[i].params.eta, 
-         list[i].params.mass1, 
-         list[i].params.mass2);
-
+         coarseList[i].params.t0, 
+         coarseList[i].params.t3, 
+         coarseList[i].params.t2, 
+         coarseList[i].params.totalMass,
+         coarseList[i].params.eta, 
+         coarseList[i].params.mass1, 
+         coarseList[i].params.mass2);
    }
 
   printf("&\n");
 
-  fineIn.coarseIn = coarseIn;
-  for (j=0; j<nlist; j+=48) {
-     fineIn.templateList = list[j];
-     LALInspiralCreateFineBank(&status, &list2, &flist, fineIn);
+  fineIn->coarseIn = *coarseIn;
+  for (j=0; j<clist; j+=48) 
+  {
+     fineIn->templateList = coarseList[j];
+     LALInspiralCreateFineBank(status, &fineList, &flist, *fineIn);
      fprintf(stderr, "flist=%d\n",flist);
      for (i=0; i<flist; i++) {
         printf("%e %e %e %e %e %e %e\n", 
-        list2[i].params.t0, 
-        list2[i].params.t2, 
-        list2[i].params.t3, 
-        list2[i].params.totalMass,
-        list2[i].params.eta, 
-        list2[i].params.mass1, 
-        list2[i].params.mass1); 
+        fineList[i].params.t0, 
+        fineList[i].params.t3, 
+        fineList[i].params.t2, 
+        fineList[i].params.totalMass,
+        fineList[i].params.eta, 
+        fineList[i].params.mass1, 
+        fineList[i].params.mass1); 
      }
-     if (list2!=NULL) LALFree(list2);
-     list2 = NULL;
+     if (fineList!=NULL) LALFree(fineList);
+     fineList = NULL;
      flist = 0;
   }
-  if (list!=NULL) LALFree(list);
+  if (fineList!=NULL) LALFree(fineList);
+  if (coarseList!=NULL) LALFree(coarseList);
+  if (coarseIn!=NULL) LALFree(coarseIn);
+  if (fineIn!=NULL) LALFree(fineIn);
+  LALFree(status);
   LALCheckMemoryLeaks();
 
   return(0);

@@ -23,8 +23,8 @@ elements of a structure of type \texttt{InspiralTemplate}.
 The function sets the fields 
 \texttt{massChoice}, \texttt{ieta}, \texttt{signalAmplitude},
 \texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff}, 
-\texttt{method}, \texttt{order},
-\texttt{approximant}, \texttt{domain}, \texttt{nStartPad}, \texttt{nEndPad}.
+\texttt{order},
+\texttt{approximant}, \texttt{nStartPad}, \texttt{nEndPad}.
 
 \subsubsection*{Algorithm}
 
@@ -55,8 +55,8 @@ void LALInspiralSetParams(LALStatus            *status,
    INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
    ATTATCHSTATUSPTR(status);
    ASSERT (tempPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (tempPars->massChoice >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (tempPars->massChoice <= 6, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
    switch (coarseIn.space) {
       case Tau0Tau2:
@@ -72,10 +72,8 @@ void LALInspiralSetParams(LALStatus            *status,
    tempPars->tSampling = coarseIn.tSampling;
    tempPars->fLower = coarseIn.fLower;
    tempPars->fCutoff = coarseIn.fUpper;
-   tempPars->method = coarseIn.method;
    tempPars->order = coarseIn.order;
    tempPars->approximant = coarseIn.approximant;
-   tempPars->domain = coarseIn.domain;
    tempPars->nStartPad = 0;
    tempPars->nEndPad = 0;
 

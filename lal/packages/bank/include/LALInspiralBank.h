@@ -163,10 +163,8 @@ tagInspiralCoarseBankIn
   REAL8           fUpper;         /* Upper frequency cutoff */
   REAL8           tSampling;      /* Sampling rate */
   void            (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
-  Method          method;         /* Method of waveform generation */
-  INT4            order;          /* Post-Newtonian order of the waveform */
+  Order            order;          /* Post-Newtonian order of the waveform */
   Approximant     approximant;    /* Approximant of the waveform */
-  Domain          domain;         /* Time- or Frequency-domain*/
   CoordinateSpace space;          /* which of t0-t2 or t0-t3 coordinates */
   REAL8 etamin;                   /* minimum value of eta in our search */
   INT4 iflso;                     /* flso will be used as an upper limit in
@@ -216,6 +214,28 @@ tagInspiralFineBankIn
 \idx[Type]{InspiralFineBankIn} 
 </lalLaTeX>  */
 
+/*  <lalVerbatim file="LALInspiralBankHS"> */
+typedef struct
+tagRectangleIn 
+   {REAL8 x0, y0, dx, dy, theta;}
+RectangleIn;
+/*  </lalVerbatim>  */
+
+/*  <lalLaTeX>
+\index{\texttt{RectangleIn}}
+</lalLaTeX>  */
+
+/*  <lalVerbatim file="LALInspiralBankHS"> */
+typedef struct
+tagRectangleOut 
+   {REAL8 x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;}
+RectangleOut;
+/*  </lalVerbatim>  */
+
+/*  <lalLaTeX>
+\index{\texttt{RectangleOut}}
+</lalLaTeX>  */
+
 /*  <lalLaTeX>
 \vfill{\footnotesize\input{LALInspiralBankHV}}
 </lalLaTeX>  */
@@ -240,6 +260,18 @@ LALInspiralComputeParams(
 
 void 
 LALInspiralValidParams(
+   LALStatus            *status,
+   INT4                 *valid,
+   InspiralBankParams   bankParams,
+   InspiralCoarseBankIn coarseIn
+);
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralValidTemplateC}
+</lalLaTeX>  */
+
+void 
+LALInspiralValidTemplate(
    LALStatus            *status,
    INT4                 *valid,
    InspiralBankParams   bankParams,
@@ -391,6 +423,17 @@ LALInspiralNextTemplate(
     InspiralMetric      metric);            
       
 /* <lalLaTeX>
+\newpage\input{LALRectangleVerticesC}
+</lalLaTeX>  */
+
+void 
+LALRectangleVertices(
+   LALStatus *status, 
+   RectangleOut *out,
+   RectangleIn *in
+);
+      
+/* <lalLaTeX>
 \newpage\input{CoarseTestC}
 </lalLaTeX> */
 
@@ -399,3 +442,4 @@ LALInspiralNextTemplate(
 #endif
 
 #endif /* _LALINSPIRALBANK_H */
+
