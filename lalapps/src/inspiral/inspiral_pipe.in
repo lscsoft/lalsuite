@@ -273,26 +273,32 @@ for i in range(len(data)):
     # if there is a chunk before this one, add it to the job
     try: 
       data[i][j-1]
-      inca.add_parent(insp_nodes[i][j-1][0])
-      inca.add_parent(insp_nodes[i][j-1][1])
       inca.add_input_a(insp_nodes[i][j-1][0].get_output())
       inca.add_input_b(insp_nodes[i][j-1][1].get_output())
+      if do_inspiral:
+        inca.add_parent(insp_nodes[i][j-1][0])
+      if do_triginsp:
+        inca.add_parent(insp_nodes[i][j-1][1])
     except IndexError:
       pass
 
     # add this chunk to the job
-    inca.add_parent(insp_nodes[i][j][0])
-    inca.add_parent(insp_nodes[i][j][1])
     inca.add_input_a(insp_nodes[i][j][0].get_output())
     inca.add_input_b(insp_nodes[i][j][1].get_output())
+    if do_inspiral:
+      inca.add_parent(insp_nodes[i][j][0])
+    if do_triginsp:
+      inca.add_parent(insp_nodes[i][j][1])
     
     # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
-      inca.add_parent(insp_nodes[i][j+1][0])
-      inca.add_parent(insp_nodes[i][j+1][1])
       inca.add_input_a(insp_nodes[i][j+1][0].get_output())
       inca.add_input_b(insp_nodes[i][j+1][1].get_output())
+    if do_inspiral:
+      inca.add_parent(insp_nodes[i][j+1][0])
+    if do_triginsp:
+      inca.add_parent(insp_nodes[i][j+1][1])
     except IndexError:
       pass
       
