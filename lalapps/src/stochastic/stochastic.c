@@ -1030,8 +1030,8 @@ INT4 main(INT4 argc, CHAR *argv[])
               responseTempOne->epoch = gpsCalibTime;
               if (vrbflg)
               {
-                fprintf(stdout, "request GPS time %d for ifo 1\n", \
-                    gpsCalibTime.gpsSeconds );
+                fprintf(stdout, "request GPS time %d for %s\n", \
+                    gpsCalibTime.gpsSeconds, ifoOne);
               }
               memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
               calfacts.ifo = ifoOne;
@@ -1073,8 +1073,8 @@ INT4 main(INT4 argc, CHAR *argv[])
               responseTempTwo->epoch = gpsCalibTime;
               if (vrbflg)
               {
-                fprintf(stdout, "request GPS time %d for ifo 2\n", \
-                    gpsCalibTime.gpsSeconds );
+                fprintf(stdout, "request GPS time %d for %s\n", \
+                    gpsCalibTime.gpsSeconds, ifoTwo);
               }
               memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
               calfacts.ifo = ifoTwo;
@@ -1227,8 +1227,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             responseTempOne->epoch = gpsCalibTime;
             if (vrbflg)
             {
-              fprintf(stdout, "request GPS time %d for ifo 1\n", \
-                  gpsCalibTime.gpsSeconds );
+              fprintf(stdout, "request GPS time %d for %s\n", \
+                  gpsCalibTime.gpsSeconds, ifoOne);
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
             calfacts.ifo = ifoOne;
@@ -1269,8 +1269,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             responseTempTwo->epoch = gpsCalibTime;
             if (vrbflg)
             {
-              fprintf(stdout, "request GPS time %d for ifo 2\n", \
-                  gpsCalibTime.gpsSeconds );
+              fprintf(stdout, "request GPS time %d for %s\n", \
+                  gpsCalibTime.gpsSeconds, ifoTwo);
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
             calfacts.ifo = ifoTwo;
