@@ -142,6 +142,13 @@ insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
+# set better submit file names than the default
+df_job.set_sub_file( basename + '.datafind.sub' )
+tmplt_job.set_sub_file( basename + '.tmpltbank.sub' )
+insp_job.set_sub_file( basename + '.inspiral.sub' )
+trig_job.set_sub_file( basename + '.trigtotmplt.sub' )
+inca_job.set_sub_file( basename + '.inca.sub' )
+
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
 n = int(cp.get('data', 'segment-length'))
