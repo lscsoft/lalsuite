@@ -50,13 +50,13 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int     lalDebugLevel = 1;
+int     lalDebugLevel = LALWARNING | LALINFO;
 int     verbose = 0;
 UINT4   numPoints = 1048576;
 UINT4   inRate    = 16384;
 UINT4   outRate   = 4096;
 REAL4   sineFreq  = 1000.0;
-ResampleTSFilter filtType = LDASorderTen;
+ResampleTSFilter filtType = LDASfirLP;
 
 static void
 Usage (const char *program, int exitflag);
@@ -74,8 +74,8 @@ main (int argc, char *argv[])
   REAL4TimeSeries       chan;
   ResampleTSParams      resampPars;
   UINT4                 j;
-  FrOutPar in_opar = { "F", "IN", ProcDataChannel, 6, 0, 0 };
-  FrOutPar out_opar = { "F", "OUT", ProcDataChannel, 6, 0, 0 };
+  FrOutPar in_opar = { "F", "IN", ProcDataChannel, 1, 0, 0 };
+  FrOutPar out_opar = { "F", "OUT", ProcDataChannel, 1, 0, 0 };
 
   ParseOptions (argc, argv);
 
@@ -234,7 +234,7 @@ ParseOptions (int argc, char *argv[])
       case 'r':
         if ( ! strcmp( "ldas", optarg ) )
         {
-          filtType = LDASorderTen;
+          filtType = LDASfirLP;
         }
         else if ( ! strcmp( "butterworth", optarg ) )
         {

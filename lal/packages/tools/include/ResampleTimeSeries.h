@@ -69,7 +69,7 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 typedef enum
 {
   defaultButterworth,
-  LDASorderTen
+  LDASfirLP
 }
 ResampleTSFilter;
 
