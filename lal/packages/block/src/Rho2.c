@@ -398,7 +398,7 @@ const	INT4		two = 2;
         CHECKSTATUSPTR( status );
 
 	/*  ndx = ndx + 2  */
-	index = index + 2;
+	(*index) = (*index) + 2;
 
 	LALI4DestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
