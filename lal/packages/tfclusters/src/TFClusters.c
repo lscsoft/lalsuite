@@ -235,6 +235,211 @@ LALComputeSpectrogram (
 
 
 
+
+/******** <lalLaTeX file="TFClustersC"> ********
+\noindent
+Compute the spectrogram from a time series.
+\subsubsection*{Prototype}
+\vspace{0.1in}
+\texttt{
+void 
+LALComputeXSpectrogram (
+		       LALStatus *status, 
+		       Spectrogram *out, 
+		       TFPlaneParams *tspec, 
+		       REAL4VectorTimeSeries *tseries
+		       )
+}
+\idx{LALComputeXSpectrogram()}
+
+\subsubsection*{Description}
+Computes the cross-spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
+FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration; if they do overlap, a Welch window is applied.
+The power is the norm square of the (normalized) discrete Fourier transform.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCreateForwardRealFFTPlan()
+LALCCreateVector()
+LALForwardRealFFT()
+LALCDestroyVector()
+LALDestroyRealFFTPlan()
+\end{verbatim}
+
+\vfill{\footnotesize\input{TFClustersCV}}
+********* </lalLaTeX> ********/
+
+void 
+LALComputeXSpectrogram (
+		       LALStatus *status, 
+		       Spectrogram *out, 
+		       TFPlaneParams *tspec, 
+		       REAL4TimeVectorSeries *tseries
+		       )
+{
+  UINT4 sid, olap, NN, minF;
+  INT4 j, k;
+  REAL8 *power;
+  REAL4 *wwin, *tdat;
+
+  /* LALWindowParams winParams; */
+  TFPlaneParams *params;
+
+  RealFFTPlan *pfwd = NULL;
+  REAL4Vector Pvec;
+  COMPLEX8Vector *Hvec = NULL;
+  COMPLEX8Vector *Ivec = NULL;
+  REAL8 norm;
+
+  INITSTATUS (status, "LALComputeSpectrogram", TFCLUSTERSC);
+  ATTATCHSTATUSPTR (status);
+
+  
+  /* Check return structure: out should have NULL pointer */
+  ASSERT ( out, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
+  ASSERT ( out->power == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
+  ASSERT ( out->params == NULL, status, TFCLUSTERSH_ENNULLP, TFCLUSTERSH_MSGENNULLP);
+
+  /* Check plane params */
+  ASSERT ( tspec, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
+  ASSERT ( tspec->timeBins > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  ASSERT ( tspec->freqBins > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  ASSERT ( tspec->deltaT > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  ASSERT ( tspec->flow >= 0.0, status, TFCLUSTERSH_EPOS, TFCLUSTERSH_MSGEPOS);
+
+
+  /* Check time series */
+  ASSERT ( tseries, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
+  ASSERT ( tseries->data, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
+
+  ASSERT ( (REAL8)(tseries->data->vectorLength) * tseries->deltaT <=
+	   (REAL8)(tspec->timeBins) * tspec->deltaT,
+	   status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP);
+  ASSERT ( tseries->data->length == 2, status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP);
+  ASSERT ( tseries->data->data, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
+
+  /* check compatibility */
+  ASSERT ( (REAL8)tspec->freqBins <= 0.5 * tspec->deltaT / tseries->deltaT,
+	   status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
+
+  /* determine overlap */
+  NN = (UINT4)floor(tspec->deltaT / tseries->deltaT);
+
+  olap = (NN * tspec->timeBins - tseries->data->vectorLength) / (tspec->timeBins - 1);
+
+  ASSERT( tseries->data->vectorLength == olap + tspec->timeBins * (NN - olap),
+	  status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
+
+  minF = (UINT4)floor(tspec->flow * tspec->deltaT);
+
+  ASSERT( tspec->freqBins + minF == NN/2,
+	  status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
+
+  /* copy tspec */
+  params = (TFPlaneParams *)LALMalloc(sizeof(TFPlaneParams));
+  if(!params)
+    {ABORT(status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
+
+  params->timeBins = tspec->timeBins;
+  params->freqBins = tspec->freqBins;
+  params->flow = tspec->flow; 
+  params->deltaT = tspec->deltaT;
+
+  out->params = params;
+
+
+  /* memory for output */
+  power = (REAL8 *)LALMalloc(params->timeBins * params->freqBins * sizeof(REAL8));
+  if(!power)
+    {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
+
+  out->power = power;
+
+
+  /* Set Fourier plans */
+  LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, NN, 0 );
+  CHECKSTATUSPTR (status);
+
+  Pvec.length = NN;
+  
+  LALCCreateVector( status->statusPtr, &Hvec, NN/2 + 1);
+  CHECKSTATUSPTR (status);
+
+  LALCCreateVector( status->statusPtr, &Ivec, NN/2 + 1);
+  CHECKSTATUSPTR (status);
+
+  norm = (REAL8)NN;
+
+  /* set window */
+  if(olap) { 
+    REAL4 nn2 = 0.5*(REAL4)NN;
+    wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
+    ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
+
+    for(k=0; k<NN; k++) {
+      wwin[k] = 1.0 - pow(((REAL4)k-nn2)/nn2,2.0);
+    }
+
+    tdat =  (REAL4 *)LALMalloc(NN * sizeof(REAL4));
+    ASSERT(tdat, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
+  }
+
+
+  /* Get TF representation */
+  for(sid = 0; sid < (UINT4)params->timeBins; sid++) {
+    if(olap) {
+      memcpy(tdat, tseries->data->data + sid * (NN - olap), NN * sizeof(REAL4));
+      for(k=0; k<NN; k++) {
+	tdat[k] *= wwin[k];
+      }
+      Pvec.data = tdat;
+    } else {
+      Pvec.data = tseries->data->data + sid * NN;
+    }
+
+    LALForwardRealFFT(status->statusPtr, Hvec, &Pvec, pfwd);
+
+
+    
+    if(olap) {
+      memcpy(tdat, tseries->data->data + tseries->data->vectorLength + sid * (NN - olap), NN * sizeof(REAL4));
+      for(k=0; k<NN; k++) {
+	tdat[k] *= wwin[k];
+      }
+      Pvec.data = tdat;
+    } else {
+      Pvec.data = tseries->data->data + sid * NN;
+    }
+
+    LALForwardRealFFT(status->statusPtr, Ivec, &Pvec, pfwd);
+
+
+
+    for(j=minF; (UINT4)j< minF + params->freqBins; j++)
+      power[sid*params->freqBins + j - minF] = sqrt( pow((REAL8)Hvec->data[j].re * (REAL8)Ivec->data[j].re + (REAL8)Hvec->data[j].im * (REAL8)Ivec->data[j].im, 2.0) + pow((REAL8)Hvec->data[j].im * (REAL8)Ivec->data[j].re - (REAL8)Hvec->data[j].re * (REAL8)Ivec->data[j].im, 2.0) ) / norm;
+  }
+
+  if(olap) {
+    LALFree(tdat);
+    LALFree(wwin);
+  }
+
+  LALCDestroyVector( status->statusPtr, &Hvec );
+  CHECKSTATUSPTR (status);
+
+  LALCDestroyVector( status->statusPtr, &Ivec );
+  CHECKSTATUSPTR (status);
+
+  LALDestroyRealFFTPlan( status->statusPtr, &pfwd );
+  CHECKSTATUSPTR (status);
+
+  /* Normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+
 /******** <lalLaTeX file="TFClustersC"> ********
 \newpage
 \noindent

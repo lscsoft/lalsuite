@@ -164,6 +164,13 @@ LALComputeSpectrogram (
 		       REAL4TimeSeries *tseries
 		       );
 
+void 
+LALComputeXSpectrogram (
+			LALStatus *status, 
+			Spectrogram *out, 
+			TFPlaneParams *tspec, 
+			REAL4TimeVectorSeries *tseries
+			);
 
 void 
 LALGetClusters (
