@@ -132,7 +132,7 @@ int boincmain(int argc, char *argv[]);
 void worker();
 
 /* hooks for communication with the graphics thread */
-void (*set_search_pos_hook)() = NULL;
+void (*set_search_pos_hook)(float,float) = NULL;
 int (*boinc_init_graphics_hook)() = NULL;
 double *fraction_done_hook = NULL;
 
@@ -2923,8 +2923,8 @@ int main(int argc, char *argv[]){
     signal(SIGILL, SIG_IGN);
 
 #if (BOINC_APP_GRAPHICS == 1)
-  set_search_pos_hook = (void*)set_search_pos;
-  boinc_init_graphics_hook = (void*)boinc_init_graphics;
+  set_search_pos_hook = set_search_pos;
+  boinc_init_graphics_hook = boinc_init_graphics;
   fraction_done_hook = &fraction_done;
 #endif
 
