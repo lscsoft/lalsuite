@@ -964,9 +964,8 @@ int main( int argc, char *argv[] )
    */
 
 
-cleanexit:
 
-  if ( vrbflg ) fprintf( stdout, "writing result data to disk\n" );
+  if ( vrbflg ) fprintf( stdout, "writing frame data to disk\n" );
 
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
@@ -979,6 +978,10 @@ cleanexit:
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
   }
+
+cleanexit:
+
+  if ( vrbflg ) fprintf( stdout, "writing xml data to disk\n" );
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
@@ -1012,19 +1015,25 @@ cleanexit:
   }
   
   /* write the search summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
-        search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  if ( numTmplts )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+          search_summary_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
+          search_summary_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
   LALFree( searchsumm.searchSummaryTable );
 
   /* write the search summvars table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summvars_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
-        search_summvars_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  if ( numTmplts )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+          search_summvars_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
+          search_summvars_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
   while( searchsummvars.searchSummvarsTable )
   {
     this_search_summvar = searchsummvars.searchSummvarsTable;
@@ -1033,22 +1042,25 @@ cleanexit:
   }
 
   /* write the summvalue table */
-  snprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
-      "%s", PROGRAM_NAME );
-  summvalue.summValueTable->version = 0;
-  summvalue.summValueTable->start_time = gpsStartTime;
-  summvalue.summValueTable->end_time = gpsEndTime;
-  snprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
-  snprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
-      "%s", "inspiral_effective_distance" );
-  snprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
-      "%s", "1.4_1.4_8" );
-  summvalue.summValueTable->value = candle.effDistance;
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
-        summ_value_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  if ( numTmplts )
+  {
+    snprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    summvalue.summValueTable->version = 0;
+    summvalue.summValueTable->start_time = gpsStartTime;
+    summvalue.summValueTable->end_time = gpsEndTime;
+    snprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    snprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+        "%s", "inspiral_effective_distance" );
+    snprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
+        "%s", "1.4_1.4_8" );
+    summvalue.summValueTable->value = candle.effDistance;
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
+          summ_value_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
 
   /* write the inspiral events to the file */
   if ( savedEvents.snglInspiralTable )
