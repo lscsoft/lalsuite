@@ -161,6 +161,13 @@ LALCompareSnglBurst(
     SnglBurstAccuracy     *params
     );
 
+void
+LALClusterSnglBurstTable (
+	      LALStatus        *status,
+              SnglBurstTable   *burstEvent,
+	      INT4             *nevents
+	      );
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
