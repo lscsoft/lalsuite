@@ -986,23 +986,30 @@ if { $EndSegTime < $start_time } {
 
     # create framequery for full segment
     set fid [ open $PrebinFile/framequery.$start_time.txt "r" ]
+    set gotFD 0
     while { [ eof $fid ] == 0 } {
 	gets $fid line
 
 	if { [ regexp "$FType $IFO (\[0-9\]{9})-(\[0-9\]{9}) .*" $line junk T0 T1 ] } {
+	    set gotFD 1
 	    break
 	}
     }
     close $fid
 
+    if { $gotFD == 0 } {
+	set T0 $start_time
+	set T1 $etime
+    }
+
     if { [ catch { exec subst $PrebinFile/framequery.$start_time.txt sfquery.txt $T0 $start_time } cout ] } {
-	    puts $cout
-	    exit 1
+	puts $cout
+	exit 1
     }
     
     if { [ catch { exec subst sfquery.txt $PrebinFile/sframequery.txt $T1 $end_time } cout ] } {
-	    puts $cout
-	    exit 1
+	puts $cout
+	exit 1
     }
     
 
