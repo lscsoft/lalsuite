@@ -216,12 +216,11 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         raise StochasticError, "Start time, end time, ifo one, ifo " \
           "two, f_min or f_max has not been set"
 
-     filename = self.get_ifo_one() + self.get_ifo_two() + '-' + \
-                str(self.get_start()) + '-' str(self.get_end()) + '-' \
-                + str(self.get_f_min()) + '-' + str(self.get_f_max()) \
-                + '.xml'
+    basename = str(self.get_f_min()) + '-' + str(self.get_f_min())
 
-     return filename
+    filename = basename + '/' + self.get_output()
+
+    return filename
 
 
 class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):

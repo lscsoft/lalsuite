@@ -233,6 +233,9 @@ for seg in data:
       stoch.set_f_min(min)
       stoch.set_f_max(max)
       stoch.set_f_ref((float)(min + max)/2)
+      # try and make a directory to store the xml files
+      try: os.mkdir("%.0f-%0.f" % (min, max))
+      except: pass
 
       # add dependancy on LSCdataFind jobs, if required
       if do_datafind:

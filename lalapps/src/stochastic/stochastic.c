@@ -1790,8 +1790,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get xml file name */
   if (bayes_flag)
   {
-    LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-%d-%d-%.0f-%.0f.xml", \
-        ifoOne, ifoTwo, startTime, endTime, fMin, fMax);
+    LALSnprintf(xmlFileName, FILENAME_MAX, \
+        "%.0f-%.0f/%s%s-stochastic-%d-%d.xml", fMin, fMax, ifoOne, ifoTwo, \
+        startTime, endTime);
   }
   else
   {
