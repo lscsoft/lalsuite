@@ -333,17 +333,6 @@ void LALXMGRPlotMesh( LALStatus          *status,
   ASSERT( head, status, LALXMGRINTERFACEH_ENULL,
           LALXMGRINTERFACEH_MSGENULL );
 
-  /* Plot mesh points. */
-  fprintf( fp, "@s%d symbol 9\n@s%d symbol size 0.33\n", set, set );
-  fprintf( fp, "@s%d line type 0\n", set );
-  fprintf( fp, "@target s%d\n@type xy\n", set );
-  for( node = head; node; node = node->next )
-  {
-    fprintf( fp, "%e %e\n", node->x, node->y );
-  }
-  set++;
-
-#if 1
   /* Plot boundary. */
   fprintf( fp, "@target s%d\n@type xy\n", set );
   for( i = 0; i < 1000; i++ )
@@ -365,8 +354,21 @@ void LALXMGRPlotMesh( LALStatus          *status,
     fprintf( fp, "%e %e\n", x, y[0] );
   }
   fprintf (fp, "%e %e\n", xlast, ylast );
+
+  set += 2;
+
+  /* Plot mesh points. */
+  fprintf( fp, "@s%d symbol 9\n@s%d symbol size 0.33\n", set, set );
+  fprintf( fp, "@s%d line type 0\n", set );
+  fprintf( fp, "@target s%d\n@type xy\n", set );
+  for( node = head; node; node = node->next )
+  {
+    fprintf( fp, "%e %e\n", node->x, node->y );
+  }
+
+
+
   set++;
-#endif
 
 #if 0
   /* Plot ellipses if requested. */
