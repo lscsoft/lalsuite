@@ -11,7 +11,8 @@ currently available are:
 \item Bartlett
 \item Parzen
 \item Papoulis
-\item Hamming.
+\item Hamming
+\item Kaiser.
 \end{itemize}
 Using window functions is well documented in many places.  Their
 principal purpose is to reduce the {\it bias} in power spectrum
@@ -33,8 +34,12 @@ In short, the two power spectra will appear more similar (apart from
 the difference in frequency of the two signals).  Hence the spectra
 is less biased.
 
-Definitions of most of the window functions above may be found in {\it Numerical Recipes} \cite{numrec} equations 13.4.13-13.4.15.  Definitions
-of the remaining windows can be found in {\it Spectral analysis for physical applications} \cite{pw} Section 6.11.
+Definitions of most of the window functions above may be found in {\it
+Numerical Recipes} \cite{numrec} equations 13.4.13-13.4.15.  Definitions of
+the remaining windows can be found in {\it Spectral analysis for physical
+applications} \cite{pw} Section 6.11. Definition of the Kaiser window can be
+found in ``Discrete-time Signal Processing'' by Oppenheim and Schafer, p.474.
+
 
 
 \newpage\input{WindowH}
