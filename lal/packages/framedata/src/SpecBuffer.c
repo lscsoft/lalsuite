@@ -56,7 +56,7 @@ UINT4 i;
 buffPar.numSpec    = numSpec;
 buffPar.numPoints  = numPoints;
 buffPar.windowType = Welch;
-LALEstimateFwdRealFFTPlan( &status, &buffPar.plan, numPoints );
+LALCreateForwardRealFFTPlan( &status, &buffPar.plan, numPoints, 0 );
 LALCreateSpectrumBuffer( &status, &buff, &buffPar );
 LALI2CreateVector( &status, &data.data, numPoints );
 LALSCreateVector( &status, &spec.data, numPoints/2 + 1 );

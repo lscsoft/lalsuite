@@ -51,7 +51,7 @@ params.numSpec    = numSpec;
 params.numPoints  = numPoints;
 params.windowType = Welch;
 params.framePath  = framePath;
-LALEstimateFwdRealFFTPlan( &status, &params.plan, numPoints );
+LALCreateForwardRealFFTPlan( &status, &params.plan, numPoints, 0 );
 LALCreateDataBuffer( &status, &buffer, &params );
 LALI2CreateVector( &status, &dmro.data, numPoints );
 LALSCreateVector( &status, &spec.data, numPoints/2 + 1 );
@@ -88,7 +88,7 @@ LALCDestroyVector( &status, &resp.data );
 LALSDestroyVector( &status, &spec.data );
 LALI2DestroyVector( &status, &dmro.data );
 LALDestroyDataBuffer( &status, &buffer );
-LALDestroyFwdRealFFTPlan( &status, &params.plan );
+LALDestroyRealFFTPlan( &status, &params.plan );
 \end{verbatim}
 
 \subsubsection*{Algorithm}

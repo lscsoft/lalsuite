@@ -141,7 +141,7 @@ main (int argc, char *argv[])
   specParm.windowType = Welch;
   specParm.plan       = NULL;
 
-  LALEstimateFwdRealFFTPlan (&status, &specParm.plan, numPoints);
+  LALCreateForwardRealFFTPlan (&status, &specParm.plan, numPoints, 0);
   TestStatus (&status, "0", 1);
 
   LALCreateSpectrumBuffer (&status, &specBuff, &specParm);

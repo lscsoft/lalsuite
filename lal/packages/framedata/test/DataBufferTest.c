@@ -141,7 +141,7 @@ main (int argc, char *argv[])
   bufferPar.windowType = Welch;
   bufferPar.plan       = NULL;
   bufferPar.framePath  = framePath;
-  LALEstimateFwdRealFFTPlan (&status, &bufferPar.plan, numPoints);
+  LALCreateForwardRealFFTPlan (&status, &bufferPar.plan, numPoints, 0);
   TestStatus (&status, "0", 1);
 
   LALCreateDataBuffer (&status, &buffer, &bufferPar);
