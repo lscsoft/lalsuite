@@ -164,6 +164,14 @@ LALFindChirpBCVFilterSegment (
     FindChirpFilterParams      *params
     );
 
+void
+LALFindChirpBCVCFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+    );
+
 
 #ifdef  __cplusplus
 #pragma {
