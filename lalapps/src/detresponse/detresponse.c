@@ -38,7 +38,10 @@ main(int argc, char **argv)
   if (args_info.debug_given)
     lalDebugLevel = args_info.debug_arg;
 
-  generate_timeseries_response(&status);
+  if (args_info.single_source_given)
+    generate_timeseries_response(&status);
+  else if (args_info.whole_sky_given)
+    compute_skygrid(&status);
 
   return 0;
 }

@@ -1,6 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 bin_PROGRAMS = lalapps_detresponse
-lalapps_detresponse_SOURCES = detresponse.c detresponse.h util.c util.h set_source_params.c generate_timeseries_response.c cmdline.c cmdline.h
+lalapps_detresponse_SOURCES = detresponse.c detresponse.h util.c util.h set_source_params.c generate_timeseries_response.c compute_skygrid.c cmdline.c cmdline.h
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I.
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+check: $(bin_PROGRAMS)
+	./lalapps_detresponse -S -NTEST -r0. -d1.57 -o1.023 -Dtest -s2001 -u2048 -i600. -v4 -e1
+	./lalapps_detresponse -W -NTEST -o1.023 -Dtest -s2001 -u2048 -i600. -v4 -e1

@@ -319,6 +319,11 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
     }
   
 
+  if (! args_info->orientation_given)
+    {
+      fprintf (stderr, "%s: '--orientation' ('-o') option required\n", PACKAGE);
+      missing_required_options = 1;
+    }
   if (! args_info->detector_given)
     {
       fprintf (stderr, "%s: '--detector' ('-D') option required\n", PACKAGE);
@@ -327,16 +332,6 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   if (! args_info->start_time_sec_given)
     {
       fprintf (stderr, "%s: '--start-time-sec' ('-s') option required\n", PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->nsample_given)
-    {
-      fprintf (stderr, "%s: '--nsample' ('-u') option required\n", PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->sampling_interval_given)
-    {
-      fprintf (stderr, "%s: '--sampling-interval' ('-i') option required\n", PACKAGE);
       missing_required_options = 1;
     }
   if ( missing_required_options )

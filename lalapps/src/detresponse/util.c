@@ -170,6 +170,31 @@ add_timeseries(REAL4TimeSeries * sum, REAL4TimeSeries * a,
 }
 
 
+
+void set_detector_params(LALStatus * status,
+                         LALFrDetector * frdet, LALDetector * det,
+                         const char * name,
+                         REAL8 vertex_longitude,
+                         REAL8 vertex_latitude,
+                         REAL4 vertex_elevation,
+                         REAL4 x_altitude,
+                         REAL4 x_azimuth,
+                         REAL4 y_altitude,
+                         REAL4 y_azimuth)
+{
+  (void)mystrlcpy(frdet->name, name, LALNameLength);
+  frdet->vertexLongitudeRadians = vertex_longitude;
+  frdet->vertexLatitudeRadians  = vertex_latitude;
+  frdet->vertexElevation        = vertex_elevation;
+  frdet->xArmAltitudeRadians    = x_altitude;
+  frdet->xArmAzimuthRadians     = x_azimuth;
+  frdet->yArmAltitudeRadians    = y_altitude;
+  frdet->yArmAzimuthRadians     = y_azimuth;
+
+  LALCreateDetector(status, det, frdet, LALDETECTORTYPE_IFODIFF);
+}
+
+
   
 REAL8
 deg_to_rad(REAL8 degrees)

@@ -33,6 +33,17 @@ void square_timeseries(REAL4TimeSeries *ts);
 void add_timeseries(REAL4TimeSeries * sum, REAL4TimeSeries * a,
                     REAL4TimeSeries * b);
 
+void set_detector_params(LALStatus * status,
+                         LALFrDetector * frdet, LALDetector * det,
+                         const char * name,
+                         REAL8 vertex_longitude,
+                         REAL8 vertex_latitude,
+                         REAL4 vertex_elevation,
+                         REAL4 x_altitude,
+                         REAL4 x_azimuth,
+                         REAL4 y_altitude,
+                         REAL4 y_azimuth);
+
 REAL8 deg_to_rad(REAL8 degrees);
 
 #endif

@@ -29,12 +29,30 @@
 #include <lal/StreamOutput.h>
 
 #include "util.h"
-
-
 #include "cmdline.h"
+
 
 /* macro for minimum of two arguments */
 #define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+/* number of grid points in declination and right ascension */
+#define NUM_DEC 11
+#define NUM_RA  24
+
+typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
+
+REAL4 skygrid_avg(const skygrid_t response);
+void  skygrid_square(skygrid_t square, const skygrid_t input);
+REAL4 skygrid_rms(const skygrid_t input);
+void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
+INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
+void  skygrid_print(const char * comments, const skygrid_t input,
+                    const char * filename);
+void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
+void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
+void  skygrid_zero(skygrid_t a);
 
 /* wrap fopen(3) and fclose(3) */
 FILE *xfopen(const char *path, const char *mode);
@@ -55,6 +73,7 @@ void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 
 void generate_timeseries_response(LALStatus * status);
+void compute_skygrid(LALStatus * status);
 
 void multiply_vectors(REAL4Vector * out,
                       const REAL4Vector * a, const REAL4Vector * b);

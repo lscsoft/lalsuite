@@ -3,24 +3,25 @@
  * $Id$
  */
 #include "config.h"
-#include "cmdline.h"
 #include "detresponse.h"
 
+/*
+ * TODO: make file names depend on name of source, and of detector
+ */
 
 void generate_timeseries_response(LALStatus * status)
 {
-  LALDetector               test_detector;
-  LALFrDetector             test_frdetector;
   LALSource                 source;
+  LALFrDetector             frdetector;
   LALDetector               detector;
   LALDetAndSource           det_and_src = {NULL,NULL};
   LALDetAMResponseSeries    det_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
   REAL4TimeSeries           tmp_series;
   LALTimeIntervalAndNSample time_info;
-  char  cross_file_name[LALNameLength];
-  char  plus_file_name[LALNameLength];
-  char  sum_file_name[LALNameLength];
+  CHAR  cross_file_name[LALNameLength];
+  CHAR  plus_file_name[LALNameLength];
+  CHAR  sum_file_name[LALNameLength];
 
   
 
@@ -45,25 +46,16 @@ void generate_timeseries_response(LALStatus * status)
         detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
       else if (mystrncasecmp(args_info.detector_arg,"test", LALNameLength) == 0)
         {
-          (void)mystrlcpy(test_frdetector.name, "TEST - North Pole",
-                          LALNameLength);
-          test_frdetector.vertexLongitudeRadians = 0.;
-          test_frdetector.vertexLatitudeRadians  = LAL_PI_2;
-          test_frdetector.vertexElevation        = 0.;
-          test_frdetector.xArmAltitudeRadians    = 0.;
-          test_frdetector.yArmAltitudeRadians    = 0.;
-          test_frdetector.xArmAzimuthRadians     = LAL_PI_2;
-          test_frdetector.yArmAzimuthRadians     = 0.;
-
-          LALCreateDetector(status, &test_detector, &test_frdetector,
-                            LALDETECTORTYPE_IFODIFF);
-
-          detector = test_detector;
+          set_detector_params(status, &frdetector, &detector,
+                              "TEST - North Pole",
+                              0., LAL_PI_2, 0.,
+                              0., LAL_PI_2,
+                              0., 0.);
         }
       else
         {
           /* unknown detector -- exit with error */
-          fprintf(stderr, "lalapps_detresponse: Unknown detector '%s'\n",
+          fprintf(stderr, "lalapps_detresponse: ERROR: Unknown detector '%s'\n",
                   args_info.detector_arg);
           exit(2);
         }
@@ -127,8 +119,11 @@ void generate_timeseries_response(LALStatus * status)
           time_info.nSample              = args_info.nsample_arg;
         }
     }
-
-  /* FIXME - need "else" here to break and/or exit */
+  else
+    {
+      fprintf(stderr, "ERROR: time info incomplete\n");
+      exit(5);
+    }
 
   if (verbosity_level & 4)
     print_time_info(&time_info);
