@@ -19,68 +19,64 @@ This section is under construction!
 % subsection: power pipeline script
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\section{Program \texttt{lalapps\_power\_pipe}}
+\section{Program \prog{lalapps\_power\_pipe}}
 \label{program:lalapps-power-pipe}
-\idx[Program]{lalapps\_power\_pipe}
+\idx[Program]{\prog{lalapps\_power\_pipe}}
 
 \begin{entry}
 
 \item[Name]
-\verb$lalapps_power_pipe$ --- builds a one interferometer
-excess-power search DAG   
+\prog{lalapps\_power\_pipe} --- builds a one interferometer excess-power
+search DAG   
 
 \item[Synopsis]
-\verb$lalapps_power_pipe$ 
-\verb$--mdccache$ \textsc{mdccache}
-$\backslash$ \newline \hspace*{0.25in}
-[\verb$--frame-cahce$ \textsc{frcache}]
-\begin{verbatim}
-  -h, --help               display this message
-  -v, --version            print version information and exit
-  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
-
-  -d, --datafind           run LSCdataFind to create frame cache files
-  -r, --power              run lalapps_power on the first IFO
-
-  -j, --injections FILE    add simulated bursts from FILE
-
-  -p, --playground-only    only create chunks that overlap with playground
-  -P, --priority PRIO      run jobs with condor priority PRIO
-
-  -f, --config-file FILE   use configuration file FILE
-  -l, --log-path PATH      directory to write condor log file
-\end{verbatim}
+\prog{lalapps\_power\_pipe}
+[\option{--mdccache}~\parm{mdccache}] \newline \hspace*{0.5in}
+[\option{--frame-cahce}~\parm{frcache}] \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--version}] \newline \hspace*{0.5in}
+\option{--user-tag}~\parm{tag} \newline \hspace*{0.5in}
+[\option{--datafind}] \newline \hspace*{0.5in}
+\option{--power} \newline \hspace*{0.5in}
+[\option{--injections}~\parm{file}] \newline \hspace*{0.5in}
+[\option{--playground-only}] \newline \hspace*{0.5in}
+[\option{--priority}~\parm{prio}] \newline \hspace*{0.5in}
+\option{--config-file}~\parm{file} \newline \hspace*{0.5in}
+\option{--log-path}~\parm{path}
 
 \item[Description] 
-\verb$lalapps_power_pipe$ builds an excess power search DAG suitable
-for running at the various LSC Data Grid sites.   The script requires
-a configuration file.   An example file can be found in
-\verb+$LALPREFIX/share/lalapps/power_pipe.ini+    Arguments to be
+\prog{lalapps\_power\_pipe} builds an excess power search DAG suitable for
+running at the various LSC Data Grid sites.   The script requires a
+configuration file.   An example file can be found in
+\texttt{\$LALPREFIX/share/lalapps/power\_pipe.ini}.   Arguments to be
 passed to the search code are supplied in this file and used the DAG
-construction.    This is a standard python format configuration file.
+construction.  This is a standard python format configuration file.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--user-tag}  \textsc{tag}]   The tag for the job.  This
-will override the value set in the ini file
+\item[\option{--user-tag} \parm{tag}]   The tag for the job.  This will
+override the value set in the ini file
 
-\item[\texttt{--datafind}] run LSCdataFind as part of the DAG to
-create the cache files for each science segment
+\item[\option{--datafind}] run LSCdataFind as part of the DAG to create the
+cache files for each science segment
 
-\item[\texttt{--power}] run lalapps\_power on the data
+\item[\option{--power}] run \prog{lalapps\_power} on the data
 
-\item[\texttt{--priority} \textsc{prio}] run jobs with condor priority PRIO
+\item[\option{--priority} \parm{prio}] run jobs with condor priority
+\parm{prio}.
 
-\item[\texttt{--config-file} \textsc{file}] use configuration file FILE
+\item[\option{--config-file} \parm{file}] use configuration file
+\parm{file}.
 
-\item[\texttt{--log-path} \textsc{path}] directory to write condor log file
+\item[\option{--log-path} \parm{path}] directory to write condor log file
+
 \end{entry}
 
 
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
- lalapps_power_pipe 
+lalapps_power_pipe
 \end{verbatim}
 
 \item[Author]
@@ -93,14 +89,14 @@ Duncan Brown, Patrick Brady and Saikat Ray-Majumder
 % section: power code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \clearpage
-\section{Program \texttt{lalapps\_power}}
+\section{Program \prog{lalapps\_power}}
 \label{program:lalapps-power}
-\idx[Program]{lalapps\_power}
+\idx[Program]{\prog{lalapps\_power}}
 
 \begin{entry}
 
 \item[Name]
-\texttt{lalapps\_power} --- performs excess power analysis on real or
+\prog{lalapps\_power} --- performs excess power analysis on real or
 simulated data.
 
 \item[Synopsis]
@@ -519,16 +515,15 @@ transients present in any of the segments.
 
 \subsubsection{The filter}
 
-The excess-power method relies on having a time-frequency
-decomposition of the the incoming data.   Consider construction of the
-the time-frequency plane in a pass-band $f_0 < f < f_0+b$.  A naive
-construction would set all Fourier components outside of this band to
-zero and inverse transform.  A major problem with this approach is
-that the band-pass filter,  when viewed in the time-domain, has
-infinite extent(as shown in Figure~\ref{fig:timedomainfilter} in a wrap around
-fashion) and can 
-lead to data corruption of the band-passed
-data stream when contructed as described above. 
+The excess-power method relies on having a time-frequency decomposition of
+the the incoming data.   Consider construction of the the time-frequency
+plane in a pass-band $f_0 < f < f_0+b$.  A naive construction would set all
+Fourier components outside of this band to zero and inverse transform.  A
+major problem with this approach is that the band-pass filter,  when viewed
+in the time-domain, has infinite extent(as shown in
+Figure~\ref{fig:timedomainfilter} in a wrap around fashion) and can lead to
+data corruption of the band-passed data stream when contructed as described
+above. 
 
 \begin{figure}
 \begin{center}
@@ -538,9 +533,10 @@ data stream when contructed as described above.
 \end{center}
 \end{figure}
  
-   We can,  however, start from this and construct a filter which preferentially
-passes the appropriate frequencies \emph{and} has finite duration in
-the time domain (Figure~\ref{fig:timedomainfilter_1} \& Figure~\ref{fig:freqdomainfilter_1}).
+We can, however, start from this and construct a filter which
+preferentially passes the appropriate frequencies \emph{and} has finite
+duration in the time domain (Figure~\ref{fig:timedomainfilter_1} \&
+Figure~\ref{fig:freqdomainfilter_1}).
 
 \begin{figure}
 \begin{center}
@@ -1017,49 +1013,49 @@ Figure~\ref{fig:testattenuation8_9}
 
 \subsection{Clustering in Excess Power Search}
 \label{section:clustering}
-The excess power search is a multi-resolution analysis of the 
-time-frequency structure of the input time series.  A burst trigger is 
-identified if the probability of obtaining the excess power in a 
-time-frequency tile from Gaussian noise is smaller
-than some threshold $\alpha$.   For large bursts in the data stream,
- many tiles can be identified as triggers with different sizes and
-aspect ratios.   Hence when the search over a particular segment is
-complete,   triggers have to be clustered. 
 
-The triggers are identified by a number of characteristic features like 
-start time,  peak time,  central frequency,  bandwidth,  excess power (the 
-excess compared to the power expected in Gaussian noise for the corresponding
-time fequency volume)  and a confidence assosciated with this measurement.
- To do the clustering we first compare the peak times of the triggers.
- If the peak times are within an allowed range,  i.e. if 
-$|peaktime(trigger 1) - peaktime(trigger 2)| < dt$ where 
-$dt$ is some seconds,  we check whether the triggers  overlap 
-in frequency.  If they overlap,  we cluster them into one single trigger
-whose start time and bandwidth are so chosen that they cover the time-frequency 
-area which includes the areas of the individual triggers.  The peak time
-of the clustered trigger is equal to the peak time of that trigger which has 
-more excess power between the two.  Then we repeat the comparison but now between
-the clustered trigger and another trigger.  If the peak times again lie
-within the specified range and the frequencies overlap,  we modify,  
- otherwise we keep them as distinct triggers.  We repeat these steps until
-there are no more distinct triggers which satisfy our criterion for clustering.  
-  The execess power of the cluster is the maximum of the triggers
-involved in that particular cluster.
+The excess power search is a multi-resolution analysis of the
+time-frequency structure of the input time series.  A burst trigger is
+identified if the probability of obtaining the excess power in a
+time-frequency tile from Gaussian noise is smaller than some threshold
+$\alpha$.   For large bursts in the data stream, many tiles can be
+identified as triggers with different sizes and aspect ratios.   Hence when
+the search over a particular segment is complete,   triggers have to be
+clustered. 
 
-Top panel in Figure~\ref{fig:checkcluster}  shows a set of triggers before 
-clustering,  middle panel shows a set of clustered triggers when $dt$
-was chosen to be $10  nanosecs$ and the bottom panel shows the cluster when
-$dt$ was $10  secs$. In the bottom panel there is only $1$
-clustered trigger and if one looks at the top panel this is expected because
-all the peak  times of the triggers(before clustering)  lie within 
-$10  secs$ of each other.
+The triggers are identified by a number of characteristic features like
+start time,  peak time,  central frequency,  bandwidth,  excess power (the
+excess compared to the power expected in Gaussian noise for the
+corresponding time fequency volume)  and a confidence assosciated with this
+measurement.  To do the clustering we first compare the peak times of the
+triggers.  If the peak times are within an allowed range,  i.e. if
+$|peaktime(trigger 1) - peaktime(trigger 2)| < dt$ where $dt$ is some
+seconds,  we check whether the triggers  overlap in frequency.  If they
+overlap,  we cluster them into one single trigger whose start time and
+bandwidth are so chosen that they cover the time-frequency area which
+includes the areas of the individual triggers.  The peak time of the
+clustered trigger is equal to the peak time of that trigger which has more
+excess power between the two.  Then we repeat the comparison but now
+between the clustered trigger and another trigger.  If the peak times again
+lie within the specified range and the frequencies overlap,  we modify,
+otherwise we keep them as distinct triggers.  We repeat these steps until
+there are no more distinct triggers which satisfy our criterion for
+clustering.  The execess power of the cluster is the maximum of the
+triggers involved in that particular cluster.
+
+Top panel in Figure~\ref{fig:checkcluster}  shows a set of triggers before
+clustering,  middle panel shows a set of clustered triggers when $dt$ was
+chosen to be $10  nanosecs$ and the bottom panel shows the cluster when
+$dt$ was $10  secs$. In the bottom panel there is only $1$ clustered
+trigger and if one looks at the top panel this is expected because all the
+peak  times of the triggers(before clustering)  lie within $10  secs$ of
+each other.
 \begin{figure}
 \centering
 \includegraphics[width=1.0\textwidth]{figures/checkclustering_dt10nsec10sec}
 \caption{Clustering in Excess Power}
 \label{fig:checkcluster}
 \end{figure}
-
 
 To understand this better let us look at the triggers themselves:
 
@@ -1104,150 +1100,137 @@ discussing till now.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % BURCA:  coincidence analysis code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Program \texttt{lalapps\_burca}}
+\section{Program \prog{lalapps\_burca}}
 \label{program:lalapps-burca}
-\idx[Program]{lalapps\_burca}
+\idx[Program]{\prog{lalapps\_burca}}
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_burca$ --- program does burst coincidence analysis.
+\prog{lalapps\_burca} --- program does burst coincidence analysis.
 
 \item[Synopsis]
-\verb$lalapps_burca$ 
-\verb$--ifo-a$ \textsc{trigfile.a} \verb$--ifo-b$ \textsc{trigfile.b} 
-[\verb$--start-time$ \textsc{startcoincidence}]
-$\backslash$ \newline \hspace*{0.25in}
-[\verb$--stop-time$ \textsc{endcoincidence}] 
-[\verb$--drhoplus$ \textsc{drhoplus}] [\verb$--drhominus$ \textsc{drhominus}] 
-$\backslash$ \newline \hspace*{0.25in}
-[\verb$--dt$ \textsc{deltat}] 
-\verb$--outfile$ \textsc{outfile} [\verb$--noplayground$] 
-[\verb$--help$]
+\prog{lalapps\_burca} \newline \hspace*{0.5in}
+[\option{--start-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
+[\option{--stop-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
+[\option{--dt}~\parm{deltat}] \newline \hspace*{0.5in}
+[\option{--noplaygroud}] \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+\option{--ifo-a}~\parm{trigfile.a} \newline \hspace*{0.5in}
+\option{--ifo-b}~\parm{trigfile.b} \newline \hspace*{0.5in}
+\option{--outfile}~\parm{outfile}
 
 \item[Description] 
-\verb$lalapps_burca$ performs coincidence on triggers from the burst
-search code.  (At present it works for only two interferometers.) It
-must be called with at least one input file from each instrument. The
-default behavior outputs triggers during playground times to the file
-\textsc{outfile};  to obtain all triggers,  use the
-\verb$--noplayground$ flag.     
-%Events can also be clustered
-%within \textsc{msec} msec or a template bank for triggered searches
-%can be constructed.
+\prog{lalapps\_burca} performs coincidence on triggers from the burst
+search code.  At present it works for only two interferometers.  It must be
+called with at least one input file from each instrument.  The default
+behavior outputs triggers during playground times to the file
+\option{outfile};  to obtain all triggers,  use the \option{--noplayground}
+flag.     
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--ifo-a} \textsc{trigfile.a}] Required.  LIGO lightweight
-XML file with triggers from interferometer A.  This argument can be
-called multiple times.  Triggers are sorted \emph{after} all files
-have been read in. 
+\item[\option{--ifo-a} \parm{trigfile.a}]  LIGO lightweight XML file with
+triggers from interferometer A.  This argument can be called multiple
+times.  Triggers are sorted \emph{after} all files have been read in. 
 
-\item[\texttt{--ifo-b} \textsc{trigfile.b}] Required.  LIGO lightweight
-XML file with triggers from interferometer B.  This argument can be
-called multiple times.  Triggers are sorted \emph{after} all files
-have been read in. 
+\item[\option{--ifo-b} \parm{trigfile.b}]  LIGO lightweight XML file with
+triggers from interferometer B.  This argument can be called multiple
+times.  Triggers are sorted \emph{after} all files have been read in. 
 
-\item[\texttt{--start-time} \textsc{startcoincidence}] Optional.  Look for
-coincident triggers with start times after \textsc{startcoincidence}.
-If not supplied,  the $\textsc{startcoincidence} = 0$.
+\item[\option{--start-time} \parm{GPS seconds}]  Ignore triggers with start
+times earlier than \parm{GPS seconds}.
 
-\item[\texttt{--stop-time} \textsc{endcoincidence}]  Optional. Look for
-coincident triggers with start times before \textsc{endcoincidence}.
-If not supplied,  then $\textsc{endcoincidence} = 977788813$, i.e.
-00:00 Dec 31, 2010 UTC.
+\item[\option{--stop-time} \parm{GPS seconds}]  Ignore triggers with stop
+times later than \parm{GPS seconds}.
 
-\item[\texttt{--drhoplus} \textsc{drhoplus}] Optional.  \textbf{Not yet
-implemented.}
+\item[\option{--dt} \parm{deltat}]  Accept triggers as coincident if their
+start times agree within \parm{deltat} msec.  If not supplied,  then
+\parm{deltat} = 0.
 
-\item[\texttt{--drhominus} \textsc{drhominus}] Optional. \textbf{Not yet
-implemented.}
+\item[\option{--outfile} \parm{outfile}]  Name of the LIGO lightweight XML
+file to be used for output.
 
-\item[\texttt{--dt} \textsc{deltat}] Optional. Accept triggers as coincident if
-their start times agree within \textsc{deltat} in msec.  If not supplied,  then 
-$\textsc{deltat} = 0$.
+\item[\option{--noplayground}]  Record all triggers.  The default behaviour
+returns only those triggers which lie in the playground data set.  
 
-\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
-to be used for output.  The output format is LIGO lightweight XML with
-only a \texttt{sngl\_burst} table.
-
-\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
-default behaviour returns only those triggers which lie in the
-playground data set.  
-
-\item[\texttt{--cluster} \textsc{msec}] Optional.  \textbf{Not yet
-implemented.}  Cluster triggers within \textsc{msec} msec window.
-
-\item[\texttt{--help}] Optional.  Print a help message.
+\item[\option{--help}]  Print a help message.
 \end{entry}
 
 \item[Example]
 \begin{verbatim}
-lalapps_burca --ifo-a L-POWER-734357353-1024.xml \
---ifo-b H-POWER-734357353-1024.xml --dt 10 --outfile my.xml \
---start-time 734357353  --stop-time 734358353 --noplayground
+lalapps_burca \
+--ifo-a L-POWER-734357353-1024.xml \
+--ifo-b H-POWER-734357353-1024.xml \
+--dt 10 \
+--outfile my.xml \
+--start-time 734357353 \
+--stop-time 734358353 \
+--noplayground
 \end{verbatim}
 \item[Author] 
 Patrick Brady and Saikat Ray-Majumder
 \end{entry}
 \clearpage
 
-\section{Program \texttt{lalapps\_binj}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BINJ:  injection generation code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Program \prog{lalapps\_binj}}
 \label{program:lalapps-binj}
-\idx[Program]{lalapps\_binj}
+\idx[Program]{\prog{lalapps\_binj}}
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_binj$ --- produces burst injection data files.
+\prog{lalapps\_binj} --- produces burst injection data files.
 
 \item[Synopsis]
-\verb$lalapps_binj$ 
-[\verb$--help$]
-\verb$--gps-start-time$ \textsc{tstart} 
-\verb$--gps-end-time$ \textsc{tend} 
-[\verb$--time-step$ \textsc{tstep}]
-[\verb$--seed$ \textsc{seed}]
-[\verb$--waveform$ \textsc{wave}]
-[\verb$--coordinates$ \textsc{coordinates}]
-[\verb$--freq$ \textsc{freq}]
-[\verb$--flow$ \textsc{flow}]
-[\verb$--fhigh$ \textsc{fhigh}]
-[\verb$--deltaf$ \textsc{deltaf}]
-[\verb$--quality$ \textsc{quality}]
-[\verb$--tau$ \textsc{tau}]
-[\verb$--hpeak$ \textsc{hpeak}]
-[\verb$--log-hpeak-min$ \textsc{log-hpeak-min}]
-[\verb$--log-hpeak-max$ \textsc{log-hpeak-max}]
-[\verb$--usertag$ \textsc{tag}]
+\prog{lalapps\_binj} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+\option{--gps-start-time}~\parm{tstart} \newline \hspace*{0.5in}
+\option{--gps-end-time}~\parm{tend} \newline \hspace*{0.5in}
+[\option{--time-step}~\parm{tstep}] \newline \hspace*{0.5in}
+[\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
+[\option{--waveform}~\parm{wave}] \newline \hspace*{0.5in}
+[\option{--coordinates}~\parm{coordinates}] \newline \hspace*{0.5in}
+[\option{--freq}~\parm{freq}] \newline \hspace*{0.5in}
+[\option{--flow}~\parm{flow}] \newline \hspace*{0.5in}
+[\option{--fhigh}~\parm{fhigh}] \newline \hspace*{0.5in}
+[\option{--deltaf}~\parm{deltaf}] \newline \hspace*{0.5in}
+[\option{--quality}~\parm{quality}] \newline \hspace*{0.5in}
+[\option{--tau}~\parm{tau}] \newline \hspace*{0.5in}
+[\option{--hpeak}~\parm{hpeak}] \newline \hspace*{0.5in}
+[\option{--log-hpeak-min}~\parm{log-hpeak-min}] \newline \hspace*{0.5in}
+[\option{--log-hpeak-max}~\parm{log-hpeak-max}] \newline \hspace*{0.5in}
+[\option{--usertag}~\parm{tag}]
 
 \item[Description] 
-\verb$lalapps_binj$
-generates a number of burst  parameters suitable  for using in a Monte
-Carlo injection to test the efficiency of a burst search.  The  various
-parameters (detailed  below)  are specified on the command line or can be
-randomly chosen in a manner appropriate for an burst upper limit
-search.
+\prog{lalapps\_binj} generates a number of burst  parameters suitable  for
+using in a Monte Carlo injection to test the efficiency of a burst search.
+The  various parameters (detailed  below)  are specified on the command
+line or can be randomly chosen in a manner appropriate for an burst upper
+limit search.
 
-The longitude $\alpha$ of the source is uniformly distributed in the
-range $[0,2\pi]$, the latitude $\delta$ is defined so that $\cos(\pi/2 - 
-\delta)$ is uniformly distributed in the range $[-1,1]$,  and the 
-polarization angle $\psi$  is uniformly distributed in the
-range $[0,2\pi]$.
+The longitude $\alpha$ of the source is uniformly distributed in the range
+$[0,2\pi]$, the latitude $\delta$ is defined so that $\cos(\pi/2 - \delta)$
+is uniformly distributed in the range $[-1,1]$,  and the polarization angle
+$\psi$  is uniformly distributed in the range $[0,2\pi]$.
 
-The output of this program  is  a  list  of  the  injected events,  starting
-at  the specified start time, ending at the specified end time, and containing
-one set  of burst parameters every specified time step.  The output
-is written to a file name in the standard burst pipeline format:
+The output of this program  is  a  list  of  the  injected events,
+starting at  the specified start time, ending at the specified end time,
+and containing one set  of burst parameters every specified time step.  The
+output is written to a file name in the standard burst pipeline format:
 \begin{center}
 \begin{verbatim}
         HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
 \end{verbatim}
 \end{center}
-where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
-\verb$SEED$ is the  value  of  the random number seed chosen and 
+where \verb$USERTAG$ is \parm{tag} as specfied on the command line,
+\verb$SEED$ is the  value  of  the random number seed chosen and
 \verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
 the file covers. The file is in the standard LIGO lightweight XML format
-containing a \texttt{sim\_burst} table that describes the injections.
-This table is described in the LAL \texttt{tools} package under
+containing a \texttt{sim\_burst} table that describes the injections.  This
+table is described in the LAL \texttt{tools} package under
 \texttt{LIGOMetadataTables.h} header.  
 
 The output is also written to an ascii file named in the following way:
@@ -1256,38 +1239,38 @@ The output is also written to an ascii file named in the following way:
         HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
 \end{verbatim}
 \end{center}
-where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
-\verb$SEED$ is the  value  of  the random number seed chosen and 
+where \verb$USERTAG$ is \parm{tag} as specfied on the command line,
+\verb$SEED$ is the  value  of  the random number seed chosen and
 \verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
 the file covers. The file is in the format agreed to for LIGO-TAMA
 simulations.  
 
-If a \texttt{--user-tag} is not specified on the command line, the
+If a \option{--user-tag} is not specified on the command line, the
 \texttt{\_USERTAG} part of the filename will be omitted.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--help}] Print a help message.
+\item[\option{--help}] Print a help message.
 
-\item[\texttt{--gps-start-time} \textsc{tstart}]
+\item[\option{--gps-start-time} \parm{tstart}]
 Optional.  Start time of the injection data to be created. Defaults to the
 start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
 
-\item[\texttt{--gps-end-time} \textsc{tend}]
-Optional. End time of the injection data to be created. Defaults to the end of
-S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+\item[\option{--gps-end-time} \parm{tend}]
+Optional. End time of the injection data to be created. Defaults to the end
+of S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
 
-\item[\texttt{--time-step} \textsc{tstep}]
-Optional. Sets the time step interval between injections. The injections will
-occour at \textsc{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
+\item[\option{--time-step} \parm{tstep}]
+Optional. Sets the time step interval between injections. The injections
+will occour at \parm{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
 
-\item[\texttt{--seed} \textsc{seed}]
-Optional. Seed the random number generator with the integer \textsc{seed}.
+\item[\option{--seed} \parm{seed}]
+Optional. Seed the random number generator with the integer \parm{seed}.
 Defaults to $1$.
 
-\item[\texttt{--coordinates} \textsc{coordinates}] 
-Optional.  The coordinate system to specify for the injections.  Use
-one of:
+\item[\option{--coordinates} \parm{coordinates}] 
+Optional.  The coordinate system to specify for the injections.  Use one
+of:
 \begin{itemize}
 \item \texttt{GEOGRAPHIC}
 \item \texttt{EQUATORIAL}
@@ -1295,31 +1278,31 @@ one of:
 \item \texttt{GALACTIC}
 \item \texttt{ZENITH}
 \end{itemize}
-The default is \verb+EQUATORIAL+.   Use \verb+ZENITH+ to describe an
-injection from directly above the detector with linear polarization
-with respect to the detector.  Note:  this is different than using
-\verb+HORIZON+ coordinates since the polarization angle is usually
+The default is \texttt{EQUATORIAL}.   Use \texttt{ZENITH} to describe an
+injection from directly above the detector with linear polarization with
+respect to the detector.  Note:  this is different than using
+\texttt{HORIZON} coordinates since the polarization angle is usually
 defined with respect to geo-centric coordinates.
 
-\item[\texttt{--flow} \textsc{flow}]
-Optional.  The code can generate injections at multiple frequencies.
-This option sets the first frequency used in that case.  Default value
-is 150 Hz.
+\item[\option{--flow} \parm{flow}]
+Optional.  The code can generate injections at multiple frequencies.  This
+option sets the first frequency used in that case.  Default value is 150
+Hz.
 
-\item[\texttt{--fhigh} \textsc{fhigh}]
-Optional.  Only generate injections with frequencies below
-\textsc{fhigh}.  Default value is 1000 Hz.
+\item[\option{--fhigh} \parm{fhigh}]
+Optional.  Only generate injections with frequencies below \parm{fhigh}.
+Default value is 1000 Hz.
 
-\item[\texttt{--deltaf} \textsc{deltaf}]
+\item[\option{--deltaf} \parm{deltaf}]
 Optional.  The linear spacing between frequencies used to make
 injections.  Default value is 0 Hz.
 
-\item[\texttt{--waveform} \textsc{wave}]
-Optional.  Default is \texttt{SineGaussian}.   The string
-\textsc{wave} will be written into the \texttt{waveform} column of the
-\texttt{sim\_burst} table output. This is used by the burst code to
-determine which type of waveforms it should inject into the data.
-Types implemented in LAL inject package are:
+\item[\option{--waveform} \parm{wave}]
+Optional.  Default is \texttt{SineGaussian}.   The string \parm{wave} will
+be written into the \texttt{waveform} column of the \texttt{sim\_burst}
+table output. This is used by the burst code to determine which type of
+waveforms it should inject into the data.  Types implemented in LAL inject
+package are:
 \begin{description}
 \item[\texttt{SineGaussian}]  Inject a sine-Gaussian waveform defined by
 \begin{eqnarray}
@@ -1334,50 +1317,56 @@ A_\times(t) &=& 0
 \end{eqnarray}
 \end{description}
 
-\item[\texttt{--tau} \textsc{tau}]
-Optional.  The decay-time $\tau$ for sine-gaussian,  gaussian,  ringdown and
-ring-up waveforms.
+\item[\option{--tau} \parm{tau}]
+Optional.  The decay-time $\tau$ for sine-gaussian,  gaussian,  ringdown
+and ring-up waveforms.
 
-\item[\texttt{--quality} \textsc{quality}]
+\item[\option{--quality} \parm{quality}]
 Optional.  The quality factor for sine-gaussian,  gaussian,  ringdown and
-ring-up waveforms.    This option overrides the decay-time
-\textsc{TAU} and recalculates the duration for each waveform using the
-formula
+ring-up waveforms.    This option overrides the decay-time \parm{tau} and
+recalculates the duration for each waveform using the formula
 $$ 
-\tau = \frac{ \textsc{quality} }{ \sqrt{2} \pi f_0 }
+\tau = \frac{\textsc{quality} }{ \sqrt{2} \pi f_0 }
 $$
 where $f_0$ is the frequency of the injection.
 
-\item[\texttt{--freq} \textsc{freq}]
+\item[\option{--freq} \parm{freq}]
 Optional.  The central frequency $f_0$ for sine-gaussian,  ringdown and
 ring-up waveforms.
 
-\item[\texttt{--hpeak} \textsc{hpeak}]
-Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,  gaussian,  ringdown and
-ring-up waveforms.
+\item[\option{--hpeak} \parm{hpeak}]
+Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,
+gaussian,  ringdown and ring-up waveforms.
 
-\item[\texttt{--log-hpeak-min} \textsc{log-hpeak-min}]
-Optional.  When this option is invoked,  a range of values of $h_0$
-such that $\log_{10}(h_0)$ is uniformly distributed in the range $[
-\textsc{log-hpeak-min}, \textsc{log-hpeak-max}]$.  If this option is
-used,  then \texttt{--log-hpeak-max} is required.
+\item[\option{--log-hpeak-min} \parm{log-hpeak-min}]
+Optional.  When this option is invoked,  a range of values of $h_0$ such
+that $\log_{10}(h_0)$ is uniformly distributed in the range
+$[$\parm{log-hpeak-min}$, $\parm{log-hpeak-max}$]$.  If this option is
+used, then \option{--log-hpeak-max} is required.
 
-\item[\texttt{--log-hpeak-max} \textsc{log-hpeak-max}]
-Optional.  When this option is invoked,  a range of values of $h_0$
-such that $\log_{10}(h_0)$ is uniformly distributed in the range $[
-\textsc{log-hpeak-min}, \textsc{log-hpeak-max}]$.  If this option is
-used,  then \texttt{--log-hpeak-min} is required.
+\item[\option{--log-hpeak-max} \parm{log-hpeak-max}]
+Optional.  When this option is invoked,  a range of values of $h_0$ such
+that $\log_{10}(h_0)$ is uniformly distributed in the range
+$[$\parm{log-hpeak-min}$, $\parm{log-hpeak-max}$]$.  If this option is
+used, then \option{--log-hpeak-min} is required.
 
-\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
-job to be \textsc{string}. May also be specified on the command line as 
-\texttt{-userTag} for LIGO database compatibility.
+\item[\option{--user-tag} \parm{string}]
+Optional. Set the user tag for this job to be \parm{string}. May also be
+specified on the command line as \option{-userTag} for LIGO database
+compatibility.
 
 \end{entry}
 
 \item[Example]
 \begin{verbatim}
-./lalapps_binj --time-step 1000 --flow 130 --fhigh 600 --deltaf 90\
---quality 8.89 --hpeak 6.0e-20 --seed 45
+lalapps_binj \
+--time-step 1000 \
+--flow 130 \
+--fhigh 600 \
+--deltaf 90 \
+--quality 8.89 \
+--hpeak 6.0e-20 \
+--seed 45
 \end{verbatim}
 
 \item[Author] 
@@ -1385,119 +1374,143 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 \end{entry}
 \clearpage
 
-\section{Program \texttt{lalapps\_bread}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% bread:  trigger file manipulation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Program \prog{lalapps\_bread}}
 \label{program:lalapps-bread}
-\idx[Program]{lalapps\_bread}
+\idx[Program]{\prog{lalapps\_bread}}
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_bread$ -- reads in triggers from multiple xml files into one single xml file 
+\prog{lalapps\_bread} -- reads in triggers from multiple xml files into one
+single xml file 
 
 \item[Synopsis]
-\verb$lalapps_bread$ 
-[\verb$--help$]
-\verb$--input$ \textsc{filename} 
-\verb$--output$ \textsc{filename} 
-[\verb$--max-confidence$ \textsc{maximum conf}]
-[\verb$--noplayground$]
-[\verb$--sort$]
-[\verb$--cluster$]
-[\verb$--min-duration$ \textsc{min dur}]
-[\verb$--max-duration$ \textsc{max dur}]
-[\verb$--min-centralfreq$ \textsc{min centralfreq}]
-[\verb$--max-centralfreq$ \textsc{max centralfreq}]
-[\verb$--max-bandwidth$ \textsc{max bw}]
-[\verb$--min-bandwidth$ \textsc{min bw}]
-[\verb$--min-amplitude$ \textsc{min amp}]
-[\verb$--max-amplitude$ \textsc{max amp}]
-[\verb$--min-snr$ \textsc{min snr}]
-[\verb$--max-snr$ \textsc{max snr}]
-[\verb$--min-start-time$ \textsc{min start time}]
-[\verb$--max-start-time$ \textsc{max start time}]
-[\verb$--verbose$]
+\prog{lalapps\_bread} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+\option{--input}~\parm{filename} \newline \hspace*{0.5in}
+\option{--output}~\parm{filename} \newline \hspace*{0.5in}
+[\option{--max-confidence}~\parm{maximum conf}] \newline \hspace*{0.5in}
+[\option{--noplayground}] \newline \hspace*{0.5in}
+[\option{--sort}] \newline \hspace*{0.5in}
+[\option{--cluster}] \newline \hspace*{0.5in}
+[\option{--min-duration}~\parm{min dur}] \newline \hspace*{0.5in}
+[\option{--max-duration}~\parm{max dur}] \newline \hspace*{0.5in}
+[\option{--min-centralfreq}~\parm{min centralfreq}] \newline \hspace*{0.5in}
+[\option{--max-centralfreq}~\parm{max centralfreq}] \newline \hspace*{0.5in}
+[\option{--max-bandwidth}~\parm{max bw}] \newline \hspace*{0.5in}
+[\option{--min-bandwidth}~\parm{min bw}] \newline \hspace*{0.5in}
+[\option{--min-amplitude}~\parm{min amp}] \newline \hspace*{0.5in}
+[\option{--max-amplitude}~\parm{max amp}] \newline \hspace*{0.5in}
+[\option{--min-snr}~\parm{min snr}] \newline \hspace*{0.5in}
+[\option{--max-snr}~\parm{max snr}] \newline \hspace*{0.5in}
+[\option{--min-start-time}~\parm{min start time}] \newline \hspace*{0.5in}
+[\option{--max-start-time}~\parm{max start time}] \newline \hspace*{0.5in}
+[\option{--verbose}]
 
 \item[Description] 
-\verb$lalapps_bread$
-reads in triggers from multiple xml files, does any requested cuts
-specified by the user and then writes the triggers in a single xml 
-file.  
+\prog{lalapps\_bread} reads in triggers from multiple xml files, does any
+requested cuts specified by the user and then writes the triggers in a
+single xml file.  
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--help}] Print a help message.
+\item[\option{--help}] Print a help message.
 
-\item[\texttt{--input} \textsc{filename}]
-The infile should be a txt file, say file.txt which
-will contain the list of xml files. \verb$lalapps_bread$ reads 
-in triggers from those xml files which are listed in file.txt
+\item[\option{--input} \parm{filename}]
+The infile should be a txt file, say file.txt which will contain the list
+of xml files. \prog{lalapps\_bread} reads in triggers from those xml files
+which are listed in file.txt
 
-\item[\texttt{--output} \textsc{filename}]
-\verb$lalapps_bread$ writes all the triggers out in one single xml file, specified by filename.  The (old) option \texttt{--outfile} can also be used.
+\item[\option{--output} \parm{filename}]
+\prog{lalapps\_bread} writes all the triggers out in one single xml file,
+specified by filename.  The (old) option \option{--outfile} can also be
+used.
 
-\item[\texttt{--max-confidence} \textsc{maximum conf}]
-Optional. Outputs only the triggers with a confidence less than or equal to the given value.
+\item[\option{--max-confidence} \parm{maximum conf}]
+Optional. Outputs only the triggers with a confidence less than or equal to
+the given value.
 
-\item[\texttt{--noplayground}]
-Optional. By default only triggers lying inside the playground are output. If this option is 
-specified then all the triggers will be output. 
+\item[\option{--noplayground}]
+Optional. By default only triggers lying inside the playground are output.
+If this option is specified then all the triggers will be output. 
 
-\item[\texttt{--sort}]
+\item[\option{--sort}]
 Not properly implemented yet. Now the triggers are always sorted in time
 before being written out.
 
-\item[\texttt{--cluster}]
+\item[\option{--cluster}]
 Apply the LAL SnglBurstTable clustering algorithm to the triggers before
 applying any cuts.  This is the same algorithm used by
 \prog{lalapps\_power}.  Running \prog{lalapps\_power} without clustering,
 followed by a clustering pass with \prog{lalapps\_bread} is equivalent to
 applying clustering in \prog{lalapps\_power}.
 
-\item[\texttt{--min-duration} \textsc{duration}]
-Optional. Outputs only the triggers with a duration greater than or equal to the value specified.
+\item[\option{--min-duration} \parm{duration}]
+Optional. Outputs only the triggers with a duration greater than or equal
+to the value specified.
 
-\item[\texttt{--max-duration} \textsc{duration}]
-Optional. Outputs only the triggers with a durations less than or equal to the value specified.
+\item[\option{--max-duration} \parm{duration}]
+Optional. Outputs only the triggers with a durations less than or equal to
+the value specified.
 
-\item[\texttt{--min-centralfreq} \textsc{frequency}]
-Optional. Outputs only the triggers with a central frequency greater than or equal to the value specified.
+\item[\option{--min-centralfreq} \parm{frequency}]
+Optional. Outputs only the triggers with a central frequency greater than
+or equal to the value specified.
 
-\item[\texttt{--max-centralfreq} \textsc{frequency}]
-Optional. Outputs only the triggers with a central frequency less than or equal to the value specified.
+\item[\option{--max-centralfreq} \parm{frequency}]
+Optional. Outputs only the triggers with a central frequency less than or
+equal to the value specified.
 
-\item[\texttt{--min-bandwidth} \textsc{bandwidth}]
-Optional. Outputs only the triggers with a bandwidth greater than or equal to the value specified.
+\item[\option{--min-bandwidth} \parm{bandwidth}]
+Optional. Outputs only the triggers with a bandwidth greater than or equal
+to the value specified.
 
-\item[\texttt{--max-bandwidth} \textsc{bandwidth}]
-Optional. Outputs only the triggers with a bandwidth less than or equal to the value specified.
+\item[\option{--max-bandwidth} \parm{bandwidth}]
+Optional. Outputs only the triggers with a bandwidth less than or equal to
+the value specified.
 
-\item[\texttt{--min-amplitude} \textsc{amplitude}]
-Optional. Outputs only the triggers with an amplitude greater than or equal to the value specified.
+\item[\option{--min-amplitude} \parm{amplitude}]
+Optional. Outputs only the triggers with an amplitude greater than or equal
+to the value specified.
 
-\item[\texttt{--max-amplitude} \textsc{amplitude}]
-Optional. Outputs only the triggers with an amplitude less than or equal to the value specified.
+\item[\option{--max-amplitude} \parm{amplitude}]
+Optional. Outputs only the triggers with an amplitude less than or equal to
+the value specified.
 
-\item[\texttt{--min-snr} \textsc{snr}]
-Optional. Outputs only the triggers with a SNR greater than or equal to the value specified.
+\item[\option{--min-snr} \parm{snr}]
+Optional. Outputs only the triggers with a SNR greater than or equal to the
+value specified.
 
-\item[\texttt{--max-snr} \textsc{snr}]
-Optional. Outputs only the triggers with a SNR less than or equal to the value specified.
+\item[\option{--max-snr} \parm{snr}]
+Optional. Outputs only the triggers with a SNR less than or equal to the
+value specified.
 
-\item[\texttt{--min-start-time} \textsc{time}]
-Optional. Outputs only the triggers with a start time later than or equal to the time specified.
+\item[\option{--min-start-time} \parm{time}]
+Optional. Outputs only the triggers with a start time later than or equal
+to the time specified.
 
-\item[\texttt{--max-start-time} \textsc{time}]
-Optional. Outputs only the triggers with a start time earlier than or equal to the time specified.
+\item[\option{--max-start-time} \parm{time}]
+Optional. Outputs only the triggers with a start time earlier than or equal
+to the time specified.
 
-\item[\texttt{--verbose}]
-Optional. Prints out detailed message as the program runs including the total no. of triggers.
+\item[\option{--verbose}]
+Optional. Prints out detailed message as the program runs including the
+total no. of triggers.
 
 \end{entry}
 
 \item[Example]
 \begin{verbatim}
-lalapps_bread --input H1.txt --output H1.xml --max-confidence -50 --verbose
+lalapps_bread \
+--input H1.txt \
+--output H1.xml \
+--max-confidence -50 \
+--verbose
 \end{verbatim}
 
 \item[Author] 
-Patrick Brady, Saikat Ray Majumder
+Patrick Brady, Saikat Ray Majumder, Kipp Cannon
 \end{entry}
