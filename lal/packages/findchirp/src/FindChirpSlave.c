@@ -265,9 +265,9 @@ LALFindChirpSlave (
 
 
   /*
-  *
-  * get template parameter bank
-  *
+   *
+   * get template parameter bank
+   *
    */
 
 
@@ -494,10 +494,11 @@ LALFindChirpSlave (
 
           params->simParams->signalNorm[i] = sigNorm;
         }
-      }
+      } /* end if ( fcBankMinimalMatch ) */
       else if ( params->simParams->simType == fcGaussianNoise ||
           params->simParams->simType == fcGaussianNoiseInject )
       {
+        /* replace the data in the segment with gaussian noise */
         for ( i = 0; i < dataSegVec->length; ++i, ++currentDataSeg )
         {
           REAL4Vector  *dataVec = currentDataSeg->chan->data;
@@ -545,11 +546,6 @@ LALFindChirpSlave (
             spec[k] = spectrum;
           }
         }
-      }
-
-      if ( params->simParams->simType == fcRealDataInject )
-      {
-        /* replace the current input data with the saved copy */
       }
 
       if ( params->simParams->simType == fcGaussianNoiseInject ||
