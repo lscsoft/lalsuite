@@ -65,6 +65,26 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+ProcessParamsTable *next_process_param( const char *name, const char *type,
+    const char *fmt, ... )
+{
+  ProcessParamsTable *pp;
+  va_list ap;
+  pp = calloc( 1, sizeof( *pp ) );
+  if ( ! pp )
+  {
+    perror( "next_process_param" );
+    exit( 1 );
+  }
+  strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
+  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
+  va_start( ap, fmt );
+  LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
+  va_end( ap );
+  return pp;
+}
+
 enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, numElem };
 
@@ -374,30 +394,93 @@ int galactic_sky_position( double *dist, double *alpha, double *delta )
  *
  */
 
+int read_source_mass_data( double **pm1, double **pm2 )
+{
+  const char *basename = massFileName ? massFileName : "BNSMasses.dat";
+  char fname[256];
+  char line[256];
+  FILE   *fp;
+  double *m1;
+  double *m2;
+  int n = 0;
+
+  LALSnprintf( fname, sizeof( fname ), basename );
+  if ( ! massFileName || ! ( fp = fopen( massFileName, "r" ) ) )
+  {
+    if ( *basename != '.' && *basename != '/' ) /* not abs or rel path */
+    { /* prepend path from env variable */
+      const char *path = getenv( "LALAPPS_DATA_PATH" );
+      LALSnprintf( fname, sizeof( fname ), "%s/%s",
+          path ? path : PREFIX "/" PACKAGE "/share", basename );
+    }
+    fp = fopen( fname, "r" );
+  }
+
+  if ( ! fp )
+  {
+    perror( "read_source_mass_data" );
+    fprintf( stderr, "Could not find file %s\n", fname );
+    fprintf( stderr, "Set environment LALAPPS_DATA_PATH to location of file %s\n", basename );
+    exit( 1 );
+  }
+
+  while ( fgets( line, sizeof( line ), fp ) )
+    ++n;
+  m1 = *pm1 = calloc( n, sizeof( *m1 ) );
+  if ( ! m1 )
+  {
+    fprintf( stderr, "alloc error\n" );
+    exit( 1 );
+  }
+  m2 = *pm2 = calloc( n, sizeof( *m2 ) );
+  if ( ! m2 )
+  {
+    fprintf( stderr, "alloc error\n" );
+    exit( 1 );
+  }
+  rewind( fp );
+  while ( fgets( line, sizeof( line ), fp ) )
+  {
+    sscanf( line, "%le %le", m1++, m2++ );
+  }
+  fclose( fp );
+  return n;
+}
 
 int read_source_data( void )
 {
+  const char *basename = sourceFileName ? sourceFileName : "inspsrcs.dat";
+  char fname[256];
   char line[256];
   FILE *fp;
   int i;
 
-  if ( ! (fp = fopen( sourceFileName, "r" )) )
+  LALSnprintf( fname, sizeof( fname ), sourceFileName );
+  if ( ! sourceFileName || ! ( fp = fopen( sourceFileName, "r" ) ) )
   {
-    perror( "Could not open sources file" );
+    if ( *basename != '.' && *basename != '/' ) /* not abs or rel path */
+    { /* prepend path from env variable */
+      const char *path = getenv( "LALAPPS_DATA_PATH" );
+      LALSnprintf( fname, sizeof( fname ), "%s/%s",
+          path ? path : PREFIX "/" PACKAGE "/share", basename );
+    }
+    fp = fopen( fname, "r" );
+  }
+
+  if ( ! fp )
+  {
+    perror( "read_source_data" );
+    fprintf( stderr, "Could not find file %s\n", fname );
+    fprintf( stderr, "Set environment LALAPPS_DATA_PATH to location of file %s\n", basename );
+    exit( 1 );
   }
 
   num_source = 0;
   while ( fgets( line, sizeof( line ), fp ) )
-  {
     if ( line[0] == '#' )
-    {
       continue;
-    }
     else 
-    {
       ++num_source;
-    }
-  }
   rewind( fp );
   
   source_data = calloc( num_source, sizeof( *source_data ) );
@@ -410,11 +493,8 @@ int read_source_data( void )
   
   i = 0;
   while ( fgets( line, sizeof( line ), fp ) )
-  {
     if ( line[0] == '#' )
-    {
       continue;
-    }
     else
     {
       char ra_sgn, dec_sgn;
@@ -436,17 +516,12 @@ int read_source_data( void )
       source_data[i].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
 
       if ( ra_sgn == '-' )
-      {
         source_data[i].ra *= -1;
-      }
       if ( dec_sgn == '-' )
-      {
         source_data[i].dec *= -1;
-      }
       source_data[i].dist *= KPC;
       ++i;
     }
-  }
 
   fclose( fp );
   return num_source;
@@ -532,38 +607,7 @@ int inj_params( double *injPar )
   double dist;
 
   if ( ! n )
-  {
-    double *p1, *p2;
-    char line[64];
-    FILE *fp;
-
-    if ( ! (fp = fopen( massFileName, "r" )) )
-    {
-      perror( "Could not open file mass file" );
-      exit( 1 );
-    }
-
-    while ( fgets( line, sizeof( line ), fp ) )
-      ++n;
-    p1 = m1arr = calloc( n, sizeof( *m1arr ) );
-    if ( ! p1 )
-    {
-      fprintf( stderr, "alloc error\n" );
-      exit( 1 );
-    }
-    p2 = m2arr = calloc( n, sizeof( *m2arr ) );
-    if ( ! p2 )
-    {
-      fprintf( stderr, "alloc error\n" );
-      exit( 1 );
-    }
-    rewind( fp );
-    while ( fgets( line, sizeof( line ), fp ) )
-    {
-      sscanf( line, "%le %le", p1++, p2++ );
-    }
-    fclose( fp );
-  }
+    n = read_source_mass_data( &m1arr, &m2arr );
 
   sky_position( &dist, &alpha, &delta );
   i = (size_t)( n * my_urandom() );
@@ -602,7 +646,7 @@ int main( int argc, char *argv[] )
   double injPar[numElem];
   size_t ninj;
   size_t inj;
-  FILE *fp;
+  FILE *fp = NULL;
   int rand_seed = 1;
   int ilwd = 0;
 
@@ -640,7 +684,7 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
+  set_debug_level( "LALMSGLVL2" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
@@ -693,14 +737,14 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         sourceFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'm':
         optarg_len = strlen( optarg ) + 1;
         massFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( massFileName, optarg, optarg_len * sizeof(char) );
-        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'a':
@@ -725,7 +769,7 @@ int main( int argc, char *argv[] )
         }
         gpsStartTime = gpsinput;
         tinj = 1000000000LL * gpsStartTime;
-        ADD_PROCESS_PARAM( "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
         break;
 
       case 'b':
@@ -749,26 +793,26 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         gpsEndTime = gpsinput;
-        ADD_PROCESS_PARAM( "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
         break;
 
       case 's':
         rand_seed = atoi( optarg );
-        ADD_PROCESS_PARAM( "int", "%d", rand_seed );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", rand_seed );
         break;
 
       case 't':
         {
           double tstep = atof( optarg );
           meanTimeStep = tstep / LAL_PI;
-          ADD_PROCESS_PARAM( "float", "%le", tstep );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%le", tstep );
         }
         break;
 
       case 'w':
         LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg );
-        ADD_PROCESS_PARAM( "string", "%le", optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
 
       case 'Z':
         /* create storage for the usertag */
@@ -801,19 +845,6 @@ int main( int argc, char *argv[] )
         fprintf( stderr, USAGE );
         exit( 1 );
     }
-  }
-
-  /* check that input files have been specified */
-  if ( ! sourceFileName )
-  {
-    fprintf( stderr, "--source-file must be specified\n" );
-    exit( 1 );
-  }
-
-  if ( ! massFileName )
-  {
-    fprintf( stderr, "--mass-file must be specified\n" );
-    exit( 1 );
   }
 
   seed_random( rand_seed );

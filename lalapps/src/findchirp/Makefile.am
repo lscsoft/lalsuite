@@ -3,19 +3,18 @@
 if DATAFLOW
 DATAFLOWPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
                 lalapps_donald lalapps_snglInspiralReader \
-                lalapps_inspinj \
 		lalapps_inspinj_find
 else
 DATAFLOWPROGRAMS = 
 endif
-bin_PROGRAMS = lalapps_inspawgfile $(DATAFLOWPROGRAMS) \
+bin_PROGRAMS = lalapps_inspawgfile lalapps_inspinj $(DATAFLOWPROGRAMS) \
                lalapps_random_bank lalapps_chirplen lalapps_effdist
 lalapps_inspawgfile_SOURCES = inspawgfile.c
 lalapps_random_bank_SOURCES = random_bank.c
 lalapps_chirplen_SOURCES = chirplen.c
 lalapps_effdist_SOURCES = effdist.c
-if DATAFLOW
 lalapps_inspinj_SOURCES = inspinj.c
+if DATAFLOW
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
 lalapps_donald_SOURCES = donald.c donald.h event_utils.c event_utils.h
