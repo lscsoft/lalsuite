@@ -207,7 +207,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   SSSimStochBGParams SBParams;
   SSSimStochBGInput SBInput;
   SSSimStochBGOutput SBOutput;
-  REAL4TimeSeries SimStochBGOne, SimStochBGTwo;
+  REAL4TimeSeries *SimStochBGOne;
+  REAL4TimeSeries *SimStochBGTwo;
   REAL4FrequencySeries MComegaGW;
   COMPLEX8FrequencySeries MCresponseOne, MCresponseTwo;
   COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
@@ -415,22 +416,13 @@ INT4 main(INT4 argc, CHAR *argv[])
     MCfreqLength = (segmentPadLength / 2) + 1;
 
     /* create vectors to store the simulated signal */
-    strncpy(SimStochBGOne.name, "Whitened-SimulatedSB1", LALNameLength);
-    strncpy(SimStochBGTwo.name, "Whitened-SimulatedSB2", LALNameLength);
-    SimStochBGOne.f0 = SimStochBGTwo.f0 = 0.;
-    SimStochBGOne.epoch = SimStochBGTwo.epoch = gpsStartPadTime;
-    SimStochBGOne.deltaT = SimStochBGTwo.deltaT = 1./(REAL8)resampleRate;
-    SimStochBGOne.sampleUnits = SimStochBGTwo.sampleUnits = lalADCCountUnit;
-    SimStochBGOne.data = SimStochBGTwo.data = NULL;
-    LAL_CALL(LALSCreateVector(&status, &(SimStochBGOne.data), \
-          segmentPadLength), &status);
-    LAL_CALL(LALSCreateVector(&status, &(SimStochBGTwo.data), \
-          segmentPadLength), &status);
-    memset(SimStochBGOne.data->data, 0, \
-        SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
-    memset(SimStochBGTwo.data->data, 0, \
-        SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
-
+    LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGOne, \
+          "Whitened-SimulatedSB1", gpsStartPadTime, 0, 1./resampleRate, \
+          lalDimensionlessUnit, segmentPadLength), &status);
+    LAL_CALL(LALCreateREAL4TimeSeries(&status, &SimStochBGTwo, \
+          "Whitened-SimulatedSB2", gpsStartPadTime, 0, 1./resampleRate, \
+          lalDimensionlessUnit, segmentPadLength), &status);
+    
     /* define parameters for SimulateSB */
     SBParams.length = segmentPadLength;
     SBParams.deltaT = 1. / resampleRate;
@@ -1385,7 +1377,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             }
 
             /* set parameters for monte carlo */
-            SimStochBGOne.epoch = SimStochBGTwo.epoch = gpsStartPadTime;
+            SimStochBGOne->epoch = gpsStartPadTime;
+            SimStochBGTwo->epoch = gpsStartPadTime;
             SBParams.seed = seed;
 
             /* define input structure for SimulateSB */
@@ -1394,8 +1387,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             SBInput.whiteningFilter2 = &MCresponseTwo;
 
             /* define output structure for SimulateSB */
-            SBOutput.SSimStochBG1 = &SimStochBGOne;
-            SBOutput.SSimStochBG2 = &SimStochBGTwo;
+            SBOutput.SSimStochBG1 = SimStochBGOne;
+            SBOutput.SSimStochBG2 = SimStochBGTwo;
 
             /* perform monte carlo */
             LAL_CALL(LALSSSimStochBGTimeSeries(&status, &SBOutput, \
@@ -1405,9 +1398,9 @@ INT4 main(INT4 argc, CHAR *argv[])
             for (i = 0; i < segmentPadLength ; i++)
             {
               segmentPadOne->data->data[i] = segPadOne[segLoop]->data[i] + \
-                (scaleFactor * SimStochBGOne.data->data[i]);
+                (scaleFactor * SimStochBGOne->data->data[i]);
               segmentPadTwo->data->data[i] = segPadTwo[segLoop]->data[i] + \
-                (scaleFactor * SimStochBGTwo.data->data[i]);
+                (scaleFactor * SimStochBGTwo->data->data[i]);
             }
 
             /* increase seed */
@@ -1759,8 +1752,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status);
   if (inject_flag)
   {
-    LAL_CALL(LALDestroyVector(&status, &SimStochBGOne.data), &status);
-    LAL_CALL(LALDestroyVector(&status, &SimStochBGTwo.data), &status);
+    LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGOne), &status);
+    LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGTwo), &status);
     LAL_CALL(LALCDestroyVector(&status, &(MCresponseOne.data)), &status);
     LAL_CALL(LALCDestroyVector(&status, &(MCresponseTwo.data)), &status);
     LAL_CALL(LALDestroyVector(&status, &(MComegaGW.data)), &status);
