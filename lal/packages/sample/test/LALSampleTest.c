@@ -11,7 +11,7 @@ Example program for LAL.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-LALSampleTest [numer denom [LALDebugLevel]]
+LALSampleTest [numer denom [lalDebugLevel]]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -20,7 +20,7 @@ This program demonstrates LAL coding and documentation standards for
 test programs.  It reads two numbers \verb@numer@ and \verb@denom@
 from the command line, computes their quotient using the function
 \verb@LALREAL8Divide()@, and prints the result to \verb@stdout@.  It is
-run with \verb@LALDebugLevel@ = 0, unless set by the optional third
+run with \verb@lalDebugLevel@ = 0, unless set by the optional third
 argument.
 
 \subsubsection*{Exit codes}
@@ -28,7 +28,7 @@ argument.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 LALPrintError()
 LALREAL8Divide()
 \end{verbatim}
@@ -53,17 +53,17 @@ NRCSID( LALSAMPLETESTC, "$Id$" );
 #define LALSAMPLETESTC_MSGESUB "Subroutine returned error"
 /***************************** </lalErrTable> */
 
-/* Declare and set the default LALDebugLevel */
-int LALDebugLevel = 0;
+/* Declare and set the default lalDebugLevel */
+int lalDebugLevel = 0;
 
 /* A local macro for printing error messages */
 #define EXIT( code, program, message )                                \
   do {                                                                \
-    if (( LALDebugLevel & LALERROR ) && (code))                          \
+    if (( lalDebugLevel & LALERROR ) && (code))                          \
       LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"\
                      "        %s\n", (code), (program), __FILE__,     \
                      __LINE__, LALSAMPLETESTC, (message) );           \
-    else if ( LALDebugLevel & LALINFO )                                  \
+    else if ( lalDebugLevel & LALINFO )                                  \
       LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"    \
                      "        %s\n", (program), __FILE__, __LINE__,   \
                      LALSAMPLETESTC, (message) );                     \
@@ -81,10 +81,10 @@ main( int argc, char **argv )
   if ( argc == 1 )
     EXIT( LALSAMPLETESTC_ENOM, argv[0], LALSAMPLETESTC_MSGENOM );
   else if ( argc == 4 )
-    LALDebugLevel = atoi( argv[3] );
+    lalDebugLevel = atoi( argv[3] );
   else if ( argc != 3 )
     {
-      LALPrintError( "Usage: %s [numer denom [ LALDebugLevel ]]\n",
+      LALPrintError( "Usage: %s [numer denom [ lalDebugLevel ]]\n",
 		     argv[0] );
       EXIT( LALSAMPLETESTC_EARG, argv[0], LALSAMPLETESTC_MSGEARG );
     }

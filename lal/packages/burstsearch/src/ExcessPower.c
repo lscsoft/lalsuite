@@ -51,7 +51,7 @@ NRCSID (EXCESSPOWERC, "$Id$");
 #define FALSE 0
 
 
-extern INT4 LALDebugLevel;
+extern INT4 lalDebugLevel;
 
 static INT4 pow1(INT4 a, INT4 b)
 {

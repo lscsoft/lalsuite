@@ -49,7 +49,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-INT4 LALDebugLevel = 1;   /* set to 2 to get full status information for tests */
+INT4 lalDebugLevel = 1;   /* set to 2 to get full status information for tests */
 INT4 verbose    = 1;
 
 static void
@@ -280,7 +280,7 @@ main (int argc, char *argv[])
    *************************************************************************/
 
 
-  if (verbose || LALDebugLevel)
+  if (verbose || lalDebugLevel)
   {
     printf ("\n===== Check Errors =====\n");
   }
@@ -1134,7 +1134,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
+  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -1161,7 +1161,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        LALDebugLevel = atoi (optarg);
+        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

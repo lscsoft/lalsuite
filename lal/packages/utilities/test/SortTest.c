@@ -38,7 +38,7 @@ specified value \verb@debug-level@.
 
 \subsubsection{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 CreateI4Vector()
 CreateSVector()
 DestroyI4Vector()
@@ -66,7 +66,7 @@ NRCSID(SORTTESTC,"$Id$");
 #define SORTTEST_ESUB 1
 #define SORTTEST_MSGESUB "Subroutine returned error"
 
-INT4 LALDebugLevel=0;
+INT4 lalDebugLevel=0;
 
 int main(int argc, char **argv)
 {
@@ -87,10 +87,10 @@ int main(int argc, char **argv)
 	LALPrintError("%s: Ignoring argument: -s\n",argv[0]);
     }else if(!strcmp(argv[i],"-d")){
       if((argc>2)&&(argv[i+1][0]!='-')){
-	LALDebugLevel=atoi(argv[++i]);
+	lalDebugLevel=atoi(argv[++i]);
 	argc--;
       }else
-	LALDebugLevel=1;
+	lalDebugLevel=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }

@@ -36,7 +36,7 @@ function.  The function \verb@Create<datatype>IIRFilter()@ deals with
 the constraints either by aborting if they are not met, or by
 adjusting the filter response so that they are met.  In the latter
 case, warning messages will be issued if the external parameter
-\verb@LALDebugLevel@ is 1 or more.  The specific constraints, and how
+\verb@lalDebugLevel@ is 1 or more.  The specific constraints, and how
 they are dealt with, are as follows:
 
 First, the filter must be \emph{causal}; that is, the output at any
@@ -51,7 +51,7 @@ Second, the filter should be \emph{stable}, which means that all poles
 should be located on or within the circle $|z|=1$.  This is not
 enforced by \verb@Create<datatype>IIRFilter()@, which can be used to
 make unstable filters; however, warnings will be issued if
-\verb@LALDebugLevel@ is 1 or more.  (In some sense the first condition is
+\verb@lalDebugLevel@ is 1 or more.  (In some sense the first condition is
 a special case of this one, since a transfer function with more zeros
 than poles actually has corresponding poles at infinity.)
 
@@ -66,14 +66,14 @@ and poles; it assumes that the latter are paired with
 negative-imaginary conjugates.  The routine will abort if this
 assumption results in a change in the given number of zeros or poles,
 but will otherwise simply modify the filter response.  This allows
-\verb@LALDebugLevel@=0 runs to proceed without lengthy and usually
-unnecessary error trapping; when \verb@LALDebugLevel@ is 1 or more, the
+\verb@lalDebugLevel@=0 runs to proceed without lengthy and usually
+unnecessary error trapping; when \verb@lalDebugLevel@ is 1 or more, the
 routine checks to make sure that each nonreal zero or pole does in
 fact have a complex-conjugate partner.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 LALMalloc()
 LALSCreateVector()
 LALDCreateVector()
@@ -93,7 +93,7 @@ LALDCreateVector()
 
 NRCSID(CREATEIIRFILTERC,"$Id$");
 
-extern INT4 LALDebugLevel;
+extern INT4 lalDebugLevel;
 
 /* <lalVerbatim file="CreateIIRFilterCP"> */
 void LALCreateREAL4IIRFilter(LALStatus            *stat,
@@ -143,7 +143,7 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
     }
     else if(zeros[i].im>0.0){
       num+=2;
-      if(LALDebugLevel>0){
+      if(lalDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
            multiple zeros at the same location. */
@@ -155,10 +155,10 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: zero number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Zero location:      %.8e +"
 			  " i*%.8e\n",zeros[i].re,zeros[i].im);
-	  if(LALDebugLevel>2){
+	  if(lalDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
             REAL4 x = zeros[i].re - zeros[0].re;
@@ -193,7 +193,7 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
     }
     else if(poles[i].im>0.0){
       num+=2;
-      if(LALDebugLevel>0){
+      if(lalDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
            multiple poles at the same location. */
@@ -205,10 +205,10 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Pole location:      %.8e +"
 			  " i*%.8e\n",poles[i].re,poles[i].im);
-	  if(LALDebugLevel>2){
+	  if(lalDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL4 x=poles[i].re-poles[0].re;
@@ -231,11 +231,11 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
     }
   ASSERT(num==numPoles,stat,IIRFILTER_EPAIR,IIRFILTER_MSGEPAIR);
 
-  if(LALDebugLevel>0){
+  if(lalDebugLevel>0){
     /* Issue a warning if the gain is nonreal. */
     if(input->gain.im!=0.0){
       LALPrintError("Warning: createIIRFilter: gain is non-real.\n");
-      if(LALDebugLevel>1)
+      if(lalDebugLevel>1)
 	LALPrintError("         Value: %.8e + i*%.8e\n",
 		      input->gain.re,input->gain.im);
     }
@@ -246,7 +246,7 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" overlaps with zero number %i\n",i,j);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Location: %.8e + i*%.8e\n",
 			  poles[i].re,poles[i].im);
 	}
@@ -260,7 +260,7 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
       if(poles[i].re*poles[i].re+poles[i].im*poles[i].im>1.0){
 	LALPrintError("Warning: createIIRFilter: pole number %i lies"
 		      " outside |z|=1\n",i);
-	if(LALDebugLevel>1)
+	if(lalDebugLevel>1)
 	  LALPrintError("         Location: %.8e + i*%.8e\n",
 			poles[i].re,poles[i].im);
       }
@@ -384,7 +384,7 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
     }
     else if(zeros[i].im>0.0){
       num+=2;
-      if(LALDebugLevel>0){
+      if(lalDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate. */
 	BOOLEAN ok=0;
 	INT4 j=0;
@@ -394,10 +394,10 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: zero number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Zero location:      %.16e +"
 			  " i*%.16e\n",zeros[i].re,zeros[i].im);
-	  if(LALDebugLevel>2){
+	  if(lalDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL8 x=zeros[i].re-zeros[0].re;
@@ -432,7 +432,7 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
     }
     else if(poles[i].im>0.0){
       num+=2;
-      if(LALDebugLevel>0){
+      if(lalDebugLevel>0){
 	/* Check to see that another zero is an actual conjugate. */
 	BOOLEAN ok=0;
 	INT4 j=0;
@@ -442,10 +442,10 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
 	if(!ok){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" has no complex conjugate pair.\n",i);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Pole location:      %.16e +"
 			  " i*%.16e\n",poles[i].re,poles[i].im);
-	  if(LALDebugLevel>2){
+	  if(lalDebugLevel>2){
 	    /* Find the nearest approximation to a conjugate, to check
                for possible typos or roundoff errors. */
 	    REAL8 x=poles[i].re-poles[0].re;
@@ -468,11 +468,11 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
     }
   ASSERT(num==numPoles,stat,IIRFILTER_EPAIR,IIRFILTER_MSGEPAIR);
 
-  if(LALDebugLevel>0){
+  if(lalDebugLevel>0){
     /* Issue a warning if the gain is nonreal. */
     if(input->gain.im!=0.0){
       LALPrintError("Warning: createIIRFilter: gain is non-real.\n");
-      if(LALDebugLevel>1)
+      if(lalDebugLevel>1)
 	LALPrintError("         Value: %.16e + i*%.16e\n",
 		      input->gain.re,input->gain.im);
     }
@@ -483,7 +483,7 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
 	  LALPrintError("Warning: createIIRFilter: pole number %i"
 			" overlaps with zero number %i\n",i,j);
-	  if(LALDebugLevel>1)
+	  if(lalDebugLevel>1)
 	    LALPrintError("         Location: %.16e + i*%.16e\n",
 			  poles[i].re,poles[i].im);
 	}
@@ -497,7 +497,7 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
       if(poles[i].re*poles[i].re+poles[i].im*poles[i].im>1.0){
 	LALPrintError("Warning: createIIRFilter: pole number %i lies"
 		      " outside |z|=1\n",i);
-	if(LALDebugLevel>1)
+	if(lalDebugLevel>1)
 	  LALPrintError("         Location: %.16e + i*%.16e\n",
 			poles[i].re,poles[i].im);
       }

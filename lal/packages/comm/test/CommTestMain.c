@@ -27,7 +27,7 @@ Master (LALStatus *, MPIId);
 void
 Slave (LALStatus *, MPIId);
 
-int LALDebugLevel = 1;
+int lalDebugLevel = 1;
 
 int
 main (int argc, char *argv[])

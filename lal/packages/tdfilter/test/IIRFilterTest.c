@@ -45,7 +45,7 @@ sets it to the specified value \verb@debug-level@.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 LALPrintError()
 LALSCreateVector()
 LALSDestroyVector()
@@ -95,7 +95,7 @@ NRCSID(IIRFILTERTESTC,"$Id$");
 #define CHECKSTAT(statusptr)                                         \
 do{                                                                  \
   if((statusptr).statusCode){                                        \
-    if(LALDebugLevel>0){                                                \
+    if(lalDebugLevel>0){                                                \
       LALPrintError("%s: %s\n",argv[0],IIRFILTERTEST_MSGESUB);       \
       REPORTSTATUS(&stat);                                           \
     }                                                                \
@@ -105,7 +105,7 @@ do{                                                                  \
 
 static void LALPrintVector(FILE *fp, REAL4Vector *vector);
 
-INT4 LALDebugLevel=0;
+INT4 lalDebugLevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
@@ -128,10 +128,10 @@ INT4 main(INT4 argc, CHAR **argv)
       printout=1;
     }else if(!strcmp(argv[i],"-d")){
       if((argc>2)&&(argv[i+1][0]!='-')){
-	LALDebugLevel=atoi(argv[++i]);
+	lalDebugLevel=atoi(argv[++i]);
 	argc--;
       }else
-	LALDebugLevel=1;
+	lalDebugLevel=1;
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }

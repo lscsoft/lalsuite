@@ -35,7 +35,7 @@ NRCSID (MAIN, "$Id$");
 extern char *optarg;
 extern int   optind;
 
-int   LALDebugLevel = 1;
+int   lalDebugLevel = 1;
 int   verbose    = 0;
 int   output     = 0;
 char *framePath  = NULL;
@@ -279,7 +279,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
+  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
   fprintf (stderr, "  -o         output framedata to files\n");
   fprintf (stderr, "  -f dir     set frame data path to dir\n");
   fprintf (stderr, "             "
@@ -318,7 +318,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        LALDebugLevel = atoi (optarg);
+        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

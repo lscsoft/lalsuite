@@ -27,7 +27,7 @@ Slave (LALStatus *, MPIId);
 #include "FindChirpGlobal.h"
 #undef FINDCHIRPGLOBAL_INIT
 
-int LALDebugLevel = 1;
+int lalDebugLevel = 1;
 
 int
 main (int argc, char *argv[])

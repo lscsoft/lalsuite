@@ -35,7 +35,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int LALDebugLevel = 0;
+int lalDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -329,7 +329,7 @@ Usage( const char *program, int exitcode )
   fprintf( stderr, "  -h         print this message\n" );
   fprintf( stderr, "  -q         quiet: run silently\n" );
   fprintf( stderr, "  -v         verbose: print extra information\n" );
-  fprintf( stderr, "  -d level   set LALDebugLevel to level\n" );
+  fprintf( stderr, "  -d level   set lalDebugLevel to level\n" );
   exit( exitcode );
 }
 
@@ -356,7 +356,7 @@ ParseOptions( int argc, char *argv[] )
     switch ( c )
     {
       case 'd': /* set debug level */
-        LALDebugLevel = atoi( optarg );
+        lalDebugLevel = atoi( optarg );
         break;
 
       case 'v': /* verbose */

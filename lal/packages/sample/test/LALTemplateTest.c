@@ -12,8 +12,8 @@ NRCSID(LALTEMPLATETESTC,"$Id$");
 
 /* Define local constants and macros */
 
-/* Declare and set global LALDebugLevel */
-int LALDebugLevel = 0;
+/* Declare and set global lalDebugLevel */
+int lalDebugLevel = 0;
 
 /* Declare local (static) functions (definitions can go here or at the
    end of the file) */

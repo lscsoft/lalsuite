@@ -35,7 +35,7 @@
 
 NRCSID (MAIN, "$Id$");
 
-int LALDebugLevel = 1;
+int lalDebugLevel = 1;
 
 int main()
 {

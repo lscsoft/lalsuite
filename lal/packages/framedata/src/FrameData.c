@@ -49,7 +49,7 @@ LALInitializeFrameData (
   *frameData = LALCalloc (1, sizeof(FrameData));
   ASSERT (*frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
 
-  /* LALDebugLevel zero: don't report errors */
+  /* debuglevel zero: don't report errors */
   FrLibIni (NULL, stderr, 0);
 
   /* set some flags and modes */

@@ -32,7 +32,7 @@ changed someday.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 LALMalloc()
 LALFree()
 LALCheckMemoryLeaks()
@@ -50,7 +50,7 @@ LALCheckMemoryLeaks()
 #include <string.h>
 #include "LALStdlib.h"
 
-int LALDebugLevel = 3;
+int lalDebugLevel = 3;
 
 int raise (int sig)
 {

@@ -5,7 +5,7 @@
 
 NRCSID( LALPRIMERTESTC, "$Id$" );
 
-int LALDebugLevel = 0;
+int lalDebugLevel = 0;
 
 int
 main( int argc, char **argv )
@@ -16,17 +16,17 @@ main( int argc, char **argv )
 
   /* Parse input line. */
   if ( argc == 4 )
-    LALDebugLevel = atoi( argv[3] );
+    lalDebugLevel = atoi( argv[3] );
   else if ( argc != 3 )
     {
-      fprintf( stderr, "Usage: %s numer denom [ LALDebugLevel ]\n",
+      fprintf( stderr, "Usage: %s numer denom [ lalDebugLevel ]\n",
 	       argv[0] );
       return 0; /* so that test script won't fail */
     }
 
   /* Compute ratio. */
   REAL4Divide( &stat, &ratio, atof( argv[1] ), atof( argv[2] ) );
-  if ( stat.statusCode && ( LALDebugLevel > 0 ) )
+  if ( stat.statusCode && ( lalDebugLevel > 0 ) )
     fprintf( stderr,
 	     "Error[0] 1: program %s, file %s, line %i, %s\n"
 	     "         Function REAL4Divide() failed\n",

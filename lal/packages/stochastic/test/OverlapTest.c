@@ -39,7 +39,7 @@
 #include "Overlap.h"
 
 #define PRINT 1 /* set to 1 to write overlap reduction functions to files */ 
-INT4 LALDebugLevel = 2; /* set to 2 to get full status information for tests */
+INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */
 
 int check( LALStatus*, INT4, CHAR* );
 

@@ -34,7 +34,7 @@ extern "C" {
 
 NRCSID( LALERRORH, "$Id$" );
 
-/* LALDebugLevel bit field values: */
+/* lalDebugLevel bit field values: */
 enum
 {
   LALNDEBUG  = 0,
@@ -48,7 +48,7 @@ enum
                                 any other bit */
 };
 
-/* composite LALDebugLevels: */
+/* composite lalDebugLevels: */
 enum { LALMSGLVL1  = LALERROR };
 enum { LALMSGLVL2  = LALERROR | LALWARNING };
 enum { LALMSGLVL3  = LALERROR | LALWARNING | LALINFO };
@@ -117,7 +117,7 @@ REPORTSTATUS( LALStatus *status );
 #ifndef NOLALMACROS
 
 #define LALError( statusptr, statement )                                    \
-  ( LALDebugLevel & LALERROR ?                                                 \
+  ( lalDebugLevel & LALERROR ?                                                 \
     LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n"       \
         "        %s %s\n", (statusptr)->level, (statusptr)->statusCode,      \
         (statusptr)->function, (statusptr)->file, (statusptr)->line,        \
@@ -125,21 +125,21 @@ REPORTSTATUS( LALStatus *status );
         (statusptr)->statusDescription ) : 0 )
 
 #define LALWarning( statusptr, warning )                                    \
-  ( LALDebugLevel & LALWARNING ?                                               \
+  ( lalDebugLevel & LALWARNING ?                                               \
     LALPrintError( "Warning[%d]: function %s, file %s, line %d, %s\n"        \
         "        %s\n", (statusptr)->level, (statusptr)->function,          \
         (statusptr)->file, (statusptr)->line, (statusptr)->Id, (warning) )  \
       : 0 )
 
 #define LALInfo( statusptr, info )                                          \
-  ( LALDebugLevel & LALINFO ?                                                  \
+  ( lalDebugLevel & LALINFO ?                                                  \
     LALPrintError( "Info[%d]: function %s, file %s, line %d, %s\n"          \
         "        %s\n", (statusptr)->level, (statusptr)->function,          \
         (statusptr)->file, (statusptr)->line, (statusptr)->Id, (info) )     \
       : 0 )
 
 #define LALTrace( statusptr, exit ) \
-  ( LALDebugLevel & LALTRACE ? \
+  ( lalDebugLevel & LALTRACE ? \
     LALPrintError( "%s[%d]: function %s, file %s, line %d, %s\n",      \
         (exit) ? "Leave" : "Enter", (statusptr)->level, \
         (statusptr)->function, (statusptr)->file, (statusptr)->line, \

@@ -41,7 +41,7 @@ NRCSID (CROSSCORRTESTC, "$Id$");
 #define EXPEXTEDOUT3	-1.7105e-20	/* expected output for test case 3	*/
 #define TOL		1.0e-2		/* allowed % disagreement 		*/
 
-INT4 LALDebugLevel = 0; /* set to 0 if we don't scare anyone with "failed ..." */
+INT4 lalDebugLevel = 0; /* set to 0 if we don't scare anyone with "failed ..." */
 
 int check ( LALStatus*, INT4, CHAR* );
 

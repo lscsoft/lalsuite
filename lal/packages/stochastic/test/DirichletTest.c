@@ -38,7 +38,7 @@
 #include "PrintVector.h"
 #include "Dirichlet.h"
 
-INT4 LALDebugLevel = 2; /* set to 2 to get full status information for tests */
+INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */
 
 int check ( LALStatus*, INT4, CHAR* );
 

@@ -24,8 +24,11 @@
  * REVISION HISTORY
  *
  * $Log$
+ * Revision 1.3  2000/09/08 23:19:25  jolien
+ * Changed LALDebugLevel to lalDebugLevel.
+ *
  * Revision 1.2  2000/07/23 01:14:48  jolien
- * LAL-prefix in front of functions and Status; debuglevel is now LALDebugLevel.
+ * LAL-prefix in front of functions and Status; debuglevel is now lalDebugLevel.
  *
  * Revision 1.1  2000/06/19 22:33:35  jolien
  * Added LALCrossCorr and SiteInfo.

@@ -6,7 +6,7 @@
 
 NRCSID (TESTSTSC,"$Id$");
 
-INT4 LALDebugLevel=0;
+INT4 lalDebugLevel=0;
 INT4 main()
 {
   static LALStatus status;

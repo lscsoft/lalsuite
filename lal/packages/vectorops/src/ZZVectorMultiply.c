@@ -24,22 +24,6 @@
  * 
  * NOTES
  * 
- *----------------------------------------------------------------------- 
- * 
- * REVISION HISTORY 
- * 
- * $Log$
- * Revision 1.3  2000/07/23 01:16:13  jolien
- * LAL-prefix in front of functions and Status; debuglevel is now LALDebugLevel.
- *
- * Revision 1.2  2000/04/17 23:31:14  jolien
- * Removed redundant include protection.
- * Changed INITSTATUS() to take extra argument (function name).
- *
- * Revision 1.1  2000/03/12 23:21:10  jolien
- * Initial entry.
- *
- * 
  *-----------------------------------------------------------------------
  */
 

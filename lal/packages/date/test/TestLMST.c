@@ -3,7 +3,7 @@
 #include "AVFactories.h"
 #include "Date.h"
 
-INT4 LALDebugLevel = 2;
+INT4 lalDebugLevel = 2;
 
 NRCSID (TESTLMSTC, "$Id$");
 
@@ -35,7 +35,7 @@ main(int argc, char *argv[])
     }
 
     testid     = atoi(argv[1]);
-    LALDebugLevel = atoi(argv[2]);
+    lalDebugLevel = atoi(argv[2]);
 
 
     LALCHARCreateVector(&status, &tmpstamp, (UINT4)64);

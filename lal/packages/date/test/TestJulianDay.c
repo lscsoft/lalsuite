@@ -1,7 +1,7 @@
 #include "LALStdlib.h"
 #include "Date.h"
 
-INT4 LALDebugLevel = 2;
+INT4 lalDebugLevel = 2;
 
 NRCSID (TESTJULIANDAYC, "$Id$");
 
@@ -28,7 +28,7 @@ main(int argc, char *argv[])
     }
 
     if (argc == 2)
-        LALDebugLevel = atoi(argv[1]);
+        lalDebugLevel = atoi(argv[1]);
 
     /*
      * Get current local time
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
     /* */
     printf("\n");
     printf("Find Julian Day/Date for 1800-Jan-01 11h 00m 00s:\n");
-    printf("(this should produce errors at LALDebugLevel > 0)\n");
+    printf("(this should produce errors at lalDebugLevel > 0)\n");
 
     date.unixDate.tm_sec  = 0;
     date.unixDate.tm_min  = 0;

@@ -17,7 +17,7 @@ Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
-  -d level   set LALDebugLevel to level
+  -d level   set lalDebugLevel to level
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -36,7 +36,7 @@ Options:
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 TYPECODECreateVector()
 TYPECODEDestroyVector()
 \end{verbatim}
@@ -72,7 +72,7 @@ NRCSID( MAIN, "$Id$" );
 extern char *optarg;
 extern int   optind;
 
-int LALDebugLevel = 1;
+int lalDebugLevel = 1;
 int verbose    = 0;
 
 static void
@@ -223,7 +223,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
+  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
   exit (exitcode);
 }
 
@@ -250,7 +250,7 @@ ParseOptions (int argc, char *argv[])
     switch (c)
     {
       case 'd': /* set debug level */
-        LALDebugLevel = atoi (optarg);
+        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

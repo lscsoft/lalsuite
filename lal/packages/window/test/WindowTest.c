@@ -40,7 +40,7 @@
 NRCSID (MAIN, "$Id$");
 
 /* modify this value to get a stack trace of test */
-int LALDebugLevel=2;
+int lalDebugLevel=2;
 
 /* modify this to turn on printing windows into files for checking */
 #define PRINT 1

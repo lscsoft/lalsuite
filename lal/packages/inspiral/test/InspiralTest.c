@@ -8,7 +8,7 @@
 #include "Inspiral.h"
 #include "LALStdlib.h"
 
-INT4 LALDebugLevel=1;
+INT4 lalDebugLevel=1;
 
 void printf_timeseries (int n, double *signal, double delta, double t0) 
 {

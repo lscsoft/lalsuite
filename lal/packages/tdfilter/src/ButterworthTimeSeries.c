@@ -124,7 +124,7 @@ little frequency-dependent phase shift.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 LALPrintError()
 LALCreateREAL4IIRFilter()
 LALCreateREAL8IIRFilter()
@@ -155,7 +155,7 @@ LALIIRFilterREAL8VectorR()
 
 NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 
-extern INT4 LALDebugLevel;
+extern INT4 lalDebugLevel;
 
 static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
 				    INT4                *n,
@@ -454,7 +454,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
     /* First make sure that two different frequencies and attenuations
        have been specified. */
     if((w1==w2)||(a1==a2)){
-      if(LALDebugLevel>1)
+      if(lalDebugLevel>1)
 	LALPrintError("Error: ButterworthTimeSeries: Specified"
 		      " frequencies or attenuations are the\n"
 		      "       same across the transition band.\n");
@@ -472,12 +472,12 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
     /* If a positive params->nMax less than *n has been specified,
        reduce to that order, with appropriate warnings. */
     if((params->nMax>0)&&(params->nMax<*n)){
-      if(LALDebugLevel>0){
+      if(lalDebugLevel>0){
 	LALPrintError("Warning: ButterworthTimeSeries: Filter order"
 		      " required to achieve requested\n"
 		      "         performance exceeds specified"
 		      " limit\n");
-	if(LALDebugLevel>1)
+	if(lalDebugLevel>1)
 	  LALPrintError("         Required: %i  Limit: %i\n",n,
 			params->nMax);
       }
@@ -501,7 +501,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
      all future cases. */
   else{
     if(params->nMax<=0){
-      if(LALDebugLevel>0)
+      if(lalDebugLevel>0)
 	LALPrintError("Error: ButterworthTimeSeries: Both"
 		      " attenuations have not been specified, so\n"
 		      "       the filter order must be.\n");
@@ -525,7 +525,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
        frequency given, otherwise we don't know whether to make a low-
        or a high-pass filter. */
     else if(wHighGiven && wLowGiven){
-      if(LALDebugLevel>0)
+      if(lalDebugLevel>0)
 	LALPrintError("Error: ButterworthTimeSeries: Neither"
 		      " attenuation has been specified, so\n"
 		      "       only one frequency should be.\n");
@@ -543,7 +543,7 @@ static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
 	*wc=tan(LAL_PI*wLow);
 	return 1;
       }else{
-	if(LALDebugLevel>0)
+	if(lalDebugLevel>0)
 	  LALPrintError("Error: ButterworthTimeSeries: No frequencies"
 			" have been specified!\n");
 	return 0;

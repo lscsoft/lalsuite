@@ -33,7 +33,7 @@ extern char *optarg;
 extern int   optind;
 
 int output     = 0;
-int LALDebugLevel = 0;
+int lalDebugLevel = 0;
 int verbose    = 0;
 
 static void
@@ -156,7 +156,7 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || LALDebugLevel)
+  if (verbose || lalDebugLevel)
   {
     printf ("\n===== Check Errors =====\n");
   }
@@ -233,7 +233,7 @@ main (int argc, char *argv[])
    */
 
 
-  if (verbose || LALDebugLevel)
+  if (verbose || lalDebugLevel)
   {
     printf ("\n===== Clean up and Exit =====\n");
   }
@@ -328,7 +328,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -q         quiet: run silently\n");
   fprintf (stderr, "  -v         verbose: print extra information\n");
-  fprintf (stderr, "  -d level   set LALDebugLevel to level\n");
+  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
   fprintf (stderr, "  -o         output random numbers to files\n");
   exit (exitcode);
 }
@@ -360,7 +360,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'd': /* set debug level */
-        LALDebugLevel = atoi (optarg);
+        lalDebugLevel = atoi (optarg);
         break;
 
       case 'v': /* verbose */

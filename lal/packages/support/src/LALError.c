@@ -55,7 +55,7 @@ invoke \verb@LALAbort()@ explicitly.
 
 \paragraph{\texttt{LALError()}} prints the \verb@statement@
 string to the error log, provided that the value of the global
-\verb@LALDebugLevel@ is set to allow error messages.  It returns the
+\verb@lalDebugLevel@ is set to allow error messages.  It returns the
 number of characters printed.  This is the standard LAL routine for
 printing error messages.  However, \verb@LALError()@ is called
 automatically by the status-handling macros (see
@@ -66,7 +66,7 @@ will generally not have to call \verb@LALError()@ explicitly.
 
 \paragraph{\texttt{LALWarning()}} prints the \verb@warning@
 string to the error log, provided that the value of the global
-\verb@LALDebugLevel@ is set to allow warning messages.  It returns the
+\verb@lalDebugLevel@ is set to allow warning messages.  It returns the
 number of characters printed.  A warning message is less serious than
 an error message: it indicates that computation is proceeding
 successfully, but with unusual or unexpected behaviour that may
@@ -74,7 +74,7 @@ invalidate the results of the computation.
 
 \paragraph{\texttt{LALInfo()}} prints the \verb@info@
 string to the error log, provided that the value of the global
-\verb@LALDebugLevel@ is set to allow information messages.  It returns
+\verb@lalDebugLevel@ is set to allow information messages.  It returns
 the number of characters printed.  An information message indicates
 that a computation is proceding normally, and simply provides
 additional information about its progress.
@@ -87,7 +87,7 @@ characters printed.  The message begins with the word \verb@Enter@ (if
 \verb@exit@ = 0) or \verb@Leave@ (if \verb@exit@ $\neq0$), to indicate
 whether the flow of execution has just entered or is about to leave
 the function.  Tracking information is printed only if the value of
-the global \verb@LALDebugLevel@ is set to allow it.  \verb@LALTrace()@ is
+the global \verb@lalDebugLevel@ is set to allow it.  \verb@LALTrace()@ is
 called automatically by the status macros when entering or leaving a
 function (see \verb@LALStatusMacros.h@), so LAL programmers need never
 invoke it explicitly.
@@ -96,12 +96,12 @@ invoke it explicitly.
 
 The functions \verb@LALError()@, \verb@LALWarning()@,
 \verb@LALInfo()@, and \verb@LALTrace()@ print status messages
-depending on the value of the global \verb@LALDebugLevel@.  Specifically,
+depending on the value of the global \verb@lalDebugLevel@.  Specifically,
 each type of status message is associated with a particular bit in
-\verb@LALDebugLevel@.  If the value of the bit is 1, that type status
+\verb@lalDebugLevel@.  If the value of the bit is 1, that type status
 message will be printed; if it is 0, that type of message will be
 suppressed.  See the documentation in \verb@LALStatusMacros.h@ for
-information about how to set the value of \verb@LALDebugLevel@.
+information about how to set the value of \verb@lalDebugLevel@.
 
 These four functions are also suppressed if a module is compiled with
 the \verb@NDEBUG@ flag set.  In this case, however, the function calls
@@ -135,7 +135,7 @@ we will not bother with additional usage information.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALDebugLevel
+lalDebugLevel
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -161,7 +161,7 @@ LALDebugLevel
 
 NRCSID( LALERRORC, "$Id$" );
 
-extern int LALDebugLevel;
+extern int lalDebugLevel;
 
 
 /* <lalVerbatim file="LALErrorCP"> */
@@ -194,7 +194,7 @@ int
 LALError( LALStatus *status, const char *statement )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( LALDebugLevel & LALERROR )
+  if ( lalDebugLevel & LALERROR )
   {
     n = LALPrintError( "Error[%d] %d: function %s, file %s, line %d, %s\n" 
         "        %s %s\n", status->level, status->statusCode,
@@ -210,7 +210,7 @@ int
 LALWarning( LALStatus *status, const char *warning )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( LALDebugLevel & LALWARNING )
+  if ( lalDebugLevel & LALWARNING )
   {
     n = LALPrintError( "Warning[%d]: function %s, file %s, line %d, %s\n" 
         "        %s\n", status->level, status->function, status->file,
@@ -225,7 +225,7 @@ int
 LALInfo( LALStatus *status, const char *info )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( LALDebugLevel & LALINFO )
+  if ( lalDebugLevel & LALINFO )
   {
     n = LALPrintError( "Info[%d]: function %s, file %s, line %d, %s\n" 
         "        %s\n", status->level, status->function, status->file,
@@ -240,7 +240,7 @@ int
 LALTrace( LALStatus *status, int exit )
 { /* </lalVerbatim> */
   int n = 0;
-  if ( LALDebugLevel & LALTRACE )
+  if ( lalDebugLevel & LALTRACE )
   {
     n = LALPrintError( "%s[%d]: function %s, file %s, line %d, %s\n",
         exit ? "Leave" : "Enter", status->level, status->function,

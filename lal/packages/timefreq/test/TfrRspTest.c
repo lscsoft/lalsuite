@@ -28,7 +28,7 @@
 
 #include "TimeFreq.h"
 
-int LALDebugLevel=2;
+int lalDebugLevel=2;
 
 int main(void)
 {

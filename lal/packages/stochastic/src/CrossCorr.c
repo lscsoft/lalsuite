@@ -52,7 +52,7 @@
 
 NRCSID (CROSSCORRC, "$Id$");
 
-extern INT4 LALDebugLevel;
+extern INT4 lalDebugLevel;
 
 void 
 LALCrossCorr ( LALStatus *status,

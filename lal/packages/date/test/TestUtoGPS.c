@@ -4,7 +4,7 @@
 
 /* $Id$ */
 
-INT4 LALDebugLevel = 2;
+INT4 lalDebugLevel = 2;
 
 NRCSID (TESTUTOGPSC, "$Id$");
 
@@ -117,7 +117,7 @@ main(int argc, char *argv[])
     }
 
     if (argc == 2)
-        LALDebugLevel = atoi(argv[1]);
+        lalDebugLevel = atoi(argv[1]);
 
     printf("TEST Unix time and Unix to GPS conversion\n");
     printf("   and LALDateString\n");
