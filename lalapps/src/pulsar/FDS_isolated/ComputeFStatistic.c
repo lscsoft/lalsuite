@@ -75,14 +75,13 @@ int boinc_time_to_checkpoint();
 void boinc_checkpoint_completed();
 
 #if !NO_BOINC_GRAPHICS
+/* for current search position, used in starsphere.C revision 4.6 or greater */
 extern int boinc_init_graphics(void (*worker)());
 extern int boinc_finish_graphics();
+extern void set_search_pos(float RAdeg, float DEdeg);
+extern double fraction_done;
 #endif
 
-/* for current search position, used in starsphere.C revision 4.6 or greater */
-extern float search_RAdeg;
-extern float search_DEdeg;
-extern double fraction_done;
 #endif /* USE_BOINC */
 
 /*----------------------------------------------------------------------*/
@@ -479,8 +478,7 @@ int main(int argc,char *argv[])
       /* pass current search position, for use with starsphere.C
 	 revision 4.6 or greater. Need to convert radians to
 	 degrees. */
-      search_RAdeg = (float)(180.0*Alpha/LAL_PI);
-      search_DEdeg = (float)(180.0*Delta/LAL_PI);
+      set_search_pos((float)(180.0*Alpha/LAL_PI), (float)(180.0*Delta/LAL_PI));
 #endif /* USE_BOINC and !NO_BOINC_GRAPHICS*/
 
       LAL_CALL (CreateDemodParams(&status), &status);
