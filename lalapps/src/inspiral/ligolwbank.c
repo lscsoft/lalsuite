@@ -40,6 +40,9 @@ InspiralTmpltBankFromLIGOLw (
   InspiralTemplate                     *thisTmplt = NULL;
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
+  int   pParParam;
+  int   pParValue;
+  REAL4 minMatch = 0;
   struct MetaTableDirectory tableDir[] =
   {
     {"mass1",   -1, 0},
@@ -67,11 +70,50 @@ InspiralTmpltBankFromLIGOLw (
     return -1;
   }
   
-  /* open the template bank file */
-  mioStatus = MetaioOpen( env, fileName );
+
+  /* open the procress_params table from the bank file */
+  mioStatus = MetaioOpenTable( env, fileName, "process_params" );
   if ( mioStatus )
   {
-    fprintf( stderr, "error opening template bank file %s\n", fileName );
+    fprintf( stderr, "error opening process_params table from file %s\n", 
+        fileName );
+    MetaioClose( env );
+    return -1;
+  }
+
+  /* figure out where the param and value columns are */
+  if ( (pParParam = MetaioFindColumn( env, "param" )) < 0 )
+  {
+    fprintf( stderr, "unable to find column param in process_params\n" );
+    MetaioClose(env);
+    return -1;
+  }
+  if ( (pParValue = MetaioFindColumn( env, "value" )) < 0 )
+  {
+    fprintf( stderr, "unable to find column value in process_params\n" );
+    MetaioClose(env);
+    return -1;
+  }
+
+  /* get the minimal match of the bank from the process params */
+  while ( (mioStatus = MetaioGetRow(env)) == 1 )
+  {
+    if ( ! strcmp( env->ligo_lw.table.elt[pParParam].data.lstring.data, 
+          "--minimum-match" ) )
+    {
+      minMatch = (REAL4) 
+        atof( env->ligo_lw.table.elt[pParValue].data.lstring.data );
+    }
+  }
+
+  MetaioClose( env );
+  
+  /* open the sngl_inspiral table template bank file */
+  mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
+  if ( mioStatus )
+  {
+    fprintf( stderr, "error opening sngl_inspiral table from file %s\n", 
+        fileName );
     MetaioClose( env );
     return -1;
   }
@@ -170,9 +212,9 @@ InspiralTmpltBankFromLIGOLw (
       thisTmplt->totalMass = thisTmplt->mass1 + thisTmplt->mass2;
       thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
         thisTmplt->totalMass;
-
-      /* XXX hardwired match for testing with against S1 results XXX */
-      thisTmplt->minMatch = 0.826794919243;
+      
+      /* set the match determined from the bank generation process params */
+      thisTmplt->minMatch = minMatch;
 
       /* increase the count of rows parsed */
       ++nrows;
