@@ -51,9 +51,9 @@ class CondorJob:
   """
   def __init__(self, universe, executable, queue):
     """
-    universe = the condor universe to run the job in.
-    executable = the executable to run.
-    queue = number of jobs to queue.
+    @param universe: the condor universe to run the job in.
+    @param executable: the executable to run.
+    @param queue: number of jobs to queue.
     """
     self.__universe = universe
     self.__executable = executable
@@ -73,8 +73,8 @@ class CondorJob:
   def add_condor_cmd(self, cmd, value):
     """
     Add a Condor command to the submit file (e.g. a class add or evironment).
-    cmd = Condor command directive.
-    value = value for command.
+    @param cmd: Condor command directive.
+    @param value: value for command.
     """
     self.__condor_cmds[cmd] = value
 
@@ -82,7 +82,7 @@ class CondorJob:
     """
     Add an argument to the executable. Arguments are appended after any
     options and their order is guaranteed.
-    arg = argument to add.
+    @param arg: argument to add.
     """
     self.__arguments.append(arg)
 
@@ -93,8 +93,8 @@ class CondorJob:
     always be added before any command line arguments. The name of the option
     is prefixed with double hyphen and the program is expected to parse it
     with getopt_long().
-    opt = command line option to add.
-    value = value to pass to the option (None for no argument).
+    @param opt: command line option to add.
+    @param value: value to pass to the option (None for no argument).
     """
     self.__options[opt] = value
 
@@ -107,8 +107,8 @@ class CondorJob:
     with getopt() or getopt_long() (if a single character option), or
     getopt_long_only() (if multiple characters).  Long and (single-character)
     short options may be mixed if the executable permits this.
-    opt = command line option to add.
-    value = value to pass to the option (None for no argument).
+    @param opt: command line option to add.
+    @param value: value to pass to the option (None for no argument).
     """
     self.__short_options[opt] = value
 
@@ -116,8 +116,8 @@ class CondorJob:
     """
     Parse command line options from a given section in an ini file and
     pass to the executable.
-    cp = ConfigParser object pointing to the ini file.
-    section = section of the ini file to add to the options.
+    @param cp: ConfigParser object pointing to the ini file.
+    @param section: section of the ini file to add to the options.
     """
     for opt in cp.options(section):
       arg = string.strip(cp.get(section,opt))
@@ -126,21 +126,21 @@ class CondorJob:
   def set_notification(self, value):
     """
     Set the email address to send notification to.
-    value = email address or never for no notification.
+    @param value: email address or never for no notification.
     """
     self.__notification = value
 
   def set_log_file(self, path):
     """
     Set the Condor log file.
-    path = path to log file.
+    @param path: path to log file.
     """
     self.__log_file = path
     
   def set_stderr_file(self, path):
     """
     Set the file to which Condor directs the stderr of the job.
-    path = path to stderr file.
+    @param path: path to stderr file.
     """
     self.__err_file = path
 
@@ -153,7 +153,7 @@ class CondorJob:
   def set_stdout_file(self, path):
     """
     Set the file to which Condor directs the stdout of the job.
-    path = path to stdout file.
+    @param path: path to stdout file.
     """
     self.__out_file = path
   
@@ -167,7 +167,7 @@ class CondorJob:
     """
     Set the name of the file to write the Condor submit file to when
     write_sub_file() is called.
-    path = path to submit file.
+    @param path: path to submit file.
     """
     self.__sub_file_path = path
 
@@ -175,7 +175,6 @@ class CondorJob:
     """
     Get the name of the file which the Condor submit file will be
     written to when write_sub_file() is called.
-    path = path to submit file.
     """
     return self.__sub_file_path
 
@@ -252,7 +251,7 @@ class CondorDAGJob(CondorJob):
     Add a variable (or macro) option to the condor job. The option is added 
     to the submit file and a different argument to the option can be set for
     each node in the DAG.
-    opt = name of option to add.
+    @param opt: name of option to add.
     """
     if opt not in self.__var_opts:
       self.__var_opts.append(opt)
@@ -279,7 +278,7 @@ class CondorDAGNode:
   """
   def __init__(self, job):
     """
-    job = the CondorJob that this node corresponds to.
+    @param job: the CondorJob that this node corresponds to.
     """
     if not isinstance(job, CondorDAGJob):
       raise CondorDAGNodeError, "A DAG node must correspond to a Condor DAG job"
@@ -310,7 +309,7 @@ class CondorDAGNode:
     """
     Sets the name of the pre script that is executed before the DAG node is
     run.
-    script = path to script
+    @param script: path to script
     """
     self.__pre_script = script
 
@@ -325,7 +324,7 @@ class CondorDAGNode:
     """
     Sets the name of the post script that is executed before the DAG node is
     run.
-    script = path to script
+    @param script: path to script
     """
     self.__post_script = script
 
@@ -352,8 +351,8 @@ class CondorDAGNode:
     the CondorJob, the value of the macro can be referenced as
     '$(name)' -- for instance, to define a unique output or error file
     for each node.
-    name = macro name.
-    value = value of the macro for this node in the DAG
+    @param name: macro name.
+    @param value: value of the macro for this node in the DAG
     """
     macro = self.__bad_macro_chars.sub( r'', name )
     self.__opts[macro] = value
@@ -363,8 +362,8 @@ class CondorDAGNode:
     Add a variable (macro) option for this node. If the option
     specified does not exist in the CondorJob, it is added so the submit
     file will be correct when written.
-    opt = option name.
-    value = value of the option for this node in the DAG.
+    @param opt: option name.
+    @param value: value of the option for this node in the DAG.
     """
     macro = self.__bad_macro_chars.sub( r'', opt )
     self.__opts['macro' + macro] = value
@@ -375,7 +374,7 @@ class CondorDAGNode:
     Add a variable (or macro) argument to the condor job. The argument is
     added to the submit file and a different value of the argument can be set
     for each node in the DAG.
-    arg = name of option to add.
+    @param arg: name of option to add.
     """
     self.__args.append(arg)
     self.__job.add_var_arg()
@@ -383,14 +382,14 @@ class CondorDAGNode:
   def set_retry(self, retry):
     """
     Set the number of times that this node in the DAG should retry.
-    retry = number of times to retry node.
+    @param retry: number of times to retry node.
     """
     self.__retry = retry
 
   def write_job(self,fh):
     """
     Write the DAG entry for this node's job to the DAG file descriptor.
-    fh = descriptor of open DAG file.
+    @param fh: descriptor of open DAG file.
     """
     fh.write( 'JOB ' + self.__name + ' ' + self.__job.get_sub_file() +  '\n' )
     fh.write( 'RETRY ' + self.__name + ' ' + str(self.__retry) + '\n' )
@@ -399,7 +398,7 @@ class CondorDAGNode:
     """
     Write the variable (macro) options and arguments to the DAG file
     descriptor.
-    fh = descriptor of open DAG file.
+    @param fh: descriptor of open DAG file.
     """
     if self.__macros.keys() or self.__opts.keys() or self.__args:
       fh.write( 'VARS ' + self.__name )
@@ -414,7 +413,7 @@ class CondorDAGNode:
   def write_parents(self,fh):
     """
     Write the parent/child relations for this job to the DAG file descriptor.
-    fh = descriptor of open DAG file.
+    @param fh: descriptor of open DAG file.
     """
     for parent in self.__parents:
       fh.write( 'PARENT ' + parent + ' CHILD ' + str(self) + '\n' )
@@ -422,7 +421,7 @@ class CondorDAGNode:
   def write_pre_script(self,fh):
     """
     Write the pre script for the job, if there is one
-    fh = descriptor of open DAG file.
+    @param fh: descriptor of open DAG file.
     """
     if self.__pre_script:
       fh.write( 'SCRIPT PRE ' + str(self) + ' ' + self.__pre_script + ' ' +
@@ -431,7 +430,7 @@ class CondorDAGNode:
   def write_post_script(self,fh):
     """
     Write the post script for the job, if there is one
-    fh = descriptor of open DAG file.
+    @param fh: descriptor of open DAG file.
     """
     if self.__post_script:
       fh.write( 'SCRIPT POST ' + str(self) + ' ' + self.__post_script + ' ' +
@@ -440,7 +439,7 @@ class CondorDAGNode:
   def set_log_file(self,log):
     """
     Set the Condor log file to be used by this CondorJob.
-    log = path of Condor log file.
+    @param log: path of Condor log file.
     """
     self.__job.set_log_file(log)
 
@@ -448,7 +447,7 @@ class CondorDAGNode:
     """
     Add a parent to this node. This node will not be executed until the
     parent node has run sucessfully.
-    node = CondorDAGNode to add as a parent.
+    @param node: CondorDAGNode to add as a parent.
     """
     if not isinstance(node, CondorDAGNode):
       raise CondorDAGNodeError, "Parent must be a Condor DAG node"
@@ -466,7 +465,7 @@ class CondorDAG:
   """
   def __init__(self,log):
     """
-    log = path to log file which must not be on an NFS mounted file system.
+    @param log: path to log file which must not be on an NFS mounted file system.
     """
     self.__log_file_path = log
     self.__dag_file_path = None
@@ -476,7 +475,7 @@ class CondorDAG:
   def set_dag_file(self, path):
     """
     Set the name of the file into which the DAG is written.
-    path = path to DAG file.
+    @param path: path to DAG file.
     """
     self.__dag_file_path = path
 
@@ -495,7 +494,7 @@ class CondorDAG:
     also added to the list of Condor jobs in the DAG so that a list of the
     submit files needed by the DAG can be maintained. Each unique CondorJob
     will be added once to prevent duplicate submit files being written.
-    node = CondorDAGNode to add to the CondorDAG.
+    @param node: CondorDAGNode to add to the CondorDAG.
     """
     if not isinstance(node, CondorDAGNode):
       raise CondorDAGError, "Nodes must be class CondorDAGNode or subclass"
@@ -540,7 +539,7 @@ class AnalysisJob:
   """
   def __init__(self,cp):
     """
-    cp = ConfigParser object that contains the configuration for this job.
+    @param cp: ConfigParser object that contains the configuration for this job.
     """
     self.__cp = cp
     self.__channel = string.strip(self.__cp.get('input','channel'))
@@ -549,8 +548,8 @@ class AnalysisJob:
     """
     Get the configration variable in a particular section of this jobs ini
     file.
-    sec = ini file section.
-    opt = option from section sec.
+    @param sec: ini file section.
+    @param opt: option from section sec.
     """
     return string.strip(self.__cp.get(sec,opt))
 
@@ -583,7 +582,7 @@ class AnalysisNode(CondorDAGNode):
     """
     Set the GPS start time of the analysis node by setting a --gps-start-time
     option to the node when it is executed.
-    time = GPS start time of job.
+    @param time: GPS start time of job.
     """
     self.add_var_opt('gps-start-time',time)
     self.__start = time
@@ -600,7 +599,7 @@ class AnalysisNode(CondorDAGNode):
     """
     Set the GPS end time of the analysis node by setting a --gps-end-time
     option to the node when it is executed.
-    time = GPS end time of job.
+    @param time: GPS end time of job.
     """
     self.add_var_opt('gps-end-time',time)
     self.__end = time
@@ -614,7 +613,7 @@ class AnalysisNode(CondorDAGNode):
   def set_input(self,file):
     """
     Add an input to the node by adding a --input option.
-    file = option argument to pass as input.
+    @param file: option argument to pass as input.
     """
     self.__input = file
     self.add_var_opt('input', file)
@@ -628,7 +627,7 @@ class AnalysisNode(CondorDAGNode):
   def set_output(self, file):
     """
     Add an output to the node by adding a --output option.
-    file = option argument to pass as output.
+    @param file: option argument to pass as output.
     """
     self.__output = file
     self.add_var_opt('output', file)
@@ -646,7 +645,7 @@ class AnalysisNode(CondorDAGNode):
     from the job configuration file and passed with a --channel-name option.
     A calibration file is obtained from the ini file and passed with a 
     --calibration-cache option.
-    ifo = two letter ifo code (e.g. L1, H1 or H2).
+    @param ifo: two letter ifo code (e.g. L1, H1 or H2).
     """
     self.__ifo = ifo
     self.add_var_opt('channel-name', ifo + ':' + self.job().channel())
@@ -662,7 +661,7 @@ class AnalysisNode(CondorDAGNode):
   def set_ifo_tag(self,ifo_tag):
     """
     Set the ifo tag that is passed to the analysis code.
-    ifo_tag = a string to identify one or more IFOs
+    @param ifo_tag: a string to identify one or more IFOs
     """
     self.__ifo_tag = ifo_tag
     self.add_var_opt('ifo-tag', ifo_tag)
@@ -677,7 +676,7 @@ class AnalysisNode(CondorDAGNode):
     """
     Set the LAL frame cache to to use. The frame cache is passed to the job
     with the --frame-cache argument.
-    file = calibration file to use.
+    @param file: calibration file to use.
     """
     self.add_var_opt('frame-cache', file)
 
@@ -712,10 +711,10 @@ class AnalysisChunk:
   """
   def __init__(self, start, end, trig_start = 0, trig_end = 0):
     """
-    start = GPS start time of the chunk.
-    end = GPS end time of the chunk.
-    trig_start = GPS time at which to start generating triggers
-    trig_end = GPS time at which to stop generating triggers
+    @param start: GPS start time of the chunk.
+    @param end: GPS end time of the chunk.
+    @param trig_start: GPS time at which to start generating triggers
+    @param trig_end: GPS time at which to stop generating triggers
     """
     self.__start = start
     self.__end = end
@@ -813,7 +812,7 @@ class ScienceSegment:
   """
   def __init__(self,segment):
     """
-    segemnt = a tuple containing the (segment id, gps start time, gps end
+    @param segment: a tuple containing the (segment id, gps start time, gps end
     time, duration) of the segment.
     """
     self.__id = segment[0]
@@ -857,13 +856,13 @@ class ScienceSegment:
     Any data at the end of the ScienceSegment that is too short to contain a 
     chunk is ignored. The length of this unused data is stored and can be
     retrieved with the unused() method.
-    length = length of chunk in seconds.
-    overlap = overlap between chunks in seconds.
-    play = 1 : only generate chunks that overlap with S2 playground data.
-    play = 2 : as play = 1 plus compute trig start and end times to coincide
-      with the start/end of the playground
-    sl = slide by sl seconds before determining playground data.
-    excl_play = exclude the first excl_play second from the start and end
+    @param length: length of chunk in seconds.
+    @param overlap: overlap between chunks in seconds.
+    @param play: 1 : only generate chunks that overlap with S2 playground data.
+                 2 : as play = 1 plus compute trig start and end times to coincide
+                 with the start/end of the playground
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
     of the chunk when computing if the chunk overlaps with playground.
     """
     time_left = self.dur()
@@ -899,9 +898,9 @@ class ScienceSegment:
   def add_chunk(self,start,end,trig_start=0,trig_end=0):
     """
     Add an AnalysisChunk to the list associated with this ScienceSegment.
-    start = GPS start time of chunk.
-    end = GPS end time of chunk.
-    trig_start = GPS start time for triggers from chunk
+    @param start: GPS start time of chunk.
+    @param end: GPS end time of chunk.
+    @param trig_start: GPS start time for triggers from chunk
     """
     self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
 
@@ -938,7 +937,7 @@ class ScienceSegment:
   def set_start(self,t):
     """
     Override the GPS start time (and set the duration) of this ScienceSegment.
-    t = new GPS start time.
+    @param t: new GPS start time.
     """
     self.__dur += self.__start - t
     self.__start = t
@@ -946,7 +945,7 @@ class ScienceSegment:
   def set_end(self,t):
     """
     Override the GPS end time (and set the duration) of this ScienceSegment.
-    t = new GPS end time.
+    @param t: new GPS end time.
     """
     self.__dur -= self.__end - t
     self.__end = t
@@ -989,15 +988,18 @@ class ScienceData:
   def read(self,file,min_length,slide_sec=0,buffer=0):
     """
     Parse the science segments from the segwizard output contained in file.
-    file = input text file containing a list of science segments generated by
+    @param file: input text file containing a list of science segments generated by
     segwizard.
-    min_length = only append science segments that are longer than min_length.
-    slide_sec = Slide each ScienceSegment by:
+    @param min_length: only append science segments that are longer than min_length.
+    @param slide_sec: Slide each ScienceSegment by::
+
       delta > 0:
         [s,e] -> [s+delta,e].
       delta < 0:
         [s,e] -> [s,e-delta].
-    buffer = shrink the science segment:
+
+    @param buffer: shrink the science segment::
+
       [s,e] -> [s+buffer,e-buffer]
     """
     self.__file = file
@@ -1025,31 +1027,30 @@ class ScienceData:
   def make_chunks(self,length,overlap=0,play=0,sl=0,excl_play=0):
     """
     Divide each ScienceSegment contained in this object into AnalysisChunks.
-    length = length of chunk in seconds.
-    overlap = overlap between segments.
-    play = if true, only generate chunks that overlap with S2 playground data.
-    sl = slide by sl seconds before determining playground data.
-    excl_play = exclude the first excl_play second from the start and end
+    @param length: length of chunk in seconds.
+    @param overlap: overlap between segments.
+    @param play: if true, only generate chunks that overlap with S2 playground data.
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
     of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
       seg.make_chunks(length,overlap,play,sl,excl_play)
 
-  def make_chunks_from_unused(
-    self,length,trig_overlap,play=0,min_length=0,sl=0,excl_play=0):
+  def make_chunks_from_unused(self,length,trig_overlap,play=0,min_length=0,sl=0,excl_play=0):
     """
-    Create an extra chunk that uses up the unused data in the science
-    segment.
-    length = length of chunk in seconds.
-    trig_overlap = length of time start generating triggers before the
+    Create an extra chunk that uses up the unused data in the science segment.
+    @param length: length of chunk in seconds.
+    @param trig_overlap: length of time start generating triggers before the
     start of the unused data.
-    play = 1 : only generate chunks that overlap with S2 playground data.
-    play = 2 : as play = 1 plus compute trig start and end times to coincide
-      with the start/end of the playground
-    min_length = the unused data must be greater than min_length to make a
+    @param play: 
+                - 1 : only generate chunks that overlap with S2 playground data.
+                - 2 : as 1 plus compute trig start and end times to coincide
+                        with the start/end of the playground
+    @param min_length: the unused data must be greater than min_length to make a
     chunk.
-    sl = slide by sl seconds before determining playground data.
-    excl_play = exclude the first excl_play second from the start and end
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
     of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
@@ -1086,12 +1087,12 @@ class ScienceData:
     self,min_length,overlap=0,play=0,sl=0,excl_play=0):
     """
     Create a chunk that uses up the unused data in the science segment
-    min_length = the unused data must be greater than min_length to make a
+    @param min_length: the unused data must be greater than min_length to make a
     chunk.
-    overlap = overlap between chunks in seconds.
-    play = if true, only generate chunks that overlap with S2 playground data.
-    sl = slide by sl seconds before determining playground data.
-    excl_play = exclude the first excl_play second from the start and end
+    @param overlap: overlap between chunks in seconds.
+    @param play: if true, only generate chunks that overlap with S2 playground data.
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
     of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
@@ -1109,7 +1110,7 @@ class ScienceData:
     Replaces the ScienceSegments contained in this instance of ScienceData
     with the intersection of those in the instance other. Returns the number
     of segments in the intersection.
-    other = ScienceData to use to generate the intersection
+    @param other: ScienceData to use to generate the intersection
     """
 
     # we only deal with the case of two lists here
@@ -1171,7 +1172,7 @@ class ScienceData:
     Replaces the ScienceSegments contained in this instance of ScienceData
     with the union of those in the instance other. Returns the number of
     ScienceSegments in the union.
-    other = ScienceData to use to generate the intersection
+    @param other: ScienceData to use to generate the intersection
     """
 
     # we only deal with the case of two lists here
@@ -1382,9 +1383,9 @@ class LSCDataFindJob(CondorDAGJob, AnalysisJob):
   """
   def __init__(self,cache_dir,log_dir,config_file):
     """
-    cache_dir = the directory to write the output lal cache files to.
-    log_dir = the directory to write the stderr file to.
-    config_file = ConfigParser object containing the path to the LSCdataFind
+    @param cache_dir: the directory to write the output lal cache files to.
+    @param log_dir: the directory to write the stderr file to.
+    @param config_file: ConfigParser object containing the path to the LSCdataFind
     executable in the [condor] section and a [datafind] section from which
     the LSCdataFind options are read.
     """
@@ -1422,7 +1423,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of LALdataFind.
+    @param job: A CondorDAGJob that can run an instance of LALdataFind.
     """
     CondorDAGNode.__init__(self,job)
     AnalysisNode.__init__(self)
@@ -1444,7 +1445,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
   def set_start(self,time):
     """
     Set the start time of the datafind query.
-    time = GPS start time of query.
+    @param time: GPS start time of query.
     """
     self.add_var_opt('gps-start-time', time)
     self.__start = time
@@ -1453,7 +1454,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
   def set_end(self,time):
     """
     Set the end time of the datafind query.
-    time = GPS end time of query.
+    @param time: GPS end time of query.
     """
     self.add_var_opt('gps-end-time', time)
     self.__end = time
@@ -1465,7 +1466,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
     interferometers is stored in the same frame file, this takes the first 
     letter of the IFO (e.g. L or H) and passes it to the --observatory option
     of LSCdataFind.
-    ifo = IFO to obtain data for.
+    @param obs: IFO to obtain data for.
     """
     self.add_var_opt('observatory',obs)
     self.__observatory = obs
