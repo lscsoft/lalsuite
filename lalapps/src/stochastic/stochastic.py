@@ -189,7 +189,7 @@ class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('stopp.sub')
 
 
-class StoppNode(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class StoppNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   An StoppNode runs an instance of the stochastic stopp code in a Condor
   DAG.
