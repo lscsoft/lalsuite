@@ -81,9 +81,7 @@ LALNDTemplateBank( LALStatus *status,
 		   NDTemplateBankOutput **output)
 /* </lalVerbatim> */
 {
-  INITSTATUS( status, "LALNDTemplateBank", NDTEMPLATEBANKC );
-  ATTATCHSTATUSPTR( status );
-  
+ 
   INT2 Dimension = input->dimension;
   REAL4Array  *metric =           NULL; /* parameter-space metric 	    */
   REAL4Array  *inverse = 	  NULL;
@@ -104,6 +102,10 @@ LALNDTemplateBank( LALStatus *status,
   REAL4 temp = 0;
   INT4 cnt = 0;
   INT4 bccFlag = 0;
+
+  INITSTATUS( status, "LALNDTemplateBank", NDTEMPLATEBANKC );
+  ATTATCHSTATUSPTR( status );
+
  
   /* Initialize unused portions of input arrays */
   for(dimLoop = Dimension; dimLoop < 12; dimLoop++){
