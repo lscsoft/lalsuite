@@ -100,7 +100,7 @@ typedef struct
 tagUpdateFactorsParams
 {
    REAL8 lineFrequency;
-   REAL8 outputMatrix;
+   REAL8 mu;
    COMPLEX16 actuationFactor;
    COMPLEX16 responseFactor;
    COMPLEX16 sensingFactor;
