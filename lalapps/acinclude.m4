@@ -82,13 +82,23 @@ AC_DEFUN(LALAPPS_ENABLE_FRAME,
 AC_DEFUN(LALAPPS_ENABLE_DATAFLOW,
 [AC_ARG_ENABLE(
         dataflow,
-        [  --enable-dataflow       compile code that requires dataflow library [default=no] ],
+        [  --enable-dataflow       compile code that requires metaio/dataflow library [default=no] ],
         [ case "${enableval}" in
             yes) dataflow=true;;
             no)  dataflow=false ;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
           esac
         ], [ dataflow=false ] )
+AC_ARG_ENABLE(
+        metaio,
+        [  --enable-metaio         compile code that requires metaio/dataflow library [default=no] ],
+        [ case "${enableval}" in
+            yes) metaio=true;;
+            no)  metaio=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+          esac
+        ], [ metaio=false ] )
+        if test "x$metaio" = "xtrue" ; then dataflow=true ; fi
 ])
 
 
