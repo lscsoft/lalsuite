@@ -84,7 +84,10 @@ LALFindChirpCreateInspiralBank (
       &(params->numCoarse), *coarseBankIn );
   BEGINFAIL( status )
   {
-    LALFree( coarseList );
+    if ( coarseList )
+    {
+      LALFree( coarseList );
+    }
   }
   ENDFAIL( status );
 
@@ -198,7 +201,10 @@ LALFindChirpCreateInspiralBank (
       BEGINFAIL( status )
       {
         LALFree( coarseList );
-        LALFree( fineList );
+        if ( fineList )
+        {
+          LALFree( fineList );
+        }
         LALFree( fineBankIn );
         TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
             status );
