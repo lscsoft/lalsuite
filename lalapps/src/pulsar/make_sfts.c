@@ -38,10 +38,16 @@
 #define SRATE 16384
 
 /* should we print the first 50 elements of various series */
-#define PRINT50
+/* #define PRINT50 */
 
 /* should we use doubles for the time-domain filtering */
 #define TDDOUBLE
+
+/* should we shift timestamps to compensate for timing errors */
+#define TSHIFT
+
+/* should we use the new 2*DF/SRATE normalization convention? */
+#define NEWNORM
 
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
@@ -142,7 +148,7 @@ int getenvval(const char *valuename){
    Data tables taken from:
    http://www.ligo.caltech.edu/~smarka/drafts/LIGO-T030070-00-D.pdf
 */
-int deltatime(const char *instrument, int gpstime){
+int deltatime(const char *instrument, int gpstime, int *valid){
   int (*data)[4];
   int i;
   
@@ -150,20 +156,18 @@ int deltatime(const char *instrument, int gpstime){
   int l1time[][4]={
     {714177080, 714855840, -121, 678760},
     {714855841, 715618813, -120, 762972},
-    /* array is null terminated with value to use if time range not found */
+    /* value to use if time range not found */
     {0,         INT_MAX,           -121,  0},
   };
   
   /* corrections for Hanford H1 during S1 */
   int h1time[][4]={
     {714335520, 715618813,   -95, 1283293},
-    /* array is null terminated with value to use if time range not
-       found */
+    /* value to use if time range not found */
     {0,         INT_MAX,     -95,  0},
   };
   
-  /* corrections for Hanford H2 during S1, cut and paste from Table 1
-     of Szabi's report */
+  /* corrections for Hanford H2 during S1 */
   int h2time[][4]={
     {714256920, 714407160,  5463, 150240},
     {714407640, 714507180, -164, 99540},
@@ -185,10 +189,9 @@ int deltatime(const char *instrument, int gpstime){
     {715545240, 715556400,  814, 11160},
     {715556640, 715594020, -163, 37380},
     {715594140, 715618800,   81, 24660},
-    /* array is null terminated with value to use if time range not
-       found */
-    {0,          INT_MAX,           0,  0},
-  };
+    /* discard data if time range not found */
+    {-1,        0,           0,  0}
+};
 
   /* select the correct instrument */
   if (!strcmp(instrument,"H1"))
@@ -204,12 +207,14 @@ int deltatime(const char *instrument, int gpstime){
   }
   
   /* search along list to see if we find the correct time range */
-  for (i=0; data[i][0]; i++)
-    if (data[i][0]<=gpstime && gpstime<=data[i][1])
+  for (i=0; data[i][0]>=0; i++)
+    if (data[i][0]<=gpstime && gpstime<=data[i][1]){
+      *valid=1;
       return data[i][2];
-
+    }
   /* value we should use if time range NOT found */
-  return data[i][2];
+  *valid=0;
+  return 0;
 }
 
 /* check a number of bounary values of the timing correction */
@@ -217,10 +222,13 @@ void checktimingcorrections(){
   
   /* check a single value of the timing correction */
   void checkone(int gpstime,const char *instrument){
-    printf("%s  time %d  correction %d\n", instrument, gpstime, deltatime(instrument, gpstime));
+    int valid;
+    int dt=deltatime(instrument, gpstime, &valid);
+    printf("%s  time %d  correction %d%s\n", instrument, gpstime, dt, valid?"":" INVALID");
     return;
   }
   
+
   /* L1 checks */
   checkone(10, "L1");
   checkone(10000, "L1");
@@ -298,14 +306,16 @@ void shifter(float *data, int length, int shift){
   return;
 }
 
+#ifdef PRINT50
 void print50(float *array, char *name){
   int i;
-  printf("%s\n", name);
+  printf("\n%s\n", name);
   for (i=0; i<50; i++)
     printf("%02d %f\n", i, array[i+176]);
   fflush(stdout);
   return;
 }
+#endif
 
 int main(int argc,char *argv[]){
   static LALStatus status;
@@ -473,10 +483,22 @@ int main(int argc,char *argv[]){
     struct stat buff;
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
+#ifdef TIMESHIFT
+    int microsec, valid=0;
+#endif
 
     /* time of correct start */
     epoch.gpsSeconds=starts[count];
     epoch.gpsNanoSeconds=0;
+    
+#ifdef TIMESHIFT
+    /* compute timeshift needed */
+    microsec=deltatime(argv[4], epoch.gpsSeconds, &valid);
+    
+    /* if there is no valid timeshift info, skip SFT */
+    if (!valid)
+      continue;
+#endif
     
     /* to check that an existing file has the correct size */
     if (doubledata)
@@ -554,7 +576,7 @@ int main(int argc,char *argv[]){
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
-#if (1)
+#ifdef NEWNORM
 	/* Normalize data according to the GEO SFT specifications */
 	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
 #endif
@@ -609,23 +631,7 @@ int main(int argc,char *argv[]){
       print50(chan.data->data, "LAL_WINDOWED");
 #endif
 
-      /* open SFT file for writing */
-      fpsft=tryopen(sftname,"w");
-      
-      /* write header */
-      header.endian=1.0;
-      header.gps_sec=epoch.gpsSeconds;
-      header.gps_nsec=epoch.gpsNanoSeconds;
-      header.tbase=tbase;
-      header.firstfreqindex=firstbin;
-      header.nsamples=(INT4)(DF*tbase);
-      if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
-	pout("Error in writing header into file %s!\n",sftname);
-	return 7;
-      }
-      
-
-#if (0)
+#ifdef TIMESHIFT
       {
 	/* correct data for timing errors.  This is a bit of a hack.  We
 	   can do it either just before or just after the FFT. This is
@@ -644,15 +650,10 @@ int main(int argc,char *argv[]){
 	   that the correct time stamp for the first datum recorded in
 	   the frame is EARLIER than the frame time stamp.
 	*/
-
-	/* number of bins to shift by */
-	int nshift, microsec;
-	double fshift;
-	
-	microsec=deltatime(argv[4], epoch.gpsSeconds);
-	fshift=1.e-6*microsec*SRATE;
-	
 	if (microsec){
+	  int nshift;
+	  double fshift=1.e-6*microsec*SRATE;
+	  
 	  if (fshift>=0.0)
 	    nshift=(int)(fshift+0.5);
 	  else
@@ -666,6 +667,23 @@ int main(int argc,char *argv[]){
 	}
       }
 #endif
+      
+      /* open SFT file for writing */
+      fpsft=tryopen(sftname,"w");
+      
+      /* write header */
+      header.endian=1.0;
+      header.gps_sec=epoch.gpsSeconds;
+      header.gps_nsec=epoch.gpsNanoSeconds;
+      header.tbase=tbase;
+      header.firstfreqindex=firstbin;
+      header.nsamples=(INT4)(DF*tbase);
+      if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
+	pout("Error in writing header into file %s!\n",sftname);
+	return 7;
+      }
+      
+
 
 #ifdef PRINT50
       print50(chan.data->data, "SHIFTED");
