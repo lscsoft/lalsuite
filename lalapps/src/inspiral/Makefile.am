@@ -6,16 +6,19 @@ TRIGTOTMPLTSRC = trigtotmplt.c
 COHERESRC = coherent_inspiral.c inspiral.h
 INCASRC = inca.c
 SIRESRC = sire.c
+INSPINJSRC = inspinj.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
-               lalapps_inca lalapps_coherent_inspiral lalapps_sire
+               lalapps_inca lalapps_coherent_inspiral lalapps_sire \
+               lalapps_inspinj
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
+lalapps_inspinj_SOURCES = $(INSPINJSRC)
 else
 bin_PROGRAMS = 
 endif
@@ -35,10 +38,14 @@ lalapps_inspiral_pipe_bkgr: inspiral_pipe_bkgr.in
 lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
 
+pkgdata_DATA = BNSMasses.dat inspsrcs.dat
+
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(SIRESRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
-             $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in
+             $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in \
+             inspiral_pipe_s2.in inspiral_pipe.ini \
+             $(INSPINJSRC) BNSMasses.dat inspsrcs.dat
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
