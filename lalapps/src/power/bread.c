@@ -401,19 +401,19 @@ int main(int argc, char **argv)
 	static LALStatus  stat;
 	FILE              *fpin=NULL;
 	FILE              *fpout;
-	INT4              fileCounter=0;
 
 	/*number of events*/
 	INT8              numEvents;
 
 	/*searchsummary info */
-	INT4              timeAnalyzed=0;
+	INT4              timeAnalyzed;
 
 	CHAR              line[MAXSTR];
 
 	CHAR              *infile=NULL,*outfile=NULL;
-	SnglBurstTable    *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
-	SnglBurstTable    burstEvent,*burstEventList=NULL,*outEventList=NULL;
+	SnglBurstTable    *tmpEvent=NULL,*currentEvent,*prevEvent=NULL;
+	SnglBurstTable    burstEvent,*burstEventList,*outEventList=NULL;
+	SnglBurstTable    **addpoint;
 	MetadataTable     myTable;
 	LIGOLwXMLStream   xmlStream;
 	struct options_t  options;
@@ -432,30 +432,27 @@ int main(int argc, char **argv)
 	memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 	xmlStream.fp = NULL;
 	numEvents = 0;
-    
-    /*****************************************************************
-     * OPEN FILE WITH LIST OF XML FILES (one file per line)
-     ****************************************************************/
-    if ( !(fpin = fopen(infile,"r")) ){
-        LALPrintError("Could not open input file\n");
-    }
 
 	/*****************************************************************
-	 * loop over the xml files
+	 * loop over the xml input files
 	 *****************************************************************/
-	currentEvent = tmpEvent = burstEventList = NULL;
 
-	if (options.verbose) {
+	if ( !(fpin = fopen(infile,"r")) )
+		LALPrintError("Could not open list of input files\n");
+
+	if(options.verbose) {
 		fpout = fopen("./EPjobstartstop.dat","w");
 		fprintf(fpout, "# This file contains the start & stop times of all jobs that succeded\n");
 	} else
 		fpout = NULL;
 
-	while ( getline(line, MAXSTR, fpin) ) {
-		fileCounter++;
-		if (options.verbose)
-			fprintf(stderr,"Working on file %s\n", line);
+	burstEventList = NULL;
+	addpoint = &burstEventList;
+	timeAnalyzed = 0;
 
+	while(getline(line, MAXSTR, fpin)) {
+		if(options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
 
 		/*
 		 * Read the search summary table
@@ -463,31 +460,23 @@ int main(int argc, char **argv)
 
 		timeAnalyzed += read_search_summary(line, fpout);
 
-      /*read in the Sngl_Burst table */
-      LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
-            line), &stat);
+		/*
+		 * Read the Sngl_Burst table
+		 */
 
-      /* connect results to linked list */
-      if (currentEvent == NULL)
-      {
-        burstEventList = currentEvent = tmpEvent;
-      }
-      else
-      {
-        currentEvent->next = tmpEvent;
-      }
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, addpoint, line), &stat);
 
-      /* move to the end of the linked list for next input file */
-      while (currentEvent->next != NULL)
-      {
-        currentEvent = currentEvent->next;
-      }
-      tmpEvent = currentEvent->next;
-    }
+		/*
+		 * move addpoint to the end of the linked list
+		 */
 
-    /* print out the total time analysed */
-	if (options.verbose) {
-		fprintf(fpout,"#Total time analysed= %d\n",timeAnalyzed);
+		while(*addpoint)
+			addpoint = &(*addpoint)->next;
+	}
+
+	/* print out the total time analysed */
+	if(options.verbose) {
+		fprintf(fpout, "# Total time analysed = %d\n", timeAnalyzed);
 		fclose(fpout);
 	}
 
@@ -556,15 +545,13 @@ int main(int argc, char **argv)
 		/* set it for output if it passes */  
 		if ( pass ) {
 			if (outEventList == NULL) {
-				outEventList = currentEvent = (SnglBurstTable *)
-				LALCalloc(1, sizeof(SnglBurstTable) );
+				outEventList = currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable) );
 				prevEvent = currentEvent;
 			} else {
-				currentEvent = (SnglBurstTable *)
-				LALCalloc(1, sizeof(SnglBurstTable) );
+				currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable) );
 				prevEvent->next = currentEvent;
 			}
-			memcpy( currentEvent, tmpEvent, sizeof(SnglBurstTable));
+			memcpy(currentEvent, tmpEvent, sizeof(SnglBurstTable));
 			prevEvent = currentEvent;
 			currentEvent = currentEvent->next = NULL;
 		}
@@ -577,28 +564,26 @@ int main(int argc, char **argv)
 		numEvents++;
 	}
 
-	if (options.verbose)
-	fprintf(stderr,"Total no. of triggers %ld\n", numEvents);
+	if(options.verbose)
+		fprintf(stderr, "Total no. of triggers %ld\n", numEvents);
 
 
     /*****************************************************************
      * sort the triggers
      *****************************************************************/
-    LAL_CALL( LALSortSnglBurst(&stat, &(outEventList), 
-			       LALCompareSnglBurstByTime ), &stat);
+    LAL_CALL(LALSortSnglBurst(&stat, &(outEventList), LALCompareSnglBurstByTime), &stat);
 
 
 
     /*****************************************************************
      * open output xml file
      *****************************************************************/
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
+    LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
+    LAL_CALL(LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
     myTable.snglBurstTable = outEventList;
-    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
-                    sngl_burst_table), &stat);
-    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+    LAL_CALL(LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, sngl_burst_table), &stat);
+    LAL_CALL(LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+    LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-    return 0;
+	exit(0);
 }
