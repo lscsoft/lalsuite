@@ -375,8 +375,8 @@ int main(int argc, char *argv[]){
   }
   
 
-
-
+  /* set fullsky flag */
+  injectPar.fullSky = 1;
   if ( (uvar_AllSkyFlag == 0) ) 
     injectPar.fullSky= 0;  /* patch case */
 
