@@ -134,6 +134,11 @@ LALTimeDelay( LALStatus                   *stat,
               REAL8                       *p_delay,
               const TwoDetsTimeAndASource *p_two_detectors_time_and_source );
 
+INT8
+XLALLightTravelTime ( const LALDetector *aDet,
+                      const LALDetector *bDet 
+                     );
+
 
 /* <lalLaTeX>
 \newpage\input{TimeDelayFromEarthCenterC}

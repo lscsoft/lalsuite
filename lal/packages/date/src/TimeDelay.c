@@ -21,13 +21,14 @@ detectors.
 
 \subsubsection*{Description}
 
-This function computes the difference in time of arrival of a signal at two
-detectors from the same source.  The two detectors and the source are
-passed in a \texttt{TwoDetectorsAndASource} structure.  The time delay is
-defined to be $\delta t = t_2 - t_1$ where $t_1$ is the time the signal
-arrives at the first detector and $t_2$ is the time the signal arrives at
-the second detector.
+The function LALTimeDelay() computes the difference in time of arrival of a
+signal at two detectors from the same source.  The two detectors and the source
+are passed in a \texttt{TwoDetectorsAndASource} structure.  The time delay is
+defined to be $\delta t = t_2 - t_1$ where $t_1$ is the time the signal arrives
+at the first detector and $t_2$ is the time the signal arrives at the second
+detector.
 
+The function XLALLightTravelTime() computes the light travel time between two detectors and returns the answer in \texttt{INT8} nanoseconds.
 
 \subsubsection*{Algorithm}
 
@@ -157,4 +158,24 @@ LALTimeDelay( LALStatus                    *stat,
   RETURN( stat );
 } /* END: LALTimeDelay() */
 
+
+
+/* <lalVerbatim file="TimeDelayCP"> */
+INT8
+XLALLightTravelTime ( const LALDetector *aDet,
+                      const LALDetector *bDet 
+                     )
+/* </lalVerbatim> */
+{
+  
+  REAL8  deltaLoc[3];     /* displacement vector between the two detectors */
+  INT4   i;               /* loop counter */
+
+  for (i = 0; i < 3; ++i)
+  {
+    deltaLoc[i] = aDet->location[i] - bDet->location[i];
+  }
+
+  return ( (INT8) ( 1e9 * sqrt( dotprod(deltaLoc, deltaLoc)) / LAL_C_SI ) );
+}
 
