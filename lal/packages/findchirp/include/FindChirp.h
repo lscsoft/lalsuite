@@ -739,6 +739,38 @@ LALFindChirpFilterSegment (
     FindChirpFilterParams      *params
     );
 
+void
+LALFindChirpStoreEvent (
+    LALStatus                  *status,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    SnglInspiralTable          *thisEvent,
+    COMPLEX8                   *q,
+    UINT4                       kmax,
+    REAL4                       norm,
+    UINT4                       eventStartIdx,
+    UINT4                       numChisqBins,
+    CHAR                        searchName[LIGOMETA_SEARCH_MAX]
+    );
+
+void
+LALFindChirpClusterEvents (
+		LALStatus                  *status,
+		SnglInspiralTable         **eventList,
+		FindChirpFilterInput       *input,
+		FindChirpFilterParams      *params,
+		COMPLEX8                   *q,
+		UINT4                       kmax,
+                UINT4                 numPoints,
+                UINT4                 deltaEventIndex,
+                UINT4                       ignoreIndex,
+		REAL4                       norm,
+                REAL4                 modqsqThresh,
+                REAL4                 chisqThreshFac,
+		UINT4                       numChisqBins,
+		CHAR                        searchName[LIGOMETA_SEARCH_MAX] 
+		);
+
 
 #if 0
 <lalLaTeX>
