@@ -40,7 +40,7 @@ UserInputTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(to
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALVersionTest LALMallocTest LALGSLTest PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
-        StreamSeriesInputTest ConfigFileTest UserInputTest
+        StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest
 
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0 
