@@ -38,6 +38,11 @@ typedef struct
    CHAR**  argv;
 }LALInitSearchParams;
 
+/* declare the parsing function which is at the end of the file */
+int snprintf(char *str, size_t size, const  char  *format, ...);
+int initializeEPSearch( int argc, char *argv[], void **searchParams,
+        MetadataTable  *procparams );
+
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
 
@@ -167,9 +172,6 @@ static void makeWhiteNoise(
     RETURN (status);
 }
 
-/* declare the parsing function which is at the end of the file */
-int initializeEPSearch( int argc, char *argv[], void **searchParams,
-        MetadataTable  procparams );
 
 
 /* some global output flags */
@@ -596,7 +598,7 @@ int main( int argc, char *argv[])
 
 #if (!OLDWAY)
     /* parse arguments and fill procparams table */
-    initializeEPSearch( argc, argv, &searchParams, procparams);
+    initializeEPSearch( argc, argv, &searchParams, &procparams);
 #endif
 
     /* create the search summary table */
@@ -790,7 +792,7 @@ int main( int argc, char *argv[])
     {
         this_proc_param = procparams.processParamsTable;
         procparams.processParamsTable = this_proc_param->next;
-        LALFree( this_proc_param );
+        LALFree(this_proc_param);
     }
 
     
@@ -837,20 +839,21 @@ int main( int argc, char *argv[])
  *************************************************************************/
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+this_proc_param->next = (ProcessParamsTable *) \
   LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+this_proc_param = this_proc_param->next ; \
+  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );\
   snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
       snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
           long_options[option_index].name ); \
-          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); 
 
 int initializeEPSearch( 
         int            argc, 
         char          *argv[], 
         void         **searchParams,
-        MetadataTable  procparams 
+        MetadataTable  *procparams 
         )
 { 
     /* getopt arguments */
@@ -895,7 +898,7 @@ int initializeEPSearch(
         {0, 0, 0, 0}
     };
     int c;
-    ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+    ProcessParamsTable *this_proc_param = procparams->processParamsTable;
     EPSearchParams     *params;
     LALStatus           stat = blank_status;
 
@@ -1056,7 +1059,7 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     params->tfTilingInput->flow = flow;
-                    ADD_PROCESS_PARAM( "float", "%f", flow );
+                    ADD_PROCESS_PARAM( "float", "%e", flow );
                 }
                 break;
 
@@ -1454,5 +1457,7 @@ int initializeEPSearch(
 
     return 0;
 }
+
+#undef ADD_PROCESS_PARAMS
 
 #endif
