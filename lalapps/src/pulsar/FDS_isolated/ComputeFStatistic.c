@@ -305,7 +305,7 @@ extern "C" {
   static void swap4(char *location);
   static void swap8(char *location);
   void swapheader(struct headertag *thisheader);
-  void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
+  void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn);
   void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
   void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 #ifdef FILE_AMCOEFFS
@@ -1389,7 +1389,7 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
 
     /*    print the output */
     if (fpstat) {
-      int i;
+      int l;
       int howmany2=0;
       int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
 			 fr, Alpha, Delta, N, mean, std, max);
@@ -1410,10 +1410,10 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
       numBytes+=howmany;
       
       /* update checksum sum */
-      for (i=0; i<howmany; i++)
-	localchecksum+=(int)tmpline[i];
+      for (l=0; l<howmany; l++)
+	localchecksum+=(int)tmpline[l];
       
-    }
+    } /* if fpstat */
     
   }/*  end i loop over different clusters */
   
@@ -3036,7 +3036,7 @@ void sighandler(int sig){
  *  @param[IN]  fstat_fname	Name of Fstats-file. 
  */
 void
-getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname)
+getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn)
 {
   FILE *fp;
   UINT4 lcount; 	/* loopcounter */
@@ -3053,7 +3053,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
  
   INITSTATUS( stat, "getChkptCounters", rcsid );
   ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( ckp_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( ckpfn, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   /* if anything goes wrong in here: start main-loop from beginning  */
   *loopcounter = 0;	
@@ -3061,7 +3061,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   
   /* try opening checkpoint-file read-only */
   if (lalDebugLevel) LALPrintError("Checking presence of checkpoint-file ... ");
-  if (!(fp = fopen(ckp_fname, "rb"))) {
+  if (!(fp = fopen(ckpfn, "rb"))) {
     if (lalDebugLevel) LALPrintError ("none found. \nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
