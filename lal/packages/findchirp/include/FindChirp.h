@@ -31,7 +31,9 @@ Provides routines to filter IFO data for binary inspiral chirps.
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
+#ifdef LAL_ENABLE_MPI
 #include <lal/Comm.h>
+#endif
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpChisq.h>
 
