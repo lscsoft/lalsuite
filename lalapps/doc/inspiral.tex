@@ -6,94 +6,310 @@
 \item[Name]
 \verb$lalapps_inspiral$ --- stand alone inspiral search code
 
-\item[Synopsis]
-\begin{verbatim}
-  --help                       display this message
-  --verbose                    print progress information
-  --debug-level LEVEL          set the LAL debug level to LEVEL
-  --user-tag STRING            set the process_params usertag to STRING
-  --comment STRING             set the process table comment to STRING
-
-  --gps-start-time SEC         GPS second of data start time
-  --gps-start-time-ns NS       GPS nanosecond of data start time
-  --gps-end-time SEC           GPS second of data end time
-  --gps-end-time-ns NS         GPS nanosecond of data end time
-  --pad-data T                 pad the data start and end time by T seconds
-
-  --frame-cache                obtain frame data from LAL frame cache FILE
-  --calibration-cache FILE     obtain calibration from LAL frame cache FILE
-  --channel-name CHAN          read data from interferometer channel CHAN
-
-  --injection-file FILE        inject simulated inspiral signals from FILE
-  --inject-overhead            inject signals directly overhead detector
-
-  --bank-file FILE             read template bank parameters from FILE
-  --minimal-match M            override bank minimal match with M (sets delta)
-  --start-template N           start filtering at template number N in bank
-  --stop-templateN             stop filtering at template number N in bank
-
-  --sample-rate F              filter data at F Hz, downsampling if necessary
-  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)
-
-  --disable-high-pass          turn off the IIR highpass filter
-  --enable-high-pass F         high pass data above F Hz using an IIR filter
-  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)
-
-  --segment-length N           set data segment length to N points
-  --number-of-segments N       set number of data segments to N
-  --segment-overlap N          overlap data segments by N points
-
-  --low-frequency-cutoff F     do not filter below F Hz
-  --inverse-spec-length T      set length of inverse spectrum to T seconds
-  --dynamic-range-exponent X   set dynamic range scaling to 2^X
-
-  --chisq-bins P               set number of chisq veto bins to P
-  --snr-threshold RHO          set signal-to-noise threshold to RHO
-  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )
-  --enable-event-cluster       turn on maximization over chirp length
-  --disable-event-cluster      turn off maximization over chirp length
-
-  --approximant APPROX         approximant to be used. {TaylorF2|BCV}
-
-  --enable-output              write the results to a LIGO LW XML file
-  --disable-output             do not write LIGO LW XML output file
-
-  --write-raw-data             write raw data to a frame file
-  --write-filter-data          write data that is passed to filter to a frame
-  --write-response             write the computed response function to a frame
-  --write-spectrum             write the uncalibrated psd to a frame
-  --write-snrsq                write the snr time series for each data segment
-  --write-chisq                write the r^2 time series for each data segment
-\end{verbatim}
+\item[Synopsis] \prog{lalapps\_inspiral} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in} 
+[\option{--verbose}] \newline \hspace*{0.5in} 
+[\option{--version}] \newline \hspace*{0.5in}
+[\option{--debug-level}~\parm{LEVEL}] \newline \hspace*{0.5in} 
+[\option{--user-tag}~\parm{STRING}] \newline \hspace*{0.5in}           
+[\option{--ifo-tag}~\parm{STRING}] \newline \hspace*{0.5in}
+\option{--debug-level}~\parm{LEVEL}] \newline \hspace*{0.5in}
+\option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}           
+\option{--gps-start-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}        
+\option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}            
+\option{--gps-end-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}          
+\option{--pad-data}~\parm{seconds} \newline \hspace*{0.5in}                  
+[\option{--slide-time}~\parm{seconds}] \newline \hspace*{0.5in}              
+[\option{--slide-time-ns}~\parm{seconds}] \newline \hspace*{0.5in}           
+[\option{--glob-frame-data}] \newline \hspace*{0.5in}            
+[\option{--frame-type}~\parm{tag}] \newline \hspace*{0.5in}           
+\option{--frame-cache} \newline \hspace*{0.5in}                   
+\option{--calibration-cache}~\parm{file} \newline \hspace*{0.5in}      
+\option{--channel-name}~\parm{channel} \newline \hspace*{0.5in}           
+\option{--calibrated-data}~\parm{type} \newline \hspace*{0.5in}        
+[\option{--geo-high-pass-freq}~\parm{frequency}] \newline \hspace*{0.5in}      
+[\option{--geo-high-pass-order}~\parm{order}] \newline \hspace*{0.5in}     
+[\option{--geo-high-pass-atten}~\parm{attenuation}] \newline \hspace*{0.5in}     
+[\option{--injection-file}~\parm{file}] \newline \hspace*{0.5in}       
+[\option{--inject-overhead} \newline \hspace*{0.5in}             
+\option{--bank-file}~\parm{file} \newline \hspace*{0.5in}             
+\option{--minimal-match}~\parm{m} \newline \hspace*{0.5in}             
+[\option{--start-template}~\parm{n}] \newline \hspace*{0.5in}          
+[\option{--stop-template}~\parm{n}] \newline \hspace*{0.5in}           
+\option{--sample-rate}~\parm{frequency} \newline \hspace*{0.5in}               
+\option{--resample-filter}~\parm{type} \newline \hspace*{0.5in}        
+\option{--disable-high-pass} \newline \hspace*{0.5in}             
+\option{--enable-high-pass}~\parm{frequency} \newline \hspace*{0.5in}          
+\option{--high-pass-order}~\parm{order} \newline \hspace*{0.5in}           
+\option{--high-pass-attenuation}~\parm{attenuation} \newline \hspace*{0.5in}    
+\option{--spectrum-type}~\parm{type} \newline \hspace*{0.5in}          
+\option{--segment-length}~\parm{n} \newline \hspace*{0.5in}            
+\option{--number-of-segments}~\parm{n} \newline \hspace*{0.5in}        
+\option{--segment-overlap}~\parm{n} \newline \hspace*{0.5in}          
+\option{--low-frequency-cutoff}~\parm{frequency} \newline \hspace*{0.5in}     
+\option{--inverse-spec-length}~\parm{seconds} \newline \hspace*{0.5in}      
+\option{--dynamic-range-exponent}~\parm{x} \newline \hspace*{0.5in}    
+\option{--approximant}~\parm{approximant} \newline \hspace*{0.5in}            
+\option{--chisq-bins}~\parm{number} \newline \hspace*{0.5in}                
+\option{--snr-threshold}~\parm{rho-value} \newline \hspace*{0.5in}           
+\option{--chisq-threshold}~\parm{chisq-value} \newline \hspace*{0.5in}          
+\option{--enable-event-cluster} \newline \hspace*{0.5in}          
+\option{--disable-event-cluster} \newline \hspace*{0.5in}        
+\option{--enable-output} \newline \hspace*{0.5in}                
+\option{--disable-output} \newline \hspace*{0.5in}                
+[\option{--trig-start-time}~\parm{seconds}] \newline \hspace*{0.5in}       
+[\option{--trig-end-time}~\parm{seconds}] \newline \hspace*{0.5in}        
+[\option{--gaussian-noise}~\parm{var}] \newline \hspace*{0.5in}        
+[\option{--random-seed}~\parm{seed}] \newline \hspace*{0.5in}          
+[\option{--bank-simulation}~\parm{n}] \newline \hspace*{0.5in}      
+[\option{--sim-approximant}~\parm{approximant}] \newline \hspace*{0.5in}      
+[\option{--sim-minimum-mass}~\parm{mass}] \newline \hspace*{0.5in}        
+[\option{--sim-maximum-mass}~\parm{mass}] \newline \hspace*{0.5in}        
+[\option{--data-checkpoint}] \newline \hspace*{0.5in}             
+[\option{--checkpoint-path}~\parm{path}] \newline \hspace*{0.5in} 
+[\option{--output-path}~\parm{path}] \newline \hspace*{0.5in}          
+[\option{--write-raw-data}] \newline \hspace*{0.5in}              
+[\option{--write-filter-data}] \newline \hspace*{0.5in}           
+[\option{--write-response}] \newline \hspace*{0.5in}              
+[\option{--write-spectrum}] \newline \hspace*{0.5in}              
+[\option{--write-snrsq}] \newline \hspace*{0.5in}                 
+[\option{--write-chisq}] \newline \hspace*{0.5in}                 
 
 \item[Description] 
-\verb$lalapps_inspiral$ is a stand alone code for performing matched filtering
-of LIGO data for gravitational wave signals and Monte Carlo analysis.
+\prog{lalapps\_inspiral} is a stand alone code for performing matched filtering for inspiral signals on LIGO 
+or GEO data for gravitational wave signals and Monte Carlo analysis; it also has the capability of doing software signal injections on the data. 
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--help}] Display a brief usage summary.
+\item[\option{--help}] Display a brief usage summary.
+
+\item[\option{--verbose}] print progress information
+
+\item[\option{--debug-level}~\parm{level}] set the LAL debug level to 
+LEVEL. For example: 1 :developer, 33 :production.
+
+\item[\option{user-tag}~\parm{string}] set the process-params usertag to 
+string
+
+\item[\option{--ifo-tag}~\parm{string}] set the ifotag to string - for 
+file naming
+
+\item[\option{--gps-start-time}~\parm{seconds}] GPS second of data start 
+time
+
+\item[\option{--gps-start-time-ns}~\parm{nanoseconds}] GPS nanosecond of 
+data start time
+
+\item[\option{--gps-end-time}~\parm{seconds}] GPS second of data end 
+time
+
+\item[\option{--gps-end-time-ns}~\parm{nanoseconds}] GPS nanosecond of 
+data end time
+
+\item[\option{--pad-data}~\parm{seconds}] pad the data start and end time 
+by 
+
+\item[\option{--slide-time}~\parm{seconds}] slide data start epoch by 
+seconds
+
+\item[\option{--slide-time-ns}~\parm{seconds}] slide data start epoch by 
+nanoseconds
+
+\item[\option{--glob-frame-data}] glob *.gwf files in the pwd to obtain 
+frame data
+
+\item[\option{--frame-type}~\parm{tag}] input data is contained in frames 
+of type tag
+
+\item[\option{--frame-cache}~\parm{file}] obtain frame data from LAL 
+frame cache 
+ 
+\item[\option{--calibration-cache}~\parm{file}] obtain calibration from 
+LAL frame cache 
+
+\item[\option{--channel-name}~\parm{channel}] read data from 
+interferometer channel 
+
+\item[\option{--calibrated-data}~\parm{type}] calibrated data of type 
+real-4 or real-8
+
+\item[\option{--geo-high-pass-freq}~\parm{frequency}] high pass GEO data 
+above F Hz using an IIR filter
+
+\item[\option{--geo-high-pass-order}~\parm{order}] set the order of the 
+GEO high pass filter to O
+
+\item[\option{--geo-high-pass-atten}~\parm{attenuation}] set the
+attenuation of the high pass filter to A
+
+\item[\option{--injection-file}~\parm{file}] inject simulated inspiral 
+signals from FILE
+
+\item[\option{--inject-overhead}] inject signals directly overhead 
+detector
+
+\item[\option{--bank-file}~\parm{file}] read template bank parameters 
+from FILE
+
+\item[\option{--minimal-match}~\parm{m}] override bank minimal match with 
+M (sets delta)
+
+\item[\option{--start-template}~\parm{n}] start filtering at template 
+number N in bank
+
+\item[\option{--stop-template}~\parm{n}] stop filtering at template 
+number N in bank
+
+\item[\option{--sample-rate}~\parm{frequency}] filter data at F Hz, 
+downsampling if necessary
+
+\item[\option{--resample-filter}~\parm{type}] set resample filter to TYPE 
+(ldas|butterworth)
+
+\item[\option{--disable-high-pass}] turn off the IIR highpass filter
+
+\item[\option{--enable-high-pass}~\parm{frequency}] high pass data above 
+F Hz using an IIR filter
+
+\item[\option{--high-pass-order}~\parm{order}] set the order of the high 
+pass filter to O 
+
+\item[\option{--high-pass-attenuation}~\parm{attenuation}] set the 
+attenuation of the high pass filter to A
+
+\item[\option{--spectrum-type}~\parm{type}] use PSD estimator TYPE 
+(mean|median)
+
+\item[\option{--segment-length}~\parm{n}] set data segment length to N 
+points
+
+\item[\option{--number-of-segments}~\parm{n}] set number of data segments 
+to N
+
+\item[\option{--segment-overlap}~\parm{n}] overlap data segments by N 
+points
+
+\item[\option{--low-frequency-cutoff}~\parm{frequency}] do not filter 
+below F Hz
+
+\item[\option{--inverse-spec-length}~\parm{seconds}] set length of 
+inverse spectrum to T seconds
+
+\item[\option{--dynamic-range-exponent}~\parm{x}] set dynamic range 
+scaling to $2^X$ 
+
+\item[\option{--approximant}~\parm{approximant}] approximant to be used. 
+{TaylorF2|BCV} 
+
+\item[\option{--chisq-bins}~\parm{number}] set number of chisq veto bins 
+to P
+
+\item[\option{--snr-threshold}~\parm{rho-value}] set signal-to-noise 
+threshold to RHO
+
+\item[\option{--chisq-threshold}~\parm{chisq-value}] threshold on $chi^2 
+< X * ( p + rho^2 * delta^2 )$
+
+\item[\option{--enable-event-cluster}] turn on maximization over chirp 
+length
+
+\item[\option{--disable-event-cluster}] turn off maximization over chirp 
+length
+
+\item[\option{--enable-output}] write the results to a LIGO LW XML file
+
+\item[\option{--disable-output}] do not write LIGO LW XML output file
+
+\item[\option{--trig-start-time}~\parm{gps-seconds}] only output triggers 
+after GPS time SEC
+
+\item[\option{--trig-end-time}~\parm{gps-seconds}] only output triggers 
+before GPS time SEC
+
+\item[\option{--gaussian-noise}~\parm{var}] replace data with gaussian 
+noise of variance VAR
+
+\item[\option{--random-seed}~\parm{seed}] set random number seed for
+injections to SEED (urandom|integer)
+
+\item[\option{--bank-simulation}~\parm{n}] perform N injections to test 
+the template bank
+
+\item[\option{--sim-approximant}~\parm{approximant}] set approximant of 
+the injected waveform to APX
+
+\item[\option{--sim-minimum-mass}~\parm{mass}] set minimum mass of bank 
+injected signal to M
+
+\item[\option{--sim-maximum-mass}~\parm{mass}] set maximum mass of bank
+injected signal to M
+
+\item[\option{--data-checkpoint}] checkpoint and exit after data is read 
+in
+
+\item[\option{--checkpoint-path}~\parm{path}] write checkpoint file under 
+PATH
+
+\item[\option{--output-path}] write output data to PATH
+
+\item[\option{--write-raw-data}] write raw data to a frame file
+
+\item[\option{--write-filter-data}] write data that is passed to filter 
+to a frame
+
+\item[\option{--write-response}] write the computed response function to 
+a frame
+
+\item[\option{--write-spectrum}] write the uncalibrated psd to a frame
+
+\item[\option{--write-snrsq}] write the snr time series for each data 
+segment
+
+\item[\option{--write-chisq}] write the $rö2$ time series for each data 
+segment
+
+
 \end{entry}
 
 \item[Example]
+To run the program, type:
 \begin{verbatim}
 lalapps_inspiral \
---enable-output --inverse-spec-length 16  --segment-length 1048576 \
---low-frequency-cutoff 7.000000e+01 --pad-data 8 \
---bank-file L1-TMPLTBANK-734357353-1024.xml \
---sample-rate 4096 --chisq-threshold 20.0 --resample-filter ldas \
---channel-name L1:LSC-AS_Q --calibration-cache \
-/ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
---segment-overlap 524288  --snr-threshold 8.0 \
---frame-cache cache/L-734357345-734361107.cache \
---number-of-segments 7 --dynamic-range-exponent 6.900000e+01 \
---enable-high-pass 5.000000e+01 --debug-level 33 \
---gps-start-time 734357353 --gps-end-time 734358377 \
---chisq-bins 8 --spectrum-type median --enable-event-cluster \
---minimal-match 9.700000e-01 --approximant TaylorF2
-\end{verbatim}
+--verbose \
+--debug-level 33 \ 
+--gps-start-time 73200096 \
+--gps-end-time 732902144 \
+--bank-file L1-TMPLTBANK-732900096-2048.xml \
+--calibration-cache L-CAL-729273600-734367600.cache \ 
+--frame-cache L1-732900096-2048.cache \
+ --channel-name L1:LSC-AS_Q \
+--snr-threshold 6.0 \
+--chisq-threshold 5.0 \
+--pad-data 8 \
+--segment-length 1048576 \
+--number-of-segments 15 \
+--sample-rate 4096 \
+--resample-filter ldas \
+--enable-high-pass 100.0 \ 
+--high-pass-order 8 \
+--high-pass-attenuation 0.1 \ 
+--spectrum-type median \
+--low-frequency-cutoff 100.0 \ 
+--approximant TaylorF2 \
+--minimal-match 0.9 \
+--segment-overlap 524288 \
+--inverse-spec-length 16 \
+--enable-event-cluster \
+--dynamic-range-exponent 69.0 \ 
+--chisq-bins 15 \
+--enable-output \
+--write-snr \
+--write-chisq \
+\end{verbatim} 
 
-\item[Author] 
-Duncan Brown
+
+
+
+
+\item[Author] Duncan Brown 
 \end{entry}
-
