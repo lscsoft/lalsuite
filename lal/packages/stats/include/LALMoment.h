@@ -10,14 +10,18 @@ $Id$
 \section{Header \texttt{LALMoment.h}}
 \label{s:LALMoment.h}
 
-The LALMoment() associated header file.
+\begin{verbatim}
+The LALDMoment() and LALSMoment() associated header file.
+(S - single precision )
+(D - double precision )
+\end{verbatim}
 
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/LALMoment.h>
 \end{verbatim}
 
-\noindent This header provides the prototype for the LALMoment() function.
+\noindent This header provides the prototype for the LALDMoment() and LALSMoment() function.
 
  </lalLaTeX> */
 
@@ -72,14 +76,22 @@ NRCSID( LALMOMENTH, "$Id$");
 \newpage\input{LALMomentC}
 </lalLaTeX>  */
 
-void LALMoment 
+void LALSMoment 
+(
+	LALStatus		*status,
+	REAL4			*result,
+	REAL4Sequence		*data,
+	INT4			whichMoment
+);
+
+
+void LALDMoment 
 (
 	LALStatus		*status,
 	REAL8			*result,
 	REAL8Sequence		*data,
-	INT4			*whichMoment
+	INT4			whichMoment
 );
-
 
 /*  <lalLaTeX>
 \newpage\input{LALMomentTestC}
