@@ -66,7 +66,7 @@ int printWaveform = 0;
 int main ( int argc, char *argv[] )
 {
   static LALStatus      stat;
-  INT4 i;
+  UINT4 i;
   REAL4 m1 = 0.0;
   REAL4 m2 = 0.0;
   float mtot,eta,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
@@ -325,7 +325,7 @@ int main ( int argc, char *argv[] )
     REAL4 sum = 0.0;
     REAL4 chisqSum = 0.0;
     REAL4 norm = 0.0;
-    INT4 k = 0;
+    UINT4 k = 0;
 
     spectrum.f0 = ppnParams.fStart;
     spectrum.deltaF = df;
