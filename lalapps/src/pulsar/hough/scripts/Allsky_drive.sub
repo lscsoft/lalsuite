@@ -1,0 +1,13 @@
+universe   = vanilla
+executable = /home/badkri/Driver_allsky/Allsky_drive.sh
+#input      = in.$(Process)
+output     = out.$(Process)
+error      = err.$(Process)
+log        = log.$(Process)
+initialdir = /home/badkri/Driver_allsky
++Prio = "42"
+notification = Never
+arguments  =  $(Process)
+on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
+requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) && (virtualmachineid == 1) )
+queue 200
