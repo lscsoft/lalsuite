@@ -700,10 +700,15 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
   
-log_fh.write( "$Id$" + "\n\n" )
+log_fh.write( "$Id$" + "\n" )
+log_fh.write( "$Name$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:
   log_fh.write( o + ' ' + a + '\n' )
+
+log_fh.write( "Config file has CVS strings:\n" )
+log_fh.write( cp.get('pipeline','version') + "\n" )
+log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
