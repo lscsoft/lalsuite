@@ -122,6 +122,7 @@ BOOLEAN FILE_FSTATS = 1;
 
 #if BOINC_GRAPHICS
 #include "graphics_api.h"
+#include "graphics_lib.h"
 #endif
 
 #define fopen boinc_fopen
@@ -131,6 +132,7 @@ int boincmain(int argc, char *argv[]);
 void worker();
 
 /* hooks for communication with the graphics thread */
+void* graphics_lib_handle;
 void (*set_search_pos_hook)(float,float) = NULL;
 int (*boinc_init_graphics_hook)(void (*worker)()) = NULL;
 double *fraction_done_hook = NULL;
@@ -2848,6 +2850,18 @@ int globargc=0;
 char **globargv=NULL;
 
 void worker() {
+
+#if (BOINC_GRAPHICS == 2) 
+  if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
+    fprintf(stderr, "unable to resolve set_search_pos(): %s\n", dlerror());
+    boinc_finish(1);
+  }
+  if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
+    fprintf(stderr, "unable to resolve fraction_done(): %s\n", dlerror());
+    boinc_finish(1);
+  }
+#endif
+
 #ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
   Outputfilename=Fstatsfilename;
@@ -2932,7 +2946,6 @@ int main(int argc, char *argv[]){
 
 #if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
-  boinc_init_graphics_hook = boinc_init_graphics;
   fraction_done_hook = &fraction_done;
 #endif
 
@@ -2947,67 +2960,37 @@ int main(int argc, char *argv[]){
   /* boinc_init() or boinc_init_graphics() needs to be run before any
    * boinc_api functions are used */
   
-  
-#if BOINC_GRAPHICS == 2
+#if BOINC_GRAPHICS>0
   {
-    /* Try loading screensaver-graphics as a dynamic library. 
-     * The convention used for the name of the screensaver-lib is
-     * to use the name of the executable + ".so"
-     */
-    CHAR *graphics_lib=NULL;	/* name of screensaver lib we're trying to load */
-    CHAR *ptr;
-    /* figure out name of executable */
-    if ( (ptr = strrchr (argv[0], '/')) == NULL )
-      ptr = argv[0];
-    else
-      ptr ++;
-
-    graphics_lib = LALCalloc(1, strlen(ptr) + 10);
-    strcpy (graphics_lib, ptr);
-    strcat (graphics_lib, ".so");    
-    /* boinc-resolve it: could be a XML symlink */
-    use_boinc_filename1(&graphics_lib);
-
-    /* try to open dynamic screensaver-lib */
-    void *handle = dlopen(graphics_lib,  RTLD_NOW);
-
-    if(handle != NULL) 
-      {
-	set_search_pos_hook      = dlsym(handle,"set_search_pos");
-	fraction_done_hook       = dlsym(handle,"fraction_done");
-	boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
-	
-	fprintf (stderr, "Successfully loaded screensaver-library '%s'\n", graphics_lib);
-      }
-    else
-      {
-	fprintf (stderr, "dlopen() failed: %s\n--> Running without screensaver graphics.\n", dlerror());
-      }
-    LALFree (graphics_lib);
-  }
-#endif
-#if BOINC_GRAPHICS
-  if (boinc_init_graphics_hook != NULL) { 
-    /* only returns if trouble creating worker thread */
-    int retval = boinc_init_graphics_hook(worker);
+    int retval;
+#if BOINC_GRAPHICS==2
+    /* Try loading screensaver-graphics as a dynamic library.  If this
+       succeeds then extern void* graphics_lib_handle is set, and can
+       be used with dlsym() to resolve symbols from that library as
+       needed.
+    */
+    retval=boinc_init_graphics_lib(worker, argv[0]);
+#endif /* BOINC_GRAPHICS==2 */
+#if BOINC_GRAPHICS==1
+    /* no dynamic library, just call boinc_init_graphics() */
+    retval = boinc_init_graphics(worker);
+#endif /* BOINC_GRAPHICS==1 */
     if (retval)
-      fprintf(stderr,"boinc_init_graphics() returned %d: unable to create worker thread\n", retval);
+      fprintf(stderr,"boinc_init_graphics[_lib]() returned %d: unable to create worker thread\n", retval);
     boinc_finish(1234+retval);
-  } else {
-#endif
-	  boinc_init();
-      worker();
-#if BOINC_GRAPHICS
   }
-#endif
-
-  /* we never get here!! */
-  return 222;
-}
-
-
+#endif /*  BOINC_GRAPHICS>0 */
+    
+    boinc_init();
+    worker();
+    boinc_finish(222);
+    /* we never get here!! */
+    return 222;
+  }
+  
+  
 #ifdef __GLIBC__
-/* needed to define backtrace() which is glibc specific*/
+  /* needed to define backtrace() which is glibc specific*/
 #include <execinfo.h>
 #endif /* __GLIBC__ */
 
