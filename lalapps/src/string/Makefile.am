@@ -4,7 +4,7 @@ if FRAME
 if LALFRAME
 if LALMETAIO
 RINGPROG = lalapps_ring
-STRINGPROG = lalapps_StringSearch
+STRINGPROG = 
 else
 RINGPROG =
 STRINGPROG =
@@ -44,6 +44,8 @@ EXTRA_DIST = ring.c StringSearch.c\
 	     ring_test_inj.sh ring_test_sim.sh ring_test_pipe.sh \
              $(SCRIPTS) $(DATA) \
 	     ring_pipe.in S2_H1_dag.in S2H1v03_test.txt
+
+EXTRA_PROGRAMS = lalapps_StringSearch
 
 python_config.sed:
 	-rm -f python_config.sed
