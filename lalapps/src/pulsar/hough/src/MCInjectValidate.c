@@ -41,7 +41,7 @@ Input shoud be from
 
 #include "./MCInjectComputeHough.h" /* proper path*/
 
-#define VALIDATEOUT "./validate.asc"
+#define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
 
 #define TRUE (1==1)
@@ -75,7 +75,8 @@ int main(int argc, char *argv[]){
   REAL8 *freqVec=NULL;
   REAL8 *spndnVec=NULL;
   static REAL8PeriodoPSD   periPSD;
-  static UCHARPeakGram     pg1;
+  /* pgV is vector of peakgrams and pg1 is onepeakgram */
+  static UCHARPeakGram     *pg1, **pgV; 
   UINT4  msp; /*number of spin-down parameters */
   INT4   uvar_ifo;
   CHAR   *uvar_SFTdir = NULL; /* the directory where the SFT  could be */
@@ -186,6 +187,7 @@ int main(int argc, char *argv[]){
     system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
+
     LALFree(fnameLog);
   }
 
@@ -261,6 +263,32 @@ int main(int argc, char *argv[]){
   sftlength = inputSFTs->data->data->length;
   timeBase = 1.0/inputSFTs->data->deltaF;
   sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+
+
+  /* loop over sfts and select peaks */
+
+  for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
+
+    /* first the memory allocation for the peakgrams */
+    pgV = (UCHARPeakGram **)LALMalloc(mObsCoh * sizeof(UCHARPeakGram *));
+    pg1 = pgV[tempLoopId];  
+    pg1->length = sftlength;
+    pg1->data = NULL;
+    pg1->data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+      
+    /* calculate the periodogram */
+    SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
+    
+    /* calculate psd using running median */
+    SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
+    
+    /* select sft bins to get peakgrams using threshold */
+    SUB( LALSelectPeakColorNoise(&status, pg1, &threshold,&periPSD), &status); 	
+    
+  } /* end of loop over sfts */
+
+  /* having calculated the peakgrams we don't need the sfts anymore */
+  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
 
   
   /* ****************************************************************/
@@ -351,7 +379,6 @@ int main(int argc, char *argv[]){
     }  
   }
 
-  
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -371,9 +398,7 @@ int main(int argc, char *argv[]){
   
   threshold = uvar_peakThreshold/normalizeThr; 
   
-  pg1.length = sftlength;
-  pg1.data = NULL;
-  pg1.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+
   
   foft.length = mObsCoh;
   foft.data = NULL;
@@ -429,24 +454,18 @@ int main(int argc, char *argv[]){
     numberCount=0;
     
     /* ****************************************************************/
-    /* loop over sfts, generate peakgrams and produce the number-count*/
+    /* loop over peakgrams and produce the number-count*/
     /* ****************************************************************/      
     for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
-      
-      /* calculate the periodogram */
-      SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
-      
-      /* calculate psd using running median */
-      SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-      
-      /* select sft bins to get peakgrams using threshold */
-      SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
-      
+
+      /* get the right peakgram */      
+      pg1 = pgV[tempLoopId];
+
       /* calculate frequency bin for template */
       index = floor( foft.data[tempLoopId]*timeBase -sftFminBin+0.5); 
       
       /* update the number count */
-      numberCount+=pg1.data[index]; 
+      numberCount+=pg1->data[index]; 
     } /* end of loop over sfts */
       
     /******************************************************************/
@@ -477,7 +496,12 @@ int main(int argc, char *argv[]){
 
   LALFree(periPSD.periodogram.data);
   LALFree(periPSD.psd.data);
-  LALFree(pg1.data);
+
+  for (tempLoopId = 0; tempLoopId < mObsCoh; tempLoopId++){
+    pg1 = pgV[tempLoopId];  
+    LALFree(pg1->data);
+  }
+  LALFree(pgV);
   
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
@@ -491,8 +515,6 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
-
   SUB (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
