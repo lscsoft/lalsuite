@@ -2,7 +2,8 @@
 #
 # $Id$
 #
-pkginclude_HEADERS = FindChirp.h \
+pkginclude_HEADERS = FindChirpDatatypes.h \
+                     FindChirp.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
                      FindChirpBCV.h \

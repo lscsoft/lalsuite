@@ -165,9 +165,10 @@ LALFindChirpFilterSegment (
   kmax = input->tmplt->fCutoff / deltaF < numPoints/2 ? 
     input->tmplt->fCutoff / deltaF : numPoints/2;
 
-  /* the length of the chisq bin vec is the number of bin   */
-  /* _boundaries_ so the number of chisq bins is length - 1 */
-  numChisqBins = input->segment->chisqBinVec->length - 1;
+  /* the length of the chisq bin vec is the number of bin boundaries so the */
+  /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
+  numChisqBins = input->segment->chisqBinVec->length ? 
+    input->segment->chisqBinVec->length - 1 : 0;
 
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
@@ -357,9 +358,14 @@ LALFindChirpFilterSegment (
         /* pointer to the chisq bin vector in the segment */
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
         params->chisqParams->norm        = norm;
-#if 0
-        params->chisqParams->bankMatch   = input->tmplt->minMatch;
-#endif
+
+        /* compute the chisq bin boundaries for this template */
+        if ( ! params->chisqParams->chisqBinVec->data )
+        {
+          LALFindChirpComputeChisqBins( status->statusPtr, 
+              params->chisqParams->chisqBinVec, input->segment, kmax );
+          CHECKSTATUSPTR( status );
+        }
 
         /* compute the chisq threshold: this is slow! */
         LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 

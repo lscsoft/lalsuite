@@ -558,20 +558,15 @@ LALCreateFindChirpSegmentVector (
       CHECKSTATUSPTR (status);
     }
 
-    
-    /* chi squared frequency bins */
-    if ( params->numChisqBins )
+    /* allocate space for the chi squared frequency bin boundaries */
+    segPtr[i].chisqBinVec = (UINT4Vector *) 
+      LALCalloc( 1, sizeof(UINT4Vector) );
+    if ( ! segPtr[i].chisqBinVec )
     {
-      segPtr[i].chisqBinVec = NULL;
-      LALU4CreateVector (status->statusPtr, 
-          &segPtr[i].chisqBinVec, params->numChisqBins + 1);
-      CHECKSTATUSPTR (status);
+      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
     }
-    else
-    {
-      segPtr[i].chisqBinVec = (UINT4Vector *) 
-        LALCalloc( 1, sizeof(UINT4Vector) );
-    }
+    segPtr[i].chisqBinVec->length = 
+      params->numChisqBins ? params->numChisqBins + 1 : 0;
 
     /* additional chisq frequency bins for the BCV templates */
     if ( params->approximant == BCV )
@@ -589,7 +584,6 @@ LALCreateFindChirpSegmentVector (
            LALCalloc( 1, sizeof(UINT4Vector) );
        }
      }
- 
 
     /* segment dependent part of normalisation, for the SP templates */
       LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
@@ -651,13 +645,9 @@ LALDestroyFindChirpSegmentVector (
     /* chi squared frequency bins */
     if ( segPtr[i].chisqBinVec->length )
     {
-      LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVec);
-      CHECKSTATUSPTR (status);
+      LALFree( segPtr[i].chisqBinVec->data );
     }
-    else
-    {
-      LALFree( segPtr[i].chisqBinVec );
-    }
+    LALFree( segPtr[i].chisqBinVec );
 
     if ( segPtr[i].chisqBinVecBCV )
     {

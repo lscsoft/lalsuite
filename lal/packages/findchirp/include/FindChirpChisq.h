@@ -37,6 +37,7 @@ function.
 #define _FINDCHIRPCHISQH_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/FindChirpDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -59,6 +60,7 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 #define FINDCHIRPCHISQH_EALOC 5
 #define FINDCHIRPCHISQH_EUAPX 6
 #define FINDCHIRPCHISQH_EIAPX 7
+#define FINDCHIRPCHISQH_EBINS 8
 #define FINDCHIRPCHISQH_MSGENULL "Null pointer"
 #define FINDCHIRPCHISQH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPCHISQH_MSGENUMZ "Number of points is zero or negative"
@@ -66,6 +68,7 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 #define FINDCHIRPCHISQH_MSGEALOC "Memory allocation error"
 #define FINDCHIRPCHISQH_MSGEUAPX "Unknown waveform approximant"
 #define FINDCHIRPCHISQH_MSGEIAPX "Incorrect waveform approximant"
+#define FINDCHIRPCHISQH_MSGEBINS "Error computing chisq bin boundaries"
 /* </lalErrTable> */
 
 #if 0
@@ -217,6 +220,14 @@ LALFindChirpChisqVetoFinalize (
 \newpage\input{FindChirpChisqC}
 </lalLaTeX>
 #endif
+
+void
+LALFindChirpComputeChisqBins(
+    LALStatus                  *status,
+    UINT4Vector                *chisqBinVec,
+    FindChirpSegment           *fcSeg,
+    UINT4                       kmax
+    );
 
 void
 LALFindChirpChisqVeto (
