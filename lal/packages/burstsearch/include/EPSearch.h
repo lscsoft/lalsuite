@@ -23,16 +23,8 @@ extern "C" {
 NRCSID (EPSEARCHH, "$Id$");
 
 /******** <lalErrTable file="EPSearchHErrTab"> ********/
-#define EPSEARCHH_ENULLP       1
-#define EPSEARCHH_EPOSARG      2
-#define EPSEARCHH_EALOC        3
-#define EPSEARCHH_EPOW2        4
-#define EPSEARCHH_EMALLOC      8
-#define EPSEARCHH_EINCOMP      16
-#define EPSEARCHH_EORDER       32
-#define EPSEARCHH_ENONNULL     64
-#define EPSEARCHH_ETILES       65
-#define EPSEARCHH_EDELFT       128
+#define EPSEARCHH_ENULLP    1
+#define EPSEARCHH_EALOC     3
 #define EPSEARCHH_EARGS     129
 #define EPSEARCHH_ENUMZ     130
 #define EPSEARCHH_ESEGZ     131
@@ -45,9 +37,6 @@ NRCSID (EPSEARCHH, "$Id$");
 #define EPSEARCHH_ELTFZ     138
 #define EPSEARCHH_ESIGM     139
 #define EPSEARCHH_EALPH     140
-#define EPSEARCHH_EFREE     141
-#define EPSEARCHH_ENLAL     142
-#define EPSEARCHH_ENDAT     143
 #define EPSEARCHH_EDUTY     144
 #define EPSEARCHH_EAMAX     145
 #define EPSEARCHH_EE2MS     146
@@ -55,21 +44,10 @@ NRCSID (EPSEARCHH, "$Id$");
 #define EPSEARCHH_ESIM      148
 #define EPSEARCHH_ESPEC     149
 #define EPSEARCHH_EWIN      150
-#define EPSEARCHH_EDATZ      151
-
-
 
 
 #define EPSEARCHH_MSGENULLP    "Null pointer"
-#define EPSEARCHH_MSGEPOSARG   "Arguments must be non-negative"
 #define EPSEARCHH_MSGEALOC     "Memory allocation error"
-#define EPSEARCHH_MSGEPOW2     "Length of supplied data must be a power of 2"
-#define EPSEARCHH_MSGEMALLOC   "Malloc failure"
-#define EPSEARCHH_MSGEINCOMP   "Incompatible arguments"
-#define EPSEARCHH_MSGEORDER    "Routines called in illegal order"
-#define EPSEARCHH_MSGENONNULL  "Null pointer expected"
-#define EPSEARCHH_MSGETILES    "Malloc failed while assigning memory for a tile"
-#define EPSEARCHH_MSGEDELFT    "Inconsistent deltaF in spectrum and data"
 #define EPSEARCHH_MSGEARGS     "Wrong number of arguments"
 #define EPSEARCHH_MSGENUMZ     "Data segment length is zero or negative"
 #define EPSEARCHH_MSGESEGZ     "Number of data segments is zero or negative"
@@ -82,9 +60,6 @@ NRCSID (EPSEARCHH, "$Id$");
 #define EPSEARCHH_MSGELTFZ     "Length (Nf) of 1st TF plane (with Nt=1) is <=0"
 #define EPSEARCHH_MSGESIGM     "Threshold number of sigma is <=1"
 #define EPSEARCHH_MSGEALPH     "Default alpha value is out of range"
-#define EPSEARCHH_MSGEFREE     "Memory free error"
-#define EPSEARCHH_MSGENLAL     "Tried to allocate to non-null pointer"
-#define EPSEARCHH_MSGENDAT     "No data read"
 #define EPSEARCHH_MSGEDUTY     "Number of segments sent to slave is zero"
 #define EPSEARCHH_MSGEAMAX     "The threshold value of alpha is negative"
 #define EPSEARCHH_MSGEE2MS     "Number of events out of range[1..99]"
@@ -92,7 +67,6 @@ NRCSID (EPSEARCHH, "$Id$");
 #define EPSEARCHH_MSGESIM      "Invalid simulation type: 0, 1, or 2"
 #define EPSEARCHH_MSGESPEC     "Invalid spectrum type: 0 or 1"
 #define EPSEARCHH_MSGEWIN      "Invalid window type: 0 or 1"
-#define EPSEARCHH_MSGEDATZ   "Got less data than expected"
 /******** </lalErrTable> ********/
 
 
@@ -126,13 +100,6 @@ EPSearch (
             SnglBurstTable         **burstEvent
          );
 
-void EPInitSearch(
-        LALStatus             *status,
-        EPSearchParams       **params,
-        CHAR                  *argv[],
-        INT4                   argc
-        );
-
 void
 EPConditionData(
     LALStatus             *status,
@@ -159,12 +126,6 @@ LALTFTileToBurstEvent (
                LIGOTimeGPS       *epoch,
                EPSearchParams    *params
                );
-
-void
-EPFinalizeSearch(
-    LALStatus             *status,
-    EPSearchParams       **params
-    );
 
 void LALWeighTFTileList (
         LALStatus         *status,

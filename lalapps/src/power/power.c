@@ -658,12 +658,17 @@ int main( int argc, char *argv[])
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 
-    /*******************************************************************
-    * FINALIZE EVERYTHING                                            *
-    *******************************************************************/
-    LAL_CALL( EPFinalizeSearch( &stat, &params), &stat);
-    LALCheckMemoryLeaks();
-    return 0;
+	/*****************************************************************
+	 * FINAL CLEANUP                                                 *
+	 *****************************************************************/
+	if(params) {
+		LALFree(params->channelName);
+		LALFree(params->compEPInput);
+		LALFree(params->tfTilingInput);
+		LALFree(params);
+	}
+	LALCheckMemoryLeaks();
+	exit(0);
 }
 
 
