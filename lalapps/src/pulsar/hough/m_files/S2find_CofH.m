@@ -5,16 +5,14 @@
 
 % load the file with all the maximun numbercount per frequency already cleaned
 %NC=load('AllSkyMax_4k_H1_0.005c');
-NC=load('/home/badkri/S2results/CLEAN_L1');
+NC=load('/local_data/badkri/S2results/CLEAN_H1');
 
 %the directory where the MC results are placed
-%DirectoryMC = '/local_data/badkri/S2-xxx/MC_allsky/';
-%Detector = 'H1';
-DirectoryMC = '/home/badkri/MCresults/';
-Detector = 'L1_coarse';
+DirectoryMC = '/local_data/badkri/MC_allsky/';
+Detector = 'H1_newline';
 
 MCfilepath = strcat(DirectoryMC,Detector);
-MCfilepre  = strcat(MCfilepath,'/MC_L1_');
+MCfilepre  = strcat(MCfilepath,'/MC_H1_');
 
 fileoutput1 = strcat(Detector,'_CofH');
 fid1 = fopen(fileoutput1, 'w');
@@ -79,8 +77,8 @@ for bandnumber=1:Nbands;
 
      %%%%%%%%%%%%%%%%%%%%Refining h0
      h0min= h0vect(nh0-1);
-     h0max= 5.0*h0vect(nh0);
-     if( CH(nh0)> 0.96)
+     h0max= h0vect(nh0)/CH(nh0);
+     if( CH(nh0)> 0.955)
        small = find( CH<0.945);
        if (length(small) ~= 0) 
          h0min = h0vect(length(small));
@@ -116,13 +114,19 @@ for bandnumber=1:Nbands;
          end
          slope = (h02-h01)/(CL2-CL1);
          UL=h01 +slope*(0.95 -CL1);
-      else
+         else
+         ii = 1;
          indices = find(CH < 0.95);
          k = length(indices);
          h02 = h0vect(k);
          CL2 = CH(k);
-         h01 = h0vect(k-1);
-         CL1 = CH(k-1);
+         h01 = h0vect(k-ii);
+         CL1 = CH(k-ii);
+         while (CL1 == CL2)
+              ii = ii+1;
+              CL1 = CH(k-ii);
+              h01 = h0vect(k-ii);
+         end
          slope = (h02 - h01)/(CL2 -CL1);
          UL = h01 + slope * (0.95 - CL1);
       end
