@@ -80,7 +80,7 @@ void pout(char *fmt, ...){
   hostsname[255]='\0';
 
   /* printout process id and hostname into error message */
-  fprintf(stderr,"%s [%d] ", hostsname, processid);
+  fprintf(stderr,"%s [PID=%d] ", hostsname, processid);
 
   /* initialize variable argument list */
   va_start(ap,fmt);
