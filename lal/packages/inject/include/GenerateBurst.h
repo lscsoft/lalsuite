@@ -27,6 +27,7 @@ This header covers routines to generate a variety of burst waveforms
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -108,6 +109,21 @@ LALGenerateBurst(
     LALStatus          *stat, 
     CoherentGW         *output, 
     BurstParamStruc    *params 
+    );
+
+/* <lalLaTeX>
+\newpage\input{SimulateTaylorCWTestC}
+</lalLaTeX> */
+
+/* <lalLaTeX>
+\newpage\input{BurstInjectSignalsCC}
+</lalLaTeX> */
+void
+LALBurstInjectSignals( 
+    LALStatus               *stat, 
+    REAL4TimeSeries         *series, 
+    SimBurstTable           *injections,
+    COMPLEX8FrequencySeries *resp
     );
 
 /* <lalLaTeX>
