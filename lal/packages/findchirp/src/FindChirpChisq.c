@@ -602,7 +602,7 @@ LALFindChirpBCVChisqVeto (
 
     memcpy( qtildeBin1 + chisqBin[l], qtilde1 + chisqBin[l],
         (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
-    mamcpy( qtildeBin2 + chisqBin[l], qtilde2 + chisqBin[l],
+    memcpy( qtildeBin2 + chisqBin[l], qtilde2 + chisqBin[l],
         (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
 
     LALCOMPLEX8VectorFFT( status->statusPtr, qBinVecPtr1[l],
