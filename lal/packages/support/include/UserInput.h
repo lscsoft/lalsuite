@@ -39,6 +39,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EBOOL	6
 #define USERINPUTH_EUNKNOWN	7
 #define USERINPUTH_ENOTSET	8
+#define USERINPUTH_EDEBUG	9
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
@@ -48,6 +49,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEBOOL	"Illegal BOOLEAN option-value"
 #define USERINPUTH_MSGEUNKNOWN	"Unknown user-variable"
 #define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
+#define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
 
 /*************************************************** </lalErrTable> */
 
@@ -146,10 +148,10 @@ void LALUserVarReadAllInput(LALStatus *stat, int argc, char *argv[]);
 void LALUserVarReadCmdline (LALStatus *stat, int argc, char *argv[]);
 void LALUserVarReadCfgfile (LALStatus *stat, const CHAR *cfgfile);
 
-void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring);
+void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring, const CHAR *progname);
 void LALUserVarCheckRequired (LALStatus *stat);
 INT4 UVARwasSet (void *cvar);
-
+void UVARgetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
 
 #ifdef  __cplusplus
 }

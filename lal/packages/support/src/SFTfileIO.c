@@ -924,7 +924,7 @@ void dump_SFT (const SFTtype *sft, FILE *fp)
       ff = f0 + i*df;
       valre = sft->data->data[i].re;
       valim = sft->data->data[i].im;
-      fprintf(fp, "%f %e %e\n", ff, valre, valim);
+      fprintf(fp, "%f %e %e %e\n", ff, valre, valim, sqrt(valre*valre + valim*valim));
         
     } /* for i < nsamples */
   

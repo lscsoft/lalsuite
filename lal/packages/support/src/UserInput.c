@@ -81,6 +81,57 @@ RegisterUserVar (LALStatus *stat,
 		 void *cvar);
 
 
+/* these are type-specific wrappers to allow tighter type-checking! */
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterREALUserVar (LALStatus *stat, 
+			const CHAR *name, 
+			CHAR optchar, 
+			UserVarState flag,
+			const CHAR *helpstr, 
+			REAL8 *cvar)
+{ /* </lalVerbatim> */
+  RegisterUserVar (stat, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
+}
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterINTUserVar (LALStatus *stat, 
+		       const CHAR *name, 
+		       CHAR optchar, 
+		       UserVarState flag,
+		       const CHAR *helpstr, 
+		       INT4 *cvar)
+{ /* </lalVerbatim> */
+  RegisterUserVar (stat, name, UVAR_INT4, optchar, flag, helpstr, cvar);
+} 
+
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterBOOLUserVar (LALStatus *stat, 
+			const CHAR *name, 
+			CHAR optchar, 
+			UserVarState flag,
+			const CHAR *helpstr, 
+			BOOLEAN *cvar)
+{ /* </lalVerbatim> */
+  RegisterUserVar (stat, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
+} 
+
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterSTRINGUserVar (LALStatus *stat, 
+			  const CHAR *name, 
+			  CHAR optchar, 
+			  UserVarState flag,
+			  const CHAR *helpstr, 
+			  CHAR **cvar)
+{ /* </lalVerbatim> */
+  RegisterUserVar (stat, name, UVAR_STRING, optchar, flag, helpstr, cvar);
+} 
+
+
+
+
 /*----------------------------------------------------------------------
  * "register" a user-variable with the module
  * effectively put an appropriate entry into UVAR_vars
@@ -132,57 +183,6 @@ RegisterUserVar (LALStatus *stat,
 
 
 
-/* these are trivial type-specific wrappers to allow tighter type-checking! */
-/* <lalVerbatim file="UserInputCP"> */
-void
-LALRegisterREALUserVar (LALStatus *stat, 
-			const CHAR *name, 
-			CHAR optchar, 
-			UserVarState flag,
-			const CHAR *helpstr, 
-			REAL8 *cvar)
-{ /* </lalVerbatim> */
-  RegisterUserVar (stat, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
-}
-/* <lalVerbatim file="UserInputCP"> */
-void
-LALRegisterINTUserVar (LALStatus *stat, 
-		       const CHAR *name, 
-		       CHAR optchar, 
-		       UserVarState flag,
-		       const CHAR *helpstr, 
-		       INT4 *cvar)
-{ /* </lalVerbatim> */
-  RegisterUserVar (stat, name, UVAR_INT4, optchar, flag, helpstr, cvar);
-} 
-
-/* <lalVerbatim file="UserInputCP"> */
-void
-LALRegisterBOOLUserVar (LALStatus *stat, 
-			const CHAR *name, 
-			CHAR optchar, 
-			UserVarState flag,
-			const CHAR *helpstr, 
-			BOOLEAN *cvar)
-{ /* </lalVerbatim> */
-  RegisterUserVar (stat, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
-} 
-
-/* <lalVerbatim file="UserInputCP"> */
-void
-LALRegisterSTRINGUserVar (LALStatus *stat, 
-			  const CHAR *name, 
-			  CHAR optchar, 
-			  UserVarState flag,
-			  const CHAR *helpstr, 
-			  CHAR **cvar)
-{ /* </lalVerbatim> */
-  RegisterUserVar (stat, name, UVAR_STRING, optchar, flag, helpstr, cvar);
-} 
-
-
-
-
 /*--------------------------------------------------------------------------------
  * free memory associated with user-variable linked list
  *--------------------------------------------------------------------------------*/
@@ -214,6 +214,9 @@ LALDestroyUserVars (LALStatus *stat)
 
   if (lastptr)
     LALFree (lastptr);
+
+  /* clean head */
+  memset (&UVAR_vars, 0, sizeof(UVAR_vars));
   
   RETURN(stat);
 } /* LALDestroyUserVars() */
@@ -244,6 +247,22 @@ LALUserVarReadCmdline (LALStatus *stat,
   ptr = &UVAR_vars;	/* set to empty head */
   pos = 0;
   numvars = 0;
+
+  /* special treatment of head, which could contain the debug-option: 
+   * NOTE: this one will *NOT* be treated by the remaining function, 
+   * (as the head is always skipped), but it has to be in the optstring 
+   * to avoid an error if specified on the command-line. 
+   * Treatment of debug-option reading has to be done separately using
+   * UVARgetDebugLevle() 
+   */
+  if ( (ptr->help != NULL) && (ptr->optchar != 0) )
+    {
+      numvars ++;
+      optstring[pos++] = ptr->optchar;
+      optstring[pos++] = ':';		/* requires an argument */
+    } /* if debug-option */
+
+  /* treat the remaining "normal" entries */
   while ( (ptr = ptr->next) != NULL )
     {
       numvars ++;			/* counter number of user-variables */
@@ -280,14 +299,20 @@ LALUserVarReadCmdline (LALStatus *stat,
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
+	ATTATCHSTATUSPTR (stat);
+	CHAR *helpstring = NULL;
+	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
+	printf ("\n%s\n", helpstring);
+	LALFree (helpstring);
 	ABORT (stat, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
       if (c != 0) 	/* find short-option character */
 	{
 	  ptr = &UVAR_vars;
-	  while ( (ptr=ptr->next) != NULL)
+	  do {
 	    if (c == ptr->optchar)
 	      break;
+	  } while ( (ptr=ptr->next) != NULL);
 	} /* if short-option */
       else	/* find long-option: returned in longindex */
 	{
@@ -295,11 +320,16 @@ LALUserVarReadCmdline (LALStatus *stat,
 	  while ( (ptr=ptr->next) != NULL)
 	    if ( !strcmp (long_options[longindex].name, ptr->name) )
 	      break;
-	}
+	} /* if long-option */
+
       if (ptr == NULL) {	/* should not be possible: nothing found at all... */
 	LALPrintError ("WARNING: failed to find option.. this points to a coding-error!\n");
 	ABORT (stat, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
+
+      /* if we found the debug-switch, ignore it (has been handled already */
+      if (ptr == &UVAR_vars)
+	continue;
 
       switch (ptr->type)
 	{
@@ -459,7 +489,8 @@ LALUserVarReadCfgfile (LALStatus *stat,
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarHelpString (LALStatus *stat, 
-		      CHAR **helpstring) /* output: allocated here! */
+		      CHAR **helpstring, /* output: allocated here! */
+		      const CHAR *progname)
 { /* </lalVerbatim> */
 
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
@@ -477,8 +508,33 @@ LALUserVarHelpString (LALStatus *stat,
   ASSERT (helpstring != NULL, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT ( *helpstring == NULL, stat, USERINPUTH_ENONULL, USERINPUTH_MSGENONULL);
 
+  /* prepare first lines of help-string: info about config-file reading */
+  newlen = 0;
+  sprintf (strbuf, "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
+  if ( (helpstr = LALCalloc (1, strlen(strbuf) + 1)) == NULL) {
+    ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+  }
+  strcpy (helpstr, strbuf);
+  newlen += strlen (strbuf) + 1;
+
   /* put together the help-string. Allocate memory on-the-fly... */
   ptr = &UVAR_vars;
+
+  /* special treatment of debug-option in the head (if present) */
+  if ( ptr->help && ptr->optchar )
+    {
+      sprintf (strbuf, "                   -%c     %-8s  %s    [%d] \n", 
+	       ptr->optchar, typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
+      newlen += strlen (strbuf);
+      helpstr = LALRealloc (helpstr, newlen);
+      if ( helpstr == NULL) {
+	ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      }
+
+      strcat (helpstr, strbuf);	/* add this line to the helpstring */
+    }
+
+  /* treat the remaining "normal" entries */
   while ( (ptr=ptr->next) != NULL)
     {
       if (ptr->state & UVAR_REQUIRED)
@@ -527,11 +583,8 @@ LALUserVarHelpString (LALStatus *stat,
 		   defaultstr);
 
       /* now increase allocated memory by the right amount */
-      newlen += strlen (strbuf) + 1;
-      if (helpstr == NULL)  /* !!make sure the first time the string is cleared!!*/
-	helpstr = LALCalloc (1, newlen);
-      else
-	helpstr = LALRealloc (helpstr, newlen);
+      newlen += strlen (strbuf);
+      helpstr = LALRealloc (helpstr, newlen);
       if ( helpstr == NULL) {
 	ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
       }
@@ -567,7 +620,6 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
 
   ATTATCHSTATUSPTR (stat); 
 
-
   /* pre-process command-line: have we got a config-file ? */
   for (i=1; i < argc; i++)
     {
@@ -597,7 +649,7 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
     if ( (ptr->state & UVAR_HELP) && (ptr->state & UVAR_WAS_SET) )
       {
 	CHAR *helpstring = NULL;
-	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring), stat);
+	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
 	printf ("\n%s\n", helpstring);
 	LALFree (helpstring);
 	DETATCHSTATUSPTR (stat);
@@ -668,3 +720,56 @@ LALUserVarCheckRequired (LALStatus *stat)
   RETURN (stat);
 
 } /* LALUserVarCheckRequired() */
+
+/*----------------------------------------------------------------------
+ * treat the delicate setting of lalDebuglevel
+ *----------------------------------------------------------------------*/
+void
+UVARgetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
+{
+  static const char *help = "set lalDebugLevel";
+  static INT4 defaultDebugLevel;
+  INT4 i;
+  CHAR *ptr;
+
+  INITSTATUS( stat, "UVARgetDebugLevel", USERINPUTC);
+
+  ASSERT (argv, stat,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (UVAR_vars.next == NULL, stat, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
+  ASSERT (UVAR_vars.varp == NULL, stat, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
+
+  /* "register" the debug-level variable in the head of the UVAR-list, 
+   * to avoid any mallocs. We need this to show up in the help-string */
+  UVAR_vars.name = NULL;
+  UVAR_vars.type = UVAR_INT4;
+  UVAR_vars.optchar = optchar;
+  UVAR_vars.help = help;
+
+  defaultDebugLevel = lalDebugLevel;
+  UVAR_vars.varp = &defaultDebugLevel;	/* trick: use to store default-value (for help-string) */
+
+  UVAR_vars.state = UVAR_OPTIONAL;
+  UVAR_vars.next = NULL;
+  
+  /* the command-line has to be processed by hand for this... ! */
+  for (i=1; i < argc; i++)
+    {
+      if ( (argv[i][0] == '-') && (argv[i][1] == optchar) )
+	{
+	  if (argv[i][2] != '\0')
+	    ptr = argv[i]+2;
+	  else
+	    ptr = argv[i+1];
+
+	  if ( (ptr==NULL) || (sscanf ( ptr, "%d", &lalDebugLevel) != 1) ) {
+	    LALPrintError ("setting debug-level `-%c` requires an argument\n", optchar);
+	    ABORT (stat, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
+	  }
+	  break;
+	} /* if debug-switch found */
+      
+    } /* for i < argc */
+
+  RETURN (stat);
+
+} /* UVARgetDebugLevel() */
