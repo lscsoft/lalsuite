@@ -17,6 +17,7 @@ SPA bank might be tested as well.
 [\verb$--fend-bcv$     \textit{$f_{cut}Min$}\texttt{\&}\textit{$f_{cut}Max$}]
 [\verb$--fl$	\textit{lower cutoff frequency}]
 [\verb$--mm$ \textit{MinimalMatch}]
+[\verb$--mass-range$ \textit{mMin}\texttt{\&}\textit{mMax}]
 [\verb$--n$     \textit{number of simulations}]  - 
 [\verb$--number-fcut$ \textit{number of layers } \textit{ in $f_{cut}$ dimension}]
 [\verb$--print-bank$]
@@ -87,6 +88,10 @@ Lower cutoff frequency for templates and signal. Might add two options later.
 Print a help message.
 \item[\texttt{--mm}]
 Fixe the Minimal Match of the bank.
+\item[\texttt{--mass-range}]
+Mass range of the signal to inject (minimum and maximum values). One has to adjust
+ the parameters of the bank generation. For instance, if the minimal mass is 3 solar
+mass then psi0 max should be of the order of 500.000.
 \item[\texttt{--n}]
 Number of trials, i.e number of injections.
 \item[\texttt{--number-fcut}]
