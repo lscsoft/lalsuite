@@ -45,7 +45,7 @@ somevar = some text.\
         line-continuation	
    var3 = 4      # whatever that means
 note = "this is also possible, and # here does nothing"
-a_switch = true	 #possible values: 0,1,true,false,yes,no
+a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
 # etc etc.
 \end{verbatim}
 
@@ -65,7 +65,8 @@ or the general-purpose reading function:\\
 
 
 A boolean variable read by \verb+LALReadConfigBOOLVariable()+ can have any of the values 
-\verb+{1, 0, yes, no, true, false}+.
+\verb+{1, 0, yes, no, true, false}+, where the comparison is done \emph{case-insensitively}, 
+i.e. you also use "True" or "FALSE"....
 
 
 If one wishes a ``tight'' sytnax for the config-file, one can check
@@ -377,6 +378,9 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 
   if (*wasRead && tmp) /* if we read anything at all... */
     {
+      /* get rid of case ambiguities */
+      TRY (LALLowerCaseString (stat->statusPtr, tmp), stat);
+
       /* try to parse it as a bool */
       if (      !strcmp(tmp, "yes") || !strcmp(tmp, "true") || !strcmp(tmp,"1"))
 	ret = 1;
@@ -595,6 +599,26 @@ LALCheckConfigReadComplete (LALStatus *stat,
 } /* LALCheckConfigReadComplete() */
 
 
+
+/*----------------------------------------------------------------------
+ * little helper function:  turn a string into lowercase
+ *----------------------------------------------------------------------*/
+void
+LALLowerCaseString (LALStatus *stat, CHAR *string)
+{
+  UINT4 i;
+
+  INITSTATUS( stat, "LALLowerCaseString", CONFIGFILEC );  
+
+  ASSERT (string != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+
+  for (i=0; i < strlen (string); i++)
+    string[i] = tolower( string[i] );
+  
+  RETURN (stat);
+
+} /* LALLowerCaseString() */
+
 
 /* ---------------------------------------------------------------------- 
  *   INTERNAL FUNCTIONS FOLLOW HERE

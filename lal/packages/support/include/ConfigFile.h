@@ -23,11 +23,9 @@ Module for general config-file reading.
 #include <lal/StringInput.h>
 
 /* C++ protection. */
-/* 
 #ifdef  __cplusplus   
 extern "C" {
 #endif
-*/
 
 NRCSID( CONFIGFILEH, "$Id$");
 
@@ -164,12 +162,12 @@ LALReadConfigVariable (LALStatus *stat,
 
 void LALCheckConfigReadComplete (LALStatus *stat, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
+void LALLowerCaseString (LALStatus *stat, CHAR *string);
+
 /* C++ protection. */
-/*
 #ifdef  __cplusplus
 }
 #endif  
-*/
 
 #endif  /* Double-include protection. */
 
