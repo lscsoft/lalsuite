@@ -94,8 +94,6 @@ EPSearch (
         dummySegment = params->epSegVec->data;
 
         /* Generate gaussian noise */
-        //LALNormalDeviates( status->statusPtr, dummySegment->data, params->randomParams);
-        //CHECKSTATUSPTR (status);
       }
       else
       {
@@ -144,8 +142,12 @@ EPSearch (
       CHECKSTATUSPTR (status);
 
       /* compute the likelihood for slightly better detection method */
-      //LALComputeLikelihood  (status->statusPtr, &(params->lambda), params->tfTiling);
-      //CHECKSTATUSPTR (status);
+      /*
+       *
+       * LALComputeLikelihood  (status->statusPtr, &(params->lambda), params->tfTiling);
+       * CHECKSTATUSPTR (status);
+       *
+       */
 
       /* sort the results. */
       LALSortTFTiling (status->statusPtr, params->tfTiling);
@@ -153,9 +155,13 @@ EPSearch (
 
       /* count the number of events  */
       /* change alphaThreshold to match with confidence */
-      //LALCountEPEvents(status->statusPtr, &(params->numEvents), 
-      //    params->tfTiling, params->alphaThreshold);
-      //CHECKSTATUSPTR (status);
+      /*
+       *
+       * LALCountEPEvents(status->statusPtr, &(params->numEvents), 
+       *   params->tfTiling, params->alphaThreshold);
+       * CHECKSTATUSPTR (status);
+       * 
+       */
       {
         TFTile *thisTile = params->tfTiling->firstTile;
         INT4 tileCount   = 0;
