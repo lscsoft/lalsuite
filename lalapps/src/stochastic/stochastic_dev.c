@@ -2111,8 +2111,6 @@ static void psdEstimator(LALStatus *status,
   INT4 i;
 
   /* psd data structures */
-  REAL4FrequencySeries *psdTempA;
-  REAL4FrequencySeries *psdTempC;
   REAL4FrequencySeries *psdA;
   REAL4FrequencySeries *psdC;
 
@@ -2124,35 +2122,27 @@ static void psdEstimator(LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   /* allocate memory for psd data structures */
-  LALCreateREAL4FrequencySeries(status->statusPtr, &psdTempA, "psdTempA", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
-  CHECKSTATUSPTR( status );
-  LALCreateREAL4FrequencySeries(status->statusPtr, &psdTempC, "psdTempC", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
-  CHECKSTATUSPTR( status );
-
-  /* allocate memory for reduced band psd data structures */
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdA, "psdA", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.filterLength);
+      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
   CHECKSTATUSPTR( status );
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdC, "psdC", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.filterLength);
+      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
   CHECKSTATUSPTR( status );
 
   /* compute uncalibrated PSDs */
-  LALREAL4AverageSpectrum(status->statusPtr, psdTempA, input.segmentA, \
+  LALREAL4AverageSpectrum(status->statusPtr, psdA, input.segmentA, \
       params.psdParams);
   CHECKSTATUSPTR( status );
-  LALREAL4AverageSpectrum(status->statusPtr, psdTempC, input.segmentC, \
+  LALREAL4AverageSpectrum(status->statusPtr, psdC, input.segmentC, \
       params.psdParams);
   CHECKSTATUSPTR( status );
 
   /* reduce to the optimal filter frequency range */
-  LALCutREAL4FrequencySeries(status->statusPtr, &psdA, psdTempA, \
-      params.numFMin, params.filterLength);
+  LALShrinkREAL4FrequencySeries(status->statusPtr, psdA, params.numFMin, \
+      params.filterLength);
   CHECKSTATUSPTR( status );
-  LALCutREAL4FrequencySeries(status->statusPtr, &psdC, psdTempC, \
-      params.numFMin, params.filterLength);
+  LALShrinkREAL4FrequencySeries(status->statusPtr, psdC, params.numFMin, \
+      params.filterLength);
   CHECKSTATUSPTR( status );
 
   for (i = 0; i < params.filterLength; i++)
@@ -2171,10 +2161,6 @@ static void psdEstimator(LALStatus *status,
   LALDestroyREAL4FrequencySeries(status->statusPtr, psdA);
   CHECKSTATUSPTR( status );
   LALDestroyREAL4FrequencySeries(status->statusPtr, psdC);
-  CHECKSTATUSPTR( status );
-  LALDestroyREAL4FrequencySeries(status->statusPtr, psdTempA);
-  CHECKSTATUSPTR( status );
-  LALDestroyREAL4FrequencySeries(status->statusPtr, psdTempC);
   CHECKSTATUSPTR( status );
 
   /* return status */
