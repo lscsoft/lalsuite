@@ -284,7 +284,7 @@ main(int argc, char **argv)
   CHAR *psfile = NULL;       /* name of PostScript output file */
   UINT2 flags;               /* plotting flags */
   REAL4 rangeParams[4];      /* LALRangeTest() parameters */
-  REAL4 metricParams[6];     /* LALMetricTest() parameters */
+  REAL4 metricParams[9];     /* LALMetricTest() parameters */
   TwoDMeshParamStruc params; /* LALCreateTwoDMesh() parameters */
   TwoDMeshNode *mesh = NULL; /* head of mesh list */
   FILE *fp;                  /* output file pointer */
@@ -297,8 +297,8 @@ main(int argc, char **argv)
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;
 
 
-  /* DEBUG: Do nothing at present.
-  return 0; */
+  /* DEBUG: Do nothing at present. */
+  return 0;
 
 
   /* Parse argument list.  arg stores the current position. */

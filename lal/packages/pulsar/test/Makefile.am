@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest StreamInputTest ResampleTest LALDemodTest FoldAmplitudesTest
-noinst_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat range_tauOverT-1e5_n-2.dat StreamInput.dat in.data
+check_PROGRAMS = StackMetricTest FlatMeshTest TwoDMeshTest StreamInputTest ResampleTest LALDemodTest FoldAmplitudesTest LALBarycenterTest
+noinst_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat range_tauOverT-1e5_n-2.dat StreamInput.dat in.data earth98.dat sun98.dat
 EXTRA_DIST = $(DATA)
 MOSTLYCLEANFILES = .dvi-dep times.blah
 StackMetricTest_SOURCES = StackMetricTest.c
@@ -17,8 +17,10 @@ LALDemodTest_SOURCES = LALDemodTest.c
 LALDemodTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 FoldAmplitudesTest_SOURCES = FoldAmplitudesTest.c
 FoldAmplitudesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALBarycenterTest_SOURCES = LALBarycenterTest.c LALInitBarycenter.h LALInitBarycenter.c
+LALBarycenterTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = StackMetricTest FlatMeshTest StreamInputTest ResampleTest FoldAmplitudesTest
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest StreamInputTest ResampleTest FoldAmplitudesTest LALBarycenterTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep

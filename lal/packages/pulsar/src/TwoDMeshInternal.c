@@ -505,11 +505,18 @@ LALTwoDColumn( LALStatus            *stat,
       ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
     }
     params->nOut++;
+
+    /*DEBUG:*/
+    fprintf( stderr, "%i %f %f\n", params->nOut, position[0],
+	     position[1] );
+    fflush( stderr );
+
     GETSIZE( here->next->dy, dx, metric, params->mThresh );
     here->next->y = position[1];
     here = here->next;
     here->x = position[0];
     here->next = here->subMesh = NULL;
+
     if ( params->nOut >= nIn ) {
       *tail = here;
       DETATCHSTATUSPTR( stat );
@@ -537,6 +544,12 @@ LALTwoDColumn( LALStatus            *stat,
 	ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
       }
       params->nOut++;
+
+      /*DEBUG:*/
+      fprintf( stderr, "%i %f %f\n", params->nOut, position[0],
+	       position[1] );
+      fflush( stderr );
+
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
       y0 = here->dy[1] - here->next->dy[0];
       y1 = here->next->dy[1] - here->dy[0];
