@@ -14,10 +14,11 @@ Power tasks:
 
 +  Modify to use call to LALComputeSpectrum() instead of in-line code
 +  Add ability to resample the data following inspiral code
-+  Fix threshold computing codes
++  Fix threshold computing codes (PATRICK)
++  Make sure that frame reading code does not drop times
 
 *  Add ability to output spectrum, etc. as frames
-*  Add ability to output hrss for the burst triggers found
+*  Add ability to output hrss for the burst triggers found (PATRICK)
 *  Check that all search summary information works correctly
 *  Add clustering algorithms suggested by PRB & JDEC
         - cluster by peak (central) time of tiles
@@ -26,6 +27,7 @@ Power tasks:
 o  Make sure can filter auxilliary channels
 o  Fix injection codes to be able to take arbitrary signals
         - this is a substantial job,  needs a couple of weeks
+	- could plan to work with h(t) for now
  
 
 burca tasks:
@@ -34,6 +36,7 @@ burca tasks:
 *  Make sure it provided search summary information
 *  Enhance in line with the method used for inca
 *  Time-slide capability
+*  Should be able to handle injection verification efficiency work
 
 
 bread/binj_find tasks:
@@ -41,12 +44,14 @@ bread/binj_find tasks:
 
 *  unify these codes so that we don't have to maintain both
 *  enhance binj_find to find best match out of triggers
+*  add the ability to 
 
 
 multiPower:
 ==========
 
 *  Develop a code to do multi-detector power searches
+*  Should be easy given all our current experience
 
 
 Burst-inspiral coincidence:
