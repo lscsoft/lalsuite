@@ -263,6 +263,16 @@ SGI running IRIX 6.5 with gcc:
     places and are hoping to use LD_LIBRARY_PATH to locate them, you may need
     to set the environment variable LD_LIBRARYN32_PATH too.
 
+  * If you have command-lines that are too long, you'll need to change
+    the length of the lines allowed.  To do this use systune -i
+    (or perhaps systune -r):
+
+        $ systune -r
+        systune-> ncargs 204800
+        systune-> quit
+    
+    This increases the command line length maximum until reboot.
+    Change it permanently with systune -b.
 
 Alpha running Linux with ccc --- making shared libraries:
 
