@@ -1016,7 +1016,6 @@ int main( int argc, char *argv[] )
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     this_sim_insp->mass1 = injPar[m1Elem];
     this_sim_insp->mass2 = injPar[m2Elem];
-    this_sim_insp->mtotal = injPar[mTotElem];
     this_sim_insp->eta = injPar[etaElem];
     this_sim_insp->distance = injPar[distElem] / MPC;
     this_sim_insp->longitude = injPar[lonElem];

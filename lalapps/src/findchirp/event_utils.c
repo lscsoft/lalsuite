@@ -255,7 +255,6 @@ buildSimInspiralIndex(
   params->geocent_end_time_nsIndex = MetaioFindColumn( triggerEnv, "geocent_end_time_ns");
   params->end_time_gmstIndex = MetaioFindColumn( triggerEnv, "end_time_gmst");
   params->sourceIndex = MetaioFindColumn( triggerEnv, "source");
-  params->mtotalIndex = MetaioFindColumn( triggerEnv, "mtotal");
   params->etaIndex = MetaioFindColumn( triggerEnv, "eta");
   params->distanceIndex = MetaioFindColumn( triggerEnv, "distance");
   params->longitudeIndex = MetaioFindColumn( triggerEnv, "longitude");
@@ -292,8 +291,6 @@ getSimInspiralVars(
       triggerEnv->ligo_lw.table.elt[params->end_time_gmstIndex].data.real_4;  
   strcpy(inspiralEvent->source,
           triggerEnv->ligo_lw.table.elt[params->sourceIndex].data.lstring.data);
-  inspiralEvent->mtotal = 
-      triggerEnv->ligo_lw.table.elt[params->mtotalIndex].data.real_4;  
   inspiralEvent->eta = 
       triggerEnv->ligo_lw.table.elt[params->etaIndex].data.real_4;  
   inspiralEvent->distance = 
