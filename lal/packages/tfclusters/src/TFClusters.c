@@ -63,7 +63,7 @@ LALComputeSpectrogram (
 
 \subsubsection*{Description}
 Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
-No window is applied, but FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration.
+FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration; if they do overlap, a Welch window is applied.
 The power is the norm square of the (normalized) discrete Fourier transform.
 
 \subsubsection*{Uses}
@@ -88,8 +88,9 @@ LALComputeSpectrogram (
 {
   UINT4 sid, olap, NN, minF;
   /* INT4 i,j; */
-  INT4 j;
+  INT4 j, k;
   REAL8 *power;
+  REAL4 *wwin, *tdat;
 
   /* LALWindowParams winParams; */
   TFPlaneParams *params;
@@ -173,9 +174,33 @@ LALComputeSpectrogram (
 
   norm = (REAL8)NN;
 
+  /* set window */
+  if(olap) { 
+    REAL4 nn2 = 0.5*(REAL4)NN;
+    wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
+    ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
+
+    for(k=0; k<NN; k++) {
+      wwin[k] = 1.0 - pow(((REAL4)k-nn2)/nn2,2.0);
+    }
+
+    tdat =  (REAL4 *)LALMalloc(NN * sizeof(REAL4));
+    ASSERT(tdat, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
+  }
+
+
   /* Get TF representation */
   for(sid = 0; sid < (UINT4)params->timeBins; sid++) {
-    Pvec.data = tseries->data->data + sid * (NN - olap);
+    if(olap) {
+      memcpy(tdat, tseries->data->data + sid * (NN - olap), NN * sizeof(REAL4));
+      for(k=0; k<NN; k++) {
+	tdat[k] *= wwin[k];
+      }
+      Pvec.data = tdat;
+    } else {
+      Pvec.data = tseries->data->data + sid * NN;
+    }
+
     LALForwardRealFFT(status->statusPtr, Hvec, &Pvec, pfwd);
 
     for(j=minF; (UINT4)j< minF + params->freqBins; j++)
@@ -191,6 +216,11 @@ LALComputeSpectrogram (
     printf("%g\n",me);
   }
   */
+
+  if(olap) {
+    LALFree(tdat);
+    LALFree(wwin);
+  }
 
   LALCDestroyVector( status->statusPtr, &Hvec );
   CHECKSTATUSPTR (status);
@@ -1455,6 +1485,55 @@ LALPlainSpectrogram(
   RETURN (status);
 }
 
+
+/******** <lalLaTeX file="TFClustersC"> ********
+\newpage
+\noindent
+Initialize a spectrogram with default values.
+\subsubsection*{Prototype}
+\vspace{0.1in}
+\texttt{
+void 
+LALPlainSpectrogramWin(
+		    LALStatus *status,
+		    TFPlaneParams *tspec,
+		    REAL4TimeSeries *tseries,
+		    REAL8 T
+		    )
+}
+\idx{LALPlainSpectrogramWin()}
+
+\subsubsection*{Description}
+Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T}/2 and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. 
+
+\vfill{\footnotesize\input{TFClustersCV}}
+********* </lalLaTeX> ********/
+void 
+LALPlainSpectrogramWin(
+		    LALStatus *status,
+		    TFPlaneParams *tspec,
+		    REAL4TimeSeries *tseries,
+		    REAL8 T
+		    )
+{
+  INITSTATUS (status, "LALPlainSpectrogram", TFCLUSTERSC);
+  ATTATCHSTATUSPTR (status);
+
+
+  ASSERT ( tseries, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
+  ASSERT ( tspec, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
+  ASSERT ( T > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS );
+
+
+  tspec->timeBins = 2*(INT4)floor((double)tseries->data->length * tseries->deltaT / T) - 1;
+  tspec->freqBins = (INT4)ceil(T/(2.0*tseries->deltaT)) - 1; /* do not include Nyquist */
+  tspec->deltaT = T;
+  tspec->flow = 1.0/T; /* do not include DC */
+
+  /* Normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
 
 
 /******** <lalLaTeX file="TFClustersC"> ********

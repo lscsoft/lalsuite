@@ -210,6 +210,14 @@ LALPlainSpectrogram(
 		    );
 
 void 
+LALPlainSpectrogramWin(
+		    LALStatus *status,
+		    TFPlaneParams *tspec,
+		    REAL4TimeSeries *tseries,
+		    REAL8 T
+		    );
+
+void 
 LALInitCList (
 	      LALStatus *status,
 	      CList *clist,
