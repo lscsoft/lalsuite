@@ -111,11 +111,6 @@ formulae the TF plane elements are \begin{equation} H_{J\Sigma} =
 Eq.\ (\ref{standarddft}).
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error Conditions}
-\input{TFTransformHErrTab}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \subsection*{Structures}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1175,42 +1170,6 @@ LALFree
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{LALCountEPEvents.c}}
-\label{ss:LALCountEPEvents.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Returns the number $n_{\rm events}$ of tiles with $\alpha_{\cal T} \le
-\alpha_*$ where $\alpha_*$ is a user supplied threshold.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CountEPEventsCP}
-\idx{LALCountEPEvents()}
-
-\subsubsection*{Description}
-
-Next, the routine \verb+CountEPEvents()+ (count excess power events) allows
-the user to specify a threshold value $\alpha_*$ of the probability $\alpha$,
-and returns the number $n_{\rm events}$ of tiles with $\alpha_{\cal T} \le
-\alpha_*$.  Since the tiles have been sorted, the relevant tiles will be the
-first $n_{\rm events}$ tiles in the linked list.  This routine thus allows the
-user to perform the first of the two types of searches of Sec.\
-\ref{twomethods} above.  The input argument is a real number
-\verb+alphaThreshold+ or $\alpha_*$, and a pointer \verb+tfTiling+ to a
-\verb+TFTiling+ structure.  There is also an output parameter \verb+numEvents+
-of type \verb+INT4*+.  On exit, \verb+*numEvents+ is the number $n_{\rm
-events}$ of files that pass the threshold.  The routine \verb+CountEPEvents()+
-must be called after calling \verb+SortTFTiling()+; calling the routines out
-of sequence will give rise to an error.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CountEPEventsCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{LALPrintTFTileList.c}}
 \label{ss:LALPrintTFTileList.c}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1356,11 +1315,6 @@ characteristics of the most common/loudest non-Gaussian noise events.
 \noindent This package provides a suite for functions to perform a
 power code search of the \texttt{REAL4} time series data.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error Conditions}
-\input{EPSearchHErrTab}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \subsection*{Structures}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1465,11 +1419,6 @@ thresholds for chi-squared and non-central chi-squared distributions
 \noindent This package provides a suite for functions for computing cumulative
 probability functions and thresholds for the chi-squared and non-central
 chi-squared distributions.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error Conditions}
-\input{ThresholdsHErrTab}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection*{Structures}
 

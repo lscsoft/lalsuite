@@ -14,11 +14,12 @@ NRCSID (FREQSERIESTOTFPLANEC, "$Id$");
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
@@ -49,76 +50,55 @@ LALFreqSeriesToTFPlane (
   
 
   /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (freqSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (freqSeries->data->data, status, TFTRANSFORMH_ENULLP,
-          TFTRANSFORMH_MSGENULLP);
-
-  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->plan, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->window, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->window->data, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-
-
+  ASSERT(freqSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->plan, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* make sure that output structure is not NULL */
-  ASSERT (tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-
-
+  ASSERT(tfp, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
+  ASSERT(tfp->params, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
+  ASSERT(tfp->data, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
 
 
   /*
-   *
-   *
    *  make sure input parameters are reasonable, compatible with
    *  each other, etc.
-   *
-   *
    */
 
-
-
   nt = tfp->params->timeBins;   /* Number of time bins */
-  ASSERT (nt > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   nf = tfp->params->freqBins;   /* Number of frequency bins */
-  ASSERT (nf > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+
 
   /* 
    * Next compute fseglength = size of segments in freq domain
    * Round off to nearest integer rather than rounding down.
    */
 
-  ASSERT( freqSeries->deltaF>0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);  
-  ASSERT( tfp->params->deltaT>0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);  
+  ASSERT(freqSeries->deltaF>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
+  ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
   fseglength = (INT4)( 0.5+ 1.0/(tfp->params->deltaT * freqSeries->deltaF));  
 
   /*
    * Length of segments in freq domain must exceed number of time bins
    * in final TF plane
    */
-  ASSERT( fseglength >= nt, status, TFTRANSFORMH_EINCOMP, 
-          TFTRANSFORMH_MSGEINCOMP);
-
-  ASSERT( fseglength == (INT4)input->dftParams->window->length, status, 
-          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(fseglength >= nt, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(fseglength == (INT4)input->dftParams->window->length, status, LAL_BADPARM_ERR, LAL_BADPARM_MSG);
 
 
   /* Input lowest frequency must be non-negative */
-  ASSERT(freqSeries->f0 >= 0.0, status, TFTRANSFORMH_EPOSARG,
-         TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(freqSeries->f0 >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* Lowest freq of time freq plane >= lowest freq of freq series */
-  ASSERT(tfp->params->flow >= freqSeries->f0, status, 
-         TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(tfp->params->flow >= freqSeries->f0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* low frequency cutoff */
   flow1 = (INT4)( (tfp->params->flow - freqSeries->f0)/ freqSeries->deltaF);
@@ -127,12 +107,10 @@ LALFreqSeriesToTFPlane (
   ntotal = nf * fseglength;
 
   /* make sure have enough data points in freq series */
-  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, 
-         TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* sumofsquares parameter must be positive */
-  ASSERT( input->dftParams->sumofsquares>0.0, status, TFTRANSFORMH_EPOSARG, 
-          TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(input->dftParams->sumofsquares>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* 
@@ -240,40 +218,34 @@ LALModFreqSeriesToTFPlane (
 
   
   /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (freqSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (freqSeries->data->data, status, TFTRANSFORMH_ENULLP,
-      TFTRANSFORMH_MSGENULLP);
-  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->plan, status, TFTRANSFORMH_ENULLP, 
-      TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->window, status, TFTRANSFORMH_ENULLP, 
-      TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->window->data, status, TFTRANSFORMH_ENULLP, 
-      TFTRANSFORMH_MSGENULLP);
+  ASSERT(freqSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->plan, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 
   /* make sure that output structure is not NULL */
-  ASSERT (tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT(tfp, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
+  ASSERT(tfp->params, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
+  ASSERT(tfp->data, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
 
   
   /* check number of time bins is positive */
   nt = tfp->params->timeBins; 
-  ASSERT (nt > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* check number of freq bins is positive */
   nf = tfp->params->freqBins;   
-  ASSERT (nf > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   
 
   /* check a couple more input parameters */
-  ASSERT( freqSeries->deltaF>0.0, status, TFTRANSFORMH_EPOSARG, 
-      TFTRANSFORMH_MSGEPOSARG);  
-  ASSERT( tfp->params->deltaT>0.0, status, TFTRANSFORMH_EPOSARG, 
-      TFTRANSFORMH_MSGEPOSARG);  
+  ASSERT(freqSeries->deltaF>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
+  ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
 
   /* 
    * delF is the frequency resoltion of the time-frequency plane.  It
@@ -293,18 +265,15 @@ LALModFreqSeriesToTFPlane (
    * Length of segments in freq domain must exceed number of time bins
    * in final TF plane
    */
-  ASSERT( fseglength >= nt, status, TFTRANSFORMH_EINCOMP, 
-      TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(fseglength >= nt, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   
   /* Input lowest frequency must be non-negative */
-  ASSERT(freqSeries->f0 >= 0.0, status, TFTRANSFORMH_EPOSARG,
-      TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(freqSeries->f0 >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   
   /* Lowest freq of time freq plane >= lowest freq of freq series */
-  ASSERT(tfp->params->flow >= freqSeries->f0, status, 
-      TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(tfp->params->flow >= freqSeries->f0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   
   /* low frequency cutoff:  in terms of number of bins of frequency series */
@@ -316,8 +285,7 @@ LALModFreqSeriesToTFPlane (
 
   
   /* make sure have enough data points in freq series */
-  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, 
-      TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* set the epoch of the TF plane */

@@ -14,13 +14,14 @@ NRCSID (COMPUTELIKELIHOODC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
+#include <lal/ExcessPower.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
-#include <lal/ExcessPower.h>
+#include <lal/LALErrno.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -47,14 +48,12 @@ LALComputeLikelihood (
 
 
     /* make sure that arguments are not NULL */
-  ASSERT (tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
-  ASSERT (lambda, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(lambda, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* make sure LALComputeExcessPower() has been already called */
-  ASSERT ( tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER, 
-           EXCESSPOWERH_MSGEORDER);
+  ASSERT(tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
   thisTile = tfTiling->firstTile;
   while (thisTile != NULL)

@@ -13,10 +13,11 @@ NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALErrno.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
 /******** <lalVerbatim file="ComputeFrequencySeriesCP"> ********/
@@ -38,38 +39,33 @@ LALComputeFrequencySeries (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (freqSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (timeSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (timeSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (dftParams->plan, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-  ASSERT (dftParams->window, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
+  ASSERT(freqSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(timeSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(timeSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(dftParams->plan, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(dftParams->window, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 
   /* make sure sizes are reasonable and agree */
   /* MODIFIED -- JC
    * n = dftParams->plan->size;
    */
+  ASSERT(timeSeries->data->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   n = timeSeries->data->length;
-  ASSERT (n > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
   /*
   ASSERT ((INT4)timeSeries->data->length == n, status,
           TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
   */
-  ASSERT ((INT4)freqSeries->data->length == n/2 + 1, status,
-          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
-  ASSERT ((INT4)dftParams->window->length == n, status,
-          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(freqSeries->data->length == n/2 + 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(dftParams->window->length == n, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* copy over data into frequency series structure */
   freqSeries->epoch = timeSeries->epoch;
   freqSeries->f0    = timeSeries->f0;
-  ASSERT(timeSeries->deltaT > 0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(timeSeries->deltaT > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   freqSeries->deltaF = 1/((REAL8)(timeSeries->data->length)*timeSeries->deltaT); 
   /* 
    * OMITTED
@@ -80,8 +76,7 @@ LALComputeFrequencySeries (
 
 
   /* compute normalization factor */
-  ASSERT(dftParams->sumofsquares > 0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(dftParams->sumofsquares > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   fac = 1 / sqrt( dftParams->sumofsquares);
 
 

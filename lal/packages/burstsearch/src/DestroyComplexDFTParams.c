@@ -14,9 +14,8 @@ NRCSID (DESTROYCOMPLEXDFTPARAMSC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALErrno.h>
 #include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
 #include <lal/TFTransform.h>
 
 /******** <lalVerbatim file="DestroyComplexDFTParamsCP"> ********/
@@ -31,14 +30,12 @@ LALDestroyComplexDFTParams (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not null */
-  ASSERT (dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (*dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT(dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(*dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* make sure that data pointed to is non-null */
-  ASSERT ((*dftParams)->plan, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP); 
-  ASSERT ((*dftParams)->window, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP); 
+  ASSERT((*dftParams)->plan, status, LAL_NULL_ERR, LAL_NULL_MSG); 
+  ASSERT((*dftParams)->window, status, LAL_NULL_ERR, LAL_NULL_MSG); 
 
   /* Ok, now let's free allocated storage */
   LALSDestroyVector (status->statusPtr, &((*dftParams)->window));
@@ -53,6 +50,3 @@ LALDestroyComplexDFTParams (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-
-
-

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = StdBurstSearch.h Thresholds.h ExcessPower.h TFTransform.h BurstSearch.h EPSearch.h Sequence.h TimeSeries.h FrequencySeries.h
+pkginclude_HEADERS = StdBurstSearch.h Thresholds.h ExcessPower.h TFTransform.h EPSearch.h Sequence.h TimeSeries.h FrequencySeries.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = FrequencySeries.h Sequence.h TimeSeries.h

@@ -15,13 +15,14 @@ NRCSID (CREATETFTILINGC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -61,7 +62,7 @@ LALCreateTFTiling (
   ATTATCHSTATUSPTR (status);
 
   /* Check input structure: report if NULL */
-  ASSERT (input, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
       
 
   /* 
@@ -69,9 +70,8 @@ LALCreateTFTiling (
    * which should not yet point to anything.
    *
    */
-  ASSERT (tfTiling != NULL, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (*tfTiling == NULL, status, EXCESSPOWERH_ENONNULL, 
-           EXCESSPOWERH_MSGENONNULL);
+  ASSERT(tfTiling != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(*tfTiling == NULL, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
 
 
   /* 
@@ -81,18 +81,12 @@ LALCreateTFTiling (
    */
 
 
-  ASSERT (input->overlapFactor > 1, status, 
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  ASSERT (input->length > 0, status,
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  ASSERT (input->deltaF > 0.0, status,
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  ASSERT (input->flow >= 0.0, status,
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  ASSERT (input->minFreqBins > 0, status, 
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  ASSERT (input->minTimeBins > 0, status, 
-          EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
+  ASSERT(input->overlapFactor > 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->deltaF > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->flow >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->minFreqBins > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->minTimeBins > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /*
@@ -114,26 +108,19 @@ LALCreateTFTiling (
    * and freq directions must not exceed length of data used
    *
    */
-  ASSERT(input->minFreqBins < nf, status, EXCESSPOWERH_EINCOMP, 
-          EXCESSPOWERH_MSGEINCOMP);
-  ASSERT(input->minTimeBins < nf, status, EXCESSPOWERH_EINCOMP, 
-          EXCESSPOWERH_MSGEINCOMP);
+  ASSERT(input->minFreqBins < nf, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->minTimeBins < nf, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* number of time frequency planes to be constructed */
   numPlanes = 1+(INT4)(0.5+log( (REAL8)(nf)) / log(2.0));
   /*printf("nf: %d,  numPlanes: %d\n", nf, numPlanes);*/
 
   /* check that length of data to be used is a power of 2 */
-  ASSERT( nf == pow1(2, numPlanes-1), status, EXCESSPOWERH_EPOW2, 
-          EXCESSPOWERH_MSGEPOW2);
+  ASSERT(nf == pow1(2, numPlanes-1), status, LAL_BADPARM_ERR, LAL_BADPARM_MSG);
 
   /*  Assign memory for *tfTiling   */
-  *tfTiling = (TFTiling *) LALMalloc(sizeof(TFTiling));
-  
-  /*  Make sure that the allocation was succesful */
-  if ( !(*tfTiling) ){
-    ABORT (status, EXCESSPOWERH_EMALLOC, EXCESSPOWERH_MSGEMALLOC);
-  }
+  *tfTiling = LALMalloc(sizeof(**tfTiling));
+  ASSERT(*tfTiling, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
 
   /* set some parameters */
   (*tfTiling)->numPlanes = numPlanes;
@@ -154,7 +141,7 @@ LALCreateTFTiling (
   /*  Make sure that the allocation was succesful */
   if ( !((*tfTiling)->tfp) ){
     LALFree( *tfTiling );
-    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
   }
 
   /* allocate memory for vector of pointers to DFTParams */
@@ -165,7 +152,7 @@ LALCreateTFTiling (
   if ( !((*tfTiling)->dftParams) ){
     LALFree( (*tfTiling)->tfp );
     LALFree( *tfTiling );
-    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
   }
 
 
@@ -269,7 +256,7 @@ LALCreateTFTiling (
 
 		      /*  Make sure that the allocation was succesful */
                       if ( ! (*currentTile) ){
-                        ABORT(status, EXCESSPOWERH_ETILES, EXCESSPOWERH_MSGETILES);
+                        ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
                       }
 
 		      /* assign the various fields */

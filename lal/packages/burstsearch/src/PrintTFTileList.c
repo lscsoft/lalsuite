@@ -15,13 +15,14 @@ NRCSID (PRINTTFTILELISTC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -57,10 +58,10 @@ PrintTFTile (
   INITSTATUS (status, "PrintTFTile", PRINTTFTILELISTC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT(tfTile, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT(tfTiling->tfp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT(fp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT(tfTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(fp, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   t1 = tfTile->tstart;
   t2 = tfTile->tend;
@@ -119,13 +120,10 @@ LALPrintTFTileList (
   INITSTATUS (status, "LALPrintTFTileList", PRINTTFTILELISTC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT(fp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
-  ASSERT(tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, \
-         EXCESSPOWERH_MSGENULLP); 
-
-  ASSERT(tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER,
-         EXCESSPOWERH_MSGEORDER);
+  ASSERT(fp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG); 
+  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG); 
+  ASSERT(tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
 
   thisTile = tfTiling->firstTile;

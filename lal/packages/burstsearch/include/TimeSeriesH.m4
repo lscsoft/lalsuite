@@ -2,8 +2,7 @@ dnl $Id$
 define(`SERIESTYPE',DATATYPE`TimeSeries')
 /* <lalLaTeX file="TimeSeriesDestroyP">
 \idx{`XLALDestroy'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesDestroyP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesDestroyP"> */
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 );
@@ -11,8 +10,7 @@ void `XLALDestroy'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesDestroyP">
 \idx{`LALDestroy'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesDestroyP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesDestroyP"> */
 void `LALDestroy'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series
@@ -21,8 +19,7 @@ void `LALDestroy'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesCreateP">
 \idx{`XLALCreate'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesCreateP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesCreateP"> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	CHAR *name,
 	LIGOTimeGPS epoch,
@@ -35,8 +32,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesCreateP">
 \idx{`LALCreate'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesCreateP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesCreateP"> */
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -51,8 +47,7 @@ void `LALCreate'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesCutP">
 \idx{`XLALCut'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesCutP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesCutP"> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
@@ -62,8 +57,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesCutP">
 \idx{`LALCut'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesCutP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesCutP"> */
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -75,8 +69,7 @@ void `LALCut'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesShrinkP">
 \idx{`XLALShrink'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesShrinkP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesShrinkP"> */
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
@@ -86,8 +79,7 @@ size_t `XLALShrink'SERIESTYPE (
 
 /* <lalLaTeX file="TimeSeriesShrinkP">
 \idx{`LALShrink'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="TimeSeriesShrinkP"> */
+</lalLaTeX> <lalVerbatim file="TimeSeriesShrinkP"> */
 void `LALShrink'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series,

@@ -6,7 +6,6 @@ $Id$
 #ifndef _EXCESSPOWER_H
 #define _EXCESSPOWER_H
 
-#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/TFTransform.h>
 #include <lal/LALRCSID.h>
@@ -15,29 +14,13 @@ $Id$
 extern "C" {
 #endif
 
-NRCSID (EXCESSPOWERH, "$Id$");
+NRCSID(EXCESSPOWERH, "$Id$");
 
 /******** <lalErrTable file="ExcessPowerHErrTab"> ********/
-#define EXCESSPOWERH_ENULLP       1
-#define EXCESSPOWERH_EPOSARG      2
-#define EXCESSPOWERH_EPOW2        4
-#define EXCESSPOWERH_EMALLOC      8
-#define EXCESSPOWERH_EINCOMP      16
 #define EXCESSPOWERH_EORDER       32
-#define EXCESSPOWERH_ENONNULL     64
-#define EXCESSPOWERH_ETILES       65
-#define EXCESSPOWERH_EDELF        128
 
 
-#define EXCESSPOWERH_MSGENULLP    "Null pointer"
-#define EXCESSPOWERH_MSGEPOSARG   "Arguments must be non-negative"
-#define EXCESSPOWERH_MSGEPOW2     "Length of supplied data must be a power of 2"
-#define EXCESSPOWERH_MSGEMALLOC   "Malloc failure"
-#define EXCESSPOWERH_MSGEINCOMP   "Incompatible arguments"
 #define EXCESSPOWERH_MSGEORDER    "Routines called in illegal order"
-#define EXCESSPOWERH_MSGENONNULL  "Null pointer expected"
-#define EXCESSPOWERH_MSGETILES    "Malloc failed while assigning memory for a tile"
-#define EXCESSPOWERH_MSGEDELF     "Inconsistent deltaF in spectrum and data"
 /******** </lalErrTable> ********/
 
 
@@ -50,11 +33,11 @@ tagTFTile
   INT4                             tstart;
   INT4                             tend;
   INT4                             whichPlane;
-  REAL8                            deltaT;      /* deltaF will always be 1/deltaT     */
+  REAL8                            deltaT; /* deltaF will always be 1/deltaT */
   REAL8                            excessPower;
   REAL8                            alpha;
   REAL8                            weight;
-  BOOLEAN                          firstCutFlag;  
+  BOOLEAN                          firstCutFlag;
   struct tagTFTile                 *nextTile;
 }
 TFTile;
@@ -68,7 +51,7 @@ tagTFTiling
   COMPLEX8TimeFrequencyPlane       **tfp;       /* Vector of pointers */
   ComplexDFTParams                 **dftParams; /* Vector of pointers */
   INT4                             numPlanes;
-  BOOLEAN                          planesComputed;      
+  BOOLEAN                          planesComputed;
   BOOLEAN                          excessPowerComputed;
   BOOLEAN                          tilesSorted;
 }
@@ -81,9 +64,9 @@ tagCreateTFTilingIn
   INT4                             overlapFactor;
   INT4                             minFreqBins;
   INT4                             minTimeBins;
-  REAL8                            flow;    /* lowest freq to search       */
-  REAL8                            deltaF;  
-  INT4                             length;  
+  REAL8                            flow;   /* lowest freq to search  */
+  REAL8                            deltaF;
+  INT4                             length;
   REAL8                            maxTileBand;
 }
 CreateTFTilingIn;
@@ -93,7 +76,7 @@ typedef struct
 tagComputeExcessPowerIn
 {
   REAL8                            numSigmaMin;
-  REAL8                            alphaDefault;                             
+  REAL8                            alphaDefault;
 }
 ComputeExcessPowerIn;
 
@@ -151,7 +134,7 @@ LALComputeLikelihood (
                    );
 
 
-void 
+void
 LALPrintTFTileList (
                  LALStatus                             *status,
                  FILE                               *fp,
@@ -172,7 +155,3 @@ PrintTFTileList1 (
 #endif  /* C++ protection. */
 
 #endif
-
-
-
-

@@ -13,13 +13,14 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -46,37 +47,27 @@ LALComputeExcessPower (
 
 
   /* make sure that arguments are not NULL */
-  ASSERT (tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->tfp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->dftParams, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
-  ASSERT (input, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* check on some parameter values */
-  if ( (input->numSigmaMin < 1.0) || (input->alphaDefault < 0.0) ||
-          (input->alphaDefault > 1.0) ){
-      ABORT(status, EXCESSPOWERH_EINCOMP, EXCESSPOWERH_MSGEINCOMP);
-  }
-  if ( !(tfTiling->numPlanes>0) ){
-      ABORT(status, EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
-  }
+  ASSERT(input->numSigmaMin >= 1.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT((input->alphaDefault >= 0.0) && (input->alphaDefault <= 1.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(tfTiling->numPlanes > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* make sure TF planes have already been computed */
-  if ( ! (tfTiling->planesComputed) ){
-      ABORT(status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
-  }
+  ASSERT(tfTiling->planesComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
   for(i=0; i<tfTiling->numPlanes; i++)
     {
       COMPLEX8TimeFrequencyPlane **thisPlane = tfTiling->tfp + i;
-      ASSERT(thisPlane, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-      ASSERT(*thisPlane, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-      ASSERT((*thisPlane)->data, status, EXCESSPOWERH_ENULLP, 
-             EXCESSPOWERH_MSGENULLP);
-      ASSERT((*thisPlane)->params, status, EXCESSPOWERH_ENULLP, 
-             EXCESSPOWERH_MSGENULLP);
+      ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
+      ASSERT(*thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
+      ASSERT((*thisPlane)->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+      ASSERT((*thisPlane)->params, status, LAL_NULL_ERR, LAL_NULL_MSG);
     }
       
 
@@ -102,23 +93,21 @@ LALComputeExcessPower (
 
 
       /* check plane index is in required range */
-      ASSERT( (thisTile->whichPlane >=0) && (thisTile->whichPlane <tfTiling->numPlanes), status, EXCESSPOWERH_EINCOMP, EXCESSPOWERH_MSGEINCOMP); 
+      ASSERT((thisTile->whichPlane >=0) && (thisTile->whichPlane < tfTiling->numPlanes), status, LAL_RANGE_ERR, LAL_RANGE_MSG); 
 
       tfPlane = *(tfTiling->tfp + thisTile->whichPlane);
       nf = tfPlane->params->freqBins;   
-      ASSERT( nf>0, status, EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
+      ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
       nt = tfPlane->params->timeBins;   
-      ASSERT( nt>0, status, EXCESSPOWERH_EPOSARG, EXCESSPOWERH_MSGEPOSARG);
+      ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
       t1=thisTile->tstart;
       t2=thisTile->tend;
       f1=thisTile->fstart;
       f2=thisTile->fend;
 
-      ASSERT( (t1>=0) && (t1<=t2) && (t2<nt), status, EXCESSPOWERH_EINCOMP, 
-              EXCESSPOWERH_MSGEINCOMP);
-      ASSERT( (f1>=0) && (f1<=f2) && (f2<nf), status, EXCESSPOWERH_EINCOMP, 
-              EXCESSPOWERH_MSGEINCOMP);
+      ASSERT((t1>=0) && (t1<=t2) && (t2<nt), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+      ASSERT((f1>=0) && (f1<=f2) && (f2<nf), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
       dof = (REAL8)(2*(t2-t1+1)*(f2-f1+1));
 
@@ -171,7 +160,7 @@ LALComputeExcessPower (
            */
 
 	  if( ((alpha==0.0) || (1.0/alpha > LAL_REAL8_MAX)) 
-               && (status->statusPtr->statusCode==THRESHOLDSH_ERANGE) )
+               && (status->statusPtr->statusCode==LAL_RANGE_ERR) )
 	    {
 	      status->statusPtr->statusCode=0;
 	      alpha = exp(-700.0);

@@ -1,21 +1,21 @@
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: ThresholdsTest.c
- * 
+ *
  * Author: Eanna Flanagan
- * 
- * Revision: $Id$ 
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
+ *
+ * Revision: $Id$
+ *
+ *-----------------------------------------------------------------------
+ *
+ * NAME
  * main()
  *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
+ * SYNOPSIS
+ *
+ * DESCRIPTION
  * Test suite for functions in Thresholds.c
- * 
+ *
  * DIAGNOSTICS
  * Writes PASS or FAIL to stdout as tests are passed or failed.
  *
@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <lal/LALErrno.h>
 #include <lal/LALStdlib.h>
 #include <lal/Thresholds.h>
 
@@ -235,28 +236,28 @@ main (int argc, char *argv[])
   }
 
   LALChisqCdf (&status, &alpha1, NULL);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALChisqCdf (&status, NULL, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALNoncChisqCdf (&status, &alpha1, NULL);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALNoncChisqCdf (&status, NULL, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALChi2Threshold( &status, &temp1, NULL);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALChi2Threshold( &status, NULL, &input2);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALRhoThreshold( &status, &temp2, NULL);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
   LALRhoThreshold( &status, NULL, &input3);
-  TestStatus (&status, CODES(THRESHOLDSH_ENULLP), 1);
+  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
 
 
@@ -270,36 +271,36 @@ main (int argc, char *argv[])
 
   input1.chi2 *= -1.0;
   LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input1.chi2 *= -1.0;  /* set it back to positive for remaining tests */
 
   input1.dof *= -1.0;
   LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input1.dof *= -1.0;
 
   input1.nonCentral *= -1.0;
   LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input1.nonCentral *= -1.0;
 
   input2.dof *= -1;
   LALChi2Threshold( &status, &temp1, &input2);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input2.dof *= -1;
   
   input3.dof *= -1;
   LALRhoThreshold( &status, &temp2, &input3);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input3.dof *= -1;
 
   input3.chi2 *= -1;
   LALRhoThreshold( &status, &temp2, &input3);
-  TestStatus (&status, CODES(THRESHOLDSH_EPOSARG), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input3.chi2 *= -1;
 
 
@@ -316,7 +317,7 @@ main (int argc, char *argv[])
   input1.dof = 1000;
   input1.chi2 = 1000;
   LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(THRESHOLDSH_EMXIT), 1);
+  TestStatus (&status, CODES(LAL_FAIL_ERR), 1);
 
 
   /* 
@@ -368,10 +369,10 @@ main (int argc, char *argv[])
 
   input2.falseAlarm = -1.0;
   LALChi2Threshold (&status, &temp1, &input2);
-  TestStatus (&status, CODES(THRESHOLDSH_EBADPROB), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input2.falseAlarm = 2.0;
   LALChi2Threshold (&status, &alpha1, &input2);
-  TestStatus (&status, CODES(THRESHOLDSH_EBADPROB), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   /* set it back to original value for remaining tests */
   input2.falseAlarm= alpha;  
 
@@ -379,10 +380,10 @@ main (int argc, char *argv[])
 
   input3.falseDismissal = -1.0;
   LALRhoThreshold (&status, &temp2, &input3);
-  TestStatus (&status, CODES(THRESHOLDSH_EBADPROB), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input3.falseDismissal = 2.0;
   LALRhoThreshold (&status, &temp2, &input3);
-  TestStatus (&status, CODES(THRESHOLDSH_EBADPROB), 1);
+  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   /* set it back to original value for remaining tests */
   input3.falseDismissal= beta;  
 
@@ -515,14 +516,3 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -14,10 +14,11 @@ NRCSID (CREATETFPLANEC, "$Id$");
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
 /******** <lalVerbatim file="CreateTFPlaneCP"> ********/
@@ -32,15 +33,12 @@ LALCreateTFPlane (
   INITSTATUS (status, "LALCreateTFPlane", CREATETFPLANEC);
 
   /* Check input structure: report if NULL */
-  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
       
   /* Make sure that input parameters are reasonable */
-  ASSERT (input->timeBins > 0, status, 
-          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
-  ASSERT (input->freqBins > 0, status,
-          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
-  ASSERT (input->deltaT > 0.0, status,
-          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(input->timeBins > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->freqBins > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  ASSERT(input->deltaT > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* 
    * Check return structure: tfp should point to a valid pointer
@@ -48,26 +46,21 @@ LALCreateTFPlane (
    *
    */
 
-  ASSERT (tfp != NULL, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (*tfp == NULL, status, TFTRANSFORMH_EALLOCP, TFTRANSFORMH_MSGEALLOCP);
+  ASSERT(tfp != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(*tfp == NULL, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
 
 
   /*  Assign memory for *tfp   */
-  *tfp = (COMPLEX8TimeFrequencyPlane *) LALMalloc(sizeof(COMPLEX8TimeFrequencyPlane));
-  
-  /*  Make sure that the allocation was succesful */
-  if ( !(*tfp) ){
-     ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
-  }
+  *tfp = LALMalloc(sizeof(**tfp));
+  ASSERT(*tfp, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
 
   /* assign memory for params field */
-  (*tfp)->params = NULL;
-  (*tfp)->params = (TFPlaneParams *) LALMalloc(sizeof (TFPlaneParams));
+  (*tfp)->params = LALMalloc(sizeof(*(*tfp)->params));
 
   /*  Make sure that the allocation was succesful */
   if ( !((*tfp)->params) ){
     LALFree ( *tfp );
-    ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
+    ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
   }
 
 
@@ -86,15 +79,14 @@ LALCreateTFPlane (
    * Allocate storage 
    */
 
-  (*tfp)->data = (COMPLEX8 *) 
-    LALMalloc (input->timeBins * input->freqBins * sizeof(COMPLEX8));
+  (*tfp)->data = LALMalloc(input->timeBins * input->freqBins * sizeof(COMPLEX8));
 
   if ( !((*tfp)->data) )
   {
     /* Must free storage pointed to by *tfp */
     LALFree ( (*tfp)->params );
     LALFree ( *tfp );
-    ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
+    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
   }
  
 

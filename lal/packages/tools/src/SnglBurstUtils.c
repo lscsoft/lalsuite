@@ -22,7 +22,6 @@ $Id$
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/BurstSearch.h>
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
 

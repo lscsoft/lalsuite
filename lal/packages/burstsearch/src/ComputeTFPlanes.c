@@ -14,13 +14,14 @@ NRCSID (COMPUTETFPLANESC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -45,15 +46,13 @@ LALComputeTFPlanes (
 
 
     /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (freqSeries->data, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (freqSeries->data->data, status, EXCESSPOWERH_ENULLP,
-          EXCESSPOWERH_MSGENULLP);
+  ASSERT(freqSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(freqSeries->data->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-  ASSERT (tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->numPlanes>0, status, EXCESSPOWERH_EPOSARG,
-          EXCESSPOWERH_MSGEPOSARG);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->numPlanes > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* compute the ith TFPlane from input frequency series */
   for(i=0; i<tfTiling->numPlanes; i++)
@@ -63,13 +62,12 @@ LALComputeTFPlanes (
       HorizontalTFTransformIn       transformparams;
 
       thisPlane = tfTiling->tfp + i;
-      ASSERT(thisPlane, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-      ASSERT(*thisPlane, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+      ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
+      ASSERT(*thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
       thisDftParams = tfTiling->dftParams + i;
-      ASSERT(thisDftParams, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-      ASSERT(*thisDftParams, status, EXCESSPOWERH_ENULLP, 
-              EXCESSPOWERH_MSGENULLP);
+      ASSERT(thisDftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+      ASSERT(*thisDftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 
       /* setup input structure for computing TF transform */

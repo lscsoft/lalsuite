@@ -13,10 +13,11 @@ NRCSID (TIMESERIESTOTFPLANEC, "$Id$");
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
 
@@ -50,32 +51,19 @@ LALTimeSeriesToTFPlane (
   
 
   /* make sure that arguments are not NULL */
-  ASSERT (timeSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (timeSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (timeSeries->data->data, status, TFTRANSFORMH_ENULLP,
-          TFTRANSFORMH_MSGENULLP);
-
-  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->plan, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-  /* OMITTED -- JC
-   * ASSERT (input->dftParams->plan->plan, status, TFTRANSFORMH_ENULLP, 
-   *       TFTRANSFORMH_MSGENULLP);
-   */
-  ASSERT (input->dftParams->window, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-  ASSERT (input->dftParams->window->data, status, TFTRANSFORMH_ENULLP, 
-          TFTRANSFORMH_MSGENULLP);
-
-
+  ASSERT(timeSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(timeSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(timeSeries->data->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->plan, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input->dftParams->window->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* make sure that output structure is not NULL */
-  ASSERT (tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-  ASSERT (tfp->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
-
-
+  ASSERT(tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfp->params, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfp->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 
   /*
@@ -90,7 +78,7 @@ LALTimeSeriesToTFPlane (
 
 
   nt = tfp->params->timeBins;   /* Number of time bins */
-  ASSERT (nt > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* 
    * Next compute nforig = total number of bins in frequncy domain
@@ -102,40 +90,28 @@ LALTimeSeriesToTFPlane (
    *
    */
 
-  ASSERT( timeSeries->deltaT>0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);  
-  ASSERT( tfp->params->deltaT>0.0, status, TFTRANSFORMH_EPOSARG, 
-         TFTRANSFORMH_MSGEPOSARG);  
+  ASSERT(timeSeries->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
+  ASSERT(tfp->params->deltaT>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
 
   nforig = (INT4)( (tfp->params->deltaT) / (2.0*(timeSeries->deltaT)) );
   tseglength = 2 * nforig;
 
-  ASSERT( nforig>0, status, TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);  
+  ASSERT(nforig>0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
   /* OMITTED -- JC
    * ASSERT( tseglength == (INT4)input->dftParams->plan->size, status, 
    *        TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
    */
-  ASSERT( tseglength == (INT4)input->dftParams->window->length, status, 
-          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(tseglength == (INT4)input->dftParams->window->length, status, LAL_BADPARM_ERR, LAL_BADPARM_MSG);
 
-  /* Supplied FFT plan must be in forward direction */
-  /* OMITTED -- JC
-   * ASSERT( input->dftParams->plan->sign==1, status, 
-   *        TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
-   */
-  
   /* Input hetrydyne frequency must be non-negative */
-  ASSERT(timeSeries->f0 >= 0.0, status, TFTRANSFORMH_EPOSARG,
-         TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(timeSeries->f0 >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* sumofsquares parameter must be positive */
-  ASSERT(input->dftParams->sumofsquares>0.0, status, TFTRANSFORMH_EPOSARG, 
-	 TFTRANSFORMH_MSGEPOSARG);  
+  ASSERT(input->dftParams->sumofsquares>0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
 
   /* compute total length of data to be used to construct TF plane */
   ntotal = 2 * nt * nforig;
-  ASSERT(input->startT + ntotal <= (INT4)timeSeries->data->length, status, 
-         TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
+  ASSERT(input->startT + ntotal <= (INT4)timeSeries->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* 
    * Actual number of number of frequency bins to be used,
@@ -143,7 +119,7 @@ LALTimeSeriesToTFPlane (
    *
    */
   nf = tfp->params->freqBins;   
-  ASSERT( nf>0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
+  ASSERT(nf>0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /*
    * Dealing with hetrodyned time Series (i.e. timeSeries->f0 > 0 )
@@ -183,9 +159,7 @@ LALTimeSeriesToTFPlane (
    * and last being real) rather than a sequence of n complex numbers
    *
    */
-  ASSERT( fhigh1 <= nforig+1, status, TFTRANSFORMH_EINCOMP, 
-	  TFTRANSFORMH_MSGEINCOMP);  
-
+  ASSERT(fhigh1 <= nforig+1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);  
 
 
   /* 

@@ -15,14 +15,14 @@ NRCSID (SORTTFTILINGC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
-#include <lal/BurstSearch.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -60,19 +60,15 @@ LALSortTFTiling (
 
 
     /* make sure that arguments are not NULL */
-  ASSERT (tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->tfp, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->dftParams, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, 
-          EXCESSPOWERH_MSGENULLP);
-  ASSERT (tfTiling->numPlanes>0, status, EXCESSPOWERH_EPOSARG,
-          EXCESSPOWERH_MSGEPOSARG);
+  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(tfTiling->numPlanes>0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* make sure excess power has already been computed */
-  ASSERT (tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER,
-          EXCESSPOWERH_MSGEORDER);
+  ASSERT(tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
   /* compute number of tiles */
   thisTile = tfTiling->firstTile;
@@ -96,7 +92,7 @@ LALSortTFTiling (
   
   /*  Make sure that the allocation was succesful */
   if ( !(tiles) ){
-    ABORT (status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
   }
 
   /* copy out pointers into array */

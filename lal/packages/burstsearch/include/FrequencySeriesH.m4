@@ -2,8 +2,7 @@ dnl $Id$
 define(`SERIESTYPE',DATATYPE`FrequencySeries')
 /* <lalLaTeX file="FrequencySeriesDestroyP">
 \idx{`XLALDestroy'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesDestroyP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesDestroyP"> */
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 );
@@ -11,8 +10,7 @@ void `XLALDestroy'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesDestroyP">
 \idx{`LALDestroy'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesDestroyP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesDestroyP"> */
 void `LALDestroy'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series
@@ -21,8 +19,7 @@ void `LALDestroy'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesCreateP">
 \idx{`XLALCreate'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesCreateP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesCreateP"> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	CHAR *name,
 	LIGOTimeGPS epoch,
@@ -35,8 +32,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesCreateP">
 \idx{`LALCreate'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesCreateP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesCreateP"> */
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -51,8 +47,7 @@ void `LALCreate'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesCutP">
 \idx{`XLALCut'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesCutP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesCutP"> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
@@ -62,8 +57,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesCutP">
 \idx{`LALCut'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesCutP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesCutP"> */
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -75,8 +69,7 @@ void `LALCut'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesShrinkP">
 \idx{`XLALShrink'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesShrinkP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
@@ -86,8 +79,7 @@ size_t `XLALShrink'SERIESTYPE (
 
 /* <lalLaTeX file="FrequencySeriesShrinkP">
 \idx{`LALShrink'SERIESTYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="FrequencySeriesShrinkP"> */
+</lalLaTeX> <lalVerbatim file="FrequencySeriesShrinkP"> */
 void `LALShrink'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series,

@@ -8,7 +8,6 @@ $Id$
 #include <stdlib.h>
 #include <string.h>
 #include <lal/BandPassTimeSeries.h>
-#include <lal/BurstSearch.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
@@ -184,7 +183,7 @@ EPSearch (
     int                       start_sample;
     INT4                      j,freqcl;
     COMPLEX8FrequencySeries  *fseries;
-    RealDFTParams            *dftparams        = NULL;
+    RealDFTParams            *dftparams = NULL;
     LALWindowParams           winParams;
     REAL4FrequencySeries     *AverageSpec;
     REAL4TimeSeries          *cutTimeSeries;
@@ -196,9 +195,9 @@ EPSearch (
     ATTATCHSTATUSPTR(status);
 
     /* make sure that arguments are not NULL */
-    ASSERT(tseries, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-    ASSERT(params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-    ASSERT(burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ASSERT(tseries != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+    ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+    ASSERT(burstEvent != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
     /* Compute the average spectrum */
     LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
@@ -363,7 +362,7 @@ void EPConditionData(
      *
      ***************************************************************/
 
-    ASSERT (params, status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP);
+    ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
     /* **************************************************************
      *

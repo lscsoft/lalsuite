@@ -11,10 +11,11 @@ NRCSID (THRESHOLDSC, "$Id$");
 
 #include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/Thresholds.h>
 #include <lal/FindRoot.h>
+#include <lal/LALConstants.h>
+#include <lal/LALErrno.h>
+#include <lal/LALStdlib.h>
+#include <lal/Thresholds.h>
 
 extern int lalDebugLevel;
 
@@ -89,12 +90,8 @@ ChisqCdf1 (
   INITSTATUS (status, "ChisqCdf1", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
-
-
-
-
-  ASSERT (prob, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (params, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(params, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* 
    * 
@@ -111,9 +108,9 @@ ChisqCdf1 (
   localparams.chi2 = exp(lnchi2);
 
 
-  LALOneMinusChisqCdf( status->statusPtr, prob, &localparams );
+  LALOneMinusChisqCdf(status->statusPtr, prob, &localparams );
   /* we can ignore the error where probability is 1 or 0 */
-  if(status->statusPtr->statusCode==THRESHOLDSH_ERANGE)
+  if(status->statusPtr->statusCode==LAL_RANGE_ERR)
     {
       status->statusPtr->statusCode=0;
     }
@@ -149,8 +146,8 @@ NoncChisqCdf1 (
   INITSTATUS (status, "NoncChisqCdf1", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (prob, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (params, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(params, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* 
    * 
@@ -169,7 +166,7 @@ NoncChisqCdf1 (
 
   LALNoncChisqCdf( status->statusPtr, prob, &localparams );
   /* we can ignore the error where probability is 1 or 0 */
-  if(status->statusPtr->statusCode==THRESHOLDSH_ERANGE)
+  if(status->statusPtr->statusCode==LAL_RANGE_ERR)
     {
       status->statusPtr->statusCode=0;
     }
@@ -230,14 +227,13 @@ LALChisqCdf (
   INITSTATUS (status, "LALChisqCdf", THRESHOLDSC);
 
   /* check that arguments are reasonable */
-  ASSERT (prob, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (input, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Arguments chi2 and dof must be non-negative */
   x = input->chi2/2.0;
   a = input->dof/2.0;
-  ASSERT ( (x >= 0.0) && (a > 0.0), status, THRESHOLDSH_EPOSARG,
-           THRESHOLDSH_MSGEPOSARG);
+  ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   if (x < (a+1.0))
     {
@@ -264,7 +260,7 @@ LALChisqCdf (
 	    }
 	  while( (n<=maxloop) && (fabs(del) > fabs(sum)*small) );
 
-	  ASSERT(n < maxloop, status, THRESHOLDSH_EMXIT, THRESHOLDSH_MSGEMXIT);
+	  ASSERT(n < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	  temp1=sum*exp(-x+a*log(x)-(ww));
 	}
       *prob=temp1;
@@ -295,7 +291,7 @@ LALChisqCdf (
 	}
       while( (i<=maxloop) && (fabs(del-1.0) > small) );
 
-      ASSERT(i < maxloop, status, THRESHOLDSH_EMXIT, THRESHOLDSH_MSGEMXIT);
+      ASSERT(i < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
       temp2=exp(-x+a*log(x)-(ww))*h;
       *prob= 1.0-temp2;
     }
@@ -305,8 +301,7 @@ LALChisqCdf (
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  ASSERT( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ), 
-          status, THRESHOLDSH_ERANGE, THRESHOLDSH_MSGERANGE);
+  ASSERT((*prob > 0.0) && (*prob < 1.0) && (1.0/(*prob) < LAL_REAL8_MAX), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   RETURN (status);
 }
@@ -357,14 +352,13 @@ LALOneMinusChisqCdf (
   INITSTATUS (status, "LALOneMinusChisqCdf", THRESHOLDSC);
 
   /* check that arguments are reasonable */
-  ASSERT (prob, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (input, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Arguments chi2 and dof must be non-negative */
   x = input->chi2/2.0;
   a = input->dof/2.0;
-  ASSERT ( (x >= 0.0) && (a > 0.0), status, THRESHOLDSH_EPOSARG,
-           THRESHOLDSH_MSGEPOSARG);
+  ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   if (x < (a+1.0))
     {
@@ -391,7 +385,7 @@ LALOneMinusChisqCdf (
 	    }
 	  while( (n<=maxloop) && (fabs(del) > fabs(sum)*small) );
 
-	  ASSERT(n < maxloop, status, THRESHOLDSH_EMXIT, THRESHOLDSH_MSGEMXIT);
+	  ASSERT(n < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	  temp1=sum*exp(-x+a*log(x)-(ww));
 	}
       *prob=1.0-temp1;
@@ -422,7 +416,7 @@ LALOneMinusChisqCdf (
 	}
       while( (i<=maxloop) && (fabs(del-1.0) > small) );
 
-      ASSERT(i < maxloop, status, THRESHOLDSH_EMXIT, THRESHOLDSH_MSGEMXIT);
+      ASSERT(i < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
       temp2=exp(-x+a*log(x)-(ww))*h;
       *prob= temp2;
     }
@@ -487,16 +481,13 @@ LALNoncChisqCdf (
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
-  ASSERT (prob, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (input, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 
   /* Arguments chi2, dof and nonCentral must be non-negative */
   localparams = *input;
-  ASSERT ( (localparams.dof > 0.0)   &&
-           (localparams.chi2 >= 0.0) && 
-           (localparams.nonCentral >=0.0 ),
-	   status, THRESHOLDSH_EPOSARG, THRESHOLDSH_MSGEPOSARG);
+  ASSERT((localparams.dof > 0.0) && (localparams.chi2 >= 0.0) && (localparams.nonCentral >=0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
    /* Evaluate the first term in the series   */
@@ -521,7 +512,7 @@ LALNoncChisqCdf (
     }
   while( ((current*current)/(sum*sum) > fractionalAccuracy) && (n < maxloop) );
 
-  ASSERT(n < maxloop, status, THRESHOLDSH_EMXIT, THRESHOLDSH_MSGEMXIT);
+  ASSERT(n < maxloop, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
   *prob = sum;
   
@@ -530,8 +521,7 @@ LALNoncChisqCdf (
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  ASSERT( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ), 
-          status, THRESHOLDSH_ERANGE, THRESHOLDSH_MSGERANGE);
+  ASSERT((*prob > 0.0) && (*prob < 1.0) && (1.0/(*prob) < LAL_REAL8_MAX), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -560,17 +550,15 @@ LALChi2Threshold (
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
-  ASSERT (chi2, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (input, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(chi2, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Argument dof must be positive */
-  ASSERT ( input->dof > 0.0 , status,
-           THRESHOLDSH_EPOSARG, THRESHOLDSH_MSGEPOSARG);
+  ASSERT(input->dof > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* Supplied false alarm probability must be between 0 and 1 */
-  ASSERT ( (input->falseAlarm > 0.0) && (input->falseAlarm < 1.0) , status,
-           THRESHOLDSH_EBADPROB, THRESHOLDSH_MSGEBADPROB);
+  ASSERT((input->falseAlarm > 0.0) && (input->falseAlarm < 1.0) , status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* Initialize input structure for DFindRoot() */
@@ -621,16 +609,14 @@ LALRhoThreshold (
   ATTATCHSTATUSPTR (status);
 
   /* check that pointers are not null */
-  ASSERT (rho, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
-  ASSERT (input, status, THRESHOLDSH_ENULLP, THRESHOLDSH_MSGENULLP);
+  ASSERT(rho, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* Arguments dof and chi2 must be positive */
-  ASSERT ( (input->dof > 0.0 ) && (input->chi2 >= 0.0), status,
-           THRESHOLDSH_EPOSARG, THRESHOLDSH_MSGEPOSARG);
+  ASSERT((input->dof > 0.0 ) && (input->chi2 >= 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   /* Supplied false dismissal probability must be between 0 and 1 */
-  ASSERT ( (input->falseDismissal > 0.0) && (input->falseDismissal < 1.0),
-           status, THRESHOLDSH_EBADPROB, THRESHOLDSH_MSGEBADPROB);
+  ASSERT((input->falseDismissal > 0.0) && (input->falseDismissal < 1.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 
   /* Initialize input structure for DFindRoot() */

@@ -14,13 +14,14 @@ NRCSID (ADDWHITENOISEC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALErrno.h>
+#include <lal/LALConstants.h>
+#include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/Thresholds.h>
 
 
 #define TRUE 1
@@ -52,14 +53,12 @@ LALAddWhiteNoise (
   INITSTATUS (status, "LALAddWhiteNoise", ADDWHITENOISEC);
   ATTATCHSTATUSPTR (status);
 
-
   /* make sure that arguments are not NULL */
-  ASSERT (v, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-  ASSERT (v->data, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+  ASSERT(v, status, LAL_NULL_ERR, LAL_NULL_MSG);
+  ASSERT(v->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
   /* make sure length of series is nonzero */
-  ASSERT (v->length>0, status, EXCESSPOWERH_EINCOMP, 
-          EXCESSPOWERH_MSGEINCOMP);
+  ASSERT(v->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   
   /* Seed Random Number Generator with current time for seed */

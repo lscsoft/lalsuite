@@ -2,8 +2,7 @@ dnl $Id$
 define(`SEQUENCETYPE',DATATYPE`Sequence')
 /* <lalLaTeX file="SequenceDestroyP">
 \idx{`XLALDestroy'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceDestroyP"> */
+</lalLaTeX> <lalVerbatim file="SequenceDestroyP"> */
 void `XLALDestroy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 );
@@ -11,8 +10,7 @@ void `XLALDestroy'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceDestroyP">
 \idx{`LALDestroy'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceDestroyP"> */
+</lalLaTeX> <lalVerbatim file="SequenceDestroyP"> */
 void `LALDestroy'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence
@@ -21,8 +19,7 @@ void `LALDestroy'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceCreateP">
 \idx{`XLALCreate'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceCreateP"> */
+</lalLaTeX> <lalVerbatim file="SequenceCreateP"> */
 SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 );
@@ -30,8 +27,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceCreateP">
 \idx{`LALCreate'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceCreateP"> */
+</lalLaTeX> <lalVerbatim file="SequenceCreateP"> */
 void `LALCreate'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
@@ -41,8 +37,7 @@ void `LALCreate'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceCutP">
 \idx{`XLALCut'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceCutP"> */
+</lalLaTeX> <lalVerbatim file="SequenceCutP"> */
 SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
@@ -52,8 +47,7 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceCutP">
 \idx{`LALCut'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceCutP"> */
+</lalLaTeX> <lalVerbatim file="SequenceCutP"> */
 void `LALCut'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
@@ -65,8 +59,7 @@ void `LALCut'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceShrinkP">
 \idx{`XLALShrink'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceShrinkP"> */
+</lalLaTeX> <lalVerbatim file="SequenceShrinkP"> */
 size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
@@ -76,8 +69,7 @@ size_t `XLALShrink'SEQUENCETYPE (
 
 /* <lalLaTeX file="SequenceShrinkP">
 \idx{`LALShrink'SEQUENCETYPE ()}
-   </lalLaTeX> */
-/* <lalVerbatim file="SequenceShrinkP"> */
+</lalLaTeX> <lalVerbatim file="SequenceShrinkP"> */
 void `LALShrink'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence,

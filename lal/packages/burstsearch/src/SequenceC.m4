@@ -52,7 +52,7 @@ void `LALCreate'SEQUENCETYPE (
 	INITSTATUS(status, "`LALCreate'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCreate'SEQUENCETYPE (length);
-	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
 	RETURN(status);
 }
 
@@ -66,12 +66,8 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	SEQUENCETYPE *new = NULL;
 
 	if(sequence && sequence->data) {
-		if(first >= sequence->length)
-			length = 0;
-		else if(first + length > sequence->length)
-			length = sequence->length - first;
 		new = `XLALCreate'SEQUENCETYPE (length);
-		if(new && length)
+		if(new)
 			memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 	}
 
@@ -90,8 +86,9 @@ void `LALCut'SEQUENCETYPE (
 	INITSTATUS(status, "`LALCut'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first + length <= input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	*output = `XLALCut'SEQUENCETYPE (input, first, length);
-	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
 	RETURN(status);
 }
 
@@ -105,18 +102,10 @@ size_t `XLALShrink'SEQUENCETYPE (
 	if(!sequence || !sequence->data)
 		return(0);
 
-	if(first >= sequence->length)
-		length = 0;
-	else {
-		if(first + length > sequence->length)
-			length = sequence->length - first;
-		memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
-	}
-
+	sequence->length = 0;
+	memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
 	sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
-	if(sequence->data)
-		sequence->length = length;
-	else
+	if(!sequence->data)
 		sequence->length = 0;
 
 	return(sequence->length);
@@ -130,8 +119,12 @@ void `LALShrink'SEQUENCETYPE (
 	size_t length
 )
 {
+	size_t new_length;
+
 	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	`XLALShrink'SEQUENCETYPE (sequence, first, length);
+	ASSERT(first + length <= sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+	new_length = `XLALShrink'SEQUENCETYPE (sequence, first, length);
+	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	RETURN(status);
 }

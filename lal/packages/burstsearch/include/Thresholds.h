@@ -20,21 +20,6 @@ extern "C" {
 NRCSID (THRESHOLDSH, "$Id$");
 
 
-/******** <lalErrTable file="ThresholdsHErrTab"> ********/
-#define THRESHOLDSH_ENULLP    1
-#define THRESHOLDSH_EPOSARG   2
-#define THRESHOLDSH_EMXIT     4
-#define THRESHOLDSH_EBADPROB  8
-#define THRESHOLDSH_ERANGE    16
-
-#define THRESHOLDSH_MSGENULLP    "Null pointer"
-#define THRESHOLDSH_MSGEPOSARG   "Arguments must be non-negative"
-#define THRESHOLDSH_MSGEMXIT     "Maximum iterations exceeded"
-#define THRESHOLDSH_MSGEBADPROB  "Supplied probability must be between 0 and 1"
-#define THRESHOLDSH_MSGERANGE    "Arguments too large, cannot obtain finite probability"
-/******** </lalErrTable> ********/
-
-
 typedef struct tagChisqCdfIn
 {
   REAL8     chi2;               /* value of chi squared          */
