@@ -553,6 +553,7 @@ LALFindChirpSPData (
 {
   UINT4                 i, k; 
   UINT4                 cut;
+  CHAR                  infoMsg[512];
 
   REAL4                *w;
   REAL4                *amp;
@@ -751,6 +752,9 @@ LALFindChirpSPData (
     /* set low frequency cutoff inverse power spectrum */
     cut = params->fLow / dataSeg->spec->deltaF > 1 ? 
       params->fLow / dataSeg->spec->deltaF : 1;
+    LALSnprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
+        "low frequency cut off index = %d\n", cut );
+    LALInfo( status, infoMsg );
 
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
