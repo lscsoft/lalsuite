@@ -1016,11 +1016,14 @@ cleanexit:
       LALFree( currentEvent );
     }
 
-    while ( inspiralEventList[j] )
+    if ( ! trigBankFile )
     {
-      currentEvent = inspiralEventList[j];
-      inspiralEventList[j] = inspiralEventList[j]->next;
-      LALFree( currentEvent );
+      while ( inspiralEventList[j] )
+      {
+        currentEvent = inspiralEventList[j];
+        inspiralEventList[j] = inspiralEventList[j]->next;
+        LALFree( currentEvent );
+      }
     }
   }
 
