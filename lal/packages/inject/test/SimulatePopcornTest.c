@@ -41,7 +41,7 @@ NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
 /**   define parameters here   **/
 
-//detectors
+/*detectors*/
 
 #define LALPOPCORN_START 714265182
 #define LALPOPCORN_RESP0 "H2.dat"
