@@ -1047,11 +1047,12 @@ int main( int argc, char *argv[] )
           LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                 &eventList, fcFilterInput, fcFilterParams ), &status );
         }
-      /*  else if ( approximant == BCVSpin )
+       else if ( approximant == BCVSpin )
         {
           LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
-                &eventList, fcFilterInput, fcFilterParams ), &status );
-        } */
+                &eventList, fcFilterInput, fcFilterParams, fcDataParams, 
+	        fcSegVec, dataSegVec), &status );
+        } 
         else
         {
           fprintf( stderr, "error: unknown waveform approximant for filter\n" );
