@@ -36,6 +36,7 @@ fend_max	= 9
 number_fcut	= 5
 alpha_bank	= 0
 noisemodel	= 'LIGOI'
+simulation_type = 1       	# 0 for signal only 1 for noise only and 2 for noise+signal
 number_of_jobs 	= 50
 number_of_trials_per_job = 20
 
@@ -64,6 +65,7 @@ arguments = ' --n	' 		+ str(number_of_trials_per_job) \
          +' --signal ' 		+ str(signal) \
          +' --signal-order ' 	+ str(signal_order) \
          +' --template ' 	+ str(template) \
+         +' --simulation-type '	+ str(simulation_type) \
          +' --alpha-bank ' 	+ str(alpha_bank) \
 	 +' --noise-model ' 	+ noisemodel \
          +' --fend-bcv ' 	+ str(fend_min) + space + str(fend_max) \
@@ -79,7 +81,7 @@ fp.write('Universe     = vanilla\n')
 fp.write('Environment  = LD_LIBRARY_PATH=/software/geopptools/lib\n')
 fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
 fp.write('+MaxHours =40\n\n')
-fp.write('Arguments = '+ '--seed $(Porcess) ' + arguments)
+fp.write('Arguments = '+ '--seed $(Process) ' + arguments)
 fp.write('\n\n')
 fp.write('Log         = log.$(Process)\n')
 fp.write('Output      = out.$(Process)\n')
