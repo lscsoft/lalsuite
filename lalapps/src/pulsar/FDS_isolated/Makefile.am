@@ -52,7 +52,7 @@ cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/starlist.C screensaver/src/starsphere.C \
 	screensaver/src/user_text.C screensaver/src/pulsar_list.C \
 	screensaver/src/search_info.C
-cfsBOINC_CPPFLAGS = -Wall $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC 
+cfsBOINC_CPPFLAGS = -Wall $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC -D_REENTRANT
 cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -all-static \
 	-L$(HOME_BOINC)/lib -lboinc -lboinc_api -lboinc_graphics_api \
 	-L$(HOME_OPENGL)/lib -L$(HOME_X11) -lboincglut -lpthread -lGL -lGLU -lXmu -lX11 -lXext -ldl -lm -lpthread -lXi -lXmu -lX11
@@ -61,7 +61,7 @@ cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -all-static \
 #-print-file-name=libpthread.so -lboinc_api -lboinc_graphics_api -lGL -lboincglut -L/usr/X11R6/lib -lGL -lGLU -lXmu
 
 cfsBOINCnographics_SOURCES = cfsBOINC.cc $(CFSsources)
-cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC -DNO_BOINC_GRAPHICS -D_REENTRANT
 cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -static -lboinc -lboinc_api 
 
 ## trick make into using c++ for ComputeFStatistic.c (for boinc-includes):
