@@ -155,7 +155,7 @@ LALComputeSingleAnnulus (
 }
 
 
-// <lalVerbatim file="SkyAnnulusCP"> 
+																																																		/* <lalVerbatim file="SkyAnnulusCP">  */
 void
 LALComputeTripleAnnuli ( 
 		       LALStatus          *status,
@@ -167,7 +167,7 @@ LALComputeTripleAnnuli (
 		       INT2               nx,
 		       INT2               ny
 		  )
-     // </lalVerbatim> 
+  /* </lalVerbatim>  */
 {
 
 
@@ -204,7 +204,7 @@ LALComputeTripleAnnuli (
 
 
 
-// <lalVerbatim file="SkyAnnulusCP"> 
+/* <lalVerbatim file="SkyAnnulusCP"> */
 void
 LALExistTripleAnnuli( 
 		     LALStatus          *status,
@@ -216,7 +216,7 @@ LALExistTripleAnnuli(
 		     INT2               nx,
 		     INT2               ny
 		     )
-     // </lalVerbatim> 
+     /* </lalVerbatim> */
 {
 
 
