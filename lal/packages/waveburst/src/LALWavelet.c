@@ -459,7 +459,7 @@ LALCoincidenceWavelet(LALStatus *status,
   int length;
   REAL4 **one2D;
   REAL4 **two2D;
-  REAL4 minAmp;
+  int neighbors;
 
   INITSTATUS( status, "LALCoincidenceWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -490,8 +490,6 @@ LALCoincidenceWavelet(LALStatus *status,
 
 /*       printf("one\n");fflush(stdout); */
 
-      minAmp=1/pow(input->one->nonZeroFractionAfterPercentile,2);
-      
       for(k=0;k<=maxLayer1;k++)
 	{
 	  status1=_getLayer(&one, k, input->one->wavelet);
@@ -524,7 +522,7 @@ LALCoincidenceWavelet(LALStatus *status,
 		  eventsOne++;
 		  continue;
 		}
-	      if(fabs(one2D[k][i])<minAmp)
+	      if(fabs(one2D[k][i])<input->minAmp4ClusterExtension)
 		{
 		  one->data->data[i]=0;
 		  continue;
@@ -580,7 +578,7 @@ LALCoincidenceWavelet(LALStatus *status,
                   eventsTwo++;
                   continue;
                 }
-	      if(fabs(two2D[k][i])<minAmp)
+	      if(fabs(two2D[k][i])<input->minAmp4ClusterExtension)
                 {
 		  two->data->data[i]=0;
                   continue;
@@ -626,38 +624,91 @@ LALCoincidenceWavelet(LALStatus *status,
 	    }
 	  _putLayer(one, k, (*output)->one->wavelet);
 	  _putLayer(two, k, (*output)->two->wavelet);	
+
+	  _freeREAL4TimeSeries(&one);
+	  _freeREAL4TimeSeries(&two);
 	}
-      (*output)->one->nonZeroFractionAfterCoincidence =
-	((REAL4)eventsOne)/(*output)->one->wavelet->data->data->length;
-      (*output)->two->nonZeroFractionAfterCoincidence =
-	((REAL4)eventsTwo)/(*output)->two->wavelet->data->data->length;
 
       _freeSpectrogram(input->one->wavelet, &one2D);
       _freeSpectrogram(input->two->wavelet, &two2D);
 
-/*       printf("four\n",i);fflush(stdout); */
-    }
-  else
-    {
-      (*output)->one->nonZeroFractionAfterCoincidence = (*output)->one->nonZeroFractionAfterPercentile;
-      (*output)->two->nonZeroFractionAfterCoincidence = (*output)->two->nonZeroFractionAfterPercentile;
+      /*      printf("four\n");fflush(stdout); */
+
+
+      _getSpectrogram((*output)->one->wavelet, &one2D);
+      _getSpectrogram((*output)->two->wavelet, &two2D);
+
+      /*      printf("five\n");fflush(stdout);*/
+
+      for(k=0;k<=maxLayer;k++)
+	{
+	  status1=_getLayer(&one,k,(*output)->one->wavelet);
+	  status2=_getLayer(&two,k,(*output)->two->wavelet);
+
+	  /*	  printf("five A\n");fflush(stdout);*/
+
+	  for(i=0;i<n;i++)
+	    {
+	      if(one2D[k][i]==0.0) continue;
+	      swt=i-1;
+	      swf=k-1;
+	      if(swt<0) swt=0;
+	      if(swf<0) swf=0;
+	      ewt=i+1;
+	      ewf=k+1;
+	      if(ewt>=n) ewt=n-1;
+	      if(ewf>maxLayer) ewf=maxLayer;
+	      neighbors=0;
+
+	      /*	      printf("six\n");fflush(stdout);*/
+
+	      for(j=swt;j<=ewt;j++)
+		{
+		  for(l=swf;l<=ewf;l++)
+		    {
+		      if(!(j==i && l==k) && one2D[l][j]) neighbors++;
+		    }
+		}
+
+	      /*	      printf("seven\n");fflush(stdout);*/
+
+	      if(!neighbors)
+		{
+		  if(fabs(one2D[k][i]) < input->minAmp4SinglePixels && 
+		     fabs(two2D[k][i]) < input->minAmp4SinglePixels)
+		    {
+		      one->data->data[i]=0.0;
+		      two->data->data[i]=0.0;
+		    }
+		}
+
+	    }
+          _putLayer(one, k, (*output)->one->wavelet);
+          _putLayer(two, k, (*output)->two->wavelet);
+
+
+	  /*	  printf("eight\n");fflush(stdout);*/
+
+	  _freeREAL4TimeSeries(&one);
+          _freeREAL4TimeSeries(&two);
+
+	  /*	  printf("nine\n");fflush(stdout);*/
+	}
+
+      /*      printf("ten\n");fflush(stdout);*/
+
+      _freeSpectrogram((*output)->one->wavelet,&one2D);
+      _freeSpectrogram((*output)->two->wavelet,&two2D);
+
+
+      /*      printf("eleven\n");fflush(stdout);*/
     }
 
-  /*
-  printf("1:one->nonZeroFractionAfterCoincidence=%f\n",(*output)->one->nonZeroFractionAfterCoincidence);
-  printf("1:two->nonZeroFractionAfterCoincidence=%f\n",(*output)->two->nonZeroFractionAfterCoincidence);
-  */  
 
   (*output)->one->nonZeroFractionAfterCoincidence=
     ((REAL4)_countNonZeroes((*output)->one->wavelet->data))/(*output)->one->wavelet->data->data->length;
   (*output)->two->nonZeroFractionAfterCoincidence=
     ((REAL4)_countNonZeroes((*output)->two->wavelet->data))/(*output)->two->wavelet->data->data->length;
-
-  /*
-  printf("2:one->nonZeroFractionAfterCoincidence=%f\n",(*output)->one->nonZeroFractionAfterCoincidence);
-  printf("2:two->nonZeroFractionAfterCoincidence=%f\n",(*output)->two->nonZeroFractionAfterCoincidence);
-  */
-
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

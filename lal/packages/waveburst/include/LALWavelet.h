@@ -526,6 +526,8 @@ tagInputCoincidenceWavelet
   INT4 timeWindowPixels;
   INT4 freqWindowPixels;
   INT4 coincidenceLevel;
+  REAL4 minAmp4SinglePixels;
+  REAL4 minAmp4ClusterExtension;
 }
 InputCoincidenceWavelet;
 

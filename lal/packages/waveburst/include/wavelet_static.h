@@ -910,7 +910,14 @@ static void _assignWavelet(Wavelet **left,Wavelet *right)
   (*left)->level=right->level;
   (*left)->HPFilterLength=right->HPFilterLength;
   (*left)->LPFilterLength=right->LPFilterLength;
-
+  (*left)->PForward=NULL;
+  (*left)->PInverse=NULL;
+  (*left)->UForward=NULL;
+  (*left)->UInverse=NULL;
+  (*left)->pLForward=NULL;
+  (*left)->pLInverse=NULL;
+  (*left)->pHForward=NULL;
+  (*left)->pHInverse=NULL;
   _assignREAL4TimeSeries(&((*left)->data),right->data);
 }
 
