@@ -683,7 +683,7 @@ print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
 sys.stdout.flush()
 
 # make sure we use the range cut for analyzing the LHO conincidences
-lho_inca_job.add_opt('ifo-b-range-cut')
+lho_inca_job.add_opt('ifo-b-range-cut',None)
 
 for seg in l1_h1_h2_data:
   # do the second inca to get the H1 triggers that are in H2 or can't be seen
