@@ -128,6 +128,7 @@ def analyze_lho_ifo(l1_lho_data,ifo_data,ifo_name,insp_job,
           insp.set_start(chunk.start())
           insp.set_end(chunk.end())
           insp.set_ifo(ifo_name)
+          insp.set_ifo_tag('L1')
           insp.add_var_opt('snr-threshold',snr)
           insp.add_var_opt('chisq-threshold',chisq)
           insp.add_var_opt('trig-start-time',chunk.trig_start())
@@ -325,6 +326,7 @@ else:
 df_job = inspiral.DataFindJob(cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
+l_insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
@@ -336,6 +338,7 @@ else:
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
+l_insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
@@ -343,18 +346,21 @@ inca_job.set_sub_file( basename + '.inca' + subsuffix )
 if usertag:
   tmplt_job.add_opt('user-tag',usertag)
   insp_job.add_opt('user-tag',usertag)
+  l_insp_job.add_opt('user-tag',usertag)
   trig_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
 
 # add the injections
 if inj_file:
   insp_job.add_opt('injection-file',inj_file)
+  l_insp_job.add_opt('injection-file',inj_file)
 
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
   tmplt_job.add_condor_cmd('priority',condor_prio)
   insp_job.add_condor_cmd('priority',condor_prio)
+  l_insp_job.add_condor_cmd('priority',condor_prio)
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
 
@@ -484,7 +490,7 @@ for seg in l1_data:
         if do_datafind: bank.add_parent(df)
         if do_tmpltbank: dag.add_node(bank)
         # make an inspiral job for the master L1 chunk
-        insp = inspiral.InspiralNode(insp_job)
+        insp = inspiral.InspiralNode(l_insp_job)
         insp.set_start(chunk.start())
         insp.set_end(chunk.end())
         insp.add_var_opt('snr-threshold',l1_snr)
@@ -533,6 +539,7 @@ for seg in l1_h1_data:
   inca.set_end(seg.end())
   inca.set_ifo_a('L1')
   inca.set_ifo_b('H1')
+  inca.set_ifo_tag('L1H1')
   inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
@@ -557,6 +564,7 @@ for seg in l1_h2_data:
   inca.set_end(seg.end())
   inca.set_ifo_a('L1')
   inca.set_ifo_b('H2')
+  inca.set_ifo_tag('L1H2')
   inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
@@ -587,6 +595,7 @@ for seg in l1_h1_h2_data:
   inca1.set_end(seg.end())
   inca1.set_ifo_a('L1')
   inca1.set_ifo_b('H1')
+  inca1.set_ifo_tag('L1H1')
   inca1.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca1.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca1.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
@@ -638,7 +647,7 @@ for seg in h2_data:
         # make a trigbank for the master H2 chunk: to do this, we need
         # the inca job from L1/H1 that overlaps with this H2 chunk as input
         trigbank = inspiral.TrigToTmpltNode(trig_job)
-        trigbank.make_trigbank(chunk,'L1','H2',usertag)
+        trigbank.make_trigbank(chunk,'L1','H2',usertag,'H1')
         for l1_h1_done in l1_h1_inca_nodes:
           if chunk_in_segment(chunk,l1_h1_done.get_chunk()):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
@@ -648,6 +657,7 @@ for seg in h2_data:
         insp.set_start(chunk.start())
         insp.set_end(chunk.end())
         insp.set_ifo('H2')
+        insp.set_ifo_tag('L1H1')
         insp.add_var_opt('snr-threshold',h2_snr)
         insp.add_var_opt('chisq-threshold',h2_chisq)
         insp.add_var_opt('trig-start-time',chunk.trig_start())
@@ -675,6 +685,7 @@ for seg in l1_h1_h2_data:
   inca2.set_end(seg.end())
   inca2.set_ifo_a('H1')
   inca2.set_ifo_b('H2')
+  inca2.set_ifo_tag('L1H1H2')
   inca2.add_var_opt('dt',cp.get('pipeline','hh-dt'))
   inca2.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
   inca2.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
@@ -685,6 +696,7 @@ for seg in l1_h1_h2_data:
   inca3.set_end(seg.end())
   inca3.set_ifo_a('L1')
   inca3.set_ifo_b('H1')
+  inca3.set_ifo_tag('L1H1H2')
   inca3.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca3.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca3.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
@@ -692,7 +704,6 @@ for seg in l1_h1_h2_data:
   for l1_h1_done in l1_h1_inca_nodes:
     if ( l1_h1_done.get_chunk().start() == seg.start() and 
       l1_h1_done.get_chunk().end() == seg.end() ):
-      print l1_h1_done, "and", seg, "match"
       inca2.add_parent(l1_h1_done.get_dag_node())
       inca2.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
       inca3.add_parent(l1_h1_done.get_dag_node())

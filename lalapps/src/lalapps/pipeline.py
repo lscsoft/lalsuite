@@ -628,7 +628,7 @@ class AnalysisNode(CondorDAGNode):
     Set the ifo tag that is passed to the analysis code.
     ifo_tag = a string to identify one or more IFOs
     """
-    self.__ifo = ifo_tag
+    self.__ifo_tag = ifo_tag
     self.add_var_opt('ifo-tag', ifo_tag)
 
   def get_ifo_tag(self):

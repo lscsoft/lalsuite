@@ -259,12 +259,16 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
+
+    basename = self.get_ifo() + '-INSPIRAL'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
     if self.__usertag:
-      out = self.get_ifo() + '-INSPIRAL_' + self.__usertag + '-'
-      out = out + str(self.get_start()) + '-'
-    else:
-      out = self.get_ifo() + '-INSPIRAL-' + str(self.get_start()) + '-'
-    return out + str(self.get_end() - self.get_start()) + '.xml'
+      basename += '_' + self.__usertag
+
+    return basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
 
 
 class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
@@ -280,13 +284,14 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__output = None
 
-  def make_trigbank(self,chunk,source_ifo,dest_ifo,usertag):
+  def make_trigbank(self,chunk,source_ifo,dest_ifo,usertag=None,ifo_tag=None):
     """
     Sets the name of triggered template bank file.
     chunk = the analysis chunk that is being 
     source_ifo = the name of the ifo that the triggers come from
     dest_ifo = the name of the ifo that the templates will be used for
     usertag = usertag to tag the output filename with
+    ifo_tag = string to tag source interferometers
     """
     if chunk.trig_start():
       self.set_start(chunk.trig_start())
@@ -300,6 +305,8 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('ifo-a',source_ifo)
 
     outfile = dest_ifo + '-TRIGBANK_' + source_ifo
+    if ifo_tag:
+      outfile += ifo_tag + '_'
     if usertag:
       outfile += '_' + usertag 
     outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'
@@ -364,12 +371,16 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_a():
       raise InspiralError, "Start time, end time or ifo a has not been set"
+
+    basename = self.get_ifo_a() + '-INCA'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
     if self.__usertag:
-      out = self.get_ifo_a() + '-INCA_' + self.__usertag + '-' 
-      out = out + str(self.get_start()) + '-'
-    else:
-      out = self.get_ifo_a() + '-INCA-' + str(self.get_start()) + '-'
-    return out + str(self.get_end() - self.get_start()) + '.xml'
+      basename += '_' + self.__usertag 
+
+    return basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
 
   def get_output_b(self):
     """
