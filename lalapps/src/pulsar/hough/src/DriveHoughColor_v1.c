@@ -1263,7 +1263,7 @@ void Periodo2PSDrng (LALStatus  *status,
   REAL8  *medians;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "Periodo2PSDrng", MCINJECTCOMPUTEHOUGHC);
+  INITSTATUS (status, "Periodo2PSDrng", DRIVEHOUGHCOLORC);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
