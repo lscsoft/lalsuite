@@ -3,10 +3,10 @@
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst part_howto.tex \
                  animate.tex animate.ps animate.pdf \
-                 calibration.tex findchirp_post.tex hello.tex \
+                 calibration.tex hello.tex \
                  inspinj.tex inspiral-module.tex inspiral.tex \
                  stochastic.tex olapredfcn.tex \
-                 pipeline-module.tex power.tex ring.tex trump.tex
+                 pipeline-module.tex power.tex ring.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
