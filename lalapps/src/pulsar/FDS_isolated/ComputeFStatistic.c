@@ -388,54 +388,40 @@ int main(int argc,char *argv[])
   long fstat_bytecounter;
   UINT4 checksum=0;             /* Checksum of fstats file contents */
 
-  lalDebugLevel = 0 ;  
-  vrbflg = 1;	/* verbose error-messages */
-
   /* set LAL error-handler */
 #if USE_BOINC
+  CHAR resfname[256];	/* buffer for boinc-resolving config-file name */
+
   lal_errhandler = BOINC_ERR_EXIT;
 #else
   lal_errhandler = LAL_ERR_EXIT;
 #endif
 
+  lalDebugLevel = 0 ;  
+  vrbflg = 1;	/* verbose error-messages */
+
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
   LAL_CALL (initUserVars(stat), stat); 	
 
-  /* do ALL cmdline and cfgfile handling */
 #if USE_BOINC
   /* handle config file request with boinc_resolve_filename */
   /* NOTE: @configfile must be at the beginning of the command line! */
-  if (argv[1][0] == '@') {
-    char resfname[256];
-    if (!boinc_resolve_filename(argv[1]+1,resfname,sizeof(resfname)))
-      LAL_CALL (LALUserVarReadCfgfile (stat, resfname), stat);
-    else
-      fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[0]+1);
-    /* skip past this file name, since we won't use/need it any more */
-    argv++;
-    argc--;
-  }
-
-  /* parse the rest of the command line */
-  LAL_CALL (LALUserVarReadCmdline(stat,argc,argv),stat);
-
-  /* print out helpstring if requested and return */
-  if (uvar_help)
+  if (argv[1][0] == '@') 
     {
-      CHAR *helpstring = NULL;
-      LAL_CALL (LALUserVarHelpString (stat, &helpstring, argv[0]), stat);
-      printf ("\n%s\n", helpstring);
-      LALFree (helpstring);
-      return COMPUTEFSTAT_EXIT_USAGE;
-    } /* if help requested */
-
-  /* check that requirements are satisfied */
-  LAL_CALL (LALUserVarCheckRequired(stat),stat);
-  
-#else
-  LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
+      if (boinc_resolve_filename(argv[1]+1,resfname,sizeof(resfname)))
+	fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[0]+1);
+      else
+	{
+	  /* hack the command-line: replace config-file by boinc-resolved path */
+	  argv[1] = resfname;
+	  /* note: we don't free the previous argv[1] in order to avoid possible problems..*/
+	}
+    } /* if config-file given as first argument */
 #endif
+
+  LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
+
 
   if (uvar_help)	/* if help was requested, we're done here */
     return COMPUTEFSTAT_EXIT_USAGE;
