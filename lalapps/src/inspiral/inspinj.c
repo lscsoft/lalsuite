@@ -36,10 +36,12 @@
 "  --mass-file FILE         read population mass parameters from FILE\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
-"  --time-step STEP         space injections STEP / pi seconds appart (2630)\n"\
+"  --time-step STEP         space injections by ave of STEP sec (2630 / PI)\n"\
+"  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
+"  --tama-output            generate a text file for tama\n"\
 "  --ilwd                   generate an ILWD file for LDAS\n"\
 "\n"
 
@@ -595,6 +597,7 @@ int main( int argc, char *argv[] )
   long gpsStartTime = S2StartTime;
   long gpsEndTime = S2StopTime;
   double meanTimeStep = 2630 / LAL_PI; /* seconds between injections     */
+  double timeInterval = 0;
 
   long long tinj = 1000000000LL * gpsStartTime;
   struct time_list  tlisthead;
@@ -604,8 +607,10 @@ int main( int argc, char *argv[] )
   size_t ninj;
   size_t inj;
   FILE *fp = NULL;
+  FILE *fq = NULL;
   int rand_seed = 1;
   static int ilwd = 0;
+  int tamaOutput = 0;
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
@@ -614,6 +619,7 @@ int main( int argc, char *argv[] )
   LALPlaceAndGPS       *place_and_gps;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector		tama = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   SkyPosition	       *sky_pos;
   DetTimeAndASource    *det_time_and_source;
   REAL8			time_diff;
@@ -629,6 +635,7 @@ int main( int argc, char *argv[] )
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
+  CHAR		       tamaFileName[256];
 
   /* getopt arguments */
   struct option long_options[] =
@@ -639,10 +646,12 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
+    {"time-interval",		required_argument, 0,		     'i'},
     {"seed",                    required_argument, 0,                's'},
     {"waveform",                required_argument, 0,                'w'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"tama-output",		      no_argument, &tamaOutput,	      1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {0, 0, 0, 0}
   };
@@ -675,7 +684,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "hf:m:a:b:t:s:w:i", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -703,14 +712,18 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         sourceFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "string", 
+	      "%s", optarg );
         break;
 
       case 'm':
         optarg_len = strlen( optarg ) + 1;
         massFileName = calloc( 1, optarg_len * sizeof(char) );
         memcpy( massFileName, optarg, optarg_len * sizeof(char) );
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "string", 
+	      "%s", optarg );
         break;
 
       case 'a':
@@ -735,7 +748,9 @@ int main( int argc, char *argv[] )
         }
         gpsStartTime = gpsinput;
         tinj = 1000000000LL * gpsStartTime;
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "int", 
+	      "%ld", gpsinput );
         break;
 
       case 'b':
@@ -759,28 +774,43 @@ int main( int argc, char *argv[] )
           exit( 1 );
         }
         gpsEndTime = gpsinput;
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%ld", gpsinput );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "int", 
+	      "%ld", gpsinput );
         break;
 
       case 's':
         rand_seed = atoi( optarg );
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", rand_seed );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "int", 
+	      "%d", rand_seed );
         break;
 
       case 't':
         {
           double tstep = atof( optarg );
-          meanTimeStep = tstep / LAL_PI;
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%le", tstep );
+          meanTimeStep = tstep ;
+          this_proc_param = this_proc_param->next = 
+	    next_process_param( long_options[option_index].name, "float", 
+		"%le", tstep );
         }
         break;
+
+      case 'i':
+	timeInterval = 1000000000LL * atof( optarg );
+	 this_proc_param = this_proc_param->next = 
+	   next_process_param( long_options[option_index].name, 
+	       "float", "%le", timeInterval/1000000000 );
+      break;
 
       case 'w':
         LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg );
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
+        this_proc_param = this_proc_param->next = 
+	  next_process_param( long_options[option_index].name, "string", 
+	      "%le", optarg );
 
-      case 'Z':
+       case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen( optarg ) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
@@ -815,7 +845,7 @@ int main( int argc, char *argv[] )
 
   seed_random( rand_seed );
 
-  tlisthead.tinj = tinj;
+  tlisthead.tinj = tinj + timeInterval * my_urandom();
   tlisthead.next = NULL;
 
   if ( ! *waveform )
@@ -825,6 +855,18 @@ int main( int argc, char *argv[] )
         "GeneratePPNtwoPN" );
   }
 
+  /* store the tamaOutput argument */
+  if ( tamaOutput )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--tama-output" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+  }
+  
   /* store the ilwd argument */
   if ( ilwd )
   {
@@ -856,7 +898,8 @@ int main( int argc, char *argv[] )
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
 
-  /* make injection times at intervals of 100/pi seconds */
+  /* make injection times at intervals of TSTEP seconds, 
+   * add random time between 0 and timeInterval */
   ninj = 1;
   tlistelem = &tlisthead;
   while ( 1 )
@@ -865,7 +908,7 @@ int main( int argc, char *argv[] )
     if ( tinj > 1000000000LL * gpsEndTime )
       break;
     tlistelem = tlistelem->next = calloc( 1, sizeof( *tlistelem ) );
-    tlistelem->tinj = tinj;
+    tlistelem->tinj = tinj + timeInterval * my_urandom();
     ++ninj;
   }
 
@@ -1082,6 +1125,65 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
             sim_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+      
+      /* write out text file for Tama */
+      if ( tamaOutput )
+      {
+	if ( userTag )
+	{
+	  LALSnprintf( tamaFileName, sizeof(tamaFileName), 
+	      "HLT-INJECTIONS_%d_%s-%d-%d.txt", rand_seed, userTag, 
+	      gpsStartTime, gpsEndTime - gpsStartTime );
+	}
+	else
+	{
+	  LALSnprintf( tamaFileName, sizeof(tamaFileName), 
+	      "HLT-INJECTIONS_%d-%d-%d.txt", rand_seed, gpsStartTime, 
+	      gpsEndTime - gpsStartTime );
+	}
+	fq = fopen( tamaFileName, "w" );
+	fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
+	fprintf( fq, "geocentric end time  hanford end time   " );
+	fprintf( fq, "livingston end time   tama end time     " );
+	fprintf( fq, "  mtotal        eta        distance    " );
+	fprintf( fq, " longitude     latitude    " );
+	fprintf( fq, "inclination   coa_phase   polarization\n");
+	
+	this_sim_insp = injections.simInspiralTable;
+	while ( this_sim_insp )
+	{
+	  REAL8 injtime, ltime, htime, ttime;
+	  LAL_CALL( LALGPStoFloat( &status, &injtime, 
+		&(this_sim_insp->geocent_end_time) ),  &status );
+	  LAL_CALL( LALGPStoFloat( &status, &htime, 
+		&(this_sim_insp->h_end_time) ),  &status );
+	  LAL_CALL( LALGPStoFloat( &status, &ltime, 
+		&(this_sim_insp->l_end_time) ),  &status );
+	  
+	  /* compute site arrival time for tama */
+	  place_and_gps->p_gps = &(this_sim_insp->geocent_end_time);
+	  det_time_and_source->p_det_and_time = place_and_gps;
+	  sky_pos->longitude = this_sim_insp->longitude;
+	  sky_pos->latitude = this_sim_insp->latitude;
+	  det_time_and_source->p_source = sky_pos;
+	  place_and_gps->p_detector = &tama;
+	  LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+	    det_time_and_source), &status );
+	  ttime = injtime + time_diff;
+
+	  fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
+	     ttime );
+	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e",
+	      (this_sim_insp->mass1 + this_sim_insp->mass2), 
+	      this_sim_insp->eta, this_sim_insp->distance,
+	      this_sim_insp->longitude, this_sim_insp->latitude );
+	  fprintf( fq, "%13.6e %12.6e %12.6e\n", 
+	      this_sim_insp->inclination, this_sim_insp->coa_phase,
+	      this_sim_insp->polarization );
+	  this_sim_insp = this_sim_insp->next;
+	}
+      }
+
     }
 
     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
