@@ -61,7 +61,7 @@ NRCSID (TWOINTERFFINDCHIRPH, "$Id$");
 \subsection*{Error codes} 
 </lalLaTeX>
 #endif
-/***************** <lalErrTable file="TwoInterfFindChirpHE"> */
+/***************** <lalErrTable> */
 #define TWOINTERFFINDCHIRPH_ENULL 1
 #define TWOINTERFFINDCHIRPH_ENNUL 2
 #define TWOINTERFFINDCHIRPH_EALOC 3
@@ -253,7 +253,6 @@ a linked list of network events.
 </lalLaTeX>
 #endif
 
-/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{MultiInspiralTable}}
@@ -265,6 +264,7 @@ a linked list of network events.
 inspiral events in the data of a pair of detectors found by \texttt{TwoInterffindchirp}.
 This structure is being redesigned to be eventually consistent with the database table
 definitions.
+</lalLaTeX>
 #endif
 
 /* --- vector of DataSegmentVector, as defined in the 
