@@ -209,8 +209,8 @@ int main( int argc, char *argv[] ) {
   ra_max = 90;
   dec_min = 0;
   dec_max = 85;
-  tau=1.;
-  f1 = 1./tau;
+  tau=1e10;
+  f1 = tevparam.deltaT/tau;
   f0 = 1000;
   numSpindown = 0;
 
@@ -258,7 +258,7 @@ int main( int argc, char *argv[] ) {
       break;
     case 's':
       tau = atof( optarg );
-      f1 = 1./tau;
+      f1 = tevparam.deltaT/tau;
       break;
     case 't':
       in.duration = tevparam.deltaT = atof( optarg );
