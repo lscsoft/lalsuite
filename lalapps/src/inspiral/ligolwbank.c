@@ -171,6 +171,9 @@ InspiralTmpltBankFromLIGOLw (
       thisTmplt->mu = thisTmplt->mass1 * thisTmplt->mass2 / 
         thisTmplt->totalMass;
 
+      /* XXX hardwired match for testing with against S1 results XXX */
+      thisTmplt->minMatch = 0.826794919243;
+
       /* increase the count of rows parsed */
       ++nrows;
     }
