@@ -12,18 +12,34 @@ Computes quantities for amplitude demodulation.
 \index{\texttt{LALComputeAM()}}
 
 \subsubsection*{Description}
-This routine computes the quantities $a(t)$ and $b(t)$ as defined in Jaranowski, Krolak, and Schutz (gr-qc/9804014), hereafter JKS.  These functions quantify the dependence of the detector output on the beam-pattern functions $F_{+}$ and $F_{\times}$; in 
-fact, $a(t)$ and $b(t)$ {\it{are}} the beam-pattern functions, without the dependence on polarization angle and detector arm angle.  Since the \verb@LALDemod()@ suite is an attempt to compute an optimal statistic, it is necessary to include these quantiti
-es in the computation.  Otherwise, the motion of the Earth as it revolves about its axis will smear the signal into several neighboring bins centered about the search frequency, consequently losing valuable SNR.
+
+This routine computes the quantities $a(t)$ and $b(t)$ as defined in
+Jaranowski, Krolak, and Schutz (gr-qc/9804014), hereafter JKS.  These
+functions quantify the dependence of the detector output on the
+beam-pattern functions $F_{+}$ and $F_{\times}$; in fact, $a(t)$ and
+$b(t)$ {\it{are}} the beam-pattern functions, without the dependence
+on polarization angle and detector arm angle.  Since the
+\verb@LALDemod()@ suite is an attempt to compute an optimal statistic,
+it is necessary to include these quantiti es in the computation.
+Otherwise, the motion of the Earth as it revolves about its axis will
+smear the signal into several neighboring bins centered about the
+search frequency, consequently losing valuable SNR.
 
 \subsubsection*{Algorithm}
+
 The routine is really simple.  From JKS, 
-\begin{eqnarray}
-F_{+} = \sin \zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\
-F_{\times} = \sin \zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ]
-\end{eqnarray}
-We use the routine \verb@LALComputeDetAMResponse()@ to calculate $F_{+}$ and $F_{\times}$ for a given polarization angle, and then extract $a(t)$ and $b(t)$, once for each timestamp $t$.  Additionally, computation of the optimal statistic requires that we
- compute inner products of these two quantities for later use.  See \ref{Deft algo} for more on the optimal statistic.
+\begin{eqnarray} 
+F_{+} = \sin
+\zeta [ a(t) \cos 2 \psi + b(t) \sin 2 \psi ] \\ 
+F_{\times} = \sin
+\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ] 
+\end{eqnarray} 
+We use the routine \verb@LALComputeDetAMResponse()@ to calculate
+$F_{+}$ and $F_{\times}$ for a given polarization angle, and then
+extract $a(t)$ and $b(t)$, once for each timestamp $t$.  Additionally,
+computation of the optimal statistic requires that we compute inner
+products of these two quantities for later use.  See \ref{Deft algo}
+for more on the optimal statistic.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -95,11 +111,7 @@ void LALComputeAM (LALStatus          *status,
       REAL4 *a = coe->a->data;
       REAL4 *b = coe->b->data;
       
-      /* Compute barycenter correction to GPS */
-      LALBarycenterEarth(status->statusPtr, &earth, &(ts[i]), params->edat);
-      params->baryinput->tgps = ts[i];
-      LALBarycenter(status->statusPtr, &emit, params->baryinput, &earth);
-      timeAndAcc.gps=params->baryinput->tgps;      
+      timeAndAcc.gps=ts[i];      
       /* Compute F_plus, F_cross */
       LALComputeDetAMResponse(status->statusPtr, &response, params->das, &timeAndAcc);
       
