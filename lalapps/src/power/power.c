@@ -177,6 +177,7 @@ int main( int argc, char *argv[])
     REAL8                 tmpOffset = 0.0;
     REAL4                 minFreq = 0.0;    
     int                   start_sample;
+    int                   usedNumPoints = 0;
 
     /* data storage */
     REAL4TimeSeries            series;
@@ -252,37 +253,21 @@ int main( int argc, char *argv[])
     /* set the temporary time variable indicating start of chunk */
     tmpEpoch = startEpoch;
 
-    /* set the time series parameters of the input data and resample params 
-    memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-    resampleParams.deltaT = 1.0 / (REAL8) sampleRate;*/
-
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
      ******************************************************************/
-    while (totalNumSegs>0){
+    while ((totalNumPoints-usedNumPoints)>(2*params->ovrlap)){
 
       /* tell operator how we are doing */
       if (verbose){
-        fprintf(stdout," %i segments left\n", totalNumSegs);
+        fprintf(stdout,"%i points analysed && %i points left\n",usedNumPoints,totalNumPoints-usedNumPoints);
       }
-      params->currentSegment  = 0;
-
-      /* make sure you don't expect too many segments */
-      if (params->initParams->numSegments > totalNumSegs)
-        params->initParams->numSegments = totalNumSegs;
-
-      /* decrement the total number of segments */
-      if (totalNumSegs >= params->initParams->numSegments+1 )
-      {
-        totalNumSegs -= (params->initParams->numSegments+1);
-      }
-      else
-        totalNumSegs = 0;
 
       /* compute the number of points in a chunk */
-      numPoints = params->initParams->numSegments * (
-          params->initParams->numPoints - params->ovrlap )
-        + 3 * params->ovrlap;
+      numPoints = min(999424,(totalNumPoints - usedNumPoints)) ;
+      
+      /* count the no. of points that are being used */
+      usedNumPoints += numPoints;
 
       /* create and initialize the time series vector */
       series.data = NULL;
@@ -290,10 +275,8 @@ int main( int argc, char *argv[])
       memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
       series.epoch = tmpEpoch;
       strcpy(series.name, params->channelName);
-      /*      series.deltaT = 1.0/((REAL8) sampleRate);*/
       series.f0 = 0.0;
       series.sampleUnits = lalADCCountUnit;
-
 
       /*******************************************************************
        * GET AND CONDITION THE DATA                                       *
@@ -600,7 +583,13 @@ int main( int argc, char *argv[])
       LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
             &tmpInterval), &stat );
 
-      /* clean up memory from that run */
+      /*recalculate the used no. of points considering the 
+       *fact that we moved back by 2*params->ovrlap
+       *when we calculated the offset in the previous step
+       */
+      usedNumPoints -= 2*params->ovrlap;
+      
+     /* clean up memory from that run */
       LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
       if ( calCacheFile )
       {
@@ -674,8 +663,7 @@ int main( int argc, char *argv[])
         LALFree(event);
     }
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-
-
+    
     /* close the xml stream */
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
