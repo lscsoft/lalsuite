@@ -142,6 +142,8 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
       return LAL_INT8_C(-1);
     }
   }
+  /* JC: HOPEFULLY NEVER GET HERE */
+  return LAL_INT8_C(-1);
 }
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
@@ -209,8 +211,8 @@ LALCompareSearchSummaryByInTime (
 {
   LALStatus     status;
 
-  SearchSummaryTable *aPtr = *((SearchSummaryTable **)a);
-  SearchSummaryTable *bPtr = *((SearchSummaryTable **)b);
+  const SearchSummaryTable *aPtr = *((const SearchSummaryTable * const *)a);
+  const SearchSummaryTable *bPtr = *((const SearchSummaryTable * const *)b);
 
   INT8 ta = 0;
   INT8 tb = 0;
@@ -259,8 +261,8 @@ LALCompareSearchSummaryByOutTime (
 {
   LALStatus     status;
 
-  SearchSummaryTable *aPtr = *((SearchSummaryTable **)a);
-  SearchSummaryTable *bPtr = *((SearchSummaryTable **)b);
+  const SearchSummaryTable *aPtr = *((SearchSummaryTable * const *)a);
+  const SearchSummaryTable *bPtr = *((SearchSummaryTable * const *)b);
 
   INT8 ta = 0;
   INT8 tb = 0;
@@ -583,8 +585,8 @@ LALCompareSummValueByTime (
 {
   LALStatus     status;
 
-  SummValueTable *aPtr = *((SummValueTable **)a);
-  SummValueTable *bPtr = *((SummValueTable **)b);
+  const SummValueTable *aPtr = *((SummValueTable * const *)a);
+  const SummValueTable *bPtr = *((SummValueTable * const *)b);
 
   INT8 ta = 0;
   INT8 tb = 0;

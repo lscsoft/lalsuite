@@ -121,6 +121,7 @@ but care should be taken if DC is relevant when this function is used.
 #include <lal/LALError.h>
 #include <lal/Calibration.h>
 #include <lal/Units.h>
+#include <lal/Date.h>
 
 #define CAL_S2START 729273613
 #define CAL_S2END 734367613
@@ -417,8 +418,9 @@ LALUpdateCalibration(
     this_a = params->sensingFactor->data->data[i];
     this_ab = params->openLoopFactor->data->data[i];
 
-    if ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ||
-        fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny )
+    /* JC: I CHANGED THE LOGIC HERE TO WHAT I THOUGHT IT SHOULD BE! */
+    if ( ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ) ||
+         ( fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny ) )
     {
       /* this is a hack for the broken S2 calibration frame data */
       if ( (params->epoch.gpsSeconds >= CAL_S2START) && 

@@ -123,7 +123,7 @@ may be \verb@REAL4@ or \verb@REAL8@.  The length of the history vector
 gives the order of the filter.  The fields are:
 
 \begin{description}
-\item[\texttt{CHAR *name}] A user-assigned name.
+\item[\texttt{const CHAR *name}] A user-assigned name.
 
 \item[\texttt{REAL8 deltaT}] The sampling time interval of the filter.
   If $\leq0$, it will be ignored (i.e.\ it will be taken from the data
@@ -141,7 +141,7 @@ gives the order of the filter.  The fields are:
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagREAL4IIRFilter{
-  CHAR *name;              /* User assigned name. */
+  const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL4Vector *directCoef; /* The direct filter coefficients. */
   REAL4Vector *recursCoef; /* The recursive filter coefficients. */
@@ -149,7 +149,7 @@ typedef struct tagREAL4IIRFilter{
 } REAL4IIRFilter;
 
 typedef struct tagREAL8IIRFilter{
-  CHAR *name;              /* User assigned name. */
+  const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL8Vector *directCoef; /* The direct filter coefficients. */
   REAL8Vector *recursCoef; /* The recursive filter coefficients. */

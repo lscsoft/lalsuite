@@ -67,7 +67,7 @@ NRCSID( DETRESPONSEC, "$Id$" );
 
 /* Matrix manipulation routines, and other stuff */
 
-static const INT4 oneBillion = 1000000000;
+/* static const INT4 oneBillion = 1000000000; */
 
 #define LALDR_MATRIXSIZE 3
 

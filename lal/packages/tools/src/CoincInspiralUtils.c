@@ -418,6 +418,8 @@ LALExtractCoincSngls(
   UINT4               eventNum = 1;
   INT4                j;
   
+  gpsStartTime = NULL;
+
   INITSTATUS( status, "LALExtractCoincSngls", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -427,7 +429,6 @@ LALExtractCoincSngls(
       LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
   ASSERT( coincInspiral, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
 
   /* loop over the linked list of coinc inspirals */
   for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,

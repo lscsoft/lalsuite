@@ -198,8 +198,8 @@ LALCompareSnglInspiralByMass (
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
-  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+  const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
+  const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
 
   if ( aPtr->mass1 > bPtr->mass1 )
   {
@@ -232,8 +232,8 @@ LALCompareSnglInspiralByPsi (
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
-  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+  const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
+  const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
 
   if ( aPtr->psi0 > bPtr->psi0 )
   {
@@ -268,8 +268,8 @@ LALCompareSnglInspiralByTime (
 /* </lalVerbatim> */
 {
   LALStatus     status;
-  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
-  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+  const SnglInspiralTable *aPtr = *((const SnglInspiralTable * const *)a);
+  const SnglInspiralTable *bPtr = *((const SnglInspiralTable * const *)b);
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );

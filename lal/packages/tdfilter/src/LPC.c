@@ -7,8 +7,10 @@
 
 NRCSID (LPCC, "$Id$");
 
+static INT4 balanc(REAL4 **a, INT4 n);
 static INT4 toeplz(REAL4 r[], REAL4 x[], REAL4 y[], INT4 n);
 static INT4 zrhqr(REAL4 a[], INT4 m, REAL4 rtr[], REAL4 rti[]);
+static INT4 hqr(REAL4 **a, INT4 n, REAL4 wr[], REAL4 wi[]);
 
 /******** <lalLaTeX file="LPCC"> ********
 \noindent
@@ -31,7 +33,7 @@ Train a FIR filter aout of order p on the data x.
 ...
 \end{verbatim}
 ********* </lalLaTeX> ********/
-  UINT4 i,j,npad;
+  UINT4 i,/*j,*/npad;
   REAL4 *r, *R, *a, *y;
   RealFFTPlan *pfwd = NULL, *pinv = NULL;
   COMPLEX8Vector *Hvec = NULL;
@@ -191,7 +193,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
     }
     aind1 = a->data[i];
 
-    for(i=0; i<a->length/2; i++) {
+    for(i=0; i<(int)a->length/2; i++) {
       REAL4 tmp;
       tmp = a->data[i];
       a->data[i] = a->data[a->length-i-1];
@@ -226,7 +228,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
       }
     }
 
-    for(i=0; i<a->length; i++) {
+    for(i=0; i<(int)a->length; i++) {
       a->data[i] *= aind1;
     }
 
@@ -329,8 +331,6 @@ static INT4 toeplz(REAL4 r[], REAL4 x[], REAL4 y[], INT4 n) {
 
 static INT4 zrhqr(REAL4 a[], INT4 m, REAL4 rtr[], REAL4 rti[])
 {
-	static INT4 balanc(REAL4 **a, INT4 n);
-	static INT4 hqr(REAL4 **a, INT4 n, REAL4 wr[], REAL4 wi[]);
 	INT4 j,k;
 	REAL4 **hess,xr,xi;
 	INT4 MAXM = m+1;
@@ -379,6 +379,8 @@ static INT4 hqr(REAL4 **a, INT4 n, REAL4 wr[], REAL4 wi[])
 {
 	INT4 nn,m,l,k,j,its,i,mmin;
 	REAL4 z,y,x,w,v,u,t,s,r,q,p,anorm;
+
+        r=q=p=0;
 
 	anorm=0.0;
 	for (i=1;i<=n;i++)
