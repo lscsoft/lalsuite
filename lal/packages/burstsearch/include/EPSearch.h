@@ -196,6 +196,11 @@ LALTFTileToBurstEvent (
                EPSearchParams                       *params
                );
 
+void LALWeighTFTileList (
+        LALStatus         *status,
+        TFTiling          *tfTiling,
+        INT4               maxDOF
+        );
 
 #ifdef  __cplusplus
 }
