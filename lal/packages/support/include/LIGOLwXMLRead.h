@@ -187,6 +187,14 @@ StochasticTableFromLIGOLw (
 		CHAR             *fileName
 		);
 
+int
+LALExtTriggerTableFromLIGOLw ( 
+    ExtTriggerTable   **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    );
+
 #ifdef  __cplusplus
 }
 #endif

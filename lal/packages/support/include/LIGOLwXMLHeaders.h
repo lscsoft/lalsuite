@@ -57,6 +57,8 @@ defined in this file are
 \item SIM\_INST\_PARAMS\_ROW 
 \item LIGOLW\_XML\_STOCHASTIC
 \item STOCHASTIC\_ROW
+\item LIGOLW\_XML\_EXT\_TRIGGERS
+\item EXT\_TRIGGERS\_ROW
 \end{itemize}
 
 \vfill{\footnotesize\input{LIGOLwXMLHeadersHV}}
@@ -444,7 +446,50 @@ extern "C" {
 "      <Stream Name=\"stochasticgroup:stochastic:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define STOCHASTIC_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"\
+"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
+
+#define LIGOLW_XML_EXT_TRIGGERS \
+" <Table Name=\"external_trigger:table\">\n" \
+"      <Column Name=\"external_trigger:process_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"external_trigger:det_alts\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_band\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_fluence\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_fluence_int\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_name\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_peak\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_peak_int\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:det_snr\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:email_time\" Type=\"int_4s\" />\n" \
+"      <Column Name=\"external_trigger:event_dec\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:event_dec_err\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:event_epoch\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:event_err_type\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:event_ra\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:event_ra_err\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:start_time\" Type=\"int_4s\" />\n" \
+"      <Column Name=\"external_trigger:start_time_ns\" Type=\"int_4s\" />\n" \
+"      <Column Name=\"external_trigger:event_type\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:event_z\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:event_z_err\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:notice_comments\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:notice_id\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:notice_sequence\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:notice_time\" Type=\"int_4s\" />\n" \
+"      <Column Name=\"external_trigger:notice_type\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:notice_url\" Type=\"lstring\" />\n" \
+"      <Column Name=\"external_trigger:obs_fov_dec\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_fov_dec_width\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_fov_ra\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_fov_ra_width\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_loc_ele\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_loc_lat\" Type=\"real_4\" />\n" \
+"      <Column Name=\"external_trigger:obs_loc_long\" Type=\"real_4\" />\n" \
+"      <Stream Name=\"external_trigger:table\" Type=\"Local\" Delimiter=\",\">\n" 
+
+
+#define EXT_TRIGGERS_ROW \
+"         \"process:process_id:0\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",%d, %e, %e, \"%s\",\"%s\", %e , %e, %d, %d, \"%s\",%e, %e, \"%s\",\"%s\",\"%s\",%d, \"%s\",\"%s\",%e, %e,%e,%e, %e, %e, %e"
 
 
 #ifdef  __cplusplus

@@ -230,9 +230,12 @@ LALBeginLIGOLwXMLTable (
     case sim_inst_params_table:
       fprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
       break;
-		case stochastic_table:
-			fprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
-			break;
+    case stochastic_table:
+      fprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
+      break;
+    case ext_triggers_table:
+      fprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
+      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -588,7 +591,48 @@ LALWriteLIGOLwXMLTable (
 						tablePtr.stochasticTable->cc_sigma
 						);
 				tablePtr.stochasticTable = tablePtr.stochasticTable->next;
-			}
+			}  
+  case ext_triggers_table:
+    while( tablePtr.extTriggerTable )
+      {
+	FIRST_TABLE_ROW
+	  fprintf( xml->fp, EXT_TRIGGERS_ROW,
+		   tablePtr.extTriggerTable->det_alts,
+		   tablePtr.extTriggerTable->det_band,
+		   tablePtr.extTriggerTable->det_fluence,
+		   tablePtr.extTriggerTable->det_fluence_int,
+		   tablePtr.extTriggerTable->det_name,
+		   tablePtr.extTriggerTable->det_peak,
+		   tablePtr.extTriggerTable->det_peak_int,
+		   tablePtr.extTriggerTable->det_snr,
+		   tablePtr.extTriggerTable->email_time,
+		   tablePtr.extTriggerTable->event_dec,
+		   tablePtr.extTriggerTable->event_dec_err,
+		   tablePtr.extTriggerTable->event_epoch,
+		   tablePtr.extTriggerTable->event_err_type,
+		   tablePtr.extTriggerTable->event_ra,
+		   tablePtr.extTriggerTable->event_ra_err,
+		   tablePtr.extTriggerTable->start_time,
+		   tablePtr.extTriggerTable->start_time_ns,
+		   tablePtr.extTriggerTable->event_type,
+		   tablePtr.extTriggerTable->event_z,
+		   tablePtr.extTriggerTable->event_z_err,
+		   tablePtr.extTriggerTable->notice_comments,
+		   tablePtr.extTriggerTable->notice_id,
+		   tablePtr.extTriggerTable->notice_sequence,
+		   tablePtr.extTriggerTable->notice_time,
+		   tablePtr.extTriggerTable->notice_type,
+		   tablePtr.extTriggerTable->notice_url,
+		   tablePtr.extTriggerTable->obs_fov_dec,
+		   tablePtr.extTriggerTable->obs_fov_dec_width,
+		   tablePtr.extTriggerTable->obs_fov_ra,
+		   tablePtr.extTriggerTable->obs_fov_ra_width,
+		   tablePtr.extTriggerTable->obs_loc_ele,
+		   tablePtr.extTriggerTable->obs_loc_lat,
+		   tablePtr.extTriggerTable->obs_loc_long
+		   );
+	tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
+      }
 			break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );

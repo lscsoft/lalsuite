@@ -76,6 +76,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_COORDINATES_MAX 16
 #define LIGOMETA_SIMINSTPARAMS_NAME_MAX 25
 #define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
+#define LIGOMETA_STD 100
 
 #if 0
 <lalLaTeX>
@@ -111,7 +112,8 @@ typedef enum
   summ_value_table,
   sim_inst_params_table,
   coinc_inspiral_table,
-  stochastic_table
+  stochastic_table,
+  ext_triggers_table
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -609,6 +611,57 @@ StochasticTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{ExtTriggerTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagExtTriggerTable
+{
+  struct        tagExtTriggerTable *next;
+  CHAR          det_alts[LIGOMETA_STD];
+  CHAR          det_band[LIGOMETA_STD];
+  CHAR          det_fluence[LIGOMETA_STD];
+  CHAR          det_fluence_int[LIGOMETA_STD];
+  CHAR          det_name[LIGOMETA_STD];
+  CHAR          det_peak[LIGOMETA_STD];
+  CHAR          det_peak_int[LIGOMETA_STD];
+  CHAR          det_snr[LIGOMETA_STD];
+  INT4          email_time;
+  REAL4         event_dec;
+  REAL4         event_dec_err;
+  CHAR          event_epoch[LIGOMETA_STD];
+  CHAR          event_err_type[LIGOMETA_STD];
+  REAL4         event_ra;
+  REAL4         event_ra_err;
+  INT4          start_time;
+  INT4          start_time_ns;
+  CHAR          event_type[LIGOMETA_STD];
+  REAL4         event_z;
+  REAL4         event_z_err;
+  CHAR          notice_comments[LIGOMETA_STD];
+  CHAR          notice_id[LIGOMETA_STD];
+  CHAR          notice_sequence[LIGOMETA_STD];
+  INT4          notice_time;
+  CHAR          notice_type[LIGOMETA_STD];
+  CHAR          notice_url[LIGOMETA_STD];
+  REAL4         obs_fov_dec;
+  REAL4         obs_fov_dec_width;
+  REAL4         obs_fov_ra;
+  REAL4         obs_fov_ra_width;
+  REAL4         obs_loc_ele;
+  REAL4         obs_loc_lat;
+  REAL4         obs_loc_long;
+  EventIDColumn *event_id;
+}
+ExtTriggerTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
@@ -630,6 +683,7 @@ tagMetadataTable
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
   StochasticTable       *stochasticTable;
+  ExtTriggerTable       *extTriggerTable;
 }
 MetadataTable;
 /* </lalVerbatim> */
