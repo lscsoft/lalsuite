@@ -112,6 +112,7 @@ tagInspiralEvent
   REAL4                         chisq;
   REAL4                         sigma;
   REAL4                         effDist;
+  CHAR                          ifoName[2];
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
