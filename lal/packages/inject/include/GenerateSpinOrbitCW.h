@@ -124,12 +124,12 @@ Without loss of generality, we will henceforth drop the offsets $R_0$
 and (constant) $\dot{R}_0$ from these equations.  This means that we
 ignore the overall propagation delay between the $R=R_0$ plane and the
 observer, and incorporate any (constant) Doppler shifts due to net
-centre-of-mass motions into the values of $f$ and $P$.  The resulting
-times and parameter values are referred to as being in the
-\emph{barycentric} frame.  On top of this, the time delays and Doppler
-shifts that we explicitly treat are those arising from the motion of
-the source relative to the $R=R_0$ sky plane passing through the
-system barycentre.
+centre-of-mass motions into the values of $f$ and $\dot{\upsilon}_p$.
+The resulting times and parameter values are referred to as being in
+the \emph{barycentric} frame.  The only time delays and Doppler shifts
+that we explicitly treat are those arising from the motion of the
+source relative to the $R=R_0$ sky plane passing through the system
+barycentre.
 
 All we need now to determine the orbital motion is an equation for
 $\upsilon(t)$.  Many basic astronomy textbooks give exact but
@@ -194,9 +194,9 @@ P & = & \frac{2\pi}{\dot{\upsilon}_p} \sqrt{\frac{1+e}{(1-e)^3}} \;.
 \end{eqnarray}
 Furthermore, for improved numerical precision when dealing with
 near-parabolic orbits, we specify the value of $1-e$ rather than the
-value of $e$.  We note that $1-e$ has a minimum value of $-1$ for a
-circular orbit, negative for closed elliptical orbits, zero for
-parabolic orbits, and positive (unbounded) for hyperbolic orbits.
+value of $e$.  We note that $1-e$ has a maximum value of $1$ for a
+circular orbit, positive for closed elliptical orbits, zero for
+parabolic orbits, and negative (unbounded) for hyperbolic orbits.
 
 ******************************************************* </lalLaTeX> */
 

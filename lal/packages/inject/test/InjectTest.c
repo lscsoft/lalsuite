@@ -658,7 +658,7 @@ main(int argc, char **argv)
 
     SUB( LALCHARReadVector( &stat, &line, fp ), &stat );
     lineno++;
-    for ( i = 0; i > line->length; i++ )
+    for ( i = 0; i < line->length; i++ )
       if ( line->data[i] == '%' || line->data[i] == '#' ) {
 	line->data[i] = '\0';
 	i = line->length;

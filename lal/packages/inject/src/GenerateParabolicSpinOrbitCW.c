@@ -68,7 +68,6 @@ root.  However, $p\rightarrow0$ in the limit $v_p\rightarrow1$ and
 $\omega=\pi$.  This may cause some loss of precision in subsequent
 calculations.  But $v_p\sim1$ means that our solution will be
 inaccurate anyway because we ignore significant relativistic effects.
-The routine generates a warning if $v_p>0.01$.
 
 Since $p>0$, we can substitute $x=y\sqrt{3/4p}$ to obtain:
 \begin{equation}
@@ -91,8 +90,13 @@ the step size in the (output) time series in $t_r$.  Thus at any
 timestep $i$, we obtain $C$ and hence $E$ via:
 \begin{eqnarray}
 C & = & C_0 + i\Delta C \;, \nonumber\\
-E & = & E_0 + \Delta E\sinh\left(\mbox{$\frac{1}{3}$}
-	\ln\left[ C + \sqrt{C^2+1} \right] \right) \;, \nonumber
+E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
+	\sinh\left[\frac{1}{3}\ln\left(
+		C + \sqrt{C^2+1} \right) \right]\;, & C\geq0 \;,\\
+	\\
+	\sinh\left[-\frac{1}{3}\ln\left(
+		-C + \sqrt{C^2+1} \right) \right]\;, & C\leq0 \;,\\
+	\end{array}\right. \nonumber
 \end{eqnarray}
 where we have explicitly written $\sinh^{-1}$ in terms of functions in
 \verb@math.h@.  Once $E$ is found, we can compute
@@ -101,17 +105,27 @@ can be precomputed), and hence $f$ and $\phi$ via
 Eqs.~(\ref{eq:taylorcw-freq}) and~(\ref{eq:taylorcw-phi}).  The
 frequency $f$ must then be divided by the Doppler factor:
 $$
-1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left[
-	(8-E^2)\times\frac{\cos\omega}{2} - E\times2\sin\omega
-	\right] \;,
+1 + \frac{\dot{R}}{c} = 1 + \frac{v_p}{4+E^2}\left(
+	4\cos\omega - 2E\sin\omega \right)
 $$
-where we have explicitly split off the coefficients $\cos\omega/2$ and
-$2\sin\omega$ that can be precomputed.
+(where once again $4\cos\omega$ and $2\sin\omega$ can be precomputed).
 
 This routine does not account for relativistic timing variations, and
 issues warnings or errors based on the criterea of
 Eq.~(\ref{eq:relativistic-orbit}) in
-\verb@GenerateEllipticSpinOrbitCW.c@.
+\verb@GenerateEllipticSpinOrbitCW.c@.  The routine will also warn if
+it seems likely that \verb@REAL8@ precision may not be sufficient to
+track the orbit accurately.  We estimate that numerical errors could
+cause the number of computed wave cycles to vary by
+$$
+\Delta N \lessim f_0 T\epsilon\left[
+	\sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
+$$
+where $|C|$ is the maximum magnitude of the variable $C$ over the
+course of the computation, $f_0T$ is the approximate total number of
+wave cycles over the computation, and $\epsilon\approx2\times10^{-16}$
+is the fractional precision of \verb@REAL8@ arithmetic.  If this
+estimate exceeds 0.01 cycles, a warning is issued.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -154,8 +168,8 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   REAL8 phi;           /* current value of phase */
   REAL8 vp;            /* projected speed at periapsis */
   REAL8 argument;      /* argument of periapsis */
-  REAL8 cosOmegaBy2;   /* half of cosine of argument */
-  REAL8 twoSinOmega;   /* twice the sine of argument */
+  REAL8 fourCosOmega;  /* four times the cosine of argument */
+  REAL8 twoSinOmega;   /* two times the sine of argument */
   REAL8 vpCosOmega;    /* vp times cosine of argument */
   REAL8 vpSinOmega;    /* vp times sine of argument */
   REAL8 vpSinOmega2;   /* vpSinOmega squared */
@@ -244,18 +258,31 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   phi0 = params->phi0;
   argument = params->omega;
   oneBy12vDot = 0.5/vDot6;
-  cosOmegaBy2 = 0.5*cos( argument );
+  fourCosOmega = 4.0*cos( argument );
   twoSinOmega = 2.0*sin( argument );
-  vpCosOmega = 2.0*vp*cosOmegaBy2;
+  vpCosOmega = 0.25*vp*fourCosOmega;
   vpSinOmega = 0.5*vp*twoSinOmega;
   vpSinOmega2 = vpSinOmega*vpSinOmega;
   pBy3 = sqrt( 4.0*( 1.0 + vpCosOmega ) - vpSinOmega2 );
-  p32 = pBy3*pBy3*pBy3;
+  p32 = 1.0/( pBy3*pBy3*pBy3 );
   c0 = p32*( vpSinOmega*( 6.0*vpCosOmega - 12.0 + vpSinOmega2 ) -
 	     tpOff*vDot6 );
   dc = p32*vDot6*dt;
   e0 = 3.0*vpSinOmega;
   de = 2.0*pBy3;
+
+  /* Check whether REAL8 precision is good enough. */
+#ifndef NDEBUG
+  if ( lalDebugLevel & LALWARNING ) {
+    REAL8 x = fabs( c0 + n*dc ); /* a temporary computation variable */
+    if ( x < fabs( c0 ) )
+      x = fabs( c0 );
+    x = 6.0 + log( x + sqrt( x*x + 1.0 ) );
+    if ( LAL_REAL8_EPS*f0*dt*n*x > 0.01 )
+      LALWarning( stat, "REAL8 arithmetic may not have sufficient"
+		  " precision for this orbit" );
+  }
+#endif
 
   /* Allocate output structures. */
   if ( ( output->a = (REAL4TimeVectorSeries *)
@@ -336,7 +363,10 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
 
     /* Compute emission time. */
     c = c0 + dc*i;
-    e = e0 + de*sinh( log( c + sqrt( c*c + 1.0 ) )/3.0 );
+    if ( c > 0 )
+      e = e0 + de*sinh( log( c + sqrt( c*c + 1.0 ) )/3.0 );
+    else
+      e = e0 + de*sinh( -log( -c + sqrt( c*c + 1.0 ) )/3.0 );
     e2 = e*e;
     phi = t = tPow = oneBy12vDot*e*( 12.0 + e2 );
 
@@ -348,7 +378,7 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
     }
 
     /* Appy frequency Doppler shift. */
-    f *= f0 / ( 1.0 + vp*( ( 8.0 - e2 )*cosOmegaBy2 - e*twoSinOmega )
+    f *= f0 / ( 1.0 + vp*( fourCosOmega - e*twoSinOmega )
 		/( 4.0 + e2 ) );
     phi *= twopif0;
     if ( fabs( f - fPrev ) > df )
