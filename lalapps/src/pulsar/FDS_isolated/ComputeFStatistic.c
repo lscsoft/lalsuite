@@ -2099,8 +2099,11 @@ INT4 EstimatePSDLines(LALStatus *status)
   
   LALDCreateVector(status, &Sp, nbins);
   LALDCreateVector(status, &FloorSp, nbins);
-  
-  
+
+  /* initialize to zero */
+  for (j=0;j<nbins;j++)
+    Sp->data[j]=0.0;
+
   /* loop over each SFTs */
   for (i=0;i<GV.SFTno;i++){
     
@@ -2108,13 +2111,14 @@ INT4 EstimatePSDLines(LALStatus *status)
     for (j=0;j<nbins;j++){
       xre=SFTData[i]->fft->data->data[j].re;
       xim=SFTData[i]->fft->data->data[j].im;
-      Sp->data[j]=Sp->data[j]+(REAL8)(xre*xre+xim*xim);
+      /* need to cast BEFORE multiplication! */
+      Sp->data[j] += ((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
     }
   }/*end loop over SFTs*/
   
   /*Average Sp*/
   for (j=0;j<nbins;j++){
-    Sp->data[j]=Sp->data[j]/GV.SFTno;
+    Sp->data[j] /= GV.SFTno;
   }
   Sp->length=nbins;
   FloorSp->length=nbins;
@@ -2532,7 +2536,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       for (j=0;j<nbins;j++){
 	xre=SFTData[i]->fft->data->data[j].re;
 	xim=SFTData[i]->fft->data->data[j].im;
-	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
+	Sp->data[j]=((REAL8)xre)*((REAL8)xre)+((REAL8)xim)*((REAL8)xim);
       }
       
       /* Compute running median */
