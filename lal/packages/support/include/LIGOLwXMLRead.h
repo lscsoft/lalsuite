@@ -15,7 +15,6 @@ Author: Brown, D. A. and Fairhurst, S.
 $Id$
 </lalVerbatim> 
 <lalLaTeX>
-
 \section{Header \texttt{LIGOLwXMLRead.h}}
 \label{s:LIGOLwXMLRead.h}
 
@@ -102,6 +101,19 @@ tagMetaTableDirectory
 }
 MetaTableDirectory;
 /* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+This structure allows for the association of entries in a MetaDataTable
+with columns in an xml file.
+\begin{description}
+\item[\texttt{name}] The name of the column in the XML table.
+\item[\texttt{pos}] The position of this column in the XML table.
+\item[\texttt{idx}] The id number of the column.
+\end{description}
+</lalLaTeX>
+#endif
+
 
 /* <lalLaTeX>
 \newpage\input{LIGOLwXMLReadC}

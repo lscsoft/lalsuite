@@ -26,8 +26,38 @@ $Id$
 This header provides provides \verb|#define|s for the common elements of LIGO
 light weight XML files.  It provides the XML header and footer, as well as table
 definitions for the various metadata tables.  It will need to be kept up to date
-with changes in the LIGO database table definitions.
-\vfill{\footnotesize\input{LIGOLwXMLHeadersHV}
+with changes in the LIGO database table definitions.  The quantities which are
+defined in this file are 
+
+\begin{itemize}
+\item LIGOLW\_XML\_HEADER
+\item LIGOLW\_XML\_FOOTER 
+\item LIGOLW\_XML\_TABLE\_FOOTER
+\item LIGOLW\_XML\_PROCESS 
+\item PROCESS\_ROW 
+\item LIGOLW\_XML\_PROCESS\_PARAMS 
+\item PROCESS\_PARAMS\_ROW 
+\item LIGOLW\_XML\_SEARCH\_SUMMARY 
+\item SEARCH\_SUMMARY\_ROW 
+\item LIGOLW\_XML\_SEARCH\_SUMMVARS 
+\item SEARCH\_SUMMVARS\_ROW 
+\item LIGOLW\_XML\_SNGL\_BURST 
+\item SNGL\_BURST\_ROW 
+\item LIGOLW\_XML\_SNGL\_INSPIRAL 
+\item SNGL\_INSPIRAL\_ROW 
+\item LIGOLW\_XML\_MULTI\_INSPIRAL 
+\item MULTI\_INSPIRAL\_ROW
+\item LIGOLW\_XML\_SIM\_INSPIRAL
+\item SIM\_INSPIRAL\_ROW 
+\item LIGOLW\_XML\_SIM\_BURST 
+\item SIM\_BURST\_ROW 
+\item LIGOLW\_XML\_SUMM\_VALUE 
+\item SUMM\_VALUE\_ROW 
+\item LIGOLW\_XML\_SIM\_INST\_PARAMS
+\item SIM\_INST\_PARAMS\_ROW 
+\end{itemize}
+
+\vfill{\footnotesize\input{LIGOLwXMLHeadersHV}}
 </lalLaTeX>
 #endif
 

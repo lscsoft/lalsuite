@@ -49,13 +49,87 @@ files.
     
 \subsubsection*{Description}
 
+The routine \verb+LALCreateMetaTableDir+ constructs a \verb+MetaTableDirectory+
+for a given LIGOLwXML table.  It determines the location of each column expected
+to be present in the XML table and populates the \verb+pos+ field with this
+information.  This then allows other routines to parse the contents of an XML
+file and correctly interpret the entries.  Currently, this has been implemented
+only for the \verb+sngl_burst+ and \verb+sim_burst+ tables.  When reading these
+tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
+the directory is constructed internally by the reading code.
+
+The routine \verb+LALSnglBurstTableFromLIGOLw+ reads in a \verb+single_burst+
+table from a LIGOLwXML file  specified in \verb+fileName+; \verb+eventHead+
+provides a pointer to the head of a linked list of \verb+SnglBurstTable+s
+containing the events.  The routine is passed the \verb+fileName+ of an XML file
+containing a \verb+sngl_burst+ table.  First, the table is opened using
+\verb+MetaioOpenTable+.  Then a directory of the table is generated using
+\verb+LALCreateMetaTableDir+.  Rows of the table are read in sequentially from
+the file.  Each entry in the row is stored in the appopriate entry of a
+\verb+SnglBurstTable+ which is appended to the end of a linked list of such
+tables.  When all rows have been read in, the file is closed using
+\verb+MetaioClose+.  \verb+eventHead+ is set to point to the head of the linked
+list of \verb+SnglBurstTable+s.  
+
+The routine \verb+LALSimBurstTableFromLIGOLw+ reads in a \verb+sim_burst+ table
+from the LIGOLwXML file specified in \verb+fileName+; \verb+eventHead+ provides a pointer to the head of
+a linked list of \verb+SimBurstTables+ containing the events.  It operates in a
+similar manner to \verb+LALSnglBurstTableFromLIGOLw+.  Additionally, a
+\verb+startTime+ and \verb+stopTime+ are be specified.  Only simulated events
+occuring between these times are returned.  If the \verb+endTime+ is set to
+zero, then all events are returned.
+
+The routine \verb+LALSnglInspiralTableFromLIGOLw+ reads in a
+\verb+sngl_inspiral+ table from the LIGOLwXML file specified in \verb+fileName+.
+It returns the number of triggers read in and \verb+eventHead+ provides a
+pointer to the head of a linked list of \verb+SnglInspiralTable+s containing the
+events.  It will return all events between the \verb+startEvent+ and
+\verb+stopEvent+; if these are set to 0 and -1 respectively, all events are
+returned.
+
+The routine \verb+InspiralTmpltBankFromLIGOLw+ reads in a \verb+sngl_inspiral+
+table from the LIGOLwXML file specified in \verb+fileName+. It returns the
+number of templates read in and \verb+bankHead+ provides a pointer to the head
+of a linked list of \verb+InspiralTemplate+s containing the templates read in.
+It will return all events between the \verb+startTmplt+ and \verb+stopTmplt+; if
+these are set to 0 and -1 respectively, all events are returned.  Although a
+\verb+sngl_inspiral+ table is read in, only those entries relevant for an
+InspiralTemplate are read in and stored.
+
+The routine \verb+SimInspiralTableFromLIGOLw+ reads in a \verb+sim_inspiral+
+table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+number of rows read in and \verb+SimHead+ provides a pointer to the head of a
+linked list of \verb+SimInspiralTable+s containing the events.  Additionally, a
+\verb+startTime+ and \verb+endTime+ are specified.  Only simulated events
+occuring between these times are returned.  If the \verb+endTime+ is set to
+zero, then all events are returned.
+
+The routine \verb+SearchSummaryTableFromLIGOLw+ reads in a \verb+search_summary+
+table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+number of rows read in and \verb+sumHead+ provides a pointer to the head of a
+linked list of \verb+SearchSummaryTable+s.
+
+The routine \verb+SummValueTableFromLIGOLw+ reads in a \verb+summ_value+
+table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
+number of rows read in and \verb+sumHead+ provides a pointer to the head of a
+linked list of \verb+SummValueTable+s.
+
+
+
+
 
 \subsubsection*{Algorithm}
 
 None.
 
 \subsubsection*{Uses}
-
+Functions in the Metaio library:
+\begin{itemize}
+\item \verb+MetaioFindColumn+
+\item \verb+MetaioGetRow+
+\item \verb+MetaioOpenTable+
+\item \verb+MetaioClose+
+\end{itemize}
 \subsubsection*{Notes}
  
 %% Any relevant notes.
