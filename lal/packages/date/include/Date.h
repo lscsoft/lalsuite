@@ -167,6 +167,7 @@ LIGOTimeUnix;
 
 
 \subsubsection{Structure \texttt{LALTimeInterval}}
+\index{\texttt{LALTimeInterval}}
 
 This structure is used for storing intervals of \texttt{LIGOTimeGPS}
 and \texttt{LIGOTimeUnix} times.  The fields are:
@@ -194,6 +195,7 @@ LALTimeInterval;
 
 
 \subsubsection{Structure \texttt{LALTimezone}}
+\index{\texttt{LALTimezone}}
 
 This structure is used for storing information about time zones.  The
 fields are:
@@ -220,6 +222,7 @@ LALTimezone;
 
 
 \subsubsection{Structure \texttt{LALDate}}
+\index{\texttt{LALDate}}
 
 This structure is an extension of \texttt{LALUnixDate} to include
 residual nanosecond information and timezone information.  The fields
@@ -250,6 +253,7 @@ LALDate;
 
 
 \subsubsection{Structure \texttt{LALPlaceAndGPS}}
+\index{\texttt{LALPlaceAndGPS}}
 
 This structure stores pointers to a \texttt{LALDetector} and a
 \texttt{LIGOTimeGPS}. Its sole purpose is to aggregate these
@@ -278,6 +282,7 @@ LALPlaceAndGPS;
 
 
 \subsubsection{Structure \texttt{LALPlaceAndDate}}
+\index{\texttt{LALPlaceAndDate}}
 
 Like \texttt{LALPlaceAndGPS}, this structure aggregates a pointer to a
 detector and a pointer to a date.  This is another convenience
