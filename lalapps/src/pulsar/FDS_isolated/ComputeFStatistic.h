@@ -20,7 +20,6 @@ extern "C" {
 /* (Half the ) number of terms to keep in the Dirichlet kernel sum */
 #define NTERMS 32
 
-#define MAXFILES 40000         /* Maximum # of files in a directory  */
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 /* The command line arguments are not the actual search parameters that will be used, 
@@ -46,7 +45,7 @@ typedef struct {
   INT4 nsamples;		/**< number of frequency-bins in an SFT */
   INT4 Ti;	        	/**< GPS seconds of start of observation */
   INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH]; /**< array of filenames to load SFTs from */
+  CHAR **filelist; 		/**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */

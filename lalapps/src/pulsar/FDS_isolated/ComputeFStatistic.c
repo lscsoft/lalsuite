@@ -1534,18 +1534,20 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
-    
+
+    fileno = 0;
     while (fread((void*)&header,sizeof(header),1,fp) == 1) {
       char tmp[256];
 
-      /* check that we've still got space for more data */
-      if (fileno >= MAXFILES) {
-	fprintf(stderr,"Too many SFT's in merged file! Exiting... \n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      /* prepare memory for another filename */
+      if ( (cfg->filelist = LALRealloc( cfg->filelist, (fileno+1) * sizeof(CHAR*))) == NULL) {
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
-      
       /* store a "file name" composed of merged name + block number */
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
+      if ( (cfg->filelist[fileno] = LALCalloc (1, strlen(tmp)+1)) == NULL) {
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
       strcpy(cfg->filelist[fileno],tmp);
       
       /* check that data is correct endian order and swap if needed */
@@ -1605,16 +1607,17 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
-    
+    /* prepare memory for all filenames */
+    if ( (cfg->filelist = LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
     while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
+	if ( (cfg->filelist[fileno] = LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
+	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	}
 	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
 	fileno++;
-	if (fileno > MAXFILES)
-	  {
-	    LALPrintError ("\nToo many files in directory! Exiting... \n\n");
-	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	  }
       }
     globfree(&globbuf);
 #endif
@@ -2001,15 +2004,20 @@ void Freemem(LALStatus *status)
   INITSTATUS (status, "Freemem", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /* Free SFTData */
+  /* Free SFTData and filenames */
   for (k=0;k<GV.SFTno;k++)
     {
+      /* data */
       LALFree(SFTData[k]->fft->data->data);
       LALFree(SFTData[k]->fft->data);
       LALFree(SFTData[k]->fft);
       LALFree(SFTData[k]);
-    }
+
+      /* filenames */
+      LALFree (GV.filelist[k]);
+    } /* for k < SFTno */
   LALFree(SFTData);
+  LALFree(GV.filelist);
 
   /* Free timestamps */
   LALFree(timestamps);
@@ -2020,6 +2028,8 @@ void Freemem(LALStatus *status)
       LALFree(Fstat.Fa);
       LALFree(Fstat.Fb);
     }
+
+
 
   /* Free DemodParams */
   if (DemodParams->amcoe)
