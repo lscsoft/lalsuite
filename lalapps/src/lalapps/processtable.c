@@ -24,7 +24,7 @@
 #define CVS_DATE_FMT "\%Y/\%m/\%d \%T"
 #define CVS_DELIM " $"
 
-int gethostname(char *name, size_t len);
+/* int gethostname(char *name, size_t len); */
 char *strptime(const char *s, const char  *format,  struct tm *tm);
 
 NRCSID( PROCESSTABLEC, "$Id$" );
