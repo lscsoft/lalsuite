@@ -1,10 +1,12 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
-TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
-                 hello.tex stochastic.tex olapredfcn.tex \
-                 ring.tex inspinj.tex animate.tex findchirp_post.tex \
-                 animate.ps animate.pdf
+TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst part_howto.tex \
+                 animate.tex animate.ps animate.pdf \
+                 calibration.tex findchirp_post.tex hello.tex \
+                 inspinj.tex inspiral-module.tex inspiral.tex \
+                 stochastic.tex olapredfcn.tex \
+                 pipeline-module.tex power.tex ring.tex trump.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
