@@ -47,6 +47,11 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 #define TIMEFREQFFTH_EPOSARG 32
 #define TIMEFREQFFTH_EMALLOC 64
 #define TIMEFREQFFTH_EINCOMP 128
+#define TIMEFREQFFTH_ENNUL 256
+#define TIMEFREQFFTH_EZSPC 512
+#define TIMEFREQFFTH_EZOVR 1024
+#define TIMEFREQFFTH_EMISM 2048
+#define TIMEFREQFFTH_EUAVG 4096
 
 #define TIMEFREQFFTH_MSGENULL "Null pointer"
 #define TIMEFREQFFTH_MSGESIZE "Invalid size"
@@ -56,6 +61,11 @@ NRCSID( TIMEFREQFFTH, "$Id$" );
 #define TIMEFREQFFTH_MSGEPOSARG "Argument must be positive"
 #define TIMEFREQFFTH_MSGEMALLOC "Malloc failure"
 #define TIMEFREQFFTH_MSGEINCOMP "Incompatible arguments"
+#define TIMEFREQFFTH_MSGENNUL "Non-null pointer"
+#define TIMEFREQFFTH_MSGEZSEG "Segment length is zero"
+#define TIMEFREQFFTH_MSGEZOVR "Overlap length is zero"
+#define TIMEFREQFFTH_MSGEMISM "Mismatch beteen segment, overlap and data length"
+#define TIMEFREQFFTH_MSGEUAVG "Unknown average power spectum method"
 
 /**** </lalErrTable> */
 
@@ -70,11 +80,26 @@ RealDFTParams;
 
 typedef enum
 {
+  useUnity,
   useMean,
   useMedian,
-  useUnity
 } AvgSpecMethod;
 
+typedef enum
+{
+  noDetrend,
+  meanDetrend,
+} AvgSpecDetrend;
+
+typedef struct
+tagAverageSpectrumParams
+{
+  UINT4                 overlap;
+  AvgSpecMethod         method;
+  REAL4Window          *window;
+  RealFFTPlan          *plan;
+}
+AverageSpectrumParams;
 
 /**** <lalLaTeX>
  * \newpage\input{TimeFreqFFTC}
@@ -118,6 +143,14 @@ LALRealAverageSpectrum(
     REAL4TimeSeries      *tSeries,
     RealDFTParams        *params,
     AvgSpecMethod              method
+    );
+
+void
+LALREAL4AverageSpectrum (
+    LALStatus                   *status,
+    REAL4FrequencySeries        *fSeries,
+    REAL4TimeSeries             *tSeries,
+    AverageSpectrumParams       *params
     );
 
 void
