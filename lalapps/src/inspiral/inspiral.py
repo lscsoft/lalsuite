@@ -468,6 +468,54 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
+  def set_outputs(self,out_name,usertag=None,tama_output=None):
+    """
+    Sets the name of the sire output file.
+    out_name = name of sire output file
+    usertag = usertag to tag the output filename with
+    """
+    outfile = out_name
+    if usertag:
+      outfile += '_' + usertag
+    summ_file = outfile + '.txt' 
+    if tama_output:
+      tama_out = outfile + '.dat'
+      self.add_var_opt('tama-output',tama_out)
+
+    outfile +=  '.xml'
+    self.__output = outfile
+    self.add_var_opt('output',outfile)
+    self.add_var_opt('summary',summ_file)
+
+  def set_inj_outputs(self,out_name,usertag=None,tama_output=None):
+    """
+    Sets the name of the sire output file.
+    out_name = name of sire output file
+    usertag = usertag to tag the output filename with
+    """
+    outfile = out_name
+    if usertag:
+      outfile += '_' + usertag
+    summ_file = outfile + '_FOUND.txt' 
+    missed_file = outfile + '_MISSED.xml'
+    if tama_output:
+      tama_out = outfile + '_FOUND.dat'
+      self.add_var_opt('tama-output',tama_out)
+    outfile +=  '_FOUND.xml'
+    self.__output = outfile
+    self.add_var_opt('output',outfile)
+    self.add_var_opt('summary',summ_file)
+    self.add_var_opt('missed-injections',missed_file)
+    self.add_var_opt
+
+
+  def get_output(self):
+    """
+    Returns the name of the sire output.
+    """
+    return self.__output
+
+
 class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   A Tama2LigoLwNode runs an instance of the tama triggers to LIGO Lw XML 

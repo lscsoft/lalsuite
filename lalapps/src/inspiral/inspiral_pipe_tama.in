@@ -198,6 +198,7 @@ def single_inca(ifo_analyzed,ifo_single,ifo_name,single_inca_job,dag,
   dag = the DAG to attach the nodes to
   """
 
+  single_inca_analyzed = []
   for seg in ifo_single:
     sinca = inspiral.IncaNode(single_inca_job)
     sinca.set_start(seg.start())
@@ -211,6 +212,9 @@ def single_inca(ifo_analyzed,ifo_single,ifo_name,single_inca_job,dag,
         sinca.add_var_arg(ifo_done.get_dag_node().get_output())
         if ligo_analysis: sinca.add_parent(ifo_done.get_dag_node())
     if ligo_analysis: dag.add_node(sinca)
+    single_inca_analyzed.append(AnalyzedIFOData(seg,sinca))
+
+  return single_inca_analyzed
 
 
 def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
@@ -228,6 +232,7 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
   dag = the DAG to attach the nodes to
   """
 
+  lt_inca_analyzed = []
   for seg in segments:
     lt_inca = inspiral.IncaNode(lt_inca_job)
     lt_inca.set_start(seg.start())
@@ -252,8 +257,54 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
         lt_inca.add_var_arg(t_done.get_dag_node().get_output())
         lt_inca.add_parent(t_done.get_dag_node())
     dag.add_node(lt_inca)
+    lt_inca_analyzed.append(AnalyzedIFOData(seg,lt_inca))
 
-  
+  return lt_inca_analyzed
+
+
+def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
+  usertag=None,tama_output=None,inj_file=None):
+  """
+  Perform coincidence test between single IFO LIGO data and TAMA data.
+  Since the way we treat all this data is the same, this function is the same 
+  for all three LIGO ifos. 
+  segments = segment list and associated dag nodes
+  output = one of output, output_a or output_b
+  output_name = the name of the output file
+  sire_job = the condor job that we should to do sire
+  dag = the DAG to attach the nodes to
+  playground_only = flag playground only analysis
+  """
+  sire = inspiral.SireNode(sire_job)
+  fname = file_name
+  if usertag:
+    fname += usertag
+  fname += '.input'
+  f = open(fname, 'w')
+  for seg in segments:
+    sire.add_parent(seg.get_dag_node())
+    if output == 'output':
+      f.write('%s\n' % seg.get_dag_node().get_output())
+    if output == 'output_a':
+      f.write('%s\n' % seg.get_dag_node().get_output_a())
+    if output == 'output_b':
+      f.write('%s\n' % seg.get_dag_node().get_output_b())
+  f.close()
+  sire.add_var_opt('input',fname)
+  if playground_only:
+    sire.add_var_opt('playground-only',' ')
+  else:
+    sire.add_var_opt('all_data',' ')
+  if inj_file:
+    sire.set_inj_outputs(file_name,usertag,tama_output)
+    sire.add_var_opt('injection-file',inj_file)
+    sire.add_var_opt('injection-coincidence',cp.get('pipeline','inj-coinc'))
+  else:
+    sire.set_outputs(file_name,usertag,tama_output)
+
+  dag.add_node(sire) 
+
+ 
 ##############################################################################
 # help message
 def usage():
@@ -281,7 +332,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:pP:l:f:soLt"
+shortop = "hvu:cj:pP:l:f:soLtO"
 longop = [
   "help",
   "version",
@@ -294,7 +345,8 @@ longop = [
   "output-segments",
   "tama-overlap",
   "ligo-analysis",
-  "tama-coincidence"
+  "tama-coincidence",
+  "tama-output"
   ]
 
 try:
@@ -313,7 +365,8 @@ tama_overlap = None
 playground_only = 0
 ligo_analysis = 0
 tama_coincidence = 0
-tama_trig_file = 0
+tama_trig_file = None
+tama_output = 0
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -337,6 +390,8 @@ for o, a in opts:
   elif o in ("-o", "--tama-coincidence"):
     tama_trig_file = a
     tama_coincidence = 1
+  elif o in ("-O", "--tama-output"):
+    tama_output = 1
   elif o in ("-j", "--injections"):
     inj_file = a
   elif o in ("-p", "--playground-only"):
@@ -414,9 +469,10 @@ trig_job = inspiral.TrigToTmpltJob(cp)
 trig_insp_job = inspiral.InspiralJob(cp)
 inca_job = inspiral.IncaJob(cp)
 s_inca_job = inspiral.IncaJob(cp)
-sire_job = inspiral.SireJob(cp)
 tama2lw_job = inspiral.Tama2LigoLwJob(cp)
 lt_inca_job = inspiral.IncaJob(cp)
+sire_job = inspiral.SireJob(cp)
+sire_inj_job = inspiral.SireJob(cp)
 
 
 # set better submit file names than the default
@@ -431,9 +487,10 @@ trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 trig_insp_job.set_sub_file( basename + '.trig_inspiral' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 s_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
-sire_job.set_sub_file( basename + '.sire' + subsuffix )
 tama2lw_job.set_sub_file( basename + '.tama2lw' + subsuffix )
 lt_inca_job.set_sub_file( basename + '.lt_inca' + subsuffix )
+sire_job.set_sub_file( basename + '.sire' + subsuffix )
+sire_inj_job.set_sub_file( basename + '.sire_inj' + subsuffix )
 
 
 # set the usertag in the jobs
@@ -444,9 +501,10 @@ if usertag:
   trig_insp_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
   s_inca_job.add_opt('user-tag',usertag)
-  sire_job.add_opt('user-tag',usertag)
   tama2lw_job.add_opt('user-tag',usertag)
   lt_inca_job.add_opt('user-tag',usertag)
+  sire_job.add_opt('user-tag',usertag)
+  sire_inj_job.add_opt('user-tag',usertag)
 
 
 # add the injections
@@ -463,9 +521,10 @@ if condor_prio:
   trig_insp_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
   s_inca_job.add_condor_cmd('priority',condor_prio)
-  sire_job.add_condor_cmd('priority',condor_prio)
   tama2lw_job.add_condor_cmd('priority',condor_prio)
   lt_inca_job.add_condor_cmd('priority',condor_prio)
+  sire_job.add_condor_cmd('priority',condor_prio)
+  sire_inj_job.add_condor_cmd('priority',condor_prio)
 
 
 ##############################################################################
@@ -640,14 +699,17 @@ print "done"
 
 print "setting up jobs to inca single IFO data...",
 
-single_inca(l1_chunks_analyzed,l1_single_data,'L1',s_inca_job,dag,
-  usertag)
+l1_single_inca_nodes = []
+l1_single_inca_nodes = single_inca(l1_chunks_analyzed,l1_single_data,'L1',
+  s_inca_job,dag, usertag)
 
-single_inca(h1_chunks_analyzed,h1_single_data,'H1',s_inca_job,dag,
-  usertag)
+h1_single_inca_nodes = []
+h1_single_inca_nodes = single_inca(h1_chunks_analyzed,h1_single_data,'H1',
+  s_inca_job,dag,usertag)
 
-single_inca(h2_single_chunks_analyzed,h2_single_data,'H2',s_inca_job,dag,
-  usertag)
+h2_single_inca_nodes = []
+h2_single_inca_nodes = single_inca(h2_single_chunks_analyzed,h2_single_data,
+  'H2',s_inca_job,dag,usertag)
 
 ##############################################################################
 # Step 11: Determine which of the H2 master chunks needs to be triggered
@@ -771,23 +833,26 @@ if tama_coincidence:
   print "setting up jobs to get (single ifo LIGO)-TAMA coincident triggers...",
   sys.stdout.flush()
 
-  l1_t_data = copy.deepcopy(l1_single_data)
-  l1_t_data.intersection(t_data)
-  h1_t_data = copy.deepcopy(h1_single_data)
-  h1_t_data.intersection(t_data)
-  h2_t_data = copy.deepcopy(h2_single_data)
-  h2_t_data.intersection(t_data)
+  l1t1_data = copy.deepcopy(l1_single_data)
+  l1t1_data.intersection(t_data)
+  h1t1_data = copy.deepcopy(h1_single_data)
+  h1t1_data.intersection(t_data)
+  h2t1_data = copy.deepcopy(h2_single_data)
+  h2t1_data.intersection(t_data)
  
   lt_dt = cp.get('pipeline','lt-dt')
-  lt_coinc(l1_t_data,l1_chunks_analyzed,tama_segs_analyzed,'L1',lt_inca_job,
-    lt_dt,dag,usertag)
+  l1t1_inca_nodes = []
+  l1t1_inca_nodes = lt_coinc(l1t1_data,l1_chunks_analyzed,tama_segs_analyzed,
+    'L1',lt_inca_job,lt_dt,dag,usertag)
 
   ht_dt = cp.get('pipeline','ht-dt')
-  lt_coinc(h1_t_data,h1_chunks_analyzed,tama_segs_analyzed,'H1',lt_inca_job,
-    ht_dt,dag,usertag)
+  h1t1_inca_nodes = []
+  h1t1_inca_nodes = lt_coinc(h1t1_data,h1_chunks_analyzed,tama_segs_analyzed,
+    'H1',lt_inca_job,ht_dt,dag,usertag)
 
-  lt_coinc(h2_t_data,h2_single_chunks_analyzed,tama_segs_analyzed,'H2',
-    lt_inca_job,ht_dt,dag,usertag)
+  h2t1_inca_nodes = []
+  h2t1_inca_nodes = lt_coinc(h2t1_data,h2_single_chunks_analyzed,
+    tama_segs_analyzed,'H2',lt_inca_job,ht_dt,dag,usertag)
 
   print "done"
 
@@ -799,10 +864,13 @@ if tama_coincidence:
   sys.stdout.flush()
 
   
-  h1_h2_t_data = copy.deepcopy(h1_h2_data)
-  h1_h2_t_data.intersection(t_data)
+  h1h2t1_data = copy.deepcopy(h1_h2_data)
+  h1h2t1_data.intersection(t_data)
 
-  for seg in h1_h2_t_data:
+  h1h2t1_inca2_nodes = []
+  h1h2t1_inca3_nodes = []
+
+  for seg in h1h2t1_data:
     # do inca to get coincidence between H1 triggers and TAMA triggers
     lt_inca2 = inspiral.IncaNode(lt_inca_job)
     lt_inca2.set_start(seg.start())
@@ -847,9 +915,75 @@ if tama_coincidence:
     # add the nodes to the dag
     dag.add_node(lt_inca2)
     dag.add_node(inca3)
+    h1h2t1_inca2_nodes.append(AnalyzedIFOData(seg,lt_inca2))
+    h1h2t1_inca3_nodes.append(AnalyzedIFOData(seg,inca3))
+
 print "done"
 sys.stdout.flush()
 
+##############################################################################
+# Step 16: Do any sires which are necessary
+
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+if ligo_analysis:
+  sire_segs(l1_single_inca_nodes,'output_a','L1-INCA_SINGLE_IFO',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1_single_inca_nodes,'output_a','H1-INCA_SINGLE_IFO',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h2_single_inca_nodes,'output_a','H2-INCA_SINGLE_IFO',sire_job,dag,
+    playground_only,usertag,tama_output) 
+  sire_segs(h1_h2_inca_nodes,'output_a','H1-INCA_H1H2',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',sire_job,dag,
+    playground_only,usertag,tama_output)
+
+if tama_coincidence:
+  sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(l1t1_inca_nodes,'output_b','T1-INCA_L1T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1t1_inca_nodes,'output_b','T1-INCA_1T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h2t1_inca_nodes,'output_b','T1-INCA_H2T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1h2t1_inca2_nodes,'output_b','T1-INCA_H1H2T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1h2t1_inca3_nodes,'output_a','H1-INCA_H1H2T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+  sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_job,dag,
+    playground_only,usertag,tama_output)
+
+if inj_file:
+  if ligo_analysis:
+    sire_segs(l1_single_inca_nodes,'output_a','L1-INCA_SINGLE_IFO',
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+    sire_segs(h1_single_inca_nodes,'output_a','H1-INCA_SINGLE_IFO',
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+    sire_segs(h2_single_inca_nodes,'output_a','H2-INCA_SINGLE_IFO',
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file) 
+    sire_segs(h1_h2_inca_nodes,'output_a','H1-INCA_H1H2',
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+    sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
+  if tama_coincidence:
+    sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file)
+    sire_segs(h1t1_inca_nodes,'output_a','H1-INCA_H1T1',sire_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file)
+    sire_segs(h2t1_inca_nodes,'output_a','H2-INCA_H2T1',sire_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file)
+    sire_segs(h1h2t1_inca3_nodes,'output_a','H1-INCA_H1H2T1',sire_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file)
+    sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_inj_job,dag,
+      playground_only,usertag,tama_output,inj_file)
+
+print "done"
 
 ##############################################################################
 # Write out the DAG, help message and log file
