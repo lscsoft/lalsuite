@@ -12,7 +12,7 @@ else
 FRAMEPROGRAMS = 
 endif
 
-bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_FstatShapeTestLAL ComputeFStatisticBinary $(FRAMEPROGRAMS)
+bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_polka lalapps_FstatShapeTestLAL ComputeFStatisticBinary $(FRAMEPROGRAMS)
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
@@ -26,5 +26,7 @@ lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
 
 lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c SemiAnalyticF.h
+
+lalapps_polka_SOURCES = polka.c
 
 ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary.c ComputeFStatisticBinary.h rngmed.c rngmed.h clusters.c clusters.h
