@@ -688,6 +688,19 @@ LALFindChirpBCVSpinFilterSegment (
   /* ignore corrupted data at start and end */
   ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
   
+  fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);
+  
+  if ( ignoreIndex > numPoints / 4 )
+  {
+  	ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
+  }
+  /* XXX reset ignoreIndex to one quarter of a segment XXX */
+  ignoreIndex = numPoints / 4;
+  
+  fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);
+   
+
+  
   rhosqThresh = params->rhosqThresh;
   modqsqThresh = rhosqThresh;  
   
