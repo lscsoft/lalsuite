@@ -169,12 +169,13 @@ if ( headPtr ) {                                                     \
 static char
 whitespace[] = { ' ', '\f', '\n', '\r', '\t', '\v', EOF, '\0' };
 
+static const BufferList empty;
 
 /* <lalVerbatim file="StreamVectorInputCP"> */
 void
 LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList head = {}; /* head of linked list of buffers */
+  BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;     /* pointer to current position in list */
   CHAR *data;           /* pointer to vector data */
   BOOLEAN done = 0;     /* whether or not to read more buffers */
@@ -248,7 +249,7 @@ LALI2ReadVector( LALStatus *stat, INT2Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   INT2 *data;              /* pointer to converted data */
@@ -362,7 +363,7 @@ LALI4ReadVector( LALStatus *stat, INT4Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   INT4 *data;              /* pointer to converted data */
@@ -476,7 +477,7 @@ LALI8ReadVector( LALStatus *stat, INT8Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   INT8 *data;              /* pointer to converted data */
@@ -590,7 +591,7 @@ LALU2ReadVector( LALStatus *stat, UINT2Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   UINT2 *data;             /* pointer to converted data */
@@ -704,7 +705,7 @@ LALU4ReadVector( LALStatus *stat, UINT4Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* the line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   UINT4 *data;             /* pointer to converted data */
@@ -818,7 +819,7 @@ LALU8ReadVector( LALStatus *stat, UINT8Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   UINT8 *data;             /* pointer to converted data */
@@ -932,7 +933,7 @@ LALSReadVector( LALStatus *stat, REAL4Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* the line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   REAL4 *data;             /* pointer to converted data */
@@ -1046,7 +1047,7 @@ LALDReadVector( LALStatus *stat, REAL8Vector **vector, FILE *stream )
   UINT4 i;                 /* an index */
   const CHAR *format;      /* the input format specifier */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
-  BufferList head = {};    /* head of linked list of buffers */
+  BufferList head = empty;    /* head of linked list of buffers */
   BufferList *here;        /* pointer to current position in list */
   CHAR *token;             /* pointer to a number to be converted */
   REAL8 *data;             /* pointer to converted data */

@@ -205,6 +205,9 @@ DDDTDiffMax( void );
 /* Returns the triple derivative of tau-t as a function of t,
    maximized over all t. */
 
+static const REAL4TimeSeries emptyREAL4TimeSeries;
+static const CreateVectorSequenceIn emptyCreateVectorSequenceIn;
+static const ResampleParamStruc emptyResampleParamStruct;
 
 int
 main( int argc, char **argv )
@@ -221,9 +224,9 @@ main( int argc, char **argv )
   REAL4 f = FREQ;       /* Frequency of carrier wave */
   REAL4 df = DF;        /* Amplitude of frequency modulation */
   REAL4 fm = FM;        /* Frequency of modulation */
-  REAL4TimeSeries input = {};  /* Modulated time series */
-  REAL4TimeSeries output = {}; /* Decimated time series */
-  PolycoStruc polyco = {};     /* Polynomial coefficient structure */
+  REAL4TimeSeries input = emptyREAL4TimeSeries;  /* Modulated time series */
+  REAL4TimeSeries output = emptyREAL4TimeSeries; /* Decimated time series */
+  static PolycoStruc polyco;     /* Polynomial coefficient structure */
   ResampleRules *rules = NULL; /* Resampling rules structure */
 
   /* Parse argument list.  arg stores the current position. */
@@ -324,7 +327,7 @@ main( int argc, char **argv )
     UINT4 n0 = (UINT4)( ( n + 2*BUFFER)/dtMax ) + 1;
     /* Number of fits required to span the desired input time */
     REAL4 *data1, *data2, *data3; /* Generic pointers to data */
-    CreateVectorSequenceIn in = {};
+    CreateVectorSequenceIn in = emptyCreateVectorSequenceIn;
 
     /* Set fields of polyco. */
     polyco.start.gpsSeconds = (INT4)( -BUFFER );
@@ -361,7 +364,7 @@ main( int argc, char **argv )
   output.deltaT = (REAL8)( dec );
   SUB( LALSCreateVector( &stat, &(output.data), m ), &stat );
   {
-    ResampleParamStruc params = {};
+    ResampleParamStruc params = emptyResampleParamStruct;
     params.start.gpsSeconds = -1;
     params.start.gpsNanoSeconds = 0;
     params.stop.gpsSeconds = n + 1;
@@ -377,9 +380,9 @@ main( int argc, char **argv )
   /* Print modulation function, if requested. */
   if ( tfile ) {
     REAL4 *data0, *data1, *data2; /* Pointers to data */
-    REAL4TimeSeries diffs0 = {};  /* Analytic timing difference */
-    REAL4TimeSeries diffs1 = {};  /* Polynomial timing difference */
-    REAL4TimeSeries diffs2 = {};  /* Resampled timing difference */
+    REAL4TimeSeries diffs0 = emptyREAL4TimeSeries;  /* Analytic timing difference */
+    REAL4TimeSeries diffs1 = emptyREAL4TimeSeries;  /* Polynomial timing difference */
+    REAL4TimeSeries diffs2 = emptyREAL4TimeSeries;  /* Resampled timing difference */
     FILE *fp = fopen( tfile, "w" ); /* Output file pointer */
 
     /* Make sure output file was created. */

@@ -173,11 +173,11 @@ main(int argc, char **argv)
   REAL8 *spin = NULL;
   REAL8Vector *lambda = NULL;
   REAL8Vector *metric = NULL;
-  LIGOTimeGPS start = {};
-  PulsarTimesParamStruc spinParams = {};
-  PulsarTimesParamStruc baryParams = {};
-  PulsarTimesParamStruc compParams = {};
-  MetricParamStruc params = {};
+  static LIGOTimeGPS start;
+  static PulsarTimesParamStruc spinParams;
+  static PulsarTimesParamStruc baryParams;
+  static PulsarTimesParamStruc compParams;
+  static MetricParamStruc params;
 
   /* Parse argument list.  arg stores the current position. */
   arg = 1;

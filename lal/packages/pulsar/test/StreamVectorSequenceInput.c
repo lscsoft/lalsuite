@@ -122,12 +122,13 @@ do {                                                                 \
   }                                                                  \
 } while (0)
 /* <lalVerbatim file="StreamVectorSequenceInputCP"> */
+static const VectorList empty;
 void
 LALCHARReadVectorSequence( LALStatus          *stat,
 			   CHARVectorSequence **sequence,
 			   FILE               *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   CHAR *data;           /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -223,7 +224,7 @@ LALI2ReadVectorSequence( LALStatus  *stat,
 			 INT2VectorSequence **sequence,
 			 FILE *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   INT2 *data;           /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -339,7 +340,7 @@ LALI4ReadVectorSequence( LALStatus          *stat,
 			 INT4VectorSequence **sequence,
 			 FILE               *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   INT4 *data;           /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -455,7 +456,7 @@ LALI8ReadVectorSequence( LALStatus          *stat,
 			 INT8VectorSequence **sequence,
 			 FILE               *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   INT8 *data;           /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -571,7 +572,7 @@ LALU2ReadVectorSequence( LALStatus           *stat,
 			 UINT2VectorSequence **sequence,
 			 FILE                *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   UINT2 *data;          /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -687,7 +688,7 @@ LALU4ReadVectorSequence( LALStatus           *stat,
 			 UINT4VectorSequence **sequence,
 			 FILE                *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   UINT4 *data;          /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -803,7 +804,7 @@ LALU8ReadVectorSequence( LALStatus           *stat,
 			 UINT8VectorSequence **sequence,
 			 FILE                *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   UINT8 *data;          /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -919,7 +920,7 @@ LALSReadVectorSequence( LALStatus           *stat,
 			REAL4VectorSequence **sequence,
 			FILE                *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   REAL4 *data;          /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */
@@ -1035,7 +1036,7 @@ LALDReadVectorSequence( LALStatus           *stat,
 			REAL8VectorSequence **sequence,
 			FILE                *stream )
 { /* </lalVerbatim> */
-  VectorList head = {}; /* head of linked list of vectors */
+  VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   REAL8 *data;          /* pointer to vector data */
   UINT4 nRows, nCols;   /* number and length of lines */

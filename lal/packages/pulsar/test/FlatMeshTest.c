@@ -362,7 +362,7 @@ main(int argc, char **argv)
   /* Generate mesh using LALFlatMesh() and LALRectIntersect(). */
   {
     /* Set up parameter structure for LALFlatMesh. */
-    FlatMeshParamStruc params = {};
+    static FlatMeshParamStruc params;
     params.matrix = matrix;
     params.matrixInv = matrixInv;
     params.controlPoints = corners;
