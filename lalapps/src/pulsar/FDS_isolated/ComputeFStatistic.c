@@ -176,8 +176,8 @@ int main(int argc,char *argv[])
   if (uvar_help)
     {
       /* little hack here: default for uvar_help = False, therefore we have to set that back: */
-      uvar_help = 0;
       CHAR *helpstr = NULL;
+      uvar_help = 0;
       LALGetUvarHelpString (&status, &helpstr, uvars);
       printf ("Arguments are (short alternative arguments in brackets):\n");
       printf (helpstr);
