@@ -70,6 +70,28 @@ RCSID( "$Id$" );
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
 
+
+#define ADD_SUMM_VALUE( sv_name, sv_comment, val, intval ) \
+if ( this_summ_value ) \
+{ \
+  this_summ_value = this_summ_value->next = (SummValueTable *) \
+    LALCalloc( 1, sizeof(SummValueTable) ); \
+} \
+else \
+{ \
+  summvalue.summValueTable = this_summ_value = (SummValueTable *) \
+    LALCalloc( 1, sizeof(SummValueTable) ); \
+} \
+this_summ_value->version = 0; \
+this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
+this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
+this_summ_value->value = (REAL4) val; \
+this_summ_value->intvalue = (INT4) intval; \
+LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
+    sv_name ); \
+LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
+    "%s", sv_comment ); \
+
 double rint(double x);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
@@ -233,7 +255,7 @@ int main( int argc, char *argv[] )
   MetadataTable         searchsummvars;
   SearchSummvarsTable  *this_search_summvar;
   MetadataTable         summvalue;
-  SummValueTable        candleTable;
+  SummValueTable       *this_summ_value = NULL;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -249,7 +271,11 @@ int main( int argc, char *argv[] )
   UINT4 resampleChan = 0;
   REAL8 tsLength;
   INT8  durationNS	= 0;
-  CalibrationUpdateParams calfacts, inj_calfacts; 
+  CalibrationUpdateParams calfacts, inj_calfacts;
+  REAL4 alpha;
+  REAL4 alphabeta;
+  REAL4 inj_alpha;
+  REAL4 inj_alphabeta;
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
   REAL8 dynRange = 1.0;
@@ -360,8 +386,6 @@ int main( int argc, char *argv[] )
   savedEvents.snglInspiralTable = NULL;
 
   /* create the standard candle and database table */
-  summvalue.summValueTable = &candleTable;
-  memset( &candleTable, 0, sizeof(SummValueTable) );
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
   strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
   candle.tmplt.mass1 = CANDLE_MASS1;
@@ -774,7 +798,12 @@ int main( int argc, char *argv[] )
     /* get the response from the frame data */
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, 
 	  &calfacts), &status );
-  
+    alpha = (REAL4) calfacts.alpha.re;
+    alphabeta = (REAL4) calfacts.alphabeta.re;
+    if ( vrbflg ) fprintf( stdout, 
+	"for calibration of data, alpha = %f and alphabeta = %f\n",
+	alpha, alphabeta);
+ 
     if ( writeResponse ) 
       outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, &resp, 
           "strain/ct", "RESPONSE" );
@@ -880,6 +909,11 @@ int main( int argc, char *argv[] )
 
           LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
                 &inj_calfacts ), &status );
+	  inj_alpha = (REAL4) calfacts.alpha.re;
+	  inj_alphabeta = (REAL4) calfacts.alphabeta.re;
+	  if ( vrbflg ) fprintf( stdout, 
+	      "for injections, alpha = %f and alphabeta = %f\n",
+	      inj_alpha, inj_alphabeta);
 
           injRespPtr = &injResp;
 
@@ -1946,24 +1980,32 @@ int main( int argc, char *argv[] )
   if ( approximant == TaylorF2 && ! bankSim )
   {
     if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
-    LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    summvalue.summValueTable->version = 0;
-    summvalue.summValueTable->start_time = 
-	searchsumm.searchSummaryTable->out_start_time;
-    summvalue.summValueTable->end_time = 
-	searchsumm.searchSummaryTable->out_end_time;
-    LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
-    LALSnprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
-        "%s", "inspiral_effective_distance" );
-    LALSnprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
-        "%s", "1.4_1.4_8" );
-    summvalue.summValueTable->value = candle.effDistance;
+    ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
+      candle.effDistance, 0);
+  }
+  if ( !bankSim )
+  {
+    /* store calibration information */
+    ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
+    ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
+    if (injectionFile) 
+    {
+      ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
+      ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+    }
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
         &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
           summ_value_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    
+    
+    while ( summvalue.summValueTable )
+    {
+      this_summ_value = summvalue.summValueTable;
+      summvalue.summValueTable = summvalue.summValueTable->next;
+      LALFree( this_summ_value );
+    }
   }
 
   /* free the search summary table */
