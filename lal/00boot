@@ -92,6 +92,8 @@ sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
 sed -f scrstrip.sed lal-install-x.sh > lal-install.sh
 sed -f texstrip.sed lal-install-x.sh > lal-install.tex
 sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
+chmod +x lal-install.sh
+chmod +x lal-preinstall.sh
 m4 install.m4 > README.install
 cp -f README.install ..
 cd ..
