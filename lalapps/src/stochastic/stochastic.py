@@ -3,7 +3,7 @@ $Id$
 
 Classes needed for the stochastic analysis pipeline.
 
-This script produced the necessary condor submit and dag files to run
+This script produces the necessary condor submit and dag files to run
 the standalone stochastic code on LIGO data.
 """
 
@@ -13,10 +13,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 
-import string
-import exceptions
 from glue import pipeline
-import os
 
 
 class StochasticError(exceptions.Exception):
@@ -44,8 +41,8 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['stochastic']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime).out')
-    self.set_stderr_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime).err')
+    self.set_stdout_file('logs/stochastic-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/stochastic-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('stochastic.sub')
 
 
