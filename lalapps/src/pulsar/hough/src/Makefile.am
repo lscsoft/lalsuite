@@ -6,6 +6,7 @@
 #LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
-bin_PROGRAMS = SFTclean
+bin_PROGRAMS = SFTclean MCInject
 
 SFTclean_SOURCES = SFTclean.c SFTbin.h SFTbin.c
+MCInject_SOURCES = MCInjectComputeHoughII.c MCInjectComputeHough.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
