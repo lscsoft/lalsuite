@@ -18,6 +18,268 @@ struct MetaTableDirectory
   int   idx;
 };
 
+#define CLOBBER_EVENTS \
+    while ( *eventHead ); \
+    { \
+      thisEvent = *eventHead; \
+      *eventHead = (*eventHead)->next; \
+      LALFree( thisEvent ); \
+      thisEvent = NULL; \
+    }
+
+int
+SnglInspiralTableFromLIGOLw (
+    SnglInspiralTable **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    )
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus;
+  SnglInspiralTable                    *thisEvent = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  struct MetaTableDirectory tableDir[] =
+  {
+    {"ifo",                     -1, 0},
+    {"search",                  -1, 1},
+    {"channel",                 -1, 2},
+    {"end_time",                -1, 3},
+    {"end_time_ns",             -1, 4},
+    {"impulse_time",            -1, 5},
+    {"impulse_time_ns",         -1, 6},
+    {"template_duration",       -1, 7},
+    {"event_duration",          -1, 8},
+    {"amplitude",               -1, 9},
+    {"eff_distance",            -1, 10},
+    {"coa_phase",               -1, 11},
+    {"mass1",                   -1, 12},
+    {"mass2",                   -1, 13},
+    {"mchirp",                  -1, 14},
+    {"eta",                     -1, 15},
+    {"tau0",                    -1, 16},
+    {"tau2",                    -1, 17},
+    {"tau3",                    -1, 18},
+    {"tau4",                    -1, 19},
+    {"tau5",                    -1, 20},
+    {"ttotal",                  -1, 21},
+    {"snr",                     -1, 22},
+    {"chisq",                   -1, 23},
+    {"chisq_dof",               -1, 24},
+    {"sigmasq",                 -1, 25},
+    {NULL,                       0, 0}
+  };
+
+  /* check that the bank handle and pointer are vaid */
+  if ( ! eventHead )
+  {
+    fprintf( stderr, "null pointer passed as handle to event list" );
+    return -1;
+  }
+  if ( *eventHead )
+  {
+    fprintf( stderr, "non-null pointer passed as pointer to event list" );
+    return -1;
+  }
+  
+  /* open the sngl_inspiral table template bank file */
+  mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
+  if ( mioStatus )
+  {
+    fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
+    MetaioClose( env );
+    return 0;
+  }
+
+  /* figure out the column positions of the template parameters */
+  for ( i = 0; tableDir[i].name; ++i )
+  {
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
+    {
+      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
+      MetaioClose(env);
+      return -1;
+    }
+  }
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* count the rows in the file */
+    i++;
+
+    /* stop parsing if we have reach the last row requested */
+    if ( stopEvent > -1 && i > stopEvent )
+    {
+      break;
+    }
+
+    /* if we have reached the first requested row, parse the row */
+    if ( i > startEvent )
+    {
+      /* allocate memory for the template we are about to read in */
+      if ( ! *eventHead )
+      {
+        thisEvent = *eventHead = (SnglInspiralTable *) 
+          LALCalloc( 1, sizeof(SnglInspiralTable) );
+      }
+      else
+      {
+        thisEvent = thisEvent->next = (SnglInspiralTable *) 
+          LALCalloc( 1, sizeof(SnglInspiralTable) );
+      }
+      if ( ! thisEvent )
+      {
+        fprintf( stderr, "could not allocate inspiral template\n" );
+        CLOBBER_EVENTS;
+        MetaioClose( env );
+        return -1;
+      }
+      
+      /* parse the contents of the row into the InspiralTemplate structure */
+      for ( j = 0; tableDir[j].name; ++j )
+      {
+        REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+        REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+        INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+        if ( tableDir[j].idx == 0 )
+        {
+          LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 1 )
+        {
+          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 2 )
+        {
+          LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 3 )
+        {
+          thisEvent->end_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 4 )
+        {
+          thisEvent->end_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 5 )
+        {
+          thisEvent->impulse_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 6 )
+        {
+          thisEvent->impulse_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 7 )
+        {
+          thisEvent->template_duration = r8colData;
+        }
+        else if ( tableDir[j].idx == 8 )
+        {
+          thisEvent->event_duration = r8colData;
+        }
+        else if ( tableDir[j].idx == 9 )
+        {
+          thisEvent->amplitude = r4colData;
+        }
+        else if ( tableDir[j].idx == 10 )
+        {
+          thisEvent->eff_distance = r4colData;
+        }
+        else if ( tableDir[j].idx == 11 )
+        {
+          thisEvent->coa_phase = r4colData;
+        }
+        else if ( tableDir[j].idx == 12 )
+        {
+          thisEvent->mass1 = r4colData;
+        }
+        else if ( tableDir[j].idx == 13 )
+        {
+          thisEvent->mass2 = r4colData;
+        }
+        else if ( tableDir[j].idx == 14 )
+        {
+          thisEvent->mchirp = r4colData;
+        }
+        else if ( tableDir[j].idx == 15 )
+        {
+          thisEvent->eta = r4colData;
+        }
+        else if ( tableDir[j].idx == 16 )
+        {
+          thisEvent->tau0 = r4colData;
+        }
+        else if ( tableDir[j].idx == 17 )
+        {
+          thisEvent->tau2 = r4colData;
+        }
+        else if ( tableDir[j].idx == 18 )
+        {
+          thisEvent->tau3 = r4colData;
+        }
+        else if ( tableDir[j].idx == 19 )
+        {
+          thisEvent->tau4 = r4colData;
+        }
+        else if ( tableDir[j].idx == 20 )
+        {
+          thisEvent->tau5 = r4colData;
+        }
+        else if ( tableDir[j].idx == 21 )
+        {
+          thisEvent->ttotal = r4colData;
+        }
+        else if ( tableDir[j].idx == 22 )
+        {
+          thisEvent->snr = r4colData;
+        }
+        else if ( tableDir[j].idx == 23 )
+        {
+          thisEvent->chisq = r4colData;
+        }
+        else if ( tableDir[j].idx == 24 )
+        {
+          thisEvent->chisq_dof = i4colData;
+        }
+        else if ( tableDir[j].idx == 25 )
+        {
+          thisEvent->sigmasq = r8colData;
+        }
+        else
+        {
+          CLOBBER_EVENTS;
+          fprintf( stderr, "unknown column while parsing sngl_inspiral\n" );
+          return -1;
+        }
+      }
+
+      /* count the number of template parsed */
+      nrows++;
+    }
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    CLOBBER_EVENTS;
+    MetaioClose( env );
+    return -1;
+  }
+
+  /* we have sucesfully parsed temples */
+  MetaioClose( env );
+  return nrows;  
+}
+
+#undef CLOBBER_EVENTS
+
 #define CLOBBER_BANK \
     while ( *bankHead ); \
     { \

@@ -15,11 +15,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <metaio.h>
+#include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLHeaders.h>
+
+int
+SnglInspiralTableFromLIGOLw (
+    SnglInspiralTable **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    );
 
 int
 InspiralTmpltBankFromLIGOLw (
