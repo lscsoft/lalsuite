@@ -43,6 +43,8 @@ helpmsg="$helpmsg
 helpmsg="$helpmsg
   --verbose                     echo everything that is done"
 helpmsg="$helpmsg
+  --with-m4=M4                  use GNU-m4 program M4 [m4]"
+helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
 helpmsg="$helpmsg
   --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
@@ -68,6 +70,7 @@ while test $# -gt 0 ; do
     -q | -quiet | --quiet ) exec 1>/dev/null;;
     -v | -verb* | --verb* ) verbose="true";;
     -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
+    -with-m4=* | --with-m4=* ) M4="$optarg";;
     -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
     -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
     -with-autoconf=* | --with-autoconf=* ) AUTOCONF="$optarg";;
@@ -79,8 +82,10 @@ done
 
 test "$verbose" = "true" && set -x
 
+# Unfortunately, GNU-m4 is required... so need to specify this version
+M4=${M4:-"m4"}
 
-echo ">>> 00boot: creating README.install"
+echo "00boot: creating README.install"
 
 ## First generate README.install
 test -f README.install || rm -f README.install
@@ -94,20 +99,20 @@ sed -f texstrip.sed lal-install-x.sh > lal-install.tex
 sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
 chmod +x lal-install.sh
 chmod +x lal-preinstall.sh
-m4 install.m4 > README.install
+${M4} install.m4 > README.install
 cp -f README.install ..
 cd ..
 
 
 ## Function to report failure
 fail () {
-  echo "!!! 00boot: $1 failed" >&2
-  echo "!!! 00boot: consult the file 'README.install' for help" >&2
+  echo "00boot: failed $1" >&2
+  echo "00boot: failure: consult the file 'README.install' for help" >&2
   exit 1
 }
 
 
-echo ">>> 00boot: checking versions of aclocal, automake, autoheader and autoconf"
+echo "00boot: checking versions of aclocal, automake, autoheader and autoconf"
 
 
 ACLOCAL=${ACLOCAL:-"aclocal"}
@@ -142,14 +147,14 @@ case "$autoconf_version" in
   ;;
 esac
 
-echo ">>> 00boot: using:"
-printf ">>> 00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
-printf ">>> 00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
-printf ">>> 00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
-printf ">>> 00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
+echo "00boot: using:"
+printf "00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
+printf "00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
+printf "00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
+printf "00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
 
 
-echo ">>> 00boot: creating configuration file"
+echo "00boot: creating configuration file"
 
 
 ## Here is the stuff to make configure.in or configure.ac
@@ -239,6 +244,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_LIBTOOL
+AC_CHECK_PROGS(M4, gm4 m4, m4)
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
@@ -631,78 +637,78 @@ fi
 
 
 ## Now run m4 to generate sources
-echo ">>> 00boot: creating sources"
+echo "00boot: creating sources"
 
 
 cd packages/std/src || fail "creating sources in packages/std/src"
-m4 Grid.m4 > Grid.c || fail "creating sources in packages/std/src"
+${M4} Grid.m4 > Grid.c || fail "creating sources in packages/std/src"
 cd ../../.. || fail "creating sources in packages/std/src"
 
 cd packages/support/src || fail "creating sources in packages/support/src"
-m4 PrintVector.m4 > PrintVector.c || fail "creating sources in packages/support/src"
-m4 PrintTimeSeries.m4 > PrintTimeSeries.c || fail "creating sources in packages/support/src"
-m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c || fail "creating sources in packages/support/src"
-m4 ReadFrequencySeries.m4 > ReadFrequencySeries.c || fail "creating sources in packages/support/src"
-m4 ReadTimeSeries.m4 > ReadTimeSeries.c || fail "creating sources in packages/support/src"
-m4 StreamVectorInput.m4 > StreamVectorInput.c || fail "creating sources in packages/support/src"
-m4 StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c || fail "creating sources in packages/support/src"
-m4 StreamSequenceInput.m4 > StreamSequenceInput.c || fail "creating sources in packages/support/src"
-m4 StreamSeriesInput.m4 > StreamSeriesInput.c || fail "creating sources in packages/support/src"
-m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c || fail "creating sources in packages/support/src"
-m4 StreamGridInput.m4 > StreamGridInput.c || fail "creating sources in packages/support/src"
-m4 StreamGridOutput.m4 > StreamGridOutput.c || fail "creating sources in packages/support/src"
+${M4} PrintVector.m4 > PrintVector.c || fail "creating sources in packages/support/src"
+${M4} PrintTimeSeries.m4 > PrintTimeSeries.c || fail "creating sources in packages/support/src"
+${M4} PrintFrequencySeries.m4 > PrintFrequencySeries.c || fail "creating sources in packages/support/src"
+${M4} ReadFrequencySeries.m4 > ReadFrequencySeries.c || fail "creating sources in packages/support/src"
+${M4} ReadTimeSeries.m4 > ReadTimeSeries.c || fail "creating sources in packages/support/src"
+${M4} StreamVectorInput.m4 > StreamVectorInput.c || fail "creating sources in packages/support/src"
+${M4} StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c || fail "creating sources in packages/support/src"
+${M4} StreamSequenceInput.m4 > StreamSequenceInput.c || fail "creating sources in packages/support/src"
+${M4} StreamSeriesInput.m4 > StreamSeriesInput.c || fail "creating sources in packages/support/src"
+${M4} StreamSeriesOutput.m4 > StreamSeriesOutput.c || fail "creating sources in packages/support/src"
+${M4} StreamGridInput.m4 > StreamGridInput.c || fail "creating sources in packages/support/src"
+${M4} StreamGridOutput.m4 > StreamGridOutput.c || fail "creating sources in packages/support/src"
 cd ../../.. || fail "creating sources in packages/support/src"
 
 cd packages/factories/src || fail "creating sources in packages/factories/src"
-m4 VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
-m4 VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
-m4 ArrayFactories.m4 > ArrayFactories.c || fail "creating sources in packages/factories/src"
-m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c || fail "creating sources in packages/factories/src"
+${M4} VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
+${M4} VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
+${M4} ArrayFactories.m4 > ArrayFactories.c || fail "creating sources in packages/factories/src"
+${M4} ArraySequenceFactories.m4 > ArraySequenceFactories.c || fail "creating sources in packages/factories/src"
 cd ../../..  || fail "creating sources in packages/factories/src"
 
 cd packages/factories/include || fail "creating sources in packages/factories/include"
-m4 SeqFactoriesH.m4 > SeqFactories.h || fail "creating sources in packages/factories/include"
-m4 AVFactoriesH.m4 > AVFactories.h || fail "creating sources in packages/factories/include"
+${M4} SeqFactoriesH.m4 > SeqFactories.h || fail "creating sources in packages/factories/include"
+${M4} AVFactoriesH.m4 > AVFactories.h || fail "creating sources in packages/factories/include"
 cd ../../.. || fail "creating sources in packages/factories/include"
 
 cd packages/factories/test || fail "creating sources in packages/factories/include"
-m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c || fail "creating sources in packages/factories/test"
-m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
-m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c || fail "creating sources in packages/factories/test"
-m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
+${M4} VectorFactoriesTest.m4 > VectorFactoriesTest.c || fail "creating sources in packages/factories/test"
+${M4} VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
+${M4} ArrayFactoriesTest.m4 > ArrayFactoriesTest.c || fail "creating sources in packages/factories/test"
+${M4} ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
 cd ../../.. || fail "creating sources in packages/factories/test"
 
 cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
-m4 MatrixDivide.m4 > MatrixDivide.c || fail "creating sources in packages/vectorops/src"
-m4 MatrixMultiply.m4 > MatrixMultiply.c || fail "creating sources in packages/vectorops/src"
-m4 MatrixPower.m4 > MatrixPower.c || fail "creating sources in packages/vectorops/src"
-m4 MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
-m4 VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
+${M4} MatrixDivide.m4 > MatrixDivide.c || fail "creating sources in packages/vectorops/src"
+${M4} MatrixMultiply.m4 > MatrixMultiply.c || fail "creating sources in packages/vectorops/src"
+${M4} MatrixPower.m4 > MatrixPower.c || fail "creating sources in packages/vectorops/src"
+${M4} MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
+${M4} VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
 cd ../../.. || fail "creating sources in packages/vectorops/src"
 
 cd packages/vectorops/include || fail "creating sources in packages/vectorops/include"
-m4 VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
+${M4} VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
 cd ../../.. || fail "creating sources in packages/vectorops/include"
 
 cd packages/utilities/src || fail "creating sources in packages/vectorops/include"
-m4 MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
+${M4} MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
 cd ../../.. || fail "creating sources in packages/vectorops/include"
 
 cd packages/stats/src || fail "creating sources in packages/stats/src"
-m4 LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
+${M4} LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
 cd ../../.. || fail "creating sources in packages/stats/src"
 
 cd packages/comm/src || fail "creating sources in packages/comm/src"
-m4 SendRecv.m4 > SendRecv.c || fail "creating sources in packages/comm/src"
-m4 Exchange.m4 > Exchange.c || fail "creating sources in packages/comm/src"
+${M4} SendRecv.m4 > SendRecv.c || fail "creating sources in packages/comm/src"
+${M4} Exchange.m4 > Exchange.c || fail "creating sources in packages/comm/src"
 cd ../../.. || fail "creating sources in packages/comm/src"
 
 cd packages/ring/src || fail "creating sources in packages/ring/src"
-m4 LALRingDown.m4 > LALRingDown.c || fail "creating sources in packages/ring/src"
+${M4} LALRingDown.m4 > LALRingDown.c || fail "creating sources in packages/ring/src"
 cd ../../.. || fail "creating sources in packages/ring/src"
 
 cd packages/framedata/src || fail "creating sources in packages/framedata/src"
-m4 FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
+${M4} FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
 cd ../../.. || fail "creating sources in packages/framedata/src"
 
 cd packages/pulsar/test || fail "creating sources in packages/pulsar/test"
@@ -719,33 +725,33 @@ cd packages/pulsar/test || fail "creating sources in packages/pulsar/test"
 cd ../../.. || fail "creating sources in packages/pulsar/test"
 
 cd packages/tools/include || fail "creating sources in packages/tools/include"
-m4 FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
-m4 Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
-m4 TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
+${M4} FrequencySeries.m4 > FrequencySeries.h || fail "creating sources in packages/tools/include"
+${M4} Sequence.m4 > Sequence.h || fail "creating sources in packages/tools/include"
+${M4} TimeSeries.m4 > TimeSeries.h || fail "creating sources in packages/tools/include"
 cd ../src || fail "creating sources in packages/tools/src"
-m4 FrequencySeries.m4 > FrequencySeries.c || fail "creating sources in packages/tools/src"
-m4 Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
-m4 TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
+${M4} FrequencySeries.m4 > FrequencySeries.c || fail "creating sources in packages/tools/src"
+${M4} Sequence.m4 > Sequence.c || fail "creating sources in packages/tools/src"
+${M4} TimeSeries.m4 > TimeSeries.c || fail "creating sources in packages/tools/src"
 cd ../../.. || fail "creating sources in packages/tools/src"
 
 ## Generate the Makefile.in's and the configure script
 
-echo ">>> 00boot: running aclocal"
+echo "00boot: running aclocal"
 $ACLOCAL || fail "aclocal"
-echo ">>> 00boot: running autoheader"
+echo "00boot: running autoheader"
 $AUTOHEADER || fail "autoheader"
-echo ">>> 00boot: running automake"
+echo "00boot: running automake"
 $AUTOMAKE $INCLUDEDEPS || fail "automake"
-echo ">>> 00boot: running autoconf"
+echo "00boot: running autoconf"
 $AUTOCONF || fail "autoconf"
 
 ## If there is a lalapps subdirectory run 00boot within this directory too
 if test -d lalapps ; then
-  echo ">>> 00boot: running 00boot within lalapps subdir"
+  echo "00boot: running 00boot within lalapps subdir"
   ( cd lalapps && ./00boot )  || fail "lalapps 00boot"
 fi
 
-echo ">>> 00boot: done"
+echo "00boot: success"
 echo "
 =================================================================
 

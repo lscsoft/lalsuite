@@ -13,11 +13,11 @@ all-local: include-link
 dvi-local: .dvi-dep
 
 FrequencySeries.h : FrequencySeries.m4
-	cd $(srcdir) && m4 FrequencySeries.m4 > FrequencySeries.h
+	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.h
 Sequence.h : Sequence.m4
-	cd $(srcdir) && m4 Sequence.m4 > Sequence.h
+	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.h
 TimeSeries.h : TimeSeries.m4
-	cd $(srcdir) && m4 TimeSeries.m4 > TimeSeries.h
+	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.h
 
 @INCLUDEMKFILE@
 @DVIMKFILE@

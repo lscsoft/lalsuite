@@ -23,8 +23,8 @@ DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
 SendRecv.c: SendRecv.m4 SendRecvAtomic.m4 SendRecvVector.m4 SendRecvSeries.m4
-	cd $(srcdir) && m4 SendRecv.m4 > SendRecv.c
+	cd $(srcdir) && @M4@ SendRecv.m4 > SendRecv.c
 
 Exchange.c: Exchange.m4 ExchangeObject.m4
-	cd $(srcdir) && m4 Exchange.m4 > Exchange.c
+	cd $(srcdir) && @M4@ Exchange.m4 > Exchange.c
 @DVIMKFILE@

@@ -13,17 +13,17 @@ DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
 MatrixDivide.c: MatrixDivide.m4 MatrixDivideBase.m4
-	cd $(srcdir) && m4 MatrixDivide.m4 > MatrixDivide.c
+	cd $(srcdir) && @M4@ MatrixDivide.m4 > MatrixDivide.c
 
 MatrixMultiply.c: MatrixMultiply.m4 MatrixMultiplyBase.m4
-	cd $(srcdir) && m4 MatrixMultiply.m4 > MatrixMultiply.c
+	cd $(srcdir) && @M4@ MatrixMultiply.m4 > MatrixMultiply.c
 
 MatrixPower.c: MatrixPower.m4 MatrixPowerBase.m4
-	cd $(srcdir) && m4 MatrixPower.m4 > MatrixPower.c
+	cd $(srcdir) && @M4@ MatrixPower.m4 > MatrixPower.c
 
 MiscMatlab.c: MiscMatlab.m4 MiscMatlabBase.m4
-	cd $(srcdir) && m4 MiscMatlab.m4 > MiscMatlab.c
+	cd $(srcdir) && @M4@ MiscMatlab.m4 > MiscMatlab.c
 
 VectorIndexRange.c: VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
-	cd $(srcdir) && m4 VectorIndexRangeC.m4 > VectorIndexRange.c
+	cd $(srcdir) && @M4@ VectorIndexRangeC.m4 > VectorIndexRange.c
 @DVIMKFILE@

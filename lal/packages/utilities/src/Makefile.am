@@ -13,5 +13,5 @@ DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
 MatrixOps.c: MatrixOps.m4 LALMatrixOps.m4
-	cd $(srcdir) && m4 MatrixOps.m4 > MatrixOps.c
+	cd $(srcdir) && @M4@ MatrixOps.m4 > MatrixOps.c
 @DVIMKFILE@

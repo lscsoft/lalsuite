@@ -16,10 +16,10 @@ DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
 FrequencySeries.c : FrequencySeries.m4
-	cd $(srcdir) && m4 FrequencySeries.m4 > FrequencySeries.c
+	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.c
 Sequence.c : Sequence.m4
-	cd $(srcdir) && m4 Sequence.m4 > Sequence.c
+	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.c
 TimeSeries.c : TimeSeries.m4
-	cd $(srcdir) && m4 TimeSeries.m4 > TimeSeries.c
+	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.c
 
 @DVIMKFILE@

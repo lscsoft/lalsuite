@@ -9,5 +9,5 @@ dvi-local: .dvi-dep
 EXTRA_DIST = LALMoment.m4 LALMomentBase.m4
 
 LALMoment.c: LALMoment.m4 LALMomentBase.m4
-	cd $(srcdir) && m4 LALMoment.m4 > LALMoment.c
+	cd $(srcdir) && @M4@ LALMoment.m4 > LALMoment.c
 @DVIMKFILE@
