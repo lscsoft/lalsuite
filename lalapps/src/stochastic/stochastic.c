@@ -210,7 +210,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4TimeSeries *SimStochBGOne;
   REAL4TimeSeries *SimStochBGTwo;
   REAL4FrequencySeries *MComegaGW;
-  COMPLEX8FrequencySeries MCresponseOne, MCresponseTwo;
+  COMPLEX8FrequencySeries *MCresponseOne;
+  COMPLEX8FrequencySeries *MCresponseTwo;
   COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
   INT4 MCLoop;
   INT4 MCfreqLength = 0;
@@ -449,21 +450,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* response functions */
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-    strncpy(MCresponseOne.name,"MCresponseOne", LALNameLength);
-    strncpy(MCresponseTwo.name,"MCresponseTwo", LALNameLength);
-    MCresponseOne.sampleUnits = MCresponseTwo.sampleUnits = countPerStrain;
-    MCresponseOne.epoch = MCresponseTwo.epoch = gpsCalibTime;
-    MCresponseOne.deltaF = MCresponseTwo.deltaF = MCdeltaF;
-    MCresponseOne.f0 = MCresponseTwo.f0 = 0;
-    MCresponseOne.data = MCresponseTwo.data = NULL;
-    LAL_CALL(LALCCreateVector(&status, &(MCresponseOne.data), \
+    LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &MCresponseOne, \
+          "MCresponseOne", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
           MCfreqLength), &status);
-    LAL_CALL(LALCCreateVector(&status, &(MCresponseTwo.data), \
+    LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &MCresponseTwo, \
+          "MCresponseTwo", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
           MCfreqLength), &status);
-    memset(MCresponseOne.data->data, 0, \
-        MCresponseOne.data->length * sizeof(*MCresponseOne.data->data));
-    memset(MCresponseTwo.data->data, 0, \
-        MCresponseTwo.data->length * sizeof(*MCresponseTwo.data->data));
 
     for (i = 0; i < numSegments; i++)
     {
@@ -1121,25 +1113,26 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* convert response function for use in the MC routine */
             if (inject_flag)
             {
-              MCresponseOne.epoch = MCresponseTwo.epoch = gpsCalibTime;
-              LAL_CALL(LALResponseConvert(&status, &MCresponseOne, \
+              MCresponseOne->epoch = gpsCalibTime;
+              MCresponseTwo->epoch = gpsCalibTime;
+              LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
                     &responseTempOne), &status);
-              LAL_CALL(LALResponseConvert(&status, &MCresponseTwo, \
+              LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
                     &responseTempTwo), &status);
 
               /* force DC to be 0 and nyquist to be real */
-              MCresponseOne.data->data[0].re = 0;
-              MCresponseTwo.data->data[0].re = 0;
-              MCresponseOne.data->data[0].im = 0;
-              MCresponseTwo.data->data[0].im = 0;
-              MCresponseOne.data->data[MCfreqLength-1].im = 0;
-              MCresponseTwo.data->data[MCfreqLength-1].im = 0;
+              MCresponseOne->data->data[0].re = 0;
+              MCresponseTwo->data->data[0].re = 0;
+              MCresponseOne->data->data[0].im = 0;
+              MCresponseTwo->data->data[0].im = 0;
+              MCresponseOne->data->data[MCfreqLength-1].im = 0;
+              MCresponseTwo->data->data[MCfreqLength-1].im = 0;
 
               /* store in memory */
               for (i = 0; i < MCfreqLength; i++)
               {
-                MCrespOne[segLoop]->data[i] = MCresponseOne.data->data[i];
-                MCrespTwo[segLoop]->data[i] = MCresponseTwo.data->data[i];
+                MCrespOne[segLoop]->data[i] = MCresponseOne->data->data[i];
+                MCrespTwo[segLoop]->data[i] = MCresponseTwo->data->data[i];
               }
             }
           }
@@ -1316,25 +1309,26 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* convert response function for use in the MC routine */
           if (inject_flag)
           {
-            MCresponseOne.epoch = MCresponseTwo.epoch = gpsCalibTime;
-            LAL_CALL(LALResponseConvert(&status, &MCresponseOne, \
+            MCresponseOne->epoch = gpsCalibTime;
+            MCresponseTwo->epoch = gpsCalibTime;
+            LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
                   &responseTempOne), &status);
-            LAL_CALL(LALResponseConvert(&status, &MCresponseTwo, \
+            LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
                   &responseTempTwo), &status);
 
             /* force DC to be 0 and nyquist to be real */
-            MCresponseOne.data->data[0].re = 0;
-            MCresponseTwo.data->data[0].re = 0;
-            MCresponseOne.data->data[0].im = 0;
-            MCresponseTwo.data->data[0].im = 0;
-            MCresponseOne.data->data[MCfreqLength-1].im = 0;
-            MCresponseTwo.data->data[MCfreqLength-1].im = 0;
+            MCresponseOne->data->data[0].re = 0;
+            MCresponseTwo->data->data[0].re = 0;
+            MCresponseOne->data->data[0].im = 0;
+            MCresponseTwo->data->data[0].im = 0;
+            MCresponseOne->data->data[MCfreqLength-1].im = 0;
+            MCresponseTwo->data->data[MCfreqLength-1].im = 0;
 
             /* store in memory */
             for (i = 0; i < MCfreqLength; i++)
             {
-              MCrespOne[numSegments-1]->data[i] = MCresponseOne.data->data[i];
-              MCrespTwo[numSegments-1]->data[i] = MCresponseTwo.data->data[i];
+              MCrespOne[numSegments-1]->data[i] = MCresponseOne->data->data[i];
+              MCrespTwo[numSegments-1]->data[i] = MCresponseTwo->data->data[i];
             }
           }
         }
@@ -1369,8 +1363,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           {
             for (i = 0; i < MCfreqLength; i++)
             {
-              MCresponseOne.data->data[i] = MCrespOne[segLoop]->data[i];
-              MCresponseTwo.data->data[i] = MCrespTwo[segLoop]->data[i];
+              MCresponseOne->data->data[i] = MCrespOne[segLoop]->data[i];
+              MCresponseTwo->data->data[i] = MCrespTwo[segLoop]->data[i];
             }
 
             /* set parameters for monte carlo */
@@ -1380,8 +1374,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
             /* define input structure for SimulateSB */
             SBInput.omegaGW = MComegaGW;
-            SBInput.whiteningFilter1 = &MCresponseOne;
-            SBInput.whiteningFilter2 = &MCresponseTwo;
+            SBInput.whiteningFilter1 = MCresponseOne;
+            SBInput.whiteningFilter2 = MCresponseTwo;
 
             /* define output structure for SimulateSB */
             SBOutput.SSimStochBG1 = SimStochBGOne;
@@ -1717,7 +1711,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwo), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentPadOne), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentPadTwo), &status);
-
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
   LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
@@ -1751,8 +1744,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGOne), &status);
     LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGTwo), &status);
-    LAL_CALL(LALCDestroyVector(&status, &(MCresponseOne.data)), &status);
-    LAL_CALL(LALCDestroyVector(&status, &(MCresponseTwo.data)), &status);
+    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, MCresponseOne), \
+        &status);
+    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, MCresponseTwo), \
+        &status);
     LAL_CALL(LALDestroyREAL4FrequencySeries(&status, MComegaGW), &status);
   }
   /*
