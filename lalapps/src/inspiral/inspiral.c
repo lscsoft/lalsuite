@@ -9,6 +9,15 @@
  *-----------------------------------------------------------------------
  */
 
+#include <config.h>
+#ifndef HAVE_GETOPT_H
+#include <stdio.h>
+int main( void )
+{
+  fputs( "Disabled: LALApps compiled without getopt.h\n", stderr );
+  return 77;
+}
+#else
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -978,3 +987,4 @@ graphREAL4 (
   return;
 }
 
+#endif /* HAVE_GETOPT_H */
