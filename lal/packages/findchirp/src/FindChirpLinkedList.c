@@ -9,16 +9,58 @@
  *-----------------------------------------------------------------------
  */
 
-#include <lal/FindChirpEngine.h>
+#if 0
+<lalVerbatim file="FindChirpLinkedListCV">
+Author: Brown D. A.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpLinkedList.c}}
+\label{ss:FindChirpLinkedList.c}
+
+Memory management functions for creating and destroying linked
+lists of inspiral template nodes for flat and heirarchical search management.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpLinkedListCP}
+\idx{LALFindChirpCreateTmpltNode()}
+\idx{LALFindChirpDestroyTmpltNode()}
+
+\subsubsection*{Description}
+
+Placeholder.
+
+\subsubsection*{Algorithm}
+
+None.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpLinkedListCV}}
+</lalLaTeX>
+#endif
+
+
+#include <lal/FindChirp.h>
 
 NRCSID (FINDCHIRPLINKEDLISTC, "$Id$");
 
+/* <lalVerbatim file="FindChirpLinkedListCP"> */
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,
     InspiralTemplate           *tmplt,
     InspiralTemplateNode      **tmpltNode
     )
+/* </lalVerbatim> */
 {
   InspiralTemplateNode         *current = NULL;
 
@@ -26,7 +68,7 @@ LALFindChirpCreateTmpltNode (
   ATTATCHSTATUSPTR( status );
 
   ASSERT( tmplt, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*
@@ -44,7 +86,7 @@ LALFindChirpCreateTmpltNode (
     LALCalloc( 1, sizeof(InspiralTemplateNode) );
   if ( !tmpltNode )
   {
-    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
   (*tmpltNode)->prev     = NULL;
@@ -68,11 +110,13 @@ LALFindChirpCreateTmpltNode (
 }  
 
 
+/* <lalVerbatim file="FindChirpLinkedListCP"> */
 void
 LALFindChirpDestroyTmpltNode ( 
     LALStatus                  *status,
     InspiralTemplateNode      **tmpltNode
     )
+/* </lalVerbatim> */
 {
   InspiralTemplateNode  *prev = NULL;
   InspiralTemplateNode  *next = NULL;
@@ -81,7 +125,7 @@ LALFindChirpDestroyTmpltNode (
   ATTATCHSTATUSPTR( status );
 
   ASSERT( tmpltNode, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*

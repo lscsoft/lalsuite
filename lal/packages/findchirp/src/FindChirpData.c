@@ -16,9 +16,6 @@ $Id$
 </lalVerbatim> 
 
 <lalLaTeX>
-\subsection{Module \texttt{FindChirpData.c}}
-\label{ss:FindChirpData.c}
-
 \input{FindChirpDataCDoc}
 
 \vfill{\footnotesize\input{FindChirpDataCV}}

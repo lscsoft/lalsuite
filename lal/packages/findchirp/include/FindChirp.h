@@ -250,6 +250,39 @@ vector
 </lalLaTeX>
 #endif
 
+/* --- structure for managing a list of inspiral templates --------------- */
+/* <lalVerbatim file="FindChirpHInspiralTemplateNode"> */
+typedef struct
+tagInspiralTemplateNode
+{
+  struct tagInspiralTemplateNode       *next;
+  struct tagInspiralTemplateNode       *prev;
+  InspiralTemplate                     *tmpltPtr;
+}
+InspiralTemplateNode;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{InspiralTemplateNode}}
+\idx[Type]{InspiralTemplateNode}
+
+\input{FindChirpHInspiralTemplateNode}
+
+\noindent This structure provides a method of constucting doubly linked
+lists of \texttt{InspiralTemplate} structures. The fields are:
+
+\begin{description}
+\item[\texttt{struct tagInspiralTemplateNode *next}] The next structure in
+the linked list.
+
+\item[\texttt{struct tagInspiralTemplateNode *prev}] The previous structure in
+the linked list.
+
+\item[\texttt{InspiralTemplate *tmpltPtr}] A pointer to an \texttt{InspiralTemplate} structure.
+\end{description}
+</lalLaTeX>
+#endif
+
 /* --- processed data segment used by FindChirp filter routine ----------- */
 /* <lalVerbatim file="FindChirpHFindChirpSegment"> */
 typedef struct
@@ -808,6 +841,25 @@ void
 LALDestroyFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector
+    );
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpLinkedListC}
+</lalLaTeX>
+#endif
+
+void
+LALFindChirpCreateTmpltNode (
+    LALStatus                  *status,
+    InspiralTemplate           *tmplt,
+    InspiralTemplateNode      **tmpltNode
+    );
+
+void
+LALFindChirpDestroyTmpltNode ( 
+    LALStatus                  *status,
+    InspiralTemplateNode      **tmpltNode
     );
 
 
