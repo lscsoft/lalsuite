@@ -2175,7 +2175,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoOne, optarg, optarg_len);
 
-        /* set site */
+        /* check and set site */
         if (strncmp(ifoOne, "H1", 2) == 0)
         {
           siteOne = 0;
@@ -2206,7 +2206,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoTwo, optarg, optarg_len);
 
-        /* set site */
+        /* check and set site */
         if (strncmp(ifoTwo, "H1", 2) == 0)
         {
           siteTwo = 0;
