@@ -270,7 +270,7 @@ for s_seg in s_data:
     df2.set_end(s_seg.end() + pad)
   elif slide_sec < 0:
     df2.set_start(s_seg.start() - pad)
-    df2.set_end(s_seg.end() + pad + slide_sec)
+    df2.set_end(s_seg.end() + pad - slide_sec)
   df2.set_ifo(ifo2)
   
   # clear the inspiral nodes in this segment
