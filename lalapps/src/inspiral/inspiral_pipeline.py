@@ -19,20 +19,167 @@ import getopt
 import re
 import ConfigParser
 
-def LoadConfig(file):
+class InspiralPipeline:
   """
-  returns a dictionary with key's of the form
-  <section>.<option> and the values 
+  Contains a dictionary of science segments and chunks that
+  define the data to analyze and hos it should be analyzed
   """
-  config = {}
-  cp = ConfigParser.ConfigParser()
-  cp.read(file)
-  for sec in cp.sections():
-    name = string.lower(sec)
-    config[name] = {}
-    for opt in cp.options(sec):
-      config[name][opt] = string.strip(cp.get(sec,opt))
-  return config
+  def __init__(self,config_file):
+    """
+    configfile = the name of the file containing configuration parameters
+    """
+    # parse the configuration file into a dictionary
+    self.config = {}
+    cp = ConfigParser.ConfigParser()
+    cp.read(config_file)
+    for sec in cp.sections():
+      name = string.lower(sec)
+      self.config[name] = {}
+      for opt in cp.options(sec):
+        self.config[name][opt] = string.strip(cp.get(sec,opt))
+    self.basename = config_file.split('.')[0]
+    # compute the chunk and overlap length in seconds
+    numpoints = int(self.config['datacond']['segment-length'])
+    numseg = int(self.config['datacond']['number-of-segments'])
+    overlap = int(self.config['datacond']['segment-overlap'])
+    srate = int(self.config['datacond']['sample-rate'])
+    self.chunk = (numpoints * numseg - ( numseg - 1 ) * overlap ) / srate
+    self.overlap = int(self.config['datacond']['segment-overlap']) / srate
+
+  def parsesegs(self):
+    self.segments = []
+    comment_line = re.compile(r'\A#')
+    for line in open(self.config['input']['segments']):
+      if not comment_line.match(line):
+        self.segments.append(
+          { 'segment' : tuple(map(int,line.split())), 'chunks' : [] } )
+
+  def buildchunks(self):
+    for seg in self.segments:
+      (id, start, end, length) = seg['segment']
+      while length >= self.chunk:
+        seg['chunks'].append(tuple([start,start+self.chunk]))
+        start += self.chunk - self.overlap
+        length -= self.chunk - self.overlap
+
+  def frcachesub(self):
+    sub_fh = open( self.basename + '.frcache.condor', 'w' )
+    print >> sub_fh, """\
+universe = scheduler
+executable = %s
+arguments = --lal-cache \\
+  --instrument $(site) --type %s \\
+  --start $(frstart) --end $(frend)
+log = %s.log
+error = frcache-$(site)-$(frstart)-$(frend).err
+output = frcache-$(site)-$(frstart)-$(frend).out
+notification = never
+queue
+""" % (self.config['condor']['datafind'],
+       self.config['input']['datatype'],
+       self.basename)
+    sub_fh.close()
+
+  def banksub(self):
+    boolargs = re.compile(r'(disable-high-pass|write-strain-spectrum)')
+    args = ()
+    sub_fh = open( self.basename + '.tmpltbank.condor', 'w' )
+    print >> sub_fh, """\
+universe = %s
+executable = %s
+arguments = --gps-start-time $(start) --gps-end-time $(end) \\
+  --channel-name $(channel) --calibration-cache $(calcache) \\
+  --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
+ """ % (self.config['condor']['universe'],self.config['condor']['tmpltbank']),
+    for sec in ['datacond','bank']:
+      for arg in self.config[sec].keys():
+        if boolargs.match(arg):
+          if re.match(self.config[sec][arg],'true'): 
+            print >> sub_fh, "--" + arg,
+        else:
+          print >> sub_fh, "--" + arg, self.config[sec][arg], 
+    print >> sub_fh, """\
+log = %s.log
+error = tmpltbank-$(start)-$(end).err
+output = tmpltbank-$(start)-$(end).out
+notification = never
+queue""" % self.basename
+    sub_fh.close()
+
+  def inspiralsub(self):
+    boolargs = re.compile(r'(disable-high-pass|enable-event-cluster)')
+    sub_fh = open( self.basename + '.inspiral.condor', 'w' )
+    print >> sub_fh, """\
+universe = %s
+executable = %s
+arguments = --gps-start-time $(start) --gps-end-time $(end) \\
+  --channel-name $(channel) --calibration-cache $(calcache) \\
+  --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
+ """ % (self.config['condor']['datafind'],self.config['condor']['tmpltbank']),
+    for sec in ['datacond','inspiral']:
+      for arg in self.config[sec].keys():
+        if boolargs.match(arg):
+          if re.match(self.config[sec][arg],'true'): 
+            print >> sub_fh, "--" + arg,
+        else:
+          print >> sub_fh, "--" + arg, self.config[sec][arg], 
+    print >> sub_fh, """
+log = %s.log
+error = tmpltbank-$(start)-$(end).err
+output = tmpltbank-$(start)-$(end).out
+notification = never
+queue
+""" % (self.basename)
+
+  def builddag(self,cache,bank,inspiral):
+    chan = self.config['input']['channel-name']
+    site = chan[0]
+    ifo  = chan[0:2]
+    dag_fh = open( self.basename + ".dag", "w" )
+    print >> dag_fh, "dot %s.dot update overwrite" % self.basename
+    
+    # jobs to generate the frame cache files
+    for seg in self.segments:
+      (id, start, end, length) = seg['segment']
+      jobname = 'frcache_%s_%s_%s' % (site,start,end)
+      print >> dag_fh, 'job %s %s.frcache.condor' % (jobname,self.basename),
+      if not cache: print >> dag_fh, 'done',
+      print >> dag_fh, '\nvars %s site="%s"' % (jobname,site)
+      print >> dag_fh, 'vars %s frstart="%s"' % (jobname,start)
+      print >> dag_fh, 'vars %s frend="%s"' % (jobname,end)
+    for i in range(1,len(self.segments)):
+      (id, start_p, end_p, length) = self.segments[i-1]['segment']
+      (id, start_c, end_c, length) = self.segments[i]['segment']
+      print >> dag_fh, 'parent frcache_%s_%s_%s child frcache_%s_%s_%s' % (
+        site,start_p,end_p,site,start_c,end_c)
+    
+    # jobs to generate the template banks
+    for seg in self.segments:
+      (id, frstart, frend, length) = seg['segment']
+      frparent = 'frcache_%s_%s_%s' % (site,frstart,frend)
+      for start,end in seg['chunks']:
+        jobname = 'tmpltbank_%s_%s_%s' % (ifo,start,end)
+        print >> dag_fh, 'job %s %s.tmpltbank.condor' % (jobname,self.basename),
+        if not cache: print >> dag_fh, 'done',
+        print >> dag_fh, '\nvars %s site="%s"' % (jobname,site)
+        print >> dag_fh, 'vars %s frstart="%s"' % (jobname,start)
+        print >> dag_fh, 'vars %s frend="%s"' % (jobname,end)
+        print >> dag_fh, 'vars %s start="%d"' % (jobname,start)
+        print >> dag_fh, 'vars %s end="%d"' % (jobname,end)
+        print >> dag_fh, 'vars %s channel="%s"' % (jobname,chan)
+        print >> dag_fh, 'vars %s calcache="%s"' % (jobname,
+          self.config['input'][string.lower(ifo) + '-cal'])
+        print >> dag_fh, 'parent %s child %s' % (frparent, jobname)
+    dag_fh.close()
+
+  def status(self):
+    print "writing to files with basename", self.basename
+    print "generating", self.chunk, "second chunks",
+    print "with", self.overlap, "second overlap"
+    try:
+      print self.segments
+    except AttributeError:
+      print "no science segments defined"
 
 def usage():
   msg = """\
@@ -103,71 +250,11 @@ if not config_file:
   print >> sys.stderr, "Use -f FILE or --config-file FILE to specify location."
   sys.exit(1)
 
-# load the configuration file into a dictionary
-config = LoadConfig(config_file)
-
-# load the science segment file into a dictionary
-sci_seg = {}
-cmt_ln = re.compile(r'\A#')
-for line in open(config['input']['segments']):
-  if not cmt_ln.match(line):
-    sci_seg.setdefault(tuple(map(int,line.split())), [])
-
-# compute the overlap and chunk length in seconds
-numpoints = int(config['datacond']['segment-length'])
-numseg = int(config['datacond']['number-of-segments'])
-numovrlap = int(config['datacond']['segment-overlap'])
-srate = int(config['datacond']['sample-rate'])
-ovrlap_len = numovrlap / srate
-chunk_len = (numpoints * numseg - ( numseg -1 ) * numovrlap) / srate
-
-# generate the list of chunk start/end tuples
-for key in sci_seg.keys():
-  (id, start, end, length) = key
-  while length >= chunk_len:
-    sci_seg[key].append(tuple([start, start + chunk_len]))
-    start += (chunk_len - ovrlap_len)
-    length -= (chunk_len - ovrlap_len)
-
-ldrcache_sub_fh = open('ldrcache.condor','w')
-print >> ldrcache_sub_fh, """\
-universe = scheduler
-executable = %s
-arguments = --lal-cache \\
-            --instrument $(ifo) --type %s \\
-            --start $(start) --end $(end)
-log = inspiral_dag.log
-error = ldrcache-$(ifo)-$(start)-$(end).err
-output = ldrcache-$(ifo)-$(start)-$(end).out
-notification = never
-queue
-""" % (config['condor']['datafind'],config['input']['datatype'])
-ldrcache_sub_fh.close()
-
-bank_sub_fh = open('tmpltbank.condor','w')
-print >> bank_sub_fh, """\
-universe = %s
-executable = %s
-arguments = """,
-bank_sub_fh.close()
-
-dag_fh = open('inspiral_pipeline.dag','w')
-
-print >> dag_fh, "# inspiral pipeline dag"
-print >> dag_fh, "dot inspiral_pipeline.dot update overwrite"
-
-child = None
-last  = (None,None)
-for key in sci_seg.keys():
-  interval = (1,2)
-  job = 'ldrcache-%d-%d' % interval
-  print >> dag_fh, 'job %s ldrcache.condor' % job
-  print >> dag_fh, 'vars %s start="%d"' % (job, interval[0])
-  print >> dag_fh, 'vars %s stop="%d"' % (job, interval[1])
-  if not child:
-    child = 1
-  else:
-    print >> dag_fh, 'parent %s child %s' % (lastjob,job)
-  lastjob = job
-
-dag_fh.close()
+pipeline = InspiralPipeline(config_file)
+pipeline.parsesegs()
+pipeline.buildchunks()
+pipeline.frcachesub()
+pipeline.banksub()
+pipeline.inspiralsub()
+pipeline.builddag(do_cache,do_bank,do_inspiral)
+pipeline.status()
