@@ -1175,16 +1175,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	           outputFilePath, ifo1, ifo2,
 	           (INT4)startTime, (INT4)stopTime, MCLoop);
 
-      if (verbose_flag)
-        {
-          fprintf(stdout, "initialize average PSDs\n");
-        }
-
-      /* initialize average PSDs */
-      for (i = 0; i < filterLength; i++)
-        {
-          calPsd1->data[i] = 0.;calPsd2->data[i] = 0.;
-        }
+   
 
       /* set stream data structures to read data*/
       streamParams.duration = segmentDuration + 2 * padData;
@@ -1201,6 +1192,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       for (jobLoop = 0; jobLoop < numJobs; jobLoop++)
 	{ 
+          /* initialize average PSDs */
+	  for (i = 0; i < filterLength; i++)
+	    {
+	      calPsd1->data[i] = 0.;calPsd2->data[i] = 0.;
+	    }
 
 	 if (jobLoop!=0)
 	  {
@@ -1211,18 +1207,23 @@ INT4 main(INT4 argc, CHAR *argv[])
 
             for (segLoop = 0; segLoop < numSegments - 1; segLoop++)
 	      {
-	       segPad1[segLoop + 1]->data = segPad1[segLoop]->data;
-	       segPad2[segLoop + 1]->data = segPad2[segLoop]->data;
-               resp1[segLoop + 1]->data = resp1[segLoop]->data;
-	       resp2[segLoop + 1]->data = resp2[segLoop]->data;
+		for (i = 0; i < segmentPadLength; i ++)
+		  {
+	            segPad1[segLoop]->data[i] = segPad1[segLoop + 1]->data[i];
+	            segPad2[segLoop]->data[i] = segPad2[segLoop + 1]->data[i];
+                  }
+                for (i = 0; i < filterLength; i++)
+		  {
+                    resp1[segLoop]->data[i] = resp1[segLoop + 1]->data[i];
+	            resp2[segLoop]->data[i] = resp2[segLoop + 1]->data[i];
 
-               if (inject_flag)
-                {
-                  MCresp1[segLoop + 1]->data = MCresp1[segLoop]->data;
-	          MCresp2[segLoop + 1]->data = MCresp2[segLoop]->data;
-                } 
+                    if (inject_flag)
+                     {
+                      MCresp1[segLoop]->data[i] = MCresp1[segLoop + 1]->data[i];
+	              MCresp2[segLoop]->data[i] = MCresp2[segLoop + 1]->data[i];
+                     } 
+		  }
 	      }
-
                  
 	   /* read extra segment */
 	   
@@ -1546,7 +1547,7 @@ INT4 main(INT4 argc, CHAR *argv[])
            if ((test_flag)&&(jobLoop==testInter)&&(MCLoop==testTrial))
             {
              LALSPrintTimeSeries(&segment1, "segmentMiddle1.dat");
-	     LALSPrintTimeSeries(&segment2, "segmentMiddle1.dat");
+	     LALSPrintTimeSeries(&segment2, "segmentMiddle2.dat");
             }
  
            /* zero pad and fft */
