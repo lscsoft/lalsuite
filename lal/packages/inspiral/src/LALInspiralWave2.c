@@ -185,6 +185,14 @@ LALInspiralWave2(
   count=1;
   do
     {
+    /*
+    Check we're not writing past the end of the vector
+    */
+    if (i >= output->length)
+    {
+	ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }
+
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
@@ -348,6 +356,14 @@ LALInspiralWave2Templates(
   count=1;
   do
     {
+    /*
+    Check we're not writing past the end of the vector
+    */
+    if (i >= output1->length)
+    {
+        ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }
+
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
@@ -562,6 +578,20 @@ LALInspiralWave2ForInjection(
   count    = 0;
   do
     {
+    /* If attempting to write beyond the end of vectors,
+       free up memory and abort.
+    */
+    if (count >= ff->length)
+    {
+	LALSDestroyVector(status->statusPtr, &ff);
+	CHECKSTATUSPTR(status);
+	LALSDestroyVector(status->statusPtr, &a);
+	CHECKSTATUSPTR(status);
+	LALDDestroyVector(status->statusPtr, &phi);
+	CHECKSTATUSPTR(status);
+	ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }
+
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */

@@ -871,8 +871,12 @@ switch (params->order)
    dR = 0.0;
    while ((r-dR)>=rn && r<rOld) 
    {
-      ASSERT(count< (INT4)signal->length, status, 
-		LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+      if (count >= (INT4)signal->length)
+      {
+         LALFree(dummy.data);
+         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
       rOld = r;
       if (params->order<threePN){
 		  LALHCapDerivatives(&values, &dvalues, funcParams);
@@ -1181,8 +1185,12 @@ Userful for debugging: Make sure a solution for r exists.
    t = 0.0;
    rOld = r+0.1;
    while (r>=rn && r<rOld) {
-      ASSERT(count< (INT4)signal1->length, status,
-	   	LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+      if (count >= (INT4)signal1->length) 
+      {
+	LALFree(dummy.data);
+	ABORT(status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+      }
+
       rOld = r;
       
      if (params->order<threePN) {
@@ -1628,8 +1636,18 @@ LALEOBWaveformForInjection (
   
   do
     {
-      /*    ASSERT(count< (INT4)inject_hc->length, status, 
-			LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
+      if (count >= (INT4)ff->length)
+      {
+	LALSDestroyVector(status->statusPtr, &ff);
+	CHECKSTATUSPTR(status);
+	LALSDestroyVector(status->statusPtr, &a);
+	CHECKSTATUSPTR(status);
+	LALDDestroyVector(status->statusPtr, &phi);
+	CHECKSTATUSPTR(status);
+ 	LALFree(dummy.data);
+	ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
       rOld = r;
       
       if (params->order<threePN) {

@@ -203,6 +203,12 @@ LALInspiralWave3 (
 
   while (f<fHigh && t<tmax && f>fOld) 
   {
+    /* Make sure we don't write beyond the end of the vector */
+    if (i >= output->length)
+    {
+	ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }
+
     fOld = f; 
     v = pow(f*LAL_PI*totalMass, oneby3);
     amp = v*v; 
@@ -355,6 +361,12 @@ LALInspiralWave3Templates (
 
   while (f<fHigh && t<tmax && f>fOld) 
   {
+    /* Check we don't write past the end of the vector */
+    if (i >= output1->length)
+    {
+        ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }
+
     fOld = f; 
     v = pow(f*LAL_PI*totalMass, oneby3);
     amp = params->signalAmplitude * v*v; 
@@ -577,6 +589,17 @@ LALInspiralWave3ForInjection (
   /* We stop if any of the following conditions fail */
   do
     {
+      if (count >= ff->length)
+      {
+         LALSDestroyVector(status->statusPtr, &ff);
+         CHECKSTATUSPTR(status);
+         LALSDestroyVector(status->statusPtr, &a);
+         CHECKSTATUSPTR(status);
+         LALDDestroyVector(status->statusPtr, &phiv);
+         CHECKSTATUSPTR(status);
+         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
       fOld = f; 
       v = pow(f*LAL_PI*totalMass, oneby3);
       amp = params->signalAmplitude * v*v;

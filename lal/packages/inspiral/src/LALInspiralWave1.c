@@ -192,6 +192,12 @@ LALInspiralWave1(
    t = 0.0;
    piM = LAL_PI * m;
    do {
+      /* Check we're not writing beyond the end of the vector */
+      if (count >= signal->length) {
+          LALFree(dummy.data);
+          ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
       h = params->signalAmplitude * v*v * cos(p);
       LALInspiralDerivatives(&values, &dvalues, funcParams);
       CHECKSTATUSPTR(status);
@@ -352,6 +358,11 @@ LALInspiralWave1Templates(
 
    t = 0.0;
    do {
+      /* Free up memory and abort if writing beyond the end of vector*/
+      if (count >= signal1->length) {
+          LALFree(dummy.data);
+          ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
       amp = params->signalAmplitude * v*v;
       h1 = amp * cos(p);
       h2 = amp * cos(p+LAL_PI_2);
@@ -565,7 +576,20 @@ LALInspiralWave1ForInjection(
   
   /* --- Main loop --- */   
   do {
-    
+    /* If trying to write beyond the end of a vector
+       free up memory and abort. */
+    if (count >= ff->length) {
+        LALSDestroyVector(status->statusPtr, &ff);
+        CHECKSTATUSPTR(status);
+        LALSDestroyVector(status->statusPtr, &a);
+        CHECKSTATUSPTR(status);
+        LALDDestroyVector(status->statusPtr, &phi);
+        CHECKSTATUSPTR(status);
+
+        LALFree(dummy.data);
+        ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+    }  
+  
     omega = v*v*v;
     
     ff->data[count]           = (REAL4)(omega/unitHz);
