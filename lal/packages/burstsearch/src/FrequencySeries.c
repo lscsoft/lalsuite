@@ -9,7 +9,7 @@
 NRCSID(FREQUENCYSERIESC, "$Id$");
 
 
-static void DestroyREAL4FrequencySeries(
+void XLALDestroyREAL4FrequencySeries(
 	REAL4FrequencySeries *series
 )
 {
@@ -29,13 +29,13 @@ void LALDestroyREAL4FrequencySeries(
 {
 	INITSTATUS(status, "LALDestroyREAL4FrequencySeries", FREQUENCYSERIESC);
 
-	DestroyREAL4FrequencySeries(series);
+	XLALDestroyREAL4FrequencySeries(series);
 
 	RETURN(status);
 }
 
 
-static REAL4FrequencySeries *NewREAL4FrequencySeries(
+REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
 	CHAR *name,
 	LIGOTimeGPS epoch,
 	REAL8 f0,
@@ -71,7 +71,7 @@ static REAL4FrequencySeries *NewREAL4FrequencySeries(
 }
 
 
-void LALNewREAL4FrequencySeries(
+void LALCreateREAL4FrequencySeries(
 	LALStatus *status,
 	REAL4FrequencySeries **output,
 	CHAR *name,
@@ -84,7 +84,7 @@ void LALNewREAL4FrequencySeries(
 {
 	INITSTATUS(status, "LALNewREAL4FrequencySeries", FREQUENCYSERIESC);
 
-	*output = NewREAL4FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
+	*output = XLALCreateREAL4FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
 
 	if(!*output)
 		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
