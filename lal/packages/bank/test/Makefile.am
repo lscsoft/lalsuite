@@ -8,7 +8,8 @@ CoarseTest2_SOURCES = CoarseTest2.c
 CoarseTest2_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2
-EXTRA_DIST = CoarseTest2.par CoarseTest.par demo 
+#EXTRA_DIST = CoarseTest2.par CoarseTest.par demo 
+EXTRA_DIST = CoarseTest.par demo 
 MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
