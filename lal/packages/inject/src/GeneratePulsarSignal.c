@@ -4,7 +4,7 @@ $Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
-\subsection{Module \texttt{GeneratePulsarSignal}
+\subsection{Module \texttt{GeneratePulsarSignal}}
 \label{ss:GeneratePulsarSignal.c}
 
 Module to generate subsequent sky-position.
@@ -43,7 +43,7 @@ static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTime
 static void checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
 /*----------------------------------------------------------------------*/
 
-NRCSID( PULSARSIGNALC, "$Id");
+NRCSID( GENERATEPULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
@@ -61,9 +61,12 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
 /***********************************************************************
  * generate a time-series at the detector for a given pulsar
  ***********************************************************************/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params)
-{
+LALGeneratePulsarSignal (LALStatus *stat, 
+			 REAL4TimeSeries **signal, 	   /* output time-series */
+			 const PulsarSignalParams *params) /* input params */
+{ /* </lalVerbatim> */
   static SpinOrbitCWParamStruc sourceParams;
   static CoherentGW sourceSignal;
   DetectorResponse detector;
@@ -72,11 +75,11 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   REAL4TimeSeries *output;
   UINT4 i;
 
-  INITSTATUS( stat, "LALGeneratePulsarSignal", PULSARSIGNALC );
+  INITSTATUS( stat, "LALGeneratePulsarSignal", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (*signal == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+  ASSERT (signal != NULL, stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*signal == NULL, stat,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
 
   /*----------------------------------------------------------------------
    *
@@ -152,7 +155,7 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   if ( sourceParams.dfdt > 2.0 )  /* taken from makefakedata_v2 */
     {
       LALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
-      ABORT (stat, PULSARSIGNALH_ESAMPLING, PULSARSIGNALH_MSGESAMPLING);
+      ABORT (stat, GENERATEPULSARSIGNALH_ESAMPLING, GENERATEPULSARSIGNALH_MSGESAMPLING);
     }
 
   if (lalDebugLevel >= 3) {
@@ -177,7 +180,7 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
-    ABORT (stat,  PULSARSIGNALH_EMEM,  PULSARSIGNALH_MSGEMEM);
+    ABORT (stat,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
   }
   LALCreateVector (stat->statusPtr, &(output->data), (UINT4)( params->samplingRate * params->duration) );
   BEGINFAIL(stat) {
@@ -213,9 +216,13 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
 /*----------------------------------------------------------------------
  * take time-series as input, convert it into SFTs and add noise if given
  *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params)
-{
+LALSignalToSFTs (LALStatus *stat, 
+		 SFTVector **outputSFTs,	/* output: SFT-vector */
+		 const REAL4TimeSeries *signal, /* input: time-series */
+		 const SFTParams *params)	/* params for output-SFTs */
+{ /* </lalVerbatim> */
   UINT4 numSFTs;			/* number of SFTs */
   UINT4 numSamples;			/* number of time-samples in each Tsft */
   UINT4 iSFT;
@@ -235,16 +242,16 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
   UINT4 j;
 
 
-  INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
+  INITSTATUS( stat, "AddSignalToSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
   
-  ASSERT (outputSFTs != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (*outputSFTs == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
-  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (outputSFTs != NULL, stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*outputSFTs == NULL, stat,  GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+  ASSERT (signal != NULL, stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   if ( params->timestamps && params->noiseSFTs) {
     ASSERT ( params->timestamps->length == params->noiseSFTs->length, stat,  
-	     PULSARSIGNALH_ENUMSFTS,  PULSARSIGNALH_MSGENUMSFTS);
+	     GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS);
   }
 
   f0 = signal->f0;				/* lowest frequency */
@@ -260,7 +267,7 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
   samples = 2.0 * Band * params->Tsft;		/* this is a float!*/
   numSamples = (UINT4) (samples + 0.5);		/* round to int */
   ASSERT ( fabs(samples - numSamples)/samples < eps, stat, 
-	   PULSARSIGNALH_EINCONSBAND, PULSARSIGNALH_MSGEINCONSBAND);
+	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
 
   
   /* Prepare FFT: compute plan for FFTW */
@@ -279,7 +286,7 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
     {
       timestamps = make_timestamps (&tStart, duration, params->Tsft );
       if (timestamps == NULL) {
-	ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
+	ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
       }
     }
   else	/* if given, nothing to do */
@@ -287,7 +294,7 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
 
   /* check that all timestamps lie within [tStart, tLast] */
   if ( check_timestamp_bounds (timestamps, tStart, tLast) != 0) {
-    ABORT (stat, PULSARSIGNALH_ETIMEBOUND, PULSARSIGNALH_MSGETIMEBOUND);
+    ABORT (stat, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
   }
 
   /* prepare SFT-vector for return */
@@ -363,6 +370,88 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
 
 
 
+/* create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins */
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALCreateSFTVector (LALStatus *stat, 
+		    SFTVector **output, /* output: allocated SFT-vector */
+		    UINT4 numSFTs, 	/* number of SFTs */
+		    UINT4 SFTlen)	/* number of frequency-bins per SFT */
+{ /* </lalVerbatim> */
+  UINT4 iSFT, j;
+  SFTVector *vect;	/* vector to be returned */
+  COMPLEX8Vector *data = NULL;
+
+  INITSTATUS( stat, "CreateSFTVector", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (output != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*output == NULL, stat, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+
+  vect = LALCalloc (1, sizeof(*vect) );
+  if (vect == NULL) {
+    ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
+  }
+
+  vect->length = numSFTs;
+
+  vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) );
+  if (vect->data == NULL) {
+    LALFree (vect);
+    ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
+  }
+
+  for (iSFT=0; iSFT < numSFTs; iSFT ++)
+    {
+      LALCCreateVector (stat->statusPtr, &data , SFTlen);
+      BEGINFAIL (stat) { /* crap, we have to de-allocate as far as we got so far... */
+	for (j=0; j<iSFT; j++)
+	  LALCDestroyVector (stat->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
+	LALFree (vect->data);
+	LALFree (vect);
+      } ENDFAIL (stat);
+
+      vect->data[iSFT].data = data;
+      data = NULL;
+
+    } /* for iSFT < numSFTs */
+
+  *output = vect;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALCreateSFTVector() */
+
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALDestroySFTVector (LALStatus *stat, 
+		     SFTVector **vect)	/* the SFT-vector to free */
+{ /* </lalVerbatim> */
+  UINT4 i;
+
+  INITSTATUS( stat, "DestroySFTVector", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+
+  
+  for (i=0; i < (*vect)->length; i++)
+    LALCDestroyVector (stat->statusPtr, &((*vect)->data[i].data) );
+
+  LALFree ( (*vect)->data );
+  LALFree ( *vect );
+
+  *vect = NULL;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALDestroySFTVector() */
+
+
+
 /*----------------------------------------------------------------------
  * convert earth-frame GPS time into barycentric-frame SSB time for given source
  *----------------------------------------------------------------------*/
@@ -374,11 +463,11 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
   BarycenterInput baryinput;
   SkyPosition tmp;
 
-  INITSTATUS( stat, "ConvertGPS2SSB", PULSARSIGNALC );
+  INITSTATUS( stat, "ConvertGPS2SSB", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (SSBout != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (SSBout != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
 
   baryinput.site = *(params->site);
   /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
@@ -424,7 +513,7 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
   INT4 iterations, E9=1000000000;
   INT8 delta, guess;
 
-  INITSTATUS( stat, "ConvertSSB2GPS", PULSARSIGNALC );
+  INITSTATUS( stat, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
 
@@ -465,7 +554,7 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
 
   /* check for convergence of root finder */
   if (iterations == 100) {
-    ABORT ( stat, PULSARSIGNALH_ESSBCONVERT, PULSARSIGNALH_MSGESSBCONVERT);
+    ABORT ( stat, GENERATEPULSARSIGNALH_ESSBCONVERT, GENERATEPULSARSIGNALH_MSGESSBCONVERT);
   }
 
   /* Now that we've found the GPS time that corresponds to the given SSB time */
@@ -493,13 +582,13 @@ PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *f
     "@yaxis label \"A\"\n";
 
   /* Set up shop. */
-  INITSTATUS( stat, "PrintR4TimeSeries", PULSARSIGNALC);
+  INITSTATUS( stat, "PrintR4TimeSeries", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   fp = fopen (fname, "w");
 
   if( !fp ) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
   
   fprintf (fp, xmgrHeader);
@@ -535,13 +624,13 @@ PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname)
     "@yaxis label \"A\"\n";
 
 
-  INITSTATUS( stat, "PrintGWSignal", PULSARSIGNALC);
+  INITSTATUS( stat, "PrintGWSignal", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   fp = fopen (fname, "w");
 
   if( !fp ) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
 
   fprintf (fp, xmgrHeader);
@@ -634,13 +723,13 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
     INT4  nsamples;
   } header;
 
-  INITSTATUS( stat, "write_SFT", PULSARSIGNALC);
+  INITSTATUS( stat, "write_SFT", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   fp = fopen (fname, "w");
 
   if( !fp ) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
 
   header.endian=1.0;
@@ -654,7 +743,7 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
 
   /* write header */
   if (fwrite( (void*)&header, sizeof(header), 1, fp) != 1) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
 
   for (i=0; i < header.nsamples; i++)
@@ -663,10 +752,10 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
       ipw = sft->data->data[i].im;
 
       if (fwrite((void*)&rpw, sizeof(REAL4), 1, fp) != 1) { 
-	ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS); 
+	ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS); 
       }
       if (fwrite((void*)&ipw, sizeof(REAL4),1,fp) != 1) {  
-	ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS); 
+	ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS); 
       }
         
     } /* for i < nsamples */
@@ -735,92 +824,17 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 
 
 
-/* create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins */
-void
-LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen)
-{
-  UINT4 iSFT, j;
-  SFTVector *vect;	/* vector to be returned */
-  COMPLEX8Vector *data = NULL;
-
-  INITSTATUS( stat, "CreateSFTVector", PULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  ASSERT (output != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-  ASSERT (*output == NULL, stat, PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
-
-  vect = LALCalloc (1, sizeof(*vect) );
-  if (vect == NULL) {
-    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-  }
-
-  vect->length = numSFTs;
-
-  vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) );
-  if (vect->data == NULL) {
-    LALFree (vect);
-    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-  }
-
-  for (iSFT=0; iSFT < numSFTs; iSFT ++)
-    {
-      LALCCreateVector (stat->statusPtr, &data , SFTlen);
-      BEGINFAIL (stat) { /* crap, we have to de-allocate as far as we got so far... */
-	for (j=0; j<iSFT; j++)
-	  LALCDestroyVector (stat->statusPtr, (COMPLEX8Vector**)&(vect->data[j].data) );
-	LALFree (vect->data);
-	LALFree (vect);
-      } ENDFAIL (stat);
-
-      vect->data[iSFT].data = data;
-      data = NULL;
-
-    } /* for iSFT < numSFTs */
-
-  *output = vect;
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* LALCreateSFTVector() */
-
-
-void
-LALDestroySFTVector (LALStatus *stat, SFTVector **vect)
-{
-  UINT4 i;
-
-  INITSTATUS( stat, "DestroySFTVector", PULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  ASSERT (vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-  ASSERT (*vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-
-  
-  for (i=0; i < (*vect)->length; i++)
-    LALCDestroyVector (stat->statusPtr, &((*vect)->data[i].data) );
-
-  LALFree ( (*vect)->data );
-  LALFree ( *vect );
-
-  *vect = NULL;
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* LALDestroySFTVector() */
-
 
 void
 LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
 {
   UINT4 i;
 
-  INITSTATUS( stat, "DestroyTimestampVector", PULSARSIGNALC);
+  INITSTATUS( stat, "DestroyTimestampVector", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
-  ASSERT (vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
-  ASSERT (*vect != NULL, stat, PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
 
   for (i=0; i < (*vect)->length; i++)
     LALFree ( (*vect)->data);
@@ -922,13 +936,13 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
     "@version 50103\n"
     "@xaxis label \"f (Hz)\"\n";
 
-  INITSTATUS( stat, "LALwriteSFTtoXMGR", PULSARSIGNALC);
+  INITSTATUS( stat, "LALwriteSFTtoXMGR", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   fp = fopen (fname, "w");
 
   if( !fp ) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
 
 
@@ -996,11 +1010,11 @@ LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition
 {
   SkyPosition tmp;	/* allow posOut == posIn */
 
-  INITSTATUS( stat, "NormalizeSkyPosition", PULSARSIGNALC);
+  INITSTATUS( stat, "NormalizeSkyPosition", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
   
-  ASSERT (posIn, stat, PULSARSIGNALH_ENULL ,  PULSARSIGNALH_MSGENULL );
-  ASSERT (posOut, stat, PULSARSIGNALH_ENULL ,  PULSARSIGNALH_MSGENULL );
+  ASSERT (posIn, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
+  ASSERT (posOut, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
 
   tmp = *posIn;
   
@@ -1065,7 +1079,7 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
   REAL8 fn0, fn1, deltaFn, shift;
   UINT4 nshift;
 
-  INITSTATUS( stat, "checkNoiseSFTs", PULSARSIGNALC);
+  INITSTATUS( stat, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
 
   for (i=0; i < sfts->length; i++)
     {
@@ -1075,18 +1089,18 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
       fn1 = f0 + thisSFT->data->length * deltaFn;
       
       if (deltaFn != deltaF) {
-	ABORT (stat,  PULSARSIGNALH_ENOISEDELTAF,  PULSARSIGNALH_MSGENOISEDELTAF);
+	ABORT (stat,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
       if ( (f0 < fn0) || (f1 > fn1) ) {
-	ABORT (stat, PULSARSIGNALH_ENOISEBAND, PULSARSIGNALH_MSGENOISEBAND);
+	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
       
       shift = (fn0 - f0) / deltaF;
       /* frequency bins have to coincide! ==> check that shift is integer!  */
       nshift = (UINT4)(shift+0.5);
       if ( fabs( nshift - shift) > eps ) {
-	ABORT (stat, PULSARSIGNALH_ENOISEBINS, PULSARSIGNALH_MSGENOISEBINS);
+	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
 
     } /* for i < numSFTs */
@@ -1107,13 +1121,13 @@ dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   REAL8 f0, df, ff;
   UINT4 nsamples;
 
-  INITSTATUS( stat, "dump_SFT", PULSARSIGNALC);
+  INITSTATUS( stat, "dump_SFT", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   fp = fopen (fname, "w");
 
   if( !fp ) {
-    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
   }
 
 

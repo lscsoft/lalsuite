@@ -11,7 +11,7 @@ Header file for GeneratePulsarSignal.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "GeneratePulsarSignal.h"
+#include <lal/GeneratePulsarSignal.h>
 \end{verbatim}
 
 \noindent 
@@ -32,37 +32,37 @@ Header file for GeneratePulsarSignal.
 extern "C" {
 #endif
 
-NRCSID( PULSARSIGNALH, "$Id");
+NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 
 /********************************************************** <lalLaTeX>
 \subsection*{Error codes}
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
-#define PULSARSIGNALH_ENULL 		1
-#define PULSARSIGNALH_ENONULL		2
-#define PULSARSIGNALH_EMEM		3
-#define PULSARSIGNALH_ESAMPLING		4
-#define PULSARSIGNALH_ESSBCONVERT	5
-#define PULSARSIGNALH_ESYS		6
-#define PULSARSIGNALH_ETIMEBOUND	7
-#define PULSARSIGNALH_ENUMSFTS		8
-#define PULSARSIGNALH_EINCONSBAND	9
-#define PULSARSIGNALH_ENOISEDELTAF	10
-#define PULSARSIGNALH_ENOISEBAND	11
-#define PULSARSIGNALH_ENOISEBINS	12
+#define GENERATEPULSARSIGNALH_ENULL 		1
+#define GENERATEPULSARSIGNALH_ENONULL		2
+#define GENERATEPULSARSIGNALH_EMEM		3
+#define GENERATEPULSARSIGNALH_ESAMPLING		4
+#define GENERATEPULSARSIGNALH_ESSBCONVERT	5
+#define GENERATEPULSARSIGNALH_ESYS		6
+#define GENERATEPULSARSIGNALH_ETIMEBOUND	7
+#define GENERATEPULSARSIGNALH_ENUMSFTS		8
+#define GENERATEPULSARSIGNALH_EINCONSBAND	9
+#define GENERATEPULSARSIGNALH_ENOISEDELTAF	10
+#define GENERATEPULSARSIGNALH_ENOISEBAND	11
+#define GENERATEPULSARSIGNALH_ENOISEBINS	12
 
-#define PULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define PULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
-#define PULSARSIGNALH_MSGEMEM		"Out of memory"
-#define PULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
-#define PULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
-#define PULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
-#define PULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of allowed time-interval"
-#define PULSARSIGNALH_MSGENUMSFTS	"Inconsistent number of SFTs in timestamps and noise-SFTs"
-#define PULSARSIGNALH_MSGEINCONSBAND	"Inconsistent values of sampling-rate and Tsft: number of samples is not integer!"
-#define PULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
-#define PULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
-#define PULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
+#define GENERATEPULSARSIGNALH_MSGEMEM		"Out of memory"
+#define GENERATEPULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
+#define GENERATEPULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
+#define GENERATEPULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
+#define GENERATEPULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of allowed time-interval"
+#define GENERATEPULSARSIGNALH_MSGENUMSFTS	"Inconsistent number of SFTs in timestamps and noise-SFTs"
+#define GENERATEPULSARSIGNALH_MSGEINCONSBAND	"Inconsistent values of sampling-rate and Tsft"
+#define GENERATEPULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
 
 /*************************************************** </lalErrTable> */
 
@@ -180,7 +180,7 @@ void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
 void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 
 /********************************************************** <lalLaTeX>
-\newpage\input{LALSampleTestC}
+%% \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */
 
 #ifdef  __cplusplus
