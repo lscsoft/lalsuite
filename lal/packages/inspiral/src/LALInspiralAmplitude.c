@@ -75,10 +75,7 @@ LALInspiralRestrictedAmplitude (LALStatus        *status,
   ASSERT((INT4)params->massChoice <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   
 
-  params->signalAmplitude = 4. * LAL_C_SI/(LAL_PC_SI * 1e6 *params->distance )
-    * pow(LAL_MTSUN_SI,5./3.)
-    * pow(params->totalMass ,5./3.)
-    * params->eta;
+  params->signalAmplitude = 4. * params->totalMass  * params->eta   /  (LAL_PC_SI * 1e6 *params->distance / LAL_MRSUN_SI); 
     
   DETATCHSTATUSPTR(status);
   RETURN(status);
