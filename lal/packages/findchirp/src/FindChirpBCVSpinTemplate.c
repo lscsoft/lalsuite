@@ -63,7 +63,8 @@ LALFindChirpBCVSpinTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *tmplt,
-    FindChirpTmpltParams       *params
+    FindChirpTmpltParams       *params,
+    FindChirpDataParams        *fcDataParams	
     )
 /* </lalVerbatim> */
 {
@@ -86,14 +87,52 @@ LALFindChirpBCVSpinTemplate (
  
   FILE        *fpTmpltIm      = NULL;
   FILE        *fpTmpltRe      = NULL;
-  /* FILE        *fpTemplate     = NULL; */
-
+  /* FILE      *fpTemplate     = NULL; */
+  FILE         *fpwtilde = NULL;
+  FILE         *fpA1 = NULL;
+  FILE         *fpA2 = NULL;
+  FILE         *fpA3 = NULL;
+    
+  
   /*RealFFTPlan *prev           = NULL;
   REAL4Vector *hVec           = NULL;
   REAL4Vector *HVec           = NULL;
   REAL4        invNumPoints;*/
 
   int		doTest;
+ 
+  REAL8                 *ampBCVSpin1;
+  REAL8                 *ampBCVSpin2;
+  COMPLEX8              *wtilde;
+  REAL8                 I = 0.0;
+  REAL8                 J = 0.0;
+  REAL8                 K = 0.0;
+  REAL8                 L = 0.0;
+  REAL8                 M = 0.0;
+  REAL4                 beta; /* Spin parameter */
+  REAL8                 rootI;
+  REAL8                 denominator;
+  REAL8                 rootDenominator;
+  REAL8                 denominator1;
+  REAL8                 numerator1;
+  REAL4                 normFac;
+  REAL4                 normFacSq;
+  REAL4                 Twoby3   = 2.0/3.0;
+  REAL8                 deltaTto2by3;
+  REAL8		*A1Vec = NULL;
+  REAL8		*A2Vec = NULL;
+  REAL8		*A3Vec = NULL;
+  REAL4			deltaT;  
+  REAL4                 fLow;
+  REAL4			fFinal;
+  REAL4                 A1A1 = 0.0;
+  REAL4                 A2A2 = 0.0;
+  REAL4                 A3A3 = 0.0;
+  REAL4                 A1A2 = 0.0;
+  REAL4                 A1A3 = 0.0;
+  REAL4                 A2A3 = 0.0;
+	    
+
   
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -133,13 +172,17 @@ LALFindChirpBCVSpinTemplate (
    * Choose level of output
    */
   
-  doTest = 0; /* Set to 1 for lots of output, useful for testing */
+  doTest = 1; /* Set to 1 for lots of output, useful for testing */
   
   if (doTest ==1)
   {	  
   fpTmpltIm  =  fopen("tmpltIm.dat","w");
   fpTmpltRe  =  fopen("tmpltRe.dat","w");
   /* fpTemplate =  fopen("Template.dat","w"); */
+  fpwtilde         = fopen ("wtilde.dat", "w");
+  fpA1             = fopen ("A1.dat","w");
+  fpA2             = fopen ("A2.dat","w");
+  fpA3             = fopen ("A3.dat","w");
   }
 
   /*
@@ -252,11 +295,6 @@ LALFindChirpBCVSpinTemplate (
 
     }
 
-if (doTest ==1)
-{	
-	fclose (fpTmpltIm);
-	fclose (fpTmpltRe);
-}
         /* Uncomment following code to output template in time domain  */
         /*
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
@@ -308,7 +346,200 @@ fclose (fpTemplate);
 LALDestroyRealFFTPlan ( status->statusPtr, &prev);
 LALSDestroyVector ( status->statusPtr, &hVec);
 LALSDestroyVector ( status->statusPtr, &HVec);
-*/  
+*/ 
+
+ fprintf (stdout, "just before new stuff \n");
+ fflush (stdout);
+    
+ wtilde      = fcDataParams->wtildeVec->data;
+ ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
+ ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
+ 
+ fprintf (stdout, "just after fcDataParamstuff \n");
+ fflush (stdout);  
+   
+ beta = 0.0;
+  
+  normFac       = 4./numPoints;
+  normFacSq     = pow(normFac, 2);
+  
+ 
+ deltaTto2by3 = pow(deltaT, Twoby3);
+ deltaT  = params->deltaT;
+ deltaF  =  1.0/((REAL4)numPoints * deltaT);
+  
+ fLow   = params->fLow;
+ fFinal = tmplt->fFinal;  
+ 
+  kmin = fLow / deltaF > 1 ? fLow / deltaF : 1;
+  kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
+                                                                                                                            
+  if (doTest == 1)
+  {
+	  fprintf (stdout, "numPoints = %d\n", numPoints);
+          fprintf (stdout, "beta: %e \n", beta);
+          fprintf (stdout, "deltaT: %e \n", deltaT);
+	  fprintf (stdout, "deltaF %e\n", deltaF);
+          fprintf (stdout, "fLow %e\t kmin %d\n", fLow, kmin);
+          fprintf (stdout, "fFinal %e\t kmax %d\n", fFinal, kmax);
+	  fprintf (stdout, "normFac %e\n", normFac);									               fprintf (stdout, "normFacSq %e\n \n", normFacSq);
+  }
+ 
+  for ( k = kmin; k < kmax; ++k )
+  {
+          I += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re ;
+          J += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+                  cos(beta * ampBCVSpin2[k] * deltaTto2by3);
+          K += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+                  sin(beta * ampBCVSpin2[k] * deltaTto2by3);
+          L += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+                  sin(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
+          M += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re *
+                  cos(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
+                                                                                                                             
+          if (doTest == 1)
+          {
+                  fprintf (fpwtilde,"%d\t%e\t%e\n",k,wtilde[k].re, wtilde[k].im);
+          }
+  }
+                                                                                                                             
+  /* Taking multiplucation outside loop lessens cost */
+                                                                                                                             
+  I *= 4*deltaF;
+  J *= 4*deltaF;
+  K *= 4*deltaF;
+  L *= 2*deltaF;
+  M *= 2*deltaF;
+                                                                                                                         
+  /* To find absolute values of these moments multiply by (deltaT)^(-7/3)  */
+	  
+  if (doTest == 1)
+  {
+          fprintf (stdout, "Moments of the noise: \n");
+          fprintf (stdout, "I = %e \n", I);
+          fprintf (stdout, "J = %e \n", J);
+          fprintf (stdout, "K = %e \n", K);
+          fprintf (stdout, "L = %e \n", L);
+          fprintf (stdout, "M = %e \n\n", M);
+  }
+                                                                                                                             
+  /* Expensive or well used quantities calc before loop */
+                                                                                                                             
+  rootI           = sqrt(I);
+  denominator     = I*M  +  0.5*pow(I,2) - pow(J,2);
+  rootDenominator = sqrt(denominator);
+  numerator1      = (I*L)-(J*K);
+  denominator1    =  sqrt( (0.5*pow(I,2)) -(I*M) - pow(K,2)
+          -  (pow(numerator1,2)/denominator) );
+                                                                                                                          
+  if (doTest == 1)
+  {
+	fprintf (stdout, "rootI           = %e \n", rootI);
+      	fprintf (stdout, "denominator     = %e \n", denominator);
+	fprintf (stdout, "rootDenominator = %e \n", rootDenominator);
+	fprintf (stdout, "denominator1    = %e \n", denominator1);
+	fprintf (stdout, "numerator1    = %e \n\n", numerator1);    
+  }
+
+  A1Vec = fcTmplt->A1BCVSpin->data;
+  A2Vec = fcTmplt->A2BCVSpin->data;
+  A3Vec = fcTmplt->A3BCVSpin->data;
+  
+  /*LALDCreateVector(status->statusPtr, &A1Vec, (numPoints/2)+1);
+  LALDCreateVector(status->statusPtr, &A2Vec, (numPoints/2)+1);
+  LALDCreateVector(status->statusPtr, &A3Vec, (numPoints/2)+1);*/
+  
+  A1Vec[0] = 0;  
+  A2Vec[0] = 0;
+  A3Vec[0] = 0;
+  
+  if (beta == 0.0)
+  {
+  	/* fprintf(stdout,"Inside beta = 0 loop \n"); */
+	                                                                                                                 
+        for ( k = 1; k < ((numPoints/2)+1); ++k )
+	{
+		A1Vec[k] = ampBCVSpin1[k] / rootI;
+		A2Vec[k] = 0.0;
+		A3Vec[k] = 0.0;
+		                                                        
+		if (doTest == 1)
+		{
+			fprintf (fpA1, "%d\t%e\n", k, A1Vec[k]);
+			fprintf (fpA2, "%d\t%e\n", k, A2Vec[k]);
+			fprintf (fpA3, "%d\t%e\n", k, A3Vec[k]);
+	        }
+	 }
+  }
+  else
+    {
+  	/* fprintf(stdout,"Inside beta not = 0 loop \n"); */
+
+ 	for ( k = 1; k < ((numPoints/2)+1); ++k )
+  	{
+    		A1Vec[k] = ampBCVSpin1[k] / rootI;
+    		A2Vec[k] = ampBCVSpin1[k] 
+                        * (   ( cos(beta * ampBCVSpin2[k] * deltaTto2by3) )    
+			-  (J/I) ) * rootI
+     	                / rootDenominator ;
+    		A3Vec[k] = (ampBCVSpin1[k]/denominator1) * 
+        	        ( sin(beta * ampBCVSpin2[k]  * deltaTto2by3) 
+                	- (K/I)
+                        - (numerator1 * ( cos(beta * ampBCVSpin2[k] 
+                        * deltaTto2by3) - (J/I) )/denominator )  ) 
+                        * rootI;          		
+	
+		if (doTest ==1)
+		{
+ 	 		fprintf (fpA1, "%d\t%e\n", k, A1Vec[k]);
+ 	 		fprintf (fpA2, "%d\t%e\n", k, A2Vec[k]);
+         		fprintf (fpA3, "%d\t%e\n", k, A3Vec[k]);
+		}
+  	 }
+  }  
+
+  /* checking orthonormalisation of A vectors */
+
+  if (doTest == 1)
+  {	
+	fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
+	  
+  	for (k=0; k < (numPoints/2) + 1; ++k)
+  	{ 
+  		A1A1 += A1Vec[k] * A1Vec[k] * wtilde[k].re;
+		A2A2 += A2Vec[k] * A2Vec[k] * wtilde[k].re;
+        	A3A3 += A3Vec[k] * A3Vec[k] * wtilde[k].re;
+        	A1A2 += A1Vec[k] * A2Vec[k] * wtilde[k].re;  
+        	A1A3 += A1Vec[k] * A3Vec[k] * wtilde[k].re;       
+        	A2A3 += A2Vec[k] * A3Vec[k] * wtilde[k].re;  
+  	}
+
+  	A1A1 *= 4 * deltaF;
+  	A2A2 *= 4 * deltaF;
+  	A3A3 *= 4 * deltaF;
+  	A1A2 *= 4 * deltaF;
+  	A1A3 *= 4 * deltaF;
+  	A2A3 *= 4 * deltaF;
+
+  	fprintf (stdout, "A1hat cross A1hat %e\n", A1A1);  
+  	fprintf (stdout, "A2hat cross A2hat %e\n", A2A2);
+  	fprintf (stdout, "A3hat cross A3hat %e\n", A3A3);
+  	fprintf (stdout, "A1hat cross A2hat %e\n", A1A2);
+  	fprintf (stdout, "A1hat cross A3hat %e\n", A1A3);
+  	fprintf (stdout, "A2hat cross A3hat %e\n\n", A2A3);
+  }
+
+
+  if (doTest ==1)
+  {
+        fclose (fpTmpltIm);
+        fclose (fpTmpltRe);
+        fclose (fpwtilde);
+        fclose (fpA1);
+        fclose (fpA2);
+        fclose (fpA3);
+  }
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
