@@ -36,11 +36,6 @@ for ``barycentering'' the measured astronomical time series.
 #include <lal/LALConstants.h>
 #include <lal/DetectorSite.h>
 
-#ifdef sun /* Protect against an annoying Solaris system constant */
-#undef sun
-#define LALBARYCENTERH_SUN 1
-#endif
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -128,10 +123,10 @@ intants in Earth ephemeris table.
 \item[\texttt{REAL8  dtStable}]  The spacing in sec. between consecutive
 intants in Sun ephemeris table.
 
-\item[\texttt{PosVelAcc *earth}] Array containing pos,vel,acc. of earth, as
+\item[\texttt{PosVelAcc *ephemE}] Array containing pos,vel,acc. of earth, as
 extracted from earth ephem file. Units are sec, 1, 1/sec.
 
-\item[\texttt{PosVelAcc *sun}] Array containing pos,vel,acc. of sun, as
+\item[\texttt{PosVelAcc *ephemS}] Array containing pos,vel,acc. of sun, as
 extracted from sun ephem file. Units are sec, 1, 1/sec.
 \end{description}
   
@@ -173,7 +168,10 @@ struct BarycenterInput
 \begin{description}
 \item[\texttt{LIGOTimeGPS  tgps}] input GPS arrival time. 
 
-\item[\texttt{LALDetector site}]  detector site info.
+\item[\texttt{LALDetector site}] detector site info.  \textbf{NOTE:}
+the \verb@site.location@ field must be modified to give the detector
+location in units of \emph{seconds} (i.e.\ divide the values normally
+stored in \verb@site.location@ by \verb@LAL_C_SI@).
 
 \item[\texttt{REAL8 alpha}] Source right ascension in ICRS J2000 
 coords (radians).
@@ -232,8 +230,8 @@ tagEphemerisData
   INT4  nentriesS;
   REAL8 dtEtable;
   REAL8 dtStable;
-  PosVelAcc *earth;
-  PosVelAcc *sun;
+  PosVelAcc *ephemE;
+  PosVelAcc *ephemS;
 }
 EphemerisData;
 
@@ -340,10 +338,5 @@ void LALBarycenter(LALStatus *, EmissionTime *, BarycenterInput *, EarthState *)
 #ifdef  __cplusplus
 }
 #endif      /* Close C++ protection */
-
-#ifdef LALBARYCENTERH_SUN /* Close Solaris system constant protection */
-#undef LALBARYCENTERH_SUN
-#define sun 1
-#endif
 
 #endif      /* Close double-include protection */

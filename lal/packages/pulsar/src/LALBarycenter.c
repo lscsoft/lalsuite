@@ -97,8 +97,8 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
     tgps[0] = (REAL8)tGPS->gpsSeconds; /*convert from INT4 to REAL8 */
     tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
 
-    tinitE = edat->earth[0].gps;
-    tinitS = edat->sun[0].gps;
+    tinitE = edat->ephemE[0].gps;
+    tinitS = edat->ephemS[0].gps;
 
     t0e=tgps[0]-tinitE;
     ientryE = floor((t0e/edat->dtEtable) +0.5e0);  /*finding Earth table entry 
@@ -133,10 +133,10 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
      */
     {  
       
-      REAL8* pos=edat->earth[ientryE].pos; /*Cartesian coords of center of Earth
+      REAL8* pos=edat->ephemE[ientryE].pos; /*Cartesian coords of center of Earth
 					     from DE405 ephem, in sec. 0=x,1=y,2=z */
-      REAL8* vel=edat->earth[ientryE].vel;
-      REAL8* acc=edat->earth[ientryE].acc; 
+      REAL8* vel=edat->ephemE[ientryE].vel;
+      REAL8* acc=edat->ephemE[ientryE].acc; 
     
       for (j=0;j<3;j++){
 	earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
@@ -415,9 +415,9 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
      */
   {
     REAL8 rse2;
-    REAL8* sunPos=edat->sun[ientryS].pos;
-    REAL8* sunVel=edat->sun[ientryS].vel;
-    REAL8* sunAcc=edat->sun[ientryS].acc;
+    REAL8* sunPos=edat->ephemS[ientryS].pos;
+    REAL8* sunVel=edat->ephemS[ientryS].vel;
+    REAL8* sunAcc=edat->ephemS[ientryS].acc;
     REAL8 sunPosNow[3], sunVelNow[3];
     
     rse2=earth->drse=0.0;
@@ -498,7 +498,6 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
 	      +baryinput->site.location[2]*baryinput->site.location[2]);
     latitude = LAL_PI/2.e0 - acos(baryinput->site.location[2]/rd);
     longitude= atan2(baryinput->site.location[1],baryinput->site.location[0]);
-    rd /= LAL_C_SI;
 
     /********************************************************************
      *Calucate Roemer delay for detector at center of Earth.

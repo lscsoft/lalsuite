@@ -169,7 +169,7 @@ main()
     the 3-vector: baryinput.site.location[] .
 
     NOTE that the driver code that calls LALInitBarycenter must
-    LALFree(edat->earth) and LALFree(edat->sun).
+    LALFree(edat->ephemE) and LALFree(edat->ephemS).
     The driver code that calls LALBarycenter must LALFree(edat).
  */   
 
@@ -279,8 +279,8 @@ sensible in degrees, but radians)*/
 	     emit.vDetector[0],emit.vDetector[1],emit.vDetector[2]);
     }    
   }
-  LALFree(edat->earth);
-  LALFree(edat->sun);
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
   LALFree(edat);
   LALCheckMemoryLeaks();
   return 0;

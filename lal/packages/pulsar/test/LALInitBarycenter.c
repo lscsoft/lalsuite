@@ -80,8 +80,8 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 	 fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
 	 fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
     
-     edat->earth  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
-     edat->sun  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
+     edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc)); 
+     edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc)); 
 
 /*first column in earth.dat or sun.dat is gps time--one long integer
   giving the number of secs that have ticked since start of GPS epoch
@@ -91,22 +91,22 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
 
 	 /* check return value of fscanf */
 	 fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
-		&edat->earth[j].gps,&edat->earth[j].pos[0],
-		&edat->earth[j].pos[1],&edat->earth[j].pos[2],
-		&edat->earth[j].vel[0],&edat->earth[j].vel[1],
-		&edat->earth[j].vel[2],&edat->earth[j].acc[0],
-		&edat->earth[j].acc[1],
-		&edat->earth[j].acc[2] );
+		&edat->ephemE[j].gps,&edat->ephemE[j].pos[0],
+		&edat->ephemE[j].pos[1],&edat->ephemE[j].pos[2],
+		&edat->ephemE[j].vel[0],&edat->ephemE[j].vel[1],
+		&edat->ephemE[j].vel[2],&edat->ephemE[j].acc[0],
+		&edat->ephemE[j].acc[1],
+		&edat->ephemE[j].acc[2] );
        }
 
        for (j=0; j < edat->nentriesS; ++j){
 	 fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
-		&edat->sun[j].gps,&edat->sun[j].pos[0],
-		&edat->sun[j].pos[1],&edat->sun[j].pos[2],
-		&edat->sun[j].vel[0],&edat->sun[j].vel[1],
-		&edat->sun[j].vel[2],&edat->sun[j].acc[0],
-		&edat->sun[j].acc[1],
-		&edat->sun[j].acc[2] );
+		&edat->ephemS[j].gps,&edat->ephemS[j].pos[0],
+		&edat->ephemS[j].pos[1],&edat->ephemS[j].pos[2],
+		&edat->ephemS[j].vel[0],&edat->ephemS[j].vel[1],
+		&edat->ephemS[j].vel[2],&edat->ephemS[j].acc[0],
+		&edat->ephemS[j].acc[1],
+		&edat->ephemS[j].acc[2] );
        }
        
        
@@ -116,10 +116,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
   --within factor e  
 Machine dependent: to be fixed!
 
-    if ( (fabs(log(1.e0*(edat->earth[edat->nentriesE -1].gps)/t2000)) > 1.e0) 
-        ||(fabs(log(1.e0*(edat->sun[edat->nentriesS -1].gps)/t2000)) > 1.e0) ){
-      LALFree(edat->earth);
-      LALFree(edat->sun);
+    if ( (fabs(log(1.e0*(edat->ephemE[edat->nentriesE -1].gps)/t2000)) > 1.e0) 
+        ||(fabs(log(1.e0*(edat->ephemS[edat->nentriesS -1].gps)/t2000)) > 1.e0) ){
+      LALFree(edat->ephemE);
+      LALFree(edat->ephemS);
       ABORT(stat,LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE); 
     }
 */

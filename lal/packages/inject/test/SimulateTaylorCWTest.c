@@ -725,8 +725,8 @@ main(int argc, char **argv)
        &stat );
   LALFree( detector.transfer );
   if ( site ) {
-    LALFree( detector.ephemerides->earth );
-    LALFree( detector.ephemerides->sun );
+    LALFree( detector.ephemerides->ephemE );
+    LALFree( detector.ephemerides->ephemS );
     LALFree( detector.ephemerides );
     LALFree( detector.site );
   }

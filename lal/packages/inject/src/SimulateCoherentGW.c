@@ -381,6 +381,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
     gpsTime.gpsSeconds -= dtDelayBy2;
     input.tgps.gpsSeconds -= dtDelayBy2;
     input.site = *(detector->site);
+    for ( i = 0; i < 3; i++ )
+      input.site.location[i] /= LAL_C_SI;
     input.alpha = source.longitude;
     input.delta = source.latitude;
     input.dInv = 0.0;
