@@ -174,7 +174,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* output file */
   FILE *out;
-  CHAR outputFilename[200];
+  CHAR baseName[FILENAME_MAX];
+  CHAR outputFilename[FILENAME_MAX];
 
   /* xml output file name */
   CHAR xmlFileName[FILENAME_MAX];
@@ -326,13 +327,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get output file name base name */
   if (outputFilePath)
   {
-    LALSnprintf(outputFilename, FILENAME_MAX, \
+    LALSnprintf(baseName, FILENAME_MAX, \
         "%s/%s%s-stochastic-%d-%d", outputFilePath, ifoOne, ifoTwo, \
         startTime, endTime);
   }
   else
   {
-    LALSnprintf(outputFilename, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
         ifoOne, ifoTwo, startTime, endTime);
   }
 
@@ -947,12 +948,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* get output filename */
     if (inject_flag)
     {
-      LALSnprintf(outputFilename, FILENAME_MAX, "%s-%d.dat", outputFilename, \
+      LALSnprintf(outputFilename, FILENAME_MAX, "%s-%d.dat", baseName, \
           MCLoop);
     }
     else
     {
-      LALSnprintf(outputFilename, FILENAME_MAX, "%s.dat", outputFilename);
+      LALSnprintf(outputFilename, FILENAME_MAX, "%s.dat", baseName);
     }
 
     for (n = 0; n < N; n++)
