@@ -28,6 +28,7 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 ******************************************************* </lalLaTeX> */
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
 
 #include "GeneratePulsarSignal.h"
 
@@ -156,6 +157,123 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* LALGeneratePulsarSignal() */
+
+
+
+/*----------------------------------------------------------------------
+ * take time-series as input, convert it into SFTs and add noise if given
+ *----------------------------------------------------------------------*/
+void
+AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal, SFTParams *params)
+{
+  UINT4 numSFTs, SFTlen;
+  UINT4 iSFT;
+  REAL8 duration, tFirst, tLast, tt;
+  REAL8 Band;
+  RealFFTPlan *pfwd = NULL;
+
+  INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+  
+  ASSERT (outputSFTs != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (outputSFTs->SFTs == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+
+
+  /* NOTE: we have to increase FreqBand slightly to make sure
+   * that the resulting number of samples in an SFT is an integer 
+   * the user shouldn't care about this...: max diff = 1/Tsft
+   */
+  SFTlen = (UINT4) ceil( 2.0 * params->FreqBand * params->Tsft);	/* round up */
+  Band = 1.0 * SFTlen / (2.0 * params->Tsft );
+
+  /* Prepare FFT: compute plan for FFTW */
+  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, SFTlen, 0), stat);
+
+  /* determine number of SFTs to be produced */
+  duration = 1.0* signal->data->length * signal->deltaT;
+  if (params->timestamps == NULL)	/* no timestamps: cover total time-series */
+    numSFTs = (UINT4)( duration / params->Tsft );
+  else	/* ok, let's use them timestamps.. */
+    {
+      /* check consistency of timestamps */
+      numSFTs = params->Nsft;
+      tFirst = signal->epoch.gpsSeconds * 1e9 + signal->epoch.gpsNanoSeconds;
+      tLast = tFirst + 1e9 * (duration  - params->Tsft );
+      for (iSFT=0; iSFT < numSFTs; iSFT++) 
+	{
+	  tt = params->timestamps[iSFT].gpsSeconds * 1e9 + params->timestamps[iSFT].gpsNanoSeconds;
+	  if ( (tt < tFirst)  || (tt > tLast) ) {
+	    ABORT (stat,  PULSARSIGNALH_ETIMEBOUND,  PULSARSIGNALH_MSGETIMEBOUND);
+	  } 
+	} /* for iSFT */
+    } /* if timestamps */
+
+
+  /* reserve memory for output SFTs */
+  outputSFTs->length = numSFTs;
+  outputSFTs->SFTs = LALCalloc (1, numSFTs * sizeof( SFTtype ) );
+  if (outputSFTs->SFTs == NULL) {
+    ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
+  }
+  for (iSFT = 0; iSFT < numSFTs; iSFT++)
+    {
+      if (params->timestamps) 
+	outputSFTs->SFTs[iSFT].epoch  = params->timestamps[iSFT];
+      else
+	{
+	  INT4 secs;
+	  tt = tFirst + iSFT * params->Tsft * 1e9;
+	  secs = (INT4) tt * 1e-9;
+	  outputSFTs->SFTs[iSFT].epoch.gpsSeconds = secs;
+	  outputSFTs->SFTs[iSFT].epoch.gpsNanoSeconds = (INT4)( tt - secs*1e9);
+	}
+      outputSFTs->SFTs[iSFT].f0 = signal->f0;
+      outputSFTs->SFTs[iSFT].deltaF = params->FreqBand / SFTlen;;
+      outputSFTs->SFTs[iSFT].length = SFTlen;
+
+      if ( (outputSFTs->SFTs[iSFT].data = LALCalloc (1, SFTlen * sizeof (COMPLEX8))) == NULL)
+	{
+	  UINT4 j;
+	  for (j=0; j < iSFT; j++)
+	    LALFree (outputSFTs->SFTs[j].data);
+	  LALFree (outputSFTs->SFTs);
+	  LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+	  ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
+	} /* if out-of-memory */
+    } /* for iSFT < numSFTs */
+
+  /* FIXME: original makefakedata-code follows here */
+  /* This is the main loop that produces output data */
+  for (iSFT = 0; iSFT < numSFTs; iSFT++)
+    {
+      /* This sets the time at which the output is given...*/
+      /*
+      timeSeries->epoch=timestamps[iSFT];
+    
+      shift = (INT4)(2.0* Band* (timestamps[iSFT].gpsSeconds - timestamps[0].gpsSeconds));
+
+      timeSeries->data->data =  totalTimeSeries->data->data + shift;
+      */
+      /* Perform FFTW-LAL Fast Fourier Transform */
+      /*
+      SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
+      */
+    
+    } /* end of loop over different SFTs */
+
+
+
+  /* clean up */
+  LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* AddSignalToSFTs() */
+
 
 
 
@@ -290,21 +408,6 @@ LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fnam
     "@xaxis label \"T (sec)\"\n"
     "@yaxis label \"A\"\n";
 
-  /*
-    "@world xmin -0.1\n"
-    "@world xmax 6.4\n"
-    "@world ymin -3.2\n"
-    "@world ymax 3.2\n"
-  */
-  /*
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  REAL4Sequence *data;
-  */
-
   /* Set up shop. */
   INITSTATUS( stat, "PrintR4TimeSeries", PULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
@@ -331,7 +434,9 @@ LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fnam
 
 } /* PrintR4TimeSeries() */
 
-
+/*----------------------------------------------------------------------
+ * write a CoherentGW type signal into an xmgrace file
+ *----------------------------------------------------------------------*/
 void
 PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname)
 {
@@ -419,37 +524,3 @@ write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set)
   return;
 
 } /* write_timeSeriesR4() */
-
-/*----------------------------------------------------------------------
- * take time-series as input, convert it into SFTs and add noise if given
- *----------------------------------------------------------------------*/
-void
-AddSignalToSFTs (LALStatus *stat, COMPLEX8Vector **outputSFTs, REAL4TimeSeries *signal, SFTParams *params)
-{
-  UINT4 i, numSFTs, i0, iSFT;
-  REAL8 duration;
-
-  INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-  
-  ASSERT (outputSFTs != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (*outputSFTs == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
-
-  /* determine number of SFT to be produced */
-  duration = 1.0* signal->data->length * signal->deltaT;
-  if (params->timestamps == NULL)
-    numSFTs = (UINT4)( duration / params->Tsft );
-  else
-    {
-      /* FIXME: stopped writing here!! */
-      for (i=0; i<10; i++)
-	;
-    }
-
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* AddSignalToSFTs() */

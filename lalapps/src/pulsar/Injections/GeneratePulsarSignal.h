@@ -44,6 +44,7 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_ESAMPLING		4
 #define PULSARSIGNALH_ESSBCONVERT	5
 #define PULSARSIGNALH_ESYS		6
+#define PULSARSIGNALH_ETIMEBOUND	7
 
 #define PULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define PULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -51,6 +52,7 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
 #define PULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
 #define PULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
+#define PULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of required time-interval"
 
 /*************************************************** </lalErrTable> */
 
@@ -100,18 +102,60 @@ typedef struct {
 
 
 typedef struct {
-  UINT4 Tsft;				/* length of SFTs in seconds */
+  REAL8 FreqBand;			/* frequency-band for the output SFT's */
+  REAL8 Tsft;				/* length of an SFT in seconds */
+  UINT4 Nsft;				/* number of timestamps and noise-SFTs (if any) */
   LIGOTimeGPS *timestamps;		/* timestamps to use for SFT's (can be NULL) */
-  COMPLEX8Vector *noiseSFTs;		/* noise SFTs to add to signal (can be NULL) */
+  COMPLEX8Vector *noiseSFTs;		/* noise SFTs to be added to the output (can be NULL) */
 } SFTParams;
+
+
+/* we don't use the LAL-type COMPLEX8FrequencySeries to encode one SFT,
+ * as we'll need lots of those and the 'name'-field alone has 64 bytes,
+ * we might want up to sth like 1e5 SFT's, so the headers alone would use
+ * up to 1e7 Bytes = 10 MBs, which seems a bit much overhead for nothing...
+ *
+ * -> so we optimize memory a little bit here by using our own custom-type
+ * for representing an SFT containing just a subset of the most basic info:
+ * (containing 24bytes, we might still end up using up to 2MB's or so...)
+ */
+typedef struct {
+  LIGOTimeGPS	epoch; 
+  REAL8		f0;	 
+  REAL8		deltaF;
+  UINT4		length;
+  COMPLEX8	*data;
+} SFTtype;
+
+/* now we need a whole vector of those, so we define a trivial 
+ * (LAL-) "Vector"-type of SFTs
+ */
+typedef struct {
+  UINT4 length;		/* number of SFTs */
+  SFTtype *SFTs;	/* array of SFTs */
+} SFTVector;
+
+/* just for reference: this is the FrequencySeries type: 
+ * { 
+ *   CHAR              name[LALNameLength]; 
+ *   LIGOTimeGPS       epoch; 
+ *   REAL8             f0;	 
+ *   REAL8             deltaF; 
+ *   LALUnit           sampleUnits
+ *   COMPLEX8Sequence *data; 
+ * } 
+ * COMPLEX8FrequencySeries; 
+ */
+
+
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
+void AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal, SFTParams *params);
+
+
 void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
-
-void AddSignalToSFTs (LALStatus *stat, COMPLEX8Vector **outputSFTs, REAL4TimeSeries *signal, SFTParams *params);
-
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 
