@@ -291,7 +291,7 @@ tagFindChirpSegment
   UINT4Vector                  *chisqBinVec;
   UINT4Vector                  *chisqBinVecBCV;
   REAL8                         deltaT;
-  REAL4                         segNorm;
+  REAL4Vector                  *segNorm;
   REAL4Vector                  *a1;     
   REAL4Vector                  *b1;
   REAL4Vector                  *b2;     
