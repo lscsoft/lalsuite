@@ -196,10 +196,6 @@ structure.  However, \texttt{REAL4Vector}s may be conveniently converted to
 \end{description}
 </lalLaTeX> */
 
-/* I would like to use REAL4TimeSeries here, but the F's are dimensionless,
-   and there seems to be no provision for not providing units in the
-   LALUnit structure.  I'll still call this a ``Series'' because that's
-   what it really is. */
 typedef struct
 tagLALDetAMResponseSeries
 {
