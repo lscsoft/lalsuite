@@ -12,7 +12,6 @@ $Id$
 #include <unistd.h>
 #include <lal/EPData.h>
 #include <lal/ExcessPower.h>
-#include "LALWrapperInterface.h"
 
 /* turn these on to enable debugging tools */
 #undef POWER_SO_DEBUG              /* print debug information               */
