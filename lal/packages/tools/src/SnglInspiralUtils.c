@@ -61,7 +61,7 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 
 \subsubsection*{Notes}
 %% Any relevant notes.
- 
+
 \vfill{\footnotesize\input{SnglInspiralUtilsCV}}
 
 </lalLaTeX>
@@ -105,7 +105,7 @@ LALSortSnglInspiral (
 
   /* qsort the array using the specified function */
   qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
-  
+
   /* re-link the linked list in the right order */
   thisEvent = *eventHead = eventHandle[0];
   for ( i = 1; i < numEvents; ++i )
@@ -158,9 +158,9 @@ LALCompareSnglInspiralByMass (
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 int
 LALCompareSnglInspiralByPsi (
-   const void *a,
-   const void *b
-   )
+    const void *a,
+    const void *b
+    )
 /* </lalVerbatim> */
 {
   SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
@@ -272,21 +272,21 @@ LALCompareSnglInspiral (
       /* compare mass1 and mass2 parameters */
       if ( dm1 <= params->dm && dm2 <= params->dm )
       {
-        if ( fabs( 
-              (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
-              ) < params->epsilon / bPtr->snr + params->kappa )
-        {
-          params->match = 1;
-          LALInfo( status, "Triggers are coincident in eff_distance" );
-        }
-        else
-        {
-          LALInfo( status, "Triggers fail eff_distance coincidence test" );
-        }
+	if ( fabs( 
+	      (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
+	      ) < params->epsilon / bPtr->snr + params->kappa )
+	{
+	  params->match = 1;
+	  LALInfo( status, "Triggers are coincident in eff_distance" );
+	}
+	else
+	{
+	  LALInfo( status, "Triggers fail eff_distance coincidence test" );
+	}
       }
       else
       {
-        LALInfo( status, "Triggers fail mass coincidence test" );
+	LALInfo( status, "Triggers fail mass coincidence test" );
       }
     }
     else if ( params->test == mchirp_and_eta )
@@ -297,12 +297,12 @@ LALCompareSnglInspiral (
       /* compare mchirp and eta parameters */
       if ( dmchirp <= params->dmchirp && deta <= params->deta )
       {
-        params->match = 1;
+	params->match = 1;
 	LALInfo( status, "Triggers are coincident in mchirp and eta" );
       }
       else
       {
-        LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+	LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
       }
     }
     else
@@ -357,20 +357,20 @@ LALClusterSnglInspiralTable (
     {
       /* displace previous event in cluster */
       if ( 
-          (
-           (clusterchoice == snr_and_chisq) && 
-           (thisEvent->snr > prevEvent->snr) && 
-           (thisEvent->chisq < prevEvent->chisq)
-          ) || (
-            (clusterchoice == snrsq_over_chisq) &&
-            (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
-            (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
-          ) || (
-            (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
-          )
-         )
+	  (
+	   (clusterchoice == snr_and_chisq) && 
+	   (thisEvent->snr > prevEvent->snr) && 
+	   (thisEvent->chisq < prevEvent->chisq)
+	  ) || (
+	    (clusterchoice == snrsq_over_chisq) &&
+	    (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
+	    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
+	    ) || (
+	      (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
+	      )
+	 )
       {
-        memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
+	memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
       }
 
       /* otherwise just dump this event from cluster */
@@ -477,7 +477,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   source.orientation      = output->polarization;
 
   placeAndGPS.p_gps = &(output->geocent_end_time);
-  
+
   detTimeAndSource.p_det_and_time = &placeAndGPS;
   detTimeAndSource.p_source = &skyPos;
 
@@ -505,7 +505,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   LALAddFloatToGPS( status->statusPtr, &(output->h_end_time),
       &(output->h_end_time), time_diff_ns );
   CHECKSTATUSPTR( status );
-  
+
   /* ligo livingston observatory */
   placeAndGPS.p_detector = &llo;
   LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
@@ -522,7 +522,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
    *
    */
 
-  
+
   /* initialize distances with real distance and compute splus and scross */
   output->eff_dist_h = output->eff_dist_l = 2.0 * output->distance;
   cosiota = cos( output->inclination );
@@ -538,7 +538,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* compute the effective distance for LHO */
   output->eff_dist_h /= sqrt( 
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
-  
+
   /* compute the response of the LLO detector */
   detAndSource.pDetector = &llo;
   LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
@@ -548,7 +548,151 @@ LALGalacticInspiralParamsToSimInspiralTable(
   /* compute the effective distance for LLO */
   output->eff_dist_l /= sqrt( 
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
-  
+
+
+  /* 
+   *
+   * normal exit
+   *
+   */
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* function to compute the site end time and effective distance of an event */
+static int site_time_and_dist( 
+    LALStatus         *status,
+    LALDetector       *detector,
+    LIGOTimeGPS       *end_time,
+    REAL4             *eff_dist,
+    SkyPosition       *skyPos,
+    SimInspiralTable  *sim_inspiral)
+{
+  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
+  LALGPSandAcc          gpsAndAcc;
+  LALSource             source;
+  LALPlaceAndGPS        placeAndGPS;
+  DetTimeAndASource     detTimeAndSource;
+  LALDetAndSource       detAndSource;
+  LALDetAMResponse      resp;
+  REAL8			time_diff_ns;
+  REAL4                 splus, scross, cosiota;
+
+  memset( &source, 0, sizeof(LALSource) );
+  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
+  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
+  memset( &detAndSource, 0, sizeof(LALDetAndSource) );
+
+
+  source.equatorialCoords = *skyPos;
+  source.orientation      = sim_inspiral->polarization;
+
+  placeAndGPS.p_gps = &(sim_inspiral->geocent_end_time);
+
+  detTimeAndSource.p_det_and_time = &placeAndGPS;
+  detTimeAndSource.p_source = skyPos;
+  detTimeAndSource.p_det_and_time->p_detector = detector;
+
+  detAndSource.pSource = &source;
+  detAndSource.pDetector = detector;
+
+  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
+  gpsAndAcc.gps = sim_inspiral->geocent_end_time;
+
+  /* initialize end time with geocentric value */
+  *end_time = sim_inspiral->geocent_end_time;
+
+  /* calculate the detector end time */
+  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
+      &detTimeAndSource );
+  CHECKSTATUSPTR( status );
+  LALAddFloatToGPS( status->statusPtr, end_time,
+      end_time, time_diff_ns );
+  CHECKSTATUSPTR( status );
+
+  /* initialize distance with real distance and compute splus and scross */
+  *eff_dist = 2.0 * sim_inspiral->distance;
+  cosiota = cos( sim_inspiral->inclination );
+  splus = -( 1.0 + cosiota * cosiota );
+  scross = -2.0 * cosiota;
+
+  /* compute the response of the detector */
+  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
+      &gpsAndAcc );
+  CHECKSTATUSPTR( status );
+
+  /* compute the effective distance */
+  *eff_dist /= sqrt( 
+      splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
+
+  return(0);
+}
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALPopulateSimInspiralSiteInfo(
+    LALStatus                  *status,
+    SimInspiralTable           *output
+    )
+/* </lalVerbatim> */
+{
+  SkyPosition	        skyPos;
+  LALDetector           detector; 
+  REAL4                *eff_dist;
+  LIGOTimeGPS          *end_time;
+
+
+  INITSTATUS( status, "LALPopulateSimInspiralSiteInfo", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( output, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+  /* set up params for the geocent end time and source location */
+  memset( &skyPos, 0, sizeof(SkyPosition) );
+
+  skyPos.longitude = output->longitude;
+  skyPos.latitude  = output->latitude;
+  skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
+
+  /* LIGO Hanford observatory*/
+  detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  end_time = &(output->h_end_time);
+  eff_dist = &(output->eff_dist_h);
+  site_time_and_dist(status, &detector, end_time, eff_dist, 
+      &skyPos, output);
+
+  /* LIGO Livingston observatory*/
+  detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  end_time = &(output->l_end_time);
+  eff_dist = &(output->eff_dist_l);
+  site_time_and_dist(status, &detector, end_time, eff_dist, 
+      &skyPos, output);
+
+  /* GEO observatory*/
+  detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  end_time = &(output->g_end_time);
+  eff_dist = &(output->eff_dist_g);
+  site_time_and_dist(status, &detector, end_time, eff_dist, 
+      &skyPos, output);
+
+  /* TAMA observatory*/
+  detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  end_time = &(output->t_end_time);
+  eff_dist = &(output->eff_dist_t);
+  site_time_and_dist(status, &detector, end_time, eff_dist, 
+      &skyPos, output);
+
+  /* Virgo observatory*/
+  detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  end_time = &(output->v_end_time);
+  eff_dist = &(output->eff_dist_v);
+  site_time_and_dist(status, &detector, end_time, eff_dist, 
+      &skyPos, output);
 
   /* 
    *

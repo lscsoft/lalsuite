@@ -219,6 +219,12 @@ LALGalacticInspiralParamsToSimInspiralTable(
     RandomParams               *params
     );
 
+void
+LALPopulateSimInspiralSiteInfo(
+    LALStatus                  *status,
+    SimInspiralTable           *output
+    );
+
 
 /*
  *
