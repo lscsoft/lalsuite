@@ -177,12 +177,14 @@ the triggers by frequency.
 \verb$lalapps_snglBurstHistogram$ \verb$--input$ \textsc{infile} 
 [\verb$--threshold$ \textsc{threshold}]    
 $\backslash$ \newline \hspace*{0.25in}
-\verb$--freq$ \textsc{fstart} \textsc{fstop} \textsc{df} 
+\verb$--freq$ \textsc{fstart} \textsc{fstop} \textsc{df}
+\verb$--tfhist$ \textsc{outfile} 
 [\verb$--help$]
 
 \item[Description] 
 \verb$lal_snglBurstHistogram$ reads in LIGO lightweight files and
-constructs a histogram of the triggers over frequency.   The code
+constructs a histogram of the triggers over frequency. This histogram data 
+is then printed in the file \verb$freq-hist.txt$. It also produces a list of triggers for each playground segment separately and that is printed in the \textsc{outfile}, if provided.   The code
 should be extensible to do a number of similar things like this.
 
 \item[Options]\leavevmode
@@ -200,6 +202,9 @@ Parameters which define a frequency histogram.  \textsc{fstart} is the
 lowest frequency;  \textsc{fstop} is the highest frequency; \textsc{df} 
 is the width of abin.
 
+\item[\texttt{--tfhist}  \textsc{outfile}] The name of a file which will 
+contain the list of triggers per playground segment for each frequency bin.
+
 \item[\texttt{--help}] Print usage instructions.
 \end{entry}
 
@@ -207,11 +212,12 @@ is the width of abin.
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
-lalapps_snglBurstHistogram --input files.txt --freq 100.0 1000.0 25.0
+lalapps_snglBurstHistogram --input files.txt --freq 100.0 1000.0 25.0 --tfhist tf.txt
 \end{verbatim}
 This will read in the xml files listed in files (see below) and
 construct a frequency histogram with lowest frequency 100 Hz,  highest
-frequency 1000 Hz and bin width 25 Hz.   The file \verb$files.txt$
+frequency 1000 Hz and bin width 25 Hz. This output will be in \verb$freq-hist.txt.$
+It will also produce the triggers for each playground segment and those will be in \verb$tf.txt$.  The file \verb$files.txt$
 must contain a list of XML files.  Here are the first few lines from
 such a file:
 \begin{verbatim}
