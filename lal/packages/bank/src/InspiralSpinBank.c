@@ -152,7 +152,7 @@ LALInspiralSpinBank(
   if (coarseIn.mmCoarse <= 0) 
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   
-  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || (coarseIn.mMin >= coarseIn.MMax) || (3*coarseIn.MMax >= 15.0))
+  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || (coarseIn.mMin >= coarseIn.MMax) || (3.0*coarseIn.MMax >= 15.0))
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
    
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */

@@ -55,6 +55,13 @@
     </lalLaTeX>
     END SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" --------------------------- */
   
+  /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
+    /* <lalLaTeX>
+    \subsubsection*{Exit codes}
+    \input{InspiralSpinBankTestCE}
+    </lalLaTeX> 
+    END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
+
   /*SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" ------------------------- <lalLaTeX>
     \subsubsection{Notes}
     \begin{itemize}
@@ -68,7 +75,6 @@
     \end{itemize}
     </lalLaTeX>
     END - SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" --------------------------- */ 
-
   /*<lalLaTeX>
   \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
   </lalLaTeX>
@@ -93,23 +99,38 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
+/*<lalErrTable file="InspiralSpinBankTestCE">*/
+#define INSPIRALSPINBANKTESTC_ENORM     0
+#define INSPIRALSPINBANKTESTC_EMEM      1
+#define INSPIRALSPINBANKTESTC_ESUB      2
+                                                                                                                                                              
+#define INSPIRALSPINBANKTESTC_MSGENORM  "Normal exit"
+#define INSPIRALSPINBANKTESTC_MSGEMEM   "Memory allocation error"
+#define INSPIRALSPINBANKTESTC_MSGESUB   "Subroutine error"
+/*</lalErrTable>*/
+
 NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
 
-int main(int argc, char *argv[])
-  {
+int main(int argc, char *argv[]){
   static LALStatus stat;
   INT4 loop = 0; 			/* loop counter */
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL; 	
-  list = (Math3DPointList *) calloc(1, sizeof(Math3DPointList));
-  first = list;
   InspiralTemplateList *Tiles = NULL;	
   InspiralCoarseBankIn CoarseIn;	/* this input stucture is superfluous */
   INT4 ntiles = 0;			/* number of tiles */
   INT2 Math3DPlot = 0;			/* option flag for Mathematica plot */
   INT4 opt = 0;				/* returning value of getopt() */
   INT4 optflag = -1;			/* Command Line option */
-  
+ 
+  if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
+    LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);
+    printf(INSPIRALSPINBANKTESTC_MSGEMEM);
+    return INSPIRALSPINBANKTESTC_EMEM;
+    }
+
+  first = list;
+ 
  /* Parse options. */
   do{
     optflag++;  
@@ -152,38 +173,57 @@ int main(int argc, char *argv[])
     CoarseIn.mmCoarse, Math3DPlot, CoarseIn.mMin, CoarseIn.MMax);
   printf("______________________________________________________________________\n");
     
-  
+  printf("\n\nCalling LALInspiralSpinBank()......\n"); 
   LALInspiralSpinBank(&stat, &Tiles, &ntiles, CoarseIn);  
+  REPORTSTATUS(&stat);
+  if (stat.statusCode){
+    LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
+    printf(INSPIRALSPINBANKTESTC_MSGESUB);
+    return INSPIRALSPINBANKTESTC_ESUB;
+  }
+    
   printf("\nThese parameters yeild %i tiles.\n\n\n", ntiles);
 
   /* Mathematica Plot Stuff */
   if (Math3DPlot){
-    for(loop=0; loop < (ntiles); loop++)
-    {
+    for(loop=0; loop < (ntiles); loop++){
       list->x = Tiles[loop].params.psi0;
       list->y = Tiles[loop].params.psi3;
       list->z = Tiles[loop].params.beta;
       list->GrayLevel = 1.0*loop/ntiles;
-      if (loop < (ntiles-1)) 
-        list = list->next = (Math3DPointList *) calloc(1, sizeof(Math3DPointList));
+      if ((list = list->next = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
+        LALError(&stat, INSPIRALSPINBANKTESTC_MSGEMEM);
+        printf(INSPIRALSPINBANKTESTC_MSGEMEM);
+        return INSPIRALSPINBANKTESTC_EMEM;
+      }
     }
     list->next = NULL;
+    printf("\nCalling LALMath3DPlot()......\n");
     LALMath3DPlot(&stat, first, &ntiles);
+    REPORTSTATUS(&stat);
+    if (stat.statusCode){
+      LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
+      printf(INSPIRALSPINBANKTESTC_MSGESUB);
+      return INSPIRALSPINBANKTESTC_ESUB;
+    }
+ 
+    
     /* Clean Up the memory from the MathPlot3D structure */
     list = first;
-    while(list->next)
-    {
+    while(list->next){
       first = list->next;
-      free(list);
+      LALFree(list);
       list = first;
     }
   }
   
   /* free the last (first?) memory allocated for Math3DPlot. */
-  free(list); 
+  LALFree(list); 
  
-  REPORTSTATUS(&stat);
-  return stat.statusCode;
+  if (stat.statusCode)
+    return INSPIRALSPINBANKTESTC_ESUB;
+  else
+    return INSPIRALSPINBANKTESTC_ENORM;
 
-  }
+}
 
