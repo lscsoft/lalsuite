@@ -205,7 +205,7 @@ int main(int argc, char **argv)
     SUB ( LALDeltaFloatGPS (&status, &deltaT1, &gps1, &gps2), &status);
     /* compare to correct result */
     deltaT0 = -1461420.688922178;
-    if (deltaT0 != deltaT0) {
+    if (deltaT1 != deltaT0) {
       LALPrintError ("Failure in LALDeltaFloatGPS(): got %20.9f instead of %20.9f\n", deltaT1, deltaT0);
       return FAILURE;
     }

@@ -324,6 +324,30 @@ LALCompareGPS(LALStatus           *status,
 
 
 /* Increment a GPS time by a float-interval */
+/* (Private function) */
+static
+LIGOTimeGPS AddFloatToGPS(
+	LIGOTimeGPS gps,
+	REAL8 deltaT
+)
+{
+	INT4 secs = deltaT;
+
+	gps.gpsSeconds += secs;
+	gps.gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
+
+	if (gps.gpsNanoSeconds >= oneBillion) {
+		gps.gpsNanoSeconds -= oneBillion;
+		gps.gpsSeconds++;
+	} else if (gps.gpsNanoSeconds < 0) {
+		gps.gpsNanoSeconds += oneBillion;
+		gps.gpsSeconds--;
+	}
+
+	return(gps);
+} /* AddFloatToGPS() */
+
+/* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */
 void
 LALAddFloatToGPS(
@@ -334,35 +358,9 @@ LALAddFloatToGPS(
     )
 /*  </lalVerbatim> */
 {
-  LIGOTimeGPS tmp_gps;		/* allow startGPS == outputGPS */
-  INT4 secs, ns;
-  REAL8 tmp;
-
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
 
-  /* split deltaT into seconds + nanoseconds */
-  secs = (INT4)(deltaT);
-  tmp = (deltaT - (REAL8) secs) * oneBillion  + 0.5;
-  ns = (INT4) floor( tmp );	/* careful with rounding!*/
-
-  /* add them to start-time */
-  tmp_gps.gpsSeconds = startGPS->gpsSeconds + secs;
-  tmp_gps.gpsNanoSeconds = startGPS->gpsNanoSeconds + ns;
-
-  /* handle over-runs in ns */
-  if (tmp_gps.gpsNanoSeconds >= oneBillion) 
-    {
-      tmp_gps.gpsNanoSeconds -= oneBillion;
-      tmp_gps.gpsSeconds += 1;
-    }
-  else if (tmp_gps.gpsNanoSeconds < 0) 
-    {
-      tmp_gps.gpsNanoSeconds += oneBillion;
-      tmp_gps.gpsSeconds -= 1;
-    }
-
-   /* assign the computed values */
-  *outputGPS = tmp_gps;
+  *outputGPS = AddFloatToGPS(*startGPS, deltaT);
 
   RETURN( status );
 
