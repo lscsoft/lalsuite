@@ -20,6 +20,7 @@ $Id$
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
+#include <lal/LALVersion.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLHeaders.h>
@@ -274,6 +275,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
         fprintf( xml->fp, SEARCH_SUMMARY_ROW,
+            lalCVSTag,
             tablePtr.searchSummaryTable->comment,
             tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
             tablePtr.searchSummaryTable->in_start_time.gpsNanoSeconds,

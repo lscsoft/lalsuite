@@ -182,7 +182,7 @@ extern "C" {
 "      <Stream Name=\"search_summarygroup:search_summary:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define SEARCH_SUMMARY_ROW \
-"         \"process:process_id:0\",\"shared_object\",\"lal_cvs_tag\",\"lalwrapper_cvs_tag\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
+"         \"process:process_id:0\",\"standalone\",\" \",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
 
 #define LIGOLW_XML_SEARCH_SUMMVARS \
 "   <Table Name=\"search_summvarsgroup:search_summvars:table\">\n" \
