@@ -849,44 +849,76 @@ data.  Intended for producing the hardware injection data.
 
 \item[Synopsis]
 \begin{verbatim}
---help                  display this message
---source SFILE          source file containing details of injection
---response RESPFILE     file containing the response function
---summary SUMFILE       write found injection to file
---ifo IFO               name of interferomter (optional)
---flow FSTART           start frequency of injection (default 40 Hz)
---fhigh FSTOP           end frequency of injection (default: end at ISCO)
---length LENGTH         length of the data (default 64 seconds)
---samplerate FREQ       rate at which data is sampled (default (16384Hz)
---debug-level DEBUG     give the lal debug level
+--help               display this message
+--source SFILE       source file containing details of injection
+--actuation ACTFILE  file containing the actuation function
+--darm2inj DCFACTOR  calibration between darm_ctrl and injection point
+--summary SUMFILE    write details of injections to file
+--ifo IFO            name of interferomter (optional)
+--flow FSTART        start frequency of injection (default 40 Hz)
+--fhigh FSTOP        end frequency of injection (default: end at ISCO)
+--smooth QFAC        ringdown the end of the injection with Q factor Qfac
+--length LENGTH      length of the data (default 64 seconds)
+--samplerate FREQ    rate at which data is sampled (default 16384Hz)
+--debug-level DEBUG  the lal debug level
+--user-tag TAG       user-tag added to output file names
 \end{verbatim}
 
 \item[Description] 
-\verb$lalapps_inspmultiawg$ injects inspiral chirps into zero data.  The details
-of several chirps can be specified using the command \verb$--source$, otherwise,
-a single inspiral of two 1.4 solar mass neutron stars will be injected.  Each
-chirp is injected into a new file containing zero data of $\texttt{LENGTH}$
-seconds, sampled at $\texttt{FREQ}$ Hz, and each injection begins at the
-beginning of the data.  The response function can be provided in
-$\texttt{RESPFILE}$.  The chirp is output to a file
+\verb$lalapps_inspmultiawg$ injects inspiral chirps into zero data.  The 
+details of several chirps can be specified using the command \verb$--source$,  
+otherwise, a single inspiral of two 1.4 solar mass neutron stars will be 
+injected.  Each chirp is injected into a new file containing zero data of
+$\texttt{LENGTH}$ seconds, sampled at $\texttt{FREQ}$ Hz, and each injection begins at the beginning of the data.  The actuation function can be provided in
+$\texttt{ACTFILE}$.  Additionally, there is a parameter $\texttt{DCFACTOR}$ 
+which is used to convert between the actuation function and the "response 
+function" between ETM\_EXC and strain.  The chirp is output to a file
 named
 \begin{verbatim}
-IFO_inspiral_NUMBER.txt
+TAG_inspiral_NUMBER_IFO.out
 \end{verbatim}
-where $\texttt{IFO}$ is the name of the interferometer, and $\texttt{NUMBER}$ is
-the injection number.  A summary of the injections performed can be saved in
-$\texttt{SUMFILE}$.
+where $\texttt{TAG}$ is the user-tag, $\texttt{IFO}$ is the name of the 
+interferometer, and $\texttt{NUMBER}$ is the injection number.  A summary of
+the injections performed can be saved in $\texttt{SUMFILE}$.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--sourcefile} \textsc{sfile}] Optional.  Reads source information
+\item[\texttt{--sourcefile} \textsc{sfile}] Optional.  Reads source information 
 from the file \textsc{sfile}.  If absent, it injects a single 
 1.4$M_\odot$--1.4$M_\odot$ inspiral, optimally oriented, at a distance
-of $1.0Mpc$.
+of $1.0 \textrm{Mpc}$.
 
-\item[\texttt{--response} \textsc{respfile}] Optional. Reads a detector response
-function from the file \textsc{respfile}.  If absent, it generates raw
-dimensionless strain.
+\item[\texttt{--actuation} \textsc{actfile}] Optional. Reads a detector
+ actuation function from the file \textsc{actfile}.  If absent, it generates 
+raw dimensionless strain.  The actuation function should contain 3 columns; frequency, followed by amplitude and phase. 
+
+
+\item[\texttt{--darm2inj} \textsc{dcfactor}] Optional.  Multiplicative
+factor used in calculating the response function from the actuation
+function.  More specifically, the actuation function is given by 
+%
+\begin{equation}
+   x_{C} = A(f) \times \mathrm{DARM}\_\mathrm{CRTL} \, .
+\end{equation}
+%
+while we are taking the response function to be:
+%
+\begin{equation}
+   h(f) = R(f) \times \mathrm{ETM}\_\mathrm{EXC} \, .
+\end{equation}
+%
+Then, $\textsc{dcfactor}$ is given by
+%
+\begin{equation}
+   A(f) = \mathrm{DCFACTOR} \times R(f) \, .
+\end{equation}
+
+\item[\texttt{--smooth} \textsc{qfac}]  Optional.  This will smooth out
+the end of the injected inspiral.  After the inspiral, the frequency of
+the waveform will be held constant while the amplitude is exponentially
+decreased as $a = a_{\mathrm{final}} \exp(- \pi f_{\mathrm{final}} t /
+\textsc{qfac})$.  Here, $t$ is the amount of time after the end of the
+inspiral.
 
 \item[\texttt{--summary} \textsc{sumfile}] Optional. The \textsc{sumfile} format
 is LIGO lightweight XML with \texttt{process}, \texttt{process\_params} and
@@ -904,10 +936,13 @@ the data is sampled.  The default is 16384 Hz.
 interferometer for which the injections are intended.  This is only used in
 naming the output files.
 
+\item[\texttt{--user-tag} \textsc{tag}] Optional.  A user-tag which is
+used in naming the output files.
+
 \item[\texttt{--flow} \textsc{fstart}] Optional.  Give the start frequency
 \textsc{fstart} for the inspiral.  The default is 40 Hz
 
-\item[\texttt{--fhigh} \textsc{sftop}] Optional.  Give the end frequency
+\item[\texttt{--fhigh} \textsc{fstop}] Optional.  Give the end frequency
 \textsc{fstop} for the inspiral.  The default behaviour is that the inspiral
 will continue to ISCO.  If set to a negative number, the generator will use its
 absolute value as the terminating frequency, but will ignore post-Newtonian
@@ -950,34 +985,27 @@ The time parameter (in this case 70 sec) does not affect the output data in any
 way.  It is simply stored in the \texttt{sim\_inspiral} table of the
 \textsc{sumfile}, in order to make analysis of the injections easier.
 
-\paragraph{Format for \texttt{respfile}:} The response function $R(f)$
-gives the real and imaginary components of the transformation
-\emph{from} ADC output $o$ \emph{to} tidal strain $h$ via
-$\tilde{h}(f)=R(f)\tilde{o}(f)$.  It is inverted internally to give
-the detector \emph{transfer function} $T(f)=1/R(f)$.  The format
-\verb@respfile@ is a header specifying the GPS epoch $t_0$ at which
-the response was taken (\verb@INT8@ nanoseconds), the lowest frequency
-$f_0$ at which the response is given (\verb@REAL8@ Hz), and the
-frequency sampling interval $\Delta f$ (\verb@REAL8@ Hz):
+\paragraph{Format for \texttt{actfile}:} The actuation function $A(f)$
+gives the transformation from DARM\_CTRL to $X_{C}$ via $X_{C} = A(f) 
+\times \mathrm{DARM}\_\mathrm{CRTL}$.   It is combined with
+\textsc{dcfactor} as desribed above to give the response function from
+the exitation channel to strain as
+$\tilde{h}(f)=R(f) \times \mathrm{ETM}_\mathrm{EXC}(f)$.  This is inverted internally 
+to give the \emph{transfer function} $T(f)=1/R(f)$. 
 
-\medskip
-\begin{tabular}{l}
-\verb@# epoch = @$t_0$ \\
-\verb@# f0 = @$f_0$ \\
-\verb@# deltaF = @$\Delta f$
-\end{tabular}
-\medskip
-
-\noindent followed by two columns of \verb@REAL4@ data giving the real
-and imaginary components of $R(f_0+k\Delta f)$.
+The format for \verb@actfile@ is three columns of \verb@REAL4@ data giving the 
+frequency followed by the amplitude and phase of the actuation function
+at that frequency.  This is the format which is produced by the
+calibration team.
 
 \paragraph{Format for the data output:} The data output in the files
-\verb$IFO_inspiral_NUMBER.txt$ is a single column of \verb$REAL4$ ADC data.
+\verb$TAG_inspiral_NUMBER_IFO.txt$ is a single column of \verb$REAL4$ ADC data.
 
 \item[Example]
 \begin{verbatim}
 lalapps_inspmultiawg --source s3.sources \
---response response_l1.txt --summary summ.xml --ifo l1
+--actuation E10-H1-ACTUATION.txt --darm2inj 8000\ 
+--summary summ.xml --ifo H1 --smooth 5
 \end{verbatim}
 
 \item[Author] 
