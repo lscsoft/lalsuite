@@ -7,8 +7,8 @@ $Id$
 \subsection{Program \texttt{LALMomentTest.c}}
 \label{s:LALMomentTest.c}
 
-A program to test \texttt{LALMoment()}.
-
+A program to test \texttt{LALDMoment()}.
+- Note only the double precision is tested because both are derived from the same code.
 \subsubsection*{Usage}
 
 \begin{verbatim}
@@ -21,7 +21,7 @@ Options:
 \end{verbatim}
 
 This program tests the function
-\texttt{LALMoment()}, which calculates the moment
+\texttt{LALDMoment()}, which calculates the moment
 of a given data set.
 
 First, it tests that the correct error codes 
@@ -31,7 +31,6 @@ the corresponding checks in the code are made using the ASSERT macro):
 \begin{itemize}
 \item \textit{null pointer to output structure}
 \item \textit{null pointer to input structure}
-\item \textit{null pointer to whichMoment}
 \item \textit{null pointer to data member of input structure}
 \item \textit{null pointer to data member of data member of input structure}
 \item \textit{zero length}
@@ -55,7 +54,8 @@ prints ``\texttt{FAIL}''.
 \subsubsection*{Uses}
 
 \begin{verbatim}
-LALMoment()
+LALDMoment()
+LALSMoment()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -146,10 +146,8 @@ int main( int argc, char *argv[] )
 	REAL8			*nullResult;
 	INT4			length;
 	INT4			whichMoment;
-	INT4			*nullWhichMoment;
 	INT4			iterator;
 	INT4			code;
-	INT4			tempLevel;
 	REAL8			testOutput[7];
 	REAL8Sequence		*sequence;
 	REAL8Sequence		*nullSequence;
@@ -164,7 +162,6 @@ int main( int argc, char *argv[] )
 
 	length		=  40;
 	nullResult	=  NULL;
-	nullWhichMoment	=  NULL;
 	nullSequence	=  NULL;
 	whichMoment	=  3;
 
@@ -191,17 +188,13 @@ int main( int argc, char *argv[] )
 
 	ParseOptions( argc, argv );
 
-	tempLevel = lalDebugLevel;
-
 	printf("\n\nMESG: %s \n",LALMOMENTTESTC);
-
-
 
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
   {
 	/* test behavior for null pointer to input structure */
-	LALMoment(&status, result, nullSequence, &whichMoment);
+	LALDMoment(&status, result, nullSequence, whichMoment);
 	if ( ( code = CheckStatus(&status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL,
 					LALMOMENTTESTC_ECHK, LALMOMENTTESTC_MSGECHK)) )
 	{
@@ -214,7 +207,7 @@ int main( int argc, char *argv[] )
 	/* test behavior for zero length of input sequnce */
 	sequence->length = 0;
 
-	LALMoment(&status, result, sequence, &whichMoment);
+	LALDMoment(&status, result, sequence, whichMoment);
 	if ( ( code = CheckStatus(&status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH,
 					LALMOMENTTESTC_ECHK, LALMOMENTTESTC_MSGECHK)) )
 	{
@@ -228,24 +221,13 @@ int main( int argc, char *argv[] )
 
 
 	/* test behavior for null pointer to output structure */
-	LALMoment(&status, nullResult, sequence, &whichMoment);
+	LALDMoment(&status, nullResult, sequence, whichMoment);
 	if ( ( code = CheckStatus(&status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL,
 					LALMOMENTTESTC_ECHK, LALMOMENTTESTC_MSGECHK)) )
 	{
 		return code;
 	}
 	printf("\nPASS: non-null pointer to output structure results in error:\n");
-	printf("       \"%s\"\n", LALMOMENTH_MSGENULL);
-
-
-	/* test behavior for null pointer to whichMoment */
-	LALMoment(&status, result, sequence, nullWhichMoment);
-	if ( ( code = CheckStatus(&status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL,
-					LALMOMENTTESTC_ECHK, LALMOMENTTESTC_MSGECHK)) )
-	{
-		return code;
-	}
-	printf("\nPASS: null pointer to whichMoment results in error:\n");
 	printf("       \"%s\"\n", LALMOMENTH_MSGENULL);
   }
 #endif
@@ -263,7 +245,7 @@ int main( int argc, char *argv[] )
 	/**********  First Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
-		LALMoment(&status, result, sequence, &whichMoment);
+		LALDMoment(&status, result, sequence, whichMoment);
 		testOutput[whichMoment] = *result;
 
 		if( lalDebugLevel > 0 )
@@ -282,7 +264,7 @@ int main( int argc, char *argv[] )
 	/**********  Second Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
-		LALMoment(&status, result, sequence, &whichMoment);
+		LALDMoment(&status, result, sequence, whichMoment);
 		testOutput[whichMoment] = *result;
 
 		if( lalDebugLevel > 0 )
@@ -301,7 +283,7 @@ int main( int argc, char *argv[] )
 	/**********  Third Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
-		LALMoment(&status, result, sequence, &whichMoment);
+		LALDMoment(&status, result, sequence, whichMoment);
 		testOutput[whichMoment] = *result;
 
 		if( lalDebugLevel > 0 )
@@ -323,7 +305,7 @@ int main( int argc, char *argv[] )
 	/**********  Fourth Test  **********/
 	for(whichMoment = 2; whichMoment < 6; whichMoment++)
 	{
-		LALMoment(&status, result, sequence, &whichMoment);
+		LALDMoment(&status, result, sequence, whichMoment);
 		testOutput[whichMoment] = *result;
 
 		if( lalDebugLevel > 0 )
