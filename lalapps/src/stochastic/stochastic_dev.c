@@ -772,10 +772,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   optFilterIn.calibratedInverseNoisePSD1 = calInvPSDOne;
   optFilterIn.calibratedInverseNoisePSD2 = calInvPSDTwo;
 
-  /* allocate memory for CC spectrum*/
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
-        "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-        filterLength), &status);
+  if (debug_flag)
+  {
+    /* allocate memory for CC spectrum*/
+    LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
+          "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+          filterLength), &status);
+  }
 
   /* set CC inputs */
   ccIn.hBarTildeOne = hBarTildeOne;
@@ -1131,8 +1134,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, optFilter), &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, ccSpectrum), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
+  if (debug_flag)
+  {
+    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, ccSpectrum), &status);
+  }
   if (apply_mask_flag)
   {
     LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
