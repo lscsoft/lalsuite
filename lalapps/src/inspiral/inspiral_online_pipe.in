@@ -105,7 +105,6 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename + dagfilesuffix)
 
 # create the Condor jobs that will be used in the DAG
-#mkcalfac_job = mkcal.MkCalFacJob(cp)
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 split_job = inspiral.SplitBankJob(cp)
@@ -115,7 +114,6 @@ inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
 subsuffix = '.sub'
-#mkcalfac_job.set_sub_file( basename + '.mkcalfac'+ subsuffix )
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 split_job.set_sub_file( basename + '.splitbank' + subsuffix )
@@ -123,10 +121,9 @@ insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 sinca_job.set_sub_file( basename + '.sinca' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
-# set the name of the run in the calibration file
-#mkcalfac_job.add_opt('run',cp.get('pipeline','run'))
-#mkcalfac_job.add_opt('version',cp.get('mkcal','version'))
-#mkcalfac_job.add_opt('ifo',cp.get('pipeline','ifo'))
+# set the key and cert paths for datafind
+df_job.add_condor_cmd('environment',
+  'X509_USER_CERT=$ENV(X509_USER_CERT);X509_USER_KEY=$ENV(X509_USER_KEY)')
 
 # set up incas for single ifo mode
 sinca_job.add_opt('single-summ-value',' ')
@@ -165,17 +162,6 @@ dag_start_time = None
 dag_end_time = None
 sinca_nodes = []
 
-# create a calibration factor frame
-#mkcalfac = mkcal.MkCalFacNode(mkcalfac_job)
-#mkcalfac.set_pre_script(cp.get('mkcal','curl'))
-#mkcalfac.add_pre_script_arg('-s -o SenseMonitor.txt %s'
-#  % cp.get('mkcal','sensemon'))
-#mkcalfac.set_ifo(ifo)
-#mkcalfac.add_var_arg('SenseMonitor.txt')
-#mkcalfac.set_post_script('mkcatalog.sh') 
-#mkcalfac.add_post_script_arg(cp.get('mkcal','reference')) 
-#dag.add_node(mkcalfac)
-
 for seg in data:
   # find all the data
   df = pipeline.LSCDataFindNode(df_job)
@@ -200,7 +186,6 @@ for seg in data:
     bank.set_ifo(ifo)
     bank.set_cache(df.get_output())
     bank.add_parent(df)
-    #bank.add_parent(mkcalfac)
     dag.add_node(bank)
     
     # split the template bank
