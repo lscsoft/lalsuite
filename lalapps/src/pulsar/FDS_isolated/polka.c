@@ -31,6 +31,8 @@ struct CommandLineArgsTag
   REAL8 Deltaf;      /* Size of coincidence window in Hz */
   REAL8 DeltaAlpha;  /* Size of coincidence window in radians */
   REAL8 DeltaDelta;  /* Size of coincidence window in radians */
+  REAL8 fmin;        /* Minimum frequency of candidate in first IFO */
+  REAL8 fmax;        /* Maximum frequency of candidate in first IFO */
 } CommandLineArgs;
 
 typedef struct CandidateTag 
@@ -134,8 +136,12 @@ int main(int argc,char *argv[])
 
       /* Minimum and maximum frequencies acceptable for coincidence */
       f1=C1.f[indices1F[i]];
+      /* if candidate frequency does not lie within bounds specified by user go to next in list */
+      if(f1 < CommandLineArgs.fmin || f1 > CommandLineArgs.fmax) continue;
+
       f1min=f1-CommandLineArgs.Deltaf;
       f1max=f1+CommandLineArgs.Deltaf;
+
       /* Find nearest index to f1min and f1max; function explained below */
       locate(C2.f,NCands2,f1min,&if2min,indices2f);
       locate(C2.f,NCands2,f1max,&if2max,indices2f);
@@ -161,10 +167,6 @@ int main(int argc,char *argv[])
 	  n2[2]=sin(Delta2);
 
 	  AngularDistance=acos(n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2]);
-
-
-
-
 	  difff=fabs(f1 - C2.f[indices2f[f]]);
 
 	  /* check difference in frequencies because we're not guaranteed 
@@ -528,6 +530,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       {"frequency-window", 	required_argument, 0, 	'f'},
       {"delta-window", 		required_argument, 0, 	'd'},
       {"alpha-window", 		required_argument, 0, 	'a'},
+      {"fmin",   		required_argument, 0, 	's'},
+      {"fmax",   		required_argument, 0, 	'e'},
       {"outputfile", 		required_argument, 0, 	'o'},
       {"help", 			no_argument, 0, 	'h'},
       {0, 0, 0, 0}
@@ -542,6 +546,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->Deltaf=0.0;
   CLA->DeltaAlpha=0;
   CLA->DeltaDelta=0;
+  CLA->fmin=0;
+  CLA->fmax=0;
+
 
   /* Scan through list of command line arguments */
   while (1)
@@ -580,6 +587,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	/* Spin down order */
 	CLA->DeltaAlpha=atof(optarg);
 	break;
+      case 's':
+	/* Spin down order */
+	CLA->fmin=atof(optarg);
+	break;
+      case 'e':
+	/* Spin down order */
+	CLA->fmax=atof(optarg);
+	break;
       case 'd':
 	/* Spin down order */
 	CLA->DeltaDelta=atof(optarg);
@@ -595,6 +610,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	fprintf(stderr,"\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
 	fprintf(stderr,"\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
 	fprintf(stderr,"\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
+	fprintf(stderr,"\t--fmin (-s)\tFLOAT\t Minimum frequency of candidate in 1st IFO\n");
+	fprintf(stderr,"\t--fmax (-e)\tFLOAT\t Maximum frequency of candidate in 1st IFO\n");
 	fprintf(stderr,"\t--help        (-h)\tFLOAT\tThis message\n");
 	exit(0);
 	break;
@@ -622,6 +639,20 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->OutputFile == NULL)
     {
       fprintf(stderr,"No ouput filename specified; input with -o option.\n");
+      fprintf(stderr,"For help type ./polka -h \n");
+      return 1;
+    }      
+
+  if(CLA->fmin == 0.0)
+    {
+      fprintf(stderr,"No minimum frequency specified.\n");
+      fprintf(stderr,"For help type ./polka -h \n");
+      return 1;
+    }      
+
+  if(CLA->fmax == 0.0)
+    {
+      fprintf(stderr,"No maximum frequency specified.\n");
       fprintf(stderr,"For help type ./polka -h \n");
       return 1;
     }      
