@@ -1,3 +1,27 @@
+/**** <lalVerbatim file="RingSearchTestCV">
+ * Author: Jolien Creighton
+ * $Id$
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ * \subsection{Program \texttt{RingSearchTest.c}}
+ * 
+ * Calls the various routines in \verb+RingSearch.h+.
+ *
+ * \subsubsection*{Usage}
+ *
+ * \begin{verbatim}
+ * RingSearchTest
+ * \end{verbatim}
+ *
+ * \subsubsection*{Description}
+ *
+ * This program filters some random Gaussian noise with an injected ringdown
+ * over a very small template bank and prints the events found.
+ *
+ * \vfill{\footnotesize\input{RingSearchTestCV}}
+ **** </lalLaTeX> */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

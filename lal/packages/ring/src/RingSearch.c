@@ -1,3 +1,8 @@
+/**** <lalVerbatim file="RingSearchCV">
+ * Author: Jolien Creighton
+ * $Id$
+ **** </lalVerbatim> */
+
 #include <string.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -9,10 +14,33 @@
 #include <lal/Comm.h>
 #include <lal/RingSearch.h>
 
+/**** <lalLaTeX>
+ *
+ * \subsection{Module \texttt{RingSearch.c}}
+ *
+ * Routine to perform a ring search.
+ *
+ * \subsubsection*{Prototypes}
+ * \input{RingSearchCP}
+ * \idx{LALRingSearch()}
+ *
+ * \subsubsection*{Description}
+ * 
+ * The function \verb+LALRingSearch()+ performs a ring search over a specified
+ * range of templates in the bank and returns a linked list of events where
+ * the filter crosses a specified threshold.
+ *
+ * \vfill{\footnotesize\input{RingCV}}
+ *
+ **** </lalLaTeX> */
+
+
+
 NRCSID( RINGSEARCHC, "$Id$" );
 
 
 
+/* <lalVerbatim file="RingSearchCP"> */
 void
 LALRingSearch(
     LALStatus         *status,
@@ -20,7 +48,7 @@ LALRingSearch(
     RingSearchInput   *input,
     RingSearchParams  *params
     )
-{
+{ /* </lalVerbatim> */
   RingEventList           *thisEvent = NULL;
   REAL4TimeSeries          signal;
   REAL4TimeSeries          result;

@@ -5,6 +5,7 @@ libring_la_SOURCES = Ring.c RingSearchInit.c RingSearchConditionData.c \
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+MAINTAINERCLEANFILES = LALRingDown.c
 dvi-local: .dvi-dep
 EXTRA_DIST = LALRingDown.m4 LALRingDownBase.m4
 

@@ -1,3 +1,8 @@
+/**** <lalVerbatim file="RingSearchConditionDataCV">
+ * Author: Jolien Creighton
+ * $Id$
+ **** </lalVerbatim> */
+
 #include <math.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
@@ -7,18 +12,40 @@
 #include <lal/VectorOps.h>
 #include <lal/RingSearch.h>
 
+/**** <lalLaTeX>
+ *
+ * \subsection{Module \texttt{RingSearchConditionData.c}}
+ *
+ * Routine to condition data prior to a ring search.
+ *
+ * \subsubsection*{Prototypes}
+ * \input{RingSearchConditionDataCP}
+ * \idx{LALRingSearchConditionData()}
+ * 
+ * \subsubsection*{Description}
+ *
+ * The function \verb+LALRingSearchConditionData()+ takes an input channel
+ * data, power spectrum data, and response data, and computes the strain data
+ * segments (in frequency domain) and the (truncated) inverse strain noise
+ * spectrum.  These are stored in the \verb+RingSearchParams+ structure.
+ *
+ * \vfill{\footnotesize\input{RingSearchConditionDataCV}}
+ * 
+ **** </lalLaTeX> */ 
+
 NRCSID( RINGSEARCHCONDITIONDATAC, "$Id$" );
 
 static const CHAR ifoNames[][3] =
     { "H0", "H1", "H2", "L0", "L1", "P0", "P1", "P2" };
 
+/* <lalVerbatim file="RingSearchConditionDataCP"> */
 void
 LALRingSearchConditionData(
     LALStatus               *status,
     RingSearchParams        *params,
     RingSearchData          *data
     )
-{
+{ /* </lalVerbatim> */
   RAT4 minusOne = { -1, 0 };
   LALUnitPair unitPair;
   LALUnit     unit;

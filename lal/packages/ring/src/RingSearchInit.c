@@ -1,3 +1,8 @@
+/**** <lalVerbatim file="RingSearchInitCV">
+ * Author: Jolien Creighton
+ * $Id$
+ **** </lalVerbatim> */
+
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -5,15 +10,77 @@
 #include <lal/Ring.h>
 #include <lal/RingSearch.h>
 
+/**** <lalLaTeX>
+ *
+ * \subsection{Module \texttt{RingSearchInit.c}}
+ *
+ * Routines to initialize and finalize a ring search.
+ *
+ * \subsubsection*{Prototypes}
+ * \input{RingSearchInitCP}
+ * \idx{LALRingSearchInit()}
+ * \idx{LALRingSearchFini()}
+ * 
+ * \subsubsection*{Description}
+ *
+ * The routine \verb+LALRingSearchInit()+ creates and initialized a
+ * \verb+RingSearchParams+ structure that will be used for a given ring
+ * search.  Some of the required memory in this structure is allocated and
+ * the ring template bank is generated.  As input, it requires parameters
+ * specified by the argument vector \verb+argv+ (with \verb+argc+ arguments).
+ *
+ * The allowed arguments are:
+ * \begin{description}
+ * \item[\texttt{-segsz} \textit{segsz}] Set the number of points in each
+ *   segment of data to \textit{segsz} [no default --- manditory].
+ * \item[\texttt{-scale} \textit{scale}] Set the dynamical range scale to
+ *   \textit{scale} [default is unity].
+ * \item[\texttt{-speclen} \textit{speclen}] Set the number of points in the
+ *   inverse spectrum truncation to \textit{speclen}
+ *   [default is zero --- no inverse spectrum truncation].
+ * \item[\texttt{-flow} \textit{flow}] Set the low frequency cutoff to
+ *   \textit{flow} Hz [default is zero].
+ * \item[\texttt{-fmin} \textit{fmin}] Set the minimum ring frequency of the
+ *   bank to \textit{fmin} Hz [no default --- manditory].
+ * \item[\texttt{-fmax} \textit{fmax}] Set the maximum ring frequency of the
+ *   bank to \textit{fmax} Hz [no default --- manditory].
+ * \item[\texttt{-qmin} \textit{qmin}] Set the minimum ring quality factor
+ *   of the bank to \textit{qmin} [no default --- manditory].
+ * \item[\texttt{-qmax} \textit{qmax}] Set the maximum ring quality factor
+ *   of the bank to \textit{qmax} [no default --- manditory].
+ * \item[\texttt{-maxmm} \textit{maxmm}] Set the maximum mismatch of templates
+ *   in the bank to \textit{maxmm} [no default --- manditory].
+ * \item[\texttt{-thresh} \textit{thresh}] Set the snr threshold for events
+ *   to \textit{thresh} [no default --- manditory].
+ * \end{description}
+ *
+ * The zeroth argument \verb+argv[0]+ is ignored and \verb+argv[argc]+ should
+ * be \verb+NULL+.  For example:
+ * \begin{verbatim}
+ * const char *argv[] = { "filterparams", "-segsz", "65536", "-speclen", "4096",
+ *    "-flow", "40", "-fmin", "150", "-fmax", "200", "-qmin", "2",
+ *    "-qmax", "10", "-maxmm", "0.1", "-thresh", "6", "-scale", "2000", NULL };
+ * int argc = sizeof( argv ) / sizeof( *argv ) - 1;
+ * \end{verbatim}
+ *
+ * The function \verb+LALRingSearchFini()+ cleans up all memory allocated in
+ * the parameter structure.
+ *
+ * \vfill{\footnotesize\input{RingCV}}
+ *
+ **** </lalLaTeX> */
+
+
 NRCSID( RINGSEARCHINITC, "$Id$" );
 
+/* <lalVerbatim file="RingSearchInitCP"> */
 void LALRingSearchInit(
     LALStatus         *status,
     RingSearchParams **searchParams,
     const CHAR       **argv,
     INT4               argc
     )
-{
+{ /* </lalVerbatim> */
   RingSearchParams      *params;
   RingTemplateBankInput  bankin;
 
@@ -152,12 +219,13 @@ void LALRingSearchInit(
 }
 
 
+/* <lalVerbatim file="RingSearchInitCP"> */
 void
 LALRingSearchFini(
     LALStatus         *status,
     RingSearchParams **searchParams
     )
-{
+{ /* </lalVerbatim> */
   RingSearchParams *params;
 
   INITSTATUS( status, "LALRingSearchFini", RINGSEARCHINITC );
