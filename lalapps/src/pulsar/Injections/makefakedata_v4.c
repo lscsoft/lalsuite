@@ -324,20 +324,13 @@ InitMakefakedata (LALStatus *stat,
   GV->timestamps = timestamps;
 
 
-  /* get start-time and pulsar reference-time */
+  /* get observation start-time */
   if (UVARwasSet (&uvar_startTime)) {
     TRY ( LALFloatToGPS (stat->statusPtr, &(GV->startTime), &uvar_startTime), stat);
   }
   else
     GV->startTime = GV->timestamps->data[0];
       
-  /* if no ref-time was given, use start-time instead */
-  if (!UVARwasSet(&uvar_refTime)) 
-    GV->refTime = GV->startTime;
-  else {
-    TRY ( LALFloatToGPS (stat->statusPtr, &(GV->refTime), &uvar_refTime), stat);
-  }
-
   /* get leap-seconds since start of GPS-time */
   TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(GV->startTime), &leapParams), stat);
 
@@ -356,6 +349,14 @@ InitMakefakedata (LALStatus *stat,
   LALFree (sundata);
 
   GV->edat = edat;
+
+  /* if ref-time was given */
+  if (UVARwasSet(&uvar_refTime)) {
+    TRY ( LALFloatToGPS (stat->statusPtr, &(GV->refTime), &uvar_refTime), stat);
+  }
+  else	/* otherwise set to 0, so startTime->SSB will be used */
+    GV->refTime.gpsSeconds = GV->refTime.gpsNanoSeconds = 0;
+  
 
   /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
    * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
@@ -416,7 +417,7 @@ initUserVars (LALStatus *stat)
   regSTRINGUserVar(stat, outTDDFile,	't', UVAR_OPTIONAL, "Filename for output time-series");
   regSTRINGUserVar(stat, detector,     	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
   regREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
-  regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in UTC) at which pulsar is defined");
+  regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
   regSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   regSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with noise-SFTs");
   regSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
