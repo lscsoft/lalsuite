@@ -513,9 +513,9 @@ analysis
 [\texttt{--injection-file} \textsc{injfile} 
 \texttt{--injection-coincidence} \textsc{$t_\mathrm{inj}$}\newline
 \quad[\texttt{--missed-injections} \textsc{missedfile}]
-[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}]
-] \newline
+[\texttt{--hardware-injections} \textsc{$t_\mathrm{hardware}$}]\newline
 %
+[\texttt{--tama-output} \textsc{tamafile}] \quad
 [\texttt{--disable-trig-start-time}]
 
 \item[Description] 
@@ -631,6 +631,21 @@ $t_\mathrm{hardware}$ seconds. Used for injection analysis of hardware
 injections where the input \verb$sim_inspiral$ rows contain the time offset of
 the injection from  $t_\mathrm{hardware}$.
 
+\item[\texttt{--tama-output} \textsc{tamafile}] Optional, if specified produces
+an output text file \textsc{tamafile} for use in collaboration with TAMA, in
+addition to the usual LIGO lightweight XML file.  The following quantities are
+recorded for each trigger in the text file:
+
+\begin{itemize}
+\item trigger time (as a double precision real)
+\item total mass, $M_{\mathrm{TOT}}$
+\item the mass ratio, $\eta$
+\item the signal to noise ratio, $\rho$
+\item the value of $\chi^2$
+\item the effective distance to the trigger, $d_{eff}$.
+\end{itemize}
+
+
 \item[\texttt{--disable-trig-start-time}] Optional, should only be used by
 maintainers. Disable checking of the \texttt{--trig-start-time} option in the
 input files. \emph{Using this option may caused total analyzed times to be
@@ -692,7 +707,7 @@ incorrectly if a non-zero \texttt{--trig-start-time} option is specified.
 \texttt{--trig-start-time} in the \verb$process_params$ table and using it to
 override the value of \verb$out_start_time$ in the \verb$search_summary$
 table. To disable this behaviour, use the \texttt{--disable-trig-start-time}
-option. Note that specifing this option may cause some analyzed data times to
+option. Note that specifying this option may cause some analyzed data times to
 be double counted and so the amount of analyzed data will be incorrectly
 reported.
 \end{enumerate}
