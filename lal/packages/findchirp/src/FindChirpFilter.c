@@ -887,7 +887,6 @@ LALFindChirpFilterSegment (
        input->segment->segNorm) / thisEvent->snrsq;
       thisEvent->effDist = sqrt( thisEvent->effDist );
     thisEvent->snrsq  *= norm;
-    thisEvent->numChisqBins = input->segment->chisqBinVec->length - 1;
   }    
 
 
