@@ -1,0 +1,132 @@
+\section{Program \texttt{lalapps\_ring}}
+\label{program:lalapps-ring}
+\idx[Program]{lalapps\_ring}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_ring$ --- filters data through a bank of ringdown filters.
+
+\item[Synopsis]
+\verb$lalapps_ring$ [\verb$-h$] [\verb$-V$] [\verb$-v$]
+  [\verb$-d$ \textit{dbglvl}] [\verb$-i$ \textit{infile}]
+  [\verb$-o$ \textit{outfile}] [\verb$-k$] [\verb$-s$]
+  [\verb$-f$ \textit{framefile}] [\verb$-r$ \textit{respfile}]
+  [\verb$-c$ \textit{channel}] [\verb$-n$ \textit{numpoints}]
+  [\verb$-t$ \textit{starttime}] [\verb$-b$ \textit{b0}[,\textit{b1}]]
+  [\verb$--$ \textit{filterparams}]
+
+\item[Description]
+\verb$lalapps_ring$ uses matched filtering to search for ringdown waveforms in
+gravitational wave data.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{-h}]
+Print a help message.
+\item[\texttt{-V}]
+Print the version information.
+\item[\texttt{-v}]
+Verbose output.
+\item[\texttt{-d} \textit{dbglvl}]
+Set LAL debug level to \textit{dbglvl}.
+\item[\texttt{-i} \textit{infile}]
+Read  filter  parameters  from  input  file \textit{infile} [stdin].
+\item[\texttt{-o} \textit{outfile}]
+Write the output to file \textit{outfile} [stdout].
+\item[\texttt{-k}]
+Keep filtering results (for use with option \texttt{-s}).
+\item[\texttt{-s}]
+Save  intermediate  filtering  results  as .dat and snr- files.
+\item[\texttt{-f} \textit{framefile}]
+Read channel data from \textit{framefile} [$\ast$.gwf].
+\item[\texttt{-r} \textit{respfile}]
+Read   response   function   data   from  \textit{respfile} [response.asc].
+\item[\texttt{-c} \textit{channel}]
+Use channel \textit{channel} data [H1:LSC-AS\_Q].
+\item[\texttt{-n} \textit{numpoints}]
+Use \textit{numpoints} points of data [65536].
+\item[\texttt{-t} \textit{starttime}]
+Use  data  starting at GPS time \textit{starttime} [start of frame data].
+\item[\texttt{-b} \textit{b0},\textit{b1}]
+Filter only template numbers \textit{b0} to \textit{b1} in bank [0,end of bank].
+\item[\texttt{--} \textit{filterparams}]
+Specify filter parameters as command line arguments \textit{filterparams}
+(see below for filter parameters).
+\end{entry}
+
+\item[Filter parameters]\leavevmode
+The filter parameters can be specified either on the  command  line  as
+arguments  following the \texttt{--} option or in a resource file that is input
+using the \texttt{-i} option  (or  from stdin).  As a resource file, each
+option-value pair should have their own line.
+\begin{entry}
+\item[\texttt{-segsz} \textit{npts}]
+Set the size of segments analyzed to \textit{npts} points.
+\item[\texttt{-speclen} \textit{len}]
+Set the size of inverse spectrum truncation to \textit{len} points [0].
+\item[\texttt{-flow} \textit{flow}]
+Set the low frequency cutoff to \textit{flow} Hz.
+\item[\texttt{-fmin} \textit{fmin}]
+Set the minimum frequency for the bank to \textit{fmin} Hz.
+\item[\texttt{-fmax} \textit{fmax}]
+Set the maximum frequency for the bank to \textit{fmax} Hz.
+\item[\texttt{-qmin} \textit{qmin}]
+Set the minimum quality for the bank to \textit{qmin}.
+\item[\texttt{-qmax} \textit{qmax}]
+Set the maximum quality for the bank to \textit{qmax}.
+\item[\texttt{-maxmm} \textit{maxmm}]
+Set  the  maximum  allowed mismatch for the bank to \textit{maxmm}.
+\item[\texttt{-thresh} \textit{thresh}]
+Set the ringdown event signal-to-noise ratio threshold to \textit{thresh}.
+\item[\texttt{-scale} \textit{scale}]
+Scale the response function by a dynamic range factor of \textit{scale} [1].
+\end{entry}
+
+\item[Debug levels]
+The LAL debug level can be specified as an integer or as a string of flags:
+\begin{entry}
+\item[\texttt{NDEBUG}]
+No debugging information is printed and memory debugging code is disabled.
+\item[\texttt{ERROR}]
+Error messages are printed.
+\item[\texttt{WARNING}]
+Warning messages are printed.
+\item[\texttt{INFO}]
+Information messages are printed.
+\item[\texttt{TRACE}]
+Function call tracing messages are printed.
+\item[\texttt{MEMINFO}]
+Memory  allocation  information messages are printed.
+\item[\texttt{MEMDBG}]
+Debugging of memory allocation routines is enabled but no messages are printed.
+\end{entry}
+The following composite levels are available:
+\begin{entry}
+\item[\texttt{MSGLVL1}]
+Equivalent to \verb$ERROR$
+\item[\texttt{MSGLVL2}]
+Equivalent to \verb$ERROR | WARNING$
+\item[\texttt{MSGLVL3}]
+Equivalent to \verb$ERROR | WARNING | INFO$
+\item[\texttt{ALLDBG}]
+All debugging messages are printed.
+\end{entry}
+
+For example, the command
+\begin{indented}
+\verb$lalapps_ring -d "ERROR | INFO"$ ...
+\end{indented}
+will set the debug level so that error and information messages are printed.
+
+\item[Environment]\leavevmode
+
+\begin{entry}
+\item[\texttt{LAL\_DEBUG\_LEVEL}]
+Default LAL debug level to use.
+\end{entry}
+
+\item[Author]
+Jolien Creighton
+
+\end{entry}

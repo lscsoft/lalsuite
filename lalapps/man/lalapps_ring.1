@@ -1,0 +1,183 @@
+.TH LALAPPS_RING 1 "11 July 2001" LALApps LALApps
+.SH NAME
+lalapps_ring - filters data through a bank of ringdown filters
+
+.SH SYNOPSIS
+.B lalapps_ring
+.RB [ \-h ]
+.RB [ \-V ]
+.RB [ \-v ]
+.RB [ \-d 
+.IR dbglvl ] 
+.RB [ \-i 
+.IR infile ] 
+.RB [ \-o 
+.IR outfile ] 
+.RB [ \-k ]
+.RB [ \-s ]
+.RB [ \-f 
+.IR framefile ] 
+.RB [ \-r 
+.IR respfile ] 
+.RB [ \-c 
+.IR channel ] 
+.RB [ \-n 
+.IR numpoints ] 
+.RB [ \-t 
+.IR starttime ] 
+.RB [ \-b 
+.IR b0[,b1] ] 
+.RB [ \-\-
+.IR filterparams ] 
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_ring\fP uses matched filtering to search for ringdown waveforms
+in gravitational wave data.
+
+.SH OPTIONS
+.TP
+.BI \-h
+Print a help message.
+.TP
+.BI \-V
+Print the version information.
+.TP
+.BI \-v
+Verbose output.
+.TP
+.BI \-d " dbglvl"
+Set LAL debug level to \fIdbglvl\fP.
+.TP
+.BI \-i " infile"
+Read filter parameters from input file \fIinfile\fP [stdin].
+.TP
+.BI \-o " outfile"
+Write the output to file \fIoutfile\fP [stdout].
+.TP
+.BI \-k
+Keep filtering results (for use with option \-s).
+.TP
+.BI \-s
+Save intermediate filtering results as .dat and snr\- files.
+.TP
+.BI \-f " framefile"
+Read channel data from \fIframefile\fP [\*.gwf].
+.TP
+.BI \-r " respfile"
+Read response function data from \fIrespfile\fP [response.asc].
+.TP
+.BI \-c " channel"
+Use channel \fIchannel\fP data [H1:LSC-AS_Q].
+.TP
+.BI \-n " numpoints"
+Use \fInumpoints\fP points of data [65536].
+.TP
+.BI \-t " starttime"
+Use data starting at GPS time \fIstarttime\fP [start of frame data].
+.TP
+.BI \-b " b0[,b1]"
+Filter only template numbers \fIb0\fP to \fIb1\fP in bank [0, end of bank].
+.TP
+.BI \-\- " filterparams"
+Specify filter parameters as command line arguments \fIfilterparams\fP
+(see below for filter parameters).
+
+.SH FILTER PARAMETERS
+The filter parameters can be specified either on the command line as
+arguments following the \-\- option or in a resource file that is
+input using the \-i option (or from stdin).  As a resource file, each
+option-value pair should have their own line.
+.TP
+.BI \-segsz " npts"
+Set the size of segments analyzed to \fInpts\fP points.
+.TP
+.BI \-speclen " len"
+Set the size of inverse spectrum truncation to \fIlen\fP points [0].
+.TP
+.BI \-flow " flow"
+Set the low frequency cutoff to \fIflow\fP Hz.
+.TP
+.BI \-fmin " fmin"
+Set the minimum frequency for the bank to \fIfmin\fP Hz.
+.TP
+.BI \-fmax " fmax"
+Set the maximum frequency for the bank to \fIfmax\fP Hz.
+.TP
+.BI \-qmin " qmin"
+Set the minimum quality for the bank to \fIqmin\fP.
+.TP
+.BI \-qmax " qmax"
+Set the maximum quality for the bank to \fIqmax\fP.
+.TP
+.BI \-maxmm " maxmm"
+Set the maximum allowed mismatch for the bank to \fImaxmm\fP.
+.TP
+.BI \-thresh " thresh"
+Set the ringdown event signal-to-noise ratio threshold to \fIthresh\fP.
+.TP
+.BI \-scale " scale"
+Scale the response function by a dynamic range factor of \fIscale\fP.
+
+.SH DEBUG LEVELS
+The LAL debug level can be specified as an integer or as a string of flags:
+.RS
+.TP
+.B NDEBUG
+No debugging information is printed and memory debugging code is disabled.
+.TP
+.B ERROR
+Error messages are printed.
+.TP
+.B WARNING
+Warning messages are printed.
+.TP
+.B INFO
+Information messages are printed.
+.TP
+.B TRACE
+Function call tracing messages are printed.
+.TP
+.B MEMINFO
+Memory allocation information messages are printed.
+.TP
+.B MEMDBG
+Debugging of memory allocation routines is enabled but no messages are printed.
+.RE
+.PP
+
+The following composite levels are available:
+.RS
+.TP
+.B MSGLVL1
+Equivalent to
+.B ERROR
+.TP
+.B MSGLVL2
+Equivalent to
+.B ERROR | WARNING
+.TP
+.B MSGLVL3
+Equivalent to
+.B ERROR | WARNING | INFO
+.TP
+.B ALLDBG
+All debugging messages are printed.
+.RE
+.PP
+
+For example, the command
+.PP
+.RS
+lalapps_ring -d "ERROR | INFO" ...
+.RE
+.PP
+will set the debug level so that error and information messages are printed.
+
+.SH ENVIRONMENT
+.TP
+.BR LAL_DEBUG_LEVEL
+Default LAL debug level to use.
+
+.SH AUTHOR
+Jolien Creighton
