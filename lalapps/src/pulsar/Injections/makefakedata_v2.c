@@ -1246,8 +1246,12 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
 
   /* check frequency range */
-  if ((fmin*Tsft < header.firstfreqindex) ||
-      ((fmin*Tsft+fvec->length-1) > header.firstfreqindex + header.nsamples)){
+  if ((INT4)(fmin*Tsft+0.5) < header.firstfreqindex){
+    error("Frequency band of noise data out of range !\n");
+    return 1;
+  }
+
+  if ( ((INT4)(fmin*Tsft+0.5)+fvec->length-1) > (header.firstfreqindex + header.nsamples)){
     error("Frequency band of noise data out of range !\n");
     return 1;
   }
@@ -1261,6 +1265,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   /* calculate size of the data in bytes */
   /* datasize = (f2ind - f1ind) * head.dsize * 2;*/
+
 
   /* allocate storage space if needed */
   if (!fvecn) {
