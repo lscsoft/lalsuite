@@ -62,7 +62,8 @@ RCSID("$Id$");
 "  --exclude-playground         write triggers that are NOT in playground\n"\
 "  --all-data                   write triggers for all times read in\n"\
 "\n"\
-"Clustering:\n"\
+"Clustering and Sorting:\n"\
+"  --sort-triggers              time sort the inspiral triggers\n"\
 "  --snr-threshold RHO          discard all triggers with snr less than RHO\n"\
 "  --cluster-algorithm CHOICE   use trigger clustering algorithm CHOICE\n"\
 "                               [ snr_and_chisq | snrsq_over_chisq | snr ]\n"\
@@ -107,6 +108,7 @@ enum
   not_play, 
   all_data 
 } useData = undefined;
+int sortTriggers = 0;
 
 int main( int argc, char *argv[] )
 {
@@ -215,6 +217,7 @@ int main( int argc, char *argv[] )
     static struct option long_options[] = 
     {
       {"verbose",                 no_argument,            &vrbflg,         1 },
+      {"sort-triggers",           no_argument,            &sortTriggers,   1 },
       {"playground-only",         no_argument,    (int *) &useData, play_only},
       {"exclude-playground",      no_argument,    (int *) &useData,  not_play},
       {"all-data",                no_argument,    (int *) &useData,  all_data},
@@ -227,7 +230,7 @@ int main( int argc, char *argv[] )
       {"glob",                    required_argument,      0,              'g'},
       {"input",                   required_argument,      0,              'i'},
       {"output",                  required_argument,      0,              'o'},
-      {"tama-output",		  required_argument,	  0,		  'j'},
+      {"tama-output",             required_argument,      0,              'j'},
       {"summary-file",            required_argument,      0,              'S'},
       {"snr-threshold",           required_argument,      0,              's'},
       {"cluster-algorithm",       required_argument,      0,              'C'},
@@ -245,7 +248,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long ( argc, argv, "hzZ:c:g:i:o:j:S:s:C:Vt:I:T:m:H:D", 
+    c = getopt_long_only ( argc, argv, "hzZ:c:g:i:o:j:S:s:C:Vt:I:T:m:H:D", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -542,6 +545,19 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "--injection-file must be specified if "
         "--injection-coincidence is given\n" );
     exit( 1 );
+  }
+
+  /* save the sort triggers flag */
+  if ( sortTriggers )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+      calloc( 1, sizeof(ProcessParamsTable) ); \
+      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+          PROGRAM_NAME ); \
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+          "--sort-triggers" );
+      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" ); \
+      LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
   switch ( useData )
@@ -1035,10 +1051,13 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( vrbflg ) fprintf( stdout, "sorting inspiral trigger list..." );
-  LAL_CALL( LALSortSnglInspiral( &stat, &eventHead, 
-        *LALCompareSnglInspiralByTime ), &stat );
-  if ( vrbflg ) fprintf( stdout, "done\n" );
+  if ( injectFileName || sortTriggers )
+  {
+    if ( vrbflg ) fprintf( stdout, "sorting inspiral trigger list..." );
+    LAL_CALL( LALSortSnglInspiral( &stat, &eventHead, 
+          *LALCompareSnglInspiralByTime ), &stat );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+  }
 
 
   /*
