@@ -307,14 +307,14 @@ int main(int argc,char *argv[])
 
   /* open and write the file */
 #if USE_BOINC
-  if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_name, sizeof(resolved_name))) {
+  if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_filename, sizeof(resolved_filename))) {
       fprintf(stderr,
               "Can't resolve file \"%s\"\n"
               "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
               PolkaCommandLineArgs.OutputFile);
       boinc_finish(2);
   }
-  fpOut=fopen(resolved_name,"w");
+  fpOut=fopen(resolved_filename,"w");
 #else
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
 #endif
@@ -330,7 +330,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* write end marker */
   fprintf(fpOut,"%%DONE\n");	
-  Outputfilename=resolved_name;
+  Outputfilename=resolved_filename;
 #endif
   fclose(fpOut);
 
