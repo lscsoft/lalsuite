@@ -46,7 +46,7 @@ LALFindChirpBCVFilterSegment (
     )
 /* </lalVerbatim> */
 {
-  UINT4                 j, k, kFinal;
+  UINT4                 j, k, kFinal, kOpt;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
@@ -92,6 +92,7 @@ LALFindChirpBCVFilterSegment (
   REAL4                 InvTan2;
   REAL4                 m, eps;
   REAL4                 psi0, psi3, fFinal;
+  CHAR infomsg[256];
 
 #if 0
      FindChirpChisqInput  *chisqInput;
@@ -177,7 +178,6 @@ LALFindChirpBCVFilterSegment (
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCV, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-
 
   /*
    *
@@ -294,35 +294,22 @@ LALFindChirpBCVFilterSegment (
     LALInfo( status, infomsg );
   }
 
-  /* k that corresponds to fFinal, currently not used      */
+  /* k that corresponds to fFinal */
   kFinal = floor( numPoints * deltaT * fFinal ); 
 
 
-  /*
-   * decide which value of k is closest to kFinal, and choose
-   * a1, b1 and b2 accordingly
-   */
+  /* assign the values to a1, b1 and b2 */
+  a1 = input->segment->a1->data[kFinal];
+  b1 = input->segment->b1->data[kFinal];
+  b2 = input->segment->b2->data[kFinal];
 
-  /* error parameter in k */
-  eps = 10.0 ;
-
-  for ( k = 0 ; input->segment->a1->length - 1 ; ++k )
-  {
-    if ( fabs( k - kFinal ) < eps )
-    {
-      a1 = input->segment->a1->data[k];
-      b1 = input->segment->b1->data[k];
-      b2 = input->segment->b2->data[k];
-      eps = fabs( k - kFinal );
-    }
-  }
 
   /*
    * make sure that non-zero values have been assigned to a1, b1 and b2
    */
 
-  eps = 0.00000001; 
-  if ( a1 < eps || b1 < eps || b2 < eps )
+  eps = 0.000001; 
+  if ( fabs(a1) < eps || fabs(b1) < eps || fabs(b2) < eps )
   {
     ABORT(status, FINDCHIRPBCVH_EZNRM, FINDCHIRPBCVH_MSGEZNRM);
   }
@@ -355,6 +342,7 @@ LALFindChirpBCVFilterSegment (
     qtildeBCV[k].im = rBCV * y + sBCV * x ;
   }
 
+
   /* qtilde negative frequency only: not DC or nyquist */
   if ( params->computeNegFreq )
   {
@@ -381,7 +369,6 @@ LALFindChirpBCVFilterSegment (
   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV, 
       params->qtildeVecBCV, params->invPlan );
   CHECKSTATUSPTR( status );
-
 
 
 
@@ -460,18 +447,18 @@ LALFindChirpBCVFilterSegment (
    * calculation of the chisq bin boundaries
    */
 
-  /* sum up the template power */
-  for ( k = 1; k < input->segment->data->data->length; ++k )
+  if( input->segment->chisqBinVec->length )
   {
-     Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
-     PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
-                     * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
-  }
+  /* sum up the template power */
+    for ( k = 1; k < input->segment->data->data->length-1; ++k )
+    {
+       Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
+       PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+                       * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
+    }
 
 
   /* First set of chisq bins */
-  if( numChisqBins )
-  {
     increment = Power / (REAL4) numChisqBins ;
     nextBin   = increment;
     chisqPt   = 0;
@@ -491,11 +478,8 @@ LALFindChirpBCVFilterSegment (
       }
     }
     chisqBin[numChisqBins] = input->segment->data->data->length;
-  }
 
   /* Second set of chisq bins */
-  if ( numChisqBins ) 
-  {
     increment = PowerBCV / (REAL4) numChisqBins;
     nextBin   = increment;
     chisqPt   = 0;
@@ -517,7 +501,6 @@ LALFindChirpBCVFilterSegment (
     } 
     chisqBinBCV[numChisqBins] = input->segment->dataBCV->data->length;
   }
-
 
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )

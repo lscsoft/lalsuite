@@ -465,6 +465,7 @@ LALFindChirpBCVData (
     fcSeg->invSpecTrunc = params->invSpecTrunc;
 
 
+#if 0
     /*
      *
      * calculate the chisq bins for the segment and template
@@ -519,7 +520,7 @@ LALFindChirpBCVData (
       }
       chisqBinBCV[numChisqBins] = fcSeg->dataBCV->data->length;
     }
-
+#endif
 
   } /* end loop over data segments */
 
