@@ -524,7 +524,10 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  thr = tPower * (1.0 - bandwidthPF);
 
-	  LALDHeapIndex(status->statusPtr, idx, FPower);
+	  LALDHeapIndex(status->statusPtr, idx, FPower); /* note: this doesn't sort FPower!! INEFFICIENT!! */
+	  CHECKSTATUSPTR (status);
+
+	  LALDHeapSort(status->statusPtr, FPower);
 	  CHECKSTATUSPTR (status);
 
 	  for(ts=0.0, l=0;l<FPower->length;l++) {
@@ -539,9 +542,9 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	      if(idx->data[l]<lo) {lo = idx->data[l];}
 	      if(hi<idx->data[l]) {hi = idx->data[l];}
 	    }
-	  }
 
-	  bandwidth = (1+hi-lo) / (data->data->deltaT * (REAL4)bptr->nTime);
+	    bandwidth = (1+hi-lo) / (data->data->deltaT * (REAL4)bptr->nTime);
+	  }
 
 	  LALI4DestroyVector(status->statusPtr, &idx);
 	  CHECKSTATUSPTR (status);
@@ -864,6 +867,9 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	    thr = tPower * (1.0 - durationPF);
 
 	    LALDHeapIndex(status->statusPtr, idx, FPower);
+	    CHECKSTATUSPTR (status);
+
+	    LALDHeapSort(status->statusPtr, FPower);
 	    CHECKSTATUSPTR (status);
 
 	    for(ts=0.0, l=0;l<FPower->length;l++) {
