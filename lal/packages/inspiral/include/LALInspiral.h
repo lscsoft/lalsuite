@@ -385,6 +385,7 @@ typedef enum {
    PadeF1,
    EOB,
    BCV,
+   BCVSpin,
    SpinTaylorT3
  } Approximant;
 /* </lalVerbatim>  */
@@ -418,6 +419,9 @@ tagInspiralTemplate
    REAL8 psi3;
    REAL8 fendBCV;
    REAL8 alpha;
+   REAL8 alpha1;
+   REAL8 alpha2;
+   REAL8 beta;
    REAL8 t0; 
    REAL8 t2; 
    REAL8 t3; 
@@ -851,6 +855,13 @@ void LALBCVWaveform(
      LALStatus *status,
      REAL4Vector *signal, 
      InspiralTemplate *params);
+
+
+void LALBCVSpinWaveform(
+     LALStatus *status,
+     REAL4Vector *signal, 
+     InspiralTemplate *params);
+
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralSpinningBHBinaryC}

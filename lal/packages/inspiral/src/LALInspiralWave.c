@@ -129,9 +129,9 @@ LALInspiralWave(
 
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->approximant <= 11, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 12, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+   ASSERT(params->order <= 7, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
    switch (params->approximant) 
    {
@@ -154,6 +154,10 @@ LALInspiralWave(
 	   break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+	   break;
+      case BCVSpin:
+           LALBCVSpinWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF1:
@@ -203,7 +207,7 @@ LALInspiralWaveTemplates(
 
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->approximant <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 12, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
@@ -230,6 +234,7 @@ LALInspiralWaveTemplates(
       case TaylorF2:
       case PadeF1:
       case BCV:
+      case BCVSpin:
       case SpinTaylorT3:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
       break;
