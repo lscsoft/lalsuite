@@ -103,4 +103,4 @@ LALFindChirpChisqVeto (
 }
 #endif
 
-#endif _FINDCHIRPCHISQH_H
+#endif /* _FINDCHIRPCHISQH_H */
