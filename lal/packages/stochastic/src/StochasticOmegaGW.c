@@ -113,7 +113,7 @@ LALStochasticOmegaGW( LALStatus                         *status,
   REAL8      f0;
   REAL8      deltaF;
   REAL4      x, deltaX, x0;   /* x = f / fRef */
-  REAL4      fRef;
+  REAL8      fRef;
   REAL4      omegaRef;
   UINT4       i;
 
