@@ -176,21 +176,24 @@ for seg in data:
   df1.set_start(seg.start() - pad)
   df1.set_end(seg.end() + pad)
   df1.set_ifo(ifo1)
-  if prev_df1: df1.add_parent(prev_df1)
+  if prev_df1: 
+    df1.add_parent(prev_df1)
 
   df2 = inspiral.DataFindNode(df_job)
-  if not first_df2: first_df2 = df2
+  if not first_df2:
+    first_df2 = df2
   df2.set_start(seg.start() - pad)
   df2.set_end(seg.end() + pad)
   df2.set_ifo(ifo2)
-  if prev_df2: df2.add_parent(prev_df2)
+  if prev_df2: 
+    df2.add_parent(prev_df2)
 
   if do_datafind:
     dag.add_node(df1)
     dag.add_node(df2)
 
   prev_df1 = df1
-  prev_df1 = df2
+  prev_df2 = df2
 
   seg_insp_nodes = []
 
