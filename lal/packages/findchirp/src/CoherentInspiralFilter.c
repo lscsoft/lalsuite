@@ -25,6 +25,8 @@
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/TwoInterfFindChirp.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/Date.h>
 #include <lal/CoherentInspiral.h>
 
 
@@ -45,7 +47,7 @@ LALCoherentInspiralFilterInputInit (
     CoherentInspiralInitParams      *params
     )
 {
-  UINT4                            i,j,l;
+  UINT4                            i,l;
   UINT4                            length=4; /*length of each thetaPhiVs vector*/
   CoherentInspiralFilterInput     *inputPtr;
   CoherentInspiralBeamVector      *beamVecPtr;
@@ -53,9 +55,6 @@ LALCoherentInspiralFilterInputInit (
   CoherentInspiralZVector         *zVecPtr;
   COMPLEX8TimeSeries              *zData;
   
-  LALDetector                     *detector;
-  REAL4TimeSeries                 *thetaPhiVs;
-
   INITSTATUS( status, "LALCoherentInspiralFilterInputInit",
 	      COHERENTINSPIRALFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -143,20 +142,24 @@ LALCoherentInspiralFilterInputInit (
   for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
     for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
       LALCreateVector (status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data), length);
-      BEGINFAIL( status ) {
-	LALFree( detBeamArray[l].thetaPhiVs );
-	detBeamArray[l].thetaPhiVs = NULL;
-	LALFree( detBeamArray );
-	detBeamArray = NULL;
-	LALFree( beamVecPtr );
-	beamVecPtr = NULL;
-	LALFree( inputPtr );
-	*input = NULL;
-      }
-      ENDFAIL( status ); 
     }
   }
-  
+
+  /*
+    BEGINFAIL( status ) {
+    LALFree( detBeamArray[l].thetaPhiVs );
+    detBeamArray[l].thetaPhiVs = NULL;
+    LALFree( detBeamArray );
+    detBeamArray = NULL;
+    LALFree( beamVecPtr );
+    beamVecPtr = NULL;
+    LALFree( inputPtr );
+    *input = NULL;
+    }
+    ENDFAIL( status ); 
+    }
+    }
+  */
   
   /*
    *
@@ -209,13 +212,11 @@ LALCoherentInspiralFilterInputFinalize (
     CoherentInspiralFilterInput    **input
     )
 {
-  UINT4                            i,j,l;
-  UINT4                            length=4;
+  UINT4                            i,l;
   CoherentInspiralBeamVector      *beamVecPtr;
   DetectorBeamArray               *detBeamArray;
   CoherentInspiralFilterInput     *inputPtr;
   CoherentInspiralZVector         *zVecPtr;
-  COMPLEX8TimeSeries              *zData;
 
   INITSTATUS( status, "LALCoherentInspiralFilterInputFinalize",
 	      COHERENTINSPIRALFILTERC );
@@ -440,6 +441,8 @@ LALCoherentInspiralFilterParamsFinalize (
   
 
   /* destroy detector vector */
+  LALFree( outputPtr->detectorVec->detector );
+  
   LALFree( outputPtr->detectorVec );
   outputPtr->detectorVec = NULL;
   
@@ -472,8 +475,10 @@ LALCoherentInspiralFilterSegment (
 {
   INT4                                siteID[6] = {0,1,2,3,4,0}; /*H1 L1 G V T H2*/
   INT4                                caseID[6] = {0,0,0,0,0,0};
-  INT4                                i,j,k,l,p,q,w;
+  INT4                                i,j,k,l,p,q,w,m;
   INT4                                dsites[4] = {0,0,0,0};
+  INT8                                chirpTimeNS;
+  UINT4                               eventId = 0; 
   UINT4                               numDetectors;
   UINT4                               numSegments;
   UINT4                               numPoints;
@@ -481,6 +486,8 @@ LALCoherentInspiralFilterSegment (
   UINT4                               deltaEventIndex;
   UINT4                               eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
+  REAL4                               buffer = 0; /* account for timeing errors */
+  REAL4                               timingError = 0.002; /* allowed timing error of 2 ms */
   REAL4                               n;
   REAL4                               s[4][3];/* up to 4 distances; in 3D space */
   REAL4                               deltaT = 0.0;
@@ -490,12 +497,14 @@ LALCoherentInspiralFilterSegment (
   REAL4                               chirpTime = 0;
   REAL4                               cohSNRThresh = 0;
   REAL4                               cohSNRLocal = 0;
-  REAL4                               cohSNR = 0; /*CHECK remove this */
+  REAL4                               cohSNR = 0;
   BOOLEAN                             cohSNROut;
+  BOOLEAN                             unresolvedEvent = 0;
+  LALMSTUnitsAndAcc                   gmstUnits;
   LALDetector                        *detector = NULL;
   COMPLEX8TimeSeries                 *zData = NULL;
   CoherentInspiralEvent              *thisEvent = NULL;
-  CoherentInspiralZVector            *multiZData = NULL;
+  MultiInspiralTable                 *cohEvent  = NULL; 
   CoherentInspiralBeamVector         *beamVec = NULL;
   
   
@@ -619,11 +628,15 @@ LALCoherentInspiralFilterSegment (
     chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    chirpTimeNS = (INT8) (1e9 * chirpTime);
   }
 
   
+  buffer = ceilf( timingError/deltaT );
+  fprintf(stdout,"slidePointsBuffer = %f\n",buffer);
+
   /* Now construct the appropriate coherent SNR */
-  
+  fprintf(stdout,"deltaEventIndex value = %d\n", deltaEventIndex );  
   switch (numDetectors)  {
   case 1:
     ABORT( status, COHERENTINSPIRALH_ENDET, COHERENTINSPIRALH_MSGENDET );
@@ -632,60 +645,113 @@ LALCoherentInspiralFilterSegment (
     if(caseID[0] && caseID[5])
       {
 	fprintf(stdout,"Network of 2 detectors - includes H1 and H2 \n");
+
+	m = 0;
 	for (k=0;k<numPoints;k++)
 	  {
-	    REAL4 cohSNR = (1 / sqrt(2)) * sqrt( pow(zData[0].data->data[k].re + zData[1].data->data[k].re,2) + pow( zData[0].data->data[k].im + zData[1].data->data[k].im,2));
-	    params->cohSNRVec->data->data[k] = cohSNR;
-	    if ( cohSNR > cohSNRThresh ) {
-	      if ( ! *eventList ) {
-		/* if this is the first event, start the list */
-		thisEvent = *eventList = (CoherentInspiralEvent *) 
-		  LALCalloc( 1, sizeof(CoherentInspiralEvent) );
-		if ( ! thisEvent )
-		  {
-		    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		  }
-		thisEvent->timeIndex = k;
-		thisEvent->cohSNR = cohSNR;
-	      }
-	      else if (params->maximiseOverChirp && 
-		       k <= thisEvent->timeIndex +deltaEventIndex ) {
-		/* if this is the same event, update the maximum */
-		thisEvent->timeIndex = k;
-		thisEvent->cohSNR = cohSNR;
-	      }
-	      else if ( k >thisEvent->timeIndex  + deltaEventIndex ||
-			! params->maximiseOverChirp )
-		{
-		  /* clean up this event */
-		  CoherentInspiralEvent *lastEvent;
-		  
-		  thisEvent->timeIndex = k;
-		  
-		  /* copy the template into the event */
-		  thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-		  thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-		  thisEvent->cohSNR = cohSNR;
+	    REAL4 cohSNR = 0.0;
 
-		  /* store the start of the crossing */
-		  eventStartIdx = k;
-		  
-		  /* allocate memory for the newEvent */
-		  lastEvent = thisEvent;
-		  
-		  lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		    LALCalloc( 1, sizeof(CoherentInspiralEvent) );
-		  if ( ! lastEvent->next )
-		    {
-		      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		    }
-		  
-		  /* stick minimal data into the event */
-		  thisEvent->timeIndex = k;
-		  thisEvent->cohSNR = cohSNR;
+	    for (m=k-buffer; m<k+buffer; m++)
+	      {
+		if(m >=0 && m<numPoints)
+		  {
+		    cohSNRLocal = (1 / sqrt(2)) * sqrt( (zData[0].data->data[k].re + zData[1].data->data[m].re)*(zData[0].data->data[k].re + zData[1].data->data[m].re) + (zData[0].data->data[k].im + zData[1].data->data[m].im)*(zData[0].data->data[k].im + zData[1].data->data[m].im));
+
+		    if(cohSNRLocal > cohSNR)
+		      {
+			cohSNR = cohSNRLocal;
+		      }
+		  }
+		params->cohSNRVec->data->data[k]= cohSNR;
+	    
+		if ( cohSNR > cohSNRThresh ) {
+		  if ( ! *eventList ) {
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* if this is the first event, start the list */
+		    thisEvent = *eventList = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		
+		    if ( ! thisEvent )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* record the data that we need for the clustering algorithm */          
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+
+		    /*fprintf(stdout,"k value FIRST = %d\t %f \n", k,cohSNR );*/
+		    fflush( stdout ); 
+
+		  } /* done creating a new event */
+		  else if (params->maximiseOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		    /* if this is the same event, update the maximum */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+
+		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
+		    fflush( stdout ); 
+
+		  }
+		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || ! params->maximiseOverChirp ) {
+		    /* clean up this event */
+		    CoherentInspiralEvent  *lastEvent;
+		    INT8                    timeNS1;
+		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+		    thisEvent->eventId = eventId++;
+		    thisEvent->timeIndex = timeIndex;
+		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		
+		    /* store the start of the crossing */
+		    eventStartIdx = k;
+		
+		    /* allocate memory for the newEvent */
+		    lastEvent = thisEvent;
+		
+		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
+		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    if ( ! lastEvent->next )
+		      {
+			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		      }
+		
+		    /* stick minimal data into the event */
+		    thisEvent->end_time.gpsSeconds = k;
+		    thisEvent->cohSNR = cohSNR;
+
+		    /*fprintf(stdout,"k value THIRD = %d\t %f \n", k,thisEvent->cohSNR  );*/
+		    fflush( stdout ); 
+		
+		  }		   
 		}
-	    }
-	  } 
+	      }
+	  }
+	
+	/* 
+	 *
+	 * clean up the last event if there is one
+	 *
+	 */
+	
+	
+	if ( thisEvent )
+	  {
+	    INT8                    timeNS1;
+	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
+	    
+	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
+	    thisEvent->eventId = eventId++;
+	    thisEvent->timeIndex = timeIndex;
+	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+	    
+	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
+	    fflush( stdout ); 
+	  }
       }
     else 
       {
@@ -701,79 +767,36 @@ LALCoherentInspiralFilterSegment (
 	      }
 	  }
 	
-	fprintf(stdout,"%d %d \n",dsites[0],dsites[1]);
+	fprintf(stdout,"Detector Sites: %d %d \n",dsites[0],dsites[1]);
+
+	/* Now calculate the distance (in meters) */
+	distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) );
+	    
+	timeDelay[1] = distance[1]/LAL_C_SI;
+	fprintf(stdout,"Time delay: %f\n",timeDelay[1]);
+	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
+	fprintf(stdout,"Corresponding # of Slidepoints: %d\n",slidePoints[1]);
 	
+	k = 0;
+	q = 0;
+
 	for(k=0;k<numPoints;k++)
 	  {
 	    REAL4 cohSNR = 0.0;
-
-	    /* Now calculate the distance (in meters) */
-	    distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) );
 	    
-	    timeDelay[1] = distance[1]/LAL_C_SI;
-	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	    
-	    for (n = k-slidePoints[1];n < k+slidePoints[1];n++)
+	    for (q = k-slidePoints[1]-buffer; q < k+slidePoints[1]+buffer; q++)
 	      {
-		if(n >= 0 && n < numPoints)
+		if(q >= 0 && q < numPoints)
 		  {
-		    cohSNRLocal = sqrt(pow(zData[0].data->data[k].re,2) + pow(zData[1].data->data[(INT4) n].re,2) + pow(zData[0].data->data[k].im,2) + pow(zData[1].data->data[(INT4) n].im,2));
+		    cohSNRLocal = sqrt(zData[0].data->data[k].re*zData[0].data->data[k].re + zData[1].data->data[q].re*zData[1].data->data[q].re + zData[0].data->data[k].im*zData[0].data->data[k].im + zData[1].data->data[q].im*zData[1].data->data[q].im);
 		    if(cohSNRLocal > cohSNR)
 		      {
 			cohSNR = cohSNRLocal; 
 			/*CHECK: updated timedelays should be stored here too */
 		      }
 		  }
+		params->cohSNRVec->data->data[k] = cohSNR;
 	      }
-	    if ( cohSNR > cohSNRThresh ) {
-	      if ( ! *eventList ) {
-		/* if this is the first event, start the list */
-		thisEvent = *eventList = (CoherentInspiralEvent *) 
-		  LALCalloc( 1, sizeof(CoherentInspiralEvent) );
-		if ( ! thisEvent )
-		  {
-		    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		  }
-		thisEvent->timeIndex = k;
-		thisEvent->cohSNR = cohSNR;
-	      }
-	      else if (params->maximiseOverChirp && 
-		       k <= thisEvent->timeIndex +deltaEventIndex ) {
-		/* if this is the same event, update the maximum */
-		thisEvent->timeIndex = k;
-		thisEvent->cohSNR = cohSNR;
-	      }
-	      else if ( k >thisEvent->timeIndex  + deltaEventIndex ||
-			! params->maximiseOverChirp )
-		{
-		  /* clean up this event */
-		  CoherentInspiralEvent *lastEvent;
-		  
-		  thisEvent->timeIndex = k;
-		  
-		  /* copy the template into the event */
-		  thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-		  thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-		  thisEvent->cohSNR = cohSNR;
-
-		  /* store the start of the crossing */
-		  eventStartIdx = j;
-		  
-		  /* allocate memory for the newEvent */
-		  lastEvent = thisEvent;
-		  
-		  lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		    LALCalloc( 1, sizeof(CoherentInspiralEvent) );
-		  if ( ! lastEvent->next )
-		    {
-		      ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		    }
-		  
-		  /* stick minimal data into the event */
-		  thisEvent->timeIndex = k;
-		  thisEvent->cohSNR = cohSNR;
-		}
-	    }
 	  }
       }
     break;
@@ -781,7 +804,6 @@ LALCoherentInspiralFilterSegment (
     if(caseID[0] && caseID[5])
       {
 	fprintf(stdout,"Network of 3 detectors - includes H1 and H2 \n");
-	/*The SNR for the H1-H2 pair is first computed, then the looping is done with one time delay */
 	
 	p=0;
 	for (l=0;l<6;l++)
@@ -792,25 +814,43 @@ LALCoherentInspiralFilterSegment (
 	      }
 	  }
 	
-	fprintf(stdout,"%d %d %d \n",dsites[0],dsites[1],dsites[2]);
+	fprintf(stdout,"Detector Sites: %d %d %d \n",dsites[0],dsites[1],dsites[2]);
 	
-	for(l=0;l<numPoints;l++)
+	/* Now calculate the distance (in meters) */
+	distance[1] = sqrt( cartesianInnerProduct( s[1],s[1]) );
+	    
+	timeDelay[1] = distance[1]/LAL_C_SI;
+	fprintf(stdout,"Time delay: %f\n",timeDelay[1]);
+	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
+	fprintf(stdout,"Corresponding # of Slidepoints: %d\n",slidePoints[1]);
+
+	k = 0;
+	q = 0;
+	m = 0;
+
+	for(k=0;k<numPoints;k++)
 	  {
-	    for (n = l-slidePoints[1];n < l+slidePoints[1];n++)
+	    REAL4 cohSNR = 0.0;
+	    for(m=k-buffer;m<k+buffer;m++)
 	      {
-		if(n >= 0 && n < numPoints)
+		if(m >=0 && m<numPoints)
 		  {
-		    cohSNRLocal = sqrt( 0.5 * (pow(zData[0].data->data[l].re + zData[1].data->data[l].re,2) + pow(zData[0].data->data[l].im + zData[1].data->data[l].im,2)) + pow(zData[2].data->data[(INT4) n].re,2) + pow(zData[2].data->data[(INT4) n].im,2));
-		    
-		    
+		    for (q = m-slidePoints[1]-buffer;q < m+slidePoints[1]+buffer;q++)
+		      {
+			if(q >= 0 && q < numPoints)
+			  {
+			    cohSNRLocal = sqrt( 0.5 * ((zData[0].data->data[k].re + zData[2].data->data[m].re)*(zData[0].data->data[k].re + zData[2].data->data[m].re) + (zData[0].data->data[k].im + zData[2].data->data[m].im)*(zData[0].data->data[k].im + zData[2].data->data[m].im)) + zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im);
+		    		    		  
+			    if(cohSNRLocal > cohSNR)
+			      {
+				cohSNR = cohSNRLocal;
+			      }
+			  }
+		      }
 		  }
-		if(cohSNRLocal > cohSNR)
-		  {
-		    cohSNR = cohSNRLocal;
-		  }
+		params->cohSNRVec->data->data[k] = cohSNR;
 	      }
 	  }
-	
       }
     else
       {
@@ -823,7 +863,13 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"%d %d %d \n",dsites[0],dsites[1],dsites[2]);
+	fprintf(stdout,"Detector Sites: %d %d %d \n",dsites[0],dsites[1],dsites[2]);
+
+	l = 0;
+	k = 0;
+	q = 0;
+	w = 0;
+
 	for (l=0;l < numBeamPoints; l++)
 	  {
 	    /* position vector to source relative to first detector */
@@ -836,35 +882,34 @@ LALCoherentInspiralFilterSegment (
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
+	    fprintf(stdout,"Time Delays: %f %f\n",timeDelay[1],timeDelay[2]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
+	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );	    
+	    fprintf(stdout,"Corresponding # of Slide Points: %d %d\n",slidePoints[1],slidePoints[2]);
 	    
-	    fprintf(stdout,"%d %d\n",slidePoints[1],slidePoints[2]);
-	    
-	    for(p=0;p<numPoints;p++)
+	    for(k=0;k<numPoints;k++)
 	      {
-		for (n = p-slidePoints[1];n < p+slidePoints[1];n++)
+		REAL4 cohSNR = 0.0;
+		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
-		    if(n >= 0 && n < numPoints)
-		      {
-			
-			for (q = n-slidePoints[2]; q < n+slidePoints[2];q++)
+		    if(q >= 0 && q < numPoints)
+		      {			
+			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
 			  {
-			    if (q >= 0 && q < numPoints)
+			    if (w >= 0 && w < numPoints)
 			      {
-				cohSNRLocal = sqrt( (pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3],2))*(pow(zData[0].data->data[p].re,2) + pow(zData[0].data->data[p].im,2)) + (pow(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3],2))*(pow(zData[1].data->data[(INT4) n].re,2) + pow(zData[1].data->data[(INT4) n].im,2)) + (pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3],2))*(pow(zData[2].data->data[(INT4) q].re,2) + pow(zData[2].data->data[(INT4) q].im,2)) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re * zData[1].data->data[(INT4) n].re + zData[0].data->data[p].im * zData[1].data->data[(INT4) n].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re*zData[2].data->data[(INT4) n].re + zData[0].data->data[p].im * zData[2].data->data[(INT4) n].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[(INT4) n].re * zData[2].data->data[(INT4) q].re + zData[1].data->data[(INT4) n].im *zData[2].data->data[(INT4) q].im));
-				
-				fprintf(stdout,"%f \n", cohSNRLocal);
+				cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re * zData[1].data->data[q].re + zData[0].data->data[k].im * zData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im * zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re * zData[2].data->data[w].re + zData[1].data->data[q].im *zData[2].data->data[w].im));
+			      
+				if(cohSNRLocal > cohSNR)
+				  {
+				    cohSNR = cohSNRLocal;
+				  }
 			      }
-			    if(cohSNRLocal > cohSNR)
-			      {
-				cohSNR = cohSNRLocal; /* CHECK: cohSNR[p]*/
-			      }
-			    
+   
 			  }
 			
 		      }
-		    
+		    params->cohSNRVec->data->data[k] = cohSNR;		    
 		  }
 	      }
 	    
@@ -885,7 +930,7 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"%d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
+	fprintf(stdout,"Detector Sites: %d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
 	
 	/*start search looping */
 	
@@ -899,40 +944,46 @@ LALCoherentInspiralFilterSegment (
 	    /* Now calculate the distance (in meters) projected along sky-position */
 	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
-	    distance[3] = cartesianInnerProduct(s[3],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    timeDelay[3] = distance[3]/LAL_C_SI;
+	    fprintf(stdout,"Time Delays: %f %f %f\n",timeDelay[1],timeDelay[2],timeDelay[3]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
 	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
-	    slidePoints[3] = ceilf( fabsf(timeDelay[3])/deltaT );
-	    
-	    fprintf(stdout,"%d %d %d\n",slidePoints[1],slidePoints[2],slidePoints[3]);
-	    
-	    for(p=0;p<numPoints;p++)
+	    fprintf(stdout,"Corresponding # of Slidepoints: %d %d\n",slidePoints[1],slidePoints[2]);
+	    	    
+	    k = 0;
+	    q = 0;
+	    w = 0;
+	    m = 0;
+	    for(k=0;k<numPoints;k++)
 	      {
-		for (n = p-slidePoints[2];n < p+slidePoints[2];n++)
+		REAL4 cohSNR = 0.0;
+		for(m=k-buffer;m<k+buffer;m++)
 		  {
-		    if(n >= 0 && n < numPoints)
+		    if(m >= 0 && m < numPoints)
 		      {
-			
-			for (q = n-slidePoints[3]; q < n+slidePoints[3];q++)
+			for (q = m-slidePoints[1]-buffer;q < m+slidePoints[1]+buffer;q++)
 			  {
-			    if (q >= 0 && q < numPoints)
-			      {
-				cohSNRLocal = sqrt( 0.5*(pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3],2))*(pow(zData[0].data->data[p].re,2) + pow(zData[0].data->data[p].im,2) + pow(zData[1].data->data[p].re,2) + pow(zData[1].data->data[p].im,2) + 2*(zData[0].data->data[p].re*zData[1].data->data[p].re + zData[0].data->data[p].im*zData[1].data->data[p].im)) + (pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3],2))*(pow(zData[2].data->data[(INT4) n].re,2) + pow(zData[2].data->data[(INT4) n].im,2)) + (pow(beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3],2))*(pow(zData[3].data->data[(INT4) q].re,2) + pow(zData[3].data->data[(INT4) q].im,2)) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re*zData[2].data->data[(INT4) n].re + zData[0].data->data[p].im*zData[2].data->data[(INT4) n].im + zData[1].data->data[p].re*zData[2].data->data[(INT4) n].re + zData[1].data->data[p].im*zData[2].data->data[(INT4) n].im) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re*zData[3].data->data[(INT4) q].re + zData[0].data->data[p].im*zData[3].data->data[(INT4) q].im + zData[1].data->data[p].re*zData[3].data->data[(INT4) q].re + zData[1].data->data[p].im*zData[3].data->data[(INT4) q].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[2].data->data[(INT4) n].re*zData[3].data->data[(INT4) q].re + zData[2].data->data[(INT4) n].im*zData[3].data->data[(INT4) q].im));
-				
-				fprintf(stdout,"%f \n", cohSNRLocal);
-			      }
-			    if(cohSNRLocal > cohSNR)
-			      {
-				cohSNR = cohSNRLocal; /*CHECK: p*/
-			      }
+			    if(q >= 0 && q < numPoints)
+			      {			
+				for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
+				  {
+				    if (w >= 0 && w < numPoints)
+				      {
+					cohSNRLocal = sqrt( 0.5*( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im + zData[3].data->data[m].re*zData[3].data->data[m].re + zData[3].data->data[m].im*zData[3].data->data[m].im + 2*(zData[0].data->data[k].re*zData[3].data->data[m].re + zData[0].data->data[k].im*zData[3].data->data[m].im)) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[1].data->data[q].re + zData[0].data->data[k].im*zData[1].data->data[q].im + zData[3].data->data[m].re*zData[1].data->data[q].re + zData[3].data->data[m].im*zData[1].data->data[q].im) + sqrt(2)*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im*zData[2].data->data[w].im + zData[3].data->data[m].re*zData[2].data->data[w].re + zData[3].data->data[m].im*zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re*zData[2].data->data[w].re + zData[1].data->data[q].im*zData[2].data->data[w].im));
+			      
+					if(cohSNRLocal > cohSNR)
+					  {
+					    cohSNR = cohSNRLocal;
+					  }
+				      }
 			    
-			  }
+				  }
 			
+			      }
+			  }
 		      }
-		    
+		    params->cohSNRVec->data->data[k] = cohSNR;		    
 		  }
 	      }
 	    
@@ -955,7 +1006,7 @@ LALCoherentInspiralFilterSegment (
 		dsites[p++] = siteID[l];
 	      }
 	  }
-	fprintf(stdout,"%d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
+	fprintf(stdout,"Detector Sites: %d %d %d %d\n",dsites[0],dsites[1],dsites[2],dsites[3]);
 	
 	/*start search looping */
 	
@@ -973,46 +1024,50 @@ LALCoherentInspiralFilterSegment (
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
 	    timeDelay[3] = distance[3]/LAL_C_SI;
+	    fprintf(stdout,"Time Delays: %f %f %f\n",timeDelay[1],timeDelay[2],timeDelay[3]);
 	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
 	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
-	    slidePoints[3] = ceilf( fabsf(timeDelay[3])/deltaT );
+	    slidePoints[3] = ceilf( fabsf(timeDelay[3])/deltaT );	    
+	    fprintf(stdout,"Corresponding # of Slidepoints: %d %d %d\n",slidePoints[1],slidePoints[2],slidePoints[3]);
 	    
-	    fprintf(stdout,"%d %d %d\n",slidePoints[1],slidePoints[2],slidePoints[3]);
-	    
-	    for(p=0;p<numPoints;p++)
+	    k = 0;
+	    q = 0;
+	    w = 0;
+	    j = 0;
+
+	    for(k=0;k<numPoints;k++)
 	      {
-		for (n = p-slidePoints[1];n < p+slidePoints[1];n++)
+		REAL4 cohSNR = 0.0;
+		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
-		    if(n >= 0 && n < numPoints)
+		    if(q >= 0 && q < numPoints)
 		      {
-			for (q = n-slidePoints[2]; q < n+slidePoints[2];q++)
+			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
 			  {
-			    if (q >= 0 && q < numPoints)
+			    if (w >= 0 && w < numPoints)
 			      {
-				for(w = q-slidePoints[3]; w < q+slidePoints[3]; w++)
+				for(j = w-slidePoints[3]-buffer; j < w+slidePoints[3]+buffer; j++)
 				  {
-				    if(w >=0 && w < numPoints)
+				    if(j >=0 && j < numPoints)
 				      {
-					cohSNRLocal = sqrt( (pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3],2))*(pow(zData[0].data->data[p].re,2) + pow(zData[0].data->data[p].im,2)) + (pow(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3],2))*(pow(zData[1].data->data[(INT4) n].re,2) + pow(zData[1].data->data[(INT4) n].im,2)) + (pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3],2))*(pow(zData[2].data->data[(INT4) q].re,2) + pow(zData[2].data->data[(INT4) q].im,2)) + (pow(beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2],2) + pow(beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3],2))*(pow(zData[3].data->data[(INT4) w].re,2) + pow(zData[3].data->data[(INT4) w].im,2)) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re * zData[1].data->data[(INT4) n].re + zData[0].data->data[p].im * zData[1].data->data[(INT4) n].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re*zData[2].data->data[(INT4) n].re + zData[0].data->data[p].im * zData[2].data->data[(INT4) n].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[0].data->data[p].re*zData[3].data->data[(INT4) w].re + zData[0].data->data[p].im*zData[3].data->data[(INT4) w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[(INT4) n].re * zData[2].data->data[(INT4) q].re + zData[1].data->data[(INT4) n].im *zData[2].data->data[(INT4) q].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[1].data->data[(INT4) n].re*zData[3].data->data[(INT4) w].re + zData[1].data->data[(INT4) n].im*zData[3].data->data[(INT4) w].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[2].data->data[(INT4) q].re*zData[3].data->data[(INT4) w].re + zData[2].data->data[(INT4) q].im * zData[3].data->data[(INT4) w].im));
-					
-					
-					fprintf(stdout,"%f \n", cohSNRLocal);
-				      }
-				    if(cohSNRLocal > cohSNR)
-				      {
-					cohSNR = cohSNRLocal;/*CHECK: p*/
+					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( zData[0].data->data[k].re*zData[0].data->data[k].re + zData[0].data->data[k].im*zData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( zData[1].data->data[q].re*zData[1].data->data[q].re + zData[1].data->data[q].im*zData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( zData[2].data->data[w].re*zData[2].data->data[w].re + zData[2].data->data[w].im*zData[2].data->data[w].im ) + ( beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] )*( zData[3].data->data[j].re*zData[3].data->data[j].re + zData[3].data->data[j].im*zData[3].data->data[j].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re * zData[1].data->data[q].re + zData[0].data->data[k].im * zData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[2].data->data[w].re + zData[0].data->data[k].im * zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[0].data->data[k].re*zData[3].data->data[j].re + zData[0].data->data[k].im*zData[3].data->data[j].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re * zData[2].data->data[w].re + zData[1].data->data[q].im*zData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[1].data->data[q].re*zData[3].data->data[j].re + zData[1].data->data[q].im*zData[3].data->data[j].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(zData[2].data->data[w].re*zData[3].data->data[j].re + zData[2].data->data[w].im * zData[3].data->data[j].im));
+				      
+					if(cohSNRLocal > cohSNR)
+					  {
+					    cohSNR = cohSNRLocal;
+					  }
 				      }
 				  }
 			      }
 			  }
 		      }
+		    params->cohSNRVec->data->data[k] = cohSNR;
 		  }
 	      }
 	    
 	  } /*end the outermost for statement prior to computing distances*/
 	
       } /*end else statement */
-    /*CHECK:      break; */
   } /* end case statement */
   
 
