@@ -1,0 +1,48 @@
+\section{Program \prog{lalapps\_stopp}}
+\label{program:lalapps-stopp}
+\idx[Program]{lalapps\_stopp}
+
+\begin{entry}
+\item[Name]
+\prog{lalapps\_stopp} --- Stochastic Post Processing.
+
+\item[Synopsis]
+\prog{lalapps\_stopp} \parm{options} \parm{xml files}\newline \hspace*{0.5in}
+\option{--help} \newline \hspace*{0.5in}
+\option{--version} \newline \hspace*{0.5in}
+\option{--text} \newline \hspace*{0.5in}
+\option{--output} \parm{FILE}
+
+\item[Description]
+\prog{lalapps\_stopp} performs post processing upon output from
+\prog{lalapps\_stochastic}.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}]
+Display usage information
+\item[\option{--version}]
+Display version information
+\item[\option{--text}]
+Output file as text
+\item[\option{--output} \parm{FILE}]
+write output data to \parm{FILE}
+\end{entry}
+
+\item[Example]
+\prog{lalapps\_stopp} is generally run as part of a DAG, as created by
+\prog{lalapps\_stochastic\_pipe}, however an example usage can be seen
+below.
+
+\begin{verbatim}
+> lalapps_stopp --output S3-H1L1-STOCHASTIC.xml \
+>   H1L1-STOCHASTIC-753601044-753601242.xml \
+>   H1L1-STOCHASTIC-753620042-753620352.xml \
+>   H1L1-STOCHASTIC-753638864-753639462.xml \
+>   H1L1-STOCHASTIC-753785374-753785707.xml \
+>   H1L1-STOCHASTIC-753791744-753792342.xml
+\end{verbatim}
+
+\item[Author]
+Adam Mercer
+\end{entry}

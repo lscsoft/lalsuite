@@ -1,0 +1,50 @@
+\section{Running the LALApps Stochastic Pipeline Under Condor}
+
+This section describes how to run the LALApps stochastic analysis
+pipeline under Condor at the various LSC Data Grid Sites, such as CIT,
+UWM, and the observatory clusters at LHO and LLO.
+
+The pipeline is constructed as a directed acyclic graph (DAG) run under
+Condor. A DAG represents a set of programs where the input, output, or
+execution of one ore more programs is dependant upon one or more other
+programs. The programs are represented by nodes (verticies) in the
+graph, and the edges (arcs) identifies the dependancies. There are three
+different nodes that make up the Stochastic analysis DAG - datafind,
+stochastic and stopp. A short description of the nodes that make up the
+stochastic DAG follows:
+
+\subsubsection{Datafind Node}
+
+The datafind node, as its name suggests, is for determining the location
+of the data that is to be analysed. It uses \texttt{LSCdataFind} to
+query the LDR database for the location of the data on the cluster. This
+step in the pipeline does not need to be run for analysis, only when the
+location of the data changes.
+
+\subsubsection{Stochastic Node}
+
+The stochastic node runs an instance of \prog{lalapps\_stochastic}, the
+main stochastic analysis code. See
+Section~\ref{program:lalapps-stochastic} for more information on
+\prog{lalapps\_stochastic}.
+
+\subsubsection{Stopp Node}
+
+The stopp node runs an instance of \prog{lalapps\_stopp}, the STOchastic
+Post Processing code. See Section~\ref{program:lalapps-stopp} for more
+information on \prog{lalapps\_stopp}.
+
+\subsection{Creating the DAG}
+
+In order to create the DAG, a configuration file is required, an example
+of which can be found in\\
+\texttt{\$LALAPPS\_PREFIX\$/share/lalapps/stochastic\_S3\_H1L1.ini}.
+This configuration specfies the parameters to use for each step of the
+pipeline. See Section~\ref{program:lalapps-stochastic-pipe} for details
+regarding the layout of the configuration file.
+
+Any combination of nodes, see above, can be present in the DAG, assuming
+that the dependancies for each node are satisfied.  For example, the
+stochastic node requires cache files to be available, so if cache have
+already been generated and the location of the data on the cluster has
+not changed then there is no read for the datafind node to be run.

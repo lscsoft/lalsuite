@@ -1,0 +1,170 @@
+\section{Program \prog{lalapps\_stochastic\_pipe}}
+\label{program:lalapps-stochastic-pipe}
+\idx[Program]{lalapps\_stochastic\_pipe}
+
+\begin{entry}
+\item[Name]
+\prog{lalapps\_stochastic\_pipe} --- python script to generate Condor DAGs
+to run the stochastic pipeline.
+
+\item[Synopsis]
+\prog{lalapps\_stochastic\_pipe} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--version}] \newline \hspace*{0.5in}
+[\option{--user-tag}~\parm{TAG}] \newline \hspace*{0.5in}
+[\option{--datafind}] \newline \hspace*{0.5in}
+[\option{--stochastic}] \newline \hspace*{0.5in}
+[\option{--stopp}] \newline \hspace*{0.5in}
+[\option{--priority}] \newline \hspace*{0.5in}
+\option{--config-file}~\parm{FILE} \newline \hspace*{0.5in}
+\option{--log-path}~\parm{PATH}
+
+\item[Description]
+\prog{lalapps\_stochastic\_pipe} builds a stochastic search DAG suitable
+for running at the various LSC Data Grid sites. The configuration file
+specifies the parameters needed to run the analysis jobs contained
+within the pipeline. It is specified with the \option{--config-file}
+option. A typical .ini file can be seen in\\
+\texttt{\$LALAPPS\_PREFIX\$/share/lalapps/stochastic\_S3\_H1L1.ini}.
+
+The .ini file contains several sections. The \verb$[condor]$ section
+contains the names of executables which will run the various stages of
+the pipeline. The \verb$[pipeline]$ section gives the CVS details of the
+pipeline. The \verb$[input]$ section specifies the segment list and the
+minimum and maximum segment duration for the jobs. The \verb$[datafind]$
+section specifies the frame types for the two input streams for passing
+onto LSCdataFind. The \verb$[detectors]$ section specifies the detector
+pair to cross correlate. The \verb$[calibration]$ section specifies the
+location and name of the various calibration cache files. The
+\verb$[stochastic]$ section specifies static options to pass to
+\prog{lalapps\_stochastic}, i.e.~options that are not automatically
+generated. Finally the \verb$[stopp]$ section specifies the static
+options to pass onto \prog{lalapps\_stopp}.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}] Display usage information
+\item[\option{--version}] Display version information
+\item[\option{--user-tag}~\parm{TAG}] The tag for the job
+\item[\option{--datafind}] Run LSCdataFind as part of the DAG to create
+the cache files for each science segment
+\item[\option{--stochastic}] Run \prog{lalapps\_stochastic} on the data
+\item[\option{--stopp}] Run \prog{lalapps\_stopp} on the data
+\item[\option{--priority}~\parm{PRIO}] Run jobs with condor priority \parm{PRIO}
+\item[\option{--config-file}~\parm{FILE}] Use configuration file \parm{FILE}
+\item[\option{--log-path}~\parm{PATH}] Directory to write condor log file
+\end{entry}
+
+\item[Configuration File Options]
+The configuration file is a standard python configuration that can be
+easily parsed using the standard ConfigParser module from python. The
+configuration file consists of sections, led by a ``[section]'' header
+and followed by ``name: value'' entries. The optional values can contain
+format strings which refer to other values in the same section. Lines
+beginning with ``\#'' or ``;'' are ignored and may be used to provide
+comments.
+
+The first section required is ``[condor]'', this specfies all the
+parameters associated with condor.
+\begin{entry}
+\item[universe]
+Specfies the condor universe under which to run, this should be set to
+''standard'' if LALApps has been compiled with the
+\texttt{--enable-condor}, otherwise it should be set to ``vanilla''.
+\item[datafind]
+Specifies the location of the \prog{LSCdataFind} script.
+\item[stochastic]
+Specifies the location of the \prog{lalapps\_stochastic} binary.
+\item[stopp]
+Specifies the location of the \prog{lalapps\_stopp} binary.
+\end{entry}
+
+The next section is ``[pipeline]'', this specifies version information
+of the pipeline, currently only the version of configuration file is
+specified.
+\begin{entry}
+\item[version]
+A CVS \texttt{\$Id\$} keyword specifying the version of the
+configuration file.
+\end{entry}
+
+The next section is ''[input]'' which specifies parameters regarding
+the input data.
+\begin{entry}
+\item[segments]
+Specifies the location of the segment list, outputed from
+\prog{SegWizard} listing the Science Segments to analyse.
+\item[min\_length]
+Specifies the minimum length of Science Segment to analyse
+\item[max\_length]
+Specifies the maximum length at which the split the Science Segments
+into.
+\item[channel]
+Currently the pipeline infrastructure requires that the ``[input]''
+section contains the option ''channel'', this can be set to anything as
+it not used within the \texttt{LSCdataFind} class.
+\end{entry}
+
+The next section is ``[datafind]'' which specifies parameters for
+\prog{LSCdataFind}.
+\begin{entry}
+\item[type-one]
+Specifies the frame type of the first data stream for \prog{LSCdataFind}
+to find.
+\item[type-two]
+Specifies the frame type of the second data stream for
+\prog{LSCdataFind} to find.
+\end{entry}
+
+The next section is ''[detectors]'' which specifies the detectors to use
+for the search.
+\begin{entry}
+\item[detector-one]
+Specifies the detector for the first data stream.
+\item[detector-two]
+Specifies the detector for the second data stream.
+\end{entry}
+
+The next section is ``[calibration]'' which specifies the location of
+the calibration files.
+\begin{entry}
+\item[path]
+Specifies the path to the calibration cache files.
+\item[L1]
+Specifies the cache file for the Livingston 4~km detector.
+\item[H1]
+Specifies the cache file for the Hanford 4~km detector.
+\item[H2]
+Specifies the cache file for the Hanford 2~km detector.
+\end{entry}
+
+The next section is ``[stochastic]'', this is used to specify any static
+options to pass onto \prog{lalapps\_stochastic}, i.e.~options that are
+not automatically generated. See
+Section~\ref{program:lalapps-stochastic} for the accepted options for
+\prog{lalapps\_stochastic}. The options that are automatically generated
+are, \texttt{--gps-start-time}, \texttt{--gps-end-time},
+\texttt{--ifo-one}, \texttt{--ifo-two}, \texttt{--frame-cache-one},
+\texttt{--frame-cache-two}, \texttt{--calibration-cache-one}, and\\
+\texttt{--calibration-cache-two}.
+
+The next section is ``[stopp]'', this is used to specfiy any static
+options to pass onto \prog{lalapps\_stopp}, i.e.~options that are not
+automatically generated. See Section~\ref{program:lalapps-stopp} for the
+accepted options for \prog{lalapps\_stopp}. The XML output files from
+\prog{lalapps\_stochastic} are automatically added.
+
+\item[Example]
+Generate a DAG to run a stochastic search on a pair of interferometers
+specified in the configuration file. The generated DAG is then submitted
+with \texttt{condor\_submit\_dag}
+
+\begin{verbatim}
+> lalapps_stochastic_pipe --log-path /home/ram/dag_logs \
+     --datafind --stochastic --stopp --config-file stochastic_H1L1.ini
+> condor_submit_dag stochastic_H1L1.dag
+\end{verbatim}
+
+\item[Author]
+Adam Mercer
+\end{entry}
