@@ -96,8 +96,8 @@ INT4 siteOne = 1;
 INT4 siteTwo = 0;
 
 /* frequency band */
-INT4 fMin = 50;
-INT4 fMax = 300;
+INT4 fMin = 64;
+INT4 fMax = 265;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -131,7 +131,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LALStatus status;
 
 	/* output file */
-	FILE *out, *in;
+	FILE *out;
 	CHAR outputFilename[LALNameLength];
 
 	/* counters */
@@ -1412,6 +1412,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			/* options that set a flag */
 			{"inject", no_argument, &inject_flag, 1},
 			{"apply-mask", no_argument, &apply_mask_flag, 1},
+                        {"high-pass-filter", no_argument, &high_pass_flag, 1},
+			{"overlap-hann", no_argument, &overlap_hann_flag, 1},
 			{"verbose", no_argument, &verbose_flag, 1},
 			/* options that don't set a flag */
 			{"help", no_argument, 0, 'h'},
@@ -1422,6 +1424,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			{"f-min", required_argument, 0, 'f'},
 			{"f-max", required_argument, 0, 'F'},
 			{"hann-duration", required_argument, 0, 'w'},
+                        {"hpf-frequency", required_argument, 0, 'k'},
+                        {"hpf-attenuation", required_argument, 0, 'p'},
+                        {"hpf-order", required_argument, 0, 'P'},
 			{"ifo-one", required_argument, 0, 'i'},
 			{"ifo-two", required_argument, 0, 'I'},
 			{"frame-cache-one", required_argument, 0, 'd'},
@@ -1430,6 +1435,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			{"calibration-cache-two", required_argument, 0, 'R'},
 			{"scale-factor", required_argument, 0, 'o'},
 			{"seed", required_argument, 0, 'g'},
+                        {"number-of-injection", required_argument, 0, 'n'},
 			{"debug-level", required_argument, 0, 'z'},
 			{"version", no_argument, 0, 'V'},
 			{0, 0, 0, 0}
@@ -1439,7 +1445,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 		int option_index = 0;
 		size_t optarg_len;
 
-		c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:o:g:z:V", \
+		c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:k:p:P:i:I:d:D:r:R:o:g:n:z:V", \
 				long_options, &option_index);
 
 		if (c == -1)
@@ -1498,6 +1504,21 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 'w':
 				/* hann window duration */
 				hannDuration = atoi(optarg);
+				break;
+
+                        case 'k':
+				/* high pass knee filter frequency  */
+				highPassFreq= atoi(optarg);
+				break;
+                          
+                        case 'p':
+				/* high pass filter attenuation  */
+				highPassAt = atoi(optarg);
+				break;
+
+                        case 'P':
+				/* high pass filter order  */
+				highPassOrder = atoi(optarg);
 				break;
 
 			case 'i':
@@ -1586,6 +1607,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 				seed = atoi(optarg);
 				break;
 
+                        case 'N':
+				/* number of injection */
+				NLoop = atoi(optarg);
+				break;
+
 			case 'z':
 				/* set debug level */
 				set_debug_level( optarg );
@@ -1615,6 +1641,43 @@ void displayUsage(INT4 exitcode)
 {
 	fprintf(stderr, "Usage: pipeline [options]\n");
 	fprintf(stderr, "Options:\n");
+	fprintf(stderr, " -h                            print this message\n");
+	fprintf(stderr, " -V                            display version\n");
+	fprintf(stderr, " --verbose                     verbose mode\n");
+	fprintf(stderr, " -z                            set lalDebugLevel\n");
+	fprintf(stderr, " -t                            GPS start time\n");
+	fprintf(stderr, " -T                            GPS stop time\n");
+	fprintf(stderr, " -l                            segment duration\n");
+	fprintf(stderr, " -a                            resample rate\n");
+	fprintf(stderr, " -f                            minimal frequency\n");
+	fprintf(stderr, " -F                            maximal frequency\n");
+        fprintf(stderr, " -- high-pass-filter           apply high pass filter\n");
+	fprintf(stderr, " -k                            high pass filter knee frequency\n");
+       	fprintf(stderr, " -p                            high pass filter attenuation\n");
+        fprintf(stderr, " -P                            high pass filter order\n");        
+        fprintf(stderr, " --overlap-hann                use overlap window\n");                
+        fprintf(stderr, " -w                            hann duration\n");
+	fprintf(stderr, " -i                            ifo for first stream\n");
+	fprintf(stderr, " -I                            ifo for second stream\n");
+	fprintf(stderr, " -d                            cache file for first " \
+			"stream\n");
+	fprintf(stderr, " -D                            cache file for second " \
+			"stream\n");
+	fprintf(stderr, " -r                            first stream calibration cache\n");
+	fprintf(stderr, " -R                            second stream calibration cache\n");
+	fprintf(stderr, " --apply-mask                  apply frequency masking\n");
+	fprintf(stderr, " --inject                      inject a signal into the data\n");
+	fprintf(stderr, " -o                            scale factor for injection\n");
+	fprintf(stderr, " -g                            seed\n");
+        fprintf(stderr, " -N                            NLoop\n");
+        
+	exit(exitcode);
+}
+/*
+void displayUsage(INT4 exitcode)
+{
+	fprintf(stderr, "Usage: pipeline [options]\n");
+	fprintf(stderr, "Options:\n");
 	fprintf(stderr, " --help                        print this message\n");
 	fprintf(stderr, " --version                     display version\n");
 	fprintf(stderr, " --verbose                     verbose mode\n");
@@ -1625,7 +1688,11 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --resample-rate F             resample rate\n");
 	fprintf(stderr, " --f-min F                     minimal frequency\n");
 	fprintf(stderr, " --f-max F                     maximal frequency\n");
-	fprintf(stderr, " --hann-duration SEC           hann duration\n");
+	fprintf(stderr, " --hpf-frequency F             high pass filter knee frequency\n");
+       	fprintf(stderr, " --hpf-attenuation N           high pass filter attenuation\n");
+        fprintf(stderr, " --hpf-order N                 high pass filter order\n");        
+                        
+        fprintf(stderr, " --hann-duration SEC           hann duration\n");
 	fprintf(stderr, " --ifo-one IFO                 ifo for first stream\n");
 	fprintf(stderr, " --ifo-two IFO                 ifo for second stream\n");
 	fprintf(stderr, " --frame-cache-one FILE        cache file for first " \
@@ -1642,10 +1709,10 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --scale-factor N              scale factor for "\
 			"injection\n");
 	fprintf(stderr, " --seed N                      seed\n");
-
+        fprintf(stderr, " --number-of-injection N        NLoop\n");
 	exit(exitcode);
 }
-
+*/
 /* function to read data in frames */
 void readDataPair(LALStatus *status,
 		StreamPair *streamPair,
