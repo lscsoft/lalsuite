@@ -1028,8 +1028,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	if(geodata)
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
-	else
-	{
+	else {
 		LAL_CALL(LALFrCacheImport(stat, &calcache, calcachefile), stat);
 		LAL_CALL(LALExtractFrameResponse(stat, response, calcache, &calfacts), stat);
 		LAL_CALL(LALDestroyFrCache(stat, &calcache), stat);
