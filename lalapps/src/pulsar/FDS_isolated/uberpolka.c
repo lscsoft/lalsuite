@@ -76,7 +76,6 @@ typedef struct CandINDICESTag
   REAL8 F;        /* Maximum value of F for the cluster */
   INT4 iFreq;
   INT4 iDelta;
-  INT4 iAlpha;
   INT4 iCand;
   INT4 iCandSorted;
 } CandINDICES;
@@ -133,7 +132,6 @@ int main(int argc,char *argv[])
 #endif
 {
   UINT4 i;
-  INT4 iAlphaLowerEdge, iAlphaUpperEdge;
   lalDebugLevel = 0;
 
   /* Reads command line arguments */
@@ -165,8 +163,7 @@ int main(int argc,char *argv[])
           SortedC1[i].F=CList1.F[i];
           SortedC1[i].iFreq=(INT4) (CList1.f[i]/(PolkaCommandLineArgs.Deltaf));
           SortedC1[i].iDelta=(INT4)(CList1.Delta[i]/(PolkaCommandLineArgs.DeltaDelta));
-          SortedC1[i].iAlpha=0;
-          SortedC1[i].iCand=i;
+	  SortedC1[i].iCand=i;
         }
       for (i=0;i<CList2.length;i++) 
         {
@@ -176,15 +173,9 @@ int main(int argc,char *argv[])
           SortedC2[i].F=CList2.F[i];
           SortedC2[i].iFreq=(INT4) (CList2.f[i]/(PolkaCommandLineArgs.Deltaf));
           SortedC2[i].iDelta=(INT4)(CList2.Delta[i]/(PolkaCommandLineArgs.DeltaDelta));
-          SortedC2[i].iAlpha=0;
-          SortedC2[i].iCand=i;
+	  SortedC2[i].iCand=i;
         }
       
-      /* define lower and upper edges in alpha and delta for wrapping */
-      iAlphaLowerEdge=0;
-      iAlphaUpperEdge=0;
-
-
       /* sort arrays of candidates */
       qsort(SortedC1, (size_t)CList1.length, sizeof(CandINDICES), compareCIStructs);
       qsort(SortedC2, (size_t)CList2.length, sizeof(CandINDICES), compareCIStructs);
@@ -202,33 +193,30 @@ int main(int argc,char *argv[])
 #endif
           if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
             {
-              int iFreq2, iAlpha2,iDelta2;
+              int iFreq2, iDelta2;
 
               /* Loop to run bsearch etc. on all surrounding boxes */
               for (iFreq2=SortedC1[i].iFreq-1; iFreq2 <= SortedC1[i].iFreq+1; iFreq2++)
                 {
-                  for (iAlpha2=SortedC1[i].iAlpha-1; iAlpha2 <= SortedC1[i].iAlpha+1; iAlpha2++)
-                    {
-                      for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
-                        {
-                          CandINDICES *p, can;
-                                                  
-                          can.iFreq=iFreq2;
-                          can.iAlpha=iAlpha2;
-                          can.iDelta=iDelta2;
+		  for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
+		    {
+		      CandINDICES *p, can;
+		      
+		      can.iFreq=iFreq2;
+		      can.iDelta=iDelta2;
                           
-                          p=bsearch(&can,SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
-
-                          if (p != NULL)
-                            {
-                              /* Now we've found at least one candidate */
-                              /* we need to move to the right edge (without segfaulting!) */
-
-                              while ( p->iCandSorted > 0 && !compareCIStructs(p, p-1) )
-                                p--;
-                            
+		      p=bsearch(&can,SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
+		      
+		      if (p != NULL)
+			{
+			  /* Now we've found at least one candidate */
+			  /* we need to move to the right edge (without segfaulting!) */
+			  
+			  while ( p->iCandSorted > 0 && !compareCIStructs(p, p-1) )
+			    p--;
+			  
                           /* Now p points to first coincident event in the second list */
-                              
+			  
                           /* Now loop over candidates found in the second list and do the fine coincidence test */
                           if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
                           while ( p->iCandSorted <  (int)CList2.length-1 &&  !compareCIStructs(p, p+1) )
@@ -237,12 +225,11 @@ int main(int argc,char *argv[])
                               if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
                             }
 
-                            }/* check that besearch was non-null */
-                        } /* loop over deltas */
-                    } /* loop over alphas */
-                }/* loop over frequencies */    
-            } /* check that frequency lies between two input bounds */
-        } /* loop over 1st candidate list */
+			}/* check that besearch was non-null */
+		    } /* loop over deltas */
+		}/* loop over frequencies */    
+	    } /* check that frequency lies between two input bounds */
+	}/* loop over 1st candidate list */
       
       LALFree(SortedC1);
       LALFree(SortedC2);
@@ -464,22 +451,8 @@ int compareCIStructs(const void *a, const void *b)
       if (iDelta1 > iDelta2)
         return 1;
   
-      if (iDelta1 == iDelta2)
-        {
-          INT4 iAlpha1, iAlpha2;
-
-          iAlpha1=ip->iAlpha;
-          iAlpha2=jp->iAlpha;
-      
-          if (iAlpha1 < iAlpha2)
-            return -1;
-
-          if (iAlpha1 > iAlpha2)
-            return 1;
-
-          if (iAlpha1 == iAlpha2)
-            return 0;
-        }
+      if (iDelta1 == iDelta2)           
+	return 0;
     }
   return 1;
 }
