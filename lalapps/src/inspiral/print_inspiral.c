@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: trig2tmplt.c
+ * File Name: print_inspiral.c
  *
  * Author: Brown, D. A.
  * 
@@ -81,23 +81,14 @@ int main ( int argc, char *argv[] )
 {
   extern int vrbflg;
   int playground = 0;
+  INT8 cluster = 0;
+  REAL4 snr = 0;
   LALStatus status = blank_status;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   char *inputGlob = NULL;
   char *outputFileName = NULL;
   glob_t globbedFiles;
   CHAR comment[LIGOMETA_COMMENT_MAX];
-  struct option long_options[] =
-  {
-    /* these options set a flag */
-    {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"playground",              no_argument,       &playground,       1 },
-    {"comment",                 required_argument, 0,                'c'},
-    {"input",                   required_argument, 0,                'i'},
-    {"output",                  required_argument, 0,                'o'},
-    {"debug-level",             required_argument, 0,                'z'},
-    {0, 0, 0, 0}
-  };
   int i, numEvents = 0;
   size_t j;
   SnglInspiralTable    *eventHead = NULL;
@@ -109,6 +100,19 @@ int main ( int argc, char *argv[] )
   MetadataTable         procparams;
   MetadataTable         outputTable;
   LIGOLwXMLStream       results;
+  struct option long_options[] =
+  {
+    /* these options set a flag */
+    {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"playground",              no_argument,       &playground,       1 },
+    {"comment",                 required_argument, 0,                'c'},
+    {"cluster",                 required_argument, 0,                'C'},
+    {"snr-threshold",           required_argument, 0,                's'},
+    {"input",                   required_argument, 0,                'i'},
+    {"output",                  required_argument, 0,                'o'},
+    {"debug-level",             required_argument, 0,                'z'},
+    {0, 0, 0, 0}
+  };
   
 
   /*
@@ -179,6 +183,32 @@ int main ( int argc, char *argv[] )
         }
         break;
 
+      case 'C':
+        cluster = (INT8) atoi( optarg );
+        if ( cluster <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "custer window must be > 0: "
+              "(%lld specified)\n",
+              long_options[option_index].name, cluster );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%lld", cluster );
+        break;
+
+      case 's':
+        snr = (REAL4) atof( optarg );
+        if ( snr <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "threshold must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, snr );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", snr );
+        break;
+
       case 'i':
         {
           /* create storage for the input file name name */
@@ -222,6 +252,9 @@ int main ( int argc, char *argv[] )
     }
     exit( 1 );
   }
+
+  /* don't buffer stdout if we are in verbose mode */
+  if ( vrbflg ) setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* fill the comment, if a user has specified it, or leave it blank */
   if ( ! *comment )
@@ -378,13 +411,98 @@ int main ( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
+  if ( eventHead ) prevEvent->next = NULL;
+  
+
+
+  /*
+   *
+   * now we have a sorted list of events, clobber on snr and cluster in time
+   *
+   */
+
+
   if ( eventHead )
   {
-    prevEvent->next = NULL;
+    SnglInspiralTable *tmpEventHead;
+    prevEvent = tmpEventHead = NULL;
+    if ( snr )
+    {
+      int numSnrEvents = 0;
+      if ( vrbflg ) fprintf( stdout, "discarding events with snr < %e... ",
+          snr );
+      thisEvent = eventHead;
+      while ( thisEvent )
+      {
+        if ( thisEvent->snr >= snr )
+        {
+          ++numSnrEvents;
+          if ( ! tmpEventHead )
+          {
+            prevEvent = tmpEventHead = thisEvent;
+          }
+          else
+          {
+            prevEvent = prevEvent->next = thisEvent;
+          }
+          thisEvent = thisEvent->next;
+        }
+        else
+        {
+          SnglInspiralTable *discard = thisEvent;
+          thisEvent = thisEvent->next;
+          LALFree( discard );
+        }
+      }
+      if ( (eventHead = tmpEventHead) ) prevEvent->next = NULL;
+      numEvents = numSnrEvents;
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
   }
-  else
+
+  if ( eventHead )
   {
-    if ( vrbflg ) fprintf( stdout, "no events left\n" );
+    if ( cluster )
+    {
+      INT8 thisEndTime, prevEndTime;
+      int numClusterEvents = 1;
+      if ( vrbflg ) fprintf( stdout, "discarding events < %lld ms appart... ",
+          cluster );
+      prevEvent = eventHead;
+      LAL_CALL( LALGPStoINT8( &status, &prevEndTime, &(prevEvent->end_time) ),
+          &status );
+      thisEvent = eventHead->next;
+      while ( thisEvent )
+      {
+        LAL_CALL( LALGPStoINT8( &status, &thisEndTime, &(thisEvent->end_time) ),
+            &status );
+        if ( (thisEndTime - prevEndTime) < (cluster * 1000000LL) )
+        {
+          SnglInspiralTable *discard = thisEvent;
+          if ( (thisEvent->snr > prevEvent->snr) &&
+              (thisEvent->chisq < prevEvent->chisq) )
+          {
+            memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
+            thisEvent = thisEvent->next;
+          }
+          else
+          {
+            prevEvent->next = thisEvent = thisEvent->next;
+          }
+          LALFree( discard );
+        }
+        else
+        {
+          ++numClusterEvents;
+          prevEvent = thisEvent;
+          LAL_CALL( LALGPStoINT8( &status, &prevEndTime, 
+                &(prevEvent->end_time) ), &status );
+          thisEvent = thisEvent->next;
+        }
+      }
+      numEvents = numClusterEvents;
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
   }
   
 
@@ -454,7 +572,6 @@ int main ( int argc, char *argv[] )
 
 
   if ( vrbflg ) fprintf( stdout, "freeing memory... ");
-  fflush( stdout );
   if ( eventHead )
   {
     LALFree( eventHandle );
