@@ -774,8 +774,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {
         /* get segment start time */
         gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
-                                     (interLoop * intervalDuration) + \
-                                     (segLoop * segmentDuration);
+                                     ((interLoop + segLoop) * segmentDuration);
         gpsSegStartTime.gpsNanoSeconds = 0;
         gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
                                    segmentDuration;
