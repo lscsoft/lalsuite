@@ -768,14 +768,16 @@ LALFindChirpFilterSegment (
           thisEvent->timeIndex = j;
           thisEvent->snrsq = modqsq;
         }
-        else if ( j < thisEvent->timeIndex + deltaEventIndex &&
+        else if ( params->maximiseOverChirp &&
+            j < thisEvent->timeIndex + deltaEventIndex &&
             modqsq > thisEvent->snrsq )
         {
           /* if this is the same event, update the maximum */
           thisEvent->timeIndex = j;
           thisEvent->snrsq = modqsq;
         }
-        else if ( j > thisEvent->timeIndex + deltaEventIndex )
+        else if ( j > thisEvent->timeIndex + deltaEventIndex ||
+            ! params->maximiseOverChirp )
         {
           /* clean up this event */
           InspiralEvent *lastEvent;
