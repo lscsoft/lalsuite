@@ -114,10 +114,6 @@ void LALDRunningMedian( LALStatus *status,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
 {
-  REAL8 *sorted_indices;
-
-  struct rngmed_val_index8 *index_block;
-
   /*----------------------------------
     Two types of pointers:
     (a)next_sorted: point to the next node in sorted list
@@ -149,10 +145,13 @@ void LALDRunningMedian( LALStatus *status,
   UINT4 ncheckpts,stepchkpts;
   UINT4 nextchkptindx,*checks4shift;
   UINT4 nearestchk,midpoint,offset,numberoffsets;
-  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
+  UINT4 samplecount,counter_chkpt,chkcount=0, shiftcounter=0;
   INT8 k;
   REAL8 nextsample,deletesample,dummy;
   INT4 shift,dummy_int;
+  /* for initial qsort */
+  REAL8 *sorted_indices;
+  struct rngmed_val_index8 *index_block;
 
   INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
   
@@ -184,6 +183,10 @@ void LALDRunningMedian( LALStatus *status,
   qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index8),rngmed_sortindex8);
   
   sorted_indices=(REAL8 *)LALCalloc(param.blocksize,sizeof(REAL8));
+  if(!sorted_indices) {
+    LALFree(index_block);
+    ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
+  }
 
   for(k=0;k<param.blocksize;k++){
     sorted_indices[k]=index_block[k].index; 
@@ -199,10 +202,12 @@ void LALDRunningMedian( LALStatus *status,
   ncheckpts = param.blocksize/stepchkpts;
   checks = (struct node **)LALCalloc(ncheckpts,sizeof(struct node*));
   if(!checks){
+    LALFree(sorted_indices);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC2,LALRUNNINGMEDIANH_MSGEMALOC2);
   }
   checks4shift = (INT4*)LALCalloc(ncheckpts,sizeof(INT4));
   if(!checks4shift){
+    LALFree(sorted_indices);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC3,LALRUNNINGMEDIANH_MSGEMALOC3);
   }
@@ -233,6 +238,7 @@ void LALDRunningMedian( LALStatus *status,
     ------------------------------------*/
   node_addresses=(struct node **)LALCalloc(param.blocksize,sizeof(struct node *));
   if(!node_addresses){
+    LALFree(sorted_indices);
     LALFree(checks4shift);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC4,LALRUNNINGMEDIANH_MSGEMALOC4);
@@ -240,6 +246,7 @@ void LALDRunningMedian( LALStatus *status,
   first_sequence=(struct node *)LALCalloc(1,sizeof(struct node));
   if(!first_sequence){
     LALFree(node_addresses);
+    LALFree(sorted_indices);
     LALFree(checks4shift);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC5,LALRUNNINGMEDIANH_MSGEMALOC5);
@@ -254,6 +261,7 @@ void LALDRunningMedian( LALStatus *status,
     currentnode=(struct node *)LALCalloc(1,sizeof(struct node));
     if(!currentnode){
       LALFree(first_sequence);
+      LALFree(sorted_indices);
       LALFree(node_addresses);
       LALFree(checks4shift);
       LALFree(checks);
@@ -313,7 +321,7 @@ void LALDRunningMedian( LALStatus *status,
     ----------------------------------*/
   for(samplecount=param.blocksize;samplecount<input->length;samplecount++){
     nextsample=input->data[samplecount];
-    if(nextsample>checks[0]->data){
+    if(nextsample>=checks[0]->data){ /* corrected */
       for(chkcount=1;chkcount<ncheckpts;chkcount++){
 	if(nextsample>checks[chkcount]->data){
 	}
@@ -323,62 +331,48 @@ void LALDRunningMedian( LALStatus *status,
       }
       chkcount-=1;
       rightnode=checks[chkcount];
+      leftnode=NULL;  /* corrected */
       while(rightnode){
-	if(nextsample<=rightnode->data){
+	if(nextsample<rightnode->data){ /* corrected */
 	  break;
 	}
 	leftnode=rightnode;
 	rightnode=rightnode->next_sorted;
       }
-      /*-------------------------
-	Guard against case when node to
-	be deleted is currentnode, otherwise
-	the inserted node will point to 
-	itself
-	---------------------------*/
-      if(rightnode==first_sequence){
-	rightnode->data=nextsample;
-	first_sequence=first_sequence->next_sequence;
-	rightnode->next_sequence=NULL;
-	last_sequence->next_sequence=rightnode;
-	last_sequence=rightnode;
-	shift=0;
-      }
-      else{ 
-	if(leftnode==first_sequence){
-	  leftnode->data=nextsample;
-	  first_sequence=first_sequence->next_sequence;
-	  leftnode->next_sequence=NULL;
-	  last_sequence->next_sequence=leftnode;
-	  last_sequence=leftnode;
-	  shift=0; 
-	}
-	else {
-	  reuse_next_sorted=rightnode;
-	  reuse_prev_sorted=leftnode;
-	  shift=1; /*shift maybe required*/
-	}
+    } else {
+      /* corrected */
+      /* new case */
+      if(nextsample<checks[0]->data){  
+	chkcount=0;
+	/* dummy_node=checks[0]; */
+	rightnode=checks[0];
+	leftnode=NULL;  
       }
     }
-    else{  
-      chkcount=0;
-      dummy_node=checks[0];
-      if(dummy_node==first_sequence){
-	dummy_node->data=nextsample;
-	first_sequence=first_sequence->next_sequence;
-	dummy_node->next_sequence=NULL;
-	last_sequence->next_sequence=dummy_node;
-	last_sequence=dummy_node;
-	shift=0;
-      }
-      else{
-	reuse_next_sorted=checks[0];
-	reuse_prev_sorted=NULL;
-	shift=1;  /*shift maybe required*/
-      }
-      rightnode=checks[0];
-      leftnode=NULL;
+
+    /* corrected */
+    /* from here ... */
+    dummy_node=NULL;
+    if(rightnode==first_sequence){
+      dummy_node=rightnode;
     }
+    else if(leftnode==first_sequence){
+      dummy_node=leftnode;
+    }
+    if(dummy_node) {
+      dummy_node->data=nextsample;
+      first_sequence=first_sequence->next_sequence;
+      dummy_node->next_sequence=NULL;
+      last_sequence->next_sequence=dummy_node;
+      last_sequence=dummy_node;
+      shift=0;                
+    }
+    else{
+      reuse_next_sorted=rightnode;
+      reuse_prev_sorted=leftnode;
+      shift=1; /*shift maybe required*/
+    }
+    /* to here */
 
     /*-----------------------------------
       Getting check points to be shifted
@@ -388,9 +382,8 @@ void LALDRunningMedian( LALStatus *status,
       if(deletesample>nextsample){
 	shiftcounter=0;
 	for(k=chkcount;k<ncheckpts;k++){
-	  dummy_node=checks[k];
-	  dummy=dummy_node->data;
-	  if(dummy>=nextsample){
+	  dummy=checks[k]->data;
+	  if(dummy>nextsample){ /* corrected */
 	    if(dummy<=deletesample){
 	      checks4shift[shiftcounter]=k;
 	      shiftcounter++;
@@ -406,8 +399,7 @@ void LALDRunningMedian( LALStatus *status,
 	if(deletesample<nextsample){
 	  shiftcounter=0;
 	  for(k=chkcount;k>=0;k--){
-	    dummy_node=checks[k];
-	    dummy=dummy_node->data;
+	    dummy=checks[k]->data;
 	    if(dummy>=deletesample){
 	      checks4shift[shiftcounter]=k;
 	      shiftcounter++;
@@ -418,19 +410,7 @@ void LALDRunningMedian( LALStatus *status,
 	  }
 	  shift=1; /*Shift Right*/
 	}
-	else{
-	  /* nextsample=deletesample but they are separated in
-	     the ordered list. This implies that all values in 
-	     between are equal. So, just change the sequential list.
-	  */
-	  dummy_node=first_sequence;
-	  dummy_node->data=nextsample;
-	  last_sequence->next_sequence=dummy_node;
-	  first_sequence=dummy_node->next_sequence;
-	  dummy_node->next_sequence=0;
-	  last_sequence=dummy_node;
-	  shift=0; 
-	}
+      /* corrected: else case deleted */
     }
     
     /*------------------------------
@@ -542,10 +522,6 @@ void LALSRunningMedian( LALStatus *status,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
 {
-  REAL4 *sorted_indices;
-
-  struct rngmed_val_index4 *index_block;
-
   /*----------------------------------
     Two types of pointers:
     (a)next_sorted: point to the next node in sorted list
@@ -577,10 +553,14 @@ void LALSRunningMedian( LALStatus *status,
   UINT4 ncheckpts,stepchkpts;
   UINT4 nextchkptindx,*checks4shift;
   UINT4 nearestchk,midpoint,offset,numberoffsets;
-  UINT4 samplecount,counter_chkpt,chkcount,shiftcounter = 0;
+  UINT4 samplecount,counter_chkpt,chkcount=0,shiftcounter=0;
   INT8 k;
   REAL4 nextsample,deletesample,dummy;
   INT4 shift,dummy_int;
+  /* for initial qsort */
+  REAL4 *sorted_indices;
+  struct rngmed_val_index4 *index_block;
+
 
   INITSTATUS( status, "LALSRunningMedian", LALRUNNINGMEDIANC );
   
@@ -601,7 +581,6 @@ void LALSRunningMedian( LALStatus *status,
     Sort the first block of param.blocksize samples
     ------------------------------------*/
   index_block =(struct rngmed_val_index4 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index4));
-
   if(!index_block) {
     ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
   }
@@ -611,8 +590,12 @@ void LALSRunningMedian( LALStatus *status,
   }
 
   qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index4),rngmed_sortindex4);
-
+  
   sorted_indices=(REAL4 *)LALCalloc(param.blocksize,sizeof(REAL4));
+  if(!sorted_indices) {
+    LALFree(index_block);
+    ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
+  }
 
   for(k=0;k<param.blocksize;k++){
     sorted_indices[k]=index_block[k].index; 
@@ -628,10 +611,12 @@ void LALSRunningMedian( LALStatus *status,
   ncheckpts = param.blocksize/stepchkpts;
   checks = (struct node **)LALCalloc(ncheckpts,sizeof(struct node*));
   if(!checks){
+    LALFree(sorted_indices);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC2,LALRUNNINGMEDIANH_MSGEMALOC2);
   }
   checks4shift = (INT4*)LALCalloc(ncheckpts,sizeof(INT4));
   if(!checks4shift){
+    LALFree(sorted_indices);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC3,LALRUNNINGMEDIANH_MSGEMALOC3);
   }
@@ -662,6 +647,7 @@ void LALSRunningMedian( LALStatus *status,
     ------------------------------------*/
   node_addresses=(struct node **)LALCalloc(param.blocksize,sizeof(struct node *));
   if(!node_addresses){
+    LALFree(sorted_indices);
     LALFree(checks4shift);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC4,LALRUNNINGMEDIANH_MSGEMALOC4);
@@ -669,6 +655,7 @@ void LALSRunningMedian( LALStatus *status,
   first_sequence=(struct node *)LALCalloc(1,sizeof(struct node));
   if(!first_sequence){
     LALFree(node_addresses);
+    LALFree(sorted_indices);
     LALFree(checks4shift);
     LALFree(checks);
     ABORT(status,LALRUNNINGMEDIANH_EMALOC5,LALRUNNINGMEDIANH_MSGEMALOC5);
@@ -683,6 +670,7 @@ void LALSRunningMedian( LALStatus *status,
     currentnode=(struct node *)LALCalloc(1,sizeof(struct node));
     if(!currentnode){
       LALFree(first_sequence);
+      LALFree(sorted_indices);
       LALFree(node_addresses);
       LALFree(checks4shift);
       LALFree(checks);
@@ -742,7 +730,7 @@ void LALSRunningMedian( LALStatus *status,
     ----------------------------------*/
   for(samplecount=param.blocksize;samplecount<input->length;samplecount++){
     nextsample=input->data[samplecount];
-    if(nextsample>checks[0]->data){
+    if(nextsample>=checks[0]->data){ /* corrected */
       for(chkcount=1;chkcount<ncheckpts;chkcount++){
 	if(nextsample>checks[chkcount]->data){
 	}
@@ -752,62 +740,48 @@ void LALSRunningMedian( LALStatus *status,
       }
       chkcount-=1;
       rightnode=checks[chkcount];
+      leftnode=NULL;  /* corrected */
       while(rightnode){
-	if(nextsample<=rightnode->data){
+	if(nextsample<rightnode->data){ /* corrected */
 	  break;
 	}
 	leftnode=rightnode;
 	rightnode=rightnode->next_sorted;
       }
-      /*-------------------------
-	Guard against case when node to
-	be deleted is currentnode, otherwise
-	the inserted node will point to 
-	itself
-	---------------------------*/
-      if(rightnode==first_sequence){
-	rightnode->data=nextsample;
-	first_sequence=first_sequence->next_sequence;
-	rightnode->next_sequence=NULL;
-	last_sequence->next_sequence=rightnode;
-	last_sequence=rightnode;
-	shift=0;
-      }
-      else{ 
-	if(leftnode==first_sequence){
-	  leftnode->data=nextsample;
-	  first_sequence=first_sequence->next_sequence;
-	  leftnode->next_sequence=NULL;
-	  last_sequence->next_sequence=leftnode;
-	  last_sequence=leftnode;
-	  shift=0; 
-	}
-	else {
-	  reuse_next_sorted=rightnode;
-	  reuse_prev_sorted=leftnode;
-	  shift=1; /*shift maybe required*/
-	}
+    } else {
+      /* corrected */
+      /* new case */
+      if(nextsample<checks[0]->data){  
+	chkcount=0;
+	/* dummy_node=checks[0]; */
+	rightnode=checks[0];
+	leftnode=NULL;  
       }
     }
-    else{  
-      chkcount=0;
-      dummy_node=checks[0];
-      if(dummy_node==first_sequence){
-	dummy_node->data=nextsample;
-	first_sequence=first_sequence->next_sequence;
-	dummy_node->next_sequence=NULL;
-	last_sequence->next_sequence=dummy_node;
-	last_sequence=dummy_node;
-	shift=0;
-      }
-      else{
-	reuse_next_sorted=checks[0];
-	reuse_prev_sorted=NULL;
-	shift=1;  /*shift maybe required*/
-      }
-      rightnode=checks[0];
-      leftnode=NULL;
+
+    /* corrected */
+    /* from here ... */
+    dummy_node=NULL;
+    if(rightnode==first_sequence){
+      dummy_node=rightnode;
     }
+    else if(leftnode==first_sequence){
+      dummy_node=leftnode;
+    }
+    if(dummy_node) {
+      dummy_node->data=nextsample;
+      first_sequence=first_sequence->next_sequence;
+      dummy_node->next_sequence=NULL;
+      last_sequence->next_sequence=dummy_node;
+      last_sequence=dummy_node;
+      shift=0;                
+    }
+    else{
+      reuse_next_sorted=rightnode;
+      reuse_prev_sorted=leftnode;
+      shift=1; /*shift maybe required*/
+    }
+    /* to here */
 
     /*-----------------------------------
       Getting check points to be shifted
@@ -817,9 +791,8 @@ void LALSRunningMedian( LALStatus *status,
       if(deletesample>nextsample){
 	shiftcounter=0;
 	for(k=chkcount;k<ncheckpts;k++){
-	  dummy_node=checks[k];
-	  dummy=dummy_node->data;
-	  if(dummy>=nextsample){
+	  dummy=checks[k]->data;
+	  if(dummy>nextsample){ /* corrected */
 	    if(dummy<=deletesample){
 	      checks4shift[shiftcounter]=k;
 	      shiftcounter++;
@@ -835,8 +808,7 @@ void LALSRunningMedian( LALStatus *status,
 	if(deletesample<nextsample){
 	  shiftcounter=0;
 	  for(k=chkcount;k>=0;k--){
-	    dummy_node=checks[k];
-	    dummy=dummy_node->data;
+	    dummy=checks[k]->data;
 	    if(dummy>=deletesample){
 	      checks4shift[shiftcounter]=k;
 	      shiftcounter++;
@@ -847,19 +819,7 @@ void LALSRunningMedian( LALStatus *status,
 	  }
 	  shift=1; /*Shift Right*/
 	}
-	else{
-	  /* nextsample=deletesample but they are separated in
-	     the ordered list. This implies that all values in 
-	     between are equal. So, just change the sequential list.
-	  */
-	  dummy_node=first_sequence;
-	  dummy_node->data=nextsample;
-	  last_sequence->next_sequence=dummy_node;
-	  first_sequence=dummy_node->next_sequence;
-	  dummy_node->next_sequence=0;
-	  last_sequence=dummy_node;
-	  shift=0; 
-	}
+      /* corrected: else case deleted */
     }
     
     /*------------------------------
