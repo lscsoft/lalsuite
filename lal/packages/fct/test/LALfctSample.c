@@ -406,7 +406,7 @@ int main( int argc, char **argv ) {
     checks at least.) */
   LALCheckMemoryLeaks();
 
-  exit(0);
+  return 0;
 }
 /*</lalVerbatim> */
 

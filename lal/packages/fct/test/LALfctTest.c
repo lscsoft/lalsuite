@@ -380,7 +380,7 @@ int main( int argc, char **argv ) {
 
   } /* for dataSize */ 
   
-  exit(0);
+  return 0;
 }
 
 LALFCTREAL phaseFunction1(LALFCTREAL x) {
