@@ -58,7 +58,7 @@ StreamSequenceInput.c: StreamSequenceInput.m4 LALReadSequence.m4 LALReadComplexS
 	cd $(srcdir) && m4 StreamSequenceInput.m4 > StreamSequenceInput.c
 
 StreamSeriesInput.c: StreamSeriesInput.m4 LALReadSeries.m4
-	cd $(srcdir) && m4 -P StreamSeriesInput.m4 > StreamSeriesInput.c
+	cd $(srcdir) && m4 StreamSeriesInput.m4 > StreamSeriesInput.c
 
 StreamSeriesOutput.c: StreamSeriesOutput.m4 LALWriteSeries.m4
-	cd $(srcdir) && m4 -P StreamSeriesOutput.m4 > StreamSeriesOutput.c
+	cd $(srcdir) && m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c

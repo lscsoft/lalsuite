@@ -277,7 +277,7 @@ main(int argc, char **argv)
 #if 1
   static LALStatus stat;       /* top-level status structure */
   FILE *fp;
-  REAL8FrequencySeries series;
+  COMPLEX8TimeVectorSeries series;
 
   lalDebugLevel = 7;
 
@@ -285,14 +285,14 @@ main(int argc, char **argv)
     fprintf( stderr, "%s: Does nothing at present\n", *argv );
     return 0;
   }
-  memset( &series, 0, sizeof(REAL8FrequencySeries) );
+  memset( &series, 0, sizeof(COMPLEX8TimeVectorSeries) );
   fp = fopen( argv[1], "r" );
-  SUB( LALDReadFSeries( &stat, &series, fp ), &stat );
+  SUB( LALCReadTVectorSeries( &stat, &series, fp ), &stat );
   fclose( fp );
   fp = fopen( argv[2], "w" );
-  SUB( LALDWriteFSeries( &stat, fp, &series ), &stat );
+  SUB( LALCWriteTVectorSeries( &stat, fp, &series ), &stat );
   fclose( fp );
-  SUB( LALDDestroyVector( &stat, &(series.data) ), &stat );
+  SUB( LALCDestroyVectorSequence( &stat, &(series.data) ), &stat );
   LALCheckMemoryLeaks();
   return 0;
 

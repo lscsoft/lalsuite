@@ -226,32 +226,34 @@ LALCHARReadVector()                     LALCHARDestroyVector()
 
 NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
 
-m4_define(`TYPECODE',`I2')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+changecom(`/*',`*/')
 
-m4_define(`TYPECODE',`I4')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`I2')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`I8')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`I4')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`U2')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`I8')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`U4')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`U2')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`U8')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`U4')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`S')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`U8')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`D')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`S')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`C')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`D')dnl
+include(`LALWriteSeries.m4')dnl
 
-m4_define(`TYPECODE',`Z')m4_dnl
-m4_include(`LALWriteSeries.m4')m4_dnl
+define(`TYPECODE',`C')dnl
+include(`LALWriteSeries.m4')dnl
+
+define(`TYPECODE',`Z')dnl
+include(`LALWriteSeries.m4')dnl

@@ -1,26 +1,27 @@
-/* m4_dnl $Id$
-m4_ifelse(TYPECODE,`Z',`m4_define(`TYPE',`COMPLEX16')m4_define(`FMT',`"% .17e"')')m4_dnl
-m4_ifelse(TYPECODE,`C',`m4_define(`TYPE',`COMPLEX8')m4_define(`FMT',`"% .9e"')')m4_dnl
-m4_ifelse(TYPECODE,`D',`m4_define(`TYPE',`REAL8')m4_define(`FMT',`"% .17e"')')m4_dnl
-m4_ifelse(TYPECODE,`S',`m4_define(`TYPE',`REAL4')m4_define(`FMT',`"% .9e"')')m4_dnl
-m4_ifelse(TYPECODE,`I2',`m4_define(`TYPE',`INT2')m4_define(`FMT',`"% " LAL_INT2_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`I4',`m4_define(`TYPE',`INT4')m4_define(`FMT',`"% " LAL_INT4_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`I8',`m4_define(`TYPE',`INT8')m4_define(`FMT',`"% " LAL_INT8_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`U2',`m4_define(`TYPE',`UINT2')m4_define(`FMT',`"%" LAL_UINT2_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`U4',`m4_define(`TYPE',`UINT4')m4_define(`FMT',`"%" LAL_UINT4_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`U8',`m4_define(`TYPE',`UINT8')m4_define(`FMT',`"%" LAL_UINT8_FORMAT')')m4_dnl
-m4_ifelse(TYPECODE,`Z',`m4_define(`COMPLEX',`1')')m4_dnl
-m4_ifelse(TYPECODE,`C',`m4_define(`COMPLEX',`1')')m4_dnl
-m4_define(`STYPE',`m4_format(`%sTimeSeries',TYPE)')m4_dnl
-m4_define(`VTYPE',`m4_format(`%sTimeVectorSeries',TYPE)')m4_dnl
-m4_define(`ATYPE',`m4_format(`%sTimeArraySeries',TYPE)')m4_dnl
-m4_define(`FTYPE',`m4_format(`%sFrequencySeries',TYPE)')m4_dnl
-m4_define(`SFUNC',`m4_format(`LAL%sWriteTSeries',TYPECODE)')m4_dnl
-m4_define(`VFUNC',`m4_format(`LAL%sWriteTVectorSeries',TYPECODE)')m4_dnl
-m4_define(`AFUNC',`m4_format(`LAL%sWriteTArraySeries',TYPECODE)')m4_dnl
-m4_define(`FFUNC',`m4_format(`LAL%sWriteFSeries',TYPECODE)')m4_dnl
-m4_dnl
-<lalVerbatim file="StreamSeriesInputCP"> */
+dnl $Id$
+ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`FMT',`"% .17e"')')dnl
+ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`FMT',`"% .9e"')')dnl
+ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`FMT',`"% .17e"')')dnl
+ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`FMT',`"% .9e"')')dnl
+ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`FMT',`"% " LAL_INT2_FORMAT')')dnl
+ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`FMT',`"% " LAL_INT4_FORMAT')')dnl
+ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`FMT',`"% " LAL_INT8_FORMAT')')dnl
+ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')define(`FMT',`"%" LAL_UINT2_FORMAT')')dnl
+ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')define(`FMT',`"%" LAL_UINT4_FORMAT')')dnl
+ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')define(`FMT',`"%" LAL_UINT8_FORMAT')')dnl
+define(`COMPLEX',`0')dnl
+ifelse(TYPECODE,`Z',`define(`COMPLEX',`1')')dnl
+ifelse(TYPECODE,`C',`define(`COMPLEX',`1')')dnl
+define(`STYPE',`format(`%sTimeSeries',TYPE)')dnl
+define(`VTYPE',`format(`%sTimeVectorSeries',TYPE)')dnl
+define(`ATYPE',`format(`%sTimeArraySeries',TYPE)')dnl
+define(`FTYPE',`format(`%sFrequencySeries',TYPE)')dnl
+define(`SFUNC',`format(`LAL%sWriteTSeries',TYPECODE)')dnl
+define(`VFUNC',`format(`LAL%sWriteTVectorSeries',TYPECODE)')dnl
+define(`AFUNC',`format(`LAL%sWriteTArraySeries',TYPECODE)')dnl
+define(`FFUNC',`format(`LAL%sWriteFSeries',TYPECODE)')dnl
+dnl
+/* <lalVerbatim file="StreamSeriesInputCP"> */
 void
 SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
 { /* </lalVerbatim> */
@@ -128,7 +129,7 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   length = series->data->length;
   data = series->data->data;
   while ( length-- ) {
-`#'if COMPLEX
+#if COMPLEX
     if ( fprintf( stream, FMT " " FMT "\n", data->re, data->im ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
@@ -256,7 +257,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   data = series->data->data;
   while ( length-- ) {
     UINT4 n = vectorLength - 1;
-`#'if COMPLEX
+#if COMPLEX
     if ( fprintf( stream, FMT " " FMT, data->re, data->im ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
@@ -267,7 +268,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
     }
 #endif
     while ( n-- ) {
-`#'if COMPLEX
+#if COMPLEX
       if ( fprintf( stream, " " FMT " " FMT, data->re, data->im ) < 0 ) {
 	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
@@ -412,7 +413,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   data = series->data->data;
   while ( length-- ) {
     UINT4 n = arrayDim - 1;
-`#'if COMPLEX
+#if COMPLEX
     if ( fprintf( stream, FMT " " FMT, data->re, data->im ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
@@ -423,7 +424,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
     }
 #endif
     while ( n-- ) {
-`#'if COMPLEX
+#if COMPLEX
       if ( fprintf( stream, " " FMT " " FMT, data->re, data->im ) < 0 ) {
 	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
@@ -550,7 +551,7 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
   length = series->data->length;
   data = series->data->data;
   while ( length-- ) {
-`#'if COMPLEX
+#if COMPLEX
     if ( fprintf( stream, FMT " " FMT "\n", data->re, data->im ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }

@@ -73,6 +73,7 @@ NRCSID(STREAMINPUTH,"$Id$");
 #define STREAMINPUTH_EDLEN 7
 #define STREAMINPUTH_EDIM  8
 #define STREAMINPUTH_EFMT  9
+#define STREAMINPUTH_EBUF 10
 
 #define STREAMINPUTH_MSGENUL  "Unexpected null pointer in arguments"
 #define STREAMINPUTH_MSGEOUT  "Output handle points to a non-null pointer"
@@ -83,6 +84,7 @@ NRCSID(STREAMINPUTH,"$Id$");
 #define STREAMINPUTH_MSGEDLEN "No dimLength given"
 #define STREAMINPUTH_MSGEDIM  "Inconsistent or non-positive arrayDim value"
 #define STREAMINPUTH_MSGEFMT  "Badly formatted number"
+#define STREAMINPUTH_MSGEBUF  "BUFFSIZE not a multiple of largest complex type size"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
