@@ -261,7 +261,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     series->data->data[i] = (REAL4)geo->data->data[i];
 
   /* destroy geo series */
-  LAL_CALL(LALDestroyREAL8TimeSeries(status, geo), status);
+  XLALDestroyREAL8TimeSeries(geo);
 
   return(series);
 }
@@ -313,7 +313,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   {
     fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
         start.gpsSeconds, end.gpsSeconds);
-    LAL_CALL(LALDestroyREAL4TimeSeries(status, series), status);
+    XLALDestroyREAL4TimeSeries(series);
     exit(1);
   }
 
@@ -660,7 +660,7 @@ static REAL4TimeSeries *data_window(LALStatus *status,
       series->data->data[length - hann_length + i] = hann->data->data[i];
 
     /* free memory for hann window */
-    LAL_CALL(LALDestroyREAL4TimeSeries(status, hann), status);
+    XLALDestroyREAL4TimeSeries(hann);
   }
   else
   {
@@ -2162,7 +2162,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       omegaGW->data->data[i] *= mask->data->data[i];
 
     /* destroy frequency mask */
-    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, mask), &status);
+    XLALDestroyREAL4FrequencySeries(mask);
   }
 
   if (vrbflg)
@@ -2758,50 +2758,46 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
   /* cleanup */
-  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentOne), &status);
-  LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwo), &status);
+  XLALDestroyREAL4TimeSeries(segmentOne);
+  XLALDestroyREAL4TimeSeries(segmentTwo);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTempOne), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTempTwo), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdOne), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTwo), &status);
-  LAL_CALL(LALDestroyVector(&status, &(calPsdOne)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(calPsdTwo)), &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOne), \
-      &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTempTwo), \
-      &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseOne), &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTwo), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, optFilter), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdOne), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdTwo), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
-  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
-  LAL_CALL(LALDestroyREAL4TimeSeries(&status, dataWindow), &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeOne), &status);
-  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, hBarTildeTwo), &status);
+  XLALDestroyREAL4FrequencySeries(psdTempOne);
+  XLALDestroyREAL4FrequencySeries(psdTempTwo);
+  XLALDestroyREAL4FrequencySeries(psdOne);
+  XLALDestroyREAL4FrequencySeries(psdTwo);
+  XLALDestroyREAL4Vector(calPsdOne);
+  XLALDestroyREAL4Vector(calPsdTwo);
+  XLALDestroyCOMPLEX8FrequencySeries(responseTempOne);
+  XLALDestroyCOMPLEX8FrequencySeries(responseTempTwo);
+  XLALDestroyCOMPLEX8FrequencySeries(responseOne);
+  XLALDestroyCOMPLEX8FrequencySeries(responseTwo);
+  XLALDestroyREAL4FrequencySeries(optFilter);
+  XLALDestroyREAL4FrequencySeries(calInvPsdOne);
+  XLALDestroyREAL4FrequencySeries(calInvPsdTwo);
+  XLALDestroyREAL4FrequencySeries(overlap);
+  XLALDestroyREAL4FrequencySeries(omegaGW);
+  XLALDestroyREAL4TimeSeries(dataWindow);
+  XLALDestroyCOMPLEX8FrequencySeries(hBarTildeOne);
+  XLALDestroyCOMPLEX8FrequencySeries(hBarTildeTwo);
   if (inject_flag)
   {
-    LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGOne), &status);
-    LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGTwo), &status);
-    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, MCresponseOne), \
-        &status);
-    LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, MCresponseTwo), \
-        &status);
-    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, MComegaGW), &status);
+    XLALDestroyREAL4TimeSeries(SimStochBGOne);
+    XLALDestroyREAL4TimeSeries(SimStochBGTwo);
+    XLALDestroyCOMPLEX8FrequencySeries(MCresponseOne);
+    XLALDestroyCOMPLEX8FrequencySeries(MCresponseTwo);
+    XLALDestroyREAL4FrequencySeries(MComegaGW);
   }
   for (i = 0; i <segsInInt; i++)
   {
-    LAL_CALL(LALCDestroyVector(&status, &(respOne[i])), &status);
-    LAL_CALL(LALCDestroyVector(&status, &(respTwo[i])), &status);
-    LAL_CALL(LALDestroyVector(&status, &(segOne[i])), &status);
-    LAL_CALL(LALDestroyVector(&status, &(segTwo[i])), &status);
+    XLALDestroyCOMPLEX8Vector(respOne[i]);
+    XLALDestroyCOMPLEX8Vector(respTwo[i]);
+    XLALDestroyREAL4Vector(segOne[i]);
+    XLALDestroyREAL4Vector(segTwo[i]);
     if (inject_flag)
     {
-      LAL_CALL(LALCDestroyVector(&status, &(MCrespOne[i])), &status);
-      LAL_CALL(LALCDestroyVector(&status, &(MCrespTwo[i])), &status);
+      XLALDestroyCOMPLEX8Vector(MCrespOne[i]);
+      XLALDestroyCOMPLEX8Vector(MCrespTwo[i]);
     }
   }
 
