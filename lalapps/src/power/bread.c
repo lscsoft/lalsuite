@@ -176,7 +176,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"noplayground",    no_argument,        &options->noplayground, TRUE},
 		{"help",            no_argument,        NULL,  'o'}, 
 		{"sort",            no_argument,        &options->sort,  TRUE},
-		{0, 0, 0, 0}
+		{NULL, 0, NULL, 0}
 	};
 	int c;
 	int option_index;
@@ -193,7 +193,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		switch(c) {
 			case 0:
 			/* if this option set a flag, do nothing else now */
-			if ( long_options[option_index].flag != 0 )
+			if ( long_options[option_index].flag != NULL )
 				break;
 			else {
 				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
@@ -467,6 +467,7 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 		event = event->next;
 	head = event;
 
+/* FIXME: don't check the first event again */
 	for(tmp = event; event; event = event->next) {
 		if(keep_this_event(event, options))
 			tmp = event;
