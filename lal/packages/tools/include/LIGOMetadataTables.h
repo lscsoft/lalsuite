@@ -219,7 +219,7 @@ tagEventIDColumn
   struct tagSnglBurstTable      *snglBurstTable;
   struct tagSnglInspiralTable   *snglInspiralTable;
   struct tagSummValueTable      *summValueTable;
-  struct tagSnglTransData       *snglTransdataTable;
+  struct tagSnglTransdataTable  *snglTransdataTable;
 }
 EventIDColumn;
 /* </lalVerbatim> */
