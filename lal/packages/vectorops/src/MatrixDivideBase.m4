@@ -33,7 +33,7 @@ void F1 (
 )
 {
         /*  Variable Declarations  */
-        INT4    iterator;
+        UINT4   iterator;
         UINT4   length;
 
         INITSTATUS( status, "F1" , MATLABMATRIXDIVC);
@@ -76,7 +76,7 @@ void F2 (
 )
 {
         /*  Variable Declarations  */
-        INT4    iterator;
+        UINT4   iterator;
         UINT4   length;
 
         INITSTATUS( status, "F2" , MATLABMATRIXDIVC);
@@ -119,7 +119,7 @@ void F3 (
 )
 {
         /*  Variable Declarations  */
-        INT4    iterator;
+        UINT4    iterator;
         UINT4   length;
 
         INITSTATUS( status, "F3" , MATLABMATRIXDIVC);
@@ -168,8 +168,8 @@ void F4 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        INT4		iterator, index;
-	INT4		row, column;
+        UINT4		iterator, index;
+	UINT4		row, column;
 
         INITSTATUS( status, "4" , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
@@ -238,8 +238,8 @@ void F5 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        INT4            iterator, index;
-        INT4            row, column;
+        UINT4            iterator, index;
+        UINT4            row, column;
 
         INITSTATUS( status, "F5" , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );
@@ -309,8 +309,8 @@ void F6 (
         UINT4Vector     *length;
         UINT4           ndims;
         UINT4           ndims2;
-        INT4            iterator, index;
-        INT4            row, column;
+        UINT4            iterator, index;
+        UINT4            row, column;
 
         INITSTATUS( status, "F6" , MATLABMATRIXDIVC);
         ATTATCHSTATUSPTR( status );

@@ -31,7 +31,7 @@ void F1 (
 )
 {
         /*  Variable Declarations  */
-        INT4    iterator;
+        UINT4    iterator;
         UINT4   length;
 
         INITSTATUS( status, "F1" , MATLABMATRIXMULTC);
@@ -74,7 +74,7 @@ void F2 (
 )
 {
         /*  Variable Declarations  */
-        INT4    iterator;
+        UINT4    iterator;
         UINT4   length;
 
         INITSTATUS( status, "F2" , MATLABMATRIXMULTC);
@@ -123,8 +123,8 @@ void F3 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        INT4		iterator, index;
-	INT4		row, column;
+        UINT4		iterator, index;
+	UINT4		row, column;
 
         INITSTATUS( status, "F3" , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
@@ -195,8 +195,8 @@ void F4 (
         UINT4Vector     *length;
         UINT4           ndims;
         UINT4		ndims2;
-        INT4            iterator, index;
-        INT4            row, column;
+        UINT4            iterator, index;
+        UINT4            row, column;
 
         INITSTATUS( status, "F4" , MATLABMATRIXMULTC);
         ATTATCHSTATUSPTR( status );
