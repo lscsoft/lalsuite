@@ -376,6 +376,7 @@ tagFindChirpFilterParams
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         norm;
+  UINT4                         maximiseOverChirp;
   BOOLEAN                       computeNegFreq;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qtildeVec;
@@ -416,6 +417,10 @@ $\rho^2(t_j)$ by
 \begin{equation}
 \rho^2(t_j) = \textrm{norm} \times \left|q_j\right|^2.
 \end{equation}
+
+\item[\texttt{UINT4 maximiseOverChirp}] If not zero, use algorithm that
+maximised over chirp lengths. Otherwise record all points that pass
+the $\rho^2$ threshold as events.
 
 \item[\texttt{BOOLEAN computeNegFreq}] Currently unused. Must be set to
 $0$ on entry.
