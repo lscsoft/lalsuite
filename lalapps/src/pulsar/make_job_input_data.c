@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr,"where FILE1 contains segment numbers, start times, and SFT length\n");
 	fprintf(stderr,"and FILE2  contains ordered frame file names\n");
 	fprintf(stderr,"and DIRNAME is a directory number to place output job files.\n");
-	return 1;
+	exit(1);
   }
  
   /* read file containing list of segment numbers and start times */
@@ -121,9 +121,13 @@ int main(int argc, char* argv[]) {
     /* see if start time same as the previous file (NDAS data can do this!) */
     if (fileno==0 || starttimes[fileno]>starttimes[fileno-1])
       fileno++;
-    else if (starttimes[fileno]==starttimes[fileno-1])
+    else if (starttimes[fileno]==starttimes[fileno-1]){
+      /* NOTE THAT WE DON'T EXIT -- THIS IS A WARNING ONLY */
+#if (0)      
       fprintf(stderr,"Identical timestamps:\n%d: %s\n%d: %s\n",
 	      starttimes[fileno], filenames[fileno], starttimes[fileno-1], filenames[fileno-1]);
+#endif
+    }
     else {
       fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%d: %s\n%d: %s\n",
 	      fileno+1, argv[2], starttimes[fileno], filenames[fileno], 
