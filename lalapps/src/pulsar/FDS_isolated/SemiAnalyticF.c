@@ -13,6 +13,7 @@ LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
 INT4 lalDebugLevel=3;
 static LALStatus status;
 AMCoeffs amc;
+BOOLEAN stampsflag;
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -24,7 +25,12 @@ int main(int argc,char *argv[])
      In the absence of command line arguments it sets some defaults */
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 
-  if (ReadTimeStamps(CommandLineArgs)) return 2;
+  if (stampsflag) {
+    if (ReadTimeStamps(CommandLineArgs)) return 2;
+  }
+  else {
+    if (MakeTimeStamps(CommandLineArgs)) return 3;
+  }
 
   if (ComputeF(CommandLineArgs)) return 5;
 
@@ -36,10 +42,29 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
+int MakeTimeStamps(struct CommandLineArgsTag CLA) 
+{
+  int i;
+ 
+  /* allocate memory for timestamps */
+  timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
+      
+  /* generate timetamps */
+  for (i=0;i<CLA.nTsft;i++){
+    timestamps[i].gpsSeconds=CLA.gpsStart+(int)(i*CLA.tsft);
+    timestamps[i].gpsNanoSeconds=0;
+  } 
+  
+  return 0;
+  
+}
+/*******************************************************************************/
+
 int ReadTimeStamps(struct CommandLineArgsTag CLA) 
 {
   FILE *fp;
   int i,r;
+ 
  
   /*   %strcpy(filename,inDataFilename); */
   fp=fopen(CLA.timestamps,"r");
@@ -48,7 +73,8 @@ int ReadTimeStamps(struct CommandLineArgsTag CLA)
     return 1;
   }
   timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
- 
+      
+  
   for (i=0;i<CLA.nTsft;i++){
     r=fscanf(fp,"%d  %d\n", &timestamps[i].gpsSeconds, &timestamps[i].gpsNanoSeconds);
     if ( r !=2 ) {
@@ -244,6 +270,8 @@ int CreateDetector(LALDetector *Detector){
   CLA->detector=0;               
   CLA->nTsft=0;            
   CLA->timestamps=NULL;
+  CLA->gpsStart=-1;
+  stampsflag=0;
   CLA->efiles=NULL;
   CLA->phi=0.0;
   CLA->psi=0.0;
@@ -252,11 +280,16 @@ int CreateDetector(LALDetector *Detector){
   CLA->sqrtSh=1.0;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"ha:d:E:n:T:D:t:Q:Y:i:s:N:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"ha:d:E:n:T:S:D:t:Q:Y:i:s:N:"))!=-1))
     switch (c) {
     case 'T':
       /* timestamps file */
       CLA->timestamps=optarg;
+      stampsflag=1;
+      break;
+    case 'S':
+      /* start time of observation */
+      CLA->gpsStart=atoi(optarg);
       break;
     case 'E':
       /* ephemeris file location */
@@ -313,7 +346,9 @@ int CreateDetector(LALDetector *Detector){
       fprintf(stdout,"\t-i\tFLOAT\t Cos(iota) (default 0.0)\n");
       fprintf(stdout,"\t-s\tFLOAT\t Strain (default 1.0)\n");
       fprintf(stdout,"\t-N\tFLOAT\t Noise floor (sqrt(Sh)) in 1/sqrt(Hz) (default 1.0)\n");
+      fprintf(stdout,"\t**** Only one of the following two needs to be set ****\n");
       fprintf(stdout,"\t-T\tSTRING\t Name of timestamps file \n");
+      fprintf(stdout,"\t-S\tINTEGER\t GPS start time of continuous observation\n");
       fprintf(stdout,"\t-t\tFLOAT\t Time baseline of SFTs \n");
       fprintf(stdout,"\t-n\tINTEGER\t Number of data points to read from timestamps file \n");
       fprintf(stdout,"\t-E\tSTRING\t Directory where Ephemeris files are located \n");
@@ -328,12 +363,6 @@ int CreateDetector(LALDetector *Detector){
       break;
     }
 
-  if(CLA->timestamps == NULL)
-    {
-      fprintf(stderr,"No timestamps file specified; input with -T option.\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
-      return 1;
-    }      
   if(CLA->efiles == NULL)
     {
       fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
@@ -346,7 +375,18 @@ int CreateDetector(LALDetector *Detector){
       fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
      return 1;
     }      
-
+  if((CLA->gpsStart>=0)&&(CLA->timestamps!=NULL))
+    {
+      fprintf(stderr,"Both start time and timestamps file specified - just need one !!\n");
+      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
+     return 1;
+    }   
+  if((CLA->gpsStart<0)&&(CLA->timestamps==NULL))
+    {
+      fprintf(stderr,"Need to specify gpsStart time or a timestamps file !!\n");
+      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
+     return 1;
+    }   
 
 
   /* update global variable and return */
