@@ -344,10 +344,14 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* determine number of calibration points required */
-      TRY( LALGPStoFloat( status->statusPtr, &epoch, &(output->epoch)), status );
-      TRY( LALGPStoFloat( status->statusPtr, &first_cal, &(sensemonTS.epoch)), status );
-      TRY( LALGPStoFloat( status->statusPtr, &duration_real, duration), status );
-      length = (UINT4)ceil((epoch + duration_real - first_cal) / (sensemonTS.deltaT));
+      TRY( LALGPStoFloat( status->statusPtr, &epoch, &(output->epoch)), 
+	  status );
+      TRY( LALGPStoFloat( status->statusPtr, &first_cal, &(sensemonTS.epoch)), 
+	  status );
+      TRY( LALGPStoFloat( status->statusPtr, &duration_real, duration), 
+	  status );
+      length = (UINT4)ceil((epoch + duration_real - first_cal) / 
+	  (sensemonTS.deltaT));
       
       /* get the alpha values */
       LALDCreateVector( status->statusPtr, &(sensemonTS.data), length );
@@ -423,7 +427,10 @@ LALExtractFrameResponse(
       ab.epoch  = sensemonTS.epoch;
       ab.deltaT = sensemonTS.deltaT;
       strncpy( ab.name, sensemonTS.name, LALNameLength );
-
+     
+      /* destroy the sensemonTS.data */
+      LALDDestroyVector( status->statusPtr, &(sensemonTS.data) );
+      CHECKSTATUSPTR( status ); 	
       break; 
     }
     /* destroy the empty frame cache and try again */
@@ -555,7 +562,11 @@ LALExtractFrameResponse(
   CHECKSTATUSPTR( status );
   LALCDestroyVector( status->statusPtr, &C0.data );
   CHECKSTATUSPTR( status );
-
+  LALCDestroyVector( status->statusPtr, &(a.data) );
+  CHECKSTATUSPTR( status );
+  LALCDestroyVector( status->statusPtr, &(ab.data) );
+  CHECKSTATUSPTR( status );
+  
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
