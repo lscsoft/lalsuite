@@ -740,6 +740,7 @@ int main(int argc, char *argv[]){
       if (mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
 	{
 	  fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
+	  return 1;  /* stop the program */
 	}
 
       /* create the base filenames for the stats, histo and event files*/
