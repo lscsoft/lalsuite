@@ -60,7 +60,7 @@ longop = [
   "triggered-inspiral",
   "coincidence",
   "injections",
-  "slide-data="
+  "slide-data=",
   "playground-only",
   "user-tag=",
   "priority=",
