@@ -125,7 +125,7 @@ Psi coordinates are for BCV searches.
 \item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
 
 \end{entry}
-
+\begin{entry}
 \item[Description] 
 \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
 template banks for LIGO or GEO data with the LAL bank package.  The code 
@@ -147,13 +147,6 @@ calibrated and unclibrated power spectra to frame files.
 
 See the LAL bank package
 documentation for detailed information on the algorithms used to generate the
-banks.
-
-\item[Options]\leavevmode
-\begin{entry}
-\item[\texttt{--help}] Display a brief usage summary.
-\end{entry}
-
 \item[Example]
 \begin{verbatim}
 lalapps_tmpltbank \
@@ -168,6 +161,7 @@ lalapps_tmpltbank \
 /ldas_outgoing/calibration/cache_files/L1-CAL-V03-729273600-734367600.cache \
 --space Tau0Tau3 --approximant TaylorT1 --order twoPN \
 --channel-name L1:LSC-AS_Q --debug-level 33
+
 \end{verbatim}
 
 \item[Author] 
