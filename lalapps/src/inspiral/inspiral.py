@@ -1,8 +1,5 @@
 """
-inspiral.py - classes needed for the inspiral analysis pipeline
-
-$Id$
-
+Classes needed for the inspiral analysis pipeline.
 This script produced the necessary condor submit and dag files to run
 the standalone inspiral code on LIGO data
 """

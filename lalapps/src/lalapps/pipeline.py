@@ -1,7 +1,7 @@
 """
-pipeline.py - condor functions used by pipeline scripts
-
-$Id$
+This modules contains objects that make it simple for the user to 
+create python scripts that build Condor DAGs to run code on the LSC
+Data Grid.
 """
 
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
