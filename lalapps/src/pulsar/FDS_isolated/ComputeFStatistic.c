@@ -46,10 +46,16 @@ RCSID( "$Id$");
 
 /*----------------------------------------------------------------------*/
 /* USE_BOINC should be set to 1 to be run under BOINC */
+/* NO_BOINC_GRAPHICS should be unset or 0 to have BOINC application graphics */
 
 #ifndef USE_BOINC
 #define USE_BOINC 0
 #endif
+
+#ifndef NO_BOINC_GRAPHICS
+#define NO_BOINC_GRAPHICS 0
+#endif
+
 #if USE_BOINC
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
@@ -60,10 +66,13 @@ typedef int bool;
 extern int boinc_init(bool standalone);
 extern int boinc_finish(int);
 extern int boinc_resolve_filename(const char*, char*, int len);
-extern int boinc_init_graphics();
-extern int boinc_finish_graphics();
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
+
+#if !NO_BOINC_GRAPHICS
+extern int boinc_init_graphics();
+extern int boinc_finish_graphics();
+#endif
 
 /* for current search position, used in starsphere.C revision 4.6 or greater */
 extern float search_RAdeg;
@@ -221,7 +230,11 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* boinc_init() needs to be run before any boinc_api functions are used */
   boinc_init(FALSE);
+
+#if !NO_BOINC_GRAPHICS
   boinc_init_graphics();
+#endif
+
 #if USE_BOINC_DEBUG
   {
     char commandstring[256];
@@ -382,13 +395,13 @@ int main(int argc,char *argv[])
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
-#if USE_BOINC
+#if (USE_BOINC && !NO_BOINC_GRAPHICS)
       /* pass current search position, for use with starsphere.C
 	 revision 4.6 or greater. Need to convert radians to
 	 degrees. */
       search_RAdeg = (float)(180.0*Alpha/LAL_PI);
       search_DEdeg = (float)(180.0*Delta/LAL_PI);
-#endif /* USE_BOINC */
+#endif /* USE_BOINC and !NO_BOINC_GRAPHICS*/
 
       LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
@@ -470,7 +483,9 @@ int main(int argc,char *argv[])
   LAL_CALL ( Freemem(&status), &status);
 
 #if USE_BOINC
+#if !NO_BOINC_GRAPHICS
   boinc_finish_graphics();
+#endif
   boinc_finish(0);
 #endif
 
@@ -2648,7 +2663,8 @@ void use_boinc_filename1(char **orig_name ) {
     fprintf(stderr, "Can't resolve file %s\n", *orig_name);
     boinc_finish(2);
   }
-  *orig_name = calloc(strlen(resolved_name)+1,1);
+  LALFree(*orig_name);
+  *orig_name = LALCalloc(strlen(resolved_name)+1,1);
   strcpy(*orig_name, resolved_name);
   return;
 }
