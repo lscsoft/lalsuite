@@ -85,14 +85,14 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = 752242050;
-UINT8 stopTime = 752242590;
+UINT8 startTime = 751957183;
+UINT8 stopTime = 751957783;
 INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
-INT4 calibOffset = 30;
-CHAR frameCache1[200] = "H-752242020.cache";
-CHAR frameCache2[200] = "L-752242020.cache";
+INT4 calibOffset =29;
+CHAR frameCache1[200] = "S3PlayCachefiles/H-751957182.cache";
+CHAR frameCache2[200] = "S3PlayCachefiles/L-751957182.cache";
 CHAR calCache1[200] = "calibration/H1-CAL-V02-751651244-757699245.cache";
 CHAR calCache2[200] = "calibration/L1-CAL-V02-751651248-757699249.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
@@ -155,6 +155,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 varTheo, inVarTheoSum ;
   REAL8 ptEst, error;
   /* input data segment */
+  INT4 duration, durationEff, extrasec;
   INT4 numSegments, numJobs, segMiddle;
   INT4 segmentLength,segmentPadLength,intervalLength;
   INT4 segmentShift;
@@ -285,6 +286,33 @@ INT4 main(INT4 argc, CHAR *argv[])
        { seed = 2 * NLoop * seed;}
    }
 
+  if ((sampleRate == resampleRate)&&(high_pass_flag == 0))
+    {padData = 0;}
+  else {padData = 1;}
+
+  /* get number of segments */
+  numSegments = (INT4)(intervalDuration / segmentDuration);
+  duration = stopTime - startTime;
+  numJobs = (INT4)((duration - 2 * padData)/ segmentDuration ) -  numSegments + 1;
+  segMiddle = (INT4) ((numSegments - 1) / 2);
+  segmentShift = segmentDuration;
+
+  /* recenter */
+  durationEff = (INT4)((duration - 2* padData) / segmentDuration ) * segmentDuration;
+  extrasec = duration - durationEff;
+  printf("%d %d\n",durationEff,extrasec);  
+  startTime = startTime + (INT4)(extrasec/2);
+  stopTime = startTime + durationEff; 
+
+  if (verbose_flag)
+    {fprintf(stdout, "%d\n",numJobs);}
+
+  if (overlap_hann_flag)
+    {
+      /* numSegments = 2 * numSegments - 1; */
+      segmentShift = segmentDuration / 2;
+    }
+
   /* initialize gps time structure */  
   gpsStartTime.gpsSeconds = startTime;
   gpsStartTime.gpsNanoSeconds = 0.;
@@ -292,28 +320,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsStartPadTime.gpsNanoSeconds = 0.;
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0.;
-
-  if (verbose_flag)
-   {fprintf(stdout,"number of jobs:");}
-
-  /* get number of segments */
-  numSegments = (INT4)(intervalDuration / segmentDuration);
-  numJobs = (INT4)((stopTime - startTime) / segmentDuration ) -  numSegments + 1;
-  segMiddle = (INT4) ((numSegments - 1) / 2);
-  segmentShift = segmentDuration;
-
-  if (verbose_flag)
-   {fprintf(stdout, "%d\n",numJobs);}
-
-  if (overlap_hann_flag)
-   {
-     /* numSegments = 2 * numSegments - 1; */
-    segmentShift = segmentDuration / 2;
-   }
-  
-  if ((sampleRate == resampleRate)&&(high_pass_flag == 0)) 
-    {padData = 0;}
-  else {padData = 1;}
 
   /* set length for data segments */
   intervalLength = (intervalDuration + 2 * padData) * resampleRate;
@@ -1543,7 +1549,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	   if (verbose_flag)
 	    {
              fprintf(stdout, "job %d:", jobLoop);
-             fprintf(stdout, "varTheo = %e s\n", varTheo);
+             fprintf(stdout, " varTheo = %e s,  sigmatheo = %e\n", varTheo, sqrt(varTheo));
             }
            
            gpsStartTime.gpsSeconds = startTime + (jobLoop + segMiddle) * segmentDuration;                     
@@ -1621,7 +1627,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* output to file */
                 
            out1 = fopen(outputFilename1, "a");
-	   fprintf(out1,"%d %e %e\n", gpsStartTime.gpsSeconds, y, varTheo);
+	   fprintf(out1,"%d %e %e %e\n", gpsStartTime.gpsSeconds, y,sqrt(varTheo), varTheo);
            fclose(out1);
 	   }
      }
