@@ -1396,10 +1396,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'i':
         fLow = (REAL4) atof( optarg );
-        if ( fLow < 40 )
+        if ( fLow < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "low frequency cutoff is less than 40 Hz: "
+              "low frequency cutoff is less than 0 Hz: "
               "(%f Hz specified)\n",
               long_options[option_index].name, fLow );
           exit( 1 );
