@@ -6,7 +6,7 @@ else
 FRAMEPROGRAMS = 
 endif
 bin_PROGRAMS = $(FRAMEPROGRAMS)
-bin_SCRIPTS = lalapps_GatherLFN lalapps_QueryMetadataLFN
+bin_SCRIPTS = lalapps_GatherLFN lalapps_QueryMetadataLFN lalapps_ClusterComputeF
 if FRAME
 lalapps_narrowBandExtract_SOURCES = narrowBandExtract.c
 endif
@@ -14,8 +14,8 @@ endif
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-EXTRA_DIST = extractSFTband.c GatherLFN.py QueryMetadataLFN.py
-CLEANFILES = lalapps_GatherLFN lalapps_QueryMetadataLFN
+EXTRA_DIST = extractSFTband.c GatherLFN.py QueryMetadataLFN.py ClusterComputeF.py
+CLEANFILES = lalapps_GatherLFN lalapps_QueryMetadataLFN lalapps_ClusterComputeF
 
 lalapps_GatherLFN: GatherLFN.py
 	sed "s+@PYTHONPROG@+@PYTHON@+g" GatherLFN.py > lalapps_GatherLFN
@@ -24,3 +24,7 @@ lalapps_GatherLFN: GatherLFN.py
 lalapps_QueryMetadataLFN: QueryMetadataLFN.py
 	sed "s+@PYTHONPROG@+@PYTHON@+g" QueryMetadataLFN.py > lalapps_QueryMetadataLFN
 	chmod +x lalapps_QueryMetadataLFN
+
+lalapps_ClusterComputeF: ClusterComputeF.py
+	sed "s+@PYTHONPROG@+@PYTHON@+g" ClusterComputeF.py > lalapps_ClusterComputeF
+	chmod +x lalapps_ClusterComputeF
