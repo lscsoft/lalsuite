@@ -435,7 +435,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->central_freq = (strtemplate[m].f-CLA.flow)/2.0;	   
 	  (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
 	  (*thisEvent)->snr          = maximum;
-	  (*thisEvent)->amplitude   = vector->data[pmax]*strtemplate[m].norm;
+	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = 0; /* FIXME */
 
 	}
@@ -619,7 +619,7 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   if(CLA.TruncSecs != 0.0) 
     {
       memset( vector->data + (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5), 0,
-	      ( vector->length -  2* (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) 
+	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) 
 	      * sizeof( *vector->data ) );
     }
   
