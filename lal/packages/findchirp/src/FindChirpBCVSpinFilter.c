@@ -92,9 +92,9 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 a1;
   REAL4                 a2;                  
   REAL4                 a3;     
-  COMPLEX8             *outputData1;
-  COMPLEX8             *outputData2;
-  COMPLEX8             *outputData3;
+  COMPLEX8             *inputData1;
+  COMPLEX8             *inputData2;
+  COMPLEX8             *inputData3;
   FindChirpChisqInput  *chisqInput;
   FindChirpChisqInput  *chisqInputBCV;
 
@@ -173,10 +173,28 @@ LALFindChirpBCVSpinFilterSegment (
   ASSERT( input->segment->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
 
+/*
+   *
+   * point local pointers to input and output pointers
+   * Check that I actually need all this
+   *
+   */
 
 
+  /* workspace vectors */
+  q    = params->qVec->data;
+  qBCV = params->qVecBCV->data;
+  qtilde    = params->qtildeVec->data;
+  qtildeBCV = params->qtildeVecBCV->data;
+  
+  
+  /* template and data */
+  inputData     = input->segment->data->data->data;
+  inputDataBCV  = input->segment->dataBCV->data->data;
+  tmpltSignal   = input->fcTmplt->data->data;
+  templateNorm  = input->fcTmplt->tmpltNorm;   /* this is expPsi */
+  deltaT        = params->deltaT;
 
-/*declaration*/
 
 /*
  *
@@ -236,25 +254,27 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  outputData1 = fcSeg->data->data->data;
-  outputData2 = fcSeg->data->data->data;
-  outputData3 = fcSeg->data->data->data;
+  inputData1 = fcSeg->data->data->data;
+  inputData2 = fcSeg->data->data->data;
+  inputData3 = fcSeg->data->data->data;
   
-  outputData1[k].re *= a1 * wtilde[k].re;
-  outputData2[k].re *= a2 * wtilde[k].re;
-  outputData3[k].re *= a3 * wtilde[k].re;
+  inputData1[k].re *= a1 * wtilde[k].re;
+  inputData2[k].re *= a2 * wtilde[k].re;
+  inputData3[k].re *= a3 * wtilde[k].re;
   
+  inputData1[k].im *= a1 * wtilde[k].im;
+  inputData2[k].im *= a2 * wtilde[k].im;
+  inputData3[k].im *= a3 * wtilde[k].im;
+
+
 
   /*
    * imaginary parts? square and add to find SNR
    *
    */
 
-  /*
-   *
-   * code copied from BCV (non spin) filter code
-   *
-   */
+ 
+
 
 
 /*code*/
