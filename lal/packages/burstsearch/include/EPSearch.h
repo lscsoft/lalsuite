@@ -107,7 +107,6 @@ typedef struct
 tagEPDataSegment
 {
   REAL4TimeSeries              *data;
-  REAL4IIRFilter               *preprocessing_filter;
 }
 EPDataSegment;
 
