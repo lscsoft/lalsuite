@@ -100,6 +100,35 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     return fr_add_proc_data( frame, &fdata );
 }
 
+
+
+FrameH *fr_add_proc_COMPLEX8TimeSeries (
+    FrameH                        *frame,
+    COMPLEX8TimeSeries            *chan,
+    const char                    *unit,
+    const char                    *suffix
+    ) 
+{
+  char          chname[256];
+  struct        series fdata;
+
+  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    fdata.name = chname;
+    fdata.tbeg = chan->epoch;
+    memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
+    epoch_add( &fdata.tend, &chan->epoch, 
+	chan->deltaT * (REAL8) chan->data->length );
+    fdata.dom = Time;
+    fdata.type = FR_VECT_8C;
+    fdata.step = (float) chan->deltaT;
+    fdata.unit = unit;
+    fdata.size = (size_t) chan->data->length;
+    fdata.data = (float *) chan->data->data;
+    return fr_add_proc_data( frame, &fdata );
+}
+
+
+
 FrameH *fr_add_proc_REAL8FrequencySeries ( 
     FrameH                     *frame, 
     REAL8FrequencySeries       *chan,
