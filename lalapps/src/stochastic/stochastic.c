@@ -2500,15 +2500,15 @@ INT4 main(INT4 argc, CHAR *argv[])
       ccIn.responseFunctionTwo = responseTwo;
       ccIn.optimalFilter = optFilter;
 
+      if (vrbflg)
+        fprintf(stdout, "Generating cross correlation spectrum...\n");
+
+      /* calculate cc spectrum */
+      ccSpectrum = cc_spectra(&status, hBarTildeOne, hBarTildeTwo, \
+          responseOne, responseTwo, optFilter, epochsMatch);
+
       if (cc_spectra_flag)
       {
-        if (vrbflg)
-          fprintf(stdout, "Generating cross correlation spectrum...\n");
-
-        /* calculate cc spectrum */
-        ccSpectrum = cc_spectra(&status, hBarTildeOne, hBarTildeTwo, \
-            responseOne, responseTwo, optFilter, epochsMatch);
-
         /* save out cc spectra as frame */
         if (vrbflg)
           fprintf(stdout, "Saving ccSpectra to frame...\n");
