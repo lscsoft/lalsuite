@@ -1,0 +1,118 @@
+/**** <lalVerbatim file="Read40mDataCV">
+ * Author: Jolien D. E. Creighton
+ * $Id$
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ * \subsection{Program \texttt{ReadGEOData.c}}
+ * 
+ * Tests the low-level frame stream routines by reading GEO frame data.
+ *
+ * \subsubsection*{Usage}
+ *
+ * \begin{verbatim}
+ * ReadGEOData
+ * \end{verbatim}
+ *
+ * \subsubsection*{Description}
+ *
+ * This program reads the channel \verb+IFO_DMRO+ from all the frames in the
+ * directory set in the environment \verb+LAL_FRAME_PATH+ (or the current
+ * directory if this environment is not set) and prints them as an ascii file.
+ *
+ **** </lalLaTeX> */
+
+#include <stdio.h>
+#include <unistd.h>
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/FrameStream.h>
+
+#ifndef CHANNEL
+#define CHANNEL "LSC_MID_EP-P"
+#endif
+
+#define TESTSTATUS( pstat ) \
+  if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
+
+INT4 lalDebugLevel = LALMSGLVL3;
+
+int main( void )
+{
+  static LALStatus status;
+  const float duration = 60.0; /* seconds of data to read at a time */
+  REAL4TimeSeries tser;
+  INT2TimeSeries  chan;
+  FrChanIn  chanin = { CHANNEL, ADCDataChannel };
+  FrStream *stream = NULL;
+  FrOutPar  outpar = { "G:" CHANNEL, ADCDataChannel, 6, 0, 0 };
+  char *dirname = getenv( "LAL_FRAME_PATH" );
+
+  /* open the frame stream */
+  LALFrOpen( &status, &stream, dirname, "GEO_*.fr" );
+  TESTSTATUS( &status );
+
+  /* get channel info */
+  chan.data = NULL;
+  LALFrGetINT2TimeSeries( &status, &chan, &chanin, stream );
+  TESTSTATUS( &status );
+
+  /* allocate data storage for channel */
+  LALI2CreateVector( &status, &chan.data, duration / chan.deltaT );
+  TESTSTATUS( &status );
+
+  /* the temporary time series */
+  memcpy( &tser, &chan, sizeof( tser ) );
+  tser.data = NULL;
+  LALSCreateVector( &status, &tser.data, duration / tser.deltaT );
+  TESTSTATUS( &status );
+
+  /* loop until all data has been read */
+  while ( 1 )
+  {
+    INT8  tacc = 0.1 * 1e9 / 16384;
+    INT8  texp;
+    INT8  tact;
+    UINT4 i;
+
+    texp  = (INT8)1000000000 * (INT8)chan.epoch.gpsSeconds;
+    texp += (INT8)chan.epoch.gpsNanoSeconds;
+    texp += (INT8)( 1e9 * chan.data->length * chan.deltaT );
+
+    LALFrGetINT2TimeSeries( &status, &chan, &chanin, stream );
+    if ( status.statusCode == FRAMESTREAMH_EDONE )
+    {
+      break;
+    }
+    TESTSTATUS( &status );
+
+    tact  = (INT8)1000000000 * (INT8)chan.epoch.gpsSeconds;
+    tact += (INT8)chan.epoch.gpsNanoSeconds;
+
+    if ( abs( texp - tact ) > tacc )
+      puts( "Gap in frame data!" );
+
+    tser.epoch = chan.epoch;
+    printf( "%s-%u-%u-%g.F\n", outpar.prefix, tser.epoch.gpsSeconds,
+        outpar.nframes, tser.data->length * tser.deltaT / outpar.nframes );
+    for ( i = 0; i < tser.data->length; ++i )
+    {
+      tser.data->data[i] = chan.data->data[i];
+    }
+    LALFrWriteREAL4TimeSeries( &status, &tser, &outpar );
+    TESTSTATUS( &status );
+  }
+
+  LALFrClose( &status, &stream );
+  TESTSTATUS( &status );
+
+  LALI2DestroyVector( &status, &chan.data );
+  TESTSTATUS( &status );
+
+  LALSDestroyVector( &status, &tser.data );
+  TESTSTATUS( &status );
+
+  LALCheckMemoryLeaks();
+  return 0;
+}
