@@ -1,21 +1,23 @@
 TODO (ComputeFStatistic-related)
 -----------------------------------
+* clean up exit codes (BOINC)
+
 * test/compare various metrics
     + find/fix problem with Ephemeris-metric
 
 * get rid of year-specification on command-line if possible (use ranges 00-04..)
 
-* work on more general tiling
+* work on more general tilings
+
+* speed up (interpolation vs oversampling?)
 
 * modify ComputeFStat so that the search parameters can be referred to
   any arbitrary epoch and not just to the epoch of the first sample of the
   analyzed data set (as is now).
 
-* move to using SFT-IO lib
+* determine detector from SFTs? (->yes, in SFT-v2)
 
-* determine detector from SFTs?
-
-* prepare 'unified' F-stat code for binary+isolated
+* prepare 'unified' F-stat code for binary+isolated (->CFS_v2)
 
 done
 ----
@@ -34,3 +36,5 @@ done
 * complete use of Ephemeris-metric
 * commit stripped-down version of "test-SFTs" to allow everybody running testFstat-script
 * quick-fix for mesh-covering problem at the equator?
+
+* move to using SFT-IO lib (done in v2)
