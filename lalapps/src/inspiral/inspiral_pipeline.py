@@ -25,20 +25,23 @@ class InspiralChunk:
     self.end = end
 
 class ScienceSegment:
-  def __init__(self,id,start,end,duration):
+  def __init__(self,id,start,end,duration,segpad):
     self.id = id
     self.start = start
     self.end = end
     self.duration = duration
     self.chunks = []
+    self.segpad = segpad
+    self.startpad = self.start - self.segpad
+    self.endpad = self.end - self.segpad
   def createchunks(self,length,overlap):
     dur = self.duration
     start = self.start
-    incr = dur - overlap
+    seg_incr = length - overlap
     while dur >= length:
       self.chunks.append(InspiralChunk(start,start+length))
-      dur =- incr
-      start += incr
+      start += seg_incr
+      dur -= seg_incr
 
 class InspiralPipeline:
   """
@@ -62,6 +65,7 @@ class InspiralPipeline:
 
   def parsesegs(self):
     self.segments = []
+    segpad = int(self.config['inspiral']['pad-data'])
     # lines that start with an octothorpe are comments
     comment_line = re.compile(r'\A#')
     for line in open(self.config['input']['segments']):
@@ -69,7 +73,7 @@ class InspiralPipeline:
         segpars = tuple(map(int,line.split()))
         # change this line if the format of the science segment file changes
         self.segments.append( 
-          ScienceSegment(segpars[0],segpars[1],segpars[2],segpars[3]) )
+          ScienceSegment(segpars[0],segpars[1],segpars[2],segpars[3],segpad) )
   
   def createchunks(self):
     # compute the chunk and overlap length in seconds
@@ -159,28 +163,28 @@ queue
     
     # jobs to generate the frame cache files
     for seg in self.segments:
-      jobname = 'frcache_%s_%d_%d' % (site,seg.start,seg.end)
+      jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
       print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
       if not cache: print >> dag_fh, 'done',
       print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
-      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
-      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
+      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
+      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
     for i in range(1,len(self.segments)):
       print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
-        site,self.segments[i-1].start,self.segments[i-1].end,
-        site,self.segments[i].start,self.segments[i].end)
+        site,self.segments[i-1].startpad,self.segments[i-1].endpad,
+        site,self.segments[i].startpad,self.segments[i].endpad)
     
     # jobs to generate the template banks
     for seg in self.segments:
-      parent = 'frcache_%s_%s_%s' % (site,seg.start,seg.end)
+      parent = 'frcache_%s_%s_%s' % (site,seg.startpad,seg.endpad)
       for chunk in seg.chunks:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
         print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
         print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
         print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
         print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
         print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
@@ -197,8 +201,8 @@ queue
         if not cache: print >> dag_fh, 'done',
         print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
         print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
         print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
         print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
         print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
