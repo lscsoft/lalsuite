@@ -633,8 +633,8 @@ int initializeEPSearch(
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
         /* output options */
-        {"printData",               no_argument,       &printData,         1 },
-        {"printSpectrum",           no_argument,       &printData,         1 },
+        {"printData",               no_argument,       &printData,         TRUE },
+        {"printSpectrum",           no_argument,       &printSpectrum,         TRUE },
         {0, 0, 0, 0}
     };
     int c;
@@ -1130,9 +1130,9 @@ int initializeEPSearch(
                 break;
 
             case 'B':
-                /* Identify events with alpha less that this value */
+                /* Identify events with alpha less than this value */
                 {
-                    REAL4 tmpth = atof(optarg);
+                    REAL8 tmpth = atof(optarg);
                     if (tmpth < 0.0){
                         fprintf(stderr,"invalid argument to --%s:\n"
                                 "Must be > 0 (%f specified)\n",
