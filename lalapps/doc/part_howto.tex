@@ -38,7 +38,7 @@ rpm -Uvh metaio-4.13-1lal.i386.rpm
 rpm -Uvh stow-1.3.3-1lal.i386.rpm
 \end{verbatim}
 Watch for error messages.   If everything installs correctly,  skip to
-Sec.~\ref{ss:lal},  otherwise continue through the following steps.  
+Sec.~\ref{ss:config},  otherwise continue through the following steps.  
 
 If the binary RPM's do not work for some reason or your particular O/S
 is not supported,   the source RPM's are also available at the LAL web
@@ -60,22 +60,39 @@ Watch for errors.  If this fails,  there is a major problem:  e-mail
 \verb+lal-discuss@gravity.phys.uwm.edu+.    If it succeeds,  as root
 \begin{verbatim}
 cd /usr/src/redhat/SPECS
-rpm -ba fftw.spec
-rpm -ba frame.spec
-rpm -ba metaio.spec
+rpm -bb fftw.spec
+rpm -bb frame.spec
+rpm -bb metaio.spec
+rpm -bb stow.spec
 cd /usr/src/redhat/RPMS/i386
 rpm -Uvh fftw-2.1.3-2lal.i386.rpm
 rpm -Uvh frame-6.08-1lal.i386.rpm
 rpm -Uvh metaio-4.13-1lal.i386.rpm
+rpm -Uvh stow-1.3.3-1lal.i386.rpm
 \end{verbatim}
-Watch for errors at every step.  If you encounter a problem:   e-mail
-\verb+lal-discuss@gravity.phys.uwm.edu+.   If it succeeds,  then you
-can go ahead to the next stage.   Later versions of the RPM software
-require \verb+rpm+ to be replaced by \verb+rpmbuild+. 
+If there are problems, try the following:
+\begin{enumerate}
+   \item Later versions of the RPM software require \verb+rpm -bb+ to be 
+      replaced by \verb+rpmbuild -bb+. 
+   \item If \verb+rpm -bb+ \textit{package} (or \verb+rpmbuild -bb+
+      \textit{package}) fail, you might be able to build by hand:\\
+      \verb+cd ../BUILD/+\textit{package-dir}\\
+      \verb+./configure+\\
+      \verb+make+\\
+      \verb+make install+\\
+      where \textit{package} is the package for which \verb+rpmbuild -bb+ 
+      did not work. The \textit{package-dir} that belongs to 
+      \textit{package} should be obvious with the exception of frame, for
+      which it is \verb+v6r08+. You do not need to do \verb+rpm -Uvh+ 
+      \textit{ package.i386.rpm} for packages installed in this way (this
+      binary rpm should not even exist).
+   \item If none of this works, e-mail\verb+lal-discuss@gravity.phys.uwm.edu+.   
+\end{enumerate}
+If it succeeds,  then you can go ahead to the next stage.   
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Configuring your environment}
+\subsection{Configuring your environment}\label{ss:config}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \color{black}
 
@@ -126,7 +143,7 @@ In the following commands, remember \verb+LALPREFIX+ is the
 absolute directory path where you want to install the LAL library.  If
 \verb+LALPREFIX+ does not exist,  you must create it:
 \begin{verbatim}
-mkdir $LALPREFIX
+mkdir -p $LALPREFIX
 \end{verbatim}
 Then create the directory into which you wish to put the source files for LAL
 and LALApps:
