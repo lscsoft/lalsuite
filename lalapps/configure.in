@@ -31,6 +31,7 @@ AM_PROG_LIBTOOL
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
+AC_CHECK_PROGS(BIBTEX, bibtex, echo)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)

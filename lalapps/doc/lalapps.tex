@@ -43,6 +43,8 @@
   \ifthenelse{\equal{#1}{xxx}}{\index{#2@\texttt{#2}}}%
   {\index{#2@\texttt{#2}}\index{#1!#2@\texttt{#2}}}}
 
+\bibliographystyle{lalapps}
+
 \makeindex
 
 \begin{document}
@@ -475,6 +477,9 @@ This chapter describes the programs that are part of the LALApps package.
 \include{stochastic}
 
 \backmatter
+
+\nocite{*}
+\bibliography{lalapps}
 
 \printindex
 

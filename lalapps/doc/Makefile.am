@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
-TEXSOURCEFILES = lalapps.tex hello.tex ZPG2transfer.tex \
-                 stochastic.tex olapredfcn.tex
+TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
+                 hello.tex ZPG2transfer.tex stochastic.tex olapredfcn.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
@@ -13,6 +13,7 @@ EXTRA_DIST = $(TEXSOURCEFILES)
 LATEX = @LATEX@
 MKIND = @MKIND@
 DVIPS = @DVIPS@
+BIBTEX = @BIBTEX@
 
 pkgdocdir=${prefix}/doc/@PACKAGE@-@VERSION@
 
@@ -27,6 +28,7 @@ dvi-local:
 	test -f AUTHORS.tex || @LN_S@ $(top_srcdir)/AUTHORS AUTHORS.tex
 	test -f hello.c || @LN_S@ $(top_srcdir)/src/example/hello.c .
 	${LATEX} lalapps
+	${BIBTEX} lalapps
 	${LATEX} lalapps
 	${MKIND} lalapps
 	${LATEX} lalapps
