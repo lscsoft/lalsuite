@@ -10,7 +10,7 @@
 /*                                                                               */
 /*                       University of Glasgow - last modified 26/03/2004        */
 /*********************************************************************************/
-
+$Id$
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

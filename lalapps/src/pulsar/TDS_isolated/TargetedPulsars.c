@@ -5,7 +5,7 @@
 /*                                                                               */
 /*                  University of Glasgow - last modified 26/03/2004             */
 /*********************************************************************************/
-
+$Id$
 #include "TargetedPulsars.h" 
 
 #define CONDOR 1 
