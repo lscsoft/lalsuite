@@ -179,7 +179,7 @@ static int EccentricOrbit( void )
 
     psi = M = 2 * LAL_PI * indep.t / P;
     del = psi - e * sin( psi ) - M;
-    while ( fabs( del ) > LAL_REAL4_EPS )
+    while ( fabs( del ) > 10 * LAL_REAL4_EPS )
     {
       psi += ( del < 0 ? 1 : -1 ) * ( fac *= 0.5 ) * e;
       del  = psi - e * sin( psi ) - M;
