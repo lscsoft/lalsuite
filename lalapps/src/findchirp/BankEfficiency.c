@@ -127,7 +127,7 @@ main (  int argc, char **argv )
    coarseIn.mmFine = 0.97;
    coarseIn.iflso = 0.0L;
    coarseIn.mMin = 3.0;
-   coarseIn.mMax = 20.0;
+   coarseIn.mMax = 10.0;
    coarseIn.MMax = coarseIn.mMax * 2.;
    coarseIn.massRange = MinMaxComponentMass; 
    /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
