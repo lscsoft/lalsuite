@@ -24,6 +24,9 @@
  *	a[-a-z]c	a-c aac abc ...
  *
  * $Log$
+ * Revision 1.2  2005/02/09 11:23:30  reinhard
+ * squashed warnings
+ *
  * Revision 1.1  2004/09/16 15:50:05  reinhard
  * add public-domain function amatch() that can do glob-like string matching.
  *
@@ -44,6 +47,8 @@
 
 #define TRUE    1
 #define FALSE   0
+
+int amatch(char *str, char *p);
 
 int
 amatch(char *str, char *p)

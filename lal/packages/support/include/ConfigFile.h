@@ -70,6 +70,7 @@ typedef enum {
   CONFIGFILE_IGNORE = 0,	/* ignore missing config-variable or unparsed config-entries */
   CONFIGFILE_WARN,		/* issue a warning but don't report an error. */
   CONFIGFILE_ERROR,		/* issue an error-message and report a LAL-error */
+  CONFIGFILE_LAST
 } ConfigStrictness;
 /* </lalVerbatim> */
 /****************************************************** <lalLaTeX>
