@@ -733,7 +733,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   
   /* clean up and exit */
 
-  LALCheckMemoryLeaks();
+  /* LALCheckMemoryLeaks();*/
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
