@@ -43,11 +43,11 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \idx{XLALCompareSnglBurstByLowFreq()}
 \idx{XLALCompareSnglBurstByFreq()}
 \idx{XLALCompareSnglBurstByStartTimeAndLowFreq()}
+\idx{XLALCompareSnglBurstByPeakTimeAndFreq()}
 \idx{LALCompareSnglBurst()}
 \idx{XLALCompareSnglBurst()}
 \idx{LALCompareSimBurstAndSnglBurst()}
 \idx{XLALCompareSimBurstAndSnglBurst()}
-\idx{XLALSnglBurstClusterTest()}
 \idx{LALClusterSnglBurstTable()}
 \idx{XLALClusterSnglBurstTable()}
 
@@ -182,6 +182,33 @@ XLALCompareSnglBurstByStartTime(
 
 
 /*
+ * Compare the peak times of two SnglBurstTable events.
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstByPeakTime(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	const REAL8 epsilon = 1e-8;	/* seconds */
+	REAL8 dt = XLALDeltaFloatGPS(&(*a)->peak_time, &(*b)->peak_time);
+
+	/* force times to compare equal if |dt| < epsilon */
+	if(fabs(dt) < epsilon)
+		dt = 0.0;
+
+	if(dt > 0.0)
+		return(1);
+	if(dt < 0.0)
+		return(-1);
+	return(0);
+}
+
+
+/*
  * Compare the time intervals of two SnglBurstTable events.
  */
 
@@ -197,7 +224,7 @@ XLALCompareSnglBurstByTime(
 		return(1);	/* a's interval lies after b's interval */
 	else if(end_time(*a) < start_time(*b))
 		return(-1);	/* a's interval lies before b's interval */
-	return(0);	/* a and b's intervals overlap */
+	return(0);	/* a and b's intervals are continuous */
 }
 
 
@@ -242,7 +269,7 @@ XLALCompareSnglBurstByFreq(
 		return(1);	/* a's band lies above b's band */
 	else if(hi_freq(*a) < lo_freq(*b))
 		return(-1);	/* a's band lies below b's band */
-	return(0);	/* a and b's bands overlap */
+	return(0);	/* a and b's bands are continuous */
 }
 
 
@@ -269,7 +296,28 @@ XLALCompareSnglBurstByStartTimeAndLowFreq(
 
 
 /*
- * Check to see if two events overlap in time and frequency.
+ * Compare two events first by peak time, then by frequency band.
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstByPeakTimeAndFreq(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	int result;
+
+	result = XLALCompareSnglBurstByPeakTime(a, b);
+	if(!result)
+		result = XLALCompareSnglBurstByFreq(a, b);
+	return(result);
+}
+
+
+/*
+ * Check to see if two events are continuous in time and/or frequency.
  */
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
@@ -336,29 +384,6 @@ LALCompareSimBurstAndSnglBurst(
 
 
 /*
- * Returns FALSE if two events should be clustered (peak times are within 10 ns
- * of each other and their frequency bands overlap).  The reason for the
- * aparently backwards return value is that in this way this function's
- * prototype is identical to those passed to the sorting routine;  thus the
- * same test functions can, in principle, be used for both.  Think of this
- * function as the equivalent of the != operator.
- */
-
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
-int
-XLALSnglBurstClusterTest(
-	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
-)
-/* </lalVerbatim> */
-{
-	const REAL8 epsilon = 1e-8;	/* seconds */
-
-	return((fabs(XLALDeltaFloatGPS(&(*a)->peak_time, &(*b)->peak_time)) >= epsilon) || XLALCompareSnglBurstByFreq(a, b));
-}
-
-
-/*
  * cluster events a and b, storing result in a
  */
 
@@ -409,8 +434,8 @@ static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 
 /*
  * Recursively cluster a linked list of SnglBurstTable events until the list
- * stops changing.  testfunc() should return FALSE if the two given events are
- * to be clustered.
+ * stops changing.  testfunc() should return 0 if the two given events are to
+ * be clustered.
  */
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
