@@ -142,6 +142,18 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     cal = os.path.join(cal_path,cal_file)
     self.add_var_opt('calibration-cache-two',cal)
 
+  def set_f_min(self,f_min):
+    """
+    Set the minimum frequency
+    """
+    self.add_var_opt('f-min',f_min)
+
+  def set_f_max(self,f_max):
+    """
+    Set the maximum frequency
+    """
+    self.add_var_opt('f-max',f_max)
+
   def get_output(self):
     """
     Returns the file name of output from the stochastic code. This must be
