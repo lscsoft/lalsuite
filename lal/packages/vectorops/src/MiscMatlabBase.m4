@@ -122,14 +122,15 @@ void F3 (
         /*  length must be greater than one  */
         ASSERT ( length >= 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
-	(*result) = 0;
+	(*result) = ((VTYPE*)(data))->data[length - 1];
+	(*index) = length - 1;
 
         for (iterator = 0; iterator < length; iterator++)
         {
                 if ( ((VTYPE*)(data))->data[iterator] > (*result) )
 		{
 			(*result) = ((VTYPE*)(data))->data[iterator];
-			(*index) = iterator + 1;
+			(*index) = iterator;
 		}
         }
 
