@@ -84,7 +84,7 @@ REAL8 deltaF = 0.25;
 LIGOTimeGPS gpsStartTime, gpsCalibTime;
 UINT8 startTime = 730793098;
 UINT8 stopTime = 730793218;
-INT4 segmentBigDuration = 600;
+INT4 segmentBigDuration = 60;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 0;
@@ -1004,8 +1004,6 @@ INT4 main(INT4 argc, CHAR *argv[])
        if ((status.statusCode !=0)||(responseTemp2.data==NULL))
         {break;}   
 
-       if (verbose_flag)
-        { fprintf(stdout, "Reduce response functions to optimal filter range...\n");}
 
        /* reduce to the optimal filter frequency range */
        response1.epoch = response2.epoch = gpsCalibTime;
@@ -1027,8 +1025,6 @@ INT4 main(INT4 argc, CHAR *argv[])
        /* convert response function for use in the MC routine */
        if (inject_flag)
        {
-        if (verbose_flag)
-         { fprintf(stdout, "Interpolate response functions for MC...\n");}
 
          MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;      
 	 LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
@@ -1365,6 +1361,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
       {"gps-end-time", required_argument, 0, 'T'},
+      {"segment-big-duration", required_argument, 0, 'L'},
       {"segment-duration", required_argument, 0, 'l'},
       {"sample-rate", required_argument, 0, 'A'},
       {"resample-rate", required_argument, 0, 'a'},
@@ -1396,7 +1393,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long(argc, argv, 
-                    "ht:T:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:z:V",
+                    "ht:T:L:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:z:V",
  		    long_options, &option_index);
 
     if (c == -1)
@@ -1431,7 +1428,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
 	       /* stop time */
 	       stopTime = atoi(optarg);
 	       break;
-
+       case 'L':
+	       /* duration */
+	       segmentBigDuration = atoi(optarg);
+	       break;
       case 'l':
 	       /* duration */
 	       segmentDuration = atoi(optarg);
@@ -1616,6 +1616,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -z                    set lalDebugLevel\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
+  fprintf(stderr, " -L                    big segment duration\n");
   fprintf(stderr, " -l                    segment duration\n");
   fprintf(stderr, " -A                    sample rate\n");
   fprintf(stderr, " -a                    resample rate\n");
