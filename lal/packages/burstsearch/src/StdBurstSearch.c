@@ -322,8 +322,10 @@ The response function is resampled to the frequency resolution defined by the se
 	  fsp.length = bptr->nFreq;
 	  fsp.f0 = 0.0;
 	  fsp.deltaF = 0.5 / (data->data->deltaT * (REAL8)bptr->nFreq);
-	  LALCCoarseGrainFrequencySeries(status->statusPtr, bptr->resp, data->resp, &fsp);
-	  CHECKSTATUSPTR (status);
+	  if(data->resp) {
+	    LALCCoarseGrainFrequencySeries(status->statusPtr, bptr->resp, data->resp, &fsp);
+	    CHECKSTATUSPTR (status);
+	  }
 
 	  Dvec->length = bptr->nTime;
 	  Hvec->length = bptr->nTime / 2 + 1;
@@ -347,7 +349,9 @@ The whole analysis segment is divided in 50\%-overlapping subsegments which are 
 	    for(l=0;l<bptr->nFreq;l++) {
 	      REAL8 P = (Hvec->data[l].re*Hvec->data[l].re + Hvec->data[l].im*Hvec->data[l].im) / bptr->norm;
 
-	      P *= pow(bptr->resp->data->data[l].re,2.0) + pow(bptr->resp->data->data[l].im,2.0);
+	      if(data->resp) {
+		P *= pow(bptr->resp->data->data[l].re,2.0) + pow(bptr->resp->data->data[l].im,2.0);
+	      }
 
 	      bptr->P0[l] += P;
 	      bptr->Q[l] += P*P;
@@ -448,16 +452,20 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  DFindRootIn dfri;
 
 	  rp.P = (Hvec->data[l].re*Hvec->data[l].re + Hvec->data[l].im*Hvec->data[l].im) / bptr->norm;
-	  rp.P *= pow(bptr->resp->data->data[l].re,2.0) + pow(bptr->resp->data->data[l].im,2.0);
-	  
+
+	  if(data->resp) {
+	    rp.P *= pow(bptr->resp->data->data[l].re,2.0) + pow(bptr->resp->data->data[l].im,2.0);
+	  }
+
 	  rp.P0 = bptr->P0[l];
 	  rp.Q = bptr->Q[l];
 
 	  LALRiceLikelihood(status->statusPtr, &q0, 0.0, &rp);
 	  if(status->statusPtr->statusCode) {
 	    char msg[1024];
+	    float bw = 1.0 / (data->data->deltaT * (REAL4)bptr->nTime); 
 	    float fr = (REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime); 
-	    sprintf(msg,"Error in LALRiceLikelihood at frequency %g Hz",fr);
+	    sprintf(msg,"Error in LALRiceLikelihood at frequency %g Hz, BW = %g Hz; %g %g %g %g %g %g",fr,bw,bptr->norm,Hvec->data[l].re,Hvec->data[l].im,rp.P0,rp.Q,rp.P);
 	    ABORT(status, 111, msg);
 	  }
 	  /*
