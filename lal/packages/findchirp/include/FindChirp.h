@@ -283,6 +283,7 @@ tagFindChirpSegment
   REAL4                         fLow;
   UINT4                         invSpecTrunc;
   UINT4                         number;
+  INT4                          level;
 }
 FindChirpSegment;
 /* </lalVerbatim> */

@@ -27,8 +27,6 @@ LALFindChirpCreateTmpltNode (
 
   ASSERT( tmplt, status, 
       FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
-  ASSERT( tmplt->segmentIdVec, status,
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
 
 
   /*
