@@ -63,7 +63,7 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "lalapps_stochastic"
+#define PROGRAM_NAME "stochastic"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
@@ -330,8 +330,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get number of segments */
   numSegments = (INT4)(intervalDuration / segmentDuration);
   duration = endTime - startTime;
-  numIntervals = (INT4)(((duration - (2 * padData)) / segmentDuration) - \
-                 numSegments + 1);
+  numIntervals = (numSegments * segmentDuration) / intervalDuration;
   segMiddle = (INT4)((numSegments - 1) / 2);
   segmentShift = segmentDuration;
 
