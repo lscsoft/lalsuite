@@ -207,14 +207,49 @@ int main(int argc,char *argv[])
 
  if (ProcessData(CommandLineArgs)) return 4;
 
+/*  { */
+/*    int p; */
+/*    for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/*      { */
+/*        fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/*      } */
+/*    return 0; */
+/*  } */
+/*  fprintf(stdout,"\n\n"); */
+
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
+/*      { */
+/*        int p; */
+/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/* 	 { */
+/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/* 	 } */
+/*        return 0; */
+/*      } */
      /* high pass filter data again with added injection */ 
      if (ProcessData2(CommandLineArgs)) return 3;
+/*      { */
+/*        int p; */
+/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/* 	 { */
+/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/* 	 } */
+/*        return 0; */
+/*      } */
    }
  
  if (DownSample(CommandLineArgs)) return 5;
+
+/*      { */
+/*        int p; */
+/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/* 	 { */
+/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/* 	 } */
+/*        return 0; */
+/*      } */
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -371,7 +406,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
     fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
     while ( thisEvent )
       {
-	fprintf( fp, "%9d %09d\t%e\t%e\t%e\t%e\t%e\n",
+	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
 		 (int) thisEvent->start_time.gpsSeconds,
 		 (int) thisEvent->start_time.gpsNanoSeconds,
 		 thisEvent->snr,
@@ -1070,7 +1105,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required except -n and -i. One of -k or -c must be specified. They are:\n");
+      fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
       fprintf(stdout,"\t--low-freq-cutoff (-f)\t\tFLOAT\t Low frequency cut-off.\n");
       fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
       fprintf(stdout,"\t--bank-low-freq-cutoff (-b)\tFLOAT\t Template bank low frequency cut-off.\n");
@@ -1088,7 +1123,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
-      fprintf(stdout,"\t--help (-n)\t\t\tFLAG\t Print this message.\n");
+      fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg ./lalapps_StringSearch --low-freq-cutoff 40.0 --bank-low-freq-cutoff 40.0 --threshold 80.0 --frame-cache ht_local_cache --channel-name H1:Calibrated-Strain --gps-start-time 732847600 --gps-end-time 732849648 --no-of-segments 32 --settling-time 8 --cusp-search\n");
       exit(0);
       break;
