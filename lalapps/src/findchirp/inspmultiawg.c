@@ -85,16 +85,19 @@ RCSID( "$Id$" );
 /* Usage format string. */
 #define USAGE \
 "%s [options]\n"\
-"  --help	    	display this message\n"\
-"  --source sfile    	source file containing details of injection\n"\
-"  --response respfile  file containing the response function\n"\
-"  --summary sumfile   	write details of injections to file\n"\
-"  --ifo ifo	    	name of interferomter (optional)\n"\
-"  --flow fstart 	start frequency of injection (default 40 Hz)\n"\
-"  --fhigh fstop    	end frequency of injection (default: end at ISCO)\n"\
-"  --length length    	length of the data (default 64 seconds)\n"\
-"  --samplerate	freq   	rate at which data is sampled (default 16384Hz)\n"\
-"  --debug-level debug	the lal debug level\n"\
+"  --help               display this message\n"\
+"  --source sfile       source file containing details of injection\n"\
+"  --actuation actfile  file containing the actuation function\n"\
+"  --darm2inj dcfactor  calibration between darm_ctrl and injection point\n"\
+"  --summary sumfile    write details of injections to file\n"\
+"  --ifo ifo            name of interferomter (optional)\n"\
+"  --flow fstart        start frequency of injection (default 40 Hz)\n"\
+"  --fhigh fstop        end frequency of injection (default: end at ISCO)\n"\
+"  --smooth Qfac        ringdown the end of the injection with Q factor Qfac\n"\
+"  --length length      length of the data (default 64 seconds)\n"\
+"  --samplerate	freq    rate at which data is sampled (default 16384Hz)\n"\
+"  --debug-level debug  the lal debug level\n"\
+"  --user-tag tag       user-tag added to output file names\n"\
 "\n"
 
 
@@ -134,8 +137,9 @@ main(int argc, char **argv)
   static int verbose_flag;
   static LALStatus stat;      /* status structure */
   CHAR	*sourcefile = NULL;   /* name of sourcefile */
-  CHAR	*respfile = NULL;     /* name of respfile */
+  CHAR	*actfile = NULL;      /* name of respfile */
   CHAR	*outfile = NULL;      /* name of outfile */
+  CHAR  *tag = NULL;	      /* user-tag */
   CHAR  ifo[3]="";	      /* name of IFO */
   CHAR  fname[256];	      /* name of outfile */
   INT4	length = LENGTH;      /* length of data segment */
@@ -166,6 +170,9 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
   INT4	  numinjects=0;
+  REAL4	  Qfac = 0; /* Q factor for the "ringdown" */
+  INT4	  smoothEnd = FALSE; /* do we include the "ringdown" */
+  REAL4	  dcfactor = 1; /* calibration factor between darm and inj */
   
   /*******************************************************************
    * BEGIN PARSE ARGUMENTS					     *
@@ -195,15 +202,18 @@ main(int argc, char **argv)
       /* these options set a flag */
       {"verbose",	      no_argument,  &verbose_flag, 1},
       {"source",              required_argument,  0,  'a'},
-      {"response",            required_argument,  0,  'b'},
+      {"actuation",           required_argument,  0,  'b'},
       {"outfile",	      required_argument,  0,  'c'},
       {"ifo",		      required_argument,  0,  'd'},
+      {"darm2inj",	      required_argument,  0,  'e'},
       {"length",	      required_argument,  0,  'f'},
       {"samplerate",	      required_argument,  0,  'g'},
-      {"help",                no_argument,	  0,  'h'},    
+      {"help",                no_argument,	  0,  'h'},
+      {"smooth",	      required_argument,  0,  'i'},    
       {"flow",		      required_argument,  0,  'j'},
       {"fhigh",		      required_argument,  0,  'k'},
       {"debug-level",	      required_argument,  0,  'l'},
+      {"user-tag",	      required_argument,  0,  'm'},
       {0, 0, 0, 0}
     };
 
@@ -242,10 +252,10 @@ main(int argc, char **argv)
 	break;
 
       case 'b':
-        /* Parse response file option. */
+        /* Parse actuation file option. */
 	{
-	  respfile = optarg;
-	  ADD_PROCESS_PARAM( "string", "%s", respfile );
+	  actfile = optarg;
+	  ADD_PROCESS_PARAM( "string", "%s", actfile );
 	}
 	break;
 
@@ -266,6 +276,13 @@ main(int argc, char **argv)
 	}
 	break;
 	
+      case 'e':
+	/* Calibration between darm and injection */
+	{
+	dcfactor = atof( optarg );
+	  ADD_PROCESS_PARAM( "float", "%e", dcfactor );
+	}
+	break;
 	
       case 'f':
 	/* Specify length of data segment */
@@ -291,6 +308,15 @@ main(int argc, char **argv)
         }
         break;
 
+      case 'i':
+	/* end the injection with a "ringdown", Q factor = Q */
+	{
+	  Qfac = atof( optarg );
+	  ADD_PROCESS_PARAM( "float", "%e", Qfac );
+	  smoothEnd = TRUE;
+	}
+	break;	
+	  
       case 'j':
 	/* Parse start frequency */
 	{
@@ -316,6 +342,15 @@ main(int argc, char **argv)
 	}
 	break;
 
+      case 'm':
+        /* Parse user-tag. */
+	{
+	  tag = optarg;
+	  ADD_PROCESS_PARAM( "string", "%s", tag );
+	}
+	break;
+
+	
       default:
 	{
 	  fprintf( stderr, "unknown error while parsing options\n" );	 
@@ -371,50 +406,51 @@ main(int argc, char **argv)
 			  &pair ), &stat );
   }
 
-  /* Read response function. */
-  if ( respfile ) 
+  /* Read actuation function -- which is stored as a 3 column vector.
+     the first column is the frequency, second is amplitude, third is
+     phase. */
+  
+  if ( actfile ) 
   {
-    REAL4VectorSequence *resp = NULL; /* response as vector sequence */
+    REAL4VectorSequence *actuation = NULL; /* actuation as vector sequence */
     COMPLEX8Vector *response = NULL;  /* response as complex vector */
-    COMPLEX8Vector *unity = NULL;     /* vector of complex 1's */
+    COMPLEX8Vector *unity = NULL;     /* complex vector of 1's */
 
-    if ( ( fp = fopen( respfile, "r" ) ) == NULL )
+    if ( ( fp = fopen( actfile, "r" ) ) == NULL )
     {
-      ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE, respfile );
+      ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE, actfile );
       return INSPAWGFILEC_EFILE;
     }
 
-    /* Read header. */
-    ok &= ( fscanf( fp, "# epoch = %Li\n", &epoch ) == 1 );
-    LALINT8toGPS( &stat, &( detector.transfer->epoch ), &epoch );
-    ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
-	    == 1 );
-    ok &= ( fscanf( fp, "# deltaF = %lf\n",
-		    &( detector.transfer->deltaF ) ) == 1 );
-    if ( !ok ) 
-    {
-      ERROR( INSPAWGFILEC_EINPUT, INSPAWGFILEC_MSGEINPUT, respfile );
-      return INSPAWGFILEC_EINPUT;
-    }
-
-    /* Read and convert body to a COMPLEX8Vector. */
-    LAL_CALL( LALSReadVectorSequence( &stat, &resp, fp ), &stat );
+    LAL_CALL( LALSReadVectorSequence( &stat, &actuation, fp ), &stat );
     fclose( fp );
-    if ( resp->vectorLength != 2 ) 
+    if ( actuation->vectorLength != 3 ) 
     {
-      ERROR( INSPAWGFILEC_EINPUT, INSPAWGFILEC_MSGEINPUT, respfile );
+      ERROR( INSPAWGFILEC_EINPUT, INSPAWGFILEC_MSGEINPUT, actfile );
       return INSPAWGFILEC_EINPUT;
     }
-    LAL_CALL( LALCCreateVector( &stat, &response, resp->length ), &stat );
-    memcpy( response->data, resp->data, 2*resp->length*sizeof(REAL4) );
-    LAL_CALL( LALSDestroyVectorSequence( &stat, &resp ), &stat );
+    
+    /* extract f0 and deltaF from the actuation function */
+    detector.transfer->f0 = actuation->data[0];
+    detector.transfer->deltaF = actuation->data[3] - actuation->data[0];
+    
+    /* Read and convert body to a COMPLEX8Vector. */
 
-    /* Convert response function to a transfer function. */
+    LAL_CALL( LALCCreateVector( &stat, &response, actuation->length ), &stat );
     LAL_CALL( LALCCreateVector( &stat, &unity, response->length ), &stat );
-    for ( i = 0; i < response->length; i++ ) {
+    for ( i = 0; i < response->length; i++ ) 
+    {
+      response->data[i].re = actuation->data[3*i-2] * 
+	cos( actuation->data[3*i-1] ) / dcfactor;
+      response->data[i].im = actuation->data[3*i-2] * 
+	sin( actuation->data[3*i-1] ) / dcfactor;
       unity->data[i].re = 1.0;
       unity->data[i].im = 0.0;
     }
+
+    LAL_CALL( LALSDestroyVectorSequence( &stat, &actuation ), &stat );
+
+    /* convert response function to transfer function */    
     LAL_CALL( LALCCreateVector( &stat, &( detector.transfer->data ),
 			   response->length ), &stat );
     LAL_CALL( LALCCVectorDivide( &stat, detector.transfer->data, unity,
@@ -461,7 +497,7 @@ main(int argc, char **argv)
   {
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
-    CoherentGW waveform;           /* amplitude and phase structure */
+    CoherentGW waveform,*wf;       /* amplitude and phase structure */
     REAL4TimeSeries signal;        /* GW signal */
     REAL8 time;                    /* length of GW signal */
     CHAR timeCode;                 /* code for signal time alignment */
@@ -544,7 +580,16 @@ main(int argc, char **argv)
         LALPrintError( "Waveform sampling interval is too large:\n"
 		       "\tmaximum df*dt = %f", ppnParams.dfdt );
       }
-
+      
+      /* add the smooth ending */
+      if( smoothEnd == TRUE )
+      {
+	wf = &waveform;
+	LAL_CALL( LALGenerateInspiralSmooth( &stat, &wf, &ppnParams, 
+	      &Qfac ), &stat );
+	waveform = *wf;
+      }
+      
       /* Compute epoch for waveform. */
       time = waveform.a->data->length*DELTAT;
       if ( timeCode == 'f' )
@@ -615,16 +660,32 @@ main(int argc, char **argv)
       prevSimEvent = currentSimEvent;
       
       /* Print output file. */
-      if ( !strcmp(ifo,"") )
+      if ( tag ) 
       {
-	LALSnprintf( fname, sizeof(fname), "inspiral_%d.txt", numinjects);
-      }
+	if ( !strcmp(ifo,"") )
+	{
+	  LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d.out", tag, 
+	      numinjects);
+	}
+	else
+	{
+	  LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
+	    tag, numinjects, ifo);
+	}
+      }	
       else
       {
-	LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d.txt",
-	    ifo, numinjects);
-     }
-
+	if ( !strcmp(ifo,"") )
+	{
+	  LALSnprintf( fname, sizeof(fname), "inspiral_%d.out", numinjects);
+	}
+	else
+	{
+	  LALSnprintf( fname, sizeof(fname), "inspiral_%d_%s.out",
+	    numinjects, ifo);
+	}
+      }
+      
       if ( ( fq = fopen( fname, "w" ) ) == NULL ) 
       {
 	ERROR( INSPAWGFILEC_EFILE, INSPAWGFILEC_MSGEFILE,fname );
@@ -690,7 +751,7 @@ main(int argc, char **argv)
       LALFree( this_proc_param );
     }
    
-    /* Write the found injections to the sim table */
+    /* Write the list of injections to the sim table */
     if ( simEventList )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sim_inspiral_table),
