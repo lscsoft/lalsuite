@@ -67,7 +67,7 @@ MPIExportEnvironment (
     INT4        myId
     )
 {
-  CHAR envstr[256];
+  CHAR command[256];
   INT4 code;
 
   INITSTATUS (status, COMMC);
@@ -82,24 +82,24 @@ MPIExportEnvironment (
     ASSERT (var, status, COMM_ENULL, COMM_MSGENULL);
 
     /* calculate length to pass */
-    len = strlen(env) + strlen(var) + 2;
-    ASSERT (len < sizeof(envstr), status, COMM_ESTRL, COMM_MSGESTRL);
+    len = strlen(env) + strlen(var) + 9;
+    ASSERT (len < sizeof(command), status, COMM_ESTRL, COMM_MSGESTRL);
 
     /* copy variable into string */
-    sprintf (envstr, "%s=%s", env, var);
+    sprintf (command, "export %s=%s", env, var);
 
     /* broadcast it */
-    code = MPI_Bcast (envstr, sizeof(envstr), MPI_CHAR, 0, MPI_COMM_WORLD);
+    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, MPI_COMM_WORLD);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
   }
   else
   {
     /* get environment variable string */
-    code = MPI_Bcast (envstr, sizeof(envstr), MPI_CHAR, 0, MPI_COMM_WORLD);
+    code = MPI_Bcast (command, sizeof(command), MPI_CHAR, 0, MPI_COMM_WORLD);
     ASSERT (code == MPI_SUCCESS, status, COMM_EMPIE, COMM_MSGEMPIE);
 
     /* set environment variable */
-    code = putenv (envstr);
+    code = system (command);
     ASSERT (code == 0, status, COMM_ESENV, COMM_MSGESENV);
   }
 
