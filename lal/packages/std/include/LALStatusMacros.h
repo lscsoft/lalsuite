@@ -182,6 +182,12 @@
  *       makes.  Normally it should be called immediately after
  *       INITSTATUS().
  *
+ *       The macro ATTATCHSTATUSPTR() sets the status code to be -1
+ *       and the status message to be "Recursive error".  These flags
+ *       are unset when DETATCHSTATUSPTR() (below) is called.  This is
+ *       so that a use of RETURN() prior to detatching the status
+ *       pointer will yield an error.
+ *
  *    b. When a subroutine is called, it should be handed the
  *       statusPtr field of the calling functions status structure, to
  *       report its own errors.  The calling function should test the
@@ -218,7 +224,8 @@
  *       unless the exit was due to a subroutine failure.  ABORT() and
  *       ASSERT() check for this automatically; the only place you
  *       need to call DETATCHSTATUSPTR() is immediately before
- *       RETURN().
+ *       RETURN().  This macro also sets the status code and the status
+ *       message to nominal values.
  *
  * 8. The REPORTSTATUS() macro is used to issue a current status
  *    report from the current function; the report is printed to
@@ -486,6 +493,8 @@ do                                                                    \
   ASSERT((statusptr)->statusPtr,statusptr,-4,                         \
 	 "ATTATCHSTATUSPTR: memory allocation error");                \
   (statusptr)->statusPtr->level=(statusptr)->level + 1;               \
+  (statusptr)->statusCode = -1;                                       \
+  (statusptr)->statusDescription="Recursive error";                   \
 } while (0)
 
 #define DETATCHSTATUSPTR(statusptr)                                   \
@@ -495,6 +504,8 @@ do                                                                    \
 	 "DETATCHSTATUSPTR: null status pointer");                    \
   LALFree((statusptr)->statusPtr);                                    \
   (statusptr)->statusPtr=NULL;                                        \
+  (statusptr)->statusCode = 0;                                        \
+  (statusptr)->statusDescription=NULL;                                \
 } while (0)
 
 #define TRY(function,statusptr)                                       \
@@ -505,7 +516,7 @@ do                                                                    \
     {                                                                 \
       (statusptr)->file=__FILE__;                                     \
       (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode=-1;                                     \
+      (statusptr)->statusCode= -1;                                    \
       (statusptr)->statusDescription="Recursive error";               \
       if(debuglevel>0)                                                \
 	{                                                             \
@@ -525,7 +536,7 @@ do                                                                    \
     {                                                                 \
       (statusptr)->file=__FILE__;                                     \
       (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode=-1;                                     \
+      (statusptr)->statusCode= -1;                                    \
       (statusptr)->statusDescription="Recursive error";               \
       if(debuglevel>0)                                                \
 	{                                                             \

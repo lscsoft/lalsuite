@@ -56,8 +56,8 @@ typedef unsigned char BOOLEAN;
   typedef short INT2;
   typedef unsigned short UINT2;
 #elif SIZEOF_INT == 2
-  typedef short INT2;
-  typedef unsigned short UINT2;
+  typedef int INT2;
+  typedef unsigned int UINT2;
 #else
 # error "ERROR: NO 2 BYTE INTEGER FOUND"
 #endif
@@ -66,8 +66,8 @@ typedef unsigned char BOOLEAN;
   typedef int INT4;
   typedef unsigned int UINT4;
 #elif SIZEOF_LONG == 4
-  typedef int INT4;
-  typedef unsigned int UINT4;
+  typedef long INT4;
+  typedef unsigned long UINT4;
 #else
 # error "ERROR: NO 4 BYTE INTEGER FOUND"
 #endif
@@ -76,8 +76,8 @@ typedef unsigned char BOOLEAN;
   typedef long INT8;
   typedef unsigned long UINT8;
 #elif SIZEOF_LONG_LONG == 8
-  typedef long INT8;
-  typedef unsigned long UINT8;
+  typedef long long INT8;
+  typedef unsigned long long UINT8;
 #else
 # error "ERROR: NO 8 BYTE INTEGER FOUND"
 #endif
