@@ -81,16 +81,26 @@
 
 NRCSID(INSPIRALSPINBANKC, "$Id$");
 
+typedef struct Node
+{
+  REAL4 psi0;
+  REAL4 psi3;
+  REAL4 beta;
+  REAL4 eta;
+  REAL4 chirpMass;
+  REAL4 mass1;
+  REAL4 mass2;
+  struct Node *next;
+} Node;
 
+  
 static void tmpmetric( REAL4Array *metric );
-
-
 static void cleanup(LALStatus *s,
     REAL4Array **m, 
     UINT4Vector **md, 
     REAL4Vector **e, 
-    SnglInspiralTable *f, 
-    SnglInspiralTable *t,
+    Node *f, 
+    Node *t,
     INT4 *nt);
 
 
@@ -104,8 +114,8 @@ LALInspiralSpinBank(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable *tmplt = NULL;  	/* loop counter */
-  SnglInspiralTable *output = NULL; 	/* head of output linked list */
+  Node *tmplt = NULL;  	/* loop counter */
+  Node *output = NULL; 	/* head of output linked list */
   REAL4Array *metric = NULL;        	/* parameter-space metric */
   UINT4Vector *metricDimensions = NULL;
   REAL4Vector *eigenval =  NULL;     	/* eigenvalues of metric */
@@ -213,7 +223,7 @@ LALInspiralSpinBank(
   zp1 = z1;
     
   /* Allocate first template, which will remain blank. */
-  output = tmplt = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
+  output = tmplt = (Node *) LALCalloc( 1, sizeof(Node) );
   if (!output) 
   {
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,output,tmplt,ntiles);
@@ -245,7 +255,7 @@ LALInspiralSpinBank(
         betaMax = 3.8*LAL_PI/29.961432 * (1+0.75*m2/m1)*(m1/m2) * pow((LAL_MTSUN_SI*100.0/mass),0.6666667);
         if (z > betaMax)
           continue;
-        tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
+        tmplt = tmplt->next = (Node *) LALCalloc( 1, sizeof(Node) );
         /* check to see if calloc worked */
         if (!tmplt) 
         {
@@ -255,10 +265,10 @@ LALInspiralSpinBank(
         tmplt->mass1 = m1;
         tmplt->mass2 = m2;
         tmplt->eta = eta;
-        tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+        tmplt->chirpMass = pow(m1*m2,0.6)/pow(m1+m2,0.2);
         tmplt->psi0 = x;            
         tmplt->psi3 = y; 
-/*        tmplt->beta = z;*/
+        tmplt->beta = z;
         ++(*ntiles);
       } /* for (zp...) */
     } /* for (yp...) */
@@ -286,8 +296,13 @@ LALInspiralSpinBank(
     (*tiles)[cnt].params.mass2 = tmplt->mass2;
     (*tiles)[cnt].params.psi0 = tmplt->psi0;
     (*tiles)[cnt].params.psi3 = tmplt->psi3;
+    (*tiles)[cnt].params.eta = tmplt->eta;
+    (*tiles)[cnt].params.chirpMass = tmplt->chirpMass;
+    (*tiles)[cnt].params.beta = tmplt->beta;
     ++cnt;
   } /* for(tmplt...) */
+
+  
   
   /* prepare the link list to be freed by copying the number of tiles to cnt */
   tmplt = output;
@@ -335,14 +350,13 @@ static void tmpmetric( REAL4Array *metric )
   metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
 } /* tmpmetric() */
 
-
 static void cleanup(
     LALStatus *s, 
     REAL4Array **m, 
     UINT4Vector **md, 
     REAL4Vector **e, 
-    SnglInspiralTable *f,
-    SnglInspiralTable *t,
+    Node *f,
+    Node *t,
     INT4 *nt)
 {
   INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
@@ -363,12 +377,10 @@ static void cleanup(
       t = t->next;
       LALFree(f);
       --(*nt);
-    }
+    }/* while(tmplt) */
   LALFree(t);
   --(*nt);
   }
   DETATCHSTATUSPTR( s );
   RETURN( s );
-}/* cleanup() */
-
-
+}
