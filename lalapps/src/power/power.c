@@ -1,13 +1,5 @@
 #include "power.h"
 
-#define PROGRAM_NAME "power"
-
-typedef struct
-{
-   INT4    argc;
-   CHAR**  argv;
-}LALInitSearchParams;
-
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
 int initializeEPSearch( int argc, char *argv[], void **searchParams,
@@ -16,6 +8,7 @@ int initializeEPSearch( int argc, char *argv[], void **searchParams,
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
 
+#define PROGRAM_NAME "power"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -118,14 +111,18 @@ EPSearchParams  *mdcparams = NULL;  /* mdc search param                   */
 CHAR       site[2];                 /* one character site                 */
 CHAR       ifo[3];                  /* two character interferometer       */
 CHAR       comment[LIGOMETA_COMMENT_MAX]; /* string in output file name   */
-CHAR      *cachefile     = NULL;    /* name of file with frame cache info */
-CHAR      *dirname       = NULL;    /* name of directory with frames      */
-REAL4      noiseAmpl     = 1.0;     /* gain factor for white noise        */
-INT4       seed          = 1;       /* set non-zero to generate noise     */
-INT4       numPoints     = 4096;    /* number of samples from frames      */
+CHAR      *cachefile      = NULL;   /* name of file with frame cache info */
+CHAR      *dirname        = NULL;   /* name of directory with frames      */
+REAL4      noiseAmpl      = 1.0;    /* gain factor for white noise        */
+INT4       seed           = 1;      /* set non-zero to generate noise     */
+INT4       numPoints      = 4096;   /* number of samples from frames      */
+INT4       totalNumPoints = 0;      /* total number of points to analyze  */
+UINT4       totalNumSegs   = 0;      /* total number of points to analyze  */
 INT8       gpsStartTimeNS = 0;      /* gps start time in nsec             */
-LIGOTimeGPS   epoch;                /* gps start time                     */
-INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
+INT8       gpsStopTimeNS  = 0;      /* gps start time in nsec             */
+LIGOTimeGPS   startEpoch;           /* gps start time                     */
+LIGOTimeGPS   stopEpoch;            /* gps stop time                      */
+INT4       sampleRate     = 2048;   /* sample rate in Hz                  */
 
 /* data conditioning parameters */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
@@ -147,18 +144,18 @@ int main( int argc, char *argv[])
     static LALStatus      stat;
     LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-    INT4                  inarg         = 1;
     void                 *searchParams  = NULL;
-    LALInitSearchParams   initSearchParams;
     EPSearchParams       *params        = NULL;
     FrStream             *stream        = NULL;
     FrCache              *frameCache    = NULL;
     CHAR                  fname[256];
-    BOOLEAN               epochSet      = FALSE;
     PassBandParamStruc    highpassParam;
     REAL4                 fsafety=0;
     LIGOTimeGPS		  duration = { 0, 0};
-
+    LIGOTimeGPS		  tmpEpoch = { 0, 0};
+    LALTimeInterval tmpInterval;
+    REAL8                 tmpOffset = 0.0;
+    
     /* data storage */
     REAL4TimeSeries            series;
     REAL8TimeSeries            geoSeries;
@@ -178,10 +175,6 @@ int main( int argc, char *argv[])
     /* units and other things */
     const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-    
-    /* Must allocate memory for the argv in dso code */
-    initSearchParams.argv = (CHAR **) LALMalloc( (size_t)(POWERC_NARGS * 
-                sizeof(CHAR*)) );
     
     /* Which error handler to use */
     lal_errhandler = LAL_ERR_EXIT;
@@ -230,12 +223,31 @@ int main( int argc, char *argv[])
     /* the number of nodes for a standalone job is always 1 */
     searchsumm.searchSummaryTable->nnodes = 1;
 
+    /* set the temporary time variable indicating start of chunk */
+    tmpEpoch.gpsSeconds = startEpoch.gpsSeconds;
+    tmpEpoch.gpsNanoSeconds = startEpoch.gpsNanoSeconds;
+
+    /* loop over chunks of data small enough to fit into memory */
+    while (totalNumSegs>0){
+
+      /* make sure you don't expect too many segments */
+      if (params->initParams->numSegments > totalNumSegs)
+        params->initParams->numSegments = totalNumSegs;
+
+      /* decrement the total number of segments */
+      totalNumSegs -= params->initParams->numSegments;
+
+      /* compute the number of points in a chunk */
+      numPoints = params->initParams->numSegments * (
+          params->initParams->numPoints - params->ovrlap )
+        + 3 * params->ovrlap;
+      
     /* create and initialize the time series vector */
     series.data = NULL;
     LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
     memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
-    series.epoch.gpsSeconds     = epoch.gpsSeconds;
-    series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+    series.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+    series.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
     strcpy(series.name, params->channelName);
     series.deltaT = 1.0/((REAL8) sampleRate);
     series.f0 = 0.0;
@@ -245,7 +257,7 @@ int main( int argc, char *argv[])
     /*******************************************************************
     * GET AND CONDITION THE DATA                                       *
     *******************************************************************/
-    
+
     /* only try to load frame if name is specified */
     if (dirname || cachefile)
     {
@@ -272,15 +284,15 @@ int main( int argc, char *argv[])
           geoSeries.data = NULL;
           LAL_CALL( LALDCreateVector( &stat, &geoSeries.data, numPoints), &stat);
           memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL8) );
-          geoSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-          geoSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          geoSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+          geoSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
           strcpy(geoSeries.name, params->channelName);
           geoSeries.deltaT = 1.0/((REAL8) sampleRate);
           geoSeries.f0 = 0.0;
           geoSeries.sampleUnits = lalADCCountUnit;
           LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
-          geoSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-          geoSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          geoSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+          geoSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
           LAL_CALL( LALFrSeek(&stat, &(geoSeries.epoch), stream), &stat);
 
           /* get the data */
@@ -311,20 +323,26 @@ int main( int argc, char *argv[])
         else
         {
           LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
-          series.epoch.gpsSeconds     = epoch.gpsSeconds;
-          series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          series.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+          series.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
           LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
 
           /* get the data */
           LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
         }
-        /* store the start and end time of the raw channel in the search summary */
-        searchsumm.searchSummaryTable->in_start_time = series.epoch;
-        LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
-            &stat );
-        tmpTime += series.deltaT * (REAL8) series.data->length;
-        LAL_CALL( LALFloatToGPS( &stat, 
-              &(searchsumm.searchSummaryTable->in_end_time), &tmpTime ), &stat );
+        
+        /* store the start time of the raw channel in the search summary */
+        if ( !(searchsumm.searchSummaryTable->in_start_time.gpsSeconds) ) 
+          searchsumm.searchSummaryTable->in_start_time = series.epoch;
+
+        /* store the stop time of the raw channel in the search summary */
+        if (totalNumSegs<=0){
+          LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
+              &stat );
+          tmpTime += series.deltaT * (REAL8) series.data->length;
+          LAL_CALL( LALFloatToGPS( &stat, 
+                &(searchsumm.searchSummaryTable->in_end_time), &tmpTime ), &stat );
+        }
 
         /* close the frame stream */
         LAL_CALL( LALFrClose( &stat, &stream ), &stat);
@@ -351,7 +369,7 @@ int main( int argc, char *argv[])
           &stat );
 
       /* set the parameters of the response to match the data */
-      resp.epoch = epoch;
+      resp.epoch = tmpEpoch;
       resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
       resp.sampleUnits = strainPerCount;
       strcpy( resp.name, channelIn.name );
@@ -395,7 +413,7 @@ int main( int argc, char *argv[])
 
       LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile,
             startTime, stopTime), &stat );
-      
+
       if ( verbose )
         fprintf(stdout, "Injecting signals into time series\n");
 
@@ -422,7 +440,7 @@ int main( int argc, char *argv[])
     /* if one wants to use mdc signals for injections */
 
     if (mdcFlag)
-      {
+    {
           INT4 i;
 	 
 	  /*open mdc cache */
@@ -471,6 +489,12 @@ int main( int argc, char *argv[])
 	  LAL_CALL( LALFrClose( &stat, &stream ), &stat);
       }
 
+      /* destroy the mdc data vector */
+      LAL_CALL( LALDestroyVector( &stat, &mdcSeries.data), &stat);
+      /* close the frame stream */
+      LAL_CALL( LALFrClose( &stat, &stream ), &stat);
+    }
+
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
 
@@ -490,11 +514,11 @@ int main( int argc, char *argv[])
     }
     
     /*******************************************************************
-    * DO THE SEARCH                                                    *
-    *******************************************************************/
+     * DO THE SEARCH                                                    *
+     *******************************************************************/
     while ( params->currentSegment < params->initParams->numSegments )
     {
-        UINT4                tmpDutyCycle=0;
+      UINT4                tmpDutyCycle=0;
         UINT4                dumCurrentSeg=params->currentSegment;
         SnglBurstTable      *tmpEvent     = NULL;
 
@@ -541,13 +565,32 @@ int main( int argc, char *argv[])
         params->currentSegment += tmpDutyCycle;
     }
 
+    /* compute the start time for the next chunk */
+    tmpOffset = (REAL8)(numPoints - 3 * params->ovrlap)/((REAL8) sampleRate);
+    LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
+          &tmpOffset), &stat );
+    LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
+          &tmpInterval), &stat );
+
+    /* clean up memory from that run */
+    LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
+    if ( calCacheFile )
+    {
+      LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
+    }
+    if ( cachefile ) LALFree( cachefile ); 
+    if ( dirname ) LALFree( dirname ); 
+
+    }
+
 
     /*******************************************************************
     * OUTPUT THE RESULTS 
     *******************************************************************/
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     snprintf( fname, sizeof(fname), "%s-%s-POWER-%d-%d.xml",
-            ifo, comment, epoch.gpsSeconds, (INT4)(series.deltaT * numPoints));
+            ifo, comment, startEpoch.gpsSeconds, 
+            stopEpoch.gpsSeconds-startEpoch.gpsSeconds);
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, fname), &stat);
 
 
@@ -607,8 +650,8 @@ int main( int argc, char *argv[])
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
-    LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
     LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
+
     if ( calCacheFile )
     {
       LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
@@ -617,6 +660,7 @@ int main( int argc, char *argv[])
     if ( dirname ) LALFree( dirname ); 
     if ( mdcFlag ) LALFree( mdcparams->channelName );
     if ( mdcFlag ) LALFree( mdcparams );
+
     LALCheckMemoryLeaks();
 
     return 0;
@@ -677,6 +721,8 @@ int initializeEPSearch(
         {"spectype",                required_argument, 0,                 'v'}, 
         {"start_time",              required_argument, 0,                 'x'}, 
         {"start_time_ns",           required_argument, 0,                 'y'}, 
+        {"stop_time",               required_argument, 0,                 'X'}, 
+        {"stop_time_ns",            required_argument, 0,                 'Y'}, 
         {"srate",                   required_argument, 0,                 'z'}, 
         {"sinFreq",                 required_argument, 0,                 'A'}, 
         {"seed",                    required_argument, 0,                 'E'}, 
@@ -1145,6 +1191,55 @@ int initializeEPSearch(
                 }
                 break;
 
+            case 'X':
+                {
+                    long int gstopt = atol( optarg );
+                    if ( gstopt < 441417609 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time is prior to " 
+                                "Jan 01, 1994  00:00:00 UTC:\n"
+                                "(%ld specified)\n",
+                                long_options[option_index].name, gstopt );
+                        exit( 1 );
+                    }
+                    if ( gstopt > 999999999 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time is after " 
+                                "Sep 14, 2011  01:46:26 UTC:\n"
+                                "(%ld specified)\n", 
+                                long_options[option_index].name, gstopt );
+                        exit( 1 );
+                    }
+                    gpsStopTimeNS += (UINT8) gstopt * 1000000000LL;
+                    ADD_PROCESS_PARAM( "int", "%ld", gstopt );
+                }
+                break;
+
+            case 'Y':
+                {
+                    long int gstoptns = atol( optarg );
+                    if ( gstoptns < 0 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time nanoseconds is negative\n",
+                                long_options[option_index].name );
+                        exit( 1 );
+                    }
+                    if ( gstoptns > 999999999 )
+                    {
+                        fprintf( stderr, "invalid argument to --%s:\n"
+                                "GPS start time nanoseconds is greater than unity:\n" 
+                                "Must be <= 999999999 (%ld specified)\n", 
+                                long_options[option_index].name, gstoptns );
+                        exit( 1 );
+                    }
+                    gpsStopTimeNS += (UINT8) gstoptns;
+                    ADD_PROCESS_PARAM( "int", "%ld", gstoptns );
+                }
+                break;
+
             case 'z':
                 /* sample rate in Hz */
                 {
@@ -1357,7 +1452,22 @@ int initializeEPSearch(
         fprintf(stderr,"--start-time must be specified");
         exit (1);
     }
-    LAL_CALL( LALINT8toGPS( &stat, &epoch, &gpsStartTimeNS), &stat);
+    LAL_CALL( LALINT8toGPS( &stat, &startEpoch, &gpsStartTimeNS), &stat);
+
+    /* check that stop time was specified & fill the epoch structure */
+    if ( !gpsStopTimeNS ){
+        fprintf(stderr,"--stop-time must be specified");
+        exit (1);
+    }
+    LAL_CALL( LALINT8toGPS( &stat, &stopEpoch, &gpsStartTimeNS), &stat);
+
+    /* compute the total number of points to be analyzed */
+    totalNumPoints = (stopEpoch.gpsSeconds - startEpoch.gpsSeconds ) 
+      * sampleRate;
+
+    /* compute the total number of segments to be analyzed */
+    totalNumSegs = (INT4) (( totalNumPoints - 3 * params->ovrlap ) /
+      ( params->initParams->numPoints - params->ovrlap ));
 
     /* initialize parameter structures */
     params->tfTiling     = NULL;
