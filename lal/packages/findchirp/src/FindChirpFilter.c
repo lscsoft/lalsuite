@@ -503,6 +503,7 @@ LALFindChirpFilterSegment (
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
+  REAL4                 chirpTime;
   BOOLEAN               haveChisq   = 0;
   COMPLEX8             *qtilde      = NULL;
   COMPLEX8             *q           = NULL;
@@ -615,7 +616,7 @@ LALFindChirpFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
     /* ignore corrupted data at start and end */
