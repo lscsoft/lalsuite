@@ -596,7 +596,7 @@ LALCreateFindChirpSegmentVector (
         params->numPoints/2 + 1 );
     CHECKSTATUSPTR( status );
 
-    if( params->approximant ==BCV )
+    if ( params->approximant == BCV )
     {
       for ( k = 0; k < vectorPtr->data->data->data->length-1; ++k )
       {
