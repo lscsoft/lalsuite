@@ -86,6 +86,14 @@ static void print_usage(char *program)
       "   --gps-end-time   end_time    GPS second of data end time\n"\
       "  [--check-times]               Check that all times were analyzed\n"\
       "\n"\
+      "  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n"\
+      "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
+      "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
+      "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
+      "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
+      "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
+      "  [--num-slides]    num_slides  The number of time slides to perform\n"\
+      "\n"\
       "  [--g1-triggers]               input triggers from G1\n"\
       "  [--h1-triggers]               input triggers from H1\n"\
       "  [--h2-triggers]               input triggers from H2\n"\
@@ -143,13 +151,23 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS startCoinc = {0,0};
   INT4  endCoincidence = -1;
   LIGOTimeGPS endCoinc = {0,0};
+
+  INT4         slideStep[LAL_NUM_IFO];
+  LIGOTimeGPS  slideTimes[LAL_NUM_IFO];
+  INT4         numSlides = 0;
+  INT4         slideNum  = 0;
+
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
   CHAR  ifos[LIGOMETA_IFOS_MAX];
+  CHAR  ifoA[LIGOMETA_IFO_MAX];
+  CHAR  ifoB[LIGOMETA_IFO_MAX];
+  
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
   CHAR *ifoTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
+  CHAR  fileSlide[FILENAME_MAX];
 
   UINT4  numIFO = 0;
   UINT4  numTrigIFO = 0;
@@ -162,8 +180,7 @@ int main( int argc, char *argv[] )
 
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
-  SnglInspiralTable    *snglOutput;
-
+  SnglInspiralTable    *snglOutput = NULL;
   CoincInspiralTable   *coincInspiralList = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
@@ -187,7 +204,8 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
 
-  INT4                  ifoNumber;
+  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
+  InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
@@ -209,6 +227,13 @@ int main( int argc, char *argv[] )
     {"t1-triggers",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },
     {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
     {"check-times",         no_argument,   &checkTimes,               1 },
+    {"g1-slide",            required_argument, 0,                    'b'},
+    {"h1-slide",            required_argument, 0,                    'c'},
+    {"h2-slide",            required_argument, 0,                    'd'},
+    {"l1-slide",            required_argument, 0,                    'e'},
+    {"t1-slide",            required_argument, 0,                    'f'},
+    {"v1-slide",            required_argument, 0,                    'g'},
+    {"num-slides",          required_argument, 0,                    'T'},
     {"g1-time-accuracy",    required_argument, 0,                    'A'},
     {"h1-time-accuracy",    required_argument, 0,                    'B'}, 
     {"h2-time-accuracy",    required_argument, 0,                    'C'}, 
@@ -236,11 +261,11 @@ int main( int argc, char *argv[] )
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
-    {"data-type",           required_argument, 0,                    'd'},
+    {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
     {"userTag",             required_argument, 0,                    'Z'},
-    {"ifo-tag",		          required_argument, 0,   		             'i'},
+    {"ifo-tag",             required_argument, 0,                    'i'},
     {"help",                no_argument,       0,                    'h'}, 
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
@@ -276,6 +301,10 @@ int main( int argc, char *argv[] )
   memset( &accuracyParams, 0, sizeof(InspiralAccuracyList) );
   memset( &aDet, 0, sizeof(LALDetector) );
 
+  /* set the time slide data to zero */
+  memset( &slideStep, 0, LAL_NUM_IFO * sizeof(INT4) );
+  memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
+  
   /* parse the arguments */
   while ( 1 )
   {
@@ -285,7 +314,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:VZ:a:d:hi:m:n:o:p:q:r:s:t:x:z:", 
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
+        "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -444,6 +474,104 @@ int main( int argc, char *argv[] )
         accuracyParams.ifoAccuracy[LAL_IFO_V1].dmchirp = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
+       
+      case 'b':
+        /* slide time for G1 */
+        slideStep[LAL_IFO_G1] = atoi( optarg );
+        if ( slideStep[LAL_IFO_G1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_G1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_G1] );
+        break;
+
+      case 'c':
+        /* slide time for H1 */
+        slideStep[LAL_IFO_H1] = atoi( optarg );
+        if ( slideStep[LAL_IFO_H1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_H1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_H1] );
+        break;
+        
+      case 'd':
+        /* slide time for H2 */
+        slideStep[LAL_IFO_H2] = atoi( optarg );
+        if ( slideStep[LAL_IFO_H2] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_H2] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_H2] );
+        break;
+        
+      case 'e':
+        /* slide time for L1 */
+        slideStep[LAL_IFO_L1] = atoi( optarg );
+        if ( slideStep[LAL_IFO_L1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_L1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_L1] );
+        break;
+        
+      case 'f':
+        /* slide time for T1 */
+        slideStep[LAL_IFO_T1] = atoi( optarg );
+        if ( slideStep[LAL_IFO_T1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_T1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_T1] );
+        break;
+        
+      case 'g':
+        /* slide time for V1 */
+        slideStep[LAL_IFO_V1] = atoi( optarg );
+        if ( slideStep[LAL_IFO_V1] < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The slideStep must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, slideStep[LAL_IFO_V1] );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", slideStep[LAL_IFO_V1] );
+        break;
+
+      case 'T':
+        /* num slides*/
+        numSlides = atoi( optarg );
+        if ( numSlides < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "The number of time slides must be positive\n"
+              "(%d specified)\n",
+              long_options[option_index].name, numSlides );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld", numSlides );
+        break;
 
       case 'm':
         /* eta accuracy G1, argument is dimensionless */
@@ -546,7 +674,7 @@ int main( int argc, char *argv[] )
         }
         break;
 
-      case 'd':
+      case 'k':
         /* type of data to analyze */
         if ( ! strcmp( "playground_only", optarg ) )
         {
@@ -610,7 +738,7 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Inspiral Coincidence\n" 
+        fprintf( stdout, "The Hierarchical INspiral Coincidence Analysis\n" 
             "Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
@@ -733,6 +861,37 @@ int main( int argc, char *argv[] )
         ifoName[2], ifoName[3]);
   }
 
+  /* if numSlides is set, check that the slide times are different for
+   * different ifos (for which we have triggers */
+  if( numSlides )
+  {
+    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    {
+      XLALReturnIFO( ifoA, ifoNumber );
+     
+      if( vrbflg && haveTrig[ifoNumber] ) fprintf( stdout, 
+          "Performing a slide of multiples of %d seconds on %s\n", 
+          slideStep[ifoNumber], ifoA);
+
+      for( ifoTwo = ifoNumber + 1; ifoTwo < LAL_NUM_IFO; ifoTwo++ )
+      {
+        if ( haveTrig[ifoTwo] && haveTrig[ifoNumber] &&
+            slideStep[ifoTwo] == slideStep[ifoNumber] )
+        {
+          XLALReturnIFO( ifoB, ifoTwo );
+           
+          fprintf( stderr,
+            "The time slide specified for ifo %s is %d\n"
+            "The time slide specified for ifo %s is also %d\n"
+            "Must specify unique time slides for all instruments\n",
+            ifoA, slideStep[ifoNumber], ifoB, slideStep[ifoTwo]);
+
+          exit( 1 );
+        }
+      }
+    }
+  }
+  
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
   {
@@ -1026,10 +1185,10 @@ int main( int argc, char *argv[] )
   {
     XLALReturnDetector( &aDet, ifoNumber );
     
-    for ( i = 0; i < LAL_NUM_IFO; i++)
+    for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
-      XLALReturnDetector( &bDet, i );
-      accuracyParams.lightTravelTime[ ifoNumber][ i ] = 
+      XLALReturnDetector( &bDet, ifoTwo );
+      accuracyParams.lightTravelTime[ ifoNumber][ ifoTwo ] = 
         XLALLightTravelTime( &aDet, &bDet );
     }
   }
@@ -1040,20 +1199,87 @@ int main( int argc, char *argv[] )
    *
    */
 
-  
-  LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
-        inspiralEventList, &accuracyParams ), &status); 
+  if ( !numSlides )
+  {
+    LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
+        inspiralEventList, &accuracyParams ), &status);
 
+    if ( vrbflg ) fprintf( stdout,
+        "%d coincident triggers found.\n", numCoinc);
 
-  /* count the coincs */
-  if( coincInspiralList )
-  {  
-    for (numCoinc = 1, thisCoinc = coincInspiralList; 
-        thisCoinc->next; ++numCoinc, thisCoinc = thisCoinc->next );
+    /* write out all coincs as singles with event IDs */
+    LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &snglOutput, 
+          coincInspiralList, &startCoinc, slideNum), &status );
   }
+  else
+  {
+    /* perform the time slides */
+    for( slideNum = -numSlides; slideNum <= numSlides; slideNum++ )
+    {
+      SnglInspiralTable    *slideOutput = NULL;
+      INT4                  numCoincInSlide = 0;
 
-  if ( vrbflg ) fprintf( stdout,
-      "%d coincident triggers found.\n", numCoinc);
+      coincInspiralList = NULL;
+      
+      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      {
+        slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
+        if( slideNum == -numSlides )
+        {
+          slideTimes[ifoNumber].gpsSeconds *= -numSlides;
+        }
+      }
+    
+      if ( vrbflg ) fprintf(stdout,
+          "Performing time slide %d\n", slideNum );
+
+      /* slide the data */
+      LAL_CALL( LALTimeSlideSingleInspiral( &status, inspiralEventList,
+            &startCoinc, &endCoinc, slideTimes), &status) ;
+      LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList),
+            LALCompareSnglInspiralByTime ), &status );
+      
+      /* look for coincidences, except in the zero lag */
+      if( slideNum )
+      {
+        LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
+          inspiralEventList, &accuracyParams ), &status);
+
+        /* count the coincs, scroll to end of list */
+        if( coincInspiralList )
+        {  
+          for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
+            thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+        }
+
+        if ( vrbflg ) fprintf( stdout,
+          "%d coincident triggers found in slide.\n", numCoincInSlide );
+      
+        numCoinc += numCoincInSlide;
+
+
+        /* write out all coincs as singles with event IDs */
+        LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
+            coincInspiralList, &startCoinc, slideNum), &status );
+      }
+      
+      if ( snglOutput )
+      {
+        thisInspiralTrigger->next = slideOutput;
+      }
+      else
+      {
+        snglOutput = slideOutput;
+      }
+
+      /* scroll to the end of the list */
+      if ( slideOutput )
+      {
+        for( thisInspiralTrigger = slideOutput; thisInspiralTrigger->next; 
+          thisInspiralTrigger = thisInspiralTrigger->next);
+      }
+    } 
+  }
 
 
   /*
@@ -1065,10 +1291,8 @@ int main( int argc, char *argv[] )
 
   /* since we don't yet write coinc inspiral tables, we must make a list of
    * sngl_inspiral tables with the eventId's appropriately poplulated */
-  LAL_CALL( LALExtractCoincSngls( &status, &snglOutput, coincInspiralList, 
-        &startCoinc), &status );
-
-
+  
+   
 cleanexit:
 
   searchsumm.searchSummaryTable->in_start_time = startCoinc;
@@ -1084,28 +1308,45 @@ cleanexit:
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
         ifos, ifoTag, userTag, startCoincidence, 
         endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s_%s-%d-%d.xml", 
+        ifos, ifoTag, userTag, startCoincidence, 
+        endCoincidence - startCoincidence );
   }
   else if ( ifoTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", ifos,
         ifoTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else if ( userTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE_%s-%d-%d.xml", 
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifos,
         startCoincidence, endCoincidence - startCoincidence );
+    LALSnprintf( fileSlide, FILENAME_MAX, "%s-THINCA_SLIDE-%d-%d.xml", ifos,
+        startCoincidence, endCoincidence - startCoincidence );
   }
   searchsumm.searchSummaryTable->nevents = numCoinc;
 
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
-      &status );
 
+  if ( !numSlides )
+  {
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
+        &status );
+  }
+  else
+  {
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileSlide), 
+        &status );
+  }
   /* write process table */
 
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
