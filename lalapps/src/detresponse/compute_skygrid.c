@@ -41,7 +41,6 @@ static double doppler(LALStatus * status,
   double          doppler_factor = 0.;
   double          sin_theta;
   int             i;
-  EphemerisData * ephemerides = (EphemerisData *)NULL;
   
   /* source_roc needs to be in Equatorial */
   if (source_loc->system != COORDINATESYSTEM_EQUATORIAL)
@@ -49,14 +48,6 @@ static double doppler(LALStatus * status,
       /* puke and go */
       exit(81);
     }
-  
-  ephemerides = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*ephemerides).ephiles.earthEphemeris = earth_filename;
-  (*ephemerides).ephiles.sunEphemeris   = sun_filename;
-
-  /* read in ephemerides */
-  LALInitBarycenter(status, ephemerides);
-  inputs->edat = ephemerides;
   
   /* NOTE: from the LALBarycenter() file, here's
    * how to compute the unit vector pointing to a 
@@ -75,19 +66,14 @@ static double doppler(LALStatus * status,
   e_source[2] = cos(LAL_PI/2. - source_loc->latitude);
   e_source[1] = sin_theta * sin(source_loc->longitude);
   e_source[0] = sin_theta * cos(source_loc->longitude);
-   
+  
+  /* printf("ALOHA: %e %e\n", source_loc->longitude, 
+            source_loc->latitude); */
+  
   LALDetectorVel(status, velocity, gps, inputs);
   
   for (i = 0; i < 3; ++i)
-  {
     doppler_factor += velocity[i] * e_source[i];
-  }
-
-  /* house keeping; gah! where did ephemE and 
-   * ephemS come from?!? */
-  LALFree(ephemerides->ephemE);
-  LALFree(ephemerides->ephemS);
-  LALFree(ephemerides);
 
   LALCheckMemoryLeaks();
 
@@ -167,6 +153,8 @@ void compute_skygrid(LALStatus * status, char * format_arg)
   LALGPSandAcc            gps_and_acc;
   LALTimeIntervalAndNSample time_info;
   LALTimeInterval         time_interval;
+  AvgVelPar               detectorvel_inputs;     /* yea yea I know */
+  VelocityPar             avgdetectorvel_inputs;
   skygrid_t               grid_cros_sq;  
   skygrid_t               grid_plus_sq;
   skygrid_t               grid_sum_sq;
@@ -297,6 +285,13 @@ void compute_skygrid(LALStatus * status, char * format_arg)
       printf("plus_file_name  = %s\n", plus_file_name);
       printf("sum_file_name   = %s\n", sum_file_name);
     }
+    
+  /* set up inputs to LALDetectorVel() and LALAvgDetectorVel() */
+  detectorvel_inputs.detector = detector;
+  detectorvel_inputs.edat     = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  detectorvel_inputs.edat->ephiles.earthEphemeris = earth_filename;
+  detectorvel_inputs.edat->ephiles.sunEphemeris = sun_filename;
+  LALInitBarycenter(status, (detectorvel_inputs.edat));
 
   /*
    * compute response over whole sky
@@ -365,12 +360,26 @@ void compute_skygrid(LALStatus * status, char * format_arg)
               grid_cros_sq[cnt] = response.cross * response.cross;
               grid_plus_sq[cnt] = response.plus  * response.plus;
               grid_sum_sq[cnt]  = (grid_cros_sq[cnt] + grid_plus_sq[cnt]);
-                
+              
+              /*
               grid_relfreq[cnt] += relval(source.equatorialCoords.latitude,
                                           source.equatorialCoords.longitude,
                                           k, (int)time_info.nSample);
+              */
+              grid_relfreq[cnt] = doppler(status, &(gps_and_acc.gps), 
+                                          &detectorvel_inputs, 
+                                          &(source.equatorialCoords));
             }
         }
+  
+        /* DEBUG */
+        /*
+        source.equatorialCoords.latitude = 0.1;
+        source.equatorialCoords.longitude = 0.1;
+        printf("%.8e\n", doppler(status, &(gps_and_acc.gps), 
+                                          &detectorvel_inputs, 
+                                          &(source.equatorialCoords)));
+        */
         
         LALIncrementGPS(status, &(gps_and_acc.gps), &(gps_and_acc.gps),
                       &time_interval);
@@ -402,7 +411,7 @@ void compute_skygrid(LALStatus * status, char * format_arg)
         
     } 
   fclose(timesfile);    
-  
+ 
   /* TIME-AVERAGED */
   (void)mystrlcpy(cross_file_name, "int_whole_sky_cross", LALNameLength);
   (void)mystrlcpy(plus_file_name, "int_whole_sky_plus", LALNameLength);
