@@ -139,7 +139,7 @@ REAL4 minimalMatch = -1;                /* override bank minimal match  */
 REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
 INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
 REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
-enum { undefined, real4, real8 } cal_data = undefined; /* cal data type */
+enum { undefined, real_4, real_8 } cal_data = undefined; /* cal data type */
 
 /* data conditioning parameters */
 LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
@@ -532,7 +532,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
-  if ( cal_data == real8 )
+  if ( cal_data == real_8 )
   {
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
@@ -585,7 +585,7 @@ int main( int argc, char *argv[] )
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
-  if ( cal_data == real8 )
+  if ( cal_data == real_8 )
   {
     /* create storage for the GEO input data */
     LAL_CALL( LALDCreateVector( &status, &(geoChan.data), numInputPoints ), 
@@ -598,7 +598,7 @@ int main( int argc, char *argv[] )
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
       chan.deltaT, numInputPoints );
 
-  if ( cal_data == real8 )
+  if ( cal_data == real_8 )
   {
     /* read in the GEO data here */
     PassBandParamStruc geoHighpassParam;
@@ -648,7 +648,7 @@ int main( int argc, char *argv[] )
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
-    if ( cal_data == real4 )
+    if ( cal_data == real_4 )
     {
       /* multiply the input data by dynRange */
       for ( j = 0 ; j < numInputPoints ; ++j )
@@ -2214,7 +2214,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
-"  --calibrated-data TYPE       calibrated data of TYPE real4 or real8\n"\
+"  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
 "  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
 "  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
@@ -2645,19 +2645,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'y':	
 	/* specify which type of calibrated data */
 	{
-	  if ( ! strcmp( "real4", optarg ) )
+	  if ( ! strcmp( "real_4", optarg ) )
 	  {
-	    cal_data = real4;
+	    cal_data = real_4;
 	  }
-	  else if ( ! strcmp( "real8", optarg ) )
+	  else if ( ! strcmp( "real_8", optarg ) )
 	  {
-	    cal_data = real8;
+	    cal_data = real_8;
 	  }
 	  else
 	  {
 	    fprintf( stderr, "invalid argument to --%s:\n"
 		"unknown data type specified;\n"
-		"%s (must be one of: real4, real8)\n",
+		"%s (must be one of: real_4, real_8)\n",
 		long_options[option_index].name, optarg);
 	  }
 	  ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -3357,7 +3357,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( cal_data == real8 )
+  if ( cal_data == real_8 )
   {
     /* check that geo high pass parameters have been specified */
     if ( geoHighPassFreq < 0 )
