@@ -38,6 +38,7 @@ Usage: lalapps_stochastic_bayes [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the jobs with TAG
 
   -d, --datafind           run LSCdataFind to create frame cache files
   -s, --stochastic         run lalapps_stochastic
@@ -50,10 +51,11 @@ Usage: lalapps_stochastic_bayes [options]
   print >> sys.stderr, msg
 
 # parse the command line options to figure out what we should do
-shortop = "hvdsP:f:l:"
+shortop = "hvu:dsP:f:l:"
 longop = [
   "help",
   "version",
+  "user-tag=",
   "datafind",
   "stochastic",
   "priority=",
@@ -68,6 +70,7 @@ except getopt.GetoptError:
   sys.exit(1)
 
 # default options
+usertag = None
 config_file = None
 do_datafind = None
 do_stochastic = None
@@ -83,6 +86,8 @@ for o, a in opts:
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
+  elif o in ("-u", "--user-tag"):
+    usertag = a
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-s", "--stochastic"):
@@ -121,21 +126,30 @@ cp.read(config_file)
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
-tempfile.template = basename + '.dag.log.'
+if usertag:
+  tempfile.template = basename + '.' + usertag + '.dag.log'
+else:
+  tempfile.template = basename + '.dag.log.'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename + '.dag')
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag + '.dag')
+else:
+  dag.set_dag_file(basename + '.dag')
 
 # create the Condor jobs that will be used in the DAG
 df_job = stochastic.LSCDataFindJob('cache','logs',cp)
 stoch_job = stochastic.StochasticJob(cp)
 
 # set file names
-subsuffix = '.sub'
+if usertag:
+  subsuffix = '.' + usertag + '.sub'
+else:
+  subsuffix = 'dag'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 stoch_job.set_sub_file( basename + '.stochastic' + subsuffix )
 
@@ -276,7 +290,11 @@ You also need to set the LSC_DATAFIND_SERVER environment variable eg.
 """
 
 # write out a logfile
-log_fh = open(basename + '.pipeline.log', 'w')
+if usertag:
+  log_fh = open(basename + '.' + usertag + '.pipeline.log', 'w')
+else:
+  log_fh = open(basename + '.pipeline.log', 'w')
+
 log_fh.write("$Id$" + "\n\n")
 log_fh.write("Invoked with arguments:\n")
 for o, a in opts:
