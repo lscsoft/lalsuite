@@ -39,18 +39,19 @@ int main( void )
   DataSegmentVector      *dataSegVec    = NULL;
 
   /* these are required for SPFilter(); they are created by SPInit() */
-  FindChirpSPTmpltParams *spTmpltParams = NULL;
-  FindChirpSPDataParams  *spDataParams  = NULL;
+  FindChirpTmpltParams *spTmpltParams = NULL;
+  FindChirpDataParams  *spDataParams  = NULL;
 
   /* this is required for TDFilter(); it is created by TDInit() */
-  FindChirpSPDataParams  *tdDataParams  = NULL;
+  FindChirpDataParams  *tdDataParams  = NULL;
 
 
   /* set initialization parameters */
   initParams.numSegments    = numSegments;
   initParams.numPoints      = numPoints;
   initParams.numChisqBins   = numChisqBins;
-  initParams.createRhosqVec = 0;
+  initParams.approximant    = TaylorF2;
+  initParams.createRhosqVec = 1;
 
 
   /* create generic objects needed by both SP and TD filters */
@@ -181,8 +182,8 @@ int Stop(
  */
 
 int SPInit(
-    FindChirpSPTmpltParams **spTmpltParams,
-    FindChirpSPDataParams  **spDataParams,
+    FindChirpTmpltParams **spTmpltParams,
+    FindChirpDataParams  **spDataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
     REAL4 fmin,
@@ -190,14 +191,14 @@ int SPInit(
     UINT4 trunc
     )
 {
-  LALFindChirpSPTemplateInit( &status, spTmpltParams, initParams );
+  LALFindChirpTemplateInit( &status, spTmpltParams, initParams );
   TEST_STATUS( &status );
 
   (*spTmpltParams)->deltaT   = 1 / srate;
   (*spTmpltParams)->fLow     = fmin;
   (*spTmpltParams)->dynRange = dynRange;
 
-  LALFindChirpSPDataInit( &status, spDataParams, initParams );
+  LALFindChirpDataInit( &status, spDataParams, initParams );
   TEST_STATUS( &status );
 
   (*spDataParams)->deltaT       = 1 / srate;
@@ -209,14 +210,14 @@ int SPInit(
 }
 
 int SPFini(
-    FindChirpSPTmpltParams **spTmpltParams,
-    FindChirpSPDataParams  **spDataParams
+    FindChirpTmpltParams **spTmpltParams,
+    FindChirpDataParams  **spDataParams
     )
 {
-  LALFindChirpSPTemplateFinalize( &status, spTmpltParams );
+  LALFindChirpTemplateFinalize( &status, spTmpltParams );
   TEST_STATUS( &status );
 
-  LALFindChirpSPDataFinalize( &status, spDataParams );
+  LALFindChirpDataFinalize( &status, spDataParams );
   TEST_STATUS( &status );
 
   return 0;
@@ -234,7 +235,7 @@ int SPFini(
  */
 
 int TDInit(
-    FindChirpSPDataParams **tdDataParams,
+    FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
     REAL4 srate,
     REAL4 fmin,
@@ -243,7 +244,7 @@ int TDInit(
     )
 {
   UINT4 i;
-  LALFindChirpSPDataInit( &status, tdDataParams, initParams );
+  LALFindChirpDataInit( &status, tdDataParams, initParams );
   TEST_STATUS( &status );
 
   for ( i = 0; i < (*tdDataParams)->ampVec->length; ++i )
@@ -258,10 +259,10 @@ int TDInit(
 }
 
 int TDFini(
-    FindChirpSPDataParams **tdDataParams
+    FindChirpDataParams **tdDataParams
     )
 {
-  LALFindChirpSPDataFinalize( &status, tdDataParams );
+  LALFindChirpDataFinalize( &status, tdDataParams );
   TEST_STATUS( &status );
   return 0;
 }
@@ -284,12 +285,12 @@ int SPFilter(
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
-    FindChirpSPTmpltParams *tmpltParams,
-    FindChirpSPDataParams *dataParams
+    FindChirpTmpltParams *tmpltParams,
+    FindChirpDataParams *dataParams
     )
 {
   InspiralTemplate tmplt;
-  UINT4 segment;
+  UINT4 segment, i;
 
   tmplt.mass1     = mass1;
   tmplt.mass2     = mass2;
@@ -306,22 +307,28 @@ int SPFilter(
 
   for ( segment = 0; segment < fcSegVec->length; ++segment )
   {
-    InspiralEvent *event = NULL;
+    FILE *fp;
+    SnglInspiralTable *event = NULL;
 
     filterInput->segment = fcSegVec->data + segment;
 
     LALFindChirpFilterSegment( &status, &event, filterInput, filterParams );
     TEST_STATUS( &status );
 
+    fp = fopen( "sp_rhosq.out", "w" );
+    for ( i = 0; i < filterParams->rhosqVec->data->length; ++i )
+      fprintf( fp, "%e\n", filterParams->rhosqVec->data->data[i] );
+    fclose( fp );
+
     while ( event )
     {
-      InspiralEvent *thisEvent = event;
+      SnglInspiralTable *thisEvent = event;
       event = thisEvent->next;
       fprintf( stdout, "\nSP Observed Event:\n" );
-      fprintf( stdout, "\tsnrsq = %e\n", thisEvent->snrsq );
+      fprintf( stdout, "\tsnr = %e\n", thisEvent->snr );
       fprintf( stdout, "\tchisq = %e\n", thisEvent->chisq );
-      fprintf( stdout, "\tsigma = %e\n", thisEvent->sigma );
-      fprintf( stdout, "\td_Mpc = %e\n", thisEvent->effDist );
+      fprintf( stdout, "\tsigma_sq = %e\n", thisEvent->sigmasq );
+      fprintf( stdout, "\td_Mpc = %e\n", thisEvent->eff_distance );
       LALFree( thisEvent );
     }
   }
@@ -350,7 +357,7 @@ int TDFilter(
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
-    FindChirpSPDataParams *dataParams
+    FindChirpDataParams *dataParams
     )
 {
   REAL4Vector    *signal = NULL;
@@ -358,8 +365,10 @@ int TDFilter(
   InspiralTemplate tmplt;
   UINT4 segment;
   UINT4 numPoints;
+  REAL4 segNormSum;
   UINT4 n;
   UINT4 k;
+  UINT4 i;
 
   numPoints = dataSegVec->data->chan->data->length;
 
@@ -423,13 +432,17 @@ int TDFilter(
 
 
   /* re-compute data normalization */
-  fcSegVec->data->segNorm = 0;
+  memset( fcSegVec->data->segNorm->data, 0, 
+      fcSegVec->data->segNorm->length * sizeof(REAL4) );
+  segNormSum = 0;
   for ( k = 1; k < stilde->length; ++k )
   {
     REAL4 re = stilde->data[k].re;
     REAL4 im = stilde->data[k].im;
     REAL4 power = re * re + im * im;
-    fcSegVec->data->segNorm += power * dataParams->wtildeVec->data[k].re;
+    segNormSum += power * dataParams->wtildeVec->data[k].re;
+    fcSegVec->data->segNorm->data[k] += segNormSum;
+      
   }
 
 
@@ -450,22 +463,28 @@ int TDFilter(
 
   for ( segment = 0; segment < fcSegVec->length; ++segment )
   {
-    InspiralEvent *event = NULL;
+    FILE *fp;
+    SnglInspiralTable *event = NULL;
 
     filterInput->segment = fcSegVec->data + segment;
 
     LALFindChirpFilterSegment( &status, &event, filterInput, filterParams );
     TEST_STATUS( &status );
 
+    fp = fopen( "td_rhosq.out", "w" );
+    for ( i = 0; i < filterParams->rhosqVec->data->length; ++i )
+      fprintf( fp, "%e\n", filterParams->rhosqVec->data->data[i] );
+    fclose( fp );
+
     while ( event )
     {
-      InspiralEvent *thisEvent = event;
+      SnglInspiralTable *thisEvent = event;
       event = thisEvent->next;
       fprintf( stdout, "\nTD Observed Event:\n" );
-      fprintf( stdout, "\tsnrsq = %e\n", thisEvent->snrsq );
+      fprintf( stdout, "\tsnr = %e\n", thisEvent->snr );
       fprintf( stdout, "\tchisq = %e\n", thisEvent->chisq );
-      fprintf( stdout, "\tsigma = %e\n", thisEvent->sigma );
-      fprintf( stdout, "\td_Mpc = %e\n", thisEvent->effDist );
+      fprintf( stdout, "\tsigmasq = %e\n", thisEvent->sigmasq );
+      fprintf( stdout, "\td_Mpc = %e\n", thisEvent->eff_distance );
       LALFree( thisEvent );
     }
   }

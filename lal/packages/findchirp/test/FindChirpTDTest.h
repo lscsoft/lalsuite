@@ -19,8 +19,8 @@ int Stop(
     );
 
 int SPInit(
-    FindChirpSPTmpltParams **spTmpltParams,
-    FindChirpSPDataParams  **spDataParams,
+    FindChirpTmpltParams **spTmpltParams,
+    FindChirpDataParams  **spDataParams,
     FindChirpInitParams     *initParams,
     REAL4 srate,
     REAL4 fmin,
@@ -29,12 +29,12 @@ int SPInit(
     );
 
 int SPFini(
-    FindChirpSPTmpltParams **spTmpltParams,
-    FindChirpSPDataParams  **spDataParams
+    FindChirpTmpltParams **spTmpltParams,
+    FindChirpDataParams  **spDataParams
     );
 
 int TDInit(
-    FindChirpSPDataParams **tdDataParams,
+    FindChirpDataParams **tdDataParams,
     FindChirpInitParams    *initParams,
     REAL4 srate,
     REAL4 fmin,
@@ -43,7 +43,7 @@ int TDInit(
     );
 
 int TDFini(
-    FindChirpSPDataParams  **tdDataParams
+    FindChirpDataParams  **tdDataParams
     );
 
 int SPFilter(
@@ -53,8 +53,8 @@ int SPFilter(
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
-    FindChirpSPTmpltParams *tmpltParams,
-    FindChirpSPDataParams *dataParams
+    FindChirpTmpltParams *tmpltParams,
+    FindChirpDataParams *dataParams
     );
 
 int TDFilter(
@@ -65,7 +65,7 @@ int TDFilter(
     FindChirpFilterInput *filterInput,
     FindChirpFilterParams *filterParams,
     FindChirpSegmentVector *fcSegVec,
-    FindChirpSPDataParams *dataParams
+    FindChirpDataParams *dataParams
     );
 
 int MakeData(
