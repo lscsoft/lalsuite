@@ -6,12 +6,23 @@
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
  * 
- * Tests the resampling functions.
+ * Tests the resampling functions by injecting a time wave of a given
+ * frequency into a time series and downsampling it. The raw and output
+ * data are returned as frame files for plotting in matlab.
  *
  * \subsubsection*{Usage}
- *
  * \begin{verbatim}
- * ResampleTimeSeriesTest -v [-n POINTS] [-i FREQ] [-o FREQ] [-f FREQ]
+ * Usage: ./ResampleTimeSeriesTest [options] defaults shown in brackets
+ * Options:
+ *   -h         print this message
+ *   -d level   set lalDebugLevel to level
+ *   -v         verbose: print extra information
+ *   -n points  number of points in the raw time series (1048576)
+ *   -i freq    sample rate of input time series (16384)
+ *   -o freq    sample rate of output time series (4096)
+ *   -f freq    frequency of sine wave to inject as input (1000.0)
+ *   -r type    type of filter to use in resampling (ldas)
+ *              [ldas|butterworth|gds]
  * \end{verbatim}
  *
  * \subsubsection*{Description}
@@ -157,7 +168,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
 static void
 Usage (const char *program, int exitcode)
 {
-  fprintf (stderr, "Usage: %s [options]\n", program);
+  fprintf (stderr, "Usage: %s [options] defaults shown in brackets\n", program);
   fprintf (stderr, "Options:\n");
   fprintf (stderr, "  -h         print this message\n");
   fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
