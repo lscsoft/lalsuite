@@ -326,31 +326,42 @@ LALCompareGPS(LALStatus           *status,
 /* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */
 void
-LALAddFloatToGPS (LALStatus             *status,
-		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
-		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
-		  REAL8 		deltaT) 	/* input: interval to increment by in seconds*/
+LALAddFloatToGPS(
+    LALStatus          *status,
+    LIGOTimeGPS        *outputGPS, /* outputGPS = startGPS + deltaT */
+    const LIGOTimeGPS  *startGPS,  /* input: GPS time */
+    REAL8 		deltaT     /* input: interval to increment by in sec */
+    )
 /*  </lalVerbatim> */
 {
-  LIGOTimeGPS tmp_gps;		/* allow startGPS == outputGPS */
-  INT4 secs, ns;
+  INT8 tmp_gps_ns, delta_t_sec, delta_t_ns;
 
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
+  ATTATCHSTATUSPTR( status );
 
-  ASSERT ( outputGPS != NULL, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-  ASSERT ( startGPS != NULL, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  LALGPStoINT8( status->statusPtr, &tmp_gps_ns, startGPS );
+  CHECKSTATUSPTR( status );
 
-  secs = (INT4)(deltaT);
-  ns =   (INT4) rint( (deltaT - (REAL8) secs) * oneBillion );
+  if ( deltaT < 0 )
+  {
+    delta_t_sec = (INT8) ceil( deltaT );
+    delta_t_ns = (-1000000000LL + (INT8) 
+      floor( (deltaT - (REAL8) delta_t_sec) * oneBillion + 0.5));
+  }
+  else
+  {
+    delta_t_sec = (INT8) floor( deltaT );
+    delta_t_ns = (INT8) 
+      floor( (deltaT - (REAL8) delta_t_sec) * oneBillion + 0.5);
+  }
 
-  tmp_gps.gpsSeconds = startGPS->gpsSeconds + secs;
-  tmp_gps.gpsNanoSeconds = startGPS->gpsNanoSeconds + ns;
+  tmp_gps_ns += delta_t_sec * 1000000000LL + delta_t_ns;
 
-   /* assign the computed values */
-  *outputGPS = tmp_gps;
+  LALINT8toGPS( status->statusPtr, outputGPS, &tmp_gps_ns );
+  CHECKSTATUSPTR( status );
 
+  DETATCHSTATUSPTR( status );
   RETURN( status );
-
 } /* LALAddFloatToGPS() */
 
 
