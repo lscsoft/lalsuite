@@ -213,7 +213,7 @@ const	INT4		two = 2;
 
 
 	/*  length must be greater than one  */
-	ASSERT ( N > 1, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
+	ASSERT ( N > 3, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
 
 	/*  Create a constant vector values from 1 to N  */
 	LALDCreateVector( status->statusPtr, &indexVector, N);
