@@ -176,6 +176,7 @@ int main(int argc,char *argv[])
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut=NULL;
+  UINT4 counter;
   LALStatus status = blank_status;	/* initialize status */
 
   lalDebugLevel = 0;  
@@ -311,6 +312,8 @@ int main(int argc,char *argv[])
     } /* if outputFstat */
 
   if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
+
+  counter = 0;
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -382,6 +385,10 @@ int main(int argc,char *argv[])
 	  highFLines->Nclusters=0;
 
 	} /* For GV.spinImax */
+
+      counter ++;
+      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
+					(100.0* counter / thisScan.numGridPoints));
       
     } /*  while SkyPos */
 
