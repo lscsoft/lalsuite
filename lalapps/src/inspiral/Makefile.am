@@ -39,7 +39,7 @@ bin_PROGRAMS =
 endif
 bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
               lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
-              lalapps_inspiral_hipe
+              lalapps_inspiral_hipe lalapps_inspiral_online_pipe
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
@@ -64,6 +64,9 @@ lalapps_inspiral_pipe_geo: inspiral_pipe_geo.in python_config.sed
 lalapps_inspiral_hipe: inspiral_hipe.in python_config.sed
 	sed -f python_config.sed inspiral_hipe.in > lalapps_inspiral_hipe
 	chmod +x lalapps_inspiral_hipe
+lalapps_inspiral_online_pipe: inspiral_online_pipe.in python_config.sed
+	sed -f python_config.sed inspiral_online_pipe.in > lalapps_inspiral_online_pipe
+	chmod +x lalapps_inspiral_online_pipe
 
 pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
