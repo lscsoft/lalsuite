@@ -219,7 +219,7 @@ static void print_usage(char *program)
 "	 --resample-filter <filter type>\n" \
 "	[--seed <seed>]\n" \
 "	 --target-sample-rate <Hz>\n" \
-"	 --tfplane-method <method> \n" \	
+"	 --tfplane-method <method>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--user-tag <comment>]\n" \
@@ -354,6 +354,10 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !params->tfTilingInput.maxTileBand;
 			break;
 
+			case 'n':
+			arg_is_missing = !params->tfPlaneMethod;
+			break;
+
 			default:
 			arg_is_missing = FALSE;
 			break;
@@ -480,6 +484,7 @@ void parse_command_line(
 	params->method = -1;	/* impossible */
 	params->compEPInput.alphaDefault = 2.0;	/* impossible */
 	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
+	params->tfPlaneMethod = 0;	/* impossible */
 	params->tfTilingInput.flow = -1.0;	/* impossible */
 	params->tfTilingInput.length = 0;	/* impossible */
 	params->tfTilingInput.minFreqBins = 0;	/* impossible */
@@ -954,7 +959,7 @@ void parse_command_line(
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
-		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.PSDAverageLength);
+		fprintf(stderr, "%s: using --psd-average-points %zu\n", argv[0], options.PSDAverageLength);
 	}
 }
 
@@ -1021,8 +1026,12 @@ static REAL4TimeSeries *get_ligo_data(
 	/* create and initialize the time series vector */
 	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
 
-	/* get the data */
+	/* get the series meta data */
 	LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
+
+	/* Resize to the correct number of samples */
+	/*LAL_CALL(LALResizeREAL4TimeSeries(stat, &series, 0, min(DeltaGPStoFloat(stat, &end, &start) / series->deltaT, lengthlimit)), stat);*/
+	
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
 		fprintf(stderr, "get_ligo_data(): reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
@@ -1267,7 +1276,7 @@ static SnglBurstTable **analyze_series(
 	if(psdlength > series->data->length) {
 		psdlength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
-			fprintf(stderr, "analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", psdlength);
+			fprintf(stderr, "analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %zu samples\n", psdlength);
 		if(!psdlength) {
 			if(options.verbose)
 				fprintf(stderr, "analyze_series(): warning: cowardly refusing to analyze 0 samples... skipping series\n");
@@ -1281,7 +1290,7 @@ static SnglBurstTable **analyze_series(
 		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
 
 		if(options.verbose)
-			fprintf(stderr, "analyze_series(): analyzing samples %i -- %i\n", start, start + interval->data->length);
+			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu\n", start, start + interval->data->length);
 
 		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
