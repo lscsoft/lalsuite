@@ -25,7 +25,7 @@
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
-#include <lal/IIFilter.h>
+#include <lal/IIRFilter.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
