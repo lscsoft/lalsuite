@@ -580,7 +580,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "GPS start time is prior to " 
                 "Jan 01, 1994  00:00:00 UTC:\n"
-                "(%lld specified)\n",
+                "(%ld specified)\n",
                 long_options[option_index].name, gstartt );
             exit( 1 );
           }
@@ -597,7 +597,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
             fprintf( stderr, "invalid argument to --%s:\n"
                 "GPS end time is after " 
                 "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%lld specified)\n", 
+                "(%ld specified)\n", 
                 long_options[option_index].name, gendt );
             exit( 1 );
           }
