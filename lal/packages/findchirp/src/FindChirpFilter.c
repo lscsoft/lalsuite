@@ -584,7 +584,7 @@ LALFindChirpFilterSegment (
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
     REAL4 fmin = input->segment->fLow;
-    REAL4 m = 2 * ( m1 > m2 ? m2 : m1 );
+    REAL4 m = m1 + m2;
     REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
