@@ -463,6 +463,7 @@ AC_CONFIG_FILES([doc/autodoc/Makefile])
 AC_CONFIG_FILES([include/Makefile])
 AC_CONFIG_FILES([include/lal/Makefile])
 AC_CONFIG_FILES([lib/Makefile])
+AC_CONFIG_FILES([misc/Makefile])
 AC_CONFIG_FILES([packages/Makefile])
 EOF
 for pkg in $lal_pkg_list; do
@@ -487,6 +488,7 @@ AC_OUTPUT([ \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \
+  misc/Makefile \
   packages/Makefile \
 EOF
 for pkg in $lal_pkg_list; do
@@ -518,6 +520,20 @@ case "$autoconf_version" in
   ;;
 esac
 
+## Now generate README.install
+
+test -f README.install || rm -f README.install
+cd doc
+test -f README.install || rm -f README.install
+sed -f scrstrip.sed lal-preinstall-x.sh > lal-preinstall.sh
+sed -f texstrip.sed lal-preinstall-x.sh > lal-preinstall.tex
+sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
+sed -f scrstrip.sed lal-install-x.sh > lal-install.sh
+sed -f texstrip.sed lal-install-x.sh > lal-install.tex
+sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
+m4 install.m4 > README.install
+cp -f README.install ..
+cd ..
 
 ## Now run m4 to generate sources
 

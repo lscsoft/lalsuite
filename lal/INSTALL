@@ -1,328 +1,182 @@
-NOTE:  You must install the package FFTW (Fastest Fourier Transform in the
-West) before installing this package.
-
-If you are installing LAL and LALWrapper for use with LDAS, please read the
-LALWrapper Software Documentation for instructions on installing these packages.
-This documentation is available from the LAL homepage:
-http://www.lsc-group.phys.uwm.edu/lal
-
-Contents:
-  0. Installing FFTW, FrameL, and MPI.
-  1. Installing LAL.
-  2. Uninstalling LAL.
-  3. Multiple builds.
-
--------------------------------------------------------------------------------
-
-0.  Install FFTW and (optionally) the FrameL library and MPI.
-
-    You can obtain FFTW from http://www.fftw.org
-    When configuring, you must use the --enable-float option.
-    Also, you must use the --enable-shared configure option (unless you build
-    LAL with the --disable-shared configure option).
-
-    You can obtain FrameL from http://wwwlapp.in2p3.fr/virgo/FrameL
-
-    For MPI you can use either MPICH or LAM
-    (LAM is the chosen implementation for LDAS, but both work with LAL)
-
-    You can obtain the MPICH implementation of MPI from
-    http://www-unix.mcs.anl.gov/mpi/mpich
-    You must use the --enable-sharedlib configure option (unless you build
-    LAL with the --disable-shared configure option).
-
-    You can obtain the LAM implementation of MPI from
-    http://www.mpi.nd.edu/lam
-    (See http://www.ldas-sw.ligo.caltech.edu/doc/INSTALL.html
-     for instructions on building LAM for LDAS.)
-    You must use the --enable-shared configure option (unless you build
-    LAL with the --disable-shared configure option).  Currently, this means
-    you also need to use the --without-romio and --without-mpi2cpp configure
-    options.
-
-
-    0.1.  To install FFTW on your system use the commands:
-
-          ./configure --enable-float --enable-shared
-          make
-          make install
-
-          (you must be superuser).
-
-    0.2.  If you are installing FFTW in your personal account:
-
-          ./configure --prefix=/home/alice --enable-float --enable-shared
-          make
-          make install
-
-          Then you must set a few environment variables before continuing.
-          If you are using sh (or bash):
-
-          LIBS=-L/home/alice/lib ; export LIBS
-          CPPFLAGS=-I/home/alice/include ; export CPPFLAGS
-
-          If you are using csh (or tcsh):
-
-          setenv LIBS -L/home/alice/lib
-          setenv CPPFLAGS -I/home/alice/include
-
-          Alternatively, you can use the --with-extra-cppflags and the
-          --with-extra-libs options of the LAL configure script (see below).
-
-    0.3.  To install the FrameL library (optional) go to the mgr directory of
-          the frame library directory structure and run the compilation script
-          makegcc.  If you install the FrameL in a non-standard location, you
-          will need to set the LIBS and CPPFLAGS variables so that the
-          library and include files are accessible (as above).
-          Both a static and a shared version of the FrameL library should be
-          made and installed.
-
-    0.4.  Install the MPICH or LAM implementation of MPI (optional).  Then set
-          the environment variable MPICC to the name of the MPI C-compiler
-          (which may be a shell script).  For example, if you are using sh:
-
-          MPICC=mpicc ; export MPICC
-
-          or if you are using csh:
-
-          setenv MPICC mpicc
-
-          Alternatively, you can specify the mpicc program using the
-          --with-mpicc option in the LAL configure script (see below).
-
-          Troubles may arise if you compile LAL with gcc but the MPICC script
-          uses some other cc.  In this case, edit the file mpicc to use gcc
-          rather than cc.  (This should no longer be a problem.)
-
-          Also, make sure that mpirun will work.  This means that you have to
-          be able to type
-
-          rsh <hostname>
-
-          (where <hostname> is the name of your computer) and be logged-in
-          without typing a password!  This may require you to add a line in
-          a file called .rhosts (in your home directory).  For example,
-          for mpirun to work on the machine einstein.institute.edu, the file
-          /home/alice/.rhosts must include the line
-
-          einstein.institute.edu alice
-
-          Also, the file .rhosts must have read-write privilege by user only.
-          To be sure, type
-
-          chmod go-rwx /home/alice/.rhosts
-
-          You (Alice) should then be able to type
-
-          rsh einstein.institute.edu
-
-          and be logged in (without entering a password).
-
-
-1.  Install the LAL package.
-
-    1.1.  If you are installing LAL on the system, use the commands:
-
-          ./configure [options]
-          make
-          make install
-
-          Options include:
-
-            --enable-frame
-            --enable-mpi
-            --disable-shared
-            --disable-static
-            --disable-debug
-            --disable-macros
-
-          * The --enable-frame argument is only used if you have the FrameL
-            library installed and you want to include code that uses this
-            library.
-
-          * The --enable-mpi argument is only used if you have MPI and want
-            to run the code that runs on multiple processors.  You may also
-            need to include --with-mpicc=/path/of/mpicc to specify the program
-            mpicc if it is not in your path.
-
-          * The --diable-shared argument is used if you don't want to produce a
-            shared-object library (liblal.so).  If you do make a shared-object
-            library (default), you'll also want to have shared-object versions
-            of fftw (libsfftw.so & libsrfftw.so or libfftw.so & librfftw.so),
-            and of the frame library (libFrame.so) and the MPI library
-            (libmpi.so) if you are enabling these too.
-
-          * The --disable-static prevents the construction of a static library
-            (liblal.a) in addition to the shared-object library.
-
-          * The --disable-debug prevents LAL from including debugging code.
-            This should make the LAL code run faster.
-
-          * The --disable-macros forces LAL to use functions rather than
-            macros for certain status operations.  This may make it easier
-            to debug LAL code.
-
-          Optionally you can also type
-
-          make check
-          make dvi
-
-          to run a suite of test programs and to latex the documentation files
-          to produce dvi (or pdf) files.
-
-    1.2.  If you are installing LAL on your personal account, use:
-
-          ./configure --prefix=/home/alice [--with-extra-cppflags=<cppflags>] \
-                  [--with-extra-libs=<libs>] [options]
-          make
-          make install
-
-          The options are as described above.
-
-          The --with-extra-cppflags option is used to specify additional
-          pre-processor flags, e.g.,
-          
-            --with-extra-cppflags=-I/home/alice/include
-
-          The --with-extra-libs option is used to specify additional library
-          flags (-l or -L flags), e.g.,
-          
-            --with-extra-libs=-L/home/alice/lib
-
-          If you need more than one flag, you'll need to use quotation marks:
-
-            --with-extra-cppflags="-I/home/alice/include -I/opt/include"
-            --with-extra-libs="-L/home/alice/lib -L/opt/lib"
-
-          Optionally you can also type
-
-          make check
-          make dvi
-
-          to run a suite of test programs and to latex the documentation files
-          to produce dvi (or pdf) files.
-
-
-2.  Uninstalling the LAL package.
-    
-    Before making a new version of LAL, it is best to un-install the previous
-    version.  This is done simply by typing
-
-    make uninstall
-
-    in the OLD LAL directory.
-
-
-3.  Multiple builds.
-
-    You can build LAL multiple times, e.g., for several different
-    architectures.  Here is an example:
-
-    /home is mounted on both a pentium linux system and a sun solaris system,
-    but /people is a private directory on each system and is not cross
-    mounted.
-
-    Bob wants to install the LAL library for both systems in /people/bob/lib,
-    /people/bob/include, etc.  He wan't all the LAL source code to be in
-    /home/bob/src/lal, which is common to both systems.
-    
-    First he unpacks LAL to get the directory /home/bob/src/lal (which
-    contains all the LAL files).  He then creates two subdirectories:
-    /home/bob/src/lal/i686-linux and /home/bob/src/lal/sun-solaris.
-
-    Second, on the pentium linux system, he types:
-
-      cd /home/bob/src/lal/i686-linux
-      ../configure --prefix=/people/bob 
-      make
-      make install
-
-    This installs LAL in /people/bob on the pentium linux system.
-
-    Third, on the solaris system, he types:
-
-      cd /home/bob/src/lal/sun-solaris
-      ../configure --prefix=/people/bob
-      make
-      make install
-
-    This installs LAL in /people/bob on the sun solaris system.
-    
-
--------------------------------------------------------------------------------
-
-
-System-specific installation instructions:
-
-
-SGI running IRIX 6.5 with gcc:
-
-  * Configure with the option --with-cc="gcc -n32".
-
-  * If you put shared objects (e.g., of the frame library) in non-standard
-    places and are hoping to use LD_LIBRARY_PATH to locate them, you may need
-    to set the environment variable LD_LIBRARYN32_PATH too.
-
-  * If you have command-lines that are too long, you'll need to change
-    the length of the lines allowed.  To do this use systune -i
-    (or perhaps systune -r):
-
-        $ systune -r
-        systune-> ncargs 204800
-        systune-> quit
-    
-    This increases the command line length maximum until reboot.
-    Change it permanently with systune -b.
-
-Alpha running Linux with ccc --- making shared libraries:
-
-  * Problem: libtool doesn't know that ccc makes position-independent code
-    by default (I hope ccc makes PIC by default...).
-
-  * Solution: trick the configure script into thinking that you are using
-    OSF/1 by using the --host option:
-
-      ./configure --host=alpha-dec-osf3 --enable-shared
-
-  * Note: use the same trick to make shared libraries for fftw!
-
-
-HP-UX 10.20 may need
-
-   --with-extra-cppflags="-D_HPUX_SOURCE"
-
-
-Mac OS X (10.2.x, possibly 10.1.x, but NOT 10.3.x) with bundled cc/gcc:
-
-  * Configure with:  --with-extra-cflags="-D_ANSI_SOURCE -no-cpp-precomp"
-
-  * Note: I (Jolien) don't need these with 10.2 ... perhaps it depends on the
-    version of the developer tools.  Also, do NOT use these flags with 10.3.
-
-
-
--------------------------------------------------------------------------------
-
-
-Troubleshooting:
-
-* If you need to re-run configure after it has failed while checking for a
-  working FFTW, FrameL, or MPI, make sure to remove the file config.cache.
-
-* The configure script assumes that ranlib is necessary unless it cannot find
-  the program in your path.  If ranlib is on your path and you don't need
-  ranlib, set the environment RANLIB to echo.
-
-* "make dvi" must be run after "make" since make dvi requires the program
-  laldoc must be compiled for "make dvi" to work.
-
-* If you want to use a different latex program than the one chosen by the
-  configure script, set it in the environment variable LATEX.  Also, if you
-  want to have different tex flags (e.g., you want to disable the batchmode
-  that the configure script uses) set the TEXFLAGS environment variable
-  to the flags you want (or a space if you don't want any flags used).
-
-* If you want to make a shared library version (default) of LAL with frame
-  library and/or MPI interface, you need to make a shared library version of
-  fftw, the frame library, and mpi too.  To make a static LAL library only,
-  use the --disable-shared option when configuring LAL.
+Basic Installation
+==================
+
+   These are generic installation instructions.
+
+   The `configure' shell script attempts to guess correct values for
+various system-dependent variables used during compilation.  It uses
+those values to create a `Makefile' in each directory of the package.
+It may also create one or more `.h' files containing system-dependent
+definitions.  Finally, it creates a shell script `config.status' that
+you can run in the future to recreate the current configuration, a file
+`config.cache' that saves the results of its tests to speed up
+reconfiguring, and a file `config.log' containing compiler output
+(useful mainly for debugging `configure').
+
+   If you need to do unusual things to compile the package, please try
+to figure out how `configure' could check whether to do them, and mail
+diffs or instructions to the address given in the `README' so they can
+be considered for the next release.  If at some point `config.cache'
+contains results you don't want to keep, you may remove or edit it.
+
+   The file `configure.in' is used to create `configure' by a program
+called `autoconf'.  You only need `configure.in' if you want to change
+it or regenerate `configure' using a newer version of `autoconf'.
+
+The simplest way to compile this package is:
+
+  1. `cd' to the directory containing the package's source code and type
+     `./configure' to configure the package for your system.  If you're
+     using `csh' on an old version of System V, you might need to type
+     `sh ./configure' instead to prevent `csh' from trying to execute
+     `configure' itself.
+
+     Running `configure' takes awhile.  While running, it prints some
+     messages telling which features it is checking for.
+
+  2. Type `make' to compile the package.
+
+  3. Optionally, type `make check' to run any self-tests that come with
+     the package.
+
+  4. Type `make install' to install the programs and any data files and
+     documentation.
+
+  5. You can remove the program binaries and object files from the
+     source code directory by typing `make clean'.  To also remove the
+     files that `configure' created (so you can compile the package for
+     a different kind of computer), type `make distclean'.  There is
+     also a `make maintainer-clean' target, but that is intended mainly
+     for the package's developers.  If you use it, you may have to get
+     all sorts of other programs in order to regenerate files that came
+     with the distribution.
+
+Compilers and Options
+=====================
+
+   Some systems require unusual options for compilation or linking that
+the `configure' script does not know about.  You can give `configure'
+initial values for variables by setting them in the environment.  Using
+a Bourne-compatible shell, you can do that on the command line like
+this:
+     CC=c89 CFLAGS=-O2 LIBS=-lposix ./configure
+
+Or on systems that have the `env' program, you can do it like this:
+     env CPPFLAGS=-I/usr/local/include LDFLAGS=-s ./configure
+
+Compiling For Multiple Architectures
+====================================
+
+   You can compile the package for more than one kind of computer at the
+same time, by placing the object files for each architecture in their
+own directory.  To do this, you must use a version of `make' that
+supports the `VPATH' variable, such as GNU `make'.  `cd' to the
+directory where you want the object files and executables to go and run
+the `configure' script.  `configure' automatically checks for the
+source code in the directory that `configure' is in and in `..'.
+
+   If you have to use a `make' that does not supports the `VPATH'
+variable, you have to compile the package for one architecture at a time
+in the source code directory.  After you have installed the package for
+one architecture, use `make distclean' before reconfiguring for another
+architecture.
+
+Installation Names
+==================
+
+   By default, `make install' will install the package's files in
+`/usr/local/bin', `/usr/local/man', etc.  You can specify an
+installation prefix other than `/usr/local' by giving `configure' the
+option `--prefix=PATH'.
+
+   You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If you
+give `configure' the option `--exec-prefix=PATH', the package will use
+PATH as the prefix for installing programs and libraries.
+Documentation and other data files will still use the regular prefix.
+
+   In addition, if you use an unusual directory layout you can give
+options like `--bindir=PATH' to specify different values for particular
+kinds of files.  Run `configure --help' for a list of the directories
+you can set and what kinds of files go in them.
+
+   If the package supports it, you can cause programs to be installed
+with an extra prefix or suffix on their names by giving `configure' the
+option `--program-prefix=PREFIX' or `--program-suffix=SUFFIX'.
+
+Optional Features
+=================
+
+   Some packages pay attention to `--enable-FEATURE' options to
+`configure', where FEATURE indicates an optional part of the package.
+They may also pay attention to `--with-PACKAGE' options, where PACKAGE
+is something like `gnu-as' or `x' (for the X Window System).  The
+`README' should mention any `--enable-' and `--with-' options that the
+package recognizes.
+
+   For packages that use the X Window System, `configure' can usually
+find the X include and library files automatically, but if it doesn't,
+you can use the `configure' options `--x-includes=DIR' and
+`--x-libraries=DIR' to specify their locations.
+
+Specifying the System Type
+==========================
+
+   There may be some features `configure' can not figure out
+automatically, but needs to determine by the type of host the package
+will run on.  Usually `configure' can figure that out, but if it prints
+a message saying it can not guess the host type, give it the
+`--host=TYPE' option.  TYPE can either be a short name for the system
+type, such as `sun4', or a canonical name with three fields:
+     CPU-COMPANY-SYSTEM
+
+See the file `config.sub' for the possible values of each field.  If
+`config.sub' isn't included in this package, then this package doesn't
+need to know the host type.
+
+   If you are building compiler tools for cross-compiling, you can also
+use the `--target=TYPE' option to select the type of system they will
+produce code for and the `--build=TYPE' option to select the type of
+system on which you are compiling the package.
+
+Sharing Defaults
+================
+
+   If you want to set default values for `configure' scripts to share,
+you can create a site shell script called `config.site' that gives
+default values for variables like `CC', `cache_file', and `prefix'.
+`configure' looks for `PREFIX/share/config.site' if it exists, then
+`PREFIX/etc/config.site' if it exists.  Or, you can set the
+`CONFIG_SITE' environment variable to the location of the site script.
+A warning: not all `configure' scripts look for a site script.
+
+Operation Controls
+==================
+
+   `configure' recognizes the following options to control how it
+operates.
+
+`--cache-file=FILE'
+     Use and save the results of the tests in FILE instead of
+     `./config.cache'.  Set FILE to `/dev/null' to disable caching, for
+     debugging `configure'.
+
+`--help'
+     Print a summary of the options to `configure', and exit.
+
+`--quiet'
+`--silent'
+`-q'
+     Do not print messages saying which checks are being made.  To
+     suppress all normal output, redirect it to `/dev/null' (any error
+     messages will still be shown).
+
+`--srcdir=DIR'
+     Look for the package's source code in directory DIR.  Usually
+     `configure' can determine that directory automatically.
+
+`--version'
+     Print the version of Autoconf used to generate the `configure'
+     script, and exit.
+
+`configure' also accepts some other, not widely useful, options.

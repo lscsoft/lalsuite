@@ -1,18 +1,12 @@
-Read the file INSTALL for installation instructions.
-
-The INSTALL file also includes instructions for compiling the documentation.
-Once compiled, the documentation will be in the file doc/lsd.dvi or
-doc/lsd.pdf and the LAL specification guide will be in the file
-doc/lalspec.dvi or doc/lalspec.pdf
-
-This code requires the FFTW (Fastest Fourier Transform in the West) package.
-This package can be obtained from http://www.fftw.org
-
+The LAL website http://www.lsc-group.phys.uwm.edu/lal contains detailed
+installation instructions.  Generic instructions can be found in the INSTALL
+file.  Specific instructions can be found in the README.install file.  If this
+file is missing (you have a fresh checkout from CVS), it can be followed
+with the instructions at the bottom of this document.
 
 
 The latest releases of LAL are available from the LAL web-site:
 http://www.lsc-group.phys.uwm.edu/lal
-
 
 
 The current working version of LAL can be obtained from the LAL CVS server by
@@ -27,7 +21,10 @@ issuing the commands:
   cd lal
   ./00boot
 
-(you will need m4, aclocal, autoheader, automake, and autoconf).
+you will need the proper versions of m4, aclocal, autoheader, automake,
+and autoconf.
+
+Specific install instructions can now be found in the README.install file.
 
 
 
@@ -43,6 +40,13 @@ There are two LAL mail lists/archives.  These are:
 
 The file README.bugs gives instructions for filing bug reports for LAL.
 
-
-
 The file README.contrib gives instructions for including a package in LAL.
+
+The file README.install gives specific instructions for performing a basic
+installation.  If this file is missing, it can be generated using the following
+commands:
+
+        sed -f doc/txtstrip.sed doc/lal-preinstall-x.sh > doc/lal-preinstall.txt
+        sed -f doc/txtstrip.sed doc/lal-install-x.sh > doc/lal-install.txt
+        m4 doc/install.m4 > README.install
+
