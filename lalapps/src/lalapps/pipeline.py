@@ -1121,7 +1121,7 @@ class ScienceData:
         if i2 < length2:
           start2 = other[i2].start()
           stop2 = other[i2].end()
-        elif i2 == length2:
+        elif i1 == length1:
           break
 
       # pick the earlier segment from the two lists
