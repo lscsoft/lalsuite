@@ -38,6 +38,7 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/clremoval/src/libclremoval.la       \
            $(top_builddir)/packages/stochastic/src/libstochastic.la     \
            $(top_builddir)/packages/inspiral/src/libinspiral.la         \
+           $(top_builddir)/packages/noisemodels/src/libnoisemodels.la   \
            $(top_builddir)/packages/bank/src/libbank.la                 \
            $(top_builddir)/packages/pulsar/src/libpulsar.la             \
            $(top_builddir)/packages/fct/src/libfct.la                   \

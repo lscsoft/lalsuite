@@ -1,4 +1,5 @@
 \documentclass[oneside]{book}
+\tracingstats=1
 \usepackage{../lal,fancyhdr,epsfig,psfig,color,hyperref,makeidx}
 \includeonly{%
   std,%
@@ -11,6 +12,8 @@
   tdfilters,%
   fft,%
   clremoval,%
+  inspiral,%
+  noisemodels,%
   bank,%
   pulsar,%
   fct,%
@@ -924,7 +927,8 @@ and {\LaTeX}  ({\tt pdflatex}) is run on it. Then  {\tt lsd.tex} and
 %\include{timefreq}
 \include{clremoval}
 %\include{stochastic}
-%\include{inspiral}
+\include{inspiral}
+\include{noisemodels}
 \include{bank}
 \include{pulsar}
 \include{fct}

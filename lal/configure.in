@@ -182,6 +182,11 @@ AC_OUTPUT( Makefile                               \
            packages/inspiral/include/Makefile     \
            packages/inspiral/src/Makefile         \
            packages/inspiral/test/Makefile        \
+           packages/noisemodels/Makefile          \
+           packages/noisemodels/doc/Makefile      \
+           packages/noisemodels/include/Makefile  \
+           packages/noisemodels/src/Makefile      \
+           packages/noisemodels/test/Makefile     \
            packages/bank/Makefile                 \
            packages/bank/doc/Makefile             \
            packages/bank/include/Makefile         \

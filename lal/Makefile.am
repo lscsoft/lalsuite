@@ -15,3 +15,4 @@ cvs-clean: maintainer-clean
 	rm -f include/lal/stamp-h*.in
 	rm -f configure
 	rm -f aclocal.m4
+	rm -f testscript.log
