@@ -136,6 +136,20 @@ void sighandler(int sig);
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 #define COMPUTEFSTATC_MSGECHECKPOINT	"Illegal checkpoint"
 #define COMPUTEFSTATC_MSGECLUSTER	"Unspecified error in cluster-related routine"
+
+/*----------------------------------------------------------------------*/
+/* Exit values */
+#define COMPUTEFSTAT_EXIT_OK              0  /* normal exit */
+#define COMPUTEFSTAT_EXIT_USAGE           7  /* user requested help */
+#define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
+#define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (checkpointing) */
+#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
+#define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
+#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
+
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
 
@@ -154,7 +168,7 @@ REAL8 uvar_dDelta;
 REAL8 uvar_DeltaBand;
 REAL8 uvar_f1dot;
 REAL8 uvar_df1dot;
-REAL8 uvar_f1dotBand;
+ REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
@@ -272,7 +286,7 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 	    "\tfile %s, line %d\n",
 	    id, func, file, line );
     REPORTSTATUS(stat);
-    boinc_finish( 12345+stat->statusCode );
+    boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+stat->statusCode );
   }
   /* should this call boinc_finish too?? */
   return 0;
@@ -325,7 +339,7 @@ int main(int argc,char *argv[])
   LAL_CALL (LALUserVarReadAllInput(stat, argc,argv), stat);	
 
   if (uvar_help)	/* if help was requested, we're done here */
-    return 0;
+    return COMPUTEFSTAT_EXIT_USAGE;
 
   /* This is dangerous for BOINC since it calls system() and makes
      assumptions that might not be true */
@@ -338,7 +352,7 @@ int main(int argc,char *argv[])
   LAL_CALL ( InitFStat(stat, &GV), stat);
 
   /* read in SFT-data */
-  if (ReadSFTData()) return 4;
+  if (ReadSFTData()) return COMPUTEFSTAT_EXIT_READSFTFAIL;
 
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(stat), stat);
@@ -356,7 +370,7 @@ int main(int argc,char *argv[])
 #endif /* USE_BOINC */
     if (!(fpmax=fopen(Fmaxfilename,"wb"))){
       fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
-      return 2;
+      return COMPUTEFSTAT_EXIT_OPENFMAX;
     }
   }
 #endif
@@ -405,7 +419,7 @@ int main(int argc,char *argv[])
       if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	  return 1;
+	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
 	}
       if ( uvar_openDX )	/* prepend openDX header */
 	{
@@ -468,7 +482,7 @@ int main(int argc,char *argv[])
   if ( FILE_FSTATS && ( (fpstat=fopen( Fstatsfilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
       fprintf(stderr,"in Main: unable to open Fstats file\n");
-      return 2;
+      return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
   /* if we checkpointed in the loop we need to "spool forward" accordingly in our sky-position list */
@@ -599,14 +613,14 @@ int main(int argc,char *argv[])
 	      if (writeFLines(maxIndex, &bytesWritten) )
 		{
 		  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-		  return 6;
+		  return COMPUTEFSTAT_EXIT_WRITEFSTAT;
 		}
 	      fstat_bytecounter += (long)bytesWritten;	/* bookkeeping of nominal length of Fstats-file */
 	   	  
 	      if (uvar_EstimSigParam)
 		{
-		  if(writeFaFb(maxIndex)) return 255;
-		  if (EstimateSignalParameters(maxIndex)) return 7;
+		  if(writeFaFb(maxIndex)) return COMPUTEFSTAT_EXIT_WRITEFAFB;
+		  if (EstimateSignalParameters(maxIndex)) return COMPUTEFSTAT_EXIT_ESTSIGPAR;
 		} /* if signal-estimation */
 	  
 	  
@@ -652,7 +666,7 @@ int main(int argc,char *argv[])
   
   LAL_CALL ( Freemem(stat), stat);
   
-  return 0;
+  return COMPUTEFSTAT_EXIT_OK;
   
 } /* main() */
 
