@@ -30,7 +30,7 @@ NRCSID (EPSEARCHC, "$Id$");
 extern INT4 lalDebugLevel;
 
 static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status);
-
+static void EPClean(INT4 freqcl,  COMPLEX8FrequencySeries *freqSeries);
 
 /****************************************************************
  *
@@ -110,7 +110,7 @@ EPSearch (
         )
 /******** </lalVerbatim> ********/
 { 
-    INT4                      i,j;
+    INT4                      i,j,freqcl;
     REAL4                     redummy, imdummy;
     EPDataSegment            *dummySegment     = NULL;
     SnglBurstTable               *currentEvent     = NULL;
@@ -119,6 +119,7 @@ EPSearch (
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
     REAL4                    *dummySpec        = NULL;
+    INT4                      nevents, dumevents;
 
     INITSTATUS (status, "EPSearch", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
@@ -406,15 +407,23 @@ EPSearch (
       params->tfTiling->tilesSorted=FALSE;
 
     }
-
+  
+    nevents = 0;
+    dumevents = 1;
+    j = 0;
     /* cluster the events if requested */
-    if (params->cluster && (*burstEvent) != NULL){
-      LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
-      CHECKSTATUSPTR (status);
-
-      LALClusterSnglBurstTable(status->statusPtr, *burstEvent);
-      CHECKSTATUSPTR (status);
-    }
+    if (params->cluster && (*burstEvent) != NULL)
+      {
+	while ( (dumevents != nevents) && j < 500) 
+	{
+	  dumevents = nevents;
+	  LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
+	  CHECKSTATUSPTR (status);
+	  LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
+	  CHECKSTATUSPTR (status);
+	  j++;
+	}
+      }
     
     /* destroy time-frequency tiling of planes */
     LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
@@ -942,8 +951,5 @@ EPFinalizeSearch(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-
-
-
 
 
