@@ -71,6 +71,7 @@ typedef struct CandINDICESTag
   INT4 iDelta;
   INT4 iAlpha;
   INT4 iCand;
+  INT4 iCandSorted;
   REAL8 f;        /* Frequency */
   REAL8 Alpha;    /* longitude */
   REAL8 Delta;    /* latitude */
@@ -181,19 +182,47 @@ int main(int argc,char *argv[])
       qsort(SortedC1, (size_t)CList1.length, sizeof(CandINDICES), compareCIStructs);
       qsort(SortedC2, (size_t)CList2.length, sizeof(CandINDICES), compareCIStructs);
 
-
+      for (i=0;i<CList1.length;i++) SortedC1[i].iCandSorted=i;
+      for (i=0;i<CList2.length;i++) SortedC2[i].iCandSorted=i;
+     
       for (i=0; i < CList1.length; i++)
 	{
 	  if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
 	    {
 	      CandINDICES *p;
 	      p=bsearch(&SortedC1[i],SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
+
 	      if (p != NULL)
 		{
-		  fprintf(stdout,"%d %d %d %d\n",p->iFreq,p->iDelta,p->iAlpha,p->iCand);
-		}
-	    }
-	}
+		  /* Now we've found at least one candidate */
+
+		  /* we need to move to the right edge; first look up until second (I don't think this will cause seg faults) */ 
+		  if ( p->iCandSorted > 0)
+		    {
+		      INT4 keepgoing = 1;
+		      while ( keepgoing )
+			{
+			  if( (p->iFreq == (p--)->iFreq) && ( p->iDelta == (p--)->iDelta) && ( p->iAlpha == (p--)->iAlpha)) 
+			    {
+			      p--;
+			    }else{
+			      keepgoing=0;
+			    }
+			  if ( p->iCandSorted == 0 )
+			    {
+			      keepgoing=0;
+			    }
+			}
+		    }
+		  /* Now p points to first coincident event in the second list */
+		  
+		  /* Now loop over candidates found in the second list and do the fine coincidence test */
+/* 		       fprintf(stdout,"%d %d %d %d\n",p->iFreq,p->iDelta,p->iAlpha,p->iCand); */
+		  
+
+		} /* check that besearch was non-null */
+	    } /* check that frequency lies between two input bounds */
+	} /* loop over 1st list */
 
       LALFree(SortedC1);
       LALFree(SortedC2);
@@ -213,7 +242,7 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
-/* Sorting function to sort 1st candidate indices INCREASING order of f, delta, alpha */
+/* Sorting function to sort candidate indices INCREASING order of f, delta, alpha */
 int compareCIStructs(const void *a, const void *b)
 {
   const CandINDICES *ip = a;
