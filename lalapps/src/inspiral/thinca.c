@@ -79,6 +79,7 @@ static void print_usage(char *program)
       "  [--version]                   print version information and exit\n"\
       "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
       "  [--user-tag]      usertag     set the process_params usertag\n"\
+      "  [--ifo-tag]       ifotag      set the ifo-tag - for file naming\n"\
       "  [--comment]       string      set the process table comment to STRING\n"\
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
@@ -92,7 +93,7 @@ static void print_usage(char *program)
       "  [--t1-triggers]               input triggers from T1\n"\
       "  [--v1-triggers]               input triggers from V1\n"\
       "\n"\
-      "   --parameter-test test        set parameters with which to test coincidence:\n"\
+      "   --parameter-test     test    set parameters with which to test coincidence:\n"\
       "                                (m1_and_m2|mchirp_and_eta)\n"\
       "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
@@ -122,7 +123,7 @@ static void print_usage(char *program)
       "  [--t1-eta-accuracy] t1_deta   specify the eta accuracy of T1\n"\
       "  [--v1-eta-accuracy] v1_deta   specify the eta accuracy of V1\n"\
       "\n"\
-      "   --data-type DATA_TYPE        specify the data type, must be one of\n"\
+      "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
@@ -146,6 +147,7 @@ int main( int argc, char *argv[] )
   CHAR  ifos[LIGOMETA_IFOS_MAX];
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
+  CHAR *ifoTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
 
@@ -238,6 +240,7 @@ int main( int argc, char *argv[] )
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
     {"userTag",             required_argument, 0,                    'Z'},
+    {"ifo-tag",		          required_argument, 0,   		             'i'},
     {"help",                no_argument,       0,                    'h'}, 
     {"debug-level",         required_argument, 0,                    'z'},
     {"version",             no_argument,       0,                    'V'},
@@ -282,8 +285,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "c:hm:n:p:q:r:s:t:z:A:D:P:V:Z:", long_options, 
-        &option_index );
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:VZ:a:d:hi:m:n:o:p:q:r:s:t:x:z:", 
+        long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -594,6 +597,14 @@ int main( int argc, char *argv[] )
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
+        break;
+        
+      case 'i':
+        /* create storage for the ifotag */
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
 
@@ -1068,7 +1079,18 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  if ( userTag )
+  if ( userTag && ifoTag)
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s_%s-%d-%d.xml", 
+        ifos, ifoTag, userTag, startCoincidence, 
+        endCoincidence - startCoincidence );
+  }
+  else if ( ifoTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%s_%d-%d.xml", ifos,
+        ifoTag, startCoincidence, endCoincidence - startCoincidence );
+  }
+  else if ( userTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
         ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
@@ -1207,6 +1229,7 @@ cleanexit:
 
 
   if ( userTag ) free( userTag );
+  if ( ifoTag ) free( ifoTag );
 
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
