@@ -150,13 +150,8 @@ void  mexFunction( int nlhs,       mxArray *plhs[],
       LALSlopeETG(&status, &output, &input, &params);
       CHKST
     } else {
-      if(!strcmp(ETG,"power")) {
-	LALPowerETG(&status, &output, &input, &params);
-	CHKST
-      } else {
-	mexErrMsgTxt("Unknown ETG!\n");
-	return;
-      }
+      mexErrMsgTxt("Unknown ETG!\n");
+      return;
     }
   }
 
