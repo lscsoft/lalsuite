@@ -36,7 +36,7 @@ LALCreateMetaTableDir(
   ATTATCHSTATUSPTR (status);
 
   /* check the inputs */
-  ASSERT( *tableDir, status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL );
+  ASSERT( !*tableDir, status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL );
 
   switch( table )
   {
@@ -118,11 +118,11 @@ LALSnglBurstTableFromLIGOLw (
     )
 {
   int                                   i, j, nrows;
-  int                                   mioStatus;
-  SnglBurstTable                    *thisEvent = NULL;
+  int                                   mioStatus=0;
+  SnglBurstTable                       *thisEvent = NULL;
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
-  MetaTableDirectory                   *tableDir;
+  MetaTableDirectory                   *tableDir = NULL;
 
   INITSTATUS( status, "LALSnglBurstTableFromLIGOLw", LIGOLWXMLREADC );
   ATTATCHSTATUSPTR (status);
