@@ -7,10 +7,6 @@ $Id$
 \subsection{Program \texttt{StochasticCrossCorrelationSpectrumTest.c}}
 \label{stochastic:ss:StochasticCrossCorrelationSpectrumTest.c}
 
-{\bf {\Large WARNING} The functionality of this module has been expanded
-and modified, so the tests and  documentation are not yet complete
-and/or correct.}
-
 A program to test \texttt{LALStochasticCrossCorrelationSpectrum()}.
 
 \subsubsection*{Usage}
@@ -65,28 +61,19 @@ the corresponding checks in the code are made using the ASSERT macro):
 \end{itemize}
 
 It then verifies that the correct cross-correlation statistic (value
-and units) is generated for each of the following simple test cases:
-\begin{enumerate}
-\item $\widetilde{Q}(f) = \frac{f(N\,\delta f - f)}{(N\,\delta
-    f/2)^2}$; $\widetilde{\bar{h}}_1(f)=f^2+if$,
-  $\widetilde{\bar{h}}_2(f)=f^{-2}-if^{-1}$.  The expected result in
-  this case is zero.
-\item $\widetilde{Q}(f) = 1$ for
-  $300\,\textrm{Hz}<f<500\,\textrm{Hz}$, 0 otherwise;
-  $\widetilde{\bar{h}}_1(f)=1-\widetilde{\bar{h}}_2(f)=f/800\,\textrm{Hz}$.
-  With $f_0=\delta f=80\,\textrm{Hz}$ and $N=9$, the expected value is
-  $116.8$.
-\end{enumerate}
+and units) is generated for the following simple test case:
+$\widetilde{Q}(f) = x(1-x)$; $\widetilde{\bar{h}}_1(f)=x^2+ix$,
+  $\widetilde{\bar{h}}_2(f)=x^{-2}-ix^{-1}$, with $x=400\,\textrm{Hz}$
+  The expected result in this case is $Y(f)=-i(2-x)(x^2+2)$.
 For each successful test
-(both of these valid data and the invalid ones described above), it
+(this valid data test and the invalid ones described above), it
 prints ``\texttt{PASS}'' to standard output; if a test fails, it
 prints ``\texttt{FAIL}''.
 
 If the \texttt{filename} arguments are present, it also reads in the
 optimal filter and the two data streams from the specified files and
 use the specified parameters to calculate the cross-correlation
-statistic.  The result is printed to standard output along with the
-resulting units in terms of the basic SI units.
+statistic.  The result is printed to the specified output file.
 
 \subsubsection*{Exit codes}
 \input{StochasticCrossCorrelationSpectrumTestCE}
@@ -113,10 +100,6 @@ fabs()
 \subsubsection*{Notes}
 
 \begin{itemize}
-\item {\bf WARNING: This test routine is being converted from the
-    version for \texttt{LALStochasticCrossCorrelationStatistic()} and
-    is not yet a complete or accurate test of
-    \texttt{LALStochasticCrossCorrelationSpectrum()}.}
   \item No specific error checking is done on user-specified data.  If
     \texttt{length} is missing, the resulting default will cause a bad
     data error.
@@ -232,8 +215,9 @@ int main( int argc, char *argv[] )
   CHARVector               *unitString = NULL;
 
   UINT4 i;
-  REAL4 omega, f;
-  INT4 code;
+  REAL4 omega, f, x;
+  INT4  code;
+  REAL4 expIm;
   
   ParseOptions( argc, argv );
   
@@ -645,18 +629,14 @@ int main( int argc, char *argv[] )
   
   for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
   {
-    f =  i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
-    goodData1.data->data[i].re = f*f
-      /(STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM
-        * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 4.0);
-    goodData1.data->data[i].im = f/(STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM/2.0);
+    f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
+    x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
+    goodData1.data->data[i].re = x*x;
+    goodData1.data->data[i].im = x;
     goodData2.data->data[i].re = 1.0/goodData1.data->data[i].re;
     goodData2.data->data[i].im = -1.0/goodData1.data->data[i].im;
     goodFilter.data->data[i].re 
-      = f * ( STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM - f)
-      / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM
-         * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM/4);
-    goodFilter.data->data[i].im = 0.0;
+      = x * (2-x);
   }
 
   LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
@@ -667,6 +647,51 @@ int main( int argc, char *argv[] )
     return code;
   }
 
+   /* check output values */
+
+  if (optVerbose) 
+  {
+    printf("Y(0)=%g + %g i, should be 0\n",
+           goodOutput.data->data[0].re, goodOutput.data->data[0].im);
+  }
+  if ( ( fabs(goodOutput.data->data[0].re) 
+         > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
+       || ( fabs(goodOutput.data->data[0].im)
+            > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL ) )
+  {
+    printf("  FAIL: Valid data test\n");
+    if (optVerbose)
+    {
+      printf("Exiting with error: %s\n", STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEFLS);
+    }
+    return STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS;
+  }
+   
+  for (i=1; i<STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH; ++i)
+  {
+    f = i * STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_DELTAF;
+    x = f / (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_FLIM / 2.0);
+    expIm = -1 * (2-x) * (1 + x*x);
+
+    if (optVerbose) 
+    {
+      printf("Y(%f Hz)=%g + %g i, should be %g i\n",
+             f, goodOutput.data->data[i].re, goodOutput.data->data[i].im,
+             expIm);
+     }
+     if ( fabs(goodOutput.data->data[i].re)
+          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL
+          || fabs(goodOutput.data->data[i].im - expIm)
+          > STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TOL )
+     {
+       printf("  FAIL: Valid data test\n");
+       if (optVerbose)
+       {
+         printf("Exiting with error: %s\n", STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEFLS);
+       }
+       return STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS;
+     }
+   }
   
 
   /* clean up */
