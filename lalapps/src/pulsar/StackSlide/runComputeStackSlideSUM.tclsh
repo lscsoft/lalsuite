@@ -18,6 +18,7 @@
 # 04/15/04 gam; update instructions.
 # 04/26/04 gam; change example jobs for intial entry into LALapps.
 # 09/03/04 gam; update examples to work with new test SFTS in LALapps.
+# 11/22/04 gam; if == 0 then set band_width = 1/sft_time
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -77,6 +78,7 @@ if { $argc < 13 || $argc > 15} {
     Print "duration:         Times to run on = \[start_time, start_time + duration).";
     Print "template_freq:    Central frequency to run on.";
     Print "band_width:       Band width to run = \[template_freq - band_width/2 , template_freq + band_width/2).";
+    Print "                  Set band_width == 0 to output result for just the template_freq bin (with bin_width = 1.0/sft_time)."; # 11/22/04 gam
     Print "sft_time:         Time baseline used to generate SFTs in seconds (e.g. 60 or 1800).";
     Print "num_sfts:         Actual number of exiting SFTs for times specified (not equal to duration/sft_time if gaps exists).";
     # Print "sft_directory:    Directory with SFTs in PULG group format."; #01/28/04 gam
@@ -208,8 +210,14 @@ if {$template_freq == "default"} {
 # Set parameters that can be used by $job_file.
 set ANALYSIS_START_TIME $start_time;
 set SAMPLE_TIME $duration;  
-set INPUTSUMF0 [expr $template_freq - $band_width/2.0];
-set INPUTSUMBAND $band_width;
+if {$band_width == "0"} {
+  set band_width [expr 1.0/$sft_time];
+  set INPUTSUMF0 $template_freq;
+  set INPUTSUMBAND $band_width;
+} else {
+  set INPUTSUMF0 [expr $template_freq - $band_width/2.0];
+  set INPUTSUMBAND $band_width;
+}
 set INPUTSFTTIME $sft_time;
 set IFONICKNAME $ifo;
 set NUMSFTS $num_sfts;
