@@ -657,7 +657,7 @@ LALREAL4AverageSpectrum (
   RETURN( status );
 }
 
-
+/* <lalVerbatim file="TimeFreqFFTCP"> */
 void
 LALCOMPLEX8AverageSpectrum (
     LALStatus                   *status,
