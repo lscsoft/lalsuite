@@ -30,7 +30,7 @@ my $DATE = f_getDateYYMMDD();
 my $TIME_CHUNK_SIZE = 600;
 my $TIME_CHUNK_MIN_SIZE = 16;
 
-my $DATA_SET_NAME = "S2H1v02";
+my $DATA_SET_NAME = "S2H2v02";
 my $DATA_QUALITY_FILE = "/scratch/power/input/$DATA_SET_NAME" . "_segs.txt";
 
 #To allow data outside of playground, set USE_PLAYGROUND to 0

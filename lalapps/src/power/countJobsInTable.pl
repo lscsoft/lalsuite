@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl  -w
 #-----------------------------------------------------------------------------------
 # countJobsTable.pl 
 #-----------------------------------------------------------------------------------
@@ -21,15 +21,26 @@ my $DATE =$ARGV[0];
 my $runNum = $ARGV[1];
 my $JOBS_TABLE = "/scratch/power/tests/$DATE-$runNum/power_jobs_$DATE.tbl";
 
-print "Counting jobs in table $JOBS_TABLE.\n";	
+print "\nCounting jobs in table $JOBS_TABLE.\n\n";	
 open TABLE, "$JOBS_TABLE" or die "Couldn't open $JOBS_TABLE.\n";
 
 my $i=0;
+my %statusCount = ( );
 while(<TABLE>){
+	chomp;
+	my @fields = split "\t";
 	$i++;
+	if ($statusCount{$fields[0]}){
+		$statusCount{$fields[0]}++;
+	}else{
+		$statusCount{$fields[0]} = 1;
+	}
 }
 
-print "$i jobs in table.\n";
+foreach(sort keys %statusCount){
+	print "$_=", $statusCount{$_},"\n";
+}
+print "\n$i jobs total in table.\n";
 
 #-----------------------------------------------------------------------------------
 #  f_getDateYYMMDD

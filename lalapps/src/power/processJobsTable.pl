@@ -110,7 +110,7 @@ my $THRESHOLD = "10.0e-10";
 my $ETOMSTR = 10;
 
 # The source of the data
-my $CHANNEL = "H1:LSC-AS_Q";
+my $CHANNEL = "H2:LSC-AS_Q";
 #my $FRAMECACHE = "/scratch/LALcaches/S2-RDS-LHO.cache	";
 
 # does not currently do anything but keep it set to 0
@@ -319,7 +319,7 @@ sub f_writeJobToCondorSubmitFile {
 	#number of segments = (2*number of seconds) - 1
 	my $epoch = $startSec;
 	my $nseg = 2*($stopSec - $startSec) - 1;
-	my $numpts = $NPTS + ($NPTS - $OLAP)*( $nseg-1);
+	my $numpts = $NPTS + ($NPTS - $OLAP)*( $nseg-1)+ 2*$OLAP;
 	my $condorCmd;
 
 	# BUILD THE ARGS
