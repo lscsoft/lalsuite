@@ -1389,7 +1389,6 @@ tagEPSearchParams
 EPSearchParams;
 \end{verbatim}
 
-
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{EPSearch.c}}
@@ -1401,8 +1400,6 @@ excess power code.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{LALWeighTFTileListCP}
-\idx{LALWeighTFTileList()}
 \input{EPConditionDataCP}
 \idx{EPConditionData()}
 \input{EPSearchCP}
@@ -1410,31 +1407,21 @@ excess power code.
 
 \subsubsection*{Description}
 
-The routine \verb+LALWeighTFTileList()+ counts the number of tile of
-each time-frequency volume and then adds a weight to each tile.  The
-weight is the number of time-frequency tiles of the same volume in the
-search.  This is used to adjust the thresholds in such a way that all
-time-frequency volumes equal probability of giving false alarms by
-chance.  
+The function \texttt{EPConditionData()} takes a frequency series as input
+and performs some data conditioning operations on it including optionally
+down-sampling the data, and high-pass filtering it.  This function is
+typically always called prior to the call(s) to \texttt{EPSearch()}.
 
-The routine \verb+EPInitSearch()+ initializes parameters and memory
-needed by the \verb+EPSearch()+.     The function
-\verb+EPConditionData()+ takes a frequency series as input and breaks
-it into segments.   This routine needs to be updated so that it can
-handle the response function;  at present, it ignore it.
-
-The routine \verb+EPSearch()+ is the powerhouse of the excess-power
-code.  It is most conveniently called after \verb+EPInitSearch()+ and 
-\verb+EPConditionData()+.
+The routine \texttt{EPSearch()} is the powerhouse of the excess-power code.
 
 
-Notes:
+\subsubsection*{Notes}
+
 \begin{enumerate}
-\item These functions were originally in-line code in LALWrapper.
-This made for very inconvenient use of the EPSearch in \emph{LALApps}.
-The implementation in LAL,  which leads to yet another layer of
-translation in LALWrapper,  is much more convenient to maintain and
-test.
+\item These functions were originally in-line code in LALWrapper.  This
+made for very inconvenient use of the EPSearch in LALApps.  The
+implementation in LAL,  which leads to yet another layer of translation in
+LALWrapper,  is much more convenient to maintain and test.
 \end{enumerate}
 
 \subsubsection*{Uses}

@@ -48,24 +48,13 @@ static INT4 DegreesOfFreedom(TFTile *tile)
 	return(2 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1));
 }
 
-/******** <lalVerbatim file="LALWeighTFTileListCP"> ********/
-void LALWeighTFTileList (
-        LALStatus         *status,
+static void WeighTFTileList (
         TFTiling          *tfTiling,
         INT4               maxDOF
         )
-/******** </lalVerbatim> ********/
 {
 	TFTile *tile;
-	INT4 *weight;
-
-	INITSTATUS(status, "LALPrintTFTileList", EPSEARCHC);
-	ATTATCHSTATUSPTR(status);
-
-	ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
-	ASSERT(tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
-
-	weight = LALCalloc(2 * maxDOF, sizeof(*weight));
+	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
 		weight[DegreesOfFreedom(tile)]++;
@@ -74,10 +63,6 @@ void LALWeighTFTileList (
 		tile->weight = weight[DegreesOfFreedom(tile)];
 
 	LALFree(weight);
-
-	/* Normal exit */
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
 }
 
 
@@ -269,8 +254,7 @@ EPSearch (
       CHECKSTATUSPTR(status);
 
       /* determine the weighting for each tile */
-      LALWeighTFTileList(status->statusPtr, tfTiling, 10000);
-      CHECKSTATUSPTR(status);
+      WeighTFTileList(tfTiling, 10000);
 
       /* convert the TFTiles into sngl_burst events for output */
       EventAddPoint = TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
