@@ -98,8 +98,8 @@ CHAR *calCacheOne = NULL;
 CHAR *calCacheTwo = NULL;
 CHAR *channelOne = NULL;
 CHAR *channelTwo = NULL;
-CHAR ifoOne[LALNameLength] = "H1";
-CHAR ifoTwo[LALNameLength] = "L1";
+CHAR *ifoOne = NULL;
+CHAR *ifoTwo = NULL;
 INT4 siteOne = 0;
 INT4 siteTwo = 1;
 
@@ -1766,6 +1766,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(calCacheTwo);
   free(channelOne);
   free(channelTwo);
+  free(ifoOne);
+  free(ifoTwo);
 
   return 0;
 }
@@ -2165,7 +2167,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* ifo for first stream */
-        strncpy(ifoOne, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoOne, optarg, optarg_len);
 
         /* set site */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -2194,7 +2198,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'I':
         /* ifo for second stream */
-        strncpy(ifoTwo, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifoTwo, optarg, optarg_len);
 
         /* set site */
         if (strncmp(ifoTwo, "H1", 2) == 0)
