@@ -47,6 +47,9 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_EGRIDCRPT		6
 #define DOPPLERSCANH_ESKYPARAM		7
 #define DOPPLERSCANH_EMETRIC		8
+#define DOPPLERSCANH_ENONULL		9
+#define DOPPLERSCANH_EMEM		10
+#define DOPPLERSCANH_ESKYREGION		11
 
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define DOPPLERSCANH_MSGENOINIT 	"NextDopplerPos() called without prior initialization by InitDopplerScan()"
@@ -56,6 +59,9 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_MSGEGRIDCRPT	"Unexpected NULL in grid-list. This points to a bug in the code... "
 #define DOPPLERSCANH_MSGESKYPARAM	"Invalid sky region! We need 0<= alpha < 2Pi and -Pi/2 <= delta <= PI/2"
 #define DOPPLERSCANH_MSGEMETRIC		"Unknown type of metric specified. 1=PtoleMetric, 2=CoherentMetric"
+#define DOPPLERSCANH_MSGENONULL		"Output pointer is not NULL"
+#define DOPPLERSCANH_MSGEMEM		"Out of memory"
+#define DOPPLERSCANH_MSGESKYREGION	"Could not parse sky-region properly"
 
 /*************************************************** </lalErrTable> */
 
@@ -68,13 +74,15 @@ typedef struct {
   REAL8 dDelta;
   REAL8 DeltaBand;
   
-  INT2 useMetric;   /* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
+  INT2 useMetric;   	/* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;
   LIGOTimeGPS obsBegin; /* start-time of time-series */
   REAL4 obsDuration;	/* length of time-series in seconds */
   REAL4 fmax; 		/* max frequency of search */
   LALDetector Detector; /* Our detector*/
   BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
+
+  CHAR *skyRegion;	/* string containing a list of sky-positions (ra,dec) which describe a sky-region */
 } DopplerScanInit;
 
 typedef struct {
@@ -82,6 +90,12 @@ typedef struct {
   REAL8Vector spindowns;
   BOOLEAN finished;
 } DopplerPosition;
+
+
+typedef struct {
+  UINT4 length;
+  SkyPosition *data;
+} SkyPositionVector;
 
 
 /* this structure reflects the internal state of DopplerScan */
@@ -96,10 +110,10 @@ typedef struct {
   REAL8 dDelta;
 
   /* these are ONLY used for manual sky-stepping: */
-  UINT4 AlphaImax;  
-  UINT4 DeltaImax;
   INT8 AlphaCounter;  /* loop counters for manual stepping */
   INT8 DeltaCounter;
+
+  SkyPositionVector skyRegion; 
 
   /* these are used for the metric sky-grid: */
   INT2 useMetric;		/* MANUAL, PTOLE_METRIC or COHERENT_METRIC */
@@ -129,12 +143,14 @@ enum {
   ORDER_ALPHA_DELTA,
   ORDER_DELTA_ALPHA
 };
-  
-enum {
-  DOPPLER_MANUAL = 0,
-  DOPPLER_PTOLE_METRIC,
-  DOPPLER_COHERENT_METRIC
-};
+
+typedef enum
+{
+  LAL_METRIC_NONE = 0,
+  LAL_METRIC_PTOLE,
+  LAL_METRIC_COHERENT,
+  LAL_METRIC_LAST
+} LALMetricType;
   
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{DopplerScanHV}}
@@ -146,7 +162,11 @@ enum {
 void InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init);
 void NextDopplerPos ( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan);
 void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
-  
+
+void ParseSkyRegion (LALStatus *stat, SkyPositionVector *skylist, const CHAR *input);
+
+void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType type);
+
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */

@@ -39,6 +39,7 @@ detector sensitivity pattern (.. in the future).
 #include <lal/AVFactories.h>
 #include <lal/LALError.h>
 #include <lal/LALXMGRInterface.h>
+#include <lal/StringInput.h>
 
 #include "DopplerScan.h"
 
@@ -112,6 +113,11 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
       ABORT (stat, DOPPLERSCANH_ESKYPARAM, DOPPLERSCANH_MSGESKYPARAM );
     }
 
+
+  if (init.skyRegion) {
+    TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init.skyRegion ), stat);
+  }
+
   /* init stuff for metric grid stepping */
   scan->grid = NULL;  /* for metric sky-grid: first node */
   scan->gridNode = NULL;
@@ -126,9 +132,8 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
     
   switch (scan->useMetric)      
     {
-    case DOPPLER_MANUAL:
+    case LAL_METRIC_NONE:	/* manual stepping */
   
-      /* stuff for manual stepping */
       scan->dAlpha = fabs(init.dAlpha);
       scan->dDelta = fabs(init.dDelta);
       scan->AlphaCounter = scan->DeltaCounter = 0;
@@ -145,16 +150,12 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 	  ABORT( stat, DOPPLERSCANH_E2DSTEP, DOPPLERSCANH_MSGE2DSTEP);
 	}
       
-      /* ok: prepare manual sky-stepping */
-      scan->AlphaImax = (UINT4)(scan->AlphaBand/scan->dAlpha + 0.5) + 1;
-      scan->DeltaImax = (UINT4)(scan->DeltaBand/scan->dDelta + 0.5) + 1;  
-      
       scan->state = STATE_MANUAL;
       
       break;
 	  
-    case DOPPLER_PTOLE_METRIC:
-    case DOPPLER_COHERENT_METRIC:
+    case LAL_METRIC_PTOLE:
+    case LAL_METRIC_COHERENT:
 
       /* Prepare call of TwoDMesh(): the mesh-parameters */
       scan->meshpar.mThresh = init.metricMismatch;
@@ -182,44 +183,18 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 	  scan->meshpar.domain[1] = scan->Delta + scan->DeltaBand;
 	}
       
-      if (scan->useMetric == DOPPLER_PTOLE_METRIC)
-	{
-	  scan->ptoleMetricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
-	  scan->ptoleMetricPar.spindown = NULL;  /*  FIXME: no spindowns for now */
-	  scan->ptoleMetricPar.epoch = init.obsBegin;
-	  scan->ptoleMetricPar.duration = init.obsDuration;
-	  scan->ptoleMetricPar.maxFreq = init.fmax;
-	  scan->ptoleMetricPar.site = init.Detector.frDetector;
-	}
-      else if (scan->useMetric == DOPPLER_COHERENT_METRIC)
-	{ /* modelled after StackMetricTest.c */
-	  /*  FIXME: currently no spindowns are used */
-	  INT2 nSpin = 0;
+      scan->ptoleMetricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      /* currently, CreateVector's are broken as they don't allow length=0 */
+      /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->ptoleMetricPar.spindown), 0 ), stat ); 	*/
+      /* FIXME: replace when fixed in LAL */
+      scan->ptoleMetricPar.spindown = LALMalloc ( sizeof(REAL4Vector) );
+      scan->ptoleMetricPar.spindown->length=0;
+      scan->ptoleMetricPar.spindown->data=NULL;
 
-	  /* Set up start time. */
-	  scan->coherentMetricPar.start = 0;
-	  scan->coherentMetricPar.deltaT = init.obsDuration;
-	  scan->coherentMetricPar.n = 1; /* only 1 stack */
-	  scan->coherentMetricPar.errors = 0;
-
-	  /* Set up constant parameters for barycentre transformation. */
-	  scan->baryParams.epoch = init.obsBegin;
-	  scan->baryParams.latitude = init.Detector.frDetector.vertexLatitudeRadians;
-	  scan->baryParams.longitude = init.Detector.frDetector.vertexLongitudeRadians;
-	  TRY( LALGetEarthTimes( stat->statusPtr, &(scan->baryParams) ), stat );
-
-	  /* Set up constant parameters for metric calculation. */
-	  scan->coherentMetricPar.dtCanon = LALDTBaryPtolemaic;
-	  scan->coherentMetricPar.constants = &(scan->baryParams);
-
-	  /* Set up the parameter list. */
-	  TRY ( LALDCreateVector( stat->statusPtr, &(scan->lambda), nSpin + 2 + 1 ), stat );
-
-	  scan->lambda->data[0] = init.fmax;
-	  scan->lambda->data[1] = 0; /* to be set by grid-function */
-	  scan->lambda->data[2] = 0;
-	}
-
+      scan->ptoleMetricPar.epoch = init.obsBegin;
+      scan->ptoleMetricPar.duration = init.obsDuration;
+      scan->ptoleMetricPar.maxFreq = init.fmax;
+      scan->ptoleMetricPar.site = init.Detector.frDetector;
 
       scan->grid = NULL;      
       /* both getMetric and getRange now take the ScanState as parameter */
@@ -280,10 +255,19 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   }
   scan->grid = scan->gridNode = NULL;
 
+  if (scan->skyRegion.data)
+    LALFree (scan->skyRegion.data);
+  scan->skyRegion.data = NULL;
+
   if (scan->lambda) {
     TRY (LALDDestroyVector ( stat->statusPtr,  &(scan->lambda) ), stat);
   }
-  scan->lambda = NULL;
+  if (scan->ptoleMetricPar.spindown) {
+    /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
+    /*    TRY (LALSDestroyVector ( stat->statusPtr, &(scan->ptoleMetricPar.spindown) ), stat); */
+    LALFree (scan->ptoleMetricPar.spindown);
+    scan->ptoleMetricPar.spindown = NULL;
+  }
     
   scan->state = STATE_IDLE;
 
@@ -303,6 +287,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
   /* This traps coding errors in the calling routine. */
   ASSERT( pos != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
 
+  pos->finished = 0;
 
   switch( scan->state )
     {
@@ -319,15 +304,18 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 
       /* prepare next step: 'loop' over alpha and delta */ 
       scan->DeltaCounter ++;
-      if (scan->DeltaCounter >= scan->DeltaImax)
+
+      /* this funny-looking procedure mimics the old for-loops */
+      if ( pos->skypos.latitude >= scan->Delta + scan->DeltaBand )
 	{
 	  scan->DeltaCounter = 0;
 	  scan->AlphaCounter ++;
-	  if (scan->AlphaCounter >= scan->AlphaImax)
-	    scan->state = STATE_FINISHED;  /* we finish in next call */
 	}
-
-      pos->finished = 0; 
+      if (pos->skypos.longitude  >= scan->Alpha + scan->AlphaBand + scan->dAlpha )
+	{
+	  scan->state = STATE_FINISHED;  
+	  pos->finished = 1;
+	}
 
       break;
 
@@ -352,7 +340,6 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
       if( scan->gridNode == NULL)
 	scan->state = STATE_FINISHED; /* finish in next call */
 
-      pos->finished = 0;
       break;
 
     case STATE_FINISHED:
@@ -448,19 +435,10 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
       lat = skypos[1];
     }
 
-  /* Call the real metric function. */
-  if (scan->useMetric == DOPPLER_PTOLE_METRIC)
-    {
-      scan->ptoleMetricPar.position.longitude = lon;
-      scan->ptoleMetricPar.position.latitude =  lat;
-      LALPtoleMetric( stat->statusPtr, metric, &(scan->ptoleMetricPar) );
-    }
-  else if (scan->useMetric == DOPPLER_COHERENT_METRIC)
-    {
-      scan->lambda->data[1] = lon;
-      scan->lambda->data[2] = lat;
-      LALCoherentMetric( stat->statusPtr, metric, scan->lambda, &(scan->coherentMetricPar) );
-    }
+  /* Call the metric function. (Ptole or Coherent, which is handled by wrapper) */
+  scan->ptoleMetricPar.position.longitude = lon;
+  scan->ptoleMetricPar.position.latitude =  lat;
+  TRY ( LALMetricWrapper( stat->statusPtr, metric, &(scan->ptoleMetricPar), scan->useMetric ), stat);
 
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
@@ -531,9 +509,9 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
   /* currently we use only f0, alpha, delta: -> 3D metric */
   dim = 3;
 
-  if (scan->useMetric == DOPPLER_PTOLE_METRIC)
+  if (scan->useMetric == LAL_METRIC_PTOLE)
     fp = fopen ("mesh_ptole.agr", "w");
-  else if (scan->useMetric == DOPPLER_COHERENT_METRIC)
+  else if (scan->useMetric == LAL_METRIC_COHERENT)
     fp = fopen ("mesh_coherent.agr", "w");
   else /* manual stepping: nothing to print here */
     {
@@ -563,20 +541,11 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
 	  alpha =  node->x;
 	  delta =  node->y;
 	  /* Get the metric at this skypos */
-	  if (scan->useMetric == DOPPLER_PTOLE_METRIC)
-	    {
-	      scan->ptoleMetricPar.position.longitude = alpha;
-	      scan->ptoleMetricPar.position.latitude  = delta;
 
-	      TRY( LALPtoleMetric( stat->statusPtr, metric, &(scan->ptoleMetricPar) ), stat);
+	  scan->ptoleMetricPar.position.longitude = alpha;
+	  scan->ptoleMetricPar.position.latitude  = delta;
 
-	    }
-	  else if (scan->useMetric == DOPPLER_COHERENT_METRIC)
-	    {
-	      scan->lambda->data[1] = alpha;
-	      scan->lambda->data[2] = delta;
-	      TRY( LALCoherentMetric( stat->statusPtr, metric, scan->lambda, &(scan->coherentMetricPar) ), stat);
-	    }
+	  TRY( LALMetricWrapper( stat->statusPtr, metric, &(scan->ptoleMetricPar), scan->useMetric ), stat);
 
 	  TRY( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
@@ -616,16 +585,6 @@ void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
 	    b = atan2 ( y, x );
 	    fprintf( fp, "%e %e\n", alpha + r*cos(angle+b), delta + r*sin(angle+b) );
 	  }
-
-/* 	/\* Loop around patch ellipse. *\/ */
-/* 	  for (i=0; i<=SPOKES; i++) { */
-/* 	    float c, r; */
-/* 	    c = LAL_TWOPI*i/SPOKES; */
-/* 	    r = smaj*smin/sqrt( pow(smaj*sin(c),2) + pow(smin*cos(c),2) ); */
-/* 	    fprintf( fp, "%e %e\n", alpha + r*cos(angle-c), delta + r*sin(angle-c) ); */
-
-/*         } /\* for (a...) *\/ */
-
 	  
 	  node = node -> next;
 	  
@@ -688,3 +647,149 @@ gridStandarizeOrder ( DopplerScanState *scan )
   return;
 
 }  /* gridStandarizeOrder() */
+
+
+/*----------------------------------------------------------------------
+ * parse a string into a list of sky-positions: the expected format is
+ *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
+ *----------------------------------------------------------------------*/
+void
+ParseSkyRegion (LALStatus *stat, SkyPositionVector *skylist, const CHAR *input)
+{
+  const CHAR *pos;
+  UINT4 i;
+
+  INITSTATUS( stat, "ParseSkyRegion", DOPPLERSCANC );
+
+  ASSERT (skylist != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (skylist->data == NULL, stat, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
+  ASSERT (input != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  /* count number of entries (by # of opening parantheses) */
+  pos = input;
+  skylist->length = 0;
+  while ( (pos = strchr (pos, '(')) != NULL )
+    {
+      skylist->length ++;
+      pos ++;
+    }
+  
+  if ( (skylist->data = LALMalloc (skylist->length * sizeof (SkyPosition))) == NULL) {
+    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+
+  pos = input;
+  for (i = 0; i < skylist->length; i++)
+    {
+      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
+		   &(skylist->data[i].longitude), &(skylist->data[i].latitude) ) != 2) {
+	ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+      }
+      
+      pos = strchr (pos + 1, '(');
+
+    } /* for skylist-length */
+
+
+  RETURN (stat);
+
+} /* ParseSkyRegion() */
+
+/*----------------------------------------------------------------------
+ * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
+ * and CoherentMetric().
+ *
+ * the parameter structure of PtoleMetric() was used, because it's more compact
+ *----------------------------------------------------------------------*/
+void
+LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType type)
+{
+  static MetricParamStruc params;
+  static PulsarTimesParamStruc spinParams;
+  static PulsarTimesParamStruc baryParams;
+  static PulsarTimesParamStruc compParams;
+  REAL8Vector *lambda = NULL;
+  UINT4 i, nSpin;
+
+  INITSTATUS( stat, "LALMetricWrapper", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( input, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( input->spindown, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+
+  switch (type)
+    {
+    case LAL_METRIC_PTOLE: /* nothing to do here, just call the fct */
+      TRY ( LALPtoleMetric (stat->statusPtr, metric, input), stat);
+      break;
+
+    case LAL_METRIC_COHERENT:       /* this follows mainly Teviet's example in StackMetricTest.c */
+      nSpin = input->spindown->length;
+
+      /* Set up constant parameters for barycentre transformation. */
+      baryParams.epoch = input->epoch;
+      baryParams.t0 = 0;
+      baryParams.latitude = input->site.vertexLatitudeRadians;
+      baryParams.longitude = input->site.vertexLongitudeRadians;
+      TRY( LALGetEarthTimes( stat->statusPtr, &baryParams ), stat );
+
+      /* Set up constant parameters for spindown transformation. */
+      spinParams.epoch = input->epoch;
+      spinParams.t0 = 0;
+      
+      /* Set up constant parameters for composed transformation. */
+      compParams.epoch = input->epoch;
+      compParams.t1 = LALTBaryPtolemaic;
+      compParams.t2 = LALTSpin;
+      compParams.dt1 = LALDTBaryPtolemaic;
+      compParams.dt2 = LALDTSpin;
+      compParams.constants1 = &baryParams;
+      compParams.constants2 = &spinParams;
+      compParams.nArgs = 2;
+
+      /* Set up input structure for CoherentMetric()  */
+      if (nSpin)
+	{
+	  params.dtCanon = LALDTComp;
+	  params.constants = &compParams;
+	}
+      else
+	{
+	  params.dtCanon = LALDTBaryPtolemaic;
+	  params.constants = &baryParams;
+	}
+
+      params.start = 0;
+      params.deltaT = (REAL8) input->duration;
+      params.n = 1; 	/* only 1 stack */
+      params.errors = 0;
+
+      /* Set up the parameter list. */
+      TRY ( LALDCreateVector( stat->statusPtr, &lambda, nSpin + 2 + 1 ), stat );
+
+      lambda->data[0] = (REAL8) input->maxFreq;
+      lambda->data[1] = (REAL8) input->position.longitude;	/* alpha */
+      lambda->data[2] = (REAL8) input->position.latitude;	/* delta */
+
+      if ( nSpin ) 
+	{
+	  for (i=0; i < nSpin; i++)
+	    lambda->data[3 + i] = (REAL8) input->spindown->data[i];
+	}
+
+      /* _finally_ we can call the metric */
+      TRY ( LALStackMetric( stat->statusPtr, metric, lambda, &params ), stat );
+      TRY ( LALDDestroyVector( stat->statusPtr, &lambda ), stat );
+
+      break;
+
+    default:
+      ABORT (stat, DOPPLERSCANH_EMETRIC,  DOPPLERSCANH_MSGEMETRIC);
+      break;
+      
+    } /* switch type */
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALMetricWrapper() */
