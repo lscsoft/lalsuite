@@ -1314,108 +1314,25 @@ LALSortTriggers (
 
 
 
-static int EventCompareTime( const void *t1, const void *t2 )
-{
-  static LALStatus   stat;
-  SnglInspiralTable * const *event1 = t1;
-  SnglInspiralTable * const *event2 = t2;
-  INT8 time1, time2;
-
-  
-  LALGPStoINT8(&stat, &time1, &((*event1)->end_time));
-  LALGPStoINT8(&stat, &time2, &((*event2)->end_time));
-  if ( time1 > time2 )
-    return 1;
-  if ( time1 < time2 )
-    return -1;
-  return 0;
-}
-
-/******** <lalVerbatim file="SortTFTilingCP"> ********/
-void
-LALSortSnglInspiralTable (
-	      LALStatus         *status,
-              SnglInspiralTable *inspiralEvent,
-              INT4               numEvents
-	      )
-/******** </lalVerbatim> ********************************/
-{
-  INT4                   eventCount;
-  INT4                   i,inject;
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable    **events=NULL;
-
-  INITSTATUS (status, "LALSortSnglInspiralTable", EVENT_UTILSC);
-  ATTATCHSTATUSPTR (status);
-
-  /* make sure that arguments are not NULL */
-
-
-  /* 
-   *
-   *  Make an array of pointers to be used to sort the tiles.
-   *
-   */
-
-  /* allocate memory for array of pointers to tiles */
-  events = NULL;
-  events = (SnglInspiralTable **) 
-      LALMalloc (numEvents * sizeof(SnglInspiralTable *));
-
-  /*  Make sure that the allocation was succesful */
-  if ( !(events) ){
-      ABORT (status, EVENTUTILSH_ENULLP, EVENTUTILSH_MSGENULLP);
-  }
-
-  /* copy out pointers into array */
-  eventCount=0;
-  thisEvent = inspiralEvent;
-  while (thisEvent != NULL)
-  {
-      eventCount++;
-      *(events + eventCount-1) = thisEvent;
-      thisEvent = thisEvent->next;
-  }
-
-  qsort( events, numEvents, sizeof( SnglInspiralTable * ), EventCompareTime );
-
-  /* copy sorted array back into linked list */
-  { 
-      SnglInspiralTable **currentEvent = NULL;
-
-      thisEvent = inspiralEvent;
-      currentEvent = &(thisEvent);
-
-      eventCount=0;
-      while (eventCount < numEvents)
-      {
-          *currentEvent = *(events + eventCount);
-          eventCount++;
-          currentEvent = &((*currentEvent)->next);
-      }
-
-      /* correctly terminate the linked list */
-      *currentEvent = NULL;
-  }
-
-  LALFree (events);
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
-
-
 void
 LALClusterSnglInspiralTable (
 	      LALStatus         *status,
               SnglInspiralTable *inspiralEvent,
-              INT4              dtime
+              INT4              dtime,
+	      INT4		clusterchoice
 	      )
 {
   SnglInspiralTable     *thisEvent=NULL,*prevEvent=NULL;
 
+  /**************************************************************************
+   *   The present clustering choices are
+   *  clusterchoice = 0     replace previous event if current event has 
+   *			    higher SNR AND lower chi squared.		
+   *  
+   *  clusterchoice = 1	    replace previous event if current event has 
+   *			    higher (SNR)^2 / (chi squared).
+   **************************************************************************/
+  
   INITSTATUS (status, "LALClusterSnglInspiralTable", EVENT_UTILSC);
   ATTATCHSTATUSPTR (status);
 
@@ -1434,8 +1351,13 @@ LALClusterSnglInspiralTable (
       /* find events within the cluster window */
       if ( (currTime - prevTime) < 1000000LL * dtime){
           /* displace previous event in cluster ...... */
-          if(thisEvent->snr > prevEvent->snr &&
-                  thisEvent->chisq < prevEvent->chisq){
+          if( 	((clusterchoice == 0) && 
+		    (thisEvent->snr > prevEvent->snr) && 
+		    (thisEvent->chisq < prevEvent->chisq)) ||
+		((clusterchoice == 1) &&
+		    (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
+		    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)) )
+	  {
               memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable));
           }
           /* otherwise just dump this event from cluster */
