@@ -80,6 +80,8 @@ LALFindChirpTDData (
     case TaylorT2:
     case TaylorT3:
     case GeneratePPN:
+    case PadeT1:
+    case EOB:
       /* store the input approximant */
       approx = params->approximant;
       break;
