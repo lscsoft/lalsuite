@@ -75,7 +75,7 @@ static void InitializeStorage(LALStatus *, TrackSearchStore *, TrackSearchParams
 static void DestroyStorage(LALStatus *, TrackSearchStore *);
 static void ComputeConvolutions(LALStatus *,  TrackSearchStore *, const TimeFreqRep *, TrackSearchParams *);
 static void ComputeLinePoints(LALStatus *, TrackSearchStore * , TrackSearchParams *);
-static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *);
+static void ConnectLinePoints(LALStatus *, TrackSearchOut *, TrackSearchParams *, const TimeFreqRep *);
 static REAL4 GetAngle(REAL4 , REAL4 );
 static REAL4 Gauss0(INT4,REAL4);
 static REAL4 Gauss1(INT4,REAL4);
@@ -89,17 +89,18 @@ static INT4 CompareLinePoints(const void *,const void *);
 void 
 LALSignalTrackSearch(LALStatus *status,
                   TrackSearchOut *out,
-                  const TimeFreqRep *tFMap,
+		     const TimeFreqRep *tfMap, /* type defined in TimeFreq.h */
                   TrackSearchParams *params)
 {
     
   /* Initialize status structure   */
+
   INITSTATUS(status,"LALSignalTrackSearch",TRACKSEARCHC);
   ATTATCHSTATUSPTR (status);
   
   /* Check the the arguments are not null pointers */
-  ASSERT(tFMap     != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
-  ASSERT(tFMap->map!= NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);  
+  ASSERT(tfMap     != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
+  ASSERT(tfMap->map!= NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);  
   ASSERT(params    != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);  
   ASSERT(out       != NULL, status, TS_NULL_POINTER, TS_MSG_NULL_POINTER);
   
@@ -129,7 +130,7 @@ LALSignalTrackSearch(LALStatus *status,
   ASSERT(params->sigma>=1,status,TS_ILLEGAL_PARAMS, TS_MSG_ILLEGAL_PARAMS);    
   /* Now we are ready to begin our work */
   /* Compute Convolutions of the image with the Gaussian derivative Kernels */
-  ComputeConvolutions(status->statusPtr, &(out->store), tFMap, params);
+  ComputeConvolutions(status->statusPtr, &(out->store), tfMap, params);
   CHECKSTATUSPTR(status);
   /* Compute Possible Line Points */
   ComputeLinePoints(status->statusPtr,  &(out->store), params);
@@ -139,7 +140,7 @@ LALSignalTrackSearch(LALStatus *status,
   /* Connect the Points into curves  only if there are possible line starting points and 
      the number of line points is more than a given threshold */  
   if((out->store).numLStartPoints&&((out->store).numLPoints>=LENGTH_THRESHOLD)){
-    ConnectLinePoints(status->statusPtr, out, params);
+    ConnectLinePoints(status->statusPtr, out, params, tfMap); /**/
     CHECKSTATUSPTR(status);
   }
   /* Return to Calling program */
@@ -400,7 +401,8 @@ ComputeLinePoints (LALStatus *status,
   REAL8 a,b,t; /* temporary variables */ 
   REAL8 px,py;  /* the subpixel line point positions */
   REAL4 *eigenVec; /* a pointer to the array containing the eigen vector and subpixel position */  
-  
+  FILE* fp; /* temp added by cwt */
+
   /* Initialize status structure   */ 
   INITSTATUS(status,"ComputeLinePoints",TRACKSEARCHC);
   /* initialize the number of possible line start points and line points */
@@ -501,7 +503,8 @@ static const Offset offset[9]={{0,0},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,
 static void 
 ConnectLinePoints(LALStatus *status,
                   TrackSearchOut *out,
-                  TrackSearchParams *params)
+                  TrackSearchParams *params,
+		  const TimeFreqRep *TimeFreqMap)
 {
   LinePoints *linePoints; /* An array containing the possible line Points */ 
   TrackSearchStore *store; /* a pointer defined for convenience, points to the temporary storage space */
@@ -524,6 +527,8 @@ ConnectLinePoints(LALStatus *status,
   REAL4 metric[3]; /* a metric defined to choose between 3 different line points */
   REAL4 minimum; /* the minimum of the metric[i]*/
   REAL4 differ; /* the difference between 2 angles */
+  REAL4 powerHalfContourA; /* The resulting power of half the contour from tfMap*/
+  REAL4 powerHalfContourB; /* The resulting power of half the contour from tfMap*/
   
   
   /* Initialize status structure   */ 
@@ -766,14 +771,25 @@ ConnectLinePoints(LALStatus *status,
             ((out->curves)[out->numberOfCurves]).n = contour[0].n+contour[1].n-1;
       out->curves[out->numberOfCurves].row=LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
       out->curves[out->numberOfCurves].col=LALMalloc(sizeof(INT4)* out->curves[out->numberOfCurves].n);
+      out->curves[out->numberOfCurves].depth=LALMalloc(sizeof(REAL4)* out->curves[out->numberOfCurves].n);
+      powerHalfContourA = 0;
       for(i=0;i<contour[0].n;i++){
 	out->curves[out->numberOfCurves].row[i] = contour[0].row[contour[0].n - 1 - i];
-	out->curves[out->numberOfCurves].col[i] = contour[0].col[contour[0].n - 1 - i];
-      }
+	out->curves[out->numberOfCurves].col[i] = contour[0].col[contour[0].n - 1 - i];	
+	/* INSERT CODE TO PLUCK OUT VALUES FROM TFMAP */
+      	out->curves[out->numberOfCurves].depth[i] = 
+	  TimeFreqMap->map[contour[0].row[contour[0].n - 1 - i]][contour[0].col[contour[0].n - 1 - i]];
+	powerHalfContourA = powerHalfContourA + out->curves[out->numberOfCurves].depth[i];
+		}
+      powerHalfContourB = 0;
       for(i=1;i<contour[1].n;i++){
 	out->curves[out->numberOfCurves].row[i+contour[0].n-1] = contour[1].row[i];     
-	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i];
+	out->curves[out->numberOfCurves].col[i+contour[0].n-1] = contour[1].col[i]; 
+	out->curves[out->numberOfCurves].depth[i+contour[0].n-1] = 
+		  TimeFreqMap->map[contour[1].row[i]][contour[1].col[i]];
+        powerHalfContourB = powerHalfContourB + out->curves[out->numberOfCurves].depth[i+contour[0].n-1];
       }
+      out->curves[out->numberOfCurves].totalPower = powerHalfContourA + powerHalfContourB;
       if(contour[0].junction+contour[1].junction)
 	out->curves[out->numberOfCurves].junction=1;
       /* increment the number of curves */
