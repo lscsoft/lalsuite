@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lalapps.h>
+#include <lal/LIGOMetadataUtils.h>
 #include "event_utils.h"
 RCSID("$Id$");
 
@@ -13,7 +15,8 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --table tablename --outfile filename \
-    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] [--help]\n"
+    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] \
+    [--clusterchoice choicenumber] [--help]\n"
 
 #define SNGLINSPIRALREADER_EARG   1
 #define SNGLINSPIRALREADER_EROW   2
@@ -65,26 +68,24 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
     return FALSE;
 }
 
-/************************************************************************************
+/****************************************************************************
  *
  * The main program
  *
- ***********************************************************************************/
+ *****************************************************************************/
 
 int main(int argc, char **argv)
 {
     static LALStatus         stat;
     INT4                     retVal=0;
-    INT4                     inarg=1;
     FILE                     *fpin=NULL;
     INT4                     fileCounter=0;
     BOOLEAN                  playground=TRUE;
     INT4                     sort=FALSE;
     INT4                     cluster=FALSE;
+    INT4		     clusterchoice = 0;
 
     REAL4                    snrstar=0.0;
-    BOOLEAN                  checkMasses=FALSE;
-    REAL4                    mass1=0.0,mass2=0.0,dm=0.0;
     INT4                     dtime=0;
 
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
@@ -100,8 +101,9 @@ int main(int argc, char **argv)
     SnglInspiralTable         inspiralEvent,*inspiralEventList=NULL;
     MetadataTable             myTable;
     LIGOLwXMLStream           xmlStream;
-    INT4                      i;
     INT4                      numEvents;
+
+    static int		      verbose_flag = 0;
 
     struct MetaioParseEnvironment triggerParseEnv;
     const MetaioParseEnv triggerEnv = &triggerParseEnv;
@@ -109,90 +111,156 @@ int main(int argc, char **argv)
     /*******************************************************************
      * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
      *******************************************************************/
-    if (argc <= 1){
-        LALPrintError( USAGE, *argv );
-        return 0;
+   int c;
+    while (1)
+    {
+	/* getopt arguments */
+	static struct option long_options[] = 
+	{
+	    /* these options set a flag */
+	    {"verbose",         no_argument,	&verbose_flag, 1 },
+ 	    /* parameters which determine the output xml file */
+	    {"input",		required_argument,  0,	'a'},
+	    {"table",		required_argument,  0,	'b'},
+	    {"outfile",		required_argument,  0,	'c'},
+	    {"snrstar",		required_argument,  0,	'd'},
+	    {"cluster",		required_argument,  0,	'e'},
+	    {"clusterchoice",	required_argument,  0,	'f'},
+	    {"noplayground",	required_argument,  0,	'g'},
+	    {"help",		no_argument,	    0,	'h'}, 
+	    {"sort",		no_argument,	    0,	'i'},
+	    {0, 0, 0, 0}
+	};
+	/* getopt_long stores the option index here. */
+	int option_index = 0;
+ 
+    	c = getopt_long ( argc, argv, "a:b:c:d:e:f:g:h:i:", 
+				long_options, &option_index );
+
+	/* detect the end of the options */
+	if ( c == - 1 )
+	    break;
+
+        switch ( c )
+	{
+	case 0:
+	    /* if this option set a flag, do nothing else now */
+	    if ( long_options[option_index].flag != 0 )
+	    {
+		break;
+	    }
+	    else
+	    {
+		fprintf( stderr, "error parsing option %s with argument %s\n",
+		    long_options[option_index].name, optarg );
+		exit( 1 );
+	    }
+	    break;
+
+	case 'a':
+	    /* file containing list of xml files to use */
+	    {
+		sprintf(inputfile,"%s",optarg);
+    	    }
+	    break;	
+	
+	case 'b':
+	    /* table to be read from xml file */
+	    {
+		tablename = optarg;
+	    }
+	    break;
+	
+	case 'c':
+	    /* output file name */
+	    {
+		outfileName = optarg;
+	    }
+	    break;
+
+	case 'd':
+	    /* a threshold cut on signal to noise, only triggers with
+	    * SNR > snrstar are kept */
+	    {
+		snrstar = atof( optarg );
+	    }
+	    break;
+
+	case 'e':
+	    /* cluster the events */ 
+	    {
+		dtime = atoi( optarg );
+		cluster = TRUE;
+	    }
+	    break;
+    
+	case 'f':
+	    /* choose the clustering algorithm, default is 0
+	     * options are detailed in event_utils.c */
+	    {
+		clusterchoice = atoi( optarg );
+	    }
+	    break;
+   
+	case 'g':
+	    /* don't restrict to the playground data */
+	    {
+		playground = FALSE;
+	    }
+	    break;
+    
+	case 'h':
+	    /* print help */
+	    {
+		LALPrintError( USAGE, *argv );
+		return SNGLINSPIRALREADER_EARG;
+	    }
+	    break;
+
+	    
+	case 'i':
+	    /* sort the events in time */
+	    {
+		sort = TRUE;
+	    }
+	    break;
+
+	    
+	default:
+	    {
+		return SNGLINSPIRALREADER_EARG;
+	    }
+	}   
     }
 
-    while ( inarg < argc ) {
-        /* file containing a list of xml files to use */
-        if ( !strcmp( argv[inarg], "--input" ) )
-        {
-            inarg++;
-            sprintf(inputfile,"%s",argv[inarg++]);
-        }
-        /* table to read from xml file */
-        else if ( !strcmp( argv[inarg], "--table" ) )
-        {
-            inarg++;
-            tablename = argv[inarg++];
-        }
-        /* output file name  */
-        else if ( !strcmp( argv[inarg], "--outfile" ) )
-        {
-            inarg++;
-            outfileName = argv[inarg++];
-        }
-        /* return all events.  By default,  returns only playground */
-        else if ( !strcmp( argv[inarg], "--noplayground" ) )
-        {
-            inarg++;
-            playground=FALSE;;
-        }
-        /* select events with SNR > snrstar */
-        else if ( !strcmp( argv[inarg], "--snrstar" ) ) {
-            inarg++;
-            snrstar = atof(argv[inarg++]);
-        }
-        /* select events with SNR > snrstar */
-        else if ( !strcmp( argv[inarg], "--cluster" ) ) {
-            inarg++;
-            dtime = atoi(argv[inarg++]);
-            cluster = TRUE;
-        }
-        /* select events with SNR > snrstar */
-        else if ( !strcmp( argv[inarg], "--sort" ) ) {
-            inarg++;
-            sort = TRUE;
-        }
-        /* specify template masses & error */
-        else if ( !strcmp( argv[inarg], "--template" ) ) {
-            checkMasses = TRUE;
-            inarg++;
-            if (argv[inarg] && (argv[inarg][0] != '-'))
-            {
-                mass1 = atof(argv[inarg++]);
-                if (argv[inarg] && (argv[inarg][0] != '-'))
-                {
-                    mass2 = atof(argv[inarg++]);
-                    if (argv[inarg] && (argv[inarg][0] != '-'))
-                    {
-                        dm = atof(argv[inarg++]);
-                    }
-                }
-            }
-        }
-        /* print a help message */
-        else if ( !strcmp( argv[inarg], "--help" ) ) {
-            LALPrintError( USAGE, *argv );
-            return SNGLINSPIRALREADER_EARG;
-        }
-        /* Check for unrecognized options. */
-        else if ( argv[inarg][0] == '-' ) {
-            LALPrintError( "Unrecognized options\n" );
-            return SNGLINSPIRALREADER_EARG;
-        }
-        /* Default case for unknown arguments */
-        else
-        {
-            LALPrintError( "Unknown arguments\n" );
-            return SNGLINSPIRALREADER_EARG;
-        }
-    }
-    if (inputfile == NULL){
+    if ( optind < argc )
+    {
+	fprintf( stderr, "extraneous command line arguments:\n" );
+	    while ( optind < argc )
+	{
+	    fprintf ( stderr, "%s\n", argv[optind++] );
+	}
+	exit( 1 );
+    }	  
+
+    if (inputfile == NULL)
+    {
         LALPrintError( "Must supply an xml file to parse\n" );
         return SNGLINSPIRALREADER_EARG;
     }
+
+    if ( ! tablename )
+    { 
+	LALPrintError( "Table name must be specified\n" );
+	return SNGLINSPIRALREADER_EARG;
+    }
+
+    if ( ! outfileName )
+    {
+    	LALPrintError( "Outfile name must be specified\n" );
+	return SNGLINSPIRALREADER_EARG;
+    }
+
 
     /*******************************************************************
     * END PARSE ARGUMENTS                                              *
@@ -203,7 +271,7 @@ int main(int argc, char **argv)
     * initialize things
     *******************************************************************/
     lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "33" );
+    set_debug_level( "1" );
     memset( &inspiralEvent, 0, sizeof(inspiralEvent) );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
@@ -220,7 +288,8 @@ int main(int argc, char **argv)
      * open output xml file
      *****************************************************************/
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), 
+		    &stat);
 
     
     /*****************************************************************
@@ -230,7 +299,8 @@ int main(int argc, char **argv)
         fileCounter++;
 
         /* open xml file at search summary table */
-        if ( (retVal = MetaioOpenTable( triggerEnv, line, searchSummaryName)) !=0 ){
+        if ( (retVal = MetaioOpenTable( triggerEnv, line, searchSummaryName))
+		       	!=0 ){
             fprintf(stderr, "Error opening injection file %s for %s\n", 
                     line, searchSummaryName );
             if (fileCounter>1){
@@ -243,14 +313,14 @@ int main(int argc, char **argv)
 
         if ( !retVal ){
         /* get the search summary table */
-        LAL_CALL( buildSearchSummaryIndex(&stat, triggerEnv, &searchSummaryIndex), 
-                &stat);
+        LAL_CALL( buildSearchSummaryIndex(&stat, triggerEnv, 
+		    &searchSummaryIndex), &stat);
         LAL_CALL( getSearchSummaryTable(&stat, triggerEnv, &searchSummaryTable, 
                     &searchSummaryIndex), &stat);
 
         /* check for events and playground */
         if ( ( playground && 
-                    !(isPlayground(searchSummaryTable.out_start_time.gpsSeconds,
+                !(isPlayground(searchSummaryTable.out_start_time.gpsSeconds,
                            searchSummaryTable.out_end_time.gpsSeconds ))) ){
             fprintf(stdout,"File %i %s: not in playground, continuing\n",
                     fileCounter,line);
@@ -296,11 +366,13 @@ int main(int argc, char **argv)
             }
 
             /* get the inspiral event */
-            getSnglInspiralEvent(&stat, triggerEnv, &inspiralEvent, &tableIndex);
+            getSnglInspiralEvent(&stat, triggerEnv, &inspiralEvent, 
+			    &tableIndex);
 
             /* check for events and playground */
             if ( ( playground ) && 
-                        (inspiralEvent.end_time.gpsSeconds-729273613)%6370 >600 ){
+                        (inspiralEvent.end_time.gpsSeconds-729273613)%6370 
+			    >600 ){
                 continue;
             }
 
@@ -314,12 +386,12 @@ int main(int argc, char **argv)
             if ( (inspiralEventList) == NULL )
             {
                 currentEvent=inspiralEventList=
-                    (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
+                  (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
             }
             else 
             {
                 currentEvent =
-                    (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
+                  (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
             }
 
             /* copy event into linked list element */
@@ -338,14 +410,14 @@ int main(int argc, char **argv)
 
         /* sort the events */
         if (sort){
-            LAL_CALL( LALSortSnglInspiralTable( &stat, inspiralEventList,
-                        numEvents), &stat);
+            LAL_CALL( LALSortSnglInspiral( &stat, &inspiralEventList,
+                        *LALCompareSnglInspiralByTime), &stat);
         }
 
         /* cluster the events */
         if ( cluster && inspiralEventList){
             LAL_CALL( LALClusterSnglInspiralTable( &stat, inspiralEventList,
-                        dtime), &stat);
+                        dtime, clusterchoice), &stat);
         }
 
         /* Write the results to the inspiral table */
