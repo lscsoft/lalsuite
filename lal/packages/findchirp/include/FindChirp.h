@@ -483,8 +483,8 @@ tagFindChirpDataParams
 {
   REAL4Vector                  *ampVec;
   REAL4Vector                  *ampVecBCV;
-  REAL4Vector                  *ampVecBCVSpin1;
-  REAL4Vector                  *ampVecBCVSpin2;
+  REAL8Vector                  *ampVecBCVSpin1;
+  REAL8Vector                  *ampVecBCVSpin2;
   RealFFTPlan                  *fwdPlan;
   RealFFTPlan                  *invPlan;
   REAL4Vector                  *wVec;
