@@ -728,6 +728,7 @@ int main(int argc, char *argv[]){
       /* opening the output statistic, and event files */
       /******************************************************************/  
       
+      /* create the directory fnameOut/skypatch_$j */
       strcpy(  filestats, fnameOut);
       strcat( filestats, "skypatch_");
       {
@@ -736,16 +737,19 @@ int main(int argc, char *argv[]){
 	strcat( filestats, tempstr);
       }
       strcat( filestats, "/");
-      mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
+      if (mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+	{
+	  printf(stderr, "unable to create skypatch directory %d\n", skyCounter);
+	}
 
+      /* create the base filenames for the stats, histo and event files*/
       strcat( filestats, fbasenameOut);
-      
-
       strcpy(filehisto, filestats);
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
 #endif
 
+      /* create and open the stats file for writing */
       strcat(  filestats, "stats");
       fp1=fopen(filestats,"w");
       if ( !fp1 ){
@@ -755,6 +759,7 @@ int main(int argc, char *argv[]){
       setlinebuf(fp1); /*line buffered on */  
       
 #ifdef PRINTEVENTS
+      /* create and open the events list file */
       strcat(  fileEvents, "events");
       fpEvents=fopen(fileEvents,"w");
       if ( !fpEvents ){
