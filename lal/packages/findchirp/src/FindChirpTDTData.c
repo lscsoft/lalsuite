@@ -4,17 +4,16 @@
  *------------------------------------
  */
 
-#include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/DataBuffer.h>
+#include <lal/FindChirp.h>
 #include <lal/FindChirpTDTemplate.h>
 
 NRCSID (FINDCHIRPTDTDATAC, "$Id$");
-
 
 
 
@@ -23,23 +22,22 @@ void LALFindChirpTDTData(
    LALStatus 			*status,
    FindChirpSegmentVector	*fcSegVec,
    DataSegmentVector		*dataSegVec,
-   FindChirpSPDataParams	*params
+   FindChirpDataParams		*params
 ){
 
    UINT4 	i,k;
-   UINT4	numChisqBins;
-   UINT4	chisqPt;
+   UINT4	cut;
 
    REAL4	*w;
    REAL4	*amp;
    COMPLEX8	*wtilde;
-   REAL4	*tmpltPower;
-   REAL4	*spec;
+/*   REAL4	*tmpltPower;   Do we need it? here */
 
    REAL4Vector	*dataVec;
+   REAL4	*spec;
    COMPLEX8	*resp;
+
    COMPLEX8	*outputData;
-   UINT4	*chisqBin = NULL;
 
    FindChirpSegment	*fcSeg;
    DataSegment		*dataSeg;
@@ -74,11 +72,12 @@ void LALFindChirpTDTData(
       FINDCHIRPSPH_MSGENULL ": params" );
 
   /* check that the parameter structure is set */
-  /* to the correct waveform approximant    
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ASSERT( params->approximant == TaylorF2, status, 
-      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  */
+  /* to the correct waveform approximant   */ 
+  
+  ASSERT( params->approximant == TaylorT1 || params->approximant == TaylorT3 
+	|| params->approximant == PadeT1 || params->approximant == EOB, 
+      status, FINDCHIRPTDT_ETAPX, FINDCHIRPTDT_MSGETAPX );
+
   
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status, 
@@ -143,6 +142,99 @@ void LALFindChirpTDTData(
  /* tmpltPower = params->tmpltPowerVec->data;*/
 
 
+ /*
+     *
+     * compute inverse power spectrum
+     *
+     */
+
+
+    /* set low frequency cutoff inverse power spectrum */
+  cut = params->fLow / dataSeg->spec->deltaF > 1 ?
+      params->fLow / dataSeg->spec->deltaF : 1;
+
+    /* set inverse power spectrum to zero */
+  memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
+
+    /* compute and truncate (if needed) inverse of S_v */
+    
+
+  for ( k = cut; k < params->wtildeVec->length; ++k )
+  {
+       if ( spec[k] == 0 )
+       {
+          ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+       }
+       wtilde[k].re = 1.0 / spec[k];
+  }
+    
+  if (params->invSpecTrunc){
+
+       /* compute square root of inverse power spectrum */
+       for ( k = cut; k < params->wtildeVec->length; ++k )
+       {
+         wtilde[k].re = sqrt( wtilde[k].re );
+       }
+
+       /* set nyquist and dc to zero */
+       wtilde[params->wtildeVec->length - 1].re = 0.0;
+       wtilde[0].re                             = 0.0;
+
+       /* transform to time domain */
+       LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec,
+           params->invPlan );
+       CHECKSTATUSPTR (status);
+
+       /* truncate in time domain */
+       memset( w + params->invSpecTrunc/2, 0,
+           (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
+
+       /* transform to frequency domain */
+       LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec,
+           params->fwdPlan );
+       CHECKSTATUSPTR (status);
+
+       /* normalise fourier transform and square */
+       {
+         REAL4 norm = 1.0 / (REAL4) params->wVec->length;
+         for ( k = cut; k < params->wtildeVec->length; ++k )
+         {
+           wtilde[k].re *= norm;
+           wtilde[k].re *= wtilde[k].re;
+           wtilde[k].im = 0.0;
+         }
+       }
+
+       /* set nyquist and dc to zero */
+       wtilde[params->wtildeVec->length - 1].re = 0.0;
+       wtilde[0].re  = 0.0;
+  }
+
+   /* set inverse power spectrum below cut to zero */
+  memset( wtilde, 0, cut * sizeof(COMPLEX8) );
+
+  /* convert from S_v to S_h */
+  for ( k = cut; k < params->wtildeVec->length; ++k )
+  {
+      REAL4 respRe = resp[k].re * params->dynRange;
+      REAL4 respIm = resp[k].im * params->dynRange;
+      REAL4 modsqResp = (respRe * respRe + respIm * respIm);
+      REAL4 invmodsqResp;
+      if ( modsqResp == 0 )
+      {
+        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+      }
+      invmodsqResp = 1.0 / modsqResp;
+      wtilde[k].re *= invmodsqResp;
+  }
+
+ /***************************************************
+       We will need dynRange in Filter code
+       we will save it in fcSeg->segNorm->data[1] 
+ ***************************************************/
+
+     fcSeg->segNorm->data[1] = params->dynRange;
+
 
   /*
    *
@@ -171,24 +263,13 @@ void LALFindChirpTDTData(
 
     outputData   = fcSeg->data->data->data;
 
- /*  !!! this part must be moved to TDTChisq.
- if ( fcSeg->chisqBinVec->length )
-    {
-      chisqBin     = fcSeg->chisqBinVec->data;
-      numChisqBins = fcSeg->chisqBinVec->length - 1;
-    }
-    else
-    {
-      numChisqBins = 0;
-    }
-*/
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
 
     /*
      *
-     * compute htilde and store in fcSeg
+     * compute htilde (xtilde in my notations) and store in fcSeg
      *
      */
 
@@ -210,96 +291,18 @@ void LALFindChirpTDTData(
     }
 
 
-    /*
-     *
-     * compute inverse power spectrum
-     *
-     */
+    /* "Overwhiten the data: xtilde(f)*wtilde(f)" */
 
+    for ( k=0; k<cut; ++k ){
 
-    /* set low frequency cutoff inverse power spectrum */
-    cut = params->fLow / dataSeg->spec->deltaF > 1 ? 
-      params->fLow / dataSeg->spec->deltaF : 1;
+       outputData[k].re = 0.0;
+       outputData[k].im = 0.0;
+    }     
 
-    /* set inverse power spectrum to zero */
-    memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
-
-    /* compute inverse of S_v */
-    for ( k = cut; k < params->wtildeVec->length; ++k )
+    for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
-      if ( spec[k] == 0 )
-      {
-        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
-      }
-      wtilde[k].re = 1.0 / spec[k];
-    }
-
-
-    /*
-     *
-     * truncate inverse power spectrum in time domain if required
-     *
-     */
-
-
-    if ( params->invSpecTrunc )
-    {
-      /* compute square root of inverse power spectrum */
-      for ( k = cut; k < params->wtildeVec->length; ++k )
-      {
-        wtilde[k].re = sqrt( wtilde[k].re );
-      }
-
-      /* set nyquist and dc to zero */
-      wtilde[params->wtildeVec->length - 1].re = 0.0;
-      wtilde[0].re                             = 0.0;
-
-      /* transform to time domain */
-      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec, 
-          params->invPlan );
-      CHECKSTATUSPTR (status);
-
-      /* truncate in time domain */
-      memset( w + params->invSpecTrunc/2, 0, 
-          (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
-
-      /* transform to frequency domain */
-      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec, 
-          params->fwdPlan );
-      CHECKSTATUSPTR (status);
-
-      /* normalise fourier transform and square */
-      {
-        REAL4 norm = 1.0 / (REAL4) params->wVec->length;
-        for ( k = cut; k < params->wtildeVec->length; ++k )
-        {
-          wtilde[k].re *= norm;
-          wtilde[k].re *= wtilde[k].re;
-          wtilde[k].im = 0.0;
-        }
-      }
-
-      /* set nyquist and dc to zero */
-      wtilde[params->wtildeVec->length - 1].re = 0.0;
-      wtilde[0].re                             = 0.0;
-    }
-
-    /* set inverse power spectrum below cut to zero */
-    memset( wtilde, 0, cut * sizeof(COMPLEX8) );
-
-    /* convert from S_v to S_h */
-    for ( k = cut; k < params->wtildeVec->length; ++k )
-    {
-      REAL4 respRe = resp[k].re * params->dynRange;
-      REAL4 respIm = resp[k].im * params->dynRange;
-      REAL4 modsqResp = (respRe * respRe + respIm * respIm);
-      REAL4 invmodsqResp;
-      if ( modsqResp == 0 )
-      {
-        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
-      } 
-      invmodsqResp = 1.0 / modsqResp;
-      wtilde[k].re *= invmodsqResp;
+      outputData[k].re  *= wtilde[k].re;
+      outputData[k].im  *= wtilde[k].re;
     }
 
      /* set output frequency series parameters */
@@ -320,18 +323,7 @@ void LALFindChirpTDTData(
     fcSeg->invSpecTrunc = params->invSpecTrunc;
 
 
-    /* "Overwhiten the data: xtilde(f)*wtilde(f)" */
-
-     for ( k = cut; k < fcSeg->data->data->length; ++k )
-    {
-      outputData[k].re  *= wtilde[k].re;
-      outputData[k].im  *= wtilde[k].re;
-    }
-
-
-    /** calculation of the chi^2 bin boundaries are moved to 
-         FindChirpTDTChisq	*/
- }
+ } /* end of loop over data segments */
 
  
  /* normal exit */
