@@ -92,10 +92,33 @@ char*argv0;
     return (code);                                                    \
   } else (void)(0)
 
-
+#if 0
 #define TOLERANCE ( 10.0 * LAL_REAL8_EPS )
 #define compare_double( x, y ) \
 ( ( y == 0 ? ( x == 0 ? 0 : fabs((x-y)/x) ) : fabs((x-y)/y) ) > TOLERANCE )
+#endif
+int compare_double( double x, double y )
+{
+  double diff;
+  double denom;
+  if ( x < LAL_REAL8_MIN )
+  {
+    if ( y < LAL_REAL8_MIN )
+      return 0;
+    else
+      denom = fabs( y );
+  }
+  else
+  {
+    denom = fabs( x );
+  }
+  diff = fabs( x - y );
+  if ( diff / denom > 10.0 * LAL_REAL8_EPS )
+  {
+    return 1;
+  }
+  return 0;
+}
 
 struct rngmed_val_index {
   REAL8 data;
