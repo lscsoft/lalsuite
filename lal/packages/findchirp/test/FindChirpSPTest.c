@@ -484,9 +484,9 @@ main (int argc, char *argv[])
 
   if ( rhosqout )
   {
-    for ( j = 0; (UINT4)j < filterParams->rhosqVec->length; ++j )
+    for ( j = 0; (UINT4)j < filterParams->rhosqVec->data->length; ++j )
     {
-      fprintf( fpRhosq, "%d\t%e\n", j, filterParams->rhosqVec->data[j] );
+      fprintf( fpRhosq, "%d\t%e\n", j, filterParams->rhosqVec->data->data[j] );
     }
   }
 
