@@ -41,21 +41,21 @@ int main ( void ) {
    double mmin, mmax, Mmax, totalMmax, compmmin, m1, m2, finalmass;
    UINT2 type;
 
-   //
-   // Change the parameters of the search space here 
-   //
-   // type=0 creates a region defined by mMin and mMax
-   // i.e. maximum mass of the companion given by mMax
-   // type=1 creates a region defined by mMin and MMax
-   // i.e. total mass of the body given by MMax
-   //
+   /*
+    Change the parameters of the search space here 
+   
+    type=0 creates a region defined by mMin and mMax
+    i.e. maximum mass of the companion given by mMax
+    type=1 creates a region defined by mMin and MMax
+    i.e. total mass of the body given by MMax
+   */
    type = 1;
    mmin = 1.0;
    mmax = 20.;
    Mmax = mmax*2.;
-   //
-   // Don't change anything below: 
-   //
+   /*
+    Don't change anything below: 
+   */
    mmin = log10(mmin);
    mmax = log10(mmax);
    Mmax = log10(Mmax);

@@ -72,8 +72,8 @@ main ( void )
    coarseIn.mMax = 20.0;
    coarseIn.MMax = coarseIn.mMax * 2.;
 
-   // coarseIn.massRange = MinComponentMassMaxTotalMass;
-   //
+   /* coarseIn.massRange = MinComponentMassMaxTotalMass; */
+
    coarseIn.massRange = MinComponentMassMaxTotalMass;
 
 /* minimum value of eta */

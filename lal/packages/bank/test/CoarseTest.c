@@ -119,7 +119,7 @@ LALCheckMemoryLeaks
 
 INT4 lalDebugLevel=1;
 
-// Nlist = expected number of coarse grid templates; if not sufficient increase 
+/* Nlist = expected number of coarse grid templates; if not sufficient increase */
      
 int 
 main ( void )
@@ -140,7 +140,7 @@ main ( void )
    coarseIn->mMax = 20.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
    coarseIn->massRange = MinComponentMassMaxTotalMass;
-   // coarseIn->massRange = MinMaxComponentMass;
+   /* coarseIn->massRange = MinMaxComponentMass; */
 
    coarseIn->mmCoarse = 0.97;
    coarseIn->mmFine = 0.97;
@@ -152,11 +152,11 @@ main ( void )
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;
 
-   // minimum value of eta 
+   /* minimum value of eta  */
    coarseIn->etamin = coarseIn->mMin * ( coarseIn->MMax - coarseIn->mMin) /
       pow(coarseIn->MMax,2.);
 
-   // fill the psd
+   /* fill the psd */
    memset( &(coarseIn->shf), 0, sizeof(REAL8FrequencySeries) );
    coarseIn->shf.f0 = 0;
    LALDCreateVector( status, &(coarseIn->shf.data), numPSDpts );
