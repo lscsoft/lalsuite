@@ -89,6 +89,9 @@ NRCSID( FRAMESTREAMC, "$Id$" );
  *
  */
 
+#ifndef MAXHOSTNAME
+#define MAXHOSTNAME 256
+#endif
 
 
 #include <errno.h>
