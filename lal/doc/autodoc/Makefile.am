@@ -3,6 +3,8 @@ MOSTLYCLEANFILES = logfile *.log *.ilg *.blg *.out
 CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.toc \
              *.eps *.pdf *.ps
 DISTCLEANFILES = *.sty *.cls *.tex
+LATEX = @LATEX@
+MKIND = @MKIND@
 
 dvi-local:
 	rm -f *.aux
@@ -13,10 +15,10 @@ dvi-local:
 	      cmd="@LN_S@ $$file ."; echo "$$cmd"; $$cmd; \
 	    fi; \
           done
-	@LATEX@ lalspec && @LATEX@ lalspec && @LATEX@ lalspec
-	pool_size=400000 @LATEX@ lsd && @MKIND@ lsd && \
-	pool_size=400000 @LATEX@ lsd && \
-	pool_size=400000 @LATEX@ lsd
+	${LATEX} lalspec && ${LATEX} lalspec && ${LATEX} lalspec
+	pool_size=400000 ${LATEX} lsd && ${MKIND} lsd && \
+	pool_size=400000 ${LATEX} lsd && \
+	pool_size=400000 ${LATEX} lsd
 	@ for file in lalspec.dvi lalspec.pdf lalspec.ps lsd.dvi lsd.pdf lsd.ps; do \
 	    if test -f $$file ; then \
 	      cmd="cp $$file .."; echo "$$cmd"; $$cmd; \
