@@ -99,13 +99,17 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
+  int p;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadData(CommandLineArgs)) return 4;
   
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
-  
+
+  for (p=0; p < (INT4) OutputData.h.data->length; p++) {
+     fprintf(stdout,"%e %1.17e\n",p*OutputData.h.deltaT,OutputData.h.data->data[p]); 
+  }
 
   if(FreeMem()) return 8;
 
@@ -198,8 +202,8 @@ static FrChanIn chanin_exc;
   InputData.To=CLA.To;
 
   /* Allocate output data */
-  OutputData.ht.deltaT=InputData.AS_Q.deltaT;
-  LALDCreateVector(&status,&OutputData.ht.data,(UINT4)(duration/OutputData.ht.deltaT +0.5));
+  OutputData.h.deltaT=InputData.AS_Q.deltaT;
+  LALDCreateVector(&status,&OutputData.h.data,(UINT4)(duration/OutputData.h.deltaT +0.5));
   TESTSTATUS( &status );
 
   OutputData.alpha.deltaT=CLA.To;
@@ -402,7 +406,7 @@ int FreeMem(void)
   LALSDestroyVector(&status,&InputData.EXC.data);
   TESTSTATUS( &status );
 
-  LALDDestroyVector(&status,&OutputData.ht.data);
+  LALDDestroyVector(&status,&OutputData.h.data);
   TESTSTATUS( &status );
 
   LALZDestroyVector(&status,&OutputData.alpha.data);
