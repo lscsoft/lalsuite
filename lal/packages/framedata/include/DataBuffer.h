@@ -202,6 +202,7 @@ typedef struct
 tagDataSegment
 {
   INT2TimeSeries          *data;
+  REAL4TimeSeries         *real4Data;
   REAL4FrequencySeries    *spec;
   COMPLEX8FrequencySeries *resp;
   INT4                     endOfData;
