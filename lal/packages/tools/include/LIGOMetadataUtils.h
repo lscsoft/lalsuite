@@ -455,8 +455,9 @@ void
 LALTimeSlideSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable          *input,
-    LIGOTimeGPS                *slideTime,
-    InterferometerNumber        skipIfo 
+    LIGOTimeGPS                *startTime,
+    LIGOTimeGPS                *endTime,
+    LIGOTimeGPS                 slideTimes[]
     );
 
 void
@@ -531,11 +532,18 @@ LALSnglInspiralCoincTest(
 
 
 void
-LALExtractCoincSngls(
+LALExtractSnglInspiralFromCoinc(
     LALStatus                  *status,
     SnglInspiralTable         **snglPtr,
     CoincInspiralTable         *coincInspiral,
-    LIGOTimeGPS                *gpsStartTime
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
+    );
+
+void
+LALCoincCutSnglInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **snglPtr
     );
 
 /* sim inspiral */
