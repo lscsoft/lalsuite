@@ -1,5 +1,5 @@
 /********************************* <lalVerbatim file="ComputeTransferCV">
-Author: Patrick Brady
+Author: Patrick Brady, Jolien Creighton
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -370,7 +370,8 @@ LALUpdateCalibration(
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  i = floor( dt / params->sensingFactor->deltaT );
+  /* first point AFTER requested time */
+  i = floor( dt / params->sensingFactor->deltaT ) + 1;
   if ( i >= params->sensingFactor->data->length )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
