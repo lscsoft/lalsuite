@@ -44,7 +44,6 @@ RCSID("$Id$");
 #define INCA_MSGEFILE  "Could not open file"
 
 #define MAXIFO 4
-#define NUMIFO 7
 
 #define KAPPA 1000
 #define EPSILON 2
@@ -59,7 +58,7 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-int haveTrig[NUMIFO];
+int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
 
 
@@ -93,13 +92,34 @@ static void print_usage(char *program)
       "  [--v1-triggers]               input triggers from V1\n"\
       "\n"\
       "   --parameter-test test        set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
-      "  [--dm Dm]                     mass coincidence window (default 0)\n"\
-      "  [--dpsi0] Dpsi0               psi0 coincidence window\n"\
-      "  [--dpsi3] Dpsi3               psi3 coincidence window\n"\
-      "  [--dmchirp] Dmchirp           mchirp coincidence window\n"\
-      "  [--deta]  Deta                eta coincidence window\n"\
-      "   --dt Dt                      time coincidence window (milliseconds)\n"\
+      "                                (m1_and_m2|mchirp_and_eta)\n"\
+      "  [--g1-time-accuracy]          specify the timing accuracy of G1\n"\
+      "  [--h1-time-accuracy]          specify the timing accuracy of H1\n"\
+      "  [--h2-time-accuracy]          specify the timing accuracy of H2\n"\
+      "  [--l1-time-accuracy]          specify the timing accuracy of L1\n"\
+      "  [--t1-time-accuracy]          specify the timing accuracy of T1\n"\
+      "  [--v1-time-accuracy]          specify the timing accuracy of V1\n"\
+      
+      "  [--g1-mass-accuracy]          specify the mass accuracy of G1\n"\
+      "  [--h1-mass-accuracy]          specify the mass accuracy of H1\n"\
+      "  [--h2-mass-accuracy]          specify the mass accuracy of H2\n"\
+      "  [--l1-mass-accuracy]          specify the mass accuracy of L1\n"\
+      "  [--t1-mass-accuracy]          specify the mass accuracy of T1\n"\
+      "  [--v1-mass-accuracy]          specify the mass accuracy of V1\n"\
+
+      "  [--g1-mchirp-accuracy]        specify the mchirp accuracy of G1\n"\
+      "  [--h1-mchirp-accuracy]        specify the mchirp accuracy of H1\n"\
+      "  [--h2-mchirp-accuracy]        specify the mchirp accuracy of H2\n"\
+      "  [--l1-mchirp-accuracy]        specify the mchirp accuracy of L1\n"\
+      "  [--t1-mchirp-accuracy]        specify the mchirp accuracy of T1\n"\
+      "  [--v1-mchirp-accuracy]        specify the mchirp accuracy of V1\n"\
+      
+      "  [--g1-eta-accuracy]           specify the eta accuracy of G1\n"\
+      "  [--h1-eta-accuracy]           specify the eta accuracy of H1\n"\
+      "  [--h2-eta-accuracy]           specify the eta accuracy of H2\n"\
+      "  [--l1-eta-accuracy]           specify the eta accuracy of L1\n"\
+      "  [--t1-eta-accuracy]           specify the eta accuracy of T1\n"\
+      "  [--v1-eta-accuracy]           specify the eta accuracy of V1\n"\
       "\n"\
       "   --data-type DATA_TYPE        specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
@@ -132,18 +152,16 @@ int main( int argc, char *argv[] )
   UINT4  numTrigIFO = 0;
   UINT4  numTriggers = 0;
   UINT4  numCoinc = 0;
-  UINT4  numTrigs[NUMIFO];
+  UINT4  numTrigs[LAL_NUM_IFO];
 
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
   SnglInspiralTable    *snglOutput;
 
-  EventIDColumn        *eventId;
-
   CoincInspiralTable   *coincInspiralList = NULL;
   CoincInspiralTable   *thisCoinc = NULL;
 
-  SnglInspiralAccuracy  errorParams;
+  InspiralAccuracyList  accuracyParams;
 
   SearchSummvarsTable  *inputFiles = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
@@ -163,44 +181,62 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
 
-  UINT4                  j;
-  INT4                   i;
+  INT4                  ifoNumber;
+  INT4                  i;
 
-  const CHAR                   ifoList[NUMIFO][LIGOMETA_IFO_MAX] = 
-                                   {"??","G1", "H1", "H2", "L1", "T1", "V1"};
-  const CHAR                  *ifoArg[NUMIFO] = 
-                                   {"??","g1-triggers", "h1-triggers", 
-                                         "h2-triggers", "l1-triggers", 
-                                         "t1-triggers", "v1-triggers"};
+  const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
+                                   {"G1", "H1", "H2", "L1", "T1", "V1"};
+  const CHAR                  *ifoArg[LAL_NUM_IFO] = 
+                                   {"g1-triggers", "h1-triggers", 
+                                    "h2-triggers", "l1-triggers", 
+                                    "t1-triggers", "v1-triggers"};
 
 
   /* getopt arguments */
   struct option long_options[] =
   {
-    {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"g1-triggers",             no_argument,       &(haveTrig[g1]),   1 },
-    {"h1-triggers",             no_argument,       &(haveTrig[h1]),   1 },
-    {"h2-triggers",             no_argument,       &(haveTrig[h2]),   1 },
-    {"l1-triggers",             no_argument,       &(haveTrig[l1]),   1 },
-    {"t1-triggers",             no_argument,       &(haveTrig[t1]),   1 },
-    {"v1-triggers",             no_argument,       &(haveTrig[v1]),   1 },
-    {"check-times",             no_argument,       &checkTimes,       1 },
-    {"parameter-test",          required_argument, 0,                'A'},
-    {"dm",                      required_argument, 0,                'm'},
-    {"dpsi0",                   required_argument, 0,                'p'},
-    {"dpsi3",                   required_argument, 0,                'P'},
-    {"dmchirp",                 required_argument, 0,                'c'},
-    {"deta",                    required_argument, 0,                'n'},
-    {"dt",                      required_argument, 0,                't'},
-    {"gps-start-time",          required_argument, 0,                'q'},
-    {"gps-end-time",            required_argument, 0,                'r'},
-    {"data-type",               required_argument, 0,                'D'},
-    {"comment",                 required_argument, 0,                's'},
-    {"user-tag",                required_argument, 0,                'Z'},
-    {"userTag",                 required_argument, 0,                'Z'},
-    {"help",                    no_argument,       0,                'h'}, 
-    {"debug-level",             required_argument, 0,                'z'},
-    {"version",                 no_argument,       0,                'V'},
+    {"verbose",             no_argument,   &vrbflg,                   1 },
+    {"g1-triggers",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },
+    {"h1-triggers",         no_argument,   &(haveTrig[LAL_IFO_H1]),   1 },
+    {"h2-triggers",         no_argument,   &(haveTrig[LAL_IFO_H2]),   1 },
+    {"l1-triggers",         no_argument,   &(haveTrig[LAL_IFO_L1]),   1 },
+    {"t1-triggers",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },
+    {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
+    {"check-times",         no_argument,   &checkTimes,               1 },
+    {"g1-time-accuracy",    required_argument, 0,                    'A'},
+    {"h1-time-accuracy",    required_argument, 0,                    'B'}, 
+    {"h2-time-accuracy",    required_argument, 0,                    'C'}, 
+    {"l1-time-accuracy",    required_argument, 0,                    'D'},
+    {"t1-time-accuracy",    required_argument, 0,                    'E'}, 
+    {"v1-time-accuracy",    required_argument, 0,                    'F'}, 
+    {"g1-mass-accuracy",    required_argument, 0,                    'G'},
+    {"h1-mass-accuracy",    required_argument, 0,                    'H'},
+    {"h2-mass-accuracy",    required_argument, 0,                    'I'},
+    {"l1-mass-accuracy",    required_argument, 0,                    'J'},
+    {"t1-mass-accuracy",    required_argument, 0,                    'K'},
+    {"v1-mass-accuracy",    required_argument, 0,                    'L'},
+    {"g1-mchirp-accuracy",  required_argument, 0,                    'M'},
+    {"h1-mchirp-accuracy",  required_argument, 0,                    'N'},
+    {"h2-mchirp-accuracy",  required_argument, 0,                    'O'},
+    {"l1-mchirp-accuracy",  required_argument, 0,                    'P'},
+    {"t1-mchirp-accuracy",  required_argument, 0,                    'Q'},
+    {"v1-mchirp-accuracy",  required_argument, 0,                    'R'},
+    {"g1-eta-accuracy",     required_argument, 0,                    'm'},
+    {"h1-eta-accuracy",     required_argument, 0,                    'n'},
+    {"h2-eta-accuracy",     required_argument, 0,                    'o'},
+    {"l1-eta-accuracy",     required_argument, 0,                    'p'},
+    {"t1-eta-accuracy",     required_argument, 0,                    'q'},
+    {"v1-eta-accuracy",     required_argument, 0,                    'r'},
+    {"parameter-test",      required_argument, 0,                    'a'},
+    {"gps-start-time",      required_argument, 0,                    's'},
+    {"gps-end-time",        required_argument, 0,                    't'},
+    {"data-type",           required_argument, 0,                    'd'},
+    {"comment",             required_argument, 0,                    'x'},
+    {"user-tag",            required_argument, 0,                    'Z'},
+    {"userTag",             required_argument, 0,                    'Z'},
+    {"help",                no_argument,       0,                    'h'}, 
+    {"debug-level",         required_argument, 0,                    'z'},
+    {"version",             no_argument,       0,                    'V'},
     {0, 0, 0, 0}
   };
   int c;
@@ -230,11 +266,7 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
-  memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
-  /* XXX set kappa and epsilon to default values of 0.5, 10000 to effectively
-   * disable the effective distance cut XXX*/
-  errorParams.kappa = KAPPA;
-  errorParams.epsilon = EPSILON;
+  memset( &accuracyParams, 0, sizeof(InspiralAccuracyList) );
   
   /* parse the arguments */
   while ( 1 )
@@ -270,19 +302,21 @@ int main( int argc, char *argv[] )
         }
         break;
 
-      case 'A':
+      case 'a':
         /* set the parameter test */
         if ( ! strcmp( "m1_and_m2", optarg ) )
         {
-          errorParams.test = m1_and_m2;
+          accuracyParams.test = m1_and_m2;
         }
         else if ( ! strcmp( "psi0_and_psi3", optarg ) )
         {
-          errorParams.test = psi0_and_psi3;
+          accuracyParams.test = psi0_and_psi3;
+          fprintf(stderr, "psi0_and_psi3 test not yet implemented\n");
+          exit(1);
         }
         else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
-          errorParams.test = mchirp_and_eta;
+          accuracyParams.test = mchirp_and_eta;
         }
         else
         {
@@ -295,43 +329,151 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case 'm':
-        /* mass errors allowed */
-        errorParams.dm = atof(optarg);
+      case 'A':
+        /* time accuracy G1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
+      case 'B':
+        /* time accuracy H1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'C':
+        /* time accuracy H2, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'D':
+        /* time accuracy L1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dt = atof(optarg) * 1000000LL;
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'p':
-        /* psi0 errors allowed */
-        errorParams.dpsi0 = atof(optarg);
+      case 'E':
+        /* time accuracy T1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'F':
+        /* time accuracy V1, argument is in milliseconds */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dt = atof(optarg) * 1000000LL;
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'G':
+        /* mass accuracy G1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
+      case 'H':
+        /* mass accuracy H1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'I':
+        /* mass accuracy H2, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'J':
+        /* mass accuracy L1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'K':
+        /* mass accuracy T1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'L':
+        /* mass accuracy V1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'M':
+        /* chirp mass accuracy G1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
+      case 'N':
+        /* chirp mass accuracy H1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'O':
+        /* chirp mass accuracy H2, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
       case 'P':
-        /* psi3 errors allowed */
-        errorParams.dpsi3 = atof(optarg);
+        /* chirp mass accuracy L1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dmchirp = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'c':
-        /* chirp mass errors allowed */
-        errorParams.dmchirp = atof(optarg);
+      case 'Q':
+        /* chirp mass accuracy T1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'R':
+        /* chirp mass accuracy V1, argument is in solar masses */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dmchirp = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'm':
+        /* eta accuracy G1, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+      
       case 'n':
-        /* mass ratio, eta, errors allowed */
-        errorParams.deta = atof(optarg);
+        /* eta accuracy H1, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].deta = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
-
-      case 't':
-        /* time coincidence window, argument is in milliseconds */
-        errorParams.dt = atof(optarg) * 1000000LL;
+        
+      case 'o':
+        /* eta accuracy H2, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'p':
+        /* eta accuracy L1, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].deta = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
       case 'q':
+        /* eta accuracy T1, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+        
+      case 'r':
+        /* eta accuracy V1, argument is dimensionless */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 's':
         /* start time coincidence window */
         gpstime = atol( optarg );
         if ( gpstime < 441417609 )
@@ -356,7 +498,7 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
         break;
 
-      case 'r':
+      case 't':
         /* end time coincidence window */
         gpstime = atol( optarg );
         if ( gpstime < 441417609 )
@@ -381,7 +523,7 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
         break;
 
-      case 's':
+      case 'x':
         /* comment */
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
@@ -396,7 +538,7 @@ int main( int argc, char *argv[] )
         }
         break;
 
-      case 'D':
+      case 'd':
         /* type of data to analyze */
         if ( ! strcmp( "playground_only", optarg ) )
         {
@@ -498,7 +640,7 @@ int main( int argc, char *argv[] )
 
 
   /* Parameter Test */
-  if ( errorParams.test == no_test )
+  if ( accuracyParams.test == no_test )
   {
     fprintf( stderr, "Error: --parameter-test must be specified\n" );
     exit( 1 );
@@ -513,20 +655,13 @@ int main( int argc, char *argv[] )
   }
 
 
-  /* Time coincidence window, dt */
-  if ( ! errorParams.dt )
-  {
-    fprintf( stderr, "Error: --dt must be specified\n");
-    exit(1);
-  }
-
   /* Store the IFOs we expect triggers from */
-  for( j=1; j< NUMIFO; j++)
+  for( ifoNumber = 1; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    if ( haveTrig[j] )
+    if ( haveTrig[ifoNumber] )
     {
       /* write ifo name in ifoName list */
-      LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifoList[j] );
+      LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifoList[ifoNumber] );
       numIFO++;
 
       /* store the argument in the process_params table */
@@ -535,9 +670,17 @@ int main( int argc, char *argv[] )
       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
           "%s", PROGRAM_NAME );
       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", 
-          ifoArg[j]);
+          ifoArg[ifoNumber]);
       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
       LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+
+      /* check that a non-zero timing accuracy was specified */
+      if ( ! accuracyParams.ifoAccuracy[ifoNumber].dt )
+      {
+        fprintf( stderr, "Error: --dt must be specified for %s\n", 
+            ifoName[ifoNumber]);
+        exit(1);
+      }
     }
   }
 
@@ -597,8 +740,7 @@ int main( int argc, char *argv[] )
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--check-times", 
-        ifoArg[j]);
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--check-times" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -775,10 +917,10 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, 
         "Checking that we have data for all times from all IFOs\n");
-    for ( j = 0; j < numIFO ; ++j )
+    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
     {
       LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
-            ifoName[j], &startCoinc, &endCoinc ), &status);
+            ifoName[ifoNumber], &startCoinc, &endCoinc ), &status);
     }
   }
 
@@ -832,17 +974,19 @@ int main( int argc, char *argv[] )
   }
 
   /* count the number of triggers for each IFO */
-  for( j = 1; j <7; j++)
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
   {
-    LALIfoCountSingleInspiral(&status, &numTrigs[j], inspiralEventList, j);
+    LALIfoCountSingleInspiral(&status, &numTrigs[ifoNumber], 
+        inspiralEventList, ifoNumber);
     if ( vrbflg ) fprintf( stdout, 
-        "Have %d triggers from %s.\n", numTrigs[j], ifoList[j] );
-    if ( numTrigs[j] && !haveTrig[j] )
+        "Have %d triggers from %s.\n", numTrigs[ifoNumber], 
+        ifoList[ifoNumber] );
+    if ( numTrigs[ifoNumber] && !haveTrig[ifoNumber] )
     {
       fprintf( stderr, "Read in triggers from %s, none expected.\n",
-          ifoList[j]);
+          ifoList[ifoNumber]);
     }
-    if ( haveTrig[j] && numTrigs[j] )
+    if ( haveTrig[ifoNumber] && numTrigs[ifoNumber] )
     {
       ++numTrigIFO;
     }
@@ -868,7 +1012,7 @@ int main( int argc, char *argv[] )
    */
 
   LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
-        inspiralEventList, &errorParams ), &status); 
+        inspiralEventList, &accuracyParams ), &status); 
 
 
   /* count the coincs */
