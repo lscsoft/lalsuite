@@ -230,7 +230,7 @@ void CreateDemodParams (LALStatus *status);
 void CreateBinaryDemodParams (LALStatus *status);
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem (LALStatus *status);
-INT4 EstimateFLines(LALStatus *status);
+void EstimateFLines(LALStatus *status);
 INT4 NormaliseSFTDataRngMdn (LALStatus *status);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
@@ -486,13 +486,20 @@ int main(int argc,char *argv[])
 
 	      if (uvar_overSampling == 1)
 		{
+		  /*
 		  LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_native.dat"), &status);
-		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, 2*FBand->Fa->length), &status);
+		  */
+		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, 2*FBand->Fa->length, uvar_Dterms), 
+			    &status);
+		  /*
 		  LAL_CALL (writeCOMPLEX16Vector(&status, FaRefined, "Fa_refined.dat"), &status);
+		  */
 		  LAL_CALL (LALZDestroyVector (&status, &FaRefined), &status);
 		}
 	      else if (uvar_overSampling == 2) {
+		/*
 		LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_oversampled_2.dat"), &status);
+		*/
 	      }
 	    }
 
@@ -1409,8 +1416,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
  if (!uvar_binary)
    {
-     cfg->dFreq = 1.0 / (uvar_overSampling * cfg->tObs);
-     cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+     cfg->dFreq = 1.0 / (cfg->tObs*uvar_overSampling);	
+     cfg->FreqImax = (INT4)(uvar_FreqBand/cfg->dFreq + 0.5) + 1;  /*Number of frequency values to calculate F for */
    }
 
  if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
@@ -1725,17 +1732,22 @@ int compare(const void *ip, const void *jp)
   return -1;
 }
 
-/*******************************************************************************/
-/** Find outliers/clusters in the F-statistic array over frequency.
+/** Find outliers and then clusters in the F-statistic array over frequency. 
+ * These clusters get written in the global highFLines. 
  */
-INT4 EstimateFLines(LALStatus *status)
+void
+EstimateFLines(LALStatus *stat)
 {
-  INT4 i,j,Ntot;                         /* loop indices */
-  INT4 nbins=GV.FreqImax;                /* Number of points in F */
+#ifdef FILE_FTXT  
+  FILE *outfile;
+#endif
+#ifdef FILE_FLINES  
+  FILE *outfile1;
+#endif
+  INT4 i,j,Ntot;   
+  INT4 nbins=GV.FreqImax;                /* Number of bins in F */
   REAL8Vector *F1=NULL; 
-  REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
-  INT2 windowSize=100;
+  REAL8Vector *FloorF1=NULL;             /* Square of SFT */
   REAL4 THR=10.0;
   
   REAL8 dmp;
@@ -1748,30 +1760,40 @@ INT4 EstimateFLines(LALStatus *status)
   Clusters       *SpLines=highFLines;
     
   INT2 smallBlock=1;
-  
   INT4 wings;
+
+  INITSTATUS( stat, "EstimateFLines", rcsid );
+  ATTATCHSTATUSPTR (stat);
 
   nbins=(UINT4)nbins;
 
   THR=uvar_Fthreshold;
 
+/* 0.0002 is the max expected width of the F stat curve for signal */
+/* with ~ 10 h observation time */
 
-  /* wings=windowSize/2; */
-  /*  0.0002 is the max expected width of the F stat curve for signal */
-  /*  with ~ 10 h observation time */
-  /*  0.0001 = 0.0002/2 */
-  /*  let me put 0.005 */
   dmp=0.5+0.0002/GV.dFreq;
-  wings=dmp;
+  wings = (INT4) dmp;
 
 
-  if (windowSize > nbins){
-    windowSize = nbins/2.0;
-    /* printf("Had to change windowSize for running median in F floor estimate\n"); */
+#ifdef FILE_FTXT
+  /*  file contains freq, PSD, noise floor */
+  if(!(outfile=fopen("F.txt","wb"))){
+    fprintf(stderr, "Cannot open F.txt file\n");
+    return 1;
   }
+#endif
+  /*  file contanis freq, PSD, noise floor,lines */
+#ifdef FILE_FLINES  
+  if(!(outfile1=fopen("FLines.txt","wb"))){
+    fprintf(stderr, "Cannot open FLines.txt file\n");
+    return 1;
+  }
+#endif
 
-  LALDCreateVector(status, &F1, nbins);
-  LALDCreateVector(status, &FloorF1, nbins);
+
+  TRY ( LALDCreateVector(stat->statusPtr, &F1, nbins), stat);
+  TRY ( LALDCreateVector(stat->statusPtr, &FloorF1, nbins), stat);
     
   /* loop over SFT data to estimate noise */
   for (j=0;j<nbins;j++){
@@ -1784,57 +1806,71 @@ INT4 EstimateFLines(LALStatus *status)
 
   /*   j=EstimateFloor(F1, windowSize, FloorF1); */
  
-  if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
-    fprintf(stderr,"Memory allocation failure for SpOutliers\n");
-    return 1;
+  if ( (outliers = (Outliers *)LALCalloc(1, sizeof(Outliers))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   outliers->Noutliers=0;
 
-  if (!(outliersParams=(OutliersParams *)LALMalloc(sizeof(OutliersParams)))){
-    fprintf(stderr,"Memory allocation failure for OutliersParams\n");
-    return 1;
+  if ( (outliersParams = (OutliersParams *)LALCalloc(1,sizeof(OutliersParams))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
-  if (!(outliersInput=(OutliersInput *)LALMalloc(sizeof(OutliersInput)))){
-    fprintf(stderr,"Memory allocation failure for OutliersParams\n");
-    return 1;
+  if ( (outliersInput = (OutliersInput *)LALCalloc(1,sizeof(OutliersInput))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=((uvar_Freq/GV.dFreq)+0.5);
+  outliersInput->ifmin = (INT4) ((uvar_Freq/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
+  /*find values of F above THR and populate outliers with them */
   ComputeOutliers(outliersInput, outliersParams, outliers);
 
+
+  /*if no outliers were found clean and exit */
    if (outliers->Noutliers == 0){
 
+#ifdef FILE_FTXT
+     /*  F.txt file contains freq, F, noise floor of F   */
+     for (i=0;i<nbins;i++){ 
+       REAL4 freq;
+       REAL8 r0,r1;
+       freq=uvar_Freq + i*GV.dFreq;
+       r0=F1->data[i]*2.0*medianbias;
+       r1=FloorF1->data[i]*2.0*medianbias;
+       fprintf(outfile,"%f %E %E\n",freq,r0,r1);
+     }
+#endif     
+
+#ifdef FILE_FTXT
+     fclose(outfile);
+#endif
+#ifdef FILE_FLINES  
+     fclose(outfile1);
+#endif 
      LALFree(outliers->ratio);
      LALFree(outliers);
      LALFree(outliersParams);
      LALFree(outliersInput);
-     LALDDestroyVector(status,&F1);
-     LALDDestroyVector(status,&FloorF1);
+     TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
+     TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
 
      /*      fprintf(stderr,"Nclusters zero \n"); */
      /*      fflush(stderr); */
 
-     return 0;
+     goto finished;
 
-   }
+   } /* if Noutliers == 0 */
   
-   /*      fprintf(stderr,"Nclusters non zero \n"); */
-   /*      fflush(stderr); */
 
-   if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
-     printf("Memory allocation failure for SpClusterParams");
-     return 1;
+   /* if outliers are found get ready to identify clusters of outliers*/
+   if ( (SpClParams = (ClustersParams*)LALCalloc(1,sizeof(ClustersParams))) == NULL) {
+     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
    }
-
    
-   if (!(clustersInput=(ClustersInput *)LALMalloc(sizeof(ClustersInput)))){ 
-     printf("Memory allocation failure for SpClusters");
-     return 1;
+   if ( (clustersInput = (ClustersInput *)LALCalloc(1,sizeof(ClustersInput))) == NULL) {
+     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
    }
       
    SpClParams->wings=wings;
@@ -1844,30 +1880,63 @@ INT4 EstimateFLines(LALStatus *status)
    clustersInput->outliersParams= outliersParams;
    clustersInput->outliers      = outliers;     
    
-   j=DetectClusters(clustersInput, SpClParams, SpLines);
-   if (j!=0){
-     printf("DetectClusters problem");
-     return 1;
-   }
-   
+   /* clusters of outliers in F get written in SpLines which is the global highFLines*/
+   TRY (DetectClusters(stat->statusPtr, clustersInput, SpClParams, SpLines), stat);
    
    /*  sum of points in all lines */
    Ntot=0;
    for (i=0;i<SpLines->Nclusters;i++){ 
      Ntot=Ntot+SpLines->NclustPoints[i];
    }
+   
+
+
+#ifdef FILE_FLINES  
+   /*  FLines file contains: F, noise floor and lines. */
+   for (i=0;i<Ntot;i++){ 
+     REAL8 freq;
+     REAL8 r0,r1,r2;
+     j=SpLines->Iclust[i];
+     freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
+     r0=F1->data[j];
+     r1=FloorF1->data[j]*2.0*medianbias;
+     r2=SpLines->clusters[i]*FloorF1->data[j]*2.0*medianbias;
+     fprintf(outfile1,"%20.17f %E %E %E\n",freq,r0,r1,r2);
+   }
+#endif
+#ifdef FILE_FTXT   
+   /*  PSD.txt file contains freq, PSD, noise floor   */
+   for (i=0;i<nbins;i++){ 
+     REAL8 freq;
+     REAL8 r0,r1;
+     freq=uvar_Freq + i*GV.dFreq;
+     r0=F1->data[i]*2.0*medianbias;
+     r1=FloorF1->data[i]*2.0*medianbias;
+     fprintf(outfile,"%20.17f %E %E\n",freq,r0,r1);
+   }
+#endif   
+
+#ifdef FILE_FTXT
+   fclose(outfile);
+#endif
+#ifdef FILE_FLINES  
+   fclose(outfile1);
+#endif   
+
+   TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
+   TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
 
    LALFree(outliers->ratio);
    LALFree(outliers->outlierIndexes);
    LALFree(outliers);
    LALFree(outliersParams);
    LALFree(outliersInput);
-   LALDDestroyVector(status,&F1);
-   LALDDestroyVector(status,&FloorF1);
    LALFree(SpClParams);
    LALFree(clustersInput);
 
-   return 0;
+ finished:
+   DETATCHSTATUSPTR(stat);
+   RETURN(stat);
 
 } /* EstimateFLines() */
 
@@ -2230,7 +2299,7 @@ NewLALDemod(LALStatus *stat, FStatisticBand **FBand, FFT **input, NewDemodPar *p
   ASSERT ( FBand, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( *FBand == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
-  nBins = params->imax;		/* number of frequency-bins to calculate Fstatistic for */
+  nBins = params->imax;	/* number of frequency-bins to calculate Fstatistic for */
 
   /* allocate memory for FBand return-struct.
    * FIXME: for now we're a bit sloppy with leaks in  case of errors 
