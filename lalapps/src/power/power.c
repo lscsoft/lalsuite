@@ -943,7 +943,7 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Open frame stream */
 	if(cachefile && dirname && options.verbose)
-		fprintf(stderr, "%s: warning: --frame-cache ignored (using --frame-dir)\n");
+		fprintf(stderr, "Warning: --frame-cache ignored (using --frame-dir)\n");
 	if(dirname)
 		LAL_CALL(LALFrOpen(stat, &stream, dirname, "*.gwf"), stat);
 	else if(cachefile) {

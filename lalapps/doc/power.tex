@@ -640,15 +640,15 @@ window that corresponds to each integer window type.
 Set the number of samples to use for an analysis window to \parm{samples}.
 Only the central half of the window will be analyzed, the first quarter and
 last quarter of the window are used as padding to avoid corruption at
-certain stages of the analysis.
+certain stages of the analysis.  For example, if you wish the code to
+analyze the data in 1 second windows, you need to set this parameter to the
+number of samples corresponding to 2 seconds of data.
 
 \item[\option{--window-shift} \parm{samples}]
 Set the number of samples each analysis window is shifted with respect to
 the previous window to \parm{samples}.  This is typically set to one
-quarter the window length (i.e.\ half the length of data that is actually
-analyzed).  For example, if you wish the code to analyze the data in 1
-second windows, you need to set this parameter to the number of samples
-corresponding to 2 seconds of data.
+quarter of the window length (i.e.\ half the length of data that is
+actually analyzed).
 
 \end{entry}
 
