@@ -28,11 +28,11 @@ LALExchangeDataSegment (
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
-  ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (segment, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (segment->data, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (segment->spec, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (segment->resp, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+  ASSERT (exchParams, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (segment, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (segment->data, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (segment->spec, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (segment->resp, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
   if (exchParams->send)  /* I am sending */
   {
@@ -118,8 +118,8 @@ LALExchangeInspiralTemplate (
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
-  ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (tmplt, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+  ASSERT (exchParams, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (tmplt, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
   /* stuff the template into a box */
   box.length = sizeof (InspiralTemplate);
@@ -160,8 +160,8 @@ LALExchangeInspiralEvent (
   ATTATCHSTATUSPTR (status);
 
   /* only do a minimal check to see if arguments are somewhat reasonable */
-  ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (event, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+  ASSERT (exchParams, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+  ASSERT (event, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
   /* stuff the event into a box */
   box.length = sizeof (InspiralEvent);
@@ -206,7 +206,7 @@ LALExchangeInspiralEventList (
   {
 
     /* check that we have a bank to send */
-    ASSERT (*eventHead, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+    ASSERT (*eventHead, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
     /* exchange the template bank */
     for (eventCurrent = *eventHead;
@@ -218,14 +218,14 @@ LALExchangeInspiralEventList (
       CHECKSTATUSPTR (status);
     }
 
-    ASSERT (!eventCurrent, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+    ASSERT (!eventCurrent, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
   }
   else /* I am receiving */
   {
 
     /* check that this is a new list */
-    ASSERT (!*eventHead, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+    ASSERT (!*eventHead, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
     /* recieve the template bank */
     do
@@ -271,7 +271,7 @@ LALExchangeTemplateBank (
   {
 
     /* check that we have a bank to send */
-    ASSERT (*tmpltHead, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+    ASSERT (*tmpltHead, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
     /* exchange the template bank */
     for (tmpltCurrent = *tmpltHead;
@@ -290,14 +290,14 @@ LALExchangeTemplateBank (
       }
     }
 
-    ASSERT (!tmpltCurrent, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+    ASSERT (!tmpltCurrent, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
   }
   else /* I am receiving */
   {
 
     /* check that this is a new list */
-    ASSERT (!*tmpltHead, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+    ASSERT (!*tmpltHead, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
     /* recieve the template bank */
     do

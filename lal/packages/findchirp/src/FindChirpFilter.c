@@ -40,15 +40,15 @@ LALCreateFindChirpInput (
   
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );  
-  ASSERT( !*output, status, FINDCHIRP_ENNUL, FINDCHIRP_MSGENNUL );
+  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );  
+  ASSERT( !*output, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the number of points is positive */
   ASSERT( params->numPoints > 0, status, 
-      FINDCHIRP_ENUMZ, FINDCHIRP_MSGENUMZ );
+      FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
 
   /*
@@ -63,7 +63,7 @@ LALCreateFindChirpInput (
     LALCalloc( 1, sizeof(FindChirpFilterInput) );
   if ( ! outputPtr )
   {
-    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
   /* create memory for the chirp template structure */
@@ -73,7 +73,7 @@ LALCreateFindChirpInput (
   {
     LALFree( *output );
     *output = NULL;
-    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
   /* create memory for the chirp template data */
@@ -116,8 +116,8 @@ LALDestroyFindChirpInput (
 
 
   /* make sure handle is non-null and points to a non-null pointer */
-  ASSERT( output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( *output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( *output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*
@@ -169,15 +169,15 @@ LALFindChirpFilterInit (
 
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( !*output, status, FINDCHIRP_ENNUL, FINDCHIRP_MSGENNUL );
+  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( !*output, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the number of points in a segment is positive */
   ASSERT( params->numPoints > 0,  status, 
-      FINDCHIRP_ENUMZ, FINDCHIRP_MSGENUMZ );
+      FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
 
   /*
@@ -192,7 +192,7 @@ LALFindChirpFilterInit (
     LALCalloc( 1, sizeof(FindChirpFilterParams) );
   if ( ! outputPtr )
   {
-    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
   /* create memory for the chisq parameters */
@@ -202,7 +202,7 @@ LALFindChirpFilterInit (
   {
     LALFree( outputPtr );
     *output = NULL;
-    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
   /* create memory for the chisq input */
@@ -213,7 +213,7 @@ LALFindChirpFilterInit (
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
-    ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
 
@@ -349,8 +349,8 @@ LALFindChirpFilterFinalize (
 
 
   /* make sure handle is non-null and points to a non-null pointer */
-  ASSERT( output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( *output, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( *output, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*
@@ -468,54 +468,54 @@ LALFindChirpFilterSegment (
 
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( eventList, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( !*eventList, status, FINDCHIRP_ENNUL, FINDCHIRP_MSGENNUL );
+  ASSERT( eventList, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( !*eventList, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the filter parameters are reasonable */
   ASSERT( params->deltaT > 0, status,
-      FINDCHIRP_EDTZO, FINDCHIRP_MSGEDTZO );
+      FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
   ASSERT( params->rhosqThresh > 0, status,
-      FINDCHIRP_ERHOT, FINDCHIRP_MSGERHOT );
+      FINDCHIRPH_ERHOT, FINDCHIRPH_MSGERHOT );
   ASSERT( params->chisqThresh > 0, status,
-      FINDCHIRP_ECHIT, FINDCHIRP_MSGECHIT );
+      FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
 
   /* check that the fft plan exists */
-  ASSERT( params->invPlan, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params->invPlan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the workspace vectors exist */
-  ASSERT( params->qVec, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( params->qVec->data, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( params->qtildeVec, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( params->qtildeVec->data, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params->qVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->qtildeVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the chisq parameter and input structures exist */
-  ASSERT( params->chisqParams, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( params->chisqInput, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( params->chisqParams, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->chisqInput, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* if a rhosqVec vector has been created, check we can store data in it */
   if ( params->rhosqVec ) 
   {
     ASSERT( params->rhosqVec->data, status, 
-        FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
   
   /* if a chisqVec vector has been created, check we can store data in it */
   if ( params->chisqVec ) 
   {
     ASSERT( params->chisqVec->data, status,
-        FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
   /* make sure that the input structure exists */
-  ASSERT( input, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( input, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the input structure contains some input */
-  ASSERT( input->tmplt, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( input->fcTmplt, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
-  ASSERT( input->segment, status, FINDCHIRP_ENULL, FINDCHIRP_MSGENULL );
+  ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /*
@@ -657,7 +657,7 @@ LALFindChirpFilterSegment (
             LALCalloc( 1, sizeof(InspiralEvent) );
           if ( ! thisEvent )
           {
-            ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
           }
           thisEvent->id = eventId++;
 
@@ -704,7 +704,7 @@ LALFindChirpFilterSegment (
             LALCalloc( 1, sizeof(InspiralEvent) );
           if ( ! lastEvent->next )
           {
-            ABORT( status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+            ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
           }
           thisEvent->id = eventId++;
 

@@ -41,15 +41,15 @@ LALFindChirpSPTemplateInit (
    */
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );  
-  ASSERT( !*output, status, FINDCHIRPSP_ENNUL, FINDCHIRPSP_MSGENNUL );
+  ASSERT( output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );  
+  ASSERT( !*output, status, FINDCHIRPSPH_ENNUL, FINDCHIRPSPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   
   /* make sure that the number of points is positive */
   ASSERT( params->numPoints > 0, status, 
-      FINDCHIRPSP_ENUMZ, FINDCHIRPSP_MSGENUMZ );
+      FINDCHIRPSPH_ENUMZ, FINDCHIRPSPH_MSGENUMZ );
 
 
   /*
@@ -64,7 +64,7 @@ LALFindChirpSPTemplateInit (
     LALCalloc( 1, sizeof(FindChirpSPTmpltParams) );
   if ( ! outputPtr )
   {
-    ABORT( status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
+    ABORT( status, FINDCHIRPSPH_EALOC, FINDCHIRPSPH_MSGEALOC );
   }
 
   /* create the vector to store x^(-7/6) */
@@ -111,8 +111,8 @@ LALFindChirpSPTemplateFinalize (
 
 
   /* make sure handle is non-null and points to a non-null pointer */
-  ASSERT( output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( *output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( *output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   
 
   /*
@@ -191,19 +191,19 @@ LALFindChirpSPTemplate (
   
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( fcTmplt->data, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( fcTmplt->data->data, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( fcTmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the timestep is positive */
   ASSERT( params->deltaT > 0, status, 
-      FINDCHIRPSP_EDELT, FINDCHIRPSP_MSGEDELT );
+      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
 
   /* check that the input exists */
-  ASSERT( tmplt, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( tmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
 
   /*

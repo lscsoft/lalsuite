@@ -43,15 +43,15 @@ LALFindChirpSPDataInit (
 
 
   /* make sure the output handle exists, but points to a null pointer */
-  ASSERT( output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( !*output, status, FINDCHIRPSP_ENNUL, FINDCHIRPSP_MSGENNUL );
+  ASSERT( output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( !*output, status, FINDCHIRPSPH_ENNUL, FINDCHIRPSPH_MSGENNUL );
 
   /* make sure that the parameter structure exists */
-  ASSERT (params, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL);
+  ASSERT (params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL);
 
   /* make sure that the number of points in a segment is positive */
   ASSERT (params->numPoints > 0, status, 
-      FINDCHIRPSP_ENUMZ, FINDCHIRPSP_MSGENUMZ);
+      FINDCHIRPSPH_ENUMZ, FINDCHIRPSPH_MSGENUMZ);
 
 
   /*
@@ -66,7 +66,7 @@ LALFindChirpSPDataInit (
     LALCalloc( 1, sizeof(FindChirpSPDataParams) );
   if ( ! dataParamPtr )
   {
-    ABORT( status, FINDCHIRPSP_EALOC, FINDCHIRPSP_MSGEALOC );
+    ABORT( status, FINDCHIRPSPH_EALOC, FINDCHIRPSPH_MSGEALOC );
   }
 
 
@@ -216,8 +216,8 @@ LALFindChirpSPDataFinalize (
   
 
   /* make sure handle is non-null and points to a non-null pointer */
-  ASSERT( output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
-  ASSERT( *output, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( *output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   
   /*
@@ -323,66 +323,66 @@ LALFindChirpSPData (
 
   /* check that the output exists */
   ASSERT( fcSegVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( fcSegVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( fcSegVec->data->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( fcSegVec->data->data->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->ampVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->vVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->vVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->wVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->wVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->wtildeVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->wtildeVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->tmpltPowerVec, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->tmpltPowerVec->data, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the fft plans exist */
   ASSERT( params->fwdPlan, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->invPlan, status, 
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter values are reasonable */
   ASSERT( params->deltaT > 0, status,
-      FINDCHIRPSP_EDELT, FINDCHIRPSP_MSGEDELT );
+      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
   ASSERT( params->fLow >= 0, status,
-      FINDCHIRPSP_EFLOW, FINDCHIRPSP_MSGEFLOW );
+      FINDCHIRPSPH_EFLOW, FINDCHIRPSPH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,
-      FINDCHIRPSP_EDYNR, FINDCHIRPSP_MSGEDYNR );
+      FINDCHIRPSPH_EDYNR, FINDCHIRPSPH_MSGEDYNR );
   
   /* check that the input exists */
   ASSERT( dataSegVec, status,
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( dataSegVec->data, status,
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( dataSegVec->data->real4Data, status,
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( dataSegVec->data->real4Data->data, status,
-      FINDCHIRPSP_ENULL, FINDCHIRPSP_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
 
   /*
@@ -430,7 +430,7 @@ LALFindChirpSPData (
     numChisqBins = fcSeg->chisqBinVec->length - 1;
 
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
-        FINDCHIRPSP_EMISM, FINDCHIRPSP_MSGEMISM );
+        FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
 
     /*
