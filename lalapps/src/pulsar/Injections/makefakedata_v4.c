@@ -82,6 +82,7 @@ void ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR
 void InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[]);
 void AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
 void GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit);
+void WriteMFDlog (LALStatus *stat, char *argv[]);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -220,7 +221,7 @@ main(int argc, char *argv[])
    * hardware-injections we do it in chunks of Tsft (because of high sampling rate) */
   if ( uvar_hardwareTDD )
     {
-      Tchunk = uvar_Tsft;
+      Tchunk = (UINT4)(uvar_Tsft+0.5);
       numchunks = (UINT4)( (1.0*GV.duration) / (1.0*Tchunk) + 0.5 );
       /* send magic number to stdout (signalling start of data?) */
       REAL4 magic = 1234.5;
@@ -349,6 +350,8 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
+  /* now low all user-input and code-versions */
+  TRY ( WriteMFDlog(stat->statusPtr, argv), stat);
 
   /* ---------- prepare vector of spindown parameters ---------- */
   {
@@ -908,4 +911,52 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
   RETURN(stat);
 
 } /* GetOrbitalParams() */
+
+
+/***********************************************************************/
+/** Log the all relevant parameters of this run into a log-file.
+ * The name of the log-file is "makefakedata.log".
+ * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
+ */
+void
+WriteMFDlog (LALStatus *stat, char *argv[])
+{
+    CHAR *logstr = NULL;
+    CHAR command[512] = "";
+    const CHAR *fname = "makefakedata.log";
+    FILE *fplog;
+
+    INITSTATUS (stat, "WriteMFDlog", rcsid);
+    ATTATCHSTATUSPTR (stat);
+
+    if ( (fplog = fopen(fname, "wb" )) == NULL) {
+      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
+      ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+    }
+
+    /* write out a log describing the complete user-input (in cfg-file format) */
+    TRY (LALUserVarGetLog(stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+
+    fprintf (fplog, "## LOG-FILE of lalapps_Makefakedata run\n\n");
+    fprintf (fplog, "# User-input:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
+
+    fprintf (fplog, logstr);
+    LALFree (logstr);
+
+    /* append an ident-string defining the exact CVS-version of the code used */
+    fprintf (fplog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n");
+    fclose (fplog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
+    system (command);   /* we currently don't check this. If it fails, we assume that */
+                        /* one of the system-commands was not available, and */
+                        /* therefore the CVS-versions will simply not be logged */
+
+
+    DETATCHSTATUSPTR (stat);
+    RETURN(stat);
+
+} /* WriteMFDLog() */
 
