@@ -170,7 +170,6 @@ Adam Mercer
 [\option{--comment}~\parm{STRING}] \newline \hspace*{0.5in}
 [\option{--output-dir}~\parm{DIR}] \newline \hspace*{0.5in}
 [\option{--cc-spectra}] \newline \hspace*{0.5in}
-[\option{--bayesian}] \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{N} \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{N} \newline \hspace*{0.5in}
 \option{--interval-duration}~\parm{N} \newline \hspace*{0.5in}
@@ -197,10 +196,6 @@ Adam Mercer
 \option{--hpf-order}~\parm{N}] \newline \hspace*{0.5in}
 \option{--recentre} \newline \hspace*{0.5in}
 \option{--middle-segment} \newline \hspace*{0.5in}
-[\option{--inject} \newline \hspace*{0.5in}
-\option{--scale-factor}~\parm{N} \newline \hspace*{0.5in}
-\option{--seed}~\parm{N} \newline \hspace*{0.5in}
-\option{--trials}~\parm{N}] \newline \hspace*{0.5in}
 [\option{--geo-hpf-frequency}~\parm{N} \newline \hspace*{0.5in}
 \option{--geo-hpf-attenuation}~\parm{N} \newline \hspace*{0.5in}
 \option{--geo-hpf-order}~\parm{N}] \newline \hspace*{0.5in}
@@ -243,9 +238,6 @@ Set the output directory for search results to \parm{DIR}
 
 \item[\option{--cc-spectra}]
 Save out cross correlation spectra as frame files.
-
-\item[\option{--bayesian}]
-Perform bayesian search.
 
 \item[\option{--gps-start-time}~\parm{N}]
 Sets the GPS time from which data should be read to \parm{N}
@@ -343,18 +335,6 @@ Centre the data
 
 \item[\option{--middle-segment}]
 Include the middle segment in the power spectra estimation
-
-\item[\option{--inject}]
-Perform signal injection
-
-\item[\option{--scale-factor}~\parm{N}]
-Set the scale factor for injections to \parm{N}
-
-\item[\option{--seed}~\parm{N}]
-Set the random seed for injections to \parm{N}
-
-\item[\option{--trials}~\parm{N}]
-Set the number of trials for injections to \parm{N}
 
 \item[\option{--geo-hpf-frequency}~\parm{N}]
 Set the knee frequency for the GEO high pass filter to \parm{N}
