@@ -190,12 +190,8 @@ ifo2 = cp.get('detectors','detector-two')
 type1 = cp.get('datafind','type-one')
 type2 = cp.get('datafind','type-two')
 
-# get stopp output file
-stopp_output = cp.get('stopp','output')
-
 # set up stopp job
 stopp = stochastic.StoppNode(stopp_job)
-stopp.set_output_file(stopp_output)
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None

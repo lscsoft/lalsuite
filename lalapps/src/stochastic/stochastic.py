@@ -239,6 +239,9 @@ class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
+    for sec in ['stopp']:
+      self.add_ini_opts(cp,sec)
+
     self.set_stdout_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('stopp.sub')
@@ -255,14 +258,6 @@ class StoppNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__output_file = None
-
-  def set_output_file(self,output_file):
-    """
-    Set the output file.
-    """
-    self.add_var_opt('output',output_file)
-    self.__output_file = output_file
 
 
 class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
