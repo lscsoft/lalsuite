@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>Burstwrapper</title>
+</head>
+<body alink="#000099" vlink="#990099" link="#000099"
+ style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);">
+<h1>Burstwrapper</h1>
+Julien Sylvestre<br>
+<hr style="width: 100%; height: 2px;"><br>
+<h3>Introduction</h3>
+&nbsp;&nbsp;&nbsp; The Burstwrapper module in the LALAPPS repository
+contains all the tools needed for a burst analysis with multiple
+interferometers. Burstwrapper tools have been used in production only
+with the TFClusters ETG to data, but they were designed so that it is
+easy to add new ETGs.<br>
+<br>
+&nbsp;&nbsp;&nbsp; The tools are separated in three categories:<br>
+<div style="margin-left: 40px;">
+<ol>
+  <li>Tools to run the ETG on the data, with LDAS or the Condor
+environment</li>
+  <li>Tools to collect and reduce the processed data</li>
+  <li>Tools to build a list of coincident events from the ETG outputs<br>
+  </li>
+</ol>
+</div>
+&nbsp;&nbsp;&nbsp; They are described in more details in the
+"Operation" section.<br>
+<h3>Installation</h3>
+<ol>
+  <li>Check out the LALAPPS repository from the appropriate <a
+ href="http://www.lsc-group.phys.uwm.edu/lal/index.html#cvs">CVS archive</a>.</li>
+  <li>Set your shell environment variable BURSTWRAPPER to the
+$LALAPPSLOCATION/src/burstwrapper,
+where $LALAPPSLOCATION is the base directory of LALAPPS.</li>
+  <li>Do the following steps only to run under Condor or in stand-alone
+more.</li>
+  <li>Check out LAL from CVS, and build it using the following
+configure options:&nbsp; configure --prefix=$LALLOCATION
+--enable-static --disable-mpi --with-extra-cppflags=-I/ldcg/include
+--with-extra-cflags=-fexceptions --with-extra-ldflags=-L/ldcg/lib
+--enable-frame --enable-fftw3, where $LALLOCATION is a shell variable
+pointing to the desired location of the LAL library.</li>
+  <li>Build LALAPPS with the following configure options:&nbsp;
+configure --prefix=$LALAPPSLOCATION --with-extra-ldflags=-L/ldcg/lib
+-L${LAL}/lib --with-extra-cppflags="-I/ldcg/include -I${LAL}/include"
+--with-extra-cppflags="-I/ldcg/include -I${LAL}/include"
+--enable-condor,
+where $LALAPPSLOCATION is a shell variable pointing to the desired
+location of the LALAPPS library.</li>
+  <li><a
+ href="http://www.ldas-dev.ligo.caltech.edu/ldas_outgoing/nightly_tarballs/">Download</a>
+and build the standalone DatacondAPI with the following configure
+options:&nbsp; configure --prefix=$DATACONDLOCATION --with-ilwd
+--with-ospace=/ldcg --with-fftw3=/ldcg --with-odbc-dm=DB2
+--disable-static, where $DATACONDLOCATION is a shell variable pointing
+to the desired location of the Datacond library.</li>
+  <li>Add $LALLOCATION/lib:$LALAPPSLOCATION/lib:$DATACONDLOCATION/lib
+to your LD_LIBRARY_PATH<br>
+  </li>
+  <li>Go to the $LALAPPSLOCATION/src/burstwrapper directory: cd
+$BURSTWRAPPER</li>
+  <li>Type 'make'. This should build two executables: burstdso and
+buildcache.</li>
+  <li>Add $LALAPPSLOCATION/src/burstwrapper to your PATH</li>
+  <li>If you want to run under Condor, you need to install the <a
+ href="http://www.lsc-group.phys.uwm.edu/lscdatagrid/doc/installclient.html">ldg-2.0
+grid tools</a>. <br>
+  </li>
+  <li>Don't forget to run grid-proxy-init before you try to run the
+code.</li>
+  <li>In order to run all TCL driver scripts, you need <a
+ href="http://www.ldas-sw.ligo.caltech.edu/ligotools/tclexe/">tclexe</a>,
+and a few LIGOTools packages: segments and ldasjob.</li>
+  <li>If you want to use matlab tools (such as the triple coincidence
+tool), type 'make matlab', and add
+$LALAPPSLOCATION/src/burstwrapper/matlab to your matlab path.<br>
+  </li>
+</ol>
+<h3>Operation</h3>
+<h5>TFClusters in stand-alone mode</h5>
+<ol>
+  <li>Make sure that the shell variable BURSTWRAPPER is set to the
+src/burstwrapper directory of lalapps.</li>
+  <li>Untar this set of files: Standalone_Driver_Example.tar<br>
+  </li>
+  <li>Edit Driver.H1.tcl to fit your needs.</li>
+  <li>Run "Driver.H1.tcl you_user_name".</li>
+  <li>Look at the output for errors; most are due to missing data, e.g.
+missing calibration frames.</li>
+  <li>Look for output (job*.bin) files in the current directory.<br>
+  </li>
+</ol>
+<h5>TFClusters under LDAS</h5>
+<ol>
+  <li>Make sure that the shell variable BURSTWRAPPER is set to the
+src/burstwrapper directory of lalapps.</li>
+  <li>Untar this set of files: LDAS_Driver_Example.tar<br>
+  </li>
+  <li>Edit Driver.H1.tcl to fit your needs (Driver.H1.Injections.tcl is
+an example where waveforms are injected as well).</li>
+  <li>Run "Driver.H1.tcl you_user_name".</li>
+  <li>Look at the output for errors; most are due to missing data, e.g.
+missing calibration frames.</li>
+  <li>Look for output files at the location defined in the driver
+script.<br>
+  </li>
+</ol>
+<h5>TFClusters under Condor <br>
+</h5>
+<ol>
+  <li>Make sure that the shell variable BURSTWRAPPER is set to the
+src/burstwrapper directory of lalapps.</li>
+  <li>Make sure to run grid-proxy-init with enough proxy uptime to
+allow all your jobs to run.</li>
+  <li>Untar this set of files: Condor_Driver_Example.tar<br>
+  </li>
+  <li>Edit Driver.H1.tcl to fit your needs.</li>
+  <li>Run "Driver.H1.tcl you_user_name".</li>
+  <li>Look at *.err files in the directory defined as PrebinFiles in
+the Driver.H1.tcl file for errors; all should be due to missing data,
+e.g. missing calibration frames.</li>
+</ol>
+<h5>Data consolidation</h5>
+<ol>
+  <li>Each output file (*.bin file) can contain triggers for more than
+one set of injection parameters or set of ETG parameters. Running "gtoc
+file" will show the table of content (TOC) for that bin file. The first
+line shows "{GPS start time (Seconds) of the analyzed segment} {GPS
+start time (nanoseconds) of the analyzed segment} 0". This is followed
+by lines showing the parameters passed to the ETG in the burstwrapper,
+and the number of triggers in the segment. A typical line might look
+like:
+",,,,,,,H1:LSC-AS_Q,0.023357,1,0,0,0.125,-130,-400,-1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+609". 609 is the number of triggers. The first 8 elements (empty here)
+show the injection parameters. The remaining elements show the ETG
+parameters.<br>
+  </li>
+  <li>For a given output file (*.bin file), you can split the file into
+a number of subfiles, one for each set of injection parameters or set
+of ETG parameters, by running "sblit &lt;pattern&gt; file", where
+pattern is an optional regular expression that matches the TOC.</li>
+  <li>After the bin file has been sblitted, you can look at individual
+triggers by running "reab file", where file is one of the subfiles
+produced by the sblit command. The first few lines might look like
+this: "000 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360355 794799804
+0.0177001953 288 4 7.25176e-20 2.96005 149.531<br>
+001 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360356 538146972 0.0243530273 376
+8 4.45509e-20 1.32682 112.491<br>
+002 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360357 374206542 0.000793457031
+360 8 5.86265e-20 1.88875 112.177<br>
+003 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360357 743835449 0.00616455078 200
+8 0 0 115.12<br>
+004 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360358 352722167 0.022277832 328 4
+3.93094e-20 1.27527 75.5329<br>
+005 H1 STD_TFCLUSTERS H1:LSC-AS_Q 734360358 432067871 0.0570068359 392
+4 1.09527e-19 3.00698 148.275<br>
+"; the columns are: burst Id; IFO; ETG; channel; GPS seconds; GPS
+nanoseconds; duration [s]; central frequency [Hz]; bandwidth [Hz];
+hrss; SNR; -log(confidence).</li>
+  <li>CleanDuplicatedFiles.tcl removes the oldest files in duplicated
+filenames distributed over the cluster. These duplicated files can be
+produced if the burstwrapper is interrupted, and is then restarted on
+the same data.</li>
+  <li>loopSblitAllCoherent loop over all nodes, select only data
+segments which have been processed by all 3 IFOs, and sblit the result.<br>
+  </li>
+</ol>
+<br>
+<h5>Coincidence analysis</h5>
+<ol>
+  <li>In matlab, add src/burstwrapper/matlab from the lalapps directory
+to
+your PATH.</li>
+  <li>Edit triple_coin_S2.m to point to the directories containing the
+sblitted files, and select the proper frequency band.</li>
+  <li>Run triple_coin_S2.</li>
+  <li>The output ...<br>
+  </li>
+</ol>
+<h3>Additional information</h3>
+<ul>
+  <li>Patrick Sutton's notes on TFClusters and the burstwrapper</li>
+  <li>The S2 analysis with TFClusters and the burstwrapper<br>
+  </li>
+</ul>
+<br>
+</body>
+</html>

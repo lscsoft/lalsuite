@@ -1,0 +1,5 @@
+<?ilwd?>
+	<ilwd comment='/home/jsylvest/public_html/burstdso/Tuning/H1etg' name='/home/jsylvest/public_html/burstdso/Tuning/H1etg::sequence' size='2'>
+		<lstring name='real:domain' size='4'>NONE</lstring>
+		<char ndim='2' dims='2,87' name='data' units='ADC'>H1:LSC-AS_Q,0.01833,1,0,0,0.0078125,-400.0,-1000.0,-1.5,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0H1:LSC-AS_Q,0.023357,1,0,0,0.125,-130.0,-400.0,-1.0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0\000\000\000\000</char>
+</ilwd>

@@ -1,0 +1,126 @@
+#!/bin/csh
+
+#$1 = dir
+
+set cdir=`pwd`
+
+@ n=1
+@ nnodes=210
+
+while ( $n <= $nnodes ) 
+
+	if ( -d /data/node$n ) then
+
+	 if ( -d /data/node$n/jsylvest/$1 ) then
+
+	 set dl1=`ls /data/node$n/jsylvest/$1/jobL1*.bin`
+	 if ( `echo $dl1 | wc -w` > 0 ) then
+
+		foreach file ( /data/node$n/jsylvest/$1/jobL1*.bin )
+
+		echo $file
+
+		# find H1 and H2
+		set fileH1=`echo $file:t:r:r | sed 's/L1/H1/g'`
+		@ nh1=1
+		while ( $nh1 <= $nnodes ) 
+                 if ( -d /data/node$nh1 ) then
+                    (ls /data/node$nh1/jsylvest/$1/$fileH1.*.bin > tmp) >& /dev/null
+                    set dl1=`cat tmp`
+                        if ( `echo $dl1 | wc -w` > 0 ) then
+                         set fileH1="$dl1"
+                         echo $fileH1
+                         break
+                        endif
+                 endif
+
+		 @ nh1++
+
+		end
+
+		if ( $nh1 > $nnodes ) then
+		 echo "can't find H1"
+		 continue
+		endif
+
+
+		set fileH2=`echo $file:t:r:r | sed 's/L1/H2/g'`
+		@ nh2=1
+		while ( $nh2 <= $nnodes ) 
+                 if ( -d /data/node$nh2 ) then
+                    (ls /data/node$nh2/jsylvest/$1/$fileH2.*.bin > tmp) >& /dev/null
+                    set dl1=`cat tmp`
+                        if ( `echo $dl1 | wc -w` > 0 ) then
+                         set fileH2="$dl1"
+                         echo $fileH2
+                         break
+                        endif
+                 endif
+
+		 @ nh2++
+
+		end
+
+		if ( $nh2 > $nnodes ) then
+		 echo "can't find H2"
+		 continue
+		endif
+
+
+		set toc=`~/c/gtoc $file`
+		@ ntoc=$#toc / 5
+		@ nt=0
+
+		set toclist=""
+
+		@ nsim=0
+
+		while ( $nt < $ntoc )
+
+		    @ i=$nt * 5
+		    @ i=$i + 4
+
+		    set wname=`echo $toc[$i] | awk '{split($1,subfields,","); print subfields[14]'}`
+		    set hname=`echo $toc[$i] | awk '{split($1,subfields,","); print subfields[15]'}`
+
+		    if ( $#wname ) then
+		    @ nsim++
+		    set toclist="$toclist $wname,$hname"
+		    endif
+
+		    @ nt++
+
+		end
+
+
+		# do injections
+		foreach pat ( $toclist )
+
+		set dname=`echo $pat | sed 's/(//g'`
+
+		if ( ! -d ./Scratch.$dname ) then
+		    mkdir -p ./Scratch.$dname
+		endif
+
+		cd ./Scratch.$dname
+
+		~/c/sblit ".*$pat" $file > /dev/null
+		~/c/sblit ".*$pat" $fileH1 > /dev/null
+		~/c/sblit ".*$pat" $fileH2 > /dev/null
+	       
+		cd ..
+		end
+
+
+		end
+
+	 endif
+
+	 endif
+
+	endif
+
+	@ n++
+end
+
+cd $cdir
