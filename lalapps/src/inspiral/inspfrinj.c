@@ -1287,7 +1287,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* if an injection channel has been specified, need a frame cache */
-  if ( injectionChanName && !frInCacheName )
+  if ( injChanName && !frInCacheName )
   {
     fprintf( stderr, 
 	    "If --injection-channel specified, also require --frame-cache\n");
