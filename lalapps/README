@@ -1,195 +1,390 @@
-I am in the process of updating these instructions (as of 9/22/2004): they are
-not yet working
+1. Introduction
 
- --Duncan.
+Welcome to the LSC Applications Library (LALApps). The LALApps web site:
 
+   http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
 
+contains many useful links for LALApps users and developers. 
 
-Instructions to get, compile, and install LALApps from the CVS repository:
+There are two LALApps mail lists/archives which are shared with LAL. These are:
 
-  0.  Get and install LAL
-      (see http://www.lsc-group.phys.uwm.edu/lal)
+  LAL-Announce: general LALApps announcements including release announcements.
+  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-announce
 
-  1.  Get LALApps and bootstrap it
+  LAL-Discuss: general LALApps discussion forum but not for filing bug reports
+  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
 
-        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft login
+This README file explains how to build and install LALApps for use on the
+LSCdatagrid.
 
-      (the password is lal)
 
-        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lalapps
-        cd lalapps
-        ./00boot
+------------------------------------------------------------------------------
 
-      (you will need m4, aclocal, autoheader, automake, and autoconf)
+2. Get LAL from CVS
 
-  2.  Configure LALApps
+Go to the LAL web page:
 
-        ./configure
+   http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
 
-      Some useful options to configure:
+and download the README file from the README section of the page. Follow the
+instructions in step 3 of the LAL README to download LAL from CVS and step 4
+of the LAL README to create the various LAL build scripts.
 
-          --prefix=PREFIX
-              install in PREFIX rather than /usr/local
+Make sure you have set the LAL_LOCATION environment variable as described in
+the LAL README.
 
-          --with-extra-cppflags=CPPFLAGS
-              additional preprocessor flags (usually -I or -D flags)
+Do NOT follow the LAL README.install. Insted return here and follow the
+instructions below once you have followed steps 3 and 4 of the LAL README.
 
-          --with-extra-cppflags=CFLAGS
-              additional compiler flags
+Do NOT follow step 8 of the LAL README (i.e. do not log out of the lscsoft CVS
+archive.)
 
-          --with-extra-ldflags=LDFLAGS
-              additional linker flags
 
-          --with-extra-libs=LIBS
-              additional library flags (usually -l or -L flags)
+------------------------------------------------------------------------------
 
-          --enable-condor
-	      compile using condor_compile so that the executables can be run
-              in the condor "standard" universe (which enables checkpointing)
+3. Get LALApps from CVS
 
+The source code for LALApps is stored in the same lscsoft CVS archive as LAL.
+You should have followed step 3 in the LAL README to log into the LAL CVS and
+checkout LAL. Now you can checkout LALApps and build the install files by 
+typing:
 
-  3.  Build and install LALApps
+  cd ${LAL_LOCATION}/src
+  cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lalapps
+  cd lalapps
+  ./00boot
 
-        make
-        make dvi
-        make install
+Now follow the steps below to build and install the software required for
+LALApps.
 
+------------------------------------------------------------------------------
 
-  4.  Uninstall or cleanup (if desired) using
+3. Important notes about required software
 
-        make uninstall
+To build LALApps, you must have LAL installed. LAL requires the following
+software to be installed:
 
-      or
-      
-        make distclean
+	pkgconfig-0.15.0
+	fftw-3.0.1 (both single- and double-precision libraries required)
+	gsl-1.5
+	libframe-6.14
+	libmetaio-5.4
 
-      respectively.
+Step 4 below describes the various options for getting the software. If you do
+NOT have LIGOtools installed, you can skip to step 4 now, otherwise read the
+rest of this section.
 
+Note that if you have LIGOtools installed, you must REMOVE the lal and lalapps
+that are installed by LIGOtools since these will cause conflicts with the
+versions you are going to build from CVS. To determine if you have LAL and
+LALApps by LIGOtools, type
 
+   ligotools_list
 
-Please read the INSTALL file for additional help on installation.
+This will list all your LIGOtools packages, for example
 
+LIGOTOOLS is /home/duncan/projects/ligotools
+  Package      Active     Other installed versions
+ ---------    --------   --------------------------
+  Fr           v6r15      
+  FrContrib    v6r15      v6r12a
+  dataflow     5.5        
+  fftw         3.0.1     
+  guild        3.31.0     3.9.3, 3.22.1, 3.20, 3.17.1, 3.14.1
+  lal          3.0        
+  lalapps      3.0        
+  segments     1.5        1.4, 1.2, 1.0
+  tclexe       8.4.7      8.3.4
 
-
-*******************************************************************************
+If you have lal or lalapps listed as active, then type
 
+   ligotools_uninstall lalapps <version>
 
-                      INSTRUCTIONS FOR CONTRIBUTORS
+where <version> is the active version of LALApps that you have installed,
+given by ligotools_list (e.g. 3.0 in the above example). Answer yes to all the
+questions asking if you really want to removed it. Then type
 
+   ligotools_uninstall lal <version>
 
+where <version> is active the version of LAL that you have installed, given by
+ligotools_list. Answer yes to all the questions asking if you really want to
+removed it. You are now ready to continue.
 
-LALApps is rather free-form.  If you like uniformity, I recommend that you copy
-what is already there.  If you like to do your own thing, that's fine too.
-Here are the essential instructions.
 
+------------------------------------------------------------------------------
 
-1. Sources:
+4. Decide how you want install the required software
 
-   Put your sources in a subdirectory, hereafter src/myprogdir, of the src
-   subdirectory.  Sources include all your .c files and all your .h files.
-   As a general rule, bundle a bunch of programs that are related (e.g., using
-   the same source files or pertaining to the same search type) into a single
-   subdirectory.
+You have the following options for installing the required software. Choose
+the one that suits you best and then follow the relevant instructions below.
 
-   If you have created a new subdirectory within the src subdirectory, edit
-   the file src/Makefile.am to add the new directory (myprogdir) to the SUBDIRS
-   line.  Copy the file src/example/Makefile.am to src/myprogdir and edit it
-   to build the new program (see below).  Also add the new Makefile
-   (src/myprogdir/Makefile) to the AC_OUTPUT command at the end of the
-   configure.in file (in the top lalapps directory).
+ -- you have your own desktop or laptop machine without some or all 
+    of the required software		----> follow step 5.1 below
 
-   Edit the file src/myprogdir/Makefile.am so that your program is built.  The
-   program that is built should have a name like lalapps_myprog.  This is so
-   that you don't clobber another program that somewhat may have installed with
-   the same name.  Suppose your sources are myprog.c and myprog.h.  Then the
-   Makefile.am should have the line
+ -- you have a LIGOtools distribution (that you control) installed on 
+    your machine 			----> follow step 5.2 below
 
-     lalapps_myprog_SOURCES = myprog.c myprog.h
+ -- you are logged into an LSCdatagrid cluster machine and do not 
+    have root access (for example the UWM cluster or one of the LIGO
+    lab clusters)			----> follow step 5.3 below
 
-   Finally, be sure to add lalapps_myprog to the bin_PROGRAMS variable.
+ -- you are the system administrator of an LSC cluster machine or you 
+    want to install the required software as RPMs or .deb files on 
+    your machine			----> follow step 5.4 below
 
-   Note that the file src/myprogdir/Makefile.am should have a line like:
 
-     INCLUDES = -I$(top_srcdir)/src
+------------------------------------------------------------------------------
 
-   if you need to include config.h, or the lines
+5.1 Installing the required software from source
 
-     INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-     LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+Choose a directory in which to install the required software (i.e. the
+software other than LAL and LALApps). 
 
-   if you are also using the lalapps routines.
+This may be under your home directory or a system directory if you have root
+access on your machine. For example you may choose ${HOME}/opt/lscsoft or
+/opt/lscsoft
 
+In these instructions, we assume that you choose ${HOME}/opt/lscsoft 
+If you choose another location, change the apropriate lines below.
 
-2. Documentation:
+Add the following to your .profile if you use a bourne shell (e.g. bash):
+        
+  LSCSOFT_LOCATION=${HOME}/opt/lscsoft   # <- change this as appropriate
+  export LSCSOFT_LOCATION
+  if [ -f ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh ] ; then
+    . ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
+  fi
 
-   Documentation is essential if you want anyone to use your program.  The
-   documentation is located in the doc subdirectory.
-   
-   The way to document your program is to write a texfile to be included in the
-   lalapps texfile lalapps.tex.  You would write a texfile called myprog.tex.
-   It should start with:
+  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
+  export LAL_LOCATION
+  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
+    . ${LAL_LOCATION}/etc/lal-user-env.sh
+  fi
+        
+If you are using a C shell (e.g., tcsh), instead add these lines to
+your .login:
 
-     \section{Program \texttt{lalapps\_myprog}}
-     \idx[Program]{lalapps\_myprog}
+  setenv LSCSOFT_LOCATION ${HOME}/opt/lscsoft   # <- change this as appropriate
+  if ( -r ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh ) then
+    source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
+  endif
 
-   and go from there.
+  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
+  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
+    source ${LAL_LOCATION}/etc/lal-user-env.csh
+  endif
 
-   Then you need to get lalapps.tex to include it.  Down near the bottom of
-   the file lalapps.tex you should add the line
+Now log out and log back in to make sure these environment variables are set.
 
-     \include{myprog}
+To install the pre-requisite software type:
 
-   (the location is obvious).
+  cd ${LAL_LOCATION}/src/lal
+  doc/lal-preinstall.sh
 
-   Finally, edit the Makefile.am so that myprog.tex appears as one of the
-   TEXSOURCEFILES.
+This will get, build and install all the necessary software. If you want to
+know what the script doc/lal-preinstall.sh does, you may look at the LAL
+README.install file.
 
-   If you have figures, make sure that you have both a pdf and eps version.
-   If you only have an eps figure, myfig.eps, create a pdf version using the
-   command
+Make sure you have access to the software you just installed. You can either
+log out and log back in (safest) or if you run a bourne shall (e.g. bash)
+type:
 
-     epstopdf myfig
+  source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
 
-   To load the figure in the documentation, use the LaTeX command
+or if you run a C-shell (e.g. tcsh) type:
+  
+  source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
 
-     \includegraphics{myfig}
+Now build and install LAL by typing:
 
-   (note: no extension).  Also be sure that myfig.eps and myfig.pdf both appear
-   in the TEXSOURCEFILES line of Makefile.am.
+  cd ${LAL_LOCATION}/src/lal
+  ./configure --prefix=${LAL_LOCATION} --disable-mpi
+  make
+  make install
 
+Make sure you have access to the software you just installed. You can either
+log out and log back in (safest) or if you run a bourne shall (e.g. bash)
+type:
 
-3. Manual pages: (optional)
+  source ${LAL_LOCATION}/etc/lal-user-env.sh
 
-   If you want a man page installed for your program, put it in the man
-   subdirectory.  Also add it to the MANS line in the Makefile.am.
+or if you run a C-shell (e.g. tcsh) type:
+  
+  source ${LAL_LOCATION}/etc/lal-user-env.csh
 
+Now build and install LALApps by typing the following. If you want to build
+LALApps to run in the condor standard universe, and you have condor installed
+on the machine that you are building on, add --enable-condor to the configure
+options:
 
-4. Make sure it works:
+  cd ${LAL_LOCATION}/src/lalapps
+  ./configure --prefix=${LAL_LOCATION}
+  make
+  make install
 
-   Try building the program using
+You are now ready to use LALApps! Please see the LALApps README.contrib for
+help on adding code to LALApps and the LALApps README.bugs for information on
+reporting bugs.
 
-     make
 
-   the documentation using
+------------------------------------------------------------------------------
 
-     make dvi
+5.2 Installing the required software via LIGOtools. 
 
-   and installing everything using
+NOTE: THE LIGOTOOLS INSTRUCTIONS HERE DO NOT CURRENTLY WORK SINCE GSL AND
+FFTW3 ARE NOT YET IN LIGOTOOLS. AS A TEMPORARY MEASURE PLEASE USE STEP 5.1
+ABOVE. 
 
-     make install
+Make sure you remove the LIGOtools lal and lalapps as described in step 2.
 
-   then clean everything up using
+Type 
 
-     make cvs-clean
+  ligotool_list
+  
+and make sure you have the following packages installed and the listed version
+is active. You may have other packages installed as well (but NOT lal and
+lalapps) and can ignore these:
 
-   If one of these things fails, and it is because of something you did,
-   fix it before committing your changes to the cvs repository.
+LIGOTOOLS is /home/duncan/projects/ligotools
+  Package      Active     Other installed versions
+ ---------    --------   --------------------------
+  Fr           v6r15      
+  dataflow     5.5        
+  fftw         3.0.1
+  gsl          1.5
 
-   If everything works, then you can add your files to the cvs repository.  Use
-   cvs add to add each file that is needed.  Then do a cvs commit to actually
-   put them in.
+Note that pkgconfig is not required for if you are getting the required
+software from LIGOtools.
 
-   If you are really paranoid, checkout a brand new copy of lalapps from the
-   cvs repository and make sure that things work.  This will let you know if
-   you forgot to add a critical file.
+Now build LAL as follows:
+
+   cd ${LAL_LOCATION}/src/lal
+   ./configure --prefix=${LAL_LOCATION} \
+     --with-extra-cppflags="-I${LIGOTOOLS}/include" \
+     --with-extra-ldflags="-L${LIGOTOOLS}/lib" --disable-mpi
+   make
+   make install
+
+If you run a bourne shell (e.g. bash) type:
+
+   source ${LAL_LOCATION}/etc/lal-user-env.sh
+
+If you run a C-shell (e.g. tcsh) type:
+
+   source ${LAL_LOCATION}/etc/lal-user-env.csh
+
+Now build LALApps as follows. If you want to build LALApps to run in the
+condor standard universe, and you have condor installed on the machine that
+you are building on, add --enable-condor to the configure options:
+
+   cd ${LAL_LOCATION}/src/lalapps
+   ./configure --prefix=${LAL_LOCATION} \
+     --with-extra-cppflags="-I${LIGOTOOLS}/include -I{LAL_PREFIX}/include" \
+     --with-extra-ldflags="-L${LIGOTOOLS}/lib -L${LAL_PREFIX}/lib"
+   make
+   make install
+
+LALApps is now installed and ready for use. The binaries will be installed in
+the directory 
+
+   ${LAL_LOCATION}/bin
+
+which is added to your path by the lal-user-env script.
+
+Add the following to your .profile if you use a bourne shell (e.g. bash):
+        
+  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
+  export LAL_LOCATION
+  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
+    . ${LAL_LOCATION}/etc/lal-user-env.sh
+  fi
+        
+If you are using a C shell (e.g., tcsh), instead add these lines to
+your .login:
+
+  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
+  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
+    source ${LAL_LOCATION}/etc/lal-user-env.csh
+  endif
+
+
+You are now ready to use LALApps! Please see the LALApps README.contrib for
+help on adding code to LALApps and the LALApps README.bugs for information on
+reporting bugs.
+
+
+------------------------------------------------------------------------------
+
+5.3 Installing on a LSCdataGrid cluster machine
+
+
+
+
+------------------------------------------------------------------------------
+
+
+5.4 Installing the required software as RPMs or .debs from a repository
+
+WARNING: These instructions are intended to be helpful for users of RPM who
+wish to install the software required by LAL system-wide.  However, these
+instructions and the provided RPMs are not officially supported, and may not
+work on all systems.
+
+The commands listed below are appropriate for a Bourne-shell (e.g., bash);
+they will need to be modified appropriately for C-shells (e.g., tcsh).
+This is where to get sources:
+        
+        LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
+
+get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
+you can use "lynx -dump" or "wget -O-" instead of "curl"
+
+        curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
+        curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
+        curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
+        curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
+        curl $LALRPMURL/libframe-6.14-1.i386.rpm > libframe-6.14-1.i386.rpm
+        curl $LALRPMURL/libframe-devel-6.14-1.i386.rpm > libframe-devel-6.14-1.i386.rpm
+        curl $LALRPMURL/libframe-utils-6.14-1.i386.rpm > libframe-utils-6.14-1.i386.rpm
+        curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
+        curl $LALRPMURL/libmetaio-devel-5.4-3.i386.rpm > libmetaio-devel-5.4-3.i386.rpm
+
+now login as root and install the RPMs
+
+        rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
+        rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
+        rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
+        rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
+
+
+1.3 BUILDING REQUIRED SOFTWARE FROM SOURCE RPMS
+
+If you cannot use these binary RPMs and you wish to build from source RPMs,
+follow these instructions.
+
+first download the source RPMs
+
+        curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
+        curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
+        curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
+        curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
+
+now login as root and build binary RPMs from the source RPMs (this will
+take a very long time)
+
+        rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
+        rpmbuild --rebuild gsl-1.5-1.src.rpm
+        rpmbuild --rebuild libframe-6.14-1.src.rpm
+        rpmbuild --rebuild libmetaio-5.4-3.src.rpm
+
+finally install the new binary RPMs
+
+        cd /usr/src/redhat/RPMS
+        rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
+        rpm -Uvh i386/gsl-1.5-1.i386.rpm
+        rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm
+        rpm -Uvh i386/libframe-6.14-1.i386.rpm
+        rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
+        rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
+        rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
 
