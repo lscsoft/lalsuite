@@ -15,6 +15,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
+#include "GenerateBinaryMesh_v1.h"
 #ifndef NOGLOB
 #include <glob.h>
 #endif
@@ -82,22 +83,7 @@ typedef struct BinaryTemplatetag {             /* BINARY-MOD - structure to stor
 } BinaryTemplate;
 
 typedef struct BinaryTemplateBanktag {
-    REAL8          BTBfmax;
-    REAL8          BTBTspan;
-    LIGOTimeGPS    BTBTobsStart;
-    INT4           BTBNFilters;
-    REAL8          BTBMismatch;
-    REAL8          BTBProjSMaxisMIN;
-    REAL8          BTBProjSMaxisMAX;
-    LIGOTimeGPS    BTBTperiSSBMIN;
-    LIGOTimeGPS    BTBTperiSSBMAX;
-    REAL8          BTBEccMIN;
-    REAL8          BTBEccMAX;
-    REAL8          BTBArgPeriMIN;
-    REAL8          BTBArgPeriMAX;
-    REAL8          BTBPeriodMIN;
-    REAL8          BTBPeriodMAX;
-    CHAR           BTBversion[256];
+    BinaryMeshFileHeader *BMFheader;
     BinaryTemplate *BTB;       
 } BinaryTemplateBank;
 
