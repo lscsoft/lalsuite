@@ -37,12 +37,12 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALHough.h>
 #include <lal/RngMedBias.h>
+#include <lal/RunningMedian.h>
+#include <lal/Velocity.h>
+#include <lal/Statistics.h>
 
 #include "./SFTbin.h"
-#include "./Velocity.h"
 #include "./PeakSelect.h"
-#include "./Statistics.h"
-#include "./rngmed.h"
 
 /******************************************************
  *   Protection against C++ name mangling
