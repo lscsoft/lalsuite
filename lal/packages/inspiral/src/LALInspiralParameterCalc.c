@@ -164,6 +164,7 @@ LALInspiralParameterCalc (
       break;
 
       case totalMassAndEta:
+      case totalMassUAndEta:
 
          ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          ASSERT(params->eta > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);

@@ -82,7 +82,7 @@ LALInspiralSetup (
    ak->omegaS = params->OmegaS;
    ak->zeta2  = params->Zeta2; 
    ak->ieta = params->ieta;
-   ak->EulerC = 0.577;
+   ak->EulerC = 0.577216;
    ak->lambda = -(1987./3080. + 3./11. * params->OmegaS);
    ak->theta = params->Theta;
    ak->t0 = params->startTime;
@@ -401,6 +401,25 @@ LALInspiralSetup (
    ak->fPa5 = c5;
    ak->fPa6 = c6;
    ak->fPa7 = c7;
+
+
+   /* spinning case */
+   ak->thetahat = 0;   /* might need to be fixed to something different from zero ?*/
+   ak->ST[newtonian] = 1.0;
+   ak->ST[oneHalfPN] = 0.0;
+   ak->ST[onePN] = ( -(1.0/336.0) * (743.0 + 924.0*eta) );
+   ak->ST[onePointFivePN] = ( 4.0 * LAL_PI ); 
+   ak->ST[twoPN] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 );
+   ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 14532.0*eta) );
+   ak->ST[threePN] = ( (16447322263.0/139708800.0)
+		- (1712.0/105.0)* ak->EulerC 
+		- (273811877.0/1088640.0)*eta - (88.0/3.0)*ak->thetahat*eta 
+		+ (541.0/806.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
+		+ (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
+		- (856.0/105.0)*log(16.0) );                          
+   ak->ST[7] = ( -(1712.0/315.0) );     
+   ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 661775.0*eta + 599156.0*eta*eta); 
+   
 
 /*
    taylorcoeffs[0] = 1.;
