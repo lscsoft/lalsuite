@@ -150,9 +150,11 @@ static size_t window_commensurate(
 	size_t windowshift
 )
 {
+	volatile size_t windows = (psdlength - windowlength) / windowshift;
+
 	if(psdlength < windowlength)
 		return(0);
-	return(((psdlength - windowlength) / windowshift) * windowshift + windowlength);
+	return(windows * windowshift + windowlength);
 }
 
 
@@ -857,7 +859,7 @@ void parse_command_line(
 		params->tfTilingInput.maxTileBand = atof(optarg);
 		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBand);
 		if(params->tfTilingInput.maxTileBand < 0) {
-			sprintf(msg,"must be > 0(%f specified)",params->tfTilingInput.maxTileBand);
+			sprintf(msg,"must be > 0 (%f specified)",params->tfTilingInput.maxTileBand);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -887,7 +889,6 @@ void parse_command_line(
 		}
 		ADD_PROCESS_PARAM("string");
 		break;
-
 
 		/* option sets a flag */
 		case 0:
