@@ -241,7 +241,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* structures for CC spectrum and CC statistics */
 	StochasticCrossCorrelationInput ccIn;
-	BOOLEAN epochsMatch;
+	BOOLEAN epochsMatch = 1;
 	REAL4WithUnits ccStat;
 	COMPLEX8FrequencySeries ccSpectrum;
 

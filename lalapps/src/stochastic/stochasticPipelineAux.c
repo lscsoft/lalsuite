@@ -205,8 +205,8 @@ void monteCarlo(LALStatus *status,
 	UINT8 startTime;
 	UINT8 calTime;
 	UINT4 length;
-	UINT4 lengthSegment;
-	UINT4 numSegment;
+	INT4 lengthSegment;
+	INT4 numSegment;
 	UINT4 calibOffset;
 	UINT4 freqLength;
 	REAL8 deltaF;
@@ -426,10 +426,10 @@ void monteCarloSplice(LALStatus *status,
 	UINT8 startTime;
 	UINT8 calTime;
 	UINT4 length;
-	UINT4 lengthSegment;
-	UINT4 numSegment;
-	UINT4 numSegmentSplice;
-	UINT4 numSegmentTot;
+	INT4 lengthSegment;
+	INT4 numSegment;
+	INT4 numSegmentSplice;
+	INT4 numSegmentTot;
 	UINT4 calibOffset;
 	UINT4 spliceOffset;
 	UINT4 freqLength;
@@ -706,15 +706,15 @@ void SinusoidalSplice(REAL4Vector **longData,
 		REAL4Vector **shortData,
 		REAL4Vector *output,
 		UINT4 nSpliceSegs,
-		UINT4 offset)
+		INT4 offset)
 {
 	/* counters */
 	INT4 i, j;
 	
 	UINT4 segLen;
-	UINT4 nOutputPts;
+	INT4 nOutputPts;
 	UINT4 nSplicePts;
-	UINT4 lastSpliceIndexPlusOne;
+	INT4 lastSpliceIndexPlusOne;
 	UINT4 leftOverlap;
 	UINT4 rightOverlap;
 	UINT4 iMod;

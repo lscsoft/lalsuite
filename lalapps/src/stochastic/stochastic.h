@@ -71,7 +71,7 @@ void monteCarlo (LALStatus *status, SSSimStochBGOutput *MCoutput,
 void monteCarloSplice (LALStatus *status, SSSimStochBGOutput *MCoutput,
 		MonteCarloInput  *MCinput, MonteCarloParams *MCparams);
 void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData,
-		REAL4Vector *output, UINT4 nSpliceSegs, UINT4 offset);
+		REAL4Vector *output, UINT4 nSpliceSegs, INT4 offset);
 
 #ifdef  __cplusplus
 }
