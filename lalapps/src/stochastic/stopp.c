@@ -50,6 +50,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* combined statistics variables */
   REAL8 numerator = 0;
+  REAL8 denominator = 0;
   REAL8 yOpt = 0;
   REAL8 sigmaOpt = 0;
 
@@ -192,9 +193,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     numerator += thisStoch->cc_stat / (thisStoch->cc_sigma * \
         thisStoch->cc_sigma);
-    sigmaOpt += thisStoch->cc_sigma * thisStoch->cc_sigma;
+    denominator += thisStoch->cc_sigma * thisStoch->cc_sigma;
   }
-  yOpt = numerator / sigmaOpt;
+  yOpt = numerator / denominator;
+  sigmaOpt = 1/denominator;
 
   /* print results */
   fprintf(stdout, "    yOpt = %e\n", yOpt);
