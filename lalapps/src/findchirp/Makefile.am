@@ -2,7 +2,8 @@
 # $Id$
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_ivana lalapps_inspmultiawg \
-                    lalapps_chirplen 
+                    lalapps_chirplen lalapps_BankNumberOfTemplates \
+		    lalapps_BankEfficiency 
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -27,6 +28,7 @@ lalapps_inspmultiawg_SOURCES 		= inspmultiawg.c
 lalapps_chirplen_SOURCES 		= chirplen.c
 lalapps_BankEfficiency_SOURCES		= BankEfficiency.c
 endif
+
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
