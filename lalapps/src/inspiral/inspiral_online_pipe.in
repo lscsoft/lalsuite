@@ -145,6 +145,10 @@ if usertag:
   insp_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
 
+# set up inca for single ifo mode
+inca_job.add_opt('single-ifo',' ')
+inca_job.add_opt('all-data',' ')
+
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
 n = int(cp.get('data', 'segment-length'))
@@ -215,11 +219,9 @@ for seg in data:
 
 # use inca to concatenate all the inspiral files
 inca = inspiral.IncaNode(inca_job)
-inca.add_opt('single-ifo')
 inca.add_var_opt('ifo-a',ifo)
 inca.add_var_opt('gps-start-time',dag_start_time)
 inca.add_var_opt('gps-end-time',dag_end_time)
-inca.add_opt('all-data')
 for insp in insp_nodes:
   inca.add_var_arg(insp.get_output())
 dag.add_node(inca)
