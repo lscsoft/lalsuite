@@ -123,7 +123,6 @@ INT4	nDeltaF;	/* number of frequency bins per SFT band */
 INT4	sftIndex;	/* more temp variables */
 REAL8	y;		/* local variable for holding y */
 REAL8	realQ, imagQ;  /* real and imaginary parts of Q, see CVS */
-INT4	spdi;
 INT4 	iCoh;
 
 INITSTATUS(stat, "LALDemod", LALDEMODC);
