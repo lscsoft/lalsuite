@@ -247,15 +247,17 @@ NRCSID( SIMULATECOHERENTGWH, "$Id$" );
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define SIMULATECOHERENTGWH_ENUL 1
-#define SIMULATECOHERENTGWH_EBAD 2
-#define SIMULATECOHERENTGWH_ESIG 3
-#define SIMULATECOHERENTGWH_EDIM 4
+#define SIMULATECOHERENTGWH_ENUL  1
+#define SIMULATECOHERENTGWH_EBAD  2
+#define SIMULATECOHERENTGWH_ESIG  3
+#define SIMULATECOHERENTGWH_EDIM  4
+#define SIMULATECOHERENTGWH_EUNIT 5
 
-#define SIMULATECOHERENTGWH_MSGENUL "Unexpected null pointer in arguments"
-#define SIMULATECOHERENTGWH_MSGEBAD "A sampling interval is (effectively) zero"
-#define SIMULATECOHERENTGWH_MSGESIG "Input signal must specify amplitude and phase functions"
-#define SIMULATECOHERENTGWH_MSGEDIM "Amplitude must be a 2-dimensional vector"
+#define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
+#define SIMULATECOHERENTGWH_MSGEBAD  "A sampling interval is (effectively) zero"
+#define SIMULATECOHERENTGWH_MSGESIG  "Input signal must specify amplitude and phase functions"
+#define SIMULATECOHERENTGWH_MSGEDIM  "Amplitude must be a 2-dimensional vector"
+#define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}

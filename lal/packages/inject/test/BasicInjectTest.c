@@ -141,6 +141,7 @@ LALNormalDeviates()
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
+#include <lal/Units.h>
 #include <lal/Random.h>
 #include <lal/VectorOps.h>
 #include <lal/Inject.h>
@@ -388,6 +389,18 @@ main(int argc, char **argv)
   detector.site = NULL;
   SUB( LALCreateRandomParams( &stat, &params, seed ), &stat );
 
+  /* Set up units. */
+  {
+    RAT4 negOne = { -1, 0 };
+    LALUnitPair pair;
+    output.sampleUnits = pair.unitOne = lalADCCountUnit;
+    pair.unitTwo = lalStrainUnit;
+    SUB( LALUnitRaise( &stat, &(pair.unitTwo), &(pair.unitTwo),
+		       &negOne ), &stat );
+    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
+			  &pair ), &stat );
+  }
+
   /* Read response function. */
   if ( respfile ) {
     REAL4VectorSequence *resp = NULL; /* response as vector sequence */
@@ -564,12 +577,13 @@ main(int argc, char **argv)
       /* Generate waveform. */
       SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
 	   &stat );
-      sprintf( message, "%d: %s", ppnParams.termCode,
-	       ppnParams.termDescription );
+      LALSnprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
+		   ppnParams.termDescription );
       INFO( message );
       if ( ppnParams.dfdt > 2.0 ) {
-	sprintf( message, "Waveform sampling interval is too large:\n"
-		 "\tmaximum df*dt = %f", ppnParams.dfdt );
+	LALSnprintf( message, MSGLEN,
+		     "Waveform sampling interval is too large:\n"
+		     "\tmaximum df*dt = %f", ppnParams.dfdt );
 	WARNING( message );
       }
 

@@ -170,6 +170,7 @@ Under development.  At present it doesn't do anything; it just exits.
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
+#include <lal/Units.h>
 #include <lal/Sort.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
@@ -414,6 +415,17 @@ main(int argc, char **argv)
   }
   detector.transfer->data = NULL;
 
+  /* Set up units. */
+  {
+    RAT4 negOne = { -1, 0 };
+    LALUnitPair pair;
+    output.sampleUnits = pair.unitOne = lalADCCountUnit;
+    pair.unitTwo = lalStrainUnit;
+    SUB( LALUnitRaise( &stat, &(pair.unitTwo), &(pair.unitTwo),
+		       &negOne ), &stat );
+    SUB( LALUnitMultiply( &stat, &(detector.transfer->sampleUnits),
+			  &pair ), &stat );
+  }
 
   /* Read infile and store the data in structures. */
   if ( infile ) {
@@ -484,7 +496,7 @@ main(int argc, char **argv)
       SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
       I8ToLIGOTimeGPS( &(output.epoch), tStart[id[0]] );
       output.deltaT = deltaT[id[0]];
-      sprintf( outname, "%s.sim", fname );
+      LALSnprintf( outname, NAMELENGTH, "%s.sim", fname );
     }
   }
 
@@ -567,7 +579,7 @@ main(int argc, char **argv)
     I8ToLIGOTimeGPS( &(output.epoch), *tStart );
     output.deltaT = DELTAT;
     if ( outfile )
-      sprintf( outname, "%s", outfile );
+      LALSnprintf( outname, NAMELENGTH, "%s", outfile );
     else
       outname[0] = '\0';
   }
@@ -772,7 +784,7 @@ main(int argc, char **argv)
 	SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
 	I8ToLIGOTimeGPS( &(output.epoch), tStart[id[nOut]] );
 	output.deltaT = deltaT[id[nOut]];
-	sprintf( outname, "%s.sim", fname );
+	LALSnprintf( outname, NAMELENGTH, "%s.sim", fname );
       }
     }
 

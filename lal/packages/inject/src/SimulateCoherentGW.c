@@ -132,6 +132,7 @@ LALWarning()
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
+#include <lal/Units.h>
 #include <lal/TimeDelay.h>
 #include <lal/VectorOps.h>
 #include <lal/SimulateCoherentGW.h>
@@ -293,6 +294,35 @@ LALSimulateCoherentGW( LALStatus        *stat,
   fFac = 1.0 / detector->transfer->deltaF;
   phiFac = fFac / ( LAL_TWOPI*signal->phi->deltaT );
   f0 = detector->transfer->f0/detector->transfer->deltaF;
+
+  /* Check units on input, and set units on output. */
+  {
+    BOOLEAN unitsOK;
+    LALUnitPair pair;
+
+    pair.unitOne = signal->f->sampleUnits;
+    pair.unitTwo = lalHertzUnit;
+    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
+    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
+	    SIMULATECOHERENTGWH_MSGEUNIT );
+    pair.unitOne = signal->phi->sampleUnits;
+    pair.unitTwo = lalDimensionlessUnit;
+    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
+    ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
+	    SIMULATECOHERENTGWH_MSGEUNIT );
+    if( signal->shift ) {
+      pair.unitOne = signal->shift->sampleUnits;
+      TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
+      ASSERT( unitsOK, stat, SIMULATECOHERENTGWH_EUNIT,
+	      SIMULATECOHERENTGWH_MSGEUNIT );
+    }
+    pair.unitOne = signal->a->sampleUnits;
+    pair.unitTwo = detector->transfer->sampleUnits;
+    TRY( LALUnitMultiply( stat->statusPtr, &(output->sampleUnits),
+			  &pair ), stat );
+    LALSnprintf( output->name, LALNameLength, "response to %s",
+		 signal->a->name );
+  }
 
   /* Define temporary variables to access the data of signal->a,
      signal->f, and signal->phi, as well as detector->transfer. */

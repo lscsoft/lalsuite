@@ -222,6 +222,7 @@ LALWarning()
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/Units.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
 #include <lal/SimulateCoherentGW.h>
@@ -284,7 +285,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
   REAL4 *c;   /* PN coefficients of frequency series */
   BOOLEAN *b; /* whether to include each PN term */
 
-  INITSTATUS( stat, "Frequency", GENERATEPPNINSPIRALC );
+  INITSTATUS( stat, "FreqDiff", GENERATEPPNINSPIRALC );
   ASSERT( p, stat, 1, "Null pointer" );
 
   c = ( (FreqDiffParamStruc *)p )->c;
@@ -785,6 +786,12 @@ LALGeneratePPNInspiral( LALStatus     *stat,
     = params->epoch;
   output->a->deltaT = output->f->deltaT = output->phi->deltaT
     = params->deltaT;
+  output->a->sampleUnits = lalStrainUnit;
+  output->f->sampleUnits = lalHertzUnit;
+  output->phi->sampleUnits = lalDimensionlessUnit;
+  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral amplitudes" );
+  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral frequency" );
+  LALSnprintf( output->a->name, LALNameLength, "PPN inspiral phase" );
   a = output->a->data->data;
   f = output->f->data->data;
   phi = output->phi->data->data;

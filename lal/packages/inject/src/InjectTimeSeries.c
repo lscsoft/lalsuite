@@ -74,6 +74,7 @@ LALUniformDeviate()
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
+#include <lal/Units.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
 
@@ -113,6 +114,24 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
   ASSERT( signal->deltaT != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
   dt = output->deltaT / signal->deltaT;
   ASSERT( dt != 0.0, stat, INJECTH_EBAD, INJECTH_MSGEBAD );
+
+  /* Check dimensions. */
+  {
+    CHAR newName[LALNameLength];
+    BOOLEAN unitsOK;
+    LALUnitPair pair;
+
+    pair.unitOne = signal->sampleUnits;
+    pair.unitTwo = lalADCCountUnit;
+    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
+    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    pair.unitOne = output->sampleUnits;
+    TRY( LALUnitCompare( stat->statusPtr, &unitsOK, &pair ), stat );
+    ASSERT( unitsOK, stat, INJECTH_EUNIT, INJECTH_MSGEUNIT );
+    LALSnprintf( newName, LALNameLength, "%s plus %s", output->name,
+		 signal->name );
+    memcpy( output->name, newName, LALNameLength*sizeof(CHAR) );
+  }
 
   /* If params = NULL, generate an internal set of parameters. */
   if ( !params )

@@ -74,11 +74,13 @@ NRCSID( INJECTH, "$Id$" );
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define INJECTH_ENUL 1
-#define INJECTH_EBAD 2
+#define INJECTH_ENUL  1
+#define INJECTH_EBAD  2
+#define INJECTH_EUNIT 3
 
-#define INJECTH_MSGENUL "Unexpected null pointer in arguments"
-#define INJECTH_MSGEBAD "A sampling interval is (effectively) zero"
+#define INJECTH_MSGENUL  "Unexpected null pointer in arguments"
+#define INJECTH_MSGEBAD  "A sampling interval is (effectively) zero"
+#define INJECTH_MSGEUNIT "Input or output is not in units of ADC counts"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
