@@ -146,8 +146,8 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),min_length,0,1)
 
 # create the chunks from the science segments
-data.make_chunks(max_length,0,0)
-data.make_short_chunks_from_unused(min_length,0,0)
+data.make_chunks(max_length)
+data.make_short_chunks_from_unused(min_length)
 
 # get the ifos
 ifo1 = cp.get('interferometers','ifo1')
