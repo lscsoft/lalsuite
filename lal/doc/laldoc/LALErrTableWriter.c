@@ -176,7 +176,7 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     sscanf(position,"%s",errStr);
 
     /* Read the Error Number, ... */
-    if ( isdigit( errStr[0] ) ) {      
+    if ( isdigit( (int) errStr[0] ) ) {      
          sscanf(position,"%s",errNum);
          *errStr = '\0' ;
     }
