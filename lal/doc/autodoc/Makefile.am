@@ -9,8 +9,9 @@ dvi-local:
 	@LATEX@ lalspec.tex
 	@LATEX@ lalspec.tex
 	@LATEX@ lalspec.tex
-	mv lalspec.* ..
 	rm -f ligodcc.cls
+	rm -f lalspec.tex
+	mv lalspec.* ..
 	cp $(srcdir)/../lsd.* .
 	rm -f lsdFig*
 	@LN_S@ `pwd`/$(srcdir)/../lsdFig* .
