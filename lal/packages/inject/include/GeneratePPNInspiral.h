@@ -368,6 +368,15 @@ LALGetInspiralParams( LALStatus                  *,
 		      RandomParams               *params );
 
 /* <lalLaTeX>
+\newpage\input{GenerateInspiralSmoothC}
+</lalLaTeX> */
+void
+LALGenerateInspiralSmooth( LALStatus            *,
+		      	   CoherentGW		**output,
+			   PPNParamStruc	*params,		   
+			   REAL4		*qfactor);
+
+/* <lalLaTeX>
 \newpage\input{GeneratePPNInspiralTestC}
 </lalLaTeX> */
 
