@@ -17,7 +17,7 @@ RCSID("$Id$");
 #define USAGE \
 "Usage: %s --input infile [--inject injectfile] --outfile outfile\n" \
 "[--snrstar snrstar] [--sort] [--noplayground] [--deltat dt]\n" \
-"[--help]  [--cluster clust]  [--clusterchoice choicenumber]\n" \
+"[--help]  [--cluster clust]  [--clusteralgorithm clusterchoice]\n" \
 "[--missedinjections missedfile]\n"
 
 #define INSPINJFIND_EARG   1
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     BOOLEAN                  playground=TRUE;
     INT4                     sort=FALSE;
     INT4                     cluster=FALSE;
-    INT4		     clusterchoice=0;
+    Clusterchoice	     clusterchoice;
     INT4		     saveMissedInjections=FALSE;
     INT4		     coincidence = FALSE;
 	
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	    {"deltat",		required_argument,  0,  'g'},
 	    {"help",		no_argument,	    0,	'h'},    
 	    {"cluster",		required_argument,  0,	'j'},
-	    {"clusterchoice",	required_argument,  0,	'k'},
+	    {"clusteralgorithm",required_argument,  0,	'k'},
 	    {"missedinjections",required_argument,  0,	'l'},
 	    {0, 0, 0, 0}
 	};
@@ -263,9 +263,24 @@ int main(int argc, char **argv)
 	case 'k':
 	    /* choose the clustering algorithm, default is 0
  	     * options are detailed in event_utils.c */
- 	    {
- 		clusterchoice = atoi( optarg );
- 	    }
+ 	    {	
+	    if ( ! strcmp( "snr_and_chisq", optarg ) )
+	        {
+		    clusterchoice = snr_and_chisq;
+		}
+		else if ( ! strcmp( "snrsq_over_chisq", optarg) )
+		{
+		    clusterchoice = snrsq_over_chisq;
+		}	    
+		else
+		{
+		    fprintf( stderr, "invalid argument to  --%s:\n"
+			"unknown clustering specified:\n "
+			"%s (must be one of: snr_and_chisq, snrsq_over_chisq)\n",
+			long_options[option_index].name, optarg);
+		    exit( 1 );
+		}
+	    }
  	    break;
  
 	case 'l':

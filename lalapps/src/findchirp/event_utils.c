@@ -1280,7 +1280,7 @@ LALClusterSnglInspiralTable (
 	      LALStatus         *status,
               SnglInspiralTable *inspiralEvent,
               INT4              dtime,
-	      INT4		clusterchoice
+	      Clusterchoice	clusterchoice
 	      )
 {
   SnglInspiralTable     *thisEvent=NULL,*prevEvent=NULL;
@@ -1312,10 +1312,10 @@ LALClusterSnglInspiralTable (
       /* find events within the cluster window */
       if ( (currTime - prevTime) < 1000000LL * dtime){
           /* displace previous event in cluster ...... */
-          if( 	((clusterchoice == 0) && 
+          if( 	((clusterchoice == snr_and_chisq) && 
 		    (thisEvent->snr > prevEvent->snr) && 
 		    (thisEvent->chisq < prevEvent->chisq)) ||
-		((clusterchoice == 1) &&
+		((clusterchoice == snrsq_over_chisq) &&
 		    (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
 		    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)) )
 	  {

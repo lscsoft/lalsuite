@@ -16,7 +16,7 @@ RCSID("$Id$");
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --table tablename --outfile filename \
     [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] \
-    [--clusterchoice choicenumber] [--help]\n"
+    [--clusteralgorithm clusterchoice] [--help]\n"
 
 #define SNGLINSPIRALREADER_EARG   1
 #define SNGLINSPIRALREADER_EROW   2
@@ -82,9 +82,9 @@ int main(int argc, char **argv)
     INT4                     fileCounter=0;
     BOOLEAN                  playground=TRUE;
     INT4                     sort=FALSE;
-    INT4                     cluster=FALSE;
-    INT4		     clusterchoice = 0;
-
+    INT4                     cluster=FALSE;   
+    Clusterchoice	     clusterchoice;
+	
     REAL4                    snrstar=0.0;
     INT4                     dtime=0;
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	    {"outfile",		required_argument,  0,	'c'},
 	    {"snrstar",		required_argument,  0,	'd'},
 	    {"cluster",		required_argument,  0,	'e'},
-	    {"clusterchoice",	required_argument,  0,	'f'},
+	    {"clusteralgorithm",required_argument,  0,	'f'},
 	    {"noplayground",	required_argument,  0,	'g'},
 	    {"help",		no_argument,	    0,	'h'}, 
 	    {"sort",		no_argument,	    0,	'i'},
@@ -198,7 +198,22 @@ int main(int argc, char **argv)
 	    /* choose the clustering algorithm, default is 0
 	     * options are detailed in event_utils.c */
 	    {
-		clusterchoice = atoi( optarg );
+		if ( ! strcmp( "snr_and_chisq", optarg ) )
+	        {
+		    clusterchoice = snr_and_chisq;
+		}
+		else if ( ! strcmp( "snrsq_over_chisq", optarg) )
+		{
+		    clusterchoice = snrsq_over_chisq;
+		}	    
+		else
+		{
+		    fprintf( stderr, "invalid argument to  --%s:\n"
+			"unknown clustering specified:\n "
+			"%s (must be one of: snr_and_chisq, snrsq_over_chisq)\n",
+			long_options[option_index].name, optarg);
+		    exit( 1 );
+		}
 	    }
 	    break;
    

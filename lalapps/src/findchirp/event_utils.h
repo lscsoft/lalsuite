@@ -184,6 +184,7 @@ int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
         snglIFO *ifo, int numIFO, int injectflag, double dummyStart, float delm,
         float distance, float coincidence_window);
 
+typedef enum { snr_and_chisq, snrsq_over_chisq } Clusterchoice;
 
 void
 buildSnglInspiralIndex(
@@ -205,7 +206,7 @@ LALClusterSnglInspiralTable (
 	      LALStatus         *status,
               SnglInspiralTable *inspiralEvent,
               INT4              dtime,
-	      INT4		clusterchoice
+	      Clusterchoice	clusterchoice
 	      );
 
 void readInspiralTriggers( 
