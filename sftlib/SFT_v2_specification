@@ -76,13 +76,16 @@ ______________________________________
 ______________________________________
 
 
-The SFT blocks in a given SFT file are required to have:
+The SFT blocks in a given SFT file are required to:
+(0) come from the same instrument, and have:
 (1) identical version numbers
 (2) monotonically increasing GPS times
 (3) identical values of tbase
 (4) identical values of first_frequency_index
 (5) identical values of nsamples
-(6) come from the same instrument and instrument channel
+NOTE: SFT blocks in a given SFT file are in general NOT contiguous.
+In other words the GPS start time of a given block may or may not
+equal the GPS start time of the previous block plus the time baseline.
 
 
 Note that this HEADER corresponds to the C structure below
@@ -146,6 +149,7 @@ gps_nsec: GPS nanoseconds of the first sample used to make this SFT.  This
           must lie in the range from 0 to 10^9-1 inclusive.
  
 tbase:    The time length in seconds of the data set used to make this SFT.
+          This must be greater than zero.
 
     Note that if the sample interval is dt, and the number of
     time-domain samples is S, then tbase=S dt.  Note that if the data

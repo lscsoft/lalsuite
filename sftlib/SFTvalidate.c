@@ -15,20 +15,20 @@ int main(int argc, char** argv) {
 
     /* open the file */
     if (!(fp=fopen(argv[i], "r"))) {
-      fprintf(stderr,"Unable to open %s ", argv[i]);
+      fprintf(stderr,"Unable to open %s", argv[i]);
       if (errno)
-	perror(NULL);
+	perror(" ");
       return SFTENULLFP;
     }
 
     /* and read successive SFTs blocks from the file and validate CRC
        checksums */
     for (count=0; 1; count++) {
-      struct headertag2 info;
+      struct headertag2 info,lastinfo;
       int err=0, swapendian, move;
       
       err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
-      
+
       /* at end of SFT file or merged SFT file blocks */
       if (err==SFTENONE && count)
 	break;
@@ -40,6 +40,13 @@ int main(int argc, char** argv) {
 	  perror(NULL);
 	return err;
       }
+
+      /* check that various bits of header information are consistent */
+      if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
+	return err;
+ 
+      /* keep copy of header for comparison the next time */
+      lastinfo=info;
       
       /* Move forward to next SFT in merged file */
       if (info.version==1)

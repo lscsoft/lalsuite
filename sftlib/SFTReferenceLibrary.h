@@ -64,23 +64,39 @@ int ReadSFTData(FILE              *fp,       /* data file.  Position unchanged o
 		struct headertag2 *info      /* if non-NULL, will contain header information */
 		);
 
+/* This routine returns zero if the two headers contain consistent
+   information, else an error code if they are not consistent */
+int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlier header */
+			      struct headertag2 *headertwo  /* pointer to later header */
+			      );
+
 /* various possible error codes.  See SFTErrorMessage() for decodings */
-#define SFTENULLFP            1
-#define SFTESEEK              2
-#define SFTEGETSTREAMPOS      3
-#define SFTERESTORESTREAMPOS  4
-#define SFTEREAD              5
-#define SFTEUNKNOWN           6
-#define SFTEGPSNSEC           7
-#define SFTEBADCOMMENT        8
-#define SFTEBADCRC64          9
-#define SFTENOMEM            10
-#define SFTESIZEWRONG        11
-#define SFTEWRITE            12
-#define SFTENULLPOINTER      13
-#define SFTENONE             14
-#define SFTEHIDDENCOMMENT    15
-#define SFTENONULLINCOMMENT  16
+#define SFTNOERROR              0  /* MUST BE ZERO, MEANS NO ERROR */
+#define SFTENULLFP              1
+#define SFTESEEK                2
+#define SFTEGETSTREAMPOS        3
+#define SFTERESTORESTREAMPOS    4
+#define SFTEREAD                5
+#define SFTEUNKNOWN             6
+#define SFTEGPSNSEC             7
+#define SFTEBADCOMMENT          8
+#define SFTEBADCRC64            9
+#define SFTENOMEM              10
+#define SFTESIZEWRONG          11
+#define SFTEWRITE              12
+#define SFTENULLPOINTER        13
+#define SFTENONE               14
+#define SFTEHIDDENCOMMENT      15
+#define SFTENONULLINCOMMENT    16
+#define SFTEGPSNOTINCREASING   17
+#define SFTETBASECHANGES       18
+#define SFTEFIRSTINDEXCHANGES  19
+#define SFTENSAMPLESCHANGES    20
+#define SFTEINSTRUMENTCHANGES  21
+#define SFTEVERSIONCHANGES     22
+#define SFTETBASENOTPOS        23
+#define SFTEFIRSTINDEXNEG      24
+#define SFTENSAMPLESNOTPOS     25
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */

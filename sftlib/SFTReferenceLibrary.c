@@ -121,7 +121,7 @@ int validate_sizes() {
       )
     return SFTESIZEWRONG;
   
-  return 0;
+  return SFTNOERROR;
 }
 
 
@@ -164,11 +164,27 @@ const char *SFTErrorMessage(int errorcode) {
     return "SFT comment contains data AFTER null character";
   case SFTENONULLINCOMMENT:
     return "SFT comment field is not null-terminated";
+  case SFTEGPSNOTINCREASING:
+    return "SFT GPS times not increasing between SFT blocks";
+  case SFTETBASECHANGES:
+    return "SFT time base changes between SFT blocks";
+  case SFTEFIRSTINDEXCHANGES:
+    return "SFT first frequency index changes between SFT blocks";
+  case SFTENSAMPLESCHANGES:
+    return "SFT number of data samples changes between SFT blocks";
+  case SFTEINSTRUMENTCHANGES:
+    return "SFT instrument changes between SFT blocks";
+  case SFTEVERSIONCHANGES:
+    return "SFT version changes between SFT blocks";
+  case SFTETBASENOTPOS:
+    return "SFT time base is not positive";
+  case SFTEFIRSTINDEXNEG:
+    return "SFT first frequency index is negative";
+  case SFTENSAMPLESNOTPOS:
+    return "SFT number of data samples is not positive";
   }
-  return "SFT Error code not recognized";
+  return "SFT Error Code not recognized";
 }
-
-
 
 /* return values: see header file
    On return, this routine leaves the file pointer at the end of the SFT
@@ -197,6 +213,17 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   /* check that nsec times are sensible */
   if (gps_nsec < 0 || gps_nsec > 999999999)
     return SFTEGPSNSEC;
+
+  /* check that tbase is positive */
+  if (tbase<=0.0)
+    return SFTETBASENOTPOS;
+
+  /* check that first frequency index is non-negative */
+  if (firstfreqindex<0)
+    return SFTEFIRSTINDEXNEG;
+
+  if (nsamples<=0)
+    return SFTENSAMPLESNOTPOS;
 
   /* comment length including null terminator to string must be an
      integer multiple of eight bytes. comment==NULL means 'no
@@ -252,7 +279,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   if (nsamples != fwrite((const void *)data, 2*sizeof(float), nsamples, fp))
     return SFTEWRITE;
   
-  return 0;
+  return SFTNOERROR;
 }
 
 /* On return this routine leaves the stream in the same
@@ -328,17 +355,14 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     goto error;
   }
   
-  if (header.gps_nsec < 0 || header.gps_nsec > 999999999) {
-    retval=SFTEGPSNSEC;
-    goto error;
-  }
-  
   if (header.comment_length % 8) {
     retval=SFTEBADCOMMENT;
     goto error;
   }
   
-  /* validate crc64 checksum ?? */
+  /* validate crc64 checksum ??  Do this BEFORE other checks since if
+     a problem occurs it is more likely file corruption than a bad
+     SFT */
   if (version !=1 && validate) {
     unsigned long long crc;
     unsigned long long crc64save=header.crc64;
@@ -405,6 +429,26 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     }
   }
 
+  if (header.gps_nsec < 0 || header.gps_nsec > 999999999) {
+    retval=SFTEGPSNSEC;
+    goto error;
+  }
+  
+  if (header.tbase<=0.0) {
+    retval=SFTETBASENOTPOS;
+    goto error;
+  }
+
+  if (header.firstfreqindex<0){
+    retval=SFTEFIRSTINDEXNEG;
+    goto error;
+  }
+
+  if (header.nsamples<=0){
+    retval=SFTENSAMPLESNOTPOS;
+    goto error;
+  }
+
   /* if user has asked for comment, store it */
   if (comment && header.comment_length) {
     int i;
@@ -465,7 +509,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   info->crc64          = header.crc64;
   info->padding        = header.padding;
   info->comment_length = header.comment_length;
-  return 0;
+  return SFTNOERROR;
 }
 
 
@@ -538,3 +582,39 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
   
   return retval;
 }
+
+/* This routine returns zero if the two headers contain consistent
+   information, else an error code if they are not consistent */
+int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlier header */
+			      struct headertag2 *headertwo  /* pointer to later header */
+			      ) {
+  /* check for null pointer */
+  if (!headerone || !headertwo)
+    return SFTENULLPOINTER;
+  
+  /* Same version number */
+  if (headerone->version != headertwo->version)
+    return SFTEVERSIONCHANGES;
+
+  /* GPS times increasing */
+  if (headerone->gps_sec >headertwo->gps_sec || (headerone->gps_sec==headertwo->gps_sec && headerone->gps_nsec>=headertwo->gps_nsec))
+    return SFTEGPSNOTINCREASING;
+  
+  /* Time base the same */
+  if (headerone->tbase != headertwo->tbase)
+    return SFTETBASECHANGES;
+  
+  /* First frequency index the same */
+  if (headerone->firstfreqindex != headertwo->firstfreqindex)
+    return SFTEFIRSTINDEXCHANGES;
+  
+  /* Number of samples the same */
+  if (headerone->nsamples != headertwo->nsamples)
+    return SFTENSAMPLESCHANGES;
+  
+  /* REINHARD, PLEASE ADD IN A COMPARISON BLOCK THAT RETURNS
+     SFTEWRONGINSTRUMENT IF NEEDED */
+  return SFTNOERROR;
+}
+
+
