@@ -461,7 +461,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
 	  (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
 	  (*thisEvent)->duration     = duration;
-	  (*thisEvent)->central_freq = (strtemplate[m].f-CLA.flow)/2.0;	   
+	  (*thisEvent)->central_freq = (strtemplate[m].f+CLA.flow)/2.0;	   
 	  (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
