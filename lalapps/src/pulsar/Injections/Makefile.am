@@ -6,7 +6,9 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefakedatabinary makefakedata_test s3inject
+bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefakedatabinary makefakedata_test
+
+EXTRA_PROGRAMS = s3inject
 
 lalapps_Makefakedata_SOURCES = makefakedata_v4.c	
 

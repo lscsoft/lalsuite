@@ -7,7 +7,6 @@
 #define _GNU_SOURCE
 
 #include <stdio.h>
-#include <stdio_ext.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,8 +34,8 @@ int npulsars=0;
 float data[BLOCKSIZE];
 float total[BLOCKSIZE];
 float testval=1234.5;
-char *directory=".";
-char *gpsflag="G";
+char *directory;
+char *gpsflag;
 char *channel=NULL; 
 int  gpstime=0;
 char *programname;
@@ -77,7 +76,10 @@ int tfiducial=751680013;
 FILE *fp[MAXPULSARS];
 
 /* forward declaration */
-void syserror(int showerrno, char *fmt, ...);
+void syserror(int showerrno, const char *fmt, ...);
+void sighandler(int sig);
+void usage(FILE *filep);
+int parseinput(int argc, char **argv);
 
 /* signal handler to monitor the status of children catch SIGCHLD */
 void sighandler(int sig){
@@ -124,7 +126,7 @@ void sighandler(int sig){
 }
 
 /* Like perror() but takes variable numbers of arguments and includes program name */
-void syserror(int showerrno, char *fmt, ...){
+void syserror(int showerrno, const char *fmt, ...){
   char *thiserror=NULL;
   pid_t pid=getpid();
   time_t t=time(NULL);
@@ -143,8 +145,8 @@ void syserror(int showerrno, char *fmt, ...){
 }
 
 /* usage message */
-void usage(FILE *fp){    
-  fprintf(fp, 
+void usage(FILE *filep){    
+  fprintf(filep, 
 	  "Options are:\n"
 	  "-h            THIS help message\n"
 	  "-n INT        Number of pulsars to simulate: 0, 1, 2, ..., %d\n"
@@ -176,6 +178,10 @@ int parseinput(int argc, char **argv){
   const char *optionlist="hL:M:H:n:d:e:DG:c:TXsp";
   opterr=0;
   
+  /* set some defaults */
+  directory = strdup(".");
+  gpsflag = strdup("G");
+
   programname=argv[0];
 
   while (-1 != (c = getopt(argc, argv, optionlist))) {
@@ -221,6 +227,7 @@ int parseinput(int argc, char **argv){
       break;
     case 'd':
       /* directory path */
+      if (directory) free(directory);
       if (!(directory=strdup(optarg))){
 	syserror(1, "Out of memory to duplicate -d directory path %s\n", optarg);
 	exit(1);
@@ -253,6 +260,7 @@ int parseinput(int argc, char **argv){
       break;
     case 'c':
       /* flag to use for GPS time */
+      if (gpsflag) free(gpsflag);
       if (!(gpsflag=strdup(optarg))){
 	syserror(1, "Out of memory to duplicate -c STRING %s\n", optarg);
 	exit(1);
