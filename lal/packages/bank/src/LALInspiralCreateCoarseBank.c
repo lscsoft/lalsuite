@@ -181,6 +181,8 @@ LALInspiralValidTemplate()
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
 static void
 GetInspiralMoments (
@@ -473,7 +475,7 @@ GetInspiralMoments (
    CHECKSTATUSPTR(status);
    in.norm = moments->j[7];
 
-   if (lalDebugLevel & LALINFO)
+   if (lalDebugLevel && LALINFO)
    {
 	   fprintf (stderr, "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e \n", 
 			   moments->a01, moments->a21, moments->a22, moments->a31, 
@@ -496,4 +498,62 @@ GetInspiralMoments (
   
    DETATCHSTATUSPTR(status);
    RETURN (status);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void 
+LALInspiralCreateFlatBank(
+		LALStatus            *status, 
+		REAL4VectorSequence  *list, 
+		InspiralBankParams   *bankParams) 
+{  /*  </lalVerbatim>  */
+
+  InspiralMetric *metric; 
+  REAL8 minimalMatch; 
+  REAL8 x0, x1;
+  UINT4 nlist = 0;
+
+  INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
+  ATTATCHSTATUSPTR(status);
+  /* From the knowledge of the metric and the minimal match find the constant
+   * increments bankParams->dx0 and bankParmams->dx1
+   */
+  metric = bankParams->metric;
+  minimalMatch = bankParams->minimalMatch;
+  LALInspiralUpdateParams(status->statusPtr, bankParams, *metric, minimalMatch);
+
+  /* Construct the template bank */
+
+  for (x1 = bankParams->x1Min; x1 <= bankParams->x1Max; x1 += bankParams->dx1)
+  {
+	  for (x0 = bankParams->x0Min; x0 <= bankParams->x0Max; x0 += bankParams->dx0)
+	  {
+		  UINT4 ndx = 2*nlist;
+		  list->data = (REAL4 *)LALRealloc( list->data, (ndx+2)*sizeof(REAL4) );
+		  if (!list->data)
+		  {
+			  ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+		  }
+		  list->data[ndx] = x0;
+		  list->data[ndx+1] = x1;
+		  ++nlist; 
+	  }
+  }
+
+  list->length = nlist;
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }

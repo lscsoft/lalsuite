@@ -351,6 +351,7 @@ typedef struct
 tagInspiralBankParams
 {
 	INT4           nparams;            
+	REAL8          minimalMatch;
 	REAL8          x0;                
 	REAL8          x1;
 	REAL8          dx0;
