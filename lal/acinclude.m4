@@ -137,6 +137,17 @@ AC_ARG_ENABLE(
   if test "x$metaio" = "xtrue" ; then dataflow=true ; fi
 ])
 
+AC_DEFUN(LAL_ENABLE_INTELFFT,
+[AC_ARG_ENABLE(
+        intelfft,
+        [  --enable-intelfft       use Intel FFT libraries insted of FFTW [default=no] ],
+        [ case "${enableval}" in
+            yes) intelfft=true;;
+            no)  intelfft=false ;;
+            *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
+          esac
+        ], [ intelfft=false ] )
+])
 
 AC_DEFUN(LAL_ENABLE_DEBUG,
 [AC_ARG_ENABLE(
@@ -173,6 +184,28 @@ AC_DEFUN(LAL_ENABLE_PTHREAD_LOCK,
           esac
         ], [ lal_pthread_lock=false ] )
 ])
+
+AC_DEFUN(LAL_INTEL_FFT_LIBS_MSG_ERROR,
+[echo "**************************************************************"
+ echo "* The --enable-static and --enable-shared options are        *"
+ echo "* mutually exclusive with Intel FFT libraries.               *"
+ echo "*                                                            *"
+ echo "* Please reconfigure with:                                   *"
+ echo "*                                                            *"
+ echo "*   --enable-static --disable-shared                         *"
+ echo "*                                                            *"
+ echo "* for static libraries or                                    *"
+ echo "*                                                            *"
+ echo "*   --disable-static --enable-shared                         *"
+ echo "*                                                            *"
+ echo "* for shared libraries.                                      *"
+ echo "*                                                            *"
+ echo "* Please see the instructions in the file INSTALL.           *"
+ echo "**************************************************************"
+AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
+])
+
+
 
 AC_DEFUN(LAL_FFTW_MSG_ERROR,
 [echo "**************************************************************"
