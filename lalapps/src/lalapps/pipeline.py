@@ -60,7 +60,8 @@ class CondorJob:
     self.__queue = queue
 
     # These are set by methods in the class
-    self.__arguments = {}
+    self.__options = {}
+    self.__arguments = []
     self.__condor_cmds = {}
     self.__notification = None
     self.__log_file = None
@@ -76,24 +77,36 @@ class CondorJob:
     """
     self.__condor_cmds[cmd] = value
 
-  def add_arg(self, arg, value):
+  def add_arg(self, arg):
     """
-    Add a command line argument to the executable.
-    arg = command line argument to add.
-    value = value to pass to the argument (None for no argument).
+    Add an argument to the executable. Arguments are appended after any
+    options and their order is guaranteed.
+    arg = argument to add.
     """
-    self.__arguments[arg] = value
+    self.__arguments.append(arg)
 
-  def add_ini_args(self, cp, section):
+  def add_opt(self, opt, value):
     """
-    Parse command line arguments from a given section in an ini file and
+    Add a command line option to the executable. The order that the arguments
+    will be appended to the command line is not guaranteed, but they will
+    always be added before any command line arguments. The name of the option
+    is prefixed with double hyphen and the program is expected to parse it
+    with getopt_long().
+    arg = command line option to add.
+    value = value to pass to the option (None for no argument).
+    """
+    self.__options[opt] = value
+
+  def add_ini_opts(self, cp, section):
+    """
+    Parse command line options from a given section in an ini file and
     pass to the executable.
     cp = ConfigParser object pointing to the ini file.
-    section = section of the ini file to add to the arguments.
+    section = section of the ini file to add to the options.
     """
     for opt in cp.options(section):
       arg = string.strip(cp.get(section,opt))
-      self.__arguments[opt] = arg
+      self.__options[opt] = arg
 
   def set_notification(self, value):
     """
@@ -172,14 +185,16 @@ class CondorJob:
     subfile.write( 'universe = ' + self.__universe + '\n' )
     subfile.write( 'executable = ' + self.__executable + '\n' )
 
-    if self.__arguments.keys():
+    if self.__options.keys() or self.arguments:
       subfile.write( 'arguments =' )
-    for c in self.__arguments.keys():
-      if self.__arguments[c]:
-        subfile.write( ' --' + c + ' ' + self.__arguments[c] )
-      else:
-        subfile.write( ' --' + c )
-    subfile.write( '\n' )
+      for c in self.__options.keys():
+        if self.__options[c]:
+          subfile.write( ' --' + c + ' ' + self.__options[c] )
+        else:
+          subfile.write( ' --' + c )
+      for c in self.__arguments:
+        subfile.write( ' ' + c )
+      subfile.write( '\n' )
 
     for cmd in self.__condor_cmds.keys():
       subfile.write( cmd + " = " + self.__condor_cmds[cmd] + '\n' )
@@ -198,7 +213,7 @@ class CondorJob:
 class CondorDAGJob(CondorJob):
   """
   A Condor DAG job never notifies the user on completion and can have variable
-  arguments that are set for a particular node in the DAG. Inherits methods
+  options that are set for a particular node in the DAG. Inherits methods
   from a CondorJob.
   """
   def __init__(self, universe, executable):
@@ -208,20 +223,30 @@ class CondorDAGJob(CondorJob):
     """
     CondorJob.__init__(self, universe, executable, 1)
     CondorJob.set_notification(self, 'never')
-    self.__var_args = []
+    self.__var_opts = []
+    self.__have_var_args = 0
     self.__bad_macro_chars = re.compile(r'[_-]')
 
-  def add_var_arg(self, arg):
+  def add_var_opt(self, opt):
     """
     Add a variable (or macro) option to the condor job. The option is added 
-    to the submit file and a different argument to the option can be set fot
+    to the submit file and a different argument to the option can be set for
     each node in the DAG.
-    arg = name of option to add.
+    opt = name of option to add.
     """
-    if arg not in self.__var_args:
-      self.__var_args.append(arg)
-      macro = self.__bad_macro_chars.sub( r'', arg )
-      self.add_arg(arg,'$(macro' + macro + ')')
+    if opt not in self.__var_opts:
+      self.__var_opts.append(opt)
+      macro = self.__bad_macro_chars.sub( r'', opt )
+      self.add_opt(opt,'$(macro' + macro + ')')
+
+  def add_var_arg(self):
+    """
+    Add a command to the submit file to allow variable (macro) arguments
+    to be passed to the executable.
+    """
+    if not self.__have_var_args:
+      self.add_arg('$(macroarguments)')
+      self.__have_var_args = 1
 
 
 
@@ -229,8 +254,8 @@ class CondorDAGNode:
   """
   A CondorDAGNode represents a node in the DAG. It corresponds to a particular
   condor job (and so a particular submit file). If the job has variable
-  (macro) arguments, they can be set here so each nodes executes with the
-  correct arguments.
+  (macro) options, they can be set here so each nodes executes with the
+  correct options.
   """
   def __init__(self, job):
     """
@@ -240,7 +265,8 @@ class CondorDAGNode:
       raise CondorDAGNodeError, "A DAG node must correspond to a Condor DAG job"
     self.__name = None
     self.__job = job
-    self.__vars = {}
+    self.__opts = {}
+    self.__args = []
     self.__retry = 0
     self.__parents = []
     self.__bad_macro_chars = re.compile(r'[_-]')
@@ -264,17 +290,27 @@ class CondorDAGNode:
     a = str( self.__class__ )
     self.__name = md5.md5(t + r + a).hexdigest()
     
-  def add_var(self,var,value):
+  def add_var_opt(self,opt,value):
     """
-    Add the a variable (macro) arguments for this node. If the option
+    Add the a variable (macro) options for this node. If the option
     specified does not exist in the CondorJob, it is added so the submit
     file will be correct when written.
-    var = option name.
+    opt = option name.
     value = value of the option for this node in the DAG.
     """
-    macro = self.__bad_macro_chars.sub( r'', var )
-    self.__vars['macro' + macro] = value
-    self.__job.add_var_arg(var)
+    macro = self.__bad_macro_chars.sub( r'', opt )
+    self.__opts['macro' + macro] = value
+    self.__job.add_var_opt(opt)
+
+  def add_var_arg(self, arg):
+    """
+    Add a variable (or macro) argument to the condor job. The argument is
+    added to the submit file and a different value of the argument can be set
+    for each node in the DAG.
+    arg = name of option to add.
+    """
+    self.__args.append(arg)
+    self.__job.add_var_arg()
 
   def set_retry(self, retry):
     """
@@ -293,14 +329,17 @@ class CondorDAGNode:
 
   def write_vars(self,fh):
     """
-    Write the variable (macro) arguments to the DAG file descriptor.
+    Write the variable (macro) options and arguments to the DAG file
+    descriptor.
     fh = descriptor of open DAG file.
     """
-    if self.__vars.keys():
+    if self.__opts.keys() or self.__vars:
       fh.write( 'VARS ' + self.__name )
-      for k in self.__vars.keys():
-        fh.write( ' ' + str(k) + '="' + str(self.__vars[k]) + '"' )
-      fh.write( '\n' )
+    for k in self.__opts.keys():
+      fh.write( ' ' + str(k) + '="' + str(self.__opts[k]) + '"' )
+    if self.__args:
+      fh.write( ' macroarguments="' + ' '.join(self.__args) + '"' )
+    fh.write( '\n' )
 
   def write_parents(self,fh):
     """
@@ -452,7 +491,7 @@ class AnalysisNode(CondorDAGNode):
     option to the node when it is executed.
     time = GPS start time of job.
     """
-    self.add_var('gps-start-time',time)
+    self.add_var_opt('gps-start-time',time)
     self.__start = time
 
   def get_start(self):
@@ -467,7 +506,7 @@ class AnalysisNode(CondorDAGNode):
     option to the node when it is executed.
     time = GPS end time of job.
     """
-    self.add_var('gps-end-time',time)
+    self.add_var_opt('gps-end-time',time)
     self.__end = time
 
   def get_end(self):
@@ -482,7 +521,7 @@ class AnalysisNode(CondorDAGNode):
     file = option argument to pass as input.
     """
     self.__input = file
-    self.add_var('input', file)
+    self.add_var_opt('input', file)
 
   def get_input(self):
     """
@@ -496,7 +535,7 @@ class AnalysisNode(CondorDAGNode):
     file = option argument to pass as output.
     """
     self.__output = file
-    self.add_var('output', file)
+    self.add_var_opt('output', file)
 
   def get_output(self):
     """
@@ -514,8 +553,8 @@ class AnalysisNode(CondorDAGNode):
     ifo = two letter ifo code (e.g. L1, H1 or H2).
     """
     self.__ifo = ifo
-    self.add_var('channel-name', ifo + ':' + self.job().channel())
-    self.add_var('calibration-cache', self.job().calibration(ifo))
+    self.add_var_opt('channel-name', ifo + ':' + self.job().channel())
+    self.add_var_opt('calibration-cache', self.job().calibration(ifo))
 
   def get_ifo(self):
     """
@@ -529,7 +568,7 @@ class AnalysisNode(CondorDAGNode):
     with the --frame-cache argument.
     file = calibration file to use.
     """
-    self.add_var('frame-cache', file)
+    self.add_var_opt('frame-cache', file)
 
 
 

@@ -213,7 +213,7 @@ for seg in data:
     insp1.set_start(chunk.start())
     insp1.set_end(chunk.end())
     insp1.set_ifo(ifo1)
-    insp1.add_var('snr-threshold',ifo1_snr)
+    insp1.add_var_opt('snr-threshold',ifo1_snr)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
 
@@ -238,7 +238,7 @@ for seg in data:
     insp2.set_start(chunk.start())
     insp2.set_end(chunk.end())
     insp2.set_ifo(ifo2)
-    insp2.add_var('snr-threshold',ifo2_snr)
+    insp2.add_var_opt('snr-threshold',ifo2_snr)
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
 
@@ -268,12 +268,14 @@ for i in range(len(data)):
     inca.set_start(chunk.start())
     inca.set_end(chunk.end())
     inca.set_output(ifo1 + ifo2)
+    inca.set_ifo_a(ifo1)
+    inca.set_ifo_b(ifo2)
     
     # if there is a chunk before this one, add it to the job
     try: 
       data[i][j-1]
-      inca.add_input_a(insp_nodes[i][j-1][0].get_output())
-      inca.add_input_b(insp_nodes[i][j-1][1].get_output())
+      inca.add_var_arg(insp_nodes[i][j-1][0].get_output())
+      inca.add_var_arg(insp_nodes[i][j-1][1].get_output())
       if do_inspiral:
         inca.add_parent(insp_nodes[i][j-1][0])
       if do_triginsp:
@@ -282,8 +284,8 @@ for i in range(len(data)):
       pass
 
     # add this chunk to the job
-    inca.add_input_a(insp_nodes[i][j][0].get_output())
-    inca.add_input_b(insp_nodes[i][j][1].get_output())
+    inca.add_var_arg(insp_nodes[i][j][0].get_output())
+    inca.add_var_arg(insp_nodes[i][j][1].get_output())
     if do_inspiral:
       inca.add_parent(insp_nodes[i][j][0])
     if do_triginsp:
@@ -292,8 +294,8 @@ for i in range(len(data)):
     # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
-      inca.add_input_a(insp_nodes[i][j+1][0].get_output())
-      inca.add_input_b(insp_nodes[i][j+1][1].get_output())
+      inca.add_var_arg(insp_nodes[i][j+1][0].get_output())
+      inca.add_var_arg(insp_nodes[i][j+1][1].get_output())
       if do_inspiral:
         inca.add_parent(insp_nodes[i][j+1][0])
       if do_triginsp:

@@ -20,7 +20,7 @@ class InspiralError(exceptions.Exception):
 
 class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A LALdataFind job used by the inspiral pipeline. The static arguments are
+  A LALdataFind job used by the inspiral pipeline. The static options are
   read from the section [datafind] in the ini file. The stdout from
   LALdataFind contains the paths to the frame files and is directed to a file
   in the cache directory named by site and GPS start and end times. The stderr
@@ -37,7 +37,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
 
     for sec in ['datafind']:
-      self.add_ini_args(cp,sec)
+      self.add_ini_opts(cp,sec)
 
     self.add_condor_cmd('environment',
       """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)""" )
@@ -49,7 +49,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_tmpltbank job used by the inspiral pipeline. The static arguments
+  A lalapps_tmpltbank job used by the inspiral pipeline. The static options
   are read from the sections [data] and [tmpltbank] in the ini file. The
   stdout and stderr from the job are directed to the logs directory. The job
   runs in the universe specfied in the ini file. The path to the executable
@@ -65,7 +65,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
 
     for sec in ['data','tmpltbank']:
-      self.add_ini_args(cp,sec)
+      self.add_ini_opts(cp,sec)
 
     self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).out')
     self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).err')
@@ -74,7 +74,7 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_inspiral job used by the inspiral pipeline. The static arguments
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
   are read from the sections [data] and [inspiral] in the ini file. The
   stdout and stderr from the job are directed to the logs directory. The job
   runs in the universe specfied in the ini file. The path to the executable
@@ -90,7 +90,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
 
     for sec in ['data','inspiral']:
-      self.add_ini_args(cp,sec)
+      self.add_ini_opts(cp,sec)
 
     self.set_stdout_file(
       'logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).out')
@@ -102,7 +102,7 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_trigtotmplt job used by the inspiral pipeline. The static
-  arguments are read from the section [trigtotmplt] in the ini file.  The
+  options are read from the section [trigtotmplt] in the ini file.  The
   stdout and stderr from the job are directed to the logs directory. The job
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
@@ -117,7 +117,7 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['trigtotmplt']:
-      self.add_ini_args(cp,sec)
+      self.add_ini_opts(cp,sec)
     
     self.set_stdout_file('logs/trigtotmplt-$(macrooutput).out')
     self.set_stderr_file('logs/trigtotmplt-$(macrooutput).err')
@@ -126,7 +126,7 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_inca job used by the inspiral pipeline. The static arguments are
+  A lalapps_inca job used by the inspiral pipeline. The static options are
   read from the section [inca] in the ini file.  The stdout and stderr from
   the job are directed to the logs directory. The job always runs in the
   scheduler universe. The path to the executable is determined from the ini
@@ -142,7 +142,7 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
     
     for sec in ['inca']:
-      self.add_ini_args(cp,sec)
+      self.add_ini_opts(cp,sec)
 
     self.set_stdout_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime).out')
     self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime).err')
@@ -178,7 +178,7 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Set the start time of the datafind query.
     time = GPS start time of query.
     """
-    self.add_var('start', time)
+    self.add_var_opt('start', time)
     self.__start = time
     self.__set_output()
 
@@ -187,7 +187,7 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Set the end time of the datafind query.
     time = GPS end time of query.
     """
-    self.add_var('end', time)
+    self.add_var_opt('end', time)
     self.__end = time
     self.__set_output()
 
@@ -199,7 +199,7 @@ class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     of LALdataFind.
     ifo = IFO to obtain data for.
     """
-    self.add_var('instrument',ifo[0])
+    self.add_var_opt('instrument',ifo[0])
     self.__instrument = ifo[0]
     self.__set_output()
 
@@ -247,7 +247,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__output = None
 
   def set_bank(self,bank):
-    self.add_var('bank-file', bank)
+    self.add_var_opt('bank-file', bank)
 
   def get_output(self):
     """
@@ -284,24 +284,20 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__input_a = []
-    self.__input_b = []
     
-  def add_input_a(self, file):
+  def set_ifo_a(self, ifo):
     """
-    Add a file as input for IFO A.
-    file = path to XML file for IFO A.
+    Set the interferometer code to use as IFO A.
+    ifo = IFO code (e.g. L1, H1 or H2).
     """
-    self.__input_a.append(file)
-    self.add_var('input-a', ' '.join(self.__input_a))
+    self.add_var_opt('ifo-a', ifo)
 
-  def add_input_b(self, file):
+  def set_ifo_b(self, ifo):
     """
-    Add a file as input for IFO B.
-    file = path to XML file for IFO B.
+    Set the interferometer code to use as IFO B.
+    ifo = IFO code (e.g. L1, H1 or H2).
     """
-    self.__input_b.append(file)
-    self.add_var('input-b', ' '.join(self.__input_b))
+    self.add_var_opt('ifo-b', ifo)
 
   def set_output(self,string):
     """
