@@ -8,24 +8,44 @@
 /*********************************************************************************/
 
 
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <getopt.h>
+
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
+#include <lal/LALStatusMacros.h>
+#include <lal/ConfigFile.h>
 
-#define MAXCANDIDATES   3750000     /* Maximum # of allowed candidates */
-#define MAXCOINC   3750000         /* Maximum # of allowed coincident candidates */
+#include <lalapps.h>
+
+#include "getopt.h"
+
+RCSID ("$Id");
+
+
+/* some error codes and messages */
+#define POLKAC_ENULL  		1
+#define POLKAC_ENONULL 		2
+#define POLKAC_ESYS 		3
+#define POLKAC_EINVALIDFSTATS	4
+#define POLKAC_EMEM		5
+
+#define POLKAC_MSGENULL 	"Arguments contained an unexpected null pointer"
+#define POLKAC_MSGENONULL	"Input pointer was not NULL"
+#define POLKAC_MSGESYS		"System call failed (probably file IO"
+#define POLKAC_MSGEINVALIDFSTATS "Invalid Fstats file"
+#define POLKAC_MSGEMEM		"Sorry, ran out of memory... bye."
 
 #ifndef USE_BOINC
 #define USE_BOINC 0
 #endif
 
 #if USE_BOINC
+#include "boinc_api.h"
+
 #define fopen boinc_fopen
 extern CHAR *Outputfilename;
 #endif
@@ -46,21 +66,30 @@ struct PolkaCommandLineArgsTag
 
 typedef struct CandidateTag 
 {
-  REAL8 f[MAXCANDIDATES];        /* Frequency */
-  REAL8 Alpha[MAXCANDIDATES];    /* longitude */
-  REAL8 Delta[MAXCANDIDATES];    /* latitude */
-  REAL8 F[MAXCANDIDATES];        /* Maximum value of F for the cluster */
-  REAL8 fa[MAXCANDIDATES];       /* false alarm probability for that candidate */
-} Candidate;
+  UINT4 length;	  /* number of candidates in list */
+  REAL8 *f;        /* Frequency */
+  REAL8 *Alpha;    /* longitude */
+  REAL8 *Delta;    /* latitude */
+  REAL8 *F;        /* Maximum value of F for the cluster */
+  REAL8 *fa;       /* false alarm probability for that candidate */
+} CandidateList;
 
 typedef struct CoincidentCandidateTag 
 {
-  REAL8 f1[MAXCOINC],f2[MAXCOINC];            /* Frequency */
-  REAL8 Alpha1[MAXCOINC],Alpha2[MAXCOINC];    /* longitude */
-  REAL8 Delta1[MAXCOINC],Delta2[MAXCOINC];    /* latitude */
-  REAL8 F1[MAXCOINC],F2[MAXCOINC];        /* Maximum value of F for the cluster */
-  REAL8 fa[MAXCOINC],fa1[MAXCOINC],fa2[MAXCOINC];       /* false alarm probability for that candidate */
+  REAL8 f1;		/* Frequencies */
+  REAL8 f2;
+  REAL8 Alpha1;		/* longitude */
+  REAL8 Alpha2;
+  REAL8 Delta1;		/* latitude */
+  REAL8 Delta2;
+  REAL8 F1;		/* Maximum value of F for the cluster */
+  REAL8 F2;
+  REAL8 fa;		/* false alarm probabilities for that candidate */
+  REAL8 fa1;
+  REAL8 fa2;       	
 } CoincidentCandidate;
+
+
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
@@ -71,13 +100,16 @@ int compare4F(const void *ip, const void *jp);
 int compare2f(const void *ip, const void *jp);
 int compareCCfa(const void *ip, const void *jp);
 void locate(double xx[], int n, double x, int *j, int *indices);
+void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
 
-int NCands1,NCands2,NCCands,NCands3,NCands4;       /* Global variables that keep track of no of candidates */
-#if !USE_BOINC
-INT4 lalDebugLevel=0;
-#endif
-Candidate C1,C2,C3,C4; /* Candidate structures */
-CoincidentCandidate CC;
+extern INT4 lalDebugLevel;
+
+CandidateList CList1, CList2, CList3, CList4; /* treat up to 4 candidate files */
+
+CoincidentCandidate *CC;
+
+#define FALSE (1==0)
+#define TRUE  (1==1)
 
 #if USE_BOINC
 int polka(int argc,char *argv[])
@@ -87,70 +119,81 @@ int main(int argc,char *argv[])
 {
   INT4 *indices1F=NULL,*indices2f=NULL,*indices2F=NULL,*indicesCCfa=NULL,*indices3F=NULL,*indices4F=NULL;
   REAL8 MaxAngularDistance;
-  int i,k;
+  UINT4 i;
+  UINT4 numCoincidences = 0;
   FILE *fpOut;
+  BOOLEAN haveFile3 =  FALSE;
+  BOOLEAN haveFile4 = FALSE;
+
+  lalDebugLevel = 1;
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
 
+  /* define some shortcuts for convenience */
+  haveFile3 = (PolkaCommandLineArgs.FstatsFile3 != NULL);
+  haveFile4 = (PolkaCommandLineArgs.FstatsFile4 != NULL);
+
   /* Reads in candidare files */
   if (ReadCandidateFiles(PolkaCommandLineArgs)) return 2;
 
+  /* Prepare list of coincident candidates */
+
   /* create arrays of indices */
-  if (!(indices1F=(INT4 *)LALMalloc(sizeof(INT4)*NCands1))){
+  if (!(indices1F=(INT4 *)LALMalloc(sizeof(INT4) * CList1.length))){
     fprintf(stderr,"Unable to allocate index array in main\n");
     return 1;
   }
-  if (!(indices2F=(INT4 *)LALMalloc(sizeof(INT4)*NCands2))){
+  if (!(indices2F=(INT4 *)LALMalloc(sizeof(INT4) * CList2.length))){
     fprintf(stderr,"Unable to allocate index array in main\n");
     return 1;
   }
-  if (!(indices2f=(INT4 *)LALMalloc(sizeof(INT4)*NCands2))){
+  if (!(indices2f=(INT4 *)LALMalloc(sizeof(INT4) * CList2.length))){
     fprintf(stderr,"Unable to allocate index array in main\n");
     return 1;
   }
 
   /* populate arrays of indices */
-  for (i=0;i<NCands1;i++) indices1F[i]=i;
-  for (i=0;i<NCands2;i++) indices2F[i]=i;
-  for (i=0;i<NCands2;i++) indices2f[i]=i;
+  for (i=0;i<CList1.length;i++) indices1F[i]=i;
+  for (i=0;i<CList2.length;i++) indices2F[i]=i;
+  for (i=0;i<CList2.length;i++) indices2f[i]=i;
 
   /* sort arrays of indices in DECREASING order*/
-  qsort((void *)indices1F, (size_t)NCands1, sizeof(int), compare1F);
-  qsort((void *)indices2F, (size_t)NCands2, sizeof(int), compare2F);
-  qsort((void *)indices2f, (size_t)NCands2, sizeof(int), compare2f);
+  qsort((void *)indices1F, (size_t)CList1.length, sizeof(int), compare1F);
+  qsort((void *)indices2F, (size_t)CList2.length, sizeof(int), compare2F);
+  qsort((void *)indices2f, (size_t)CList2.length, sizeof(int), compare2f);
 
-  if(PolkaCommandLineArgs.FstatsFile3 != NULL)
+  if ( haveFile3 )
     {
-      if (!(indices3F=(INT4 *)LALMalloc(sizeof(INT4)*NCands3))){
+      if (!(indices3F=(INT4 *)LALMalloc(sizeof(INT4)*CList3.length))){
 	fprintf(stderr,"Unable to allocate index array in main\n");
 	return 1;
       }
-      for (i=0;i<NCands3;i++) indices3F[i]=i;
-      qsort((void *)indices3F, (size_t)NCands3, sizeof(int), compare3F);
+      for (i=0;i<CList3.length;i++) indices3F[i]=i;
+      qsort((void *)indices3F, (size_t)CList3.length, sizeof(int), compare3F);
     }      
-  if(PolkaCommandLineArgs.FstatsFile4 != NULL)
+  if ( haveFile4 )
     {
-      if (!(indices4F=(INT4 *)LALMalloc(sizeof(INT4)*NCands4))){
+      if (!(indices4F=(INT4 *)LALMalloc(sizeof(INT4)*CList4.length))){
 	fprintf(stderr,"Unable to allocate index array in main\n");
 	return 1;
       }
-      for (i=0;i<NCands4;i++) indices4F[i]=i;
-      qsort((void *)indices4F, (size_t)NCands4, sizeof(int), compare4F);
+      for (i=0;i<CList4.length;i++) indices4F[i]=i;
+      qsort((void *)indices4F, (size_t)CList4.length, sizeof(int), compare4F);
     }      
 
-  k=0; /* kounts koinzident events */
+  numCoincidences = 0; /* kounts koinzident events */
   MaxAngularDistance=sqrt(pow(PolkaCommandLineArgs.DeltaAlpha,2)+pow(PolkaCommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* go through list */
-  for (i=0; i < NCands1; i++)
+  for (i=0; i < CList1.length; i++)
     {
       REAL8 f1min,f1max,difff;
       REAL8 f1,Alpha1,Delta1,F1;
       int if2min,if2max,f;
 
       /* Minimum and maximum frequencies acceptable for coincidence */
-      f1=C1.f[indices1F[i]];
+      f1 = CList1.f[indices1F[i]];
       /* if candidate frequency does not lie within bounds specified by user go to next in list */
       if(f1 < PolkaCommandLineArgs.fmin || f1 > PolkaCommandLineArgs.fmax) continue;
 
@@ -158,19 +201,19 @@ int main(int argc,char *argv[])
       f1max=f1+PolkaCommandLineArgs.Deltaf;
 
       /* Find nearest index to f1min and f1max; function explained below */
-      locate(C2.f,NCands2,f1min,&if2min,indices2f);
-      locate(C2.f,NCands2,f1max,&if2max,indices2f);
+      locate(CList2.f,CList2.length,f1min,&if2min,indices2f);
+      locate(CList2.f,CList2.length,f1max,&if2max,indices2f);
 
       /* alpha */
-      Alpha1=C1.Alpha[indices1F[i]];
+      Alpha1=CList1.Alpha[indices1F[i]];
       /* delta */
-      Delta1=C1.Delta[indices1F[i]];
+      Delta1=CList1.Delta[indices1F[i]];
       /* F */
-      F1=C1.F[indices1F[i]];
+      F1=CList1.F[indices1F[i]];
       
       for (f=if2max; f <= if2min; f++)
 	{
-	  REAL8 Alpha2=C2.Alpha[indices2f[f]],Delta2=C2.Delta[indices2f[f]];
+	  REAL8 Alpha2=CList2.Alpha[indices2f[f]],Delta2=CList2.Delta[indices2f[f]];
 	  REAL8 n1[3],n2[3],AngularDistance;
 	  
 	  n1[0]=cos(Alpha1)*cos(Delta1);
@@ -182,7 +225,7 @@ int main(int argc,char *argv[])
 	  n2[2]=sin(Delta2);
 
 	  AngularDistance=acos((float)(n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2]));
-	  difff=fabs(f1 - C2.f[indices2f[f]]);
+	  difff=fabs(f1 - CList2.f[indices2f[f]]);
 
 	  /* check difference in frequencies because we're not guaranteed 
 	     sufficient closeness at the edges of array */
@@ -191,68 +234,70 @@ int main(int argc,char *argv[])
 	      if ( AngularDistance <= MaxAngularDistance )
 		{	
 		  int j;
-		      
-		  CC.f1[k]=f1;
-		  CC.Alpha1[k]=Alpha1;
-		  CC.Delta1[k]=Delta1;
-		  CC.F1[k]=F1;
+		  CoincidentCandidate *thisCC;
+		  /* seems we found a coincident candidate: let's make space for it to be stored */
+		  numCoincidences ++;
+		  if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
+		    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+		    return 1;	/* got lazy here.. */
+		  }
+		  thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
 
-		  if(PolkaCommandLineArgs.FstatsFile3 != NULL)
+		  thisCC->f1 = f1;
+		  thisCC->Alpha1 = Alpha1;
+		  thisCC->Delta1 =Delta1;
+		  thisCC->F1 = F1;
+
+		  if ( haveFile3 )
 		    {
-		      locate(C3.F,NCands3,CC.F1[k],&j,indices3F);
-		      CC.fa1[k]=(REAL8)(j+1)/(REAL8)NCands3;
+		      locate(CList3.F,CList3.length,thisCC->F1,&j,indices3F);
+		      thisCC->fa1=(REAL8)(j+1)/(REAL8)CList3.length;
 		    }
-		  else CC.fa1[k]=(REAL8)(i+1)/(REAL8)NCands1;
+		  else thisCC->fa1=(REAL8)(i+1)/(REAL8)CList1.length;
 
-		  CC.f2[k]=C2.f[indices2f[f]];
-		  CC.Alpha2[k]=C2.Alpha[indices2f[f]];
-		  CC.Delta2[k]=C2.Delta[indices2f[f]];
-		  CC.F2[k]=C2.F[indices2f[f]];
+		  thisCC->f2=CList2.f[indices2f[f]];
+		  thisCC->Alpha2=CList2.Alpha[indices2f[f]];
+		  thisCC->Delta2=CList2.Delta[indices2f[f]];
+		  thisCC->F2=CList2.F[indices2f[f]];
 
-		  if(PolkaCommandLineArgs.FstatsFile4 != NULL)
+		  if ( haveFile4 )
 		    {
-		      locate(C4.F,NCands4,CC.F2[k],&j,indices4F);
-		      CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands4;
+		      locate(CList4.F,CList4.length,thisCC->F2,&j,indices4F);
+		      thisCC->fa2=(REAL8)(j+1)/(REAL8)CList4.length;
 		    }else{
-		      locate(C2.F,NCands2,CC.F2[k],&j,indices2F);
-		      CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands2;
+		      locate(CList2.F,CList2.length,thisCC->F2,&j,indices2F);
+		      thisCC->fa2=(REAL8)(j+1)/(REAL8)CList2.length;
 		    }
 
-		  CC.fa[k]=CC.fa1[k]*CC.fa2[k];
+		  thisCC->fa = thisCC->fa1 * thisCC->fa2;
 
-		  k++;
-		  if (k == MAXCOINC)
-		    {
-		      fprintf(stderr,"Too many coincident candidates! Exiting... \n");
-		      return 1;
-		    }
-		  
 		}
 	    }
 	}
       /* next candidate for 1st ifo */
     }     
 
-  NCCands=k;
   /* allocate space */
-  if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4)*NCCands))){
+  if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4) * numCoincidences))){
     fprintf(stderr,"Unable to allocate index array in main\n");
     return 1;
   }
-  for (i=0;i<NCCands;i++) indicesCCfa[i]=i;
+  for (i=0; i < numCoincidences; i++) 
+    indicesCCfa[i]=i;
+
   /* sort in increasing probability of joint false alarm */
-  qsort((void *)indicesCCfa, (size_t)NCCands, sizeof(int), compareCCfa);
+  qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCCfa);
 
   /* open and write the file */
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
-  for (i=0;i<NCCands;i++) 
+  for (i=0; i < numCoincidences; i++) 
     {
-      k=indicesCCfa[i];
+      /*      k=indicesCCfa[i]; */
       fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
-	      CC.f1[k],CC.Alpha1[k],CC.Delta1[k],
-	      CC.F1[k],CC.fa1[k],
-	      CC.f2[k],CC.Alpha2[k],CC.Delta2[k],
-	      CC.F2[k],CC.fa2[k],CC.fa[k]);
+	      CC[i].f1, CC[i].Alpha1, CC[i].Delta1,
+	      CC[i].F1, CC[i].fa1,
+	      CC[i].f2, CC[i].Alpha2, CC[i].Delta2,
+	      CC[i].F2, CC[i].fa2, CC[i].fa);
     }
   fclose(fpOut);
 #if USE_BOINC
@@ -264,12 +309,40 @@ int main(int argc,char *argv[])
   LALFree(indices2f);
   LALFree(indicesCCfa);
 
+  /* that's a bit tedious, so we use a macro */
+#define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); } while(0)
+  
+  freeCList(CList1);
+  freeCList(CList2);
+  if (haveFile3 ) freeCList(CList3);
+  if (haveFile4 ) freeCList(CList4);
+  
+  LALFree ( CC );
+  
+  LALCheckMemoryLeaks(); 
+
   return 0;
 
 }
 
 /*******************************************************************************/
+/* Explanation of locate
 
+the function locate returns the lower value of the two indices of the array xx
+that bound the value given x.
+
+consider xx to be in descending order:
+
+fmax                                      fmin
+   |     |     |     |     |     |     |     |
+j: 0     1     2     3     4     5     6     7
+
+            ^           ^            ^
+	 f2+Df	        f2        f2-Df
+
+locate will return if2max=1 and if2min=5
+
+*/
 void locate(double xx[], int n, double x, int *j, int *indices) 
      /* locates x in array of xx */
 { 
@@ -311,8 +384,8 @@ int compare1F(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=C1.F[*(int *)ip];
-  dj=C1.F[*(int *)jp];
+  di=CList1.F[*(const int *)ip];
+  dj=CList1.F[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -329,8 +402,8 @@ int compare2F(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=C2.F[*(int *)ip];
-  dj=C2.F[*(int *)jp];
+  di=CList2.F[*(const int *)ip];
+  dj=CList2.F[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -348,8 +421,8 @@ int compare3F(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=C3.F[*(int *)ip];
-  dj=C3.F[*(int *)jp];
+  di=CList3.F[*(const int *)ip];
+  dj=CList3.F[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -366,8 +439,8 @@ int compare4F(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=C4.F[*(int *)ip];
-  dj=C4.F[*(int *)jp];
+  di=CList4.F[*(const int *)ip];
+  dj=CList4.F[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -385,8 +458,8 @@ int compare2f(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=C2.f[*(int *)ip];
-  dj=C2.f[*(int *)jp];
+  di=CList2.f[*(const int *)ip];
+  dj=CList2.f[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -403,8 +476,8 @@ int compareCCfa(const void *ip, const void *jp)
 {
   REAL8 di, dj;
 
-  di=CC.fa[*(int *)ip];
-  dj=CC.fa[*(int *)jp];
+  di=CC[*(const int *)ip].fa;
+  dj=CC[*(const int *)jp].fa;
 
   if (di<dj)
     return -1;
@@ -420,121 +493,40 @@ int compareCCfa(const void *ip, const void *jp)
 
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
-  INT4 i;
-  FILE *fp;
-  char line[256];
-  REAL8 dmp;
+  LALStatus status = blank_status;	/* initialize status */
 
+  ReadOneCandidateFile (&status, &CList1, CLA.FstatsFile1);
+  if (status.statusCode != 0) {
+    REPORTSTATUS (&status);
+    return 1;
+  }
+  ReadOneCandidateFile (&status, &CList2, CLA.FstatsFile2);
+  if (status.statusCode != 0) {
+    REPORTSTATUS (&status);
+    return 1;
+  }
 
- /* This is kinda messy... Unfortunately there's no good way of doing this */
- 
- /* ------ Open and read 1st candidate file ------ */
- i=0;
- fp=fopen(CLA.FstatsFile1,"r");
- if (fp==NULL) 
-   {
-     fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.FstatsFile1);
-     return 1;
-   }
- while(fgets(line,sizeof(line),fp))
-   {
-     if(*line == '#') continue;
-     if(*line == '%') continue;
-     if (i >= MAXCANDIDATES)
-       {
-	 fprintf(stderr,"Too many lines in file %s! Exiting... \n",CLA.FstatsFile1);
-	 return 1;
-       }
-     sscanf(line,"%le %le %le %le %le %le %le",&C1.f[i],&C1.Alpha[i],&C1.Delta[i],
-	    &dmp,&dmp,&dmp,&C1.F[i]);
-     i++;
-   }
- NCands1=i;
- fclose(fp);     
- /* -- close 1st candidate file -- */
+  if (CLA.FstatsFile3)
+    {
+      ReadOneCandidateFile (&status, &CList3, CLA.FstatsFile3);
+      if (status.statusCode != 0) {
+	REPORTSTATUS (&status);
+	return 1;
+      }
+    }
 
- /* ------ Open and read 2nd candidate file ------ */
- i=0;
- fp=fopen(CLA.FstatsFile2,"r");
- if (fp==NULL) 
-   {
-     fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.FstatsFile2);
-     return 1;
-   }
- while(fgets(line,sizeof(line),fp))
-   {
-     if(*line == '#') continue;
-     if(*line == '%') continue;
-     if (i >= MAXCANDIDATES)
-       {
-	 fprintf(stderr,"Too many lines in file %s! Exiting... \n",CLA.FstatsFile2);
-	 return 1;
-       }
-     sscanf(line,"%le %le %le %le %le %le %le",&C2.f[i],&C2.Alpha[i],&C2.Delta[i],
-	    &dmp,&dmp,&dmp,&C2.F[i]);
-     i++;
-   }
- NCands2=i;
- fclose(fp);     
- /* -- close 1st candidate file -- */
-
- if(CLA.FstatsFile3 != NULL)
-   {
-     /* ------ Open and read 3rd candidate file ------ */
-     i=0;
-     fp=fopen(CLA.FstatsFile3,"r");
-     if (fp==NULL) 
-       {
-	 fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.FstatsFile3);
-	 return 1;
-       }
-     while(fgets(line,sizeof(line),fp))
-       {
-	 if(*line == '#') continue;
-	 if(*line == '%') continue;
-	 if (i >= MAXCANDIDATES)
-	   {
-	     fprintf(stderr,"Too many lines in file %s! Exiting... \n",CLA.FstatsFile3);
-	     return 1;
-	   }
-	 sscanf(line,"%le %le %le %le %le %le %le",&C3.f[i],&C3.Alpha[i],&C3.Delta[i],
-		&dmp,&dmp,&dmp,&C3.F[i]);
-	 i++;
-       }
-     NCands3=i;
-     fclose(fp);     
-    }      
-
- if(CLA.FstatsFile4 != NULL)
-   {
-     /* ------ Open and read 4th candidate file ------ */
-     i=0;
-     fp=fopen(CLA.FstatsFile4,"r");
-     if (fp==NULL) 
-       {
-	 fprintf(stderr,"That's weird... %s doesn't exist!\n",CLA.FstatsFile4);
-	 return 1;
-       }
-     while(fgets(line,sizeof(line),fp))
-       {
-	 if(*line == '#') continue;
-	 if(*line == '%') continue;
-	 if (i >= MAXCANDIDATES)
-	   {
-	     fprintf(stderr,"Too many lines in file %s! Exiting... \n",CLA.FstatsFile4);
-	     return 1;
-	   }
-	 sscanf(line,"%le %le %le %le %le %le %le",&C4.f[i],&C4.Alpha[i],&C4.Delta[i],
-		&dmp,&dmp,&dmp,&C4.F[i]);
-	 i++;
-       }
-     NCands4=i;
-     fclose(fp);     
-    }      
-
+  if (CLA.FstatsFile4)
+    {
+      ReadOneCandidateFile (&status, &CList4, CLA.FstatsFile4);
+      if (status.statusCode != 0) {
+	REPORTSTATUS (&status);
+	return 1;
+      }
+    }
 
   return 0;
-}
+
+} /* ReadCandidateFiles() */
 
 /*******************************************************************************/
 
@@ -683,21 +675,89 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   return errflg;
 }
 
+#define DONE_MARKER "%DONE"
+/* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
+void 
+ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
+{
+  UINT4 i;
+  UINT4 numlines;
+  REAL8 dmp;
+  LALParsedDataFile *Fstats =NULL;	/* pre-parsed contents of Fstats-file */
+  const CHAR *thisline;
+  CandidateList cands;
+  
+  INITSTATUS( stat, "ReadOneCandidateFile", rcsid );
+  ATTATCHSTATUSPTR (stat);
+ 
+  ASSERT ( fname, stat, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT ( CList, stat, POLKAC_ENULL, POLKAC_MSGENULL);
+  ASSERT ( CList->f == NULL && CList->Alpha == NULL && CList->Delta == NULL && CList->F == NULL && CList->fa == NULL, 
+	   stat, POLKAC_ENONULL, POLKAC_MSGENONULL);
 
-/* Explanation of locate
+  /* ------ Open and read candidate file ------ */
+  TRY ( LALParseDataFile (stat->statusPtr, &Fstats, fname), stat);
 
-the function locate returns the lower value of the two indices of the array xx
-that bound the value given x.
+  numlines = Fstats->lines->nTokens; /* how many lines of data */
 
-consider xx to be in descending order:
+  /* check validity of this Fstats-file */
+  thisline = Fstats->lines->tokens[numlines-1];	/* get last line */
+  if ( strcmp(thisline, DONE_MARKER ) ) 
+    {
+      LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
+      TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+  else
+    numlines --; 	/* avoid stepping on DONE-marker */
+  
+  /* reserve memory for fstats-file contents */
+  cands.f     = LALCalloc (numlines, sizeof(REAL8));
+  cands.Alpha = LALCalloc (numlines, sizeof(REAL8));
+  cands.Delta = LALCalloc (numlines, sizeof(REAL8));
+  cands.F     = LALCalloc (numlines, sizeof(REAL8));
+  cands.fa    = LALCalloc (numlines, sizeof(REAL8));
 
-fmax                                      fmin
-   |     |     |     |     |     |     |     |
-j: 0     1     2     3     4     5     6     7
+  if ( !cands.f || !cands.Alpha || !cands.Delta || !cands.F || !cands.fa )
+    {
+      TRY( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+      ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+    }
 
-            ^           ^            ^
-	 f2+Df	        f2        f2-Df
+  for (i=0; i < numlines; i++)
+    {
+      int read;
+      
+      thisline = Fstats->lines->tokens[i];
+      read = sscanf (thisline, 
+		     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
+		     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
+		     &(cands.f[i]), &(cands.Alpha[i]), &(cands.Delta[i]), &dmp, &dmp, &dmp, &(cands.F[i]) );
+      if ( read != 7 )
+	{
+	  LALPrintError ("Failed to parse line %d in file '%s' \n", i+1, fname);
+	  TRY (LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+	  LALFree (cands.f);
+	  LALFree (cands.Alpha);
+	  LALFree (cands.Delta);
+	  LALFree (cands.F);
+	  LALFree (cands.fa);
+	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	}
+    } /* for i < numlines */
+ 
+  /* we're done: get rid of raw data-file */
+  TRY ( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
+  
+  /* return final candidate-list */
+  CList->length = numlines;
+  CList->f      = cands.f;
+  CList->Alpha  = cands.Alpha;
+  CList->Delta  = cands.Delta;
+  CList->F      = cands.F;
+  CList->fa     = cands.fa;
 
-locate will return if2max=1 and if2min=5
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
 
-*/
+} /* ReadOneCandidateFile() */
