@@ -62,7 +62,6 @@ int main( void )
   filterParams->deltaT         = 1 / srate;
   filterParams->rhosqThresh    = 1e-6;
   filterParams->chisqThresh    = 1e+6;
-  filterParams->computeNegFreq = 0;
 
 
   /* create some fake data */
@@ -297,7 +296,6 @@ int SPFilter(
   tmplt.totalMass = tmplt.mass1 + tmplt.mass2;
   tmplt.mu        = tmplt.mass1 * tmplt.mass2 / tmplt.totalMass;
   tmplt.eta       = tmplt.mu / tmplt.totalMass;
-  filterInput->tmplt = &tmplt;
 
   LALFindChirpSPData( &status, fcSegVec, dataSegVec, dataParams );
   TEST_STATUS( &status );
@@ -395,7 +393,6 @@ int TDFilter(
   tmplt.massChoice      = m1Andm2;
   tmplt.OmegaS          = 0;
   tmplt.Theta           = 0;
-  filterInput->tmplt = &tmplt;
 
   LALInspiralParameterCalc( &status, &tmplt );
   TEST_STATUS( &status );

@@ -183,8 +183,7 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  tmplt = filterInput->tmplt = 
-    (InspiralTemplate *) LALMalloc (sizeof(InspiralTemplate));
+  tmplt = (InspiralTemplate *) LALMalloc (sizeof(InspiralTemplate));
   memset( tmplt, 0, sizeof(InspiralTemplate) );
 
 
@@ -439,7 +438,6 @@ main (int argc, char *argv[])
   filterParams->deltaT            = deltaT;
   filterParams->rhosqThresh       = rhosqThresh;
   filterParams->chisqThresh       = chisqThresh;
-  filterParams->computeNegFreq    = 0;
   filterParams->maximiseOverChirp = 1;
 
 
