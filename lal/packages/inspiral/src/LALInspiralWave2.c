@@ -106,10 +106,10 @@ LALInspiralWave2(
 
   rootIn.function = func.timing2; /* function to solve for v, given t: 
                                      timing2(v;tC,t)=0.  */
-
-/* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
-   which are given.  */
-
+  
+  /* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
+     which are given.  */
+  
   LALInspiralParameterCalc(status->statusPtr, params);
   CHECKSTATUSPTR(status);
 
@@ -130,60 +130,60 @@ LALInspiralWave2(
   toffIn.tl6 = ak.tvl6;
   toffIn.piM = ak.totalmass * LAL_PI;
 
-/* Determine the total chirp-time tC: the total chirp time is 
-   timing2(v0;tC,t) with t=tc=0*/
-
+  /* Determine the total chirp-time tC: the total chirp time is 
+     timing2(v0;tC,t) with t=tc=0*/
+  
   toffIn.t = 0.;
   toffIn.tc = 0.;
   funcParams = (void *) &toffIn;
   func.timing2(status->statusPtr, &tC, fs, funcParams);
   CHECKSTATUSPTR(status);
-/* Reset chirp time in toffIn structure */
+  /* Reset chirp time in toffIn structure */
   toffIn.tc = -tC;
-
-/* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
+  
+  /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
   v = pow(fs * LAL_PI * totalMass, oneby3);
   ak.phiC = 0.0;
   func.phasing2(status->statusPtr, &phase, v, &ak);
   CHECKSTATUSPTR(status);
   ak.phiC = -phase;
 
-/* 
-   If flso is less than the user inputted upper frequency cutoff fu, 
-*/
+  /* 
+     If flso is less than the user inputted upper frequency cutoff fu, 
+  */
 
   fLso = ak.fn;
   if (fu) 
-     fHigh = (fu < fLso) ? fu : fLso; 
+    fHigh = (fu < fLso) ? fu : fLso; 
   else 
-     fHigh = fLso;
+    fHigh = fLso;
 
-/* Is the sampling rate large enough? */
-
+  /* Is the sampling rate large enough? */
+  
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  
   rootIn.xmax = 1.1*fu;
   rootIn.xacc = 1.0e-8;
   rootIn.xmin = 0.999999*fs;
-
+  
   i=0;
   while (i<startShift) 
-  {
+    {
       output->data[i] = 0.0;
       i++;
   }
-
-/* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
-  of type void * rather than InspiralToffInput  */
-
+  
+  /* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
+     of type void * rather than InspiralToffInput  */
+  
   funcParams = (void *) &toffIn;
-
+  
   toffIn.t = 0.0;
   freq = fs;
   count=1;
   do
-  {
+    {
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
@@ -191,20 +191,20 @@ LALInspiralWave2(
     output->data[i++]=(REAL4)(params->signalAmplitude* v*v *cos(phase+phase0));
     toffIn.t=count*dt;
     ++count;
-/* 
-   Determine the frequency at the current time by solving timing2(v;tC,t)=0 
-*/
+    /* 
+       Determine the frequency at the current time by solving timing2(v;tC,t)=0 
+    */
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
-  } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
+    } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
   params->tC = toffIn.t;
-
+  
   while (i<(INT4)output->length) 
-  {
+    {
       output->data[i]=0.0;
       i++;
-  }
+    }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -217,14 +217,14 @@ NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
 
 void 
 LALInspiralWave2Templates(
-   LALStatus        *status, 
-   REAL4Vector      *output1, 
-   REAL4Vector      *output2, 
-   InspiralTemplate *params
-   )
+			  LALStatus        *status, 
+			  REAL4Vector      *output1, 
+			  REAL4Vector      *output2, 
+			  InspiralTemplate *params
+			  )
 
 { /* </lalVerbatim>  */
-
+  
   REAL8 amp, eta, dt, fs, fu, fHigh, phase0, phase1, tC;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
   INT4 i, startShift, count;
@@ -247,12 +247,12 @@ LALInspiralWave2Templates(
   ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  
   LALInspiralSetup(status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
   CHECKSTATUSPTR(status);
-
+  
   dt = 1.0/(params->tSampling);   /* sampling interval */
   fs = params->fLower;            /* lower frequency cutoff */
   fu = params->fCutoff;           /* upper frequency cutoff */
@@ -262,10 +262,10 @@ LALInspiralWave2Templates(
 
   rootIn.function = func.timing2; /* function to solve for v, given t: 
                                      timing2(v;tC,t)=0.  */
-
+  
 /* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
    which are given.  */
-
+  
   LALInspiralParameterCalc(status->statusPtr, params);
   CHECKSTATUSPTR(status);
 
@@ -286,60 +286,60 @@ LALInspiralWave2Templates(
   toffIn.tl6 = ak.tvl6;
   toffIn.piM = ak.totalmass * LAL_PI;
 
-/* Determine the total chirp-time tC: the total chirp time is 
-   timing2(v0;tC,t) with t=tc=0*/
-
+  /* Determine the total chirp-time tC: the total chirp time is 
+     timing2(v0;tC,t) with t=tc=0*/
+  
   toffIn.t = 0.;
   toffIn.tc = 0.;
   funcParams = (void *) &toffIn;
   func.timing2(status->statusPtr, &tC, fs, funcParams);
   CHECKSTATUSPTR(status);
-/* Reset chirp time in toffIn structure */
+  /* Reset chirp time in toffIn structure */
   toffIn.tc = -tC;
-
-/* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
+  
+  /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
   v = pow(fs * LAL_PI * totalMass, oneby3);
   ak.phiC = 0.0;
   func.phasing2(status->statusPtr, &phase, v, &ak);
   CHECKSTATUSPTR(status);
   ak.phiC = -phase;
 
-/* 
-   If flso is less than the user inputted upper frequency cutoff fu, 
-*/
-
+  /* 
+     If flso is less than the user inputted upper frequency cutoff fu, 
+  */
+  
   fLso = ak.fn;
   if (fu) 
-     fHigh = (fu < fLso) ? fu : fLso; 
+    fHigh = (fu < fLso) ? fu : fLso; 
   else 
-     fHigh = fLso;
-
-/* Is the sampling rate large enough? */
+    fHigh = fLso;
+  
+  /* Is the sampling rate large enough? */
 
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  
   rootIn.xmax = 1.1*fu;
   rootIn.xacc = 1.0e-8;
   rootIn.xmin = 0.999999*fs;
-
+  
   i=0;
   while (i<startShift) 
-  {
+    {
       output1->data[i] = output2->data[i] = 0.0;
       i++;
   }
-
-/* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
-  of type void * rather than InspiralToffInput  */
-
+  
+  /* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
+     of type void * rather than InspiralToffInput  */
+  
   funcParams = (void *) &toffIn;
-
+  
   toffIn.t = 0.0;
   freq = fs;
   count=1;
   do
-  {
+    {
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
@@ -350,16 +350,16 @@ LALInspiralWave2Templates(
     i++;
     toffIn.t=count*dt;
     ++count;
-/* 
-   Determine the frequency at the current time by solving timing2(v;tC,t)=0 
-*/
+    /* 
+       Determine the frequency at the current time by solving timing2(v;tC,t)=0 
+    */
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
-  } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
+    } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
 
   while (i<(INT4)output1->length) 
-  {
+    {
       output1->data[i]= output2->data[i]=0.0;
       i++;
   }
@@ -399,21 +399,6 @@ LALInspiralWave2ForInjection(
   expnFunc func;
   REAL8 unitHz,f2a, mu, mTot, cosI, etab, fFac,  f2aFac, apFac, acFac, phiC;
     
-  mTot   =  params->mass1 + params->mass2;
-  etab   =  params->mass1 * params->mass2;
-  etab  /= mTot;
-  etab  /= mTot;
-  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
-  cosI   = cos( params->inclination );
-  mu     = etab * mTot;  
-  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
-  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
-  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-  apFac *= 1.0 + cosI*cosI;
-  acFac *= 2.0 * cosI;
-
-
   INITSTATUS (status, "LALInspiralWave2ForInjection", LALINSPIRALWAVE2FORINJECTIONC);
   ATTATCHSTATUSPTR(status);
 
@@ -441,23 +426,38 @@ LALInspiralWave2ForInjection(
   
   params->nStartPad=0;
   
- /*Compute some parameters*/
-   LALInspiralSetup (status->statusPtr, &ak, params);
- CHECKSTATUSPTR(status);
-   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
-   CHECKSTATUSPTR(status);
-   LALInspiralWaveLength(status->statusPtr, &length, *params);
-   CHECKSTATUSPTR(status);
+  /*Compute some parameters*/
+  LALInspiralSetup (status->statusPtr, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+  CHECKSTATUSPTR(status);
+  LALInspiralWaveLength(status->statusPtr, &length, *params);
+  CHECKSTATUSPTR(status);
+  
 
+  
 
+  mTot   =  params->mass1 + params->mass2;
+  etab   =  params->mass1 * params->mass2;
+  etab  /= mTot;
+  etab  /= mTot;
+  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+  cosI   = cos( params->inclination );
+  mu     = etab * mTot;  
+  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+  apFac *= 1.0 + cosI*cosI;
+  acFac *= 2.0 * cosI;
 
-   /*Now we can allocate memory and vector for coherentGW structure*/     
-   LALSCreateVector(status->statusPtr, &ff, length);
-   CHECKSTATUSPTR(status);   
-   LALSCreateVector(status->statusPtr, &a, 2*length);
-   CHECKSTATUSPTR(status);   
-   LALDCreateVector(status->statusPtr, &phi, length);
-   CHECKSTATUSPTR(status);
+  /*Now we can allocate memory and vector for coherentGW structure*/     
+  LALSCreateVector(status->statusPtr, &ff, length);
+  CHECKSTATUSPTR(status);   
+  LALSCreateVector(status->statusPtr, &a, 2*length);
+  CHECKSTATUSPTR(status);   
+  LALDCreateVector(status->statusPtr, &phi, length);
+  CHECKSTATUSPTR(status);
   
   dt = 1.0/(params->tSampling);   /* sampling interval */
   fs = params->fLower;            /* lower frequency cutoff */
@@ -465,23 +465,23 @@ LALInspiralWave2ForInjection(
   startShift = params->nStartPad; /* number of bins to pad at the beginning */
   phase0 = params->startPhase;    /* initial phasea */
   phase1 = phase0 + LAL_PI_2;
-
+  
   rootIn.function = func.timing2; /* function to solve for v, given t: 
                                      timing2(v;tC,t)=0.  */
-
-/* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
-   which are given.  */
+  
+  /* Calculate the three unknown paramaters in (m1,m2,M,eta,mu) from the two
+     which are given.  */
 
   LALInspiralParameterCalc(status->statusPtr, params);
   CHECKSTATUSPTR(status);
-
+  
   ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->eta <=0.25, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  
   eta = params->eta;
   totalMass = params->totalMass*LAL_MTSUN_SI; /* solar mass in seconds */
-
+  
   toffIn.tN = ak.tvaN;
   toffIn.t2 = ak.tva2;
   toffIn.t3 = ak.tva3;
@@ -491,56 +491,58 @@ LALInspiralWave2ForInjection(
   toffIn.t7 = ak.tva7;
   toffIn.tl6 = ak.tvl6;
   toffIn.piM = ak.totalmass * LAL_PI;
-
-/* Determine the total chirp-time tC: the total chirp time is 
-   timing2(v0;tC,t) with t=tc=0*/
-
+  
+  /* Determine the total chirp-time tC: the total chirp time is 
+     timing2(v0;tC,t) with t=tc=0*/
+  
   toffIn.t = 0.;
   toffIn.tc = 0.;
   funcParams = (void *) &toffIn;
   func.timing2(status->statusPtr, &tC, fs, funcParams);
   CHECKSTATUSPTR(status);
-/* Reset chirp time in toffIn structure */
-  toffIn.tc = -tC;
 
-/* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
+  /* Reset chirp time in toffIn structure */
+  toffIn.tc = -tC;
+  
+  /* Determine the initial phase: it is phasing2(v0) with ak.phiC=0 */
   v = pow(fs * LAL_PI * totalMass, oneby3);
   ak.phiC = 0.0;
+  ak.phiC = LAL_PI/2;
   func.phasing2(status->statusPtr, &phase, v, &ak);
   CHECKSTATUSPTR(status);
   ak.phiC = -phase;
 
-/* 
-   If flso is less than the user inputted upper frequency cutoff fu, 
-*/
+  /* 
+     If flso is less than the user inputted upper frequency cutoff fu, 
+  */
 
   fLso = ak.fn;
   if (fu) 
-     fHigh = (fu < fLso) ? fu : fLso; 
+    fHigh = (fu < fLso) ? fu : fLso; 
   else 
-     fHigh = fLso;
-
-/* Is the sampling rate large enough? */
-
+    fHigh = fLso;
+  
+  /* Is the sampling rate large enough? */
+  
   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
+  
   rootIn.xmax = 1.1*fu;
   rootIn.xacc = 1.0e-8;
   rootIn.xmin = 0.999999*fs;
-
-  i=0;
-
-/* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
-  of type void * rather than InspiralToffInput  */
+  
+  i = 0;
+  
+  /* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
+     of type void * rather than InspiralToffInput  */
 
   funcParams = (void *) &toffIn;
-
+  
   toffIn.t = 0.0;
-  freq = fs;
-  count=1;
+  freq     = fs;
+  count    = 1;
   do
-  {
+    {
     fOld = freq;
     v = pow(freq*toffIn.piM, oneby3);
     func.phasing2(status->statusPtr, &phase, v, &ak); /* phase at given v */
@@ -548,33 +550,30 @@ LALInspiralWave2ForInjection(
 
     omega = v*v*v;
 
-
-
     ff->data[count]= (REAL4)(omega/unitHz);
     f2a = pow (f2aFac * omega, 2./3.);
     a->data[2*count]          = (REAL4)(4.*apFac * f2a);
     a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
     phi->data[count]          = (REAL8)(phase);
 
-
-    toffIn.t=count*dt;
+    toffIn.t = count * dt;
     ++count;
-/* 
-   Determine the frequency at the current time by solving timing2(v;tC,t)=0 
-*/
+    /* 
+       Determine the frequency at the current time by solving timing2(v;tC,t)=0 
+    */
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
     CHECKSTATUSPTR(status);
-  } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
+    } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
-
-
- /*wrap the phase vector*/
-   phiC =  phi->data[count-1] ;
-   for (i=0; i<count;i++)
+  
+  
+  /*wrap the phase vector*/
+  phiC =  phi->data[count-1] ;
+  for (i=0; i<count;i++)
      {
        phi->data[i] =  phi->data[i] -phiC;
      }
-/* Allocate the waveform structures. */
+  /* Allocate the waveform structures. */
   if ( ( waveform->a = (REAL4TimeVectorSeries *)
 	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
     ABORT( status, LALINSPIRALH_EMEM,
@@ -598,7 +597,6 @@ LALInspiralWave2ForInjection(
   memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
 
 
-
   in.length = (UINT4)count;
   in.vectorLength = 2;
   LALSCreateVectorSequence( status->statusPtr,
@@ -611,13 +609,9 @@ LALInspiralWave2ForInjection(
 		    &( waveform->phi->data ), count );
   CHECKSTATUSPTR(status);        
   
-  
-  
-
   memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
   memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
   memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
-
 
  
   dt = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
@@ -625,31 +619,26 @@ LALInspiralWave2ForInjection(
   waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
     = 1./params->tSampling;
 
-  waveform->a->sampleUnits = lalStrainUnit;
-  waveform->f->sampleUnits = lalHertzUnit;
+  waveform->a->sampleUnits   = lalStrainUnit;
+  waveform->f->sampleUnits   = lalHertzUnit;
   waveform->phi->sampleUnits = lalDimensionlessUnit;
- LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
-  LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
-  LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+
+  LALSnprintf( waveform->a->name, LALNameLength, "T2 inspiral amplitudes" );
+  LALSnprintf( waveform->f->name, LALNameLength, "T2 inspiral frequency" );
+  LALSnprintf( waveform->phi->name, LALNameLength, "T2 inspiral phase" );
 
 
- /* params->tC = count / params->tSampling ;*/
-  params->tSampling = (REAL4)(waveform->f->data->data[count-1]
-			      -
-			      waveform->f->data->data[count-2]);
-  /* - (waveform->f->data[count-2]);*/
-  params->tSampling /= (REAL4)dt;
+  params->tC = count / params->tSampling ;
   params->nStartPad = count;
 
-  LALFree(a->data);
-  LALFree(ff->data);
-  LALFree(phi->data);
-
-
-
+  LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
 
 
   DETATCHSTATUSPTR(status);
-    RETURN(status);
-
+  RETURN(status);
 }

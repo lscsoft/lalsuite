@@ -1,31 +1,22 @@
-/*----------------------------------------------------------------------- 
- * 
- * Author: Vallisneri, M.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+/*<lalVerbatim file="LALSTPNWaveformCV"> 
+  Author: Vallisneri, M.  Cokelaer, T.
+  $Id$
+  </lalVerbatim>  */
 
-/*</lalVerbatim>  */
+
 
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALSTPNWaveform.c}}
+DOCUMENTATION IN PROGRESS
 
-Module to generate STPN waveforms
+Module to generate STPN (spinning binaries) waveforms in agreement with 
+the injecttion  package (return a CoherentGW structure).
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALSTPNWaveformForInjectionCP}
-\index{\verb&LALSTPNWaveformForInjection()&}
-\begin{itemize}
-\item {\tt inject\_hc:} Output containing the 0-phase inspiral waveform.
-\item {\tt inject\_hp:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt inject\_phase:} Output containing the phase of inspiral waveform.
-\item {\tt inject\_freq:} Output containing the frequency of inspiral waveform.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+\index{\verb&LALSTPNWaveformForInjection&}
 
 
 \subsubsection*{Description}
@@ -44,6 +35,9 @@ Module to generate STPN waveforms
 \vfill{\footnotesize\input{LALSTPNWaveformCV}}
 
 </lalLaTeX>  */
+
+
+
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
@@ -236,18 +230,14 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     dvalues->data[9] = dS2y;
     dvalues->data[10]= dS2z;
 }
-
+                
 /*  <lalVerbatim file="LALSTPNWaveformForInjectionCP"> */
 void 
-LALSTPNWaveformForInjection (
-			    LALStatus        *status,
-			    CoherentGW       *waveform,
-			    InspiralTemplate *params
-			    ) 
-{ 
+LALSTPNWaveformForInjection (LALStatus        *status,
+			     CoherentGW       *waveform,
+			     InspiralTemplate *params  )  
   /* </lalVerbatim> */
-  REAL8 m1, m2, mTot, eta, mu;
-  REAL8 initf, thetahat, norb, nspnevl, nspn;
+{
   /* declare model parameters*/
 
   LALSTPNparams STPNparameters;
@@ -267,8 +257,8 @@ LALSTPNWaveformForInjection (
   REAL4Vector 	*a 	= NULL;
   REAL4Vector 	*ff 	= NULL ;
   REAL4Vector 	*shift 	= NULL;
-
   REAL8Vector 	*phi 	= NULL;
+
   REAL8Vector 	dummy, values, dvalues, newvalues, yt, dym, dyt;
 
   REAL8 	lengths;
@@ -279,11 +269,13 @@ LALSTPNWaveformForInjection (
   REAL8 	unitHz;
   REAL8  	dt;
   REAL8 LNhztol = 1.0e-8;
+
   /* declare initial values of dynamical variables*/
   REAL8 initphi;
   REAL8 initLNhx, initLNhy, initLNhz;
   REAL8 initS1x, initS1y, initS1z;
   REAL8 initS2x, initS2y, initS2z;
+
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
   REAL8 alpha, omegadot;
@@ -362,6 +354,7 @@ LALSTPNWaveformForInjection (
  /* Make sure parameter and waveform structures exist. */
   ASSERT(params, status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL);
   ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+
   /* Make sure waveform fields don't exist. */
   ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,	  LALINSPIRALH_MSGENULL );
@@ -665,7 +658,7 @@ LALSTPNWaveformForInjection (
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
 
-  params->fFinal = (REAL4)(omega/unitHz);
+  params->fFinal = ff->data[count-1];
 
   /* -? this looks like the final phase is being subtracted from the phase history*/
   /*    this operations negates the use of initphi, which is set to 0.0 anyway*/
@@ -737,21 +730,20 @@ LALSTPNWaveformForInjection (
   LALSnprintf( waveform->shift->name, 	LALNameLength, "STPN inspiral polshift" );
 
   params->tC = count / params->tSampling ;
-
-  /* -? I am not sure I understand this! Why is tSampling derived this way?*/
-  /*    it seems to me that these parameters are used to return other values*/
-  /*    but what should I do? */
-
-  params->tSampling = (REAL4)(waveform->f->data->data[count-1] - waveform->f->data->data[count-2]);
-  params->tSampling /= (REAL4)dt;
   params->nStartPad = count;
 
-  LALFree(shift->data);
-  LALFree(a->data);
-  LALFree(ff->data);
-  LALFree(phi->data); 
+  LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &shift);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
+
+
   LALFree(dummy.data);
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

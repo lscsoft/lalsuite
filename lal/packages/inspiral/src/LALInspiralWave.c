@@ -175,6 +175,8 @@ LALInspiralWave(
 	   LALInspiralSpinModulatedWave(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
+      case SpinTaylor: /* implemented only for inject package for the time being*/
+           break;
    }
 
    DETATCHSTATUSPTR(status);

@@ -8,6 +8,7 @@ LALEtaTau04.c\
 LALInspiralChooseModel.c\
 LALInspiralFrequency3.c\
 LALInspiralParameterCalc.c\
+LALInspiralParseParameters.c\
 LALInspiralPhasing1.c\
 LALInspiralPhasing2.c\
 LALInspiralPhasing3.c\
@@ -27,7 +28,8 @@ LALInspiralWave2.c\
 LALInspiralWave3.c\
 LALInspiralDerivatives.c\
 LALPrintTimeseries.c\
-LALRungeKutta4.c
+LALRungeKutta4.c\
+LALSTPNWaveform.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep

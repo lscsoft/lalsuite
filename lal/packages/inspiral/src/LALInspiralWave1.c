@@ -129,6 +129,7 @@ LALInspiralWave1(
       fHigh = (fu < ak.flso) ? fu : ak.flso; 
    else 
       fHigh = ak.flso;
+
 /* 
     Check that the highest frequency is less than half 
     the sampling frequency - the Nyquist theorem 
@@ -205,7 +206,7 @@ LALInspiralWave1(
       *(signal->data+count) = (REAL4) h;
       t = (++count-params->nStartPad) * dt;
       f = v*v*v/piM;
-   } while (t < ak.tn && f<fHigh);
+   } while (t < ak.tn &&  f<fHigh);
    params->fFinal = f;
    params->tC = t;       
 
@@ -369,8 +370,11 @@ LALInspiralWave1Templates(
       t = (++count-params->nStartPad) * dt;
       f = v*v*v/piM;
    } while (t < ak.tn && f<fHigh);
+   
+   params->vFinal = p;
    params->fFinal = f;
    params->tC = t;
+   
    while (count < (int)signal1->length) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;
@@ -636,24 +640,22 @@ LALInspiralWave1ForInjection(
   waveform->a->sampleUnits = lalStrainUnit;
   waveform->f->sampleUnits = lalHertzUnit;
   waveform->phi->sampleUnits = lalDimensionlessUnit;
- LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
-  LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
-  LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+ LALSnprintf( waveform->a->name, LALNameLength, "T1 inspiral amplitudes" );
+  LALSnprintf( waveform->f->name, LALNameLength, "T1 inspiral frequency" );
+  LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
 
 
   params->tC = count / params->tSampling ;
-  params->tSampling = (REAL4)(waveform->f->data->data[count-1]
-			      -
-			      waveform->f->data->data[count-2]);
-  /* - (waveform->f->data[count-2]);*/
-  params->tSampling /= (REAL4)dt;
   params->nStartPad = count;
 
-  LALFree(a->data);
-  LALFree(ff->data);
-  LALFree(phi->data);
+  LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
 
-   LALFree(dummy.data);
+  LALFree(dummy.data);
    
    DETATCHSTATUSPTR(status);
    RETURN (status);

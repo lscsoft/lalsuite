@@ -1442,8 +1442,7 @@ LALEOBWaveformForInjection (
 
   for (i=0; i<count;i++)
     {
-      phi->data[i] =  phi->data[i] -phiC;
-      /* if (i>100000)printf(" %d %E\n",i ,a->data[i]);*/
+      phi->data[i] =  phi->data[i] - phiC;
     }
 
   /* Allocate the waveform structures. */
@@ -1512,16 +1511,15 @@ LALEOBWaveformForInjection (
 
 
   params->tC = count / params->tSampling ;
-  params->tSampling = (REAL4)(waveform->f->data->data[count-1]
-			      -
-			      waveform->f->data->data[count-2]);
-  /* - (waveform->f->data[count-2]);*/
-  params->tSampling /= (REAL4)dt;
   params->nStartPad = count;
 
-  LALFree(a->data);
-  LALFree(ff->data);
-  LALFree(phi->data);
+
+  LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
 
  
   /*on peut utiliser tSampling pour dfdt*/

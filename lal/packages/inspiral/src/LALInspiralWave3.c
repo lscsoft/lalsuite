@@ -622,22 +622,21 @@ LALInspiralWave3ForInjection (
   waveform->a->sampleUnits = lalStrainUnit;
   waveform->f->sampleUnits = lalHertzUnit;
   waveform->phi->sampleUnits = lalDimensionlessUnit;
- LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
-  LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
-  LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+ LALSnprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
+  LALSnprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
+  LALSnprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );
 
 
   params->tC = count / params->tSampling ;
-  params->tSampling = (REAL4)(waveform->f->data->data[count-1]
-			      -
-			      waveform->f->data->data[count-2]);
-  /* - (waveform->f->data[count-2]);*/
-  params->tSampling /= (REAL4)dt;
   params->nStartPad = count;
 
-  LALFree(a->data);
-  LALFree(ff->data);
-  LALFree(phiv->data);
+ LALSDestroyVector(status->statusPtr, &ff);
+  CHECKSTATUSPTR(status);
+  LALSDestroyVector(status->statusPtr, &a);
+  CHECKSTATUSPTR(status);
+  LALDDestroyVector(status->statusPtr, &phi);
+  CHECKSTATUSPTR(status);
+
 
 
   DETATCHSTATUSPTR(status);

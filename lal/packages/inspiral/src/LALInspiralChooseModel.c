@@ -718,7 +718,7 @@ LALInspiralChooseModel(
  case BCVSpin:
    ak->tn = 100.;
    break;
- case SpinTaylorPN:
+ case SpinTaylor:
    break;
 }
    DETATCHSTATUSPTR(status);
