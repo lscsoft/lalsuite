@@ -1,0 +1,141 @@
+f\subsection{Program \texttt{lalapps\_BankEfficiency}}
+\label{program:lalapps-BankEfficiency}
+\idx[Program]{lalapps\_BankEfficiency}
+{\LARGE{{\bf Documentation In progress}}}
+
+\begin{entry}
+
+\item[Name]
+\verb$lalapps_BankEfficiency$ --- produces Monte Carlo simulation to test the bank efficiency
+code in the framework of inspiral binaries. It is dedicated to BCV bank validation tough 
+SPA bank might be tested as well.
+
+\item[Synopsis]
+\verb$lalapps_BankEfficiency$ [\verb$-h$] 
+[\verb$--alpha-bank$   \textit{$\alpha_{bank}$}]
+[\verb$--alpha-signal$ \textit{$\alpha_{signal}$}]
+[\verb$--fend-bcv$     \textit{$f_{cut}Min$}\texttt{\&}\textit{$f_{cut}Max$}]
+[\verb$--fl$	\textit{lower cutoff frequency}]
+[\verb$--mm$ \textit{MinimalMatch}]
+[\verb$--n$     \textit{number of simulations}]  - 
+[\verb$--number-fcut$ \textit{number of layers } \textit{ in $f_{cut}$ dimension}]
+[\verb$--print-bank$]
+[\verb$--psi0-range$ \textit{$\psi0_{Min}$}\texttt{\&}\textit{$\psi0_{Max}$}]
+[\verb$--psi3-range$ \textit{$\psi3_{Min}$}\texttt{\&}\textit{$\psi3_{Max}$}]
+[\verb$--s$ \textit{seed}]
+[\verb$--sampling$ \textit{sampling frequency}]
+[\verb$--signal$ \textit{injected signal approximant}]
+[\verb$--signal-order$ \textit{injected signal order}]
+[\verb$--template$ \textit{template approximant}]
+
+
+
+
+
+\item[Description]
+\verb$lalapps_BankEfficiency$ This application create a bank of templates based on the
+SPA bank or BCV bank. Then, it performs a Monte Carlo Simulation by injecting known signals
+such as TaylorT1, PadeT1 or EOB and computing the overlap between the signal and the 
+bank of templates.
+ 
+The argument \verb$--template$  decides which bank has to be used: BCV approximant leads 
+to BCV templates and BCV bank whereas any other approximant leads to a SPA bank but with 
+templates based on the given approximant. 
+
+If BCV bank is chosen, then overlap is based on BCV and takes into account the alpha
+maximization. If SPA bank is chosen then the filter in quadrature is used.
+
+In the case of BCV bank, the user have to provide the following parameters: 
+
+\begin{itemize}
+\item Minimal Match \verb$--mm 0.97$.
+\item $\alpha$ parameter \verb$--alpha-bank 0.01$ .
+\item a range of $\psi_0$ \verb$--psi0-range 1 100000$.
+\item a range of $\psi_3$ \verb$--psi3-range -1 -3500$.
+\end{itemize}
+ and possibly
+\begin{itemize}
+\item number of layers \verb$--number-fcut 5$ in the $f_{cut}$ dimension for the bank generation. 
+\item range of $f_{cut}$ \verb$--fend-bcv 4 8$.
+\item cutoff frequency for the moment computation \verb$--fcut-moment$
+\end{itemize}
+
+For the time being the Bank code is provided by the bank package through the function
+\texttt{LALCreateCoarseBank}. If the option "template" is BCV then the bank will be a BCV
+ bank using the fucntion \texttt{LALInspiralBCVFcutBank} (see bank package for details).
+
+
+
+
+
+\item[Options related to the simulations]\leavevmode
+\begin{entry}
+\item[\texttt{--alpha-bank}]
+alpha parameter to compute the metric.
+\item[\texttt{--alpha-signal}]
+alpha parameter used for generating the  injection of BCV waveform.
+\item[\texttt{--fend-bcv}]
+Range of cutoff frequency for the BCV template creation. User must provide two parameters: 
+the lowest and upper frequency cutoff. Those frequency are not expressed in Hz but in term
+of distance betwwen the two objets. for instance at the last stable orbit, the distance 
+between the two objects is 6GM. In the case of an EOB description, the distance between 
+the two objects is closer to 3GM. A good compromise is to use fend-bcv between 8GM and 3GM
+and using the options --number-fcut = 5. 
+\item[\texttt{--fl}]
+Lower cutoff frequency for templates and signal. Might add two options later. 
+\item[\texttt{--h}]
+Print a help message.
+\item[\texttt{--mm}]
+Fixe the Minimal Match of the bank.
+\item[\texttt{--n}]
+Number of trials, i.e number of injections.
+\item[\texttt{--number-fcut}]
+Number of layers to create in the BCV bank in the fend-bcv dimension. 
+Given the lower and upper frequency (see option fend-bcv), the bank creates
+n layers each of them having a frequency between lowest fend-bcv and highest fend-bcv.
+\item[\texttt{--psi0-range}]
+Range of paramter psi0. User must give two positive numbers.
+\item[\texttt{--psi3-range}]
+Range of paramter psi3. User must give two negative numbers.
+\item[\texttt{--sampling}]
+Sampling frequency.
+\item[\texttt{--seed}]
+Random seed.
+\item[\texttt{--signal}]
+Approximant of the injected signal. See LAL documentation for details. It must be a string
+such as TaylorT1, TaylorT2, EOB ...
+\item[\texttt{--signal-order}]
+Order of the injected waveforms.
+\item[\texttt{--template}]
+Template to be used for the detection. If BCV if given then both bank and templates will be
+based on BCV. If the approximant is not BCV then the bank is a SPA bank of templates and the 
+templates corresponds to the given argument.
+\end{entry}
+
+
+
+
+\item[Options related to output]\leavevmode
+\begin{entry}
+\item[\texttt{--print-bank}]
+Print the bank of templates on stdout. If a BCV-template bank is used then the ouput is composed of
+5 columns: psi0, psi3, number of layer, total mass and final frequency. If it is a SPA bank
+then 4 columns are print: tau0, tau3, and corresponding mass1 and mass2. The number of templates is 
+also printed.
+
+\end{entry}
+
+\item[Example]\leavevmode
+The following command
+\begin{verbatim}
+lalapps_BankEfficiency --psi0-range 1 100000 --psi3-range -1 -3500 -n 1000 
+--template BCV --signal TaylorT1 --alpha-bank 0 -mm 0.97
+\end{verbatim}
+
+will compute overlaps between injected TaylorT1 waveforms and a BCV abnk of templates. 
+
+
+\item[Author]
+Thomas Cokelaer
+
+\end{entry}
