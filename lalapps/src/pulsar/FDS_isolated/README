@@ -1,0 +1,39 @@
+----------------------------------------------------------------------
+Codes for pulsar-search in the frequency domain and related codes.
+----------------------------------------------------------------------
+
+
+FILES:
+----------
+ComputeFStatistic.h
+ComputeFStatistic.c	: main search-code using JKS98 "F-statistic"
+
+clusters.h
+clusters.c		: cluster-finding algorithm, very non LAL-compliant
+
+rngmed.h
+rngmed.c		: original running-median code, has moved into LAL recently and will disappear soon
+
+DopplerScan.h
+DopplerScan.c		: generate grid in parameter-space do stepping through it (eventually -> LAL ?)
+
+cfs_example.cfg		: config-file example for ComputeFStatistic
+
+ComputeFStatistic_v2.c	: 'placeholder' for work on major re-write of to turn ComputeFStatistic it into 
+			   a function callable from other codes (ie. in Monte-Carlo simulations, Hough-search etc)
+
+ComputeFStatisticBinary.h
+ComputeFStatisticBinary.c: Chris' modified version to allow for binary-pulsar search. Eventually to be subsumed 
+			   into the  main code and to disappear
+
+SemiAnalyticF.h
+SemiAnalyticF.c		: Xavier's semi-analytic calculation of F-statistic for testing main-code
+
+FstatShapeTest.c	: Yousuke's codes for Shape-test and finding nearest grid-points...
+FstatShapeTestLAL.c	:
+NearestGridPoints.c	:     
+
+FrComputeFStatistic.h
+FrComputeFStatistic.c	: don't know what the heck this is...
+
+
