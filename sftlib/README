@@ -5,6 +5,9 @@ LATEST CODE/DOCUMENTATION VERSION
 ---------------------------------
 May be obtained from CVS using module 'sftlib' from:
 :pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft 
+See:
+http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-cvs.html
+for instructions about accessing CVS using this.
 
 
 TO BUILD/INSTALL
