@@ -82,13 +82,13 @@ main (  int argc, char **argv )
    static UINT4 psdLength, quietFlag = 0, optFlag=0;
    static REAL8 df, norm;
    static REAL4Vector signal, correlation;
-   void   *noisemodel = LALLIGOIPsd;
-/*   void   *noisemodel = LALVIRGOPsd;*/
+/*   void   *noisemodel = LALLIGOIPsd;*/
+   void   *noisemodel = LALVIRGOPsd;
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
    static REAL8FrequencySeries shf;
    static RealFFTPlan *fwdp=NULL,*revp=NULL;
-   static InspiralTemplate tmpltParam, param;
+   static InspiralTemplate tmpltParams, params;
    static InspiralWaveNormaliseIn normin;
    
    
@@ -96,74 +96,74 @@ main (  int argc, char **argv )
    approx = PadeT1;
    tmplt = BCV;
 
-   param.approximant = approx;
-   param.massChoice = m1Andm2;
-   param.ieta = 1;
-   param.fLower = 40;
-   param.order = 5;
-   param.mass1 = 5.0;
-   param.mass2 = 5.0;
-   param.startTime=0.0; 
-   param.startPhase=0.88189; 
-   param.nStartPad=1000;
-   param.fCutoff = 1000.;
-   param.tSampling = 2048.;
-   param.signalAmplitude = 1.0;
-   param.nEndPad = 0;
-   param.alpha = 0.L;
+   params.approximant = approx;
+   params.massChoice = m1Andm2;
+   params.ieta = 1;
+   params.fLower = 40;
+   params.order = 5;
+   params.mass1 = 5.0;
+   params.mass2 = 5.0;
+   params.startTime=0.0; 
+   params.startPhase=0.88189; 
+   params.nStartPad=1000;
+   params.fCutoff = 1000.;
+   params.tSampling = 2048.;
+   params.signalAmplitude = 1.0;
+   params.nEndPad = 0;
+   params.alpha = 0.L;
    
-   tmpltParam = param;
+   tmpltParams = params;
 
-   tmpltParam.massChoice = psi0Andpsi3;
-   tmpltParam.approximant = tmplt;
-   tmpltParam.alpha = 0.669L;
-   tmpltParam.psi0 = 224810.L;
-   tmpltParam.psi3 = -867.58L;
-   tmpltParam.fendBCV = 764.5L;
-   param.alpha = tmpltParam.alpha;
-   param.psi0 = tmpltParam.psi0;
-   param.psi3 = tmpltParam.psi3;
-   param.fendBCV = tmpltParam.fendBCV;
+   tmpltParams.massChoice = psi0Andpsi3;
+   tmpltParams.approximant = tmplt;
+   tmpltParams.alpha = 0.669L;
+   tmpltParams.psi0 = 224810.L;
+   tmpltParams.psi3 = -867.58L;
+   tmpltParams.fendBCV = 764.5L;
+   params.alpha = tmpltParams.alpha;
+   params.psi0 = tmpltParams.psi0;
+   params.psi3 = tmpltParams.psi3;
+   params.fendBCV = tmpltParams.fendBCV;
 
 
    i=1;
    while(i < argc)
    {
 	   if (strcmp(argv[i],"-fl1")==0)
-		   param.fLower      = atof(argv[++i]);
+		   params.fLower      = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-fl2")==0)
-		   tmpltParam.fLower = atof(argv[++i]);
+		   tmpltParams.fLower = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-order1")==0)
-		   param.order = atoi(argv[++i]); 
+		   params.order = atoi(argv[++i]); 
 	   else if (strcmp(argv[i],"-order2")==0)
-		   tmpltParam.order = atoi(argv[++i]);
+		   tmpltParams.order = atoi(argv[++i]);
 	   else if (strcmp(argv[i],"-zeta2")==0)
-	     param.Zeta2 = atof(argv[++i]);
+	     params.Zeta2 = atof(argv[++i]);
 	   else if  (strcmp(argv[i],"-sampling")==0)
 	     {
-	       param.tSampling = atof(argv[++i]);
-	       tmpltParam.tSampling = param.tSampling;
+	       params.tSampling = atof(argv[++i]);
+	       tmpltParams.tSampling = params.tSampling;
 	     }
 	   else if (strcmp(argv[i],"-m1")==0)
-		   param.mass1 = atof(argv[++i]); 
+		   params.mass1 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-m2")==0)
-		   param.mass2 = atof(argv[++i]); 
+		   params.mass2 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-m3")==0)
-		   tmpltParam.mass1 = atof(argv[++i]); 
+		   tmpltParams.mass1 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-m4")==0)
-		   tmpltParam.mass2 = atof(argv[++i]); 
+		   tmpltParams.mass2 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-quiet")==0)
 		   quietFlag = 1;
 	   else if (strcmp(argv[i],"-opt")==0)
 		   optFlag = 1;
 	   else if (strcmp(argv[i],"-alpha")==0)
-		   tmpltParam.alpha = atof(argv[++i]); 
+		   tmpltParams.alpha = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-psi0")==0)
-		   tmpltParam.psi0 = atof(argv[++i]);
+		   tmpltParams.psi0 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-psi3")==0)
-		   tmpltParam.psi3 = atof(argv[++i]);
+		   tmpltParams.psi3 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-fcut")==0)
-		   tmpltParam.fendBCV = atof(argv[++i]);
+		   tmpltParams.fendBCV = atof(argv[++i]);
 	   else if (strcmp(argv[i], "-approximant")==0 || (strcmp(argv[i], "-signal")==0))
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
@@ -186,7 +186,7 @@ main (  int argc, char **argv )
 			   approx = 8;
 		   else if (strcmp(argv[i],"SpinTaylorT3")==0)
 			   approx = 9;
-		   param.approximant = approx;	
+		   params.approximant = approx;	
 	   }	
 	   else if (strcmp(argv[i], "-template")==0)
 	   {
@@ -210,29 +210,28 @@ main (  int argc, char **argv )
 			   tmplt = 8;
 		   else if (strcmp(argv[i],"SpinTaylorT3")==0)
 			   tmplt = 9;
-		   tmpltParam.approximant = tmplt;	
+		   tmpltParams.approximant = tmplt;	
 	   }	
 	   else 
 	   {
 		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
 		   fprintf(stderr,"The options are (with default values in brackets)\n");
 		   fprintf(stderr,"      -quiet : if this flag is present, the output is restricted to the minimum\n");
-		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n", param.alpha);
-		   fprintf(stderr,"-approximant : Post-Newtonian model of signal (PadeT1)\n");
+		   fprintf(stderr,"      -alpha : BCV amplitude correction paramseter (%7.2f)\n", params.alpha);
 		   fprintf(stderr,"     -signal : same as -approximant\n");
 		   fprintf(stderr,"   -template : Post-Newtonian model of template (BCV)\n");
-		   fprintf(stderr,"        -fl1 : lower frequency cutoff (%7.2f) Hz of signal\n", param.fLower);
-		   fprintf(stderr,"        -fl2 : lower frequency cutoff (%7.2f) Hz of template\n", param.fLower);
-		   fprintf(stderr,"      -Zeta2 : zeta2 for EOB 3pn (%7.2f)\n", param.Zeta2);
-		   fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", param.mass1);
-		   fprintf(stderr,"         -m2 : mass of companion (%7.2f) SolarMass\n", param.mass2);
-		   fprintf(stderr,"         -m3 : mass of primary (%7.2f) in template\n", tmpltParam.mass1);
-		   fprintf(stderr,"         -m4 : mass of companion (%7.2f) in template\n", tmpltParam.mass2);
-		   fprintf(stderr,"      -order : order of PN model (%7.2d) of signal\n", param.order);
-		   fprintf(stderr,"      -order : order of PN model (%7.2d) of template\n", param.order);
-		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", param.psi0);
-		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", param.psi3);
-		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", param.fendBCV);
+		   fprintf(stderr,"        -fl1 : lower frequency cutoff (%7.2f) Hz of signal\n", params.fLower);
+		   fprintf(stderr,"        -fl2 : lower frequency cutoff (%7.2f) Hz of template\n", params.fLower);
+		   fprintf(stderr,"      -Zeta2 : zeta2 for EOB 3pn (%7.2f)\n", params.Zeta2);
+		   fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", params.mass1);
+		   fprintf(stderr,"         -m2 : mass of companion (%7.2f) SolarMass\n", params.mass2);
+		   fprintf(stderr,"         -m3 : mass of primary (%7.2f) in template\n", tmpltParams.mass1);
+		   fprintf(stderr,"         -m4 : mass of companion (%7.2f) in template\n", tmpltParams.mass2);
+		   fprintf(stderr,"      -order : order of PN model (%7.2d) of signal\n", params.order);
+		   fprintf(stderr,"      -order : order of PN model (%7.2d) of template\n", params.order);
+		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", params.psi0);
+		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", params.psi3);
+		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fendBCV);
 		   return 1;	
 
 	   }
@@ -245,8 +244,8 @@ main (  int argc, char **argv )
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;
    signal.length = 0.;
-   param.approximant = EOB;
-   LALInspiralWaveLength (&status, &signal.length, param);
+   params.approximant = EOB;
+   LALInspiralWaveLength (&status, &signal.length, params);
    if (!quietFlag) fprintf(stdout, "signal length = %d\n", signal.length);
 
    correlation.length = signal.length;
@@ -256,8 +255,8 @@ main (  int argc, char **argv )
    memset( &(shf), 0, sizeof(REAL8FrequencySeries) );
    shf.f0 = 0;
    LALDCreateVector( &status, &(shf.data), psdLength );
-   shf.deltaF = param.tSampling / signal.length;
-   df = param.tSampling/(float) signal.length;
+   shf.deltaF = params.tSampling / signal.length;
+   df = params.tSampling/(float) signal.length;
    LALNoiseSpectralDensity (&status, shf.data, noisemodel, df);
 
 /* 
@@ -268,46 +267,46 @@ main (  int argc, char **argv )
 /* REPORTSTATUS(&status); */
    
    
-   param.approximant = approx;
-   if (param.approximant == BCV)
-	   param.massChoice = psi0Andpsi3;
+   params.approximant = approx;
+   if (params.approximant == BCV)
+	   params.massChoice = psi0Andpsi3;
    else
-	   param.massChoice = m1Andm2;
+	   params.massChoice = m1Andm2;
 
-   LALInspiralParameterCalc (&status, &param);
-   if (param.approximant != BCV && param.approximant != TaylorF1 && param.approximant != TaylorF2 )
+   LALInspiralParameterCalc (&status, &params);
+   if (params.approximant != BCV && params.approximant != TaylorF1 && params.approximant != TaylorF2 )
    {
-	   LALInspiralWave(&status, &correlation, &param);
+	   LALInspiralWave(&status, &correlation, &params);
 	   LALREAL4VectorFFT(&status, &signal, &correlation, fwdp);
    }
    else
    {
-	   LALInspiralWave(&status, &signal, &param);
+	   LALInspiralWave(&status, &signal, &params);
    }
 
    normin.psd = shf.data;
-   normin.df = param.tSampling / (REAL8)signal.length;
-   normin.fCutoff = param.fFinal;
+   normin.df = params.tSampling / (REAL8)signal.length;
+   normin.fCutoff = params.fFinal;
   /* normin.fLower = 0;*/
-/*      normin.fCutoff = param.tSampling / 2. -1;*/
-   normin.samplingRate = param.tSampling;
+/*      normin.fCutoff = params.tSampling / 2. -1;*/
+   normin.samplingRate = params.tSampling;
 
 
    LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin);
    
 
-   tmpltParam.approximant = tmplt;
-   if (tmpltParam.approximant == BCV)
+   tmpltParams.approximant = tmplt;
+   if (tmpltParams.approximant == BCV)
    {
-	   tmpltParam.massChoice = psi0Andpsi3;
+	   tmpltParams.massChoice = psi0Andpsi3;
    }
    else
    {
-	   tmpltParam.massChoice = m1Andm2;
+	   tmpltParams.massChoice = m1Andm2;
    }
-   LALInspiralParameterCalc (&status, &tmpltParam);
+   LALInspiralParameterCalc(&status, &tmpltParams);
 
-   overlapin.param = tmpltParam;
+   overlapin.param = tmpltParams;
    overlapin.psd = *shf.data;
    overlapin.signal = signal;
    overlapin.fwdp = fwdp;
@@ -319,30 +318,30 @@ main (  int argc, char **argv )
    if (!quietFlag) for (i=0; (UINT4) i<correlation.length; i++) printf("%e\n", correlation.data[i]);
    if (tmplt == BCV)
 	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e\n", 
-			   tmpltParam.approximant,
-			   param.approximant,
-			   tmpltParam.psi0, 
-			   tmpltParam.psi3, 
-			   param.mass1,
-			   param.mass2,
-			   tmpltParam.totalMass, 
-			   param.totalMass,
+			   tmpltParams.approximant,
+			   params.approximant,
+			   tmpltParams.psi0, 
+			   tmpltParams.psi3, 
+			   params.mass1,
+			   params.mass2,
+			   tmpltParams.totalMass, 
+			   params.totalMass,
 			   overlapin.param.fFinal, 
-			   param.fFinal,
+			   params.fFinal,
 			   overlapout.max
 		   );
    else
-	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e\n", 
-			   tmpltParam.approximant,
-			   param.approximant,
-			   tmpltParam.mass1, 
-			   param.mass1,
-			   tmpltParam.mass2, 
-			   param.mass2,
-			   tmpltParam.totalMass, 
-			   param.totalMass,
+	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e %e\n", 
+			   tmpltParams.approximant,
+			   params.approximant,
+			   tmpltParams.mass1, 
+			   params.mass1,
+			   tmpltParams.mass2, 
+			   params.mass2,
+			   tmpltParams.totalMass, 
+			   params.totalMass,
 			   overlapin.param.fFinal, 
-			   param.fFinal,
+			   params.fFinal,tmpltParams.fLower,
 			   overlapout.max
 		   );
    /* destroy the plans, correlation and signal */
@@ -354,7 +353,7 @@ main (  int argc, char **argv )
       LALDestroyRealFFTPlan(&status,&revp);
       LALCheckMemoryLeaks();
       if (!quietFlag) 
-      	PrintParams(param, tmpltParam);
+      	PrintParams(params, tmpltParams);
    return(0);
 
 }
@@ -373,33 +372,33 @@ void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0)
 
 
 void
-PrintParams(InspiralTemplate params1, InspiralTemplate param2)
+PrintParams(InspiralTemplate params1, InspiralTemplate params2)
 {
-  printf("\n#ieta     = %7.2d %7.2d\n",params1.ieta,param2.ieta);
-  printf("#level      = %7.2d %7.2d\n",params1.level,param2.level);
-  printf("#nStartPad  = %7.2d %7.2d\n",params1.nStartPad,param2.nStartPad);
-  printf("#nEndPad    = %7.2d %7.2d\n",params1.nEndPad,param2.nEndPad);
-  printf("#minMatch   = %7.2f %7.2f\n",params1.minMatch,param2.minMatch);
-  printf("#mass1      = %7.2f %7.2f\n",params1.mass1,param2.mass1); 
-  printf("#mass2      = %7.2f %7.2f\n",params1.mass2,param2.mass2);
-  printf("#totalMass  = %7.2f %7.2f\n",params1.totalMass,param2.totalMass); 
-  printf("#chirpmass  = %7.2f %7.2f\n",params1.chirpMass,param2.chirpMass); 
-  printf("#psi0       = %7.2f %7.2f\n",params1.psi0,param2.psi0);
-  printf("#psi3       = %7.2f %7.2f\n",params1.psi3,param2.psi3);
-  printf("#fendBCV    = %7.2f %7.2f\n",params1.fendBCV,param2.fendBCV);
-  printf("#alpha      = %7.2f %7.2f\n",params1.alpha,param2.alpha);
-  printf("#alpha1     = %7.2f %7.2f\n",params1.alpha1,param2.alpha1);
-  printf("#alpha2     = %7.2f %7.2f\n",params1.alpha2,param2.alpha1);
-  printf("#beta       = %7.2f %7.2f\n",params1.beta,param2.beta);
-  printf("#tc         = %7.2f %7.2f\n",params1.tC,param2.tC); 
-  printf("#eta        = %7.2f %7.2f\n",params1.eta,param2.eta);
-  printf("#fLower     = %7.2f %7.2f\n",params1.fLower,param2.fLower);
-  printf("#fcutoff    = %7.2f %7.2f\n",params1.fCutoff,param2.fCutoff);
-  printf("#tsampling  = %7.2f %7.2f\n",params1.tSampling,param2.tSampling);
-  printf("#phase0     = %7.2f %7.2f\n",params1.startPhase,param2.startPhase);
-  printf("#t0         = %7.2f %7.2f\n",params1.startTime,param2.startTime);
-  printf("#fFinal     = %7.2f %7.2f\n",params1.fFinal,param2.fFinal);
-  printf("#zeta2      = %7.2f %7.2f\n",params1.Zeta2,param2.Zeta2);
-  printf("#order      = %7.2d %7.2d\n",params1.order,param2.order);
-  printf("#approximant= %7.2d %7.2d\n",params1.approximant,param2.approximant);
+  printf("\n#ieta     = %7.2d %7.2d\n",params1.ieta,params2.ieta);
+  printf("#level      = %7.2d %7.2d\n",params1.level,params2.level);
+  printf("#nStartPad  = %7.2d %7.2d\n",params1.nStartPad,params2.nStartPad);
+  printf("#nEndPad    = %7.2d %7.2d\n",params1.nEndPad,params2.nEndPad);
+  printf("#minMatch   = %7.2f %7.2f\n",params1.minMatch,params2.minMatch);
+  printf("#mass1      = %7.2f %7.2f\n",params1.mass1,params2.mass1); 
+  printf("#mass2      = %7.2f %7.2f\n",params1.mass2,params2.mass2);
+  printf("#totalMass  = %7.2f %7.2f\n",params1.totalMass,params2.totalMass); 
+  printf("#chirpmass  = %7.2f %7.2f\n",params1.chirpMass,params2.chirpMass); 
+  printf("#psi0       = %7.2f %7.2f\n",params1.psi0,params2.psi0);
+  printf("#psi3       = %7.2f %7.2f\n",params1.psi3,params2.psi3);
+  printf("#fendBCV    = %7.2f %7.2f\n",params1.fendBCV,params2.fendBCV);
+  printf("#alpha      = %7.2f %7.2f\n",params1.alpha,params2.alpha);
+  printf("#alpha1     = %7.2f %7.2f\n",params1.alpha1,params2.alpha1);
+  printf("#alpha2     = %7.2f %7.2f\n",params1.alpha2,params2.alpha1);
+  printf("#beta       = %7.2f %7.2f\n",params1.beta,params2.beta);
+  printf("#tc         = %7.2f %7.2f\n",params1.tC,params2.tC); 
+  printf("#eta        = %7.2f %7.2f\n",params1.eta,params2.eta);
+  printf("#fLower     = %7.2f %7.2f\n",params1.fLower,params2.fLower);
+  printf("#fcutoff    = %7.2f %7.2f\n",params1.fCutoff,params2.fCutoff);
+  printf("#tsampling  = %7.2f %7.2f\n",params1.tSampling,params2.tSampling);
+  printf("#phase0     = %7.2f %7.2f\n",params1.startPhase,params2.startPhase);
+  printf("#t0         = %7.2f %7.2f\n",params1.startTime,params2.startTime);
+  printf("#fFinal     = %7.2f %7.2f\n",params1.fFinal,params2.fFinal);
+  printf("#zeta2      = %7.2f %7.2f\n",params1.Zeta2,params2.Zeta2);
+  printf("#order      = %7.2d %7.2d\n",params1.order,params2.order);
+  printf("#approximant= %7.2d %7.2d\n",params1.approximant,params2.approximant);
 }

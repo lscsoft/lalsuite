@@ -117,20 +117,24 @@ LALInspiralParameterCalc
 #define BANKEFFICIENCY_STARTTIME       	0.
 #define BANKEFFICIENCY_STARTPHASE    	0.9
 #define BANKEFFICIENCY_NSTARTPHASE  	1000
-#define BANKEFFICIENCY_SIGNALAMPLITUDE 	1.
+#define BANKEFFICIENCY_SIGNALAMPLITUDE 	10.
 #define BANKEFFICIENCY_NENDPAD         	0
 #define BANKEFFICIENCY_NOISEAMP        	1.
 #define BANKEFFICIENCY_NTRIALS         	2
-#define BANKEFFICIENCY_QUIETFLAG       	0
-
+#define BANKEFFICIENCY_SEED        122888
+/* Other Parameters */
+#define BANKEFFICIENCY_QUIETFLAG       	        0
+#define BANKEFFICIENCY_AMBIGUITYFUNCTION      	0
 
 typedef struct	
 {
-INT4 signal; /*random signal*/
-INT4 template;/*template and bank*/
-INT4 bank;
-INT4 ntrials;
-INT4 quietFlag;
+  INT4 signal; /*random signal*/
+  INT4 template;/*template and bank*/
+  INT4 bank;
+  INT4 ntrials;
+  INT4 quietFlag;
+  INT4 ambiguityFunction;
+  double m1,m2, psi0,psi3;
 } OtherParamIn;
 
 
@@ -156,10 +160,10 @@ void 	Help(InspiralCoarseBankIn 	coarseIn,
 	     RandomInspiralSignalIn 	randIn,
 	     OtherParamIn 		otherIn);
 
-INT4 lalDebugLevel=1;
-     
+int lalDebugLevel = LALINFO |LALNMEMDBG;
 
-int 
+
+
 main (  int argc, char **argv ) 
 {
    /* --- Variables ---*/
@@ -168,7 +172,8 @@ main (  int argc, char **argv )
    INT4 jmax, nlist;
    REAL8 df, omax;
    REAL4Vector  signal, correlation;
-   void   			*noisemodel = LALLIGOIPsd;
+   /*void   			*noisemodel = LALLIGOIPsd;*/
+   void   			*noisemodel = LALVIRGOPsd;
    RandomInspiralSignalIn	 randIn;			/* random signal waveform to inject*/
    InspiralWaveOverlapIn 	 overlapin;			/* structure for Overlap*/
    InspiralWaveOverlapOut        overlapout, 
@@ -178,7 +183,6 @@ main (  int argc, char **argv )
 		     	        *revp=NULL;
    InspiralTemplateList         *list=NULL;
    InspiralCoarseBankIn          coarseIn; 			/* strcture for the bank of templates*/
-
 
    
    /* --- Initialisation of parameters and variables --- */
@@ -213,13 +217,12 @@ main (  int argc, char **argv )
    /* --- Compute Noise Spectral Density --- */
    df = randIn.param.tSampling/(float) signal.length;
    LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df);
-   for (i=0; i<randIn.psd.length; i++)
+   for (i=0; i< (int)randIn.psd.length; i++)
      randIn.psd.data[i] = coarseIn.shf.data->data[i];
 
    /* --- And the bank of templates --- */
    LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
    if (nlist==0) exit(0);					/* If no points in the bank then noting to do here */
-
 
    /* --- Let's print some optional comments : the position of templates in the bank ---*/
    if (!otherIn.quietFlag)
@@ -242,7 +245,7 @@ main (  int argc, char **argv )
        if (coarseIn.approximant==BCV)
 	 {
 	       fprintf(stdout, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e, signal=%d, template=%d\n", 
-		       coarseIn.psi0Min,coarseIn.psi0Max,coarseIn.psi3Min,coarseIn.psi3Max,otherIn.signal,randIn.param.approximant);
+		       coarseIn.psi0Min,coarseIn.psi0Max,coarseIn.psi3Min,coarseIn.psi3Max,otherIn.signal,otherIn.template);
 	       fprintf(stdout, "#psi0Tmplt   psi0Sig    psi3Tmplt    psi3Sig    fFinalTmplt   fFinalSig  m1 m2 Overlap/SNR\n");
 	 }
        else
@@ -267,14 +270,23 @@ main (  int argc, char **argv )
    overlapin.fwdp 	= randIn.fwdp = fwdp;
    overlapin.revp 	= revp;
    
-   
+   /* If ambiguity function flag equal to 1 we don't want to compute 
+      tons of trials since th number of ouput could be too important*/
+  
+
+   if (otherIn.ambiguityFunction  == 1)
+     {
+       
+       otherIn.ntrials=1;
+     }
+
    
  
    /* --- The main loop --- */ 
    while (otherIn.ntrials--) 
      {
-       randIn.param.approximant 	= otherIn.signal;  /* The waveform to inject */
-       randIn.param.fCutoff 	= coarseIn.fUpper; /* its cutoff frequency */
+       randIn.param.approximant    = otherIn.signal;  /* The waveform to inject */
+       randIn.param.fCutoff 	   = coarseIn.fUpper; /* its cutoff frequency */
        /* What kind of parameters do we use ?*/
        if (otherIn.signal == BCV) 
 	 randIn.param.massChoice = psi0Andpsi3;
@@ -283,11 +295,18 @@ main (  int argc, char **argv )
        /* Let's compute the random parameters of the waveform to inject*/
        for (i=0; i<signal.length; i++) signal.data[i] = 0.;
        LALRandomInspiralSignal(&status, &signal, &randIn);
+
+       /*if (otherIn.m1 != -1)       
+	 {
+	   randIn.param.mass1 = otherIn.m1;
+	   randIn.param.mass2 = otherIn.m2;
+	 }
+       */
        
        overlapin.signal = signal;
        jmax = 0;
        omax = 0.0;
-       /* Process through the bank */
+       /* Process hrough the bank */
        for (j=0; j<nlist; j++) 
 	 {
 	   overlapin.param 	= list[j].params;
@@ -299,7 +318,11 @@ main (  int argc, char **argv )
 	   
 	   for (i=0; i<signal.length; i++) correlation.data[i] = 0.;
 	   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin); /* The computation of the overlap */
+
 	   list[j].params.fFinal = overlapin.param.fFinal;
+	   
+	   if (otherIn.ambiguityFunction  == 1)
+	     printf("%lf %lf %lf %lf\n", list[j].params.psi0, list[j].params.psi3, list[j].params.fendBCV,overlapout.max);
 	   
 	   if (omax < overlapout.max) /*storing overlap here*/
 	     {
@@ -398,7 +421,7 @@ void Init2DummyCoarse(InspiralCoarseBankIn *coarseIn)
 /* --- Affect dummy values to a structure ---*/
 void Init2DummyRandom(RandomInspiralSignalIn *randIn)
 {
-  randIn->useed             = 128092;
+  randIn->useed             = -1;
   randIn->type              = -1;
   randIn->SignalAmp         = -1;
   randIn->param.approximant = 100;   /* can't be negative*/
@@ -424,6 +447,12 @@ void Init2DummyOtherParam(OtherParamIn *otherIn)
   otherIn->signal     = -1;
   otherIn->quietFlag  = -1;
   otherIn->ntrials    = -1;
+  otherIn->ambiguityFunction = -1;
+  otherIn->m1         = -1;
+  otherIn->m2         = -1;
+  otherIn->psi0         = -1;
+  otherIn->psi3         = -1;
+  
 }
 
 
@@ -446,8 +475,7 @@ ParseParameters(int *argc,
 	  coarseIn->fLower = atof(argv[++i]);
 	  randIn->param.fLower = coarseIn->fLower;
 	}
-
-      else if (strcmp(argv[i],"-tSampling")==0)
+      else if (strcmp(argv[i],"-sampling")==0)
 	{
 	  coarseIn->tSampling  = atof(argv[++i]);
 	  randIn->param.tSampling = coarseIn->tSampling;
@@ -458,6 +486,22 @@ ParseParameters(int *argc,
 	  randIn->mMin = coarseIn->mMin;
 	  randIn->param.mass1 = randIn->mMin;
 	  randIn->param.mass2 = randIn->mMin;
+	}
+      else if (strcmp(argv[i], "-m1")==0)
+	{
+	  otherIn->m1 = atof(argv[++i]);
+	}
+      else if (strcmp(argv[i], "-m2")==0)
+	{
+	  otherIn->m2 = atof(argv[++i]);	  
+	}
+      else if (strcmp(argv[i], "-psi0")==0)
+	{
+	  otherIn->psi0 = atof(argv[++i]);	  
+	}
+      else if (strcmp(argv[i], "-psi3")==0)
+	{
+	  otherIn->psi3 = atof(argv[++i]);	  
 	}
       else if (strcmp(argv[i],"-mMax")==0)
 	{
@@ -492,24 +536,38 @@ ParseParameters(int *argc,
 
 	}
       else if (strcmp(argv[i],"-numFcut")==0)
-	coarseIn->numFcutTemplates = atof(argv[++i]); 
+	{
+	  coarseIn->numFcutTemplates = atoi(argv[++i]);
+	}
       else if (strcmp(argv[i],"-simType")==0)
-	randIn->type = atoi(argv[++i]);
+	{
+	  randIn->type = atoi(argv[++i]);
+	}
       else if (strcmp(argv[i],"-sigAmp")==0)
-	randIn->SignalAmp = atof(argv[++i]);
+	{
+	  randIn->SignalAmp = atof(argv[++i]);
+	}
       else if (strcmp(argv[i],"-alpha")==0)
 	{
 	  coarseIn->alpha = atof(argv[++i]); 
 	  randIn->param.alpha = coarseIn->alpha;
 	}
       else if (strcmp(argv[i],"-order")==0)
-	randIn->param.order = atoi(argv[++i]); 
+	{
+	  randIn->param.order = atoi(argv[++i]); 
+	}
       else if (strcmp(argv[i],"-n")==0)
-	otherIn->ntrials = atoi(argv[++i]);       
+	{
+	  otherIn->ntrials = atoi(argv[++i]);       
+	}
       else if (strcmp(argv[i],"-seed")==0)
-	randIn->useed = atoi(argv[++i])+1;
-      else if (strcmp(argv[i],"-quiet")==0)
-	otherIn->quietFlag = 1;
+	{
+	  randIn->useed = atoi(argv[++i])+1;
+	}
+      else if (strcmp(argv[i],"-quiet")==0)       
+	  otherIn->quietFlag = 1;
+      else if (strcmp(argv[i],"-amb")==0)       
+	  otherIn->ambiguityFunction = 1;
       else if (strcmp(argv[i], "-template")==0)
 	{
 	  if (strcmp(argv[++i],"TaylorT1")==0)
@@ -703,22 +761,37 @@ void SetDefault(InspiralCoarseBankIn *coarseIn,
     {
       randIn->param.fendBCV = BANKEFFICIENCY_FENDBCV;
     }
-
+  if (randIn->type == -1)
+    {
+      randIn->type = BANKEFFICIENCY_TYPE;
+    }
+  if (randIn->SignalAmp == -1)
+    {
+      randIn->SignalAmp = BANKEFFICIENCY_SIGNALAMP;
+    }
+  if (randIn->useed == -1)
+    {
+      randIn->useed = BANKEFFICIENCY_SEED;
+    }
 
   /* OtherIn structure */
   if (otherIn->quietFlag == -1)
     {
       otherIn->quietFlag = BANKEFFICIENCY_QUIETFLAG;
     }
+  if (otherIn->ambiguityFunction == -1)
+    {
+      otherIn->ambiguityFunction = BANKEFFICIENCY_AMBIGUITYFUNCTION;
+    }
   if (otherIn->ntrials == -1)
     {
       otherIn->ntrials = BANKEFFICIENCY_NTRIALS;
     }
 
-  /*no parsing for those parameters*/
 
-  randIn->type                  = BANKEFFICIENCY_TYPE;
-  randIn->SignalAmp             = BANKEFFICIENCY_SIGNALAMP;
+
+  
+  /*no parsing for those parameters*/
   randIn->param.ieta            = BANKEFFICIENCY_IETA; 
   randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
   randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
@@ -758,6 +831,11 @@ void Help(InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"     -signal : same as -approximant\n");
   fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n",    BANKEFFICIENCY_ORDER);;
   fprintf(stderr,"     -sigAmp : amplitude of the signal            (%7.2f)\n",    BANKEFFICIENCY_SIGNALAMP);
+
+  fprintf(stderr,"     -quiet  : extra information on screen             (%d)\n",    BANKEFFICIENCY_QUIETFLAG);
+  fprintf(stderr,"     -amb    : print overlap in every point of the mesh(%d)\n",    BANKEFFICIENCY_AMBIGUITYFUNCTION);
+
+
 
   /*to avoid boring warning*/
   temp = coarseIn.approximant;

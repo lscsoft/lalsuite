@@ -7,8 +7,8 @@ LALMETAIOPROGRAMS =
 endif
 bin_PROGRAMS = lalapps_inspawgfile lalapps_inspinj $(LALMETAIOPROGRAMS) \
                lalapps_random_bank lalapps_chirplen lalapps_effdist\
-               lalapps_BankEfficiency lalapps_BankEfficiencyRealPsd \
-               lalapps_InspiralOverlap lalapps_InspiralTools 
+               lalapps_BankEfficiency lalapps_BankEfficiencyRealPsd lalapps_InspiralOverlap\
+		lalapps_InspiralTools lalapps_BankEfficiencyBCV 
 
 
 lalapps_inspawgfile_SOURCES = inspawgfile.c
@@ -17,6 +17,7 @@ lalapps_chirplen_SOURCES = chirplen.c
 lalapps_effdist_SOURCES = effdist.c
 lalapps_inspinj_SOURCES = inspinj.c
 lalapps_BankEfficiency_SOURCES = BankEfficiency.c 
+lalapps_BankEfficiencyBCV_SOURCES = BankEfficiencyBCV.c 
 lalapps_BankEfficiencyRealPsd_SOURCES = BankEfficiencyRealPsd.c 
 lalapps_InspiralOverlap_SOURCES = InspiralOverlap.c 
 lalapps_InspiralTools_SOURCES = InspiralTools.c

@@ -18,6 +18,77 @@ parameters.
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
+
+
+
+#define  INSPIRALTEMPLATE_ALPHA 0
+#define  INSPIRALTEMPLATE_ALPHA1 0 
+#define  INSPIRALTEMPLATE_ALPHA2 0
+#define  INSPIRALTEMPLATE_CHIRPMASS 1
+#define  INSPIRALTEMPLATE_APPROXIMANT BCV 
+#define  INSPIRALTEMPLATE_BETA 0
+#define  INSPIRALTEMPLATE_DISTANCE 1  
+#define  INSPIRALTEMPLATE_ECCENTRICITY 0
+#define  INSPIRALTEMPLATE_FCUTOFF 1000
+#define  INSPIRALTEMPLATE_FLOWER 40
+#define  INSPIRALTEMPLATE_FUPPER 1000
+#define  INSPIRALTEMPLATE_FENDBCV 300
+#define  INSPIRALTEMPLATE_IETA 1
+#define  INSPIRALTEMPLATE_INCLINATION 0
+#define  INSPIRALTEMPLATE_LEVEL 0
+#define  INSPIRALTEMPLATE_MINMATCH .97 
+#define  INSPIRALTEMPLATE_MASS1  10
+#define  INSPIRALTEMPLATE_MASS2 10
+#define  INSPIRALTEMPLATE_MASSCHOICE m1Andm2 
+#define  INSPIRALTEMPLATE_NSTARTPAD 0
+#define  INSPIRALTEMPLATE_NENDPAD 0
+#define  INSPIRALTEMPLATE_OMEGAS 0
+#define  INSPIRALTEMPLATE_ORBITTHETA0 0
+#define  INSPIRALTEMPLATE_ORBITPHI0 0
+#define  INSPIRALTEMPLATE_ORDER twoPN
+#define  INSPIRALTEMPLATE_PSI0 100000
+#define  INSPIRALTEMPLATE_PSI3 -1000
+#define  INSPIRALTEMPLATE_SIGNALAMPLITUDE 1
+
+
+#define INSPIRALTEMPLATE_THETA 1
+#define INSPIRALTEMPLATE_TOTALMASS 1  
+#define INSPIRALTEMPLATE_TSAMPLING 2048
+#define INSPIRALTEMPLATE_ZETA2 0
+
+
+#define INSPIRALTEMPLATE_MMCOARSE     	         0.8
+#define INSPIRALTEMPLATE_MMFINE       	        0.97
+#define INSPIRALTEMPLATE_MMIN            	5.
+#define INSPIRALTEMPLATE_MMAX           	20.
+
+#define INSPIRALTEMPLATE_SPACE      	Tau0Tau3
+#define INSPIRALTEMPLATE_IFLSO           	0.
+#define INSPIRALTEMPLATE_PSI0MIN        	10.
+#define INSPIRALTEMPLATE_PSI0MAX    	250000.
+#define INSPIRALTEMPLATE_PSI3MIN     	-2200.
+#define INSPIRALTEMPLATE_PSI3MAX       	-10.
+#define INSPIRALTEMPLATE_NFCUT           	5
+#define INSPIRALTEMPLATE_SIGNAL  		TaylorT1
+#define INSPIRALTEMPLATE_BANK          	BCV
+#define INSPIRALTEMPLATE_TYPE            	0
+#define INSPIRALTEMPLATE_SIGNALAMP      	10.
+#define INSPIRALTEMPLATE_STARTTIME       	0.
+#define INSPIRALTEMPLATE_STARTPHASE    	0.9
+#define INSPIRALTEMPLATE_NSTARTPHASE  	1000
+#define INSPIRALTEMPLATE_SIGNALAMPLITUDE 	10.
+#define INSPIRALTEMPLATE_NOISEAMP        	1.
+#define INSPIRALTEMPLATE_NTRIALS         	2
+#define INSPIRALTEMPLATE_SEED               122888
+/* Other Parameters */
+#define INSPIRALTEMPLATE_QUIETFLAG       	        0
+#define INSPIRALTEMPLATE_AMBIGUITYFUNCTION      	0
+
+
+
+
+
+
 INT4 lalDebugLevel=1;
 
 
@@ -38,6 +109,9 @@ void PrintParams(InspiralTemplate params);
 void PrintParamsMass(InspiralTemplate params);
 void GenerateWaveform(LALStatus *status, InspiralTemplate params);
 void LastFreq(LALStatus *status, InspiralTemplate params);
+void ComputeSpin(InspiralTemplate *params);
+void Init2DummyInspiralTemplate(InspiralTemplate *params);
+
 
 /*/NRCSID(INSPIRALTOOLSC, "InspiralTools, main");*/
 
@@ -47,12 +121,14 @@ int main (int argc, char **argv ) {
   static LALStatus status;
   
   
-  /*/INITSTATUS(&status, "Main InspiralTools", INSPIRALTOOLSC );8/*/
-  /*/ATTATCHSTATUSPTR(&status); */
 
-  SetDefault(&params);
-  OtherDefault(&tool);
+  Init2DummyInspiralTemplate(&params);
   ParseParameters(argc, argv, &params, &tool);
+  OtherDefault(&tool);
+  SetDefault(&params);
+
+
+  ComputeSpin(&params);
    
    
    /*TODO 
@@ -91,34 +167,119 @@ int main (int argc, char **argv ) {
 
 
 
+
+
+void Init2DummyInspiralTemplate(InspiralTemplate *params)
+{
+  params->alpha        = -1;
+  params->alpha1       = -1;
+  params->alpha2       = -1;
+  params->approximant  = -1;
+  params->beta         = -1;
+  params->chirpMass    = -1; 
+  params->distance     = -1; 
+  params->eccentricity = -1;
+  params->eta          = -1;
+  params->fCutoff      = -1;
+  params->fendBCV      = -1;
+  params->fFinal       = -1;
+  params->fLower       = -1;
+  params->ieta         = -1;
+  params->inclination  = -1;
+  params->level        = -1;
+  params->minMatch     = -1;
+  params->mass1        = -1; 
+  params->mass2        = -1;
+  params->massChoice   = -1;
+  params->mu           = -1; 
+  params->number       = -1;
+  params->nStartPad    = -1;
+  params->nEndPad      = -1;
+  params->OmegaS       = -1;
+  params->orbitTheta0  = -1;
+  params->orbitPhi0    = -1;
+  params->order        = -1;
+  params->psi0         = -1;
+  params->psi3         = -1;
+  params->signalAmplitude = -1;
+
+  params->spin1[3];
+  params->spin2[3];
+  params->sourceTheta;
+  params->sourcePhi;
+  params->startPhase;
+  params->startTime;
+
+  params->Theta       = -1;
+  params->totalMass   = -1;
+  params->tSampling   = -1;
+    params->Zeta2       = -1;
+
+
+
+
+
+
+
+}
+
+
 void 
 SetDefault(InspiralTemplate *params)
 {
-  params->approximant=EOB;
-  params->OmegaS = 0.;
-  params->Zeta2 = 0.; /*use by EOB @ 3PN*/
-  params->Theta = 0.;
-  params->ieta=1; 
-  params->mass1=10; 
-  params->mass2=1.4; 
-  params->startTime=0.0; 
-  params->startPhase=0.;
-  params->fLower=40.0; 
-  params->fCutoff=2000.0;
-  params->tSampling=4096.0;
-  params->order=4;
-  params->signalAmplitude=1.0;
-  params->nStartPad=1000;
-  params->nEndPad=1200;
-  params->massChoice=m1Andm2;
+  params->alpha        = INSPIRALTEMPLATE_ALPHA;
+  params->alpha1       = INSPIRALTEMPLATE_ALPHA1;
+  params->alpha2       = INSPIRALTEMPLATE_ALPHA2;
+  params->approximant  = INSPIRALTEMPLATE_APPROXIMANT;
+  params->beta         = INSPIRALTEMPLATE_BETA;
+  /*  params->chirpMass    = INSPIRALTEMPLATE_CHIRPMASS; */
+  params->distance     = INSPIRALTEMPLATE_DISTANCE; 
+  params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;
+  /*  params->eta          = INSPIRALTEMPLATE_ETA;*/
+  params->fCutoff      = INSPIRALTEMPLATE_FCUTOFF;
+  params->fendBCV      = INSPIRALTEMPLATE_FENDBCV;
+  /*  params->fFinal       = INSPIRALTEMPLATE_FFINAL;*/
+  params->fLower       = INSPIRALTEMPLATE_FLOWER;
+  /*  params->ieta         = INSPIRALTEMPLATE_IETA;*/
+  params->inclination  = INSPIRALTEMPLATE_INCLINATION;
+  params->level        = INSPIRALTEMPLATE_LEVEL;
+  params->minMatch     = INSPIRALTEMPLATE_MINMATCH;
+  params->mass1        = INSPIRALTEMPLATE_MASS1; 
+  params->mass2        = INSPIRALTEMPLATE_MASS2;
+  params->massChoice   = INSPIRALTEMPLATE_MASSCHOICE;
+  /*  params->mu           = INSPIRALTEMPLATE_MU; */
+  /*  params->number       = INSPIRALTEMPLATE_NUMBER;*/
+  params->nStartPad    = INSPIRALTEMPLATE_NSTARTPAD;
+  params->nEndPad      = INSPIRALTEMPLATE_NENDPAD;
+  params->OmegaS       = INSPIRALTEMPLATE_OMEGAS;
+  params->orbitTheta0  = INSPIRALTEMPLATE_ORBITTHETA0;
+  params->orbitPhi0    = INSPIRALTEMPLATE_ORBITPHI0;
+  params->order        = INSPIRALTEMPLATE_ORDER;
+  params->psi0         = INSPIRALTEMPLATE_PSI0;
+  params->psi3         = INSPIRALTEMPLATE_PSI3;
+  params->signalAmplitude = INSPIRALTEMPLATE_SIGNALAMPLITUDE;
+
+  params->spin1[3];
+  params->spin2[3];
+  params->sourceTheta;
+  params->sourcePhi;
+  params->startPhase;
+  params->startTime;
+
+  params->Theta       = INSPIRALTEMPLATE_THETA;
+  /*  params->totalMass   = INSPIRALTEMPLATE_TOTALMASS; */
+  params->tSampling   = INSPIRALTEMPLATE_TSAMPLING;
+  params->Zeta2       = INSPIRALTEMPLATE_ZETA2;
+
+
+
+  /*
   params->distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
-  params->alpha = 0;
-  params->alpha1 = 0;
-  params->alpha2 = 0;
-  params->beta = 0;
-  params->psi0 = 80000.;
-  params->psi3 = -100;
-  params->fendBCV = 331.4;
+
+  params->spin1[0] = 0;
+  params->spin2[0] = 0;
+  */
+
 }
 
 void
@@ -136,7 +297,6 @@ ParseParameters(int argc,
 		UINT4 *tool)
 {
   int i=1;
-
    while(i <argc)
    {
      if (strcmp(argv[i],"-tool")==0)
@@ -181,50 +341,66 @@ ParseParameters(int argc,
        params->mass1 = atof(argv[++i]); 
      else if (strcmp(argv[i],"-m2")==0)
        params->mass2 = atof(argv[++i]); 
+     else if (strcmp(argv[i],"-spin")==0)
+       {	 
+	 params->spin1[0]= atof(argv[++i]);
+	 params->spin2[0]= atof(argv[++i]);
+       }
+     else if (strcmp(argv[i],"-angle")==0)
+       {	 
+	 params->spin1[1]= atof(argv[++i]);
+	 params->spin1[2]= atof(argv[++i]);
+	 params->spin2[1]= atof(argv[++i]);
+	 params->spin2[2]= atof(argv[++i]);
 
-
+       }
      else if (strcmp(argv[i],"-fbcv")==0)
        params->fendBCV = atof(argv[++i]); 
+     else if (strcmp(argv[i], "-approximant")==0)
+       {
+	 if (strcmp(argv[++i],"TaylorT1")==0)
+	   params->approximant = TaylorT1;
+	 else if (strcmp(argv[i],"TaylorT2")==0)
+	   params->approximant = TaylorT2;
+	 else if (strcmp(argv[i],"TaylorT3")==0)
+	   params->approximant = TaylorT3;
+	 else if (strcmp(argv[i],"TaylorF1")==0)
+	   params->approximant = TaylorF1;
+	 else if (strcmp(argv[i],"TaylorF2")==0)
+	   params->approximant = TaylorF2;
+	 else if (strcmp(argv[i],"PadeT1")==0)
+	   params->approximant = PadeT1;
+	 else if (strcmp(argv[i],"PadeF1")==0)
+	   params->approximant = PadeF1;
+	 else if (strcmp(argv[i],"EOB")==0)
+	   params->approximant = EOB;
+	 else if (strcmp(argv[i],"BCV")==0)
+	   params->approximant = BCV;
+	 else if (strcmp(argv[i],"BCVSpin")==0)
+	   params->approximant = BCVSpin;
+	 else if (strcmp(argv[i],"SpinTaylorT3")==0)
+	   params->approximant = SpinTaylorT3;	 
+       }	
+     else 
+       {
+	 fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
+	 fprintf(stderr,"The options are (with default values in brackets)\n");
+	 fprintf(stderr,"All options should be followed by a number \n");
+	 fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",params->alpha);
+	 fprintf(stderr,"-approximant : Post-Newtonian model such as TaylorT1(2,3), TaylorF1(2), PadeT1, PadeF1, EOB, BCV, BCVSpin and SpinTaylorT3  (PadeT1)\n");
+	 fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", 10);
+	 /*	 fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", params.mass1);
+	 fprintf(stderr,"         -m2 : mass of primary (%7.2f) SolarMass\n", params.mass2);
+	 fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n",    10);;*/
+	 fprintf(stderr,"       -psi0 : First parameter for BCV template (%7.2f)\n",params->psi0);
+	 fprintf(stderr,"       -psi3 : Second parameter for BCV template \n");
+	 fprintf(stderr,"     -signal : same as -approximant\n");
+	 fprintf(stderr,"   -template : Post-Newtonian model of template (BCV)\n");
 
-
-	   else if (strcmp(argv[i], "-approximant")==0)
-	   {
-		   if (strcmp(argv[++i],"TaylorT1")==0)
-			   params->approximant = TaylorT1;
-		   else if (strcmp(argv[i],"TaylorT2")==0)
-			   params->approximant = TaylorT2;
-		   else if (strcmp(argv[i],"TaylorT3")==0)
-			   params->approximant = TaylorT3;
-		   else if (strcmp(argv[i],"TaylorF1")==0)
-			   params->approximant = TaylorF1;
-		   else if (strcmp(argv[i],"TaylorF2")==0)
-			   params->approximant = TaylorF2;
-		   else if (strcmp(argv[i],"PadeT1")==0)
-			   params->approximant = PadeT1;
-		   else if (strcmp(argv[i],"PadeF1")==0)
-			   params->approximant = PadeF1;
-		   else if (strcmp(argv[i],"EOB")==0)
-			   params->approximant = EOB;
-		   else if (strcmp(argv[i],"BCV")==0)
-			   params->approximant = BCV;
-		   else if (strcmp(argv[i],"BCVSpin")==0)
-			   params->approximant = BCVSpin;
-		   else if (strcmp(argv[i],"SpinTaylorT3")==0)
-			   params->approximant = SpinTaylorT3;
-
-	   }	
-	   else 
-	   {
-		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
-		   fprintf(stderr,"The options are (with default values in brackets)\n");
-		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",params->alpha);
-		   fprintf(stderr,"-approximant : Post-Newtonian model such as TaylorT1(2,3), TaylorF1(2), PadeT1, PadeF1, EOB, BCV, BCVSpin and SpinTaylorT3  (PadeT1)\n");
-		   fprintf(stderr,"       -psi0 : First parameter for BCV template (%7.2f)\n",params->psi0);
-		   fprintf(stderr,"       -psi3 : Second parameter for BCV template \n");
-		   exit(0);
-
-	   }
-	   i++;       
+ exit(0);
+	 
+       }
+     i++;       
    }
 }
 
@@ -381,7 +557,7 @@ void LastFreq(LALStatus *status, InspiralTemplate params)
 
    static REAL4Vector *signal1;
    static REAL8 dt;
-   int n, i;
+   int n;
    dt = 1./params.tSampling;
    
    INITSTATUS(status,"InspiralTools", GENERATEWAVEFORMC);
@@ -437,3 +613,33 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 }
 
 
+
+void ComputeSpin(InspiralTemplate *params)
+{
+
+
+  double mass1Sq, mass2Sq, spin1Frac, spin2Frac, spin1Phi, spin2Phi, spin1Theta, spin2Theta;
+
+  mass1Sq = pow(params->mass1*LAL_MTSUN_SI,2.L); 
+  mass2Sq = pow(params->mass2*LAL_MTSUN_SI,2.L); 
+  spin1Frac = params->spin1[0];  
+  spin2Frac = params->spin2[0];
+
+  params->sourceTheta = LAL_PI/6.L;
+  params->sourcePhi = LAL_PI/6.L;
+
+
+  spin1Theta = params->spin1[1];
+  spin2Theta = params->spin2[1];
+  spin1Phi   = params->spin1[2];
+  spin2Phi   = params->spin2[2];
+  
+  
+  params->spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);
+  params->spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
+  params->spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);	 	 
+  params->spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
+  params->spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
+  params->spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);  
+
+}
