@@ -552,7 +552,7 @@ int main( int argc, char *argv[] )
       exit( 1 );
     }
 
-    LALFree( frGlobCache );
+    LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
   }
   else
   {
@@ -710,8 +710,7 @@ int main( int argc, char *argv[] )
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
-  if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
-      &status );
+  LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
 
   /* write the raw channel data as read in from the frame files */
   if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 

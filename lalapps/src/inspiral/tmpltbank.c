@@ -317,7 +317,7 @@ int main ( int argc, char *argv[] )
       exit( 1 );
     }
 
-    LALFree( frGlobCache );
+    LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
   }
   else
   {
