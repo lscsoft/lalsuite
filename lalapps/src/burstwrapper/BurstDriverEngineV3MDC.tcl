@@ -774,7 +774,7 @@ if { [ info exists MDCFrames ] } {
     set MDCalias ""
 }
 
-if { [ info exists $useResponse ] == 0 } {
+if { [ info exists useResponse ] == 0 } {
     set useResponse ""
 }
 
