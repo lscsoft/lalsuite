@@ -121,11 +121,11 @@ sifo2 = cp.get('chisq-params','sifo2')
 subdir=''.join([local_work_dir,'/','run.',str(job_id)])
 
 # figure out name of results file that we're using to compute the upper limit
-freq = float(start_freq) + float(job_id) * float(freq_band)
+freq = float(start_freq) + float(job_id)
 
 # names of Fstats files
-fstats1_zipped=''.join(['Fstats-1-',str(freq),'.gz'])
-fstats2_zipped=''.join(['Fstats-2-',str(freq),'.gz'])
+fstats1_zipped=''.join(['FstatsJOINED-1-',str(freq),'.gz'])
+fstats2_zipped=''.join(['FstatsJOINED-2-',str(freq),'.gz'])
 
 # remove local work directory in case it exists
 rm_subdir=''.join(['rm -rf ',subdir])
@@ -145,9 +145,9 @@ os.chdir(subdir)
 #     executables
 cfstat=''.join([starting_dir,'/lalapps_ComputeFStatistic'])
 mkdata=''.join([starting_dir,'/makefakedata_v2'])
-fstatshape=''.join([starting_dir,'/lalapps_FstatShapeTest'])
-makeinveto=''.join([starting_dir,'/makeInvetofile'])
-polka=''.join([starting_dir,'/polka'])
+fstatshape=''.join([starting_dir,'/lalapps_FstatShapeTestLAL'])
+makeinveto=''.join([starting_dir,'/lalapps_makeInvetofile'])
+polka=''.join([starting_dir,'/lalapps_polka'])
 
 #     ephemeris, timestamps and results file
 earth=''.join([starting_dir,'/earth00-04.dat'])
@@ -173,12 +173,12 @@ shutil.copy(fstats2_file,subdir)
 # unzip fstats files:
 unzip_fstats1=''.join(['gunzip ',fstats1_zipped])
 os.system(unzip_fstats1)
-FstatsFileName1=''.join(['Fstats-1-',str(freq)])
+FstatsFileName1=''.join(['FstatsJOINED-1-',str(freq)])
 
 
 unzip_fstats2=''.join(['gunzip ',fstats2_zipped])
 os.system(unzip_fstats2)
-FstatsFileName2=''.join(['Fstats-2-',str(freq)])
+FstatsFileName2=''.join(['FstatsJOINED-2-',str(freq)])
 
 
 # -------------------------------------------------------------------------------- #
@@ -188,7 +188,7 @@ FstatsFileName2=''.join(['Fstats-2-',str(freq)])
 # name of output file for polka
 polka_out=''.join(['polka_out',''.join(['-',str(freq)])])
 
-polka_args = ' '.join(['./polka','-1',FstatsFileName1,'-2',FstatsFileName2,'-f',\
+polka_args = ' '.join(['./lalapps_polka','-1',FstatsFileName1,'-2',FstatsFileName2,'-f',\
                        str(freq_window),'-a',str(alpha_window),'-d',\
                        str(delta_window),'-o',polka_out,\
                        '-3',FstatsFileName1,'-4',FstatsFileName2])
@@ -237,7 +237,7 @@ for line in polka_file:
     
     # 2) run makeinvetofile makes the In.data file for makefakedata
     #    and checks that there's only one outlier
-    makeinveto_args=' '.join(['./makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
+    makeinveto_args=' '.join(['./lalapps_makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
                               '-l 1800.0 -n 20','-s',str(int(float(sf))-1),'-b 3.0'])
     print 'running: ',makeinveto_args
     os.system(makeinveto_args)
@@ -260,7 +260,7 @@ for line in polka_file:
     os.system('rm -rf signal/')
 
     # 5) run Fstatshpetest and see if chisq test is passed
-    fstatshape_args=' '.join(['./lalapps_FstatShapeTest -o FaFb00.001 -t FaFb01.001 > chisq.txt'])
+    fstatshape_args=' '.join(['./lalapps_FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > chisq.txt'])
     print 'running: ',fstatshape_args
     os.system(fstatshape_args)
   
@@ -308,7 +308,7 @@ for line in polka_file:
     
     # 2) run makeinvetofile makes the In.data file for makefakedata
     #    and checks that there's only one outlier
-    makeinveto_args=' '.join(['./makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
+    makeinveto_args=' '.join(['./lalapps_makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
                               '-l 1800.0 -n 20','-s',str(int(float(sf))-1),'-b 3.0'])
     print 'running: ',makeinveto_args
     os.system(makeinveto_args)
@@ -331,7 +331,7 @@ for line in polka_file:
     os.system('rm -rf signal/')
 
     # 5) run Fstatshpetest and see if chisq test is passed
-    fstatshape_args=' '.join(['./lalapps_FstatShapeTest -o FaFb00.001 -t FaFb01.001 > chisq.txt'])
+    fstatshape_args=' '.join(['./lalapps_FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > chisq.txt'])
     print 'running: ',fstatshape_args
     os.system(fstatshape_args)
   
