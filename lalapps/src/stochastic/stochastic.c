@@ -2706,7 +2706,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     outputTable.stochasticTable = stochHead;
     LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
-        &status);;
+        &status);
     LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
           stochastic_table), &status);
     LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
@@ -2782,6 +2782,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(channelTwo);
   free(ifoOne);
   free(ifoTwo);
+  free(userTag);
+  free(outputPath);
 
   /* check for memory leaks and exit */
   LALCheckMemoryLeaks();
