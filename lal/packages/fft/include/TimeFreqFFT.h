@@ -188,15 +188,6 @@ LALFreqTimeRealFFT(
     );
 
 void
-LALRealAverageSpectrum(
-    LALStatus            *status,
-    REAL4FrequencySeries *fSeries,
-    REAL4TimeSeries      *tSeries,
-    RealDFTParams        *params,
-    AvgSpecMethod              method
-    );
-
-void
 LALREAL4AverageSpectrum (
     LALStatus                   *status,
     REAL4FrequencySeries        *fSeries,
