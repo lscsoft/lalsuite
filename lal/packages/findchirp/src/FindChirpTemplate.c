@@ -122,6 +122,7 @@ LALFindChirpTemplateInit (
     case TaylorT1:
     case TaylorT2:
     case TaylorT3:
+    case GeneratePPN:
       /* time domain waveforms use xfac to store the time domain waveform */
       LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
           params->numPoints );

@@ -497,6 +497,8 @@ LALCreateFindChirpSegmentVector (
     case TaylorT2:
     case TaylorT3:
     case TaylorF2:
+    case GeneratePPN:
+    case FindChirpSP:
     case BCV:
     case BCVSpin:
       break;

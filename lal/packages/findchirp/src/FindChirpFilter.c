@@ -159,6 +159,16 @@ LALFindChirpFilterSegment (
 
     case TaylorF2:
       LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "TaylorF2twoPN" );
+      break;
+
+    case GeneratePPN:
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "GeneratePPNtwoPN" );
+      break;
+
+    case FindChirpSP:
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
           "FindChirpSPtwoPN" );
       break;
 

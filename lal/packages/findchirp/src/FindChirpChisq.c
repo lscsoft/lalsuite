@@ -257,6 +257,8 @@ LALFindChirpChisqVeto (
     case TaylorT2:
     case TaylorT3:
     case TaylorF2:
+    case GeneratePPN:
+    case FindChirpSP:
       break;
     default:
       ABORT( status, FINDCHIRPCHISQH_EIAPX, FINDCHIRPCHISQH_MSGEIAPX );
