@@ -68,10 +68,12 @@ LALFindChirpBCVData (
   UINT4                *chisqBin    = NULL;
   UINT4                *chisqBinBCV = NULL;
   UINT4                 numChisqBins;
+#if 0
   UINT4                 chisqPt;
   REAL4                 increment;
   REAL4                 nextBin;
   REAL4                 partSum;
+#endif
 #if 0
   REAL4                 Power  = 0.0 ;
   REAL4                 PowerBCV = 0.0 ;

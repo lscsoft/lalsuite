@@ -67,6 +67,11 @@ void LALFindChirpFilterOutputVeto(
       FINDCHIRPFILTEROUTPUTVETOC );
   ATTATCHSTATUSPTR( status );
 
+  /* JC: DOESN'T DO MUCH... MAKE IT DO SOMETHING */
+  eventList = NULL;
+  qVec = NULL;
+  qNorm = 0;
+  params = NULL;
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

@@ -58,6 +58,7 @@ LALFree()
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>
+#include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/Inject.h>

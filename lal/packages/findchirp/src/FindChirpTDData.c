@@ -44,6 +44,7 @@ Time domain filtering code.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpTD.h>
+#include <lal/FindChirpSP.h>
 
 
 NRCSID (FINDCHIRPTDDATAC, "$Id$");

@@ -91,7 +91,7 @@ LALFindChirpBCVChisqVeto (
   UINT4                *chisqBin;
   UINT4                *chisqBinBCV;
   REAL4                 chisqNorm;
-  REAL4                 rhosq;
+  /* REAL4                 rhosq; */
 
   COMPLEX8             *qtildeBin;
   COMPLEX8             *qtildeBinBCV;

@@ -202,7 +202,7 @@ LALFindChirpBCVTemplate (
       REAL4 psi  = 
         psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * psi00 )));
       REAL4 psi1 = psi + psi0;
-      REAL4 psi2;  
+      /* REAL4 psi2;   */
 
       /* range reduction of psi1 */
       while ( psi1 < -LAL_PI )

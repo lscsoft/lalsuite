@@ -97,7 +97,7 @@ LALFindChirpFilterSegment (
   REAL4                 modqsqThresh;
   REAL4                 mismatch;
   REAL4                 chisqThreshFac;
-  REAL4                 modChisqThresh;
+  /* REAL4                 modChisqThresh;*/
   UINT4                 numChisqBins;
   UINT4                 eventStartIdx = 0;
   BOOLEAN               haveChisq     = 0;

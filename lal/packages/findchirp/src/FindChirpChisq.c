@@ -152,8 +152,9 @@ LALFindChirpComputeChisqBins(
     }
   }
 
+  /* JC: LOOKS LIKE A MISTAKE... CHANGING = TO == */
   /* check that we have sucessfully allocated all the bins */
-  if ( k = fcSeg->tmpltPowerVec->length && chisqPt != numChisqBins )
+  if ( k == fcSeg->tmpltPowerVec->length && chisqPt != numChisqBins )
   {
     /* if we have reaced the end of the template power vec and not */
     /* allocated all the bin boundaries then there is a problem    */
@@ -193,7 +194,7 @@ LALFindChirpChisqVeto (
   UINT4                 numChisqBins;
   UINT4                *chisqBin;
   REAL4                 chisqNorm;
-  REAL4                 rhosq;
+  /* REAL4                 rhosq; */
 
   COMPLEX8             *qtildeBin;
 
