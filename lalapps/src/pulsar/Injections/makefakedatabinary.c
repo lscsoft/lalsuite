@@ -176,9 +176,11 @@ NRCSID (MAKEFAKEDATABINARYC, "$Id$");
 #include <lal/LALVersion.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
+#include "getopt.h"
+
 /* Locations of the earth and sun ephemeris data */
-#define EARTHDATA "./earth03.dat"
-#define SUNDATA "./sun03.dat"
+CHAR earthdata[]= "./earth00-04.dat";
+CHAR sundata[] = "./sun00-04.dat";
 
 int mycalls=0;
 int myclears=0;
@@ -239,10 +241,10 @@ char *lalWatch;
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
 /*Default input data file name*/
-char *inDataFilename="In_bin.data";
+const char *inDataFilename="In_bin.data";
 char timestampsname[128];
-char *basefilename="SFT";
-char *timebasefilename="./scratch/TIME_e";
+const char *basefilename="SFT";
+const char *timebasefilename="./scratch/TIME_e";
 char *noisedir;        /* ="/gwave1/cm/GWsearch/data/GEOS1/"; */
 char *programname=NULL;
 char filelist[MAXFILES][MAXFILENAMELENGTH];
@@ -328,7 +330,8 @@ int SetupSigGenParams(void);
 static void TimeToFloat(REAL8 *, LIGOTimeGPS *);
 static void FloatToTime(LIGOTimeGPS *, REAL8 *);
 
-
+void syserror(const char *fmt, ...);
+void error(const char *fmt, ...);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -712,9 +715,9 @@ int prepare_baryinput(LALStatus* status){
 
   /* Quantities computed for barycentering */
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = "./earth03.dat";
-  (*edat).ephiles.sunEphemeris = "./sun03.dat";
-   (*edat).leap=13; 
+  (*edat).ephiles.earthEphemeris = earthdata;
+  (*edat).ephiles.sunEphemeris = sundata;
+  (*edat).leap=13; 
 
   /* Read in ephemerides */  
   LALInitBarycenter(status, edat);
@@ -932,7 +935,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LALSource         source;
   LALDetAndSource   detectorandsource;
   LALGPSandAcc       gps;
-  char *filename="AmplMod.dat";
+  const char *filename="AmplMod.dat";
   int i;
 
 
@@ -1225,8 +1228,6 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
   int r,i,msp;
   UINT4 imin, nsamples;  
   FILE *fp;
-  extern char *optarg;
-
   
   /* scan through the list of arguments on the command line 
      and get the input data filename*/

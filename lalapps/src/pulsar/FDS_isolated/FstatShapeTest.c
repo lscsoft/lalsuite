@@ -18,6 +18,8 @@ $Id$
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 
+#include "getopt.h"
+
 NRCSID( FSTATSHAPETESTC, "$Id$" );
 
 #define MAX_DATA_POINTS 100000000
@@ -35,7 +37,11 @@ INT2 RearrangeData(void);
 INT2 ConstructData(void);
 INT2 ComputeChi(void);
 REAL8 chi2cdf(REAL8, REAL8);
-
+INT4 myRound(REAL8);
+REAL8 gammaq(REAL8 dof, REAL8 chi2var);
+void gcf(REAL8 * gammacf, REAL8 a, REAL8 x, REAL8 * gln);
+void gser(REAL8 * gamser, REAL8 a, REAL8 x, REAL8 * gln);
+REAL8 gammln(REAL8 xx);
 
 /* structure typedef */
 typedef struct tagGlobalVariables {
@@ -83,8 +89,8 @@ INT4 lalDebugLevel=3;
 /* static LALStatus status; */
 
 /* default input file name */
-CHAR * obsvdatafile = "FaFbObsv.txt";
-CHAR * testdatafile = "FaFbTest.txt";
+const CHAR * obsvdatafile = "FaFbObsv.txt";
+const CHAR * testdatafile = "FaFbTest.txt";
 
 /* flag */
 INT2 verboseflag=0; /* verbose flag */
@@ -228,7 +234,6 @@ INT2 InitData(void)
 INT2 HandleComArg(INT4 argc, CHAR *argv[]) 
 {
   INT4 c, errflg = 0;
-  extern CHAR *optarg;
   
   /* scan through the list of arguments on the command line 
      and get the input data filename*/
@@ -456,8 +461,6 @@ INT2 ShiftData(REAL8 lmfrq)
 /*-----------------------------------------------------------------*/
 INT2 RearrangeData(void)
 {
-  INT4 myRound(REAL8);
-
   REAL8 sFreqO,sFreqT,sFreq;
   REAL8 dFreqO,dFreqT,dFreqLCM;
   INT4   nObsv,nTest,nData;
@@ -740,7 +743,6 @@ INT2 ComputeChi(void)
 
 REAL8 chi2cdf(REAL8 df, REAL8 data)
 {
-  REAL8 gammaq(REAL8 dof, REAL8 chi2var);
   return gammaq(0.5*df,0.5*data);
 }
 
@@ -753,10 +755,6 @@ REAL8 chi2cdf(REAL8 df, REAL8 data)
 REAL8 gammaq(REAL8 a, REAL8 x)
 {
   REAL8 gamser,gammcf,gln;
-
-  void gcf(REAL8 * gammacf, REAL8 a, REAL8 x, REAL8 * gln);
-  void gser(REAL8 * gamser, REAL8 a, REAL8 x, REAL8 * gln);
-
 
   if(x<0.0||a<=0.0) {
     fprintf(stderr,"Invalid arguments in gammaq\n");
@@ -778,8 +776,6 @@ void gser(REAL8 * gamser, REAL8 a, REAL8 x, REAL8 * gln)
   const REAL8 EPS=3.0e-7;
   INT4 n;
   REAL8 sum,del,ap;
-
-  REAL8 gammln(REAL8 xx);
 
   *gln=gammln(a);
   if(x<=0.0) {
@@ -814,7 +810,6 @@ void gcf(REAL8 * gammcf, REAL8 a, REAL8 x, REAL8 * gln)
   const REAL8 EPS=3.0e-7;
   const REAL8 FPMIN=1.0e-30;
 
-  REAL8 gammln(REAL8 xx);
   INT4 i;
   REAL8 an,b,c,d,del,h;
 

@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +51,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadTimeStamps(struct CommandLineArgsTag CLA);
 int ComputeF(struct CommandLineArgsTag CLA);
 int CreateDetector(LALDetector *Detector);
-int Freemem();
+int Freemem(void);
 
 
 

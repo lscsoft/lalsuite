@@ -1,6 +1,5 @@
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,10 +48,10 @@ struct CommandLineArgsTag {
   double skyDelta;
   int spinDwnOrder;
   double Fthreshold;
-  char *DataDir;
-  char *EphemDir;
-  char *EphemYear;
-  char *filters;
+  const char *DataDir;
+  const char *EphemDir;
+  const char *EphemYear;
+  const char *filters;
 } CommandLineArgs;
 
 typedef struct GlobalVariablesTag {
@@ -77,7 +76,7 @@ typedef struct GlobalVariablesTag {
   int Ti;        /* GPS seconds of first SFT */
   int Tf;        /* GPS seconds of last SFT */
   char filelist[MAXFILES][MAXFILENAMELENGTH];
-  char *filters;
+  const char *filters;
   double SemiMajorAxis;
   double OrbitalPeriod;
   LIGOTimeGPS TperiapseSSB;

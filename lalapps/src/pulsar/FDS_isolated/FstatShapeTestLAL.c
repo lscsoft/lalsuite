@@ -25,6 +25,7 @@ $Id$
 #include <lal/LALDemod.h>
 
 #include <lalapps.h>
+#include "getopt.h"
 
 
 RCSID( "$Id$" );
@@ -80,10 +81,10 @@ typedef struct tagFSTClustInfo {
 
 typedef struct tagFSTUserInput {
   BOOLEAN computeProbFlag; /* compute probability or not */
-  CHAR *dbglvl; /* lalDebugLevel */
+  const CHAR *dbglvl; /* lalDebugLevel */
   REAL8 sigLevel; /* significance level for hypothesis test */
-  CHAR *obsvdatafile; /* observed data filename */
-  CHAR *testdatafile; /* veto signal filename */
+  const CHAR *obsvdatafile; /* observed data filename */
+  const CHAR *testdatafile; /* veto signal filename */
 } FSTUserInput; /* Variables user can specify. */
 
 typedef struct tagFSTFstatPair {
@@ -105,6 +106,25 @@ typedef struct tagFSTFVetoStat {
   REAL8 dof;           /* degrees of freedom */
 } FSTFVetoStat;
 
+  /* function prototype */ 
+  void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
+  void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
+  void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
+  void ComputeVetoStatistic( LALStatus *, 
+                             FSTFVetoStat *, /* output veto statistic and degrees of freedom. */ 
+			     FSTFstatPair *FaFbPair, /* input Fa Fb of observed data and veto signal. */
+			     FSTClustInfoPair *clustInfoPair /* input cluster information of observed data and veto signal. */);
+void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
+void showHelp( LALStatus *status, FSTUserInput *cla );
+
+/* function prototype */ 
+void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
+void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
+void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
+void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
+REAL8 myRound(REAL8);
+void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
+void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
 
 /*-----------------------------------------------------------------*/
 /*                                                                 */
@@ -121,17 +141,6 @@ INT4 main(INT4 argc, CHAR ** argv)
   FSTClustInfoPair clustInfoPair;
   FSTFstatPair *FaFbPair;
   FSTFVetoStat vetoStat;
-
-  /* function prototype */ 
-  void HandleComArg( LALStatus *, FSTUserInput *, INT4 argc, CHAR ** argv );
-  void ReadClusterInfo( LALStatus *, FSTClustInfoPair *, FSTUserInput * );
-  void ReadData( LALStatus *, FSTFstatPair *, FSTUserInput * );
-  void ComputeVetoStatistic( LALStatus *, 
-                             FSTFVetoStat *, /* output veto statistic and degrees of freedom. */ 
-			     FSTFstatPair *FaFbPair, /* input Fa Fb of observed data and veto signal. */
-			     FSTClustInfoPair *clustInfoPair /* input cluster information of observed data and veto signal. */);
-  void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
-
 
   /* set LAL error-handler */
   /* exits with the returned status code if there is an error. */
@@ -267,10 +276,7 @@ HandleComArg( LALStatus *status,
 	      CHAR *argv[]    /* input */) 
 {
   INT4 option;
-  extern CHAR *optarg;
   
-  void showHelp( LALStatus *status, FSTUserInput *cla );
-
   INITSTATUS( status, "HandleComArg", rcsid );
 
   /* First initialization of all the cla variables. */
@@ -539,13 +545,6 @@ ComputeVetoStatistic( LALStatus *status,
 
   FSTControlParameters CP; 
 
-
-  /* function prototype */ 
-  void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
-  void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
-  void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
-  void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
-
   INITSTATUS( status, "ComputeVetoStatistic", rcsid );
   ATTATCHSTATUSPTR( status );
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -730,8 +729,6 @@ RearrangeData( LALStatus *status,
 	       FSTControlParameters *CP, /* output */
 	       FSTClustInfoPair *clustInfoPair  /* intput */)
 {
-  REAL8 myRound(REAL8);
-
   REAL8 startFreqO,startFreqT,startFreq;
   REAL8 deltaFreqO,deltaFreqT,deltaFreqLCM;
   INT4  nObsv,nTest,nData;
@@ -1068,7 +1065,6 @@ LALChi2CDFP( LALStatus *status,
 	     const REAL8 *dof /* input Degrees of freedom  */)
 {
   REAL8 x, a;
-  void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
 
   INITSTATUS( status, "LALChi2CDFP", rcsid );
 
@@ -1126,9 +1122,6 @@ LALGammaInc( LALStatus *status,
   REAL8 errormax = LAL_REAL8_EPS;
   REAL8 a0, a1, b0, b1, del, sum, gmln;
   REAL8 fac, n, g, gold, ana, anf;
-
-
-  void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
 
   INITSTATUS( status, "LALGammaInc", rcsid );
 

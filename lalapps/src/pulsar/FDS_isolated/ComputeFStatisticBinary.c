@@ -26,7 +26,7 @@ DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
 LALFstat *F=NULL;
 LALFstat Fstr; 
-INT4 lalDebugLevel=0,i,a,d,s,irec;
+INT4 lalDebugLevel=0,a,d,s;
 static LALStatus status;
 AMCoeffs amc;
 GlobalVariables GV;
@@ -37,14 +37,14 @@ Clusters *highSpLines, *highFLines=&HFLines;;
 FILE *fpmax,*fpstat,*filtfp,*fpABCD;
 double medianbias=1.0;
 double Radius,Phase;
-CHAR statfilename[256], maxfilename[256], ABCDfilename[256],dmp[256];
+CHAR statfilename[256], maxfilename[256], ABCDfilename[256];
 INT4 Fno;   /* stores current XY filter number */
 
 int main(int argc,char *argv[]) 
 {
-
+  INT4 i;
   INT4 *maxIndex=NULL; /* array that contains indexes of maximum of each cluster */
-
+  CHAR dmp[256];
   
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;  
  
@@ -1012,7 +1012,7 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
   GV.skyDelta=CLA.skyDelta;
 
   /* Filter file */
-  GV.filters=CLA.filters;
+  GV.filters = CLA.filters;
 
   GV.nsamples=header.nsamples;    /* # of freq. bins */
 
@@ -1342,8 +1342,8 @@ int compare(const void *ip, const void *jp)
 {
   double di, dj;
 
-  di=Fstr.F[*(int *)ip];
-  dj=Fstr.F[*(int *)jp];
+  di=Fstr.F[*(const int *)ip];
+  dj=Fstr.F[*(const int *)jp];
 
   if (di<dj)
     return 1;
@@ -1857,7 +1857,7 @@ int EstimateFLines(void)
 /*******************************************************************************/
 /*******************************************************************************/
 
-int NormaliseSFTDataRngMdn(LALStatus *status)
+int NormaliseSFTDataRngMdn(LALStatus *stat)
 {
 
   /* FILE *outfile; */
@@ -1876,10 +1876,10 @@ int NormaliseSFTDataRngMdn(LALStatus *status)
   */
   
   if (GV.noise != 1)
-    LALRngMedBias (status, &medianbias, windowSize);
+    LALRngMedBias (stat, &medianbias, windowSize);
   
-  LALDCreateVector(status, &Sp, (UINT4)nbins);
-  LALDCreateVector(status, &RngMdnSp, (UINT4)nbins);
+  LALDCreateVector(stat, &Sp, (UINT4)nbins);
+  LALDCreateVector(stat, &RngMdnSp, (UINT4)nbins);
 
   nbins=(INT2)nbins;
 
@@ -1974,8 +1974,8 @@ int NormaliseSFTDataRngMdn(LALStatus *status)
   
   free(N);
   free(Sp1);
-  LALDDestroyVector(status, &RngMdnSp);
-  LALDDestroyVector(status, &Sp);
+  LALDDestroyVector(stat, &RngMdnSp);
+  LALDDestroyVector(stat, &Sp);
   
   return 0;
 }

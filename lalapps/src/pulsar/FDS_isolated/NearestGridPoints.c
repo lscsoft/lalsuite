@@ -65,6 +65,10 @@ NRCSID( NEARESTGRIDPOINTSC, "$Id$" );
 #define NEARESTGRIDPOINTSH_MSGEMEM		"Memory allocation error."
 
 
+void RefineSkyRegion (LALStatus *status,  DopplerScanInit *scanInit, DopplerScanState *scanState,  SkyPosition *skyPosition, REAL8 *ratio);
+void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, SkyRegion *skyRegion);
+void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit scanInit);
+
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 
 			       DopplerScanState *theScan, /* output */ 
@@ -80,9 +84,6 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 
   SkyRegion tmpSkyRegion;
   SkyPosition centerOfMass;
-
-  void RefineSkyRegion (LALStatus *status,  DopplerScanInit *scanInit, DopplerScanState *scanState,  SkyPosition *skyPosition, REAL8 *ratio);
-  void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, SkyRegion *skyRegion);
 
 
   INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEARESTGRIDPOINTSC );
