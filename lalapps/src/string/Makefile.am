@@ -35,7 +35,7 @@ EXTRA_DIST = ring.c stringfind.c \
              H-CAL_FAC-600000000-6000.gwf H-CAL_REF-600000000-64.gwf \
              H-600000000-600000180.cache H1-CAL-600000000-600006000.cache \
              response.asc filterpar.in ring_test.sh string_test.sh \
-             $(SCRIPTS) ring_pipe.in S2_H1_dag.ini
+             $(SCRIPTS) ring_pipe.in S2_H1_dag.ini S2H1v03_test.txt
 
 python_config.sed:
 	-rm -f python_config.sed
