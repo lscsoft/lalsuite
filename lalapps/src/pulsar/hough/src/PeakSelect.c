@@ -170,7 +170,7 @@ void LALUCHAR2HOUGHPeak(LALStatus  *status,
 { /*   *********************************************  </lalVerbatim> */
   
   INT4  length;
-  INT4  nPeaks;
+  UINT4  nPeaks;
   
   /* --------------------------------------------- */
   INITSTATUS (status, "LALUCHAR2HOUGHPeak", PEAKSELECTC);
