@@ -132,7 +132,7 @@ LALInspiralParameterCalc (
  
    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 6, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    totalMass = 0.0;
    ieta = params->ieta;
@@ -142,7 +142,8 @@ LALInspiralParameterCalc (
    tiny = 1.e-10;
    piFl = LAL_PI * params->fLower;
 
-   switch(params->massChoice) {
+   switch(params->massChoice) 
+   {
 
       case m1Andm2:
 
@@ -300,32 +301,31 @@ LALInspiralParameterCalc (
 
       break;
 
-     case psi0Andpsi3:
-
-         ASSERT(params->psi0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-         params->totalMass = totalMass = -(params->psi3/params->psi0) / LAL_PI / LAL_MTSUN_SI  /16. / LAL_PI;
-         params->eta = eta = 3./128. * pow(LAL_PI * LAL_MTSUN_SI * totalMass, -5./3.) 
-                      / params->psi0;     
-
-		      /* if eta greater than .25 and >0 amd M>0 then physical values*/
-	 if (eta <= oneby4 && eta >0 && totalMass>0) {
-            params->mass1 = m1 = 0.5*totalMass * ( 1.L + sqrt(1.L - 4.L*eta));
-            params->mass2 = m2 = 0.5*totalMass * ( 1.L - sqrt(1.L - 4.L*eta));
-            params->mu = eta*totalMass;
-            params->chirpMass = pow(eta,0.6)*totalMass;
-            params->t0 = 5. / (256. * piFl) 
-                      * pow (totalMass * piFl * LAL_MTSUN_SI, -5. / 3.) / eta;
-	    params->t3 = 1. / (8. * params->fLower * eta) * pow(totalMass * piFl * LAL_MTSUN_SI, -2. / 3.) ;
-         }
-         else {
-           params->mass1 = 0.;
-           params->mass2 = 0.;
-         }
-
+     
+      case psi0Andpsi3:
+      if (params->psi0 > 0 && params->psi3 < 0)
+      {
+	      params->totalMass = totalMass = -params->psi3/(16.L * LAL_PI * LAL_PI * params->psi0)/LAL_MTSUN_SI;
+	      params->eta = eta = 3.L/(128.L * params->psi0 * pow (LAL_PI * totalMass*LAL_MTSUN_SI, fiveby3));
+		      
+	      /* if eta < 1/4 amd M > 0 then physical values*/
+	      if (eta <= oneby4) 
+	      {
+		      params->mass1 = 0.5*totalMass * ( 1.L + sqrt(1.L - 4.L*eta));
+		      params->mass2 = 0.5*totalMass * ( 1.L - sqrt(1.L - 4.L*eta));
+		      params->mu = eta*totalMass;
+		      params->chirpMass = pow(eta,0.6)*totalMass;
+	      }
+      }
+      else 
+      {
+	      params->eta = 0.;
+	      DETATCHSTATUSPTR(status);
+	      RETURN(status);
+      }
       break;
-
-      default:
+	      
+     default:
       ABORT (status, 999, "Improper choice for massChoice in LALInspiralParameterCalc\n");
       break;
    }
