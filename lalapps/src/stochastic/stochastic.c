@@ -375,8 +375,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime);
 
-  exit(1);
-  */
+  exit(1);*/
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -1860,7 +1859,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long(argc, argv, \
+    c = getopt_long_only(argc, argv, \
         "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
         "A:B:C:D:E:FG:H:I:J:", long_options, &option_index);
 
@@ -1875,11 +1874,15 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 0:
         /* If this option set a flag, do nothing else now. */
         if (long_options[option_index].flag != 0)
+        {
           break;
-        printf ("option %s", long_options[option_index].name);
-        if (optarg)
-          printf (" with arg %s", optarg);
-        printf ("\n");
+        }
+        else
+        {
+          fprintf(stderr, "error parseing option %s with argument %s\n", \
+              long_options[option_index].name, optarg);
+          exit(1);
+        }
         break;
 
       case 'a':
