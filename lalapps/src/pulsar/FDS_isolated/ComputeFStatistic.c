@@ -1627,8 +1627,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
   
 #if USE_BOINC
-  strcat(cfg->EphemEarth,"earth");
-  strcat(cfg->EphemSun,"sun");  
+  strcpy(cfg->EphemEarth,"earth");
+  strcpy(cfg->EphemSun,"sun");  
   
 #if BOINC_COMPRESS
   /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
@@ -2177,18 +2177,25 @@ void Freemem(LALStatus *status)
       LALFree (GV.filelist[k]);
     } /* for k < SFTno */
   LALFree(SFTData);
+  SFTData = NULL;
+
   LALFree(GV.filelist);
+  GV.filelist = NULL;
 
   /* Free timestamps */
   LALFree(timestamps);
+  timestamps = NULL;
 
   LALFree(Fstat.F);
+  Fstat.F = NULL;
+
   if(uvar_EstimSigParam) 
     {
       LALFree(Fstat.Fa);
+      Fstat.Fa = NULL;
       LALFree(Fstat.Fb);
+      Fstat.Fb = NULL;
     }
-
 
 
   /* Free DemodParams */
@@ -2202,6 +2209,7 @@ void Freemem(LALStatus *status)
       LALFree(DemodParams->skyConst);
       LALFree(DemodParams->spinDwn);
       LALFree(DemodParams);
+      DemodParams = NULL;
     }
      
 
@@ -2209,23 +2217,38 @@ void Freemem(LALStatus *status)
   TRY (LALDestroyUserVars(status->statusPtr), status);
 
   if (GV.skyRegion)
-    LALFree ( GV.skyRegion );
+    {
+      LALFree ( GV.skyRegion );
+      GV.skyRegion = NULL;
+    }
 
   /* this comes from clusters.c */
-  if (highFLines->clusters) LALFree(highFLines->clusters);
-  if (highFLines->Iclust) LALFree(highFLines->Iclust);
-  if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
+  if (highFLines->clusters) { 
+    LALFree(highFLines->clusters);
+    highFLines->clusters = NULL;
+  }
+  if (highFLines->Iclust) {
+    LALFree(highFLines->Iclust);
+    highFLines->Iclust = NULL;
+  }
+  if (highFLines->NclustPoints) {
+    LALFree(highFLines->NclustPoints);
+    highFLines->NclustPoints = NULL;
+  }
 
 
   /* Free ephemeris data */
   LALFree(GV.edat->ephemE);
   LALFree(GV.edat->ephemS);
   LALFree(GV.edat);
+  GV.edat = NULL;
 
 #if USE_BOINC
   /* free buffer used for fstat.  Its safe to do this because we already did fclose(fpstat) earlier */
-  if (fstatbuff)
+  if (fstatbuff) {
     LALFree(fstatbuff);
+    fstatbuff = NULL;
+  }
 #endif
   
   DETATCHSTATUSPTR (status);
