@@ -1,0 +1,232 @@
+%
+% $Id$
+%
+\color{black}
+\chapter{How to get, build and use software for the LSC Data Grid} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Getting and installing the software}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We describe the installation of \lal\ and \lalapps\ for use in
+gravitational-wave data analysis.   These packages are under active
+development at the present time and the latest functionality is
+available only from CVS.   These instructions assume a standard
+RedHat installation including development tools.   
+
+\subsection{Installation of required development tools}
+
+A useful installation of \lal\ and \lalapps\ requires \textsc{fftw},
+the \textsc{frame} and \textsc{metaio} libraries.   Pre-compiled
+versions of these libraries are available as RPM's from
+\begin{verbatim}
+    http://www.lsc-group.phys.uwm.edu/lal/rpms/
+\end{verbatim}
+The binary versions
+\begin{verbatim}
+   fftw-2.1.3-2lal.i386.rpm   28-Aug-2003 17:35   810k  
+   frame-6.08-1lal.i386.rpm   28-Aug-2003 17:35   464k  
+   metaio-4.13-1lal.i386.rpm  28-Aug-2003 17:35    24k  
+\end{verbatim}
+are compiled on RedHat7.3 architecture,  but may work on later
+versions of RedHat.   Download the RPM's,  log in as root on your
+computer,  then type
+\begin{verbatim}
+rpm -Uvh fftw-2.1.3-2lal.i386.rpm
+rpm -Uvh frame-6.08-1lal.i386.rpm
+rpm -Uvh metaio-4.13-1lal.i386.rpm
+\end{verbatim}
+Watch for error messages.   If everything installs correctly,  skip to
+Sec.~\ref{s:lal},  otherwise continue through the following steps.  
+
+The source RPM's are also available on the LAL web site,   download
+\begin{verbatim}
+   fftw-2.1.3-2lal.src.rpm   28-Aug-2003 17:35   810k  
+   frame-6.08-1lal.src.rpm   28-Aug-2003 17:35   464k  
+   metaio-4.13-1lal.src.rpm  28-Aug-2003 17:35    24k  
+\end{verbatim}
+to your computer.  As root,   type
+\begin{verbatim}
+rpm -Uvh fftw-2.1.3-2lal.src.rpm
+rpm -Uvh frame-6.08-1lal.src.rpm
+rpm -Uvh metaio-4.13-1lal.src.rpm
+\end{verbatim}
+Watch for errors.  If this fails,  there is a major problem:  e-mail
+\verb+lal-discuss@gravity.phys.uwm.edu+.    If it succeeds,  then
+\begin{verbatim}
+cd /usr/src/redhat/SPECS
+rpm -ba fftw.spec
+rpm -ba frame.spec
+rpm -ba metaio.spec
+cd ../RPMS/i386
+rpm -Uvh fftw-2.1.3-2lal.i386.rpm
+rpm -Uvh frame-6.08-1lal.i386.rpm
+rpm -Uvh metaio-4.13-1lal.i386.rpm
+\end{verbatim}
+Watch for errors at every step.  If you encounter a problem:   e-mail
+\verb+lal-discuss@gravity.phys.uwm.edu+.   If it succeeds,  then you
+can go ahead to the next stage.
+
+\color{black}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Configuring your environment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\color{black}
+
+While developing,  we recommend that you install the \lal\ and \lalapps
+somewhere under your home directory.  If you follow the
+instructions below,  the \lal\ and \lalapps\ libraries will be in
+\verb+$LALPREFIX/lib+;  the documentation in \verb+$LALPREFIX/doc+; the header
+files in \verb+$LALPREFIX/include+; the binaries in \verb+$LALPREFIX/bin+.
+The environment \verb+LALPREFIX+ should be set to the absolute path where you
+want to install these things.  For example,  user \texttt{patrick} might put
+the source code in \verb+/home/patrick/src+ and set \verb+LALPREFIX+ to
+\verb+/home/patrick+.
+
+We assume you have installed \ligotools\ and configured your
+environment as described in Peter Shawhan's documentation.   
+To make the appropriate binaries accesible to you,  check that your path is
+set correctly. It is also useful to add environment variables for the CVS
+servers. If you have a lal CVS login, change
+\verb+anonymous@gravity.phys.uwm.edu+ to
+\verb+your_user_name@gravity.phys.uwm.edu+ in the environment variables below.
+If you are using \texttt{bash}, add
+the following lines to your \texttt{.bash\_profile} file
+\begin{verbatim}
+export LALPREFIX=${HOME}      # <---- Change this as appropriate
+export PATH=${LALPREFIX}/bin:${PATH}
+export LALCVS=":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal"
+\end{verbatim}
+If you are using \texttt{csh} or a derivative,  add the following lines to
+your \texttt{.cshrc} file
+\begin{verbatim}
+setenv LALPREFIX $HOME
+setenv PATH $LALPREFIX/bin:$PATH
+setenv LALCVS ":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal"
+\end{verbatim}
+These enviromnent variables must be set before running anything,
+so it is a good idea to log out and log back in again before
+continuing.   \textbf{Note:} With libtool version 1.4.2, or greater, there is
+no need to have the \verb+LD_LIBRARY_PATH+ environment variable set. Library
+paths are hard coded into the libraries using the \texttt{-rpath}
+compiler option. This is the correct way to do this,  using
+\verb+LD_LIBRARY_PATH+ is incorrect.  
+
+\color{black}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{LAL}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\color{black}
+
+In the following commands, remember \verb+LALPREFIX+ is the
+absolute directory path where you want to install the LAL library.  If
+\verb+LALPREFIX+ does not exist,  you must create it:
+\begin{verbatim}
+mkdir $LALPREFIX
+\end{verbatim}
+Then create the directory into which you wish to put the source files for LAL
+and LALApps:
+\begin{verbatim}
+mkdir $LALPREFIX/src
+\end{verbatim}
+
+The LAL software is maintained in a CVS repository -- CVS stands for
+Concurrent Version-control System which is tool to allow multiple developers
+to manipulate the same software,  meerging differences and identifying
+conflicts between changes if they arise.  Obtain the LAL package from the CVS
+repository as follows:  
+\begin{verbatim}
+cd $LALPREFIX/src
+cvs -d $LALCVS login
+\end{verbatim}
+At this point,  you will be asked for a password.  The password for the
+\verb+anonymous+ user is \verb+lal+. If you have a your own username, use the
+password that you have been given.
+The version of LAL that is checked-out is identified by the argument
+to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
+current development version.  If you want to check out a released
+version, replace the \verb+HEAD+ tag by \verb+release-X-Y+ where
+\verb+X+ and \verb+Y+ are integers which identify the release version
+number as \verb+X.Y+.
+\begin{verbatim}
+cvs -d $LALCVS checkout -rHEAD lal
+\end{verbatim}
+You have now obtained the latest development version of LAL.
+
+To build and install the LAL software suite, 
+\begin{verbatim}
+cd $LALPREFIX/src/lal
+./00boot
+./configure --prefix=$LALPREFIX \
+        --enable-frame
+make
+make check
+make dvi
+make install prefix=$LALPREFIX/stow_pkgs/lal-howto
+cd $LALPREFIX/stow_pkgs
+stow lal-howto
+\end{verbatim}
+This completes the installation and testing of LAL.  
+
+\color{black}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{LALApps}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\color{black}
+
+In the following commands, remember \verb+LALPREFIX+ is the absolute
+directory path where you want to install the LALApps binaries.  We
+assume that you have followed the build instructions for \lal\ and
+that the directories \verb+LALPREFIX+ and \verb+$LALPREFIX/src+ exist.
+
+Obtain the LALApps package from the CVS repository as follows:  
+\begin{verbatim}
+cd $LALPREFIX/src
+cvs -d $LALCVS login
+\end{verbatim}
+At this point,  you will be asked for a password.  The password for the
+\verb+anonymous+ user is \verb+lal+. If you have your own username, use the
+password that you have been given.
+The version of LALApps that is checked-out is identified by the argument
+to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
+current development version.  If you want to check out a released
+version, replace the \verb+HEAD+ tag by \verb+release-X-Y+ where
+\verb+X+ and \verb+Y+ are integers which identify the release version
+number as \verb+X.Y+.
+\begin{verbatim}
+cvs -d $LALCVS checkout -rHEAD lalapps
+\end{verbatim}
+You have now obtained the latest development version of LALApps.
+
+To build and install the LALApps suite, 
+\begin{verbatim}
+cd $LALPREFIX/src/lalapps
+./00boot
+./configure --prefix=$LALPREFIX \
+    --with-extra-cppflags="-I$LALPREFIX/include" \
+    --with-extra-ldflags="-L$LALPREFIX/lib" \
+    --enable-frame
+make
+make check
+make dvi
+make install prefix=$LALPREFIX/stow_pkgs/lalapps-howto
+cd $LALPREFIX/stow_pkgs
+stow lalapps-howto
+\end{verbatim}
+This completes the installation and testing of LALApps.  
+
+\begin{enumerate}
+
+\item It's now time to start looking at the example search codes in the
+\verb+contrib+ directory.  Either \verb+power+ or \verb+inspiral+ should serve
+as good examples to get started.   Good luck and happy coding.
+
+\end{enumerate}
+
+\pagebreak
+\begin{thebibliography}{99}
+\bibitem{lalspec} Bruce Allen \textit{et al}, \emph{Numerical Algorithms
+Library Specification and Style Guide}, distributed as part of \verb+lal+ 
+package and LIGO-T990030.
+\end{thebibliography}
+
+
