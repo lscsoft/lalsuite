@@ -95,7 +95,7 @@ char filelist[MAXFILES][MAXFILENAMELENGTH];
 /* timebaseline of SFT in sec, band SFT in Hz */
 REAL4 Tsft,B;
 /* smallest frequency in the band B */
-REAL8 fmin;
+REAL8 f_min;
 /* How many SFTS we'll produce*/
 INT4 nTsft;
 
@@ -211,12 +211,12 @@ int read_noise(LALStatus* status, int iSFT) {
 
   /*************************************/
   Tsft=header.tbase;
-  imin=(INT4)(fmin*Tsft+0.5);
-  fmin=imin/Tsft;
+  imin=(INT4)(f_min*Tsft+0.5);
+  f_min=imin/Tsft;
 
   /* check frequency range */
-  if ((fmin*Tsft < header.firstfreqindex) ||
-      ((fmin*Tsft+(ceil(B*Tsft))) > header.firstfreqindex + header.nsamples)){
+  if ((f_min*Tsft < header.firstfreqindex) ||
+      ((f_min*Tsft+(ceil(B*Tsft))) > header.firstfreqindex + header.nsamples)){
     fprintf(stderr,"Frequency band of noise data out of range !\n");
     return 1;
   }
@@ -291,7 +291,7 @@ int write_SFTS(LALStatus* status, int iSFT){
   header.gps_sec=timestamps[iSFT].gpsSeconds;
   header.gps_nsec=timestamps[iSFT].gpsNanoSeconds;
   header.tbase=Tsft;
-  header.firstfreqindex=(INT4)(fmin*Tsft+0.5);
+  header.firstfreqindex=(INT4)(f_min*Tsft+0.5);
   header.nsamples=fvec->length; 
   
   /* write header */
@@ -357,7 +357,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
       break;
     case 'f':
       /* Starting frequency in Hz */
-      if ( 1 != sscanf( optarg, "%lf", &fmin ) ) {
+      if ( 1 != sscanf( optarg, "%lf", &f_min ) ) {
 	fprintf( stderr, "Unrecognizable frequency %s\n", optarg );
 	return 1;
       }
