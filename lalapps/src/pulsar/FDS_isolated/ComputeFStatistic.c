@@ -576,7 +576,7 @@ int main(int argc,char *argv[])
     done[0] = '\0';
     if(!fseek(fpstat,-6,SEEK_END))
       if(fread(done,6,1,fpstat)==1)
-        if(strncmp(done,"%DONE")==0){
+        if(strncmp(done,"%DONE",5)==0){
           fclose(fpstat);
           fprintf(stderr,"detected finished Fstat file - aborting Fstat run %d\n",cfsRunNo);
           return(0);
