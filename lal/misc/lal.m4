@@ -206,7 +206,7 @@ AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
  echo "*                                                            *"
  echo "* The environment variables                                  *"
  echo "*                                                            *"
- echo "*    MKL_SERIAL=true                                         *"
+ echo "*    MKL_SERIAL=YES                                          *"
  echo "*    KMP_LIBRARY=serial                                      *"
  echo "*                                                            *"
  echo "* must be set before running executables linked against this *"
