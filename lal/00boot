@@ -215,15 +215,19 @@ AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
 
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
+lal_version_micro=`echo "$VERSION" | cut -d. -f3-`
+test -z "$lal_version_micro" && lal_version_micro=0
 lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
 lal_cvs_tag=`echo '$Name$' | sed 's/\\$//g' | sed 's/Name: //'`
 AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
 AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
 AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
+AC_DEFINE_UNQUOTED(LAL_VERSION_MICRO, $lal_version_micro, [LAL Version Micro Number] )
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
 AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
-AC_DEFINE_UNQUOTED(LAL_PREFIX, "$prefix", [LAL Install Prefix])
+test "$prefix"="NONE" && lal_prefix="$ac_default_prefix" || lal_prefix="$prefix"
+AC_DEFINE_UNQUOTED(LAL_PREFIX, "$lal_prefix", [LAL Install Prefix])
 
 lal_pthread_available="yes"
 ACX_PTHREAD( , [lal_pthread_available="no"])
@@ -445,7 +449,7 @@ AC_CHECK_FUNCS(vsnprintf)
 AC_CHECK_FUNCS(putenv)
 
 dnl Set package documentation install path
-AC_SUBST([pkgdocdir], [${prefix}/doc/${PACKAGE_NAME}-${PACKAGE_VERSION}])
+AC_SUBST([pkgdocdir], [\${prefix}/share/doc/${PACKAGE}-${VERSION}])
 
 dnl Setup automake conditionals
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)

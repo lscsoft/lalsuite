@@ -14,6 +14,9 @@
 /* LAL Version Minor Number  */
 #undef LAL_VERSION_MINOR
 
+/* LAL Version Micro Number  */
+#undef LAL_VERSION_MICRO
+
 /* LAL Configure Arguments */
 #undef LAL_CONFIGURE_ARGS
 

@@ -41,6 +41,7 @@ NRCSID( LALVERSIONC, "$Id$" );
 const char *lalVersion       = LAL_VERSION;
 const int   lalVersionMajor  = LAL_VERSION_MAJOR;
 const int   lalVersionMinor  = LAL_VERSION_MINOR;
+const int   lalVersionMicro  = LAL_VERSION_MICRO;
 const char *lalConfigureArgs = LAL_CONFIGURE_ARGS;
 const char *lalConfigureDate = LAL_CONFIGURE_DATE;
 const char *lalCVSTag        = LAL_CVS_TAG;

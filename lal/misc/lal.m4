@@ -150,7 +150,7 @@ AC_DEFUN([LAL_ENABLE_DEBUG],
             no)  AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
             *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
           esac
-        ],)
+        ], )
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],
@@ -162,7 +162,7 @@ AC_DEFUN([LAL_ENABLE_MACROS],
             no)  AC_DEFINE(NOLALMACROS, 1, Use functions rather than macros) ;;
             *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
           esac
-        ],)
+        ], )
 ])
 
 AC_DEFUN([LAL_ENABLE_NIGHTLY],
@@ -170,11 +170,11 @@ AC_DEFUN([LAL_ENABLE_NIGHTLY],
         [nightly],
         [  --enable-nightly        nightly build [default=no] ],
         [ case "${enableval}" in
-            yes) NIGHTLY_VERSION=`date +"%Y_%m_%d"`
-                 VERSION="${VERSION}_${NIGHTLY_VERSION}";;
+            yes) NIGHTLY_VERSION=`date +"%Y.%m.%d"`
+                 VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
             no)  NIGHTLY_VERSION="";;
             *)   NIGHTLY_VERSION="${enableval}"
-                 VERSION="${VERSION}_${NIGHTLY_VERSION}";;
+                 VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
           esac ],
         [ NIGHTLY_VERSION="" ] )
  AC_SUBST(NIGHTLY_VERSION)
