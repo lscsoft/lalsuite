@@ -63,69 +63,79 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 </lalLaTeX>
 #endif
 
-static int ModifiedforClustering(
-				 SnglBurstTable *prevEvent, 
-				 SnglBurstTable *thisEvent
-				 )
+/* cluster events a and b, storing result in a */
+
+void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 {
-  INT8 ta1, ta2, tb1, tb2, ta_p, tb_p;
-  REAL4 fa1, fa2, fb1, fb2; 
-  LALStatus status; 
-  INT8  epsilon = 10;
+	REAL4 f_lo, f_hi;
+	INT8 ta_start, ta_end, tb_start, tb_end;
 
+	/* the cluster's frequency band is the smallest band containing the
+	 * bands of the two original events */
 
-  memset( &status, 0, sizeof(LALStatus) );
+	f_lo = a->central_freq - a->bandwidth / 2;
+	f_hi = a->central_freq + a->bandwidth / 2;
+	if(b->central_freq - b->bandwidth / 2 < f_lo)
+		f_lo = b->central_freq - b->bandwidth / 2;
+	if(b->central_freq + b->bandwidth / 2 > f_hi)
+		f_hi = b->central_freq + b->bandwidth / 2;
 
-  /*compute the start, stop & peak times of the prevEvent */
-  LALGPStoINT8(&status, &ta1, &(prevEvent->start_time));
-  ta2 = ta1 + ( NANOSEC * prevEvent->duration );
-  LALGPStoINT8(&status, &ta_p, &(prevEvent->peak_time));
+	a->central_freq = (f_hi + f_lo) / 2;
+	a->bandwidth = f_hi - f_lo;
 
-  /* compute the start and stop frequencies of the prevEvent */
-  fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
-  fa2 = fa1 + prevEvent->bandwidth;
+	/* the cluster's time interval is the smallest interval containing the
+	 * intervals of the two original events */
 
-  /*compute the start, stop & peak times of the thisEvent */
-  LALGPStoINT8(&status, &tb1, &(thisEvent->start_time));
-  tb2 = tb1 + ( NANOSEC * thisEvent->duration );
-  LALGPStoINT8(&status, &tb_p, &(thisEvent->peak_time));
-
-  /* compute the start and stop frequencies of the prevEvent */
-  fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
-  fb2 = fb1 + thisEvent->bandwidth;
-
-  if ( llabs(ta_p - tb_p) < epsilon )
-    {
-      if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) 
-	 || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
-        {
-          /* set the lower & higher frequencies of the cluster */ 
-          fa1 = fb1 < fa1 ? fb1 : fa1 ;
-          fa2 = fb2 > fa2 ? fb2 : fa2 ;
-          prevEvent->central_freq = 0.5 * (fa1 + fa2);
-          prevEvent->bandwidth = (fa2 - fa1);
-
-	  /*set the start & end times of the cluster */
-          ta1 = tb1 < ta1 ? tb1 : ta1;
-          ta2 = tb2 > ta2 ? tb2 : ta2 ;
-          LALINT8toGPS(&status, &(prevEvent->start_time), &ta1);
-          prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
-	   
-	  /* set the amplitude, snr, conf. & peak time */
-	  if ( prevEvent->amplitude < thisEvent->amplitude )
-            {
-	      prevEvent->amplitude = thisEvent->amplitude;
-	      prevEvent->snr = thisEvent->snr;
-	      prevEvent->peak_time = thisEvent->peak_time;
-	      prevEvent->confidence = thisEvent->confidence;
-            }
-	  return 1;
+	ta_start = XLALGPStoINT8(&a->start_time);
+	tb_start = XLALGPStoINT8(&b->start_time);
+	ta_end = ta_start + 1e9 * a->duration;
+	tb_end = tb_start + 1e9 * b->duration;
+	if(tb_start < ta_start) {
+		a->start_time = b->start_time;
+		ta_start = tb_start;
 	}
-      else 
+	if(tb_end > ta_end)
+		a->duration = (tb_end - ta_start) / 1e9;
+	else
+		a->duration = (ta_end - ta_start) / 1e9;
+
+	/* the amplitude, SNR, confidence, and peak time of the cluster are
+	 * those of the loudest of the two events */
+
+	if(a->amplitude < b->amplitude) {
+		a->amplitude = b->amplitude;
+		a->snr = b->snr;
+		a->confidence = b->confidence;
+		a->peak_time = b->peak_time;
+	}
+}
+
+static int ModifiedforClustering(SnglBurstTable *prevEvent, SnglBurstTable *thisEvent)
+{
+	REAL4 fa1, fa2, fb1, fb2;
+	REAL8 deltaT;
+	REAL8 epsilon = 1e-8;	/* seconds */
+
+	/* compute difference in peak times */
+	deltaT = XLALDeltaFloatGPS(&prevEvent->peak_time, &thisEvent->peak_time);
+
+	/* compute the start and stop frequencies of the prevEvent */
+	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
+	fa2 = fa1 + prevEvent->bandwidth;
+
+	/* compute the start and stop frequencies of the thisEvent */
+	fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
+	fb2 = fb1 + thisEvent->bandwidth;
+
+	if((fabs(deltaT) < epsilon) &&
+	   ( (fb1 >= fa1 && fb1 <= fa2) ||
+	     (fb2 >= fa1 && fb2 <= fa2) ||
+	     (fa1 >= fb1 && fa1 <= fb2) ||
+	     (fa2 >= fb1 && fa2 <= fb2) )) {
+		XLALClusterSnglBurst(prevEvent, thisEvent);
+		return 1;
+	}
 	return 0;
-    }
-  else 
-    return 0;
 }
 
 
@@ -338,64 +348,48 @@ LALCompareSimBurstAndSnglBurst(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALClusterSnglBurstTable (
-    LALStatus        *status,
-    SnglBurstTable   *burstEvent,
-    INT4             *nevents
-    )
+	LALStatus        *status,
+	SnglBurstTable   *burstEvent,
+	INT4             *nevents
+)
 /* </lalVerbatim> */
 {
-  SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL,*startEvent=NULL;
-  INT4 i, j;
-  INT4 numModEvent = 1;
+	SnglBurstTable *thisEvent = NULL;
+	SnglBurstTable *prevEvent = NULL;
+	SnglBurstTable *startEvent = NULL;
+	INT4 i, j;
+	INT4 numModEvent = 1;
 
+	INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
+	ATTATCHSTATUSPTR (status);
 
-  INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
-  ATTATCHSTATUSPTR (status);
+	startEvent = burstEvent;
 
+	for(thisEvent = burstEvent->next; thisEvent; thisEvent = prevEvent->next) {
+		prevEvent = startEvent;
 
-  startEvent = burstEvent;
-  thisEvent = burstEvent->next;
+		for(i = numModEvent; i > 0; i--) {
+			if(ModifiedforClustering(prevEvent,thisEvent)) {
+				for(j = i; j > 1; j--)
+					prevEvent = prevEvent->next;
+				prevEvent->next = thisEvent->next;
+				LALFree(thisEvent);
+				break;
+			}
+			else
+				prevEvent = prevEvent->next;
+		}
 
-  while (thisEvent != NULL)
-  {
-    prevEvent = startEvent;
-    
-    for (i = numModEvent; i > 0; i--)
-      {   
-	if (ModifiedforClustering(prevEvent,thisEvent))
-	  {
-	    for (j = i; j > 1; j--)
-	      {
-		prevEvent = prevEvent->next;
-	      }
-	    prevEvent->next = thisEvent->next;
-	    LALFree(thisEvent);
-	    break;
-	  }
-	else
-	  prevEvent = prevEvent->next;
-      }
+		if(i == 0)
+			numModEvent++;
+	}
 
-    if (i == 0)
-      numModEvent++;
+	/* count the number of events in the modified list */
 
-    thisEvent = prevEvent->next;    
-  }
-  
-  /*count the number of events in the modified list */
+	for(*nevents = 1; startEvent; startEvent = startEvent->next)
+		*nevents++;
 
-  while (startEvent != NULL)
-  {
-    numModEvent = 1;
-    startEvent = startEvent->next;
-    numModEvent++;
-  }
-
-  *nevents = numModEvent;
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	/* normal exit */
+	DETATCHSTATUSPTR (status);
+	RETURN (status);
 }
-
-#undef NANOSEC
