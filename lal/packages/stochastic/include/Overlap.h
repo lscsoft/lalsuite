@@ -15,9 +15,18 @@
  * #include "Overlap.h"
  *
  * DESCRIPTION
- * Error codes, typedefs, and protypes for the function overlap().
+ * Error codes, typedefs, and protypes for the function Overlap().
  *
  * DIAGNOSTICS
+ *
+ *-----------------------------------------------------------------------
+ *
+ * REVISION HISTORY
+ *
+ * $Log$
+ * Revision 1.2  2000/02/26 21:19:42  jolien
+ * Overlap modified; Dirichlet added.
+ *
  *
  *-----------------------------------------------------------------------
  */
@@ -28,27 +37,27 @@
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
 #ifndef _LALSTDLIB_H
-#define _LALstdlib_H
+#define _LALSTDLIB_H
 #endif
 #endif
 
-NRCSID (OVERLAPH, "$Id$");
+static volatile const char *OVERLAPH = "$Id$";
 
-#define OVERLAP_ENULLP 1
-#define OVERLAP_ENULLV 2
-#define OVERLAP_ESIZE  4
-#define OVERLAP_EDFREQ 8
-#define OVERLAP_ESITE  16
-#define OVERLAP_ESZMM  32
-#define OVERLAP_ENULLD 64
+#define OVERLAP_ENULLIP    1
+#define OVERLAP_ESITE      2
+#define OVERLAP_ESIZE      4
+#define OVERLAP_EDELTAF    8
+#define OVERLAP_ENULLOP    16
+#define OVERLAP_ESIZEMM    32
+#define OVERLAP_ENULLD     64
 
-#define OVERLAP_MSGENULLP "Address of parameter structure must be non-null"
-#define OVERLAP_MSGENULLV "Address of vector pointer must be non-null"
-#define OVERLAP_MSGESIZE  "Length of output vector must be positive"
-#define OVERLAP_MSGEDFREQ "Frequency spacing must be positive"
-#define OVERLAP_MSGESITE  "Site ID must have legitimate enum type"
-#define OVERLAP_MSGESZMM  "Vector lengths must agree"
-#define OVERLAP_MSGENULLD "Data area of vector must be non-null"
+#define OVERLAP_MSGENULLIP "Pointer to input parameters must be non-null"
+#define OVERLAP_MSGESITE   "Site ID must have legitimate enum type"
+#define OVERLAP_MSGESIZE   "Specified length of output vector must be > 0"
+#define OVERLAP_MSGEDELTAF "Frequency spacing must be > 0"
+#define OVERLAP_MSGENULLOP "Pointer to output vector must be non-null"
+#define OVERLAP_MSGESIZEMM "Length of output vector must agree with length specified in input parameters"
+#define OVERLAP_MSGENULLD  "Pointer to data member of output vector must be non-null"
 
 #define C_LIGHT (2.99792458e10) /* speed of light [cm/sec] */
 
@@ -93,4 +102,4 @@ OverlapParameters;
 void
 Overlap ( Status *, REAL4Vector *, OverlapParameters * );
 
-#endif
+#endif /* _OVERLAP_H */

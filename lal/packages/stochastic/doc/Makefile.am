@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-TEXFILES = Overlap.tex
-DVIFILES = Overlap.dvi
+TEXFILES = Overlap.tex Dirichlet.tex
+DVIFILES = Overlap.dvi Dirichlet.dvi
 SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
 CLEANFILES = *.dvi

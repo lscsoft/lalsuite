@@ -30,21 +30,35 @@
  * } IFOsite;
  * 
  * DESCRIPTION 
- * Creates a vector structure containing the values of the overlap
- * reduction function for a pair of interferometers.
+ * Calculates the values of the overlap reduction function for a pair of 
+ * interferometers.
  *
  * DIAGNOSTICS 
- * null address for parameter pointer, null address for vector pointer,
- * non-positive length of vector, non-positive frequency spacing,
- * unknown site ID's, mismatched vector lengths, null data area for 
- * vector
- * 
+ * null pointer to input parameters
+ * site ID having illegitimate enum type
+ * specified length of output vector <= 0
+ * frequency spacing <= 0
+ * null pointer to output vector 
+ * length of output vector not equal to length specified in input parameters
+ * null pointer to data member of output vector
+ *
  * CALLS
  * 
  * NOTES
  * 
+ *----------------------------------------------------------------------- 
+ * 
+ * REVISION HISTORY 
+ * 
+ * $Log$
+ * Revision 1.2  2000/02/26 21:19:50  jolien
+ * Overlap modified; Dirichlet added.
+ *
+ * 
  *-----------------------------------------------------------------------
  */
+
+static volatile const char *OVERLAPC = "$Id$";
 
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
@@ -66,8 +80,6 @@
 #define _OVERLAP_H
 #endif
 #endif
-
-NRCSID (OVERLAPC, "$Id$");
 
 static void
 GetSiteParameters ( SiteParameters*, IFOsite );
@@ -109,21 +121,10 @@ Overlap ( Status            *status,
   /* initialize status structure */
   INITSTATUS( status, OVERLAPC );
 
-  /* check that input parameter block is not null */
-  ASSERT(parameters!=NULL, status, OVERLAP_ENULLP, OVERLAP_MSGENULLP);
+  /* check that pointer to input parameters is not null */
+  ASSERT(parameters!=NULL, status, OVERLAP_ENULLIP, OVERLAP_MSGENULLIP);
 
-  /* check that vector is not null */
-  ASSERT(vector!=NULL, status, OVERLAP_ENULLV, OVERLAP_MSGENULLV);
-
-  /* check that desired length of vector is >0 */ 
-  length = parameters->length;
-  ASSERT(length>0, status, OVERLAP_ESIZE, OVERLAP_MSGESIZE);
-
-  /* check that desired frequency spacing is >0 */ 
-  deltaF = parameters->deltaF;
-  ASSERT(deltaF>0, status, OVERLAP_EDFREQ, OVERLAP_MSGEDFREQ);
-
-  /* check that site ID's are legitimate */
+  /* check that site IDs have legitimate values */
   site1ID = parameters->site1ID;
   site2ID = parameters->site2ID;
   ASSERT(LHO<=site1ID && site1ID<NUMBEROFSITES, status,
@@ -131,11 +132,25 @@ Overlap ( Status            *status,
   ASSERT(LHO<=site2ID && site2ID<NUMBEROFSITES, status,
          OVERLAP_ESITE, OVERLAP_MSGESITE);
 
-  /* check that allocated length equals length specified by input params */
-  ASSERT(vector->length==length, status, OVERLAP_ESZMM, OVERLAP_MSGESZMM);
+  /* check that specified length of output vector is > 0 */ 
+  length = parameters->length;
+  ASSERT(length>0, status, OVERLAP_ESIZE, OVERLAP_MSGESIZE);
 
-  /* check that data area is non-null */
+  /* check that frequency spacing is > 0 */ 
+  deltaF = parameters->deltaF;
+  ASSERT(deltaF>0, status, OVERLAP_EDELTAF, OVERLAP_MSGEDELTAF);
+
+  /* check that pointer to output vector is not null */
+  ASSERT(vector!=NULL, status, OVERLAP_ENULLOP, OVERLAP_MSGENULLOP);
+
+  /* check that output vector length agrees with length specified in */
+  /* input parameters */
+  ASSERT(vector->length==length, status, OVERLAP_ESIZEMM, OVERLAP_MSGESIZEMM);
+
+  /* check that pointer to data member of output vector is not null */
   ASSERT(vector->data!=NULL, status, OVERLAP_ENULLD, OVERLAP_MSGENULLD);
+
+  /* everything okay here --------------------------------------------*/
 
   /* get parameters for each site */
   GetSiteParameters( &site1Parameters, site1ID );

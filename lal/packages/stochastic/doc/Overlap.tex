@@ -7,8 +7,8 @@
 \subsection{Purpose}
 % A short description of purpose. 
 
-Creates a vector structure containing values of the overlap reduction 
-function for a pair of interferometers.
+Calculates the values of the overlap reduction function for a pair of 
+interferometers.
 The individual interferometer sites currently available are:
 %
 \begin{itemize}
@@ -27,7 +27,8 @@ One can add additional interferometer sites as needed.
 \begin{verbatim}
 #include "Overlap.h"
 
-void Overlap ( Status *, REAL4Vector *, OverlapParameters * );
+void 
+Overlap ( Status *, REAL4Vector *, OverlapParameters * );
 
 typedef struct tagOverlapParameters {
   IFOsite   site1ID;  /* ID number for interferometer site #1 */
@@ -84,9 +85,9 @@ cross-correlated signal due to an isotropic and unpolarized stochastic
 gravity-wave background.
 
 Given a choice of two detector sites, a frequency spacing $\Delta f$,
-and the number of desired values $N$, {\tt Overlap()\/} outputs a
-vector structure of length $N$ containing the values of $\gamma(f)$ 
-evaluated at the discrete frequencies $f_i=i\Delta f$, $i=0,1,\cdots, N-1$.
+and the number of desired values $N$, {\tt Overlap()\/} calculates
+the values of $\gamma(f)$ at the discrete frequencies 
+$f_i=i\Delta f$, $i=0,1,\cdots, N-1$.
 
 \subsection{Operating Instructions}
 % Detailed usage 
@@ -96,18 +97,22 @@ Status             status;
 REAL4Vector*       vector = NULL;
 OverlapParameters  parameters;
 
-/* example choice of input parameters */
+/* choose input parameters */
 parameters.site1ID = LHO;
 parameters.site2ID = LLO;
 parameters.length  = 10000;
 parameters.deltaF  = 1.0;
 
-CreateVector (&status, &vector, parameters.length);
+/* create vector */
+SCreateVector (&status, vector, parameters.length);
 
 /* calculate values of the overlap reduction function */
 Overlap( &status, vector, &parameters );
 
-DestroyVector (&status, &vector);
+... 
+
+/* destroy vector */
+SDestroyVector (&status, &vector);
 \end{verbatim}
 
 
@@ -122,27 +127,30 @@ set by {\tt Overlap()\/} on return.
 Non-zero status codes indicate an error condition as specified in 
 Table~\ref{t:errors}
 \item 
-{\tt vector\/} is a pointer of structure type {\tt REAL4Vector}.
-The length of the vector must equal {\tt parameters.length\/} or an 
-error will occur.
-Upon successful return from {\tt Overlap()\/}, vector contains the 
+{\tt vector\/} is a pointer to a structure of type {\tt REAL4Vector}.
+One must call {\tt SCreateVector()\/} to allocate storage for the
+values of the overlap reduction function.
+The length of the output vector must equal the length specified in
+the input parameters or an error will occur.
+Upon successful return from {\tt Overlap()\/},
+{\tt vector->data\/} contains the 
 values of the overlap reduction function $\gamma(f)$ evaluated at the
 discrete frequencies $f_i:=i\Delta f$, $i=0,1,\cdots, N-1$, where
-$\Delta f=${\tt parameters.deltaF\/} and $N=${\tt parameters.length\/}.
+$N=${\tt parameters.length\/} and $\Delta f=${\tt parameters.deltaF\/}.
 \item 
 {\tt parameters\/} is a structure of type {\tt OverlapParameters\/}.
 The site identification numbers 
 {\tt parameters.site1ID\/} and {\tt parameters.site2ID\/} must have 
 legitimate enum type {\tt IFOsite} values.
-{\tt parameters.length} and {\tt parameter.deltaF} must be positive.
+{\tt parameters.length} and {\tt parameter.deltaF} are integer and
+floating point variables that must be $> 0$.
 They correspond to the desired length $N$ of the output vector and
 the frequency spacing $\Delta f$, in Hz.
 \end{itemize}
 
 \subsubsection{Options}
 
-The input parameter structure is required.
-The output {\tt vector\/} structure is required. 
+None.
 
 \subsubsection{Error conditions}
 % What constitutes an error condition? What do the error codes mean?
@@ -152,21 +160,34 @@ Non-zero status codes indicate an error condition.
 Error conditions are described in Table~\ref{t:errors}.
 
 \begin{table}
-\hskip -0.7in
+%\hskip -0.7in
+\begin{center}
 \begin{tabular}{|r|l|l|}\hline
-status&	status&				Description\\
-code&	description&			\\\hline
-ENULLP&	{\tt \&parameters==NULL\/}&    Address of parameter structure must be\\
-& &                                     non-NULL\\
-ENULLV&	{\tt \&vector==NULL}&  		Address of vector pointer must be\\
-& &                                     non-NULL\\
-ESIZE& 	{\tt parameters.length<=0\/}&  	Length $N$ must be positive\\
-EDFREQ&	{\tt parameters.deltaF<=0\/}&   Frequency spacing $\Delta f$ must be positive\\
-ESITE&	{\tt parameters.siteID<LHO\/} or {\tt >TAMA300\/}& Site ID must have legitimate enum type\\
-ESZMM&	{\tt vector$\rightarrow$length!=parameters.length\/}& Vector lengths must agree\\
-ENULLD&	{\tt vector$\rightarrow$data==NULL\/}& Data area of vector must be non-NULL\\
+status & status & Description\\
+code   & description &\\
+\hline
+ENULLIP& {\tt \&parameters == NULL\/}
+& Pointer to input parameters must be non-null\\
+ESITE&	{\tt parameters.siteID < LHO  ||\/}
+& Site ID must have legitimate enum type\\ 
+& {\tt parameters.siteID > TAMA300\/} & \\
+ESIZE& 	{\tt parameters.length $\le$ 0\/}
+& Specified length of output vector must be $>0$\\
+EDELTAF & {\tt parameters.deltaF $\le$ 0\/}
+& Frequency spacing must be $>0$\\
+ENULLOP & {\tt vector == NULL} 
+& Pointer to output vector must be non-null\\
+ESIZEMM & {\tt vector->length !=\/}
+& Length of output vector must agree with\\
+& {\tt parameters.length\/}
+& length specified in input parameters\\
+ENULLD & {\tt vector->data == NULL\/}
+& Pointer to data member of output vector must\\
+&& be non-null\\
 \hline
 \end{tabular}
+\end{center}
+%
 \caption{Error conditions for {\tt Overlap()\/}}
 \label{t:errors}
 \end{table}
@@ -240,7 +261,7 @@ the detector measured in degrees counter-clockwise from true North,
 the orientation of the second arm of the detector, again measured in 
 degrees counter-clockwise from true North, and the arm length, in cm.
 This information is presently ``hard-wired'' in a static function 
-contained in {\tt Overlap.c}.
+contained in {\tt Overlap()\/}.
 It may be better in the future to have this information stored in
 an external data file, and write a routine that inputs this information 
 when needed.
@@ -384,9 +405,7 @@ Overlap reduction function for the TAMA300--GEO600 pair.}
 \subsection{Uses}
 % What LLAL, other routines does this one call?
 
-{\tt InitStatus()\/}, 
-{\tt dCreateVector()\/} if {\tt vector==NULL}, and
-{\tt StatusHandler()\/}.
+{\tt Overlap()\/} calls no external routines.
 
 \subsection{Notes}
 % Miscellaneous notes that do not appear elsewhere. Things remaining
@@ -413,8 +432,8 @@ $\rho_1(\alpha)$ should be $-10/\alpha$, not $-2/\alpha$.
 This error was corrected in the Eq.~(\ref{e:closed2}) above.
 \item
 It may be useful, in the future, to extend ${\tt Overlap()\/}$ to 
-calculate the overlap reduction for a pair of acoustic resonant
-detectors and/or for interferometer--acoustic resonant detector pairs.
+calculate the overlap reduction for a pair of resonant mass
+detectors and/or for interferometer--resonant mass detector pairs.
 %
 \end{itemize}
 
