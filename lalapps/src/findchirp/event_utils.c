@@ -531,6 +531,8 @@ int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
     multiInspiral *thisMEvent;
     FILE *fpout;
 
+    fprintf(stderr,"distance = %f, delm = %f, coinc = %f\n", distance, delm, coincidence_window);
+
     /* deteremine coincidences according to our rule */
     for ( i=1 ; i<numIFO ; i++ ){
         myevent = (injectflag) ? ifo[0].Ieventhead : ifo[0].eventhead;
@@ -541,9 +543,12 @@ int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
                 while ( thisCEvent != NULL && (*myevent).significance == 0){
                     float chirpfrac=( (*myevent).mchirp - (*thisCEvent).mchirp )/
                         (*thisCEvent).mchirp;
-                    if ( chirpfrac*chirpfrac < delm ){
-                    /* if ((*myevent).mchirp > (*thisCEvent).mchirp - delm &&
-                            (*myevent).mchirp < (*thisCEvent).mchirp + delm){ */
+                    float m1frac=( (*myevent).mass1 - (*thisCEvent).mass1 )/
+                        (*thisCEvent).mass1;
+                    float m2frac=( (*myevent).mass2 - (*thisCEvent).mass2 )/
+                        (*thisCEvent).mass2;
+                    if ( chirpfrac*chirpfrac < delm ){ 
+                    /* if ( m1frac*m1frac < delm && m2frac*m2frac < delm ){ */
                         if ( (*myevent).time > (*thisCEvent).time - coincidence_window &&
                                 (*myevent).time < (*thisCEvent).time + coincidence_window){
                             numEvents++;

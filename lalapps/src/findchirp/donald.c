@@ -393,7 +393,7 @@ int main(int argc, char **argv)
          ********************************************************************/
         fprintf(fpout,"Trigger filename = %s\n",ifo[i].candidates.triggerfile);
         fprintf(fpout,"Injection filename = %s\n",ifo[i].candidates.injectfile);
-        fprintf(fpout,"SNR > %f, CHISQ < %f, dtime = +/-%f\n----\n",
+        fprintf(fpout,"SNR > %f, CHISQ < %f, dtime = %f\n----\n",
                 ifo[i].candidates.snr_threshold,
                 ifo[i].candidates.chi_threshold,
                 ifo[i].candidates.dtime);
@@ -469,6 +469,7 @@ int main(int argc, char **argv)
      *************************************************************************/
     fprintf(fpout,"# Looking for coincidences\n"); fflush(fpout);
     LALSortTriggers(&status,ifo,numIFO);
+    fprintf(fpout,"# Delta M is %e \n",delm); fflush(fpout);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
             TRIGGERS, dummyStart, delm, distance, coincidence_window);
 

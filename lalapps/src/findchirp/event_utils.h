@@ -96,3 +96,6 @@ int computeUL(const char *outputfile, int **triggerHistogram,
         int ninject, float time_analyzed);
 int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
         double *dummyStart, double *dummyEnd);
+int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
+        snglIFO *ifo, int numIFO, int injectflag, double dummyStart, float delm,
+        float distance, float coincidence_window);
