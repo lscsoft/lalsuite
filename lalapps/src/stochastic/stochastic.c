@@ -822,41 +822,41 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"cc-spectra", no_argument, &cc_spectra_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
-      {"gps-start-time", required_argument, 0, 'b'},
-      {"gps-end-time", required_argument, 0, 'c'},
-      {"interval-duration", required_argument, 0, 'd'},
-      {"segment-duration", required_argument, 0, 'e'},
-      {"resample-rate", required_argument, 0, 'g'},
-      {"f-min", required_argument, 0, 'h'},
-      {"f-max", required_argument, 0, 'i'},
-      {"hann-duration", required_argument, 0, 'j'},
-      {"hpf-frequency", required_argument, 0, 'k'},
-      {"hpf-attenuation", required_argument, 0, 'l'},
-      {"hpf-order", required_argument, 0, 'm'},
-      {"geo-hpf-frequency", required_argument, 0, 'n'},
-      {"geo-hpf-attenuation", required_argument, 0, 'o'},
-      {"geo-hpf-order", required_argument, 0, 'p'},
-      {"ifo-one", required_argument, 0, 'q'},
-      {"ifo-two", required_argument, 0, 'r'},
-      {"channel-one", required_argument, 0, 's'},
-      {"channel-two", required_argument, 0, 't'},
-      {"frame-cache-one", required_argument, 0, 'u'},
-      {"frame-cache-two", required_argument, 0, 'v'},
-      {"calibration-cache-one", required_argument, 0, 'w'},
-      {"calibration-cache-two", required_argument, 0, 'x'},
-      {"calibration-offset", required_argument, 0, 'y'},
-      {"mask-bin", required_argument, 0, 'z'},
-      {"scale-factor", required_argument, 0, 'A'},
-      {"seed", required_argument, 0, 'B'},
-      {"trials", required_argument, 0, 'C'},
-      {"output-dir", required_argument, 0, 'D'},
-      {"debug-level", required_argument, 0, 'E'},
-      {"version", no_argument, 0, 'F'},
-      {"alpha", required_argument, 0, 'G'},
-      {"f-ref", required_argument, 0, 'H'},
-      {"omega0", required_argument, 0, 'I'},
-      {"comment", required_argument, 0, 'J'},
-      {"user-tag", required_argument, 0, 'K'},
+      {"version", no_argument, 0, 'b'},
+      {"debug-level", required_argument, 0, 'c'},
+      {"user-tag", required_argument, 0, 'd'},
+      {"comment", required_argument, 0, 'e'},
+      {"output-dir", required_argument, 0, 'f'},
+      {"gps-start-time", required_argument, 0, 'g'},
+      {"gps-end-time", required_argument, 0, 'h'},
+      {"interval-duration", required_argument, 0, 'i'},
+      {"segment-duration", required_argument, 0, 'j'},
+      {"resample-rate", required_argument, 0, 'k'},
+      {"f-min", required_argument, 0, 'l'},
+      {"f-max", required_argument, 0, 'm'},
+      {"ifo-one", required_argument, 0, 'n'},
+      {"ifo-two", required_argument, 0, 'o'},
+      {"channel-one", required_argument, 0, 'p'},
+      {"channel-two", required_argument, 0, 'q'},
+      {"frame-cache-one", required_argument, 0, 'r'},
+      {"frame-cache-two", required_argument, 0, 's'},
+      {"calibration-cache-one", required_argument, 0, 't'},
+      {"calibration-cache-two", required_argument, 0, 'u'},
+      {"calibration-offset", required_argument, 0, 'v'},
+      {"mask-bin", required_argument, 0, 'w'},
+      {"hann-duration", required_argument, 0, 'x'},
+      {"hpf-frequency", required_argument, 0, 'y'},
+      {"hpf-attenuation", required_argument, 0, 'z'},
+      {"hpf-order", required_argument, 0, 'A'},
+      {"scale-factor", required_argument, 0, 'B'},
+      {"seed", required_argument, 0, 'C'},
+      {"trials", required_argument, 0, 'D'},
+      {"geo-hpf-frequency", required_argument, 0, 'E'},
+      {"geo-hpf-attenuation", required_argument, 0, 'F'},
+      {"geo-hpf-order", required_argument, 0, 'G'},
+      {"alpha", required_argument, 0, 'H'},
+      {"f-ref", required_argument, 0, 'I'},
+      {"omega0", required_argument, 0, 'J'},
       {0, 0, 0, 0}
     };
 
@@ -865,8 +865,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long_only(argc, argv, \
-        "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:B:C:D:E:FG:H:I:J:", long_options, &option_index);
+        "abc:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
+        "A:B:C:D:E:F:G:H:I:J:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -897,6 +897,64 @@ static void parse_options(INT4 argc, CHAR *argv[])
         break;
 
       case 'b':
+        /* display version info and exit */
+        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
+        exit(0);
+        break;
+
+      case 'c':
+        /* debug level */
+        set_debug_level( optarg );
+        ADD_PROCESS_PARAM("string", "%s", optarg);
+        break;
+
+      case 'd':
+        /* user tag */
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(userTag, optarg, optarg_len);
+
+        /* add to process_params table */
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+                          calloc(1, sizeof(ProcessParamsTable));
+        LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+            PROGRAM_NAME);
+        LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
+        LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
+        LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
+        break;
+
+      case 'e':
+        /* xml comment */
+        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
+        {
+          fprintf(stderr, "invalid argument to --%s:\n" \
+              "comment must be less than %d characters\n", \
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX);
+          exit(1);
+        }
+        else
+        {
+          LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
+
+      case 'f':
+        /* directory for output files */
+        optarg_len = strlen(optarg) + 1;
+        outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(outputFilePath, optarg, optarg_len);
+        if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Directory does not exist: (%s specified)\n", \
+              long_options[option_index].name, outputFilePath);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("string", "%s", outputFilePath);
+        break;
+
+      case 'g':
         /* start time */
         startTime = atoi(optarg);
         if (startTime < 441217609)
@@ -918,7 +976,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%ld", startTime);
         break;
 
-      case 'c':
+      case 'h':
         /* end time */
         endTime = atoi(optarg);
         if (endTime < 441217609)
@@ -940,7 +998,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%ld", endTime);
         break;
 
-      case 'd':
+      case 'i':
         /* interval duration */
         intervalDuration = atoi(optarg);
         if (intervalDuration <= 0)
@@ -953,7 +1011,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", intervalDuration);
         break;
 
-      case 'e':
+      case 'j':
         /* segment duration */
         segmentDuration = atoi(optarg);
         if (segmentDuration <= 0)
@@ -966,8 +1024,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", segmentDuration);
         break;
 
-      case 'g':
-        /* resampling */
+      case 'k':
+        /* resampe rate */
         resampleRate = atoi(optarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
@@ -981,7 +1039,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'h':
+      case 'l':
         /* minimal frequency */
         fMin = atof(optarg);
         if (fMin < 0)
@@ -1001,7 +1059,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fMin);
         break;
 
-      case 'i':
+      case 'm':
         /* maximal frequency */
         fMax = atof(optarg);
         if (fMax < 0)
@@ -1021,108 +1079,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fMax);
         break;
 
-      case 'j':
-        /* hann window duration */
-        hannDuration = atoi(optarg);
-        if (hannDuration < 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Hann duartion is less than 0: (%d specified)\n", \
-              long_options[option_index].name, hannDuration);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", hannDuration);
-        break;
-
-      case 'k':
-        /* high pass knee filter frequency  */
-        highPassFreq = atof(optarg);
-        if (highPassFreq < 0)
-        {
-          fprintf(stderr, "Invalid argument tp --%s:\n" \
-              "High pass filter knee frequency is less than 0 Hz: "\
-              "(%f specified)\n", long_options[option_index].name, \
-              highPassFreq);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", highPassFreq);
-        break;
-
-      case 'l':
-        /* high pass filter attenuation  */
-        highPassAtten = atof(optarg);
-        if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "High pass filter attenuation must be in the range [0:1]: " \
-              "(%f specified)\n", long_options[option_index].name, \
-              highPassAtten);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", highPassAtten);
-        break;
-
-      case 'm':
-        /* high pass filter order  */
-        highPassOrder = atoi(optarg);
-        if (highPassOrder <= 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "High pass filter order must be greater than 0: " \
-              "(%d specified)\n", long_options[option_index].name,
-              highPassOrder);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", highPassOrder);
-        break;
-
       case 'n':
-        /* GEO high pass knee filter frequency */
-        geoHighPassFreq = atof(optarg);
-        if (geoHighPassFreq < 0)
-        {
-          fprintf(stderr, "Invalid argument tp --%s:\n" \
-              "GEO high pass filter knee frequency is less than 0 Hz: "\
-              "(%f specified)\n", long_options[option_index].name, \
-              geoHighPassFreq);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
-        break;
-
-      case 'o':
-        /*GEO high pass filter attenuation */
-        geoHighPassAtten = atof(optarg);
-        if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GEO high pass filter attenuation must be in the range [0:1]: " \
-              "(%f specified)\n", long_options[option_index].name, \
-              geoHighPassAtten);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
-        break;
-
-      case 'p':
-        /* GEO high pass filter order */
-        geoHighPassOrder = atoi(optarg);
-        if (geoHighPassOrder <= 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GEO high pass filter order must be greater than 0: " \
-              "(%d specified)\n", long_options[option_index].name,
-              geoHighPassOrder);
-          exit(1);
-        }
-        ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
-        break;
-
-      case 'q':
         /* ifo for first stream */
         optarg_len = strlen(optarg) + 1;
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoOne, optarg, optarg_len);
+
+        /* set site id for ifo one */
         if (strncmp(ifoOne, "H1", 2) == 0)
           siteOne = 0;
         else if (strncmp(ifoOne, "H2", 2) == 0)
@@ -1139,11 +1102,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", ifoOne);
         break;
 
-      case 'r':
+      case 'o':
         /* ifo for second stream */
         optarg_len = strlen(optarg) + 1;
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(ifoTwo, optarg, optarg_len);
+
+        /* set site id for ifo two */
         if (strncmp(ifoTwo, "H1", 2) == 0)
           siteTwo = 0;
         else if (strncmp(ifoTwo, "H2", 2) == 0)
@@ -1160,7 +1125,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", ifoTwo);
         break;
 
-      case 's':
+      case 'p':
         /* channel one */
         optarg_len = strlen(optarg) + 4;
         channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -1169,7 +1134,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", channelOneTemp);
         break;
 
-      case 't':
+      case 'q':
         /* channel two */
         optarg_len = strlen(optarg) + 4;
         channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -1178,8 +1143,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", channelTwoTemp);
         break;
 
-      case 'u':
-        /* data cache one */
+      case 'r':
+        /* frame cache one */
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(frameCacheOne, optarg, optarg_len);
@@ -1193,8 +1158,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", frameCacheOne);
         break;
 
-      case 'v':
-        /* data cache two */
+      case 's':
+        /* frame cache two */
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(frameCacheTwo, optarg, optarg_len);
@@ -1208,7 +1173,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", frameCacheTwo);
         break;
 
-      case 'w':
+      case 't':
         /* calibration cache one */
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -1223,7 +1188,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", calCacheOne);
         break;
 
-      case 'x':
+      case 'u':
         /* calibration cache two */
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -1238,13 +1203,13 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("string", "%s", calCacheTwo);
         break;
 
-      case 'y':
+      case 'v':
         /* calibration time offset */
         calibOffset = atoi(optarg);
         ADD_PROCESS_PARAM("int", "%d", calibOffset);
         break;
 
-      case 'z':
+      case 'w':
         /* number of bins to mask for frequency mask */
         maskBin = atoi(optarg);
         if (maskBin <= 0)
@@ -1257,19 +1222,74 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", maskBin);
         break;
 
+      case 'x':
+        /* hann window duration */
+        hannDuration = atoi(optarg);
+        if (hannDuration < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Hann duartion is less than 0: (%d specified)\n", \
+              long_options[option_index].name, hannDuration);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", hannDuration);
+        break;
+
+      case 'y':
+        /* high pass knee filter frequency  */
+        highPassFreq = atof(optarg);
+        if (highPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "High pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassFreq);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", highPassFreq);
+        break;
+
+      case 'z':
+        /* high pass filter attenuation  */
+        highPassAtten = atof(optarg);
+        if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassAtten);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", highPassAtten);
+        break;
+
       case 'A':
+        /* high pass filter order  */
+        highPassOrder = atoi(optarg);
+        if (highPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              highPassOrder);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", highPassOrder);
+        break;
+
+      case 'B':
         /* scale factor */
         scaleFactor = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", scaleFactor);
         break;
 
-      case 'B':
+      case 'C':
         /* seed */
         seed = atoi(optarg);
         ADD_PROCESS_PARAM("float", "%e", seed);
         break;
 
-      case 'C':
+      case 'D':
         /* number of trials */
         NLoop = atoi(optarg);
         if (NLoop <= 0)
@@ -1282,40 +1302,55 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("int", "%d", NLoop);
         break;
 
-      case 'D':
-        /* directory for output files */
-        optarg_len = strlen(optarg) + 1;
-        outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(outputFilePath, optarg, optarg_len);
-        if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
+      case 'E':
+        /* GEO high pass knee filter frequency */
+        geoHighPassFreq = atof(optarg);
+        if (geoHighPassFreq < 0)
         {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Directory does not exist: (%s specified)\n", \
-              long_options[option_index].name, outputFilePath);
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "GEO high pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassFreq);
           exit(1);
         }
-        ADD_PROCESS_PARAM("string", "%s", outputFilePath);
-        break;
-
-      case 'E':
-        /* set debug level */
-        set_debug_level( optarg );
-        ADD_PROCESS_PARAM("string", "%s", optarg);
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
         break;
 
       case 'F':
-        /* display version info and exit */
-        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
-        exit(0);
+        /* GEO high pass filter attenuation */
+        geoHighPassAtten = atof(optarg);
+        if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassAtten);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
         break;
 
       case 'G':
+        /* GEO high pass filter order */
+        geoHighPassOrder = atoi(optarg);
+        if (geoHighPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              geoHighPassOrder);
+          exit(1);
+        }
+        ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
+        break;
+
+      case 'H':
         /* filter spectrum exponent */
         alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
-      case 'H':
+      case 'I':
         /* filter reference frequency */
         fRef = atof(optarg);
         if (fRef < 0)
@@ -1328,7 +1363,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         ADD_PROCESS_PARAM("float", "%e", fRef);
         break;
 
-      case 'I':
+      case 'J':
         /* filter reference omega */
         omegaRef = atof(optarg);
         if (omegaRef <= 0)
@@ -1339,37 +1374,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
           exit(1);
         }
         ADD_PROCESS_PARAM("float", "%e", omegaRef);
-        break;
-
-      case 'J':
-        /* xml comment */
-        if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
-        {
-          fprintf(stderr, "invalid argument to --%s:\n" \
-              "comment must be less than %d characters\n", \
-              long_options[option_index].name, LIGOMETA_COMMENT_MAX);
-          exit(1);
-        }
-        else
-        {
-          LALSnprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
-        }
-        break;
-
-      case 'K':
-        /* process_params usertag */
-        optarg_len = strlen(optarg) + 1;
-        userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(userTag, optarg, optarg_len);
-
-        /* add to process_params table */
-        this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-                          calloc(1, sizeof(ProcessParamsTable));
-        LALSnprintf(this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-            PROGRAM_NAME);
-        LALSnprintf(this_proc_param->param, LIGOMETA_PARAM_MAX, "--user-tag");
-        LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "string");
-        LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, "%s", optarg);
         break;
 
       case '?':
