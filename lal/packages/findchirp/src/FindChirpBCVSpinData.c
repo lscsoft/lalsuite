@@ -359,6 +359,70 @@ LALFindChirpBCVSpinData (
       wtilde[k].re *= invmodsqResp;
     }
 
+  /*
+     *
+     * compute BCV normalisation parameters a1, b1 and b2, 
+     * segment normalization, outputData, point fcSeg at data segment
+     *
+     */
+
+
+    fcSeg->a1 = 0.0;
+    fcSeg->b1 = 0.0;
+    fcSeg->b2 = 0.0;
+    fcSeg->segNorm = 0.0;
+
+    for ( k = 0; k < cut; ++k )
+    {
+      outputData[k].re = 0.0;
+      outputData[k].im = 0.0;
+      outputDataBCV[k].re = 0.0;
+      outputDataBCV[k].im = 0.0;
+    }
+
+    memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
+    memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
+
+    /* 
+     * moments necessary for the calculation of
+     * the BCVSpin normalization parameters
+     */
+    
+    for ( k = 1; k < fcSeg->data->data->length; ++k )
+    {
+      fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
+    }
+
+    /*
+     *
+     * tmplt power calcs require moments etc, not calc yet
+     *
+     */
+
+  
+
+    /* set output frequency series parameters */
+    strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
+    strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );
+
+    fcSeg->data->epoch.gpsSeconds      = dataSeg->chan->epoch.gpsSeconds;
+    fcSeg->data->epoch.gpsNanoSeconds  = dataSeg->chan->epoch.gpsNanoSeconds;
+    fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
+    fcSeg->dataBCV->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
+
+    fcSeg->data->f0     = dataSeg->chan->f0;
+    fcSeg->data->deltaF = 1.0 /
+      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+    fcSeg->dataBCV->f0     = dataSeg->chan->f0;
+    fcSeg->dataBCV->deltaF = 1.0 /
+      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+
+    fcSeg->deltaT       = dataSeg->chan->deltaT;
+    fcSeg->number       = dataSeg->number;
+
+    /* store low frequency cutoff and invSpecTrunc in segment */
+    fcSeg->fLow         = params->fLow;
+    fcSeg->invSpecTrunc = params->invSpecTrunc;
 
 
   /* code */
