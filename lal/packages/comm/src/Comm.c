@@ -1048,10 +1048,12 @@ LALInitializeExchange (
   ASSERT (exchParamsOut, status, COMM_ENULL, COMM_MSGENULL);
   ASSERT (!*exchParamsOut, status, COMM_ENNUL, COMM_MSGENNUL);
 
-  /* now allocate memory for output exchange parameters */
-  *exchParamsOut = (ExchParams *) LALMalloc (sizeof(ExchParams));
-  ASSERT (*exchParamsOut, status, COMM_ENULL, COMM_MSGENULL);
-  /* memset( *exchParamsOut, 0, sizeof(ExchParams) ); */
+  /* allocate memory for output exchange parameters */
+  *exchParamsOut = (ExchParams *) LALCalloc (1, sizeof(ExchParams));
+  if ( ! *exchParamsOut )
+  {
+    ABORT( status, COMM_ENULL, COMM_MSGENULL );
+  }
 
   if (exchParamsInp) /* I am initializing the exchange */
   {
