@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: FindChirpSPTest.c
+ * File Name: FindChirpBCVSpinTest.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A., Jones, G
  * 
  * Revision: $Id$
  * 
@@ -60,18 +60,22 @@ int lalDebugLevel = 1;
 static InputDataType    inputDataType   = gaussian;
 static BOOLEAN          rhosqout        = 0;
 static BOOLEAN          verbose         = 0;
-static INT4             numPoints       = 32768;
+static INT4             numPoints       = 32768; /*128; 32768;*/
 static INT4             numSegments     = 8;
 static INT4             numTmplts       = 8;
-static INT4             numChisqBins    = 8;
+static INT4             numChisqBins    = 0;  /* changed default to zero */
 static INT4             srate           = 8192;
 static REAL4            sigmasq         = 64.0;
 static INT4             invSpecTrunc    = 0;
-static REAL4            fLow            = 150.0;
+static REAL4            fLow            = 40.0;
 static REAL4            rhosqThresh     = 100.0;
 static REAL4            chisqThresh     = 0.001;
 static REAL4            mass            = 1.4;
 static REAL4            dynRange        = 1.0;
+
+static INT4		loopCount       = 0;
+
+
 
 int
 main (int argc, char *argv[])
@@ -91,6 +95,7 @@ main (int argc, char *argv[])
   FILE                         *fpResp;
 
   FILE                         *fpRhosq = NULL;
+  FILE                         *fpRead = NULL;
 
   REAL4                         sigma;
   REAL4                         Sfk;
@@ -98,6 +103,8 @@ main (int argc, char *argv[])
   REAL4                         respIm;
   REAL4                         deltaT;
   REAL4                         deltaF;   
+  
+  REAL4                         temp;
 
   REAL4Vector                  *noiseVec = NULL;
 
@@ -106,8 +113,8 @@ main (int argc, char *argv[])
   RandomParams                 *randParams = NULL;
 
   FindChirpFilterParams        *filterParams = NULL;
-  FindChirpSPDataParams        *dataParams   = NULL;
-  FindChirpSPTmpltParams       *tmpltParams  = NULL;
+  FindChirpDataParams        *dataParams   = NULL;
+  FindChirpTmpltParams       *tmpltParams  = NULL;
 
   DataSegmentVector            *dataSegVec = NULL;
   DataSegment                  *dataSeg    = NULL;
@@ -117,6 +124,19 @@ main (int argc, char *argv[])
 
   InspiralTemplate             *tmplt = NULL;
   InspiralEvent                *event = NULL;
+
+                                                                                                                             
+ REAL4            ab              = 0.0;
+ REAL4            cd               = 0.0;
+ REAL4            de;
+                                                                                                                             
+                                                                                                                             
+de = ab/cd;
+                                                                                                                             
+fprintf (stdout, "0.0  / 0.0 d %d  \n", de);
+fprintf (stdout, "0.0  / 0.0 e %e  \n", de);
+
+
 
 
   /*
@@ -160,7 +180,8 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  initParams->approximant = TaylorF2;
+  /*  initParams->approximant = TaylorF2; */
+  initParams->approximant = BCVSpin;
 
   LALCreateFindChirpSegmentVector (&status, &fcSegVec, initParams);
   TestStatus (&status, "0", 1);
@@ -186,6 +207,10 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
+
+fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
+
+
   LALFindChirpFilterInit (&status, &filterParams, initParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -195,11 +220,11 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpSPDataInit (&status, &dataParams, initParams);
+  LALFindChirpDataInit (&status, &dataParams, initParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpSPTemplateInit (&status, &tmpltParams, initParams);
+  LALFindChirpTemplateInit (&status, &tmpltParams, initParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
@@ -211,10 +236,10 @@ main (int argc, char *argv[])
 
 
   /* analytical stuff */
-  sigma  = sqrt( sigmasq );
+  sigma  = sqrt( sigmasq );    /* standard deviation of gaussian noise*/
   deltaT = 1.0 / (float) srate;
   deltaF = 1.0 / (numPoints * deltaT);
-  Sfk    = 2.0 * sigmasq * deltaT;
+  Sfk    = 2.0 * sigmasq * deltaT; /* used to calc gaussian noise spectrum*/
   respRe = 1.0;
   respIm = 0.0;
 
@@ -231,6 +256,11 @@ main (int argc, char *argv[])
   fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
+
+ fprintf( stdout, "        numSegments = %d\n\n", numSegments );
+ fprintf( stdout, "        dataSegVec->length = %d\n\n",dataSegVec->length );
+
+
 
   for ( i = 0; (UINT4)i < dataSegVec->length; ++i )
   {
@@ -296,6 +326,8 @@ main (int argc, char *argv[])
     }
     else if ( inputDataType == file )
     {
+      fpRead = fopen ("Read.dat","w");
+
       /* open the input files */
       if ( !(fpData = fopen( "data.dat", "r" )) )
       {
@@ -322,18 +354,24 @@ main (int argc, char *argv[])
       /* read in ifodmro data */
       for ( j = 0; j < numPoints; ++j )
       {
-        if (( (flag = fscanf( fpData, "%f\n", 
+        
+       if (( (flag = fscanf( fpData, "%f\n", 
                   &(dataSeg[i].chan->data->data[j]) )) != 1 || flag == EOF ) 
-            && j < numPoints ) 
+            && j <  numPoints ) 
         {
-          fprintf( stdout, "error reading input data\n" );
+          fprintf( stdout, "error reading input data %f %d\n" , temp, j);
           fflush( stdout );
           fclose( fpData );
           fclose( fpSpec );
           fclose( fpResp );
           goto abort;
         }
+       
+      fprintf (fpRead, "%e\n",  dataSeg[i].chan->data->data[j] );
+
       }
+
+      fclose (fpRead);
 
       /* read in spec and resp */
       for ( k = 0; k < numPoints/2 + 1; ++k )
@@ -388,10 +426,14 @@ main (int argc, char *argv[])
   dataParams->dynRange     = dynRange;
   dataParams->invSpecTrunc = invSpecTrunc;
 
-  LALFindChirpSPData (&status, fcSegVec, dataSegVec, dataParams);
+ /* fprintf (stdout, "just before LALFindBCVSpinData call \n" )*/;
+   
+
+  LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, dataParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
+ /* fprintf (stdout, "just before start of template loop \n" );*/
 
   /*
    *
@@ -432,12 +474,31 @@ main (int argc, char *argv[])
       tmplt->totalMass = m1 + m2;
       tmplt->mu        = m1 * m2 / tmplt->totalMass;
       tmplt->eta       = tmplt->mu / tmplt->totalMass;
-      tmplt->approximant = TaylorF2;
-    }
+      tmplt->approximant = BCVSpin;
+      
+      tmplt->fFinal 	= 1000;
+      tmplt->psi0       = 944071;
+      tmplt->psi3       = -2982;
 
-    LALFindChirpSPTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams);
+fprintf (stdout, "deltaT (testfile) = %e \n", deltaT);
+fprintf (stdout, "fLow (testfile) = %e \n", fLow);
+
+
+
+      tmpltParams->fLow  = fLow;
+      tmpltParams->deltaT = deltaT;
+}
+
+
+
+fprintf (stdout, "just before LALFindChirpBCVSpinTemplate call \n" );
+
+
+    LALFindChirpBCVSpinTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams);
     TestStatus (&status, "0", 1);
     ClearStatus (&status);
+
+fprintf (stdout, "just after LALFindChirpBCVSpinTemplate call \n" );
 
 
     /*
@@ -452,10 +513,16 @@ main (int argc, char *argv[])
 
       event = NULL;
 
-      LALFindChirpFilterSegment (&status, &event, filterInput, filterParams);
+/* fprintf (stdout, "just before LALFindChirpBCVSpinFilter call \n" );*/
+
+
+      LALFindChirpBCVSpinFilterSegment (&status, &event, filterInput, filterParams, dataParams, fcSegVec, dataSegVec);
       TestStatus (&status, "0", 1);
 
-      if ( event )
+/* fprintf (stdout, "just after LALFindChirpBCVSpinFilter call \n" );*/
+
+
+   /*   if ( event )
       {
         fprintf( stdout, "Events found in segment!\n" );
         while ( event )
@@ -477,18 +544,24 @@ main (int argc, char *argv[])
           LALFree( thisEvent );
 	} 
       }
+    */
 
     }
 
+loopCount = loopCount + 1;
 
   } /* end loop over templates */
+
+ fprintf (stdout, "just after end of loop over templates \n" );
+ fprintf (stdout, "no of templates: %d  \n", loopCount );
+
 
   if ( rhosqout )
   {
     for ( j = 0; (UINT4)j < filterParams->rhosqVec->data->length; ++j )
     {
-      /* fprintf( fpRhosq, "%d\t%e\n", j, filterParams->rhosqVec->data->data[j] );*/
-	 fprintf( fpRhosq, "%d\t%e\n", j, pow(filterParams->rhosqVec->data->data[j],0.5) ); 
+       fprintf( fpRhosq, "%d\t%e\n", j, filterParams->rhosqVec->data->data[j] );
+/*	 fprintf( fpRhosq, "%d\t%e\n", j, pow(filterParams->rhosqVec->data->data[j],0.5) ); */
     }
   }
 
@@ -515,11 +588,11 @@ abort:
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpSPDataFinalize (&status, &dataParams);
+  LALFindChirpDataFinalize (&status, &dataParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
-  LALFindChirpSPTemplateFinalize (&status, &tmpltParams);
+  LALFindChirpTemplateFinalize (&status, &tmpltParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
@@ -884,5 +957,5 @@ graphINT4 (
   /* start up graphing program with data in the file */
   /* system( "xmgr temp.graph 1>/dev/null 2>&1 &" ); */
 
-  return;
+return;
 }
