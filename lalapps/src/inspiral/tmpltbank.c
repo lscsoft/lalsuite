@@ -60,6 +60,12 @@ RCSID( "$Id$" );
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
+#define FR_CHECK_GAPS \
+    if ( frStream->state == LAL_FR_GAP ) \
+    { \
+      fprintf( stderr, "error: frame stream contains gaps\n" ); \
+      exit( 1 ); \
+    }
 
 /*
  *
@@ -247,9 +253,15 @@ int main ( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
+  /* XXX check that there are no gaps in the data XXX */
+  FR_CHECK_GAPS;
+
   /* determine the sample rate of the raw data and allocate enough memory */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
+
+  /* XXX check that there are no gaps in the data XXX */
+  FR_CHECK_GAPS;
 
   /* determine if we need to resample the channel */
   if ( vrbflg )
@@ -289,6 +301,9 @@ int main ( int argc, char *argv[] )
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+  /* XXX check that there are no gaps in the data XXX */
+  FR_CHECK_GAPS;
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
