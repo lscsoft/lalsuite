@@ -58,7 +58,7 @@ README.install:
 	  || case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
 
-all: all-am
+all-local:
 	@echo "";\
 echo "*****************************************************************";\
 echo "*                                                               *";\
@@ -67,7 +67,7 @@ echo "*       Now run 'make install' to install LAL.                  *";\
 echo "*                                                               *";\
 echo "*****************************************************************"
 
-install: install-am
+install-exec-local:
 	@echo "";\
 echo "*****************************************************************";\
 echo "*                                                               *";\
