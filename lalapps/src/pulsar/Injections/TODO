@@ -1,5 +1,10 @@
 TODO
 -----
+* (BUG!) put phase-correction from heterodying into LALSignalToSFTs() (->Yousuke's Notes)
+
+* double-check on "renormalization" for FFTs if using sub-set of bins
+
+* use UserInput module and "clean-up" makefakedata_v4
 
 * prepare a "test suite" for pulsar-signal generation & Cie.
 	--> test-check final SFTs against makefakedata_v2
