@@ -164,7 +164,7 @@ int main( int argc, char *argv[] )
   UINT4 numPoints;
   REAL8 tsLength;
   INT8  durationNS	= 0;
-  CalibrationUpdateParams calfacts, inj_calfacts;
+  CalibrationUpdateParams inj_calfacts;
   REAL4 inj_alpha;
   REAL4 inj_alphabeta;
   CHAR tmpChName[LALNameLength];
@@ -306,6 +306,7 @@ int main( int argc, char *argv[] )
   {
     inj.deltaT = chan.deltaT;
     inj.epoch = chan.epoch;
+    inj.sampleUnits = chan.sampleUnits;
     strcpy( inj.name, chan.name );
       }  
   else
@@ -369,8 +370,8 @@ int main( int argc, char *argv[] )
 
       LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
 	    &inj_calfacts ), &status );
-      inj_alpha = (REAL4) calfacts.alpha.re;
-      inj_alphabeta = (REAL4) calfacts.alphabeta.re;
+      inj_alpha = (REAL4) inj_calfacts.alpha.re;
+      inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
       if ( vrbflg ) fprintf( stdout, 
 	  "for injections, alpha = %f and alphabeta = %f\n",
 	  inj_alpha, inj_alphabeta);
@@ -432,12 +433,14 @@ int main( int argc, char *argv[] )
 
     memset( &output, 0, sizeof(REAL4TimeSeries) );
     output.deltaT = inj.deltaT;
+    output.sampleUnits = inj.sampleUnits;
     output.data = (REAL4Vector *) LALCalloc( 1, sizeof(REAL4Vector) );
     length = numPoints / numFiles;
     output.data->length = length;
     
     for ( n = 0; n < numFiles; ++n )
     {
+      outFrame = NULL;
       output.epoch.gpsSeconds  = gpsStartTime.gpsSeconds + n * frameLength;
 
       /* write the injection channel to frame */
@@ -459,8 +462,9 @@ int main( int argc, char *argv[] )
 	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
 	      "RAW" );
 	}
-	/* perform injections into this file's data only */
+	/* perform injections into this file's data only, preserve name*/
 	LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
+        strcpy( output.name, inj.name );
 
 	if ( writeRawPlusInj )
 	{
@@ -468,9 +472,20 @@ int main( int argc, char *argv[] )
 	      "RAW_PLUS_INJ" );
 	}
       }
-      
-      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%s-%d-%d.gwf", 
-	ifo, userTag, output.epoch.gpsSeconds, frameLength );
+      if( userTag )
+      {
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+          "%s-INSPFRINJ_%s-%d-%d.gwf", ifo, userTag, output.epoch.gpsSeconds, 
+	  frameLength );
+      }
+      else
+      {
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+          "%s-INSPFRINJ-%d-%d.gwf", ifo, output.epoch.gpsSeconds, 
+	  frameLength );
+
+      }
+
       if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
       frOutFile = FrFileONew( fname, 0 );
       FrameWrite( outFrame, frOutFile );
@@ -495,9 +510,19 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s-%s-%d-%d.xml", 
-	ifo, userTag, gpsStartTime.gpsSeconds, 
+  if( userTag )
+  {
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+      "%s-INSPFRINJ_%s-%d-%d.xml", ifo, userTag, gpsStartTime.gpsSeconds, 
 	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else
+  {
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+      "%s-INSPFRINJ_%d-%d.xml", ifo, gpsStartTime.gpsSeconds, 
+	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+
+  }
 
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
