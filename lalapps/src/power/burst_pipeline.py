@@ -50,10 +50,15 @@ class ScienceSegment:
     dur = self.duration
     start = self.start
     seg_incr = length - overlap
-    while dur >= length:
-      end = start + length
+    while dur >= 0:
+      if dur >= length:
+        middle = start + length/2
+        end = start + length
+      else:
+          middle = start + dur/2
+          end = start + dur
       if (not play_only) or ( play_only 
-        and ( isplay(start) or isplay(end) ) ):
+        and ( isplay(start) or isplay(middle) or isplay(end) ) ):
         self.chunks.append(BurstChunk(start,end))
       start += seg_incr
       dur -= seg_incr
@@ -149,12 +154,16 @@ queue
     print >> sub_fh, """\
 universe = %s
 executable = %s
-arguments =   --channel $(channel) \\
+arguments =  --nseg $(nseg) \\
+  --npts $(npts) \\
+  --numpts $(numpts) \\
+  --channel $(channel) \\
   --start_time $(start) \\ 
   --framecache cache/frcache-$(site)-$(frstart)-$(frend).out \\
-  --comment realdata-$(site)-$(start) \\
+  --comment realdata-$(start) \\
+  --cluster \\
  """ % (self.config['condor']['universe'],self.config['condor']['burst']),
-    for sec in ['arg1','arg2']:
+    for sec in ['arg']:
       for arg in self.config[sec].keys():
         if boolargs.match(arg):
           if re.match(self.config[sec][arg],'true'): 
@@ -176,9 +185,12 @@ queue
     print >> sub_fh, """\
 universe = %s
 executable = %s
+arguments = --ifo-a L-realdata-$(start)-POWER-$(start)-$(duration).xml \\
+  --ifo-b H-realdata-$(start)-POWER-$(start)-$(duration).xml \\
+  --outfile coincidence-$(start)-$(end).xml --dt 10
 log = %s
-error = coinerr/coinc-$(frstart)-$(frend).$(cluster).$(process).err
-output = coinout/coinc-$(start)-$(end).$(cluster).$(process).out
+error = coin/coinc-$(start)-$(end).$(cluster).$(process).err
+output = coin/coinc-$(start)-$(end).$(cluster).$(process).out
 notification = never
 queue
 """ % (self.config['condor']['universe'],self.config['condor']['coinc'],self.logfile),
@@ -192,6 +204,10 @@ queue
     siteL1 = chanL1[0]
     ifoH1  = chanH1[0:2]
     ifoL1  = chanL1[0:2]
+    t      = int(self.config['datacond']['t'])
+    srate  = int(self.config['arg']['srate'])
+    olap   = int(self.config['arg']['olap'])
+    
     dag_fh = open( self.basename + ".dag", "w" )
     
     # jobs to generate the frame cache files
@@ -224,9 +240,9 @@ queue
         jobname = 'burst_%s_%s_%s' % (ifoH1,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
         print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s"\
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d"\
 """ % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanH1)
+chunk.length,chanH1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)))
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     for seg in self.segments:
       for chunk in seg.chunks:
@@ -234,9 +250,9 @@ chunk.length,chanH1)
         jobname = 'burst_%s_%s_%s' % (ifoL1,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
         print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s"\
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" nseg = "%d" npts = "%d" numpts = "%d"\
 """ % ( jobname,siteL1,ifoL1,seg.startpad,seg.endpad,chunk.start,chunk.end,
-chunk.length,chanL1)
+chunk.length,chanL1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)))
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
 
@@ -249,8 +265,8 @@ chunk.length,chanL1)
         jobname = 'coinc_%s_%s' % (chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.coinc.sub' % (jobname,self.basename),
         print >> dag_fh, """
-VARS %s ifo="%s" ifo="%s" start="%d" end="%d" chunklen="%d"\
-""" % ( jobname,ifoH1,ifoL1,chunk.start,chunk.end,chunk.length)
+VARS %s ifo="%s" ifo="%s" start="%d" end="%d" chunklen="%d" duration="%d"\
+""" % ( jobname,ifoH1,ifoL1,chunk.start,chunk.end,chunk.length,(chunk.end-chunk.start+1))
         print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)    
 
 
@@ -368,6 +384,8 @@ except: pass
 try: os.mkdir('datafind')
 except: pass
 try: os.mkdir('burst')
+except: pass
+try: os.mkdir('coin')
 except: pass
 
 pipeline = BurstPipeline(config_file)
