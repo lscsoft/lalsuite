@@ -249,6 +249,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = fseries.deltaF;
     params.length = ntot;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
@@ -418,6 +419,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, NULL);
     TestStatus (&status, CODES(EXCESSPOWERH_ENULLP), 1);
@@ -546,6 +548,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
@@ -688,6 +691,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
@@ -853,6 +857,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
@@ -938,6 +943,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
@@ -1031,6 +1037,7 @@ main (int argc, char *argv[])
     params.flow = 0.0;
     params.deltaF = 1.0;
     params.length = 16;
+    params.maxTileBand = 64.0;
   
     LALCreateTFTiling (&status, &tfTiling, &params);
     TestStatus (&status, CODES(0), 1);
