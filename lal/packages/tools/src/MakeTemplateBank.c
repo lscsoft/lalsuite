@@ -1,3 +1,4 @@
+#if 0
 /*________________________________________________________________________
  *
  * File Name: MakeTemplateBank.c
@@ -88,6 +89,7 @@ LALMakeTemplateBank(
     }
 
 /* look at inspiral Searches */
+#if 0
   if ((*type >= 100) && (*type < 200)){
     printf("\nInside if type statement in MakeTemplateBank\n");  
     TRY(LALInspiralBankGeneration(status->statusPtr, 
@@ -96,6 +98,7 @@ LALMakeTemplateBank(
                               table->snglInspiralTable), status); 
     printf("Just called LALInspiralBankGeneration\n");
     }
+#endif
 
 
 
@@ -121,4 +124,4 @@ LALMakeTemplateBank(
 
 
 
- 
+#endif

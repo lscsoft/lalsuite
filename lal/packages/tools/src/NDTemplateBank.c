@@ -50,25 +50,25 @@
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
-#include <lal/TemplateBankGeneration.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConfig.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/MatrixUtils.h>
+#include <lal/TemplateBankGeneration.h>
 
 
 NRCSID(NDTEMPLATEBANKC, "$Id");
   
 static REAL4 DotProduct(REAL4 *EV, REAL4 *DX){
   INT2 loop = 0;
-  REAL4 DotProduct = 0.0;
+  REAL4 dot = 0.0;
   
   for (loop = 0; loop < 12; loop++){
-    DotProduct  += EV[loop] * DX[loop];
+    dot  += EV[loop] * DX[loop];
     }
-  return DotProduct;
+  return dot;
   }
 
                                                                                      
