@@ -282,6 +282,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line options */
   parseOptions(argc, argv);
 
+  /* only add a buffer if the data is going to be resample and/or high
+   * pass filtered */
   if ((sampleRate == resampleRate) && (high_pass_flag == 0))
     padData = 0;
   else
@@ -306,10 +308,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   if (overlap_hann_flag)
-  {
-    /* numSegments = 2 * numSegments - 1; */
     segmentShift = segmentDuration / 2;
-  }
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
