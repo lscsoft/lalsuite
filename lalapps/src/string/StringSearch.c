@@ -98,7 +98,8 @@ struct CommandLineArgsTag {
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
-  INT4 whitespectrumflag;      /* =0 if spectrum is to be computed =1 for white spectrum */
+  INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
+  INT4 trigstarttime;         /* start-time of allowed triggers */
 } CommandLineArgs;
 
 typedef 
@@ -413,7 +414,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 /*       fprintf(stdout,"%9.9lf %f\n",(double)timeNS*1e-9,vector->data[p]); */
 
-      if (fabs(vector->data[p]) > CLA.threshold)
+      if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
 	{
           INT8  timeNS, peaktime;
 	  REAL8 duration;
@@ -668,6 +669,13 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   memset( GV.StringFilter.data->data, 0, f_cutoff_index  * 
 	  sizeof( *GV.StringFilter.data->data ) );
 
+/*   LALReverseRealFFT( &status, vector, vtilde,  GV.rplan); */
+/*   TESTSTATUS( &status ); */
+
+/*   for ( p = 0 ; p < (int)vector->length; p++ ) */
+/*     fprintf(stdout,"%e\n",vector->data[p]); */
+/*   return 1; */
+
   LALCDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
 
@@ -697,7 +705,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       int p;
       for ( p = 0 ; p < (int)GV.Spec.data->length; p++ )
 	{
-	  GV.Spec.data->data[p]=2*SAMPLERATE;
+	  GV.Spec.data->data[p]=2/SAMPLERATE;
 	}
       GV.Spec.deltaF=1/(GV.seg_length*GV.ht_proc.deltaT);
   }
@@ -814,7 +822,7 @@ int ReadData(struct CommandLineArgsTag CLA)
   LALSCreateVector(&status,&GV.ht_proc.data,(UINT4)(GV.duration/GV.ht.deltaT +0.5));
   TESTSTATUS( &status );
 
-  SAMPLERATE=GV.ht.deltaT;
+  SAMPLERATE=1.0/GV.ht.deltaT;
 
   /* If we are reading real noise then read it*/
   if (!CLA.fakenoiseflag)
@@ -872,6 +880,15 @@ int ReadData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );   
     }
 
+  /* set first second of data equal to the second second of data (this is to avoid the 
+     bang at the beginning of h(t) segments) */
+  for (p=0; p<(int)SAMPLERATE; p++)
+    {
+      GV.ht.data->data[p] = GV.ht.data->data[p+(int)SAMPLERATE];
+    }
+  /* FIXME: Should check that segment is sufficiently long */
+
+
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
 
@@ -900,6 +917,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"no-of-segments",      required_argument, NULL,           'N'},
     {"settling-time",       required_argument, NULL,           'T'},
     {"sample-rate",         required_argument, NULL,           's'},
+    {"trig-start-time",     required_argument, NULL,           'g'},
     {"cusp-search",                no_argument, NULL,         'c' },
     {"kink-search",                no_argument, NULL,         'k' },
     {"test-gaussian-data",         no_argument, NULL,          'n' },
@@ -907,7 +925,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:";
+  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:g:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -937,6 +955,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->whitespectrumflag=0;
   CLA->whitespectrumflag=0;
   CLA->samplerate=4096.0;
+  CLA->trigstarttime=0;
  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1010,6 +1029,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->TruncSecs=atof(optarg);
       ADD_PROCESS_PARAM("int");
       break;
+    case 'g':
+      /* start time of allowed triggers */
+      CLA->trigstarttime=atof(optarg);
+      ADD_PROCESS_PARAM("int");
+      break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
@@ -1043,6 +1067,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
+      fprintf(stdout,"\t--trig-start-time (-g)\t\tINTEGER\t GPS start time of triggers to consider.\n");
       fprintf(stdout,"\t--no-of-segments (-N)\t\tINTEGER\t Number of non-overlapping sub-segments, N. The 2N-1 segments analysed will overlap by 50%s. \n","%");
       fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
