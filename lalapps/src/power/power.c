@@ -167,13 +167,15 @@ int main( int argc, char *argv[])
     LIGOTimeGPS		  tmpEpoch = { 0, 0};
     LALTimeInterval tmpInterval;
     REAL8                 tmpOffset = 0.0;
-    
+    REAL4                 minFreq = 0.0;    
+
     /* data storage */
     REAL4TimeSeries            series;
     REAL8TimeSeries            geoSeries;
     COMPLEX8FrequencySeries    resp;
     REAL4TimeSeries            mdcSeries;
     ResampleTSParams           resampleParams;
+    ResampleTSFilter           resampFiltType;
 
     /* Burst events */
     SnglBurstTable      *burstEvent    = NULL;
@@ -236,13 +238,16 @@ int main( int argc, char *argv[])
     /* the number of nodes for a standalone job is always 1 */
     searchsumm.searchSummaryTable->nnodes = 1;
 
+    /*set the min. freq to be searched for */
+    minFreq = params->tfTilingInput->flow;
+
     /* set the temporary time variable indicating start of chunk */
     tmpEpoch.gpsSeconds = startEpoch.gpsSeconds;
     tmpEpoch.gpsNanoSeconds = startEpoch.gpsNanoSeconds;
 
-    /* set the time series parameters of the input data and resample params */
+    /* set the time series parameters of the input data and resample params 
     memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-    resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
+    resampleParams.deltaT = 1.0 / (REAL8) sampleRate;*/
 
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
@@ -284,7 +289,7 @@ int main( int argc, char *argv[])
       series.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
       series.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
       strcpy(series.name, params->channelName);
-      series.deltaT = 1.0/((REAL8) sampleRate);
+      /*      series.deltaT = 1.0/((REAL8) sampleRate);*/
       series.f0 = 0.0;
       series.sampleUnits = lalADCCountUnit;
 
@@ -547,7 +552,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/sampleRate, resampFiltType, searchParams), &stat);
 
       /* add information about times to summary table */
       {
