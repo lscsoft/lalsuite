@@ -53,7 +53,7 @@ NRCSID (MAIN, "$Id$");
 
 #define CHKST if(status.statusCode != 0) return -1
 
-int lalDebugLevel = 3; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
+int lalDebugLevel = 0; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
   dir.minf = 0;
   dir.maxf = 1E30; /* max frequency to consider (Hz) */
 
-  LALFillCListDir(&status, &dir, -log(2.06115E-9)); /* allocate memory and set the threshold on power so that 1 every 10 pixel is black */
+  LALFillCListDir(&status, &dir, -log(1E-4)); /* allocate memory and set the threshold on power so that 1 every 10 pixel is black */
   CHKST;
 
 

@@ -52,7 +52,7 @@ NRCSID (MAIN, "$Id$");
 
 #define CHKST if(status.statusCode != 0) return -1
 
-int lalDebugLevel = 3; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
+int lalDebugLevel = 0; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
