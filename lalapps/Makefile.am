@@ -8,6 +8,8 @@ cvs-clean: maintainer-clean
 	rm -f Makefile.in
 	rm -f */Makefile.in
 	rm -f src/*/Makefile.in
+	rm -f src/pulsar/*/Makefile.in
+	rm -f src/pulsar/hough/src/Makefile.in
 	rm -f src/stamp-h.in
 	rm -f src/config.h.in
 	rm -f configure
