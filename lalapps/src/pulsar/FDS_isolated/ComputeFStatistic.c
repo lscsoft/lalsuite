@@ -197,6 +197,7 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
 #define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
 #define COMPUTEFSTAT_EXIT_USER     	 20  /* user asked for exit */
+#define COMPUTEFSTAT_EXIT_DEMOD     	 21  /* error in LAL-Demod */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -3631,8 +3632,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 	 */
 	if ( xTemp < 0 )
 	  {
-	    printf ( "RP is an idiot: the assumption xTemp >= 0 is not generally true!!\n");
-	    exit (-1);
+	    fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
+	    exit (COMPUTEFSTAT_EXIT_DEMOD);
 	  }
 
 	/* find correct index into LUT -- pick closest point */
