@@ -27,7 +27,8 @@ RCSID("$Id$");
 
 struct options_t {
 	CHAR *inputFile;
-	CHAR *injectionFile;
+	CHAR *burstinjectionFile;
+	CHAR *inspinjectionFile;
 	CHAR *injmadeFile;
 	CHAR *injFoundFile;
 	CHAR *outSnglFile;
@@ -84,7 +85,8 @@ static void set_option_defaults(struct options_t *options)
 	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
 
 	options->inputFile = NULL;
-	options->injectionFile = NULL;
+	options->burstinjectionFile = NULL;
+	options->inspinjectionFile = NULL;
 	options->injmadeFile = NULL;
 	options->injFoundFile = NULL;
 	options->outSnglFile = NULL;
@@ -131,7 +133,8 @@ static void set_option_defaults(struct options_t *options)
 static void print_usage(FILE *handle, char *prog)
 {
 	fprintf(handle,
-"Usage: %s --input-trig <filename> --input-inj <filename>\n" \
+"Usage: %s --input-trig <filename> --input-burstinj <filename>\n" \
+"       --input-inspinj <filename>\n" \
 "	--output-trig <filename> --output-inj-made <filename>\n" \
 "	--output-inj-found <filename> --best-confidence|--best-peaktime\n" \
 "	[--noplayground] [--help]\n", prog);
@@ -141,33 +144,38 @@ static void print_usage(FILE *handle, char *prog)
 static void parse_command_line(int argc, char *argv[], struct options_t *options)
 {
 	struct option long_options[] = {
-		{"verbose", no_argument, &options->verbose, TRUE},
-		{"input-trig", required_argument, NULL, 'a'},
-		{"input-inj", required_argument, NULL, 'b'},
-		{"output-inj-made", required_argument, NULL, 'c'},
-		{"max-confidence", required_argument, NULL, 'd'},
-		{"gps-start-time", required_argument, NULL, 'e'},
-		{"gps-end-time", required_argument, NULL, 'f'},
-		{"min-centralfreq", required_argument, NULL, 'g'},
-		{"max-centralfreq", required_argument, NULL, 'h'},
+	        {"verbose",          no_argument, &options->verbose, TRUE},
+		{"playground",       no_argument, &options->playground, TRUE},
+		{"noplayground",     no_argument, &options->noplayground, TRUE},
+		{"best-confidence",  no_argument, &options->best_confidence, TRUE},
+		{"best-peaktime",    no_argument, &options->best_peaktime, TRUE},
+		{"help",             no_argument, NULL, 'o'},
+		{"input-trig",       required_argument, NULL, 'a'},
+		{"input-burstinj",   required_argument, NULL, 'b'},
+		{"input-inspinj",    required_argument, NULL, 'j'},
+		{"output-inj-made",  required_argument, NULL, 'c'},
+		{"max-confidence",   required_argument, NULL, 'd'},
+		{"gps-start-time",   required_argument, NULL, 'e'},
+		{"gps-end-time",     required_argument, NULL, 'f'},
+		{"min-centralfreq",  required_argument, NULL, 'g'},
+		{"max-centralfreq",  required_argument, NULL, 'h'},
 		{"output-inj-found", required_argument, NULL, 'i'},
-		{"playground", no_argument, &options->playground, TRUE},
-		{"noplayground", no_argument, &options->noplayground, TRUE},
-		{"help", no_argument, NULL, 'o'},
-		{"output-trig", required_argument, NULL, 'q'},
-		{"best-confidence", no_argument, &options->best_confidence, TRUE},
-		{"best-peaktime", no_argument, &options->best_peaktime, TRUE},
+		{"output-trig",      required_argument, NULL, 'q'},
 		{NULL, 0, NULL, 0}
 	};
 	int c, index;
 
-	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:oq:", long_options, &index)) {
+	do switch(c = getopt_long(argc, argv, "a:b:j:c:d:e:f:g:h:i:oq:", long_options, &index)) {
 	case 'a':
 		options->inputFile = optarg;
 		break;
 
 	case 'b':
-		options->injectionFile = optarg;
+		options->burstinjectionFile = optarg;
+		break;
+
+	case 'j':
+		options->inspinjectionFile = optarg;
 		break;
 
 	case 'c':
@@ -242,8 +250,8 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		exit(1);
 	}
 
-	if(!options->inputFile || !options->injectionFile || !options->injmadeFile  || !options->injFoundFile || !options->outSnglFile) {
-		fprintf(stderr, "%s: error: must specify all of --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n", argv[0]);
+	if(!options->inputFile || (!options->burstinjectionFile &&  !options->inspinjectionFile) || !options->injmadeFile  || !options->injFoundFile || !options->outSnglFile) {
+		fprintf(stderr, "%s: error: must specify all of --input-trig, --input-inj(burst/insp), --output-trig, --output-inj-made, and --output-inj-found\n", argv[0]);
 		print_usage(stderr, argv[0]);
 		exit(1);
 	}
@@ -295,7 +303,7 @@ static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
  * Pick the best of two triggers.
  */
 
-static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *a, SnglBurstTable *b, struct options_t options)
+static SnglBurstTable *select_burstinj_event(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *a, SnglBurstTable *b, struct options_t options)
 {
 	if(!a)
 		return(b);
@@ -308,27 +316,55 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
 	if(options.best_peaktime) {
 		INT8 injtime, atime, btime;
 
-	if(! strcmp("ZENITH",injection->coordinates))
-		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->geocent_peak_time), stat);
-	else {
-		if(! strcmp("H1", a->ifo))
-			LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
-	  	else if(! strcmp("H2", a->ifo))
-			LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
-	  	else if(! strcmp("L1", a->ifo))
-	    		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_peak_time), stat);
-	}	
-
-	LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
-	LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
-
-	return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
+		if(! strcmp("ZENITH",injection->coordinates))
+		  LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->geocent_peak_time), stat);
+		else {
+		  if(! strcmp("H1", a->ifo))
+		    LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
+		  else if(! strcmp("H2", a->ifo))
+		    LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
+		  else if(! strcmp("L1", a->ifo))
+		    LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_peak_time), stat);
+		}	
+		
+		LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
+		LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
+		
+		return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
 	}
 	
 	return(NULL);
 }
 
+static SnglBurstTable *select_inspinj_event(LALStatus *stat, SimInspiralTable *injection, SnglBurstTable *a, SnglBurstTable *b, struct options_t options)
+{
+	if(!a)
+		return(b);
+	if(!b)
+		return(a);
 
+	if(options.best_confidence)
+		return(a->confidence < b->confidence ? a : b);
+
+	if(options.best_peaktime) {
+		INT8 injtime, atime, btime;
+		
+		if(! strcmp("H1", a->ifo))
+		  LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_end_time), stat);
+	  	else if(! strcmp("H2", a->ifo))
+		  LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_end_time), stat);
+	  	else if(! strcmp("L1", a->ifo))
+		  LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_end_time), stat);
+		
+
+		LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
+		LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
+		
+		return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
+	}
+	
+	return(NULL);
+}
 /*
  * =============================================================================
  *                             Injection Handling
@@ -344,7 +380,7 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
  * deleted).
  */
 
-static int keep_this_injection(SimBurstTable *injection, struct options_t options)
+static int keep_this_burstinjection(SimBurstTable *injection, struct options_t options)
 {
 	if(options.minCentralfreqFlag && !(injection->freq > options.minCentralfreq))
 		return(FALSE);
@@ -356,7 +392,7 @@ static int keep_this_injection(SimBurstTable *injection, struct options_t option
 	return(TRUE);
 }
 
-static SimBurstTable *free_this_injection(SimBurstTable *injection)
+static SimBurstTable *free_this_burstinjection(SimBurstTable *injection)
 {
 	SimBurstTable *next = injection ? injection->next : NULL;
 	LALFree(injection);
@@ -365,32 +401,83 @@ static SimBurstTable *free_this_injection(SimBurstTable *injection)
 
 /* not used anymore, but might come in handy, so don't delete just yet */
 #if 0
-static void free_injections(SimBurstTable *list)
+static void free_burstinjections(SimBurstTable *list)
 {
 	while(list)
 		list = free_this_injection(list);
 }
 #endif
 
-static SimBurstTable **trim_injection_list(SimBurstTable **list, struct options_t options)
+static SimBurstTable **trim_burstinjection_list(SimBurstTable **list, struct options_t options)
 {
 	SimBurstTable *injection = *list;
 
-	while(*list && !keep_this_injection(*list, options))
-		*list = free_this_injection(*list);
+	while(*list && !keep_this_burstinjection(*list, options))
+		*list = free_this_burstinjection(*list);
 
 	if(!*list)
 		return(list);
 
 	for(injection = *list; injection->next; ) {
-		if(keep_this_injection(injection->next, options))
+		if(keep_this_burstinjection(injection->next, options))
 			injection = injection->next;
 		else
-			injection->next = free_this_injection(injection->next);
+			injection->next = free_this_burstinjection(injection->next);
 	}
 	return(&injection->next);
 }
 
+/*
+ * Trim a SimInspiralTable.  The trim function takes as input the address of the
+ * pointer pointing to the head of the trigger list.  Upon exit, this pointer
+ * will be set to point to the new head of the trigger list.  The return value
+ * is the address of the "next" pointer in the last element of the list (which
+ * might be same as the pointer to the head of the list if all elements were
+ * deleted).
+ */
+
+static int keep_this_inspinjection(SimInspiralTable *injection, struct options_t options)
+{
+	if(options.playground && !contains_playground(injection->geocent_end_time.gpsSeconds, injection->geocent_end_time.gpsSeconds))
+		return(FALSE);
+
+	return(TRUE);
+}
+
+static SimInspiralTable *free_this_inspinjection(SimInspiralTable *injection)
+{
+	SimInspiralTable *next = injection ? injection->next : NULL;
+	LALFree(injection);
+	return(next);
+}
+
+/* not used anymore, but might come in handy, so don't delete just yet */
+#if 0
+static void free_inspinjections(SimInspiralTable *list)
+{
+	while(list)
+		list = free_this_injection(list);
+}
+#endif
+
+static SimInspiralTable **trim_inspinjection_list(SimInspiralTable **list, struct options_t options)
+{
+	SimInspiralTable *injection = *list;
+
+	while(*list && !keep_this_inspinjection(*list, options))
+		*list = free_this_inspinjection(*list);
+
+	if(!*list)
+		return(list);
+
+	for(injection = *list; injection->next; ) {
+		if(keep_this_inspinjection(injection->next, options))
+			injection = injection->next;
+		else
+			injection->next = free_this_inspinjection(injection->next);
+	}
+	return(&injection->next);
+}
 
 /*
  * Read injection data.
@@ -399,7 +486,7 @@ static SimBurstTable **trim_injection_list(SimBurstTable **list, struct options_
  * per line.
  */
 
-static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, struct options_t options)
+static SimBurstTable *read_burstinjection_list(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
@@ -418,7 +505,35 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 
 		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
 
-		addpoint = trim_injection_list(addpoint, options);
+		addpoint = trim_burstinjection_list(addpoint, options);
+	}
+
+	fclose(infile);
+
+	return(list);
+}
+
+static SimInspiralTable *read_inspiralinjection_list(char *filename, INT4 start_time, INT4 end_time, struct options_t options)
+{
+	FILE *infile;
+	char line[MAXSTR];
+	SimInspiralTable *list = NULL;
+	SimInspiralTable **addpoint = &list;
+
+	if(options.verbose)
+		fprintf(stderr, "Reading in SimInspiral Table\n");
+
+	if(!(infile = fopen(filename, "r")))
+		LALPrintError("Could not open input file\n");
+
+	while(getline(line, MAXSTR, infile)) {
+		if (options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		SimInspiralTableFromLIGOLw(addpoint, line, start_time, end_time);
+
+		addpoint = trim_inspinjection_list(addpoint, options);
+
 	}
 
 	fclose(infile);
@@ -427,11 +542,12 @@ static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 
 }
 
 
+
 /*
- * Extract the injections that lie between the given start and end times.
+ * Extract the burst injections that lie between the given start and end times.
  */
 
-static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpoint, SimBurstTable *injection, INT8 start, INT8 end)
+static SimBurstTable **extract_burstinjections(LALStatus *stat, SimBurstTable **addpoint, SimBurstTable *injection, INT8 start, INT8 end)
 {
 	INT8 peaktime;
 
@@ -448,7 +564,26 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
 	return(addpoint);
 }
 
+/*
+ * Extract the inspiral injections that lie between the given start and end times.
+ */
 
+static SimInspiralTable **extract_inspiralinjections(LALStatus *stat, SimInspiralTable **addpoint, SimInspiralTable *injection, INT8 start, INT8 end)
+{
+	INT8 endtime;
+
+	for(; injection; injection = injection->next) {
+		LAL_CALL(LALGPStoINT8(stat, &endtime, &injection->geocent_end_time), stat);
+		if((start < endtime) && (endtime < end)) {
+			*addpoint = LALMalloc(sizeof(**addpoint));
+			**addpoint = *injection;
+			addpoint = &(*addpoint)->next;
+			*addpoint = NULL;
+		}
+	}
+
+	return(addpoint);
+}
 /*
  * =============================================================================
  *                             Injection Finding
@@ -465,13 +600,13 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
  * matching triggers.
  */
 
-static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *triglist, SimBurstTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
+static void find_burstinjections(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *triglist, SimBurstTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
 {
 	SnglBurstTable *event, *bestmatch;
 
 	for(; injection; (*ninjected)++, injection = injection->next) {
 		if(options.verbose)
-			fprintf(stderr, "\tSearching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
+			fprintf(stderr, "\tSearching for injection at time %d.%09d s\n", injection->geocent_peak_time.gpsSeconds, injection->geocent_peak_time.gpsNanoSeconds);
 
 		bestmatch = NULL;
 		for(event = triglist; event; event = event->next) {
@@ -485,7 +620,7 @@ static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurst
 				continue;
 
 			/* compare this trigger to the best so far */
-			bestmatch = select_event(stat, injection, bestmatch, event, options);
+			bestmatch = select_burstinj_event(stat, injection, bestmatch, event, options);
 		}
 
 		/* if we didn't detect a matching event, continue to next
@@ -509,6 +644,48 @@ static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurst
 }
 
 
+static void find_inspinjections(LALStatus *stat, SimInspiralTable *injection, SnglBurstTable *triglist, SimInspiralTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
+{
+	SnglBurstTable *event, *bestmatch;
+
+	for(; injection; (*ninjected)++, injection = injection->next) {
+		if(options.verbose)
+			fprintf(stderr, "\tSearching for injection at time %d.%09d s\n", injection->geocent_end_time.gpsSeconds, injection->geocent_end_time.gpsNanoSeconds);
+
+		bestmatch = NULL;
+		for(event = triglist; event; event = event->next) {
+			int match;
+
+			/* if the injection's centre frequency and peak time
+			 * don't lie within the trigger's time-frequency
+			 * volume, move to next event */
+			LAL_CALL(LALCompareSimInspiralAndSnglBurst(stat, injection, event, &match), stat);
+			if(!match)
+				continue;
+
+			/* compare this trigger to the best so far */
+			bestmatch = select_inspinj_event(stat, injection, bestmatch, event, options);
+		}
+
+		/* if we didn't detect a matching event, continue to next
+		 * injection */
+		if(!bestmatch)
+			continue;
+		(*ndetected)++;
+
+		/* record the detected injection */
+		*detinj = LALMalloc(sizeof(**detinj));
+		**detinj = *injection;
+		detinj = &(*detinj)->next;
+		*detinj = NULL;
+
+		/* record the matching trigger */
+		*dettrig = LALMalloc(sizeof(**dettrig));
+		**dettrig = *bestmatch;
+		dettrig = &(*dettrig)->next;
+		*dettrig = NULL;
+	}
+}
 /*
  * =============================================================================
  *                              Trigger Handling
@@ -657,11 +834,20 @@ int main(int argc, char **argv)
 	/* injections */
 	INT4 ninjected = 0;
 	INT4 ndetected = 0;
-	SimBurstTable *injection_list = NULL;
-	SimBurstTable *made_list = NULL;
-	SimBurstTable **made_addpoint = &made_list;
-	SimBurstTable *detectedInjections = NULL;
-	SimBurstTable **detinjaddpoint = &detectedInjections;
+
+	/* burst injection tables */
+	SimBurstTable *burstinjection_list = NULL;
+	SimBurstTable *made_burstlist = NULL;
+	SimBurstTable **made_burstaddpoint = &made_burstlist;
+	SimBurstTable *detectedburstInjections = NULL;
+	SimBurstTable **detburstinjaddpoint = &detectedburstInjections;
+
+	/* inspiral injection tables */
+	SimInspiralTable *inspinjection_list = NULL;
+	SimInspiralTable *made_inspirallist = NULL;
+	SimInspiralTable **made_inspiraladdpoint = &made_inspirallist;
+	SimInspiralTable *detectedinspInjections = NULL;
+	SimInspiralTable **detinspinjaddpoint = &detectedinspInjections;
 
 	/* outputs */
 	MetadataTable myTable;
@@ -683,10 +869,12 @@ int main(int argc, char **argv)
 	parse_command_line(argc, argv, &options);
 
 	/*
-	 * Read and trim the injection list.
+	 * Read and trim the burst/inspiral injection list.
 	 */
-
-	injection_list = read_injection_list(&stat, options.injectionFile, options.gpsStartTime, options.gpsEndTime, options);
+	if(options.burstinjectionFile)
+	  burstinjection_list = read_burstinjection_list(&stat, options.burstinjectionFile, options.gpsStartTime, options.gpsEndTime, options);
+	else 
+	  inspinjection_list = read_inspiralinjection_list(options.inspinjectionFile, options.gpsStartTime, options.gpsEndTime, options);
 
 	/*
 	 * Loop over trigger files, searching each for the appropriate
@@ -707,23 +895,39 @@ int main(int argc, char **argv)
 		/* Determine the times encompassed by this file */
 		timeAnalyzed += read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL);
 
-		/* Select the injections made during these times */
-		extract_injections(&stat, made_addpoint, injection_list, SearchStart, SearchEnd);
-
+		/* Select the burst/inspiral injections made during these times */
+		if( burstinjection_list )
+		  extract_burstinjections(&stat, made_burstaddpoint, burstinjection_list, SearchStart, SearchEnd);
+		else 
+		  extract_inspiralinjections(&stat, made_inspiraladdpoint, inspinjection_list, SearchStart, SearchEnd);
 
 		/* Read and trim the triggers from this file */
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &trigger_list, line), &stat);
 		trim_event_list(&trigger_list, options);
 
 		/* Search the triggers for matches against the selected
-		 * injections */
-		find_injections(&stat, *made_addpoint, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
-		while(*detinjaddpoint)
-			detinjaddpoint = &(*detinjaddpoint)->next;
+		 * burst/inspiral injections 
+		 */
+		if( burstinjection_list )
+		  find_burstinjections(&stat, *made_burstaddpoint, trigger_list, detburstinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+		else 
+		  find_inspinjections(&stat, *made_inspiraladdpoint, trigger_list, detinspinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+
+		if( burstinjection_list ){
+		  while(*detburstinjaddpoint)
+		    detburstinjaddpoint = &(*detburstinjaddpoint)->next;
+		  while(*made_burstaddpoint)
+		    made_burstaddpoint = &(*made_burstaddpoint)->next;
+		}
+		else {
+		  while(*detinspinjaddpoint)
+		    detinspinjaddpoint = &(*detinspinjaddpoint)->next;
+		  while(*made_inspiraladdpoint)
+		    made_inspiraladdpoint = &(*made_inspiraladdpoint)->next;
+		}
+
 		while(*dettrigaddpoint)
 			dettrigaddpoint = &(*dettrigaddpoint)->next;
-		while(*made_addpoint)
-			made_addpoint = &(*made_addpoint)->next;
 
 		/* Clean up */
 		free_events(trigger_list);
@@ -749,19 +953,37 @@ int main(int argc, char **argv)
 
 	/* List of injections that were actually made */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injmadeFile), &stat);
-	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = made_list;
-	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
-	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	if( made_burstlist ){
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
+	  myTable.simBurstTable = made_burstlist;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
+	else {
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_inspiral_table), &stat);
+	  myTable.simInspiralTable = made_inspirallist;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_inspiral_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
 
 	/* List of injections which were detected */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injFoundFile), &stat);
-	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = detectedInjections;
-	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
-	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
-	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	if( detectedburstInjections ){
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
+	  myTable.simBurstTable = detectedburstInjections;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
+	else {
+	  LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_inspiral_table), &stat);
+	  myTable.simInspiralTable = detectedinspInjections;
+	  LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_inspiral_table), &stat);
+	  LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
+	  LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
 
 	/* List of matching triggers */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.outSnglFile), &stat);
