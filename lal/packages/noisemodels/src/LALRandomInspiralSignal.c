@@ -314,12 +314,11 @@ LALRandomInspiralSignal
          addIn.v1 = &buff;
          addIn.a1 = randIn->SignalAmp;
          addIn.v2 = &noisy;
-         addIn.a2 = randIn->NoiseAmp;
 	 /* After experimenting we found that the following factor SamplingRate*sqrt(2)
 	  * is needed for noise amplitude to get the output of the signalless correlation
 	  * equal to unity; the proof of this is still needed 
-         addIn.a2 = randIn->param.tSampling * sqrt(2.L) * randIn->NoiseAmp;
 	  */
+         addIn.a2 = randIn->NoiseAmp * sqrt (randIn->param.tSampling)/2.L; 
          LALAddVectors(status->statusPtr, signal, addIn);
          CHECKSTATUSPTR(status);
          if (noisy.data != NULL) LALFree(noisy.data);
