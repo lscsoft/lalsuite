@@ -108,7 +108,7 @@ printf "    <int_4u name='gps_sec:start_time' units='sec'>$tstart</int_4u>\n"
 printf "    <int_4u name='gps_nan:start_time' units='nanosec'>0</int_4u>\n"
 printf "    <int_4u name='gps_sec:stop_time' units='sec'>$tstop</int_4u>\n"
 printf "    <int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n"
-printf "    <real_4 name='time:step_size' units='sec'>$tstep</real_4>\n"
+printf "    <real_8 name='time:step_size' units='sec'>$tstep</real_8>\n"
 printf "    <real_4 dims='9,$nlines' name='data' ndim='2' units='s,s,s,s/s,s/s,s/s,1/s,1/s,1/s'>"
 # The data: delete GPS time from data file and remove newlines.
 sed 's/[^ ]* //' $tmpfile | tr '\n' ' ' || fail
