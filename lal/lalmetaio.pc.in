@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: LAL
-Description: LSC Algorithm Library
+Name: LALMetaIo
+Description: LAL MetaIo Library Support
 Version: @VERSION@
-Requires: fftw3 fftw3f gsl
-Libs: -L${libdir}
+Requires: lal libmetaio
+Libs: -L${libdir} -llalmetaio
 Cflags: -I${includedir}

@@ -109,7 +109,7 @@ echo ">>> 00boot: checking versions of aclocal, automake, autoheader and autocon
 
 
 if test -z "$AUTOMAKE" ; then
-  for AUTOMAKE in automake automake-1.8 automake-1.5 automake ; do
+  for AUTOMAKE in automake-1.8 automake-1.5 automake ; do
     case "`$AUTOMAKE --version 2>/dev/null`" in
       *\ 1.8*) break;;
       *\ 1.5*) break;;
@@ -120,7 +120,7 @@ if test -z "$AUTOMAKE" ; then
 fi
 
 if test -z "$ACLOCAL" ; then
-  for ACLOCAL in aclocal aclocal-1.8 aclocal-1.5 aclocal ; do
+  for ACLOCAL in aclocal-1.8 aclocal-1.5 aclocal ; do
     case "`$ACLOCAL --version 2>/dev/null`" in
       *\ 1.8*) break;;
       *\ 1.5*) break;;
@@ -392,11 +392,17 @@ dnl Checks for optional MPI libraries and header files.
 if test "${mpi}" = "true"; then
   AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
   LAL_CHECK_MPI_FLAGS
+  lal_pre_mpi_LIBS="$LIBS"
+  lal_pre_mpi_CPPFLAGS="$CPPFLAGS"
+  lal_pre_mpi_CFLAGS="$CFLAGS"
   LIBS="$LIBS $MPI_LDFLAGS"
   CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
   CFLAGS="$CFLAGS $MPI_CFLAGS"
   AC_SEARCH_LIBS(MPI_Init, mpi, , [AC_MSG_ERROR([can't find MPI library])])
   AC_CHECK_HEADERS(mpi.h, , [AC_MSG_ERROR([can't find mpi.h header])])
+  LIBS="$lal_pre_mpi_LIBS"
+  CPPFLAGS="$lal_pre_mpi_CPPFLAGS"
+  CFLAGS="$lal_pre_mpi_CFLAGS"
 else
   MPI_CFLAGS=
   MPI_CPPFLAGS=
@@ -532,9 +538,12 @@ $prefixstring
 [frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
 [metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
 [mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
-[prefixstring="`printf '* %61s *' "$prefix"`"]
+[prefixstring="`printf '*               %-47s *' "$prefix"`"]
 )
 AC_CONFIG_FILES([lal.pc])
+AC_CONFIG_FILES([lalframe.pc])
+AC_CONFIG_FILES([lalmetaio.pc])
+AC_CONFIG_FILES([lalmpi.pc])
 AC_CONFIG_FILES([lalsupport.pc])
 AC_CONFIG_FILES([lal-config])
 AC_CONFIG_FILES([Makefile])

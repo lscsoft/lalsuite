@@ -2,14 +2,31 @@
 SUBDIRS = misc include packages doc lib
 MAINTAINERCLEANFILES = README.install
 EXTRA_DIST = README.bugs README.contrib README.install \
-  lal-config.in lal.pc.in lalsupport.pc.in acinclude.m4 aclocal.m4 \
+  lal.pc.in lalsupport.pc.in lalframe.pc.in lalmetaio.pc.in lalmpi.pc.in \
+  lal-config.in acinclude.m4 aclocal.m4 \
   misc/doc.mk misc/dvi.mk misc/include.mk misc/main.tex.in \
   misc/lal.m4 misc/lallibtool.m4 misc/lalam15patch.m4 \
   misc/acconfig.h
 BUILT_SOURCES = README.install
 bin_SCRIPTS = lal-config
+
+if FRAME
+LALFRAMEPC = lalframe.pc
+else
+LALFRAMEPC =
+endif
+if METAIO
+LALMETAIOPC = lalmetaio.pc
+else
+LALMETAIOPC =
+endif
+if MPI
+LALMPIPC = lalmpi.pc
+else
+LALMPIPC =
+endif
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = lal.pc lalsupport.pc
+pkgconfig_DATA = lal.pc lalsupport.pc $(LALFRAMEPC) $(LALMETAIOPC) $(LALMPIPC)
 
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.

@@ -3,9 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: LAL
-Description: LSC Algorithm Library
+Name: LALFrame
+Description: LAL Frame Library Support
 Version: @VERSION@
-Requires: fftw3 fftw3f gsl
-Libs: -L${libdir}
+Requires: lal libframe
+Libs: -L${libdir} -llalframe
 Cflags: -I${includedir}

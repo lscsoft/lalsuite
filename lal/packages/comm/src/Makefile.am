@@ -2,8 +2,11 @@
 COMMSOURCES = SendRecv.c Exchange.c
 
 if MPI
-noinst_LTLIBRARIES = libcomm.la
-libcomm_la_SOURCES = $(COMMSOURCES)
+lib_LTLIBRARIES = liblalmpi.la
+liblalmpi_la_SOURCES = $(COMMSOURCES)
+liblalmpi_la_CPPFLAGS = $(MPI_CPPFLAGS)
+liblalmpi_la_CFLAGS = $(MPI_CFLAGS)
+liblalmpi_la_LIBADD = $(MPI_LDFLAGS)
 EXTRA_TEXSOURCES   =
 else
 EXTRA_TEXSOURCES   = $(COMMSOURCES)
