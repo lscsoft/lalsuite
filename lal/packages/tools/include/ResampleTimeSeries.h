@@ -64,7 +64,11 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 
 typedef enum
 {
-  defaultButterworth
+  defaultButterworth,
+  firLSOne,
+  firLSTwo,
+  firLSThree,
+  firEqOne
 }
 ResampleTSFilter;
 
@@ -97,6 +101,14 @@ LALResampleREAL4TimeSeries(
     REAL4TimeSeries    *ts, 
     ResampleTSParams   *params
     );
+
+void
+LALDecimateREAL4TimeSeries(
+    LALStatus          *status,
+    REAL4TimeSeries    *ts, 
+    ResampleTSParams   *params
+    );
+
 
 #ifdef __cplusplus
 #pragma {
