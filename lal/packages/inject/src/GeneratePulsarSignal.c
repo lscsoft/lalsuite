@@ -42,8 +42,7 @@ This module also contains a few more general-purpose helper-functions:
 \begin{itemize}
 \item Namely, \verb+LALConvertSSB2GPS()+ and \verb+LALConvertGPS2SSB()+
 which convert arrival times for a given source (not necessarily a
-pulsar!) the detector ("GPS") and the solar-system barycenter
-("SSB"). 
+pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB"). 
 NOTE: only the source-location (\verb+params->pulsar.position+), the
 detector-site (\verb+params->site+) and the ephemeris-data
 (\verb+params->ephemerides+)are used from the
@@ -135,6 +134,11 @@ extern INT4 lalDebugLevel;
 
 static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some number is an INT) */
 
+/* some empty structs for initializing */
+static LALStatus emptyStatus;	
+static SpinOrbitCWParamStruc emptyCWParams;
+static CoherentGW emptySignal;
+
 #define LTT 1000
 /* FIXME!!!!!: 
    -> we use this time-constant to make the signal start earlier and last longer than
@@ -154,8 +158,8 @@ LALGeneratePulsarSignal (LALStatus *stat,
 			 REAL4TimeSeries **signal, 	   /* output time-series */
 			 const PulsarSignalParams *params) /* input params */
 { /* </lalVerbatim> */
-  static SpinOrbitCWParamStruc sourceParams;
-  static CoherentGW sourceSignal;
+  SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
+  CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   UINT4 SSBduration;
   LIGOTimeGPS time = {0,0};
@@ -220,6 +224,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
      so we have to do that here: */
+  sourceParams.f = NULL;
   if (params->pulsar.spindown)
     {
       TRY ( LALDCreateVector (stat->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), stat);
@@ -241,10 +246,6 @@ LALGeneratePulsarSignal (LALStatus *stat,
       LALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
       ABORT (stat, GENERATEPULSARSIGNALH_ESAMPLING, GENERATEPULSARSIGNALH_MSGESAMPLING);
     }
-
-  if (lalDebugLevel >= 3) {
-    TRY (PrintGWSignal (stat->statusPtr, &sourceSignal, "signal2.agr"), stat);
-  }
 
   /*----------------------------------------------------------------------
    *
@@ -415,7 +416,7 @@ LALSignalToSFTs (LALStatus *stat,
 	  REAL8 diff;
 	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
 	  if (diff != 0)
-	    LALPrintError ("Warning: timestamp had to be 'nudged' by %e s to fit with time-series\n", diff);
+	    LALPrintError ("Warning: timestamp %d had to be 'nudged' by %e s to fit with time-series\n", iSFT, diff);
 	} /* if lalDebugLevel */
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
@@ -823,9 +824,11 @@ make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
 int
 check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
 {
-  static LALStatus status1, status2;
+  LALStatus status1, status2;
   REAL8 diff0, diff1;
   UINT4 i;
+
+  status1 = status2 = emptyStatus;
 
   for (i = 0; i < timestamps->length; i ++)
     {
