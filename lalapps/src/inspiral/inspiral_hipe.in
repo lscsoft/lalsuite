@@ -521,7 +521,7 @@ if condor_prio:
 # read in the injection-file from the ini file 
 # and add to inspiral and sire jobs
 try:
-  inj_file = string.strip(cp.get('pipeline','injection-file'))
+  inj_file = string.strip(cp.get('input','injection-file'))
 except:
   inj_file = None
   
@@ -703,12 +703,18 @@ print "done"
 h1_data_out = copy.deepcopy(h1_data)
 h2_data_out = copy.deepcopy(h2_data)
 l1_data_out = copy.deepcopy(l1_data)
-  
+
+# remove start and end of science segments which can't be analyzed for triggers
 for sci_data in [h1_data_out,h2_data_out,l1_data_out]:
   for seg in sci_data:
     seg.set_start(seg.start()+overlap/2)
     seg.set_end(seg.end()-overlap/2)
 
+if playground_only:
+  h1_data_out.play()
+  h2_data_out.play()
+  l1_data_out.play()
+  
 not_h1_data_out = copy.deepcopy(h1_data_out)
 not_h1_data_out.invert()
 
