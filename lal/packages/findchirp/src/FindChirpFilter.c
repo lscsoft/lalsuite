@@ -234,6 +234,10 @@ LALFindChirpFilterInit (
     ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
+  /* store the filter approximant in the filter and chisq params */
+  outputPtr->approximant = outputPtr->chisqParams->approximant = 
+    params->approximant;
+
   /* create memory for the chisq input */
   outputPtr->chisqInput = (FindChirpChisqInput *)
     LALCalloc( 1, sizeof(FindChirpChisqInput) );
