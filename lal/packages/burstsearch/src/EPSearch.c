@@ -342,12 +342,12 @@ EPSearch(
 	Psd->deltaF = AverageSpec->deltaF;
 	Psd->epoch = AverageSpec->epoch;
 	if(params->useOverWhitening){
-	  for(i=0; i<Psd->data->length;i++){
+	  for(i=0; (unsigned)i<Psd->data->length;i++){
 	    Psd->data->data[i] = AverageSpec->data->data[i];
 	  }
 	}
 	else{
-    	  for(i=0; i<Psd->data->length;i++){
+    	  for(i=0;(unsigned)i<Psd->data->length;i++){
 	    Psd->data->data[i] = 1.0;
 	  }
 	}
@@ -381,6 +381,9 @@ EPSearch(
 	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
 		LALInfo(status->statusPtr, "Analyzing a window...");
 		CHECKSTATUSPTR(status);
+		/*Initialize the normalisation */
+		normalisation = NULL;
+
 		/*
 		 * Extract a windowLength of data from the time series,
 		 * compute its DFT, then free it.
