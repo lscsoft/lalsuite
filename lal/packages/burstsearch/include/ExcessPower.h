@@ -127,7 +127,9 @@ LALModComputeTFPlanes (
                  LALStatus                             *status,
                  TFTiling                           *tfTiling,
                  COMPLEX8FrequencySeries            *freqSeries,
-                 UINT4                              windowShift
+                 UINT4                              windowShift,
+                 REAL4		                    *norm,
+		 REAL4FrequencySeries               *psd
                  );
 
 void
@@ -141,7 +143,8 @@ void
 LALModComputeExcessPower (
                     LALStatus                          *status,
                     TFTiling                        *tfTiling,
-                    ComputeExcessPowerIn            *input
+                    ComputeExcessPowerIn            *input,
+                    REAL4                           *norm
                     );
 
 void
