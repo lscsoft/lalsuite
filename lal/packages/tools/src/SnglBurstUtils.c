@@ -451,7 +451,7 @@ LALClusterSnglBurstTable (
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
-	XLALClusterSnglBurstTable(list, XLALSnglBurstClusterTest);
+	XLALClusterSnglBurstTable(list, testfunc);
 	RETURN(status);
 }
 

@@ -22,6 +22,7 @@ Revision: $Id$
 #include <lal/ResampleTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
+#include <lal/Units.h>
 #include <lal/Window.h>
 
 NRCSID(EPSEARCHC, "$Id$");
@@ -314,6 +315,7 @@ EPSearch(
 	TFTiling                 *tfTiling = NULL;
 	REAL4                    *normalisation;
 	INT4                     tileStartShift;
+	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
 	INITSTATUS(status, "EPSearch", EPSEARCHC);
 	ATTATCHSTATUSPTR(status);
@@ -330,12 +332,12 @@ EPSearch(
 	 * Compute the average spectrum.
 	 */
 
-	LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
 	CHECKSTATUSPTR(status);
 	ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
 	CHECKSTATUSPTR(status);
 
-	LALCreateREAL4FrequencySeries(status->statusPtr, &Psd, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	LALCreateREAL4FrequencySeries(status->statusPtr, &Psd, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
 	CHECKSTATUSPTR(status);
 	Psd->deltaF = AverageSpec->deltaF;
 	Psd->epoch = AverageSpec->epoch;
@@ -360,7 +362,7 @@ EPSearch(
 	 * Assign temporary memory for the frequency data.
 	 */
 
-	LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->windowLength / 2 + 1);
+	LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
 	CHECKSTATUSPTR(status);
 
 	/*
