@@ -1360,7 +1360,7 @@ LALInspiralITStructurePrint(
 	InspiralTemplate  params);
 
 void
-LALInspiralITStructureHelp();
+LALInspiralITStructureHelp(void);
 
 /* --- TEST PROTOTYPES --- */
 
