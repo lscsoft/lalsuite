@@ -1,59 +1,30 @@
 #if 0 /* autodoc block */
-<lalVerbatim file="LALStdioCV">
+<lalVerbatim file="LALStdCV">
 $Id$
 </lalVerbatim>
 
 <lalLaTeX>
-\subsection{Module \texttt{LALStdio.c}}
+\subsection{Module \texttt{LALStd.c}}
 
-IO routines for LAL.  With the exception of LALSnprintf and LALVsnprintf,
-these should \emph{not} be used in routines within the LAL library---only
-within test programs.
+LAL replacement routines for standard C functions.  At present, this includes
+just includes replacements for \texttt{snprintf}.
 
 \subsection*{Prototypes}
-\input{LALStdioCP}
-\begin{verbatim}
-FILE *LALFopen( const char *path, const char *mode );
-int LALFclose( FILE *stream );
-\end{verbatim}
 \begin{verbatim}
 int LALSnprintf( char *str, size_t size, const char *fmt, ... );
 int LALVsnprintf( char *str, size_t size, const char *fmt, va_list ap );
 \end{verbatim}
-\index{\texttt{LALOpenDataFile()}}
-\index{\texttt{LALFopen()}}
-\index{\texttt{LALFclose()}}
 \index{\texttt{LALSnprintf()}}
 \index{\texttt{LALVsnprintf()}}
 
 \subsection*{Description}
-
-The routines \verb+LALFopen()+ and \verb+LALFclose()+ are macro defined to be
-the same as the standard C routines \verb+fopen()+ and \verb+fclose()+.  These
-should only be used in test programs.
-
-The routine \verb+LALOpenDataFile()+ is used to open a data file for reading.
-This routine is also to be used in test programs only.  Unless the data file
-is specified with an absolute path (beginning with a \verb+/+), the directory
-that the file is in is obtained from the environment variable
-\verb+LAL_DATA_PATH+, which must be set at run-time.  (If the environment
-variable is not set, the default path is \verb+.+ --- i.e., the current
-directory.)  \verb+LAL_DATA_PATH+ should typically be set to
-\verb+/usr/local/share/lal+, or wherever LAL data is installed in your system
-(which may be different if you used a \verb+--prefix+ argument when
-configuring LAL), but when the test suite is run with \verb+make check+, the
-variable \verb+LAL_DATA_PATH+ is set to the current source directory.  If the
-filename (including the directory path) is too long (more than 256
-characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
-\verb+errno+ to \verb+ENAMETOOLONG+.  It is strongly recommended that
-\verb+LALOpenDataFile()+ be used when writing test code.
 
 The routines \verb+LALSnprintf()+ and \verb+LALVsnprintf()+ are
 implementations of the standard C \verb+snprintf()+ and \verb+vsnprintf()+,
 which do not seem to be terribly standard on many systems yet.  These routines
 were written and copywrited by Mark Martinec (\verb+<mark.martinec@ijs.si>+)
 and are available from \verb+http://www.ijs.si/software/snprintf+.  They have
-been incorporated (almost) verbatim into the file \verb+LALStdio.c+, and the
+been incorporated (almost) verbatim into the file \verb+LALStd.c+, and the
 original readme and license are reproduced as \verb+snprintf_README+ and
 \verb+snprintf_LICENSE.txt+.
 
@@ -61,7 +32,7 @@ It is strongly recommended that \verb+LALSnprintf()+ and \verb+LALVsnprintf()+
 be used rather than \verb+sprintf()+ and \verb+vsprintf()+ as the latter are
 prone to buffer-overflow problems.
 
-\vfill{\footnotesize\input{LALStdioCV}}
+\vfill{\footnotesize\input{LALStdCV}}
 
 </lalLaTeX>
 #endif /* autodoc block */
@@ -80,33 +51,6 @@ const int lalNoDebug = 1;
 #else
 const int lalNoDebug = 0;
 #endif
-
-/* <lalVerbatim file="LALStdioCP"> */
-FILE *
-LALOpenDataFile( const char *fname )
-{ /* </lalVerbatim> */
-  char *path;
-  char  fdata[265];
-  int   n;
-
-  if ( ! fname )
-    return NULL;
-
-  if ( *fname == '/' ) /* absolute path is given */
-    return LALFopen( fname, "r" );
-
-  path = getenv( "LAL_DATA_PATH" );
-
-  n = LALSnprintf( fdata, sizeof( fdata ), "%s/%s", path ? path : ".", fname );
-  if ( n > (int) sizeof( fdata ) ) /* data file name too long */
-  {
-    errno = ENAMETOOLONG;
-    return NULL;
-  }
-
-  return LALFopen( fdata, "r" );
-}
-
 
 /*
  * LALSnprintf is based on the snprintf implementation written by:
