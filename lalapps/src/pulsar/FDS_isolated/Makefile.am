@@ -12,9 +12,11 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
-	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh 
+	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh lalapps_monteint
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
+
+lalapps_monteint_SOURCES = monteint.c
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
