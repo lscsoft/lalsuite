@@ -58,15 +58,15 @@ extern INT4 lalDebugLevel;
 
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *scan );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *scan );
-void gridStandarizeOrder ( DopplerScanState_t *scan );
+void gridStandarizeOrder ( DopplerScanState *scan );
 
-void printGrid (LALStatus *stat, DopplerScanState_t *scan, BOOLEAN printEllipses);
+void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN printEllipses);
 
 
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
-InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t init)
+InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 { /* </lalVerbatim> */
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
@@ -261,7 +261,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t in
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
-FreeDopplerScan (LALStatus *stat, DopplerScanState_t *scan)
+FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
 { /* </lalVerbatim> */
 
   INITSTATUS( stat, "FreeDopplerScan", DOPPLERSCANC);
@@ -295,7 +295,7 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState_t *scan)
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
-NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *scan)
+NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 { /* </lalVerbatim> */
 
   INITSTATUS( stat, "NextSkyPos", DOPPLERSCANC);
@@ -382,10 +382,14 @@ NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *sca
  *----------------------------------------------------------------------*/
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
 {
-  DopplerScanState_t *scan = params;
+  DopplerScanState *scan = params;
+  REAL4 nix;
+
   /* Set up shop. */
   INITSTATUS( stat, "getRange", DOPPLERSCANC );
   /*   ATTATCHSTATUSPTR( stat ); */
+
+  nix = x;	/* avoid compiler warning */
   
   /* for now: we return the fixed y-range, indendent of x */
   if (scan->internalOrder == ORDER_ALPHA_DELTA)
@@ -418,7 +422,7 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
 void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
   INT2 dim;  	/* dimension of (full) parameter space (incl. freq) */
-  DopplerScanState_t *scan = params;
+  DopplerScanState *scan = params;
   REAL8Vector   *metric = NULL;  /* for output of metric */
   REAL4 lon, lat;
 
@@ -500,7 +504,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define SPOKES 60  /* spokes for ellipse-plots */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 
-void printGrid (LALStatus *stat, DopplerScanState_t *scan, BOOLEAN plotEllipses)
+void printGrid (LALStatus *stat, DopplerScanState *scan, BOOLEAN plotEllipses)
 {
   FILE *fp = NULL;
   TwoDMeshNode *node;
@@ -653,7 +657,7 @@ void printGrid (LALStatus *stat, DopplerScanState_t *scan, BOOLEAN plotEllipses)
  * put alpha and delta into "standard order" in the grid: ORDER_ALPHA_DELTA
  *------------------------------------------------------------------------*/
 void
-gridStandarizeOrder ( DopplerScanState_t *scan )
+gridStandarizeOrder ( DopplerScanState *scan )
 {
   REAL4 tmp;
   TwoDMeshNode *node = scan->grid;

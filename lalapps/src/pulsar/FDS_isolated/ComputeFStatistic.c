@@ -49,15 +49,15 @@ FILE *fpstat;
 /* #endif     */
 REAL8 medianbias=1.0;
 
-DopplerScanState_t thisScan;
+DopplerScanState thisScan;
 
 
 int main(int argc,char *argv[]) 
 {
 
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
-  DopplerPosition_t dopplerpos;
-  DopplerScanInit_t scanInit;
+  DopplerPosition dopplerpos;
+  DopplerScanInit scanInit;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
 

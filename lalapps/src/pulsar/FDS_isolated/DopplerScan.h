@@ -75,13 +75,13 @@ typedef struct {
   REAL4 fmax; 		/* max frequency of search */
   LALDetector Detector; /* Our detector*/
   BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
-} DopplerScanInit_t;
+} DopplerScanInit;
 
 typedef struct {
   SkyPosition skypos;
   REAL8Vector spindowns;
   BOOLEAN finished;
-} DopplerPosition_t;
+} DopplerPosition;
 
 
 /* this structure reflects the internal state of DopplerScan */
@@ -120,7 +120,7 @@ typedef struct {
 
   TwoDMeshParamStruc meshpar;	/* input params for the 2D mesh */
 
-} DopplerScanState_t;
+} DopplerScanState;
 
 /* the meshing+metric functions might use a different grid-coordinate order
  * than our "standard order", which we fixed as ORDER_ALPHA_DELTA
@@ -143,9 +143,9 @@ enum {
 
 /* Function prototypes */
 
-  void InitDopplerScan( LALStatus *stat, DopplerScanState_t *scan, DopplerScanInit_t init);
-  void NextDopplerPos( LALStatus *stat, DopplerPosition_t *pos, DopplerScanState_t *scan);
-  void FreeDopplerScan (LALStatus *stat, DopplerScanState_t *scan);
+void InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init);
+void NextDopplerPos ( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan);
+void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
   
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
