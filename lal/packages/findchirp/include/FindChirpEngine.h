@@ -106,6 +106,7 @@ InspiralTemplateNode;
 typedef struct
 tagFindChirpMasterParams
 {
+  UINT4                         inspiralDebugFlag;
   UINT4                         numTmpltExch;
   MPI_Comm                     *mpiComm;
   UINT4                        *numSlaves;
@@ -114,15 +115,17 @@ tagFindChirpMasterParams
   UINT4                         numTmplts;
   BOOLEAN                      *notFinished;
   REAL4                        *fracRemaining;
+  InspiralEvent                *loudestEvent;
 }
 FindChirpMasterParams;
 
 typedef struct
 tagFindChirpSlaveParams
 {
-  MPI_Comm                     *mpiComm;
+  UINT4                         inspiralDebugFlag;
   REAL4                        *chisqThreshVec;
   REAL4                        *rhosqThreshVec;
+  MPI_Comm                     *mpiComm;
   FindChirpSPDataParams        *dataParams;
   FindChirpSPTmpltParams       *tmpltParams;
   FindChirpFilterParams        *filterParams;
