@@ -85,6 +85,8 @@ if test "${dataflow}" = "true"; then
   AC_CHECK_HEADERS(metaio.h, , AC_MSG_ERROR(could not find metaio.h))
 fi
 
+LALAPPS_CHECK_QTHREAD
+
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
 AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE,1,

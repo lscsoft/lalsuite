@@ -112,6 +112,38 @@ AC_DEFUN(LALAPPS_DISABLE_FRAME,
  frame=false
 ])
 
+AC_DEFUN([LALAPPS_CHECK_QTHREAD],
+[AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
+AC_TRY_RUN([
+int main() { return LAL_QTHREAD; }
+],
+AC_MSG_RESULT([no]),
+AC_MSG_RESULT([yes])
+[
+if test x$condor != xtrue ; then 
+  echo "**************************************************************"
+  echo "*                                                            *"
+  echo "* LAL has been compiled with --enable-intelfft=condor but    *"
+  echo "* but --enable-condor has not been specified when compiling  *"
+  echo "* LALapps.                                                   *"
+  echo "*                                                            *"
+  echo "* LALapps must be configured with --condor-compile when      *"
+  echo "* building LALapps against a version of LAL compiled with    *"
+  echo "* the fake qthread library.                                  *"
+  echo "*                                                            *"
+  echo "* Reconfigure LALapps with --enable-condor or rebuild and    *"
+  echo "* reinstall LAL with either --enable-intelfft=yes or         *"
+  echo "* --disable-intelfft to continue.                            *"
+  echo "*                                                            *"
+  echo "* See the documentation in the LAL fft package information.  *"
+  echo "*                                                            *"
+  echo "**************************************************************"
+  AC_MSG_ERROR(qthread requires condor_compile)
+fi
+]
+,
+AC_MSG_RESULT([unknown]) ) ] )
+
 ## libtool.m4 - Configure libtool for the host system. -*-Shell-script-*-
 ## Copyright 1996, 1997, 1998, 1999, 2000, 2001
 ## Free Software Foundation, Inc.
