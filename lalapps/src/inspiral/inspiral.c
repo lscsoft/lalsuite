@@ -235,7 +235,7 @@ int main( int argc, char *argv[] )
   UINT4 i, j, k;
   INT4  inserted;
   INT4  currentLevel;
-  CHAR  fname[256];
+  CHAR  fname[FILENAME_MAX];
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
@@ -855,11 +855,14 @@ int main( int argc, char *argv[] )
   {
 #ifdef LALAPPS_CONDOR
     condor_compress_ckpt = 0;
-    LALSnprintf( fname, sizeof(fname)/sizeof(*fname), "%s.ckpt", fileName );
     if ( ckptPath[0] )
     {
-      LALSnprintf( fname, sizeof(fname)/sizeof(*fname), 
-          "%s/%s", ckptPath, fname );
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt", 
+          ckptPath, fileName );
+    }
+    else
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
@@ -1709,11 +1712,14 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    LALSnprintf( fname, sizeof(fname) / sizeof(*fname), "%s.gwf", fileName );
     if ( outputPath[0] )
     {
-      LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
-          "%s/%s", outputPath, fname );
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", 
+          outputPath, fileName );
+    }
+    else
+    {
+      LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
     }
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
     frOutFile = FrFileONew( fname, 0 );
@@ -1725,11 +1731,14 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  LALSnprintf( fname, sizeof(fname), "%s.xml", fileName );
   if ( outputPath[0] )
   {
-    LALSnprintf( fname, sizeof(fname) / sizeof(*fname), 
-        "%s/%s", outputPath, fname );
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", 
+        outputPath, fileName );
+  }
+  else
+  {
+    LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
   }
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
