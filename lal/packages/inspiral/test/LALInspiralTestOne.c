@@ -88,8 +88,8 @@ typedef struct{
 char *program;
 
 void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) ;
-void LALInspiralTestOneHelp();
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
+void LALInspiralTestOneHelp(void);
 
 
 
@@ -100,7 +100,7 @@ int main (int argc , char **argv) {
   static LALStatus status;
   InspiralTemplate params; /* the parameters */
   REAL8 dt;                /* some sampling */
-  UINT4 n, i;
+  UINT4 n,i;
   InspiralInit paramsInit;
 
   RealFFTPlan *revp =NULL;
@@ -145,7 +145,7 @@ int main (int argc , char **argv) {
       fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
       fprintf(stderr, "#Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);  
       fprintf(stderr,"#size in bins %d\n",n);
-      fprintf(stderr,"#size in seconds %lf\n",params.tC);
+      fprintf(stderr,"#size in seconds %f\n",params.tC);
     }
   
   SUB( LALSCreateVector(&status, &(signal1), n), &status);
@@ -197,7 +197,7 @@ int main (int argc , char **argv) {
 	SUB( LALSDestroyVector(&status, &signal1), &status);
 	SUB( LALSDestroyVector(&status, &signal2), &status);	
       }
-    printf("%lf %d %lf %lf %lf\n",
+    printf("%f %d %f %f %f\n",
 	   params.tC*params.tSampling,
 	   n ,
 	   params.totalMass,params.eta, params.fLower);
@@ -223,7 +223,7 @@ ParseParameters(	UINT4 			argc,
 			CHAR 			**argv,
 			OtherParamIn    	*otherIn)
 {
-  INT4 		i = 1;
+  UINT4 		i = 1;
   
   while(i < argc)
     {
@@ -249,7 +249,7 @@ ParseParameters(	UINT4 			argc,
 
 
 
-void LALInspiralTestOneHelp()
+void LALInspiralTestOneHelp(void)
 {
 
   fprintf(stderr,"LALInspiralTestOne Help\n");
