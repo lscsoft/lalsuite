@@ -427,6 +427,24 @@ cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
 ##############################################################################
+# if we're doing a quickslide, change the usertag appropriately
+if quick_slide:
+  if usertag:
+    if quick_slide < 0: 
+      usertag += '_SLIDEneg' + str(abs(quick_slide))
+      
+    else:
+      usertag += '_SLIDE' + str(abs(quick_slide))
+
+  else: 
+    if quick_slide < 0: 
+      usertag = 'SLIDEneg' + str(abs(quick_slide))
+      
+    else:
+      usertag = 'SLIDE' + str(abs(quick_slide))
+
+
+##############################################################################
 # if a usertag has been specified, override the config file
 if usertag:
   cp.set('pipeline','user-tag',usertag)
@@ -513,7 +531,9 @@ if inj_file:
 
 #############################################################################
 # add the playground information to the inca and sire jobs
-if playground_only:
+if quick_slide:
+  sire_job.add_opt('all-data',' ')
+elif playground_only:
   inca_job.add_opt('playground-only',' ')
   s_inca_job.add_opt('playground-only',' ')
   lt_inca_job.add_opt('playground-only',' ')
@@ -523,7 +543,7 @@ if playground_only:
 elif slide_time:
   inca_job.add_opt('all-data',' ')
   s_inca_job.add_opt('all-data',' ')
-  lt_inca_job.add_opt('all_data',' ')
+  lt_inca_job.add_opt('all-data',' ')
   sire_job.add_opt('all-data',' ')
   sire_inj_job.add_opt('all-data',' ')
   sire_cl_inj_job.add_opt('all-data',' ')
@@ -537,10 +557,13 @@ else:
 
 #############################################################################
 # add the slide argument to inca if we are doing a background estimation
-if slide_time or quick_slide:
+if slide_time:
   lt_inca_job.add_opt('slide-time',str(slide_time))
   if slide_time_ns:
     lt_inca_job.add_opt('slide-time-ns',str(slide_time))
+
+if quick_slide:
+  lt_inca_job.add_opt('slide-time',str(quick_slide))
 
 #############################################################################  
 # set the condor job priority
@@ -1226,17 +1249,18 @@ if quick_slide:
   s2start = 729273613
   s2end = 734367613
 
-
-  # setup the 2 sire filed
+  # setup the 2 sire files
   sire_ligo = inspiral.SireNode(sire_job)
   sire_tama = inspiral.SireNode(sire_job)
   
-  fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS_' + str(quick_slide)
-  fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS_' + str(quick_slide)
+  fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS'
+  fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS'
 
-  f_ligo = fname_ligo + '.input'
-  f_tama = fname_tama + '.input'
-  
+
+  f_ligo = fname_ligo + '_' + usertag + '.input'
+  f_tama = fname_tama + '_' + usertag + '.input'
+
+
   fl = open(f_ligo, 'w')
   ft = open(f_tama, 'w')
   
@@ -1245,7 +1269,7 @@ if quick_slide:
     lt_inca = inspiral.IncaNode(lt_inca_job)
     lt_inca.set_start(s2start)
     lt_inca.set_end(s2end)
-    lt_inca.set_user_tag('SLIDE' + str(quick_slide))
+    lt_inca.set_user_tag(usertag)
     if ifo == 'H1H2':
       lt_inca.set_ifo_a('H1')
     else:
@@ -1256,8 +1280,8 @@ if quick_slide:
       lt_inca.add_var_opt('dt',cp.get('pipeline','lt-dt'))
     else:
       lt_inca.add_var_opt('dt',cp.get('pipeline','ht-dt'))
-    lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
-    lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
+    # lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
+    # lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
     lt_inca.add_var_opt('parameter-test', 
       cp.get('pipeline','ligo-t-param-test'))
     if ifo == 'H1H2':
@@ -1277,12 +1301,12 @@ if quick_slide:
   ft.close()
 
   # do two sires to get the LIGO triggers and the TAMA triggers
-  sire_ligo.add_var_opt('input',fname_ligo)
-  sire_tama.add_var_opt('input',fname_tama)
+  sire_ligo.add_var_opt('input',f_ligo)
+  sire_tama.add_var_opt('input',f_tama)
  
   cluster = 0
-  sire_ligo.set_outputs(fname_ligo,usertag,cluster,slide_time,tama_output)
-  sire_tama.set_outputs(fname_tama,usertag,cluster,slide_time,tama_output)
+  sire_ligo.set_outputs(fname_ligo,usertag,cluster,0,tama_output)
+  sire_tama.set_outputs(fname_tama,usertag,cluster,0,tama_output)
 
   dag.add_node(sire_ligo) 
   dag.add_node(sire_tama) 
@@ -1535,7 +1559,7 @@ if tama_coincidence or slide_time or quick_slide:
     if slide_time:
       f = open('ligo_tama_slide_segs.txt', 'w')
     elif quick_slide:
-      f = open('ligo_tama_quick_slide_segs' + quick_slide + '.txt', 'w')
+      f = open('ligo_tama_quick_slide_segs' + str(quick_slide) + '.txt', 'w')
     elif playground_only:
       f = open('ligo_tama_play_segs.txt', 'w')
     else:
