@@ -23,6 +23,7 @@ class InspiralChunk:
   def __init__(self,start,end):
     self.start = start
     self.end = end
+    self.length = end - start
 
 class ScienceSegment:
   def __init__(self,id,start,end,duration,segpad):
@@ -139,6 +140,7 @@ executable = %s
 arguments = --gps-start-time $(start) --gps-end-time $(end) \\
   --channel-name $(channel) --calibration-cache $(calcache) \\
   --frame-cache frcache-$(site)-$(frstart)-$(frend).out \\
+  --bank-file $(site)-TMPLTBANK-$(start)-$(chunklen).xml \\
  """ % (self.config['condor']['datafind'],self.config['condor']['tmpltbank']),
     for sec in ['datacond','inspiral']:
       for arg in self.config[sec].keys():
@@ -182,10 +184,9 @@ queue
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if bank: print >> dag_fh, 'done',
         print >> dag_fh, """
-VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
-""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
-self.config['input'][string.lower(ifo) + '-cal'])
-        
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
+chunk.length,chan,self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
     # jobs to run the inspiral code
