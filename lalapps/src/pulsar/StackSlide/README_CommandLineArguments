@@ -75,11 +75,12 @@ set normalizationFlag                        4; #41 INT2 what normalization to d
 set f0NRM               1.0095000000000000e+03; #42 REAL8 frequency to start with when finding norms. 
 set bandNRM             2.3999999999999999e+00; #43 REAL8 frequency band to use when finding norms. 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
-set normalizationThreshold  1.0000000000000000e+04; #45 REAL4 optional threshold to use when finding norms. 
+set normalizationParameter  7.2324717044830322e-01; #45 REAL4 see uses below. 
 #The thresholdFlag rules are: 
 # if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
 # if (params->normalizationFlag & 4) > 0 normalize STKs using running median, 
-# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationThreshold = max_power_allowed/mean_power.
+# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.
+# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
 # if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
 
 set testFlag                                 0; #46 INT2 specify test case (0 no test; 1 output Hough number counts instead of power. 

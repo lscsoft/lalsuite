@@ -62,4 +62,3 @@ set searchKeepThisNumber  1;  # Used only if ((searchEventFlag & 2) > 0):
                               # e.g., if == 1 then will keep only the loudest event.
 
 set searchNormalizationFlag 4; # 04/14/04 gam; use running median; print out into .Sh file estimates of PSD for each SFT.
-set searchNormalizationThreshold 10000; # 03/03/04 gam; set to large default value; not used if (params->normalizationFlag & 8) == 0.

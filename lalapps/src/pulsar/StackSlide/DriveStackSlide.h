@@ -51,6 +51,7 @@
 /* 04/15/04 gam; Add INT2 params->debugOptionFlag */
 /* 04/15/04 gam; Add debugOptionFlag to struct StackSlideSkyPatchParams */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
+/* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -117,6 +118,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_EPARAMSPACEFLAG 27
 #define DRIVESTACKSLIDEH_EKEEPTHISNEVENTS 28
 #define DRIVESTACKSLIDEH_EOUTPUTREQUEST 29
+#define DRIVESTACKSLIDEH_ENORMPARAM 30
 
 #define DRIVESTACKSLIDEH_MSGENULL           "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT        "Unexpected GPS time interval"
@@ -145,6 +147,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG  "Value for parameterSpaceFlag is invalid or currently unsupported"
 #define DRIVESTACKSLIDEH_MSGEKEEPTHISNEVENTS "2nd bit in outputEventFlag set to keep loudest but keepThisNumber was < 1!"
 #define DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST   "Cannot set thresholdFlag < 1 and outputEventFlag to output everything!"
+#define DRIVESTACKSLIDEH_MSGENORMPARAM       "Cannot have normalizationParameter less than ln(2) or greater than 1 when using running median."
 
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
@@ -458,7 +461,7 @@ typedef struct tagStackSlideSearchParams {
   REAL8   f0NRM;                     /* Start frequency to normalize over to create NRMs */
   REAL8   bandNRM;                   /* Band width to normalize over to create NRMs. */
   INT4    nBinsPerNRM;               /* Number of data points to normalize over to create to creat NRMs */
-  REAL4   normalizationThreshold;    /* 03/03/04 gam; change windowFilterParam1 to normalizationThreshold */
+  REAL4   normalizationParameter;    /* 03/03/04 gam; change windowFilterParam1 to normalizationThreshold */ /* 05/05/04 gam; Change normalizationThreshold to normalizationParameter. */
 
   INT2    testFlag;                  /* Specifies any tests or debugging to do; 0 means no test */
 

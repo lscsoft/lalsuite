@@ -77,6 +77,7 @@
 /* 04/15/04 gam; if ((params->debugOptionFlag & 4) > 0 ) then print sky positions INCLUDE_DEBUG_SKY_POSITIONS_CODE (change DEBUG_SKY_POSITIONS to INCLUDE_DEBUG_SKY_POSITIONS_CODE) */
 /* 04/15/04 gam; Add debugOptionFlag to struct StackSlideSkyPatchParams */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
+/* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
    
 /*********************************************/
 /*                                           */
@@ -272,7 +273,7 @@ void StackSlideInitSearch(
 		case 42: params->f0NRM = (REAL8)atof(argv[i]); break;
 		case 43: params->bandNRM = (REAL8)atof(argv[i]); break;
 		case 44: params->nBinsPerNRM = (INT4)atol(argv[i]); break;
-		case 45: params->normalizationThreshold = (REAL4)atof(argv[i]); break;
+		case 45: params->normalizationParameter = (REAL4)atof(argv[i]); break;
 		
 		case 46: params->testFlag = (INT2)atoi(argv[i]); break;
 
@@ -463,11 +464,12 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set f0NRM              %23.16e; #42 REAL8 frequency to start with when finding norms. \n", params->f0NRM);
     	fprintf(stdout,"set bandNRM            %23.16e; #43 REAL8 frequency band to use when finding norms. \n", params->bandNRM);
     	fprintf(stdout,"set nBinsPerNRM        %23d; #44 INT4 number of frequency bins to use when finding norms. \n", params->nBinsPerNRM);
-    	fprintf(stdout,"set normalizationThreshold %23.16e; #45 REAL4 optional threshold to use when finding norms. \n", params->normalizationThreshold);
+    	fprintf(stdout,"set normalizationParameter %23.16e; #45 REAL4 see uses below. \n", params->normalizationParameter);
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median, \n"); /* 04/14/04 gam; now implemented */
-    	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationThreshold = max_power_allowed/mean_power.\n");
+    	fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); /* 05/05/04 gam; */
+    	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case (0 no test; 1 output Hough number counts instead of power. \n", params->testFlag);
@@ -1286,11 +1288,21 @@ void StackSlideApplySearch(
                fprintf(stdout, "Normalizing STKs with running median; mediansLengthm1 = %i,\n",mediansLengthm1);
                fflush(stdout);
            #endif
-
+           
+           /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
+           if (params->normalizationParameter < ((REAL4)LAL_LN2) || params->normalizationParameter > 1.0) {
+              ABORT( status, DRIVESTACKSLIDEH_ENORMPARAM, DRIVESTACKSLIDEH_MSGENORMPARAM );
+           }
+              
            /* For each STK, call LALSRunningMedian; use medians to normalize the STK. */
            for(k=0;k<params->numSTKs;k++) {
               LALSRunningMedian(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams);
               CHECKSTATUSPTR (status);
+
+              /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
+              for(istkNRM=0;istkNRM<mediansLength;istkNRM++) {
+                  medians->data[istkNRM] = medians->data[istkNRM]/params->normalizationParameter;
+              }
         
               /* 04/15/04 gam */
               if ( (params->normalizationFlag & 16) > 0 )  {      
@@ -1300,7 +1312,8 @@ void StackSlideApplySearch(
                   stkNRM += medians->data[istkNRM];
                 }
                 stkNRM = stkNRM/((REAL4)mediansLength);
-                fprintf(fpPSD,"%d %22.16e \n",params->STKData[k]->epoch.gpsSeconds,2.0*stkNRM/((REAL4)LAL_LN2));
+                /* fprintf(fpPSD,"%d %22.16e \n",params->STKData[k]->epoch.gpsSeconds,2.0*stkNRM/((REAL4)LAL_LN2)); */
+                fprintf(fpPSD,"%d %22.16e \n",params->STKData[k]->epoch.gpsSeconds,2.0*stkNRM);
                 #ifdef DEBUG_NORMALIZEBLKS
                   fprintf(stdout, "Normalizing STKData[%i], with running median; average median = %g \n",k, stkNRM);
                   fflush(stdout);
@@ -1381,7 +1394,7 @@ void StackSlideApplySearch(
               stkNRM = 0.0;
               nrmBinCount = 0;
               for(istkNRM=params->iMinNRM;istkNRM<=params->iMaxNRM;istkNRM++) {
-                 if (params->STKData[k]->data->data[istkNRM] > params->normalizationThreshold) {
+                 if (params->STKData[k]->data->data[istkNRM] > params->normalizationParameter) {
                     /* veto this bin from the norm */
                  } else {
                      nrmBinCount++;
