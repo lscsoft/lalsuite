@@ -731,24 +731,28 @@ int main( int argc, char *argv[])
         /* This is the main engine of the excess power method */ 
         LAL_CALL( EPSearch (&stat, params, &tmpEvent, tmpDutyCycle), &stat);
 
-        /* add events to event list */
-        if (burstEvent == NULL){
-            nextEvent = burstEvent = 
-                (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
-        } else {
-            nextEvent->next = (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
-            nextEvent = nextEvent->next;
-        }
-        memcpy(nextEvent, tmpEvent, sizeof(SnglBurstTable));
+        if ( tmpEvent != NULL ){
 
-        /* locate end of event list */
-        while (nextEvent->next){
-            nextEvent = nextEvent->next;
-        }
+            /* add events to event list */
+            if (burstEvent == NULL){
+                nextEvent = burstEvent = 
+                    (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
+            } else {
+                nextEvent->next = (SnglBurstTable *)LALMalloc( sizeof(SnglBurstTable) );
+                nextEvent = nextEvent->next;
+            }
+            memcpy(nextEvent, tmpEvent, sizeof(SnglBurstTable));
 
-        /* free the head of the temporary list */
-        LALFree( tmpEvent );
-        tmpEvent = NULL;
+            /* locate end of event list */
+            while (nextEvent->next){
+                nextEvent = nextEvent->next;
+            }
+
+            /* free the head of the temporary list */
+            LALFree( tmpEvent );
+            tmpEvent = NULL;
+
+        }
 
         /* increment to the next segment number to be analyzed */
         params->currentSegment += tmpDutyCycle;
