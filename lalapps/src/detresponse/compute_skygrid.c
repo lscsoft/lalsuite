@@ -187,7 +187,8 @@ void compute_skygrid(LALStatus * status, char * format_arg)
       
   /* first, the suffixes */
   if ((strncasecmp(args_info.format_arg, "am", LALNameLength) == 0) ||
-      (strncasecmp(args_info.format_arg, "af", LALNameLength) == 0))
+      (strncasecmp(args_info.format_arg, "af", LALNameLength) == 0) ||
+      (strncasecmp(args_info.format_arg, "csv", LALNameLength) == 0))
     {
       (void)mystrlcpy(outfile_suffix, ".txt", LALNameLength);
     }
@@ -294,10 +295,13 @@ void compute_skygrid(LALStatus * status, char * format_arg)
         (void)mystrlcpy(ser_sum_file_name, sum_file_name, LALNameLength);
         (void)mystrlcpy(ser_relfreq_file_name, relfreq_file_name, LALNameLength);
 
-        (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
-        (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
-        (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
-        (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+        if (!(strncasecmp(args_info.format_arg, "csv", LALNameLength) == 0))
+	    {
+              (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
+              (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
+              (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
+              (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+	    }
 
         (void)strncat(ser_cross_file_name, outfile_suffix, LALNameLength);
         (void)strncat(ser_plus_file_name, outfile_suffix, LALNameLength);
@@ -441,17 +445,21 @@ void skygrid_print(const char * format,
   INT4 i, j, fmtcode;
   FILE * outfile = NULL;
   
-  outfile = xfopen(filename, mode);
-  
   if (strncasecmp(format, "am", LALNameLength) == 0)
     fmtcode = 0;
   else if (strncasecmp(format, "af", LALNameLength) == 0)
     fmtcode = 1;
   else if (strncasecmp(format, "b", LALNameLength) == 0)
     fmtcode = 3;
+  else if (strncasecmp(format, "csv", LALNameLength) == 0)
+    fmtcode = 4;
   else 
     fmtcode = 0;
 
+  if(fmtcode==4)mode="a";
+
+  outfile = xfopen(filename, mode);
+  
   if (fmtcode == 0)
     {
       if (gps != (LIGOTimeGPS *)NULL)
@@ -488,6 +496,18 @@ void skygrid_print(const char * format,
       fwrite(&(gps->gpsSeconds), sizeof(INT4), 1, outfile);
       fwrite(&num_el, sizeof(INT4), 1, outfile);
       fwrite(input, sizeof(REAL4), num_el, outfile);
+    }
+  else if (fmtcode == 4)
+    {
+     if (gps != (LIGOTimeGPS *)NULL)
+            fprintf(outfile, "%.9d", gps->gpsSeconds);
+        
+     const int tot = NUM_RA * NUM_DEC;
+     for (i = 0; i < tot; ++i)
+       {
+        fprintf(outfile, " %14.8e", input[i]); 
+       }
+     fprintf(outfile, "\n");
     }
 
   xfclose(outfile);
