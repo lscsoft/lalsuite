@@ -367,20 +367,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdParams.plan = NULL;
   psdParams.window = NULL;
 
-  /* set psd inputs */
-  psdInputOne.segmentA = segmentOneA;
-  psdInputOne.segmentC = segmentOneC;
-  psdInputOne.responseA = respOneA;
-  psdInputOne.responseC = respOneC;
-  psdInputTwo.segmentA = segmentTwoA;
-  psdInputTwo.segmentC = segmentTwoC;
-  psdInputTwo.responseA = respTwoA;
-  psdInputTwo.responseC = respTwoC;
-  psdEstParams.psdTempLength = psdTempLength;
-  psdEstParams.filterLength = filterLength;
-  psdEstParams.psdParams = &psdParams;
-  psdEstParams.numFMin = numFMin;
-
   if (vrbflg)
   {
     fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
@@ -969,11 +955,23 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Estimating PSDs...\n");
     }
 
-    /* set epoch */
-    calInvPSDOne->epoch = segmentOneB->epoch;
-    calInvPSDTwo->epoch = segmentTwoB->epoch;
+    /* set psd inputs */
+    psdInputOne.segmentA = segmentOneA;
+    psdInputOne.segmentC = segmentOneC;
+    psdInputOne.responseA = respOneA;
+    psdInputOne.responseC = respOneC;
+    psdInputTwo.segmentA = segmentTwoA;
+    psdInputTwo.segmentC = segmentTwoC;
+    psdInputTwo.responseA = respTwoA;
+    psdInputTwo.responseC = respTwoC;
+    psdEstParams.psdTempLength = psdTempLength;
+    psdEstParams.filterLength = filterLength;
+    psdEstParams.psdParams = &psdParams;
+    psdEstParams.numFMin = numFMin;
     psdEstParams.gpsStartTime = segmentOneB->epoch;
     psdEstParams.gpsStartTime = segmentTwoB->epoch;
+    calInvPSDOne->epoch = segmentOneB->epoch;
+    calInvPSDTwo->epoch = segmentTwoB->epoch;
 
     /* estimate psds */
     LAL_CALL(psdEstimator(&status, calInvPSDOne, psdInputOne, \
