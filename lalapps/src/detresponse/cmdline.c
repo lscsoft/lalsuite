@@ -41,9 +41,14 @@ cmdline_parser_print_help (void)
   printf("  -h, --help                      Print help and exit\n");
   printf("  -V, --version                   Print version and exit\n");
   printf("\n");
-  printf(" Group: single_src_or_whole_sky \n");
+  printf(" Group: single_src_or_whole_sky Single source or whole sky\n");
   printf("  -S, --single-source             Compute response with single source; \n                                    requires source data\n");
-  printf("  -W, --whole-sky                 Compute response integrated over whole sky; \n                                    doesn't require source data\n");
+  printf("  -W, --whole-sky                 Compute response integrated over whole sky; \n                                    doesn't require source position\n");
+  printf("\n");
+  printf(" Group: output type Snapshot, time series, or average\n");
+  printf("  -p, --snapshot                  Compute response at one instant in time\n");
+  printf("  -t, --timeseries                Compute response at regularly spaced times\n");
+  printf("  -a, --average                   Compute averaged response\n");
   printf("  -N, --source-name=STRING        Name of source  (default=`NONAME_SOURCE')\n");
   printf("  -r, --right-ascension=DOUBLE    Right Ascension of source, in rad\n");
   printf("  -d, --declination=DOUBLE        Declination of source, in rad\n");
@@ -53,7 +58,7 @@ cmdline_parser_print_help (void)
   printf("  -n, --start-time-nanosec=INT    GPS nanoseconds field of start time of \n                                    observation  (default=`0')\n");
   printf("  -u, --nsample=INT               number of samples\n");
   printf("  -i, --sampling-interval=DOUBLE  sampling time interval, in seconds\n");
-  printf("  -F, --format=STRING             output format  (default=`am')\n");
+  printf("  -F, --format=STRING             output format  (default=`mam')\n");
   printf("  -v, --verbosity=INT             verbosity level for debugging  (default=`0')\n");
   printf("  -e, --debug=INT                 debug level  (default=`0')\n");
 }
@@ -78,6 +83,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
 {
   int c;	/* Character of the parsed option.  */
   int missing_required_options = 0;
+  int output_type_group_counter = 0;
+  
   int single_src_or_whole_sky_group_counter = 0;
   
 
@@ -85,6 +92,9 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->version_given = 0 ;
   args_info->single_source_given = 0 ;
   args_info->whole_sky_given = 0 ;
+  args_info->snapshot_given = 0 ;
+  args_info->timeseries_given = 0 ;
+  args_info->average_given = 0 ;
   args_info->source_name_given = 0 ;
   args_info->right_ascension_given = 0 ;
   args_info->declination_given = 0 ;
@@ -101,7 +111,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->source_name_arg = gengetopt_strdup("NONAME_SOURCE") ;\
   args_info->detector_arg = NULL; \
   args_info->start_time_nanosec_arg = 0 ;\
-  args_info->format_arg = gengetopt_strdup("am") ;\
+  args_info->format_arg = gengetopt_strdup("mam") ;\
   args_info->verbosity_arg = 0 ;\
   args_info->debug_arg = 0 ;\
 }
@@ -123,6 +133,9 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { "version",	0, NULL, 'V' },
         { "single-source",	0, NULL, 'S' },
         { "whole-sky",	0, NULL, 'W' },
+        { "snapshot",	0, NULL, 'p' },
+        { "timeseries",	0, NULL, 't' },
+        { "average",	0, NULL, 'a' },
         { "source-name",	1, NULL, 'N' },
         { "right-ascension",	1, NULL, 'r' },
         { "declination",	1, NULL, 'd' },
@@ -139,7 +152,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
       };
 
       stop_char = 0;
-      c = getopt_long (argc, argv, "hVSWN:r:d:o:D:s:n:u:i:F:v:e:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVSWptaN:r:d:o:D:s:n:u:i:F:v:e:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -166,7 +179,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
           single_src_or_whole_sky_group_counter += 1;
         break;
 
-        case 'W':	/* Compute response integrated over whole sky; doesn't require source data.  */
+        case 'W':	/* Compute response integrated over whole sky; doesn't require source position.  */
           if (args_info->whole_sky_given)
             {
               fprintf (stderr, "%s: `--whole-sky' (`-W') option given more than once\n", CMDLINE_PARSER_PACKAGE);
@@ -175,6 +188,39 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
             }
           args_info->whole_sky_given = 1;
           single_src_or_whole_sky_group_counter += 1;
+        break;
+
+        case 'p':	/* Compute response at one instant in time.  */
+          if (args_info->snapshot_given)
+            {
+              fprintf (stderr, "%s: `--snapshot' (`-p') option given more than once\n", CMDLINE_PARSER_PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->snapshot_given = 1;
+          output_type_group_counter += 1;
+        break;
+
+        case 't':	/* Compute response at regularly spaced times.  */
+          if (args_info->timeseries_given)
+            {
+              fprintf (stderr, "%s: `--timeseries' (`-t') option given more than once\n", CMDLINE_PARSER_PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->timeseries_given = 1;
+          output_type_group_counter += 1;
+        break;
+
+        case 'a':	/* Compute averaged response.  */
+          if (args_info->average_given)
+            {
+              fprintf (stderr, "%s: `--average' (`-a') option given more than once\n", CMDLINE_PARSER_PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->average_given = 1;
+          output_type_group_counter += 1;
         break;
 
         case 'N':	/* Name of source.  */
@@ -326,6 +372,12 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         } /* switch */
     } /* while */
 
+  if ( output_type_group_counter > 1)
+    {
+      fprintf (stderr, "%s: %d options of group output type were given. At most one is required\n", CMDLINE_PARSER_PACKAGE, output_type_group_counter);
+      missing_required_options = 1;
+    }
+  
   if ( single_src_or_whole_sky_group_counter != 1)
     {
       fprintf (stderr, "%s: %d options of group single_src_or_whole_sky were given. One is required\n", CMDLINE_PARSER_PACKAGE, single_src_or_whole_sky_group_counter);

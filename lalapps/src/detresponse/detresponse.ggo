@@ -4,9 +4,14 @@
 
 purpose "compute time series of detector response function (antenna pattern). Outputs files with F+^2, Fx^2, (F+^2 + Fx^2); OR integrals of the above over the whole sky."
 
-defgroup "single_src_or_whole_sky" yes
+defgroup "single_src_or_whole_sky" groupdesc="Single source or whole sky" yes
 groupoption "single-source" S "Compute response with single source; requires source data" group="single_src_or_whole_sky"
-groupoption "whole-sky"     W "Compute response integrated over whole sky; doesn't require source data" group="single_src_or_whole_sky"
+groupoption "whole-sky"     W "Compute response integrated over whole sky; doesn't require source position" group="single_src_or_whole_sky"
+
+defgroup "output type" groupdesc="Snapshot, time series, or average"
+groupoption "snapshot"    p "Compute response at one instant in time" group="output type"
+groupoption "timeseries"  t "Compute response at regularly spaced times" group="output type"
+groupoption "average"     a "Compute averaged response" group="output type"
 
 # options to describe source
 option "source-name"      N   "Name of source" string default="NONAME_SOURCE" no
@@ -32,12 +37,16 @@ option "nsample"               u   "number of samples" int no
 option "sampling-interval"     i   "sampling time interval, in seconds" double no
 
 # option specifying the output format
-#  'am' -> ascii matrix, multiple file (default)
-#  'af' -> ascii flat, multiple file
-#  'al' -> ascii, single file, single line
-#  'b'  -> binary, multiple file
-option "format"                F   "output format" string default="am" no
+#  3 chars:
+#   1. 's' or 'm' -> single file, or multiple file
+#   2. 'a' or 'b' -> ascii or binary
+#   3. 'l', 'f' or 'm' -> line, flat or matrix (applies only to ascii; binary is unformatted)
+#                         "flat" means the matrix of values is flattened to a single line
+#                         "matrix" means the matrix is formatted in the obvious format
+#                         "line" means flat, with the GPS time as the first entry in the line
+#                         (instead of in a comment line)
+option "format"      F   "output format" string default="mam" no
 
 # misc. options
-option "verbosity"             v   "verbosity level for debugging" int default="0" no
-option "debug"                 e   "debug level" int default="0" no
+option "verbosity"   v   "verbosity level for debugging" int default="0" no
+option "debug"       e   "debug level" int default="0" no

@@ -33,7 +33,7 @@ struct gengetopt_args_info
   int start_time_nanosec_arg;	/* GPS nanoseconds field of start time of observation (default='0').  */
   int nsample_arg;	/* number of samples.  */
   double sampling_interval_arg;	/* sampling time interval, in seconds.  */
-  char * format_arg;	/* output format (default='am').  */
+  char * format_arg;	/* output format (default='mam').  */
   int verbosity_arg;	/* verbosity level for debugging (default='0').  */
   int debug_arg;	/* debug level (default='0').  */
 
@@ -41,6 +41,9 @@ struct gengetopt_args_info
   int version_given ;	/* Whether version was given.  */
   int single_source_given ;	/* Whether single-source was given.  */
   int whole_sky_given ;	/* Whether whole-sky was given.  */
+  int snapshot_given ;	/* Whether snapshot was given.  */
+  int timeseries_given ;	/* Whether timeseries was given.  */
+  int average_given ;	/* Whether average was given.  */
   int source_name_given ;	/* Whether source-name was given.  */
   int right_ascension_given ;	/* Whether right-ascension was given.  */
   int declination_given ;	/* Whether declination was given.  */

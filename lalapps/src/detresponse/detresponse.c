@@ -41,7 +41,7 @@ main(int argc, char **argv)
   if (args_info.single_source_given)
     generate_timeseries_response(&status);
   else if (args_info.whole_sky_given)
-    compute_skygrid(&status, args_info.format_arg);
+    compute_skygrid(&status);
 
   return 0;
 }
