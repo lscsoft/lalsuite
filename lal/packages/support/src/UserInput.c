@@ -713,7 +713,7 @@ LALUserVarCheckRequired (LALStatus *stat)
   while ( (ptr = ptr->next) != NULL) 
     if ( (ptr->state & UVAR_REQUIRED) && !(ptr->state & UVAR_WAS_SET))
       {
-	LALPrintError ("Required user-variable `%s` has not been specified!\n", ptr->name);
+	LALPrintError ("\nRequired user-variable `%s` has not been specified!\n\n", ptr->name);
 	ABORT (stat, USERINPUTH_ENOTSET, USERINPUTH_MSGENOTSET);
       }
 
