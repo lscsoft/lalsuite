@@ -83,8 +83,10 @@ FILE *
 LALOpenDataFile( const char *fname )
 { /* </lalVerbatim> */
   FILE *fp;
-  char *path;
-  char *p;
+  const char *path;
+  char *datapath;	/* locally allocated copy of env-var LAL_DATA_PATH */
+  const char *p0; 	/* pointer to current sub-path of datapath*/
+  char *p1;		/* pointer to next sub-path */
   char  fdata[265];
   int   n;
 
@@ -114,6 +116,7 @@ LALOpenDataFile( const char *fname )
   }
 
   path = getenv( "LAL_DATA_PATH" );
+
   if ( ! path || ! strlen( path ) ) /* path is NULL or empty */
   {
     fp = LALFopen( fname, "r" );
@@ -125,17 +128,25 @@ LALOpenDataFile( const char *fname )
   }
 
   /* scan through all directories in colon-delmited list of directories */
+  if ( (datapath = LALCalloc (strlen(path)+1, 1)) == NULL)	/* we need local copy */
+    {
+      ERRORMSG( fname );
+      return NULL;
+    }
+  strcpy (datapath, path);
+  p0 = datapath;
   do {
-    p = strchr( path, ':' ); /* look for additional directories */
-    if ( p ) /* there are more things in the list */
-      *p++ = 0; /* NUL-terminate current directory */
-    if ( ! strlen( path ) ) /* this directory is empty */
-      path = LAL_PREFIX "/share/lal"; /* default data directory */
+    p1 = strchr( p0, ':' ); /* look for additional directories */
+    if ( p1 ) /* there are more things in the list */
+      *p1++ = 0; /* NUL-terminate current directory */
+    if ( ! strlen( p0 ) ) /* this directory is empty */
+      p0 = LAL_PREFIX "/share/lal"; /* default data directory */
 
-    n = LALSnprintf( fdata, sizeof(fdata), "%s/%s", path ? path : ".", fname );
+    n = LALSnprintf( fdata, sizeof(fdata), "%s/%s", p0 ? p0 : ".", fname );
     if ( n > (int) sizeof( fdata ) ) /* data file name too long */
     {
       errno = ENAMETOOLONG;
+      LALFree (datapath);
       return NULL;
     }
 
@@ -144,13 +155,15 @@ LALOpenDataFile( const char *fname )
     if ( fp ) /* we've found it! */
     {
       INFOMSG( "Opening data file", fdata );
+      LALFree (datapath);
       return fp;
     }
 
-    path = p;
+    p0 = p1;
   }
-  while ( path );
+  while ( p0 );
 
+  LALFree (datapath);
   ERRORMSG( fname );
   return NULL;
 }
