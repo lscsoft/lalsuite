@@ -20,7 +20,7 @@ In order to remove frequency and amplitude modulation of a time series $x_a$, we
 \item[\bf{Frequency modulation information}]  This is given through a phase model $\Phi$.
 \item[\bf{Amplitude modulation information}]  This is given through two functions $\hat{a}$ and $\hat{b}$, which are derived from the beam-pattern functions $F_{+}$ and $F_{\times}$.
 \end{description}
-Given these, the long time baseline demodulated Fourier Transform (DeFT) in the $b^{th}$ frequency bin is
+Given these, the F statistic in the $b^{th}$ frequency bin is
 \begin{equation}
 \mathcal{F}_{b} = \frac{4}{S_{h}(f_{0})T_{0}} \frac{B|\hat{F_{a}}|^{2}+A|F_{b}|^{2} - 2C \Re(F_{a}F_{b}^{*})}{D}
 \end{equation}
@@ -101,7 +101,7 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 #include <lal/DetectorSite.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
-#include "LALComputeAM.h"
+#include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
 #include <lal/LALBarycenter.h>
 
@@ -111,28 +111,8 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 
 NRCSID (LALDEMODH, "$Id$"); 
 
-/* <lalLaTeX>
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{LALDemodHErrorTable}
-</lalLaTeX> */
-/* *****<lalErrTable file="LALDemodHErrorTable">*/
-#define LALDEMODH_ENULL 1
-#define LALDEMODH_ENNEG 2
-#define LALDEMODH_EORDR 4
-#define LALDEMODH_ENOFILE 8
-#define LALDEMODH_EBADARG 16
-#define LALDEMODH_MSGENULL "Null Pointer"
-#define LALDEMODH_MSGENNEG "Erroneous Negative Value"
-#define LALDEMODH_MSGEORDR "Min Value Larger than Max"
-#define LALDEMODH_MSGENOFILE "Non-existent filename"
-#define LALDEMODH_MSGEBADARG "Bad Command Line argument"
-/********************************************** </lalErrTable> */
 
-
-#define NTERM_COH_DIV_TWO 8
 #define SMALL	0.000000001
-#define SFTOVERLAP 0.05
 
 /* <lalLaTeX>
 
@@ -146,135 +126,47 @@ struct DemodPar
 \noindent This structure contains the parameters for the demodulation routine.   The parameters are:
 
 \begin{description}
-\item[\texttt{INT4 if0Max}] The maximum search frequency index in coarse-grained frequency resolution.
-\item[\texttt{INT4 if0Min}] The minimum search frequency index in coarse-grained frequency resolution.
-\item[\texttt{INT4 mCohSFT}] The number of SFTs in coherent timescale.  In other words, the number of SFTs which make up one DeFT.
-\item[\texttt{INT4 mObsCoh}] The number of coherent timescale in observation time.  In other words, this quantifies how many DeFTs will be produced.
-\item[\texttt{INT4 ifMin}] The index of the minimum frequency of the SFT frequency band.
-\item[\texttt{INT4 iCoh}] The index of the DeFT being computed (0 $\leq$ iCoh \verb@<@ mObsCoh).
+
+\item[\textttINT4 spinDwnOrder{}] Maximum order of spdwn parameter
 \item[\texttt{REAL8 *skyConst}] The array of sky constants.
 \item[\texttt{REAL8 *spinDwn}] The set of template spindown parameters.
 \item[\texttt{AMCoeffs *amcoe}] The values of the function $a$ and $b$, plus their scalar products.
+\item[\texttt{REAL8 f0}] The minimum search frequency 
+\item[\texttt{REAL8 df}] The search frequency spacing
+\item[\texttt{INT4 SFTno}] The number of SFTs in coherent timescale
+\item[\texttt{INT4 Dterms}] Terms used in the computation of the dirichlet kernel 
+\item[\texttt{INT4 ifMin}] The index of the minimum frequency of the SFT frequency band.
+\item[\texttt{INT4 imax}] How many frequencies are serached.
+
 \end{description}
 
-\begin{verbatim}
-struct SkyPos
-\end{verbatim}
-\index{\texttt{SkyPos}}
-\noindent This structure contains the basic parameters of a sky position.  These are:
-\begin{description}
-\item[\texttt{REAL8 alpha}]  The inclination, in radians.
-\item[\texttt{REAL8 delta}]  The declination, in radians.
-\item[\texttt{CHAR type}]  Coordinate system used.
-\end{description}
 
-\begin{verbatim}
-struct Spindown
-\end{verbatim}
-\index{\texttt{Spindown}}
-\noindent This structure contains the values of the spindown parameters.  Included are
-\begin{description}
-\item[\texttt{INT4 m}]  The maximum order of spindown parameter employed, or the number of spindown parameters per spindown parameter set.
-\item[\texttt{REAL8 *spParams}]  An array containing the values.
-\end{description}
-
-\begin{verbatim}
-struct ParameterSet
-\end{verbatim}
-\index{\texttt{ParameterSet}}
-\noindent This is a structure which contains all the parameters that describe a source.  Included are
-\begin{description}
-\item[\texttt{SkyPos *skyP}]
-\item[\texttt{Spindown *spind}]
-\end{description}
-
-\begin{verbatim}
-struct FFT
-\end{verbatim}
-\index{\texttt{FFT}}
-\noindent This structure is used to hold all Fourier domain data.  Note that it is different from the LAL definition of a \verb@SequenceOfFrequencySeries@ variable in that the \verb@FFT@ structure allows one to record information specific to each individual FFT; the LAL structure does not allow this functionality at present.  The fields contained within are
-\begin{description}
-\item[\texttt{COMPLEX8FrequencySeries *fft}]  Holds the data (within \verb@fft->data->data@) and other parameters relevant to each transform.
-\item[\texttt{ParameterSet par}]  Holds source parameters that might be relevant to the data in the previous field.  For example, if the \verb@*fft@ structure above contains DeFTs, this field will contain the demodulation parameters.
-\end{description}
-
-\begin{verbatim}
-struct DeFTPeriodogram
-\end{verbatim}
-\index{\texttt{DeFTPeriodogram}}
-\noindent  This structure contains the statistic we wanted to compute: \ref{e1}, and information regarding its parameters.
-\begin{description}
-\item[\texttt{REAL8FrequencySeries *fft}]  The periodogram.
-\item[\texttt{ParameterSer par}]  The parameter set used in the demodulation.
-\end{description}
-
- </lalLaTeX> */
+</lalLaTeX> */
  
 
 /* PARAMETERS */
 typedef struct DemodParTag{
-  INT4		if0Max;		/* Index of maximum freq. of search on this proc. */
-  INT4		if0Min;		/* Index of minimum freq. of search on this proc. */
-  INT4		mCohSFT;	/* This is G_Mcoh_sft */
-  INT4 		mObsCoh;	/* This is G_Mobs_sft */
-  INT4 		ifMin;		/* Index of minimum freq. of search */
-  INT4 		iCoh;	        /* Index of coherent timescale */
   INT4		spinDwnOrder;	/* Maximum order of spdwn parameter */
   REAL8		*skyConst;	/* Constants computed in ComputeSky.c */
   REAL8		*spinDwn;	/* Spindown parameter set */
-  AMCoeffs      *amcoe;
-  INT4          *sftPerCoh;
+  AMCoeffs      *amcoe;         //Amplitude Modulation coefficients
+  REAL8         f0;            /*Starting Frequency to be demodulated*/
+  REAL8         df;            /*Frequency index resolution*/
+  INT4          SFTno;          /* No. of SFTs*/
+  INT4          Dterms;         /*Terms used in the computation of the dirichlet kernel*/
+  INT4          ifmin;          //smallest frequency index in SFTs
+  INT4          imax;           //maximum # of values of F to calculate
 }DemodPar;
 
-
-typedef struct SkyPosTag 
-{
-  REAL8 alpha;
-  REAL8 delta;
-  CHAR type;
-}SkyPos;
-
-typedef struct SpindownTag 
-{
-	INT4 m;
-	REAL8 *spParams;
-}Spindown;
-
-typedef struct ParameterSetTag 
-{
-	SkyPos *skyP;
-	Spindown *spind;
-}ParameterSet;
 
 /*This structure will hold a single FFT*/
 typedef struct FFTTag 
 {
   COMPLEX8FrequencySeries *fft;   
-  ParameterSet par;
 } FFT;
 
-typedef struct DeFTPeriodogramTag
-{
-  REAL8FrequencySeries *fft;
-  COMPLEX16FrequencySeries *fA;   
-  COMPLEX16FrequencySeries *fB;   
-  ParameterSet par;
-} DeFTPeriodogram;
 
-
-/* <lalLaTeX>
-\input{LALDemodHV}
-</lalLaTeX> */
-
-/* <lalLaTeX>
-\newpage\input{LALDemodC}
-</lalLaTeX> */
-
-void LALDemod (LALStatus 	        *stat, 
-			DeFTPeriodogram *xHatCoh, 
-			FFT 		**input, 
-			DemodPar 	*params);
-
+void LALDemod (LALStatus *stat, double  *F, FFT **input, DemodPar *params);
 
 	
 /* <lalLaTeX>
