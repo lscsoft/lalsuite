@@ -55,6 +55,7 @@ typedef struct
   LIGOTimeGPS refTime;
   LIGOTimeGPSVector *timestamps;
   REAL8 duration;
+  REAL8 fmin_eff;	/* 'effective' fmin: round down such that fmin*Tsft = integer! */
   REAL8Vector *spindown;
   SFTVector *noiseSFTs;
 } ConfigVars_t;
@@ -168,7 +169,7 @@ main(int argc, char *argv[])
   params.startTimeGPS   = GV.startTime;
   params.duration     	= (UINT4) ceil(GV.duration); /* length of time-series in seconds */
   params.samplingRate 	= 2.0 * uvar_Band;	/* sampling rate of time-series (= 2 * frequency-Band) */
-  params.fHeterodyne  	= uvar_fmin;		/* heterodyning frequency for output time-series */
+  params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
   /*----------------------------------------
    * generate the heterodyned time-series 
@@ -355,6 +356,11 @@ InitMakefakedata (LALStatus *stat,
 
   GV->edat = edat;
 
+  /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
+   * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
+   * to a frequency-index of the non-heterodyned signal
+   */
+  GV->fmin_eff = (REAL8)((INT4)(uvar_fmin * uvar_Tsft)) / uvar_Tsft;
 
   /* read noise-sft's if given */
   if (uvar_noiseDir)
@@ -367,7 +373,7 @@ InitMakefakedata (LALStatus *stat,
       }
       strcpy (fpat, uvar_noiseDir);
       strcat (fpat, "/SFT");		/* use search-pattern of makefakedata_v2 */
-      fmin = uvar_fmin;
+      fmin = GV->fmin_eff;
       fmax = fmin + uvar_Band;
       TRY ( LALReadSFTfiles (stat->statusPtr, &(GV->noiseSFTs), fmin, fmax, fpat), stat);
       LALFree (fpat);
