@@ -4,7 +4,7 @@
  * 
  * Author: Sintes, A. M.
  * 
- * Revision: $Id: 
+ * Revision: $Id$
  * 
  *----------------------------------------------------------------------- 
  * 
@@ -85,7 +85,7 @@ Described before.
 LALSCreateVector()
 LALCCreateVector()
 LALZCreateVector()
-LALEstimateInvComplexFFTPlan()
+LALCreateReverseComplexFFTPlan()
 LALCOMPLEX8VectorFFT()
 LALSDestroyVector()
 LALCDestroyVector()
@@ -196,7 +196,7 @@ void LALRefInterference (LALStatus    *status,
   
   TRY(LALCCreateVector(status->statusPtr, &snum, n), status);
   
-  TRY(LALEstimateInvComplexFFTPlan(status->statusPtr, &pinv, n), status);
+  TRY(LALCreateReverseComplexFFTPlan(status->statusPtr, &pinv, n, 0), status);
   /* -------------------------------------------   */
  
   /* -------------------------------------------   */

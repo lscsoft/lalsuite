@@ -952,7 +952,16 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
       factor of +1 in the exponent and a "backward" transform
       has a -1.
     */
-    LALEstimateInvComplexFFTPlan(status, &plan, gtmp_in->length);
+    /* LALEstimateInvComplexFFTPlan(status, &plan, gtmp_in->length); */
+    /*
+     * >> THIS HAS BEEN CHANGED <<
+     *
+     * Now "forward" has a -1 in LAL, so I am changing the above line to do a
+     * transform with a -1 (as before), which is now the "forward" transform
+     *
+     * --Jolien
+     */
+    LALCreateForwardComplexFFTPlan(status, &plan, gtmp_in->length, 0);
     
     /* Set up the plan and output area */
     LALCreateFCTPlan(status, &fctPlan, &planIn);

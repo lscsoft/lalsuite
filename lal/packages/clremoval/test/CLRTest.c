@@ -17,24 +17,24 @@
  * DIAGNOSTICS
  * 
  * CALLS
- *   I4CreateVector
- *   CCreateVector
- *   SCreateVector
+ *   LALI4CreateVector
+ *   LALCCreateVector
+ *   LALSCreateVector
  *   LALMalloc
  *   LALFree
- *   EstimateFwdRealFFTPlan
- *   RealPowerSpectrum
- *   FwdRealFFT
- *   DestroyRealFFTPlan
- *   I4DestroyVector
- *   CDestroyVector
- *   SDestroyVector 
- *   HarmonicFinder
- *   RefInterference
- *   CleanAll
- *   EstimateInvComplexFFTPlan
- *   COMPLEX8VectorFFT
- *   DestroyComplexFFTPlan
+ *   LALCreateForwardRealFFTPlan
+ *   LALRealPowerSpectrum
+ *   LALForwardRealFFT
+ *   LALDestroyRealFFTPlan
+ *   LALI4DestroyVector
+ *   LALCDestroyVector
+ *   LALSDestroyVector 
+ *   LALHarmonicFinder
+ *   LALRefInterference
+ *   LALCleanAll
+ *   LALCreateForwardComplexFFTPlan
+ *   LALCOMPLEX8VectorFFT
+ *   LALDestroyComplexFFTPlan
  * NOTES
  *  
  *-----------------------------------------------------------------------
@@ -79,9 +79,9 @@ LALCCreateVector()
 LALSCreateVector()
 LALMalloc()
 LALFree()
-LALEstimateFwdRealFFTPlan()
+LALCreateForwardRealFFTPlan()
 LALRealPowerSpectrum()
-LALFwdRealFFT()
+LALForwardRealFFT()
 LALDestroyRealFFTPlan()
 LALI4DestroyVector()
 LALCDestroyVector()
@@ -89,7 +89,7 @@ LALSDestroyVector()
 LALHarmonicFinder()
 LALRefInterference()
 LALCleanAll()
-LALEstimateInvComplexFFTPlan()
+LALCreateReverseComplexFFTPlan()
 LALCOMPLEX8VectorFFT()
 LALDestroyComplexFFTPlan()
 \end{verbatim}
@@ -150,7 +150,7 @@ int main ( void )
   LALI4CreateVector(&status, &hk, l);
   LALI4CreateVector(&status, &hkff, 3*l);
   
-  LALEstimateFwdRealFFTPlan(&status, &pfwd, n);
+  LALCreateForwardRealFFTPlan(&status, &pfwd, n, 0);
   
   xt =  (REAL4TVectorCLR *)LALMalloc(sizeof(REAL4TVectorCLR));
   xp =  (REAL4FVectorCLR *)LALMalloc(sizeof(REAL4FVectorCLR));
@@ -241,7 +241,7 @@ int main ( void )
   /* ------------------------------- */   
 
   /* perform fft */
-  LALFwdRealFFT(&status,xf,x,pfwd);
+  LALForwardRealFFT(&status,xf,x,pfwd);
   
   /* generate the reference signal */
   LALRefInterference(&status,mt,xf,hkff);
