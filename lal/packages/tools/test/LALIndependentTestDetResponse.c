@@ -20,6 +20,16 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 05/20/03 gam: Last argument in LALGPStoLMST1 changed to type LALMSTUnitsAndAcc.
 05/20/03 gam: Add Brian Cameron's LALResponseFunc.c into function GenerateResponseFuncUsingLAL(int argc, char *argv[]);
 05/20/03 gam: Last argument of LALComputeDetAMResponse changed to type LALGPSandAcc.
+05/23/04 Dave Chin globally changed "time" to "timevec" to fix warnings about shadowing global declarations.
+05/30/03 gam: Change GenerateResponseFuncUsingLAL to work with params in the config file.
+09/26/03 gam: Clean up GenerateResponseFuncUsingLAL, removed unnecessary code.
+09/26/03 gam: Need to set LALTimeIntervalAndNSample time_info.accuracy = LALLEAPSEC_STRICT.
+09/29/03 gam: Return data from GenerateResponseFuncUsingLAL
+09/30/03 gam: Change name of LALComputeResponseFunc to more descriptive name GenerateResponseFuncNotUsingLAL.
+09/30/03 gam: Clean up GenerateResponseFuncNotUsingLAL, removed unnecessary code.
+09/30/03 gam: Always call GenerateResponseFuncUsingLAL
+09/30/03 gam: Removed all other unnecessary code.
+09/30/03 gam: Add code to test difference between independent and LAL values for F_+ and F_x.
 */
 
 #include <stdio.h>
@@ -36,11 +46,9 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 #include <lal/Date.h>
 #include <lal/Random.h>
 
-
 #define usgfmt \
      "Usage: %s [options]\n" \
      " -h                  Prints this message\n" \
-     " -L                  Generate the response using LAL only and return \n" \
      " -c configFile       Use this Configure File\n" \
      " -d lalDebugLevel    Set debug level\n" \
      "\n" \
@@ -54,26 +62,17 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 #define usage( program ) fprintf( stderr, usgfmt, program )
 
-NRCSID( GENERATECWSIGNALC, "$Id$" );
+NRCSID( LALINDEPENDENTTESTDETRESPONSEC, "$Id$" );
 
-static void
-LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet,
-		       REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross);
-static void
-LALComputePolarFuncs(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,
-		     REAL8Vector *freqParams, REAL8Vector *hPlus, REAL8Vector *hCross);
-static void
-PrintLALDetector(LALDetector *detector);
+void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross);
 
-int GenerateResponseFuncUsingLAL(int argc, char *argv[]); /* 05/20/03 gam */
+void PrintLALDetector(LALDetector *detector);
+
+void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 sampleRate, LIGOTimeGPS *gps, LALDetAMResponseSeries  *am_response_series_ptr);
 
 extern char *optarg;
 REAL8 omegaEarth = LAL_TWOPI/LAL_DAYSID_SI;
 REAL8 omegaEarthSun = LAL_TWOPI/LAL_YRSID_SI;
-REAL8 phiSun;
-REAL8 plusSignalAmplitude;
-REAL8 crossSignalAmplitude;
-
 
 INT4 lalDebugLevel = 0;
 
@@ -89,42 +88,55 @@ int main( int argc, char *argv[] )
   UINT4 lineSize = 80, valueSize  = 25;
   CHARVector *lineString = NULL, *valueString = NULL;
   INT4 checkFileName = 0;
-  const CHAR *configFileName = NULL;
+  /* const CHAR *configFileName = NULL; */ /* 09/23/03 gam */
+  CHAR *configFileName = NULL;
   FILE *configFile = NULL;
 
-  /* For Printing and File Output */
+  /* Flags */ /* 09/30/03 gam */
+  INT2 outputIndependentFPlusFCross;
+  INT2 outputLALFPlusFCross;
+  INT2 outputFPlusFCrossDiffs;
+
+  /* For computing differences */ /* 09/30/03 gam */
+  REAL4 maxFPlusDiff = 0.0;
+  REAL4 maxFCrossDiff = 0.0;
+  REAL4 tmpFPlusDiff = 0.0;
+  REAL4 tmpFCrossDiff = 0.0;
+  REAL4 tolerance = 0.0;
+  /* REAL4 tmpFPlusDenom = 0.0; */ /* Only used if testing fractional difference. Not currently used. */
+  /* REAL4 tmpFCrossDenom = 0.0; */ /* Only used if testing fractional difference. Not currently used. */
+  /* REAL4 TINY = 1.e-4; */ /* Only used if testing fractional difference. Not currently used. */
+
+  /* For File Output */
   FILE *outFileFPlus = NULL, *outFileFCross = NULL;
-  FILE *outFileHPlus = NULL, *outFileHCross = NULL;
-  FILE *outFileNoise = NULL, *outFileSignal = NULL;
-  FILE *weightFile = NULL;
+  FILE *outFileLALPlus = NULL, *outFileLALCross = NULL;
+  FILE *outFilePlusDiff = NULL, *outFileCrossDiff = NULL;
 
   /* Used LAL structures */
   LIGOTimeGPS gpsTime;
   LALSource pulsar;
   LALDetector detector;
   LALPlaceAndGPS place_and_gps;
+  LALDetAMResponseSeries am_response_series; /* 09/30/03 gam */
+  REAL4TimeSeries plus_series, cross_series, scalar_series; /* 09/30/03 gam */
 
   /* first num is longitude, second is latitude (radians) 05/14/03 gam */
   LALFrDetector testFrDetector;
 
   /* Vectors For Results */
-  static REAL4Vector  *normalDeviates = NULL;
-  static RandomParams *randpar = NULL;
   REAL8Vector *fPlus=NULL, *fCross=NULL;
-  REAL8Vector *hPlus=NULL, *hCross=NULL;
-  REAL8Vector *cwSignal=NULL;
-  REAL4Vector *weightVector = NULL;
 
   /* Other Stuff */
   REAL8Vector *timevec = NULL;
-  REAL8Vector *frequencyParams = NULL;
   REAL8 sampleRate = 0, duration = 0;
-  UINT4 numFreqParams = 6;
   UINT4 lgthDataSet = 0;
   REAL8 phiStart = 0.0;
-  REAL8 randSigma = 0.0;
 
- LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; /* 05/20/03 gam */
+  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
+  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
+
+  uandacc.units = MST_RAD;
+  uandacc.accuracy = LALLEAPSEC_STRICT;
 
   /* parse options */
   if( argc == 1)
@@ -144,8 +156,7 @@ int main( int argc, char *argv[] )
 	  configFileName = optarg;
           break;
         case 'L':
-          GenerateResponseFuncUsingLAL(argc, argv); /* Added case L */ /* 05/20/03 gam */
-          return 0;
+	  break;
 	case 'd':
 	  lalDebugLevel = atoi( optarg );
 	  break;
@@ -166,19 +177,15 @@ int main( int argc, char *argv[] )
     usage( program );
     return 0;
   }
-  LALCHARCreateVector(&status, &lineString, lineSize);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALCHARCreateVector(&status, &valueString, valueSize);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
 
-  /* Throw Away First Line, Formatting Comment */
+  LALCHARCreateVector(&status, &lineString, lineSize);
+  LALCHARCreateVector(&status, &valueString, valueSize);
+
+  /* Throw Away First Line Comment */
   fgets(lineString->data, lineSize, configFile);
 
-
-  /* Start by Reading Pulsar Coordinates */
-  strcpy(pulsar.name, "INPUT PULSAR");
+  /* Test Name */
+  strcpy(pulsar.name, "TEST");
   pulsar.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* R.A. of the Source */
@@ -191,43 +198,32 @@ int main( int argc, char *argv[] )
   strncpy(valueString->data, lineString->data, valueSize);
   pulsar.equatorialCoords.latitude = LAL_PI_180*(atof( valueString->data ));
 
-  /* Pulsar Polarization Angle */
+  /* Polarization Angle */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
   pulsar.orientation = LAL_PI_180*atof( valueString->data );
 
-  /* Parse Date */
+  /* Start Time */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  gpsTime.gpsSeconds = atoi( valueString->data );
+  /* gpsTime.gpsSeconds = atoi( valueString->data ); */
+  gpsTime.gpsSeconds = atol( valueString->data ); /* 09/30/03 gam */
   gpsTime.gpsNanoSeconds = 0;
 
-  /* Read in Sample Rate */
+  /* Sample Rate */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
   sampleRate = atof( valueString->data );
 
-  /* Length of the Data Set */
+  /* Duration */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
   duration = atof( valueString->data );
 
-  lgthDataSet = (UINT4)(duration * sampleRate) + 1;
+  /* lgthDataSet = (UINT4)(duration * sampleRate) + 1; */ /* 09/30/03 gam */
+  lgthDataSet = (UINT4)(duration * sampleRate);
 
-  /* Read in Frequency Paramters */
-  LALDCreateVector(&status, &frequencyParams, numFreqParams);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-
-  for(i=0;i<numFreqParams;i++)
-    {
-      fgets(lineString->data, lineSize, configFile);
-      strncpy(valueString->data, lineString->data, valueSize);
-      frequencyParams->data[i] = atof( valueString->data );
-    }
-
-
-  /* Read in the Detector Site */
+  /* Detector Site */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
   if(valueString->data[0] == 'H')
@@ -260,62 +256,21 @@ int main( int argc, char *argv[] )
       LALCreateDetector( &status, &detector, &testFrDetector, LALDETECTORTYPE_IFODIFF);
     }
 
-  /* Options For Random Number Creation */
+  /* tolerance */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  randSigma = atof( valueString->data );
-
-  /*
-   * Multiply Earth's spin or orbit by some constant
-   * Will allow us to simplify by letting the earth stand still
-   * or speed the earth up to facilitate smaller data sets.
-   */
-
-  /* Earth's Rotation Axis */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  omegaEarth *= atof( valueString->data );
-
-  /* Rotation about the Sun */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  omegaEarthSun *= atof( valueString->data );
-
-  /* Read in Phase of the earth's orbit */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  phiSun = atof( valueString->data );
-
-  /* Read in Signal Amplitudes */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  plusSignalAmplitude = atof( valueString->data );
-
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  crossSignalAmplitude = atof( valueString->data );
+  tolerance = atof( valueString->data );
 
   /* Open Various Output Files */
 
-  /* Weighting File */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
-    i=0; checkFileName = 0;
-    while( !checkFileName ) {
-      if(valueString->data[i] == ' ') {
-	valueString->data[i] = '\0';
-	checkFileName = 1;
-      }
-      i++;
-    }
-    weightFile = fopen(valueString->data, "r");
-  }
+  outputIndependentFPlusFCross = atoi( valueString->data );
 
-  /*  F_Plus Filename */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+  if (outputIndependentFPlusFCross) {
+    /*  F_Plus Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -325,12 +280,10 @@ int main( int argc, char *argv[] )
       i++;
     }
     outFileFPlus = fopen(valueString->data, "w");
-  }
 
-  /* F_Cross Filename */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+    /* F_Cross Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -340,12 +293,16 @@ int main( int argc, char *argv[] )
       i++;
     }
     outFileFCross = fopen(valueString->data, "w");
-  }
+ }
 
-  /* H_Plus Filename */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+  outputLALFPlusFCross = atoi( valueString->data );
+
+  if (outputLALFPlusFCross) {
+    /*  F_Plus LAL Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -354,13 +311,11 @@ int main( int argc, char *argv[] )
       }
       i++;
     }
-    outFileHPlus = fopen(valueString->data, "w");
-  }
+    outFileLALPlus = fopen(valueString->data, "w");
 
-  /* H_Cross Filename */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+    /* F_Cross LAL Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -369,13 +324,18 @@ int main( int argc, char *argv[] )
       }
       i++;
     }
-    outFileHCross = fopen(valueString->data, "w");
-  }
+    outFileLALCross = fopen(valueString->data, "w");
+ }
 
-  /* Noise Filename */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+  outputFPlusFCrossDiffs = atoi( valueString->data );
+
+  if (outputFPlusFCrossDiffs) {
+
+    /*  F_Plus LAL Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -384,13 +344,11 @@ int main( int argc, char *argv[] )
       }
       i++;
     }
-    outFileNoise = fopen(valueString->data, "w");
-  }
+    outFilePlusDiff = fopen(valueString->data, "w");
 
-  /* Signal Filename */
-  fgets(lineString->data, lineSize, configFile);
-  strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] != '0'){
+    /* F_Cross LAL Filename */
+    fgets(lineString->data, lineSize, configFile);
+    strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
       if(valueString->data[i] == ' ') {
@@ -399,9 +357,10 @@ int main( int argc, char *argv[] )
       }
       i++;
     }
-    outFileSignal = fopen(valueString->data, "w");
-  }
+    outFileCrossDiff = fopen(valueString->data, "w");
 
+ }
+ fclose(configFile);
 
   /* Echo Parameters */
   if( lalDebugLevel > 1)
@@ -413,14 +372,8 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "Polarization: %f\n", pulsar.orientation );
       fprintf( stderr, "\n" );
 
-      fprintf( stderr, "Freq. Params\n" );
-      fprintf( stderr, "%e %e %e %e %e %e\n", frequencyParams->data[0], frequencyParams->data[1],
-	       frequencyParams->data[2], frequencyParams->data[3],frequencyParams->data[4]
-	       ,frequencyParams->data[5] );
-      fprintf( stderr, "\n" );
-
       fprintf( stderr, "Date Info\n" );
-      fprintf( stderr, "For GPS: %10d, %9d\n", gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds );
+      fprintf( stderr, "For GPS Seconds, NanoSeconds: %10d, %9d\n", gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds );
       fprintf( stderr, "\n" );
 
       fprintf( stderr, "Sampling Rate: %f\n", sampleRate );
@@ -432,13 +385,6 @@ int main( int argc, char *argv[] )
       fprintf( stderr, "Ang. Vel. of Earth = %e\n", omegaEarth );
       fprintf( stderr, "Ang. Vel. of Earth about the Sun = %e\n", omegaEarthSun );
       fprintf( stderr, "\n");
-
-      fprintf( stderr, "Plus Signal Amplitude %f\n", plusSignalAmplitude );
-      fprintf( stderr, "Cross Signal Amplitude %f\n", crossSignalAmplitude );
-      fprintf( stderr, "\n" );
-
-      fprintf( stderr, "Standard Deviation of Noise %f\n", randSigma );
-      fprintf( stderr, "\n" );
     }
 
   /*
@@ -451,260 +397,178 @@ int main( int argc, char *argv[] )
   /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
   LALGPStoLMST1(&status, &phiStart,  &place_and_gps, &uandacc);
 
-  if(lalDebugLevel > 1)
-    fprintf( stderr, "LMST (radians)= %f\n", phiStart );
-  
+  if(lalDebugLevel > 1) fprintf( stderr, "LMST (radians)= %f\n", phiStart );
 
   /* Intialize Arrays */
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Creating Vectors.\n" );
+  if(lalDebugLevel > 0) fprintf( stderr, "Creating Vectors.\n" );
 
   LALDCreateVector(&status, &fPlus, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
   LALDCreateVector(&status, &fCross, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALDCreateVector(&status, &hPlus, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALDCreateVector(&status, &hCross, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALDCreateVector(&status, &cwSignal, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALCreateVector (&status, &normalDeviates, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
   LALDCreateVector(&status, &timevec, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS (&status);
-  LALCreateVector(&status, &weightVector, lgthDataSet);
-  if(lalDebugLevel > 2)
-    REPORTSTATUS(&status);
 
-  /* Read in Weighting File */
-  if( weightFile != NULL ) {
-    for(i = 0; i<=lgthDataSet; i++) {
-      fgets(lineString->data, lineSize, weightFile);
-      strncpy(valueString->data, lineString->data, valueSize);
-      weightVector->data[i] = atof( valueString->data );
-    }
-  } else {
-    if( lalDebugLevel > 0 )
-      fprintf( stderr, "Weighting Function not in use.\n" );
-    for(i = 0; i<=lgthDataSet; i++)
-      weightVector->data[i] = 1.0;
-  }
+  plus_series.data = NULL;
+  cross_series.data = NULL;
+  scalar_series.data = NULL;
+  am_response_series.pPlus   = &(plus_series);
+  am_response_series.pCross  = &(cross_series);
+  am_response_series.pScalar = &(scalar_series);
 
+  LALSCreateVector(&status, &(am_response_series.pPlus->data), lgthDataSet);
+  LALSCreateVector(&status, &(am_response_series.pCross->data), lgthDataSet);
+  LALSCreateVector(&status, &(am_response_series.pScalar->data), lgthDataSet);
 
   /* make time array */
   for(i = 0;i<lgthDataSet;i++)
     {
       timevec->data[i] = i*(1.0/sampleRate);
     }
-  /* Create Random Number Distribution */
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Generating Random Numbers.\n" );
 
-  LALCreateRandomParams (&status, &randpar, 0);
-  LALNormalDeviates (&status, normalDeviates, randpar);
-  for( i=0; i<lgthDataSet ; i++ )
-    normalDeviates->data[i] *= randSigma;
+  if(lalDebugLevel > 0) {
+    fprintf(stdout, "Computing Independent Response Functions.\n" );
+    fflush(stdout);
+  }
 
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Computing Response Functions.\n" );
+  GenerateResponseFuncNotUsingLAL(&pulsar, &detector, lgthDataSet, phiStart, timevec, fPlus, fCross );
 
-  LALComputeResponseFunc( &status, &pulsar, &detector, lgthDataSet, phiStart, timevec, fPlus, fCross );
+  if(lalDebugLevel > 0) {
+    fprintf(stdout, "Computing Response Functions Using LAL.\n" );
+    fflush(stdout);
+  }
 
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Computing Polarization Functions.\n" );
+  GenerateResponseFuncUsingLAL(&status, &pulsar, &detector, lgthDataSet, sampleRate, &gpsTime, &am_response_series);
 
-  LALComputePolarFuncs( &pulsar, &detector,  lgthDataSet, phiStart, timevec, frequencyParams, hPlus, hCross );
-  
-  /*
-   * Combine Signals with Noise
-   */
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Creating (possibly) Weighted Signal With Noise.\n" );
-
-  for(i=0;i<lgthDataSet;i++) 
-    cwSignal->data[i] = weightVector->data[i]*(fPlus->data[i]*hPlus->data[i] + fCross->data[i]*hCross->data[i] 
-					       + normalDeviates->data[i]);
-
-  if(lalDebugLevel > 0)
-    fprintf( stderr, "Writing Results to File.\n" );
-  /*
-   * Write out Response Functions
-   */
-  if(outFileFPlus != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileFPlus, "%.15f\n", fPlus->data[i] );
+  /* Write out files */
+  if (outputIndependentFPlusFCross) {
+    if(lalDebugLevel > 0) fprintf( stderr, "Writing Independent F_+ and F_x to File.\n" );
+    for (i = 0;i<lgthDataSet; i++) {
+        fprintf(outFileFPlus, "%.15f\n", fPlus->data[i]);
+        fprintf(outFileFCross, "%.15f\n", fCross->data[i]);
     }
-  if(outFileFCross != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileFCross, "%.15f\n", fCross->data[i] );
+    fclose(outFileFPlus);
+    fclose(outFileFCross);
+  }
+  if (outputLALFPlusFCross) {
+    if(lalDebugLevel > 0) fprintf( stderr, "Writing LAL F_+ and F_x to File.\n" );
+    for (i = 0; i < lgthDataSet; ++i) {
+        fprintf(outFileLALPlus, "%.15f\n", am_response_series.pPlus->data->data[i]);
+        fprintf(outFileLALCross, "%.15f\n", am_response_series.pCross->data->data[i]);
     }
+    fclose(outFileLALPlus);
+    fclose(outFileLALCross);
 
-  /*
-   * Write out Polarization Functions
-   */
-  if(outFileHPlus != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileHPlus, "%.15f\n", hPlus->data[i] );
-    }
-  if(outFileHCross != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileHCross, "%.15f\n", hCross->data[i] );
-    }
-  
-  /*
-   * Write out Noise
-   */
-  if(outFileNoise != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileNoise, "%.15f\n", normalDeviates->data[i] );
-    }
+  }
 
-  /*
-   * Write out Signal
-   */
-  if(outFileSignal != NULL)
-    {
-      for(i = 0;i<lgthDataSet; i++)
-	fprintf(outFileSignal, "%.15f\n", cwSignal->data[i] );
+  /* Compute differences; write out differences if requested */ /* 09/30/03 gam */
+  if(lalDebugLevel > 0) fprintf( stderr, "Computing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x.\n" );
+  if (outputFPlusFCrossDiffs && lalDebugLevel > 0) fprintf( stderr, "Writing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x to File.\n" );
+  maxFPlusDiff = 0.0;  /* initialize */
+  maxFCrossDiff = 0.0; /* initialize */
+  for (i = 0; i < lgthDataSet; ++i) {
+    tmpFPlusDiff = am_response_series.pPlus->data->data[i] - (REAL4)fPlus->data[i];
+    tmpFCrossDiff = am_response_series.pCross->data->data[i] - (REAL4)fCross->data[i];
+    /* tmpFPlusDenom and tmpFCrossDenom used for testing fractional difference. Not currently used. */
+    /* tmpFPlusDenom = fabs((REAL4)fPlus->data[i]); */
+    /* tmpFCrossDenom = fabs((REAL4)fCross->data[i]); */
+    if (outputFPlusFCrossDiffs) {
+      fprintf(outFilePlusDiff, "%.15f\n",  tmpFPlusDiff);
+      fprintf(outFileCrossDiff, "%.15f\n", tmpFCrossDiff);
     }
+    /* Code for testing absolute difference */
+    tmpFPlusDiff = fabs(tmpFPlusDiff);
+    if (tmpFPlusDiff > maxFPlusDiff) maxFPlusDiff = tmpFPlusDiff;
+    tmpFCrossDiff = fabs(tmpFCrossDiff);
+    if (tmpFCrossDiff > maxFCrossDiff) maxFCrossDiff = tmpFCrossDiff;
+    /* Code for testing fractional difference. Not currently used. */
+    /* if (tmpFPlusDenom > TINY) {
+      tmpFPlusDiff = fabs(tmpFPlusDiff)/tmpFPlusDenom;
+      if (tmpFPlusDiff > maxFPlusDiff) maxFPlusDiff = tmpFPlusDiff;
+    }
+    if (tmpFCrossDenom >  TINY) {
+      tmpFCrossDiff = fabs(tmpFCrossDiff)/tmpFCrossDenom;
+      if (tmpFCrossDiff > maxFCrossDiff) maxFCrossDiff = tmpFCrossDiff;
+    } */
+  }
+  if (outputFPlusFCrossDiffs) {
+    fclose(outFilePlusDiff);
+    fclose(outFileCrossDiff);
+  }
+  if(lalDebugLevel > 0) {
+    fprintf(stdout, "\nmaxFPlusDiff, tolerance = %.6e, %.6e\n",maxFPlusDiff, tolerance );
+    fprintf(stdout, "\nmaxFCrossDiff, tolerance = %.6e, %.6e\n",maxFCrossDiff, tolerance);
+    fflush(stdout);
+  }
 
-  LALCHARDestroyVector( &status, &lineString ); 
-  LALCHARDestroyVector( &status, &valueString ); 
+  /* Free memory, and then test difference */
+  LALSDestroyVector(&status, &(am_response_series.pPlus->data));
+  LALSDestroyVector(&status, &(am_response_series.pCross->data));
+  LALSDestroyVector(&status, &(am_response_series.pScalar->data));
+
+  LALCHARDestroyVector( &status, &lineString );
+  LALCHARDestroyVector( &status, &valueString );
   LALDDestroyVector( &status, &fPlus );
   LALDDestroyVector( &status, &fCross );
-  LALDDestroyVector( &status, &hPlus );
-  LALDDestroyVector( &status, &hCross );
-  LALDDestroyVector( &status, &cwSignal );
-  LALDestroyVector ( &status, &normalDeviates );
-  LALDestroyVector( &status, &weightVector );
-  LALDestroyRandomParams (&status, &randpar );
-  
-  LALCheckMemoryLeaks();
+  LALDDestroyVector( &status, &timevec );
+
+  /* Test differences. End with error if difference exceed tolerance. */
+  if (maxFPlusDiff > tolerance || maxFCrossDiff > tolerance) {
+    if (maxFPlusDiff > tolerance) {
+      fprintf(stderr, "\nLAL F_+ - Independent F_+ Difference Test Failed!\n");
+      fflush(stderr);
+    }
+    if (maxFCrossDiff > tolerance) {
+      fprintf(stderr, "\nLAL F_x - Independent F_x Difference Test Failed!\n");
+      fflush(stderr);
+    }
+    exit(1);
+  }
+
+  if(lalDebugLevel > 0) {
+    fprintf(stdout, "\nALL LALIndependentTestDetResponse Test Passed!\n");
+    fflush(stdout);
+  }
+
   return 0;
 }
 
-void LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, 
+void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet,
 			    REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross)
 {
-  REAL8Vector *aCoeff = NULL, *bCoeff = NULL;
+  REAL8 aCoeff, bCoeff;
   /* REAL8 gammaAngle = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
   REAL8 gammaAngle = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians;
   /* REAL8 detLatitude = LAL_PI_180*detector->frDetector.vertexLatitudeDegrees; */ /* 05/14/03 gam */
   REAL8 detLatitude = detector->frDetector.vertexLatitudeRadians;
   INT4 i;
 
-  INITSTATUS (status, "LALComputeResponseFunc", GENERATECWSIGNALC);
-  ATTATCHSTATUSPTR(status);
-
-  /* a(t) and b(t) coefficients from JKS */
-  LALDCreateVector( status->statusPtr, &aCoeff, lgthDataSet ); 
-  LALDCreateVector( status->statusPtr, &bCoeff, lgthDataSet );
-
-  for(i = 0;i<lgthDataSet; i++)
-    {
-      aCoeff->data[i] = sin(2.0*gammaAngle)*(3.0 - cos(2.0*detLatitude))*(3.0 - cos(2.0*pulsar->equatorialCoords.latitude))
-	*cos(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]))/16.0; 
-      aCoeff->data[i] -= 0.25*cos(2.0*gammaAngle)*sin(detLatitude)*(3 - cos(2.0*pulsar->equatorialCoords.latitude))
+  /* Compute Fplus and Fcross from JKS */ /* 09/30/03 gam aCoeff and bCoeff no longer vectors */
+  for(i = 0;i<lgthDataSet; i++) {
+      aCoeff = sin(2.0*gammaAngle)*(3.0 - cos(2.0*detLatitude))*(3.0 - cos(2.0*pulsar->equatorialCoords.latitude))
+	*cos(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]))/16.0;
+      aCoeff -= 0.25*cos(2.0*gammaAngle)*sin(detLatitude)*(3 - cos(2.0*pulsar->equatorialCoords.latitude))
 	*sin(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]));
-      aCoeff->data[i] += 0.25*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
-	*cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]); 
-      aCoeff->data[i] -= 0.5*cos(2.0*gammaAngle)*cos(detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
+      aCoeff += 0.25*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
+	*cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]);
+      aCoeff -= 0.5*cos(2.0*gammaAngle)*cos(detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
 	*sin(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]);
-      aCoeff->data[i] += 0.75*sin(2.0*gammaAngle)*cos(detLatitude)*cos(detLatitude)
+      aCoeff += 0.75*sin(2.0*gammaAngle)*cos(detLatitude)*cos(detLatitude)
 	*cos(pulsar->equatorialCoords.latitude)*cos(pulsar->equatorialCoords.latitude);
-      
-      bCoeff->data[i] = cos(2*gammaAngle)*sin(detLatitude)*sin(pulsar->equatorialCoords.latitude)
+
+      bCoeff = cos(2*gammaAngle)*sin(detLatitude)*sin(pulsar->equatorialCoords.latitude)
 	*cos(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]));
-      bCoeff->data[i] += 0.25*sin(2.0*gammaAngle)*(3.0-cos(2.0*detLatitude))*sin(pulsar->equatorialCoords.latitude)
+      bCoeff += 0.25*sin(2.0*gammaAngle)*(3.0-cos(2.0*detLatitude))*sin(pulsar->equatorialCoords.latitude)
 	*sin(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]));
-      bCoeff->data[i] += cos(2*gammaAngle)*cos(detLatitude)*cos(pulsar->equatorialCoords.latitude)
+      bCoeff += cos(2*gammaAngle)*cos(detLatitude)*cos(pulsar->equatorialCoords.latitude)
 	*cos(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]);
-      bCoeff->data[i] += 0.5*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*cos(pulsar->equatorialCoords.latitude)
+      bCoeff += 0.5*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*cos(pulsar->equatorialCoords.latitude)
 	*sin(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]);
-      
-    }
-
-  /* Compute Fplus and Fcross from JKS */
-  
-  /* Note: Assumes Interferometer Arms are Perpendicular */
-  for(i = 0;i<lgthDataSet;i++)
-    {
-      fPlus->data[i] = aCoeff->data[i]*cos(2.0*pulsar->orientation) + bCoeff->data[i]*sin(2.0*pulsar->orientation);
-      fCross->data[i] = bCoeff->data[i]*cos(2.0*pulsar->orientation) - aCoeff->data[i]*sin(2.0*pulsar->orientation);
-    }
-  
-  LALDDestroyVector( status, &aCoeff );
-  LALDDestroyVector( status, &bCoeff );
-  
-  DETATCHSTATUSPTR(status);
-  LALCheckMemoryLeaks();
-  
+      /* Note: Assumes Interferometer Arms are Perpendicular */
+      fPlus->data[i] = aCoeff*cos(2.0*pulsar->orientation) + bCoeff*sin(2.0*pulsar->orientation);
+      fCross->data[i] = bCoeff*cos(2.0*pulsar->orientation) - aCoeff*sin(2.0*pulsar->orientation);
+  }
+  return;
 }
 
-
-/*
- *  The strain of the detector is given by JKS eq. (20), and the polarization
- *  magnitudes by JKS (21) & (22)
- */
-
-void LALComputePolarFuncs( LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, 
-			   REAL8Vector *freqParams, REAL8Vector *hPlus, REAL8Vector *hCross)
-{
-  REAL8 wavePhase = 0.0;
-  /* REAL8 detLatitude = LAL_PI_180*detector->frDetector.vertexLatitudeDegrees; */ /* 05/14/03 gam */
-  REAL8 detLatitude = detector->frDetector.vertexLatitudeRadians;
-  REAL8 epsilon = 23.5*LAL_PI_180;
-  INT4 i;
-
-  for(i = 0; i<lgthDataSet; i++)
-    {
-      wavePhase = LAL_AU_SI*(cos(pulsar->equatorialCoords.longitude)*cos(pulsar->equatorialCoords.latitude)
-			     *cos(phiSun + omegaEarthSun*timevec->data[i]) + (cos(epsilon)*sin(pulsar->equatorialCoords.longitude)
-									 *cos(pulsar->equatorialCoords.latitude) 
-									 + sin(epsilon)*sin(pulsar->equatorialCoords.latitude))
-			     *sin(phiSun + omegaEarthSun*timevec->data[i]));
-      
-      wavePhase += LAL_REARTH_SI*(sin(detLatitude)*sin(pulsar->equatorialCoords.latitude)
-				  + cos(detLatitude)*cos(pulsar->equatorialCoords.latitude)
-				  *cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]));
-
-      wavePhase *= (LAL_TWOPI/LAL_C_SI)*(freqParams->data[0] + freqParams->data[1]*timevec->data[i] 
-					 + freqParams->data[2]*timevec->data[i]*timevec->data[i]/2.0 
-					 + freqParams->data[3]*timevec->data[i]*timevec->data[i]*timevec->data[i]/6.0
-					 + freqParams->data[4]*pow(timevec->data[i], 4)/24.0
-					 + freqParams->data[5]*pow(timevec->data[i], 5)/120.0);
-
-      wavePhase += LAL_TWOPI*(freqParams->data[0]*timevec->data[i] + (freqParams->data[1]*timevec->data[i]*timevec->data[i]/2.0) 
-			      + (freqParams->data[2]*timevec->data[i]*timevec->data[i]*timevec->data[i]/6.0)
-			      + (freqParams->data[3]*pow(timevec->data[i], 4)/24.0)
-			      + (freqParams->data[4]*pow(timevec->data[i], 5)/120.0)
-			      + (freqParams->data[5]*pow(timevec->data[i], 6)/720.0) );		     
-
-      hPlus->data[i] = plusSignalAmplitude*cos(wavePhase); 
-      hCross->data[i] = crossSignalAmplitude*sin(wavePhase); 
-      
-      wavePhase = 0.0;
-    }
-  
-  LALCheckMemoryLeaks();
-  
-}
-
-static void
-PrintLALDetector(LALDetector *detector)
+void PrintLALDetector(LALDetector *detector)
 {
   /* REAL8 gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
   REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians;
@@ -726,189 +590,88 @@ PrintLALDetector(LALDetector *detector)
   return;
 }
 
-/* This function is based on the code from Brian Cameron's LALResponseFunc. c */ /* 05/20/03 gam */
-int GenerateResponseFuncUsingLAL(int argc, char *argv[])
+void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 sampleRate, LIGOTimeGPS *gps, LALDetAMResponseSeries  *am_response_series_ptr)
 {
-  static LALStatus  status;
-  LALSource         pulsar;
-  LALDetector       detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LIGOTimeGPS       gps;
   LALDetAndSource   det_and_pulsar;
   LALDetAMResponse  am_response;
   LALPlaceAndGPS    place_and_gps; REAL8 lmsthours;
-  LALDate date;
-  LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
-  REAL4TimeSeries           plus_series, cross_series, scalar_series;
-  LALTimeIntervalAndNSample time_info;
-  LALLeapSecAccuracy leapAccuracy = LALLEAPSEC_STRICT;
-  CHARVector          *timestamp = NULL;
-  UINT4 i;
 
-  LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; /* 05/20/03 gam */
+  LALTimeIntervalAndNSample time_info;
+
+  /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
+  LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
   LALGPSandAcc gps_and_acc; /* 05/20/03 gam */
 
-  FILE *outFilePlus, *outFileCross;
-  outFilePlus = fopen("fPlusLAL.out", "w");
-  outFileCross = fopen("fCrossLAL.out", "w");
+  INITSTATUS (status, "GenerateResponseFuncUsingLAL", LALINDEPENDENTTESTDETRESPONSEC);
+  ATTATCHSTATUSPTR(status);
 
-  if (argc == 2)
-    lalDebugLevel = atoi(argv[1]);
+  uandacc.units = MST_RAD;
+  uandacc.accuracy = LALLEAPSEC_STRICT;
 
-  /*
-   * Set Siurce as Crab Pulsar
-   */
-  strcpy(pulsar.name, "CRAB PULSAR");
-  pulsar.equatorialCoords.longitude = 83.63*LAL_PI_180;  /* RA */
-  pulsar.equatorialCoords.latitude  = 22.014*LAL_PI_180;  /* Dec */
-  pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
-  pulsar.orientation                = 22.5*LAL_PI_180;  /* orientation */
+  if (lalDebugLevel > 0)  {
+     fprintf(stdout,"status->statusCode = %i \n", status->statusCode);
+     fprintf(stdout,"status->statusPtr->statusCode = %i \n", status->statusPtr->statusCode);
+     printf("Source Info\n");
+     printf("RA: %e\n", pulsar->equatorialCoords.longitude);
+     printf("Dec: %e\n", pulsar->equatorialCoords.latitude);
+     printf("Psi: %e\n", pulsar->orientation);
+     printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
+	   detector->location[0], detector->location[1],
+           detector->location[2]);
+     fprintf(stderr, "GPS = {%10d, %9d}\n", gps->gpsSeconds, gps->gpsNanoSeconds);
+  }
 
-  /*
-   * Print Source Info
-   */
-  printf("Source Info\n");
-  printf("RA: %e\n", pulsar.equatorialCoords.longitude);
-  printf("Dec: %e\n", pulsar.equatorialCoords.latitude);
-  printf("Psi: %e\n", pulsar.orientation);
+  /* Add detector and source into structures */
+  place_and_gps.p_detector = detector;
+  place_and_gps.p_gps = gps;
+  det_and_pulsar.pDetector = detector;
+  det_and_pulsar.pSource   = pulsar;
 
-  if (lalDebugLevel > 0)
-    printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
-	   detector.location[0], detector.location[1],
-           detector.location[2]);
-
-  /*
-   * Set Date
-   */
-  LALCHARCreateVector(&status, &timestamp, (UINT4)64);
-
-  date.unixDate.tm_year = 100;
-  date.unixDate.tm_mon  =  0;
-  date.unixDate.tm_mday =  1;
-  date.unixDate.tm_hour =  0;
-  date.unixDate.tm_min  =  0;
-  date.unixDate.tm_sec  =  0;
-  date.residualNanoSeconds = 0;
-
-  LALUTCtoGPS (&status, &gps, &date, &leapAccuracy);
-
-  LALDateString(&status, timestamp, &date);
-
-  gps.gpsSeconds = 709398013;
-  gps.gpsNanoSeconds = 0;
-
-  fprintf(stderr, "For: %s\n", timestamp->data);
-  fprintf(stderr, "GPS = {%10d, %9d}\n", gps.gpsSeconds,
-          gps.gpsNanoSeconds);
-
-  /*
-   * Stuff Detector and Source into structure
-   */
-  place_and_gps.p_detector = &detector;
-  place_and_gps.p_gps   = &gps;
   /* LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  LALGPStoLMST1(&status, &lmsthours, &place_and_gps, &uandacc);
+  LALGPStoLMST1(status->statusPtr, &lmsthours, &place_and_gps, &uandacc);
+  CHECKSTATUSPTR (status);
 
-  fprintf(stderr, "LMST = %7e \n", lmsthours);
+  if (lalDebugLevel > 0)  {
+    fprintf(stdout, "LMST = %7e \n", lmsthours);
+  }
 
-  /*
-   * Stuff Detector and Source into structure
-   */
-  det_and_pulsar.pDetector = &detector;
-  det_and_pulsar.pSource   = &pulsar;
-
-  /*
-   * Compute instantaneous AM response
-   */
-  gps_and_acc.gps = gps; /* 05/20/03 gam */
+  /* Compute instantaneous AM response */
+  gps_and_acc.gps.gpsSeconds     = gps->gpsSeconds;
+  gps_and_acc.gps.gpsNanoSeconds = gps->gpsNanoSeconds;
   gps_and_acc.accuracy = LALLEAPSEC_STRICT; /* 05/20/03 gam */
 
   /* LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps); */ /* 05/20/03 gam */
-  LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps_and_acc);
+  LALComputeDetAMResponse(status->statusPtr, &am_response, &det_and_pulsar, &gps_and_acc);
+  CHECKSTATUSPTR (status);
 
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      /* fprintf(stderr,
-              "LALTestDetResponse0: error in LALComputeDetAMResponse, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C); */ /* 05/20/03 gam */
-      fprintf(stderr, "Error in LALComputeDetAMResponse\n");
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
+   if (lalDebugLevel > 0) {
+   }
 
-  /*
-   * Compute a time series AM response
-   */
-  if (lalDebugLevel > 0)
-    {
-      printf("Starting vector test\n");
-    }
+  time_info.epoch.gpsSeconds     = gps->gpsSeconds;
+  time_info.epoch.gpsNanoSeconds = gps->gpsNanoSeconds;
+  time_info.deltaT               = 1.0/sampleRate;
+  time_info.nSample              = lgthDataSet;
+  time_info.accuracy = LALLEAPSEC_STRICT; /* 09/26/03 gam */
 
-  plus_series.data = NULL;
-  cross_series.data = NULL;
-  scalar_series.data = NULL;
+   if (lalDebugLevel > 0) {
+      printf("Start computing AM response vectors\n");
+      /* fprintf(stdout, "am_response_series_ptr->pPlus->data->length = %d\n", am_response_series_ptr->pPlus->data->length);
+      fprintf(stdout, "am_response_series_ptr->pCross->data->length = %d\n", am_response_series_ptr->pCross->data->length);
+      fprintf(stdout, "am_response_series_ptr->pScalar->data->length = %d\n", am_response_series_ptr->pScalar->data->length); */
+      fprintf(stdout, "timeinfo = %d %d %g %d\n",time_info.epoch.gpsSeconds,time_info.epoch.gpsNanoSeconds,time_info.deltaT,time_info.nSample);
+      fflush(stdout);
+   }
 
-  am_response_series.pPlus   = &(plus_series);
-  am_response_series.pCross  = &(cross_series);
-  am_response_series.pScalar = &(scalar_series);
+  LALComputeDetAMResponseSeries(status->statusPtr, am_response_series_ptr, &det_and_pulsar, &time_info);
+  CHECKSTATUSPTR (status);
 
-  LALSCreateVector(&status, &(am_response_series.pPlus->data), 1);
-  LALSCreateVector(&status, &(am_response_series.pCross->data), 1);
-  LALSCreateVector(&status, &(am_response_series.pScalar->data), 1);
-
-  if (lalDebugLevel > 0)
-    {
-      printf("am_response_series.pPlus->data->length = %d\n",
-             am_response_series.pPlus->data->length);
-      printf("am_response_series.pCros->data->length = %d\n",
-             am_response_series.pCross->data->length);
-      printf("am_response_series.pScalar->data->length = %d\n",
-             am_response_series.pScalar->data->length);
-    }
-
-  time_info.epoch.gpsSeconds     = gps.gpsSeconds;
-  time_info.epoch.gpsNanoSeconds = gps.gpsNanoSeconds;
-  time_info.deltaT               = 1;
-  time_info.nSample              = 86401;
-
-  LALComputeDetAMResponseSeries(&status,
-                                &am_response_series,
-                                &det_and_pulsar,
-                                &time_info);
-
-  if (status.statusCode && lalDebugLevel > 0)
-    {
-      /* fprintf(stderr,
-              "LALTestDetResponse0: error in LALComputeDetAMResponseSeries, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C); */ /* 05/20/03 gam */
-      fprintf(stderr, "Error in LALComputeDetAMResponse\n");
-      return status.statusCode;
-    }
-
-  if (lalDebugLevel > 0)
-    {
+  if (lalDebugLevel > 0) {
       printf("Done computing AM response vectors\n");
+      /* printf("am_response_series_ptr->pPlus->data->length = %d\n", am_response_series_ptr->pPlus->data->length);
+      printf("am_response_series_ptr->pCross->data->length = %d\n", am_response_series_ptr->pCross->data->length);
+      printf("am_response_series_ptr->pScalar->data->length = %d\n", am_response_series_ptr->pScalar->data->length); */
+  }
 
-      printf("am_response_series.pPlus->data->length = %d\n",
-             am_response_series.pPlus->data->length);
-      printf("am_response_series.pCross->data->length = %d\n",
-             am_response_series.pCross->data->length);
-      printf("am_response_series.pScalar->data->length = %d\n",
-             am_response_series.pScalar->data->length);
-    }
-
-
-  for (i = 0; i < time_info.nSample; ++i)
-    {
-      fprintf(outFilePlus, "%f\n", am_response_series.pPlus->data->data[i]);
-      fprintf(outFileCross, "%f\n", am_response_series.pCross->data->data[i]);
-    }
-  LALCHARDestroyVector(&status, &timestamp);
-  LALSDestroyVector(&status, &(am_response_series.pPlus->data));
-  LALSDestroyVector(&status, &(am_response_series.pCross->data));
-  LALSDestroyVector(&status, &(am_response_series.pScalar->data));
-
-  LALCheckMemoryLeaks();
-
-  return 0;
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
-
