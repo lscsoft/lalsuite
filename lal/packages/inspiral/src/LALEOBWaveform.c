@@ -1176,6 +1176,7 @@ Userful for debugging: Make sure a solution for r exists.
 
    t = 0.0;
    count = 0;
+   params->nStartPad = 0; /* must be zero for templates*/
    while (count < params->nStartPad) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;

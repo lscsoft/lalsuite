@@ -349,7 +349,7 @@ LALInspiralWave1Templates(
    in4.dyt = &dyt;
 
    count = 0;
-/*   params->nStartPad = 0;*/
+   params->nStartPad = 0; /* for template generation, that value must be zero*/
    while (count < params->nStartPad) 
    {
       *(signal1->data + count) = *(signal2->data + count) = 0.;

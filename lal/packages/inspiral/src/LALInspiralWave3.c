@@ -296,6 +296,7 @@ LALInspiralWave3Templates (
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
   CHECKSTATUSPTR(status);
 
+  params->nStartPad = 0; /* must be zero for templates*/
   dt = 1.0/(params->tSampling);    /* sampling rate  */
   fu = params->fCutoff;            /* upper frequency cutoff  */
   phi = params->startPhase;        /* initial phase  */

@@ -268,7 +268,8 @@ LALInspiralWave2Templates(
   CHECKSTATUSPTR(status);
   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
   CHECKSTATUSPTR(status);
-  
+ 
+  params->nStartPad = 0;          /* that value must be zero for template generation */ 
   dt = 1.0/(params->tSampling);   /* sampling interval */
   fs = params->fLower;            /* lower frequency cutoff */
   fu = params->fCutoff;           /* upper frequency cutoff */
