@@ -33,7 +33,7 @@ export PATH LD_LIBRARY_PATH PKG_CONFIG_PATH
 #ignore
 LAL_PREFIX=$LAL_LOCATION
 ### for example (don't actually do this)
-if 0; then
+if [ false ] ; then
 #/ignore
 #verbatim
 LAL_PREFIX=$LAL_LOCATION
