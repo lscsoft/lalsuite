@@ -12,7 +12,7 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_FstatShapeTestLAL compareFstats ComputeFStatistic_v2 \
-	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh  \
+	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh
 
 EXTRA_PROGRAMS = cfsBOINC cfsBOINCnographics $(FRAMEPROGRAMS) 
 
