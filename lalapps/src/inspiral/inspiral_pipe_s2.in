@@ -513,12 +513,12 @@ sys.stdout.flush()
 print "done"
 
 ##############################################################################
-# Step 7: Determine which of the H2 master chunks needs to be filtered
-h2_chunks_analyzed = []
+# Step 7: Determine which of the H2 only master chunks needs to be filtered
+l1_h2_chunks_analyzed = []
 
-print "setting up jobs to filter H1 data...",
+print "setting up jobs to filter H2 double coincident data...",
 sys.stdout.flush()
-(prev_df,h2_chunks_analyzed) = analyze_lho_ifo(l1_lho_data,h2_data,'H2',
+(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(l1_h2_data,h2_data,'H2',
   insp_job, h2_snr,h2_chisq,prev_df,
   do_datafind,do_h2_trigbank,do_h2_inspiral,dag)
 print "done"
@@ -566,7 +566,7 @@ for seg in l1_h2_data:
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca.add_parent(l1_done.get_dag_node())
   # add all H2 master segments that overlap with segment to input
-  for h2_done in h2_chunks_analyzed:
+  for h2_done in l1_h2_chunks_analyzed:
     if chunk_in_segment(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
@@ -575,10 +575,13 @@ print "done"
 
 ##############################################################################
 # Step 9: Run incas on the triple coincident data
-print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
+print "setting up jobs to get L1/H1 triple coincident triggers...",
 sys.stdout.flush()
+
+l1_h1_inca_nodes = []
+
 for seg in l1_h1_h2_data:
-  # do the first inca to get the triggers that are coincident between h1 and h2
+  # do the first inca to get the triggers that are coincident between L1 and H1
   inca1 = inspiral.IncaNode(inca_job)
   inca1.set_start(seg.start())
   inca1.set_end(seg.end())
@@ -597,6 +600,75 @@ for seg in l1_h1_h2_data:
     if chunk_in_segment(h1_done.get_chunk(),seg):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca1.add_parent(h1_done.get_dag_node())
+  # add the nodes to the dag
+  if do_l1h1h2_coinc:
+    dag.add_node(inca1)
+  l1_h1_inca_nodes.append(AnalyzedIFOData(seg,inca1))
+print "done"
+
+##############################################################################
+# Step 10: Generate triggered banks for filter the tripe coinc H2 data
+print "setting up jobs to analyze H2 triple coincident data...",
+sys.stdout.flush()
+
+l1_h1_h2_chunks_analyzed = []
+# loop over the master science segments
+for seg in h2_data:
+  # make sure that we do not do a data find more than once per science segment
+  done_df_for_seg = None
+  # loop over the master analysis chunks in the science segment
+  for chunk in seg:
+    done_this_chunk = 0
+    # now loop over all the triple coincident data that we need to filter
+    for seg_to_do in l1_h1_h2_data:
+      # if the current chunk is in one of the segments we need to filter
+      if chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
+        # make sure we only filter the master chunk once
+        done_this_chunk = 1
+        # make sure we have done one and only one datafind for the segment
+        if not done_df_for_seg:
+          df = inspiral.DataFindNode(df_job)
+          df.set_ifo('H2')
+          df.set_start(seg.start() - pad)
+          df.set_end(seg.end() + pad)
+          if prev_df: df.add_parent(prev_df)
+          if do_datafind: dag.add_node(df)
+          prev_df = df
+          done_df_for_seg = 1
+        # make a trigbank for the master H2 chunk: to do this, we need
+        # the inca job from L1/H1 that overlaps with this H2 chunk as input
+        trigbank = inspiral.TrigToTmpltNode(trig_job)
+        trigbank.make_trigbank(chunk,'L1','H2',usertag)
+        for l1_h1_done in l1_h1_inca_nodes:
+          if chunk_in_segment(chunk,l1_h1_done.get_chunk()):
+            trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
+            trigbank.add_parent(l1_h1_done.get_dag_node())
+        # analyze the H2 master chunk with this triggered template bank
+        insp = inspiral.InspiralNode(insp_job)
+        insp.set_start(chunk.start())
+        insp.set_end(chunk.end())
+        insp.set_ifo('H2')
+        insp.add_var_opt('snr-threshold',h2_snr)
+        insp.add_var_opt('chisq-threshold',h2_chisq)
+        insp.add_var_opt('trig-start-time',chunk.trig_start())
+        insp.add_var_opt('trig-end-time',chunk.trig_end())
+        insp.set_cache(df.get_output())
+        insp.set_bank(trigbank.get_output())
+        if do_datafind: insp.add_parent(df)
+        if do_l1h1h2_coinc: 
+          dag.add_node(trigbank)
+          insp.add_parent(trigbank)
+          dag.add_node(insp)
+        # store this chunk in the list of filtered L1 data
+        l1_h1_h2_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+print "done"
+
+##############################################################################
+# Step 11: Run inca to get triple coincident triggers
+print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
+sys.stdout.flush()
+
+for seg in l1_h1_h2_data:
   # do the second inca to get the H1 triggers that are in H2 or can't be seen
   inca2 = inspiral.IncaNode(inca_job)
   inca2.set_start(seg.start())
@@ -607,13 +679,6 @@ for seg in l1_h1_h2_data:
   inca2.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
   inca2.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
   # XXX need to add argument that makes inca check the H2 range XXX
-  inca2.add_parent(inca1)
-  inca2.add_var_arg(inca1.get_output())
-  # add all H2 master segments that overlap with segment to input
-  for h2_done in h2_chunks_analyzed:
-    if chunk_in_segment(h2_done.get_chunk(),seg):
-      inca2.add_var_arg(h2_done.get_dag_node().get_output())
-      if do_h1_inspiral: inca2.add_parent(h2_done.get_dag_node())
   # do the third inca to clobber and L1 triggers that we can
   inca3 = inspiral.IncaNode(inca_job)
   inca3.set_start(seg.start())
@@ -623,13 +688,24 @@ for seg in l1_h1_h2_data:
   inca3.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca3.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca3.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
-  inca3.add_parent(inca1)
+  # add the triggers and parent relation from the L1/H1 inca
+  for l1_h1_done in l1_h1_inca_nodes:
+    if ( l1_h1_done.get_chunk().start() == seg.start() and 
+      l1_h1_done.get_chunk().end() == seg.end() ):
+      print l1_h1_done, "and", seg, "match"
+      inca2.add_parent(l1_h1_done.get_dag_node())
+      inca2.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
+      inca3.add_parent(l1_h1_done.get_dag_node())
+      inca3.add_var_arg(l1_h1_done.get_dag_node().get_output_a())
+  # add all H2 master segments that overlap with segment to input
+  for h2_done in l1_h1_h2_chunks_analyzed:
+    if chunk_in_segment(h2_done.get_chunk(),seg):
+      inca2.add_var_arg(h2_done.get_dag_node().get_output())
+      inca2.add_parent(h2_done.get_dag_node())
   inca3.add_parent(inca2)
-  inca3.add_var_arg(inca1.get_output())
-  inca3.add_var_arg(inca2.get_output())
+  inca3.add_var_arg(inca2.get_output_a())
   # add the nodes to the dag
   if do_l1h1h2_coinc:
-    dag.add_node(inca1)
     dag.add_node(inca2)
     dag.add_node(inca3)
 print "done"
@@ -695,9 +771,20 @@ print >> log_fh, "\n total time", total_time, "seconds"
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
-  "Filtering " + str(len(h2_chunks_analyzed)) + " H2 master chunks\n" )
+  "Filtering " + str(len(l1_h2_chunks_analyzed)) + \
+  " H2 double coinc master chunks\n" )
 total_time = 0
-for h2_done in h2_chunks_analyzed:
+for h2_done in l1_h2_chunks_analyzed:
+  print >> log_fh, h2_done.get_chunk()
+  total_time += len(h2_done.get_chunk())
+print >> log_fh, "\n total time", total_time, "seconds"
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( 
+  "Filtering " + str(len(l1_h1_h2_chunks_analyzed)) + \
+  " H2 triple coinc master chunks\n" )
+total_time = 0
+for h2_done in l1_h1_h2_chunks_analyzed:
   print >> log_fh, h2_done.get_chunk()
   total_time += len(h2_done.get_chunk())
 print >> log_fh, "\n total time", total_time, "seconds"
@@ -728,5 +815,4 @@ for seg in l1_h1_h2_data:
   print >> log_fh, seg
   total_time += seg.dur()
 print >> log_fh, "\n total time", total_time, "seconds"
-
 sys.exit(0)
