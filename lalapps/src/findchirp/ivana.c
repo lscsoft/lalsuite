@@ -26,7 +26,7 @@ ivana ../data/H2_ASQ_triple_c5.xml \
 #define MINLIVEINTERVAL 4.0
 
 #define RINGBUFSIZE 16384
-#define MAXTIMERANGES 1024
+#define MAXTIMERANGES 4096
 #define MAXVETOFILES 8
 
 /*====== Structure definitions ==============================================*/
@@ -306,22 +306,29 @@ int main( int argc, char **argv )
 	  chptr = strchr( intext, '#' );
 	  if ( chptr ) { *chptr = '\0'; }
 
+	  /*-- Skip any leading spaces or tabs --*/
+	  chptr2 = intext;
+	  while ( *chptr2 == ' ' ) { chptr2++; }
 	  /*-- If line is blank, go on to the next line --*/
-	  if ( strtok(intext," \t\n") == NULL ) { continue; }
+	  if ( strlen(chptr2) == 0 ) { continue; }
 
 	  /*-- Parse as a range --*/
 
-	  chptr = strchr( intext, '-' );
+	  chptr = strchr( chptr2, '-' );
 	  if ( chptr == NULL ) {
-	    printf( "Error parsing time range in %s: %s\n", arg, intext );
-	    fclose(fd); return 1;
+	    /*-- Start and stop times might be separated by a space --*/
+	    chptr = strchr( chptr2, ' ' );
+	    if ( chptr == NULL ) {
+	      printf( "Error parsing time range in %s: %s\n", arg, intext );
+	      fclose(fd); return 1;
+	    }
 	  }
 	  *chptr = '\0'; chptr++;
 	  tTemp1 = 0.0; tTemp2 = 2.0e9;
 
-	  if ( strlen(intext) > 0 ) {
-	    if ( sscanf( intext, "%lf", &tTemp1 ) < 1 ) {
-	      printf( "Error parsing beginning of time range: %s\n", intext );
+	  if ( strlen(chptr2) > 0 ) {
+	    if ( sscanf( chptr2, "%lf", &tTemp1 ) < 1 ) {
+	      printf( "Error parsing beginning of time range: %s\n", chptr2 );
 	      fclose(fd); return 1;
 	    }
 	  }
