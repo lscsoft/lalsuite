@@ -658,14 +658,14 @@ foreach l1 $SegmentList {
 			    append dcwave "\t\thpf = respfilt(ihpt,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 			    append dcwave $hpfilters
 			    append dcwave "\t\thpfr = float(hpf);\n"
-			    set st1 "\t\toutput(hpfr,_,_,$ff \[REAL4Sequence\]"
-			    append dcwave [ append st1 "_p,$ff" "_p);\n" ]
+			    set st1 "\t\toutput(hpfr,_,_,$ff"
+			    append dcwave [ append st1 "_p,$ff" "_p \[REAL4Sequence\]);\n" ]
 			} else {
 
 			    ## no plus polarization
 			    ## add zeros
-			    set st1 "\t\toutput(zero,_,_,$ff \[REAL4Sequence\]"
-			    append dcwave [ append st1 "_p,$ff" "_p);\n" ]
+			    set st1 "\t\toutput(zero,_,_,$ff"
+			    append dcwave [ append st1 "_p,$ff" "_p \[REAL4Sequence\]);\n" ]
 			}
 
 			if { $got2 != 0 } {
@@ -675,14 +675,14 @@ foreach l1 $SegmentList {
 			    append dcwave "\t\thcf = respfilt(ihct,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 			    append dcwave $hcfilters
 			    append dcwave "\t\thcfr = float(hcf);\n"
-			    set st1 "\t\toutput(hcfr,_,_,$ff \[REAL4Sequence\]"
-			    append dcwave [ append st1 "_c,$ff" "_c);\n" ]
+			    set st1 "\t\toutput(hcfr,_,_,$ff"
+			    append dcwave [ append st1 "_c,$ff" "_c \[REAL4Sequence\]);\n" ]
 			} else {
 
 			    ## no cross polarization
 			    ## add zeros
-			    set st1 "\t\toutput(zero,_,_,$ff \[REAL4Sequence\]"
-			    append dcwave [ append st1 "_c,$ff" "_c);\n" ]
+			    set st1 "\t\toutput(zero,_,_,$ff"
+			    append dcwave [ append st1 "_c,$ff" "_c \[REAL4Sequence\]);\n" ]
 			}
 
 			incr wcount 1
@@ -784,12 +784,12 @@ foreach l1 $SegmentList {
 				    append dcwave "\t\thpf = respfilt(ihpt,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 				    append dcwave $hpfilters
 				    append dcwave "\t\thpfr = float(hpf);\n"
-				    set st1 "\t\toutput(hpfr,_,_,$w \[REAL4Sequence\]"
-				    append dcwave [ append st1 "_p,$w" "_p);\n" ]
+				    set st1 "\t\toutput(hpfr,_,_,$w"
+				    append dcwave [ append st1 "_p,$w" "_p \[REAL4Sequence\]);\n" ]
 				} else {
 				    ## zeros
-				    set st1 "\t\toutput(zero,_,_,$w \[REAL4Sequence\]"
-				    append dcwave [ append st1 "_p,$w" "_p);\n" ]
+				    set st1 "\t\toutput(zero,_,_,$w"
+				    append dcwave [ append st1 "_p,$w" "_p \[REAL4Sequence\]);\n" ]
 				}
 
 				if { $got2 != 0 } {
@@ -798,12 +798,12 @@ foreach l1 $SegmentList {
 				    append dcwave "\t\thcf = respfilt(ihct,h1resp,h1gain,h1cavfacf,h1oloopf);\n"
 				    append dcwave $hcfilters
 				    append dcwave "\t\thcfr = float(hcf);\n"
-				    set st1 "\t\toutput(hcfr,_,_,$w \[REAL4Sequence\]"
-				    append dcwave [ append st1 "_c,$w" "_c);\n" ]
+				    set st1 "\t\toutput(hcfr,_,_,$w"
+				    append dcwave [ append st1 "_c,$w" "_c \[REAL4Sequence\]);\n" ]
 				} else {
 				    ## zeros
-				    set st1 "\t\toutput(zero,_,_,$w \[REAL4Sequence\]"
-				    append dcwave [ append st1 "_c,$w" "_c);\n" ]
+				    set st1 "\t\toutput(zero,_,_,$w"
+				    append dcwave [ append st1 "_c,$w" "_c \[REAL4Sequence\]);\n" ]
 				}
 				
 				incr wcount 1

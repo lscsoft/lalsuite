@@ -780,6 +780,8 @@ int RunSearch(BurstSearchParams *params,
 	    ats.f0 = params->data.data->f0;
 	    ats.epoch = params->data.data->epoch;
 	    ats.data = &av;
+	    ats.sampleUnits = sig.sampleUnits;
+
 	    av.length = params->data.data->data->vectorLength;
 	    av.data = (REAL4 *)malloc(av.length * sizeof(REAL4));
 	    bzero(av.data, av.length * sizeof(REAL4));
@@ -838,6 +840,8 @@ int RunSearch(BurstSearchParams *params,
 	    ats.f0 = params->data.data->f0;
 	    ats.epoch = params->data.data->epoch;
 	    ats.data = &av;
+            ats.sampleUnits = sig.sampleUnits;
+
 	    av.length = params->data.data->data->vectorLength;
 	    av.data = params->data.data->data->data;
 

@@ -24,6 +24,7 @@ RCSID( "ReConditionData.c" );
 
 /* units for calibration */
 const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+const LALUnit ADCCountUnit = {0,{0,0,0,0,0,0,1},{0,0,0,0,0,0,0}};
 
 int ReConditionData(int Nsymbols,
 		    datacond_symbol_type *symbols,
@@ -483,6 +484,9 @@ for(si=0;si<Nsymbols;si++) {
 
 	/* set sampling frequency */
 	params->data.data->deltaT = r4ts->deltaT;
+
+	/* set units to ADC */
+	params->data.data->sampleUnits = ADCCountUnit;
 
       break;
 
