@@ -187,9 +187,9 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid detector location. */
-  ASSERT( abs(input->site.vertexLatitudeDegrees) <= 90, status,
+  ASSERT( abs(input->site.vertexLatitudeRadians) <= LAL_PI_2, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( abs(input->site.vertexLongitudeDegrees) <= 180, status,
+  ASSERT( abs(input->site.vertexLongitudeRadians) <= LAL_PI, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check that metric has been provided. */
@@ -205,8 +205,8 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGEDIM );
 
   /* This section saves typing and makes the equations more legible. */
-  lat = input->site.vertexLatitudeDegrees*LAL_PI/180;
-  lon = input->site.vertexLongitudeDegrees*LAL_PI/180;
+  lat = input->site.vertexLatitudeRadians;
+  lon = input->site.vertexLongitudeRadians;
 
   /* Spindown-spindown metric components, before projection */
   if( input->spindown )
