@@ -7,6 +7,9 @@ $Id$
 \section{Header \texttt{CoarseGrainFrequencySeries.h}}
 \label{stochastic:s:CoarseGrainFrequencySeries.h}
 
+Provides prototype, structure and error code information for routines
+which coarse-grain a frequency series.
+
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/CoarseGrainFrequencySeries.h>

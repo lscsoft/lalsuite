@@ -109,7 +109,7 @@ $\lambda^{\scriptstyle{\rm min}}_k$.
 
 With these definitions, approximating the integral in
 (\ref{stochastic:e:coarse}) gives
-$$
+\begin{equation}\label{stochastic:e:coarseapprox}
 h_k = \frac{1}{\rho}
 \left(
   (\ell^{\scriptstyle{\rm min}}_k - \lambda^{\scriptstyle{\rm min}}_k)
@@ -120,9 +120,34 @@ h_k = \frac{1}{\rho}
   + (\lambda^{\scriptstyle{\rm max}}_k - \ell^{\scriptstyle{\rm max}}_k)
   h'_{\ell^{\scriptscriptstyle{\rm max}}_k+1}
 \right)
-$$
+\end{equation}
+
+In the special case $f_0=f'_0$, we assume both frequency series
+represent the independent parts of larger frequency series
+$\{h_k|k=-(N-1)\ldots(N-1)\}$ and $\{h'_\ell|\ell=-(N-1)\ldots(N-1)\}$
+which obey $h_{-k}=h_k^*$ and $h'_{-\ell}{}=h'_\ell{}^*$ (e.g.,
+fourier transforms of real data).  In that case, the DC element of the
+coarse-grained series can be built out of both positive- and implied
+negative-frequency elements in the fine-grained series.
+\begin{equation}
+  h_0 = \frac{1}{\rho}
+  \left[
+    h'_0
+    + 2\ \mathrm{Re}
+    \left(
+      \sum_{\ell=1}^{\ell^{\scriptscriptstyle{\rm max}}_0}
+      h'_\ell
+      + (\lambda^{\scriptstyle{\rm max}}_0 - \ell^{\scriptstyle{\rm max}}_0)
+      h'_{\ell^{\scriptscriptstyle{\rm max}}_0+1}
+    \right)
+  \right]
+\end{equation}
 
 \subsubsection*{Algorithm}
+
+These routines move through the output series, using
+(\ref{stochastic:e:coarseapprox}) to add up the contributions from the
+bins in the fine-grained series.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -130,7 +155,25 @@ $$
 
 \subsubsection*{Notes}
 \begin{itemize}
-\item
+\item The coarse graining ratio must obey $\rho\ge 1$ (so the
+  coarse-grained frequency spacing must be less than the fine-grained
+  one).  Additionally, the bins in the fine-grained frequency series
+  must \emph{completely} overlap those in the coarse-grained frequency
+  series.  In particular, since the lowest frequency in the first bin
+  of the coarse-grained series is $f_{\scriptstyle{\rm
+      min}}=f_0-\delta f/2$ and the last is $f_{\scriptstyle{\rm
+      max}}=f_0 + (N-1) \delta f +\delta f/2$ (taking into account the
+  width of the bins), the conitions are
+  \begin{eqnarray*}
+    f_0 - \frac{\delta f}{2} &\ge& f'_0 - \frac{\delta f'}{2}\\
+    f_0 + \left(N-\frac{1}{2}\right)\,\delta f &\le&
+     f'_0 + \left(N'-\frac{1}{2}\right)\,\delta f'
+  \end{eqnarray*}
+  (The special case $f_0=f'_0=0$ is an
+  exception to the condition on the minimum frequency.)
+\item The routines return an error if either minimum frequency
+  ($f_{\scriptstyle{\rm min}}$ or $f'_{\scriptstyle{\rm min}}$) is 
+  negative (unless $f_0=0$ or $f'_0=0$, respectively).
 \end{itemize}
 
 \vfill{\footnotesize\input{CoarseGrainFrequencySeriesCV}}

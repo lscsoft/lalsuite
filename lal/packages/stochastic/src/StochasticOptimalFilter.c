@@ -195,6 +195,11 @@ LALUnitCompare()
 \subsubsection*{Notes}
 
 \begin{itemize}
+\item If $f_0=0$, the DC element $Q(0)$ is set to zero, regardless of
+  the values of the inputs, because the $f^3$ term would make it
+  diverge otherwise, and because any conceivable realistic noise
+  spectrum will end up blowing up at zero frequency fast enough to
+  kill the optimal filter.
 \item The reference frequency $f_{\scriptstyle{\rm R}}$ must lie
   safely enough in the frequency range of the inputs to allow the
   value of ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ to be determined
