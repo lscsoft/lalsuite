@@ -278,14 +278,25 @@ for line in polka_file:
     # 6) is chi sq test passed?
     chisq_file=open('chisq.txt',mode='r')
 
+#    for line in chisq_file:
+#      [crap,crap,crap,schisq1]=line.split(None,5)
+#      print 'chi sq from data:',schisq1
+#
+#    chisq1=float(schisq1)
+#    
+#    chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F1)/10.0 +1)**2
+#    print 'theoretical chi sq:',chisq_th
+
     for line in chisq_file:
-      [crap,crap,crap,schisq1]=line.split(None,5)
-      print 'chi sq from data:',schisq1
+      [crap,crap,sdof1,schisq1]=line.split(None,5)
+      print 'chi sq from data, dof:',schisq1,sdof1
 
     chisq1=float(schisq1)
+    dof1=float(sdof1)
     
-    chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F1)/10.0 +1)**2
+    chisq_th=dof1*(math.sqrt(F1)/10.0 +1)**2    
     print 'theoretical chi sq:',chisq_th
+
 
     if chisq1 < chisq_th:
       chisq1_pass=1
@@ -349,13 +360,21 @@ for line in polka_file:
     # 6) is chi sq test passed?
     chisq_file=open('chisq.txt',mode='r')
 
-    for line in chisq_file:
-      [crap,crap,crap,schisq2]=line.split(None,5)
-      print 'chi sq from data:',schisq2
-    chisq2=float(schisq2)
+#    for line in chisq_file:
+#      [crap,crap,crap,schisq2]=line.split(None,5)
+#      print 'chi sq from data:',schisq2
+#    chisq2=float(schisq2)
+#    
+#    chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F2)/10.0 +1)**2
 
+    for line in chisq_file:
+      [crap,crap,sdof2,schisq2]=line.split(None,5)
+      print 'chi sq from data, dof:',schisq2,sdof2
+
+    chisq2=float(schisq2)
+    dof2=float(sdof2)
     
-    chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F2)/10.0 +1)**2
+    chisq_th=dof2*(math.sqrt(F2)/10.0 +1)**2    
     print 'theoretical chi sq:',chisq_th
 
     if chisq2 < chisq_th:
