@@ -450,6 +450,7 @@ tagFindChirpFilterParams
   REAL4                         norm;
   UINT4                         maximiseOverChirp;
   BOOLEAN                       computeNegFreq;
+  Approximant                   approximant;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
   COMPLEX8Vector               *qVecBCVSpin1;
