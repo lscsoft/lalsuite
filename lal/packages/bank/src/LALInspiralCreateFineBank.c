@@ -95,21 +95,21 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   CHECKSTATUSPTR(status);
 
   i=0;
-    for(bankPars.x1=x1FineMin; bankPars.x1<=x1FineMax; bankPars.x1+=bankPars.dx1) {  
-    for(bankPars.x0=x0FineMin; bankPars.x0<=x0FineMax; bankPars.x0+=bankPars.dx0) { 
-	LALInspiralValidParams(status->statusPtr, &validPars, bankPars, fineIn.coarseIn);
+  for(bankPars.x1=x1FineMin; bankPars.x1<=x1FineMax; bankPars.x1+=bankPars.dx1) {  
+  for(bankPars.x0=x0FineMin; bankPars.x0<=x0FineMax; bankPars.x0+=bankPars.dx0) { 
+    LALInspiralValidParams(status->statusPtr, &validPars, bankPars, fineIn.coarseIn);
+    CHECKSTATUSPTR(status);
+    if (validPars) {
+      LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, fineIn.coarseIn);
       CHECKSTATUSPTR(status);
-       if (validPars) {
-          LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, fineIn.coarseIn);
-          CHECKSTATUSPTR(status);
-          *outlist = (InspiralTemplateList*) 
-             LALRealloc(*outlist, sizeof(InspiralTemplateList)*(i+1));
-          (*outlist)[i].params = tempPars;
-          ++i; 
-       }
-    }   
+      *outlist = (InspiralTemplateList*) 
+      LALRealloc(*outlist, sizeof(InspiralTemplateList)*(i+1));
+        (*outlist)[i].params = tempPars;
+      ++i; 
     }
-   *nlist = i;
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
+  }   
+  }
+  *nlist = i;
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 }

@@ -86,9 +86,6 @@ void LALInspiralWaveTemplates(LALStatus *status,
                LALTappRpnTdomTimeTemplates(status->statusPtr, signal0, signal1, params);
                CHECKSTATUSPTR(status);
             break;
-            default:
-            fprintf(stderr,"LALInspiralWaveTemplates: You haven't chosen a method ... exiting\n");
-            exit(0);
          }
       break;
       case FrequencyDomain:

@@ -66,15 +66,11 @@ LALInspiralParameterCalc
  
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
      
 int 
 main () 
 {
-/* 
-   It is assumed that InspiralTemplateList is no larger than 5000; 
-   change it if you expect your lattice to be larger than that
-*/
    InspiralTemplateList *list=NULL;
    static LALStatus status;
    InspiralCoarseBankIn coarseIn;
@@ -92,8 +88,8 @@ main ()
 /*---------------------------------------------------------------------------*/
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
-   coarseIn.mMin = 5.0;
-   coarseIn.MMax = 20.0;
+   coarseIn.mMin = 2.0;
+   coarseIn.MMax = 40.0;
    coarseIn.mmCoarse = 0.80;
    coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
@@ -101,11 +97,11 @@ main ()
    coarseIn.iflso = 0;
    coarseIn.tSampling = 4096.;
    coarseIn.NoisePsd = LALLIGOIPsd;
-   coarseIn.method = two;
+   coarseIn.method = one;
    coarseIn.order = twoPN;
    coarseIn.approximant = taylor;
    coarseIn.domain = TimeDomain;
-   coarseIn.space = Tau0Tau3;
+   coarseIn.space = Tau0Tau2;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
@@ -126,10 +122,10 @@ main ()
       coarseIn.space
    );
 
-   randIn.type = 0;
+   randIn.type = 2;
    randIn.SignalAmp = 10.0;
    randIn.NoiseAmp = 1.0;
-   randIn.useed = 610903;
+   randIn.useed = 3990498;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
    randIn.param.nStartPad=1000;
@@ -147,7 +143,7 @@ main ()
 /*CHANGE NOTHING BELOW THIS LINE IF YOU ARE UNSURE OF WHAT YOU ARE DOING     */
 /*---------------------------------------------------------------------------*/
    LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
-   REPORTSTATUS(&status);
+/* REPORTSTATUS(&status); */
    if (nlist==0) exit(0);
    fprintf(RandomSignal, "#Number of Coarse Bank Templates=%d\n",nlist);
    fprintf(stderr, "Number of Coarse Bank Templates=%d\n",nlist);
@@ -184,7 +180,7 @@ main ()
    signal.length = 0.;
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
    fprintf(stderr, "signal length = %d\n", signal.length);
-   REPORTSTATUS(&status);
+/* REPORTSTATUS(&status); */
    correlation.length = signal.length;
    randIn.psd.length = signal.length/2 + 1;
 
@@ -193,16 +189,16 @@ main ()
    randIn.psd.data = (REAL8*) LALMalloc(sizeof(REAL8)*randIn.psd.length);
    df = randIn.param.tSampling/(float) signal.length;
    LALNoiseSpectralDensity (&status, &randIn.psd, coarseIn.NoisePsd, df);
-   REPORTSTATUS(&status);
+/* REPORTSTATUS(&status); */
 
    overlapin.psd = randIn.psd;
 /*--------------------------
    Estimate the plans 
 --------------------------*/
    LALEstimateFwdRealFFTPlan(&status, &fwdp, signal.length);
-   REPORTSTATUS(&status);
+/* REPORTSTATUS(&status); */
    LALEstimateInvRealFFTPlan(&status, &revp, signal.length);
-   REPORTSTATUS(&status);
+/* REPORTSTATUS(&status); */
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
    i=10;
@@ -265,13 +261,13 @@ main ()
         randIn.param.mass1, 
         randIn.param.mass2, 
         randIn.param.totalMass, 
-        list[jmax].params.mass1, 
-        list[jmax].params.mass2,
-        list[jmax].params.totalMass,
         list[jmax].params.t0, 
         list[jmax].params.t2,
         list[jmax].params.t3,
         list[jmax].params.t4,
+        list[jmax].params.mass1, 
+        list[jmax].params.mass2,
+        list[jmax].params.totalMass,
         overlapoutmax.phase,
         overlapoutmax.bin,
         overlapoutmax.max
@@ -284,13 +280,13 @@ main ()
         randIn.param.mass1, 
         randIn.param.mass2, 
         randIn.param.totalMass, 
-        list[jmax].params.mass1, 
-        list[jmax].params.mass2,
-        list[jmax].params.totalMass,
         list[jmax].params.t0, 
         list[jmax].params.t2,
         list[jmax].params.t3,
         list[jmax].params.t4,
+        list[jmax].params.mass1, 
+        list[jmax].params.mass2,
+        list[jmax].params.totalMass,
         overlapoutmax.phase,
         overlapoutmax.bin,
         overlapoutmax.max

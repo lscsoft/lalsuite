@@ -34,7 +34,7 @@ of waveforms which have phases which differ by $\pi/2$.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-laldebuglevel
+lalDebugLevel
 InspiralWaveLength
 InspiralWave
 \end{verbatim}
@@ -51,7 +51,7 @@ InspiralWave
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 
 /* Nlist = expected number of coarse grid templates; if not sufficient increase */
      
@@ -65,9 +65,9 @@ main ( void )
    static InspiralFineBankIn   fineIn;
    static INT4 i, j, nlist, flist;
 
-   coarseIn.mMin = 2.0;
+   coarseIn.mMin = 1.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.85;
+   coarseIn.mmCoarse = 0.80;
    coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
@@ -105,21 +105,20 @@ main ( void )
      fineIn.templateList = list[j];
      LALInspiralCreateFineBank(&status, &list2, &flist, fineIn);
      fprintf(stderr, "flist=%d\n",flist);
-      for (i=0; i<flist; i++) {
-         printf("%e %e %e %e %e %e %e\n", 
-         list2[i].params.t0, 
-         list2[i].params.t2, 
-         list2[i].params.t3, 
-         list2[i].params.totalMass,
-         list2[i].params.eta, 
-         list2[i].params.mass1, 
-         list2[i].params.mass1); 
-      }
-   }
-   if (list!=NULL) LALFree(list);
-   if (list2!=NULL) LALFree(list2);
-   LALCheckMemoryLeaks();
+     for (i=0; i<flist; i++) {
+        printf("%e %e %e %e %e %e %e\n", 
+        list2[i].params.t0, 
+        list2[i].params.t2, 
+        list2[i].params.t3, 
+        list2[i].params.totalMass,
+        list2[i].params.eta, 
+        list2[i].params.mass1, 
+        list2[i].params.mass1); 
+     }
+  }
+  if (list!=NULL) LALFree(list);
+  if (list2!=NULL) LALFree(list2);
+  LALCheckMemoryLeaks();
 
-   return(0);
+  return(0);
 }
-

@@ -97,7 +97,7 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
    LALInspiralUpdateParams(status->statusPtr, &bankPars, metric, coarseIn.mmCoarse);
    CHECKSTATUSPTR(status);
    *list = (InspiralTemplateList*) 
-      LALRealloc(*list, sizeof(InspiralTemplateList)*(i+1));
+   LALRealloc(*list, sizeof(InspiralTemplateList)*(i+1));
    (*list)[i].ID = i; (*list)[i].params = tempPars; (*list)[i].metric = metric; ++i; 
 
 /* First lay templates along the equal mass curve; i.e. eta=1/4. 

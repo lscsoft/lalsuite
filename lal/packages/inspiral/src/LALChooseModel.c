@@ -386,6 +386,7 @@ LALChooseModel(
       case taylor:
       switch (params->order) {
          case newtonian:
+         case oneHalfPN:
             ak->vn = ak->vlso = vlso = ak->vlsoT0;
             if (ak->fn) {
                vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
@@ -393,9 +394,6 @@ LALChooseModel(
             } 
             f->dEnergy = dEt0;
             f->flux = Ft0;
-            break;
-         case oneHalfPN:
-            fprintf(stderr, "You can't choose 1/2 PN T-approximants\n");
             break;
          case onePN:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -436,6 +434,7 @@ LALChooseModel(
    
    break;
    case pade:
+   ASSERT (params->order != onePN,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    switch (params->order) {
       case newtonian:			
          ak->vn = ak->vlso = vlso = ak->vlsoP0;
@@ -454,17 +453,6 @@ LALChooseModel(
          } 
          f->dEnergy = dEp0;
          f->flux = Fp1;
-         break;
-      case onePN:
-         ak->vn = ak->vlso = vlso = ak->vlsoP0;
-         if (ak->fn) {
-            vn = pow(LAL_PI * ak->totalmass * ak->fn, oneby3);
-            ak->vn = (vn < vlso) ? vn :  vlso;
-         } 
-         f->dEnergy = dEp2;
-         f->flux = Fp2;
-         fprintf(stderr, "This choice is undefined\n");
-         fprintf(stderr, "Choose another order of expansion\n");
          break;
       case onePointFivePN:
          ak->vn = ak->vlso = vlso = ak->vlsoP0;

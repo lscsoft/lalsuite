@@ -448,6 +448,9 @@ void LALInspiralComputeMetric(LALStatus        *status,
    trans[2][0] = 0.0;
    trans[1][1] = -5.0*t_0*c0/(3.0*totmass);
    trans[1][2] = -t_0*c0/eta;
+   ASSERT (metric->space>=0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric->space<=1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
    switch (metric->space) {
       case Tau0Tau2:
          trans[2][1] = -t_2*c2/(totmass);
@@ -456,10 +459,6 @@ void LALInspiralComputeMetric(LALStatus        *status,
       case Tau0Tau3:
          trans[2][1] = -2.0*t_3*c3/(3.0*totmass);
          trans[2][2] = -t_3*c3/eta;
-         break;
-      default:
-         fprintf(stderr, "LALInspiralComputeMetric2: No case for space\n");
-         exit(0);
          break;
    }
 

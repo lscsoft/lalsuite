@@ -91,12 +91,12 @@ void LALInspiralSetSearchLimits (LALStatus               *status,
 
 /* Calculate the value of the parameters at the three corners of the search space */
 
-   Pars1.mass1 = coarseIn.MMax/2.;
-   Pars1.mass2 = coarseIn.MMax/2.;
+   Pars1.mass1 = Pars1.mass2 = coarseIn.MMax/2.;
    LALInspiralParameterCalc(status->statusPtr, &Pars1); CHECKSTATUSPTR(status);
-   Pars2.mass1 = coarseIn.mMin;
-   Pars2.mass2 = coarseIn.mMin;
+   
+   Pars2.mass1 = Pars2.mass2 = coarseIn.mMin;
    LALInspiralParameterCalc(status->statusPtr, &Pars2); CHECKSTATUSPTR(status);
+   
    Pars3.mass1 = coarseIn.mMin;
    Pars3.mass2 = (coarseIn.MMax - coarseIn.mMin);
    LALInspiralParameterCalc(status->statusPtr, &Pars3); CHECKSTATUSPTR(status);

@@ -84,6 +84,8 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   endShift = params->nEndPad;
   phase0 = params->startPhase;
 
+  ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->order >= 4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   switch (params->order) {
      case newtonian:
      case oneHalfPN:
@@ -106,9 +108,6 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
           LALTappRpnTdomFreqTofF = &LALTappRpnTdomFreqTofF4PN;
           rootIn.function = LALTappRpnTdomFreqTofF4PN;
           break;
-     default:
-          fprintf(stderr, "LALTappRpnTdomFreq: No order selected ... exiting\n");
-          exit(0);
      }
 
 /* Calculate the three unknowns from (m1,m2,M,eta,mu) from the two which

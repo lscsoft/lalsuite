@@ -77,6 +77,7 @@ LALInspiralParameterCalc (
 
    REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny;
    REAL8 x1, x2, A0, A2, A3, A4, B2, B4, C4, dumm_const1, dumm_const2, dumm_const3;
+   static REAL8 oneby4;
    void *pars;
    DFindRootIn rootIn;
    EtaTau02In Tau2In;
@@ -89,8 +90,9 @@ LALInspiralParameterCalc (
    ASSERT(params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(params->massChoice <= 6, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   oneby4 = 1./4.;
    etamin = 1.e-10;
-   tiny = 1.e-14;
+   tiny = 1.e-10;
    piFl = LAL_PI * params->fLower;
    switch(params->massChoice) {
 
@@ -102,7 +104,7 @@ LALInspiralParameterCalc (
          m2 = params->mass2;
          params->totalMass = totalMass = m1+m2;
          params->eta = eta = m1*m2/pow(totalMass,2);
-         if (params->eta > 0.25) params->eta -= tiny;
+         if (params->eta > oneby4) params->eta -= tiny;
          params->mu = mu = m1*m2/totalMass;
          params->chirpMass = pow(mu,0.6)*pow(totalMass,0.4);
 
@@ -112,12 +114,12 @@ LALInspiralParameterCalc (
 
          ASSERT(params->totalMass > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          ASSERT(params->eta > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-         if (params->eta > 0.25) params->eta -= tiny;
-         ASSERT(params->eta <= 0.25, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         if (params->eta > oneby4) params->eta -= tiny;
+         ASSERT(params->eta <= oneby4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
          totalMass = params->totalMass;
          eta = params->eta;
-         params->mass1 = 0.5*totalMass + (totalMass*sqrt(0.25-eta));
-         params->mass2 = 0.5*totalMass - (totalMass*sqrt(0.25-eta));
+         params->mass1 = 0.5*totalMass + (totalMass*sqrt(oneby4-eta));
+         params->mass2 = 0.5*totalMass - (totalMass*sqrt(oneby4-eta));
          params->mu = eta*totalMass;
          params->chirpMass = pow(eta,0.6)*totalMass;
 
@@ -131,9 +133,9 @@ LALInspiralParameterCalc (
          totalMass = params->totalMass;
          mu = params->mu;
          params->eta = eta =  (params->mu)/totalMass;
-         if (params->eta > 0.25) params->eta -= tiny;
-         params->mass1 = 0.5*totalMass + (totalMass*sqrt(0.25-eta));
-         params->mass2 = 0.5*totalMass - (totalMass*sqrt(0.25-eta));
+         if (params->eta > oneby4) params->eta -= tiny;
+         params->mass1 = 0.5*totalMass + (totalMass*sqrt(oneby4-eta));
+         params->mass2 = 0.5*totalMass - (totalMass*sqrt(oneby4-eta));
          params->chirpMass = pow(eta,0.6)*totalMass;
          params->mu = eta*totalMass;
 
@@ -151,7 +153,7 @@ LALInspiralParameterCalc (
          Tau2In.B2 = B2;
          pars = (void *) &Tau2In;
          rootIn.function = &LALEtaTau02;
-         rootIn.xmax = 0.25+tiny;
+         rootIn.xmax = oneby4+tiny;
          rootIn.xmin = etamin;
          rootIn.xacc = 1.e-8;
          LALEtaTau02(status->statusPtr, &x1, rootIn.xmax, pars);
@@ -159,17 +161,19 @@ LALInspiralParameterCalc (
          LALEtaTau02(status->statusPtr, &x2, rootIn.xmin, pars);
          CHECKSTATUSPTR(status);
          if (x1*x2 > 0) {
-            eta = 0.;
+            params->eta = 0.;
+            DETATCHSTATUSPTR(status);
+            RETURN(status);
          } else {
             LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
             CHECKSTATUSPTR(status);
          }
-         if (eta > 0.25) eta-=tiny;
+         if (eta > oneby4) eta-=tiny;
          params->eta = eta;
          totalMass = pow(A0/(eta*params->t0), 0.6);
          totalMass = params->totalMass = totalMass/LAL_MTSUN_SI;
-         params->mass1 = 0.5*totalMass + (totalMass*sqrt(0.25-eta));
-         params->mass2 = 0.5*totalMass - (totalMass*sqrt(0.25-eta));
+         params->mass1 = 0.5*totalMass + (totalMass*sqrt(oneby4-eta));
+         params->mass2 = 0.5*totalMass - (totalMass*sqrt(oneby4-eta));
          params->chirpMass = pow(eta,0.6)*totalMass;
          params->mu = eta*totalMass;
 
@@ -182,11 +186,12 @@ LALInspiralParameterCalc (
          A0 = 5./ pow(piFl, eightby3)/256.;
          A3 = LAL_PI / pow(piFl, fiveby3)/8.;
          totalMass = A0 * params->t3/(A3 * params->t0);
-         eta = params->eta = A0/(params->t0 * pow(totalMass, fiveby3));
-         if (eta > 0.25) eta-=tiny;
+         eta = A0/(params->t0 * pow(totalMass, fiveby3));
+         if (eta > oneby4) eta-=tiny;
+         params->eta = eta;
          totalMass = params->totalMass = totalMass/LAL_MTSUN_SI;
-         params->mass1 = 0.5*totalMass + (totalMass*sqrt(0.25-eta));
-         params->mass2 = 0.5*totalMass - (totalMass*sqrt(0.25-eta));
+         params->mass1 = 0.5*totalMass + (totalMass*sqrt(oneby4-eta));
+         params->mass2 = 0.5*totalMass - (totalMass*sqrt(oneby4-eta));
          params->chirpMass = pow(eta,0.6)*totalMass;
          params->mu = eta*totalMass;
 
@@ -206,7 +211,7 @@ LALInspiralParameterCalc (
          Tau4In.C4 = C4;
          pars = (void *) &Tau4In;
          rootIn.function = &LALEtaTau04;
-         rootIn.xmax = 0.25+tiny;
+         rootIn.xmax = oneby4+tiny;
          rootIn.xmin = etamin;
          rootIn.xacc = 1.e-8;
          LALEtaTau04(status->statusPtr, &x1, rootIn.xmax, pars);
@@ -214,23 +219,25 @@ LALInspiralParameterCalc (
          LALEtaTau04(status->statusPtr, &x2, rootIn.xmin, pars);
          CHECKSTATUSPTR(status);
          if (x1*x2 > 0) {
-            eta = 0.26;
+            params->eta = 0.;
+            DETATCHSTATUSPTR(status);
+            RETURN(status);
          } else {
             LALDBisectionFindRoot(status->statusPtr, &eta, &rootIn, pars);
             CHECKSTATUSPTR(status);
          }
-         if (eta > 0.25) eta-=tiny;
+         if (eta > oneby4) eta-=tiny;
          params->eta = eta;
          totalMass = pow(A0/(eta*params->t0), 0.6);
          totalMass = params->totalMass = totalMass/LAL_MTSUN_SI;
-         params->mass1 = 0.5*totalMass + (totalMass*sqrt(0.25-eta));
-         params->mass2 = 0.5*totalMass - (totalMass*sqrt(0.25-eta));
+         params->mass1 = 0.5*totalMass + (totalMass*sqrt(oneby4-eta));
+         params->mass2 = 0.5*totalMass - (totalMass*sqrt(oneby4-eta));
          params->chirpMass = pow(eta,0.6)*totalMass;
          params->mu = eta*totalMass;
 
       break;
    }
-   if (params->eta > 0.25) params->eta-=tiny;
+   if (params->eta > oneby4) params->eta-=tiny;
    totalMass = totalMass*LAL_MTSUN_SI;
    params->t0 = 5.0/(256.0*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));
    params->t2 = (3715.0 + (4620.0*eta))/(64512.0*eta*totalMass*pow(piFl,2.0));

@@ -226,6 +226,8 @@ void LALTappRpnTdomTime (LALStatus *status,
   ASSERT(params->mu >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
 
+  ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->order >= 4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   switch (params->order) {
      case newtonian:
      case oneHalfPN:
@@ -244,9 +246,6 @@ void LALTappRpnTdomTime (LALStatus *status,
           LALTappRpnTdomTimePhase = &LALTappRpnTdomTimePhase4PN;
           LALTappRpnTdomTimeFrequency = &LALTappRpnTdomTimeFrequency4PN;
           break;
-     default:
-          fprintf(stderr, "LALTappRpnTdomTime: No order selected ... exiting\n");
-          exit(0);
      }
   
  
