@@ -8,16 +8,16 @@
 files
 
 \item[Synopsis]
-\verb$lalapps_splitbank$ 
-[\verb$--help$]
-[\verb$--verbose$]
-[\verb$--version$]
-[\verb$--debug-level$ \textsc{level}] \newline
-[\verb$--user-tag$ \textsc{string}]
-[\verb$--comment$ \textsc{string}] \newline
-\verb$--bank-file$ \textsc{file}
-\verb$--number-of-banks$ \textsc{n}
-\verb$--minimal-match$ \textsc{m}
+\prog{lalapps\_splitbank} \newline \hspace*{0.5in}
+\option{--bank-file} \parm{file} \newline \hspace*{0.5in}
+\option{--comment} \parm{comment}\newline \hspace*{0.5in}
+\option{--debug-level} \parm{level} \newline \hspace*{0.5in}
+\option{--help}  \newline \hspace*{0.5in}
+\option{--minimal-match} \parm{m} \newline \hspace*{0.5in}
+\option{--number-of-banks} \parm{n}\newline \hspace*{0.5in}
+\option{--user-tag} \parm{comment}\newline \hspace*{0.5in}
+\option{--verbose} \newline \hspace*{0.5in}
+\option{--version} \newline \hspace*{0.5in}
 
 \item[Description] 
 \verb$lalapps_splitbank$ splits a LIGO\_LW XML file containing inspiral
@@ -48,33 +48,42 @@ through them.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\texttt{--help}] Optional. Print a usage summary and exit.
 
-\item[\texttt{--verbose}] Optional. Print debugging information to the
+\item[\option{--bank-file} \parm{file}] 
+Read the templates from the \texttt{sngl\_inspiral} table in the file \parm{file}.
+
+\item[ \option{--comment}~\parm{comment}]
+Add the string \parm{comment} to the \verb$process$ table in the output XML file.
+
+\item[\option{--debug-level} \parm{level}]
+Sets the LAL debug level to \parm{level}.  The default value is
+\texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
+padding, but keeps memory tracking and error messages.  If you want to turn
+off memory tracking completely, then use 33.
+
+\item[\option{--help}]
+Display a usage message and exit.
+
+\item[\option{--minimal-match} \parm{m}] 
+Set the minimal match of the output template bank file to \parm{m}.
+This option is not really needed for running \verb$lalapps_splitbank$, it just put that value of \parm{m} for the minimal match in all splited template banks.
+
+\item[\option{--number-of-banks} \parm{n}] 
+ Split the input template banks into \parm{n} seperate output bank files.
+
+\item[\option{--user-tag} \parm{comment}]
+Set the user tag to the string \parm{comment}.  This string must not
+contain spaces or dashes (``-'').  This string will appear in the name of
+the file to which output information is written, and is recorded in the
+various XML tables within the file.
+
+\item[\option{--verbose}]
+Print debugging information to the
 standard output while executing.
 
-\item[\texttt{--version}] Optional.  Print the CVS id and exit.
+\item[\option{--version}]   
+Print the CVS id and exit.
 
-\item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
-level to \textsc{level}. If not specified the default is 1.
-
-\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag in
-the \texttt{process\_params} table to \textsc{string}. Note that this does
-not set the user tag in the output filename, as it does in other inspiral
-pipeline tools. The output filename is derived strictly from the number of
-output banks and the input bank file name.
-
-\item[\texttt{--comment} \textsc{string}] Optional. Set the comment column in
-the output \texttt{process} table to \textsc{string}.
-
-\item[\texttt{--bank-file} \textsc{file}] Required. Read the templates from
-the \texttt{sngl\_inspiral} table in \textsc{file}.
-
-\item[\texttt{--number-of-banks} \textsc{n}] Required. Split the input
-template banks into \textsc{n} output bank files.
-
-\item[\texttt{--minimal-match} \textsc{m}] Required. Set the minimal match of
-the output template bank file to \textsc{m}.
 \end{entry}
 
 \item[Example]
@@ -90,6 +99,6 @@ generate using standard integer division. This gives the upper limit on the
 number of templates in a single output file.
 
 \item[Author] 
-Duncan Brown
+Duncan Brown and Alexander Dietz
 \end{entry}
 
