@@ -51,19 +51,7 @@ LALFindChirpCreateTmpltNode (
 
   (*tmpltNode)->prev     = NULL;
   (*tmpltNode)->next     = NULL;
-  (*tmpltNode)->level    = tmplt->level;
-  (*tmpltNode)->inserted = 0;
   (*tmpltNode)->tmpltPtr = tmplt;
-
-  LALI4CreateVector( status->statusPtr, &((*tmpltNode)->segmentIdVec),
-      tmplt->segmentIdVec->length );
-  memset( (*tmpltNode)->segmentIdVec->data, 0,
-      tmplt->segmentIdVec->length * sizeof(INT4) );
-  BEGINFAIL( status )
-  {
-    LALFree( tmpltNode );
-  }
-  ENDFAIL( status );
 
   /* link the list */
   if ( current ) 
@@ -109,9 +97,6 @@ LALFindChirpDestroyTmpltNode (
   prev = (*tmpltNode)->prev;
   next = (*tmpltNode)->next;
 
-  /* destroy the node */
-  LALI4DestroyVector( status->statusPtr, &((*tmpltNode)->segmentIdVec) );
-  CHECKSTATUSPTR( status );
   LALFree( *tmpltNode );
   *tmpltNode = NULL;
 
