@@ -178,7 +178,7 @@ INT4 NormaliseSFTData(void);
 void initUserVars (LALStatus *stat);
 
 /* BINARY-MOD - declaration of binary template reading function */
-INT4 ReadBinaryTemplateBank(LALStatus *status);
+INT4 ReadBinaryTemplateBank();
 
 /*----------------------------------------------------------------------
  * Helper function (Yousuke): 
@@ -373,7 +373,7 @@ int main(int argc,char *argv[])
 
   /* BINARY-MOD - Call function to read in Binary template bank */
   if (uvar_binary) {
-    LAL_CALL (ReadBinaryTemplateBank(&status), &status);  
+    LAL_CALL (ReadBinaryTemplateBank(), &status);  
     Alpha=uvar_Alpha;   /* BINARY-MOD - Also set sky location */
     Delta=uvar_Delta;
   }
@@ -414,7 +414,7 @@ int main(int argc,char *argv[])
 	{
 	  
 	  /* Have we scanned all DopplerPositions yet? */
-	  if (((INT4)counter) >= BinaryBank->BTBNFilters)
+	  if (((UINT4)counter) >= BinaryBank->BMFheader->Nfilters)
 	    break;
 
 	  printf("about to fill current template\n");
@@ -1961,6 +1961,7 @@ void Freemem(LALStatus *status)
 
   if (uvar_binary) {
     LALFree(BinaryBank->BTB);
+    LALFree(BinaryBank->BMFheader);
     LALFree(BinaryBank);
   }
 
@@ -2829,13 +2830,12 @@ void use_boinc_filename1(char **orig_name ) {
 
 /**************************************************************************************/
 
-int ReadBinaryTemplateBank(LALStatus *status)
+int ReadBinaryTemplateBank()
 {
 
   FILE *BTBfp;
-  char dmp[256];
   char filename[256];
-  INT4 i;
+  UINT4 i;
   REAL8 temp1,temp2;
 
   
@@ -2846,147 +2846,124 @@ int ReadBinaryTemplateBank(LALStatus *status)
     return 1;
   } 
 
-  /* allocate memory for header info */
+  /* allocate memory for header and template info */
   BinaryBank=(BinaryTemplateBank *)LALMalloc(1*sizeof(BinaryTemplateBank));
+  BinaryBank->BMFheader=(BinaryMeshFileHeader *)(sizeof(BinaryMeshFileHeader));
 
-  /*printf("opened binary file %s\n",filename);
-  fscanf(BTBfp,"%s %le\n",dmp,&(BinaryBank->BTBfmax));
-  printf("temp1 read as %le\n",BinaryBank->BTBfmax);
-  exit(0);*/
-  /* read header information and fill in TemplateBank fields */
-  fscanf(BTBfp,"%s%le\n %s%le\n %s%d\n %s%d\n %s%d\n %s%lf\n %s%le\n %s%le\n" \
-	 "%s%d\n %s%d\n %s%d\n %s%d\n %s%le\n %s%le\n %s%le\n %s%le\n %s%le\n %s%le\n %s%s\n\n", \
-	 dmp,&(BinaryBank->BTBfmax), \
-	 dmp,&(BinaryBank->BTBTspan), \
-	 dmp,&(BinaryBank->BTBTobsStart).gpsSeconds, \
-	 dmp,&(BinaryBank->BTBTobsStart).gpsNanoSeconds, \
-	 dmp,&(BinaryBank->BTBNFilters), \
-	 dmp,&(BinaryBank->BTBMismatch), \
-	 dmp,&(BinaryBank->BTBProjSMaxisMIN), \
-	 dmp,&(BinaryBank->BTBProjSMaxisMAX), \
-	 dmp,&(BinaryBank->BTBTperiSSBMIN).gpsSeconds, \
-	 dmp,&(BinaryBank->BTBTperiSSBMIN).gpsNanoSeconds, \
-	 dmp,&(BinaryBank->BTBTperiSSBMAX).gpsSeconds, \
-	 dmp,&(BinaryBank->BTBTperiSSBMAX).gpsNanoSeconds, \
-	 dmp,&(BinaryBank->BTBEccMIN), \
-	 dmp,&(BinaryBank->BTBEccMAX), \
-	 dmp,&(BinaryBank->BTBArgPeriMIN), \
-	 dmp,&(BinaryBank->BTBArgPeriMAX), \
-	 dmp,&(BinaryBank->BTBPeriodMIN), \
-	 dmp,&(BinaryBank->BTBPeriodMAX), \
-	 dmp,(BinaryBank->BTBversion));
+  /* read the header information in */
+  if (ReadMeshFileHeader(BTBfp,BinaryBank->BMFheader)) return 1;
 
   printf("read header info\n");
   /* Do initial validation of header information */
-  if (BinaryBank->BTBfmax<0.0) {
+  if (BinaryBank->BMFheader->fmax<0.0) {
     printf("In BinaryTemplate file %s : header value of fmax < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBTspan<0.0) {
+  if (BinaryBank->BMFheader->tspan<0.0) {
     printf("In BinaryTemplate file %s : header value of Tspan < 0.0\n",filename);
     return 1;
   }
-    if ((BinaryBank->BTBTobsStart.gpsSeconds!=GV.Ti)||(BinaryBank->BTBTobsStart.gpsNanoSeconds!=0)) {
+    if ((BinaryBank->BMFheader->tstart.gpsSeconds!=GV.Ti)||(BinaryBank->BMFheader->tstart.gpsNanoSeconds!=0)) {
       printf("In BinaryTemplate file %s : header value of Tstart != Tstart of data\n",filename);
       return 1;
     }
-  if (BinaryBank->BTBNFilters<1) {
+  if (BinaryBank->BMFheader->Nfilters<1) {
     printf("In BinaryTemplate file %s : header value of NFilters < 1\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBMismatch<0.0) {
+  if (BinaryBank->BMFheader->mismatch<0.0) {
     printf("In BinaryTemplate file %s : header value of Mismatch < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBProjSMaxisMIN<0.0) {
+  if (BinaryBank->BMFheader->sma_MIN<0.0) {
     printf("In BinaryTemplate file %s : header value of Minimum Projected semi-major axis < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBProjSMaxisMAX<0.0) {
+  if (BinaryBank->BMFheader->sma_MAX<0.0) {
     printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBProjSMaxisMAX<BinaryBank->BTBProjSMaxisMIN) {
+  if (BinaryBank->BMFheader->sma_MAX<BinaryBank->BMFheader->sma_MIN) {
     printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < Minimum\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBTperiSSBMIN.gpsSeconds<0) {
+  if (BinaryBank->BMFheader->tperi_MIN.gpsSeconds<0) {
     printf("In BinaryTemplate file %s : header value of Minimum SSB time of periapse passage < 0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBTperiSSBMAX.gpsSeconds<0) {
+  if (BinaryBank->BMFheader->tperi_MAX.gpsSeconds<0) {
     printf("In BinaryTemplate file %s : header value of Maximum SSB time of periapse passage < 0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBTperiSSBMIN.gpsNanoSeconds<0) {
+  if (BinaryBank->BMFheader->tperi_MIN.gpsNanoSeconds<0) {
     printf("In BinaryTemplate file %s : header value of Minimum SSB time of periapse passage (nanoseconds) < 0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBTperiSSBMAX.gpsNanoSeconds<0) {
+  if (BinaryBank->BMFheader->tperi_MAX.gpsNanoSeconds<0) {
     printf("In BinaryTemplate file %s : header value of Maximum SSB time of periapse passage (nanoseconds) < 0\n",filename);
     return 1;
   }
-  temp1=BinaryBank->BTBTperiSSBMIN.gpsSeconds+1e-9*BinaryBank->BTBTperiSSBMIN.gpsNanoSeconds;
-  temp2=BinaryBank->BTBTperiSSBMAX.gpsSeconds+1e-9*BinaryBank->BTBTperiSSBMAX.gpsNanoSeconds;
+  temp1=BinaryBank->BMFheader->tperi_MIN.gpsSeconds+1e-9*BinaryBank->BMFheader->tperi_MIN.gpsNanoSeconds;
+  temp2=BinaryBank->BMFheader->tperi_MAX.gpsSeconds+1e-9*BinaryBank->BMFheader->tperi_MAX.gpsNanoSeconds;
   if (temp2<temp1) {
     printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < Minimum\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBEccMIN<0.0) {
+  if (BinaryBank->BMFheader->ecc_MIN<0.0) {
     printf("In BinaryTemplate file %s : header value of Minimum eccentricity < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBEccMAX<0.0) {
+  if (BinaryBank->BMFheader->ecc_MAX<0.0) {
     printf("In BinaryTemplate file %s : header value of Maximum eccentricity < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBEccMAX<BinaryBank->BTBEccMIN) {
+  if (BinaryBank->BMFheader->ecc_MAX<BinaryBank->BMFheader->ecc_MIN) {
     printf("In BinaryTemplate file %s : header value of Maximum eccentricity < Minimum\n",filename);
     return 1;
   }
-  if ((BinaryBank->BTBArgPeriMIN<0.0)||(BinaryBank->BTBArgPeriMIN>LAL_TWOPI)) {
+  if ((BinaryBank->BMFheader->argp_MIN<0.0)||(BinaryBank->BMFheader->argp_MIN>LAL_TWOPI)) {
     printf("In BinaryTemplate file %s : header value of Minimum argument of periapse not in range (0 - 2*PI)\n",filename);
     return 1;
   }
-  if ((BinaryBank->BTBArgPeriMAX<0.0)||(BinaryBank->BTBArgPeriMAX>LAL_TWOPI)) {
+  if ((BinaryBank->BMFheader->argp_MAX<0.0)||(BinaryBank->BMFheader->argp_MAX>LAL_TWOPI)) {
     printf("In BinaryTemplate file %s : header value of Maximum argument of periapse not in range (0 - 2*PI)\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBArgPeriMAX<BinaryBank->BTBArgPeriMIN) {
+  if (BinaryBank->BMFheader->argp_MAX<BinaryBank->BMFheader->argp_MIN) {
     printf("In BinaryTemplate file %s : header value of Maximum argument of periapse < Minimum\n",filename);
     return 1;
   }
-  if ((BinaryBank->BTBArgPeriMIN<0.0)||(BinaryBank->BTBArgPeriMIN>LAL_TWOPI)) {
+  if ((BinaryBank->BMFheader->argp_MIN<0.0)||(BinaryBank->BMFheader->argp_MIN>LAL_TWOPI)) {
     printf("In BinaryTemplate file %s : header value of Minimum argument of periapse not in range (0 - 2*PI)\n",filename);
     return 1;
   }
-  if ((BinaryBank->BTBArgPeriMAX<0.0)||(BinaryBank->BTBArgPeriMAX>LAL_TWOPI)) {
+  if ((BinaryBank->BMFheader->argp_MAX<0.0)||(BinaryBank->BMFheader->argp_MAX>LAL_TWOPI)) {
     printf("In BinaryTemplate file %s : header value of Maximum argument of periapse not in range (0 - 2*PI)\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBArgPeriMAX<BinaryBank->BTBArgPeriMIN) {
+  if (BinaryBank->BMFheader->argp_MAX<BinaryBank->BMFheader->argp_MIN) {
     printf("In BinaryTemplate file %s : header value of Maximum argument of periapse < Minimum\n",filename);
     return 1;
   }  
-  if (BinaryBank->BTBPeriodMIN<0.0) {
+  if (BinaryBank->BMFheader->period_MIN<0.0) {
     printf("In BinaryTemplate file %s : header value of Minimum period < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBPeriodMAX<0.0) {
+  if (BinaryBank->BMFheader->period_MAX<0.0) {
     printf("In BinaryTemplate file %s : header value of Maximum period < 0.0\n",filename);
     return 1;
   }
-  if (BinaryBank->BTBPeriodMAX<BinaryBank->BTBPeriodMIN) {
+  if (BinaryBank->BMFheader->period_MAX<BinaryBank->BMFheader->period_MIN) {
     printf("In BinaryTemplate file %s : header value of Maximum period < Minimum\n",filename);
     return 1;
   }  
   
   /* allocate memory for templates */
-  (BinaryBank->BTB)=(BinaryTemplate *)LALMalloc(BinaryBank->BTBNFilters*sizeof(BinaryTemplate));
+  (BinaryBank->BTB)=(BinaryTemplate *)LALMalloc(BinaryBank->BMFheader->Nfilters*sizeof(BinaryTemplate));
   
   /* Now read in all templates into memory */
   i=0;
-  while (i<BinaryBank->BTBNFilters) {
+  while (i<BinaryBank->BMFheader->Nfilters) {
     fscanf(BTBfp,"%le%le%d%d%le%le\n",
 		 &(BinaryBank->BTB[i]).ProjSMaxis,
 		 &(BinaryBank->BTB[i]).Period,
