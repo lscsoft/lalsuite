@@ -95,3 +95,6 @@ splot 'int_whole_sky_plus.txt' matrix
 set output "int_whole_sky_sum.png"
 set title "Int. Sum"
 splot 'int_whole_sky_sum.txt' matrix
+
+
+set terminal x11 6
