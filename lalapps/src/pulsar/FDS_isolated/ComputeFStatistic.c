@@ -13,7 +13,7 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-#include "UserInput.h"
+#include <lal/UserInput.h>
 
 NRCSID( COMPUTEFSTATISTIC, "$Id$");
 
@@ -70,7 +70,7 @@ BOOLEAN uvar_debug;		/* NOTE: don't use this, it's a dummy!! lalDebugLevel is se
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel 	= NULL;
 
-UserVariable uvars[] = {
+LALUserVariable uvars[] = {
   regUserVar (Dterms, 	UVAR_INT4, 't', "Number of terms to keep in Dirichlet kernel sum"),
   regUserVar (Freq, 	UVAR_REAL8,'f', "Starting search frequency in Hz"),
   regUserVar (FreqBand, UVAR_REAL8,'b', "Demodulation frequency band in Hz"),
@@ -81,9 +81,9 @@ UserVariable uvars[] = {
   regUserVar (Delta, 	UVAR_REAL8,'d', "Sky position delta (equatorial coordinates) in radians"),
   regUserVar (DeltaBand,UVAR_REAL8,'c', "Band in delta (equatorial coordinates) in radians"),
   regUserVar (dDelta, 	UVAR_REAL8,'g', "Resolution in delta (equatorial coordinates) in radians"),
-  regUserVar (DataDir, 	UVAR_CHAR, 'D', "Directory where SFT's are located"),
-  regUserVar (EphemDir, UVAR_CHAR, 'E', "Directory where Ephemeris files are located"),
-  regUserVar (EphemYear,UVAR_CHAR, 'y', "Year (or range of years) of ephemeris files to be used"),
+  regUserVar (DataDir, 	UVAR_STRING, 'D', "Directory where SFT's are located"),
+  regUserVar (EphemDir, UVAR_STRING, 'E', "Directory where Ephemeris files are located"),
+  regUserVar (EphemYear,UVAR_STRING, 'y', "Year (or range of years) of ephemeris files to be used"),
   regUserVar (IFO, 	UVAR_INT4, 'I', "Detector, must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar"),
   regUserVar (SignalOnly,UVAR_BOOL,'S', "Signal only flag"),
   regUserVar (Spin, 	UVAR_REAL8,'s', "Starting spindown parameter"),
@@ -91,13 +91,13 @@ UserVariable uvars[] = {
   regUserVar (dSpin, 	UVAR_REAL8,'e', "Spindown resolution (default 1/(2*Tobs*Tsft*Nsft)"),
   regUserVar (EstimSigParam, UVAR_BOOL, 'p', "Do Signal Parameter Estimation"),
   regUserVar (Fthreshold,UVAR_REAL8,'F', "Signal Set the threshold for selection of 2F"),
-  regUserVar (BaseName, UVAR_CHAR, 'i', "The base name of the input  file you want to read"),
+  regUserVar (BaseName, UVAR_STRING, 'i', "The base name of the input  file you want to read"),
   regUserVar (Metric,	UVAR_INT4, 'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric"),
   regUserVar (metricMismatch, UVAR_REAL8, 'X', "Maximal mismatch for metric tiling"),
   regUserVar (debug, 	UVAR_INT4, 'v', "Set lalDebugLevel"),
   regUserVar (help, 	UVAR_BOOL, 'h', "Print this message"),
-  regUserVar (skyRegion,UVAR_CHAR, 'R', "Specify sky-region by polygon"),
-  regUserVar (outputLabel,UVAR_CHAR,'o', "Label to be appended to all output file-names"),
+  regUserVar (skyRegion,UVAR_STRING, 'R', "Specify sky-region by polygon"),
+  regUserVar (outputLabel,UVAR_STRING,'o', "Label to be appended to all output file-names"),
   {NULL, 0, 0, NULL, NULL}
 };
 

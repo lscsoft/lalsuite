@@ -5,8 +5,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h ConfigFile.c ConfigFile.h		\
-	UserInput.c UserInput.h
+	DopplerScan.c DopplerScan.h 
+
 
 
 
