@@ -108,6 +108,9 @@ LALFindChirpBCVSpinData (
 
   FILE                 *fpDataIn = NULL;
 
+  FILE                 *fpOutRe = NULL;
+  FILE                 *fpOutIm = NULL;
+
 
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
@@ -227,7 +230,9 @@ ASSERT( params->ampVecBCVSpin2, status,
 
   fpDataIn = fopen ("DataIn.dat","w");
 
-
+  fpOutRe = fopen("OutRe.dat","w");
+  fpOutIm = fopen("OutIm.dat","w");
+ 
 
 
 
@@ -331,6 +336,8 @@ fprintf (stdout, "dataSegVec->length %d\n", dataSegVec->length);
         dataVec, params->fwdPlan );                             
     CHECKSTATUSPTR( status );*/                                   
 
+   
+
 fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
 
 
@@ -342,13 +349,16 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
     REAL4 x = resp[k].re * params->dynRange;
     REAL4 y = resp[k].im * params->dynRange;
 
-   
+    fprintf (fpOutRe,  "%d\t%e\n",k,outputData[k].re);  
+    fprintf (fpOutIm,  "%d\t%e\n",k,outputData[k].im);
+
+
     fprintf (fprespRe, "%d\t%e\n",k,resp[k].re);
     fprintf (fprespIm, "%d\t%e\n",k,resp[k].im);
 
 
-    outputData[k].re =  p*x - q*y;
-    outputData[k].im =  p*y + q*x;
+    outputData[k].re =  (p*x) - (q*y);
+    outputData[k].im =  (p*y) + (q*x);
   
     fprintf (fpStrainRe, "%d\t%e\n",k,outputData[k].re);
     fprintf (fpStrainIm, "%d\t%e\n",k,outputData[k].im);
@@ -544,6 +554,8 @@ fclose(fpdataVec);
 fclose(fpStrainRe);
 fclose(fpStrainIm);
 fclose (fpDataIn);
+fclose (fpOutRe);
+fclose (fpOutIm);
 
 
   DETATCHSTATUSPTR( status );
