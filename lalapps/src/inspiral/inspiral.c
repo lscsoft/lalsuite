@@ -916,6 +916,14 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFindChirpBCVData (&status, fcSegVec, dataSegVec, fcDataParams),
         &status );
   }
+ else if ( approximant == BCVSpin )
+  {
+    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCVSpin\n" );
+    LAL_CALL( LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, fcDataParams),
+        &status );
+  }
+
+
   else
   {
     fprintf( stderr, "error: unknown waveform approximant for data\n" );
@@ -979,6 +987,14 @@ int main( int argc, char *argv[] )
             tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
       fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
     }
+    else if ( approximant == BCVSpin )
+    {
+      LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
+            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+    }
+
+
     else
     {
       fprintf( stderr, "error: unknown waveform approximant for template\n" );
@@ -1031,6 +1047,11 @@ int main( int argc, char *argv[] )
           LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                 &eventList, fcFilterInput, fcFilterParams ), &status );
         }
+      /*  else if ( approximant == BCVSpin )
+        {
+          LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
+                &eventList, fcFilterInput, fcFilterParams ), &status );
+        } */
         else
         {
           fprintf( stderr, "error: unknown waveform approximant for filter\n" );
@@ -1458,7 +1479,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
 "\n"\
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
-"                                 (TaylorF2|BCV)\n"\
+"                                 (TaylorF2|BCV|BCVSpin)\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
@@ -1957,11 +1978,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCV;
         }
+        else if ( ! strcmp( "BCVSpin", optarg ) )
+        {
+          approximant = BCVSpin;
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
-              "%s (must be either TaylorF2 or BCV)\n", 
+              "%s (must be either TaylorF2 or BCV or BCVSpin)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
