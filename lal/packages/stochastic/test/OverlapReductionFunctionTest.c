@@ -105,11 +105,25 @@ LALCheckMemoryLeaks()
 ******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
+
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+#include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/StochasticCrossCorrelation.h>
+#include <lal/Units.h>
+
 #include "CheckStatus.h"
 
 NRCSID(OVERLAPREDUCTIONFUNCTIONTESTC, "$Id$");

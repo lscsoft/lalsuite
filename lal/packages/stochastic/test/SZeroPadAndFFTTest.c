@@ -103,16 +103,26 @@ fabs()
 ******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
+
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
-#include <lal/AVFactories.h>
-#include <lal/PrintFTSeries.h>
+#endif
+
 #include <lal/StochasticCrossCorrelation.h>
-#include <lal/Units.h>
+#include <lal/AVFactories.h>
 #include <lal/ReadFTSeries.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/Units.h>
+
 #include "CheckStatus.h"
 
 NRCSID(SZEROPADANDFFTTESTC, "$Id$");
