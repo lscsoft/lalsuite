@@ -59,7 +59,7 @@ extern "C" {
 
 /* <lalLaTeX>
 	 \subsection*{Structures}
-	 \idx[Type]{BinaryPulsar{Params}
+	 \idx[Type]{BinaryPulsarParams}
 	 \idx[Type]{BinaryPulsarInput}
 	 \idx[Type]{BinaryPulsarOutput}
 	 
