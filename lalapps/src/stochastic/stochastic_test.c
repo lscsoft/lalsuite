@@ -1311,7 +1311,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	  if (verbose_flag)
 	   {
             fprintf(stdout, "interval %d\n", bigLoop);
-            fprintf(stdout, "varTheo = %e s\n", varTheo);
+            fprintf(stdout, "sigmaTheo = %e s\n", sqrt(varTheo));
            }
 
       
