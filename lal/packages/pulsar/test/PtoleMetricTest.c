@@ -109,7 +109,7 @@ NRCSID( PTOLEMETRICTESTC, "$Id" );
 #define DEFAULT_DURATION 1e5 /* seconds */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 #define SPOKES 30
-#define MAGNIFY 5.0           /* Magnification factor of ellipses */
+#define MAGNIFY 1.0           /* Magnification factor of ellipses */
 
 int lalDebugLevel = 0;
 
@@ -337,6 +337,16 @@ int main( int argc, char *argv[] ) {
                   PTOLEMETRICTESTC_MSGESUB );
           return PTOLEMETRICTESTC_ESUB;
         }
+
+	/*  Project metric: */ 
+	LALProjectMetric( &status, metric, 0 );
+	if( status.statusCode )
+	  {
+          printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                  PTOLEMETRICTESTC_MSGESUB );
+          return PTOLEMETRICTESTC_ESUB;
+	  }
+
         /* Rename \gamma_{\alpha\alpha}. */
         gaa = metric->data[2];
         /* Rename \gamma_{\alpha\delta}. */
