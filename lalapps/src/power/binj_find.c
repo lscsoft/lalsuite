@@ -670,22 +670,12 @@ int main(int argc, char **argv)
 
 	ninjected = ndetected = 0;
 	for (injection = simBurstList; injection; ninjected++, injection = injection->next) {
-		INT8 injPeakTime;
-
-		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &injection->l_peak_time), &stat);
 		if(options.verbose)
 			fprintf(stderr, "Searching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
 
 		bestmatch = NULL;
 		for (event = burstEventList; event; event = event->next) {
 			SnglBurstAccuracy accParams;
-			INT8 burstStartTime;
-
-			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &event->start_time), &stat);
-
-			/* trigger list is sorted, so we can bailout */
-			if (burstStartTime > injPeakTime)
-				break;
 
 			/* if the injection's centre frequency and peak time
 			 * don't lie within the trigger's time-frequency
@@ -694,7 +684,7 @@ int main(int argc, char **argv)
 			if (!accParams.match)
 				continue;
 
-			/* pick the best event */
+			/* compare this trigger to the best so far */
 			bestmatch = select_event(&stat, injection, bestmatch, event, options);
 		}
 
