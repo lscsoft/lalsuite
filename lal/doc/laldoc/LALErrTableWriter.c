@@ -100,7 +100,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
         fgets( line , MAXSTR , Env->InFilePtr ) ;
         while ( !strstr(line , HASHDEFINE ) ){
             fgets( line , MAXSTR , Env->InFilePtr ) ;
-            if( strstr(line , Env->closer) ){
+            if( strstr(line , Env->OffFlag) ){
                 LALDocErr("Incomplete Error Table.",
                 Env->sourceFile , __LINE__ , __FILE__  , 1 );
             }
@@ -111,7 +111,7 @@ LALDocConstructErrorTable(  LALEnvironment *Env  )
          * to find the other piece of the pair. */
         linePtr=strstr(line,HASHDEFINE) + szHASH;
         ParseErrLine(linePtr,Env,caps1,errName1,errStr1,errNum1);
-        while( (strcmp(errName1,errName2)!= 0) && !strstr(line,Env->closer) ){
+        while( (strcmp(errName1,errName2)!= 0) && !strstr(line,Env->OffFlag) ){
              fgets( line , MAXSTR , Env->InFilePtr )  ;
              linePtr=strstr(line,HASHDEFINE) ;
              if(linePtr){
