@@ -122,6 +122,7 @@ void `LALShrink'SEQUENCETYPE (
 	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first + length <= sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	ASSERT(`XLALShrink'SEQUENCETYPE (sequence, first, length), status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	`XLALShrink'SEQUENCETYPE (sequence, first, length);
+	ASSERT(sequence->length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	RETURN(status);
 }
