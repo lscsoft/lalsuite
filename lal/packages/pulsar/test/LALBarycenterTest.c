@@ -91,7 +91,7 @@ main( void )
 
   char eEphFileBad[] = "earth47.dat";
   char eEphFile[] = "earth98.dat";
-  char sEphFile[] = "sun98.dat"
+  char sEphFile[] = "sun98.dat";
   
   
   REAL8 alpha,delta;  /* RA and DEC (radians) in 
