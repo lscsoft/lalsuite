@@ -832,9 +832,9 @@ LALFindChirpFilterSegment (
   /* check that the filter parameters are reasonable */
   ASSERT( params->deltaT > 0, status,
       FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
-  ASSERT( params->rhosqThresh > 0, status,
+  ASSERT( params->rhosqThresh >= 0, status,
       FINDCHIRPH_ERHOT, FINDCHIRPH_MSGERHOT );
-  ASSERT( params->chisqThresh > 0, status,
+  ASSERT( params->chisqThresh >= 0, status,
       FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
 
   /* check that the fft plan exists */
@@ -1413,9 +1413,9 @@ LALFindChirpBCVFilterSegment (
   /* check that the filter parameters are reasonable */
   ASSERT( params->deltaT > 0, status,
       FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
-  ASSERT( params->rhosqThresh > 0, status,
+  ASSERT( params->rhosqThresh >= 0, status,
       FINDCHIRPH_ERHOT, FINDCHIRPH_MSGERHOT );
-  ASSERT( params->chisqThresh > 0, status,
+  ASSERT( params->chisqThresh >= 0, status,
       FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
 
   /* check that the fft plan exists */
