@@ -21,12 +21,17 @@ TO USE
 Makes a test SFT (called SFT-test)
  ./SFTwrite
 You can do this on little-endian and big-endian machines to generate
-both flavors
+both flavors.  This produces a set of good and a set of bad SFTs.  The
+good SFTs are:
+SFT-test[1234567] and SFT-good
+and the bad SFTs are
+SFT-bad[1234567]
+
 
 
 TO MAKE CONCATENATED SFTs
 -------------------------
-cat SFT-test SFT-test SFT-test > SFT-merged
+cat SFT-test1 SFT-test2 SFT-test3 > SFT-merged
 
 
 TO VERIFY THAT A SET OF SFT files IS VALID

@@ -32,3 +32,6 @@ docs_DATA       =      README \
                        SCCB_2004_09_09
 
 EXTRA_DIST      =      $(docs_DATA)
+
+CLEANFILES      =      SFT-test[1-7] SFT-bad[1-7] SFT-good
+

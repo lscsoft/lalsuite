@@ -29,12 +29,11 @@
 #define BLOCKSIZE 65536
 
 /* some local prototypes */
-unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
-int isbigendian(void);
-void swap2(char *location);
-void swap4(char *location);
-void swap8(char *location);
-int validate_sizes(void);
+static unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
+static void swap2(char *location);
+static void swap4(char *location);
+static void swap8(char *location);
+static int validate_sizes(void);
 
 const char* ReferenceSFTLibraryVersion(void) {
   return PACKAGE_VERSION;
@@ -81,23 +80,15 @@ unsigned long long crc64(const unsigned char* data,
   return crc;
 }
 
-
-/* determine endian ordering at run time */
-int isbigendian(void){
-  short i=0x0100;
-  char *tmp=(char *)&i;
-  return *tmp;
-}
-
 /* swap 2, 4 or 8 bytes.  Point to low address */
-void swap2(char *location){
+static void swap2(char *location){
   char tmp=*location;
   *location=*(location+1);
   *(location+1)=tmp;
   return;
 }
  
-void swap4(char *location){
+static void swap4(char *location){
   char tmp=*location;
   *location=*(location+3);
   *(location+3)=tmp;
@@ -105,7 +96,7 @@ void swap4(char *location){
   return;
 }
  
-void swap8(char *location){
+static void swap8(char *location){
   char tmp=*location;
   *location=*(location+7);
   *(location+7)=tmp;
@@ -119,7 +110,7 @@ void swap8(char *location){
 /* this routine checks that the assumed sizes and structure packing
    conventions of this code are valid.  These checks could also be
    done at compile time with #error statements */
-int validate_sizes(void) {
+static int validate_sizes(void) {
   if (
       sizeof(char) != 1      ||
       sizeof(int) != 4       ||
