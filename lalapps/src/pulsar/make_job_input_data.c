@@ -264,8 +264,9 @@ int main(int argc, char* argv[]) {
 	    return 1;
 	  }; 
 	}
-        fprintf(fp2,"Data missing for SFT starting at %d\n",thistime);
-	fprintf(fp2,"Missing data GPS frames in range %d to %d\n",firstframe,lastframe);
+        fprintf(fp2,"Data missing for %d-second SFT starting at %d\n",tbase[i],thistime);
+	fprintf(fp2,"First frame GPS start: %d\n", firstframe);
+	fprintf(fp2,"Last  frame GPS start: %d\n", lastframe);
 	
 	/* to list the missing frames, first step through all the
 	   frames that SHOULD be there */
@@ -281,7 +282,7 @@ int main(int argc, char* argv[]) {
 	    }
 	  /* see if we found it */ 
 	  if (!foundit)
-	    fprintf(fp2,"  Missing frame from %d to %d\n", shouldbethere, shouldbethere+framesec);
+	    fprintf(fp2,"  Missing frame has start time: %d\n", shouldbethere);
 	}
       }
     }
@@ -292,5 +293,4 @@ int main(int argc, char* argv[]) {
   if (fp2)
     fclose(fp2);
  
-  return 0;
-}
+  return 0;}
