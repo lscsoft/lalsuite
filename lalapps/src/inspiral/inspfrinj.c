@@ -70,8 +70,8 @@ else \
   LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
 this_summ_value->version = 0; \
-this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
-this_summ_value->end_time = searchsumm.searchSummaryTable->out_end_time; \
+this_summ_value->start_time = searchsumm.searchSummaryTable->in_start_time; \
+this_summ_value->end_time = searchsumm.searchSummaryTable->in_end_time; \
 this_summ_value->value = (REAL4) val; \
 this_summ_value->intvalue = (INT4) intval; \
 LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
@@ -365,6 +365,7 @@ int main( int argc, char *argv[] )
       /* initialize the inj_calfacts */
       memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
       inj_calfacts.ifo = ifo;
+      durationNS = gpsEndTimeNS - gpsStartTimeNS;
       LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
 	    &durationNS ), &status );
 
@@ -652,37 +653,35 @@ LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
-  "lalapps_inspiral [options]\n\n"\
-"  --help                       display this message\n"\
-"  --verbose                    print progress information\n"\
-"  --version                    print version information and exit\n"\
-"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING            set the process_params usertag to STRING\n"\
-"  --comment STRING             set the process table comment to STRING\n"\
+  "lalapps_inspfrinj [options]\n\n"\
+"  --help                     display this message\n"\
+"  --verbose                  print progress information\n"\
+"  --version                  print version information and exit\n"\
+"  --debug-level LEVEL        set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING          set the process_params usertag to STRING\n"\
+"  --comment STRING           set the process table comment to STRING\n"\
 "\n"\
-"  --gps-start-time SEC         GPS second of data start time\n"\
-"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
-"  --gps-end-time SEC           GPS second of data end time\n"\
-"  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
+"  --gps-start-time SEC       GPS second of data start time\n"\
+"  --gps-start-time-ns NS     GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC         GPS second of data end time\n"\
+"  --gps-end-time-ns NS       GPS nanosecond of data end time\n"\
 "\n"\
-"  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
-"  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
-"  --channel-name CHAN          read data from interferometer channel CHAN\n"\
+"  --frame-cache              obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE   obtain calibration from LAL frame cache FILE\n"\
+"  --channel-name CHAN        read data from interferometer channel CHAN\n"\
 "\n"\
-"  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
-"  --inject-overhead            inject signals from overhead detector\n"\
-"  --inject-safety SEC          inject signals that end up to SEC after end of data\n"\
+"  --injection-file FILE      inject simulated inspiral signals from FILE\n"\
+"  --inject-overhead          inject signals from overhead detector\n"\
+"  --inject-safety SEC        inject signals ending up to SEC after gps end time\n"\
 "\n"\
-"  --write-raw-data             write out the raw frame files\n"\
-"  --write-inj-only             write out frames containing only injections\n"\
-"  --write-raw-plus-inj         write out frames containing raw data with inj\n"\
+"  --write-raw-data           write out the raw frame files\n"\
+"  --write-inj-only           write out frames containing only injections\n"\
+"  --write-raw-plus-inj       write out frames containing raw data with inj\n"\
 "\n"\
-"  --output-frame-length SEC    write out data in frames of length SEC\n"\
-"  --inj-start-time SEC         only add injectins after GPS time SEC\n"\
-"  --inj-end-time SEC           only add injections before GPS time SEC\n"\
+"  --output-frame-length SEC  write out data in frames of length SEC\n"\
 "\n"\
-"  --ifo  IFO                   specify the IFO ((only if not reading frames)\n"\
-"  --sample-rate                data sample rate (only if not reading frames)\n"\
+"  --ifo  IFO                 specify the IFO (only if not reading frames)\n"\
+"  --sample-rate              data sample rate (only if not reading frames)\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
