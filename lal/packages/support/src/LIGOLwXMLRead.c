@@ -1802,12 +1802,12 @@ StochasticTableFromLIGOLw (
   /* check that the table handle and pointer are valid */
   if (!stochHead)
   {
-    fprintf(stderr, "null pointer passed as handle to stochastic value");
+    fprintf(stderr, "null pointer passed as handle to stochastic value\n");
     return -1;
   }
   if (*stochHead)
   {
-    fprintf(stderr, "non-null pointer passed as pointer to stochastic value");
+    fprintf(stderr, "non-null pointer passed as pointer to stochastic value\n");
     return -1;
   }
 
