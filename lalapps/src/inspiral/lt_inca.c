@@ -57,7 +57,8 @@ RCSID("$Id$");
 "  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
 "  --ligo-coinc              use the LIGO (inca) coincidence routine\n"\
-"  --tama-coinc              use the TAMA coincidence routine\n"\
+"  --tama-coinc CLUSTER      use the TAMA coincidence routine, with CLUSTER\n"\
+"                            one of [ snr_and_chisq | snrsq_over_chisq | snr ]\n"\
 "  --gps-start-time SEC      GPS second of data start time\n"\
 "  --gps-end-time SEC        GPS second of data end time\n"\
 "\n"\
@@ -93,7 +94,7 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-enum { undefined, ligoCoinc, tamaCoinc } coincTest = undefined;
+enum { undefined, ligo_coinc, tama_coinc } coincTest = undefined;
 
 int main( int argc, char *argv[] )
 {
@@ -114,7 +115,6 @@ int main( int argc, char *argv[] )
   CHAR *ifoTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
-  CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
 
   LIGOTimeGPS slideData = {0,0};
@@ -132,6 +132,8 @@ int main( int argc, char *argv[] )
   SearchSummvarsTable  *inputFiles = NULL;
   SearchSummvarsTable  *thisInputFile = NULL;
 
+  SnglInspiralClusterChoice   clusterchoice = none;
+  
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
@@ -145,12 +147,12 @@ int main( int argc, char *argv[] )
   /* getopt arguments */
   struct option long_options[] =
   {
-    {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"ligo-coinc",              no_argument,       &coincTest,ligoCoinc },
-    {"tama-coinc",              no_argument,       &coincTest,tamaCoinc },
+    {"verbose",                 no_argument,     &vrbflg,             1 },
+    {"ligo-coinc",              no_argument,     &coincTest, ligo_coinc },
     {"no-playground",           no_argument,       0,                'Q'},
     {"playground-only",         no_argument,       0,                'R'},
     {"all-data",                no_argument,       0,                'D'},
+    {"tama-coinc",              required_argument, 0,                'T'},
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"dm",                      required_argument, 0,                'm'},
@@ -217,7 +219,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRDT:", long_options, 
         &option_index );
 
     /* detect the end of the options */
@@ -395,6 +397,38 @@ int main( int argc, char *argv[] )
         dataType = all_data;
         break;
 
+      case 'T':
+        /* use the TAMA coincidence routine */
+        coincTest = tama_coinc;
+        
+        /* set the clustering algorithm */
+        {        
+          if ( ! strcmp( "snr_and_chisq", optarg ) )
+          {
+            clusterchoice = snr_and_chisq;
+          }
+          else if ( ! strcmp( "snrsq_over_chisq", optarg) )
+          {
+            clusterchoice = snrsq_over_chisq;
+          }
+          else if ( ! strcmp( "snr", optarg) )
+          {
+            clusterchoice = snr;
+          }        
+          else
+          {
+            fprintf( stderr, "invalid argument to  --%s:\n"
+                "unknown clustering specified:\n "
+                "%s (must be one of: snr_and_chisq, \n"
+                "   snrsq_over_chisq or snr)\n",
+                long_options[option_index].name, optarg);
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
+      
       case 'h':
         /* help message */
         fprintf( stderr, USAGE , argv[0]);
@@ -545,7 +579,7 @@ int main( int argc, char *argv[] )
   }
 
 
-  if ( coincTest = undefined )
+  if ( coincTest == undefined )
   {
     fprintf( stderr, "Must specify either the LIGO or TAMA coincidence\n"
         "--ligo-coinc or --tama-coinc\n");
@@ -737,17 +771,17 @@ int main( int argc, char *argv[] )
 
 
   /* Test for coincidence */
-  if ( coincTest == ligoCoinc )
+  if ( coincTest == ligo_coinc )
   {
     LALIncaCoincidenceTest( &status, &coincidentEvents[0], 
         &coincidentEvents[1], inspiralEventList[0], inspiralEventList[1], 
         &errorParams ); 
   }
-  else if (coincTest == tamaCoinc )
+  else if (coincTest == tama_coinc )
   {
-    LALIncaCoincidenceTest( &status, &coincidentEvents[1], 
+    LALTamaCoincidenceTest( &status, &coincidentEvents[1], 
         &coincidentEvents[0], inspiralEventList[1], inspiralEventList[0], 
-        &errorParams );
+        &errorParams, clusterchoice );
   }
 
 cleanexit:
