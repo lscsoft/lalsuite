@@ -23,18 +23,24 @@ extern "C" {
 NRCSID (COMMH, "$Id$");
 
 #define COMM_ENULL 1
-#define COMM_ESIZE 2
+#define COMM_ENNUL 2
+#define COMM_ESIZE 3
 #define COMM_ESTRL 4
-#define COMM_EMPIE 8
-#define COMM_ESENV 16
-#define COMM_ESYSC 32
+#define COMM_EMPIE 5
+#define COMM_ESENV 6
+#define COMM_ESYSC 7
+#define COMM_ENOBJ 8
+#define COMM_EHAND 9
 
 #define COMM_MSGENULL "Null pointer"
+#define COMM_MSGENNUL "Non-Null pointer"
 #define COMM_MSGESIZE "Invalid size"
 #define COMM_MSGESTRL "String too long"
 #define COMM_MSGEMPIE "MPI error"
 #define COMM_MSGESENV "Couldn't set environment variable"
 #define COMM_MSGESYSC "Error executing system command"
+#define COMM_MSGENOBJ "Invalid number of objects"
+#define COMM_MSGEHAND "Wrong handshake"
 
 /* Structure for identifying processors */
 typedef struct
@@ -105,6 +111,27 @@ tagMPIMessage
   INT4 source;
 }
 MPIMessage;
+
+typedef struct
+tagExchParams
+{
+  INT4           send;
+  INT4           numObjects;
+  INT4           partnerProcNum;
+  INT4           myProcNum;
+  INT4           exchObjectType;
+  MPI_Comm       mpiComm;
+}
+ExchParams;
+
+typedef struct
+tagInitExchParams
+{
+  INT4           myProcNum;
+  MPI_Comm       mpiComm;
+}
+InitExchParams;
+
 
 
 void
@@ -304,6 +331,26 @@ LALMPIRecvCOMPLEX8FrequencySeries (
     MPI_Comm    mpiComm
     );
 
+void
+LALInitializeExchange (
+    LALStatus      *status,
+    ExchParams **exchParamsOut,
+    ExchParams  *exchParamsInp,
+    InitExchParams *params
+    );
+
+void
+LALFinalizeExchange (
+    LALStatus      *status,
+    ExchParams **exchParams
+    );
+
+void
+LALExchangeUINT4 (
+    LALStatus         *status,
+    UINT4             *object,
+    ExchParams        *exchParms
+                 );
 
 #ifdef  __cplusplus
 }

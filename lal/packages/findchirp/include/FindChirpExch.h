@@ -35,7 +35,7 @@ NRCSID (FINDCHIRPEXCHH, "$Id$");
 #define FINDCHIRPEXCH_MSGENOBJ "Invalid number of objects"
 #define FINDCHIRPEXCH_MSGEHAND "Wrong handshake"
 
-typedef enum
+enum
 {
   ExchDataSegment,
   ExchFindChirpSegment,
@@ -46,47 +46,6 @@ typedef enum
 }
 ExchObjectType;
 
-typedef struct
-tagExchParams
-{
-  INT4           send;
-  INT4           numObjects;
-  INT4           partnerProcNum;
-  INT4           myProcNum;
-  MPI_Comm       mpiComm;
-  ExchObjectType exchObjectType;
-}
-ExchParams;
-
-typedef struct
-tagInitExchParams
-{
-  INT4           myProcNum;
-  MPI_Comm       mpiComm;
-}
-InitExchParams;
-
-
-void
-LALInitializeExchange (
-    LALStatus      *status,
-    ExchParams **exchParamsOut,
-    ExchParams  *exchParamsInp,
-    InitExchParams *params
-    );
-
-void
-LALFinalizeExchange (
-    LALStatus      *status,
-    ExchParams **exchParams
-    );
-
-void
-LALExchangeUINT4 (
-    LALStatus         *status,
-    UINT4             *object,
-    ExchParams        *exchParms
-                 );
 
 void
 LALExchangeDataSegment (
