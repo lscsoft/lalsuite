@@ -184,7 +184,7 @@ LALRandomInspiralSignal
 	   {
 		   epsilon1 = (float) random()/(float)RAND_MAX;
 		   epsilon2 = (float) random()/(float)RAND_MAX;
-		   switch (randIn->massChoice) 
+		   switch (randIn->param.massChoice) 
 		   {
 			   case m1Andm2: 
 				/* 
@@ -236,7 +236,7 @@ LALRandomInspiralSignal
 		   /*
 		   printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
 		    */
-		   switch (randIn->massChoice) 
+		   switch (randIn->param.massChoice) 
 		   {
 			   case m1Andm2: 
 			   case t03: 
