@@ -43,6 +43,7 @@
 "  --waveform NAME          set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --tama-output            generate a text file for tama\n"\
+"  --write-eff-dist         output the effective distances in tama file\n"\
 "  --ilwd                   generate an ILWD file for LDAS\n"\
 "\n"
 
@@ -617,6 +618,7 @@ int main( int argc, char *argv[] )
   int rand_seed = 1;
   static int ilwd = 0;
   int tamaOutput = 0;
+  int writeDeff = 0;
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
@@ -648,6 +650,7 @@ int main( int argc, char *argv[] )
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
     {"tama-output",		      no_argument, &tamaOutput,	      1 },
+    {"write-eff-dist",                no_argument, &writeDeff,        1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {0, 0, 0, 0}
   };
@@ -859,6 +862,19 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
 	PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--tama-output" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+  }
+
+  /* store the writeDeff argument */
+  if ( writeDeff )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+	PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--write-eff-dist" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
@@ -1126,7 +1142,11 @@ int main( int argc, char *argv[] )
 	fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
 	fprintf( fq, "geocentric end time  hanford end time   " );
 	fprintf( fq, "livingston end time   tama end time     " );
-	fprintf( fq, "  mtotal        eta      distance(kpc) " );
+        if ( writeDeff )
+        {
+          fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
+	}
+        fprintf( fq, "  mtotal        eta      distance(kpc) " );
 	fprintf( fq, " longitude     latitude    " );
 	fprintf( fq, "inclination   coa_phase   polarization\n");
 
@@ -1145,11 +1165,18 @@ int main( int argc, char *argv[] )
 
 	  fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
 	      ttime );
-	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e",
+          if ( writeDeff )
+          {
+            fprintf( fq, "%12.6e %12.6e %12.6e ", 
+                1.0e+03 * this_sim_insp->eff_dist_h,
+                1.0e+03 * this_sim_insp->eff_dist_l, 
+                1.0e+03 * this_sim_insp->eff_dist_t );
+	  }
+          fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
 	      (this_sim_insp->mass1 + this_sim_insp->mass2), 
 	      this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
 	      this_sim_insp->longitude, this_sim_insp->latitude );
-	  fprintf( fq, "%13.6e %12.6e %12.6e\n", 
+	  fprintf( fq, "%12.6e %12.6e %12.6e\n", 
 	      this_sim_insp->inclination, this_sim_insp->coa_phase,
 	      this_sim_insp->polarization );
 	  this_sim_insp = this_sim_insp->next;
