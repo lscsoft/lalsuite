@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = VectorOps.h Matrix.h
+pkginclude_HEADERS = VectorOps.h Matrix.h VectorIndexRange.h
+EXTRA_DIST = VectorIndexRangeH.m4
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link

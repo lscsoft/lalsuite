@@ -2,9 +2,10 @@
 noinst_LTLIBRARIES = libvectorops.la
 EXTRA_DIST = MatrixDivide.m4      MatrixMultiplyBase.m4  MiscMatlab.m4 \
 MatrixDivideBase.m4  MatrixPower.m4         MiscMatlabBase.m4 \
-MatrixMultiply.m4    MatrixPowerBase.m4
-MATRIXSRCS = MatrixDivide.c MatrixMultiply.c MatrixPower.c MiscMatlab.c
-libvectorops_la_SOURCES = VectorMultiply.c VectorPolar.c $(MATRIXSRCS)
+MatrixMultiply.m4    MatrixPowerBase.m4 \
+VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
+MATRIXSRCS = MatrixDivide.c MatrixMultiply.c MatrixPower.c MiscMatlab.c 
+libvectorops_la_SOURCES = VectorMultiply.c VectorPolar.c $(MATRIXSRCS) VectorIndexRange.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = $(MATRIXSRCS)
 MOSTLYCLEANFILES = .dvi-dep
@@ -22,3 +23,6 @@ MatrixPower.c: MatrixPower.m4 MatrixPowerBase.m4
 
 MiscMatlab.c: MiscMatlab.m4 MiscMatlabBase.m4
 	cd $(srcdir) && m4 MiscMatlab.m4 > MiscMatlab.c
+
+VectorIndexRange.c: VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
+	cd $(srcdir) && m4 VectorIndexRangeC.m4 > VectorIndexRange.c
