@@ -52,7 +52,7 @@ INT4 lalDebugLevel=0;
 /* defaults chosen for L1 */
 
 #define HARMONICSFILE "./harmonicsS2LHO4K_200_400.txt" 
-#define NSTARFILE "/home/badkri/H1results/ALLSKYMAX"
+#define NSTARFILE "/home/badkri/S2results/ALLSKYMAX_H1"
 #define CLEANNSTARFILE "./ALLSKYMAXCLEAN"
 #define WINDOWSIZE 100
 #define TRUE (1==1)
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]){
   REAL8 *freqVec=NULL;
   INT4 nstarNum=0, minBin, maxBin;
   REAL8 timeBase=1800.0, minFreq, maxFreq;
-  INT4 flag;
+  INT4 flag= 0;
  
   /* user input variables */
   BOOLEAN uvar_help;

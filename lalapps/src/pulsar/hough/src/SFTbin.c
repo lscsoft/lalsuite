@@ -814,7 +814,7 @@ void CheckLines ( LALStatus           *status,
 
   /* loop over lines and check if freq is affected by the lines */
   nLines = lines->nLines;
-  countL = 0;
+  *countL = 0;
   for (j=0; j<nLines; j++)
     {
       lineFreq = lines->lineFreq[j];
@@ -826,7 +826,7 @@ void CheckLines ( LALStatus           *status,
       rightWing += doppler;
       /* now chech if freq lies in range */
       if ( (freq <= lineFreq + rightWing) && (freq >= lineFreq - leftWing))
-	countL++;  
+	*countL += 1;  
     }
       
   DETATCHSTATUSPTR (status);
