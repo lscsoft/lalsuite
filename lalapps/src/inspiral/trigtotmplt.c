@@ -269,6 +269,7 @@ int main ( int argc, char *argv[] )
 
       case 'z':
         set_debug_level( optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case '?':

@@ -970,6 +970,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'z':
         set_debug_level( optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'Z':
