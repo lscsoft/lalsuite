@@ -47,7 +47,7 @@ typedef struct {
   INT4 ifmax;
   INT4 ifmin;
 
-  REAL8 df;
+  REAL8 dFreq;
   REAL8 tsft;
   INT4 SFTno;
 
