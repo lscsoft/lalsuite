@@ -298,7 +298,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:m:p:P:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -922,7 +922,8 @@ int main( int argc, char *argv[] )
     }
     else
     {
-      fprintf( stderr, "error: unknown waveform approximant for data\n" );
+      fprintf( stderr, "error: unknown waveform approximant for sorting
+		     events \n" );
       exit( 1 );
     }
 
