@@ -13,6 +13,19 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyVectorSequence',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyVectorSequence')', `define(`XFUNC',`format(`XLALDestroy%s',STYPE)')' ) 
+
+void XFUNC ( STYPE *vseq )
+{
+  if ( ! vseq )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EFAULT );
+  if ( ! vseq->data || ! vseq->length || ! vseq->vectorLength )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+  LALFree( vseq->data );
+  memset( vseq, 0, sizeof( *vseq ) );
+  LALFree( vseq );
+  return;
+}
 
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
 void FUNC ( LALStatus *status, STYPE **vseq )
@@ -44,8 +57,20 @@ void FUNC ( LALStatus *status, STYPE **vseq )
 
   /* Ok, now let's free allocated storage */
 
-  LALFree ( (*vseq)->data ); /* free allocated data */
-  LALFree ( *vseq );	      /* free vseq struct itself */
+  XFUNC ( *vseq );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    if ( code == XLAL_EFAULT )
+    {
+      ABORT (status, SEQFACTORIESH_EUPTR, SEQFACTORIESH_MSGEUPTR);
+    }
+    if ( code == XLAL_EINVAL )
+    {
+      ABORT (status, SEQFACTORIESH_EDPTR, SEQFACTORIESH_MSGEDPTR);
+    }
+  }
 
   *vseq = NULL;		/* make sure we don't point to freed struct */
 

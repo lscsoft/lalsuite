@@ -13,6 +13,25 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`LAL%sCreateVector',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVector')', `define(`XFUNC',`format(`XLALCreate%s',VTYPE)')' )
+
+VTYPE * XFUNC ( UINT4 length )
+{
+  VTYPE * vector;
+  if ( ! length )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+  vector = LALMalloc( sizeof( *vector ) );
+  if ( ! vector )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  vector->data = LALMalloc( length * sizeof( *vector->data ) );
+  if ( ! vector->data )
+  {
+    LALFree( vector );
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  }
+  vector->length = length;
+  return vector;
+}
 
 /* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length ) 
@@ -43,30 +62,12 @@ void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
    * Allocate pointer
    */
 
-  *vector = ( VTYPE * ) LALMalloc( sizeof( VTYPE ) );
-  if ( NULL == *vector )
+  *vector = XFUNC ( length );
+  if ( ! *vector )
   {
+    XLALClearErrno();
     ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
   }
-
-  (*vector)->length = 0;	/* length 0 until storage allocated */
-  (*vector)->data   = NULL;	/* NULL data until allocated */
-
-  /* 
-   * Allocate storage 
-   * Test that storage is properly allocated. Can't handle with ASSERT
-   * since we need to de-allocate structure pointer before an error return
-   */
-
-  (*vector)->data = ( TYPE * ) LALMalloc( length*sizeof( TYPE ) );
-
-  if ( NULL == (*vector)->data )
-  {
-    /* Must free storage pointed to by *vector */
-    LALFree( *vector );
-    ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
-  }
-  (*vector)->length = length;	/* Set length if storage allocated */
 
   /* We be done: Normal exit */
 

@@ -12,16 +12,109 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`LAL%sCreateArray',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateArray')', `define(`XFUNC',`format(`XLALCreate%s',ATYPE)')' )
+ifelse( TYPECODE, `', `define(`XFUNCL',`XLALCreateArrayL')', `define(`XFUNCL',`format(`XLALCreate%sL',ATYPE)')' )
+ifelse( TYPECODE, `', `define(`XFUNCV',`XLALCreateArrayV')', `define(`XFUNCV',`format(`XLALCreate%sV',ATYPE)')' )
+
+ATYPE * XFUNCL ( UINT4 ndim, ... )
+{
+  enum { maxdim = 16 };
+  va_list ap;
+  ATYPE *arr;
+  UINT4 dims[maxdim];
+  UINT4 dim;
+
+  if ( ! ndim )
+    XLAL_ERROR_NULL( "XFUNCL", XLAL_EBADLEN );
+  if ( ndim > maxdim )
+    XLAL_ERROR_NULL( "XFUNCL", XLAL_EINVAL );
+
+  va_start( ap, ndim );
+  for ( dim = 0; dim < ndim; ++dim )
+    dims[dim] = va_arg( ap, UINT4 );
+  va_end( ap );
+
+  arr = XFUNCV ( ndim, dims );
+  if ( ! arr )
+    XLAL_ERROR_NULL( "XFUNCL", XLAL_EFUNC );
+  return arr; 
+}
+
+ATYPE * XFUNCV ( UINT4 ndim, UINT4 *dims )
+{
+  ATYPE *arr;
+  UINT4Vector dimLength;
+
+  if ( ! ndim )
+    XLAL_ERROR_NULL( "XFUNCV", XLAL_EBADLEN );
+  if ( ! dims )
+    XLAL_ERROR_NULL( "XFUNCV", XLAL_EFAULT );
+
+  dimLength.length = ndim;
+  dimLength.data   = dims;
+
+  arr = XFUNC ( &dimLength );
+  if ( ! arr )
+    XLAL_ERROR_NULL( "XFUNCV", XLAL_EFUNC );
+  return arr;
+}
+
+
+ATYPE * XFUNC ( UINT4Vector *dimLength )
+{
+  ATYPE *arr;
+  UINT4 size = 1;
+  UINT4 ndim;
+  UINT4 dim;
+
+  if ( ! dimLength )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EFAULT );
+  if ( ! dimLength->length )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+  if ( ! dimLength->data )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EINVAL );
+
+  ndim = dimLength->length;
+  for ( dim = 0; dim < ndim; ++dim )
+    size *= dimLength->data[dim];
+
+  if ( ! size )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+
+  /* create array */
+  arr = LALMalloc( sizeof( *arr ) );
+  if ( ! arr )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+
+  /* create array dimensions */
+  arr->dimLength = XLALCreateUINT4Vector( ndim );
+  if ( ! arr->dimLength )
+  {
+    LALFree( arr );
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EFUNC );
+  }
+
+  /* copy dimension lengths */
+  memcpy( arr->dimLength->data, dimLength->data,
+      ndim * sizeof( *arr->dimLength->data ) );
+
+  /* allocate data storage */
+  arr->data = LALMalloc( size * sizeof( *arr->data ) );
+  if ( ! arr->data )
+  {
+    XLALDestroyUINT4Vector( arr->dimLength );
+    LALFree( arr );
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  }
+
+  return arr;
+}
+
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength ) 
 { /* </lalVerbatim> */
-  UINT4 arrayDataSize = 1;
-  UINT4 numDims;
-  UINT4 dim;
-
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);   
-  ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are sane */
 
@@ -32,56 +125,29 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
   ASSERT (dimLength->length, status,
           AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH);
 
-  numDims = dimLength->length;
-
-  /* loop over dimensions to compute total size of array data */
-
-  for (dim = 0; dim < numDims; ++dim)
+  *array = XFUNC ( dimLength );
+  if ( ! *array )
   {
-    arrayDataSize *= dimLength->data[dim];
+    int code = xlalErrno & ~XLAL_EFUNC; /* turn off subfunction error bit */
+    XLALClearErrno();
+    if ( code & XLAL_EFAULT )
+    {
+      ABORT (status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
+    }
+    if ( code == XLAL_EBADLEN )
+    {
+      ABORT (status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH);
+    }
+    if ( code == XLAL_EINVAL )
+    {
+      ABORT (status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
+    }
+    if ( code == XLAL_ENOMEM )
+    {
+      ABORT (status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC);
+    }
   }
 
-  ASSERT (arrayDataSize, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH);
-
-  /* allocate memory for structure */
-
-  *array = ( ATYPE * ) LALMalloc ( sizeof( ATYPE ) );
-  if ( NULL == *array )
-  {
-    ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
-  }
-
-  (*array)->dimLength = NULL;
-  (*array)->data      = NULL;
-
-  /* allocate dimLength field and copy information there */
-
-  LALU4CreateVector (status->statusPtr, &(*array)->dimLength, numDims);
-  if (status->statusPtr->statusCode)
-  {
-    LALFree (*array);
-    *array = NULL;
-    RETURN (status);   /* this returns a recursive error status code (-1) */
-  }
-  memcpy ((*array)->dimLength->data, dimLength->data, numDims*sizeof(UINT4));
-  
-  /* allocate storage */
-
-  (*array)->data = ( TYPE * ) LALMalloc( arrayDataSize*sizeof( TYPE ) );
-
-  if (!(*array)->data)
-  {
-    /* try to free memory                                               */
-    /* this should ALWAYS work so we can use the CHECKSTATUSPTR() macro */
-    LALU4DestroyVector (status->statusPtr, &(*array)->dimLength);
-    CHECKSTATUSPTR (status);  /* if this fails, there is a memory leak  */
-
-    LALFree (*array);
-    *array = NULL;
-    ABORT (status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC);
-  }
-
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 }
 

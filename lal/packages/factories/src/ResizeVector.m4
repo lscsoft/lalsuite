@@ -13,8 +13,29 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`RESIZEVECTOR',`format(`LAL%sResizeVector',TYPECODE)')
-define(`CREATEVECTOR',`format(`LAL%sCreateVector',TYPECODE)')
-define(`DESTROYVECTOR',`format(`LAL%sDestroyVector',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALResizeVector')', `define(`XFUNC',`format(`XLALResize%s',VTYPE)')' )
+define(`XCFUNC',`format(`XLALCreate%s',VTYPE)')
+define(`XDFUNC',`format(`XLALDestroy%s',VTYPE)')
+
+VTYPE * XFUNC ( VTYPE * vector, UINT4 length )
+{
+  if ( ! vector )
+    return XCFUNC ( length );
+  if ( ! length )
+  {
+    XDFUNC ( vector );
+    return NULL;
+  }
+  vector->data = LALRealloc( vector->data, length * sizeof( *vector->data ) );
+  if ( ! vector->data )
+  {
+    vector->length = 0;
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  }
+  vector->length = length;
+  return vector;
+}
+
 
 /* <lalVerbatim file="VectorFactoriesD"> */
 void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length ) 
@@ -27,46 +48,27 @@ void RESIZEVECTOR ( LALStatus *status, VTYPE **vector, UINT4 length )
   INITSTATUS( status, "RESIZEVECTOR", VECTORFACTORIESC );	
 
   ASSERT ( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
-      
+
   /* Want this to behave like realloc(3), i.e.
    * *vector == NULL => create a new vector 
    * length == 0 => destroy the vector 
    * otherwise => resize given vector 
    */
-  if ( (*vector) == NULL )
-    {
-      CREATEVECTOR ( status, vector, length );
-    }
-  else if ( length == 0 )
-    {
-      DESTROYVECTOR ( status, vector );
-    }
-  else
-    {
-      /* 
-       * Reallocate storage 
-       * Test that storage is properly allocated. Can't handle with ASSERT
-       * since we need to de-allocate structure pointer before an error return
-       */
 
-      /* 
-         NOTE: LALRealloc() free()s the pointer that's been passed in.  This
-         is different from the documented behavior of realloc(3) on Darwin,
-         although the realloc(3) on Darwin actually *does* free() the memory.
-         Ignore what Darwin's man pages say about realloc() and reallocf() 
-       */
-      p = LALRealloc( (*vector)->data, length*sizeof( TYPE ));
-
-      if (p == NULL)
-        {
-          /* FIXME: question -- do I need to free (*vector)->data here? */
-          LALFree( (*vector)->data );
-          ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
-        }
-    
-      (*vector)->data = p;
-      (*vector)->length = length;	/* Set length if storage allocated */
+  *vector = XFUNC ( *vector, length );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno(); 
+    if ( code == XLAL_EBADLEN )
+    {
+      ABORT( status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
     }
-
+    if ( code == XLAL_ENOMEM )
+    {
+      ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
+    }
+  }
+      
   RETURN( status );
 }

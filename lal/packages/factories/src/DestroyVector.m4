@@ -13,6 +13,20 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyVector',TYPECODE)')
+ifelse(TYPECODE, `', `define(`XFUNC',`XLALDestroyVector')', `define(`XFUNC',`format(`XLALDestroy%s',VTYPE)')' )
+
+void XFUNC ( VTYPE *vector )
+{
+  if ( ! vector )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EFAULT );
+  if ( ! vector->length || ! vector->data )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+  LALFree( vector->data );
+  vector->length = 0;
+  vector->data = NULL;
+  LALFree( vector );
+  return;
+}
 
 /* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( LALStatus *status, VTYPE **vector )
@@ -44,8 +58,20 @@ void FUNC ( LALStatus *status, VTYPE **vector )
 
   /* Ok, now let's free allocated storage */
 
-  LALFree( (*vector)->data ); /* free allocated data */
-  LALFree( *vector );	/* free vector struct itself */
+  XFUNC ( *vector );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    if ( code == XLAL_EFAULT )
+    {
+      ABORT( status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR );
+    }
+    if ( code == XLAL_EINVAL )
+    {
+      ABORT( status, AVFACTORIESH_EDPTR, AVFACTORIESH_MSGEDPTR );
+    }
+  }
 
   *vector = NULL;		/* make sure we don't point to freed struct */
 

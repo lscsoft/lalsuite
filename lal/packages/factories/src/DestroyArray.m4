@@ -12,12 +12,27 @@ ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`LAL%sDestroyArray',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALDestroyArray')', `define(`XFUNC',`format(`XLALDestroy%s',ATYPE)')' ) 
+
+void XFUNC ( ATYPE *array )
+{
+  if ( ! array )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EFAULT );
+  if ( ! array->dimLength
+      || ! array->dimLength->length
+      || ! array->dimLength->data
+      || ! array->data )
+    XLAL_ERROR_VOID( "XFUNC", XLAL_EINVAL );
+  XLALDestroyUINT4Vector( array->dimLength );
+  LALFree( array->data );
+  LALFree( array );
+  return;
+}
 
 /* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( LALStatus *status, ATYPE **array )
 { /* </lalVerbatim> */
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);	
-  ATTATCHSTATUSPTR (status);
       
   ASSERT (array,          status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
   ASSERT (*array,         status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);
@@ -25,13 +40,21 @@ void FUNC ( LALStatus *status, ATYPE **array )
 
   /* Free allocated storage */
 
-  LALU4DestroyVector (status->statusPtr, &(*array)->dimLength);
-  CHECKSTATUSPTR (status);
-
-  LALFree ((*array)->data); /* free allocated data */
-  LALFree (*array);	    /* free array struct itself */
+  XFUNC ( *array );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    if ( code == XLAL_EFAULT )
+    {
+      ABORT (status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);
+    }
+    if ( code == XLAL_EINVAL )
+    {
+      ABORT (status, AVFACTORIESH_EDPTR, AVFACTORIESH_MSGEDPTR);
+    }
+  }
   *array = NULL;	    /* make sure we don't point to freed struct */
 
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 }

@@ -123,6 +123,63 @@ typedef struct tagCreateArraySequenceIn {
 /* Function prototypes. */
 /* <lalLaTeX>
 \newpage\input{VectorSequenceFactoriesC}
+
+\newpage
+\subsection{XLAL Functions}
+
+\subsubsection*{Synopsis}
+\begin{verbatim}
+REAL4VectorSequence * XLALCreateVectorSequence(UINT4 length, UINT4 veclen);
+void XLALCreateVectorSequence(REAL4VectorSequence *vecseq);
+
+<vecseqtype> * XLALCreate<vecseqtype>(UINT4 length, UINT4 veclen);
+void XLALCreate<vecseqtype>(<vecseqtype> *vecseq);
+\end{verbatim}
+\idx{XLALCreateREAL4VectorSequence}
+\idx{XLALDestroyREAL4VectorSequence}
+\idx{XLALCreate<type>VectorSequence}
+\idx{XLALDestroy<type>VectorSequence}
+
+Here \verb+<vecseqtype>+ is one of
+\verb+COMPLEX16VectorSequence+,
+\verb+COMPLEX8VectorSequence+,
+\verb+REAL8VectorSequence+,
+\verb+REAL4VectorSequence+,
+\verb+INT8VectorSequence+,
+\verb+INT4VectorSequence+,
+\verb+INT2VectorSequence+,
+\verb+UINT8VectorSequence+,
+\verb+UINT4VectorSequence+,
+\verb+UINT2VectorSequence+, or
+\verb+CHARVectorSequence+.
+
+\subsubsection*{Description}
+
+The \verb+XLALCreate<type>VectorSequence+ functions create vector sequences
+of type \verb+<type>, length \verb+length+, and vector length \verb+veclen+.
+The function \verb+XLALCreateVectorSequence+ is the same as
+\verb+XLALCreateREAL4VectorSequence+.
+
+The \verb+XLALDestroy<type>VectorSequence+ functions deallocate the memory
+allocation pointed to by \verb+vecseq+ including its contents.  The function
+\verb+XLALDestroyVectorSequence+ is the same as
+\verb+XLALDestroyREAL4VectorSequence+.
+
+\subsubsection*{Return Values}
+
+The create functions return a pointer to the created vector sequence if
+successful; upon failure they will return \verb+NULL+ and set \verb+xlalErrno+
+to one of the following values: \verb+XLAL_ENOMEM+ if memory allocation
+failed, or \verb+XLAL_EBADLEN+ if the requested \verb+length+ or \verb+veclen+
+is zero.
+
+The destroy functions do not have a return value.  They can fail if they are
+passed a \verb+NULL+ pointer, in which case \verb+xlalErrno+ is set to
+\verb+XLAL_EFAULT+, or if the vector sequency passed to the destroy routine
+has zero length, vector length, or \verb+NULL+ data pointer then
+\verb+xlalErrno+ is set to \verb+XLAL_EINVAL+.
+
+
 </lalLaTeX> */
 
 

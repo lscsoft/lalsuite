@@ -16,8 +16,14 @@ define(`VTYPE',`format(`%sVector',TYPE)')
 define(`CREATEVECTOR',`format(`LAL%sCreateVector',TYPECODE)')
 define(`RESIZEVECTOR',`format(`LAL%sResizeVector',TYPECODE)')
 define(`DESTROYVECTOR',`format(`LAL%sDestroyVector',TYPECODE)')
+ifelse(TYPECODE,`',`define(`XCREATEVECTOR',`XLALCreateVector')',`define(`XCREATEVECTOR',`format(`XLALCreate%s',VTYPE)')')
+ifelse(TYPECODE,`',`define(`XRESIZEVECTOR',`XLALResizeVector')',`define(`XRESIZEVECTOR',`format(`XLALResize%s',VTYPE)')')
+ifelse(TYPECODE,`',`define(`XDESTROYVECTOR',`XLALDestroyVector')',`define(`XDESTROYVECTOR',`format(`XLALDestroy%s',VTYPE)')')
  * TYPE
  */
+VTYPE * XCREATEVECTOR ( UINT4 length );
+VTYPE * XRESIZEVECTOR ( VTYPE * vector, UINT4 length );
+void XDESTROYVECTOR ( VTYPE * vector );
 void CREATEVECTOR ( LALStatus *, VTYPE **, UINT4 );
 void RESIZEVECTOR ( LALStatus *, VTYPE **, UINT4 );
 void DESTROYVECTOR ( LALStatus *, VTYPE ** );

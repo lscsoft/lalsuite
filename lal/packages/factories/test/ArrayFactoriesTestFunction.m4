@@ -139,7 +139,7 @@ static void FUNC ( void )
 
     array->data = &datum;
     DFUNC ( &status, &array );
-    TestStatus( &status, CODES( -1 ), 1 );
+    TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
     ClearStatus( &status );
   }
 

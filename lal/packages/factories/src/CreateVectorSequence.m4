@@ -13,6 +13,32 @@ ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`LAL%sCreateVectorSequence',TYPECODE)')
+ifelse( TYPECODE, `', `define(`XFUNC',`XLALCreateVectorSequence')', `define(`XFUNC',`format(`XLALCreate%s',STYPE)')' ) 
+
+
+STYPE * XFUNC ( UINT4 length, UINT4 veclen )
+{
+  STYPE *seq;
+
+  if ( ! length || ! veclen )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_EBADLEN );
+
+  seq = LALMalloc( sizeof( *seq ) );
+  if ( ! seq )
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  
+  seq->data = LALMalloc( length * veclen * sizeof( *seq->data ) );
+  if ( ! seq )
+  {
+    LALFree( seq );
+    XLAL_ERROR_NULL( "XFUNC", XLAL_ENOMEM );
+  }
+
+  seq->length = length;
+  seq->vectorLength = veclen;
+
+  return seq;
+}
 
 /* <lalVerbatim file="VectorSequenceFactoriesD"> */
 void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in ) 
@@ -50,41 +76,28 @@ void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
   ASSERT (vseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR);
   ASSERT (*vseq == NULL, status, SEQFACTORIESH_EUPTR, SEQFACTORIESH_MSGEUPTR);
 
-  /*
-   * Allocate pointer
-   */
 
-  *vseq = ( STYPE * ) LALMalloc( sizeof( STYPE ) );
-  if ( NULL == *vseq )
+  *vseq = XFUNC ( in->length, in->vectorLength );
+  if ( ! vseq )
   {
-    ABORT( status, SEQFACTORIESH_EMALLOC, SEQFACTORIESH_MSGEMALLOC );
+    int code = xlalErrno;
+    XLALClearErrno();
+    if ( code == XLAL_EBADLEN )
+    {
+      if ( ! in->length )
+      {
+        ABORT (status, SEQFACTORIESH_ESLENGTH, SEQFACTORIESH_MSGESLENGTH);
+      }
+      else
+      {
+        ABORT (status, SEQFACTORIESH_EVLENGTH, SEQFACTORIESH_MSGEVLENGTH); 
+      }
+    }
+    if ( code == XLAL_ENOMEM )
+    {
+      ABORT( status, SEQFACTORIESH_EMALLOC, SEQFACTORIESH_MSGEMALLOC );
+    }
   }
-
-  (*vseq)->length = 0;	/* length 0 until storage allocated */
-  (*vseq)->vectorLength = 0; /* vector length 0 until storage allocated */
-  (*vseq)->data   = NULL;	/* NULL data until allocated */
-
-  /* 
-   * Allocate storage 
-   */
-
-  {
-    size_t tlength;
-    tlength = in->vectorLength * in->length * sizeof( TYPE );
-    (*vseq)->data = ( TYPE * ) LALMalloc (tlength);
-  }
-
-  if (NULL == (*vseq)->data)
-  {
-    /* Must free storage pointed to by *vseq */
-    LALFree ((void *) *vseq);
-    ABORT (status, SEQFACTORIESH_EMALLOC, SEQFACTORIESH_MSGEMALLOC);
-  }
- 
-  /* Set length, vectorLength if storage allocated */
-
-  (*vseq)->length = in->length;	
-  (*vseq)->vectorLength = in->vectorLength;
 
   /* We be done: Normal exit */
 
