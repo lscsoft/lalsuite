@@ -1307,7 +1307,7 @@ int write_SFTS(int iSFT){
 
 
   FILE *fp;
-  REAL4 rpw,ipw;
+  REAL4 rpw,ipw,norm;
   /* REAL8 fr; */
   char filename[256], filenumber[16];
   int errorcode;
@@ -1345,6 +1345,8 @@ int write_SFTS(int iSFT){
     syserror( "Error in writing header into file!\n");
     return 1;
   }
+
+  norm=((REAL4)header.nsamples)*1.0/((REAL4)(fvec->length-1));
 
   for (i=0;i<fvec->length-1;i++){
 
