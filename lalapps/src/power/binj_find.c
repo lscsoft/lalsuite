@@ -353,11 +353,14 @@ static SimBurstTable *free_this_injection(SimBurstTable *injection)
 	return(next);
 }
 
+/* not used anymore, but might come in handy, so don't delete just yet */
+#if 0
 static void free_injections(SimBurstTable *list)
 {
 	while(list)
 		list = free_this_injection(list);
 }
+#endif
 
 static SimBurstTable **trim_injection_list(SimBurstTable **list, struct options_t options)
 {
@@ -645,6 +648,8 @@ int main(int argc, char **argv)
 	INT4 ninjected = 0;
 	INT4 ndetected = 0;
 	SimBurstTable *injection_list = NULL;
+	SimBurstTable *made_list = NULL;
+	SimBurstTable **made_addpoint = &made_list;
 	SimBurstTable *detectedInjections = NULL;
 	SimBurstTable **detinjaddpoint = &detectedInjections;
 
@@ -655,7 +660,6 @@ int main(int argc, char **argv)
 	/* input loop */
 	FILE *infile;
 	char line[MAXSTR];
-	SimBurstTable *selected_inj;
 	INT8 SearchStart, SearchEnd;
 
 	/*
@@ -685,7 +689,6 @@ int main(int argc, char **argv)
 
 	/* For each trigger file named in the input file... */
 	while(getline(line, MAXSTR, infile)) {
-		selected_inj = NULL;
 		trigger_list = NULL;
 
 		if(options.verbose)
@@ -695,7 +698,8 @@ int main(int argc, char **argv)
 		timeAnalyzed += read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL);
 
 		/* Select the injections made during these times */
-		extract_injections(&stat, &selected_inj, injection_list, SearchStart, SearchEnd);
+		extract_injections(&stat, made_addpoint, injection_list, SearchStart, SearchEnd);
+
 
 		/* Read and trim the triggers from this file */
 		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &trigger_list, line), &stat);
@@ -703,14 +707,15 @@ int main(int argc, char **argv)
 
 		/* Search the triggers for matches against the selected
 		 * injections */
-		find_injections(&stat, selected_inj, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+		find_injections(&stat, *made_addpoint, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
 		while(*detinjaddpoint)
 			detinjaddpoint = &(*detinjaddpoint)->next;
 		while(*dettrigaddpoint)
 			dettrigaddpoint = &(*dettrigaddpoint)->next;
+		while(*made_addpoint)
+			made_addpoint = &(*made_addpoint)->next;
 
 		/* Clean up */
-		free_injections(selected_inj);
 		free_events(trigger_list);
 	}
 
@@ -735,7 +740,7 @@ int main(int argc, char **argv)
 	/* List of injections that were actually made */
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injmadeFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
-	myTable.simBurstTable = injection_list;
+	myTable.simBurstTable = made_list;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
