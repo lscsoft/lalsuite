@@ -151,9 +151,11 @@ int main( int argc, char *argv[] )
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
+#if 0
   int i, stat;
 
   double d, cosphi, sinphi;
+#endif
 
 /*  GalacticInspiralParamStruc galacticPar; */
   LALGPSCompareResult        compareGPS;
