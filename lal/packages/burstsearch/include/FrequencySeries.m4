@@ -1,7 +1,6 @@
-/* <lalVerbatim file="FrequencySeriesHV">
-Author: Kipp Cannon <kipp@gravity.phys.uwm.edu>
-$Id$
-</lalVerbatim>
+/*
+ * Author: Kipp Cannon <kipp@gravity.phys.uwm.edu>
+ * Revision: $Id$
  */
 
 #ifndef _FREQUENCYSERIES_H
@@ -9,34 +8,34 @@ $Id$
 
 #include <lal/LALDatatypes.h>
 
-define(DATATYPE,COMPLEX8)
+define(`DATATYPE',COMPLEX8)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,COMPLEX16)
+define(`DATATYPE',COMPLEX16)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,REAL4)
+define(`DATATYPE',REAL4)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,REAL8)
+define(`DATATYPE',REAL8)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,INT2)
+define(`DATATYPE',INT2)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,INT4)
+define(`DATATYPE',INT4)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,INT8)
+define(`DATATYPE',INT8)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,UINT2)
+define(`DATATYPE',UINT2)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,UINT4)
+define(`DATATYPE',UINT4)
 include(FrequencySeriesH.m4)
 
-define(DATATYPE,UINT8)
+define(`DATATYPE',UINT8)
 include(FrequencySeriesH.m4)
 
 #endif  /* _FREQUENCYSERIES_H */

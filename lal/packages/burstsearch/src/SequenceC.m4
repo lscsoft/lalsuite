@@ -1,8 +1,10 @@
 dnl $Id$
-define(SEQUENCETYPE,DATATYPE`Sequence')
+define(`SEQUENCETYPE',DATATYPE`Sequence')
+/* <lalVerbatim> */
 void `XLALDestroy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 )
+/* </lalVerbatim> */
 {
 	if(sequence)
 		LALFree(sequence->data);
@@ -10,10 +12,12 @@ void `XLALDestroy'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALDestroy'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALDestroy'SEQUENCETYPE", SEQUENCEC);
 	`XLALDestroy'SEQUENCETYPE (sequence);
@@ -21,9 +25,11 @@ void `LALDestroy'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	SEQUENCETYPE *new;
 	DATATYPE *data;
@@ -43,11 +49,13 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALCreate'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCreate'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -57,19 +65,23 @@ void `LALCreate'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	SEQUENCETYPE *new = NULL;
 
 	if(sequence && sequence->data) {
-		if(first + length > sequence->length)
+		if(first >= sequence->length)
+			length = 0;
+		else if(first + length > sequence->length)
 			length = sequence->length - first;
 		new = `XLALCreate'SEQUENCETYPE (length);
-		if(new)
+		if(new && length)
 			memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 	}
 
@@ -77,6 +89,7 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALCut'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
@@ -84,30 +97,36 @@ void `LALCut'SEQUENCETYPE (
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCut'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first < input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	*output = `XLALCut'SEQUENCETYPE (input, first, length);
 	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	RETURN(status);
 }
 
 
+/* <lalVerbatim> */
 size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	if(!sequence || !sequence->data)
 		return(0);
 
-	if(first + length > sequence->length)
-		length = sequence->length - first;
+	if(first >= sequence->length)
+		length = 0;
+	else {
+		if(first + length > sequence->length)
+			length = sequence->length - first;
+		memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
+	}
 
-	memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
 	sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
 	if(sequence->data)
 		sequence->length = length;
@@ -118,16 +137,17 @@ size_t `XLALShrink'SEQUENCETYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALShrink'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first < sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	`XLALShrink'SEQUENCETYPE (sequence, first, length);
 	RETURN(status);
 }

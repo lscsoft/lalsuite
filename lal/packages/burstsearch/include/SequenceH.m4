@@ -1,5 +1,5 @@
 dnl $Id$
-define(SEQUENCETYPE,DATATYPE`Sequence')
+define(`SEQUENCETYPE',DATATYPE`Sequence')
 void `XLALDestroy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 );

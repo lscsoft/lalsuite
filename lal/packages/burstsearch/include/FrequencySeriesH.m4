@@ -1,5 +1,5 @@
 dnl $Id$
-define(SERIESTYPE,DATATYPE`FrequencySeries')
+define(`SERIESTYPE',DATATYPE`FrequencySeries')
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 );

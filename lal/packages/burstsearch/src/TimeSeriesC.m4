@@ -1,9 +1,11 @@
 dnl "$Id"
-define(SERIESTYPE,DATATYPE`TimeSeries')
-define(SEQUENCETYPE,DATATYPE`Sequence')
+define(`SERIESTYPE',DATATYPE`TimeSeries')
+define(`SEQUENCETYPE',DATATYPE`Sequence')
+/* <lalVerbatim> */
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 )
+/* </lalVerbatim> */
 {
 	if(series)
 		`XLALDestroy'SEQUENCETYPE (series->data);
@@ -11,10 +13,12 @@ void `XLALDestroy'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALDestroy'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALDestroy'SERIESTYPE", TIMESERIESC);
 	`XLALDestroy'SERIESTYPE (series);
@@ -22,6 +26,7 @@ void `LALDestroy'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	CHAR *name,
 	LIGOTimeGPS epoch,
@@ -30,6 +35,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	LALUnit sampleUnits,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
@@ -56,6 +62,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -66,6 +73,7 @@ void `LALCreate'SERIESTYPE (
 	LALUnit sampleUnits,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", TIMESERIESC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -75,11 +83,13 @@ void `LALCreate'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
@@ -103,6 +113,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -110,27 +121,27 @@ void `LALCut'SERIESTYPE (
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCut'SERIESTYPE", TIMESERIESC);
 
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first < input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
 	*output = `XLALCut'SERIESTYPE (input, first, length);
-
 	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
 
 
+/* <lalVerbatim> */
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	if(!series)
 		return(0);
@@ -140,19 +151,19 @@ size_t `XLALShrink'SERIESTYPE (
 }
 
 
+/* <lalVerbatim> */
 void `LALShrink'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
+/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALShrink'SERIESTYPE", TIMESERIESC);
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first < series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	`XLALShrink'SERIESTYPE (series, first, length);
-
 	RETURN(status);
 }
