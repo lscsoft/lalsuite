@@ -480,6 +480,19 @@ LALInspiralFindEvents
    );
 
 /* <lalLaTeX>
+\newpage\input{LALInspiralFindEventsClusterC}
+</lalLaTeX>  */
+
+void 
+LALInspiralFindEventsCluster 
+   (
+   LALStatus            *status,
+   INT4                 *nEvents,
+   InspiralEventsList   **findeventsout,
+   InspiralFindEventsIn *findeventsin
+   );
+
+/* <lalLaTeX>
 \newpage\input{LALStatsREAL4VectorC}
 </lalLaTeX>  */
 
