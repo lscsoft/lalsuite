@@ -42,8 +42,8 @@ typedef enum {
 TFPlaneType;
 
 typedef enum {
-  useSingleTFPlane, /* tiles are created in a single TF plane */
-  useMultipleTFPlane /*tiles are created in multiple TF planes */ 
+  useSingleTFPlane = 1, /* tiles are created in a single TF plane */
+  useMultipleTFPlane    /*tiles are created in multiple TF planes */ 
 }
 TFPlaneMethod;
 
