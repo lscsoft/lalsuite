@@ -257,7 +257,7 @@ int main( int argc, char *argv[])
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
      ******************************************************************/
-    while ((totalNumPoints-usedNumPoints)>(2*params->ovrlap*(frameSampleRate/targetSampleRate))){
+    while ((totalNumPoints-usedNumPoints)>(2*(int)params->ovrlap*(frameSampleRate/targetSampleRate))){
 
       /* tell operator how we are doing */
       if (verbose){
@@ -266,6 +266,10 @@ int main( int argc, char *argv[])
 
       /* compute the number of points in a chunk */
       numPoints = min(ramLimitPoints,(totalNumPoints - usedNumPoints)) ;
+
+      if (verbose){
+        fprintf(stdout,"read in %i points\n",numPoints);
+      }
       
       /* count the no. of points that are being used */
       usedNumPoints += numPoints;
@@ -277,6 +281,7 @@ int main( int argc, char *argv[])
       series.epoch = tmpEpoch;
       strcpy(series.name, params->channelName);
       series.f0 = 0.0;
+      series.deltaT = 1.0/((REAL8)frameSampleRate);
       series.sampleUnits = lalADCCountUnit;
 
       /*******************************************************************
@@ -558,14 +563,36 @@ int main( int argc, char *argv[])
       /*******************************************************************
        * DO THE SEARCH                                                    *
        *******************************************************************/
-      for(start_sample = 0; start_sample < (int) series.data->length; start_sample += (psdAveragePoints - 3* params->ovrlap))
+      if (verbose)
+	fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
+
+      /* first check if the psdAveragePoints of data are available or not?
+       * If not, then set the psdAveragePoints to be equal to the length 
+       * of data available 
+       */
+      if ((int)series.data->length < psdAveragePoints)
+	psdAveragePoints = series.data->length;
+
+      for(start_sample = 0; start_sample < ((int)series.data->length - 3*params->ovrlap); start_sample += (psdAveragePoints - 3* params->ovrlap))
       {
         REAL4TimeSeries *interval;
+	int shifted_start_sample = 0;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(psdAveragePoints, (series.data->length - start_sample))), &stat);
+	/* if the no. of points left is less than the psdAveragePoints
+	 * then move the epoch back so that it can cut out 
+	 * psdAveragePoints of data 
+	 */
+	if ( ((int)series.data->length - start_sample) < psdAveragePoints ){
 
+	 shifted_start_sample = series.data->length - psdAveragePoints;
+
+	 LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, shifted_start_sample,psdAveragePoints), &stat);
+	}
+	else
+	  LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, psdAveragePoints), &stat);
+	
         if (verbose)
-          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
+          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample,min(shifted_start_sample,start_sample) + interval->data->length);
 
         LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
 
@@ -575,7 +602,7 @@ int main( int argc, char *argv[])
         LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
       } 
 
-
+ 
       /* compute the start time for the next chunk */
       tmpOffset = (REAL8)(numPoints - 2 * (params->ovrlap*(frameSampleRate/targetSampleRate)))/((REAL8)frameSampleRate);
       LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
