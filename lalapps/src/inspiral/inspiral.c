@@ -1007,33 +1007,15 @@ cleanexit:
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag )
   {
-    if ( injectionFile )
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_INJ_%s-%d-%d.xml",
-          ifo, userTag, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
-          ifo, userTag, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
+    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
+        ifo, userTag, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    if ( injectionFile )
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_INJ-%d-%d.xml",
-          ifo, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
-          ifo, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
+    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
+        ifo, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
