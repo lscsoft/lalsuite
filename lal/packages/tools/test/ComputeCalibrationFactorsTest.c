@@ -470,6 +470,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
       fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
       fprintf(stdout,"\t-E\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
       fprintf(stdout,"\t-D\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL)\n");
+      fprintf(stdout,"Caution: There are a few hardwired quantities in this code. Look for 'HARDWIRED!!' in the code.\n");
       exit(0);
       break;
     default:
