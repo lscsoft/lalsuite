@@ -128,9 +128,8 @@
 
 #include <config.h>
 
-#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+#ifdef LAL_FFTW3_ENABLED
 #include <fftw3.h>
-#define USE_FFTW3
 #elif defined HAVE_SRFFTW_H
 #include <srfftw.h>
 #elif defined HAVE_RFFTW_H
@@ -148,7 +147,7 @@
 #include <lal/FFTWMutex.h>
 
 /* tell FFTW to use LALMalloc and LALFree */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
 #define FFTWHOOKS ((void)0)
 #else
 #define FFTWHOOKS \
@@ -163,7 +162,7 @@ tagRealFFTPlan
 {
   INT4       sign;
   UINT4      size;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_plan  plan;
 #else
   rfftw_plan plan;
@@ -180,7 +179,7 @@ LALCreateForwardRealFFTPlan(
     INT4          measure
     )
 { /* </lalVerbatim> */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   REAL4 *tmp1;
   REAL4 *tmp2;
   int flags = FFTW_UNALIGNED;
@@ -194,7 +193,7 @@ LALCreateForwardRealFFTPlan(
   INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
   FFTWHOOKS;
 
-#ifndef USE_FFTW3
+#ifndef LAL_FFTW3_ENABLED
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
 #endif
@@ -213,7 +212,7 @@ LALCreateForwardRealFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = -1;
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = LALMalloc( size * sizeof( *tmp2 ));
   if ( !tmp1 || !tmp2 )
@@ -225,13 +224,13 @@ LALCreateForwardRealFFTPlan(
   }
 #endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   (*plan)->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
 #else
   (*plan)->plan = rfftw_create_plan( size, FFTW_REAL_TO_COMPLEX, flags );
 #endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   LALFree( tmp2 );
   LALFree( tmp1 );
 #endif
@@ -255,7 +254,7 @@ LALCreateReverseRealFFTPlan(
     INT4          measure
     )
 { /* </lalVerbatim> */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   REAL4 *tmp1;
   REAL4 *tmp2;
   int flags = FFTW_UNALIGNED;
@@ -269,7 +268,7 @@ LALCreateReverseRealFFTPlan(
   INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
   FFTWHOOKS;
 
-#ifndef USE_FFTW3
+#ifndef LAL_FFTW3_ENABLED
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
 #endif
@@ -288,7 +287,7 @@ LALCreateReverseRealFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = 1;
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
   if ( !tmp1 || !tmp2 )
@@ -300,13 +299,13 @@ LALCreateReverseRealFFTPlan(
   }
 #endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   (*plan)->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
 #else
   (*plan)->plan = rfftw_create_plan( size, FFTW_COMPLEX_TO_REAL, flags );
 #endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   LALFree( tmp2 );
   LALFree( tmp1 );
 #endif
@@ -335,7 +334,7 @@ LALDestroyRealFFTPlan(
 
   /* destroy plan and set to NULL pointer */
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_destroy_plan( (*plan)->plan );
 #else
   rfftw_destroy_plan( (*plan)->plan );
@@ -387,7 +386,7 @@ LALForwardRealFFT(
     ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
   }
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_execute_r2r( plan->plan, input->data, tmp );
 #else
   rfftw_one( plan->plan, (fftw_real *) input->data, tmp );
@@ -474,7 +473,7 @@ LALReverseRealFFT(
     tmp[n / 2] = input->data[n / 2].re;
   }
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_execute_r2r( plan->plan, tmp, output->data );
 #else
   rfftw_one( plan->plan, tmp, (fftw_real *) output->data );
@@ -521,7 +520,7 @@ LALRealPowerSpectrum (
     ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
   }
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_execute_r2r( plan->plan, data->data, tmp );
 #else
   rfftw_one( plan->plan, (fftw_real *) data->data, tmp );
@@ -578,7 +577,7 @@ LALREAL4VectorFFT(
   ASSERT( input->length == plan->size, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_execute_r2r( plan->plan, input->data, output->data );
 #else
   rfftw_one( plan->plan, (fftw_real *)input->data, (fftw_real *)output->data );
@@ -590,5 +589,5 @@ LALREAL4VectorFFT(
 #undef FFTWHOOKS
 
 /* double precision routines if they are available */
-#if defined HAVE_LIBFFTW3 && defined HAVE_FFTW3_H
+#if defined LAL_FFTW3_ENABLED && HAVE_LIBFFTW3
 #endif

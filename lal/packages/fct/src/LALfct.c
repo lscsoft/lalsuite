@@ -18,7 +18,7 @@
    </lalLaTeX> */
 
 #include <config.h>
-#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+#if defined LAL_FFTW3_ENABLED
 /* fftw3 not yet supported */
 #else /* fftw2 implementation */
 

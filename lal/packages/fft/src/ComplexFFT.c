@@ -103,8 +103,7 @@
 
 #include <config.h>
 
-#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
-#define USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
 #include <fftw3.h>
 #elif defined HAVE_SFFTW_H
 #include <sfftw.h>
@@ -125,7 +124,7 @@
 NRCSID( COMPLEXFFTC, "$Id$" );
 
 /* tell FFTW to use LALMalloc and LALFree */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
 #define FFTWHOOKS ((void)0)
 #else
 #define FFTWHOOKS \
@@ -137,7 +136,7 @@ tagComplexFFTPlan
 {
   INT4       sign;
   UINT4      size;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_plan plan;
 #else
   fftw_plan  plan;
@@ -153,7 +152,7 @@ LALCreateForwardComplexFFTPlan(
     INT4             measure
     )
 { /* </lalVerbatim> */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   COMPLEX8 *tmp1;
   COMPLEX8 *tmp2;
   int flags = FFTW_UNALIGNED;
@@ -167,7 +166,7 @@ LALCreateForwardComplexFFTPlan(
   INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
-#ifndef USE_FFTW3
+#ifndef LAL_FFTW3_ENABLED
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
 #endif
@@ -186,7 +185,7 @@ LALCreateForwardComplexFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = -1;
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
   if ( !tmp1 || !tmp2 )
@@ -198,14 +197,14 @@ LALCreateForwardComplexFFTPlan(
   }
 #endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   (*plan)->plan = fftwf_plan_dft_1d( size,
       (fftwf_complex *)tmp1, (fftwf_complex *)tmp2, FFTW_FORWARD, flags );
 #else
   (*plan)->plan = fftw_create_plan( size, FFTW_FORWARD, flags );
 #endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   LALFree( tmp2 );
   LALFree( tmp1 );
 #endif
@@ -229,7 +228,7 @@ LALCreateReverseComplexFFTPlan(
     INT4             measure
     )
 { /* </lalVerbatim> */
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   COMPLEX8 *tmp1;
   COMPLEX8 *tmp2;
   int flags = FFTW_UNALIGNED;
@@ -243,7 +242,7 @@ LALCreateReverseComplexFFTPlan(
   INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
-#ifndef USE_FFTW3
+#ifndef LAL_FFTW3_ENABLED
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
 #endif
@@ -262,7 +261,7 @@ LALCreateReverseComplexFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = 1;
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
   tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
   if ( !tmp1 || !tmp2 )
@@ -274,14 +273,14 @@ LALCreateReverseComplexFFTPlan(
   }
 #endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   (*plan)->plan = fftwf_plan_dft_1d( size,
       (fftwf_complex *)tmp1, (fftwf_complex *)tmp2, FFTW_BACKWARD, flags );
 #else
   (*plan)->plan = fftw_create_plan( size, FFTW_BACKWARD, flags );
 #endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   LALFree( tmp2 );
   LALFree( tmp1 );
 #endif
@@ -311,7 +310,7 @@ LALDestroyComplexFFTPlan (
 
   /* destroy plan and set to NULL pointer */
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_destroy_plan( (*plan)->plan );
 #else
   fftw_destroy_plan( (*plan)->plan );
@@ -354,7 +353,7 @@ LALCOMPLEX8VectorFFT (
   ASSERT( input->length == plan->size, status,
           COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
 
-#ifdef USE_FFTW3
+#ifdef LAL_FFTW3_ENABLED
   fftwf_execute_dft(
       plan->plan,
       (fftwf_complex *)input->data,
@@ -372,5 +371,5 @@ LALCOMPLEX8VectorFFT (
 }
 
 /* double precision routines if they are available */
-#if defined HAVE_LIBFFTW3 && defined HAVE_FFTW3_H
+#if defined LAL_FFTW3_ENABLED && defined HAVE_LIBFFTW3
 #endif
