@@ -45,8 +45,6 @@ BOOLEAN FILE_FSTATS = 1;
 #define FILE_FMAX
 #define FILE_FLINES
 #define FILE_FTXT 
-#define FILE_PSD 
-#define FILE_PSDLINES 
 #define FILE_SPRNG 
 */
 
