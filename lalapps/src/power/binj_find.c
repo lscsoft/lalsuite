@@ -185,7 +185,7 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
 		return(a);
 
 	if(options.best_confidence)
-		return(a->confidence > b->confidence ? a : b);
+		return(a->confidence < b->confidence ? a : b);
 
 	if(options.best_peaktime) {
 		INT8 injtime, atime, btime;
