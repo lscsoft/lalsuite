@@ -53,15 +53,13 @@ NRCSID(LALBARYCENTERTESTC,"$Id$");
 /***************************** <lalErrTable file="LALBarycenterTestCE"> */
 #define LALBARYCENTERTESTC_ENOM 0
 #define LALBARYCENTERTESTC_EOPEN 1
-#define LALBARYCENTERH_ENULL  2
 #define LALBARYCENTERTESTC_EOUTOFRANGEE  4
 #define LALBARYCENTERTESTC_EOUTOFRANGES  8
 #define LALBARYCENTERTESTC_EBADSOURCEPOS 16
 #define LALBARYCENTERTESTC_EEPHFILE 32
 
 #define LALBARYCENTERTESTC_MSGENOM "Nominal exit"
-#define LALBARYCENTERTESTC_MSGEEOPEN "Error checking failed to catch missing ephemeris file."
-#define LALBARYCENTERTESTC_MSGENULL "Failed to catch null input to Barycenter routine."
+#define LALBARYCENTERTESTC_MSGEOPEN "Error checking failed to catch missing ephemeris file."
 #define LALBARYCENTERTESTC_MSGEOUTOFRANGEE "Failed to catch that tgps not in range of earth.dat file"
 #define LALBARYCENTERTESTC_MSGEOUTOFRANGES "Failed to catch that tgps not in range of sun.dat file"  
 #define LALBARYCENTERTESTC_MSGEBADSOURCEPOS "Failed to catch bad source position"
