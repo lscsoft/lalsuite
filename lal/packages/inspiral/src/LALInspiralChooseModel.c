@@ -436,6 +436,7 @@ static REAL8 Fp6(REAL8 v, expnCoeffs *ak)
    return (flux);
 }
 
+/*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp7(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
    REAL8 flux,v2,v4,v8,v10;
