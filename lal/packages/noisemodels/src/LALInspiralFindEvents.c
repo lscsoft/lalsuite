@@ -164,7 +164,7 @@ LALInspiralFindEvents
    LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, findeventsin->psd);
    CHECKSTATUSPTR(status);
    corrin.df = df;
-   corrin.fCutoff = findeventsin->param.tSampling/2.;
+   corrin.fCutoff = findeventsin->param.fFinal;
    corrin.psd = findeventsin->psd;
    corrin.signal1 = findeventsin->signal;
    corrin.signal2 = filter1;

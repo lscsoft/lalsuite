@@ -86,7 +86,7 @@ main ( void )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
    UINT4 numPSDpts = 1048576;
-   UINT4 numFcutTemplates=4;
+   UINT4 numFcutTemplates=5;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
@@ -112,7 +112,7 @@ main ( void )
    bankParams.x0Min = 0.0;
    bankParams.x0Max = 2.5e5;
    bankParams.x1Min = -2.2e3;
-   bankParams.x1Max = 0.0;
+   bankParams.x1Max = 100.0;
    bankParams.minimalMatch = 0.95;
 
 /*---------------------------------------------------------------------------*/
@@ -147,12 +147,12 @@ main ( void )
    randIn.param.order = 4;
    randIn.param.approximant = PadeT1;
    randIn.param.massChoice = m1Andm2;
-   randIn.mMin = 5.0;
+   randIn.param.fendBCV = 1000.;
+   randIn.mMin = 3.0;
    randIn.mMax = 20.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
-   randIn.param.fendBCV = 300.;
    randIn.param.alpha = 0.;
 
    signal.length = 0.;
@@ -192,12 +192,14 @@ main ( void )
 	   tmpltList[i].params.startPhase = randIn.param.startPhase;
 	   tmpltList[i].params.nEndPad = randIn.param.nEndPad;
 	   tmpltList[i].params.tSampling= randIn.param.tSampling;
+	   tmpltList[i].params.fendBCV= randIn.param.fendBCV;
    }
 
 	   
+   /*
+   */
    LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
    fprintf(stderr, "#Number of Coarse Bank Templates after=%d\n",nlist);
-   fprintf(FilterTest, "Number of Coarse Bank Templates=%d\n",nlist);
    if (nlist==0) exit(0);
 
    for (i=0; i<nlist; i++)
@@ -242,7 +244,7 @@ main ( void )
       int numTemplates=0;
       randIn.type = 0;
       /*
-      randIn.param.massChoice = m1Andm2;
+      randIn.param.massChoice = psi0Andpsi3;
       */
       randIn.param.massChoice = m1Andm2;
       randIn.param.approximant = EOB;
@@ -276,18 +278,34 @@ main ( void )
       randIn.param.fendBCV = randIn.param.fCutoff;
       */
 
-      overlapin.signal = signal;
+      /*
+      overlapin.param = tmpltList[j].params;
+      */
       overlapin.param = randIn.param;
+      overlapin.signal = signal;
       overlapin.param.approximant = BCV;
+      overlapin.param.massChoice = psi0Andpsi3;
       jmax = 0;
       omax = 0.0;
+	      
       for (j=0; j<nlist; j++) 
       {
      	      overlapin.param.psi0 = tmpltList[j].params.psi0;
 	      overlapin.param.psi3 = tmpltList[j].params.psi3;
 	      overlapin.param.fCutoff = tmpltList[j].params.fendBCV;
+	      overlapin.param.fendBCV = tmpltList[j].params.fendBCV;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-	      fprintf(stderr, "%d %e %e %e\n", j, overlapin.param.psi0, overlapin.param.psi3, overlapout.max);
+	      tmpltList[j].params.fFinal = overlapin.param.fFinal;
+	      fprintf(FilterTest, "%e %e %e %e\n", 
+			      overlapin.param.psi0, 
+			      overlapin.param.psi3, 
+			      overlapin.param.fFinal, 
+			      overlapout.max);
+	      fprintf(stderr, "%e %e %e %e\n", 
+			      overlapin.param.psi0, 
+			      overlapin.param.psi3, 
+			      overlapin.param.fFinal, 
+			      overlapout.max);
 	      if (omax < overlapout.max) 
 	      {
 		      omax = overlapout.max;
@@ -295,20 +313,26 @@ main ( void )
 		      jmax = j;
 	      }
       }
-      fprintf(stderr, "%e %e %e %e %e %e\n", 
+      fprintf(stderr, "%e %e %e %e %e %e %e %e %e\n", 
 		      tmpltList[jmax].params.psi0, 
+		      randIn.param.psi0, 
 		      tmpltList[jmax].params.psi3, 
-		      tmpltList[jmax].params.fendBCV, 
-		      randIn.param.mass1, 
-		      randIn.param.mass2, 
+		      randIn.param.psi3, 
+		      tmpltList[jmax].params.fFinal, 
+		      randIn.param.fFinal,
+		      randIn.param.mass1,
+		      randIn.param.mass2,
 		      omax);
      
-      fprintf(FilterTest, "%e %e %e %e %e %e\n", 
+      fprintf(FilterTest, "#%e %e %e %e %e %e %e %e %e\n", 
 		      tmpltList[jmax].params.psi0, 
+		      randIn.param.psi0, 
 		      tmpltList[jmax].params.psi3, 
-		      tmpltList[jmax].params.fendBCV, 
-		      randIn.param.mass1, 
-		      randIn.param.mass2, 
+		      randIn.param.psi3, 
+		      tmpltList[jmax].params.fFinal, 
+		      randIn.param.fFinal,
+		      randIn.param.mass1,
+		      randIn.param.mass2,
 		      omax);
       fflush(stdout);
    }

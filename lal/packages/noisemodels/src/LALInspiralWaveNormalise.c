@@ -33,8 +33,6 @@ vector using:
 \begin{equation}
 \widehat H_k = \frac {H_k}{\sqrt H},\ \ k=0,\ldots n-1.
 \end{equation}
-Note that the norm of $\widehat H_k,$ as defined in Eq.~(\ref{eq:inspiralnorm}), 
-is unity.
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -90,8 +88,12 @@ LALInspiralWaveNormalise
 
   *norm *= 2.;
 
+  /*
   if (psd.data[nby2]) *norm += pow(in->data[nby2], 2.)/psd.data[nby2];
   if (psd.data[0]) *norm += pow(in->data[0], 2.)/psd.data[0];
+  */
+  /* Set the 0th and Nyquist frequency bins to be zero. */
+  in->data[0] = in->data[nby2] = 0.;
 
   *norm = sqrt(*norm);
   

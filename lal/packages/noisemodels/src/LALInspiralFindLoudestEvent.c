@@ -216,7 +216,7 @@ LALInspiralFindLoudestEvent
    
    normin.psd = &(findeventsin->psd);
    normin.df = df;
-   normin.fCutoff = findeventsin->param.fCutoff;
+   normin.fCutoff = findeventsin->param.fFinal;
    normin.samplingRate = findeventsin->param.tSampling;
    LALInspiralWaveNormaliseLSO(status->statusPtr, &filter1, &norm, &normin);
    CHECKSTATUSPTR(status);
@@ -225,7 +225,7 @@ LALInspiralFindLoudestEvent
    corrin.psd = findeventsin->psd;
    corrin.revp = findeventsin->revp;
    corrin.signal1 = findeventsin->signal;
-   corrin.fCutoff = findeventsin->param.fCutoff;
+   corrin.fCutoff = findeventsin->param.fFinal;
    corrin.samplingRate = findeventsin->param.tSampling;
 
    corrin.signal2 = filter1;

@@ -177,8 +177,8 @@ LALRandomInspiralSignal
 	   valid = 0;
 	   while (!valid) 
 	   {
-		   epsilon1 = random()/(float)RAND_MAX;
-		   epsilon2 = random()/(float)RAND_MAX;
+		   epsilon1 = (float) random()/(float)RAND_MAX;
+		   epsilon2 = (float) random()/(float)RAND_MAX;
 		   switch (randIn->param.massChoice) 
 		   {
 			   case m1Andm2: 

@@ -114,13 +114,13 @@ LALInspiralWaveOverlap
    }
    normin.psd = &(overlapin->psd);
    normin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
-   normin.fCutoff = overlapin->param.fCutoff;
+   normin.fCutoff = overlapin->param.fFinal;
    normin.samplingRate = overlapin->param.tSampling;
    LALInspiralWaveNormaliseLSO(status->statusPtr, &filter1, &norm, &normin);
    CHECKSTATUSPTR(status);
    LALInspiralWaveNormaliseLSO(status->statusPtr, &filter2, &norm, &normin);
    CHECKSTATUSPTR(status);
-   corrin.fCutoff = overlapin->param.fCutoff;
+   corrin.fCutoff = overlapin->param.fFinal;
    corrin.samplingRate = overlapin->param.tSampling;
    corrin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
    corrin.psd = overlapin->psd;
