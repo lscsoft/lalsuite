@@ -32,11 +32,15 @@ Provides routines to filter IFO data for binary inspiral chirps.
 #include <stdlib.h>
 #include <strings.h>
 #include <lal/LALStdlib.h>
+#include <lal/Random.h>
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/Inject.h>
 #ifdef LAL_MPI_ENABLED
 #include <lal/Comm.h>
 #include <lal/FindChirpExch.h>
@@ -69,6 +73,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_ELVEL 11
 #define FINDCHIRPENGINEH_ESEGZ 12
 #define FINDCHIRPENGINEH_EUSIM 13
+#define FINDCHIRPENGINEH_EWAVL 14
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -82,6 +87,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
 #define FINDCHIRPENGINEH_MSGESEGZ "Number of data segments is zero"
 #define FINDCHIRPENGINEH_MSGEUSIM "Unkown simulation type requested"
+#define FINDCHIRPENGINEH_MSGEWAVL "Simulated waveform is longer than dataseg"
 /* </lalErrTable> */
 
 
@@ -99,15 +105,22 @@ typedef enum
   gaussianNoise,
   bankMinimalMatch,
   gaussianNoiseInject,
-  realDataInject
+  realDataInject,
+  egregious
 }
 FindChirpSimulationType;
 
 typedef struct
 tagFindChirpSimulationParams
 {
-  UINT4                         simCount;
-  FindChirpSimulationType       simType;
+  FindChirpSimulationType       simType;        /* type of simulation        */
+  UINT4                         simCount;       /* number of simulations     */
+  InspiralEvent                *loudestEvent;   /* array of loudest events   */
+  REAL4                        *signalNorm;     /* (s|s) for each dataSeg    */
+  REAL4                         mMin;           /* minimum mass for binary   */
+  REAL4                         mMax;           /* maximum mass for binary   */
+  REAL4                         gaussianVarsq;  /* variance squared of noise */
+  RandomParams                 *randomParams;   /* random seed container     */
 }
 FindChirpSimulationParams;
 
