@@ -113,6 +113,8 @@ INT4               mdcFlag       = FALSE;
  
 /* global variables */
 FrChanIn   channelIn;               /* channnel information               */
+FrChanIn   mdcchannelIn;            /* mdc signal only channnel info      */
+EPSearchParams  *mdcparams = NULL;  /* mdc search param                   */
 CHAR       site[2];                 /* one character site                 */
 CHAR       ifo[3];                  /* two character interferometer       */
 CHAR       comment[LIGOMETA_COMMENT_MAX]; /* string in output file name   */
@@ -336,7 +338,7 @@ int main( int argc, char *argv[])
 
     /* write diagnostic info to disk */
     if ( printData ){
-      LALPrintTimeSeries( &series, "./timeseries.dat" );
+      LALPrintTimeSeries( &series, "./timeseriesasq.dat" );
     }
 
     /* create storage for the response function */
@@ -422,6 +424,7 @@ int main( int argc, char *argv[])
     if (mdcFlag)
       {
           INT4 i;
+	 
 	  /*open mdc cache */
           LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
 	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
@@ -433,17 +436,22 @@ int main( int argc, char *argv[])
           memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
           mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
           mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-          strcpy(mdcSeries.name, params->channelName);
+          strcpy(mdcSeries.name, mdcparams->channelName);
           mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
           mdcSeries.f0 = 0.0;
           mdcSeries.sampleUnits = lalADCCountUnit;
-          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &channelIn, stream), &stat);
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
           mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
           mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
           LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
 
           /* get the mdc signal data */
-          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &channelIn, stream), &stat);
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
+
+	  /* write diagnostic info to disk */
+	  if ( printData ){
+	    LALPrintTimeSeries( &mdcSeries, "./timeseriesmdc.dat" );
+	  }
 
 	  /* add the signal to the As_Q data */
 	  
@@ -480,7 +488,7 @@ int main( int argc, char *argv[])
       LAL_CALL( LALFloatToGPS( &stat, 
             &(searchsumm.searchSummaryTable->out_end_time), &tmpTime ), &stat );
     }
-
+    
     /*******************************************************************
     * DO THE SEARCH                                                    *
     *******************************************************************/
@@ -607,7 +615,8 @@ int main( int argc, char *argv[])
     }
     if ( cachefile ) LALFree( cachefile ); 
     if ( dirname ) LALFree( dirname ); 
-
+    if ( mdcFlag ) LALFree( mdcparams->channelName );
+    if ( mdcFlag ) LALFree( mdcparams );
     LALCheckMemoryLeaks();
 
     return 0;
@@ -681,7 +690,9 @@ int initializeEPSearch(
         {"injfile",                 required_argument, 0,                 'J'},
 	/* geo data flag, argument is corner freq. of high pass filter */
 	{"geodata",		    required_argument, 0,		  'K'},
+	/* mdc data & channel information */
         {"mdccache",                required_argument, 0,                 'L'},
+        {"mdcchannel",              required_argument, 0,                 'M'},
         /* output options */
         {"printData",               no_argument,       &printData,         TRUE },
         {"printSpectrum",           no_argument,       &printSpectrum,     TRUE },
@@ -741,7 +752,7 @@ int initializeEPSearch(
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:J:K:",
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:J:K:L:M:",
                 long_options, &option_index );
 
         /* detect the end of the options */
@@ -1294,6 +1305,30 @@ int initializeEPSearch(
                 mdcCacheFile = (CHAR *) calloc( len, sizeof(CHAR));
                 memcpy( mdcCacheFile, optarg, len );
                 mdcFlag = TRUE;
+                ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+	     case 'M':
+	        mdcparams = LALMalloc (sizeof( EPSearchParams ));
+	        if ( !mdcparams )
+		  {
+		    fprintf(stderr, "Memory allocation failed for searchParams\n");
+		    exit(1);
+		  }
+                /* mdc channel to be used in the analysis */
+                mdcparams->channelName = (CHAR *) LALMalloc(strlen( optarg )+1 );
+                if (! mdcparams->channelName ){
+                    fprintf(stderr,"Error allocating memory for channel name\n");
+                }
+                strcpy( mdcparams->channelName, optarg );
+                mdcchannelIn.name = mdcparams->channelName;
+                mdcchannelIn.type = ADCDataChannel;
+  
+                /* copy the first character to site and the first two to ifo 
+                memset( site, 0, sizeof(site) );
+                memset( ifo, 0, sizeof(ifo) );
+                memcpy( site, mdcchannelIn.name, sizeof(site) - 1 );
+                memcpy( ifo, mdcchannelIn.name, sizeof(ifo) - 1 );*/
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
                 break;
 
