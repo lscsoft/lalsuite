@@ -1,51 +1,31 @@
-/*--------------------------------------------------------------------
- * void InitDopplerScanOnRefinedGrid()
- *
- *
- * [1] 
- * A helper function for metric validations.
- * At the same time, this is a wrapper for the Reinhard's InitDopplerScan().
- * This routine refine a usre-specified skyRegion so that the number of the 
- * grid points inside the region will be about a (hard-coded) desired value.
- *
- *
- * [2] Purpose 
- * When we search around a sky position, it may happen that we need to 
- * use numbers, "targetNumGridPoints", of sky grid points around the  
- * position. Taking the DopplerScanInit variable "scanInit", we try 
- * "maxTrial" times to refine the initial skyRegion "scanInit->skyRegion" 
- * so that the refined sky region contains "targetNumGridPoints +- tolerance"  
- * grid points. 
- * The output is a DopplerScanState variable "theScan".
- *
- * The input/output are same as InitDopplerScan to cope with it and NOT 
- * to introduce additional command line arguments to ComputeFStatistic. 
- * 
- * 
- * [3] Example usage: This is painful. 
- * #define NEARESTGRIDPOINTS_ON
- *
- * #ifdef NEARESTGRIDPOINTS_ON
- *     void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit scanInit);
- * #endif
- *
- *
- *#ifdef NEARESTGRIDPOINTS_ON
- *   LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
- *#else 
- *  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
- * LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
- *  if (lalDebugLevel) LALPrintError ("done.\n");
- * if ( uvar_outputSkyGrid ) {
- *   LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
- *   LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
- *   LALPrintError (" done.\n\n");
- * }
- *#endif
- *
- *
- *
- *--------------------------------------------------------------------*/
+/*!@file
+   @author Itoh, Yousuke  
+   $Id$
+   @note 
+   @brief A helper function for wide-sky-area search codes validation.
+ 
+  [1] 
+  A helper function for metric validations.
+  At the same time, this is a wrapper for the Reinhard's InitDopplerScan().
+  This routine refine a usre-specified skyRegion so that the number of the 
+  grid points inside the region will be about a (hard-coded) desired value.
+ 
+ 
+  [2] Purpose 
+  When we search around a sky position, it may happen that we need to 
+  use numbers, "targetNumGridPoints", of sky grid points around the  
+  position. Taking the DopplerScanInit variable "scanInit", we try 
+  "maxTrial" times to refine the initial skyRegion "scanInit->skyRegion" 
+  so that the refined sky region contains "targetNumGridPoints +- tolerance"  
+  grid points. 
+  The output is a DopplerScanState variable "theScan".
+ 
+  The input/output are same as InitDopplerScan to cope with it and NOT 
+  to introduce additional command line arguments to ComputeFStatistic. 
+
+  
+*/
+
 #include "DopplerScan.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,27 +39,33 @@
 #include <lal/StringInput.h>
 
 extern INT4 lalDebugLevel;
-NRCSID( NEARESTGRIDPOINTSC, "$Id$" );
+NRCSID( NEIGHBORINGGRIDPOINTSC, "$Id$" );
 
-#define NEARESTGRIDPOINTSH_ENULL 	1
-#define NEARESTGRIDPOINTSH_ENONULL	2
-#define NEARESTGRIDPOINTSH_ESUB		3
-#define NEARESTGRIDPOINTSH_EMEM		4
+#define NEIGHBORINGGRIDPOINTSH_ENULL 	1
+#define NEIGHBORINGGRIDPOINTSH_ENONULL	2
+#define NEIGHBORINGGRIDPOINTSH_ESUB		3
+#define NEIGHBORINGGRIDPOINTSH_EMEM		4
 
-#define NEARESTGRIDPOINTSH_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define NEARESTGRIDPOINTSH_MSGENONULL		"Output pointer is not NULL"
-#define NEARESTGRIDPOINTSH_MSGESUB		"Failure in a subroutine call."
-#define NEARESTGRIDPOINTSH_MSGEMEM		"Memory allocation error."
+#define NEIGHBORINGGRIDPOINTSH_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define NEIGHBORINGGRIDPOINTSH_MSGENONULL		"Output pointer is not NULL"
+#define NEIGHBORINGGRIDPOINTSH_MSGESUB		"Failure in a subroutine call."
+#define NEIGHBORINGGRIDPOINTSH_MSGEMEM		"Memory allocation error."
 
 
+/*! Computes ratio-scaled vertices  */
 void RefineSkyRegion (LALStatus *status,  DopplerScanInit *scanInit, DopplerScanState *scanState,  SkyPosition *skyPosition, REAL8 *ratio);
+/*! Compute the geometrical center of the given skyRegion */
 void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, SkyRegion *skyRegion);
+/*! 
+refine the original skyRegion so that there are about "targetNumGridPoints" grid points within a new skyRegion. Return the new skyRegion 
+*/
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+
 
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 
-			       DopplerScanState *theScan, /* output */ 
-			       DopplerScanInit *scanInit   /* input */ )
+			       DopplerScanState *theScan,  /*!<  Output DopplerScanState variable includes a refined skyRegion  */ 
+			       DopplerScanInit *scanInit   /*!<  Input DopplerScanInit variable includes the original skyRegion */ )
 {
   UINT4 ic;
   INT4 targetNumGridPoints = 40; 
@@ -94,11 +80,11 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   SkyPosition centerOfMass;
   DopplerScanInit *scanInitTmp;
 
-  INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEARESTGRIDPOINTSC );
+  INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEIGHBORINGGRIDPOINTSC );
   ATTATCHSTATUSPTR( status );
   /* This traps coding errors in the calling routine. */
-  ASSERT ( scanInit, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
-  ASSERT ( theScan != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
+  ASSERT ( scanInit, status, NEIGHBORINGGRIDPOINTSH_ENULL , NEIGHBORINGGRIDPOINTSH_MSGENULL );  
+  ASSERT ( theScan != NULL, status, NEIGHBORINGGRIDPOINTSH_ENONULL , NEIGHBORINGGRIDPOINTSH_MSGENONULL );  
 
   /* copy the origianl scanInit to a temporal scanInitTmp. */
   scanInitTmp = scanInit;
@@ -117,7 +103,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   if ( status->statusCode ) {
     LALFree(tmpSkyRegion.vertices);
     REPORTSTATUS ( status );
-    ABORT (status,  NEARESTGRIDPOINTSH_ESUB ,  NEARESTGRIDPOINTSH_MSGESUB );
+    ABORT (status,  NEIGHBORINGGRIDPOINTSH_ESUB ,  NEIGHBORINGGRIDPOINTSH_MSGESUB );
   }
   LALFree(tmpSkyRegion.vertices);
 
@@ -174,22 +160,22 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
  * void ComputeCenterOfMass()
  *
  * This compute the center of the mass.
- * (1)Find the center of the mass point by vectorial-averaging over 
+ * Find the center of the mass point by vectorial-averaging over 
  *    all the vertices. 
  *    $\vec g = \frac{1}{N}\sum_{i}^N\vec p_i$
  *--------------------------------------------------------------------*/
 void 
 ComputeCenterOfMass ( LALStatus *status, 
-		     SkyPosition *skyposCM, /* output center of mass of the vertices pointed by scanInit */
-		     SkyRegion *skyRegion /* input Initial vertices. */)
+		     SkyPosition *skyposCM, /*!< output: center of mass of the vertices pointed by scanInit */
+		     SkyRegion *skyRegion /*!< input: Initial vertices. */)
 {
   REAL8 longitudeCM = 0.0, latitudeCM = 0.0;
   UINT4 ic;
 
-  INITSTATUS( status, "ComputeCenterOfMass", NEARESTGRIDPOINTSC );
+  INITSTATUS( status, "ComputeCenterOfMass", NEIGHBORINGGRIDPOINTSC );
   /* This traps coding errors in the calling routine. */
-  ASSERT ( skyRegion, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
-  ASSERT ( skyposCM != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
+  ASSERT ( skyRegion, status, NEIGHBORINGGRIDPOINTSH_ENULL , NEIGHBORINGGRIDPOINTSH_MSGENULL );  
+  ASSERT ( skyposCM != NULL, status, NEIGHBORINGGRIDPOINTSH_ENONULL , NEIGHBORINGGRIDPOINTSH_MSGENONULL );  
 
 
   /* Find the center of mass */
@@ -208,7 +194,9 @@ ComputeCenterOfMass ( LALStatus *status,
   RETURN( status );
 } /* void ComputeCenterOfMass() */
 
+
 /*--------------------------------------------------------------------
+ *
  * void RefineSkyRegion()
  *
  * This routine computes ratio-scaled vertices.
@@ -225,10 +213,10 @@ ComputeCenterOfMass ( LALStatus *status,
  *--------------------------------------------------------------------*/
 void 
 RefineSkyRegion (LALStatus *status, 
-		 DopplerScanInit *scanInit, 
-		 DopplerScanState *scanState, 
-		 SkyPosition *centerOfMass,  
-		 REAL8 *ratio )
+		 DopplerScanInit *scanInit, /*!< output: includes scaled vertices */
+		 DopplerScanState *scanState, /*!< input: includes skyPosition to be scaled */
+		 SkyPosition *centerOfMass,  /*!< input: geometrical center of the skyRegion */
+		 REAL8 *ratio /*!< input: ratio by which the skyRegion will be scaled */)
 {
   REAL8 longitudeCM = 0.0, latitudeCM = 0.0;
   REAL8 longitudeIth = 0.0, latitudeIth = 0.0;
@@ -236,23 +224,20 @@ RefineSkyRegion (LALStatus *status,
   CHAR *tmpstr;
   CHAR *ptr;
   UINT4 ic;
-  /*
-  REAL8 eps = sqrt(LAL_REAL4_EPS);
-  */
 
-  INITSTATUS( status, "RefineSkyRegion", NEARESTGRIDPOINTSC );
+  INITSTATUS( status, "RefineSkyRegion", NEIGHBORINGGRIDPOINTSC );
 
   longitudeCM = centerOfMass->longitude; 
   latitudeCM = centerOfMass->latitude; 
 
   tmpSkyRegion = (CHAR *) LALMalloc(strlen(scanInit->skyRegion)+512);
   if ( tmpSkyRegion == NULL ) {
-    ABORT (status,  NEARESTGRIDPOINTSH_EMEM ,  NEARESTGRIDPOINTSH_MSGEMEM );
+    ABORT (status,  NEIGHBORINGGRIDPOINTSH_EMEM ,  NEIGHBORINGGRIDPOINTSH_MSGEMEM );
   }
   tmpstr = (CHAR *) LALMalloc(512);
   if ( tmpstr == NULL ) {
     LALFree(tmpSkyRegion);
-    ABORT (status,  NEARESTGRIDPOINTSH_EMEM ,  NEARESTGRIDPOINTSH_MSGEMEM );
+    ABORT (status,  NEIGHBORINGGRIDPOINTSH_EMEM ,  NEIGHBORINGGRIDPOINTSH_MSGEMEM );
   }
   memset(tmpSkyRegion,'\0',sizeof(tmpSkyRegion));
   memset(tmpstr,'\0',sizeof(tmpstr));
@@ -270,20 +255,6 @@ RefineSkyRegion (LALStatus *status,
     latitudeIth += latitudeCM;
 
 
-    /* This maps around the angular variable 
-       modulo 0,2pi (alpha) and -pi/2,pi/2. Thanks to that (thanks 
-       to Reinhard, I do not need the following restrictions!) */
-    /*
-    if( longitudeIth < 0.0 ) 
-      longitudeIth = 0.0 + eps;
-    if( longitudeIth > LAL_TWOPI ) 
-      longitudeIth = LAL_TWOPI - eps;
-    if( latitudeIth < - LAL_PI_2 ) 
-      latitudeIth = - LAL_PI_2 + eps;
-    if( latitudeIth > LAL_PI_2 ) 
-      latitudeIth = LAL_PI_2 - eps;
-    */
-
     sprintf ( tmpstr, "(%.16f, %.16f), ", longitudeIth, latitudeIth );
     strcat ( tmpSkyRegion, tmpstr );
   }
@@ -297,12 +268,9 @@ RefineSkyRegion (LALStatus *status,
     LALFree(scanInit->skyRegion);
     LALFree(tmpstr);
     LALFree(tmpSkyRegion);
-    ABORT (status,  NEARESTGRIDPOINTSH_EMEM ,  NEARESTGRIDPOINTSH_MSGEMEM );
+    ABORT (status,  NEIGHBORINGGRIDPOINTSH_EMEM ,  NEIGHBORINGGRIDPOINTSH_MSGEMEM );
   }
   scanInit->skyRegion = ptr;
-  /*
-  memset(scanInit->skyRegion,'\0',strlen((scanInit->skyRegion)));
-  */
   strcpy(scanInit->skyRegion,tmpSkyRegion);
 
   LALFree(tmpstr);
