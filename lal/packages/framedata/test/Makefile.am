@@ -15,7 +15,8 @@ pkgdata_DATA = catalog $(FRAMEFILES)
 noinst_DATA = catalog.test
 
 EXTRA_DIST = NoTest FrameDataTest.c SpecBufferTest.c DataBufferTest.c \
-        mkcatalog.sh FrameCacheTest.sh $(FRAMEFILES)
+        mkcatalog.sh FrameCacheTest.sh $(FRAMEFILES) \
+        L-CAL-714240000-715609980.cache L-CAL-729925200-729928800.cache
 
 LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
