@@ -105,6 +105,7 @@ main (int argc, char *argv[])
   RandomParams                 *randParams = NULL;
 
   FindChirpFilterParams        *filterParams = NULL;
+  FindChirpChisqParams         *chisqParams  = NULL;
   FindChirpSPDataParams        *dataParams   = NULL;
   FindChirpSPTmpltParams       *tmpltParams  = NULL;
 
@@ -187,6 +188,11 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
+  LALFindChirpChisqVetoInit (&status, filterParams->chisqParams, 
+      numChisqBins, numPoints);
+  TestStatus (&status, "0", 1);
+  ClearStatus (&status);
+
   LALFindChirpSPDataInit (&status, &dataParams, initParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -230,20 +236,20 @@ main (int argc, char *argv[])
     REAL4 time;
     dataSeg = dataSegVec->data;
 
-    dataSeg[i].data->deltaT = (REAL8) deltaT;
+    dataSeg[i].real4Data->deltaT = (REAL8) deltaT;
     dataSeg[i].spec->deltaF = (REAL8) deltaF;
 
     time = numPoints * deltaT * (REAL4) i;
-    dataSeg[i].data->epoch.gpsSeconds     = (INT4) floor( time );
+    dataSeg[i].real4Data->epoch.gpsSeconds     = (INT4) floor( time );
     time = (time - floor( time )) * 1.0E9;
-    dataSeg[i].data->epoch.gpsNanoSeconds = (INT4) floor( time );
+    dataSeg[i].real4Data->epoch.gpsNanoSeconds = (INT4) floor( time );
 
     /* impulse */
     if ( inputDataType == impulse )
     {
-      memset( dataSeg[i].data->data->data, 0, numPoints * sizeof(INT2) );
+      memset( dataSeg[i].real4Data->data->data, 0, numPoints * sizeof(REAL4) );
 
-      dataSeg[i].data->data->data[0] = 1;
+      dataSeg[i].real4Data->data->data[0] = 1.0;
 
       /* spectrum and response */
       for ( k = 0; k < numPoints/2 + 1; ++k )
@@ -265,18 +271,18 @@ main (int argc, char *argv[])
       for ( j = 0; j < numPoints; ++j )
       {
         REAL4 noise;
-        INT2  ifodmro;
+        REAL4 ifodmro;
 
         noise = floor( 0.5 + sigma * noiseVec->data[j] );
 
         if ( noise > -2048 && noise < 2047 ) 
-          ifodmro= (INT2) noise;
+          ifodmro= noise;
         else if ( noise < -2048 ) 
-          ifodmro = -2048;
+          ifodmro = -2048.0;
         else 
-          ifodmro=2047;
+          ifodmro=2047.0;
 
-        dataSeg[i].data->data->data[j] = ifodmro;
+        dataSeg[i].real4Data->data->data[j] = ifodmro;
       }
 
       /* spectrum and response */
@@ -315,8 +321,8 @@ main (int argc, char *argv[])
       /* read in ifodmro data */
       for ( j = 0; j < numPoints; ++j )
       {
-        if (( (flag = fscanf( fpData, "%hd\n", 
-                  &(dataSeg[i].data->data->data[j]) )) != 1 || flag == EOF ) 
+        if (( (flag = fscanf( fpData, "%f\n", 
+                  &(dataSeg[i].real4Data->data->data[j]) )) != 1 || flag == EOF ) 
             && j < numPoints ) 
         {
           fprintf( stdout, "error reading input data\n" );
@@ -495,6 +501,11 @@ main (int argc, char *argv[])
 abort:
 
   LALDestroyRandomParams (&status, &randParams);
+  TestStatus (&status, "0", 1);
+  ClearStatus (&status);
+
+  LALFindChirpChisqVetoFinalize (&status, filterParams->chisqParams,
+      numChisqBins);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
 
