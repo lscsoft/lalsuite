@@ -240,8 +240,8 @@ LALFindChirpBCVSpinFilterSegment (
   I *= 4;
   J *= 4;
   K *= 4;
-  L *= 4;
-  M *= 4;
+  L *= 2;
+  M *= 2;
 
   /* Expensive or well used quantities calc before loop */
 
