@@ -163,7 +163,9 @@ To build and install the LAL software suite,
 cd $LALPREFIX/src/lal
 ./00boot
 ./configure --prefix=$LALPREFIX \
-        --enable-frame --enable-metaio
+        --enable-frame --enable-metaio \
+        --enable-static --disable-shared \
+        --with-extra-cflags=-g
 make
 make check
 make dvi
@@ -211,7 +213,9 @@ cd $LALPREFIX/src/lalapps
 ./configure --prefix=$LALPREFIX \
     --with-extra-cppflags="-I$LALPREFIX/include" \
     --with-extra-ldflags="-L$LALPREFIX/lib" \
-    --enable-frame --enable-metaio
+    --enable-frame --enable-metaio \
+    --enable-static --disable-shared \
+    --with-extra-cflags="-g -static"
 make
 make check
 make dvi
@@ -220,6 +224,12 @@ cd $LALPREFIX/stow_pkgs
 stow lalapps-howto
 \end{verbatim}
 This completes the installation and testing of LALApps.  
+
+Note f you are building lalapps on a machine with Condor installed and wish to
+run in the standard universe, append the option \texttt{--enable-condor} to
+the configure for lalapps before you type make. The lalapps executables will
+then be linked with \texttt{condor\_compile} and checkpointing will be
+available.
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
