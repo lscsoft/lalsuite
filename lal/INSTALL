@@ -282,9 +282,12 @@ HP-UX 10.20 may need
    --with-extra-cppflags="-D_HPUX_SOURCE"
 
 
-Mac OS X (10.2.x, possibly 10.1.x) with bundled cc/gcc:
+Mac OS X (10.2.x, possibly 10.1.x, but NOT 10.3.x) with bundled cc/gcc:
 
   * Configure with:  --with-extra-cflags="-D_ANSI_SOURCE -no-cpp-precomp"
+
+  * Note: I (Jolien) don't need these with 10.2 ... perhaps it depends on the
+    version of the developer tools.  Also, do NOT use these flags with 10.3.
 
 
 
