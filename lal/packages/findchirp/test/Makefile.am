@@ -10,7 +10,7 @@ check_PROGRAMS  =
 TESTS           = NoTest.sh
 endif
 
-EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c
+EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c TwoInterfFindChirpSPTest.c
 
 EXTRA_TEXSOURCES = NoTest.sh
 
