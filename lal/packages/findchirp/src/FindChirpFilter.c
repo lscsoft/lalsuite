@@ -243,6 +243,7 @@ LALFindChirpFilterInit (
     LALCalloc( 1, sizeof(FindChirpChisqInput) );
   if ( !outputPtr->chisqInputBCV )
   {
+    LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -264,6 +265,7 @@ LALFindChirpFilterInit (
   BEGINFAIL( status )
   {
     LALFree( outputPtr->chisqInput );
+    LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -279,6 +281,7 @@ LALFindChirpFilterInit (
         &(outputPtr->invPlan) ), status );
     
     LALFree( outputPtr->chisqInput );
+    LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -294,6 +297,7 @@ LALFindChirpFilterInit (
     TRY( LALDestroyComplexFFTPlan( status->statusPtr,
         &(outputPtr->invPlan) ), status );
 
+    LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
@@ -314,6 +318,7 @@ LALFindChirpFilterInit (
         &(outputPtr->invPlan) ), status );
     
     LALFree( outputPtr->chisqInput );
+    LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -332,6 +337,7 @@ LALFindChirpFilterInit (
     TRY( LALDestroyComplexFFTPlan( status->statusPtr,
         &(outputPtr->invPlan) ), status );
 
+    LALFree( outputPtr->chisqInput );
     LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
@@ -1135,9 +1141,18 @@ LALFindChirpBCVFilterSegment (
   REAL4                 b2;                  
   REAL4                 templateNorm;
   REAL4                 modqsq;
+  REAL4    		omega;
+  REAL4			Num1;
+  REAL4 		Num2;
+  REAL4			Den1;
+  REAL4			Den2;
+  REAL4 		InvTan1;
+  REAL4			InvTan2;
 
+  /*
   FindChirpChisqInput  *chisqInput;
   FindChirpChisqInput  *chisqInputBCV;
+  */
 
   INITSTATUS( status, "LALFindChirpBCVFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -1256,16 +1271,21 @@ LALFindChirpBCVFilterSegment (
 
   {
     /* length of the chirp:                      */
-    /* For BCV, the chirpTime is not calculated  */
-    /* but set to 1.5 seconds.                   */
-    /* chirpTime is not recorded                 */
-    /* just used to maximize over chirp.         */
+    REAL4 eta = input->tmplt->eta;
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
-    REAL4 m = m1 + m2;
     REAL4 fmin = input->segment->fLow;
+    REAL4 m = m1 + m2;
+    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+    REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
+    REAL4 c3 = -32*LAL_PI/3;
+    REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
     REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
-    REAL4 chirpTime = 1.0;
+    REAL4 x2 = x*x;
+    REAL4 x3 = x*x2;
+    REAL4 x4 = x2*x2;
+    REAL4 x8 = x4*x4;
+    REAL8 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
@@ -1476,16 +1496,16 @@ LALFindChirpBCVFilterSegment (
         params->chisqParams->chisqBinVec    = input->segment->chisqBinVec;
 	params->chisqParams->chisqBinVecBCV = input->segment->chisqBinVecBCV;
         params->chisqParams->norm           = norm;
-	params->chisqParams->a1             = a1 ;
-	params->chisqParams->b1             = b1 ;
-	params->chisqParams->b2             = b2 ;
+	params->chisqParams->a1             = input->segment->a1 ;
+	params->chisqParams->b1             = input->segment->b1 ;
+	params->chisqParams->b2             = input->segment->b2 ;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
 
         /* compute the chisq threshold: this is slow! */
-        LALFindChirpBCVChisqVeto( status->statusPtr, params->chisqVec,
-            params->chisqInput, params->chisqInputBCV, params->chisqParams );
+        LALFindChirpChisqVeto( status->statusPtr, params->chisqVec,
+            params->chisqInput, params->chisqParams );
         CHECKSTATUSPTR (status);
 
         haveChisq = 1;
@@ -1523,8 +1543,8 @@ LALFindChirpBCVFilterSegment (
            thisEvent->end_time.gpsSeconds = j;
            thisEvent->snr = modqsq;
          }
-         else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-             ! params->maximiseOverChirp )
+         else if ( (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+             ! params->maximiseOverChirp) )
          {
            /* clean up this event */
            SnglInspiralTable *lastEvent;
@@ -1543,7 +1563,7 @@ LALFindChirpBCVFilterSegment (
            CHECKSTATUSPTR( status );
 
            /* set the impuse time for the event */
-           /*thisEvent->template_duration = (REAL8) chirpTime;*/ 
+           thisEvent->template_duration = (REAL8) chirpTime;
 
 	   /* record the ifo and channel name for the event */
 	   strncpy( thisEvent->ifo, input->segment->data->name,
@@ -1551,6 +1571,51 @@ LALFindChirpBCVFilterSegment (
 	   strncpy( thisEvent->channel, input->segment->data->name + 3,
 	       (LALNameLength - 3) * sizeof(CHAR) );
 	   thisEvent->impulse_time = thisEvent->end_time;
+
+	   /* record coalescence phase and alpha */
+
+	   /* calculate the numerators and the denominators */
+	   Num1 = qBCV[timeIndex].re + q[timeIndex].im ;
+	   Num2 = qBCV[timeIndex].re - q[timeIndex].re ;
+           Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
+	   Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
+
+	   if ( Den1 == 0 )
+	   {
+	     if ( Num1 >= 0 )
+	     {
+		InvTan1 = LAL_PI / 2.0;
+	     }
+	     else 
+	     {
+	    	InvTan1 = - LAL_PI / 2.0 ;
+	     }
+       	   }
+	   else
+	   {
+	      InvTan1 = atan( Num1 / Den1 );
+	   }
+
+	   if ( Den2 == 0 )
+           {
+             if ( Num2 >= 0 )
+             {
+                InvTan2 = LAL_PI / 2.0;
+             }
+             else
+             {
+                InvTan2 = - LAL_PI / 2.0 ;
+             }
+           }
+           else
+           {
+              InvTan2 = atan( Num2 / Den2 );
+           }
+
+	   thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
+	   omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
+	   thisEvent->alpha = - input->segment->b2 * tan(omega) / 
+		( input->segment->a1 + input->segment->b1*tan(omega) );
 
            /* copy the template into the event */
 	   thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -1642,7 +1707,7 @@ LALFindChirpBCVFilterSegment (
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    /*thisEvent->template_duration = (REAL8) chirpTime; */
+    thisEvent->template_duration = (REAL8) chirpTime; 
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name,
