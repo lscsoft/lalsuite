@@ -1,0 +1,2 @@
+# demo2 script
+xmgr -par CoarseTest2.par ChirpSpace2.out CoarseTest2.out

@@ -1,0 +1,49 @@
+/*  <lalVerbatim file="LALLIGOIPsdCV">
+Author: Sathyaprakash, B. S.
+$Id$
+</lalVerbatim>  */
+
+/*  <lalLaTeX>
+
+\subsection{Module \texttt{LALLIGOIPsd.c}}
+
+Module to calculate the noise power spectral density for the initial LIGO detector.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALLIGOIPsdCP}
+\index{\verb&LALLIGOIPsd()&}
+
+\subsubsection*{Description}
+
+The module takes as an input a frequency $f$ in Hz, and it calculates the noise spectral
+density (per Hz)
+$S_{h}(f)$ for that frequency $f$.
+
+\subsubsection*{Algorithm}
+
+
+\subsubsection*{Uses}
+None.
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{LALLIGOIPsdCV}}
+
+</lalLaTeX>  */
+
+
+
+
+#include <lal/LALInspiralBank.h>
+
+/*  <lalVerbatim file="LALLIGOIPsdCP"> */
+REAL8 LALLIGOIPsd (REAL8 x) 
+{ /* </lalVerbatim> */
+
+   REAL8 x2, psd;
+   x2 = x*x;
+   psd = pow(4.49*x,-56.) + 0.16 * pow(x,-4.52) + 0.52 + 0.32 * x2; 
+   return (psd);
+}
+

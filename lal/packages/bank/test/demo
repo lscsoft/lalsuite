@@ -1,0 +1,2 @@
+#
+xmgr -par CoarseTest.par ChirpSpace.out CoarseTest.out

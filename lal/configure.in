@@ -168,6 +168,11 @@ AC_OUTPUT( Makefile                               \
            packages/inspiral/include/Makefile     \
            packages/inspiral/src/Makefile         \
            packages/inspiral/test/Makefile        \
+           packages/bank/Makefile                 \
+           packages/bank/doc/Makefile             \
+           packages/bank/include/Makefile         \
+           packages/bank/src/Makefile             \
+           packages/bank/test/Makefile            \
            packages/pulsar/Makefile               \
            packages/pulsar/doc/Makefile           \
            packages/pulsar/include/Makefile       \
