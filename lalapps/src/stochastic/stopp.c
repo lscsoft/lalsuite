@@ -79,7 +79,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* options that set a flag */
       {"verbose", no_argument, &vrbflg, 1},
       {"text", no_argument, &text_flag, 1},
-      {"cat-flag", no_argument, &cat_flag, 1},
+      {"cat-only", no_argument, &cat_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
