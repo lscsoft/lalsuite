@@ -14,7 +14,7 @@ import exceptions
 import time
 import random
 import md5
-
+import math
 
 def s2play(t):
   """
@@ -823,7 +823,9 @@ class ScienceSegment:
     retrieved with the unused() method.
     length = length of chunk in seconds.
     overlap = overlap between chunks in seconds.
-    play = only generate chunks that overlap with S2 playground data.
+    play = 1 : only generate chunks that overlap with S2 playground data.
+    play = 2 : as play = 1 plus compute trig start and end times to coincide
+      with the start/end of the playground
     sl = slide by sl seconds before determining playground data.
     excl_play = exclude the first excl_play second from the start and end
     of the chunk when computing if the chunk overlaps with playground.
@@ -832,23 +834,40 @@ class ScienceSegment:
     start = self.start()
     increment = length - overlap
     while time_left >= length:
-      middle = start + length / 2
       end = start + length
       if (not play) or (play and (((end-sl-excl_play-729273613) % 6370) < 
         (600+length-2*excl_play))):
-        self.__chunks.append(AnalysisChunk(start,end))
+	if (play == 2):
+	  # calculate the start of the playground preceeding the chunk end
+	  play_start = 729273613 + 6370 * \
+		math.floor((end-sl-excl_play-729273613) / 6370)
+ 	  play_end = play_start + 600
+	  trig_start = 0
+	  trig_end = 0
+	  if ( (play_end - 6370) > start ):
+	    print "Two playground segments in this chunk:",
+	    print "  Code to handle this case has not been implemented"
+	    sys.exit(1)
+          else:
+	    if play_start > start:
+	      trig_start = int(play_start)
+	    if play_end < end:
+	      trig_end = int(play_end)
+	  self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
+        else:
+          self.__chunks.append(AnalysisChunk(start,end))
       start += increment
       time_left -= increment
     self.__unused = time_left - overlap
 
-  def add_chunk(self,start,end,trig_start):
+  def add_chunk(self,start,end,trig_start=0,trig_end=0):
     """
     Add an AnalysisChunk to the list associated with this ScienceSegment.
     start = GPS start time of chunk.
     end = GPS end time of chunk.
     trig_start = GPS start time for triggers from chunk
     """
-    self.__chunks.append(AnalysisChunk(start,end,trig_start))
+    self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
 
   def unused(self):
     """
@@ -980,7 +999,9 @@ class ScienceData:
     length = length of chunk in seconds.
     trig_overlap = length of time start generating triggers before the
     start of the unused data.
-    play = if true, only generate chunks that overlap with S2 playground data.
+    play = 1 : only generate chunks that overlap with S2 playground data.
+    play = 2 : as play = 1 plus compute trig start and end times to coincide
+      with the start/end of the playground
     min_length = the unused data must be greater than min_length to make a
     chunk.
     sl = slide by sl seconds before determining playground data.
@@ -995,7 +1016,26 @@ class ScienceData:
         middle = start + length / 2
         if (not play) or (play and (((end-sl-excl_play-729273613)%6370) < 
           (600+length-2*excl_play))):
-          seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
+          trig_start = end - seg.unused() - trig_overlap
+	  if (play == 2):
+            # calculate the start of the playground preceeding the chunk end
+	    play_start = 729273613 + 6370 * \
+              math.floor((end-sl-excl_play-729273613) / 6370)
+ 	    play_end = play_start + 600
+	    trig_end = 0
+	    if ( (play_end - 6370) > start ):
+	      print "Two playground segments in this chunk"
+	      print "  Code to handle this case has not been implemented"
+	      sys.exit(1)
+            else:
+	      if play_start > trig_start:
+	        trig_start = int(play_start)
+	      if (play_end < end):
+	        trig_end = int(play_end)
+	      if trig_end > trig_start:
+                seg.add_chunk(start, end, trig_start, trig_end)
+          else:
+            seg.add_chunk(start, end, trig_start)
         seg.set_unused(0)
 
   def make_short_chunks_from_unused(
