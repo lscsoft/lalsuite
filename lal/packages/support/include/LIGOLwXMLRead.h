@@ -1,19 +1,34 @@
-/* <lalVerbatim file="LIGOLwXMLReadHV">
-$Id$
-</lalVerbatim> */
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: LIGOLwXMLRead.h
+ *
+ * Author: Brown, D. A. and Fairhurst, S.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
 
-/* <lalLaTeX>
+#if 0
+<lalVerbatim file="LIGOLwXMLReadHV">
+Author: Brown, D. A. and Fairhurst, S.
+$Id$
+</lalVerbatim> 
+<lalLaTeX>
 
 \section{Header \texttt{LIGOLwXMLRead.h}}
 \label{s:LIGOLwXMLRead.h}
+
+Provides functions for reading LIGO lightweight XML files to LIGO 
+metadata database tables.
 
 \subsection*{Synopsis}
 \begin{verbatim}
 #include <lal/LIGOLwXMLRead.h>
 \end{verbatim}
 
-</lalLaTeX> */
-
+</lalLaTeX>
+#endif
 
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
@@ -148,6 +163,12 @@ int
 SearchSummaryTableFromLIGOLw (
     SearchSummaryTable **sumHead,
     CHAR                *fileName
+    );
+
+int
+SummValueTableFromLIGOLw (
+    SummValueTable **sumHead,
+    CHAR           *fileName
     );
 
 #ifdef  __cplusplus

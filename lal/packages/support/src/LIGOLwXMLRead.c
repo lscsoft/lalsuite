@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: ligolwbank.c
+ * File Name: ligolwxmlread.c
  *
  * Author: Brown, D. A.
  * 
@@ -8,6 +8,13 @@
  * 
  *-----------------------------------------------------------------------
  */
+
+#if 0
+<lalVerbatim file="LIGOLwXMLReadCV">
+Author: Brown, D. A. and Fairhurst, S.
+$Id$
+</lalVerbatim> 
+#endif
 
 #include <lal/LALStdio.h>
 #include <lal/LIGOLwXMLRead.h>
@@ -21,7 +28,44 @@
 
 NRCSID( LIGOLWXMLREADC, "$Id$" );
 
+#if 0
+<lalLaTeX>
+\subsection{Module \texttt{LIGOLwXMLRead.c}}
 
+Routines to write LIGO metadata database structures to LIGO lightweight XML
+files.
+
+\subsubsection*{Prototypes}
+\input{LIGOLwXMLReadCP}
+\idx{LALCreateMetaTableDir()}
+\idx{LALSnglBurstTableFromLIGOLw()}
+\idx{LALSimBurstTableFromLIGOLw()}
+\idx{LALSnglInspiralTableFromLIGOLw()}
+\idx{InspiralTmpltBankFromLIGOLw()}
+\idx{SimInspiralTableFromLIGOLw()}
+\idx{SearchSummaryTableFromLIGOLw()}
+\idx{SummValueTableFromLIGOLw()}
+
+    
+\subsubsection*{Description}
+
+
+\subsubsection*{Algorithm}
+
+None.
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+ 
+%% Any relevant notes.
+ 
+\vfill{\footnotesize\input{LIGOLwXMLReadCV}}
+
+</lalLaTeX>
+#endif
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 void
 LALCreateMetaTableDir(
     LALStatus              *status,
@@ -29,6 +73,7 @@ LALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
     )
+/* </lalVerbatim> */
 {
   INT4 i;
 
@@ -153,12 +198,14 @@ LALCreateMetaTableDir(
       thisEvent = NULL; \
     }
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 void
 LALSnglBurstTableFromLIGOLw (
     LALStatus          *status,
     SnglBurstTable    **eventHead,
     CHAR               *fileName
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus=0;
@@ -304,7 +351,7 @@ LALSnglBurstTableFromLIGOLw (
   RETURN( status );
 }
 
-
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 void
 LALSimBurstTableFromLIGOLw (
     LALStatus          *status,
@@ -313,6 +360,7 @@ LALSimBurstTableFromLIGOLw (
     INT4                startTime,
     INT4                stopTime
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus=0;
@@ -488,7 +536,7 @@ LALSimBurstTableFromLIGOLw (
   RETURN( status );
 }
 
-
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,
@@ -496,6 +544,7 @@ LALSnglInspiralTableFromLIGOLw (
     INT4                startEvent,
     INT4                stopEvent
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
@@ -775,6 +824,7 @@ LALSnglInspiralTableFromLIGOLw (
       thisTmplt = NULL; \
     }
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 InspiralTmpltBankFromLIGOLw (
     InspiralTemplate  **bankHead,
@@ -782,6 +832,7 @@ InspiralTmpltBankFromLIGOLw (
     INT4                startTmplt,
     INT4                stopTmplt
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
@@ -1014,6 +1065,7 @@ InspiralTmpltBankFromLIGOLw (
       thisSim = NULL; \
     }
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 SimInspiralTableFromLIGOLw (
     SimInspiralTable   **simHead,
@@ -1021,6 +1073,7 @@ SimInspiralTableFromLIGOLw (
     INT4                 startTime,
     INT4                 endTime
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
@@ -1227,11 +1280,13 @@ SimInspiralTableFromLIGOLw (
 
 #undef CLOBBER_SIM
 
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 SearchSummaryTableFromLIGOLw (
     SearchSummaryTable **sumHead,
     CHAR                *fileName
     )
+/* </lalVerbatim> */
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
@@ -1341,6 +1396,145 @@ SearchSummaryTableFromLIGOLw (
       else if ( tableDir[j].idx == 10 )
       {
         (*sumHead)->nnodes = intData;
+      }
+      else
+      {
+        LALFree( *sumHead );
+        fprintf( stderr, "unknown column while parsing\n" );
+        return -1;
+      }
+    }
+
+    /* increase the count of rows parsed */
+    ++nrows;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    LALFree( *sumHead );
+    MetaioClose( env );
+    return -1;
+  }
+
+  /* we have sucesfully parsed table */
+  MetaioClose( env );
+  return nrows;  
+}
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+int
+SummValueTableFromLIGOLw (
+    SummValueTable **sumHead,
+    CHAR           *fileName
+    )
+/* </lalVerbatim> */
+{
+  int                                   i, j, nrows;
+  int                                   mioStatus;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory tableDir[] =
+  {
+    {"program",		      -1, 0},
+    {"process_id",	      -1, 1},
+    {"start_time",	      -1, 2},
+    {"start_time_ns",         -1, 3},
+    {"end_time",	      -1, 4},
+    {"end_time_ns",	      -1, 5},
+    {"ifo",		      -1, 6},
+    {"name",		      -1, 7},
+    {"value",		      -1, 8},
+    {"comment",               -1, 9},
+    {NULL,                     0, 0}
+  };
+
+  /* check that the bank handle and pointer are vaid */
+  if ( ! sumHead )
+  {
+    fprintf( stderr, "null pointer passed as handle to summ value" );
+    return -1;
+  }
+  if ( *sumHead )
+  {
+    fprintf( stderr, "non-null pointer passed as pointer to summ value" );
+    return -1;
+  }
+  
+  /* open the summ_value table in the file file */
+  mioStatus = MetaioOpenTable( env, fileName, "summ_value" );
+  if ( mioStatus )
+  {
+    fprintf( stderr, "error opening summ_value table from file %s\n", 
+        fileName );
+    return -1;
+  }
+
+  /* figure out the column positions */
+  for ( i = 0; tableDir[i].name; ++i )
+  {
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
+    {
+      fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
+      MetaioClose(env);
+      return -1;
+    }
+  }
+
+  /* allocate memory for the table */
+  *sumHead = (SummValueTable *) LALCalloc( 1, sizeof(SummValueTable) );
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* parse the rows into the SearhSummary structure */
+    for ( j = 1; tableDir[j].name; ++j )
+    {
+      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( (*sumHead)->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        (*sumHead)->start_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        (*sumHead)->start_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        (*sumHead)->end_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        (*sumHead)->end_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+	LALSnprintf( (*sumHead)->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+	LALSnprintf( (*sumHead)->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
+	    sizeof(CHAR), "%s",
+	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+	(*sumHead)->value = r4colData;
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        LALSnprintf( (*sumHead)->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
+	    sizeof(CHAR), "%s",
+	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else
       {
