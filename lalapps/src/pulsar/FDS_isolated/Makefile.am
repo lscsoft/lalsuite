@@ -5,19 +5,23 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 AM_LDFLAGS = -all-static
+AM_CFLAGS = -g -ggdb
 
-bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
-	ComputeFStatistic_v2
+
+bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_FstatShapeTestLAL ComputeFStatistic_v2
+
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h
+	DopplerScan.c DopplerScan.h NearestGridPoints.c
 
 ComputeFStatistic_v2_SOURCES =  ComputeFStatistic_v2.c 	\
 		rngmed.c rngmed.h clusters.c clusters.h  \
 		DopplerScan.c DopplerScan.h
 
+lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
+lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
+
 lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c SemiAnalyticF.h
 
-lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
 
