@@ -569,6 +569,34 @@ REAL4TimeSeries *data_window(LALStatus *status,
   return(series);
 }
 
+/* wrapper function for calculating the inverse noise */
+REAL4FrequencySeries *inverse_noise(LALStatus *status,
+    REAL4FrequencySeries *psd,
+    COMPLEX8FrequencySeries *response)
+{
+  /* variables */
+  REAL4FrequencySeries *series;
+  StochasticInverseNoiseInput input;
+  StochasticInverseNoiseCalOutput output;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "calPSD", \
+        response->epoch, response->f0, response->deltaF, \
+        lalDimensionlessUnit, response->data->length), status);
+
+  /* set input */
+  input.unCalibratedNoisePSD = psd;
+  input.responseFunction = response;
+
+  /* set output */
+  output.calibratedInverseNoisePSD = series;
+
+  /* generate inverse noise */
+  LAL_CALL(LALStochasticInverseNoiseCal(status, &output, &input), status);
+
+  return(series);
+}
+
 /*
  * vim: et
  */
