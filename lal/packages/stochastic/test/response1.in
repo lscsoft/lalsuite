@@ -1,0 +1,13 @@
+# response function #1
+# 
+# Units are (10^18 strain^-1 count)
+# Freq (Hz)	Re(Value)	Im(Value)
+0	1	0
+32	1	0
+64	1	0
+96	1	0
+128	1	0
+160	1	0
+192	1	0
+224	1	0
+256	1	0
