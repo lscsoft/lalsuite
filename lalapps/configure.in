@@ -112,6 +112,7 @@ AC_OUTPUT( 				\
 	src/power/Makefile		\
 	src/ring/Makefile		\
 	src/pulsar/Makefile		\
+	src/pulsar/FDS_isolated/Makefile\
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
