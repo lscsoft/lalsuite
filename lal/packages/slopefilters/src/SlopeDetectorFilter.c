@@ -148,10 +148,21 @@ the output data $a_i$ is
 \begin{equation}
 a_i = \frac{12}{\tau N(N^2 - 1)}
 \left( \sum_{j=0}^{N-1} jx_j - \frac{N-1}{2} \sum_{k=0}^{N-1} x_k \right),
-\label{eqn:slopedetecttwogradient}
+\label{eqn:slopedgrad}
 \end{equation}
 
-where $\tau$ is the sampling period.
+where $\tau$ is the sampling period. Apart from a factor of $\tau$, equations
+\ref{eqn:slopedetectone} and \ref{eqn:slopedgrad} are equivalent,
+since we have the following identities:
+
+\begin{eqnarray}
+\sum_{j=0}^{N-1} j & = & \frac{N(N-1)}{2} \\ \nonumber
+\sum_{j=0}^{N-1} j^2 & = & \frac{N}{6} (2N-1)(N-1) \\ \nonumber
+\label{eqn:slopepartialsums}
+\end{eqnarray}
+
+Note that slope filters have a mimimum order of 2, since it takes at least 2 points
+to estimate the slope.
 
 For 
 \texttt{LALSlopeLineFitFilter} with
