@@ -119,7 +119,7 @@ tagTdotsAndDeltaTs
 }
 TdotsAndDeltaTs;
 
-void StackSlideIsolated(	LALStatus *status, 
+void StackSlide(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 
 			REAL4FrequencySeries **STKData, 
 			StackSlideParams *params);

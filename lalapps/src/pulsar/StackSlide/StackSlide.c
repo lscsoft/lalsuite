@@ -57,7 +57,7 @@ Sum them.
 NRCSID( STACKSLIDEC,  "$Id$");
 
 /* <lalVerbatim file="StackSlideCP"> */
-void StackSlideIsolated(	LALStatus *status, 
+void StackSlide(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 
 			REAL4FrequencySeries **STKData, 
 			StackSlideParams *params)
@@ -81,6 +81,7 @@ void StackSlideIsolated(	LALStatus *status,
     EmissionTime emit;
 
     REAL8 f_t;
+
     REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs);  /* 12/03/04 gam */
     
     INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
@@ -137,17 +138,13 @@ void StackSlideIsolated(	LALStatus *status,
           pTdotsAndDeltaTs->vecTDots[i] = 0.0; /* Initialize */
           for(m=0;m<params->numSpinDown;m++) {
               pTdotsAndDeltaTs->vecDeltaTs[i][m] = 0.0; /* Initialize */
-if(pTdotsAndDeltaTs!=NULL){
-	      printf("pTdotsAndDeltaTs %f\n",pTdotsAndDeltaTs->vecDeltaTs[i][m] );
-                   }
           }
         }
-        
 
-	/* get Tdot and DeltaT's for this sky position */
-      StackSlideComputeSky(status->statusPtr, pTdotsAndDeltaTs, csParams);
+        /* get Tdot and DeltaT's for this sky position */
+        StackSlideComputeSky(status->statusPtr, pTdotsAndDeltaTs, csParams);
         CHECKSTATUSPTR (status);
-	
+
         /* for all spindowns, loop */
         for(iFreqDeriv=0;iFreqDeriv<numLoopOnSpindown;iFreqDeriv++) {
             /* call computesky for all stacks at once */
@@ -245,35 +242,32 @@ void StackSlideComputeSky (LALStatus            *status,
      fflush(stdout);
   #endif  
   ATTATCHSTATUSPTR(status);
-   /* Check for non-negativity of sky positions in SkyCoh[] */
+ 
+  /* Check for non-negativity of sky positions in SkyCoh[] */
   /* removed this, so is there another check we should do on sky position validity? */
   /* ASSERT(iSkyCoh>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA); */
-  
  
-   /* Check to make sure sky positions are loaded */
+  /* Check to make sure sky positions are loaded */
   ASSERT(params->skyPos!=NULL, status, STACKSLIDECOMPUTESKYH_ENULL, STACKSLIDECOMPUTESKYH_MSGENULL);
   ASSERT(params->skyPos!=NULL, status, STACKSLIDECOMPUTESKYH_ENULL, STACKSLIDECOMPUTESKYH_MSGENULL);
  
-printf("1\n");
-    
-
   /* Check to make sure parameters are loaded and reasonable */
   ASSERT(params->spinDwnOrder>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
   ASSERT(params->mObsSFT>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
   ASSERT(params->tSFT>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
-
-  for(n=0;n<params->mObsSFT;n++) { 
+ 
+  for(n=0;n<params->mObsSFT;n++) {
      ASSERT(params->tGPS[n].gpsSeconds>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
   }
  
   /* Check to make sure pointer to output is not NULL */
   ASSERT(pTdotsAndDeltaTs!=NULL, status, STACKSLIDECOMPUTESKYH_ENNUL, STACKSLIDECOMPUTESKYH_MSGENNUL);
-  
+ 
   params->baryinput->tgps.gpsSeconds = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
   params->baryinput->tgps.gpsNanoSeconds = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
  
   LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
- 
+  
   LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
  
   TimeToFloat(&tB0, &(params->emit->te));
