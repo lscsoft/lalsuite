@@ -147,7 +147,27 @@ class BurcaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/burca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('burca.sub')
 
+class VigilJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A vigilance job used to produce summary info
+  once triggers have been produced
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','vigil')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    for sec in ['vigil']:
+      self.add_ini_opts(cp,sec)
 
+    self.set_stdout_file('logs/vigil-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/vigil-$(cluster)-$(process).err')
+    self.set_sub_file('vigil.sub')
+    
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A DataFindNode runs an instance of datafind in a Condor DAG.
@@ -347,13 +367,13 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('mdcframe-cache', file)
     self.add_input_file(file)
 
-  def set_inj(self,file):
+  def set_burstinj(self,file):
     """
     Set the LAL frame cache to to use. The frame cache is passed to the job
     with the --frame-cache argument.
     @param file: calibration file to use.
     """
-    self.add_var_opt('injection-file', file)
+    self.add_var_opt('burstinjection-file', file)
     self.add_input_file(file)
 
 class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
@@ -424,3 +444,16 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Return the output file, i.e. the file containing the frame cache data.
     """
     return self.__output
+
+class VigilNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A InjNode runs an instance of binj code
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of vigil.sh.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+    
