@@ -24,6 +24,7 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
@@ -197,10 +198,13 @@ static void print_usage(char *program)
 "	 --gps-start-time <seconds>\n" \
 "	 --gps-start-time-ns <nanoseconds>\n" \
 "	[--help]\n" \
+"       [--high-freq-cutoff <max freq in the search(New TF plane)>]\n" \
 "	[--injection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
+"        --max-tileband <max frequency  band to be searched for>\n" \
+"       [--max-tileduration <longest time duration of a tile(New TF plane)>]\n" \
 "	 --min-freq-bin <nfbin>\n" \
 "	 --min-time-bin <ntbin>\n" \
 "	[--noise-amplitude <amplitude>]\n" \
@@ -349,6 +353,10 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = options.FilterCorruption < 0;
 			break;
 
+		        case 'l':
+			arg_is_missing = !params->tfTilingInput.maxTileBand;
+			break;
+
 			default:
 			arg_is_missing = FALSE;
 			break;
@@ -435,8 +443,11 @@ void parse_command_line(
 		{"gps-start-time",      required_argument, NULL,           'M'},
 		{"gps-start-time-ns",   required_argument, NULL,           'N'},
 		{"help",                no_argument,       NULL,           'O'},
+		{"high-freq-cutoff",    required_argument, NULL,           'k'},
 		{"injection-file",      required_argument, NULL,           'P'},
 		{"low-freq-cutoff",     required_argument, NULL,           'Q'},
+		{"max-tileband",        required_argument, NULL,           'l'},
+		{"max-tileduration",    required_argument, NULL,           'm'},
 		{"mdc-cache",           required_argument, NULL,           'R'},
 		{"mdc-channel",         required_argument, NULL,           'S'},
 		{"min-freq-bin",        required_argument, NULL,           'T'},
@@ -475,7 +486,8 @@ void parse_command_line(
 	params->tfTilingInput.length = 0;	/* impossible */
 	params->tfTilingInput.minFreqBins = 0;	/* impossible */
 	params->tfTilingInput.minTimeBins = 0;	/* impossible */
-	params->tfTilingInput.maxTileBand = 64.0;	/* default */
+	params->tfTilingInput.maxTileBand = 0;  /* impossible */
+	/*	params->tfTilingInput.maxTileBand = 32.0;       default */
 	params->tfTilingInput.overlapFactor = 0;	/* impossible */
 	params->windowType = NumberWindowTypes;	/* impossible */
 	params->windowLength = 0;	/* impossible */
@@ -645,12 +657,14 @@ void parse_command_line(
 
 		case 'Q':
 		params->tfTilingInput.flow = atof(optarg);
+		params->tfPlaneParams.flow = atof(optarg);
 		if(params->tfTilingInput.flow < 0.0) {
 			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->tfTilingInput.flow);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->tfPlaneParams.flow);
 		break;
 
 		case 'R':
@@ -832,6 +846,40 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", options.FilterCorruption);
+		break;
+
+		case 'k':
+		params->tfPlaneParams.fhigh = atof(optarg);
+		if(params->tfPlaneParams.fhigh < params->tfPlaneParams.flow ) {
+			sprintf(msg,"must be > flow(%f) (%f specified)",params->tfPlaneParams.flow, params->tfPlaneParams.fhigh);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e",params->tfPlaneParams.fhigh);
+		break;
+
+	        case 'l':
+		  params->tfTilingInput.maxTileBand = atof(optarg);
+		  params->tfPlaneParams.deltaT = 1/(2*(params->tfTilingInput.maxTileBand));
+		if(params->tfTilingInput.maxTileBand > params->tfTilingInput.length ) {
+		  sprintf(msg,"must be < (%i) (%f specified)",params->tfTilingInput.length,params->tfTilingInput.maxTileBand);
+		  print_bad_argument(argv[0], long_options[option_index].name, msg);
+		  args_are_bad = TRUE;
+		  }
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e",params->tfTilingInput.maxTileBand);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e",params->tfPlaneParams.deltaT);
+		break;
+
+	        case 'm':
+		  params->tfTilingInput.maxTileDuration = atof(optarg);
+		  params->tfPlaneParams.deltaF = 1/(2*(params->tfTilingInput.maxTileDuration));
+		if(params->tfTilingInput.maxTileDuration > 1.0 ) {
+		  sprintf(msg,"must be < 1.0 (%f specified)",params->tfTilingInput.maxTileDuration);
+		  print_bad_argument(argv[0], long_options[option_index].name, msg);
+		  args_are_bad = TRUE;
+		  }
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e",params->tfTilingInput.maxTileDuration);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e",params->tfPlaneParams.deltaF);
 		break;
 
 		/* option sets a flag */

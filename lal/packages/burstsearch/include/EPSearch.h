@@ -30,7 +30,8 @@ tagEPSearchParams {
 	UINT4                 windowShift;
 	REAL8                 alphaThreshold;
 	AvgSpecMethod         method;
-	CreateTFTilingIn      tfTilingInput;
+        CreateTFTilingIn      tfTilingInput;
+        TFPlaneParams         tfPlaneParams;
 	ComputeExcessPowerIn  compEPInput;
 	WindowType            windowType;
 } EPSearchParams;

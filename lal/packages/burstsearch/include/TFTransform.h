@@ -46,12 +46,11 @@ typedef struct tagTFPlaneParams
 {
   INT4             timeBins;    /* Number of time bins in TF plane    */
   INT4             freqBins;    /* Number of freq bins in TF plane    */
-  REAL8            deltaT;      /* deltaF will always be 1/deltaT     */
-  REAL8            flow;
-  /*
-   * frequencies f will lie in range flow <= f <= flow + freqBins * deltaF
-   * flow is in Hertz
-   */
+  REAL8            deltaT;      /* time resolution of the plane     */
+  REAL8            deltaF;      /* freq. resolution of the plane */
+  REAL8            flow;        /* minimum frequency to search for */
+  REAL8            fhigh;       /* maximum frequency to search for */
+  REAL8            timeDuration;/* length of data to be used to create a TF plane at a time */ 
 }
 TFPlaneParams;
 
@@ -159,6 +158,13 @@ LALFreqSeriesToTFPlane (
                      );
 void
 LALModFreqSeriesToTFPlane (
+                     LALStatus                         *status,
+                     COMPLEX8TimeFrequencyPlane     *tfp,
+                     COMPLEX8FrequencySeries        *freqSeries,
+                     HorizontalTFTransformIn        *input
+                     );
+void
+LALModModFreqSeriesToTFPlane (
                      LALStatus                         *status,
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      COMPLEX8FrequencySeries        *freqSeries,

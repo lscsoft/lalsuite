@@ -310,11 +310,21 @@ EPSearch(
 		 * Create time-frequency tiling of plane.
 		 */
 		
+		/****************************************************
+                 * This needs to be fixed so that it is not hard coded.
+                 * Used in the new TF plane: Saikat
+                 ****************************************************/
+		params->tfPlaneParams.timeDuration = 1;
+		/****************************************************/
+
 		if(!tfTiling) {
 			/* the factor of 2 here is to account for the
 			 * overlapping */
 			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
 			LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput);
+
+			/*To be used for the new TF plane */
+			/*LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);*/
 			CHECKSTATUSPTR(status);
 		}
 
@@ -325,17 +335,23 @@ EPSearch(
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries);
+
+		/*For the new TF plane */
+		/*LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries);*/
 		CHECKSTATUSPTR(status);
 
-		/*
+                 /*
 		 * Search these planes.
 		 */
 
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
 		LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
-		CHECKSTATUSPTR(status);
 
+		/*For the new TF plane */
+		/*LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);*/
+		CHECKSTATUSPTR(status);
+	  
 		/*
 		 * Compute the likelihood for slightly better detection
 		 * method.

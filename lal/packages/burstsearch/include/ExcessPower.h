@@ -33,7 +33,8 @@ tagTFTile
   INT4                             tstart;
   INT4                             tend;
   INT4                             whichPlane;
-  REAL8                            deltaT; /* deltaF will always be 1/deltaT */
+  REAL8                            deltaT; 
+  REAL8                            deltaF;
   REAL8                            excessPower;
   REAL8                            alpha;
   REAL8                            weight;
@@ -68,6 +69,7 @@ tagCreateTFTilingIn
   REAL8                            deltaF;
   INT4                             length;
   REAL8                            maxTileBand;
+  REAL8                            maxTileDuration;
 }
 CreateTFTilingIn;
 
@@ -98,6 +100,14 @@ LALCreateTFTiling (
 
 
 void
+LALModCreateTFTiling (
+                LALStatus                              *status,
+                TFTiling                            **tfTiling,
+                CreateTFTilingIn                    *input,
+		TFPlaneParams                       *planeParams
+                );
+
+void
 LALDestroyTFTiling (
                  LALStatus                             *status,
                  TFTiling                           **tfTiling
@@ -111,6 +121,12 @@ LALComputeTFPlanes (
                  COMPLEX8FrequencySeries            *freqSeries
                  );
 
+void
+LALModComputeTFPlanes (
+                 LALStatus                             *status,
+                 TFTiling                           *tfTiling,
+                 COMPLEX8FrequencySeries            *freqSeries
+                 );
 
 void
 LALComputeExcessPower (
@@ -119,6 +135,12 @@ LALComputeExcessPower (
                     ComputeExcessPowerIn            *input
                     );
 
+void
+LALModComputeExcessPower (
+                    LALStatus                          *status,
+                    TFTiling                        *tfTiling,
+                    ComputeExcessPowerIn            *input
+                    );
 
 void
 LALSortTFTiling (
