@@ -172,6 +172,16 @@ following combination of {\it masses:}
 \item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
 \item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
 \end{itemize}
+The LALRandomInspiralSignal uses that structure as an input. Since the injected
+waveform are not necessarely wanted to be random, we also provide the following 
+options
+\begin{itemize}
+\item \texttt{bhns:} One of the mass is a Neutron star and the other a black 
+hole. (m1 $\in$ [minMass-3] and m2 $\in$ [3-maxMass]).
+\item \texttt{fixedMasses:} The two masses are given by the input parameter structure.
+\item \texttt{fixedPsi:} The two psi values are given by the input parameter structure.
+\item \texttt{fixedTau:} The two tau values are given by the input parameter structure.
+\end{itemize}
 
 
 \item \texttt{InspiralTemplate:}
@@ -416,9 +426,14 @@ typedef enum {
    t03,
    t04,
    psi0Andpsi3,
-   bhns
+   bhns, 
+   fixedMasses, 
+   fixedPsi, 
+   fixedTau
  } InputMasses;
 /* </lalVerbatim>  */
+
+
 
 /* <lalLaTeX>
 \idx[Type]{InputMasses}
