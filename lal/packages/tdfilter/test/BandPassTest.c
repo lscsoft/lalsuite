@@ -1,33 +1,27 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: BandPassTest.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/********************************* <lalVerbatim file="BandPassTestCV">
+Author: Creighton, T. D.
+$Id$
+********************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Program \texttt{BandPassTest.c}}
+\label{s:BandPassTest.c}
 
 Tests time-domain high- and low-pass filters.
 
-\subsubsection{Usage}
+\subsubsection*{Usage}
 \begin{verbatim}
 BandPassTest [-o [outfile]] [-d [debug-level]]
 \end{verbatim}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 This program generates a time series with an impulse in it, and passes
 it through a time-domain low-pass or high-pass filter.  By default,
 running this program with no arguments simply tests the subroutines,
 producing no output.  All filter parameters are set from
-\verb@#define@d constants.  The program returns a value of 0 upon
-successful completion, 1 if any of its function calls failed, or 2 if
-output file creation failed.
+\verb@#define@d constants.
 
 The \verb@-o@ flag tells the program to print the impulse response to
 a data file; if \verb@outfile@ is not specified, it will write to the
@@ -35,18 +29,29 @@ file \verb@out.dat@.  The \verb@-d@ option increases the default debug
 level from 0 to 1, or sets it to the specified value
 \verb@debug-level@.
 
-\subsubsection{Algorithm}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\tt 2 & Could not create output file. \\
+\hline
+\end{tabular}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 debuglevel
+LALPrintError()
 SCreateVector()
 SDestroyVector()
 ButterworthREAL4TimeSeries()
-LALPrintError()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{BandPassTestCV}}
 
 </lalLaTeX> */
 
@@ -78,7 +83,7 @@ INT4 debuglevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
-  Status stat = {0};         /* Status pointer for subroutines. */
+  Status stat = { 0 };       /* Status pointer for subroutines. */
   CHAR *fname=NULL;          /* The output filename. */
   INT4 i;                    /* Index counter. */
   REAL4TimeSeries series;    /* Time series. */

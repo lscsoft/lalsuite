@@ -1,337 +1,422 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: LALStatusMacros.h
- * 
- * Author: Creighton, J. D. E. and Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * LALStatusMacros.h
- * 
- * SYNOPSIS 
- * #include "LALStatusMacros.h"
- *
- * DESCRIPTION
- *
- * This header file defines programming macros for handling LAL status
- * pointers.  The intent is simultaneously to standardize the error
- * reporting, and to make the reporting as transparent as possible to
- * people coding individual routines.
- *
- * The following summarized everything the common programmer needs to
- * know in order to follow LAL standard error reporting.
- *
- * 0. The Status structure
- *
- *    All error reporting is handled by a structure type named Status.
- *    This structure has the following fields:
- *
- *    INT4 statusCode: A code indicating the exit status of a
- *      function.  0 represents a normal exit.  Negative values are
- *      reserved for certain standard error types.  The authors of
- *      individual functions should assign positive values to the
- *      various ways in which their code can fail.
- *
- *    const CHAR *statusDescription: An explanatory string
- *      corresponding to the numerical status code.
- *
- *    const CHAR *Id: A character string identifying the source file
- *      and version number of the function being reported on.
- *
- *    const CHAR *file: The file name of the actual .c file containing
- *      the function code.
- *
- *    INT4 line: The line number in the .c file of the instruction
- *      where any error was reported.
- *
- *    Status *statusPtr: A recursive pointer to another status
- *      pointer.  This structure is used to report an error in a
- *      subroutine of the current function.  Thus if an error occurs
- *      in a deeply-nested routine, the status structure returned to
- *      the main program will be the head of a linked list of status
- *      structures, one for each nested level, with the tail structure
- *      reporting the actual error that caused the overlying routines
- *      to fail.
- *
- *    INT4 level: The nested-function level where any error was reported.
- *
- *    The standard status codes are as follows:
- *
- *     0: Nominal execution: the function returned successfully.
- *
- *    -1: Recursive error: the function aborted due to failure of a
- *        subroutine.
- *
- *    -2: The status structure passed to the function had a non-null
- *        statusPtr field, which blocks the function from calling
- *        subroutines (it is symptomatic of something screwy going on
- *        in the calling routine).
- *
- *    -4: Memory allocation error: the function was unable to allocate
- *        the statusPtr field to pass down to a subroutine.
- *
- *    -8: The statusPtr could not be deallocated at the end of all
- *        subroutine calls; one of the subroutines must have lost it
- *        or set it to null.
- *
- *
- * 1. Every source file should have a unique character string
- *    identifying that version of that file.  The standard convention,
- *    for a file MyFile.c, is to declare a string at the top of the
- *    module using the macro NRCSID (defined in the include file LALRCSID.h):
- *
- *      NRCSID( MYFILEC, "\044Id\044" );
- *
- *    where \044Id\044 is expanded by RCS to give the full name and
- *    version number of the source file.
- *
- * 2. All functions should have return type void.  The first argument
- *    of any function should be a pointer to a structure of type
- *    Status.  Thus:
- *
- *      void MyFunction( Status *stat, ... )
- *
- *    Since the function has no return code, it must report all errors
- *    or failure through the status structure.  A function that is
- *    passed a NULL pointer in place of the status pointer should
- *    abort the program, as this is its only way to report the error.
- *    However, this is the only circumstance under which a function
- *    sould normally abort; other errors should be trapped, reported
- *    in the status structure, and control returned to the calling
- *    routine.
- *
- * 3. The first instruction in any function, after variable
- *    declarations, should be the macro INITSTATUS(), which takes three
- *    arguments: the function's status pointer, the function name (a
- *    string literal) and the module's RCS Id string.
- *
- *        INITSTATUS( stat, "MyFunction", MYFILEC );
- *
- *    This macro checks that a valid status pointer has been passed to
- *    the function, and if so, initializes the other fields to
- *    indicate (by default) nominal execution.  If stat is null, the
- *    macro causes the program to abort, this being its only way to
- *    report that something went wrong.
- *
- * 4. Upon completion, the function should issue the macro RETURN(),
- *    which takes one argument: the function's status pointer.
- *
- *        RETURN(stat);
- *
- *    This takes the place of any return statements, and may also log
- *    status reports to some suitable log file (often stderr),
- *    depending on implementation and the value of a global debuglevel
- *    parameter.  Typically RETURN() is used only for successful
- *    completion, with other macros ABORT(), ASSERT(), and TRY() being
- *    used to report failure.  However, it is possible for the
- *    programmer to assign the fields of stat by hand, and then issue
- *    RETURN(stat).
- *
- * 5. The standard method to terminate a function unsuccessfully is
- *    with the ABORT() macro, which takes three arguments: the status
- *    pointer, the status code, and the status description string.
- *    Normally the various error codes and descriptions will be
- *    constants defined in the function's header file:
- *
- *        ABORT(stat, MYFUNK_EMYERR, MYFUNK_MSGEMYERR);
- *
- *    where the error code MYFUNK_EMYERR and the error message
- *    MYFUNK_MSGEMYERR are defined in the function's header file.
- *    Like RETURN(), ABORT() correctly handles any status logging
- *    required by the implementation and the debuglevel.  Notably,
- *    ABORT() does not raise a SIGABRT flag, but instead returns
- *    control to the calling routine.
- *
- * 6. Another way to indicate an unsuccessful termination is with the
- *    macro ASSERT(), which takes as arguments a test statement, a
- *    status pointer, a status code, and a status description.  The
- *    statement ASSERT(assertion,...); is in all ways equivalent to
- *    the statement if(!assertion) ABORT(...);.  For instance, in the
- *    above example, one might have:
- *
- *        ASSERT(assertion, stat, MYFUNK_EMYERR, MYFUNK_MSGEMYERR)
- *
- *    Coding purists may argue that ASSERT() should be used only to
- *    trap coding errors rather than runtime errors, which would be
- *    trapped using ABORT().  In other words, the assertion should
- *    always test true in the final debugged program.  At present,
- *    however, this coding practice is not enforced by the LAL
- *    standard.
- *
- * 7. If the function is to call other LAL functions as subroutines,
- *    four more macros must be used to report possible errors arising
- *    in these routines.  The macros are ATTATCHSTATUSPTR(),
- *    DETATCHSTATUSPTR(), CHECKSTATUSPTR(), and TRY().  The usage of
- *    these macros is as follows.
- *
- *    a. First, before any subroutines are called, the function must
- *       call the macro ATTATCHSTATUSPTR() which takes as its argument
- *       the status pointer of the current function:
- *
- *           ATTATCHSTATUSPTR(stat);
- *
- *       This allocates stat->statusPtr, which is the status pointer
- *       that will be handed down into any and all subroutines.  If
- *       the pointer has already been allocated, ATTATCHSTATUSPTR()
- *       will abort, as this is symptomatic of a coding error.  Note
- *       that ATTATCHSTATUSPTR() need only be called once in a given
- *       function, no matter how many subroutine calls that function
- *       makes.  Normally it should be called immediately after
- *       INITSTATUS().
- *
- *       The macro ATTATCHSTATUSPTR() sets the status code to be -1
- *       and the status message to be "Recursive error".  These flags
- *       are unset when DETATCHSTATUSPTR() (below) is called.  This is
- *       so that a use of RETURN() prior to detatching the status
- *       pointer will yield an error.
- *
- *    b. When a subroutine is called, it should be handed the
- *       statusPtr field of the calling functions status structure, to
- *       report its own errors.  The calling function should test the
- *       returned status code, and either attempt to deal
- *       with any abnormal returns, or abort with status code -1.  The
- *       macro CHECKSTATUSPTR() helps simplify this procedure.  It takes one
- *       arguments: the status pointer of the current function (not
- *       the subroutine).
- *
- *           mysubroutine(stat->statusPtr,...);
- *           CHECKSTATUSPTR(stat);
- *
- *       The TRY() macro is a somewhat more streamlined approach but
- *       with equivalent results.  It takes two arguments.  The first
- *       is the subroutine call, and the second is the status pointer.
- *       Thus:
- *
- *           TRY(mysubroutine(stat->statusPtr,...), stat);
- *
- *       The only practical difference between these two approaches is
- *       that the TRY() macro takes up only one line, and can also
- *       report the name of the failed subroutine call when logging
- *       errors.
- *
- *    c. After all subroutines have been called, but before any
- *       RETURN() statement, the function must call the
- *       DETATCHSTATUSPTR() macro, with the status pointer of the
- *       current function (not the subroutines) as its argument:
- *
- *           DETATCHSTATUSPTR(stat);
- *
- *       This simply deallocates stat->statusPtr and sets it to NULL.
- *       It is an error to exit the function with non-NULL statusPtr,
- *       unless the exit was due to a subroutine failure.  ABORT() and
- *       ASSERT() check for this automatically; the only place you
- *       need to call DETATCHSTATUSPTR() is immediately before
- *       RETURN().  This macro also sets the status code and the status
- *       message to nominal values.
- *
- * 8. The REPORTSTATUS() macro is used to issue a current status
- *    report from the current function; the report is printed to
- *    stderr or some other implementation-specific stream used for
- *    error reporting.  REPORTSTATUS() takes the current status
- *    pointer as its argument, and iteratively reports down any chain
- *    of non-NULL statusPtr structures passed back by subroutines.
- *
- * 9. The top-level main function should start with an empty (all fields set
- *    to zero) status structure, as in the following example:
- *
- *      int
- *      main ()
- *      {
- *        static Status status;
- *        MyFunction( &status );
- *        REPORTSTATUS( &status );
- *        return 0;
- *      }
- *
- *
- * Non-Conformant Functions:
- *
- * These standards apply only to functions that will be publicly
- * available in the LAL libraries.  Within a module, a programmer may
- * define and use subroutines that do not conform to the LAL function
- * standards, provided these routines are only visible within that
- * module.  Such functions should be declared as static to ensure
- * this.  A publicly-visible non-conformant function requires special
- * dispensation.
- *
- *
- * Example:
- *
- * As an example to illustrate these standards, here is a pair of
- * (rather silly) routines to perform inversion and division of real
- * numbers.  In the file division.h one might have the following error
- * codes and error messages defined:
- *
- *   #define DIVISION_ENULL 1
- *   #define DIVISION_EDIV0 2
- *   #define DIVISION_MSGEDIV0 "Null pointer"
- *   #define DIVISION_MSGEDIV0 "Division by zero"
- *
- * followed by function prototypes.  The file division.c might contain
- * the following code:
- *
- *   static const char *DIVISIONC="\044Id\044";
- *
- *   ReturnCode InvertREAL4(Status *stat,
- *                          REAL4  *output,
- *                          REAL4  input)
- *   {
- *     INITSTATUS(stat,"InvertREAL4",DIVISIONC);
- *     ASSERT(output!=NULL,stat,DIVISION_ENULL,DIVISION_MSGENULL);
- *     if(input==0.0)
- *       ABORT(stat,DIVISION_EDIV0,DIVISION_MSGEDIV0);
- *     *output = 1.0/input;
- *     RETURN(stat);
- *   }
- *
- *   ReturnCode DivideREAL4(Status *stat,
- *                          REAL4  *output,
- *                          REAL4  numerator,
- *                          REAL4  denominator)
- *   {
- *     REAL4 invDenom;
- *
- *     INITSTATUS(stat,"DivideREAL4",DIVISIONC);
- *     ATTATCHSTATUSPTR(stat);
- *     TRY(InvertREAL4(stat->statusPtr,&invDenom,denominator),stat);
- *     *output = numerator*invDenom;
- *     DETATCHSTATUSPTR(stat);
- *     RETURN(stat);
- *   }
- *
- *
- * NOTES
- *
- * Why are the status handling routines written as macros rather than
- * functions?  There are three good reasons.
- *
- * First, many of the handling routines must be able to force an exit
- * from the function calling them.  This cannot be done if the routine
- * is in its own function, except by raising signal flags (which is a
- * Bad Thing according to LAL standards).
- *
- * Second, it is useful for these routines to assign a status
- * structure's file and line fields using the __FILE__ and __LINE__
- * macros.  If the routine is its own function, then these will just
- * give the file and line number where the error handling routine is
- * defined.  If the routine is a macro, then these will give the file
- * and line number where the macro was called, which is much more
- * interesting.
- *
- * Third, by expanding macros at compile time, the runtime performance
- * of the resulting code is marginally better.  Most of these macros
- * will, under nominal conditions, reduce to a single conditional test
- * of an integer value, with no additional overhead from function
- * calling and parameter passing.  Thus programmers can be encouraged
- * to include extensive error trapping in all their routines, without
- * having to worry about compromising performance.
- *
- *
- *----------------------------------------------------------------------- 
- */
+/****************************** <lalVerbatim file="LALStatusMacrosHV">
+Author: Creighton, J. D. E. and Creighton, T. D.
+$Id$
+******************************* </lalVerbatim> */
+
+/* <lalLaTeX>
+
+\section{Header \texttt{LALStatusMacros.h}}
+\label{s:LALStatusMacros.h}
+
+Provides macros for handling the LAL status structure.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "LALStatusMacros.h"
+\end{verbatim}
+
+\noindent This header defines a number of macros for interacting with
+the LAL status structure \verb@Status@.  The intent is simultaneously
+to standardize the error reporting, and to make the reporting as
+transparent as possible to people coding individual routines.
+
+The following summarized everything the common programmer needs to
+know in order to follow LAL standard error reporting.  It can be
+treated as a primer on LAL coding conventions.
+
+\subsection*{The \texttt{Status} structure}
+
+The \verb@Status@ structure is the standard LAL structure for
+reporting progress and errors; it is described in
+Sec.~\ref{ss:status-structure} of the header \verb@LALDatatypes.h@.
+For completeness, we explain the fields of this structure below:
+\begin{description}
+\item[\texttt{INT4 statusCode}] A code indicating the exit status of a
+function.  0 represents a normal exit.  Negative values are reserved
+for certain standard error types.  The authors of individual functions
+should assign positive values to the various ways in which their code
+can fail.
+\item[\texttt{const CHAR *statusDescription}] An explanatory string
+corresponding to the numerical status code.
+\item[\texttt{volatile const CHAR *Id}] A character string identifying
+the source file and version number of the function being reported on.
+\item[\texttt{const CHAR *function}] The name of the function.
+\item[\texttt{const CHAR *file}] The file name of the \verb@.c@ file
+containing the function code.
+\item[\texttt{INT4 line}] The line number in the \verb@.c@ file of the
+instruction where any error was reported.
+\item[\texttt{Status *statusPtr}] A recursive pointer to another
+status pointer.  This structure is used to report an error in a
+subroutine of the current function.  Thus if an error occurs in a
+deeply-nested routine, the status structure returned to the main
+program will be the head of a linked list of status structures, one
+for each nested level, with the tail structure reporting the actual
+error that caused the overlying routines to fail.
+\item[\texttt{INT4 level}] The nested-function level where any error
+was reported.
+\end{description}
+In almost all circumstances the programmer will \emph{not} have to
+access this structure directly, relying instead on the macros defined
+in this header.  The exception is the \verb@statusCode@ field, which
+the programmer may want to query directly.
+
+The \verb@statusCode@ field is set to a nonzero value any time an
+error condition arises that would lead to abnormal termination of the
+current function.  Programmers can assign positive error codes to the
+various types of error that may be encountered in their routines.
+Additionally, the following following status codes are reserved to
+report certain standard conditions:
+
+\begin{center}
+\begin{tabular}{|cp{3.5cm}p{6.5cm}|}
+\hline
+Code & Message & Explanation \\
+\hline
+
+\tt 0 & & Nominal execution; the function returned
+successfully. \\
+
+\tt -1 & \vspace{-1.4ex}\tt Recursive error & The function aborted due
+to failure of a subroutine. \\
+
+\tt -2 & \vspace{-1.4ex}\tt INITSTATUS: non-null status pointer & The
+status structure passed to the function had a non-\verb@NULL@
+\verb@statusPtr@ field, which blocks the function from calling
+subroutines (it is symptomatic of something screwy going on in the
+calling routine). \\
+
+\tt -4 & \vspace{-1.4ex}\tt ATTATCHSTATUSPTR: memory allocation error
+& The function was unable to allocate a \verb@statusPtr@ field to pass
+down to a subroutine. \\
+
+\tt -8 & \vspace{-1.4ex}\tt DETATCHSTATUSPTR: null status pointer &
+The \verb@statusPtr@ field could not be deallocated at the end of all
+subroutine calls; one of the subroutines must have lost it or set it
+to \verb@NULL@. \\
+
+\hline
+\end{tabular}
+\end{center}
+
+\subsection*{LAL function calls}
+
+All functions should have return type void.  The first argument of any
+function should be a pointer to a structure of type \verb@Status@.
+Thus:
+\begin{verbatim} 
+void MyFunction( Status *stat, ... )
+\end{verbatim}
+Since the function has no return code, it must report all errors or
+failure through the status structure.  A function that is passed a
+\verb@NULL@ pointer in place of the status pointer should terminate
+the program with a \verb@SIGABRT@ signal, as this is its only way to
+report the error.  However, this is the only circumstance under which
+a function sould deliberately raise a signal.  In all other cases the
+error should be trapped, reported in the status structure, and control
+returned to the calling routine.
+
+\subsection*{Assigning an RCS \texttt{\$Id\$} string}
+
+Every source file should have a unique character string identifying
+that version of that file.  The standard convention, for a file
+\verb@MyFile.c@, is to declare a string \verb@MYFILEC@ at the top of
+the module using the macro \verb@NRCSID()@ (defined in the include
+file \verb@LALRCSID.h@):
+
+\vspace{2ex}
+\noindent\texttt{NRCSID( MYFILEC, \$Id\$ );}
+\vspace{2ex}
+
+\noindent where \texttt{\$Id\$} is expanded by RCS to give the full
+name and version number of the source file.
+
+\subsection*{Initializing the status structure}
+
+The first instruction in any function, after variable declarations,
+should be the macro \verb@INITSTATUS()@, which takes three arguments:
+the function's status pointer, the function name (a string literal)
+and the module's RCS \texttt{\$Id\$} string.
+\begin{verbatim}
+INITSTATUS( stat, "MyFunction", MYFILEC );
+\end{verbatim}
+This macro checks that a valid status pointer has been passed to the
+function, and if so, initializes the other fields to indicate (by
+default) nominal execution.  If \verb@stat@ is null, the macro causes
+the program to terminate with a \verb@SIGABRT@ signal, as described
+above.
+
+\subsection*{Normal return from a function}
+
+Upon completion, the function should issue the macro \verb@RETURN()@,
+which takes one argument: the function's status pointer.
+\begin{verbatim}
+RETURN( stat );
+\end{verbatim}
+This takes the place of any return statements, and may also log status
+reports to some suitable log file (often \verb@stderr@), depending on
+implementation and the value of a global \verb@debuglevel@ parameter.
+Typically \verb@RETURN()@ is used only for successful completion, with
+other macros \verb@ABORT()@, \verb@ASSERT()@, \verb@CHECKSTATUSPTR()@,
+and \verb@TRY()@ being used to report failure.  However, it is
+possible for the programmer to assign the fields of \verb@stat@ by
+hand, and then issue \verb@RETURN()@.
+
+\subsection*{Abnormal return from a function}
+
+The standard method to terminate a function unsuccessfully is with the
+\verb@ABORT()@ macro, which takes three arguments: the status pointer,
+the status code, and the status description string.  Normally the
+various error codes and descriptions will be constants defined in the
+function's header file \verb@MyHeader.h@:
+\begin{verbatim}
+ABORT( stat, MYHEADER_EMYERR, MYHEADER_MSGEMYERR );
+\end{verbatim}
+where the error code \verb@MYHEADER_EMYERR@ and the error message
+\verb@MYHEADER_MSGEMYERR@ are defined in \verb@MyHeader.h@.  This
+standard LAL naming convention for error messages prevents namespace
+conflicts between different header files.  Like \verb@RETURN()@,
+\verb@ABORT()@ correctly handles any status logging required by the
+implementation and the \verb@debuglevel@.  Note that \verb@ABORT()@
+does \emph{not} raise a \verb@SIGABRT@ signal, but instead returns
+control to the calling routine.
+
+\subsection*{Error checking within a function}
+
+Another way to indicate an unsuccessful termination is with the macro
+\verb@ASSERT()@, which takes as arguments a test statement, a status
+pointer, a status code, and a status description.  The statement
+\verb@ASSERT(assertion,...);@ is in all ways equivalent to the
+statement \verb@if(!assertion) ABORT(...);@, except on a failure the
+\verb@ASSERT()@ macro will also log the failed assertion.  In the
+above example, one might have:
+\begin{verbatim}
+ASSERT( assertion, stat, MYHEADER_EMYERR, MYHEADER_MSGEMYERR );
+\end{verbatim}
+Coding purists argue that \verb@ASSERT()@ should be used only to trap
+coding errors rather than runtime errors, which would be trapped using
+\verb@ABORT()@.  In other words, the assertion should always test true
+in the final debugged program.  At present this coding practice is not
+enforced by the LAL standard.  However, programmers should be aware of
+the side effects of using \verb@ASSERT()@ to exit a function in normal
+runtime.
+
+For example, it is an error to allocate dynamic memory to local
+variables in a function and then fail to free it before returning.
+Thus, if you have dynamically allocated memory, you cannot then use
+\verb@ASSERT()@ for runtime error checking, as this does not permit
+you to free the memory before returning.  Instead, you must check the
+assertion, and, if it fails, free the memory and call \verb@ABORT()@.
+
+\subsection*{Calling subroutines}
+
+If the function is to call other LAL functions as subroutines, four
+more macros are used to report possible errors arising in these
+routines.  The macros are \verb@ATTATCHSTATUSPTR()@,
+\verb@DETATCHSTATUSPTR()@, \verb@CHECKSTATUSPTR()@, and \verb@TRY()@.
+The usage of these macros is as follows.
+
+\begin{enumerate}
+
+\item First, before any subroutines are called, the function must call
+the macro \verb@ATTATCHSTATUSPTR()@ which takes as its argument the
+status pointer of the current function:
+\begin{verbatim}
+ATTATCHSTATUSPTR( stat );
+\end{verbatim}
+This allocates \verb@stat->statusPtr@, which is the status pointer
+that will be handed down into any and all subroutines.  If the pointer
+has already been allocated, \verb@ATTATCHSTATUSPTR()@ will abort, as
+this is symptomatic of a coding error.
+
+In most cases \verb@ATTATCHSTATUSPTR()@ need only be called once in a
+given function, immediately after \verb@INITSTATUS()@, no matter how
+many subroutine calls that function makes.  The exception is if the
+function deals with (or ignores) errors reported by its subroutines.
+In that case, the function should detatch the status pointer using
+\verb@DETATCHSTATUSPTR()@ (below), and then re-attatch it.
+
+The macro \verb@ATTATCHSTATUSPTR()@ sets the status code to be $-1$
+and the status message to be \verb@Recursive error@.  These flags are
+unset when \verb@DETATCHSTATUSPTR()@ (below) is called.  This is so
+that a use of \verb@RETURN()@ prior to detatching the status pointer
+will yield an error.
+
+\item When a subroutine is called, it should be handed the
+\verb@statusPtr@ field of the calling function's status structure, to
+report its own errors.  The calling function should test the returned
+status code, and either attempt to deal with any abnormal returns, or
+abort with status code $-1$.  The macro \verb@CHECKSTATUSPTR()@
+simplifies the latter case.  It takes one arguments: the status
+pointer of the current function (not the subroutine).
+\begin{verbatim}
+MySubroutine( stat->statusPtr, ... );
+CHECKSTATUSPTR( stat );
+\end{verbatim}
+The \verb@TRY()@ macro is a somewhat more streamlined approach but
+with equivalent results.  It takes two arguments.  The first is the
+subroutine call, and the second is the status pointer.  Thus:
+\begin{verbatim}
+TRY( MySubroutine( stat->statusPtr, ... ), stat );
+\end{verbatim}
+The only practical difference between these two approaches is that
+\verb@TRY()@ also reports the name of the failed subroutine call when
+logging errors.
+
+Similar caveats apply when using \verb@CHECKSTATUSPTR()@ and
+\verb@TRY()@ as when using \verb@ASSERT()@, in that these macros can
+force an immediate return with no additional housekeeping
+instructions.  For instance, if you have dynamically-allocated local
+memory, you should explicitly check the \verb@statusPtr->statusCode@
+field to see if a subroutine failed, then free the memory and call
+\verb@ABORT()@ to exit.
+
+If the calling routine attempts to work around an error reported from
+a subroutine, and the attempt fails, the routine should \emph{not} use
+\verb@CHECKSTATUSPTR()@ to exit with status code $-1$.  Instead, it
+should call \verb@ABORT()@ with an appropriate (positive) code and
+message to indicate how the attempted workaround failed.
+
+\item After all subroutines have been called, but before any
+\verb@RETURN()@ statement, the function must call the
+\verb@DETATCHSTATUSPTR()@ macro, with the status pointer of the
+current function (not the subroutines) as its argument:
+\begin{verbatim}
+DETATCHSTATUSPTR( stat );
+\end{verbatim}
+This simply deallocates \verb@stat->statusPtr@ and sets it to
+\verb@NULL@.  It is an error to exit the function with non-\verb@NULL@
+\verb@statusPtr@, unless the exit was due to a subroutine failure.
+\verb@ABORT()@ and \verb@ASSERT()@ check for this automatically; the
+only place you normally need to call \verb@DETATCHSTATUSPTR()@ is
+immediately before \verb@RETURN()@.  This macro also sets the status
+code and the status message to nominal values.
+
+Additionally, if a function successfully works around an error
+reported by a subroutine, it should call \verb@DETATCHSTATUSPTR()@ and
+\verb@ATTATCHSTATUSPTR()@ to create a fresh status pointer before
+calling another subroutine.
+
+\end{enumerate}
+
+\subsection*{Reporting the current status}
+
+The \verb@REPORTSTATUS()@ macro is used to issue a current status
+report from the current function; the report is printed to
+\verb@stderr@ or some other implementation-specific stream used for
+error reporting.  \verb@REPORTSTATUS()@ takes the current status
+pointer as its argument, and iteratively reports down any chain of
+non-\verb@NULL@ \verb@statusPtr@ structures passed back by
+subroutines.
+
+\subsection*{Setting the top-level \texttt{Status} structure and
+	\texttt{debuglevel}}
+
+The top-level main function must set a global variable
+\verb@debuglevel@, of standard C/C++ type \verb@int@ (not
+\verb@INT4@).  It is invoked in this header as an \verb@extern@
+variable, and controls the amount of error logging performed by the
+various status macros.  The program should also declare an empty (all
+fields set to zero) status structure to pass to its LAL functions.
+The \verb@Status@ structure need only be declared and initialized
+once, no matter how many LAL functions are called.  For example:
+\begin{verbatim}
+int debuglevel = 1;
+
+int main( int argc, char **argv )
+{
+  static Status stat;
+  MyFunction( &stat );
+  REPORTSTATUS( &stat );
+  return 0;
+}
+\end{verbatim}
+
+A \verb@debuglevel@ of 0 means that no error logging will occur with
+any of the status macros, with the exception of \verb@REPORTSTATUS()@.
+A \verb@debuglevel@ of 1 means that a status message will be logged
+(usually to \verb@stderr@) whenever a function terminates abnormally
+(i.e.\ with non-zero \verb@statusCode@).  Any other value of
+\verb@debuglevel@ means that a status message will be logged even when
+functions exit nominally.  Programmers may also explicitly invoke
+\verb@extern int debuglevel@ in their code to determine the verbosity
+of their own error and warning messages.
+
+Please note that all status macros with the exception of
+\verb@REPORTSTATUS()@ can force a return from the calling routine.
+This is a Bad Thing if the calling routine is \verb@main()@, since
+\verb@main()@ must normally return \verb@int@ rather than \verb@void@.
+It is therefore recommended that none of these macros other than
+\verb@REPORTSTATUS()@ be used at the top level.
+
+\subsection*{Non-confomant functions}
+
+These standards apply only to functions that will be publicly
+available in the LAL libraries.  Within a module, a programmer may
+define and use subroutines that do not conform to the LAL function
+standards, provided these routines are only visible within that
+module.  Such functions should be declared as \verb@static@ to ensure
+this.  A publicly-visible non-conformant function requires special
+dispensation.
+
+\subsection*{Notes}
+
+Why are the status handling routines written as macros rather than
+functions?  There are three good reasons.
+
+First, many of the handling routines must be able to force an exit
+from the function calling them.  This cannot be done if the routine is
+in its own function, except by raising signal flags (which is a Bad
+Thing according to LAL standards).
+
+Second, it is useful for these routines to assign a status structure's
+file and line fields using the \verb@__FILE__@ and \verb@__LINE__@
+macros.  If the routine is its own function, then these will just give
+the file and line number where the error handling routine is defined.
+If the routine is a macro, then these will give the file and line
+number where the macro was called, which is much more interesting.
+
+Third, by expanding macros at compile time, the runtime performance of
+the resulting code is marginally better.  Most of these macros will,
+under nominal conditions, reduce to a single conditional test of an
+integer value, with no additional overhead from function calling and
+parameter passing.  Thus programmers can be encouraged to include
+extensive error trapping in all their routines, without having to
+worry about compromising performance.
+
+\subsection*{Example: A LAL primer}
+
+The following sections give a sample program program
+\verb@LALPrimerTest.c@, along with its supporting header file
+\verb@LALPrimer.h@ and function module \verb@LALPrimer.c@.  The
+program itself is trivial to the point of silliness: it takes two
+arguments from the command line and computes their ratio.  (Optionally
+it can take a third command line argument to set the
+\verb@debuglevel@.)  It is intended simply to illustrate how to use
+the LAL status structure and macros in an actual, complete piece of
+code.
+
+For a more fully developed sample program, see the package
+\verb@hello@.  That package also demonstrates how to document a
+package using the autodocumentation utilities, which the
+\verb@LALPrimer@ routines ignore.
+
+
+\vfill{\footnotesize\input{LALStatusMacrosHV}}
+
+
+\newpage\subsection{Sample header: \texttt{LALPrimer.h}}
+\vspace{3ex}
+\input{LALPrimerH}
+
+\newpage\subsection{Sample module: \texttt{LALPrimer.c}}
+\vspace{3ex}
+\input{LALPrimerC}
+
+\newpage\subsection{Sample program: \texttt{LALPrimerTest.c}}
+\vspace{3ex}
+\input{LALPrimerTestC}
+
+</lalLaTeX> */
 
 
 #ifndef _LALSTATUSMACROS_H
@@ -418,21 +503,20 @@ do                                                                    \
 #define ABORT(statusptr,code,mesg)                                    \
 do                                                                    \
 {                                                                     \
-  INT4 mycode = (code);                                               \
   (statusptr)->file=__FILE__;                                         \
   (statusptr)->line=__LINE__;                                         \
-  (statusptr)->statusCode=mycode;                                     \
+  (statusptr)->statusCode=(code);                                     \
   (statusptr)->statusDescription=(mesg);                              \
   if((statusptr)->statusPtr)                                          \
     {                                                                 \
       LALFree((statusptr)->statusPtr);                                \
       (statusptr)->statusPtr=NULL;                                    \
     }                                                                 \
-  if(debuglevel==0 || ((debuglevel==1)&&(mycode==0)))                 \
+  if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))                 \
     {                                                                 \
       return;                                                         \
     }                                                                 \
-  else if(mycode==0)                                                  \
+  else if((code)==0)                                                  \
     {                                                                 \
       LALPrintError("Nominal[%d]: ", (statusptr)->level);             \
       LALPrintError("function %s, file %s, line %d, %s\n",            \
@@ -442,7 +526,7 @@ do                                                                    \
     }                                                                 \
   else                                                                \
     {                                                                 \
-      LALPrintError("Error[%d] %d: ", (statusptr)->level,mycode);     \
+      LALPrintError("Error[%d] %d: ", (statusptr)->level,(code));     \
       LALPrintError("function %s, file %s, line %d, %s\n",            \
               (statusptr)->function, (statusptr)->file,               \
               (statusptr)->line, (statusptr)->Id);                    \
@@ -454,23 +538,22 @@ do                                                                    \
 #define ASSERT(assertion,statusptr,code,mesg)                         \
 do                                                                    \
 {                                                                     \
-  INT4 mycode = (code);                                               \
   if(!(assertion))                                                    \
     {                                                                 \
       (statusptr)->file=__FILE__;                                     \
       (statusptr)->line=__LINE__;                                     \
-      (statusptr)->statusCode=mycode;                                 \
+      (statusptr)->statusCode=(code);                                 \
       (statusptr)->statusDescription=(mesg);                          \
       if((statusptr)->statusPtr)                                      \
 	{                                                             \
 	  LALFree((statusptr)->statusPtr);                            \
 	  (statusptr)->statusPtr=NULL;                                \
 	}                                                             \
-      if(debuglevel==0 || ((debuglevel==1)&&(mycode==0)))             \
+      if(debuglevel==0 || ((debuglevel==1)&&((code)==0)))             \
 	{                                                             \
 	  return;                                                     \
 	}                                                             \
-      else if(mycode==0)                                              \
+      else if((code)==0)                                              \
 	{                                                             \
           LALPrintError("Nominal[%d]: ", (statusptr)->level);         \
           LALPrintError("function %s, file %s, line %d, %s\n",        \
@@ -480,7 +563,7 @@ do                                                                    \
 	}                                                             \
       else                                                            \
 	{                                                             \
-          LALPrintError("Error[%d] %d: ", (statusptr)->level,mycode); \
+          LALPrintError("Error[%d] %d: ", (statusptr)->level,(code)); \
           LALPrintError("function %s, file %s, line %d, %s\n",        \
                   (statusptr)->function, (statusptr)->file,           \
                   (statusptr)->line, (statusptr)->Id);                \
@@ -507,9 +590,14 @@ do                                                                    \
 #define DETATCHSTATUSPTR(statusptr)                                   \
 do                                                                    \
 {                                                                     \
-  ASSERT((statusptr)->statusPtr,statusptr,-8,                         \
-	 "DETATCHSTATUSPTR: null status pointer");                    \
-  LALFree((statusptr)->statusPtr);                                    \
+  Status *ptr=(statusptr)->statusPtr;                                 \
+  ASSERT(ptr,statusptr,-8,"DETATCHSTATUSPTR: null status pointer");   \
+  while (ptr)                                                         \
+  {                                                                   \
+    Status *next=ptr->statusPtr;                                      \
+    LALFree(ptr);                                                     \
+    ptr=next;                                                         \
+  }                                                                   \
   (statusptr)->statusPtr=NULL;                                        \
   (statusptr)->statusCode = 0;                                        \
   (statusptr)->statusDescription=NULL;                                \

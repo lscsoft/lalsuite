@@ -1,0 +1,13 @@
+\chapter{Package \texttt{support}}
+
+This package covers LAL support routines.  These routines do not conform to
+LAL requirements so they should be used only for debugging and in test code,
+not in production code.  The exeption is those routines in the
+\verb+LALMalloc.h+ header, section~\ref{s:LALMalloc.h}, which behave correctly
+when \verb+debuglevel+ is set to zero (as it should be for production code).
+The routines in this header should be used for all dynamic memory allocation
+rather than the standard system functions.
+
+\newpage\input{LALMallocH}
+\newpage\input{LALErrorH}
+\newpage\input{PrintVectorH}

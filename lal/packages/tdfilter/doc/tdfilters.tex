@@ -1,0 +1,32 @@
+\chapter{Package \texttt{tdfilters}}
+
+This package covers LAL routines for constructing and applying digital
+time-domain filters.  It is organized under three headers.  The
+\verb@ZPGFilter.h@ header provides routines for manipulating filters
+in the ``zeros, poles, gain'' representation, which is typically the
+simplest way of representing a filter response.  These routines create
+and destroy ZPG filters, and can transform the complex variable used
+to represent them.  The \verb@IIRFilter.h@ header provides routines
+for creating actual time-domain filters from the ZPG representation,
+and applying these filters to data.  The \verb@BandPassTimeSeries.h@
+header provides routines an actual implementation of these utilities
+to the specific task of high- or low-pass filtering of a data stream.
+These routines also serve as an example for the more general task of
+designing time-domain filters with any desired frequency response.
+
+The module \verb@ButterworthTimeSeries.c@ provides specific advice and
+guidelines for building a numerically stable time-domain filter, but
+the general procedure is as follows.  (1) Decide on the desired filter
+response, and express it as a rational function of the frequency
+variable $w=\tan(\pi f\Delta t)$ (which maps the Nyquist interval onto
+the positive real axis).  (2) Factorize this rational function into
+zeros and poles, restricting oneself to the upper half of the $w$
+complex plane.  Assign these to one or more objects of type
+\verb@<datatype>ZPGFilter@.  (3) Use \verb@WToZ<datatype>ZPGFilter()@
+to transform the filter to the more conventional $z=\exp(2\pi if\Delta
+t)$ frequency variable.  (4) Use the routines in \verb@IIRFilter.h@ to
+create IIR filters from the ZPG filters, and to apply them to data.
+
+\newpage\input{ZPGFilterH}
+\newpage\input{IIRFilterH}
+\newpage\input{BandPassTimeSeriesH}

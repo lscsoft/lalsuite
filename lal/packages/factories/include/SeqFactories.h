@@ -1,28 +1,27 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: SeqFactories.h
- *
- * Author: Finn, L. S.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * SeqFactories.h
- *
- * SYNOPSIS
- * #include "SeqFactories.h"
- *
- * DESCRIPTION 
- * Provides prototype and status code information for use
- * of CreateSequence, CreateVectorSequence, CreateArraySequence, 
- * DestroySequence, DestroyVectorSequence and DestroyArraySequence
- *
- * DIAGNOSTICS
- *
- *----------------------------------------------------------------------- 
- */
+/*----------------------------------------------------------------------- 
+
+File Name: SeqFactories.h
+
+<lalVerbatim file="SeqFactoriesHV">
+Revision: $Id$
+</lalVerbatim>
+
+-------------------------------------------------------------------------*/
+
+/* <lalLaTeX>
+
+\section{Header \texttt{SeqFactories.h}}
+\label{s:SeqFactories.h}
+
+Provides prototype and status code information for use of CreateVectorSequence
+and DestroyVectorSequence.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "SeqFactories.h"
+\end{verbatim}
+
+</lalLaTeX> */
 
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
@@ -36,56 +35,69 @@ extern "C" {
 
 NRCSID (SEQFACTORIESH, "$Id$");
 
-#define CREATESEQ_ESLENGTH  1
-#define CREATESEQ_EVLENGTH  2
-#define CREATESEQ_EVPTR    4
-#define CREATESEQ_EUPTR    8
-#define CREATESEQ_EMALLOC  16
+/* <lalLaTeX>
 
-#define CREATESEQ_MSGESLENGTH   "Illegal length" /* ESLENGTH */
-#define CREATESEQ_MSGEVLENGTH   "Illegal vector length" /* EVLENGTH */
-#define CREATESEQ_MSGEVPTR    "seq == NULL" /* EVPTR */
-#define CREATESEQ_MSGEUPTR    "*seq != NULL" /* EUPTR */
-#define CREATESEQ_MSGEMALLOC   "Malloc failure" /* EMALLOC */
+\subsection*{Error conditions}
+\input{SeqFactoriesHErrTab}
 
-#define DESTROYSEQ_EVPTR  1
-#define DESTROYSEQ_EUPTR  2
-#define DESTROYSEQ_EDPTR  8
+</lalLaTeX> */
 
-#define DESTROYSEQ_MSGEVPTR "seq == NULL" /* EVPTR */
-#define DESTROYSEQ_MSGEUPTR "*seq == NULL" /* EUPTR */
-#define DESTROYSEQ_MSGEDPTR "(*seq)->data == NULL" /* EDPTR */
+/*
+<lalErrTable file="SeqFactoriesHErrTab">
+*/
 
-#define CREATEVECSEQ_ESLENGTH    1
-#define CREATEVECSEQ_EVPTR      2
-#define CREATEVECSEQ_EUPTR      4
-#define CREATEVECSEQ_EMALLOC    8
-#define CREATEVECSEQ_EVLENGTH  16
-#define CREATEVECSEQ_EINPTR    32
+#define SEQFACTORIESH_ESLENGTH  1
+#define SEQFACTORIESH_EVLENGTH  2
+#define SEQFACTORIESH_EVPTR     4
+#define SEQFACTORIESH_EUPTR     8
+#define SEQFACTORIESH_EDPTR    16
+#define SEQFACTORIESH_EINPTR   32
+#define SEQFACTORIESH_EMALLOC  64
 
-#define CREATEVECSEQ_MSGESLENGTH   "Illegal sequence length" /* ESLENGTH */
-#define CREATEVECSEQ_MSGEVPTR     "seq == NULL" /* EVPTR */
-#define CREATEVECSEQ_MSGEUPTR     "*seq != NULL" /* EUPTR */
-#define CREATEVECSEQ_MSGEMALLOC   "Malloc failure" /* EMALLOC */
-#define CREATEVECSEQ_MSGEVLENGTH  "Illegal vector length" /* EVLENGTH */
-#define CREATEVECSEQ_MSGEINPTR    "in == NULL" /* EINPTR */
+#define SEQFACTORIESH_MSGESLENGTH "Illegal sequence length."
+#define SEQFACTORIESH_MSGEVLENGTH "Illegal vector length."
+#define SEQFACTORIESH_MSGEVPTR    "Null sequence handle."
+#define SEQFACTORIESH_MSGEUPTR    "Non-null sequence pointer."
+#define SEQFACTORIESH_MSGEDPTR    "Null sequence data."
+#define SEQFACTORIESH_MSGEINPTR   "Null input pointer."
+#define SEQFACTORIESH_MSGEMALLOC  "Malloc failure."
 
-#define DESTROYVECSEQ_EVPTR  1
-#define DESTROYVECSEQ_EUPTR  2
-#define DESTROYVECSEQ_EDPTR  8
+/*
+</lalErrTable>
+*/
 
-#define DESTROYVECSEQ_MSGEVPTR "seq == NULL" /* EVPTR */
-#define DESTROYVECSEQ_MSGEUPTR "*seq == NULL" /* EUPTR */
-#define DESTROYVECSEQ_MSGEDPTR "(*seq)->data == NULL" /* EDPTR */
+
+/* Structures. */
+/* <lalLaTeX>
+
+\subsection*{Structures}
+\begin{verbatim}
+CreateVectorSequenceIn
+\end{verbatim}
+\index{\verb&CreateVectorSequenceIn&}
+
+\noindent This structure stores the input required for creating a vector
+sequence.  This input includes the length of the sequence (i.e., the number of
+vectors) and the length of each vector.  The fields are:
+
+\begin{description}
+\item[\texttt{UINT4 length}] The sequence length.
+\item[\texttt{UINT4 vectorLength}] The length of each vector in the sequence.
+\end{description}
+
+</lalLaTeX> */
 
 typedef struct tagCreateVectorSequenceIn {
   UINT4 length;
   UINT4 vectorLength;
 } CreateVectorSequenceIn;
 
-/*
- * 9. Functions Declarations (i.e., prototypes).
- */
+
+
+/* Function prototypes. */
+/* <lalLaTeX>
+\newpage\input{VectorSequenceFactoriesC}
+</lalLaTeX> */
 
 void CreateSequence(Status *, REAL4Sequence **, UINT4);
 void CHARCreateSequence(Status *, CHARSequence **, UINT4);
@@ -175,6 +187,11 @@ void CDestroyVectorSequence(Status *,
 void ZDestroyVectorSequence(Status *, 
 			     COMPLEX16VectorSequence **);
 
+/* Test program. */
+
+/* <lalLaTeX>
+\newpage\input{VectorSequenceFactoriesTestC}
+</lalLaTeX> */
 
 #ifdef  __cplusplus
 }

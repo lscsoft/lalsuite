@@ -1,26 +1,26 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: PrintVector.h
- *
- * Author: Allen, Bruce 
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- *   PrintVector.h
- *
- * SYNOPSIS
- *   #include "PrintVector.h"
- *
- * DESCRIPTION
- *   Defines PrintVector interface.
- *
- * DIAGNOSTICS
- *
- *----------------------------------------------------------------------
- */
+/************************************ <lalVerbatim file="PrintVectorHV">
+Author: Allen, B.
+$Id$
+************************************* </lalVerbatim> */
+
+/* <lalLaTeX>
+
+\section{Header \texttt{PrintVector.h}}
+\label{s:PrintVector.h}
+
+This is a simple utility to print vectors into a file.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "PrintVector.h"
+\end{verbatim}
+
+\noindent Defines PrintVector interface.
+
+\vfill{\footnotesize\input{PrintVectorHV}}
+\newpage\input{PrintVectorC}
+
+</lalLaTeX> */
 
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
@@ -32,10 +32,9 @@ extern "C" {
 #endif
 
 
-NRCSID (PRINTVECTORH, "$Id$");
+NRCSID( PRINTVECTORH, "$Id$" );
 
-void PrintVector(REAL4Vector *vector);
-
+void PrintVector( REAL4Vector *vector );
 
 #ifdef  __cplusplus
 }

@@ -1,28 +1,27 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: AVFactories.h
- *
- * Author: Finn, L. S.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * AVFactories.h
- *
- * SYNOPSIS
- * #include "AVFactories.h"
- *
- * DESCRIPTION 
- * Provides prototype and status code information for use
- * of CreateVector, CreateArray, DestroyVector and DestroyArray
- *
- * DIAGNOSTICS
- *
- *----------------------------------------------------------------------- 
- */
+/*----------------------------------------------------------------------- 
 
+File Name: AVFactories.h
+
+<lalVerbatim file="AVFactoriesHV">
+Revision: $Id$
+</lalVerbatim>
+
+-------------------------------------------------------------------------*/
+
+/* <lalLaTeX>
+
+\section{Header \texttt{AVFactories.h}}
+\label{s:AVFactories.h}
+
+Provides prototype and status code information for use of CreateVector,
+CreateArray, DestroyVector and DestroyArray
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "AVFactories.h"
+\end{verbatim}
+
+</lalLaTeX> */
 
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
@@ -35,41 +34,35 @@ extern "C" {
 
 NRCSID (AVFACTORIESH, "$Id$");
 
-#define CREATEVECTOR_ELENGTH  1
-#define CREATEVECTOR_EVPTR    2
-#define CREATEVECTOR_EUPTR    4
-#define CREATEVECTOR_EMALLOC  8
+/* <lalLaTeX>
 
-#define CREATEARRAY_ELENGTH  1
-#define CREATEARRAY_EVPTR    2
-#define CREATEARRAY_EUPTR    4
-#define CREATEARRAY_EMALLOC  8
+\subsection*{Error conditions}
+\input{AVFactoriesHErrTab}
 
-#define CREATEVECTOR_MSGELENGTH   "Illegal length" /* ELENGTH */
-#define CREATEVECTOR_MSGEVPTR    "vector == NULL" /* EVPTR */
-#define CREATEVECTOR_MSGEUPTR    "*vector != NULL" /* EUPTR */
-#define CREATEVECTOR_MSGEMALLOC   "Malloc failure" /* EMALLOC */
+</lalLaTeX> */
 
-#define CREATEARRAY_MSGELENGTH   "Illegal length" /* ELENGTH */
-#define CREATEARRAY_MSGEVPTR    "array == NULL" /* EVPTR */
-#define CREATEARRAY_MSGEUPTR    "*array != NULL" /* EUPTR */
-#define CREATEARRAY_MSGEMALLOC   "Malloc failure" /* EMALLOC */
+/*
+<lalErrTable file="AVFactoriesHErrTab">
+*/
+#define AVFACTORIESH_ELENGTH 1
+#define AVFACTORIESH_EVPTR   2
+#define AVFACTORIESH_EUPTR   4
+#define AVFACTORIESH_EDPTR   8
+#define AVFACTORIESH_EMALLOC 16
+#define AVFACTORIESH_MSGELENGTH  "Illegal length."
+#define AVFACTORIESH_MSGEVPTR    "Null vector/array handle."
+#define AVFACTORIESH_MSGEUPTR    "Non-null vector/array pointer."
+#define AVFACTORIESH_MSGEDPTR    "Null vector/array data."
+#define AVFACTORIESH_MSGEMALLOC  "Malloc failure."
+/*
+</lalErrTable>
+*/
 
-#define DESTROYVECTOR_EVPTR  1
-#define DESTROYVECTOR_EUPTR  2
-#define DESTROYVECTOR_EDPTR  8
-
-#define DESTROYARRAY_EVPTR  1
-#define DESTROYARRAY_EUPTR  2
-#define DESTROYARRAY_EDPTR  8
-
-#define DESTROYVECTOR_MSGEVPTR "vector == NULL" /* EVPTR */
-#define DESTROYVECTOR_MSGEUPTR "*vector == NULL" /* EUPTR */
-#define DESTROYVECTOR_MSGEDPTR "(*vector)->data == NULL" /* EDPTR */
-
-#define DESTROYARRAY_MSGEVPTR "array == NULL" /* EVPTR */
-#define DESTROYARRAY_MSGEUPTR "*array == NULL" /* EUPTR */
-#define DESTROYARRAY_MSGEDPTR "(*array)->data == NULL" /* EDPTR */
+/* Function prototypes. */
+/* <lalLaTeX>
+\newpage\input{VectorFactoriesC}
+\newpage\input{ArrayFactoriesC}
+</lalLaTeX> */
 
 void CHARCreateVector(Status *, CHARVector **, UINT4);
 void I2CreateVector(Status *, INT2Vector **, UINT4);
@@ -121,6 +114,12 @@ void DDestroyArray(Status *, REAL8Array **);
 void CDestroyArray(Status *, COMPLEX8Array **);
 void ZDestroyArray(Status *, COMPLEX16Array **);
 
+/* Test program. */
+
+/* <lalLaTeX>
+\newpage\input{VectorFactoriesTestC}
+\newpage\input{ArrayFactoriesTestC}
+</lalLaTeX> */
 
 #ifdef  __cplusplus
 }

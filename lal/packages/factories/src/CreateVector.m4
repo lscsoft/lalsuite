@@ -14,8 +14,9 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`%sCreateVector',TYPECODE)')
 
+/* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( Status *status, VTYPE **vector, UINT4 length ) 
-{
+{ /* </lalVerbatim> */
   /* 
    * Initialize status structure
    */
@@ -27,16 +28,16 @@ void FUNC ( Status *status, VTYPE **vector, UINT4 length )
    * length was passed
    */
 
-  ASSERT( length > 0, status, CREATEVECTOR_ELENGTH, CREATEVECTOR_MSGELENGTH );
+  ASSERT( length > 0, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH );
 
   /* 
    * Check return structure: If return pointer does not point to a
    *    valid pointer then report an error 
    */
 
-  ASSERT( vector != NULL, status, CREATEVECTOR_EVPTR, CREATEVECTOR_MSGEVPTR );
+  ASSERT( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
 
-  ASSERT( *vector == NULL, status, CREATEVECTOR_EUPTR, CREATEVECTOR_MSGEUPTR );
+  ASSERT( *vector == NULL, status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR );
 
   /*
    * Allocate pointer
@@ -44,7 +45,7 @@ void FUNC ( Status *status, VTYPE **vector, UINT4 length )
 
   *vector = ( VTYPE * ) LALMalloc( sizeof( VTYPE ) );
   ASSERT( *vector != NULL, status,
-          CREATEVECTOR_EMALLOC, CREATEVECTOR_MSGEMALLOC );
+          AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
 
   (*vector)->length = 0;	/* length 0 until storage allocated */
   (*vector)->data   = NULL;	/* NULL data until allocated */
@@ -61,7 +62,7 @@ void FUNC ( Status *status, VTYPE **vector, UINT4 length )
   {
     /* Must free storage pointed to by *vector */
     LALFree( *vector );
-    ABORT( status, CREATEVECTOR_EMALLOC, CREATEVECTOR_MSGEMALLOC );
+    ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
   }
   (*vector)->length = length;	/* Set length if storage allocated */
 

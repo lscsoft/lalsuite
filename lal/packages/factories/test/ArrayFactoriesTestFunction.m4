@@ -56,30 +56,30 @@ void FUNC ( void )
 
 
   CFUNC ( &status, &array, &badLength1 );
-  TestStatus( &status, CODES( CREATEARRAY_EVPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
   CFUNC ( &status, &array, &badLength2 );
-  TestStatus( &status, CODES( CREATEARRAY_ELENGTH ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
 
   CFUNC ( &status, &array, &badLength3 );
-  TestStatus( &status, CODES( CREATEARRAY_ELENGTH ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_ELENGTH ), 1 );
   LALCheckMemoryLeaks();
 
   DFUNC ( &status, NULL );
-  TestStatus( &status, CODES( DESTROYARRAY_EVPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
   CFUNC ( &status, NULL, &dimLength );
-  TestStatus( &status, CODES( CREATEARRAY_EVPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
   DFUNC ( &status, &array );
-  TestStatus( &status, CODES( DESTROYARRAY_EUPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
 
   array = &astore;
   CFUNC ( &status, &array, &dimLength );
-  TestStatus( &status, CODES( CREATEARRAY_EUPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EUPTR ), 1 );
 
   DFUNC ( &status, &array );
-  TestStatus( &status, CODES( DESTROYARRAY_EDPTR ), 1 );
+  TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
 
   array->data = &datum;
   DFUNC ( &status, &array );

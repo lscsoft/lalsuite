@@ -1,29 +1,51 @@
 dnl $Id$
-/*----------------------------------------------------------------------- 
- * 
- * File Name: ArrayFactoriesTest.c
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * DESCRIPTION 
- *   Test suite for vector factories
- * 
- * DIAGNOSTICS
- *   Writes PASS, FAIL to stdout as tests are passed or failed. 
- *   Returns 0 if all tests passed and -1 if any test failed. 
- * 
- * CALLS
- *   TYPECODECreateArray
- *   TYPECODEDestroyArray
- * 
- * NOTES
- *   PROGNAME can't test LALMalloc failure without messing with
- *   LALMalloc
- * 
- *-----------------------------------------------------------------------
- */
+/*************** <lalVerbatim file="ArrayFactoriesTestCV"> ****
+$Id$
+**************** </lalVerbatim> *******************************/
+
+/* <lalLaTeX>
+
+\subsection{Program \texttt{ArrayFactoriesTest.c}}
+\label{ss:ArrayFactoriesTest.c}
+
+A program to test create/destroy array routines.
+
+\subsubsection*{Usage}
+\begin{verbatim}
+ArrayFactoriesTest [options]
+Options:
+  -h         print help
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set debuglevel to level
+\end{verbatim}
+
+\subsubsection*{Description}
+
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+debuglevel
+TYPECODECreateArray()
+TYPECODEDestroyArray()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ArrayFactoriesTestCV}}
+
+</lalLaTeX> */
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,24 +1,22 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: CreateZPGFilter.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/****************************** <lalVerbatim file="CreateZPGFilterCV">
+Author: Creighton, T. D.
+$Id$
+******************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{CreateZPGFilter.c}}
+\label{ss:CreateZPGFilter.c}
 
 Creates ZPG filter objects.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{CreateZPGFilterD}
+\input{CreateZPGFilterCP}
+\index{\verb&CreateCOMPLEX8ZPGFilter()&}
+\index{\verb&CreateCOMPLEX16ZPGFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions create an object \verb@**output@, of type
 \verb@COMPLEX8ZPGFilter@ or \verb@COMPLEX16ZPGFilter@, having
@@ -28,16 +26,18 @@ start out as garbage).  The handle passed into the functions must be a
 valid handle (i.e.\ \verb@output@$\neq$\verb@NULL@), but must not
 point to an existing object (\i.e.\ \verb@*output@=\verb@NULL@).
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 LALMalloc()
 CCreateVector()
 ZCreateVector()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateZPGFilterCV}}
 
 </lalLaTeX> */
 
@@ -48,7 +48,7 @@ ZCreateVector()
 NRCSID(CREATEZPGFILTERC,"$Id$");
 
 
-/* <lalVerbatim file="CreateZPGFilterD"> */
+/* <lalVerbatim file="CreateZPGFilterCP"> */
 void CreateCOMPLEX8ZPGFilter(Status            *stat,
 			     COMPLEX8ZPGFilter **output,
 			     INT4              numZeros,
@@ -86,7 +86,7 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
 }
 
 
-/* <lalVerbatim file="CreateZPGFilterD"> */
+/* <lalVerbatim file="CreateZPGFilterCP"> */
 void CreateCOMPLEX16ZPGFilter(Status             *stat,
 			      COMPLEX16ZPGFilter **output,
 			      INT4               numZeros,

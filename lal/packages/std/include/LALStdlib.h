@@ -1,37 +1,53 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: LALstdlib.h
- *
- * Author: Finn, L. S.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * LALStdlib.h
- *
- * SYNOPSIS
- * #include "LALStdlib.h"
- *
- * DESCRIPTION
- * Defines LIGO/LSC Analysis Library support functions for file I/O, 
- * memory allocation, etc. Provides prototypes for support functions 
- * used to manipulate status structures.
- *
- * DIAGNOSTICS
- *
- *----------------------------------------------------------------------
- */
+/************************************ <lalVerbatim file="LALStdlibHV">
+Author: Finn, L. S.
+$Id$
+************************************* </lalVerbatim> */
+
+/* <lalLaTeX>
+
+\section{Header \texttt{LALStdlib.h}}
+\label{s:LALStdlib.h}
+
+Includes the standard LAL header files.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "LALStdlib.h"
+\end{verbatim}
+
+\noindent This header is the overall header for the \verb@std@
+package.  It provides the datatypes, constants, and macros required by
+most LAL functions, by including the following header files in the
+\verb@std@ package:
+
+\vspace{1ex}
+
+</lalLaTeX> */
 
 #ifndef _LALSTDLIB_H
 #define _LALSTDLIB_H
 
-#include <stdio.h>
+/* <lalVerbatim> */
 #include "LALRCSID.h"
-#include "LALMalloc.h"
 #include "LALDatatypes.h"
 #include "LALStatusMacros.h"
+/* </lalVerbatim>
+<lalLaTeX>
+
+\noindent\verb@LALStdlib.h@ also includes function prototype headers
+for certain standard modules used by many LAL routines:
+
+\vspace{1ex}
+
+</lalLaTeX>
+<lalVerbatim> */
+#include <stdio.h>
+#include "LALMalloc.h"
+/* </lalVerbatim> 
+
+<lalLaTeX>
+\vfill{\footnotesize\input{LALStdlibHV}}
+</lalLaTeX> */
 
 #ifdef  __cplusplus
 extern "C" {

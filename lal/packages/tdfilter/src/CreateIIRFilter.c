@@ -1,24 +1,22 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: CreateIIRFilter.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/****************************** <lalVerbatim file="CreateIIRFilterCV">
+Author: Creighton, T. D.
+$Id$
+******************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{CreateIIRFilter.c}}
+\label{ss:CreateIIRFilter.c}
 
 Creates IIR filter objects.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{CreateIIRFilterD}
+\input{CreateIIRFilterCP}
+\index{\verb&CreateREAL4IIRFilter()&}
+\index{\verb&CreateREAL8IIRFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions create an object \verb@**output@ of type
 \verb@<datatype>IIRFilter@, where \verb@<datatype>@ is \verb@REAL4@ or
@@ -30,7 +28,7 @@ $z=\exp(2\pi if)$ plane.  Initially the output handle must be a valid
 handle (\verb@output@$\neq$\verb@NULL@) but should not point to an
 existing object (\verb@*output@=\verb@NULL@)
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
 An IIR filter is a real time-domain filter, which imposes certain
 constraints on the zeros, poles, and gain of the filter transfer
@@ -73,7 +71,7 @@ unnecessary error trapping; when \verb@debuglevel@ is 1 or more, the
 routine checks to make sure that each nonreal zero or pole does in
 fact have a complex-conjugate partner.
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 debuglevel
 LALMalloc()
@@ -81,7 +79,9 @@ SCreateVector()
 DCreateVector()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{CreateIIRFilterCV}}
 
 </lalLaTeX> */
 
@@ -95,7 +95,7 @@ NRCSID(CREATEIIRFILTERC,"$Id$");
 
 extern INT4 debuglevel;
 
-/* <lalVerbatim file="CreateIIRFilterD"> */
+/* <lalVerbatim file="CreateIIRFilterCP"> */
 void CreateREAL4IIRFilter(Status            *stat,
 			  REAL4IIRFilter    **output,
 			  COMPLEX8ZPGFilter *input)
@@ -336,7 +336,7 @@ void CreateREAL4IIRFilter(Status            *stat,
 }
 
 
-/* <lalVerbatim file="CreateIIRFilterD"> */
+/* <lalVerbatim file="CreateIIRFilterCP"> */
 void CreateREAL8IIRFilter(Status             *stat,
 			  REAL8IIRFilter     **output,
 			  COMPLEX16ZPGFilter *input)

@@ -14,8 +14,9 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
 define(`FUNC',`format(`%sDestroyVector',TYPECODE)')
 
+/* <lalVerbatim file="VectorFactoriesD"> */
 void FUNC ( Status *status, VTYPE **vector )
-{
+{ /* </lalVerbatim> */
   /* 
    * Initialize status
    */
@@ -26,20 +27,20 @@ void FUNC ( Status *status, VTYPE **vector )
    * Check vector: is it non-NULL?
    */
 
-  ASSERT( vector != NULL, status, DESTROYVECTOR_EVPTR, DESTROYVECTOR_MSGEVPTR );
+  ASSERT( vector != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
 
   /* 
    * Check vector: does it point to non-NULL?
    */
 
-  ASSERT( *vector != NULL, status, DESTROYVECTOR_EUPTR, DESTROYVECTOR_MSGEUPTR );
+  ASSERT( *vector != NULL, status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR );
 
   /*
    * Check data in vector: does it point to non-NULL
    */
 
   ASSERT( (*vector)->data != NULL, status,
-          DESTROYVECTOR_EDPTR, DESTROYVECTOR_MSGEDPTR );
+          AVFACTORIESH_EDPTR, AVFACTORIESH_MSGEDPTR );
 
   /* Ok, now let's free allocated storage */
 

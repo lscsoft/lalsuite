@@ -1,24 +1,20 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: IIRFilterVectorR.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/***************************** <lalVerbatim file="IIRFilterVectorRCV">
+Author: Creighton, T. D.
+$Id$
+****************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilterVectorR.c}}
+\label{ss:IIRFilterVectorR.c}
 
 Applies a time-reversed IIR filter to a data stream.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{IIRFilterVectorRD}
+\input{IIRFilterVectorRCP}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions apply a generic time-domain filter \verb@*filter@ to a
 time series \verb@*vector@, as with the routines
@@ -29,15 +25,17 @@ of the frequency response while canceling the phase shift.  This can
 be significant when one wishes to preserve phase correlations across
 wide frequency bands.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
 Because these filter routines are inherently acausal, the
 \verb@filter->history@ vector is meaningless and unnecessary.  These
 routines neither use nor modify this data array.
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{IIRFilterVectorRCV}}
 
 </lalLaTeX> */
 
@@ -47,7 +45,7 @@ routines neither use nor modify this data array.
 NRCSID(IIRFILTERVECTORRC,"$Id$");
 
 
-/* <lalVerbatim file="IIRFilterVectorRD"> */
+/* <lalVerbatim file="IIRFilterVectorRCP"> */
 void IIRFilterREAL4VectorR(Status         *stat,
 			   REAL4Vector    *vector,
 			   REAL4IIRFilter *filter)
@@ -106,7 +104,7 @@ void IIRFilterREAL4VectorR(Status         *stat,
 }
 
 
-/* <lalVerbatim file="IIRFilterVectorRD"> */
+/* <lalVerbatim file="IIRFilterVectorRCP"> */
 void IIRFilterREAL8VectorR(Status         *stat,
 			   REAL8Vector    *vector,
 			   REAL8IIRFilter *filter)

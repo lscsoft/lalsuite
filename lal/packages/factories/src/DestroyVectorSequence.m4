@@ -14,8 +14,9 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')
 define(`FUNC',`format(`%sDestroyVectorSequence',TYPECODE)')
 
+/* <lalVerbatim file="VectorSequenceFactoriesD"> */
 void FUNC ( Status *status, STYPE **vseq )
-{
+{ /* </lalVerbatim> */
   /* 
    * Initialize status
    */
@@ -26,20 +27,20 @@ void FUNC ( Status *status, STYPE **vseq )
    * Check vseq: is it non-NULL?
    */
 
-  ASSERT (vseq != NULL, status, DESTROYVECSEQ_EVPTR, DESTROYVECSEQ_MSGEVPTR); 
+  ASSERT (vseq != NULL, status, SEQFACTORIESH_EVPTR, SEQFACTORIESH_MSGEVPTR); 
 
   /* 
    * Check vseq: does it point to non-NULL?
    */
 
-  ASSERT (*vseq != NULL,status, DESTROYVECSEQ_EUPTR, DESTROYVECSEQ_MSGEUPTR);
+  ASSERT (*vseq != NULL,status, SEQFACTORIESH_EUPTR, SEQFACTORIESH_MSGEUPTR);
 
   /*
    * Check data in vseq: does it point to non-NULL?
    */
 
   ASSERT ((*vseq)->data != NULL, status,
-          DESTROYVECSEQ_EDPTR, DESTROYVECSEQ_MSGEDPTR);
+          SEQFACTORIESH_EDPTR, SEQFACTORIESH_MSGEDPTR);
 
   /* Ok, now let's free allocated storage */
 

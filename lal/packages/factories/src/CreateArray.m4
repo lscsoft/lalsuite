@@ -13,9 +13,9 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`%sCreateArray',TYPECODE)')
 
-
+/* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength ) 
-{
+{ /* </lalVerbatim> */
   UINT4 arrayDataSize = 1;
   UINT4 numDims;
   UINT4 dim;
@@ -25,12 +25,12 @@ void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength )
 
   /* make sure arguments are sane */
 
-  ASSERT (array,             status, CREATEARRAY_EVPTR, CREATEARRAY_MSGEVPTR);
-  ASSERT (!*array,           status, CREATEARRAY_EUPTR, CREATEARRAY_MSGEUPTR);
-  ASSERT (dimLength,         status, CREATEARRAY_EVPTR, CREATEARRAY_MSGEVPTR);
-  ASSERT (dimLength->data,   status, CREATEARRAY_EVPTR, CREATEARRAY_MSGEVPTR);
+  ASSERT (array,             status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
+  ASSERT (!*array,           status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);
+  ASSERT (dimLength,         status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
+  ASSERT (dimLength->data,   status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
   ASSERT (dimLength->length, status,
-          CREATEARRAY_ELENGTH, CREATEARRAY_MSGELENGTH);
+          AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH);
 
   numDims = dimLength->length;
 
@@ -41,12 +41,12 @@ void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength )
     arrayDataSize *= dimLength->data[dim];
   }
 
-  ASSERT (arrayDataSize, status, CREATEARRAY_ELENGTH, CREATEARRAY_MSGELENGTH);
+  ASSERT (arrayDataSize, status, AVFACTORIESH_ELENGTH, AVFACTORIESH_MSGELENGTH);
 
   /* allocate memory for structure */
 
   *array = ( ATYPE * ) LALMalloc ( sizeof( ATYPE ) );
-  ASSERT (*array, status, CREATEARRAY_EMALLOC, CREATEARRAY_MSGEMALLOC);
+  ASSERT (*array, status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC);
 
   (*array)->dimLength = NULL;
   (*array)->data      = NULL;
@@ -75,7 +75,7 @@ void FUNC ( Status *status, ATYPE **array, UINT4Vector *dimLength )
 
     LALFree (*array);
     *array = NULL;
-    ABORT (status, CREATEARRAY_EMALLOC, CREATEARRAY_MSGEMALLOC);
+    ABORT (status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC);
   }
 
   DETATCHSTATUSPTR (status);

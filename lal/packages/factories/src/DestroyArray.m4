@@ -13,14 +13,15 @@ ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`ATYPE',`format(`%sArray',TYPE)')
 define(`FUNC',`format(`%sDestroyArray',TYPECODE)')
 
+/* <lalVerbatim file="ArrayFactoriesD"> */
 void FUNC ( Status *status, ATYPE **array )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);	
   ATTATCHSTATUSPTR (status);
       
-  ASSERT (array,          status, DESTROYARRAY_EVPTR, DESTROYARRAY_MSGEVPTR);
-  ASSERT (*array,         status, DESTROYARRAY_EUPTR, DESTROYARRAY_MSGEUPTR);
-  ASSERT ((*array)->data, status, DESTROYARRAY_EDPTR, DESTROYARRAY_MSGEDPTR);
+  ASSERT (array,          status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
+  ASSERT (*array,         status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);
+  ASSERT ((*array)->data, status, AVFACTORIESH_EDPTR, AVFACTORIESH_MSGEDPTR);
 
   /* Free allocated storage */
 

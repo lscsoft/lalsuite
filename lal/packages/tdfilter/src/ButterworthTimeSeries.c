@@ -1,24 +1,28 @@
 /*----------------------------------------------------------------------- 
- * 
- * File Name: ButterworthTimeSeries.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+
+File Name: ButterworthTimeSeries.c
+
+<lalVerbatim file="ButterworthTimeSeriesCV">
+Author: Creighton, T. D.
+Revision: $Id$
+</lalVerbatim>
+
+-------------------------------------------------------------------------*/
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{ButterworthTimeSeries.c}}
+\label{ss:ButterworthTimeSeries.c}
 
 Applies a low- or high-pass Butterworth filter to a time series.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ButterworthTimeSeriesD}
+\index{\verb&ButterworthREAL4TimeSeries()&}
+\index{\verb&ButterworthREAL8TimeSeries()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These routines perform an in-place time-domain band-pass filtering of
 a data sequence \verb@*series@, using a Butterworth filter generated
@@ -28,7 +32,7 @@ applied to the data once forward and once in reverse.  This gives the
 full amplitude response with little or no frequency-dependent phase
 shift.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
 The frequency response of a Butterworth low-pass filter is easiest to
 express in terms of the transformed frequency variable $w=\tan(\pi
@@ -118,7 +122,7 @@ applied to the data stream twice: once in the normal sense, and once
 in the time-reversed sense.  This gives the full attenuation with very
 little frequency-dependent phase shift.
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 debuglevel
 LALPrintError()
@@ -136,7 +140,9 @@ IIRFilterREAL4VectorR()
 IIRFilterREAL8VectorR()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{ButterworthTimeSeriesCV}}
 
 </lalLaTeX> */
 

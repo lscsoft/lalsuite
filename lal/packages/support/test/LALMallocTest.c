@@ -1,3 +1,50 @@
+/*************** <lalVerbatim file="LALMallocTestCV"> *************
+$Id$
+**************** </lalVerbatim> ***********************************/
+
+/* <lalLaTeX>
+
+\subsection{Program \texttt{LALMallocTest.c}}
+\label{s:LALMallocTest.c}
+
+Tests the routines in \verb@LALMalloc.h@.
+
+\subsubsection*{Usage}
+\begin{verbatim}
+LALMallocTest
+\end{verbatim}
+
+\subsubsection*{Description}
+
+This program has ugly code for testing the LAL memory allocation and freeing
+routines.  It always returns success, so it is not very useful.  The actual
+success should be interpreted from the output messages.  This should be
+changed someday.
+
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Always returned.              \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+debuglevel
+LALMalloc()
+LALFree()
+LALCheckMemoryLeaks()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{LALMallocTestCV}}
+
+</lalLaTeX> */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +58,7 @@ int raise (int sig)
   return 1;
 }
 
-int main ()
+int main( void )
 {
   int    *p;
   int    *q;

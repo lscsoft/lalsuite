@@ -1,24 +1,24 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: IIRFilter.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/************************************ <lalVerbatim file="IIRFilterCV">
+Author: Creighton, T. D.
+$Id$
+************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilter.c}}
+\label{ss:IIRFilter.c}
 
 Computes an instant-by-instant IIR filter response.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{IIRFilterD}
+\input{IIRFilterCP}
+\index{\verb&IIRFilterREAL4()&}
+\index{\verb&IIRFilterREAL8()&}
+\index{\verb&SIIRFilter()&}
+\index{\verb&DIIRFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions pass a time-domain datum to an object \verb@*filter@
 of type \verb@REAL4IIRFilter@ or \verb@REAL8IIRFilter@, and return the
@@ -36,11 +36,13 @@ programs; they have no status handling or error trapping.  The input
 datum is passed in by the variable \verb@x@, and the response is
 returned through the function's return statement.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{IIRFilterCV}}
 
 </lalLaTeX> */
 
@@ -50,7 +52,7 @@ returned through the function's return statement.
 NRCSID(IIRFILTERC,"$Id$");
 
 
-/* <lalVerbatim file="IIRFilterD"> */
+/* <lalVerbatim file="IIRFilterCP"> */
 void IIRFilterREAL4(Status         *stat,
 		    REAL4          *output,
 		    REAL4          input,
@@ -103,7 +105,7 @@ void IIRFilterREAL4(Status         *stat,
 }
 
 
-/* <lalVerbatim file="IIRFilterD"> */
+/* <lalVerbatim file="IIRFilterCP"> */
 void IIRFilterREAL8(Status         *stat,
 		    REAL8          *output,
 		    REAL8          input,
@@ -156,9 +158,8 @@ void IIRFilterREAL8(Status         *stat,
 }
 
 
-/* <lalVerbatim file="IIRFilterD"> */
-REAL4 SIIRFilter(REAL4          x,
-		 REAL4IIRFilter *filter)
+/* <lalVerbatim file="IIRFilterCP"> */
+REAL4 SIIRFilter(REAL4 x, REAL4IIRFilter *filter)
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -196,9 +197,8 @@ REAL4 SIIRFilter(REAL4          x,
 }
 
 
-/* <lalVerbatim file="IIRFilterD"> */
-REAL8 DIIRFilter(REAL8          x,
-		 REAL8IIRFilter *filter)
+/* <lalVerbatim file="IIRFilterCP"> */
+REAL8 DIIRFilter(REAL8 x, REAL8IIRFilter *filter)
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */

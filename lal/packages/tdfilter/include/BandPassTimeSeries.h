@@ -1,20 +1,16 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: BandPassTimeSeries.h
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/*************************** <lalVerbatim file="BandPassTimeSeriesHV">
+Author: Creighton, T. D.
+$Id$
+**************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \section{Header \texttt{BandPassTimeSeries.h}}
+\label{s:BandPassTimeSeries.h}
 
 Provides routines to low- or high-pass filter a time series.
 
-\subsection{Synopsis}
+\subsection*{Synopsis}
 \begin{verbatim}
 #include "BandPassTimeSeries.h"
 \end{verbatim}
@@ -32,16 +28,15 @@ Further documentation is given in the individual routines' modules.
 #include "IIRFilter.h"
 #include "ZPGFilter.h"
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
-
 
 NRCSID(BANDPASSTIMESERIESH,"$Id$");
 
 /* <lalLaTeX>
 
-\subsection{Error conditions}
+\subsection*{Error conditions}
 \begin{tabular}{|c|l|l|}
 \hline
 status & status                    & Explanation                           \\
@@ -63,11 +58,12 @@ status & status                    & Explanation                           \\
 
 /* <lalLaTeX>
 
-\subsection{Structures}
+\subsection*{Structures}
 
 \begin{verbatim}
 struct PassBandParamStruc
 \end{verbatim}
+\index{\verb&PassBandParamStruc&}
 
 \noindent This structure stores data used for constructing a low- or
 high-pass filter: either the order and characteristic frequency of the
@@ -99,6 +95,10 @@ typedef struct tagPassBandParamStruc{
   REAL8 a2;
 } PassBandParamStruc;
 
+/* <lalLaTeX>
+\vfill{\footnotesize\input{BandPassTimeSeriesHV}}
+</lalLaTeX> */
+
 /* Function prototypes. */
 
 /* <lalLaTeX>
@@ -115,12 +115,13 @@ void ButterworthREAL8TimeSeries(Status             *stat,
 /* Chebyshev filters should also be added, but I'm too busy to write
    the routines now. */
 
+/* Test program. */
+
 /* <lalLaTeX>
 \newpage\input{BandPassTestC}
 </lalLaTeX> */
 
-
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

@@ -1,39 +1,39 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: DestroyIIRFilter.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/***************************** <lalVerbatim file="DestroyIIRFilterCV">
+Author: Creighton, T. D.
+$Id$
+****************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{DestroyIIRFilter.c}}
+\label{ss:DestroyIIRFilter.c}
 
 Destroys IIR filter objects.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{DestroyIIRFilterD}
+\input{DestroyIIRFilterCP}
+\index{\verb&DestroyREAL4IIRFilter()&}
+\index{\verb&DestroyREAL8IIRFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions destroy an object \verb@**input@ of type
 \texttt{REAL4IIRFilter} or \texttt{REAL8IIRFilter}, and set
 \verb@*input@ to \verb@NULL@.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 void LALFree()
 void SDestroyVector()
 void DDestroyVector()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyIIRFilterCV}}
 
 </lalLaTeX> */
 
@@ -44,7 +44,7 @@ void DDestroyVector()
 NRCSID(DESTROYIIRFILTERC,"$Id$");
 
 
-/* <lalVerbatim file="DestroyIIRFilterD"> */
+/* <lalVerbatim file="DestroyIIRFilterCP"> */
 void DestroyREAL4IIRFilter(Status         *stat,
 			   REAL4IIRFilter **input)
 { /* </lalVerbatim> */
@@ -72,7 +72,7 @@ void DestroyREAL4IIRFilter(Status         *stat,
 }
 
 
-/* <lalVerbatim file="DestroyIIRFilterD"> */
+/* <lalVerbatim file="DestroyIIRFilterCP"> */
 void DestroyREAL8IIRFilter(Status         *stat,
 			   REAL8IIRFilter **input)
 { /* </lalVerbatim> */

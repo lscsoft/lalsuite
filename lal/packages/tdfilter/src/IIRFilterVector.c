@@ -1,24 +1,22 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: iirFilterVector.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/****************************** <lalVerbatim file="IIRFilterVectorCV">
+Author: Creighton, T. D.
+$Id$
+******************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilterVector.c}}
+\label{ss:IIRFilterVector.c}
 
 Applies an IIR filter to a data stream.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{IIRFilterVectorD}
+\input{IIRFilterVectorCP}
+\index{\verb&IIRFilterREAL4Vector()&}
+\index{\verb&IIRFilterREAL8Vector()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions apply a generic time-domain filter given by an object
 \verb@*filter@ of type \verb@REAL4IIRFilter@ or \verb@REAL8IIRFilter@
@@ -29,15 +27,17 @@ To filter a piece of a larger dataset, the calling routine may pass a
 vector structure whose data pointer and length fields specify a subset
 of a larger vector.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 LALMalloc()
 LALFree()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{IIRFilterVectorCV}}
 
 </lalLaTeX> */
 
@@ -47,7 +47,7 @@ LALFree()
 NRCSID(IIRFILTERVECTORC,"$Id$");
 
 
-/* <lalVerbatim file="IIRFilterVectorD"> */
+/* <lalVerbatim file="IIRFilterVectorCP"> */
 void IIRFilterREAL4Vector(Status         *stat,
 			  REAL4Vector    *vector,
 			  REAL4IIRFilter *filter)
@@ -133,7 +133,7 @@ void IIRFilterREAL4Vector(Status         *stat,
 }
 
 
-/* <lalVerbatim file="IIRFilterVectorD"> */
+/* <lalVerbatim file="IIRFilterVectorCP"> */
 void IIRFilterREAL8Vector(Status         *stat,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter)

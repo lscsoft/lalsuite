@@ -3,6 +3,8 @@ pkginclude_HEADERS = LALStdlib.h LALConstants.h\
         LALAtomicDatatypes.h LALDatatypes.h \
         LALRCSID.h LALStatusMacros.h
 
+EXTRA_DIST = LALPrimer.h
+
 all-local: $(top_srcdir)/include/LALStdlib.h \
            $(top_srcdir)/include/LALConstants.h \
            $(top_srcdir)/include/LALAtomicDatatypes.h \

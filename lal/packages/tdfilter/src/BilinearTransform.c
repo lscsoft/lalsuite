@@ -1,24 +1,22 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: BilinearTransform.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/**************************** <lalVerbatim file="BilinearTransformCV">
+Author: Creighton, T. D.
+$Id$
+***************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{BilinearTransform.c}}
+\label{ss:BilinearTransform.c}
 
 Transforms the complex frequency coordinate of a ZPG filter.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{BilinearTransformD}
+\input{BilinearTransformCP}
+\index{\verb&WToZCOMPLEX8ZPGFilter()&}
+\index{\verb&WToZCOMPLEX16ZPGFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions perform an in-place bilinear transformation on an
 object \verb@*filter@ of type \verb@<datatype>ZPGFilter@, transforming
@@ -29,7 +27,7 @@ to simply relocating the zeros and poles, residual factors are also
 incorporated into the gain of the filter (i.e.\ the leading
 coefficient of the rational function).
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
 The vectors \verb@filter->zeros@ and \verb@filter->poles@ only record
 those zeros and poles that have finite value.  If one includes the
@@ -83,7 +81,7 @@ imaginary) that have qualitatively significant results ($z$ purely
 real), so that one doesn't end up with, for instance, an imaginary
 part of $10^{-12}$ instead of 0.
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 I4CreateVector()
 SCreateVector()
@@ -99,7 +97,9 @@ SHeapIndex()
 DHeapIndex()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{BilinearTransformCV}}
 
 </lalLaTeX> */
 
@@ -113,7 +113,7 @@ DHeapIndex()
 NRCSID(BILINEARTRANSFORMC,"$Id$");
 
 
-/* <lalVerbatim file="BilinearTransformD"> */
+/* <lalVerbatim file="BilinearTransformCP"> */
 void WToZCOMPLEX8ZPGFilter(Status            *stat,
 			   COMPLEX8ZPGFilter *filter)
 { /* </lalVerbatim> */
@@ -348,7 +348,7 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
 }
 
 
-/* <lalVerbatim file="BilinearTransformD"> */
+/* <lalVerbatim file="BilinearTransformCP"> */
 void WToZCOMPLEX16ZPGFilter(Status             *stat,
 			    COMPLEX16ZPGFilter *filter)
 { /* </lalVerbatim> */

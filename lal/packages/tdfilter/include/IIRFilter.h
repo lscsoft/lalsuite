@@ -1,20 +1,16 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: IIRFilter.h
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/************************************ <lalVerbatim file="IIRFilterHV">
+Author: Creighton, T. D.
+$Id$
+************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \section{Header \texttt{IIRFilter.h}}
+\label{s:IIRFilter.h}
 
 Provides routines to make and apply IIR filters.
 
-\subsection{Synopsis}
+\subsection*{Synopsis}
 \begin{verbatim}
 #include "IIRFilter.h"
 \end{verbatim}
@@ -94,53 +90,80 @@ routines never actually use this coefficient.
 #include "LALStdlib.h"
 #include "ZPGFilter.h"
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
-
 
 NRCSID(IIRFILTERH,"$Id$");
 
 /* <lalLaTeX>
 
-\subsection{Error conditions}
-\begin{tabular}{|c|l|l|}
+\subsection*{Error conditions}
+
+%\begin{tabular}{|c|l|l|}
+%\hline
+%status & status      & Explanation \\
+% code  & description & \\
+%\hline
+%\tt 1  & \tt Null pointer            & Missing a required pointer.           \\
+%\tt 2  & \tt Output already exists   & Can't allocate to a non-null pointer. \\
+%\tt 3  & \tt Memory allocation error & Could not allocate memory.            \\
+%\tt 4  & \tt Input has unpaired      & For real filters, complex poles or    \\
+%       & \tt nonreal poles or zeros  & zeros must come in conjugate pairs.   \\
+%\hline
+%\end{tabular}
+
+Status codes are represented by the symbol
+\verb@IIRFILTERH_E@\textit{name}.  Status descriptions are represented
+by the symbol \verb@IIRFILTERH_MSGE@\textit{name}.
+
+\begin{center}
+\begin{tabular}{|lcp{4.5in}|}
 \hline
-status & status      & Explanation \\
- code  & description & \\
+\it name & code & description \\
 \hline
-\tt 1  & \tt Null pointer            & Missing a required pointer.           \\
-\tt 2  & \tt Output already exists   & Can't allocate to a non-null pointer. \\
-\tt 3  & \tt Memory allocation error & Could not allocate memory.            \\
-\tt 4  & \tt Input has unpaired      & For real filters, complex poles or    \\
-       & \tt nonreal poles or zeros  & zeros must come in conjugate pairs.   \\
+\tt NUL  & 1 & \vspace{-1.4ex}\tt "Arguments contain an unexpected null pointer" \\
+\tt OUT  & 2 & \vspace{-1.4ex}\tt "Output already exists; cannot allocate memory to a non-null pointer" \\
+\tt MEM  & 3 & \vspace{-1.4ex}\tt "Memory allocation failed" \\
+\tt PAIR & 4 & \vspace{-1.4ex}\tt "Input contains nonreal poles or zeros that do not have complex conjugate pairs" \\
 \hline
 \end{tabular}
+\end{center}
 
 </lalLaTeX> */
 
+/* <lalVerbati***> */
+/* Missing a required pointer. */
 #define IIRFILTER_ENUL  1
-#define IIRFILTER_EOUT  2
-#define IIRFILTER_EMEM  3
-#define IIRFILTER_EPAIR 4
-
 #define IIRFILTER_MSGENUL  "Null pointer"
+
+/* Can't allocate to a non-null pointer. */
+#define IIRFILTER_EOUT  2
 #define IIRFILTER_MSGEOUT  "Output already exists"
+
+/* Could not allocate memory. */
+#define IIRFILTER_EMEM  3
 #define IIRFILTER_MSGEMEM  "Memory allocation error"
+
+/* For real filters, complex poles or zeros must come in conjugate pairs. */
+#define IIRFILTER_EPAIR 4
 #define IIRFILTER_MSGEPAIR "Input has unpaired nonreal poles or zeros"
+/* </lalVerbati***> */
 
 
 /* <lalLaTeX>
 
-\subsection{Structures}
+\subsection*{Structures}
 \begin{verbatim}
 <datatype>IIRFilter
 \end{verbatim}
+\index{\verb&REAL4IIRFilter&}
+\index{\verb&REAL8IIRFilter&}
 
 \noindent This structure stores the direct and recursive filter
 coefficients, as well as the history of the auxiliary sequence $w$.
-The length of the history vector gives the order of the filter.  The
-fields are:
+\verb@<datatype>@ may be \verb@REAL4@ or \verb@REAL8@.  The length of
+the history vector gives the order of the filter.  The fields are:
 
 \begin{description}
 \item[\texttt{CHAR *name}] A user-assigned name.
@@ -169,6 +192,11 @@ typedef struct tagREAL8IIRFilter{
   REAL8Vector *recursCoef; /* The recursive filter coefficients. */
   REAL8Vector *history;    /* The previous values of w. */
 } REAL8IIRFilter;
+
+
+/* <lalLaTeX>
+\vfill{\footnotesize\input{IIRFilterHV}}
+</lalLaTeX> */
 
 
 /* Function prototypes. */
@@ -206,11 +234,9 @@ void IIRFilterREAL8(Status         *stat,
 		    REAL8          input,
 		    REAL8IIRFilter *filter);
 
-REAL4 SIIRFilter(REAL4          x,
-		 REAL4IIRFilter *filter);
+REAL4 SIIRFilter(REAL4 x, REAL4IIRFilter *filter);
 
-REAL8 DIIRFilter(REAL8          x,
-		 REAL8IIRFilter *filter);
+REAL8 DIIRFilter(REAL8 x, REAL8IIRFilter *filter);
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterVectorC}
@@ -234,7 +260,11 @@ void IIRFilterREAL8VectorR(Status         *stat,
 			   REAL8Vector    *vector,
 			   REAL8IIRFilter *filter);
 
-#ifdef  __cplusplus
+/* <lalLaTeX>
+\newpage\input{IIRFilterTestC}
+</lalLaTeX> */
+
+#ifdef __cplusplus
 }
 #endif
 

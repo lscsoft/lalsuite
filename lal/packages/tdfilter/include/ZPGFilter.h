@@ -1,20 +1,16 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: ZPGFilter.h
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/************************************ <lalVerbatim file="ZPGFilterHV">
+Author: Creighton, T. D.
+$Id$
+************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \section{Header \texttt{ZPGFilter.h}}
+\label{s:ZPGFilter.h}
 
 Provides routines to manipulate ZPG filters.
 
-\subsection{Synopsis}
+\subsection*{Synopsis}
 \begin{verbatim}
 #include "ZPGFilter.h"
 \end{verbatim}
@@ -66,16 +62,15 @@ variable is assumed.
 
 #include "LALStdlib.h"
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
-
 
 NRCSID(ZPGFILTERH,"$Id$");
 
 /* <lalLaTeX>
 
-\subsection{Error conditions}
+\subsection*{Error conditions}
 \begin{tabular}{|c|l|l|}
 \hline
 status & status      & Explanation \\
@@ -102,7 +97,11 @@ status & status      & Explanation \\
 #define ZPGFILTER_MSGEBAD "Bad filter parameters"
 
 /* <lalLaTeX>
-\subsection{Structures}
+\subsection*{Structures}
+</lalLaTeX> */
+
+/* <lalLaTeX>
+\vfill{\footnotesize\input{ZPGFilterHV}}
 </lalLaTeX> */
 
 /* Function prototypes. */
@@ -138,7 +137,7 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
 void WToZCOMPLEX16ZPGFilter(Status             *stat,
 			    COMPLEX16ZPGFilter *filter);
 
-#ifdef  __cplusplus
+#ifdef __cplusplus
 }
 #endif
 

@@ -1,39 +1,39 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: DestroyZPGFilter.c
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------*/
+/***************************** <lalVerbatim file="DestroyZPGFilterCV">
+Author: Creighton, T. D.
+$Id$
+****************************** </lalVerbatim> */
 
 /* <lalLaTeX>
 
 \subsection{Module \texttt{DestroyZPGFilter.c}}
+\label{ss:DestroyZPGFilter.c}
 
 Destroys ZPG filter objects.
 
-\subsubsection{Prototypes}
+\subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{DestroyZPGFilterD}
+\input{DestroyZPGFilterCP}
+\index{\verb&DestroyCOMPLEX8ZPGFilter()&}
+\index{\verb&DestroyCOMPLEX16ZPGFilter()&}
 
-\subsubsection{Description}
+\subsubsection*{Description}
 
 These functions destroy an object \verb@**output@ of type
 \verb@COMPLEX8ZPGFilter@ or \verb@COMPLEX16ZPGFilter@, and set
 \verb@*output@ to \verb@NULL@.
 
-\subsubsection{Algorithm}
+\subsubsection*{Algorithm}
 
-\subsubsection{Uses}
+\subsubsection*{Uses}
 \begin{verbatim}
 LALFree()
 CDestroyVector()
 ZDestroyVector()
 \end{verbatim}
 
-\subsubsection{Notes}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DestroyZPGFilterCV}}
 
 </lalLaTeX> */
 
@@ -43,7 +43,7 @@ ZDestroyVector()
 
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 
-/* <lalVerbatim file="DestroyZPGFilterD"> */
+/* <lalVerbatim file="DestroyZPGFilterCP"> */
 void DestroyCOMPLEX8ZPGFilter(Status            *stat,
 			      COMPLEX8ZPGFilter **input)
 { /* </lalVerbatim> */
@@ -70,7 +70,7 @@ void DestroyCOMPLEX8ZPGFilter(Status            *stat,
 }
 
 
-/* <lalVerbatim file="DestroyZPGFilterD"> */
+/* <lalVerbatim file="DestroyZPGFilterCP"> */
 void DestroyCOMPLEX16ZPGFilter(Status             *stat,
 			       COMPLEX16ZPGFilter **input)
 { /* </lalVerbatim> */

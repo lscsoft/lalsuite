@@ -1,35 +1,32 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: LALConstants.h
- * 
- * Author: Creighton, T. D.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * LALConstants.h
- * 
- * SYNOPSIS 
- * #include "LALConstants.h" 
- *
- * DESCRIPTION
- * A number of useful constants for LAL.  Computational constants are
- * taken from the IEEE standard 754 for binary arithmetic.
- * Mathematical constants are from the GNU C math.h header file.
- * Physical constants, astrophysical parameters, and cosmological
- * parameters are taken from the paper by Particle Data Group,
- * R. M. Barnett et al., Phys. Rev. D v.54 p.1, 1996
- * 
- * DIAGNOSTICS 
- *
- * CALLS
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+/********************************* <lalVerbatim file="LALConstantsHV">
+Author: Creighton, T. D.
+$Id$
+********************************** </lalVerbatim> */
+
+/* <lalLaTeX>
+
+\section{Header \texttt{LALConstants.h}}
+\label{s:LALConstants.h}
+
+Provides standard numerical constants for LAL.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "LALConstants.h"
+\end{verbatim}
+
+\noindent This header defines a number of useful numerical constants
+for use in LAL routines.  These constants come in three basic
+flavours: arithmetic and mathematical constants, fundamental (or
+defined) physical constants, and measured astrophysical and
+cosmological parameters.
+
+Note that, unlike the other headers in the \verb@std@ package, this
+header is \emph{not} included automatically by the header
+\verb@LALStdlib.h@.  Include it explicitly if you need any of these
+constants.
+
+</lalLaTeX> */
 
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
@@ -42,7 +39,47 @@ extern "C" {
 
 NRCSID (LALCONSTANTSH, "$Id$");
 
-/* Computational constants (dimensionless) */
+/* <lalLaTeX>
+
+\subsection*{Mathematical constants}
+
+The following constants define the precision and range of
+floating-point arithmetic in LAL.  They are taken from the IEEE
+standard~754 for binary arithmetic.  All numbers are dimensionless.
+
+\begin{center}
+\begin{tabular}{|lll|}
+\hline
+Name & Value & Description \\
+\hline
+\tt LAL\_REAL4\_MANT & 24 &
+	Bits in {\tt REAL4} mantissa \\
+\tt LAL\_REAL4\_MAX  & $3.40282347\times10^{38}$ &
+	Largest {\tt REAL4} \\
+\tt LAL\_REAL4\_MIN  & $1.17549435\times10^{-38}$ &
+	Smallest positive {\tt REAL4} \\
+\tt LAL\_REAL4\_EPS  & $1.19209290\times10^{-7}$ &
+	$2^{-(\mathtt{LAL\_REAL4\_MANT}-1)}$ \\
+\hline
+\tt LAL\_REAL8\_MANT & 53 &
+	Bits in {\tt REAL8} mantissa \\
+\tt LAL\_REAL8\_MAX  & $1.7976931348623157\times10^{308}$ &
+	Largest {\tt REAL8} \\
+\tt LAL\_REAL8\_MIN  & $2.2250738585072014\times10^{-308}$ &
+	Smallest positive {\tt REAL8} \\
+\tt LAL\_REAL8\_EPS  & $2.2204460492503131\times10^{-16}$ &
+	$2^{-(\mathtt{LAL\_REAL8\_MANT}-1)}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent\verb@LAL_REAL4_EPS@ and \verb@LAL_REAL8_EPS@ can be thought
+of as the difference between 1 and the next representable \verb@REAL4@
+or \verb@REAL8@ number.
+
+\vspace{3ex}
+
+</lalLaTeX> */
 
 #define LAL_REAL4_MANT 24 /* Bits of precision in the mantissa of a REAL4 */
 #define LAL_REAL4_MAX 3.40282347e+38 /* Largest REAL4 */
@@ -55,8 +92,38 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_REAL8_EPS 2.2204460492503131e-16  /* 0.5^(LAL_REAL8_MANT-1) */
 /* I.e. the difference between 1 and the next resolveable REAL8 */
 
+/* <lalLaTeX>
 
-/* Mathematical constants (dimensionless) */
+The following are fundamental mathematical constants.  They are mostly
+taken from the GNU C \verb@math.h@ header (with the exception of
+\verb@LAL_TWOPI@, which was computed using Maple).  All numbers are
+dimensionless.
+
+\begin{center}
+\begin{tabular}{|llc|}
+\hline
+Name & Value & Expression \\
+\hline
+\tt LAL\_E         & 2.7182818284590452353602874713526625 & $e$ \\
+\tt LAL\_LOG2E     & 1.4426950408889634073599246810018922 & $\log_2 e$ \\
+\tt LAL\_LOG10E    & 0.4342944819032518276511289189166051 & $\log_{10} e$ \\
+\tt LAL\_LN2       & 0.6931471805599453094172321214581766 & $\log_e 2$ \\
+\tt LAL\_LN10      & 2.3025850929940456840179914546843642 & $\log_e 10$ \\
+\tt LAL\_SQRT2     & 1.4142135623730950488016887242096981 & $\sqrt{2}$ \\
+\tt LAL\_SQRT1\_2  & 0.7071067811865475244008443621048490 & $1/\sqrt{2}$ \\
+\tt LAL\_GAMMA     & 0.5772156649015328606065120900824024 & $\gamma$ \\
+\tt LAL\_PI        & 3.1415926535897932384626433832795029 & $\pi$ \\
+\tt LAL\_TWOPI     & 6.2831853071795864769252867665590058 & $2\pi$ \\
+\tt LAL\_PI\_2     & 1.5707963267948966192313216916397514 & $\pi/2$ \\
+\tt LAL\_PI\_4     & 0.7853981633974483096156608458198757 & $\pi/4$ \\
+\tt LAL\_1\_PI     & 0.3183098861837906715377675267450287 & $1/\pi$ \\
+\tt LAL\_2\_PI     & 0.6366197723675813430755350534900574 & $2/\pi$ \\
+\tt LAL\_2\_SQRTPI & 1.1283791670955125738961589031215452 & $2/\sqrt{\pi}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+</lalLaTeX> */
 
 #define LAL_E         2.7182818284590452353602874713526625L  /* e */
 #define LAL_LOG2E     1.4426950408889634073599246810018922L  /* log_2 e */
@@ -75,17 +142,97 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_2_PI      0.6366197723675813430755350534900574L  /* 2/pi */
 #define LAL_2_SQRTPI  1.1283791670955125738961589031215452L  /* 2/sqrt(pi) */
 
-/* Physical constants, defined (SI) */
+/* <lalLaTeX>
+
+\subsection*{Physical constants}
+
+The following physical constants are defined to have exact values.
+The values of $c$ and $g$ are taken from~\cite{Barnet:1996},
+$p_\mathrm{atm}$ is from~\cite{Lang:1992}, while $\epsilon_0$ and
+$\mu_0$ are computed from $c$ using exact formulae.  They are given in
+the SI units shown.
+
+\begin{center}
+\begin{tabular}{|lll|}
+\hline
+Name & Value & Description \\
+\hline
+\tt LAL\_C\_SI        & $299\,792\,458\,\mathrm{m}\,\mathrm{s}^{-1}$ &
+	Speed of light $c$ in free space \\
+\tt LAL\_EPSILON0\_SI & \multicolumn{2}{l|}{
+	$8.8541878176203898505365630317107503\times10^{-12}\,
+	\mathrm{C}^2\mathrm{N}^{-1}\mathrm{m}^{-2}$} \\
+& & Permittivity $\epsilon_0$ of free space \\
+\tt LAL\_MU0\_SI      & \multicolumn{2}{l|}{
+	$1.2566370614359172953850573533118012\times10^{-6}\,
+	\mathrm{N}\,\mathrm{A}^{-2}$} \\
+& & Permeability $\mu_0$ of free space \\
+\tt LAL\_GEARTH\_SI   & $9.80665\,\mathrm{m}\,\mathrm{s}^{-2}$ &
+	Standard gravity $g$ \\
+\tt LAL\_PATM\_SI     & $101\,325\,\mathrm{Pa}$ &
+	Standard atmospheric pressure $p_\mathrm{atm}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+</lalLaTeX> */
 
 #define LAL_C_SI      299792458 /* Speed of light in vacuo, m s^-1 */
-#define LAL_EPSILON0_SI  8.8541878176203898505365630317107503e-12
+#define LAL_EPSILON0_SI  8.8541878176203898505365630317107503e-12L
 /* Permittivity of free space, C^2 N^-1 m^-2 */
-#define LAL_MU0_SI    1.2566370614359172953850573533118012e-6
+#define LAL_MU0_SI    1.2566370614359172953850573533118012e-6L
 /* Permeability of free space, N A^-2 */
 #define LAL_GEARTH_SI 9.80665 /* Standard gravity, m s^-2 */
+#define LAL_PATM_SI 101325 /* Standard atmosphere, Pa */
 
+/* <lalLaTeX>
 
-/* Physical constants, measured (SI or dimensionless) */
+The following are measured fundamental physical constants, with values
+given in~\cite{Barnet:1996}.  When not dimensionless, they are given
+in the SI units shown.
+
+\begin{center}
+\begin{tabular}{|lll|}
+\hline
+Name & Value & Description \\
+\hline
+\tt LAL\_G\_SI     & $6.67259\times10^{-11}\,\mathrm{N}\,\mathrm{m}^{2}
+	\mathrm{kg}^{-2}$ & Gravitational constant $G$ \\
+\tt LAL\_H\_SI     & $6.6260755\times10^{-34}\,\mathrm{J}\,\mathrm{s}$ &
+	Planck constant $h$ \\
+\tt LAL\_HBAR\_SI  & $1.05457266\times10^{-34}\,\mathrm{J}\,\mathrm{s}$ &
+	Reduced Planck constant $\hbar$ \\
+\tt LAL\_MPL\_SI   & $2.17671\times10^{-8}\,\mathrm{kg}$ & Planck mass \\
+\tt LAL\_LPL\_SI   & $1.61605\times10^{-35}\,\mathrm{m}$ & Planck length \\
+\tt LAL\_TPL\_SI   & $5.39056\times10^{-44}\,\mathrm{s}$ & Planck time \\
+\tt LAL\_K\_SI     & $1.380658\times10^{-23}\,\mathrm{J}\,\mathrm{K}^{-1}$ &
+	Boltzmann constant $k$ \\
+\tt LAL\_R\_SI     & $8.314511\,\mathrm{J}\,\mathrm{K}^{-1}$ &
+	Ideal gas constant $R$ \\
+\tt LAL\_MOL       & $6.0221367\times10^{23}$ & Avogadro constant \\
+\tt LAL\_BWIEN\_SI & $2.897756\times10^{-3}\,\mathrm{m}\,\mathrm{K}$ &
+	Wien displacement law constant $b$ \\
+\tt LAL\_SIGMA\_SI & $5.67051\times10^{-8}\,\mathrm{W}\,\mathrm{m}^{-2}
+	\mathrm{K}^{-4}$ & Stefan-Boltzmann constant $\sigma$ \\
+\tt LAL\_AMU\_SI   & $1.6605402\times10^{-27}\,\mathrm{kg}$ &
+	Atomic mass unit \\
+\tt LAL\_MP\_SI    & $1.6726231\times10^{-27}\,\mathrm{kg}$ & Proton mass \\
+\tt LAL\_ME\_SI    & $9.1093897\times10^{-31}\,\mathrm{kg}$ & Electron mass \\
+\tt LAL\_QP\_SI    & $1.60217733\times10^{-19}\,\mathrm{C}$ & Proton charge \\
+\tt LAL\_ALPHA     & $7.297354677\times10^{-3}$ & Fine structure constant \\
+\tt LAL\_RE\_SI    & $2.81794092\times10^{-15}\,\mathrm{m}$ &
+	Classical electron radius $r_e$ \\
+\tt LAL\_LAMBDAE\_SI & $3.86159323\times10^{-13}\,\mathrm{m}$ &
+	Electron Compton wavelength $\lambda_e$ \\
+\tt LAL\_AB\_SI    & $5.29177249\times10^{-11}\,\mathrm{m}$ & Bohr radius $a$\\
+\tt LAL\_MUB\_SI   & $9.27401543\times10^{-24}\,\mathrm{J}\,\mathrm{T}^{-1}$ &
+	Bohr magneton $\mu_B$ \\
+\tt LAL\_MUN\_SI   & $5.05078658\times10^{-27}\,\mathrm{J}\,\mathrm{T}^{-1}$ &
+	Nuclear magneton $\mu_N$ \\
+\hline
+\end{tabular}
+\end{center}
+</lalLaTeX> */
 
 #define LAL_G_SI      6.67259e-11    /* Gravitational constant, N m^2 kg^-2 */
 #define LAL_H_SI      6.6260755e-34  /* Planck constant, J s */
@@ -109,11 +256,52 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_MUB_SI    9.27401543e-24 /* Bohr magneton, J T^-1 */
 #define LAL_MUN_SI    5.05078658e-27 /* Nuclear magneton, J T^-1 */
 
+/* <lalLaTeX>
 
-/* Astrophysical parameters (SI) */
+\subsection*{Astrophysical parameters}
+
+The following parameters are derived from measured properties of the
+Earth and Sun.  The values are taken from~\cite{Barnet:1996}, except
+for the obliquity of the ecliptic plane and the eccentricity of
+Earth's orbit, which are taken from~\cite{Lang:1992}.  All values are
+given in the SI units shown.
+
+\begin{center}
+\begin{tabular}{|lll|}
+\hline
+Name & Value & Description \\
+\hline
+\tt LAL\_REARTH\_SI & $6.378140\times10^6\,\mathrm{m}$ &
+	Earth equatorial radius \\
+\tt LAL\_MEARTH\_SI & $5.97370\times10^{24}\,\mathrm{kg}$ & Earth mass \\
+\tt LAL\_IEARTH     & $0.409092804\,\mathrm{rad}$ &
+	Obliquity of the ecliptic (2000) \\
+\tt LAL\_EEARTH     & 0.0167 & Earth orbital eccentricity \\
+\tt LAL\_RSUN\_SI   & $6.960\times10^8\,\mathrm{m}$ & Solar equatorial radius\\
+\tt LAL\_MSUN\_SI   & $1.98892\times10^{30}\,\mathrm{kg}$ & Solar mass \\
+\tt LAL\_MRSUN\_SI  & $1.47662504\times10^3\,\mathrm{m}$ &
+	Geometrized solar mass (length) \\
+\tt LAL\_MTSUN\_SI  & $4.92549095\times10^{-6}\,\mathrm{s}$ &
+	Geometrized solar mass (time) \\
+\tt LAL\_LSUN\_SI   & $3.846\times10^{26}\,\mathrm{W}$ & Solar luminosity \\
+\tt LAL\_AU\_SI     & $1.4959787066\times10^{11}\,\mathrm{m}$ &
+	Astronomical unit \\
+\tt LAL\_PC\_SI     & $3.0856775807\times10^{16}\,\mathrm{m}$ & Parsec \\
+\tt LAL\_YRTROP\_SI & $31\,556\,925.2\,\mathrm{s}$ & Tropical year (1994) \\
+\tt LAL\_YRSID\_SI  & $31\,558\,149.8\,\mathrm{s}$ & Sidereal year (1994) \\
+\tt LAL\_DAYSID\_SI & $86\,164.09053\,\mathrm{s}$ & Mean sidereal day \\
+\tt LAL\_LYR\_SI    & $9.46052817\times10^{15}\,\mathrm{m}$ &
+	$c\times$tropical year (1994) \\
+\hline
+\end{tabular}
+\end{center}
+
+</lalLaTeX> */
 
 #define LAL_REARTH_SI 6.378140e6      /* Earth equatorial radius, m */
 #define LAL_MEARTH_SI 5.97370e24      /* Earth mass, kg */
+#define LAL_IEARTH    0.409092804     /* Earth inclination (2000), radians */
+#define LAL_EEARTH    0.0167          /* Earth orbital eccentricity */
 #define LAL_RSUN_SI   6.960e8         /* Solar equatorial radius, m */
 #define LAL_MSUN_SI   1.98892e30      /* Solar mass, kg */
 #define LAL_MRSUN_SI  1.47662504e3    /* Geometrized solar mass, m */
@@ -126,8 +314,54 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_DAYSID_SI 86164.09053     /* Mean sidereal day, s */
 #define LAL_LYR_SI    9.46052817e15   /* ``Tropical'' lightyear (1994), m */
 
+/* <lalLaTeX>
 
-/* Cosmological parameters (SI) */
+The following cosmological parameters are derived from measurements of
+the Hubble expansion rate and of the cosmic background radiation
+(CBR).  Data are taken from~\cite{Barnet:1996}.  In what follows, the
+normalized Hubble constant $h_0$ is equal to the actual Hubble
+constant $H_0$ divided by $\langle H
+\rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}$.  Thus the
+Hubble constant can be written as:
+$$
+H_0 = \langle H \rangle h_0 \; .
+$$
+Similarly, the critical energy density $\rho_c$ required for spatial
+flatness is given by:
+$$
+\rho_c = \langle\rho\rangle h_0^2 \; .
+$$
+Current estimates give $h_0$ a value of around 0.65, which is what is
+assumed below.  All values are in the SI units shown.
+
+\begin{center}
+\begin{tabular}{|lll|}
+\hline
+Name & Value & Description \\
+\hline
+\tt LAL\_H0\_SI      & $2\times10^{-18}\,\mathrm{s}^{-1}$ &
+	Approx.\ Hubble constant $H_0$ \\
+\tt LAL\_H0FAC\_SI   & $3.2407792903\times10^{-18}\,\mathrm{s}^{-1}$ &
+	$H_0/h_0$ \\
+\tt LAL\_RHOC\_SI    & $7\times10^{-10}\,\mathrm{J}\,\mathrm{m}^{-3}$ &
+	Approx.\ critical energy density $\rho_c$ \\
+\tt LAL\_RHOCFAC\_SI & $1.68860\times10^{-9}\,\mathrm{J}\,\mathrm{m}^{-3}$ &
+	$\rho_c/h_0^2$ \\
+\tt LAL\_TCBR\_SI    & $2.726 \mathrm{K}$ &
+	CBR temperature \\
+\tt LAL\_VCBR\_SI    & $3.695\times10^5\,\mathrm{m}\,\mathrm{s}^{-1}$ &
+	Solar velocity with respect to CBR \\
+\tt LAL\_RHOCBR\_SI  & $4.177\times10^{-14}\,\mathrm{J}\,\mathrm{m}^{-3}$ &
+	Energy density of CBR \\
+\tt LAL\_NCBR\_SI    & $4.109\times10^8\,\mathrm{m}^{-3}$ &
+	Number density of CBR photons \\
+\tt LAL\_SCBR\_SI    & $3.993\times10^{-14}\,\mathrm{J}\,\mathrm{K}^{-1}
+	\mathrm{m}^{-3}$ & Entropy density of CBR \\
+\hline
+\end{tabular}
+\end{center}
+
+</lalLaTeX> */
 
 #define LAL_H0FAC_SI  3.2407792903e-18 /* Hubble constant prefactor, s^-1 */
 #define LAL_H0_SI     2e-18            /* Approximate Hubble constant, s^-1 */
@@ -141,6 +375,12 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_NCBR_SI   4.109e8   /* Number density of CBR photons, m^-3 */
 #define LAL_SCBR_SI   3.993e-14 /* Entropy density of CBR, J K^-1 m^-3 */
 
+
+/* <lalLaTeX>
+
+\vfill{\footnotesize\input{LALConstantsHV}}
+
+</lalLaTeX> */
 
 #ifdef  __cplusplus
 }
