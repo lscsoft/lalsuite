@@ -1,5 +1,5 @@
 /**** <lalVerbatim file="InspiralSpinBankCV">
- * Authors: Hanna, C. and Owen, B. J.
+ * Authors: Hanna, C. R. and Owen, B. J.
  * $Id$
  **** </lalVerbatim> */
 
@@ -45,7 +45,7 @@
  * \end{verbatim}
  *
  * \subsubsection*{Notes}
- *err
+ *
  * Currently we use dummy functions for the metric and noise moments. These
  * should be updated, especially to account for real noise spectra.
  *
@@ -72,6 +72,7 @@
 #include <lal/MatrixUtils.h>
 #include <lal/SeqFactories.h>
 
+
 #define INSPIRALSPINBANKC_ENOTILES 5 
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
 
@@ -82,6 +83,8 @@ NRCSID(INSPIRALSPINBANKC, "$Id$");
 
 
 static void tmpmetric( REAL4Array *metric );
+
+
 static void cleanup(LALStatus *s,
     REAL4Array *m, 
     UINT4Vector *md, 
@@ -274,13 +277,15 @@ void LALInspiralSpinBank(
   
   
   /* Convert output to communicate with LALInspiralCreateCoarseBank(). */
-  *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList) );
+  *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList));
+  cnt = 0;
   for (tmplt = output; tmplt; tmplt = tmplt->next)
   {
-    (*tiles)->params.mass1 = tmplt->mass1;
-    (*tiles)->params.mass2 = tmplt->mass2;
-    (*tiles)->params.psi0 = tmplt->psi0;
-    (*tiles)->params.psi3 = tmplt->psi3;
+    (*tiles)[cnt].params.mass1 = tmplt->mass1;
+    (*tiles)[cnt].params.mass2 = tmplt->mass2;
+    (*tiles)[cnt].params.psi0 = tmplt->psi0;
+    (*tiles)[cnt].params.psi3 = tmplt->psi3;
+    ++cnt;
 /*    (*tiles)->params.beta = tmplt->beta;*/
   } /* for(tmplt...) */
   
@@ -331,6 +336,7 @@ static void tmpmetric( REAL4Array *metric )
   metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
 } /* tmpmetric() */
 
+
 static void cleanup(
     LALStatus *s, 
     REAL4Array *m, 
@@ -364,6 +370,6 @@ static void cleanup(
   }
   DETATCHSTATUSPTR( s );
   RETURN( s );
-}
+} /*cleanup() */
 
 
