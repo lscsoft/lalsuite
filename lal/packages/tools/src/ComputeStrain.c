@@ -168,7 +168,7 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   /* now add control and residual signals together and we're done */
   for (p=0; p < h.data->length; p++) {
     h.data->data[p]= hR.data->data[p]+ hC.data->data[p];
-/*     fprintf(stdout,"%e %1.17e\n",p*h.deltaT,h.data->data[p]); */
+    output->h.data->data[p]=h.data->data[p];
   }
 
   /* destroy vectors that hold the data */
@@ -293,8 +293,8 @@ int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
 {
   int n,m;
-  REAL8 time,InterpolatedAlpha;
-  static REAL8 alpha[MAXALPHAS],tainterp[MAXALPHAS];
+  double time,InterpolatedAlpha;
+  double alpha[MAXALPHAS],tainterp[MAXALPHAS];
 
   /* copy ouput alphas into local array */
   for(m=0; m < output->alpha.data->length; m++)
@@ -473,6 +473,8 @@ INT4 length = input->AS_Q.data->length;
 
 /*       fprintf(stdout,"%e %e %e %e\n",output->alpha.data->data[m].re,output->alpha.data->data[m].im, */
 /* 	                             output->beta.data->data[m].re,output->beta.data->data[m].im); */
+
+
 
       if(m == MAXALPHAS)
 	{
