@@ -361,6 +361,7 @@ omegaofr3PN (
    u2 = u*u;
    u3 = u2*u;
    a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   
    a4p4eta = a4 + 4. * eta;
    a4peta2 = a4 + eta * eta;
    NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
@@ -379,14 +380,12 @@ LALrOfOmega3PN(
 	    void *params)
 {
   REAL8  omega1,omega2,eta ;
-  rOfOmegaIn *rofomegain;
-  
-   
-  
-  rofomegain = (rOfOmegaIn *) params;
-  eta = rofomegain->eta;
+  pr3In *pr3in;
+       
+  pr3in = (pr3In *) params;
+  eta = pr3in->eta;
 
-  omega1 = rofomegain->omega;
+  omega1 = pr3in->omega;
   omegaofr3PN(&omega2,r, params);
   *x = -omega1 + omega2;
 
@@ -406,6 +405,8 @@ LALlightRingRadius3PN(
   REAL8 omegaS=0;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
+
+
   u = 1./r;
   u2 = u*u;
   u3 = u2*u;
@@ -441,6 +442,9 @@ LALHCapDerivatives3PN(
    zeta2 = ak->coeffs->zeta2;
    omegaS = ak->coeffs->omegaS;
    
+
+
+
    r = values->data[0];
    s = values->data[1];
    p = values->data[2];
@@ -512,9 +516,10 @@ LALHCapDerivatives3PN(
 
   eta = pr3in->eta;     
   u = 1./ pr3in->r;
-
+  
   u2 = u*u;
   u3 = u2*u;
+
   
   a4 = (ninty4by3etc - 2. * pr3in->omegaS) * eta;
   a4p4eta = a4 + 4. * eta;
@@ -583,6 +588,8 @@ LALEOBWaveform (
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
+
+
 
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -656,6 +663,9 @@ LALEOBWaveform (
    rootIn.xmin = 4.;
    funcParams = (void *) &rofomegain;
 
+
+
+
 /*-------------------------------------------------------------------
 Userful for debugging: Make sure a solution for r exists.
 --------------------------------------------------------
@@ -683,6 +693,10 @@ Userful for debugging: Make sure a solution for r exists.
        break;
      case threePN:
        rootIn.function = LALrOfOmega3PN;
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.zeta2 = params->Zeta2;
+       pr3in.omega = omega;
        break;
      default:
        fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
@@ -691,7 +705,7 @@ Userful for debugging: Make sure a solution for r exists.
 
    rootIn.xmax = 100.;
    rootIn.xmin = 6.;
-   LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+   LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
    CHECKSTATUSPTR(status);
 
    params->rInitial = r;
@@ -727,6 +741,7 @@ switch (params->order)
        pr3in.in3copy = in3; 
        pr3in.eta = eta;
        pr3in.omegaS = params->OmegaS;
+       pr3in.zeta2 = params->Zeta2;
        pr3in.r = r;
        pr3in.q = q; 
        pr3in.omega = omega;
@@ -746,7 +761,7 @@ switch (params->order)
    values.data[2] = p;
    values.data[3] = q;
 
-   
+
    in4.y = &values;
    in4.h = dt/m;
    in4.n = nn;
@@ -962,6 +977,10 @@ Userful for debugging: Make sure a solution for r exists.
        break;
      case threePN:
        rootIn.function = LALrOfOmega3PN;
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.zeta2 = params->Zeta2;
+       pr3in.omega = omega;
        break;
      default:
        fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
@@ -969,7 +988,7 @@ Userful for debugging: Make sure a solution for r exists.
      }
    rootIn.xmax = 100.;
    rootIn.xmin = 6.;
-   LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+   LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
    CHECKSTATUSPTR(status);
 
    params->rInitial = r;
@@ -1243,6 +1262,10 @@ LALEOBWaveformForInjection (
       break;
     case threePN:
       rootIn.function = LALrOfOmega3PN;
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.zeta2 = params->Zeta2;
+       pr3in.omega = omega;
       break;
     default:
       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
@@ -1250,7 +1273,7 @@ LALEOBWaveformForInjection (
     }
   rootIn.xmax = 100.;
   rootIn.xmin = 6.;
-  LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+  LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
   CHECKSTATUSPTR(status);
   
   params->rInitial = r;
