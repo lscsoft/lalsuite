@@ -63,7 +63,7 @@ REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
-CHAR  *calibrationCache = NULL;         /* location of calibration data */
+CHAR  *calCacheName     = NULL;         /* location of calibration data */
 
 /* matched filter parameters */
 INT4  startTemplate     = -1;           /* index of first template      */
@@ -140,7 +140,8 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       results;
 
   /* counters and other variables */
-  UINT4 i, k;
+  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+  UINT4 i;
   INT4  inserted;
   INT4  currentLevel;
   CHAR  fname[256];
@@ -357,13 +358,11 @@ int main( int argc, char *argv[] )
   memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
   resp.deltaF = spec.deltaF;
   resp.f0 = spec.f0;
+  resp.sampleUnits = strainPerCount;
 
   /* generate the response function for the current time */
-  for ( k = 0; k < resp.data->length; ++k )
-  {
-    resp.data->data[k].re = 1.0;
-    resp.data->data[k].im = 0;
-  }
+  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
+      &status );
 
   /* write the calibration data to a file */
   if ( writeResponse )
@@ -747,7 +746,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"start-template",          required_argument, 0,                'm'},
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
-    {"calibration",             required_argument, 0,                'p'},
+    {"calibration-cache",       required_argument, 0,                'p'},
     {"rhosq-thresholds",        required_argument, 0,                'q'},
     {"chisq-thresholds",        required_argument, 0,                'r'},
     {"comment",                 required_argument, 0,                's'},
@@ -1041,8 +1040,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the calibration frame cache name */
           size_t ccnamelen = strlen(optarg) + 1;
-          calibrationCache = (CHAR *) LALCalloc( ccnamelen, sizeof(CHAR));
-          memcpy( calibrationCache, optarg, ccnamelen );
+          calCacheName = (CHAR *) LALCalloc( ccnamelen, sizeof(CHAR));
+          memcpy( calCacheName, optarg, ccnamelen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1244,7 +1243,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check calibration has been given */
-  if ( ! calibrationCache )
+  if ( ! calCacheName )
   {
     fprintf( stderr, "--calibration must be specified\n" );
     exit( 1 );
