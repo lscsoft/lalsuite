@@ -31,9 +31,10 @@ lalapps_inspfrinj [options]
   --calibration-cache CAL_CACHE 
   --calibrated-data TYPE  
   
-  --num-resp-points N    
+ [--num-resp-points N ]   
  
   --injection-file FILE
+  --injection-channel INJ
  [--inject-overhead ]  
  [--inject-safety SEC ]
  
@@ -51,11 +52,13 @@ lalapps_inspfrinj [options]
 \texttt{lalapps\_frinspinj} generates injections and stores them as
 frame files.  This code is essentially a copy of those parts of
 \texttt{lalapps\_inspiral} responsible for reading in the data and
-performing the injections.  The injection details are read in from the
-\texttt{sim\_inspiral} table of a LIGO lightweight xml file.  The
-injections are then generated using LALFindChirpInjectSignals.  The
-injection data is output to frame files.  The length of the output
-frames is specified by \texttt{output-frame-length}.
+performing the injections.  The injection details are either read in
+from frame files containin an injection channel or from the
+\texttt{sim\_inspiral} table of a LIGO lightweight xml file or Is a
+\texttt{sim\_inspiral} table is given, the injections are generated
+using LALFindChirpInjectSignals.  The injection data is output to frame
+files.  The length of the output frames is specified by
+\texttt{output-frame-length}.
 
 The code is capable of generating both calibrated and uncalibrated
 injections.  To obtain calibrated h(t) injections the option
@@ -172,14 +175,20 @@ calibrated data as input/output.  This will produce strain data
 injections.  This option must be specified if no calibration cache is
 given.  
   
-\item[\texttt{--num-resp-points} \textsc{N}] Required.  The number of
+\item[\texttt{--num-resp-points} \textsc{N}] Optional.  The number of
 points used to generate the response function.  If generating
 uncalibrated injections, this can actually change slightly the injection
-data.   
+data.  If not specified, then set to default value of 4194304.
  
-\item[\texttt{--injection-file} \textsc{FILE}] Required. Read in the
+\item[\texttt{--injection-channel} \textsc{INJ}] Optional.  If this
+option is specified, the code will read in injection data from the INJ
+channel and add it to the raw data.  Either this option or
+\texttt{--injection-file} must be specified.
+ 
+\item[\texttt{--injection-file} \textsc{FILE}] Optional. Read in the
 injection data from \textsc{FILE}.  This should contain a
-\texttt{sim\_inspiral} table with a list of injections.
+\texttt{sim\_inspiral} table with a list of injections.  Either this
+option or \texttt{--injection-channel} must be specified.
 
 \item[\texttt{--inject-overhead}] Optional.  Perform the injections
 directly overhead the interferometer and optimally oriented.
