@@ -11,7 +11,7 @@
  *
  *-----------------------------------------------------------------------
  */
-                                                       
+
 /*
  * 1.  An author and Id block
  */
@@ -158,7 +158,7 @@ do {                                                                 \
     return TESTCONSTRUCTPLUTC_ESUB;                                  \
   }                                                                  \
 } while (0)
-/*****************************************************************/
+/******************************************************************/
 
 /* A global pointer for debugging. */
 #ifndef NDEBUG
@@ -214,6 +214,7 @@ int main(int argc, char *argv[]){
   parRes.f0 =  F0;
   parRes.deltaF = DF;
   parRes.minWidthRatio = MWR;
+  f0 = F0;
 
   f0Bin = F0*TCOH;
 
@@ -374,7 +375,8 @@ int main(int argc, char *argv[]){
   /* this should be for plotting each two bins! 
      so one can see all border with +1 or -1 */
 
-  /* for( k= -2; k < 3 ; k+=2 ){ /*now just 3 peaks selected -2,0,+2 */
+  /* for( k= -2; k < 3 ; k+=2 ){ */ 
+        /* now just 3 peaks selected -2,0,+2 */
    
 
     INT2 lb1,rb1,lb2,rb2; /* The border index. If zero means that */

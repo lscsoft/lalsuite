@@ -212,7 +212,8 @@ int main(int argc, char *argv[]){
   FILE *fp=NULL;                    /* Output file */
 
   INT4 arg;                         /* Argument counter */
-  INT4 i,j,k;                       /* Index counter, etc */
+  UINT4 i,j;                       /* Index counter, etc */
+  INT4 k; 
   REAL8 f0, alpha, delta, veloMod;
 
 
@@ -240,6 +241,7 @@ int main(int argc, char *argv[]){
   freqInd.data = NULL;
   ht.map = NULL;
 
+  f0 =  F0;
   parRes.f0 =  F0;
   parRes.deltaF = DF;
   parRes.minWidthRatio = MWR;
@@ -476,9 +478,9 @@ int main(int argc, char *argv[]){
   }
 
  
-  for(j=ySide-1; j>=0; --j){
+  for(k=ySide-1; k>=0; --k){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d", ht.map[j*xSide +i]);
+      fprintf( fp ," %d", ht.map[k*xSide +i]);
       fflush( fp );
     }
     fprintf( fp ," \n");

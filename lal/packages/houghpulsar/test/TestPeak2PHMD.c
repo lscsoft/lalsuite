@@ -205,6 +205,7 @@ int main(int argc, char *argv[]){
 
   INT4 arg;                         /* Argument counter */
   INT4 i,j,k;                       /* Index counter, etc */
+  UINT4 ii;
   REAL8 f0, alpha, delta, veloMod;
 
 
@@ -216,7 +217,8 @@ int main(int argc, char *argv[]){
   maxNBorders = MAX_N_BORDERS;  /* from LUT.h */
   xSideMax    = SIDEX;   /* from LUT.h */
   ySideMax    = SIDEY;   /* from LUT.h */
-
+  
+  f0 =  F0;
   parRes.f0 =  F0;
   parRes.deltaF = DF;
   parRes.minWidthRatio = MWR;
@@ -376,7 +378,7 @@ int main(int argc, char *argv[]){
   pg.peak = NULL;
   pg.peak = (INT4 *)LALMalloc( (pg.length) * sizeof(INT4));
 
-  for (i=0; i< pg.length; ++i){  pg.peak[i] = 3*i;  } /* a test */
+  for (ii=0; ii< pg.length; ++ii){  pg.peak[ii] = 3*ii;  } /* a test */
 
 
   /******************************************************************/
