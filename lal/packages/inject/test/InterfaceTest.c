@@ -7,15 +7,11 @@ $Id$
 
 
 DRAFT DOCUMENTATION
- right now this test file read an input file and for each valid line compute
- the approriate waveform. The waveform are eiter produce inside the inject pacakge 
-either inside the inspiral package. 
 
-This file is composed of two main part. One to read the file and parse the parameter and one
-to generate the waveform.
+Right now this test file read an input xml file and for each valid line it computes
+ the approriate waveform. Those waveforms are either produce within the inject package 
+(PPN waveform) or within the inspiral package. 
 
-Parsing the parameters has required to create a new struct GeneralInspiralStruc which can parse either
-"inspiral" data either "inject" data depending of the input data. 
 
 Then the function LALGeneralInspiral create the amplitude, freq and phi vectors needed for further
 injection including the data itself (noise, h(t)) 
@@ -48,13 +44,17 @@ liste des fonctions utilisees
 
 \vfill{\footnotesize\input{InterfaceTestCV}}
 
-******************************************************* </lalLaTeX> */
+******************************************************* </lalLaTeX><lalErrTable> */
+
 #define INTERFACETESTC_ENORM 0
 #define INTERFACETESTC_ESUB  1
 #define INTERFACETESTC_EARG  2
 #define INTERFACETESTC_EVAL  3
 #define INTERFACETESTC_EFILE 4
 #define INTERFACETESTC_EMEM  5
+#define INTERFACETESTC_EINJECT  6
+
+
 
 #define INTERFACETESTC_MSGENORM "Normal exit"
 #define INTERFACETESTC_MSGESUB  "Subroutine failed"
@@ -62,8 +62,18 @@ liste des fonctions utilisees
 #define INTERFACETESTC_MSGEVAL  "Input argument out of valid range"
 #define INTERFACETESTC_MSGEFILE "Could not open file"
 #define INTERFACETESTC_MSGEMEM  "Out of memory"
+#define INTERFACETESTC_MSGEINJECT  "No valid injection to do ... ? "
+
+/* </lalErrTable><lalLaTeX>*/
 
 
+/* --- the names of the files to be used --- */
+#define INTERFACETEST_INJECTIONXMLFILE    "injection.xml"
+#define INTERFACETEST_INJECTIONOUTPUTFILE "injection.dat"
+
+
+
+/* --- include files --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,6 +100,7 @@ liste des fonctions utilisees
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 #include <lal/PrintFTSeries.h>
+
 NRCSID( INTERFACETESTC, "$Id$" );
 
 #define ERROR( code, msg, statement )                                \
@@ -98,7 +109,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, INTERFACETESTC, statement ? statement :      \
+		 __LINE__, INTERFACETESTC, statement ? statement :   \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)
@@ -107,9 +118,9 @@ while (0)
 do                                                                   \
 if ( (func), (statusptr)->statusCode )                               \
 {                                                                    \
-  ERROR( INTERFACETESTC_ESUB, INTERFACETESTC_MSGESUB,                      \
+  ERROR( INTERFACETESTC_ESUB, INTERFACETESTC_MSGESUB,                \
          "Function call \"" #func "\" failed:" );                    \
-  exit( INTERFACETESTC_ESUB );                                          \
+  exit( INTERFACETESTC_ESUB );                                       \
 }                                                                    \
 while (0)
 
@@ -117,21 +128,15 @@ char *program;
 
 
 
-INT4 lalDebugLevel=1;
-
-
-
+/* --- Main program start here --- */
 int main(int argc, char **argv)
 {
-  /* input xml data */
-  CHAR  	*injectionFile	= NULL;         
-  
   /* some variables to create the data */
   UINT4 	startTime;
   UINT4		endTime;
   UINT4 	k;
-  UINT4 	numPoints 	= 524288 * 2 / 16;
-  UINT4         numInjections   = 0;
+  UINT4 	numPoints 	= 524288 * 2 / 16; /* arbitrary length of the data*/
+  UINT4         numInjections   = 0; /* by default no injection. */
   REAL8 	sampling	= 2048.;
   
  static  LALStatus 	status 		;
@@ -141,40 +146,53 @@ int main(int argc, char **argv)
  SimInspiralTable    *thisInj    = NULL;
  
   /* the data */
-  REAL4TimeSeries               ts ;						/* A time series to store the injection */
-  COMPLEX8FrequencySeries       fs ;						/* A freq series to store the psd 	*/
+  REAL4TimeSeries               ts ; /* A time series to store the injection */
+  COMPLEX8FrequencySeries       fs ; /* A freq series to store the psd 	*/
 
-  /* output data to check injection */
-  FILE		*output;
-  PPNParamStruc         ppnParams;
-  CoherentGW            waveform;
+  FILE		*output;             /* output result*/
 
   
-   /* --- MAIN --- */
+   /* --- for debugging --- */
   lalDebugLevel = 1;
-  program = *argv;
+  program       = *argv;
 
-  injectionFile = "injection.xml"; 						/* an xml file with the injection	*/
-  output 	= fopen("injection.dat","w");					/* an ascii file for results		*/
   
-  memset(&ts, 0, sizeof(REAL4TimeSeries));					/* allocate memory 			*/  
-  LALSCreateVector( &status, &(ts.data), numPoints);	/* and ts null				*/
+
+  /* --- Start Main part here --- */
+  /* First, we test if the injection xml file exist */
+  if ((output 	= fopen(INTERFACETEST_INJECTIONXMLFILE,"r")) == NULL)
+    {
+      ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
+      exit(0);
+    }
+  else fclose(output); /*if it exist let's close it */
+  /* then let's start to open the output file */
+  if ((output 	= fopen(INTERFACETEST_INJECTIONOUTPUTFILE,"w")) == NULL)
+    {
+      ERROR(INTERFACETESTC_EFILE,INTERFACETESTC_MSGEFILE, 0);
+      exit(0);
+    }
+    
+  /* let's allocate memory for to create some dummy data to 
+     inject the waveforms */
+  memset(&ts, 0, sizeof(REAL4TimeSeries));		
+  LALSCreateVector( &status, &(ts.data), numPoints);	
   
-  memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));				/* idem for fs				*/
+  memset( &fs, 0, sizeof(COMPLEX8FrequencySeries));	
   LALCCreateVector( &status, &(fs.data), numPoints / 2 + 1 );
-  
 
-  ts.epoch.gpsSeconds 	= 729273610;						/* gps time of the time series		*/
-  startTime 		= 729273610;						/* gps start time and end time of ..	*/	
-  endTime   		= startTime + 100;					/* ..injection; should be in agreement..*/
-  										/* ..with the xml file			*/ 
-  ts.sampleUnits 	= lalADCCountUnit;					/*  UNITY ?? 				*/
-  ts.deltaT 		= 1./sampling;						/* sampling				*/
-  fs.deltaF 		= sampling / numPoints;					/* idem for fs				*/
+  
+  /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
+  ts.epoch.gpsSeconds 	= 729273610;		       /* gps time of the time series		*/
+  startTime 		= 729273610;		       /* start time and end time of ..	*/	
+  endTime   		= startTime + 100;	       /* ..injection; should be in agreement..*/
+  						       /* ..with the xml file			*/ 
+  ts.sampleUnits 	= lalADCCountUnit;	       /*  UNITY ?? 				*/
+  ts.deltaT 		= 1./sampling;		       /* sampling				*/
+  fs.deltaF 		= sampling / numPoints;	       /* idem for fs				*/
   fs.sampleUnits 	= lalADCCountUnit;
 
   /* --- the psd is flat for simplicity --- */		
-
   for( k = 0 ; k< numPoints/2; k++){
     fs.data->data[k].re = 1;
     fs.data->data[k].im = 0.;
@@ -186,64 +204,35 @@ int main(int argc, char **argv)
    
   /* --- read injection  here --- */
   SUB(numInjections = SimInspiralTableFromLIGOLw( &injections, 
-						  injectionFile,
+						  INTERFACETEST_INJECTIONXMLFILE,
 						  startTime,
 						  endTime), &status);
 
-
+  /* any injection to do ? */
   if ( numInjections < 0 )
     {
-      fprintf( stderr, "error: cannot read injection file (injection.xml)" );
+      ERROR(INTERFACETESTC_EINJECT, INTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );
     }
-  /* else we perform the injection */
+
   /* --- inject here --- */
   SUB( LALFindChirpInjectSignals( &status,
 				  &ts, 
 				  injections,
 				  &fs ), &status);
   
-  /*memset( &waveform, 0, sizeof(CoherentGW) );
 
-  
-  ppnParams.mTot = 10;
-  ppnParams.eta  = .25;
-  ppnParams.d    = 1 * 1.0e6 * LAL_PC_SI;
-  ppnParams.inc  = 0;
-  ppnParams.phi  = 1.;
-  
-  ppnParams.fStartIn = 40.0;
-  ppnParams.fStopIn  = -1.0 / 
-    (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
-  
-  ppnParams.position.longitude   = 0;
-  ppnParams.position.latitude    = 0;
-  ppnParams.position.system      = COORDINATESYSTEM_EQUATORIAL;
-  ppnParams.psi                  = 0;
-  ppnParams.epoch.gpsSeconds     = 0;
-  ppnParams.epoch.gpsNanoSeconds = 0;
-  
-  SUB( LALGenerateInspiral(&status, &waveform, injections, &ppnParams), &status);
-  */
-
+  /* --- now we save the results --- */
   for (k=0; k<numPoints; k++){
     fprintf(output,"%15.12lf %e\n",  (float)k/sampling, ts.data->data[k]);
   }
   fclose(output);
   
+  
   SUB( LALSDestroyVector( &status, &(ts.data) ), &status );
   SUB( LALCDestroyVector( &status, &(fs.data) ), &status );
   
-  /*
-    LALSDestroyVectorSequence( &status, &(waveform.a->data) );
-    LALSDestroyVector(&status, &(waveform.f->data));
-    LALDDestroyVector(&status, &(waveform.phi->data));
-    
-    LALFree( waveform.a );
-    LALFree( waveform.f );
-    LALFree( waveform.phi );
-  */
-
+  /* --- and finally free memory --- */
   while ( injections )
     {
       thisInj = injections;
@@ -254,11 +243,12 @@ int main(int argc, char **argv)
 
 
   LALCheckMemoryLeaks();
-
   return 0;
 }
 
 
+
+/* might be used later keep it for the time being */
 #if 0
     case SpinOrbitCW: 
       params->socw.epoch.gpsSeconds = params->socw.epoch.gpsNanoSeconds = 0;
