@@ -192,6 +192,8 @@ int main( int argc, char *argv[] ) {
   float           a,b,c,d,e,f;      /* To input point in standard format */
   int             ra_min, ra_max;   /* Min and max RA for ellipse plot */
   int             dec_min, dec_max; /* Min and max dec for ellipse plot */
+  float           f1;           /* The max spindown parameter */
+  float           tau;              /* The spindown age */
   float           c_ellipse;        /* Centers of ellipses */
   float           r_ellipse;        /* Radii of ellipses */
   REAL8           determinant;      /* Determinant of projected metric */
@@ -212,11 +214,13 @@ int main( int argc, char *argv[] ) {
   ra_max = 90;
   dec_min = 0;
   dec_max = 85;
+  tau=1.;
+  f1 = 1./tau;
   f0 = 1000;
 
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pt:x" )) != -1) {
+  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pt:s:x" )) != -1) {
     switch (opt) {
     case 'a':
       metric_code = atoi( optarg );
@@ -245,7 +249,7 @@ int main( int argc, char *argv[] ) {
       if( sscanf( optarg, "%d:%d:%d:%d", 
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
-	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees" );
+	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max all in degrees" );
 	}
       break;
     case 'm':
@@ -253,6 +257,10 @@ int main( int argc, char *argv[] ) {
       break;
     case 'p':
       nongrace = 1;
+      break;
+    case 's':
+      tau = atof( optarg );
+      f1 = 1./tau;
       break;
     case 't':
       in.duration = tevparam.deltaT = atof( optarg );
