@@ -17,17 +17,8 @@ extern "C" {
 
 NRCSID(STOCHASTICH, "$Id$");
 
-typedef struct tagStreamPair {
-  REAL4TimeSeries *streamOne;
-  REAL4TimeSeries *streamTwo;
-} StreamPair;
-
-static void parse_options(INT4 argc, CHAR *argv[]);
-static void readDataPair(LALStatus *status, StreamPair *streamPair,
-    REAL4TimeSeries *seriesOne, REAL4TimeSeries *seriesTwo,
-    LIGOTimeGPS start);
-
 /* helper functions */
+static void parse_options(INT4 argc, CHAR *argv[]);
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
     CHAR *cacheFile, CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end,
     INT4 buffer);

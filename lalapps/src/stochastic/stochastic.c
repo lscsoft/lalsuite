@@ -179,7 +179,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentShift;
   INT4 padData;
   LIGOTimeGPS gpsCalibTime;
-  StreamPair streamPair;
   REAL4TimeSeries *segmentOne;
   REAL4TimeSeries *segmentTwo;
   REAL4Vector *segOne[100], *segTwo[100];
@@ -375,10 +374,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     memset(segOne[i]->data, 0, segOne[i]->length * sizeof(*segOne[i]->data));
     memset(segTwo[i]->data, 0, segTwo[i]->length * sizeof(*segTwo[i]->data));
   }
-
-  /* set segment input parameters */
-  streamPair.streamOne = segmentOne;
-  streamPair.streamTwo = segmentTwo;
 
   if (inject_flag)
   {
@@ -798,8 +793,11 @@ INT4 main(INT4 argc, CHAR *argv[])
               gpsSegStartTime.gpsSeconds);
         }
 
-        readDataPair(&status, &streamPair, seriesOne, seriesTwo, \
-            gpsSegStartTime);
+        /* cut segments from series */
+        segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
+            gpsSegEndTime);
+        segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
+            gpsSegEndTime);
 
         /* store in memory */
         for (i = 0; i < segmentLength; i++)
@@ -2333,69 +2331,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
   return;
 }
 
-/* function to read data in frames */
-static void readDataPair(LALStatus *status,
-    StreamPair *streamPair,
-    REAL4TimeSeries *seriesOne,
-    REAL4TimeSeries *seriesTwo,
-    LIGOTimeGPS start)
-{
-  /* variables */
-  INT4 i;
-  REAL4TimeSeries *dataStreamOne;
-  REAL4TimeSeries *dataStreamTwo;
-  INT4 first;
-  INT4 length;
-  INT4 streamStart;
-
-  /* get start of stream */
-  streamStart = seriesOne->epoch.gpsSeconds;
-
-  /* get first bin required, and length */
-  first = (start.gpsSeconds - streamStart) * resampleRate;
-  length = segmentDuration * resampleRate;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for data streams...\n");
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &dataStreamOne, "DataStreamOne", \
-        start, 0, 1./resampleRate, lalDimensionlessUnit, length), status);
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &dataStreamTwo, "DataStreamTwo", \
-        start, 0, 1./resampleRate, lalDimensionlessUnit, length), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Cutting data from stream...\n");
-  
-  LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamOne, seriesOne, first, \
-        length), status);
-  LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamTwo, seriesTwo, first, \
-        length), status);
-
-  /* build output */
-  strncpy(streamPair->streamOne->name, dataStreamOne->name, LALNameLength);
-  strncpy(streamPair->streamTwo->name, dataStreamTwo->name, LALNameLength);
-  streamPair->streamOne->epoch = dataStreamOne->epoch;
-  streamPair->streamTwo->epoch = dataStreamTwo->epoch;
-  streamPair->streamOne->deltaT = dataStreamOne->deltaT;
-  streamPair->streamTwo->deltaT = dataStreamTwo->deltaT;
-  streamPair->streamOne->f0 = dataStreamOne->f0;
-  streamPair->streamTwo->f0 = dataStreamOne->f0;
-  streamPair->streamOne->sampleUnits = dataStreamOne->sampleUnits;
-  streamPair->streamTwo->sampleUnits = dataStreamTwo->sampleUnits;
-
-  /* copy to output structure */
-  for (i = 0; i < length; i++)
-  {
-    streamPair->streamOne->data->data[i] = dataStreamOne->data->data[i];
-    streamPair->streamTwo->data->data[i] = dataStreamTwo->data->data[i];
-  }
-
-  /* clean up */
-  LAL_CALL(LALDestroyREAL4TimeSeries(status, dataStreamOne), status);
-  LAL_CALL(LALDestroyREAL4TimeSeries(status, dataStreamTwo), status);
-}
-
 /* read a time series */
 static REAL4TimeSeries *get_time_series(LALStatus *status,
     CHAR *ifo,
@@ -2708,7 +2643,7 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
   INT4 first;
 
   /* calculate length of segment to cut */
-  length = (INT4)delta_gps_to_float(status, end, start);
+  length = (INT4)delta_gps_to_float(status, end, start) / input->deltaT;
 
   /* get first bin */
   first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
