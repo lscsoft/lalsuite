@@ -1377,6 +1377,7 @@ LALFindChirpBCVFilterSegment (
   REAL4                 Den2;
   REAL4                 InvTan1;
   REAL4                 InvTan2;
+  REAL4                 m;
 
   /*
      FindChirpChisqInput  *chisqInput;
@@ -1534,9 +1535,6 @@ LALFindChirpBCVFilterSegment (
     /* k that corresponds to fFinal, currently not used      */
     /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
     /* BCV normalization parameters */
-    REAL4 a1 = input->segment->a1;
-    REAL4 b1 = input->segment->b1;  
-    REAL4 b2 = input->segment->b2; 
 
     chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
@@ -1647,9 +1645,8 @@ LALFindChirpBCVFilterSegment (
 
   /* normalisation */
   /*  For the BCV templates, templateNorm is equal to                      */
-  /*  (5*eta/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2    */
-  /* which is the square of the normalization factor that multiplies the   */
-  /* template                                                              */
+  /*  (5*eta/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2,   */
+  /* the square of the normalization factor that multiplies the template   */
 
   rhosqThresh = params->rhosqThresh;
 
@@ -1784,8 +1781,8 @@ LALFindChirpBCVFilterSegment (
           thisEvent->end_time.gpsSeconds = j;
           thisEvent->snr = modqsq;
         }
-        else if ( (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-              ! params->maximiseOverChirp) )
+        else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+              ! params->maximiseOverChirp)
         {
           /* clean up this event */
           SnglInspiralTable *lastEvent;
@@ -1821,7 +1818,7 @@ LALFindChirpBCVFilterSegment (
           Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
           Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
 
-          InvTan1 = (REAL4) atan2(Num1, Den1) ;
+          InvTan1 = (REAL4) atan2(Num1, Den1);
           InvTan2 = (REAL4) atan2(Num2, Den2);
 
           thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
@@ -1837,6 +1834,10 @@ LALFindChirpBCVFilterSegment (
           /* chirp mass in units of M_sun */
           thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
             pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
+          m =  fabs(thisEvent->psi3) / 
+            (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
+          thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 * 
+              pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
           thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
 
           /* set the type of the template used in the analysis */
@@ -1957,6 +1958,11 @@ LALFindChirpBCVFilterSegment (
     thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
       pow( 3.0 / 128.0 / input->tmplt->psi0, 3.0/5.0 );
     thisEvent->f_final  = (REAL4) input->tmplt->fFinal;
+    m =  fabs(thisEvent->psi3) /
+          (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
+    thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
+          pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
+
 
 
     /* set the type of the template used in the analysis */
