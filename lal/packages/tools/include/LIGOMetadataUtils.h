@@ -50,6 +50,7 @@ extern "C" {
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALInspiral.h>
+#include <lal/GeneratePPNInspiral.h>
 
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
@@ -62,9 +63,11 @@ NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 #define LIGOMETADATAUTILSH_ENULL 1
 #define LIGOMETADATAUTILSH_ENNUL 2
 #define LIGOMETADATAUTILSH_ETIME 3
+#define LIGOMETADATAUTILSH_ECOOR 4
 #define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
 #define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
 #define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
+#define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
 /* </lalErrTable> */
 
 #if 0
@@ -207,6 +210,15 @@ LALClusterSnglInspiralTable (
     INT8                        dtimeNS,
     SnglInspiralClusterChoice   clusterchoice
     );
+
+void
+LALGalacticInspiralParamsToSimInspiralTable(
+    LALStatus                  *status,
+    SimInspiralTable           *output,
+    GalacticInspiralParamStruc *input,
+    RandomParams               *params
+    );
+
 
 /*
  *
