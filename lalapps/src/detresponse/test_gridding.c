@@ -25,6 +25,7 @@ main(int argc, char **argv)
   LIGOTimeGPS        gps;
   LALLeapSecAccuracy acc = LALLEAPSEC_LOOSE;
   EphemerisData      ephem;
+  INT4               leap_secs;
 
   s.statusPtr = NULL;
   
