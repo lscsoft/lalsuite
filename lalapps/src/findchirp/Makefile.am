@@ -2,7 +2,7 @@
 # $Id$
 if DATAFLOW
 DATAFLOWPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
-                lalapps_icoin lalapps_donald
+                lalapps_icoin lalapps_donald lalapps_snglInspiralReader
 else
 DATAFLOWPROGRAMS = 
 endif
@@ -22,6 +22,7 @@ lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
 lalapps_donald_SOURCES = donald.c donald.h event_utils.c event_utils.h
 lalapps_icoin_SOURCES = icoin.c trump.h event_utils.c
 lalapps_ivana_SOURCES = ivana.c
+lalapps_snglInspiralReader_SOURCES = snglInspiralReader.c event_utils.c event_utils.h
 endif
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
