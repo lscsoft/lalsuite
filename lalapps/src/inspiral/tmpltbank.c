@@ -191,7 +191,7 @@ int main ( int argc, char *argv[] )
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
   REAL8 tsLength;
-  LIGOTimeGPS duration = {0, 0};
+  CalibrationUpdateParams calfacts;
   REAL8 dynRange = 0;
 
 
@@ -591,14 +591,23 @@ int main ( int argc, char *argv[] )
   }
   else
   {
+    /* initialize the calfacts */
+    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+    calfacts.duration.gpsSeconds = gpsEndTime.gpsSeconds 
+      - gpsStartTime.gpsSeconds;
+    calfacts.ifo = ifo;
+
     /* generate the response function for the current time */
     if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
         "response parameters f0 = %e, deltaF = %e, length = %d\n",
         resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
         resp.f0, resp.deltaF, resp.data->length );
-    duration.gpsSeconds = gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds;
-    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
-          &duration ), &status );
+        LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, 
+          &calfacts ), &status );
+    if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
+        "alpha = %f, alpha_beta = %f\n",
+        calfacts.alpha.re, calfacts.alphabeta.re );
+
   }
 
   /* write the calibration data to a file */

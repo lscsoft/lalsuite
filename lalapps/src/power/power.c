@@ -155,7 +155,7 @@ int main( int argc, char *argv[])
     CHAR                  fname[256];
     PassBandParamStruc    highpassParam;
     REAL4                 fsafety=0;
-    LIGOTimeGPS		  duration = { 0, 0};
+    CalibrationUpdateParams calfacts;
     LIGOTimeGPS		  tmpEpoch = { 0, 0};
     LALTimeInterval tmpInterval;
     REAL8                 tmpOffset = 0.0;
@@ -407,8 +407,11 @@ int main( int argc, char *argv[])
         }
       }
       else{
-        LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo, 
-              &duration ), &stat );
+        memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+        calfacts.ifo = ifo;
+
+        LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile,  
+              &calfacts ), &stat );
       }
     } 
 

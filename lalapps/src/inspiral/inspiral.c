@@ -38,6 +38,7 @@
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/Calibration.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Window.h>
 #include <lal/TimeFreqFFT.h>
@@ -254,7 +255,7 @@ int main( int argc, char *argv[] )
   UINT4 resampleChan = 0;
   REAL8 tsLength;
   INT8  durationNS	= 0;
-  LIGOTimeGPS duration	= {0,0};
+  CalibrationUpdateParams calfacts, inj_calfacts; 
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
   REAL8 dynRange = 1.0;
@@ -276,7 +277,7 @@ int main( int argc, char *argv[] )
   SimInstParamsTable *prevSimInstParams = NULL;
   MetadataTable simResults;
 
-
+ 
 
   /*
    *
@@ -762,11 +763,17 @@ int main( int argc, char *argv[] )
   /* generate the response function for the current time */
   if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
       resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
+
+  /* initialize the calfacts */
+  memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+  calfacts.ifo = ifo;
+  
   /* determine length of chunk */
   durationNS = gpsEndTimeNS - gpsStartTimeNS;
-  LAL_CALL( LALINT8toGPS( &status, &duration, 
+  LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration), 
 	&durationNS ), &status );
 
+  
   if ( geoData )
   {
     /* if we are using geo data set the response to unity */
@@ -781,8 +788,8 @@ int main( int argc, char *argv[] )
   else
   {
     /* get the response from the frame data */
-    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
-          &duration ), &status );
+    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, 
+	  &calfacts), &status );
   
     if ( writeResponse ) 
       outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, &resp, 
@@ -880,8 +887,15 @@ int main( int argc, char *argv[] )
               resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
               injResp.data->length, injResp.deltaF );
 
+	  /* initialize the inj_calfacts */
+          memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
+	  inj_calfacts.ifo = ifo;
+          LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
+		&durationNS ), &status );
+
+
           LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
-                ifo, &duration ), &status );
+                &inj_calfacts ), &status );
 
           injRespPtr = &injResp;
 

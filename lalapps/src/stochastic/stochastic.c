@@ -181,7 +181,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* response functions */
   COMPLEX8FrequencySeries responseTemp1,responseTemp2,response1,response2;
   INT4 respLength;
-  LIGOTimeGPS duration;
+  CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* calibrated and half calibrated inverse noise data structures */
@@ -504,7 +504,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
-  duration.gpsSeconds = duration.gpsNanoSeconds = 0;
 
   /* set metadata fields for response functions */
   strncpy(responseTemp1.name, "responseTemp1", LALNameLength);
@@ -934,9 +933,11 @@ INT4 main(INT4 argc, CHAR *argv[])
               
      gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
      responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
-                
+     memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+     calfacts.ifo = ifo1;
+           
      LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
-                                        ifo1, &duration), &status );
+                                        &calfacts), &status );
 
      /* skip dsegment if calibration not found */
      if ((status.statusCode !=0)||(responseTemp1.data==NULL))
@@ -947,9 +948,12 @@ INT4 main(INT4 argc, CHAR *argv[])
        else 
         break;   
       }     
-                         
+     
+     memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+     calfacts.ifo = ifo2;
+                    
      LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calCache2,
-               ifo2, &duration), &status );
+               &calfacts), &status );
                 
      /* skip segment if calibration not found */
      if ((status.statusCode !=0)||(responseTemp2.data==NULL))
@@ -989,12 +993,16 @@ INT4 main(INT4 argc, CHAR *argv[])
          }
 
          MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;
-                
+         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+         calfacts.ifo = ifo1;
+                           
 	 LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1, 
-                   ifo1, &duration), &status );
-			
-	 LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2, 
-                   ifo2, &duration), &status );
+                    &calfacts), &status );
+	
+         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+         calfacts.ifo = ifo2;
+ 	 LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2, 
+                   &calfacts), &status );
 
          /* force DC to be 0 and nyquist to be real */
          MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;

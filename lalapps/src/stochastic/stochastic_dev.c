@@ -168,8 +168,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	COMPLEX8FrequencySeries responseOne;
 	COMPLEX8FrequencySeries responseTwo;
 	INT4 respLength;
-	LIGOTimeGPS duration;
-	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+        CalibrationUpdateParams calfacts;
+        LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
 	/* calibrated and half calibrated inverse noise data structures */
 	REAL4FrequencySeries calInvPSDOne;
@@ -450,8 +450,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set parameters for response functions */
 	respLength = (UINT4)(fMax / deltaF) + 1;
-	duration.gpsSeconds = 0;
-	duration.gpsNanoSeconds = 0;
 
 	/* set metadata fields for response functions */
 	strncpy(responseTempOne.name, "responseTempOne", LALNameLength);
@@ -1034,10 +1032,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* compute response function */
 		responseTempOne.epoch = gpsSegmentStart;
 		responseTempTwo.epoch = gpsSegmentStart;
+                
+                memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+                calfacts.ifo = ifoOne;
+
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-					ifoOne, &duration), &status );
+					&calfacts), &status );
+                memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+                calfacts.ifo = ifoTwo;
+
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo, &duration), &status );
+					&calfacts), &status );
 
 		if (vrbflg)
 		{
