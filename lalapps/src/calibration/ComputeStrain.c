@@ -21,6 +21,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <glob.h>
+#include <errno.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -41,6 +43,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <gsl/gsl_spline.h>
 
 #include "filters-H1-S2.h"                      /* files that contains the filter coefficients */
+
+extern char *optarg;
+extern int optind, opterr, optopt;
 
 #define MAXLINERS 76800                   /* Max lines read in Freq Response files */
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
@@ -357,7 +362,7 @@ FrOutPar opar = { "./H", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0, 2 };
 /* 	  for (p=0; p<GV.h.data->length;p++) {  */
 /*  	     fprintf(stdout,"%1.10e  %1.16e\n",j*T+p*GV.h.deltaT,GV.h.data->data[p]); */
 /*   	  }   */
-	  //	  fprintf(stdout,"\n\n");
+	  /*	  fprintf(stdout,"\n\n"); */
 
 	  /* WRITE A FRAME */
 	  strncpy( GV.h.name, CHANNEL, sizeof( GV.h.name ) );
