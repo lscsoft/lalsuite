@@ -41,7 +41,7 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
 
-    for sec in ['stochastic']:
+    for sec in ['parameters']:
       self.add_ini_opts(cp,sec)
 
     self.set_stdout_file('logs/stoch-$(macrogpsstarttime)-$(macrogpsendtime).out')
