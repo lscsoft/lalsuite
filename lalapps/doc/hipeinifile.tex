@@ -1,0 +1,123 @@
+\begin{verbatim}
+; inspiral pipeline configuration script.
+; 
+; $Id$
+;
+; this is the configuration file for the inspiral DAG generation program 
+; lalapps_inspiral_pipe that creates a condor DAG to run the inspiral
+; analysis pipeline. It can be use to perform a simple single interferometer
+; or a double coincident analysis.
+
+[condor]
+; setup of condor universe and location of executables
+universe  = standard
+datafind  = LSCdataFind
+tmpltbank = lalapps_tmpltbank
+inspiral  = lalapps_inspiral
+inca      = lalapps_inca
+sire      = lalapps_sire
+
+[pipeline]
+; tagging information for the configure script
+version = $Id$
+cvs-tag = $Name$
+; user-tag here can be overidden on the command line of lalapps_inspiral_pipe
+user-tag = 
+; data choice (playground_only|exclude_playground|all_data)
+playground-data-mask = playground_only
+
+[input]
+; the segments file should be the output from segwizard with DQ flags applied
+; if no segment file if specified, assumed no data from that IFO.
+h1-segments = S3H1v03_selectedsegs.txt
+h2-segments = S3H2v03_selectedsegs.txt
+l1-segments = S3L1v03_selectedsegs.txt
+channel = LSC-AS_Q
+; injection file (if blank then no injections)
+injection-file =
+
+[inspiral-thresholds]
+; thresholds for SNR for each interferometer in pipeline
+l1-snr-threshold = 8.0
+h1-snr-threshold = 8.0
+h2-snr-threshold = 8.0
+; chisq thresholds for each interferometer in pipleine
+l1-chisq-threshold = 5.0
+h1-chisq-threshold = 5.0
+h2-chisq-threshold = 5.0
+
+[coincidence-parameters]
+; inca coincidence parameters for hanford-hanford coincidence
+hh-dt = 1.0
+hh-epsilon = 2.0
+hh-kappa = 0.5
+; inca coincidence parameters for hanford-livingston coincidence
+hl-dt = 11.0
+hl-kappa = 1000.0
+hl-epsilon = 2.0
+; inca parameter test
+parameter-test = mchirp_and_eta
+
+[sire-parameters]
+; clustering parameters
+cluster-time = 4000
+cluster-algorithm = snr
+; injection coincidence
+injection-coincidence = 3 
+
+[calibration]
+; location of the calibration cache and the cache files
+path = /ldas_outgoing/calibration/cache_files
+L1 = L1-CAL-V02-751651248-757699249.cache
+H1 = H1-CAL-V02-751651244-757699245.cache
+H2 = H2-CAL-V02-751651244-757699245.cache
+
+[datafind]
+; type of data to use
+type = RDS_R_L3
+
+[data]
+; data conditioning parameters common to tmpltbank and inspiral
+pad-data = 8
+segment-length = 1048576
+number-of-segments = 15
+sample-rate = 4096
+resample-filter = ldas
+enable-high-pass = 70.0
+high-pass-order = 8
+high-pass-attenuation = 0.1
+spectrum-type = median
+low-frequency-cutoff = 70.0
+
+[tmpltbank]
+; template bank generation parameters -- added to all tmpltbank jobs
+minimum-mass = 1.0 
+maximum-mass = 3.0
+minimal-match = 0.97
+high-frequency-cutoff = 2048.0
+order = twoPN
+approximant = TaylorF2
+space = Tau0Tau3
+debug-level = 33
+
+[inspiral]
+; inspiral analysis parameters -- added to all inspiral jobs
+approximant = TaylorF2
+minimal-match = 0.97
+segment-overlap = 524288
+inverse-spec-length = 16
+dynamic-range-exponent = 69.0
+enable-output = 
+enable-event-cluster = 
+chisq-bins = 0
+debug-level = 33
+
+[inca]
+; common coincidence parameters -- added to all inca jobs
+debug-level = 33
+dm = 0.0
+dpsi0 = 0.0
+dpsi3 = 0.0
+dmchirp = 0.02
+deta = 0.1
+\end{verbatim}
