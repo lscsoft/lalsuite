@@ -401,11 +401,6 @@ int InitSearch(char *filterParams,
   case SLOPE:
     params->ETGfun = LALSlopeETG; 
     break;
-  case POWER:
-    /*
-    params->ETGfun = LALPowerETG; 
-    */
-    break;
   default:
     SABORT(INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
   }
