@@ -40,6 +40,7 @@ Usage: lalapps_inspiral_pipe [options]
   -j, --injections         add simulated inspirals from injection file
 
   -p, --playground-only    only create chunks that overlap with playground
+  -m, --missing-playground pick up only missing playground from chunks
   -P, --priority PRIO      run jobs with condor priority PRIO
 
   -f, --config-file FILE   use configuration file FILE
@@ -48,7 +49,7 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpjs:u:P:f:l:"
+shortop = "hvdtiTICpmjs:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -60,6 +61,7 @@ longop = [
   "coincidence",
   "injections",
   "playground-only",
+  "missing-playground",
   "user-tag=",
   "priority=",
   "config-file=",
@@ -85,6 +87,7 @@ playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
+missing_play = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -111,6 +114,9 @@ for o, a in opts:
     usertag = a
   elif o in ("-p", "--playground-only"):
     playground_only = 1
+  elif o in ("-m", "--missing-playground"):
+    playground_only = 1
+    missing_play = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
@@ -222,6 +228,26 @@ data.read(cp.get('input','segments'),length)
 # create the chunks from the science segments
 data.make_chunks(length,overlap,playground_only)
 data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+
+# only process jobs that were missed with the bad playground algorithm
+removed_chunks = ''
+if missing_play:
+  bad_data = pipeline.ScienceData()
+  bad_data.read(cp.get('input','segments'),length)
+  bad_data.make_chunks(length,overlap,playground_only)
+  bad_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+
+  for seg in data:
+    for chunk in seg:
+      
+      # see if the chunk has already been processed by the bad playground
+      # algorithm: if it had, delete it
+      for bs in bad_data:
+        for bc in bs:
+          if ( chunk.start() == bc.start() ):
+            removed_chunks += str(chunk)
+            removed_chunks += ' has already been processed, removing\n'
+            seg._ScienceSegment__chunks.remove(chunk)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -405,6 +431,11 @@ for seg in data:
   for chunk in seg:
     total_data += len(chunk)
 print >> log_fh, "total data =", total_data
+
+if missing_play:
+  print >> log_fh, "\n===========================================\n"
+  print >> log_fh, removed_chunks, '\n'
+
 print >> log_fh, "\n===========================================\n"
 print >> log_fh, data
 for seg in data:
