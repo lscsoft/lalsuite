@@ -29,7 +29,8 @@ Header file for the template generation codes.
 # include <stdlib.h>
 # include <lal/LALStdlib.h>
 # include <lal/LALConstants.h>
-
+# include <lal/SimulateCoherentGW.h>
+ 
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -64,6 +65,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_ESIZE 8
 #define LALINSPIRALH_ECHOICE 16
 #define LALINSPIRALH_EORDER 4 
+
 #define LALINSPIRALH_MSGENULL "Arguments contained an unexpected null pointer"
 #define LALINSPIRALH_MSGEMEM "Memory allocation error"
 #define LALINSPIRALH_MSGEDIV0 "Division by zero"
@@ -774,10 +776,7 @@ void LALInspiralWave1Templates(
 
 void LALInspiralWave1ForInjection(
      LALStatus        *status,
-     REAL4Vector      *inject_hc,
-     REAL4Vector      *inject_hp,
-     REAL4Vector      *inject_phase,
-     REAL4Vector      *inject_freq,			   
+     CoherentGW *waveform,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
@@ -859,10 +858,7 @@ void LALEOBWaveformTemplates(
 
 void LALEOBWaveformForInjection(
      LALStatus *status,
-     REAL4Vector *,
-     REAL4Vector *,
-     REAL4Vector *,
-     REAL4Vector *,
+     CoherentGW *waveform,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
