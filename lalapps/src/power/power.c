@@ -1,4 +1,5 @@
 #include "power.h"
+#include <lal/TimeSeries.h>
 
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
@@ -65,6 +66,13 @@ int main( void )
     "[--verbose] \n"\
     "[--dbglevel        lalDebugLevel] \n"\
     "[--help]\n"
+
+/* this is a temporary function to make some code below more readable.
+ * Obviously the argument and return types are sub-optimal... */
+static size_t min(size_t a, size_t b)
+{
+	return(a < b ? a : b);
+}
 
 /* Fill an array with white noise */
 static void makeWhiteNoise(
@@ -395,7 +403,7 @@ int main( int argc, char *argv[])
         if (verbose )
         {
           REAL4 norm=0;
-          INT4 j ;
+          UINT4 j ;
           /* PRB - The normalization constant */
           norm = 0.0;
           for( j=0 ; j<series.data->length ; j++)
@@ -585,6 +593,9 @@ int main( int argc, char *argv[])
         UINT4                tmpDutyCycle=0;
         UINT4                dumCurrentSeg=params->currentSegment;
         SnglBurstTable      *tmpEvent     = NULL;
+        REAL4TimeSeries  *interval;
+
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, params->currentSegment * params->ovrlap, min(32.5 / series.deltaT, (params->initParams->numSegments - params->currentSegment + 1) * params->ovrlap)), &stat);
 
         /* count the segments to analyze */
         for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
@@ -625,6 +636,8 @@ int main( int argc, char *argv[])
           tmpEvent = NULL;
 
         }
+
+        LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
 
         /* increment to the next segment number to be analyzed */
         params->currentSegment += tmpDutyCycle;
