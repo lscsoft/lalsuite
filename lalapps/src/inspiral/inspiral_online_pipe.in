@@ -215,7 +215,7 @@ for seg in data:
       insp.set_ifo(ifo)
       insp.set_cache(df.get_output())
       insp.set_bank(subbank)
-      trig_job.add_var_opt('user-tag',"%2.2d" % i)
+      insp.add_var_opt('user-tag',"%2.2d" % i)
       insp.add_parent(split)
       dag.add_node(insp)
       sub_insp.append(insp)
