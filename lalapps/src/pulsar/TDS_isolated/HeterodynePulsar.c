@@ -67,7 +67,7 @@ LALHeterodyneToPulsar     ( LALStatus                      *status,
 /* </lalVerbatim> */
 {
   UINT4		n; 
-  UINT4		i, cntr=0;
+  UINT4		i;
   REAL8Vector   *phase;
   REAL8		f0,f1,f2;
   REAL8 	t,T0;
@@ -132,26 +132,19 @@ LALHeterodyneToPulsar     ( LALStatus                      *status,
  /******* DO ANALYSIS ************/
  
  /* calculate instantaneous phase */
-    cntr=1000;
     for (i=0;i<n;i++)
     {    
       t = (REAL8)input->V.epoch.gpsSeconds + (REAL8)input->V.epoch.gpsNanoSeconds*1e-9 + (REAL8)i*deltaT;  
       baryinput.tgps.gpsSeconds = (UINT8)floor(t);
       baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	 
-      if (cntr>512)
-      {
-        LALBarycenterEarth(status->statusPtr, &earth, &baryinput.tgps, params->edat); 
-        LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);  
-        cntr=0;
-      } 
+      LALBarycenterEarth(status->statusPtr, &earth, &baryinput.tgps, params->edat); 
+      LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);  
       T0 = input->fEpochGPS;      
       tdt = t + (double)emit.deltaT - (double)T0;
   
       ph = f0*tdt + 0.5*f1*tdt*tdt + f2*tdt*tdt*tdt/6.0;
-      /* store phase of time stamp i */
       phase->data[i] =  2.0*LAL_PI*fmod(ph, 1.0);
-      cntr++;
-    }
+     }
   
 
   /* do heterodyning, iir filtering, and resampling */
