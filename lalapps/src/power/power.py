@@ -327,14 +327,15 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise PowerError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() 
+    basename = self.get_ifo()
+    basename += '-' + 'POWER'
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
     if self.__usertag:
-      basename += '-' + self.__usertag
+      basename += '_' + self.__usertag
 
-    return basename + '-' + 'POWER' + '-' + str(self.get_start()) + '-' + \
+    return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
   def set_mdccache(self,file):
@@ -369,14 +370,15 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__start = 0
     self.__end = 0
     self.__output = None
-
+    self.__prefix = None
+    
   def __set_output(self):
     """
     Private method to set the file to write the cache to. Automaticaly set
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end :
-      self.__output = 'coincident/' + 'HL' + '-' + str(self.__start) 
+      self.__output = 'coincident/' + str(self.__prefix) + '-' + 'POWER' + '_' + str(self.__usertag) + '-' + str(self.__start) 
       self.__output = self.__output + '-' + str(self.__end - self.__start) + '.xml'
                      
   def set_ifoa(self,file):
@@ -413,6 +415,10 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__end = time
     self.__set_output()
 
+  def set_prefix(self,prefix):
+
+    self.__prefix = prefix
+    
   def get_output(self):
     """
     Return the output file, i.e. the file containing the frame cache data.
