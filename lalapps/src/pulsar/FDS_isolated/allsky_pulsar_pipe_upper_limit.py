@@ -339,7 +339,7 @@ while cont:
 
     # mismatched template variables
     theta=random.uniform(0.0,2*pi)
-    AngularDistance=random.uniform(0.0,math.sqrt(float(alpha_window)**2+float(delta_window)**2))
+    AngularDistance=random.uniform(0.0,math.sqrt(float(alpha_window)**2+float(delta_window)**2)/2.0)
     alphaT=alpha+AngularDistance*math.cos(theta)
     deltaT=delta+AngularDistance*math.sin(theta)
     fstart=f0-float(freq_window)
