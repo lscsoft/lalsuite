@@ -653,7 +653,7 @@ int main( int argc, char *argv[] )
 
   /* count the number of triggers  */
   for( currentTrigger = inspiralEventList, numTriggers = 0; currentTrigger; 
-      currentTrigger = currentTrigger->next, ++numTriggers)
+      currentTrigger = currentTrigger->next, ++numTriggers);
   
   if ( vrbflg ) fprintf( stdout, "%d triggers to be written to trigbank.\n",
       numTriggers );
@@ -667,11 +667,12 @@ int main( int argc, char *argv[] )
 
 cleanexit:
 
-  /* search summary entries: nevents is from primary ifo */
+  /* search summary entries: */
   searchsumm.searchSummaryTable->in_start_time = startTimeGPS;
   searchsumm.searchSummaryTable->in_end_time = endTimeGPS;
   searchsumm.searchSummaryTable->out_start_time = startTimeGPS;
   searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
+  searchsumm.searchSummaryTable->nevents = numTriggers;
   
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
@@ -689,7 +690,7 @@ cleanexit:
   else if ( ifoTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
-        outputIFO, userTag, startTime, endTime - startTime );
+        outputIFO, ifoTag, startTime, endTime - startTime );
   }
   else 
   {
