@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <regex.h>
 #include <pwd.h>
@@ -17,6 +16,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
+
+#include "processtable.h"
 
 #define CVS_REV_STR "$Revision "
 #define CVS_SOURCE_STR "$Source "
