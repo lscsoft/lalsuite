@@ -37,10 +37,9 @@ Usage: lalapps_inspiral_pipe [options]
   -I, --triggered-inspiral run lalapps_inspiral on the second IFO
   -C, --coincidence        run lalapps_inca on the triggers from both IFOs
 
-  -j, --injections         add simulated inspirals from injection file
+  -j, --injections FILE    add simulated inspirals from FILE
 
   -p, --playground-only    only create chunks that overlap with playground
-  -m, --missing-playground pick up only missing playground from chunks
   -P, --priority PRIO      run jobs with condor priority PRIO
 
   -f, --config-file FILE   use configuration file FILE
@@ -49,7 +48,7 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpmju:P:f:l:"
+shortop = "hvdtiTICpj:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -59,9 +58,8 @@ longop = [
   "triggered-bank",
   "triggered-inspiral",
   "coincidence",
-  "injections",
+  "injections=",
   "playground-only",
-  "missing-playground",
   "user-tag=",
   "priority=",
   "config-file=",
@@ -81,13 +79,12 @@ do_inspiral = None
 do_trigbank = None
 do_triginsp = None
 do_coinc = None
-do_inj = None
+inj_file = None
 usertag = None
 playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
-missing_play = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -109,14 +106,11 @@ for o, a in opts:
   elif o in ("-C", "--coincidence"):
     do_coinc = 1
   elif o in ("-j", "--injections"):
-    do_inj = 1
+    inj_file = a
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
     playground_only = 1
-  elif o in ("-m", "--missing-playground"):
-    playground_only = 1
-    missing_play = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
@@ -201,8 +195,8 @@ if usertag:
   inca_job.add_opt('user-tag',usertag)
 
 # add the injections
-if do_inj:
-  insp_job.add_opt('injection-file',cp.get('input','injection-file'))
+if inj_file
+  insp_job.add_opt('injection-file',inj_file)
 
 # set the condor job priority
 if condor_prio:
@@ -229,35 +223,13 @@ data.read(cp.get('input','segments'),length)
 data.make_chunks(length,overlap,playground_only)
 data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 
-# only process jobs that were missed with the bad playground algorithm
-if missing_play:
-  bad_data = pipeline.ScienceData()
-  bad_data.read(cp.get('input','segments'),length)
-  bad_data.make_chunks_bad_play(length,overlap,playground_only)
-  bad_data.make_chunks_from_unused_bad_play(
-    length,overlap/2,playground_only,overlap/2)
- 
-  good_segs = []
-  bad_segs = []
-
-  for i in range(len(data)):
-    good_segs.append({})
-    bad_segs.append({})
-
-    for chunk in data[i]:
-      good_segs[i][chunk.start()] = chunk
-    for chunk in bad_data[i]:
-      bad_segs[i][chunk.start()] = chunk
-
-  for i in range(len(data)):
-    missed = [good_segs[i][k] for k in good_segs[i] if k not in bad_segs[i]]
-    data[i]._ScienceSegment__chunks = missed
-
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
 ifo2 = cp.get('pipeline','ifo2')
 ifo1_snr = cp.get('pipeline','ifo1-snr-threshold')
 ifo2_snr = cp.get('pipeline','ifo2-snr-threshold')
+ifo1_chisq = cp.get('pipeline','ifo1-chisq-threshold')
+ifo2_chisq = cp.get('pipeline','ifo2-chisq-threshold')
 
 # set the name of the ifo to generate the triggered bank from
 trig_job.add_opt('ifo-a',ifo1)
@@ -315,6 +287,7 @@ for seg in data:
     insp1.set_end(chunk.end())
     insp1.add_var_opt('trig-start-time',chunk.trig_start())
     insp1.add_var_opt('snr-threshold',ifo1_snr)
+    insp1.add_var_opt('chisq-threshold',ifo1_chisq)
     insp1.set_ifo(ifo1)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
@@ -347,6 +320,7 @@ for seg in data:
     insp2.set_end(chunk.end())
     insp2.set_ifo(ifo2)
     insp2.add_var_opt('snr-threshold',ifo2_snr)
+    insp2.add_var_opt('chisq-threshold',chisq_snr)
     insp2.add_var_opt('trig-start-time',chunk.trig_start())
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
