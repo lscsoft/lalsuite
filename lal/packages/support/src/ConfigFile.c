@@ -153,7 +153,6 @@ LALLoadConfigFile (LALStatus *stat,
 { /* </lalVerbatim> */
 
   CHARSequence *rawdata = NULL;
-  UINT4 i;
   FILE *fp;
 
   INITSTATUS( stat, "LALLoadConfigFile", CONFIGFILEC );
@@ -190,14 +189,6 @@ LALLoadConfigFile (LALStatus *stat,
   BEGINFAIL (stat)
     LALFree (*cfgdata);
   ENDFAIL (stat);
-
-  if (lalDebugLevel >= 3)
-    {
-      LALPrintError ("ConfigFile DEBUG: parsed config-file contents:\n");
-      for (i=0; i < (*cfgdata)->lines->nTokens; i++)
-	printf ( "%d: '%s'\n", i, (*cfgdata)->lines->tokens[i] );
-    }
-
 
   /* initialize the 'wasRead' flags for the lines */
   if ( ((*cfgdata)->wasRead = LALCalloc (1, (*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) {
