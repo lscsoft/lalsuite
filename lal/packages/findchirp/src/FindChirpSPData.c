@@ -47,7 +47,9 @@ LALFindChirpSPDataInit (
 {
   FindChirpSPDataParams        *dataParamPtr;
   REAL4                        *amp;
-  const REAL4                   exponent = -7.0/6.0;
+  REAL4                        *ampBCV; /* EM */
+  const REAL4                   exponent    = -7.0/6.0;
+  const REAL4                   exponentBCV = -1.0/2.0; /* EM */
   UINT4                         k;
 
   INITSTATUS( status, "LALFindChirpSPDataInit", FINDCHIRPSPDATAC );
@@ -91,7 +93,7 @@ LALFindChirpSPDataInit (
 
   /*
    *
-   * allocate and fill vector for exponent of amplitude
+   * allocate and fill vector for f^(-7/6)
    *
    */
 
@@ -111,6 +113,30 @@ LALFindChirpSPDataInit (
   for ( k = 1; k < dataParamPtr->ampVec->length; ++k )
     amp[k] = pow( ((REAL4) k / (REAL4)params->numPoints), exponent );
 
+  /*
+   *
+   * for the BCV templates, allocate and fill vector for f^(-1/2)
+   *
+   */
+   
+  /* changes: EM */
+  LALCreateVector( status->statusPtr, &dataParamPtr->ampVecBCV,
+        (params->numPoints)/2 + 1 );
+  BEGINFAIL( status )
+  {
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    LALFree( dataParamPtr );
+    *output = NULL;
+  }
+  ENDFAIL( status );
+
+  ampBCV = dataParamPtr->ampVecBCV->data;
+  ampBCV[0] = 0.0;
+
+  for ( k = 1; k < dataParamPtr->ampVecBCV->length; ++k )
+    ampBCV[k] = pow( ((REAL4) k / (REAL4)params->numPoints), exponentBCV );
+  /* end changes: EM */
+
 
   /*
    *
@@ -124,7 +150,9 @@ LALFindChirpSPDataInit (
         params->numPoints, 0 );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);
+    /* previous line: EM */
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -137,9 +165,10 @@ LALFindChirpSPDataInit (
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
-        status );
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);
+    /* previous line: EM */
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -152,11 +181,12 @@ LALFindChirpSPDataInit (
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-        status ); 
+	status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
-        status );
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);
+    /* previous line: EM */
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -168,14 +198,13 @@ LALFindChirpSPDataInit (
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
-        status ); 
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-        status ); 
+	status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
-        status );
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);    /* previous line: EM */
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -189,15 +218,14 @@ LALFindChirpSPDataInit (
   BEGINFAIL( status )
   {
     TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
-        status ); 
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-        status ); 
+	status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
-        status );
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);    /* previous line: EM */
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -209,16 +237,18 @@ LALFindChirpSPDataInit (
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
+    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->tmpltPowerVec),  
+	status );  /* EM  */
     TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
-        status );
+	status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status );
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-        status ); 
+	status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-        status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
-        status );    
+	status );
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status ); 
+    TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCV), status);    /* previous line: EM */
+
     LALFree( dataParamPtr );
     *output = NULL;
   }
@@ -283,20 +313,22 @@ LALFindChirpSPDataFinalize (
 
   LALDestroyVector (status->statusPtr, &dataParamPtr->tmpltPowerVec);
   CHECKSTATUSPTR (status);
+
   LALDestroyVector (status->statusPtr, &dataParamPtr->tmpltPowerVecBCV);
   CHECKSTATUSPTR (status);
 
 
   /*
    *
-   * destroy vector for exponent of amplitude
+   * destroy vectors for exponent of amplitude
    *
    */
 
 
   LALDestroyVector (status->statusPtr, &dataParamPtr->ampVec);
   CHECKSTATUSPTR (status);
-
+  LALDestroyVector (status->statusPtr, &dataParamPtr->ampVecBCV); /*EM*/
+  CHECKSTATUSPTR (status);/*EM*/
 
   /*
    *
@@ -699,6 +731,7 @@ LALFindChirpBCVData (
 
   REAL4                *w;
   REAL4                *amp;
+  REAL4                *ampBCV; /* EM */
   COMPLEX8             *wtilde;
   REAL4		       *tmpltPower;
   REAL4		       *tmpltPowerBCV;
@@ -768,6 +801,10 @@ LALFindChirpBCVData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->ampVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->ampVecBCV, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); /* EM*/
+  ASSERT( params->ampVecBCV->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); /* EM*/
 
   ASSERT( params->wVec, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
@@ -827,6 +864,7 @@ LALFindChirpBCVData (
 
   w             = params->wVec->data;
   amp           = params->ampVec->data;
+  ampBCV        = params->ampVecBCV->data; /* EM */
   wtilde        = params->wtildeVec->data;
   tmpltPower    = params->tmpltPowerVec->data;
   tmpltPowerBCV = params->tmpltPowerVecBCV->data;
@@ -884,6 +922,9 @@ LALFindChirpBCVData (
     LALForwardRealFFT( status->statusPtr, fcSeg->data->data,
         dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
+    LALForwardRealFFT( status->statusPtr, fcSeg->dataBCV->data, /* EM */
+        dataVec, params->fwdPlan );                             /* EM */
+    CHECKSTATUSPTR( status );                                   /* EM */
 
     /* compute strain */
     for ( k = 0; k < fcSeg->data->data->length; ++k )
@@ -993,7 +1034,7 @@ LALFindChirpBCVData (
     /*
      *
      * compute BCV normalisation parameters a1, b1 and b2, 
-     * outputData, point fcSeg at data segment
+     * segment normalization, outputData, point fcSeg at data segment
      *
      */
 
@@ -1001,6 +1042,7 @@ LALFindChirpBCVData (
     fcSeg->a1 = 0.0;
     fcSeg->b1 = 0.0;
     fcSeg->b2 = 0.0;
+    fcSeg->segNorm = 0.0;
 
     for ( k = 0; k < cut; ++k )
     {
@@ -1013,12 +1055,17 @@ LALFindChirpBCVData (
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
 
+    /* 
+     * moments necessary for the calculation of
+     * the BCV normalization parameters
+     */
+    
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
+      fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
-      I53 += 4.0 * amp[k] * pow( (k/(fcSeg->data->data->length)), -1.0/2.0 )
-		* wtilde[k].re ;
-      I1 += 4.0 * pow( (k/(fcSeg->data->data->length)), -1.0 ) * wtilde[k].re;  
+      I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
+      I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  
     }
 
     fcSeg->a1 = 1.0 / sqrt(I73) ;
@@ -1030,10 +1077,8 @@ LALFindChirpBCVData (
       tmpltPower[k]    = 4.0 * fcSeg->a1 * fcSeg->a1 * amp[k] * amp[k] 
 	      * wtilde[k].re;
       Power += tmpltPower[k];
-      tmpltPowerBCV[k] = 4.0 * ( fcSeg->b1 * amp[k] + fcSeg->b2 * 
-         pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) *
-         ( fcSeg->b1 * amp[k] + fcSeg->b2 * 
-	 pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re;
+      tmpltPowerBCV[k] = 4.0 * ( fcSeg->b1 * amp[k] + fcSeg->b2 * ampBCV[k] )
+         * ( fcSeg->b1 * amp[k] + fcSeg->b2 * ampBCV[k] ) * wtilde[k].re;
       PowerBCV += tmpltPowerBCV[k] ;
     }
 
@@ -1041,20 +1086,26 @@ LALFindChirpBCVData (
     {
       outputData[k].re  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
       outputData[k].im  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
-      outputDataBCV[k].re *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b1 *
-	pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re ; 
-      outputDataBCV[k].im *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b1 *
-        pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re ;
+      outputDataBCV[k].re *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b2 *
+	ampBCV[k] ) * wtilde[k].re ; 
+      outputDataBCV[k].im *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b2 *
+        ampBCV[k] ) * wtilde[k].re ;
     }
 
     /* set output frequency series parameters */
     strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
+    strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );
 
     fcSeg->data->epoch.gpsSeconds      = dataSeg->chan->epoch.gpsSeconds;
     fcSeg->data->epoch.gpsNanoSeconds  = dataSeg->chan->epoch.gpsNanoSeconds;
+    fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
+    fcSeg->dataBCV->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;
 
     fcSeg->data->f0     = dataSeg->chan->f0;
     fcSeg->data->deltaF = 1.0 /
+      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+    fcSeg->dataBCV->f0     = dataSeg->chan->f0;
+    fcSeg->dataBCV->deltaF = 1.0 /
       ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
 
     fcSeg->deltaT       = dataSeg->chan->deltaT;
@@ -1072,7 +1123,7 @@ LALFindChirpBCVData (
      */
 
 
-    /* Fisrt set of chisq bins */
+    /* First set of chisq bins */
     if ( numChisqBins )
     {
       increment = Power / (REAL4) numChisqBins;
