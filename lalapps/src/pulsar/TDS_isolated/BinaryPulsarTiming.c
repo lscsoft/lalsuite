@@ -5,7 +5,69 @@
 	 
 /*	 Also contains function to read TEMPO .par files to obtain parameters
 	and errors on parameters (if available) */
+
+/* <lalVerbatim file="BinaryPulsarTiming">
+	 Author: Pitkin, M. D.
+	 $Id$
+	 </lalVerbatim>
 	 
+	 <lalLaTeX>
+	 \subsection{Module \texttt{BinaryPulsarTiming.c}}
+	 \label{ss:BinaryPulsarTiming.c}
+	 
+	 Functions for calculating the timing delay to a signal from a pulsar in a
+	 binary system and reading pulsar parameters from TEMPO \cite{TEMPO} .par
+	 files.
+	 
+	 \subsubsection*{Prototypes}
+	 \vspace{0.1in}
+	 \input{BinaryPulsarTimingCP}
+	 \idx{LALBinaryPulsarDeltaT()}
+	 \idx{LALReadTEMPOParFile()}
+	 \idx{degsToRads()}
+	 
+	 \subsubsection*{Description}
+	 
+	 The main function computes the time delay of a signal from a pulsar in a
+	 binary system due to doppler shifts and relativistic delays, 
+	 \begin{equation}
+	 \Delta{}t = t_{\rm Roemer} + t_{\rm Shapiro} + t_{\rm Einstein} + t_{\rm
+	 Abberation},
+	 \end{equation}
+	 where $t_{\rm Roemer}$ is the light travel time, $t_{\rm Shapiro}$ is the
+	 General relativistic time delay, $t_{\rm Einstein}$ is the special
+	 relativistic time delay, and $t_{\rm Abberation}$ is the delay caused by the
+	 pulsars' rotation. There are several models of the binary systems, described 
+	 in \cite{TaylorWeisberg:1989}, of which the three most common a so far
+	 implemented. The three models are Blandford-Teukolsky (BT)
+	 \cite{BlandfordTeukolsky:1976}, the low ellipticity model (ELL1)
+	 \cite{ChLangeetal:2001} and Damour-Deruelle (DD) \cite{DamourDeruelle:1985}.
+	 These three models all use the five main binary parameters: the longitude of
+	 periastron $\omega_0$, the eccentricity of the orbit $e$, the orbital period
+	 $P$, the time of periastron/or the time of ascension of the first node 
+	 $T_0$/$T_{{\rm asc}}$, and the projected semi-major axis $a\sin{}i$. The are
+	 also many other model dependent parameters. These routines closely follow
+	 those used in the radio astronomy package TEMPO \cite{TEMPO}.
+	 
+	 Radio astronomer will fit pulsar parameters using TEMPO which will output the
+	 parameters in a \verb+.par+ file. The values allowed in this file can be
+	 found in the TEMPO documentation. A function is included to extract these 
+	 parameters from the \verb+.par+ files and put them into a
+	 \verb+BinaryPulsarParams+ structure, it will set any unused parameters to
+	 zero or \texttt{NULL}. All parameters are in the units used by TEMPO with any
+	 conversion to SI units occuring within the binary timing routines. A function
+	 is also included which converts a string containing the right ascension or 
+	 declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s} 
+	 (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in 
+	 radians.
+	 
+	 \subsubsection*{Notes}
+	 
+	 \vfill{\footnotesize\input{BinaryPulsarTimingCV}}
+	 
+	 </lalLaTeX>
+*/
+
 /* Matt Pitkin 29/04/04 */
 
 #include "BinaryPulsarTiming.h"
@@ -23,6 +85,7 @@ NRCSID( BINARYPULSARTIMINGC, "$Id$" );
 void
 LALBinaryPulsarDeltaT( LALStatus						*status,
 											 BinaryPulsarOutput		*output,
+											 BinaryPulsarInput		*input,
 											 BinaryPulsarParams		*params )
 {
 	REAL8 dt;	/* binary pulsar deltaT */
@@ -50,6 +113,22 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 	INITSTATUS(status, "LALBinaryPulsarDeltaT", BINARYPULSARTIMINGC);
 	ATTATCHSTATUSPTR(status);
 	
+	/* Check input arguments */
+	ASSERT(input != (BinaryPulsarInput *)NULL, status, 
+	BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT);
+	
+	ASSERT(output != (BinaryPulsarOutput *)NULL, status, 
+	BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
+	
+	ASSERT(params != (BinaryPulsarParams *)NULL, status, 
+	BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS);
+	
+	ASSERT((strstr(params->model, "BT") != NULL) || 
+				 (strstr(params->model, "ELL1") != NULL) ||
+				 (strstr(params->model, "DD") != NULL), status,
+				 BINARYPULSARTIMINGH_ENULLBINARYMODEL, 
+				 BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
+	
 	/* convert certain params to SI units */
 	w0 = params->w0*LAL_PI_180; /* convert w to rads from degs */
 	wdot = params->wdot*LAL_PI_180/(365.25*DAYSTOSECS); /* convert wdot to rads/s from degs/yr */
@@ -60,15 +139,16 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 	T0 = params->T0*DAYSTOSECS; /* covert T0 from MJD to secs */
 	Tasc = params->Tasc*DAYSTOSECS; /* convert Tasc from MJD to secs */
 	
-	if(strstr(params->tbflag, "MJD") != NULL){
-		tb = params->tb*DAYSTOSECS;
+	if(strstr(input->tbflag, "MJD") != NULL){
+		tb = input->tb*DAYSTOSECS;
 	}
-	else if(strstr(params->tbflag, "GPS") != NULL){
-		tb = params->tb - params->leapSecs;
+	else if(strstr(input->tbflag, "GPS") != NULL){
+		tb = input->tb - input->leapSecs;
 	}
 	else{
-		/* need some error check here, say, an ASSERT function and LAL error
-		message*/
+		ASSERT((strstr(input->tbflag, "GPS") != NULL) || 
+		(strstr(input->tbflag, "MJD") != NULL), status, 
+		BINARYPULSARTIMINGH_ENULLTBFLAG, BINARYPULSARTIMINGH_MSGENULLTBFLAG);
 	}
 	 
 	e = params->e;
@@ -117,10 +197,10 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 		REAL8 du = 1.0; 
 		
 		/* set some vars for bnrybt.f (TEMPO) method */
-		REAL8 tt;
+		/*REAL8 tt;
 		REAL8 som;
 		REAL8 com;
-		REAL8 alpha, beta;
+		REAL8 alpha, beta;*/
 		/*REAL8 q, r, s;*/
 		
 		/*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary model.\n");*/		
@@ -363,9 +443,14 @@ LALReadTEMPOParFile(	LALStatus *status,
 {
 	FILE *fp;
 	CHAR val[500][20]; /* string array to hold all the read in values 
-												500 strings of max 20 characters is enough */
-	
+												500 strings of max 20 characters is enough */	
 	INT4 i=0, j=1, k;
+	
+	INITSTATUS(status, "LALReadTEMPOParFile", BINARYPULSARTIMINGC);
+	ATTATCHSTATUSPTR(status);
+	
+	ASSERT(output != (BinaryPulsarParams *)NULL, status, 
+	BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
 	
 	output->model = NULL; /* set binary model to null - incase not a binary */
 	
@@ -459,14 +544,16 @@ LALReadTEMPOParFile(	LALStatus *status,
 	output->xErr=0.0;
 	output->T0Err=0.0;
 	
-	if((fp = fopen(pulsarAndPath, "r"))==NULL){
-		fprintf(stderr, "For %s path is wrong or file doesn't exist.\n",
-		pulsarAndPath);
-		return;
-	}
+	fp = fopen(pulsarAndPath, "r");
 	
+	ASSERT(fp!=NULL, status, BINARYPULSARTIMINGH_EPARFILEERROR,
+				 BINARYPULSARTIMINGH_MSGEPARFILEERROR);
+		
 	/* read all the pulsar data into the string array */
 	while(!feof(fp)){
+		/* make sure val[i] is clear first */
+		sprintf(val[i], "%s", "");
+		
 		fscanf(fp, "%s", val[i]);
 		i++;
 	}
@@ -481,9 +568,14 @@ LALReadTEMPOParFile(	LALStatus *status,
 		 param (in same units as the param) */
 	while(1){
 		j=i;
-		if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
+		if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
+			output->name = val[i+1];
+			
+			j++;
+		}
+		else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
 			/* this can be in form hh:mm:ss.ss or hhmmss.ss */
-			output->ra = degsToRads(val[i+1], "RA");
+			output->ra = LALDegsToRads(val[i+1], "RA");
 			j++;
 			
 			/* only try to get error if one exists */
@@ -494,7 +586,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 			}
 		}
 		else if(!strcmp(val[i],"dec") || !strcmp(val[i],"DEC") || !strcmp(val[i],"DECJ")) {
-			output->dec = degsToRads(val[i+1], "DEC");
+			output->dec = LALDegsToRads(val[i+1], "DEC");
 			j++;
 			
 			if(atoi(val[i+2])==1){
@@ -539,7 +631,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 				 before the d/D but not the exponent */
 			CHAR *loc;
 				
-			output->f0 = atof(val[j+1]);
+			output->f0 = atof(val[i+1]);
 			j++;
 			
 			if(atoi(val[i+2])==1){
@@ -563,7 +655,7 @@ LALReadTEMPOParFile(	LALStatus *status,
 				output->f1 = atof(val[i+1])*pow(10, atof(loc+1));
 			}
 			else{
-				output->f1 = atof(val[j+1]);
+				output->f1 = atof(val[i+1]);
 			}
 			j++;
 			
@@ -631,7 +723,8 @@ LALReadTEMPOParFile(	LALStatus *status,
     }
 		else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
 			/*sprintf(output->model, "%s", val[j+1]);*/
-			output->model = val[j+1];
+			output->model = val[i+1];
+			
 			j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
@@ -855,22 +948,21 @@ LALReadTEMPOParFile(	LALStatus *status,
 	}	
 	
 	/*fprintf(stderr, "Have I got to the end of LALReadPARFile.\n");*/
-	fclose(fp);	
-	
+	fclose(fp);
+		
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
 }
 
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format 
    dd/hhmmss.ss to radians */
-double degsToRads(char *degs, char *coord){
-	double radians;
-	int d, m;
-	double s;
-	char dc[3]="", mc[3]="", *sc=NULL;
-	char *loc;
-	int ch=58; /* 58 is the ascii number for : */
-	int i, n;
+REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
+	REAL8 radians;
+	INT4 d, m;
+	REAL8 s;
+	CHAR dc[3]="", mc[3]="", *sc=NULL;
+	CHAR *loc;
+	INT4 n;
 	
 	/* if in format dd/hh:mm:ss.s do this*/
 	/* locate first : */
@@ -917,13 +1009,13 @@ double degsToRads(char *degs, char *coord){
 	
 	if(strstr(coord, "ra") || strstr(coord, "RA") || strstr(coord, "alpha")){
 		/* convert from hh:mm:ss to radians */
-		radians = LAL_PI_180*(double)d*(360.0/24.0);
-		radians += LAL_PI_180*((double)m/60.0)*(360.0/24.0);
+		radians = LAL_PI_180*(REAL8)d*(360.0/24.0);
+		radians += LAL_PI_180*((REAL8)m/60.0)*(360.0/24.0);
 		radians += LAL_PI_180*(s/(60.0*60.0))*(360.0/24.0);
 	}
 	else if(strstr(coord, "dec") || strstr(coord, "DEC") || strstr(coord, "delta")){
 		/* convert from dd:mm:ss to radians */
-		radians = LAL_PI_180*(double)d;
+		radians = LAL_PI_180*(REAL8)d;
 		
 		/* if dec is negative convert mins and secs to -ve numbers */
 		if(d<0){
@@ -931,7 +1023,7 @@ double degsToRads(char *degs, char *coord){
 			s = -s;
 		}
 		
-		radians += LAL_PI_180*(double)m/60.0;
+		radians += LAL_PI_180*(REAL8)m/60.0;
 		radians += LAL_PI_180*s/(60.0*60.0);
 	}
 	
