@@ -5,12 +5,13 @@ FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref
 else
 FRAMEPROGRAMS = 
 endif
-bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors
+bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain lalapps_ComputeFactors lalapps_ComputeStrainDriver
 if FRAME
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
 lalapps_ComputeStrain_SOURCES = ComputeStrain.c
+lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
@@ -24,3 +25,4 @@ EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh \
   S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt
 MOSTLYCLEANFILES = *.ilwd *.gwf
 TESTS = mkcalfiles_test.sh
+
