@@ -83,7 +83,7 @@ int main(int argc, char *argv[]){
 		}
 		
 		fprintf(fp,
-	"%d\t%s\t%.11lf\t%.11lf\t%.4e\t%.4e\t%.6lf\t%.16lf\t%.13e\t%.13e\t%.6lf\t%s\t%.8lf\t%.8lf\t%.12lf\t%.5e\t%.10lf\t%.5e\t%.7lf\t%.5e\t%.8e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5f\t%.5f\t%.5f\t%.5e\t%.5e\t%.5e\t%.5e\n", 
+	"%d\t%s\t%.11lf\t%.11lf\t%.4e\t%.4e\t%.6lf\t%.16lf\t%.13e\t%.13e\t%.6lf\t%s\t%.9lf\t%.9lf\t%.12lf\t%.5e\t%.10lf\t%.5e\t%.7lf\t%.5e\t%.8e\t%.6e\t%.5e\t%.6e\t%.5e\t%.5e\t%.5e\t%.5e\t%.5f\t%.5f\t%.5f\t%.5e\t%.5e\t%.5e\t%.5e\n", 
 		i-1, psrname, params.ra, params.dec, params.pmra, params.pmdec, 
 		params.posepoch, params.f0,params.f1, params.f2, params.pepoch, 
 		params.model, params.T0, params.Tasc, params.Pb, params.Pbdot, params.x, 
