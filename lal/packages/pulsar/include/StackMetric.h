@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 
-\newcommand{\bm}[1]{\mbox{\boldmath$#1$\unboldmath}}
+\providecommand{\bm}[1]{\mbox{\boldmath$#1$\unboldmath}}
 
 \section{Header \texttt{StackMetric.h}}
 \label{s:StackMetric.h}
