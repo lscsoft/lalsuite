@@ -3001,12 +3001,17 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   CHAR *cacheFile,
   CHAR *channel,
   LIGOTimeGPS start,
-  LIGOTimeGPS end)
+  size_t length)
 {
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
   FrCache *frameCache = NULL;
+  LIGOTimeGPS end;
+
+  /* set end time */
+  end.gpsSeconds = start.gpsSeconds + length;
+  end.gpsNanoSeconds = start.gpsNanoSeconds;
 
   /* Open frame stream */
   LAL_CALL(LALFrCacheImport(status, &frameCache, cacheFile), status);
