@@ -1,3 +1,7 @@
+#define DELM 0.0001
+#define H1L1DISTANCE 0.018
+#define COINWINDOW 0.011
+
 #define MAXSTR       256
 
 #define RESPONSEC_ENORM  0
@@ -18,9 +22,7 @@
 
 /* Usage format string. */
 #define USAGE "Usage: %s [options]\n"\
-        "--help                 Print this help message\n" \
-        "[--veto vetofile]      File with veto metadata\n" \
-        "[--trigger trigfile]   File with trigger/injection metadata\n" \
-        "[--times file safety]  File with t dt and how much data per seg is ignored\n"
+        "--help                           Print this help message\n" \
+        "--ifofiles ifo1.cfg ifo2.cfg     Configurat\n"
 
 

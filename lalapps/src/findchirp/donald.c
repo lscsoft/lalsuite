@@ -4,11 +4,11 @@
 #include <string.h>
 #include <lal/Thresholds.h>
 #include <lal/LALStdlib.h>
+#include <lalapps.h>
 #include "metaio.h"
 #include "event_utils.h"
 #include "donald.h"
-
-INT4 lalDebugLevel = LALNDEBUG;
+RCSID("$Id$");
 
 static int getline(char *line, int max, FILE *fpin)
 {
@@ -19,6 +19,7 @@ static int getline(char *line, int max, FILE *fpin)
     else 
         return strlen(line);
 }
+
 
 /**********************************************************************************
  *
@@ -77,7 +78,7 @@ int readconfig(snglIFO *ifo, FILE *fp, FILE *logfile)
                 }
 
                 /* copy the veto information into the structure */
-                for( i=2; i<7 && (vcol[i]=strtok(NULL,";")) ; i++) { }
+                for( i=2; i<8 && (vcol[i]=strtok(NULL,";")) ; i++) { }
 
                 /***********************************************************
                  *
@@ -96,6 +97,7 @@ int readconfig(snglIFO *ifo, FILE *fp, FILE *logfile)
                 (*thisentry).threshold = atof(vcol[4]);
                 (*thisentry).minusdtime = atof(vcol[5]);
                 (*thisentry).plusdtime = atof(vcol[6]);
+                (*thisentry).ratio = atof(vcol[7]);
             }
             /********************************************************************
              *
@@ -170,15 +172,18 @@ int readconfig(snglIFO *ifo, FILE *fp, FILE *logfile)
                     double dummys,dummye,ovrlap=ifo->safety;
                     int    doneflag, segnum;
 
-                    sscanf(vetoline, "%i %lf %lf %i\n", &doneflag, &dummys, &dummye, &segnum);
+                    sscanf(vetoline, "%i %lf %lf %i\n", 
+                            &doneflag, &dummys, &dummye, &segnum);
                     if (doneflag) {
                         if ( ! (ifo->awindows) ){
-                            thiswindow = ifo->awindows = (timeWindow *)malloc(sizeof(timeWindow));
+                            thiswindow = ifo->awindows = 
+                                (timeWindow *)malloc(sizeof(timeWindow));
                             (*thiswindow).next_time_window = NULL;
                         }
                         else
                         {
-                            (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
+                            (*thiswindow).next_time_window = 
+                                (timeWindow *)malloc(sizeof(timeWindow));
                             thiswindow = (*thiswindow).next_time_window;
                             (*thiswindow).next_time_window = NULL;
                         }
@@ -222,12 +227,16 @@ int main(int argc, char **argv)
     timeWindow *thiswindow=NULL,*vwindows=NULL, *awindows=NULL;
     double timeVetoed=0.0;
     candEvent *thisCEvent=NULL, *myevent=NULL, *thisIEvent=NULL;
-    float time_analyzed, delm;
+    float time_analyzed, delm=DELM;
     int **triggerHistogram, **injectHistogram, numbins=40, *coincident_times;
     snglIFO ifo[2];
-    double dummyStart=0,dummyEnd=0,coincidence_window;
-    float distance;
+    double dummyStart=0,dummyEnd=0,coincidence_window=COINWINDOW;
+    float distance=H1L1DISTANCE;
     multiInspiral *multInspEv;
+    static LALStatus        status;
+    lal_errhandler = LAL_ERR_EXIT;
+
+  set_debug_level( "3" );
 
     /*******************************************************************
      * PARSE ARGUMENTS (arg stores the current position)               *
@@ -285,7 +294,6 @@ int main(int argc, char **argv)
      * 
      ****************************************************************/
     for ( i=0 ; i<numIFO ; i++ ){
-        
         
         fprintf(fpout,"# Working on IFO %s out of %i\n",ifo[i].ifoname,numIFO);
 
@@ -433,6 +441,7 @@ int main(int argc, char **argv)
      *
      *************************************************************************/
     fprintf(fpout,"# Looking for coincidences\n"); fflush(fpout);
+    LALSortTriggers(&status,ifo,numIFO);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
             TRIGGERS, dummyStart);
 
@@ -512,6 +521,7 @@ int main(int argc, char **argv)
         prev_value = 0;
         for(i=0;i<numPts;i++){
             if ( coincident_times[i] != prev_value ){
+                fprintf(tmpPtr,"%lf %i\n",dummyStart+0.1*(double)(i-1),prev_value);
                 fprintf(tmpPtr,"%lf %i\n",dummyStart+0.1*(double)i,coincident_times[i]);
             }
             if ( coincident_times[i] > 0 ){
@@ -523,8 +533,8 @@ int main(int argc, char **argv)
 
     fprintf(fpout,"ninject:=%i;\n", countsamples);
     fprintf(fpout,"T = %1.2f sec = %1.2f hr\n", 
-            (time_analyzed - timeVetoed),
-            (time_analyzed - timeVetoed)/3600.0);
+            (time_analyzed),
+            (time_analyzed)/3600.0);
     fprintf(fpout,"# Finished\n");
     fflush(fpout);
 
@@ -533,12 +543,11 @@ int main(int argc, char **argv)
      * Compute the upper limit
      *********************************************************/
     {
-        FILE  *ulout;
-        float *snrbin, snrdiv, minsnr=8.0,maxsnr=minsnr+10.0,*efficiency,*numevents;
+        FILE  *ulout,*compout;
+        float *snrbin, snrdiv, minsnr=10.0,maxsnr=minsnr+10.0,*efficiency,*numevents;
         double mu;
-        int    numbins=800,k;
+        int    numbins=800,k,first;
         Chi2ThresholdIn  thresholdIn;
-        static LALStatus        status;
 
         ulout = fopen("ul.dat","w");
 
@@ -579,18 +588,27 @@ int main(int argc, char **argv)
         }
         fprintf(ulout,"# snr numevents efficiency\n");
 
+        compout = fopen("comparisons.txt","a");
+        first=1;
         for ( k = 0; k < numbins; ++k )
         {
             thresholdIn.falseAlarm=0.1;
             thresholdIn.dof=2.0*(numevents[k]+1);
             LALChi2Threshold(&status, &mu, &thresholdIn);
             mu /= 2.0;
-            fprintf( ulout, "%f %f %f %f\n", snrbin[k],numevents[k],
+            fprintf( ulout, "%f %f %f %e %e %e\n", snrbin[k],numevents[k],
                     efficiency[k]/(float)countsamples,
                     (3600.0*countsamples*(float)mu)/
-                    (efficiency[k]*(time_analyzed-timeVetoed)));
+                    (efficiency[k]*(time_analyzed)), mu,
+                    thresholdIn.dof);
+            if ( numevents[k] == 0 && first ){
+                fprintf(compout,"%f\t%e\t%f\t%f\n",coincidence_window,
+                        delm,distance,efficiency[k]/(float)countsamples);
+                first = 0;
+            }
         }
 
+        fclose(compout);
         fclose(ulout);
         free(snrbin);
         free(efficiency);
