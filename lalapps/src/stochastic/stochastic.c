@@ -567,71 +567,14 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   FrFileOEnd(frfile);
 }
 
-/* function to return a rectangular window */
-static REAL4TimeSeries *rectangular_window(LALStatus *status,
-    REAL8 deltaT,
-    REAL8 f0,
-    INT4 length)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  LIGOTimeGPS gps_time;
-  INT4 i;
-
-  /* set time */
-  gps_time.gpsSeconds = 0;
-  gps_time.gpsNanoSeconds = 0;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", gps_time, f0, \
-        deltaT, lalDimensionlessUnit, length), status);
-
-  /* generate window */
-  for (i = 0; i < length; i++)
-    series->data->data[i] = 1;
-
-  return(series);
-}
-
-/* function to return a hann window */
-static REAL4TimeSeries *hann_window(LALStatus *status,
-    REAL8 deltaT,
-    REAL8 f0,
-    INT4 length)
-{
-  /* variables */
-  REAL4TimeSeries *series;
-  LIGOTimeGPS gps_time;
-  LALWindowParams window_params;
-
-  /* set time */
-  gps_time.gpsSeconds = 0;
-  gps_time.gpsNanoSeconds = 0;
-
-  /* allocate memory */
-  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", gps_time, f0, \
-        deltaT, lalDimensionlessUnit, length), status);
-
-  /* set window parameters */
-  window_params.length = length;
-  window_params.type = Hann;
-
-  /* generate window */
-  LAL_CALL(LALWindow(status, series->data, &window_params), status);
-
-  return(series);
-}
-
 /* function to return the data window */
-static REAL4TimeSeries *data_window(LALStatus *status,
-    REAL8 deltaT,
-    REAL8 f0,
+static REAL4Window *data_window(REAL8 deltaT,
     INT4 length,
     INT4 hann_duration)
 {
   /* variables */
-  REAL4TimeSeries *series;
-  REAL4TimeSeries *hann;
+  REAL4Window *window = NULL;
+  REAL4Window *hann = NULL;
   INT4 hann_length;
   INT4 i;
 
@@ -641,34 +584,35 @@ static REAL4TimeSeries *data_window(LALStatus *status,
   if (hann_length == 0)
   {
     /* rectangular window requested */
-    series = rectangular_window(status, deltaT, f0, length);
+    window = XLALCreateRectangularREAL4Window(length);
   }
   else if (hann_length == length)
   {
     /* pure hann window requested */
-    series = hann_window(status, deltaT, f0, length);
+    window = XLALCreateHannREAL4Window(length);
   }
   else if ((hann_length > 0) && (hann_length < length))
   {
-    series = rectangular_window(status, deltaT, f0, length);
-    hann = hann_window(status, deltaT, f0, hann_length);
+    window = XLALCreateRectangularREAL4Window(length);
+    hann =  XLALCreateHannREAL4Window(hann_length);
 
     /* construct tukey window */
+    
     for (i = 0; i < hann_length / 2; i++)
-      series->data->data[i] = hann->data->data[i];
+      window->data->data[i] = hann->data->data[i];
     for (i = hann_length / 2; i < hann_length; i++)
-      series->data->data[length - hann_length + i] = hann->data->data[i];
+      window->data->data[length - hann_length + i] = hann->data->data[i];
 
     /* free memory for hann window */
-    XLALDestroyREAL4TimeSeries(hann);
+    XLALDestroyREAL4Window(hann);
   }
   else
   {
-    fprintf(stderr, "invalid hann length to data_window()...\n");
+    fprintf(stderr, "Invalid hann_length to data_window()...\n");
     exit(1);
   }
 
-  return(series);
+  return(window);
 }
 
 /* wrapper function for calculating the inverse noise */
@@ -1709,7 +1653,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
-  REAL4TimeSeries *dataWindow;
+  REAL4Window *dataWindow;
 
   /* response functions */
   COMPLEX8FrequencySeries *responseTempOne;
@@ -2055,8 +1999,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     hannDuration = segmentDuration;
 
   /* create window for data */
-  dataWindow = data_window(&status, seriesOne->deltaT, 0, \
-      segmentLength, hannDuration);
+  dataWindow = data_window(seriesOne->deltaT, segmentLength, hannDuration);
 
   /* zeropad lengths */
   zeroPadLength = 2 * segmentLength;
@@ -2487,7 +2430,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* set normalisation parameters */
       normParams.fRef = fRef;
       normParams.heterodyned = 0;
-      normParams.window1 = normParams.window2 = dataWindow->data;
+      normParams.window1 = dataWindow->data;
+      normParams.window2 = dataWindow->data;
 
       /* set normalisation input */
       normInput.overlapReductionFunction = overlap;
@@ -2773,7 +2717,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(calInvPsdTwo);
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
-  XLALDestroyREAL4TimeSeries(dataWindow);
+  XLALDestroyREAL4Window(dataWindow);
   XLALDestroyCOMPLEX8FrequencySeries(hBarTildeOne);
   XLALDestroyCOMPLEX8FrequencySeries(hBarTildeTwo);
   if (inject_flag)
