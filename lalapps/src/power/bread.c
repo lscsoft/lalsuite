@@ -16,11 +16,14 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input filename --output filename " \
-	"[--max-confidence maximum conf] [--noplayground] [--sort] [--min-duration min dur] " \
-	"[--max-duration max dur] [--min-centralfreq min central_freq] " \
-	"[--max-centralfreq max central_freq] [--max-bandwidth max bw] " \
-	"[--min-bandwidth min bw] [--min-amplitude min amp] [--max-amplitude max amp] " \
-	"[--min-snr min snr] [--max-snr max snr] [--min-start-time time] [--max-start-time time] [--help]\n"
+	"[--max-confidence maximum conf] [--noplayground] [--sort] [--cluster] " \
+	"[--min-duration min dur] [--max-duration max dur] " \
+	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
+	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
+	"[--min-amplitude min amp] [--max-amplitude max amp] " \
+	"[--min-snr min snr] [--max-snr max snr] " \
+	"[--min-start-time time] [--max-start-time time] " \
+	"[--help]\n"
 
 #define SNGLBURSTREADER_EARG   1
 #define SNGLBURSTREADER_EROW   2
@@ -58,6 +61,7 @@ static int getline(char *line, int max, FILE *file)
 
 struct options_t {
 	int verbose;
+	int cluster;
 	int playground;
 	int noplayground;
 	int sort;
@@ -110,6 +114,7 @@ struct options_t {
 static void set_option_defaults(struct options_t *options)
 {
 	options->verbose = FALSE;
+	options->cluster = FALSE;
 	options->playground = FALSE;
 	options->noplayground = FALSE;
 	options->sort = FALSE;
@@ -156,6 +161,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	struct option long_options[] = {
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, TRUE},
+		{"cluster",         no_argument,        &options->cluster, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
 		{"output",          required_argument,  NULL,  'c'},
@@ -585,6 +591,13 @@ int main(int argc, char **argv)
 		fprintf(fpout, "# Total time analysed = %d\n", timeAnalyzed);
 		fclose(fpout);
 	}
+
+	/*
+	 * Cluster the events
+	 */
+
+	if(options.cluster)
+		LAL_CALL(LALClusterSnglBurstTable(&stat, burstEventList), &stat);
 
 
 	/*

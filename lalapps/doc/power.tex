@@ -1401,6 +1401,7 @@ Jolien Creighton, Patrick Brady, Duncan Brown
 [\verb$--max-confidence$ \textsc{maximum conf}]
 [\verb$--noplayground$]
 [\verb$--sort$]
+[\verb$--cluster$]
 [\verb$--min-duration$ \textsc{min dur}]
 [\verb$--max-duration$ \textsc{max dur}]
 [\verb$--min-centralfreq$ \textsc{min centralfreq}]
@@ -1441,8 +1442,15 @@ Optional. By default only triggers lying inside the playground are output. If th
 specified then all the triggers will be output. 
 
 \item[\texttt{--sort}]
-Not properly implemented yet. Now the triggers are always sorted in time before being written
-out.
+Not properly implemented yet. Now the triggers are always sorted in time
+before being written out.
+
+\item[\texttt{--cluster}]
+Apply the LAL SnglBurstTable clustering algorithm to the triggers before
+applying any cuts.  This is the same algorithm used by
+\prog{lalapps\_power}.  Running \prog{lalapps\_power} without clustering,
+followed by a clustering pass with \prog{lalapps\_bread} is equivalent to
+applying clustering in \prog{lalapps\_power}.
 
 \item[\texttt{--min-duration} \textsc{duration}]
 Optional. Outputs only the triggers with a duration greater than or equal to the value specified.
