@@ -316,7 +316,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'i':
-        timeInterval = 1000000000LL * atof( optarg );
+        timeInterval = atof( optarg );
         if ( timeInterval < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -326,7 +326,7 @@ int main( int argc, char *argv[] )
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%le", timeInterval/1000000000 );
+              "float", "%le", timeInterval );
         break;
 
       case 'A':
@@ -482,6 +482,24 @@ int main( int argc, char *argv[] )
   /* null out the head of the linked list */
   injections.simInspiralTable = NULL;
 
+  /* create the output file name */
+  if ( userTag )
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+        randSeed, userTag, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+  else
+  {
+    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+        randSeed, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  }
+
+  /* check that the start time is before the end time */
+  LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, &gpsEndTime ),
+      &status );
+
 
   /*
    *
@@ -489,11 +507,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
-  /* set the time of the first injection */
-  galacticPar.geocentEndTime = gpsStartTime;
-  LAL_CALL( LALCompareGPS( &status, &compareGPS, 
-        &(galacticPar.geocentEndTime), &gpsEndTime ), &status );
 
   while ( compareGPS == LALGPS_EARLIER )
   {
@@ -556,21 +569,24 @@ int main( int argc, char *argv[] )
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
 
-    /* populate the sim_inspiral table */
-    LAL_CALL( LALGalacticInspiralParamsToSimInspiralTable( &status,
-          this_inj, &galacticPar, randParams ), &status );
-
-    /* increment the injection time */
-    LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
-          &(galacticPar.geocentEndTime), meanTimeStep ), &status );
+    /* set the geocentric end time of the injection */
+    galacticPar.geocentEndTime = gpsStartTime;
     if ( timeInterval )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
             &(galacticPar.geocentEndTime), u * timeInterval ), &status );
     }
-    LAL_CALL( LALCompareGPS( &status, &compareGPS, 
-          &(galacticPar.geocentEndTime), &gpsEndTime ), &status );
+
+    /* populate the sim_inspiral table */
+    LAL_CALL( LALGalacticInspiralParamsToSimInspiralTable( &status,
+          this_inj, &galacticPar, randParams ), &status );
+
+    /* increment the injection time */
+    LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
+          meanTimeStep ), &status );
+    LAL_CALL( LALCompareGPS( &status, &compareGPS, &gpsStartTime, 
+          &gpsEndTime ), &status );
 
   } /* end loop over injection times */
 
@@ -584,20 +600,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
-  /* create the file name */
-  if ( userTag )
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-        randSeed, userTag, gpsStartTime.gpsSeconds, 
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-  }
-  else
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-        randSeed, gpsStartTime.gpsSeconds, 
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-  }
 
   /* open the xml file */
   memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
