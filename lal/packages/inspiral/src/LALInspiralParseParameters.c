@@ -106,6 +106,8 @@ None
 NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
 
 
+void LALInspiralITStrucutreInit2Dummy(LALStatus *status, 
+				      InspiralTemplate *params);
 
 
 
@@ -244,7 +246,7 @@ void LALInspiralITStrucutreInit2Dummy(LALStatus *status,
   params->approximant  = -1;
   params->order        = -1;
   params->mass1        = -1;
-  params->mass1        = -1;
+  params->mass2        = -1;
   params->fCutoff      = -1;
   params->fLower       = -1;
   params->tSampling    = -1; 
@@ -291,10 +293,10 @@ void LALInspiralITStructureCheck(LALStatus *status,
   switch (params.approximant)
     {
     case BCV:
-      if (params.alpha < 0) {  
+/*      if (params.alpha < 0) {  
 	ABORT(status, LALINSPIRALH_EALPHA, LALINSPIRALH_MSGEALPHA);
-      }
-      else if (params.fCutoff < 0){
+      }*/
+       if (params.fCutoff < 0){
 	ABORT(status, LALINSPIRALH_EFCUTOFF,  LALINSPIRALH_MSGEFCUTOFF);
       }
       else if (params.psi0 < 0) {

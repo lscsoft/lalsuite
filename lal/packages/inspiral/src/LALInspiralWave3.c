@@ -84,7 +84,8 @@ LALInspiralWave3 (
 
 { /* </lalVerbatim>  */
 
-  INT4 i, startShift, count;
+  
+  UINT4 count, i, startShift;
   REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi;
   REAL8 v, f, fHigh, amp, tmax, fOld, phase;
   DFindRootIn rootIn;
@@ -221,7 +222,7 @@ LALInspiralWave3 (
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
 */
-  while (i < (int)output->length) 
+  while (i < output->length) 
   {
       output->data[i]=0.0;
       i++;
@@ -401,7 +402,7 @@ LALInspiralWave3ForInjection (
      /* </lalVerbatim>  */
 {
   
-  INT4 i, startShift, count;
+  UINT4 i, startShift, count;
   REAL8 dt, fHigh, ieta, eta, tc, totalMass, t, td, c1,  phi,omega;
   REAL8 v, f, amp, tmax, fOld, phase;
   expnFunc func;
@@ -427,7 +428,6 @@ LALInspiralWave3ForInjection (
   REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
   REAL8 phiC;/* phase at coalescence */
 
-  CHAR message[256];
   
   InspiralInit paramsInit;  
   

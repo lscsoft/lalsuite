@@ -92,7 +92,7 @@ LALInspiralInit (LALStatus        *status,
     status->statusPtr->statusCode = 0;    
     paramsInit->nbins = 0;
 
-    sprintf(message, "#Estimated Length (seconds) = %lf | fCutoff = %lf",
+    sprintf(message, "#Estimated Length (seconds) = %f | fCutoff = %f",
 	    paramsInit->ak.tn, params->fCutoff);
     LALInfo(status, message);
 
@@ -105,7 +105,7 @@ LALInspiralInit (LALStatus        *status,
     LALWarning(status,  LALINSPIRALH_MSGESIZE);
     status->statusPtr->statusCode = 0;    
     paramsInit->nbins = 0;
-    sprintf(message, "#Estimated Length (seconds) = %lf ",
+    sprintf(message, "#Estimated Length (seconds) = %f ",
 	    paramsInit->ak.tn);
     LALInfo(status, message);
     
@@ -126,7 +126,7 @@ LALInspiralInit (LALStatus        *status,
     /*now we can free memory */
     CHECKSTATUSPTR(status);
 
-    sprintf(message, "#Estimated Length (seconds) = %lf | Allocated length (bins) = %d", 
+    sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d", 
 	    paramsInit->ak.tn, 
 	    paramsInit->nbins);
     LALInfo(status, message);
@@ -137,7 +137,7 @@ LALInspiralInit (LALStatus        *status,
   }
   else { /*otherwise size is zero */
     sprintf(message,
-	    "Can't get size of the following waveform: totalMass = %lf, fLower = %lf, approximant = %d @ %lfPN"
+	    "Can't get size of the following waveform: totalMass = %f, fLower = %f, approximant = %d @ %fPN"
 	    , params->mass1 + params->mass2, params->fLower, params->approximant, params->order/2.);
     LALWarning(status, message);
 

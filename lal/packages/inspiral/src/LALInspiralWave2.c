@@ -72,7 +72,8 @@ LALInspiralWave2(
 
   REAL8 eta, dt, fs, fu, fHigh, phase0, tC;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
-  INT4 i, startShift, count;
+  INT4 i, startShift;
+  UINT4 count;
   DFindRootIn rootIn;
   InspiralToffInput toffIn;
   void *funcParams;
@@ -178,7 +179,7 @@ LALInspiralWave2(
      of type void * rather than InspiralToffInput  */
   
   funcParams = (void *) &toffIn;
- fprintf(stderr,"fu=%lf fs=%lf fHigh=%lf\n",fu, fs  ,fHigh); 
+  fprintf(stderr,"fu=%f fs=%f fHigh=%f\n",fu, fs  ,fHigh); 
   toffIn.t = 0.0;
   freq = fs;
   count=1;
@@ -395,7 +396,8 @@ LALInspiralWave2ForInjection(
 
   REAL8  eta, dt, fs, fu, fHigh, phase0, phase1, tC, omega;
   REAL8 phase, v, totalMass, fLso, freq, fOld;
-  INT4 i, startShift, count;
+  INT4  startShift;
+  UINT4 count,i;
 
   REAL4Vector *a   = NULL;/* pointers to generated amplitude  data */
   REAL4Vector *ff  = NULL ;/* pointers to generated  frequency data */
@@ -585,9 +587,9 @@ LALInspiralWave2ForInjection(
   params->fFinal = fOld;
 
   
-  if ( (phase/2./LAL_PI) < 2. ){
-        sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
-	       phase/2./LAL_PI );
+  if ( fabs(phi->data[count-1]/2.)/LAL_PI < 2. ){
+        sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
+	       (double)(fabs(phi->data[count-1]/2.)/LAL_PI) );
     LALWarning(status, message);
 
 

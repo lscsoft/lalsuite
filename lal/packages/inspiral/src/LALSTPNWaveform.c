@@ -47,6 +47,7 @@ NRCSID (LALSTPNWAVEFORMC, "$Id$");
 
 /* private structure with PN parameters*/
 
+void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams); 
 typedef struct LALSTPNstructparams {
 	REAL8 eta;
 	REAL8 m1m2;
@@ -322,7 +323,7 @@ LALSTPNWaveformForInjection (LALStatus        *status,
 
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
-  REAL8 test=0;
+  REAL8 test=-2;
   REAL8 alpha, omegadot;
   REAL8 f2a, apcommon;
 
@@ -760,11 +761,11 @@ CHAR message[256];
   /* -? I will comment this out to compare with my Mathematica code*/
 
 
-  sprintf(message, "cycles = %f", vphi/3.14159);
+  sprintf(message, "cycles = %f", phi->data[count-1]/3.14159);
   LALInfo(status, message);
 
 
-  if ( (vphi/LAL_PI) < 2 ){
+  if ( fabs(phi->data[count-1]/LAL_PI) < 2 ){
     sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
 	    (double)(vphi/LAL_PI) );
     LALWarning(status, message);

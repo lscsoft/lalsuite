@@ -403,7 +403,8 @@ LALInspiralWave1ForInjection(
 			     )
 { /* </lalVerbatim>  */
   
-  INT4 n = 2, count, i;
+  INT4 n = 2  ;
+  UINT4 count, i; 
   REAL8  dt, t, v, p, f, fu, fHigh, piM, omega;
   REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
   
@@ -590,11 +591,11 @@ LALInspiralWave1ForInjection(
   } while (t < ak.tn && f<fHigh);
   
   params->fFinal = ff->data[count-1];
-  sprintf(message, "cycles = %lf", p/2./3.14159);
+  sprintf(message, "cycles = %f", p/2./3.14159);
   LALInfo(status, message);
 
   if ( (p/2./LAL_PI) < 2 ){
-    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
+    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
 	       p/2./(double)LAL_PI );
     LALWarning(status, message);
   }

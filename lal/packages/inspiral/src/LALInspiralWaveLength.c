@@ -99,7 +99,7 @@ LALInspiralWaveLength(
    }
    else { 
 	sprintf(message,
-	       	"size is zero for the following waveform: totalMass = %lf, fLower = %lf, approximant = %d @ %lfPN"
+	       	"size is zero for the following waveform: totalMass = %f, fLower = %f, approximant = %d @ %fPN"
 	       , params.mass1 + params.mass2, params.fLower, params.approximant, params.order/2.);
        	LALWarning(status, message);
        	*length = 0;

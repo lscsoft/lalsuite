@@ -99,10 +99,16 @@ typedef struct tagPr3In {
   InspiralDerivativesIn in3copy; 
 } pr3In;
 
+void 
+omegaofr3PN (
+	     REAL8 *x,
+	     REAL8 r, 
+	     void *params) ;
+
 static 
 void LALHCapDerivatives(	REAL8Vector *values, 
-							REAL8Vector *dvalues, 
-							void 		*funcParams);
+				REAL8Vector *dvalues, 
+				void 		*funcParams);
 
 static 
 void LALprInit(	REAL8 		*pr, 
@@ -111,24 +117,24 @@ void LALprInit(	REAL8 		*pr,
 
 static 
 void LALpphiInit(	REAL8 *phase, 
-					REAL8 r, 
-					REAL8 eta);
+			REAL8 r, 
+			REAL8 eta);
 
 static 
 void LALlightRingRadius(	LALStatus 	*status,
-							REAL8 		*x, 
-							REAL8 		r, 
-							void 	*params);
+				REAL8 		*x, 
+				REAL8 		r, 
+				void 	*params);
 							
 static void LALrOfOmega (	LALStatus 	*status, 
-							REAL8 		*x,
-							REAL8 		r, 
-							void 		*params);
+				REAL8 		*x,
+				REAL8 		r, 
+				void 		*params);
 
 static
 void LALHCapDerivatives3PN(	REAL8Vector 	*values,
-							REAL8Vector 	*dvalues, 
-							void 			*funcParams);
+				REAL8Vector 	*dvalues, 
+				void 			*funcParams);
 							
 static
 void LALprInit3PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
@@ -395,6 +401,7 @@ LALprInit3PN(
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
+
 void 
 omegaofr3PN (
 	     REAL8 *x,
@@ -1244,7 +1251,7 @@ LALEOBWaveformForInjection (
 			    ) 
 { 
   /* </lalVerbatim> */
-  INT4 count, nn=4, i;
+  UINT4 count, nn=4, i;
   REAL8  eta, m, rn, r, rOld, s, p, q, dt, t,  v, omega ;
   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
 
@@ -1442,7 +1449,7 @@ LALEOBWaveformForInjection (
    *  First, let's check what's happen with root.xmax */
   LALrOfOmega(status->statusPtr, &r, rootIn.xmax, funcParams);
   sprintf(message, 
-	 	"EOB:initialCondition:For omega=rootIn.xmax=%lf, LALrOfOmega return r=%lf", 
+	 	"EOB:initialCondition:For omega=rootIn.xmax=%f, LALrOfOmega return r=%f", 
 	 	rootIn.xmax, r);
   LALInfo(status->statusPtr, message);
   if (r < 0 || finite(r)==0 ) {   
@@ -1466,7 +1473,7 @@ LALEOBWaveformForInjection (
   /* Then, let's check what's happen  with rootIn.xmin*/
   LALrOfOmega(status->statusPtr, &r, rootIn.xmin, funcParams);
   sprintf(message, 
-  	"EOB:initialCondition:For omega=rootIn.xmin=%lf, LALrOfOmega return r=%lf", 
+  	"EOB:initialCondition:For omega=rootIn.xmin=%f, LALrOfOmega return r=%f", 
   	rootIn.xmin, r);
   
   LALInfo(status->statusPtr, message);
@@ -1525,13 +1532,13 @@ LALEOBWaveformForInjection (
       exit(0);
     }
   
-  sprintf(message, "EOB:initialCondition:Initial r found = %lf\n", r);
+  sprintf(message, "EOB:initialCondition:Initial r found = %f\n", r);
   LALInfo(status->statusPtr, message); 
 
         
   if (r < 6){
     sprintf(message, 
-	  	"EOB:initialCondition:Initial r found = %lf ",r);
+	  	"EOB:initialCondition:Initial r found = %f ",r);
 	sprintf(message, 	
 	  	"too small (below 6 no waveform is generated)\n");
     LALWarning(status->statusPtr, message); 
@@ -1594,7 +1601,7 @@ LALEOBWaveformForInjection (
     }
   
   sprintf( message, 
-		"rInitial= %lf, vinitial= %lf, lightring= %lf, initial phase= %lf, pphase%lf, pr=%lf ", 
+		"rInitial= %f, vinitial= %f, lightring= %f, initial phase= %f, pphase%f, pr=%f ", 
 	   r, v , rn, s, q, p);
   LALInfo(status->statusPtr, message);
   
@@ -1661,20 +1668,20 @@ LALEOBWaveformForInjection (
   /*params->rFinal = rOld;
   params->vFinal = v;*/
   params->fFinal = pow(v,3.)/(LAL_PI*m);
-sprintf(message, "fFinal = %lf", params->fFinal);
+sprintf(message, "fFinal = %f", params->fFinal);
   LALInfo(status, message);
 
- sprintf(message, "cycles = %lf", s/3.14159);
+ sprintf(message, "cycles = %f", s/3.14159);
   LALInfo(status, message);
 
-  sprintf( message, "final coalescence phase with respet to actual data =%lf ",
+  sprintf( message, "final coalescence phase with respet to actual data =%f ",
   	(ff->data[count]-ff->data[count-1])/2/3.14159); 
   LALInfo(status->statusPtr, message);
   
 
 
   if ( (s/LAL_PI) < 2 ){
-    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
+    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
 	      (double) s/ (double)LAL_PI );	
     LALWarning(status, message);
   }
