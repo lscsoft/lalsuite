@@ -649,18 +649,18 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
       /* check that values that are read in are sensible */
       if (
-	  cl->f < 0.0                             ||
-	  cl->F < 0.0                             ||
-	  cl->Alpha < -epsilon                    ||
-	  cl->Alpha > LAL_TWOPI + epsilon         ||
-	  cl->Delta < -LAL_PI/2.0-epsilon         ||
-	  cl->Delta > LAL_PI/2.0+epsilon          ||									
-	  !finite(cl->f)                          ||
-	  !finite(cl->Alpha)                      ||
-	  !finite(cl->Delta)                      ||
-	  !finite(dmp1)                           ||
-	  !finite(dmp2)                           ||
-	  !finite(dmp3)                           ||
+	  cl->f < 0.0                        ||
+	  cl->F < 0.0                        ||
+	  cl->Alpha <         0.0 - epsilon  ||
+	  cl->Alpha >   LAL_TWOPI + epsilon  ||
+	  cl->Delta < -0.5*LAL_PI - epsilon  ||
+	  cl->Delta >  0.5*LAL_PI + epsilon  ||									
+	  !finite(cl->f)                     ||
+	  !finite(cl->Alpha)                 ||
+	  !finite(cl->Delta)                 ||
+	  !finite(dmp1)                      ||
+	  !finite(dmp2)                      ||
+	  !finite(dmp3)                      ||
 	  !finite(cl->F)
 	  ) {
 	  LALPrintError(
