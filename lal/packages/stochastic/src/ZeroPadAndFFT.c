@@ -32,7 +32,7 @@ h[k]  &    k = 0, 1, \cdots, N-1 \\
 before being Fourier transformed via
 \begin{equation}
 \widetilde{h}[\ell] := \sum_{\ell=-(N-1)}^{N-1} 
-\delta t\,h[k]\,e^{i2\pi k\ell/(2N-1)}
+\delta t\,h[k]\,e^{-i2\pi k\ell/(2N-1)}
 \ .
 \end{equation}
 
@@ -44,8 +44,8 @@ $2N-1$ and Fourier-transforming it into a
 
 \subsubsection*{Algorithm}
 
-\texttt{LALSZeroPadAndFFT()} constructs the sequence $\delta
-t\,\bar{h}[k]$, and then applies a real-to-complex discrete Fourier
+\texttt{LALSZeroPadAndFFT()} constructs the sequence $\bar{h}[k]$, and
+then applies a real-to-complex time-to-frequency discrete Fourier
 transform from the \texttt{fft} package.
 
 \subsubsection*{Uses}
@@ -55,8 +55,9 @@ transform from the \texttt{fft} package.
 \begin{verbatim}
 LALSCreateVector()
 LALSDestroyVector()
-LALFwdRealFFT()
+LALTimeFreqRealFFT()
 LALUnitMultiply()
+memcpy()
 strncpy()
 \end{verbatim}
 % LALUnitPair
