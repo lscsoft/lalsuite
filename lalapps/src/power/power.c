@@ -1302,7 +1302,7 @@ int main( int argc, char *argv[])
 	 * makes us pass a pointer... sigh), and set the outer loop's upper
 	 * bound */
 	{
-	REAL8 overlap = (REAL8) params.windowLength / 2.0 / targetSampleRate;
+	REAL8 overlap = (REAL8) (params.windowLength - params.windowShift) / targetSampleRate;
 
 	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
