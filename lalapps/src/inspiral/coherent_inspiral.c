@@ -2,7 +2,7 @@
  * 
  * File Name: coherent_inspiral.c
  *
- * Author: Bose, S. and Brown, D. A.
+ * Author: Bose, S., Brown, D. A., and Noel, J. S.
  * 
  * Revision: $Id$
  * 
@@ -56,6 +56,7 @@
 
 #include "inspiral.h"
 #include "inspiralfrutils.h"
+
 
 RCSID( "$Id$" );
 
@@ -123,7 +124,9 @@ INT4  numChisqBins      = -1;           /* number of chisq bins         */
 REAL4 snrThresh[2]      = {-1,-1};      /* snr thresholds in each ifo   */
 REAL4 coherentSnrThresh = -1;           /* coherent snr threshold       */
 REAL4 chisqThresh[2]    = {-1,-1};      /* chisq veto thresholds        */
-INT4  eventCluster  = -1;               /* perform chirplen clustering  */
+INT4  eventCluster      = -1;           /* perform chirplen clustering  */
+UINT4 site0             = -1;           /* 1st ifo: lalCachedDetector site identifier*/
+UINT4 site1             = -1;           /* 2nd ifo: lalCachedDetector site identifier*/
 
 /* output parameters */
 int    enableOutput     = -1;           /* write out inspiral events    */
@@ -160,7 +163,7 @@ int main( int argc, char *argv[] )
   REAL4TimeSeries               chan[2];
   REAL4FrequencySeries          spec[2];
   COMPLEX8FrequencySeries       resp[2];
-  DataSegmentVector            *dataSegVec[2] = {NULL,NULL};
+  DataSegmentVector            *dataSegVec = NULL;
 
   /* structures for preconditioning */
 #if 0
@@ -190,7 +193,8 @@ int main( int argc, char *argv[] )
 #if 0
   TwoInterfInspiralEvent                *twoInterfInspiralEvent = NULL;
 #endif
-
+  LALDetectorPair               detectors;
+  
   /* inspiral template structures */
   INT4                          numTmplts    = 0;
   InspiralTemplate             *bankHead     = NULL;
@@ -423,7 +427,7 @@ int main( int argc, char *argv[] )
       }
     }
 
-    /* determine the number of points to get and create storage forr the data */
+    /* determine the number of points to get and create storage for the data */
     inputLengthNS = 
       (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
     numInputPoints = 
@@ -618,6 +622,7 @@ int main( int argc, char *argv[] )
   /* check data length */
   for ( n = 0 ; n < numDetectors ; ++n )
   {
+  
     if ( chan[n].data->length != inputDataLength )
     {
       fprintf( stderr, "error: computed channel length and requested\n"
@@ -661,7 +666,7 @@ int main( int argc, char *argv[] )
         "could not allocate memory for twointerffindchirp init params\n" );
     exit( 1 );
   }
-  twoInterfInitParams->numDetectors            = 2; /*hardwired to 2*/
+  twoInterfInitParams->numDetectors            = numDetectors;
   twoInterfInitParams->numSegments             = numSegments;
   twoInterfInitParams->numPoints               = numPoints;
   twoInterfInitParams->numChisqBins            = numChisqBins;
@@ -669,58 +674,65 @@ int main( int argc, char *argv[] )
   twoInterfInitParams->createTwoInterfRhosqVec = writeCoherentRhosq;
   twoInterfInitParams->ovrlap                  = ovrlap;
 
+  
   LAL_CALL( LALCreateTwoInterfDataSegmentVector(&status, &twoInterfDataSegVec, 
-        twoInterfInitParams), &status );
+						twoInterfInitParams), &status );
+  
   LAL_CALL( LALCreateTwoInterfFindChirpSegmentVector(&status, 
-        &twoInterfFcSegVec, twoInterfInitParams), &status );
+						     &twoInterfFcSegVec, twoInterfInitParams), &status );
   LAL_CALL( LALTwoInterfFindChirpSPDataInit(&status, &twoInterfDataParamsVec, 
-        twoInterfInitParams), &status );
+					    twoInterfInitParams), &status );
 
   fcDataParams = twoInterfDataParamsVec->data;  
-
-  for ( n = 0 ; n < numDetectors ; ++n)
-  {
+  dataSegVec   = twoInterfDataSegVec->data;
+  
+  for ( n = 0 ; n < numDetectors ; ++n) {
+    DataSegmentVector *dataVecPtr=NULL;
     if ( ! ( fcInitParams[n] = (FindChirpInitParams *) 
-          LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
-    {
-      fprintf( stderr, 
-          "could not allocate memory for findchirp init params\n" );
-      exit( 1 );
-    }
+	     LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
+      {
+	fprintf( stderr, 
+		 "could not allocate memory for findchirp init params\n" );
+	exit( 1 );
+      }
     fcInitParams[n]->numPoints      = numPoints;
     fcInitParams[n]->numSegments    = numSegments;
     fcInitParams[n]->numChisqBins   = numChisqBins;
     fcInitParams[n]->createRhosqVec = writeRhosq;
     fcInitParams[n]->ovrlap         = ovrlap;
-
-    dataSegVec[n]   = &(twoInterfDataSegVec->data[n]);
-
-    /* create the data segment vector */
+    
+      /* create the data segment vector */
     memset( &spec[n], 0, sizeof(REAL4FrequencySeries) );
     LAL_CALL( LALSCreateVector( &status, &(spec[n].data), numPoints / 2 + 1 ), 
-        &status );
+	      &status );
+    
+    LAL_CALL( LALInitializeDataSegmentVector( &status, &dataVecPtr,
+					      &chan[n], &spec[n], 
+					      &resp[n], fcInitParams[n] ), 
+	      &status );
 
-    LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec[n],
-          &chan[n], &spec[n], 
-          &resp[n], fcInitParams[n] ), 
-        &status );
+    dataSegVec[n].length = dataVecPtr->length;
+    dataSegVec[n].data = dataVecPtr->data;
+
     fcDataParams[n].invSpecTrunc = (invSpecTrunc[n] * sampleRate);
     fcDataParams[n].fLow         = fLow[n];
-
+    
     LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams[n], 
-          fcInitParams[n] ), &status );
+					  fcInitParams[n] ), &status );
+  }    
 
+  for ( n = 0 ; n < numDetectors ; ++n) {
     fcDataParams[n].dynRange = fcTmpltParams[n]->dynRange = 
       pow( 2.0, dynRangeExponent );
     fcDataParams[n].deltaT = 
       fcTmpltParams[n]->deltaT = 1.0 / (REAL4) sampleRate;
     fcTmpltParams[n]->fLow = fLow[n];
-
+    
     /* compute the windowed power spectrum for the data channel */
     avgSpecParams[n].window = NULL;
     avgSpecParams[n].plan   = fcDataParams[n].fwdPlan;
     switch ( specType )
-    {
+      {
       case 0:
         avgSpecParams[n].method = useMean;
         if ( vrbflg ) fprintf( stdout, "computing mean psd" );
@@ -754,7 +766,7 @@ int main( int argc, char *argv[] )
         &status );
     strcpy( spec[n].name, chan[n].name );
   }
-
+  
   /* write the spectrum data to a file */
   if ( writeSpectrum )
   {
@@ -779,17 +791,18 @@ int main( int argc, char *argv[] )
       &status );
 
   /* initialize the template functions */
-  for ( n = 0 ; n < numDetectors ; ++n)
-  {
-    /* initialize findchirp filter functions */
-    LAL_CALL( LALTwoInterfFindChirpFilterInit ( &status, 
-          &twoInterfFilterParams, twoInterfInitParams), &status );
-  }
+  /* initialize findchirp filter functions */
+  LAL_CALL( LALTwoInterfFindChirpFilterInit ( &status, 
+					      &twoInterfFilterParams, twoInterfInitParams), &status );
 
+  detectors.detectorOne = lalCachedDetectors[site0];
+  detectors.detectorTwo = lalCachedDetectors[site1];
+  
   twoInterfFilterParams->twoInterfRhosqThresh = coherentSnrThresh;
-
+  twoInterfFilterParams->detectors            = &detectors;
+  
   fcFilterParams = twoInterfFilterParams->paramsVec->filterParams;
-
+  
   for ( n = 0 ; n < numDetectors ; ++n)
   {
     fcFilterParams[n].deltaT = 1.0 / (REAL4) sampleRate;
@@ -815,13 +828,11 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "twointerffindchirp conditioning data\n" );
   LAL_CALL( LALTwoInterfFindChirpSPData (&status, twoInterfFcSegVec, 
-        twoInterfDataSegVec, twoInterfDataParamsVec),
-      &status );
+					 twoInterfDataSegVec, twoInterfDataParamsVec),
+	    &status );
   LAL_CALL( LALTwoInterfFindChirpSPDataFinalize (&status, 
         &twoInterfDataParamsVec), &status );
-  LAL_CALL( LALDestroyTwoInterfDataSegmentVector (&status, 
-        &twoInterfDataSegVec), &status );
-
+  
   /* compute the standard candle */
   {
     REAL4 cannonDist = 1.0; /* Mpc */
@@ -866,10 +877,11 @@ int main( int argc, char *argv[] )
    *
    */
 
-
+  fcFilterInput = twoInterfFilterInputVec->filterInput;
+  
   for ( tmpltCurrent = tmpltHead, inserted = 0; tmpltCurrent; 
-      tmpltCurrent = tmpltCurrent->next, inserted = 0 )
-  {
+	tmpltCurrent = tmpltCurrent->next, inserted = 0 )
+   {
     /* loop over detectors */
     for ( n = 0; n < numDetectors; ++n )
     {
@@ -877,14 +889,7 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput[n].fcTmplt,
             tmpltCurrent->tmpltPtr, fcTmpltParams[n] ), 
           &status );
-      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-
-      /* XXX this can't go here as LALFindChirpSPTemplateFinalize() should */
-      /* XXX only be called once at the end of the code                    */
-#if 0
-      LAL_CALL( LALFindChirpSPTemplateFinalize(&status, &fcTmpltParams[n]), 
-          &status );
-#endif
+      fcFilterInput[n].tmplt = tmpltCurrent->tmpltPtr;
 
       /*
        *
@@ -963,10 +968,9 @@ int main( int argc, char *argv[] )
 
         /* XXX event handling code will segfault as it deferences NULL ptr */
 #if 0
-      if ( ! savedEvents.multiInspiralTable )
-      {
-        /* Eventually the filter code will be modfified to output */
-        /* MultiInspiralTable instead of TwoInterfInspiralEvent   */
+      if ( eventList && ! savedEvents.multiInspiralTable ) {
+	/* Eventually the filter code will be modfified to output */
+	/* MultiInspiralTable instead of TwoInterfInspiralEvent   */
         savedEvents.multiInspiralTable->end_time = eventList->time;
         savedEvents.multiInspiralTable->impulse_time = eventList->impulseTime;
         savedEvents.multiInspiralTable->eff_distance = eventList->effDist;
@@ -1001,11 +1005,10 @@ int main( int argc, char *argv[] )
         event->next = eventList;
       }
 #endif
-
       /* save a pointer to the last event in the list and count the events */
       ++numEvents;
       while ( eventList->next )
-      {
+	{
         eventList = eventList->next;
         ++numEvents;
       }
@@ -1063,13 +1066,16 @@ int main( int argc, char *argv[] )
   /* free the data storage */
   for (n = 0; n < numDetectors; ++n) 
   {
-    LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec[n] ),
-        &status );
+    DataSegmentVector *dataVecPtr;
+    LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataVecPtr ),
+	      &status );
     LAL_CALL( LALSDestroyVector( &status, &(chan[n].data) ), &status );
     LAL_CALL( LALSDestroyVector( &status, &(spec[n].data) ), &status );
     LAL_CALL( LALCDestroyVector( &status, &(resp[n].data) ), &status );
   }
-
+  LAL_CALL( LALDestroyTwoInterfDataSegmentVector (&status, 
+						  &twoInterfDataSegVec), &status );
+  
 
   /*
    *
@@ -1212,6 +1218,72 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
+#define USAGE \
+"lalapps_inspiral [options]\n\n"\
+"  --help                       display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --comment STRING             set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC         GPS second of data start time\n"\
+"  --gps-start-time-ns NS       GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC           GPS second of data end time\n"\
+"  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
+"  --pad-data T                 pad the data start and end time by T seconds\n"\
+"\n"\
+"  --site0                      first detector's site number [0 for LHO]\n"\
+"  --site1                      second detector's site number [1 for LLO]\n"\
+"  --ifo1-frame-cache                obtain ifo1 frame data from LAL frame cache FILE\n"\
+"  --ifo2-frame-cache                obtain ifo2 frame data from LAL frame cache FILE\n"\
+"  --ifo1-calibration-cache FILE     obtain ifo1 calibration from LAL frame cache FILE\n"\
+"  --ifo2-calibration-cache FILE     obtain ifo2 calibration from LAL frame cache FILE\n"\
+"  --channel-name-ifo1 CHAN          read data from the 1st interferometer's channel CHAN\n"\
+"  --channel-name-ifo2 CHAN          read data from the 2nd interferometer's channel CHAN\n"\
+"\n"\
+"\n"\
+"  --bank-file FILE             read template bank parameters from FILE\n"\
+"  --minimal-match M            override bank minimal match with M (sets delta)\n"\
+"  --start-template N           start filtering at template number N in bank\n"\
+"  --stop-templateN             stop filtering at template number N in bank\n"\
+"\n"\
+"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
+"  --resample-filter TYPE       set resample filter to TYPE (ldas|butterworth)\n"\
+"\n"\
+"  --disable-high-pass          turn off the IIR highpass filter\n"\
+"  --enable-high-pass-ifo1 F    high pass ifo1 data above F Hz using an IIR filter\n"\
+"  --enable-high-pass-ifo2 F    high pass ifo2 data above F Hz using an IIR filter\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)\n"\
+"\n"\
+"  --segment-length N           set data segment length to N points\n"\
+"  --number-of-segments N       set number of data segments to N\n"\
+"  --segment-overlap N          overlap data segments by N points\n"\
+"\n"\
+"  --low-frequency-cutoff-ifo1 F     do not filter ifo1 data below F Hz\n"\
+"  --low-frequency-cutoff-ifo2 F     do not filter ifo2 below F Hz\n"\
+"  --inverse-spec-length-ifo1 T      set length of inverse spectrum of ifo1 to T seconds\n"\
+"  --inverse-spec-length-ifo2 T      set length of inverse spectrum of ifo2 to T seconds\n"\
+"  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
+"\n"\
+"  --chisq-bins P               set number of chisq veto bins to P\n"\
+"  --ifo1-snr-threshold RHO          set signal-to-noise threshold in ifo1 to RHO\n"\
+"  --ifo2-snr-threshold RHO          set signal-to-noise threshold in ifo2 to RHO\n"\
+"  --ifo1-chisq-threshold X          threshold on ifo1 chi^2 < X * ( p + rho^2 * delta^2 )\n"\
+"  --ifo2-chisq-threshold X          threshold on ifo2 chi^2 < X * ( p + rho^2 * delta^2 )\n"\
+"  --enable-event-cluster       turn on maximization over chirp length\n"\
+"  --disable-event-cluster      turn off maximization over chirp length\n"\
+"\n"\
+"  --enable-output              write the results to a LIGO LW XML file\n"\
+"  --disable-output             do not write LIGO LW XML output file\n"\
+"\n"\
+"  --write-raw-data             write raw data to a frame file\n"\
+"  --write-filter-data          write data that is passed to filter to a frame\n"\
+"  --write-response             write the computed response function to a frame\n"\
+"  --write-spectrum             write the uncalibrated psd to a frame\n"\
+"  --write-snrsq                write the snr time series for each data segment\n"\
+"  --write-chisq                write the r^2 time series for each data segment\n"\
+"\n"
+
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
   /* getopt arguments */
@@ -1250,7 +1322,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"ifo2-calibration-cache",  required_argument, 0,                'P'},
     {"ifo1-snr-threshold",      required_argument, 0,                'q'},
     {"ifo2-snr-threshold",      required_argument, 0,                'Q'},
-    {"coherent-snr-threshold",  required_argument, 0,                'X'},
     {"ifo1-chisq-threshold",    required_argument, 0,                'r'},
     {"ifo2-chisq-threshold",    required_argument, 0,                'S'},
     {"resample-filter",         required_argument, 0,                'R'},
@@ -1262,6 +1333,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
     {"pad-data",                required_argument, 0,                'x'},
+    {"coherent-snr-threshold",  required_argument, 0,                'X'},
+    {"site0",                   required_argument, 0,                'y'},
+    {"site1",                   required_argument, 0,                'Y'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -1271,7 +1345,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-response",          no_argument,       &writeResponse,    1 },
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
     {"write-detector-snrsq",    no_argument,       &writeRhosq,       1 },
-    {"write-coherent-snrsq",    no_argument,       &writeRhosq,       1 },
+    {"write-coherent-snrsq",    no_argument,       &writeCoherentRhosq, 1 },
     {"write-chisq",             no_argument,       &writeChisq,       1 },
     {0, 0, 0, 0}
   };
@@ -1294,7 +1368,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:C:d:e:f:g:h:i:j:k:K:l:m:M:n:o:p:P:q:Q:X:r:S:R:s:t:T:u:U:v:w:x:z:Z:", 
+        "a:A:b:B:c:C:d:e:f:g:h:i:j:k:K:l:m:M:n:o:p:P:q:Q:r:S:R:s:t:T:u:U:v:w:x:X:y:Y:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1441,8 +1515,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           memcpy( channelName[0], channamptr, chanlen );
 
           /* copy the first two characters to the ifo name */
-          memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+          memset( ifo[0], 0, sizeof(ifo[0]) );
+          memcpy( ifo[0], optarg, sizeof(ifo[0]) - 1 );
         }
         break;
 
@@ -1469,8 +1543,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           memcpy( channelName[1], channamptr, chanlen );
 
           /* copy the first two characters to the ifo name */
-          memset( ifo, 0, sizeof(ifo) );
-          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+          memset( ifo[1], 0, sizeof(ifo[1]) );
+          memcpy( ifo[1], optarg, sizeof(ifo[1]) - 1 );
         }
         break;
 
@@ -1712,19 +1786,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
-      case 'X':
-        coherentSnrThresh = atof( optarg );
-        if ( coherentSnrThresh < 0 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "network signal to noise threshold must be positive: "
-              "(%f specified)\n", 
-              long_options[option_index].name, coherentSnrThresh  );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "float", "%s", optarg );
-        break;
-
       case 'r':
         chisqThresh[0] = atof( optarg );
         if ( chisqThresh[0] < 0 )
@@ -1865,6 +1926,45 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", padData );
+        break;
+
+      case 'X':
+        coherentSnrThresh = atof( optarg );
+        if ( coherentSnrThresh < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "network signal to noise threshold must be positive: "
+              "(%f specified)\n", 
+              long_options[option_index].name, coherentSnrThresh  );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'y':
+        site0 = (UINT4) atoi( optarg );
+        if ( site0 < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "the lalCachedDetector site identifier must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, site0  );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", optarg );
+        break;
+
+      case 'Y':
+        site1 = (UINT4) atoi( optarg );
+        if ( site1 < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "the lalCachedDetector site identifier must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, site1  );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", optarg );
         break;
 
       case 'z':
