@@ -47,15 +47,7 @@ Input shoud be from
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-BOOLEAN uvar_help;
-INT2 uvar_ifo;
-CHAR *uvar_earthEphemeris;
-CHAR *uvar_sunEphemeris;
-CHAR *uvar_SFTdir;
-CHAR *uvar_fnameIn;
-CHAR *uvar_fnameOut;
-REAL8 uvar_peakThreshold;
-INT4 uvar_blocksRngMed;
+
 
 /******************************************************
  *  Assignment of Id string using NRCSID()
@@ -102,6 +94,16 @@ int main(int argc, char *argv[]){
   FILE  *fpOut = NULL;
   
 
+  BOOLEAN uvar_help;
+  INT4 uvar_ifo;
+  CHAR *uvar_earthEphemeris;
+  CHAR *uvar_sunEphemeris;
+  CHAR *uvar_SFTdir;
+  CHAR *uvar_fnameIn;
+  CHAR *uvar_fnameOut;
+  REAL8 uvar_peakThreshold;
+  INT4 uvar_blocksRngMed;
+
 
   /******************************************************************/
   /*    Set up the default parameters.      */
@@ -132,15 +134,15 @@ int main(int argc, char *argv[]){
   SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
 
   /* register user input variables */
-  LALregBOOLUserVar( &status, help, 'h', UVAR_HELP, "Print this message");  
-  LALregINTUserVar( &status, ifo, 'i', UVAR_OPTIONAL, "Detector" );
-  LALregSTRINGUserVar( &status, earthEphemeris, 'E', UVAR_REQUIRED, "Earth Ephemeris file");
-  LALregSTRINGUserVar( &status, sunEphemeris, 'S', UVAR_REQUIRED, "Sun Ephemeris file");
-  LALregSTRINGUserVar( &status, SFTdir, 'D', UVAR_REQUIRED, "SFT Directory");
-  LALregSTRINGUserVar( &status, fnameIn, 'T', UVAR_OPTIONAL, "Input template file");
-  LALregSTRINGUserVar( &status, fnameOut, 'o', UVAR_OPTIONAL, "Output filename");
-  LALregINTUserVar( &status, blocksRngMed, 'w', UVAR_OPTIONAL, "RngMed block size");
-  LALregREALUserVar( &status, peakThreshold, 't', UVAR_OPTIONAL, "Peak selection threshold");
+  SUB( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
+  SUB( LALRegisterINTUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector", &uvar_ifo ), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_REQUIRED, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_REQUIRED, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "SFTdir", 'D', UVAR_REQUIRED, "SFT Directory", &uvar_SFTdir), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
+  SUB( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
+  SUB( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
 
   /* read all command line variables */
   SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
