@@ -495,9 +495,9 @@ Then suppose Excess Power processed data at 16384 Hz in 1 second segments
 which overlap each other by 0.5 seconds. Each of these segments is then 
 windowed (using a Welch window) and transformed into the frequency domain 
 \begin{equation}
-\tilde{H}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_jh_j e^{-2 \pi i j k /N}
+\tilde{s}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_js_j e^{-2 \pi i j k /N}
 \end{equation}
-where $N=16\, 384$, $h_j$ is the filtered gravitational 
+where $N=16\, 384$, $s_j$ is the filtered gravitational 
 wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
 function and $\sigma_w$ is  
 \begin{equation}
@@ -507,7 +507,7 @@ function and $\sigma_w$ is
 Now the input to the Excess Power search code is the whitened 
 frequency domain signal,
 \begin{equation}
-\tilde{s}_k = \sqrt{2\Delta f}\sqrt{\frac{2}{P_k}}\tilde{H}_k
+\hat{s}_k = 2\sqrt{\frac{\Delta f}{P_k}}\tilde{s}_k
 \end{equation}
 where $\Delta f = \frac{1}{N\Delta}$ is the sampling frequency interval and 
 $P_k = 2 \Delta f\langle|\tilde{H}_k^2| \rangle$ is the 
@@ -525,11 +525,37 @@ the time-frequency plane in a pass-band $f_0 < f < f_0+b$.  A naive
 construction would set all Fourier components outside of this band to
 zero and inverse transform.  A major problem with this approach is
 that the band-pass filter,  when viewed in the time-domain, has
-infinite extent and can lead to data corruption of the band-passed
-data stream when contructed as described above.   We can,  however,
-start from this and construct a filter which preferentially
+infinite extent(as shown in Figure~\ref{fig:timedomainfilter} in a wrap around
+fashion) and can 
+lead to data corruption of the band-passed
+data stream when contructed as described above. 
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figures/timedomainfilter}
+\caption{Filter in the time domain in a wrapped around fashion}
+\label{fig:timedomainfilter}
+\end{center}
+\end{figure}
+ 
+   We can,  however, start from this and construct a filter which preferentially
 passes the appropriate frequencies \emph{and} has finite duration in
-the time domain.
+the time domain (Figure~\ref{fig:timedomainfilter_1} \& Figure~\ref{fig:freqdomainfilter_1}).
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figures/timedomainfilter_1}
+\caption{Filter in the time domain}
+\label{fig:timedomainfilter_1}
+\end{center}
+\end{figure}
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figures/freqdomainfilter_1}
+\caption{Filter in the frequency domain}
+\label{fig:freqdomainfilter_1}
+\end{center}
+\end{figure}
 
 Consider the rectangular band-pass in the frequency domain
 \begin{eqnarray}
@@ -578,10 +604,12 @@ e^{2 \pi i ft_0} df
 
 The Excess Power search then identifies triggers which may be
 gravitational wave bursts using the following algorithm.  For each
-segment $\tilde{w}_k$,  construct multiple time-frequency planes
+segment $\hat{s}_k$,  construct multiple time-frequency planes
 ${\cal{P}}^a$ such that the frequency resolution of each plane is
 $2^a \times 1 \textrm{ Hz}$ and the time resolution $2^{-a} \times 1
-\textrm{ s}$ where $a=0,\ldots ,6$.  This approach allows
+\textrm{ s}$ where $a$ can have a range of values depending on the 
+minimum and maximum time-frequency resolutions one wants to tolerate 
+in the search.  However this approach allows
 multi-resolution analysis of the time-frequency structure of the input
 time series $s_j$ while insuring that all pixels have unit
 time-frequency volume (the product of time resolution by frequency
@@ -623,14 +651,76 @@ obtaining the excess power in a tile from Gaussian noise is smaller
 than some threshold $\alpha$.   For large bursts in the data stream,
 many tiles can be identified as triggers with different sizes and
 aspect ratios.   When the search over a particular segment is
-complete,   triggers are clustered by circumscribing a large
-rectangular tile around triggers which overlap in the time-frequency
-plane. In the process of clustering,  information about the tile
-with the largest excess power within the cluster is used to identify
-the peak time of the burst trThe igger as the center time of that tile.
-This method is crude and might account for the bad timing accuracy
-currently observed for short duration bursts.  We will address these
-issues in future versions of the algorithm.
+complete,   triggers are clustered and the clustering is described in 
+Section~\ref{section:clustering} .
+
+\subsubsection{An alternate Time-Frequency Plane construction}
+In the previous section we described an algorithmic implementation
+where multiple time-frequency planes are constructed and then all 
+possible tiles in a plane are searched for excess power.  Each plane 
+in that implementation has a unique time-frequency resolution.  However
+while searching the tiles it is very likely that we consider many 
+duplicate tiles from different planes.
+  
+Here we describe an alternate implementation where we construct a single
+time frequency plane and then search over all possible tiles of different
+time durations and frequency bands.  One first has to decide the maximum 
+frequency band and the maximum time duration that are to be tolerated in
+the search.  The maximum frequency band determines the minimum duration
+a tile can have requiring the time-frequency volume be $1$ and 
+similarly the maximum time duration determines the minimum frequency band
+of the tile.  The time frequency plane is then constructed with a 
+time-frequency resolution finer by at least a factor of $2$ compared to
+the minimum resolutions of the tiles.  As a concrete example,  
+suppose one wants to search for a
+ maximum time duration of  $0.5 sec$  and a maximum frequency band of 
+$32 Hz$.  This implies the minimum duration of a tile in the search will
+be  $1/32 sec (31.2 msec)$  and the minimum frequency band will be  $2 Hz$.
+ The time-frequency plane is then constructed with a timing resolution
+of $1/64 sec (15.6 msec.)$ and a frequency resolution of $1 Hz$.         
+
+The way one approaches towards this is almost similar to the implementation
+described in the previous section.  For each whitened segment
+$\hat{s}_k$, one constructs multiple channels,  each of which is an
+inverse Fourier tranform of $b Hz$ of data,  where $b Hz$
+ is the frequency resolution of the plane.  The elements of the 
+time-frequency plane are then selected from these channels depending
+on the timing resolution of the plane.  If we consider the example
+that we were discussing above,  under the assumption that the
+bandwidth over which we want to search is $128 Hz$,  there will be
+$128$ channels given the fact that the frequency resolution of our
+time-frequency plane is $1 Hz$.  Each of these channels is thus a time
+series constructed by the inverse Fourier transform of $1 Hz$ of 
+whitened data.          
+
+The elements of a channel whose lower frequency is,  say,  $k_1$ can 
+be represented as:
+\begin{equation}
+z_{jk_1} = \sum_{k=k_1}^{k_1+b-1} ( \hat{s}_k \tilde{\Theta}^\ast e^{2 \pi ijk/N}
+                                  + c.c )
+\end{equation},  where $b = \frac{b Hz}{\delta f}$, $\delta f$ being the 
+frequency resolution of the data and $j = 0,\cdots, N-1$.  Note,  the timing
+resolution of $z_{jk_1}$ is equal to that of the sampled detector data $s_j$.
+ The elements of the time-frequency plane which can be picked from this 
+particular channel $z_{jk_1}$ will then be 
+\begin{equation}
+H_{l_1k_1} = H_{l_1n_f + k_1} = z_{l_1\frac{\Delta T}{\delta t} , k_1}
+\end{equation}, where $n_f = 128$ , the number of frequency bins, 
+$l_1$ can lie between $0, \cdots, n_t - 1$ , $n_t$ being the number of 
+time bins in the plane,  $\Delta T$ is the timing resolution of the
+plane and $\delta t$ is that of $z_{jk_1}$.  Thus $n_t$ elements can be
+ picked from each one of the $n_f$ number of channels and hence there will be 
+$n_t \times n_f$ number of elements representing the time-frequency plane.
+
+A tile in this plane can be denoted as $\tau ={J_1, J_2, K_1, K_2}$,  where
+$J_1$ and $J_2$ represent the indices corresponding to the start and 
+stop times of the tile respectively while $K_1$ and $K_2$ represent the
+minimum and maximum frequencies.  The degrees of freedom assosciated with
+$\tau$ will then be $dof_{\tau} = 2 \times (J_2 - J_1) \times \Delta T \times (K_2 - K_1) \times \Delta F $ and the signal to noise ratio will be 
+\begin{equation}
+\rho_{\tau} = \frac{\sum_{n=0}^{m-1}(\sum_{k=K1}^{K2}H_{[J_1 + n\frac{J_2-J_1}{dof_{\tau}}],k})^2}{\sigma ^2}
+\end{equation}
+,  where $m\frac{J_2-J_1}{dof_\tau} = J_2$.
 
 
 
@@ -752,6 +842,8 @@ to have been read.
 
 \subsection{Performance on Gaussian data}
 \label{section:Gaussian}
+
+\subsubsection{Multiple time-frequency planes}
 In this section we will describe the performance of Excess Power algorithm  
 on Gaussian data.  Instead of reading in real data from frame files we filled 
 in the time series with Gaussian noise generated by the LAL 
@@ -830,7 +922,22 @@ spectrum estimation.
     
 Hence at this point,  it is not quite clear what causes the mismatch but 
 we have to further investigate that.
-     
+
+\subsubsection{Single time-frequency plane}
+We carried out similar tests to check if the power in tiles in the 
+single time-frequency plane follow the chi-square distribution.
+Figure ~\ref{fig:compchisquarenew}  shows the distributions for
+degrees of freedom $2$ and $4$. 
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figures/compchisquarenew2_4}
+\caption{Comparison of the measured and theoretical distributions for the
+  new time-frequency plane}
+\label{fig:compchisquarenew}
+\end{center}
+\end{figure}     
+
+
 \clearpage
 
 \subsection{Butterworth Filter used in Excess Power Search}
