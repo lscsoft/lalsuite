@@ -1496,6 +1496,23 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
+  /* check for negative stepsizes in Freq, Alpha, Delta */
+  if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  /*----------------------------------------------------------------------*/
 
   /* set the current working directory */
 #ifndef _MSC_VER
