@@ -74,4 +74,5 @@ AC_OUTPUT( 				\
 	src/stochastic/Makefile		\
 	src/power/Makefile		\
 	src/ring/Makefile		\
+	src/pulsar/Makefile		\
 )
