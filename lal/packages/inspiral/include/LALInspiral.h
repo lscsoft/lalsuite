@@ -143,6 +143,8 @@ by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a f
 \item \texttt{EOB:} Effective one-body waveform  Outputs a time-domain wave.
 \item \texttt{BCV:} Detection template family of Buonanno, Chen and 
                     Vallisneri \cite{BCV03}. Outputs a frequency-domain wave.
+\item \texttt{BCVSpin:} Detection template family of Buonanno, Chen and 
+                    Vallisneri including  spin effects\cite{BCV03b}. Outputs a frequency-domain wave.
 \end{itemize}
 
 
