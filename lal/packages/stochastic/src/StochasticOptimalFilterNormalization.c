@@ -665,7 +665,7 @@ LALStochasticOptimalFilterNormalization(
     meanW2 /= winLength;
     meanW4 /= winLength;
 
-    if ( meanW2 < 0 )
+    if ( meanW2 <= 0 )
     {
       ABORT(status, 
             STOCHASTICCROSSCORRELATIONH_ENONPOSWIN,
@@ -719,13 +719,13 @@ LALStochasticOptimalFilterNormalization(
 
   lambdaInv /= ( omegaRef / deltaF )
     * ( (20.0L * LAL_PI * LAL_PI) 
-        / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
+        / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) * meanW2 )
         );
   
   if ( !parameters->heterodyned ) lambdaInv *= 2.0;
   
-  lamPtr->value = 1 / ( lambdaInv * meanW2 ) ;
-  
+  lamPtr->value = 1 / lambdaInv;
+
   if (output->variance != NULL) 
   {
     output->variance->value 
