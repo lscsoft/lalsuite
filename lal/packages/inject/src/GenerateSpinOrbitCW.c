@@ -204,10 +204,16 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
 					 params ), stat );
   }
 
-  /* Parabolic and hyperbolic routines haven't been written yet. */
+  /* e = 1 is parabolic. */
+  else if ( params->oneMinusEcc == 0.0 ) {
+    TRY( LALGenerateParabolicSpinOrbitCW( stat->statusPtr, output,
+					  params ), stat );
+  }
+
+  /* e > 1 is hyperbolic. */
   else {
-    ABORT( stat, GENERATESPINORBITCWH_EECC,
-	   GENERATESPINORBITCWH_MSGEECC );
+    TRY( LALGenerateHyperbolicSpinOrbitCW( stat->statusPtr, output,
+					   params ), stat );
   }
 
   /* That is all. */
