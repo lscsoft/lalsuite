@@ -94,8 +94,12 @@ int main (int argc , char **argv) {
    
    
    params.alpha = 0.;
+   params.beta  = .5;
+   params.alpha1 = 0.3;
+   params.alpha2= 0.3;
+   
    params.fFinal = 1000.;
-   params.approximant = EOB;
+   params.approximant = BCV;
 			   
    if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV  || params.approximant==BCVSpin) 
    {
@@ -114,9 +118,9 @@ int main (int argc , char **argv) {
 		Signal1->data[i].im = signal1->data[n-i];
 	}
 	Signal1->data[0].re = 0.;
-	Signal1->data[0].re = 0.;
+	Signal1->data[0].im = 0.;
 	Signal1->data[n/2].re = 0.;
-	Signal1->data[n/2].re = 0.;
+	Signal1->data[n/2].im = 0.;
 
 	LALReverseRealFFT(&status, signal2, Signal1, revp);
 	LALCDestroyVector (&status, &Signal1);
