@@ -58,7 +58,8 @@ LALCorrelate (
   n = corrin.signal1.length;
 
   buff.length = corrin.signal1.length;
-  buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length);
+  if (! (buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length))) 
+     ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
 
   nby2 = n/2;
   for (i=1; i<nby2; i++) {
@@ -91,6 +92,7 @@ LALCorrelate (
   for (i=0; i< (int) buff.length; i++) output->data[i] = buff.data[i]/2.;
 
   LALFree(buff.data);
+  buff.data = NULL;
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

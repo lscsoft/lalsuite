@@ -261,6 +261,7 @@ LALFree
 *	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
 *              Also Sathyaprakash, note from October 2000.
 */
+
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
@@ -272,7 +273,7 @@ void LALInspiralComputeMetric(LALStatus        *status,
 { /* </lalVerbatim> */
 
    INT4 i, Dim=3;
-   REAL8 **trans, **mm3, **tm3;
+   REAL8 **trans=NULL, **mm3=NULL, **tm3=NULL, *dummy;
    REAL8 t_0, t_2, t_3, t_4, s0, s2, s3, s4, tm11, tm12, tm22, m2;
    REAL8 t_02,t22,t32,t42,s02,s22,s32,s42,eta2,k0sq,k1sq,k2sq;
    REAL8 k0, k1, k2, k00, k01, k02, k11, k12, k22, flso;
@@ -295,33 +296,28 @@ void LALInspiralComputeMetric(LALStatus        *status,
    totmass = params.totalMass * LAL_MTSUN_SI;
    eta = params.eta;
    flso = 1/(LAL_PI * totmass * pow(6.,1.5));
-/* Arrays for the metric (mm3 -> m and eta, tm3->chirp times) and transformation   matrix */
-   trans = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
-   ASSERT (trans,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   mm3 = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
-   ASSERT (mm3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   tm3 = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
-   ASSERT (tm3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   if (!trans || !mm3 || !tm3) {
-       LALFree(mm3);
-       LALFree(tm3);
-       LALFree(trans);
-       ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+/* Allocating space for three, (Dim x Dim) matrices and then point the
+   mm3, tm3 and trans arrays to dummy */
+/* Arrays for the metric (mm3 -> m and eta, tm3->chirp times) and 
+transformation   matrix */
+
+   if (!(dummy = LALMalloc(sizeof(REAL8) * Dim * Dim * 3))) {
+      ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
    }
+   if (!(trans = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim * 3))) {
+      LALFree(dummy);
+      ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+   }
+
+   mm3 = trans+Dim;
+   tm3 = trans+2*Dim;
+  
    for (i=0; i<Dim; i++) {
-      trans[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
-      ASSERT (trans[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-      mm3[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
-      ASSERT (mm3[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-      tm3[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
-      ASSERT (tm3[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-      if (!trans[i] || !mm3[i] || !tm3[i]) {
-          LALFree(mm3[i]);
-          LALFree(tm3[i]);
-          LALFree(trans[i]);
-          ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-      }
-   }
+      trans[i] = &dummy[Dim*i]; 
+      mm3[i] = &dummy[Dim*Dim + Dim*i]; 
+      tm3[i] = &dummy[2*Dim*Dim + Dim*i]; 
+   } 
+   
 /* If first time set all static variables and compute moments else go
    straight to the metric calculation */
    if (pass==1) {
@@ -510,13 +506,9 @@ void LALInspiralComputeMetric(LALStatus        *status,
       fprintf(stderr, "det=%e g00=%e g11=%e theta=%e\n", det, metric->g00, metric->g11, metric->theta);
    }
 */
-   for (i=0; i<Dim; i++) {
-      LALFree(trans[i]);
-      LALFree(mm3[i]);
-      LALFree(tm3[i]);
-   }
+   LALFree(dummy); 
+   LALFree(trans);
 
-   LALFree(mm3); LALFree(tm3); LALFree(trans);
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }

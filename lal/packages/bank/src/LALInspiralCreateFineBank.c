@@ -56,8 +56,8 @@ void LALInspiralCreateFineBank(LALStatus            *status,
                                InspiralFineBankIn   fineIn)
 { /* </lalVerbatim> */
  
-  REAL8 x0FineMin, x1FineMin, x0FineMax, x1FineMax;     
-  INT4  i, validPars; 
+  REAL8 x0, x1, Dx0, Dx1, dx0, dx1, x0FineMin, x1FineMin, x0FineMax, x1FineMax;     
+  INT4  i, j, validPars, bins0, bins1; 
   static InspiralTemplate   tempPars;  
   static InspiralBankParams bankPars;
 
@@ -83,33 +83,49 @@ void LALInspiralCreateFineBank(LALStatus            *status,
   }
 
   LALInspiralUpdateParams(status->statusPtr,&bankPars,fineIn.templateList.metric,fineIn.coarseIn.mmCoarse); 
-
   CHECKSTATUSPTR(status);
-
-  x0FineMin = bankPars.x0 - bankPars.dx0/2.;
-  x0FineMax = bankPars.x0 + bankPars.dx0/2.;
-  x1FineMin = bankPars.x1 - bankPars.dx1/2.;
-  x1FineMax = bankPars.x1 + bankPars.dx1/2.;
+  x0 = bankPars.x0;
+  x1 = bankPars.x1;
+  Dx0 = bankPars.dx0;
+  Dx1 = bankPars.dx1;
 
   LALInspiralUpdateParams(status->statusPtr,&bankPars,fineIn.templateList.metric,fineIn.coarseIn.mmFine); 
   CHECKSTATUSPTR(status);
+  dx0 = bankPars.dx0;
+  dx1 = bankPars.dx1;
 
-  i=0;
-  for(bankPars.x1=x1FineMin; bankPars.x1<=x1FineMax; bankPars.x1+=bankPars.dx1) {  
-  for(bankPars.x0=x0FineMin; bankPars.x0<=x0FineMax; bankPars.x0+=bankPars.dx0) { 
-    LALInspiralValidParams(status->statusPtr, &validPars, bankPars, fineIn.coarseIn);
-    CHECKSTATUSPTR(status);
-    if (validPars) {
-      LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, fineIn.coarseIn);
-      CHECKSTATUSPTR(status);
-      *outlist = (InspiralTemplateList*) 
-      LALRealloc(*outlist, sizeof(InspiralTemplateList)*(i+1));
-        (*outlist)[i].params = tempPars;
-      ++i; 
-    }
-  }   
+  bins0 = (int)(Dx0/dx0) + 1;
+  bins1 = (int)(Dx1/dx1) + 1;
+
+  x0FineMin = x0 - (float) bins0/2. * dx0;
+  x0FineMax = x0 + (float) bins0/2. * dx0;
+  x1FineMin = x1 - (float) bins1/2. * dx1;
+  x1FineMax = x1 + (float) bins1/2. * dx1;
+
+  bankPars.x1 = x1FineMin;
+  for(i=0; i<=bins1; i++) {
+     bankPars.x0 = x0FineMin;
+     for(j=0; j<=bins0; j++) {
+       LALInspiralValidParams(status->statusPtr, &validPars, bankPars, fineIn.coarseIn);
+       CHECKSTATUSPTR(status);
+       if (validPars) {
+         LALInspiralComputeParams(status->statusPtr, &tempPars, bankPars, fineIn.coarseIn);
+         CHECKSTATUSPTR(status);
+/*  
+    On failure realloc() returns a NULL to outlist, hence there is
+    no need to explicitly free the outlist 
+*/
+         if (!(*outlist = (InspiralTemplateList*) 
+            LALRealloc(*outlist, sizeof(InspiralTemplateList)*(*nlist+1)))) {
+            ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+         }
+         (*outlist)[*nlist].params = tempPars;
+         ++(*nlist); 
+       }
+       bankPars.x0+=bankPars.dx0;
+     }   
+     bankPars.x1+=bankPars.dx1;
   }
-  *nlist = i;
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }

@@ -49,10 +49,12 @@ NRCSID( LALNOISEMODELSH, "$Id$" );
 /* <lalErrTable> */
 
 #define LALNOISEMODELSH_ENULL 1
-#define LALNOISEMODELSH_ECHOICE 2
+#define LALNOISEMODELSH_EMEM 2
+#define LALNOISEMODELSH_ECHOICE 3
 #define LALNOISEMODELSH_EDIV0 4
 #define LALNOISEMODELSH_ESIZE 8
 #define LALNOISEMODELSH_MSGENULL "Arguments contained an unexpected null pointer"
+#define LALNOISEMODELSH_MSGEMEM "Memory allocation error"
 #define LALNOISEMODELSH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALNOISEMODELSH_MSGEDIV0 "Division by zero"
 #define LALNOISEMODELSH_MSGESIZE "Invalid input range"
@@ -107,7 +109,7 @@ AddVectorsIn;
 \index{\texttt{AddVectorsIn}} 
 </lalLaTeX>  */
 
-/*  <lalVerbatim file="LALInspiralBankHS"> */
+/*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct 
 tagRandomInspiralSignalIn
 {

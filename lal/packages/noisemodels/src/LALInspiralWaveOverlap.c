@@ -52,14 +52,30 @@ LALInspiralWaveOverlap (
    output1.length = output2.length = overlapin->signal.length;
    filter1.length = filter2.length = overlapin->signal.length;
 
-   output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length);
-   ASSERT (output1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
-   output2.data = (REAL4*) LALMalloc(sizeof(REAL4)*output2.length);
-   ASSERT (output2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
-   filter1.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter1.length);
-   ASSERT (filter1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
-   filter2.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter2.length);
-   ASSERT (filter2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   if (!(output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length))) {
+      ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+   }
+   if (!(output2.data = (REAL4*) LALMalloc(sizeof(REAL4)*output2.length))) {
+      LALFree(output1.data);
+      output1.data = NULL;
+      ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+   }
+   if (!(filter1.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter1.length))) {
+      LALFree(output1.data);
+      LALFree(output2.data);
+      output1.data = NULL;
+      output2.data = NULL;
+      ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+   }
+   if (!(filter2.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter2.length))) {
+      LALFree(output1.data);
+      LALFree(output2.data);
+      LALFree(filter1.data);
+      output1.data = NULL;
+      output2.data = NULL;
+      filter1.data = NULL;
+      ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+   }
 
    overlapin->param.nStartPad = 0;
    overlapin->param.startPhase = LAL_PI_2;

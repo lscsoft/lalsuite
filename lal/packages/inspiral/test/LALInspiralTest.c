@@ -38,6 +38,7 @@ brackets):
                             one=ODE solver, 
                             two=implicit phasing formula solved in quadrature, 
                             three=explicit time-domain phasing)
+                            eob=effective-one-body approach
    params.order=twoPN;     (also Newtonian, onePN, oneAndHalfPN, twoAndHalfPN)
    params.domain=TimeDomain;
    params.approximant=pade;(also taylor)
@@ -77,8 +78,8 @@ int main () {
    INT4 n;
 
    params.ieta=1; 
-   params.mass1=10.0; 
-   params.mass2=1.4; 
+   params.mass1=1.40; 
+   params.mass2=1.40; 
    params.startTime=0.0; 
    params.startPhase=0.0; 
    params.fLower=40.0; 
@@ -87,8 +88,8 @@ int main () {
    params.signalAmplitude=1.0;
    params.nStartPad=1000;
    params.nEndPad=1000;
-   params.method=eob;
-   params.order=twoPointFivePN;
+   params.method=two;
+   params.order=twoPN;
    params.domain=TimeDomain;
    params.approximant=pade;
    params.massChoice=m1Andm2;
@@ -101,6 +102,9 @@ int main () {
    LALInspiralWave (&status, &signal, &params);
    dt = 1./params.tSampling;
    printf_timeseries(signal.length, signal.data, dt, params.startTime);
+   LALFree(signal.data);
+   signal.data = NULL;
+   LALCheckMemoryLeaks();
 
    return 0;
 }

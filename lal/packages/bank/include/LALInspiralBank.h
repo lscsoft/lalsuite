@@ -48,10 +48,12 @@ NRCSID( LALINSPIRALBANKH, "$Id$" );
 /* <lalErrTable> */
 
 #define LALINSPIRALBANKH_ENULL 1
-#define LALINSPIRALBANKH_ECHOICE 2
+#define LALINSPIRALBANKH_EMEM  2
+#define LALINSPIRALBANKH_ECHOICE 3
 #define LALINSPIRALBANKH_EDIV0 4
 #define LALINSPIRALBANKH_ESIZE 8
 #define LALINSPIRALBANKH_MSGENULL "Arguments contained an unexpected null pointer"
+#define LALINSPIRALBANKH_MSGEMEM "Memory allocation failure"
 #define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALINSPIRALBANKH_MSGEDIV0 "Division by zero"
 #define LALINSPIRALBANKH_MSGESIZE "Invalid input range"
@@ -96,7 +98,7 @@ tagInspiralMetric
    REAL8            theta;   /* Angle from t0 to x0 */
    CoordinateSpace space;    /* Coordinate space in which metric is computed */
    INT4 iflso;
-   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
+   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
 } 
 InspiralMetric;
 /* </lalVerbatim>  */
@@ -160,7 +162,7 @@ tagInspiralCoarseBankIn
   REAL8           fLower;         /* Lower frequency cutoff */
   REAL8           fUpper;         /* Upper frequency cutoff */
   REAL8           tSampling;      /* Sampling rate */
-  void            (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
+  void            (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
   Method          method;         /* Method of waveform generation */
   INT4            order;          /* Post-Newtonian order of the waveform */
   Approximant     approximant;    /* Approximant of the waveform */
@@ -181,7 +183,7 @@ InspiralCoarseBankIn;
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 xmin, xmax, ndx, norm;
-   void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
+   void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
 } InspiralMomentsIn;
 /* </lalVerbatim>  */
 
@@ -193,7 +195,7 @@ typedef struct {
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 ndx;
-   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
+   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
 } InspiralMomentsIntegrandIn;
 
 /* </lalVerbatim>  */

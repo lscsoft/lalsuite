@@ -58,10 +58,12 @@ NRCSID( LALINSPIRALH, "$Id$" );
 /* <lalErrTable> */
 
 #define LALINSPIRALH_ENULL 1
-#define LALINSPIRALH_ECHOICE 2
+#define LALINSPIRALH_EMEM 2
+#define LALINSPIRALH_ECHOICE 3
 #define LALINSPIRALH_EDIV0 4
 #define LALINSPIRALH_ESIZE 8
 #define LALINSPIRALH_MSGENULL "Arguments contained an unexpected null pointer"
+#define LALINSPIRALH_MSGEMEM "Memory allocation error"
 #define LALINSPIRALH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALINSPIRALH_MSGEDIV0 "Division by zero"
 #define LALINSPIRALH_MSGESIZE "Invalid input range"

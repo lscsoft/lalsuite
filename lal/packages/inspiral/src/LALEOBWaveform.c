@@ -19,7 +19,7 @@ void LALEOBWaveform (LALStatus *status,
 { 
    INT4 count, i, nn=4;
    REAL8 eta, m, rn, r, s, p, q, dt, t, h, v, omega, f, x;
-   REAL8Vector values, dvalues, newvalues, yt, dym, dyt;
+   REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
@@ -51,12 +51,24 @@ void LALEOBWaveform (LALStatus *status,
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   values.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (values.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   dvalues.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (dvalues.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   newvalues.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (newvalues.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+/* Allocate all the memory required to dummy and then point the various
+   arrays to dummy - this makes it easier to handle memory failures */
+
+   dummy.length = nn * 6;
+
+   values.length = dvalues.length = newvalues.length =
+   yt.length = dym.length = dyt.length = nn;
+
+   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+   }
+
+   values.data = &dummy.data[0];
+   dvalues.data = &dummy.data[nn];
+   newvalues.data = &dummy.data[2*nn];
+   yt.data = &dummy.data[3*nn];
+   dym.data = &dummy.data[4*nn];
+   dyt.data = &dummy.data[5*nn];
 
    dt = 1./params->tSampling;
    eta = ak.eta;
@@ -144,12 +156,6 @@ Userful for debugging: Make sure a solution for r exists.
    values.data[2] = p;
    values.data[3] = q;
 
-   dym.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (dym.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   dyt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (dyt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   yt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*nn);
-   ASSERT (yt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    
    in4.function = LALHCapDerivatives;
    in4.y = &values;
@@ -199,12 +205,7 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    f = pow(v,3.)/(LAL_PI*m);
    while (count < signal->length) *(signal->data + count++) = 0.;
 
-   LALFree(yt.data);
-   LALFree(dyt.data);
-   LALFree(dym.data);
-   LALFree(values.data);
-   LALFree(dvalues.data);
-   LALFree(newvalues.data);
+   LALFree(dummy.data);
 }
 
 /*----------------------------------------------------------------------*/

@@ -55,8 +55,9 @@ LALRandomInspiralSignal(
    ASSERT (randIn->type <= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
    buff.length = signal->length;
-   buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length);
-   ASSERT (buff.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   if (!(buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length))) {
+      ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+   }
    srandom(randIn->useed);
    randIn->useed = random();
    e1 = random()/(float)RAND_MAX;
@@ -82,8 +83,11 @@ LALRandomInspiralSignal(
          break;
       default:
          noisy.length = signal->length;
-         noisy.data = (REAL4*) LALMalloc(sizeof(REAL4)*noisy.length);
-         ASSERT (noisy.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+         if (!(noisy.data = (REAL4*) LALMalloc(sizeof(REAL4)*noisy.length))) {
+            LALFree(buff.data);
+            buff.data = NULL;
+            ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+         }
          LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
          CHECKSTATUSPTR(status);
          LALREAL4VectorFFT(status->statusPtr, &noisy, &buff, randIn->fwdp);

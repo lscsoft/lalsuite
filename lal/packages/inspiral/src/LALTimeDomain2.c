@@ -126,17 +126,12 @@ void LALTimeDomain2(LALStatus *status,
 
    INT4 n=2, count;
    REAL8 m, dt, t, v, p, h, f;
-   REAL8Vector values;
-   REAL8Vector dvalues;
-   REAL8Vector valuesNew;
+   REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
    rk4In in4;
    void *funcParams;
-   REAL8Vector yt;
-   REAL8Vector dym;
-   REAL8Vector dyt;
    expnCoeffs ak;
    expnFunc func;
 
@@ -156,12 +151,19 @@ void LALTimeDomain2(LALStatus *status,
    LALChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
 
-   values.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (values.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   dvalues.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (dvalues.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   valuesNew.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (valuesNew.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   values.length = dvalues.length = valuesNew.length =
+   yt.length = dym.length = dyt.length = n;
+   dummy.length = n * 6;
+   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * n * 6))) {
+      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+   }
+
+   values.data = &dummy.data[0];
+   dvalues.data = &dummy.data[n];
+   valuesNew.data = &dummy.data[2*n];
+   yt.data = &dummy.data[3*n];
+   dym.data = &dummy.data[4*n];
+   dyt.data = &dummy.data[5*n];
 
    m = ak.totalmass;
    dt = 1./params->tSampling;
@@ -203,13 +205,6 @@ void LALTimeDomain2(LALStatus *status,
    *(values.data) = v; 
    *(values.data+1) = p;
 
-   dym.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (dym.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   dyt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (dyt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   yt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
-   ASSERT (yt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   
    in4.function = LALInspiralDerivatives;
    in4.x = t;
    in4.y = &values;
@@ -240,12 +235,7 @@ void LALTimeDomain2(LALStatus *status,
    while (count < (int)signal->length) *(signal->data + count++) = 0.;
 
 
-   LALFree(yt.data);
-   LALFree(dyt.data);
-   LALFree(dym.data);
-   LALFree(values.data);
-   LALFree(dvalues.data);
-   LALFree(valuesNew.data);
+   LALFree(dummy.data);
 
    DETATCHSTATUSPTR(status);
    RETURN (status);

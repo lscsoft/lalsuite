@@ -67,15 +67,15 @@ main ( void )
 
    coarseIn.mMin = 1.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.80;
-   coarseIn.mmFine = 0.97;
+   coarseIn.mmCoarse = 0.90;
+   coarseIn.mmFine = 0.99;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 4096.;
    coarseIn.NoisePsd = LALLIGOIPsd;
    coarseIn.order = twoPN;
-   coarseIn.space = Tau0Tau2;
+   coarseIn.space = Tau0Tau3;
    coarseIn.method = one;
    coarseIn.approximant = taylor;
    coarseIn.domain = TimeDomain;
@@ -115,9 +115,11 @@ main ( void )
         list2[i].params.mass1, 
         list2[i].params.mass1); 
      }
+     if (list2!=NULL) LALFree(list2);
+     list2 = NULL;
+     flist = 0;
   }
   if (list!=NULL) LALFree(list);
-  if (list2!=NULL) LALFree(list2);
   LALCheckMemoryLeaks();
 
   return(0);
