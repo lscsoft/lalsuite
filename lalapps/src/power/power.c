@@ -130,10 +130,8 @@ static int CompareGPS(LALStatus *stat, LIGOTimeGPS *gps1, LIGOTimeGPS *gps2)
 
 static REAL8 DeltaGPStoFloat(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *start)
 {
-	LALTimeInterval i;
 	REAL8 d;
-	LAL_CALL(LALDeltaGPS(stat, &i, stop, start), stat);
-	LAL_CALL(LALIntervalToFloat(stat, &d, &i), stat);
+	LAL_CALL(LALDeltaFloatGPS(stat, &d, stop, start), stat);
 	return(d);
 }
 
