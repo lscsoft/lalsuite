@@ -639,18 +639,30 @@ LALReadSFTdata(LALStatus *status,
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
-  /* try version 1.0 */
-  version = 1.0;
-  /* try swapping the version if it is not equal */
-  if(memcmp(inVersion,&version,sizeof(version))){
-    endian_swap (inVersion, sizeof(inVersion),1);
-    swapEndian = 1;
-    /* fail if still not true */
+  /* set invalid version */
+  version = -1.0;
+
+  if (version < 0) {
+    /* try version 1.0 */
+    version = 1.0;
+    /* try swapping the version if it is not equal */
     if(memcmp(inVersion,&version,sizeof(version))){
-      fclose (fp);
-      if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-      ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+      endian_swap (inVersion, sizeof(inVersion),1);
+      swapEndian = 1;
+      /* set invalid version if still not true */
+      if(memcmp(inVersion,&version,sizeof(version))){
+	version = -1;
+	endian_swap (inVersion, sizeof(inVersion),1);
+	swapEndian = 0;
+      }
     }
+  }
+
+  /* fail if the version is invalid */
+  if (version < 0) {
+    fclose (fp);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* check compatibility of version with this function */
