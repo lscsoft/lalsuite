@@ -4,6 +4,7 @@
 ## build, and install the software required to build LAL.  The software
 ## includes the following:
 ##verse
+##      pkgconfig-0.15.0
 ##	fftw-3.0.1 (both single- and double-precision libraries required)
 ##	gsl-1.5
 ##	libframe-6.14 (optional but recommended)
