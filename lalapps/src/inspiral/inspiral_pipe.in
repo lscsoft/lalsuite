@@ -249,9 +249,6 @@ if missing_play:
     for chunk in bad_data[i]:
       bad_segs[i][chunk.start()] = chunk
 
-    print 'good_segs[%d] = %s' % (i,str(good_segs[i]))
-    print 'bad_segs[%d]  = %s' % (i,str(bad_segs[i]))
-
   for i in range(len(data)):
     missed = [good_segs[i][k] for k in good_segs[i] if k not in bad_segs[i]]
     data[i]._ScienceSegment__chunks = missed
