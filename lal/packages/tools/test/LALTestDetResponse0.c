@@ -75,7 +75,6 @@ typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
 int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
 int        verbose_level = 0;
-BOOLEAN    global_detectors_set_p = FALSE;
 const INT4 oneBillion    = 1000000000;
 
 const REAL8 zero_tolerance = 0.;
@@ -634,13 +633,16 @@ void  skygrid_square(skygrid_t square, const skygrid_t input);
 REAL4 skygrid_rms(const skygrid_t input);
 void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
-void  skygrid_print(const skygrid_t input, const char * filename);
-void skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
+void  skygrid_print(const char * comments, const skygrid_t input,
+                    const char * filename);
+void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
 void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
 
-void  setup_global_detectors(LALStatus *status);
+void  setup_global_detectors_maybe(LALStatus *status);
+
+BOOLEAN pass_special_locations_tests_p(LALStatus *status);
 
 typedef enum
   {
@@ -662,6 +664,11 @@ FILE *xfopen(const char *path, const char *mode);
 
 /* wrapped strncpy() to guarantee NUL termination */
 char *strlcpy(char *dst, const char *src, size_t len);
+
+/*
+ * Test modules
+ */
+BOOLEAN passed_special_locations_tests_p(LALStatus *status);
 
 /* Yes, I do mean for the following block to be #if'ed out */
 #if 0
@@ -842,7 +849,7 @@ int main(int argc, char *argv[])
   verbose_level = atoi(argv[2]);
   verbose_p     = verbose_level;
 
-  setup_global_detectors(&status);
+  setup_global_detectors_maybe(&status);
 
 
   /* this section is just for finding out a time when GMST is equal to 0 */
@@ -2228,8 +2235,10 @@ int main(int argc, char *argv[])
 
           if (k == 0)
             {
-              skygrid_print(plus, "plus.txt");
-              skygrid_print(cross, "cross.txt");
+              skygrid_print("LAL-computed response to plus", plus,
+                            "plus.txt");
+              skygrid_print("LAL-computed response to cross", cross,
+                            "cross.txt");
 
               skygrid_square(tmpskygrid, plus);
               skygrid_square(tmpskygrid2, cross);
@@ -2244,9 +2253,12 @@ int main(int argc, char *argv[])
         }
       printf("\n");
 
-      skygrid_print(plus_sq_time_avg, "plus_sq_time_avg.txt");
-      skygrid_print(cross_sq_time_avg, "cross_sq_time_avg.txt");
-      skygrid_print(sum_of_sq_time_avg, "sum_of_sq_time_avg.txt");
+      skygrid_print("LAL-computed time avg. of square of response to plus",
+                    plus_sq_time_avg, "plus_sq_time_avg.txt");
+      skygrid_print("LAL-computed time avg. of square of response to cross",
+                    cross_sq_time_avg, "cross_sq_time_avg.txt");
+      skygrid_print("LAL-computed time avg. of sum of squares of response to plus and cross",
+                    sum_of_sq_time_avg, "sum_of_sq_time_avg.txt");
 
       fprintf(file_plus_sq_avg, "\n");
       fprintf(file_cross_sq_avg, "\n");
@@ -2290,6 +2302,7 @@ int main(int argc, char *argv[])
   
 
   /* compute the response using a local horizon coordinate system */
+#if 0  
   {
     REAL4 tmpsum = 0.;
     REAL8 gmst1 = 0.;
@@ -2365,19 +2378,25 @@ int main(int argc, char *argv[])
 
         if (k == 0)
           {
-            skygrid_print(resp_plus, "local_plus.txt");
-            skygrid_print(resp_cros, "local_cros.txt");
+            skygrid_print("GRASP-computed response to plus",
+                          resp_plus, "local_plus.txt");
+            skygrid_print("GRASP-computed response to cross",
+                          resp_cros, "local_cros.txt");
 
-            skygrid_print(plus, "lal_plus.txt");
-            skygrid_print(cross, "lal_cross.txt");
+            skygrid_print("LAL-computed response to plus",
+                          plus, "lal_plus.txt");
+            skygrid_print("LAL-computed response to cross",
+                          cross, "lal_cross.txt");
             
             skygrid_subtract(tmp3, resp_plus, plus);
             skygrid_fabs(tmp3, tmp3);
-            skygrid_print(tmp3, "diff_plus.txt");
+            skygrid_print("Abs. difference between GRASP and LAL for plus",
+                          tmp3, "diff_plus.txt");
 
             skygrid_subtract(tmp3, resp_cros, cross);
             skygrid_fabs(tmp3, tmp3);
-            skygrid_print(tmp3, "diff_cros.txt");
+            skygrid_print("Abs. difference between GRASP and LAL for cross",
+                          tmp3, "diff_cros.txt");
           }
 
         skygrid_square(tmp1, resp_plus);
@@ -2397,7 +2416,7 @@ int main(int argc, char *argv[])
       } /* for (k = -128; ..) */
     printf("... Done with looping over fudge_factor.\n");
   }
-
+#endif
 
   printf("\n\nGOODBYE.\n");
 
@@ -2963,12 +2982,16 @@ INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
 
 
 
-void skygrid_print(const skygrid_t input, const char * filename)
+void skygrid_print(const char * comments,
+                   const skygrid_t input, const char * filename)
 {
   INT4 i, j;
   FILE * outfile = NULL;
 
   outfile = xfopen(filename, "w");
+
+  if (comments != (char *)NULL)
+    fprintf(outfile, "# %s\n", comments);
 
   for (i = 0; i < NUM_RA; ++i)
     {
@@ -3096,7 +3119,7 @@ REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol)
 
 
 
-void setup_global_detectors(LALStatus *status)
+void setup_global_detectors_maybe(LALStatus *status)
 {
   /*
     LALDetector det_north_pole;
@@ -3105,7 +3128,12 @@ void setup_global_detectors(LALStatus *status)
     LALDetector det_green_tropic_of_cancer;
     LALDetector det_foo_tropic_of_cancer;
   */
+  static BOOLEAN global_detectors_set_p = FALSE;
   LALFrDetector frdet;
+
+  if (verbose_level & 4)
+    printf("global_detectors_set_p = %d\n", global_detectors_set_p);
+
 
   if (global_detectors_set_p == TRUE)
     {
@@ -3127,7 +3155,10 @@ void setup_global_detectors(LALStatus *status)
                         LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
-        PrintLALDetector(&det_north_pole);  
+        {
+          PrintLALDetector(&det_north_pole);
+          (void)print_small_separator_maybe();
+        }
   
       /* Det. @ South Pole */
       (void)strlcpy(frdet.name, "South Pole", LALNameLength);
@@ -3143,7 +3174,10 @@ void setup_global_detectors(LALStatus *status)
                         LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
-        PrintLALDetector(&det_south_pole);  
+        {
+          PrintLALDetector(&det_south_pole);  
+          (void)print_small_separator_maybe();
+        }
 
       /* Det. @ (0, 0) on Earth */
       (void)strlcpy(frdet.name, "Greenwich-Equator", LALNameLength);
@@ -3159,7 +3193,10 @@ void setup_global_detectors(LALStatus *status)
                         LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
-        PrintLALDetector(&det_green_equator);
+        {
+          PrintLALDetector(&det_green_equator);
+          (void)print_small_separator_maybe();
+        }
 
       /* Det. @ (0, 23.5) on Earth */
       (void)strlcpy(frdet.name, "Greenwich-Tropic of Cancer", LALNameLength);
@@ -3175,7 +3212,10 @@ void setup_global_detectors(LALStatus *status)
                         LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
-        PrintLALDetector(&det_green_tropic_of_cancer);
+        {
+          PrintLALDetector(&det_green_tropic_of_cancer);
+          (void)print_small_separator_maybe();
+        }
 
       /* Det. @ (38.4, 23.5) on Earth */
       (void)strlcpy(frdet.name, "Foo-Tropic of Cancer", LALNameLength);
@@ -3191,11 +3231,22 @@ void setup_global_detectors(LALStatus *status)
                         LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
-        PrintLALDetector(&det_foo_tropic_of_cancer);
+        {
+          PrintLALDetector(&det_foo_tropic_of_cancer);
+          print_small_separator_maybe();
+        }
 
       global_detectors_set_p = TRUE;
     }
 } /* END: setup_global_detectors() */
+
+
+
+BOOLEAN pass_special_locations_tests_p(LALStatus *status)
+{
+
+  return TRUE;
+}
 
 
 
