@@ -349,7 +349,7 @@ for seg in data:
     if do_mdcinj:
       pow1.set_mdccache(mdcdf1.get_output())
     if do_inj: 
-      pow1.set_inj(inj1.get_output())
+      pow1.set_burstinj(inj1.get_output())
       pow1.add_var_opt('calibration-cache',ifo1_calibration)
     pow1.add_var_opt('threshold',ifo1_snr)
 
@@ -371,7 +371,7 @@ for seg in data:
     if do_mdcinj:
       pow2.set_mdccache(mdcdf1.get_output())
     if do_inj: 
-      pow2.set_inj(inj1.get_output()) 
+      pow2.set_burstinj(inj1.get_output()) 
       pow2.add_var_opt('calibration-cache',ifo2_calibration)     
     pow2.add_var_opt('threshold',ifo2_snr)
 
@@ -393,7 +393,7 @@ for seg in data:
     if do_mdcinj:
       pow3.set_mdccache(mdcdf2.get_output())
     if do_inj: 
-      pow3.set_inj(inj1.get_output())
+      pow3.set_burstinj(inj1.get_output())
       pow3.add_var_opt('calibration-cache',ifo3_calibration)
     pow3.add_var_opt('threshold',ifo3_snr)
 
