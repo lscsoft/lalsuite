@@ -20,7 +20,6 @@ RCSID( "$Id$");
 /*
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
-#define DEBG_MAIN 
 #define DEBG_SGV 
 */
 
@@ -78,6 +77,8 @@ CHAR *uvar_DataDir;
 CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
+BOOLEAN uvar_outputFstat;
+
 /*----------------------------------------------------------------------*/
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
@@ -145,8 +146,9 @@ int main(int argc,char *argv[])
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
+  FILE *fpOut;
   LALStatus status = blank_status;	/* initialize status */
-
+  
   vrbflg = 1;
 
   /* set LAL error-handler */
@@ -218,6 +220,13 @@ int main(int argc,char *argv[])
   
   LALFree (scanInit.skyRegion);
   
+  if (uvar_outputFstat)
+    if ( (fpOut = fopen ("F_stat", "w")) == NULL)
+      {
+	printf ("Error opening file 'F_stat' for writing..\n");
+	exit (-1);
+      }
+
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -238,22 +247,23 @@ int main(int argc,char *argv[])
 	{
 	  DemodParams->spinDwn[0]=uvar_f1dot + s*uvar_df1dot;
 	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
-	  
+
 	  /*  This fills-in highFLines that are then used by discardFLines */
 	  if (GV.FreqImax > 5) {
 	    LAL_CALL (EstimateFLines(&status), &status);
 	  }
 	  
-
-#ifdef DEBG_MAIN
-	  for(i=0;i < GV.FreqImax ;i++)
+	  /* now, if user requested it, we output ALL F-statistic results */
+	  if (uvar_outputFstat && fpOut)
 	    {
-	      /* medianbias is 1 if GV.SignalOnly=1 */ 
-	      fprintf(stdout,"%20.10f %e %20.17f %20.17f %20.17f\n",
-		      uvar_Freq+i*uvar_dFreq,  DemodParams->spinDwn[0],
-		      Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
-	    }
-#endif
+	      int i;
+	      for(i=0;i < GV.FreqImax ;i++)
+		{
+		  if ( Fstat.F[i] >= uvar_Fthreshold )
+		    fprintf(fpOut, "%20.10f %20.17f %20.17f %20.17f\n",
+			    uvar_Freq+ i*uvar_dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+		}
+	    } /* if outputFstat */
 	  
 	  /*  This fills-in highFLines  */
 	  if (highFLines != NULL && highFLines->Nclusters > 0){
@@ -293,6 +303,8 @@ int main(int argc,char *argv[])
       
     } /*  while SkyPos */
 
+  if (uvar_outputFstat && fpOut)
+    fclose (fpOut);
 
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -348,6 +360,8 @@ initUserVars (LALStatus *stat)
   uvar_help = FALSE;
   uvar_outputLabel = NULL;
 
+  uvar_outputFstat = FALSE;
+
   /* register all our user-variables */
  
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
@@ -377,6 +391,7 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregBOOLUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
