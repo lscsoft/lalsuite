@@ -520,7 +520,9 @@ int main(int argc,char *argv[])
   strcat(ckp_fname, ".ckp");
 
 #if USE_BOINC
-  use_boinc_filename0(Fstatsfilename);
+  /* only boinc_resolve the filename if we run CFS once */
+  if (cfsRunNo == 0)
+	  use_boinc_filename0(Fstatsfilename);
   /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
 
