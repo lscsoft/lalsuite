@@ -294,7 +294,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 lambda;
 
   /* structures for optimal filter */
-  REAL4FrequencySeries optFilter;
+  REAL4FrequencySeries *optFilter;
   StochasticOptimalFilterCalInput optFilterIn;
 
   /* spectrum structures */
@@ -844,21 +844,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   normOutput.normalization = &normLambda;
   normOutput.variance = &normSigma;
 
-  /* set metadata fields for optimal filter */
-  strncpy(optFilter.name, "optFilter", LALNameLength);
-  optFilter.epoch = gpsStartTime;
-  optFilter.deltaF = deltaF;
-  optFilter.f0 = fMin;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for optimal filter...\n");
 
   /* allocate memory for optimal filter */
-  optFilter.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &(optFilter.data), filterLength), \
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &optFilter, "optFilter", \
+        gpsStartTime, fMin, deltaF, lalDimensionlessUnit, filterLength), \
       &status);
-  memset(optFilter.data->data, 0, \
-      optFilter.data->length * sizeof(*optFilter.data->data));
 
   /* set optimal filter inputs */
   optFilterIn.overlapReductionFunction = overlap;
@@ -887,7 +879,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   ccIn.hBarTildeTwo = hBarTildeTwo;
   ccIn.responseFunctionOne = responseOne;
   ccIn.responseFunctionTwo = responseTwo;
-  ccIn.optimalFilter = &optFilter;
+  ccIn.optimalFilter = optFilter;
 
   if (vrbflg)
     fprintf(stdout, "Done with memory allocation...\n");
@@ -1470,8 +1462,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "Generating optimal filter...\n");
 
         /* build optimal filter */
-        optFilter.epoch = gpsStartTime;
-        LAL_CALL(LALStochasticOptimalFilterCal(&status, &optFilter, \
+        optFilter->epoch = gpsStartTime;
+        LAL_CALL(LALStochasticOptimalFilterCal(&status, optFilter, \
               &optFilterIn, &normLambda), &status);
 
         /* analyse middle segment */
@@ -1683,7 +1675,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseOne), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTwo), &status);
-  LAL_CALL(LALDestroyVector(&status, &(optFilter.data)), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, optFilter), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdOne), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPsdTwo), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
