@@ -46,12 +46,29 @@ If not specified, the seed is gerenated from the current time.
 \end{itemize}
 
 \paragraph{Format for \texttt{sourcefile}:} The source file consists
-of any number of lines of data, each line having 6
-whitespace-delimeted fields specifying a particular chirp waveform:
-the GPS epoch at the start of the chirp (\verb@INT8@ nanoseconds), the
-two binary masses (\verb@REAL4@ $M_\odot$), the distance to the source
-(\verb@REAL4@ kpc), and the source's inclination and phase at
-coalescence (\verb@REAL4@ degrees).
+of any number of lines of data, each specifying a chirp waveform.
+Each line must begin with a character code (\verb@CHAR@ equal to one
+of \verb@'i'@, \verb@'f'@, or \verb@'c'@), followed by 6
+whitespace-delimited numerical fields: the GPS epoch of the chirp
+(\verb@INT8@ nanoseconds), the two binary masses (\verb@REAL4@
+$M_\odot$), the distance to the source (\verb@REAL4@ kpc), and the
+source's inclination and phase at coalescence (\verb@REAL4@ degrees).
+The character codes have the following meanings:
+\begin{itemize}
+\item[\texttt{'i'}] The epoch represents the GPS time of the start of
+the chirp waveform.
+\item[\texttt{'f'}] The epoch represents the GPS time of the end of
+the chirp waveform.
+\item[\texttt{'c'}] The epoch represents the GPS time when the
+binaries would coalesce in the point-mass approximation.
+\end{itemize}
+Thus a typical input line for two $1.4M_\odot$ objects at 11\,000\,kpc
+inclined $30^\circ$ with an initial phase of $45^\circ$, coalescing at
+315\,187\,245 GPS seconds, will have the following line in the input
+file:
+\begin{verbatim}
+c 315187245000000000 1.4 1.4 11000.0 30.0 45.0
+\end{verbatim}
 
 \paragraph{Format for \texttt{respfile}:} The response function $R(f)$
 gives the real and imaginary components of the transformation
@@ -169,7 +186,7 @@ int lalDebugLevel = 0;
 /* Global constants. */
 #define MSGLEN (256)    /* maximum length of warning/info messages */
 #define FSTART (25.0)   /* initial frequency of waveform */
-#define FSTOP  (2000.0) /* termination frequency of waveform */
+#define FSTOP  (500.0) /* termination frequency of waveform */
 #define DELTAT (0.01)   /* sampling interval of amplitude and phase */
 
 /* Usage format string. */
@@ -542,29 +559,31 @@ main(int argc, char **argv)
     CoherentGW waveform;           /* amplitude and phase structure */
     REAL4TimeSeries signal;        /* GW signal */
     REAL8 time;                    /* length of GW signal */
+    CHAR timeCode;                 /* code for signal time alignment */
     CHAR message[MSGLEN];          /* warning/info messages */
 
     /* Read and convert input line. */
     if ( sourcefile ) {
-      ok &= ( fscanf( fp, "%Li %f %f %f %f %f\n", &epoch, &m1, &m2,
-		      &dist, &inc, &phic ) == 6 );
+      ok &= ( fscanf( fp, "%c %lli %f %f %f %f %f\n", &timeCode,
+		      &epoch, &m1, &m2, &dist, &inc, &phic ) == 7 );
       ppnParams.mTot = m1 + m2;
       ppnParams.eta = m1*m2/( ppnParams.mTot*ppnParams.mTot );
       ppnParams.d = dist*LAL_PC_SI*1000.0;
       ppnParams.inc = inc*LAL_PI/180.0;
       ppnParams.phi = phic*LAL_PI/180.0;
-      I8ToLIGOTimeGPS( &( ppnParams.epoch ), epoch );
     } else {
+      timeCode = 'i';
       ppnParams.mTot = M1 + M2;
       ppnParams.eta = M1*M2/( ppnParams.mTot*ppnParams.mTot );
       ppnParams.d = DIST;
       ppnParams.inc = INC;
       ppnParams.phi = PHIC;
-      I8ToLIGOTimeGPS( &( ppnParams.epoch ), EPOCH );
+      epoch = EPOCH;
     }
 
     if ( ok ) {
       /* Set up other parameter structures. */
+      ppnParams.epoch.gpsSeconds = ppnParams.epoch.gpsNanoSeconds = 0;
       ppnParams.position.latitude = ppnParams.position.longitude = 0.0;
       ppnParams.position.system = COORDINATESYSTEM_EQUATORIAL;
       ppnParams.psi = 0.0;
@@ -575,7 +594,7 @@ main(int argc, char **argv)
       ppnParams.deltaT = DELTAT;
       memset( &waveform, 0, sizeof(CoherentGW) );
 
-      /* Generate waveform. */
+      /* Generate waveform at zero epoch. */
       SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
 	   &stat );
       LALSnprintf( message, MSGLEN, "%d: %s", ppnParams.termCode,
@@ -588,13 +607,21 @@ main(int argc, char **argv)
 	WARNING( message );
       }
 
+      /* Compute epoch for waveform. */
+      time = waveform.a->data->length*DELTAT;
+      if ( timeCode == 'f' )
+	epoch -= (INT8)( 1000000000.0*time );
+      else if ( timeCode == 'c' )
+	epoch -= (INT8)( 1000000000.0*ppnParams.tc );
+      I8ToLIGOTimeGPS( &( waveform.a->epoch ), epoch );
+      waveform.f->epoch = waveform.phi->epoch = waveform.a->epoch;
+
       /* Generate and inject signal. */
       signal.epoch = waveform.a->epoch;
       signal.epoch.gpsSeconds -= 1;
       signal.deltaT = output.deltaT/4.0;
       signal.data = NULL;
-      time = waveform.a->data->length*DELTAT + 2.0;
-      time /= signal.deltaT;
+      time = ( time + 2.0 )/signal.deltaT;
       SUB( LALSCreateVector( &stat, &( signal.data ), (UINT4)time ),
 	   &stat );
       SUB( LALSimulateCoherentGW( &stat, &signal, &waveform,

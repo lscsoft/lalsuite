@@ -55,10 +55,11 @@ which is much less than the sampling interval of LIGO.
 Next, the polarization response functions of the detector
 $F_{+,\times}(\alpha,\delta)$ are computed for every minute of the
 signal's duration, using the position of the source in \verb@*signal@,
-the detector information in \verb@*detector@, and the response
-functions in \verb@???@.  Subsequently, the polarization functions are
-estimated for each output sample by interpolating these precomputed
-values.  Again, this guarantees a fractional accuracy of
+the detector information in \verb@*detector@, and the function
+\verb@LALComputeDetAMResponseSeries()@.  Subsequently, the
+polarization functions are estimated for each output sample by
+interpolating these precomputed values.  Again, this guarantees a
+fractional accuracy of
 $\lessim(\pi^2/2)(1\mathrm{min}/1\mathrm{day})^2\sim2\times10^{-6}$.
 
 Next, the frequency response of the detector is estimated in the
@@ -102,21 +103,22 @@ Then, for each output sample time $t_k$, we compute:
 \begin{eqnarray}
 t & = & t_\mathrm{off} + k \times dt \; , \nonumber \\
 j & = & \lfloor t \rfloor            \; , \nonumber \\
-f & = & t - j                        \; . \nonumber
+f & = & t - j                        \; , \nonumber
 \end{eqnarray}
-The time series sampled at the new time is then:
+where $\lfloor x\rfloor$ is the ``floor'' function; i.e.\ the largest
+integer $\leq x$.  The time series sampled at the new time is then:
 $$
 A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
 $$
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALSCreateVector()              LALSCreateVectorSequence()
-LALSDestroyVector()             LALSDestroyVectorSequence()
-LALConvertSkyCoordinates()      LALGeodeticToGeocentric()
+LALWarning()                    LALInfo()
+LALSCreateVector()              LALSDestroyVector()
+LALDCreateVector()              LALDDestroyVector()
+LALConvertSkyCoordinates()      LALGeocentricToGeodetic()
 LALCVectorAbs()                 LALCVectorAngle()
 LALUnwrapREAL4Angle()
-LALWarning()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -130,8 +132,8 @@ LALWarning()
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/DetectorSite.h>
+#include <lal/DetResponse.h>
 #include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeDelay.h>
@@ -177,8 +179,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 shiftInit, shiftFinal; /* ditto for signal->shift */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
-  CreateVectorSequenceIn in;  /* structure for creating vectors and
-				 vector sequences */
+  SkyPosition source;         /* source sky position */
   BOOLEAN fFlag = 0; /* 1 if frequency left detector->transfer range */
   BOOLEAN pFlag = 0; /* 1 if frequency was estimated from phase */
 
@@ -188,9 +189,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
      data array.  At some time t measured in units of output->deltaT,
      the interpolation point in xData is given by ( xOff + t*xDt ),
      where xOff is an offset and xDt is a relative sampling rate. */
-  REAL4VectorSequence *polResponse = NULL;
+  LALDetAMResponseSeries polResponse;
   REAL8Vector *delay = NULL;
-  REAL4 *aData, *fData, *phiData, *shiftData, *polData;
+  REAL4 *aData, *fData, *phiData, *shiftData, *plusData, *crossData;
   REAL8 *delayData;
   REAL8 aOff, fOff, phiOff, shiftOff, polOff, delayOff;
   REAL8 aDt, fDt, phiDt, shiftDt, polDt, delayDt;
@@ -339,14 +340,34 @@ LALSimulateCoherentGW( LALStatus        *stat,
   else
     shiftData = NULL;
 
+  /* Convert source position to equatorial coordinates, if
+     required. */
+  if ( detector->site ) {
+    source = signal->position;
+    if ( source.system != COORDINATESYSTEM_EQUATORIAL ) {
+      ConvertSkyParams params; /* parameters for conversion */
+      EarthPosition location;  /* location of detector */
+      params.gpsTime = &( output->epoch );
+      params.system = COORDINATESYSTEM_EQUATORIAL;
+      if ( source.system == COORDINATESYSTEM_HORIZON ) {
+	params.zenith = &( location.geodetic );
+	location.x = detector->site->location[0];
+	location.y = detector->site->location[1];
+	location.z = detector->site->location[2];
+	TRY( LALGeocentricToGeodetic( stat->statusPtr, &location ),
+	     stat );
+      }
+      TRY( LALConvertSkyCoordinates( stat->statusPtr, &source,
+				     &source, &params ), stat );
+    }
+  } 
+
   /* Generate the table of propagation delays. */
   delayDt = output->deltaT/DELAYDT;
-  in.length = (UINT4)( output->data->length*output->deltaT/DELAYDT )
-    + 3;
-  TRY( LALDCreateVector( stat->statusPtr, &delay, in.length ), stat );
+  nMax = (UINT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
+  TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
   delayData = delay->data;
   if ( detector->site ) {
-    SkyPosition source;      /* position of source on sky */
     LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
     LALPlaceAndGPS event;    /* spacetime point where we compute delay */
     DetTimeAndASource input; /* input to time delay function */
@@ -361,32 +382,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
     delayMin = delayMax = LAL_REARTH_SI / ( LAL_C_SI*output->deltaT );
     delayMin *= -1;
 
-    /* Convert source position to equatorial coordinates. */
-    source = signal->position;
-    if ( source.system != COORDINATESYSTEM_EQUATORIAL ) {
-      ConvertSkyParams params; /* parameters for conversion */
-      EarthPosition location;  /* location of detector */
-      params.gpsTime = &gpsTime;
-      params.system = COORDINATESYSTEM_EQUATORIAL;
-      if ( source.system == COORDINATESYSTEM_HORIZON ) {
-	params.zenith = &( location.geodetic );
-	location.x = detector->site->location[0];
-	location.y = detector->site->location[1];
-	location.z = detector->site->location[2];
-	LALGeodeticToGeocentric( stat->statusPtr, &location );
-	BEGINFAIL( stat )
-	  TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-	ENDFAIL( stat );
-      }
-      LALConvertSkyCoordinates( stat->statusPtr, &source, &source,
-				&params );
-      BEGINFAIL( stat )
-	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-      ENDFAIL( stat );
-    }
-
     /* Compute table. */
-    for ( i = 0; (UINT4)( i ) < in.length; i++ ) {
+    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
       REAL8 tDelay; /* propagation time */
       LALTimeDelayFromEarthCenter( stat->statusPtr, &tDelay, &input );
       BEGINFAIL( stat )
@@ -406,33 +403,82 @@ LALSimulateCoherentGW( LALStatus        *stat,
   } else {
     LALInfo( stat, "Detector site absent; simulating h_plus with no"
 	     " propagation delays." );
-    memset( delayData, 0, in.length*sizeof(REAL8) );
+    memset( delayData, 0, nMax*sizeof(REAL8) );
     delayMin = delayMax = 0.0;
   }
 
   /* Generate the table of polarization response functions. */
   polDt = output->deltaT/POLDT;
-  in.length = (UINT4)( output->data->length*output->deltaT/POLDT )
-    + 3;
-  in.vectorLength = 2;
-  LALSCreateVectorSequence( stat->statusPtr, &polResponse, &in );
+  nMax = (UINT4)( output->data->length*output->deltaT/POLDT ) + 3;
+  memset( &polResponse, 0, sizeof( LALDetAMResponseSeries ) );
+  LALSCreateVector( stat->statusPtr, &( polResponse.pPlus ), nMax );
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   ENDFAIL( stat );
-  polData = polResponse->data;
-  for ( i = 0; (UINT4)( i ) < 2*in.length; i+=2 ) {
-    /* This is a temporary kludge... */
-    polData[i] = 1.0;
-    polData[i+1] = 0.0;
+  LALSCreateVector( stat->statusPtr, &( polResponse.pCross ), nMax );
+  BEGINFAIL( stat ) {
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+  } ENDFAIL( stat );
+  LALSCreateVector( stat->statusPtr, &( polResponse.pScalar ), nMax );
+  BEGINFAIL( stat ) {
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
+	 stat );
+  } ENDFAIL( stat );
+  plusData = polResponse.pPlus->data;
+  crossData = polResponse.pCross->data;
+  if ( detector->site ) {
+    LALSource polSource;     /* position and polarization angle */
+    LIGOTimeGPS gpsTime;     /* detector time when we compute delay */
+    LALPlaceAndGPS event;    /* spacetime point where we compute delay */
+    LALDetAndSource input;            /* response input structure */
+    LALTimeIntervalAndNSample params; /* response parameter structure */
+
+    /* Arrange nested pointers, and set initial values. */
+    polSource.equatorialCoords = source;
+    polSource.orientation = (REAL8)( signal->psi );
+    input.pSource = &polSource;
+    input.pDetector = detector->site;
+    params.epoch = output->epoch;
+    params.epoch.gpsSeconds -= POLDT/2;
+    params.deltaT = POLDT;
+    params.nSample = nMax;
+
+    /* Compute table of responses. */
+    LALComputeDetAMResponseSeries( stat->statusPtr, &polResponse,
+				   &input, &params );
+    BEGINFAIL( stat ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	   stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
+	   stat );
+      TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pScalar ) ),
+	   stat );
+    } ENDFAIL( stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pScalar ) ),
+	 stat );
+  } else {
+    /* No detector site, so just simulate response to hplus. */
+    for ( i = 0; (UINT4)( i ) < nMax; i++ ) {
+      plusData[i] = 1.0;
+      crossData[i] = 0.0;
+    }
   }
 
   /* Decompose the transfer function into an amplitude and phase
      response. */
-  in.length = detector->transfer->data->length;
-  LALSCreateVector( stat->statusPtr, &phiTemp, in.length );
+  nMax = detector->transfer->data->length;
+  LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
   LALCVectorAngle( stat->statusPtr, phiTemp,
@@ -440,14 +486,18 @@ LALSimulateCoherentGW( LALStatus        *stat,
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
-  LALSCreateVector( stat->statusPtr, &phiTransfer, in.length );
+  LALSCreateVector( stat->statusPtr, &phiTransfer, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
   LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
@@ -455,15 +505,19 @@ LALSimulateCoherentGW( LALStatus        *stat,
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
   TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
-  LALSCreateVector( stat->statusPtr, &aTransfer, in.length );
+  LALSCreateVector( stat->statusPtr, &aTransfer, nMax );
   BEGINFAIL( stat ) {
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
   LALCVectorAbs( stat->statusPtr, aTransfer,
@@ -472,7 +526,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
     TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+	 stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
 	 stat );
   } ENDFAIL( stat );
   phiTransData = phiTransfer->data;
@@ -668,9 +724,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
     x = polOff + iCentre*polDt;
     j = (INT4)floor( x );
     frac = (REAL4)( x - j );
-    j *= 2;
-    oPlus *= frac*polData[j+2] + ( 1.0 - frac )*polData[j];
-    oCross *= frac*polData[j+3] + ( 1.0 - frac )*polData[j+1];
+    oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
+    oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
     outData[i] = oPlus + oCross;
   }
 
@@ -688,7 +743,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
-  TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+  TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pPlus ) ),
+       stat );
+  TRY( LALSDestroyVector( stat->statusPtr, &( polResponse.pCross ) ),
        stat );
   DETATCHSTATUSPTR( stat );
   RETURN( stat );

@@ -166,7 +166,7 @@ h(t) = h_+(t)F_+(\alpha,\delta,\psi;t) +
 	h_\times(t)F_\times(\alpha,\delta,\psi;t) \; .
 $$
 We will not discuss the computation of these functions $F_{+,\times}$,
-as these are covered in the package \verb@???@.
+as these are covered under the header \verb@DetResponse.h@.
 
 \paragraph{The transfer function:} All gravitational wave detectors
 incorporate a set of analog and digital filters that convert a

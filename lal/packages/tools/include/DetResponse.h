@@ -33,6 +33,7 @@ detected at a given time.
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
 #include <lal/DetectorSite.h>
+#include <lal/SkyCoordinates.h>
 
 #ifdef __cplusplus
 extern "C"
