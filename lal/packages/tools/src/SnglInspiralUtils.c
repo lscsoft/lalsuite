@@ -229,7 +229,6 @@ LALCompareSnglInspiral (
   REAL4 dm1, dm2;
   REAL4 dpsi0, dpsi3;
   REAL4 sigmaRatio;
-  Approximant approximant;
 
   INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -242,7 +241,7 @@ LALCompareSnglInspiral (
   /* compate on triggger time coincidence */
   if ( labs( ta - tb ) < params->dt )
   {
-    if ( approximant == BCV )
+    if ( params->approximant == BCV )
     {
       dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
       dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
@@ -257,7 +256,7 @@ LALCompareSnglInspiral (
 	LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
       }
     }
-    else if ( approximant == TaylorF2 )
+    else if ( params->approximant == TaylorF2 )
     {  
       dm1 = fabs( aPtr->mass1 - bPtr->mass1 );
       dm2 = fabs( aPtr->mass2 - bPtr->mass2 );
