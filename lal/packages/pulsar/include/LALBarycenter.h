@@ -189,7 +189,7 @@ struct EmissionTime
 \begin{description}
 \item[\texttt{  REAL8  deltaT}] $t_e$(TDB) - $t_a$(GPS) (+ constant = ``light-travel-time from source to SSB'') 
 
-\item[\texttt{  REAL8 te}]   pulse emission time $t_e$ in TDB (plus constant =
+\item[\texttt{  LIGOTimeGPS te}]   pulse emission time $t_e$ in TDB (plus constant =
 ``light-travel-time from source to SSB''), in format of LIGOTImeGPS structure.
 
 \item[\texttt{  REAL8 tDot}]   d(emission time in TDB)/d(arrival time in GPS)  
