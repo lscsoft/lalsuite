@@ -34,26 +34,36 @@ $Id$
   /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
      \subsubsection{Description}
    * This module contains a function for plotting 3D template banks by creating a 
-   * Mathematica notebook.  The notebook renders the templates as points in a three 
-   * dimensional lattice.  The plot is animated so the user can see the template bank 
-   * from different perspectives.
+   * \MATHEMATICA notebook.  The notebook renders the templates as points in a three 
+   * dimensional lattice.  The plot is animated so the user can see the template bank from 
+   * different perspectives.  See figure 1.1.
      </lalLaTeX> 
      END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
 
-  /* <lalLaTeX>
-     \includegraphics{LALMathematicaHplot1}
-     </lalLaTeX>*/
+  /* FIGURE - "LALMathematicaHplot1" ----------------------------------------- <lalLaTeX>
+     \begin{figure}
+     \begin{center}
+     \includegraphics[width=0.5\textwidth]{LALMathematicaHplot1}
+     \end{center}
+     \caption{Here is an example template bank produced by running InspiralSpinBankTest.c
+              to generate roughly 5000 templates.  Currently the plot doesn't show the 
+              contour of the templates; it renders them as spheres.  In the case of 
+              metrics with disimilar scales along the principle directions you will 
+ 	      notice considerable space between points accordingly.}
+     \end{figure}
+     </lalLaTeX>
+     END - FIGURE -------------------------------------------------------------------- */
 
   /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
      \subsubsection{Notes}
      \begin{itemize}
    * \item The output of this function is ``Math3DNotebook.nb" and will appear in the 
    * directory of the program that called this function.
-   * \item Exported Mathematica graphics have no preferred directory and will appear in
-   * your home directory for unix users and in the Mathematica directory for Windows 
-   * users unless you have another path configured in your Mathematica installation. It
-   * is necessary to change the file name within the notebook to avoid overwriting 
-   * previous files.
+   * \item Exported \MATHEMATICA graphics have no preferred directory and will appear in 
+   * your home directory for unix users and in the $\backslash$Mathematica directory for 
+   * Windows users unless you have another path configured in your \MATHEMATICA 
+   * installation. It is necessary to change the file name within the notebook to avoid 
+   * overwriting previous files.
      \end{itemize}
      </lalLaTeX>
      END SUBSUBSECTION - NOTES ------------------------------------------------------- */

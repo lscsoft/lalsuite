@@ -21,12 +21,11 @@
 /*SECTION - HEADER - "LalMathematica.h" -------------------------------------- <lalLaTeX>
   \section{Header \texttt{LALMathematica.h}}
   \label{s:LALMathematica.h}
+  \newcommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
 * Provides structures, functions and macro definitions for modules
-* that generate Mathematica notebooks.  Currently, the only module
-* using this header file is \texttt{Math3DPlot.c}, which
-* generates 3D animated plots of template banks having
-* three parameters.  See the \texttt{Math3DPlot.c} documenation
-* for more detail.  
+* that generate \MATHEMATICA notebooks. Currently, the only module using this header file 
+* is \texttt{Math3DPlot.c}, which generates 3D animated plots of template banks having
+* three parameters.  See the \texttt{Math3DPlot.c} documenation for more detail.  
   </lalLaTeX> */
  
   /*SUBSECTION - SYNOPSIS ---------------------------------------------------- <lalLaTeX>
@@ -34,16 +33,15 @@
     \begin{verbatim}
     #include <lal/LALMathematica.h>
     \end{verbatim}
-  * This header file defines macros containing Mathematica syntax that 
-  * is otherwise messy to implement into C source files.  With these 
-  * macros one can easily write a function that will output a mathematica
-  * notebook. Simply\ldots
+  * This header file defines macros containing \MATHEMATICA syntax that is otherwise messy 
+  * to implement into C source files.  With these macros one can easily write a function 
+  * that will output a \MATHEMATICA notebook. Simply\ldots
     \begin{enumerate}
   * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".  
   * \item Use BEG\_NOTEBOOK to start the notebook file.  
   * \item Use the appropriate BEG and END macros with fprint(nb, ``Your Text") in 
   * between to write your text to the cells of the notebook.  If you are writing 
-  * Mathematica commands use the INPUT macros; for plain text, use TEXT Macros.  
+  * \MATHEMATICA commands use the INPUT macros; for plain text, use TEXT Macros.  
   * \item Denote titles and sections with the appropriate macros.  
   * \item Use END\_NOTEBOOK to end the notebook and 
   * use fclose(nb) to close the file ``nb". 
@@ -82,7 +80,7 @@
     \input{LALMathematicaHM}
     \noindent
   * See the source file \texttt{Math3DPlot.c} for an example of how to use these macros
-  * to generate a Mathematica notebook in your own program.  
+  * to generate a \MATHEMATICA notebook in your own program.  
     \begin{itemize}
   * \item{NOTEBOOK} Denotes the beginning and ending of the notebook file.  A 
   * BEG\_NOTEBOOK tag must start the file and an END\_NOTEBOOK tag must end it.
@@ -92,7 +90,7 @@
   * \item{SECTION} Same as title except the text printed will be in \emph{section font}.
   * Subsequent input and text cells following the END\_SECTIONCELL tag will be grouped
   * with that section until a new BEG\_SECTIONCELL tag is encountered.
-  * \item{INPUT} provides cells to input Mathematica commands.
+  * \item{INPUT} provides cells to input \MATHEMATICA  commands.
   * \item{TEXT} provides cells to input plain text.
     \end{itemize}
   * Notice that the file 
@@ -101,9 +99,9 @@
   * an underscored tag instead of an END tag without an underscore.  
   * Although the notebook will compile (usually) if you use the tags without an ending 
   * underscore, the dangling comma is taken as a null member of the list of grouped cells  
-  * and when you view the notebook in mathematica you may see the word ``NULL" printed 
-  * on a line.  That is an indication that you should use the underscore version of the 
-  * tag which preceeded the ``NULL" statement.   
+  * and when you view the notebook in \MATHEMATICA  you may see the word 
+  * ``NULL" printed on a line.  That is an indication that you should use the underscore 
+  * version of the tag which preceeded the ``NULL" statement.   
     </lalLaTeX> 
     END SUBSECTION - MACROS ---------------------------------------------------------- */
 
@@ -132,7 +130,7 @@
   * \item Obviously the definitions and functions associated with 
   * this header are NOT lal complient and thus do not belong in any lal routines except 
   * test programs.
-  * \item There are many more commands to manipulate Mathematica notebooks that are not
+  * \item There are many more commands to manipulate \MATHEMATICA notebooks that are not
   * included in this header.  The macros are only what is necessary for a 
   * \emph{bare minimum} interface.   
     \end{itemize} 
