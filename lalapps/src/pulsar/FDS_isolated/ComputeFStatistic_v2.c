@@ -480,18 +480,51 @@ int main(int argc,char *argv[])
 	  if (loopcounter == 0)
 	    {
 	      COMPLEX16Vector *FaRefined = NULL;
+	      COMPLEX16Vector *FbRefined = NULL;
+	      REAL8Vector *FstatRefined = NULL;
+	      UINT4 nbins, ni; 
+	      REAL4 A, B, C, D;
+	      REAL8 FaRe, FaIm, FbRe, FbIm;
+	      UINT4 M; 
 
 	      if ( uvar_useInterpolation && (uvar_overSampling != 1) )
 		{
-		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, uvar_overSampling*FBand->Fa->length, uvar_Dterms), &status);
+		  nbins =  uvar_overSampling * FBand->Fa->length;
+		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, nbins, uvar_Dterms), &status);
+		  LAL_CALL (refineCOMPLEX16Vector(&status, &FbRefined, FBand->Fb, nbins, uvar_Dterms), &status);
+
+		  /* calculate F-statistic by combining Fa and Fb properly */
+		  LAL_CALL (LALDCreateVector (&status, &FstatRefined, nbins), &status);
+
+		  A = DemodParams->amcoe->A;
+		  B = DemodParams->amcoe->B;
+		  C = DemodParams->amcoe->C;
+		  D = DemodParams->amcoe->D;
+		  
+		  M = DemodParams->SFTno;
+
+		  for (ni = 0; ni < nbins; ni++)
+		    {
+		      FaRe = FaRefined->data[ni].re;
+		      FaIm = FaRefined->data[ni].im;
+		      FbRe = FbRefined->data[ni].re;
+		      FbIm = FbRefined->data[ni].im;
+
+		      FstatRefined->data[ni] = B * (FaRe*FaRe + FaIm*FaIm) + A * (FbRe*FbRe + FbIm*FbIm) - 2.0*C*(FaRe*FbRe + FaIm*FbIm);
+		      FstatRefined->data[ni] *= (4.0/(M*D));
+
+		    } /* for ni < nbins */
 
 		  if (lalDebugLevel) 
 		    {
 		      LAL_CALL (writeCOMPLEX16Vector(&status, FaRefined, va("Fa_interpolated_%f.dat", uvar_overSampling) ), &status);
 		      LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_natural.dat"), &status);
 		    }
+
 		  LAL_CALL (LALZDestroyVector (&status, &FaRefined), &status);
-		  
+		  LAL_CALL (LALZDestroyVector (&status, &FbRefined), &status);
+		  LAL_CALL (LALDDestroyVector (&status, &FstatRefined), &status);
+
 		} /* if useInterpolation */
 
 	      if (lalDebugLevel && !uvar_useInterpolation) {
