@@ -20,6 +20,149 @@
 NRCSID (FINDCHIRPCHISQC, "$Id$");
 
 void
+LALFindChirpChisqVetoInit (
+    LALStatus                  *status,
+    FindChirpChisqParams       *params,
+    UINT4                       numChisqBins,
+    UINT4                       numPoints
+    )
+{
+  UINT4                         l, m;
+  COMPLEX8                     *qtildeBin = NULL;
+
+  INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( params, status, 
+      FINDCHIRPCHISQ_ENULL, FINDCHIRPCHISQ_MSGENULL );
+
+  ASSERT( numPoints > 0, status,
+      FINDCHIRPCHISQ_ENUMZ, FINDCHIRPCHISQ_MSGENUMZ );
+
+  ASSERT( ! params->plan, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+  ASSERT( ! params->qtildeBinVec, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+  ASSERT( ! params->qtildeBinVec, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+
+  ASSERT( numChisqBins > 0, status, 
+      FINDCHIRPCHISQ_ECHIZ, FINDCHIRPCHISQ_MSGECHIZ );
+
+
+  /*
+   *
+   * create storage
+   *
+   */
+
+
+  /* create plan for chisq filter */
+  LALEstimateInvComplexFFTPlan( status->statusPtr, 
+      &(params->plan), numPoints );
+  CHECKSTATUSPTR( status );
+
+  /* create one vector for the fourier domain data */
+  LALCCreateVector( status->statusPtr, 
+      &(params->qtildeBinVec), numPoints );
+  BEGINFAIL( status )
+  {
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+          &(params->plan) ), status );
+  }
+  ENDFAIL( status );
+
+  /* create numBins vectors for the time domain data */
+  params->qBinVecPtr = (COMPLEX8Vector **) 
+    LALCalloc( 1, numChisqBins * sizeof(COMPLEX8Vector*) );
+  if ( ! params->qBinVecPtr )
+  {
+    TRY( LALCDestroyVector( status->statusPtr, 
+           &(params->qtildeBinVec) ), status );
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+          &(params->plan) ), status );
+    ABORT( status, FINDCHIRPCHISQ_EALOC, FINDCHIRPCHISQ_MSGEALOC );
+  }
+
+  for ( l = 0; l < numChisqBins; ++l )
+  {
+    LALCCreateVector( status->statusPtr, params->qBinVecPtr + l, numPoints );
+    BEGINFAIL( status )
+    {
+      for ( m = 0; m < l ; ++m )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, 
+              params->qBinVecPtr + m ), status );
+      }
+      LALFree( params->qBinVecPtr );
+      TRY( LALCDestroyVector( status->statusPtr, 
+            &(params->qtildeBinVec) ), status );
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+            &(params->plan) ), status );
+    }
+    ENDFAIL( status );
+  }
+
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+void
+LALFindChirpChisqVetoFinalize (
+    LALStatus                  *status,
+    FindChirpChisqParams       *params,
+    UINT4                       numChisqBins
+    )
+{
+  UINT4                         l;
+
+  INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( params, status, 
+      FINDCHIRPCHISQ_ENULL, FINDCHIRPCHISQ_MSGENULL );
+  ASSERT( params->plan, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+  ASSERT( params->qtildeBinVec, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+  ASSERT( params->qtildeBinVec, status, 
+      FINDCHIRPCHISQ_ENNUL, FINDCHIRPCHISQ_MSGENNUL );
+  ASSERT( numChisqBins > 0, status, 
+      FINDCHIRPCHISQ_ECHIZ, FINDCHIRPCHISQ_MSGECHIZ );
+
+  /*
+   *
+   * destroy storage
+   *
+   */
+
+
+  for ( l = 0; l < numChisqBins; ++l )
+  {
+    LALCDestroyVector( status->statusPtr, (params->qBinVecPtr + l) );
+    CHECKSTATUSPTR( status );
+  }
+
+  LALFree( params->qBinVecPtr );
+
+  LALCDestroyVector( status->statusPtr, &(params->qtildeBinVec) );
+  CHECKSTATUSPTR( status );
+
+  /* destroy plan for chisq filter */
+  LALDestroyComplexFFTPlan( status->statusPtr, &(params->plan) );
+  CHECKSTATUSPTR( status );
+
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+void
 LALFindChirpChisqVeto (
     LALStatus                  *status,
     REAL4Vector                *chisqVec,
@@ -39,10 +182,7 @@ LALFindChirpChisqVeto (
   UINT4                 numChisqBins;
   UINT4                *chisqBin;
 
-  COMPLEX8Vector       *qtildeBinVec;
   COMPLEX8             *qtildeBin;
-
-  COMPLEX8Vector      **qBinVecPtr;
 
   INITSTATUS( status, "LALFindChirpChisqVeto", FINDCHIRPCHISQC );
   ATTATCHSTATUSPTR( status );
@@ -86,6 +226,14 @@ LALFindChirpChisqVeto (
   ASSERT( input->qtildeVec->data, status, 
       FINDCHIRPCHISQ_ENULL, FINDCHIRPCHISQ_MSGENULL );
 
+  /* check that the workspace vectors exist */
+  ASSERT( params->qtildeBinVec, status, 
+      FINDCHIRPCHISQ_ENULL, FINDCHIRPCHISQ_MSGENULL );
+  ASSERT( params->qtildeBinVec->data, status, 
+      FINDCHIRPCHISQ_ENULL, FINDCHIRPCHISQ_MSGENULL );
+  ASSERT( params->qtildeBinVec->length > 0, status, 
+      FINDCHIRPCHISQ_ECHIZ, FINDCHIRPCHISQ_MSGECHIZ );
+
 
   /*
    *
@@ -104,33 +252,7 @@ LALFindChirpChisqVeto (
   numChisqBins = numChisqPts - 1;
   chisqBin     = params->chisqBinVec->data;
 
-
-  /*
-   *
-   * create storage (this should be moved to an init)
-   *
-   */
-
-
-  /* create one vector for the fourier domain data */
-  qtildeBinVec = NULL;
-
-  LALCCreateVector( status->statusPtr, &qtildeBinVec, numPoints );
-  CHECKSTATUSPTR( status );
-
-  qtildeBin = qtildeBinVec->data;
-
-  /* create numBins vectors for the time domain data */
-  qBinVecPtr = (COMPLEX8Vector **) 
-    LALMalloc( numChisqBins * sizeof(COMPLEX8Vector*) );
-
-  for ( l = 0; l < numChisqBins; ++l )
-  {
-    qBinVecPtr[l] = NULL;
-
-    LALCCreateVector( status->statusPtr, qBinVecPtr + l, numPoints );
-    CHECKSTATUSPTR( status );
-  }
+  qtildeBin = params->qtildeBinVec->data;
 
 
   /* 
@@ -147,8 +269,8 @@ LALFindChirpChisqVeto (
     memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l], 
         (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
 
-    LALCOMPLEX8VectorFFT( status->statusPtr, qBinVecPtr[l], qtildeBinVec,
-        params->plan );
+    LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l], 
+        params->qtildeBinVec, params->plan );
     CHECKSTATUSPTR( status );
   }
 
@@ -160,34 +282,14 @@ LALFindChirpChisqVeto (
    */
 
 
-#if 0
-  /* this is for debugging */
-  {
-    memset( chisq, 0, numPoints * sizeof(REAL4) );
-
-    for ( j = 0; j < numPoints; ++j ) 
-    {
-      REAL4 sumXl = 0.0;
-      REAL4 sumYl = 0.0;
-
-      for ( l = 0; l < numChisqBins; ++l ) 
-      {
-        sumXl += params->chisqNorm * qBinVecPtr[l]->data[j].re;
-        sumYl += params->chisqNorm * qBinVecPtr[l]->data[j].im;
-      }
-      chisq[j] = sumXl * sumXl + sumYl * sumYl;
-    }
-  }
-#endif
-
   memset( chisq, 0, numPoints * sizeof(REAL4) );
 
   for ( j = 0; j < numPoints; ++j ) 
   {
     for ( l = 0; l < numChisqBins; ++l ) 
     {
-      REAL4 Xl = qBinVecPtr[l]->data[j].re;
-      REAL4 Yl = qBinVecPtr[l]->data[j].im;
+      REAL4 Xl = params->qBinVecPtr[l]->data[j].re;
+      REAL4 Yl = params->qBinVecPtr[l]->data[j].im;
       REAL4 deltaXl = params->chisqNorm * Xl -
         (params->chisqNorm * q[j].re / (REAL4) (numChisqBins));
       REAL4 deltaYl = params->chisqNorm * Yl -
@@ -196,25 +298,6 @@ LALFindChirpChisqVeto (
       chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
     }
   }
-
-
-  /*
-   *
-   * destroy storage (this should be moved to a finalize)
-   *
-   */
-
-
-  for ( l = 0; l < numChisqBins; ++l )
-  {
-    LALCDestroyVector( status->statusPtr, (qBinVecPtr + l) );
-    CHECKSTATUSPTR( status );
-  }
-
-  LALFree( qBinVecPtr );
-
-  LALCDestroyVector( status->statusPtr, &qtildeBinVec );
-  CHECKSTATUSPTR( status );
 
 
   /* normal exit */
