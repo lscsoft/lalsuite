@@ -4,16 +4,19 @@
 # Author: Greg Mendell
 #
 
-if { $argc < 20 } {
+# Changes
+# 01/18/05 gam; Add output_type. Give some params more meaningful but also more general names.
+
+if { $argc < 21 } {
     puts " ";
-    puts "Create Condor DAG that runs ComputeStackSlideSums to find Loudest Event and Monte Carlo Simulation in parallel as parent jobs; child job runs designated matlab script on xml output of parent jobs.\n";
+    puts "Create Condor DAG that runs ComputeStackSlideSums to find Loudest Event and Monte Carlo Simulation in parallel as parent jobs A and B; child C job runs designated code on xml output of parent jobs.\n";
     puts "Usage:";
     puts " ";
     puts " ";
-    puts "$argv0 <base_name> <eff_or_ul> <ifo> <start_time> <duration> <start_freq> <full_band_width> <num_sub_bands> <sft_time> <num_sfts> <sft_path_pattern> <LEparam_file> <numLEjobs> <MCparam_file> <numMCjobs> <sun_edat_file> <earth_edat_file> <computeStackSlideSumsAndPath> <compiledMatlabScriptAndPath> <dagWorkingDir>";
+    puts "$argv0 <base_name> <conf_or_faRate> <ifo> <start_time> <duration> <start_freq> <full_band_width> <num_sub_bands> <sft_time> <num_sfts> <sft_path_pattern> <SEparam_file> <numSEjobs> <MCparam_file> <numMCjobs> <sun_edat_file> <earth_edat_file> <computeStackSlideSumsAndPath> <childCExeNameAndPath> <dagWorkingDir> <output_type>";
     puts " ";
     puts "base_name:                    the base filename from which to create all .dag, .sub, .xml, and .txt filenames."
-    puts "eff_or_ul:                    if > 0 then find ULs with this confidence (e.g., 0.95); else find efficiencies."
+    puts "conf_or_faRate:               depending on output_type below; this is the False Alarm Rate (e.g., .01) or Confidence (e.g., .95)."
     puts "ifo:                          the IFO for which to create jobs.";
     puts "start_time:                   start time of first SFT to use.";
     puts "duration:                     duration of the search.";
@@ -23,22 +26,26 @@ if { $argc < 20 } {
     puts "sft_time:                     time baseline of the SFTs used.";
     puts "num_sfts:                     number of sfts used in job."
     puts "sft_path_pattern:             path to SFTs plus glob style pattern to match to find SFT files." 
-    puts "LEparam_file:                 parameter file to use to set up job that finds the Loudest Event."
-    puts "numLEjobs:                    number of parallel jobs to run to find the Loudest Event."
-    puts "MCparam_file:                 parameter file to use to set up Monte Carlo simulation jobs."
-    puts "numMCjobs:                    number of parallel jobs to run perform Monte Carlo simulation."
+    puts "SEparam_file:                 parameter file to use to set up parent job A that finds the Search Events."
+    puts "numSEjobs:                    number of parallel jobs to run to find the Search Events."
+    puts "MCparam_file:                 parameter file to use to set up parent job B that runs the Monte Carlo simulation."
+    puts "numMCjobs:                    number of parallel jobs to run perform the Monte Carlo simulation."
     puts "sun_edat_file:                path and name of sun ephemeris file to use.";
     puts "earth_edat_file:              path and name of earth ephemeris file to use.";
-    puts "computeStackSlideSumsAndPath: path and name of ComputeStackSlideSums executable."
-    puts "matlabScriptAndPath:          path and name of compiled Matlab script to run after parent jobs finish.";
-    puts "dagWorkingDir:                the working directory from where all condor dag and submit files will run.";    
+    puts "computeStackSlideSumsAndPath: path and name of ComputeStackSlideSums executable for parent jobs A and B."
+    puts "childCExeNameAndPath:         path and name of executable (e.g., compiled Matlab code) to run as child job C after parent jobs finish.";
+    puts "dagWorkingDir:                the working directory from where all condor dag and submit files will run.";
+    puts "output_type:                  determines command line args for child C job, and name of output.";
+    puts "                              0 = output Efficiency based on the Loudest Event.";
+    puts "                              1 = output Efficiency for a fixed False Alarm Rate.";
+    puts "                              2 = output Estimated Upper Limit for a desired Confidence.";
     puts " "; 
     return;
 }
 
 # Names of parameters used in the script
 set base_name [lindex $argv 0];
-set eff_or_ul [lindex $argv 1]
+set conf_or_faRate [lindex $argv 1]
 set ifo [lindex $argv 2];
 set start_time [lindex $argv 3];
 set duration [lindex $argv 4];
@@ -48,15 +55,16 @@ set num_sub_bands [lindex $argv 7];
 set sft_time [lindex $argv 8];
 set num_sfts [lindex $argv 9];
 set sft_path_pattern [lindex $argv 10];
-set LEparam_file [lindex $argv 11];
-set numLEjobs [lindex $argv 12];
+set SEparam_file [lindex $argv 11];
+set numSEjobs [lindex $argv 12];
 set MCparam_file [lindex $argv 13];
 set numMCjobs [lindex $argv 14];
 set sun_edat_file [lindex $argv 15];
 set earth_edat_file [lindex $argv 16];
 set computeStackSlideSumsAndPath [lindex $argv 17];
-set matlabScriptAndPath [lindex $argv 18];
+set childCExeNameAndPath [lindex $argv 18];
 set dagWorkingDir [lindex $argv 19];
+set output_type [lindex $argv 20];
 
 # Create submit files for DAG:
 # A  B
@@ -97,24 +105,31 @@ set submitFileChildC $base_name;
 append submitFileChildC "_childC.sub";
 source $MCparam_file;
 set amplitudeMC $searchThreshold4; # MUST BE SET IN MCparam_file!
-set matlabScriptPath [file dirname $matlabScriptAndPath ];
-if {$eff_or_ul > 0.0} {
-  set outputFileChildC "Confidence_";
+set childCExePath [file dirname $childCExeNameAndPath ];
+# if {$conf_or_faRate > 0.0} # 01/18/05 gam
+if {$output_type == 0} {
+  set outputFileChildC "EfficiencyFromLE_";
+} elseif {$output_type == 1} {
+  set outputFileChildC "EfficiencyFixedFARate_";
+} elseif {$output_type == 2} {
+  set outputFileChildC "Confidence_";  
 } else {
-  set outputFileChildC "Efficiency_";
+  puts "\nInvalid output_type = $output_type\n";
+  exit 1;
 }
 append outputFileChildC $base_name;
 set cFid [open $submitFileChildC "w"];
 puts $cFid "universe   = vanilla";
-puts $cFid "environment = PATH=\$(PATH):$matlabScriptPath";
+puts $cFid "environment = PATH=\$(PATH):$childCExePath";
 puts $cFid "getenv     = True";
-puts $cFid "executable = $matlabScriptAndPath";
+puts $cFid "executable = $childCExeNameAndPath";
 puts $cFid "output     = childC.out.\$(JobID)";
 puts $cFid "error      = childCerr.\$(JobID)";
 puts $cFid "log        = childC.log";
 puts $cFid "";
-if {$eff_or_ul > 0.0} {
-   puts $cFid "arguments  = $dagWorkingDir/\$(nameFileListA) $dagWorkingDir/\$(nameFileListB) $amplitudeMC $eff_or_ul $num_sfts 0 $outputFileChildC.\$(JobID) 0";
+# if {$conf_or_faRate > 0.0} # 01/18/05 gam
+if {$output_type > 0} {
+   puts $cFid "arguments  = $dagWorkingDir/\$(nameFileListA) $dagWorkingDir/\$(nameFileListB) $amplitudeMC $conf_or_faRate $num_sfts 0 $outputFileChildC.\$(JobID) 0";
 } else {
    puts $cFid "arguments  = $dagWorkingDir/\$(nameFileListA) $dagWorkingDir/\$(nameFileListB) $amplitudeMC 0 $outputFileChildC.\$(JobID) 0";
 }
@@ -142,16 +157,16 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
    # Open the file with the list of output files for parent job A.
    set pListAFid [open $outputFileListA "w"];
    # Divide the band_width up and create jobs for each sub-band.
-   set sub_band_width [expr $band_width/$numLEjobs];
-   for {set i 0} {$i<$numLEjobs} {incr i} {
+   set sub_band_width [expr $band_width/$numSEjobs];
+   for {set i 0} {$i<$numSEjobs} {incr i} {
       set sub_start_freq [expr $freq + ($sub_band_width*$i)];
       set mid_freq [expr $sub_start_freq + ($sub_band_width/2.0)];
       set jobID_subJobID "$j";
       append jobID_subJobID "_";
       append jobID_subJobID "$i";
       set outputFileName "$outputParentA$jobID_subJobID";
-      #set cmd "exec ./runComputeStackSlideSUM.tclsh $ifo $start_time $duration $mid_freq $sub_band_width $sft_time $num_sfts \"$sft_path_pattern\" $LEparam_file runStackSlideSearch.job $sun_edat_file $earth_edat_file $outputFileName condor >> $submitFileParentA";
-      set cmd "exec ./runComputeStackSlideSUM.tclsh $ifo $start_time $duration $mid_freq $sub_band_width $sft_time $num_sfts \"$sft_path_pattern\" $LEparam_file runStackSlideSearch.job $sun_edat_file $earth_edat_file $outputFileName condor";
+      #set cmd "exec ./runComputeStackSlideSUM.tclsh $ifo $start_time $duration $mid_freq $sub_band_width $sft_time $num_sfts \"$sft_path_pattern\" $SEparam_file runStackSlideSearch.job $sun_edat_file $earth_edat_file $outputFileName condor >> $submitFileParentA";
+      set cmd "exec ./runComputeStackSlideSUM.tclsh $ifo $start_time $duration $mid_freq $sub_band_width $sft_time $num_sfts \"$sft_path_pattern\" $SEparam_file runStackSlideSearch.job $sun_edat_file $earth_edat_file $outputFileName condor";
       #puts $cmd;
       set nodeName "A$jobID_subJobID";
       set argList [lindex [split [lindex [split [eval $cmd] "\n"] 1] "="] 1];
