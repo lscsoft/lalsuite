@@ -172,7 +172,7 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 	    k=j;
 	  }
 	}
-	if(sep>0.0){
+	if(sep>LAL_REAL4_EPS){
 	  LALWarning(stat,"Complex zero has no conjugate pair:");
 	  LALPrintError("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
 			zeros[i].re,zeros[i].im);
@@ -215,7 +215,7 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 	    k=j;
 	  }
 	}
-	if(sep>0.0){
+	if(sep>LAL_REAL4_EPS){
 	  LALWarning(stat,"Complex pole has no conjugate pair:");
 	  LALPrintError("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
 			poles[i].re,poles[i].im);
@@ -230,7 +230,7 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
-    if(input->gain.im!=0.0){
+    if(fabs(input->gain.im)>fabs(LAL_REAL4_EPS*input->gain.re)){
       LALWarning(stat,"Gain is non-real:");
       LALPrintError("\tg = %.8e + i*%.8e\n", input->gain.re,
 		    input->gain.im);
@@ -418,7 +418,7 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 	    k=j;
 	  }
 	}
-	if(sep>0.0){
+	if(sep>LAL_REAL8_EPS){
 	  LALWarning(stat,"Complex zero has no conjugate pair:");
 	  LALPrintError("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
 			zeros[i].re,zeros[i].im);
@@ -461,7 +461,7 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 	    k=j;
 	  }
 	}
-	if(sep>0.0){
+	if(sep>LAL_REAL8_EPS){
 	  LALWarning(stat,"Complex pole has no conjugate pair:");
 	  LALPrintError("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
 			poles[i].re,poles[i].im);
@@ -476,7 +476,7 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
-    if(input->gain.im!=0.0){
+    if(fabs(input->gain.im)>fabs(LAL_REAL8_EPS*input->gain.re)){
       LALWarning(stat,"Gain is non-real:");
       LALPrintError("\tg = %.8e + i*%.8e\n", input->gain.re,
 		    input->gain.im);
