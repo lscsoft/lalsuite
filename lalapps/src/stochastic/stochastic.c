@@ -384,12 +384,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* set segment input parameters */
-  streamParams.frameCacheOne = frameCacheOne;
-  streamParams.frameCacheTwo = frameCacheTwo;
-  streamParams.ifoOne = ifoOne;
-  streamParams.ifoTwo = ifoTwo;
-  streamParams.channelOne = channelOne;
-  streamParams.channelTwo = channelTwo;
   streamParams.buffer = 0;
   streamParams.duration = segmentDuration + 2 * padData;
   streamPair.streamOne = &segmentPadOne;
@@ -2761,8 +2755,8 @@ void readDataPair(LALStatus *status,
   bufferStartTime.gpsNanoSeconds = 0;
 
   /* set channels */
-  frChanInOne.name = params->channelOne;
-  frChanInTwo.name = params->channelTwo;
+  frChanInOne.name = channelOne;
+  frChanInTwo.name = channelTwo;
   frChanInTwo.type = ADCDataChannel;
   frChanInOne.type = ADCDataChannel;
 
@@ -2800,7 +2794,7 @@ void readDataPair(LALStatus *status,
     fprintf(stdout, "Opening first frame cache...\n");
 
   /* open first frame cache */
-  LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
+  LALFrCacheImport(status->statusPtr, &frCacheOne, frameCacheOne);
   CHECKSTATUSPTR(status);
   LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
   CHECKSTATUSPTR(status);
@@ -2894,7 +2888,7 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Opening second frame cache...\n");
 
     /* open second frame cache and read in second channel */
-    LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
+    LALFrCacheImport(status->statusPtr, &frCacheTwo, frameCacheTwo);
     CHECKSTATUSPTR(status);
     LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
     CHECKSTATUSPTR(status);
