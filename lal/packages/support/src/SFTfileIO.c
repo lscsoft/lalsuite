@@ -839,9 +839,9 @@ find_files (const CHAR *globdir)
     return (NULL);
   }
 #else
-  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+strlen(fpattern)+4)) == NULL)
+  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
     return(NULL);
-  sprintf(ptr1,"%s\\*%s*",dname,fpattern);  
+  sprintf(ptr1,"%s\\*",dname);  
   dir = _findfirst(ptr1,&entry);
   LALFree(ptr1);
   if (dir == -1) {
