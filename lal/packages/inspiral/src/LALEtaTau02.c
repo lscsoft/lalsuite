@@ -29,6 +29,16 @@ None.
 
 \subsubsection*{Uses}
 None.
+\subsubsection*{Notes}
+The {\tt void pointer} {\tt *p} should point to a {\tt struct}
+of type {\tt EtaTau02In:}
+
+{\tt void *p;\\
+    EtaTau02In q;\\
+    ---fill in the elements of q ---\\
+    p = (void *) \&q;\\
+}
+
 </lalLaTeX> */
 
 

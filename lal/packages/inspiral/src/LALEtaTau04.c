@@ -32,6 +32,16 @@ None.
 \subsubsection*{Uses}
 None.
 
+\subsubsection*{Uses}
+None.
+The {\tt void pointer} {\tt *p} should point to a {\tt struct}
+of type {\tt EtaTau04In}
+
+{texttt void *p;\\
+    EtaTau04In q;\\
+    ---fill in the elements of q ---\\
+    p = (void *) \&q;\\
+    }
 </lalLaTeX> */
 
 #include <lal/LALInspiral.h>

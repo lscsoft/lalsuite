@@ -78,7 +78,7 @@ int main (void) {
    static REAL8 dt;
    UINT4 n, i;
 
-   params.approximant=TaylorF1;
+   params.approximant=TaylorF2;
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
@@ -114,14 +114,32 @@ int main (void) {
 			   
    if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV) 
    {
-	static RealFFTPlan *revp;
+	RealFFTPlan *revp = NULL;
+	COMPLEX8Vector *Signal1 = NULL;
 	LALInspiralWave(&status, signal1, &params);
 	/*
 	   REPORTSTATUS(&status);
 	 */
 	LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
+
+	LALCCreateVector(&status, &Signal1, n/2+1);
+	for (i=1; i<n/2; i++) 
+	{
+		Signal1->data[i].re = signal1->data[i];
+		Signal1->data[i].im = signal1->data[n-i];
+	}
+	Signal1->data[0].re = 0.;
+	Signal1->data[0].re = 0.;
+	Signal1->data[n/2].re = 0.;
+	Signal1->data[n/2].re = 0.;
+
+	LALReverseRealFFT(&status, signal2, Signal1, revp);
+	LALCDestroyVector (&status, &Signal1);
+	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
+
 	LALREAL4VectorFFT(&status, signal2, signal1, revp);
 	LALDestroyRealFFTPlan (&status, &revp);
+	printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
    }
    else
    {
@@ -130,7 +148,6 @@ int main (void) {
 	   REPORTSTATUS(&status);
 	 */
    }
-   printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
    fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
 
    if (status.statusCode) 

@@ -81,7 +81,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 \item \texttt{EtaTau02In, EtaTau04In:}
 These are the input structures needed in solving for the mass
 ratio $\eta$ given the chirptimes $\tau_0$ and $\tau_2,$ or
-to solve for $\eta$ given the chirptimes $\tau_2$ and $\tau_4.$
+to solve for $\eta$ given the chirptimes $\tau_0$ and $\tau_4.$
 
 \input{LALEtaTau0Tau2InH}
 
@@ -157,6 +157,8 @@ by \texttt{TaylorT1} approximant (see Damour, Iyer, Sathyaprakash,
 \item \texttt{PadeT1:} Time-domain P-approximant.
 \item \texttt{PadeF1:} Frequency-domain P-approximant (not yet implemented).
 \item \texttt{EOB:} Effective one-body waveform 
+\item \texttt{BCV:} Detection template family of Buonanno, Chen and 
+                    Vallisneri (PRD 59, 084006 (1999)).
 \item \texttt{DJS:} Effective one-body waveform to 3.5 PN order 
 \item \texttt{INSPA:} Improved stationary phase approximation (not implemented yet)
 \item \texttt{IRSPA:} Improved relativistic stationary phase approximation (not implemented yet)
@@ -177,7 +179,7 @@ The inspiral waveform parameter structure containing information about the
   \item \texttt { level:} (introduced by Duncan Brown?)
   \item \texttt { *segmentIdVec:} (introduced by Duncan Brown?)
   \item \texttt { number:} (introduced by Duncan Brown?)
-  \item \texttt { nStartPad:} Number of leading elements to be set to zero (input).
+  \item \texttt { nStartPad:} Number of leading elements in the template to be set to zero (input).
   \item \texttt { nEndPad:} Number of trailing bins to be set to zero, the 
   resulting waveform will have at least this many bins zero at the end, probably
   more since we always deal with an integer power of 2 array (input). 
@@ -241,13 +243,13 @@ The inspiral waveform parameter structure containing information about the
 
 \item \texttt{InspiralACSTParams:}
 \input{LALInspiralACSTParamsH} 
-This is a structure needed to generate solve the differential equation
+This is a structure needed to solve the differential equation
 	giving the evolution of the orbital angular momentum and the
 	spin angular momenta in the case of spinning black hole binaries.
 \begin{itemize}
   \item	\texttt {v:} parameter of 'integration': v=sqrt(M/r) 
-  \item {magS1:} The constant magnitudes of the primary.
-  \item {magS2:} The constant magnitudes of the secondary.
+  \item {magS1:} The constant spin magnitude of the primary.
+  \item {magS2:} The constant spin magnitude of the secondary.
   \item {NCap[3]:} Source direction (unit vector) in detector coordinate system.
   \item {spin1[3]:} Spin of the larger body.
   \item {M:} Total mass of the binary (in seconds).
