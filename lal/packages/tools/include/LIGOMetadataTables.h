@@ -88,6 +88,8 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{SnglBurstTable}
 \idx[Type]{SnglInspiralTable}
 \idx[Type]{SummValueTable}
+\idx[Type]{CoincInspiralTable}
+\idx[Type]{StochasticTable}
 
 \subsubsection*{Type \texttt{MetadataTableType}}
 </lalLaTeX>
@@ -108,7 +110,8 @@ typedef enum
   sim_burst_table,
   summ_value_table,
   sim_inst_params_table,
-  coinc_inspiral_table
+  coinc_inspiral_table,
+	stochastic_table
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -581,6 +584,31 @@ SimInstParamsTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{StochasticTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagStochasticTable
+{
+	struct tagStochasticTable *next;
+	CHAR          ifo_one[LIGOMETA_IFO_MAX];
+	CHAR          ifo_two[LIGOMETA_IFO_MAX];
+	CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
+	CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
+	LIGOTimeGPS   start_time;
+	LIGOTimeGPS   duration;
+	REAL8         cc_stat;
+	REAL8         cc_sigma;
+}
+StochasticTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{MetadataTable}}
 
 </lalLaTeX>
@@ -601,6 +629,7 @@ tagMetadataTable
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
+	StochasticTable       *stochasticTable;
 }
 MetadataTable;
 /* </lalVerbatim> */

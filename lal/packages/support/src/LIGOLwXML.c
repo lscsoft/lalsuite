@@ -230,6 +230,9 @@ LALBeginLIGOLwXMLTable (
     case sim_inst_params_table:
       fprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
       break;
+		case stochastic_table:
+			fprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
+			break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -568,6 +571,25 @@ LALWriteLIGOLwXMLTable (
         tablePtr.simInstParamsTable = tablePtr.simInstParamsTable->next;
       }
       break;
+		case stochastic_table:
+			while( tablePtr.stochasticTable )
+			{
+				FIRST_TABLE_ROW
+				fprintf( xml->fp, STOCHASTIC_ROW,
+						tablePtr.stochasticTable->ifo_one,
+						tablePtr.stochasticTable->ifo_two,
+						tablePtr.stochasticTable->channel_one,
+						tablePtr.stochasticTable->channel_two,
+						tablePtr.stochasticTable->start_time.gpsSeconds,
+						tablePtr.stochasticTable->start_time.gpsNanoSeconds,
+						tablePtr.stochasticTable->duration.gpsSeconds,
+						tablePtr.stochasticTable->duration.gpsNanoSeconds,
+						tablePtr.stochasticTable->cc_stat,
+						tablePtr.stochasticTable->cc_sigma
+						);
+				tablePtr.stochasticTable = tablePtr.stochasticTable->next;
+			}
+			break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }

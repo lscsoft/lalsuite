@@ -55,6 +55,8 @@ defined in this file are
 \item SUMM\_VALUE\_ROW 
 \item LIGOLW\_XML\_SIM\_INST\_PARAMS
 \item SIM\_INST\_PARAMS\_ROW 
+\item LIGOLW\_XML\_STOCHASTIC
+\item STOCHASTIC\_ROW
 \end{itemize}
 
 \vfill{\footnotesize\input{LIGOLwXMLHeadersHV}}
@@ -425,6 +427,25 @@ extern "C" {
 
 #define SIM_INST_PARAMS_ROW \
 "         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
+
+#define LIGOLW_XML_STOCHASTIC \
+"   <Table Name=\"stochasticgroup:stochastic:table\">\n" \
+"      <Column Name=\"stochasticgroup:stochastic:process_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:ifo_one\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:ifo_two\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:channel_one\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:channel_two\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:start_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:start_time_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:duration\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:duration_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:cc_stat\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"stochasticgroup:stochastic:cc_sigma\" Type=\"real_8\"/>\n" \
+"      <Stream Name=\"stochasticgroup:stochastic:table\" Type=\"Local\" Delimiter=\",\">\n"
+
+#define STOCHASTIC_ROW \
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"
+
 
 #ifdef  __cplusplus
 #pragma {
