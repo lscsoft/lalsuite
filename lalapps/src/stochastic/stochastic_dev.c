@@ -180,6 +180,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   AverageSpectrumParams psdParams;
  
   /* response functions */
+  COMPLEX8FrequencySeries *respTempOneA;
+  COMPLEX8FrequencySeries *respTempOneB;
+  COMPLEX8FrequencySeries *respTempOneC;
+  COMPLEX8FrequencySeries *respTempTwoA;
+  COMPLEX8FrequencySeries *respTempTwoB;
+  COMPLEX8FrequencySeries *respTempTwoC;
   COMPLEX8FrequencySeries *respOneA;
   COMPLEX8FrequencySeries *respOneB;
   COMPLEX8FrequencySeries *respOneC;
@@ -394,24 +400,44 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for response functions */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneA, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempOneA, \
         "respTempOneA", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneB, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempOneB, \
         "respTempOneB", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneC, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempOneC, \
         "respTempOneC", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoA, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempTwoA, \
         "respTempTwoA", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoB, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempTwoB, \
         "respTempTwoB", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoC, \
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTempTwoC, \
         "respTempTwoC", gpsStartTime, 0, deltaF, countPerAttoStrain, \
         respLength), &status);
+
+  /* allocate memory for reduced frequency band response functions */
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneA, \
+        "respOneA", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneB, \
+        "respOneB", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respOneC, \
+        "respOneC", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoA, \
+        "respTwoA", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoB, \
+        "respTwoB", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &respTwoC, \
+        "respTwoC", gpsStartTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
 
   if (vrbflg)
   {
@@ -714,12 +740,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         "optFilter", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
         filterLength), &status);
 
-  /* set optimal filter inputs */
-  optFilterIn.overlapReductionFunction = overlap;
-  optFilterIn.omegaGW = omegaGW;
-  optFilterIn.calibratedInverseNoisePSD1 = calInvPSDOne;
-  optFilterIn.calibratedInverseNoisePSD2 = calInvPSDTwo;
-
   if (debug_flag)
   {
     /* allocate memory for CC spectrum*/
@@ -727,13 +747,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
           filterLength), &status);
   }
-
-  /* set CC inputs */
-  ccIn.hBarTildeOne = hBarTildeOne;
-  ccIn.hBarTildeTwo = hBarTildeTwo;
-  ccIn.responseFunctionOne = respOneB;
-  ccIn.responseFunctionTwo = respTwoB;
-  ccIn.optimalFilter = optFilter;
 
   if (vrbflg)
   {
@@ -876,35 +889,35 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* compute response function */
-    respOneA->epoch = gpsSegmentAStart;
-    respOneB->epoch = gpsSegmentBStart;
-    respOneC->epoch = gpsSegmentCStart;
-    respTwoA->epoch = gpsSegmentAStart;
-    respTwoB->epoch = gpsSegmentBStart;
-    respTwoC->epoch = gpsSegmentCStart;
+    respTempOneA->epoch = gpsSegmentAStart;
+    respTempOneB->epoch = gpsSegmentBStart;
+    respTempOneC->epoch = gpsSegmentCStart;
+    respTempTwoA->epoch = gpsSegmentAStart;
+    respTempTwoB->epoch = gpsSegmentBStart;
+    respTempTwoC->epoch = gpsSegmentCStart;
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respOneA, calCacheOne, \
-          &calfacts), &status);
-    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-    calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respOneB, calCacheOne, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneA, calCacheOne, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL(LALExtractFrameResponse(&status, respOneC, calCacheOne, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneB, calCacheOne, \
+          &calfacts), &status);
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+    calfacts.ifo = ifoOne;
+    LAL_CALL(LALExtractFrameResponse(&status, respTempOneC, calCacheOne, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTwoA, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoA, calCacheTwo, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTwoB, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoB, calCacheTwo, \
           &calfacts), &status);
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL(LALExtractFrameResponse(&status, respTwoC, calCacheTwo, \
+    LAL_CALL(LALExtractFrameResponse(&status, respTempTwoC, calCacheTwo, \
           &calfacts), &status);
 
     if (vrbflg)
@@ -914,18 +927,18 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* reduce to the optimal filter frequency range */
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respOneA, \
-          numFMin, filterLength), &status);
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respOneB, \
-          numFMin, filterLength), &status);
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respOneC, \
-          numFMin, filterLength), &status);
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respTwoA, \
-          numFMin, filterLength), &status);
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respTwoB, \
-          numFMin, filterLength), &status);
-    LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(&status, respTwoC, \
-          numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respOneA, \
+          respTempOneA, numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respOneB, \
+          respTempOneB, numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respOneC, \
+          respTempOneC, numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respTwoA, \
+          respTempTwoA, numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respTwoB, \
+          respTempTwoB, numFMin, filterLength), &status);
+    LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &respTwoC, \
+          respTempTwoC, numFMin, filterLength), &status);
 
     /* output the results */
     if (debug_flag)
@@ -1015,6 +1028,12 @@ INT4 main(INT4 argc, CHAR *argv[])
       fprintf(stdout, "Generating optimal filter...\n");
     }
 
+    /* set optimal filter inputs */
+    optFilterIn.overlapReductionFunction = overlap;
+    optFilterIn.omegaGW = omegaGW;
+    optFilterIn.calibratedInverseNoisePSD1 = calInvPSDOne;
+    optFilterIn.calibratedInverseNoisePSD2 = calInvPSDTwo;
+
     /* build optimal filter */
     optFilter->epoch = gpsSegmentAStart;
     LAL_CALL(LALStochasticOptimalFilterCal(&status, optFilter, \
@@ -1026,7 +1045,13 @@ INT4 main(INT4 argc, CHAR *argv[])
       LALPrintFrequencySeries(optFilter, "optFilter.dat");
     }
 
-    /* save */
+    /* set CC inputs */
+    ccIn.hBarTildeOne = hBarTildeOne;
+    ccIn.hBarTildeTwo = hBarTildeTwo;
+    ccIn.responseFunctionOne = respOneB;
+    ccIn.responseFunctionTwo = respTwoB;
+    ccIn.optimalFilter = optFilter;
+
     if (debug_flag)
     {
       if (vrbflg)
@@ -1038,6 +1063,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
             ccSpectrum, &ccIn, epochsMatch), &status);
 
+      /* save */
       LALSnprintf(debugFilename, LALNameLength, "%d-ccSpectrum.dat", \
           gpsSegmentBStart.gpsSeconds);
       LALCPrintFrequencySeries(ccSpectrum, debugFilename);
@@ -1077,6 +1103,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoA), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoB), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoC), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempOneA), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempOneB), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempOneC), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoA), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoB), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoC), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respOneA), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respOneB), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respOneC), &status);
