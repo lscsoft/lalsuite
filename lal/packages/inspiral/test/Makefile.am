@@ -2,8 +2,8 @@
 check_PROGRAMS = LALInspiralTest ChirpSpace
 LALInspiralTest_SOURCES = LALInspiralTest.c
 ChirpSpace_SOURCES = ChirpSpace.c
-LALInspiralTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
-ChirpSpace_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+ChirpSpace_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALInspiralTest ChirpSpace
 MOSTLYCLEANFILES = .dvi-dep

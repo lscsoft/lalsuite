@@ -2,7 +2,7 @@
 check_PROGRAMS = LALMomentTest
 
 LALMomentTest_SOURCES = LALMomentTest.c CheckStatus.c
-LALMomentTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALMomentTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALMomentTest

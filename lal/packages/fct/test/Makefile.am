@@ -2,11 +2,11 @@
 #check_PROGRAMS = LALfctTest LALfctSample LALFCTInterfaceTest
 check_PROGRAMS = LALfctSample LALFCTInterfaceTest
 #LALfctTest_SOURCES = LALfctTest.c timingfunctions.c timingfunctions.h
-#LALfctTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+#LALfctTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 LALfctSample_SOURCES = LALfctSample.c
-LALfctSample_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALfctSample_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 LALFCTInterfaceTest_SOURCES = LALFCTInterfaceTest.c
-LALFCTInterfaceTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALFCTInterfaceTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = LALfctTest LALFCTInterfaceTest
 TESTS = LALFCTInterfaceTest

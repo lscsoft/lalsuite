@@ -154,16 +154,16 @@ This example shows how to add a package called "mypackage" to LAL.
      and link them to LAL. Change the lines                                
      
      LALSampleTest_SOURCES = LALSampleTest.c
-     LALSampleTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+     LALSampleTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      LALTemplateTest_SOURCES = LALTemplateTest.c
-     LALTemplateTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+     LALTemplateTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
                                                           
      to
           
      MyTestProgA_SOURCES = MyTestProgA.c
-     MyTestProgA_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+     MyTestProgA_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      MyTestProgB_SOURCES = MyTestProgB.c              
-     MyTestProgB_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+     MyTestProgB_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
      
      and the line                            
      

@@ -53,16 +53,6 @@ characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
-/*
- * This needs to be in some source code somewhere,
- * so may as well put it here.
- */
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-const int lalNoDebug = 1;
-#else
-const int lalNoDebug = 0;
-#endif
-
 /* <lalVerbatim file="FileIOCP"> */
 FILE *
 LALOpenDataFile( const char *fname )
