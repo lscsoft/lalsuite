@@ -160,6 +160,10 @@ AC_MSG_ERROR([single precision FFTW must be properly installed.])
 AC_DEFUN(LAL_SFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison FFTW works)
 AC_TRY_RUN([
+#if defined HAVE_LIBFFTW3F
+#include <fftw3.h>
+int main() { return 0; }
+#else
 #include <stdio.h>
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
@@ -168,21 +172,29 @@ AC_TRY_RUN([
 #else
 #error "don't have either sfftw.h or fftw.h"
 #endif
-int main() { return (sizeof(fftw_real)!=4 || fftw_sizeof_fftw_real()!=4); } ],
+int main() { return (sizeof(fftw_real)!=4 || fftw_sizeof_fftw_real()!=4); }
+#endif ],
 AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no)
+[
 echo "**************************************************************"
 echo "* FFTW does not seem to be working.                          *"
 echo "* Possible problems:                                         *"
 echo "*   - FFTW version < 2.0                                     *"
-echo "*   - Compiler could not find header sfftw.h or fftw.h       *"
+echo "*   - Could not find header sfftw.h, fftw.h, or fftw3.h      *"
 echo "*   - FFTW was not configured with the --enable-float option *"
+echo "* Consult file config.log for details                        *"
+]
 LAL_FFTW_MSG_ERROR,
 AC_MSG_RESULT(unknown) ) ] )
 
 AC_DEFUN(LAL_SRFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison real FFTW works)
 AC_TRY_RUN([
+#if defined HAVE_LIBFFTW3F
+#include <fftw3.h>
+int main() { return 0; }
+#else
 #include <stdio.h>
 #ifdef HAVE_SRFFTW_H
 #include <srfftw.h>
@@ -191,16 +203,20 @@ AC_TRY_RUN([
 #else
 #error "don't have either srfftw.h or rfftw.h"
 #endif
-int main() { return sizeof(fftw_real) - 4; } ],
+int main() { return sizeof(fftw_real) - 4; }
+#endif ],
 AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no)
+[
 echo "**************************************************************"
 echo "* FFTW does not seem to be working.                          *"
 echo "* Possible problems:                                         *"
 echo "*   - FFTW version < 2.0                                     *"
-echo "*   - Compiler could not find header srfftw.h or rfftw.h     *"
+echo "*   - Could not find header srfftw.h, rfftw.h, or fftw3.h    *"
 echo "*   - FFTW was not configured with the --enable-float option *"
+echo "* Consult file config.log for details                        *"
 echo "**************************************************************"
+]
 LAL_FFTW_MSG_ERROR,
 AC_MSG_RESULT(unknown) ) ] )
 

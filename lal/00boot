@@ -139,12 +139,17 @@ esac
 dnl Checks for libraries.
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
+AC_CHECK_LIB(fftw3f, fftwf_execute_dft, ,
+[
 AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
 AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
+] , -lm )
+AC_CHECK_LIB(fftw3, fftw_execute_dft, , , -lm)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
+AC_CHECK_HEADERS(fftw3.h)
 AC_CHECK_HEADERS(sfftw.h fftw.h, break)
 AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
 
