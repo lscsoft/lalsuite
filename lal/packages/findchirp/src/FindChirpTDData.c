@@ -81,7 +81,7 @@ LALFindChirpTDData (
 
   /* call the stationary phase conditioning to do the real work */
   params->approximant = TaylorF2;
-  LALFindChirpData ( status->statusPtr, fcSegVec, dataSegVec, params );
+  LALFindChirpSPData ( status->statusPtr, fcSegVec, dataSegVec, params );
   CHECKSTATUSPTR( status );
   params->approximant = approx;
   
