@@ -1436,6 +1436,7 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
   REAL8 fn0, fn1, deltaFn, shift;
   UINT4 nshift;
   REAL8 relError;
+  volatile REAL8 bin1, bin2;	/* keep compiler from optimizing these away! */
 
   INITSTATUS( stat, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
 
@@ -1458,10 +1459,12 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
       
-      shift = (f0 - fn0) / deltaF;
+      bin1 = f0 / deltaF;	/* exact division if f is an integer frequency-bin! */
+      bin2 = fn0 / deltaF;
+      shift = bin1 - bin2;
       /* frequency bins have to coincide! ==> check that shift is integer!  */
       nshift = (UINT4)(shift+0.5);
-      relError = fabs( nshift - shift)/shift;
+      relError = fabs( nshift - shift);
       if ( relError > eps ) {
 	if (lalDebugLevel) 
 	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
