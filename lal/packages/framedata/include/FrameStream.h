@@ -466,6 +466,71 @@ LALFrWriteCOMPLEX16TimeSeries(
     FrOutPar            *params
     );
 
+
+void
+LALFrWriteINT2FrequencySeries(
+    LALStatus       *status,
+    INT2FrequencySeries  *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteINT2FrequencySeries(
+    LALStatus       *status,
+    INT2FrequencySeries  *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteINT4FrequencySeries(
+    LALStatus       *status,
+    INT4FrequencySeries  *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteINT8FrequencySeries(
+    LALStatus       *status,
+    INT8FrequencySeries  *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteREAL4FrequencySeries(
+    LALStatus       *status,
+    REAL4FrequencySeries *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteREAL8FrequencySeries(
+    LALStatus       *status,
+    REAL8FrequencySeries *series,
+    FrOutPar        *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteCOMPLEX8FrequencySeries(
+    LALStatus          *status,
+    COMPLEX8FrequencySeries *series,
+    FrOutPar           *params,
+    INT4             subtype
+    );
+
+void
+LALFrWriteCOMPLEX16FrequencySeries(
+    LALStatus           *status,
+    COMPLEX16FrequencySeries *series,
+    FrOutPar            *params,
+    INT4             subtype
+    );
+
 #ifdef __cplusplus
 #pragma {
 }

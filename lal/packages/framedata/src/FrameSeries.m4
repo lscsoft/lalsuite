@@ -200,6 +200,7 @@ static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
     }
     proc->classe = FrProcDataDef();
     proc->fShift = fshift;
+    proc->type = 1; /* time series */
     proc->data = vect;
     proc->next = frame->procData;
     frame->procData = proc;

@@ -15,7 +15,9 @@ ifelse(TYPE,`INT4',`define(`FRDATA',`dataI')')
 ifelse(TYPE,`INT2',`define(`FRDATA',`dataS')')
 
 define(`STYPE',`format(`%sTimeSeries',TYPE)')
+define(`FSTYPE',`format(`%sFrequencySeries',TYPE)')
 define(`FUNC',`format(`LALFrWrite%s',STYPE)')
+define(`FSFUNC',`format(`LALFrWrite%s',FSTYPE)')
 
 /* <lalVerbatim file="FrameSeriesCP"> */
 void
@@ -100,6 +102,109 @@ FUNC (
     FrameWrite( frame, frfile );
     data += ncpy;
     t += 1e9 * ncpy * series->deltaT;
+  }
+
+  FrFileOEnd( frfile );
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+/* <lalVerbatim file="FrameSeriesCP"> */
+void
+FSFUNC (
+    LALStatus		*status,
+    FSTYPE 	*series,
+    FrOutPar		*params,
+    INT4                 subtype
+    )
+{ /* </lalVerbatim> */
+  TYPE 	*data;
+  CHAR   hertz[] = "Hz";
+  CHAR   comment[] = "Created by FSFUNC $Id$";
+  CHAR   source[256];
+  CHAR   fname[256];
+  CHAR   units[LALUnitNameSize];
+  CHARVector vnits;
+  struct FrFile *frfile;
+  UINT4 nframes;
+  REAL4 deltaT;
+  INT8 t;
+  INT8 tend;
+  INT4 dt;
+
+  INITSTATUS( status, "FUNC", FRAMESERIESC );  
+  ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ATTATCHSTATUSPTR( status );
+
+  vnits.length = sizeof( units );
+  vnits.data = units;
+
+  strncpy( source, params->source ? params->source : "F", sizeof( source ) );
+  
+  TRY( LALUnitAsString( status->statusPtr, &vnits, &series->sampleUnits ),
+      status );
+
+  deltaT = series->deltaF ? 1.0 / series->deltaF : 1;
+  t     = EPOCH_TO_I8TIME( series->epoch );
+  tend  = t + (INT8)floor( 1e9 * deltaT );
+  dt    = tend / (INT8)1000000000;
+  dt   -= series->epoch.gpsSeconds;
+  dt    = dt < 1 ? 1 : dt; /* must be at least one */
+
+  LALSnprintf( fname, sizeof( fname ), "%s-%s-%d-%d.gwf", source,
+      params->description ? params->description : "UNKNOWN",
+      series->epoch.gpsSeconds, dt );
+  frfile = FrFileONew( fname, 0 );
+
+  data = series->data->data;
+  /* nframes = params->nframes; */
+  nframes = 1; /* params->nframes is ignored */
+  {
+    UINT4 ncpy;
+    struct FrameH     *frame;
+    struct FrVect     *vect;
+    struct FrProcData *proc;
+    ncpy = series->data->length;
+    frame = FrameHNew( source );
+    frame->run = params->run;
+    frame->frame = params->frame++;
+    frame->GTimeS = t / (INT8)1000000000;
+    frame->GTimeN = t % (INT8)1000000000;
+    frame->dt = deltaT;
+#if !defined FR_VERS || FR_VERS < 5000
+    frame->localTime = 0;
+#endif
+
+    /* NOTE: always make a proc channel! */
+    proc = calloc( 1, sizeof( *proc ) );
+    if ( ! proc )
+    {
+      ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+    }
+    vect = FrVectNew1D( series->name, FRTYPE, series->data->length,
+        series->deltaF, hertz, units );
+    if ( ! vect )
+    {
+      free( proc );
+      ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+    }
+    vect->startX[0] = series->f0;
+
+    FrStrCpy( &proc->name, series->name );
+    FrStrCpy( &proc->comment, comment );
+    proc->next = frame->procData;
+    frame->procData = proc;
+    proc->type = 2;
+    proc->subType = subtype;
+    proc->tRange = deltaT;
+    proc->fRange = series->data->length * series->deltaF;
+    /* frequency shift is in vector */
+
+    memcpy( vect->FRDATA, data, ncpy * sizeof( *series->data->data ) );
+
+    FrameWrite( frame, frfile );
   }
 
   FrFileOEnd( frfile );

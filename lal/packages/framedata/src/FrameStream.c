@@ -173,6 +173,7 @@ static void free_flist( FrFileInfo *flist )
   return;
 }
 
+#if 0
 #include <glob.h>
 static FrStream *fr_open( const char *pattern )
 {
@@ -291,6 +292,7 @@ static FrStream *fr_open( const char *pattern )
   stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[0];
   return stream;
 }
+#endif
 
 static int fr_close( FrStream *stream )
 {
@@ -315,6 +317,7 @@ static int fr_state( FrStream *stream )
   return stream->state;
 }
 
+#if 0
 static void fr_clearerr( FrStream *stream )
 {
   if ( ! stream )
@@ -323,6 +326,7 @@ static void fr_clearerr( FrStream *stream )
     stream->state = LAL_FR_OK;
   return;
 }
+#endif
 
 static int fr_rewind( FrStream *stream )
 {
