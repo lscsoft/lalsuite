@@ -152,7 +152,6 @@ LALFindChirpComputeChisqBins(
     }
   }
 
-  /* JC: LOOKS LIKE A MISTAKE... CHANGING = TO == */
   /* check that we have sucessfully allocated all the bins */
   if ( k == fcSeg->tmpltPowerVec->length && chisqPt != numChisqBins )
   {
