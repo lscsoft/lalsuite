@@ -403,15 +403,7 @@ LALFindChirpSlave (
     /* according to the rules below                                     */
     if ( params->simParams )
     {
-#if 0
-      fprintf( stdout, "warning: simulation mode\n" );
-      fflush( stdout );
-#endif
-
-      if ( params->simParams->simType == bankMinimalMatch )
-      {
         DataSegment    *currentDataSeg = dataSegVec->data;
-        InspiralEvent  *loudestEvent = NULL;
 
         REAL4   dynRange   = params->dataParams->dynRange;
         REAL4   dynRangeSq = dynRange * dynRange;
@@ -421,6 +413,21 @@ LALFindChirpSlave (
 
         UINT4   tdLength = currentDataSeg->chan->data->length;
         UINT4   fdLength = currentDataSeg->spec->data->length;
+
+        REAL8   psdFactor = 9.0e-46;
+        REAL8   minPsd;
+        REAL4   response;
+        REAL4   transfer;
+        REAL4   spectrum;
+
+#if 0
+      fprintf( stdout, "warning: simulation mode\n" );
+      fflush( stdout );
+#endif
+
+      if ( params->simParams->simType == fcBankMinimalMatch )
+      {
+        InspiralEvent  *loudestEvent = NULL;
 
         /* create storeage for loudest event and (s|s) for each segment */
         loudestEvent = params->simParams->loudestEvent = (InspiralEvent *)
@@ -433,12 +440,8 @@ LALFindChirpSlave (
           ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
         }
 
-        for ( i = 0; i < dataSegVec->length; ++i )
+        for ( i = 0; i < dataSegVec->length; ++i, ++currentDataSeg )
         {
-          REAL8         psdFactor = 9.0e-46;
-          REAL8         minPsd;
-          REAL4         response;
-          REAL4         transfer;
           UINT4         waveStart;
           CoherentGW    waveform;
           PPNParamStruc ppnParams;
@@ -547,8 +550,6 @@ LALFindChirpSlave (
           LALFree( waveform.a );
           LALFree( waveform.f );
           LALFree( waveform.phi );
-
-          currentDataSeg++;
         }
 
         /* condition the data segments: this will compute S_h( |f_k| )  */
@@ -608,16 +609,84 @@ LALFindChirpSlave (
 #endif
         }
       }
-      else if ( params->simParams->simType == gaussianNoise ||
-          params->simParams->simType == gaussianNoiseInject )
+      else if ( params->simParams->simType == fcGaussianNoise ||
+          params->simParams->simType == fcGaussianNoiseInject )
       {
-        /* fill input data stream with gaussian noise */
+        for ( i = 0; i < dataSegVec->length; ++i, ++currentDataSeg )
+        {
+          REAL4Vector  *dataVec = currentDataSeg->chan->data;
+
+          REAL4        *data = currentDataSeg->chan->data->data;
+          REAL4        *spec = currentDataSeg->spec->data->data;
+          COMPLEX8     *resp = currentDataSeg->resp->data->data;
+
+          REAL4         gaussianVarsq = params->simParams->gaussianVarsq;
+          REAL4         gaussianVar = sqrt( gaussianVarsq );
+
+          REAL4         respFactor = 1.0 / 
+            ( gaussianVar * (REAL4) sqrt( 2.0 * deltaT ) );
+
+          /* fill data channel with gaussian noise */
+          LALNormalDeviates( status->statusPtr, 
+              dataVec, params->simParams->randomParams );
+          CHECKSTATUSPTR( status );
+          
+          for ( j = 0; j < tdLength; ++j )
+          {
+            data[j] = floor( 0.5 + gaussianVar * data[j] );
+#if 0
+            /* should we dither the data? if so how? */
+            if ( data[j] > 2047 )
+            {
+              data[j] = 2047;
+            }
+            else if ( data[j] < -2048 )
+            {
+              data[j] = -2048;
+            }
+#endif
+          }
+
+          spectrum = 2.0 * gaussianVarsq * deltaT;
+
+          LALLIGOIPsd( NULL, &minPsd, (REAL8) params->dataParams->fLow );
+
+          for( k = 0; k < fdLength; ++k )
+          {
+            REAL8 psd;
+            REAL8 freq = (REAL8) k * deltaF;
+            if ( freq < params->dataParams->fLow )
+            {
+              resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * minPsd );
+              resp[k].re *= respFactor;
+            }
+            else
+            {
+              LALLIGOIPsd( NULL, &psd, freq );
+              resp[k].re = 1.0 / (REAL4) sqrt( psdFactor * psd );
+              resp[k].re *= respFactor;
+            }
+            resp[k].im = 0.0;
+            spec[k] = spectrum;
+          }
+        }
       }
 
-      if ( params->simParams->simType == gaussianNoiseInject ||
-          params->simParams->simType == realDataInject )
+      if ( params->simParams->simType == fcRealDataInject )
+      {
+        /* replace the current input data with the saved copy */
+      }
+
+      if ( params->simParams->simType == fcGaussianNoiseInject ||
+          params->simParams->simType == fcRealDataInject )
       {
         /* inject a signal into the input data stream */
+      }
+
+      /* unless this is a min match sim we need to (re)condition the data */
+      if ( params->simParams->simType != fcBankMinimalMatch )
+      {
+        params->dataConditioned = 0;
       }
     }
 
@@ -763,7 +832,7 @@ LALFindChirpSlave (
               }
             }
             else if ( params->simParams && 
-             params->simParams->simType == bankMinimalMatch )
+             params->simParams->simType == fcBankMinimalMatch )
             {
               /* if we just want the loudest event, save only the loudest */
               /* in the list for the data segment                         */
@@ -857,7 +926,7 @@ LALFindChirpSlave (
 
 
     if ( params->simParams && 
-        params->simParams->simType == bankMinimalMatch )
+        params->simParams->simType == fcBankMinimalMatch )
     {
       InspiralEvent    *loudestEvent = params->simParams->loudestEvent;
       REAL4            *signalNorm   = params->simParams->signalNorm;
