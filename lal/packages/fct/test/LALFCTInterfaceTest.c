@@ -797,8 +797,10 @@ setupParamList(LALStatus* const status)
 
     testprintf("Generating list of chirp parameters...\n");
 
+    coarseIn.massRange = MinMaxComponentMass;
     coarseIn.mMin = 2.0;
-    coarseIn.MMax = 10.6;
+    coarseIn.mMax = 3.0;
+    coarseIn.MMax = 2.0*coarseIn.mMax; /* 10.6 */
     coarseIn.mmCoarse = 0.80;
     coarseIn.mmFine = 0.97;
     coarseIn.fLower = fcutoff;
