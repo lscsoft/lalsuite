@@ -255,7 +255,7 @@ void LALDestroyREAL4Window (
   ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
 
   /* destroy the window */
-  LALDestroyVector( status->statusPtr, (*output)->data );
+  LALDestroyVector( status->statusPtr, &((*output)->data) );
   CHECKSTATUSPTR( status );
   LALFree( *output );
   *output = NULL;
