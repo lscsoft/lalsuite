@@ -26,7 +26,7 @@ lal_pkg_list_frame="framedata"
 lal_pkg_list_frame_mpi=""
 
 # Packages that are omitted
-lal_pkg_list_omit="fct timefreq"
+lal_pkg_list_omit="timefreq"
 
 ## <<<< !!!!  Do not edit below here !!!! >>>> ##
 
