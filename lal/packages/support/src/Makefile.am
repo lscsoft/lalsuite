@@ -12,7 +12,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c \
   LALInitBarycenter.c LALXMGRInterface.c \
-  LIGOLwXML.c
+  LIGOLwXML.c SnglInspiralUtils.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   ReadFrequencySeries.c ReadTimeSeries.c Grid.c \
