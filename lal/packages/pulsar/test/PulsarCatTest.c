@@ -26,9 +26,9 @@ any order):
 \item[\texttt{-p}] The pulsar position at time \verb@posepoch@ is set
 to \verb@ra@ radians right ascension and \verb@dec@ radians
 declination, with proper motions of \verb@pmra@ and \verb@pmdec@
-milliarcseconds per year, respectively.  See below for parsing formats
-for \verb@posepoch@.  If the \verb@-p@ option is not specified, a
-random source position is generated.
+radians per second, respectively.  See below for parsing formats for
+\verb@posepoch@.  If the \verb@-p@ option is not specified, a random
+source position is generated.
 \item[\texttt{-l}] Sets the detector location.  \verb@site@ must be
 one of the following character strings: \verb@LHO@, \verb@LLO@,
 \verb@VIRGO@, \verb@GEO600@, \verb@TAMA300@, or \verb@CIT40@.
