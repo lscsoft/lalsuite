@@ -320,8 +320,8 @@ int main( int argc, char *argv[] ) {
 
    /* Read in ephemeris data from files: */
    eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-   eph->ephiles.earthEphemeris = "/usr/center/horizon/jones/no-backup/share/lal/earth03.dat";
-   eph->ephiles.sunEphemeris = "/usr/center/horizon/jones/no-backup/share/lal/sun03.dat";
+   eph->ephiles.earthEphemeris = "earth03.dat";
+   eph->ephiles.sunEphemeris = "sun03.dat";
    eph->leap = 14; /* Ben: Is this right for 2003? Automate. */
 
 
