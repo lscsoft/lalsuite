@@ -62,7 +62,7 @@ typedef
 struct SegmentListTag {
   INT4 tgps;          /* GPS Seconds of start of segment group */
   INT4 nseg;          /* number of segments starting at tgps */
-  INT4 seglength;     /* length of segment in seconds */       
+  REAL4 seglength;    /* length of segment in seconds */       
 } SegmentList;
 
 static LALStatus status;
@@ -96,6 +96,8 @@ REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadFiles(struct CommandLineArgsTag CLA);
 int GetChannelNames(struct CommandLineArgsTag CLA);
+void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
+void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 int FreeMem(void);
 
 /**************** MAIN PROGRAM ***************/
@@ -115,8 +117,8 @@ int main(int argc,char *argv[])
 	{
 	  REAL4 magexc, magdarm, magasq;
 
-	  epoch.gpsSeconds=SL[i].tgps+j*SL[i].seglength;
-	  epoch.gpsNanoSeconds=0;
+	  REAL8 t=SL[i].tgps+j*SL[i].seglength;
+	  FloatToTime(&epoch, &t);
 
 	  LALFrSeek(&status,&epoch,framestream);
 	  LALFrGetPos(&status,&pos,framestream);
@@ -131,15 +133,15 @@ int main(int argc,char *argv[])
 	  LALFrSetPos(&status,&pos,framestream);
 
  	  /*Windowing*/ 
-	  for(k=0;k<(INT4)(SL[0].seglength/asq.deltaT +0.5);k++)
+	  for(k=0;k<(INT4)(SL[i].seglength/asq.deltaT +0.5);k++)
 	    {
 	      asq.data->data[k] *= 2.0*asqwin->data[k];
 	    }
-	  for(k=0;k<(INT4)(SL[0].seglength/darm.deltaT +0.5);k++)
+	  for(k=0;k<(INT4)(SL[i].seglength/darm.deltaT +0.5);k++)
 	    {
 	      darm.data->data[k] *= 2.0*darmwin->data[k];
 	    }
-	  for(k=0;k<(INT4)(SL[0].seglength/exc.deltaT +0.5);k++)
+	  for(k=0;k<(INT4)(SL[i].seglength/exc.deltaT +0.5);k++)
 	    {
 	      exc.data->data[k] *= 2.0*excwin->data[k];
 	    }
@@ -150,8 +152,8 @@ int main(int argc,char *argv[])
 	  params.exc = &exc;
 	  params.lineFrequency = CommandLineArgs.f;
 	  params.outputMatrix = CommandLineArgs.k;
-	  params.actuationFactor.re = Af0.re/4000.0;
-	  params.actuationFactor.im = Af0.im/4000.0;
+	  params.actuationFactor.re = Af0.re/4000.0; /*ACHTUNG: HARDWIRED !!*/
+	  params.actuationFactor.im = Af0.im/4000.0; /*ACHTUNG: HARDWIRED !!*/
 	  params.responseFactor = Rf0;
 	  params.sensingFactor = Cf0;
 	  
@@ -161,7 +163,7 @@ int main(int argc,char *argv[])
 	  magasq=sqrt(factors.asq.re*factors.asq.re+factors.asq.im*factors.asq.im)*2/SL[i].seglength;
 	  magdarm=sqrt(factors.darm.re*factors.darm.re+factors.darm.im*factors.darm.im)*2/SL[i].seglength;
 
-	  fprintf(stdout,"%d %20.15f %20.15f %20.15f %20.15f %20.15f %20.15f %20.15f\n",epoch.gpsSeconds,
+	  fprintf(stdout,"%20.15f %20.15f %20.15f %20.15f %20.15f %20.15f %20.15f %20.15f\n",t,
 		  factors.alpha.re,factors.alpha.im,factors.alphabeta.re,
 		  factors.alphabeta.im,magexc,magdarm,magasq);
 
@@ -176,6 +178,24 @@ int main(int argc,char *argv[])
 }
 
 /*******************************************************************************/
+ void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
+{
+  REAL8 temp0, temp2, temp3;
+  REAL8 temp1, temp4;
+
+  temp0 = floor(*f);     /* this is tgps.S */
+  temp1 = (*f) * 1.e10;
+  temp2 = fmod(temp1, 1.e10);
+  temp3 = fmod(temp1, 1.e2);
+  temp4 = (temp2-temp3) * 0.1;
+
+  tgps->gpsSeconds = (INT4)temp0;
+  tgps->gpsNanoSeconds = (INT4)temp4;
+}
+
+ 
+/*******************************************************************************/
+
 int GetChannelNames(struct CommandLineArgsTag CLA)
 {
 
@@ -356,7 +376,7 @@ int ReadFiles(struct CommandLineArgsTag CLA)
 	 fprintf(stderr,"Too many lines in file %s! Exiting... \n", CLA.SegmentsFile);
 	 return 1;
        }
-     sscanf(line,"%d %d %d",&SL[i].nseg,&SL[i].tgps,&SL[i].seglength);
+     sscanf(line,"%d %d %f",&SL[i].nseg,&SL[i].tgps,&SL[i].seglength);
      i++;
    }
  numsegs=i;
