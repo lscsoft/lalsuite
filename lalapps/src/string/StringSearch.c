@@ -722,6 +722,8 @@ int ProcessData(struct CommandLineArgsTag CLA)
     } 
 
   GV.ht_proc.deltaT=GV.ht.deltaT; 
+  GV.ht_proc.name=CLA.ChannelName;
+  GV.ht_proc.epoch=GV.ht.epoch;
 
   /* destroy double precision vector */
   LALDDestroyVector(&status,&GV.ht.data); 
@@ -818,6 +820,8 @@ int ReadData(struct CommandLineArgsTag CLA)
     {
       GV.ht.data->data[p] *= SCALE;
     }
+
+  GV.ht.name=CLA.ChannelName;
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
