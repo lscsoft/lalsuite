@@ -22,58 +22,10 @@
 
 NRCSID (DRIVEHOUGHCOLORC, "$Id$");
 
-/* ************************************************************
- * Usage format string. 
- */
-
-#define USAGE "Usage: \n\
- [-d debuglevel] \n\
-        Default value:  lalDebugLevel=1\n\
- [-i IFO (1,2,3)] \n\
-        Interferometer option\n\
-             1:GEO600 (Default), 2:LLO, 3:LHO  \n\
- [-E Earth ephemeris data filename] \n\
-         Default value:\n\
-	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat\n\
- [-S Sun ephemeris data filename] \n\
-	 Default value:\n\
-	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat\n\
- [-D sftDir] \n\
-        Directory where the input SFT data are located. \n\
-	If not set, the program will look into ./data1\n\
- [-o outdir basefilename] \n\
-        This is a string that prefixes some output filenames.\n\
-        The results will be written to outdir/skypatch_<number>/basefilename_stats or\n\
-        outdir/skypatch_<number>/basefilename_histo\n\
- 	If not set, the program will write into ./outHM1/skypatch_<number>/HM\n\
- [-V time-velocity data file]\n\
-        This is a string of the output time-velocity data file.\n\
-        It might contain a path.\n\
-        If not set, the program will write on ./velocity.data \n\
- [-f first search frequency (in Hz)] \n\
-        Lowest search frequency in Hz. \n\
-        Default: 250.0 Hz\n\
- [-b search frequency band (in Hz)] \n\
-        Bandwith to be analyzed \n\
-        Default: 2.0 Hz\n\
- [-t peak threshold selection ] \n\
-        Threshold relative to the PSD for the selection of peak in the\n\
-        time-frequency plane \n\
-        Default: 1.6 (almost optimal)\n\
- [-a Hough false alarm ] \n\
-        Hough false alarm for candidate selection \n\
-        Default: 0.00000001 \n\
- [-w running median window size ] \n\
-        To estimate the psd \n\
- 	Default: 25\n\
- [-P Skypatchfile] \n\
-        file containing list of skypatches \n\
-\n"
-
 
 /* ***************************************************************
  * Constant Declarations.  Default parameters.
- */
+ *****************************************************************/
 
 INT4 lalDebugLevel=0;
 #define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
@@ -88,8 +40,6 @@ INT4 lalDebugLevel=0;
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
 #define FILETIME "./Ts" /* name: file with timestamps */
 #define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
-/* #define THRESHOLD 1.5  thresold for peak selection, with respect to the
-                              the averaged power in the search band */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 0.00000001 /* Hough false alarm for candidate selection */
@@ -107,60 +57,71 @@ INT4 lalDebugLevel=0;
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
-  static LALStatus           status;  /* LALStatus pointer */
+  /** This is the main driver for the Hough transform routines.
+      It takes as input a set of SFTs and search parameters and
+      outputs the number counts using the Hough transform routines **/
+
+
+  /* LALStatus pointer */
+  static LALStatus           status;  
   
+  /* detector */
   static LALDetector         detector;
+
+  /* time and velocity vectors and files*/
   static LIGOTimeGPSVector1   timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector         timeDiffV;
-  
-  static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
-  static HOUGHPeakGramVector pgV;
-  static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
-  static UINT8FrequencyIndexVector freqInd;
 
-  static HOUGHResolutionPar parRes;
-  static HOUGHPatchGrid  patch;   /* Patch description */
+  /* hough structures */
+  static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
+  static HOUGHPeakGramVector pgV;  /* vector of peakgrams */
+  static PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
+  static UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
+  static HOUGHResolutionPar parRes;   /* patch grid information */
+  static HOUGHPatchGrid  patch;   /* Patch description */ 
   static HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
   static HOUGHDemodPar   parDem;  /* demodulation parameters or  */
-  static HOUGHSizePar    parSize;
- 
+  static HOUGHSizePar    parSize; 
   static HOUGHMapTotal   ht;   /* the total Hough map */
-  static UINT4Vector     hist;
-  static UINT4Vector     histTotal;
+  static UINT4Vector     hist; /* histogram of number counts for a single map */
+  static UINT4Vector     histTotal; /* number count histogram for all maps */
   HoughStats      stats;
 
-  /* ------------------------------------------------------- */
-
-
-  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR   *fnameVelocity = NULL;
-  CHAR   *fnameTime = NULL;
-
-  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; /* skypatch info */
+  /* skypatch info */
+  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; 
   INT4   nSkyPatches, skyCounter; 
 
+  /* log file and strings */
+  FILE   *fpLog=NULL;
+  CHAR   *fnameLog=NULL; 
+  CHAR   *logstr=NULL; 
+  CHAR   filehisto[256]; 
+  CHAR   filestats[256]; 
 
-  INT4   houghThreshold;
+  /* miscellaneous */
+  INT4   houghThreshold, nfSizeCylinder, iHmap, nSpin1Max;;
   UINT4  mObsCoh;
-  INT4   nfSizeCylinder,iHmap;
-  INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
-  INT8   fBin;
-  REAL8  alpha, delta, timeBase, deltaF;
-  REAL8  normalizeThr;
-  REAL8  patchSizeX, patchSizeY;
+  INT8   f0Bin, fLastBin, fBin;
+  REAL8  alpha, delta, timeBase, deltaF, f1jump;
+  REAL8  normalizeThr, patchSizeX, patchSizeY;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
-  INT4   nSpin1Max;
-  REAL8  f1jump;
-  
+  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];  
   FILE   *fp1 = NULL;
-  FILE   *fpLog=NULL;
-  CHAR   *fnameLog=NULL;
-  CHAR   *logstr=NULL;
-  CHAR   filehisto[256];
-  CHAR   filestats[256];
 
+  /* user input variables */
+  BOOLEAN uvar_help;
+  INT4 uvar_ifo, uvar_blocksRngMed;
+  REAL8 uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
+  CHAR *uvar_earthEphemeris=NULL;
+  CHAR *uvar_sunEphemeris=NULL;
+  CHAR *uvar_sftDir=NULL;
+  CHAR *uvar_dirnameOut=NULL;
+  CHAR *uvar_fbasenameOut=NULL;
+  CHAR *uvar_skyfile=NULL;
+
+  /* variables for various preprocessor flags */
 #ifdef PRINTEVENTS
   FILE   *fpEvents = NULL;
   CHAR   fileEvents[256];
@@ -171,26 +132,14 @@ int main(int argc, char *argv[]){
   CHAR fileTemplates[256];
 #endif
 
-
 #ifdef TIMING
   unsigned long long start, stop;
 #endif
- 
- 
+  
 #ifdef TIMING
   start = realcc();
 #endif
 
-
-  BOOLEAN uvar_help;
-  INT4 uvar_ifo, uvar_blocksRngMed;
-  REAL8 uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
-  CHAR *uvar_earthEphemeris=NULL;
-  CHAR *uvar_sunEphemeris=NULL;
-  CHAR *uvar_sftDir=NULL;
-  CHAR *uvar_fnameOut=NULL;
-  CHAR *uvar_fbasenameOut=NULL;
-  CHAR *uvar_skyfile=NULL;
   
   /******************************************************************/
   /*    Set up the default parameters.      */
@@ -217,8 +166,8 @@ int main(int argc, char *argv[]){
   uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_sftDir,SFTDIRECTORY);
 
-  uvar_fnameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_fnameOut,DIROUT);
+  uvar_dirnameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_dirnameOut,DIROUT);
 
   uvar_fbasenameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_fbasenameOut,BASENAMEOUT);
@@ -237,7 +186,7 @@ int main(int argc, char *argv[]){
   SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
   SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
   SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "fnameOut",        'o', UVAR_OPTIONAL, "Output directory",              &uvar_fnameOut),        &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "dirnameOut",      'o', UVAR_OPTIONAL, "Output directory",              &uvar_dirnameOut),        &status);
   SUB( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
   SUB( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
 
@@ -247,6 +196,10 @@ int main(int argc, char *argv[]){
   /* set value of bias which might have been changed from default */  
   SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   
+  /* set value of nfsizecylinder */
+  nfSizeCylinder = NFSIZE;
+  
+  /* set detector */
   if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -256,9 +209,26 @@ int main(int argc, char *argv[]){
     exit(0); 
  
   /* open log file for writing */
-  fnameLog = LALCalloc( (strlen(uvar_fnameOut) + strlen(".log") + 10),1);
-  strcpy(fnameLog,uvar_fnameOut);
+  fnameLog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(fnameLog,uvar_dirnameOut);
+  strcat(fnameLog, "/logfiles/");
+  /* now create directory fdirOut/logfiles using mkdir */
+  errno = 0;
+  {
+    /* check whether file can be created or if it exists already 
+       if not then exit */
+    INT4 mkdir_result;
+    mkdir_result = mkdir(fnameLog, S_IRWXU | S_IRWXG | S_IRWXO);
+    if ( (mkdir_result == -1) && (errno != EEXIST) )
+      {
+	fprintf(stderr, "unable to create logfiles directory %d\n", skyCounter);
+	return 1;  /* stop the program */
+      }
+  }
+  /* create the logfilename in the logdirectory */
+  strcat(fnameLog, uvar_fbasenameOut);
   strcat(fnameLog,".log");
+  /* open the log file for writing */
   if ((fpLog = fopen(fnameLog, "w")) == NULL) {
     fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
     LALFree(fnameLog);
@@ -289,15 +259,6 @@ int main(int argc, char *argv[]){
   }
 
 
-
-  /******************************************************************/
-
-  if ( uvar_f0 < 0 ) {
-    ERROR( DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD, "freq<0:" );
-    LALPrintError( USAGE, *argv  );
-    return DRIVEHOUGHCOLOR_EBAD;
-  }
-  /******************************************************************/
  
 
    /*****************************************************************/
@@ -311,7 +272,7 @@ int main(int argc, char *argv[]){
      fpsky = fopen(uvar_skyfile, "r");
      if ( !fpsky )
        {
-	 fprintf(stderr, "Unable to fine file %s\n", uvar_skyfile);
+	 fprintf(stderr, "Unable to find skyfile %s\n", uvar_skyfile);
 	 return DRIVEHOUGHCOLOR_EFILE;
        }
 
@@ -457,11 +418,6 @@ int main(int argc, char *argv[]){
     sft.data = NULL;
     sft.data = (COMPLEX8 *)LALMalloc(length* sizeof(COMPLEX8));
 
-/*
- *     peri.length = length;
- *     peri.data = NULL;
- *     peri.data = (REAL8 *)LALMalloc(length* sizeof(REAL8));
- */
     periPSD.periodogram.length = length;
     periPSD.periodogram.data = NULL;
     periPSD.periodogram.data = (REAL8 *)LALMalloc(length* sizeof(REAL8));
@@ -502,7 +458,7 @@ int main(int argc, char *argv[]){
     }
     
     LALFree(sft.data);
-    /*     LALFree(peri.data); */    
+
     LALFree(periPSD.periodogram.data);
     LALFree(periPSD.psd.data);
     LALFree(pg1.data);
@@ -589,43 +545,43 @@ int main(int argc, char *argv[]){
   /* ****************************************************************/
   /*  Writing the time & detector-velocity corresponding to each SFT  */
   /* ****************************************************************/
-
- {
-    UINT4   j;
-    FILE   *fp = NULL;
- 
-    fp = fopen( fnameVelocity, "w");
-    if (fp==NULL){
-      fprintf(stderr,"Unable to find file %s\n",fnameVelocity);
-      return 1; /* stop the program */
-    }
-    /* read data format:  INT4 INT4  REAL8 REAL8 REAL8 */
-    for (j=0; j<mObsCoh;++j){
-      fprintf(fp, "%d %d %g %g %g\n",
-                (timeV.time[j].gpsSeconds),
-                (timeV.time[j].gpsNanoSeconds),
-                (velV.data[j].x), (velV.data[j].y),(velV.data[j].z) );
-
-      fflush(fp);
-    }
-    fclose(fp);
-
-    fp = fopen( fnameTime, "w");
-    if (fp==NULL){
-      fprintf(stderr,"Unable to find file %s\n",fnameVelocity);
-      return 1; /* stop the program */
-    }
-    /* read data format:  INT4 INT4 */
-    for (j=0; j<mObsCoh;++j){
-      fprintf(fp, "%d %d \n",
-                (timeV.time[j].gpsSeconds),
-                (timeV.time[j].gpsNanoSeconds) );
-
-      fflush(fp);
-    }
-    fclose(fp);
-  }
-
+  
+  /*  { */
+  /*     UINT4   j; */
+  /*     FILE   *fp = NULL; */
+  
+  /*     fp = fopen( fnameVelocity, "w"); */
+  /*     if (fp==NULL){ */
+  /*       fprintf(stderr,"Unable to open velocity file %s for writing\n",fnameVelocity); */
+  /*       return 1; /\* stop the program *\/ */
+  /*     } */
+  /*     /\* read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
+  /*     for (j=0; j<mObsCoh;++j){ */
+  /*       fprintf(fp, "%d %d %g %g %g\n", */
+  /*                 (timeV.time[j].gpsSeconds), */
+  /*                 (timeV.time[j].gpsNanoSeconds), */
+  /*                 (velV.data[j].x), (velV.data[j].y),(velV.data[j].z) ); */
+  
+  /*       fflush(fp); */
+  /*     } */
+  /*     fclose(fp); */
+  
+  /*     fp = fopen( fnameTime, "w"); */
+  /*     if (fp==NULL){ */
+  /*       fprintf(stderr,"Unable to open file %s\n for writing",fnameTime); */
+  /*       return 1; /\* stop the program *\/ */
+  /*     } */
+  /*     /\* read data format:  INT4 INT4 *\/ */
+  /*     for (j=0; j<mObsCoh;++j){ */
+  /*       fprintf(fp, "%d %d \n", */
+  /*                 (timeV.time[j].gpsSeconds), */
+  /*                 (timeV.time[j].gpsNanoSeconds) ); */
+  
+  /*       fflush(fp); */
+  /*     } */
+  /*     fclose(fp); */
+  /*   } */
+  
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
@@ -640,8 +596,8 @@ int main(int argc, char *argv[]){
       /* opening the output statistic, and event files */
       /******************************************************************/  
       
-      /* create the directory name uvar_fnameOut/skypatch_$j */
-      strcpy(  filestats, uvar_fnameOut);
+      /* create the directory name uvar_dirnameOut/skypatch_$j */
+      strcpy(  filestats, uvar_dirnameOut);
       strcat( filestats, "skypatch_");
       {
 	CHAR tempstr[16];
@@ -650,7 +606,7 @@ int main(int argc, char *argv[]){
       }
       strcat( filestats, "/");
 
-      /* now create directory fnameout/akypatch_$j using mkdir */
+      /* now create directory fnameout/skypatch_$j using mkdir */
       errno = 0;
       {
 	/* check whether file can be created or if it exists already 
@@ -675,11 +631,11 @@ int main(int argc, char *argv[]){
 #endif
 
 
-            /* create and open the stats file for writing */
+      /* create and open the stats file for writing */
       strcat(  filestats, "stats");
       fp1=fopen(filestats,"w");
       if ( !fp1 ){
-	fprintf(stderr,"Unable to find file %s\n", filestats);
+	fprintf(stderr,"Unable to find file %s for writing\n", filestats);
 	return DRIVEHOUGHCOLOR_EFILE;
       }
       setlinebuf(fp1); /*line buffered on */  
@@ -880,7 +836,7 @@ int main(int argc, char *argv[]){
 	  /* ********************* print results *********************** */
 	  
 #ifdef PRINTMAPS
-	  if( PrintHmap2m_file( &ht, uvar_fnameOut, iHmap ) ) return 5;
+	  if( PrintHmap2m_file( &ht, uvar_dirnameOut, iHmap ) ) return 5;
 #endif 
 	  
 
@@ -931,7 +887,7 @@ int main(int argc, char *argv[]){
 	      /* ***** print results *********************** */
 	      
 #ifdef PRINTMAPS
-	      if( PrintHmap2m_file( &ht, uvar_fnameOut, iHmap ) ) return 5;
+	      if( PrintHmap2m_file( &ht, uvar_dirnameOut, iHmap ) ) return 5;
 #endif
 	      
 	      fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
@@ -1037,6 +993,8 @@ int main(int argc, char *argv[]){
   LALFree(skyDelta);
   LALFree(skySizeAlpha);
   LALFree(skySizeDelta);
+
+  SUB (LALDestroyUserVars(&status), &status);
 	
   LALCheckMemoryLeaks();
   
