@@ -118,31 +118,31 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
             if ligo_analysis or datafind_only : dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
-    # make a template bank job for the master chunk
-    bank = inspiral.TmpltBankNode(tmplt_job)
-    bank.set_start(chunk.start())
-    bank.set_end(chunk.end())
-    bank.set_ifo(ifo_name)
-    bank.set_cache(df.get_output())
-    bank.calibration()
-    bank.add_parent(df)
-    if ligo_analysis: dag.add_node(bank)
-    # make an inspiral job for the master chunk
-    insp = inspiral.InspiralNode(insp_job)
-    insp.set_start(chunk.start())
-    insp.set_end(chunk.end())
-    insp.add_var_opt('snr-threshold',snr)
-    insp.add_var_opt('chisq-threshold',chisq)
-    insp.add_var_opt('trig-start-time',chunk.trig_start())
-    insp.add_var_opt('trig-end-time',chunk.trig_end())
-    insp.set_ifo(ifo_name)
-    insp.set_cache(df.get_output())
-    insp.calibration()
-    insp.set_bank(bank.get_output())
-    insp.add_parent(bank)
-    if ligo_analysis: dag.add_node(insp)
-    # store this chunk in the list of filtered L1 data
-    chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+          # make a template bank job for the master chunk
+          bank = inspiral.TmpltBankNode(tmplt_job)
+          bank.set_start(chunk.start())
+          bank.set_end(chunk.end())
+          bank.set_ifo(ifo_name)
+          bank.set_cache(df.get_output())
+          bank.calibration()
+          bank.add_parent(df)
+          if ligo_analysis: dag.add_node(bank)
+          # make an inspiral job for the master chunk
+          insp = inspiral.InspiralNode(insp_job)
+          insp.set_start(chunk.start())
+          insp.set_end(chunk.end())
+          insp.add_var_opt('snr-threshold',snr)
+          insp.add_var_opt('chisq-threshold',chisq)
+          insp.add_var_opt('trig-start-time',chunk.trig_start())
+          insp.add_var_opt('trig-end-time',chunk.trig_end())
+          insp.set_ifo(ifo_name)
+          insp.set_cache(df.get_output())
+          insp.calibration()
+          insp.set_bank(bank.get_output())
+          insp.add_parent(bank)
+          if ligo_analysis: dag.add_node(insp)
+          # store this chunk in the list of filtered data
+          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
 
