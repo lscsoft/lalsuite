@@ -110,6 +110,8 @@ NRCSID (WINDOWH, "$Id$");
 #define WINDOWH_ENULLHANDLE   32
 #define WINDOWH_EWRONGLENGTH  64
 #define WINDOWH_ENULLDATA    128
+#define WINDOWH_ENNUL        256
+#define WINDOWH_ENULL        512
 
 #define WINDOWH_MSGENULLPARAM    "null input parameter structure pointer"
 #define WINDOWH_MSGENULLVECTOR   "null output vector pointer"
@@ -119,6 +121,8 @@ NRCSID (WINDOWH, "$Id$");
 #define WINDOWH_MSGENULLHANDLE   "input vector is null"
 #define WINDOWH_MSGEWRONGLENGTH  "input vector is the wrong length"
 #define WINDOWH_MSGENULLDATA     "data area of input vector is null"
+#define WINDOWH_MSGENULL         "null pointer"
+#define WINDOWH_MSGENNUL         "non-null pointer"
   /*********************************************************** </lalErrTable>*/
 /*<lalLaTeX> 
 
@@ -205,10 +209,31 @@ typedef struct tagLALWindowParams {
   const CHAR* windowname;   /* pointer to a char string with window name (output) */
 } LALWindowParams;
 
-
+typedef struct
+tagREAL4Window
+{
+  WindowType    type;
+  REAL4Vector  *data;
+  CHAR          windowname[LALNameLength];
+  REAL8         sumofsquares;
+}
+REAL4Window;
+  
 void LALWindow (LALStatus *,
 		REAL4Vector *, 
 		LALWindowParams *);
+
+void LALCreateREAL4Window (
+    LALStatus    *status,
+    REAL4Window **output,
+    UINT4         length,
+    WindowType    type
+    );
+
+void LALDestroyREAL4Window (
+    LALStatus    *status,
+    REAL4Window **output
+    );
 
 /**************************************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{WindowHV}}
