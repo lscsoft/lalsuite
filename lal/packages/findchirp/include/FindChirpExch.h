@@ -35,17 +35,6 @@ NRCSID (FINDCHIRPEXCHH, "$Id$");
 #define FINDCHIRPEXCH_MSGENOBJ "Invalid number of objects"
 #define FINDCHIRPEXCH_MSGEHAND "Wrong handshake"
 
-enum
-{
-  ExchDataSegment,
-  ExchFindChirpSegment,
-  ExchInspiralBankIn,
-  ExchInspiralTemplate,
-  ExchInspiralEvent,
-  ExchFinished
-}
-ExchObjectType;
-
 
 void
 LALExchangeDataSegment (
