@@ -169,9 +169,9 @@ int main(int argc, char *argv[]){
   printf("length = %d \n", header.length);
   printf("time = %lf \n", header.timeBase);
  
-  length = 10;
+  length = 1810;
   sft.length = length;
-  sft.fminBinIndex = floor(151.298 * header.timeBase + 0.5);
+  sft.fminBinIndex = floor(301.0 * header.timeBase + 0.5);
   sft.data = NULL;
   sft.data = (COMPLEX8 *)LALMalloc(length* sizeof(COMPLEX8));
     
@@ -180,14 +180,14 @@ int main(int argc, char *argv[]){
   printf(" sft fminBinIndex = %d \n", sft.fminBinIndex);
   printf(" sft timeBase = %lf \n", sft.timeBase);
   
-  k=0;
+  /*  k=0;
   while(length-- >0){
     printf("frequency = %9.6g\n", (1.0*sft.fminBinIndex + 1.0*k)/ header.timeBase);
     printf("re = %g im = %g \n"  , sft.data[k].re,sft.data[k].im );
     k++;
-  }
+    }*/
+  // length = sft.length;
 
-  length = sft.length;
   peri.length = length;
   peri.data = NULL;
   peri.data = (REAL8 *)LALMalloc(length* sizeof(REAL8));
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]){
   }
 
 
-  printf("now start the cleaning routines...\n");
+  /*printf("now start the cleaning routines...\n");
 
   SUB( FindNumberLines( &status, &lines, linefname ), &status);
 
@@ -232,10 +232,10 @@ int main(int argc, char *argv[]){
   while(length-- >0){
    printf("clean periodogram[x] =  %g \n"  , peri.data[k] );
    k++;
-  }
+   } */
 
   /* write the sft to a file */
-  SUB( WriteCOMPLEX8SFT( &status, &sft, outfname),  &status );
+  /*SUB( WriteCOMPLEX8SFT( &status, &sft, outfname),  &status );
   printf("finished writing the sft\n");
 
   printf("now trying to reread the sft...\n");
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]){
     printf("frequency = %9.6g\n", (1.0*sft.fminBinIndex + 1.0*k)/ header.timeBase);
     printf("re = %g im = %g \n"  , sft.data[k].re,sft.data[k].im );
     k++;
-  }
+  } */
 
 
   LALFree(sft.data);

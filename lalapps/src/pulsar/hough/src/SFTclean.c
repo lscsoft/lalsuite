@@ -58,7 +58,7 @@ INT4 lalDebugLevel=0;
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 
-#define USAGE "Usage: %s [-d debuglevel] \n [-l linefile] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
+#define USAGE "Usage: %s [-d debuglevel] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
 
 
 /* Usage format string. */
@@ -106,7 +106,7 @@ char *lalWatch;
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
   static SFTHeader1      header;
-  static SFTtype         sft;
+  static SFTtype         *sft=NULL;
   static SFTVector       *sftvect=NULL;
   static LineNoiseInfo  lines;
   static LineHarmonicsInfo harmonics; 
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   REAL8 fStart, fBand, timeBase, deltaF;
   INT8 fStartBin, fBandBin;  
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR tempstr1[256], tempstr2[256]; 
+  CHAR tempstr1[256], tempstr2[256], command[256]; 
 
   /* set defaults */
   linefname = LINEFILE;
@@ -212,36 +212,7 @@ int main(int argc, char *argv[]){
   } 
 
   /* End of argument parsing loop. */
-  /******************************************************************/
-  
-  /*  {  
-      CHAR     command[256];
-      glob_t   globbuf;
-      UINT4    k; 
-      
-      strcpy(command, inputSFTDir);
-      strcat(command, "/*SFT*.*");
-			 
-			 globbuf.gl_offs = 1;
-			 glob(command, GLOB_ERR, NULL, &globbuf);
-			 
-			 if(globbuf.gl_pathc==0)
-			 {
-			 fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", inputSFTDir);
-			 return 1;  
-			 }
-    
-			 mObsCoh = (MAXFILES < globbuf.gl_pathc)? MAXFILES : globbuf.gl_pathc;
-			 
-			 
-			 for (k=0; k < mObsCoh; k++)
-			 {
-			 strcpy(filelist[k],globbuf.gl_pathv[k]);
-			 }
-      globfree(&globbuf);	
-      }*/
-   
-
+  /******************************************************************/   
 
   SUB( FindNumberHarmonics (&status, &harmonics, harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
@@ -274,40 +245,26 @@ int main(int argc, char *argv[]){
 
   strcpy(command, inputSFTDir);
   strcat(command, "/SFT");
-  SUB( LALReadSFTfiles( &status, &sftvect, fstart, fstart + fBand, command), &status);
+  SUB( LALReadSFTfiles( &status, &sftvect, fStart, fStart + fBand, command), &status);
   mObsCoh = sftvect->length;
 
 
-
-  SUB( ReadSFTbinHeader1( &status, &header, filelist[0] ), &status );
-  timeBase = header.timeBase; 
-  deltaF = 1./timeBase;  
-  fStartBin = (INT8)(fStart * timeBase);
-  fBandBin = (INT8)(fBand * timeBase);
-
-  sft.length = fBandBin; 
-  sft.fminBinIndex = fStartBin; 
-  sft.data = NULL;
-  sft.data = (COMPLEX8 *)LALMalloc(fBandBin * sizeof(COMPLEX8));
-
   for (j=0; j < mObsCoh; j++)
     { 
-      /* read the sft */
-      fname = filelist[j];
-      SUB( ReadCOMPLEX8SFTbinData1( &status, &sft, fname ), &status );
+      sft = sftvect[j].data;
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, &sft, 2, &lines), &status);
+	SUB( CleanCOMPLEX8SFT( &status, sft, 2, &lines), &status);
       
       /* make the output sft filename */
-      sprintf(tempstr1, "%d", sft.epoch.gpsSeconds);
+      sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
       strcpy(tempstr2,outputSFTDir);
       strcat(tempstr2, "/CLEAN_SFT.");
       strcat(tempstr2, tempstr1);
 
       /* write the sft */
-      SUB( WriteCOMPLEX8SFT( &status, &sft, tempstr2),  &status );
+      SUB( LALWriteSFTfile( &status, sft, tempstr2),  &status );
     }
 
 
@@ -328,7 +285,8 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  LALFree(sft.data);
+  LALDestroySFTVector (&status, &sftvect);
+
   LALCheckMemoryLeaks(); 
 
   INFO( SFTCLEANC_MSGENORM );
