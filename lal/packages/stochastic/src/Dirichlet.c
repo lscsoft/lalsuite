@@ -1,121 +1,145 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Dirichlet.c 
- * 
- * Author: UTB Relativity Group
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- *
- * NAME
- * Dirichlet
- *
- * SYNOPSIS
- *
- * void LALDirichlet( LALStatus*, REAL4Vector*, DirichletParameters* )
- *
- * typedef struct tagDirichletParameters{
- *   INT4   n; 
- *   INT4   length;
- *   REAL8  deltaX;
- * } DirichletParameters; 
- *
- * DESCRIPTION
- * Calculates the values of the LALDirichlet kernel for a discrete set of
- * of values starting at x = 0.
- *
- * DIAGNOSTICS
- * null pointer to input parameters
- * LALDirichlet parameter N <= 0
- * specified length of output vector <= 0
- * spacing of x values <= 0
- * null pointer to output vector 
- * length of output vector not equal to length specified in input parameters
- * null pointer to data member of output vector
- *
- * CALLS
- *
- * NOTES
- *
- *------------------------------------------------------------------------
- */
+/************************************ <lalVerbatim file="DirichletCV">
+Author: UTB Relativity Group; contact J. T. Whelan
+$Id$
+************************************* </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+\subsection{Module \texttt{Dirichlet.c}}
+\label{s:Dirichlet.c}
+
+Calculates the values of the Dirichlet kernel.
+
+\subsubsection*{Prototypes}
+\input{DirichletCP}
+\index{\texttt{LALDirichlet()}}
+
+\subsubsection*{Description}
+
+{\tt LALDirichlet()} calculates the values of the Dirichlet kernel \cite{PW}:
+%
+\[
+{\cal D}_N(x):=
+\left\{
+\begin{array}{cl}
+(-1)^{x(N-1)} & \quad x=0, \pm 1, \pm 2, \cdots\\
+{\sin(N\pi x)\over N\sin(\pi x)} & \quad {\rm otherwise}\ .
+\end{array}
+\right.
+\]
+%
+The magnitude of the Dirichlet kernel is $1/N$ times the magnitude
+of the discrete Fourier transform of the discrete $N$-point rectangular
+window.
+
+\subsubsection*{Algorithm}
+None.
+
+\subsubsection*{Uses}
+None.
+
+\subsubsection*{Notes}
+The Dirichlet kernel is needed for a rigorous (i.e., exact) calculation
+of the standard cross-correlation statistic, evaluated in discrete time.
+However, \texttt{LALOptimal()} as currently implemented does not make
+use of the Dirichlet kernel;
+in \texttt{LALOptimal()}, one works in the large observation time
+continuum limit approximation, for which ${\cal D}_N(x)$ can effectively
+be replaced by a Dirac delta function.
+
+\vfill{\footnotesize\input{DirichletCV}}
+
+******************************************************* </lalLaTeX> */
+
+/**************************************** <lalLaTeX file="DirichletCB">
+
+\bibitem{PW}
+{\em Spectral analysis for physical applications},
+by Donald B.\ Percival and Andrew T.\ Walden
+(Cambridge University Press, Cambridge, 1993), p.\ 26-27.
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <math.h>
 #include <lal/Dirichlet.h>
 
-NRCSID (DIRICHLETC, "$Id$");
+NRCSID(DIRICHLETC, "$Id$"
+);
 
-void 
-LALDirichlet(LALStatus*              pstatus, 
-	  REAL4Vector*         poutput, 
-	  DirichletParameters* pparameters )
-
+/* <lalVerbatim file="DirichletCP"> */
+void
+LALDirichlet(LALStatus*                 status,
+             REAL4Vector*               output,
+             const DirichletParameters* parameters )
+/* </lalVerbatim> */
 {
-  INT4  i;
-  INT4  n;	   /* LALDirichlet parameter N */
-  INT4  length;	   /* specified length of output vector */
+  UINT4  i;
+  UINT4  n;         /* Dirichlet parameter N */
+  UINT4  length;   /* specified length of output vector */
   REAL8 deltaX;    /* spacing of x values */
-  REAL8 x;  
+  REAL8 x;
   REAL8 top;
   REAL8 bot;
 
   /* initialize status structure */
-  INITSTATUS( pstatus, "LALDirichlet", DIRICHLETC );
+  INITSTATUS( status, "LALDirichlet", DIRICHLETC );
 
   /* check that pointer to input parameters is not null */
-  ASSERT(pparameters != NULL,pstatus,DIRICHLET_ENULLIP,DIRICHLET_MSGENULLIP);
-	
-  /* check that LALDirichlet parameter N is > 0 */
-  ASSERT(pparameters->n > 0,pstatus,DIRICHLET_ENVALUE,DIRICHLET_MSGENVALUE);
+  ASSERT(parameters != NULL,status,
+         DIRICHLETH_ENULLPIN,DIRICHLETH_MSGENULLPIN);
+        
+  /* check that Dirichlet parameter N is > 0 */
+  ASSERT(parameters->n > 0,status,
+         DIRICHLETH_ENVALUE,DIRICHLETH_MSGENVALUE);
 
-  /* assign valid data to LALDirichlet parameter N */
-  n=pparameters->n;
+  /* assign valid data to Dirichlet parameter N */
+  n=parameters->n;
 
-  /* check that specified length of output vector is > 0 */
-  ASSERT(pparameters->length > 0,pstatus,DIRICHLET_ESIZE,DIRICHLET_MSGESIZE);
+  /* check that length parameter is greater than zero */
+  ASSERT(parameters->length > 0,status,
+         DIRICHLETH_ESIZE,DIRICHLETH_MSGESIZE);
 
   /* assign valid data to specified length */
-  length=pparameters->length;
+  length=parameters->length;
 
-  /* check that spacing of x values is > 0 */
-  ASSERT(pparameters->deltaX > 0,pstatus,DIRICHLET_EDELTAX,
-	 DIRICHLET_MSGEDELTAX);
+  /* check that spacing of x values is greater than zero */
+  ASSERT(parameters->deltaX > 0,status,DIRICHLETH_EDELTAX,
+         DIRICHLETH_MSGEDELTAX);
 
   /* assign valid data to delta x */
-  deltaX=pparameters->deltaX;
+  deltaX=parameters->deltaX;
 
   /* check that pointer to output vector is not null */
-  ASSERT(poutput != NULL,pstatus,DIRICHLET_ENULLOP,DIRICHLET_MSGENULLOP);
+  ASSERT(output != NULL,status,
+         DIRICHLETH_ENULLPOUT,DIRICHLETH_MSGENULLPOUT);
 
-  /* check that output vector length agrees with length specified in */
-  /* input parameters */
-  ASSERT((INT4)poutput->length==length,pstatus,DIRICHLET_ESIZEMM,
-	 DIRICHLET_MSGESIZEMM);
+  /* check length of output vector agrees with length specified in
+     input parameters */
+  ASSERT(output->length==length,status,DIRICHLETH_ESIZEMM,
+         DIRICHLETH_MSGESIZEMM);
 
   /* check that pointer to data member of output vector is not null */
-  ASSERT(poutput->data != NULL,pstatus,DIRICHLET_ENULLD,DIRICHLET_MSGENULLD);
+  ASSERT(output->data != NULL,status,
+         DIRICHLETH_ENULLPDOUT,DIRICHLETH_MSGENULLPDOUT);
 
   /* everything okay here ----------------------------------------------*/
 
-  /* calculate the values of the LALDirichlet kernel D_N(x) */
+  /* calculate the values of the Dirichlet kernel D_N(x) */
 
-  poutput->data[0] = 1;  /* D_N(0)=1 */
+  output->data[0] = 1;  /* D_N(0)=1 */
 
   for ( i = 1; i < length; i++) {
     x = i * deltaX;
-    
+
     if ( x-floor(x) == 0 ) {  /* D_N(x)=(-1)^(x * (N-1)) */
-      poutput->data[i] = pow(-1.0, ( (INT4)(x * (n-1)) ) );
+      output->data[i] = pow(-1.0, ( (INT4)(x * (n-1)) ) );
     }
     else {
       top = sin(LAL_PI * n * deltaX * i);
       bot = n * sin(LAL_PI * deltaX * i);
-      poutput->data[i] = top/bot;
+      output->data[i] = top/bot;
     }
-  } 
+  }
 
   return;
 }

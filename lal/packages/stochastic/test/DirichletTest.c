@@ -1,35 +1,80 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: DirichletTest.c
- * 
- * Author: UTB Relativity Group
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * main()
- *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
- * Test suite for LALDirichlet()
- * 
- * DIAGNOSTICS
- * Writes PASS or FAIL to stdout as tests are passed or failed.
- * Also writes to a file the values of the LALDirichlet kernel for threee
- * different valid test cases.
- *    
- * CALLS
- * LALDirichlet()
- * LALSCreateVector()
- * LALSDestroyVector()
- * 
- * NOTES
- *
- *-----------------------------------------------------------------------
- */
+/******************************** <lalVerbatim file="DirichletTestCV">
+Author: UTB Relativity Group; contact J. T. Whelan 
+$Id$
+********************************* </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+\subsection{Program \texttt{DirichletTest.c}}
+\label{s:DirichletTest.c}
+
+Test suite for LALDirichlet().
+
+\subsubsection*{Usage}
+\begin{verbatim}
+./DirichletTest
+\end{verbatim}
+
+\subsubsection*{Description}
+
+This program tests the function {\tt LALDirichlet()}.
+It tests all error conditions listed in the Error codes table.
+It also writes to files the values of the Dirichlet kernel for three
+different valid test cases.
+See Figs.~\ref{f:dirichlet_fig1}-\ref{f:dirichlet_fig3}.
+
+% figures %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{figure}[htbp!]
+\begin{center}
+\noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig1}
+\caption{\label{f:dirichlet_fig1}
+Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 1$.}
+\end{center}
+\end{figure}
+%
+\begin{figure}[htbp!]
+\begin{center}
+\noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig2}
+\caption{\label{f:dirichlet_fig2}
+Dirichlet kernel for $N=11$, $\Delta x =.01$, and $0\le x\le 1$.}
+\end{center}
+\end{figure}
+%
+\begin{figure}[htbp!]
+\begin{center}
+\noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig3}
+\caption{\label{f:dirichlet_fig3}
+Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 2$.}
+\end{center}
+\end{figure}
+%
+
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+lalDebugLevel
+LALDirichlet()
+LALPrintVector()
+LALSCreateVector()
+LALSDestroyVector()
+LALCheckMemoryLeaks()
+\end{verbatim}
+
+\subsubsection*{Notes}
+None.
+
+\vfill{\footnotesize\input{DirichletTestCV}}
+
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <math.h>
@@ -38,145 +83,257 @@
 #include <lal/PrintVector.h>
 #include <lal/Dirichlet.h>
 
-INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */
+INT4 lalDebugLevel = LALMSGLVL3;
 
 int check ( LALStatus*, INT4, const CHAR* );
 
-NRCSID (MAIN, "$ID: DirichletTest.c$");
+NRCSID(MAIN, "$Id$");
 
 int 
 main( void )
 {
    
-   static LALStatus status;
-   REAL4Vector*         poutput = NULL; 
-   REAL4Vector          dummy;
-   DirichletParameters  parameters;
+  static LALStatus            status;
+  REAL4Vector*                poutput = NULL; 
+  REAL4Vector                 dummy;
+  DirichletParameters         parameters;
+  
+  UINT4                        length;
+  length = 10;
 
 
-   /* test behavior for null pointer to input parameters */
-   LALDirichlet( &status, &dummy, NULL );
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    parameters.length = 11 ;
+    dummy.length = 11; 
+    /* test behavior for null pointer to input parameters */
+    LALDirichlet( &status, &dummy, NULL );
+    
+    if ( check( &status, DIRICHLETH_ENULLPIN, DIRICHLETH_MSGENULLPIN ) ) 
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPIN); 
+    
+    /* test behavior for LALDirichlet parameter N <= 0  */
+    
+    parameters.n = 0;
+    LALDirichlet( &status, &dummy, &parameters);
+    if ( check( &status, DIRICHLETH_ENVALUE, DIRICHLETH_MSGENVALUE ) )
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGENVALUE);
+}
+#endif /* LAL_NDEBUG */
 
-   if ( check( &status, DIRICHLET_ENULLIP, DIRICHLET_MSGENULLIP ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGENULLIP); 
+  /* define valid value of N */
+  parameters.n = 10 ;
+  
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    parameters.length = 0;
+    LALDirichlet( &status, &dummy, &parameters);
+    if ( check( &status, DIRICHLETH_ESIZE, DIRICHLETH_MSGESIZE ) )
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGESIZE);
+  }
+#endif /* LAL_NDEBUG */
 
-   /* test behavior for LALDirichlet parameter N <= 0  */
-   parameters.n = -3;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_ENVALUE, DIRICHLET_MSGENVALUE ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGENVALUE);
+  /* define valid value for specified length of output vector */
+  parameters.length = 11 ;
+  dummy.length = 11; 
+  
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    /* test behavior for x spacing <= 0 */
+    parameters.deltaX = -4.0;
+    LALDirichlet( &status, &dummy, &parameters);
+    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) ) 
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGEDELTAX );
+    parameters.deltaX = 0.0;
+    LALDirichlet( &status, &dummy, &parameters);
+    if ( check( &status, DIRICHLETH_EDELTAX, DIRICHLETH_MSGEDELTAX ) ) 
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGEDELTAX );
+  }
+#endif  /* LAL_NDEBUG */ 
+  
+  /* define valid delta x */
+  parameters.deltaX = 0.1;
 
-   parameters.n = 0;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_ENVALUE, DIRICHLET_MSGENVALUE ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGENVALUE);
-
-   /* define valid value of N */
-   parameters.n = 10 ;
-
-   /* test behavior for specified length of output vector <= 0  */
-   parameters.length = -3;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_ESIZE, DIRICHLET_MSGESIZE ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGESIZE);
-
-   parameters.length = 0;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_ESIZE, DIRICHLET_MSGESIZE ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGESIZE);
-
-   /* define valid value for specified length of output vector */
-   parameters.length = 11 ;
-
-   /* test behavior for x spacing <= 0 */
-   parameters.deltaX = -4;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_EDELTAX, DIRICHLET_MSGEDELTAX ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGEDELTAX );
-
-   parameters.deltaX = 0.0;
-   LALDirichlet( &status, &dummy, &parameters);
-   if ( check( &status, DIRICHLET_EDELTAX, DIRICHLET_MSGEDELTAX ) ) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGEDELTAX );
-
-   /* define valid delta x */
-   parameters.deltaX = 0.1;
-
-   /* test behavior for null pointer to output vector */
-   LALDirichlet( &status, NULL, &parameters );
-   if ( check( &status, DIRICHLET_ENULLOP, DIRICHLET_MSGENULLOP)) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGENULLOP);
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    /* test behavior for null pointer to output vector */
+    LALDirichlet( &status, NULL, &parameters );
+    if ( check( &status, DIRICHLETH_ENULLPOUT, DIRICHLETH_MSGENULLPOUT))
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPOUT);
       
-   /* test behavior for length of output vector not equal to length  */
-   /* specified in input parameters */
-   dummy.length = 10; 
-   LALDirichlet( &status, &dummy, &parameters );
-   if ( check( &status, DIRICHLET_ESIZEMM, DIRICHLET_MSGESIZEMM ) ) return 1;
-   printf( "PASS: %s\n", DIRICHLET_MSGESIZEMM );
+    /* test behavior for length of output vector not equal to length  */
+    /* specified in input parameters */
+    dummy.length = 10; 
+    LALDirichlet( &status, &dummy, &parameters );
+    if ( check( &status, DIRICHLETH_ESIZEMM, DIRICHLETH_MSGESIZEMM ) ) 
+    {
+      return 1;
+    }
+    printf( "PASS: %s\n", DIRICHLETH_MSGESIZEMM );
+  }
+#endif  /* LAL_NDEBUG */
 
-   /* assign valid output vector length */
-   dummy.length = parameters.length;
+  /* assign valid output vector length */
+  dummy.length = parameters.length;
 
-   /* test behavior for null pointer to data member of output vector */
-   dummy.data = NULL;
-   LALDirichlet( &status, &dummy, &parameters );
-   if ( check( &status, DIRICHLET_ENULLD, DIRICHLET_MSGENULLD)) return 1;
-   printf("PASS: %s\n", DIRICHLET_MSGENULLD);
-
-   /* VALID TEST DATA #1 */
-   /* call Dirichet() with valid data (N=even) */
-   parameters.n      = 10;
-   parameters.length = 101;
-   parameters.deltaX = 0.01; 
-   LALSCreateVector (&status, &poutput, parameters.length);  
-
-   LALDirichlet( &status, poutput, &parameters );  
-   LALPrintVector(poutput); 
-
-   LALSDestroyVector( &status, &poutput );   
-
-   /* VALID TEST DATA #2 */
-   /* call Dirichet() with valid data (N=odd) */
-   parameters.n      = 11;
-   parameters.length = 101;
-   parameters.deltaX = 0.01; 
-   LALSCreateVector(&status, &poutput, parameters.length);  
-
-   LALDirichlet( &status, poutput, &parameters );  
-   LALPrintVector(poutput); 
-
-   LALSDestroyVector( &status, &poutput );   
-
-   /* VALID TEST DATA #3 */
-   /* call Dirichet() with valid data (x=0 to 2) */
-   parameters.n      = 10;
-   parameters.length = 201;
-   parameters.deltaX = 0.01; 
-   LALSCreateVector(&status, &poutput, parameters.length);  
-
-   LALDirichlet( &status, poutput, &parameters );  
-   LALPrintVector(poutput); 
-
-   LALSDestroyVector( &status, &poutput );   
-
-   return 0;
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    /* test behavior for null pointer to data member of output vector */
+    dummy.data = NULL;
+    LALDirichlet( &status, &dummy, &parameters );
+    if ( check( &status, DIRICHLETH_ENULLPDOUT, DIRICHLETH_MSGENULLPDOUT)) 
+    {
+      return 1;
+    }
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPDOUT);
+  }
+# endif  /* LAL_NDEBUG */
+  
+  /* VALID TEST DATA #1 */
+  /* call Dirichet() with valid data (N=even) */
+  parameters.n      = 10;
+  parameters.length = 101;
+  parameters.deltaX = 0.01; 
+  
+  
+  LALSCreateVector (&status, &poutput, parameters.length);  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALDirichlet( &status, poutput, &parameters );  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALPrintVector(poutput); 
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALSDestroyVector( &status, &poutput );   
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  /* VALID TEST DATA #2 */
+  /* call Dirichet() with valid data (N=odd) */
+  parameters.n      = 11;
+  parameters.length = 101;
+  parameters.deltaX = 0.01; 
+  
+  
+  LALSCreateVector(&status, &poutput, parameters.length);  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALDirichlet( &status, poutput, &parameters );  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALPrintVector(poutput); 
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALSDestroyVector( &status, &poutput );   
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  /* VALID TEST DATA #3 */
+  /* call Dirichet() with valid data (x=0 to 2) */
+  parameters.n      = 10;
+  parameters.length = 201;
+  parameters.deltaX = 0.01; 
+  
+  
+  LALSCreateVector(&status, &poutput, parameters.length);  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALDirichlet( &status, poutput, &parameters );  
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALPrintVector(poutput); 
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  LALSDestroyVector( &status, &poutput );   
+  if ( check( &status, 0 , "") )
+  {
+    return 1;
+  }
+  
+  
+  return 0;
 }
 /*------------------------------------------------------------------------*/
 
 int 
 check( LALStatus* status, INT4 code, const CHAR* message )
 {
-   if ( status->statusCode!= code ) {
-     printf ( "FAIL: did not recognize \"%s\"\n", message );
-     return 1;
-   }
-   else if ( strcmp( message, status->statusDescription ) ) {
-     printf( "FAIL: incorrect warning message \"%s\" not \"%s\"\n",
-	     status->statusDescription, message );
+  if ( status->statusCode!= code ) 
+  {
+    printf ( "FAIL: did not recognize \"%s\"\n", message );
+    return 1;
+  }
+  else if (code && strcmp( message, status->statusDescription)) {
+    printf("FAIL: incorrect warning message \"%s\" not \"%s\"\n",
+	   status->statusDescription, message);
+    
+    return 1;
+  }
 
-     return 1;
-   }
-
-   return 0;
+  return 0;
 }
-
