@@ -230,24 +230,31 @@ data.make_chunks(length,overlap,playground_only)
 data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 
 # only process jobs that were missed with the bad playground algorithm
-removed_chunks = ''
 if missing_play:
   bad_data = pipeline.ScienceData()
   bad_data.read(cp.get('input','segments'),length)
-  bad_data.make_chunks(length,overlap,playground_only)
-  bad_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+  bad_data.make_chunks_bad_play(length,overlap,playground_only)
+  bad_data.make_chunks_from_unused_bad_play(
+    length,overlap/2,playground_only,overlap/2)
 
-  for seg in data:
-    for chunk in seg:
-      
-      # see if the chunk has already been processed by the bad playground
-      # algorithm: if it had, delete it
-      for bs in bad_data:
-        for bc in bs:
-          if ( chunk.start() == bc.start() ):
-            removed_chunks += str(chunk)
-            removed_chunks += ' has already been processed, removing\n'
-            seg._ScienceSegment__chunks.remove(chunk)
+  good_segs = []
+  bad_segs = []
+
+  for i in range(len(data)):
+    good_segs.append({})
+    bad_segs.append({})
+    
+    for chunk in data[i]:
+      good_segs[i][chunk.start()] = chunk
+    for chunk in bad_data[i]:
+      bad_segs[i][chunk.start()] = chunk
+
+    print 'good_segs[%d] = %s' % (i,str(good_segs[i]))
+    print 'bad_segs[%d]  = %s' % (i,str(bad_segs[i]))
+  
+  for i in range(len(data)):
+    new_chunks = [k for k in good_segs[i] if k not in bad_segs[i]]
+    data[i]._ScienceSegment__chunks = new_chunks
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -431,10 +438,6 @@ for seg in data:
   for chunk in seg:
     total_data += len(chunk)
 print >> log_fh, "total data =", total_data
-
-if missing_play:
-  print >> log_fh, "\n===========================================\n"
-  print >> log_fh, removed_chunks, '\n'
 
 print >> log_fh, "\n===========================================\n"
 print >> log_fh, data
