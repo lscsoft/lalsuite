@@ -58,7 +58,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_bindir}/lal-config
 %{_libdir}/*a
 %{_libdir}/pkgconfig/*
-%{_includedir}/lal/*
+%{_includedir}/lal
 %{_datadir}/*
 
 
