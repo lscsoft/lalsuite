@@ -118,31 +118,31 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
             if ligo_analysis or datafind_only : dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
-	  # make a template bank job for the master chunk
-	  bank = inspiral.TmpltBankNode(tmplt_job)
-	  bank.set_start(chunk.start())
-	  bank.set_end(chunk.end())
-	  bank.set_ifo(ifo_name)
-	  bank.set_cache(df.get_output())
-          bank.calibration()
-          bank.add_parent(df)
-	  if ligo_analysis: dag.add_node(bank)
-	  # make an inspiral job for the master chunk
-	  insp = inspiral.InspiralNode(insp_job)
-	  insp.set_start(chunk.start())
-	  insp.set_end(chunk.end())
-	  insp.add_var_opt('snr-threshold',snr)
-	  insp.add_var_opt('chisq-threshold',chisq)
-	  insp.add_var_opt('trig-start-time',chunk.trig_start())
-	  insp.add_var_opt('trig-end-time',chunk.trig_end())
-	  insp.set_ifo(ifo_name)
-	  insp.set_cache(df.get_output())
-          insp.calibration()
-          insp.set_bank(bank.get_output())
-	  insp.add_parent(bank)
-          if ligo_analysis: dag.add_node(insp)
-	  # store this chunk in the list of filtered L1 data
-	  chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+    # make a template bank job for the master chunk
+    bank = inspiral.TmpltBankNode(tmplt_job)
+    bank.set_start(chunk.start())
+    bank.set_end(chunk.end())
+    bank.set_ifo(ifo_name)
+    bank.set_cache(df.get_output())
+    bank.calibration()
+    bank.add_parent(df)
+    if ligo_analysis: dag.add_node(bank)
+    # make an inspiral job for the master chunk
+    insp = inspiral.InspiralNode(insp_job)
+    insp.set_start(chunk.start())
+    insp.set_end(chunk.end())
+    insp.add_var_opt('snr-threshold',snr)
+    insp.add_var_opt('chisq-threshold',chisq)
+    insp.add_var_opt('trig-start-time',chunk.trig_start())
+    insp.add_var_opt('trig-end-time',chunk.trig_end())
+    insp.set_ifo(ifo_name)
+    insp.set_cache(df.get_output())
+    insp.calibration()
+    insp.set_bank(bank.get_output())
+    insp.add_parent(bank)
+    if ligo_analysis: dag.add_node(insp)
+    # store this chunk in the list of filtered L1 data
+    chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
 
@@ -207,7 +207,7 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
     lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
     lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
     lt_inca.add_var_opt('parameter-test',
-      cp.get('pipeline','ligo-t-param-test'))
+    cp.get('pipeline','ligo-t-param-test'))
     
     # add all LIGO master chunks that overlap with segment to input
     for ligo_done in ligo_chunks:
@@ -260,16 +260,17 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
   f.close()
   sire.add_var_opt('input',fname)
   if inj_file:
-    sire.set_inj_outputs(file_name,usertag,tama_output,cluster)
-    sire.add_var_opt('injection-file',inj_file)
     coinc_time = int(cp.get('pipeline','inj-coinc'))
+    sire.set_inj_outputs(file_name,inj_coinc,usertag,cluster,slide_time,
+      tama_output)
+    sire.add_var_opt('injection-file',inj_file)
     sire.add_var_opt('injection-coincidence',coinc_time)
     if cluster:
       sire.add_var_opt('cluster-algorithm',cp.get('pipeline','cluster-alg'))
       sire.add_var_opt('cluster-time',2*coinc_time)
-	  
+    
   else:
-    sire.set_outputs(file_name,usertag,slide_time,tama_output)
+    sire.set_outputs(file_name,usertag,cluster,slide_time,tama_output)
 
   dag.add_node(sire) 
 
@@ -866,8 +867,7 @@ if tama_coincidence:
     infile = cp.get('input','tama-triggers')
     tama2lw.set_input(infile)
     outfile = 'T1-INSPIRAL'
-    if usertag:
-      outfile += '_' + usertag 
+    if usertag: outfile += '_' + usertag 
     outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
       '.xml'
     tama2lw.set_output(outfile)
@@ -885,8 +885,7 @@ if tama_coincidence or slide_time:
     infile = cp.get('input','tama-triggers')
     tama2lw.set_input(infile)
     outfile = 'TAMA-INSPIRAL'
-    if usertag:
-      outfile += '_' + usertag 
+    if usertag: outfile += '_' + usertag 
     outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
       '.xml'
     tama2lw.set_output(outfile)
@@ -982,7 +981,7 @@ if tama_coincidence or slide_time:
     lt_inca2.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
     lt_inca2.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
     lt_inca2.add_var_opt('parameter-test', 
-      cp.get('pipeline','ligo-t-param-test'))
+    cp.get('pipeline','ligo-t-param-test'))
     # do the third inca between H1 and H2
     inca3 = inspiral.IncaNode(inca_job)
     inca3.set_start(seg.start())
@@ -994,7 +993,7 @@ if tama_coincidence or slide_time:
     inca3.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
     inca3.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
     inca3.add_var_opt('parameter-test', 
-      cp.get('pipeline','hh-param-test'))
+    cp.get('pipeline','hh-param-test'))
 
     inca3.add_var_opt('ifo-b-snr-threshold',h2_snr)
     # add the triggers and parent relation from the H1/H2 inca
@@ -1115,28 +1114,28 @@ if inj_file:
     cluster = 1
     sire_segs(l1_single_inca_nodes,'output_a','L1-INCA_SINGLE_IFO',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
-        inj_file,cluster)
+      inj_file,cluster)
     sire_segs(h1_single_inca_nodes,'output_a','H1-INCA_SINGLE_IFO',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
-        inj_file,cluster)
+      inj_file,cluster)
     sire_segs(h2_single_inca_nodes,'output_a','H2-INCA_SINGLE_IFO',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
-        inj_file,cluster) 
+      inj_file,cluster) 
     sire_segs(h1_h2_inca_nodes,'output_a','H1-INCA_H1H2',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
-        inj_file,cluster)
+      inj_file,cluster)
     sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,0,
-        inj_file,cluster)
+      inj_file,cluster)
   
   if tama_coincidence:
     # sire to find all TAMA triggers coincident with injections.
     sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',
-	sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
     # a sire that contains all the TAMA triggers coincident with injections
     # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',
-	sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
 
     # sires to find all LT coincident triggers coincident with injections.
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_inj_job,dag,
@@ -1193,7 +1192,7 @@ if inj_file:
     # one last sire that contains all the TAMA triggers.
     sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
       sire_cl_inj_job,dag,playground_only,usertag,tama_output,slide_time,
-        inj_file,cluster)
+      inj_file,cluster)
 
 print "done"
 
@@ -1292,9 +1291,6 @@ for h2_done in h1_h2_chunks_analyzed:
   print >> log_fh, h2_done.get_chunk()
   total_time += len(h2_done.get_chunk())
 print >> log_fh, "\n total time", total_time, "seconds"
-
-
-
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(l1_single_data)) + 

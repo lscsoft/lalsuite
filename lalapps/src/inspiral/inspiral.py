@@ -476,53 +476,77 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
-  def set_outputs(self,out_name,usertag=None,slide_time=None,tama_output=None):
+  def set_outputs(self,out_name,usertag=None,cluster=None,slide_time=None,
+    tama_output=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
     usertag = usertag to tag the output filename with
+    cluster = cluster time (ms)
+    slide_time = slide time (sec)
+    tama_output = output tama file?
     """
     outfile = out_name
+    
     if usertag:
       outfile += '_' + usertag
+    
+    if cluster:
+      outfile += '_CLUSTER' + str(cluster)
+      
     if slide_time:
       if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
       else: outfile += '_SLIDE' + str(slide_time)
+    
     summ_file = outfile + '.txt' 
+    self.add_var_opt('summary',summ_file)
+    
     if tama_output:
       tama_out = outfile + '.dat'
       self.add_var_opt('tama-output',tama_out)
 
-    outfile +=  '.xml'
+    outfile += '.xml'
     self.__output = outfile
     self.add_var_opt('output',outfile)
-    self.add_var_opt('summary',summ_file)
 
-  def set_inj_outputs(self,out_name,usertag=None,tama_output=None,
-			slide_time=None,cluster=None):
+  def set_inj_outputs(self,out_name,inj_coinc,usertag=None,cluster=None,
+    slide_time=None,tama_output=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
+    inj_coinc = injection coincidence window (ms)
     usertag = usertag to tag the output filename with
+    cluster = cluster time (ms)
+    slide_time = slide time (sec)
+    tama_output = output tama file?
     """
     outfile = out_name
+    
     if usertag:
       outfile += '_' + usertag
+    
+    if cluster:
+      outfile += '_CLUSTER' + str(cluster)
+    
     if slide_time:
       if slide_time < 0: outfile += '_SLIDEneg' + str(abs(slide_time))
-      else: outfile += '_SLIDE' + slide_time
-    if cluster:
-      outfile += '_CLUSTER'  
-    summ_file = outfile + '_FOUND.txt' 
-    missed_file = outfile + '_MISSED.xml'
+      else: outfile += '_SLIDE' + str(slide_time)
+    
+    missed_file = outfile + '_MISSED' + str(inj_coinc) + '.xml'
+    self.add_var_opt('missed-injections',missed_file)
+    
+    outfile += '_FOUND' + str(inj_coinc)
+    
     if tama_output:
-      tama_out = outfile + '_FOUND.dat'
+      tama_out = outfile + '.dat'
       self.add_var_opt('tama-output',tama_out)
-    outfile +=  '_FOUND.xml'
+    
+    summ_file = outfile + '.txt' 
+    self.add_var_opt('summary',summ_file)
+    
+    outfile += '.xml'
     self.__output = outfile
     self.add_var_opt('output',outfile)
-    self.add_var_opt('summary',summ_file)
-    self.add_var_opt('missed-injections',missed_file)
     self.add_var_opt
 
 
