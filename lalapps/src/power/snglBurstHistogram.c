@@ -242,7 +242,7 @@ int main(int argc, char **argv)
             FILE *fpFreqHist=NULL;
             fpFreqHist = fopen("freq-hist.txt","w");
             for(i=0;i<nFreqBins;i++){
-                fprintf(fpFreqHist,"%f %i\n",fstart+i*df,
+                fprintf(fpFreqHist,"%f %i\n",fstart+i*df+0.5*df,
                         freqHistData[i]);
             }
             fclose(fpFreqHist);
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
             INT4 i;
             for(i=0;i<nFreqBins;i++){
                 fprintf(fpTFHist,"%i %f %i\n",fileCounter,
-                        fstart+ i*df, tmpHistData[i]);
+                        fstart+ i*df + 0.5*df, tmpHistData[i]);
             }
             fprintf(fpTFHist,"\n");
         }
