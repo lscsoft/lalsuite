@@ -17,6 +17,7 @@ import sys
 import string
 import getopt
 import re
+import tempfile
 import ConfigParser
 
 def isplay(t):
@@ -77,6 +78,8 @@ class InspiralPipeline:
       for opt in cp.options(sec):
         self.config[name][opt] = string.strip(cp.get(sec,opt))
     self.basename = config_file.split('.')[0]
+    tempfile.template = self.basename
+    self.logfile = tempfile.mktemp()
 
   def parsesegs(self):
     self.segments = []
@@ -118,6 +121,7 @@ created %d inspiral chunks for analysis\
 """ % ( len(self.segments), total_science, total_science_used, num_chunks )
     if play_only:
       print >> log_fh, "filtering only segments that overlap with playground"
+    print >> log_fh, "condor log file is", self.logfile
     log_fh.close()
 
   def frcachesub(self):
@@ -136,7 +140,7 @@ notification = never
 queue
 """ % (self.config['condor']['datafind'],
        self.config['input']['datatype'],
-       self.basename)
+       self.logfile)
     sub_fh.close()
 
   def banksub(self):
@@ -161,7 +165,7 @@ log = %s.log
 error = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).err
 output = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
-queue""" % self.basename
+queue""" % self.logfile
     sub_fh.close()
 
   def inspiralsub(self):
@@ -188,7 +192,7 @@ error = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).err
 output = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
 queue
-""" % (self.basename)
+""" % (self.logfile)
 
   def builddag(self,cache,bank):
     chan = self.config['input']['channel-name']
@@ -244,11 +248,17 @@ Usage: inspiral_pipeline.py [OPTIONS]
    -h, --help               print help information
    -c, --cache              flag the frame cache query as done
    -b, --bank               flag the bank generation and cache query as done
+   -l, --log-path           directory to write condor log file
 
 This program generates a DAG to run the inspiral code. The configuration file 
 should specify the parameters needed to run the jobs and must be specified 
 with the --config-file (or -f) option. See the LALapps documentation for more
 information on the syntax of the configuation file.
+
+A directory which condor uses to write a log file must be specified with the
+--log-file (or -l) option. This must be a non-NFS mounted directory. The name
+of the log file is automatically created and will be unique for each
+invocation of inspiral_pipeline.py.
 
 A file containing science segments to be analyzed should be specified in the 
 [input] section of the configuration file with a line such as
@@ -286,7 +296,7 @@ template banks are expected to exist by the inspiral code.
 """
   print msg
 
-shortop = "f:vhcbip"
+shortop = "f:vhcbipl:"
 longop = [
   "config-file=",
   "version",
@@ -294,7 +304,8 @@ longop = [
   "cache",
   "bank",
   "inspiral",
-  "play"
+  "play",
+  "log-path="
   ]
 
 try:
@@ -307,6 +318,7 @@ config_file = None
 no_cache = None
 no_bank = None
 play_only = None
+log_path = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -324,11 +336,19 @@ for o, a in opts:
     no_bank = 1
   if o in ("-p", "--play"):
     play_only = 1
+  if o in ("-l", "--log-path"):
+    log_path = a
 
 if not config_file:
   print >> sys.stderr, "No configuration file specified."
   print >> sys.stderr, "Use -f FILE or --config-file FILE to specify location."
   sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use -l PATH or --log-path PATH to specify a location."
+  sys.exit(1)
+tempfile.tempdir = log_path
 
 try: os.mkdir('cache')
 except: pass
