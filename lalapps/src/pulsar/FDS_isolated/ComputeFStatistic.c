@@ -1540,12 +1540,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       char tmp[256];
 
       /* prepare memory for another filename */
-      if ( (cfg->filelist = LALRealloc( cfg->filelist, (fileno+1) * sizeof(CHAR*))) == NULL) {
+      if ( (cfg->filelist = (CHAR**)LALRealloc( cfg->filelist, (fileno+1) * sizeof(CHAR*))) == NULL) {
 	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
-      if ( (cfg->filelist[fileno] = LALCalloc (1, strlen(tmp)+1)) == NULL) {
+      if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
 	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       strcpy(cfg->filelist[fileno],tmp);
@@ -1608,12 +1608,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     /* prepare memory for all filenames */
-    if ( (cfg->filelist = LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
+    if ( (cfg->filelist = (CHAR**)LALCalloc(globbuf.gl_pathc, sizeof(CHAR*))) == NULL) {
       ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
     while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
-	if ( (cfg->filelist[fileno] = LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
+	if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
 	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
 	}
 	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
