@@ -1139,7 +1139,7 @@ LALFindChirpBCVFilterSegment (
   FindChirpChisqInput  *chisqInput;
   FindChirpChisqInput  *chisqInputBCV;
 
-  INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
+  INITSTATUS( status, "LALFindChirpBCVFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
 
 
