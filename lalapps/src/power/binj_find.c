@@ -64,10 +64,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
 	segMiddle = (segMiddle - runStart) % playInterval;
 
-	if (segStart < playLength || segEnd < playLength || segMiddle < playLength)
-		return TRUE;
-
-	return FALSE;
+	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
 /****************************************************************************
