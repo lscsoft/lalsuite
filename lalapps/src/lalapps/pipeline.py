@@ -61,11 +61,20 @@ class CondorJob:
 
     # These are set by methods in the class
     self.__arguments = {}
+    self.__condor_cmds = {}
     self.__notification = None
     self.__log_file = None
     self.__err_file = None
     self.__out_file = None
     self.__sub_file_path = None
+
+  def add_condor_cmd(self, cmd, value):
+    """
+    Add a Condor command to the submit file (e.g. a class add or evironment).
+    cmd = Condor command directive.
+    value = value for command.
+    """
+    self.__condor_cmds[cmd] = value
 
   def add_arg(self, arg, value):
     """
@@ -171,6 +180,9 @@ class CondorJob:
       else:
         subfile.write( ' --' + c )
     subfile.write( '\n' )
+
+    for cmd in self.__condor_cmds.keys():
+      subfile.write( cmd + " = " + self.__condor_cmds[cmd] + '\n' )
 
     subfile.write( 'log = ' + self.__log_file + '\n' )
     subfile.write( 'error = ' + self.__err_file + '\n' )
