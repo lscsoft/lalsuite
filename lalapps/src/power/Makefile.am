@@ -14,7 +14,7 @@ bin_PROGRAMS = lalapps_power lalapps_burca \
 lalapps_power_SOURCES = $(POWERSRCS)
 lalapps_burca_SOURCES = $(BURCASRC)
 lalapps_bread_SOURCES = $(BREADSRC)
-lalapps_binj_SOURCES = $(BREADSRC)
+lalapps_binj_SOURCES = $(BINJSRC)
 lalapps_binj_find_SOURCES = $(BINJFINDSRC)
 else
 bin_PROGRAMS = 
