@@ -10,7 +10,7 @@ libinject_la_SOURCES =	\
 	InjectVector.c			InjectTimeSeries.c \
 	SkyCoordinates.c		SimulateSB.c \
 	SimulateInspiral.c              SimulatePopcorn.c \
-	StochasticMC.c                  SimulateCoherentGW.c
+	StochasticMC.c                  SimulateCoherentGW.c\
 	TerrestrialCoordinates.c 
 
 ## Hack to get this working for now... change later
