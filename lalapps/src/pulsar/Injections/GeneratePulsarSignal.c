@@ -38,7 +38,8 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 /* prototypes for internal functions */
 static void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series, UINT4 set);
 static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series, UINT4 set);
-static LIGOTimeGPSVector* getTimestamps (LALStatus *stat, const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
+static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
+static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 /*----------------------------------------------------------------------*/
 
 NRCSID( PULSARSIGNALC, "$Id$");
@@ -78,8 +79,7 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarS
    *
    *----------------------------------------------------------------------*/
   sourceParams.position.system = COORDINATESYSTEM_EQUATORIAL;
-  sourceParams.position.longitude = params->pulsar.Alpha;
-  sourceParams.position.latitude =  params->pulsar.Delta;
+  sourceParams.position = params->pulsar.position;
   sourceParams.psi = params->pulsar.psi;
   sourceParams.aPlus = params->pulsar.aPlus;
   sourceParams.aCross = params->pulsar.aCross;
@@ -240,30 +240,23 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
    * Therefore, we have to generate them now if none have been provided by the user. */
   if (params->timestamps == NULL)
     {
-      timestamps = getTimestamps (stat->statusPtr, &tStart, duration, params->Tsft );
+      timestamps = make_timestamps (&tStart, duration, params->Tsft );
       if (timestamps == NULL) {
 	ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
       }
-      numSFTs = timestamps->length;
     }
-  else	/* if given, check that they all lie within the permissible range */
-    {
-      REAL8 diff0, diff1;
-      timestamps = params->timestamps;
-      numSFTs = params->timestamps->length;
+  else	/* if given, nothing to do */
+    timestamps = params->timestamps;
 
-      for (iSFT = 0; iSFT < numSFTs; iSFT ++)
-	{
-	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff0, &(timestamps->data[iSFT]), &tStart), stat);
-	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff1, &tLast, &(timestamps->data[iSFT])), stat);
-	  if ( (diff0 < 0) || (diff1 < 0) ) {
-	    ABORT (stat, PULSARSIGNALH_ETIMEBOUND, PULSARSIGNALH_MSGETIMEBOUND);
-	  }
-	}
-    } /* if timestamps */
+  /* check that all timestamps lie within [tStart, tLast] */
+  if ( check_timestamp_bounds (timestamps, tStart, tLast) != 0) {
+    ABORT (stat, PULSARSIGNALH_ETIMEBOUND, PULSARSIGNALH_MSGETIMEBOUND);
+  }
 
   /* prepare SFT-vector for return */
+  numSFTs = timestamps->length;			/* number of SFTs */
   SFTlen = (UINT4)(numSamples/2) + 1;		/* number of frequency-bins */
+
   LALCreateSFTVector (stat->statusPtr, &sftvect, numSFTs, SFTlen);
   BEGINFAIL (stat) {
     if (params->timestamps == NULL)
@@ -335,8 +328,14 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
   baryinput.site.location[0] /= LAL_C_SI;
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
-  baryinput.alpha = params->pulsar.Alpha;
-  baryinput.delta = params->pulsar.Delta;
+  if (params->pulsar.position.system != COORDINATESYSTEM_EQUATORIAL)
+    {
+      /* FIXME: do proper conversion or error-reporting */
+      printf ("\nARGH: non-equatorial coords not implemented here yet!\n");
+      exit(-1);	/* suicide */
+    }
+  baryinput.alpha = params->pulsar.position.longitude;
+  baryinput.delta = params->pulsar.position.latitude;
   baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
 
   baryinput.tgps = GPSin;
@@ -723,45 +722,6 @@ LALDestroySFTVector (LALStatus *stat, SFTVector **vect)
 } /* LALDestroySFTVector() */
 
 
-/***********************************************************************
- * given a start-time, duration and Tsft, returns a list of timestamps
- * covering this time-stretch.
- * returns NULL on out-of-memory
- ***********************************************************************/
-LIGOTimeGPSVector* 
-getTimestamps (LALStatus *stat, const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
-{
-  UINT4 i;
-  UINT4 numSFTs;
-  LIGOTimeGPS tt;
-  LIGOTimeGPSVector *timestamps = NULL;
-
-  numSFTs = (UINT4)( duration / Tsft );			/* floor */
-  timestamps = LALCalloc (1, sizeof( *timestamps) );
-
-  timestamps->length = numSFTs;
-  if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) 
-    return (NULL);
-
-  tt = *tStart;	/* initialize to start-time */
-  for (i = 0; i < numSFTs; i++)
-    {
-      timestamps->data[i] = tt;
-      /* get next time-stamp */
-      /* NOTE: we add the interval Tsft successively instead of
-       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
-       * with a REAL8 interval, which becomes critial from about 100days on...
-       */
-      LALAddFloatToGPS( stat, &tt, &tt, Tsft);
-      if (stat->statusCode != 0)
-	return (NULL);
-
-    } /* for i < numSFTs */
-  
-  return (timestamps);
-  
-} /* getTimestamps() */
-
 void
 LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
 {
@@ -784,3 +744,75 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
   RETURN (stat);
   
 } /* LALDestroyTimestampVector() */
+
+
+
+
+/***********************************************************************
+ * given a start-time, duration and Tsft, returns a list of timestamps
+ * covering this time-stretch.
+ * returns NULL on out-of-memory
+ ***********************************************************************/
+LIGOTimeGPSVector* 
+make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
+{
+  LALStatus status;
+  UINT4 i;
+  UINT4 numSFTs;
+  LIGOTimeGPS tt;
+  LIGOTimeGPSVector *timestamps = NULL;
+
+  numSFTs = (UINT4)( duration / Tsft );			/* floor */
+  timestamps = LALCalloc (1, sizeof( *timestamps) );
+
+  timestamps->length = numSFTs;
+  if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) 
+    return (NULL);
+
+  tt = *tStart;	/* initialize to start-time */
+  for (i = 0; i < numSFTs; i++)
+    {
+      timestamps->data[i] = tt;
+      /* get next time-stamp */
+      /* NOTE: we add the interval Tsft successively instead of
+       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
+       * with a REAL8 interval, which becomes critial from about 100days on...
+       */
+      LALAddFloatToGPS( &status, &tt, &tt, Tsft);
+      if (status.statusCode)	/* error */
+	return (NULL);
+
+    } /* for i < numSFTs */
+  
+  return (timestamps);
+  
+} /* make_timestamps() */
+
+/* check that all timestamps given lie within the range [t0, t1] 
+   return: 0 if ok, -1 if not
+*/
+int
+check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
+{
+  static LALStatus status1, status2;
+  REAL8 diff0, diff1;
+  UINT4 i;
+
+  for (i = 0; i < timestamps->length; i ++)
+    {
+      LALDeltaFloatGPS (&status1, &diff0, &(timestamps->data[i]), &t0);
+      LALDeltaFloatGPS (&status2, &diff1, &t1, &(timestamps->data[i]));
+
+      /* catch errors */
+      if (status1.statusCode || status2.statusCode)
+	return (-2);
+
+      /* check timestamps-bounds */
+      if ( (diff0 < 0) || (diff1 < 0) ) 
+	return (-1);
+
+    } /* for i < numSFTs */
+
+  return (0);
+
+} /* check_timestamp_bounds */

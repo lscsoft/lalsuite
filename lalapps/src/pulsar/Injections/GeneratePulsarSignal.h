@@ -71,8 +71,7 @@ NRCSID( PULSARSIGNALH, "$Id$");
 typedef struct {
   LIGOTimeGPS TRefSSB;	/* reference time for pulsar parameters (in SSB time!) */
   			/* if ZERO, startTimeGPS is used instead */
-  REAL8 Alpha;		/* source location in equatorial coordinates (in radians) */
-  REAL8 Delta;
+  SkyPosition position;	/* source location (in radians!) */
   REAL4 psi;            /* polarization angle (radians) at TRef */
   REAL4 aPlus, aCross;    /* polarization amplitudes at TRef */
   REAL8 phi0;             /* initial phase (radians) at TRef */

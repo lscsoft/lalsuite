@@ -9,8 +9,9 @@ TODO
 
 * write some documentation
 
-* understand why we can throw away freqency-bin nr (n/2 +1) ?
-	(--> FFTW algorithm)
+* understand why we throw away the last freqency-bin in FFT -> SFT ?
+
+* do MEASURE the FFTW-plan, and allow some plan-buffering!
 
 done
 ----

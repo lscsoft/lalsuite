@@ -553,8 +553,7 @@ int main(int argc,char *argv[]) {
     CHAR fname[256];
 
     params.pulsar.TRefSSB = SSBpulsarparams;
-    params.pulsar.Alpha = genTayParams.position.longitude;
-    params.pulsar.Delta = genTayParams.position.latitude;
+    params.pulsar.position = genTayParams.position;
     params.pulsar.psi = genTayParams.psi;
     params.pulsar.aPlus = genTayParams.aPlus;
     params.pulsar.aCross = genTayParams.aCross;
@@ -584,12 +583,15 @@ int main(int argc,char *argv[]) {
 
     SUB (LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
 
-    /*    sftParams.FreqBand = Band; */ /* FIXME */
     sftParams.Tsft = Tsft;
-    sftParams.timestamps = NULL;
+    sftParams.timestamps = LALCalloc(1, sizeof(LIGOTimeGPSVector));
+    sftParams.timestamps->length = nTsft;
+    sftParams.timestamps->data = timestamps;
     sftParams.noiseSFTs = NULL;
 
     SUB ( LALSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
+
+    LALFree (sftParams.timestamps);
 
     for (i=0; i < SFTs->numSFTs; i++) 
       {
@@ -601,11 +603,8 @@ int main(int argc,char *argv[]) {
   /**********************************************************************************/
 
 
-
-
   /* This is the main loop that produces output data */
   for (iSFT=0;iSFT<nTsft;iSFT++){
-    CHAR name[256];
     INT4 shift;
 
     /* This sets the time at which the output is given...*/
@@ -615,11 +614,7 @@ int main(int argc,char *argv[]) {
 
     timeSeries->data->data =  totalTimeSeries->data->data + shift;
 
-
     printf ("i = %d: epoch = %d, sample-shift = %d\n", iSFT, timestamps[iSFT].gpsSeconds,  shift);
-
-    sprintf (name, "orig_%03d.agr", iSFT);
-    SUB ( LALPrintR4TimeSeries (&status, timeSeries, name), &status);
 
     /* Note that we DON'T update cwDetector Heterodyne Epoch. Teviet
     says: "You can set it to anything you like; it doesn't really
@@ -661,8 +656,11 @@ int main(int argc,char *argv[]) {
       if (write_SFTS(&status, iSFT))
 	return 1;  
 
+      /* FIXME */ 
+      /*
       printf ("\nComparing SFT %d:", iSFT);
-      /*      compare_SFTs (fvec, SFTs.data[iSFT] ); */ /* FIXME */
+      compare_SFTs (fvec, SFTs.data[iSFT] ); 
+      */
     }
 
   } /* end of loop over different SFTs */
