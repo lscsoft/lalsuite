@@ -71,6 +71,8 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 extern int boinc_fraction_done(double fraction_complete);
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
+int boinc_time_to_checkpoint();
+void boinc_checkpoint_completed();
 
 #if !NO_BOINC_GRAPHICS
 extern int boinc_init_graphics();
@@ -393,48 +395,54 @@ int main(int argc,char *argv[])
   /* allow for checkpointing: 
    * open fstats file for writing or appending, depending on loopcounter. 
    */
-  if ( FILE_FSTATS && ( (fpstat=fopen( Fstatsfilename, loopcounter>0 ? "ab" : "wb")) == NULL) )
+  if ( FILE_FSTATS && ( (fpstat=fopen( Fstatsfilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
       fprintf(stderr,"in Main: unable to open Fstats file\n");
       return 2;
     }
 
   /* if we checkpointed in the loop we need to "spool forward" accordingly in our sky-position list */
-  if ( loopcounter > 0 )
-    {
-      UINT4 i;
-      for (i=0; i < loopcounter; i++)
-	{
-	  LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
-	  if (thisScan.state == STATE_FINISHED)
-	    {
-	      LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
-	      return COMPUTEFSTATC_ECHECKPOINT; 
-	    }
-	}
-    } /* if loopcounter > 0 */
+  if ( loopcounter > 0 ) {
+    UINT4 i;
+    for (i=0; i < loopcounter; i++) {
+      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+      if (thisScan.state == STATE_FINISHED) {
+	LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
+	return COMPUTEFSTATC_ECHECKPOINT; 
+      }
+    }
+    /* seek to right point of fstats file (truncate what's left over) */
+    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) {	/* something gone wrong seeking .. */
+      if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+      return COMPUTEFSTATC_ECHECKPOINT;;
+    }
+  } /* if loopcounter > 0 */
     
 
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
+
       if (fpstat)
-	{
-	  FILE *fp;
-	  if ( (fp = fopen(ckp_fname, "wb")) == NULL) /* overwrite old file */
-	    {
+#if USE_BOINC
+	if (boinc_time_to_checkpoint())
+#endif
+	  {
+	    FILE *fp;
+	    if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
 	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
 	      return COMPUTEFSTATC_ECHECKPOINT;
 	    }
-	  if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld", loopcounter, fstat_bytecounter) < 0)
-	    {
+	    if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, fstat_bytecounter) < 0) {
 	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
 	      return COMPUTEFSTATC_ECHECKPOINT;
 	    }
-	  fclose (fp);
-	  fflush (fpstat);
-	  
-	} /* if fpstat */
+	    fclose (fp);
+	    fflush (fpstat);
+#if USE_BOINC
+	    boinc_checkpoint_completed();
+#endif
+	  } /* if fpstat */
       
       /* Show some progress */
 #if USE_BOINC
@@ -2808,6 +2816,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
   UINT4 lcount; 	/* loopcounter */
   long bcount;		/* and bytecounter read from ckp-file */
   long flen;
+  char lastnewline='\0';
 
   INITSTATUS( stat, "getChkptCounters", rcsid );
 
@@ -2817,52 +2826,48 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
   /* if anything goes wrong in here: start main-loop from beginning  */
   *loopcounter = 0;	
   *bytecounter = 0;
-
+  
   /* try opening checkpoint-file read-only */
   if (lalDebugLevel) LALPrintError("Checking presence of checkpoint-file ... ");
-  if ( (fp = fopen(ckp_fname, "rb")) == NULL) 
-    {
-      if (lalDebugLevel) LALPrintError ("none found. \nStarting main-loop from beginning.\n");
-      RETURN(stat);
-    }
-
+  if (!(fp = fopen(ckp_fname, "rb"))) {
+    if (lalDebugLevel) LALPrintError ("none found. \nStarting main-loop from beginning.\n");
+    RETURN(stat);
+  }
+  
   /* try reading checkpoint-counters: two INT's loopcounter and fstat_bytecounter */
   if (lalDebugLevel) LALPrintError ("found! \nTrying to read checkpoint counters from it...");
-  if ( 2 != fscanf (fp, "%" LAL_UINT4_FORMAT " %ld", &lcount, &bcount))
-    {
-      if (lalDebugLevel) LALPrintError ("failed! \nStarting main-loop from beginning.\n");
-      fclose( fp );
-      RETURN(stat);
-    }
+  if ( 3 != fscanf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &bcount, &lastnewline) || lastnewline!='\n') {
+    if (lalDebugLevel) LALPrintError ("failed! \nStarting main-loop from beginning.\n");
+    goto exit;
+  }
   fclose( fp );
-
+  
   /* checkpoint-file read successfully: check consistency with fstats-file */
   if (lalDebugLevel) LALPrintError ("ok.\nChecking if fstats-file is ok ...");
-  if ( (fp = fopen(fstat_fname, "rb")) == NULL) {
+  if (!(fp = fopen(fstat_fname, "rb"))) {
     if (lalDebugLevel) LALPrintError ("none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
   /* seek to end of fstats file */
-  if ( 0 != fseek( fp, 0, SEEK_END) ) {	/* something gone wrong seeking .. */
+  if (fseek( fp, 0, SEEK_END)) {	/* something gone wrong seeking .. */
     if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
-    RETURN(stat);
+    goto exit;
   }
-
+  
   /* is bytecounter consistent with length of this file? */
-  flen = ftell(fp);
-  if ( bcount != flen )
-    {
-      if (lalDebugLevel) 
-	LALPrintError ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
-      RETURN(stat);
-    }
-  fclose( fp );
-
+  if ( bcount > (flen = ftell(fp))) {
+    if (lalDebugLevel) 
+      LALPrintError ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
+    goto exit;
+  }
+  
   if (lalDebugLevel) LALPrintError ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
-
+  
   *loopcounter = lcount;
   *bytecounter = bcount;
-
+  
+ exit:
+  fclose( fp );
   RETURN(stat);
-
+  
 } /* getChkptCounters() */ 
