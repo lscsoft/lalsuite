@@ -178,7 +178,7 @@ main(int argc, char *argv[])
 	}
       if ( (relErr=relError( max1, max2)) > eps4 )
 	{
-	  LALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  diff_found=1;
 	}
       
