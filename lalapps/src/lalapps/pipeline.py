@@ -1032,7 +1032,7 @@ class ScienceData:
 	        trig_start = int(play_start)
 	      if (play_end < end):
 	        trig_end = int(play_end)
-	      if trig_end > trig_start:
+	      if (trig_end == 0) or (trig_end > trig_start):
                 seg.add_chunk(start, end, trig_start, trig_end)
           else:
             seg.add_chunk(start, end, trig_start)
