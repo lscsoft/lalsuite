@@ -57,3 +57,36 @@ README.install:
 	(cd $(top_builddir)/doc && $(MAKE) $(AM_MAKEFLAGS) README.install) \
 	  || case "$$amf" in *=*) exit1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
+
+all: all-am
+	@echo "";\
+echo "*****************************************************************";\
+echo "*                                                               *";\
+echo "*       LAL has now been successfully built.                    *";\
+echo "*       Now run 'make install' to install LAL.                  *";\
+echo "*                                                               *";\
+echo "*****************************************************************"
+
+install: install-am
+	@echo "";\
+echo "*****************************************************************";\
+echo "*                                                               *";\
+echo "*       LAL has now been successfully installed.                *";\
+echo "*                                                               *";\
+echo "*       Now you may want to setup your environment:             *";\
+echo "*                                                               *";\
+echo "*       Bourne shell [bash] users: please add the               *";\
+echo "*       following lines to your .profile file                   *";\
+echo "*                                                               *";\
+printf "*           LAL_LOCATION=%-31s        *\n" $(prefix) ;\
+echo "*           export LAL_LOCATION                                 *";\
+echo '*           . $${LAL_LOCATION}/etc/lal-user-env.sh               *';\
+echo "*                                                               *";\
+echo "*       C-shell [tcsh] users: please add the following          *";\
+echo "*       lines to your .login file                               *";\
+echo "*                                                               *";\
+printf "*           setenv LAL_LOCATION %-31s *\n" $(prefix) ;\
+echo '*           source $${LAL_LOCATION}/etc/lal-user-env.sh          *';\
+echo "*                                                               *";\
+echo "*****************************************************************"
+

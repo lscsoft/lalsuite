@@ -14,20 +14,3 @@ MOSTLYCLEANFILES = LALBuildDate.c
 TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
-
-all: all-am
-	@echo "";\
-echo "*****************************************************************";\
-echo "*                                                               *";\
-echo "*       LAL has now been successfully built.                    *";\
-echo "*       Now run 'make install' to install LAL.                  *";\
-echo "*                                                               *";\
-echo "*****************************************************************"
-
-install: install-am
-	@echo "";\
-echo "*****************************************************************";\
-echo "*                                                               *";\
-echo "*       LAL has now been successfully installed.                *";\
-echo "*                                                               *";\
-echo "*****************************************************************"
