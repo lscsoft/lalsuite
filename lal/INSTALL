@@ -18,6 +18,8 @@ Contents:
 
     You can obtain FFTW from http://www.fftw.org
     When configuring, you must use the --enable-float option.
+    Also, you must use the --enable-shared configure option (unless you build
+    LAL with the --disable-shared configure option).
 
     You can obtain FrameL from http://wwwlapp.in2p3.fr/virgo/FrameL
 
@@ -26,16 +28,22 @@ Contents:
 
     You can obtain the MPICH implementation of MPI from
     http://www-unix.mcs.anl.gov/mpi/mpich
+    You must use the --enable-sharedlib configure option (unless you build
+    LAL with the --disable-shared configure option).
 
     You can obtain the LAM implementation of MPI from
     http://www.mpi.nd.edu/lam
     (See http://www.ldas-sw.ligo.caltech.edu/doc/INSTALL.html
      for instructions on building LAM for LDAS.)
+    You must use the --enable-shared configure option (unless you build
+    LAL with the --disable-shared configure option).  Currently, this means
+    you also need to use the --without-romio and --without-mpi2cpp configure
+    options.
 
 
     0.1.  To install FFTW on your system use the commands:
 
-          ./configure --enable-float
+          ./configure --enable-float --enable-shared
           make
           make install
 
@@ -43,7 +51,7 @@ Contents:
 
     0.2.  If you are installing FFTW in your personal account:
 
-          ./configure --prefix=/home/alice --enable-float
+          ./configure --prefix=/home/alice --enable-float --enable-shared
           make
           make install
 
@@ -63,13 +71,11 @@ Contents:
 
     0.3.  To install the FrameL library (optional) go to the mgr directory of
           the frame library directory structure and run the compilation script
-          makecc.  If you install the FrameL in a non-standard location, you
+          makegcc.  If you install the FrameL in a non-standard location, you
           will need to set the LIBS and CPPFLAGS variables so that the
           library and include files are accessible (as above).
-
-          If you are trying to make a shared object version of LAL with the
-          frame library interface, you'll need to make a shared object version
-          of the frame library too.  See the troubleshooting section below.
+          Both a static and a shared version of the FrameL library should be
+          made and installed.
 
     0.4.  Install the MPICH or LAM implementation of MPI (optional).  Then set
           the environment variable MPICC to the name of the MPI C-compiler
@@ -298,10 +304,7 @@ Troubleshooting:
   that the configure script uses) set the TEXFLAGS environment variable
   to the flags you want (or a space if you don't want any flags used).
 
-* If you want to make a shared library version of LAL with frame library
-  and/or MPI interface, you need to make a shared library version of the frame
-  library and mpi too.  With mpich, use the --enable-sharedlib flag when
-  you run the mpich configuration script.  With the frame library it is
-  easiest to use a modified version of the frame library available from the
-  URL http://www.lsc-group.phys.uwm.edu/~duncan/project/mpi/frame-3.85.tar.gz
-  to make the shared version of the frame library.
+* If you want to make a shared library version (default) of LAL with frame
+  library and/or MPI interface, you need to make a shared library version of
+  fftw, the frame library, and mpi too.  To make a static LAL library only,
+  use the --disable-shared option when configuring LAL.
