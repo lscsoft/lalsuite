@@ -218,6 +218,7 @@ tagFindChirpSimulationParams
   REAL4                        *signalNorm;     /* (s|s) for each dataSeg    */
   REAL4                         mMin;           /* minimum mass for binary   */
   REAL4                         mMax;           /* maximum mass for binary   */
+  REAL4                         fLowInject;     /* waveform low freq cutoff  */
   REAL4                         gaussianVarsq;  /* variance squared of noise */
   RandomParams                 *randomParams;   /* random seed container     */
   REAL4TimeSeries              *chan;           /* pointer to the data chunk */
