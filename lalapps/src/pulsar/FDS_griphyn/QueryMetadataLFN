@@ -10,6 +10,8 @@ and that the MCS client tools are already configured to
 point to the correct MCS instance.
 """
 
+versionN = 1.0
+
 import os
 import sys
 import getopt
@@ -125,6 +127,9 @@ for o, a in opts:
                 calversion = a
         elif o in ("-o", "--output"):
                 outputPath = a
+        elif o in ("-V", "--version"):
+                print >>sys.stderr, versionN
+                sys.exit(0)
 
          
 # sanity checking on inputs
