@@ -1,0 +1,280 @@
+From root@star.phys.uwm.edu  Sat Sep  1 10:47:58 2001
+Return-Path: <root@star.phys.uwm.edu>
+Received: from star.phys.uwm.edu (IDENT:root@star.phys.uwm.edu [129.89.57.99])
+	by gravity.phys.uwm.edu (8.9.3/8.9.3) with ESMTP id KAA04178
+	for <jolien@gravity.phys.uwm.edu>; Sat, 1 Sep 2001 10:47:58 -0500
+Received: (from root@localhost)
+	by star.phys.uwm.edu (8.9.3/8.9.3) id KAA06807
+	for jolien@gravity.phys.uwm.edu; Sat, 1 Sep 2001 10:49:27 -0500
+Date: Sat, 1 Sep 2001 10:49:27 -0500
+From: root <root@star.phys.uwm.edu>
+Message-Id: <200109011549.KAA06807@star.phys.uwm.edu>
+To: jolien@gravity.phys.uwm.edu
+Status: RO
+Content-Length: 9460
+Lines: 263
+
+\subsubsection*{Stationary Phase Approximation to Binary Inspiral Chirps}
+
+Consider the two phases of the inspiral chirp waveform, 
+$h_c(t)$ and $h_s(t)$.  The stationary phase approximations to the 
+Fourier transforms of $h_c(t)$ and $h_s(t)$ are given in the 
+restricted post-Newtonian approximation by
+\begin{eqnarray}
+\label{e:chirpcosfreq}
+\tilde{h}_c(f)&=&\left(\frac{5\mu}{96M_\odot}\right)^{1/2}
+\left(\frac{M}{\pi^2M_\odot}\right)^{1/3}f^{-7/6}T_\odot^{-1/6}
+\exp\,[i\Psi(f)],\\
+\tilde{h}_s(f)&=&i\tilde{h}_c(f),
+\end{eqnarray}
+where $f$ is the gravitational wave frequency in Hz, $M$ is the total
+mass of the binary, and $\mu$ is the reduced mass.  Note that
+$\tilde{h}_{c,s}(f)$ have dimensions of 1/Hz.  The instrument strain
+per Hz, $\tilde{h}(f)$, is obtained from a linear superposition of
+$\tilde{h}_{c,s}(f)$ in exactly the same way as $h(t)$ is obtained from
+$h_{c,s}(t)$.
+
+The restricted post-Newtonian approximation assumes that the evolution
+of the waveform amplitude is given by the 0'th-order post-Newtonian
+expression, but that the phase evolution is accurate to higher order.
+This phase is given by
+\begin{eqnarray}
+\Psi(f)&=&2\pi ft_c-2\phi_c-\pi/4\nonumber\\
+&&+\frac{3}{128\eta}\biggl[x^{-5}+
+\left(\frac{3715}{756}+\frac{55}{9}\eta\right)x^{-3}
+-16\pi x^{-2}\nonumber\\
+&&+\left(\frac{15\,293\,365}{508\,032}+\frac{27\,145}{504}\eta
++\frac{3085}{72}\eta^2\right)x^{-1}\nonumber\\
+&&+\left(\frac{38\,645}{252}+5\eta\right)\pi\ln{x}\biggr],
+\end{eqnarray}
+where $x=(\pi MfT_\odot/M_\odot)^{1/3}$, the coalescence phase
+$\phi_c$ is determined by the binary ephemeris, and the coalescence
+time $t_c$ is the time at which the bodies collide.  The chirps
+$\tilde{h}_c$ and $\tilde{h}_s$ are given $\phi_c=0$ and
+$\phi_c=-\pi/4$, respectively. The chirps are set to zero for 
+frequencies below the requested starting frequency and above 
+an upper cutoff $f_c$ which is chosen to be the frequency of the 
+Schwarzschild ISCO
+\begin{equation}
+f_c=\frac{M_\odot}{6^{3/2}\pi MT_\odot}.
+\end{equation}
+
+\subsubsection*{Normalisation of the Filter for Stationary Phase Chirps}
+
+Consider a filter constructed from the waveform
+\begin{eqnarray}
+\nonumber
+\tilde{h}_c(f;M,\eta) 
+%&=& A(f;M,\eta) e^{i\Psi(f;M,\eta)} \\
+%\nonumber
+&=& A_0(M,\eta) A(f) e^{i\Psi(f;M,\eta)} \\
+&=& A_0(M,\eta) f^{-7/6} e^{i\Psi(f;M,\eta)}.
+\end{eqnarray}
+We choose the normalisation of the filter to be such that
+\begin{eqnarray}
+\nonumber
+\left( \frac{\tilde{h}_c(f;M,\eta)}{S_h(|f|)},
+    \frac{\tilde{h}_c(f;M,\eta)}{S_h(|f|)} \right) &=&
+\int_{-\infty}^{\infty} df\,
+\frac{\tilde{h}_c(f;M,\eta) \tilde{h}^{*}_c(f;M,\eta)}
+{S_h(|f|)} \\
+\nonumber
+&=& A_0^2(M,\eta) \int df\, \frac{f^{-7/3}}{S_h(|f|)} \\
+&=& \frac{\alpha^2}{2}.
+\end{eqnarray}
+This equation defines the quantity $\alpha^2$, which we adopt henceforth. 
+The filter becomes
+\begin{equation}
+\tilde{Q}(f) = \frac{2}{\alpha} \frac{\tilde{h}_c(f;M,\eta)}{S_h(|f|)} 
+e^{-2\pi ift}.
+\end{equation}
+
+\subsubsection*{Construction of the Filter for Continuous Signals}
+
+We want to compute the filter outputs:
+\begin{eqnarray}
+  S_c(t;M,\eta) &=& \frac{2}{\alpha} 
+    \int_{-\infty}^\infty df\, e^{-2\pi ift}
+    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)}, \\
+  S_s(t;M,\eta) &=& \frac{2}{\alpha} 
+    \int_{-\infty}^\infty df\, e^{-2\pi ift}
+    \frac{\tilde{h}(f)\tilde{h}_s^\ast(f;M,\eta)}{S_h(f)}.
+\end{eqnarray}
+We write these as
+\begin{eqnarray}
+\nonumber
+  S_c(t;M,\eta) 
+%  &=& \frac{2}{\alpha} \left[
+%    \int_{-\infty}^0 df\, e^{-2\pi ift}
+%    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)} +
+%    \int_{0}^\infty df\, e^{-2\pi ift}
+%    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)} \right] \\
+%\nonumber
+  &=& \frac{2}{\alpha} \left[
+    \int_{0}^\infty df\, e^{2\pi ift}
+    \frac{\tilde{h}^\ast(f)\tilde{h}_c(f;M,\eta)}{S_h(f)} +
+    \int_{0}^\infty df\, e^{-2\pi ift}
+    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)} \right] \\
+  &=& \frac{2}{\alpha} 
+    \left[ z(t;M,\eta) + z^\ast(t;M,\eta) \right] 
+\end{eqnarray}
+and
+\begin{eqnarray}
+\nonumber
+  S_s(t;M,\eta) 
+%  &=& \frac{2}{\alpha} \left[
+%    \int_{-\infty}^0 df\, e^{-2\pi ift}
+%    \frac{\tilde{h}(f)\tilde{h}_s^\ast(f;M,\eta)}{S_h(f)} +
+%    \int_{0}^\infty df\, e^{-2\pi ift}
+%    \frac{\tilde{h}(f)\tilde{h}_s^\ast(f;M,\eta)}{S_h(f)} \right] \\
+\nonumber
+  &=& \frac{2}{\alpha} \left[
+    \int_{0}^\infty df\, e^{2\pi ift}
+    \frac{\tilde{h}^\ast(f)\tilde{h}_s(f;M,\eta)}{S_h(f)} +
+    \int_{0}^\infty df\, e^{-2\pi ift}
+    \frac{\tilde{h}(f)\tilde{h}_s^\ast(f;M,\eta)}{S_h(f)} \right] \\
+%\nonumber
+%  &=& \frac{2}{\alpha} \left[
+%    \int_{0}^\infty df\, e^{2\pi ift}
+%    \frac{\tilde{h}^\ast(f)i\tilde{h}_c(f;M,\eta)}{S_h(f)} +
+%    \int_{0}^\infty df\, e^{-2\pi ift}
+%    \frac{\tilde{h}(f)(-i)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)} \right] \\
+\nonumber
+  &=& (-2i) \frac{2}{\alpha} \left[
+    - \int_{0}^\infty df\, e^{2\pi ift}
+    \frac{\tilde{h}^\ast(f)\tilde{h}_c(f;M,\eta)}{S_h(f)} +
+    \int_{0}^\infty df\, e^{-2\pi ift}
+    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)} \right] \\
+  &=& (-2i) \frac{2}{\alpha} 
+    \left[ z(t;M,\eta) - z^\ast(t;M,\eta) \right],
+\end{eqnarray}
+where
+\begin{equation}
+z(t;M,\eta) = \int_0^\infty df\, e^{-2\pi ift} 
+    \frac{\tilde{h}(f)\tilde{h}_c^\ast(f;M,\eta)}{S_h(f)}
+\end{equation}
+and we have used the fact that ${h}(t)$ and ${h}_c(t;M,\eta)$
+are real funtions so that $h^\ast(f) = h(-f)$. Therefore
+\begin{eqnarray}
+S_c(t;M\eta) &=& \frac{4}{\sigma} \Re z(t;M,\eta), \\
+S_s(t;M\eta) &=& \frac{4}{\sigma} \Im z(t;M,\eta).
+\end{eqnarray}
+We define the signal to noise squared to be
+\begin{equation}
+\rho^2(t;M,\eta) = S_c^2(t;M,\eta) + S_s^2(t;M,\eta)
+= \frac{16}{\alpha^2} |z(t;M,\eta)|^2.
+\end{equation}
+If we define 
+\begin{equation}
+  \tilde{z}(f;M,\eta) = \left\{
+    \begin{array}{ll}
+      0 & f < 0 \\
+      \frac{\tilde{h}(f) \tilde{h}^\ast_c(f)}{S_h(f)} & f \ge 0
+    \end{array}
+  \right.
+\end{equation}
+then we may compute $z(t;M,\eta)$ by computing the inverse Fourier 
+transform of $\tilde{z}(f;M,\eta)$ and hence compute $\rho^2(t;M,\eta)$.
+
+Now if the signal $h(t)$ is white Gaussian noise, $n(t)$, we have
+\begin{eqnarray}
+\nonumber
+\langle \rho^2 \rangle 
+&=& \frac{16}{\alpha^2} \langle |z|^2 \rangle 
+    = \frac{16}{\alpha^2} \langle zz^\ast \rangle\\
+\nonumber
+&=& \frac{16}{\alpha^2} \int_0^\infty df\, \int_0^\infty df'\,
+    e^{-2\pi i(f-f')}
+      \frac{ \langle \tilde{n}(f) \tilde{n}^\ast(f') \rangle
+             \tilde{h}_c(f;M,\eta) \tilde{h}^\ast_c(f';M,\eta)}
+      {S_h(f) S_h(f')} \\
+\nonumber
+&=& \frac{16}{\alpha^2} \int_0^\infty df\, \int_0^\infty df'\,
+    e^{-2\pi i(f-f')} 
+      \frac{ \frac{1}{2} S_h(|f|) \delta(f-f')
+             \tilde{h}_c(f;M,\eta) \tilde{h}^\ast_c(f';M,\eta)}
+      {S_h(f) S_h(f')} \\
+\nonumber
+&=& \frac{8}{\alpha^2}\int_0^\infty df\,
+      \frac{ \tilde{h}_c(f;M,\eta) \tilde{h}^\ast_c(f;M,\eta)}
+      {S_h(f)} \\
+\nonumber
+&=& \frac{8}{\alpha^2} \frac{1}{2} \frac{\alpha^2}{2} \\
+&=& 2 
+\end{eqnarray}
+
+\subsubsection*{Construction of the Filters for Discrete Signals}
+
+For discrete signals, we define the quantity $\tilde{h}_{ck}$ to be
+\begin{eqnarray}
+\nonumber
+\tilde{h}_{ck} &=& \frac{\tilde{h}_c(f_k)}{\Delta t} \\
+\nonumber
+&=& 
+\left(\frac{5\mu}{96M_\odot}\right)^{1/2}
+\left(\frac{M}{\pi^2M_\odot}\right)^{1/3}
+\left(\frac {T_\odot}{\Delta t}\right)^{-1/6}
+\left(f \Delta t\right)^{-7/6}
+\exp\,[i\Psi(f_k)]\\
+&=&  
+A_{[k]}(M,\eta) k^{-7/6} \exp\,[i\Psi(f_k)]
+\end{eqnarray}
+and so the filter $S_c(t;M,\eta)$ becomes
+\begin{eqnarray}
+\nonumber
+S_c(t_j;M,\eta) &=& \frac{2}{\alpha} \frac{1}{N\Delta t}
+  \sum_{k=0}^{N-1} e^{-2\pi ijk/N} 
+  \frac{\tilde{h}(f_k) \tilde{h}^\ast_c(f_k)}{S_h(|f_k|)} \\
+&=& \frac{2}{\alpha} \frac{\Delta t}{N}
+  \sum_{k=0}^{N-1} e^{-2\pi ijk/N} 
+  \frac{\tilde{h}_k \tilde{h}^\ast_{ck}}{S_h(|f_k|)}.
+\end{eqnarray}
+Then if $h(t) = n(t)$
+\begin{eqnarray}
+\nonumber
+\langle S_c^2 \rangle &=& 
+  \frac{4}{\alpha^2} \left(\frac{\Delta t}{N}\right)^2
+  \sum_{k=0}^{N-1} \sum_{k'=0}^{N-1} 
+  e^{-2\pi ij(k-k')/N}
+  \frac{ \langle \tilde{n}_k \tilde{n}^\ast_k \rangle
+     \tilde{h}_{ck} \tilde{h}^\ast_{ck}}
+       { S_h(|f_k|) S_h(|f_{k'}|) } \\
+ &=& \frac{2}{\alpha^2} \frac{\Delta t}{N}
+      \sum_{k=0}^{N-1} \frac{ \tilde{h}_{ck} \tilde{h}^\ast_{ck}}
+       { S_h(|f_k|) }. 
+\end{eqnarray}
+Now
+\begin{equation}
+\frac{\alpha^2}{2} = \frac{1}{N\Delta t} \sum_{k=0}^{N-1} 
+   \frac{\tilde{h}_c(f_k) \tilde{h}^\ast_c(f_k)}{S_h(|f_k|)} 
+= \frac{\Delta t}{N} \sum_{k=0}^{N-1} 
+   \frac{ \tilde{h}_{ck} \tilde{h}^\ast_{ck}}{ S_h(|f_k|) },
+\end{equation}
+so $\langle S_c \rangle = 1$, as expected.
+
+Following the derivation for the continuous quantities, we obtain
+\begin{eqnarray}
+S_c(t_j;M,\eta) &=& \frac{4}{\alpha} \frac{\Delta T}{N} \Re z_j, \\
+S_c(t_j;M,\eta) &=& \frac{4}{\alpha} \frac{\Delta T}{N} \Im z_j,
+\end{eqnarray}
+where
+\begin{equation}
+z_j = \sum_{k=0}^{N/2} e^{-2\pi ijk/N} 
+\frac{\tilde{h}_k \tilde{h}^\ast_{ck}}{S_h(f_k)}.
+  = \sum_{k=0}^{N-1} e^{-2\pi ijk/N} \tilde{z}_k
+\end{equation}
+The quantity $\tilde{z}_k$ is defined to be
+\begin{equation}
+  \tilde{z}_k = \left\{
+    \begin{array}{ll}
+      \frac{\tilde{h}_k \tilde{h}^\ast_{ck}}{S_h(f_k)} & 0 < k < \frac{N}{2} \\
+       0 & \textrm{otherwise}
+    \end{array}
+  \right. .
+\end{equation}
+The signal to noise squared is given by
+\begin{equation}
+\rho(t_j;M,\eta) = \frac{16}{\alpha^2} \left(\frac{\Delta t}{N}\right)^2
+  \left| z_j \right|^2.
+\end{equation}
+
