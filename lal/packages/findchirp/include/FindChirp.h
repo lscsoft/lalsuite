@@ -165,6 +165,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_EAPRX 21
 #define FINDCHIRPH_EUAPX 22
 #define FINDCHIRPH_ECHTZ 23
+#define FINDCHIRPH_EMASS 24
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -184,6 +185,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGEAPRX "Incorrect waveform approximant"
 #define FINDCHIRPH_MSGEUAPX "Unknown waveform approximant"
 #define FINDCHIRPH_MSGECHTZ "Length of chirp is zero or negative"
+#define FINDCHIRPH_MSGEMASS "Invalid mass parameters for template generation"
 /* </lalErrTable> */
 
 

@@ -156,6 +156,11 @@ LALFindChirpSPTemplate (
   eta    = (REAL4) tmplt->eta;
   mu     = (REAL4) tmplt->mu;
 
+  if ( m <= 0 || eta <= 0 || mu <= 0 )
+  {
+    ABORT( status, FINDCHIRPH_EMASS, FINDCHIRPH_MSGEMASS );
+  }
+
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
   distNorm *= params->dynRange;
