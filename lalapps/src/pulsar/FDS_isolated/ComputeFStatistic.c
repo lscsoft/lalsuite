@@ -2595,8 +2595,10 @@ int main(int argc, char *argv[]){
     signal(SIGSEGV, SIG_IGN);
   if (signal(SIGFPE, sighandler)==SIG_IGN)
     signal(SIGFPE, SIG_IGN);
+#ifndef _MSC_VER
   if (signal(SIGBUS, sighandler)==SIG_IGN)
     signal(SIGBUS, SIG_IGN);
+#endif
   if (signal(SIGILL, sighandler)==SIG_IGN)
     signal(SIGILL, SIG_IGN);
 
