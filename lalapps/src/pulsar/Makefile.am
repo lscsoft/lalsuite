@@ -8,5 +8,15 @@ lalapps_make_sfts_SOURCES = make_sfts.c
 else
 bin_PROGRAMS = 
 endif
-EXTRA_DIST = lalDebugLevel.c
+EXTRA_DIST =  lalapps_make_job_input_data \
+lalapps_make_sfts \
+make_cluster_data_list \
+Makefile.am \
+make_job_input_data.c \
+make_locked_data_list \
+make_sfts.c \
+README \
+S1-H1segments.txt \
+S1-H2segments.txt \
+S1-L1segments.txt
 INCLUDES = -I$(top_srcdir)/src
