@@ -524,8 +524,8 @@ LALFindChirpBCVTemplate (
 	}
 
       /* compute approximate sine and cosine of psi1 */
-      expPsi[k].im = - sin(psi);
-      expPsi[k].re =   cos(psi);
+      expPsi[k].im = - sin(psi1);
+      expPsi[k].re =   cos(psi1);
 // work needed here... expensive computation method
     }
 
