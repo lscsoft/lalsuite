@@ -25,7 +25,9 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 \input{IncrementGPSCP}
 \idx{LALIncrementGPS()}
 \idx{LALDecrementGPS()}
+\idx{LALAddFloatToGPS()}
 \idx{LALDeltaGPS()}
+\idx{LALDeltaFloatGPS()}
 \idx{LALCompareGPS()}
 
 \subsubsection*{Description}
@@ -37,7 +39,9 @@ the GPS times they operate on into a floating point representation.
 \begin{itemize}
   \item \texttt{LALIncrementGPS()} increments a GPS time by a time interval
   \item \texttt{LALDecrementGPS()} decrements a GPS time by a time interval
-  \item \texttt{LALDeltaGPS()} takes the difference between two GPS times
+  \item \texttt{LALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
+  \item \texttt{LALDeltaGPS()} returns the difference between two GPS times as a \texttt{LALTimeInterval}.
+  \item \texttt{LALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
   \item \texttt{LALCompareGPS()} compares two GPS times, and returns a \texttt{LALGPSCompareResult} indicating if the first GPS time is earlier than, equal to,  or later than the second GPS time
 \end{itemize}
 
@@ -47,7 +51,7 @@ the GPS times they operate on into a floating point representation.
 
 \subsubsection*{Notes}
 
-In the \texttt{LALIncrementGPS()} and \texttt{LALDecrementGPS()}
+In the \texttt{LALIncrementGPS()}, \texttt{LALDecrementGPS()} and \texttt{LALAddFloatToGPS()}
 routines, it is legal to pass a pointer to the same \texttt{LIGOTimeGPS}
 structure as input and output, \textit{e.g.}
 
@@ -74,6 +78,7 @@ structure as input and output, \textit{e.g.}
 
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
+#include <math.h>
 
 NRCSID( INCREMENTGPSC, "$Id$" );
 
@@ -315,3 +320,59 @@ LALCompareGPS(LALStatus           *status,
   DETATCHSTATUSPTR(status);
   RETURN( status );
 } /* END: LALCompareGPS() */
+
+
+
+/* Increment a GPS time by a float-interval */
+/* <lalVerbatim file="IncrementGPSCP"> */
+void
+LALAddFloatToGPS (LALStatus             *status,
+		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
+		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
+		  REAL8 		deltaT) 	/* input: interval to increment by in seconds*/
+/*  </lalVerbatim> */
+{
+  LIGOTimeGPS tmp_gps;		/* allow startGPS == outputGPS */
+  INT4 secs, ns;
+
+  INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
+
+  ASSERT ( outputGPS != NULL, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+  ASSERT ( startGPS != NULL, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+
+  secs = (INT4)(deltaT);
+  ns =   (INT4) rint( (deltaT - (REAL8) secs) * oneBillion );
+
+  tmp_gps.gpsSeconds = startGPS->gpsSeconds + secs;
+  tmp_gps.gpsNanoSeconds = startGPS->gpsNanoSeconds + ns;
+
+   /* assign the computed values */
+  *outputGPS = tmp_gps;
+
+  RETURN( status );
+
+} /* LALAddFloatToGPS() */
+
+
+/* Return GPS1 - GPS2 as a REAL8 !*/
+/* <lalVerbatim file="IncrementGPSCP"> */
+void
+LALDeltaFloatGPS (LALStatus    *status,
+		  REAL8 	*deltaT,	/* tGPS1 - tGPS2 */
+		  const LIGOTimeGPS *tGPS1, 	/* input: tGPS1 */
+		  const LIGOTimeGPS *tGPS2) 	/* input: tGPS2 */
+/* </lalVerbatim> */
+{
+
+  INITSTATUS( status, "LALDeltaFloatGPS", INCREMENTGPSC );
+
+  ASSERT(deltaT, status, DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+  ASSERT(tGPS1, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  ASSERT(tGPS2, status, DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  
+  *deltaT = (REAL8)(tGPS1->gpsSeconds - tGPS2->gpsSeconds) + 1.0*(tGPS1->gpsNanoSeconds - tGPS2->gpsNanoSeconds)*oneBillion;
+
+  RETURN( status );
+
+} /* LALDeltaFloatGPS() */
+

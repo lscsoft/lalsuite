@@ -598,6 +598,18 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
 
+void
+LALAddFloatToGPS (LALStatus             *stat,
+		  LIGOTimeGPS           *outputGPS,	/* outputGPS = startGPS + deltaT */
+		  const LIGOTimeGPS     *startGPS, 	/* input: GPS time */
+		  REAL8 		deltaT); 	/* input: interval to increment by in seconds*/
+
+void
+LALDeltaFloatGPS (LALStatus    *status,
+		  REAL8 	*deltaT,	/* tGPS1 - tGPS2 */
+		  const LIGOTimeGPS *tGPS1, 	/* input: tGPS1 */
+		  const LIGOTimeGPS *tGPS2);
+
 /* This function returns the current GPS time according to the system clock */
 /* <lalLaTeX>
 \newpage\input{GPSTimeNowC}
