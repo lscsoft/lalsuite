@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   INT4                i = 0;
   LALLeapSecFormat    format = LALLEAPSEC_GPSUTC;
   LALLeapSecAccuracy  acc = LALLEAPSEC_STRICT;
-  LALLeapSecFormatAndAcc formatAndAcc = {format, acc};
+  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
 
 
   if (argc > 1)

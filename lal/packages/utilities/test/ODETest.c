@@ -62,8 +62,9 @@ static void Kepler(
 
 static int CircularOrbit( void )
 {
-  const UINT4 ndim = 4;
-  const UINT4 nstp = 4;
+  enum { NUMDIM = 4, NUMSTP = 4 };
+  const UINT4 ndim = NUMDIM;
+  const UINT4 nstp = NUMSTP;
   const REAL4 tend = 100;
   const REAL4 tstp = 0.01;
   static REAL4ODEParams params;
@@ -71,7 +72,7 @@ static int CircularOrbit( void )
   static REAL4Vector *x0;
   static REAL4Vector *x;
   static LALStatus status;
-  CreateVectorSequenceIn seqin = { nstp, ndim };
+  CreateVectorSequenceIn seqin = { NUMSTP, NUMDIM };
   FILE *fp;
 
   LALCreateVector( &status, &x, ndim );
@@ -119,15 +120,16 @@ static int CircularOrbit( void )
 
 static int EccentricOrbit( void )
 {
-  const UINT4 ndim = 4;
-  const UINT4 nstp = 6;
+  enum { NUMDIM = 4, NUMSTP = 6 };
+  const UINT4 ndim = NUMDIM;
+  const UINT4 nstp = NUMSTP;
   const REAL4 nper = 3;
   static REAL4ODEParams params;
   static REAL4ODEIndep indep;
   static REAL4Vector *x0;
   static REAL4Vector *x;
   static LALStatus status;
-  CreateVectorSequenceIn seqin = { nstp, ndim };
+  CreateVectorSequenceIn seqin = { NUMSTP, NUMDIM };
   REAL4 a;
   REAL4 v;
   REAL4 r;
