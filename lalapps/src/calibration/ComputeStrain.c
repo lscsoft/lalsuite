@@ -13,6 +13,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #else
 
 
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -1021,8 +1022,19 @@ FILE *fpAlpha=NULL;
 
       GV.alpha[m]= factors.alpha.re;
       
-      if( GV.alpha[m] < 0.3 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
-      if( GV.alpha[m] > 1.7 ) outflag=1;  /* If any alpha is bad set a flag so we exit gracefully */
+      if( GV.alpha[m] < 0.3 ) 
+	{
+	 fprintf(stderr,"There were invalid values of alpha at %d!\n",localgpsepoch.gpsSeconds);
+	 GV.alpha[m]=1.0;
+	 if (m>0) GV.alpha[m]=GV.alpha[m-1];
+	}
+
+      if( GV.alpha[m] > 2.0 ) 
+	{
+	 fprintf(stderr,"There were invalid values of alpha at %d!\n",localgpsepoch.gpsSeconds);
+	 GV.alpha[m]=1.0;
+	 if (m>0) GV.alpha[m]=GV.alpha[m-1];
+	}
       
       GV.beta[m]= factors.beta.re;
 
