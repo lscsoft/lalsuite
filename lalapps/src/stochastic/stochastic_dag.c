@@ -781,9 +781,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (high_pass_flag)
   {
     highpassParam.nMax = highPassOrder;
-    highpassParam.f1 = -1.0;
     highpassParam.f2 = highPassFreq;
-    highpassParam.a1 = -1.0;
     highpassParam.a2 = highPassAtten;
   }
 
