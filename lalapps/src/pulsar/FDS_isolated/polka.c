@@ -560,6 +560,8 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   CLA->fmin=0;
   CLA->fmax=0;
 
+  /* reset gnu getopt */
+  optind = 0;
 
   /* Scan through list of command line arguments */
   while (1)
