@@ -29,9 +29,9 @@ standards for LAL headers.
 #include <lal/StackMetric.h>
 
 /* C++ protection. */
-/* #ifdef  __cplusplus    */
-/* extern "C" { */
-/* #endif */
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 NRCSID( DOPPLERSCANH, "$Id$" );
 
@@ -146,9 +146,9 @@ void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *inpu
 \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */
 
-/* #ifdef  __cplusplus */
-/* } */
-/* #endif   */  
+#ifdef  __cplusplus
+}
+#endif  
 /* C++ protection. */
 
 #endif  /* Double-include protection. */
