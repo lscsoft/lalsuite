@@ -201,7 +201,7 @@ void skygrid_print(LALStatus *status,
     }
     fwrite(&(gps->gpsSeconds), sizeof(INT4), 1, outfile);
     fwrite(&grid_lim, sizeof(UINT4), 1, outfile);
-    fwrite(input->data, sizeof(REAL4), grid_lim, outfile);    
+    fwrite(input->data, sizeof(*(input->data)), grid_lim, outfile);    
   }
   else
   {
