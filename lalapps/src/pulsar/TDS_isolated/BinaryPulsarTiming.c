@@ -223,7 +223,7 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 		
 		/* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
 		u = phase + e*sin(phase)*(1 + e*cos(phase));
-		while(abs(du) > 1.0e-12){
+		while(fabs(du) > 1.0e-12){
 			du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
 			u += du;
 		}
@@ -373,7 +373,7 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 		
 		/* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
 		u = phase + e*sin(phase)*(1 + e*cos(phase));
-		while(abs(du) > 1.0e-12){
+		while(fabs(du) > 1.0e-12){
 			du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
 			u += du;
 		}
@@ -442,8 +442,8 @@ LALReadTEMPOParFile(	LALStatus *status,
 											CHAR			*pulsarAndPath )
 {
 	FILE *fp;
-	CHAR val[500][20]; /* string array to hold all the read in values 
-												500 strings of max 20 characters is enough */	
+	CHAR val[500][40]; /* string array to hold all the read in values 
+												500 strings of max 40 characters is enough */	
 	INT4 i=0, j=1, k;
 	
 	INITSTATUS(status, "LALReadTEMPOParFile", BINARYPULSARTIMINGC);
@@ -960,9 +960,9 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 	REAL8 radians;
 	INT4 d, m;
 	REAL8 s;
-	CHAR dc[3]="", mc[3]="", *sc=NULL;
+	CHAR dc[4]="", mc[3]="", *sc=NULL;
 	CHAR *loc;
-	INT4 n;
+	INT4 n, negbutzero=0;
 	
 	/* if in format dd/hh:mm:ss.s do this*/
 	/* locate first : */
@@ -972,6 +972,11 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 		/* copy degrees part to dc */
 		strncpy(dc, degs, n);
 		d = atoi(dc);
+		
+		/* check if dec is negative but the degree part is zero */
+		if((strchr(degs, '-') != NULL) && d == 0){
+			negbutzero = 1;
+		}
 	
 		/* copy minutes part to mc */
 		strncpy(mc, loc+1, 2);
@@ -1000,6 +1005,9 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 			/* first char is negative */
 			strncpy(dc, loc-7, 3);
 			d = atoi(dc);
+			
+			/* if dec is negative but the degrees part is zero set flag */
+			negbutzero = 1;
 		}
 		else{
 			strncpy(dc, loc-6, 2);
@@ -1018,7 +1026,7 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 		radians = LAL_PI_180*(REAL8)d;
 		
 		/* if dec is negative convert mins and secs to -ve numbers */
-		if(d<0){
+		if(d<0 || negbutzero==1){
 			m = -m;
 			s = -s;
 		}
