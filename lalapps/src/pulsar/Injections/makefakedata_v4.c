@@ -32,6 +32,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_EBAD  	3
 #define MAKEFAKEDATAC_EFILE 	4
 #define MAKEFAKEDATAC_ENOARG 	5
+#define MAKEFAKEDATAC_EMEM 	6
 
 #define MAKEFAKEDATAC_MSGENORM "Normal exit"
 #define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
@@ -39,7 +40,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_MSGEBAD  "Bad argument values"
 #define MAKEFAKEDATAC_MSGEFILE "File IO error"
 #define MAKEFAKEDATAC_MSGENOARG "Missing argument"
-
+#define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
 /* </lalErrTable> */
 
 /***************************************************/
@@ -419,26 +420,52 @@ InitMakefakedata (LALStatus *stat,
   }
   else
     cfg->startTime = cfg->timestamps->data[0];
+
+  /*----------------------------------------------------------------------
+   * Prepare quantities for barycentering 
+   */
+  {
+    UINT4 len;
+
+    len = strlen(uvar_ephemYear) + 20;
+
+    if (LALUserVarWasSet (&uvar_ephemDir) ) 
+      len += strlen (uvar_ephemDir);
       
-  /* get leap-seconds since start of GPS-time */
-  TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(cfg->startTime), &leapParams), stat);
+    if ( (earthdata = LALCalloc(1, len)) == NULL) {
+      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+    }
+    if ( (sundata = LALCalloc(1, len)) == NULL) {
+      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+    }
 
-  /* Prepare quantities for barycentering */
-  earthdata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(uvar_ephemYear) + 20);
-  sundata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(uvar_ephemYear) + 20);
+    if (LALUserVarWasSet (&uvar_ephemDir) ) 
+      {
+	sprintf(earthdata, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
+	sprintf(sundata, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
+      }
+    else
+      {
+	sprintf(earthdata, "earth%s.dat", uvar_ephemYear);
+	sprintf(sundata, "sun%s.dat",  uvar_ephemYear);
+      }
 
-  sprintf (earthdata, "%s/%s%s.dat", uvar_ephemDir, "/earth", uvar_ephemYear);
-  sprintf (sundata, "%s/%s%s.dat", uvar_ephemDir, "/sun", uvar_ephemYear);
-  edat.ephiles.earthEphemeris = earthdata;
-  edat.ephiles.sunEphemeris   = sundata;
-  edat.leap = (INT2) leapSecs;
+    edat.ephiles.earthEphemeris = earthdata;
+    edat.ephiles.sunEphemeris   = sundata;
+        
+    /* get leap-seconds since start of GPS-time */
+    TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(cfg->startTime), &leapParams), stat);
+    edat.leap = (INT2) leapSecs;
 
-  /* Init ephemerides */  
-  TRY( LALInitBarycenter (stat->statusPtr, &edat), stat);   
-  LALFree (earthdata);
-  LALFree (sundata);
+    /* Init ephemerides */  
+    TRY( LALInitBarycenter (stat->statusPtr, &edat), stat);   
+    LALFree (earthdata);
+    LALFree (sundata);
 
-  cfg->edat = edat;
+    cfg->edat = edat;
+  } /* END: prepare barycentering routines */
+  /*----------------------------------------------------------------------*/
+
 
   /* if reference-time was given for pulsar-parameters */
   if (LALUserVarWasSet(&uvar_refTime)) {
@@ -530,6 +557,10 @@ InitUserVars (LALStatus *stat)
   uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_ephemYear, EPHEM_YEARS);
 
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+  uvar_ephemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar_ephemDir, DEFAULT_EPHEMDIR);
+
   uvar_doWindowing = FALSE;
   uvar_binaryoutput = FALSE;
   uvar_nomagic = FALSE;
@@ -549,7 +580,7 @@ InitUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
   LALregREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
   LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
-  LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_REQUIRED, "Directory path for ephemeris files");
+  LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   LALregSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(stat,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
   LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
