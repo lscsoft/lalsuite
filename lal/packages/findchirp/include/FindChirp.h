@@ -156,7 +156,9 @@ tagInspiralEvent
   REAL4                         sigma;
   REAL4                         effDist;
   REAL4                         coaPhase;
+  UINT4                         numChisqBins;
   CHAR                          ifoName[2];
+  CHAR                          channel[LALNameLength];
   WaveformGenerator             wavGen;
   struct tagInspiralEvent      *next;
 }
