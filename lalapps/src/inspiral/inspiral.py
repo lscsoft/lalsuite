@@ -387,11 +387,15 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     Returns the file name of output from inca for ifo b. This must be kept
     synchronized with the name of the output file in inca.c.
     """
-    if not self.get_start() or not self.get_end() or not self.get_ifo_a():
+    if not self.get_start() or not self.get_end() or not self.get_ifo_b():
       raise InspiralError, "Start time, end time or ifo a has not been set"
+
+    basename = self.get_ifo_b() + '-INCA'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
     if self.__usertag:
-      out = self.get_ifo_b() + '-INCA_' + self.__usertag + '-' 
-      out = out + str(self.get_start()) + '-'
-    else:
-      out = self.get_ifo_a() + '-INCA-' + str(self.get_start()) + '-'
-    return out + str(self.get_end() - self.get_start()) + '.xml'
+      basename += '_' + self.__usertag 
+
+    return basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
