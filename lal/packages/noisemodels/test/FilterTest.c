@@ -256,7 +256,7 @@ main ( void )
    ApproximateMatch (status, &match, list[j], dt0, dt1);)
 ------------------------------------------------------------------------*/
          match = 1. - metric.G00*dt0*dt0 - metric.G11*dt1*dt1 - 2.*metric.G01*dt0*dt1;
-         // if (match > bankParams.minimalMatch/2.) 
+         /* if (match > bankParams.minimalMatch/2.) */
 	 {
 		 numTemplates++;
 		 overlapin.param.psi0 = list->data[j2];
