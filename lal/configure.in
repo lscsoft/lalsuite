@@ -142,6 +142,11 @@ AC_OUTPUT( Makefile                               \
            packages/fft/include/Makefile          \
            packages/fft/src/Makefile              \
            packages/fft/test/Makefile             \
+           packages/timefreq/Makefile             \
+           packages/timefreq/doc/Makefile         \
+           packages/timefreq/include/Makefile     \
+           packages/timefreq/src/Makefile         \
+           packages/timefreq/test/Makefile        \
            packages/stochastic/Makefile           \
            packages/stochastic/doc/Makefile       \
            packages/stochastic/include/Makefile   \
