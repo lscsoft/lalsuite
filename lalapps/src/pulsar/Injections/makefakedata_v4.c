@@ -34,6 +34,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_ENOARG 	5
 #define MAKEFAKEDATAC_EMEM 	6
 #define MAKEFAKEDATAC_EBINARYOUT 7
+#define MAKEFAKEDATAC_EREADFILE 8
 
 #define MAKEFAKEDATAC_MSGENORM "Normal exit"
 #define MAKEFAKEDATAC_MSGESUB  "Subroutine failed"
@@ -43,6 +44,7 @@ RCSID ("$Id$");
 #define MAKEFAKEDATAC_MSGENOARG "Missing argument"
 #define MAKEFAKEDATAC_MSGEMEM 	"Out of memory..."
 #define MAKEFAKEDATAC_MSGEBINARYOUT "Error in writing binary-data to stdout"
+#define MAKEFAKEDATAC_MSGEREADFILE "Error reading in file"
 /* </lalErrTable> */
 
 /***************************************************/
@@ -69,6 +71,7 @@ typedef struct
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
   BOOLEAN binaryPulsar;		/**< are we dealing with a binary pulsar? */
+  COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 } ConfigVars_t;
 
 /** Default year-span of ephemeris-files to be used */
@@ -83,6 +86,9 @@ void InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[
 void AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
 void GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit);
 void WriteMFDlog (LALStatus *stat, char *argv[]);
+
+void LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **transfer, const CHAR *fname);
+
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -123,6 +129,7 @@ REAL8 uvar_noiseSigma;		/**< Gaussian noise variance sigma */
 
 /* Detector and ephemeris */
 CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
+CHAR *uvar_actuation;		/**< filename containg detector actuation function */
 CHAR *uvar_ephemDir;		/**< Directory path for ephemeris files (optional), use LAL_DATA_PATH if unset. */
 CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
@@ -210,7 +217,7 @@ main(int argc, char *argv[])
     params.orbit = NULL;
 
   /* detector params */
-  params.transfer = NULL;	/* detector transfer function (NULL if not used) */	
+  params.transfer = GV.transfer;	/* detector transfer function (NULL if not used) */	
   params.site = &(GV.Detector);	
   params.ephemerides = &(GV.edat);
 
@@ -423,12 +430,12 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       {
 	if (haveTimestamps || !( haveStart && haveDuration ) ) 
 	  {
-	    LALPrintError ("\nHardware injection: please specify 'startTime' and 'duration'\n");
+	    LALPrintError ("\nHardware injection: please specify 'startTime' and 'duration'\n\n");
 	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
 	  {
-	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n");
+	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n\n");
 	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	if ( uvar_duration < uvar_Tsft )
@@ -442,18 +449,18 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     
     if ( ! ( haveStart || haveTimestamps ) )
       {
-	LALPrintError ("\nCould not infer start of observation-period (need either 'startTime' or 'timestampsFile')\n");
+	LALPrintError ("\nCould not infer start of observation-period (need either 'startTime' or 'timestampsFile')\n\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
     if ( (haveStart || haveDuration) && haveTimestamps )
       {
-	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration' and 'timestampsFile' given)\n");
+	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration' and 'timestampsFile' given)\n\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
     if ( haveStart && !haveDuration )
       {
-	LALPrintError ("\nCould not infer duration of observation-period (need 'duration')\n");
+	LALPrintError ("\nCould not infer duration of observation-period (need 'duration')\n\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
@@ -505,7 +512,7 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
       
       if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
-	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n", 
+	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n\n", 
 		      cfg->fmin_eff, cfg->fBand_eff);
       
     } /* END: SFT-specific corrections to fmin and Band */
@@ -623,9 +630,25 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     } 
   else
     {
-      LALPrintError ("\nPulsar referenceTime is required! \n");
+      LALPrintError ("\nPulsar referenceTime is required! \n\n");
       ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
     }
+
+  /* ---------- has the user specified an actuation-function file ? ---------- */
+  if ( uvar_actuation ) 
+    {
+      /* currently we only allow using a transfer-function for hardware-injections */
+      if (!uvar_hardwareTDD )
+	{
+	  LALPrintError ("\nError: use of an actuation/transfer function restricted to hardare-injections\n\n");
+	  ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	}
+      else {
+	TRY ( LoadTransferFunctionFromActuation( stat->statusPtr, &(cfg->transfer), uvar_actuation), stat);
+      }
+
+    } /* if uvar_actuation */
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -683,6 +706,8 @@ InitUserVars (LALStatus *stat)
 
   /* detector and ephemeris */
   LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
+  LALregSTRINGUserVar(stat, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
+
   LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
   LALregSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
 
@@ -987,4 +1012,106 @@ WriteMFDlog (LALStatus *stat, char *argv[])
     RETURN(stat);
 
 } /* WriteMFDLog() */
+
+/** 
+ * Reads an actuation-function in format (r,\phi) from file 'fname', 
+ * and returns the associated transfer-function as a COMPLEX8FrequencySeries (Re,Im)
+ * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
+ */
+void
+LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **transfer, const CHAR *fname)
+{
+  LALParsedDataFile *fileContents = NULL;
+  CHAR *thisline;
+  UINT4 i;
+  COMPLEX8Vector *data;
+  COMPLEX8FrequencySeries *ret = NULL;
+  const CHAR *readfmt = "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT;
+  REAL8 amp, phi;
+  REAL8 f0, f1;
+
+  INITSTATUS (stat, "ReadActuationFunction", rcsid);
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT (transfer, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (*transfer == NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (fname != NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+
+
+  TRY ( LALParseDataFile (stat->statusPtr, &fileContents, fname), stat);
+
+  LALCCreateVector (stat->statusPtr, &data, fileContents->lines->nTokens);
+  BEGINFAIL(stat)
+    TRY ( LALDestroyParsedDataFile(stat->statusPtr, &fileContents), stat);    
+  ENDFAIL(stat);
+
+  if ( (ret = LALCalloc(1, sizeof(COMPLEX8FrequencySeries))) == NULL)
+    {
+      LALDestroyParsedDataFile(stat->statusPtr, &fileContents);
+      LALFree (data);
+      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+    }
+
+  LALSnprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
+  ret->name[LALNameLength-1]=0;
+
+  /* read first line to get some info */
+  thisline = fileContents->lines->tokens[0];
+
+  /* initialize loop */
+  f0 = f1 = 0;
+
+  for (i=0; i < fileContents->lines->nTokens; i++)
+    {
+      thisline = fileContents->lines->tokens[i];
+
+      f0 = f1;
+      if ( 3 != sscanf (thisline, readfmt, &f1, &amp, &phi) )
+	{
+	  LALPrintError ("\nFailed to read 3 floats from line %d of file %s\n\n", i, fname);
+	  goto failed;
+	}
+      
+      /* first line: set f0 */
+      if ( i == 0 )
+	ret->f0 = f1;
+
+      /* second line: set deltaF */
+      if ( i == 1 )
+	ret->deltaF = f1 - ret->f0;
+	
+      /* check constancy of frequency-step */
+      if ( (f1 - f0 != ret->deltaF) && i )
+	{
+	  LALPrintError ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
+			 (f1-f0), ret->deltaF, i, fname);
+	  goto failed;
+	}
+
+      /* now convert into transfer-function and (Re,Im): T = A^-1 */
+      data->data[i].re = (REAL4)( cos(phi) / amp );
+      data->data[i].im = (REAL4)(-sin(phi) / amp );
+      
+    } /* for i < numlines */
+
+  goto success;
+ failed:
+  LALDestroyParsedDataFile(stat->statusPtr, &fileContents);
+  LALFree (data);
+  LALFree (ret);
+  ABORT (stat, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
+      
+ success:
+
+  TRY ( LALDestroyParsedDataFile(stat->statusPtr, &fileContents), stat);
+
+  ret->data = data;
+  (*transfer) = ret;
+  
+  
+  DETATCHSTATUSPTR (stat);
+  RETURN(stat);
+
+} /* ReadActuationFunction() */
+
 
