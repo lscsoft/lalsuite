@@ -267,7 +267,6 @@ for i in range(len(data)):
     inca = inspiral.IncaNode(inca_job)
     inca.set_start(chunk.start())
     inca.set_end(chunk.end())
-    inca.set_output(ifo1 + ifo2)
     inca.set_ifo_a(ifo1)
     inca.set_ifo_b(ifo2)
     
