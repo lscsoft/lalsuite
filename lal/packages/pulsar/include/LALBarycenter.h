@@ -44,16 +44,16 @@ NRCSID (LALBARYCENTERH,"$Id$");
 
 /* <lalErrTable file="LALBarycenterHErrorTable"> */
 #define LALBARYCENTERH_ENULL  2
+#define LALBARYCENTERH_EOUTOFRANGEE  4
+#define LALBARYCENTERH_EOUTOFRANGES  8
+#define LALBARYCENTERH_EBADSOURCEPOS 16
 
 #define LALBARYCENTERH_MSGENULL  "Null input to Barycenter routine."
+#define LALBARYCENTERH_MSGEOUTOFRANGEE  "tgps not in range of earth.dat file"
+#define LALBARYCENTERH_MSGEOUTOFRANGES  "tgps not in range of sun.dat file"  
+#define LALBARYCENTERH_MSGEBADSOURCEPOS "source position not in standard range"
+
 /* </lalErrTable> */
-
-#define EphemTableDimE 2500
-#define EphemTableDimS 2500
-/*Curt: should really allocate less space for EphemTableDimS, but this
-  was for testing purposes */ 
-/*Curt: rem .h files should not allocate storage */
-
 
 /* <lalLaTeX>
 \subsection*{Error conditions}
@@ -76,14 +76,13 @@ to data files containing arrays of center-of-mass
 positions for the Earth and Sun, respectively.
 The tables are derived from the JPL ephemeris.
 
-
 \noindent Files tabulate positions for one calendar year 
 (actually, a little more than one year, to deal 
 with overlaps).  The first line of each table summarizes
 what is in it. Subsequent lines give the time (GPS) and the
 Earth's position $(x,y,z)$,
 velocity $(v_x, v_y, v_z)$, and acceleration $(a_x, a_y, a_z)$
-at that instant.  All units of seconds; e.g. positiions have
+at that instant.  All in units of seconds; e.g. positions have
 units of seconds, and accelerations have units 1/sec.
 
 \begin{description}
@@ -103,36 +102,32 @@ time intervals. The fields are
 
 \begin{description}
 \item[\texttt{EphemerisFilenames ephiles}] Stucture giving names of
-the two files containing positions of Earth and Sun, resp., at evenly spaced times.
+the two files containing positions of Earth and Sun, resp., at evenly 
+spaced times.
+
 \item[\texttt{INT2  leap}]  The number of leap seconds that have
 been inserted into UTC between Jan. 6, 1980 (= start of GPS calendar) 
-and Jan. 2 of year covered by this ephemeris file; 
-e.g. leap = 13 for year 2000.
+and the current time tgps. But it's perfectly OK to approximate this by 
+number of leap sec inserted between Jan. 6, 1980 and Jan. 2 of year covered by 
+this ephemeris file; e.g. leap = 13 for year 2000.
 
-\item[\texttt{REAL8 gpsE[EphemTableDimE]}] Instant of time, labelled by 
-seconds in GPS.
+\item[\texttt{INT4  nentriesE}]  The number of entries in Earth ephemeris 
+table.
 
-\item[\texttt{REAL8 position[EphemTableDimE][3]}] x,y,z components
-of Earth's position at that instant (with respect to SSB, in the ICRS J2000 
-frame).  Based on JPL DE405 ephemerid. Units are seconds.
+\item[\texttt{INT4  nentriesS}]  The number of entries in Sun ephemeris 
+table.
 
-\item[\texttt{REAL8 velocity[EphemTableDimE][3]}] x,y,z components
-of Earth's velocity at that instant. Dimensionless (c=1).
+\item[\texttt{REAL8  dtEtable}]  The spacing in sec. between consecutive
+intants in Earth ephemeris table.
 
-\item[\texttt{REAL8 acceleration[EphemTableDimE][3]}] x,y,z components
-of Earth's acceleration at that instant. Units are 1/sec.
+\item[\texttt{REAL8  dtStable}]  The spacing in sec. between consecutive
+intants in Sun ephemeris table.
 
-\item[\texttt{REAL8 gpsS[EphemTableDimS]}] Instant of time, labelled by 
-seconds in GPS.
+\item[\texttt{PosVelAcc *earth}] Array containing pos,vel,acc. of earth, as
+extracted from earth ephem file. Units are sec, 1, 1/sec.
 
-\item[\texttt{REAL8 sunPos[EphemTableDimS][3]}] x,y,z components
-of Sun's position  at that instant. Units are seconds.
-
-\item[\texttt{REAL8 sunVel[EphemTableDimS][3]}] x,y,z components
-of Earth's velocity at that instant. Dimensionless (c=1).
-
-\item[\texttt{REAL8 sunAccel[EphemTableDimS][3]}] x,y,z components
-of Sun's acceleration at that instant. Units are 1/sec. 
+\item[\texttt{PosVelAcc *sun}] Array containing pos,vel,acc. of sun, as
+extracted from sun ephem file. Units are sec, 1, 1/sec.
 \end{description}
   
 \begin{verbatim}
@@ -154,9 +149,10 @@ in radians, at tgps. It's basically the angle thru which Earth has
 spun at given time. gast is like gmst, but has additional correction 
 for short-term nutation. 
 
-\item[\texttt{REAL8 M}] variable describing effect of lunisolar precession, at tgps
-\item[\texttt{REAL8 N}] variable describing effect of lunisolar precession, at tgps
-\item[\texttt{REAL8 delpsi}] variable describing effect of Earth nutation, at tgps
+\item[\texttt{REAL8 tzeA}] variable describing effect of lunisolar precession, at tgps; see Explan. Supp. Astron. Almanac, pp.104-5.
+\item[\texttt{REAL8 zA}] variable describing effect of lunisolar precession, at tgps
+\item[\texttt{REAL8 thetaA}] variable describing effect of lunisolar precession, at tgps
+\item[\texttt{REAL8 delpsi}] variable describing effect of Earth nutation, at tgps; see Explan. Supp. Astron. Almanac, pp.120. 
 \item[\texttt{REAL8 deleps}] variable describing effect of Earth nutation, at tgps
 \item[\texttt{REAL8 se[3]}] vector that points from Sun to Earth at instant tgps, in DE405 coords; units = sec 
 \item[\texttt{REAL8 dse[3]}] d(se[3])/d(tgps). Dimensionless
@@ -189,7 +185,6 @@ struct EmissionTime
 \noindent Basic output structure produced by LALBarycenter.c.
 \begin{description}
 \item[\texttt{  REAL8  deltaT}] $t_e$(TDB) - $t_a$(GPS) (+ constant = ``light-travel-time from source to SSB'') 
-                               
 
 \item[\texttt{  REAL8 te}]   pulse emission time $t_e$ in TDB (plus constant =
 ``light-travel-time from source to SSB''), in format of LIGOTImeGPS structure.
@@ -213,20 +208,27 @@ tagEphemerisFilenames
 }
 EphemerisFilenames;
 
+typedef struct
+tagPosVelAcc
+{
+   REAL8 gps;
+   REAL8 pos[3]; 
+   REAL8 vel[3];
+   REAL8 acc[3];
+}
+PosVelAcc;
 
 typedef struct
 tagEphemerisData
 {
   EphemerisFilenames ephiles;
   INT2  leap;
-  REAL8 gpsE[EphemTableDimE];
-  REAL8 position[EphemTableDimE][3];
-  REAL8 velocity[EphemTableDimE][3];
-  REAL8 acceleration[EphemTableDimE][3];
-  REAL8 gpsS[EphemTableDimS];
-  REAL8 sunPos[EphemTableDimS][3];
-  REAL8 sunVel[EphemTableDimS][3];
-  REAL8 sunAccel[EphemTableDimS][3];
+  INT4  nentriesE;
+  INT4  nentriesS;
+  REAL8 dtEtable;
+  REAL8 dtStable;
+  PosVelAcc *earth;
+  PosVelAcc *sun;
 }
 EphemerisData;
 
@@ -245,8 +247,10 @@ tagEarthState
 		      Is basically the angle thru which Earth has spun at 
                       given time. gast is like gmst, but has 
                       additional correction for short-term nutation */
-  REAL8 M;  /*variable describing effect of lunisolar precession, at tgps*/
-  REAL8 N;  /*variable describing effect of lunisolar precession, at tgps*/
+
+  REAL8 tzeA;  /*variable describing effect of lunisolar precession, at tgps*/
+  REAL8 zA;  /*variable describing effect of lunisolar precession, at tgps*/
+  REAL8 thetaA;  /*variable describing effect of lunisolar prec., at tgps*/
   REAL8 delpsi;  /*variable describing effect of Earth nutation, at tgps*/
   REAL8 deleps;  /*variable describing effect of Earth nutation, at tgps*/
 
@@ -273,10 +277,10 @@ tagBarycenterInput
   REAL8 alpha;      /* source right ascension in ICRS 
                         J2000 coords (radians)*/
   REAL8 delta;      /* source declination in ICRS J2000 coords (radians)*/
-  REAL8 dInv;       /* 1/(distance to source), in 1/sec 
-                       This is needed to calculate the parallax for very 
-                       nearby sources, but that part of code not yet  
-                       implemented. */
+  REAL8 dInv;       /* 1/(distance to source), in 1/sec. 
+                       This needed to correct Roemer delay for very 
+                       nearby sources; correction is about 10 microsec for
+                       source at 100 pc */
 }
 BarycenterInput;
 
@@ -300,11 +304,11 @@ tagEmissionTime
 EmissionTime;
 
 
-/*Curt: I should probably take the 1.0 OUT of tDot--ie., output tDot-1 
-Is that right, or will users just immediately add back the one anyway??
+/*Curt: probably best to take 1.0 OUT of tDot--ie., output tDot-1. 
+But most users would immediately add back the one anyway.
 */
 
-/*say output REAL8 T is ``time pulse would arrive at a GPS clock 
+/*Curt: rem te is ``time pulse would arrive at a GPS clock 
 way out in empty space, if you renormalized  and zero-ed the latter
 to give, on average, the same arrival time as the GPS clock on Earth'' */
 
