@@ -77,8 +77,9 @@ static void print_usage(char *program)
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
       "  [--check-times]               Check that all times were analyzed\n"\
-      "  --input-ifo       input_ifo   the name of the input IFO triggers\n"\
-      "  --output-ifo      output_ifo  the name of the IFO for which to create the bank\n"\
+      "   --input-ifo      input_ifo   the name of the input IFO triggers\n"\
+      "   --output-ifo     output_ifo  the name of the IFO for which to create the bank\n"\
+      "   --ifo-tag        ifotag      write the ifotag in the output file name\n"\
       "   --parameter-test test        set parameters with which to test coincidence:\n"\
       "                                (m1_and_m2|psi0_and_psi3)\n"\
       "  --data-type DATA_TYPE         specify the data type, must be one of\n"\
@@ -683,17 +684,28 @@ cleanexit:
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   /* set the file name correctly */
-  if ( userTag )
+  if ( userTag && ifoTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s_%s-%d-%d.xml", 
-        outputIFO, inputIFO, userTag, startTime, endTime - startTime );
+        outputIFO, ifoTag, userTag, startTime, endTime - startTime );
+  }
+  else if ( userTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
+        outputIFO, userTag, startTime, endTime - startTime );
+  }
+  else if ( ifoTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
+        outputIFO, userTag, startTime, endTime - startTime );
   }
   else 
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK_%s-%d-%d.xml", 
-        outputIFO, inputIFO, startTime, endTime - startTime );
+    LALSnprintf( fileName, FILENAME_MAX, "%s-TRIGBANK-%d-%d.xml", 
+        outputIFO, startTime, endTime - startTime );
   }
 
+    
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
       &status );
