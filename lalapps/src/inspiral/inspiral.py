@@ -487,7 +487,8 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('output',outfile)
     self.add_var_opt('summary',summ_file)
 
-  def set_inj_outputs(self,out_name,usertag=None,tama_output=None):
+  def set_inj_outputs(self,out_name,usertag=None,tama_output=None,
+    cluster=None):
     """
     Sets the name of the sire output file.
     out_name = name of sire output file
@@ -496,6 +497,8 @@ class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     outfile = out_name
     if usertag:
       outfile += '_' + usertag
+    if cluster:
+      outfile += '_CLUSTER'  
     summ_file = outfile + '_FOUND.txt' 
     missed_file = outfile + '_MISSED.xml'
     if tama_output:
