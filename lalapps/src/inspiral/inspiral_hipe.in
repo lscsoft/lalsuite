@@ -239,7 +239,7 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 
   triple_coinc_analyzed = []
   for seg in ifo_triple:
-    thinca = inspiral.ThincaNode(double_coinc_job)
+    thinca = inspiral.ThincaNode(triple_coinc_job)
     thinca.set_start(seg.start())
     thinca.set_end(seg.end())
     for ifo in [ifo_a_name, ifo_b_name, ifo_c_name]:
