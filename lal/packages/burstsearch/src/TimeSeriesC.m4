@@ -116,7 +116,7 @@ void `LALCut'SERIESTYPE (
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(first + length <= input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+	ASSERT(first < input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 	*output = `XLALCut'SERIESTYPE (input, first, length);
 
@@ -151,6 +151,7 @@ void `LALShrink'SERIESTYPE (
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first < series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	`XLALShrink'SERIESTYPE (series, first, length);
 
 	RETURN(status);

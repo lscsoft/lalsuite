@@ -88,6 +88,7 @@ void `LALCut'SEQUENCETYPE (
 	INITSTATUS(status, "`LALCut'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first < input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	*output = `XLALCut'SEQUENCETYPE (input, first, length);
 	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 	RETURN(status);
@@ -126,6 +127,7 @@ void `LALShrink'SEQUENCETYPE (
 {
 	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first < sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	`XLALShrink'SEQUENCETYPE (sequence, first, length);
 	RETURN(status);
 }
