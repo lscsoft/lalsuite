@@ -554,18 +554,9 @@ int main ( int argc, char *argv[] )
   /* write the output frame */
   if ( writeRawData || writeResponse || writeSpectrum || writeStrainSpec )
   {
-    if ( userTag )
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s-%d-%d.gwf",
-          ifo, userTag, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
-          ifo, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
+    LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
+        ifo, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );

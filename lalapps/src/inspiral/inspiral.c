@@ -991,18 +991,9 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    if ( userTag )
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.gwf",
-          ifo, userTag, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
-          ifo, gpsStartTime.gpsSeconds,
-          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
+    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
+        ifo, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
@@ -1016,15 +1007,33 @@ cleanexit:
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag )
   {
-    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
-        ifo, userTag, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    if ( injectionFile )
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_INJ_%s-%d-%d.xml",
+          ifo, userTag, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
+    else
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
+          ifo, userTag, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
-        ifo, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    if ( injectionFile )
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_INJ-%d-%d.xml",
+          ifo, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
+    else
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
+          ifo, gpsStartTime.gpsSeconds,
+          gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
   }
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
