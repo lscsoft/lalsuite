@@ -219,8 +219,6 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
 
-  /* Approximant           approximant; */         /* waveform approximant */
-  
   INT4                  i, j;
 
   /* getopt arguments */
