@@ -79,11 +79,11 @@ int main( int argc, char *argv[] )
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
   int debug_level      = 0;          /* LAL debug level */
-  REAL4 duration       = 1e5;        /* duration of integration */
-  int min_spindown     = 1;          /* sets minimum spindown age */
-  int spindown_order   = 1;          /* sets minimum spindown order */
-  REAL4 mismatch       = 0.02;       /* sets mismatch threshold of mesh */
-  REAL4 max_frequency  = 1e4;        /* sets maximum frequency of integration*/
+  REAL4 duration       = 1e5;        /* duration of integration (seconds) */
+  REAL4 min_spindown   = 1e10;       /* minimum spindown age (seconds) */
+  int spindown_order   = 1;          /* minimum spindown order */
+  REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
+  REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
   /* Define structures for TwoDMesh and Ptolemetric  */
   TwoDMeshNode *firstNode;
@@ -218,7 +218,7 @@ int main( int argc, char *argv[] )
   printf("detector is %s\n", detector); 
   printf("LAL debug level is set to %d\n", debug_level); 
   printf("Integration duration is %f seconds\n", duration); 
-  printf("Minimum spindown age is %d seconds\n", min_spindown); 
+  printf("Minimum spindown age is %f seconds\n", min_spindown); 
   printf("spindown order is %d\n", spindown_order); 
   printf("Mismatch of mesh is %f\n", mismatch); 
   printf("Maximum frequency of integration is %f Hz\n\n", max_frequency);
