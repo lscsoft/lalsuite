@@ -175,7 +175,7 @@ main(int argc, char **argv)
   params.alpha = 0.528;
   */
   params.alpha = 0.L;
-  params.fendBCV = 868.7;
+  params.fFinal = 868.7;
   metric.space = Tau0Tau3;
 
   samplingRate = params.tSampling;

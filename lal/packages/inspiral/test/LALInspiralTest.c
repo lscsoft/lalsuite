@@ -55,7 +55,7 @@ Example values of the parameters that can be set (with options in brackets) is:
    params.psi0 = 132250.;   (parameter required to generate BCV detection templates)
    params.psi3 = -1014.2;   (parameter required to generate BCV detection templates)
    params.alpha = 0.528;    (amplitude correction used in BCV templates)
-   params.fendBCV = 868.7;  (frequency at which the BCV template is terminated)
+   params.fFinal = 868.7;  (frequency at which the BCV template is terminated)
 
 \end{verbatim}
 
@@ -96,16 +96,16 @@ int main (void) {
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=100.; 
-   params.mass2=1.; 
+   params.mass1=20.; 
+   params.mass2=20.; 
    params.startTime=0.0; 
    params.startPhase=0.0;
-   params.fLower=30.0; 
-   params.fCutoff=4000.00;
-   params.tSampling=8192.0;
-   params.order=6;
+   params.fLower=40.0; 
+   params.fCutoff=2047.00;
+   params.fFinal=2047.00;
+   params.tSampling=4096.0;
+   params.order=4;
    params.approximant=TaylorT1;
-/* SpinTaylorT3 */
    params.signalAmplitude=1.0;
    params.nStartPad=0;
    params.nEndPad=1000;
@@ -121,6 +121,7 @@ int main (void) {
    LALCreateVector(&status, &signal1, n);
 
    LALInspiralWave(&status, signal1, &params);
+   fprintf(stderr,"fFinal = %e\n", params.fFinal);
 	      printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
 REPORTSTATUS(&status);
 

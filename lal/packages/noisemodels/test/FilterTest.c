@@ -131,12 +131,12 @@ main (  int argc, char **argv )
    tmpltParam.alpha = 0.669L;
    tmpltParam.psi0 = 224810.L;
    tmpltParam.psi3 = -867.58L;
-   tmpltParam.fendBCV = 764.5L;
+   tmpltParam.fFinal = 764.5L;
    param.alpha = 0.669L;
    param.psi0 = 224810.L;
    param.psi3 = -867.58L;
-   param.fendBCV = 764.5L;
-   param.fendBCV = tmpltParam.fendBCV;
+   param.fFinal = 764.5L;
+   param.fFinal = tmpltParam.fFinal;
 
 
    i=1;
@@ -165,7 +165,7 @@ main (  int argc, char **argv )
 	   else if (strcmp(argv[i],"-psi3")==0)
 		   tmpltParam.psi3 = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-fcut")==0)
-		   tmpltParam.fendBCV = atof(argv[++i]);
+		   tmpltParam.fFinal = atof(argv[++i]);
 	   else if (strcmp(argv[i], "-approximant")==0 || (strcmp(argv[i], "-signal")==0))
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
@@ -227,7 +227,7 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"      -order : order of PN model (%7.2d)\n", param.order);
 		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", param.psi0);
 		   fprintf(stderr,"       -psi3 : Min value of psi  (%7.2f)\n", param.psi3);
-		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", param.fendBCV);
+		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", param.fFinal);
 		   return 1;	
 
 	   }

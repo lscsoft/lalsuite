@@ -77,7 +77,7 @@ int main (void) {
    params.psi0 = 72639.;
    params.psi3 = -768.78;
    params.alpha = 0.766;
-   params.fendBCV = 331.4;
+   params.fFinal = 331.4;
    params.approximant = BCV;
 			   
    if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV) 

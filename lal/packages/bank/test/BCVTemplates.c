@@ -100,7 +100,7 @@ main(int argc, char **argv)
 			  list1[j].params.psi0, 
 			  list1[j].params.psi3, 
 			  list1[j].params.totalMass, 
-			  list1[j].params.fendBCV);
+			  list1[j].params.fFinal);
   }
   fprintf(fpr, "&\n");
   coarseIn.approximant  = TaylorT1;

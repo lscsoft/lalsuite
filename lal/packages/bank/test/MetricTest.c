@@ -103,7 +103,7 @@ main()
   params.psi0 = 132250.;
   params.psi3 = -1314.2;
   params.alpha = 0.528;
-  params.fendBCV = 868.7;
+  params.fFinal = 868.7;
   metric.space = Tau0Tau3;
 
   samplingRate = params.tSampling;

@@ -148,7 +148,7 @@ main ( void )
    randIn.param.psi0 = 72639.;
    randIn.param.psi3 = -768.78;
    randIn.param.alpha = 0.766;
-   randIn.param.fendBCV = 331.4;
+   randIn.param.fFinal = 331.4;
 
    randIn.psi0Min = 10000.L;
    randIn.psi0Max = 100000.L;
@@ -237,7 +237,7 @@ main ( void )
 	      if (randIn.param.approximant !=BCV) 
 		      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      else
-		      randIn.param.fCutoff = randIn.param.fendBCV;
+		      randIn.param.fCutoff = randIn.param.fFinal;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e psi0=%e psi3=%e phase_max=%e bin_max=%d overlap_max=%e\n",  
