@@ -54,7 +54,7 @@ set threshold1          2.7999999523162842e+00; #32 REAL4 peak found if power is
 set threshold2          1.0700000524520874e+00; #33 REAL4 peak ends if power drops below this. 
 set threshold3          2.0000000298023224e-01; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. 
 set threshold4          0.0000000000000000e+00; #35 REAL4 unused (except when params->testFlag & 2 > 0; see below).
-set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when params->testFlag & 1 > 0; see below).
+set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when params->testFlag & 1 > 0 or params->weightFlag & 8 > 0; see below).
 set maxWidthBins                             3; #37 REAL4 maximum width in bins. 
 #The thresholdFlag rules are: 
 # if (params->thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,
@@ -66,10 +66,14 @@ set maxWidthBins                             3; #37 REAL4 maximum width in bins.
 set calibrationFlag                         -1; #38 INT2 whether to calibrate input data (< 0 already done, 0 no, 1 yes). 
 # Note that < 0 and 0 are only options currently supported. 
 
-set weightFlag                               0; #39 INT2 whether to weight BLKs with beam pattern response (currently unused). 
+set weightFlag                               0; #39 INT2 how to weight STKs. 
+#The weightFlag rules are: 
+# if (params->weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),
+# if (params->weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
+# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
+# if (params->weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.
 
-set windowFilterFlag                         0; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) 
-# Note that < 0 and 0 are only options currently supported. 
+set orientationAngle    0.0000000000000000e+00; #40 REAL8 orientation angle in radians used to find F_+ and F_x when used to weight STKs or if using fixed polarization for a Monte Carlo Simulation. 
 
 set normalizationFlag                        4; #41 INT2 what normalization to do. 
 set f0NRM               3.0000999999999999e+02; #42 REAL8 frequency to start with when finding norms. 
@@ -78,7 +82,7 @@ set nBinsPerNRM                             50; #44 INT4 number of frequency bin
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
 #The thresholdFlag rules are: 
 # if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
-# if (params->normalizationFlag & 4) > 0 normalize STKs using running median, 
+# if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), 
 # if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
 # if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
 

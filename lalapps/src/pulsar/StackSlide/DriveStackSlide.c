@@ -97,6 +97,7 @@
 /* 10/28/04 gam; if (params->weightFlag & 4) > 0 then include beam pattern F_x in PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
 /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
+/* 11/18/04 gam; in GetDetResponseTStampMidPts latitute is DEC and longitude is RA, or course! */
 
 /*********************************************/
 /*                                           */
@@ -3520,10 +3521,13 @@ void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampM
     /* Set up das, the Detector and Source info */
     das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
     das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
-    das->pDetector = cachedDetector;
-    das->pSource->equatorialCoords.latitude = skyPosData[0];
-    das->pSource->equatorialCoords.longitude = skyPosData[1];
-    
+    das->pDetector = cachedDetector;    
+    /* das->pSource->equatorialCoords.latitude = skyPosData[0];
+    das->pSource->equatorialCoords.longitude = skyPosData[1]; */
+    /* 11/18/04 gam; in GetDetResponseTStampMidPts latitute is DEC and longitude is RA, or course! */
+    das->pSource->equatorialCoords.longitude = skyPosData[0];
+    das->pSource->equatorialCoords.latitude = skyPosData[1];
+
     das->pSource->orientation = orientationAngle;  
     das->pSource->equatorialCoords.system = coordSystem;
     timeAndAcc.accuracy=LALLEAPSEC_STRICT;
