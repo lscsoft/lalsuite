@@ -24,12 +24,11 @@
 
 static int lalDebugLevel = 0;
 static int verbosity_level = 0;
+static struct gengetopt_args_info args_info;
 
 int
 main(int argc, char **argv)
 {
-  struct gengetopt_args_info args_info;
-  
   static LALStatus          status;
   LALSource                 source;
   LALDetector               detector;
@@ -43,8 +42,8 @@ main(int argc, char **argv)
   /* null out strings */
   cross_file_name[0] = '\0';
   plus_file_name[0] = '\0';
-  
-  /* cmdline parser */
+
+  /* parse command line options */
   if (cmdline_parser(argc, argv, &args_info) != 0)
     exit(1);
 

@@ -53,8 +53,6 @@ int cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *ar
 void cmdline_parser_print_help(void);
 void cmdline_parser_print_version(void);
 
-int cmdline_parser_configfile (char * const filename, struct gengetopt_args_info *args_info, int override);
-
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
