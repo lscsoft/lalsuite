@@ -44,14 +44,11 @@ extern int optind, opterr, optopt;
 
 #define MAXLINERS 76800                   /* Max lines read in Freq Response files */
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
-#define To 60                             /* length of time used in table of alphas and betas (seconds)*/
-#define MAXALPHAS 10000                    /* Maximum number of calibration factors in a science segment */
-
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define CHANNEL "L1:Calibrated-Strain"
+/* run ./lalapps_ComputeFactors -b Factors.0 -f 973.3 -F S2-H1-Cache.0 -S NewSeg.0 -r R.txt -c C.txt -a A.txt -A H1:LSC-AS_Q -E H1:LSC-ETMX_EXC_DAQ -D H1:LSC-DARM_CTRL -m -0.493 */
 
 /***************************************************************************/
 /* Complex division routine -- used to calculate beta from alpha and alpha*beta */
@@ -85,6 +82,7 @@ static COMPLEX16 *cdiv( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 /* STRUCTURES */
 struct CommandLineArgsTag {
   REAL8 f;                 /* Frequency of the calibration line */
+  REAL8 t;                 /* Time interval to calculate factors */
   REAL8 mu;                /* Fraction of actuation seen by excitation channel */
   char *RFile;             /* Text file with the response funtion */
   char *CFile;             /* Text file with the sensing function */
@@ -135,7 +133,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadFiles(struct CommandLineArgsTag CLA);             
 
 /* Produces a table of calibration factors for a science segment; 
-the factors are calculated every interval To*/
+the factors are calculated every interval CLA.t */
 int GetFactors(struct CommandLineArgsTag CLA);   
 
 /************************************* MAIN PROGRAM *************************************/
@@ -201,8 +199,9 @@ REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 LALWindowParams winparams;
 
 COMPLEX16 be;
-INT4 k,m,outflag=0;
+INT4 k,m;
 LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate the calibration factors */
+long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
  
 FILE *fpAlpha=NULL;
 
@@ -232,36 +231,36 @@ FILE *fpAlpha=NULL;
   TESTSTATUS( &status );
 
   /* Allocate space for data vectors */
-  LALCreateVector(&status,&asq.data,(UINT4)(To/asq.deltaT +0.5));
+  LALCreateVector(&status,&asq.data,(UINT4)(CLA.t/asq.deltaT +0.5));
   TESTSTATUS( &status );
-  LALCreateVector(&status,&darm.data,(UINT4)(To/darm.deltaT +0.5));
+  LALCreateVector(&status,&darm.data,(UINT4)(CLA.t/darm.deltaT +0.5));
   TESTSTATUS( &status );
-  LALCreateVector(&status,&exc.data,(UINT4)(To/exc.deltaT +0.5));
+  LALCreateVector(&status,&exc.data,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
 
   /* Create Window vectors */
-  LALCreateVector(&status,&asqwin,(UINT4)(To/asq.deltaT +0.5));
+  LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
   TESTSTATUS( &status );
-  LALCreateVector(&status,&darmwin,(UINT4)(To/darm.deltaT +0.5));
+  LALCreateVector(&status,&darmwin,(UINT4)(CLA.t/darm.deltaT +0.5));
   TESTSTATUS( &status );
-  LALCreateVector(&status,&excwin,(UINT4)(To/exc.deltaT +0.5));
+  LALCreateVector(&status,&excwin,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
 
   winparams.type=Hann;
    
   /* windows for time domain channels */
   /* asq */
-  winparams.length=(INT4)(To/asq.deltaT +0.5);
+  winparams.length=(INT4)(CLA.t/asq.deltaT +0.5);
   LALWindow(&status,asqwin,&winparams);
   TESTSTATUS( &status );
   
   /* darm */
-  winparams.length=(INT4)(To/darm.deltaT +0.5);
+  winparams.length=(INT4)(CLA.t/darm.deltaT +0.5);
   LALWindow(&status,darmwin,&winparams);
   TESTSTATUS( &status );
 
   /* exc */
-  winparams.length=(INT4)(To/exc.deltaT +0.5);
+  winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
   LALWindow(&status,excwin,&winparams);
   TESTSTATUS( &status );
 
@@ -274,7 +273,7 @@ FILE *fpAlpha=NULL;
     }
   setvbuf( fpAlpha, NULL, _IONBF, 0 );  /* This stops buffering -- From Duncan Brown*/
 
-  for(m=0;m < GV.duration/To;m++)
+  for(m=0;m < (INT4)(GV.duration/CLA.t);m++)
     {
       /* Fill data vectors with data */
 
@@ -299,15 +298,15 @@ FILE *fpAlpha=NULL;
       TESTSTATUS( &status );
 
       /* Window the data */
-      for(k=0;k<(INT4)(To/asq.deltaT +0.5);k++)
+      for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
 	{
 	  asq.data->data[k] *= 2.0*asqwin->data[k];
 	}
-      for(k=0;k<(INT4)(To/darm.deltaT +0.5);k++)
+      for(k=0;k<(INT4)(CLA.t/darm.deltaT +0.5);k++)
 	{
 	  darm.data->data[k] *= 2.0*darmwin->data[k];
 	}
-      for(k=0;k<(INT4)(To/exc.deltaT +0.5);k++)
+      for(k=0;k<(INT4)(CLA.t/exc.deltaT +0.5);k++)
 	{
 	  exc.data->data[k] *= 2.0*excwin->data[k];
 	}
@@ -328,9 +327,13 @@ FILE *fpAlpha=NULL;
 
       cdiv(&be,&factors.alphabeta,&factors.alpha);
 
-      fprintf(fpAlpha,"%d %d %f %f %f %f\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im);
-	
-      localgpsepoch.gpsSeconds = localgpsepoch.gpsSeconds+To;
+      fprintf(fpAlpha,"%18.9Lf %f %f %f %f %f %f\n",
+	      gtime,factors.alpha.re,factors.alpha.im,be.re,be.im,factors.alphabeta.re,factors.alphabeta.im);
+
+      gtime += CLA.t;	
+      localgpsepoch.gpsSeconds = (INT4)gtime;
+      localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);
+      
     }
 
   /* Clean up */
@@ -523,6 +526,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   
   /* Initialize default values */
   CLA->f=0.0;
+  CLA->t=0.0;
   CLA->mu=0.0;  
   CLA->RFile=NULL;
   CLA->CFile=NULL;   
@@ -535,11 +539,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->alphafile=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:m:b:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hf:F:r:S:c:A:E:D:a:m:b:t:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
       CLA->f=atof(optarg);
+      break;
+    case 't':
+      /* calibration line frequency */
+      CLA->t=atof(optarg);
       break;
     case 'm':
       /* darm to etmx output matrix value */
@@ -585,6 +593,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -b. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
+      fprintf(stdout,"\t-t\tFLOAT\t Time interval to calculate factors in seconds (>0.0005).\n");
       fprintf(stdout,"\t-m\tFLOAT\t Fraction of the actuation seen by excitation channel (=1 if injected into darm,Gx/(Ky Gy- Kx Gx)...).\n");
       fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t-r\tSTRING\t Name of response function file.\n");
@@ -607,61 +616,73 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->f == 0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
-  if(CLA->mu == 0)
+  if(CLA->t == 0)
+    {
+      fprintf(stderr,"No time interval to calculate factors.\n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
+      return 1;
+    }      
+  if(CLA->t < 0.0005)
+    {
+      fprintf(stderr,"Time interval to calculate factors too small (<0.0005).\n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
+      return 1;
+    }      
+ if(CLA->mu == 0)
     {
       fprintf(stderr,"No value of the output matrix to x arm specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
   if(CLA->CFile == NULL)
     {
       fprintf(stderr,"No sensing function file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
   if(CLA->RFile == NULL)
     {
       fprintf(stderr,"No response function file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
   if(CLA->AFile == NULL)
     {
       fprintf(stderr,"No actuation function file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
   if(CLA->SegmentsFile == NULL)
     {
       fprintf(stderr,"No segments file specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
    if(CLA->exc_chan == NULL)
     {
       fprintf(stderr,"No excitation channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
    if(CLA->darm_chan == NULL)
     {
       fprintf(stderr,"No darm channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
-      fprintf(stderr,"Try ./ComputeStrain -h \n");
+      fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
 
