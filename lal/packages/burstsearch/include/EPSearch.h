@@ -128,7 +128,6 @@ tagEPSearchParams
   CHAR                         *channelName;       /* Added Erik Kats */
   EPInitParams                 *initParams;
   CreateTFTilingIn             *tfTilingInput;
-  TFTiling                     *tfTiling;
   ComputeExcessPowerIn         *compEPInput;
   LALWindowParams               winParams;
   BOOLEAN                       printSpectrum;
@@ -161,19 +160,27 @@ EPConditionData(
     );
 
 void
-EPFinalizeSearch(
-    LALStatus             *status,
-    EPSearchParams       **params
-    );
+LALCountEPEvents (
+               LALStatus                               *status,
+               INT4                                 *numEvents,
+               TFTiling                             *tfTiling,
+               REAL8                                alphaThreshold
+               );
 
 void
 LALTFTileToBurstEvent (
                LALStatus         *status,
                SnglBurstTable    *burstEvent,
                TFTile            *event,
-               INT8               tstart,
+               LIGOTimeGPS       *epoch,
                EPSearchParams    *params
                );
+
+void
+EPFinalizeSearch(
+    LALStatus             *status,
+    EPSearchParams       **params
+    );
 
 void LALWeighTFTileList (
         LALStatus         *status,

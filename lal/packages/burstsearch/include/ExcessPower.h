@@ -143,16 +143,6 @@ LALSortTFTiling (
               TFTiling                              *tfTiling
               );
 
-
-void
-LALCountEPEvents (
-               LALStatus                               *status,
-               INT4                                 *numEvents,
-               TFTiling                             *tfTiling,
-               REAL8                                alphaThreshold
-               );
-
-
 void
 LALComputeLikelihood (
                    LALStatus                           *status,

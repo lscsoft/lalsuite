@@ -136,17 +136,14 @@ static void ComputeAverageSpectrum(
 static INT4 TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 numevents;
-	INT8 tstartNS;
 
 	LALInfo(status->statusPtr, "Converting times into sngl_burst events");
 	CHECKSTATUSPTR (status);
 
 	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->events2Master); tile = tile->nextTile, numevents++) {
-		LALGPStoINT8(status->statusPtr, &tstartNS, epoch);
-
 		*event = LALMalloc(sizeof(**event));
 
-		LALTFTileToBurstEvent(status->statusPtr, *event, tile, tstartNS, params); 
+		LALTFTileToBurstEvent(status->statusPtr, *event, tile, epoch, params); 
 		CHECKSTATUSPTR(status);
 
 		event = &(*event)->next;
@@ -175,15 +172,15 @@ EPSearch (
     REAL4TimeSeries          *cutTimeSeries;
     INT4                      nevents, dumevents;
     SnglBurstTable          **EventAddPoint = burstEvent;
-    TFTiling                 *tfTiling;	/* FIXME: use this instead of params->tfTiling */
+    TFTiling                 *tfTiling = NULL;
 
-    INITSTATUS (status, "EPSearch", EPSEARCHC);
-    ATTATCHSTATUSPTR (status);
+    INITSTATUS(status, "EPSearch", EPSEARCHC);
+    ATTATCHSTATUSPTR(status);
 
     /* make sure that arguments are not NULL */
-    ASSERT (tseries, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-    ASSERT (params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
-    ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ASSERT(tseries, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ASSERT(params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
+    ASSERT(burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
     /* Compute the average spectrum */
     LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
@@ -203,13 +200,13 @@ EPSearch (
 
     /* assign temporary memory for the frequency data */
     LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR(status);
 
     /* create the dft params */
-    winParams.type=params->winParams.type;
-    winParams.length=2 * params->initParams->numPoints;
+    winParams.type = params->winParams.type;
+    winParams.length = 2 * params->initParams->numPoints;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR(status);
 
     /* point to the start of event list */
     params->numEvents=0;
@@ -219,16 +216,16 @@ EPSearch (
     {
       /* Cut out two sec long time series */
       LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, lround(2.0 / tseries->deltaT));
-      CHECKSTATUSPTR (status);
+      CHECKSTATUSPTR(status);
 
       /* compute the DFT of input time series: NOTE:We are using
        * the timeseries directly to compute the spectrum: Saikat
        * (20040823)
        */
       LALInfo(status->statusPtr, "Computing the frequency series");
-      CHECKSTATUSPTR (status);
-      LALComputeFrequencySeries (status->statusPtr, fseries, cutTimeSeries, dftparams);
-      CHECKSTATUSPTR (status);
+      CHECKSTATUSPTR(status);
+      LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
+      CHECKSTATUSPTR(status);
   
       /* delete the timeseries */
       LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
@@ -258,52 +255,50 @@ EPSearch (
       }
 
       /* create time-frequency tiling of plane.  */
-      if ( params->tfTiling == NULL ){
+      if(!tfTiling) {
         /* the factor of 2 here is to account for the overlapping */
-        params->tfTilingInput->deltaF=2.0*fseries->deltaF;
-        LALCreateTFTiling (status->statusPtr, &(params->tfTiling), 
-            params->tfTilingInput);
-        CHECKSTATUSPTR (status);
+        params->tfTilingInput->deltaF = 2.0 * fseries->deltaF;
+        LALCreateTFTiling(status->statusPtr, &tfTiling, params->tfTilingInput);
+        CHECKSTATUSPTR(status);
       }
 
       /* compute the TFplanes for the data segment */
       LALInfo(status->statusPtr, "Computing the TFPlanes");
-      CHECKSTATUSPTR (status);
-      LALComputeTFPlanes (status->statusPtr, params->tfTiling, fseries);
-      CHECKSTATUSPTR (status);
+      CHECKSTATUSPTR(status);
+      LALComputeTFPlanes(status->statusPtr, tfTiling, fseries);
+      CHECKSTATUSPTR(status);
 
       /* search these planes */
       LALInfo(status->statusPtr, "Computing the excess power");
-      CHECKSTATUSPTR (status);
-      LALComputeExcessPower (status->statusPtr, params->tfTiling, 
-          params->compEPInput);
-      CHECKSTATUSPTR (status);
+      CHECKSTATUSPTR(status);
+      LALComputeExcessPower (status->statusPtr, tfTiling, params->compEPInput);
+      CHECKSTATUSPTR(status);
 
       /* compute the likelihood for slightly better detection method */
       /*
-       * LALComputeLikelihood  (status->statusPtr, &(params->lambda), params->tfTiling);
-       * CHECKSTATUSPTR (status);
+       * LALComputeLikelihood(status->statusPtr, &(params->lambda), tfTiling);
+       * CHECKSTATUSPTR(status);
        */
 
       /* sort the results. */
       LALInfo(status->statusPtr, "Sorting TFTiling");
-      CHECKSTATUSPTR (status);
-      LALSortTFTiling (status->statusPtr, params->tfTiling);
-      CHECKSTATUSPTR (status);
+      CHECKSTATUSPTR(status);
+      LALSortTFTiling(status->statusPtr, tfTiling);
+      CHECKSTATUSPTR(status);
 
       /* determine the weighting for each tile */
-      LALWeighTFTileList(status->statusPtr, params->tfTiling, 10000);
+      LALWeighTFTileList(status->statusPtr, tfTiling, 10000);
       CHECKSTATUSPTR(status);
 
       /* convert the TFTiles into sngl_burst events for output */
-      params->numEvents += TFTilesToSnglBurstTable(status, params->tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+      params->numEvents += TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
       while(*EventAddPoint)
         EventAddPoint = &(*EventAddPoint)->next;
 
       /* reset the flags on the tftiles */
-      params->tfTiling->planesComputed=FALSE;
-      params->tfTiling->excessPowerComputed=FALSE;
-      params->tfTiling->tilesSorted=FALSE;
+      tfTiling->planesComputed=FALSE;
+      tfTiling->excessPowerComputed=FALSE;
+      tfTiling->tilesSorted=FALSE;
     }
 
     nevents = 0;
@@ -314,26 +309,26 @@ EPSearch (
       while((dumevents != nevents) && j < 500) {
         dumevents = nevents;
         LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
-        CHECKSTATUSPTR (status);
+        CHECKSTATUSPTR(status);
         LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
-        CHECKSTATUSPTR (status);
+        CHECKSTATUSPTR(status);
         j++;
       }
     }
 
     /* memory clean-up */
-    LALDestroyTFTiling (status->statusPtr, &(params->tfTiling));
-    CHECKSTATUSPTR (status);
-    LALDestroyCOMPLEX8FrequencySeries (status->statusPtr, fseries);
-    CHECKSTATUSPTR (status);
-    LALDestroyRealDFTParams (status->statusPtr, &dftparams);
-    CHECKSTATUSPTR (status);
+    LALDestroyTFTiling(status->statusPtr, &tfTiling);
+    CHECKSTATUSPTR(status);
+    LALDestroyCOMPLEX8FrequencySeries(status->statusPtr, fseries);
+    CHECKSTATUSPTR(status);
+    LALDestroyRealDFTParams(status->statusPtr, &dftparams);
+    CHECKSTATUSPTR(status);
     LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR(status);
 
     /* normal exit */
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
 }
 
 
@@ -511,7 +506,6 @@ void EPInitSearch(
     (*params)->winParams.type               = atoi( argv[18] );
 
     /* initialize parameter structures */
-    (*params)->tfTiling     = NULL;
     (*params)->numSlaves    = NULL;
 
     /* initialize parameters */

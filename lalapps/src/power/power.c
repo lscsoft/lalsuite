@@ -1498,7 +1498,6 @@ int initializeEPSearch(
       ( (*params)->initParams->numPoints - (*params)->ovrlap ));
 
     /* initialize parameter structures */
-    (*params)->tfTiling     = NULL;
     (*params)->numSlaves    = NULL;
 
     /* initialize parameters */
