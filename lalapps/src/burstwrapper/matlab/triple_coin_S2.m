@@ -12,11 +12,11 @@ CList = [];
 kk=1; 
 
 % path to ETG data that has been processed by the sblit c program; need 3 directories: H1, H2, L1
-%path = '/home/jsylvest/S2/S2v2.2/Sblit'; % 130-400 Hz band
+path = '/home/jsylvest/S2/S2v2.2/Sblit'; % 130-400 Hz band
 %path = '/home/jsylvest/S2/S2.B2.Full/Sblit/Scratch.0.0'; % 400-1000 Hz band
 
-path = '/home/jsylvest/S2/White/Sblit/Scratch.-130,-400/';
-%path = '/home/jsylvest/S2/BO2/Sblit/Scratch.-400,-1000/';
+%path = '/home/jsylvest/S2/WHITE_Plain/';
+%path = '/home/jsylvest/S2/BH6/Sblit/Scratch.-400,-1000/';
 
 % Cuts on the SNR for 130-400 Hz band
 SNRL1 = 10.6138;
@@ -27,6 +27,11 @@ SNRH2 = 2.8218;
 %SNRL1 = 5.9738;
 %SNRH1 = 5.9738;
 %SNRH2 = 5.9738;
+
+% Cuts for white noise
+%SNRL1 = 2.8;
+%SNRH1 = 2.8;
+%SNRH2 = 2.8;
 
 disp(path);
 disp(num2str([SNRL1 SNRH1 SNRH2]));
@@ -70,6 +75,22 @@ end % try block
  [pst,pen] = textread('/home/jsylvest/S2/S2playgnd.txt','%n %n');
  sT5=load2('/home/jsylvest/S2/S2CommonSegments.mat');
  T5 = sT5.T5;
+
+ % cut to v05 segment list
+ [segid,start,stop,duration]=textread('/home/jsylvest/S2/S2H1H2L1v05_burstsegs_300nopg.txt','%f%f%f%f','commentstyle','shell');
+
+ IS = [];
+
+ for p=1:length(T5)
+     I = find(T5(p) >= start & T5(p)+300 <= stop);
+     if(isempty(I))
+      IS = [IS ; p];
+     end
+ end
+
+ IS = setdiff(1:length(T5),IS);
+ T5 = T5(IS);
+ 
 
  disp('H1 playgnd...');
 tic
@@ -515,6 +536,6 @@ fclose(fid)
 % analyzed times
 fid = fopen([path '/times.dat'],'w');
 
-fprintf(fid,'%f\n',GT');
+fprintf(fid,'%i\n',GT');
 
 fclose(fid)
