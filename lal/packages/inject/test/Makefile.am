@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 check_PROGRAMS = InjectTest BasicInjectTest GeneratePPNInspiralTest
-InjectTest_SOURCES = InjectTest.c StreamInput.h StreamVectorInput.c StreamVectorSequenceInput.c
+InjectTest_SOURCES = InjectTest.c
 InjectTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
-BasicInjectTest_SOURCES = BasicInjectTest.c StreamVectorInput.c StreamVectorSequenceInput.c
+BasicInjectTest_SOURCES = BasicInjectTest.c
 BasicInjectTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 GeneratePPNInspiralTest_SOURCES = GeneratePPNInspiralTest.c
 GeneratePPNInspiralTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la

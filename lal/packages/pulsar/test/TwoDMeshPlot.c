@@ -382,7 +382,7 @@ LALMakeMeshMacro( LALStatus           *stat,
         maximum requested recursion level.  Along the way it adjusts
         the bounding box for the figure. */
 {
-  UINT4 level;          /* current recursion depth */
+  UINT4 rLevel;         /* current recursion depth */
   BOOLEAN plotPoints;   /* whether to plot mesh points at this level */
   BOOLEAN plotEllipses; /* whether to plot ellipses at this level */
   BOOLEAN plotTiles;    /* whether to plot tiles at this level */
@@ -390,9 +390,9 @@ LALMakeMeshMacro( LALStatus           *stat,
 
   /* Pointer to the metric function, its optional arguments, and the
      mismatch value, for the current recursion level. */
-  void (*getMetric)( LALStatus *, REAL4 [3], REAL4 [2], void *);
-  void *metricParams;
-  REAL4 mThresh;
+  void (*getMetric)( LALStatus *, REAL4 [3], REAL4 [2], void *) = NULL;
+  void *metricParams = NULL;
+  REAL4 mThresh = 0.0;
 
   INITSTATUS( stat, "LALMakeMeshMacro", TWODEMESHPLOTC );
   ATTATCHSTATUSPTR( stat );
@@ -402,20 +402,20 @@ LALMakeMeshMacro( LALStatus           *stat,
 	  TWODMESHPLOTH_MSGENUL );
 
   /* Do nothing if we're beyond the maximum recursion level. */
-  if ( ( level = params->level ) >= params->plotParams->nLevels ) { 
+  if ( ( rLevel = params->level ) >= params->plotParams->nLevels ) { 
     DETATCHSTATUSPTR( stat );
     RETURN( stat );
   }
 
   /* Otherwise, determine what needs to be plotted at this level. */
-  plotPoints = ( params->plotParams->plotPoints[level] != 0 );
-  plotTiles = params->plotParams->plotTiles[level];
-  plotEllipses = params->plotParams->plotEllipses[level];
+  plotPoints = ( params->plotParams->plotPoints[rLevel] != 0 );
+  plotTiles = params->plotParams->plotTiles[rLevel];
+  plotEllipses = params->plotParams->plotEllipses[rLevel];
   plotAny = ( plotPoints || plotTiles || plotEllipses );
   if ( plotEllipses ) {
-    getMetric = params->plotParams->params[level].getMetric;
-    metricParams = params->plotParams->params[level].metricParams;
-    mThresh = params->plotParams->params[level].mThresh;
+    getMetric = params->plotParams->params[rLevel].getMetric;
+    metricParams = params->plotParams->params[rLevel].metricParams;
+    mThresh = params->plotParams->params[rLevel].mThresh;
   }
 
   /* Move down the list, plotting what needs to be plotted. */
@@ -424,7 +424,7 @@ LALMakeMeshMacro( LALStatus           *stat,
     if ( plotAny ) {
       fprintf( stream, "%f %f moveto", mesh->x, mesh->y );
       if ( plotPoints ) {
-	fprintf( stream, " point%u", level );
+	fprintf( stream, " point%u", rLevel );
 	AdjustBBox( mesh->x, mesh->y, params->plotParams );
 	params->nObj += 1;
       }
@@ -521,7 +521,7 @@ LALMakeMeshMacro( LALStatus           *stat,
 
     /* Plot any submeshes, if necessary. */
     if ( ( mesh->subMesh != NULL ) &&
-	 ( level < params->plotParams->nLevels - 1 ) ) {
+	 ( rLevel < params->plotParams->nLevels - 1 ) ) {
       params->level += 1;
       TRY( LALMakeMeshMacro( stat->statusPtr, stream, mesh->subMesh,
 			     params ), stat );

@@ -73,7 +73,7 @@ NRCSID( TWODMESHPLOTH, "$Id$" );
 \vspace{-.1in}The values in the table above are stored in the
 constants \verb@TWODMESHPLOTH_@\texttt{<}\textit{name}\texttt{>}.
 
-/****************************************************** </lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #define TWODMESHPLOTH_XSIZE 540 /* horizontal plot size (points) */
 #define TWODMESHPLOTH_YSIZE 720 /* vertical plot size (points) */

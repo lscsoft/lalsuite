@@ -30,10 +30,7 @@ end-of-line or end-of-file is reached.  (The line can be of arbitrary
 length; the data is temporarily stored in a linked list of buffers.)
 Once read, a LAL vector structure \verb@**vector@ is created and the
 data stored in it.  The routine passes back a pointer to the new
-structure.  The pointer \verb@*end@, if non-null, stores the last
-character read; this is useful for discerning the end of I/O streams
-(such as standard input) that do not explicitly set an end-of-file
-flag.
+structure.
 
 The basic routine in this module is \verb@LALCHARReadVector()@, which
 simply stores bytes read from \verb@*stream@ until the next
@@ -74,7 +71,7 @@ LALWarning()
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID(STREAMVECTORINPUTC,"$Id$");
 

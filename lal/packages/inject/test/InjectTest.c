@@ -175,7 +175,7 @@ Under development.  At present it doesn't do anything; it just exits.
 #include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID( INJECTTESTC, "$Id$" );
 

@@ -286,7 +286,7 @@ main(int argc, char **argv)
   static LALStatus stat;     /* top-level status structure */
   CHAR *outfile = NULL;      /* name of output file */
   CHAR *psfile = NULL;       /* name of PostScript output file */
-  UINT2 flags;               /* plotting flags */
+  UINT2 flags = 0;           /* plotting flags */
   UINT4 nmax = 0, cmax = 0;  /* maximum numbers of points/columns */
   REAL4 rangeParams[4];      /* LALRangeTest() parameters */
   REAL4 metricParams[9];     /* LALMetricTest() parameters */

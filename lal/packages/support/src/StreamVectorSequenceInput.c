@@ -82,7 +82,7 @@ LALDReadVector()    LALDDestroyVector()    LALDCreateVectorSequence()
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID(STREAMVECTORSEQUENCEINPUTC,"$Id$");
 

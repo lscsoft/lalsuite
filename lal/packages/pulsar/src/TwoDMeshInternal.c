@@ -440,17 +440,14 @@ LALTwoDColumn( LALStatus            *stat,
 { /* </lalVerbatim> */
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
-  REAL4 dx, dxMax;      /* current and maximum half-width of column */
+  REAL4 dx;             /* half-width of column */
   REAL4 y0, y1;         /* temporary variables storing y-coordinates */
   REAL4 centreRange[2]; /* centreline of column parameter space */
   REAL4 centreClip[2];  /* centre of clip boundary */
-  REAL4 centreTiled[2]; /* centre of region tiled */
   REAL4 leftTiled[2];   /* left side of region tiled */
   REAL4 rightTiled[2];  /* right side of region tiled */
   REAL4 metric[3];      /* current metric components */
   TwoDMeshNode *here;   /* current node in list */
-  UINT4 nFree;          /* number of nodes freed (if we have to
-			   discard this column because it's too wide) */
 
   /* Default parameter values: */
   REAL4 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;

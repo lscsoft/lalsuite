@@ -5,7 +5,8 @@ lib_LTLIBRARIES = liblalsupport.la
 libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
-  PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c
+  PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
+  StreamVectorInput.c StreamVectorSequenceInput.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   ReadFrequencySeries.c ReadTimeSeries.c

@@ -64,13 +64,13 @@ LALSReadVectorSequence()        LALDestroyVectorSequence()
 #include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID(STREAMINPUTTESTC,"$Id$");
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
-#define INFILE "StreamInput.dat"
+#define INFILE "StreamInput.data"
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-d debuglevel] [infile]\n"

@@ -126,7 +126,7 @@ LALSCreateVector()              LALSDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FlatMesh.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID(FLATMESHTESTC,"$Id$");
 

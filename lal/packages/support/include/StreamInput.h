@@ -20,21 +20,15 @@ data structures.
 LAL data structures using the data from a file (or other I/O) stream.
 The routines do not provide a system-level interface to create files
 and open or close file streams; they simply assume that they have been
-passed an open, readable stream.
+passed an open, readable stream.  Nonetheless, because they involve
+I/O stream manipulation, these routines are placed in the
+\verb@lalsupport@ library rather than in \verb@lal@ proper.
 
-According to the LAL specification in place at the time of writing
-these modules, routines that perform file I/O (that is, which invoke
-the C \verb@FILE@ type) should not be part of the LAL, but may be part
-of standalone or test programs.  These routines, while quite generic,
-do involve reading from file (or other input) streams, and so are not
-included in the library; they are distributed as separate modules
-within the \verb@test@ directory of the \verb@pulsar@ package.
-
-However, these routines are compartmentalized in such a way that they
-can easily be converted if the LAL specification is later expanded to
-include I/O streams.  In partucular, the only file I/O commands used
-are \verb@fgets()@ and \verb@feof()@.  Thus the upgrade would involve
-only the following global changes:
+These routines are compartmentalized in such a way that they can
+easily be converted if the LAL specification later changes the way in
+which I/O streams are handled.  In partucular, the only file I/O
+commands used are \verb@fgets()@ and \verb@feof()@.  Thus the upgrade
+would involve only the following global changes:
 \begin{enumerate}
 \item Replace all occurrences of \verb@FILE *@ with the name of the
 LAL I/O stream pointer type.

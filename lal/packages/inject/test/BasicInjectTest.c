@@ -146,7 +146,7 @@ LALNormalDeviates()
 #include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
-#include "StreamInput.h"
+#include <lal/StreamInput.h>
 
 NRCSID( BASICINJECTTESTC, "$Id$" );
 

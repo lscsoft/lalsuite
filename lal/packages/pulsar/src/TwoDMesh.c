@@ -151,9 +151,10 @@ LALDestroyTwoDMesh( LALStatus    *stat,
   while ( *mesh ) {
     UINT4 nSub = 0;             /* nodes freed from sub-meshes */
     TwoDMeshNode *last = *mesh; /* pointer to previous node */
-    if ( last->subMesh )
+    if ( last->subMesh ) {
       TRY( LALDestroyTwoDMesh( stat->statusPtr, &(last->subMesh),
 			       &nSub ), stat );
+    }
     *mesh = last->next;
     LALFree( last );
     if ( nFree )
