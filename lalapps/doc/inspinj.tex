@@ -24,6 +24,8 @@
 [\texttt{--usertag} \textsc{tag}]\newline
 %
 [\texttt{--tama-output}]\newline
+[\texttt{--write-eff-dist}]\newline
+%
 [\texttt{--ilwd}]
 
 \item[Description] 
@@ -116,19 +118,48 @@ which contains the following fields:
 \item geocentric end time
 \item Hanford end time
 \item Livingston end time
-\item Tama end time
+\item TAMA end time
 \item total mass, $M_{\mathrm{TOT}}$
 \item mass ratio, $\eta$
-\item distance to source (in Mpc)
+\item distance to source (in kpc)
 \item longitude
 \item latitude
 \item inclination
 \item coalescence phase
 \item polarization
+\item TAMA polarization
+\item end time GMST
 \end{itemize}
 
 In the above, all times are recorded as double precision real numbers and all
-angles are in radians.  
+angles are in radians.  The TAMA polarization is calculated using
+%
+\begin{equation}
+  \tan( \psi_{T} ) = \frac{ x \cdot T_{z} }{ y \cdot T_{z} } \, .
+\end{equation}
+%
+
+Here x and y are the x,y axes of the radiation frame expressed in earth fixed
+coordinates (\ref{xrad}, \ref{yrad}).  $T_{z}$ is a unit vector in earth fixed
+coordinates which is orthogonal to the two arms of the TAMA detector
+(\ref{tarm}).  It is given by
+
+%
+\begin{equation}
+  T_{z} = ( -0.6180, +0.5272, +0.5832 )
+\end{equation}
+%
+
+\item[\texttt{--write-eff-dist}] Optional.  If this option is given, three extra
+columns are added to the TAMA output file described above.  They are
+\begin{itemize}
+\item Hanford effective distance (kpc)
+\item Livingston effective distance (kpc)
+\item TAMA effective distance (kpc)
+\end{itemize}
+  
+These entries are added to the list immediately after TAMA end time and before
+total mass.
 
 \item[\texttt{--ilwd}] Optional. If this option is given,
 \verb+lalapps_inspinj+ also produces two ILWD-format files, injepochs.ilwd and
@@ -155,6 +186,125 @@ source in radians.
 lalapps_inspinj --seed 45\
 --source-file inspsrcs.dat --mass-file BNSMasses.dat
 \end{verbatim}
+
+
+\item[Algorithm]
+
+The algorithm for computing the effective distance will be described in some
+detail below.  The method is to compute both the strain due to the inspiral and
+the detector response in the earth fixed frame.  This frame is such that the
+z-axis points from the earth's centre to the North Pole, the x-axis points from
+the centre to the intersection of the equator and the prime meridian and the
+y-axis is chosen to complete the orthonormal basis.  The
+coordinates of the injection are specified by longitude (or right ascension)
+$\alpha$ and
+latitude (or declination) $\delta$.  The polarization is appropriate for transferring
+from the radiation to earth fixed frame.  These are then converted to the earth
+fixed frame by
+%
+\begin{eqnarray}
+  \theta &=& \frac{\pi}{2} - \delta \\
+  \phi &=& \alpha - \textrm{gmst} \, .
+\end{eqnarray}
+%
+Here, gmst is the Greenwich Mean sidereal time of the injection.  The axes of
+the radiation frame (x,y,z) can be expressed in terms of the earth fixed
+coordinates as:
+%
+\begin{eqnarray}
+  x(1) &=& +( \sin( \phi ) \cos( \psi ) - \sin( \psi ) \cos( \phi ) 
+      \cos( \theta ) ) \nonumber \\
+  x(2) &=& -( \cos( \phi ) \cos( \psi ) + \sin( \psi ) \sin( \phi ) 
+      \cos( \theta ) ) \nonumber \\
+  x(3) &=& \sin( \psi ) \sin( \theta ) \label{xrad}\\
+  y(1) &=& -( \sin( \phi ) \sin( \psi ) + \cos( \psi ) \cos( \phi ) 
+      \cos( \theta ) ) \nonumber\\
+  y(2) &=& +( \cos( \phi ) \sin( \psi ) - \cos( \psi ) \sin( \phi ) 
+      \cos( \theta ) ) \nonumber \\
+  y(3) &=& \cos( \psi ) \sin( \theta ) \label{yrad}
+\end{eqnarray}
+%
+Making use of these expressions, we can express the gravitational wave strain in
+earth fixed coordinates as
+%
+\begin{equation}\label{hij}
+  h_{ij} = ( h^{+}(t) e^{+}_{ij} ) + (h^{\times}(t) e^{\times}_{ij})
+\end{equation}
+%
+where
+%
+\begin{equation}
+  e^{+}_{ij} = x_{i} * x_{j} - y_{i} * y_{j} \qquad \mathrm{and} \qquad
+  e^{\times}_{ij} = x_{i} * y_{j} + y_{i} * x_{j}.
+\end{equation}
+%
+
+For the case of a binary inspiral signal, the two polarizations $h^{+}$
+and $h^{\times}$ of the gravitational wave are given by
+%
+\begin{eqnarray}
+  h^{+}(t)  &=& \frac{A}{r}  ( 1 + \cos^2 ( \iota ) ) * \cos( \Phi(t) ) \\
+  h^{\times}(t) &=& \frac{A}{r} * ( 2 \cos( \iota )   ) * \sin( \Phi(t) )
+\end{eqnarray}
+%    
+where $A$ is a mass and frequency dependent amplitude factor, $r$ is the
+physical distance at which the injection is located and $\iota$ is the
+inclination angle.
+
+Next, we can write the detector response function as
+%
+\begin{equation}
+  d^{ij} = \left(\frac{1}{2} \right) \left( n_{x}^{i} n_{x}^{j} 
+      - n_{y}^{i} n_{y}^{j} \right) \, .
+\end{equation}
+%
+Here, $n_{x}$ and $n_{y}$ are unit vectors directed along the arms of the
+detector.  Specifically, for the Hanford, Livingston, GEO, TAMA and Virgo
+detectors we use:
+%
+\begin{eqnarray}
+  H_{x} &=& ( -0.2239, +0.7998, +0.5569 ) \nonumber \\
+  H_{y} &=& ( -0.9140, +0.0261, -0.4049 ) \\
+  L_{x} &=& ( -0.9546, -0.1416, -0.2622 ) \nonumber \\
+  L_{y} &=& ( +0.2977, -0.4879, -0.8205 ) \\
+  G_{x} &=& ( -0.6261, -0.5522, +0.5506 ) \nonumber \\
+  G_{y} &=& ( -0.4453, +0.8665, +0.2255 ) \\
+  T_{x} &=& ( +0.6490, +0.7608, +0.0000 ) \nonumber \\
+  T_{y} &=& ( -0.4437, +0.3785, -0.8123 ) \label{tarm} \\
+  V_{x} &=& ( -0.7005, +0.2085, +0.6826 ) \nonumber \\
+  V_{y} &=& ( -0.0538, -0.9691, +0.2408 )
+\end{eqnarray} 
+%
+
+The response of an interferometric detector with arm locations given by $n_{x}$
+and $n_{y}$ to an inspiralling binary system described by (\ref{hij}) is
+%
+\begin{eqnarray}
+  h(t) &=& h^{+}(t) ( d^{ij} e^{+}_{ij} ) 
+    + h^{\times}(t) ( d^{ij} e^{\times}_{ij} ) \nonumber \\
+      &=& 
+    \left(\frac{A}{r}\right) \left[  
+	( 1 + \cos^2 ( \iota ) ) F_{+} \cos( \Phi(t)) + 
+        2 \cos( \iota ) F_{\times} \sin( \Phi(t) ) \right] \, ,
+\end{eqnarray}
+%
+where we have introduced
+%
+\begin{equation}
+  F_{+} = d^{ij} e^{+}_{ij} \qquad \mathrm{and} \qquad  
+  F_{\times} = d^{ij} e^{\times}_{ij}
+\end{equation}
+%  
+
+Finally, to calculate the effective distance, we note that the two contributions
+to $h(t)$ are $\pi/2$ radians out of phase, and hence orthogonal.  Thus, we can
+compute the effective distance to be:
+%
+\begin{equation}
+  D_{\mathrm{eff}} = r / \left( \frac{ (1 + \cos^2(\iota))^2 }{4} F_{+}^{2} +
+      cos^{2}(\iota) F_{\times}^{2} \right)
+\end{equation}      
+%
 
 \item[Environment]\leavevmode
 \begin{entry}
