@@ -89,7 +89,7 @@ LALFindChirpStoreEvent (
   /* set the gmst units and strictness */
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
-  
+ 
   /* set the event LIGO GPS time of the event */
   timeNS = 1000000000L * 
     (INT8) (input->segment->data->epoch.gpsSeconds);
