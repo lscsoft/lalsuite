@@ -32,6 +32,7 @@ LIGO light weight XML files.
 #ifndef _LIGOLWXML_H
 #define _LIGOLWXML_H
 
+#include <stdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 
