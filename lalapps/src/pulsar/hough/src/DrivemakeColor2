@@ -11,6 +11,7 @@
 # -----------------------------------------------------------
 # your compiler
 CC = gcc
+#CC = gcc3
 
 #CC = gcc -DTIMING
 #CC = gcc -DPRINTHOUGH
@@ -69,7 +70,7 @@ DriveHoughColor_v2: SFTbin.o PeakSelect.o DriveHoughColor_v2.o
 # -----------------------------------------------------------
 # cleaning...
 clean:
-	rm -f  DriveHoughColor_v2.o DriveHoughColor_v2
+	rm -f  DriveHoughColor_v2.o DriveHoughColor_v2 DriveHoughColor_v1.o DriveHoughColor_v1
 
 
 
