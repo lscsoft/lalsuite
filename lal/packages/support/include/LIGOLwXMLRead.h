@@ -113,7 +113,9 @@ void
 LALSimBurstTableFromLIGOLw (
     LALStatus          *status,
     SimBurstTable    **eventHead,
-    CHAR               *fileName
+    CHAR               *fileName,
+    INT4                startTime,
+    INT4                stopTime
     );
 
 int

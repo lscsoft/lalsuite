@@ -275,7 +275,6 @@ LALSnglBurstTableFromLIGOLw (
         ABORT(status, LIGOLWXMLREADH_ENCOL, LIGOLWXMLREADH_MSGENCOL);
       }
     }
-
     /* count the number of triggers parsed */
     nrows++;
   }
@@ -300,7 +299,9 @@ void
 LALSimBurstTableFromLIGOLw (
     LALStatus          *status,
     SimBurstTable    **eventHead,
-    CHAR               *fileName
+    CHAR               *fileName,
+    INT4                startTime,
+    INT4                stopTime
     )
 {
   int                                   i, j, nrows;
@@ -338,122 +339,128 @@ LALSimBurstTableFromLIGOLw (
   i = nrows = 0;
   while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
   {
+    INT4 geo_time = env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
+
     /* count the rows in the file */
     i++;
 
-    /* allocate memory for the template we are about to read in */
-    if ( ! *eventHead )
+    /* get the injetcion time and check that it is within the time window */
+    if ( ! stopTime || geo_time > startTime && geo_time < stopTime )
     {
-      thisEvent = *eventHead = (SimBurstTable *) 
-        LALCalloc( 1, sizeof(SimBurstTable) );
-    }
-    else
-    {
-      thisEvent = thisEvent->next = (SimBurstTable *) 
-        LALCalloc( 1, sizeof(SimBurstTable) );
-    }
-    if ( ! thisEvent )
-    {
-      fprintf( stderr, "could not allocate burst event\n" );
-      CLOBBER_EVENTS;
-      MetaioClose( env );
-      ABORT(status, LIGOLWXMLREADH_EALOC, LIGOLWXMLREADH_MSGEALOC);
-    }
 
-    /* parse the contents of the row into the InspiralTemplate structure */
-    for ( j = 0; tableDir[j].name; ++j )
-    {
-      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
-      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
-
-      if ( tableDir[j].idx == 0 )
+      /* allocate memory for the template we are about to read in */
+      if ( ! *eventHead )
       {
-        LALSnprintf( thisEvent->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 1 )
-      {
-        thisEvent->geocent_peak_time.gpsSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 2 )
-      {
-        thisEvent->geocent_peak_time.gpsNanoSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 3 )
-      {
-        thisEvent->h_peak_time.gpsSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 4 )
-      {
-        thisEvent->h_peak_time.gpsNanoSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 5 )
-      {
-        thisEvent->l_peak_time.gpsSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 6 )
-      {
-        thisEvent->l_peak_time.gpsNanoSeconds = i4colData;
-      }
-      else if ( tableDir[j].idx == 7 )
-      {
-        thisEvent->peak_time_gmst = r8colData;
-      }
-      else if ( tableDir[j].idx == 8 )
-      {
-        thisEvent->dtminus = r4colData;
-      }
-      else if ( tableDir[j].idx == 9 )
-      {
-        thisEvent->dtplus = r4colData;
-      }
-      else if ( tableDir[j].idx == 10 )
-      {
-        thisEvent->longitude = r4colData;
-      }
-      else if ( tableDir[j].idx == 11 )
-      {
-        thisEvent->latitude = r4colData;
-      }
-      else if ( tableDir[j].idx == 12 )
-      {
-        LALSnprintf( thisEvent->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
-            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
-      }
-      else if ( tableDir[j].idx == 13 )
-      {
-        thisEvent->polarization = r4colData;
-      }
-      else if ( tableDir[j].idx == 14 )
-      {
-        thisEvent->hrss = r4colData;
-      }
-      else if ( tableDir[j].idx == 15 )
-      {
-        thisEvent->hpeak = r4colData;
-      }
-      else if ( tableDir[j].idx == 16 )
-      {
-        thisEvent->freq = r4colData;
-      }
-      else if ( tableDir[j].idx == 17 )
-      {
-        thisEvent->tau = r4colData;
-      }
-      else if ( tableDir[j].idx == 18 )
-      {
-        thisEvent->zm_number = i4colData;
+        thisEvent = *eventHead = (SimBurstTable *) 
+          LALCalloc( 1, sizeof(SimBurstTable) );
       }
       else
       {
-        CLOBBER_EVENTS;
-        ABORT(status, LIGOLWXMLREADH_ENCOL, LIGOLWXMLREADH_MSGENCOL);
+        thisEvent = thisEvent->next = (SimBurstTable *) 
+          LALCalloc( 1, sizeof(SimBurstTable) );
       }
-    }
+      if ( ! thisEvent )
+      {
+        fprintf( stderr, "could not allocate burst event\n" );
+        CLOBBER_EVENTS;
+        MetaioClose( env );
+        ABORT(status, LIGOLWXMLREADH_EALOC, LIGOLWXMLREADH_MSGEALOC);
+      }
 
-    /* count the number of triggers parsed */
-    nrows++;
+      /* parse the contents of the row into the InspiralTemplate structure */
+      for ( j = 0; tableDir[j].name; ++j )
+      {
+        REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+        REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+        INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+        if ( tableDir[j].idx == 0 )
+        {
+          LALSnprintf( thisEvent->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 1 )
+        {
+          thisEvent->geocent_peak_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 2 )
+        {
+          thisEvent->geocent_peak_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 3 )
+        {
+          thisEvent->h_peak_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 4 )
+        {
+          thisEvent->h_peak_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 5 )
+        {
+          thisEvent->l_peak_time.gpsSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 6 )
+        {
+          thisEvent->l_peak_time.gpsNanoSeconds = i4colData;
+        }
+        else if ( tableDir[j].idx == 7 )
+        {
+          thisEvent->peak_time_gmst = r8colData;
+        }
+        else if ( tableDir[j].idx == 8 )
+        {
+          thisEvent->dtminus = r4colData;
+        }
+        else if ( tableDir[j].idx == 9 )
+        {
+          thisEvent->dtplus = r4colData;
+        }
+        else if ( tableDir[j].idx == 10 )
+        {
+          thisEvent->longitude = r4colData;
+        }
+        else if ( tableDir[j].idx == 11 )
+        {
+          thisEvent->latitude = r4colData;
+        }
+        else if ( tableDir[j].idx == 12 )
+        {
+          LALSnprintf( thisEvent->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+        else if ( tableDir[j].idx == 13 )
+        {
+          thisEvent->polarization = r4colData;
+        }
+        else if ( tableDir[j].idx == 14 )
+        {
+          thisEvent->hrss = r4colData;
+        }
+        else if ( tableDir[j].idx == 15 )
+        {
+          thisEvent->hpeak = r4colData;
+        }
+        else if ( tableDir[j].idx == 16 )
+        {
+          thisEvent->freq = r4colData;
+        }
+        else if ( tableDir[j].idx == 17 )
+        {
+          thisEvent->tau = r4colData;
+        }
+        else if ( tableDir[j].idx == 18 )
+        {
+          thisEvent->zm_number = i4colData;
+        }
+        else
+        {
+          CLOBBER_EVENTS;
+          ABORT(status, LIGOLWXMLREADH_ENCOL, LIGOLWXMLREADH_MSGENCOL);
+        }
+      }
+
+      nrows++;
+    }
   }
 
   if ( mioStatus == -1 )
