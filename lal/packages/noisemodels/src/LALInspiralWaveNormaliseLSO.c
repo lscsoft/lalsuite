@@ -88,7 +88,7 @@ LALInspiralWaveNormaliseLSO
 		   * fCutoff so that the signal doesn't contribute to the correlation
 		   * outside this frequency band
 		   */
-		  filter->data[i] = 0.;
+		  filter->data[i] = filter->data[n-i] = 0.;
 	  }
 	  else
 	  {

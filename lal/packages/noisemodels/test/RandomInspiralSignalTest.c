@@ -179,7 +179,6 @@ main ( void )
    randIn.param.approximant = BCV;
    i=4;
    while (i--) {
-	   /*
       randIn.type = 0;
       LALRandomInspiralSignal(&status, &signal, &randIn);
       fprintf(stderr, "%d %e %e\n", i, randIn.param.mass1, randIn.param.mass2);
@@ -221,7 +220,6 @@ main ( void )
 			      overlapout.phase, overlapout.bin, overlapout.max);
       }
 
-      */
       randIn.type = 2;
       randIn.param.approximant = BCV;
       randIn.param.massChoice = psi0Andpsi3;
