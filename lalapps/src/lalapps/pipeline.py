@@ -260,7 +260,7 @@ class CondorDAGNode:
     var = option name.
     value = value of the option for this node in the DAG.
     """
-    macro = self.__bad_macro_chars( r'', arg )
+    macro = self.__bad_macro_chars( r'', var )
     self.__vars[macro] = value
     self.__job.add_var_arg(var)
 
