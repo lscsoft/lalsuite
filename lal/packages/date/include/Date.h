@@ -609,6 +609,31 @@ LALGPSTimeNow (
     const LALLeapSecAccuracy  *accuracy
     );
 
+/* <lalLaTeX>
+\newpage\input{PlaygroundC}
+</lalLaTeX> */
+void
+LALINT8NanoSecIsPlayground (
+    LALStatus          *status,
+    INT4               *playground,
+    INT8               *ns
+    );
+
+void
+LALGPSIsPlayground (
+    LALStatus          *status,
+    INT4               *playground,
+    LIGOTimeGPS        *gpstime
+    );
+
+void
+LALSegmentIsPlayground (
+    LALStatus          *status,
+    INT4               *playground,
+    LIGOTimeGPS        *gpsStart,
+    LIGOTimeGPS        *gpsEnd
+    );
+
 #ifdef  __cplusplus
 }
 #endif
