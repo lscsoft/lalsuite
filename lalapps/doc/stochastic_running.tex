@@ -44,7 +44,32 @@ pipeline. See Section~\ref{program:lalapps-stochastic-pipe} for details
 regarding the layout of the configuration file.
 
 Any combination of nodes, see above, can be present in the DAG, assuming
-that the dependancies for each node are satisfied.  For example, the
-stochastic node requires cache files to be available, so if cache have
-already been generated and the location of the data on the cluster has
-not changed then there is no read for the datafind node to be run.
+that the dependancies for each node are satisfied. The datafine node has
+no dependancies, the stochastic node requires cache files to be
+available, so if cache have already been generated and the location of
+the data on the cluster has not changed then there is no read for the
+datafind node to be run, and finally the stopp node requires that the
+xml output file from \prog{lalapps\_stochastic} are available.
+
+The following example will create a DAG containing all nodes, datafind,
+stochastic and stopp.
+
+\begin{verbatim}
+> lalapps_stochastic --datafind --stochastic --stopp \
+    --config-file example_S3_H1L1.ini --log-path logs
+\end{verbatim}
+
+In addition to creating the DAG it will also create several other file
+required for running the search under condor, descriptions of these
+files can be found below,
+
+\begin{description}
+\item[\texttt{example\_S3\_H1L1.dag}]
+This is main dag file that includes all the dependancy information for
+the different nodes within the DAG.
+\item[\texttt{example\_S3\_H1L1.datafind.sub}]
+This is the submit file used to submit datafind jobs to condor.
+\item[\texttt{example\_S3\_H1L1.stochastic.sub}]
+\item[\texttt{example\_S3\_H1L1.stopp.sub}]
+\item[\texttt{example\_S3\_H1L1.pipeline.log}]
+\end{description}
