@@ -138,10 +138,6 @@ void LALPtoleMetric( LALStatus *status,
 
   INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
 
-  /* A 5-dim (phi, f, a, d, f1) metric for internal use only:  */
-  big_metric = NULL;
-  LALDCreateVector( status, &big_metric, 15 );
-
   /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
 	  PTOLEMETRICH_MSGENULL );
@@ -170,7 +166,6 @@ void LALPtoleMetric( LALStatus *status,
   ASSERT( abs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   
-  /* Check that metric has been provided. */
   if( input->spindown )
     dim = 2+input->spindown->length;
   else
@@ -181,7 +176,11 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGENULL );
   ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
-  
+
+  /* A bigger metric that includes phase for internal use only:  */
+  big_metric = NULL;
+  LALDCreateVector( status, &big_metric, (dim+2)*(dim+3)/2);
+ 
   /* Detector location: */
   lat = input->site->frDetector.vertexLatitudeRadians;
   lon = input->site->frDetector.vertexLongitudeRadians;
@@ -414,7 +413,7 @@ void LALPtoleMetric( LALStatus *status,
 
   I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s,3);
 
-  /* The 5-dim metric components: */
+  /* The 4-dim metric components: */
   /* g_pp = */
   big_metric->data[0] =
     1;
@@ -431,10 +430,6 @@ void LALPtoleMetric( LALStatus *status,
   big_metric->data[6] =
     LAL_TWOPI*f*(-A[1]*sin_d*cos_a + A[2]*sin_d*sin_a + A[3]*cos_d);
 
-  /* g_p1 = */
-  big_metric->data[10] = 
-    2*LAL_TWOPI*f*T/3;
-
   /* g_ff = */
   big_metric->data[2] =
     pow(LAL_TWOPI*T, 2)/3;
@@ -447,10 +442,6 @@ void LALPtoleMetric( LALStatus *status,
   big_metric->data[7] =
     pow(LAL_TWOPI,2)*f*T*(-B[1]*sin_d*cos_a - B[2]*sin_d*sin_a + B[3]*cos_d);
 
-  /* g_f1= */
-  big_metric->data[11]=
-    pow(LAL_PI*T,2)*f;
-
   /* g_aa = */
   big_metric->data[5] =
     2*pow(LAL_PI*f*cos_d,2) * (B[4]*sin_a*sin_a + B[5]*sin_2a + B[6]*cos_a*cos_a);
@@ -461,22 +452,33 @@ void LALPtoleMetric( LALStatus *status,
 			     -B[7]*sin_a*cos_d + B[5]*cos_a*cos_a*sin_d - B[6]*sin_a*cos_a*sin_d
 			     +B[8]*cos_a*cos_d);
 
-  /* g_a1 = */
-  big_metric->data[12] = 2*pow(LAL_PI*f/T,2)*(-cos_d*sin_a*(R_o*I[1] + R_s*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));
-
   /* g_dd = */
   big_metric->data[9] =
     2*pow(LAL_PI*f,2)*(B[4]*pow(cos_a*sin_d,2) + B[6]*pow(sin_a*sin_d,2)
 		       +B[9]*pow(cos_d,2) - B[5]*sin_2a*pow(sin_d,2) - B[8]*sin_a*sin_2d
 		       -B[7]*cos_a*sin_2d);
 
-  /* g_d1 = */
-  big_metric->data[13] = 2*pow(LAL_PI*f/T,2)*(-sin_d*cos_a*(R_o*I[1] + R_s*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l*pow(T,3)/3));
+  /*The spindown components*/
+  if(dim==3) {
+    /* g_p1 = */
+    big_metric->data[10] = 
+      LAL_PI*f*T/3;
+    
+    /* g_f1= */
+    big_metric->data[11]=
+      pow(LAL_PI*T,2)*f/2;
+
+    /* g_a1 = */
+    big_metric->data[12] = 2*pow(LAL_PI*f/T,2)*(-cos_d*sin_a*(R_o*I[1] + R_s*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
+    
+    /* g_d1 = */
+    big_metric->data[13] = 2*pow(LAL_PI*f/T,2)*(-sin_d*cos_a*(R_o*I[1] + R_s*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l*pow(T,3)/3));
+    
+    /* g_11 = */
+    big_metric->data[14] = pow(LAL_PI*f*T,2)/5;
+  }
+    
   
-  /* g_11 = */
-  big_metric->data[14] = pow(LAL_PI*f*T,2)/5;
-
-
   /**********************************************************/
   /* Spin-down stuff not consistent with rest of code - don't uncomment! */
   /* Spindown-spindown metric components, before projection
@@ -576,18 +578,24 @@ void LALPtoleMetric( LALStatus *status,
   /*d-d component */
   metric->data[5] =  big_metric->data[9] 
     - big_metric->data[6]*big_metric->data[6]/big_metric->data[0]; 
-  /*f-f_1 component */
-  metric->data[6] = big_metric->data[11]
-    - big_metric->data[1]*big_metric->data[10]/big_metric->data[0];
-  /*a-f1 component */
-  metric->data[7] = big_metric->data[12]
-    - big_metric->data[3]*big_metric->data[10]/big_metric->data[0];
-  /*d-f1 component */
-  metric->data[8] = big_metric->data[13]
-    - big_metric->data[6]*big_metric->data[10]/big_metric->data[0];
-  /* f1-f1 component */
-  metric->data[9] = big_metric->data[14]
-    - big_metric->data[10]*big_metric->data[10]/big_metric->data[0];
+  if(dim==3) {
+    
+    /*f-f1 component */
+    metric->data[6] = big_metric->data[11]
+      - big_metric->data[1]*big_metric->data[10]/big_metric->data[0];
+
+    /*a-f1 component */
+    metric->data[7] = big_metric->data[12]
+      - big_metric->data[3]*big_metric->data[10]/big_metric->data[0];
+
+    /*d-f1 component */
+    metric->data[8] = big_metric->data[13]
+      - big_metric->data[6]*big_metric->data[10]/big_metric->data[0];
+
+    /* f1-f1 component */
+    metric->data[9] = big_metric->data[14]
+      - big_metric->data[10]*big_metric->data[10]/big_metric->data[0];
+  }
 
   LALDDestroyVector( status, &big_metric ); 
   /* All done */
