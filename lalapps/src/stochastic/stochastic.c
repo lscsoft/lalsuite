@@ -84,17 +84,17 @@ static int recenter_flag;
 /* parameters for the stochastic search */
 
 /* sampling parameters */
-INT4 sampleRate = 16384;
-INT4 resampleRate = 1024;
+INT4 sampleRate = -1;
+INT4 resampleRate = -1;
 REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = 751957183;
-UINT8 endTime = 751957783;
-INT4 intervalDuration = 180;
-INT4 segmentDuration = 60;
-INT4 calibOffset = 29;
+UINT8 startTime = 0;
+UINT8 endTime = 0;
+INT4 intervalDuration = -1;
+INT4 segmentDuration = -1;
+INT4 calibOffset = -1;
 CHAR *frameCacheOne = NULL;
 CHAR *frameCacheTwo = NULL;
 CHAR *calCacheOne = NULL;
@@ -103,12 +103,12 @@ CHAR *channelOne = NULL;
 CHAR *channelTwo = NULL;
 CHAR *ifoOne = NULL;
 CHAR *ifoTwo = NULL;
-INT4 siteOne = 0;
-INT4 siteTwo = 1;
+INT4 siteOne;
+INT4 siteTwo;
 
 /* frequency band */
-INT4 fMin = 50;
-INT4 fMax = 250;
+INT4 fMin = -1;
+INT4 fMax = -1;
 
 /* omegaGW parameters */
 REAL4 alpha = 0;
@@ -116,33 +116,33 @@ REAL4 fRef = 100;
 REAL4 omegaRef = 1;
 
 /* monte carlo parameters */
-REAL4 scaleFactor = 1;
-INT4 seed = 1;
-INT4 NLoop = 1;
+REAL4 scaleFactor = -1;
+INT4 seed = -1;
+INT4 NLoop = -1;
 
 /* window parameters */
-INT4 hannDuration = 1;
+INT4 hannDuration = -1;
 
 /* high pass filtering parameters */
-REAL4 highPassFreq = 40;
-REAL4 highPassAtten = 0.25;
-INT4  highPassOrder = 6;
+REAL4 highPassFreq = -1;
+REAL4 highPassAtten = -1;
+INT4  highPassOrder = -1;
 
 /* GEO scale factor */
 REAL4 geoScaleFactor = 1e18;
 
 /* GEO high pass filter parameters */
-REAL4 geoHighPassFreq = 70;
-INT4  geoHighPassOrder = 8;
-REAL4 geoHighPassAtten = 0.9;
+REAL4 geoHighPassFreq = -1; /* 70; */
+INT4  geoHighPassOrder = -1; /* 8; */
+REAL4 geoHighPassAtten = -1; /* 0.9; */
 
 /* number of bins for frequency masking */
-INT4 maskBin = 1;
+INT4 maskBin = -1;
 
 /* arguments associated with test flag */
-INT4 testInter = 0;
-INT4 testSeg = 0;
-INT4 testTrial = 0;
+INT4 testInter = -1;
+INT4 testSeg = -1;
+INT4 testTrial = -1;
 
 /* output file */
 CHAR *outputFilePath = NULL;
@@ -2457,6 +2457,225 @@ void parseOptions(INT4 argc, CHAR *argv[])
       fprintf(stderr, "%s\n", argv[optind++]);
     }
     exit(1);
+  }
+
+  /* check for required arguments */
+
+  /* start/end time */
+  if (startTime == 0)
+  {
+    fprintf(stderr, "--gps-start-time must be specified\n");
+    exit(1);
+  }
+  if (endTime == 0)
+  {
+    fprintf(stderr, "--gps-end-time must be specified\n");
+    exit(1);
+  }
+
+  /* interval duration */
+  if (intervalDuration == -1)
+  {
+    fprintf(stderr, "--interval-duration must be specified\n");
+    exit(1);
+  }
+
+  /* segment duration */
+  if (segmentDuration == -1)
+  {
+    fprintf(stderr, "--segment-duration must be specified\n");
+    exit(1);
+  }
+
+  /* sample rates */
+  if (sampleRate == -1)
+  {
+    fprintf(stderr, "--sample-rate must be specified\n");
+    exit(1);
+  }
+  if (resampleRate == -1)
+  {
+    fprintf(stderr, "--resample-rate must be specified\n");
+    exit(1);
+  }
+
+  /* min/max frequency */
+  if (fMin == -1)
+  {
+    fprintf(stderr, "--f-min must be specified\n");
+    exit(1);
+  }
+  if (fMax == -1)
+  {
+    fprintf(stderr, "--f-max must be specified\n");
+    exit(1);
+  }
+
+  /* ifos */
+  if (ifoOne == NULL)
+  {
+    fprintf(stderr, "--ifo-one must be specified\n");
+    exit(1);
+  }
+  if (ifoTwo == NULL)
+  {
+    fprintf(stderr, "--ifo-two must be specified\n");
+    exit(1);
+  }
+
+  /* channels */
+  if (channelOne == NULL)
+  {
+    fprintf(stderr, "--channel-one must be specified\n");
+    exit(1);
+  }
+  if (channelTwo == NULL)
+  {
+    fprintf(stderr, "--channel-two must be specified\n");
+    exit(1);
+  }
+
+  /* frame cache */
+  if (frameCacheOne == NULL)
+  {
+    fprintf(stderr, "--frame-cache-one must be specified\n");
+    exit(1);
+  }
+  if (siteOne != siteTwo)
+  {
+    /* only need second frame cache if ifos differ */
+    if (frameCacheOne == NULL)
+    {
+      fprintf(stderr, "--frame-cache-two must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* calibration cache */
+  if (calCacheOne == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-one must be specified\n");
+    exit(1);
+  }
+  if (calCacheTwo == NULL)
+  {
+    fprintf(stderr, "--calibration-cache-two must be specified\n");
+    exit(1);
+  }
+
+  /* calibration offset */
+  if (calibOffset == -1)
+  {
+    fprintf(stderr, "--calibration-offset must be specified\n");
+    exit(1);
+  }
+
+  /* mask */
+  if (apply_mask_flag)
+  {
+    if (maskBin == -1)
+    {
+      fprintf(stderr, "--mask-bin must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* hann duration */
+  if (overlap_hann_flag)
+  {
+    if (hannDuration != -1)
+    {
+      fprintf(stderr, "Overlapping Hann windows specified, --hann-duration " \
+          "will be ignored\n");
+    }
+  }
+  else
+  {
+    if (hannDuration == -1)
+    {
+      fprintf(stderr, "--hann-duration must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* high pass filter */
+  if (high_pass_flag)
+  {
+    if (highPassFreq == -1)
+    {
+      fprintf(stderr, "--hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (highPassAtten == -1)
+    {
+      fprintf(stderr, "--hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (highPassOrder == -1)
+    {
+      fprintf(stderr, "--hpf-order must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* injections */
+  if (inject_flag)
+  {
+    if (scaleFactor == -1)
+    {
+      fprintf(stderr, "--scale-factor must be specified\n");
+      exit(1);
+    }
+    if (seed == -1)
+    {
+      fprintf(stderr, "--seed must be specified\n");
+      exit(1);
+    }
+    if (NLoop == -1)
+    {
+      fprintf(stderr, "--trials must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* tests */
+  if (test_flag)
+  {
+    if (testInter == -1)
+    {
+      fprintf(stderr, "--test-interval must be specified\n");
+      exit(1);
+    }
+    if (testSeg == -1)
+    {
+      fprintf(stderr, "--test-segment must be specified\n");
+      exit(1);
+    }
+    if (testTrial == -1)
+    {
+      fprintf(stderr, "--test-trial must be specified\n");
+      exit(1);
+    }
+  }
+
+  /* GEO high pass filter */
+  if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
+  {
+    if (geoHighPassFreq == -1)
+    {
+      fprintf(stderr, "--geo-hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (geoHighPassAtten == -1)
+    {
+      fprintf(stderr, "--geo-hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (geoHighPassOrder == -1)
+    {
+      fprintf(stderr, "--geo-hpf-order must be specified\n");
+      exit(1);
+    }
   }
 
   /* check for sensible arguments */
