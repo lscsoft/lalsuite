@@ -2453,6 +2453,47 @@ void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
+  /* check for sensible arguments */
+
+  /* start time same as stop time */
+  if (startTime == endTime)
+  {
+    fprintf(stderr, "Start time same as end time; no analysis to perform\n");
+    exit(1);
+  }
+
+  /* stop time before start time */
+  if (startTime > endTime)
+  {
+    fprintf(stderr, "Invalid start/end time; end time (%lld) is before " \
+        "start time (%lld)\n", endTime, startTime);
+    exit(1);
+  }
+
+  /* resample rate greater than sample rate */
+  if (resampleRate > sampleRate)
+  {
+    fprintf(stderr, "Invalid resample rate (%d); must be less than sample " \
+        "rate (%d)\n", resampleRate, sampleRate);
+    exit(1);
+  }
+
+  /* min frequency same as max */
+  if (fMin == fMax)
+  {
+    fprintf(stderr, "Minimum frequency same as maximum; no analysis to " \
+        "perform\n");
+    exit(1);
+  }
+
+  /* max frequency less than min */
+  if (fMin > fMax)
+  {
+    fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
+        "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
   /* set channels */
   strcpy(channelOne, ifoOne);
   strcpy(channelTwo, ifoTwo);
