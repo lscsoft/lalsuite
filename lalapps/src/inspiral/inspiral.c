@@ -257,6 +257,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS duration	= {0,0};
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
+  REAL8 dynRange = 1.0;
 
   /* random number generator parameters */
   RandomParams *randParams = NULL;
@@ -375,6 +376,9 @@ int main( int argc, char *argv[] )
   candle.tmplt.mu = candle.tmplt.mass1 * candle.tmplt.mass2 / 
     candle.tmplt.totalMass;
   candle.tmplt.eta = candle.tmplt.mu / candle.tmplt.totalMass;
+
+  /* create the dynamic range exponent */
+  dynRange = pow( 2.0, dynRangeExponent );
 
 
   /*
@@ -607,9 +611,9 @@ int main( int argc, char *argv[] )
 
     /* cast the GEO data to REAL4 in the chan time series       */
     /* which already has the correct amount of memory allocated */
-    for ( i = 0 ; i < numInputPoints ; ++i )
+    for ( j = 0 ; j < numInputPoints ; ++j )
     {
-      chan.data->data[i] = (REAL4) geoChan.data->data[i];
+      chan.data->data[j] = (REAL4) ( geoChan.data->data[j] * dynRange );
     }
 
     /* re-copy the data paramaters from the GEO channel to input data channel */
@@ -766,10 +770,10 @@ int main( int argc, char *argv[] )
   if ( geoData )
   {
     /* if we are using geo data set the response to unity */
-    for( i = 0; i < resp.data->length; ++i )
+    for( k = 0; k < resp.data->length; ++k )
     {
-      resp.data->data[i].re = 1.0;
-      resp.data->data[i].im = 0.0;
+      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
+      resp.data->data[k].im = 0.0;
     }
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_GEO" );
@@ -1290,8 +1294,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpTemplateInit( &status, &fcTmpltParams, 
         fcInitParams ), &status );
 
-  fcDataParams->dynRange = fcTmpltParams->dynRange = 
-    pow( 2.0, dynRangeExponent );
+  fcDataParams->dynRange = fcTmpltParams->dynRange = dynRange;
   fcDataParams->deltaT = fcTmpltParams->deltaT = 1.0 / (REAL4) sampleRate;
   fcTmpltParams->fLow = fLow;
 
@@ -3331,7 +3334,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--frame-cache must be specified\n" );
     exit( 1 );
   }
-  if ( ! calCacheName )
+  if ( ! geoData && ! calCacheName )
   {
     fprintf( stderr, "--calibration-cache must be specified\n" );
     exit( 1 );
