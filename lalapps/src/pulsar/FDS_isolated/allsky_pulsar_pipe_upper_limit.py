@@ -190,11 +190,12 @@ if os.path.exists(res_out):
     confidence=float(sconfidence)
     dh0=float(sdh0)
     h0=float(sh0)
+    Ninj=int(sNinj)
   #endif there is a line -- we get here only if there are only data lines
   #and we are reading the last line
 
   if length > 1:
-    line=line_list[length-3]
+    line=line_list[length-2]
     [sNinjOLD,stolOLD,sh0OLD,sdh0OLD,sconfidenceOLD]=line.split(None,5)
     confidenceOLD=float(sconfidenceOLD)
     if abs(confidence-c0) < tol:
