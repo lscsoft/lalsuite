@@ -6,6 +6,7 @@
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/GenerateSpinOrbitCW.h>
 #include <lal/GenerateTaylorCW.h>
+#include <lal/LIGOMetadataTables.h>
 
 
 #ifdef  __cplusplus
@@ -18,37 +19,32 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 
 /* A reference number for the method already implemented in the injection package*/
 typedef enum {  
-   PPN       = 101,
-   SpinOrbitCW      = 102,
-   TaylorCW  = 103
+   PPN       	= 101,
+   SpinOrbitCW	= 102,
+   TaylorCW  	= 103
  } Method;
 
 
 
-/* Structure which uses the structures already defined in the inspiral package
- and injection package. */
-typedef struct 
-tagGeneralInspiralStruc
-{
-  PPNParamStruc          ppn;
-  SpinOrbitCWParamStruc  socw;
-  TaylorCWParamStruc     taylorcw;
-  InspiralTemplate       inspiral;
-  Method method;
-} GeneralInspiralStruc;
+/**/
+void
+LALInjectInspiral(
+		    LALStatus        *status,
+		    CoherentGW       *waveform,
+		    SimInspiralTable  *params, 
+		    REAL4 *buf1, 
+		    REAL8 *buf2,
+		    UINT4 *buf3
+		    );
 
 
 /**/
 void
-LALGenerateInspiral(
-		    LALStatus        *status,
-		    CoherentGW       *waveform,
-		    GeneralInspiralStruc  *params
-		    );
-
-
-
-
+LALGetApproximantAndOrder(
+			  LALStatus *status,
+			  CHAR *waveform,
+			  UINT4 *order,
+			  UINT4 *approximant);
 #ifdef  __cplusplus
 #pragma {
 }
