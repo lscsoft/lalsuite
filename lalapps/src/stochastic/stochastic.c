@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <math.h>
 
 #include <unistd.h>
@@ -86,7 +88,7 @@ REAL8 deltaF = 0.25;
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
 UINT8 startTime = 751957183;
-UINT8 stopTime = 751957783;
+UINT8 endTime = 751957783;
 INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
@@ -123,7 +125,7 @@ INT4 hannDuration = 1;
 
 /* high pass filtering parameters */
 REAL4 highPassFreq = 40;
-REAL4 highPassAt = 0.25;
+REAL4 highPassAtten = 0.25;
 INT4  highPassOrder = 6;
 
 REAL4 geoScaleFactor = 1e18;
@@ -131,7 +133,7 @@ REAL4 geoScaleFactor = 1e18;
 /* geo high pass filter parameters */
 REAL4 geoHighPassFreq = 70;
 INT4  geoHighPassOrder = 8;
-REAL4 geoHighPassAt = 0.1;
+REAL4 geoHighPassAtten = 0.1;
 
 /* number of bins for frequency masking */
 INT4 maskBin = 1;
@@ -286,7 +288,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (condor_flag)
   {
     fscanf(stdin,"%lld\n", &startTime);
-    fscanf(stdin,"%lld\n", &stopTime);
+    fscanf(stdin,"%lld\n", &endTime);
     fscanf(stdin,"%s\n%s\n", frameCache1, frameCache2);
     fscanf(stdin,"%s\n%s\n", calCache1, calCache2);
     if (inject_flag)
@@ -300,7 +302,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   
   /* get number of segments */
   numSegments = (INT4)(intervalDuration / segmentDuration);
-  duration = stopTime - startTime;
+  duration = endTime - startTime;
   numIntervals = (INT4)(((duration - (2 * padData)) / segmentDuration) - \
                  numSegments + 1);
   segMiddle = (INT4)((numSegments - 1) / 2);
@@ -313,7 +315,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                   segmentDuration);
     extrasec = duration - durationEff;
     startTime = startTime + (INT4)(extrasec / 2);
-    stopTime = startTime + durationEff;
+    endTime = startTime + durationEff;
   }
 
   if (verbose_flag)
@@ -728,7 +730,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     highpassParam.f1 = -1;
     highpassParam.f2 = highPassFreq;
     highpassParam.a1 = -1;
-    highpassParam.a2 = highPassAt;
+    highpassParam.a2 = highPassAtten;
   }
 
   /* zeropad lengths */
@@ -988,11 +990,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* open output file */
     LALSnprintf(outputFilename1, LALNameLength, \
         "%s/stat-%s%s-%lld-%lld-%d.dat", outputFilePath, ifo1, ifo2, \
-        startTime, stopTime, MCLoop);
+        startTime, endTime, MCLoop);
     /* open output file */
     LALSnprintf(outputFilename2, LALNameLength, \
         "%s/post-%s%s-%lld-%lld-%d.dat", outputFilePath, ifo1, ifo2, \
-        startTime, stopTime, MCLoop);
+        startTime, endTime, MCLoop);
 
     for (n = 0; n < N; n++)
     {
@@ -1703,7 +1705,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
       error = sqrt (1./inVarTheoSum ) /(REAL8)segmentDuration;
       out2 = fopen(outputFilename2, "a");
-      fprintf(out2,"%lld %lld %e %e\n", startTime, stopTime, ptEst, error);
+      fprintf(out2,"%lld %lld %e %e\n", startTime, endTime, ptEst, error);
       fclose(out2);
       if (verbose_flag)
         fprintf(stdout, "ptEst = %e, error = %e\n", ptEst, error);
@@ -1822,6 +1824,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
+  struct stat fileStatus;
 
   while(1)
   {
@@ -1909,76 +1912,252 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 't':
         /* start time */
         startTime = atoi(optarg);
+
+        /* check */
+        if (startTime < 441217609)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS start time is prior to 1 January 1994 00:00:00 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
+          exit(1);
+        }
+        if (startTime > 999999999)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS start time is after 14 September 2011 01:46:26 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
+          exit(1);
+        }
+
         break;
 
       case 'T':
         /* stop time */
-        stopTime = atoi(optarg);
+        endTime = atoi(optarg);
+
+        /* check */
+        if (endTime < 441217609)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS end time is prior to 1 January 1994 00:00:00 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              endTime);
+          exit(1);
+        }
+        if (endTime > 999999999)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GPS end time is after 14 September 2011 01:46:26 UTC " \
+              "(%lld specified)\n", long_options[option_index].name, \
+              endTime);
+          exit(1);
+        }
+
         break;
 
       case 'L':
         /* duration */
         intervalDuration = atoi(optarg);
+
+        /* check */
+        if (intervalDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Interval duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, intervalDuration);
+          exit(1);
+        }
+
         break;
 
       case 'l':
         /* duration */
         segmentDuration = atoi(optarg);
+
+        /* check */
+        if (segmentDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Segment duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, segmentDuration);
+          exit(1);
+        }
+
         break;
 
       case 'A':
         /* sample rate */
         sampleRate = atoi(optarg);
+
+        /* check */
+        if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Sample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              sampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'a':
         /* resampling */
         resampleRate = atoi(optarg);
+
+        /* check */
+        if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Resample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              resampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'f':
         /* minimal frequency */
         fMin = atoi(optarg);
+
+        /* check */
+        if (fMin < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Minimum frequency is less than 0 Hz (%d specified)\n", \
+              long_options[option_index].name, fMin);
+          exit(1);
+        }
+
         break;
 
       case 'F':
         /* maximal frequency */
         fMax = atoi(optarg);
+
+        /* check */
+        if (fMax < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Maximum frequency is less than 0 Hz (%d specified)\n", \
+              long_options[option_index].name, fMax);
+          exit(1);
+        }
+
         break;
 
       case 'w':
         /* hann window duration */
         hannDuration = atoi(optarg);
+
+        /* check */
+        if (hannDuration < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Hann duartion is less than 0: (%d specified)\n", \
+              long_options[option_index].name, hannDuration);
+          exit(1);
+        }
+
         break;
 
       case 'k':
         /* high pass knee filter frequency  */
         highPassFreq = atof(optarg);
+
+        /* check */
+        if (highPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "High pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassFreq);
+          exit(1);
+        }
+
         break;
 
       case 'p':
         /* high pass filter attenuation  */
-        highPassAt = atof(optarg);
+        highPassAtten = atof(optarg);
+
+        /* check */
+        if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassAtten);
+          exit(1);
+        }
+
         break;
 
       case 'P':
         /* high pass filter order  */
         highPassOrder = atoi(optarg);
+
+        /* check */
+        if (highPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              highPassOrder);
+          exit(1);
+        }
+
         break;
 
       case 'K':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
+
+        /* check */
+        if (geoHighPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "GEO high pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassFreq);
+          exit(1);
+        }
+
         break;
 
       case 'q':
         /*GEO high pass filter attenuation */
-        geoHighPassAt = atof(optarg);
+        geoHighPassAtten = atof(optarg);
+
+        /* check */
+        if ((geoHighPassAtten < 0.0) || (geoHighPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              geoHighPassAtten);
+          exit(1);
+        }
+
         break;
 
       case 'Q':
         /* GEO high pass filter order */
         geoHighPassOrder = atoi(optarg);
+
+        /* check */
+        if (geoHighPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "GEO high pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              geoHighPassOrder);
+          exit(1);
+        }
+
         break;
 
       case 'i':
@@ -2050,21 +2229,61 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'd':
         /* data cache one */
         strncpy(frameCache1, optarg, 200);
+
+        /* check that file exists */
+        if ( stat(frameCache1, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, frameCache1);
+          exit(1);
+        }
+
         break;
 
       case 'D':
         /* data cache two */
         strncpy(frameCache2, optarg, 200);
+
+        /* check that file exists */
+        if ( stat(frameCache2, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, frameCache2);
+          exit(1);
+        }
+
         break;
 
       case 'r':
         /* calibration cache one */
         strncpy(calCache1, optarg, 200);
+
+        /* check that file exists */
+        if ( stat(calCache1, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, calCache1);
+          exit(1);
+        }
+
         break;
 
       case 'R':
         /* calibration cache two */
         strncpy(calCache2, optarg, 200);
+
+        /* check that file exists */
+        if ( stat(calCache2, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, calCache2);
+          exit(1);
+        }
+
         break;
 
       case 'c':
@@ -2247,7 +2466,7 @@ void readDataPair(LALStatus *status,
     geoHighpassParam.f1 = -1;
     geoHighpassParam.f2 = (REAL8)geoHighPassFreq;
     geoHighpassParam.a1 = -1;
-    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAt);
+    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
     LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
         &geoHighpassParam);
     CHECKSTATUSPTR(status);
@@ -2338,7 +2557,7 @@ void readDataPair(LALStatus *status,
       geoHighpassParam.f1 = -1;
       geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
       geoHighpassParam.a1 = -1;
-      geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAt);
+      geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
       LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
           &geoHighpassParam);
       CHECKSTATUSPTR(status);
