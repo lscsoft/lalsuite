@@ -504,8 +504,8 @@ void parse_command_line(
 
 	options.calCacheFile = NULL;	/* default */
 	options.cluster = FALSE;	/* default */
-	options.comment = "";	        /* default */
-	options.fcorner = 100.0;	/* default */
+	options.comment = "";		/* default */
+	options.fcorner = -1.0;		/* impossible */
 	options.FilterCorruption = -1;	/* impossible */
 	options.noiseAmpl = -1.0;	/* default */
 	options.printData = FALSE;	/* default */
@@ -598,8 +598,9 @@ void parse_command_line(
 
 		case 'J':
 		options.fcorner = atof(optarg);
-		if(options.fcorner <= 0) {
-			print_bad_argument(argv[0], long_options[option_index].name, "must be > 0");
+		if(options.fcorner < 0.0) {
+			sprintf(msg, "must be >= 0.0 Hz (%f Hz specified)", options.fcorner);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
 		geodata = TRUE;
@@ -964,6 +965,13 @@ void parse_command_line(
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
+	 * Sanity check on GEO high-pass filter corner frequency.
+	 */
+
+	if(options.fcorner >= params->tfTilingInput.flow)
+		fprintf(stderr, "%s: warning: GEO high-pass corner frequency (%f) greater than TF plane low frequency (%f)\n", argv[0], options.fcorner, params->tfTilingInput.flow);
+
+	/*
 	 * Miscellaneous chores.
 	 */
 
@@ -989,8 +997,7 @@ static REAL4TimeSeries *get_geo_data(
 	const char *chname,
 	LIGOTimeGPS start,
 	LIGOTimeGPS end,
-	size_t lengthlimit,
-	REAL4 flow
+	size_t lengthlimit
 )
 {
 	PassBandParamStruc highpassParam;
@@ -1006,7 +1013,7 @@ static REAL4TimeSeries *get_geo_data(
 	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, geo, &channelIn, stream), stat);
 
 	/* resize to the correct number of samples */
-	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
+	length = DeltaGPStoFloat(stat, &end, &start) / geo->deltaT;
 	if(lengthlimit)
 		length = min(length, lengthlimit);
 	LAL_CALL(LALResizeREAL8TimeSeries(stat, geo, 0, length), stat);
@@ -1014,12 +1021,12 @@ static REAL4TimeSeries *get_geo_data(
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
-		fprintf(stderr, "get_geo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", geo->data->length, geo->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_geo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", geo->data->length, geo->data->length * geo->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
-	highpassParam.f2 = flow > options.fcorner ? options.fcorner : flow;
+	highpassParam.f2 = options.fcorner;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
 	highpassParam.a1 = -1.0;
@@ -1098,7 +1105,7 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(geodata)
-		series = get_geo_data(stat, stream, params->channelName, start, end, lengthlimit, params->tfTilingInput.flow - 10.0);
+		series = get_geo_data(stat, stream, params->channelName, start, end, lengthlimit);
 	else
 		series = get_ligo_data(stat, stream, params->channelName, start, end, lengthlimit);
 
