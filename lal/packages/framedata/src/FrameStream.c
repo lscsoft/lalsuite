@@ -400,7 +400,7 @@ static int fr_rewind( FrStream *stream )
   return 0;
 }
 
-static int fr_next( FrStream *stream )
+static int fr_next( FrStream *stream, INT8 *actual_time, INT8 *expected_time )
 {
   /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
   const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
@@ -478,6 +478,9 @@ static int fr_next( FrStream *stream )
 
   if ( abs( texp - tact ) > tacc ) /* there is a gap */
     stream->state |= LAL_FR_GAP;
+
+  *actual_time = tact;
+  *expected_time = texp;
 
   return 0;
 }
@@ -984,6 +987,9 @@ LALFrNext(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
+  INT8 actual_time = 0;
+  INT8 expected_time = 0;
+  CHAR frErrMsg[1024];
   INITSTATUS( status, "LALFrNext", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -995,16 +1001,22 @@ LALFrNext(
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
 
-  if ( fr_next( stream ) )
+  if ( fr_next( stream, &actual_time, &expected_time ) )
   {
     if ( stream->state & LAL_FR_ERR )
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
+        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+            "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
+        LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
+        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+            "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
+        LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
       }
     }
@@ -1018,6 +1030,10 @@ LALFrNext(
     }
     if ( ! ( stream->mode & LAL_FR_IGNOREGAP_MODE ) )
     {
+      LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+            "Gap in frame expected time %lld got time %lld\n", 
+            expected_time, actual_time );
+      LALError( status, frErrMsg );
       ABORT( status, FRAMESTREAMH_EDGAP, FRAMESTREAMH_MSGEDGAP );
     }
   }
@@ -1033,6 +1049,7 @@ LALFrSeek(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
+  CHAR frErrMsg[1024];
   INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );  
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -1047,10 +1064,16 @@ LALFrSeek(
     {
       if ( stream->state & LAL_FR_URL ) /* must have failed to open a file */
       {
+        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+            "Could not open URL %s\n", (stream->flist+stream->fnum)->url );
+        LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
       if ( stream->state & LAL_FR_TOC ) /* must have failed to read a file */
       {
+        LALSnprintf( frErrMsg, sizeof(frErrMsg)/sizeof(*frErrMsg),
+            "Could not read TOC from %s\n", (stream->flist+stream->fnum)->url );
+        LALError( status, frErrMsg );
         ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
       }
     }
