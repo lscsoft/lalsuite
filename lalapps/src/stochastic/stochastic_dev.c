@@ -177,10 +177,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numFMax;
   LALWindowParams psdWindowParams;
   AverageSpectrumParams psdParams;
-  REAL4FrequencySeries psdTempOne;
-  REAL4FrequencySeries psdTempTwo;
-  REAL4FrequencySeries psdOne;
-  REAL4FrequencySeries psdTwo;
+  /*LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};*/
 
   /* response functions */
   COMPLEX8FrequencySeries *respTempOneA;
@@ -363,34 +360,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   numFMin = (UINT4)(fMin / deltaF);
   numFMax = (UINT4)(fMax / deltaF);
   filterLength = numFMax - numFMin + 1;
-
-  if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for PSDs...\n");
-  }
-  
-  /* allocate memory for PSDs */
-  psdTempOne.data = NULL;
-  psdTempTwo.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &(psdTempOne.data), psdTempLength), \
-      &status);
-  LAL_CALL(LALCreateVector(&status, &(psdTempTwo.data), psdTempLength), \
-      &status);
-  memset(psdTempOne.data->data, 0, \
-      psdTempOne.data->length * sizeof(*psdTempOne.data->data));
-  memset(psdTempTwo.data->data, 0, \
-      psdTempTwo.data->length * sizeof(*psdTempTwo.data->data));
-
-  if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
-  }
-
-  /* allocate memory for reduced frequency band PSDs */
-  psdOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  psdTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  psdOne.data->length = filterLength;
-  psdTwo.data->length = filterLength;
 
   /* set window parameters for PSD estimation */
   psdWindowParams.length = windowPSDLength;
@@ -1199,10 +1168,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoA), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoB), &status);
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentTwoC), &status);
-  LALFree(psdOne.data);
-  LALFree(psdTwo.data);
-  LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(psdTempTwo.data)), &status);
   LALFree(responseOneA.data);
   LALFree(responseOneB.data);
   LALFree(responseOneC.data);
