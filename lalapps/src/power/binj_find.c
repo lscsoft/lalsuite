@@ -458,7 +458,7 @@ static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurst
 
 	for(; injection; (*ninjected)++, injection = injection->next) {
 		if(options.verbose)
-			fprintf(stderr, "Searching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
+			fprintf(stderr, "\tSearching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
 
 		bestmatch = NULL;
 		for(event = triglist; event; event = event->next) {
@@ -636,8 +636,8 @@ int main(int argc, char **argv)
 	struct options_t options;
 
 	/* triggers */
-	INT8 timeAnalyzed;
-	SnglBurstTable *trigger_list = NULL;
+	INT8 timeAnalyzed = 0;
+	SnglBurstTable *trigger_list;
 	SnglBurstTable *detectedTriggers = NULL;
 	SnglBurstTable **dettrigaddpoint = &detectedTriggers;
 
@@ -655,9 +655,7 @@ int main(int argc, char **argv)
 	/* input loop */
 	FILE *infile;
 	char line[MAXSTR];
-	SnglBurstTable **eventaddpoint = &trigger_list;
-	SimBurstTable *newinjection = NULL;
-	SimBurstTable **injaddpoint = &newinjection;
+	SimBurstTable *selected_inj;
 	INT8 SearchStart, SearchEnd;
 
 	/*
@@ -677,43 +675,50 @@ int main(int argc, char **argv)
 	injection_list = read_injection_list(&stat, options.injectionFile, options.gpsStartTime, options.gpsEndTime, options);
 
 	/*
-	 * Read and trim the trigger list;  remove injections from the
-	 * injection list that lie outside the time intervals that were
-	 * actually analyzed according to the search summary tables.
+	 * Loop over trigger files, searching each for the appropriate
+	 * injections.
 	 */
 
+	/* Open the list of trigger files */
 	if(!(infile = fopen(options.inputFile, "r")))
 		LALPrintError("Could not open input file\n");
 
-	timeAnalyzed = 0;
+	/* For each trigger file named in the input file... */
 	while(getline(line, MAXSTR, infile)) {
+		selected_inj = NULL;
+		trigger_list = NULL;
+
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
+		/* Determine the times encompassed by this file */
 		timeAnalyzed += read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL);
 
-		injaddpoint = extract_injections(&stat, injaddpoint, injection_list, SearchStart, SearchEnd);
+		/* Select the injections made during these times */
+		extract_injections(&stat, &selected_inj, injection_list, SearchStart, SearchEnd);
 
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, eventaddpoint, line), &stat);
+		/* Read and trim the triggers from this file */
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, &trigger_list, line), &stat);
+		trim_event_list(&trigger_list, options);
 
-		eventaddpoint = trim_event_list(eventaddpoint, options);
+		/* Search the triggers for matches against the selected
+		 * injections */
+		find_injections(&stat, selected_inj, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+		while(*detinjaddpoint)
+			detinjaddpoint = &(*detinjaddpoint)->next;
+		while(*dettrigaddpoint)
+			dettrigaddpoint = &(*dettrigaddpoint)->next;
+
+		/* Clean up */
+		free_injections(selected_inj);
+		free_events(trigger_list);
 	}
-
-	free_injections(injection_list);
-	injection_list = newinjection;
 
 	fclose(infile);
 
 	/*
-	 * Construct a list of detected injections, and a list of the matching
-	 * triggers.
+	 * Output some summary information.
 	 */
-
-	find_injections(&stat, injection_list, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
-	while(*detinjaddpoint)
-		detinjaddpoint = &(*detinjaddpoint)->next;
-	while(*dettrigaddpoint)
-		dettrigaddpoint = &(*dettrigaddpoint)->next;
 
 	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
 	fprintf(stdout, "Total injections: %d\n", ninjected);
