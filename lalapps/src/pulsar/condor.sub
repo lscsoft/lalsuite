@@ -5,8 +5,8 @@ output     = out.$(Process)
 error      = err.$(Process)
 log        = log.$(Process)
 notification = Never
-arguments  =  $(Process)  /scratch/ballen/S2-L1.60-lists /scratch/ballen/SFT-L1.60-sfts L1
+arguments  =  $(Process)  /scratch/ballen/S2-L1.60-lists /scratch/ballen/S2-L1.60-sft L1
 on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
 initialdir = /scratch/ballen/S2-L1.60-condor
-queue 296
-#queue 20
+#queue 296
+queue 5
