@@ -140,6 +140,7 @@ following combination of {\it masses:}
 \begin{itemize}
 \item \texttt{m1Andm2:} component masses
 \item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
+\item \texttt{totalMassUAndEta:} total mass and eta but uniform distribution in totalMass
 \item \texttt{totalMassAndMu:} total mass and reduced mass
 \item \texttt{t01:} unused; shouldn't be used.
 \item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
@@ -381,6 +382,7 @@ typedef enum {
 typedef enum {
    m1Andm2,
    totalMassAndEta,
+   totalMassUAndEta, 
    totalMassAndMu,
    t01,
    t02,
@@ -467,8 +469,8 @@ tagInspiralTemplate
   INT4  nStartPad;
   INT4  nEndPad;
   REAL8 OmegaS;
-/*  REAL8 vFinal;
-  REAL8 vInitial;
+  REAL8 vFinal;
+/*  REAL8 vInitial;
   REAL8 rFinal;
   REAL8 rInitial;
   REAL8 rLightRing;*/

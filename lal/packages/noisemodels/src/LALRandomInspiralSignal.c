@@ -176,131 +176,145 @@ LALRandomInspiralSignal
    randIn->useed = random();
    /* we need random parameters only if we need to generate a signal (i.e. type 0/2) */
    if (randIn->type==0 || randIn->type==2)
-   {
-	   valid = 0;
-	   /* Keep generating random parameters until they 
-	    * are located within the specified region */
-	   while (!valid) 
-	   {
+     {
+       valid = 0;
+       /* Keep generating random parameters until they 
+	* are located within the specified region */
+       while (!valid) 
+	 {
+	   epsilon1 = (float) random()/(float)RAND_MAX;
+	   epsilon2 = (float) random()/(float)RAND_MAX;
+	   switch (randIn->param.massChoice) 
+	     {
+	     case m1Andm2: 
+	       /* 
+		* restriction is on the minimum and maximum individual 
+		* masses of the two component stars. 
+		*/
+	       randIn->param.mass1 = randIn->mMin + 
+		 (randIn->mMax - randIn->mMin) * epsilon1;
+	       randIn->param.mass2 = randIn->mMin  + 
+		 (randIn->mMax - randIn->mMin) * epsilon2;
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       break;
+	     case totalMassAndEta: 
+	       /*
+		* restriction is on the total mass of the binary 
+		* and the minimum mass of the component stars
+		*/
+	       randIn->param.mass1 = randIn->mMin 
+		 + (randIn->MMax - 2.*randIn->mMin) * epsilon1;
+	       randIn->param.mass2 = randIn->mMin 
+		 + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * epsilon2;
+	       randIn->param.totalMass = randIn->param.mass1 + randIn->param.mass2 ;
+	       randIn->param.eta = (randIn->param.mass1*randIn->param.mass2)/pow(randIn->param.totalMass,2.L); 
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       break;
+	     case totalMassUAndEta: 
+	       /*
+		* restriction is on the total mass of the binary 
+		* and the minimum mass of the component stars
+		*/
+	       
+	       randIn->param.totalMass = 2 * randIn->mMin  + 2 * epsilon1 * (randIn->mMax - randIn->mMin ) ;
+	       randIn->etaMin = (randIn->param.totalMass - randIn->mMin) * randIn->mMin / randIn->param.totalMass/randIn->param.totalMass;
+	       randIn->param.eta = randIn->etaMin + epsilon2 * (.25 - randIn->etaMin); 
+	       
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       break;  
+	     case t02: 
+	       /* chirptimes t0 and t2 are required in a specified range */
+	       randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
+	       randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       break;
+	     case t03: 
+	       /* chirptimes t0 and t3 are required in a specified range */
+	       randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
+	       randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       break;
+	     case psi0Andpsi3: 
+	       /* BCV parameters are required in a specified range */
+	       randIn->param.psi0 = randIn->psi0Min + (randIn->psi0Max - randIn->psi0Min)*epsilon1;
+	       randIn->param.psi3 = randIn->psi3Min + (randIn->psi3Max - randIn->psi3Min)*epsilon2;
+	       break;
+	     case t04: 
+	     default:
+	       /* if the choice of parameters is wrong abort the run */
+	       ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+	       break;
+	     }
+	   /*
+	     printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
+	   */
+	   switch (randIn->param.massChoice) 
+	     {
+	     case m1Andm2: 
+	     case t03: 
+	     case t02:
+	       /*
+		* The following imposes a range in which min and
+		* max of component masses are restricted. 
+		*/
+	       if (
+		   randIn->param.mass1 >= randIn->mMin &&
+		   randIn->param.mass2 >= randIn->mMin &&
+		   randIn->param.mass1 <= randIn->mMax &&
+		   randIn->param.mass2 <= randIn->mMax &&
+		   randIn->param.eta <= 0.25 &&
+		   randIn->param.eta >= randIn->etaMin
+		   )
+		 {
+		   valid = 1;
+		 }
+	       break;
+	     case totalMassAndEta: 
+	     case totalMassUAndEta: 
+	       
+	       /*
+		* The following imposes a range in which min of 
+		* component masses and max total mass are restricted. 
+		*/
+	       if (
+		   randIn->param.mass1 >= randIn->mMin &&
+		   randIn->param.mass2 >= randIn->mMin &&
+		   randIn->param.totalMass <= randIn->MMax &&
+		   randIn->param.eta <= 0.25 &&
+		   randIn->param.eta >= randIn->etaMin
+		   )
+		 
+		 {
+		   valid = 1;
+		 }
+	       break;
+	       
+	     case psi0Andpsi3: 
+	       /* 
+		* the following makes sure that the BCV has
+		* a well defined end-frequency
+		*/
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       if (randIn->param.totalMass > 0.)
+		 {
+		   REAL8 fLR, fLSO, fend;
 		   epsilon1 = (float) random()/(float)RAND_MAX;
-		   epsilon2 = (float) random()/(float)RAND_MAX;
-		   switch (randIn->param.massChoice) 
-		   {
-			   case m1Andm2: 
-				/* 
-				* restriction is on the minimum and maximum individual 
-				* masses of the two component stars. 
-				*/
-				 randIn->param.mass1 = randIn->mMin + 
-				 	(randIn->mMax - randIn->mMin) * epsilon1;
-			         randIn->param.mass2 = randIn->mMin  + 
-				 	(randIn->mMax - randIn->mMin) * epsilon2;
-		               	 LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-				   break;
-			    case totalMassAndEta: 
-				   /*
-				    * restriction is on the total mass of the binary 
-				    * and the minimum mass of the component stars
-				    */
-				   randIn->param.mass1 = randIn->mMin 
-					   + (randIn->MMax - 2.*randIn->mMin) * epsilon1;
-				   randIn->param.mass2 = randIn->mMin 
-					   + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * epsilon2;
-				   randIn->param.totalMass = randIn->param.mass1 + randIn->param.mass2 ;
-				   randIn->param.eta = (randIn->param.mass1*randIn->param.mass2)/pow(randIn->param.totalMass,2.L); 
-				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-				   break;
-			   case t02: 
-				   /* chirptimes t0 and t2 are required in a specified range */
-				   randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
-				   randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
-				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-				   break;
-			   case t03: 
-				   /* chirptimes t0 and t3 are required in a specified range */
-				  randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
-				   randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
-				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-				   break;
-			   case psi0Andpsi3: 
-				   /* BCV parameters are required in a specified range */
-				   randIn->param.psi0 = randIn->psi0Min + (randIn->psi0Max - randIn->psi0Min)*epsilon1;
-				   randIn->param.psi3 = randIn->psi3Min + (randIn->psi3Max - randIn->psi3Min)*epsilon2;
-				   break;
-			   case t04: 
-			   default:
-				   /* if the choice of parameters is wrong abort the run */
-				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-				   break;
-		   }
-		   /*
-		   printf("%e %e %e %e\n", randIn->param.t0, randIn->param.t3, randIn->param.mass1, randIn->param.mass2);
-		    */
-		   switch (randIn->param.massChoice) 
-		   {
-			   case m1Andm2: 
-			   case t03: 
-			   case t02:
-				   /*
-				    * The following imposes a range in which min and
-				    * max of component masses are restricted. 
-				    */
-				   if (
-						   randIn->param.mass1 >= randIn->mMin &&
-						   randIn->param.mass2 >= randIn->mMin &&
-						   randIn->param.mass1 <= randIn->mMax &&
-						   randIn->param.mass2 <= randIn->mMax &&
-						   randIn->param.eta <= 0.25 &&
-						   randIn->param.eta >= randIn->etaMin
-				      )
-				   {
-					   valid = 1;
-				   }
-				   break;
-			   case totalMassAndEta: 
-				   /*
-				    * The following imposes a range in which min of 
-				    * component masses and max total mass are restricted. 
-				    */
-				   if (
-						   randIn->param.mass1 >= randIn->mMin &&
-						   randIn->param.mass2 >= randIn->mMin &&
-						   randIn->param.totalMass <= randIn->MMax &&
-						   randIn->param.eta <= 0.25 &&
-						   randIn->param.eta >= randIn->etaMin
-				      )
-		   
-				   {
-					   valid = 1;
-				   }
-				   break;
-		   
-			   case psi0Andpsi3: 
-				   /* 
-				    * the following makes sure that the BCV has
-				    * a well defined end-frequency
-				    */
-				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-				   if (randIn->param.totalMass > 0.)
-				   {
-					   REAL8 fLR, fLSO, fend;
-					   epsilon1 = (float) random()/(float)RAND_MAX;
-					   fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
-					   fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
-					   fend = fLSO + (fLR - fLSO) * epsilon1;
-					   if (fend > randIn->param.tSampling/2. || fend < randIn->param.fLower) break;
-					   randIn->param.fFinal = fend;
-					   valid = 1;
-				   }
-				   break;
-			   case t04: 
-                           default:
-				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-                                   break; 
-		   }
-	   }
-   }
-
+		   fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+		   fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+		   fend = fLSO + (fLR - fLSO) * epsilon1;
+		   if (fend > randIn->param.tSampling/2. || fend < randIn->param.fLower) break;
+		   randIn->param.fFinal = fend;
+		   valid = 1;
+		 }
+	       break;
+	     case t04: 
+	     default:
+	       ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+	       break; 
+	     }
+	 }
+     }
+   
    /* set up the structure for normalising the signal */
    normin.psd = &(randIn->psd);
    normin.df = randIn->param.tSampling / (REAL8) signal->length;
@@ -324,7 +338,7 @@ LALRandomInspiralSignal
 	 }
        else
 	 {
-	   /*add thomas to force to comput fFinal ??*/
+	   /* force to comput fFinal is it really necessary  ? */
 	   randIn->param.fFinal=0;
 	   LALInspiralWave(status->statusPtr, &buff, &randIn->param);
 	   CHECKSTATUSPTR(status);
