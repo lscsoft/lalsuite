@@ -2,7 +2,7 @@
 
 ## allow 'make test' to work from builddir != srcdir
 if [ -z "${srcdir}" ]; then
-    srcdir=..
+    srcdir=.
 fi
   
 sftdir="${srcdir}/.."
