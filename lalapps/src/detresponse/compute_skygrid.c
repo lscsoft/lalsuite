@@ -13,11 +13,97 @@ static const INT4 grid_lim = NUM_RA * NUM_DEC;
 static const INT4 dec_lim  = (NUM_DEC - 1)/2;
 
 static const double rad2deg = 180./LAL_PI;
-static const double eps = 23.5;
-static const double vorb = 2.*LAL_PI*1.5e11/(365.25*24.*3600.);
-static const double clight = 2.998e8;
+static const double     eps = 23.5;
+static const double    vorb = 2.*LAL_PI*1.5e11/(365.25*24.*3600.);
+static const double  clight = 2.998e8;
+
+/* ephemerides files for the year 2003 */
+static char * const earth_filename = "earth03.dat"; 
+static char * const sun_filename = "sun03.dat";
 
 static double vorbrel;
+
+/*
+ * compute instantaneous doppler factor
+ * NOTE: for some unfathomable reason, LALDetectorVel() takes
+ *   AvgVelPar as input, while LALAvgDetectorVel() takes
+ *   VelocityPar as input.
+ */
+static double doppler(LALStatus * status, 
+                      LIGOTimeGPS * gps,    /* time when vel. is needed */
+                      AvgVelPar * inputs,   /* detector, ephemerides */
+                      SkyPosition * source_loc)
+{
+  /* the reference frame in which everything is done is the barycentric,
+   * with J2000 equatorial defining the x-y plane */
+  double          velocity[3];
+  double          e_source[3];
+  double          doppler_factor = 0.;
+  double          sin_theta;
+  int             i;
+  EphemerisData * ephemerides = (EphemerisData *)NULL;
+  
+  /* source_roc needs to be in Equatorial */
+  if (source_loc->system != COORDINATESYSTEM_EQUATORIAL)
+    {
+      /* puke and go */
+      exit(81);
+    }
+  
+  ephemerides = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*ephemerides).ephiles.earthEphemeris = earth_filename;
+  (*ephemerides).ephiles.sunEphemeris   = sun_filename;
+
+  /* read in ephemerides */
+  LALInitBarycenter(status, ephemerides);
+  inputs->edat = ephemerides;
+  
+  /* NOTE: from the LALBarycenter() file, here's
+   * how to compute the unit vector pointing to a 
+   * source of RA=alpha, Dec=delta [the vector is
+   * in the J2000 frame]
+   *
+   *     sinTheta=sin(LAL_PI/2.0-delta);
+   *     // s is vector that points towards source 
+   *     s[2]=cos(LAL_PI/2.0-delta); 
+   *     // in Cartesian coords based on J2000
+   *     s[1]=sinTheta*sin(alpha);
+   *     // 0=x,1=y,2=z 
+   *     s[0]=sinTheta*cos(alpha);   */
+   
+  sin_theta = sin(LAL_PI/2. - source_loc->latitude);   
+  e_source[2] = cos(LAL_PI/2. - source_loc->latitude);
+  e_source[1] = sin_theta * sin(source_loc->longitude);
+  e_source[0] = sin_theta * cos(source_loc->longitude);
+   
+  LALDetectorVel(status, velocity, gps, inputs);
+  
+  for (i = 0; i < 3; ++i)
+  {
+    doppler_factor += velocity[i] * e_source[i];
+  }
+
+  /* house keeping; gah! where did ephemE and 
+   * ephemS come from?!? */
+  LALFree(ephemerides->ephemE);
+  LALFree(ephemerides->ephemS);
+  LALFree(ephemerides);
+
+  LALCheckMemoryLeaks();
+
+  return doppler_factor;
+}
+
+static double avg_doppler(LALStatus * status, 
+                          VelocityPar * inputs,   /* detector, ephemerides */
+                          SkyPosition * source_loc)
+{
+  double v_avg[3];
+  double doppler_factor_avg = 0.;
+  
+  return doppler_factor_avg;
+}
+             
 
 static double relval(double ra, double dec, int i, int nrelvals)
 {
