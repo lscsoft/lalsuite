@@ -47,10 +47,13 @@ specified in \verb@*signal@.  Values of the propagation delay are
 precomuted at fixed intervals and stored in a table, with the
 intervals $\Delta T_\mathrm{delay}$ chosen such that the value
 interpolated from adjacent table entries will never differ from the
-true value by more than $0.1\times$\verb@output->deltaT@:
+true value by more than $0.1/f_\mathrm{max}$, where
+$f_\mathrm{max}=$\verb@output->f0@+1/\verb@output->deltaT@ is the
+highest signal frequency that can be reasonably represented in the
+output time series.  This implies that:
 $$
 \Delta T_\mathrm{delay} \leq \sqrt{
-	\frac{0.8\times\mathtt{output->deltaT}}{\max\{a/c\}} } \; ,
+	\frac{0.8}{\max\{a/c\}\times f_\mathrm{max}} } \; ,
 $$
 where $\max\{a/c\}=1.32\times10^{-10}\mathrm{s}^{-1}$ is the maximum
 acceleration of an Earth-based detector in the barycentric frame.  The
@@ -370,7 +373,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   } 
 
   /* Generate the table of propagation delays. */
-  dtDelayBy2 = (UINT4)( 38924.9*sqrt( output->deltaT ) );
+  dtDelayBy2 = (UINT4)( 38924.9/sqrt( output->f0 +
+				      1.0/output->deltaT ) );
+
   delayDt = output->deltaT/( 2.0*dtDelayBy2 );
   nMax = (UINT4)( output->data->length*delayDt ) + 3;
   TRY( LALDCreateVector( stat->statusPtr, &delay, nMax ), stat );
@@ -857,7 +862,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     oCross = a1*sin( shift )*cos( phi ) + a2*cos( shift )*sin( phi );
 
     /* Interpolate the polarization response, and compute output. */
-    x = polOff + iCentre*polDt;
+    x = polOff + i*polDt;
     j = (INT4)floor( x );
     frac = (REAL4)( x - j );
     oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
