@@ -359,29 +359,29 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   
 
   /* print events to text */
-/*   { */
-/*     SnglBurstTable *thisEvent = events; */
-/*     FILE *fp; */
-/*     fp = fopen( "events.txt", "w" ); */
-/*     if ( ! fp ) */
-/*       { */
-/* 	perror( "output file" ); */
-/* 	exit( 1 ); */
-/*       } */
-/*     fprintf( fp,"# gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" ); */
-/*     while ( thisEvent ) */
-/*       { */
-/* 	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n", */
-/* 		 (int) thisEvent->start_time.gpsSeconds, */
-/* 		 (int) thisEvent->start_time.gpsNanoSeconds, */
-/* 		 thisEvent->snr, */
-/* 		 thisEvent->amplitude, */
-/* 		 thisEvent->central_freq, */
-/* 		 thisEvent->bandwidth,thisEvent->duration ); */
-/* 	thisEvent = thisEvent->next; */
-/*       } */
-/*     fclose( fp ); */
-/*   } */
+  {
+    SnglBurstTable *thisEvent = events;
+    FILE *fp;
+    fp = fopen( "events.txt", "w" );
+    if ( ! fp )
+      {
+	perror( "output file" );
+	exit( 1 );
+      }
+    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
+    while ( thisEvent )
+      {
+	fprintf( fp, "%9d %09d\t%e\t%e\t%e\t%e\t%e\n",
+		 (int) thisEvent->start_time.gpsSeconds,
+		 (int) thisEvent->start_time.gpsNanoSeconds,
+		 thisEvent->snr,
+		 thisEvent->amplitude,
+		 thisEvent->central_freq,
+		 thisEvent->bandwidth,thisEvent->duration );
+	thisEvent = thisEvent->next;
+      }
+    fclose( fp );
+  }
 
   /* free event list, process table, search summary and process params */
   while ( events )
@@ -723,7 +723,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
  
       windowParams.type     = Hann;
       windowParams.length   = GV.seg_length;
-
+ 
       avgSpecParams.window  = NULL;
       avgSpecParams.plan    = GV.fplan;
       avgSpecParams.method  = useMean;
