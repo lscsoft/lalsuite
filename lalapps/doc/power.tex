@@ -173,59 +173,15 @@ Figure~\ref{fig:testattenuation8_9}
 
 \clearpage
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RUNNING A PIPELINE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Running the power code under Condor}
 \label{subsection:running_power}
 \idx[Running]{power}
 
-\begin{enumerate}
+This section is under construction!
 
-\item Make sure you have the dag script suited to your needs
-(For eg. \texttt{bursttripleifo\_pipeline.py} runs on triple coincident data
-with software injections )
-
-\item Make sure you have the right input file (For eg.\texttt{burstripleifot\_dag.ini} )
-
-\item Need to have a file containing the list of segmnets to be analyzed. 
-May use \texttt{segwizrd} for that.
-
-\begin{enumerate}
-
-\item Now here are the steps describing how to run the jobs: 
-
-1) If you want to create the cache files run the dag script as follows: 
-\begin{verbatim}
-./bursttripleifo_pipeline.py -f bursttripleifo_dag.ini -p -l /people/saikat/log 
-\end{verbatim}    
-( the log files will be written in the dir /people/saikat/log )     
-
-2)The previous step will create a dag file \texttt{bursttripleifo\_dag.dag}
-Submit the dag:
-\begin{verbatim}
-condor_submit_dag bursttripleifo_dag.dag 
-\end{verbatim}
-
-\item  Now if you want to use the cache files from a previous run:    
-
-1) Make sure you create a sim link to the relevant
-dir. containing the cache files. For eg.:
-\begin{verbatim}
-ln -s /scratch/saikat/realdata/S2cachefiles cache   
-\end{verbatim}
-
-2) Run the script: 
-\begin{verbatim}
- ./burstinjburca_pipeline.py -f burst_dag.ini -p -c -l /people/patrick/log    
-\end{verbatim}
-Note the extra flag \texttt{-c} which indicates that the LSCDataFind jobs are
-to be skipped.
- 
-3) Submit the dag:
-\begin{verbatim}
- condor_submit_dag bursttripleifo_dag.dag
-\end{verbatim}
-\end{enumerate}
-\end{enumerate}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % subsection: power pipeline script
@@ -706,83 +662,9 @@ Patrick Brady,  Kipp Cannon and Saikat Ray Majumder
 \end{entry}
 \clearpage
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% manipulate the events from power code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \texttt{lalapps\_snglBurstHistogram}}
-\label{program:lalapps-snglBurstHistogram}
-\idx[Program]{lalapps\_snglBurstHistogram}
-
-\begin{entry}
-
-\item[Name]
-\verb$lalapps_snglBurstHistogram$ --- runs over LIGO lightweight files and histograms
-the triggers by frequency.   
-
-\item[Synopsis]
-\verb$lalapps_snglBurstHistogram$ \verb$--input$ \textsc{infile} 
-[\verb$--threshold$ \textsc{threshold}]    
-$\backslash$ \newline \hspace*{0.25in}
-\verb$--freq$ \textsc{fstart} \textsc{fstop} \textsc{df}
-[\verb$--tfhist$ \textsc{outfile}] 
-[\verb$--help$]
-
-\item[Description] 
-\verb$lal_snglBurstHistogram$ reads in LIGO lightweight files and
-constructs a histogram of the triggers over frequency. This histogram data 
-is then printed in the file \verb$freq-hist.txt$. It also produces a list of triggers for each playground segment separately and that is printed in the \textsc{outfile}, if provided.   The code
-should be extensible to do a number of similar things like this.
-
-\item[Options]\leavevmode
-\begin{entry}
-\item[\texttt{--input}  \textsc{infile}] The name of a file containing
-a list of XML files to parse;  one XML file per line of
-\textsc{infile}.
-
-\item[\texttt{--table} \textsc{tablename}] The name of the table to be
-parsed from the XML file.   This will be needed when the process
-table is written into the XML files by the power code.
-
-\item[\texttt{--threshold} \textsc{threshold}] Identify events with alpha
-less than this; a real number.  The meaning of the threshold is the same as
-\verb$lalapps_power$ itself.  (Optional)
-
-\item[\texttt{--freq} \textsc{fstart} \textsc{fstop} \textsc{df}]
-Parameters which define a frequency histogram.  \textsc{fstart} is the
-lowest frequency;  \textsc{fstop} is the highest frequency; \textsc{df} 
-is the width of abin.
-
-\item[\texttt{--tfhist}  \textsc{outfile}] The name of a file which will 
-contain the list of triggers per playground segment for each frequency bin.
-
-\item[\texttt{--help}] Print usage instructions.
-\end{entry}
-
-
-\item[Example]
-To run the program,  type:
-\begin{verbatim}
-lalapps_snglBurstHistogram --input files.txt --freq 100.0 1000.0 25.0 --tfhist tf.txt
-\end{verbatim}
-This will read in the xml files listed in files (see below) and
-construct a frequency histogram with lowest frequency 100 Hz,  highest
-frequency 1000 Hz and bin width 25 Hz. This output will be in \verb$freq-hist.txt.$
-It will also produce the triggers for each playground segment and those will be in \verb$tf.txt$.  The file \verb$files.txt$
-must contain a list of XML files.  Here are the first few lines from
-such a file:
-\begin{verbatim}
-simtest-693768279-11.xml
-simtest-693768311-21.xml
-simtest-693768343-31.xml
-simtest-693768375-41.xml
-\end{verbatim}
-
-\item[Author]
-Patrick Brady
-
-\end{entry}
-\clearpage
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BURCA:  coincidence analysis code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Program \texttt{lalapps\_burca}}
 \label{program:lalapps-burca}
 \idx[Program]{lalapps\_burca}
