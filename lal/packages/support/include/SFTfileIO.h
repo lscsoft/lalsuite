@@ -13,7 +13,7 @@
  */
  
 /* *********************************** <lalVerbatim file="SFTfileIOHV">
-Author: Sintes, A.M., 
+Author: Sintes, A.M., Prix. R
 $Id$
 ************************************* </lalVerbatim> */
 
