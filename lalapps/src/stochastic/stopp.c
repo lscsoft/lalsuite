@@ -146,7 +146,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
 
       /* read in the stochastic table */
-      numSegments = StochasticTableFromLIGOLw(stochHandle, argv[i]);
+      numSegments = LALStochasticTableFromLIGOLw(stochHandle, argv[i]);
 
       if (numSegments < 0)
       {
