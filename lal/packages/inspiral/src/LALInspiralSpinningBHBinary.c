@@ -377,7 +377,7 @@ LALACSTDerivatives
 	/* page 6277, Eqs. (11a)-(11c) of ACST 
 	 * Note that ACST has a mis-print in Eq. (11b) */
 	/* loop variables */
-	UINT4 Dim=3;
+	enum { Dim=3 };
 	UINT4 i, j, k, p, q;             
 	/* magnitudes of S1, S2, L etc. */
 	REAL8 Theta, v, M, magS1, magS2, magL, S1DotL, S2DotL;
