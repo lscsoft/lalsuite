@@ -578,10 +578,10 @@ class AnalysisNode(CondorDAGNode):
 
 class AnalysisChunk:
   """
-  An AnalysisCunk is the unit of data that a node works with, usually some
+  An AnalysisChunk is the unit of data that a node works with, usually some
   subset of a ScienceSegment.
   """
-  def __init__(self, start, end, trig_start):
+  def __init__(self, start, end, trig_start = 0, trig_end = 0):
     """
     start = GPS start time of the chunk.
     end = GPS end time of the chunk.
@@ -591,22 +591,34 @@ class AnalysisChunk:
     self.__end = end
     self.__length = end - start
     self.__trig_start = trig_start
+    self.__trig_end= trig_end
 
   def __repr__(self):
-    return '<AnalysisChunk: start %d, end %d, trig_start %d>' % (
-      self.__start, self.__end, self.__trig_start)
+    if self.__trig_start and self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_start %d, trig_end %d>' % (
+        self.__start, self.__end, self.__trig_start, self.__trig_end)
+    elif self.__trig_start and not self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_start %d>' % (
+        self.__start, self.__end, self.__trig_start)
+    elif not self.__trig_start and self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_end %d>' % (
+        self.__start, self.__end, self.__trig_end)
+    else:
+      return '<AnalysisChunk: start %d, end %d>' % (self.__start, self.__end)
 
   def __len__(self):
     """
     Returns the length of data for which this AnalysisChunk will produce
     triggers (in seconds).
     """
-    if self.trig_start > 0:
-      print "self.__end - self.__trig_start = ", self.__end - self.__trig_start
+    if self.__trig_start and self.__trig_end:
+      return self.__trig_end - self.__trig_start
+    elif self.__trig_start and not self.__trig_end:
       return self.__end - self.__trig_start
+    elif not self.__trig_start and self.__trig_end:
+      return self.__trig_end - self.__start
     else:
-      print "self.__length = ", self.__length
-      return self.__length
+      return self.__end - self.__start
     
   def start(self):
     """
@@ -694,7 +706,7 @@ class ScienceSegment:
       end = start + length
       if (not play) or ( play 
        and ( s2play(start) or s2play(middle) or s2play(end) ) ):
-        self.__chunks.append(AnalysisChunk(start,end,0))
+        self.__chunks.append(AnalysisChunk(start,end))
       start += increment
       time_left -= increment
     self.__unused = time_left - overlap
@@ -847,5 +859,5 @@ class ScienceData:
         middle = start + length / 2
         if (not play) or ( play 
           and ( s2play(start) or s2play(middle) or s2play(end) ) ):
-          seg.add_chunk(start, end, end - seg.unused() + trig_overlap )
+          seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
