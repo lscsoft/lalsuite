@@ -34,20 +34,16 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
-static int getline(char *line, int max, FILE * fpin)
+static int getline(char *line, int max, FILE *fpin)
 {
-	int i;
-	CHAR tmpline[MAXSTR];
+	char *end;
 
-	for (i = 0; i < MAXSTR; i++)
-		*(line + i) = '\0';
-
-	if (fgets(tmpline, max, fpin) == NULL)
-		return 0;
-	else {
-		strncpy(line, tmpline, strlen(tmpline) - 1);
-		return strlen(line);
-	}
+	if(!fgets(line, max, fpin))
+		line[0] = '\0';
+	end = strchr(line, '\n');
+	if(end)
+		*end = '\0';
+	return(strlen(line));
 }
 
 
