@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest SimulatePopcornTest
+check_PROGRAMS = BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest SimulatePopcornTest InterfaceTest
+InterfaceTest_SOURCES = InterfaceTest.c
+InterfaceTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalmetaio.la
 InjectTest_SOURCES = InjectTest.c
 InjectTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 BasicInjectTest_SOURCES = BasicInjectTest.c
@@ -14,8 +16,8 @@ SkyCoordinatesTest_SOURCES = SkyCoordinatesTest.c
 SkyCoordinatesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
 SimulatePopcornTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest 
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include 
+TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest InterfaceTest
 EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat
 MOSTLYCLEANFILES = .dvi-dep WHITENED-SB*
 DISTCLEANFILES = *.tex
