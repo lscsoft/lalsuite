@@ -25,7 +25,8 @@ typedef enum{
   WAVEFORM  = 0, Waveform = 0, waveform = 0,
     OVERLAP = 1, Overlap = 1, overlap = 1 ,
     LENGTH  = 2, Length =2, 
-    CONVERSION = 3, Conversion = 3, conversion = 3
+    CONVERSION = 3, Conversion = 3, conversion = 3,
+    LASTFREQ = 4
 } Tools; 
 
 
@@ -36,7 +37,7 @@ void ParseParameters(int , char **, InspiralTemplate *, UINT4 *);
 void PrintParams(InspiralTemplate params);
 void PrintParamsMass(InspiralTemplate params);
 void GenerateWaveform(LALStatus *status, InspiralTemplate params);
-
+void LastFreq(LALStatus *status, InspiralTemplate params);
 
 /*/NRCSID(INSPIRALTOOLSC, "InspiralTools, main");*/
 
@@ -68,6 +69,9 @@ int main (int argc, char **argv ) {
        break;
        /*TODO */ 
      case Overlap:
+       break;
+     case LASTFREQ:
+       LastFreq(&status, params);
       break;
      case Length:
        break;
@@ -151,9 +155,12 @@ ParseParameters(int argc,
 		  strcmp(argv[i],"conversion")==0
 		  )
 	   *tool = CONVERSION;
+	 else if (strcmp(argv[i],"LASTFREQ")==0) *tool = LASTFREQ;
        }
      else if (strcmp(argv[i],"-fl")==0)
        params->fLower = atof(argv[++i]);
+     else if (strcmp(argv[i],"-nstartpad")==0)
+       params->nStartPad = atoi(argv[++i]); 
      else if (strcmp(argv[i],"-alpha")==0)
        params->alpha = atof(argv[++i]); 
      else if (strcmp(argv[i],"-alpha1")==0)
@@ -168,6 +175,8 @@ ParseParameters(int argc,
        params->psi0 = atof(argv[++i]); 
      else if (strcmp(argv[i],"-psi3")==0)
        params->psi3 = atof(argv[++i]); 
+     else if (strcmp(argv[i],"-sampling")==0)
+       params->tSampling = atof(argv[++i]); 
      else if (strcmp(argv[i],"-m1")==0)
        params->mass1 = atof(argv[++i]); 
      else if (strcmp(argv[i],"-m2")==0)
@@ -222,72 +231,47 @@ ParseParameters(int argc,
 void
 PrintParamsMass(InspiralTemplate params)
 {
-  printf("m1= %7.2e\n", params.mass1);
-  printf("m2= %7.2e\n",params.mass2);
-  printf("psi0= %7.2e\n",params.psi0);
-  printf("psi3= %7.2e\n",params.psi3);
-  printf("M= %7.2e\n",params.totalMass);
-  printf("eta= %7.2e\n",params.eta);
+  printf("m1= %15.12e\n", params.mass1);
+  printf("m2= %15.12e\n",params.mass2);
+  printf("psi0= %15.12e\n",params.psi0);
+  printf("psi3= %15.12e\n",params.psi3);
+  printf("M= %15.12e\n",params.totalMass);
+  printf("eta= %15.12e\n",params.eta);
 }  
 
 
 void
 PrintParams(InspiralTemplate params)
 {
-  printf("\nieta  = %7.2d\n", params.ieta);
-  printf("level = %7.2d\n",params.level);
+  printf("\nieta     = %15.12d\n", params.ieta);
+  printf("level      = %15.12d\n",params.level);
+  printf("nStartPad  = %15.12d\n",params.nStartPad);
+  printf("nEndPad    = %15.12d\n",params.nEndPad);
+  printf("minMatch   = %15.12f\n",params.minMatch);
+  printf("mass1      = %15.12f\n",params.mass1); 
+  printf("mass2      = %15.12f\n",params.mass2);
+  printf("totalMass  = %15.12f\n", params.totalMass); 
+  printf("chirpmass  = %15.12f\n", params.chirpMass); 
+  printf("psi0       = %15.12f\n",params.psi0);
+  printf("psi3       = %15.12f\n ",params.psi3);
+  printf("fendBCV    = %15.12f\n",params.fendBCV);
+  printf("alpha      = %15.12f\n",params.alpha);
+  printf("alpha1     = %15.12f\n",params.alpha1);
+  printf("alpha2     = %15.12f\n",params.alpha2);
+  printf("beta       = %15.12f\n",params.beta);
+  printf("tc         = %15.12f\n",params.tC); 
+  printf("eta        = %15.12f\n",params.eta);
+  printf("fLower     = %15.12f\n",params.fLower);
+  printf("fcutoff    = %15.12f\n",params.fCutoff);
+  printf("tsampling  = %15.12f\n",params.tSampling);
+  printf("phase0     = %15.12f\n",params.startPhase);
+  printf("t0         = %15.12f\n ",params.startTime);
+  printf("fFinal     = %15.12f\n",params.fFinal);
+  printf("zeta2      = %15.12f\n",params.Zeta2);
+  printf("omegaS      = %15.12f\n",params.OmegaS);
+  printf("order   %d\n",params.order);
+  printf("approximant %15.12d\n",   params.approximant);
 
-  /*
-  printf("   INT4 "nStartPad;
-  printf("   INT4 "nEndPad;
-  printf("   REAL4 "minMatch;
-  printf("   REAL8 "mass1; 
-  printf("   REAL8 "mass2;
-  printf("   REAL8 "spin1[3];
-  printf("   REAL8 "spin2[3];
-  printf("   REAL8 "sourceTheta;
-  printf("   REAL8 "sourcePhi;
-  printf("   REAL8 orbitTheta0;
-  printf("   REAL8 orbitPhi0;
-  printf("   REAL8 distance; 
-  printf("   REAL8 inclination;
-  printf("   REAL8 eccentricity;
-  printf("   REAL8 totalMass; 
-  printf("   REAL8 chirpMass; 
-  printf("   REAL8 psi0;
-  printf("   REAL8 psi3;
-  printf("   REAL8 fendBCV;
-  printf("   REAL8 alpha;
-  printf("   REAL8 alpha1;
-  printf("   REAL8 alpha2;
-  printf("   REAL8 beta;
-  printf("   REAL8 t0; 
-  printf("   REAL8 t2; 
-  printf("   REAL8 t3; 
-  printf("   REAL8 t4; 
-  printf("   REAL8 t5; 
-  printf("   REAL8 tC; 
-  printf("   REAL8 mu; 
-  printf("   REAL8 eta;
-  printf("   REAL8 fLower;
-  printf("   REAL8 fCutoff;
-  printf("   REAL8 tSampling;
-  printf("   REAL8 startPhase;
-  printf("   REAL8 startTime;
-  printf("   REAL8 signalAmplitude;
-  printf("   REAL8 rInitial;
-  printf("   REAL8 vInitial;
-  printf("   REAL8 rFinal;
-  printf("   REAL8 vFinal;
-  printf("   REAL8 fFinal;
-  printf("   REAL8 rLightRing;
-  printf("   REAL8 OmegaS;
-  printf("   REAL8 Theta;
-  printf("   REAL8 Zeta2;
-  printf("   InputMasses massChoice;
-  printf("   Order order;
-  printf("   Approximant approximant;
-*/
 }
 
 
@@ -364,8 +348,6 @@ void GenerateWaveform(LALStatus *status, InspiralTemplate params)
        REPORTSTATUS(&status);
      */
    }
-   fprintf(stderr, "approximant=%d order=%d,", params.approximant, params.order);
-   PrintParams(params);
    if (status->statusCode) 
      fprintf(stderr, " not available\n");
    else 
@@ -394,6 +376,45 @@ void GenerateWaveform(LALStatus *status, InspiralTemplate params)
 
 
 
+void LastFreq(LALStatus *status, InspiralTemplate params)
+{
+
+   static REAL4Vector *signal1;
+   static REAL8 dt;
+   int n, i;
+   dt = 1./params.tSampling;
+   
+   INITSTATUS(status,"InspiralTools", GENERATEWAVEFORMC);
+   ATTATCHSTATUSPTR(status);
+
+  LALInspiralWaveLength(status->statusPtr, &n, params);
+  if (params.approximant ==BCV || params.approximant==BCVSpin)
+    {
+      params.massChoice = psi0Andpsi3;
+      n = 32768;             
+    }
+  
+  LALInspiralParameterCalc(status->statusPtr, &params);
+
+  LALCreateVector(status->statusPtr, &signal1, n);
+  
+   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 
+		   || params.approximant==BCV || params.approximant==BCVSpin) 
+     {
+	
+	LALInspiralWave(status->statusPtr, signal1, &params);
+	
+     }
+   else
+   {
+     LALInspiralWave(status->statusPtr, signal1, &params);
+   }
+   fprintf(stderr, "M= %lf F= %lf\n", params.totalMass, params.fFinal);
+
+   LALDestroyVector(status->statusPtr, &signal1);
+   DETATCHSTATUSPTR(status);
+   LALCheckMemoryLeaks();
+}
 
 
 

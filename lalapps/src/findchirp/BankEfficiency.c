@@ -1,6 +1,10 @@
 /******************************** <lalVerbatim file="BankEfficiencyCV">
 Author: Cokelaer, T. and Sathyaprakash, B. S.
+<<<<<<< BankEfficiency.c
 < $Id$
+=======
+< $Id$
+>>>>>>> 1.8
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -134,9 +138,9 @@ main (  int argc, char **argv )
    /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
    coarseIn.psi0Min = 1.e0;
-   coarseIn.psi0Max = 3e5;
-   coarseIn.psi3Min = -3.5e3;
-   coarseIn.psi3Max = 0;
+   coarseIn.psi0Max = 2.5e5;
+   coarseIn.psi3Min = -2.2e3;
+   coarseIn.psi3Max = 1.e1;
    coarseIn.alpha = 0.L;
    coarseIn.numFcutTemplates = 5;
    coarseIn.approximant = template;
@@ -359,7 +363,7 @@ main (  int argc, char **argv )
    while (ntrials--) 
    {
       randIn.param.approximant = approx;
-      randIn.param.fCutoff = coarseIn.fUpper;;
+      randIn.param.fCutoff = coarseIn.fUpper;
       if (approx==BCV) 
 	      randIn.param.massChoice = psi0Andpsi3;
       else
@@ -371,15 +375,16 @@ main (  int argc, char **argv )
       overlapin.signal = signal;
       jmax = 0;
       omax = 0.0;
-	      
       for (j=0; j<nlist; j++) 
       {
      	      overlapin.param = list[j].params;
 	      if (overlapin.param.approximant==BCV) 
-		      overlapin.param.fCutoff = list[j].params.fendBCV;
+		      overlapin.param.fCutoff = list[j].params.fendBCV ;
 	      else
 		      overlapin.param.fCutoff = randIn.param.fCutoff;
+	      
 
+	      
 	      for (i=0; i<signal.length; i++) correlation.data[i] = 0.;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
               list[j].params.fFinal = overlapin.param.fFinal;
