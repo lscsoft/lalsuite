@@ -429,8 +429,8 @@ INT4 main(INT4 argc, CHAR *argv[])
      {fprintf(stdout, "Allocating memory for MC...\n");}
 
     MCdeltaT = 1.0 / resampleRate;
-    MCdeltaF = (REAL8)resampleRate / (REAL8)segmentLength;
-    MCfreqLength = segmentLength / 2 + 1;
+    MCdeltaF = (REAL8)resampleRate / (REAL8)segmentPadLength;
+    MCfreqLength = segmentPadLength / 2 + 1;
 
     /* create vectors to store the simulated signal */
     strncpy(SimStochBG1.name, "Whitened-SimulatedSB1",LALNameLength);
@@ -1360,9 +1360,9 @@ INT4 main(INT4 argc, CHAR *argv[])
               for (i = 0; i < segmentPadLength ; i++)
                {
                 segmentPad1.data->data[i] = 
-                     segPad1[segMiddle]->data[i] + (scaleFactor * SimStochBG1.data->data[i]);
+                     segPad1[segLoop]->data[i] + (scaleFactor * SimStochBG1.data->data[i]);
                 segmentPad2.data->data[i] = 
-                     segPad2[segMiddle]->data[i] + (scaleFactor * SimStochBG2.data->data[i]);
+                     segPad2[segLoop]->data[i] + (scaleFactor * SimStochBG2.data->data[i]);
                }
                 
 	       /* increase seed */
@@ -1372,8 +1372,8 @@ INT4 main(INT4 argc, CHAR *argv[])
              {
               for (i = 0; i < segmentPadLength; i ++)
                {
-	        segmentPad1.data->data[i] = segPad1[segMiddle]->data[i];
-                segmentPad2.data->data[i] = segPad2[segMiddle]->data[i] ;
+	        segmentPad1.data->data[i] = segPad1[segLoop]->data[i];
+                segmentPad2.data->data[i] = segPad2[segLoop]->data[i] ;
                }
              }
             
@@ -1480,8 +1480,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           for (i = 0; i < filterLength; i++)
            {
 
-            calPsd1->data[i] = calPsd1->data[i]  / (REAL4)numSegments;
-            calPsd2->data[i] = calPsd2->data[i]  / (REAL4)numSegments;
+            calPsd1->data[i] = calPsd1->data[i]  / (REAL4)(numSegments-1);
+            calPsd2->data[i] = calPsd2->data[i]  / (REAL4)(numSegments-1);
 	    calInvPsd1.data->data[i] = 1. / calPsd1->data[i] ;
             calInvPsd2.data->data[i] = 1. / calPsd2->data[i] ;
            } 
@@ -1536,7 +1536,7 @@ INT4 main(INT4 argc, CHAR *argv[])
            /* print */
            if ((test_flag)&&(jobLoop==testInter)&&(MCLoop==testTrial))
             {
-             LALSPrintTimeSeries(&segment1, "segmentMi ddle1.dat");
+             LALSPrintTimeSeries(&segment1, "segmentMiddle1.dat");
 	     LALSPrintTimeSeries(&segment2, "segmentMiddle1.dat");
             }
  
@@ -1620,6 +1620,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
    LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
    LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
+   LAL_CALL( LALDestroyVector(&status, &(interval1.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(interval2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segmentPad1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segmentPad2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(segment1.data)), &status );
