@@ -57,7 +57,9 @@ typedef struct
   LALDetector Detector;  	/**< detector */
 
   LIGOTimeGPS startTimeGPS;	/**< start-time of observation */
-  UINT4 duration;		/**< duration of observation in seconds */
+  UINT4 duration;		/**< total duration of observation in seconds */
+  UINT4 Tchunk;			/**< produce data in chunks of Tchunk (mostly for hardware-injections) */
+
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
 
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
@@ -97,9 +99,8 @@ BOOLEAN uvar_help;		/**< Print this help/usage message */
 /* output */
 CHAR *uvar_outSFTbname;		/**< Path and basefilename of output SFT files */
 
-BOOLEAN uvar_outputTDD;		/**< Output generated time-domain data (TDD) */
-CHAR *uvar_TDDfile;		/**< Filename for output time-series */
-BOOLEAN uvar_hardwareTDD;	/**< Output timeseries in binary-format for hardware injections. */
+CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
+BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
 /* specify start + duration */
 CHAR *uvar_timestampsFile;	/**< Timestamps file */
@@ -116,9 +117,6 @@ REAL8 uvar_Tsft;		/**< SFT time baseline Tsft */
 /* noise to add [OPTIONAL] */
 CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
 REAL8 uvar_noiseSigma;		/**< Gaussian noise variance sigma */
-
-
-
 
 /* Detector and ephemeris */
 CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
@@ -150,8 +148,6 @@ REAL8 uvar_orbitArgPeriapse;	/**< Argument of periapsis (radians) */
 
 /*----------------------------------------------------------------------*/
 
-
-
 extern int vrbflg;
 
 /*----------------------------------------------------------------------
@@ -166,8 +162,8 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   BinaryOrbitParams orbit;
+  UINT4 Tchunk, i_chunk, numchunks;
 
-  CHAR *fname = NULL;
   UINT4 i;
 
   lalDebugLevel = 0;
@@ -215,99 +211,118 @@ main(int argc, char *argv[])
   params.ephemerides = &(GV.edat);
 
   /* characterize the output time-series */
-  params.startTimeGPS   = GV.startTimeGPS;
-  params.duration     	= GV.duration; 		/* length of time-series in seconds */
   params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (= 2 * frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
-  /*----------------------------------------
-   * generate the (heterodyned) time-series 
-   *----------------------------------------*/
-  LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
 
-  /* add Gaussian noise if requested */
-  if ( (REAL4)uvar_noiseSigma > 0) {
-    LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)uvar_noiseSigma), &status);
-  }
-
-
-  /* output time-series if requested */
-  if ( uvar_outputTDD )
+  /* normally we produce the whole time-series at once, but for
+   * hardware-injections we do it in chunks of Tsft (because of high sampling rate) */
+  if ( uvar_hardwareTDD )
     {
-      FILE *fp;
-      
-      if ( !strcmp (uvar_TDDfile, "stdout") )
-	fp = stdout;
-      else if ( !strcmp (uvar_TDDfile, "stderr") )
-	fp = stderr;
-      else
+      Tchunk = uvar_Tsft;
+      numchunks = (UINT4)( (1.0*GV.duration) / (1.0*Tchunk) + 0.5 );
+      /* send magic number to stdout (signalling start of data?) */
+      REAL4 magic = 1234.5;
+      fwrite ( &magic, sizeof(magic), 1, stdout );
+    }
+  else
+    {
+      numchunks = 1;
+      Tchunk = GV.duration;
+    }
+
+  params.startTimeGPS = GV.startTimeGPS;
+  params.duration     = Tchunk;
+
+  for ( i_chunk = 0; i_chunk < numchunks; i_chunk++ )
+    {
+
+      /*----------------------------------------
+       * generate the (heterodyned) time-series 
+       *----------------------------------------*/
+      LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+
+      /* add Gaussian noise if requested */
+      if ( (REAL4)uvar_noiseSigma > 0) {
+	LAL_CALL ( AddGaussianNoise(&status, Tseries, Tseries, (REAL4)uvar_noiseSigma), &status);
+      }
+
+      /* output ASCII time-series if requested */
+      if ( uvar_TDDfile )
 	{
-	  if ( (fp = fopen (uvar_TDDfile, "w")) == NULL)
+	  FILE *fp;
+	  CHAR *fname = LALCalloc (1, strlen(uvar_TDDfile) + 10 );
+	  sprintf (fname, "%s.%02d", uvar_TDDfile, i_chunk);
+	  
+	  if ( (fp = fopen (fname, "w")) == NULL)
 	    {
 	      perror ("Error opening outTDDfile for writing");
-	      LALPrintError ("TDDfile = %s\n", uvar_TDDfile );
+	      LALPrintError ("TDDfile = %s\n", fname );
 	      exit ( MAKEFAKEDATAC_EFILE );
 	    }
-	}
+	  
+	  write_timeSeriesR4(fp, Tseries);
+	  fclose(fp);
+	  LALFree (fname);
+	} /* if outputting ASCII time-series */
 
-      /* send timeseries data in binary-format to stdout for hardware-injections */
+
+      /* if hardware injection: send timeseries in binary-format to stdout */
       if ( uvar_hardwareTDD )
 	{
-	  REAL4 magic = 1234.5;
 	  UINT4  length = Tseries->data->length;
 	  REAL4 *datap = Tseries->data->data;
-    
-	  fwrite ( &magic, sizeof(magic), 1, stdout );
+	  
 	  if ( length != fwrite (datap, sizeof(datap[0]), length, stdout) )
 	    {
 	      perror( "Fatal error in writing binary data to stdout\n");
 	      exit (MAKEFAKEDATAC_EBINARYOUT);
 	    }
-	} /* binary output for hardware injections */
-      else
-	write_timeSeriesR4(fp, Tseries);
+	  fflush (stdout);
+	  /* now prepare next step */
+	  params.startTimeGPS.gpsSeconds += Tchunk;
 
-      if ( (fp != stdout) && (fp != stderr) )
-	fclose(fp);
+	} /* if hardware injections */
 
-    } /* if outputting time-series */
-     
-
-  /*----------------------------------------
-   * last step: turn this timeseries into SFTs
-   * and output them to disk 
-   *----------------------------------------*/
-  if (uvar_outSFTbname)
-    {
-      SFTParams sftParams = empty_sftParams;
-
-      sftParams.Tsft = uvar_Tsft;
-      sftParams.timestamps = GV.timestamps;
-      sftParams.noiseSFTs = GV.noiseSFTs;
-
-      LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
-
-      fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
-      for (i=0; i < SFTs->length; i++)
+      /*----------------------------------------
+       * last step: turn this timeseries into SFTs
+       * and output them to disk 
+       *----------------------------------------*/
+      if (uvar_outSFTbname)
 	{
-	  sprintf (fname, "%s.%05d", uvar_outSFTbname, i);
-	  LAL_CALL (LALWriteSFTfile(&status, &(SFTs->data[i]), fname), &status);
-	} /* for i < nSFTs */
-      LALFree (fname);
-    } /* if SFTbname */
+	  CHAR *fname;
+	  SFTParams sftParams = empty_sftParams;
+	  
+	  sftParams.Tsft = uvar_Tsft;
+	  sftParams.timestamps = GV.timestamps;
+	  sftParams.noiseSFTs = GV.noiseSFTs;
+	  
+	  LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
+	  
+	  fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
+	  for (i=0; i < SFTs->length; i++)
+	    {
+	      sprintf (fname, "%s.%05d", uvar_outSFTbname, i);
+	      LAL_CALL (LALWriteSFTfile(&status, &(SFTs->data[i]), fname), &status);
+	    } /* for i < nSFTs */
+	  LALFree (fname);
+	} /* if SFTbname */
 
-  /* free memory */
-  if (Tseries) 
-    {
-      LAL_CALL (LALDestroyVector(&status, &(Tseries->data)), &status);
-      LALFree (Tseries);
-      Tseries = NULL;
-    }
+      /* free memory */
+      if (Tseries) 
+	{
+	  LAL_CALL (LALDestroyVector(&status, &(Tseries->data)), &status);
+	  LALFree (Tseries);
+	  Tseries = NULL;
+	}
+
+    } /* produce timeseries in nchunks stretches of Tchunk duration  */
+
   if (SFTs) 
     LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
-
+  
   LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
-
+  
   LALCheckMemoryLeaks(); 
 
   return 0;
@@ -333,17 +348,6 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
-
-  /* ----- determine "reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet(&uvar_refTime)) 
-    {
-      TRY ( LALFloatToGPS(stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
-    } 
-  else	/* otherwise set to 0 ==> startTime in SSB will be used */
-    {
-      cfg->refTime.gpsSeconds = 0;
-      cfg->refTime.gpsNanoSeconds = 0;
-    }
 
   /* ---------- prepare vector of spindown parameters ---------- */
   {
@@ -385,36 +389,6 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
   }
 
-  /* ---------- for SFT output: calculate effective fmin and Band ---------- */
-  if ( LALUserVarWasSet( &uvar_outSFTbname ) )
-    {
-      UINT4 imin, nsamples;
-      
-      /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
-       * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
-       * to a frequency-index of the non-heterodyned signal.
-       */
-      imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
-      cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
-
-      /* Increase Band correspondingly. */
-      cfg->fBand_eff = uvar_Band;
-      cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
-      /* increase band further to make sure we get an integer number of frequency-bins in SFT */
-      nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
-      cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
-      
-      if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
-	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n", 
-		      cfg->fmin_eff, cfg->fBand_eff);
-      
-    } /* END: SFT-specific corrections to fmin and Band */
-  else
-    { /* producing pure time-series output ==> no adjustments necessary */
-      cfg->fmin_eff = uvar_fmin;
-      cfg->fBand_eff = uvar_Band;
-    }
-
   /* ---------- determine requested signal- start + duration ---------- */
   {
     /* check input consistency: *uvar_timestampsFile, uvar_startTime, uvar_duration */
@@ -422,6 +396,22 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     haveStart = LALUserVarWasSet(&uvar_startTime);
     haveDuration = LALUserVarWasSet(&uvar_duration);
     haveTimestamps = LALUserVarWasSet(&uvar_timestampsFile);
+
+    /*-------------------- special case: Hardware injection ---------- */
+    /* don't allow timestamps-file and SFT-output */
+    if ( uvar_hardwareTDD )
+      {
+	if (haveTimestamps || !( haveStart && haveDuration ) ) 
+	  {
+	    LALPrintError ("\nHardware injection: please specify 'startTime' and 'duration'\n");
+	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
+	  {
+	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n");
+	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+      } /* ----- if hardware-injection ----- */
     
     if ( ! ( haveStart || haveTimestamps ) )
       {
@@ -465,8 +455,39 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	cfg->duration = (UINT4)uvar_duration;
 	cfg->timestamps = NULL;
       } /* !haveTimestamps */
-
+ 
   } /* END: setup signal start + duration */
+
+  /* ---------- for SFT output: calculate effective fmin and Band ---------- */
+  if ( LALUserVarWasSet( &uvar_outSFTbname ) )
+    {
+      UINT4 imin, nsamples;
+      
+      /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
+       * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
+       * to a frequency-index of the non-heterodyned signal.
+       */
+      imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
+      cfg->fmin_eff = (REAL8)imin / uvar_Tsft;
+
+      /* Increase Band correspondingly. */
+      cfg->fBand_eff = uvar_Band;
+      cfg->fBand_eff += (uvar_fmin - cfg->fmin_eff);
+      /* increase band further to make sure we get an integer number of frequency-bins in SFT */
+      nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
+      cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
+      
+      if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
+	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n", 
+		      cfg->fmin_eff, cfg->fBand_eff);
+      
+    } /* END: SFT-specific corrections to fmin and Band */
+  else
+    { /* producing pure time-series output ==> no adjustments necessary */
+      cfg->fmin_eff = uvar_fmin;
+      cfg->fBand_eff = uvar_Band;
+    }
+
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
   {
@@ -567,7 +588,17 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 
   } /* END: Noise params */
 
-  /* ----------------------------------------------------------------------*/
+
+  /* ----- determine "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
+  if (LALUserVarWasSet(&uvar_refTime)) 
+    {
+      TRY ( LALFloatToGPS(stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
+    } 
+  else
+    {
+      LALPrintError ("\nPulsar referenceTime is required! \n");
+      ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+    }
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -602,24 +633,20 @@ InitUserVars (LALStatus *stat)
   uvar_noiseSigma = 0;
   uvar_noiseSFTs = NULL;
 
-  uvar_outputTDD = FALSE;
   uvar_hardwareTDD = FALSE;
 
   uvar_fmin = 0;	/* no heterodyning by default */
   uvar_Band = 8192;	/* 1/2 LIGO sampling rate by default */
 
-#define DEFAULT_TDDFILE "stdout"
-  uvar_TDDfile = LALCalloc(1, strlen(DEFAULT_TDDFILE)+1);
-  strcpy (uvar_TDDfile, DEFAULT_TDDFILE);
+  uvar_TDDfile = NULL;
 
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
   LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
 
-  LALregBOOLUserVar(stat,  outputTDD,  't', UVAR_OPTIONAL, "Output generated time-domain data (TDD)");
-  LALregSTRINGUserVar(stat, TDDfile,	'T', UVAR_OPTIONAL, "Filename for output time-series");
-  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Output timeseries in binary-format for hardware injections.");
+  LALregSTRINGUserVar(stat, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
+  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format, in chunks of Tsft seconds");
 
   /* detector and ephemeris */
   LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
@@ -636,10 +663,10 @@ InitUserVars (LALStatus *stat)
   LALregREALUserVar(stat,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
+  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline Tsft in seconds");
 
   /* pulsar params */
-  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB ('0' means: use startTimeSSB)");
+  LALregREALUserVar(stat,   refTime, 	'S', UVAR_REQUIRED, "Pulsar reference time tRef in SSB");
   LALregREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
   LALregREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
   LALregREALUserVar(stat,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
