@@ -26,7 +26,7 @@ DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
 LALFstat *F=NULL;
 LALFstat Fstr; 
-INT4 lalDebugLevel=0,a,d,s;
+INT4 lalDebugLevel=0;
 static LALStatus status;
 AMCoeffs amc;
 GlobalVariables GV;
