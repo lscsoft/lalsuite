@@ -181,7 +181,8 @@ int main(int argc,char *argv[])
 		    {
 		      locate(C3.F,NCands3,CC.F1[k],&j,indices3F);
 		      CC.fa1[k]=(REAL8)(j+1)/(REAL8)NCands3;
-		    }else CC.fa1[k]=(REAL8)(i+1)/(REAL8)NCands1;
+		    }
+		  else CC.fa1[k]=(REAL8)(i+1)/(REAL8)NCands1;
 
 		  CC.f2[k]=C2.f[indices2f[f]];
 		  CC.Alpha2[k]=C2.Alpha[indices2f[f]];
