@@ -453,4 +453,4 @@ LALStochasticInverseNoise( LALStatus                          *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-}
+} /* LALStochasticInverseNoise() */

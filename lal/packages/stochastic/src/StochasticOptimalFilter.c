@@ -460,8 +460,7 @@ LALStochasticOptimalFilterCal(
   unitPair.unitOne = &(lambda->units);
   unitPair.unitTwo = &tmpUnit2;
   TRY( LALUnitMultiply(status->statusPtr, &(optimalFilter->sampleUnits),
-                       &unitPair)
-       , status );
+                       &unitPair), status );
 
   /* Done with unit manipulation */
 
@@ -471,26 +470,22 @@ LALStochasticOptimalFilterCal(
   for (i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8) i;
-    
+
     f3 = f * f * f;
-    
+
     omega = input->omegaGW->data->data[i];
     gamma = input->overlapReductionFunction->data->data[i];
     p1WInv = input->calibratedInverseNoisePSD1->data->data[i];
     p2WInv = input->calibratedInverseNoisePSD2->data->data[i];
-    
-    
-    realFactor = gamma * omega * lambda->value / f3;
-    
+		
+		realFactor = gamma * omega * lambda->value / f3;
+
     optimalFilter->data->data[i] = realFactor *  (p1WInv) * (p2WInv );
-    
-    
-      }
+	}
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
-}
+} /* LALStochasticOptimalFilterCal() */
 
 /* <lalVerbatim file="StochasticOptimalFilterCP"> */
 void
@@ -801,5 +796,4 @@ LALStochasticOptimalFilter(
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
-}
+} /* LALStochasticOptimalFilter() */
