@@ -1,4 +1,4 @@
- 
+
 /* *****************************************************************************
  * Author: Cokelaer, T. and Sathyaprakash, B. S.
  * ************************************************************************** */
@@ -97,11 +97,16 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_USEED        		122888
 
 /* Other Parameters  1 = true ; 0 = false	*/
+#define BANKEFFICIENCY_ALPHAFCONSTRAINT         1 				/* alphaF between 0 and 1	       */
 #define BANKEFFICIENCY_QUIETFLAG       	        0 				/* silent 				*/ 
 #define BANKEFFICIENCY_AMBIGUITYFUNCTION      	0				/* Print Ambiguity function		*/
 #define BANKEFFICIENCY_FASTSIMULATION           0                               /* cheating code (dont use template far from injection; use with care */
 #define BANKEFFICIENCY_FMAXIMIZATION      	0				/* Print SNR function of fendBCV	*/
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTBESTOVERLAP             0				/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTBESTTEMPLATE             0				/* Print Best Template 			*/
+
+
 #define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"		/* Print Best Overlap in a file		*/
 #define BANKEFFICIENCY_PRINTFILTER              0				/* Print corresponding Filter		*/
 
@@ -182,12 +187,14 @@ typedef enum{
  * inputPSD	: name of an input file for the psd.
  * */
 typedef struct{
+  INT4 alphaFConstraint;                 /* force alpha_F to be constriant between 0 and 1 */
   INT4 signal;				/* name of the random signal to inject 	*/	
   INT4 template;			/* name of the template in the bank 	*/
   INT4 bank;				/* type of bank to use 			*/
   UINT4 ntrials;				/* number of simulations		*/
   INT4 quietFlag;			/* a flag for verbose mode or not	*/
   INT4 ambiguityFunction;		/* do we want to save the ambiguity function ? */
+  INT4 lalDebug; 
   INT4 FastSimulation;                  /* target the injection in the bank --> less 
 					   computation but Match might be less than the
 					   optimal  is noise is injected or template and 
@@ -207,7 +214,7 @@ typedef struct{
   INT4 PrintPsd;                        /* print the psd used in <x|x>          */
   BinaryInjection binaryInjection; /*injection will be set by the mass-range*/
   INT4 PrintTemplate;  
-
+  INT4 PrintBestOverlap, PrintBestTemplate, extraFinalPrinting ;
   OverlapMethodIn overlapMethod;
   INT4 check;				/* compute only one correlation where bothe 
 					   template and signal have the same parameters */
@@ -473,7 +480,7 @@ main (INT4 argc, CHAR **argv )
   REAL4 	temp;
   UINT4 	i;
     
-  
+  REAL4 sum;
 
   INT8 		il;
   
@@ -493,7 +500,8 @@ main (INT4 argc, CHAR **argv )
   REAL4Vector   VectorA22;
   REAL4Vector   Filter1; 
   REAL4Vector   Filter2;
-  
+  REAL4Vector                  *noiseVec = NULL;
+
   ResultIn      Result;
 
   RandomInspiralSignalIn 	randIn;						/* random signal waveform to inject	*/
@@ -518,12 +526,18 @@ main (INT4 argc, CHAR **argv )
 
   FILE				*Finput;   					/* to read the input psd 		*/
   FILE                          *Foutput;					/* to print some output in files	*/
+  FILE                          *inputData;					/* to print some output in files	*/
 
   float 			*bankEfficiencyOverlapIn;			
+  float 			*bankEfficiencyOverlapInTime;			
+  RandomParams                 *randParams = NULL;
+  INT4                          seed = 3;
+
   /* --- main code start here --- */ 
   /* --- Debugging level --- */
+  LALCreateVector (&status, &noiseVec, 65536);
+  LALCreateRandomParams (&status, &randParams, seed);
 
-  lalDebugLevel = 0;
  
   /* --- Some initialization --- */
   
@@ -542,6 +556,7 @@ main (INT4 argc, CHAR **argv )
 				otherIn);					/* Check validity of some variables. 	*/
 
 
+  lalDebugLevel = otherIn.lalDebug ;
 
   if (otherIn.PrintPrototype){
     BEPrintProtoXml(coarseBankIn, randIn, otherIn);    
@@ -554,7 +569,7 @@ main (INT4 argc, CHAR **argv )
   randIn.param.approximant 	= EOB;						/* Only to compute the length of "signal"*/
   LAL_CALL(LALInspiralWaveLength(&status, 
 			  	 &signal.length, randIn.param), &status);
-  signal.length*=4;
+  signal.length*=2;
   randIn.param.approximant = otherIn.signal;					/* Retrieve the actual approximant of the 
 										   waveform to inject. otherwise it will
 										   be EOB all the time. */
@@ -566,6 +581,9 @@ main (INT4 argc, CHAR **argv )
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4)*signal.length);	/* memory for the injected signal	*/
   correlation.data 	= (REAL4*) LALCalloc(1, sizeof(REAL4)*correlation.length); /* and correlation 			*/
 
+ 
+
+  
   memset( &(coarseBankIn.shf), 0, sizeof(REAL8FrequencySeries) );			/* ?? coarseBankIn. should be after ??	*/
 
   coarseBankIn.shf.f0 	= 0;
@@ -607,7 +625,6 @@ main (INT4 argc, CHAR **argv )
       break;
      }
 
-
   /* --- save the psd in the file psd.dat if requested --- */
   if (otherIn.PrintPsd)
    {
@@ -633,7 +650,9 @@ main (INT4 argc, CHAR **argv )
    
    LAL_CALL(LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseBankIn),&status);
    if (nlist==0) exit(0);	
-   bankEfficiencyOverlapIn = (float*) malloc(sizeof(float*)* nlist);              	/* allocate memory to store the bank 	*/
+   bankEfficiencyOverlapIn = (float*) malloc(sizeof(float*)* nlist);              	/* allocate memory to store the bank results	*/
+   bankEfficiencyOverlapInTime = (float*) malloc(sizeof(float*)* nlist);              	/* allocate memory to store the bank results 	*/
+
    for (il=0; il<nlist; il++) 								/* get back the order 			*/
      (list[il]).params.order = temporder;
 
@@ -712,50 +731,298 @@ main (INT4 argc, CHAR **argv )
 				 &coarseBankIn.shf, 
 				 &(list[j].params)), &status);
   
+
+
   /* If check option is on, we compute the best overlap 
    * (we should get one if template and approximant are the same) 
    * otherwise we jump to the else with the bank efficiency itself
    * */   
-  if (otherIn.check) {
-    randIn.param.approximant    = otherIn.signal;  				/* The waveform parameter for injection */
-    randIn.param.fCutoff 	= coarseBankIn.fUpper; 				/* its cutoff frequency 		*/
-    /* What kind of parameters do we use ?*/
-    if (otherIn.signal == BCV) 
-      randIn.param.massChoice = psi0Andpsi3;
-    else
-      randIn.param.massChoice = m1Andm2;					/* might be totalMass ans eta		*/
-    /* Let's compute the random parameters of the waveform to inject*/
-    for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
-    
-    /* we might force to compute a non random waveform giving the two
-       input parameters m1 and m2 */
-    if (otherIn.m1==-1 && otherIn.m2 ==-1){
-      LAL_CALL(LALRandomInspiralSignal(&status, &signal, &randIn), &status);
+  
+  if (otherIn.PrintBankOverlap) /*we just create the empty file here if requested why ?? */
+    {
+      Foutput = fopen("FF.sr4","w");
+      fclose(Foutput); 
     }
-    else
-      {
-	randIn.param.mass1 = otherIn.m1;
-	randIn.param.mass2 = otherIn.m2;
-	LALGenerateWaveform(&status,&signal, &randIn);
+  
+  /*
+   * Main loop is here. We creae random signal and filter 
+   * it with the template bank.
+   */
+  while (++ntrials <= otherIn.ntrials) 
+    {
+      
+      /*	LALCreateRandomInjection(otherIn, randIn, signal);*/
+      randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
+      	randIn.param.fCutoff 		= coarseBankIn.fUpper; 			/* its cutoff frequency 		*/
+      /* What kind of parameters do we use ?*/
+      if (otherIn.signal == BCV) 
+	randIn.param.massChoice = psi0Andpsi3;
+      else
+	{
+          randIn.param.massChoice = m1Andm2;
+	  randIn.param.massChoice = totalMassUAndEta;
+	}
+      /* Let's compute the random parameters of the waveform to inject*/
+      for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
+      
+      /* we might force to compute a non random waveform giving the two
+	 input parameters m1 and m2 */      
+      
+      if (otherIn.m1==-1 && otherIn.m2 ==-1)
+	{   
+	  if (otherIn.binaryInjection == BHNS){	 
+	    randIn.param.massChoice = bhns;
+	    LAL_CALL(LALRandomInspiralSignal(&status, &signal, &randIn), &status);
+	  }
+	  else
+	    LAL_CALL(LALRandomInspiralSignal(&status, &signal, &randIn), &status);	  
+	}
+      else
+	{
+	  randIn.param.mass1 = otherIn.m1;
+	  randIn.param.mass2 = otherIn.m2;
+	  LAL_CALL(LALGenerateWaveform(&status,&signal, &randIn), &status);
+	}
+
+
+      /*Temporary swith to read data containing waveform + noise*/
+#if 0
+      for (i=0; i< signal.length; i++){
+	signal.data[i]=0;		
       }
-    overlapin.signal 	= signal;
-    jmax           	= 0;
-    overlapout.max 	= 0.0;
-    kMin  		= floor(randIn.param.fLower / df );
-    
-    overlapin.param 	= randIn.param;
-    list[1].params      = randIn.param;
-    
-    /*
-      overlapin.param.fFinal  = list[1].params.fFinal;
-      overlapin.param.fCutoff = list[1].params.fFinal;
-    */
-    k = floor(overlapin.param.fFinal / df);
- 
-    BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);	/* fill the bcv matrix */
-    switch(otherIn.overlapMethod)
-      {
-      case AlphaMaximization:
+      inputData=fopen("inputData.dat", "r");
+      for (i=0; i< signal.length; i++){
+	fscanf(inputData, "%e %e\n", &signal.data[i], &signal.data[i]);
+      }
+      fclose(inputData);
+      LALNormalDeviates (&status, noiseVec, randParams);
+      signal.data = noiseVec->data;
+#endif	
+      
+  
+      overlapin.signal 	= signal;
+      jmax           	= 0;
+      overlapoutmax.max 	= 0.0;
+      
+      
+      /* we might force to use only one template giving the input psi0 and psi3. 
+	 Then, we don't need to use the bank*/
+      if (otherIn.psi0 != -1 && otherIn.psi3 != -1)
+	{
+	  list[0].params.psi0 = otherIn.psi0;
+	  list[0].params.psi3 = otherIn.psi3;
+	  nlist  = 1;
+	}
+	  
+      
+      nby2 	= Filter1.length / 2;
+      nn 	= Filter1.length;
+      kMin  	= floor(randIn.param.fLower /df );
+      df   	= randIn.param.tSampling / (REAL8)(VectorPhase.length) / 2.;
+      
+      
+      /* --- we can process the data through the bank now --- */
+      nbank = 0;
+      for (j = 0; j < nlist; j++) 
+	{	
+	  /* trick to check the code; template == signal and we use only one template */
+	  if (otherIn.check){
+	    list[j].params = randIn.param;
+	    overlapin.param = randIn.param;
+	    nlist=1;  
+	  }	     	     
+	  else {
+	    overlapin.param 	= list[j].params;	   
+	    overlapout.max = -11.11; /*??*/
+	  }
+	  
+	  
+	  
+	  if (
+	      (otherIn.FastSimulation == 1 ) &&
+	      ((fabs(randIn.param.t0 - list[j].params.t0)> .1) ||
+	       (fabs(randIn.param.t3 - list[j].params.t3)> .1) )
+	      )
+	    {
+	      /*fprintf(stderr, "Fast Simulation: skipped template number %d t0=%lf t3=%lf\n ", j, list[j].params.t0, list[j].params.t3);*/
+	    }
+	  else
+	    {
+	      
+	      switch(otherIn.overlapMethod)
+		{
+		case AlphaMaximization:	   	   	   
+		  nbank++;
+		  
+		  
+		  fendBCV = list[j].params.fFinal;
+		  overlapin.param.fFinal   =  fendBCV;
+		  overlapin.param.fCutoff  =  fendBCV;
+		  
+		  /* Extract some values for template creation*/
+		  k = floor(fendBCV / df);
+		  BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
+		  
+		  /* Template creation */
+		  LAL_CALL(LALCreateFilters(&Filter1,
+					    &Filter2,
+					    VectorPowerFm5_3,
+					    VectorPowerFm2_3,
+					    VectorPowerFm7_6,
+					    VectorPowerFm1_2,
+					    matrix,
+					    kMin,					       
+					    list[j].params.psi0,
+					    list[j].params.psi3
+					    ), &status);
+
+
+		  /* The overlap given two filters and the input signal*/
+		  
+		  LAL_CALL(LALWaveOverlapBCV(&status, 
+					     &correlation, &overlapout, &overlapin,
+					     &Filter1, &Filter2, matrix, otherIn), 
+			   &status);
+		  
+		  break;
+		case InQuadrature:
+		  if (coarseBankIn.approximant == BCV) /* bcv template but no apha maximization */
+		    {
+		      fendBCV  			=  list[j].params.fFinal;  
+		      overlapin.param.fCutoff 	= fendBCV;
+		      overlapin.param.fFinal 	= fendBCV;
+		      for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
+		      LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
+		    }    
+		  else	/* --- classical version of overlap using non bcv templates. 
+			   thus flso has to  be fixed manually --- */
+		    {
+		      /* SHOULD be replace by flso of the template in the bank*/
+		      
+		      
+		      fendBCV   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
+		      if (coarseBankIn.approximant==EOB && coarseBankIn.order==threePN)
+			fendBCV   = 1./LAL_PI/pow(2.3, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
+		      
+		      
+		      
+		      if (fendBCV > randIn.param.tSampling/2 ) 
+			fendBCV = randIn.param.tSampling/2. - 1;
+		      
+		      if (otherIn.check)
+			fendBCV  			=  list[j].params.fFinal;  
+		      
+		      
+		      
+		      overlapin.param.fFinal  = fendBCV;
+		      overlapin.param.fCutoff = fendBCV;
+		      for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
+		      LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
+		      
+		    }
+		  
+		  
+		  overlapout.alpha = -1;	          /* since alpha is not initalized in that switch we give a  constante value */
+		  break;	     
+		}     /* switch end */
+	      
+	      /* --- if overlap is the largest one, then we keep some 
+	       * other information . Later we might just use the previous 
+	       * vector. Keep everything and use it outside the bank 
+	       * process --- we should keep time as well*/	     
+	      bankEfficiencyOverlapIn[j] = overlapout.max; 
+	      bankEfficiencyOverlapInTime[j] = overlapout.bin; 
+	      
+	      /* --- if overlap is the largest one, then we keep some 
+	       * other information . Later we might just use the previous 
+	       * vector. Keep everything and use it outside the bank 
+	       * process --- */	     
+	      KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
+	      
+	    }/*end of if cheating code*/  
+	  
+	  
+	}/*end of the bank process*/
+      
+      
+      
+	 /* --- Now print some results or other stuffs --- */
+	 /* --- first, do we want to print the bank results (ambiguity function maximised over time )*/
+      if (otherIn.PrintBankOverlap) {
+	PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseBankIn);
+      }
+      
+      /* Then print the maximum overlap over the whole bank and the corresponding 
+       * parameter of the templates, injected signal and so on. This is the main results
+       * We'll print one line for each simulation (ntrials parameter)*/
+      LAL_CALL(LALInspiralParameterCalc(&status, &list[jmax].params), &status);
+      if (!otherIn.quietFlag){
+	PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, list[jmax].nLayer);
+      }
+      
+      
+      
+      if (otherIn.PrintResultXml)
+	{
+	  if (otherIn.overlapMethod!=InQuadrature)
+	    {
+	      Result.psi0_trigger = list[jmax].params.psi0;
+	      Result.psi3_trigger = list[jmax].params.psi3;
+	      Result.psi0_inject  = randIn.param.psi0;
+	      Result.psi3_inject  = randIn.param.psi3;
+	    }
+	  else
+	    {
+	      Result.psi0_trigger = list[jmax].params.t0;
+	      Result.psi3_trigger = list[jmax].params.t3;
+	      Result.psi0_inject  = randIn.param.t0;
+	      Result.psi3_inject  = randIn.param.t3;
+	    }   
+	  Result.mass1_inject = randIn.param.mass1;
+	  Result.mass2_inject = randIn.param.mass2;
+	  Result.fend_trigger = fendBCV;
+	  Result.fend_inject = randIn.param.fFinal;
+	  Result.totalMass_trigger = list[jmax].params.totalMass;
+	  Result.eta_trigger = list[jmax].params.eta;
+	  Result.rho_final   = overlapoutmax.max; 
+	  Result.alpha = overlapoutmax.alpha;
+	  Result.alpha_f = overlapoutmax.alpha* pow(fendBCV,2./3.);; 
+	  Result.bin = overlapoutmax.bin;
+	  Result.phase = overlapoutmax.phase;
+	  Result.layer = list[jmax].nLayer;
+	  Result.ntrial = ntrials;
+	  BEPrintResultsXml(coarseBankIn, randIn, otherIn, Result);	 
+	}
+      
+      fflush(stdout);	
+      
+      
+      /* now some studies related to the probability of detection */
+      
+      
+
+      /*Now we might want given the best template, to reproduce results and keep overlp, wavefom of the signal , template ...*/
+      /* save signal */
+      /* overlap     */
+      /* save template and correlation */
+      if (otherIn.PrintBestOverlap || otherIn.PrintBestTemplate){
+	
+	otherIn.extraFinalPrinting = 1;
+	
+
+	Foutput=fopen("BE_waveformIn.dat", "w");
+	for (i=0; i<signal.length; i++)
+	  {
+	    fprintf(Foutput, "%e %e\n", i/randIn.param.tSampling , signal.data[i]);
+	  }
+	fclose(Foutput);
+	   
+	fendBCV = list[jmax].params.fFinal;
+	overlapin.param.fFinal   =  overlapin.param.fCutoff  =  fendBCV;
+	/* Extract some values for template creation*/
+	k = floor(fendBCV / df);
+	BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
+	/* Template creation*/
 	LAL_CALL(LALCreateFilters(&Filter1,
 				  &Filter2,
 				  VectorPowerFm5_3,
@@ -764,281 +1031,28 @@ main (INT4 argc, CHAR **argv )
 				  VectorPowerFm1_2,
 				  matrix,
 				  kMin,					       
-				  list[1].params.psi0,
-				  list[1].params.psi3
+				  list[jmax].params.psi0,
+				  list[jmax].params.psi3
 				  ), &status);
 	/* The overlap given two filters and the input signal*/
 	LAL_CALL(LALWaveOverlapBCV(&status, 
-				   &correlation,
-				   &overlapout,
-				   &overlapin,
-				   &Filter1,
+				   &correlation, &overlapout, &overlapin,
+				   &Filter1, 
 				   &Filter2,
-				   matrix,
-				   otherIn), &status);
-    printf("#");
-    PrintResults(list[1].params, randIn.param,overlapout,  list[1].params.fFinal, overlapout.bin);
-	/* given overlapout, j, l, fendBCV then we fill overlapoutmax, 
-	 * jmax, lmax, fMax.
-	 * in that case (checking), j and l are not importamt though. */	
-	break;
-      case InQuadrature:
-	{ 
-	  for (i=0; i<signal.length; i++) 
-		correlation.data[i] = 0.;	   	   	  	 
-	  
-	  LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-    printf("#");
-    PrintResults(list[1].params, randIn.param,overlapout,  overlapin.param.fFinal, 1);
-	}
+				   matrix, 
+				      otherIn ), &status);
+	LAL_CALL(LALInspiralParameterCalc(&status, &list[jmax].params), &status);
+	/*	   if (!otherIn.quietFlag){
+		   PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, list[jmax].nLayer);*/
       }
-    
-
-    /* --- if requested we print the correlation in a file--- */
-    if (otherIn.PrintOverlap){
-     Foutput  = fopen(BANKEFFICIENCY_PRINTOVERLAP_FILE,"w");
-     for ( i = 0; i < correlation.length; i++)
-	fprintf(Foutput,"%f %f\n", i*df, (correlation.data[i]));
-     fclose(Foutput);
-    }
-  }
-  else{										 /* --- the real code is here --- */
-    /* --- The main loop --- */
-    
-    if (otherIn.PrintBankOverlap) /*we just create the empty file here if requested why ?? */
-      {
-	Foutput = fopen("FF.sr4","w");
-	fclose(Foutput); 
-      }
-    
-    while (++ntrials <= otherIn.ntrials) 
-      {
-        randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
-	randIn.param.fCutoff 		= coarseBankIn.fUpper; 			/* its cutoff frequency 		*/
-	/* What kind of parameters do we use ?*/
-	if (otherIn.signal == BCV) 
-	  randIn.param.massChoice = psi0Andpsi3;
-	else
-	{
-          randIn.param.massChoice = m1Andm2;
-	   randIn.param.massChoice = totalMassUAndEta;
-	}
-	/* Let's compute the random parameters of the waveform to inject*/
-	 for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
-	 
-	 /* we might force to compute a non random waveform giving the two
-	    input parameters m1 and m2 */
-
-
-	 if (otherIn.m1==-1 && otherIn.m2 ==-1)
-	   {   
-	     if (otherIn.binaryInjection == BHNS){	 
-	       randIn.param.massChoice = bhns;
-	       LAL_CALL(LALRandomInspiralSignal(&status, &signal, &randIn), &status);
-	     }
-	     else
-	       LAL_CALL(LALRandomInspiralSignal(&status, &signal, &randIn), &status);
-	     
-	   }
-	 else
-	   {
-	     randIn.param.mass1 = otherIn.m1;
-	     randIn.param.mass2 = otherIn.m2;
-	     LAL_CALL(LALGenerateWaveform(&status,&signal, &randIn), &status);
-	   }
-	     
-	 overlapin.signal 	= signal;
-	 jmax           	= 0;
-	 overlapoutmax.max 	= 0.0;
-
-	 
-	 /* we might force to use only one template giving the input psi0 and psi3. 
-	    Then, we don't need to use the bank*/
-	 if (otherIn.psi0 != -1 && otherIn.psi3 != -1)
-	   {
-	     list[0].params.psi0 = otherIn.psi0;
-	     list[0].params.psi3 = otherIn.psi3;
-	     nlist  = 1;
-	   }
-	 
-	 
-	 nby2 	= Filter1.length / 2;
-	 nn 	= Filter1.length;
-	 kMin  	= floor(randIn.param.fLower /df );
-	 df   	= randIn.param.tSampling / (REAL8)(VectorPhase.length) / 2.;
-	 
-
-	 /* --- we can process the data through the bank now --- */
-	 nbank = 0;
-	 for (j = 0; j < nlist; j++) 
-	   {	   	     	     	     
-	     overlapin.param 	= list[j].params;	   
-
-
-	     overlapout.max = -11.11; 
-	  
-
-	     if (
-		 (otherIn.FastSimulation == 1 ) &&
-		 ((fabs(randIn.param.t0 - list[j].params.t0)> .1) ||
-		 (fabs(randIn.param.t3 - list[j].params.t3)> .1) )
-		 )
-	       {
-		 /*fprintf(stderr, "Fast Simulation: skipped template number %d t0=%lf t3=%lf\n ", j, list[j].params.t0, list[j].params.t3);*/
-	       }
-	     else
-	       {
-	     
-		 switch(otherIn.overlapMethod)
-		   {
-		   case AlphaMaximization:	   	   	   
-		     nbank++;
-		     fendBCV = list[j].params.fFinal;
-		     overlapin.param.fFinal   =  fendBCV;
-		     overlapin.param.fCutoff  =  fendBCV;
-		     
-		     /* Extract some values for template creation*/
-		     k = floor(fendBCV / df);
-		     BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
-		     
-		     /* Template creation*/
-		     LAL_CALL(LALCreateFilters(&Filter1,
-					       &Filter2,
-					       VectorPowerFm5_3,
-					       VectorPowerFm2_3,
-					       VectorPowerFm7_6,
-					       VectorPowerFm1_2,
-					       matrix,
-					       kMin,					       
-					       list[j].params.psi0,
-					       list[j].params.psi3
-					       ), &status);
-		     
-		     /* The overlap given two filters and the input signal*/
-		     LAL_CALL(LALWaveOverlapBCV(&status, 
-						&correlation, &overlapout, &overlapin,
-						&Filter1, &Filter2, matrix, otherIn), 
-			      &status);
-		     
-		     break;
-		   case InQuadrature:
-		     if (coarseBankIn.approximant == BCV) /* bcv template but no apha maximization */
-		       {
-			 fendBCV  			=  list[j].params.fFinal;  
-			 overlapin.param.fCutoff 	= fendBCV;
-			 overlapin.param.fFinal 	= fendBCV;
-			 for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
-			 LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-		       }    
-		     else	/* --- classical version of overlap using non bcv templates. 
-				   thus flso has to  be fixed manually --- */
-		       {
-			 /* SHOULD be replace by flso of the template in the bank*/
-			 
-
-			 fendBCV   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
-			 if (coarseBankIn.approximant==EOB && coarseBankIn.order==threePN)
-			   fendBCV   = 1./LAL_PI/pow(2.3, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
-			 
-			 
-
-			 if (fendBCV > randIn.param.tSampling/2 ) 
-			   fendBCV = randIn.param.tSampling/2. - 1;
-			 
-			 
-			 
-			 
-			 overlapin.param.fFinal  = fendBCV;		    
-			 overlapin.param.fCutoff = fendBCV;
-			 for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
-			 LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-
-		       }
-		     
-		     
-		     overlapout.alpha = -1;	       /* since alpha is not initalized in that switch we give a  constante value */
-		     break;	     
-		   }     /* switch end */
-		 
-		 /* --- if overlap is the largest one, then we keep some 
-		  * other information . Later we might just use the previous 
-		  * vector. Keep everything and use it outside the bank 
-		  * process --- */	     
-		 bankEfficiencyOverlapIn[j] = overlapout.max; 
-		 /* --- if overlap is the largest one, then we keep some 
-		  * other information . Later we might just use the previous 
-		  * vector. Keep everything and use it outside the bank 
-		  * process --- */	     
-		 KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
-		
-	       }/*end of if cheating code*/  
-
-		 
-	       }/*end of the bank process*/
-
-	   
-	 
-	 /* --- Now print some results or other stuffs --- */
-	 /* --- first, do we want to print the bank results (ambiguity function)*/
-	 if (otherIn.PrintBankOverlap) 
-	   PrintBankOverlap(&list, nlist ,  bankEfficiencyOverlapIn, coarseBankIn);
-	
-	 
-	 /* Then print the maximum overlap over the whole bank and the corresponding 
-	  * parameter of the templates, injected signal and so on. This is the main results
-	  * We'll print one line for each simulation (ntrials parameter)*/
-	 LAL_CALL(LALInspiralParameterCalc(&status, &list[jmax].params), &status);
-	 if (!otherIn.quietFlag)
-	   PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, list[jmax].nLayer);
-
-
-	 
-
-	 if (otherIn.PrintResultXml)
-	   {
-	     if (otherIn.overlapMethod!=InQuadrature)
-	     {
-		     Result.psi0_trigger = list[jmax].params.psi0;
-		     Result.psi3_trigger = list[jmax].params.psi3;
-		     Result.psi0_inject  = randIn.param.psi0;
-		     Result.psi3_inject  = randIn.param.psi3;
-	     }
-	     else
-	     {
-		     Result.psi0_trigger = list[jmax].params.t0;
-		     Result.psi3_trigger = list[jmax].params.t3;
-		     Result.psi0_inject  = randIn.param.t0;
-		     Result.psi3_inject  = randIn.param.t3;
-	     }   
-	     Result.mass1_inject = randIn.param.mass1;
-	     Result.mass2_inject = randIn.param.mass2;
-	     Result.fend_trigger = fendBCV;
-	     Result.fend_inject = randIn.param.fFinal;
-	     Result.totalMass_trigger = list[jmax].params.totalMass;
-	     Result.eta_trigger = list[jmax].params.eta;
-	     Result.rho_final   = overlapoutmax.max; 
-	     Result.alpha = overlapoutmax.alpha;
-	     Result.alpha_f = overlapoutmax.alpha* pow(fendBCV,2./3.);; 
-	     Result.bin = overlapoutmax.bin;
-	     Result.phase = overlapoutmax.phase;
-	     Result.layer = list[jmax].nLayer;
-	     Result.ntrial = ntrials;
-	     BEPrintResultsXml(coarseBankIn, randIn, otherIn, Result);	 
-	   }
-	 
-	 /* --- here we might do something else which is not needed but 
-	  * it is a good check . We get the best templates given by the bank 
-	  * process and vary the last frequency --- */
-	 fflush(stdout);	
-
-
-	 /* now some studies related to the probability of detection */
+      
+    }  /*end while(trial)*/
+  
 
 
 
-      }
 
-  }
+
 
 
    /* --- destroy the plans, correlation and signal --- */
@@ -1175,8 +1189,11 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
  * ***************************************************************************/
 void InitOtherParamIn(OtherParamIn *otherIn)
 {
+  otherIn->alphaFConstraint      = BANKEFFICIENCY_ALPHAFCONSTRAINT;
+  otherIn->extraFinalPrinting   =0; 
   otherIn->template		= BANKEFFICIENCY_TEMPLATE;
   otherIn->bank         	= -1;
+  otherIn->lalDebug         	= 0;
   otherIn->signal       	= BANKEFFICIENCY_SIGNAL;
   otherIn->m1           	= -1;
   otherIn->m2           	= -1;
@@ -1184,6 +1201,9 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->psi0         	= -1;
   otherIn->psi3         	= -1;
   otherIn->PrintOverlap 	= BANKEFFICIENCY_PRINTOVERLAP;
+  otherIn->PrintBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
+  otherIn->PrintBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
+
   otherIn->PrintFilter  	= BANKEFFICIENCY_PRINTFILTER;
   otherIn->PrintPsd             = BANKEFFICIENCY_PRINTPSD;
   otherIn->overlapMethod	= AlphaMaximization;
@@ -1224,7 +1244,10 @@ ParseParameters(	INT4 			*argc,
 
   while(i < *argc)
     {
-      if ( strcmp(argv[i],	"--fend-bcv") 	== 0 ) {
+      if ( strcmp(argv[i],	"--debug") 	== 0 ) {
+	      otherIn->lalDebug = atoi(argv[++i]);
+      }
+      else if ( strcmp(argv[i],	"--fend-bcv") 	== 0 ) {
 		coarseBankIn->LowGM      	= atof(argv[++i]);
        	      	coarseBankIn->HighGM     	= atof(argv[++i]);
 	}
@@ -1282,6 +1305,8 @@ ParseParameters(	INT4 			*argc,
     	      coarseBankIn->alpha = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--alpha-signal")==0)	     
     	      randIn->param.alpha = atof(argv[++i]);
+      else if ( strcmp(argv[i],	"--ffinal-signal")==0)	     
+    	      randIn->param.fCutoff = atof(argv[++i]);
       else if ( strcmp(argv[i],	"--freq-moment-bank")	==0)	     
 	coarseBankIn->fUpper = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--template-order")==0)     
@@ -1311,11 +1336,16 @@ ParseParameters(	INT4 			*argc,
 	      /*TODO check whether the file exist otherwise quit with error message */
 	    }	  
 	}
+      else if ( strcmp(argv[i],"--alpha-constraint")	==0)     otherIn->alphaFConstraint	= 1;
+      else if ( strcmp(argv[i],"--no-alpha-constraint")	==0)     otherIn->alphaFConstraint	= 0;
       else if ( strcmp(argv[i],"--quiet")		==0)     otherIn->quietFlag 		= 1;
       else if ( strcmp(argv[i],"--InQuadrature")	==0)     otherIn->overlapMethod 	= InQuadrature;
       else if ( strcmp(argv[i],"--print-ambiguity-function")==0) otherIn->ambiguityFunction 	= 1;
       else if ( strcmp(argv[i],"--FMaximization")	==0) 	 otherIn->FMaximization 	= 1;
       else if ( strcmp(argv[i],"--print-overlap")	==0)  	 otherIn->PrintOverlap 		= 1;
+      else if ( strcmp(argv[i],"--print-best-overlap")	==0)  	 otherIn->PrintBestOverlap 	= 1;
+      else if ( strcmp(argv[i],"--print-best-template")	==0)  	 otherIn->PrintBestTemplate	= 1;
+
       else if ( strcmp(argv[i],"--print-psd")	        ==0)  	 otherIn->PrintPsd 		= 1;
       else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1; 
       else if ( strcmp(argv[i],"--print-bank-overlap")	==0)  	 otherIn->PrintBankOverlap 	= 1;
@@ -1482,6 +1512,7 @@ void Help(	InspiralCoarseBankIn   coarseBankIn,
   fprintf(stderr,"--alpha-bank		: BCV amplitude correction parameter 			(%7.2f)\n", BANKEFFICIENCY_ALPHABANK);
   fprintf(stderr,"--alpha-signal	: BCV amplitude correction parameter 			(%7.2f)\n",BANKEFFICIENCY_ALPHASIGNAL);
   fprintf(stderr,"--binaryInjection[BHNS]: if argument=BHNS then system are Blackhole+neutron star\n");
+  fprintf(stderr,"--debug		: debugging option for lal functions 0=no edbug, 1=debug ... (0)\n");
   fprintf(stderr,"--fl			: lower frequency cutoff             			(%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
   fprintf(stderr,"--length-factor	: multiply length signal by some factor(should be of unity order) ( %7.2d)\n", 1);
   fprintf(stderr,"--fend-bcv		: Lower and highest values of bcv frequency cutoff 	(%7.2d, %7.2d)\n", BANKEFFICIENCY_LOWGM, BANKEFFICIENCY_HIGHGM);
@@ -1511,6 +1542,7 @@ void Help(	InspiralCoarseBankIn   coarseBankIn,
   fprintf(stderr,"     --PrintOverlap	: Print Overlap given by the best template 		(%d)\n", BANKEFFICIENCY_PRINTOVERLAP);
   /*  fprintf(stderr,"     --PrintFilter	: Print filters giving the best overlap template 	(%d)\n", BANKEFFICIENCY_PRINTFILTER);
   fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)	(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);*/
+  fprintf(stderr,"     --print-bank-overlap    : Print the overlap given by each template (default=no printing)		\n");
 
   fprintf(stderr,"     --print-bank	: Print the bank in ascii format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEASCII);
   fprintf(stderr,"     --print-bank-xml	: Print the bank in xml format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEXML);
@@ -1836,18 +1868,18 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 		  	     )
      /*  </lalVerbatim>  */
 {
-  REAL4 
+  REAL4   BestPhase,thetab,thetaa,thetav, alphaMax, a11,a22,a21, 
 	  rhoMax 	= 0,							/* SNR maximum 				*/ 
 	  maxV1 	= 0, maxV2 	= 0, 					/* V1 and V2 value  of triggered bin	*/
 	  x1_2, x2_2, x3_2, x4_2, 						/* some temporary data 	      		*/
 	  V0, V1, V2, 								/* idem 				*/
-	  rho		= 0;							/* the SNR 				*/
-	  
+	  rho		= 0,							/* the SNR 				*/
+           alpha, w;
   INT4 
 	  maxbin 	= 0;							/* position of the maximum SNR 		*/
   
   REAL4Vector 
-	  x1, x2, x3, x4;							/* output of the correlations 		*/
+	  template, x1, x2, x3, x4, phaseV, rho1, rho2, rho3, v0, v1, v2;					/* output of the correlations 		*/
 
   InspiralWaveCorrelateIn 
 	  corrin;								/* the correlation input structure 	*/
@@ -1857,12 +1889,15 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  nEnd, 								/* end of valid correlation 		*/
 	  n = correlation->length; 						/* length of the vectors		*/
   REAL4 phi, phase, cphase, sphase, cphi, sphi;
+  FILE *Foutput;
 	  
   INITSTATUS (status, "LALInspiralWaveOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
   
   /* size affectation*/
-  x1.length = x2.length = x3.length = x4.length = n;
+  x1.length = x2.length = x3.length = x4.length = 
+  v1.length = v2.length = v0.length =
+    phaseV.length =  rho1.length= rho2.length = rho3.length  =template.length= n;
   
   /* memory allocation*/
   x1.data = (REAL4*) LALMalloc(sizeof(REAL4) * x1.length);
@@ -1870,6 +1905,16 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   x3.data = (REAL4*) LALMalloc(sizeof(REAL4) * x3.length);
   x4.data = (REAL4*) LALMalloc(sizeof(REAL4) * x4.length);
 
+  if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+    phaseV.data = (REAL4*) LALMalloc(sizeof(REAL4) * phaseV.length);
+    template.data = (REAL4*) LALMalloc(sizeof(REAL4) * template.length);
+    rho1.data = (REAL4*) LALMalloc(sizeof(REAL4) * rho1.length);
+    rho2.data = (REAL4*) LALMalloc(sizeof(REAL4) * rho2.length);
+    rho3.data = (REAL4*) LALMalloc(sizeof(REAL4) * rho3.length);
+    v1.data = (REAL4*) LALMalloc(sizeof(REAL4) * v1.length);
+    v2.data = (REAL4*) LALMalloc(sizeof(REAL4) * v2.length);
+    v0.data = (REAL4*) LALMalloc(sizeof(REAL4) * v0.length);
+  }
   /**/
   overlapin->param.nStartPad 	= 0;
   overlapin->param.startPhase 	= 0;
@@ -1910,28 +1955,38 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   overlapout->bin   	= nBegin;
   overlapout->phase 	= 0;
 
+
   /* some output for debugging, checking ... */
-#if 0
-  if (otherIn.PrintOverlap)
+  if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting)
     {
+      Foutput = fopen( "BE_Overlap.dat", "w");
       for (i=0; i< x1.length; i++)
-	printf("%d %e\n", i,fabs(x1.data[i]));
-      printf("&\n");	       
+	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x1.data[i]));
+      fprintf(Foutput,"&\n");	       
       
       for (i=1; i< Filter1->length; i++)
-	printf("%d %e\n", i,fabs(x2.data[i]));
-      printf("&\n");	       
+	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x2.data[i]));
+      fprintf(Foutput,"&\n");	       
       
       for (i=0; i< Filter1->length; i++)
-	printf("%d %e\n", i,fabs(x3.data[i]));
-      printf("&\n");	       
+	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x3.data[i]));
+      fprintf(Foutput,"&\n");	       
       
       for (i=0; i< Filter1->length-1; i++)
-	printf("%d %e\n", i,fabs(x4.data[i]));
-      printf("&\n");	       
+	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,fabs(x4.data[i]));
+      fprintf(Foutput,"&\n");	 
+      fclose(Foutput);      
     }
-#endif
 
+  a11=matrix.a11;
+  a22=matrix.a22;
+  a21=matrix.a21;
+  alphaMax = pow(corrin.fCutoff, -2./3.);
+
+  thetab = fabs(-(a11 * alphaMax)/(a22+a21*alphaMax));
+  thetab =  atan(thetab);
+  BestPhase = 0;
+  /*  fprintf(stderr,"%e %e %e\n", alphaMax , thetab, corrin.fCutoff);*/
 
   /* Once we have the 4 correlations, we can search for the
    * maximum of correlation and compute the final SNR */
@@ -1946,41 +2001,152 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       V1 = x1_2 + x3_2 - x2_2 - x4_2;
       V2 = 2*x1.data[i]*x2.data[i] + 2*x3.data[i]*x4.data[i];
 
-      rho = V0 + sqrt(V1*V1+V2*V2);						/* final correlation			*/
-      
-     if(otherIn.PrintOverlap==1)						/* we don't need to store all the cor- 	*/
-	correlation->data[i] = sqrt(rho /2.);					/* relation except if needed		*/
-      if ( rho > rhoMax)							/* Keep the position of the max only	*/
-	{
-	  rhoMax 	= rho;
-	  maxbin 	= i;
-	  maxV1  	= V1;
-	  maxV2 	= V2;
+      if (otherIn.alphaFConstraint){
+	thetav = atan(V2/V1)+LAL_PI/2.;
+	 if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+	   rho = sqrt((V0 + sqrt(V1*V1+V2*V2))/2.);						/* final correlation			*/
+	   rho1.data[i] = rho;
+	   
+	   rho = sqrt((V0 + V1)/2.);
+	   rho2.data[i] = rho;
+	   
+	   rho = sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);
+	   rho3.data[i] = rho;
+	 }
+	if (LAL_PI-thetab<=thetav && thetav <= LAL_PI) {
+	  rho = sqrt((V0 + sqrt(V1*V1+V2*V2))/2.);
+	  w = thetav;
+	}
+	else if (thetab <=thetav && thetav<=LAL_PI-thetab){
+	  rho = sqrt((V0 + V1)/2.);
+	  w = 0;
+	}
+	else 
+	  if (0 <=thetav && thetav<=thetab){
+	    rho =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
+	    w = 1;
+	  }
+	if ( rho > rhoMax)							/* Keep the position of the max only	*/
+	  {
+	    rhoMax 	= rho;
+	    maxbin 	= i;
+	    maxV1  	= V1;
+	    maxV2 	= V2;
+	    BestPhase     = w;	    	    
 	}          
+      }
+      else{
+	rho = sqrt((V0 + sqrt(V1*V1+V2*V2))/2.);
+	if ( rho > rhoMax)							/* Keep the position of the max only	*/
+	  {
+	    rhoMax 	= rho;
+	    maxbin 	= i;
+	    maxV1  	= V1;
+	    maxV2 	= V2;
+	    BestPhase   = .5 * atan2(maxV2, maxV1);
+	}          
+      }
+      
+      /* else */
+
+      if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+	v0.data[i] = V0;
+	v1.data[i] = V1;
+	v2.data[i] = V2;
+	correlation->data[i] = rho;			/* relation except if needed		*/
+	phaseV.data[i] =thetav;		                /* its phase				*/
+      }
+      
     }
 
-
-  /* Let's compute the phase corresponding to the maximum 
-   * and store some results.*/ 
   overlapout->bin       = maxbin;						/* position of the maximum 		*/
-  overlapout->phase 	= .5 * atan2(maxV2, maxV1);				/* its phase				*/
-  overlapout->max 	= sqrt(rhoMax /2.) ; 					/* its maximum				*/
+  overlapout->phase 	=  BestPhase;				/* its phase				*/
+  overlapout->max 	= rhoMax  ; 					/* its maximum				*/
+  
 
-  /* Is it needed ?*/
-  while (overlapout->phase > LAL_PI || overlapout->phase > 0 ) 
-	  overlapout->phase -= LAL_PI;
+  /*    while (overlapout->phase > LAL_PI || overlapout->phase > 0 ) 
+    overlapout->phase -= LAL_PI;
   while (overlapout->phase < -LAL_PI || overlapout->phase < 0 ) 
-	  overlapout->phase += LAL_PI;
-
+    overlapout->phase += LAL_PI;
+  */
+ 
   overlapout->alpha = -(matrix.a22 * tan(overlapout->phase)) 				/* Compute the final alpha parameter 	*/
-	  / (matrix.a11 + matrix.a21* tan(overlapout->phase));				/* which optimize the overlap		*/	
-  /* The final template */
-  #if 0
-   for (i=0; i< correlation->length; i++)
-	printf("%d %e\n", i,fabs(correlation->data[i]));
-   printf("&\n");	 
-	phase 		= overlapout->phase;
-	  phi   		= overlapin->param.startPhase;
+    / (matrix.a11 + matrix.a21* tan(overlapout->phase));
+
+
+
+
+  /* The final template to be print ? */
+  if (otherIn.PrintBestOverlap  && otherIn.extraFinalPrinting){
+
+    /*print overlap, combinaison of the x_i filters*/
+    Foutput=fopen("BE_Phase.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,phaseV.data[i]);
+    }
+    fclose(Foutput);
+    
+
+  Foutput=fopen("BE_rho1.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho1.data[i]);
+    }
+    fclose(Foutput);
+    
+
+  Foutput=fopen("BE_rho2.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho2.data[i]);
+    }
+    fclose(Foutput);
+    
+
+    Foutput=fopen("BE_rho3.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho3.data[i]);
+    }
+    fclose(Foutput);
+     
+    Foutput=fopen("BE_v0.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v0.data[i]);
+    }
+    fclose(Foutput);
+
+    Foutput=fopen("BE_v1.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v1.data[i]);
+    }
+    fclose(Foutput); 
+
+    Foutput=fopen("BE_v2.dat","w");
+    for (i=0; i< phaseV.length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v2.data[i]);
+    }
+    fclose(Foutput);
+    
+    Foutput=fopen("BE_alpha.dat","w");
+    for (i=0; i< correlation->length; i++){
+      alpha = -(matrix.a22 * tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
+	/ (matrix.a11 + matrix.a21* tan(phaseV.data[i]));
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,alpha*pow(corrin.fCutoff,2./3.));
+    }
+    fclose(Foutput);
+
+    /*print overlap, combinaison of the x_i filters*/
+    Foutput=fopen("BE_Overlap.dat","a+");
+    for (i=0; i< correlation->length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(correlation->data[i]));
+    }
+    fclose(Foutput);
+  }
+
+
+    if (otherIn.extraFinalPrinting || otherIn.PrintBestOverlap){
+    /* print the final template given phase, alpha ans so on*/
+    
+    phase 		= overlapout->phase;
+    phi   		= overlapin->param.startPhase; /*how to get it ohterwise ? */
    
     for (i=0; i<(UINT4)correlation->length; i++) 
     {
@@ -1994,17 +2160,69 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	+ x3.data[i] * cphase * sphi
 	+ x4.data[i] * sphase * sphi;	
     }
-  for (i=0; i< correlation->length; i++)
-	printf("%d %e\n", i,fabs(correlation->data[i]));
-      printf("&\n");	    
-  #endif
+
+    Foutput=fopen("BE_Correlation.dat", "w");
+    for (i=0; i< correlation->length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(correlation->data[i]));
+    }
+    fclose(Foutput);
+
+
+    LALGetOrthogonalFilter2(Filter1);						/* get the orthonormalized template     */
+    corrin.signal2        = *Filter1;
+
+    for (i=0; i<(UINT4)correlation->length; i++) 
+    { 
+      cphase = cos(phaseV.data[i]);
+      cphi   = cos(phi);
+      sphase = sqrt(1-cphase*cphase);
+      sphi   = sqrt(1-cphi*cphi);
+      
+      template.data[i]=Filter1->data[i]*cphase*cphi; 
+      template.data[i]+=corrin.signal2.data[i] * sphase*cphi; 
+
+	
+    }
+
+    LALGetOrthogonalFilter2(Filter2);						/* get the orthonormalized template     */
+    corrin.signal2        = *Filter2;
+
+    for (i=0; i<(UINT4)correlation->length; i++) 
+    { 
+      cphase = cos(phaseV.data[i]);
+      cphi   = cos(phi);
+      sphase = sqrt(1-cphase*cphase);
+      sphi   = sqrt(1-cphi*cphi);
+      
+      template.data[i]=Filter2->data[i]*sphase*cphi; 
+      template.data[i]+=corrin.signal2.data[i]*sphase*sphi; 
+
+	
+    }
+
+    Foutput=fopen("BE_BestTemplate.dat", "w");
+    for (i=0; i< correlation->length; i++){
+      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,template.data[i]);
+    }
+    fclose(Foutput);
+
+
+
+  }/*end if printTemplate*/
+
+
   
   /* Free memory */
   LALFree(x1.data);
   LALFree(x2.data);
   LALFree(x3.data);
   LALFree(x4.data);
-  
+
+  if (otherIn.extraFinalPrinting || otherIn.PrintBestOverlap){
+  LALFree(phaseV.data);
+  LALFree(template.data);
+  }
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
@@ -2437,16 +2655,12 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--psi3-range",		coarseBankIn.psi3Max);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--mm",			coarseBankIn.mmCoarse);
   ADD_PROCESS_PARAM("int",	"%6d",		"--number-fcut",	coarseBankIn.numFcutTemplates);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--signal",		otherIn.signal);
   ADD_PROCESS_PARAM("int",	"%6d",		"--simulation-type",	randIn.type);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-amplitude",	randIn.SignalAmp);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--noise-amplitude",	randIn.NoiseAmp);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--alpha-bank",		coarseBankIn.alpha);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--alpha-signal",	randIn.param.alpha);
   ADD_PROCESS_PARAM("float",	"%12.5f",	"--freq-moment-bank",	coarseBankIn.fUpper);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--template",		otherIn.template);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--template-order",	coarseBankIn.order);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--signal-order",	randIn.param.order);
   ADD_PROCESS_PARAM("int",	"%6d",		"--nn",			otherIn.ntrials);
   ADD_PROCESS_PARAM("int",	"%6d",		"--seed",		randIn.useed);
   switch (otherIn.NoiseModel){
@@ -2471,6 +2685,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   }
   ADD_PROCESS_PARAM("int",	"%6d",		"--template",		otherIn.template);
   ADD_PROCESS_PARAM("int",	"%6d",		"--signal",		otherIn.signal);
+  ADD_PROCESS_PARAM("int",	"%6d",		"--template-order",	coarseBankIn.order);
+  ADD_PROCESS_PARAM("int",	"%6d",		"--signal-order",	randIn.param.order);
 
   switch (otherIn.overlapMethod){
   case InQuadrature:
