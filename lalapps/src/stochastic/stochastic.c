@@ -673,6 +673,52 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   return(series);
 }
 
+/* wrapper function for estimating the psd */
+REAL4FrequencySeries *estimate_psd(LALStatus *status,
+    REAL4TimeSeries *series)
+{
+  /* variables */
+  REAL4FrequencySeries *psd;
+  REAL4Window *window;
+  RealFFTPlan *plan = NULL;
+  AverageSpectrumParams psd_params;
+  UINT4 length;
+  UINT4 overlap;
+  REAL8 deltaF;
+  UINT4 psd_length;
+
+  /* lengths */
+  length = PSD_WINDOW_DURATION / series->deltaT;
+  overlap = length / 2;
+  deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
+  psd_length = (length / 2) + 1;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &psd, "psd", \
+        series->epoch, series->f0, deltaF, lalDimensionlessUnit, \
+        psd_length), status);
+
+  /* create window for psd estimation */
+  window = XLALCreateHannREAL4Window(length);
+
+  /* create fft plan for psd estimation */
+  plan = XLALCreateForwardREAL4FFTPlan(length, 0);
+
+  /* set parameters */
+  psd_params.window = window;
+  psd_params.overlap = overlap;
+  psd_params.method = useMean;
+  psd_params.plan = plan;
+
+  /* esimate psd */
+  LAL_CALL(LALREAL4AverageSpectrum(status, psd, series, &psd_params), status);
+
+  /* free memory for window */
+  XLALDestroyREAL4Window(window);
+
+  return(psd);
+}  
+
 /* display usage information */
 static void display_usage()
 {
@@ -1675,8 +1721,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numFMin;
   INT4 numFMax;
   AverageSpectrumParams specparPSD;
-  REAL4FrequencySeries *psdTempOne;
-  REAL4FrequencySeries *psdTempTwo;
+  REAL4FrequencySeries *psdTempOne = NULL;
+  REAL4FrequencySeries *psdTempTwo = NULL;
   REAL4FrequencySeries *psdOne;
   REAL4FrequencySeries *psdTwo;
   REAL4Vector *calPsdOne, *calPsdTwo;
@@ -1901,21 +1947,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdTempLength = (psdWindowLength / 2) + 1;
   filterLength = numFMax - numFMin + 1;
 
-  /* set parameters for PSD estimation */
-  specparPSD.method = useMean;
-  specparPSD.overlap = overlapPSDLength;
-  specparPSD.plan = NULL;
-  specparPSD.window = NULL;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for PSDs...\n");
-
-  /* allocate memory for PSDs */
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTempOne, "psdTempOne", \
-        gpsStartTime, 0, deltaF, psdUnits, psdTempLength), &status);
-  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTempTwo, "psdTempTwo", \
-        gpsStartTime, 0, deltaF, psdUnits, psdTempLength), &status);
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
 
@@ -1971,18 +2002,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     memset(respTwo[i]->data, 0, respTwo[i]->length * \
         sizeof(*respTwo[i]->data));
   }
-
-  if (vrbflg)
-    fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
-
-  /* create fft plan */
-  specparPSD.plan = XLALCreateForwardREAL4FFTPlan(psdWindowLength, 0);
-
-  if (vrbflg)
-    fprintf(stdout, "Creating window for PSD estimation...\n");
-
-  /* create window for PSD estimation */
-  specparPSD.window = XLALCreateHannREAL4Window(psdWindowLength);
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
@@ -2366,10 +2385,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             fprintf(stdout, "Estimating PSDs...\n");
 
           /* compute uncalibrated PSDs */
-          LAL_CALL(LALREAL4AverageSpectrum(&status, psdTempOne, \
-                segmentOne, &specparPSD), &status);
-          LAL_CALL(LALREAL4AverageSpectrum(&status, psdTempTwo, \
-                segmentTwo, &specparPSD), &status);
+          psdTempOne = estimate_psd(&status, segmentOne);
+          psdTempTwo = estimate_psd(&status, segmentTwo);
 
           if (vrbflg)
           {
