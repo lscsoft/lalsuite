@@ -337,7 +337,7 @@ int write_timeseries(LALStatus *, int iSFT);
 int cleanup(LALStatus *);
 int freemem(LALStatus *);
 int window_data(LALStatus *);
-int correct_phase(LALStatus *, int iSFT);
+int correct_phase(LALStatus *);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -574,6 +574,11 @@ int main(int argc,char *argv[]) {
 
       /* Perform FFTW-LAL Fast Fourier Transform */
       SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
+
+#if(1)
+      /* correct phase */
+      correct_phase(&status);
+#endif
       
       /* if you want noise added in the FREQ domain only, read from files and add in */
       if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
@@ -738,7 +743,59 @@ int correct_phase(LALStatus* status, int iSFT) {
   
   return 0;
 }
+
 #endif
+
+
+
+/* correct the heterodyned phase */
+/*
+ * "If the starting (which is also the heterodyning) frequency of the 
+ * In.data file does not go through an integer number of cycles in the 
+ * time corresponding to the gap, then the phase of the signal gets 
+ * screwed up by the heterodyning procedure.", according to Xavier.
+ *
+ * This makes the resulting F stat values different from the correct 
+ * ones by 400,000% in the worst case I have seen.  
+ *
+ * The correct_phase() solves this problem as far as F stat 
+ * values are concerned. 
+ *
+ * Detail of validation:
+ * Performing 64,000 MC experiments over differnt signal parameters 
+ * (alpha,delta,phi0,psi,cosiota,fsignal, starting_frequency_in_In.data) 
+ * for 10 hours-worth observation time with gaps for LLO, the resulting 
+ * F stat values differ from the correct ones by up to 0.1% and for 99% 
+ * of the time of the experiments less than 0.03%. 
+ *
+ * When there is no gap, the differences are less than 0.03% among 60,000 MCs. 
+ * Differences between with this routine and without this routine are at most 
+ * 3e-7% out of 124,000 MCs. 
+ * Yousuke 24 Mar 2004.
+ *
+ */
+int correct_phase(LALStatus* status) {
+
+  int i;
+  REAL8 cosx,sinx,x;
+  COMPLEX8 fvec1;
+
+  x = timeSeries->epoch.gpsSeconds-cwDetector.heterodyneEpoch.gpsSeconds;
+  x += 0.000000001 * ( timeSeries->epoch.gpsNanoSeconds-cwDetector.heterodyneEpoch.gpsNanoSeconds );
+
+  x *= LAL_TWOPI*timeSeries->f0; 
+
+  cosx=cos(x);
+  sinx=sin(x);
+  for (i = 0; i < fvec->length; ++i){
+    fvec1=fvec->data[i];
+    fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;
+    fvec->data[i].im=fvec1.im*cosx+fvec1.re*sinx;
+  }
+  
+  return 0;
+}
+
 
 /* windows the data*/
 int window_data(LALStatus* status){
