@@ -218,7 +218,7 @@ overlap = o / r
 # read the science segments from the input file and create the chunks
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'))
-data.make_chunks(length,overlap,do_playground)
+data.make_chunks(length,overlap,playground_only)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
