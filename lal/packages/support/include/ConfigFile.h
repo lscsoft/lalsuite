@@ -42,6 +42,7 @@ NRCSID( CONFIGFILEH, "$Id$");
 #define CONFIGFILEH_EUNKNOWN		8
 #define CONFIGFILEH_EMEM		9
 #define CONFIGFILEH_EBOOL		10
+#define CONFIGFILEH_ESTRING		11
 
 #define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
 #define CONFIGFILEH_MSGEFILE		"File error."
@@ -52,7 +53,7 @@ NRCSID( CONFIGFILEH, "$Id$");
 #define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
 #define CONFIGFILEH_MSGEMEM		"Out of memory"
 #define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
-
+#define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
 /*************************************************** </lalErrTable> */
 
 

@@ -459,11 +459,10 @@ LALReadConfigREAL8Variable (LALStatus *stat,
 
 /*----------------------------------------------------------------------
  * specialization to STRING variables 
- * NOTE: this means the rest of the line after the variable, and NOT "%s" ! 
- * here we need the pointer to the char-pointer
+ * NOTE: this means the rest of the line, NOT "%s"! (but excluding comments of course), 
+ * NOTE2: if string is quoted by \", everything within quotes is read,
+ *       and the quotes are removed here 
  *
- * NOTE2: we don't need the wasRead-flag here, as we can set the 
- *        return-string to NULL
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
@@ -474,16 +473,55 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
 			     BOOLEAN *wasRead)			     
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
+  CHAR *str = NULL;
+  CHAR *ret = NULL;
 
   INITSTATUS( stat, "LALReadConfigSTRINGVariable", CONFIGFILEC );
+
+  ASSERT ( *varp == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
 
   param.varName = varName;
   param.fmt = FMT_STRING;
   param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
+  LALReadConfigVariable (stat, (void*) &str, cfgdata, &param, wasRead);
 
-  if (! (*wasRead) )
+  if (wasRead)
+    {
+      INT2 numQuotes = 0;
+      CHAR *ptr = str;
+      /* count number of quotation marks */
+      while ( (ptr = strchr(ptr, '"')) )
+	{
+	  numQuotes ++;
+	  ptr ++;
+	} /* while quotes found */
+
+      /* check balanced quotes (don't allow escaping for now) */
+      if ( (numQuotes !=0) && (numQuotes != 2) ) {
+	ABORT (stat, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
+      }
+      if ( numQuotes==2 )  
+	{
+	  /* allowed only at end and beginning */
+	  if ( (str[0] != '"') || (str[strlen(str)-1] != '"') ) {
+	    ABORT (stat, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
+	  }
+	  /* quotes ok, now remove them */
+	  if ( (ret = LALMalloc( strlen(str) -2 + 1)) == NULL ) {
+	    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+	  }
+	  str[strlen(str)-1] = 0;
+	  strcpy (ret, str+1);
+	  LALFree (str);
+	} /* if 2 quotation marks */
+      else
+	ret = str;	/* no quotes, just return string */
+      
+      *varp = ret;
+
+    } /* if wasRead */
+  else
     *varp = NULL;
 
   RETURN (stat);
@@ -635,13 +673,14 @@ cleanConfig (CHARSequence *text)
   CHAR *ptr, *ptr2, *eol;
   BOOLEAN inQuotes = 0;
 
-  /* clean out comments, by replacing them by '\n' */
+  /*----------------------------------------------------------------------
+   * RUN 1: clean out comments, by replacing them by '\n' 
+   */
   ptr = text->data;
-
   while ( *ptr )
     {
       if ( (*ptr) == '\"' )
-	inQuotes = !inQuotes;
+	inQuotes = !inQuotes;	/* flip state */
 
       if ( ((*ptr) == '#') || ( (*ptr) == ';') )
 	if ( !inQuotes )	/* only consider as comments if not quoted */
@@ -654,7 +693,9 @@ cleanConfig (CHARSequence *text)
 
     } /* while *ptr */
 
-  /* do line-gluing when '\' is found at end-of-line */
+  /*----------------------------------------------------------------------
+   * RUN 2: do line-gluing when '\' is found at end-of-line 
+   */
   ptr = text->data;
   while ( (ptr = strchr(ptr, '\\')) != NULL )
     {
@@ -669,14 +710,17 @@ cleanConfig (CHARSequence *text)
 	}
     } /* while '\' found in text */
 
-  /* let's turn all tabs into single spaces.. */
+  /*----------------------------------------------------------------------
+   * RUN 3: turn all tabs into single spaces.. 
+   */
   ptr = text->data;
   while ( (ptr = strchr(ptr, '\t')) != NULL )
     *ptr = ' ';
 
-  /* lets get rid of initial and trailing whitespace (we replace it by '\n') */
+  /*---------------------------------------------------------------------- 
+   * RUN 4: get rid of initial and trailing whitespace (replace it by '\n') 
+   */
   ptr = text->data;
-
   while (ptr < (text->data + text->length -1) )
     {
       len = strspn (ptr, WHITESPACE); 
