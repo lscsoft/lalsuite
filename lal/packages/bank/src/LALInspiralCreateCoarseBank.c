@@ -939,16 +939,19 @@ LALInspiralBCVFcutBank(
 	nf=numFcutTemplates;
 
 
-	/* Before the allocation was inside the loop and allocate the exact number of structure 
-	   related to the valid point in the bank. However if nlist is large (>5000) it is too 
-	   long to compute. Thus I put this ReAlloc outside the loop
+	/* Obsolete but I keep those comments for later. 
+	 *
+	 * The allocation is inside the loop and allocate the exact number of structure 
+	 * related to the valid point in the bank. However if nlist is large (>5000) it is too 
+	 * long to compute. Thus It would be nice to put this ReAlloc outside the loop.
+	 * However sometimes it creates error.  Have to be done correctly. janvier 2004
 	*/
-	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, nlist * numFcutTemplates * sizeof(InspiralTemplateList)))) 
+	/*	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, nlist * numFcutTemplates * sizeof(InspiralTemplateList)))) 
 	  {
 	    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 	    
 	 }
-
+	*/
 
 	ndx = nlist = *NList;
 	frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
@@ -965,7 +968,7 @@ LALInspiralBCVFcutBank(
 			fMax = (*list)[j].params.fendBCV;
 			df = fMax * frac;
 			fMin = fMax * ( 1.L - (nf-1.L)*df);
-
+/*			fMin = (*list)[j].params.fLower;*/
 			for (i=0; i<nf; i++)
 			{
 				fendBCV = fMax * (1.L - i * frac);
@@ -978,15 +981,16 @@ LALInspiralBCVFcutBank(
 				if (fendBCV > (*list)[j].params.fLower && fendBCV < (*list)[j].params.tSampling/2.)
 				{
 					ndx++;
-					/*
+					
 					  if (!(*list = (InspiralTemplateList*) LALRealloc(*list, ndx * sizeof(InspiralTemplateList)))) 
 					  {
 					    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 					    
 					  }
-					*/
+					
 					(*list)[ndx-1] = (*list)[j];
 					(*list)[ndx-1].params.fendBCV = fendBCV;
+					(*list)[ndx-1].params.fFinal = fendBCV;
 					(*list)[ndx-1].metric = (*list)[0].metric;
 				}
 			}
@@ -996,7 +1000,7 @@ LALInspiralBCVFcutBank(
 	{
 		(*list)[j-nlist] = (*list)[j];
 	}
-					
+				
 	*NList = ndx - nlist;
 
 	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, *NList * sizeof(InspiralTemplateList) ))) 
