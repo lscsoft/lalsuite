@@ -18,9 +18,19 @@ $Id$
 #define LAL_RANGE_ERR	4
 #define LAL_RANGE_MSG	"parameter out of range"
 
+void XLALDestroyREAL4TimeSeries(
+	REAL4TimeSeries *series
+);
+
 void LALDestroyREAL4TimeSeries(
 	LALStatus *status,
 	REAL4TimeSeries *series
+);
+
+REAL4TimeSeries *XLALCutREAL4TimeSeries(
+	REAL4TimeSeries *series,
+	size_t first_sample,
+	size_t num_samples
 );
 
 void LALCutREAL4TimeSeries(

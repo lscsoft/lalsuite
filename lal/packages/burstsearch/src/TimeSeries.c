@@ -8,7 +8,7 @@
 NRCSID(TIMESERIESC, "$Id$");
 
 
-static void DestroyREAL4TimeSeries(
+void XLALDestroyREAL4TimeSeries(
 	REAL4TimeSeries *series
 )
 {
@@ -28,13 +28,13 @@ void LALDestroyREAL4TimeSeries(
 {
 	INITSTATUS(status, "LALDestroyREAL4TimeSeries", TIMESERIESC);
 
-	DestroyREAL4TimeSeries(series);
+	XLALDestroyREAL4TimeSeries(series);
 
 	RETURN(status);
 }
 
 
-static REAL4TimeSeries *CutREAL4TimeSeries(
+REAL4TimeSeries *XLALCutREAL4TimeSeries(
 	REAL4TimeSeries *series,
 	size_t first_sample,
 	size_t num_samples
@@ -43,7 +43,6 @@ static REAL4TimeSeries *CutREAL4TimeSeries(
 	REAL4TimeSeries *new;
 	REAL4Sequence *sequence;
 	REAL4 *data;
-	LALStatus status = {}; /* AddFloatToGPS cannot fail so we can defeat the error reporting mechanism for cleanliness */
 
 	new = LALMalloc(sizeof(*new));
 	sequence = LALMalloc(sizeof(*sequence));
@@ -61,7 +60,7 @@ static REAL4TimeSeries *CutREAL4TimeSeries(
 	sequence->length = num_samples;
 	memcpy(sequence->data, series->data->data + first_sample, num_samples * sizeof(*data));
 
-	LALAddFloatToGPS(&status, &new->epoch, &new->epoch, first_sample * new->deltaT);
+	new->epoch = XLALAddFloatToGPS(new->epoch, first_sample * new->deltaT);
 
 	return(new);
 }
@@ -76,13 +75,11 @@ void LALCutREAL4TimeSeries(
 )
 {
 	INITSTATUS(status, "LALCutREAL4TimeSeries", TIMESERIESC);
-	ATTATCHSTATUSPTR(status);
 
-	*output = CutREAL4TimeSeries(input, first_sample, num_samples);
+	*output = XLALCutREAL4TimeSeries(input, first_sample, num_samples);
 
 	if(!*output)
 		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
-	DETATCHSTATUSPTR(status);
 	RETURN(status);
 }
