@@ -38,7 +38,7 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:f:l"
+shortop = "hvu:f:l:"
 longop = [
   "help",
   "version",
@@ -105,6 +105,7 @@ else:
     usertag = None
 
 # create a log file that the Condor jobs will write to
+dagfilesuffix = '.dag'
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
 if usertag:
