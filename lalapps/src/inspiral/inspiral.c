@@ -97,8 +97,6 @@ REAL4 minimalMatch = -1;                /* override bank minimal match  */
 
 /* data conditioning parameters */
 LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
-LIGOTimeGPS duration	= {0,0};	/* length of calibration chunk  */
-INT8   durationNS	= 0;		/* length of cal chunk (NS)	*/
 INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
@@ -210,6 +208,8 @@ int main( int argc, char *argv[] )
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
   REAL8 tsLength;
+  INT8  durationNS	= 0;
+  LIGOTimeGPS duration	= {0,0};
 
 
   /*

@@ -71,8 +71,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 
 /* parameters used to generate calibrated power spectrum */
 LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
-LIGOTimeGPS gpsEndTime = { 0, 0};       /* input data GPS end time      */
-LIGOTimeGPS duration = { 0, 0};		/* duration used for calibration*/
+LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
 INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
@@ -165,6 +164,7 @@ int main ( int argc, char *argv[] )
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
+  LIGOTimeGPS duration = {0, 0};
 
 
   /*
