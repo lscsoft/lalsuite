@@ -20,6 +20,6 @@ pkgdata_DATA = \
 EXTRA_DIST = mkcalfac.c mkcalref.c series.c series.h mkcalfiles_test.sh \
   S1-L1-CAL-FACTORS.txt S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt \
   S1-H1-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H1-CAL-CAV_GAIN.txt \
-  S1-H2-CAL-FACTORS.txt S1-H1-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt
+  S1-H2-CAL-FACTORS.txt S1-H2-CAL-RESPONSE.txt S1-H2-CAL-CAV_GAIN.txt
 MOSTLYCLEANFILES = *.ilwd *.gwf
 TESTS = mkcalfiles_test.sh
