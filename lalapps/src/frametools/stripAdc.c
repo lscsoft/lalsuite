@@ -1,6 +1,6 @@
 /***********************************************\
 * stripAdc.c                                    *
-* 02/18/02                                      *
+* 02/25/02                                      *
 *                                               *
 * Routine to strip ADC channels.  Outputs       *
 * merged frames.  Input are in a config file.   *
@@ -26,6 +26,7 @@
 
 int main(int argc, char *argv[])
 {
+   static const char *rcsid = "$Id$";
    struct FrFile     *iFile, *oFile;
    struct FrameH     *frame;
    struct FrHistory  *history;
@@ -417,7 +418,7 @@ int main(int argc, char *argv[])
     {
      sprintf(outFile1,"%s-%d-16.gwf", in.outFrameFile, frame->GTimeS);
      oFile = NULL;
-     if ((oFile = FrFileONewH(outFile1,COMPRESSION, "stripAdc.c")) == NULL)
+     if ((oFile = FrFileONewH(outFile1,COMPRESSION, rcsid)) == NULL)
      {
       printf("Error opening output file %s!\n", outFile1);
       fprintf(ofp2,"Error opening output file %s!\n", outFile1);
