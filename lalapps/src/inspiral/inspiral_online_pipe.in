@@ -30,7 +30,6 @@ Usage: lalapps_inspiral_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
 
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
@@ -38,11 +37,10 @@ Usage: lalapps_inspiral_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:f:l:"
+shortop = "hvf:l:"
 longop = [
   "help",
   "version",
-  "user-tag=",
   "config-file=",
   "log-path="
   ]
@@ -54,7 +52,6 @@ except getopt.GetoptError:
   sys.exit(1)
 
 config_file = None
-usertag = None
 config_file = None
 log_path = None
 
@@ -65,8 +62,6 @@ for o, a in opts:
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
-  elif o in ("-u", "--user-tag"):
-    usertag = a
   elif o in ("-f", "--config-file"):
     config_file = a
   elif o in ("-l", "--log-path"):
@@ -95,15 +90,6 @@ except: pass
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
-# if a usertag has been specified, override the config file
-if usertag:
-  cp.set('pipeline','user-tag',usertag)
-else:
-  try:
-    usertag = string.strip(cp.get('pipeline','user-tag'))
-  except:
-    usertag = None
-
 # create a log file that the Condor jobs will write to
 dagfilesuffix = '.dag'
 basename = re.sub(r'\.ini',r'',config_file)
@@ -126,6 +112,7 @@ else:
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
+split_job = inspiral.SplitBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
@@ -136,14 +123,9 @@ else:
   subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
+split_job.set_sub_file( basename + '.splitbank' + subsuffix )
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
-
-# set the usertag in the jobs
-if usertag:
-  tmplt_job.add_opt('user-tag',usertag)
-  insp_job.add_opt('user-tag',usertag)
-  inca_job.add_opt('user-tag',usertag)
 
 # set up inca for single ifo mode
 inca_job.add_opt('single-ifo',' ')
@@ -203,19 +185,31 @@ for seg in data:
     bank.set_cache(df.get_output())
     bank.add_parent(df)
     dag.add_node(bank)
+    
+    # split the template bank
+    split = inspiral.SplitBankJob(split_job)
+    split.set_bank(bank.get_output())
+    split.set_num_banks(20)
+    split.add_parent(bank)
+    dag.add_node(split)
 
     # create the inspiral job
-    insp = inspiral.InspiralNode(insp_job)
-    insp.set_start(chunk.start())
-    insp.set_end(chunk.end())
-    insp.add_var_opt('trig-start-time',chunk.trig_start())
-    insp.set_ifo(ifo)
-    insp.set_cache(df.get_output())
-    insp.set_bank(bank.get_output())
-    insp.add_parent(bank)
-    insp.add_parent(df)
-    dag.add_node(insp)
-    insp_nodes.append(insp)
+    i = 0
+    sub_insp = []
+    for subbank in split.get_output():
+      insp = inspiral.InspiralNode(insp_job)
+      insp.set_start(chunk.start())
+      insp.set_end(chunk.end())
+      insp.add_var_opt('trig-start-time',chunk.trig_start())
+      insp.set_ifo(ifo)
+      insp.set_cache(df.get_output())
+      insp.set_bank(subbank)
+      trig_job.add_var_opt('user-tag',"%2.2d" % i)
+      insp.add_parent(split)
+      dag.add_node(insp)
+      sub_insp.append(insp)
+
+      insp_nodes.append(insp)
 
 # use inca to concatenate all the inspiral files
 inca = inspiral.IncaNode(inca_job)
