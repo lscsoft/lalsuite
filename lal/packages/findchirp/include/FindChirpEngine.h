@@ -33,12 +33,14 @@ Provides routines to filter IFO data for binary inspiral chirps.
 #include <strings.h>
 #include <lal/LALStdlib.h>
 #include <lal/DataBuffer.h>
-#include <lal/Comm.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpExch.h>
 #include <lal/FindChirpSP.h>
+#ifdef LAL_MPI_ENABLED
+#include <lal/Comm.h>
+#include <lal/FindChirpExch.h>
+#endif /* LAL_MPI_ENABLED */
 
 
 #ifdef  __cplusplus
@@ -66,6 +68,7 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_EUEXT 10
 #define FINDCHIRPENGINEH_ELVEL 11
 #define FINDCHIRPENGINEH_ESEGZ 12
+#define FINDCHIRPENGINEH_EUSIM 13
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -78,59 +81,53 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGEUEXT "Unrecognised exchange type"
 #define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
 #define FINDCHIRPENGINEH_MSGESEGZ "Number of data segments is zero"
+#define FINDCHIRPENGINEH_MSGEUSIM "Unkown simulation type requested"
 /* </lalErrTable> */
 
-
-
-enum ExchObjectType
-{
-  ExchDataSegment,
-  ExchFindChirpSegment,
-  ExchInspiralTemplate,
-  ExchInspiralEvent,
-  ExchFinished
-};
 
 typedef struct
 tagInspiralTemplateNode
 {
-  INT4                                  level;
-  INT4                                  inserted;
-  INT4Vector                           *segmentIdVec;
   struct tagInspiralTemplateNode       *next;
   struct tagInspiralTemplateNode       *prev;
   InspiralTemplate                     *tmpltPtr;
 }
 InspiralTemplateNode;
 
-typedef struct
-tagFindChirpMasterParams
+typedef enum
 {
-  UINT4                         inspiralDebugFlag;
-  UINT4                         numTmpltExch;
-  MPI_Comm                     *mpiComm;
-  UINT4                        *numSlaves;
-  InspiralTemplateNode         *tmpltCurrent;
-  InspiralTemplateNode         *tmpltHead;
-  UINT4                         numTmplts;
-  BOOLEAN                      *notFinished;
-  REAL4                        *fracRemaining;
-  InspiralEvent                *loudestEvent;
+  gaussianNoise,
+  bankMinimalMatch,
+  gaussianNoiseInject,
+  realDataInject
 }
-FindChirpMasterParams;
+FindChirpSimulationType;
+
+typedef struct
+tagFindChirpSimulationParams
+{
+  UINT4                         simCount;
+  FindChirpSimulationType       simType;
+}
+FindChirpSimulationParams;
 
 typedef struct
 tagFindChirpSlaveParams
 {
-  UINT4                         inspiralDebugFlag;
+  UINT4                         dataConditioned;
+  UINT4                        *inspiralDebugFlagPtr;
   REAL4                        *chisqThreshVec;
   REAL4                        *rhosqThreshVec;
-  MPI_Comm                     *mpiComm;
+  FILE                         *tmpltBankFilePtr;
+  FILE                         *eventFilePtr;
+  FindChirpSegmentVector       *fcSegVec;
   FindChirpSPDataParams        *dataParams;
   FindChirpSPTmpltParams       *tmpltParams;
   FindChirpFilterParams        *filterParams;
   FindChirpFilterInput         *filterInput;
-  InspiralEvent                *loudestEvent;
+  FindChirpSimulationParams    *simParams;
+  BOOLEAN                       useMPI;
+  void                         *mpiComm;
 }
 FindChirpSlaveParams;
 
@@ -143,6 +140,31 @@ tagFindChirpCreateBankParams
 }
 FindChirpCreateBankParams;
 
+/* Only define the master and exchange type if we have MPI enabled */
+#ifdef LAL_MPI_ENABLED
+enum ExchObjectType
+{
+  ExchDataSegment,
+  ExchFindChirpSegment,
+  ExchInspiralTemplate,
+  ExchInspiralEvent,
+  ExchNumTmpltsFiltered,
+  ExchFinished
+};
+
+typedef struct
+tagFindChirpMasterParams
+{
+  UINT4                         numTmpltExch;
+  UINT4                         numTmpltsToFilter;
+  UINT4                         numTmpltsFiltered;
+  UINT4                        *inspiralDebugFlagPtr;
+  MPI_Comm                     *mpiComm;
+  UINT4                        *numSlaves;
+  InspiralTemplateNode         *currentTmpltNode;
+  InspiralTemplateNode         *tmpltNodeHead;
+}
+FindChirpMasterParams;
 
 void
 LALFindChirpMaster (
@@ -150,12 +172,13 @@ LALFindChirpMaster (
     InspiralEvent             **eventList,
     FindChirpMasterParams       *params 
     );
+#endif /* LAL_MPI_ENABLED */
 
 void
 LALFindChirpSlave (
     LALStatus                  *status, 
     BOOLEAN                    *notFinished,
-    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec,
     FindChirpSlaveParams        *params 
     );
 
