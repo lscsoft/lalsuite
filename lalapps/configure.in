@@ -69,6 +69,7 @@ lalframe=true
 lalmetaio=true
 AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe=false)
 AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio=false)
+AC_CHECK_LIB(gslcblas, main)
 AC_CHECK_LIB(gsl, gsl_version)
 AC_CHECK_LIB(mysqlclient, mysql_init)
 AC_CHECK_LIB(datacondCaller, DatacondCaller)
