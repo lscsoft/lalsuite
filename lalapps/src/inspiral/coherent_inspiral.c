@@ -131,6 +131,8 @@ UINT4 site1             = -1;           /* 2nd ifo: lalCachedDetector site ident
 
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
+INT8   trigStartTimeNS  = 0;            /* CHECK: write triggers only after    */
+INT8   trigEndTimeNS    = 0;            /* CHECK: write triggers only before   */
 int    enableOutput     = -1;           /* write out inspiral events    */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
@@ -169,16 +171,16 @@ int main( int argc, char *argv[] )
   DataSegmentVector            *dataVecPtr[2] = {NULL, NULL};
   
   /* structures for preconditioning */
-#if 0
   COMPLEX8FrequencySeries       injResp;        
   COMPLEX8FrequencySeries      *injRespPtr;     
-#endif
+
   ResampleTSParams              resampleParams; 
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams[2];
   
   /* findchirp data structures */
   FindChirpInitParams          *fcInitParams[2]   = {NULL,NULL};
+  FindChirpSegmentVector       *fcSegVec = NULL;
   FindChirpSPDataParams        *fcDataParams   = NULL;
   FindChirpSPTmpltParams       *fcTmpltParams[2]  = {NULL,NULL};
   FindChirpFilterParams        *fcFilterParams = NULL;
@@ -208,8 +210,8 @@ int main( int argc, char *argv[] )
   /* inspiral events */
   INT4                          numEvents   = 0;
   
-  TwoInterfInspiralEvent       *event       = NULL;
-  TwoInterfInspiralEvent       *eventList   = NULL;
+  MultiInspiralTable           *event = NULL;
+  MultiInspiralTable           *eventList = NULL;
   MetadataTable                 savedEvents;
   
   /* output data */
@@ -287,9 +289,7 @@ int main( int argc, char *argv[] )
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
 
-  /* make sure the pointer to the first event is null */
   savedEvents.multiInspiralTable = NULL;
-
 
   /* create the standard candle and database table */
   summvalue.summValueTable = &candleTable;
@@ -522,21 +522,84 @@ int main( int argc, char *argv[] )
     outFrame[1] = fr_add_proc_COMPLEX8FrequencySeries( outFrame[1], 
         &resp[1], "strain/ct", "RESPONSE2" );
   }
+ 
 
+  /*
+   *
+   * inject signals into the raw, unresampled data
+   *
+   */
+  
+  if ( injectionFile ) {
+    /* get injections within 500 seconds of either end of the segment.   */
+    /* a 0.4,0.4 MACHO starting at 30.0 Hz has length 435.374683 seconds */
+    /* so this should be plenty of safety. better to waste cpu than miss */
+    /* injected signals...                                               */
+    INT4 injSafety = 500;
+    int  numInjections = 0;
+    SimInspiralTable    *injections = NULL;
+    SimInspiralTable    *thisInj = NULL;
+    CHAR tmpChName[LALNameLength];
 
+    /* read in the injection data from XML */
+    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
+        gpsStartTime.gpsSeconds - injSafety,
+        gpsEndTime.gpsSeconds + injSafety );
+    if ( numInjections < 0 )
+    {
+      fprintf( stderr, "error: cannot read injection file" );
+      exit( 1 );
+    }
+
+    injRespPtr = &resp[0];
+
+    /* inject the signals, preserving the channel name (Tev mangles it) */
+    strcpy( tmpChName, chan[0].name );
+    LAL_CALL( LALFindChirpInjectSignals( &status, &chan[0],
+          injections, injRespPtr ), &status );
+    strcpy( chan[0].name, tmpChName );
+
+    if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
+        numInjections, injectionFile, chan[0].name );
+
+    injRespPtr = &resp[1];
+
+    /* inject the signals, preserving the channel name (Tev mangles it) */
+    strcpy( tmpChName, chan[1].name );
+    LAL_CALL( LALFindChirpInjectSignals( &status, &chan[1],
+          injections, injRespPtr ), &status );
+    strcpy( chan[1].name, tmpChName );
+
+    if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
+        numInjections, injectionFile, chan[1].name );
+
+    while ( injections )
+    {
+      thisInj = injections;
+      injections = injections->next;
+      LALFree( thisInj );
+    }
+  
+    /* write the raw channel data plus injections to the output frame file */
+    if ( writeRawData ) {
+      outFrame[0] = fr_add_proc_REAL4TimeSeries( outFrame[0],
+						 &chan[0], "ct", "RAW_INJ1" );
+      outFrame[1] = fr_add_proc_REAL4TimeSeries( outFrame[1],
+					      &chan[1], "ct", "RAW_INJ2" );
+    }
+  }
+  
   /*
    *
    * resample the data to the requested rate
    *
    */
-
-
-  if ( resampleChan )
-  {
-    for ( n = 0 ; n < numDetectors ; ++n )
-    { 
+  
+  
+  if ( resampleChan ) {
+    for ( n = 0 ; n < numDetectors ; ++n ) { 
       if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
-          chan[n].deltaT, resampleParams.deltaT );
+	  chan[n].deltaT, resampleParams.deltaT );
 
       LAL_CALL( LALResampleREAL4TimeSeries( &status, &chan[n], 
             &resampleParams ), &status );
@@ -811,7 +874,7 @@ int main( int argc, char *argv[] )
       dataSegVec[n].data[i].chan = dataVecPtr[n]->data[i].chan;
       dataSegVec[n].data[i].spec = dataVecPtr[n]->data[i].spec;
       dataSegVec[n].data[i].resp = dataVecPtr[n]->data[i].resp;
-      
+      dataSegVec[n].data[i].number = dataVecPtr[n]->data[i].number;
     }
   }
     
@@ -844,7 +907,7 @@ int main( int argc, char *argv[] )
   detectors.detectorOne = lalCachedDetectors[site0];
   detectors.detectorTwo = lalCachedDetectors[site1];
   
-  twoInterfFilterParams->twoInterfRhosqThresh = coherentSnrThresh;
+  twoInterfFilterParams->twoInterfRhosqThresh = coherentSnrThresh*coherentSnrThresh;
   twoInterfFilterParams->detectors            = &detectors;
   
   LAL_CALL( LALCreateTwoInterfFindChirpInputVector (&status, 
@@ -878,8 +941,8 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "twointerffindchirp conditioning data\n" );
   LAL_CALL( LALTwoInterfFindChirpSPData (&status, twoInterfFcSegVec, 
-					 twoInterfDataSegVec, twoInterfDataParamsVec),
-	    &status );
+	twoInterfDataSegVec, twoInterfDataParamsVec),
+      &status );
 
   /* compute the standard candle */
   {
@@ -924,153 +987,154 @@ int main( int argc, char *argv[] )
    * search engine
    *
    */
-
+  
   fcFilterInput = twoInterfFilterInputVec->filterInput;
   
   for ( tmpltCurrent = tmpltHead, inserted = 0; tmpltCurrent; 
-	tmpltCurrent = tmpltCurrent->next, inserted = 0 )
-   {
+	tmpltCurrent = tmpltCurrent->next, inserted = 0 ) {
+ 
     /* loop over detectors */
-    for ( n = 0; n < numDetectors; ++n )
-    {
+    for ( n = 0; n < numDetectors; ++n ) {
       /*  generate template */
       LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput[n].fcTmplt,
-            tmpltCurrent->tmpltPtr, fcTmpltParams[n] ), 
-          &status );
+					tmpltCurrent->tmpltPtr, fcTmpltParams[n] ), 
+		&status );
       fcFilterInput[n].tmplt = tmpltCurrent->tmpltPtr;
-
-      /*
-       *
-       * loop over segments
-       *
-       */
-
-      for ( i = 0; i < twoInterfInitParams->numSegments; ++i )
-      {
-        twoInterfFilterInputVec->filterInput[n].segment = 
-          twoInterfFcSegVec->data[n].data + i;
-
-      } /* end loop over number of segments */
-
-    } /* end loop over detectors */
-
-
-    LAL_CALL( LALTwoInterfFindChirpFilterSegment (&status, &eventList, 
-          twoInterfFilterInputVec, twoInterfFilterParams), 
-        &status );
-
-    if ( writeRhosq )
-    {
-      for ( n = 0; n < numDetectors; ++n ) 
-      {
-        CHAR snrsqStr[LALNameLength];
-        LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
-            "SNRSQ_%d", nRhosqFr++ );
-        strcpy( fcFilterParams[n].rhosqVec->name, chan[n].name );
-        outFrame[n] = fr_add_proc_REAL4TimeSeries(outFrame[n], 
-            fcFilterParams[n].rhosqVec, 
-            "none", snrsqStr );
-      }
     }
+    
+    /*
+     *
+     * loop over segments
+     *
+     */
 
-    if ( writeCoherentRhosq )
-    {
-      CHAR snrsqStr[LALNameLength];
-      LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
-          "SNRSQ_%d", nRhosqFr++ );
-      outFrameNet = fr_add_proc_REAL4TimeSeries(outFrameNet, 
-          twoInterfFilterParams->twoInterfRhosqVec, 
-          "none", snrsqStr );
-    }
-
-    if ( writeChisq ) 
-    {
-      for ( n = 0; n < numDetectors; ++n )
-      {
-        CHAR chisqStr[LALNameLength];
-        REAL4TimeSeries chisqts;
-        LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
-            "CHISQ_%d", nChisqFr++ );
-        chisqts.epoch = fcFilterInput[n].segment->data->epoch;
-        memcpy( &(chisqts.name), fcFilterInput[n].segment->data->name,
-            LALNameLength * sizeof(CHAR) );
-        chisqts.deltaT = fcFilterInput[n].segment->deltaT;
-        chisqts.data = fcFilterParams[n].chisqVec;
-        outFrame[n] = fr_add_proc_REAL4TimeSeries( outFrame[n], 
-            &chisqts, "none", chisqStr );
+    fcSegVec = twoInterfFcSegVec->data;
+    
+    for ( i = 0; i < twoInterfInitParams->numSegments; ++i ) {
+      INT8 fcSegStartTimeNS[2];
+      INT8 fcSegEndTimeNS[2];
+      
+      /* loop over detectors */
+      for ( n = 0; n < numDetectors; ++n ) {
+	LAL_CALL( LALGPStoINT8( &status, &fcSegStartTimeNS[n], 
+	      &(twoInterfFcSegVec->data[n].data[i].data->epoch) ), &status );
+	fcSegEndTimeNS[n] = fcSegStartTimeNS[n] + (INT8)
+	  ( (REAL8) numPoints * 1e9 * twoInterfFcSegVec->data[n].data[i].deltaT );
+	
+	/* skip segment if it is not contained in the trig start or end times */
+	if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS[n])) || 
+	     (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS[n])) )
+	  { 
+	    if ( vrbflg ) fprintf( stdout, 
+	        "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
+		fcSegVec[n].data[i].number, fcSegVec[n].length, 
+		fcSegStartTimeNS[n], fcSegEndTimeNS[n] );
+	    
+	    continue;
+	  }
+	
+	
+	/* filter data segment */ 
+	if ( twoInterfFcSegVec->data[n].data[i].level == tmpltCurrent->tmpltPtr->level ) {
+	  if ( vrbflg ) fprintf( stdout, 
+				 "filtering segment %d/%d [%lld-%lld] "
+				 "against template %d/%d (%e,%e)\n", 
+				 fcSegVec[n].data[i].number,  twoInterfFcSegVec->data[n].length,
+				 fcSegStartTimeNS[n], fcSegEndTimeNS[n],
+				 tmpltCurrent->tmpltPtr->number, numTmplts,
+				 fcFilterInput[n].tmplt->mass1, fcFilterInput[n].tmplt->mass2 );
+	  
+	  
+	  twoInterfFilterInputVec->filterInput[n].segment = 
+	    twoInterfFcSegVec->data[n].data + i;
+	  
+	}
+	
+      } /* end loop over detectors */
+      
+      LAL_CALL( LALCoherentFindChirpFilterSegment (&status, &eventList, 
+	    twoInterfFilterInputVec, twoInterfFilterParams), 
+		&status );
+      
+      if ( writeRhosq ) {
+	for ( n = 0; n < numDetectors; ++n ) {
+	  CHAR snrsqStr[LALNameLength];
+	  LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
+		       "SNRSQ_%d", nRhosqFr++ );
+	  strcpy( fcFilterParams[n].rhosqVec->name, chan[n].name );
+	  outFrame[n] = fr_add_proc_REAL4TimeSeries(outFrame[n], 
+						    fcFilterParams[n].rhosqVec, 
+						    "none", snrsqStr );
+	}
       }
-    }
-
-
-    /*  test if filter returned any events */
-    if ( eventList )
-    {
-      if ( vrbflg )
-      {
-        fprintf( stdout, "segment %d rang template %e,%e\n",
-            twoInterfFcSegVec->data[0].data[i].number,
-            fcFilterInput[0].tmplt->mass1, 
-            fcFilterInput[0].tmplt->mass2 );
-        fprintf( stdout, "***>  dumping events  <***\n" );
-      }
-
-        /* XXX event handling code will segfault as it deferences NULL ptr */
-#if 0
-      if ( eventList && ! savedEvents.multiInspiralTable ) {
-	/* Eventually the filter code will be modfified to output */
-	/* MultiInspiralTable instead of TwoInterfInspiralEvent   */
-        savedEvents.multiInspiralTable->end_time = eventList->time;
-        savedEvents.multiInspiralTable->impulse_time = eventList->impulseTime;
-        savedEvents.multiInspiralTable->eff_distance = eventList->effDist;
-        savedEvents.multiInspiralTable->eta = (REAL4) eventList->tmplt.eta;
-        savedEvents.multiInspiralTable->mass1 = (REAL4) eventList->tmplt.mass1;
-        savedEvents.multiInspiralTable->mass2 = (REAL4) eventList->tmplt.mass2;
-        savedEvents.multiInspiralTable->tau0 = (REAL4) eventList->tmplt.t0;
-        savedEvents.multiInspiralTable->tau2 = (REAL4) eventList->tmplt.t2;
-        savedEvents.multiInspiralTable->tau3 = (REAL4) eventList->tmplt.t3;
-        savedEvents.multiInspiralTable->tau4 = (REAL4) eventList->tmplt.t4;
-        savedEvents.multiInspiralTable->tau5 = (REAL4) eventList->tmplt.t5;
-        savedEvents.multiInspiralTable->snr = sqrt(eventList->snrsq);
-
-        /*Temporarily set "network" chisq to the average value*/
-        savedEvents.multiInspiralTable->chisq = 
-          0.5 * (eventList->chisq1+eventList->chisq2);
-        
-        savedEvents.multiInspiralTable->sigmasq = 
-          eventList->sigma * eventList->sigma;
-        savedEvents.multiInspiralTable->ligo_axis_ra = 
-          eventList->twoInterfAxisRa;
-        savedEvents.multiInspiralTable->ligo_axis_dec = 
-          eventList->twoInterfAxisDec;
-
-        /*Wave arrival angle with respect to detector1-to-detector2 
-          (e.g., Hanford-to-Livingston) ray/baseline...*/           
-        savedEvents.multiInspiralTable->ligo_angle 
-          = eventList->twoInterfAngle;
-      }
-      else
-      {
-        event->next = eventList;
-      }
-#endif
-      /* save a pointer to the last event in the list and count the events */
-      ++numEvents;
-      while ( eventList->next )
+      
+      if ( writeCoherentRhosq )
 	{
-        eventList = eventList->next;
-        ++numEvents;
-      }
-      event = eventList;
-      eventList = NULL;
-    } /* end if ( eventList ) */
-
-  } /* end loop over linked list */
-
-
+	  CHAR snrsqStr[LALNameLength];
+	  LALSnprintf( snrsqStr, LALNameLength*sizeof(CHAR), 
+		       "SNRSQ_%d", nRhosqFr++ );
+	  outFrameNet = fr_add_proc_REAL4TimeSeries(outFrameNet, 
+						    twoInterfFilterParams->twoInterfRhosqVec, 
+						    "none", snrsqStr );
+	}
+      
+      if ( writeChisq ) 
+	{
+	  for ( n = 0; n < numDetectors; ++n )
+	    {
+	      CHAR chisqStr[LALNameLength];
+	      REAL4TimeSeries chisqts;
+	      LALSnprintf( chisqStr, LALNameLength*sizeof(CHAR), 
+			   "CHISQ_%d", nChisqFr++ );
+	      chisqts.epoch = fcFilterInput[n].segment->data->epoch;
+	      memcpy( &(chisqts.name), fcFilterInput[n].segment->data->name,
+		      LALNameLength * sizeof(CHAR) );
+	      chisqts.deltaT = fcFilterInput[n].segment->deltaT;
+	      chisqts.data = fcFilterParams[n].chisqVec;
+	      outFrame[n] = fr_add_proc_REAL4TimeSeries( outFrame[n], 
+							 &chisqts, "none", chisqStr );
+	    }
+	}
+      
+      
+      /*  test if filter returned any events */
+      if ( eventList )
+	{
+	  if ( vrbflg )
+	    {
+	      fprintf( stdout, "segment %d rang template %e,%e\n",
+		       twoInterfFcSegVec->data[0].data[i].number,
+		       fcFilterInput[0].tmplt->mass1, 
+		       fcFilterInput[0].tmplt->mass2 );
+	      fprintf( stdout, "***>  dumping events  <***\n" );
+	    }
+	  
+	  if ( ! savedEvents.multiInspiralTable )
+	    {
+	      savedEvents.multiInspiralTable = eventList;
+	      
+	    }
+	  else
+	    {
+	      event->next = eventList;
+	    }
+	  /* save a pointer to the last event in the list and count the events */
+	  ++numEvents;
+	  while ( eventList->next )
+	    {
+	      eventList = eventList->next;
+	      ++numEvents;
+	    }
+	  event = eventList;
+	  eventList = NULL;
+	} /* end if ( eventList ) */
+    } /* end loop over detectors */
+  }/*end loop over templates */
+  
   /* save the number of events in the search summary table */
   searchsumm.searchSummaryTable->nevents = numEvents;
-
-
+  
+  
   /*
    *
    * free memory used by filtering code
@@ -1129,7 +1193,6 @@ int main( int argc, char *argv[] )
   LALFree( twoInterfDataSegVec);
   twoInterfDataSegVec= NULL;
 
-  
   /*
    *
    * write the results to disk
@@ -1167,7 +1230,7 @@ cleanexit:
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", ifo[0],ifo[1] );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
@@ -1225,7 +1288,7 @@ cleanexit:
     summvalue.summValueTable->version = 0;
     summvalue.summValueTable->start_time = gpsStartTime;
     summvalue.summValueTable->end_time = gpsEndTime;
-    LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s%s", ifo[0],ifo[1] );
     LALSnprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
         "%s", "cohere_insp_effective_distance" );
     LALSnprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
@@ -1238,6 +1301,74 @@ cleanexit:
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
 
+  /* write the multi_inspiral triggers to the output xml */
+  if ( savedEvents.multiInspiralTable )
+  {
+    MultiInspiralTable *tmpEventHead = NULL;
+    MultiInspiralTable *lastEvent = NULL;
+
+    /* discard any triggers outside the trig start/end time window */
+    event = savedEvents.multiInspiralTable;
+    if ( trigStartTimeNS || trigEndTimeNS )
+    {
+      if ( vrbflg ) fprintf( stdout, 
+          "discarding triggers outside trig start/end time... " );
+
+      while ( event )
+      {
+        INT8 trigTimeNS;
+        LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, &(event->end_time) ), 
+            &status );
+
+        if ( ! ( ! trigTimeNS || (trigTimeNS >= trigStartTimeNS) ) && 
+            ( ! trigEndTimeNS || (trigTimeNS < trigEndTimeNS) ) )
+        {
+          /* throw this trigger away */
+          MultiInspiralTable *tmpEvent = event;
+
+          if ( lastEvent )
+          {
+            lastEvent->next = event->next;
+          }
+
+          /* increment the linked list by one and free the event */
+          event = event->next;
+          LALFree( tmpEvent );
+        }
+        else 
+        {
+          /* store the first event as the head of the new linked list */
+          if ( ! tmpEventHead ) tmpEventHead = event;
+
+          /* save the last event and increment the linked list by one */
+          lastEvent = event;
+          event = event->next;
+        }
+      }
+
+      savedEvents.multiInspiralTable = tmpEventHead;
+
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+    
+    /* if we haven't thrown all the triggers away, write multi_inspiral table */
+    if ( savedEvents.multiInspiralTable )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, 
+            &results, multi_inspiral_table ), &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
+            multi_inspiral_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    }
+  }
+  while ( savedEvents.multiInspiralTable )
+  {
+    event = savedEvents.multiInspiralTable;
+    savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+    LALFree( event );
+  }
+
+
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
@@ -1246,6 +1377,7 @@ cleanexit:
 
   for ( n = 0; n < numDetectors; ++n )
   {
+    if ( injectionFile ) free ( injectionFile ); 
     if ( calCacheName[n] ) free( calCacheName[n] );
     if ( frInCacheName[n] ) free( frInCacheName[n] );
     if ( channelName[n] ) free( channelName[n] );
@@ -1319,8 +1451,9 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
 "\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
-"  --ifo1-snr-threshold RHO          set signal-to-noise threshold in ifo1 to RHO\n"\
-"  --ifo2-snr-threshold RHO          set signal-to-noise threshold in ifo2 to RHO\n"\
+"  --ifo1-snr-threshold RHO1          set signal-to-noise threshold in ifo1 to RHO1\n"\
+"  --ifo2-snr-threshold RHO2          set signal-to-noise threshold in ifo2 to RHO2\n"\
+"  --coherent-snr-threshold NETRHO    set coherent signal-to-noise threshold to NETRHO\n"\
 "  --ifo1-chisq-threshold X          threshold on ifo1 chi^2 < X * ( p + rho^2 * delta^2 )\n"\
 "  --ifo2-chisq-threshold X          threshold on ifo2 chi^2 < X * ( p + rho^2 * delta^2 )\n"\
 "  --enable-event-cluster       turn on maximization over chirp length\n"\
