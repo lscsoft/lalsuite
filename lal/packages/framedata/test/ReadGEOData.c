@@ -97,7 +97,7 @@ int main( void )
     tser.epoch = chan.epoch;
     printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
         tser.epoch.gpsSeconds,
-        ceil( 1e-9 * tser.epoch.gpsNanoSeconds
+        (int)ceil( 1e-9 * tser.epoch.gpsNanoSeconds
           + tser.data->length * tser.deltaT ) );
     for ( i = 0; i < tser.data->length; ++i )
     {

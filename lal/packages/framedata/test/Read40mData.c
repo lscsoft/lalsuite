@@ -186,7 +186,7 @@ int main( void )
     /* copy data to tser and output it */
     printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
         tser.epoch.gpsSeconds,
-        ceil( 1e-9 * tser.epoch.gpsNanoSeconds
+        (int)ceil( 1e-9 * tser.epoch.gpsNanoSeconds
           + tser.data->length * tser.deltaT ) );    
     tser.epoch = dmro.epoch;
     for ( i = 0; i < tser.data->length; ++i )

@@ -88,7 +88,7 @@ int main( void )
 
     printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
         chan.epoch.gpsSeconds,
-        ceil( 1e-9 * chan.epoch.gpsNanoSeconds 
+        (int)ceil( 1e-9 * chan.epoch.gpsNanoSeconds 
           + chan.data->length * chan.deltaT ) );    
     LALFrWriteREAL4TimeSeries( &status, &chan, &outpar );
     TESTSTATUS( &status );

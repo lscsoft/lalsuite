@@ -225,15 +225,13 @@ else (void)(0)
 
 #include <lal/LALDemod.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
-
-static void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw);
-
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
@@ -1075,7 +1073,7 @@ int main(int argc, char **argv)
 
 
 /***** This is the routine which computes the timestamps *****/
-static void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw)
+void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw)
 {
   int i=0, j=0;
   int temp1=0, temp2=0;

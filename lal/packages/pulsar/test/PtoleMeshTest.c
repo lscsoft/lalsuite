@@ -52,8 +52,10 @@ LALXMGRPlotMesh()
 
 #include <math.h>
 #include <stdio.h>
+#include <lal/AVFactories.h>
 #include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
 NRCSID( PTOLEMESHTESTC, "$Id$" );
@@ -82,7 +84,6 @@ int main( int argc, char **argv )
   BOOLEAN              errors;    /* whether or not to showcase error traps */
   BOOLEAN              grace;     /* whether or not to graph using xmgrace */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
-  TwoDMeshNode        *node;      /* 'counter' for running down list */
   static TwoDMeshParamStruc mesh; /* mesh parameters */
   static PtoleMetricIn search;    /* more mesh parameters */
   REAL4                mismatch;  /* mismatch threshold of mesh */
@@ -205,6 +206,7 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
   /* Set up shop. */
   INITSTATUS( stat, "getRange", PTOLEMESHTESTC );
   ATTATCHSTATUSPTR( stat );
+  unused = NULL;
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
   y[0] = center.latitude - sqrt( pow( radius*1.001, 2 )
