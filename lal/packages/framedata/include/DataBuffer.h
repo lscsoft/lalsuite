@@ -90,6 +90,7 @@ tagDataSegment
   INT4                     newLock;
   INT4                     newCal;
   INT4                     number;
+  INT4                     level;
 }
 DataSegment;
 
