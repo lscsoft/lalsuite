@@ -119,7 +119,12 @@ int main(int argc, char* argv[]) {
      spread the pain equally over the different nodes. */
   for (i=0;i<locksegs;i++){
     for (k=0;k<nseg[i];k++){
-      int startat=(totalsegs*jobno)/NODES;
+      int startat;
+      
+      if (jobno)
+	startat=(totalsegs*jobno)/(NODES-1);
+      else
+	startat=0;
       
       if (
 #if (SEGSPERJOB)
