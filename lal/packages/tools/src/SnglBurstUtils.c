@@ -2,7 +2,7 @@
  * 
  * File Name: SnglBurstUtils.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A.  and Brady, P. R.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="SnglBurstUtilsCV">
-Author: Brown, D. A.
+Author: Brown, D. A. and Brady, P. R.
 $Id$
 </lalVerbatim> 
 #endif
@@ -25,6 +25,8 @@ $Id$
 #include <lal/BurstSearch.h>
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
+
+#define NANOSEC  (1000000000LL)
 
 #if 0
 <lalLaTeX>
@@ -147,9 +149,53 @@ LALCompareSnglBurstByTime(
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+LALCompareSnglBurstByTimeAndFreq(
+    const void *a,
+    const void *b
+    )
+/* </lalVerbatim> */
+{
+  LALStatus     status;
+  SnglBurstTable *aPtr = *((SnglBurstTable **)a);
+  SnglBurstTable *bPtr = *((SnglBurstTable **)b);
+  INT8 ta, tb;
+  REAL4 flowa, flowb;
+
+  memset( &status, 0, sizeof(LALStatus) );
+  LALGPStoINT8( &status, &ta, &(aPtr->start_time) );
+  LALGPStoINT8( &status, &tb, &(bPtr->start_time) );
+
+  flowa = aPtr->central_freq - 0.5 * aPtr->bandwidth;
+  flowb = bPtr->central_freq - 0.5 * bPtr->bandwidth;
+
+  if ( ta > tb )
+  {
+    return 1;
+  }
+  else if ( ta == tb && flowa > flowb )
+  {
+    return 1;
+  }
+  else if ( ta < tb )
+  {
+    return -1;
+  }
+  else if ( ta == tb && flowa < flowb )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALCompareSnglBurst(
-    LALStatus                *status,
+    LALStatus             *status,
     SnglBurstTable        *aPtr,
     SnglBurstTable        *bPtr,
     SnglBurstAccuracy     *params
@@ -177,3 +223,81 @@ LALCompareSnglBurst(
 }
 
 
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+LALClusterSnglBurstTable (
+	      LALStatus        *status,
+              SnglBurstTable   *burstEvent
+	      )
+/* </lalVerbatim> */
+{
+  SnglBurstTable     *thisEvent=NULL,*prevEvent=NULL;
+
+  INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  thisEvent = burstEvent->next;
+  prevEvent = burstEvent;
+  while (thisEvent != NULL)
+  {
+    /* cornerTime[0][0] = thisEvent->start_time,  etc */
+    INT8    cornerTime[2][2];
+    REAL4   cornerFreq[2][2];
+
+    /* compute the time in nanosec for each event trigger */
+    LALGPStoINT8(status->statusPtr, &(cornerTime[1][0]), &(thisEvent->start_time));
+    CHECKSTATUSPTR(status);
+    cornerTime[1][1] = cornerTime[1][0] + ( NANOSEC * thisEvent->duration );
+
+    LALGPStoINT8(status->statusPtr, &(cornerTime[0][0]), &(prevEvent->start_time));
+    CHECKSTATUSPTR(status);
+    cornerTime[0][1] = cornerTime[0][0] + ( NANOSEC * prevEvent->duration );
+
+    /* compute the start and stop frequencies */
+    cornerFreq[1][0] = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
+    cornerFreq[1][1] = cornerFreq[1][0] + thisEvent->bandwidth;
+    cornerFreq[0][0] = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
+    cornerFreq[0][1] = cornerFreq[0][0] + prevEvent->bandwidth;
+
+    /* find overlapping events */
+    if ( ( (cornerTime[1][0]-cornerTime[0][0]) * 
+          (cornerTime[1][0]-cornerTime[0][1]) <= 0 ) &&
+        ( ((cornerFreq[1][0]-cornerFreq[0][0]) * 
+           (cornerFreq[1][0]-cornerFreq[0][1]) <=0 ) ||
+          ((cornerFreq[1][1]-cornerFreq[0][0]) * 
+           (cornerFreq[1][1]-cornerFreq[0][1]) <=0 ) ) )
+    {
+      cornerFreq[0][0] = cornerFreq[1][0] < cornerFreq[0][0] ? cornerFreq[1][0] :
+        cornerFreq[0][0];
+      cornerFreq[0][1] = cornerFreq[1][1] > cornerFreq[0][1] ? cornerFreq[1][1] :
+        cornerFreq[0][1];
+      cornerTime[0][1] = cornerTime[1][1] > cornerTime[0][1] ? cornerTime[1][1] :
+        cornerTime[0][1];
+      prevEvent->central_freq = 0.5 * (cornerFreq[0][0]+cornerFreq[0][1]);
+      prevEvent->bandwidth = (cornerFreq[0][1]-cornerFreq[0][0]);
+      prevEvent->duration = (REAL4)(cornerTime[0][1]-cornerTime[0][0])/1.0e9;
+
+      if ( prevEvent->confidence > thisEvent->confidence )
+      {
+        prevEvent->confidence = thisEvent->confidence;
+      }
+
+      /* otherwise just dump this event from cluster */
+      prevEvent->next = thisEvent->next;
+      LALFree(thisEvent);
+      thisEvent = prevEvent->next;
+    }
+    else
+    {
+      /* otherwise keep this as a unique trigger */
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+    }
+  }
+
+  /* normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+#undef NANOSEC

@@ -51,6 +51,7 @@ extern "C" {
 NRCSID( LIGOMETADATAUTILSH, "$Id$" );
 
 #include <lal/LIGOMetadataTables.h>
+#include <lal/BurstSearch.h>
 
 typedef struct
 tagSnglBurstAccuracy
@@ -96,9 +97,15 @@ LALCompareSnglBurstByTime(
     const void *b
     );
 
+int
+LALCompareSnglBurstByTimeAndFreq(
+    const void *a,
+    const void *b
+    );
+
 void
 LALCompareSnglBurst(
-    LALStatus                *status,
+    LALStatus             *status,
     SnglBurstTable        *aPtr,
     SnglBurstTable        *bPtr,
     SnglBurstAccuracy     *params
