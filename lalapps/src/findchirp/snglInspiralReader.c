@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 	    {"snrstar",		required_argument,  0,	'd'},
 	    {"cluster",		required_argument,  0,	'e'},
 	    {"clusteralgorithm",required_argument,  0,	'f'},
-	    {"noplayground",	required_argument,  0,	'g'},
+	    {"noplayground",	no_argument,	    0,	'g'},
 	    {"help",		no_argument,	    0,	'h'}, 
 	    {"sort",		no_argument,	    0,	'i'},
 	    {0, 0, 0, 0}
