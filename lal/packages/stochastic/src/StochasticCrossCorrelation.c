@@ -78,13 +78,13 @@ Y=\
 \end{equation} 
 
 If the input data streams represent a range of positive frequencies
-$f_0\le f \le f_0+(N-1)\delta f$, $f_0>0$ (and thus were produced by
+$f_0\le f < f_0+(2N-1)\delta f$, $f_0>0$ (and thus were produced by
 Fourier transforming heterodyned data) we calculate the
 cross-correlation statistic
 \begin{eqnarray}
 Y&=&\ 
 \delta f\ 
-2\sum_{\ell=1}^{N-1}\ 
+2\sum_{\ell=0}^{2N-2}\ 
 {\mathrm{Re}} \left\{
 \widetilde{\bar{h}}_{1}[\ell]^* \ 
 \widetilde{Q}[\ell]\ 
@@ -92,9 +92,9 @@ Y&=&\
 \right\} \nonumber
 \\
 &\approx&
-\int_{-f_0-N\delta f}^{-f_0} df\ 
+\int_{-f_0-(2N-1)\delta f}^{-f_0} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
-+ \int_{f_0}^{f_0+N\delta f} df\ 
++ \int_{f_0}^{f_0+(2N-1)\delta f} df\ 
 \widetilde{h}_1(f)^*\ \widetilde{Q}(f)\ \widetilde{h}_2(f)
 \label{stochastic:e:heterodyned}
 \end{eqnarray}
@@ -120,6 +120,16 @@ LALUnitMultiply()
   whitened data include the different complex whitening filters for
   the two streams.  
   (cf.\ Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c}.)
+\item The output units are constructed by combining the input units,
+  but under normal circumstances the units will be as follows:
+  \begin{eqnarray}
+    {} [\widetilde{Q}^{\scriptstyle{\rm W}}] &=&
+    \textrm{count}^{-2} \\
+    {} [\widetilde{\bar{h}}_{1,2}] &=& \textrm{count}\,\textrm{Hz}^{-1} \\
+    {} [Y] &:=&     [\widetilde{\bar{h}}_1] 
+    [\widetilde{Q}^{\scriptstyle{\rm W}}]  [\widetilde{\bar{h}}_2]
+    = \textrm{s}
+  \end{eqnarray}
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticCrossCorrelationCV}}
