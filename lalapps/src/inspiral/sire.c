@@ -1367,9 +1367,9 @@ int main( int argc, char *argv[] )
     if ( tamaFileName )
     {
       fq = fopen( tamaFileName, "w" );
-      fprintf( fq, "LIGO triggers from %s\n", eventHead->ifo );
-      fprintf( fq, "   trigger time       total mass     eta       " );
-      fprintf( fq, "   snr         chisq        eff dist\n" );
+      fprintf( fq, "LIGO triggers\n");
+      fprintf( fq, "IFO   trigger time       snr         chisq       " );
+      fprintf( fq, " total mass     eta       eff dist (kpc)\n" );
     }
     
     /* free the temporary memory containing the events */
@@ -1392,9 +1392,9 @@ int main( int argc, char *argv[] )
 	{
 	  mtotal = ( thisEvent->mchirp ) / pow( thisEvent->eta, 0.6 );
 	}
-	fprintf( fq, "%20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", trigtime, 
-	    mtotal, thisEvent->eta, thisEvent->snr, thisEvent->chisq, 
-	    thisEvent->eff_distance );
+	fprintf( fq, "%s %20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", 
+	    thisEvent->ifo, trigtime, thisEvent->snr, thisEvent->chisq, 
+	    mtotal, thisEvent->eta, 1.0e+03 * thisEvent->eff_distance );
       }
       LALFree( thisEvent );
     }
