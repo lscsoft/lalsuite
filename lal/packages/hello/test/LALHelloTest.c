@@ -49,7 +49,8 @@ ClearStatus (Status *status);
 int
 main (int argc, char *argv[])
 {
-  static Status status;
+  Status status = {};
+  Status keep;
 
   ParseOptions (argc, argv);
 
@@ -58,13 +59,14 @@ main (int argc, char *argv[])
 
   LALHello (&status, "\0");
   TestStatus (&status, CODES(-1), 1);
-  /* forget to clear status */
+  /* forget to clear status; keep status so we can deallocate it later */
+  keep = status;
 
   LALHello (&status, NULL);
   TestStatus (&status, CODES(-2), 1);
 
-  /* now clear status */
-  ClearStatus (&status);
+  /* now clear status we kept */
+  ClearStatus (&keep);
 
   LALCheckMemoryLeaks ();
   return 0;
