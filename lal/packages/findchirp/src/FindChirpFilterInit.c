@@ -612,6 +612,7 @@ LALFindChirpFilterInit (
   }
   ENDFAIL( status );
   
+
   /*
    *
    * create vector to store snrsq, if required
@@ -625,57 +626,57 @@ LALFindChirpFilterInit (
 	LALCalloc( 1, sizeof(REAL4TimeSeries) );
       LALCreateVector (status->statusPtr, &(outputPtr->rhosqVec->data), 
 			params->numPoints);
-      BEGINFAIL( status )	{
-      TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
-          status ); 
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
-          status );
-      if ( outputPtr->qtildeVecBCV )
+      BEGINFAIL( status )
       {
-        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV)), 
-	      status );
-      }
-      if ( outputPtr->qtildeVecBCVSpin1 )
-      {
-        TRY( LALCDestroyVector( status->statusPtr, 
-              &(outputPtr->qtildeVecBCVSpin1)), status );
-      }
-      if ( outputPtr->qtildeVecBCVSpin2 )
-      {
-        TRY( LALCDestroyVector( status->statusPtr, 
-              &(outputPtr->qtildeVecBCVSpin2)), status );
-      }
-      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
-          status );
-      if ( outputPtr->qVecBCV)
-      {
-        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+        TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
+            status ); 
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
             status );
-      }
-      if ( outputPtr->qVecBCVSpin1)
-      {
-        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+        if ( outputPtr->qtildeVecBCV )
+        {
+          TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV)), 
+              status );
+        }
+        if ( outputPtr->qtildeVecBCVSpin1 )
+        {
+          TRY( LALCDestroyVector( status->statusPtr, 
+                &(outputPtr->qtildeVecBCVSpin1)), status );
+        }
+        if ( outputPtr->qtildeVecBCVSpin2 )
+        {
+          TRY( LALCDestroyVector( status->statusPtr, 
+                &(outputPtr->qtildeVecBCVSpin2)), status );
+        }
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
             status );
-      }
-      if ( outputPtr->qVecBCVSpin2)
-      {
-        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
-            status );
-      }
+        if ( outputPtr->qVecBCV)
+        {
+          TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+              status );
+        }
+        if ( outputPtr->qVecBCVSpin1)
+        {
+          TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+              status );
+        }
+        if ( outputPtr->qVecBCVSpin2)
+        {
+          TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
+              status );
+        }
 
+        TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+              &(outputPtr->invPlan) ), status );
 
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-            &(outputPtr->invPlan) ), status );
-
-      LALFree( outputPtr->chisqInput );
-      if ( outputPtr->chisqInputBCV )
-      {
-        LALFree( outputPtr->chisqInputBCV );
+        LALFree( outputPtr->chisqInput );
+        if ( outputPtr->chisqInputBCV )
+        {
+          LALFree( outputPtr->chisqInputBCV );
+        }
+        LALFree( outputPtr->chisqParams );
+        LALFree( outputPtr );
+        *output = NULL;
       }
-      LALFree( outputPtr->chisqParams );
-      LALFree( outputPtr );
-      *output = NULL;
-    }
     ENDFAIL( status );
   }    
 
@@ -687,6 +688,7 @@ LALFindChirpFilterInit (
    */
   
   
+# if 0
   if ( params->createZVec )
     {
       outputPtr->zVec = (COMPLEX8TimeSeries *) 
@@ -750,6 +752,7 @@ LALFindChirpFilterInit (
     }
     ENDFAIL( status );*/
   }    
+#endif
 
 
   /* normal exit */
@@ -889,6 +892,7 @@ LALFindChirpFilterFinalize (
     LALFree( outputPtr->rhosqVec );
   }    
 
+#if 0
   if ( outputPtr->zVec )
   {
     LALCDestroyVector( status->statusPtr, &(outputPtr->zVec->data) );
@@ -896,6 +900,7 @@ LALFindChirpFilterFinalize (
 
     LALFree( outputPtr->zVec );
   }    
+#endif
 
 
   /*

@@ -117,21 +117,15 @@ LALFindChirpFilterSegment (
         FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
 
-
-
-
- if ( params->zVec )
+#if 0
+  if ( params->zVec )
   {
     ASSERT( params->zVec->data->data, status,
-	FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL  );
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL  );
     ASSERT( params->zVec->data, status,
-	FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   }
-
-
-
-
-
+#endif
 
   /* if a chisqVec vector has been created, check we can store data in it */
   if ( params->chisqVec ) 
@@ -312,10 +306,10 @@ LALFindChirpFilterSegment (
   if ( params->rhosqVec )
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
+#if 0
   if (params->zVec )
     memset( params->zVec->data->data, 0, numPoints * sizeof( COMPLEX8 ) ); 
-
-
+#endif
 
   /* normalisation */
   params->norm = norm = 
@@ -360,7 +354,7 @@ LALFindChirpFilterSegment (
     }
   }
 
-
+#if 0
  if ( params->zVec ) 
   {
     memcpy( params->zVec->name, input->segment->data->name,
@@ -375,9 +369,7 @@ LALFindChirpFilterSegment (
       params->zVec->data->data[j].im = sqrt(norm) * q[j].im;
     }
   }
-
-
-
+#endif
 
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
