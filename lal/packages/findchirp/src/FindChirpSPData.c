@@ -1107,6 +1107,8 @@ LALFindChirpBCVData (
     fcSeg->b1 = 0.0;
     fcSeg->b2 = 0.0;
     fcSeg->segNorm = 0.0;
+    Power    = 0.0;
+    PowerBCV = 0.0;
 
     for ( k = 0; k < cut; ++k )
     {
