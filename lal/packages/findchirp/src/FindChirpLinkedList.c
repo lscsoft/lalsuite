@@ -38,7 +38,8 @@ LALFindChirpCreateTmpltNode (
   current = *tmpltNode;
 
   /* create memory for the template node */
-  *tmpltNode = (InspiralTemplateNode *) LALMalloc( sizeof(InspiralTemplateNode) );
+  *tmpltNode = (InspiralTemplateNode *) 
+    LALCalloc( 1, sizeof(InspiralTemplateNode) );
   if ( !tmpltNode )
   {
     ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
