@@ -286,7 +286,7 @@ class CondorDAGNode:
         fh.write( ' ' + str(k) + '="' + str(self.__vars[k]) + '"' )
       fh.write( '\n' )
 
-  def write_parentss(self,fh):
+  def write_parents(self,fh):
     """
     Write the parent/child relations for this job to the DAG file descriptor.
     fh = descriptor of open DAG file.
