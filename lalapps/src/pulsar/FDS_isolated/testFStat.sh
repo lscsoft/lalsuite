@@ -35,6 +35,7 @@ echo "Running ComputeFStatistic-code '$prog' on test-data '$sftdir/$sftbase*'"
 ## Test1: using a uniform sky-grid
 ##----------------------------------------
 echo "Test 1) uniform sky-grid:"
+echo "cmd-line args: $CFSparams1"
 if ! "$prog" $CFSparams1 -v0; then
     echo "failed... exiting.";
     exit
@@ -51,6 +52,7 @@ fi
 ## Test2: using an isotropic Grid
 ##-------------------------------
 echo "Test 2) isotropic sky-grid:"
+echo "cmd-line args: $CFSparams2"
 if ! "$prog" $CFSparams2 -v0; then
     echo "failed... exiting.";
     exit
@@ -68,6 +70,7 @@ fi
 ## Test3: using a the analytic Ptole-metric
 ##----------------------------------------
 echo "Test 3) analytic Ptole-metric:"
+echo "cmd-line args: $CFSparams3"
 if ! "$prog" $CFSparams3 -v0; then
     echo "failed... exiting.";
     exit
@@ -80,6 +83,3 @@ if ./compareFstats -1 ./Fstats -2 ./Fstats.ref3 ; then
 else
     echo "OUCH... files differ. Something might be wrong..."
 fi
-
-    
-
