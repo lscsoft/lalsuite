@@ -407,8 +407,6 @@ void compute_skygrid(LALStatus * status)
         (void)strncat(ser_relfreq_file_name, outfile_suffix, LALNameLength);
       }
       
-      printf("CUBAAN: ser_cross_file_name: %s\n", ser_cross_file_name);
-      
       skygrid_print(&(gps_and_acc.gps), grid_cros_sq, ser_cross_file_name);
       skygrid_print(&(gps_and_acc.gps), grid_plus_sq, ser_plus_file_name);
       skygrid_print(&(gps_and_acc.gps), grid_sum_sq, ser_sum_file_name);
