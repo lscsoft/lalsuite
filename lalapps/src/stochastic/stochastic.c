@@ -2062,19 +2062,21 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counters */
   INT4 i, segLoop, interLoop;
 
-  /* results parameters */
+  /* results */
   REAL8 y;
   REAL8 sigmaTheo;
 
   /* input data */
+  REAL4TimeSeries *seriesOne;
+  REAL4TimeSeries *seriesTwo;
+
+  /* timing */
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
   LIGOTimeGPS gpsSegStartTime;
   LIGOTimeGPS gpsAnalysisTime;
-  REAL4TimeSeries *seriesOne;
-  REAL4TimeSeries *seriesTwo;
 
-  /* input data segment */
+  /* segments */
   INT4 numSegments;
   INT4 duration, durationEff, extrasec;
   INT4 segsInInt, numIntervals, segMiddle;
@@ -2085,7 +2087,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4TimeSeries *segmentOne = NULL;
   REAL4TimeSeries *segmentTwo = NULL;
 
-  /* window for segment data streams */
+  /* window */
   REAL4Window *dataWindow;
 
   /* response functions */
@@ -2094,7 +2096,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 respLength;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
-  /* data structures for PSDs */
+  /* PSDs */
   REAL8 deltaF;
   INT4 filterLength;
   INT4 numFMin;
@@ -2103,23 +2105,23 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *psdTwo = NULL;
   REAL4Vector *calPsdOne, *calPsdTwo;
 
-  /* calibrated inverse noise data structures */
+  /* calibrated inverse noise*/
   REAL4FrequencySeries *calInvPsdOne = NULL;
   REAL4FrequencySeries *calInvPsdTwo = NULL;
 
   /* overlap reduction function */
   REAL4FrequencySeries *overlap;
 
-  /* frequency mask structures */
+  /* frequency mask */
   REAL4FrequencySeries *mask;
 
-  /* structures for optimal filter */
+  /* optimal filter */
   REAL4FrequencySeries *optFilter = NULL;
 
-  /* spectrum structures */
+  /* gravitational wave spectrum */
   REAL4FrequencySeries *omegaGW;
 
-  /* structures for cross correlation spectrum */
+  /* cross correlation spectrum */
   COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
   /* error handler */
@@ -2204,7 +2206,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* check that the two series have the same sample rate */
   if (seriesOne->deltaT != seriesTwo->deltaT)
   {
-    fprintf(stderr, "series have different sample rates...\n");
+    fprintf(stderr, "Series have different sample rates...\n");
     exit(1);
   }
   else
@@ -2217,23 +2219,19 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get deltaF for optimal filter */
   deltaF = 1./(REAL8)PSD_WINDOW_DURATION;
 
-  /* set length for data segments */
-  intervalLength = intervalDuration * resampleRate;
-  segmentLength = segmentDuration * resampleRate;
-
   /* get bins for min and max frequencies */
   numFMin = (INT4)(fMin / deltaF);
   numFMax = (INT4)(fMax / deltaF);
 
   /* get lengths */
   filterLength = numFMax - numFMin + 1;
+  intervalLength = intervalDuration * resampleRate;
+  segmentLength = segmentDuration * resampleRate;
+  respLength = (UINT4)(fMax / deltaF) + 1;
 
   /* allocate memory for calibrated PSDs */
   calPsdOne = XLALCreateREAL4Vector(filterLength);
   calPsdTwo = XLALCreateREAL4Vector(filterLength);
-
-  /* set parameters for response functions */
-  respLength = (UINT4)(fMax / deltaF) + 1;
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
@@ -2245,8 +2243,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* create window for data */
   dataWindow = data_window(seriesOne->deltaT, segmentLength, hannDuration);
-
-  /* quantities needed to build the optimal filter */
 
   /* generate overlap reduction function */
   if (vrbflg)
@@ -2298,7 +2294,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             (REAL8)((interLoop * segmentShift) + \
                     (segLoop * segmentDuration))), &status);
 
-      /* get epoch for response functions */
+      /* get calibration epoch */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
             (REAL8)calibOffset), &status);
 
@@ -2318,7 +2314,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
           segmentDuration);
 
-      /* compute response functions */
+      /* compute response */
       responseOne = generate_response(&status, ifoOne, calCacheOne, \
           gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
       responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
@@ -2326,7 +2322,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
-      if ((segLoop == segMiddle) && (middle_segment_flag == 0))
+      if ((segLoop == segMiddle) && (!middle_segment_flag))
       {
         if (vrbflg)
           fprintf(stdout, "Ignoring middle segment..\n");
