@@ -51,6 +51,27 @@ class AnalyzedIFOData:
   def get_dag_node(self):
     return self.__dag_node
 
+class AnalyzedTAMAData:
+  """
+  Contains the information for the data that needs to be filtered.
+  """
+  def __init__(self,seg,node):
+    self.__analysis_segment = seg
+    self.__dag_node = node
+
+  def set_seg(self,seg):
+    self.__analysis_segment = seg
+
+  def get_seg(self):
+    return self.__analysis_segment
+
+  def set_dag_node(self,node):
+    self.__dag_node = node
+
+  def get_dag_node(self):
+    return self.__dag_node
+
+
 def chunk_in_segment(chunk,seg):
   if ( 
     chunk.start() >= seg.start()
@@ -75,6 +96,20 @@ def chunks_overlap(chunk1,chunk2):
     ) or (
     chunk1.start()  >= chunk2.start() 
     and chunk1.end() <= chunk2.end() ):
+    return 1
+  else:
+    return 0
+
+def segs_overlap(seg1,seg2):
+  if ( 
+    seg1.start()  >= seg2.start() 
+    and seg1.start()  <= seg2.end()
+    ) or (
+    seg1.end()  >= seg2.start() 
+    and seg1.end() <= seg2.end()
+    ) or (
+    seg1.start()  <= seg2.start() 
+    and seg1.end() >= seg2.end() ):
     return 1
   else:
     return 0
@@ -120,7 +155,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
             df.set_start(seg.start() - pad)
             df.set_end(seg.end() + pad)
             if prev_df: df.add_parent(prev_df)
-            dag.add_node(df)
+            if ligo_analysis : dag.add_node(df)
             prev_df = df
             done_df_for_seg = 1
 	  # make a template bank job for the master chunk
@@ -130,7 +165,7 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
 	  bank.set_ifo(ifo_name)
 	  bank.set_cache(df.get_output())
 	  bank.add_parent(df)
-	  dag.add_node(bank)
+	  if ligo_analysis: dag.add_node(bank)
 	  # make an inspiral job for the master chunk
 	  insp = inspiral.InspiralNode(insp_job)
 	  insp.set_start(chunk.start())
@@ -143,13 +178,82 @@ def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
 	  insp.set_cache(df.get_output())
 	  insp.set_bank(bank.get_output())
 	  insp.add_parent(bank)
-	  dag.add_node(insp)
+          if ligo_analysis: dag.add_node(insp)
 	  # store this chunk in the list of filtered L1 data
 	  chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
 
 
+def single_inca(ifo_analyzed,ifo_single,ifo_name,single_inca_job,dag,
+  usertag=None):
+  """
+  Run inca on the single coincident times from each of the IFOs. 
+  Since the way we treat all this data is the same, this function is the same 
+  for all three cases. 
+  ifo_analyzed = the analyzed chunks for the IFO
+  ifo_single = the single IFO science segments 
+  ifo_name = the name of the IFO
+  single_inca_job = the condor job to do single IFO inca
+  dag = the DAG to attach the nodes to
+  """
+
+  for seg in ifo_single:
+    sinca = inspiral.IncaNode(single_inca_job)
+    sinca.set_start(seg.start())
+    sinca.set_end(seg.end())
+    sinca.set_ifo_a(ifo_name)
+    sinca.add_var_opt('single-ifo',' ')
+
+    # add all master chunks that overlap with segment to input
+    for ifo_done in ifo_analyzed:
+      if chunk_in_segment(ifo_done.get_chunk(),seg):
+        sinca.add_var_arg(ifo_done.get_dag_node().get_output())
+        if ligo_analysis: sinca.add_parent(ifo_done.get_dag_node())
+    if ligo_analysis: dag.add_node(sinca)
+
+
+def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
+  dag,usertag=None):
+  """
+  Perform coincidence test between single IFO LIGO data and TAMA data.
+  Since the way we treat all this data is the same, this function is the same 
+  for all three LIGO ifos. 
+  segments = segment list of single IFO + TAMA times
+  ligo_chunks = the master chunks for the LIGO IFO
+  tama_segs = the TAMA segments
+  ifo_name = the name of the LIGO IFO
+  inca_job = the condor job that we should use to test coincidence
+  dt = max time difference between triggers
+  dag = the DAG to attach the nodes to
+  """
+
+  for seg in segments:
+    lt_inca = inspiral.IncaNode(lt_inca_job)
+    lt_inca.set_start(seg.start())
+    lt_inca.set_end(seg.end())
+    lt_inca.set_ifo_a(ifo_name)
+    lt_inca.set_ifo_b('T1')
+    lt_inca.set_ifo_tag(ifo_name + 'T1')
+    lt_inca.add_var_opt('dt',dt)
+    lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
+    lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
+    lt_inca.add_var_opt('parameter-test',
+      cp.get('pipeline','ligo-t-param-test'))
+    
+    # add all LIGO master chunks that overlap with segment to input
+    for ligo_done in ligo_chunks:
+      if chunk_in_segment(ligo_done.get_chunk(),seg):
+        lt_inca.add_var_arg(ligo_done.get_dag_node().get_output())
+        if ligo_analysis: lt_inca.add_parent(ligo_done.get_dag_node())
+    # add all TAMA segments that overlap with segment to input
+    for t_done in tama_segs:
+      if segs_overlap(t_done.get_seg(),seg):
+        lt_inca.add_var_arg(t_done.get_dag_node().get_output())
+        lt_inca.add_parent(t_done.get_dag_node())
+    dag.add_node(lt_inca)
+
+  
 ##############################################################################
 # help message
 def usage():
@@ -161,7 +265,9 @@ Usage: lalapps_inspiral_pipe [options]
   -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
 
   -s, --output-segments    output the analyzed segments and exit
-  -t, --tama-overlap       analyze only times in coincidence with TAMA 
+  -o, --tama-overlap       analyze only times in coincidence with TAMA
+  -L, --ligo-analysis      perform the ligo analysis
+  -t, --tama-coincidence   test for coincidence between LIGO and TAMA triggers
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -175,7 +281,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:pP:l:f:st"
+shortop = "hvu:cj:pP:l:f:soLt"
 longop = [
   "help",
   "version",
@@ -186,7 +292,9 @@ longop = [
   "log-path=",
   "config-file=",
   "output-segments",
-  "tama-overlap"
+  "tama-overlap",
+  "ligo-analysis",
+  "tama-coincidence"
   ]
 
 try:
@@ -203,7 +311,9 @@ config_file = None
 output_segs = None
 tama_overlap = None
 playground_only = 0
-
+ligo_analysis = 0
+tama_coincidence = 0
+tama_trig_file = 0
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -220,8 +330,13 @@ for o, a in opts:
     usertag = a
   elif o in ("-s", "--output-segments"):
     output_segs = 1
-  elif o in ("-t", "--tama-overlap"):
+  elif o in ("-o", "--tama-overlap"):
     tama_overlap = 1
+  elif o in ("-o", "--ligo-analysis"):
+    ligo_analysis = 1
+  elif o in ("-o", "--tama-coincidence"):
+    tama_trig_file = a
+    tama_coincidence = 1
   elif o in ("-j", "--injections"):
     inj_file = a
   elif o in ("-p", "--playground-only"):
@@ -298,6 +413,11 @@ insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 trig_insp_job = inspiral.InspiralJob(cp)
 inca_job = inspiral.IncaJob(cp)
+s_inca_job = inspiral.IncaJob(cp)
+sire_job = inspiral.SireJob(cp)
+tama2lw_job = inspiral.Tama2LigoLwJob(cp)
+lt_inca_job = inspiral.IncaJob(cp)
+
 
 # set better submit file names than the default
 if usertag:
@@ -310,6 +430,11 @@ insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 trig_insp_job.set_sub_file( basename + '.trig_inspiral' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
+s_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
+sire_job.set_sub_file( basename + '.sire' + subsuffix )
+tama2lw_job.set_sub_file( basename + '.tama2lw' + subsuffix )
+lt_inca_job.set_sub_file( basename + '.lt_inca' + subsuffix )
+
 
 # set the usertag in the jobs
 if usertag:
@@ -318,6 +443,11 @@ if usertag:
   trig_job.add_opt('user-tag',usertag)
   trig_insp_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
+  s_inca_job.add_opt('user-tag',usertag)
+  sire_job.add_opt('user-tag',usertag)
+  tama2lw_job.add_opt('user-tag',usertag)
+  lt_inca_job.add_opt('user-tag',usertag)
+
 
 # add the injections
 if inj_file:
@@ -330,8 +460,12 @@ if condor_prio:
   tmplt_job.add_condor_cmd('priority',condor_prio)
   insp_job.add_condor_cmd('priority',condor_prio)
   trig_job.add_condor_cmd('priority',condor_prio)
-  trig_insp_job.add_opt('injection-file',inj_file)
+  trig_insp_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
+  s_inca_job.add_condor_cmd('priority',condor_prio)
+  sire_job.add_condor_cmd('priority',condor_prio)
+  tama2lw_job.add_condor_cmd('priority',condor_prio)
+  lt_inca_job.add_condor_cmd('priority',condor_prio)
 
 
 ##############################################################################
@@ -365,7 +499,7 @@ t_data = pipeline.ScienceData()
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
-if tama_overlap:
+if tama_overlap or tama_coincidence:
   t_data.read(cp.get('input','tama-segments'),0)
 print "done"
 
@@ -502,7 +636,21 @@ sys.stdout.flush()
 print "done"
 
 ##############################################################################
-# Step 10: Determine which of the H2 master chunks needs to be triggered
+# Step 10: Run inca in single ifo mode on the single ifo triggers.
+
+print "setting up jobs to inca single IFO data...",
+
+single_inca(l1_chunks_analyzed,l1_single_data,'L1',s_inca_job,dag,
+  usertag)
+
+single_inca(h1_chunks_analyzed,h1_single_data,'H1',s_inca_job,dag,
+  usertag)
+
+single_inca(h2_single_chunks_analyzed,h2_single_data,'H2',s_inca_job,dag,
+  usertag)
+
+##############################################################################
+# Step 11: Determine which of the H2 master chunks needs to be triggered
 h1_h2_chunks_analyzed = []
 
 print "setting up jobs to filter H2 double coincident data...",
@@ -527,7 +675,7 @@ for seg in h2_data:
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
-          dag.add_node(df)
+          if ligo_analysis: dag.add_node(df)
           prev_df = df
           done_df_for_seg = 1
         # make a trigbank for the master H2 chunk: to do this, we need
@@ -538,7 +686,7 @@ for seg in h2_data:
           if chunks_overlap(chunk,h1_done.get_chunk()):
             trigbank.add_var_arg(h1_done.get_dag_node().get_output())
             trigbank.add_parent(h1_done.get_dag_node())
-        dag.add_node(trigbank)
+        if ligo_analysis: dag.add_node(trigbank)
         # analyze the H2 master chunk with this triggered template bank
         trig_insp = inspiral.InspiralNode(trig_insp_job)
         trig_insp.set_start(chunk.start())
@@ -553,13 +701,13 @@ for seg in h2_data:
         trig_insp.set_bank(trigbank.get_output())
         trig_insp.add_parent(df)
         trig_insp.add_parent(trigbank)
-        dag.add_node(trig_insp)
+        if ligo_analysis: dag.add_node(trig_insp)
         # store this chunk in the list of filtered L1 data
         h1_h2_chunks_analyzed.append(AnalyzedIFOData(chunk,trig_insp))
 print "done"
 
 ##############################################################################
-# Step 11: Run inca on each of the disjoint sets of double coincidence data
+# Step 12: Run inca on each of the disjoint sets of double coincidence data
 
 print "setting up jobs to get H1/H2 double coincident triggers...",
 sys.stdout.flush()
@@ -567,7 +715,7 @@ sys.stdout.flush()
 # make sure we use the range cut for analyzing the LHO conincidences
 inca_job.add_opt('ifo-b-range-cut',None)
 
-
+h1_h2_inca_nodes = []
 for seg in h1_h2_data:
   inca = inspiral.IncaNode(inca_job)
   inca.set_start(seg.start())
@@ -575,11 +723,11 @@ for seg in h1_h2_data:
   inca.set_ifo_a('H1')
   inca.set_ifo_b('H2')
   inca.set_ifo_tag('H1H2')
-  inca.add_var_opt('dt',cp.get('pipeline','dt'))
-  inca.add_var_opt('kappa',cp.get('pipeline','kappa'))
-  inca.add_var_opt('epsilon',cp.get('pipeline','epsilon'))
+  inca.add_var_opt('dt',cp.get('pipeline','hh-dt'))
+  inca.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
+  inca.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
   inca.add_var_opt('ifo-b-snr-threshold',h2_snr)
-
+  inca.add_var_opt('parameter-test',cp.get('pipeline','hh-param-test'))
 
   # add all H1 master chunks that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
@@ -591,8 +739,117 @@ for seg in h1_h2_data:
     if chunk_in_segment(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       inca.add_parent(h2_done.get_dag_node())
-  dag.add_node(inca)
+  if ligo_analysis: dag.add_node(inca)
+  h1_h2_inca_nodes.append(AnalyzedIFOData(seg,inca))
 print "done"
+
+##############################################################################
+# Step 13: Run tama2ligolw on the tama triggers
+
+if tama_coincidence:
+  tama_segs_analyzed = []
+  for seg in t_data:
+    tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
+    tama2lw.set_start(seg.start())
+    tama2lw.set_end(seg.end())
+    infile = cp.get('input','tama-triggers')
+    tama2lw.set_input(infile)
+    outfile = 'T1-INSPIRAL'
+    if usertag:
+      outfile += '_' + usertag 
+    outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
+      '.xml'
+    tama2lw.set_output(outfile)
+    dag.add_node(tama2lw)
+    tama_segs_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
+
+
+##############################################################################
+# Step 14: Test for coincidence between the single IFO ligo and tama triggers
+
+if tama_coincidence:
+  print "setting up jobs to get (single ifo LIGO)-TAMA coincident triggers...",
+  sys.stdout.flush()
+
+  l1_t_data = copy.deepcopy(l1_single_data)
+  l1_t_data.intersection(t_data)
+  h1_t_data = copy.deepcopy(h1_single_data)
+  h1_t_data.intersection(t_data)
+  h2_t_data = copy.deepcopy(h2_single_data)
+  h2_t_data.intersection(t_data)
+ 
+  lt_dt = cp.get('pipeline','lt-dt')
+  lt_coinc(l1_t_data,l1_chunks_analyzed,tama_segs_analyzed,'L1',lt_inca_job,
+    lt_dt,dag,usertag)
+
+  ht_dt = cp.get('pipeline','ht-dt')
+  lt_coinc(h1_t_data,h1_chunks_analyzed,tama_segs_analyzed,'H1',lt_inca_job,
+    ht_dt,dag,usertag)
+
+  lt_coinc(h2_t_data,h2_single_chunks_analyzed,tama_segs_analyzed,'H2',
+    lt_inca_job,ht_dt,dag,usertag)
+
+  print "done"
+
+##############################################################################
+# Step 15: Test for coincidence between the H1-H2 and tama triggers
+
+if tama_coincidence:
+  print "setting up jobs to get (H1-H2 LIGO)-TAMA coincident triggers...",
+  sys.stdout.flush()
+
+  
+  h1_h2_t_data = copy.deepcopy(h1_h2_data)
+  h1_h2_t_data.intersection(t_data)
+
+  for seg in h1_h2_t_data:
+    # do inca to get coincidence between H1 triggers and TAMA triggers
+    lt_inca2 = inspiral.IncaNode(lt_inca_job)
+    lt_inca2.set_start(seg.start())
+    lt_inca2.set_end(seg.end())
+    lt_inca2.set_ifo_a('H1')
+    lt_inca2.set_ifo_b('T1')
+    lt_inca2.set_ifo_tag('H1H2T1')
+    lt_inca2.add_var_opt('dt',cp.get('pipeline','ht-dt'))
+    lt_inca2.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
+    lt_inca2.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
+    lt_inca2.add_var_opt('parameter-test', 
+      cp.get('pipeline','ligo-t-param-test'))
+    # do the third inca between H1 and H2
+    inca3 = inspiral.IncaNode(inca_job)
+    inca3.set_start(seg.start())
+    inca3.set_end(seg.end())
+    inca3.set_ifo_a('H1')
+    inca3.set_ifo_b('H2')
+    inca3.set_ifo_tag('H1H2T1')
+    inca3.add_var_opt('dt',cp.get('pipeline','hh-dt'))
+    inca3.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
+    inca3.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
+    inca3.add_var_opt('parameter-test', 
+      cp.get('pipeline','hh-param-test'))
+
+    inca3.add_var_opt('ifo-b-snr-threshold',h2_snr)
+    # add the triggers and parent relation from the L1/H1 inca
+    for h1_h2_done in h1_h2_inca_nodes:
+      if ( h1_h2_done.get_chunk().start() == seg.start() and 
+        h1_h2_done.get_chunk().end() == seg.end() ):
+        lt_inca2.add_parent(h1_h2_done.get_dag_node())
+        lt_inca2.add_var_arg(h1_h2_done.get_dag_node().get_output_a())
+        inca3.add_parent(h1_h2_done.get_dag_node())
+        inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
+    # add all H2 master segments that overlap with segment to input
+    for t_done in tama_segs_analyzed:
+      if chunk_in_segment(t_done.get_seg(),seg):
+        lt_inca2.add_var_arg(t_done.get_dag_node().get_output())
+        lt_inca2.add_parent(t_done.get_dag_node())
+    inca3.add_parent(lt_inca2)
+    inca3.add_var_arg(lt_inca2.get_output_a())
+    # add the nodes to the dag
+    dag.add_node(lt_inca2)
+    dag.add_node(inca3)
+print "done"
+sys.stdout.flush()
+
 
 ##############################################################################
 # Write out the DAG, help message and log file
@@ -600,6 +857,7 @@ dag.write_sub_files()
 dag.write_dag()
 
 print "\nCreated a DAG file which can be submitted by executing"
+
 print "\n   condor_submit_dag", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
@@ -688,6 +946,19 @@ for h2_done in h1_h2_chunks_analyzed:
   print >> log_fh, h2_done.get_chunk()
   total_time += len(h2_done.get_chunk())
 print >> log_fh, "\n total time", total_time, "seconds"
+
+if tama_coincidence:
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( 
+    "Getting triggers from " + str(len(tama_segs_analyzed)) + \
+    " TAMA segments\n" )
+  total_time = 0
+  for t_done in tama_segs_analyzed:
+    print >> log_fh, t_done.get_seg()
+    seg = t_done.get_seg()
+    total_time += seg.end() - seg.start() 
+    print >> log_fh, t_done.get_dag_node()
+  print >> log_fh, "\n total time", total_time, "seconds"
 
 
 print >> log_fh, "\n===========================================\n"
