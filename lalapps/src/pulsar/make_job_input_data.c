@@ -137,7 +137,8 @@ int main(int argc, char* argv[]) {
   /* check that files names/times are properly ordered */
   for (i=0;i<fileno-1;i++){
     if (starttimes[i]>=starttimes[i+1]){
-      fprintf(stderr,"Problem with file time stamps at line %d %s %s\n",i+1,filenames[i],filenames[i+1]);
+      fprintf(stderr,"Problem with file time stamps at line %d of file: %s:\n%s\n%s\n",
+	      i+1, argv[2], filenames[i], filenames[i+1]);
       return 1;
     }
   }
