@@ -91,9 +91,8 @@ LALFindChirpBCVSpinFilterSegment (
   LALMSTUnitsAndAcc     gmstUnits;
   COMPLEX8             *wtilde;  
   COMPLEX8             *inputData1;
-  REAL4			rhoSq;
   REAL4 		rho = 0.0;
-  REAL4                 invRho;
+  REAL4                 invRho = 0.0;
   REAL4 		m;
   REAL4                 normFac;
   REAL4                 normFacSq;
@@ -244,8 +243,8 @@ LALFindChirpBCVSpinFilterSegment (
 
   	normData *= deltaT * normFac;   
   
-  	fprintf (stdout, "Cross product of input data with itself = %e\n", 
-			normData);
+  	/*fprintf (stdout, "Cross product of input data with itself = %e\n", 
+			normData);*/
 
   	invRootNormData = pow(normData,-0.5); 
  
@@ -564,6 +563,89 @@ LALFindChirpBCVSpinFilterSegment (
   	}
   } 
 
+
+ /*
+  *
+  * clean up the last event if there is one
+  *
+  */
+	
+ if (thisEvent)	
+ {
+ 	/* clean up this event */
+	INT8 timeNS;
+	INT4 timeIndex = thisEvent->end_time.gpsSeconds;
+	                                            
+	/* set the event LIGO GPS time of the event */
+	timeNS = 1000000000L *
+	    (INT8) (input->segment->data->epoch.gpsSeconds);
+	timeNS +=
+	   (INT8) (input->segment->data->epoch.gpsNanoSeconds);
+	timeNS += (INT8) (1e9 * timeIndex * deltaT);
+	thisEvent->end_time.gpsSeconds
+	        = (INT4) (timeNS/1000000000L);
+	thisEvent->end_time.gpsNanoSeconds
+	        = (INT4) (timeNS%1000000000L);
+	LALGPStoGMST1( status->statusPtr,
+	          &(thisEvent->end_time_gmst),
+	          &(thisEvent->end_time), &gmstUnits );
+	          CHECKSTATUSPTR( status );
+																													                                                                                                                                              
+	/* set the impulse time for the event */
+	thisEvent->template_duration = (REAL8) chirpTime;
+	                                                                                                                                              
+	/* record the ifo and channel name for the event */
+	strncpy( thisEvent->ifo, input->segment->data->name,
+	         2 * sizeof(CHAR) );
+	         strncpy( thisEvent->channel,
+	         input->segment->data->name + 3,
+	         (LALNameLength - 3) * sizeof(CHAR) );
+	         thisEvent->impulse_time = thisEvent->end_time;
+																			                                                                                                                                              
+	/*calculate and record the alpha values */
+	
+ 	alpha1hat = q[j].re * invRho;
+        alpha4hat = q[j].im * invRho;
+	alpha2hat = qBCVSpin1[j].re * invRho;
+	alpha5hat = qBCVSpin1[j].im * invRho;
+	alpha3hat = qBCVSpin2[j].re * invRho;
+	alpha6hat = qBCVSpin2[j].im * invRho;
+														                                                                                                                                              
+	thisEvent->alpha1 = alpha1hat;
+	thisEvent->alpha2 = alpha2hat;
+	thisEvent->alpha3 = alpha3hat;
+	thisEvent->alpha4 = alpha4hat;
+	thisEvent->alpha5 = alpha5hat;
+	thisEvent->alpha6 = alpha6hat;
+																																	                          thisEvent->beta   = input->fcTmplt->tmplt.beta;
+	thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
+	thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
+																                     /* chirp mass in units of M_sun */
+	thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
+	               pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0 , 3.0/5.0 );
+	               m =  fabs(thisEvent->psi3) /
+	               (16.0 * LAL_MTSUN_SI * LAL_PI
+	               * LAL_PI * thisEvent->psi0) ;
+
+	thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
+		       pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
+        thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
+                                                                                                                                                                         
+       /* set the type of the template used in the analysis */
+       LALSnprintf( thisEvent->search,
+                    LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+                   "FindChirpBCVSpin" );
+		
+        /* compute the time since the snr crossing */
+        thisEvent->event_duration =
+                   (REAL8) timeIndex - (REAL8) eventStartIdx;
+                   thisEvent->event_duration *= (REAL8) deltaT;
+       
+    }
+
+		 
+
+	
   DETATCHSTATUSPTR( status );
   RETURN( status );
   }
