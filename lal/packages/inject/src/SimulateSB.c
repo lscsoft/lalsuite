@@ -206,7 +206,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   RealFFTPlan      *invPlan=NULL;  
   
   /* initialize status pointer */
-  INITSTATUS(status, "LALSimulateSB", SIMULATESBC);
+  INITSTATUS(status, "LALSSSimStochBGTimeSeries", SIMULATESBC);
   ATTATCHSTATUSPTR(status);
   
   
