@@ -29,6 +29,66 @@ NRCSID (EPSEARCHC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
+static void 
+LALWeighTFTileList (
+		 LALStatus                                 *status,
+		 TFTiling                               *tfTiling,
+		 INT4                                   maxDOF
+		 )
+{
+  TFTile *thisTile;
+  INT4   *tmparray;
+  INT4    i=0;
+
+  INITSTATUS (status, "LALPrintTFTileList", EPSEARCHC);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT(tfTiling, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP); 
+  ASSERT(tfTiling->firstTile, status, EXCESSPOWERH_ENULLP, \
+         EXCESSPOWERH_MSGENULLP); 
+
+  
+  tmparray = (INT4 *) LALMalloc (2*maxDOF*sizeof(INT4));
+  for (i=0 ; i < 2*maxDOF ; i++){
+        tmparray[i]=0;
+  }
+
+  thisTile = tfTiling->firstTile;
+  while ( (thisTile != NULL) )
+    {
+          INT4 t1 = thisTile->tstart;
+          INT4 t2 = thisTile->tend;
+          INT4 f1 = thisTile->fstart;
+          INT4 f2 = thisTile->fend;
+          INT4 dof = 2*(t2-t1+1)*(f2-f1+1);
+          tmparray[dof]+=1;
+
+      thisTile = thisTile->nextTile;
+    }
+  thisTile = tfTiling->firstTile;
+  while ( (thisTile != NULL) )
+    {
+          INT4 t1 = thisTile->tstart;
+          INT4 t2 = thisTile->tend;
+          INT4 f1 = thisTile->fstart;
+          INT4 f2 = thisTile->fend;
+          INT4 dof = 2*(t2-t1+1)*(f2-f1+1);
+
+          thisTile->weight=(REAL4)tmparray[dof];
+      thisTile = thisTile->nextTile;
+    }
+
+  LALFree(tmparray);
+
+  /* Normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+
+
+
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
 EPSearch (
@@ -283,11 +343,16 @@ EPSearch (
        * CHECKSTATUSPTR (status);
        */
 
+      /* determine the weighting for each tile */
+      LALWeighTFTileList ( status->statusPtr, params->tfTiling, 10000);
+      CHECKSTATUSPTR (status);
+
       {
         TFTile *thisTile = params->tfTiling->firstTile;
         INT4 tileCount   = 0;
 
-        while ( (thisTile != NULL) && (thisTile->alpha <= params->alphaThreshold) 
+        while ( (thisTile != NULL) 
+                && (thisTile->alpha <= params->alphaThreshold/thisTile->weight) 
             && (tileCount < params->events2Master) )
         {
           INT8 tstartNS = 0;
