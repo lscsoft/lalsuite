@@ -128,6 +128,7 @@ static void	lnIRatio(
 	LALDCreateVector( status->statusPtr, &INk2, N - 2);
 	LALDCreateVector( status->statusPtr, &Ik2,  N - 2);
 	LALDCreateVector( status->statusPtr, result, N - 3);
+	CHECKSTATUSPTR( status );
 
 	for( iterator = 0; iterator < N - 2; iterator++)
 		INk2->data[iterator] = Ik2->data[iterator] = 0;
@@ -375,7 +376,7 @@ const	INT4		two = 2;
 		fom->data[k - 2] = exp( fom->data[k - 2] ) * sqrt(2 * LAL_PI);
 
 		/*  fom = fom.*rootRatio  */
-		rootRatio = sqrt(N/(k * (N - k)));
+		rootRatio = sqrt(N/k * (N - k));
 		fom->data[k - 2] = fom->data[k - 2]* rootRatio;
        	}
 
@@ -394,6 +395,9 @@ const	INT4		two = 2;
 	/*  [rpeak,ndx] = max(fom)  */
 	LALDMax( status->statusPtr, rpeak, fomWithoutMargins, index);
         CHECKSTATUSPTR( status );
+
+	/*  ndx = ndx + 2  */
+	index = index + 2;
 
 	LALI4DestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
