@@ -90,6 +90,7 @@ strncpy()
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
+#include <lal/AVFactories.h>
 #include <string.h>
 
 #define invNoise output->calibratedInverseNoisePSD
