@@ -141,7 +141,7 @@ float test_inject_phase;
 float geoHighPassFreq = 70.;
 float geoHighPassOrder = 8;
 float geoHighPassAtten = 0.1;
-float geoDynamicRange = 65.;
+float geoScale = 1.e10;
 
 const char *fpars;
 int         fargc = 1;
@@ -623,7 +623,7 @@ int parse_options( int argc, char **argv )
     { "geo-high-pass-freq",      required_argument, 0, 'G' },
     { "geo-high-pass-order",     required_argument, 0, 'H' },
     { "geo-high-pass-atten",     required_argument, 0, 'P' },
-    { "geo-dyn-range",           required_argument, 0, 'e' },
+    { "geo-scale",           required_argument, 0, 'e' },
     /* these options are for writing output */
     { "write-format", required_argument, 0, 'w' },
     { "write-raw-data",         no_argument, &write_raw_data,         1 },
@@ -762,8 +762,8 @@ int parse_options( int argc, char **argv )
        case 'P': /* geo high pass filter attenuation  */
 	  geoHighPassAtten = atof(optarg);
 	  break;
-      case 'e': /* geo dynamic range  */
-        geoDynamicRange = atof(optarg);
+      case 'e': /* geo data scale factor */
+        geoScale = atof(optarg);
         break;
 
       case '?':
@@ -976,7 +976,7 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
        /* which already has the correct amount of memory allocated */
        for ( j = 0 ; j < npts ; ++j )
         {
-         channel->data->data[j] = geoDynamicRange * (REAL4) (geoChannel->data->data[j]);
+         channel->data->data[j] = geoScale * (REAL4) (geoChannel->data->data[j]);
          }
        /* re-copy the data paramaters from the GEO channel to input data channel */
        LALSnprintf( channel->name, LALNameLength * sizeof(CHAR), "%s", geoChannel->name );
@@ -1348,7 +1348,7 @@ const char *usgfmt =
 "  --geo-high-pass-freq scale\n\t\tknee frequency for geo high pass filter[1]\n\n"
 "  --geo-high-pass-order scale\n\t\torder of geo high pass filter[1]\n\n"
 "  --geo-high-pass-atten scale\n\t\tattenuation of geo high pass filter[1]\n\n"
-"  --geo-dyn-range \n\t\t dynamic range factor for geo data [1]\n\n";
+"  --geo-scale \n\t\t scale geo data by a factor of scale[1]\n\n";
 
 int usage( const char *program )
 {
