@@ -188,7 +188,7 @@ This example shows how to add a package called "mypackage" to LAL.
      
      Add your package to the "liblal_la_LIBADD =" line by adding the line
      
-           $(top_builddir)/packages/support/src/libmypackage.la           \
+           $(top_builddir)/packages/mypackage/src/libmypackage.la           \
      
      before the line                               
      
