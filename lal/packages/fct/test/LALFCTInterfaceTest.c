@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <stdarg.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -10,7 +10,19 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/LALInspiralBank.h>
 
+NRCSID(LALFCTINTERFACETESTC, "$Id:");
+
+#define USAGE "Usage: LALFCTInterfaceTest [ --full-test ] [ --verbose ]\n"
+
 int lalDebugLevel = 1;
+
+/*
+#define USE_WRITE
+*/
+
+/* Global test parameters */
+INT4 doingFullTest = 0;
+INT4 doingVerboseTest = 0;
 
 /* Global parameters for chirp functions */
 
@@ -32,6 +44,23 @@ const REAL8 Nyq = SRATE/2.0L;  /* Hz */
 /* Initial scaling factors - must be reset before creating the plan */
 REAL8 newtPhiScale = 0.0;
 REAL8 onePNPhiScale = 0.0;
+
+/* Replacement for printf that only prints when verbose is on */
+void
+testprintf(const char* format, ...);
+
+void
+testprintf(const char* format, ...)
+{
+    if (doingVerboseTest)
+    {
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+    }
+}
+
 
 /* Quadratic chirp phase function */
 static
@@ -253,36 +282,38 @@ LALFCTSetDataCubesInput dataCubesIn;
 
 ComplexFFTPlan* plan = 0;
 
-COMPLEX8Vector* fct_in = 0;
-COMPLEX8Vector* chirp = 0;
-REAL4Vector* tseries = 0;
+COMPLEX8Vector* gfct_in = 0;
+COMPLEX8Vector* gchirp = 0;
+REAL4Vector* gtseries = 0;
 
-COMPLEX8Vector* tmp_in = 0;
-COMPLEX8Vector* tmp_out = 0;
+COMPLEX8Vector* gtmp_in = 0;
+COMPLEX8Vector* gtmp_out = 0;
 
-COMPLEX8Vector* fct_out = 0;
+COMPLEX8Vector* gfct_out = 0;
 
 /*
   Get (or generate) a time series
 */
 static
-void getTimeSeriesData(LALStatus* const status, REAL4Vector* const tseries)
+void getTimeSeriesData(LALStatus* const status, REAL4Vector* const ts)
 {
+#ifdef USE_WRITE
     const int fd_output = creat("tseries.out", 0644);
+#endif
     static UINT8 seed = 0xDEADBEEF;
     UINT4 i = 0;
 
-    for (i = 0; i < tseries->length; ++i)
+    for (i = 0; i < ts->length; ++i)
     {
-	tseries->data[i] = 0.0;
+	ts->data[i] = 0.0;
     }
     
 #if 1
-    LALGaussianNoise(status, tseries, &seed);
+    LALGaussianNoise(status, ts, &seed);
 #endif
 
-#if 0
-    write(fd_output, tseries->data, tseries->length*sizeof(*(tseries->data)));
+#ifdef USE_WRITE
+    write(fd_output, ts->data, ts->length*sizeof(*(ts->data)));
 #endif
 }
 
@@ -312,7 +343,7 @@ void chirpFn(const REAL8 f, const REAL8 tc,
 
 static
 void
-insertChirp(LALStatus* status, COMPLEX8Vector* in)
+insertChirp(COMPLEX8Vector* in)
 {
     /* Typical ranges for tau0 are 0.295 to 43.50 */
     const REAL8 tau0 = 1.0;
@@ -328,15 +359,15 @@ insertChirp(LALStatus* status, COMPLEX8Vector* in)
     
     UINT8 l = 0;
 
-    for (l = 0; l < chirp->length; ++l)
+    for (l = 0; l < gchirp->length; ++l)
     {
 	const REAL8 f = offset + delta*l;
 	COMPLEX8 val = { 0.0, 0.0 };
 
 	chirpFn(f, tc, tau0, tau2, &val);
 
-	chirp->data[l].re = val.re;
-	chirp->data[l].im = val.im;
+	gchirp->data[l].re = val.re;
+	gchirp->data[l].im = val.im;
     }
 
     /* Add it - why is there no function for adding vectors in LAL??? */
@@ -344,8 +375,8 @@ insertChirp(LALStatus* status, COMPLEX8Vector* in)
     {
 	const REAL8 f = (offset + delta*l)*Nyq;
 
-	in->data[l].re += chirp->data[l].re;
- 	in->data[l].im += chirp->data[l].im;
+	in->data[l].re += gchirp->data[l].re;
+ 	in->data[l].im += gchirp->data[l].im;
 	
 	/* Zero out everything below the cutoff */
 	if (f <= fcutoff)
@@ -363,29 +394,31 @@ generateFCTInput(LALStatus* const status,
 		 COMPLEX8Vector* out,
 		 REAL4Vector* in)
 {
+#ifdef USE_WRITE
     const int fd_output = creat("fseries.out", 0644);
+#endif
 
     UINT4 i = 0;
 
-    for (i = 0; i < tmp_in->length; ++i)
+    for (i = 0; i < gtmp_in->length; ++i)
     {
-	tmp_in->data[i].re = in->data[i];
-	tmp_in->data[i].im = 0.0;
+	gtmp_in->data[i].re = in->data[i];
+	gtmp_in->data[i].im = 0.0;
     }
 
-    LALCOMPLEX8VectorFFT(status, tmp_out, tmp_in, plan);
+    LALCOMPLEX8VectorFFT(status, gtmp_out, gtmp_in, plan);
 
     /* Only fill in the output vector up to the size requested in out */
     for (i = 0; i < out->length; ++i)
     {
-	out->data[i].re = tmp_out->data[i].re;
-	out->data[i].im = tmp_out->data[i].im;
+	out->data[i].re = gtmp_out->data[i].re;
+	out->data[i].im = gtmp_out->data[i].im;
     }
 
     /* Now insert the phase function into the background signal */
-    insertChirp(status, out);
+    insertChirp(out);
 
-#if 0
+#ifdef USE_WRITE
     write(fd_output, out->data, out->length*sizeof(*(out->data)));
 #endif
 }
@@ -400,6 +433,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
     INT4 k_max = 0;
     INT4 k0_max = 0;
     INT4 k1_max = 0;
+    INT4 Ntemplates = 0;
 
     REAL4 tau0_max = 0.0;
     REAL4 tau2_max = 0.0;
@@ -423,7 +457,21 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
     dataCubesIn.data_cube = &cube[0];
     dataCubesIn.num_data_cubes = NUM_DATA_CUBES;
 
-    for (i = 0; i < NtemplateList; ++i)
+    /*
+      To make the test shorter, set the number of templates to a
+      small number unless --full-test is on
+    */
+    
+    if (doingFullTest)
+    {
+	Ntemplates = NtemplateList;
+    }
+    else
+    {
+	Ntemplates = 4;
+    }
+
+    for (i = 0; i < Ntemplates; ++i)
     {
 	const REAL4 tc_start = cube[0].start_locations[0];
 	const REAL4 tc_end   = cube[0].end_locations[0] - 1;
@@ -478,18 +526,18 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 	tau2_start = cube[0].start_locations[2]/phi1Scale;
 	tau2_end   = (cube[0].end_locations[2] - 1)/phi1Scale;
 
-	printf("Searching over data cube bounded by:\n");
-	printf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
+	testprintf("Searching over data cube bounded by:\n");
+	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
 	       cube[0].start_locations[0],
 	       cube[0].end_locations[0] - 1,
 	       tc_start,
 	       tc_end);
-	printf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
+	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
 	       cube[0].start_locations[1],
 	       cube[0].end_locations[1] - 1,
 	       tau0_start,
 	       tau0_end);
-	printf("    %5d <= k1 <= %5d (%5f <= tau2 <= %5f)\n", 
+	testprintf("    %5d <= k1 <= %5d (%5f <= tau2 <= %5f)\n", 
 	       cube[0].start_locations[2],
 	       cube[0].end_locations[2] - 1,
 	       tau2_start,
@@ -497,12 +545,12 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 
 	LALFCTSetDataCubes(status, &dataCubesIn, fctPlan);
 	
-	LALFCTCalculate(status, fct_out, fct_in, fctPlan);
+	LALFCTCalculate(status, gfct_out, fct_in, fctPlan);
 	
-	for (l = 0; l < fct_out->length; ++l)
+	for (l = 0; l < gfct_out->length; ++l)
 	{
-	    pwr = fct_out->data[l].re*fct_out->data[l].re
-		+ fct_out->data[l].im*fct_out->data[l].im;
+	    pwr = gfct_out->data[l].re*gfct_out->data[l].re
+		+ gfct_out->data[l].im*gfct_out->data[l].im;
 	    if (pwr > max_pwr)
 	    {
 		max_pwr = pwr;
@@ -530,12 +578,12 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
 	tau0 = k0/phi0Scale;
 	tau2 = k1/phi1Scale;
 	
-	printf("Max pwr: fct_out->data[%d](K = %d, K0 = %d, K1 = %d) = %g\n",
+	testprintf("Max pwr: fct_out->data[%d](K = %d, K0 = %d, K1 = %d) = %g\n",
 	       max_pwr_index, K, K0, K1, max_pwr);
-	printf("    k  = %5d (tc   = %d)\n", k, k);
-	printf("    k0 = %5d (tau0 = %f)\n", k0, tau0);
-	printf("    k1 = %5d (tau2 = %f)\n", k1, tau2);
-	printf("\n");
+	testprintf("    k  = %5d (tc   = %d)\n", k, k);
+	testprintf("    k0 = %5d (tau0 = %f)\n", k0, tau0);
+	testprintf("    k1 = %5d (tau2 = %f)\n", k1, tau2);
+	testprintf("\n");
 
 	if (max_pwr > overall_max)
 	{
@@ -550,10 +598,10 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
     tau0_max = k0_max/phi0Scale;
     tau2_max = k1_max/phi1Scale;
     
-    printf("Overall max pwr: %g\n", overall_max);
-    printf("    k  = %5d (tc   = %d)\n", k_max, k_max);
-    printf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
-    printf("    k1 = %5d (tau2 = %f)\n", k1_max, tau2_max);
+    testprintf("Overall max pwr: %g\n", overall_max);
+    testprintf("    k  = %5d (tc   = %d)\n", k_max, k_max);
+    testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
+    testprintf("    k1 = %5d (tau2 = %f)\n", k1_max, tau2_max);
 
 #if 0
     writefct((float*) fct_out->data,
@@ -565,13 +613,14 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
   This is the old version that I didn't want to change - it
   runs over some range of parameters
 */
+#if 0
 static
 void
 calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 {
     REAL8 overall_max = 0.0;
 
-    INT4 l = 0;
+    UINT4 l = 0;
     INT4 k_max = 0;
     INT4 k0_max = 0;
 
@@ -622,13 +671,13 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 
 	REAL4 tau0 = 0.0;
 
-	printf("Searching over data cube bounded by:\n");
-	printf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
+	testprintf("Searching over data cube bounded by:\n");
+	testprintf("    %5d <= k  <= %5d (%5f <= tc   <= %5f)\n", 
 	       cube[0].start_locations[0],
 	       cube[0].end_locations[0] - 1,
 	       tc_start,
 	       tc_end);
-	printf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
+	testprintf("    %5d <= k0 <= %5d (%5f <= tau0 <= %5f)\n", 
 	       cube[0].start_locations[1],
 	       cube[0].end_locations[1] - 1,
 	       tau0_start,
@@ -636,12 +685,12 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 
 	LALFCTSetDataCubes(status, &dataCubesIn, fctPlan);
 	
-	LALFCTCalculate(status, fct_out, fct_in, fctPlan);
+	LALFCTCalculate(status, gfct_out, fct_in, fctPlan);
 	
-	for (l = 0; l < fct_out->length; ++l)
+	for (l = 0; l < gfct_out->length; ++l)
 	{
-	    pwr = fct_out->data[l].re*fct_out->data[l].re
-		+ fct_out->data[l].im*fct_out->data[l].im;
+	    pwr = gfct_out->data[l].re*gfct_out->data[l].re
+		+ gfct_out->data[l].im*gfct_out->data[l].im;
 	    if (pwr > max_pwr)
 	    {
 		max_pwr = pwr;
@@ -664,11 +713,11 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 
 	tau0 = k0/phi0Scale;
 	
-	printf("Max pwr: fct_out->data[%d](K = %d, K0 = %d) = %g\n",
+	testprintf("Max pwr: fct_out->data[%d](K = %d, K0 = %d) = %g\n",
 	       max_pwr_index, K, K0, max_pwr);
-	printf("    k  = %5d (tc   = %d)\n", k, k);
-	printf("    k0 = %5d (tau0 = %f)\n", k0, tau0);
-	printf("\n");
+	testprintf("    k  = %5d (tc   = %d)\n", k, k);
+	testprintf("    k0 = %5d (tau0 = %f)\n", k0, tau0);
+	testprintf("\n");
 
 	if (max_pwr > overall_max)
 	{
@@ -685,15 +734,16 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
 
     tau0_max = k0_max/phi0Scale;
     
-    printf("Overall max pwr: %g\n", overall_max);
-    printf("    k  = %5d (tc   = %d)\n", k_max, k_max);
-    printf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
+    testprintf("Overall max pwr: %g\n", overall_max);
+    testprintf("    k  = %5d (tc   = %d)\n", k_max, k_max);
+    testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
 
 #if 0
     writefct((float*) fct_out->data,
 	     data_length, fct_out->length/data_length, "fct.out");
 #endif
 }
+#endif /* exclusion of function */
 
 static
 void
@@ -701,13 +751,13 @@ InspiralSearch(LALStatus* const status)
 {
     INT4 curr_data_segment = 0;
 
-    printf("Commencing search...\n");
+    testprintf("Commencing search...\n");
 
     while (curr_data_segment < numDataSegments)
     {
-	getTimeSeriesData(status, tseries);
-	generateFCTInput(status, fct_in, tseries);
-	calculateFCTCubes(status, fct_in);
+	getTimeSeriesData(status, gtseries);
+	generateFCTInput(status, gfct_in, gtseries);
+	calculateFCTCubes(status, gfct_in);
 	++curr_data_segment;
     }
 }
@@ -728,7 +778,7 @@ setupParamList(LALStatus* const status)
 
     InspiralCoarseBankIn coarseIn;
 
-    printf("Generating list of chirp parameters...\n");
+    testprintf("Generating list of chirp parameters...\n");
 
     coarseIn.mMin = 1.0;
     coarseIn.MMax = 40.0;
@@ -752,12 +802,12 @@ setupParamList(LALStatus* const status)
     LALInspiralCreateCoarseBank(status, templateList,
 				&NtemplateList, coarseIn);
 
-    printf("Generated %d sets of parameters\n", NtemplateList);
+    testprintf("Generated %d sets of parameters\n", NtemplateList);
     
-    printf("tau0 tau2 tau3 M eta m1 m2\n");
+    testprintf("tau0 tau2 tau3 M eta m1 m2\n");
     for (i = 0; i < NtemplateList; ++i)
     {
-	printf("%e %e %e %e %e %e %e\n",
+	testprintf("%e %e %e %e %e %e %e\n",
 	       templateList[i].params.t0, 
 	       templateList[i].params.t2, 
 	       templateList[i].params.t3, 
@@ -787,16 +837,16 @@ setupParamList(LALStatus* const status)
 	}
     }
 
-    printf("Min tau0 = %g\n", t0_min);
-    printf("Max tau0 = %g\n", t0_max);
+    testprintf("Min tau0 = %g\n", t0_min);
+    testprintf("Max tau0 = %g\n", t0_max);
 
-    printf("Min tau2 = %g\n", t2_min);
-    printf("Max tau2 = %g\n", t2_max);
+    testprintf("Min tau2 = %g\n", t2_min);
+    testprintf("Max tau2 = %g\n", t2_max);
 }
 
 static
 void
-setupGlobals(LALStatus* const status)
+setupGlobals(LALStatus* const status, int argc, char **argv)
 {
     const LALCreateFCTPlanInput planIn = {
 	data_length,
@@ -819,6 +869,32 @@ setupGlobals(LALStatus* const status)
     /* I have to guess what the size of the list of chirp params will be */
     const INT4 Nlist = 5000;
     
+    INT4 i = 0;
+
+    /* Do command line arguments */
+    for (i = 1; i < argc; ++i)
+    {
+	if (strcmp("-h", argv[i]) == 0)
+	{
+	    printf(USAGE);
+	    exit(0);
+	}
+	else if (strcmp("--full-test", argv[i]) == 0)
+	{
+	    doingFullTest = 1;
+	}
+	else if (strcmp("--verbose", argv[i]) == 0)
+	{
+	    doingVerboseTest = 1;
+	}
+	else
+	{
+	    printf("Invalid argument: %s\n", argv[i]);
+	    printf(USAGE);
+	    exit(1);
+	}
+    }
+    
     /*
       Set the global scaling functions.
       
@@ -839,15 +915,15 @@ setupGlobals(LALStatus* const status)
     setupParamList(status);
 
     /* Create the various arrays we use for storage */
-    LALSCreateVector(status, &tseries, tseries_length);
+    LALSCreateVector(status, &gtseries, tseries_length);
 
-    LALCCreateVector(status, &fct_in, data_length);
-    LALCCreateVector(status, &tmp_in, data_length);
-    LALCCreateVector(status, &tmp_out, data_length);
-    LALCCreateVector(status, &chirp, data_length);
+    LALCCreateVector(status, &gfct_in, data_length);
+    LALCCreateVector(status, &gtmp_in, data_length);
+    LALCCreateVector(status, &gtmp_out, data_length);
+    LALCCreateVector(status, &gchirp, data_length);
 
     /* Plan for doing the FFT of the tseries */
-    LALEstimateFwdComplexFFTPlan(status, &plan, tmp_in->length);
+    LALEstimateFwdComplexFFTPlan(status, &plan, gtmp_in->length);
     
     /* Set up the plan and output area */
     LALCreateFCTPlan(status, &fctPlan, &planIn);
@@ -878,7 +954,7 @@ setupGlobals(LALStatus* const status)
     LALFCTOutputDataSize(status, &output_data_size, fctPlan);
 
     /* Allocate an output vector of this size */
-    LALCCreateVector(status, &fct_out, output_data_size);
+    LALCCreateVector(status, &gfct_out, output_data_size);
 }
 
 static
@@ -887,32 +963,34 @@ cleanup(LALStatus* const status)
 {
     /* Deallocate the arrays and plan */
 
-    LALCDestroyVector(status, &fct_out);
+    LALCDestroyVector(status, &gfct_out);
 
     LALDestroyFCTPlan(status, &fctPlan);
 
     LALDestroyComplexFFTPlan(status, &plan);
 
-    LALCDestroyVector(status, &chirp);
-    LALCDestroyVector(status, &tmp_out);
-    LALCDestroyVector(status, &tmp_in);
-    LALCDestroyVector(status, &fct_in);
+    LALCDestroyVector(status, &gchirp);
+    LALCDestroyVector(status, &gtmp_out);
+    LALCDestroyVector(status, &gtmp_in);
+    LALCDestroyVector(status, &gfct_in);
 
-    LALSDestroyVector(status, &tseries);
+    LALSDestroyVector(status, &gtseries);
 
     LALFree(templateList);
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
-    LALStatus status = { 0, 0 };
-    
-    setupGlobals(&status);
+    LALStatus* status = LALCalloc(1, sizeof(*status));
 
-    InspiralSearch(&status);
+    setupGlobals(status, argc, argv);
 
-    cleanup(&status);
+    InspiralSearch(status);
+
+    cleanup(status);
+
+    LALFree(status);
 
     return 0;
 }

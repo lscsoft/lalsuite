@@ -5,7 +5,14 @@
 #ifndef FCT_FFT_H
 #define FCT_FFT_H
 
+#ifdef HAVE_SFFTW_H
 #include <sfftw.h>
+#elif HAVE_FFTW_H
+#include <fftw.h>
+#else
+#error "don't have either sfftw.h or fftw.h"
+#endif
+
 #include "fct.h"
 
 struct fct_fft_plan_

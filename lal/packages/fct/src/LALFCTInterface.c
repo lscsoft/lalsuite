@@ -1,6 +1,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALFCTInterface.h>
 #include <lal/LALMalloc.h>
+#include <config.h>
 
 #define LALFCT
 
@@ -54,6 +55,17 @@ void LALCreateFCTPlan(LALStatus* const status,
     fct_malloc_hook = LALMalloc;
     fct_calloc_hook = LALCalloc;
     fct_free_hook = LALFree;
+    
+    /* Also set the FFTW hooks *unless* they've already been set */
+    if (fftw_malloc_hook == 0)
+    {
+	fftw_malloc_hook = LALMalloc;
+    }
+    
+    if (fftw_free_hook == 0)
+    {
+	fftw_free_hook = LALFree;
+    }
 
     *plan_ptr = LALCalloc(1, sizeof(**plan_ptr));
     
@@ -239,7 +251,7 @@ void LALFCTCalculate(LALStatus* const status,
     ASSERT(out != 0, status,
            LALFCTINTERFACEH_ENULL, LALFCTINTERFACEH_MSGENULL);
 
-    ASSERT(in->length == plan->fctPlan->data_length, status,
+    ASSERT((INT8)(in->length) == (INT8)(plan->fctPlan->data_length), status,
            LALFCTINTERFACEH_ESIZE, LALFCTINTERFACEH_MSGESIZE);
 
     ASSERT(plan->num_data_cubes > 0, status,
