@@ -312,6 +312,13 @@ m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
 m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c
 cd ../../..
 
+cd packages/vectorops/src
+m4 MatrixDivide.m4 > MatrixDivide.c
+m4 MatrixMultiply.m4 > MatrixMultiply.c
+m4 MatrixPower.m4 > MatrixPower.c
+m4 MiscMatlab.m4 > MiscMatlab.c
+cd ../../..
+
 cd packages/stats/src
 m4 LALMoment.m4 > LALMoment.c
 cd ../../..
