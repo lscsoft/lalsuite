@@ -764,6 +764,14 @@ void LALInspiralWave1Templates(
      REAL4Vector *signal2,
      InspiralTemplate *params);
 
+void LALInspiralWave1ForInjection(
+     LALStatus        *status,
+     REAL4Vector      *inject_hc,
+     REAL4Vector      *inject_hp,
+     REAL4Vector      *inject_phase,
+     REAL4Vector      *inject_freq,			   
+     InspiralTemplate *params);
+
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave2C}
 </lalLaTeX>  */
