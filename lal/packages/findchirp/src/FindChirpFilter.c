@@ -67,6 +67,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
+  CHAR                  searchName[LIGOMETA_SEARCH_MAX];
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -142,20 +143,35 @@ LALFindChirpFilterSegment (
   switch ( params->approximant )
   {
     case TaylorT1:
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "TaylorT1twoPN" );
+      break;
+
     case TaylorT2:
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "TaylorT2twoPN" );
+      break;
+
     case TaylorT3:
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "TaylorT3twoPN" );
+      break;
+
     case TaylorF2:
-      /* make sure the approximant in the tmplt and segment agree */
-      if ( params->approximant != input->fcTmplt->tmplt.approximant ||
-          params->approximant != input->segment->approximant )
-      {
-        ABORT( status, FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-      }
+      LALSnprintf( searchName, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "FindChirpSPtwoPN" );
       break;
 
     default:
       ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
       break;
+  }
+
+  /* make sure the approximant in the tmplt and segment agree */
+  if ( params->approximant != input->fcTmplt->tmplt.approximant ||
+      params->approximant != input->segment->approximant )
+  {
+    ABORT( status, FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   }
 
 
@@ -442,20 +458,20 @@ LALFindChirpFilterSegment (
             atan2( q[timeIndex].im, q[timeIndex].re ); 
 
           /* copy the template into the event */
-          thisEvent->mass1  = (REAL4) input->fcTmplt->tmplt.mass1;
-          thisEvent->mass2  = (REAL4) input->fcTmplt->tmplt.mass2;
-          thisEvent->mchirp = (REAL4) input->fcTmplt->tmplt.chirpMass;
-          thisEvent->eta    = (REAL4) input->fcTmplt->tmplt.eta;
-          thisEvent->tau0   = (REAL4) input->fcTmplt->tmplt.t0;
-          thisEvent->tau2   = (REAL4) input->fcTmplt->tmplt.t2;
-          thisEvent->tau3   = (REAL4) input->fcTmplt->tmplt.t3;
-          thisEvent->tau4   = (REAL4) input->fcTmplt->tmplt.t4;
-          thisEvent->tau5   = (REAL4) input->fcTmplt->tmplt.t5;
-          thisEvent->ttotal = (REAL4) input->fcTmplt->tmplt.tC;
+          thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
+          thisEvent->mass2   = (REAL4) input->fcTmplt->tmplt.mass2;
+          thisEvent->mchirp  = (REAL4) input->fcTmplt->tmplt.chirpMass;
+          thisEvent->eta     = (REAL4) input->fcTmplt->tmplt.eta;
+          thisEvent->tau0    = (REAL4) input->fcTmplt->tmplt.t0;
+          thisEvent->tau2    = (REAL4) input->fcTmplt->tmplt.t2;
+          thisEvent->tau3    = (REAL4) input->fcTmplt->tmplt.t3;
+          thisEvent->tau4    = (REAL4) input->fcTmplt->tmplt.t4;
+          thisEvent->tau5    = (REAL4) input->fcTmplt->tmplt.t5;
+          thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
+          thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
 
           /* set the type of the template used in the analysis */
-          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-              "FindChirpSPtwoPN" );
+          thisEvent->search = searchName;
 
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
@@ -546,20 +562,20 @@ LALFindChirpFilterSegment (
         atan2( q[timeIndex].im, q[timeIndex].re );
 
     /* copy the template into the event */
-    thisEvent->mass1  = (REAL4) input->fcTmplt->tmplt.mass1;
-    thisEvent->mass2  = (REAL4) input->fcTmplt->tmplt.mass2;
-    thisEvent->mchirp = (REAL4) input->fcTmplt->tmplt.chirpMass;
-    thisEvent->eta    = (REAL4) input->fcTmplt->tmplt.eta;
-    thisEvent->tau0   = (REAL4) input->fcTmplt->tmplt.t0;
-    thisEvent->tau2   = (REAL4) input->fcTmplt->tmplt.t2;
-    thisEvent->tau3   = (REAL4) input->fcTmplt->tmplt.t3;
-    thisEvent->tau4   = (REAL4) input->fcTmplt->tmplt.t4;
-    thisEvent->tau5   = (REAL4) input->fcTmplt->tmplt.t5;
-    thisEvent->ttotal = (REAL4) input->fcTmplt->tmplt.tC;
+    thisEvent->mass1   = (REAL4) input->fcTmplt->tmplt.mass1;
+    thisEvent->mass2   = (REAL4) input->fcTmplt->tmplt.mass2;
+    thisEvent->mchirp  = (REAL4) input->fcTmplt->tmplt.chirpMass;
+    thisEvent->eta     = (REAL4) input->fcTmplt->tmplt.eta;
+    thisEvent->tau0    = (REAL4) input->fcTmplt->tmplt.t0;
+    thisEvent->tau2    = (REAL4) input->fcTmplt->tmplt.t2;
+    thisEvent->tau3    = (REAL4) input->fcTmplt->tmplt.t3;
+    thisEvent->tau4    = (REAL4) input->fcTmplt->tmplt.t4;
+    thisEvent->tau5    = (REAL4) input->fcTmplt->tmplt.t5;
+    thisEvent->ttotal  = (REAL4) input->fcTmplt->tmplt.tC;
+    thisEvent->f_final = (REAL4) input->fcTmplt->tmplt.fFinal;
 
     /* set the type of the template used in the analysis */
-    LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "FindChirpSPtwoPN" );
+    thisEvent->search = searchName;
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
