@@ -116,7 +116,6 @@ tagFindChirpSegment
   REAL8                         deltaT;
   REAL4                         segNorm;
   UINT4                         number;
-  UINT4                         level;
 }
 FindChirpSegment;
 
