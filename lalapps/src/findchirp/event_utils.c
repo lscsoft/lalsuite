@@ -1,9 +1,26 @@
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: event_utils.c
+ *
+ * Author: Brady, P. R.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
+#include <lal/LALRCSID.h>
+
+
+NRCSID (SORTTFTILINGC, "$Id$");
+
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <lal/Thresholds.h>
 #include "metaio.h"
+#include "donald.h"
 #include "event_utils.h"
 
 
@@ -35,34 +52,13 @@
 *******************************************************************/
 int buildVetoTimes( vetoParams *thisentry)
 {
-    int status,iVetoS,iVetoNS,iVetoSNR,first=1,timeBase=0;
+    int status,iVetoS=-1,iVetoNS=-1,iVetoSNR=-1,first=1,timeBase=0,epoch=1;
+    long stime,etime;
     timeWindow *thiswindow=NULL, *prevwindow=NULL;
-    double tVtemp;
+    double tVtemp,SNR;
     struct MetaioParseEnvironment vetoParseEnv;
     const MetaioParseEnv vetoEnv = &vetoParseEnv;
-
-    /* Open the veto file */
-    if ( (status = MetaioOpen( vetoEnv, (*thisentry).filename)) !=0 ){
-        fprintf(stderr, "Error opening veto file %s\n", (*thisentry).filename );
-        MetaioAbort( vetoEnv ); 
-        return 2;
-    }
-
-    /* Locate the relevant columns */
-    iVetoS   = MetaioFindColumn( vetoEnv, "start_time" );
-    iVetoNS  = MetaioFindColumn( vetoEnv, "start_time_ns" );
-    if ( iVetoS < 0 || iVetoNS < 0 ) {
-        /* try to use end_time */
-        iVetoS  = MetaioFindColumn( vetoEnv, "end_time" );
-        iVetoNS = MetaioFindColumn( vetoEnv, "end_time_ns" );
-        if ( iVetoS < 0 || iVetoNS < 0 ) {
-            fprintf(stderr, "Veto file %s does not contain start_time or end_time\n",
-                    (*thisentry).filename );
-            MetaioAbort( vetoEnv ); 
-            return 2;
-        }
-    }
-    iVetoSNR = MetaioFindColumn( vetoEnv, (*thisentry).table_column);
+    FILE *fpin;
 
     /* Allocate the head of the veto time list */
     if ((*thisentry).vwindows == NULL){
@@ -70,34 +66,110 @@ int buildVetoTimes( vetoParams *thisentry)
         (*thiswindow).next_time_window = NULL;
         (*thiswindow).start_time=0.0;
         (*thiswindow).end_time=0.0;
+        (*thiswindow).end_time=0.0;
+        (*thiswindow).snr=0.0;
+        (*thiswindow).ratio=(*thisentry).ratio;
     }
 
-    /* Read in the veto data and construct a list of veto times */
-    while (1) {
-        
-        status = MetaioGetRow(vetoEnv);
-        if ( status == -1 ) {
-            printf( "Error while getting row from file %s\n", (*thisentry).filename );
-            MetaioAbort( vetoEnv ); 
-            return 6;
-        } else if ( status == 0 ) {
-            /*-- Reached end of file --*/
-            break;
-        }
-        if (vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_4 > (*thisentry).threshold ){
-           
-            tVtemp = (double) ( vetoEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
-                + 1.0e-9 * (double) vetoEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
+    epoch=strcmp((*thisentry).table_column,"epoch");
 
-            /* Must treat the first veto event difficult */
-            if ( first ){
-                (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
-                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
-                first = 0;
+    if ( epoch != 0 ){
+        /* Open the veto file */
+        if ( (status = MetaioOpen( vetoEnv, (*thisentry).filename)) !=0 ){
+            fprintf(stderr, "Error opening veto file %s\n", (*thisentry).filename );
+            MetaioAbort( vetoEnv ); 
+            return 2;
+        }
+
+        /* Locate the relevant columns */
+        iVetoS   = MetaioFindColumn( vetoEnv, "start_time" );
+        iVetoNS  = MetaioFindColumn( vetoEnv, "start_time_ns" );
+        if ( iVetoS < 0 || iVetoNS < 0 ) {
+            /* try to use end_time */
+            iVetoS  = MetaioFindColumn( vetoEnv, "end_time" );
+            iVetoNS = MetaioFindColumn( vetoEnv, "end_time_ns" );
+            if ( iVetoS < 0 || iVetoNS < 0 ) {
+                fprintf(stderr, "Veto file %s does not contain start_time or end_time\n",
+                        (*thisentry).filename );
+                MetaioAbort( vetoEnv ); 
+                return 2;
             }
-            /* If this event is within last veto window,  update veto times */
-            else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).minusdtime + 4.0) ){
-                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
+        }
+        iVetoSNR = MetaioFindColumn( vetoEnv, (*thisentry).table_column);
+
+        /* Read in the veto data and construct a list of veto times */
+        while (1) {
+
+            status = MetaioGetRow(vetoEnv);
+            if ( status == -1 ) {
+                printf( "Error while getting row from file %s\n", (*thisentry).filename );
+                MetaioAbort( vetoEnv ); 
+                return 6;
+            } else if ( status == 0 ) {
+                /*-- Reached end of file --*/
+                break;
+            }
+            SNR = vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_8;
+            if ( SNR < 1.0e-200 ){
+                SNR = vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;
+            }
+            if ( SNR > (*thisentry).threshold ){
+
+                tVtemp = (double) ( vetoEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
+                    + 1.0e-9 * (double) vetoEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
+
+                /* Must treat the first veto event different */
+                if ( first ){
+                    (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
+                    (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
+                    (*thiswindow).snr = SNR;
+                    (*thiswindow).ratio=(*thisentry).ratio;
+                    first = 0;
+                }
+                /* If this event is within last veto window,  update veto times */
+                else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).minusdtime + 4.0) ){
+                    (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
+                    if (SNR > (*thiswindow).snr){
+                        (*thiswindow).snr=SNR;
+                    }
+                }
+                /* Otherwise allocate next node and update veto window */
+                else
+                {
+                    prevwindow=thiswindow;
+                    (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
+                    thiswindow = (*thiswindow).next_time_window;
+                    (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
+                    (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
+                    (*thiswindow).snr=SNR;
+                    (*thiswindow).ratio=(*thisentry).ratio;
+                    (*thiswindow).next_time_window = NULL;
+                }
+
+            }
+
+        }
+
+        MetaioAbort(vetoEnv);
+    }
+    else
+    {
+
+        /* Open the veto file */
+        if ( ! (fpin = fopen((*thisentry).filename,"r") ) ){
+            fprintf(stderr, "Error opening veto file %s\n", (*thisentry).filename );
+            return 2;
+        }
+
+        while ( fscanf(fpin,"%i\t%i\n",&stime,&etime) != EOF ){
+
+            /* Must treat the first veto event different */
+            if ( first ){
+                (*thiswindow).start_time = (double)stime;
+                (*thiswindow).end_time = (double)etime;
+                (*thiswindow).snr = 0.0;
+                (*thiswindow).ratio = 1.0;
+                first = 0;
             }
             /* Otherwise allocate next node and update veto window */
             else
@@ -105,17 +177,19 @@ int buildVetoTimes( vetoParams *thisentry)
                 prevwindow=thiswindow;
                 (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
                 thiswindow = (*thiswindow).next_time_window;
-                (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
-                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
+                (*thiswindow).start_time = (double)stime;
+                (*thiswindow).end_time = (double)etime;
+                (*thiswindow).snr=0.0;
+                (*thiswindow).ratio=1.0;
                 (*thiswindow).next_time_window = NULL;
             }
-            
         }
-        
+
+        /* close the veto file */
+        fclose(fpin);
+
     }
 
-    MetaioAbort(vetoEnv);
-    
     return 0;
 }
 
@@ -151,6 +225,8 @@ int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry)
                 
             double tempSTime=(*tempwindow).start_time;
             double tempETime=(*tempwindow).end_time;
+            double tempSNR=(*tempwindow).snr;
+            double tempRatio=(*tempwindow).ratio;
 
             /* Loop over concatenated list of vetoes */
             thiswindow = (*vwindows);
@@ -159,8 +235,17 @@ int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry)
                 
                 double thisSTime=(*thiswindow).start_time;
                 double thisETime=(*thiswindow).end_time;
+                double thisSNR=(*thiswindow).snr;
+                double thisRatio=(*thiswindow).ratio;
+
                 if ( tempSTime >= thisSTime && tempSTime <= thisETime){
                     (*thiswindow).end_time = tempETime > thisETime ? tempETime : thisETime;
+                    (*thiswindow).snr = tempSNR > thisSNR ? tempSNR : thisSNR;
+                    if (thisRatio != tempRatio){
+                        fprintf(stderr,"Warning: different ratio factor\n");
+                        fprintf(stderr,"Warning: Using one for latest window\n");
+                        (*thiswindow).ratio = thisRatio;
+                    }
                     updated_window=1;
                     break;
                 }
@@ -273,8 +358,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                 if ( tVtemp > (*thiswindow).start_time &&
                         tVtemp < (*thiswindow).end_time ){
                     /* this candidate is vetoed */
-                    pass = 0;
-                    break;
+                        pass = 0;
+                        break;
                 }
                 thiswindow = (*thiswindow).next_time_window;
             }
@@ -296,7 +381,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                 /* If this event is within last veto window,  update veto times */
                 else if ( tVtemp <= (lastVtemp + candidates.dtime) && maxflag){
                     if ( (*thisCEvent).snr < snrVtemp 
-                            /* && (*thisCEvent).chisq > chiVtemp */
+                            && (*thisCEvent).chisq > chiVtemp
                        ){
                         (*thisCEvent).time = tVtemp;
                         (*thisCEvent).snr = snrVtemp;
@@ -304,8 +389,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                         (*thisCEvent).eff_distance = edistVtemp;
                         (*thisCEvent).mchirp = mchirpVtemp;
                         (*thisCEvent).significance = 0;
-                    (*thisCEvent).candidate = 0;
-                    (*thisCEvent).coincident = 0;
+                        (*thisCEvent).candidate = 0;
+                        (*thisCEvent).coincident = 0;
                     }
                 }
                 /* Otherwise allocate next node and update veto window */
@@ -380,6 +465,10 @@ int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
             int jmin,jmax,j;
             jmin = (int)( 10 * ( (*thiswindow).start_time-(*dummyStart) ));
             jmax = (int)( 10 * ( (*thiswindow).end_time-(*dummyStart) ));
+            if (jmin < 0 || jmax > numPts) {
+                fprintf(stderr,"Warning: analysis and veto times out of range\n");
+                jmin=jmax=0;
+            }
             for(j=jmin; j<jmax ; j++){ 
                 if ( (*coincident_times)[j] >= dummyMask ){
                     (*coincident_times)[j] -= dummyMask;
@@ -388,7 +477,7 @@ int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
             thiswindow =  (*thiswindow).next_time_window;
         }
     }
-    return dummyStart;
+    return 0;
 }
 
 /*******************************************************************
@@ -410,12 +499,13 @@ int cpySnglToMultiInspiral(multiInspiral *thisMEvent, candEvent *myevent, int if
 int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
         snglIFO *ifo, int numIFO, int injectflag, double dummyStart)
 {
-    float coincidence_window = 0.015;
-    float delm = 0.010;
-    float distance = 0.030;
+    float coincidence_window = COINWINDOW;
+    float delm = DELM;
+    float distance = H1L1DISTANCE;
     int i, numEvents=0, first=1,dummyMask;
     candEvent *thisCEvent=NULL, *myevent=NULL;
     multiInspiral *thisMEvent;
+    FILE *fpout;
 
     /* deteremine coincidences according to our rule */
     for ( i=1 ; i<numIFO ; i++ ){
@@ -425,10 +515,13 @@ int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
                     coincident_times[(int)( 10 * ((*myevent).time - dummyStart))] == 3 ){
                 thisCEvent = (injectflag) ? ifo[i].Ieventhead : ifo[i].eventhead;
                 while ( thisCEvent != NULL && (*myevent).significance == 0){
-                    if ( (*myevent).time > (*thisCEvent).time - coincidence_window &&
-                            (*myevent).time < (*thisCEvent).time + coincidence_window){
-                        if ((*myevent).mchirp > (*thisCEvent).mchirp - delm &&
-                                (*myevent).mchirp < (*thisCEvent).mchirp + delm){
+                    float chirpfrac=( (*myevent).mchirp - (*thisCEvent).mchirp )/
+                        (*thisCEvent).mchirp;
+                    if ( chirpfrac*chirpfrac < delm ){
+                    /* if ((*myevent).mchirp > (*thisCEvent).mchirp - delm &&
+                            (*myevent).mchirp < (*thisCEvent).mchirp + delm){ */
+                        if ( (*myevent).time > (*thisCEvent).time - coincidence_window &&
+                                (*myevent).time < (*thisCEvent).time + coincidence_window){
                             numEvents++;
                             thisMEvent = (multiInspiral *)malloc(sizeof(multiInspiral));
                             thisMEvent->next_event = NULL;
@@ -671,8 +764,121 @@ void LALDQBit(char *ifo, int *dqbit){
         return;
     }
     else {
-        dqbit = -1;
+        *dqbit = -1;
         return;
     }
+}
+
+
+static int EventCompare( const void *t1, const void *t2 )
+{
+  candEvent * const *tiles1 = t1;
+  candEvent * const *tiles2 = t2;
+  if ( (*tiles1)->time > (*tiles2)->time )
+    return 1;
+  if ( (*tiles1)->time < (*tiles2)->time )
+    return -1;
+  return 0;
+}
+
+/******** <lalVerbatim file="SortTFTilingCP"> ********/
+void
+LALSortTriggers (
+	      LALStatus         *status,
+              snglIFO           *ifo, 
+              int               numIFO
+	      )
+/******** </lalVerbatim> ********************************/
+{
+  INT4               eventCount;
+  INT4               numEvents;
+  INT4               i,inject;
+  candEvent             *thisEvent;
+  candEvent             **events;
+
+  INITSTATUS (status, "LALSortTFTiling", SORTTFTILINGC);
+  ATTATCHSTATUSPTR (status);
+
+  /* make sure that arguments are not NULL */
+
+  /* make sure excess power has already been computed */
+  for (i=0 ; i<numIFO ; i++){
+      for (inject=0 ; inject<2; inject++){
+
+          /* compute number of tiles */
+          if (inject){
+              thisEvent = ifo[i].Ieventhead;
+          } else {
+              thisEvent = ifo[i].eventhead;
+          }
+          eventCount=0;
+          while (thisEvent != NULL)
+          {
+              eventCount++;
+              thisEvent = thisEvent->next_event;
+          }
+          numEvents = eventCount;
+
+          /* 
+           *
+           *  Make an array of pointers to be used to sort the tiles.
+           *
+           */
+
+          /* allocate memory for array of pointers to tiles */
+          events = NULL;
+          events = (candEvent **) LALMalloc (numEvents * sizeof(candEvent *));
+
+          /*  Make sure that the allocation was succesful */
+          if ( !(events) ){
+              ABORT (status, EVENTUTILSH_ENULLP, EVENTUTILSH_MSGENULLP);
+          }
+
+          /* copy out pointers into array */
+          eventCount=0;
+          if (inject){
+              thisEvent = ifo[i].Ieventhead;
+          } else {
+              thisEvent = ifo[i].eventhead;
+          }
+          while (thisEvent != NULL)
+          {
+              eventCount++;
+              *(events + eventCount-1) = thisEvent;
+              thisEvent = thisEvent->next_event;
+          }
+
+          qsort( events, numEvents, sizeof( candEvent * ), EventCompare );
+
+          /* copy sorted array back into linked list */
+          { 
+              candEvent **currentEvent = NULL;
+              if (inject){
+                  thisEvent = ifo[i].Ieventhead;
+              } else {
+                  thisEvent = ifo[i].eventhead;
+              }
+              currentEvent = &(thisEvent);
+              
+
+              eventCount=0;
+              while (eventCount < numEvents)
+              {
+                  *currentEvent = *(events + eventCount);
+                  eventCount++;
+                  currentEvent = &((*currentEvent)->next_event);
+              }
+
+              /* correctly terminate the linked list */
+              *currentEvent = NULL;
+          }
+
+          LALFree (events);
+      }
+  }
+
+  /* normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 }
 

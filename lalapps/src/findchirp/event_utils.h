@@ -1,7 +1,8 @@
 #define INJECTIONS 1
 #define TRIGGERS   0
 
-
+#define EVENTUTILSH_ENULLP 1
+#define EVENTUTILSH_MSGENULLP "null pointer"
 typedef struct
 tagcandParams{
     char       name[256];
@@ -47,6 +48,8 @@ typedef struct
 tagtimeWindow{
     double                start_time;   /* gps seconds */
     double                end_time;     /* gps seconds */
+    double                snr;          /* loudest snr in window */
+    double                ratio;        /* ASQ/VETO ratio above which is veto */
     struct tagtimeWindow *next_time_window;
 }
 timeWindow;
@@ -60,6 +63,7 @@ tagvetoParams{
     float      threshold;                   /* col > thresh => veto           */ 
     double     minusdtime;                  /* veto t_veto - dt < t ....      */
     double     plusdtime;                   /*  ...... < t_veto + dt          */
+    double     ratio;                   /* ASQ/VETO ratio above which is veto */
     timeWindow *vwindows; 
     struct tagvetoParams *next_veto;
 }
