@@ -133,7 +133,7 @@ int main( int argc, char *argv[] )
   int  enableTrigStartTime = 1;
 
   int j;
-  FILE *fp,*fq;
+  FILE *fp = NULL;
   glob_t globbedFiles;
   int numInFiles = 0;
   char **inFileNameList;
@@ -1342,13 +1342,6 @@ int main( int argc, char *argv[] )
         process_params_table ), &stat );
   LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
 
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
-
   /* Write the found injections to the sim table */
   if ( simEventHead )
   {
@@ -1359,14 +1352,6 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
           sim_inspiral_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat );
-
-    /* free the temporary memory containing the events */
-    while ( simEventHead )
-    {
-      thisSimEvent = simEventHead;
-      simEventHead = simEventHead->next;
-      LALFree( thisSimEvent );
-    }
   }
   
   /* Write the results to the inspiral table */
@@ -1379,50 +1364,49 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
           sngl_inspiral_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat);
-
-    if ( tamaFileName )
-    {
-      fq = fopen( tamaFileName, "w" );
-      fprintf( fq, "LIGO triggers\n");
-      fprintf( fq, "IFO   trigger time       snr         chisq       " );
-      fprintf( fq, " total mass     eta       eff dist (kpc)\n" );
-    }
-    
-    /* free the temporary memory containing the events */
-    while ( eventHead )
-    {
-      thisEvent = eventHead;
-      eventHead = eventHead->next;
-      /* write out the Tama file */
-      if ( tamaFileName )
-      {
-	REAL8 trigtime;
-	REAL4 mtotal;
-	LAL_CALL( LALGPStoFloat( &stat, &trigtime, &(thisEvent->end_time) ),
-	   &stat );
-	if (thisEvent->eta <= 0.25)
-	{
-	  mtotal = (thisEvent->mass1 + thisEvent->mass2);
-	}
-	else
-	{
-	  mtotal = ( thisEvent->mchirp ) / pow( thisEvent->eta, 0.6 );
-	}
-	fprintf( fq, "%s %20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", 
-	    thisEvent->ifo, trigtime, thisEvent->snr, thisEvent->chisq, 
-	    mtotal, thisEvent->eta, 1.0e+03 * thisEvent->eff_distance );
-      }
-      LALFree( thisEvent );
-    }
-    if ( tamaFileName )
-    {
-      fclose( fq );
-    }
   }
 
   /* close the output file */
   LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
   if ( vrbflg ) fprintf( stdout, "done\n" );
+
+  /* write out the TAMA file if it is requested */
+  if ( tamaFileName )
+  {
+    REAL8 trigtime;
+    REAL4 mtotal;
+
+    fp = fopen( tamaFileName, "w" );
+    if ( ! fp )
+    {
+      perror( "TAMA file" );
+      exit( 1 );
+    }
+
+    fprintf( fp, "IFO   trigger time       snr         chisq       "
+        " total mass     eta       eff dist (kpc)\n" );
+
+    for ( thisEvent = eventHead; thisEvent; thisEvent = thisEvent->next )
+    {
+      LAL_CALL( LALGPStoFloat( &stat, &trigtime, &(thisEvent->end_time) ),
+          &stat );
+
+      if ( thisEvent->eta <= 0.25 )
+      {
+        mtotal = thisEvent->mass1 + thisEvent->mass2;
+      }
+      else
+      {
+        mtotal = thisEvent->mchirp / pow( thisEvent->eta, 0.6 );
+      }
+
+      fprintf( fp, "%s %20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", 
+          thisEvent->ifo, trigtime, thisEvent->snr, thisEvent->chisq, 
+          mtotal, thisEvent->eta, 1.0e+03 * thisEvent->eff_distance );
+    }
+
+    fclose( fp );
+  }
 
   if ( missedFileName )
   {
@@ -1440,14 +1424,6 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
             sim_inspiral_table ), &stat );
       LAL_CALL( LALEndLIGOLwXMLTable( &stat, &xmlStream ), &stat );
-    }
-
-    /* free the temporary memory containing the missed injections */
-    while ( missedSimHead )
-    {
-      tmpSimEvent = missedSimHead;
-      missedSimHead = missedSimHead->next;
-      LALFree( tmpSimEvent );
     }
 
     LAL_CALL( LALCloseLIGOLwXMLFile( &stat, &xmlStream ), &stat );
@@ -1526,6 +1502,39 @@ int main( int argc, char *argv[] )
    */
 
 
+  /* free the inspiral events we saved */
+  while ( eventHead )
+  {
+    thisEvent = eventHead;
+    eventHead = eventHead->next;
+    LALFree( thisEvent );
+  }
+
+  /* free the process params */
+  while( procparams.processParamsTable )
+  {
+    this_proc_param = procparams.processParamsTable;
+    procparams.processParamsTable = this_proc_param->next;
+    free( this_proc_param );
+  }
+
+  /* free the found injections */
+  while ( simEventHead )
+  {
+    thisSimEvent = simEventHead;
+    simEventHead = simEventHead->next;
+    LALFree( thisSimEvent );
+  }
+
+  /* free the temporary memory containing the missed injections */
+  while ( missedSimHead )
+  {
+    tmpSimEvent = missedSimHead;
+    missedSimHead = missedSimHead->next;
+    LALFree( tmpSimEvent );
+  }
+  
+  /* free the input file name data */
   if ( inputGlob )
   {
     LALFree( inFileNameList ); 
