@@ -610,10 +610,18 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
 
 int add_sft_to_mergedSFT_file(struct sftheader *header, float *dataF, FILE *outputSFTFile) 
 {
+        struct sftheader myHeader;
         int ret;
 
+        myHeader.endian = header -> endian;
+        myHeader.gpssec = header -> gpssec;
+        myHeader.gpsnan = header -> gpsnan;
+        myHeader.tbase  = header -> tbase; 
+        myHeader.first  = header -> first;
+        myHeader.nsamples = header -> nsamples;
+
         /* write header to the file */
-        ret = fwrite((const void *) header, sizeof(header), 1, outputSFTFile);
+        ret = fwrite((const void *) &myHeader, sizeof(myHeader), 1, outputSFTFile);
 
         if (ret != 1)
         {
