@@ -1,3 +1,4 @@
+
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
@@ -424,9 +425,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     memset( MCresponse2.data->data, 0, 
             MCresponse2.data->length * sizeof(*MCresponse2.data->data));
 
-  }
-
-	
+  }	
 
   /* set PSD window length */
   windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -911,11 +910,36 @@ INT4 main(INT4 argc, CHAR *argv[])
                 segLoop + 1, numSegments);
       }
                 
-     /* compute response function */
+     
+      /* read data and downsample */
+      if (verbose_flag)
+	{ fprintf(stdout, "Reading data...\n");}
+
+      /* read data */
+      streamParams.startTime = gpsStartTime.gpsSeconds;
+      LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+       
+      /* skip segment if data not found or corrupted with 0 values */           
+      if ((status.statusCode !=0)||
+          (segmentTemp1.data==NULL)||(segmentTemp2.data==NULL))
+       {
+	clear_status(&status);
+        if (segLoop < (numSegments - 1)) continue; 
+	else break;   
+       }
+               
+      /* save */
+      if (verbose_flag)
+       {
+        LALSPrintTimeSeries(&segmentTemp1, "segment1.dat");
+        LALSPrintTimeSeries(&segmentTemp2, "segment2.dat");
+       }
+
+      /* compute response function */
 
      if (verbose_flag)
       {
-       fprintf(stdout, "Getting appropriate frequencresponse functions...\n");
+       fprintf(stdout, "Getting appropriate frequency response functions...\n");
       }
               
      gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
@@ -948,7 +972,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }   
 
      if (verbose_flag)
-      { fprintf(stdout, "Generating response functions...\n");}
+      { fprintf(stdout, "Reduce response functions to optimal filter range...\n");}
 
      /* reduce to the optimal filter frequency range */
      response1.epoch = response2.epoch = gpsCalibTime;
@@ -965,22 +989,19 @@ INT4 main(INT4 argc, CHAR *argv[])
        LALCPrintFrequencySeries(&response2, "response2.dat");
       }
 
-     /* compute response function for MC */
+     /* convert response function for use in the MC routine */
       if (inject_flag)
        {
         if (verbose_flag)
          {
-	  fprintf(stdout, "Getting appropriate frequencyresponse " \
-			   "functions for MC...\n");
+	  fprintf(stdout, "Interpolate response functions for MC...\n");
          }
 
          MCresponse1.epoch = MCresponse2.epoch = gpsCalibTime;
                 
-	 LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1, 
-                   ifo1, &duration), &status );
+	 LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
 			
-	 LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2, 
-                   ifo2, &duration), &status );
+	 LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
 
          /* force DC to be 0 and nyquist to be real */
          MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
@@ -996,31 +1017,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	  }
                 
        }
-
-      /* read data and downsample */
-      if (verbose_flag)
-	{ fprintf(stdout, "Reading data...\n");}
-
-      /* read data */
-      streamParams.startTime = gpsStartTime.gpsSeconds;
-      LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
-       
-      /* skip segment if data not found or corrupted with 0 values */           
-      if ((status.statusCode !=0)||
-          (segmentTemp1.data==NULL)||(segmentTemp2.data==NULL))
-       {
-	clear_status(&status);
-        if (segLoop < (numSegments - 1)) continue; 
-	else break;   
-       }
-               
-      /* save */
-      if (verbose_flag)
-       {
-        LALSPrintTimeSeries(&segmentTemp1, "segment1.dat");
-        LALSPrintTimeSeries(&segmentTemp2, "segment2.dat");
-       }
-
+      
       for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
        {	
        	/* open output file */
