@@ -73,35 +73,33 @@ static int test_flag;
 static int post_analysis_flag;
 extern int vrbflg;
 
-/* parameters for the stochastic search */
-
 /* sampling parameters */
-INT4 sampleRate = 16384;
-INT4 resampleRate = 1024;
-REAL8 deltaF = 0.25;
+INT4 sampleRate = -1;
+INT4 resampleRate = -1;
+REAL8 deltaF;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime;
-UINT8 stopTime;
-INT4 intervalDuration = 180;
-INT4 segmentDuration = 60;
-INT4 calibDuration = 60;
-INT4 calibOffset = 30;
-CHAR *frameCache1;
-CHAR *frameCache2;
-CHAR *calCache1;
-CHAR *calCache2;
+UINT8 startTime = 0;
+UINT8 stopTime = 0;
+INT4 intervalDuration = -1;
+INT4 segmentDuration = -1;
+INT4 calibDuration;
+INT4 calibOffset;
+CHAR *frameCache1 = NULL;
+CHAR *frameCache2 = NULL;
+CHAR *calCache1 = NULL;
+CHAR *calCache2 = NULL;
 CHAR channel1[LALNameLength];
 CHAR channel2[LALNameLength];
-CHAR ifo1[LALNameLength];
-CHAR ifo2[LALNameLength];
+CHAR *ifo1 = NULL;
+CHAR *ifo2 = NULL;
 INT4 site1;
 INT4 site2;
 
 /* frequency band */
-INT4 fMin = 50;
-INT4 fMax = 300;
+INT4 fMin = -1;
+INT4 fMax = -1;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -115,8 +113,7 @@ INT4 seed;
 INT4 NLoop;
 
 /* window parameters */
-/* 60 s for pure Hann, 1 s for Tukey, 0s for rectangular window */
-INT4 hannDuration = 1;
+INT4 hannDuration = -1;
 
 /* high pass filtering parameters */
 REAL4 highPassFreq = 40.;
@@ -136,8 +133,6 @@ CHAR *outputFilePath;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
-  /* variable declarations */
-
   /* status pointer */
   LALStatus status;
 
@@ -1793,6 +1788,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(calCache1);
   free(calCache2);
   free(outputFilePath);
+  free(ifo1);
+  free(ifo2);
 
   return 0;
 }
@@ -2125,7 +2122,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* ifo for first stream */
-        strncpy(ifo1, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifo1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifo1, optarg, optarg_len);
 
         /* set site and channel */
         if (strncmp(ifo1, "H1", 2) == 0)
@@ -2155,7 +2154,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'I':
         /* ifo for second stream */
-        strncpy(ifo2, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        ifo2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(ifo2, optarg, optarg_len);
 
         /* set site and channel */
         if (strncmp(ifo2, "H1", 2) == 0)
@@ -2339,7 +2340,79 @@ void parseOptions(INT4 argc, CHAR *argv[])
     exit(1);
   }
 
-  /* check arguments */
+  /* check for required arguments arguments */
+
+  /* start time */
+  if (startTime == 0)
+  {
+    fprintf(stderr, "Start time must be specified\n");
+    exit(1);
+  }
+
+  /* interval duration */
+  if (intervalDuration == -1)
+  {
+    fprintf(stderr, "Interval duration must be specified\n");
+    exit(1);
+  }
+
+  /* segment duration */
+  if (segmentDuration == -1)
+  {
+    fprintf(stderr, "Segment duration must be specified\n");
+    exit(1);
+  }
+
+  /* sample rate */
+  if (sampleRate == -1)
+  {
+    fprintf(stderr, "Sample rate must be specified\n");
+    exit(1);
+  }
+
+  /* resample rate */
+  if (resampleRate == -1)
+  {
+    fprintf(stderr, "Resample rate must be specified\n");
+    exit(1);
+  }
+
+  /* minimum frequency */
+  if (fMin == -1)
+  {
+    fprintf(stderr, "Minimum frequency must be specified\n");
+    exit(1);
+  }
+
+  /* maximum frequency */
+  if (fMax == -1)
+  {
+    fprintf(stderr, "Maximum frequency must be specified\n");
+    exit(1);
+  }
+
+  /* hann duration */
+  if (hannDuration == -1)
+  {
+    fprintf(stderr, "Hann duration must be specified\n");
+    exit(1);
+  }
+
+  /* ifo one */
+  if (ifo1 == NULL)
+  {
+    fprintf(stderr, "First IFO must be specified\n");
+    exit(1);
+  }
+
+  /* ifo two */
+  if (ifo2 == NULL)
+  {
+    fprintf(stderr, "Second IFO must be specified\n");
+    exit(1);
+  }
+
+  /* check for sensible arguments */
 
   /* start time same as stop time */
   if (startTime == stopTime)
