@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
 
   /* time and velocity vectors and files*/
   static LIGOTimeGPSVector1   timeV;
-  static REAL8Cart3CoorVector velV;
+  static REAL8Cart3CoorVector velV, velVmid;
   static REAL8Vector         timeDiffV;
 
   /* hough structures */
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]){
   /* get the log string */
   SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
-  fprintf( fpLog, "## LOG FILE FOR MCInjectValidate\n\n");
+  fprintf( fpLog, "## LOG FILE FOR Hough Driver\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
   fprintf( fpLog, logstr);
@@ -422,7 +422,7 @@ int main(int argc, char *argv[]){
     length =  uvar_fSearchBand*timeBase; 
     fLastBin = f0Bin+length;   /* final frequency to be analyzed */
 
-    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder;
+    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
     length = 1 + length + 2*fWings;
 
     sft.length = length;
@@ -484,9 +484,13 @@ int main(int argc, char *argv[]){
   velV.data = NULL;
   velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
 
+  velVmid.length = mObsCoh;
+  velVmid.data = NULL;
+  velVmid.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
+
   {  
     VelocityPar   velPar;
-    REAL8     vel[3]; 
+    REAL8     vel[3], tempVel[3]; 
     UINT4     j; 
     EphemerisData    *edat=NULL;
     
@@ -519,10 +523,29 @@ int main(int argc, char *argv[]){
       velPar.startTime.gpsSeconds     = timeV.time[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;
       
-      SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
+      SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status ); 
+      
+      {
+	/*         REAL8  midTimeBase; */
+	LIGOTimeGPS midTimeBaseGPS, tempGPS; 
+	
+	/*         midTimeBase = 0.5 * timeBase;  */
+	/*         SUB( LALFloatToGPS ( &status, &midTimeBaseGPS, &midTimeBase), &status); */
+	/* 	tempGPS.gpsSeconds = midTimeBaseGPS.gpsSeconds + timeV.time[j].gpsSeconds; */
+	/* 	tempGPS.gpsNanoSeconds = midTimeBaseGPS.gpsNanoSeconds + timeV.time[j].gpsNanoSeconds; */
+	tempGPS.gpsSeconds = timeV.time[j].gpsSeconds;
+	tempGPS.gpsNanoSeconds = timeV.time[j].gpsNanoSeconds;
+        SUB( LALDetectorVel ( &status, tempVel, &tempGPS, detector, edat), &status ); 
+      }
+
       velV.data[j].x= vel[0];
       velV.data[j].y= vel[1];
       velV.data[j].z= vel[2];   
+
+      /* for debugging purposes */
+      velVmid.data[j].x = tempVel[0];
+      velVmid.data[j].y = tempVel[1];
+      velVmid.data[j].z = tempVel[2];
     }
     
     LALFree(edat->ephemE);
@@ -551,7 +574,7 @@ int main(int argc, char *argv[]){
     for(j=1; j< velV.length; ++j){
       ts = timeV.time[j].gpsSeconds;
       tn = timeV.time[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn -t0+midTimeBase; 
+      timeDiffV.data[j] = ts+tn - t0 + midTimeBase; 
     }  
   }
 
@@ -559,41 +582,40 @@ int main(int argc, char *argv[]){
   /*  Writing the time & detector-velocity corresponding to each SFT  */
   /* ****************************************************************/
   
-  /*  { */
-  /*     UINT4   j; */
-  /*     FILE   *fp = NULL; */
-  
-  /*     fp = fopen( fnameVelocity, "w"); */
-  /*     if (fp==NULL){ */
-  /*       fprintf(stderr,"Unable to open velocity file %s for writing\n",fnameVelocity); */
-  /*       return 1; /\* stop the program *\/ */
-  /*     } */
-  /*     /\* read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
-  /*     for (j=0; j<mObsCoh;++j){ */
-  /*       fprintf(fp, "%d %d %g %g %g\n", */
-  /*                 (timeV.time[j].gpsSeconds), */
-  /*                 (timeV.time[j].gpsNanoSeconds), */
-  /*                 (velV.data[j].x), (velV.data[j].y),(velV.data[j].z) ); */
-  
-  /*       fflush(fp); */
-  /*     } */
-  /*     fclose(fp); */
-  
-  /*     fp = fopen( fnameTime, "w"); */
-  /*     if (fp==NULL){ */
-  /*       fprintf(stderr,"Unable to open file %s\n for writing",fnameTime); */
-  /*       return 1; /\* stop the program *\/ */
-  /*     } */
-  /*     /\* read data format:  INT4 INT4 *\/ */
-  /*     for (j=0; j<mObsCoh;++j){ */
-  /*       fprintf(fp, "%d %d \n", */
-  /*                 (timeV.time[j].gpsSeconds), */
-  /*                 (timeV.time[j].gpsNanoSeconds) ); */
-  
-  /*       fflush(fp); */
-  /*     } */
-  /*     fclose(fp); */
-  /*   } */
+/*     {  */
+/*       UINT4   j;  */
+/*       FILE   *fp = NULL;  */
+      
+/*       fp = fopen( "velocityOut.c", "w");  */
+/*       if (fp==NULL){  */
+/* 	fprintf(stderr,"Unable to open velocity file for writing\n");  */
+/* 	return 1;  */
+/*       }  */
+/*       /\*     read data format:  INT4 INT4  REAL8 REAL8 REAL8 *\/ */
+/*       for (j=0; j<mObsCoh;++j){  */
+/* 	fprintf(fp, "%d %d %g %g %g %g %g %g\n",  */
+/* 		timeV.time[j].gpsSeconds, timeV.time[j].gpsNanoSeconds, velV.data[j].x, velV.data[j].y,  */
+/* 		velV.data[j].z, velVmid.data[j].x, velVmid.data[j].y, velVmid.data[j].z );  */
+	
+/* 	fflush(fp);  */
+/*       }  */
+/*       fclose(fp);  */
+      
+      /*     fp = fopen( fnameTime, "w");  */
+      /*       if (fp==NULL){  */
+      /* 	fprintf(stderr,"Unable to open file %s\n for writing",fnameTime);  */
+      /*         return 1; /\* stop the program *\/ */
+      /*       }  */
+      /*       /\* read data format:  INT4 INT4 *\/ */
+      /*       for (j=0; j<mObsCoh;++j){  */
+      /* 	fprintf(fp, "%d %d \n",  */
+      /* 		(timeV.time[j].gpsSeconds),  */
+      /* 		(timeV.time[j].gpsNanoSeconds) );  */
+      
+      /* 	fflush(fp);  */
+      /*       }  */
+      /*       fclose(fp);  */
+   /*  }  */
   
   /* loop over sky patches */
   for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
