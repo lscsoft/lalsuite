@@ -27,6 +27,7 @@
  * \hline
  * \tt 0 & Success, normal exit.         \\
  * \tt 1 & Subroutine failed.            \\
+ * \tt 2 & PSD estimation tolerance exceeded \\
  * \hline
  * \end{tabular}
  * 
@@ -53,6 +54,7 @@
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/LALMoment.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
@@ -85,6 +87,9 @@ int main( int argc, char *argv[] )
   static REAL4TimeSeries         x;
   static COMPLEX8FrequencySeries X;
 
+  static REAL4TimeSeries         y;
+  static REAL4FrequencySeries    Y;
+
   static COMPLEX8TimeSeries      z;
   static COMPLEX8FrequencySeries Z;
 
@@ -94,7 +99,16 @@ int main( int argc, char *argv[] )
   ComplexFFTPlan *revComplexPlan = NULL;
   RandomParams   *randpar        = NULL;
 
-  UINT4 j;
+  LALWindowParams       wpars;
+  AverageSpectrumParams avgSpecParams;
+
+  UINT4 srate[] = { 4096, 9000 };
+  UINT4 npts[] = { 262144, 1048576 };
+  REAL4 var[] = { 5, 16 };
+
+  UINT4 j, sr, np, vr;
+
+  CHAR fname[2048];
 
   ParseOptions( argc, argv );
 
@@ -151,6 +165,82 @@ int main( int argc, char *argv[] )
   LALSPrintTimeSeries( &x, "xx.out" );
 
 
+  /*
+   *
+   * Try the average power spectum.
+   *
+   */
+
+
+  wpars.type = Hann;
+  avgSpecParams.method = useMean;
+
+  for ( np = 0; np < sizeof(npts)/sizeof(*npts) ; ++np )
+  {
+    /* length of time series for 7 segments, overlapped by 1/2 segment */
+    UINT4 tsLength = npts[np] * 7 - 6 * npts[np] / 2;
+    LALCreateVector( &status, &y.data, tsLength );
+    TestStatus( &status, CODES( 0 ), 1 );
+    LALCreateVector( &status, &Y.data, npts[np] / 2 + 1  );
+    TestStatus( &status, CODES( 0 ), 1 );
+    avgSpecParams.overlap = npts[np] / 2;
+
+    /* create the window */
+    wpars.length = npts[np];
+    avgSpecParams.window = NULL;
+    LALCreateREAL4Window( &status, &avgSpecParams.window, &wpars );
+    TestStatus( &status, CODES( 0 ), 1 );
+    avgSpecParams.plan = NULL;
+    LALCreateForwardRealFFTPlan( &status, &avgSpecParams.plan, npts[np], 0 );
+    TestStatus( &status, CODES( 0 ), 1 );
+
+    for ( sr = 0; sr < sizeof(srate)/sizeof(*srate) ; ++sr )
+    {
+      /* set the sample rate of the time series */
+      y.deltaT = 1.0 / (REAL8) srate[sr];
+      for ( vr = 0; vr < sizeof(var)/sizeof(*var) ; ++vr )
+      {
+        REAL4 Sfk = 2.0 * var[vr] * var[vr] * y.deltaT;
+        REAL4 sfk = 0;
+
+        /* create the data */
+        LALNormalDeviates( &status, y.data, randpar );
+        TestStatus( &status, CODES( 0 ), 1 );
+        for ( j = 0; j < y.data->length; ++j )
+        {
+          y.data->data[j] *= var[vr];
+        }
+        
+        /* compute the psd and find the average */
+        LALREAL4AverageSpectrum( &status, &Y, &y, &avgSpecParams );
+        TestStatus( &status, CODES( 0 ), 1 );
+        LALSMoment( &status, &sfk, Y.data, 1 );
+        TestStatus( &status, CODES( 0 ), 1 );
+
+        /* check the result */
+        if ( fabs(Sfk-sfk) > 1.0e-4 )
+        {
+          fprintf( stderr, "FAIL: PSD estimate appears incorrect\n");
+          fprintf( stderr, "expected %e, got %e (difference = %e)\n", 
+              Sfk, sfk, fabs(Sfk-sfk) );
+          exit(2);
+        }
+
+      }
+    }
+
+    /* destroy structures that need to be resized */
+    LALDestroyRealFFTPlan( &status, &avgSpecParams.plan );
+    TestStatus( &status, CODES( 0 ), 1 );
+    LALDestroyREAL4Window( &status, &avgSpecParams.window );
+    TestStatus( &status, CODES( 0 ), 1 );
+    LALDestroyVector( &status, &y.data );
+    TestStatus( &status, CODES( 0 ), 1 );
+    LALDestroyVector( &status, &Y.data );
+    TestStatus( &status, CODES( 0 ), 1 );
+  }
+
+  
   /*
    *
    * Try the complex transform.
