@@ -471,9 +471,6 @@ LALUTCtoGPS (LALStatus                *status,
              p_utcDate->unixDate.tm_mday >= 6))), status,
           DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
-
-  LALInfo(status, ">= 1980-01-06 only");
-
   /* UPDATEME */
   /*
    * Check that time asked for is not after last known leap sec
