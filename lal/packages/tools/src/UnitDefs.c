@@ -28,7 +28,7 @@ compare that to the actual units using \texttt{LALUnitCompare()}.
 
 \texttt{LALParseUnitString()} reconstructs the original
 \texttt{LALUnit} structure from the string output by
-\texttt{LALUnitCompare()}.  It is very sensitive to the exact format
+\texttt{LALUnitAsString()}.  It is very sensitive to the exact format
 of the string and is not intended for use in parsing user-entered
 strings.
 
