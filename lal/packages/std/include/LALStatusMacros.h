@@ -165,27 +165,26 @@ Flag & Binary & Decimal & Meaning \\
 \tt LALINFO     & 0\ldots00100 &  4 & Turn on info messages \\
 \tt LALTRACE    & 0\ldots01000 &  8 & Turn on tracing messages \\
 \tt LALMEMINFO  & 0\ldots10000 & 16 & Turn on memory messages \\
-\tt LALMEMDBG   & 1\ldots00000 & $2^{N-1}$ & Turn on debugging without
+\tt LALMEMDBG   & 1\ldots00000 & $2^{14}$ & Turn on debugging without
 messages \\
 \multicolumn{4}{|l|}{\it Combination flags} \\
 \tt LALMSGLVL1  & 0\ldots00001 &  1 & Error messages only \\
 \tt LALMSGLVL2  & 0\ldots00011 &  3 & Error and warning messages \\
 \tt LALMSGLVL3  & 0\ldots00111 &  7 & Error, warning, and info messages \\
 \tt LALMEMTRACE & 0\ldots11000 & 24 & Memory and tracing messages \\
-\tt LALALLDBG   & 1\ldots11111 & $2^N-1$ & All messages and debugging \\
+\tt LALALLDBG   & 1\ldots11111 & $2^{15}-1$ & All messages and debugging \\
 \hline
 \end{tabular}
 \end{center}
 
-Here $N$ is the number of bits in the statndard C type \verb@int@ on
-the particular system.  The $N^\mathrm{th}$, or most significant, bit
-of \verb@lalDebugLevel@ has a special meaning, in that it is not
+The most significant bit
+of \verb@lalDebugLevel@ has a special meaning in that it is not
 associated with any type of status message.  However, certain pieces
 of debugging or error-tracking code --- such as the memory leak
 detection code in \verb@LALMalloc.c@ --- do not write status messages
 and are not associated with a \verb@lalDebugLevel@ bit; instead, these
 pieces of code are turned on for \emph{any} nonzero value of
-\verb@lalDebugLevel@.  Switching on only the $N^\mathrm{th}$ bit with
+\verb@lalDebugLevel@.  Switching on only the most significant bit with
 \verb@LALMEMDBG@ activates this code without turning on any other
 error reporting.
 

@@ -43,9 +43,9 @@ enum
   LALINFO    = 4,
   LALTRACE   = 8,
   LALMEMINFO = 16,
-  LALMEMDBG  = ~( -1U >> 1 ) /* any non-zero value that doesn't interfere with
-                                other bits: meaningless to combine this with
-                                any other bit */
+  LALMEMDBG  = 16384 /* any non-zero value that doesn't interfere with
+                        other bits: meaningless to combine this with
+                        any other bit */
 };
 
 /* composite lalDebugLevels: */
@@ -53,7 +53,7 @@ enum { LALMSGLVL1  = LALERROR };
 enum { LALMSGLVL2  = LALERROR | LALWARNING };
 enum { LALMSGLVL3  = LALERROR | LALWARNING | LALINFO };
 enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
-enum { LALALLDBG   = ~0 };
+enum { LALALLDBG   = 32767 };
 
 extern int  ( *lalRaiseHook )( int, const char *, ... );
 extern void ( *lalAbortHook )( const char *, ... );
