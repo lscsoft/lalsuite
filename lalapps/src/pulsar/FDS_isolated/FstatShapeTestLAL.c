@@ -114,7 +114,7 @@ INT4 main(INT4 argc, CHAR ** argv)
   /* initialize status */
   LALStatus status = blank_status;  
 
-  REAL8 probability = 0.0;  /* Chi-Square cumulative probability */
+  REAL8 probability = 0.0;  /* Confidence level = Chi-Square cumulative probability from 0 to data */
   BOOLEAN rejection = 0;    /* Reject the  hypothesis if 1. */
   FSTUserInput cla; /* user input: command line arguments */
 
@@ -239,10 +239,14 @@ INT4 main(INT4 argc, CHAR ** argv)
     {
       LAL_CALL( LALChi2CDFP( &status, &probability, &(vetoStat.vetoStatistic), &(vetoStat.dof) ), &status );
     }
-    if( probability < cla.sigLevel ) {
-      rejection = 1;
+    if( 1.0 - probability < cla.sigLevel ) {
+      rejection = 1; /* We reject the null hypothesis */
     }
-    fprintf(stdout, "%8.5e %d", probability, rejection);
+    /* NOTE: The code calls chi2cdfp() that is an integral from 0 to x of 
+     *       chi2pdf(). Therefore, the probability here is confidence level. 
+     *       The significance level is 1 - confidence level. 
+     */
+    fprintf(stdout, "%8.5e %d", 1.0 - probability, rejection);
   }
   fprintf(stdout,"\n");
 
@@ -343,8 +347,8 @@ showHelp( LALStatus *status,
   fprintf(stderr,"(3) Maximum of F in the cluster\n");
   fprintf(stderr,"(4) Degrees of freedom\n");
   fprintf(stderr,"(5) Veto statistic\n");
-  fprintf(stderr,"[(6) Probability]\n");
-  fprintf(stderr,"[(7) If 1, the observed signal is consistent with the veto signal, \n");
+  fprintf(stderr,"[(6) Chi square Probability]\n");
+  fprintf(stderr,"[(7) If 0, the observed signal is consistent with the veto signal, \n");
   fprintf(stderr,"with the significance level = %f.]\n", cla->sigLevel);
   exit(0);
 
