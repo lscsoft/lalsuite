@@ -26,6 +26,7 @@ Routines to perform arithmetic and comparisons on \texttt{LIGOTimeGPS} and
 \idx{LALIncrementGPS()}
 \idx{LALDecrementGPS()}
 \idx{LALAddFloatToGPS()}
+\idx{XLALAddFloatToGPS()}
 \idx{LALDeltaGPS()}
 \idx{LALDeltaFloatGPS()}
 \idx{LALCompareGPS()}
@@ -40,6 +41,7 @@ the GPS times they operate on into a floating point representation.
   \item \texttt{LALIncrementGPS()} increments a GPS time by a time interval
   \item \texttt{LALDecrementGPS()} decrements a GPS time by a time interval
   \item \texttt{LALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
+  \item \texttt{XLALAddFloatToGPS()} adds a REAL8 interval (in seconds) to a GPS time
   \item \texttt{LALDeltaGPS()} returns the difference between two GPS times as a \texttt{LALTimeInterval}.
   \item \texttt{LALDeltaFloatGPS()} returns the difference between two GPS times in seconds as a \texttt{REAL8}.
   \item \texttt{LALCompareGPS()} compares two GPS times, and returns a \texttt{LALGPSCompareResult} indicating if the first GPS time is earlier than, equal to,  or later than the second GPS time
@@ -324,28 +326,31 @@ LALCompareGPS(LALStatus           *status,
 
 
 /* Increment a GPS time by a float-interval */
-/* (Private function) */
-static
-LIGOTimeGPS AddFloatToGPS(
+/* <lalVerbatim file="IncrementGPSCP"> */
+LIGOTimeGPS XLALAddFloatToGPS(
 	LIGOTimeGPS gps,
 	REAL8 deltaT
 )
+/*  </lalVerbatim> */
 {
-	INT4 secs = deltaT;
+  INT4 secs = deltaT;
 
-	gps.gpsSeconds += secs;
-	gps.gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
+  gps.gpsSeconds += secs;
+  gps.gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
 
-	if (gps.gpsNanoSeconds >= oneBillion) {
-		gps.gpsNanoSeconds -= oneBillion;
-		gps.gpsSeconds++;
-	} else if (gps.gpsNanoSeconds < 0) {
-		gps.gpsNanoSeconds += oneBillion;
-		gps.gpsSeconds--;
-	}
+  if (gps.gpsNanoSeconds >= oneBillion)
+    {
+      gps.gpsNanoSeconds -= oneBillion;
+      gps.gpsSeconds++;
+    }
+  else if (gps.gpsNanoSeconds < 0)
+    {
+      gps.gpsNanoSeconds += oneBillion;
+      gps.gpsSeconds--;
+    }
 
-	return(gps);
-} /* AddFloatToGPS() */
+  return(gps);
+} /* XLALAddFloatToGPS() */
 
 /* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */
@@ -360,7 +365,7 @@ LALAddFloatToGPS(
 {
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
 
-  *outputGPS = AddFloatToGPS(*startGPS, deltaT);
+  *outputGPS = XLALAddFloatToGPS(*startGPS, deltaT);
 
   RETURN( status );
 

@@ -596,6 +596,11 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS1, /* input: GPS1 */
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
+LIGOTimeGPS
+XLALAddFloatToGPS(
+	LIGOTimeGPS gps,
+	REAL8 deltaT
+);
 
 void
 LALAddFloatToGPS (LALStatus             *status,
