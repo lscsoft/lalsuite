@@ -63,7 +63,7 @@ void LALACSTDerivatives (REAL8Vector *values, REAL8Vector *dvalues, void *funcPa
 NRCSID (LALINSPIRALSPINNINGBHBINARYC, "$Id$");
 
 /* Routine to generate inspiral waveforms from binaries consisting of spinning objects */
-/*  <lalVerbatim file="LALSpinModulatedWaveCP"> */
+/*  <lalVerbatim file="LALInspiralSpinningBHBinaryCP"> */
 void 
 LALInspiralSpinModulatedWave(
 		LALStatus        *status, 
@@ -213,7 +213,10 @@ LALInspiralSpinModulatedWave(
 		signal->data[count] = amp*cos(phase+phi0);
 
 		/*
-		fprintf(stderr, "%e %e %e %e %e\n", t, magL, values.data[0], values.data[1], values.data[2]);
+		double s1;
+		s1 = pow(pow(values.data[3],2.0) + pow(values.data[4], 2.0) +pow(values.data[5], 2.0), 0.5);
+		printf("%e %e %e %e %e\n", t, values.data[3], values.data[4], values.data[5], s1);
+		printf("%e %e %e %e %e %e %e %e\n", t, signal->data[count], Phi, phi, psi, NCapDotL/magL, Fcross, Fplus);
 		*/
 
 		/* Record the old values of frequency, polarisation angle and phase */
@@ -293,9 +296,7 @@ LALInspiralPolarisationAngle(
 		*psi = LAL_PI_2;
 
 	/* If you require your polarisation angle to be continuous, then uncomment the line below */
-	/*
 	if (psiOld) while (fabs(*psi-psiOld)>LAL_PI_2) *psi = (psiOld > *psi) ? *psi+LAL_PI : *psi-LAL_PI;
-	*/
 }
 
 static void 
@@ -333,12 +334,10 @@ LALInspiralPolarisationPhase(
 	REAL8 NCapDotLByL;
 	/* page 6278, Eqs. (19b) of ACST */
 	NCapDotLByL = NCapDotL/magL;
-	*phi=atan(2.L*NCapDotLByL*Fcross/(1.L + NCapDotLByL*NCapDotLByL)*Fplus);
+	*phi=atan(2.L*NCapDotLByL*Fcross/((1.L + NCapDotLByL*NCapDotLByL)*Fplus));
 
 	/* If you require your polarisation phase to be continuous, then uncomment the line below */
-	/*
 	if (phiOld) while (fabs(*phi-phiOld)>LAL_PI_2) *phi = (phiOld>*phi) ? *phi+LAL_PI : *phi-LAL_PI;
-	*/
 }
 
 static void 

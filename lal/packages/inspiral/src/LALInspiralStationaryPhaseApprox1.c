@@ -51,11 +51,12 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
 
 /* This is the main function to compute the stationary phase approximation */
 
+/*  <lalVerbatim file="LALInspiralStationaryPhaseApprox1CP"> */
 void LALInspiralStationaryPhaseApprox1 (
    LALStatus *status, 
    REAL4Vector *signal,
    InspiralTemplate *params) 
-{
+{ /* </lalVerbatim>  */
    REAL8 t, pimmc, f0, fn, f, v, df, shft, phi, amp0, amp, psif, psi, sign;
    INT4 n, i, nby2;
    void *funcParams;

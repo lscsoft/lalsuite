@@ -123,7 +123,7 @@ void LALInspiralWave(LALStatus *status,
 
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->approximant <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->approximant <= 11, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
@@ -159,6 +159,10 @@ void LALInspiralWave(LALStatus *status,
       case IRSPA:
       case DJS:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+	   break;
+      case SpinTaylorT3:
+	   LALInspiralSpinModulatedWave(status->statusPtr, signal, params); 
+           CHECKSTATUSPTR(status);
 	   break;
    }
 

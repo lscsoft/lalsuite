@@ -10,8 +10,8 @@
  * %% A one-line description of the function(s) defined in this module.
  *
  * \subsubsection*{Prototypes}
- * \input{LALStationaryPhaseApprox2CP}
- * \idx{LALStationaryPhaseApprox2()}
+ * \input{LALInspiralStationaryPhaseApprox2CP}
+ * \idx{LALInspiralStationaryPhaseApprox2()}
  *
  * \subsubsection*{Description}
  *
