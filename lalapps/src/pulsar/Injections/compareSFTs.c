@@ -64,11 +64,6 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
-  REAL8 fmin1, fmax1;
-  REAL8 fmin2, fmax2;
-  REAL8 deltaF;
-  SFTHeader header;
-  CHAR *fname;
   SFTVector *SFTs1 = NULL, *SFTs2 = NULL;
   UINT4 i;
 
@@ -78,7 +73,7 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /* register all user-variables */
-  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'd'), &status);
+  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status);	  
 
   /* read cmdline & cfgfile  */	
@@ -87,40 +82,15 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  /* figure out what frequency-band these SFTs contain */
-  fname = LALCalloc(1, strlen(uvar_sftBname1) + 10);
-  sprintf (fname, "%s.00000", uvar_sftBname1);
-  LAL_CALL (LALReadSFTheader (&status, &header, fname), &status);
-  LALFree (fname);
-
-  deltaF = 1.0 / header.timeBase;
-  fmin1 = header.fminBinIndex * deltaF;
-  fmax1 = fmin1 + (header.length - 1) * deltaF;
-  /* header 2*/
-  fname = LALCalloc(1, strlen(uvar_sftBname2) + 10);
-  sprintf (fname, "%s.00000", uvar_sftBname2);
-  LAL_CALL (LALReadSFTheader (&status, &header, fname), &status);
-  LALFree (fname);
-
-  deltaF = 1.0 / header.timeBase;
-  fmin2 = header.fminBinIndex * deltaF;
-  fmax2 = fmin2 + (header.length - 1) * deltaF;
-
-  if ( (fmin1 != fmin2) || (fmax1 != fmax2) ) {
-    LALPrintError ("SFTs don't cover the same frequency-bands [%f,%f] vs [%f,%f]\n", 
-		   fmin1, fmax1, fmin2, fmax2);
-    exit (-1);
-  }
-
-
-  /* now read in the two sft-vectors */
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, fmin1, fmax1, uvar_sftBname1), &status);
-  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, fmin2, fmax2, uvar_sftBname2), &status);
+  /* now read in the two complete sft-vectors */
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs1, 0, 0, uvar_sftBname1), &status);
+  LAL_CALL (LALReadSFTfiles (&status, &SFTs2, 0, 0, uvar_sftBname2), &status);
 
   if (SFTs1->length != SFTs2->length) {
     LALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
   }
 
+  printf ("\nCompareSFTs: Legend: 'max' := maxERR / max, 'mean' := meanERR / mean \n");
   for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
     {
       printf ("i=%02d: ", i);
@@ -177,7 +147,8 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
   REAL4 meanerr = 0, meanph = 0;
   REAL4 re1, re2, im1, im2, pow1, pow2, phase1, phase2;
   REAL8 Tdiff, tmp;
-  
+  INT4 ind_pow = 0, ind_phase = 0;
+  REAL4 mean = 0, sftmax=0;
 
   if (sft1->data->length != sft2->data->length) 
     {
@@ -205,27 +176,40 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
       pow1 = sqrt(re1*re1 + im1*im1);
       pow2 = sqrt(re2*re2 + im2*im2);
 
+      mean += pow1;
+      sftmax = mymax (pow1, sftmax);
+
       phase1 = atan2 (im1, re1);
       phase2 = atan2 (im2, re2);
       /* error in power */
-      tmp = fabs(pow1-pow2)/mymax(pow1,pow2);
+      tmp = fabs(pow1-pow2);
       meanerr += tmp;
-      errpow = mymax (tmp, errpow);
+      if (tmp > errpow) 
+	{
+	  errpow = tmp;
+	  ind_pow = i;
+	}
       /* error in phase */
       tmp = fabs(phase1 - phase2);
       if (tmp > LAL_PI)
 	tmp = LAL_TWOPI - tmp;
 
       meanph += tmp;
-      errph = mymax (errph, tmp);
+      if (tmp > errph)
+	{
+	  errph = tmp;
+	  ind_phase = i;
+	}
 
     } /* for i */
 
+  mean /= sft1->data->length;
   meanerr /= sft1->data->length;
   meanph /= sft1->data->length;
 
-  printf ("errors (max/mean):  dPOWER = (%e, %e), dPHASE = (%e, %e) radians\n", 
-	  errpow, meanerr, errph, meanph);
+  printf ("POWER: max = %e @ %6.2fHz  mean = %e, PHASE: max = %e @ %6.2fHz, mean = %e \n", 
+	  errpow/sftmax, sft1->f0 + ind_pow * sft1->deltaF, meanerr/mean, 
+	  (REAL4)(errph / LAL_PI), sft2->f0 + ind_phase * sft1->deltaF, (REAL4)(meanph / LAL_PI));
 
   return;
 
