@@ -35,7 +35,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status, FrStream *stream,
 		CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
 static REAL4TimeSeries *get_geo_data(LALStatus *status, FrStream *stream,
 		CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
-static REAL8 DeltaGPStoFloat(LALStatus *status, LIGOTimeGPS *end,
+static REAL8 delta_gps_to_float(LALStatus *status, LIGOTimeGPS *end,
 		LIGOTimeGPS *start);
 static REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
 		REAL8 fRef, REAL4 omegaRef, UINT4 length, REAL8 f0, REAL8 deltaF,
@@ -43,6 +43,8 @@ static REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
 static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     UINT4 length, REAL8 f0, REAL8 deltaF, INT4 siteOne, INT4 siteTwo,
     LIGOTimeGPS time);
+static LIGOTimeGPS increment_gps(LALStatus *status, LIGOTimeGPS *time,
+		INT4 increment);
 
 #ifdef  __cplusplus
 }

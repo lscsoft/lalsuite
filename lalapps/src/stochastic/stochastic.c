@@ -773,11 +773,20 @@ INT4 main(INT4 argc, CHAR *argv[])
       for (segLoop = 0; segLoop < segsInInt; segLoop++)
       {
         /* get segment start time */
+        gpsSegStartTime = increment_gps(&status, &gpsStartTime, \
+            (interLoop + segLoop) * segmentDuration);
+        /*
         gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
                                      ((interLoop + segLoop) * segmentDuration);
         gpsSegStartTime.gpsNanoSeconds = 0;
+        */
+        gpsSegEndTime = increment_gps(&status, &gpsSegStartTime, \
+            segmentDuration);
+        /*
         gpsSegEndTime.gpsSeconds = gpsSegStartTime.gpsSeconds + \
                                    segmentDuration;
+        gpsSegEndTime.gpsNanoSeconds = 0;
+        */
         segmentOne->epoch = gpsSegStartTime;
         segmentTwo->epoch = gpsSegStartTime;
 
@@ -966,11 +975,11 @@ INT4 main(INT4 argc, CHAR *argv[])
           for (i = 0; i < segmentLength ; i++)
           {
             segmentOne->data->data[i] = segOne[segLoop]->data[i] + \
-                                           (scaleFactor * \
-                                            SimStochBGOne->data->data[i]);
+                                        (scaleFactor * \
+                                         SimStochBGOne->data->data[i]);
             segmentTwo->data->data[i] = segTwo[segLoop]->data[i] + \
-                                           (scaleFactor * \
-                                            SimStochBGTwo->data->data[i]);
+                                        (scaleFactor * \
+                                         SimStochBGTwo->data->data[i]);
           }
 
           /* increase seed */
@@ -2407,7 +2416,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   /* apply resample buffer */
   if (buffer)
   {
-    length = DeltaGPStoFloat(status, &end, &start) * resampleRate;
+    length = delta_gps_to_float(status, &end, &start) * resampleRate;
     start.gpsSeconds -= buffer;
     end.gpsSeconds += buffer;
   }
@@ -2486,7 +2495,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
         stream), status);
 
   /* resize series to the correct number of samples */
-  length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
+  length = delta_gps_to_float(status, &end, &start) / series->deltaT;
   LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
 
   if (vrbflg)
@@ -2527,7 +2536,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
         stream), status);
 
   /* resize series to the correct number of samples */
-  length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
+  length = delta_gps_to_float(status, &end, &start) / series->deltaT;
   LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
 
   if (vrbflg)
@@ -2561,14 +2570,18 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
 }
 
 /* return the difference between two GPS times as REAL8 */
-static REAL8 DeltaGPStoFloat(LALStatus *status,
+static REAL8 delta_gps_to_float(LALStatus *status,
     LIGOTimeGPS *end,
     LIGOTimeGPS *start)
 {
+  /* varaibles */
   LALTimeInterval i;
   REAL8 d;
+
+  /* get the time difference as a REAL8 */
   LAL_CALL(LALDeltaGPS(status, &i, end, start), status);
   LAL_CALL(LALIntervalToFloat(status, &d, &i), status);
+
   return(d);
 }
 
@@ -2636,6 +2649,26 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
       status);
 
   return(series);
+}
+
+/* helper function to increment the seconds component of a gps time with
+ * an integer */
+static LIGOTimeGPS increment_gps(LALStatus *status,
+    LIGOTimeGPS *time,
+    INT4 increment)
+{
+  /* variables */
+  LIGOTimeGPS result;
+  LALTimeInterval interval;
+
+  /* set interval */
+  interval.seconds = increment;
+  interval.nanoSeconds = 0;
+
+  /* increment GPS time */
+  LAL_CALL(LALIncrementGPS(status, &result, time, &interval), status);
+
+  return(result);
 }
 
 /*
