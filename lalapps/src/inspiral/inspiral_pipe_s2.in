@@ -408,9 +408,9 @@ l1_data.make_chunks(length,overlap,0)
 h1_data.make_chunks(length,overlap,0)
 h2_data.make_chunks(length,overlap,0)
 
-l1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h1_data.make_chunks_from_unused(length,overlap/2,0,0)
-h2_data.make_chunks_from_unused(length,overlap/2,0,0)
+l1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
+h1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
+h2_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
 print "done"
 
 ##############################################################################
@@ -504,19 +504,7 @@ for seg in l1_data:
 print "done"
 
 ##############################################################################
-# Step 6: Determine which of the H2 only master chunks needs to be filtered
-l1_h2_chunks_analyzed = []
-
-print "setting up jobs to filter H2 double coincident data...",
-sys.stdout.flush()
-(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
-  l1_h2_data,l1_chunks_analyzed,h2_data,
-  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
-  dag,usertag)
-print "done"
-
-##############################################################################
-# Step 7: Determine which of the H1 master chunks needs to be filtered
+# Step 6: Determine which of the H1 master chunks needs to be filtered
 h1_chunks_analyzed = []
 
 print "setting up jobs to filter H1 data...",
@@ -527,6 +515,17 @@ sys.stdout.flush()
   dag,usertag)
 print "done"
 
+##############################################################################
+# Step 7: Determine which of the H2 only master chunks needs to be filtered
+l1_h2_chunks_analyzed = []
+
+print "setting up jobs to filter H2 double coincident data...",
+sys.stdout.flush()
+(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
+  l1_h2_data,l1_chunks_analyzed,h2_data,
+  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
+  dag,usertag)
+print "done"
 
 ##############################################################################
 ## Any thing below here needs to be redone for each time slide ###############
@@ -583,15 +582,15 @@ for seg in l1_h1_data:
   inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
-  # add all L1 master chunks that overlap with segment to input
+  # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(l1_done.get_dag_node())
-  # add all H1 master chunks that overlap with segment to input
+  # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if chunk_in_segment(h1_done.get_chunk(),seg,abs(slide_time)):
+    if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag:
         inca.add_parent(h1_done.get_dag_node())
@@ -610,15 +609,15 @@ for seg in l1_h2_data:
   inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
-  # add all L1 master chunks that overlap with segment to input
+  # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
     if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(l1_done.get_dag_node())
-  # add all H2 master chunks that overlap with segment to input
+  # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h2_chunks_analyzed:
-    if chunk_in_segment(h2_done.get_chunk(),seg,abs(slide_time)):
+    if chunk_in_segment(h2_done.get_chunk(),seg,slide_time):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca.add_parent(h2_done.get_dag_node())
@@ -656,7 +655,7 @@ for seg in l1_h1_h2_data:
         inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if chunk_in_segment(h1_done.get_chunk(),seg,abs(slide_time)):
+    if chunk_in_segment(h1_done.get_chunk(),seg,slide_time):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
       if not slide_time or check_bkgr_dag: 
         inca1.add_parent(h1_done.get_dag_node())
@@ -699,7 +698,7 @@ for seg in h2_data:
         trigbank = inspiral.TrigToTmpltNode(trig_job)
         trigbank.make_trigbank(chunk,max_slide,'H1','H2',usertag,'L1H1')
         for l1_h1_done in l1_h1_inca_nodes:
-          if chunk_in_segment(chunk,l1_h1_done.get_chunk(),abs(slide_time)):
+          if chunk_in_segment(chunk,l1_h1_done.get_chunk(),slide_time):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
             if not slide_time or check_bkgr_dag:
               trigbank.add_parent(l1_h1_done.get_dag_node())
@@ -813,15 +812,6 @@ for o, a in opts:
 log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
-
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, "Science Segments and master chunks:\n"
-for sci_data in [l1_data, h1_data, h2_data]:
-  print >> log_fh, sci_data
-  for seg in sci_data:
-    print >> log_fh, " ", seg
-    for chunk in seg:
-      print >> log_fh, "   ", chunk
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
