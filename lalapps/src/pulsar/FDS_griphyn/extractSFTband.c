@@ -90,8 +90,6 @@ char *lalWatch;
 /*Default input data file name*/
 char *inDataFilename="InExtract.data";
 char *basefilename="TEST_SFT";
-char *noisedir="/sft/sft-timelist-ffv0/";
-/*char *noisedir="";*/
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 
 /* timebaseline of SFT in sec, band SFT in Hz */
@@ -213,7 +211,7 @@ int read_noise(LALStatus* status, int iSFT) {
 
   /*************************************/
   Tsft=header.tbase;
-  imin=floor(fmin*Tsft);
+  imin=(INT4)(fmin*Tsft+0.5);
   fmin=imin/Tsft;
 
   /* check frequency range */
@@ -228,12 +226,12 @@ int read_noise(LALStatus* status, int iSFT) {
   timestamps[iSFT].gpsNanoSeconds=header.gps_nsec;
 
   /* seek to position */
-  if (0 != fseek(fp, (fmin*Tsft - header.firstfreqindex) * 4.0 * 2, SEEK_CUR)){
+  if (0 != fseek(fp, (imin - header.firstfreqindex) * 4 * 2, SEEK_CUR)){
     fprintf(stderr,"file too short (could'n fssek to position\n");
     return 1;
   }
 
-  len2=ceil(B*Tsft);
+  len2=(INT4)(B*Tsft+0.5)+1;
   if (iSFT == 0) {
     LALCCreateVector(status, &fvec, (UINT4)len2);
   }
@@ -241,8 +239,8 @@ int read_noise(LALStatus* status, int iSFT) {
   norm=(REAL4)(len2)/(REAL4)header.nsamples;
 
   /* read the data */
-  if (1 != fread(fvec->data,len2*2*4.0,1,fp)) {
-      fprintf(stderr,"Could not read the data \n");
+  if (1 != fread(fvec->data,len2*2*4,1,fp)) {
+    fprintf(stderr,"Could not read the data \n");
     return 1;
   }
 
@@ -293,7 +291,7 @@ int write_SFTS(LALStatus* status, int iSFT){
   header.gps_sec=timestamps[iSFT].gpsSeconds;
   header.gps_nsec=timestamps[iSFT].gpsNanoSeconds;
   header.tbase=Tsft;
-  header.firstfreqindex=(INT4)(fmin*Tsft);
+  header.firstfreqindex=(INT4)(fmin*Tsft+0.5);
   header.nsamples=fvec->length; 
   
   /* write header */
