@@ -96,19 +96,19 @@ int main (void) {
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=20.; 
-   params.mass2=20.; 
+   params.mass1=5.; 
+   params.mass2=5.; 
    params.startTime=0.0; 
    params.startPhase=0.0;
-   params.fLower=40.0; 
+   params.fLower=85.0; 
    params.fCutoff=2047.00;
-   params.fFinal=2047.00;
    params.tSampling=4096.0;
-   params.order=4;
-   params.approximant=TaylorT1;
+   params.order=6;
+   params.approximant=EOB;
+/* SpinTaylorT3 */
    params.signalAmplitude=1.0;
    params.nStartPad=0;
-   params.nEndPad=1000;
+   params.nEndPad=0;
    params.massChoice=m1Andm2;
    dt = 1./params.tSampling;
 
@@ -124,6 +124,9 @@ int main (void) {
    fprintf(stderr,"fFinal = %e\n", params.fFinal);
 	      printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
 REPORTSTATUS(&status);
+
+   printf("duration is %f \n", params.tC);
+   printf("final frequency is %f \n", params.fFinal);
 
    LALDestroyVector(&status, &signal1);
    LALCheckMemoryLeaks();
