@@ -2,7 +2,7 @@
 
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex hello.tex ZPG2transfer.tex \
-                 stochastic.tex olapredfcn.tex
+                 olapredfcn.tex
 
 ## Don't edit below here (unless you know what you're doing)
 INSTALLFILES = lalapps.pdf lalapps.dvi lalapps.ps
