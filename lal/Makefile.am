@@ -20,3 +20,5 @@ cvs-clean: maintainer-clean
 	rm -f aclocal.m4
 	rm -f testscript.log
 	rm -f config.cache
+	rm -f config.status
+	rm -f config.log
