@@ -15,7 +15,7 @@ cross-correlation statistic for stochastic background searches.
 
 \subsubsection*{Prototypes}
 \index{\texttt{LALStochasticCrossCorrelationStatistic()}}
-\index{\texttt{LALHeterodynedStochasticCrossCorrelationStatistic()}}
+\index{\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}}
 \index{\texttt{LALStochasticCrossCorrelationSpectrum()}}
 \input{StochasticCrossCorrelationCP}
 
