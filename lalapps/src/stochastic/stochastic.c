@@ -1815,12 +1815,12 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"seed", required_argument, 0, 'B'},
       {"trials", required_argument, 0, 'C'},
       {"output-dir", required_argument, 0, 'D'},
-      {"debug-level", required_argument, 0, 'H'},
-      {"version", no_argument, 0, 'I'},
-      {"alpha", required_argument, 0, 'J'},
-      {"f-ref", required_argument, 0, 'K'},
-      {"omega0", required_argument, 0, 'L'},
-      {"comment", required_argument, 0, 'M'},
+      {"debug-level", required_argument, 0, 'E'},
+      {"version", no_argument, 0, 'F'},
+      {"alpha", required_argument, 0, 'G'},
+      {"f-ref", required_argument, 0, 'H'},
+      {"omega0", required_argument, 0, 'I'},
+      {"comment", required_argument, 0, 'J'},
       {0, 0, 0, 0}
     };
 
@@ -1830,7 +1830,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
     c = getopt_long(argc, argv, \
         "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:B:C:D:H:IJ:K:L:M:", long_options, &option_index);
+        "A:B:C:D:E:FG:H:I:J:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -2368,25 +2368,25 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'H':
+      case 'E':
         /* set debug level */
         set_debug_level( optarg );
         ADD_PROCESS_PARAM("string", "%s", optarg);
         break;
 
-      case 'I':
+      case 'F':
         /* display version info and exit */
         fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
         exit(0);
         break;
 
-      case 'J':
+      case 'G':
         /* filter spectrum exponent */
         alpha = atof(optarg);
         ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
-      case 'K':
+      case 'H':
         /* filter reference frequency */
         fRef = atof(optarg);
 
@@ -2403,7 +2403,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'L':
+      case 'I':
         /* filter reference omega */
         omegaRef = atof(optarg);
 
@@ -2420,7 +2420,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'M':
+      case 'J':
         /* xml comment */
         if (strlen(optarg) > LIGOMETA_COMMENT_MAX - 1)
         {
