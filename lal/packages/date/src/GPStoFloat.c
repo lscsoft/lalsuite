@@ -56,7 +56,6 @@ NRCSID(GPSTOFLOATC, "$Id$");
 /* D'oh. rint(3) is not in the ANSI std. Thanks Jolien. */
 #define rint(x) floor(0.5 + (x))
 
-double rint( double );
 static const INT4 oneBillion = 1000000000;
 
 /* <lalVerbatim file="GPStoFloatCP"> */
