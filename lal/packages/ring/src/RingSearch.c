@@ -164,7 +164,7 @@ LALRingSearch(
       }
             
       LALCCVectorMultiplyConjugate( status->statusPtr, rtilde.data,
-          stilde.data, params->dataSegment[seg].data );
+          params->dataSegment[seg].data, stilde.data );
       CHECKSTATUSPTR( status );
 
       unitPair.unitOne = &params->dataSegment[seg].sampleUnits;
