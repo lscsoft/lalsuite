@@ -223,56 +223,6 @@ LALFindChirpInjectSignals (
 
   for ( thisEvent = events; thisEvent; thisEvent = thisEvent->next )
   {
-
-
-    /* 
-     *
-     * populate ppn parameter structure from injection event 
-     *
-     */
-
-
-    /* input fields */
-    ppnParams.mTot = thisEvent->mass1 + thisEvent->mass2;
-    ppnParams.eta  = thisEvent->eta;
-    ppnParams.d    = thisEvent->distance * 1.0e6 * LAL_PC_SI;
-    ppnParams.inc  = thisEvent->inclination;
-    ppnParams.phi  = thisEvent->coa_phase;
-
-    /* frequency cutoffs */
-    ppnParams.fStartIn = 40.0;
-    ppnParams.fStopIn  = -1.0 / 
-      (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
-
-    /* passed fields */
-    ppnParams.position.longitude   = thisEvent->longitude;
-    ppnParams.position.latitude    = thisEvent->latitude;
-    ppnParams.position.system      = COORDINATESYSTEM_EQUATORIAL;
-    ppnParams.psi                  = thisEvent->polarization;
-    ppnParams.epoch.gpsSeconds     = 0;
-    ppnParams.epoch.gpsNanoSeconds = 0;
-
-    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-        "Injected waveform parameters:\n"
-        "ppnParams.mTot = %e\n"
-        "ppnParams.eta = %e\n"
-        "ppnParams.d = %e\n"
-        "ppnParams.inc = %e\n"
-        "ppnParams.phi = %e\n"
-        "ppnParams.psi = %e\n"
-        "ppnParams.position.longitude = %e\n"
-        "ppnParams.position.latitude = %e\n", 
-        ppnParams.mTot, 
-        ppnParams.eta, 
-        ppnParams.d,
-        ppnParams.inc,
-        ppnParams.phi,
-        ppnParams.psi, 
-        ppnParams.position.longitude, 
-        ppnParams.position.latitude );
-    LALInfo( status, warnMsg );
-
-
     /* 
      *
      * generate waveform and inject it into the data
@@ -283,47 +233,13 @@ LALFindChirpInjectSignals (
     /* clear the waveform structure */
     memset( &waveform, 0, sizeof(CoherentGW) );
 
-    if ( !strncmp("GeneratePPN",thisEvent->waveform,11))
-    {
-      /* generate the waveform for injection */
-      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-          "Injecting waveform using LALGeneratePPNInspiral\n");
-      LALInfo( status, warnMsg );
-      LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
-      CHECKSTATUSPTR( status );
-    }
-    else if ( !strncmp("EOB",thisEvent->waveform,3) ||
-              !strncmp("PadeT1",thisEvent->waveform,6) ||
-              !strncmp("TaylorT1",thisEvent->waveform,8) ||
-              !strncmp("TaylorT2",thisEvent->waveform,8) ||
-              !strncmp("TaylorT3",thisEvent->waveform,8) ||
-              !strncmp("SpinTaylor",thisEvent->waveform,10) )
-    {
-      /* create the waveform using the new function from inject */
-      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-          "Injecting waveform using LALGenerateInspiral\n");
-      LALInfo( status, warnMsg );
-      LALGenerateInspiral(status->statusPtr, &waveform, thisEvent, &ppnParams );
-      CHECKSTATUSPTR( status );
-    }
-    else
-    {
-      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-          "Unknown injection waveform\n");
-      LALInfo( status, warnMsg );
-      ABORT( status, FINDCHIRPH_EWVFM, FINDCHIRPH_MSGEWVFM );
-    }
 
+    LALGenerateInspiral(status->statusPtr, &waveform, thisEvent, &ppnParams );
+    CHECKSTATUSPTR( status );
+
+   
     LALInfo( status, ppnParams.termDescription );
 
-    if ( ppnParams.dfdt > 2.0 ) 
-    {
-      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-          "Waveform sampling interval is too large:\n"
-          "\tmaximum df*dt = %f", ppnParams.dfdt );
-      LALInfo( status, warnMsg );
-      ABORT( status, FINDCHIRPH_EDFDT, FINDCHIRPH_MSGEDFDT );
-    }
 
     if ( thisEvent->geocent_end_time.gpsSeconds )
     {
