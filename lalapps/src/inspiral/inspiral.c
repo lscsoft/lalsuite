@@ -916,14 +916,13 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFindChirpBCVData (&status, fcSegVec, dataSegVec, fcDataParams),
         &status );
   }
- else if ( approximant == BCVSpin )
+  else if ( approximant == BCVSpin )
   {
-    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCVSpin\n" );
-    LAL_CALL( LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, fcDataParams),
-        &status );
+    if ( vrbflg ) fprintf( stdout, 
+        "findchirp conditioning data for BCVSpin\n" );
+    LAL_CALL( LALFindChirpBCVSpinData (&status, fcSegVec, dataSegVec, 
+          fcDataParams), &status );
   }
-
-
   else
   {
     fprintf( stderr, "error: unknown waveform approximant for data\n" );
@@ -993,8 +992,6 @@ int main( int argc, char *argv[] )
             tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
       fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
     }
-
-
     else
     {
       fprintf( stderr, "error: unknown waveform approximant for template\n" );
@@ -1047,11 +1044,11 @@ int main( int argc, char *argv[] )
           LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                 &eventList, fcFilterInput, fcFilterParams ), &status );
         }
-       else if ( approximant == BCVSpin )
+        else if ( approximant == BCVSpin )
         {
           LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
                 &eventList, fcFilterInput, fcFilterParams, fcDataParams, 
-	        fcSegVec, dataSegVec), &status );
+                fcSegVec, dataSegVec), &status );
         } 
         else
         {
