@@ -48,6 +48,7 @@
 /* 07/14/04 gam; add option to use function LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs; see LAL inject packge GeneratePulsarSignal.c and .h */
 /* 07/19/04 gam; if (params->testFlag & 4) > 0 use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs for Monte Carlo simulations */
 /* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time GPSin: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
+/* 08/02/04 gam; Set pSFTandSignalParams->resTrig = 0 to avoid serious bug in LALFastGeneratePulsarSFTs when using lookup tables (LUTs) for trig calls. */
   
 /*********************************************/
 /*                                           */
@@ -65,6 +66,7 @@
 /* #define DEBUG_LALFASTGENERATEPULSARSFTS */
 /* #define DEBUG_SETFIXED_RANDVAL */
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
+/* #define PRINT_MAXPOWERANDBINEACHSFT */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -788,7 +790,8 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
      pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
      pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
      /* create lookup table (LUT) values for doing trig */
-     pSFTandSignalParams->resTrig = 64; /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+     /* pSFTandSignalParams->resTrig = 64; */ /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+     pSFTandSignalParams->resTrig = 0; /* 08/02/04 gam; avoid serious bug when using LUTs for trig calls */
      pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
      pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
      pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
@@ -993,6 +996,27 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
             }
           }
         #endif
+        
+        #ifdef PRINT_MAXPOWERANDBINEACHSFT
+         {
+           INT4 jMaxPwr;
+           REAL4 maxPwr;
+           REAL4 pwr;
+           for(i=0;i<params->numBLKs;i++) {
+             maxPwr = 0.0;
+             jMaxPwr = -1;
+             for(j=0;j<params->nBinsPerBLK;j++) {
+               pwr = outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
+               if (pwr > maxPwr) {
+                  maxPwr = pwr;
+                  jMaxPwr = j;
+               }
+             }
+             fprintf(stdout,"Max power for SFT %i is in bin %i = %g \n",i,jMaxPwr,maxPwr);
+             fflush(stdout);
+           }
+         }
+        #endif
 
         /* Add outputSFTs with injected signal to input noise SFTs; no renorm should be needed */
         for(i=0;i<params->numBLKs;i++) {
@@ -1067,6 +1091,29 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
                 fflush(stdout);
               }
            }
+        #endif
+
+        #ifdef PRINT_MAXPOWERANDBINEACHSFT
+         {
+           INT4 jMaxPwr;
+           REAL4 maxPwr;
+           REAL4 pwr;
+           for(i=0;i<params->numBLKs;i++) {
+             maxPwr = 0.0;
+             jMaxPwr = -1;
+             renorm = ((REAL4)GV.nsamples)/((REAL4)(outputSFTs->data[i].data->length - 1));
+             for(j=0;j<params->nBinsPerBLK;j++) {
+               pwr = outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im;
+               pwr = renorm*renorm*pwr;
+               if (pwr > maxPwr) {
+                  maxPwr = pwr;
+                  jMaxPwr = j;
+               }
+             }
+             fprintf(stdout,"Max power for SFT %i is in bin %i = %g \n",i,jMaxPwr,maxPwr);
+             fflush(stdout);
+           }
+         }
         #endif
         
         /* Add outputSFTs with injected signal to input noise SFTs; renorm is needed. */
