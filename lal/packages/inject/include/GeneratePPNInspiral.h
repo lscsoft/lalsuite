@@ -331,6 +331,9 @@ See~\verb@SkyCoordinates.h@ for the definition of this quantity.
 
 \item[\texttt{REAL4 m1, m2}] The masses of the binary components, in
 solar masses.
+
+\item[\texttt{LIGOTimeGPS geocentEndTime}] The geocentric end time of 
+the inspiral event.
 \end{description}
 
 ******************************************************* </lalLaTeX> */
@@ -340,6 +343,7 @@ typedef struct tagGalacticInspiralParamStruc {
   REAL4 z;      /* Galactocentric axial height (kpc) */
   REAL4 lGal;   /* Galactocentric longitude (radians) */
   REAL4 m1, m2; /* system masses (solar masses) */
+  LIGOTimeGPS geocentEndTime; /* geocentric end time */
 } GalacticInspiralParamStruc;
 
 

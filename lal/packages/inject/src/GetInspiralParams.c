@@ -26,7 +26,7 @@ This function takes a Galactic location and pair of masses from
 and \verb@output->phi@ are set randomly and uniformly using the random
 sequence specified by \verb@*params@; if \verb@*params@=\verb@NULL@ a
 new sequence is started internally using the current execution time as
-a seed.
+a seed. The field \verb@input->geocentEndTime@ is ignored by this routine.
 
 The other \verb@PPNParamStruc@ input fields are not touched by this
 routine, and must be specified externally before generating a waveform
