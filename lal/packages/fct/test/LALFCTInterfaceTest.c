@@ -7,6 +7,7 @@
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
+#include <lal/Random.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/LALInspiralBank.h>
 
@@ -311,7 +312,7 @@ void getTimeSeriesData(LALStatus* const status, REAL4Vector* const ts)
 #ifdef USE_WRITE
     const int fd_output = creat("tseries.out", 0644);
 #endif
-    static UINT8 seed = 0xDEADBEEF;
+    RandomParams* randpar = 0;
     UINT4 i = 0;
 
     for (i = 0; i < ts->length; ++i)
@@ -320,7 +321,9 @@ void getTimeSeriesData(LALStatus* const status, REAL4Vector* const ts)
     }
     
 #if 1
-    LALGaussianNoise(status, ts, &seed);
+    LALCreateRandomParams (status, &randpar, 0);
+    LALNormalDeviates(status, ts, randpar);
+    LALDestroyRandomParams (status, &randpar);
 #endif
 
 #ifdef USE_WRITE
@@ -791,8 +794,8 @@ setupParamList(LALStatus* const status)
 
     testprintf("Generating list of chirp parameters...\n");
 
-    coarseIn.mMin = 1.0;
-    coarseIn.MMax = 2.6;
+    coarseIn.mMin = 2.0;
+    coarseIn.MMax = 10.6;
     coarseIn.mmCoarse = 0.80;
     coarseIn.mmFine = 0.97;
     coarseIn.fLower = fcutoff;
@@ -803,11 +806,9 @@ setupParamList(LALStatus* const status)
     /*                          - duncan              */
     /* coarseIn.detector = ligo;                      */
     coarseIn.NoisePsd = LALLIGOIPsd;
-    coarseIn.method = one;
     coarseIn.order = twoPN;
-    coarseIn.approximant = taylor;
-    coarseIn.domain = TimeDomain;
-    coarseIn.space = Tau0Tau2;
+    coarseIn.approximant = TaylorT1;
+    coarseIn.space = Tau0Tau3;
 
     /* minimum value of eta */
     coarseIn.etamin = coarseIn.mMin*(coarseIn.MMax - coarseIn.mMin)/
