@@ -118,7 +118,7 @@ sifo2 = cp.get('chisq-params','sifo2')
 # ------------------------- Set up working directory ----------------------------- # 
 
 # name of local work directory
-subdir=''.join([local_work_dir,'/','rescue-run.',str(job_id)])
+subdir=''.join([local_work_dir,'/','run.',str(job_id)])
 
 # figure out name of results file that we're using to compute the upper limit
 freq = float(start_freq) + float(job_id) * float(freq_band)
