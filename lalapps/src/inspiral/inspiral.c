@@ -562,14 +562,15 @@ int main( int argc, char *argv[] )
 
   if ( geoData )
   {
-    /* XXX Stas: read in the GEO data here XXX */
+    /* read in the GEO data here */
     PassBandParamStruc geoHighpassParam;
 
     /* read the GEO data from the time series into geoChan      */
     /* which already has the correct amount of memory allocated */
     if ( vrbflg ) fprintf( stdout, "reading GEO data from frames... " );
 
-    LAL_CALL(LALFrGetREAL8TimeSeries(&status, &geoChan, &frChan, frStream), &status);
+    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
+        &status);
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -583,14 +584,14 @@ int main( int argc, char *argv[] )
         "%3.2f of signal passes at %4.2f Hz\n", 
         geoHighpassParam.nMax, geoHighpassParam.a2, geoHighpassParam.f2 );
 
-    LAL_CALL( LALButterworthREAL8TimeSeries(&status, &geoChan, &geoHighpassParam), &status);
-        
+    LAL_CALL( LALButterworthREAL8TimeSeries( &status, &geoChan, 
+          &geoHighpassParam ), &status );
 
     /* cast the GEO data to REAL4 in the chan time series       */
     /* which already has the correct amount of memory allocated */
-
-    for(i=0;i<numInputPoints;i++){
-            chan.data->data[i] = (REAL4) geoChan.data->data[i];
+    for ( i = 0 ; i < numInputPoints ; ++i )
+    {
+      chan.data->data[i] = (REAL4) geoChan.data->data[i];
     }
 
     /* re-copy the data paramaters from the GEO channel to input data channel */
@@ -741,22 +742,26 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALINT8toGPS( &status, &duration, 
 	&durationNS ), &status );
 
-
-  if(geoData){
-      for(i=0; i<resp.data->length; ++i){
-          resp.data->data[i].re = 1.0;
-	  resp.data->data[i].im = 0.0;
-      }
-      if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+  if ( geoData )
+  {
+    /* if we are using geo data set the response to unity */
+    for( i = 0; i < resp.data->length; ++i )
+    {
+      resp.data->data[i].re = 1.0;
+      resp.data->data[i].im = 0.0;
+    }
+    if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
         outFrame, &resp, "strain/ct", "RESPONSE_GEO" );
-
-
-  }else{
-      LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
-        	&duration ), &status );
+  }
+  else
+  {
+    /* get the response from the frame data */
+    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
+          &duration ), &status );
   
-     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-           outFrame, &resp, "strain/ct", "RESPONSE" );
+    if ( writeResponse ) 
+      outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, &resp, 
+          "strain/ct", "RESPONSE" );
   }
 
   if ( gaussianNoise )
@@ -828,33 +833,38 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         strcpy( injResp.name, chan.name );
 
-        /* generate the response function for the current time */
-
-	if(geoData){
-             
-	  if ( vrbflg ) fprintf( stdout, "setting GEO response to unity... " );
-          for ( k = 0; k < injResp.data->length; ++k ){
+	if ( geoData )
+        {
+          /* generate a unity response function for GEO */
+          if ( vrbflg ) fprintf( stdout, "setting GEO response to unity... " );
+          for ( k = 0; k < injResp.data->length; ++k )
+          {
             injResp.data->data[k].re = 1.0;
             injResp.data->data[k].im = 0;
           }
-          if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-              outFrame, &injResp, "strain/ct", "RESPONSE_INJ_GEO" );
-
-	}else{
-            if ( vrbflg ) fprintf( stdout, 
-                 "generating high resolution response at time %d sec %d ns\n"
-                 "length = %d points, deltaF = %e Hz\n",
-                 resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-                 injResp.data->length, injResp.deltaF );
-            LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
-                      ifo, &duration ), &status );
-
-            injRespPtr = &injResp;
-
-            if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-                       outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+          if ( writeResponse ) 
+            outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
+                &injResp, "strain/ct", "RESPONSE_INJ_GEO" );
         }
-     
+        else
+        {
+          /* generate the response function for the current time */
+          if ( vrbflg ) fprintf( stdout, 
+              "generating high resolution response at time %d sec %d ns\n"
+              "length = %d points, deltaF = %e Hz\n",
+              resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+              injResp.data->length, injResp.deltaF );
+
+          LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+                ifo, &duration ), &status );
+
+          injRespPtr = &injResp;
+
+          if ( writeResponse ) 
+            outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+                outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+        }
+
         if ( gaussianNoise )
         {
           /* replace the response function with unity if */
