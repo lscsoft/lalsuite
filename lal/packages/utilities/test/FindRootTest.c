@@ -35,6 +35,31 @@
 #endif
 #endif
 
+#ifndef _LALCONFIG_H
+#include "LALConfig.h"
+#ifndef _LALCONFIG_H
+#define _LALCONFIG_H
+#endif
+#endif
+
+#ifdef HAVE_UNISTD_H
+#ifndef _UNISTD_H
+#include <unistd.h>
+#ifndef _UNISTD_H
+#define _UNISTD_H
+#endif
+#endif
+#endif
+
+#ifdef HAVE_GETOPT_H
+#ifndef _GETOPT_H
+#include <getopt.h>
+#ifndef _GETOPT_H
+#define _GETOPT_H
+#endif
+#endif
+#endif
+
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
 #ifndef _LALSTDLIB_H
@@ -49,8 +74,8 @@
 #endif
 #endif
 
-#define _CODES(x) #x
-#define CODES(x) _CODES(x)
+#define CODES_(x) #x
+#define CODES(x) CODES_(x)
 
 NRCSID (MAIN, "$Id$");
 
@@ -238,8 +263,8 @@ main (int argc, char *argv[])
   }
   
   y0             = 1; /* there is no root when y0 > 0 */
-  input.xmin     = -5;
-  input.xmax     = 5;
+  input.xmin     = -1e-18;
+  input.xmax     = 1e-18;
 
   BracketRoot (&status, &input, &y0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);

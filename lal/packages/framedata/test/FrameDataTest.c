@@ -30,6 +30,31 @@
 #endif
 #endif
 
+#ifndef _LALCONFIG_H
+#include "LALConfig.h"
+#ifndef _LALCONFIG_H
+#define _LALCONFIG_H
+#endif
+#endif
+
+#ifdef HAVE_UNISTD_H
+#ifndef _UNISTD_H
+#include <unistd.h>
+#ifndef _UNISTD_H
+#define _UNISTD_H
+#endif
+#endif
+#endif
+
+#ifdef HAVE_GETOPT_H
+#ifndef _GETOPT_H
+#include <getopt.h>
+#ifndef _GETOPT_H
+#define _GETOPT_H
+#endif
+#endif
+#endif
+
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
 #ifndef _LALSTDLIB_H
