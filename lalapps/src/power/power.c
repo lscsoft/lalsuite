@@ -73,11 +73,11 @@ static struct {
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	INT4 verbose;
+	int whiteNoise;             /* insertion of Gaussian white noise   */
 } options;
 
 /* some global output flags */
 INT4 geodata;
-INT4 whiteNoise;                    /* insertion of Gaussian white noise   */
  
 /* global variables */
 FrChanIn channelIn;                 /* channnel information                */
@@ -369,6 +369,7 @@ void parse_command_line(
 	options.PSDAverageLength = 0;
 	options.seed = 1;
 	options.verbose = FALSE;
+	options.whiteNoise = FALSE;
 
 	cachefile = NULL;
 	dirname = NULL;
@@ -381,7 +382,6 @@ void parse_command_line(
 	printSpectrum = FALSE;
 	resampFiltType = -1;
 	targetSampleRate = 0;
-	whiteNoise = FALSE;
 
 	/*
 	 * Parse command line.
@@ -569,7 +569,7 @@ void parse_command_line(
 
 		case 'V':
 		options.noiseAmpl = atof(optarg);
-		whiteNoise = TRUE;
+		options.whiteNoise = TRUE;
 		if(options.noiseAmpl <= 0.0) {
 			sprintf(msg, "must be > 0.0 (%f specified)", options.noiseAmpl);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -1174,7 +1174,7 @@ int main( int argc, char *argv[])
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
 	LIGOTimeGPS               boundepoch;
-	LALTimeInterval           overlapInterval;
+	LALTimeInterval           overlapCorrection;
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
@@ -1219,10 +1219,10 @@ int main( int argc, char *argv[])
 	/* determine the input time series overlap correction */
 	/* LAL spec makes us pass a pointer... sigh */
 	{
-	REAL8 overlap = 0.0;
-	LAL_CALL(LALFloatToInterval(&stat, &overlapInterval, &overlap), &stat);
+	REAL8 overlap = (REAL8) options.windowLength / 2.0 / targetSampleRate;
+	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
-		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapInterval.seconds, overlapInterval.nanoSeconds);
+		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapCorrection.seconds, overlapCorrection.nanoSeconds);
 	}
 
 	/* determine the outer loop's upper bound */
@@ -1245,24 +1245,26 @@ int main( int argc, char *argv[])
 		numPoints = min(options.maxSeriesLength, DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * frameSampleRate);
 
 		/*
-		 * Get the data, or create an empty time series of 1s if
-		 * the operation fails (eg. no input files were specified).
+		 * Get the data,
 		 */
 
 		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, numPoints, &params);
-		if(!series) {
-			size_t i;
-			LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
-			for(i = 0; i < series->data->length; i++)
-				series->data->data[i] = 1.0;
-		}
 
 		/*
-		 * Add white noise to the time series if requested
+		 * Create an empty series of 1s if we didn't read one (eg.
+		 * if no input files were specified), then add white noise
+		 * to the series.
 		 */
 
-		if(whiteNoise)
+		if(options.whiteNoise) {
+			if(!series) {
+				size_t i;
+				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
+				for(i = 0; i < series->data->length; i++)
+					series->data->data[i] = 1.0;
+			}
 			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
+		}
 
 		/*
 		 * Write diagnostic info to disk
@@ -1331,12 +1333,12 @@ int main( int argc, char *argv[])
 		 *
 		 * Advancing the epoch by the post-conditioning series length
 		 * provides exactly the overlap needed to account for
-		 * conditioning corruption.  The explicit overlap adjustment
-		 * must not include this.
+		 * conditioning corruption.  overlapCorrection provides any
+		 * additional overlap that is needed.
 		 */
 
 		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, series->data->length * series->deltaT), &stat);
-		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapInterval), &stat);
+		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapCorrection), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
 
