@@ -25,16 +25,13 @@ endif
 else
 bin_PROGRAMS = 
 endif
-bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr \
-              lalapps_inspiral_pipe_s2
+bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
 
 lalapps_inspiral_pipe: inspiral_pipe.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe.in > lalapps_inspiral_pipe 
-lalapps_inspiral_pipe_bkgr: inspiral_pipe_bkgr.in
-	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_bkgr.in > lalapps_inspiral_pipe_bkgr
 lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
 
@@ -43,16 +40,14 @@ pkgdata_DATA = BNSMasses.dat inspsrcs.dat
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
-             $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in \
-             inspiral_pipe_s2.in inspiral_pipe.ini \
+             $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
              $(SPLITBANKSRC)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_bkgr \
-             lalapps_inspiral_pipe_s2
+CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
