@@ -750,6 +750,46 @@ static COMPLEX8FrequencySeries *unity_response(LALStatus *status,
   return(response);
 }
 
+/* wrapper function for generating response function */
+static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
+    CHAR *ifo,
+    CHAR *cache_file,
+    LIGOTimeGPS epoch,
+    REAL8 f0,
+    REAL8 deltaF,
+    LALUnit units,
+    UINT4 length)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *response;
+  FrCache *cache = NULL;
+  CalibrationUpdateParams calib_params;
+
+  /* allocate memory */
+  memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
+        epoch, 0, deltaF, units, length + (UINT4)(f0/deltaF)), status);
+
+  /* set ifo */
+  calib_params.ifo = ifo;
+
+  /* open calibration frame cache */
+  cache = XLALFrImportCache(cache_file);
+
+  /* generate response function */
+  LAL_CALL(LALExtractFrameResponse(status, response, cache, &calib_params), \
+      status);
+
+  /* destory calibration frame cache */
+  XLALDestroyCache(cache);
+
+  /* reduce to required band */
+  LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/deltaF, \
+        length), status);
+
+  return(response);
+}
+
 /* display usage information */
 static void display_usage()
 {
