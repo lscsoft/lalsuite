@@ -35,9 +35,9 @@ RCSID( "$Id$");
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 
 #define FILE_FSTATS
-/* #define FILE_FMAX */
-#define FILE_FLINES
 /*
+#define FILE_FMAX
+#define FILE_FLINES
 #define FILE_FTXT 
 #define FILE_PSD 
 #define FILE_PSDLINES 
