@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Inspiral.h
+pkginclude_HEADERS = LALInspiral.h
 
-all-local: $(top_builddir)/include/lal/Inspiral.h
+all-local: $(top_builddir)/include/lal/LALInspiral.h
 
-$(top_builddir)/include/lal/Inspiral.h: Inspiral.h
-	cp -f $(srcdir)/Inspiral.h $(top_builddir)/include/lal
+$(top_builddir)/include/lal/LALInspiral.h: LALInspiral.h
+	cp -f $(srcdir)/LALInspiral.h $(top_builddir)/include/lal

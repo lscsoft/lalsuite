@@ -5,12 +5,12 @@
    April 5 , 00.
 */
 #include <stdio.h>
-#include <lal/Inspiral.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALInspiral.h>
 
 INT4 lalDebugLevel=1;
 
-static void printf_timeseries (int n, double *signal, double delta, double t0) 
+void printf_timeseries (int n, float *signal, double delta, double t0) ;
+void printf_timeseries (int n, float *signal, double delta, double t0) 
 {
   int i=0;
   FILE *outfile1;
@@ -25,14 +25,12 @@ static void printf_timeseries (int n, double *signal, double delta, double t0)
 }
 
 
-int main ( void ) {
-   REAL8Vector signal;
+int main () {
+   REAL4Vector signal;
    InspiralTemplate params;
-   /*
    double dt;
-   */
    static LALStatus status;
-
+   INT4 n;
 
    params.ieta=1; 
    params.mass1=1.4; 
@@ -46,16 +44,18 @@ int main ( void ) {
    params.nStartPad=0;
    params.nEndPad=0;
    params.method=one;
-   params.order=twoPointFivePN;
-   params.domain=time;
+   params.order=twoPN;
+   params.domain=TimeDomain;
    params.approximant=pade;
    params.massChoice=m1Andm2;
 
+   LALInspiralWaveLength (&status, &n, params);
+   fprintf(stderr, "signal length=%d\n", n);
+   signal.length = n;
+   signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
    LALInspiralWave (&status, &signal, &params);
-   /*
    dt = 1./params.tSampling;
-   printf_timeseries(signal.length, signal.data, dt, 0.0);
-   */
+   printf_timeseries(signal.length, signal.data, dt, params.startTime);
 
    return 0;
 }
