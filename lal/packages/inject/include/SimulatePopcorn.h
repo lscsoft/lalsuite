@@ -1,3 +1,5 @@
+
+
 /*
 <lalVerbatim file="SimulatePopcornHV">
 Author: Tania Regimbau 
@@ -70,8 +72,15 @@ NRCSID (SIMULATEPOPCORNH, "$Id$");
 #define SIMULATEPOPCORNH_MSGEBV            "Bad input or parameter"
 
 /*</lalErrTable> */
-
-
+/*<lalLaTeX>
+\subsection*{Structures}
+These constants define the cosmological model
+\begin{verbatim}*/
+#define SIMULATEPOPCORN_ho 0.7
+#define SIMULATEPOPCORN_OMEGAMATTER 0.3
+#define SIMULATEPOPCORN_OMEGAVACUUM 0.7
+/*\end{verbatim}*/
+/*</lalLaTeX>/*
 /*<lalLaTeX>
 \subsection*{Structures}
 These are function pointers to functions that model burst waveforms.
