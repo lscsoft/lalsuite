@@ -504,7 +504,7 @@ LALWriteSFTfile (LALStatus  *status,
 /* <lalVerbatim file="SFTfileIOD"> */
 void
 LALReadSFTdata(LALStatus *status,
-	       SFTtype    *sft,    /* assuming  memory is allocated  */
+	       SFTtype    *sft,    /* assuming memory is allocated  */
 	       const CHAR *fname,
 	       INT4 fminBinIndex)
 { /* </lalVerbatim> */
@@ -516,7 +516,7 @@ LALReadSFTdata(LALStatus *status,
   BOOLEAN swapEndian = 0;
   UINT4 i;
 
-  INITSTATUS (status, "LALReadSFTtype", SFTFILEIOC);
+  INITSTATUS (status, "LALReadSFTdata", SFTFILEIOC);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -526,7 +526,6 @@ LALReadSFTdata(LALStatus *status,
   
   /* Read header */
   TRY ( LALReadSFTheader (status->statusPtr, &header, fname), status);
-
 
   /* check that the required frequency-interval is part of the SFT */
   readlen = sft->data->length;
