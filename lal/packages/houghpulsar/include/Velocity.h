@@ -154,7 +154,7 @@ void LALAvgDetectorVel(LALStatus    *status,
 
 void LALDetectorVel(LALStatus   *status, 
 		 REAL8       v[3],  /* output velocity vector */ 
-		 LIGOTimeGPS *time, /* time at which velocity is calculated */
+		 LIGOTimeGPS *time0, /* time at which velocity is calculated */
 		 AvgVelPar *in); /* detector for which velocity is calculated */
 
 /* ****************************************************** */

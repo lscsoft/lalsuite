@@ -168,7 +168,7 @@ void LALAvgDetectorVel( LALStatus *status,
 /* *******************************  <lalVerbatim file="VelocityD"> */
 void LALDetectorVel(LALStatus    *status, 
 		    REAL8        v[3], 
-		    LIGOTimeGPS  *time, 
+		    LIGOTimeGPS  *time0, 
 		    AvgVelPar    *in)
 { /*-------------------------------------------------</lalVerbatim> */
 
@@ -184,7 +184,7 @@ void LALDetectorVel(LALStatus    *status,
   INITSTATUS ( status, "LALDetectorVel", VELOCITYC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (time, status, VELOCITYH_ENULL, VELOCITYH_MSGENULL);
+  ASSERT (time0, status, VELOCITYH_ENULL, VELOCITYH_MSGENULL);
   ASSERT (in, status, VELOCITYH_ENULL, VELOCITYH_MSGENULL);
  
   emit = (EmissionTime *)LALMalloc(sizeof(EmissionTime));
@@ -198,7 +198,7 @@ void LALDetectorVel(LALStatus    *status,
   baryinput.site.location[2] = detector.location[2]/LAL_C_SI;
   
   /* set other barycentering info */
-  baryinput.tgps = *time;
+  baryinput.tgps = *time0;
 
   /* for the purposes of calculating the velocity of the earth */
   /* at some given time, the position of the source in the sky should not matter. */
@@ -208,7 +208,7 @@ void LALDetectorVel(LALStatus    *status,
   baryinput.delta = 0.0; 
   
   /* call barycentering routines to calculate velocities */
-  TRY( LALBarycenterEarth( status->statusPtr, earth, time, edat), status);
+  TRY( LALBarycenterEarth( status->statusPtr, earth, time0, edat), status);
   TRY( LALBarycenter( status->statusPtr, emit, &baryinput, earth), status);
   
   /* set values of velocity for all the SFT's */

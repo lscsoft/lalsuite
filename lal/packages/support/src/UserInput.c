@@ -441,7 +441,7 @@ LALUserVarHelpString (LALStatus *stat,
 void
 LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
 {
-  UINT4 i;
+  INT4 i;
   CHAR* fname = NULL;
 
   INITSTATUS( stat, "LALUserVarReadAllInput", USERINPUTC);
