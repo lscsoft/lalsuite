@@ -39,11 +39,7 @@ RCSID("$Id$");
 /****************************************************************************
 * FUNCTION TESTS IF TRIGGER IS IN PLAYGROUND DATA
 ***************************************************************************/
-static int 
-isPlayground(
-    INT4 gpsStart, 
-    INT4 gpsEnd
-    )
+static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 {
   INT4 runStart=729273613;
   INT4 playInterval=6370;
@@ -55,7 +51,7 @@ isPlayground(
   segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
   segMiddle = (segMiddle - runStart)%playInterval;
 
-  if (segStart < playLength || segEnd < playLength || segMiddle < playLength)
+  if ( segStart < playLength || segEnd < playLength || segMiddle < playLength )
   {
     return TRUE;
   }
@@ -64,13 +60,13 @@ isPlayground(
 }
 
 
-/*************************************************************************
+/***************************************************************************
  * The main program
- *************************************************************************/
+ ***************************************************************************/
 int main(int argc, char **argv)
 {
   static LALStatus         stat;
-  INT4                     playground = TRUE;
+  INT4                     playground=TRUE;
   INT4                     verbose = FALSE;
 
   INT4                     startCoincidence=0;
@@ -97,16 +93,17 @@ int main(int argc, char **argv)
   {
     /* these options set a flag */
     {"verbose",                 no_argument,       &verbose,           TRUE },
-    {"no-playground",           no_argument,       &playground,        FALSE },
-    {"input-a",                 required_argument, 0,                'a'},
-    {"input-b",                 required_argument, 0,                'b'},
-    {"drho-plus",               required_argument, 0,                'c'},
-    {"drho-minus",              required_argument, 0,                'd'},
+    {"noplayground",            no_argument,       &playground,        FALSE },
+    /* parameters used to generate calibrated power spectrum */
+    {"ifo-a",                   required_argument, 0,                'a'},
+    {"ifo-b",                   required_argument, 0,                'b'},
+    {"drhoplus",                required_argument, 0,                'c'},
+    {"drhominus",               required_argument, 0,                'd'},
     {"dm",                      required_argument, 0,                'm'},
     {"dt",                      required_argument, 0,                't'},
-    {"gps-start-time",          required_argument, 0,                'r'},
-    {"gps-stop-time",           required_argument, 0,                's'},
-    {"output",                  required_argument, 0,                'o'},
+    {"start-time",              required_argument, 0,                'r'},
+    {"stop-time",               required_argument, 0,                's'},
+    {"outfile",                 required_argument, 0,                'o'},
     {"help",                    no_argument,       0,                'h'}, 
     {0, 0, 0, 0}
   };
@@ -128,6 +125,9 @@ int main(int argc, char **argv)
   memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
   memset( &nTrigFile, 0, MAXIFO * sizeof(INT4) );
 
+  /*******************************************************************
+   * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
+   *******************************************************************/
   /* parse the arguments */
   while ( 1 )
   {
@@ -240,9 +240,8 @@ int main(int argc, char **argv)
     }
   }
 
-  if ( *trigFile == NULL || (*trigFile+MAXFILES) == NULL || 
-      outfileName == NULL )
-  {
+  if ( *trigFile == NULL || (*trigFile+MAXFILES) == NULL ||
+      outfileName == NULL ){
     LALPrintError( "Must supply two input and one output file\n" );
     return INCA_EARG;
   }
@@ -250,7 +249,7 @@ int main(int argc, char **argv)
   /*******************************************************************
    * END PARSE ARGUMENTS                                              *
    *******************************************************************/
-  if ( endCoincidence == 977788813 )
+  if (endCoincidence == 977788813)
     fprintf(stderr,"Warning: %s\n", INCA_TIMEWARNING);
 
 
@@ -324,7 +323,8 @@ int main(int argc, char **argv)
     /*catch up triggers from ifo B */
     while (currentTrigger[1] != NULL)
     {
-      LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->end_time)), &stat);
+      LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->end_time)), 
+          &stat);
       if (tb > ta-deltaT)
       {
         break;
@@ -382,7 +382,8 @@ int main(int argc, char **argv)
    * open output xml file
    *****************************************************************/
   LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-  LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), &stat);
+  LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), 
+      &stat);
   myTable.snglInspiralTable = coincidentEvents;
   LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
         sngl_inspiral_table), &stat);
