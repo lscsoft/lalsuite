@@ -153,7 +153,10 @@ detector.
 from file \parm{FILE}.
 
 \item[\option{--minimal-match}~\parm{M}] Override bank minimal match with 
-\parm{M} (sets delta).
+\parm{M} (sets delta). This value is usually set to 0.97 (delta = 0.03). If 
+you plan to do a run with injections 
+(\option{--injection-file}~\parm{FILE}), this value 
+should be set to 0.8 (delta = 0.2) to ensure recovering injections.   
 
 \item[\option{--start-template}~\parm{N}] Optional. Start filtering at 
 template number \parm{N} in bank.
