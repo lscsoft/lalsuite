@@ -515,7 +515,7 @@ ConnectLinePoints(LALStatus *status,
   INT4 **label;/*map whose entries point to the approapriate element of the linePoints array*/
   INT4 **mapContour; /* Each Contour is assigned an iteger value and the points of this map depict the contours*/
   INT4 i,j; /* Temporary loop variables */
-  INT4 index,nextIndex; /* used as an indices to the lineStart array */
+  INT4 myindex,nextIndex; /* used as an indices to the lineStart array */
   INT4 processed; /*the number of line Points processed so far */
   INT4 octant,lastOctant; /* to use in identifying which neighbouring pixels to search for line points */
   INT4 currentRow,currentCol,nextRow,nextCol; /* variables pointing to the current and next location*/
@@ -555,28 +555,28 @@ ConnectLinePoints(LALStatus *status,
   /* we do not know whether the curve will have a junction so we initialize to zero(no junction)*/
   contour[0].junction=contour[1].junction=0;
   /* Fill up linePoints structure and set label to 0 */
-  index=0;
+  myindex=0;
   for(i=0;i<params->height;i++){
     for(j=0;j<params->width;j++){
       label[i][j]=0;
       if(store->isLine[i][j]>0){
-	linePoints[index].pValue = store->isLine[i][j];
-	linePoints[index].r = i;
-	linePoints[index].c = j;
-	linePoints[index].flag = 1;
-	linePoints[index].eigen = store->imageTemp[i][j];
+	linePoints[myindex].pValue = store->isLine[i][j];
+	linePoints[myindex].r = i;
+	linePoints[myindex].c = j;
+	linePoints[myindex].flag = 1;
+	linePoints[myindex].eigen = store->imageTemp[i][j];
 	eigenVec = store->eigenVec + 4*(params->width*i + j);	
 	/* calculate the angles at all the line points (between 0 and PI)*/
-	linePoints[index].angle=GetAngle(eigenVec[1],eigenVec[0]);	
+	linePoints[myindex].angle=GetAngle(eigenVec[1],eigenVec[0]);	
 	/* store the subpixel line position */
-	linePoints[index].pRow=eigenVec[2];
-	linePoints[index].pCol=eigenVec[3];	
-	index++;
+	linePoints[myindex].pRow=eigenVec[2];
+	linePoints[myindex].pCol=eigenVec[3];	
+	myindex++;
       }	
     }
   }
   /* check if the number of line start points is the same as found in the previous module */
-  ASSERT(index==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
+  ASSERT(myindex==store->numLPoints,status,TS_LINE_START,TS_MSG_LINE_START);
   /* sort the line point structures based on their values (2's come first ) 
      i.e. The first store->numLStartPoints points are line starting points and the remaining are ordinary points
      Also among the line start points the sorting order is one of decreasing value of linePoint.eigen*/
@@ -610,9 +610,9 @@ ConnectLinePoints(LALStatus *status,
       directionSwitch=1;
       /* loop while there are points to be joined to the current curve */
       while(flag){      
-	index=label[currentRow][currentCol]-1;
+	myindex=label[currentRow][currentCol]-1;
 	/* identify which direction the line is normal to */
-	octant = floor((double)linePoints[index].angle/(LAL_PI/4.0)) + 1;
+	octant = floor((double)linePoints[myindex].angle/(LAL_PI/4.0)) + 1;
 	/* check if octant is less than or equal to 4 */
 	ASSERT(octant<=4,status,TS_OCTANT,MSG_TS_OCTANT);
 	/* now we have to find whether the octant has changed discontinuously for 1 to 4 or from 4 to 1 
@@ -671,7 +671,7 @@ ConnectLinePoints(LALStatus *status,
 	    continue;
 	  /* check whether the pixel is a multiple response*/
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle - linePoints[nextIndex].angle);
+	  differ=(REAL4)fabs((double)linePoints[myindex].angle - linePoints[nextIndex].angle);
 	  if(differ>LAL_PI/2.0)
 	    differ=LAL_PI - differ;
 	  if(differ<MAX_ANGLE_DIFFERENCE){	
@@ -699,7 +699,7 @@ ConnectLinePoints(LALStatus *status,
 	  }
 	  /* check if the pixel is a valid continuation */
 	  nextIndex=label[nextRow][nextCol]-1;
-	  differ=(REAL4)fabs((double)linePoints[index].angle-linePoints[nextIndex].angle);
+	  differ=(REAL4)fabs((double)linePoints[myindex].angle-linePoints[nextIndex].angle);
 	  if(differ>LAL_PI/2.0)
 	    differ=LAL_PI - differ;
 	  if(differ>MAX_ANGLE_DIFFERENCE){
@@ -722,8 +722,8 @@ ConnectLinePoints(LALStatus *status,
                         }    
 	    /* the metric used to select the most plausible adjacent point
 	       d = sqrt((px1-px2)^2 + (py1-py2)^2) + abs(angle1 - angle2)*/
-	    metric[i]=sqrt((linePoints[index].pRow-linePoints[nextIndex].pRow)*(linePoints[index].pRow-linePoints[nextIndex].pRow)+\
-			   (linePoints[index].pCol-linePoints[nextIndex].pCol)*(linePoints[index].pCol-linePoints[nextIndex].pCol)) + differ;
+	    metric[i]=sqrt((linePoints[myindex].pRow-linePoints[nextIndex].pRow)*(linePoints[myindex].pRow-linePoints[nextIndex].pRow)+\
+			   (linePoints[myindex].pCol-linePoints[nextIndex].pCol)*(linePoints[myindex].pCol-linePoints[nextIndex].pCol)) + differ;
 	  }
 	}
 	/* if none of  the pixels are not a valid continuation, the curve stops here */

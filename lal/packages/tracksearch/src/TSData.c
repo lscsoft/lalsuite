@@ -24,7 +24,7 @@ LALCreateTSDataSegmentVector (
 {
   INT4                           i;
   TSSegmentVector       *vectorPtr;
-  REAL4TimeSeries          *segPtr;
+  /* REAL4TimeSeries          *segPtr; */
 
   INITSTATUS (status, "LALCreateTSSegmentVector", TSDATAC);
   ATTATCHSTATUSPTR (status);

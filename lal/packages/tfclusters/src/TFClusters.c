@@ -90,7 +90,7 @@ LALComputeSpectrogram (
   /* INT4 i,j; */
   INT4 j, k;
   REAL8 *power;
-  REAL4 *wwin, *tdat;
+  REAL4 *wwin = NULL, *tdat = NULL;
 
   /* LALWindowParams winParams; */
   TFPlaneParams *params;
@@ -180,7 +180,7 @@ LALComputeSpectrogram (
     wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
     ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
 
-    for(k=0; k<NN; k++) {
+    for(k=0; (int)k<(int)NN; k++) {
       wwin[k] = 1.0 - pow(((REAL4)k-nn2)/nn2,2.0);
     }
 
@@ -193,7 +193,7 @@ LALComputeSpectrogram (
   for(sid = 0; sid < (UINT4)params->timeBins; sid++) {
     if(olap) {
       memcpy(tdat, tseries->data->data + sid * (NN - olap), NN * sizeof(REAL4));
-      for(k=0; k<NN; k++) {
+      for(k=0; (int)k<(int)NN; k++) {
 	tdat[k] *= wwin[k];
       }
       Pvec.data = tdat;
@@ -280,7 +280,7 @@ LALComputeXSpectrogram (
   UINT4 sid, olap, NN, minF;
   INT4 j, k;
   REAL8 *power;
-  REAL4 *wwin, *tdat;
+  REAL4 *wwin = NULL, *tdat = NULL;
 
   /* LALWindowParams winParams; */
   TFPlaneParams *params;
@@ -376,7 +376,7 @@ LALComputeXSpectrogram (
     wwin = (REAL4 *)LALMalloc(NN * sizeof(REAL4));
     ASSERT(wwin, status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );
 
-    for(k=0; k<NN; k++) {
+    for(k=0; (int)k<(int)NN; k++) {
       wwin[k] = 1.0 - pow(((REAL4)k-nn2)/nn2,2.0);
     }
 
@@ -389,7 +389,7 @@ LALComputeXSpectrogram (
   for(sid = 0; sid < (UINT4)params->timeBins; sid++) {
     if(olap) {
       memcpy(tdat, tseries->data->data + sid * (NN - olap), NN * sizeof(REAL4));
-      for(k=0; k<NN; k++) {
+      for(k=0; (int)k<(int)NN; k++) {
 	tdat[k] *= wwin[k];
       }
       Pvec.data = tdat;
@@ -403,7 +403,7 @@ LALComputeXSpectrogram (
     
     if(olap) {
       memcpy(tdat, tseries->data->data + tseries->data->vectorLength + sid * (NN - olap), NN * sizeof(REAL4));
-      for(k=0; k<NN; k++) {
+      for(k=0; (int)k<(int)NN; k++) {
 	tdat[k] *= wwin[k];
       }
       Pvec.data = tdat;
@@ -492,7 +492,7 @@ LALGetClusters (
 		CListDir *dir
 		)
 {
-  UINT4 i,j, j0, mins, ndir, dpos, s1, s2, nfriends, nbigs, nt, jmax=0, jmin;
+  UINT4 i,j, myj0, mins, ndir, dpos, s1, s2, nfriends, nbigs, nt, jmax=0, jmin;
   UINT4 *friends1, *friends2, *bigs, *where, *ts;
   UINT4 **bbox, **tf, **tt;
   REAL8 *rho = dir->rho;
@@ -937,7 +937,7 @@ LALGetClusters (
 	{
 	  where[friends2[i]] = where[friends1[i]];
 
-	  j0 = clist->sizes[where[friends1[i]]];
+	  myj0 = clist->sizes[where[friends1[i]]];
 
 	  clist->sizes[where[friends1[i]]] += tlist.sizes[friends2[i]];
 	  
@@ -955,9 +955,9 @@ LALGetClusters (
 
 
 	  for(j=0;j<tlist.sizes[friends2[i]];j++)
-	    {clist->f[where[friends1[i]]][j+j0] = tlist.f[friends2[i]][j];
-	    clist->t[where[friends1[i]]][j+j0] = tlist.t[friends2[i]][j];
-	    clist->P[where[friends1[i]]][j+j0] = tlist.P[friends2[i]][j];}
+	    {clist->f[where[friends1[i]]][j+myj0] = tlist.f[friends2[i]][j];
+	    clist->t[where[friends1[i]]][j+myj0] = tlist.t[friends2[i]][j];
+	    clist->P[where[friends1[i]]][j+myj0] = tlist.P[friends2[i]][j];}
 	}      
 
       if(where[friends1[i]] == -1U &&
@@ -965,7 +965,7 @@ LALGetClusters (
 	{
 	  where[friends1[i]] = where[friends2[i]];
 
-	  j0 = clist->sizes[where[friends2[i]]];
+	  myj0 = clist->sizes[where[friends2[i]]];
 
 	  clist->sizes[where[friends2[i]]] += tlist.sizes[friends1[i]];
 	  
@@ -983,9 +983,9 @@ LALGetClusters (
 
 
 	  for(j=0;j<tlist.sizes[friends1[i]];j++)
-	    {clist->f[where[friends2[i]]][j+j0] = tlist.f[friends1[i]][j];
-	    clist->t[where[friends2[i]]][j+j0] = tlist.t[friends1[i]][j];
-	    clist->P[where[friends2[i]]][j+j0] = tlist.P[friends1[i]][j];}
+	    {clist->f[where[friends2[i]]][j+myj0] = tlist.f[friends1[i]][j];
+	    clist->t[where[friends2[i]]][j+myj0] = tlist.t[friends1[i]][j];
+	    clist->P[where[friends2[i]]][j+myj0] = tlist.P[friends1[i]][j];}
 	}      
     }
 

@@ -23,6 +23,7 @@ $Id$
 #define TFCWAVELETH_MSGEINCOMP "Incompatible time series and TF parameters"
 
 /* Daubechies coefficients for size 4, 12 & 20 */
+#if 0
 static const REAL4 daub2[4]={0.4829629131445341,0.8365163037378079,
                     0.2241438680420134,-0.1294095225512604};
 static const REAL4 daub6[12]={0.111540743350, 0.494623890398, 0.751133908021,
@@ -36,7 +37,7 @@ static const REAL4 daub10[20]={0.026670057901, 0.188176800078, 0.527201188932,
                       0.003606553567,-0.010733175483, 0.001395351747,
                       0.001992405295,-0.000685856695,-0.000116466855,
                       0.000093588670,-0.000013264203};
-
+#endif
 
 typedef struct tagTFCWavelet {
 
