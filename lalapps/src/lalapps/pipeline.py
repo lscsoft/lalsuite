@@ -998,7 +998,7 @@ class ScienceData:
       delta < 0:
         [s,e] -> [s,e-delta].
 
-    @param buffer: shrink the science segment::
+    @param buffer: shrink the ScienceSegment::
 
       [s,e] -> [s+buffer,e-buffer]
     """
