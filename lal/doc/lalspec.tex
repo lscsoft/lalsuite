@@ -77,8 +77,8 @@ minimal list of development tools in Section \ref{sec:laltools}.
 
 \item
 The output of one programmer's routine is likely to be the
-input of someone else's  routine. To make this exchange easy,  we
-specify some reusable  data structures for input and output. (We also
+input of another's  routine. To make this exchange easy,  we
+specify reusable data structures for input and output. (We also
 require developers to use them whenever possible.) These are given in
 Section  \ref{sec:laldatatypes}.
 
@@ -89,25 +89,25 @@ programmer's code; therefore we establish some coding conventions
 (Sections \ref{sec:lalfunctions} and \ref{sec:lalcode}),  and the
 specifications for the documentation (Section
 \ref{sec:laldocumentation}). In particular, we
-define the  namespace conventions  in Section \ref{sec:codingstyle}, and  we explain the
+define the  namespace conventions  in Section \ref{sec:codingstyle}, 
+and  we explain the
 details of  reporting errors in Section \ref{sec:lalfunctions}. 
 
 \item
 It is essential that users and developers know the pedigree of
-the routines they are using; therefore we have defined a version
+the routines; therefore we have defined a version
 control system (CVS) for the library in Section \ref{sec:lalmaint}.  
 
 \item
-Using a standard design for the software will (hopefully)
-make it easier to test routines by comparing data analysis results
-from different groups.
+Using a standard design for the software will (hopefully) make it
+easier to test routines by comparing data analysis results from
+different groups.
 	
 \item
-This code project will grow and evolve. This  makes  it
-impossible to foresee all the necessary code requirements. Therefore,
-the LL and LSC will continue to jointly update and maintain this
-specification. The rules for this procedure are given in Section
-\ref{sec:lalmaint}.
+Since this code project will grow and evolve, it impossible to foresee
+all the necessary code requirements. Therefore, the LL and LSC will
+continue to jointly update and maintain this specification. The rules
+for this procedure are given in Section \ref{sec:lalmaint}.
 
 \item
 In order to facilitate collaboration, the LSC Software
@@ -359,7 +359,6 @@ TYPE    variableName;    /* helpful or useful comment              */
 INT4    length;         /* number of elements                     */
 INT4    vectorLength;    /* length of each vector in sequence      */
 REAL4    *a,*b,*c;       /* temporary pointer variables            */
-REAL4    *a,b;           /* DO NOT COMBINE POINTERS AND VARIABLES! */
 \end{verbatim}}
 
 \section{LAL Data Types}
@@ -504,11 +503,11 @@ Data Class & LAL Names & Comments \\
 \multicolumn{3}{|c|}
 {\bf \ref{aggregates} Aggregates} \\
 \hline
-Vectors    & {\tt <datatype>}Vector          & Aggregates capture   \\  \cline{1-2}
-Array      & {\tt <datatype>}Array           & only numerical data  \\  \cline{1-2}
-           & {\tt <datatype>}Sequence        & for computation      \\  \cline{2-2}
-Sequences  & {\tt <datatype>}VectorSequence  & (e.g. bytes): no     \\  \cline{2-2}
-           & {\tt <datatype>}ArraySequence   & units or physical    \\ 
+Vectors    & {\tt <datatype>Vector}          & Aggregates capture   \\  \cline{1-2}
+Array      & {\tt <datatype>Array}           & only numerical data  \\  \cline{1-2}
+           & {\tt <datatype>Sequence}        & for computation      \\  \cline{2-2}
+Sequences  & {\tt <datatype>VectorSequence}  & (e.g. bytes): no     \\  \cline{2-2}
+           & {\tt <datatype>ArraySequence}   & units or physical    \\ 
            &                                 & information is       \\ 
            &                                 & provided at          \\ 
            &                                 & this level           \\ 
@@ -646,62 +645,31 @@ tag<datatype>ArraySequence
 \noindent
 The discussion at the end of Section \ref{vectors}.
 
-\paragraph{The packing order of a VectorSequence of ArraySequence \\}
+\paragraph{The packing order or a VectorSequence of ArraySequence \\}
 \label{packingorderAS} 
 
-The indexing for a sequence of compound objects will run through the
-internal indices of the objects before going to the next object in the
-sequence. For example, here is a  sequence of {\tt data->length=M } 
-vectors, each of {\tt data->vectorLength=N}.
-
+\noindent A vector sequence {\tt v} stores a sequence of
+$M$={\tt v->length} vectors
+$\{\vec{v}^{(0)},\vec{v}^{(1)},\ldots,\vec{v}^{(M-1)}\}$, where each
+vector has $N$={\tt v->vectorLength} components
+$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(j)}_{N-1})$.  The components are
+stored in a flattened array {\tt v->data} in such a way that one
+steps first over the components of each vector, and then over the
+vectors in the sequence:
 \begin{eqnarray}
-&
-\left\{  
-  \begin{array}{cccccc}
-     \left[ 
-     \begin{array}{c}
-     h_1[t_1]  \\
-     \dots     \\
-     h_N[t_1]  
-     \end{array} 
-     \right]
-     &
-     ,
-     \left[ 
-     \begin{array}{c}
-         h_1[t_2]  \\
-         \dots     \\
-         h_N[t_2]  
-     \end{array} 
-     \right]
-     &
-     ,
-     \left[ 
-     \begin{array}{c}
-         h_1[t_3]  \\
-         \dots     \\
-         h_N[t_3]  
-     \end{array} 
-     \right]
-     &
-     , \dots ,
-     &
-     \left[ 
-     \begin{array}{c}
-         h_1[t_M]  \\
-         \dots     \\
-         h_N[t_M]  
-     \end{array} 
-     \right]
-   \end{array}
-\right\}
-\Longrightarrow \nonumber \\
-\nonumber \\
-&
-\{ h_1[t_1], \dots , h_N[t_1], h_1[t_2], \dots , 
-h_N[t_2] , \dots h_1[t_M], \dots , h_N[t_M]\}
+\left\{
+\left[\begin{array}{c} v^{(0)}_0 \\ \vdots \\ v^{(0)}_{N-1} \end{array}\right],
+\left[\begin{array}{c} v^{(1)}_0 \\ \vdots \\ v^{(1)}_{N-1} \end{array}\right],
+\ldots ,
+\left[\begin{array}{c}
+v^{(M-1)}_0 \\ \vdots \\ v^{(M-1)}_{N-1} \end{array}\right]
+\right\} \Longrightarrow \nonumber\\
+\left\{ v^{(0)}_0, \ldots, v^{(0)}_{N-1}, v^{(1)}_0, \ldots, v^{(1)}_{N-1},
+\ldots, v^{(M-1)}_0, \ldots, v^{(M-1)}_{N-1} \right\} \; .
 \end{eqnarray}
-
+That is, the component $v^{(j)}_i$ is stored in
+{\tt v->data[}$j\times N+i${\tt ]}.
+   
 In Section \ref{packingorder} we define a structure where the packing
 is in the other order.
 
@@ -2012,21 +1980,6 @@ multiple times with different command line options are allowed. Also
 keep in mind, these executables should serve as example code on  how
 to use the functions.
 
-
-\subsubsection{Component level tests}
-Along with each header file there should be an executable that tests
-every function prototyped in the header file.  These executables
-should extensively (if not exhaustively) test the error condition that
-can be thrown by a function. The program  should report success or
-failure for all the tests and exit cleanly.
-
-As these executables will not form part of the dynamically loaded
-library of functions, there is a bit more flexibility in how they are
-written.  For example unix shell scripts that run an executable
-multiple times with different command line options are allowed. Also
-keep in mind, these executables should serve as example code on  how
-to use the functions.
-
 As a general rule, a test suite should involve tests from at least
 three categories:
 \begin{itemize}
@@ -2301,8 +2254,8 @@ conducted to ``validate" the code.
 
 \subsection{Requesting changes in LAL}
 
-LL and LSC will maintain a web page for submitting bug reports and
-releasing  the code. At present this is partially functional:
+The LSC will maintain a web page for submitting bug reports and
+releasing  the code. Currently, this can be found at
 http://www.lsc-group.phys.uwm.edu/lal/.
 
 While in the development phase, updating the code and documentation
