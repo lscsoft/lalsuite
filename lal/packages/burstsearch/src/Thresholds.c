@@ -433,9 +433,11 @@ LALOneMinusChisqCdf (
    *  third test is necessary since there are some numbers x for 
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
-  ASSERT( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ), 
-          status, THRESHOLDSH_ERANGE, THRESHOLDSH_MSGERANGE);
-
+  if ( !( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
+      *prob = 1.0/LAL_REAL8_MAX;
+      if(lalDebugLevel&LALWARNING)
+          LALPrintError("\tThe probability is: %e\n",*prob);
+  }
 
   RETURN (status);
 }
