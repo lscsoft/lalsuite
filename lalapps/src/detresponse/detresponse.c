@@ -26,10 +26,32 @@ static int lalDebugLevel = 0;
 static int verbosity_level = 0;
 static struct gengetopt_args_info args_info;
 
+void
+generate_timeseries_response(LALStatus * status);
+
 int
 main(int argc, char **argv)
 {
   static LALStatus          status;
+
+  /* parse command line options */
+  if (cmdline_parser(argc, argv, &args_info) != 0)
+    exit(1);
+
+  if (args_info.verbosity_given)
+    verbosity_level = args_info.verbosity_arg;
+
+  if (args_info.debug_given)
+    lalDebugLevel = args_info.debug_arg;
+
+  generate_timeseries_response(&status);
+
+  return 0;
+}
+
+
+void generate_timeseries_response(LALStatus * status)
+{
   LALSource                 source;
   LALDetector               detector;
   LALDetAndSource           det_and_src = {NULL,NULL};
@@ -43,17 +65,7 @@ main(int argc, char **argv)
   cross_file_name[0] = '\0';
   plus_file_name[0] = '\0';
 
-  /* parse command line options */
-  if (cmdline_parser(argc, argv, &args_info) != 0)
-    exit(1);
-
-  if (args_info.verbosity_given)
-    verbosity_level = args_info.verbosity_arg;
-
-  if (args_info.debug_given)
-    lalDebugLevel = args_info.debug_arg;
-
-  if (args_info.detector_given)
+    if (args_info.detector_given)
     {
       if (mystrncasecmp(args_info.detector_arg, "lho", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -143,12 +155,12 @@ main(int argc, char **argv)
   det_response_series.pCross  = &(cross_series);
   det_response_series.pScalar = &(scalar_series);
 
-  LALSCreateVector(&status, &(det_response_series.pPlus->data), 1);
-  LALSCreateVector(&status, &(det_response_series.pCross->data), 1);
-  LALSCreateVector(&status, &(det_response_series.pScalar->data), 1);
+  LALSCreateVector(status, &(det_response_series.pPlus->data), 1);
+  LALSCreateVector(status, &(det_response_series.pCross->data), 1);
+  LALSCreateVector(status, &(det_response_series.pScalar->data), 1);
 
-  LALComputeDetAMResponseSeries(&status, &det_response_series,
-                                          &det_and_src, &time_info);
+  LALComputeDetAMResponseSeries(status, &det_response_series,
+                                &det_and_src, &time_info);
 
   LALSPrintTimeSeries(det_response_series.pPlus, plus_file_name);
   LALSPrintTimeSeries(det_response_series.pCross, cross_file_name);
@@ -157,9 +169,7 @@ main(int argc, char **argv)
   /*
    * house keeping
    */
-  LALSDestroyVector(&status, &(det_response_series.pPlus->data));
-  LALSDestroyVector(&status, &(det_response_series.pCross->data));
-  LALSDestroyVector(&status, &(det_response_series.pScalar->data));
-
-  return 0;
+  LALSDestroyVector(status, &(det_response_series.pPlus->data));
+  LALSDestroyVector(status, &(det_response_series.pCross->data));
+  LALSDestroyVector(status, &(det_response_series.pScalar->data));
 }
