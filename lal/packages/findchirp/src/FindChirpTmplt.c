@@ -10,6 +10,7 @@
  */
 
 #include <lal/FindChirpEngine.h>
+#include <lal/AVFactories.h>
 
 NRCSID( FINDCHIRPTMPLTC, "$Id$" );
 

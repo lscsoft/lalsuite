@@ -133,6 +133,7 @@ LALCOMPLEX8VectorFFT()
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/DetectorSite.h> 
