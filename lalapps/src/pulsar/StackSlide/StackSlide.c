@@ -8,6 +8,7 @@ $Id$
 /* 02/02/04 gam; Further changes to handle case numSpinDown = 0 and numFreqDerivTotal = 0. */
 /* 02/02/04 gam; Add preprocessor flag section. When flags defined will print debugging info; added/modified some printf statements for debugging. */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
+/* 06/05/04 gam; Add gpsStartTimeSec and gpsStartTimeNan to StackSlideSkyParams; set these to epoch that gives T0 at SSB. */
 
 /*********************************************/
 /*                                           */
@@ -128,6 +129,8 @@ ATTATCHSTATUSPTR(status);
 	params->baryinput->delta=params->skyPosData[iSky][1];
 	
 	csParams->tGPS=params->timeStamps;
+        csParams->gpsStartTimeSec = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
+        csParams->gpsStartTimeNan = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
 	csParams->spinDwnOrder=params->numSpinDown;
 	csParams->mObsSFT=params->numSTKs;
 	csParams->tSFT=params->tSTK;
@@ -280,8 +283,10 @@ void StackSlideComputeSky	(LALStatus		*status,
  /* Check to make sure pointer to output is not NULL */
  ASSERT(pTdotsAndDeltaTs!=NULL, status, STACKSLIDECOMPUTESKYH_ENNUL, STACKSLIDECOMPUTESKYH_MSGENNUL);
  
- params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
- params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
+ /*params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
+ params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds; */ /* 06/05/04 gam */
+ params->baryinput->tgps.gpsSeconds = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
+ params->baryinput->tgps.gpsNanoSeconds = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
  
  /* params->baryinput->alpha=params->skyPos[iSkyCoh];
  params->baryinput->delta=params->skyPos[iSkyCoh+1]; */

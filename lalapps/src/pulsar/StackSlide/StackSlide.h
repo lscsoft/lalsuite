@@ -5,6 +5,7 @@ $Id$
 
 /* REVISIONS: */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
+/* 06/05/04 gam; Add gpsStartTimeSec and gpsStartTimeNan to StackSlideSkyParams; set these to epoch that gives T0 at SSB. */
 
 /* <lalLaTeX> 
 \section{Header \texttt{ComputeSky.h}}
@@ -175,6 +176,8 @@ tagStackSlideSkyParams
 	INT8		mObsSFT;	/* number of coherent timescales */
 	REAL8		tSFT;		/* timescale of SFT */
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
+	UINT4 gpsStartTimeSec;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
+	UINT4 gpsStartTimeNan;          /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
 	REAL8 		*skyPos; 	/* array of sky positions */
 	BarycenterInput *baryinput;	
 	EmissionTime *emit;
