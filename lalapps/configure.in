@@ -120,6 +120,7 @@ AC_OUTPUT( 				\
 	src/pulsar/Makefile		\
 	src/pulsar/FDS_isolated/Makefile \
 	src/pulsar/Injections/Makefile	 \
+	src/pulsar/FDS_griphyn/Makefile \
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
