@@ -14,6 +14,6 @@ done
 for i in $badSFTs; do
     res=`$prog $i`
     if [ ! -n $res ]; then
-	exit -1;
+	exit 1;
     fi
 done
