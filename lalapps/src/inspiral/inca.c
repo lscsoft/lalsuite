@@ -26,6 +26,7 @@
 
 RCSID("$Id$");
 
+#define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -49,6 +50,7 @@ RCSID("$Id$");
 "Usage: %s [options] [LIGOLW XML input files]\n\n"\
 "  --help                    display this message\n"\
 "  --verbose                 print progress information\n"\
+"  --version                    print version information and exit\n"\
 "  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING         set the process_params usertag to STRING\n"\
 "  --comment STRING          set the process table comment to STRING\n"\
@@ -155,7 +157,7 @@ int main( int argc, char *argv[] )
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
   REAL4 minMatch = -1;
-  INT4 useRangeCut = 0;
+  INT4  useRangeCut = 0;
   REAL4 ifob_snrthresh = IFOB_SNRTHRESH;
   REAL4	d_range[MAXIFO];
 
@@ -205,6 +207,7 @@ int main( int argc, char *argv[] )
     {"userTag",                 required_argument, 0,                'Z'},
     {"help",                    no_argument,       0,                'h'}, 
     {"debug-level",             required_argument, 0,                'z'},
+    {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
   int c;
@@ -466,6 +469,14 @@ int main( int argc, char *argv[] )
       case 'Y':
         slideData.gpsNanoSeconds = (INT4) atoi( optarg );
         ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
+        break;
+
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
+            "CVS Version: " CVS_ID_STRING "\n" );
+        exit( 0 );
         break;
 
       case '?':
