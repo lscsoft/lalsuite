@@ -44,7 +44,7 @@ static int _compareAbs(const void *a, const void *b);
 
 static void _clusterProperties(ClusterWavelet *w);
 
-static void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan);
+static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan);
 static double _secNanToDouble(UINT4 sec, UINT4 nan);
 /* static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds); */
 
@@ -1203,9 +1203,9 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   int **XY;
   BOOLEAN status;
   int maxPixels;
-  int *f;
-  int *t;
-  register int* pN;
+  unsigned int *f;
+  unsigned int *t;
+  register unsigned int* pN;
   int nM;
   Slice S;
   Wavelet *original=w->original;
@@ -2212,10 +2212,10 @@ static REAL4 _noise(ClusterWavelet *w, INT4 number)
   return sqrt(noise);
 }
 
-static void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan)
+static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan)
 {
-  *sec=(UINT4)t;
-  *nan=(UINT4)((t-*sec)*pow(10,9));
+  *sec=(INT4)t;
+  *nan=(INT4)((t-*sec)*pow(10,9));
 }
 
 static double _secNanToDouble(UINT4 sec, UINT4 nan)
