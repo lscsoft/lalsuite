@@ -41,14 +41,13 @@ of waveforms which have phases which differ by $\pi/2$.
 This code directly uses the following functions (see those functions
 to find out what they call in turn):
 \begin{verbatim}
-laldebuglevel
 LALInspiralWaveLength
 LALInspiralCreateCoarseBank
 LALRandomInspiralSignal
 LALInspiralParameterCalc
 LALNoiseSpectralDensity 
-LALMeasureFwdRealFFTPlan
-LALMeasureInvRealFFTPlan
+LALEstimateFwdRealFFTPlan
+LALEstimateInvRealFFTPlan
 LALInspiralWaveOverlap
 LALInspiralParameterCalc
 \end{verbatim}
@@ -70,13 +69,13 @@ void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 INT4 lalDebugLevel=1;
      
 int 
-main ( void ) 
+main () 
 {
 /* 
    It is assumed that InspiralTemplateList is no larger than 5000; 
    change it if you expect your lattice to be larger than that
 */
-   static InspiralTemplateList list[5000];
+   InspiralTemplateList *list=NULL;
    static LALStatus status;
    InspiralCoarseBankIn coarseIn;
    INT4 i, j, nlist, jmax;
@@ -84,7 +83,6 @@ main ( void )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
    RandomInspiralSignalIn randIn;
-   Detector choice;
    OverlapIn overlapin;
    OverlapOut overlapout, overlapoutmax;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
@@ -94,26 +92,26 @@ main ( void )
 /*---------------------------------------------------------------------------*/
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
-   coarseIn.mMin = 1.0;
-   coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.90;
+   coarseIn.mMin = 5.0;
+   coarseIn.MMax = 20.0;
+   coarseIn.mmCoarse = 0.80;
    coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
-   coarseIn.fUpper = 1000;
+   coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
-   coarseIn.tSampling = 4000.;
-   coarseIn.detector = ligo;
-   coarseIn.method = one;
+   coarseIn.tSampling = 4096.;
+   coarseIn.NoisePsd = LALLIGOIPsd;
+   coarseIn.method = two;
    coarseIn.order = twoPN;
-   coarseIn.approximant = pade;
+   coarseIn.approximant = taylor;
    coarseIn.domain = TimeDomain;
-   coarseIn.space = Tau0Tau2;
+   coarseIn.space = Tau0Tau3;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
 
-   fprintf(RandomSignal, "#mMin mMax mmCoarse mmFine fLower fUpper tSampling detector method order approximant domain space\n");
-   fprintf(RandomSignal, "#%e %e %e %e %e %e %e %d %d %d %d %d %d\n", 
+   fprintf(RandomSignal, "#mMin mMax mmCoarse mmFine fLower fUpper tSampling method order approximant domain space\n");
+   fprintf(RandomSignal, "#%e %e %e %e %e %e %e %d %d %d %d %d\n", 
       coarseIn.mMin,
       coarseIn.MMax,
       coarseIn.mmCoarse,
@@ -121,7 +119,6 @@ main ( void )
       coarseIn.fLower,
       coarseIn.fUpper,
       coarseIn.tSampling,
-      coarseIn.detector,
       coarseIn.method,
       coarseIn.order,
       coarseIn.approximant,
@@ -130,15 +127,15 @@ main ( void )
    );
 
    randIn.type = 0;
-   randIn.SignalAmp = 10.;
+   randIn.SignalAmp = 10.0;
    randIn.NoiseAmp = 1.0;
    randIn.useed = 610903;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
-   randIn.param.nStartPad=10000;
+   randIn.param.nStartPad=1000;
 
    fprintf(RandomSignal, "#type SignalAmp NoiseAmp startTime startPhase startpad\n");
-   fprintf(RandomSignal, "%d %e %e %e %e %d\n",
+   fprintf(RandomSignal, "%#d %e %e %e %e %d\n",
       randIn.type,
       randIn.SignalAmp,
       randIn.NoiseAmp,
@@ -149,7 +146,9 @@ main ( void )
 /*---------------------------------------------------------------------------*/
 /*CHANGE NOTHING BELOW THIS LINE IF YOU ARE UNSURE OF WHAT YOU ARE DOING     */
 /*---------------------------------------------------------------------------*/
-   LALInspiralCreateCoarseBank(&status, list, &nlist, coarseIn);
+   LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
+   REPORTSTATUS(&status);
+   if (nlist==0) exit(0);
    fprintf(RandomSignal, "#Number of Coarse Bank Templates=%d\n",nlist);
    fprintf(stderr, "Number of Coarse Bank Templates=%d\n",nlist);
    for (i=0; i<nlist; i++) {
@@ -182,23 +181,28 @@ main ( void )
 
    dt = 1./randIn.param.tSampling;
    t0 = 0.0;
+   signal.length = 0.;
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
+   fprintf(stderr, "signal length = %d\n", signal.length);
+   REPORTSTATUS(&status);
    correlation.length = signal.length;
    randIn.psd.length = signal.length/2 + 1;
 
    signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*signal.length);
    correlation.data = (REAL4*) LALMalloc(sizeof(REAL4)*correlation.length);
    randIn.psd.data = (REAL8*) LALMalloc(sizeof(REAL8)*randIn.psd.length);
-   choice = coarseIn.detector;
    df = randIn.param.tSampling/(float) signal.length;
-   LALNoiseSpectralDensity (&status, &randIn.psd, choice, df);
+   LALNoiseSpectralDensity (&status, &randIn.psd, coarseIn.NoisePsd, df);
+   REPORTSTATUS(&status);
 
    overlapin.psd = randIn.psd;
 /*--------------------------
-   Measure the plans 
+   Estimate the plans 
 --------------------------*/
-   LALMeasureFwdRealFFTPlan(&status, &fwdp, signal.length);
-   LALMeasureInvRealFFTPlan(&status, &revp, signal.length);
+   LALEstimateFwdRealFFTPlan(&status, &fwdp, signal.length);
+   REPORTSTATUS(&status);
+   LALEstimateInvRealFFTPlan(&status, &revp, signal.length);
+   REPORTSTATUS(&status);
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
    i=10;
@@ -206,6 +210,11 @@ main ( void )
    fprintf(RandomSignal, "#Signal Length=%d Number of sims=%d\n", signal.length, i);
    while (i--) {
       LALRandomInspiralSignal(&status, &signal, &randIn);
+/*
+      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+      for (j=0; j<signal.length; j++) printf("%e\n", correlation.data[j]);
+      exit(0);
+*/
       LALInspiralParameterCalc(&status, &randIn.param);
       overlapin.signal = signal;
       jmax = 0;

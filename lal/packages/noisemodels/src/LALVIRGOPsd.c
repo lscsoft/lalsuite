@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the VIRGO detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALVIRGOPsdCP}
-\index{\texttt{LALVIRGOPsd()}}
+\index{\verb&LALVIRGOPsd()&}
 
 \subsubsection*{Description}
 
@@ -41,14 +41,18 @@ None.
 #include <lal/LALNoiseModels.h>
 
 /*  <lalVerbatim file="LALVIRGOPsdCP"> */
-REAL8 LALVIRGOPsd (REAL8 x) 
+void LALVIRGOPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */
 
-   REAL8 s1, s2, s3, psd;
+   REAL8 s1, s2, s3, x;
 
+   status = NULL;
+   x = f/500.;
    s1 = 34.6;
    s2 = 6.60;
    s3 = 3.24;
-   psd = s1*pow(10.*x,-5.) + s2/x + s3 * (1. + x*x);
-   return psd;
+/*
+   *psd = s1*pow(10.*x,-5.) + s2/x + s3 * (1. + x*x);
+*/
+   *psd = pow(6.23*x,-5.) + 2./x + 1. + x*x;
 }

@@ -11,7 +11,7 @@ and return the resulting vector in \texttt{vector}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALAddVectorsCP}
-\index{\texttt{LALAddVectors()}}
+\index{\verb&LALAddVectors()&}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
@@ -36,6 +36,10 @@ LALAddVectors(
    INT4 i;
 
    INITSTATUS (status, "LALAddVectors", LALADDVECTORSC);
+   ATTATCHSTATUSPTR(status);
+   ASSERT (vector,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (vector->length >= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (vector->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
 
    i=vector->length;
    if ( (in.v1->length != in.v2->length) ||
@@ -45,5 +49,7 @@ LALAddVectors(
    }
    while (i--)
       vector->data[i] = in.a1 * in.v1->data[i] + in.a2 * in.v2->data[i];
-   RETURN(status);
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
 }

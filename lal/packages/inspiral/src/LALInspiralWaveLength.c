@@ -12,7 +12,7 @@ Module to calculate the number of data points needed to make a given waveform.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveLengthCP}
-\index{\texttt{LALInspiralWaveLength()}}
+\index{\verb&LALInspiralWaveLength()&}
 
 \subsubsection*{Description}
 
@@ -61,9 +61,13 @@ void LALInspiralWaveLength(LALStatus       *status,
    expnFunc func;
 
    INITSTATUS (status, "LALInspiralWaveLength", LALINSPIRALWAVELENGTHC);
-
-
    ATTATCHSTATUSPTR(status);
+
+   ASSERT (params.nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params.nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params.tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (&params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
    LALInspiralSetup (status->statusPtr, &ak, &params);
    CHECKSTATUSPTR(status);
    LALChooseModel(status->statusPtr, &func, &ak, &params);

@@ -12,7 +12,7 @@ Module to generate two inspiral waveforms simultaneously, which differ in phase 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTimeDomain2TemplatesCP}
-\index{\texttt{LALTimeDomain2Templates()}}
+\index{\verb&LALTimeDomain2Templates()&}
 
 \subsubsection*{Description}
 
@@ -79,6 +79,10 @@ void LALTimeDomain2Templates(LALStatus *status,
    ASSERT (signal2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal2->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
@@ -86,8 +90,14 @@ void LALTimeDomain2Templates(LALStatus *status,
    CHECKSTATUSPTR(status);
 
    values.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (values.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    dvalues.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dvalues.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    valuesNew.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (valuesNew.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+   ASSERT(ak.totalmass > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(ak.totalmass < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    m = ak.totalmass;
    dt = 1./params->tSampling;
@@ -127,8 +137,11 @@ void LALTimeDomain2Templates(LALStatus *status,
    *(values.data+1) = p;
 
    dym.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dym.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    dyt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dyt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    yt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (yt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    
    in4.function = LALInspiralDerivatives;
    in4.x = t;

@@ -11,7 +11,7 @@ of power spectral density \texttt{psd}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALColoredNoiseCP}
-\index{\texttt{LALColoredNoise()}}
+\index{\verb&LALColoredNoise()&}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
@@ -40,10 +40,13 @@ LALColoredNoise (
    
 
    INITSTATUS (status, "LALColoredNoise", LALCOLOREDNOISEC);
-   if (psd.length != noisy->length/2+1) {
-     fprintf(stderr, "LALColoredNoise: Incompatible lengths\n");
-     exit(1);
-   }
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT (noisy,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (noisy->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (psd.length == noisy->length/2+1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+
    n = length = noisy->length;
    nby2 = n/2;
    noisy->data[0] = 0.;
@@ -55,5 +58,7 @@ LALColoredNoise (
       noisy->data[i] *= x;
       noisy->data[j] *= x;
    }
-   RETURN(status); 
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
 }

@@ -23,7 +23,7 @@ brackets):
 \begin{verbatim}
    params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
    params.mass1=1.4;       (masses of the component stars in solar masses) 
-   params.mass2=10.; 
+   params.mass2=1.4; 
    params.startTime=0.0;   (defined so that the instantaneous GW frequency 
                             is params.fLower at params.startTime)
    params.startPhase=0.0;  (0 to $\pi/2$)
@@ -51,7 +51,7 @@ brackets):
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
 void printf_timeseries (int n, float *signal, double delta, double t0) 
@@ -77,23 +77,24 @@ int main () {
    INT4 n;
 
    params.ieta=1; 
-   params.mass1=1.4; 
-   params.mass2=10.; 
+   params.mass1=10.0; 
+   params.mass2=1.4; 
    params.startTime=0.0; 
    params.startPhase=0.0; 
    params.fLower=40.0; 
-   params.fCutoff=1000000.0;
+   params.fCutoff=1000.0;
    params.tSampling=4000.0;
    params.signalAmplitude=1.0;
-   params.nStartPad=0;
-   params.nEndPad=0;
-   params.method=one;
-   params.order=twoPN;
+   params.nStartPad=1000;
+   params.nEndPad=1000;
+   params.method=eob;
+   params.order=twoPointFivePN;
    params.domain=TimeDomain;
    params.approximant=pade;
    params.massChoice=m1Andm2;
 
    LALInspiralWaveLength (&status, &n, params);
+   LALInspiralParameterCalc (&status, &params);
    fprintf(stderr, "signal length=%d\n", n);
    signal.length = n;
    signal.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);

@@ -12,7 +12,7 @@ The function \texttt{LALPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\pr
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALPhiofVIntegrandCP}
-\index{\texttt{LALPhiofVIntegrand()}}
+\index{\verb&LALPhiofVIntegrand()&}
 
 \subsubsection*{Description}
 
@@ -62,6 +62,8 @@ void LALPhiofVIntegrand (LALStatus *status,
 
   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (v>0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (v<1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   in = (PhiofVIntegrandIn *) params;
 

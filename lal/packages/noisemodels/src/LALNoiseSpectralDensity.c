@@ -9,7 +9,7 @@ Module to create NoiseSpectralDensity.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALNoiseSpectralDensityCP}
-\index{\texttt{LALNoiseSpectralDensity()}}
+\index{\verb&LALNoiseSpectralDensity()&}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
@@ -24,61 +24,54 @@ Module to create NoiseSpectralDensity.
 #include <lal/LALNoiseModels.h>
 
 NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
-void 
+
 /*  <lalVerbatim file="LALNoiseSpectralDensityCP"> */
+void 
 LALNoiseSpectralDensity (
    LALStatus   *status, 
    REAL8Vector *psd, 
-   Detector    choice, 
+   void        (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
    REAL8       df) 
 {  /*  </lalVerbatim>  */
-    REAL8 f0, fs, xs, s0, dx, x, (*NoisePsd)(REAL8);
+
+    REAL8 shf, fs, xs, s0, dx, x;
     int i;
 
-   INITSTATUS (status, "LALNoiseSpectralDensity", LALNOISESPECTRALDENSITYC);
-   switch (choice) {
-	case 0:
-	   NoisePsd = &LALGEOPsd;
+   INITSTATUS(status, "LALNoiseSpectralDensity", LALNOISESPECTRALDENSITYC);
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT (psd->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (NoisePsd, status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (df > 0., status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+
+   if (NoisePsd == LALGEOPsd) {
            s0 = 1.e-46;
-           f0 = 150;
            fs = 40;
-	   break;
-	case 1:
-	   NoisePsd = &LALLIGOIPsd;
+   } else if(NoisePsd == LALLIGOIPsd) {
            s0 = 9.0e-46;
-           f0 = 150;
            fs = 40;
-	   break;
-	case 2:
-	   NoisePsd = &LALTAMAPsd;
+   } else if(NoisePsd == LALTAMAPsd) {
            s0 = 75.e-46;
-           f0 = 400;
            fs = 75;
-	   break;
-	case 3:
-	   NoisePsd = &LALVIRGOPsd;
+   } else if(NoisePsd == LALVIRGOPsd) {
            s0 = 3.24e-46;
-           f0 = 500;
            fs = 20;
-	   break;
-        default:
-           fprintf(stderr, "LALNoiseSpectralDensity: Invalid Detector\n");
-           exit(1);
-           break;
+   } else {
+           s0 = 1.;
+           fs = 1.;
    }
-   dx = df/f0;
-   xs = fs/f0;
+   dx = df;
+   xs = fs;
    psd->data[0] = psd->data[1] = 0.;
-/*
-   s0 = 1.;
-*/
    for (i=2; i<(int)psd->length; i++) {
       x = (i-1)*dx;
       if (x>xs ) {
-        psd->data[i] = s0 * (*NoisePsd)(x);
+        (*NoisePsd)(status->statusPtr, &shf, x);
+        psd->data[i] = s0 * shf;
       } else
         psd->data[i] = 0.;
    }
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 

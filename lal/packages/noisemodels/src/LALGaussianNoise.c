@@ -10,7 +10,7 @@ Module to create GaussianNoise.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGaussianNoiseCP}
-\index{\texttt{LALGaussianNoise()}}
+\index{\verb&LALGaussianNoise()&}
 
 \subsubsection*{Description}
 Using a random number seed (unsigned integer) this module returns a
@@ -46,12 +46,16 @@ LALGaussianNoise (
 
    INITSTATUS (status, "LALGaussianNoise", LALGAUSSIANNOISEC);
    ATTATCHSTATUSPTR(status);
+   ASSERT (noisy,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (noisy->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (*seed > 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+
    srandom(*seed);
    *seed = random();
    for (i=0; i<(int)noisy->length; i++){
       LALGaussianRandomNumber(status->statusPtr,noisy->data+i);
+      CHECKSTATUSPTR(status);
    }
-   CHECKSTATUSPTR(status);
    DETATCHSTATUSPTR(status);
    RETURN(status); 
 }

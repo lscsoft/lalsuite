@@ -9,7 +9,7 @@ Module to create a Gaussian random number.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGaussianRandomNumberCP}
-\index{\texttt{LALGaussianRandomNumber()}}
+\index{\verb&LALGaussianRandomNumber()&}
 
 \subsubsection*{Description}
 Using the c internal random number generates this routine
@@ -41,6 +41,8 @@ LALGaussianRandomNumber(
    REAL8 fac,rsq,v1,v2;
 
    INITSTATUS (status, "LALGaussianRandomNumber", LALGAUSSIANRANDOMNUMBERC);
+   ATTATCHSTATUSPTR(status);
+
    if  (iset == 0) {
       do {
          v1 = 2.*(random()/(REAL8)RAND_MAX) - 1.0;
@@ -51,10 +53,11 @@ LALGaussianRandomNumber(
       gset=v1*fac;
       iset=1;
       *randnum = (REAL4) (v2*fac);
-      RETURN(status); 
    } else {
       iset=0;
       *randnum = (REAL4) (gset);
-      RETURN(status); 
    }
+
+   DETATCHSTATUSPTR(status);
+   RETURN(status); 
 }

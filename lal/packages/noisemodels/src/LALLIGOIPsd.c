@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the initial LIGO detect
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALLIGOIPsdCP}
-\index{\texttt{LALLIGOIPsd()}}
+\index{\verb&LALLIGOIPsd()&}
 
 \subsubsection*{Description}
 
@@ -40,12 +40,13 @@ None.
 #include <lal/LALNoiseModels.h>
 
 /*  <lalVerbatim file="LALLIGOIPsdCP"> */
-REAL8 LALLIGOIPsd (REAL8 x) 
+void
+LALLIGOIPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */
 
-   REAL8 x2, psd;
+   REAL8 x2,x;
+   x = f/175.;
+   status = NULL;
    x2 = x*x;
-   psd = pow(4.49*x,-56.) + 0.16 * pow(x,-4.52) + 0.52 + 0.32 * x2; 
-   return (psd);
+   *psd = pow(4.49*x,-56.) + 0.16 * pow(x,-4.52) + 0.52 + 0.32 * x2; 
 }
-

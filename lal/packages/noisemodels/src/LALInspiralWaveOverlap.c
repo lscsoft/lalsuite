@@ -13,7 +13,7 @@ where the maximum occured and the phase at the maximum.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveOverlapCP}
-\index{\texttt{LALInspiralWaveOverlap()}}
+\index{\verb&LALInspiralWaveOverlap()&}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
@@ -44,12 +44,23 @@ LALInspiralWaveOverlap (
 
    INITSTATUS (status, "LALOverlap", LALOVERLAPC);
    ATTATCHSTATUSPTR(status);
+
+   ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (overlapin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (overlapin->signal.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+
    output1.length = output2.length = overlapin->signal.length;
    filter1.length = filter2.length = overlapin->signal.length;
+
    output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length);
+   ASSERT (output1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    output2.data = (REAL4*) LALMalloc(sizeof(REAL4)*output2.length);
+   ASSERT (output2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    filter1.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter1.length);
+   ASSERT (filter1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    filter2.data = (REAL4*) LALMalloc(sizeof(REAL4)*filter2.length);
+   ASSERT (filter2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+
    overlapin->param.nStartPad = 0;
    overlapin->param.startPhase = LAL_PI_2;
    LALInspiralWave(status->statusPtr, &output2, &overlapin->param);

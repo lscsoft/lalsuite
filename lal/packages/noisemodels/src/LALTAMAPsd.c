@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the TAMA detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTAMAPsdCP}
-\index{\texttt{LALTAMAPsd()}}
+\index{\verb&LALTAMAPsd()&}
 
 \subsubsection*{Description}
 
@@ -39,14 +39,15 @@ None.
 #include <lal/LALNoiseModels.h>
 
 /*  <lalVerbatim file="LALTAMAPsdCP"> */
-REAL8  LALTAMAPsd(REAL8 x) 
+void  LALTAMAPsd(LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */
 
-   REAL8 psd, seismic, thermal, shot;
+   REAL8 seismic, thermal, shot, x;
 
+   status = NULL;
+   x = f/400.;
    seismic = pow(x,-5);
    thermal = 13. / x;
    shot = 9. * (1. + x*x);
-   psd = seismic + thermal + shot;
-   return(psd);
+   *psd = seismic + thermal + shot;
 }

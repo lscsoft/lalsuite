@@ -13,7 +13,7 @@ waveform generation.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetupCP}
-\index{\texttt{LALInspiralSetup()}}
+\index{\verb&LALInspiralSetup()&}
 
 \subsubsection*{Description}
 
@@ -149,6 +149,13 @@ void LALInspiralSetup (LALStatus *status,
 
    ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (params->mass1 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->mass2 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->fCutoff > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->fCutoff > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    ak->ieta = params->ieta;
    ak->t0 = params->startTime;

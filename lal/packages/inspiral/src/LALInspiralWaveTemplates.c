@@ -14,7 +14,7 @@ with a zero and $\pi/2$ phase template, we do not need to call the waveform gene
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveTemplatesCP}
-\index{\texttt{LALInspiralWaveTemplates()}}
+\index{\verb&LALInspiralWaveTemplates()&}
 
 \subsubsection*{Description}
 
@@ -41,10 +41,6 @@ See the documentation for the module \texttt{LALInspiralWave} for further detail
 </lalLaTeX>  */
 
 
-
-
-
-
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
@@ -61,40 +57,44 @@ void LALInspiralWaveTemplates(LALStatus *status,
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signal0,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (signal0->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (signal1->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (signal0->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal1->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
+   ASSERT(params->domain >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->domain <= 1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    switch (params->domain) {
-	case TimeDomain:
-		switch (params->method) {
+      case TimeDomain:
+         ASSERT(params->method >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         ASSERT(params->method <= 3, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         switch (params->method) {
 
-			case one:
-			case best:
-		        	LALTimeDomain2Templates(status->statusPtr, signal0, signal1, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			case two:
-				LALTappRpnTdomFreqTemplates(status->statusPtr, signal0, signal1, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			case three:
-				LALTappRpnTdomTimeTemplates(status->statusPtr, signal0, signal1, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			default:
-		                fprintf(stderr,"LALInspiralWaveTemplates: You haven't chosen a method ... exiting\n");
-                                exit(0);
-			}
-	break;
-
-	case FrequencyDomain:
-		fprintf(stderr,"LALInspiralWaveTemplates: We don't have frequency domain waveforms yet \n");
-                exit(0);
-	}						
-
+            case one:
+            case best:
+               LALTimeDomain2Templates(status->statusPtr, signal0, signal1, params);
+               CHECKSTATUSPTR(status);
+            break;
+            case two:
+               LALTappRpnTdomFreqTemplates(status->statusPtr, signal0, signal1, params);
+               CHECKSTATUSPTR(status);
+            break;
+            case three:
+               LALTappRpnTdomTimeTemplates(status->statusPtr, signal0, signal1, params);
+               CHECKSTATUSPTR(status);
+            break;
+            default:
+            fprintf(stderr,"LALInspiralWaveTemplates: You haven't chosen a method ... exiting\n");
+            exit(0);
+         }
+      break;
+      case FrequencyDomain:
+         fprintf(stderr,"LALInspiralWaveTemplates: No frequency domain waveforms yet \n");
+         exit(0);
+   }
    DETATCHSTATUSPTR(status);
    RETURN (status);
 

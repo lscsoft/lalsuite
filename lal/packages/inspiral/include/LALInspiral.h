@@ -62,7 +62,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EDIV0 4
 #define LALINSPIRALH_ESIZE 8
 #define LALINSPIRALH_MSGENULL "Arguments contained an unexpected null pointer"
-#define LALINSPIRALH_MSGECHOICE "Invalid input choice made"
+#define LALINSPIRALH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALINSPIRALH_MSGEDIV0 "Division by zero"
 #define LALINSPIRALH_MSGESIZE "Invalid input range"
 
@@ -167,6 +167,7 @@ typedef enum {
   one,
   two,
   three,
+  eob,
   best
  } Method;
 /* </lalVerbatim>  */
@@ -181,7 +182,11 @@ typedef enum {
 typedef struct
 tagInspiralTemplate
 {
+  INT4 ieta;
+  INT4 level;
   INT4 number;
+  INT4 nStartPad;
+  INT4 nEndPad;
   REAL8 mass1; 
   REAL8 mass2;
   REAL8 spin1[3];
@@ -203,9 +208,11 @@ tagInspiralTemplate
   REAL8 startPhase;
   REAL8 startTime;
   REAL8 signalAmplitude;
-  INT4 nStartPad;
-  INT4 ieta;
-  INT4 nEndPad;
+  REAL8 rInitial;
+  REAL8 vInitial;
+  REAL8 rFinal;
+  REAL8 vFinal;
+  REAL8 rLightRing;
   InputMasses massChoice;
   Method method;
   Order order;

@@ -12,7 +12,7 @@ Interface routine needed to generate a T- or a P-approximant.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveCP}
-\index{\texttt{LALInspiralWave()}}
+\index{\verb&LALInspiralWave()&}
 
 \subsubsection*{Description}
 
@@ -104,7 +104,7 @@ parameter \texttt{approximant}, which is of type \texttt{enum Approximant}.
 
 
 \subsubsection*{Uses}
-Depending on the user inputs, and one of the following functions:
+Depending on the user inputs one of the following functions is called:
 
 \texttt{TimeDomain2}
 \texttt{TappRpnTdomFreq}
@@ -115,10 +115,6 @@ Depending on the user inputs, and one of the following functions:
 \vfill{\footnotesize\input{LALInspiralWaveCV}}
 
 </lalLaTeX>  */
-
-
-
-
 
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
@@ -134,37 +130,43 @@ void LALInspiralWave(LALStatus *status,
    INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
    ATTATCHSTATUSPTR(status);
 
+   ASSERT (signal->length >= 2, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
+   ASSERT(params->domain >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->domain <= 1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
    switch (params->domain) {
-	case TimeDomain:
-		switch (params->method) {
+      case TimeDomain:
+         ASSERT(params->method >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         ASSERT(params->method <= 3, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+         switch (params->method) {
 
-			case one:
-			case best:
-		        	LALTimeDomain2(status->statusPtr, signal, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			case two:
-				LALTappRpnTdomFreq(status->statusPtr, signal, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			case three:
-				LALTappRpnTdomTime(status->statusPtr, signal, params);
-   	                	CHECKSTATUSPTR(status);
-				break;
-			default:
-		                fprintf(stderr,"LALInspiralWave: You haven't chosen a method ... exiting\n");
-                                exit(0);
-				}
-		break;
-
-	case FrequencyDomain:
-		fprintf(stderr,"LALInspiralWave: We don't have frequency domain waveforms yet \n");
-                exit(0);
+            case one:
+                LALTimeDomain2(status->statusPtr, signal, params);
+                CHECKSTATUSPTR(status);
+            break;
+            case two:
+                LALTappRpnTdomFreq(status->statusPtr, signal, params);
+                CHECKSTATUSPTR(status);
+            break;
+            case three:
+                LALTappRpnTdomTime(status->statusPtr, signal, params);
+                CHECKSTATUSPTR(status);
+            break;
+	    case eob:
+	    case best:
+                LALEOBWaveform(status->statusPtr, signal, params);
+                CHECKSTATUSPTR(status);
+            break;
+         }
+      break;
+      case FrequencyDomain:
+          fprintf(stderr,"LALInspiralWave: We don't have frequency domain waveforms yet \n");
+          exit(0);
    }						
 
    DETATCHSTATUSPTR(status);

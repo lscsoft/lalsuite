@@ -76,8 +76,8 @@ void LALUSPA (
             sign = 1.0;
          }
          LALDRombergIntegrate (status->statusPtr, &psif, &intinp, funcParams);
-         psif *= sign;
          CHECKSTATUSPTR(status);
+         psif *= sign;
       }
       psi = shft * f - phi + psif;
 /* 

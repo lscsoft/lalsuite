@@ -9,7 +9,7 @@
 
 INT4 lalDebugLevel=4;
 
-int main ( void ) {
+int main () {
    static InspiralTemplate p;
    static LALStatus status;
    double mmin, Mmax, totalMmax, compmmin, m2;
@@ -17,7 +17,7 @@ int main ( void ) {
 /**************************************************/
 /* Change the parameters of the search space here */
 /**************************************************/
-   mmin = 1.0;
+   mmin = 5.0;
    Mmax = 40.;
    mmin = log10(mmin);
    Mmax = log10(Mmax);

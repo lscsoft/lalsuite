@@ -16,7 +16,7 @@ equation
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTofVCP}
-\index{\texttt{LALTofV()}}
+\index{\verb&LALTofV()&}
 
 \subsubsection*{Description}
 
@@ -63,6 +63,8 @@ void LALTofV (LALStatus *status,
 
    ASSERT (tofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    sign = 1.0;
 

@@ -13,7 +13,7 @@ non--spinning point--mass stars in quasi--circular orbits, up to second post--Ne
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqCP}
-\index{\texttt{LALTappRpnTdomFreq()}}
+\index{\verb&LALTappRpnTdomFreq()&}
 
 \subsubsection*{Description}
 
@@ -75,33 +75,33 @@ F(f) &  = & - \frac{32}{5} \eta^{2} (\pi m f)^{10/3}
 This leads us to
 \begin{eqnarray}
 t - t_{a} & = & 
-\tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] + 
-\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \nonumber \\
-          & - & \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + \tau_{P^{2}N}
+\tau_{0} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] + 
+\tau_{2} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \nonumber \\
+          & - & \tau_{3} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + \tau_{4}
 \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]
 \label{toff1}
 \end{eqnarray}
-where $\tau_{N}$ is usually referred to as the Newtonian chirp time, $\tau_{P^{1}N}$ is the first
-post--Newtonian chirp time, and so on for $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$. Because the $f/f_{a}$ term
+where $\tau_{0}$ is usually referred to as the Newtonian chirp time, $\tau_{2}$ is the first
+post--Newtonian chirp time, and so on for $\tau_{3}$ and $\tau_{4}$. Because the $f/f_{a}$ term
 appears throughout the above equations, the code works with the instantaneous frequency expressed in units
 of $f_{a}$, $(f/f_{a})$ rather than in Hz. The chirp times are related to the masses of the stars and
 $f_{a}$ in the following way:
 \begin{equation}
-\tau_{N} = \frac{5}{256} \eta^{-1} m^{-5/3} (\pi f_{a})^{-8/3} \,,
+\tau_{0} = \frac{5}{256} \eta^{-1} m^{-5/3} (\pi f_{a})^{-8/3} \,,
 \end{equation}
  
 \begin{equation}
-\tau_{P^{1}N} = \frac{3715+4620 \eta}{64512 \eta m (\pi f_{a})^{2}} \,,
+\tau_{2} = \frac{3715+4620 \eta}{64512 \eta m (\pi f_{a})^{2}} \,,
 \end{equation}
  
 \begin{equation}
-\tau_{P^{1.5}N} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}
+\tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}
 \end{equation}
 
 end
 
 \begin{equation}
-\tau_{P^{2}N} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
+\tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
 \frac{5429}{1008} \eta
 + \frac{617}{144} \eta^{2} \right] \,.
 \end{equation}
@@ -110,16 +110,16 @@ Eq.(\ref{waveform1}), however, requires $f$ as a function of $t$. In order to ob
 Eq.(\ref{toff1})  into the form
  
 \begin{eqnarray}
-t - t_{a} & - & \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{P^{1}N} \left[ 1 -
+t - t_{a} & - & \tau_{0} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{2} \left[ 1 -
 \left( \frac{f}{f_{a}} \right)^{-2} \right] \nonumber \\
-          & + & \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N}
+          & + & \tau_{3} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{4}
 \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right] = 0 \,.
 \label{TappRpnTdomFreqtoff2}
 \end{eqnarray}
 The left--hand--side of Eq.(\ref{TappRpnTdomFreqtoff2}) is fed into a root--finding function,  which finds the value of
 $(f/f_{a})$
-which solves the equation for a given $t$, $t_{a}$, $\tau_{N}$, $\tau_{P^{1}N}$, $\tau_{P^{1.5}N}$ and
-$\tau_{P^{2}N}$.
+which solves the equation for a given $t$, $t_{a}$, $\tau_{0}$, $\tau_{2}$, $\tau_{3}$ and
+$\tau_{4}$.
 Once we have obtained $(f/f_{a})(t)$ in this way we use it to calculate the phase $\phi(t)$.
  
 In the same way that we derived the expression for the time formula, we may write the phase of the GW at
@@ -138,11 +138,11 @@ Once more, knowledge of the functions $E^{\prime}(f)$ (Eq.(\ref{Eoff})) and $F(f
 enables us to obtain the time dependence of the phase $\phi(t)$,
  
 \begin{eqnarray}
-\phi(t) & = & \frac{16 \pi f_{a} \tau_{N}}{5} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + 4
-\pi f_{a}\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1} \right]  
+\phi(t) & = & \frac{16 \pi f_{a} \tau_{0}}{5} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + 4
+\pi f_{a}\tau_{2} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1} \right]  
 \nonumber \\
-        & - & 5 \pi f_{a} \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2/3} \right] + 8 \pi
-f_{a} \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1/3} \right] + \Phi \,.
+        & - & 5 \pi f_{a} \tau_{3} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2/3} \right] + 8 \pi
+f_{a} \tau_{4} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1/3} \right] + \Phi \,.
 \label{TappRpnTdomFreqphioff}
 \end{eqnarray}
  
@@ -166,9 +166,9 @@ v = (\pi m f)^{1/3} \,.
 
 \subsubsection*{Uses}
 
-\texttt{LALInspiralParameterCalc}
-\texttt{LALDBisectionFindRoot}
-\texttt{LALTappRpnTdomFreqPhase}
+\texttt{LALInspiralParameterCalc}\\
+\texttt{LALDBisectionFindRoot}\\
+\texttt{LALTappRpnTdomFreqPhase}\\
 
 \subsubsection*{Notes}
 

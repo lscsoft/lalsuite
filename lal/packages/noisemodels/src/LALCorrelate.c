@@ -10,7 +10,7 @@ Module to compute the correlation of two data sets.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALCorrelateCP}
-\index{\texttt{LALCorrelate()}}
+\index{\verb&LALCorrelate()&}
 
 \subsubsection*{Description}
 The module expects two inputs \texttt{signal1, signal2}
@@ -47,14 +47,13 @@ LALCorrelate (
   INITSTATUS (status, "LALCorrelate", LALCORRELATEC);
   ATTATCHSTATUSPTR(status);
 
-  if (corrin.psd.length != corrin.signal1.length/2+1) {
-      fprintf(stderr, "LALCorrelate: Incompatible lengths\n");
-      exit(1);
-  }
-  if (corrin.signal1.length != corrin.signal2.length) {
-      fprintf(stderr, "LALCorrelate: Incompatible array lengths\n");
-      exit(1);
-  }
+  ASSERT (output,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (corrin.signal1.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (corrin.signal2.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (corrin.psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (corrin.signal1.length == corrin.signal2.length, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+  ASSERT (corrin.psd.length == corrin.signal1.length/2+1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
   n = corrin.signal1.length;
 
@@ -79,14 +78,18 @@ LALCorrelate (
      output->data[0] = corrin.signal1.data[0]*corrin.signal2.data[0] / psd;
   else
      output->data[0] = 0;
+
   psd = corrin.psd.data[nby2];
   if (psd) 
      output->data[nby2] = corrin.signal1.data[nby2]*corrin.signal2.data[nby2] / psd;
   else
      output->data[nby2] = 0;
+
   LALREAL4VectorFFT(status->statusPtr,&buff,output,corrin.revp);
   CHECKSTATUSPTR(status);
+
   for (i=0; i< (int) buff.length; i++) output->data[i] = buff.data[i]/2.;
+
   LALFree(buff.data);
   DETATCHSTATUSPTR(status);
   RETURN(status);

@@ -4,6 +4,7 @@ libinspiral_la_SOURCES = \
 LALChooseModel.c\
 LALEtaTau02.c\
 LALEtaTau04.c\
+LALEOBWaveform.c\
 LALInspiralDerivatives.c\
 LALInspiralParameterCalc.c\
 LALInspiralPhase.c\

@@ -12,7 +12,7 @@ Module to calculate the first order differential equations needed in the phasing
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralDerivativesCP}
-\index{\texttt{LALInspiralDerivatives()}}
+\index{\verb&LALInspiralDerivatives()&}
 
 \subsubsection*{Description}
 
@@ -64,14 +64,13 @@ void LALInspiralDerivatives (REAL8Vector *values,
  { /* </lalVerbatim> */
 
   InspiralDerivativesIn *ak;
+  REAL8 v;
 
   ak = (InspiralDerivativesIn *) params;
+  v = *(values->data);
 
-
-   *(dvalues->data) = -ak->flux(*(values->data), ak->coeffs)/
-                      (ak->totalmass*ak->dEnergy(*(values->data), ak->coeffs));
-
-   *(dvalues->data+1) = 2.* *(values->data)* *(values->data)* *(values->data)/ak->totalmass;
+  dvalues->data[0] = -ak->flux(v, ak->coeffs)/ (ak->totalmass*ak->dEnergy(v, ak->coeffs));
+  dvalues->data[1] = 2.* pow(v,3.)/ak->totalmass;
 
   return;
 

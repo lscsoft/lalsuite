@@ -21,7 +21,7 @@ equation in \texttt{x} for a given \texttt{eta}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALEtaTau04CP}
-\index{\texttt{LALEtaTau04()}}
+\index{\verb&LALEtaTau04()&}
 
 \subsubsection*{Description}
 None.
@@ -36,6 +36,7 @@ None.
 
 #include <lal/LALInspiral.h>
 
+NRCSID (LALETATAU04C, "$Id$");
 /*  <lalVerbatim file="LALEtaTau04CP"> */
 void LALEtaTau04(LALStatus *status, 
                  REAL8 *x, 
@@ -43,7 +44,13 @@ void LALEtaTau04(LALStatus *status,
                  void *p) 
 { /* </lalVerbatim> */
    EtaTau04In *q;
-   status = NULL;
+   INITSTATUS(status, "LALEtaTau04", LALETATAU04C);
+   ATTATCHSTATUSPTR(status);
+   ASSERT (p,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(eta > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
    q = (EtaTau04In *) p;
    *x = -q->t4 + q->A4/pow(eta,0.8) * (1. + q->B4*eta + q->C4*eta*eta);
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }

@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the GEO600 detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGEOPsdCP}
-\index{\texttt{LALGEOPsd()}}
+\index{\verb&LALGEOPsd()&}
 
 \subsubsection*{Description}
 
@@ -39,16 +39,17 @@ None.
 
 #include <lal/LALNoiseModels.h>
 
-
-
 /* <lalVerbatim file="LALGEOPsdCP"> */
-REAL8  LALGEOPsd(REAL8 x) 
+void
+LALGEOPsd(LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */
 
-   REAL8 psd, seismic, thermal, shot;
+   REAL8 x, seismic, thermal, shot;
+
+   status = NULL;
+   x = f/150.;
    seismic = pow(10.,-16.) *  pow(x,-30.);
    thermal = 34. / x;
    shot = 20. * (1 - pow(x,2.) + 0.5 * pow(x,4.)) / (1. + 0.5 * pow(x,2.));
-   psd = seismic + thermal + shot;
-   return(psd);
+   *psd = seismic + thermal + shot;
 }

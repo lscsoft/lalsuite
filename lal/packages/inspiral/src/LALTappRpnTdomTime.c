@@ -14,7 +14,7 @@ used is as follows.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomTimeCP}
-\index{\texttt{LALTappRpnTdomTime()}}
+\index{\verb&LALTappRpnTdomTime()&}
 
 \subsubsection*{Description}
 

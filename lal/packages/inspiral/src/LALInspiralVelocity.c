@@ -13,7 +13,7 @@ inspiralling binary system.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralVelocityCP}
-\index{\texttt{LALInspiralVelocity()}}
+\index{\verb&LALInspiralVelocity()&}
 
 \subsubsection*{Description}
 
@@ -44,12 +44,6 @@ $\mathcal{F}(v)$.
 \vfill{\footnotesize\input{LALInspiralVelocityCV}}
 
 </lalLaTeX>  */
-
-
-
-
-
-
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -90,12 +84,8 @@ void LALInspiralVelocity(LALStatus *status,
   RETURN(status);
   }
 
-
   LALDBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
   CHECKSTATUSPTR(status);
-
-
-
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

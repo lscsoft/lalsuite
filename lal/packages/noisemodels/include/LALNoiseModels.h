@@ -49,9 +49,13 @@ NRCSID( LALNOISEMODELSH, "$Id$" );
 /* <lalErrTable> */
 
 #define LALNOISEMODELSH_ENULL 1
-#define LALNOISEMODELSH_EDIV0 2
+#define LALNOISEMODELSH_ECHOICE 2
+#define LALNOISEMODELSH_EDIV0 4
+#define LALNOISEMODELSH_ESIZE 8
 #define LALNOISEMODELSH_MSGENULL "Arguments contained an unexpected null pointer"
+#define LALNOISEMODELSH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALNOISEMODELSH_MSGEDIV0 "Division by zero"
+#define LALNOISEMODELSH_MSGESIZE "Invalid input range"
 
 /* </lalErrTable> */
 
@@ -161,7 +165,7 @@ OverlapOut;
 
 void LALNoiseSpectralDensity (LALStatus   *status, 
                               REAL8Vector *psd, 
-                              Detector    choice, 
+                              void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
                               REAL8       f);
 
 /* <lalLaTeX>
@@ -185,25 +189,25 @@ void LALNormalise (LALStatus   *status,
 \newpage\input{LALGEOPsdC}
 </lalLaTeX>  */
 
-REAL8 LALGEOPsd (REAL8 x);
+void LALGEOPsd (LALStatus *status, REAL8 *shf, REAL8 x);
 
 /* <lalLaTeX>
 \newpage\input{LALLIGOIPsdC}
 </lalLaTeX>  */
 
-REAL8 LALLIGOIPsd (REAL8 x);
+void LALLIGOIPsd (LALStatus *status, REAL8 *shf, REAL8 x);
 
 /* <lalLaTeX>
 \newpage\input{LALTAMAPsdC}
 </lalLaTeX>  */
 
-REAL8 LALTAMAPsd (REAL8 x);
+void LALTAMAPsd (LALStatus *status, REAL8 *shf, REAL8 x);
 
 /* <lalLaTeX>
 \newpage\input{LALVIRGOPsdC}
 </lalLaTeX>  */
 
-REAL8 LALVIRGOPsd (REAL8 x);
+void LALVIRGOPsd (LALStatus *status, REAL8 *shf, REAL8 x);
 
 
 /* <lalLaTeX>

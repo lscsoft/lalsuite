@@ -12,13 +12,14 @@ Module to generate two inspiral waveforms simultaneously, which differ in phase 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomTimeTemplatesCP}
-\index{\texttt{LALTappRpnTdomTimeTemplates()}}
+\index{\verb&LALTappRpnTdomTimeTemplates()&}
 
 \subsubsection*{Description}
 
-Module to generate two inspiral waveforms simultaneously, which differ in phase by $\pi/2$. 
-This is so that when we need to maximise over the phase at time of arrival by seperately correlating a
-signal with a zero and $\pi/2$ phase waveform, we do not need to call the waveform generation function
+Module to generate two inspiral waveforms simultaneously, which differ in 
+phase by $\pi/2$.  This is so that when we need to maximise over the phase 
+at time of arrival by seperately correlating a signal with a zero and $\pi/2$ 
+phase waveform, we do not need to call the waveform generation function
 twice.
 
 \subsubsection*{Algorithm}

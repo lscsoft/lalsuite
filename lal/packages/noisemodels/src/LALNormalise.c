@@ -10,7 +10,7 @@ array. The original signal is left untouched.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALNormaliseCP}
-\index{\texttt{LALNormalise()}}
+\index{\verb&LALNormalise()&}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
@@ -34,14 +34,16 @@ LALNormalise (
    REAL8 *norm,
    REAL8Vector psd) 
 {  /*  </lalVerbatim>  */
+
   INT4 i, n, nby2, k;
   REAL8 psdvalue;
+
   INITSTATUS (status, "LALNormalise", LALNORMALISEC);
-  if (psd.length != in->length/2+1) {
-  fprintf(stderr, "LALNormalise: Incompatible lengths %d, %d\n",
-     psd.length, in->length);
-     exit(1);
-  }
+  ATTATCHSTATUSPTR(status);
+
+  ASSERT (in->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+  ASSERT (psd.length == in->length/2+1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
   n = in->length;
   *norm = 0;
@@ -55,6 +57,8 @@ LALNormalise (
   
   i=n;
   while (i--) *(in->data+i) = *(in->data+i) / *norm;
+
+  DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 

@@ -13,46 +13,47 @@ Module to calculate the LHS of Eq.(4) in the documentation for
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqTofFCP}
-\index{\texttt{LALTappRpnTdomFreqTofF()}}
+\index{\verb&LALTappRpnTdomFreqTofF()&}
 
 \subsubsection*{Description}
 
-The module \texttt{LALTappRpnTdomFreqToff} calculates the quantity which we may call toff, which is given by
-the following equation:
+The module \texttt{LALTappRpnTdomFreqToff} calculates the quantity which we 
+may call toff, which is given by the following equation:
 
 \begin{eqnarray}
-\mathrm{toff} = t - t_{a}  &  - \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] -
-\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
-    &  \\
-          & + \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N}
-\left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]  \,.
+\mathrm{toff} = t - t_{a}  &  - \tau_{0} 
+                \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] -
+                \tau_{2} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
+                & + \tau_{3} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - 
+               \tau_{4} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]  \,.
 \label{toff}
 \end{eqnarray}
 
-The terms in this equation are defined as follows:
-The parameter $t$ represents time, $\tau_{N}$ is the Newtonian chirp time, $\tau_{P^{1}N}$ is the first
-post--Newtonian chirp time, and so on for $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$. The parameter $f$ is the
-instantaneous frequency
-of the gravitational wave, and $f_{a}$ is the value of this frequency when the wave enters the lower end of
-the detectors' bandwidth. Here we will neglect the $t_{a}$ term, which is the instant at which the wave
-enters the lower end of the detectors bandwidth, and which can be defined alsewhere. If we define
+The terms in this equation are defined as follows: The parameter $t$ 
+represents time, $\tau_{0}$ is the Newtonian chirp time, $\tau_{2}$ is the first
+post--Newtonian chirp time, and so on for $\tau_{3}$ and $\tau_{4}$. 
+The parameter $f$ is the instantaneous frequency of the gravitational wave, 
+and $f_{a}$ is the value of this frequency when the wave enters the lower end of
+the detectors' bandwidth. Here we will neglect the $t_{a}$ term, which is the 
+instant at which the wave enters the lower end of the detectors bandwidth, 
+and which can be defined alsewhere. If we define
 \begin{equation}
-\tau_{c} = \tau_{N} + \tau_{P^{1}N} - \tau_{P^{1.5}N} + \tau_{P^{2}N}
+\tau_{c} = \tau_{0} + \tau_{2} - \tau_{3} + \tau_{4}
 \end{equation}
 then Eq.(\ref{toff}) becomes
 \begin{eqnarray}
-\mathrm{toff} &  = & t - t_{a}  - \tau_{N} + \tau_{N}\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{P^{1}N} +
-\tau_{P^{1}N} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
-      & + & \tau_{P^{1.5}N} - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{P^{2}N} +
-\tau_{P^{2}N} \left( \frac{f}{f_{a}} \right)^{-4/3}
+\mathrm{toff} &  = & t - t_{a}  - \tau_{0} + \tau_{0}
+\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{2} +
+\tau_{2} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
+      & + & \tau_{3} - \tau_{3} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{4} +
+\tau_{4} \left( \frac{f}{f_{a}} \right)^{-4/3}
 \end{eqnarray}
 i.e.\
 \begin{eqnarray}
-\mathrm{toff} &  = &  t - t_{a}  + \tau_{N} \left( \frac{f}{f_{a}} \right)^{-8/3} + \tau_{P^{1}N} \left(
-\frac{f}{f_{a}} \right)^{-2} \nonumber \\
-   & - & \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{P^{2}N} \left( \frac{f}{f_{a}}
-\right)^{-4/3} -
-\tau_{c}
+\mathrm{toff} &  = &  t - t_{a}  + \tau_{0} \left( \frac{f}{f_{a}} \right)^{-8/3} + 
+\tau_{2} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
+   & - & \tau_{3} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{4} \left( \frac{f}{f_{a}}
+\right)^{-4/3} - \tau_{c}
 \label{toff2}
 \end{eqnarray}
 
@@ -66,12 +67,12 @@ i.e.\
 
 All frequencies are expressed in units of fs, the frequency of the
 waveform when it first enters the detectable part of the detector's
-bandwidth.
-For a fuller description of how this function is used in the generation of an inspiral waveform, see the
+bandwidth.  For a fuller description of how this function is used in 
+the generation of an inspiral waveform, see the
 documentation for the function \texttt{LALTappRpnTdomFreq}.
-The nomenclature adopted is the same as that used in Sathyaprakash, PRD, 50, R7111, 1994, which may be
-consulted for
-further details.
+The nomenclature adopted is the same as that used in 
+Sathyaprakash, PRD, 50, R7111, 1994, which may be
+consulted for further details.
 
 \vfill{\footnotesize\input{LALTappRpnTdomFreqTofFCV}}
 
@@ -159,7 +160,7 @@ void LALTappRpnTdomFreqTofF2PN (LALStatus *status,
 
   *toff = toffIn->t 
         + toffIn->t0 / f8 
-        + toffIn->t2 / f4*f2
+        + toffIn->t2 / (f4*f2)
         - toffIn->tc;
 
 
@@ -194,8 +195,8 @@ void LALTappRpnTdomFreqTofF3PN (LALStatus *status,
 
   *toff = toffIn->t 
         + toffIn->t0 / f8 
-        + toffIn->t2 / f4*f2
-        - toffIn->t3 / f4*f 
+        + toffIn->t2 / (f4*f2)
+        - toffIn->t3 / (f4*f) 
         - toffIn->tc;
 
 

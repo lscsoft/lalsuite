@@ -10,7 +10,7 @@ and to add a noisy component expected in a given detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALRandomInspiralSignalCP}
-\index{\texttt{LALRandomInspiralSignal()}}
+\index{\verb&LALRandomInspiralSignal()&}
 
 \subsubsection*{Description}
 Depending on the value of the parameter \texttt{RandomIn.type=0,1 or 2} this
@@ -32,20 +32,31 @@ code returns a pure signal, a pure noise or signal+noise.
 
 NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 /*  <lalVerbatim file="LALRandomInspiralSignalCP"> */
+
 void
 LALRandomInspiralSignal(
    LALStatus *status, 
    REAL4Vector *signal,
    RandomInspiralSignalIn *randIn)
 {  /*  </lalVerbatim>  */
+
    REAL8 e1, e2, norm;
    REAL4Vector noisy, buff;
    AddVectorsIn addIn;
    
    INITSTATUS (status, "LALRandomInspiralSignal", LALRANDOMINSPIRALSIGNALC);
    ATTATCHSTATUSPTR(status);
+
+   ASSERT (signal->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (randIn->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (randIn->mMin > 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (randIn->MMax > 2*randIn->mMin, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (randIn->type >= 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (randIn->type <= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+
    buff.length = signal->length;
    buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length);
+   ASSERT (buff.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    srandom(randIn->useed);
    randIn->useed = random();
    e1 = random()/(float)RAND_MAX;
@@ -72,6 +83,7 @@ LALRandomInspiralSignal(
       default:
          noisy.length = signal->length;
          noisy.data = (REAL4*) LALMalloc(sizeof(REAL4)*noisy.length);
+         ASSERT (noisy.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
          LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
          CHECKSTATUSPTR(status);
          LALREAL4VectorFFT(status->statusPtr, &noisy, &buff, randIn->fwdp);

@@ -11,7 +11,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralPhaseCP}
-\index{\texttt{LALInspiralPhase()}}
+\index{\verb&LALInspiralPhase()&}
 
 \subsubsection*{Description}
 
@@ -73,17 +73,17 @@ void LALInspiralPhase (LALStatus *status,
    REAL8 sign;
    REAL8 answer;
 
-  INITSTATUS (status, "LALInspiralPhase", INSPIRALPHASEC);
-  ATTATCHSTATUSPTR (status);
+   INITSTATUS (status, "LALInspiralPhase", INSPIRALPHASEC);
+   ATTATCHSTATUSPTR (status);
 
-  ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    sign = 1.0;
-  
 
    in1 = (InspiralPhaseIn *) params;
-
 
    intinp.function = LALPhiofVIntegrand;
    intinp.xmin = in1->v0;
@@ -96,33 +96,24 @@ void LALInspiralPhase (LALStatus *status,
 
    funcParams = (void *) &in2;
 
+   if (v==in1->v0) {
+      *phiofv = in1->phi0;
+      DETATCHSTATUSPTR (status);
+      RETURN (status);
+   }
 
-
-   if (v==in1->v0)
-     {
-     *phiofv = in1->phi0;
-     DETATCHSTATUSPTR (status);
-     RETURN (status);
-     }
-
-   if(in1->v0 > v)
-       {
-	intinp.xmin = v;
-	intinp.xmax = in1->v0;
-	sign = -1.0;
-	}
-
+   if(in1->v0 > v) {
+      intinp.xmin = v;
+      intinp.xmax = in1->v0;
+      sign = -1.0;
+   }
 
    LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
    CHECKSTATUSPTR (status);
 
-
    *phiofv = in1->phi0 - 2.0*sign*answer;
-
 
    DETATCHSTATUSPTR (status);
    RETURN (status);
-
-
 }
 

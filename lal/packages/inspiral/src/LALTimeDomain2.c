@@ -14,7 +14,7 @@ and flux function are solved numerically.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTimeDomain2CP}
-\index{\texttt{LALTimeDomain2()}}
+\index{\verb&LALTimeDomain2()&}
 
 \subsubsection*{Description}
 
@@ -125,7 +125,7 @@ void LALTimeDomain2(LALStatus *status,
  { /* </lalVerbatim>  */
 
    INT4 n=2, count;
-   double m, dt, t, v, p, h, f;
+   REAL8 m, dt, t, v, p, h, f;
    REAL8Vector values;
    REAL8Vector dvalues;
    REAL8Vector valuesNew;
@@ -140,26 +140,34 @@ void LALTimeDomain2(LALStatus *status,
    expnCoeffs ak;
    expnFunc func;
 
-
    INITSTATUS(status, "LALTimeDomain2", LALTIMEDOMAIN2C);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    LALInspiralSetup (status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
    LALChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
 
-
    values.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (values.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    dvalues.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dvalues.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    valuesNew.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (valuesNew.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
    m = ak.totalmass;
    dt = 1./params->tSampling;
+
+   ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    t = 0.0;
    in1.t = t;
@@ -181,8 +189,8 @@ void LALTimeDomain2(LALStatus *status,
    in3.dEnergy = func.dEnergy;
    in3.flux = func.flux;
    in3.coeffs = &ak;
-
    funcParams = (void *) &in3;
+
    LALInspiralVelocity(status->statusPtr, &v, &in1);
    CHECKSTATUSPTR(status);
 
@@ -196,8 +204,11 @@ void LALTimeDomain2(LALStatus *status,
    *(values.data+1) = p;
 
    dym.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dym.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    dyt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (dyt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    yt.data = (REAL8 *)LALMalloc(sizeof(REAL8)*n);
+   ASSERT (yt.data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    
    in4.function = LALInspiralDerivatives;
    in4.x = t;
