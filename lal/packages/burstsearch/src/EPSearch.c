@@ -86,12 +86,6 @@ static void ComputeAverageSpectrum(
 	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
 	CHECKSTATUSPTR(status);
 
-	/* Adjust the normalization to agree with our old implementation.
-	 * Eventually, the rest of the code will be migrated to the LAL
-	 * conventions, and this will not be needed. */
-	for(i = 0; i < spectrum->data->length; i++)
-		spectrum->data->data[i] /= 2 * tseries->deltaT;
-
 	LALDestroyREAL4Window(status->statusPtr, &spec_params.window);
 	CHECKSTATUSPTR(status);
 
@@ -209,9 +203,9 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
 	size_t i;
 
 	for(i = 0; i < fseries->data->length; i++) {
-		factor = sqrt(psd->data->data[i] / 2.0);
-		fseries->data->data[i].re /= factor;
-		fseries->data->data[i].im /= factor;
+		factor = sqrt(2.0/psd->data->data[i] )*sqrt(2*fseries->deltaF);
+		fseries->data->data[i].re *= factor;
+		fseries->data->data[i].im *= factor;
 	}
 }
 
@@ -231,7 +225,7 @@ EPSearch(
 /******** </lalVerbatim> ********/
 { 
 	int                       start_sample;
-	INT4                      i;
+	INT4                      i, j;
 	COMPLEX8FrequencySeries  *fseries;
 	RealDFTParams            *dftparams = NULL;
 	LALWindowParams           winParams;
@@ -297,9 +291,10 @@ EPSearch(
 		CHECKSTATUSPTR(status);
 		LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
 		CHECKSTATUSPTR(status);
+		
 		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
 		CHECKSTATUSPTR(status);
-
+		
 		/*
 		 * Normalize the frequency series to the average PSD.
 		 */
@@ -307,12 +302,12 @@ EPSearch(
 		normalize_to_psd(fseries, AverageSpec);
 
 		if(params->printSpectrum)
-			print_complex8fseries("frequency_series.dat", fseries);
+		  print_complex8fseries("frequency_series.dat", fseries);
 
 		/*
 		 * Create time-frequency tiling of plane.
 		 */
-
+		
 		if(!tfTiling) {
 			/* the factor of 2 here is to account for the
 			 * overlapping */
