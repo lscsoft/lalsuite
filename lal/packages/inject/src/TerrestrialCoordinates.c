@@ -53,11 +53,11 @@ Although it is conventional to specify an observation location by its
 \verb@LALGeocentricToGeodetic()@ and \verb@LALGeodeticToGeocentric()@
 perform this computation, reading and writing to the variable
 parameter structure \verb@*location@.  The function
-\verb@LALGCentricToGDetic()@ reads the fields \verb@location->x@,
+\verb@LALGeocentricToGeodetic()@ reads the fields \verb@location->x@,
 \verb@y@, \verb@z@, and computes \verb@location->zenith@ and
-\verb@location->altitude@.  The function \verb@LALGDeticToGCentric()@
-does the reverse, and also sets the fields \verb@location->position@
-and \verb@location->radius@.
+\verb@location->altitude@.  The function
+\verb@LALGeodeticToGeocentric()@ does the reverse, and also sets the
+fields \verb@location->position@ and \verb@location->radius@.
 
 \subsubsection*{Algorithm}
 
@@ -167,7 +167,7 @@ where
 C & = & \frac{1}{\sqrt{\cos^2\phi + (1-f)^2\sin^2\phi}} \; , \\
 S & = & (1-f)^2 C \; ,
 \end{eqnarray}
-and $h$ is the perpendicular height of the location above the
+and $h$ is the perpendicular elevation of the location above the
 reference ellipsoid.  The geocentric spherical coordinates are given
 simply by:
 \begin{eqnarray}
@@ -181,20 +181,110 @@ before computing the sum of squares, to avoid floating-point overflow;
 however this should be unnecessary for radii near the surface of the
 Earth.
 
-The inverse transformation is somewhat trickier, and I'm still working
-on it.  I will commit it when I'm done.
+The inverse transformation is somewhat trickier.  Eq.~5.29
+of~\cite{Lang_K:1998} conveniently gives the transformation in terms
+of a sequence of intermediate variables, but unfortunately these
+variables are not particularly computer-friendly, in that they are
+prone to underflow or overflow errors.  The following equations
+essentially reproduce this sequence using better-behaved methods of
+calculation.
 
-%Given geocentric Cartesian coordinates
-%$x=r\cos\phi_\mathrm{geodetic}\cos\lambda$,
-%$y=r\cos\phi_\mathrm{geodetic}\sin\lambda$, and
-%$z=r\sin\phi_\mathrm{geodetic}$, one computes a number of
-%intermediates:
-%\begin{eqnarray}
-%\varpi & = & \sqrt{ x^2 + y^2 } \;,\nonumber\\
-%E & = & (1-f)\frac{z}{r} - f(2-f)\frac{r_e}{r} \;,\nonumber\\
-%F & = & (1-f)\frac{z}{r} + f(2-f)\frac{r_e}{r} \;,\nonumber\\
-%P & = & \frac{4}{3}( EF + 1 ) \;,\nonumber\\
-%Q & = & 2
+Given geocentric Cartesian coordinates
+$x=r\cos\phi_\mathrm{geocentric}\cos\lambda$,
+$y=r\cos\phi_\mathrm{geocentric}\sin\lambda$, and
+$z=r\sin\phi_\mathrm{geocentric}$, one computes the following:
+\begin{eqnarray}
+\varpi & = & \sqrt{ \left(\frac{x}{r_e}\right)^2
+	+ \left(\frac{y}{r_e}\right)^2 } \;,\nonumber\\
+E & = & (1-f)\left|\frac{z}{r_e}\right| - f(2-f) \;,\nonumber\\
+F & = & (1-f)\left|\frac{z}{r_e}\right| + f(2-f) \;,\nonumber\\
+P & = & \frac{4}{3}\left( EF + \varpi^2 \right) \quad = \quad
+	\frac{4}{3}\left[ \varpi^2 + (1-f)^2\left(\frac{z}{r_e}\right)^2
+		- f^2(2-f)^2 \right] \;,\nonumber\\
+Q & = & 2(F^2 - E^2) \quad = \quad
+	4f(1-f)(2-f)\left|\frac{z}{r_e}\right| \;,\nonumber\\
+D & = & P^3 + \varpi^2 Q^2 \;,\nonumber\\
+v & = & \left(\sqrt{d}+\varpi Q\right)^{1/3}
+	+ \left(\sqrt{d}-\varpi Q\right)^{1/3} \;,\nonumber\\
+G & = & \frac{E+\sqrt{E^2 + \varpi v}}{2} \;,\nonumber\\
+H & = & \frac{\varpi^2 F - \varpi vG}{2G-E} \;,\nonumber\\
+t & = & G\left(\sqrt{1+H}-1\right) \;.\nonumber
+\end{eqnarray}
+All of these functions are reasonably well-behaved, and can be
+computed directly as shown, with the following exceptions:
+\begin{itemize}
+\item If $\varpi=0$ or $z=0$, then $t$ is set to 0 or 1, respectively,
+with no further calculation.  If both $\varpi$ and $z$ are zero, an
+error is returned.
+
+\item The transformation involves complex numbers when $P<0$; that is,
+in the ellipsoidal region:
+$$
+\left(\frac{z(1-f)}{f(2-f)}\right)^2 +
+\left(\frac{\varpi}{f(2-f)}\right)^2 \quad = \quad
+\frac{z^2}{(42.8413\,\mathrm{km})^2} +
+\frac{x^2+y^2}{(42.6977\,\mathrm{km})^2} \quad < \quad 1 \; .
+$$
+The discussion in~\cite{Lang_K:1998} mentions ways to continue the
+solution analytically into this region, but even these continuations
+have singularities on the intersections of this ellipse with the
+equator and $z$-axis.  I may implement these continuations later, but
+for the present, the function \verb@LALGeographicToGeodetic()@ will
+abort if given coordinates inside or within 1\% of this ellipsoid.
+
+\item The equations for $v$ and $G$ have square and cube roots of
+expressions involving squares and cubes of numbers.  For formal
+robustness one should factor out the leading-order dependence, so that
+one is assured of taking squares and cubes of numbers near unity.
+However, we are using \verb@REAL8@ precision, and have already
+normalized our distances by the Earth's radius $r_e$, so the point is
+almost certainly irrelevant.
+
+\item The expression for $H$ may go to zero, leading to precision
+errors in $t$; the number of digits of precision lost is on the order
+of the number of leading zeros after the decimal place in $H$.  I
+arbitrarily state that we should not lose more than 4 of our 16
+decimal places of precision, meaning that we should series-expand the
+square root for $H<10^{-4}$.  To get our 12 places of precision back,
+we need an expansion to $H^3$:
+$$
+t \approx G\left(\frac{1}{2}H - \frac{3}{8}H^2
+	+ \frac{5}{16}H^3\right) \; .
+$$
+\end{itemize}
+Once we have $t$, we can compute the geodetic latitude $\phi$ and
+elevation $h$:
+\begin{eqnarray}
+\phi & = & \mathrm{sgn}({z})\arctan\left[\frac{2}{1-f}
+	\left(\frac{(\varpi-t)(\varpi+t)}{\varpi t}\right)\right] \; , \\
+h & = & r_e(\varpi-t)\cos\phi + [z-r_e(1-f)]\sin\phi \; .
+\end{eqnarray}
+When computing $\phi$, we first compute $t-\varpi$, $t+\varpi$,
+$t^{-1}$, and $\varpi^{-1}$, sort them by order of magnitude, and
+alternately multiply large and small terms.  We note that if the
+argument of the $\arctan$ function is large we have
+$$
+\arctan(x) = \mathrm{sgn}(x)\frac{\pi}{2}
+	- \arctan\left(\frac{1}{x}\right) \; ,
+$$
+but the \verb@atan()@ function in the C math library should be smart
+enough to do this itself.
+
+\paragraph{Ellipsoidal vs.\ orthometric elevation:} In this module it
+is assumed that all elevations refer heights above the reference
+ellipsoid.  This is the elevation computed by such techniques as GPS
+triangulation.  However, the ``true'' orthometric elevation refers to
+the height above the mean sea level or \emph{geoid}, a level surface
+in the Earth's gravitational potential.  Thus, even if two points have
+the same ellipsoidal elevation, water will still flow from the higher
+to the lower orthometric elevation.
+
+The difference between the geoid and reference ellipsoid is called the
+``undulation of the geoid'', and can vary by over a hundred metres
+over the Earth's surface.  However, it can only be determined through
+painstaking measurements of local variations in the Earth's
+gravitational field.  For this reason we will ignore the undulation of
+the geoid.
 
 \subsubsection*{Uses}
 
@@ -207,11 +297,13 @@ on it.  I will commit it when I'm done.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/LALError.h>
 #include <lal/Date.h>
+#include <lal/Sort.h>
 #include <lal/SkyCoordinates.h>
 
 #define LAL_EARTHFLAT (0.00335281)
+#define LAL_HSERIES (0.0001) /* value H below which we expand
+                                sqrt(1-H) */
 
 NRCSID( TERRESTRIALCOORDINATESC, "$Id$" );
 
@@ -417,8 +509,8 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
   sinP = sin( location->geodetic.latitude );
   c = sqrt( 1.0 / ( cosP*cosP + fFac*sinP*sinP ) );
   s = fFac*c;
-  c = ( LAL_REARTH_SI*c + location->height )*cosP;
-  s = ( LAL_REARTH_SI*s + location->height )*sinP;
+  c = ( LAL_REARTH_SI*c + location->elevation )*cosP;
+  s = ( LAL_REARTH_SI*s + location->elevation )*sinP;
 
   /* Compute Cartesian coordinates. */
   location->x = x = c*cos( location->geodetic.longitude );
@@ -449,18 +541,90 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
 void
 LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
 { /* </lalVerbatim> */
+  REAL8 x, y, z;   /* normalized geocentric coordinates */
+  REAL8 pi, t;     /* axial distance and axial height reduction */
+  REAL8 phi, tanP; /* geodetic latitude, and its tangent. */
+
+  /* Declare some local constants. */
+  const REAL8 rInv = 1.0 / LAL_REARTH_SI;
+  const REAL8 f1 = 1.0 - LAL_EARTHFLAT;
+  const REAL8 f2 = LAL_EARTHFLAT*( 2.0 - LAL_EARTHFLAT );
 
   INITSTATUS( stat, "LALGeocentricToGeodetic", TERRESTRIALCOORDINATESC );
+  ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structure exists. */
   ASSERT( location, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
 
-  /* Make sure the geodetic coordinates are in the right system. */
-  if ( location->geocentric.system != COORDINATESYSTEM_GEOGRAPHIC ) {
-    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  /* See if we've been given a special set of coordinates. */
+  x = rInv*location->x;
+  y = rInv*location->y;
+  z = rInv*location->z;
+  pi = sqrt( x*x + y*y );
+  if ( z == 0.0 ) {
+    if ( pi == 0.0 ) {
+      ABORT( stat, SKYCOORDINATESH_EZERO, SKYCOORDINATESH_MSGEZERO );
+    } else
+      t = 1.0;
+  } else if ( pi == 0.0 ) {
+    t = 0.0;
+  } else {
+    REAL8 za, e, f, p, q, d, v, g, h; /* intermediate variables */
+
+    /* See if we're inside the singular ellipsoid. */
+    if ( pi <= 1.01*f2 ) {
+      REAL8 z1 = z*f1/f2;
+      REAL8 p1 = pi/f2;
+      if ( z1*z1 + p1*p1 < 1.02 ) {
+	ABORT( stat, SKYCOORDINATESH_ESING, SKYCOORDINATESH_MSGESING );
+      }
+    }
+
+    /* Compute intermediates variables. */
+    za = f1*fabs( z );
+    e = za - f2;
+    f = za + f2;
+    p = ( 4.0/3.0 )*( pi*pi + za*za - f2*f2 );
+    q = 4.0*f2*za;
+    d = p*p*p + pi*pi*q*q;
+    v = pow( sqrt( d ) + pi*q, 1.0/3.0 );
+    v += pow( sqrt( d ) - pi*q, 1.0/3.0 );
+    g = 0.5*( e + sqrt( e*e + v*pi ) );
+    h = pi*( f*pi - v*g )/( 2.0*g - sqrt( e*e + v*pi ) );
+
+    /* Compute t, expanding the square root if necessary. */
+    if ( fabs( h ) < LAL_HSERIES )
+      t = g*( 0.5*h + 0.375*h*h + 0.3125*h*h*h );
+    else
+      t = g*( sqrt( 1.0 + h ) - 1.0 );
   }
 
-  LALWarning( stat, "This function is just a stub." );
+  /* Compute and sort the factors in the arctangent. */
+  {
+    REAL8 tanPFac[4];    /* factors of tanP */
+    REAL8Vector tanPVec; /* vector structure holding tanPFac */
+    tanPFac[0] = pi - t;
+    tanPFac[1] = pi + t;
+    tanPFac[2] = 1.0/pi;
+    tanPFac[3] = 1.0/t;
+    tanPVec.length = 4;
+    tanPVec.data = tanPFac;
+    TRY( LALDHeapSort( stat->statusPtr, &tanPVec ), stat );
+    tanP = tanPFac[0]*tanPFac[3];
+    tanP *= tanPFac[1]*tanPFac[2];
+    tanP *= 2.0/f1;
+  }
 
+  /* Compute latitude, longitude, and elevation. */
+  phi = atan( tanP );
+  if ( z < 0.0 )
+    phi *= -1.0;
+  location->geodetic.system = COORDINATESYSTEM_GEOGRAPHIC;
+  location->geodetic.latitude = phi;
+  location->geodetic.longitude = atan2( y, x );
+  location->elevation = ( pi - t )*cos( phi ) + ( z - f1 )*sin(phi);
+  location->elevation *= LAL_REARTH_SI;
+
+  DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

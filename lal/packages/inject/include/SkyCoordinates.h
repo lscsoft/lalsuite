@@ -223,11 +223,15 @@ NRCSID( SKYCOORDINATESH, "$Id$" );
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define SKYCOORDINATESH_ENUL 1
-#define SKYCOORDINATESH_ESYS 2
+#define SKYCOORDINATESH_ENUL  1
+#define SKYCOORDINATESH_ESYS  2
+#define SKYCOORDINATESH_EZERO 3
+#define SKYCOORDINATESH_ESING 4
 
-#define SKYCOORDINATESH_MSGENUL "Unexpected null pointer in arguments"
-#define SKYCOORDINATESH_MSGESYS "Wrong coordinate system in input"
+#define SKYCOORDINATESH_MSGENUL  "Unexpected null pointer in arguments"
+#define SKYCOORDINATESH_MSGESYS  "Wrong coordinate system in input"
+#define SKYCOORDINATESH_MSGEZERO "Angular coordinates undefined at origin"
+#define SKYCOORDINATESH_MSGESING "Point is inside singular ellipsoid"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
@@ -311,7 +315,7 @@ as described in \verb@TerrestrialCoordinates.c@.  The fields are:
 upward vertical direction from the point; that is, the point's
 \emph{geodetic} latitude and longitude.
 
-\item[\texttt{REAL8 height}] The vertical distance of the point above
+\item[\texttt{REAL8 elevation}] The vertical distance of the point above
 the reference ellipsoid, in metres.
 
 \item[\texttt{REAL8 x, y, z}] The Earth-fixed geocentric Cartesian
@@ -329,7 +333,7 @@ the point's \emph{geocentric} latitude and longitude.
 
 typedef struct tagEarthPosition {
   SkyPosition geodetic;
-  REAL8 height;
+  REAL8 elevation;
   REAL8 x, y, z;
   REAL8 radius;
   SkyPosition geocentric;
