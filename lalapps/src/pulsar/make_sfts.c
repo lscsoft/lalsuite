@@ -27,20 +27,15 @@
 #include "FrIO.h" /* corrected Version of FrIO.h */
 #endif
 
-typedef struct
-tagFrFileInfo
-{
+typedef struct tagFrFileInfo {
   INT4  ind;
   CHAR *url;
   INT4  t0;
   INT4  dt;
-}
-FrFileInfo;
+} FrFileInfo;
 
 /* Definition of FrStream */
-struct
-tagFrStream
-{
+struct tagFrStream {
   FrFileInfo     *filelist;
   UINT4           numfiles;
   UINT4           filenum;
