@@ -78,7 +78,7 @@ REAL8 deltaF = 0.25;
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
 UINT8 startTime;
-UINT8 stopTime;
+UINT8 endTime;
 INT4 streamDuration = 60;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
@@ -129,7 +129,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	CHAR outputFilename[LALNameLength];
 
 	/* counters */
-	INT4 i, segLoop;
+	INT4 i, j;
 
 	/* results parameters */
 	REAL8 y;
@@ -164,8 +164,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	INT4 psdTempLength;
 	INT4 windowPSDLength;
 	INT4 filterLength;
-	INT4 numPointInf;
-	INT4 numPointSup;
+	INT4 numFMin;
+	INT4 numFMax;
 	LALWindowParams winparPSD;
 	AverageSpectrumParams specparPSD;
 	REAL4FrequencySeries psdTempOne;
@@ -261,7 +261,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* open output file */
 	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
-			ifoOne, ifoTwo, (INT4)startTime, (INT4)stopTime);
+			ifoOne, ifoTwo, (INT4)startTime, (INT4)endTime);
 	if ((out = fopen(outputFilename, "w")) == NULL)
 	{
 		fprintf(stderr, "Can't open file for output...\n");
@@ -274,7 +274,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* get number of segments */
-	streamDuration = stopTime - startTime;
+	streamDuration = endTime - startTime;
 	numSegments = streamDuration / segmentDuration;
 	segmentShift = segmentDuration;
 	if (overlap_hann_flag)
@@ -421,9 +421,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* set parameters for PSD estimation */
 	overlapPSDLength = windowPSDLength / 2;
 	psdTempLength = (windowPSDLength / 2) + 1;
-	numPointInf = (UINT4)(fMin / deltaF);
-	numPointSup = (UINT4)(fMax / deltaF);
-	filterLength = numPointSup - numPointInf + 1;
+	numFMin = (UINT4)(fMin / deltaF);
+	numFMax = (UINT4)(fMax / deltaF);
+	filterLength = numFMax - numFMin + 1;
 
 	/* set metadata fields for PSDs */
 	strncpy(psdTempOne.name, "psdTempOne", LALNameLength);
@@ -877,7 +877,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* get appropriate band */
 		for (i = 0; i < filterLength; i++)
 		{
-			mask.data->data[i] = maskTemp->data[i + numPointInf];
+			mask.data->data[i] = maskTemp->data[i + numFMin];
 		}
 
 		if (verbose_flag)
@@ -999,10 +999,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		fprintf(stdout, "Looping over %d segments...\n", numSegments);
 	}
 
-	for (segLoop = 0; segLoop < numSegments; segLoop++)
+	for (j = 0; j < numSegments; j++)
 	{
 		/* define segment epoch */
-		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentShift);
+		gpsStartTime.gpsSeconds = startTime + (j * segmentShift);
 		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
 		segmentOne.epoch = gpsStartTime;
 		segmentTwo.epoch = gpsStartTime;
@@ -1010,16 +1010,16 @@ INT4 main(INT4 argc, CHAR *argv[])
 		if (verbose_flag)
 		{
 			fprintf(stdout, "Performing search on segment %d of %d...\n", \
-					segLoop + 1, numSegments);
+					j + 1, numSegments);
 		}
 
 		/* build small segment */
 		for (i = 0; i < segmentLength ; i++)
 		{
 			segmentOne.data->data[i] = streamOne.data->data[i + \
-				(segLoop * segmentShift * resampleRate)];
+				(j * segmentShift * resampleRate)];
 			segmentTwo.data->data[i] = streamTwo.data->data[i + \
-				(segLoop * segmentShift * resampleRate)];
+				(j * segmentShift * resampleRate)];
 		}
 
 		/* simulate signal */
@@ -1093,8 +1093,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* reduce to the optimal filter frequency range */
 		for (i = 0; i < filterLength; i++)
 		{
-			psdOne.data->data[i] = psdTempOne.data->data[i + numPointInf];
-			psdTwo.data->data[i] = psdTempTwo.data->data[i + numPointInf];
+			psdOne.data->data[i] = psdTempOne.data->data[i + numFMin];
+			psdTwo.data->data[i] = psdTempTwo.data->data[i + numFMin];
 		}
 
 		/* output the results */
@@ -1128,8 +1128,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		responseTwo.epoch = gpsCalTime;
 		for (i = 0; i < filterLength; i++)
 		{
-			responseOne.data->data[i] = responseTempOne.data->data[i + numPointInf];
-			responseTwo.data->data[i] = responseTempTwo.data->data[i + numPointInf];
+			responseOne.data->data[i] = responseTempOne.data->data[i + numFMin];
+			responseTwo.data->data[i] = responseTempTwo.data->data[i + numFMin];
 		}
 
 		/* output the results */
@@ -1345,11 +1345,49 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 't':
 				/* start time */
 				startTime = atoi(optarg);
+
+				/* check */
+				if (startTime < 441217609)
+				{
+					fprintf(stderr, "Invalid argument to --%s:\n" \
+							"GPS start time is prior to 1 January 1994 00:00:00 UTC " \
+							"(%d specified)\n", long_options[option_index].name, \
+							(INT4)startTime);
+					exit(1);
+				}
+				if (startTime > 999999999)
+				{
+					fprintf(stderr, "Invalid argument to --%s:\n" \
+							"GPS start time is after 14 September 2011 01:46:26 UTC " \
+							"(%d specified)\n", long_options[option_index].name, \
+							(INT4)startTime);
+					exit(1);
+				}
+
 				break;
 
 			case 'T':
 				/* stop time */
-				stopTime = atoi(optarg);
+				endTime = atoi(optarg);
+
+				/* check */
+				if (endTime < 441217609)
+				{
+					fprintf(stderr, "Invalid argument to --%s:\n" \
+							"GPS end time is prior to 1 January 1994 00:00:00 UTC " \
+							"(%d specified)\n", long_options[option_index].name, \
+							(INT4)endTime);
+					exit(1);
+				}
+				if (endTime > 999999999)
+				{
+					fprintf(stderr, "Invalid argument to --%s:\n" \
+							"GPS end time is after 14 September 2011 01:46:26 UTC " \
+							"(%d specified)\n", long_options[option_index].name, \
+							(INT4)endTime);
+					exit(1);
+				}
+
 				break;
 
 			case 'l':
@@ -1505,7 +1543,7 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --verbose                     verbose mode\n");
 	fprintf(stderr, " --debug-level LEVEL           set lalDebugLevel\n");
 	fprintf(stderr, " --gps-start-time SEC          GPS start time\n");
-	fprintf(stderr, " --gps-end-time SEC            GPS stop time\n");
+	fprintf(stderr, " --gps-end-time SEC            GPS end time\n");
 	fprintf(stderr, " --segment-duration SEC        segment duration\n");
 	fprintf(stderr, " --resample-rate F             resample rate\n");
 	fprintf(stderr, " --f-min F                     minimal frequency\n");
