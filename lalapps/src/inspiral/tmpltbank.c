@@ -795,8 +795,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'c':
         {
           /* create storage for the channel name and copy it */
-          optarg_len = strlen( optarg ) + 1;
           char *channamptr = NULL;
+          optarg_len = strlen( optarg ) + 1;
           fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
           memcpy( fqChanName, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
