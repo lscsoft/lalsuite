@@ -456,9 +456,9 @@ int main(int argc, char **argv)
                     break;
                 /* this is a LAL function which compares events */
                 LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
-                            tmpEvent, &accParams.match), &stat);
+                            tmpEvent, &accParams.difference), &stat);
 
-                if (accParams.match )
+                if (!accParams.difference)
                 {
                     if (coincidentEvents == NULL)
                     {
