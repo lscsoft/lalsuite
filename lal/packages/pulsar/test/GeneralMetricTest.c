@@ -21,8 +21,8 @@ GeneralMetricTest
 
 This program computes metric components using a metric function of the
 user's specification.  The ordering of the components is $(f_0,
-\alpha, \delta)$ for the unprojected metric, and $(\alpha, \delta)$
-for the metric with $f_0$ projected out.
+\alpha, \delta, f_1\ldots)$ for the unprojected metric, and $(\alpha,
+\delta, f_1\ldots)$ for the metric with $f_0$ projected out.
 
 With no options, this program displays metric components for a single point
 in parameter space for the default parameter values.
@@ -35,7 +35,6 @@ options are:
 \hspace{1cm} 2 = (CoherentMetric \& DTBaryPtolemaic), 
 
 \hspace{1cm} 3 = (CoherentMetric \& DTEphemeris).
-
 
 The \texttt{-b} option sets the beginning GPS time of integration to
 the option argument. (Default is $731265908$ seconds, chosen to lie
@@ -71,8 +70,9 @@ RA(min):RA(max):dec(min):dec(max).  (The default is the octant of the
 sky defined by $0 < {\rm RA} 90$ and $0< {\rm dec} 85$; this avoids the
 coordinate singularity at the poles.)
 
-
 The \texttt{-m} option sets the mismatch (default is $0.02$).
+
+The \texttt{-n} option sets the number of spindown parameters (default 0).
 
 The \texttt{-p} option is provided for users who wish to view the
 power mismatch contours provided by the \texttt{-x} option (see below)
@@ -126,12 +126,7 @@ xmgrace
 
 \subsubsection*{Notes}
 
-For most regions of parameter space the three metric codes seem to
-agree well.  However, for short (less than one day) runs, they are all
-capable of returning (unphysical) negative determinant metrics for
-points very close to the equator.
-
-
+The code does not yet really work with more than one spindown parameter.
 
 \vfill{\footnotesize\input{GeneralMetricTestCV}}
 
@@ -178,7 +173,7 @@ int main( int argc, char *argv[] ) {
                                     /* 1 = Ptolemetric */
                                     /* 2 = CoherentMetric + DTBarycenter */
                                     /* 3 = CoherentMetric + DTEphemeris  */
-  REAL8Vector     *tevlambda;       /* (f, a, d) input for CoherentMetric */
+  REAL8Vector     *tevlambda;       /* (f, a, d, ...) for CoherentMetric */
   MetricParamStruc tevparam;        /* Input structure for CoherentMetric */
   PulsarTimesParamStruc tevpulse;   /* Input structure for CoherentMetric */
                                     /* (this is a member of tevparam) */
@@ -223,7 +218,6 @@ int main( int argc, char *argv[] ) {
   f0 = 1000;
   numSpindown = 0;
 
-
   /* Parse options. */
   while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
     switch (opt) {
@@ -261,8 +255,7 @@ int main( int argc, char *argv[] ) {
       mismatch = atof( optarg );
       break;
     case 'n':
-      if( metric_code == 1 || metric_code == 2)
-        numSpindown = atoi( optarg );
+      numSpindown = atoi( optarg );
       break;
     case 'p':
       nongrace = 1;
@@ -280,7 +273,7 @@ int main( int argc, char *argv[] ) {
     }
   }
 
-  /* Allocate storage for output metric. */
+  /* Allocate storage. */
   metric = NULL;
   LALDCreateVector( &status, &metric, (3+numSpindown)*(4+numSpindown)/2 );
   if( status.statusCode )
@@ -290,7 +283,7 @@ int main( int argc, char *argv[] ) {
       return GENERALMETRICTESTC_EMEM;
     }
   tevlambda = NULL;
-  LALDCreateVector( &status, &tevlambda, 3 );
+  LALDCreateVector( &status, &tevlambda, 3+numSpindown );
   if( status.statusCode )
     {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
@@ -298,15 +291,26 @@ int main( int argc, char *argv[] ) {
       return GENERALMETRICTESTC_EMEM;
     }
 
-
-  /* Other constants */
-
-  /* Communal constants */
+  /* Position in parameter space (sky, frequency, spindowns) */
+  in.position.system = COORDINATESYSTEM_EQUATORIAL;
   in.position.longitude = tevlambda->data[1] = ra_point;
   in.position.latitude = tevlambda->data[2] = dec_point;
   in.maxFreq = tevlambda->data[0] = f0;
+  in.spindown = NULL;
+  if( numSpindown > 0 ) {
+    LALCreateVector( &status, &(in.spindown), numSpindown );
+    if( status.statusCode ) {
+      printf( "%s line %d: %s\n", __FILE__, __LINE__,
+              GENERALMETRICTESTC_MSGEMEM );
+      return GENERALMETRICTESTC_EMEM;
+    }
+    for( i=0; i<numSpindown; i++ ) {
+      in.spindown->data[i] = 0;
+      tevlambda->data[i+3] = 0;
+    }
+  }
 
-  /* Detector choice */
+  /* Detector site */
   if(detector==1)
     tevpulse.site = &lalCachedDetectors[LALDetectorIndexLHODIFF];
   if(detector==2)
@@ -317,32 +321,18 @@ int main( int argc, char *argv[] ) {
     tevpulse.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(detector==5)
     tevpulse.site = &lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-
   in.site = tevpulse.site;
   tevpulse.latitude = in.site->frDetector.vertexLatitudeRadians;
   tevpulse.longitude = in.site->frDetector.vertexLongitudeRadians;
-
-
-  /* Ptolemetric constants */
-  in.position.system = COORDINATESYSTEM_EQUATORIAL;
-  in.spindown = NULL;
-  if( numSpindown > 0 )
-    LALCreateVector( &status, &(in.spindown), numSpindown );
-  if( status.statusCode )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              GENERALMETRICTESTC_MSGEMEM );
-      return GENERALMETRICTESTC_EMEM;
-    }
 
   /* CoherentMetric constants */
   tevparam.constants = &tevpulse;
   tevparam.n = 1;
   tevparam.errors = 0;
   tevparam.start = 0; /* start time relative to epoch */
-  tevpulse.t0 = 0.0;  /* Irrelavant */
+  tevpulse.t0 = 0.0;  /* spindown definition time relative to epoch */
  
-  /* To fill in the fields tevpulse.tMidnight & tevpulse.tAutumn */
+  /* Fill in the fields tevpulse.tMidnight & tevpulse.tAutumn: */
   LALGetEarthTimes( &status, &tevpulse );
   if( status.statusCode )
     {
@@ -356,8 +346,6 @@ int main( int argc, char *argv[] ) {
    eph->ephiles.earthEphemeris = "earth00-04.dat";
    eph->ephiles.sunEphemeris = "sun00-04.dat";
    eph->leap = 13; /* right number for the years 2000-2004 */
-
-
    LALInitBarycenter( &status, eph );
    if( status.statusCode )
     {
@@ -365,35 +353,33 @@ int main( int argc, char *argv[] ) {
               GENERALMETRICTESTC_MSGESUB );
       return GENERALMETRICTESTC_ESUB;
     }
-
    tevpulse.ephemeris = eph;
 
    /* Choose CoherentMetric timing function */
-   if(metric_code==2) {
-     baryparams.epoch = tevpulse.epoch;
-     baryparams.latitude = tevpulse.latitude;
-     baryparams.longitude = tevpulse.longitude;
-     spinparams.epoch = tevpulse.epoch;
-     spinparams.t0 = tevpulse.t0;
-     compparams.epoch = tevpulse.epoch;
-     compparams.t1 = LALTBaryPtolemaic;
-     compparams.t2 = LALTSpin;
-     compparams.dt1 = LALDTBaryPtolemaic;
-     compparams.dt2 = LALDTSpin;
-     compparams.constants1 = &baryparams;
-     compparams.constants2 = &spinparams;
-     compparams.nArgs = 2;
-     if(numSpindown) {
-       tevparam.dtCanon = LALDTComp;
-       /*tevparam.constants = &compparams;*/
-     }
-     else {
-       tevparam.dtCanon=LALDTBaryPtolemaic;
-       /*tevparam.constants = &baryparams;*/
-     }
+   if( metric_code == 2 ) {
+     tevpulse.t1 = LALTBaryPtolemaic;
+     tevpulse.dt1 = LALDTBaryPtolemaic;
    }
-   if(metric_code==3)
-     tevparam.dtCanon = LALDTEphemeris;
+   if( metric_code == 3 ) {
+/* WE NEED TO WRITE SUCH A FUNCTION!
+     tevpulse.t1 = LALTEphemeris;
+ */
+     tevpulse.dt1 = LALDTEphemeris;
+   }
+   tevpulse.t2 = LALTSpin;
+   tevpulse.dt2 = LALDTSpin;
+   tevpulse.constants1 = &tevpulse;
+   tevpulse.constants2 = &tevpulse;
+   tevpulse.nArgs = 2;
+   if( numSpindown > 0 ) {
+     tevparam.dtCanon = LALDTComp;
+   }
+   else {
+     if( metric_code == 2 )
+       tevparam.dtCanon = LALDTBaryPtolemaic;
+     if( metric_code == 3 )
+       tevparam.dtCanon = LALDTEphemeris;
+   }
 
    /* Evaluate metric components. */
    if(metric_code==1)
