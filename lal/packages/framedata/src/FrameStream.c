@@ -797,8 +797,6 @@ LALFrCacheOpen(
   }
   ENDFAIL( status );
 
-  FrLibIni( NULL, stderr, 0 );
-
   stream->file = URLFrFileINew( stream->flist );
   if ( ! stream->file )
   {

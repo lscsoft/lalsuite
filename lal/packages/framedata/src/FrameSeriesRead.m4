@@ -95,6 +95,7 @@ FUNC (
   struct FrVect	*vect;
   UINT4		 need;
   UINT4		 noff;
+  UINT4          mult;
   UINT4		 ncpy;
   TYPE 		*dest;
   INT8		 tnow;
@@ -164,16 +165,18 @@ FUNC (
 
   ATTATCHSTATUSPTR( status );
 
+  /* mult is two if output series is complex */
+  mult = sizeof( *series->data->data ) / sizeof( *vect->FRDATA );
   dest = series->data->data;
   need = series->data->length;
-  if ( noff > vect->nData )
+  if ( noff * mult > vect->nData )
   {
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
   }
 
   /* number of points to copy */
-  ncpy = ( vect->nData - noff < need ) ? vect->nData - noff : need;
-  memcpy( dest, vect->FRDATA + noff, ncpy * sizeof( *series->data->data ) );
+  ncpy = ( vect->nData - noff < need * mult ) ? ( vect->nData - noff ) / mult : need;
+  memcpy( dest, vect->FRDATA + noff * mult, ncpy * sizeof( *series->data->data ) );
   dest += ncpy;
   need -= ncpy;
 
