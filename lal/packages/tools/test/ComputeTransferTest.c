@@ -52,11 +52,25 @@ int main( int argc, char *argv[] )
   static LALUnit units;
   REAL8 poles[] = { 0.3, 0.5 };
   REAL8 zeros[] = { 0.1, 0.2, 0.4 };
-  REAL8Vector pvec = { sizeof( poles ) / sizeof( *poles ), poles };
-  REAL8Vector zvec = { sizeof( zeros ) / sizeof( *zeros ), zeros };
+  REAL8Vector pvec;
+  REAL8Vector zvec;
   COMPLEX8 fdata[TransferLength];
-  COMPLEX8Vector fvec = { sizeof( fdata ) / sizeof( *fdata ), fdata };
-  COMPLEX8FrequencySeries fser = { "transfer", now, 0, df, units, &fvec };
+  COMPLEX8Vector fvec;
+  COMPLEX8FrequencySeries fser;
+
+  /* initialization */
+  pvec.length = sizeof( poles ) / sizeof( *poles );
+  pvec.data   = poles;
+  zvec.length = sizeof( zeros ) / sizeof( *zeros );
+  zvec.data   = zeros;
+  fvec.length = sizeof( fdata ) / sizeof( *fdata );
+  fvec.data   = fdata;
+  fser.epoch  = now;
+  fser.f0     = 0;
+  fser.deltaF = df;
+  fser.data   = &fvec;
+  fser.sampleUnits = units;
+  strncpy( fser.name, "transfer", sizeof( fser.name ) );
 
   /* parse options */
   program = *argv;
