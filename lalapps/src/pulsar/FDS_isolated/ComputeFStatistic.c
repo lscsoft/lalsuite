@@ -65,12 +65,13 @@ BOOLEAN FILE_FSTATS = 1;
 #define USE_BOINC 0
 #endif
 
-#ifndef BOINC_APP_GRAPHICS
+#if USE_BOINC
+
 #ifdef NO_BOINC_GRAPHICS
 #define BOINC_APP_GRAPHICS 0
-#else
 #endif
-#define BOINC_APP_GRAPHICS 1
+#ifndef BOINC_APP_GRAPHICS
+#define BOINC_APP_GRAPHICS 0
 #endif
 
 /* compress earth and sun files and output Fstats file, using zip.
@@ -78,9 +79,6 @@ BOOLEAN FILE_FSTATS = 1;
 #ifndef BOINC_COMPRESS
 #define BOINC_COMPRESS 0
 #endif
-
-
-#if USE_BOINC
 
 #ifndef BOINC_APP_GRAPHICS_LIB
 #define BOINC_APP_GRAPHICS_LIB "cfsBOINC.so"
