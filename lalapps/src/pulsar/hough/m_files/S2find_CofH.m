@@ -71,7 +71,8 @@ for bandnumber=1:Nbands;
        CH(h0num) = length(kkcount)/length(x);
        fprintf(fid1,' %d %d ', h0vect(h0num), CH(h0num) );
      end
-     
+     fprintf(fid1,' \n');
+
      %%%%%%%%%%%%%%%%%%%%Refining h0
      h0min= h0vect(nh0-1);
      h0max= 5.0*h0vect(nh0);
@@ -113,17 +114,16 @@ for bandnumber=1:Nbands;
          slope = (h02 - h01)/(CL2 -CL1);
          UL = h01 + slope * (0.95 - CL1);
       end
-    
+      fprintf(fid2,'%d \n', UL );
+ 
   else
     for h0num=1:nh0
-       fprintf(fid1,' 0.0 0.0 ' );
-       fprintf(fid2,' 0.0 0.0 ' );
+       fprintf(fid1,' 0.0 0.0 ' );   
     end
+    fprintf(fid2,' 0.0 0.0 0.0 \n' );
+    fprintf(fid1,' \n');
   end
-
-  fprintf(fid1,' \n');
-  fprintf(fid2,'%d \n', UL );
-   
+ 
 end
 
  fclose(fid1);
