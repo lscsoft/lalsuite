@@ -63,7 +63,7 @@ LALFindChirpCreateCoherentInput(
      LALStatus                  *status,
      COMPLEX8TimeSeries         **coherentInputData,
      COMPLEX8TimeSeries         *input,
-     SnglInspiralTable          *tmplt,
+     SnglInspiralTable          *templt,
      REAL4                      coherentSegmentLength,/*in seconds*/
      INT4                       corruptedDataLength /*in timepoints */
      )
@@ -84,6 +84,8 @@ LALFindChirpCreateCoherentInput(
   INT4                     cohSegStart = 0;
   INT4                     nonCorruptEnd = 0;
   INT4                     nonCorruptStart = 0;
+  INT4                     overlap         = 0;
+  INT4                     fullCohSegLength = 0;
 
   INITSTATUS( status, "LALFindChirpCreateCoherentInput",
 	      COHERENTINSPIRALINPUTC );
@@ -105,9 +107,9 @@ LALFindChirpCreateCoherentInput(
   ASSERT( input->data->length, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that a valid snglInspiralTable is input */
-  ASSERT( tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( tmplt->end_time.gpsSeconds > 0, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( tmplt->end_time.gpsNanoSeconds >= 0, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( templt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( templt->end_time.gpsSeconds > 0, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( templt->end_time.gpsNanoSeconds >= 0, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check for valid lengths */
   ASSERT( coherentSegmentLength > 0, status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
@@ -116,8 +118,8 @@ LALFindChirpCreateCoherentInput(
 
   /* Get necessary info from input structures */
 
-  end_time = tmplt->end_time;
-  eventID  = tmplt->event_id->id;
+  end_time = templt->end_time;
+  eventID  = templt->event_id->id;
   numPoints = input->data->length;
   cohSegLength = coherentSegmentLength;
   inputEpochSeconds = input->epoch.gpsSeconds;
@@ -139,7 +141,6 @@ LALFindChirpCreateCoherentInput(
       cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
 	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
 
-      INT4 fullCohSegLength = 0;
       fullCohSegLength = 2*cohSegLength/deltaT;
 
       LALCCreateVector(status->statusPtr, &(cohInputData->data), fullCohSegLength);
@@ -165,9 +166,6 @@ LALFindChirpCreateCoherentInput(
       cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
 	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
 
-      INT4 overlap          = 0;
-      INT4 fullCohSegLength = 0;
-
       overlap = cohSegEnd - nonCorruptEnd;
       fullCohSegLength = 2*cohSegLength/deltaT - overlap;
 
@@ -188,9 +186,6 @@ LALFindChirpCreateCoherentInput(
 
       cohInputData = *coherentInputData = (COMPLEX8TimeSeries *)
 	LALCalloc(1, sizeof(COMPLEX8TimeSeries) );
-
-      INT4 overlap          = 0;
-      INT4 fullCohSegLength = 0;
 
       overlap = nonCorruptStart - cohSegStart;
       fullCohSegLength = 2*cohSegLength/deltaT - overlap;
