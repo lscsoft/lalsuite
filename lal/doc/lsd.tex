@@ -82,7 +82,14 @@ and Members of the LSC}
 % The table of contents.
 \tableofcontents
 
-\chapter{Preface to the first edition:}
+
+\chapter{Preface}
+
+\bigskip
+{\bf {\Huge{Preface to the first edition:}}}
+
+\medskip
+\noindent
 The formal document governing the LAL-code and documentation is the
 {\bf LIGO Data Analysis System Numerical Algorithms Library
 Specification and Style Guide}
@@ -109,14 +116,15 @@ the documentation of the LAL code itself.
 
 \medskip
 \noindent
-The first edition of the
+By necessity, the first edition of the
 {{\textcolor{red}{\bf L}} {\textcolor{green}{\bf S}} {\textcolor{blue}{\bf D}} }
-contained a lot of instructions specifying the layout of the
-documentation and code; however many of these rules have migrated
-to the LLAL-Spec itself, and thus there is less need for the such
-long list of rules.  Furthermore, now there is a much larger body of
-example code  to help guide people in how to follow the LAL
-rules.  Therefore Part I of this new edition of the 
+contained long lists of instructions that specified the layout
+of the documentation and code; however many of these rules have
+migrated to the LAL-Spec itself, and thus there is less need for
+such rules.  Furthermore, now there is a much
+larger body of example code  to help guide people in how to
+follow the LAL rules.  Therefore Part I of this new edition of
+the 
 {{\textcolor{red}{\bf L}} {\textcolor{green}{\bf S}} {\textcolor{blue}{\bf D}} }
 is considerably shorter than its predessor.
 
@@ -138,6 +146,9 @@ An up to date release  of the LAL -- and a wealth of other information
     \item[$\bullet$ ]  {\bf Current distribution"} You can can click
                        to down load the tar ball with all the code.
     \vspace*{-0.051in}
+    \item[$\bullet$ ] {\bf Report a bug:}  You can click to enter
+                      the LAL bug reporting system.
+    \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf LAL software librarian:}  You can click to
                       email the librarian.
     \vspace*{-0.051in}
@@ -149,8 +160,9 @@ An up to date release  of the LAL -- and a wealth of other information
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf The CVS tree:}  There are instructions
                       on how to download the latest version of
-                      LAL from the cvs.
-
+                      LAL from the cvs. {\bf Installation
+                      instructions} can be found in the lal
+                      directory in a file called {\tt INSTALL}
     \vspace*{-0.051in}
     \item[$\bullet$]  {\bf Previous releases of LAL:} If you want an older 
                       version for sentimental reasons, you can find it here.
@@ -179,36 +191,6 @@ An up to date release  of the LAL -- and a wealth of other information
     \end{itemize} 
 \end{itemize}
 
-\section{Version control}
-
-As required by the LAL-Spec, the LAL is kept in a CVS repository, but,
-at present, the Software Librarian has the only key.  Individual users
-can only ``check in'' code by sending it to him; however they do have
-easy access to the latest ``Librarian-approved'' code from the CVS
-tree on the web page. (See above.)
-
-We are aware that with this policy their is a danger of having people
-working on the same code at the same time, and, therefore, we may change 
-the policy in the future. To date, this hasn't been a problem, and we
-have sound reasons for handling the CVS repository this way.  It is
-important that the code in the repository reflect the software
-standard as closely as possible.  Since the standard is new, changing,
-and sometimes unclear, we feel it is a good policy to have the
-Librarian look over the code submissions before they become publicly
-available and possibly imitated.
-
-Another reason for limiting user access to the CVS is portability of
-the code.  Thus far, the LAL librarian has been fastidious in making
-sure that all the code in  the LAL compiles and runs on almost any
-architecture.  For now, we would like to maintain this portability,
-and this is easier to do incrementally from the start, rather than
-trying to fix a big mess later.
-
-\section{Installing LAL on your machine}
-
-When you down load the LAL package, you will find the installation
-instructions in the file {\tt /lal/INSTALL}.
-
 \chapter{Notes about coding}
 \label{c:CodingNotes}
 
@@ -235,9 +217,9 @@ Please contact the Librarian.
 
 \bigskip
 
-{\noindent \bf Defining the RCS ID string:}  The LAL-Spec says this
-must be done in all header, module and test files. To do this, you
-must use the macro:
+{\noindent \bf Defining the RCS ID string:}  The LAL-Spec 
+requires all header, module and test files to define the
+RCS ID String with the following macro: 
 \begin{verbatim}
           NRCSID(LALTEMPLATEH,"$Id$");
 \end{verbatim}
@@ -417,34 +399,18 @@ more mature and some of it starts to perform highly integrated tasks,
 it will be necessary for coders to have quick access to the entire
 body of documentation.
 
-{\bf Documentation for a single package:} In the documentation
-directory within each package there will be a file called {\tt
-main.tex}. The contents of which are essentially identical in each
-package. For example, in a package called {\tt samplepackage} the
-following file ({\tt main.tex}) must be in the directory {\tt
-/lal/packages/samplepackage/doc/}
-\begin{verbatim}
-     \documentclass[oneside]{book}
-     \usepackage{../lal,hyperref,color,chapterbib,fancyhdr,makeidx}
-
-     ... the rest of the preamble
-
-     \makeindex
-     \begin{document}
-     \tableofcontents
-     
-     % This is the only line that will change from package to package.
-     \include{samplepackage}
-     
-     \printindex
-     \end{document}
-\end{verbatim}
-
-The guts of the documentation for this package should reside in the
-file that is \verb@\include{}@ed  into  this file (e.g. {\tt
-/lal/packages/samplepackage/doc/samplepackage.tex}).  This file may
+{\bf Documentation for a single package:} 
+The guts of the documentation for a package (e.g. {\tt sample}) should reside in the
+file {\tt /lal/packages/samplepackage/doc/sample.tex}.  
+This file may
 itself have many \verb@\input{}@ commands in it to include files that
 were auto extracted from the source-code files by {\tt laldoc}.
+
+When LAL is built, the file  {\tt sample.tex}  will be
+automatically included in the file {\tt main.tex} to build the
+stand alone documentation  {\tt main.pdf} for this (or any
+package). In other words, the file  {\tt main.pdf} in any {\tt
+lal/package/doc} is the documentation for that package.
 
 One problem you can have when you build the documentation of a single
 package is that if their are references (\verb@\ref{}@'s)  to objects
@@ -470,7 +436,7 @@ We need both so we can build the documentation either with
 
 The syntax to use for putting in the figure should be something like this
 \begin{verbatim}
-\noindent\includegraphics[width=0.9\linewidth,angle=0]{MyHeaderFileNameMyFig}
+\resizebox{0.5\textwidth}{!}{\includegraphics{myHeaderFileNameMyFig}}
 \end{verbatim}
 Note. Don't include the extension on the figure file name in
 the \verb@\includegraphics[]{}@ command. If you leave the extension off, 
@@ -489,8 +455,10 @@ name-space collision.
 \subsection{Autodocumentation requirements}
 There is an automatic documentation tool supplied with the LAL.  To
 what extent the coders wish to use the autodocmentation system, is
-largely left up to their judgment and patience. However, there are a
-few things that must be auto-documented.
+largely left up to their judgment and patience. However, the
+LAL-Spec require several items to be auto-extracted from the code
+to include the documentation. See the LAL-Spec for the official
+list, but here are some examples
 
 \begin{itemize}
   \item[$\bullet$] {\bf Function Prototypes} 
@@ -717,8 +685,9 @@ These four-step instructions are also outlined in the file
 \begin{itemize}
 \item[(1)] Copy the executable ({\tt /lal/doc/laldoc/laldoc}) 
 and the  sample input file ({\tt /lal/doc/laldoc/LalDocDemo.h}) to an
-empty  {\tt /junk} directory. 
-\item[(2)] In {\tt /junk} run the command ``\verb@./laldoc LalDocDemo.h Errors.out@'' 
+empty  {\tt /home/alice/junk} directory. 
+\item[(2)] In {\tt /home/alice/junk} 
+run the command ``\verb@./laldoc LalDocDemo.h Errors.out@'' 
 \item[(3)] {\LaTeX} the file {\texttt {LalDocDemo\_LaTeX\_This\_File.tex}}.
 \item[(4)] Read the  document created in step 3
 ({\texttt {LalDocDemo\_LaTeX\_This\_File.dvi}}) . It will explain how
