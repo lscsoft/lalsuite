@@ -39,7 +39,7 @@ Basically, you can provide all the arguments from the InspiralTemplate structure
 
 NRCSID( LALINSPIRALTESTONEC, "$Id$" );
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=7;
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
@@ -101,23 +101,19 @@ int main (int argc , char **argv) {
   InspiralTemplate params; /* the parameters */
   REAL8 dt;                /* some sampling */
   UINT4 n, i;
+  InspiralInit paramsInit;
 
   RealFFTPlan *revp =NULL;
 
   COMPLEX8Vector *Signal1 =NULL;
 
   OtherParamIn otherIn; /* some extra parameters to parse*/
- 
-
 
   program = *argv;
 
-
   /* ---  we start real computation here --- */
-
   otherIn.PrintParameters = 0; /* by default we don't print the parameters */
   ParseParameters(argc, argv, &otherIn);/*let's parse user parameters     */
-
 
 
   SUB( LALInspiralITStructureSetDefault(&status, &params),
@@ -125,30 +121,24 @@ int main (int argc , char **argv) {
   
   SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params), 
        &status);/*parse user inspiral template parameters */
-
-  SUB( LALInspiralParameterCalc(&status, &params), 
-       &status);
-
-
-  /*  params.signalAmplitude = 4. * LAL_C_SI/(LAL_PC_SI * 1e6 *params.distance )
-    * pow(LAL_MTSUN_SI,5./3.)
-    * pow(params.totalMass ,5./3.)
-    * params.eta;
-    */
-
-  if (otherIn.PrintParameters)
-    SUB( LALInspiralITStructurePrint(&status, params), 
-	 &status); 
+ 
+  SUB(  LALInspiralInit(&status, &params, &paramsInit), &status);
+  /*  params.signalAmplitude =1;*/
+  
+  
+  if (otherIn.PrintParameters){
+    SUB( LALInspiralITStructurePrint(&status, params),  &status); 
+  }
      
   /* force those parameters */
-  params.ieta       = 0;  /* is it 1 or 0 ?*/
 
-  dt = 1./params.tSampling;
-  
-  SUB(  LALInspiralWaveLength(&status, &n, params), &status);
-  SUB(  LALInspiralParameterCalc(&status, &params), &status);
-  
+  dt 	= 1./params.tSampling;
+  n 	= paramsInit.nbins;   
 
+  if (n<=10) {  
+      LALWarning(&status, "#nothing to compute; length is too short. You might reduce the fLower or masses values.");
+    return 0; 
+  }
   
   if (otherIn.PrintParameters)
     {
@@ -156,13 +146,12 @@ int main (int argc , char **argv) {
       fprintf(stderr, "#Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);  
       fprintf(stderr,"#size in bins %d\n",n);
       fprintf(stderr,"#size in seconds %lf\n",params.tC);
-
     }
   
   SUB( LALSCreateVector(&status, &(signal1), n), &status);
   SUB( LALSCreateVector(&status, &(signal2), n), &status);
      
-
+  params.ieta = 0;  /*should be zero or 1 ?? */
   /* */
   
   switch (params.approximant){		   
@@ -188,11 +177,6 @@ int main (int argc , char **argv) {
     SUB( LALCDestroyVector (&status, &Signal1), &status);
     printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
     SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
-
-    /*    SUB( LALREAL4VectorFFT(&status, signal2, signal1, revp), &status);
-
-    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
-    */
     break;
   case SpinTaylorT3:
   case TaylorT1:
@@ -201,8 +185,20 @@ int main (int argc , char **argv) {
   case EOB:
   case PadeT1:
     SUB(LALInspiralWave(&status, signal2, &params), &status);
-
-    printf_timeseries(signal2->length, signal2->data, dt, params.startTime);        
+    if (status.statusCode == 0){
+      printf_timeseries(signal2->length, signal2->data, dt, params.startTime);   	  
+      SUB( LALSDestroyVector(&status, &signal2), &status);
+      SUB( LALSDestroyVector(&status, &signal1), &status);
+    }
+    else 
+      {
+	SUB( LALSDestroyVector(&status, &signal1), &status);
+	SUB( LALSDestroyVector(&status, &signal2), &status);	
+      }
+    printf("%lf %d %lf %lf %lf\n",
+	   params.tC*params.tSampling,
+	   n ,
+	   params.totalMass,params.eta, params.fLower);
     break;
   case PadeF1:
   case SpinTaylor:
@@ -211,8 +207,6 @@ int main (int argc , char **argv) {
 	    break;
   }
      
-  SUB( LALSDestroyVector(&status, &signal2), &status);
-  SUB( LALSDestroyVector(&status, &signal1), &status);
   
   LALCheckMemoryLeaks();
   return 0;
