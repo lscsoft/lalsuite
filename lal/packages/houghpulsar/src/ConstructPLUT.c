@@ -155,7 +155,6 @@ More detailed documentation can be found in the source code itself.
  *    c. LAL includes
  */
 
-
 #include <lal/LUT.h>
 
 
@@ -1901,6 +1900,7 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
   REAL8 yupper;
+  REAL4 kkk;
  
   if(xc < patch->xMin) return;  /* non optimized */
   
@@ -1920,8 +1920,11 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
   
   
+  kkk = (ylower/patch->deltaY - 0.5);
+  kkk += 0.5*patch->ySide;
+  yymin  = ceil( kkk );
+   /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
 
-  yymin  = ceil(ylower/patch->deltaY+patch->ySide/2.-0.5);
   
 
   /*********************************************************/
@@ -2036,6 +2039,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   INT4 yymin,yymax;
   INT4 noIn, noIn1, noIn2;
   REAL8 ylower;
+  REAL4 kkk;
   REAL8 yupper;
  
   if( xc > patch->xMax ) return;  /* non optimized */
@@ -2054,9 +2058,11 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   /* convert to the value of the 'near' y-pixel */ 
   yymax  = floor(yupper/patch->deltaY+patch->ySide/2.-0.5);
  
-  
-  yymin  = ceil(ylower/patch->deltaY+patch->ySide/2.-0.5);
-  
+  kkk = (ylower/patch->deltaY - 0.5);
+  kkk += 0.5*patch->ySide;
+  yymin  = ceil( kkk );
+   /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
+ 
   
   /*********************************************************/
   /* looking at the upper-right quadrant */
