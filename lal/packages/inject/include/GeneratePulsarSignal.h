@@ -52,6 +52,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ENOISEDELTAF	10
 #define GENERATEPULSARSIGNALH_ENOISEBAND	11
 #define GENERATEPULSARSIGNALH_ENOISEBINS	12
+#define GENERATEPULSARSIGNALH_ECOPYSIZE		13
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -65,6 +66,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 
 /*************************************************** </lalErrTable> */
 
@@ -125,14 +127,11 @@ typedef struct {
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
-void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
-void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
 
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 
-/* debug- und testing functions */
+/* interanl debug- und testing functions */
 void dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);

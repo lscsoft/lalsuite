@@ -14,7 +14,9 @@ Module to generate simulated pulsar-signals.
 \idx{LALSignalToSFTs()}
 \idx{LALConvertSSB2GPS()}
 \idx{LALConvertGPS2SSB()}
+\idx{LALCreateSFTtype()}
 \idx{LALCreateSFTVector()}
+\idx{LALDestroySFTtype()}
 \idx{LALDestroySFTVector()}
 \idx{LALDestroyTimestampVector()}
 
@@ -47,10 +49,13 @@ detector-site (\verb+params->site+) and the ephemeris-data
 (\verb+params->ephemerides+)are used from the
 \verb+PulsarSignalParams+-structure.  
 
-\item Furthermore, \verb+LALCreateSFTVector()+ and\verb+LALDestroySFTVector()+ 
-respectively allocate and free an SFT-vector. 
-Similarly, \verb+LALDestroyTimestampVector()+ frees a bunch of
-GPS-timestamps.
+\item The helper functions \verb+LALCreateSFTtype()+,
+\verb+LALDestroySFTtype()+, \verb+LALCreateSFTVector()+
+and\verb+LALDestroySFTVector()+  respectively allocate and free an
+SFT-structs and SFT-vectors. 
+Similarly, \verb+LALCreateTimestampVector()+ and
+\verb+LALDestroyTimestampVector()+ allocate and free a bunch of  
+GPS-timestamps respectively.
 
 \subsubsection*{Algorithm}
 
@@ -578,6 +583,41 @@ LALConvertSSB2GPS (LALStatus *stat,
 
 
 
+
+/*----------------------------------------------------------------------
+ * create one SFT-struct
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALCreateSFTtype (LALStatus *stat, 
+		  SFTtype **output, 	/* output: allocated SFT-struct */
+		  UINT4 SFTlen)		/* number of frequency-bins */
+{ /* </lalVerbatim> */
+  SFTtype *sft = NULL;
+
+  INITSTATUS( stat, "LALCreateSFTtype", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (output != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*output == NULL, stat, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+
+  sft = LALCalloc (1, sizeof(*sft) );
+  if (sft == NULL) {
+    ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
+  }
+  LALCCreateVector (stat->statusPtr, &(sft->data), SFTlen);
+  BEGINFAIL (stat) { 
+    LALFree (sft);
+  } ENDFAIL (stat);
+
+  *output = sft;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALCreateSFTVector() */
+
+
 /*----------------------------------------------------------------------
  * create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins 
  *----------------------------------------------------------------------*/
@@ -592,7 +632,7 @@ LALCreateSFTVector (LALStatus *stat,
   SFTVector *vect;	/* vector to be returned */
   COMPLEX8Vector *data = NULL;
 
-  INITSTATUS( stat, "CreateSFTVector", GENERATEPULSARSIGNALC);
+  INITSTATUS( stat, "LALCreateSFTVector", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   ASSERT (output != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
@@ -634,6 +674,33 @@ LALCreateSFTVector (LALStatus *stat,
 } /* LALCreateSFTVector() */
 
 /*----------------------------------------------------------------------
+ * destroy an SFT-struct
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALDestroySFTtype (LALStatus *stat, 
+		   SFTtype **sft)
+{ /* </lalVerbatim> */
+
+  INITSTATUS( stat, "LALDestroySFTtype", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT (sft != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*sft != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  
+
+  LALCDestroyVector (stat->statusPtr, &((*sft)->data) );
+  LALFree ( (*sft) );
+
+  *sft = NULL;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALDestroySFTVector() */
+
+
+/*----------------------------------------------------------------------
  * destroy an SFT-vector
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
@@ -643,7 +710,7 @@ LALDestroySFTVector (LALStatus *stat,
 { /* </lalVerbatim> */
   UINT4 i;
 
-  INITSTATUS( stat, "DestroySFTVector", GENERATEPULSARSIGNALC);
+  INITSTATUS( stat, "LALDestroySFTVector", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
 
   ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
@@ -666,6 +733,75 @@ LALDestroySFTVector (LALStatus *stat,
 
 
 /*----------------------------------------------------------------------
+ *  copy an entire SFT-type into another
+ *  we require the destination to have at least as many frequency-bins
+ *  as the source, but it can have less..
+ *----------------------------------------------------------------------*/
+void
+LALCopySFTtype (LALStatus *stat, SFTtype *dest, const SFTtype *src)
+{
+
+  INITSTATUS( stat, "LALDestroySFTVector", GENERATEPULSARSIGNALC);
+
+  ASSERT (dest,  stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (dest->data,  stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (src, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (src->data, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+
+  /* some hard requirements */
+  if ( dest->data->length < src->data->length ) {
+    ABORT (stat, GENERATEPULSARSIGNALH_ECOPYSIZE, GENERATEPULSARSIGNALH_MSGECOPYSIZE);
+  }
+  
+  /* copy head */
+  strcpy (dest->name, src->name);
+  dest->epoch = src->epoch;
+  dest->f0 = src->f0;
+  dest->deltaF = src->deltaF;
+  dest->sampleUnits = src->sampleUnits;
+  /* copy data */
+  memcpy (dest->data->data, src->data->data, dest->data->length);
+  
+  RETURN (stat);
+
+} /* LALCopySFTtype() */
+
+
+
+/*----------------------------------------------------------------------
+ * allocate a LIGOTimeGPSVector
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALCreateTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect, UINT4 length)
+{ /* </lalVerbatim> */
+  LIGOTimeGPSVector *out = NULL;
+
+  INITSTATUS( stat, "LALCreateTimestampVector", GENERATEPULSARSIGNALC);
+
+  ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*vect == NULL, stat, GENERATEPULSARSIGNALH_ENONULL,  GENERATEPULSARSIGNALH_MSGENONULL);
+
+  out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
+  if (out == NULL) {
+    ABORT (stat,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
+  }
+  out->length = length;
+  out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
+  if (out->data == NULL) {
+    LALFree (out);
+    ABORT (stat,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
+  }
+
+  *vect = out;
+
+  RETURN (stat);
+  
+} /* LALDestroyTimestampVector() */
+
+
+
+/*----------------------------------------------------------------------
  * de-allocate a LIGOTimeGPSVector
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
@@ -674,8 +810,7 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
 { /* </lalVerbatim> */
   UINT4 i;
 
-  INITSTATUS( stat, "DestroyTimestampVector", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
+  INITSTATUS( stat, "LALDestroyTimestampVector", GENERATEPULSARSIGNALC);
 
   ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
@@ -687,7 +822,6 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
   
   *vect = NULL;
 
-  DETATCHSTATUSPTR( stat );
   RETURN (stat);
   
 } /* LALDestroyTimestampVector() */
