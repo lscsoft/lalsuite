@@ -772,9 +772,12 @@ main (INT4 argc, CHAR **argv )
   else{										 /* --- the real code is here --- */
     /* --- The main loop --- */
 
+    if (otherIn.PrintBankOverlap) /*we just create the empty file here if requested why ?? */
+      {
 	Foutput = fopen("FF.sr4","w");
 	fclose(Foutput); 
-	
+      }
+    
     while (++ntrials <= otherIn.ntrials) 
       {
         randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
