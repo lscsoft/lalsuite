@@ -11,6 +11,10 @@ TODO (ComputeFStatistic-related)
 
 * work on more general tiling
 
+* modify ComputeFStat so that the search parameters can be refered to
+  any arbitrary epoch and not just to the epoch of the first sample of the
+  analyzed data set (as is now).
+
 
 done
 ----
