@@ -97,7 +97,7 @@ When the DAG has been created successfully, a message will be displayed
 describing what needs to be done inorder to run the analysis pipeline at
 a LSC DataGrid Site.
 
-\prog{LSCdataFind} works by querying the LDRdataFind Server for the
+\prog{LSCdataFind} works by querying the datafind server for the
 location of the requested data, this requires the user running
 LSCdataFind to have a valid grid proxy. Therefore if the DAG includes
 any datafind nodes, a valid grid proxy must be available prior to the
@@ -114,6 +114,51 @@ grid certificates pass phase. The default duration for the proxy to be
 valid is 12 hours, if a longer duration is required it can be increased
 by appending ``\option{-hours}~\parm{HOURS}'' to the call to
 \prog{grid-proxy-init}.
+
+So that LSCdataFind knows what datafind server to query the
+\texttt{LSC\_DATAFIND\_SERVER} environment variable must be set to the
+address of the datafind server to use. For example, if the pipeline is
+being run on the UWM Medusa cluster the relevant datafind server is
+shown below, for bash:
+
+\begin{verbatim}
+> export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+\end{verbatim}
+
+\noindent or for csh:
+
+\begin{verbatim}
+> setenv LSC_DATAFIND_SERVER dataserver.phys.uwm.edu
+\end{verbatim}
+
+Now that everything is setup, the DAG is ready to be submitted to condor
+for execution. This is achieved with the following command.
+
+\begin{verbatim}
+> condor_submit_dag example_S3_H1L1.dag
+\end{verbatim}
+
+The progress of the DAG can be monitored by studying the DAGman output
+file, \texttt{example\_S3\_H1L1.dag.dagman.out}. This contains
+information regarding the current state of the search, what jobs have
+been completed sucessfully, those that have failed, and those that fail
+to run due to unsatisfied dependancies. Once the DAG has completed, if
+and jobs have failed, a rescue DAG will be written out. This can be then
+submitted to the cluster in the same way as before, the difference is
+that this will only attempt to run jobs that previously failed.
+
+NOTE: currently there is a problem with running a large number of
+stochastic jobs at any one time. As condor is designed to run jobs that
+take over an hour to complete and the average runtime for a stochastic
+job is a matter a minutes, running a large number of stocahastic jobs at
+the same time will greatly reduce the computational efficiency of a
+cluster. Whilst this problem it resolved it is recommended to submit the
+DAG with the following command, limiting the total number of jobs to run
+to a maximum of 6:
+
+\begin{verbatim}
+> condor_submit_dag -maxjobs 6 example_S3_H1L1.dag
+\end{verbatim}
 
 \subsection{Example}
 
