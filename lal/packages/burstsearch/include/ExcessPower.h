@@ -26,6 +26,8 @@ NRCSID (EXCESSPOWERH, "$Id$");
 #define EXCESSPOWERH_EORDER       32
 #define EXCESSPOWERH_ENONNULL     64
 #define EXCESSPOWERH_ETILES       65
+#define EXCESSPOWERH_EDELF        128
+
 
 #define EXCESSPOWERH_MSGENULLP    "Null pointer"
 #define EXCESSPOWERH_MSGEPOSARG   "Arguments must be non-negative"
@@ -35,9 +37,8 @@ NRCSID (EXCESSPOWERH, "$Id$");
 #define EXCESSPOWERH_MSGEORDER    "Routines called in illegal order"
 #define EXCESSPOWERH_MSGENONNULL  "Null pointer expected"
 #define EXCESSPOWERH_MSGETILES    "Malloc failed while assigning memory for a tile"
+#define EXCESSPOWERH_MSGEDELF     "Inconsistent deltaF in spectrum and data"
 /******** </lalErrTable> ********/
-
-
 
 typedef struct
 tagTFTile
