@@ -173,7 +173,7 @@ LALFindChirpInjectSignals (
       break;
     case 'L':
       *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
-      LALWarning( status, "computing waveform for Livingstone." );
+      LALWarning( status, "computing waveform for Livingston." );
       break;
     default:
       LALFree( detector.site );
