@@ -206,7 +206,10 @@ LALDestroyUserVars (LALStatus *stat)
     {
       /* is an allocated string here? */
       if ( (ptr->type == UVAR_STRING) && (*(CHAR**)(ptr->varp) != NULL) ) 
-	LALFree ( *(CHAR**)(ptr->varp) );
+	{
+	  LALFree ( *(CHAR**)(ptr->varp) );
+	  *(CHAR**)(ptr->varp) = NULL;		/* IMPORTANT: reset user-variable to NULL ! */
+	}
 
       /* free list-entry behind us (except for the head) */
       if (lastptr)
@@ -299,6 +302,14 @@ LALUserVarReadCmdline (LALStatus *stat,
   long_options[pos].has_arg = 0;
   long_options[pos].flag = 0;
   long_options[pos].val = 0;
+
+
+  /* NOTE: in case we get called several times, we have to make sure here that getopt() gets 
+   * properly reset/initialized. We do this using the (undocumented) feature of GNU getopt
+   * of setting optind to 0. As we're linking our private version of GNU getopt, this should be
+   * guaranteed to work.
+   */
+  optind = 0; 	/* reset getopt(), getopt_long() */
 
   /* parse the command-line */
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
