@@ -299,8 +299,8 @@ LALUserVarReadCmdline (LALStatus *stat,
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
-	ATTATCHSTATUSPTR (stat);
 	CHAR *helpstring = NULL;
+	ATTATCHSTATUSPTR (stat);
 	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
 	printf ("\n%s\n", helpstring);
 	LALFree (helpstring);
