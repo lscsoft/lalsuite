@@ -126,6 +126,8 @@ Approximant approximant;                /* waveform approximant         */
 
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
+CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
+CHAR   fileName[FILENAME_MAX];          /* name of output files         */
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 int    enableOutput     = -1;           /* write out inspiral events    */
@@ -267,6 +269,32 @@ int main( int argc, char *argv[] )
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
+
+  /* set the name of the output file */
+  if ( userTag && ifoTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s_%s-%d-%d", ifo, 
+	ifoTag, userTag, gpsStartTime.gpsSeconds, 
+	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+    }
+    else if ( userTag && !ifoTag )
+    {
+      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
+	userTag,  gpsStartTime.gpsSeconds, 
+	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
+    else if ( !userTag && ifoTag )
+    {
+      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL_%s-%d-%d", ifo, 
+	  ifoTag,  gpsStartTime.gpsSeconds, 
+	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+    }
+    else
+    {
+      LALSnprintf( fileName, FILENAME_MAX, "%s-INSPIRAL-%d-%d", ifo,
+	  gpsStartTime.gpsSeconds, 
+	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );     
+    }
 
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
@@ -1196,18 +1224,7 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    if ( userTag )
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.gwf",
-	  ifo, userTag, gpsStartTime.gpsSeconds,
-	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
-    else
-    {
-      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
-	  ifo, gpsStartTime.gpsSeconds,
-	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-    }
+    LALSnprintf( fname, sizeof(fname), "%s.gwf", fileName );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
@@ -1219,18 +1236,7 @@ cleanexit:
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  if ( userTag )
-  {
-    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.xml",
-        ifo, userTag, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-  }
-  else
-  {
-    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
-        ifo, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-  }
+  LALSnprintf( fname, sizeof(fname), "%s.xml", fileName );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
@@ -1414,6 +1420,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
+"  --ifo-tag STRING             set the ifotag to STRING - for file naming\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
 "\n"\
 "  --gps-start-time SEC         GPS second of data start time\n"\
@@ -1516,7 +1523,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"high-pass-order",         required_argument, 0,                'H'},
-    {"high-pass-attenuation",   required_argument, 0,                'I'},
+    {"high-pass-attenuation",   required_argument, 0,                'T'},
     {"frame-cache",             required_argument, 0,                'u'},
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
@@ -1526,6 +1533,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"ifo-tag",                 required_argument, 0,                'I'},
     {"version",                 no_argument,       0,                'V'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
@@ -1557,7 +1565,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:H:I:u:v:w:x:z:Z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:H:T:I:u:v:w:x:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -2052,7 +2060,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", highPassOrder );
         break;
 
-      case 'I':
+      case 'T':
         highPassAtten = (REAL4) atof( optarg );
         if ( highPassAtten < 0.0 || highPassAtten > 1.0 )
         {
@@ -2132,6 +2140,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
+
+      case 'I':
+	/* create storaged for the ifo-tag */
+	optarg_len = strlen( optarg ) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+	break;
 
       case 'V':
         /* print version information and exit */

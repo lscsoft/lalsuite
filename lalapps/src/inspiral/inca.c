@@ -53,6 +53,7 @@ RCSID("$Id$");
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING         set the process_params usertag to STRING\n"\
+"  --ifo-tag STRING          set the ifo-tag to STRING - for file naming\n"\
 "  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
 "  --gps-start-time SEC      GPS second of data start time\n"\
@@ -71,6 +72,8 @@ RCSID("$Id$");
 "  --kappa ERROR             set effective distance test kappa (default 0.01)\n"\
 "  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)\n"\
 "  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger\n"\
+"  --approximant APPROX      set approximant of the waveform to APPROX\n"\
+"                                 (TaylorF2|BCV)\n"\
 "  --dm mass                 mass coincidence window (default 0)\n"\
 "  --dpsi0 Dpsi0             psi0 coincidence window\n"\
 "  --dpsi3 Dpsi3             psi3 coincidence window\n"\
@@ -169,7 +172,8 @@ int main( int argc, char *argv[] )
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
-
+  CHAR *ifoTag = NULL;
+  
   CHAR  fileName[FILENAME_MAX];
   CHAR *trigBankFile = NULL;
   CHAR *xmlFileName;
@@ -241,6 +245,7 @@ int main( int argc, char *argv[] )
     {"slide-time-ns",           required_argument, 0,                'Y'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"ifo-tag",			required_argument, 0,		     'I'},
     {"help",                    no_argument,       0,                'h'}, 
     {"debug-level",             required_argument, 0,                'z'},
     {"version",                 no_argument,       0,                'V'},
@@ -298,7 +303,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:A:m:p:P:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -514,6 +519,14 @@ int main( int argc, char *argv[] )
             optarg );
         break;
 
+	case 'I':
+        /* create storage for the ifo-tag */
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+	ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       case 'T':
         optarg_len = strlen( optarg ) + 1;
         trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
@@ -574,6 +587,12 @@ int main( int argc, char *argv[] )
   if ( endCoincidence < 0 )
   {
     fprintf( stderr, "Error: --gps-end-time must be specified\n" );
+    exit( 1 );
+  }
+
+  if ( ! haveApprox )
+  {
+    fprintf( stderr, "--approximant must be specified\n" );
     exit( 1 );
   }
 
@@ -1301,15 +1320,42 @@ cleanexit:
     }
     else
     {
-      if ( userTag )
+      CHAR  thisIFO[LIGOMETA_IFO_MAX];
+      CHAR  otherIFO[LIGOMETA_IFO_MAX];
+      
+      strncpy( thisIFO, ifoName[j], LIGOMETA_IFO_MAX * sizeof(CHAR) );
+
+      if ( j == 0 )
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[j],
-            userTag, startCoincidence, endCoincidence - startCoincidence );
+	strncpy( otherIFO, ifoName[1], LIGOMETA_IFO_MAX * sizeof(CHAR) );	
+      }
+      else if ( j == 1 )
+      {
+	strncpy( otherIFO, ifoName[0], LIGOMETA_IFO_MAX * sizeof(CHAR) );
+      }
+      
+      if ( userTag && ifoTag )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s_%s-%d-%d.xml", 
+	    thisIFO, otherIFO, ifoTag, userTag, startCoincidence, 
+	    endCoincidence - startCoincidence );
+      }
+      else if ( userTag && !ifoTag )
+      {
+	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
+	    thisIFO, otherIFO, userTag, startCoincidence, 
+	    endCoincidence - startCoincidence );
+      }
+      else if ( !userTag && ifoTag )
+      {
+	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
+	    thisIFO, otherIFO, ifoTag, startCoincidence, 
+	    endCoincidence - startCoincidence );
       }
       else
       {
-        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
-            startCoincidence, endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", thisIFO,
+	    otherIFO, startCoincidence, endCoincidence - startCoincidence );
       }
 
       xmlFileName = fileName;
@@ -1422,6 +1468,7 @@ cleanexit:
   }
 
   if ( userTag ) free( userTag );
+  if ( ifoTag ) free( ifoTag );
 
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
