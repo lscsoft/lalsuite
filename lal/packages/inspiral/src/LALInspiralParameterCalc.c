@@ -132,7 +132,7 @@ LALInspiralParameterCalc (
  
    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT((INT4)params->massChoice <= 8, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice <= 9, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    totalMass 	= 0.0;
    ieta 	= params->ieta;
