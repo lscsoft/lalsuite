@@ -15,7 +15,7 @@ stacked pulsar searches.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "StackMetric.h"
+#include <lal/StackMetric.h>
 \end{verbatim}
 
 \noindent This header covers routines that determine the metric

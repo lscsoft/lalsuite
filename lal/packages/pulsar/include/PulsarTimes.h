@@ -13,7 +13,7 @@ a pulsar search.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "PulsarTimes.h"
+#include <lal/PulsarTimes.h>
 \end{verbatim}
 
 \noindent This header covers routines that computes time coordinate
@@ -122,6 +122,10 @@ routines that place different parameters in \verb@*variables@ and
 #define _PULSARTIMES_H
 
 #include <lal/LALStdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 NRCSID(PULSARTIMESH,"$Id$");
 
@@ -290,5 +294,9 @@ LALDTComp( LALStatus             *stat,
 	   REAL8Vector           *dtComp,
 	   REAL8Vector           *variables,
 	   PulsarTimesParamStruc *constants );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

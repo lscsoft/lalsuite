@@ -13,7 +13,7 @@ canonical time coordinate.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "Resample.h"
+#include <lal/Resample.h>
 \end{verbatim}
 
 \noindent One of the crucial problems in searching for

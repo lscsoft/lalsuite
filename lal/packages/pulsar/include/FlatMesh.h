@@ -13,7 +13,7 @@ constant parameter metrics.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "FlatMesh.h"
+#include <lal/FlatMesh.h>
 \end{verbatim}
 
 \noindent This header covers routines that lay out a mesh of points on
