@@ -44,3 +44,4 @@ parse_and_sort  LLO  RDS  $run
 parse_and_sort  LLO  full $run
 parse_and_sort  LHO  RDS  $run
 parse_and_sort  LHO  full $run
+parse_and_sort  NDAS RDS  $run
