@@ -115,7 +115,6 @@ static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
       return NULL;
     }
     proc->classe = FrProcDataDef();
-    proc->sampleRate = rate;
     proc->fShift = fshift;
     proc->data = vect;
     proc->next = frame->procData;
