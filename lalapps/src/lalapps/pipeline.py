@@ -812,7 +812,7 @@ class ScienceSegment:
     """
     return cmp(self.start(),other.start())
 
-  def make_chunks(self,length=0,overlap=0,play=0,sl=0):
+  def make_chunks(self,length=0,overlap=0,play=0,sl=0,excl_play=0):
     """
     Divides the science segment into chunks of length seconds overlapped by
     overlap seconds. If the play option is set, only chunks that contain S2
@@ -825,6 +825,8 @@ class ScienceSegment:
     overlap = overlap between chunks in seconds.
     play = only generate chunks that overlap with S2 playground data.
     sl = slide by sl seconds before determining playground data.
+    excl_play = exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
     """
     time_left = self.dur()
     start = self.start()
@@ -832,7 +834,8 @@ class ScienceSegment:
     while time_left >= length:
       middle = start + length / 2
       end = start + length
-      if (not play) or (play and (((end-sl-729273613) % 6370) < (600+length))):
+      if (not play) or (play and (((end-sl-excl_play-729273613) % 6370) < 
+        (600+length-2*excl_play))):
         self.__chunks.append(AnalysisChunk(start,end))
       start += increment
       time_left -= increment
@@ -956,19 +959,21 @@ class ScienceData:
         x = ScienceSegment(tuple([id,st,en,du]))
         self.__sci_segs.append(x)
 
-  def make_chunks(self,length,overlap,play,sl=0):
+  def make_chunks(self,length,overlap,play=0,sl=0,excl_play=0):
     """
     Divide each ScienceSegment contained in this object into AnalysisChunks.
     length = length of chunk in seconds.
     overlap = overlap between segments.
     play = if true, only generate chunks that overlap with S2 playground data.
     sl = slide by sl seconds before determining playground data.
+    excl_play = exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
-      seg.make_chunks(length,overlap,play,sl)
+      seg.make_chunks(length,overlap,play,sl,excl_play)
 
   def make_chunks_from_unused(
-    self,length,trig_overlap,play,min_length,sl=0):
+    self,length,trig_overlap,play=0,min_length=0,sl=0,excl_play=0):
     """
     Create an extra chunk that uses up the unused data in the science
     segment.
@@ -979,6 +984,8 @@ class ScienceData:
     min_length = the unused data must be greater than min_length to make a
     chunk.
     sl = slide by sl seconds before determining playground data.
+    excl_play = exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
       # if there is unused data longer than the minimum chunk length
@@ -986,21 +993,30 @@ class ScienceData:
         start = seg.end() - length
         end = seg.end()
         middle = start + length / 2
-        if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
+        if (not play) or (play and (((end-sl-excl_play-729273613)%6370) < 
+          (600+length-2*excl_play))):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
 
   def make_short_chunks_from_unused(
-    self,min_length,overlap,play,sl=0):
+    self,min_length,overlap,play=0,sl=0,excl_play=0):
     """
     Create a chunk that uses up the unused data in the science segment
+    min_length = the unused data must be greater than min_length to make a
+    chunk.
+    overlap = overlap between chunks in seconds.
+    play = if true, only generate chunks that overlap with S2 playground data.
+    sl = slide by sl seconds before determining playground data.
+    excl_play = exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
     """
     for seg in self.__sci_segs:
       if seg.unused() > min_length:
         start = seg.end() - seg.unused() - overlap
         end = seg.end()
         length = start - end
-        if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
+        if (not play) or (play and (((end-sl-excl_play-729273613)%6370) < 
+        (600+length-2*excl_play))):
           seg.add_chunk(start, end, start)
         seg.set_unused(0)
 
