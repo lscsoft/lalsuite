@@ -127,7 +127,7 @@ REAL4 highPassAt = 0.707;
 INT4  highPassOrder = 6;
 
 /* number of bins for frequency masking */ 
-INT4 maskBin = 0;
+INT4 maskBin = 1;
 
 /* arguments associated with test flag */
 INT4 testInter = 0;
@@ -390,7 +390,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
   
   /* set segment input parameters */
-  streamParams.duration = intervalDuration;
+  streamParams.duration = intervalDuration + 2 * padData;
   streamParams.frameCache1 = frameCache1;
   streamParams.frameCache2 = frameCache2;
   streamParams.ifo1 = ifo1;
@@ -424,8 +424,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     SimStochBG1.deltaT = SimStochBG2.deltaT = 1./(REAL8)resampleRate;
     SimStochBG1.sampleUnits = SimStochBG2.sampleUnits = lalADCCountUnit;
     SimStochBG1.data = SimStochBG2.data = NULL;
-    LAL_CALL( LALSCreateVector( &status, &(SimStochBG1.data), segmentPadLength),              &status);
-    LAL_CALL( LALSCreateVector( &status, &(SimStochBG2.data), segmentPadLength),              &status);
+    LAL_CALL( LALSCreateVector( &status, &(SimStochBG1.data), segmentPadLength),&status);
+    LAL_CALL( LALSCreateVector( &status, &(SimStochBG2.data), segmentPadLength),&status);
 	
     memset(SimStochBG1.data->data, 0,
            SimStochBG1.data->length *sizeof(*SimStochBG1.data->data));
@@ -698,7 +698,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   for (i = 0; i < segmentLength; i++)
    { dataWindow.data->data[i] = 1.;}
   if (overlap_hann_flag)
-   { hannDuration = 60;}
+   { hannDuration = segmentLength;}
 
   if (hannDuration != 0)
    {
@@ -1041,8 +1041,8 @@ INT4 main(INT4 argc, CHAR *argv[])
      for (segLoop = 0; segLoop < numSegments; segLoop++)
       {
  
-        gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds +  
-                                  (segLoop * segmentShift) + calibOffset;
+        gpsCalibTime.gpsSeconds = startTime + (interLoop * intervalDuration) 
+                                  + (segLoop * segmentShift) + calibOffset;
         responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
 
         if (verbose_flag)
@@ -1160,8 +1160,8 @@ INT4 main(INT4 argc, CHAR *argv[])
          for (segLoop = 0; segLoop < numSegments; segLoop++)
           {
 
-            gpsStartTime.gpsSeconds = gpsStartTime.gpsSeconds +  
-                                      (segLoop * segmentShift);
+            gpsStartTime.gpsSeconds = startTime + (interLoop * intervalDuration)
+                                      + (segLoop * segmentShift);
             gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
 
             if (verbose_flag)
@@ -1237,7 +1237,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	     }
             else
 	     {
-	      for (i = 0; i < segmentLength; i ++)
+	      for (i = 0; i < segmentPadLength; i ++)
                {
 	        segmentPad1.data->data[i] = 
                      interval1.data->data[i + segLoop * segmentShift * resampleRate];
@@ -1249,19 +1249,18 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* print */
             if ((test_flag)&&(interLoop==testInter)&&(segLoop==testSeg)&&(MCLoop==testTrial))
              {
-              LALSPrintTimeSeries(&segment1, "segment1.dat");
-	      LALSPrintTimeSeries(&segment2, "segment2.dat");
+              LALSPrintTimeSeries(&segmentPad1, "segmentPad1.dat");
+	      LALSPrintTimeSeries(&segmentPad2, "segmentPad2.dat");
              }
-            
-
             if (high_pass_flag)
 	     {               
               LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentPad1, 
                         &highpassParam ), &status );
               LAL_CALL( LALButterworthREAL4TimeSeries( &status, &segmentPad2, 
                         &highpassParam ), &status );
-             }       
+             } 
 
+            
             /* throw away pad data on each side of the segment */      
             
             for (i = 0; i < segmentLength; i ++)
@@ -1271,7 +1270,16 @@ INT4 main(INT4 argc, CHAR *argv[])
 	        segment2.data->data[i] = 
                      segmentPad2.data->data[i + padData * resampleRate];
 	       }
-            
+     
+            /* print */
+            if ((test_flag)&&(interLoop==testInter)&&(segLoop==testSeg)&&(MCLoop==testTrial))
+             {
+              LALSPrintTimeSeries(&segment1, "segment1.dat");
+	      LALSPrintTimeSeries(&segment2, "segment2.dat");
+             }
+
+                  
+       
             /* store in memory */
             
             for (i = 0; i < segmentLength; i ++)
