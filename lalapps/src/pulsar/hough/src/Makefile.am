@@ -7,11 +7,9 @@
 
 AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = SFTclean MCInject MCInjectS2 DriveHoughColor_v2 DriveHough_v3 HoughValidate 
+bin_PROGRAMS = SFTclean MCInjectS2 DriveHough_v3 HoughValidate 
 
 SFTclean_SOURCES = SFTclean.c SFTbin.h SFTbin.c
-MCInject_SOURCES = MCInjectComputeHoughII.c MCInjectComputeHough.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
 MCInjectS2_SOURCES = MCInjectHoughS2.c MCInjectHoughS2.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
-DriveHoughColor_v2_SOURCES = DriveHoughColor_v2.c  DriveHoughColor.h SFTbin.c PeakSelect.c
 DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h SFTbin.c PeakSelect.c
 HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
