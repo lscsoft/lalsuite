@@ -61,6 +61,7 @@ extern double *fraction_done_hook;
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
 #ifdef _MSC_VER
+#include <float.h>
 #define finite _finite
 #else
 int finite(double);
@@ -345,7 +346,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   /* make the output filename known to teh boinc main() routine in ComputeFStatistic */
   Outputfilename=resolved_filename;
 #endif
-  fclose(fpOut);
+  fclose(fpOut);   fprintf(stderr,"waiting...\n"); sleep(20);
 
   if (numCoincidences != 0){ 
     LALFree ( CP );
