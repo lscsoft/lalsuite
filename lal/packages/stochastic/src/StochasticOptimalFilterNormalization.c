@@ -274,6 +274,7 @@ LALStochasticOptimalFilterNormalization(
   RAT4        power;
   LALUnitPair unitPair;
   LALUnit     tmpUnit1, tmpUnit2, checkUnit;
+  REAL4WithUnits    *lamPtr;
 
   /* initialize status pointer */
   INITSTATUS(status, "LALStochasticOptimalFilterNormalization", STOCHASTICOPTIMALFILTERC);
@@ -289,16 +290,6 @@ LALStochasticOptimalFilterNormalization(
 
   /* output structure */
   ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-
-  /* normalization member of output structure */
-  ASSERT(output->normalization != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-
-  /* variance member of output structure */
-  ASSERT(output->variance != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
@@ -557,21 +548,42 @@ LALStochasticOptimalFilterNormalization(
   TRY( LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power)
        , status );
 
+  /* In case the normalization output was NULL, we need to allocate it
+     since we still use it as an intermediate; we do so here to
+     minimize the BEGINFAIL/ENDFAIL pairs needed */
+
+  if (output->normalization != NULL) 
+  {
+    lamPtr = output->normalization;
+  }
+  else 
+  {
+    lamPtr = (REAL4WithUnits*) LALMalloc(sizeof(REAL4WithUnits));
+  }
+
   unitPair.unitOne = &tmpUnit2;
   /* unitPair.unitTwo = &checkUnit; */
   /** Commented out because it's redundant with the last assignment **/
-  TRY( LALUnitMultiply(status->statusPtr, &(output->normalization->units),
-		       &unitPair)
-       , status );
+  LALUnitMultiply(status->statusPtr, &(lamPtr->units), &unitPair);
 
-  /******* assign correct units to variance per time of CC stat ********/
+  BEGINFAIL( status ) 
+    if (output->normalization == NULL) LALFree(lamPtr);
+  ENDFAIL( status );
 
-  unitPair.unitOne = &(output->normalization->units);
-  unitPair.unitTwo = &tmpUnit1;
-
-  TRY( LALUnitMultiply(status->statusPtr,
-                       &(output->variance->units), &unitPair)
-      , status );
+  if (output->variance != NULL) 
+  {
+    /******* assign correct units to variance per time of CC stat ********/
+    
+    unitPair.unitOne = &(lamPtr->units);
+    unitPair.unitTwo = &tmpUnit1;
+    
+    LALUnitMultiply(status->statusPtr,
+		    &(output->variance->units), &unitPair);
+    
+    BEGINFAIL( status ) 
+      if (output->normalization == NULL) LALFree(lamPtr);
+    ENDFAIL( status );
+  }
 
 
   /************** calculate lambda ***********************/
@@ -603,8 +615,6 @@ LALStochasticOptimalFilterNormalization(
   /* calculate inverse lambda value */
   lambdaInv = 0.0; 
 
-  
-
   for ( i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8) i;
@@ -621,20 +631,24 @@ LALStochasticOptimalFilterNormalization(
       / f6;
   }
 
-    lambdaInv /= omegaRef
-      * ( (20.0L * LAL_PI * LAL_PI) 
-          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
-          );
-
-    if ( !parameters->heterodyned ) lambdaInv *= 2.0;
-
-    output->normalization->value = 1 / lambdaInv;
-
+  lambdaInv /= omegaRef
+    * ( (20.0L * LAL_PI * LAL_PI) 
+	/ ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
+	);
+  
+  if ( !parameters->heterodyned ) lambdaInv *= 2.0;
+  
+  lamPtr->value = 1 / lambdaInv;
+  
+  if (output->variance != NULL) 
+  {
     output->variance->value 
       = ( (20.0L * LAL_PI * LAL_PI) 
-          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
-        * omegaRef / lambdaInv;
-
+	  / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
+      * omegaRef / lambdaInv;
+  }
+  if (output->normalization == NULL) LALFree(lamPtr);
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
 

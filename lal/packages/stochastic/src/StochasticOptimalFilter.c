@@ -317,9 +317,6 @@ LALStochasticOptimalFilter(
 
   REAL4     gamma;
   REAL4     omega;
-  REAL4     omegaTimesGamma;
-  REAL4     p1Inv;
-  REAL4     p2Inv;
   COMPLEX8  p1HWInv;
   COMPLEX8  p2HWInv;
 
@@ -332,16 +329,7 @@ LALStochasticOptimalFilter(
 
   /* normalization factor */
   UINT4      i;
-  UINT4       xRef;
-  REAL4      omega1;
-  REAL4      omega2;
-  REAL8      freq1;
-  REAL8      freq2;
-  REAL4      exponent;
-  REAL4      omegaRef;   
-  REAL8      realFactor;   /* constants used to calculate lambda */
-  REAL8      lambdaInv;
-  REAL8      f6; 
+  REAL8      realFactor;
 
   UINT4       length;
   
@@ -350,6 +338,9 @@ LALStochasticOptimalFilter(
   LALUnit     tmpUnit1, tmpUnit2, checkUnit;
 
   REAL4WithUnits lambda;
+  StochasticOptimalFilterNormalizationInput       normIn;
+  StochasticOptimalFilterNormalizationOutput      normOut;
+  StochasticOptimalFilterNormalizationParameters  normPar;
 
   /* initialize status pointer */
   INITSTATUS(status, "LALStochasticOptimalFilter", STOCHASTICOPTIMALFILTERC);
@@ -696,27 +687,23 @@ LALStochasticOptimalFilter(
   TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status );
   /* Now tmpUnit1 has units of Omega/H0^2 */
 
-  /******* assign correct units to normalization constant ********/
-  /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2 */
-  /* which is the same as tmpUnit1*f^3*checkUnit */
+  /******* Calculate normalization constant ********/
 
+  normIn.overlapReductionFunction = input->overlapReductionFunction;
+  normIn.omegaGW                  = input->omegaGW;
+  normIn.inverseNoisePSD1         = input->unWhitenedInverseNoisePSD1;
+  normIn.inverseNoisePSD2         = input->unWhitenedInverseNoisePSD2;
 
-  unitPair.unitOne = &tmpUnit1;
-  unitPair.unitTwo = &checkUnit;
-  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair)
-       , status );
-  /* tmpUnit2 has units of Omega/H0^2*f^2*P1*P2*(gamma*Omega)^-2 */
+  normPar.fRef                    = parameters->fRef;
+  normPar.heterodyned             = parameters->heterodyned;
 
-  /* Now that we've used checkUnit, we don't need it any more and */
-  /* can use it for temp storage (of f^3) */
-  power.numerator = 3;
-  TRY( LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power)
-       , status );
+  normOut.normalization           = &lambda;
+  normOut.variance                = NULL;
 
-  unitPair.unitOne = &tmpUnit2;
-  /* unitPair.unitTwo = &checkUnit; */
-  /** Commented out because it's redundant with the last assignment **/
-  TRY( LALUnitMultiply(status->statusPtr, &(lambda.units), &unitPair)
+  TRY( LALStochasticOptimalFilterNormalization(status->statusPtr,
+					       &normOut,
+					       &normIn,
+					       &normPar)
        , status );
 
   /* Now we need to set the Optimal Filter Units equal to the units of */
@@ -756,86 +743,32 @@ LALStochasticOptimalFilter(
 
   /* Done with unit manipulation */
 
-  /* calculate lambda */
-  /* find omegaRef */
-  xRef = (UINT4)((parameters->fRef - f0)/deltaF);
-  if ( ((parameters->fRef - f0)/deltaF) == (REAL8)(xRef) )
-  {
-    omegaRef = input->omegaGW->data->data[xRef];
-  }
-  else
-  {
-    omega1   = input->omegaGW->data->data[xRef];
-    omega2   = input->omegaGW->data->data[xRef+1];
-    freq1    = f0 + xRef * deltaF; 
-    freq2    = f0 + (xRef + 1) * deltaF;
-    if (omega1 <= 0)
-    {
-      ABORT( status,
-             STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
-             STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
-    }
-    else
-    {
-      exponent = ((log((parameters->fRef)/freq1))/(log(freq2/freq1)));
-    }
-    omegaRef = omega1*(pow((omega2/omega1),exponent));
-  }
+  optimalFilter->data->data[0].re = 0;
+  optimalFilter->data->data[0].im = 0;
   
-  /* calculate inverse lambda value */
-  lambdaInv = 0.0; 
-
-  
-
-  for ( i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
+  /* calculate optimal filter values */  
+  for (i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
   {
     f = f0 + deltaF * (REAL8) i;
-
-      f3 = f * f * f;
-      f6 = f3 * f3;
-
-      omegaTimesGamma = input->omegaGW->data->data[i]
-        * input->overlapReductionFunction->data->data[i];
-      p1Inv = input->unWhitenedInverseNoisePSD1->data->data[i];
-      p2Inv = input->unWhitenedInverseNoisePSD2->data->data[i];
-
-      lambdaInv += omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
-        / f6;
-    }
-
-    lambdaInv /= omegaRef
-      * ( (20.0L * LAL_PI * LAL_PI) 
-          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
-          );
-
-    if ( !parameters->heterodyned ) lambdaInv *= 2.0;
-
-    optimalFilter->data->data[0].re = 0;
-    optimalFilter->data->data[0].im = 0;
-      
-    /* calculate optimal filter values */  
-    for (i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
-    {
-      f = f0 + deltaF * (REAL8) i;
-
-      f3 = f * f * f;
-
-      omega = input->omegaGW->data->data[i];
-      gamma = input->overlapReductionFunction->data->data[i];
-      p1HWInv = input->halfWhitenedInverseNoisePSD1->data->data[i];
-      p2HWInv = input->halfWhitenedInverseNoisePSD2->data->data[i];
-      
-      cPtrOptimalFilter = &(optimalFilter->data->data[i]);
-
-      realFactor = (gamma * omega)/(f3 * lambdaInv);
-
-      cPtrOptimalFilter->re = realFactor * 
-        ( (p1HWInv.re) * (p2HWInv.re) + (p1HWInv.im) * (p2HWInv.im) );
-
-      cPtrOptimalFilter->im = realFactor * 
-        ( (p1HWInv.re) * (p2HWInv.im) - (p1HWInv.im) * (p2HWInv.re) );
-    }
-
+    
+    f3 = f * f * f;
+    
+    omega = input->omegaGW->data->data[i];
+    gamma = input->overlapReductionFunction->data->data[i];
+    p1HWInv = input->halfWhitenedInverseNoisePSD1->data->data[i];
+    p2HWInv = input->halfWhitenedInverseNoisePSD2->data->data[i];
+    
+    cPtrOptimalFilter = &(optimalFilter->data->data[i]);
+    
+    realFactor = gamma * omega * lambda.value / f3;
+    
+    cPtrOptimalFilter->re = realFactor * 
+      ( (p1HWInv.re) * (p2HWInv.re) + (p1HWInv.im) * (p2HWInv.im) );
+    
+    cPtrOptimalFilter->im = realFactor * 
+      ( (p1HWInv.re) * (p2HWInv.im) - (p1HWInv.im) * (p2HWInv.re) );
+  }
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
