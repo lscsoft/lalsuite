@@ -38,7 +38,7 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-S Sun ephemeris data filename] \n\
 	 Default value:\n\
 	 /afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat\n\
- [-D directory] \n\
+ [-D sftDir] \n\
         Directory where the input SFT data are located. \n\
 	If not set, the program will look into ./data1\n\
  [-o outdir basefilename] \n\
@@ -75,7 +75,7 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  * Constant Declarations.  Default parameters.
  */
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 #define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
 #define SUNEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat"
 
@@ -87,7 +87,6 @@ INT4 lalDebugLevel=1;
 #define BASENAMEOUT "HM1"
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
 #define FILETIME "./Ts" /* name: file with timestamps */
-
 #define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 /* #define THRESHOLD 1.5  thresold for peak selection, with respect to the
                               the averaged power in the search band */
@@ -97,10 +96,12 @@ INT4 lalDebugLevel=1;
 #define SKYFILE "./skypatchfile"      
 #define F0 250.0          /*  frequency to build the LUT and start search */
 #define FBAND 0.2          /* search frequency band  (in Hz) */
-
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
 #define BLOCKSRNGMED 101 /* Running median window size */
+
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
@@ -135,7 +136,7 @@ int main(int argc, char *argv[]){
 
   INT4   ifo;
   CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR   *directory = NULL; /* the directory where the SFT  could be */
+  CHAR   *sftDir = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
   CHAR   *fbasenameOut = NULL;
   CHAR   *fnameVelocity = NULL;
@@ -183,12 +184,62 @@ int main(int argc, char *argv[]){
  
  
 #ifdef TIMING
-   start = realcc();
+  start = realcc();
 #endif
 
+
+  BOOLEAN uvar_help;
+  INT4 uvar_ifo, uvar_blocksRngMed;
+  REAL8 uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
+  CHAR *uvar_earthEphemeris=NULL;
+  CHAR *uvar_sunEphemeris=NULL;
+  CHAR *uvar_sftDir=NULL;
+  CHAR *uvar_fnameOut=NULL;
+  CHAR *uvar_fbasenameOut=NULL;
+  CHAR *uvar_skyfile=NULL;
+  CHAR *uvar_fnameVelocity=NULL;
+  CHAR *uvar_fnameTime=NULL;
+  
   /******************************************************************/
   /*    Set up the default parameters.      */
-  /* ****************************************************************/
+  /*****************************************************************/
+
+  lalDebugLevel = 0;
+  /* LALDebugLevel must be called before anything else */
+  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
+
+  uvar_help = FALSE;
+  uvar_ifo = IFO;
+  uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_f0 = F0;
+  uvar_fSearchBand = FBAND;
+  uvar_peakThreshold = THRESHOLD;
+  uvar_houghFalseAlarm = FALSEALARM;
+  
+  uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+
+  uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+
+  uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_sftDir,SFTDIRECTORY);
+
+  uvar_fnameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_fnameOut,DIROUT);
+
+  uvar_fbasenameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_fbasenameOut,BASENAMEOUT);
+
+  uvar_fnameVelocity = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_fnameVelocity,FILEVELOCITY);
+
+  uvar_fnameTime = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_fnameTime,FILETIME);
+
+  uvar_skyfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_skyfile,SKYFILE);
+
 
   ifo = IFO;
   
@@ -206,7 +257,7 @@ int main(int argc, char *argv[]){
   earthEphemeris = EARTHEPHEMERIS;
   sunEphemeris = SUNEPHEMERIS;
   
-  directory = SFTDIRECTORY;
+  sftDir = SFTDIRECTORY;
   fnameOut = DIROUT;
   fbasenameOut = BASENAMEOUT; 
 
@@ -274,7 +325,7 @@ int main(int argc, char *argv[]){
       else if ( !strcmp( argv[arg], "-D" ) ) {
 	if ( argc > arg + 1 ) {
 	  arg++;
-	  directory = argv[arg++];
+	  sftDir = argv[arg++];
 	} else {
 	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
 	  LALPrintError( USAGE, *argv );
@@ -438,7 +489,7 @@ int main(int argc, char *argv[]){
     glob_t   globbuf;
     UINT4    j;
      
-    strcpy(command, directory);
+    strcpy(command, sftDir);
     strcat(command, "/*SFT*.*");
     
     globbuf.gl_offs = 1;
@@ -446,7 +497,7 @@ int main(int argc, char *argv[]){
     
     if(globbuf.gl_pathc==0)
       {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", directory);
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", sftDir);
 	return 1;  /* stop the program */
       }
     
