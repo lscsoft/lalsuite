@@ -197,9 +197,7 @@ int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
 int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
-#if 0
-int    writeZData       = 0;            /* write complex time series z  */
-#endif
+int    writeCData       = 0;            /* write complex time series c  */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -225,9 +223,7 @@ int main( int argc, char *argv[] )
   struct FrameH *outFrame   = NULL;
   UINT4          nRhosqFr = 0;
   UINT4          nChisqFr = 0;
-#if 0
-  UINT4          nZDataFr = 0;
-#endif
+  UINT4          nCDataFr = 0;
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -1295,9 +1291,7 @@ int main( int argc, char *argv[] )
   fcInitParams->createRhosqVec = writeRhosq;
   fcInitParams->ovrlap         = ovrlap;
   fcInitParams->approximant    = approximant;
-#if 0
-  fcInitParams->createZVec     = writeZData;
-#endif
+  fcInitParams->createCVec     = writeCData;
 
 
   /*
@@ -1829,17 +1823,15 @@ int main( int argc, char *argv[] )
                 fcFilterParams->rhosqVec, "none", snrsqStr );
           }
 
-#if 0
-          if ( writeZData )
+          if ( writeCData )
 	  {
-	    CHAR zdataStr[LALNameLength];
-	    LALSnprintf( zdataStr, LALNameLength*sizeof(CHAR),
-			 "ZData_%d", nZDataFr++ );
-	    strcpy( fcFilterParams->zVec->name, chan.name );
+	    CHAR cdataStr[LALNameLength];
+	    LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+			 "CData_%d", nCDataFr++ );
+	    strcpy( fcFilterParams->cVec->name, chan.name );
 	    outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame, 
-	        fcFilterParams->zVec, "none", zdataStr );
+	        fcFilterParams->cVec, "none", cdataStr );
 	  }
-#endif
 
           if ( writeChisq )
           {
@@ -2090,12 +2082,8 @@ int main( int argc, char *argv[] )
 
 
   /* write the output frame */
-#if 0
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq || writeZData )
-#endif
-  if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq )
+      writeRhosq || writeChisq || writeCData )
   {
     if ( outputPath[0] )
     {
@@ -2429,7 +2417,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-spectrum             write the uncalibrated psd to a frame\n"\
 "  --write-snrsq                write the snr time series for each data segment\n"\
 "  --write-chisq                write the r^2 time series for each data segment\n"\
-"  --write-zdata                write the z=x+iy complex time series for each data segment\n"\
+"  --write-cdata                write the c=x+iy complex time series for each data segment\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -2509,9 +2497,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
     {"write-snrsq",             no_argument,       &writeRhosq,       1 },
     {"write-chisq",             no_argument,       &writeChisq,       1 },
-#if 0
-    {"write-zdata",             no_argument,       &writeZData,       1 },
-#endif
+    {"write-cdata",             no_argument,       &writeCData,       1 },
     {0, 0, 0, 0}
   };
   int c;
