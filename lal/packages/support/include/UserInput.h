@@ -35,12 +35,15 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_ENONULL	2
 #define USERINPUTH_EMEM		3
 #define USERINPUTH_EOPT		4
+#define USERINPUTH_ENOUVARS	5
+#define USERINPUTH_EBOOL	6
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
 #define USERINPUTH_MSGEMEM	"Out of memory"
 #define USERINPUTH_MSGEOPT	"Unknown command-line option encountered"
-
+#define USERINPUTH_MSGENOUVARS	"No user-variables have been registered!"
+#define USERINPUTH_MSGEBOOL	"Illegal BOOLEAN option-value"
 /*************************************************** </lalErrTable> */
 
 /****************************************************** <lalLaTeX>
@@ -58,28 +61,6 @@ typedef enum {
   UVAR_STRING	/* string */
 } LALUserVarType;
 /* </lalVerbatim> */
-/* <lalLaTeX> 
-\subsection*{Types}
-
-\subsubsection*{Structure \texttt{LALUserVariable}}
-\idx[Type]{LALUserVariable}
-
-This structure defines a "user-variable", which can be read
-automagically from command-line and/or config-file.
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef struct {
-  const CHAR *name;	/* full name */
-  LALUserVarType type;	/* type: bool, int, float or string */
-  CHAR optchar;		/* cmd-line character */
-  const CHAR *help;	/* help-string */
-  void *varp;		/* pointer to the actual C-variable */
-} LALUserVariable;
-/* </lalVerbatim> */
-
-/* this helps users to set up a consistent array of UserVariable's */
-#define regUserVar(name,type,option,help) { #name, type, option, help, &(uvar_ ## name) }
-
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{UserInputHV}}
@@ -88,15 +69,20 @@ typedef struct {
 ******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
-void LALReadUserInput (LALStatus *stat, int argc, char *argv[], const LALUserVariable *uvars);
-void LALReadCmdLineInput (LALStatus *stat, int argc, char *argv[], const LALUserVariable *uvars);
-void LALReadCfgFileInput (LALStatus *stat, const CHAR *cfgfile, const LALUserVariable *uvars );
-void LALFreeUserVars (LALStatus *stat, LALUserVariable *uvars);
-void LALGetUvarHelpString (LALStatus *stat, CHAR **helpstring, const LALUserVariable *uvars);
+void LALRegisterUserVar (LALStatus *stat, const CHAR *name, LALUserVarType type, CHAR optchar, const CHAR *helpstr, void *cvar);
+void LALDestroyUserVars (LALStatus *stat);
+
+void LALUserVarReadAllInput(LALStatus *stat, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *stat, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *stat, const CHAR *cfgfile);
+
+void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring);
+
 
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
+
 #endif  /* Double-include protection. */
 
 

@@ -371,21 +371,24 @@ LALReadConfigBOOLVariable (LALStatus *stat,
   /* first read the value as a string */
   TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
 
-  /* try to parse it as a bool */
-  if ( !strcmp(tmp, "yes") || !strcmp(tmp, "true") || !strcmp(tmp,"True") || !strcmp(tmp,"1") )
-    ret = 1;
-  else if ( !strcmp (tmp, "no") || !strcmp(tmp,"false") || !strcmp(tmp, "False") || !strcmp(tmp,"0"))
-    ret = 0;
-  else
+  if (tmp) /* if we read anything at all... */
     {
+      /* try to parse it as a bool */
+      if (      !strcmp(tmp, "yes") || !strcmp(tmp, "true") || !strcmp(tmp,"1") )
+	ret = 1;
+      else if ( !strcmp (tmp, "no") || !strcmp(tmp,"false") || !strcmp(tmp,"0"))
+	ret = 0;
+      else
+	{
+	  LALFree (tmp);
+	  ABORT (stat, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
+	}
+      
+      if (ret != -1)	/* only set value of something has been found */
+	*varp = (BOOLEAN) ret;
       LALFree (tmp);
-      ABORT (stat, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
     }
-  
-  if (ret != -1)	/* only set value of something has been found */
-    *varp = (BOOLEAN) ret;
 
-  LALFree (tmp);
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
