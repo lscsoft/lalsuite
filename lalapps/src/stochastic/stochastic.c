@@ -230,8 +230,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   PassBandParamStruc highpassParam;
 
   /* response functions */
-  COMPLEX8FrequencySeries responseTempOne, responseTempTwo;
-  COMPLEX8FrequencySeries responseOne, responseTwo;
+  COMPLEX8FrequencySeries *responseTempOne;
+  COMPLEX8FrequencySeries *responseTempTwo;
+  COMPLEX8FrequencySeries *responseOne;
+  COMPLEX8FrequencySeries *responseTwo;
   COMPLEX8Vector *respOne[100], *respTwo[100];
   INT4 respLength;
   CalibrationUpdateParams calfacts;
@@ -539,37 +541,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
 
-  /* set metadata fields for response functions */
-  strncpy(responseTempOne.name, "responseTempOne", LALNameLength);
-  strncpy(responseTempTwo.name, "responseTempTwo", LALNameLength);
-  responseTempOne.sampleUnits = countPerAttoStrain;
-  responseTempTwo.sampleUnits = countPerAttoStrain;
-  responseTempOne.epoch = responseTempTwo.epoch = gpsCalibTime;
-  responseTempOne.deltaF = responseTempTwo.deltaF = deltaF;
-  responseTempOne.f0 = responseTempTwo.f0 = 0;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for response functions...\n");
 
   /* allocate memory for response functions */
-  responseTempOne.data = responseTempTwo.data = NULL;
-  LAL_CALL(LALCCreateVector(&status, &(responseTempOne.data), respLength), \
-      &status);
-  LAL_CALL(LALCCreateVector(&status, &(responseTempTwo.data), respLength), \
-      &status);
-  memset(responseTempOne.data->data, 0, \
-      responseTempOne.data->length * sizeof(*responseTempOne.data->data));
-  memset(responseTempTwo.data->data, 0, \
-      responseTempTwo.data->length * sizeof(*responseTempTwo.data->data));
-
-  /* reduced frequency band response functions */
-  /* set metadata fields for reduced frequency band response functions */
-  strncpy(responseOne.name, "responseOne", LALNameLength);
-  strncpy(responseTwo.name, "responseTwo", LALNameLength);
-  responseOne.sampleUnits = responseTwo.sampleUnits = countPerAttoStrain;
-  responseOne.epoch = responseTwo.epoch = gpsCalibTime;
-  responseOne.deltaF = responseTwo.deltaF = deltaF;
-  responseOne.f0 = responseTwo.f0 = fMin;
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTempOne, \
+        "responseTempOne", gpsCalibTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTempTwo, \
+        "responseTempTwo", gpsCalibTime, 0, deltaF, countPerAttoStrain, \
+        respLength), &status);
 
   if (vrbflg)
   {
@@ -578,15 +559,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for reduced frequency band response functions */
-  responseOne.data = responseTwo.data = NULL;
-  LAL_CALL(LALCCreateVector(&status, &(responseOne.data), filterLength), \
-      &status);
-  LAL_CALL(LALCCreateVector(&status, &(responseTwo.data), filterLength), \
-      &status);
-  memset(responseOne.data->data, 0, \
-      responseOne.data->length * sizeof(*responseOne.data->data));
-  memset(responseTwo.data->data, 0, \
-      responseTwo.data->length * sizeof(*responseTwo.data->data));
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseOne, \
+        "responseOne", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTwo, \
+        "responseTwo", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
+        filterLength), &status);
 
   for (i = 0; i < numSegments; i++)
   {
@@ -636,9 +614,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set inverse noise inputs */
   inverseNoiseInOne.unCalibratedNoisePSD = &psdOne;
-  inverseNoiseInOne.responseFunction = &responseOne;
+  inverseNoiseInOne.responseFunction = responseOne;
   inverseNoiseInTwo.unCalibratedNoisePSD = &psdTwo;
-  inverseNoiseInTwo.responseFunction = &responseTwo;
+  inverseNoiseInTwo.responseFunction = responseTwo;
 
   /* set inverse noise outputs */
   inverseNoiseOutOne.calibratedInverseNoisePSD = &calInvPsdOne;
@@ -936,8 +914,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set CC inputs */
   ccIn.hBarTildeOne = &hBarTildeOne;
   ccIn.hBarTildeTwo = &hBarTildeTwo;
-  ccIn.responseFunctionOne = &responseOne;
-  ccIn.responseFunctionTwo = &responseTwo;
+  ccIn.responseFunctionOne = responseOne;
+  ccIn.responseFunctionTwo = responseTwo;
   ccIn.optimalFilter = &optFilter;
 
   if (vrbflg)
@@ -1015,20 +993,21 @@ INT4 main(INT4 argc, CHAR *argv[])
 
             /* compute response functions */
             gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
-            responseOne.epoch  = responseTwo.epoch  = gpsCalibTime;
+            responseOne->epoch = gpsCalibTime;
+            responseTwo->epoch = gpsCalibTime;
 
             /* set response function to unity for GEO */
             if (strncmp(ifoOne, "G1", 2) == 0)
             {
               for (i = 0; i < filterLength; i++)
               {
-                responseOne.data->data[i].re = 1;
-                responseOne.data->data[i].im = 0;
+                responseOne->data->data[i].re = 1;
+                responseOne->data->data[i].im = 0;
               }
             }
             else
             {
-              responseTempOne.epoch = gpsCalibTime;
+              responseTempOne->epoch = gpsCalibTime;
               if (vrbflg)
               {
                 fprintf(stdout, "request GPS time %d for ifo 1\n", \
@@ -1038,12 +1017,12 @@ INT4 main(INT4 argc, CHAR *argv[])
               calfacts.ifo = ifoOne;
               LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheOne), \
                   &status);
-              LAL_CALL(LALExtractFrameResponse(&status, &responseTempOne, \
+              LAL_CALL(LALExtractFrameResponse(&status, responseTempOne, \
                     calibCache, &calfacts), &status);
               LAL_CALL(LALDestroyFrCache(&status, &calibCache), &status);
 
               /* skip segment if data not found or corrupted with 0 values */
-              if ((status.statusCode !=0)||(responseTempOne.data==NULL))
+              if ((status.statusCode !=0 ) || (responseTempOne->data == NULL))
               {
                 clear_status(&status);
                 firstpass = 1;
@@ -1055,7 +1034,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               /* reduce to the optimal filter frequency range */
               for (i = 0; i < filterLength; i++)
               {
-                responseOne.data->data[i] = responseTempOne.data->data[i + \
+                responseOne->data->data[i] = responseTempOne->data->data[i + \
                                           numFMin];
               }
             }
@@ -1065,13 +1044,13 @@ INT4 main(INT4 argc, CHAR *argv[])
             {
               for (i = 0; i < filterLength; i++)
               {
-                responseTwo.data->data[i].re = 1;
-                responseTwo.data->data[i].im = 0;
+                responseTwo->data->data[i].re = 1;
+                responseTwo->data->data[i].im = 0;
               }
             }
             else
             {
-              responseTempTwo.epoch = gpsCalibTime;
+              responseTempTwo->epoch = gpsCalibTime;
               if (vrbflg)
               {
                 fprintf(stdout, "request GPS time %d for ifo 2\n", \
@@ -1081,12 +1060,12 @@ INT4 main(INT4 argc, CHAR *argv[])
               calfacts.ifo = ifoTwo;
               LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheTwo ), \
                   &status);
-              LAL_CALL(LALExtractFrameResponse( &status, &responseTempTwo, \
+              LAL_CALL(LALExtractFrameResponse( &status, responseTempTwo, \
                     calibCache, &calfacts), &status);
               LAL_CALL(LALDestroyFrCache( &status, &calibCache), &status);
 
               /* skip segment if data not found or corrupted with 0 values */
-              if ((status.statusCode !=0)||(responseTempTwo.data==NULL))
+              if ((status.statusCode != 0) || (responseTempTwo->data == NULL))
               {
                 clear_status(&status);
                 firstpass = 1;
@@ -1098,7 +1077,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               /* reduce to the optimal filter frequency range */
               for (i = 0; i < filterLength; i++)
               {
-                responseTwo.data->data[i] = responseTempTwo.data->data[i + \
+                responseTwo->data->data[i] = responseTempTwo->data->data[i + \
                                           numFMin];
               }
             }
@@ -1106,8 +1085,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* store in memory */
             for (i = 0; i < filterLength; i++)
             {
-              respOne[segLoop]->data[i] = responseOne.data->data[i];
-              respTwo[segLoop]->data[i] = responseTwo.data->data[i];
+              respOne[segLoop]->data[i] = responseOne->data->data[i];
+              respTwo[segLoop]->data[i] = responseTwo->data->data[i];
             }
 
             /* convert response function for use in the MC routine */
@@ -1116,9 +1095,9 @@ INT4 main(INT4 argc, CHAR *argv[])
               MCresponseOne->epoch = gpsCalibTime;
               MCresponseTwo->epoch = gpsCalibTime;
               LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
-                    &responseTempOne), &status);
+                    responseTempOne), &status);
               LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
-                    &responseTempTwo), &status);
+                    responseTempTwo), &status);
 
               /* force DC to be 0 and nyquist to be real */
               MCresponseOne->data->data[0].re = 0;
@@ -1212,19 +1191,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           /* compute extra response function */
           gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
-          responseOne.epoch  = responseTwo.epoch = gpsCalibTime;
+          responseOne->epoch = gpsCalibTime;
+          responseTwo->epoch = gpsCalibTime;
 
           if (strncmp(ifoOne, "G1", 2) == 0)
           {
             for (i = 0; i < filterLength; i++)
             {
-              responseOne.data->data[i].re = 1;
-              responseOne.data->data[i].im = 0;
+              responseOne->data->data[i].re = 1;
+              responseOne->data->data[i].im = 0;
             }
           }
           else
           {
-            responseTempOne.epoch = gpsCalibTime;
+            responseTempOne->epoch = gpsCalibTime;
             if (vrbflg)
             {
               fprintf(stdout, "request GPS time %d for ifo 1\n", \
@@ -1234,12 +1214,12 @@ INT4 main(INT4 argc, CHAR *argv[])
             calfacts.ifo = ifoOne;
             LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheOne ), \
                 &status);
-            LAL_CALL(LALExtractFrameResponse(&status, &responseTempOne, \
+            LAL_CALL(LALExtractFrameResponse(&status, responseTempOne, \
                   calibCache, &calfacts), &status);
             LAL_CALL(LALDestroyFrCache(&status, &calibCache), &status);
 
             /* skip segment if data not found or corrupted with 0 values */
-            if ((status.statusCode != 0) || (responseTempOne.data == NULL))
+            if ((status.statusCode != 0) || (responseTempOne->data == NULL))
             {
               clear_status(&status);
               firstpass = 1;
@@ -1251,7 +1231,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* reduce to the optimal filter frequency range */
             for (i = 0; i < filterLength; i++)
             {
-              responseOne.data->data[i] = responseTempOne.data->data[i + \
+              responseOne->data->data[i] = responseTempOne->data->data[i + \
                                         numFMin];
             }
           }
@@ -1260,13 +1240,13 @@ INT4 main(INT4 argc, CHAR *argv[])
           {
             for (i = 0; i < filterLength; i++)
             {
-              responseOne.data->data[i].re = 1;
-              responseOne.data->data[i].im = 0;
+              responseOne->data->data[i].re = 1;
+              responseOne->data->data[i].im = 0;
             }
           }
           else
           {
-            responseTempTwo.epoch = gpsCalibTime;
+            responseTempTwo->epoch = gpsCalibTime;
             if (vrbflg)
             {
               fprintf(stdout, "request GPS time %d for ifo 2\n", \
@@ -1276,12 +1256,12 @@ INT4 main(INT4 argc, CHAR *argv[])
             calfacts.ifo = ifoTwo;
             LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheTwo ), \
                 &status);
-            LAL_CALL(LALExtractFrameResponse(&status, &responseTempTwo, \
+            LAL_CALL(LALExtractFrameResponse(&status, responseTempTwo, \
                   calibCache, &calfacts), &status);
             LAL_CALL(LALDestroyFrCache(&status, &calibCache), &status);
 
             /* skip segment if data not found or corrupted with 0 values */
-            if ((status.statusCode != 0) || (responseTempTwo.data == NULL))
+            if ((status.statusCode != 0) || (responseTempTwo->data == NULL))
             {
               clear_status(&status);
               firstpass = 1;
@@ -1291,10 +1271,10 @@ INT4 main(INT4 argc, CHAR *argv[])
             }
 
             /* reduce to the optimal filter frequency range */
-            responseTwo.epoch  = gpsCalibTime;
+            responseTwo->epoch  = gpsCalibTime;
             for (i = 0; i < filterLength; i++)
             {
-              responseTwo.data->data[i] = responseTempTwo.data->data[i + \
+              responseTwo->data->data[i] = responseTempTwo->data->data[i + \
                                         numFMin];
             }
           }
@@ -1302,8 +1282,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* store in memory */
           for (i = 0; i < filterLength; i++)
           {
-            respOne[numSegments-1]->data[i] = responseOne.data->data[i];
-            respTwo[numSegments-1]->data[i] = responseTwo.data->data[i];
+            respOne[numSegments-1]->data[i] = responseOne->data->data[i];
+            respTwo[numSegments-1]->data[i] = responseTwo->data->data[i];
           }
 
           /* convert response function for use in the MC routine */
@@ -1312,9 +1292,9 @@ INT4 main(INT4 argc, CHAR *argv[])
             MCresponseOne->epoch = gpsCalibTime;
             MCresponseTwo->epoch = gpsCalibTime;
             LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
-                  &responseTempOne), &status);
+                  responseTempOne), &status);
             LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
-                  &responseTempTwo), &status);
+                  responseTempTwo), &status);
 
             /* force DC to be 0 and nyquist to be real */
             MCresponseOne->data->data[0].re = 0;
@@ -1350,12 +1330,13 @@ INT4 main(INT4 argc, CHAR *argv[])
           segmentOne->epoch = gpsStartTime;
           segmentTwo->epoch = gpsStartTime;
           gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
-          responseOne.epoch = responseTwo.epoch = gpsCalibTime;
+          responseOne->epoch = gpsCalibTime;
+          responseTwo->epoch = gpsCalibTime;
 
           for (i = 0; i < filterLength; i++)
           {
-            responseOne.data->data[i] = respOne[segLoop]->data[i];
-            responseTwo.data->data[i] = respTwo[segLoop]->data[i];
+            responseOne->data->data[i] = respOne[segLoop]->data[i];
+            responseTwo->data->data[i] = respTwo[segLoop]->data[i];
           }
 
           /* simulate signal */
@@ -1546,8 +1527,8 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* cc spectrum */
         for (i = 0; i < filterLength; i++)
         {
-          responseOne.data->data[i] = respOne[segMiddle]->data[i];
-          responseTwo.data->data[i] = respTwo[segMiddle]->data[i];
+          responseOne->data->data[i] = respOne[segMiddle]->data[i];
+          responseTwo->data->data[i] = respTwo[segMiddle]->data[i];
         }
 
         LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
@@ -1719,10 +1700,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyVector(&status, &(psdTwo.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(calPsdOne)), &status);
   LAL_CALL(LALDestroyVector(&status, &(calPsdTwo)), &status);
-  LAL_CALL(LALCDestroyVector(&status, &(responseTempOne.data)), &status);
-  LAL_CALL(LALCDestroyVector(&status, &(responseTempTwo.data)), &status);
-  LAL_CALL(LALCDestroyVector(&status, &(responseOne.data)), &status);
-  LAL_CALL(LALCDestroyVector(&status, &(responseTwo.data)), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOne), \
+      &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTempTwo), \
+      &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseOne), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTwo), &status);
   LAL_CALL(LALDestroyVector(&status, &(optFilter.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(calInvPsdOne.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(calInvPsdTwo.data)), &status);
