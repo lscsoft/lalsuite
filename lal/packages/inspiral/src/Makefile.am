@@ -5,6 +5,7 @@ LALBCVWaveform.c\
 LALEOBWaveform.c\
 LALEtaTau02.c\
 LALEtaTau04.c\
+LALInspiralAmplitude.c\
 LALInspiralChooseModel.c\
 LALInspiralFrequency3.c\
 LALInspiralParameterCalc.c\
