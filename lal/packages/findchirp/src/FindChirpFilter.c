@@ -1543,7 +1543,7 @@ LALFindChirpBCVFilterSegment (
            CHECKSTATUSPTR( status );
 
            /* set the impuse time for the event */
-           thisEvent->template_duration = (REAL8) chirpTime; 
+           /*thisEvent->template_duration = (REAL8) chirpTime;*/ 
 
 	   /* record the ifo and channel name for the event */
 	   strncpy( thisEvent->ifo, input->segment->data->name,
@@ -1642,7 +1642,7 @@ LALFindChirpBCVFilterSegment (
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) chirpTime; 
+    /*thisEvent->template_duration = (REAL8) chirpTime; */
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name,
