@@ -77,4 +77,5 @@ AC_OUTPUT( 				\
 	src/ring/Makefile		\
 	src/pulsar/Makefile		\
 	src/inspiral/Makefile		\
+	src/zmsearch/Makefile		\
 )
