@@ -528,14 +528,14 @@ void LALGenerateInspiralPopulateInspiralSpin(LALStatus        *status,
   /* not needed ???*/
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;
   inspiralParams->sourcePhi   = GENERATEINSPIRAL_SOURCEPHI;
-  inspiralParams->spin1[0]    = GENERATEINSPIRAL_SPIN1; 
-  inspiralParams->spin2[0]    = GENERATEINSPIRAL_SPIN2;
-  inspiralParams->spin1[1]    = GENERATEINSPIRAL_THETA1;
-  inspiralParams->spin2[1]    = GENERATEINSPIRAL_THETA2;
-  inspiralParams->spin1[2]    = GENERATEINSPIRAL_PHI1;
-  inspiralParams->spin2[2]    = GENERATEINSPIRAL_PHI2;
-  inspiralParams->orbitTheta0 = 1.5;
-  inspiralParams->orbitPhi0   = 0.0;
+  inspiralParams->spin1[0]    = GENERATEINSPIRAL_SPIN1X; 
+  inspiralParams->spin2[0]    = GENERATEINSPIRAL_SPIN2X;
+  inspiralParams->spin1[1]    = GENERATEINSPIRAL_SPIN1Y;
+  inspiralParams->spin2[1]    = GENERATEINSPIRAL_SPIN2Y;
+  inspiralParams->spin1[2]    = GENERATEINSPIRAL_SPIN1Z;
+  inspiralParams->spin2[2]    = GENERATEINSPIRAL_SPIN2Z;
+  inspiralParams->orbitTheta0 = GENERATEINSPIRAL_ORBITTHETA0;
+  inspiralParams->orbitPhi0   = GENERATEINSPIRAL_ORBITPHI0;
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
