@@ -140,8 +140,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get number of segments */
   deltaF = (REAL8) (1. / FFTDuration);
   segmentDuration = numFFT * FFTDuration;
-  numSegments = (INT4)floor((stopTime - startTime) / segmentDuration );
-
+  numSegments = (INT4)((stopTime - startTime) / segmentDuration );
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
   if (sampleRate == resampleRate)
