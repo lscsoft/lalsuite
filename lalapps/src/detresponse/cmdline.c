@@ -51,7 +51,7 @@ cmdline_parser_print_help (void)
   printf("   -rDOUBLE   --right-ascension=DOUBLE    Right Ascension of source, in rad\n");
   printf("   -dDOUBLE   --declination=DOUBLE        Declination of source, in rad\n");
   printf("   -oDOUBLE   --orientation=DOUBLE        Orientation of source, in rad\n");
-  printf("   -DSTRING   --detector=STRING           Detector name\n");
+  printf("   -DSTRING   --detector=STRING           Detector name; legal names: lho, llo, virgo, geo, tama, cit\n");
   printf("   -sINT      --start-time-sec=INT        GPS seconds field of start time of observation\n");
   printf("   -nINT      --start-time-nanosec=INT    GPS nanoseconds field of start time of observation (default='0')\n");
   printf("   -uINT      --nsample=INT               number of samples\n");
@@ -190,7 +190,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
           args_info->orientation_arg = strtod (optarg, NULL);
           break;
 
-        case 'D':	/* Detector name.  */
+        case 'D':	/* Detector name; legal names: lho, llo, virgo, geo, tama, cit.  */
           if (args_info->detector_given)
             {
               fprintf (stderr, "%s: `--detector' (`-D') option given more than once\n", PACKAGE);

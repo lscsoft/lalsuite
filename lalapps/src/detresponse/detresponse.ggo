@@ -19,7 +19,7 @@ option "orientation"      o   "Orientation of source, in rad" double yes
 #   - TAMA (300m), differential mode
 #   - CIT (40m), differential mode
 #   we shall use these strings as the detector names
-option "detector"         D   "Detector name" string yes
+option "detector"         D   "Detector name; legal names: lho, llo, virgo, geo, tama, cit" string yes
 
 # options to specify observation time
 option "start-time-sec"        s   "GPS seconds field of start time of observation" int yes
