@@ -357,7 +357,6 @@ int main( int argc, char *argv[] ) {
      tevpulse.dt1 = LALDTBaryPtolemaic;
    }
    if( metric_code == 3 ) {
-     /* WE NEED TO WRITE SUCH A FUNCTION!*/
      tevpulse.t1 = LALTEphemeris;
      tevpulse.dt1 = LALDTEphemeris;
    }
@@ -406,6 +405,19 @@ int main( int argc, char *argv[] ) {
      printf("\n");
    }
 
+   /* Print determinants. */
+   determinant = metric->data[5]*metric->data[2] - pow(metric->data[4],2);
+   printf( "\nSky-determinant %e\n", determinant );
+   if( numSpindown == 1 ) {
+     determinant = metric->data[2] * metric->data[5] * metric->data[9]
+                 - metric->data[2] * metric->data[8] * metric->data[8]
+                 + metric->data[4] * metric->data[8] * metric->data[7]
+                 - metric->data[4] * metric->data[4] * metric->data[9]
+                 + metric->data[7] * metric->data[4] * metric->data[8]
+                 - metric->data[7] * metric->data[7] * metric->data[5];
+     printf( "S&S determinant %e\n", determinant );
+   }
+
    /* Project carrier frequency out of metric. */
    LALProjectMetric( &status, metric, 0 );
    if( status.statusCode )
@@ -413,13 +425,6 @@ int main( int argc, char *argv[] ) {
        printf( "%s line %d: %s\n", __FILE__, __LINE__,
 	       GENERALMETRICTESTC_MSGESUB );
        return GENERALMETRICTESTC_ESUB;
-     }
-   determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
-   if(determinant < 0.0)
-     {
-       printf( "%s line %d: %s\n", __FILE__, __LINE__,
-	       GENERALMETRICTESTC_MSGEMET );
-       return GENERALMETRICTESTC_EMET;
      }
 
    /* Print projected metric. */
@@ -429,6 +434,19 @@ int main( int argc, char *argv[] ) {
        printf( "  %+.4e", metric->data[k+j*(j+1)/2] );
      printf( "\n" );
       }
+
+   /* Print determinants. */
+   determinant = metric->data[5]*metric->data[2] - pow(metric->data[4],2);
+   printf( "\nSky-determinant %e\n", determinant );
+   if( numSpindown == 1 ) {
+     determinant = metric->data[2] * metric->data[5] * metric->data[9]
+                 - metric->data[2] * metric->data[8] * metric->data[8]
+                 + metric->data[4] * metric->data[8] * metric->data[7]
+                 - metric->data[4] * metric->data[4] * metric->data[9]
+                 + metric->data[7] * metric->data[4] * metric->data[8]
+                 - metric->data[7] * metric->data[7] * metric->data[5];
+     printf( "S&S determinant %e\n", determinant );
+   }
 
   /* Here is the code that uses xmgrace with the -x option, */
   /* and outputs data to a file with the -t option. */
