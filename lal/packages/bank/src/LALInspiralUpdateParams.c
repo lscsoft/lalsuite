@@ -17,7 +17,7 @@ to a {\it template list}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
-\index{\verb&LALInspiralUpdateParams()&}
+\index{\texttt{LALInspiralUpdateParams()}}
 
 \subsubsection*{Description}
 

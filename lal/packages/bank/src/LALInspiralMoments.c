@@ -12,7 +12,7 @@ Module to calculate the moment of the noise power spectral density.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralMomentsCP}
-\index{\verb&LALInspiralMoments()&}
+\index{\texttt{LALInspiralMoments()}}
 
 \subsubsection*{Description}
 

@@ -13,7 +13,7 @@ binary system as a function of time up to second post-Nowtonian order.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomTimeFrequencyCP}
-\index{\verb&LALTappRpnTdomTimeFrequency()&}
+\index{\texttt{LALTappRpnTdomTimeFrequency()}}
 
 \subsubsection*{Description}
 

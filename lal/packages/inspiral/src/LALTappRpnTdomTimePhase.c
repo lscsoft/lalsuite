@@ -16,7 +16,7 @@ system as a function of time up to second post-Nowtonian order.
 
 \input{LALTappRpnTdomTimePhaseCP}
 
-\index{\verb&LALTappRpnTdomTimePhase()&}
+\index{\texttt{LALTappRpnTdomTimePhase()}}
 
 \subsubsection*{Description}
 

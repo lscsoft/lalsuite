@@ -13,7 +13,7 @@ where the maximum occured and the phase at the maximum.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveOverlapCP}
-\index{\verb&LALInspiralWaveOverlap()&}
+\index{\texttt{LALInspiralWaveOverlap()}}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}

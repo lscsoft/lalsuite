@@ -12,7 +12,7 @@ Module to calculate the first order differential equations needed in the phasing
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralDerivativesCP}
-\index{\verb&LALInspiralDerivatives()&}
+\index{\texttt{LALInspiralDerivatives()}}
 
 \subsubsection*{Description}
 

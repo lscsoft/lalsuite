@@ -11,7 +11,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALMatrixTransformCP}
-\index{\verb&LALMatrixTransform()&}
+\index{\texttt{LALMatrixTransform()}}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ Module tocalculate the derivative of a 3-dimensional matrix $g_{ij}$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALDeterminant3CP}
-\index{\verb&LALDeterminant()&}
+\index{\texttt{LALDeterminant()}}
 
 \subsubsection*{Description}
 

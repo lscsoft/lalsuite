@@ -12,7 +12,7 @@ Module to create a coarse grid of templates.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetParamsCP}
-\index{\verb&LALInspiralSetParams()&}
+\index{\texttt{LALInspiralSetParams()}}
 
 \subsubsection*{Description}
 

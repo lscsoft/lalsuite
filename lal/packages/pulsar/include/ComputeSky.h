@@ -118,7 +118,7 @@ NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
 \begin{verbatim}
 struct CSParams
 \end{verbatim}
-\index{\verb&CSParams&}
+\index{\texttt{CSParams}}
 
 \noindent This structure contains the parameters for the \verb@ComputeSky()@ routine.  The parameters are:
 

@@ -18,7 +18,7 @@ $\tau_{3}=\tau_{3min}$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetSearchLimitsCP}
-\index{\verb&LALInspiralSetSearchLimits()&}
+\index{\texttt{LALInspiralSetSearchLimits()}}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the GEO600 detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGEOPsdCP}
-\index{\verb&LALGEOPsd()&}
+\index{\texttt{LALGEOPsd()}}
 
 \subsubsection*{Description}
 

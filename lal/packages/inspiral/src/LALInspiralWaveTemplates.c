@@ -14,7 +14,7 @@ with a zero and $\pi/2$ phase template, we do not need to call the waveform gene
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveTemplatesCP}
-\index{\verb&LALInspiralWaveTemplates()&}
+\index{\texttt{LALInspiralWaveTemplates()}}
 
 \subsubsection*{Description}
 

@@ -14,7 +14,7 @@ physical values for the masses of the compact objects and their symmetric mass r
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralValidParamsCP}
-\index{\verb&LALInspiralValidParams()&}
+\index{\texttt{LALInspiralValidParams()}}
 
 \subsubsection*{Description}
 

@@ -9,7 +9,7 @@ Module to create a Gaussian random number.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGaussianRandomNumberCP}
-\index{\verb&LALGaussianRandomNumber()&}
+\index{\texttt{LALGaussianRandomNumber()}}
 
 \subsubsection*{Description}
 Using the c internal random number generates this routine

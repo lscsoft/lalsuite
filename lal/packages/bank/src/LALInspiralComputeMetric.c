@@ -14,7 +14,7 @@ the signal manifold.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralComputeMetricCP}
-\index{\verb&LALInspiralComputeMetric()&}
+\index{\texttt{LALInspiralComputeMetric()}}
 
 \subsubsection*{Description}
 

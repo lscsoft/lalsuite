@@ -11,7 +11,7 @@ and return the resulting vector in \texttt{vector}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALAddVectorsCP}
-\index{\verb&LALAddVectors()&}
+\index{\texttt{LALAddVectors()}}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}

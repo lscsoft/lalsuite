@@ -13,7 +13,7 @@ waveform generation.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetupCP}
-\index{\verb&LALInspiralSetup()&}
+\index{\texttt{LALInspiralSetup()}}
 
 \subsubsection*{Description}
 

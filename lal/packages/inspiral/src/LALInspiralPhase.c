@@ -11,7 +11,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralPhaseCP}
-\index{\verb&LALInspiralPhase()&}
+\index{\texttt{LALInspiralPhase()}}
 
 \subsubsection*{Description}
 

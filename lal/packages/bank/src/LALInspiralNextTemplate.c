@@ -12,7 +12,7 @@ Module to calculate the coordinates of the next template in the bank.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralNextTemplateCP}
-\index{\verb&LALInspiralNextTemplate()&}
+\index{\texttt{LALInspiralNextTemplate()}}
 
 \subsubsection*{Description}
 

@@ -9,7 +9,7 @@ Computes a demodulated Fourier transform (DeFT) given a set of input short Fouri
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALDemodD}
-\index{\verb&LALDemod()&}
+\index{\texttt{LALDemod()}}
 
 \subsubsection*{Description}
 As described in sections \ref{demodulation_intro} and \ref{s:LALDemod.h}, the

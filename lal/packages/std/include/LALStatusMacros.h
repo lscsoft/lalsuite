@@ -845,14 +845,6 @@ extern const int lalNoDebug;
   }                                                                           \
   while ( (statusptr)->statusPtr )
 
-#define SETSTATUSFILELINE( statusptr ) \
-  ( ( void ) ( (statusptr)->file = __FILE__, (statusptr)->line = __LINE__ ) )
-
-#define SETSTATUS( statusptr, code, mesg )                                    \
-  ( SETSTATUSFILELINE( statusptr ),                                           \
-    (statusptr)->statusDescription = (mesg),                                  \
-    (statusptr)->statusCode = (code) )
-
 #define REPORTSTATUS( statusptr )                                             \
   do                                                                          \
   {                                                                           \
@@ -947,6 +939,14 @@ do {                                                                          \
     return;                                                                   \
   }                                                                           \
 } while ( 0 )
+
+#define SETSTATUSFILELINE( statusptr ) \
+  ( ( void ) ( (statusptr)->file = __FILE__, (statusptr)->line = __LINE__ ) )
+
+#define SETSTATUS( statusptr, code, mesg )                                    \
+  ( SETSTATUSFILELINE( statusptr ),                                           \
+    (statusptr)->statusDescription = (mesg),                                  \
+    (statusptr)->statusCode = (code) )
 
 
 #ifdef  __cplusplus

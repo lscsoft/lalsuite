@@ -10,7 +10,7 @@ Computes the phase model coefficients necessary for a successful demodulation.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ComputeSkyCP}
-\index{\verb&ComputeSky()&}
+\index{\texttt{ComputeSky()}}
 
 \subsubsection*{Description}
 Given an input index which refers to the sky patch under consideration, this

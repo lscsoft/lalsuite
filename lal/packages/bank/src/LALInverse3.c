@@ -13,7 +13,7 @@ Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInverse3CP}
-\index{\verb&LALInverse3()&}
+\index{\texttt{LALInverse3()}}
 
 \subsubsection*{Description}
 

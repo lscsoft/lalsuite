@@ -10,7 +10,7 @@ and to add a noisy component expected in a given detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALRandomInspiralSignalCP}
-\index{\verb&LALRandomInspiralSignal()&}
+\index{\texttt{LALRandomInspiralSignal()}}
 
 \subsubsection*{Description}
 Depending on the value of the parameter \texttt{RandomIn.type=0,1 or 2} this

@@ -12,7 +12,7 @@ Module to calculate the number of data points needed to make a given waveform.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveLengthCP}
-\index{\verb&LALInspiralWaveLength()&}
+\index{\texttt{LALInspiralWaveLength()}}
 
 \subsubsection*{Description}
 
