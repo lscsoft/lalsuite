@@ -271,6 +271,7 @@ Duncan Brown, Patrick Brady and Saikat Ray-Majumder
 \texttt{lalapps\_power} --- performs excess power analysis on real or
 simulated data.
 
+\newcommand{\function}[1]{\texttt{#1}}
 \newcommand{\prog}[1]{\texttt{#1}}
 \newcommand{\option}[1]{\texttt{#1}}
 \newcommand{\parm}[1]{$<$\textit{#1}$>$}
@@ -591,7 +592,7 @@ Enable the output of informational messages.
 Set the type of window to use when extracting an analysis window from the
 time series to the LAL window corresponding to the integer parameter
 \parm{window}.  See the LAL package ``window'' for a description of the
-window that corresponds to each integer window type.
+window that corresponds to each value of \parm{window}.
 
 \item[\option{--window-length} \parm{samples}]
 Set the number of samples to use for an analysis window to \parm{samples}.
@@ -609,8 +610,7 @@ actually analyzed).
 
 \end{entry}
 
-\item[Time Domain Segmentation]\leavevmode
-
+\item[Time Domain Segmentation]
 The excess power analysis code does not process the input data as a
 continuous time series;  rather the time series is split into a sequence of
 discrete ``analysis windows'', which are each analyzed individually.  To
@@ -622,40 +622,115 @@ the boundary of one window will (typically) be centred in the next.
 Because edge effects at various stages of the analysis can corrupt the
 beginning and end of the analysis window, the actual quantity of data
 extracted from the input time series to form a window is twice the amount
-that is analyzed.  Only the central half of the window is retained, with
-the first and last quarters of each window being discarded.  The
-arrangement is shown in the following diagram.
+that is analyzed.  Only results from the central half of the window are
+retained, with the first and last quarters of each window being discarded.
+The arrangement is shown in the following diagram.
 \begin{center}
 \input{figures/power/windows.fig}
 \end{center}
-Here we see an example sequence of analysis windows, each containing 32768
-samples.  The first and last 8192 samples (first and last quarter) from
-each window are discarded as indicated by the crossed-out sections in each
-window.  In this example, each window is shifted 8192 samples (equal to one
-quarter of the window length) from the start of the previous window.  This
-choice of window length and window shift cause the sections of the time
-series that are actually searched for events (the sections that are not
-crossed out) to overlap each other by half of their own width, which is the
-typical mode of operation for the code.  Notice that the first and last
-quarter window length of the complete time series are \emph{not} analyzed,
-as they are discarded from the only windows in which they appear.
+Here we see a discrete time series (represented by the bottom-most
+horizontal line) that contains 57344 samples.  It has been divided into a
+sequence of four analysis windows, each containing 32768 samples.  A fifth,
+greyed-out, analysis window is shown to indicate where the next window in
+the sequence would start.  In the analysis of each window, the first and
+last 8192 samples (first and last quarter) are discarded as indicated by
+the crossed-out sections in each window.  In this particular example, each
+window is shifted 8192 samples (also equal to one quarter of the window
+length) from the start of the previous window.  This choice of window
+length and window shift causes the sections of each window that are
+actually searched for events (the sections that are not crossed out) to
+overlap their neighbours by half of their own width.  This is the typical
+mode of operation for the search code.  Notice that the first and last
+quarter window length of the complete time series (the cross-out sections
+in the bottom line) are \emph{not} analyzed, as they are discarded from the
+only analysis windows in which they appear.
+
+The excess power code whitens the input time series using an estimate of
+the instrument's noise power spectral density (PSD).  The estimated noise
+PSD is computed by averaging the PSDs from a number of successive analysis
+windows.  The noise PSD is not estimated by averaging over the entire time
+series in order to allow the code to track the (possibly) changing
+character of the instrument's noise.  For convenience, the user is
+permitted to enter the number of samples that should be used to estimate
+the PSD.  The number of samples entered should correspond to the time for
+which the instrument's noise can be approximated as stationary for the
+purpose of the excess power analysis.  Since, however, the actual
+estimation procedure involves averaging over an integer number of analysis
+windows, it is necessary for the number of samples selected to correspond
+to the boundary of an analysis window.  For convenience,
+\prog{lalapps\_power} will automatically round the value entered down to
+the nearest analysis window boundary.
+
+The LAL function \function{EPSearch()} performs the parts of the analysis
+described above.  It is given a time series that it divides into analysis
+windows, which it uses to estimate the noise PSD.  Using the estimated
+noise PSD, it whitens each analysis window and then searches them for burst
+events.  Only the analysis windows within the data used to estimate the
+noise PSD are whitened using that estimate.  Once those windows have been
+searched for burst events, \function{EPSearch()} returns to the calling
+procedure which then extracts a new time series and the process repeats.
+The parameter provided via the command line option
+\option{--psd-average-points} sets the length of the time series that is
+passed to \function{EPSearch()}.
+
+As each successive time series is passed to \function{EPSearch()}, in order
+for the analysis windows in the two time series to overlap each other
+correctly --- i.e.\ to ensure the same overlap between analysis windows in
+neighbouring time series as exists between neighbouring windows within a
+series --- it is necessary for the second time series to begin
+$(\mbox{\parm{window length}} - \mbox{\parm{window shift}})$ samples before
+the end of the first series.  The arrangement is shown in the following
+figure.
+\begin{center}
+\input{figures/power/psds.fig}
+\end{center}
+Here we see two of the time series from the first diagram above, each of
+which is to be passed to \function{EPSearch()} for analysis.  To see why
+the overlap between these two time series must be chosen as it is, refer to
+the first diagram above to see where the greyed-out fifth analysis window
+was to be placed.  That is where the first analysis window in the second
+time series here will be placed.
+
+\begin{center}
+\input{figures/power/conditioning.fig}
+\end{center}
 
 
 \item[Example]
-To run the program,  type:
+To run the program, type:
 \begin{verbatim}
- lalapps_power --npts 16384  --nseg 1200  --olap 8192 --olapfctr 3 \  
- --minfbin 2  --mintbin 2   --flow 130  --delf 1   --lngth 256     \
- --nsigma 2  --alphdef 0.5  --segdcle 64  --threshold 1e-09        \
- --etomstr 100  --channel H1:LSC-AS_Q   --simtype 0                \
- --spectype useMedian  --window 2 --gps-start-time 729332600       \
- --gps-start-time_ns 0 --gps-end-time 729332800                    \
- --gps-end-time-ns 0  --sample-rate 16384                          \
- --frame-cache frcache-H-729332032-729333188.out --user-tag 040511 \
- --verbose  --dbglevel 65                                          \
- --calibration-cache H1-CAL-V03-729273600-734367600.cache          \
- --injfile HL-INJECTIONS_1_S20507043-729332032-1156.xml            
+lalapps_power \
+--bandwidth 1024 \
+--channel-name "H1:LSC-AS_Q" \
+--cluster \
+--default-alpha 0.5 \
+--filter-corruption 8192 \
+--frame-cache H-754008315-754008371.cache \
+--frame-sample-rate 16384 \
+--gps-end-time 754008363 \
+--gps-end-time-ns 0 \
+--gps-start-time 754008323 \
+--gps-start-time-ns 0 \
+--low-freq-cutoff 130.0 \
+--min-freq-bin 2 \
+--min-time-bin 2 \
+--nsigma 2.0 \
+--psd-average-method useMedian \
+--psd-average-points 548864 \
+--resample-filter butterworth \
+--target-sample-rate 16384 \
+--threshold 1.0e-9 \
+--tile-overlap-factor 3 \
+--user-tag testing \
+--verbose \
+--window 2 \
+--window-length 32768 \
+--window-shift 8192
 \end{verbatim}
+For this to succeed, the current directory must contain the file
+\texttt{H-754008315-754008931.cache} describing the locations of the
+\texttt{.gwf} frame files with channel \verb|H1:LSC-AS_Q| data at 16384
+samples per second for the GPS times 754008323.0 s through 754008363.0 s.
 
 \item[Authors]
 Patrick Brady,  Kipp Cannon and Saikat Ray Majumder 
