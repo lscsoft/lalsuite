@@ -15,8 +15,6 @@ backgrounds.
 \label{program:stochastic-pipeline}
 \idx[Program]{stochastic\_pipeline.py}
 
-% this documentation is correct as of CVS Revision 1.24
-
 \begin{entry}
 \item[Name]
 \prog{lalapps\_stochastic\_pipe} --- python script to generate Condor DAGs
@@ -42,13 +40,17 @@ the parameters needed to run the jobs and must be specified with the
 \verb$--config-file$ option. A file containing science segments to
 analysed should be specified in the \verb$[input]$ section of the
 configuration file with a line such as
+
 \begin{verbatim}
 segments = S2H1L1v03_selectedsegs.txt
 \end{verbatim}
+
 This should contain four whitespace separated columns:
+
 \begin{verbatim}
   segment_id    gps_start_time    gps_end_time    duration
 \end{verbatim}
+
 that define the science segments to be used. Lines starting with an
 octothorpe are ignored.
 
@@ -56,11 +58,71 @@ octothorpe are ignored.
 Generate a DAG to run a stochastic search on a pair of interferometers
 specified in the configuration file. The generated DAG is then submitted
 with \texttt{condor\_submit\_dag}
-\begin{verbatim}
-lalapps_inspiral_pipe --log-path /home/ram/dag_logs \
---datafind --stochastic --config-file stochastic_H1L1.ini
 
-condor_submit_dag stochastic_H1L1.dag
+\begin{verbatim}
+> lalapps_stochastic_pipe --log-path /home/ram/dag_logs \
+     --datafind --stochastic --config-file stochastic_H1L1.ini
+> condor_submit_dag stochastic_H1L1.dag
+\end{verbatim}
+
+\item[Author]
+Adam Mercer
+\end{entry}
+
+\clearpage
+\section{Program \prog{lalapps\_stochastic\_bayes}}
+\label{program:stochastic-pipeline}
+\idx[Program]{stochastic\_pipeline.py}
+
+\begin{entry}
+\item[Name]
+\prog{lalapps\_stochastic\_bayes} --- python script to generate Condor DAGs
+to run the stochastic bayesian pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+  -h, --help               display this message
+  -v, --version            print version information and exit
+
+  -d, --datafind           run LSCdataFind to create frame cache files
+  -s, --stochastic         run lalapps_stochastic
+
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+\end{verbatim}
+
+\item[Description] \prog{lalapps\_stochastic\_bayes} generates a Condor
+DAG to run the stochastic search bayesian pipeline. The configuration
+should specify the parameters needed to run the jobs and must be
+specified with the \verb$--config-file$ option. A file containing
+science segments to analysed should be specified in the \verb$[input]$
+section of the configuration file with a line such as
+
+\begin{verbatim}
+segments = S2H1L1v03_selectedsegs.txt
+\end{verbatim}
+
+This should contain
+four whitespace separated columns:
+
+\begin{verbatim}
+  segment_id    gps_start_time    gps_end_time    duration
+\end{verbatim}
+
+that define the science segments to be used. Lines starting with an
+octothorpe are ignored.
+
+\item[Example]
+Generate a DAG to run a stochastic search on a pair of interferometers
+specified in the configuration file. The generated DAG is then submitted
+with \texttt{condor\_submit\_dag}
+
+\begin{verbatim}
+> lalapps_stochastic_bayes --log-path /home/ram/dag_logs \
+    --datafind --stochastic --config-file stochastic_H1L1_bayes.ini
+> condor_submit_dag stochastic_H1L1_bayes.dag
 \end{verbatim}
 
 \item[Author]
@@ -71,8 +133,6 @@ Adam Mercer
 \section{Program \prog{lalapps\_stochastic}}
 \label{program:lalapps-stochastic}
 \idx[Program]{lalapps\_stochastic}
-
-% this documentation is correct as of CVS Revision 1.118
 
 \begin{entry}
 \item[Name]
