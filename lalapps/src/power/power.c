@@ -1050,7 +1050,7 @@ static REAL4TimeSeries *get_time_series(
 		series = get_ligo_data(stat, stream, params->channelName, start, end, lengthlimit);
 
 	/* Check for missing data */
-	if(stream->state | LAL_FR_GAP) {
+	if(stream->state & LAL_FR_GAP) {
 		fprintf(stderr, "get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		LAL_CALL(LALDestroyREAL4TimeSeries(stat, series), stat);
 		series = NULL;
