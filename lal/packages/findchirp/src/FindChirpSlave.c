@@ -606,16 +606,23 @@ LALFindChirpSlave (
     if ( params->candlePtr )
     {
       FindChirpStandardCandle   *candle = params->candlePtr;
+
+      REAL4 cannonDist = 1.0; /* Mpc */
       REAL4 m  = (REAL4) candle->tmplt.totalMass;
       REAL4 mu = (REAL4) candle->tmplt.mu;
+      REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
       REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
         pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
         pow( LAL_MTSUN_SI / (REAL4) params->tmpltParams->deltaT, -1.0/6.0 );
 
-      candle->sigmasq = 4.0 * ( (REAL4) params->tmpltParams->deltaT / 
-          (REAL4) params->filterInput->fcTmplt->data->length ) * 
-        candleTmpltNorm * params->fcSegVec->data->segNorm;
-      
+      distNorm *= params->tmpltParams->dynRange;
+      candleTmpltNorm *= candleTmpltNorm;
+      candleTmpltNorm *= distNorm * distNorm;
+
+      candle->sigmasq = 4.0 * ( (REAL4) params->filterParams->deltaT / 
+          (REAL4) params->filterParams->qVec->length );
+      candle->sigmasq *= candleTmpltNorm * params->fcSegVec->data->segNorm;
+
       candle->effDistance = sqrt( candle->sigmasq / candle->rhosq );
     }
 
