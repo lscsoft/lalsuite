@@ -622,48 +622,6 @@ static SnglBurstTable **trim_event_list(SnglBurstTable **list, struct options_t 
 
 
 /*
- * Read trigger list, and generate a new injection list from the injections
- * that occur in the data that was analyzed.  We also trim out unwanted
- * triggers as we go to try to control memory usage.
- */
-
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *timeAnalyzed, SimBurstTable **injection_list, struct options_t options)
-{
-	FILE *infile;
-	char line[MAXSTR];
-	SnglBurstTable *trigger_list = NULL;
-	SnglBurstTable **eventaddpoint = &trigger_list;
-	SimBurstTable *newinjection = NULL;
-	SimBurstTable **injaddpoint = &newinjection;
-	INT8 SearchStart, SearchEnd;
-
-	if(!(infile = fopen(filename, "r")))
-		LALPrintError("Could not open input file\n");
-
-	*timeAnalyzed = 0;
-	while(getline(line, MAXSTR, infile)) {
-		if(options.verbose)
-			fprintf(stderr, "Working on file %s\n", line);
-
-		*timeAnalyzed += read_search_summary_start_end(stat, line, &SearchStart, &SearchEnd, NULL);
-
-		injaddpoint = extract_injections(stat, injaddpoint, *injection_list, SearchStart, SearchEnd);
-
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
-
-		eventaddpoint = trim_event_list(eventaddpoint, options);
-	}
-
-	free_injections(*injection_list);
-	*injection_list = newinjection;
-
-	fclose(infile);
-
-	return(trigger_list);
-}
-
-
-/*
  * =============================================================================
  *                                Entry Point
  * =============================================================================
@@ -695,6 +653,14 @@ int main(int argc, char **argv)
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
+	/* input loop */
+	FILE *infile;
+	char line[MAXSTR];
+	SnglBurstTable **eventaddpoint = &trigger_list;
+	SimBurstTable *newinjection = NULL;
+	SimBurstTable **injaddpoint = &newinjection;
+	INT8 SearchStart, SearchEnd;
+
 	/*
 	 * Initialize things.
 	 */
@@ -717,7 +683,27 @@ int main(int argc, char **argv)
 	 * actually analyzed according to the search summary tables.
 	 */
 
-	trigger_list = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &injection_list, options);
+	if(!(infile = fopen(options.inputFile, "r")))
+		LALPrintError("Could not open input file\n");
+
+	timeAnalyzed = 0;
+	while(getline(line, MAXSTR, infile)) {
+		if(options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		timeAnalyzed += read_search_summary_start_end(&stat, line, &SearchStart, &SearchEnd, NULL);
+
+		injaddpoint = extract_injections(&stat, injaddpoint, injection_list, SearchStart, SearchEnd);
+
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(&stat, eventaddpoint, line), &stat);
+
+		eventaddpoint = trim_event_list(eventaddpoint, options);
+	}
+
+	free_injections(injection_list);
+	injection_list = newinjection;
+
+	fclose(infile);
 
 	/*
 	 * Construct a list of detected injections, and a list of the matching
