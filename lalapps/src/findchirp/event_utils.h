@@ -211,19 +211,12 @@ getSnglInspiralEvent(
         SnglInspiralIndex        *params
         );
 
-
-void
-LALSortSnglInspiralTable (
-	      LALStatus         *status,
-              SnglInspiralTable *inspiralEvent,
-              INT4               numEvents
-	      );
-
 void
 LALClusterSnglInspiralTable (
 	      LALStatus         *status,
               SnglInspiralTable *inspiralEvent,
-              INT4              dtime
+              INT4              dtime,
+	      INT4		clusterchoice
 	      );
 
 void
