@@ -162,8 +162,10 @@ int main(int argc, char *argv[]){
   
   FILE   *fp1 = NULL;
   CHAR   filestats[256];
+#ifdef PRINTEVENTS
   FILE   *fpEvents = NULL;
   CHAR   fileEvents[256];
+#endif
   UINT2  blocksRngMed;
 
 #ifdef TIMING
