@@ -125,12 +125,12 @@ static void	lnIRatio(
 
 	INk2 = Ik2 = NULL;
 
-	LALDCreateVector( status->statusPtr, &INk2, N - 2);
-	LALDCreateVector( status->statusPtr, &Ik2,  N - 2);
+	LALDCreateVector( status->statusPtr, &INk2, N - 3);
+	LALDCreateVector( status->statusPtr, &Ik2,  N - 3);
 	LALDCreateVector( status->statusPtr, result, N - 3);
 	CHECKSTATUSPTR( status );
 
-	for( iterator = 0; iterator < N - 2; iterator++)
+	for( iterator = 0; iterator < N - 3; iterator++)
 		INk2->data[iterator] = Ik2->data[iterator] = 0;
 
 	IN2 = nextOrder ( N - 2 );
@@ -170,6 +170,7 @@ void LALBlockRho2 (
 /*********************************************** </lalVerbatim> */
 {
 	/*  Variable Declarations  */
+	REAL8Vector	*indexVector;
 	REAL8Vector	*xbar0k;
 	REAL8Vector	*x2bar0k;
         REAL8Vector     *xbarkNk;
@@ -187,7 +188,6 @@ void LALBlockRho2 (
 	REAL8		rootRatio;
 const	INT4		two = 2;
 	INT4		k;
-	INT4Vector	*indexVector;
         INT4		iterator;
         INT4		N;
 
@@ -216,22 +216,22 @@ const	INT4		two = 2;
 	ASSERT ( N > 1, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
 
 	/*  Create a constant vector values from 1 to N  */
-	LALI4CreateVector( status->statusPtr, &indexVector, N);
+	LALDCreateVector( status->statusPtr, &indexVector, N);
 
 	for (iterator = 1; iterator <= N; iterator++)
-		indexVector->data[iterator - 1] = iterator;
-
-
+		indexVector->data[iterator - 1] = ((REAL8)(iterator));
 
 	/* xbar0k = cumsum(data)./(1:N); */
 
 	LALDCumSum( status->statusPtr, &xbar0k, data);
 
-	LALDVectorDotSlashI4Vector( status->statusPtr, &temp, xbar0k, indexVector);
+	LALDVectorDotSlashDVector( status->statusPtr, &temp, xbar0k, indexVector);
         CHECKSTATUSPTR( status );
 
 	for ( iterator = 0; iterator < N; iterator++)
+	  {
 		xbar0k->data[iterator] = temp->data[iterator];
+	  }
 
 	LALDDestroyVector( status->statusPtr, &temp);
         CHECKSTATUSPTR( status );
@@ -250,7 +250,7 @@ const	INT4		two = 2;
         CHECKSTATUSPTR( status );
         temp            = NULL;
 
-        LALDVectorDotSlashI4Vector( status->statusPtr, &temp, x2bar0k, indexVector);
+        LALDVectorDotSlashDVector( status->statusPtr, &temp, x2bar0k, indexVector);
         CHECKSTATUSPTR( status );
 
         for ( iterator = 0; iterator < N; iterator++)
@@ -295,7 +295,7 @@ const	INT4		two = 2;
 	LALDCumSum( status->statusPtr, &temp2, temp);
         CHECKSTATUSPTR( status );
 
-        LALDVectorDotSlashI4Vector( status->statusPtr, &xbarkNk, temp2, indexVector);
+        LALDVectorDotSlashDVector( status->statusPtr, &xbarkNk, temp2, indexVector);
         CHECKSTATUSPTR( status );
 
         LALDDestroyVector( status->statusPtr, &temp2);
@@ -319,7 +319,7 @@ const	INT4		two = 2;
         LALDCumSum( status->statusPtr, &temp, temp2);
         CHECKSTATUSPTR( status );
 
-	LALDVectorDotSlashI4Vector( status->statusPtr, &x2barkNk, temp, indexVector);
+	LALDVectorDotSlashDVector( status->statusPtr, &x2barkNk, temp, indexVector);
         CHECKSTATUSPTR( status );
 
         LALDDestroyVector( status->statusPtr, &temp2);
@@ -364,7 +364,7 @@ const	INT4		two = 2;
 	for (k = 2; k <= N - 2; k++)
 	{
 		/*  fom = log(N*Y0N)*(N-1)/2  - log(k.*Y0k(k)).*(k-1)/2  */
-		fom->data[k - 2] = tempReal - (log(k * Y0k->data[k-1])) * (k-1)/2;
+		fom->data[k - 2] = tempReal - (log(k * Y0k->data[k - 1])) * (k-1)/2;
 
 		/*  fom = fom - log((N-k).*YkNk(N-k+1)).*(N-k-1)/2  */
 		fom->data[k - 2] = fom->data[k - 2] - log((N - k) * YkNk->data[N - k - 1]) * ( N - k - 1) / 2;
@@ -377,7 +377,6 @@ const	INT4		two = 2;
 
 		/*  fom = fom.*rootRatio  */
 		rootRatio = sqrt(((REAL8)(N))/(k * (N - k)));
-
 		fom->data[k - 2] = fom->data[k - 2]* rootRatio;
        	}
 
@@ -385,22 +384,22 @@ const	INT4		two = 2;
 	CHECKSTATUSPTR( status );
 
 	for( k = (*marginOfExclusion); k < (INT4)fom->length - (INT4)(2 * (*marginOfExclusion)); k++ )
-	{
-		fomWithoutMargins->data[k - (*marginOfExclusion)] = fom->data[k];
-	}
-
-	/*  r = sum(fom)  */
-	LALDSum( status->statusPtr, result, fomWithoutMargins);
-        CHECKSTATUSPTR( status );
+	  {
+	    fomWithoutMargins->data[k - (*marginOfExclusion)] = fom->data[k];
+	  }
 
 	/*  [rpeak,ndx] = max(fom)  */
 	LALDMax( status->statusPtr, rpeak, fomWithoutMargins, index);
         CHECKSTATUSPTR( status );
 
+	/*  r = sum(fom)  */
+	LALDSum( status->statusPtr, result, fomWithoutMargins);
+	CHECKSTATUSPTR( status );
+
 	/*  ndx = ndx + 2  */
 	(*index) = (*index) + 1;
 
-	LALI4DestroyVector( status->statusPtr, &indexVector);
+	LALDDestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
 	LALDDestroyVector( status->statusPtr, &xbar0k);
 	LALDDestroyVector( status->statusPtr, &x2bar0k);
