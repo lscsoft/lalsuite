@@ -61,6 +61,9 @@
 /* Define if using MetaIo library */
 #undef LAL_METAIO_ENABLED
 
+/* Define if using qthread library */
+#undef LAL_QTHREAD
+
 #endif /* _LALCONFIG_H */
 
 #endif /* CONFIG_H__LAL */
