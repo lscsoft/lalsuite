@@ -34,10 +34,14 @@ $\backslash$ \newline \hspace*{0.25in}
 \verb$--channel$ \textsc{channel} \verb$--simtype$ \textsc{simtype} 
 \verb$--spectype$ \textsc{spectype} 
 $\backslash$ \newline \hspace*{0.25in}
-\verb$--window$ \textsc{window} \verb$--epoch$ \textsc{sec} \textsc{nsec} 
+\verb$--window$ \textsc{window} \verb$--start_time$ \textsc{sec} 
+\verb$--start_time_ns$ \textsc{nsec} 
 \verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
 $\backslash$ \newline \hspace*{0.25in}
-[\verb$--noise$ \textsc{var} \textsc{seed}] [\verb$--outfile$ \textsc{outfile}]
+\verb$--srate$ \textsc{srate} 
+$\backslash$ \newline \hspace*{0.25in}
+[\verb$--noise$ \textsc{var}] [\verb$--seed$ \textsc{seed}] 
+[\verb$--comment$ \textsc{comment}]
 
 \item[Description] 
 \verb$lal_power$ runs the excess power code from LAL on a chunk of
@@ -132,6 +136,20 @@ integer.
 data to be analyzed;  a character string matching
 the channel name in the frame files,  e.g. \texttt{H2:LSC-AS\_Q}.
 
+\item[\texttt{--start\_time} \textsc{sec}] The GPS time
+corresponding to the start of the time series read from frames.  Note:  
+$\textsc{olap}$ points are discarded at the beginning and end of the
+data to avoid data corrupted by the low-pass filtering.
+
+\item[\texttt{--start\_time\_ns} \textsc{nsec}] The number of
+nanoseconds after \textsc{sec} for the time series read from frames. 
+
+\item[\texttt{--framecache} \textsc{frcache}] A LAL format frame
+cache file.    The \textsc{frcache} can be a filename in the local
+directory,  or a filename including absolute path.   These cache files
+are explained in the \emph{framedata} package in LAL and can be
+constructed by making calls to \emph{LALdataFind} on some systems.
+
 \item[\texttt{--simtype} \textsc{simtype}] Type of simulation. Set it to 0,
 although it is ignored in the current version of the code.
 
@@ -141,6 +159,40 @@ data;  a character string [\texttt{useMean}, \texttt{useMedian}].
 \item[\texttt{--window} \textsc{window}] Type of window to use on the data;
 must be an integer.  [Possible values are:  0=Rectangular, 1=Hann,
 2=Welch, 3=Bartlett, 4=Parzen, 5=Papoulis, 6=Hamming.]
+
+\item[\texttt{--numpts} \textsc{numpts}] The number of points of data
+to be extracted from the frame files may be determined by the
+following formula
+\[
+\mbox{\textsc{numpts}} = \mbox{\textsc{nseg}} \times (
+\mbox{\textsc{npts}} - 
+\mbox{\textsc{olap}} ) + 3 \times
+\mbox{\textsc{olap}} \; .
+\]
+Notice that this appears to be $2 \times \textsc{olap}$ more points
+than you might expect.   Since the data stream is high-pass filtered
+internally,   the code ignores the first $\textsc{olap}$ points and
+requires that there be an extra $\textsc{olap}$ points at the end to
+avoid data corruption.
+
+\item[\texttt{--comment} \textsc{comment}] A user defined comment
+string.  It should be less than 256 characters and should not contain
+spaces (replace spaces by underscores).  This string will appear in
+the name of the file to which output information is written.
+
+\item[\texttt{--printSpectrum}] Print out the power spectrum to a
+file.   Note:  this needs to be enhanced.  AT present it give some
+help with debugging and understanding the data.
+
+\item[\texttt{--printData}] Print out the time series that is read in
+by the code.
+
+\item[\texttt{--verbose}] Print out informational messages as the code
+runs.
+
+\item[\texttt{--dbglevel}] Set the lalDebugLevel.  The default is
+\texttt{LALMSGLVL2}.   A useful setting is 65 which turns off memory
+padding,  but keeps memory tracking and error messages.
 \end{entry}
 
 
@@ -152,13 +204,13 @@ lalapps_power --npts 2048 --nseg 719 --olap 1024 --olapfctr 3 \
     --alphdef 0.5 --segdcle 32 --threshold 1.0e-13 --etomstr 10 \
     --channel S1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
     --epoch  693768279 0 --numpts 1048576 --printSpectrum --noise 1 11 \
-    --outfile sim-inj.xml
+    --comment simulation
 \end{verbatim}
 
 \item[Author]
 Patrick Brady
 \end{entry}
-
+\clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % manipulate the events from power code
@@ -178,7 +230,7 @@ the triggers by frequency.
 [\verb$--threshold$ \textsc{threshold}]    
 $\backslash$ \newline \hspace*{0.25in}
 \verb$--freq$ \textsc{fstart} \textsc{fstop} \textsc{df}
-\verb$--tfhist$ \textsc{outfile} 
+[\verb$--tfhist$ \textsc{outfile}] 
 [\verb$--help$]
 
 \item[Description] 
@@ -192,6 +244,10 @@ should be extensible to do a number of similar things like this.
 \item[\texttt{--input}  \textsc{infile}] The name of a file containing
 a list of XML files to parse;  one XML file per line of
 \textsc{infile}.
+
+\item[\texttt{--table} \textsc{tablename}] The name of the table to be
+parsed from the XML file.   This will be needed when the process
+table is written into the XML files by the power code.
 
 \item[\texttt{--threshold} \textsc{threshold}] Identify events with alpha
 less than this; a real number.  The meaning of the threshold is the same as
