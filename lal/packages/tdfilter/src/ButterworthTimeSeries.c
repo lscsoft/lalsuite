@@ -706,25 +706,21 @@ ParsePassBandParamStruc( LALStatus          *stat,
      just which parameter combinations have been given. */
   REAL8 w1=deltaT*params->f1;    /* Dimensionless frequencies; */
   REAL8 w2=deltaT*params->f2;    /* later transformed to w-plane. */
-  REAL8 wLow = w1<w2 ? w1 : w2;  /* Sorted frequencies. */
-  REAL8 wHigh = w1>w2 ? w1 : w2;
   REAL8 a1=params->a1;           /* Attenuation factors; later a */
   REAL8 a2=params->a2;           /* square root will be taken. */
-  REAL8 aLow = w1<w2 ? a1 : a2;  /* Sorted according to w's. */
-  REAL8 aHigh = w1>w2 ? a1 : a2;
-  BOOLEAN wLowGiven = (wLow>0.0)&&(wLow<0.5);
-  BOOLEAN bothLowGiven = wLowGiven&&(aLow>0.0)&&(aLow<1.0);
-  BOOLEAN wHighGiven = (wHigh>0.0)&&(wHigh<0.5);
-  BOOLEAN bothHighGiven = wHighGiven&&(aHigh>0.0)&&(aHigh<1.0);
+  BOOLEAN w1Given = (w1>0.0)&&(w1<0.5);
+  BOOLEAN w2Given = (w2>0.0)&&(w2<0.5);
+  BOOLEAN both1Given = w1Given && (a1>0.0)&&(a1<1.0);
+  BOOLEAN both2Given = w2Given && (a2>0.0)&&(a2<1.0);
 
   /* If both frequencies and both attenuations have been given,
      compute the required filter order and characteristic frequency
      from them. */
-  if(bothLowGiven && bothHighGiven){
-    aLow=sqrt(aLow);
-    aHigh=sqrt(aHigh);
-    wLow=tan(LAL_PI*wLow);
-    wHigh=tan(LAL_PI*wHigh);
+  if(both1Given && both2Given){
+    REAL8 aLow  = w1<w2 ? sqrt(a1) : sqrt(a2);
+    REAL8 aHigh = w1>w2 ? sqrt(a1) : sqrt(a2);
+    REAL8 wLow  = w1<w2 ? tan(LAL_PI*w1) : tan(LAL_PI*w2);
+    REAL8 wHigh = w1>w2 ? tan(LAL_PI*w1) : tan(LAL_PI*w2);
 
     /* First make sure that two different frequencies and attenuations
        have been specified. */
@@ -781,15 +777,15 @@ ParsePassBandParamStruc( LALStatus          *stat,
 	      " (validly) specified.");
       return 0;
     }
-    if(bothLowGiven){
-      wLow=tan(LAL_PI*wLow);
-      aLow=sqrt(aLow);
+    if(both1Given){
+      REAL8 wLow=tan(LAL_PI*w1);
+      REAL8 aLow=sqrt(a1);
       *n=params->nMax;
       *wc=wLow*pow(1.0/aLow - 1.0, -0.5/((REAL8)(*n)));
       return 1;
-    }else if(bothHighGiven){
-      wHigh=tan(LAL_PI*wHigh);
-      aHigh=sqrt(aHigh);
+    }else if(both2Given){
+      REAL8 wHigh=tan(LAL_PI*w2);
+      REAL8 aHigh=sqrt(a2);
       *n=params->nMax;
       *wc=wHigh*pow(1.0/aHigh - 1.0, 0.5/((REAL8)(*n)));
       return 2;
@@ -798,7 +794,7 @@ ParsePassBandParamStruc( LALStatus          *stat,
     /* If no attenuations are given, then there had better be only one
        frequency given, otherwise we don't know whether to make a low-
        or a high-pass filter. */
-    else if(wHighGiven && wLowGiven){
+    else if(w1Given && w2Given){
       LALInfo(stat,"Neither attenuation has been specified, so only"
 	      " one frequency should be.");
       return 0;
@@ -808,11 +804,11 @@ ParsePassBandParamStruc( LALStatus          *stat,
        the specified nMax as the filter order. */
     else{
       *n=params->nMax;
-      if(wHighGiven){
-	*wc=tan(LAL_PI*wHigh);
+      if(w2Given){
+	*wc=tan(LAL_PI*w2);
 	return 2;
-      }else if(wLowGiven){
-	*wc=tan(LAL_PI*wLow);
+      }else if(w1Given){
+	*wc=tan(LAL_PI*w1);
 	return 1;
       }else{
 	LALInfo(stat,"No frequencies within the Nyquist band have"
