@@ -80,7 +80,6 @@
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
 #include <lal/FrameStream.h>
@@ -111,7 +110,7 @@ NRCSID( FRAMECALIBRATIONC, "$Id$" );
   } \
   TRY( LALDestroyFrCache( status->statusPtr, &calCache ), status );
 
-#define OPEN_FAC \
+#define OPEN_FAC_AND_GET_POS \
       LALFrCacheOpen( status->statusPtr, &facStream, facCache ); \
       BEGINFAIL( status ) \
       { \
@@ -125,10 +124,8 @@ NRCSID( FRAMECALIBRATIONC, "$Id$" );
         TRY( LALFrClose( status->statusPtr, &facStream ), status ); \
         RETURN_POINT_CAL; \
       } \
-      ENDFAIL( status );
-
-#define GET_POS \
-      LALFrSeek( status->statusPtr, &seekEpoch, facStream ); \
+      ENDFAIL( status ); \
+      LALFrSeek( status->statusPtr, &(output->epoch), facStream ); \
       BEGINFAIL( status ) \
       { \
         TRY( LALFrClose( status->statusPtr, &facStream ), status ); \
@@ -153,6 +150,7 @@ LALExtractFrameResponse(
     LIGOTimeGPS		    *duration)
 
 { /* </lalVerbatim> */
+  /* UINT4 k; */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
   FrCache      *calCache  = NULL;
@@ -178,10 +176,9 @@ LALExtractFrameResponse(
   CalibrationFunctions          calfuncs;
   CalibrationUpdateParams       calfacts;
 
-  LIGOTimeGPS                   seekEpoch;
+  REAL8				epoch, first_cal;
   UINT4				length;
   REAL8				duration_real;
-  const REAL8                   fuzz = 0.1 / 16384.0;
     
   INITSTATUS( status, "LALFrameExtractResponse", FRAMECALIBRATIONC );
   ATTATCHSTATUSPTR( status );
@@ -200,13 +197,7 @@ LALExtractFrameResponse(
       FRAMECALIBRATIONH_ENULL, FRAMECALIBRATIONH_MSGENULL );
 
 
-  /*
-   *
-   * set up and clear the structures to hold the input data 
-   *
-   */
-
-
+  /* set up and clear the structures to hold the input data */
   memset( &R0, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &C0, 0, sizeof(COMPLEX8FrequencySeries) );
   memset( &ab, 0, sizeof(COMPLEX8TimeSeries) );
@@ -221,14 +212,12 @@ LALExtractFrameResponse(
   calfacts.epoch = output->epoch;
   calfacts.duration = *duration;
   frameChan.name = channelName;
-  
 
   /* 
    *
    * open the calibration cache file 
    *
    */
-
 
   LALFrCacheImport( status->statusPtr, &calCache, catalog );
   if ( status->statusPtr->statusCode )
@@ -336,17 +325,15 @@ LALExtractFrameResponse(
     { 
       /* sensemon stores fac times series as real_8 adc trend data */  
       REAL8TimeSeries     sensemonTS;
-      REAL8               alphaDeltaT;
       INT4		  i;
 
       memset( &sensemonTS, 0, sizeof(REAL8TimeSeries) ); 
     
-      OPEN_FAC;
+      OPEN_FAC_AND_GET_POS;
+
       
       LALSnprintf( channelName, LALNameLength * sizeof(CHAR), 
           "%s:" CAV_FAC_CHAN ".mean" ,  ifo );
-
-      /* get the sample rate of the alpha channel */
       LALFrGetREAL8TimeSeries( status->statusPtr, 
           &sensemonTS, &frameChan, facStream );
       BEGINFAIL( status )
@@ -357,29 +344,24 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* determine number of calibration points required */
+      TRY( LALGPStoFloat( status->statusPtr, &epoch, &(output->epoch)), 
+	  status );
+      TRY( LALGPStoFloat( status->statusPtr, &first_cal, &(sensemonTS.epoch)), 
+	  status );
       TRY( LALGPStoFloat( status->statusPtr, &duration_real, duration), 
 	  status );
-      length = (UINT4) ceil( duration_real / sensemonTS.deltaT );
-      ++length;
-
-      /* make sure we get the first point before the requested cal time */
-      alphaDeltaT = sensemonTS.deltaT;
-      TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            0.0 - ( sensemonTS.deltaT + fuzz ) ), status );
-      sensemonTS.epoch = seekEpoch;
-
-      GET_POS;
+      length = (UINT4)ceil((epoch + duration_real - first_cal) / 
+	  (sensemonTS.deltaT));
       
-      /* create memory for the alpha values */
+      /* get the alpha values */
       LALDCreateVector( status->statusPtr, &(sensemonTS.data), length );
       BEGINFAIL( status )
       {
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
+	TRY( LALDDestroyVector( status->statusPtr, &(sensemonTS.data) ), 
+	    status );
       }
       ENDFAIL( status );
       
-      /* get the alpha values */
       LALFrGetREAL8TimeSeries( status->statusPtr, 
           &sensemonTS, &frameChan, facStream );
       BEGINFAIL( status )
@@ -392,19 +374,21 @@ LALExtractFrameResponse(
       LALCCreateVector( status->statusPtr, &(a.data), length ); 
       BEGINFAIL( status )
       {
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
+	TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status);
       }
       ENDFAIL( status );
 
-      for ( i = 0; i < length; ++i )
+      i = 0;
+      while(i < length)
       {
 	a.data->data[i].re = (REAL4) sensemonTS.data->data[i];
 	a.data->data[i].im = 0;
+	i++;
       }
       a.epoch  = sensemonTS.epoch;
       a.deltaT = sensemonTS.deltaT;
       strncpy( a.name, sensemonTS.name, LALNameLength );
+
 
       LALFrSetPos( status->statusPtr, &facPos, facStream );
       BEGINFAIL( status )
@@ -414,7 +398,7 @@ LALExtractFrameResponse(
       }
       ENDFAIL( status );
       
-      /* get the alpha*beta values */
+      /* get the alpha beta values */
       LALSnprintf( channelName, LALNameLength * sizeof(CHAR), 
           "%s:" OLOOP_FAC_CHAN ".mean",  ifo );
       LALFrGetREAL8TimeSeries( status->statusPtr, 
@@ -426,28 +410,19 @@ LALExtractFrameResponse(
       }
       ENDFAIL( status );
 
-      /* check that alpha and alpha*beta have the same sample rate */
-      if ( fabs( alphaDeltaT - sensemonTS.deltaT ) > LAL_REAL8_EPS )
-      {
-        TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status );
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
-        ABORT( status, FRAMECALIBRATIONH_EDTMM, FRAMECALIBRATIONH_MSGEDTMM );
-      }
-
       LALCCreateVector( status->statusPtr, &(ab.data), length ); 
       BEGINFAIL( status )
       {
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status );
-	RETURN_POINT_CAL;
+	TRY( LALCDestroyVector( status->statusPtr, &(ab.data) ), status);
       }
       ENDFAIL( status );
 
-      for ( i = 0; i < length; ++i )
+      i = 0;
+      while(i < length)
       {
 	ab.data->data[i].re = (REAL4) sensemonTS.data->data[i];
 	ab.data->data[i].im = 0;
+	i++;
       }
       ab.epoch  = sensemonTS.epoch;
       ab.deltaT = sensemonTS.deltaT;
@@ -458,7 +433,6 @@ LALExtractFrameResponse(
       CHECKSTATUSPTR( status ); 	
       break; 
     }
-
     /* destroy the empty frame cache and try again */
     LALDestroyFrCache( status->statusPtr, &facCache );
     BEGINFAIL( status )
@@ -479,12 +453,10 @@ LALExtractFrameResponse(
     if ( facCache->numFrameFiles )
     {
       /* the lalapps frames are complex_8 proc data */
-      OPEN_FAC;
+      OPEN_FAC_AND_GET_POS;
      
       LALSnprintf( channelName, LALNameLength * sizeof(CHAR), 
           "%s:" CAV_FAC_CHAN,  ifo );
-
-      /* get the sample rate of the alpha channel */
       LALFrGetCOMPLEX8TimeSeries( status->statusPtr, 
           &a, &frameChan, facStream );
       BEGINFAIL( status )
@@ -495,28 +467,20 @@ LALExtractFrameResponse(
       ENDFAIL( status );
 
       /* determine number of calibration points required */
-      TRY( LALGPStoFloat( status->statusPtr, &duration_real, duration), 
-          status);
-      length = (UINT4) ceil( duration_real / a.deltaT );
-      ++length;
-
-      /* make sure we get the first point before the requested cal time */
-      TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            0.0 - ( a.deltaT + fuzz ) ), status );
-      a.epoch = ab.epoch = seekEpoch;
-
-      GET_POS;
+      TRY( LALGPStoFloat( status->statusPtr, &epoch, &(output->epoch)), status);
+      TRY( LALGPStoFloat( status->statusPtr, &first_cal, &(a.epoch)), status);
+      TRY( LALGPStoFloat( status->statusPtr, &duration_real, duration), status);
+      length = (UINT4)ceil((epoch + duration_real - first_cal) / (a.deltaT));
+      length = (length > 0) ? length : 1;
       
-      /* create storage for the alpha values */
+      /* get the alpha values */ 
       LALCCreateVector( status->statusPtr, &(a.data), length );
       BEGINFAIL( status )
       {
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
+	TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status );
       }
       ENDFAIL( status );
 
-      /* get the alpha values */ 
       LALFrGetCOMPLEX8TimeSeries( status->statusPtr, 
           &a, &frameChan, facStream );
       BEGINFAIL( status )
@@ -525,6 +489,7 @@ LALExtractFrameResponse(
         RETURN_POINT_CAL;
       }
       ENDFAIL( status );
+
       
       LALFrSetPos( status->statusPtr, &facPos, facStream );
       BEGINFAIL( status )
@@ -534,43 +499,27 @@ LALExtractFrameResponse(
       }
       ENDFAIL( status );
 
-      /* create storage for the alpha*beta values */
+      /* get the alpha beta values */
       LALCCreateVector( status->statusPtr, &(ab.data), length ); 
       BEGINFAIL( status )
       {
-	TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status);
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
+	TRY( LALCDestroyVector( status->statusPtr, &(ab.data) ), status);
       }
       ENDFAIL( status );
 
-      /* get the alpha*beta values */
-      LALSnprintf( channelName, LALNameLength * sizeof(CHAR), 
+       LALSnprintf( channelName, LALNameLength * sizeof(CHAR), 
           "%s:" OLOOP_FAC_CHAN,  ifo );
       LALFrGetCOMPLEX8TimeSeries( status->statusPtr, 
           &ab, &frameChan, facStream );
       BEGINFAIL( status )
       {
-	TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status);
-	TRY( LALCDestroyVector( status->statusPtr, &(ab.data) ), status);
         TRY( LALFrClose( status->statusPtr, &facStream ), status );
         RETURN_POINT_CAL;
       }
       ENDFAIL( status );
 
-      /* check that alpha and alpha*beta have the same sample rate */
-      if ( fabs( a.deltaT - ab.deltaT ) > LAL_REAL8_EPS )
-      {
-        TRY( LALCDestroyVector( status->statusPtr, &(a.data) ), status );
-        TRY( LALCDestroyVector( status->statusPtr, &(ab.data) ), status );
-        TRY( LALFrClose( status->statusPtr, &facStream ), status );
-        RETURN_POINT_CAL;
-        ABORT( status, FRAMECALIBRATIONH_EDTMM, FRAMECALIBRATIONH_MSGEDTMM );
-      }
-
       break;
     }
-
     /* destroy the empty frame cache and give up */
     LALDestroyFrCache( status->statusPtr, &facCache );
     BEGINFAIL( status )
