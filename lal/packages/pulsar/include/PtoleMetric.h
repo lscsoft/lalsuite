@@ -121,6 +121,7 @@ LALPtoleMetric( LALStatus      *status,
 
 /**************************************************************** <lalLaTeX>
 \newpage\input{PtoleMetricTestC}
+\newpage\input{PtoleMeshTestC}
 ************************************************************* </lalLaTeX> */
 
 #ifdef  __cplusplus
