@@ -804,7 +804,7 @@ int main( int argc, char *argv[] )
         exit( 1 );
       }
 
-      /* get the minimal match of the bank from the process params */
+      /* get the trigger start time from the process params */
       while ( (mioStatus = MetaioGetRow(env)) == 1 )
       {
         if ( ! strcmp( env->ligo_lw.table.elt[pParParam].data.lstring.data, 
@@ -1165,17 +1165,15 @@ int main( int argc, char *argv[] )
         /* injections must be put in the missed injections list       */
         if ( ! missedSimHead )
         {
-          /* if there are are any events after this one, */
-          /* then they are the missed sim list           */
-          if ( thisSimEvent )
-            thisMissedSim = missedSimHead = thisSimEvent->next;
+          /* this and any subsequent events are in the missed sim list */
+          if ( thisSimEvent ) thisMissedSim = missedSimHead = thisSimEvent;
         }
         else
         {
           if ( thisSimEvent )
           {
             /* append the rest of the list to the list of missed injections */
-            thisMissedSim = thisMissedSim->next = thisSimEvent->next;
+            thisMissedSim = thisMissedSim->next = thisSimEvent;
           }
           else
           {
@@ -1183,9 +1181,14 @@ int main( int argc, char *argv[] )
             thisMissedSim = thisMissedSim->next = NULL;
           }
         }
+
+        /* terminate the list of found injections correctly */
+        if ( prevSimEvent ) prevSimEvent->next = NULL;
+        
         while ( thisMissedSim )
         {
           /* count the number of injections just stuck in the missed list */
+          if ( vrbflg ) fprintf( stdout, "M" );
           ++numSimMissed;
           ++numSimProcessed;
           thisMissedSim = thisMissedSim->next;
