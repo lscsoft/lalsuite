@@ -3,8 +3,10 @@
 
 if LALFRAME
 LALFRAMEPROGRAMS = lalapps_stochastic
+lalapps_stochastic_SOURCES = stochastic.c stochastic.h
 if LALMETAIO
 LALMETAIOFRAMEPROGRAMS = lalapps_stopp
+lalapps_stopp_SOURCES = stopp.c
 else
 LALMETAIOFRAMEPROGRAMS =
 endif
@@ -17,14 +19,6 @@ ${LALMETAIOFRAMEPROGRAMS}
 
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
-
-if LALFRAME
-lalapps_stochastic_SOURCES = stochastic.c stochastic.h
-endif
-
-if LALMETAIO
-lalapps_stopp_SOURCES = stopp.c
-endif
 
 bin_SCRIPTS = lalapps_stochastic_pipe
 pythonlibdir = ${prefix}/lib/python
