@@ -67,7 +67,6 @@ static int high_pass_flag;
 static int overlap_hann_flag;
 static int recentre_flag;
 static int cc_spectra_flag;
-static int bayes_flag;
 extern int vrbflg;
 
 /* xml comment/tags */
@@ -1155,7 +1154,6 @@ static void display_usage()
   fprintf(stdout, " --comment STRING              set the comment\n");
   fprintf(stdout, " --output-dir DIR              directory for output files\n");
   fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
-  fprintf(stdout, " --bayesian                    perfrom bayesian search\n");
   fprintf(stdout, " --gps-start-time N            GPS start time\n");
   fprintf(stdout, " --gps-end-time N              GPS end time\n");
   fprintf(stdout, " --interval-duration N         interval duration\n");
@@ -1212,7 +1210,6 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       {"recentre", no_argument, &recentre_flag, 1},
       {"cc-spectra", no_argument, &cc_spectra_flag, 1},
-      {"bayesian", no_argument, &bayes_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"version", no_argument, 0, 'b'},
