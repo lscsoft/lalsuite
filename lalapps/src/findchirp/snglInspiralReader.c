@@ -256,8 +256,8 @@ int main(int argc, char **argv)
 		{
 		    fprintf( stderr, "invalid argument to  --%s:\n"
 			"unknown clustering specified:\n "
-			"%s (must be one of: snr_and_chisq, 
-			    snrsq_over_chisq)\n",
+			"%s (must be one of: snr_and_chisq, \n"
+			"   snrsq_over_chisq)\n",
 			long_options[option_index].name, optarg);
 		    exit( 1 );
 		}
@@ -366,8 +366,8 @@ int main(int argc, char **argv)
         /* open xml file at search summary table */
         if ( (retVal = MetaioOpenTable( triggerEnv, line, searchSummaryName))
 		       	!=0 ){
-            fprintf(stderr, "Error opening injection file %s for
-                %s\n", line, searchSummaryName );
+            fprintf(stderr, "Error opening injection file %s for %s\n",
+                line, searchSummaryName );
             fprintf(stderr,"Proceeding anyway\n");
         }
 
