@@ -99,9 +99,9 @@ UINT2 dim;         /* Dimension of parameter space */
 PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
                                    /* and orbit at t_gps =0             */
 REAL8Vector *big_metric; /* 10-dim metric in (phi,f,a,d) for internal use */
-REAL8 T;  // Duration of observation
-REAL8 f; // Frequency;
-// Some useful short-hand notations involving the orbital phase:
+REAL8 T;  /* Duration of observation */
+REAL8 f; /* Frequency */
+/* Some useful short-hand notations involving the orbital phase: */
 REAL8 D_p_o;
 REAL8 sin_p_o;
 REAL8 cos_p_o;
@@ -109,7 +109,7 @@ REAL8 D_sin_p_o;
 REAL8 D_cos_p_o;
 REAL8 D_sin_2p_o;
 REAL8 D_cos_2p_o;
-// Some useful short-hand notations involving the spin phase:
+/* Some useful short-hand notations involving the spin phase: */
 REAL8 D_p_s;
 REAL8 sin_p_s;
 REAL8 cos_p_s;
@@ -117,7 +117,7 @@ REAL8 D_sin_p_s;
 REAL8 D_cos_p_s;
 REAL8 D_sin_2p_s;
 REAL8 D_cos_2p_s;
-// Some useful short-hand notations involving the spin and orbital phases:
+/* Some useful short-hand notations involving spin and orbital phases: */
 REAL8 D_sin_p_o_plus_s;
 REAL8 D_p_o_plus_s;
 REAL8 D_sin_p_o_minus_s;
@@ -129,7 +129,7 @@ REAL8 D_cos_p_o_minus_s;
 
 INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
 
-// A 4-dim (phi, f, a, d) metric for internal use only: 
+/* A 4-dim (phi, f, a, d) metric for internal use only:  */
 big_metric = NULL;
 LALDCreateVector( status, &big_metric, 10 );
 
@@ -173,55 +173,55 @@ ASSERT( metric->data != NULL, status, PTOLEMETRICH_ENULL,
 ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
-// Detector location:
+/* Detector location: */
 lat = input->site.vertexLatitudeRadians;
 lon = input->site.vertexLongitudeRadians;
 cos_l = cos(lat);
 sin_l = sin(lat);
 sin_2l = sin(2*lat);
 
-// Inclination of Earth's spin-axis to ecliptic
+/* Inclination of Earth's spin-axis to ecliptic */
 sin_i = sin(LAL_IEARTH);
 cos_i = cos(LAL_IEARTH);
 
-// Radii of circular motions in seconds: 
+/* Radii of circular motions in seconds:  */
 R_s = LAL_REARTH_SI / LAL_C_SI;
 R_o = LAL_AU_SI / LAL_C_SI;
 
-// To switch off orbital motion uncomment this:
-//R_o = 0.0;
+/* To switch off orbital motion uncomment this: */
+/* R_o = 0.0; */
 
-// To switch off spin motion uncomment this:
-//R_s = 0.0;
+/* To switch off spin motion uncomment this: */
+/* R_s = 0.0; */
 
-// Angular velocities: 
+/* Angular velocities: */
 omega_s = LAL_TWOPI / LAL_DAYSID_SI;
 omega_o = LAL_TWOPI / LAL_YRSID_SI;
 
-// Duration of observation
+/* Duration of observation */
 T = input->duration;
 
-// Frequency:
+/* Frequency: */
 f = input->maxFreq;
 
-// Source RA:
+/* Source RA: */
 sin_a  = sin(input->position.longitude);
 cos_a  = cos(input->position.longitude);
 sin_2a = sin(2*(input->position.longitude));
 
-// Source declination:
+/* Source declination: */
 sin_d  = sin(input->position.latitude);
 cos_d  = cos(input->position.latitude);
 sin_2d = sin(2*(input->position.latitude));
 
-// Calculation of phases of spin and orbit at start:
+/* Calculation of phases of spin and orbit at start: */
 zero_phases.epoch.gpsSeconds = input->epoch.gpsSeconds;
 LALGetEarthTimes( status, &zero_phases);
 phi_o_i = -zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
 phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
 
 
-// Quantities involving the orbital phase:
+/* Quantities involving the orbital phase: */
 phi_o_f   = phi_o_i + omega_o*T;
 D_p_o     = omega_o*T;
 sin_p_o   = sin(phi_o_f);
@@ -231,7 +231,7 @@ D_cos_p_o = cos(phi_o_f) - cos(phi_o_i);
 D_sin_2p_o = sin(2*phi_o_f) - sin(2*phi_o_i);
 D_cos_2p_o = cos(2*phi_o_f) - cos(2*phi_o_i);
 
-// Quantities involving the spin phase:
+/* Quantities involving the spin phase: */
 phi_s_f    = phi_s_i + omega_s*T;
 D_p_s      = omega_s*T;
 sin_p_s    = sin(phi_s_f);
@@ -241,7 +241,7 @@ D_cos_p_s  = cos(phi_s_f) - cos(phi_s_i);
 D_sin_2p_s = sin(2*phi_s_f) - sin(2*phi_s_i);
 D_cos_2p_s = cos(2*phi_s_f) - cos(2*phi_s_i);
 
-// Some mixed quantities:
+/* Some mixed quantities: */
 D_sin_p_o_plus_s  = sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i);
 D_p_o_plus_s      = D_p_o + D_p_s;
 D_sin_p_o_minus_s = sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i);
@@ -249,7 +249,7 @@ D_p_o_minus_s     = D_p_o - D_p_s;
 D_cos_p_o_plus_s  = cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i);
 D_cos_p_o_minus_s = cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i);
 
-// The A[i] quantities:
+/* The A[i] quantities: */
 A[1] = 
 R_o*D_sin_p_o/D_p_o + R_s*cos_l*D_sin_p_s/D_p_s;
 
@@ -313,7 +313,7 @@ R_o*R_s*D_cos_p_o/D_p_o;
 A[21] =
 R_s*R_s*D_cos_p_s/D_p_s;
 
-// The B[i] quantities:
+/* The B[i] quantities: */
 B[1] =
 A[4] + A[5]*cos_l;
 
@@ -342,46 +342,46 @@ B[9] =
 A[15]*sin_i*sin_i - 4*A[20]*sin_i*sin_l + 2*R_s*R_s*sin_l*sin_l;
 
 
-// The 4-dim metric components:
-//g_pp =
+/* The 4-dim metric components: */
+/* g_pp = */
 big_metric->data[0] =
 1;
 
-//g_pf =
+/* g_pf = */
 big_metric->data[1] =
 LAL_PI*T;
 
-//g_pa =
+/* g_pa = */
 big_metric->data[3] =
 -LAL_TWOPI*f*cos_d*(A[1]*sin_a + A[2]*cos_a);
 
-//g_pd =
+/* g_pd = */
 big_metric->data[6] =
 LAL_TWOPI*f*(-A[1]*sin_d*cos_a + A[2]*sin_d*sin_a + A[3]*cos_d);
 
-//g_ff =
+/* g_ff = */
 big_metric->data[2] =
 pow(LAL_TWOPI*T, 2)/3;
 
-//g_fa =
+/* g_fa = */
 big_metric->data[4] =
 pow(LAL_TWOPI,2)*f*cos_d*T*(-B[1]*sin_a + B[2]*cos_a);
 
-//g_fd =
+/* g_fd = */
 big_metric->data[7] =
 pow(LAL_TWOPI,2)*f*T*(-B[1]*sin_d*cos_a - B[2]*sin_d*sin_a + B[3]*cos_d);
 
-//g_aa =
+/* g_aa = */
 big_metric->data[5] =
 2*pow(LAL_PI*f*cos_d,2) * (B[4]*sin_a*sin_a + B[5]*sin_2a + B[6]*cos_a*cos_a);
 
-//g_ad = 
+/* g_ad =  */
 big_metric->data[8] =
 2*pow(LAL_PI*f,2)*cos_d*(B[4]*sin_a*cos_a*sin_d - B[5]*sin_a*sin_a*sin_d
 -B[7]*sin_a*cos_d + B[5]*cos_a*cos_a*sin_d - B[6]*sin_a*cos_a*sin_d
 +B[8]*cos_a*cos_d);
 
-//g_dd =
+/* g_dd = */
 big_metric->data[9] =
 2*pow(LAL_PI*f,2)*(B[4]*pow(cos_a*sin_d,2) + B[6]*pow(sin_a*sin_d,2)
 +B[9]*pow(cos_d,2) - B[5]*sin_2a*pow(sin_d,2) - B[8]*sin_a*sin_2d
@@ -389,7 +389,7 @@ big_metric->data[9] =
 
 
 /**********************************************************/
-// Spin-down stuff not consistent with rest of code - don't uncomment!
+/* Spin-down stuff not consistent with rest of code - don't uncomment! */
 /* Spindown-spindown metric components, before projection */
 if( input->spindown )
      for (j=1; j<=dim-2; j++)
@@ -432,7 +432,7 @@ if( input->spindown )
 /*************************************************************/
 
 
-// Project down to 3-dim metric:
+/* Project down to 3-dim metric: */
 metric->data[0] =  big_metric->data[2] 
     - big_metric->data[1]*big_metric->data[1]/big_metric->data[0];
 metric->data[1] =  big_metric->data[4] 
