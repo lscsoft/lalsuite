@@ -12,7 +12,7 @@ version=0.8
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="support tools sample hello factories vectorops utilities inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters"
+lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters"
 
 # Packages compiled only with --enable-mpi
 lal_pkg_list_mpi="comm findchirp"
