@@ -154,6 +154,7 @@ data.make_chunks_from_unused(
 
 # get the order of the ifos to filter
 ifo = cp.get('pipeline','ifo')
+run = cp.get('pipeline','run')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
@@ -233,6 +234,8 @@ for seg in data:
     for insp in sub_insp:
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
+      sinca.set_post_script("/bin/cp %s /cluster/inspiral/%s/%s" % 
+        (sinca.get_output_a(), run, ifo))
     dag.add_node(sinca)
     sinca_nodes.append(sinca)
 
@@ -245,7 +248,6 @@ for sinca in sinca_nodes:
   inca.add_parent(sinca)
   inca.add_var_arg(sinca.get_output_a())
 inca_post_script = open( 'inca_post_script.sh', 'w' )
-run = cp.get('pipeline','run')
 inca_post_script.write("""cp ${1} /cluster/inspiral/%s/${1}
 ln -sf /cluster/inspiral/%s/${1} /cluster/inspiral/%s/%s-INSPIRAL.xml
 """ % (run, run, run, ifo) )
