@@ -6,10 +6,9 @@ DATAFLOWPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
 else
 DATAFLOWPROGRAMS = 
 endif
-bin_PROGRAMS = lalapps_findchirp lalapps_inspinj lalapps_inspinj_s1 \
+bin_PROGRAMS = lalapps_inspinj lalapps_inspinj_s1 \
                lalapps_findchirp_post lalapps_inspawgfile $(DATAFLOWPROGRAMS) \
                lalapps_random_bank lalapps_chirplen lalapps_effdist
-lalapps_findchirp_SOURCES = findchirp.c findchirp.h findchirp_args.c
 lalapps_inspinj_SOURCES = inspinj.c
 lalapps_inspinj_s1_SOURCES = inspinj_s1.c
 lalapps_findchirp_post_SOURCES = findchirp_post.c
