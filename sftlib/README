@@ -1,0 +1,57 @@
+Here is a short how-to on this reference SFT version 2 library.
+$Id$
+
+TO BUILD/INSTALL
+----------
+./configure
+make
+make install (optional)
+
+
+SFT SPECIFICATIONS
+------------------
+See the file: SFT_v2_specification
+
+
+TO USE
+------
+Makes a test SFT (called SFT-test)
+ ./SFTwrite
+You can do this on little-endian and big-endian machines to generate
+both flavors
+
+
+TO MAKE CONCATENATED SFTs
+-------------------------
+cat SFT-test SFT-test SFT-test > SFT-merged
+
+
+TO VERIFY THAT A SET OF SFT files IS VALID
+-------------------------------------------
+./SFTvalidate SFT1 SFT2 ... SFTn
+The exit status will be zero if all SFTs are valid.  The exit status
+will be non-zero if any of the SFTs was invalid.  grep SFTE
+SFTReferenceLibrary.h will show the return values.
+
+
+TO DUMP THE HEADER INFORMATION FROM A SET OF SFT FILES
+------------------------------------------------------
+./SFTdumpheader SFT1 SFT2 ... SFTn
+The exit status will be zero if all SFTs are valid.  The exit status
+will be non-zero if any of the SFTs was invalid.  grep SFTE
+SFTReferenceLibrary.h will show the return values.
+
+
+TO DUMP ALL INFORMATION FROM A SET OF SFT FILES
+------------------------------------------------------
+./SFTdumpall SFT1 SFT2 ... SFTn
+The exit status will be zero if all SFTs are valid.  The exit status
+will be non-zero if any of the SFTs was invalid.  grep SFTE
+SFTReferenceLibrary.h will show the return values.
+
+
+LIBRARY TO LINK TO
+------------------
+cc mycode.c -lSFTReferenceLibrary
+
+

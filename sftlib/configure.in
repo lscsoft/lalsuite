@@ -1,0 +1,39 @@
+# $Id$
+#
+dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.50)
+AC_INIT(SFTReferenceLibrary, 2.2, ballen@gravity.phys.uwm.edu)
+AC_CONFIG_SRCDIR(SFTReferenceLibrary.c)
+
+AM_CONFIG_HEADER(config.h)
+
+AM_INIT_AUTOMAKE
+
+AM_MAINTAINER_MODE
+
+AC_LANG_C
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+#AC_LIBSOURCE
+
+AC_CANONICAL_HOST
+
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(ASFLAGS)
+AC_SUBST(CFLAGS)
+
+dnl Add -Wall and -W if using gcc and its not already specified.
+if test "x$GCC" = "xyes"; then
+  if test -z "`echo "$CFLAGS" | grep "\-Wall" 2> /dev/null`" ; then
+      CFLAGS="$CFLAGS -Wall"
+  fi
+fi
+
+AC_ARG_WITH(docdir,[AC_HELP_STRING([--with-docdir=dir],[Location of documentation])],[docdir="$withval"],[docdir='${prefix}/share/doc/${PACKAGE}-${VERSION}'])
+AC_SUBST(docdir)
+
+AC_OUTPUT(Makefile)
+AC_PROG_MAKE_SET
