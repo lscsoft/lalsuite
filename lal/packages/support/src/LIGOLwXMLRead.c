@@ -1437,15 +1437,14 @@ SummValueTableFromLIGOLw (
   MetaTableDirectory tableDir[] =
   {
     {"program",		      -1, 0},
-    {"process_id",	      -1, 1},
-    {"start_time",	      -1, 2},
-    {"start_time_ns",         -1, 3},
-    {"end_time",	      -1, 4},
-    {"end_time_ns",	      -1, 5},
-    {"ifo",		      -1, 6},
-    {"name",		      -1, 7},
-    {"value",		      -1, 8},
-    {"comment",               -1, 9},
+    {"start_time",	      -1, 1},
+    {"start_time_ns",         -1, 2},
+    {"end_time",	      -1, 3},
+    {"end_time_ns",	      -1, 4},
+    {"ifo",		      -1, 5},
+    {"name",		      -1, 6},
+    {"value",		      -1, 7},
+    {"comment",               -1, 8},
     {NULL,                     0, 0}
   };
 
@@ -1488,8 +1487,8 @@ SummValueTableFromLIGOLw (
   i = nrows = 0;
   while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
   {
-    /* parse the rows into the SearhSummary structure */
-    for ( j = 1; tableDir[j].name; ++j )
+    /* parse the rows into the SummValue structure */
+    for ( j = 0; tableDir[j].name; ++j )
     {
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
