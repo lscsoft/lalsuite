@@ -377,6 +377,7 @@ int main(int argc,char *argv[])
     Alpha=uvar_Alpha;   /* BINARY-MOD - Also set sky location */
     Delta=uvar_Delta;
   }
+  printf("read binary bank into mem\n");
 
   if (uvar_outputFstat)   
     {
