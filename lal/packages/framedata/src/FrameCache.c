@@ -536,7 +536,7 @@ LALFrCacheGenerate(
       if ( nextdir )
         *nextdir++ = 0;
       LALSnprintf( path, sizeof( path ) - 1, "%s/%s", *dirname ? dirname : ".", fnptrn );
-      glob( fnptrn, globflags, NULL, &g );
+      glob( path, globflags, NULL, &g );
       globflags |= GLOB_APPEND;
     }
     while ( nextdir );
