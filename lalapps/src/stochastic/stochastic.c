@@ -629,11 +629,40 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
     REAL4FrequencySeries *omega,
     REAL4FrequencySeries *psdOne,
     REAL4FrequencySeries *psdTwo,
-    REAL4WithUnits normalisation)
+    REAL4Window *window,
+    REAL8 *sigma)
 {
   /* variables */
   REAL4FrequencySeries *series;
+  StochasticOptimalFilterNormalizationInput norm_input;
+  StochasticOptimalFilterNormalizationOutput norm_output;
+  StochasticOptimalFilterNormalizationParameters norm_params;
   StochasticOptimalFilterCalInput input;
+  REAL4WithUnits norm_lambda;
+  REAL4WithUnits norm_variance;
+
+  /* set parameters for normalisation */
+  norm_params.fRef = fRef;
+  norm_params.heterodyned = 0;
+  norm_params.window1 = window->data;
+  norm_params.window2 = window->data;
+
+  /* set inputs for normalisation */
+  norm_input.overlapReductionFunction = overlap;
+  norm_input.omegaGW = omega;
+  norm_input.inverseNoisePSD1 = psdOne;
+  norm_input.inverseNoisePSD2 = psdTwo;
+
+  /* set normalisation output */
+  norm_output.normalization = &norm_lambda;
+  norm_output.variance = &norm_variance;
+
+  /* calculate variance and normalisation for the optimal filter */
+  LAL_CALL(LALStochasticOptimalFilterNormalization(status, \
+        &norm_output, &norm_input, &norm_params), status);
+
+  *sigma = sqrt((REAL8)(segmentDuration * norm_variance.value * \
+        pow(10, norm_variance.units.powerOfTen)));
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "filter", \
@@ -648,7 +677,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
 
   /* generate optimal filter */
   LAL_CALL(LALStochasticOptimalFilterCal(status, series, &input, \
-        &normalisation), status);
+        &norm_lambda), status);
 
   return(series);
 }
@@ -1898,7 +1927,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* results parameters */
   REAL8 y;
-  REAL8 varTheo;
+  REAL8 sigmaTheo;
 
   /* input data */
   LIGOTimeGPS gpsStartTime;
@@ -1968,13 +1997,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* frequency mask structures */
   REAL4FrequencySeries *mask;
-
-  /* structures for optimal filter normalisation */
-  StochasticOptimalFilterNormalizationInput normInput;
-  StochasticOptimalFilterNormalizationOutput normOutput;
-  StochasticOptimalFilterNormalizationParameters normParams;
-  REAL4WithUnits normLambda;
-  REAL4WithUnits normSigma;
 
   /* structures for optimal filter */
   REAL4FrequencySeries *optFilter = NULL;
@@ -2228,7 +2250,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   if (vrbflg)
-    fprintf(stdout, "Done with memory allocation...\n");
+    fprintf(stdout, "Starting analysis loop...\n");
 
   /* main analysis loop */
   for (MCLoop = 0; MCLoop < NLoop; MCLoop++)
@@ -2460,37 +2482,12 @@ INT4 main(INT4 argc, CHAR *argv[])
         calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
       }
 
-      /* set normalisation parameters */
-      normParams.fRef = fRef;
-      normParams.heterodyned = 0;
-      normParams.window1 = dataWindow->data;
-      normParams.window2 = dataWindow->data;
-
-      /* set normalisation input */
-      normInput.overlapReductionFunction = overlap;
-      normInput.omegaGW = omegaGW;
-      normInput.inverseNoisePSD1 = calInvPsdOne;
-      normInput.inverseNoisePSD2 = calInvPsdTwo;
-
-      /* set normalisation output */
-      normOutput.normalization = &normLambda;
-      normOutput.variance = &normSigma;
-
-      if (vrbflg)
-        fprintf(stdout, "Normalising optimal filter...\n");
-
-      /* compute variance and normalisation for optimal filter */
-      LAL_CALL(LALStochasticOptimalFilterNormalization(&status, \
-            &normOutput, &normInput, &normParams), &status);
-      varTheo = (REAL8)(segmentDuration * normSigma.value * \
-          pow(10.,normSigma.units.powerOfTen));
-
       if (vrbflg)
         fprintf(stdout, "Generating optimal filter...\n");
 
       /* build optimal filter */
       optFilter = optimal_filter(&status, overlap, omegaGW, calInvPsdOne, \
-          calInvPsdTwo, normLambda);
+          calInvPsdTwo, dataWindow, &sigmaTheo);
 
       if (vrbflg)
       {
@@ -2536,7 +2533,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         fprintf(stdout, "Interval %d\n", interLoop + 1);
         fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
         fprintf(stdout, "  y         = %e\n", y);
-        fprintf(stdout, "  sigmaTheo = %e\n", sqrt(varTheo));
+        fprintf(stdout, "  sigmaTheo = %e\n", sigmaTheo);
       }
 
       /* allocate memory for table */
@@ -2563,7 +2560,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       thisStoch->f_min = fMin;
       thisStoch->f_max = fMax;
       thisStoch->cc_stat = y;
-      thisStoch->cc_sigma = sqrt(varTheo);
+      thisStoch->cc_sigma = sigmaTheo;
     }
   }
 
