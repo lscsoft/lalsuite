@@ -68,6 +68,8 @@ cmdline_parser_print_help (void)
   printf("  -O, --output-dir=STRING         Output directory  (default=`.')\n");
   printf("  -v, --verbosity=INT             verbosity level for debugging  (default=`0')\n");
   printf("  -e, --debug=INT                 debug level  (default=`0')\n");
+  printf("      --earth-ephemeris=STRING    Earth ephemeris file\n");
+  printf("      --sun-ephemeris=STRING      Sun ephemeris file\n");
 }
 
 
@@ -121,6 +123,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->output_dir_given = 0 ;
   args_info->verbosity_given = 0 ;
   args_info->debug_given = 0 ;
+  args_info->earth_ephemeris_given = 0 ;
+  args_info->sun_ephemeris_given = 0 ;
 #define clear_args() { \
   args_info->source_name_arg = gengetopt_strdup("NONAME_SOURCE") ;\
   args_info->detector_arg = NULL; \
@@ -133,6 +137,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->output_dir_arg = gengetopt_strdup(".") ;\
   args_info->verbosity_arg = 0 ;\
   args_info->debug_arg = 0 ;\
+  args_info->earth_ephemeris_arg = NULL; \
+  args_info->sun_ephemeris_arg = NULL; \
 }
 
   clear_args();
@@ -174,6 +180,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { "output-dir",	1, NULL, 'O' },
         { "verbosity",	1, NULL, 'v' },
         { "debug",	1, NULL, 'e' },
+        { "earth-ephemeris",	1, NULL, 0 },
+        { "sun-ephemeris",	1, NULL, 0 },
         { NULL,	0, NULL, 0 }
       };
 
@@ -481,6 +489,34 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
               }
             args_info->count_dec_given = 1;
             args_info->count_dec_arg = strtol (optarg,&stop_char,0);
+            break;
+          }
+          
+          /* Earth ephemeris file.  */
+          else if (strcmp (long_options[option_index].name, "earth-ephemeris") == 0)
+          {
+            if (args_info->earth_ephemeris_given)
+              {
+                fprintf (stderr, "%s: `--earth-ephemeris' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->earth_ephemeris_given = 1;
+            args_info->earth_ephemeris_arg = gengetopt_strdup (optarg);
+            break;
+          }
+          
+          /* Sun ephemeris file.  */
+          else if (strcmp (long_options[option_index].name, "sun-ephemeris") == 0)
+          {
+            if (args_info->sun_ephemeris_given)
+              {
+                fprintf (stderr, "%s: `--sun-ephemeris' option given more than once\n", CMDLINE_PARSER_PACKAGE);
+                clear_args ();
+                exit (EXIT_FAILURE);
+              }
+            args_info->sun_ephemeris_given = 1;
+            args_info->sun_ephemeris_arg = gengetopt_strdup (optarg);
             break;
           }
           

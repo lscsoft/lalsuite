@@ -61,3 +61,6 @@ option "output-dir"	O	"Output directory" string default="." no
 # misc. options
 option "verbosity"   v   "verbosity level for debugging" int default="0" no
 option "debug"       e   "debug level" int default="0" no
+
+option "earth-ephemeris"  - "Earth ephemeris file" string no
+option "sun-ephemeris"  - "Sun ephemeris file" string no

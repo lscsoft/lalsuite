@@ -43,6 +43,8 @@ struct gengetopt_args_info
   char * output_dir_arg;	/* Output directory (default='.').  */
   int verbosity_arg;	/* verbosity level for debugging (default='0').  */
   int debug_arg;	/* debug level (default='0').  */
+  char * earth_ephemeris_arg;	/* Earth ephemeris file.  */
+  char * sun_ephemeris_arg;	/* Sun ephemeris file.  */
 
   int help_given ;	/* Whether help was given.  */
   int version_given ;	/* Whether version was given.  */
@@ -70,6 +72,8 @@ struct gengetopt_args_info
   int output_dir_given ;	/* Whether output-dir was given.  */
   int verbosity_given ;	/* Whether verbosity was given.  */
   int debug_given ;	/* Whether debug was given.  */
+  int earth_ephemeris_given ;	/* Whether earth-ephemeris was given.  */
+  int sun_ephemeris_given ;	/* Whether sun-ephemeris was given.  */
 
 } ;
 
