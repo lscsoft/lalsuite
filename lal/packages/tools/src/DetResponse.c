@@ -33,8 +33,7 @@ Anderson, \textit{et al.}~\cite{ABCF:2000}.  We compute the $h$-tensors for
 $+$- and $\times$-polarized in the Earth-fixed frame, and then contract
 them (take the scalar product) with the detector response tensors as
 described in the \texttt{DetectorSite.h} section of the \texttt{tools}
-package. This is a translation of the Maple worksheet by
-Anderson,~\textit{et al.}~\cite{ABCF:2000}.
+package. 
 
 \texttt{DetectorSite.h} in the \texttt{tools} package  provides predefined
 \texttt{LALDetector} structures representing most current detectors,
