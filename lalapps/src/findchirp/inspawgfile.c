@@ -566,6 +566,12 @@ main(int argc, char **argv)
 
   /* write diagnostic info to disk */
   if ( specfile ){
+    fprintf(stderr, "error, unable to compute power spectrum.\n" );
+    fprintf(stderr, "LALRealAverageSpectrum has been removed from LAL.\n" );
+    fprintf(stderr, "Fix code to use new LALREAL4AverageSpectrum routine.\n" );
+    fprintf(stderr, "Aborting.\n" );
+    abort();
+#if 0
       REAL4FrequencySeries     *fseries;
       RealDFTParams            *dftparams        = NULL;
       LALWindowParams           winParams;
@@ -595,6 +601,7 @@ main(int argc, char **argv)
       SUB( LALDestroyRealDFTParams(&stat, &dftparams), &stat);
       SUB( LALDestroyVector(&stat, &fseries->data), &stat);
       LALFree( fseries );
+#endif
   }
 
 
