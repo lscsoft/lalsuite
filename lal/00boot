@@ -296,7 +296,7 @@ else
   else
     AC_CHECK_LIB(pthread, pthread_create, , [AC_MSG_ERROR(could not find pthread library)])
   fi
-  AC_CHECK_LIB(guide, __kmp_abort, , [AC_MSG_ERROR(could not find pthread library)])
+  AC_CHECK_LIB(guide, __kmp_abort, , [AC_MSG_ERROR(could not find guide library)])
   AC_CHECK_HEADERS(pthread.h, , [AC_MSG_ERROR(could not find pthread header)])
   if test "${enable_static}" = "yes"; then
     if test "${enable_shared}" = "yes" ; then
