@@ -4,9 +4,9 @@
 SUBDIRS = FDS_isolated Injections FDS_griphyn hough FDS_binary
 
 if FRAME
-FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts
+FRAMEPROGS = lalapps_make_job_input_data lalapps_make_sfts lalapps_Calibrate60sSFTs
 else
-FRAMEPROGS = 
+FRAMEPROGS = lalapps_Calibrate60sSFTs
 endif
 
 bin_PROGRAMS = $(FRAMEPROGS)
@@ -20,11 +20,15 @@ lalapps_make_job_input_data_SOURCES = make_job_input_data.c
 lalapps_make_sfts_SOURCES = make_sfts.c
 endif
 
+lalapps_Calibrate60sSFTs_SOURCES = Calibrate60sSFTs.c Calibrate60sSFTs.h
+
 EXTRA_DIST = \
 make_locked_data_list \
 make_cluster_data_list \
 make_job_input_data.c \
 make_sfts.c \
+Calibrate60sSFTs.c \
+Calibrate60sSFTs.h \
 README \
 SFT.00000 \
 SFT.00001 \
