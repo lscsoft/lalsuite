@@ -25,13 +25,16 @@ Converts between \texttt{LIGOTimeGPS} and \texttt{INT8} formats.
 \vspace{0.1in}
 \input{GPStoINT8CP}
 \idx{LALGPStoINT8()}
+\idx{XLALGPStoINT8()}
 \idx{LALINT8toGPS()}
+\idx{XLALINT8toGPS()}
 
 \subsubsection*{Description}
 
-This modules contains two routines, one of which converts from
-\texttt{LIGOTimeGPS} to \texttt{INT8} nanoseconds, and the other, from
-\texttt{INT8} nanoseconds to \texttt{LIGOTimeGPS}.
+This modules contains two LAL routines and their XLAL counterparts.  One
+pair of routines converts from \texttt{LIGOTimeGPS} to \texttt{INT8}
+nanoseconds, and the other, from \texttt{INT8} nanoseconds to
+\texttt{LIGOTimeGPS}.
 
 \subsubsection*{Algorithm}
 
@@ -49,6 +52,22 @@ This modules contains two routines, one of which converts from
 NRCSID( GPSTOINT8C, "$Id$" );
 
 /* <lalVerbatim file="GPStoINT8CP"> */
+LIGOTimeGPS
+XLALINT8toGPS ( 
+    INT8                input
+    )
+/* </lalVerbatim> */
+{
+  LIGOTimeGPS output;
+  INT8 s = input / LAL_INT8_C(1000000000);
+  
+  output.gpsSeconds = (INT4)( s );
+  output.gpsNanoSeconds = (INT4)( input - LAL_INT8_C(1000000000)*s );
+
+  return( output );
+}
+
+/* <lalVerbatim file="GPStoINT8CP"> */
 void
 LALINT8toGPS ( 
     LALStatus          *status,
@@ -57,14 +76,23 @@ LALINT8toGPS (
     )
 /* </lalVerbatim> */
 {
-  INT8 s = (*input) / LAL_INT8_C(1000000000);
-
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
-  
-  output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( (*input) - LAL_INT8_C(1000000000)*s );
+
+  *output = XLALINT8toGPS( *input );
 
   RETURN( status );
+}
+
+/*----------------------------------------------------------------------*/
+/* <lalVerbatim file="GPStoINT8CP"> */
+INT8
+XLALGPStoINT8 ( 
+    LIGOTimeGPS         input 
+    )
+/* </lalVerbatim> */
+{
+  return( (INT8) input.gpsNanoSeconds 
+    + LAL_INT8_C(1000000000) * (INT8) input.gpsSeconds );
 }
 
 /*----------------------------------------------------------------------*/
@@ -79,8 +107,8 @@ LALGPStoINT8 (
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
   
-  *output = (INT8) input->gpsNanoSeconds 
-    + LAL_INT8_C(1000000000) * (INT8) input->gpsSeconds;
+  *output = XLALGPStoINT8( *input );
 
   RETURN( status );
 }
+
