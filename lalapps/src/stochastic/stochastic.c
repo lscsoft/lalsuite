@@ -750,8 +750,8 @@ static COMPLEX8FrequencySeries *unity_response(LALStatus *status,
   return(response);
 }
 
-/* wrapper function for generating response function */
-static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
+/* wrapper function for generating response function for LIGO data */
+static COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     CHAR *ifo,
     CHAR *cache_file,
     LIGOTimeGPS epoch,
@@ -786,6 +786,35 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   /* reduce to required band */
   LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/deltaF, \
         length), status);
+
+  return(response);
+}
+
+/* wrapper to unity_response and ligo_response for generating the
+ * appropriate response for the given detector */
+static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
+    CHAR *ifo,
+    CHAR *cache_file,
+    LIGOTimeGPS epoch,
+    REAL8 f0,
+    REAL8 deltaF,
+    LALUnit units,
+    INT4 length)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *response = NULL;
+
+  if (strncmp(ifo, "G1", 2) == 0)
+  {
+    /* generate response for GEO */
+    response = unity_response(status, epoch, f0, deltaF, units, length);
+  }
+  else
+  {
+    /* generate response function for LIGO */
+    response = ligo_response(status, ifo, cache_file, epoch, f0, deltaF, \
+        units, length);
+  }
 
   return(response);
 }
@@ -2212,30 +2241,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* compute response functions */
         gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
-
-        /* set response function to unity for GEO */
-        if (strncmp(ifoOne, "G1", 2) == 0)
-        {
-          responseOne = unity_response(&status, gpsCalibTime, fMin, deltaF, \
-              countPerAttoStrain, filterLength);
-        }
-        else
-        {
-          responseOne = generate_response(&status, ifoOne, calCacheOne,
-              gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-        }
-
-        /* set response function to unity for GEO */
-        if (strncmp(ifoTwo, "G1", 2) == 0)
-        {
-          responseTwo = unity_response(&status, gpsCalibTime, fMin, deltaF, \
-              countPerAttoStrain, filterLength);
-        }
-        else
-        {
-          responseTwo = generate_response(&status, ifoTwo, calCacheTwo,
-              gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-        }
+        responseOne = generate_response(&status, ifoOne, calCacheOne, \
+            gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+        responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
+            gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
 
         /* store in memory */
         for (i = 0; i < filterLength; i++)
