@@ -577,7 +577,7 @@ main(int argc, char **argv)
       REAL8Vector *input = NULL; /* input parameters */
       ok &= ( fscanf( fp, "%lli", &epoch ) == 1 );
       if ( ok ) {
-	SUB( LALDReadVector( &stat, &input, fp ), &stat );
+	SUB( LALDReadVector( &stat, &input, fp, 1 ), &stat );
 	ok &= ( input->length > 6 );
       }
       if ( ok ) {
