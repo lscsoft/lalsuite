@@ -48,6 +48,9 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 
+#include <lalapps.h>
+#include <processtable.h>
+
 extern char *optarg;
 extern int optind, opterr, optopt;
 
@@ -121,9 +124,9 @@ int NTemplates;
 LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
 SnglBurstTable *events=NULL;
-MetadataTable  *procTable=NULL;
-MetadataTable  *procparams=NULL;
-MetadataTable  *searchsumm=NULL;
+MetadataTable  procTable;
+MetadataTable  procparams;
+MetadataTable  searchsumm;
 
 int Nevents=0;
 
@@ -165,16 +168,17 @@ int OutputEvents();
 int FreeMem(void);                                        
 
 
+
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
 {
 
  /* create the process and process params tables */
-/*  procTable->processTable = LALCalloc(1, sizeof(ProcessTable)); */
-/*  LALGPSTimeNow(&status, procTable->processTable->start_time, &accuracy); */
-/*  populate_process_table(&stat, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE); */
-/*  procparams.processParamsTable = NULL; */
+ procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
+ LALGPSTimeNow(&status, &(procTable.processTable->start_time), &accuracy);
+ populate_process_table(&status, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE);
+ procparams.processParamsTable = NULL;
 
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
  
