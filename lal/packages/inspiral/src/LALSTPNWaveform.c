@@ -246,9 +246,10 @@ LALSTPNWaveformForInjection (
 			    ) 
 { 
   /* </lalVerbatim> */
-
+  REAL8 m1, m2, mTot, eta, mu;
+  REAL8 initf, thetahat, norb, nspnevl, nspn;
   /* declare model parameters*/
-  
+
   LALSTPNparams STPNparameters;
   LALSTPNparams *mparams;
 
@@ -367,6 +368,7 @@ LALSTPNWaveformForInjection (
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
+  /*===================*/
 
   LALInspiralParameterCalc(status->statusPtr, params);
   CHECKSTATUSPTR(status);
@@ -398,14 +400,12 @@ LALSTPNWaveformForInjection (
   /* dt = 10e-3 * m;*/
 
   /* -- length in seconds from Newtonian formula; chirpm in seconds*/
-
-/*  chirpm = params->totalMass * LAL_MTSUN_SI * pow(params->eta,3.0/5.0);*/
   lengths = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
 	  * pow(params->chirpMass * LAL_MTSUN_SI * params->fLower,-5.0/3.0) / params->fLower;
 
   length = ceil(log10(lengths/dt)/log10(2.0));
   length = pow(2,length);
-
+  length*=2;
 
   /* set initial values of dynamical variables*/
 
@@ -487,8 +487,8 @@ LALSTPNWaveformForInjection (
       mparams->wdotorb[j] = 0;
     mparams->wspin15 	= -(1.0/12.0);    
     mparams->LNhdot15 	= 0.5;
-    mparams->S1dot15 	= (4.0 + 3.0 * params->mass2/params->mass1) / 2.0 ;
-    mparams->S2dot15 	= (4.0 + 3.0 * params->mass1/params->mass2) / 2.0 ;   
+    mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
+    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;   
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 	= 0.0;
     mparams->Sdot20 	= 0.0;
@@ -504,12 +504,17 @@ LALSTPNWaveformForInjection (
     mparams->LNhdot20 	= -1.5 / params->eta;
     mparams->Sdot20 	= 0.5;
     mparams->LNhdot15 	= 0.5;
-    mparams->S1dot15 	= (4.0 + 3.0 * params->mass2/params->mass1) / 2.0 ;
-    mparams->S2dot15 	= (4.0 + 3.0 * params->mass1/params->mass2) / 2.0 ;    
+    mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
+    mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;    
     break;
   }
-  
-    
+
+  if (params->order == threePN)
+    mparams->wdotorb[(int)(threePN+1)] = ak.ST[(int)(threePN+1)];
+ if (params->order == threePointFivePN)
+    mparams->wdotorb[8] = ak.ST[8];
+
+
 
   /* setup initial conditions for dynamical variables*/
 
@@ -583,6 +588,8 @@ LALSTPNWaveformForInjection (
   /*    that I should probably reinstate*/
 
   while(omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) {
+
+    /*    fprintf(stderr,"%ld %ld %15.12lf %15.12lf %15.12lf %15.12lf %15.12lf\n", count, length, omegadot, LNhz*LNhz, LNhztol, omega, unitHz);*/
       ASSERT(count < length, status, LALINSPIRALH_EMEM, "Out of memory during integration");
       /* From SimulateCoherentGW.h:
 	 <<We therefore write the waveforms in terms of two polarization amplitudes $A_1(t)$
