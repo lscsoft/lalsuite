@@ -1231,7 +1231,6 @@ int RunSearch(BurstSearchParams *params,
     /* back to old value */
     si = sii;
 
-    printf("%ui\n",si);
 
   } /* end of for loop over si */
 

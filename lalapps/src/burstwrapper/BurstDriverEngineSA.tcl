@@ -1494,7 +1494,7 @@ foreach l1 $SegmentList {
 
 
 				## add files to transfer list
-				set CondorFiles "$CondorFiles,$Twaves"
+				append CondorFiles ",$Twaves"
 			    }
 
 			    ## which files to transfer to nodes
