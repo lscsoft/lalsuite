@@ -209,7 +209,9 @@ tagFindChirpInitParams
   UINT4                         numChisqBins;
   UINT4                         ovrlap;
   BOOLEAN                       createRhosqVec;
+  BOOLEAN                       createZVec;
   Approximant                   approximant;
+  BOOLEAN                       createZVec;
 }
 FindChirpInitParams;
 /* </lalVerbatim> */
@@ -410,11 +412,13 @@ tagFindChirpFilterParams
   COMPLEX8Vector               *qtildeVecBCVSpin2;
   ComplexFFTPlan               *invPlan;
   REAL4TimeSeries              *rhosqVec;
+  COMPLEX8TimeSeries           *zVec;
   REAL4Vector                  *chisqVec;
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;
   FindChirpChisqInput          *chisqInputBCV;
   FindChirpFilterOutputVetoParams      *filterOutputVetoParams;
+  COMPLEX8TimeSeries           *zVec;
 }
 FindChirpFilterParams;
 /* </lalVerbatim> */
