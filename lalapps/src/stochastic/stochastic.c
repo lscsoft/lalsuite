@@ -730,7 +730,7 @@ static COMPLEX8FrequencySeries *unity_response(LALStatus *status,
     REAL8 f0,
     REAL8 deltaF,
     LALUnit units,
-    UINT4 length)
+    INT4 length)
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
@@ -758,7 +758,7 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     REAL8 f0,
     REAL8 deltaF,
     LALUnit units,
-    UINT4 length)
+    INT4 length)
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
@@ -768,7 +768,7 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   /* allocate memory */
   memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
-        epoch, 0, deltaF, units, length + (UINT4)(f0/deltaF)), status);
+        epoch, 0, deltaF, units, length + (INT4)(f0/deltaF)), status);
 
   /* set ifo */
   calib_params.ifo = ifo;
@@ -781,7 +781,7 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
       status);
 
   /* destory calibration frame cache */
-  XLALDestroyCache(cache);
+  XLALFrDestroyCache(cache);
 
   /* reduce to required band */
   LAL_CALL(LALShrinkCOMPLEX8FrequencySeries(status, response, f0/deltaF, \
@@ -1776,15 +1776,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4Window *dataWindow;
 
   /* response functions */
-  COMPLEX8FrequencySeries *responseTempOne;
-  COMPLEX8FrequencySeries *responseTempTwo;
-  COMPLEX8FrequencySeries *responseOne;
-  COMPLEX8FrequencySeries *responseTwo;
+  COMPLEX8FrequencySeries *responseOne = NULL;
+  COMPLEX8FrequencySeries *responseTwo = NULL;
   COMPLEX8Vector *respOne[100], *respTwo[100];
   INT4 respLength;
-  CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-  FrCache *calibCache = NULL;
 
   /* data structures for PSDs */
   REAL8 deltaF;
@@ -1985,7 +1981,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         MCdeltaF);
 
     /* response functions */
-    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &MCresponseOne, \
           "MCresponseOne", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
           MCfreqLength), &status);
@@ -2033,31 +2028,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for response functions...\n");
-
-  /* allocate memory for response functions */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTempOne, \
-        "responseTempOne", gpsCalibTime, 0, deltaF, countPerAttoStrain, \
-        respLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTempTwo, \
-        "responseTempTwo", gpsCalibTime, 0, deltaF, countPerAttoStrain, \
-        respLength), &status);
-
-  if (vrbflg)
-  {
-    fprintf(stdout, "Allocating memory for reduced frequency band " \
-        "response functions...\n");
-  }
-
-  /* allocate memory for reduced frequency band response functions */
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseOne, \
-        "responseOne", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
-        filterLength), &status);
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &responseTwo, \
-        "responseTwo", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
-        filterLength), &status);
 
   /* allocate memory for temporary response functions */
   for (i = 0; i < segsInInt; i++)
@@ -2242,67 +2212,29 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* compute response functions */
         gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
-        responseOne->epoch = gpsCalibTime;
-        responseTwo->epoch = gpsCalibTime;
 
         /* set response function to unity for GEO */
         if (strncmp(ifoOne, "G1", 2) == 0)
         {
-          for (i = 0; i < filterLength; i++)
-          {
-            responseOne->data->data[i].re = 1;
-            responseOne->data->data[i].im = 0;
-          }
+          responseOne = unity_response(&status, gpsCalibTime, fMin, deltaF, \
+              countPerAttoStrain, filterLength);
         }
         else
         {
-          /* generate response function */
-          responseTempOne->epoch = gpsCalibTime;
-          if (vrbflg)
-          {
-            fprintf(stdout, "Getting response function for %s at %d\n", \
-                ifoOne, gpsCalibTime.gpsSeconds);
-          }
-          memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-          calfacts.ifo = ifoOne;
-          calibCache = XLALFrImportCache(calCacheOne);
-          LAL_CALL(LALExtractFrameResponse(&status, responseTempOne, \
-                calibCache, &calfacts), &status);
-          XLALFrDestroyCache(calibCache);
-
-          /* reduce to the optimal filter frequency range */
-          LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &responseOne, \
-                responseTempOne, numFMin, filterLength), &status);
+          responseOne = generate_response(&status, ifoOne, calCacheOne,
+              gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
         }
 
         /* set response function to unity for GEO */
         if (strncmp(ifoTwo, "G1", 2) == 0)
         {
-          for (i = 0; i < filterLength; i++)
-          {
-            responseTwo->data->data[i].re = 1;
-            responseTwo->data->data[i].im = 0;
-          }
+          responseTwo = unity_response(&status, gpsCalibTime, fMin, deltaF, \
+              countPerAttoStrain, filterLength);
         }
         else
         {
-          /* generate response function */
-          responseTempTwo->epoch = gpsCalibTime;
-          if (vrbflg)
-          {
-            fprintf(stdout, "Getting response function for %s at %d\n", \
-                ifoOne, gpsCalibTime.gpsSeconds);
-          }
-          memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-          calfacts.ifo = ifoTwo;
-          calibCache = XLALFrImportCache(calCacheTwo);
-          LAL_CALL(LALExtractFrameResponse(&status, responseTempTwo, \
-                calibCache, &calfacts), &status);
-          XLALFrDestroyCache(calibCache);
-
-          /* reduce to the optimal filter frequency range */
-          LAL_CALL(LALCutCOMPLEX8FrequencySeries(&status, &responseTwo, \
-                responseTempTwo, numFMin, filterLength), &status);
+          responseTwo = generate_response(&status, ifoTwo, calCacheTwo,
+              gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
         }
 
         /* store in memory */
@@ -2318,9 +2250,9 @@ INT4 main(INT4 argc, CHAR *argv[])
           MCresponseOne->epoch = gpsCalibTime;
           MCresponseTwo->epoch = gpsCalibTime;
           LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
-                responseTempOne), &status);
+                responseOne), &status);
           LAL_CALL(LALResponseConvert(&status, MCresponseTwo, \
-                responseTempTwo), &status);
+                responseTwo), &status);
 
           /* force DC to be 0 and nyquist to be real */
           MCresponseOne->data->data[0].re = 0;
@@ -2791,8 +2723,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(psdTwo);
   XLALDestroyREAL4Vector(calPsdOne);
   XLALDestroyREAL4Vector(calPsdTwo);
-  XLALDestroyCOMPLEX8FrequencySeries(responseTempOne);
-  XLALDestroyCOMPLEX8FrequencySeries(responseTempTwo);
   XLALDestroyCOMPLEX8FrequencySeries(responseOne);
   XLALDestroyCOMPLEX8FrequencySeries(responseTwo);
   XLALDestroyREAL4FrequencySeries(optFilter);
