@@ -8,6 +8,7 @@
 #include "detresponse.h"
 #include "skygrid.h"
 
+
 /*
  * TODO: 
  *   1. make file names depend on name of source, and of detector
@@ -24,7 +25,7 @@ static double vorbrel;
  * compute instantaneous doppler factor
  * NOTE: for some unfathomable reason, LALDetectorVel() takes
  *   AvgVelPar as input, while LALAvgDetectorVel() takes
- *   VelocityPar as input.
+ *   VelocityPar as input. -> the structure AvgVelPar is now killed - Badri Krishnan
  */
 /* gps = time when vel. is needed */   
 /* inputs = detector, ephemerides */
@@ -167,7 +168,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   LALLeapSecFormatAndAcc  leapsec_info = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
   INT4                    tmp_leapsecs;
   REAL8                   det_velocity[3];
-  AvgVelPar               detectorvel_inputs;     /* yea yea I know */
+
 
   CHAR                    cross_file_name[LALNameLength];
   CHAR                    plus_file_name[LALNameLength];
@@ -314,9 +315,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     (void *)mystrlcpy(outfile_suffix, ".dat", LALNameLength);
   }
   
-  /* set up inputs to LALDetectorVel() */
-  detectorvel_inputs.detector = detector;
-  detectorvel_inputs.edat     = p_ephemeris_data;
   
   /*
    * compute response over whole sky
@@ -353,7 +351,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
     p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
     
-    LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+
+    LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
     
     Pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
     for (j = start_ra; j < end_ra; ++j)
@@ -437,7 +436,9 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
       p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
       
-      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+
+
+      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
       
       for (j = start_ra; j < end_ra; ++j)
       {
@@ -538,7 +539,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       LALLeapSecs(status, &tmp_leapsecs, &(gps_and_acc.gps), &leapsec_info);
       p_ephemeris_data->leap = (INT2)tmp_leapsecs; 
 
-      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+
+      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), detector, p_ephemeris_data);
           
       for (j = start_ra; j < end_ra; ++j)
       {
