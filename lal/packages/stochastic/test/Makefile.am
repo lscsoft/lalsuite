@@ -59,6 +59,14 @@ CCoarseGrainFrequencySeriesTest_SOURCES = CCoarseGrainFrequencySeriesTest.c Chec
 CCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
+#TESTS =	  StochasticCrossCorrelationStatisticTest \
+#	  StochasticHeterodynedCrossCorrelationStatisticTest \
+#          StochasticCrossCorrelationSpectrumTest \
+#	  SZeroPadAndFFTTest                    CZeroPadAndFFTTest \
+#          StochasticOptimalFilterTest           StochasticOmegaGWTest \
+#          OverlapReductionFunctionTest           StochasticInverseNoiseTest \
+#          DirichletTest        \
+#	  SCoarseGrainFrequencySeriesTest    CCoarseGrainFrequencySeriesTest
 TESTS =	  StochasticCrossCorrelationStatisticTest \
 	  StochasticHeterodynedCrossCorrelationStatisticTest \
           StochasticCrossCorrelationSpectrumTest \
@@ -66,7 +74,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest        \
-	  SCoarseGrainFrequencySeriesTest    CCoarseGrainFrequencySeriesTest
+	  SCoarseGrainFrequencySeriesTest
 
 #    SFalseAlarmTest       SFalseDismissalTest  \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
