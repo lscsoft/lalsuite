@@ -264,7 +264,7 @@ INT4 main(INT4 argc, CHAR *argv[])
      fscanf(stdin,"%s\n%s\n",&frameCache1,&frameCache2);
      fscanf(stdin,"%s\n%s\n",&calCache1,&calCache2); 
      if (inject_flag)
-       { seed = 2 * N * seed;}
+       { seed = 2 * NLoop * seed;}
    }
 
        
