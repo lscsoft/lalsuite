@@ -40,11 +40,14 @@ void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
+static void checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
 /*----------------------------------------------------------------------*/
 
 NRCSID( PULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
+
+static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some number is an INT) */
 
 #define LTT 1000
 /* FIXME!!!!!: 
@@ -216,7 +219,7 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
   UINT4 numSFTs;			/* number of SFTs */
   UINT4 numSamples;			/* number of samples in each Tsft */
   UINT4 iSFT;
-  REAL8 Band, samples;
+  REAL8 Band, samples, f0, deltaF;
   RealFFTPlan *pfwd = NULL;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
@@ -225,9 +228,9 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
   REAL8 duration, delay;
   UINT4 SFTlen;				/* number of samples in an SFT */
   UINT4 indexShift;
-  const REAL8 eps = 1.e-14;		
   SFTtype *thisSFT;
   SFTVector *sftvect = NULL;		/* return value. For better readability */
+
 
   INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
@@ -241,15 +244,24 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
 	     PULSARSIGNALH_ENUMSFTS,  PULSARSIGNALH_MSGENUMSFTS);
   }
 
+  f0 = signal->f0;				/* lowest frequency */
   Band = 1.0 / (2.0 * signal->deltaT);		/* NOTE: frequency-band is determined by sampling-rate! */
+  deltaF = 1.0 / params->Tsft;			/* frequency-resolution */
+
+  /* if noiseSFTs are given: check they are consistent with signal! */
+  if (params->noiseSFTs) {
+    TRY (checkNoiseSFTs (stat->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), stat);
+  }
+    
+  /* make sure that number of samples is an integer (up to possible rounding errors */
   samples = 2.0 * Band * params->Tsft;		/* this is a float!*/
   numSamples = (UINT4) (samples + 0.5);		/* round to int */
-  /* now make sure that number of samples is an integer (up to possible rounding errors */
-  ASSERT ( abs(samples - numSamples)/samples < eps, stat, 
+  ASSERT ( fabs(samples - numSamples)/samples < eps, stat, 
 	   PULSARSIGNALH_EINCONSBAND, PULSARSIGNALH_MSGEINCONSBAND);
+
   
   /* Prepare FFT: compute plan for FFTW */
-  /* FIXME: put some buffering */
+  /* FIXME: put some buffering + measure best plan */
   TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat); 	
 
   /* get some info about time-series */
@@ -308,11 +320,10 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
       thisSFT->f0 = signal->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
+      /* Now add the noise-SFTs if given */
+
     } /* for iSFT < numSFTs */ 
 
-  /* Now add the noise-SFTs if given */
-  
-  /* ... */
 
 
   /* clean up */ /* FIXME: buffering */
@@ -691,8 +702,8 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
       re2 = sft2->data->data[i].re;
       im2 = sft2->data->data[i].im;
 
-      diffre = abs( re1 - re2 ) / mymax( abs(re1), abs(re2) );
-      diffim = abs( im1 - im2 ) / mymax( abs(im1), abs(im2) );
+      diffre = fabs( re1 - re2 ) / mymax( fabs(re1), fabs(re2) );
+      diffim = fabs( im1 - im2 ) / mymax( fabs(im1), fabs(im2) );
       
       if (diffre > maxdiff) {
 	maxdiff = diffre;
@@ -1034,3 +1045,45 @@ LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition
   RETURN (stat);
 
 } /* LALNormalizeSkyPosition() */
+
+/*----------------------------------------------------------------------
+ * check if frequency-range and resolution of noiseSFTs is consistent with signal
+ * ABORT if not
+ *----------------------------------------------------------------------*/
+void
+checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
+{
+  UINT4 i;
+  SFTtype *thisSFT;
+  REAL8 fn0, fn1, deltaFn, shift;
+  UINT4 nshift;
+
+  INITSTATUS( stat, "checkNoiseSFTs", PULSARSIGNALC);
+
+  for (i=0; i < sfts->length; i++)
+    {
+      thisSFT = &(sfts->data[i]);
+      deltaFn = thisSFT->deltaF;
+      fn0 = thisSFT->f0;
+      fn1 = f0 + thisSFT->data->length * deltaFn;
+      
+      if (deltaFn != deltaF) {
+	ABORT (stat,  PULSARSIGNALH_ENOISEDELTAF,  PULSARSIGNALH_MSGENOISEDELTAF);
+      }
+
+      if ( (f0 < fn0) || (f1 > fn1) ) {
+	ABORT (stat, PULSARSIGNALH_ENOISEBAND, PULSARSIGNALH_MSGENOISEBAND);
+      }
+      
+      shift = (fn0 - f0) / deltaF;
+      /* frequency bins have to coincide! ==> check that shift is integer!  */
+      nshift = (UINT4)(shift+0.5);
+      if ( fabs( nshift - shift) > eps ) {
+	ABORT (stat, PULSARSIGNALH_ENOISEBINS, PULSARSIGNALH_MSGENOISEBINS);
+      }
+
+    } /* for i < numSFTs */
+
+  RETURN (stat);
+
+} /* checkNoiseSFTs() */

@@ -47,6 +47,9 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_ETIMEBOUND	7
 #define PULSARSIGNALH_ENUMSFTS		8
 #define PULSARSIGNALH_EINCONSBAND	9
+#define PULSARSIGNALH_ENOISEDELTAF	10
+#define PULSARSIGNALH_ENOISEBAND	11
+#define PULSARSIGNALH_ENOISEBINS	12
 
 #define PULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define PULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -57,6 +60,9 @@ NRCSID( PULSARSIGNALH, "$Id$");
 #define PULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of allowed time-interval"
 #define PULSARSIGNALH_MSGENUMSFTS	"Inconsistent number of SFTs in timestamps and noise-SFTs"
 #define PULSARSIGNALH_MSGEINCONSBAND	"Inconsistent values of sampling-rate and Tsft: number of samples is not integer!"
+#define PULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
+#define PULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
+#define PULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
 
 /*************************************************** </lalErrTable> */
 

@@ -616,6 +616,21 @@ int main(int argc,char *argv[]) {
     /* Perform FFTW-LAL Fast Fourier Transform */
     SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
 
+    /*----------------------------------------------------------------------*/
+    /* COMPARE this to "new" SFTs */
+    if (lalDebugLevel >= 3) 
+      {
+	SFTtype testSFT;
+	testSFT.epoch = timestamps[iSFT];
+	testSFT.f0 = fmin;
+	testSFT.deltaF = 1.0 / Tsft;
+	testSFT.data = fvec;
+	printf ("\ni = %d: ", iSFT);
+	compare_SFTs ( &testSFT, &(SFTs->data[iSFT]) );
+      }
+    /*----------------------------------------------------------------------*/
+
+
     /* if you want noise added in the FREQ domain only, read from files and add in */
     if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
       return 1;
