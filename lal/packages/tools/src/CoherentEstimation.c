@@ -30,7 +30,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   static INT4
     jacobi(float **a, int n, float d[], float **v, int *nrot);
 
-  INT4 Sret,
+  INT4 /* Sret, */
     i, j, k, /* counters */
     iPad, ePad, /* used for padding */
     del;  /* integer time delay */
@@ -72,13 +72,13 @@ LALCoherentEstimation ( LALStatus          *stat,
 
   ASSERT ( in->Ndetectors == 3, stat, COHERENTESTIMATIONH_EUIMP, COHERENTESTIMATIONH_MSGEUIMP );
 
-  for(i=0;i<in->Ndetectors;i++) {
+  for(i=0;i<(INT4)in->Ndetectors;i++) {
     ASSERT ( in->data[i].data, stat, COHERENTESTIMATIONH_E0DEC, COHERENTESTIMATIONH_MSGE0DEC );
   }
 
   t0 = in->data[0].epoch;
 
-  for(i=1;i<in->Ndetectors;i++) {
+  for(i=1;i<(INT4)in->Ndetectors;i++) {
     ASSERT ( in->data[i].epoch.gpsSeconds == t0.gpsSeconds &&
 	     in->data[i].epoch.gpsNanoSeconds == t0.gpsNanoSeconds, stat, COHERENTESTIMATIONH_EDST, COHERENTESTIMATIONH_MSGEDST );
   }
@@ -98,12 +98,12 @@ LALCoherentEstimation ( LALStatus          *stat,
     REAL8Vector *tmpR8 = NULL;
     UINT4 jind;
 
-    for(i=0;i<in->Ndetectors;i++) {
+    for(i=0;i<(INT4)in->Ndetectors;i++) {
       ASSERT ( params->filters[i], stat, COHERENTESTIMATIONH_EICE, COHERENTESTIMATIONH_MSGEICE );
     }
 
     /* loop over all detectors, and filter twice */
-    for(i=0; i<params->Ndetectors; i++) {
+    for(i=0; i<(INT4)params->Ndetectors; i++) {
 
       TRY ( LALDCreateVector( stat->statusPtr,
 			      &tmpR8,
@@ -175,7 +175,9 @@ LALCoherentEstimation ( LALStatus          *stat,
   source.equatorialCoords = *(params->position);
   source.orientation = params->polAngle;
 
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
+
+    LALGPSandAcc gpsAndAcc;
 
     pGPS.p_detector = dAs.pDetector = params->detectors + i;
 
@@ -189,10 +191,12 @@ LALCoherentEstimation ( LALStatus          *stat,
       ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
     }
 
+    gpsAndAcc.gps = *pGPS.p_gps;
+    gpsAndAcc.accuracy = LALLEAPSEC_LOOSE; /* FIXME ??? */
     TRY ( LALComputeDetAMResponse ( stat->statusPtr, 
 				    F + i,
 				    &dAs,
-				    pGPS.p_gps ), stat );
+				    &gpsAndAcc ), stat );
 
     if(isnan(F[i].cross) || isnan(F[i].plus)) {
       ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
@@ -213,7 +217,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   */
   mDelay = tDelays[0];
 
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
     tDelays[i] -= mDelay;
   }
 
@@ -232,7 +236,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   if(!Hmat) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
     Hmat[i] = (REAL4 *)LALMalloc(params->Ndetectors * sizeof(REAL4));
     if(!(Hmat[i])) {
       ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
@@ -243,7 +247,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   if(!v) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
     v[i] = (REAL4 *)LALMalloc(params->Ndetectors * sizeof(REAL4));
     if(!(v[i])) {
       ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
@@ -252,8 +256,8 @@ LALCoherentEstimation ( LALStatus          *stat,
 
   Cmat = params->CMat;
 
-  for(i=0; i<params->Ndetectors; i++) {
-    for(j=0; j<params->Ndetectors; j++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
+    for(j=0; j<(INT4)params->Ndetectors; j++) {
 
 	Hmat[i][j] = (F[i].plus*F[j].plus*params->plus2cross + (F[i].plus*F[j].cross + F[j].plus*F[i].cross)*params->plusDotcross + F[i].cross*F[j].cross/params->plus2cross) / Cmat[i][i];
 
@@ -267,18 +271,18 @@ LALCoherentEstimation ( LALStatus          *stat,
  printf("%g\t%g\t%g\n",lambda[0],lambda[1],lambda[2]);
  */
   maxLambda = -1e30;
-  for(k=0;k<params->Ndetectors;k++) {
+  for(k=0;k<(INT4)params->Ndetectors;k++) {
 
     tmpLambda = 0.0;
 
-    for(i=0; i<params->Ndetectors; i++) {
-      for(j=0; j<params->Ndetectors; j++) {
+    for(i=0; i<(INT4)params->Ndetectors; i++) {
+      for(j=0; j<(INT4)params->Ndetectors; j++) {
 	tmpLambda += v[i][k]*v[j][k]*(F[i].plus*F[j].plus*params->plus2cross + (F[i].plus*F[j].cross + F[j].plus*F[i].cross)*params->plusDotcross + F[i].cross*F[j].cross/params->plus2cross);
       }
     }
 
     if(tmpLambda > maxLambda) {
-      for(i=0; i<params->Ndetectors; i++) {
+      for(i=0; i<(INT4)params->Ndetectors; i++) {
 	alpha[i] = v[i][k];
       }
       maxLambda = tmpLambda;
@@ -289,7 +293,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   }
 
   /* loop */
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
 
     /* setup padding and weights */
     if(tDelays[i] < 0.0) { 
@@ -318,7 +322,7 @@ LALCoherentEstimation ( LALStatus          *stat,
 
 
     /* interpolate using time delays */
-    for(j=iPad+1; j<output->data->length - ePad; j++) {
+    for(j=iPad+1; j<(INT4)output->data->length - (INT4)ePad; j++) {
 
       y = p1 * in->data[i].data->data[del+j-1] + p2 * in->data[i].data->data[del+j];
 
@@ -348,7 +352,7 @@ LALCoherentEstimation ( LALStatus          *stat,
   LALFree(alpha);
   LALFree(lambda);
 
-  for(i=0; i<params->Ndetectors; i++) {
+  for(i=0; i<(INT4)params->Ndetectors; i++) {
     LALFree(Hmat[i]);
     LALFree(v[i]);
   }
@@ -430,7 +434,7 @@ LALClearCoherentInfo (
 
 int jacobi(float **a, int n, float d[], float **v, int *nrot)
 {
-	int j,iq,ip,i,k;
+	int j,iq,ip,i/*,k*/;
 	float tresh,theta,tau,t,sm,s,h,g,c,*b,*z;
 
 	b = (REAL4 *)LALMalloc(n * sizeof(REAL4));

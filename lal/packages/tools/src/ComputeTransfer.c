@@ -116,6 +116,7 @@ but care should be taken if DC is relevant when this function is used.
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/Calibration.h>
+#include <lal/Units.h>
 
 NRCSID( COMPUTETRANSFERC, "$Id$" );
 
@@ -409,7 +410,8 @@ LALResponseConvert(
     COMPLEX8FrequencySeries *input
     )
 { /* </lalVerbatim> */
-  cini;
+  COMPLEX8 tmpb, tmpc;
+  REAL4 tmpx, tmpy;
   LALUnit unitOne;
   LALUnit unitTwo;
   UINT4 i;

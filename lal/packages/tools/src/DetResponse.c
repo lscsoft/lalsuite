@@ -80,6 +80,7 @@ typedef REAL8 LALDR_33Matrix[LALDR_MATRIXSIZE][LALDR_MATRIXSIZE];
 /*
  * Private functions
  */
+#if 0
 static REAL8 deg_to_rad(REAL8 degrees)
 {
   return degrees * (REAL8)LAL_PI / (REAL8)180.;
@@ -89,6 +90,7 @@ static REAL8 rad_to_deg(REAL8 radians)
 {
   return radians * (REAL8)180. / (REAL8)LAL_PI;
 }
+#endif
 
 
 /* axis for LALDR_EulerRotation() */
@@ -96,6 +98,7 @@ typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
 
 /* This #if is so I can hide this block in Emacs's hide-ifdef-mode */
 #if 1
+#if 0
 static void
 LALDR_Set3Vector(LALDR_3Vector * v,
                  REAL8 v1, REAL8 v2, REAL8 v3)
@@ -155,6 +158,7 @@ LALDR_OuterProd3Vector(LALDR_33Matrix * a,
 
   return;
 }
+#endif
 
 
 
@@ -200,6 +204,7 @@ LALDR_Set33Matrix(LALDR_33Matrix * matrix,
 /*
  * Copy matrix source to matrix target
  */
+#if 0
 static void
 LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * source)
 {
@@ -226,6 +231,7 @@ LALDR_Zero33Matrix(LALDR_33Matrix * matrix)
                     0., 0., 0.);
   return;
 }
+#endif
 
 
 
@@ -264,6 +270,7 @@ LALDR_Multiply33Matrix(LALDR_33Matrix * product,
 /*
  * Scalar multiply
  */
+#if 0
 static void
 LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
                          REAL8 coefficient,
@@ -315,6 +322,7 @@ LALDR_Subtract33Matrix(LALDR_33Matrix * result,
 
   return;
 }
+#endif
 
 
 
@@ -347,6 +355,7 @@ LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
 /*
  * The L2 norm of a matrix
  */
+#if 0
 static REAL8
 LALDR_L2Norm33Matrix(LALDR_33Matrix * matrix)
 {
@@ -498,6 +507,7 @@ LALDR_Print3Vector(LALDR_3Vector * vector,
   fflush(file);
   return;
 }
+#endif
      
 
 
