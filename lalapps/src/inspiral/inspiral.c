@@ -102,6 +102,9 @@ INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
 REAL4  highPassFreq     = 0;            /* high pass frequency          */
+INT4   highPassOrder    = -1;           /* order of the td iir filter   */
+REAL4  highPassAtten    = -1;           /* attenuation of the td filter */
+
 REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
 INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
@@ -668,14 +671,15 @@ int main( int argc, char *argv[] )
   if ( highPass )
   {
     PassBandParamStruc highpassParam;
-    highpassParam.nMax = 4;
+    highpassParam.nMax = highPassOrder;
     highpassParam.f1 = -1.0;
-    highpassParam.f2 = highPassFreq;
+    highpassParam.f2 = (REAL8) highPassFreq;
     highpassParam.a1 = -1.0;
-    highpassParam.a2 = 0.1;
+    highpassParam.a2 = 1.0 - (REAL8) highPassAtten; /* a2 is not attenuation */
 
-    if ( vrbflg ) fprintf( stdout, "highpassing data above %e\n", 
-        highPassFreq );
+    if ( vrbflg ) fprintf( stdout, "applying %d order high pass to data: "
+        "%e of signal passes at %e Hz\n", 
+        highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
 
     LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
         &status );
@@ -1437,6 +1441,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --disable-high-pass          turn off the IIR highpass filter\n"\
 "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
+"  --high-pass-order O          set the order of the high pass filter to O\n"\
+"  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
 "  --spectrum-type TYPE         use PSD estimator TYPE (mean|median)\n"\
 "\n"\
 "  --segment-length N           set data segment length to N points\n"\
@@ -1509,6 +1515,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"resample-filter",         required_argument, 0,                'R'},
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
+    {"high-pass-order",         required_argument, 0,                'H'},
+    {"high-pass-attenuation",   required_argument, 0,                'I'},
     {"frame-cache",             required_argument, 0,                'u'},
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
@@ -1549,7 +1557,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:u:v:w:x:z:Z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:H:I:u:v:w:x:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -2020,15 +2028,41 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 't':
         highPass = 1;
         highPassFreq = (REAL4) atof( optarg );
-        if ( highPassFreq < 0 )
+        if ( highPassFreq <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "low frequency cutoff is less than 0 Hz: "
+              "high pass filter frequency must be greater than 0 Hz: "
               "(%f Hz specified)\n",
               long_options[option_index].name, highPassFreq );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", highPassFreq );
+        break;
+
+      case 'H':
+        highPassOrder = (INT4) atoi( optarg );
+        if ( highPassOrder <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "high pass filter order must be greater than 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, highPassOrder );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", highPassOrder );
+        break;
+
+      case 'I':
+        highPassAtten = (REAL4) atoi( optarg );
+        if ( highPassAtten < 0.0 || highPassAtten > 1.0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "high pass attenuation must be in the range [0:1]: "
+              "(%f specified)\n",
+              long_options[option_index].name, highPassAtten );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%e", highPassAtten );
         break;
 
       case 'u':
@@ -2289,6 +2323,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "--disable-high-pass" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  else
+  {
+    /* check that all the high pass parameters have been specified */
+    if ( highPassOrder < 0 )
+    {
+      fprintf( stderr, "--high-pass-order must be specified\n" );
+      exit( 1 );
+    }
+    if ( highPassAtten < 0 )
+    {
+      fprintf( stderr, "--high-pass-attenuation must be specified\n" );
+      exit( 1 );
+    }
   }
 
   /* check validity of input data length */
