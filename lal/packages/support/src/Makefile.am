@@ -1,7 +1,21 @@
 ## Process this file with automake to produce Makefile.in
 ## $Id$
 noinst_LTLIBRARIES = libsupport.la
-lib_LTLIBRARIES = liblalsupport.la
+LALMETAIOSOURCES = LIGOLwXMLRead.c
+
+if METAIO
+LALMETAIOLIBRARIES = liblalmetaio.la
+else
+LALMETAIOLIBRARIES = 
+endif
+
+lib_LTLIBRARIES = $(LALMETAIOLIBRARIES) liblalsupport.la
+
+if METAIO
+liblalmetaio_la_SOURCES = $(LALMETAIOSOURCES)
+else
+EXTRA_TEXSOURCES = $(LALMETAIOSOURCES)
+endif
 
 libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
   StringToken.c StringConvert.c Grid.c
@@ -20,7 +34,8 @@ MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c
 
-EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
+EXTRA_DIST = $(LALMETAIOSOURCES) \
+             PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
 	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
 	     ReadFrequencySeries.m4 LALReadFrequencySeries.m4\

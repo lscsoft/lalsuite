@@ -5,7 +5,7 @@ pkginclude_HEADERS = LALStdio.h LALVersion.h LALMalloc.h LALError.h \
                      Grid.h StringInput.h StreamInput.h StreamOutput.h \
                      LALInitBarycenter.h LALXMGRInterface.h \
                      LIGOMetadataTables.h LIGOLwXML.h LIGOLwXMLHeaders.h \
-                     LIGOMetadataUtils.h
+                     LIGOMetadataUtils.h LIGOLwXMLRead.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
