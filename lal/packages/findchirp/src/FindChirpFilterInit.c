@@ -69,6 +69,21 @@ LALCreateFindChirpInput (
   ASSERT( params->numPoints > 0, status, 
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
+  /* check that the approximants is of a known type */
+  switch ( params->approximant )
+  {
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
+  }
+
 
   /*
    *
@@ -97,7 +112,7 @@ LALCreateFindChirpInput (
 
   /* create memory for the chirp template data */
   LALCCreateVector (status->statusPtr, &(outputPtr->fcTmplt->data), 
-      params->numPoints);
+      params->numPoints / 2 + 1 );
   BEGINFAIL( status )
   {
     LALFree( outputPtr->fcTmplt );
@@ -110,38 +125,38 @@ LALCreateFindChirpInput (
   /* create memory for BCVSpin orthonormalised amplitude vectors */
   if ( params->approximant == BCVSpin )
   {
-  	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin), 
-      		((params->numPoints)/2)+1 );
-	BEGINFAIL( status )
-	{
-	    LALFree( outputPtr->fcTmplt );
-	    outputPtr->fcTmplt = NULL;
-	    LALFree( *output );
-	    *output = NULL;
-	}
-	ENDFAIL( status );
-	   
- 	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin),
-	        ((params->numPoints)/2)+1 );
-        BEGINFAIL( status )
-	{
-	    LALFree( outputPtr->fcTmplt );
-	    outputPtr->fcTmplt = NULL;
-	    LALFree( *output );
-	    *output = NULL;
-	}
-	ENDFAIL( status );
+    LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin), 
+        ((params->numPoints)/2)+1 );
+    BEGINFAIL( status )
+    {
+      LALFree( outputPtr->fcTmplt );
+      outputPtr->fcTmplt = NULL;
+      LALFree( *output );
+      *output = NULL;
+    }
+    ENDFAIL( status );
 
-	LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin),
-	            ((params->numPoints)/2)+1 );
-	BEGINFAIL( status )
-	{
-	     LALFree( outputPtr->fcTmplt );
-	     outputPtr->fcTmplt = NULL;
-	     LALFree( *output );
-	     *output = NULL;
-	}
-	ENDFAIL( status );  
+    LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin),
+        ((params->numPoints)/2)+1 );
+    BEGINFAIL( status )
+    {
+      LALFree( outputPtr->fcTmplt );
+      outputPtr->fcTmplt = NULL;
+      LALFree( *output );
+      *output = NULL;
+    }
+    ENDFAIL( status );
+
+    LALDCreateVector (status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin),
+        ((params->numPoints)/2)+1 );
+    BEGINFAIL( status )
+    {
+      LALFree( outputPtr->fcTmplt );
+      outputPtr->fcTmplt = NULL;
+      LALFree( *output );
+      *output = NULL;
+    }
+    ENDFAIL( status );  
   }	  
 
   
@@ -195,20 +210,20 @@ LALDestroyFindChirpInput (
   /* destroy BCVSpin amplitude vectors */
   if (outputPtr->fcTmplt->A1BCVSpin)
   {
-  	LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin) );
-	CHECKSTATUSPTR( status );	
+    LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A1BCVSpin) );
+    CHECKSTATUSPTR( status );	
   }	  
   
   if (outputPtr->fcTmplt->A2BCVSpin)
   {
-         LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin) );
-         CHECKSTATUSPTR( status );
+    LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A2BCVSpin) );
+    CHECKSTATUSPTR( status );
   }
 
   if (outputPtr->fcTmplt->A3BCVSpin)
   {
-         LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin) );
-         CHECKSTATUSPTR( status );
+    LALDDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->A3BCVSpin) );
+    CHECKSTATUSPTR( status );
   }
     
   
@@ -260,10 +275,18 @@ LALFindChirpFilterInit (
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
   /* check that the user has given a known approximant */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV &&
-      params->approximant != BCVSpin )
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
   }
 
 

@@ -139,7 +139,7 @@ LALFindChirpBCVTemplate (
   numPoints = fcTmplt->data->length;
 
   /* store the waveform approximant */
-  fcTmplt->approximant = BCV;
+  fcTmplt->tmplt.approximant = BCV;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
@@ -221,6 +221,9 @@ LALFindChirpBCVTemplate (
       expPsi[k].re =   cos(psi1);
       /* very expensive computation method */
     }
+
+  /* copy the template parameters to the finchirp template structure */
+  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

@@ -251,9 +251,16 @@ LALFindChirpChisqVeto (
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
   /* check that we are using the correct approximant */
-  if ( params->approximant != TaylorF2 )
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPCHISQH_EIAPX, FINDCHIRPCHISQH_MSGEIAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+      break;
+    default:
+      ABORT( status, FINDCHIRPCHISQH_EIAPX, FINDCHIRPCHISQH_MSGEIAPX );
+      break;
   }
 
 

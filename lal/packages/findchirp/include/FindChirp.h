@@ -353,6 +353,7 @@ tagFindChirpTmpltParams
   REAL4                         dynRange;
   REAL4Vector                  *xfacVec;
   Approximant                   approximant;
+  RealFFTPlan                  *fwdPlan;
 }
 FindChirpTmpltParams;
 /* </lalVerbatim> */
@@ -399,7 +400,6 @@ tagFindChirpFilterParams
   REAL4                         chisqThresh;
   REAL4                         norm;
   UINT4                         maximiseOverChirp;
-  BOOLEAN                       computeNegFreq;
   Approximant                   approximant;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
@@ -453,9 +453,6 @@ $\rho^2(t_j)$ by
 \item[\texttt{UINT4 maximiseOverChirp}] If not zero, use algorithm that
 maximised over chirp lengths. Otherwise record all points that pass
 the $\rho^2$ threshold as events.
-
-\item[\texttt{BOOLEAN computeNegFreq}] Currently unused. Must be set to
-$0$ on entry.
 
 \item[\texttt{COMPLEX8Vector *qVec}] Pointer to vector allocated by 
 \texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
@@ -523,7 +520,6 @@ if \texttt{numChisqBins} is greater than zero.
 typedef struct
 tagFindChirpFilterInput
 {
-  InspiralTemplate             *tmplt;
   FindChirpTemplate            *fcTmplt;
   FindChirpSegment             *segment;
 }

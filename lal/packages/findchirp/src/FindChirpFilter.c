@@ -60,7 +60,6 @@ LALFindChirpFilterSegment (
   REAL4                 modChisqThresh;
   UINT4                 numChisqBins;
   UINT4                 eventStartIdx = 0;
-  REAL4                 chirpTime     = 0;
   BOOLEAN               haveChisq     = 0;
   COMPLEX8             *qtilde        = NULL;
   COMPLEX8             *q             = NULL;
@@ -136,21 +135,28 @@ LALFindChirpFilterSegment (
   ASSERT( input, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the input structure contains some input */
-  ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
-  /* make sure the filter has been initialized for the correct approximant */
-  if ( params->approximant != TaylorF2 )
+  /* check the allowed approximants */
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-  }
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+      /* make sure the approximant in the tmplt and segment agree */
+      if ( params->approximant != input->fcTmplt->tmplt.approximant ||
+          params->approximant != input->segment->approximant )
+      {
+        ABORT( status, FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+      }
+      break;
 
-  /* make sure that the template and the segment are both stationary phase */
-  ASSERT( input->fcTmplt->approximant == TaylorF2, status,
-      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
-  ASSERT( input->segment->approximant == TaylorF2, status,
-      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+    default:
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
+  }
 
 
   /*
@@ -172,8 +178,8 @@ LALFindChirpFilterSegment (
   tmpltSignal = input->fcTmplt->data->data;
   deltaT = params->deltaT;
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
-  kmax = input->tmplt->fCutoff / deltaF < numPoints/2 ? 
-    input->tmplt->fCutoff / deltaF : numPoints/2;
+  kmax = input->fcTmplt->tmplt.fCutoff / deltaF < numPoints/2 ? 
+    input->fcTmplt->tmplt.fCutoff / deltaF : numPoints/2;
 
   /* the length of the chisq bin vec is the number of bin boundaries so the */
   /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
@@ -192,54 +198,37 @@ LALFindChirpFilterSegment (
    */
 
 
+  if ( input->fcTmplt->tmplt.tC <= 0 )
   {
-    /* calculate the length of the chirp */
-    REAL4 eta = input->tmplt->eta;
-    REAL4 m1 = input->tmplt->mass1;
-    REAL4 m2 = input->tmplt->mass2;
-    REAL4 fmin = input->segment->fLow;
-    REAL4 m = m1 + m2;
-    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
-    REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
-    REAL4 c3 = -32*LAL_PI/3;
-    REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
-    REAL4 x2 = x*x;
-    REAL4 x3 = x*x2;
-    REAL4 x4 = x2*x2;
-    REAL4 x8 = x4*x4;
-    chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
-    if ( chirpTime <= 0 )
-    {
-      ABORT( status, FINDCHIRPH_ECHTZ, FINDCHIRPH_MSGECHTZ );
-    }
-
-    deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
-
-    /* ignore corrupted data at start and end */
-    ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
-
-    if ( lalDebugLevel & LALINFO )
-    {
-      CHAR infomsg[256];
-
-      LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
-          "m1 = %e m2 = %e => %e seconds => %d points\n"
-          "invSpecTrunc = %d => ignoreIndex = %d\n", 
-          m1, m2, chirpTime, deltaEventIndex, 
-          input->segment->invSpecTrunc, ignoreIndex );
-      LALInfo( status, infomsg );
-    }
-
-    /* XXX check that we are not filtering corrupted data XXX */
-    /* XXX this is hardwired to 1/4 segment length        XXX */
-    if ( ignoreIndex > numPoints / 4 )
-    {
-      ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
-    }
-    /* XXX reset ignoreIndex to one quarter of a segment XXX */
-    ignoreIndex = numPoints / 4;
+    ABORT( status, FINDCHIRPH_ECHTZ, FINDCHIRPH_MSGECHTZ );
   }
+
+  deltaEventIndex = (UINT4) rint( (input->fcTmplt->tmplt.tC / deltaT) + 1.0 );
+
+  /* ignore corrupted data at start and end */
+  ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
+
+  if ( lalDebugLevel & LALINFO )
+  {
+    CHAR infomsg[256];
+
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+        "m1 = %e m2 = %e => %e seconds => %d points\n"
+        "invSpecTrunc = %d => ignoreIndex = %d\n", 
+        input->fcTmplt->tmplt.mass1, input->fcTmplt->tmplt.mass2, 
+        input->fcTmplt->tmplt.tC , deltaEventIndex, 
+        input->segment->invSpecTrunc, ignoreIndex );
+    LALInfo( status, infomsg );
+  }
+
+  /* XXX check that we are not filtering corrupted data XXX */
+  /* XXX this is hardwired to 1/4 segment length        XXX */
+  if ( ignoreIndex > numPoints / 4 )
+  {
+    ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
+  }
+  /* XXX reset ignoreIndex to one quarter of a segment XXX */
+  ignoreIndex = numPoints / 4;
 
   if ( lalDebugLevel & LALINFO )
   {
@@ -270,21 +259,6 @@ LALFindChirpFilterSegment (
 
     qtilde[k].re = r*x - s*y;
     qtilde[k].im = r*y + s*x;
-  }
-
-  /* qtilde negative frequency only: not DC or nyquist */
-  if ( params->computeNegFreq )
-  {
-    for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
-    {
-      REAL4 r = inputData[k].re;
-      REAL4 s = inputData[k].im;
-      REAL4 x = tmpltSignal[k].re;
-      REAL4 y = 0 - tmpltSignal[k].im;     /* note complex conjugate */
-
-      qtilde[k].re = r*x - s*y;
-      qtilde[k].im = r*y + s*x;
-    }
   }
 
   /* inverse fft to get q */
@@ -331,7 +305,7 @@ LALFindChirpFilterSegment (
   /*                                                                    */
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
-  mismatch = 1.0 - input->tmplt->minMatch;
+  mismatch = 1.0 - input->fcTmplt->tmplt.minMatch;
   chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
 
   /* if full snrsq vector is required, store the snrsq */
@@ -454,7 +428,7 @@ LALFindChirpFilterSegment (
           CHECKSTATUSPTR( status );
 
           /* set the impuse time for the event */
-          thisEvent->template_duration = (REAL8) chirpTime;
+          thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;
 
           /* record the ifo and channel name for the event */
           strncpy( thisEvent->ifo, input->segment->data->name, 
@@ -468,16 +442,16 @@ LALFindChirpFilterSegment (
             atan2( q[timeIndex].im, q[timeIndex].re ); 
 
           /* copy the template into the event */
-          thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-          thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-          thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
-          thisEvent->eta    = (REAL4) input->tmplt->eta;
-          thisEvent->tau0   = (REAL4) input->tmplt->t0;
-          thisEvent->tau2   = (REAL4) input->tmplt->t2;
-          thisEvent->tau3   = (REAL4) input->tmplt->t3;
-          thisEvent->tau4   = (REAL4) input->tmplt->t4;
-          thisEvent->tau5   = (REAL4) input->tmplt->t5;
-          thisEvent->ttotal = (REAL4) input->tmplt->tC;
+          thisEvent->mass1  = (REAL4) input->fcTmplt->tmplt.mass1;
+          thisEvent->mass2  = (REAL4) input->fcTmplt->tmplt.mass2;
+          thisEvent->mchirp = (REAL4) input->fcTmplt->tmplt.chirpMass;
+          thisEvent->eta    = (REAL4) input->fcTmplt->tmplt.eta;
+          thisEvent->tau0   = (REAL4) input->fcTmplt->tmplt.t0;
+          thisEvent->tau2   = (REAL4) input->fcTmplt->tmplt.t2;
+          thisEvent->tau3   = (REAL4) input->fcTmplt->tmplt.t3;
+          thisEvent->tau4   = (REAL4) input->fcTmplt->tmplt.t4;
+          thisEvent->tau5   = (REAL4) input->fcTmplt->tmplt.t5;
+          thisEvent->ttotal = (REAL4) input->fcTmplt->tmplt.tC;
 
           /* set the type of the template used in the analysis */
           LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
@@ -558,7 +532,7 @@ LALFindChirpFilterSegment (
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) chirpTime;
+    thisEvent->template_duration = (REAL8) input->fcTmplt->tmplt.tC;
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name, 
@@ -572,16 +546,16 @@ LALFindChirpFilterSegment (
         atan2( q[timeIndex].im, q[timeIndex].re );
 
     /* copy the template into the event */
-    thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-    thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-    thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
-    thisEvent->eta    = (REAL4) input->tmplt->eta;
-    thisEvent->tau0   = (REAL4) input->tmplt->t0;
-    thisEvent->tau2   = (REAL4) input->tmplt->t2;
-    thisEvent->tau3   = (REAL4) input->tmplt->t3;
-    thisEvent->tau4   = (REAL4) input->tmplt->t4;
-    thisEvent->tau5   = (REAL4) input->tmplt->t5;
-    thisEvent->ttotal = (REAL4) input->tmplt->tC;
+    thisEvent->mass1  = (REAL4) input->fcTmplt->tmplt.mass1;
+    thisEvent->mass2  = (REAL4) input->fcTmplt->tmplt.mass2;
+    thisEvent->mchirp = (REAL4) input->fcTmplt->tmplt.chirpMass;
+    thisEvent->eta    = (REAL4) input->fcTmplt->tmplt.eta;
+    thisEvent->tau0   = (REAL4) input->fcTmplt->tmplt.t0;
+    thisEvent->tau2   = (REAL4) input->fcTmplt->tmplt.t2;
+    thisEvent->tau3   = (REAL4) input->fcTmplt->tmplt.t3;
+    thisEvent->tau4   = (REAL4) input->fcTmplt->tmplt.t4;
+    thisEvent->tau5   = (REAL4) input->fcTmplt->tmplt.t5;
+    thisEvent->ttotal = (REAL4) input->fcTmplt->tmplt.tC;
 
     /* set the type of the template used in the analysis */
     LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),

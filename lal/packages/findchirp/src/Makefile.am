@@ -9,19 +9,15 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpLinkedList.c \
   FindChirpFilterInit.c FindChirpChisqInit.c \
   FindChirpFilter.c FindChirpChisq.c \
   FindChirpSPData.c FindChirpSPTemplate.c \
+  FindChirpTDData.c FindChirpTDTemplate.c \
   FindChirpBCVData.c FindChirpBCVTemplate.c \
   FindChirpBCVFilter.c FindChirpBCVChisq.c \
   FindChirpBCVSpinData.c FindChirpBCVSpinTemplate.c \
   FindChirpBCVSpinFilter.c FindChirpBCVSpinChisq.c \
   FindChirpSimulation.c FindChirpFilterOutputVeto.c
 
-TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \
-  TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c \
-  TwoInterfFindChirpChisq.c
-
 libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES)
 
-EXTRA_DIST = $(TWOINTERFFINDCHIRPSOURCES)
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

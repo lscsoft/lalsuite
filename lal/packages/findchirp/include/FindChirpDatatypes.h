@@ -252,6 +252,7 @@ the vector
 typedef struct
 tagFindChirpTemplate
 {
+  InspiralTemplate              tmplt;
   COMPLEX8Vector               *data;
   REAL4                         tmpltNorm;
   REAL8                         momentI;
@@ -262,7 +263,6 @@ tagFindChirpTemplate
   REAL8                         numFactor1;
   REAL8                         numFactor2;
   REAL8                         numFactor3;  
-  Approximant                   approximant;
   REAL8Vector                  *A1BCVSpin;
   REAL8Vector                  *A2BCVSpin;
   REAL8Vector                  *A3BCVSpin;

@@ -467,10 +467,19 @@ LALCreateFindChirpSegmentVector (
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
-  if ( params->approximant != TaylorF2 && params->approximant != BCV && 
-      params->approximant !=BCVSpin )
+  /* check that the approximant is of a known type */
+  switch ( params->approximant )
   {
-	ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
   }
 
 
@@ -519,7 +528,6 @@ LALCreateFindChirpSegmentVector (
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
-
     if ( params->approximant == BCV )
     {
       segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
@@ -546,17 +554,17 @@ LALCreateFindChirpSegmentVector (
       CHECKSTATUSPTR (status);
 
       LALCreateVector (status->statusPtr,
-         &(segPtr[i].b2), params->numPoints/2 + 1);
+          &(segPtr[i].b2), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
 #if 0
       LALCreateVector (status->statusPtr,
-       &(segPtr[i].tmpltPowerVec), params->numPoints/2 + 1);
+          &(segPtr[i].tmpltPowerVec), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 #endif
 
       LALCreateVector (status->statusPtr,
-       &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);  
+          &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);  
       CHECKSTATUSPTR (status);
     }
 
@@ -573,24 +581,24 @@ LALCreateFindChirpSegmentVector (
     /* additional chisq frequency bins for the BCV templates */
     if ( params->approximant == BCV )
     { 
-       if ( params->numChisqBins )
-       {
-         segPtr[i].chisqBinVecBCV = NULL;
-         LALU4CreateVector (status->statusPtr, 
-             &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
-         CHECKSTATUSPTR (status);
-       }
-       else
-       {
-         segPtr[i].chisqBinVecBCV = (UINT4Vector *) 
-           LALCalloc( 1, sizeof(UINT4Vector) );
-       }
-     }
+      if ( params->numChisqBins )
+      {
+        segPtr[i].chisqBinVecBCV = NULL;
+        LALU4CreateVector (status->statusPtr, 
+            &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
+        CHECKSTATUSPTR (status);
+      }
+      else
+      {
+        segPtr[i].chisqBinVecBCV = (UINT4Vector *) 
+          LALCalloc( 1, sizeof(UINT4Vector) );
+      }
+    }
 
     /* segment dependent part of normalisation, for the SP templates */
-      LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
-          params->numPoints/2 + 1 );
-      CHECKSTATUSPTR( status );
+    LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
+        params->numPoints/2 + 1 );
+    CHECKSTATUSPTR( status );
 
     /* segment id number (invalid) */
     segPtr[i].number = -1;

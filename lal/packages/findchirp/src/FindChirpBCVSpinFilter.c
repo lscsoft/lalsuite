@@ -182,12 +182,11 @@ LALFindChirpBCVSpinFilterSegment (
   ASSERT( input, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the input structure contains some input */
-  ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the template and the segment are both BCVSpin */
-  ASSERT( input->fcTmplt->approximant == BCVSpin, status,
+  ASSERT( input->fcTmplt->tmplt.approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
@@ -304,40 +303,6 @@ LALFindChirpBCVSpinFilterSegment (
      	qtildeBCVSpin2[k].im *= A3Vec[k];
   }
 
-  /* qtilde negative frequency only: not DC or nyquist */
-  if ( params->computeNegFreq )
-  {
-  	for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
-    	{
-      		REAL4 r        = inputData1[k].re;
-      		REAL4 s        = inputData1[k].im;    
-     
-                REAL4 x =    tmpltSignal[k].re;
-      		REAL4 y =  - tmpltSignal[k].im;
-
-      		qtilde[k].re = r * x - s * y ;
-      		qtilde[k].im = r * y + s * x ;
-    
-		qtilde[k].re *= wtilde[k].re;
-      		qtilde[k].im *= wtilde[k].re;
- 
-		qtildeBCVSpin1[k] = qtilde[k];
-      		qtildeBCVSpin2[k] = qtilde[k]; 
-
-      		/* real parts */
-
-     		qtilde[k].re         *= A1Vec[k];
-     		qtildeBCVSpin1[k].re *= A2Vec[k];
-     		qtildeBCVSpin2[k].re *= A3Vec[k];
-
-      		/* imaginary parts */
-   
-     		qtilde[k].im         *= A1Vec[k];
-     		qtildeBCVSpin1[k].im *= A2Vec[k];
-     		qtildeBCVSpin2[k].im *= A3Vec[k];
-         }
-  }
- 
  
   /* 
    *
@@ -531,18 +496,18 @@ LALFindChirpBCVSpinFilterSegment (
                 	/* record the beta value */
                		/* eventually beta will be provided FROM 
 				the template bank */
-                	thisEvent->beta   = input->tmplt->beta; 
-          		thisEvent->psi0   = (REAL4) input->tmplt->psi0;
-          		thisEvent->psi3   = (REAL4) input->tmplt->psi3;
+                	thisEvent->beta   = input->fcTmplt->tmplt.beta; 
+          		thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
+          		thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
           		/* chirp mass in units of M_sun */
           		thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-            		pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
+            		pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0 , 3.0/5.0 );
           		m =  fabs(thisEvent->psi3) /	
 	                (16.0 * LAL_MTSUN_SI * LAL_PI 
 			* LAL_PI * thisEvent->psi0) ;
           	        thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
               		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
-          		thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
+          		thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 			
           		/* set the type of the template used in the analysis */
           		LALSnprintf( thisEvent->search, 

@@ -7,6 +7,7 @@ pkginclude_HEADERS = FindChirpDatatypes.h \
                      FindChirpFilterOutputVeto.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
+                     FindChirpTD.h \
                      FindChirpBCV.h \
                      FindChirpBCVSpin.h \
 		     TwoInterfFindChirp.h

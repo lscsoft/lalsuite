@@ -96,11 +96,6 @@ LALFindChirpSPData (
   ASSERT( params, status, FINDCHIRPSPH_ENULL, 
       FINDCHIRPSPH_MSGENULL ": params" );
 
-  /* check that the parameter structure is set */
-  /* to the correct waveform approximant       */
-  ASSERT( params->approximant == TaylorF2, status, 
-      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
-
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status, 
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
@@ -150,6 +145,13 @@ LALFindChirpSPData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
       ": dataSegVec->data->chan->data" );
 
+  /* check that the parameter structure is set */
+  /* to the correct waveform approximant       */
+  if ( params->approximant != TaylorF2 )
+  {
+    ABORT( status, FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+  }
+
 
   /*
    *
@@ -196,7 +198,7 @@ LALFindChirpSPData (
 
 
     /* store the waveform approximant in the data segment */
-    fcSeg->approximant = TaylorF2;
+    fcSeg->approximant = params->approximant;
 
 
     /*
@@ -336,13 +338,14 @@ LALFindChirpSPData (
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
 
+    fcSeg->tmpltPowerVec = params->tmpltPowerVec; 
+
     segNormSum = 0.0;
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
       tmpltPower[k] = amp[k] * amp[k] * wtilde[k].re;
       segNormSum += tmpltPower[k];
       fcSeg->segNorm->data[k] = segNormSum;
-      fcSeg->tmpltPowerVec = params->tmpltPowerVec; 
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )

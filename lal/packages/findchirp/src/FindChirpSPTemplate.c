@@ -85,10 +85,10 @@ LALFindChirpSPTemplate (
   const REAL4   cannonDist = 1.0; /* Mpc */
 
   /* pn constants */
-  REAL4 c0;
-  REAL4 c10;
-  REAL4 c15;
-  REAL4 c20;
+  REAL4 c0, c10, c15, c20; 
+
+  /* variables used to compute chirp time */
+  REAL4 c0T, c2T, c3T, c4T, xT, x2T, x3T, x4T, x8T;
 
   /* chebychev coefficents for expansion of sin and cos */
   const REAL4 s2 = -0.16605;
@@ -117,12 +117,12 @@ LALFindChirpSPTemplate (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-
-  /* check that the parameter structure is set */
-  /* to the correct waveform approximant       */
-  ASSERT( params->approximant == TaylorF2, status, 
-      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+  ASSERT( params, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->xfacVec, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->xfacVec->data, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the timestep is positive */
   ASSERT( params->deltaT > 0, status, 
@@ -130,6 +130,11 @@ LALFindChirpSPTemplate (
 
   /* check that the input exists */
   ASSERT( tmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
+  /* check that the parameter structure is set */
+  /* to the correct waveform approximant       */
+  if ( params->approximant != TaylorF2 )
+    ABORT( status, FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
 
 
   /*
@@ -145,7 +150,7 @@ LALFindChirpSPTemplate (
   numPoints = fcTmplt->data->length;
 
   /* store the waveform approximant */
-  fcTmplt->approximant = TaylorF2;
+  fcTmplt->tmplt.approximant = params->approximant;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
@@ -249,6 +254,27 @@ LALFindChirpSPTemplate (
 
   }
 
+
+  /*
+   *
+   * compute the length of the stationary phase chirp
+   *
+   */
+
+
+  c0T = 5 * m * LAL_MTSUN_SI / (256 * eta);
+  c2T = 743.0/252.0 + eta * 11.0/3.0;
+  c3T = -32 * LAL_PI/3;
+  c4T = 3058673.0/508032.0 + eta * (5429.0/504.0 + eta * 617.0/72.0);
+  xT  = pow( LAL_PI * m * LAL_MTSUN_SI * params->fLow, 1.0/3.0);
+  x2T = xT * xT;
+  x3T = xT * x2T;
+  x4T = x2T * x2T;
+  x8T = x4T * x4T;
+  tmplt->tC = c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T) / x8T;
+
+  /* copy the template parameters to the finchirp template structure */
+  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

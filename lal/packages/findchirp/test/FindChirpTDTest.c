@@ -8,7 +8,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
-#include <FindChirpTDTest.h>
+#include "FindChirpTDTest.h"
 
 #define TEST_STATUS( ps ) \
   ( ( ps )->statusCode && ( exit( 1 ), \

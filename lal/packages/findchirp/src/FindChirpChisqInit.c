@@ -105,10 +105,18 @@ LALFindChirpChisqVetoInit (
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
 
   /* check that we are using a known approximant */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV
-       && params->approximant != BCVSpin )
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+      break;
   }
 
 
@@ -279,10 +287,18 @@ LALFindChirpChisqVetoFinalize (
   ATTATCHSTATUSPTR( status );
 
   /* check that we are using a known approximant */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV 
-       && params->approximant != BCVSpin )
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+      break;
   }
 
 

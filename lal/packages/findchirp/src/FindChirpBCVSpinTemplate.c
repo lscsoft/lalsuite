@@ -160,7 +160,7 @@ LALFindChirpBCVSpinTemplate (
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
   
   /* store the waveform approximant */
-  fcTmplt->approximant = BCVSpin;
+  fcTmplt->tmplt.approximant = BCVSpin;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
@@ -373,6 +373,10 @@ LALFindChirpBCVSpinTemplate (
   	fprintf (stdout, "A1hat cross A3hat %e\n", A1A3);
   	fprintf (stdout, "A2hat cross A3hat %e\n\n", A2A3);
   } */
+
+  /* copy the template parameters to the finchirp template structure */
+  memcpy( &(fcTmplt->tmplt), tmplt, sizeof(InspiralTemplate) );
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

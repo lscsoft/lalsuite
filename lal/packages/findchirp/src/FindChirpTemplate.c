@@ -98,13 +98,6 @@ LALFindChirpTemplateInit (
   ASSERT( params->numPoints > 0, status, 
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
-  /* check that we are making a waveform that we know about */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV
-       && params->approximant != BCVSpin )
-  {
-    ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
-  }
-
 
   /*
    *
@@ -124,21 +117,65 @@ LALFindChirpTemplateInit (
   /* store the waveform approximant */
   outputPtr->approximant = params->approximant;
 
-  /* create the vector to store x^(-7/6) */
-  LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
-      params->numPoints/2 + 1 );
-  BEGINFAIL( status )
+  switch ( params->approximant )
   {
-    LALFree( outputPtr );
-    *output = NULL;
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+      /* time domain waveforms use xfac to store the time domain waveform */
+      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
+          params->numPoints );
+      BEGINFAIL( status )
+      {
+        LALFree( outputPtr );
+        *output = NULL;
+      }
+      ENDFAIL( status );
+      
+      memset( xfac, 0, outputPtr->xfacVec->length * sizeof(REAL4) );
+      
+      /* create an fft plan for the time domain waveform */
+      LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan), 
+          params->numPoints, 0 );
+      BEGINFAIL( status )
+      {
+        TRY( LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) ), 
+            status );
+
+        LALFree( outputPtr );
+        *output = NULL;
+      }
+      ENDFAIL( status );
+      break;
+      
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      /* freq domain waveforms need xfac vector containing k^(-7/6) */
+      LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
+          params->numPoints/2 + 1 );
+      BEGINFAIL( status )
+      {
+        LALFree( outputPtr );
+        *output = NULL;
+      }
+      ENDFAIL( status );
+
+      xfac = outputPtr->xfacVec->data;
+
+      xfac[0] = 0;
+      for (k = 1; k < outputPtr->xfacVec->length; ++k) 
+        xfac[k] = pow( (REAL4) k, exponent );
+      break;
+
+    default:
+      /* unknown approximant type */
+      LALFree( outputPtr );
+      *output = NULL;
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
   }
-  ENDFAIL( status );
-
-  xfac = outputPtr->xfacVec->data;
-  memset( xfac, 0, outputPtr->xfacVec->length * sizeof(REAL4) );
-
-  for (k = 1; k < outputPtr->xfacVec->length; ++k) 
-    xfac[k] = pow( (REAL4) k, exponent );
+      
   
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -183,7 +220,14 @@ LALFindChirpTemplateFinalize (
   /* local pointer to output */
   outputPtr = *output;
 
-  /* destroy the vector of x^(-7/6) */
+  /* destroy the fft plan if it exists */
+  if ( outputPtr->fwdPlan )
+  {
+    LALDestroyRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan) );
+    CHECKSTATUSPTR( status );
+  }
+
+  /* destroy the vector used to store part of the template */
   LALDestroyVector( status->statusPtr, &(outputPtr->xfacVec) );
   CHECKSTATUSPTR( status );
 

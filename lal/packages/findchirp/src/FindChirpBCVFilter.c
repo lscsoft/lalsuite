@@ -154,7 +154,6 @@ LALFindChirpBCVFilterSegment (
   ASSERT( input, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* make sure that the input structure contains some input */
-  ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
@@ -165,7 +164,7 @@ LALFindChirpBCVFilterSegment (
   }
 
   /* make sure that the template and the segment are both BCV */
-  ASSERT( input->fcTmplt->approximant == BCV, status,
+  ASSERT( input->fcTmplt->tmplt.approximant == BCV, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCV, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
@@ -226,9 +225,9 @@ LALFindChirpBCVFilterSegment (
    * template parameters, since FindChirpBCVFilterSegment is run
    * for every template
    */
-  psi0 = input->tmplt->psi0;  
-  psi3 = input->tmplt->psi3;
-  fFinal = input->tmplt->fFinal;
+  psi0 = input->fcTmplt->tmplt.psi0;  
+  psi3 = input->fcTmplt->tmplt.psi3;
+  fFinal = input->fcTmplt->tmplt.fFinal;
 
   /*
    *
@@ -243,10 +242,10 @@ LALFindChirpBCVFilterSegment (
     /* for the BCV tempaltes, as calculated using psi0 and psi3        */ 
 
 #if 0
-    /* REAL4 eta = input->tmplt->eta; */
+    /* REAL4 eta = input->fcTmplt->tmplt.eta; */
     /* m1 and m2 are currently equal to 0 in the BCV template bank */
-    REAL4 m1 = input->tmplt->mass1;
-    REAL4 m2 = input->tmplt->mass2;
+    REAL4 m1 = input->fcTmplt->tmplt.mass1;
+    REAL4 m2 = input->fcTmplt->tmplt.mass2;
     REAL4 fmin = input->segment->fLow;
     /* total mass and eta, for use in chirpTime calculation */
     REAL4 m =  fabs(psi3) / (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * psi0) ;
@@ -367,26 +366,6 @@ LALFindChirpBCVFilterSegment (
     qtildeBCV[k].im = rBCV * y + sBCV * x ;
   }
 
-
-  /* qtilde negative frequency only: not DC or nyquist */
-  if ( params->computeNegFreq )
-  {
-    for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
-    {
-      REAL4 r    = a1 * inputData[k].re;
-      REAL4 s    = a1 * inputData[k].im;
-      REAL4 rBCV = b1 * inputData[k].re + b2 * inputDataBCV[k].re;
-      REAL4 sBCV = b1 * inputData[k].im + b2 * inputDataBCV[k].im;
-      REAL4 x = tmpltSignal[k].re;
-      REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */
-
-      qtilde[k].re = r * x - s * y ;
-      qtilde[k].im = r * y + s * x ;
-      qtildeBCV[k].re = rBCV * x - sBCV * y ;
-      qtildeBCV[k].im = rBCV * y + sBCV * x ;
-    }
-  }
-
   /* inverse fft to get q, and qBCV */
   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, 
       params->qtildeVec, params->invPlan );
@@ -438,7 +417,7 @@ LALFindChirpBCVFilterSegment (
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
 
-  mismatch = 1.0 - input->tmplt->minMatch;
+  mismatch = 1.0 - input->fcTmplt->tmplt.minMatch;
   if ( !numChisqBins )
   {
     chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
@@ -599,7 +578,7 @@ LALFindChirpBCVFilterSegment (
         params->chisqParams->b1             = b1 ;
         params->chisqParams->b2             = b2 ;
 #if 0
-        params->chisqParams->bankMatch   = input->tmplt->minMatch;
+        params->chisqParams->bankMatch   = input->fcTmplt->tmplt.minMatch;
 #endif
 
         /* compute the chisq vector: this is slow! */
@@ -721,16 +700,16 @@ LALFindChirpBCVFilterSegment (
           thisEvent->alpha *= pow(params->deltaT, 2.0/3.0);   
 
           /* copy the template into the event */
-          thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
-          thisEvent->psi3   = (REAL4) input->tmplt->psi3;
+          thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0; 
+          thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;
           /* chirp mass in units of M_sun */
           thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-            pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
+            pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0 , 3.0/5.0 );
           m =  fabs(thisEvent->psi3) / 
             (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
           thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 * 
               pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
-          thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
+          thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal ;
 
           /* set the type of the template used in the analysis */
           LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
@@ -840,12 +819,12 @@ LALFindChirpBCVFilterSegment (
 
 
     /* copy the template into the event */
-    thisEvent->psi0   = (REAL4) input->tmplt->psi0;   
-    thisEvent->psi3   = (REAL4) input->tmplt->psi3;  
+    thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;   
+    thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;  
     /* chirp mass in units of M_sun */
     thisEvent->mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-      pow( 3.0 / 128.0 / input->tmplt->psi0, 3.0/5.0 );
-    thisEvent->f_final  = (REAL4) input->tmplt->fFinal;
+      pow( 3.0 / 128.0 / input->fcTmplt->tmplt.psi0, 3.0/5.0 );
+    thisEvent->f_final  = (REAL4) input->fcTmplt->tmplt.fFinal;
     m =  fabs(thisEvent->psi3) /
           (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * thisEvent->psi0) ;
     thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *

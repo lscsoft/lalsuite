@@ -74,11 +74,19 @@ LALFindChirpDataInit (
   ASSERT (params->numPoints > 0, status, 
       FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ);
 
-  /* check that we are making a waveform that we know about */
-  if ( params->approximant != TaylorF2 && params->approximant != BCV 
-      && params->approximant != BCVSpin)
+  /* check that the approximant is of a known type */
+  switch ( params->approximant )
   {
-    ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorF2:
+    case BCV:
+    case BCVSpin:
+      break;
+    default:
+      ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+      break;
   }
 
 
