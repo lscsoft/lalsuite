@@ -2,7 +2,7 @@
 
 ## Add additional tex sources (texfiles, eps&pdf figures, etc.) here
 TEXSOURCEFILES = lalapps.tex lalapps.bib lalapps.bst \
-                 hello.tex ZPG2transfer.tex stochastic.tex olapredfcn.tex \
+                 hello.tex stochastic.tex olapredfcn.tex \
                  ring.tex inspinj.tex animate.tex findchirp_post.tex \
                  animate.ps animate.pdf
 
