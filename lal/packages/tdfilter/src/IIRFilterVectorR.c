@@ -1,9 +1,9 @@
 /***************************** <lalVerbatim file="IIRFilterVectorRCV">
 Author: Creighton, T. D.
 $Id$
-****************************** </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilterVectorR.c}}
 \label{ss:IIRFilterVectorR.c}
@@ -37,7 +37,7 @@ routines neither use nor modify this data array.
 
 \vfill{\footnotesize\input{IIRFilterVectorRCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
@@ -63,15 +63,15 @@ LALIIRFilterREAL4VectorR( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL4VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
-  ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(vector->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
+  ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(vector->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
   length=vector->length;
   data=vector->data+length-1;
   directOrder=filter->directCoef->length;
@@ -80,7 +80,7 @@ LALIIRFilterREAL4VectorR( LALStatus      *stat,
   recursCoef=filter->recursCoef->data;
 
   /* Perform the auxilliary piece of the filter. */
-  for(i=0;i<recursOrder;i++,data--)
+  for(i=0;(i<recursOrder)&&(i<length);i++,data--)
     for(j=1;j<=i;j++)
       *data+=data[j]*recursCoef[j];
   for(;i<length;i++,data--)
@@ -123,15 +123,15 @@ LALIIRFilterREAL8VectorR( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL8VectorR",IIRFILTERVECTORRC);
 
   /* Make sure all the structures have been initialized. */
-  ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(vector->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
+  ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(vector->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
   length=vector->length;
   data=vector->data+length-1;
   directOrder=filter->directCoef->length;
@@ -140,7 +140,7 @@ LALIIRFilterREAL8VectorR( LALStatus      *stat,
   recursCoef=filter->recursCoef->data;
 
   /* Perform the auxilliary piece of the filter. */
-  for(i=0;i<recursOrder;i++,data--)
+  for(i=0;(i<recursOrder)&&(i<length);i++,data--)
     for(j=1;j<=i;j++)
       *data+=data[j]*recursCoef[j];
   for(;i<length;i++,data--)

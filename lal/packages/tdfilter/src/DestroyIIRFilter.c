@@ -1,9 +1,9 @@
 /***************************** <lalVerbatim file="DestroyIIRFilterCV">
 Author: Creighton, T. D.
 $Id$
-****************************** </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{DestroyIIRFilter.c}}
 \label{ss:DestroyIIRFilter.c}
@@ -35,7 +35,7 @@ void LALDDestroyVector()
 
 \vfill{\footnotesize\input{DestroyIIRFilterCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -55,8 +55,8 @@ LALDestroyREAL4IIRFilter( LALStatus      *stat,
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALSDestroyVector will check that the data fields are
      non-null.) */
-  ASSERT(input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(*input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(*input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
   /* Destroy the vector fields. */
   TRY(LALSDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
@@ -84,8 +84,8 @@ LALDestroyREAL8IIRFilter( LALStatus      *stat,
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALDDestroyVector will check that the data fields are
      non-null.) */
-  ASSERT(input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(*input,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(*input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
   /* Destroy the vector fields. */
   TRY(LALDDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);

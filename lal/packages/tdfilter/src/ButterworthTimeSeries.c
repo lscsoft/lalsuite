@@ -1,15 +1,9 @@
-/*----------------------------------------------------------------------- 
-
-File Name: ButterworthTimeSeries.c
-
-<lalVerbatim file="ButterworthTimeSeriesCV">
+/************************ <lalVerbatim file="ButterworthTimeSeriesCV">
 Author: Creighton, T. D.
 Revision: $Id$
-</lalVerbatim>
+**************************************************** </lalVerbatim> */
 
--------------------------------------------------------------------------*/
-
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{ButterworthTimeSeries.c}}
 \label{ss:ButterworthTimeSeries.c}
@@ -40,12 +34,15 @@ f\Delta t)$, where $\Delta t$ is the sampling interval (i.e.\
 \verb@series->deltaT@).  In this parameter, then, the \emph{power}
 response (attenuation) of the filter is:
 $$
-|R|^2 = a = \frac{1}{1+(w/w_c)^{2n}} \; ,
+|R|^2 = \sqrt{a} = \frac{1}{1+(w/w_c)^{2n}} \; ,
 $$
 where $n$ is the filter order and $w_c$ is the characteristic
-frequency.  Similarly, a Butterworth high-pass filter is given by
+frequency.  We have written the attenuation as $\sqrt{a}$ to emphasize
+that the full attenuation $a$ is achieved only after filtering twice
+(once forward, once in reverse).  Similarly, a Butterworth high-pass
+filter is given by
 $$
-|R|^2 = a = \frac{1}{1+(w_c/w)^{2n}} \; .
+|R|^2 = \sqrt{a} = \frac{1}{1+(w_c/w)^{2n}} \; .
 $$
 If one is given a filter order $n$, then the characteristic frequency
 can be determined from the attenuation at some any given frequency.
@@ -74,7 +71,7 @@ low- or high-pass filter is determined from the relative sizes of
 these parameters.  In this case the \verb@nMax@ parameter is optional;
 if given, it specifies an upper limit on the filter order.  If the
 desired attenuations would require a higher order, then the routine
-will sacrifiece performance in the stop band in order to remain within
+will sacrifice performance in the stop band in order to remain within
 the specified \verb@nMax@.
 
 If one of the frequency/attenuation pairs is missing, then the filter
@@ -83,8 +80,53 @@ given).  The filter is taken to be a low-pass filter if \verb@f1@,
 \verb@a1@ are given, and high-pass if \verb@f2@, \verb@a2@ are given.
 If only one frequency and no corresponding attenuation is specified,
 then it is taken to be the characteristic frequency (i.e. the
-corresponding attenuation is assumed to be 1/2).  If none of these
-conditions are met, the routine will return an error.
+corresponding attenuation is assumed to be $\sqrt{a}=1/2$).  If none
+of these conditions are met, the routine will return an error.
+
+The following table summarizes the decision algorithm.  A $\bullet$
+symbol indicates that the parameter is specified in the range given
+above.  A $\circ$ symbol indicates that the parameter is ``not
+given'', i.e.\ not specified in the valid range.
+\begin{center}
+\begin{tabular}{|cccccp{10cm}|}
+\hline
+\tt nMax & \tt f1 & \tt a1 & \tt f2 & \tt a2 & Procedure \\
+\hline
+ $\circ$  & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ &
+	Type of filter (low- or high-pass), $w_c$, and $n$ are
+	computed from all four transition-band parameters. \\
+$\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ &
+	Ditto, but if the resulting $n>$ \texttt{nMax}, $w_c$ is
+	computed from \texttt{nMax} and the (\texttt{f},\texttt{a})
+	pair with the \emph{larger} \texttt{a}. \\
+$\bullet$ & $\bullet$ & $\bullet$ &  $\circ$  &  $\circ$  &
+	Low-pass filter; $w_c$ is computed from \texttt{nMax},
+	\texttt{f1}, and \texttt{a1}. \\
+$\bullet$ & $\bullet$ & $\bullet$ &  $\circ$  & $\bullet$ &
+	Ditto; \texttt{a2} is ignored. \\
+$\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ &  $\circ$  &
+	Ditto; \texttt{f2} is ignored. \\
+$\bullet$ & $\bullet$ &  $\circ$  &  $\circ$  &  $\circ$  &
+	Low-pass filter; $w_c$ is computed as above with \texttt{a1}
+	treated as 1/4. \\
+$\bullet$ & $\bullet$ &  $\circ$  &  $\circ$  & $\bullet$ &
+	Ditto; \texttt{a2} is ignored. \\
+$\bullet$ &  $\circ$  &  $\circ$  & $\bullet$ & $\bullet$ &
+	High-pass filter; $w_c$ is computed from \texttt{nMax},
+	\texttt{f2}, and \texttt{a2}. \\
+$\bullet$ &  $\circ$  & $\bullet$ & $\bullet$ & $\bullet$ &
+	Ditto; \texttt{a1} is ignored. \\
+$\bullet$ & $\bullet$ &  $\circ$  & $\bullet$ & $\bullet$ &
+	Ditto; \texttt{f1} is ignored. \\
+$\bullet$ &  $\circ$  &  $\circ$  & $\bullet$ &  $\circ$  &
+	High-pass filter; $w_c$ is computed as above with \texttt{a2}
+	treated as 1/4. \\
+$\bullet$ &  $\circ$  & $\bullet$ & $\bullet$ &  $\circ$  &
+	Ditto; \texttt{a1} is ignored. \\
+\multicolumn{5}{|c}{Other} & Subroutine returns an error. \\
+\hline
+\end{tabular}
+\end{center}
 
 Once an order $n$ and characteristic frequency $w_c$ are known, the
 zeros and poles of a ZPG filter are readily determined.  A stable,
@@ -99,7 +141,13 @@ R = \frac{w^n}{\prod_{k=0}^{n-1}(w - w_c e^{2\pi i(k+1/2)/n})}
 $$
 for a high-pass filter.  By choosing only poles on the upper-half
 plane, one ensures that after transforming to $z$ the poles will have
-$|z|<1$.
+$|z|<1$.  Furthermore, the phase factor $(-i)^n$ in the numerator of
+the low-pass filter is chosen so that the DC response is purely real;
+this ensures that the response function in the $z$-plane will have a
+real gain factor, and the resulting IIR filter will be physically
+realizable.  The high-pass filter has a purely real response at
+Nyquist ($w\rightarrow\infty$), which similarly gives a physical IIR
+filter.
 
 Although higher orders $n$ would appear to produce better (i.e.\
 sharper) filter responses, one rapidly runs into numerical errors, as
@@ -125,26 +173,21 @@ little frequency-dependent phase shift.
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
-LALPrintError()
-LALCreateREAL4IIRFilter()
-LALCreateREAL8IIRFilter()
-LALDestroyREAL4IIRFilter()
-LALDestroyREAL8IIRFilter()
-LALCreateCOMPLEX8ZPGFilter()
-LALCreateCOMPLEX16ZPGFilter()
-LALDestroyCOMPLEX8ZPGFilter()
-LALDestroyCOMPLEX16ZPGFilter()
-LALIIRFilterREAL4Vector()
-LALIIRFilterREAL8Vector()
-LALIIRFilterREAL4VectorR()
-LALIIRFilterREAL8VectorR()
+LALPrintError()                 LALWarning()
+LALCreateREAL4IIRFilter()       LALCreateREAL8IIRFilter()
+LALCreateCOMPLEX8ZPGFilter()    LALCreateCOMPLEX16ZPGFilter()
+LALDestroyREAL4IIRFilter()      LALDestroyREAL8IIRFilter()
+LALDestroyCOMPLEX8ZPGFilter()   LALDestroyCOMPLEX16ZPGFilter()
+LALWToZCOMPLEX8ZPGFilter()      LALWToZCOMPLEX16ZPGFilter()
+LALIIRFilterREAL4Vector()       LALIIRFilterREAL8Vector()
+LALIIRFilterREAL4VectorR()      LALIIRFilterREAL8VectorR()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{ButterworthTimeSeriesCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -158,7 +201,8 @@ NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 extern INT4 lalDebugLevel;
 
 static INT4
-ParsePassBandParamStruc( PassBandParamStruc *params,
+ParsePassBandParamStruc( LALStatus          *stat,
+			 PassBandParamStruc *params,
 			 INT4               *n,
 			 REAL8              *wc,
 			 REAL8              deltaT );
@@ -181,21 +225,22 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
-  ASSERT(params,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series->data,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series->data->data,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
+  ASSERT(params,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
 
   /* Parse the pass-band parameter structure.  I separate this into a
      local static subroutine because it's an icky mess of conditionals
      that would clutter the logic of the main routine. */
-  type=ParsePassBandParamStruc(params,&n,&wc,series->deltaT);
-  ASSERT(type,stat,BANDPASSTIMESERIES_EBAD,
-	 BANDPASSTIMESERIES_MSGEBAD);
+  type=ParsePassBandParamStruc(stat,params,&n,&wc,series->deltaT);
+  if(type==0) {
+    ABORT(stat,BANDPASSTIMESERIESH_EBAD,BANDPASSTIMESERIESH_MSGEBAD);
+  }
 
   /* An order n Butterworth filter has n poles spaced evenly along a
      semicircle in the upper complex w-plane.  By pairing up poles
@@ -232,15 +277,30 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
     zpgFilter->poles->data[1].im=ai;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
-	stat);
+    LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
 
     /* Filter the data, once each way. */
-    TRY(LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
-	stat);
-    TRY(LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
-	stat);
+    LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
 
     /* Free the filters. */
     TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
@@ -271,15 +331,30 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
     zpgFilter->poles->data->im=wc;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
-	stat);
+    LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL4IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
 
     /* Filter the data, once each way. */
-    TRY(LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter),
-	stat);
-    TRY(LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter),
-	stat);
+    LALIIRFilterREAL4Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALIIRFilterREAL4VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
 
     /* Free the filters. */
     TRY(LALDestroyREAL4IIRFilter(stat->statusPtr,&iirFilter),stat);
@@ -308,21 +383,22 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
-  ASSERT(params,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series->data,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
-  ASSERT(series->data->data,stat,BANDPASSTIMESERIES_ENUL,
-	 BANDPASSTIMESERIES_MSGENUL);
+  ASSERT(params,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
+  ASSERT(series->data->data,stat,BANDPASSTIMESERIESH_ENUL,
+	 BANDPASSTIMESERIESH_MSGENUL);
 
   /* Parse the pass-band parameter structure.  I separate this into a
      local static subroutine because it's an icky mess of conditionals
      that would clutter the logic of the main routine. */
-  type=ParsePassBandParamStruc(params,&n,&wc,series->deltaT);
-  ASSERT(type,stat,BANDPASSTIMESERIES_EBAD,
-	 BANDPASSTIMESERIES_MSGEBAD);
+  type=ParsePassBandParamStruc(stat,params,&n,&wc,series->deltaT);
+  if(type==0) {
+    ABORT(stat,BANDPASSTIMESERIESH_EBAD,BANDPASSTIMESERIESH_MSGEBAD);
+  }
 
   /* An order n Butterworth filter has n poles spaced evenly along a
      semicircle in the upper complex w-plane.  By pairing up poles
@@ -345,7 +421,7 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
       zpgFilter->zeros->data[0].im=0.0;
       zpgFilter->zeros->data[1].re=0.0;
       zpgFilter->zeros->data[1].im=0.0;
-      zpgFilter->gain.re=-1.0;
+      zpgFilter->gain.re=1.0;
       zpgFilter->gain.im=0.0;
     }else{
       TRY(LALCreateCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
@@ -359,15 +435,30 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
     zpgFilter->poles->data[1].im=ai;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
-	stat);
+    LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
 
     /* Filter the data, once each way. */
-    TRY(LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
-	stat);
-    TRY(LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
-	stat);
+    LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
 
     /* Free the filters. */
     TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
@@ -398,15 +489,30 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
     zpgFilter->poles->data->im=wc;
 
     /* Transform to the z-plane and create the IIR filter. */
-    TRY(LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter),stat);
-    TRY(LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter),
-	stat);
+    LALWToZCOMPLEX16ZPGFilter(stat->statusPtr,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
+    LALCreateREAL8IIRFilter(stat->statusPtr,&iirFilter,zpgFilter);
+    BEGINFAIL(stat)
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+    ENDFAIL(stat);
 
     /* Filter the data, once each way. */
-    TRY(LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter),
-	stat);
-    TRY(LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter),
-	stat);
+    LALIIRFilterREAL8Vector(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
+    LALIIRFilterREAL8VectorR(stat->statusPtr,series->data,iirFilter);
+    BEGINFAIL(stat) {
+      TRY(LALDestroyCOMPLEX16ZPGFilter(stat->statusPtr,&zpgFilter),
+	  stat);
+      TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
+    } ENDFAIL(stat);
 
     /* Free the filters. */
     TRY(LALDestroyREAL8IIRFilter(stat->statusPtr,&iirFilter),stat);
@@ -420,7 +526,8 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
 
 
 static INT4
-ParsePassBandParamStruc( PassBandParamStruc *params,
+ParsePassBandParamStruc( LALStatus          *stat,
+			 PassBandParamStruc *params,
 			 INT4               *n,
 			 REAL8              *wc,
 			 REAL8              deltaT )
@@ -457,11 +564,14 @@ ParsePassBandParamStruc( PassBandParamStruc *params,
 
     /* First make sure that two different frequencies and attenuations
        have been specified. */
-    if((w1==w2)||(a1==a2)){
-      if(lalDebugLevel>1)
-	LALPrintError("Error: ButterworthTimeSeries: Specified"
-		      " frequencies or attenuations are the\n"
-		      "       same across the transition band.\n");
+    if(w1==w2){
+      LALInfo(stat,"The two frequencies defining the transition band"
+	      " are the same.");
+      return 0;
+    }
+    if(a1==a2){
+      LALInfo(stat,"The two attenuations across the transition band"
+	      " are the same.");
       return 0;
     }
 
@@ -476,15 +586,11 @@ ParsePassBandParamStruc( PassBandParamStruc *params,
     /* If a positive params->nMax less than *n has been specified,
        reduce to that order, with appropriate warnings. */
     if((params->nMax>0)&&(params->nMax<*n)){
-      if(lalDebugLevel>0){
-	LALPrintError("Warning: ButterworthTimeSeries: Filter order"
-		      " required to achieve requested\n"
-		      "         performance exceeds specified"
-		      " limit\n");
-	if(lalDebugLevel>1)
-	  LALPrintError("         Required: %i  Limit: %i\n",n,
-			params->nMax);
-      }
+      LALWarning(stat,"Filter order required to achieve requested"
+		 " performance exceeds\n"
+		 "\tspecified limit.");
+      if(lalDebugLevel&LALWARNING)
+	LALPrintError("\tRequired: %i  Limit: %i\n",*n,params->nMax);
       *n=params->nMax;
     }
 
@@ -505,23 +611,23 @@ ParsePassBandParamStruc( PassBandParamStruc *params,
      all future cases. */
   else{
     if(params->nMax<=0){
-      if(lalDebugLevel>0)
-	LALPrintError("Error: ButterworthTimeSeries: Both"
-		      " attenuations have not been specified, so\n"
-		      "       the filter order must be.\n");
+      LALInfo(stat,"The filter order must be given if one or more"
+	      " frequencies or\n"
+	      "\tattenuations of the transition band have not been"
+	      " (validly) specified.");
       return 0;
     }
     if(bothLowGiven){
       wLow=tan(LAL_PI*wLow);
       aLow=sqrt(aLow);
       *n=params->nMax;
-      *wc=wLow*log(*n*2.0)/log(1.0/aLow - 1.0);
+      *wc=wLow*pow(1.0/aLow - 1.0, -0.5/((REAL8)(*n)));
       return 1;
     }else if(bothHighGiven){
       wHigh=tan(LAL_PI*wHigh);
       aHigh=sqrt(aHigh);
       *n=params->nMax;
-      *wc=wHigh*log(1.0/aHigh - 1.0)/log(*n*2.0);
+      *wc=wHigh*pow(1.0/aHigh - 1.0, 0.5/((REAL8)(*n)));
       return 2;
     }
 
@@ -529,10 +635,8 @@ ParsePassBandParamStruc( PassBandParamStruc *params,
        frequency given, otherwise we don't know whether to make a low-
        or a high-pass filter. */
     else if(wHighGiven && wLowGiven){
-      if(lalDebugLevel>0)
-	LALPrintError("Error: ButterworthTimeSeries: Neither"
-		      " attenuation has been specified, so\n"
-		      "       only one frequency should be.\n");
+      LALInfo(stat,"Neither attenuation has been specified, so only"
+	      " one frequency should be.");
       return 0;
     }
 
@@ -547,9 +651,8 @@ ParsePassBandParamStruc( PassBandParamStruc *params,
 	*wc=tan(LAL_PI*wLow);
 	return 1;
       }else{
-	if(lalDebugLevel>0)
-	  LALPrintError("Error: ButterworthTimeSeries: No frequencies"
-			" have been specified!\n");
+	LALInfo(stat,"No frequencies within the Nyquist band have"
+		" been specified!");
 	return 0;
       }
     }

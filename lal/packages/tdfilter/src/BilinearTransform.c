@@ -1,9 +1,9 @@
 /**************************** <lalVerbatim file="BilinearTransformCV">
 Author: Creighton, T. D.
 $Id$
-***************************** </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{BilinearTransform.c}}
 \label{ss:BilinearTransform.c}
@@ -56,7 +56,7 @@ where $z=(1+iw)/(1-iw)$ and $z_k=(1+iw_k)/(1-iw_k)$.  If there are an
 equal number of poles and zeros being transformed, then the factors of
 $z+1$ will cancel; otherwise, the remaining factors correspond to the
 zeros or poles at $z=-1$ brought in from $w=\infty$.  The factor
-$(z-z_k)$ represents the transformation of the zero or pole at $w_k$.
+$(z-z_k)$ represents the new position of the transformed zero or pole.
 The important factor to note, though, is the factor $-(w_k+i)^{\pm1}$.
 This factor represents the change in the gain \verb@filter->gain@.
 When $w_k=-i$, the transformation is slightly different:
@@ -65,7 +65,7 @@ $$
 $$
 thus the gain correction factor is $2i$ (rather than 0) in this case.
 
-The algorithms in this module computes and stores all the gain
+The algorithm in this module computes and stores all the gain
 correction factors before applying them to the gain.  The correction
 factors are sorted in order of absolute magnitude, and are multiplied
 together in small- and large-magnitude pairs.  In this way one reduces
@@ -74,7 +74,7 @@ intermediate calculations.
 
 As a similar precaution, the routines in this module use the algorithm
 discussed in the \verb@VectorOps@ package whenever they perform
-complex division, to avoid intermediate results that mey be the
+complex division, to avoid intermediate results that may be the
 product of two large numbers.  When transforming $z=(1+iw)/(1-iw)$,
 these routines also test for special cases (such as $w$ purely
 imaginary) that have qualitatively significant results ($z$ purely
@@ -83,25 +83,20 @@ part of $10^{-12}$ instead of 0.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALI4CreateVector()
-LALSCreateVector()
-LALDCreateVector()
-LALCCreateVector()
-LALZCreateVector()
-LALI4DestroyVector()
-LALSDestroyVector()
-LALDDestroyVector()
-LALCDestroyVector()
-LALZDestroyVector()
-LALSHeapIndex()
-LALDHeapIndex()
+LALI4CreateVector()             LALI4DestroyVector()
+LALSCreateVector()              LALDCreateVector()
+LALSDestroyVector()             LALDDestroyVector()
+LALCCreateVector()              LALZCreateVector()
+LALCDestroyVector()             LALZDestroyVector()
+LALCVectorAbs()                 LALZVectorAbs()
+LALSHeapIndex()                 LALDHeapIndex()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{BilinearTransformCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -136,7 +131,7 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */
-  ASSERT(filter,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(filter,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
 
   /* If the filter->zeros or filter->poles pointers is null, this
      means that there are no zeros or no poles.  For simplicity, we
@@ -151,16 +146,14 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
   /* Check that the vector lengths are non-negative, and, if positive,
      that the vector data pointer is non-null. */
   numZeros=filter->zeros->length;
-  ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  if(numZeros>0)
-  {
-    ASSERT(filter->zeros->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(numZeros>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  if(numZeros>0) {
+    ASSERT(filter->zeros->data,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   }
   numPoles=filter->poles->length;
-  ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  if(numPoles>0)
-  {
-    ASSERT(filter->poles->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(numPoles>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  if(numPoles>0) {
+    ASSERT(filter->poles->data,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   }
 
   /* Compute the total number of zeros and poles in the w-plane,
@@ -169,8 +162,9 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
   numZeros=numPoles=num;
 
   /* If there are neither zeros nor poles, then there is nothing to
-     transform. */
-  if(num==0){
+     transform.  (The <0 case should never occur if the ASSERT()
+     macros have done their job, but is included for extra safety.) */
+  if(num<=0){
     filter->zeros=NULL;
     filter->poles=NULL;
     DETATCHSTATUSPTR(stat);
@@ -188,11 +182,14 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
 
   /* Create the vector of gain correction factors. */
   TRY(LALCCreateVector(stat->statusPtr,&gain,filter->zeros->length+
-		    filter->poles->length),stat);
+		       filter->poles->length),stat);
   g=gain->data;
 
   /* Create the new vector of zeros. */
-  TRY(LALCCreateVector(stat->statusPtr,&z,numZeros),stat);
+  LALCCreateVector(stat->statusPtr,&z,numZeros);
+  BEGINFAIL(stat)
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
   b=z->data;
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -243,15 +240,17 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
     b->im = 0.0;
   }
   /* Replace the old filter zeros with the new ones. */
-  if(filter->zeros->length>0)
-  {
+  if(filter->zeros->length>0) {
     TRY(LALCDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
   }
   filter->zeros=z;
   z=NULL;
 
   /* Create the new vector of poles. */
-  TRY(LALCCreateVector(stat->statusPtr,&z,numPoles),stat);
+  LALCCreateVector(stat->statusPtr,&z,numPoles);
+  BEGINFAIL(stat)
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -302,8 +301,7 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
     b->im = 0.0;
   }
   /* Replace the old filter poles with the new ones. */
-  if(filter->poles->length>0)
-  {
+  if(filter->poles->length>0) {
     TRY(LALCDestroyVector(stat->statusPtr,&(filter->poles)),stat);
   }
   filter->poles=z;
@@ -312,13 +310,29 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
   /* To avoid numerical overflow when applying the gain correction
      factors, we should multiply alternately by large and small
      factors.  First, create a vector of the factors' magnitudes. */
-  TRY(LALSCreateVector(stat->statusPtr,&absGain,gain->length),stat);
-  TRY(LALCVectorAbs(stat->statusPtr,absGain,gain),stat);
+  LALSCreateVector(stat->statusPtr,&absGain,gain->length);
+  BEGINFAIL(stat)
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
+  LALCVectorAbs(stat->statusPtr,absGain,gain);
+  BEGINFAIL(stat) {
+    TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
 
   /* Now create an idx vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&idx,gain->length),stat);
-  TRY(LALSHeapIndex(stat->statusPtr,idx,absGain),stat);
+  LALI4CreateVector(stat->statusPtr,&idx,gain->length);
+  BEGINFAIL(stat) {
+    TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
+  LALSHeapIndex(stat->statusPtr,idx,absGain);
+  BEGINFAIL(stat) {
+    TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
+    TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALCDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
   TRY(LALSDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
@@ -367,20 +381,20 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
   INT4 num;      /* The total number of zeros or poles. */
   INT4 numZeros; /* The number of finite zeros. */
   INT4 numPoles; /* The number of finite poles. */
-  COMPLEX16 *a;  /* A zero or pole in the w plane. */
-  COMPLEX16 *b;  /* A zero or pole in the z plane. */
-  COMPLEX16 *g;  /* A gain correction factor. */
-  COMPLEX16Vector *z=NULL;  /* Vector of zeros or poles in z plane. */
+  COMPLEX16 *a;   /* A zero or pole in the w plane. */
+  COMPLEX16 *b;   /* A zero or pole in the z plane. */
+  COMPLEX16 *g;   /* A gain correction factor. */
+  COMPLEX16Vector *z=NULL;   /* Vector of zeros or poles in z plane. */
   COMPLEX16Vector *gain=NULL; /* Vector of gain correction factors. */
   COMPLEX16Vector null;       /* A vector of zero length. */
-  REAL8Vector *absGain=NULL;  /* Magnitudes of gain corrections. */
-  INT4Vector *idx=NULL;     /* Index array for sorting absGain. */
+  REAL8Vector *absGain=NULL; /* Magnitudes of gain corrections. */
+  INT4Vector *idx=NULL;    /* Index array for sorting absGain. */
 
   INITSTATUS(stat,"LALWToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the filter pointer is non-null. */
-  ASSERT(filter,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(filter,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
 
   /* If the filter->zeros or filter->poles pointers is null, this
      means that there are no zeros or no poles.  For simplicity, we
@@ -395,16 +409,14 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
   /* Check that the vector lengths are non-negative, and, if positive,
      that the vector data pointer is non-null. */
   numZeros=filter->zeros->length;
-  ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  if(numZeros>0)
-  {
-    ASSERT(filter->zeros->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(numZeros>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  if(numZeros>0) {
+    ASSERT(filter->zeros->data,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   }
   numPoles=filter->poles->length;
-  ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  if(numPoles>0)
-  {
-    ASSERT(filter->poles->data,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
+  ASSERT(numPoles>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  if(numPoles>0) {
+    ASSERT(filter->poles->data,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   }
 
   /* Compute the total number of zeros and poles in the w-plane,
@@ -413,8 +425,9 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
   numZeros=numPoles=num;
 
   /* If there are neither zeros nor poles, then there is nothing to
-     transform. */
-  if(num==0){
+     transform.  (The <0 case should never occur if the ASSERT()
+     macros have done their job, but is included for extra safety.) */
+  if(num<=0){
     filter->zeros=NULL;
     filter->poles=NULL;
     DETATCHSTATUSPTR(stat);
@@ -432,11 +445,14 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 
   /* Create the vector of gain correction factors. */
   TRY(LALZCreateVector(stat->statusPtr,&gain,filter->zeros->length+
-		    filter->poles->length),stat);
+		       filter->poles->length),stat);
   g=gain->data;
 
   /* Create the new vector of zeros. */
-  TRY(LALZCreateVector(stat->statusPtr,&z,numZeros),stat);
+  LALZCreateVector(stat->statusPtr,&z,numZeros);
+  BEGINFAIL(stat)
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
   b=z->data;
   /* Transform existing zeros from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -487,15 +503,17 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
     b->im = 0.0;
   }
   /* Replace the old filter zeros with the new ones. */
-  if(filter->zeros->length>0)
-  {
+  if(filter->zeros->length>0) {
     TRY(LALZDestroyVector(stat->statusPtr,&(filter->zeros)),stat);
   }
   filter->zeros=z;
   z=NULL;
 
   /* Create the new vector of poles. */
-  TRY(LALZCreateVector(stat->statusPtr,&z,numPoles),stat);
+  LALZCreateVector(stat->statusPtr,&z,numPoles);
+  BEGINFAIL(stat)
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
   b=z->data;
   /* Transform existing poles from w to z, except for those at w=-i,
      which are mapped to z=infinity.  At the same time, compute the
@@ -546,55 +564,66 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
     b->im = 0.0;
   }
   /* Replace the old filter poles with the new ones. */
-  if(filter->poles->length>0)
-  {
+  if(filter->poles->length>0) {
     TRY(LALZDestroyVector(stat->statusPtr,&(filter->poles)),stat);
   }
   filter->poles=z;
   z=NULL;
 
-  /* To avoid numerical overflow, we should multiply alternately by
-     large and small factors.  First, create a vector of the factors'
-     magnitudes. */
-  TRY(LALDCreateVector(stat->statusPtr,&absGain,gain->length),stat);
-  TRY(LALZVectorAbs(stat->statusPtr,absGain,gain),stat);
+  /* To avoid numerical overflow when applying the gain correction
+     factors, we should multiply alternately by large and small
+     factors.  First, create a vector of the factors' magnitudes. */
+  LALDCreateVector(stat->statusPtr,&absGain,gain->length);
+  BEGINFAIL(stat)
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  ENDFAIL(stat);
+  LALZVectorAbs(stat->statusPtr,absGain,gain);
+  BEGINFAIL(stat) {
+    TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
 
   /* Now create an idx vector that indexes the magnitudes from small
      to large, and free the magnitude vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&idx,gain->length),stat);
-  TRY(LALDHeapIndex(stat->statusPtr,idx,absGain),stat);
+  LALI4CreateVector(stat->statusPtr,&idx,gain->length);
+  BEGINFAIL(stat) {
+    TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
+  LALDHeapIndex(stat->statusPtr,idx,absGain);
+  BEGINFAIL(stat) {
+    TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
+    TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
+    TRY(LALZDestroyVector(stat->statusPtr,&gain),stat);
+  } ENDFAIL(stat);
   TRY(LALDDestroyVector(stat->statusPtr,&absGain),stat);
 
   /* Now multiply the gain alternately by small and large correction
      factors. */
   for(i=0,j=gain->length-1;i<j;i++,j--){
-    /* Multiply by the small factor. */
+    /* Multiply the small and largest factors together. */
     REAL8 ar=gain->data[idx->data[i]].re;
     REAL8 ai=gain->data[idx->data[i]].im;
-    REAL8 gr=filter->gain.re;
-    REAL8 gi=filter->gain.im;
+    REAL8 br=gain->data[idx->data[j]].re;
+    REAL8 bi=gain->data[idx->data[j]].im;
+    REAL8 cr=ar*br-ai*bi;
+    REAL8 ci=ar*bi+ai*br;
 
-    filter->gain.re=gr*ar-gi*gi;
-    filter->gain.im=gr*ai+gi*ar;
-
-    /* Multiply by the large factor. */
-    ar=gain->data[idx->data[j]].re;
-    ai=gain->data[idx->data[j]].im;
-    gr=filter->gain.re;
-    gi=filter->gain.im;
-
-    filter->gain.re=gr*ar-gi*gi;
-    filter->gain.im=gr*ai+gi*ar;
+    /* Multiply the gain by the combined factor. */
+    br=filter->gain.re;
+    bi=filter->gain.im;
+    filter->gain.re=br*cr-bi*ci;
+    filter->gain.im=br*ci+bi*cr;
   }
   if(i==j){
     /* Multiply by the remaining odd factor. */
-    REAL8 ar=gain->data[idx->data[i]].re;
-    REAL8 ai=gain->data[idx->data[i]].im;
-    REAL8 gr=filter->gain.re;
-    REAL8 gi=filter->gain.im;
+    REAL8 cr=gain->data[idx->data[i]].re;
+    REAL8 ci=gain->data[idx->data[i]].im;
+    REAL8 br=filter->gain.re;
+    REAL8 bi=filter->gain.im;
 
-    filter->gain.re=gr*ar-gi*gi;
-    filter->gain.im=gr*ai+gi*ar;
+    filter->gain.re=br*cr-bi*ci;
+    filter->gain.im=br*ci+bi*cr;
   }
 
   /* Free remaining temporary vectors, and exit. */

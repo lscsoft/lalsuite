@@ -1,9 +1,9 @@
 /*************************** <lalVerbatim file="BandPassTimeSeriesHV">
 Author: Creighton, T. D.
 $Id$
-**************************** </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \section{Header \texttt{BandPassTimeSeries.h}}
 \label{s:BandPassTimeSeries.h}
@@ -19,7 +19,7 @@ Provides routines to low- or high-pass filter a time series.
 high-pass filter to a data series of type \verb@<datatype>TimeSeries@.
 Further documentation is given in the individual routines' modules.
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
@@ -30,46 +30,31 @@ Further documentation is given in the individual routines' modules.
 
 #ifdef __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID(BANDPASSTIMESERIESH,"$Id$");
 
-/* <lalLaTeX>
-
+/********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
-\begin{tabular}{|c|l|l|}
-\hline
-status & status                    & Explanation                           \\
- code  & description               &                                       \\
-\hline
-\tt 1  & \tt Null pointer          & Missing a required pointer.           \\
-\tt 2  & \tt Bad filter parameters & Filter creation parameters outside of \\
-       &                           & acceptable ranges.                    \\
-\hline
-\end{tabular}
+****************************************** </lalLaTeX><lalErrTable> */
+#define BANDPASSTIMESERIESH_ENUL 1
+#define BANDPASSTIMESERIESH_EBAD 2
 
-</lalLaTeX> */
+#define BANDPASSTIMESERIESH_MSGENUL "Unexpected null pointer in arguments"
+#define BANDPASSTIMESERIESH_MSGEBAD "Bad filter parameters"
+/******************************************** </lalErrTable><lalLaTeX>
 
-#define BANDPASSTIMESERIES_ENUL 1
-#define BANDPASSTIMESERIES_EBAD 2
+\subsection*{Types}
 
-#define BANDPASSTIMESERIES_MSGENUL "Null pointer"
-#define BANDPASSTIMESERIES_MSGEBAD "Bad filter parameters"
-
-/* <lalLaTeX>
-
-\subsection*{Structures}
-
-\begin{verbatim}
-struct PassBandParamStruc
-\end{verbatim}
+\subsubsection*{Structure \texttt{PassBandParamStruc}}
 \index{\texttt{PassBandParamStruc}}
 
-\noindent This structure stores data used for constructing a low- or
-high-pass filter: either the order and characteristic frequency of the
-filter, or the frequencies and desired attenuations at the ends of
-some transition band.  In the latter case, a nonzero filter order
-parameter n indicates a maximum allowed order.  The fields are:
+This structure stores data used for constructing a low- or high-pass
+filter: either the order and characteristic frequency of the filter,
+or the frequencies and desired attenuations at the ends of some
+transition band.  In the latter case, a nonzero filter order parameter
+\verb@n@ indicates a maximum allowed order.  The fields are:
 
 \begin{description}
 \item[\texttt{CHAR *name}] A user-assigned name.
@@ -84,7 +69,7 @@ parameter n indicates a maximum allowed order.  The fields are:
   factors at the reference frequencies.
 \end{description}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 typedef struct tagPassBandParamStruc{
   CHAR *name;
@@ -104,13 +89,15 @@ typedef struct tagPassBandParamStruc{
 /* <lalLaTeX>
 \newpage\input{ButterworthTimeSeriesC}
 </lalLaTeX> */
-void LALButterworthREAL4TimeSeries(LALStatus             *stat,
-				REAL4TimeSeries    *series,
-				PassBandParamStruc *params);
+void
+LALButterworthREAL4TimeSeries( LALStatus          *stat,
+			       REAL4TimeSeries    *series,
+			       PassBandParamStruc *params );
 
-void LALButterworthREAL8TimeSeries(LALStatus             *stat,
-				REAL8TimeSeries    *series,
-				PassBandParamStruc *params);
+void
+LALButterworthREAL8TimeSeries( LALStatus          *stat,
+			       REAL8TimeSeries    *series,
+			       PassBandParamStruc *params );
 
 /* Chebyshev filters should also be added, but I'm too busy to write
    the routines now. */
@@ -122,6 +109,7 @@ void LALButterworthREAL8TimeSeries(LALStatus             *stat,
 </lalLaTeX> */
 
 #ifdef __cplusplus
+#pragma {
 }
 #endif
 

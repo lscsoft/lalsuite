@@ -1,9 +1,9 @@
 /************************************ <lalVerbatim file="IIRFilterCV">
 Author: Creighton, T. D.
 $Id$
-************************************* </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilter.c}}
 \label{ss:IIRFilter.c}
@@ -44,7 +44,7 @@ returned through the function's return statement.
 
 \vfill{\footnotesize\input{IIRFilterCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
@@ -67,16 +67,16 @@ LALIIRFilterREAL4( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL4",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
-  ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->history,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->history->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->history,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
   /* Compute the auxiliary datum. */
   jmax=filter->recursCoef->length;
@@ -121,16 +121,16 @@ LALIIRFilterREAL8( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL8",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
-  ASSERT(output,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->history,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->history->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->history,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
   /* Compute the auxiliary datum. */
   jmax=filter->recursCoef->length;

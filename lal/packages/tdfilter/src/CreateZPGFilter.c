@@ -1,9 +1,9 @@
 /****************************** <lalVerbatim file="CreateZPGFilterCV">
 Author: Creighton, T. D.
 $Id$
-******************************* </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{CreateZPGFilter.c}}
 \label{ss:CreateZPGFilter.c}
@@ -30,16 +30,16 @@ point to an existing object (\i.e.\ \verb@*output@=\verb@NULL@).
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALMalloc()
-LALCCreateVector()
-LALZCreateVector()
+LALMalloc()                     LALFree()
+LALCCreateVector()              LALCDestroyVector()
+LALZCreateVector()              LALZDestroyVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{CreateZPGFilterCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -49,41 +49,48 @@ NRCSID(CREATEZPGFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
-				 COMPLEX8ZPGFilter **output,
-				 INT4              numZeros,
-				 INT4              numPoles )
+void
+LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
+			    COMPLEX8ZPGFilter **output,
+			    INT4              numZeros,
+			    INT4              numPoles )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALCreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null
      pointer. */
-  ASSERT(output,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
-  ASSERT(!*output,stat,ZPGFILTER_EOUT,ZPGFILTER_MSGEOUT);
+  ASSERT(output,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
+  ASSERT(!*output,stat,ZPGFILTERH_EOUT,ZPGFILTERH_MSGEOUT);
 
   /* Make sure that numZeros and numPoles are non-negative. */
-  ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
+  ASSERT(numZeros>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  ASSERT(numPoles>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
 
   /* Create the output structure. */
   *output=(COMPLEX8ZPGFilter *)LALMalloc(sizeof(COMPLEX8ZPGFilter));
   if ( !(*output) ) {
-    ABORT(stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+    ABORT(stat,ZPGFILTERH_EMEM,ZPGFILTERH_MSGEMEM);
   }
   memset(*output,0,sizeof(COMPLEX8ZPGFilter));
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
-  if(numZeros>0)
-  {
-    TRY(LALCCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
-	stat);
+  if(numZeros>0){
+    LALCCreateVector(stat->statusPtr,&((*output)->zeros),numZeros);
+    BEGINFAIL(stat) {
+      LALFree(*output);
+      *output=NULL;
+    } ENDFAIL(stat);
   }
-  if(numPoles>0)
-  {
-    TRY(LALCCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
-	stat);
+  if(numPoles>0){
+    LALCCreateVector(stat->statusPtr,&((*output)->poles),numPoles);
+    BEGINFAIL(stat) {
+      TRY(LALCDestroyVector(stat->statusPtr,&((*output)->zeros)),
+	  stat);
+      LALFree(*output);
+      *output=NULL;
+    } ENDFAIL(stat);
   }
 
   /* Normal exit */
@@ -93,41 +100,48 @@ void LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
-				  COMPLEX16ZPGFilter **output,
-				  INT4               numZeros,
-				  INT4               numPoles )
+void
+LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
+			     COMPLEX16ZPGFilter **output,
+			     INT4               numZeros,
+			     INT4               numPoles )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALCreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure that the output handle exists, but points to a null
      pointer. */
-  ASSERT(output,stat,ZPGFILTER_ENUL,ZPGFILTER_MSGENUL);
-  ASSERT(!*output,stat,ZPGFILTER_EOUT,ZPGFILTER_MSGEOUT);
+  ASSERT(output,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
+  ASSERT(!*output,stat,ZPGFILTERH_EOUT,ZPGFILTERH_MSGEOUT);
 
   /* Make sure that numZeros and numPoles are non-negative. */
-  ASSERT(numZeros>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
-  ASSERT(numPoles>=0,stat,ZPGFILTER_EBAD,ZPGFILTER_MSGEBAD);
+  ASSERT(numZeros>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
+  ASSERT(numPoles>=0,stat,ZPGFILTERH_EBAD,ZPGFILTERH_MSGEBAD);
 
   /* Create the output structure. */
   *output=(COMPLEX16ZPGFilter *)LALMalloc(sizeof(COMPLEX16ZPGFilter));
   if ( !(*output) ) {
-    ABORT(stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+    ABORT(stat,ZPGFILTERH_EMEM,ZPGFILTERH_MSGEMEM);
   }
   memset(*output,0,sizeof(COMPLEX16ZPGFilter));
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,
      the corresponding field(s) should remain null. */
-  if(numZeros>0)
-  {
-    TRY(LALZCreateVector(stat->statusPtr,&((*output)->zeros),numZeros),
-	stat);
+  if(numZeros>0){
+    LALZCreateVector(stat->statusPtr,&((*output)->zeros),numZeros);
+    BEGINFAIL(stat) {
+      LALFree(*output);
+      *output=NULL;
+    } ENDFAIL(stat);
   }
-  if(numPoles>0)
-  {
-    TRY(LALZCreateVector(stat->statusPtr,&((*output)->poles),numPoles),
-	stat);
+  if(numPoles>0){
+    LALZCreateVector(stat->statusPtr,&((*output)->poles),numPoles);
+    BEGINFAIL(stat) {
+      TRY(LALZDestroyVector(stat->statusPtr,&((*output)->zeros)),
+	  stat);
+      LALFree(*output);
+      *output=NULL;
+    } ENDFAIL(stat);
   }
 
   /* Normal exit */

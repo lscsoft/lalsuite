@@ -1,9 +1,9 @@
 /************************************ <lalVerbatim file="ZPGFilterHV">
 Author: Creighton, T. D.
 $Id$
-************************************* </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \section{Header \texttt{ZPGFilter.h}}
 \label{s:ZPGFilter.h}
@@ -55,7 +55,7 @@ necessarily constant under transformations!  Routines invoking the
 \verb@<datatype>ZPGFilter@ data types should document which complex
 variable is assumed.
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #ifndef _ZPGFILTER_H
 #define _ZPGFILTER_H
@@ -64,41 +64,28 @@ variable is assumed.
 
 #ifdef __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID(ZPGFILTERH,"$Id$");
 
-/* <lalLaTeX>
-
+/********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
-\begin{tabular}{|c|l|l|}
-\hline
-status & status      & Explanation \\
- code  & description &             \\
-\hline
-\tt 1  & \tt Null pointer            & Missing a required pointer.           \\
-\tt 2  & \tt Output already exists   & Can't allocate to a non-null pointer. \\
-\tt 3  & \tt Memory allocation error & Could not allocate memory.            \\
-\tt 4  & \tt Bad filter parameters   & Filter creation parameters outside of \\
-       &                             & acceptable ranges.                    \\
-\hline
-\end{tabular}
+****************************************** </lalLaTeX><lalErrTable> */
+#define ZPGFILTERH_ENUL 1
+#define ZPGFILTERH_EOUT 2
+#define ZPGFILTERH_EMEM 3
+#define ZPGFILTERH_EBAD 4
 
-</lalLaTeX> */
+#define ZPGFILTERH_MSGENUL "Unexpected null pointer in arguments"
+#define ZPGFILTERH_MSGEOUT "Output handle points to a non-null pointer"
+#define ZPGFILTERH_MSGEMEM "Memory allocation error"
+#define ZPGFILTERH_MSGEBAD "Bad filter parameters"
+/******************************************** </lalErrTable><lalLaTeX>
 
-#define ZPGFILTER_ENUL 1
-#define ZPGFILTER_EOUT 2
-#define ZPGFILTER_EMEM 3
-#define ZPGFILTER_EBAD 4
-
-#define ZPGFILTER_MSGENUL "Null pointer"
-#define ZPGFILTER_MSGEOUT "Output already exists"
-#define ZPGFILTER_MSGEMEM "Memory allocation error"
-#define ZPGFILTER_MSGEBAD "Bad filter parameters"
-
-/* <lalLaTeX>
 \subsection*{Structures}
-</lalLaTeX> */
+
+********************************************************</lalLaTeX> */
 
 /* <lalLaTeX>
 \vfill{\footnotesize\input{ZPGFilterHV}}
@@ -109,35 +96,42 @@ status & status      & Explanation \\
 /* <lalLaTeX>
 \newpage\input{CreateZPGFilterC}
 </lalLaTeX> */
-void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
-			     COMPLEX8ZPGFilter **output,
-			     INT4              numZeros,
-			     INT4              numPoles);
+void
+LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
+			    COMPLEX8ZPGFilter **output,
+			    INT4              numZeros,
+			    INT4              numPoles );
 
-void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
-			      COMPLEX16ZPGFilter **output,
-			      INT4               numZeros,
-			      INT4               numPoles);
+void
+LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
+			     COMPLEX16ZPGFilter **output,
+			     INT4               numZeros,
+			     INT4               numPoles );
 
 /* <lalLaTeX>
 \newpage\input{DestroyZPGFilterC}
 </lalLaTeX> */
-void LALDestroyCOMPLEX8ZPGFilter(LALStatus            *stat,
-			      COMPLEX8ZPGFilter **input);
+void
+LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
+			     COMPLEX8ZPGFilter **input );
 
-void LALDestroyCOMPLEX16ZPGFilter(LALStatus             *stat,
-			       COMPLEX16ZPGFilter **input);
+void
+LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
+			      COMPLEX16ZPGFilter **input );
 
 /* <lalLaTeX>
 \newpage\input{BilinearTransformC}
 </lalLaTeX> */
-void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
-			   COMPLEX8ZPGFilter *filter);
+void
+LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
+			  COMPLEX8ZPGFilter *filter );
 
-void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
-			    COMPLEX16ZPGFilter *filter);
+void
+LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
+			   COMPLEX16ZPGFilter *filter );
 
 #ifdef __cplusplus
+#pragma {
 }
 #endif
 

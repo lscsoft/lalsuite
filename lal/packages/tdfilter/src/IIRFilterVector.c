@@ -1,9 +1,9 @@
 /****************************** <lalVerbatim file="IIRFilterVectorCV">
 Author: Creighton, T. D.
 $Id$
-******************************* </lalVerbatim> */
+**************************************************** </lalVerbatim> */
 
-/* <lalLaTeX>
+/********************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{IIRFilterVector.c}}
 \label{ss:IIRFilterVector.c}
@@ -39,7 +39,7 @@ LALFree()
 
 \vfill{\footnotesize\input{IIRFilterVectorCV}}
 
-</lalLaTeX> */
+******************************************************* </lalLaTeX> */
 
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
@@ -69,17 +69,17 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL4Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
-  ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(vector->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->history,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->history->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(vector->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->history,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
   length=vector->length;
   data=vector->data;
   directOrder=filter->directCoef->length;
@@ -90,7 +90,7 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
   history=filter->history->data;
   temp=(REAL4 *)LALMalloc(numHist*sizeof(REAL4));
   if ( !temp ) {
-    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+    ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
   }
 
   /* Compute the auxiliary data series. */
@@ -158,17 +158,17 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
   INITSTATUS(stat,"LALIIRFilterREAL8Vector",IIRFILTERVECTORC);
 
   /* Make sure all the structures have been initialized. */
-  ASSERT(vector,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(vector->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->history,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
-  ASSERT(filter->directCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->recursCoef->data,stat,IIRFILTER_ENUL,
-	 IIRFILTER_MSGENUL);
-  ASSERT(filter->history->data,stat,IIRFILTER_ENUL,IIRFILTER_MSGENUL);
+  ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(vector->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->history,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(filter->directCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->recursCoef->data,stat,IIRFILTERH_ENUL,
+	 IIRFILTERH_MSGENUL);
+  ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
   length=vector->length;
   data=vector->data;
   directOrder=filter->directCoef->length;
@@ -179,7 +179,7 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
   history=filter->history->data;
   temp=(REAL8 *)LALMalloc(numHist*sizeof(REAL8));
   if ( !temp ) {
-    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+    ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
   }
 
   /* Compute the auxiliary data series. */
