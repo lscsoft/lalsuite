@@ -29,8 +29,8 @@ with changes in the LIGO database table definitions.
 </lalLaTeX>
 #endif
 
-#ifndef _RING_H
-#define _RING_H
+#ifndef _LIGOLWXMLHEADERS_H
+#define _LIGOLWXMLHEADERS_H
 
 NRCSID( LIFOLWXMLHEADERSH, "$Id$" );
 
