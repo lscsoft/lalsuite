@@ -1293,7 +1293,7 @@ static SnglBurstTable **analyze_series(
 		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
 
 		if(options.verbose)
-			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu\n", start, start + interval->data->length);
+			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s)\n", start, start + interval->data->length, interval->data->length * interval->deltaT);
 
 		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
