@@ -565,7 +565,7 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
     return NULL;
   }
 
-  if ( ( (int) n ) < 0 )
+  if ( ( (long) n ) < 0 )
   {
     lalRaiseHook( SIGSEGV, "%s error: corrupt size descriptor for pointer at address %p\n",
         func, p );
@@ -612,7 +612,7 @@ static void *UnPadAlloc( void *p, int keep, const char *func )
 
 static void *PushAlloc( void *p, size_t n, const char *file, int line )
 {
-  struct allocNode *new;
+  struct allocNode *newnode;
   if ( lalDebugLevel & LALNMEMTRK )
   {
     return p;
@@ -621,17 +621,17 @@ static void *PushAlloc( void *p, size_t n, const char *file, int line )
   {
     return NULL;
   }
-  if ( ! ( new = malloc( sizeof( *new ) ) ) )
+  if ( ! ( newnode = malloc( sizeof( *newnode ) ) ) )
   {
     return NULL;
   }
   pthread_mutex_lock( &mut );
-  new->addr = p;
-  new->size = n;
-  new->file = file;
-  new->line = line;
-  new->next = allocList;
-  allocList = new;
+  newnode->addr = p;
+  newnode->size = n;
+  newnode->file = file;
+  newnode->line = line;
+  newnode->next = allocList;
+  allocList = newnode;
   pthread_mutex_unlock( &mut );
   return p;
 }
