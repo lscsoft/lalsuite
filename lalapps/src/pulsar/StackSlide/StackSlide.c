@@ -1,5 +1,5 @@
 /*********************************** <lalVerbatim file="StackSlideCV">
-Author:  Landry, M., and Mendell, G.
+Authors:  Landry, Michael; Mendell, Gregory; Re, Virginia
 $Id$
 ************************************ </lalVerbatim> */
 
@@ -12,13 +12,18 @@ $Id$
 /* 12/03/04 gam; Clean up indentation; remove extraneous or obsolete comments. */
 /* 12/03/04 gam; Add parameter: BOOLEAN divideSUMsByNumSTKs. */
 /* 12/06/04 gam; use refFreq = STK frequency in the middle of the SUM band as the reference to calculate how many bins to slide, rather than f0STK. */
+/* 02/21/05 gam; propagate divideSUMsByNumSTKs and refFreq from StackSlideOld to new StackSlide function; */
+/* 02/22/05 gam; Fix bug, kSUM not set correctly in StackSlide function; clean up indentation everywhere */
 
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
 /*                                           */
 /*********************************************/
-/* #define DEBUG_STACKSLIDE_FNC */
+#define DEBUG_STACKSLIDE_FNC
+#define DEBUG_STACKSLIDE_FNC_KLOOP
+#define PRINT_STACKSLIDE_BINOFFSETS
+#define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
 /* #define DEBUG_STACKSLIDECOMPUTESKY_FNC */
 /*********************************************/
 /*                                           */
@@ -52,7 +57,6 @@ Sum them.
 </lalLaTeX> */
 
 #include "StackSlide.h"/*This includes isolated/binary info*/
-
 
 NRCSID( STACKSLIDEC,  "$Id$");
 
@@ -167,7 +171,7 @@ void StackSlideOld(	LALStatus *status,
                /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 12/06/04 gam */
                binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
 
-               #ifdef DEBUG_STACKSLIDE_FNC
+               #ifdef PRINT_STACKSLIDE_BINOFFSETS
                   fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
                   fflush(stdout);   
                #endif
@@ -221,127 +225,133 @@ void StackSlideOld(	LALStatus *status,
 } /* END StackSlideOld() */
 
 
-
-
-
 /*********************************************************************************/
 /*              START function: StackSlide                                       */
 /*********************************************************************************/
-
-	
-       void StackSlide(	LALStatus *status, 
+void StackSlide(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 
 			REAL4FrequencySeries **STKData,
                         TdotsAndDeltaTs *pTdotsAndDeltaTs,
 			StackSlideParams *params)
 {
        
-    /*INT4 iFreqDeriv */; /* index give which Freq Derivs  */
-    INT4 kSUM ;       /* index gives which SUM */
-    INT4 iSUM ;       /* index gives which SUM bin */
-    REAL8 f_t;
-    
+  /* INT4 iSky = 0; */ /* index gives which Sky Position */       /* 02/22/05 gam; obsolete */
+  /* INT4 iFreqDeriv = 0; */ /* index give which Freq Derivs  */  /* 02/22/05 gam; obsolete */  
+  /* INT4 numLoopOnSpindown; */                                   /* 02/22/05 gam; obsolete */  
+  INT4 kSUM = 0; /* index gives which SUM */ /* 02/22/05 gam; HARD CODED TO 0; This function only returns one SUM! */
+  INT4 iSUM = 0; /* index gives which SUM bin */  
+  REAL8 f_t;
 
-    INT4 numLoopOnSpindown; 
-    
-    INT4 i,k,m, iSky;
-    INT4 binoffset = 0;  
- 
-    printf("start function StackSlide\n");
-        	
-       INITSTATUS (status, "StackSlide", STACKSLIDEC); 
-       ATTATCHSTATUSPTR(status);
+  REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs); /* 12/03/04 gam */ /* 02/21/05 gam */
 
+  /* INT4 i,k,m, iSky; */ /* 02/22/05 gam; iSky is obsolete */
+  INT4 i,k,m;  
+  INT4 binoffset = 0;  
   
-	INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency                                                                       to include when making SUMs from STKs */
-	
-        INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency                                                                       to include when making SUMs from STKs */
-  printf("iFreqDeriv is %d\n",params->iFreqDeriv);
+  #ifdef DEBUG_STACKSLIDE_FNC
+    fprintf(stdout,"start function StackSlide\n");
+    fflush(stdout);
+  #endif   
 
-  printf("iMaxSTK is %d\n", iMaxSTK);
- 	 	
+  INITSTATUS (status, "StackSlide", STACKSLIDEC);
+  ATTATCHSTATUSPTR(status);
 
-  kSUM = iSky*numLoopOnSpindown + params->iFreqDeriv; /* 01/28/04 gam; need to find index to which to SUM */
- /*05/02/18 vir kSUM=iSky*(numLoopOnSpinDown*params->nMaxSMA*params->nMaxTperi)+...*/
+  INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
+  INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency to include when making SUMs from STKs */
+
+  REAL8 refFreq = params->f0SUM + ((REAL8)(params->nBinsPerSUM/2))*params->dfSUM; /* 12/06/04 gam */ /* 02/21/05 gam */
+  
+  #ifdef DEBUG_STACKSLIDE_FNC
+    fprintf(stdout,"invNumSTKs %g\n",invNumSTKs);
+    fprintf(stdout,"params->divideSUMsByNumSTKs = %i \n",params->divideSUMsByNumSTKs);  
+    fprintf(stdout,"refFreq %g\n",refFreq);
+    fprintf(stdout,"iFreqDeriv is %d\n",params->iFreqDeriv);
+    fprintf(stdout,"iMaxSTK is %d\n",iMaxSTK);
+    fprintf(stdout,"iMinSTK is %d\n",iMinSTK);
+    fprintf(stdout,"numSTKs is %d\n", params->numSTKs);    
+    fflush(stdout);
+  #endif
+  
+  /* kSUM = iSky*numLoopOnSpindown + params->iFreqDeriv; */ /* 02/22/05 gam; obsolete */ /* 01/28/04 gam; need to find index to which to SUM */
+  /*05/02/18 vir kSUM=iSky*(numLoopOnSpinDown*params->nMaxSMA*params->nMaxTperi)+...*/
   /*... + params->iFreqDeriv*(params->nMaxSMA*params->nMaxTperi)+params->iSMA*(params->nMaxTperi) + params->iT;*/
-  
-  printf("iMinSTK is %d\n",iMinSTK);
-  
+
   for(k=0;k<params->numSTKs;k++) {
+
+        /* compute frequency */
+        /* f_t = params->f0STK; */ /*this should be refFreq;*/ /* 02/21/05 gam */
+        f_t = refFreq; /* 12/06/04 gam */ /* 02/21/05 gam */
+        #ifdef DEBUG_STACKSLIDE_FNC_KLOOP
+          fprintf(stdout,"start ft is %f\n",f_t);
+          fflush(stdout);
+        #endif
+        for (m=0; m<params->numSpinDown; m++) {
+            #ifdef DEBUG_STACKSLIDE_FNC_KLOOP        
+              fprintf(stdout,"numspindown is %d m is %d k is %d \n",params->numSpinDown, m, k );
+              fflush(stdout);
+            #endif
+            f_t += params->freqDerivData[params->iFreqDeriv][m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
+            /*params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m]; */
+        }
+        f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
+        #ifdef DEBUG_STACKSLIDE_FNC_KLOOP
+          fprintf(stdout,"corrected ft is %f\n",f_t);
+          fflush(stdout);          
+        #endif   
+
+        /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 02/21/05 gam */
+        binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 ); /* 12/06/04 gam */ /* 02/21/05 gam */
+        #ifdef PRINT_STACKSLIDE_BINOFFSETS
+            fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
+            fflush(stdout);
+        #endif
+
+        for (i=iMinSTK;i<=iMaxSTK; i++) {
+            iSUM = i - iMinSTK;
+            if (k==0) {
+               /* Starting a new SUM: initialize */
+               SUMData[kSUM]->data->data[iSUM] = STKData[k]->data->data[i+binoffset];
+               SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
+               SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
+               SUMData[kSUM]->f0=params->f0SUM;
+               SUMData[kSUM]->deltaF=params->dfSUM;
+               SUMData[kSUM]->data->length=params->nBinsPerSUM;
+            } else {
+               SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i+binoffset];
+            }
+
+       }/*end of for iMinSTK*/
+  } /* END for(k=0;k<params->numSTKs;k++) */
+  /* Normalize the SUMs with params->numSTKs*/
+      
+  /* 12/03/04 gam; added params->divideSUMsByNumSTKs */ /* 02/21/05 gam */
+  if (params->divideSUMsByNumSTKs) {
+     /* Normalize the SUMs with params->numSTKs*/
+     for(i=0;i<params->nBinsPerSUM; i++) {
+        /* SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs); */
+        SUMData[kSUM]->data->data[i] = SUMData[kSUM]->data->data[i]*invNumSTKs;  /* 12/03/04 gam; multiply by 1.0/numSTKs */
+     }
+  }
+
+  /*05/02/18 vir:*/ params->ParamsSMA[kSUM]=params->SemiMajorAxis;
+  /*05/02/18 vir: params->ParamsTperi[kSUM]=params->TperiapseSSB*/
   
-	  printf("numSTKs is %d\n", params->numSTKs);
-                               
-	                               /* compute frequency */
-	
-	f_t = params->f0STK; /*this should be refFreq;*/
-	printf("start ft is %f\n",f_t);
-	for (m=0; m<params->numSpinDown; m++) 
-       	   {
-		  printf("numspindown  is %d m is %d k is %d \n",params->numSpinDown, m, k );
-		f_t += params->freqDerivData[params->iFreqDeriv][m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
-		/*params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m]; */
-	
-       	   }	   
-	   f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
-	   	
-	   printf("corrected ft is %f\n",f_t);
-
-	   binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 );
-
-	   printf("binoffset is %d\n", binoffset);
-           
-          #ifdef DEBUG_STACKSLIDE_FNC
-              fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-              fflush(stdout);   
-           #endif
-	
-
-	    for(i=iMinSTK;i<=iMaxSTK; i++) {
-                iSUM = i - iMinSTK;
-	        if (k==0) {
-		   /* Starting a new SUM: initialize */
-	           SUMData[kSUM]->data->data[iSUM] = STKData[k]->data->data[i+binoffset];
-		   SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
-		   SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
-		   SUMData[kSUM]->f0=params->f0SUM;
-		   SUMData[kSUM]->deltaF=params->dfSUM;
-		   SUMData[kSUM]->data->length=params->nBinsPerSUM;
-		   	
-
-	        } else {
-	           SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i+binoffset];
-
-		}
-
-            }/*end of for iMinSTK*/
-      } /* END for(k=0;k<params->numSTKs;k++) */
-                               /* Normalize the SUMs with params->numSTKs*/
-      
-      for(i=0;i<params->nBinsPerSUM; i++) {
-               SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs);
-  /*    printf("Normalized sum is %f\n",SUMData[kSUM]->data->data[i]);*/
-                           	          }	
-      /*05/02/18 vir:*/ params->ParamsSMA[kSUM]=params->SemiMajorAxis;
-      
-      /*05/02/18 vir: params->ParamsTperi[kSUM]=params->TperiapseSSB*/
-       printf("end function StackSlide\n");     
-	
+  #ifdef DEBUG_STACKSLIDE_FNC
+    fprintf(stdout,"end function StackSlide\n");
+    fflush(stdout);
+  #endif
+  
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
  }   /*end of void StackSlide*/
-
-
 /*********************************************************************************/
 /*              END function: StackSlide                                         */
 /*********************************************************************************/
 
 
-
 /*********************************************************************************/
 /*              START function: StackSlideComputeSky                             */
 /*********************************************************************************/
-
-
 
 /* Internal routines copied from ComputeSky.c */ 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
@@ -445,23 +455,19 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
   tgps->gpsSeconds = (INT4)temp0;
   tgps->gpsNanoSeconds = (INT4)temp4;
 }
+
 /*********************************************************************************/
 /*              END function: StackSlideComputeSkY                               */
 /*********************************************************************************/
-
 
 
 /*********************************************************************************/
 /*              START function: StackSlideComputeSkyBinary                       */
 /*********************************************************************************/
 
-
-
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 t, void *tr0);
 
-
 /*Redefinition of all the parameters needed for orbital motion for easier use*/
-
 static REAL8 a;      /* semi major axis -maybe a random*/
 static REAL8 Period;    /* Period */
 static REAL8 ecc;    /* eccentricity */
@@ -470,173 +476,168 @@ static LIGOTimeGPS Tperi;  /* Time of periapse passage as measured in SSB frame 
 static REAL8 p,q;    /* coefficients of phase model */
 static REAL8 E;      /* eccentric anomaly */
 
-
-
-void StackSlideComputeSkyBinary( LALStatus		*status, 
-				 TdotsAndDeltaTs 	*pTdotsAndDeltaTs, 
-				 INT8 		iSkyCoh,
+void StackSlideComputeSkyBinary( LALStatus 			*status, 
+				 TdotsAndDeltaTs 		*pTdotsAndDeltaTs, 
+				 INT8 				iSkyCoh,
 				 /*StackSlideBinarySkyParams 	*params*/
-				 StackSlideSkyParams *params
+				 StackSlideSkyParams 		*params
 			        )
 
-{  
-printf("start function ComputeSkyBinary\n");
+{
+  INT4 m, n, nP;
+  REAL8 dTbary;
+  LALTimeInterval dTBaryInterval;
+  LALTimeInterval HalfSFT;
+  REAL8 HalfSFTfloat;
+  REAL8   dTbarySP;
+  REAL8   dTperi;
+  REAL8   dTcoord;
+  REAL8   Tdotbin;
+  REAL8   basedTperi;
+  DFindRootIn input;
+  REAL8 tr0;
+  REAL8 acc;
 
-	INT4	m, n, nP;
-	REAL8	dTbary;
-	LALTimeInterval dTBaryInterval;
-	LALTimeInterval HalfSFT;
-	REAL8 HalfSFTfloat;
-	REAL8   dTbarySP;
-	REAL8   dTperi;
-	REAL8   dTcoord;
-	REAL8   Tdotbin;
-	REAL8   basedTperi;
-	DFindRootIn input;
-	REAL8 tr0;
-	REAL8 acc;
+  #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+    fprintf(stdout,"start function ComputeSkyBinary\n");
+    fflush(stdout);   
+  #endif
 
-	
- INITSTATUS (status, "StackSlideComputeSkyBinary", STACKSLIDEC);
- ATTATCHSTATUSPTR(status);
- 
+  INITSTATUS (status, "StackSlideComputeSkyBinary", STACKSLIDEC);
+  ATTATCHSTATUSPTR(status);
 
-/*for (i=0;i< SSparams->numSTKs; i++)
+  /*for (i=0;i< SSparams->numSTKs; i++)
         	{
-			tGPS[i].gpsSeconds=SSparams->gpsStartTimeSec +(UINT4)(i*(SSparams->tSTK));
-	        	tGPS[i].gpsNanoSeconds=SSparams->gpsStartTimeNan;
-	                       
+  			tGPS[i].gpsSeconds=SSparams->gpsStartTimeSec +(UINT4)(i*(SSparams->tSTK));
+  	        	tGPS[i].gpsNanoSeconds=SSparams->gpsStartTimeNan;
+  	                       
        	        }*/
- /*is this SSparams or params?*/
-  
- 
-/*#ifdef 0 */
-/* Check for non-negativity of sky positions in SkyCoh[] */
- ASSERT(iSkyCoh>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  /*is this SSparams or params?*/
 
-/* Check to make sure sky positions are loaded */
- ASSERT(params->skyPos!=NULL, status, COMPUTESKYBINARYH_ENULL, COMPUTESKYBINARYH_MSGENULL);
- ASSERT(params->skyPos!=NULL, status, COMPUTESKYBINARYH_ENULL, COMPUTESKYBINARYH_MSGENULL);
- /* Check to make sure parameters are loaded and reasonable */
- ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT(params->mObsSFT>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT(params->tSFT>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
-	 
-/* Check to make sure orbital parameters are loaded and reasonable */
-ASSERT(params->SemiMajorAxis>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT(params->OrbitalPeriod>0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT(params->OrbitalEccentricity>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT((params->ArgPeriapse>=0)&&(params->ArgPeriapse<=LAL_TWOPI), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
- ASSERT(params->TperiapseSSB.gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA); 
- ASSERT((params->TperiapseSSB.gpsNanoSeconds>=0)&&(params->TperiapseSSB.gpsNanoSeconds<1e9), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
-/*#endif*/ 
+  /*#ifdef 0 */
+  /* Check for non-negativity of sky positions in SkyCoh[] */
+  ASSERT(iSkyCoh>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+
+  /* Check to make sure sky positions are loaded */
+  ASSERT(params->skyPos!=NULL, status, COMPUTESKYBINARYH_ENULL, COMPUTESKYBINARYH_MSGENULL);
+  ASSERT(params->skyPos!=NULL, status, COMPUTESKYBINARYH_ENULL, COMPUTESKYBINARYH_MSGENULL);
+  /* Check to make sure parameters are loaded and reasonable */
+  ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT(params->mObsSFT>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT(params->tSFT>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+
+  /* Check to make sure orbital parameters are loaded and reasonable */
+  ASSERT(params->SemiMajorAxis>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT(params->OrbitalPeriod>0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT(params->OrbitalEccentricity>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT((params->ArgPeriapse>=0)&&(params->ArgPeriapse<=LAL_TWOPI), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  ASSERT(params->TperiapseSSB.gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA); 
+  ASSERT((params->TperiapseSSB.gpsNanoSeconds>=0)&&(params->TperiapseSSB.gpsNanoSeconds<1e9), status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+  /*#endif*/ 
 
   /* Here we redefine the orbital variables for ease of use */
-printf("leap %d\n",params->edat->leap);
+  #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+    fprintf(stdout,"leap %d\n",params->edat->leap); 
+    fflush(stdout);   
+  #endif
 
- a=params->SemiMajorAxis;  /* This is the projected semi-major axis of the orbit normalised by the speed of light */
- Period=params->OrbitalPeriod;  /* This is the period of the orbit in seconds */
- ecc=params->OrbitalEccentricity;  /* This is the eccentricity of the orbit */
- parg=params->ArgPeriapse;  /* This is the argument of periapse defining the angular location of the source at periapsis */
+  a=params->SemiMajorAxis;  /* This is the projected semi-major axis of the orbit normalised by the speed of light */
+  Period=params->OrbitalPeriod;  /* This is the period of the orbit in seconds */
+  ecc=params->OrbitalEccentricity;  /* This is the eccentricity of the orbit */
+  parg=params->ArgPeriapse;  /* This is the argument of periapse defining the angular location of the source at periapsis */
                             /* measured relative to the ascending node */
- Tperi.gpsSeconds=params->TperiapseSSB.gpsSeconds;  /* This is the GPS time as measured in the SSB of the observed */
- Tperi.gpsNanoSeconds=params->TperiapseSSB.gpsNanoSeconds;  /* periapse passage of the source */
+  Tperi.gpsSeconds=params->TperiapseSSB.gpsSeconds;  /* This is the GPS time as measured in the SSB of the observed */
+  Tperi.gpsNanoSeconds=params->TperiapseSSB.gpsNanoSeconds;  /* periapse passage of the source */
 
+  /* Convert half the SFT length to a LALTimeInterval for later use */
+  HalfSFTfloat=params->tSFT/2.0;
+  #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+    fprintf(stdout,"HalfSFTfl %f\n",HalfSFTfloat);
+    fflush(stdout);   
+  #endif 
 
+  LALFloatToInterval(status->statusPtr,&HalfSFT,&HalfSFTfloat);
 
- /* Convert half the SFT length to a LALTimeInterval for later use */
- HalfSFTfloat=params->tSFT/2.0;
- fprintf(stdout,"HalfSFTfl %f\n",HalfSFTfloat);
- LALFloatToInterval(status->statusPtr,&HalfSFT,&HalfSFTfloat);
-
-/* fprintf(stdout,"HalfSFT %f\n",HalfSFT.seconds);*/
-
-
- /* Here we check that the GPS timestamps are greater than zero */
+  /* Here we check that the GPS timestamps are greater than zero */
   for(n=0;n<params->mObsSFT;n++)
-   { 
+  {
+     ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
+     /*ASSERT(tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);*/
+  }
+  
+  /* Check to make sure pointer to output is not NULL */
+  /*ASSERT(skyConst!=NULL, status, COMPUTESKYBINARYH_ENNUL, COMPUTESKYBINARYH_MSGENNUL);*/
+  
+  ASSERT(pTdotsAndDeltaTs!=NULL, status, COMPUTESKYBINARYH_ENNUL, COMPUTESKYBINARYH_MSGENNUL);
 
-      ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);
-/*ASSERT(tGPS[n].gpsSeconds>=0, status, COMPUTESKYBINARYH_ENEGA, COMPUTESKYBINARYH_MSGENEGA);*/
-
-
-   }
- /* Check to make sure pointer to output is not NULL */
-         /*ASSERT(skyConst!=NULL, status, COMPUTESKYBINARYH_ENNUL, COMPUTESKYBINARYH_MSGENNUL);*/
- 
-	 ASSERT(pTdotsAndDeltaTs!=NULL, status, COMPUTESKYBINARYH_ENNUL, COMPUTESKYBINARYH_MSGENNUL);
-
- 
- /* prepare params input sky position structure */
-/* params->baryinput->alpha=params->skyPos[iSkyCoh];
- params->baryinput->delta=params->skyPos[iSkyCoh+1];*/
- /* params->baryinput->alpha=SSparams->skyPosData[iSky][iSkyCoh];
+  /* prepare params input sky position structure */
+  /* params->baryinput->alpha=params->skyPos[iSkyCoh];
+  params->baryinput->delta=params->skyPos[iSkyCoh+1];*/
+  /* params->baryinput->alpha=SSparams->skyPosData[iSky][iSkyCoh];
   params->baryinput->delta=SSparams->skyPosData[iSky][iSkyCoh+1]; maybe put it back*/
- 
-
-
 
   /* calculate phase model coefficients p and q which are defined in the ComputeSkyBinary header LAL documentation  */
  
- p=((LAL_TWOPI/(Period*1.0))*a*sqrt(1-(ecc*ecc))*cos(parg))-ecc;
- q=(LAL_TWOPI/(Period*1.0))*a*sin(parg);
+  p=((LAL_TWOPI/(Period*1.0))*a*sqrt(1-(ecc*ecc))*cos(parg))-ecc;
+  q=(LAL_TWOPI/(Period*1.0))*a*sin(parg);
 
- /* Calculate the required accuracy for the root finding procedure in the main loop */
- acc=LAL_TWOPI*(REAL8)ACC/Period;   /* ACC is defined in ComputeSkyBinary.h and represents the required */
+  /* Calculate the required accuracy for the root finding procedure in the main loop */
+  acc=LAL_TWOPI*(REAL8)ACC/Period;   /* ACC is defined in ComputeSkyBinary.h and represents the required */
                                     /* timing precision in seconds (roughly)*/
- 
 
- /* begin loop over SFT's */
- for (n=0; n<params->mObsSFT; n++) 
-   {
-
+  /* begin loop over SFT's */
+  for (n=0; n<params->mObsSFT; n++)
+  {
      /* Calculate the detector time at the mid point of current SFT ( T(i)+(tsft/2) ) using LAL functions */
- /*!*/ /* LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);*/
-/*	   LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&tGPS[n],&HalfSFT);*/
-	  
+     /*!*/ /* LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);*/
+     /*  LALIncrementGPS(status->statusPtr,&(params->baryinput->tgps),&tGPS[n],&HalfSFT);*/
 
-	   
- LALIncrementGPS(status->statusPtr, &(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
- fprintf(stdout,"tgps %d\n",params->baryinput->tgps.gpsSeconds);
-
-
-fprintf(stdout,"leap %d\n",params->edat->leap);
+     LALIncrementGPS(status->statusPtr, &(params->baryinput->tgps),&params->tGPS[n],&HalfSFT);
+ 
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"tgps %d\n",params->baryinput->tgps.gpsSeconds);
+       fprintf(stdout,"leap %d\n",params->edat->leap);
+       fflush(stdout);   
+     #endif
 
      /* Convert this mid point detector time into barycentric time (SSB) */
 
-               /* GetSSBTime(&(baryinput.tgps), &TmidSSB) ;*/
+     /* GetSSBTime(&(baryinput.tgps), &TmidSSB) ;*/
 
- 
-       LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);    
-       LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);   
+     LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);    
+     LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);   
 
-       CHECKSTATUSPTR(status);printf("status %d\n",status->statusCode);
-	     
-   /*   LALBarycenterEarth(status->statusPtr, csParams->earth, &(csParams->baryinput->tgps), csParams->edat);    
-     LALBarycenter(status->statusPtr, csParams->emit, csParams->baryinput, csParams->earth);*/       
+     CHECKSTATUSPTR(status);
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"status %d\n",status->statusCode); 
+       fflush(stdout);   
+     #endif
 
+     /* LALBarycenterEarth(status->statusPtr, csParams->earth, &(csParams->baryinput->tgps), csParams->edat);    
+        LALBarycenter(status->statusPtr, csParams->emit, csParams->baryinput, csParams->earth);*/       
 
-
-
-     
      /* Calculate the time difference since the observed periapse passage in barycentric time (SSB). */ 
      /* This time difference, when converted to REAL8, should lose no precision unless we are dealing */
      /* with periods >~ 1 Year */
      
-       LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(params->emit->te),&Tperi); 
+     LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(params->emit->te),&Tperi); 
                
-       LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);
+     LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);
 
-      /*     LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(csParams->emit->te),&Tperi); 
-     LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);*/
+     /* LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(csParams->emit->te),&Tperi); 
+        LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval);*/
 
-    
      /* Calculate the time since the last periapse passage ( < Single Period (SP) ) */
      dTbarySP=Period*((dTbary/(1.0*Period))-(REAL8)floor(dTbary/(1.0*Period)));
-    printf("dTbarySP is %f\n",dTbarySP);
+     
      /* Calculate number of full orbits completed since the input observed periapse passage */
      nP=(INT4)floor(dTbary/(1.0*Period));
-      printf("nP is %i\n",nP);
+     
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"dTbarySP is %f\n",dTbarySP);
+       fprintf(stdout,"nP is %i\n",nP);
+       fflush(stdout);   
+     #endif
 
      /* begin root finding procedure */
      tr0 = dTbarySP;        /* we wish to find the value of the eccentric anomaly E corresponding to the time */
@@ -646,69 +647,88 @@ fprintf(stdout,"leap %d\n",params->edat->leap);
      input.xmax = LAL_TWOPI;
      input.xacc = acc;      /* The accuracy of the root finding procedure */
 
-                                                    
      /* expand domain until a root is bracketed */
      LALDBracketRoot(status->statusPtr,&input,&tr0); 
-  
+
      /* bisect domain to find eccentric anomoly E corresponding to the current midpoint timestamp */
      LALDBisectionFindRoot(status->statusPtr,&E,&input,&tr0); 
  
      /* Now we calculate the time interval since the input periapse passage as measured at the source */ 
      dTperi=(Period/LAL_TWOPI)*(E-(ecc*sin(E)))+((REAL8)nP*Period); 
-     printf("dTperi is %f\n",dTperi);
-   
+
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"dTperi is %f\n",dTperi);     
+       fflush(stdout);   
+     #endif
+
      /* The following quantity is the derivative of the time coordinate measured at the source with */
      /* respect to the time coordinate measured in the SSB : dt_(source)/dt_(SSB) */
      dTcoord=(1.0-(ecc*cos(E)))/(1.0+(p*cos(E))-(q*sin(E)));  
-     printf("dTcoord is %f\n",dTcoord);
 
-   
-     
      /* The following quantity is the derivitive of the time coordinate measured in the SSB with */
      /* respect to the time coordinate measured at the chosen detector.  It was calculated via the */
      /* last call to LALBarycenter : dt_(SSB)/dt_(detector)  */
-      Tdotbin = params->emit->tDot*dTcoord; /*=dt_source/dt_detector*/ 
-    printf("Tdotbin is %f\n",Tdotbin);
+     Tdotbin = params->emit->tDot*dTcoord; /*=dt_source/dt_detector*/ 
 
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"dTcoord is %f\n",dTcoord);     
+       fprintf(stdout,"Tdotbin is %f\n",Tdotbin);
+       fflush(stdout);   
+     #endif
 
-      /*    Tdotbin = csParams->emit->tDot*dTcoord; */
+     /*    Tdotbin = csParams->emit->tDot*dTcoord; */
      
      /* Loop over all spin down orders plus 0th order (f0) */
      /* In this loop we calculate the SkyConstants defined in the documentation as A_{s,alpha} and B_{s,alpha} */
 
       
-      /*!*/ pTdotsAndDeltaTs->vecTDots[n]= Tdotbin;
- printf("pTdotsAndDeltaTs->vecTDots is %f\n",pTdotsAndDeltaTs->vecTDots[n]);
-
- 
+     /*!*/ pTdotsAndDeltaTs->vecTDots[n]= Tdotbin;
      
-        for (m=0; m<params->spinDwnOrder; m++)     
-       {
-	 /* raise the quantity dTperi to the power m */
-	 basedTperi = pow(dTperi, (REAL8)m+1);
-	 printf("basedTperi %f\n",basedTperi);
-/*!*/	 /*the 2 lines below must be changed */
-	
-	 /* Calculate A coefficients */
-	/* skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTperi*dTperi-0.5*params->tSFT*basedTperi*Tdotbin;*/
-	 /* Calculate B coefficients */
-/*	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*basedTperi*Tdotbin;*/
-	 
- /*expressing the time difference in the SSB */
-/*!*/        /*pTdotsAndDeltaTs->vecDeltaTs[m][n]= basedTperi*pTdotsAndDeltaTs->vecTDots[n]; */
-	 pTdotsAndDeltaTs->vecDeltaTs[n][m]= basedTperi; /*in the Source*/ 
-          printf("vecDeltaTs %f\n", pTdotsAndDeltaTs->vecDeltaTs[n][m]);
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"pTdotsAndDeltaTs->vecTDots is %f\n",pTdotsAndDeltaTs->vecTDots[n]);
+       fflush(stdout);   
+     #endif
 
-       }    
-   printf("end function StackSlideComputeSkyBinary\n");    
-} 
-/*LALFree(params->edat->ephemE);
-LALFree(params->edat->ephemS);
-LALFree(params->edat);*/
+     for (m=0; m<params->spinDwnOrder; m++)
+     {
+       /* raise the quantity dTperi to the power m */
+       basedTperi = pow(dTperi, (REAL8)m+1);
 
- /* Normal Exit */
- DETATCHSTATUSPTR(status);
- RETURN(status);
+       #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+         fprintf(stdout,"basedTperi %f\n",basedTperi);
+         fflush(stdout);
+       #endif         
+
+       /*!*/ /*the 2 lines below must be changed */
+
+       /* Calculate A coefficients */
+       /* skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTperi*dTperi-0.5*params->tSFT*basedTperi*Tdotbin;*/
+       /* Calculate B coefficients */
+       /* skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*basedTperi*Tdotbin;*/
+
+       /*expressing the time difference in the SSB */
+       /*!*/ /*pTdotsAndDeltaTs->vecDeltaTs[m][n]= basedTperi*pTdotsAndDeltaTs->vecTDots[n]; */
+       pTdotsAndDeltaTs->vecDeltaTs[n][m]= basedTperi; /*in the Source*/ 
+
+       #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+         fprintf(stdout,"vecDeltaTs %f\n", pTdotsAndDeltaTs->vecDeltaTs[n][m]);
+         fflush(stdout);
+       #endif
+    
+     } /* END for (m=0; m<params->spinDwnOrder; m++) */
+    
+     #ifdef DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+       fprintf(stdout,"end function StackSlideComputeSkyBinary\n");
+       fflush(stdout);
+     #endif
+  } /* for (n=0; n<params->mObsSFT; n++) */
+  /*LALFree(params->edat->ephemE);
+  LALFree(params->edat->ephemS);
+  LALFree(params->edat);*/
+
+  /* Normal Exit */
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 /**************************************************************************************************/
@@ -724,11 +744,6 @@ static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
   RETURN(status);
 }
 
-
-
 /*********************************************************************************/
 /*              END function: StackSlideComputeSkyBinary                         */
 /*********************************************************************************/
-	
-
-
