@@ -861,14 +861,15 @@ LALInspiralBCVFcutBank (
 {  
   UINT4 nf, nlist, j, ndx;
   REAL8 frac, fendBCV;
+  REAL4 LowGM, HighGM;
 
   INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
 
   nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
 
-  REAL4 LowGM = coarseIn.LowGM;
-  REAL4 HighGM = coarseIn.HighGM;
+  LowGM = coarseIn.LowGM;
+  HighGM = coarseIn.HighGM;
 
   /* if we have only one layer, we don't need HighGM. 
    * And default value for LowGM is  3GM*/
