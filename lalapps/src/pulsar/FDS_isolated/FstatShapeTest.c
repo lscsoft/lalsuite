@@ -103,7 +103,7 @@ INT4 main(INT4 argc, CHAR ** argv)
   REAL8 df=0.0;     /* degrees of freedom of the chi square distribution */
 
   REAL8 ChiSumMin=FLT_MAX;
-  REAL8 lmfrqmin;
+  REAL8 lmfrqmin=0.0;
 
   REAL8 prob;
   INT2 rejection=0;

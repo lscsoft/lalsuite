@@ -534,7 +534,7 @@ ComputeVetoStatistic( LALStatus *status,
   REAL8 vetoStatMin = LAL_REAL4_MAX; /* 3.4e38 */
   REAL8 vetoStat = 0.0; /* veto statistic: ideally follows Chi^2 distribution. */
   REAL8 df = 0.0;       /* degrees of freedom of the chi square distribution */
-  REAL8 searchFreqmin;
+  REAL8 searchFreqmin = 0.0;
   REAL8 threshold, thr = 0.5; /* threshold to find "summits = local maxima" of the cluster. */
 
   FSTControlParameters CP; 
