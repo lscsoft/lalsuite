@@ -4,9 +4,6 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-## build everything completely static
-##AM_LDFLAGS = -all-static
-
 if FRAME
 FRAMEPROGRAMS = lalapps_FrComputeFStatistic
 else
@@ -20,6 +17,7 @@ CFSsources = 	ComputeFStatistic.c ComputeFStatistic.h		\
 		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
 lalapps_ComputeFStatistic_SOURCES = $(CFSsources)
+lalapps_ComputeFStatistic_LDFLAGS = -all-static
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
