@@ -1343,6 +1343,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       
           for (segLoop = 0; segLoop < numSegments; segLoop++)
            {
+            gpsStartTime.gpsSeconds = gpsStartTime.gpsSeconds +
+	      (segLoop * segmentShift);
 
 	    for (i = 0; i < segmentLength; i ++)
                {
