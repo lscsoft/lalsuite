@@ -772,7 +772,7 @@ cleanexit:
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
           search_summary_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
-          process_params_table ), &status );
+          search_summary_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* write the sngl_inspiral table using events from IFO A */
