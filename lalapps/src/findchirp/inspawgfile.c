@@ -58,8 +58,9 @@ int lalDebugLevel = LALINFO | LALNMEMDBG;
 #define DELTAT (0.00006103515625) /* sampling interval of amplitude and phase */
 
 /* Usage format string. */
-#define USAGE "Usage: %s [-s sourcefile] [-r respfile] [-o outfile] [-e seed]\n                [-i infile | -n sec nsec npt dt sigma] [-fi lowf] [-fe highf] \n
-     [-d debuglevel] [-p]\n"
+#define USAGE "Usage: %s [-s sourcefile] [-r respfile] [-o outfile] [-e seed]\n" \
+"                [-i infile | -n sec nsec npt dt sigma] [-fi lowf] [-fe highf] \n" \
+"                [-d debuglevel] [-p]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
