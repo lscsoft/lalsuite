@@ -25,7 +25,11 @@ ComputeCalibrationFactorsTest_LDADD = $(top_builddir)/packages/framedata/src/lib
 endif
 EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+if FRAME
 TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest
+else
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
+endif
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
