@@ -110,7 +110,11 @@ LALSRunningMedian( LALStatus *status,
 		   REAL4Sequence *input,
 		   LALRunningMedianPar param);
 
-
+void
+LALDRunningMedian2( LALStatus *status,
+		    REAL8Sequence *medians,
+		    REAL8Sequence *input,
+		    LALRunningMedianPar param);
 
 /* <lalLaTeX>
 \newpage\input{LALRunningMedianC}
