@@ -147,13 +147,13 @@ LALInspiralSpinBank(
   if (coarseIn.mmCoarse <= 0) 
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   
-  /* These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
-  /*  if ((coarseIn.m1Min <= 0) || (coarseIn.m2Min <= 0) || (coarseIn.m1Max <= 0) || (coarseIn.m2Max <= 0))
+  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || (coarseIn.mMin >= coarseIn.MMax) || (3*coarseIn.MMax >= 15.0))
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-
+   
+  /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
+  /*
     if (coarseIn.betaMax < 0) 
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-
   */
     
   /* Get noise power moments and trig moments. */
@@ -201,10 +201,11 @@ LALInspiralSpinBank(
   theta = atan2( -metric->data[3], -metric->data[0] );
 
   /* Hardcode mass range etc for the moment. */
-  m1Min = 5*LAL_MTSUN_SI;
-  m1Max = 10*LAL_MTSUN_SI;
-  m2Min = 1*LAL_MTSUN_SI;
-  m2Max = 2*LAL_MTSUN_SI;
+  m2Min = coarseIn.mMin*LAL_MTSUN_SI;
+  m2Max = coarseIn.MMax*LAL_MTSUN_SI;
+  m1Min = 2.0*m2Max;
+  m1Max = 15.0*LAL_MTSUN_SI - m2Max;
+
 
   /* Set box on unprimed coordinates including region. */
   x0 = 0.9*(3.0/128) / (pow(LAL_PI*f0*(m1Max+m2Max),1.666667)*(m1Max*m2Max/pow(m1Max+m2Max,2)));

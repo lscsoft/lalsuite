@@ -741,6 +741,10 @@ LALRectangleVertices
 \newpage\input{ChirpSpaceC}
 </lalLaTeX> */
 
+/*<lalLaTeX>
+\newpage\input{InspiralSpinBankTestC}
+</lalLaTeX>*/
+
 #ifdef  __cplusplus
 }
 #endif
