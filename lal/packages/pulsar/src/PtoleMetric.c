@@ -21,8 +21,7 @@ This function computes metric components in a way that yields results very
 similar to those of \texttt{CoherentMetric} called with the output of
 \texttt{TBaryPtolemaic}. The CPU demand, however, is less, and the metric
 components can be expressed analytically, lending themselves to better
-understanding of the behavior of the parameter space. For example, the
-density of patches goes as $\sin^22\delta$.
+understanding of the behavior of the parameter space.
 
 \subsubsection*{Algorithm}
 
@@ -114,15 +113,17 @@ $(f_0, \alpha, \delta, f_1, \ldots)$.
 
 \subsubsection*{Uses}
 
-\subsubsection*{Notes}
+LALGetEarthTimes()
 
-Orbital motion is not yet included.
+\subsubsection*{Notes}
 
 The awkward series where $j//2$ and similar things appear can be represented
 as incomplete gamma functions of imaginary arguments, but in the code the
 trig series is the easiest to implement. I could write them more cleanly in
 terms of complex exponentials, but the trig expressions are what is actually
 in the code.
+
+Orbital motion is not yet included.
 
 \vfill{\footnotesize\input{PtoleMetricCV}}
 
@@ -134,6 +135,7 @@ in the code.
 #include <lal/DetectorSite.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
+#include <lal/PulsarTimes.h>
 
 NRCSID( PTOLEMETRICC, "$Id$" );
 
@@ -150,19 +152,29 @@ void LALPtoleMetric( LALStatus *status,
                      REAL8Vector *metric,
                      PtoleMetricIn *input )
 { /* </lalVerbatim> */
-  INT2 j, k;         /* Loop counters */
-  REAL4 dayR, yearR; /* Amplitude of daily/yearly modulation, s */
-  REAL4 dayW, yearW; /* Angular frequency of daily/yearly modulation, rad/s */
-  REAL4 psi0;        /* Phase of Earth's rotation at beginning (epoch) */
-  REAL4 psi1;        /* Phase of Earth's rotation at end (epoch+duration) */
-  REAL4 dpsi;        /* psi1 - psi0 */
-  REAL4 cosd, sind;  /* Cosine and sine of source declination */
+  INT2 j, k;         /* loop counters */
+  REAL4 r, R;        /* radii of rotation and revolution, in seconds */
+  REAL4 w, W;        /* angular frequencies of rotation and revolution, in radians per second */
+  REAL4 t0, T;       /* initial time and duration of integration, in seconds */
+  REAL4 psi0, psi1;  /* initial and final phases of rotation, in radians */
+  REAL4 dpsi;        /* elapsed phase of rotation, in radians */
+  REAL4 phi0, phi1;  /* initial and final phases of revolution, in radians */
+  REAL4 dphi;        /* elapsed phase of revolution, in radians */
   REAL4 s0, c0;      /* sin(psi0) and cos(psi0) */
   REAL4 s1, c1;      /* sin(psi1) and cos(psi1) */
-  UINT2 dim;         /* Dimension of parameter space */
-  REAL4 lat, lon;    /* latitude and longitude of detector site */
+  REAL4 S0, C0;      /* sin(phi0) and cos(phi0) */
+  REAL4 S1, C1;      /* sin(phi1) and cos(phi1) */
+  REAL4 cosa, sina;  /* cosine and sine of right ascension */
+  REAL4 cosb, sinb;  /* cosine and sine of detector latitude */
+  REAL4 cosd, sind;  /* cosine and sine of declination */
+  REAL4 cosi, sini;  /* cosine and sine of Earth's inclination */
+  UINT2 dim;         /* dimension of parameter space */
+  REAL4 f0;          /* maximum frequency to search */
+  REAL4 Gx0, Gxa, G00, G0a, Gaa;
+  PulsarTimesParamStruc tev;
 
   INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
+  ATTATCHSTATUSPTR( status );
 
   /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
@@ -204,51 +216,86 @@ void LALPtoleMetric( LALStatus *status,
   ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
-  /* This section saves typing and makes the equations more legible. */
-  lat = input->site.vertexLatitudeRadians;
-  lon = input->site.vertexLongitudeRadians;
+  /* Get times until next midnight and autumnal equinox. */
+  tev.epoch = input->epoch;
+  tev.latitude = input->site.vertexLatitudeRadians;
+  tev.longitude = input->site.vertexLongitudeRadians;
+  TRY( LALGetEarthTimes( status->statusPtr, &tev ), status );
 
-  /* Spindown-spindown metric components, before projection */
+  /* These assignments make later equations more legible. */
+  f0 = input->maxFreq;
+  r = LAL_REARTH_SI / LAL_C_SI;
+  R = LAL_AU_SI / LAL_C_SI;
+  w = LAL_TWOPI / LAL_DAYSID_SI;
+  W = LAL_TWOPI / LAL_YRSID_SI;
+  t0 = input->epoch.gpsSeconds + 1e-9*input->epoch.gpsNanoSeconds;
+  T = input->duration;
+  psi0 = -w*tev.tMidnight + input->site.vertexLongitudeRadians - input->position.longitude;
+  dpsi = w*T;
+  psi1 = psi0+dpsi;
+  phi0 = -W*tev.tAutumn;
+  dphi = W*T;
+  phi1 = phi0+dphi;
+
+  /* These are for legibility and cut CPU trig time. */
+  cosa = cos(input->position.longitude);
+  sina = sin(input->position.longitude);
+  cosd = cos(input->position.latitude);
+  sind = sin(input->position.latitude);
+  cosb = cos(input->site.vertexLatitudeRadians);
+  sinb = sin(input->site.vertexLatitudeRadians);
+  cosi = cos(LAL_IEARTH);
+  sini = sin(LAL_IEARTH);
+  c0 = cos(psi0);
+  s0 = sin(psi0);
+  c1 = cos(psi1);
+  s1 = sin(psi1);
+  C0 = cos(phi0);
+  S0 = sin(phi0);
+  C1 = cos(phi1);
+  S1 = sin(phi1);
+
+#if 0
+  Gx0 = LAL_PI*(T+2*t0);
+  Gxa = -LAL_TWOPI*f0*( r/dpsi*cosb*cosd*(c1-c0)
+        + R/dphi*sina*cosd*(S1-S0) + R/dphi*cosi*cosa*cosd*(C1-C0) );
+  G00 = 4/3*LAL_PI*LAL_PI * (T*T+3*T*t0+3*t0*t0);
+  G0a = LAL_TWOPI*LAL_TWOPI*f0*(
+          r/w/dpsi*cosb*cosd*(-psi1*c1 + psi0*c0 + s1 - s0)
+        - R/W/dphi*sina*cosd*(phi1*S1 - phi0*S0 + C1 - C0)
+        + R/W/dphi*cosi*cosa*cosd*(-phi1*C1 + phi0*C0 + S1 - S0) );
+  Gaa = 2*LAL_PI*LAL_PI*f0*f0*cosd*cosd*(
+          r*r*cosb*cosb*(1 - (s1*c1-s0*c0)/dpsi)
+        + R*R*sina*sina*(1 + (S1*C1-S0*C0)/dphi)
+        + R*R*cosi*cosi*cosa*cosa*(1 - (S1*C1-S0*C0)/dphi)
+        - R*R/dphi*cosi*sina*cosa*(S1*S1 - S0*S0)
+        + 2*r*R/dpsi*cosb*sina*(c1*C1 - c0*C0)
+        - 2*r*R/dpsi*cosb*cosi*cosa*(c1*S1 - c0*S0) );
+
+//  This line has overflow problems due to large t0.
+//  metric->data[0] = G00 - Gx0*Gx0;
+  // Why is this one not agreeing with Tev anymore?
+  metric->data[0] = LAL_PI*LAL_PI/3*T*T;
+  metric->data[2] = Gaa - Gxa*Gxa;
+#else
+  /* Spindown-spindown metric components, before projection of f0 */
   if( input->spindown )
     for (j=1; j<=dim-2; j++)
       for (k=1; k<=j; k++)
-        metric->data[(k+2)+(j+2)*(j+3)/2] = pow(LAL_TWOPI*input->maxFreq
-          *input->duration,2)/(j+2)/(k+2)/(j+k+3);
+        metric->data[(k+2)+(j+2)*(j+3)/2] = pow(LAL_TWOPI*f0*T,2)/(j+2)/(k+2)/(j+k+3);
 
-  /* Is equatorial radius good enough? */
-  dayR = LAL_REARTH_SI / LAL_C_SI * cos(lat);
-  /* Is a circular orbit good enough? */
-  yearR = LAL_AU_SI / LAL_C_SI;
-  /* Is 1994 sidereal day good enough? */
-  dayW = LAL_TWOPI / LAL_DAYSID_SI;
-  /* Is 1994 sidereal year good enough? */
-  yearW = LAL_TWOPI / LAL_YRSID_SI;
-
-  /* This assumes that gpsSeconds=0 is when the source is on the meridian */
-  psi0 = dayW*input->epoch.gpsSeconds - input->position.longitude + lon;
-  dpsi = dayW*input->duration;
-  psi1 = psi0+dpsi;
-
-  /* Trig-savers */
-  cosd = cos(input->position.latitude);
-  sind = sin(input->position.latitude);
-  c0 = cos(psi0);
-  s0 = sin(psi0);
-  c1 = cos(psi0+dpsi);
-  s1 = sin(psi0+dpsi);
-
-  /* Angle-angle metric components, before projection */
+  /* angle-angle metric components, before projecting out f0 */
   /* RA-RA : 1+1*2/2 = 2 */
-  metric->data[2] = pow(LAL_PI*input->maxFreq*dayR*cosd,2);
+  metric->data[2] = pow(LAL_PI*f0*r*cosb*cosd,2);
   metric->data[2] *= 2 - 2*(s1*c1-s0*c0)/dpsi - pow(2*(c1-c0)/dpsi,2);
   /* RA-dec : 1+2*3/2 = 4 */
-  metric->data[4] = -pow(LAL_PI*input->maxFreq*dayR,2)*2*sind*cosd;
+  metric->data[4] = -pow(LAL_PI*f0*r*cosb,2)*2*sind*cosd;
   metric->data[4] *= (s1*s1-s0*s0 + 2*(s1-s0)*(c1-c0)/dpsi)/dpsi;
   /* dec-dec : 2+2*3/2 = 5 */
-  metric->data[5] = pow(LAL_PI*input->maxFreq*dayR*sind,2);
+  metric->data[5] = pow(LAL_PI*f0*r*cosb*sind,2);
   metric->data[5] *= 2 + 2*(s1*c1-s0*c0)/dpsi - pow(2*(s1-s0)/dpsi,2);
 
-  /* Spindown-angle metric components, before projection */
+  /* spindown-angle metric components, before projecting out f0 */
   if( input->spindown )
     for (j=1; j<=(INT4)input->spindown->length; j++) {
 
@@ -260,8 +307,7 @@ void LALPtoleMetric( LALStatus *status,
       metric->data[1+(j+2)*(j+3)/2] += pow(-1,j/2)/pow(dpsi,j+1)*factrl(j+1)
         *((j%2)?c0:s0);
       metric->data[1+(j+2)*(j+3)/2] -= (c1-c0)/(j+2);
-      metric->data[1+(j+2)*(j+3)/2] *= -pow(LAL_TWOPI*input->maxFreq,2)*dayR
-        *cosd/dayW/(j+1);
+      metric->data[1+(j+2)*(j+3)/2] *= -pow(LAL_TWOPI*f0,2)*r*cosb*cosd/w/(j+1);
 
       /* Spindown-dec: 2+(j+2)*(j+3)/2 */
       metric->data[2+(j+2)*(j+3)/2] = 0;
@@ -271,25 +317,25 @@ void LALPtoleMetric( LALStatus *status,
       metric->data[2+(j+2)*(j+3)/2] += pow(-1,(j+1)/2)/pow(dpsi,j+1)
         *factrl(j+1)*((j%2)?s0:c0);
       metric->data[2+(j+2)*(j+3)/2] += (s1-s0)/(j+2);
-      metric->data[2+(j+2)*(j+3)/2] *= pow(LAL_TWOPI*input->maxFreq,2)*dayR
-        *sind/dayW/(j+1);
+      metric->data[2+(j+2)*(j+3)/2] *= pow(LAL_TWOPI*f0,2)*r*cosb*sind/w/(j+1);
     } /* for( j... ) */
 
   /* f0-f0 : 0 */
-  metric->data[0] = pow(LAL_PI*input->duration,2)/3;
+  metric->data[0] = pow(LAL_PI*T,2)/3;
   /* f0-ra : 0+1*2/2 = 1 */
-  metric->data[1] = 2*pow(LAL_PI,2)*input->maxFreq*dayR/dayW*cosd;
+  metric->data[1] = 2*pow(LAL_PI,2)*f0*r*cosb/w*cosd;
   metric->data[1] *= -c1-c0 + 2/dpsi*(s1-s0);
   /* f0-dec : 0+2*3/2 = 3 */
-  metric->data[3] = -2*pow(LAL_PI,2)*input->maxFreq*dayR/dayW*sind;
+  metric->data[3] = -2*pow(LAL_PI,2)*f0*r*cosb/w*sind;
   metric->data[3] *= s1+s0 + 2/dpsi*(c1-c0);
   /* f0-spindown : 0+(j+2)*(j+3)/2 */
   if( input->spindown )
     for (j=1; j<=dim-2; j++)
-      metric->data[(j+2)*(j+3)/2] = 2*pow(LAL_PI,2)*input->maxFreq
-        *pow(input->duration,2)/(j+2)/(j+3);
+      metric->data[(j+2)*(j+3)/2] = 2*pow(LAL_PI,2)*f0*T*T/(j+2)/(j+3);
+#endif
 
-  /* All done */
+  /* Clean up and leave. */
+  DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALPtoleMetric() */
 
