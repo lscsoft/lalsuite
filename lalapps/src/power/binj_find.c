@@ -94,7 +94,6 @@ int main(int argc, char **argv)
 	size_t len = 0;
 	INT4 ndetected = 0;
 	INT4 ninjected = 0;
-	INT4 ncheck = 0;
 	const long S2StartTime = 729273613;	/* Feb 14 2003 16:00:00 UTC */
 	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
 
@@ -147,7 +146,6 @@ int main(int argc, char **argv)
 
 	/* search summary */
 	SearchSummaryTable *searchSummary = NULL;
-	INT4 timeAnalyzed = 0;
 
 	/* triggers */
 	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL, *prevEvent = NULL;
@@ -455,7 +453,6 @@ int main(int argc, char **argv)
 	currentEvent = tmpEvent = burstEventList = NULL;
 	while (getline(line, MAXSTR, fpin)) {
 		INT4 tmpStartTime = 0, tmpEndTime = 0;
-		INT4 remainder;
 
 		fileCounter++;
 		if (verbose_flag) {
