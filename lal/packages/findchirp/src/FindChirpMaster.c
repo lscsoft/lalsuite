@@ -95,8 +95,6 @@ LALFindChirpMaster (
 
         if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
         {
-          UINT4         tmpNumTmplts = 1;
-
 #if 0
           fprintf( stdout, "master: slave %d requested bank simulation\n", 
               thisExch->partnerProcNum );
