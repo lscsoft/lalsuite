@@ -635,7 +635,8 @@ void LALStochasticMC (LALStatus *status,
   spliceoffset =  lengthseg / (2 * sRate);
   deltaT = 1.0 / sRate; 
   deltaF = 1.0/(deltaT*lengthseg);
-  caltime = starttime + spliceoffset;printf ("caltime = %d\n",caltime);
+  /*for the first initialization*/
+  caltime = starttime;
   
    
 /** check for mismatches **/
@@ -745,6 +746,8 @@ void LALStochasticMC (LALStatus *status,
   for (loop = 0; loop < numsegtot; loop ++)
    
    {
+       
+    caltime = caltime + spliceoffset;
     seed = seed + loop*2;
     SBParams.seed = seed;
          
@@ -794,7 +797,6 @@ void LALStochasticMC (LALStatus *status,
          shortTrain1[m] = whitenedSSimStochBG1.data;
 	 shortTrain2[m] = whitenedSSimStochBG2.data;
         } 
-     caltime = caltime + spliceoffset;            
    }
 
     
