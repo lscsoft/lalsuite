@@ -80,6 +80,9 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (Status *status, const char *expectedCodes, int exitCode);
 
+static void
+ClearStatus (Status *status);
+
 int
 main (int argc, char *argv[])
 {
@@ -135,6 +138,7 @@ main (int argc, char *argv[])
 
   CreateDataBuffer (&status, &buffer, &bufferPar);
   TestStatus (&status, "-1 0", 1);
+  ClearStatus (&status);
 
   for (seg = 0; seg < numSegs; ++seg)
   {
@@ -142,6 +146,8 @@ main (int argc, char *argv[])
 
     GetData (&status, &dataout, 3*numPoints/4, buffer);
     TestStatus (&status, "-1 0", 1);
+    ClearStatus (&status);
+
     if (dataout.endOfData)
     {
       fprintf (stderr, "... end of data\n");
@@ -268,6 +274,25 @@ TestStatus (Status *status, const char *ignored, int exitcode)
 
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
+}
+
+
+/*
+ *
+ * ClearStatus ()
+ *
+ * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
+ * linked list of statuses.
+ *
+ */
+void
+ClearStatus (Status *status)
+{
+  if (status->statusPtr)
+  {
+    ClearStatus      (status->statusPtr);
+    DETATCHSTATUSPTR (status);
+  }
 }
 
 
