@@ -163,7 +163,7 @@ LALFindChirpBCVSpinTemplate (
   tmplt->approximant = BCVSpin;
 
   /* zero output */
-  memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
+  memset( expPsi, 0, fcTmplt->data->length * sizeof(COMPLEX8) );
 
   /* psi coefficients */
   psi00 = tmplt->psi0;            /* BCV only uses psi0, psi15:            */

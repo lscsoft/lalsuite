@@ -153,7 +153,7 @@ LALFindChirpSPTemplate (
   tmplt->approximant = params->approximant;
 
   /* zero output */
-  memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
+  memset( expPsi, 0, fcTmplt->data->length * sizeof(COMPLEX8) );
 
   /* parameters */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
