@@ -109,8 +109,10 @@ int buildVetoTimes( vetoParams *thisentry)
                 /*-- Reached end of file --*/
                 break;
             }
-            SNR = vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_8;
-            if ( SNR < 1.0e-200 ){
+            if ( strstr( (*thisentry).filename, "glitchmon" ) ){
+                SNR = vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_8;
+            }
+            else{
                 SNR = vetoEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;
             }
             if ( SNR > (*thisentry).threshold ){
