@@ -2212,6 +2212,7 @@ int main( int argc, char *argv[] )
   if ( injectionFile ) free ( injectionFile ); 
   if ( calCacheName ) free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
+  if ( frInType ) free( frInType );
   if ( bankFileName ) free( bankFileName );
   if ( channelName ) free( channelName );
   if ( fqChanName ) free( fqChanName );
