@@ -545,6 +545,8 @@ foreach l1 $SegmentList {
 		    ################################################################################
 		    ## Parse waveforms
 		    ################################################################################
+		    set Twaves ""
+
 		    if { [ string length $waveforms ] == 0 } {
 			## no waveforms
 			set injWave ""
@@ -579,6 +581,13 @@ foreach l1 $SegmentList {
 			append fplus "_p.ilwd"
 			if { [ file exists $fplus ] } {
 			    ## got local file
+
+			    if { [ string length $Twaves ] == 0 } {
+				set Twaves $fplus
+			    } else {
+				append Twaves ",$fplus"
+			    }
+
 			    append responseFile "$fplus push ihp$wcount\n"
 			    set got1 1
 			}
@@ -590,6 +599,13 @@ foreach l1 $SegmentList {
 			append fcross "_c.ilwd"
 			if { [ file exists $fcross ] } {
 			    ## local file
+
+			    if { [ string length $Twaves ] == 0 } {
+				set Twaves $fcross
+			    } else {
+				append Twaves ",$fcross"
+			    }
+
 			    append responseFile "$fcross push ihc$wcount\n"
 			    set got2 1
 			}
@@ -603,6 +619,13 @@ foreach l1 $SegmentList {
 			if { $got0 == 0 && $got1 == 0 } {
 			    set f "Zeros.ilwd"
 			    if { [ file exists $f ] } {
+
+				if { [ string length $Twaves ] == 0 } {
+				    set Twaves $f
+				} else {
+				    append Twaves ",$f"
+				}
+
 				append responseFile "Zeros.ilwd push Zero\n"
 				append dcwave "\t\tzero = float(Zero);\n"
 				set got0 1
@@ -612,6 +635,14 @@ foreach l1 $SegmentList {
 			if { $got0 == 0 && $got2 == 0 } {
 			    set f "Zeros.ilwd"
 			    if { [ file exists $f ] } {
+
+				if { [ string length $Twaves ] == 0 } {
+				    set Twaves $f
+				} else {
+				    append Twaves ",$f"
+				}
+
+
 				append responseFile "Zeros.ilwd push Zero\n"
 				append dcwave "\t\tzero = float(Zero);\n"
 				set got0 1
@@ -678,6 +709,14 @@ foreach l1 $SegmentList {
 				set fplus $w
 				append fplus "_p.ilwd"
 				if { [ file exists $fplus ] } {
+
+				    if { [ string length $Twaves ] == 0 } {
+					set Twaves $fplus
+				    } else {
+					append Twaves ",$fplus"
+				    }
+
+
 				    append responseFile "$fplus push ihp$wcount\n"
 				    set got1 1
 				}
@@ -686,6 +725,14 @@ foreach l1 $SegmentList {
 				set fcross $w
 				append fcross "_c.ilwd"
 				if { [ file exists $fcross ] } {
+
+				    if { [ string length $Twaves ] == 0 } {
+					set Twaves $fcross
+				    } else {
+					append Twaves ",$fcross"
+				    }
+
+
 				    append responseFile "$fcross push ihc$wcount\n"
 				    set got2 1
 				}
@@ -699,6 +746,14 @@ foreach l1 $SegmentList {
 				if { $got0 == 0 && $got1 == 0 } {
 				    set f "Zeros.ilwd"
 				    if { [ file exists $f ] } {
+
+					if { [ string length $Twaves ] == 0 } {
+					    set Twaves $f
+					} else {
+					    append Twaves ",$f"
+					}
+
+
 					append responseFile "Zeros.ilwd push Zero\n"
 					append dcwave "\t\tzero = float(Zero);\n"
 					set got0 1
@@ -708,6 +763,14 @@ foreach l1 $SegmentList {
 				if { $got0 == 0 && $got2 == 0 } {
 				    set f "Zeros.ilwd"
 				    if { [ file exists $f ] } {
+
+					if { [ string length $Twaves ] == 0 } {
+					    set Twaves $f
+					} else {
+					    append Twaves ",$f"
+					}
+
+
 					append responseFile "Zeros.ilwd push Zero\n"
 					append dcwave "\t\tzero = float(Zero);\n"
 					set got0 1
@@ -1418,6 +1481,11 @@ foreach l1 $SegmentList {
 
 			    ## rename submit file
 			    file rename -force tmp.condor $PrebinFile/tmp.condor.$SegTime
+
+			    ## add waveforms to files to transfer
+			    if { [ string length $Twaves ] > 0 } {
+				set CondorFiles "$CondorFiles,$Twaves"
+			    }
 
 			    ## which files to transfer to nodes
 			    exec echo "transfer_input_files = $CondorFiles" >> tmp
