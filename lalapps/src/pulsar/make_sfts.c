@@ -59,6 +59,9 @@
 /* check of insensitivity to LSB of gravity-wave channel */
 #define QUANTIZATION_TEST 1
 
+/* track memory usage under linux */
+#define TRACKMEMUSE 1
+
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
 
@@ -535,6 +538,16 @@ int main(int argc,char *argv[]){
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
     int lsffl=0,verifyframes=0;
+
+#if TRACKMEMUSE
+ {
+   pid_t mypid=getpid();
+   char commandline[256];
+   printf("Memory usage at iteration %d is:\n", count);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm", (int)mypid);
+   system(commandline);
+ }
+#endif
 
 #if TIMESHIFT
     int microsec, valid=0;
