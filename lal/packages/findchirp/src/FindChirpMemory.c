@@ -94,6 +94,16 @@ LALCreateDataSegmentVector (
         &segPtr[i].data->data, params->numPoints);
     CHECKSTATUSPTR (status);
 
+    /* as_q */
+    segPtr[i].real4Data = (REAL4TimeSeries *) 
+      LALMalloc( sizeof(REAL4TimeSeries) );
+    ASSERT( segPtr[i].real4Data, status, FINDCHIRP_EALOC, FINDCHIRP_MSGEALOC );
+    memset( segPtr[i].real4Data, 0, sizeof(REAL4TimeSeries) );
+
+    LALCreateVector (status->statusPtr, 
+        &segPtr[i].real4Data->data, params->numPoints);
+    CHECKSTATUSPTR (status);
+
     /* power spectrum */
     segPtr[i].spec = (REAL4FrequencySeries *) 
       LALMalloc( sizeof(REAL4FrequencySeries) );
@@ -166,6 +176,12 @@ LALDestroyDataSegmentVector (
     CHECKSTATUSPTR (status);
 
     LALFree (segPtr[i].data);
+
+    /* as_q */
+    LALDestroyVector (status->statusPtr, &segPtr[i].real4Data->data);
+    CHECKSTATUSPTR (status);
+
+    LALFree (segPtr[i].real4Data);
 
     /* power spectrum */
     LALDestroyVector (status->statusPtr, &segPtr[i].spec->data);
