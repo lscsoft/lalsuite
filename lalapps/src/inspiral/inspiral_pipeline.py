@@ -101,8 +101,9 @@ class InspiralPipeline:
     for seg in self.segments:
       seg.createchunks(chunk_length,chunk_overlap,play_only)
 
-  def status(self):
+  def status(self,play_only):
     log_fh = open( self.basename + '.pipeline.log', 'w' )
+    print >> log_fh, """$Id$"""
     total_science_used = 0
     total_science = 0
     num_chunks = 0
@@ -113,8 +114,10 @@ class InspiralPipeline:
     print >> log_fh, """\
 read %d science segments
 got %d seconds of science data of which %d seconds is usable
-created %d inspiral chunks for analysis
+created %d inspiral chunks for analysis\
 """ % ( len(self.segments), total_science, total_science_used, num_chunks )
+    if play_only:
+      print >> log_fh, "filtering only segments that overlap with playground"
     log_fh.close()
 
   def frcachesub(self):
@@ -318,7 +321,7 @@ except: pass
 pipeline = InspiralPipeline(config_file)
 pipeline.parsesegs()
 pipeline.createchunks(play_only)
-pipeline.status()
+pipeline.status(play_only)
 pipeline.frcachesub()
 pipeline.banksub()
 pipeline.inspiralsub()
