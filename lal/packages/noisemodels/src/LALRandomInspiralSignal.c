@@ -282,54 +282,54 @@ LALRandomInspiralSignal
    normin.samplingRate = randIn->param.tSampling;
 
    switch (randIn->type) 
-   {
-      case 0:
-	 if (randIn->param.approximant == BCV ||
-	     randIn->param.approximant == TaylorF1 ||
-	     randIn->param.approximant == TaylorF2 ||
-	     randIn->param.approximant == PadeF1)
+     {
+     case 0:
+       if (randIn->param.approximant == BCV ||
+	   randIn->param.approximant == TaylorF1 ||
+	   randIn->param.approximant == TaylorF2 ||
+	   randIn->param.approximant == PadeF1)
 	 {
-		 LALInspiralWave(status->statusPtr, signal, &randIn->param);
-		 CHECKSTATUSPTR(status);
+	   LALInspiralWave(status->statusPtr, signal, &randIn->param);
+	   CHECKSTATUSPTR(status);
 	 }
-	 else
+       else
 	 {
-		 /*add thomas to force to comput fFinal ??*/
-		 randIn->param.fFinal=0;
-		 LALInspiralWave(status->statusPtr, &buff, &randIn->param);
-		 CHECKSTATUSPTR(status);
-		 LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
-		 CHECKSTATUSPTR(status);
+	   /*add thomas to force to comput fFinal ??*/
+	   randIn->param.fFinal=0;
+	   LALInspiralWave(status->statusPtr, &buff, &randIn->param);
+	   CHECKSTATUSPTR(status);
+	   LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
+	   CHECKSTATUSPTR(status);
 	 }
-	 LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
-         CHECKSTATUSPTR(status);
-         break;
-      case 1:
-/*
-         LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
-*/
-         LALCreateRandomParams(status->statusPtr, &randomparams, randIn->useed);
-         CHECKSTATUSPTR(status);
-         LALNormalDeviates(status->statusPtr, &buff, randomparams);
-         CHECKSTATUSPTR(status);
-         LALDestroyRandomParams(status->statusPtr, &randomparams);
-         CHECKSTATUSPTR(status);
-         LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
-         CHECKSTATUSPTR(status);
-         LALColoredNoise(status->statusPtr, signal, randIn->psd);
-         CHECKSTATUSPTR(status);
-         break;
-      default:
+       LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
+       CHECKSTATUSPTR(status);
+       break;
+     case 1:
+       /*
+	 LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
+       */
+       LALCreateRandomParams(status->statusPtr, &randomparams, randIn->useed);
+       CHECKSTATUSPTR(status);
+       LALNormalDeviates(status->statusPtr, &buff, randomparams);
+       CHECKSTATUSPTR(status);
+       LALDestroyRandomParams(status->statusPtr, &randomparams);
+       CHECKSTATUSPTR(status);
+       LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
+       CHECKSTATUSPTR(status);
+       LALColoredNoise(status->statusPtr, signal, randIn->psd);
+       CHECKSTATUSPTR(status);
+       break;
+     default:
          noisy.length = signal->length;
          if (!(noisy.data = (REAL4*) LALMalloc(sizeof(REAL4)*noisy.length))) 
-         {
-            if (buff.data != NULL) LALFree(buff.data);
-            buff.data = NULL;
-            ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
-         }
-/*
-         LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
-*/
+	   {
+	     if (buff.data != NULL) LALFree(buff.data);
+	     buff.data = NULL;
+	     ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+	   }
+	 /*
+	   LALGaussianNoise(status->statusPtr, &buff, &randIn->useed);
+	 */
          LALCreateRandomParams(status->statusPtr, &randomparams, randIn->useed);
          CHECKSTATUSPTR(status);
          LALNormalDeviates(status->statusPtr, &buff, randomparams);
