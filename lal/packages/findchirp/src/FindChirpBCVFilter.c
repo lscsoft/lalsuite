@@ -204,7 +204,13 @@ LALFindChirpBCVFilterSegment (
   /* _boundaries_ so the number of chisq bins is length - 1 */
   if ( input->segment->chisqBinVec->length )
   {
-    numChisqBins = input->segment->chisqBinVec->length - 1;
+    /* 
+     * at this point, numChisqBins is only used as a 
+     * criterion on whether we will do a chisq test or not.
+     * normally we would have: 
+     * numChisqBins = input->segment->chisqBinVec->length - 1;
+     */
+    numChisqBins = input->segment->chisqBinVec->length ;
     chisqBin    = input->segment->chisqBinVec->data;
     chisqBinBCV = input->segment->chisqBinVecBCV->data;
   }
@@ -217,7 +223,10 @@ LALFindChirpBCVFilterSegment (
   gmstUnits.units = MST_HRS;
   gmstUnits.accuracy = LALLEAPSEC_STRICT;
 
-  /* template parameters */
+  /* 
+   * template parameters, since FindChirpBCVFilterSegment is run
+   * for every template
+   */
   psi0 = input->tmplt->psi0;  
   psi3 = input->tmplt->psi3;
   fFinal = input->tmplt->fFinal;
@@ -389,6 +398,7 @@ LALFindChirpBCVFilterSegment (
   rhosqThresh = params->rhosqThresh;
 
   params->norm = norm = deltaT / ((REAL4) numPoints) ;
+  /* XXX notice the difference with SP: no factor of 4 in norm XXX */
 
 
   /* normalized snr threhold */
@@ -442,71 +452,96 @@ LALFindChirpBCVFilterSegment (
 
   /*
    * calculation of the chisq bin boundaries
+   * only if we are going to do a chisq veto
    */
-
+  
+  numChisqBins = 0;
   if( input->segment->chisqBinVec->length )
   {
 
     /* 
-     * The correct number of chisq bins can be decided here,
-     * based on fFinal, and numChisqBins can be adjusted
-     * accordingly
+     * Decide whether we do a chisq veto and what the 
+     * correct number of chisq bins is, based on fFinal
      */
-
-    /* sum up the template power */
-    for ( k = 1; k < kFinal; ++k )
+    if ( fFinal <= 200.0 )
     {
-       Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
-       PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
-                       * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
+      numChisqBins = 0; /* no chisq veto for these frequencies */
+    }
+    else if ( fFinal > 200.0 && fFinal <= 450.0 )
+    {
+      numChisqBins = 4;
+    }
+    else if ( fFinal > 450.0 && fFinal <= 700.0 )
+    {
+      numChisqBins = 6;
+    }
+    else if ( fFinal > 700.0 )
+    {
+      numChisqBins = 8;
     }
 
-
-    /* First set of chisq bins */
-    increment = Power / (REAL4) numChisqBins ;
-    nextBin   = increment;
-    chisqPt   = 0;
-    partSum   = 0.0;
-
-    /* calculate the frequencies of the chi-squared bin boundaries */
-    chisqBin[chisqPt++] = 0;
-
-    for ( k = 1; k < kFinal; ++k )
+    /* if we do a chisq veto, calculate the bin boundaries */
+    if ( numChisqBins )
     {
-      partSum += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
-      if ( partSum >= nextBin )
+
+      /* sum up the template power */
+      for ( k = 1; k < kFinal+1; ++k )
       {
-        chisqBin[chisqPt++] = k;
-        nextBin += increment;
-        if ( chisqPt == numChisqBins ) break;
+         Power    += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
+         PowerBCV += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+                         * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
       }
-    }
-    chisqBin[numChisqBins] = input->segment->data->data->length;
 
-  /* Second set of chisq bins */
-    increment = PowerBCV / (REAL4) numChisqBins;
-    nextBin   = increment;
-    chisqPt   = 0;
-    partSum   = 0.0;
+
+      /* First set of chisq bins */
+      increment = Power / (REAL4) numChisqBins ;
+      nextBin   = increment;
+      chisqPt   = 0;
+      partSum   = 0.0;
+
+      /* calculate the frequencies of the chi-squared bin boundaries */
+      chisqBin[chisqPt++] = 0;
+
+      for ( k = 1; k < kFinal+1; ++k )
+      {
+        partSum += 4.0 * a1 * a1 * tmpltPower[k] * tmpltPower[k];
+        if ( partSum >= nextBin )
+        {
+          chisqBin[chisqPt++] = k;
+          nextBin += increment;
+          if ( chisqPt == numChisqBins ) break;
+        }
+      }
+      chisqBin[numChisqBins] = input->segment->data->data->length;
+
+      /* Second set of chisq bins */
+      increment = PowerBCV / (REAL4) numChisqBins;
+      nextBin   = increment;
+      chisqPt   = 0;
+      partSum   = 0.0;
                       
-    /* calculate the frequencies of the chi-squared bin boundaries */
-    chisqBinBCV[chisqPt++] = 0;
+      /* calculate the frequencies of the chi-squared bin boundaries */
+      chisqBinBCV[chisqPt++] = 0;
 
-    for ( k = 1; k < kFinal; ++k )
-    {
-      partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
-                     * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
-      if ( partSum >= nextBin )
+      for ( k = 1; k < kFinal+1; ++k )
       {
-        chisqBinBCV[chisqPt++] = k;
-        nextBin += increment;
-        if ( chisqPt == numChisqBins ) break;
-      }
-    } 
-    chisqBinBCV[numChisqBins] = input->segment->dataBCV->data->length;
-  }
+        partSum += 4.0 * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] ) 
+                       * ( b1 * tmpltPower[k] + b2 * tmpltPowerBCV[k] );
+        if ( partSum >= nextBin )
+        {
+          chisqBinBCV[chisqPt++] = k;
+          nextBin += increment;
+          if ( chisqPt == numChisqBins ) break;
+        }
+      } 
+      chisqBinBCV[numChisqBins] = input->segment->dataBCV->data->length;
+  
+    } /* end if ( numChisqBins ) */
 
-  /* look for an events in the filter output */
+  } /* end: if( input->segment->chisqBinVec->length ) */ 
+
+
+  /* look for an event in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
     REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
@@ -524,7 +559,7 @@ LALFindChirpBCVFilterSegment (
     {
 
       /* compute chisq vector if it does not exist and we want it */
-      if ( ! haveChisq  && input->segment->chisqBinVec->length )
+      if ( ! haveChisq  && numChisqBins )
       {
         memset( params->chisqVec->data, 0,
             params->chisqVec->length * sizeof(REAL4) );
@@ -535,9 +570,11 @@ LALFindChirpBCVFilterSegment (
         params->chisqInputBCV->qtildeVec = params->qtildeVecBCV;
         params->chisqInputBCV->qVec      = params->qVecBCV;
 
-        /* pointer to the chisq bin vector in the segment */
+        /* pointers to the chisq bin vectors in the segment */
         params->chisqParams->chisqBinVec    = input->segment->chisqBinVec;
         params->chisqParams->chisqBinVecBCV = input->segment->chisqBinVecBCV;
+
+        /* pointers to chisq normalization */
         params->chisqParams->norm           = norm;
         params->chisqParams->a1             = a1 ;
         params->chisqParams->b1             = b1 ;
@@ -553,11 +590,45 @@ LALFindChirpBCVFilterSegment (
 
         haveChisq = 1;
       }
+      else if ( ! numChisqBins )
+      {
+        memset( params->chisqVec->data, 0,
+            params->chisqVec->length * sizeof(REAL4) );
+      }
 
 
-      /* if we don't have a chisq or the chisq drops below the            */
-      /* modified chisq threshold, start processing events                */
-      if ( ! input->segment->chisqBinVec->length ||
+      /* 
+       * when we decide to impose a cut on alphaF, the calculation of
+       * alphaF must be done at this point, and the check on alphaF 
+       * should be in the if statement that follows
+       * CHECK THIS CALCULATION AGAIN
+       */
+#if 0
+      /* calculate alpha */
+      Num1 = qBCV[j].re + q[j].im ;
+      Num2 = qBCV[j].re - q[j].re ;
+      Den1 = q[j].re - qBCV[j].im ;
+      Den2 = q[j].re + qBCV[j].im ;
+
+      InvTan1 = (REAL4) atan2(Num1, Den1);
+      InvTan2 = (REAL4) atan2(Num2, Den2);
+
+      omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
+      alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
+      /* 
+       * compensate for the fact that the factors of deltaT^(2/3)
+       * are not taken into account in the calculation of a1, b1, b2
+       * IS THIS CORRECT???
+       */
+      alpha *= pow(deltaT, 2/3); 
+      alphaF = alpha * pow(fFinal, 2/3);
+#endif
+
+      /* 
+       * if we don't have a chisq or the chisq drops below the 
+       * modified chisq threshold, start processing events 
+       */
+      if ( ! numChisqBins || 
           params->chisqVec->data[j] <
           (params->chisqThresh * ( 1.0 + modqsq * chisqThreshFac )) )
       {
@@ -629,7 +700,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-          thisEvent->alpha *= pow(deltaT, 2/3);
+          /* thisEvent->alpha *= pow(deltaT, 2/3); */ /* check this factor */
 #if 0
           /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
           thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   
@@ -659,21 +730,19 @@ LALFindChirpBCVFilterSegment (
             /* so we multiply r^2 by p here to get chisq                 */
             thisEvent->chisq =
               params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
-            thisEvent->chisq_dof = numChisqBins;
+            thisEvent->chisq_dof = 2 * numChisqBins; /* double for BCV */
           }
           else
           {
             thisEvent->chisq     = 0;
             thisEvent->chisq_dof = 0;
           }
-#if 0
-          thisEvent->sigmasq = norm * input->segment->segNorm *
-            input->segment->segNorm * input->fcTmplt->tmpltNorm;
+          thisEvent->sigmasq = ( 1 / ( 4.0 * a1 * a1 * a1 * a1) ) * norm 
+             * input->fcTmplt->tmpltNorm;
           thisEvent->eff_distance =
-            (input->fcTmplt->tmpltNorm * input->segment->segNorm *
-             input->segment->segNorm) / thisEvent->snr;
+            (input->fcTmplt->tmpltNorm * (1 / (16.0 *a1*a1*a1*a1))
+             ) / thisEvent->snr;
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
-#endif
 
           thisEvent->snr *= norm;      
           thisEvent->snr = sqrt( thisEvent->snr );
@@ -753,7 +822,7 @@ LALFindChirpBCVFilterSegment (
     thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-    thisEvent->alpha *= pow(deltaT, 2/3); /* correct units */
+    /* thisEvent->alpha *= pow(deltaT, 2/3);*/ /* check this factor */
 #if 0
     /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
     thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   
@@ -786,21 +855,19 @@ LALFindChirpBCVFilterSegment (
       /* so we multiply r^2 by p here to get chisq                 */
       thisEvent->chisq =
         params->chisqVec->data[timeIndex] * (REAL4) numChisqBins;
-      thisEvent->chisq_dof = numChisqBins;
+      thisEvent->chisq_dof =  2 * numChisqBins; /* double for BCV */
     }
     else
     {
       thisEvent->chisq     = 0;
       thisEvent->chisq_dof = 0;
     }
-#if 0    
-    thisEvent->sigmasq = norm * input->segment->segNorm *
-      input->segment->segNorm * input->fcTmplt->tmpltNorm;
+    thisEvent->sigmasq = ( 1 / ( 4.0 * a1 * a1 * a1 * a1) ) * norm
+        * input->fcTmplt->tmpltNorm;
     thisEvent->eff_distance =
-      (input->fcTmplt->tmpltNorm * input->segment->segNorm *
-       input->segment->segNorm) / thisEvent->snr;
+        (input->fcTmplt->tmpltNorm * (1 / (16.0 *a1*a1*a1*a1) ) ) /
+          thisEvent->snr;
     thisEvent->eff_distance = sqrt( thisEvent->eff_distance ); 
-#endif      
 
     thisEvent->snr *=  norm ;   
     thisEvent->snr = sqrt( thisEvent->snr );
