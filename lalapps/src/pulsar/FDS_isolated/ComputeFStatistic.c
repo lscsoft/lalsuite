@@ -1265,13 +1265,14 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( uvar_dFreq == 0.0 ) 
+  if( !UVARwasSet(&uvar_dFreq) ) 
     uvar_dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
 
   cfg->FreqImax=(INT4)(uvar_FreqBand/uvar_dFreq+.5)+1;  /*Number of frequency values to calculate F for */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( uvar_df1dot == 0.0 ) uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
+  if( !UVARwasSet (&uvar_df1dot) ) 
+    uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
 
   cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of frequency values to calculate F for */
 
