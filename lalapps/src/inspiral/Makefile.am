@@ -68,7 +68,7 @@ lalapps_inspiral_online_pipe: inspiral_online_pipe.in python_config.sed
 	sed -f python_config.sed inspiral_online_pipe.in > lalapps_inspiral_online_pipe
 	chmod +x lalapps_inspiral_online_pipe
 
-pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini 
+pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini s2_tama.ini inspiral_hipe.ini online.ini
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) $(MINJSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \

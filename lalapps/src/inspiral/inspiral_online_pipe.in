@@ -131,6 +131,9 @@ insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 sinca_job.set_sub_file( basename + '.sinca' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
+# set the name of the run in the calibration file
+mkcalfac_job.add_opt(cp.get('pipeline','run'))
+
 # set up incas for single ifo mode
 sinca_job.add_opt('single-summ-value',' ')
 sinca_job.add_opt('single-ifo',' ')
@@ -173,6 +176,7 @@ mkcalfac.set_pre_script(cp.get('mkcal','curl'))
 mkcalfac.add_pre_script_arg('-s -o SenseMonitor.txt %s'
   % cp.get('mkcal','sensemon'))
 mkcalfac.set_ifo(ifo)
+mkcalfac.add_var_arg('SenseMonitor.txt')
 dag.add_node(mkcalfac)
 
 for seg in data:
@@ -247,8 +251,8 @@ for sinca in sinca_nodes:
 inca_post_script = open( 'inca_post_script.sh', 'w' )
 inca_post_script.write("""#!/bin/sh
 cp ${1} /cluster/inspiral/%s/${1}
-ln -s /cluster/inspiral/%s/${1} /cluster/inspiral/%s/inspiral.xml
-""" % (cp.get('input','segments'), cp.get('input','segments')) )
+ln -s /cluster/inspiral/%s/${1} /cluster/inspiral/%s/INSPIRAL_%s.xml
+""" % (cp.get('pipeline','run'), cp.get('pipeline','run')), ifo )
 inca_post_script.close()
 inca.set_post_script('inca_post_script.sh')
 inca.add_post_script_arg(inca.get_output_a())
