@@ -53,7 +53,6 @@
 #include <lal/FindChirpSP.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/TwoInterfFindChirp.h>
-#include <lal/FindChirpEngine.h>
 
 #include "inspiral.h"
 

@@ -54,7 +54,6 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
-#include <lal/FindChirpEngine.h>
 
 #include "inspiral.h"
 
