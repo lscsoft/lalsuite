@@ -1589,11 +1589,11 @@ LALFindChirpBCVFilterSegment (
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r    = inputData[k].re;
-    REAL4 s    = 0.0 - inputData[k].im;    /* note complex conjugate */
+    REAL4 s    = inputData[k].im;    
     REAL4 rBCV = inputDataBCV[k].re;
-    REAL4 sBCV = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
+    REAL4 sBCV = inputDataBCV[k].im; 
     REAL4 x = tmpltSignal[k].re;
-    REAL4 y = tmpltSignal[k].im;     
+    REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */     
 
     qtilde[k].re = r * x - s * y ;
     qtilde[k].im = r * y + s * x ;
@@ -1607,11 +1607,11 @@ LALFindChirpBCVFilterSegment (
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
       REAL4 r = inputData[k].re;
-      REAL4 s = 0.0 - inputData[k].im;    /* note complex conjugate */
+      REAL4 s = inputData[k].im;    
       REAL4 rBCV = inputDataBCV[k].re;
-      REAL4 sBCV = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
+      REAL4 sBCV = inputDataBCV[k].im; 
       REAL4 x = tmpltSignal[k].re;
-      REAL4 y = tmpltSignal[k].im;
+      REAL4 y = 0.0 - tmpltSignal[k].im; /* note complex conjugate */
 
       qtilde[k].re = r * x - s * y ;
       qtilde[k].im = r * y + s * x ;
