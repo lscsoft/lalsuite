@@ -65,8 +65,8 @@ class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['splitbank']:
       self.add_ini_opts(cp,sec)
   
-    self.set_stdout_file('logs/splitbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/splitbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/splitbank-$(macrobankfile)-$(cluster)-$(process).err')
     self.set_sub_file('splitbank.sub')
     
 
@@ -248,6 +248,7 @@ class SplitBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     return self.__bankfile
 
   def set_num_banks(self,numbanks):
+    self.add_var_opt('number-of-banks',numbanks)
     self.__numbanks = int(numbanks)
 
   def get_num_banks(self):
