@@ -10,6 +10,48 @@
  */
 
 #include <config.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <time.h>
+#include <math.h>
+
+#include <FrameL.h>
+
+#include <lalapps.h>
+#include <series.h>
+#include <processtable.h>
+
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+#include <lal/FrameStream.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/FrameCalibration.h>
+#include <lal/Window.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/IIRFilter.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/FindChirpChisq.h>
+#include <lal/FindChirpEngine.h>
+
 #include "inspiral.h"
 #include "inspiralfrutils.h"
 #include "ligolwbank.h"
@@ -19,6 +61,7 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+#define PROGRAM_NAME "inspiral"
 
 /* define the parameters for a 1.4,1.4 sloar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
@@ -1141,6 +1184,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
           LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
           LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+#define USAGE \
+"lalapps_inspiral [options]\n\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {

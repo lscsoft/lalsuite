@@ -10,8 +10,50 @@
  */
 
 #include <config.h>
-#include "inspiral.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <getopt.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <regex.h>
+#include <time.h>
+#include <math.h>
+
+#include <FrameL.h>
+
+#include <lalapps.h>
+#include <series.h>
+#include <processtable.h>
+
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/LALConstants.h>
+#include <lal/FrameStream.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/FrameCalibration.h>
+#include <lal/Window.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/IIRFilter.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/FindChirpChisq.h>
 #include <lal/TwoInterfFindChirp.h>
+#include <lal/FindChirpEngine.h>
+
+#include "inspiral.h"
 #include "inspiralfrutils.h"
 #include "ligolwbank.h"
 
@@ -20,11 +62,18 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
+#define PROGRAM_NAME "coherent_inspiral"
 
 /* define the parameters for a 1.4,1.4 solar mass standard candle with snr 8 */
 #define CANDLE_MASS1 1.4
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
+
+#define USAGE \
+"lalapps_coherent_inspiral [options]\n\n"\
+"See lalapps documentation for more information\n"\
+"\n"
+
 
 /*
  *
