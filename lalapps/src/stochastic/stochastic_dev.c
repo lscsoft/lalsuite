@@ -28,6 +28,7 @@
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
 #include <lal/IIRFilter.h>
+#include <lal/FileIO.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
@@ -121,6 +122,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* output file */
   FILE *out;
   CHAR outputFilename[LALNameLength];
+
+  /* debug filename */
+  CHAR debugFilename[LALNameLength];
 
   /* counters */
   INT4 i, j, k;
@@ -1059,14 +1063,30 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* output the results */
     if (debug_flag)
     {
-      LALSPrintTimeSeries(&intervalOne, "interval1.dat");
-      LALSPrintTimeSeries(&intervalTwo, "interval2.dat");
-      LALSPrintTimeSeries(&segmentOneA, "segment1a.dat");
-      LALSPrintTimeSeries(&segmentOneB, "segment1b.dat");
-      LALSPrintTimeSeries(&segmentOneC, "segment1c.dat");
-      LALSPrintTimeSeries(&segmentTwoA, "segment2a.dat");
-      LALSPrintTimeSeries(&segmentTwoB, "segment2b.dat");
-      LALSPrintTimeSeries(&segmentTwoC, "segment2c.dat");
+      LALSnprintf(debugFilename, LALNameLength, "%d-interval1.dat", \
+          gpsIntervalStart.gpsSeconds);
+      LALSPrintTimeSeries(&intervalOne, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-interval2.dat", \
+          gpsIntervalStart.gpsSeconds);
+      LALSPrintTimeSeries(&intervalTwo, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment1a.dat", \
+          gpsSegmentAStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentOneA, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment1b.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentOneB, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment1c.dat", \
+          gpsSegmentCStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentOneC, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment2a.dat", \
+          gpsSegmentAStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentTwoA, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment2b.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentTwoB, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-segment2c.dat", \
+          gpsSegmentCStart.gpsSeconds);
+      LALSPrintTimeSeries(&segmentTwoC, debugFilename);
     }
 
     if (vrbflg)
@@ -1083,8 +1103,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* save */
     if (debug_flag)
     {
-      LALCPrintFrequencySeries(&hBarTildeOne, "hBarTilde1.dat");
-      LALCPrintFrequencySeries(&hBarTildeTwo, "hBarTilde2.dat");
+      LALSnprintf(debugFilename, LALNameLength, "%d-hBarTilde1.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALCPrintFrequencySeries(&hBarTildeOne, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-hBarTilde2.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALCPrintFrequencySeries(&hBarTildeTwo, debugFilename);
     }
 
     if (vrbflg)
@@ -1141,12 +1165,24 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* output the results */
     if (debug_flag)
     {
-      LALCPrintFrequencySeries(&responseOneA, "response1a.dat");
-      LALCPrintFrequencySeries(&responseOneB, "response1b.dat");
-      LALCPrintFrequencySeries(&responseOneC, "response1c.dat");
-      LALCPrintFrequencySeries(&responseTwoA, "response2a.dat");
-      LALCPrintFrequencySeries(&responseTwoB, "response2b.dat");
-      LALCPrintFrequencySeries(&responseTwoC, "response2c.dat");
+      LALSnprintf(debugFilename, LALNameLength, "%d-response1a.dat", \
+          gpsSegmentAStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseOneA, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-response1b.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseOneB, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-response1c.dat", \
+          gpsSegmentCStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseOneC, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-response2a.dat", \
+          gpsSegmentAStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseTwoA, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-response2b.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseTwoB, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-response2c.dat", \
+          gpsSegmentCStart.gpsSeconds);
+      LALCPrintFrequencySeries(&responseTwoC, debugFilename);
     }
 
     if (vrbflg)
@@ -1167,8 +1203,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* output the results */
     if (debug_flag)
     {
-      LALSPrintFrequencySeries(&calInvPSDOne, "inPSD1.dat");
-      LALSPrintFrequencySeries(&calInvPSDTwo, "inPSD2.dat");
+      LALSnprintf(debugFilename, LALNameLength, "%d-inPDS1.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALSPrintFrequencySeries(&calInvPSDOne, debugFilename);
+      LALSnprintf(debugFilename, LALNameLength, "%d-inPDS2.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALSPrintFrequencySeries(&calInvPSDTwo, debugFilename);
     }
 
     if (vrbflg)
@@ -1219,7 +1259,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL( LALStochasticCrossCorrelationSpectrumCal(&status, \
             &ccSpectrum, &ccIn, epochsMatch), &status );
 
-      LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
+      LALSnprintf(debugFilename, LALNameLength, "%d-ccSpectrum.dat", \
+          gpsSegmentBStart.gpsSeconds);
+      LALCPrintFrequencySeries(&ccSpectrum, debugFilename);
     }
 
     if (vrbflg)
