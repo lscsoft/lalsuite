@@ -716,13 +716,15 @@ LALFindChirpBCVChisqVeto (
       chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
 #endif
 
-      REAL4 mod1 = ( ( X1 - q[j].re ) * ( X1 - q[j].re ) + 
-	      	     ( Y1 - q[j].im ) * ( Y1 - q[j].im ) ) 
-	      	   / (REAL4) (numChisqBins) ;
+      REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) * 
+		     ( X1 - q[j].re / (REAL4) (numChisqBins) ) + 
+	      	     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) * 
+		     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) ); 
 
-      REAL4 mod2 = ( ( X2 - qBCV[j].re ) * ( X2 - qBCV[j].re ) +
-		     ( Y2 - qBCV[j].im ) * ( Y2 - qBCV[j].im ) )
-   		   / (REAL4) (numChisqBins) ;   
+      REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) * 
+		     ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
+		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) * 
+		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
 
       chisq[j] += ( chisqNorm * chisqNorm * ( mod1 + mod2 ) ) ;	    
 
