@@ -398,7 +398,7 @@ LALUpdateCalibration(
   length = (length > 0) ? length : 1;
   last = i + length;
    
-  if ( last >= params->sensingFactor->data->length )
+  if ( last > params->sensingFactor->data->length )
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
