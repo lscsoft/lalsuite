@@ -146,6 +146,7 @@ int main(int argc,char *argv[])
 #endif
 {
   UINT4 i;
+  INT4 iAlphaLowerEdge, iAlphaUpperEdge;
   lalDebugLevel = 3;
 #if USE_BOINC
   static char resolved_filename[256];
@@ -194,6 +195,11 @@ int main(int argc,char *argv[])
 	  SortedC2[i].iAlpha=0;
 	  SortedC2[i].iCand=i;
 	}
+      
+      /* define lower and upper edges in alpha and delta for wrapping */
+      iAlphaLowerEdge=0;
+      iAlphaUpperEdge=0;
+
 
       /* sort arrays of candidates */
       qsort(SortedC1, (size_t)CList1.length, sizeof(CandINDICES), compareCIStructs);
@@ -201,7 +207,8 @@ int main(int argc,char *argv[])
 
       for (i=0;i<CList1.length;i++) SortedC1[i].iCandSorted=i;
       for (i=0;i<CList2.length;i++) SortedC2[i].iCandSorted=i;
-     
+      
+      /* loop iover candidates in first array */
       for (i=0; i < CList1.length; i++)
 	{
 	  if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
@@ -217,7 +224,7 @@ int main(int argc,char *argv[])
 			{
 			  CandINDICES *p, can;
 			  INT4 keepgoing;
-
+			  
 			  can.iFreq=iFreq2;
 			  can.iAlpha=iAlpha2;
 			  can.iDelta=iDelta2;
@@ -396,6 +403,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
 }
 
 /*******************************************************************************/
+#define BLOCKSIZE 16384
 
 int FineCoincidenceTest(CandINDICES c1, CandINDICES c2, struct PolkaCommandLineArgsTag CLA)
 {
@@ -436,15 +444,20 @@ int FineCoincidenceTest(CandINDICES c1, CandINDICES c2, struct PolkaCommandLineA
 	  CList2.Ctag[c2.iCand]=1;
 		  
 	  /* seems we found a coincident candidate: let's make space for it to be stored */
+	  
+	  if (numCoincidences % BLOCKSIZE == 0)
+	    {
+	      if ( (CC = LALRealloc ( CC, (numCoincidences + BLOCKSIZE) * sizeof(CoincidentCandidate) )) == NULL) {
+		fprintf (stderr, "Error: polka ran out of memory allocating %d coincident candidate (CC).\n",numCoincidences);
+		return 1;
+	      }
+	      if ( (CP = LALRealloc ( CP, (numCoincidences + BLOCKSIZE) * sizeof(CoincidentPairs) )) == NULL) {
+		fprintf (stderr, "Error: polka ran out of memory allocating %d coincident candidate (CP).\n",numCoincidences);
+		return 1;
+	      }
+	    }
+
 	  numCoincidences ++;
-	  if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
-	    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
-	    return 1;	/* got lazy here.. */
-	  }
-	  if ( (CP = LALRealloc ( CP, numCoincidences * sizeof(CoincidentPairs) )) == NULL) {
-	    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
-	    return 1;	/* got lazy here.. */
-	  }
 	  
 	  thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
 	  thisCP = &(CP[ numCoincidences - 1]);	/* point to current new coincidences */
