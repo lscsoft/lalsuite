@@ -416,6 +416,10 @@ int main(int argc,char *argv[])
 
   /* parse the rest of the command line */
   LAL_CALL (LALUserVarReadCmdline(stat,argc,argv),stat);
+
+  /* check that requirements are satisfied */
+  LAL_CALL (LALUserVarCheckRequired(stat),stat);
+
 #else
   LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
 #endif
