@@ -68,10 +68,10 @@ BOOLEAN FILE_FSTATS = 1;
 #if USE_BOINC
 
 #ifdef NO_BOINC_GRAPHICS
-#define BOINC_APP_GRAPHICS 0
+#define BOINC_GRAPHICS 0
 #endif
-#ifndef BOINC_APP_GRAPHICS
-#define BOINC_APP_GRAPHICS 0
+#ifndef BOINC_GRAPHICS
+#define BOINC_GRAPHICS 0
 #endif
 
 /* compress earth and sun files and output Fstats file, using zip.
@@ -131,7 +131,7 @@ extern bool boinc_time_to_checkpoint();
 #include <dlfcn.h>
 #endif
 
-#if BOINC_APP_GRAPHICS
+#if BOINC_GRAPHICS
 #include "graphics_api.h"
 #endif
 
@@ -153,7 +153,7 @@ void use_boinc_filename0(char* orig_name);
 extern "C" {
 #endif
 
-#if (BOINC_APP_GRAPHICS == 1)
+#if (BOINC_GRAPHICS == 1)
 extern double fraction_done;
 /* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
@@ -2932,7 +2932,7 @@ int main(int argc, char *argv[]){
   if (signal(SIGILL, sighandler)==SIG_IGN)
     signal(SIGILL, SIG_IGN);
 
-#if (BOINC_APP_GRAPHICS == 1)
+#if (BOINC_GRAPHICS == 1)
   set_search_pos_hook = set_search_pos;
   boinc_init_graphics_hook = boinc_init_graphics;
   fraction_done_hook = &fraction_done;
@@ -2948,7 +2948,7 @@ int main(int argc, char *argv[]){
   
   /* boinc_init() or boinc_init_graphics() needs to be run before any
      boinc_api functions are used */
-#if BOINC_APP_GRAPHICS == 2
+#if BOINC_GRAPHICS == 2
   {
 	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB,  RTLD_LAZY);
 	  if(handle != NULL) {
@@ -2958,7 +2958,7 @@ int main(int argc, char *argv[]){
       }
   }
 #endif
-#if BOINC_APP_GRAPHICS
+#if BOINC_GRAPHICS
   if (boinc_init_graphics_hook != NULL) { 
     /* only returns if trouble creating worker thread */
     int retval = boinc_init_graphics_hook(worker);
@@ -2969,7 +2969,7 @@ int main(int argc, char *argv[]){
 #endif
 	  boinc_init();
       worker();
-#if BOINC_APP_GRAPHICS
+#if BOINC_GRAPHICS
   }
 #endif
 
