@@ -67,12 +67,22 @@ proc dataDownload { URL { outFile -1 } } {
 ################################
 set injAmpTmp $injAmp
 set LOCALFILE 0
+set FastCacheDone 0
+
+set EndSegTime 0
+set cjid 0
+set CondorFiles ""
 
 if { [ regexp {LOCAL:(.*)} $PrebinFile junk ZeFile ] } {
 
     set NNODES 210
 
     set PrebinFile $ZeFile
+
+    if { [ file exists $PrebinFile ] == 0 } {
+	file mkdir $PrebinFile
+    }
+
     if { [ regexp {/usr1/(.*)} $ZeFile junk PrebinFileSUFFIX ] == 0 } {
 	error "PrebinFile doesn't start with /usr1/"
     }
@@ -247,33 +257,33 @@ foreach l1 $SegmentList {
 ################################
 if { [ string length $prefilters ] == 0 } {
     set dcfilters ""
-    set responseFile "-responsefiles \{\n"
+    set responseFile ""
 } else {
     set flist [ split $prefilters "," ]
     if { [ llength $flist ] == 0 } {
 	error "Invalid filter list: $prefilters"
     }
 
-    set responseFile "-responsefiles \{\n"
+    set responseFile ""
     set dcfilters ""
     set fcount 1
     set got1 0
     set fa [ lindex $flist 0 ]
     append fa "_a.ilwd"
     if { [ file exists $fa ] } {
-	append responseFile "\t\t%FILE(" $fa "),push,fa$fcount\n"
+	append responseFile "$fa push fa$fcount\n"
 	incr got1 1
     } else {
-	append responseFile "\t\t file:$filtroot/$fa,push,fa$fcount\n"
+	append responseFile "${filtroot}/$fa push fa$fcount\n"
 	incr got1 1
     }
     set fb [ lindex $flist 0 ]
     append fb "_b.ilwd"
     if { [ file exists $fb ] } {
-	append responseFile "\t\t%FILE(" $fb "),push,fb$fcount\n"
+	append responseFile "$fb push fb$fcount\n"
 	incr got1 1
     } else {
-	append responseFile "\t\t file:$filtroot/$fb,push,fb$fcount\n"
+	append responseFile "${filtroot}/$fb push fb$fcount\n"
 	incr got1 1
     }
     if { $got1 != 2 } {
@@ -291,19 +301,19 @@ if { [ string length $prefilters ] == 0 } {
 	    set fa $f
 	    append fa "_a.ilwd"
 	    if { [ file exists $fa ] } {
-		append responseFile "\t\t%FILE(" $fa "),push,fa$fcount\n"
+		append responseFile "$fa push fa$fcount\n"
 		incr got1 1
 	    } else {
-		append responseFile "\t\t file:$filtroot/$fa,push,fa$fcount\n"
+		append responseFile "${filtroot}/$fa push fa$fcount\n"
 		incr got1 1
 	    }
 	    set fb $f
 	    append fb "_b.ilwd"
 	    if { [ file exists $fb ] } {
-		append responseFile "\t\t%FILE(" $fb "),push,fb$fcount\n"
+		append responseFile "$fb push fb$fcount\n"
 		incr got1 1
 	    } else {
-		append responseFile "\t\t file:$filtroot/$fb,push,fb$fcount\n"
+		append responseFile "${filtroot}/$fb push fb$fcount\n"
 		incr got1 1
 	    }
 	    if { $got1 != 2 } {
@@ -329,10 +339,10 @@ if { [ string length $prefiltersB ] > 0 } {
 
     append fb ".ilwd"
     if { [ file exists $fb ] } {
-	append responseFile "\t\t%FILE(" $fb "),push,fb$fcount\n"
+	append responseFile "$fb push fb$fcount\n"
 	incr got1 1
     } else {
-	append responseFile "\t\t file:$filtroot/$fb,push,fb$fcount\n"
+	append responseFile "${filtroot}/$fb push fb$fcount\n"
 	incr got1 1
     }
     append dcfilters "\t\tgwchn = linfilt(fb$fcount,gwchn);\n"
@@ -346,10 +356,10 @@ if { [ string length $prefiltersB ] > 0 } {
 	    
 	    append fb ".ilwd"
 	    if { [ file exists $fb ] } {
-		append responseFile "\t\t%FILE(" $fb "),push,fb$fcount\n"
+		append responseFile "$fb push fb$fcount\n"
 		incr got1 1
 	    } else {
-		append responseFile "\t\t file:$filtroot/$fb,push,fb$fcount\n"
+		append responseFile "${filtroot}/$fb push fb$fcount\n"
 		incr got1 1
 	    }
 	    append dcfilters "\t\tgwchn = linfilt(fb$fcount,gwchn);\n"
@@ -382,13 +392,13 @@ if { [ string length $waveforms ] == 0 } {
     set fplus [ lindex $wlist 0 ]
     append fplus "_p.ilwd"
     if { [ file exists $fplus ] } {
-	append responseFile "\t\t%FILE(" $fplus "),push,ihp$wcount\n"
+	append responseFile "$fplus push ihp$wcount\n"
 	set got1 1
     }
     set fcross [ lindex $wlist 0 ]
     append fcross "_c.ilwd"
     if { [ file exists $fcross ] } {
-	append responseFile "\t\t%FILE(" $fcross "),push,ihc$wcount\n"
+	append responseFile "$fcross push ihc$wcount\n"
 	set got2 1
     }
     if { $got1 == 0 && $got2 == 0 } {
@@ -397,7 +407,7 @@ if { [ string length $waveforms ] == 0 } {
     if { $got0 == 0 && $got1 == 0 } {
 	set f "Zeros.ilwd"
 	if { [ file exists $f ] } {
-	    append responseFile "\t\t%FILE(Zeros.ilwd),push,Zero\n"
+	    append responseFile "Zeros.ilwd push Zero\n"
 	    append dcwave "\t\tzero = float(Zero)"
 	    set got0 1
 	}
@@ -405,7 +415,7 @@ if { [ string length $waveforms ] == 0 } {
     if { $got0 == 0 && $got2 == 0 } {
 	set f "Zeros.ilwd"
 	if { [ file exists $f ] } {
-	    append responseFile "\t\t%FILE(Zeros.ilwd),push,Zero\n"
+	    append responseFile "Zeros.ilwd push Zero\n"
 	    append dcwave "\t\tzero = float(Zero)"
 	    set got0 1
 	}
@@ -451,13 +461,13 @@ if { [ string length $waveforms ] == 0 } {
 	    set fplus $w
 	    append fplus "_p.ilwd"
 	    if { [ file exists $fplus ] } {
-		append responseFile "\t\t%FILE(" $fplus "),push,ihp$wcount\n"
+		append responseFile "$fplus push ihp$wcount\n"
 		set got1 1
 	    }
 	    set fcross $w
 	    append fcross "_c.ilwd"
 	    if { [ file exists $fcross ] } {
-		append responseFile "\t\t%FILE(" $fcross "),push,ihc$wcount\n"
+		append responseFile "$fcross push ihc$wcount\n"
 		set got2 1
 	    }
 	    if { $got1 == 0 && $got2 == 0 } {
@@ -466,7 +476,7 @@ if { [ string length $waveforms ] == 0 } {
 	    if { $got0 == 0 && $got1 == 0 } {
 		set f "Zeros.ilwd"
 		if { [ file exists $f ] } {
-		    append responseFile "\t\t%FILE(Zeros.ilwd),push,Zero\n"
+		    append responseFile "Zeros.ilwd push Zero\n"
 		    append dcwave "\t\tzero = float(Zero)"
 		    set got0 1
 		}
@@ -474,7 +484,7 @@ if { [ string length $waveforms ] == 0 } {
 	    if { $got0 == 0 && $got2 == 0 } {
 		set f "Zeros.ilwd"
 		if { [ file exists $f ] } {
-		    append responseFile "\t\t%FILE(Zeros.ilwd),push,Zero\n"
+		    append responseFile "Zeros.ilwd push Zero\n"
 		    append dcwave "\t\tzero = float(Zero)"
 		    set got0 1
 		}
@@ -633,19 +643,19 @@ if { [ info exists injType ] == 1 } {
 }
 
 if { [ regexp {__([^_]+)__} $injAmp junk file ] } {
-    append responseFile "\t\t%FILE($file.ilwd),pass\n"
+    append responseFile ${file}".ilwd pass\n"
 }
 if { [ regexp {__([^_]+)__} $injAlpha junk file ] } {
-    append responseFile "\t\t%FILE($file.ilwd),pass\n"
+    append responseFile ${file}".ilwd pass\n"
 }
 if { [ regexp {__([^_]+)__} $injDelta junk file ] } {
-    append responseFile "\t\t%FILE($file.ilwd),pass\n"
+    append responseFile ${file}".ilwd pass\n"
 }
 if { [ regexp {__([^_]+)__} $injPsi junk file ] } {
-    append responseFile "\t\t%FILE($file.ilwd),pass\n"
+    append responseFile ${file}".ilwd pass\n"
 }
 if { [ regexp {__([^_]+)__} $injTimes junk file ] } {
-    append responseFile "\t\t%FILE($file.ilwd),pass\n"
+    append responseFile ${file}".ilwd pass\n"
 }
 
 
@@ -660,12 +670,12 @@ if { [ info exists ETGParameters ] == 0 } {
     eval set ETGParameters $ETGParameters
 
     if { [ regexp {__(.+)__} $ETGParameters junk file ] } {
-	append responseFile "\t\t%FILE($file.ilwd),pass\n"
+	append responseFile "${file}.ilwd pass\n"
     }
     set ETGParams $ETGParameters
 }
 
-append responseFile "\t\t\}"
+
 
 
 #    set now [ clock seconds ]
@@ -681,9 +691,6 @@ append responseFile "\t\t\}"
     set times $start_time-$etime
     #set chalias [ mkchannel $channel $start_time ]
     set chalias [ mkchannelnt $channel ]
-
-    set NNData [ expr int(($etime-$start_time)*16384) ]
-    set Seed "-[ clock clicks ]"
 
     set cst [ expr $start_time ]
     set cet [ expr $etime ]
@@ -707,26 +714,29 @@ append responseFile "\t\t\}"
 	set h2calstart 734234127
     }
 
-    set h1caltimes ${h1calstart}-[expr $h1calstart + 63 ]
-    set h2caltimes ${h2calstart}-[expr $h2calstart + 63 ]
-    set l1caltimes ${l1calstart}-[expr $l1calstart + 63 ]
+    set h1caltimes ${h1calstart}-[expr $h1calstart + 64 ]
+    set h2caltimes ${h2calstart}-[expr $h2calstart + 64 ]
+    set l1caltimes ${l1calstart}-[expr $l1calstart + 64 ]
 
     set caltimes $ifo2
     append caltimes "caltimes" 
     set caltimes [ set $caltimes ]
-
-    if { $IFO2 == "H2" } {
-	set frqueryREF " { CAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes Proc($IFO2:CAL-CAV_GAIN!0!7000.0001!,$IFO2:CAL-RESPONSE!0!7000.0001!) } "
-    } else {
-	set frqueryREF " { CAL_REF_V03_$IFO2 $IFO {} $caltimes Proc($IFO2:CAL-CAV_GAIN!0!7000.0001!,$IFO2:CAL-RESPONSE!0!7000.0001!) } "
-    } 
 
     set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
     set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
     set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
     set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
 
-    set frqueryFAC " { $FTypeCALFAC $IFO {} $ctimes Proc($IFO2:CAL-OLOOP_FAC,$IFO2:CAL-CAV_FAC) } "
+
+    if { $IFO2 == "H2" } {
+	set frqueryREF "CAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO /ldas_outgoing/mirror/frames/S2/LHO/cal/H-CAL_REF_V03_H2-${h2calstart}-64.gwf $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
+#	set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
+    } else {
+	set frqueryREF "CAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\nCAL_REF_V03_$IFO2 $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp "
+    } 
+
+    set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC) h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
+
 
     set calaliases "                   h1oloop  = $h1oloop;
                    h1cavfac = $h1cavfac;
@@ -737,14 +747,14 @@ append responseFile "\t\t\}"
                         cavfac = float(h1cavfac);
                         cavfaccplx = complex(cavfac);
 
-                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor);
+                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor \[COMPLEX8TimeSeries\]);
 
                         oloop = float(h1oloop);
                         oloopcplx = complex(oloop);
 
-                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor);
-                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain);
-                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response);
+                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor \[COMPLEX8TimeSeries\]);
+                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain \[COMPLEX8FrequencySeries\]);
+                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response \[COMPLEX8FrequencySeries\]);
 
                         h1cavfacf = float(h1cavfac);
                         h1cavfacf = complex(h1cavfacf);
@@ -752,6 +762,10 @@ append responseFile "\t\t\}"
                         h1oloopf = float(h1oloop);
                         h1oloopf = complex(h1oloopf);
 "
+
+if { [ info exists $useResponse ] == 0 } {
+    set useResponse ""
+}
 
     if { [ info exists NoCalibration ] } {
 	set frqueryREF ""
@@ -761,12 +775,7 @@ append responseFile "\t\t\}"
     }
 
 if { [ info exists MDCFrames ] } {
-
-    if { $MDCFrames == "SG12" } {
-	set frqueryMDC "{ $MDCFrames HLT {} $times Adc(${IFO2}:GW) }"
-    } else {
-	set frqueryMDC "{ $MDCFrames HL {} $times Adc(${IFO2}:GW) }"
-    }
+    set frqueryMDC "$MDCFrames HL $times adc(${IFO2}:GW) y"
 
     set MDCalias "y = ${IFO2}\\:GW"
     set MDCalgo "x = add(x0,y);"
@@ -777,163 +786,305 @@ if { [ info exists MDCFrames ] } {
     set MDCalias ""
 }
 
-if { [ info exists $useResponse ] == 0 } {
-    set useResponse ""
+#######################################################################
+
+# manager
+if { $manager == "cit" } {
+    set dataserver "ldas-gridmon.ligo.caltech.edu"
 }
 
-    set LDASJOB "
-        dataPipeline
-        -np $NNodes
-        -dynlib /dso-test/libldasburst.so.0.0.0
-        -returnprotocol http://results.iwld
-        -metadataapi ligolw
-        -filterparams ($binoutput$burstoutput$useResponse$channel,$Ndata,$injWave,$injAmp,$injAlpha,$injDelta,$injPsi,$injN,$injTimes,$ETG,$ETGParams)
-        -subject BURST
-        -datacondtarget wrapper
-#       -datacondtarget datacond
-#       -outputformat {ilwd ascii}
-        $responseFile
-        -framequery { 
-                      $frqueryFAC
-                      $frqueryREF 
-                      $frqueryMDC
-                    }
-        -aliases { 
-                   $calaliases
-                   $MDCalias
-                 }
-        -algorithms {
-                        $MDCalgo
+# frames query and aliases
+set framequery "$frqueryFAC\n$frqueryREF\n$frqueryMDC"
 
-                        x1 = gasdev($NNData,$Seed);
-                        x = tseries(x1,16384.0,$start_time,0);
+# algorithm
+set NNData [ expr int(($etime-$start_time)*16384) ]
+set Seed "-[ clock clicks ]"
 
-                        gwchn = double(x);
-
-                        $dcfilters
-
-                        gwchns = slice(gwchn,$sliceStart,$Ndata,1);
-
-                        gwchns = float(gwchns);
-
-                        output(gwchns,_,_,GW_STRAIN_DATA:primary,GW_STRAIN_DATA);
-
-     $calalgo
-
-     $dcwave
-
-                        spec = psd( gwchns, $psdlength );
-                        output(spec,_,_,GW_STRAIN_PSD,GW_STRAIN_PSD);
-
-        }
+set algorithms "$MDCalgo
+                x1 = gasdev($NNData,$Seed);
+                x = tseries(x1,16384.0,$start_time,0);
+                gwchn = double(x);
+                $dcfilters
+                gwchns = slice(gwchn,$sliceStart,$Ndata,1);
+                gwchns = float(gwchns);
+                output(gwchns,_,_,GW_STRAIN_DATA:primary,GW_STRAIN_DATA);
+                $calalgo
+                $dcwave
+                spec = psd( gwchns, $psdlength );
+                output(spec,_,_,GW_STRAIN_PSD,GW_STRAIN_PSD);
 "
+
+# filterParams
+set filterparams "-filterparams,$binoutput$burstoutput$channel,$Ndata,$injWave,$injAmp,$injAlpha,$injDelta,$injPsi,$injN,$injTimes,$ETG,$ETGParams"
+
+# response files
+set responsefiles $responseFile
 
 #######################################################
 
-    LJrun Job1 -user $userName -manager $manager -log {puts "Submitted Job ID $this(jobid)"} {
-        $LDASJOB
-    }
-
-    set jobOK 0
-
-    #-- Check for an error
-    if $LJerror {
-	puts "LDAS job failed!  Error message from LDAS:"
-	puts $Job1(error)
-	puts "LDAS job number: $Job1(jobid)"
-	LJdelete Job1
-
-	if { $fileOutput == 1 } {
-	    if { [ catch { exec mv $binFile "$binFile.failed" } cout ] } {
-		puts $cout
-	    }
-	}
-
-#	incr jobRetry 1
-#	if { $jobRetry > $maxRetry } {
-	    set eti [ expr $start_time + $duration ]
-	    puts "Giving up for $start_time $eti"
-	    incr start_time $duration
-
-	if { [ info exists injType ] } {
-	    if { $injType >= 2 } {
-		catch { exec rm hamp.ilwd.$start_time }
-		catch { exec rm alpha.ilwd.$start_time }
-		catch { exec rm delta.ilwd.$start_time }
-		catch { exec rm psi.ilwd.$start_time }
-		catch { exec rm injTime.ilwd.$start_time }
-
-		catch { exec rm hamp${IFO2}.ilwd.$start_time }
-		catch { exec rm alpha${IFO2}.ilwd.$start_time }
-		catch { exec rm delta${IFO2}.ilwd.$start_time }
-		catch { exec rm psi${IFO2}.ilwd.$start_time }
-		catch { exec rm injTime${IFO2}.ilwd.$start_time }
-	    }
-	}
-#	}
-
-#	continue
+if { [ catch { exec grid-proxy-info } cout ] } {
+    puts $cout
+} else {
+    if { [ regexp {timeleft : ([0-9]+:[0-9]+:[0-9]+)} $cout junk timleft ] == 0} {
+	error "Invalid output from grid-proxy-info: $cout"
+	exit
     } else {
-	puts "Job succeeded."
-	set jobOK 1
-	set jobRetry 0
+
+	regexp {([0-9]+):([0-9]+):([0-9]+)} $timleft junk h m s 
+
+	set h [ string trimleft $h 0 ]
+	if { [ string length $h ] == 0 } {
+	    set h 0
+	}
+
+	set m [ string trimleft $m 0 ]
+	if { [ string length $m ] == 0 } {
+	    set m 0
+	}
+
+	set s [ string trimleft $s 0 ]
+	if { [ string length $s ] == 0 } {
+	    set s 0
+	}
+
+	set tup [ expr 3600*int($h)+60*int($m)+int($s) ]
+
+	if { $tup > 3600 } {
+	    puts "proxy is up ($tup s left)"
+	} else {
+	    puts "Less than 1 hour left: need to initialize proxy"
+	    puts "Please run grid-proxy-init"
+	}
     }
+}
+
+set fid [ open "framequery.txt" "w" ]
+puts $fid $framequery
+close $fid
+
+set fid [ open "algorithms.txt" "w" ]
+puts $fid $algorithms
+close $fid
+
+set fid [ open "filterparams.txt" "w" ]
+puts $fid $filterparams
+close $fid
+
+set fid [ open "responsefiles.txt" "w" ]
+puts $fid $responsefiles
+close $fid
+
+set jobOK 0
+
+if { [ info exists NoCondor ] } {
+if { [ catch { exec burstdso $dataserver framequery.txt algorithms.txt filterparams.txt responsefiles.txt 2>> std.err } cout ] } {
+    puts $cout
+
+    if { $fileOutput == 1 } {
+	if { [ catch { exec mv $binFile "$binFile.failed" } cout ] } {
+	    puts $cout
+	}
+    }
+
+    set eti [ expr $start_time + $duration ]
+    puts "Giving up for $start_time $eti"
+    incr start_time $duration
+
+    if { [ info exists injType ] } {
+	if { $injType >= 2 } {
+	    catch { exec rm hamp.ilwd.$start_time }
+	    catch { exec rm alpha.ilwd.$start_time }
+	    catch { exec rm delta.ilwd.$start_time }
+	    catch { exec rm psi.ilwd.$start_time }
+	    catch { exec rm injTime.ilwd.$start_time }
+
+	    catch { exec rm hamp${IFO2}.ilwd.$start_time }
+	    catch { exec rm alpha${IFO2}.ilwd.$start_time }
+	    catch { exec rm delta${IFO2}.ilwd.$start_time }
+	    catch { exec rm psi${IFO2}.ilwd.$start_time }
+	    catch { exec rm injTime${IFO2}.ilwd.$start_time }
+	}
+    }
+
+} else {
+    set jobOK 1
+    set jobRetry 0
+}
+
 
 #######################################################
 
 if { $jobOK } {
-    if { $fileOutput != 1 } {
-	## download result
-	regexp {(http://[\.0-9]+/ldas_outgoing/jobs/LDAS-[A-Z0-9_]+/LDAS-[A-Z0-9]+)} $Job1(jobReply) junk loc
-    
-	dataDownload $loc/results.xml results$channel$Job1(jobid).xml
 
-	set zeFile results$channel$Job1(jobid).xml
-	
-    } else {
+    if { $moveIt } {
+	set zeFile ./results$channel$Job1(jobid).bin
 
-	if { $moveIt } {
-	    set zeFile ./results$channel$Job1(jobid).bin
-
-	    if { [ catch { exec mv $binFile $zeFile } cout ] } {
-		puts $cout
-	    }
-	} else {
-	    set zeFile $binFile
+	if { [ catch { exec mv $binFile $zeFile } cout ] } {
+	    puts $cout
 	}
-
+    } else {
+	set zeFile $binFile
     }
 
-#    puts "Block Id: $bId"
+}
 
-    if { $doSplit } {
+if { $doSplit } {
     if { [ catch { exec sblit $zeFile >& toc$IFO2.$Job1(jobid).$bId } cout ] } {
 	puts $cout
     } else {
 	file delete $zeFile
     }
-    } else {
+} else {
 
-	if { $Zip } {
+    if { $Zip } {
 
-	    if { [ catch { exec gzip $zeFile } cout ] } {
-		puts $cout
-	    }
-
+	if { [ catch { exec gzip $zeFile } cout ] } {
+	    puts $cout
 	}
+	
+    }
 
+}
+
+
+
+} else {
+# Condor
+puts "Creating condor job..."
+
+file copy -force algorithms.txt framequery.txt filterparams.txt responsefiles.txt $PrebinFile
+
+file rename -force $PrebinFile/algorithms.txt $PrebinFile/algorithms.$start_time.txt
+file rename -force $PrebinFile/framequery.txt $PrebinFile/framequery.$start_time.txt
+file rename -force $PrebinFile/filterparams.txt $PrebinFile/filterparams.$start_time.txt
+file rename -force $PrebinFile/responsefiles.txt $PrebinFile/responsefiles.$start_time.txt
+
+if { [ string length $CondorFiles ] > 0 } {
+    set CondorFiles "$CondorFiles,algorithms.$start_time.txt,framequery.$start_time.txt,filterparams.$start_time.txt,responsefiles.$start_time.txt"
+} else {
+    set CondorFiles "algorithms.$start_time.txt,framequery.$start_time.txt,filterparams.$start_time.txt,responsefiles.$start_time.txt"
+}
+
+if { $cjid == 0 } {
+    exec echo "\#!/bin/bash\n\n" > tmp.condor
+    exec echo "export PATH=$env(PATH):\$PATH" >> tmp.condor
+    exec echo "export LD_LIBRARY_PATH=$env(LD_LIBRARY_PATH):\$LD_LIBRARY_PATH" >> tmp.condor
+    exec echo "export BURSTWRAPPER=$env(BURSTWRAPPER)" >> tmp.condor
+    exec echo "export X509_USER_PROXY=$env(X509_USER_PROXY)\n\n" >> tmp.condor
+
+    if { [ file exists tmp ] } {
+	file delete tmp
+    }
+
+    exec echo "universe = vanilla\n\nexecutable = IDIR/EXEC\n\nerror = job.EXEC.err\nlog = jobs.log\n\n\ninitialdir = IDIR\n\n" > tmp
+
+} 
+
+if { $EndSegTime < $start_time } {
+
+    set EndSegTime $end_time
+
+    # create framequery for full segment
+    set fid [ open $PrebinFile/framequery.$start_time.txt "r" ]
+    while { [ eof $fid ] == 0 } {
+	gets $fid line
+
+	if { [ regexp "$FType $IFO (\[0-9\]{9})-(\[0-9\]{9}) .*" $line junk T0 T1 ] } {
+	    break
+	}
+    }
+    close $fid
+
+    if { [ catch { exec subst $PrebinFile/framequery.$start_time.txt sfquery.txt $T0 $start_time } cout ] } {
+	    puts $cout
+	    exit 1
+    }
+    
+    if { [ catch { exec subst sfquery.txt $PrebinFile/sframequery.txt $T1 $end_time } cout ] } {
+	    puts $cout
+	    exit 1
+    }
+    
+
+    if { [ catch { exec /bin/bash --login -c "echo $PrebinFile ; cd $PrebinFile ; buildcache $dataserver $PrebinFile/sframequery.txt" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    file copy -force $PrebinFile/FrCacheFile $PrebinFile/FrCacheFile.$start_time
+
+    set FrCFile FrCacheFile.$start_time
+
+    set CondorFiles "$CondorFiles,FrCacheFile.$start_time"
+
+    set SegTime $start_time
+} else {
+    if { $cjid == 0 } {
+
+	set CondorFiles "$CondorFiles,FrCacheFile.$SegTime"
+	
     }
 }
 
-    LJdelete Job1
 
-#    puts $cout
+exec echo "burstdso $FrCFile framequery.$start_time.txt algorithms.$start_time.txt filterparams.$start_time.txt responsefiles.$start_time.txt\n" >> tmp.condor
+
+incr cjid
+
+
+
+if { $cjid > $NCondorJobs } {
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+    puts "Sending jobs to cluster"
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+
+    file rename -force tmp.condor $PrebinFile/tmp.condor.$SegTime
+
+    exec echo "transfer_input_files = $CondorFiles" >> tmp
+
+
+    exec echo "when_to_transfer_output = ON_EXIT\n\ngetenv = True\n\nQueue\n\n" >> tmp
+
+
+    if { [ catch { exec subst tmp tmp2 EXEC tmp.condor.$SegTime } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    regsub -all "/" $ZeFile "\\/" rZeFile
+    if { [ catch { exec subst tmp2 tmp3 IDIR $rZeFile } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    
+
+    if { [ catch { exec /bin/bash --login -c "condor_submit tmp3" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+
+    file rename -force tmp3 tmp3.$SegTime
+
+    set cjid 0
+    set CondorFiles ""
+
+}
+
+
+
+
+
+}
 
 
 #end loop over channels:
 } 
     
-    incr start_time $duration
+incr start_time $duration
 
 # end if do1:
 }
@@ -947,5 +1098,46 @@ if { $jobOK } {
 # end loop over segments:
 }
 
+
+# Run any left over jobs
+if { [ info exists NoCondor ] == 0 && $cjid > 0 } {
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+    puts "Sending jobs to cluster"
+    puts "*********************************************************************"
+    puts "*********************************************************************"
+
+    file rename -force tmp.condor $PrebinFile/tmp.condor.$SegTime
+
+    exec echo "transfer_input_files = $CondorFiles" >> tmp
+
+
+    exec echo "when_to_transfer_output = ON_EXIT\n\ngetenv = True\n\nQueue\n\n" >> tmp
+
+
+    if { [ catch { exec subst tmp tmp2 EXEC tmp.condor.$SegTime } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    regsub -all "/" $ZeFile "\\/" rZeFile
+    if { [ catch { exec subst tmp2 tmp3 IDIR $rZeFile } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+    
+
+    if { [ catch { exec /bin/bash --login -c "condor_submit tmp3" } cout ] } {
+	puts $cout
+	exit 1
+    }
+
+
+    file rename -force tmp3 tmp3.$SegTime
+
+    set cjid 0
+    set CondorFiles ""
+}
 
 puts "Normal exit"
