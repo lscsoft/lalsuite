@@ -500,7 +500,7 @@ int main( int argc, char *argv[] )
         minMatch = (REAL4) atof( optarg );
         if ( minMatch <= 0 )
         {
-          fprintf( stdout, "invalid argument to --%s:\n"
+          fprintf( stderr, "invalid argument to --%s:\n"
               "minimal match of bank must be > 0: "
               "(%f specified)\n",
               long_options[option_index].name, minMatch );
@@ -957,7 +957,10 @@ int main( int argc, char *argv[] )
   {
     if ( ! inspiralEventList[j] )
     {
-      fprintf( stdout, "No triggers read in for interferometer %d\n", j );
+      /* no triggers in this ifo so no coincidences can be found */
+      if ( vrbflg )
+        fprintf( stdout, "No triggers read in for interferometer %d\n", j );
+
       goto cleanexit;
     }
   }
@@ -1154,7 +1157,9 @@ int main( int argc, char *argv[] )
 
   if ( ! currentTrigger[0] )
   {
-    fprintf( stdout, "No triggers found in coincidence window\n" );
+    if ( vrbflg )
+      fprintf( stdout, "No triggers found in coincidence window\n" );
+
     goto cleanexit;
   }
 
@@ -1299,7 +1304,7 @@ int main( int argc, char *argv[] )
 
       if ( ! dont_search_b )
       {
-	if ( vrbflg &&  currentTrigger[1] ) fprintf( stdout, 
+	if ( vrbflg && currentTrigger[1] ) fprintf( stdout, 
 	    "  start loop over IFO B trigger at %d + %10.10f\n",
             currentTrigger[1]->end_time.gpsSeconds, 
             ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
@@ -1315,8 +1320,8 @@ int main( int argc, char *argv[] )
 	  if (tb > ta + errorParams.dt )
 	  {
 	    /* we are outside the time coincidence so move to the next event */
-            if (vrbflg) fprintf(stdout, "outside the time coincidence window\n"
-		);
+            if ( vrbflg ) 
+              fprintf( stdout, "outside the time coincidence window\n" );
 	    break;
 	  }
 	  else
