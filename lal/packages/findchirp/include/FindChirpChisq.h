@@ -110,8 +110,9 @@ typedef struct
 tagFindChirpChisqParams
 {
   REAL4                         norm;
+  REAL4                         a1;
   REAL4                         b1;
-  REAL4                         a2;
+  REAL4                         b2;
 #if 0
   REAL4                         bankMatch;
 #endif
@@ -141,9 +142,11 @@ functions. The fields are:
 \item[\texttt{REAL4 norm}] The normalization factor for the SP templates.
 Equals $4 \Delta t / (N segNorm)$.
 
+\item[\texttt{REAL4 a1}] BCV-template normalization parameter.
+
 \item[\texttt{REAL4 b1}] BCV-template normalization parameter.
 
-\item[\texttt{REAL4 a2}] BCV-template normalization parameter.
+\item[\texttt{REAL4 b2}] BCV-template normalization parameter.
 
 \item[\texttt{REAL4 bankMatch}] Template bank match...
 

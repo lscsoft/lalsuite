@@ -280,8 +280,9 @@ tagFindChirpSegment
   UINT4Vector 		       *chisqBinVecBCV;
   REAL8                         deltaT;
   REAL4                         segNorm;
-  REAL4                         b1;     
-  REAL4                         a2;     
+  REAL4                         a1;     
+  REAL4                         b1;
+  REAL4                         b2;     
   REAL4                         fLow;
   UINT4                         invSpecTrunc;
   UINT4                         number;
@@ -305,7 +306,7 @@ used for the stationary phase chirps and the BCV templates.
 The conditioning performed is as described in the documentation for the
 module \texttt{FindChirpSPData.c}
 
-\item[\texttt{COMPLEX8FrequencySeries *data1}] The conditioned input data,
+\item[\texttt{COMPLEX8FrequencySeries *dataBCV}] The conditioned input data,
 used only for the BCV templates.
 The conditioning performed is as described in the documentation for the
 module \texttt{FindChirpBCVData.c}
@@ -325,9 +326,11 @@ input data.
 \item[\texttt{REAL4 segNorm}] The template independent part of the 
 normalisation constant $\sigma$.
 
+\item[\texttt{REAL4 a1}] BCV-template normalization parameter.
+
 \item[\texttt{REAL4 b1}] BCV-template normalization parameter.
 
-\item[\texttt{REAL4 a2}] BCV-template normalization parameter.
+\item[\texttt{REAL4 b2}] BCV-template normalization parameter.
 
 \item[\texttt{UINT4 invSpecTrunc}] The number of points to which the inverse 
 power spectrum \ospsd is truncated to in the time domain in order to smooth

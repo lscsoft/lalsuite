@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpSP.h
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A., BCV-Modifications by Messaritaki E.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="FindChirpSPHV">
-Author: Brown, D. A.
+Author: Brown, D. A., BCV-Modifications by Messaritaki E.
 $Id$
 </lalVerbatim> 
 
@@ -153,7 +153,7 @@ contains the quantity
 \mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
 \end{equation}
 
-\item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
+\item[\texttt{REAL4Vector *tmpltPowerVecBCV}] A vector which on exit from
 \texttt{FindChirpBCVData()}  
 contains the quantity
 \begin{equation}

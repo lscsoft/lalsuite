@@ -1088,8 +1088,9 @@ LALFindChirpBCVFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
+  REAL4                 a1;
   REAL4                 b1;                  
-  REAL4                 a2;                  
+  REAL4                 b2;                  
   REAL4                 templateNorm;
   REAL4                 modqsq;
 
@@ -1241,9 +1242,10 @@ LALFindChirpBCVFilterSegment (
     REAL4 fendBCV = input->tmplt->fendBCV;                  
     /* k that corresponds to fendBCV  */
     UINT4 kendBCV = floor( numPoints * deltaT * fendBCV );  
-    /* BCV normalization */
+    /* BCV normalization parameters */
+    REAL4 a1 = input->segment->a1;
     REAL4 b1 = input->segment->b1;  
-    REAL4 a2 = input->segment->a2; 
+    REAL4 b2 = input->segment->b2; 
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
@@ -1297,21 +1299,17 @@ LALFindChirpBCVFilterSegment (
   kTop = ( (numPoints/2) < kendBCV ? numPoints/2 : kendBCV );
   for ( k = 1; k < kTop; ++k )
   {
-    REAL4 r1 = inputData[k].re;
-    REAL4 s1 = 0 - inputData[k].im;    /* note complex conjugate */
-    REAL4 r2 = inputDataBCV[k].re;
-    REAL4 s2 = 0 - inputDataBCV[k].im; /* note complex conjugate */
+    REAL4 r    = inputData[k].re;
+    REAL4 s    = 0.0 - inputData[k].im;    /* note complex conjugate */
+    REAL4 rBCV = inputDataBCV[k].re;
+    REAL4 sBCV = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = tmpltSignal[k].im;     
 
-    qtilde[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) +
-		           a2 * ( r2 * x - s2 * y ) );
-    qtilde[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) +
-		           a2 * ( r2 * y + s2 * x ) );
-    qtildeBCV[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) -
-		              a2 * ( r2 * x - s2 * y ) );
-    qtildeBCV[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) -
-		              a2 * ( r2 * y + s2 * x ) ); 
+    qtilde[k].re = r * x - s * y ;
+    qtilde[k].im = r * y + s * x ;
+    qtildeBCV[k].re = rBCV * x - sBCV * y ;
+    qtildeBCV[k].im = rBCV * y + sBCV * x ;
   }
 
   /* qtilde negative frequency only: not DC or nyquist */
@@ -1320,21 +1318,17 @@ LALFindChirpBCVFilterSegment (
     kTop = ( (numPoints-1) < kendBCV ? (numPoints-1) : kendBCV );	  
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
-      REAL4 r1 = inputData[k].re;
-      REAL4 s1 = 0.0 - inputData[k].im;    /* note complex conjugate */
-      REAL4 r2 = inputDataBCV[k].re;
-      REAL4 s2 = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
+      REAL4 r = inputData[k].re;
+      REAL4 s = 0.0 - inputData[k].im;    /* note complex conjugate */
+      REAL4 rBCV = inputDataBCV[k].re;
+      REAL4 sBCV = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
       REAL4 x = tmpltSignal[k].re;
       REAL4 y = tmpltSignal[k].im;
 
-      qtilde[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) +
-                             a2 * ( r2 * x - s2 * y ) );
-      qtilde[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) +
-                             a2 * ( r2 * y + s2 * x ) );
-      qtildeBCV[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) -
-                                a2 * ( r2 * x - s2 * y ) );
-      qtildeBCV[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) -
-                                a2 * ( r2 * y + s2 * x ) );
+      qtilde[k].re = r * x - s * y ;
+      qtilde[k].im = r * y + s * x ;
+      qtildeBCV[k].re = rBCV * x - sBCV * y ;
+      qtildeBCV[k].im = rBCV * y + sBCV * x ;
     }
    }
 
@@ -1403,14 +1397,16 @@ LALFindChirpBCVFilterSegment (
         sizeof(LIGOTimeGPS) );
     params->rhosqVec->deltaT = input->segment->deltaT;
 
-    modqsq = 0.0;
-
     for ( j = 0; j < numPoints; ++j )
     {
-      modqsq += ( q[j].re * q[j].re + q[j].im * q[j].im );
-      modqsq += ( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im );
-      modqsq += ( 2.0 * sqrt( q[j].re * q[j].re + q[j].im * q[j].im ) *
-		   sqrt( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ));
+      REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
+      REAL4 modqsqBCV = qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ;
+      REAL4 ImProd = - 2.0 * ( q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
+
+      REAL4 modqsq = ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
+		       0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) *
+		     ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
+		       0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) ;
 
       params->rhosqVec->data->data[j] = norm * modqsq;   
     }
@@ -1420,10 +1416,14 @@ LALFindChirpBCVFilterSegment (
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
-     modqsq += ( q[j].re * q[j].re + q[j].im * q[j].im );
-     modqsq += ( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im );
-     modqsq += ( 2.0 * sqrt( q[j].re * q[j].re + q[j].im * q[j].im ) *
-                    sqrt( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ));
+     REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
+     REAL4 modqsqBCV = qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ;
+     REAL4 ImProd = - 2.0 * ( q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
+
+     REAL4 modqsq = ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
+                      0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) *
+                    ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
+                      0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) ;
 
 
     /* if snrsq exceeds threshold at any point */
@@ -1445,8 +1445,9 @@ LALFindChirpBCVFilterSegment (
         params->chisqParams->chisqBinVec    = input->segment->chisqBinVec;
 	params->chisqParams->chisqBinVecBCV = input->segment->chisqBinVecBCV;
         params->chisqParams->norm           = norm;
+	params->chisqParams->a1             = a1 ;
 	params->chisqParams->b1             = b1 ;
-	params->chisqParams->a2             = a2 ;
+	params->chisqParams->b2             = b2 ;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
@@ -1460,7 +1461,7 @@ LALFindChirpBCVFilterSegment (
       }
 
 
-      /* if we have don't have a chisq or the chisq drops below the       */
+      /* if we don't have a chisq or the chisq drops below the            */
       /* modified chisq threshold, start processing events                */
       if ( ! input->segment->chisqBinVec->length ||
           params->chisqVec->data[j] <
@@ -1521,22 +1522,9 @@ LALFindChirpBCVFilterSegment (
 	   thisEvent->impulse_time = thisEvent->end_time;
 
            /* copy the template into the event */
-
-#if 0      
-	   thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-           thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-           thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
-           thisEvent->eta    = (REAL4) input->tmplt->eta;
-           thisEvent->tau0   = (REAL4) input->tmplt->t0;
-           thisEvent->tau2   = (REAL4) input->tmplt->t2;
-           thisEvent->tau3   = (REAL4) input->tmplt->t3;
-           thisEvent->tau4   = (REAL4) input->tmplt->t4;
-           thisEvent->tau5   = (REAL4) input->tmplt->t5;
-           thisEvent->ttotal = (REAL4) input->tmplt->tC;  
-#endif	   
-	   /* temporarily */
-	   thisEvent->tau0   = (REAL4) input->tmplt->psi0; 
-	   thisEvent->tau3   = (REAL4) input->tmplt->psi3;
+	   /* temporarily just copy psi0, psi3 and Mchirp */
+	   thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
+	   thisEvent->psi3   = (REAL4) input->tmplt->psi3;
 	   thisEvent->mchirp = LAL_1_PI *
 		   pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
 
@@ -1631,22 +1619,9 @@ LALFindChirpBCVFilterSegment (
     thisEvent->impulse_time = thisEvent->end_time;
 
     /* copy the template into the event */
-
-#if 0    
-    thisEvent->mass1  = (REAL4) input->tmplt->mass1;
-    thisEvent->mass2  = (REAL4) input->tmplt->mass2;
-    thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
-    thisEvent->eta    = (REAL4) input->tmplt->eta;
-    thisEvent->tau0   = (REAL4) input->tmplt->t0;
-    thisEvent->tau2   = (REAL4) input->tmplt->t2;
-    thisEvent->tau3   = (REAL4) input->tmplt->t3;
-    thisEvent->tau4   = (REAL4) input->tmplt->t4;
-    thisEvent->tau5   = (REAL4) input->tmplt->t5;
-    thisEvent->ttotal = (REAL4) input->tmplt->tC;    
-#endif    
-    /* temporarily */
-    thisEvent->tau0   = (REAL4) input->tmplt->psi0;   
-    thisEvent->tau3   = (REAL4) input->tmplt->psi3;  
+    /* temporarily copy just psi0, psi3 and Mchirp */
+    thisEvent->psi0   = (REAL4) input->tmplt->psi0;   
+    thisEvent->psi3   = (REAL4) input->tmplt->psi3;  
     thisEvent->mchirp = LAL_1_PI *
 	    pow( 3.0 / 128.0 / input->tmplt->psi0, 3.0/5.0 );
 

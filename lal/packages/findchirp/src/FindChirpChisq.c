@@ -530,8 +530,6 @@ LALFindChirpBCVChisqVeto (
   REAL4                 mismatch;
 #endif
 
-  REAL4                 b1;
-  REAL4                 a2;
   COMPLEX8             *qtildeBin;
   COMPLEX8             *qtildeBinBCV;
 
@@ -624,9 +622,6 @@ LALFindChirpBCVChisqVeto (
    */
 
 
-  b1  =  params->b1;
-  a2  =  params->a2;
-  
   chisq        = chisqVec->data;
 
   numPoints    = input->qVec->length;

@@ -190,7 +190,7 @@ LALFindChirpSPDataInit (
   }
   ENDFAIL( status );
 
-  /* additinal BCV template power vector */
+  /* additional BCV template power vector */
   LALCreateVector( status->statusPtr, &dataParamPtr->tmpltPowerVecBCV,
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
@@ -698,8 +698,11 @@ LALFindChirpBCVData (
   REAL4                 increment;
   REAL4                 nextBin;
   REAL4                 partSum;
-  REAL4                 PowerPlus  = 0.0 ;
-  REAL4                 PowerMinus = 0.0 ;
+  REAL4                 Power  = 0.0 ;
+  REAL4                 PowerBCV = 0.0 ;
+  REAL4                 I73 = 0.0;
+  REAL4                 I53 = 0.0;
+  REAL4                 I1 = 0.0;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -970,14 +973,15 @@ LALFindChirpBCVData (
 
     /*
      *
-     * compute BCV normalisationi parameters b1 and a2, 
+     * compute BCV normalisation parameters a1, b1 and b2, 
      * outputData, point fcSeg at data segment
      *
      */
 
 
+    fcSeg->a1 = 0.0;
     fcSeg->b1 = 0.0;
-    fcSeg->a2 = 0.0;
+    fcSeg->b2 = 0.0;
 
     for ( k = 0; k < cut; ++k )
     {
@@ -992,36 +996,36 @@ LALFindChirpBCVData (
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      tmpltPower[k]   = amp[k] * amp[k] * wtilde[k].re;
-      tmpltPowerBCV[k]   = tmpltPower[k] *
-	pow( (k/(fcSeg->data->data->length)), 4.0/3.0 );
-      fcSeg->b1 += tmpltPower[k];
-      fcSeg->a2 += tmpltPowerBCV[k];
+      I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
+      I53 += 4.0 * amp[k] * pow( (k/(fcSeg->data->data->length)), -1.0/2.0 )
+		* wtilde[k].re ;
+      I1 += 4.0 * pow( (k/(fcSeg->data->data->length)), -1.0 ) * wtilde[k].re;  
     }
 
-    fcSeg->b1 = 1.0 / 2.0 / sqrt( fcSeg->b1 ) ;
-    fcSeg->a2 = 1.0 / 2.0 / sqrt( fcSeg->a2 ) ;
+    fcSeg->a1 = 1.0 / sqrt(I73) ;
+    fcSeg->b2 = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
+    fcSeg->b1 = - I53 * fcSeg->b2 / I73 ;
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      PowerPlus += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
-		          (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] +
-			  2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
-		       	     pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
-      PowerMinus += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
-		          (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] -
-		          2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]* 
-			     pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
+      tmpltPower[k]    = 4.0 * fcSeg->a1 * fcSeg->a1 * amp[k] * amp[k] 
+	      * wtilde[k].re;
+      Power += tmpltPower[k];
+      tmpltPowerBCV[k] = 4.0 * ( fcSeg->b1 * amp[k] + fcSeg->b2 * 
+         pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) *
+         ( fcSeg->b1 * amp[k] + fcSeg->b2 * 
+	 pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re;
+      PowerBCV += tmpltPowerBCV[k] ;
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
-      outputData[k].re  *= wtilde[k].re * amp[k];
-      outputData[k].im  *= wtilde[k].re * amp[k];
-      outputDataBCV[k].re *= outputDataBCV[k].re 
-	      * pow( (k/(fcSeg->data->data->length)), 2.0/3.0 );
-      outputDataBCV[k].im *= outputDataBCV[k].re
-	      * pow( (k/(fcSeg->data->data->length)), 2.0/3.0 );
+      outputData[k].re  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
+      outputData[k].im  *= 4.0 * fcSeg->a1 * amp[k] * wtilde[k].re ;
+      outputDataBCV[k].re *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b1 *
+	pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re ; 
+      outputDataBCV[k].im *= 4.0 * (fcSeg->b1 * amp[k] + fcSeg->b1 *
+        pow( ( k/(fcSeg->data->data->length) ) , -1.0/2.0 ) ) * wtilde[k].re ;
     }
 
     /* set output frequency series parameters */
@@ -1052,7 +1056,7 @@ LALFindChirpBCVData (
     /* Fisrt set of chisq bins */
     if ( numChisqBins )
     {
-      increment = PowerPlus / (REAL4) numChisqBins;
+      increment = Power / (REAL4) numChisqBins;
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;
@@ -1062,10 +1066,7 @@ LALFindChirpBCVData (
 
       for ( k = 1; k < fcSeg->data->data->length; ++k )
       {
-        partSum += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
-                      (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] +
-                      2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
-                      pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) ); 
+        partSum += tmpltPower[k] ;
         if ( partSum >= nextBin )
         {
           chisqBin[chisqPt++] = k;
@@ -1079,7 +1080,7 @@ LALFindChirpBCVData (
     /* Second set of chisq bins */
     if ( numChisqBins )
     {
-      increment = PowerMinus / (REAL4) numChisqBins;
+      increment = PowerBCV / (REAL4) numChisqBins;
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;
@@ -1089,10 +1090,7 @@ LALFindChirpBCVData (
 
       for ( k = 1; k < fcSeg->dataBCV->data->length; ++k )
       {
-        partSum += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
-                   (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] -
-                   2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
-                   pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
+        partSum += tmpltPowerBCV[k] ;
         if ( partSum >= nextBin )
         {
           chisqBinBCV[chisqPt++] = k;
