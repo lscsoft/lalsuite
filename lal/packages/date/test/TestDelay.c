@@ -59,7 +59,7 @@ NRCSID( TESTDELAYC, "$Id$" );
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
 
 
-int lalDebugLevel = 0;
+int lalDebugLevel = LALALLDBG;
 
 int main( void )
 {
@@ -119,6 +119,8 @@ int main( void )
   frdet2.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
+  if (lalDebugLevel > 2)
+    REPORTSTATUS(&stat);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
@@ -134,6 +136,8 @@ int main( void )
   det1_and_source.p_source       = &source;
 
   LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
+  if (lalDebugLevel > 2)
+    REPORTSTATUS(&stat);
 
   /*
    * Expect delay to be roughly c/R, where c=speed of light,

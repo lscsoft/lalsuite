@@ -33,25 +33,26 @@ Trivial.
 \subsubsection*{Uses}
 
 Suppose we would like to form a timestamp string for the current time.
-The following program (taken from GRASP~\cite{grasp:194}) would
-accomplish this:
+The following program would accomplish this:
 
 \begin{verbatim}
-void printone(Status *status, const LIGOTimeUnix *time1)
+#include <time.h>
+#include <lal/Date.h>
+int main(int argc, char *argv[])
 {
+    static LALStatus status;
     LIGOTimeGPS  gpstime;
     LALDate      laldate;
-    LIGOTimeUnix tmp;
     LALUnixDate  utimestruct;
-    CHARVector *utc = NULL;
+    CHARVector  *utc = NULL;
+    time_t       ticks;
 
     INITSTATUS (status, "printone", TESTUTOGPSC);
 
     LALCHARCreateVector(status, &utc, (UINT4)64);
 
-    UtoGPS(status, &gpstime, time1);
-
-    Utime(status, &laldate, time1);
+    ticks = time(NULL);
+    gmtime_r(&ticks, &(laldate->unixDate));
     DateString(status, utc, &laldate);
 
     printf("%s\n", utc->data);
@@ -90,7 +91,7 @@ LALDateString (LALStatus     *status,
   CHAR tmpmin[3];
   CHAR tmpsec[3];
   CHAR tmpwday[4];
-  
+
   INITSTATUS (status, "LALDateString", DATESTRINGC);
 
   /*

@@ -24,7 +24,7 @@ main(int argc, char *argv[])
     INT4             testid;
     INT4             dayofmonth, monthofyear;
     LIGOTimeGPS      gpstime;
-    LIGOTimeUnix     unixtime;
+    LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
     
     if (argc != 3)
@@ -132,8 +132,7 @@ main(int argc, char *argv[])
         /* Doing the GPS to MST1 conversions the long way */
         printf("\n");
         printf("\nConverting GPS to LMST the long way instead:\n");
-        LALGPStoU(&status, &unixtime, &gpstime);
-        LALUtime(&status, &date, &unixtime);
+        LALGPStoUTC(&status, &date, &gpstime, &accuracy);
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
         LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
@@ -202,8 +201,7 @@ main(int argc, char *argv[])
         /* Doing the GPS to MST1 conversions the long way */
         printf("\n");
         printf("\nConverting GPS to LMST the long way instead:\n");
-        LALGPStoU(&status, &unixtime, &gpstime);
-        LALUtime(&status, &date, &unixtime);
+        LALGPStoUTC(&status, &date, &gpstime, &accuracy);
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
         LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 

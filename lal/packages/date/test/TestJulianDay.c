@@ -2,9 +2,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 
-INT4 lalDebugLevel = 2;
+INT4 lalDebugLevel = 0;
 
-NRCSID (TESTJULIANDAYC, "$Id$");
+NRCSID (LALTESTJULIANDAYC, "$Id$");
 
 #define SUCCESS              0
 #define FAIL_JULIAN_DAY      1
@@ -96,7 +96,9 @@ main(int argc, char *argv[])
     /*
      * Distinctly not robust
      */
-    printf("Usage: TestJulianDay [debug_level] -- debug_level = [0,1,2]\n");
+    if (argc == 1)
+      fprintf(stderr,
+              "Usage: TestJulianDay [debug_level] -- debug_level = [0,1,2]\n");
 
     if (argc == 2)
         lalDebugLevel = atoi(argv[1]);
@@ -148,13 +150,37 @@ main(int argc, char *argv[])
       printf("Find Julian Day/Date for current date and time:\n");
     
       LALJulianDay(&status, &julian_day, &date);
+      if (status.statusCode && lalDebugLevel > 0)
+        {
+          fprintf(stderr, "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                  __LINE__, LALTESTJULIANDAYC);
+          REPORTSTATUS(&status);
+          return status.statusCode;
+        }
+      
       printf("\n");
       printf("\tJulian Day Number          = %8d\n", julian_day);
 
       LALJulianDate(&status, &julian_date, &date);
+      if (status.statusCode && lalDebugLevel > 0)
+        {
+          fprintf(stderr,
+                  "TestJulianDay: LALJulianDate() failed, line %i, %s\n",
+                  __LINE__, LALTESTJULIANDAYC);
+          REPORTSTATUS(&status);
+          return status.statusCode;
+        }
       printf("\tJulian Date                = %19.10f\n", julian_date);
 
       LALModJulianDate(&status, &julian_date, &date);
+      if (status.statusCode && lalDebugLevel > 0)
+        {
+          fprintf(stderr,
+                  "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                  __LINE__, LALTESTJULIANDAYC);
+          REPORTSTATUS(&status);
+          return status.statusCode;
+        }
       printf("\tModified Julian Date       = %19.10f\n", julian_date);
 
     }
@@ -182,27 +208,47 @@ main(int argc, char *argv[])
 
     ref_julian_day = 2451545;
     LALJulianDay(&status, &julian_day, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
 
+      
     if (lalDebugLevel > 0) {
       printf("\n");
       printf("\tJulian Day Number          = %8d\n", julian_day);
     }
 
     if (julian_day != ref_julian_day) {
-      fprintf(stderr, "FAIL: Julian Day\n");
+      fprintf(stderr, "FAIL: Julian Day: value not as expected; line %i, %s\n",
+              __LINE__, LALTESTJULIANDAYC);
       return FAIL_JULIAN_DAY;
     }
 
     ref_julian_date = 2451545.0;
     LALJulianDate(&status, &julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
 
+    
     if (lalDebugLevel > 0) 
       printf("\tJulian Date                = %19.10f\n", julian_date);
 
     if (fabs(julian_date - ref_julian_date) > julian_precision) {
 
       if (fabs(julian_date - ref_julian_date) > coarse_precision) {  
-        fprintf(stderr, "FAIL: Julian Date\n");
+        fprintf(stderr, "FAIL: Julian Date, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
         return FAIL_JULIAN_DATE;
       } else {
         fprintf(stderr, "WARNING: Inaccuracy in LALJulianDate() > %e\n",
@@ -212,6 +258,16 @@ main(int argc, char *argv[])
 
     ref_mod_julian_date = 51544.5;
     LALModJulianDate(&status, &mod_julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
+
 
     if (lalDebugLevel > 0)
       printf("\tModified Julian Date       = %19.10f\n", mod_julian_date);
@@ -219,7 +275,8 @@ main(int argc, char *argv[])
     if (fabs(mod_julian_date - ref_mod_julian_date) > julian_precision) {
       
       if (fabs(mod_julian_date - ref_mod_julian_date) > coarse_precision) {
-        fprintf(stderr, "FAIL: Modified Julian Date\n");
+        fprintf(stderr, "FAIL: Modified Julian Date, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
         return FAIL_MOD_JULIAN_DATE;
       } else {
         fprintf(stderr, "WARNING: Inaccuracy in LALModJulianDate() > %e\n",
@@ -247,6 +304,16 @@ main(int argc, char *argv[])
 
     ref_julian_day = 2451545;
     LALJulianDay(&status, &julian_day, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
+
 
     if (lalDebugLevel > 0) {
       printf("\n");
@@ -254,13 +321,23 @@ main(int argc, char *argv[])
     }
 
     if (julian_day != ref_julian_day) {
-      fprintf(stderr, "FAIL: Julian Day\n");
+      fprintf(stderr, "FAIL: Julian Day, line %i, %s\n", __LINE__,
+              LALTESTJULIANDAYC);
       return FAIL_JULIAN_DAY;
     }
 
 
     ref_julian_date = 2451544.9583333344;
     LALJulianDate(&status, &julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tJulian Date                = %19.10f\n", julian_date);
@@ -278,6 +355,15 @@ main(int argc, char *argv[])
 
     ref_mod_julian_date = 51544.4583333344;
     LALModJulianDate(&status, &mod_julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tModified Julian Date       = %19.10f\n", mod_julian_date);
@@ -315,13 +401,41 @@ main(int argc, char *argv[])
       date.unixDate.tm_isdst = 0;
 
       LALJulianDay(&status, &julian_day, &date);
+      /* here, we EXPECT an error */
+      if (!status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
       printf("\n");
       printf("\tJulian Day Number          = %8d\n", julian_day);
 
       LALJulianDate(&status, &julian_date, &date);
+      if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
       printf("\tJulian Date                = %19.10f\n", julian_date);
 
       LALModJulianDate(&status, &julian_date, &date);
+      if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
       printf("\tModified Julian Date       = %19.10f\n", mod_julian_date);
 
       lalDebugLevel = old_debuglvl;
@@ -350,6 +464,15 @@ main(int argc, char *argv[])
 
     ref_julian_day = 2449673;
     LALJulianDay(&status, &julian_day, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tJulian Day Number          = %8d\n", julian_day);
@@ -361,6 +484,15 @@ main(int argc, char *argv[])
 
     ref_julian_date = 2449672.5;
     LALJulianDate(&status, &julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tJulian Date                = %19.10f\n", julian_date);
@@ -379,6 +511,15 @@ main(int argc, char *argv[])
 
     ref_mod_julian_date = 49672.0;
     LALModJulianDate(&status, &mod_julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0) 
       printf("\tModified Julian Date       = %19.10f\n", mod_julian_date);
@@ -413,6 +554,15 @@ main(int argc, char *argv[])
 
     ref_julian_day = 2452045;
     LALJulianDay(&status, &julian_day, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDay() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tJulian Day Number          = %8d\n", julian_day);
@@ -424,6 +574,15 @@ main(int argc, char *argv[])
 
     ref_julian_date = 2452044.609653;
     LALJulianDate(&status, &julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0)
       printf("\tJulian Date                = %19.10f\n", julian_date);
@@ -442,6 +601,15 @@ main(int argc, char *argv[])
 
     ref_mod_julian_date = 52044.109653;
     LALModJulianDate(&status, &mod_julian_date, &date);
+    if (status.statusCode && lalDebugLevel > 0)
+      {
+        fprintf(stderr,
+                "TestJulianDay: LALModJulianDate() failed, line %i, %s\n",
+                __LINE__, LALTESTJULIANDAYC);
+        REPORTSTATUS(&status);
+        return status.statusCode;
+      }
+
 
     if (lalDebugLevel > 0) 
       printf("\tModified Julian Date       = %19.10f\n", mod_julian_date);

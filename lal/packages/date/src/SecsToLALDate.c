@@ -102,7 +102,6 @@ main(int argc, char *argv[])
  * CALLS
  * 
  * NOTES
- * To convert a LIGOTimeUTC structure to LALDate, use LALUtime().
  * 
  *----------------------------------------------------------------------- */
 

@@ -74,6 +74,8 @@ LALTimeDelay( LALStatus                    *stat,
               REAL8                        *p_time_diff,
               const TwoDetsTimeAndASource  *p_dets_time_and_source )
 { /* </lalVerbatim> */
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+  
   /* a and b are WGS-84 ellipsoid parameters (semimajor and semiminor axes) */
   const REAL8 a2 = LAL_AWGS84_SI * LAL_AWGS84_SI;
   const REAL8 b2 = LAL_BWGS84_SI * LAL_BWGS84_SI;
@@ -97,7 +99,6 @@ LALTimeDelay( LALStatus                    *stat,
   /* GMST of first detector, in radians */
   REAL8 gmst1;
   
-  LIGOTimeUnix unixTime; /* Unix time */
   LALDate      date;
 
 
@@ -133,9 +134,9 @@ LALTimeDelay( LALStatus                    *stat,
    */
   
   /* need GMST in radians */
-  TRY( LALGPStoU( stat->statusPtr, &unixTime,
-                  p_dets_time_and_source->p_det_and_time1->p_gps ), stat );
-  TRY( LALUtime( stat->statusPtr, &date, &unixTime ), stat );
+  TRY( LALGPStoUTC( stat->statusPtr, &date,
+                    p_dets_time_and_source->p_det_and_time1->p_gps,
+                    &accuracy ), stat );
   TRY( LALGMST1( stat->statusPtr, &gmst1, &date, MST_RAD ), stat );
 
   /* polar angle, theta */

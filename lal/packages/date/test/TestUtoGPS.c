@@ -220,6 +220,8 @@ main(int argc, char *argv[])
     testunixtime(&status, &unixtime, 0, &retval);
     unixtime.unixSeconds = 911110677;
     testunixtime(&status, &unixtime, 0, &retval);
+    unixtime.unixSeconds = 773539211 + 21;
+    testunixtime(&status, &unixtime, 0, &retval);
     unixtime.unixSeconds = time(NULL);
     testunixtime(&status, &unixtime, 0, &retval);
 

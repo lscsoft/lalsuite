@@ -209,8 +209,8 @@ NRCSID (LMST1C, "$Id$");
 /*
  * Compute GMST1 in requested units given date UTC.
  * Use algorithm as coded in NOVAS-C Version 2.0.1 (10 Dec 99)
- *   Naval Observatory Vector Astrometry Subroutines
- *  C Version
+ *   Naval Observatory Vector Astrometry Subroutines C Version:
+ *   void sidereal_time()
  */
 
 /* <lalVerbatim file="LMST1CP"> */
@@ -233,6 +233,7 @@ LALGMST1 (LALStatus     *status,
   const REAL8      e = 3155760000.0;
 
   INITSTATUS (status, "LALGMST1", LMST1C);
+  ATTATCHSTATUSPTR(status);
 
   /*
    * Check pointer to input variables
@@ -249,7 +250,7 @@ LALGMST1 (LALStatus     *status,
   /*
    * Compute GMST1 for 0h UT1 on given date in seconds 
    */
-  LALJulianDate(status, &jdate, p_date);
+  TRY( LALJulianDate( status->statusPtr, &jdate, p_date ), status );
   jdate -= J2000_0;
   tmp    = (INT4)jdate;  /* get the integral part of jdate */
   jd_hi  = (REAL8)tmp;
@@ -306,6 +307,7 @@ LALGMST1 (LALStatus     *status,
       break;
     }
 
+  DETATCHSTATUSPTR(status);
   RETURN (status);
 } /* END LALGMST1() */
 
@@ -321,11 +323,11 @@ LALGPStoGMST1( LALStatus         *status,
                const LIGOTimeGPS *p_gps,    /* input - GPS time */
                LALMSTUnits        outunits) /* GMST1 units */
 { /* </lalVerbatim> */
-  LIGOTimeUnix    unixTime;
   LALDate         date;
-    
-  INITSTATUS (status, "LALGPStoGMST1", LMST1C);
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
+  INITSTATUS (status, "LALGPStoGMST1", LMST1C);
+  ATTATCHSTATUSPTR(status);
     
   /*
    * Check pointer to input variables
@@ -342,16 +344,12 @@ LALGPStoGMST1( LALStatus         *status,
   /*
    * Convert GPS to date-time structure
    */
+  TRY( LALGPStoUTC(status->statusPtr, &date, p_gps, &accuracy), status );
 
-  /* first, GPS to Unix */
-  LALGPStoU(status, &unixTime, p_gps);
+  TRY( LALGMST1(status->statusPtr, p_gmst, &date, outunits), status );
 
-  /* then, Unix to date-time */
-  LALUtime(status, &date, &unixTime);
-
-  LALGMST1(status, p_gmst, &date, outunits);
-
-  return;
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 } /* END: LALGPStoGMST1() */
 
 
@@ -365,7 +363,7 @@ LALGPStoGMST1( LALStatus         *status,
 void
 LALLMST1 (LALStatus             *status,
           REAL8                 *p_lmst,            /* output - LMST1 */
-          const LALPlaceAndDate *p_place_and_date,  /* input - location and date */
+          const LALPlaceAndDate *p_place_and_date,  /* input - place and date */
           LALMSTUnits            outunits)          /* LMST1 units */
 { /* </lalVerbatim> */
   REAL8 gmst;
@@ -373,8 +371,8 @@ LALLMST1 (LALStatus             *status,
   REAL8 longitude =
     p_place_and_date->p_detector->frDetector.vertexLongitudeDegrees;
 
-
   INITSTATUS (status, "LALLMST1", LMST1C);
+  ATTATCHSTATUSPTR(status);
 
   /*
    * Check pointer to input variables
@@ -393,7 +391,8 @@ LALLMST1 (LALStatus             *status,
    */
 
   /* get GMST1 in seconds */
-  LALGMST1(status, &gmst, p_place_and_date->p_date, outunits);
+  TRY( LALGMST1(status->statusPtr, &gmst, p_place_and_date->p_date, outunits),
+       status);
 
   /* convert longitude to appropriate units of sidereal time */
   switch (outunits)
@@ -422,6 +421,7 @@ LALLMST1 (LALStatus             *status,
   while (*p_lmst < 0)
     *p_lmst += day;
 
+  DETATCHSTATUSPTR(status);
   RETURN (status);
 } /* END LALLMST1() */
 
@@ -434,15 +434,15 @@ LALLMST1 (LALStatus             *status,
 void
 LALGPStoLMST1( LALStatus             *status,
                REAL8                 *p_lmst,          /* output - LMST1 */
-               const LALPlaceAndGPS  *p_place_and_gps, /* input - location and GPS */
+               const LALPlaceAndGPS  *p_place_and_gps, /* input - place and GPS */
                LALMSTUnits            outunits)        /* LMST1 units */
 { /* </lalVerbatim> */
-  LIGOTimeUnix    unixTime;
   LALDate         date;
   LALPlaceAndDate place_and_date;
-
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
   INITSTATUS (status, "LALGPStoLMST1", LMST1C);
+  ATTATCHSTATUSPTR(status);
 
     
   /*
@@ -462,18 +462,17 @@ LALGPStoLMST1( LALStatus             *status,
    */
 
   /* first, GPS to Unix */
-  LALGPStoU(status, &unixTime, p_place_and_gps->p_gps);
-
-  /* then, Unix to date-time */
-  LALUtime(status, &date, &unixTime);
+  TRY( LALGPStoUTC(status->statusPtr, &date, p_place_and_gps->p_gps, &accuracy),
+       status );
 
   /* stuff it all into a LALPlaceAndDate */
   place_and_date.p_detector = p_place_and_gps->p_detector;
   place_and_date.p_date     = &date;
 
-  LALLMST1(status, p_lmst, &place_and_date, outunits);
+  TRY( LALLMST1(status->statusPtr, p_lmst, &place_and_date, outunits), status );
 
-  return;
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 } /* END: LALGPStoLMST1() */
 
 

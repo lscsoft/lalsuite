@@ -20,10 +20,10 @@ Converts between Gregorian date and Julian Days/Dates.
 
 \subsubsection*{Description}
 
-These routines compute Julian Day, Modified Julian Day, Julian Date, and
-Modified Julian Date for a given Gregorian date and time UTC.  Julian Day
-and Modified Julian Day are integer number of days; Julian Date and
-Modified Julian Date are decimal number of days.
+These routines compute Julian Day, Julian Date, and Modified Julian Date
+for a given Gregorian date and time UTC.  Julian Day and Modified Julian
+Day are integer number of days; Julian Date and Modified Julian Date are
+decimal number of days.
 
 \subsubsection*{Algorithms}
 
@@ -90,15 +90,14 @@ int
 main(int argc, char *argv[])
 {
     time_t        now;
-    LALUnixDate  *ltime;
     Status        status = {0};
     LALDate       date;
     REAL8         jDate;
 
     INITSTATUS (&status, "TestJulianDay", TESTJULIANDAYC);
 
-    time(&now);
-    ltime = localtime(&now);
+    now = time(NULL);
+    gmtime_r(&now, &(date.unixDate));
 
     date.unixDate.tm_sec  = ltime->tm_sec;
     date.unixDate.tm_min  = ltime->tm_min;
@@ -110,7 +109,7 @@ main(int argc, char *argv[])
     date.unixDate.tm_yday = ltime->tm_yday;
     date.unixDate.tm_isdst = 0; 
 
-    JulianDate(&status, &jDate, &date);
+    LALJulianDate(&status, &jDate, &date);
     printf("\tJulian Date                = %10.1f\n", jDate);
 
     return 0;
@@ -142,7 +141,7 @@ LALJulianDay (LALStatus     *status,
               const LALDate *date)
 { /* </lalVerbatim> */
     INT4 y, m, d;
-
+    
     INITSTATUS (status, "LALJulianDay", JULIANC);
 
     /*
@@ -211,6 +210,7 @@ LALJulianDate (LALStatus     *status,
     REAL8 jdate;
 
     INITSTATUS(status, "LALJulianDate", JULIANC);
+    ATTATCHSTATUSPTR(status);
 
     /*
      * Check pointer to input variable
@@ -235,7 +235,7 @@ LALJulianDate (LALStatus     *status,
     /*
      * Get Julian Day number
      */
-    LALJulianDay(status, &jday, date);
+    TRY( LALJulianDay( status->statusPtr, &jday, date ), status );
 
     /*
      * Convert to fractions of a day
@@ -247,6 +247,7 @@ LALJulianDate (LALStatus     *status,
 
     *jDateOut = jdate;
 
+    DETATCHSTATUSPTR(status);
     RETURN (status);
 } /* END LALJulianDate() */
 
@@ -264,6 +265,7 @@ LALModJulianDate (LALStatus     *status,
   REAL8 mjd;
 
   INITSTATUS(status, "LALModJulianDate", JULIANC);
+  ATTATCHSTATUSPTR(status);
 
   /*
    * Check pointer to input variable
@@ -280,11 +282,12 @@ LALModJulianDate (LALStatus     *status,
   /*
    * Get Julian Date, and modify it
    */
-  LALJulianDate(status, &mjd, date);
+  TRY( LALJulianDate( status->statusPtr, &mjd, date ), status );
   mjd -= MJDREF;
     
   *modJDate = mjd;
 
+  DETATCHSTATUSPTR(status);
   RETURN (status);
 } /* END LALModJulianDate() */
 

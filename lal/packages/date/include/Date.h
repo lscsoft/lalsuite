@@ -26,12 +26,23 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 #ifndef _DATE_H
 #define _DATE_H
 
+/* the following two preprocessor defines are to include the prototypes for
+ * gmtime_r() and asctime_r() from /usr/include/time.h */
+
+/* HP-UX and Solaris */
 #ifndef _REENTRANT
 #   define _REENTRANT
 #endif
 
+/* Linux */
+#ifndef __USE_POSIX
+#   define __USE_POSIX
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+
+
 #include <time.h>
 
 #include <lal/LALRCSID.h>
@@ -56,17 +67,19 @@ NRCSID (DATEH, "$Id$");
 </lalLaTeX> */
 
 /* <lalErrTable> */
-#define DATEH_ENULLINPUT    1
-#define DATEH_ENULLOUTPUT   2
-#define DATEH_EDATETOOEARLY 3
-#define DATEH_ERANGE        4
-#define DATEH_EBUFFTOOSMALL 5
-#define DATEH_EASCTIMEFAIL  6
+#define DATEH_ENULLINPUT     1
+#define DATEH_ENULLOUTPUT    2
+#define DATEH_EDATETOOEARLY  3
+#define DATEH_ERANGEGPSTOUTC 4
+#define DATEH_ERANGEGPSABS   5
+#define DATEH_EBUFFTOOSMALL  6
+#define DATEH_EASCTIMEFAIL   7
 
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
-#define DATEH_MSGERANGE "Input time out of range: 0 <= utc seconds <= 946684823"
+#define DATEH_MSGERANGEGPSTOUTC "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2002-Mar-31 23:59:00 UTC (GPS 701654353)"
+#define DATEH_MSGERANGEGPSABS "Input time out of range: cannot convert times before 1972-Jan-01 00:00:00 UTC (GPS -252892800)"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
     
@@ -158,37 +171,6 @@ typedef struct
 tm
 LALUnixDate;
 
-/* <lalLaTeX>
-
-\subsubsection*{Structure \texttt{LIGOTimeUnix}}
-\index{\texttt{LIGOTimeUnix}}
-
-This structure is the Unix-epoch analog of \texttt{LIGOTimeGPS}.  It
-store the number of seconds and nanoseconds elapsed since the Unix
-epoch (1970-Jan-01 00:00:00). The fields are:
-
-\begin{description}
-\item[\texttt{INT4 unixSeconds}] The integral number of seconds
-  elapsed since the Unix epoch
-\item[\texttt{INT4 unixNanoSeconds}] The residual number of
-  nanoseconds that have to be added to \texttt{unixSeconds} to bring us
-  up to the time in question
-\end{description}
-
-</lalLaTeX> */
-
-/*
- * This time object is exactly like LIGOTimeGPS, except for the name.
- * This measures the amount of time elapsed since the Unix time reference,
- * i.e. 1970-Jan-01 00:00:00 UTC
- */
-typedef struct
-tagLIGOTimeUnix
-{
-    INT4 unixSeconds;
-    INT4 unixNanoSeconds;
-}
-LIGOTimeUnix;
 
 /* <lalLaTeX>
 
@@ -323,26 +305,6 @@ void LALModJulianDate (LALStatus     *status,
                        REAL8         *modJDate,
                        const LALDate *date);
 
-/* <lalLaTeX>
-\newpage\input{UtoGPSC}
-</lalLaTeX> */
-
-void LALUtoGPS(LALStatus*,
-               LIGOTimeGPS*,
-               const LIGOTimeUnix*);
-
-void LALGPStoU(LALStatus*,
-               LIGOTimeUnix*,
-               const LIGOTimeGPS*);
-
-
-/* <lalLaTeX>
-\newpage\input{UtimeC}
-</lalLaTeX> */
-
-void LALUtime ( LALStatus                *status,
-                LALDate                  *utc,
-                const LIGOTimeUnix       *unixtime );
 
 /* <lalLaTeX>
 \newpage\input{DateStringC}
@@ -394,10 +356,15 @@ void LALSecsToLALDate(LALStatus*,
 /* FOOBAR! Put LALLATEX stuff here for GPStoUTC */
 void
 LALGPStoUTC (LALStatus                *status,
-             LALDate                  *utcDate,
-             const LIGOTimeGPS        *gpsTime,
-             const LALLeapSecAccuracy *accuracy);
+             LALDate                  *p_utcDate,
+             const LIGOTimeGPS        *p_gpsTime,
+             const LALLeapSecAccuracy *p_accuracy);
 
+void
+LALUTCtoGPS (LALStatus                *status,
+             LIGOTimeGPS              *p_gpsTime,
+             const LALDate            *p_utcDate,
+             const LALLeapSecAccuracy *p_accuracy);
 
 
 #ifdef  __cplusplus
