@@ -596,7 +596,7 @@ LALFindChirpSlave (
     */
 
     
-    if ( ! params->bandPassed )
+    if ( ! params->bandPassed && params->specType )
     {
       REAL4                     fsafety = 0;
       PassBandParamStruc        highpassParam;
@@ -631,6 +631,10 @@ LALFindChirpSlave (
         LALFree( rawChannel );
       }
 
+      params->bandPassed = 1;
+    }
+    else
+    {
       params->bandPassed = 1;
     }
 
