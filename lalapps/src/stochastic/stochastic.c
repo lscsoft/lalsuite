@@ -1227,7 +1227,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* output to file */
-		fprintf(out, "%e %e\n", sqrt(varTheo), y);
+		fprintf(out, "%d %e %e\n", gpsStartTime.gpsSeconds, sqrt(varTheo), y);
 	}
 
 	/* close output file */
