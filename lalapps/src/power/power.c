@@ -88,7 +88,6 @@ EPSearchParams *mdcparams;          /* mdc search param                    */
 CHAR ifo[3];                        /* two character interferometer        */
 CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
-INT4 frameSampleRate;               /* sample rate of the frame data       */
 INT4 targetSampleRate;              /* sample rate after resampling        */
 
 /* data conditioning parameters */
@@ -193,7 +192,6 @@ static void print_usage(char *program)
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
-"	 --frame-sample-rate <Hz>\n" \
 "	[--geodata <high pass corner frequency>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-end-time-ns <nanoseconds>\n" \
@@ -278,10 +276,6 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 
 			case 'E':
 			arg_is_missing = params->compEPInput.alphaDefault > 1.0;
-			break;
-
-			case 'I':
-			arg_is_missing = !frameSampleRate;
 			break;
 
 			case 'K':
@@ -437,7 +431,6 @@ void parse_command_line(
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
-		{"frame-sample-rate",   required_argument, NULL,           'I'},
 		{"geodata",		required_argument, NULL,           'J'},
 		{"gps-end-time",        required_argument, NULL,           'K'},
 		{"gps-end-time-ns",     required_argument, NULL,           'L'},
@@ -509,7 +502,6 @@ void parse_command_line(
 
 	cachefile = NULL;	/* default */
 	dirname = NULL;	/* default */
-	frameSampleRate = 0;	/* impossible */
 	geodata = FALSE;	/* default */
 	memset(ifo, 0, sizeof(ifo));	/* default */
 	injectionFile = NULL;	/* default */
@@ -582,16 +574,6 @@ void parse_command_line(
 		case 'H':
 		dirname =  optarg;
 		ADD_PROCESS_PARAM("string");
-		break;
-
-		case 'I':
-		frameSampleRate = (INT4) atoi(optarg);
-		if(frameSampleRate < 2 || frameSampleRate > 16384 || !is_power_of_2(frameSampleRate)) {
-			sprintf(msg, "must be a power of 2 in the range [2,16384] (%d specified)", frameSampleRate);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("int");
 		break;
 
 		case 'J':
@@ -984,12 +966,21 @@ static REAL4TimeSeries *get_geo_data(
 	REAL4TimeSeries *series;
 	REAL8TimeSeries *geo;
 	size_t i;
+	size_t length;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geo, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geo, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
 
-	/* get the data */
+	/* get the meta data */
 	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, geo, &channelIn, stream), stat);
+
+	/* resize to the correct number of samples */
+	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
+	if(lengthlimit)
+		length = min(length, lengthlimit);
+	LAL_CALL(LALResizeREAL8TimeSeries(stat, geo, 0, length), stat);
+
+	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
 		fprintf(stderr, "get_geo_data(): reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
@@ -1022,16 +1013,21 @@ static REAL4TimeSeries *get_ligo_data(
 )
 {
 	REAL4TimeSeries *series;
+	size_t length;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
 
 	/* get the series meta data */
 	LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
 
-	/* Resize to the correct number of samples */
-	/*LAL_CALL(LALResizeREAL4TimeSeries(stat, &series, 0, min(DeltaGPStoFloat(stat, &end, &start) / series->deltaT, lengthlimit)), stat);*/
-	
+	/* resize to the correct number of samples */
+	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
+	if(lengthlimit)
+		length = min(length, lengthlimit);
+	LAL_CALL(LALResizeREAL4TimeSeries(stat, series, 0, length), stat);
+
+	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
 		fprintf(stderr, "get_ligo_data(): reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
@@ -1130,6 +1126,7 @@ static void makeWhiteNoise(
 static COMPLEX8FrequencySeries *generate_response(
 	LALStatus *stat,
 	const char *calcachefile,
+	REAL8 deltaT,
 	LIGOTimeGPS epoch,
 	size_t length
 )
@@ -1144,7 +1141,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	memset(&calfacts, 0, sizeof(calfacts));
 	calfacts.ifo = ifo;
 
-	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) length, strainPerCount, length / 2 + 1), stat);
+	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, 1.0 / (length * deltaT), strainPerCount, length / 2 + 1), stat);
 
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
@@ -1384,7 +1381,6 @@ int main( int argc, char *argv[])
 	LIGOTimeGPS               epoch;
 	LIGOTimeGPS               boundepoch;
 	LALTimeInterval           overlapCorrection;
-	INT4                      numPoints;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
 	SnglBurstTable           *burstEvent = NULL;
@@ -1452,15 +1448,12 @@ int main( int argc, char *argv[])
 
 	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
 		/* compute the number of points to use in this run */
-		numPoints = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * frameSampleRate;
-		if(options.maxSeriesLength)
-			numPoints = min(options.maxSeriesLength, numPoints);
 
 		/*
 		 * Get the data,
 		 */
 
-		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, numPoints, &params);
+		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, options.maxSeriesLength, &params);
 
 		/*
 		 * If we specified input files but nothing got read, there
@@ -1480,8 +1473,11 @@ int main( int argc, char *argv[])
 
 		if(options.noiseAmpl > 0.0) {
 			if(!series) {
-				size_t i;
-				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
+				size_t i, length;
+				length = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * targetSampleRate;
+				if(options.maxSeriesLength)
+					length = min(options.maxSeriesLength, length);
+				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / targetSampleRate, lalADCCountUnit, length), &stat);
 				for(i = 0; i < series->data->length; i++)
 					series->data->data[i] = 1.0;
 			}
@@ -1504,7 +1500,7 @@ int main( int argc, char *argv[])
 
 			/* Create the response function */
 			if(options.calCacheFile)
-				response = generate_response(&stat, options.calCacheFile, series->epoch, series->data->length);
+				response = generate_response(&stat, options.calCacheFile, series->deltaT, series->epoch, series->data->length);
 
 			/* perform injections */
 			add_burst_injections(&stat, series, response);
