@@ -274,6 +274,14 @@ int AddInjections(struct CommandLineArgsTag CLA)
   /* Inject the signals into the data */
   LALBurstInjectSignals(&status, &GV.ht_proc, injections, response); 
 
+  {
+    int pp;
+    for (pp=0; pp<(int)GV.ht_proc.data->length; pp++)
+      {
+	fprintf(stdout,"%e\n",GV.ht_proc.data->data[pp]);
+      }
+  }
+
   /* free the injection table */
   while(injections) {
     SimBurstTable *thisEvent = injections;
@@ -690,6 +698,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
 int DownSample()
 {
   ResampleTSParams resamplepar;
+  int p;
 
   memset( &resamplepar, 0, sizeof( resamplepar ) );
   resamplepar.deltaT     = GV.ht_proc.deltaT * 4.0;
