@@ -8,7 +8,8 @@ libpulsar_la_SOURCES = \
   RulesToTimingDifference.c LALComputeAM.c LALDemod.c ComputeSky.c       \
   FoldAmplitudes.c TwoDMesh.c TwoDMeshInternal.c TwoDMeshMetrics.c       \
   TwoDMeshRanges.c LALBarycenter.c PtoleMetric.c HeterodynePulsar.c      \
-  FitToPulsar.c BinaryPulsarTiming.c PulsarCat.c PulsarCatInput.c
+  FitToPulsar.c BinaryPulsarTiming.c PulsarCat.c PulsarCatInput.c        \
+  ComputeSkyBinary.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
