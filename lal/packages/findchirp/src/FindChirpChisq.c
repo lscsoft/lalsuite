@@ -325,10 +325,14 @@ LALFindChirpChisqVetoFinalize (
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
   ASSERT( params->qtildeBinVec, status, 
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( params->qtildeBinVecBCV, status,
-      FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( params->qtildeBinVecBCV, status,
-      FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
+
+  if ( params->approximant == BCV )
+  {
+    ASSERT( params->qtildeBinVecBCV, status,
+        FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
+    ASSERT( params->qtildeBinVecBCV, status,
+        FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
+  }
 
 
   /*
