@@ -405,6 +405,76 @@ calling another subroutine.
 
 \end{enumerate}
 
+\subsubsection{Cleaning up after subroutine failure}
+
+Although they are convenient, the \verb@TRY()@ and
+\verb@CHECKSTATUSPTR()@ macros have a serious drawback in that they
+may cause the calling function to return immediately.  If the calling
+function had previously allocated any local memory storage, this
+memory will be cast adrift, with no means of accessing or subsequently
+freeing it (short of terminating the runtime process).  Such a memory
+leak is a violation of the LAL function standard.
+
+The macros \verb@BEGINFAIL()@ and \verb@ENDFAIL()@ allow a function to
+test the return code of a subroutine, and, if that indicates a
+failure, to execute one or more ``cleanup'' instructions before itself
+returning.  Each macro takes a single argument: the current function's
+status pointer.  The macros must occur in matched pairs, and use the
+same syntax as a \verb@do ... while@ statement: they either span a
+single instruction, or a block of instructions enclosed in braces.
+
+For example, if a function had allocated memory to some pointer
+\verb@localPointer@, any subsequent call to a subroutine
+\verb@LALSubroutine()@ would take the following form:
+\begin{verbatim}
+LALSubroutine( stat->statusPtr, ... );
+BEGINFAIL( stat )
+  LALFree( localPointer );
+ENDFAIL( stat );
+\end{verbatim}
+For another example, if a function had to create three vectors
+\verb@*vector1@, \verb@*vector2@, \verb@*vector3@, the allocation
+would look something like this:
+\begin{verbatim}
+TRY( LALSCreateVector( stat->statusPtr, &vector1, 100 ), stat );
+
+LALSCreateVector( stat->statusPtr, &vector2, 100 );
+BEGINFAIL( stat )
+  TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
+ENDFAIL( stat );
+
+LALSCreateVector( stat->statusPtr, &vector3, 100 );
+BEGINFAIL( stat ) {
+  TRY( LALSDestroyVector( stat->statusPtr, &vector1 ), stat );
+  TRY( LALSDestroyVector( stat->statusPtr, &vector2 ), stat );
+} ENDFAIL( stat );
+\end{verbatim}
+As indicated above, the cleanup instructions can include calls to
+other LAL routines.  The \verb@BEGINFAIL( stat )@ macro call first
+checks \verb@stat->statusPtr@ to see if a subroutine error has
+occured.  If it has, the macro detaches and saves that pointer, then
+attaches a new \verb@stat->statusPtr@ to be used in calls to the
+cleanup routines.  After the cleanup instructions have been executed,
+the \verb@ENDFAIL( stat )@ macro call reattaches the saved status
+pointer and returns with a subroutine error code.  In this way, the
+returned status list indicates where the original failure occurred,
+rather than giving an uninformative report from the last cleanup
+routine.
+
+Of course a \emph{second} failure in one of the cleanup routines can
+cause serious problems.  If the routine was called using a
+\verb@TRY()@ macro, it will force an immediate return from the calling
+function, with a status code and status list indicating how the cleanp
+routine failed.  The original status list saved by \verb@BEGINFAIL()@
+is lost.  While this loss does constitute a memory leak, the failure
+of a cleanup routine in itself indicates that there are serious
+problems with the memory management.
+
+It is possible to nest \verb@BEGINFAIL()@\ldots\verb@ENDFAIL();@
+blocks, but this is unlikely to serve any useful purpose.  Once
+cleanup routines start to fail, it is probably beyond the scope of the
+LAL function to deal with the resulting memory leaks.
+
 \subsubsection{Issuing status messages}
 
 The module \verb@LALError.c@ defines the functions \verb@LALError()@,
@@ -666,7 +736,7 @@ extern int lalDebugLevel;
   {                                                                           \
     INT4 level = (statusptr)->level ;                                         \
     INT4 statp = (statusptr)->statusPtr ? 1 : 0 ;                             \
-    memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */    \
+    memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */ \
     (statusptr)->level    = level > 0 ? level : 1 ;                           \
     (statusptr)->Id       = (id);                                             \
     (statusptr)->function = (funcname);                                       \
@@ -696,7 +766,7 @@ extern int lalDebugLevel;
 #define ATTATCHSTATUSPTR(statusptr)                                           \
   if ( !(statusptr)->statusPtr )                                              \
   {                                                                           \
-    (statusptr)->statusPtr = (LALStatus *) LALCalloc( 1, sizeof( LALStatus ) );     \
+    (statusptr)->statusPtr = (LALStatus *)LALCalloc( 1, sizeof( LALStatus ) );\
     if ( !(statusptr)->statusPtr )                                            \
     {                                                                         \
       ABORT( statusptr, -4, "ATTATCHSTATUSPTR: memory allocation error" );    \
@@ -767,7 +837,7 @@ extern int lalDebugLevel;
 #define FREESTATUSPTR( statusptr )                                            \
   do                                                                          \
   {                                                                           \
-    LALStatus *next = (statusptr)->statusPtr->statusPtr;                         \
+    LALStatus *next = (statusptr)->statusPtr->statusPtr;                      \
     LALFree( (statusptr)->statusPtr );                                        \
     (statusptr)->statusPtr = next;                                            \
   }                                                                           \
@@ -784,7 +854,7 @@ extern int lalDebugLevel;
 #define REPORTSTATUS( statusptr )                                             \
   do                                                                          \
   {                                                                           \
-    LALStatus *ptr;                                                              \
+    LALStatus *ptr;                                                           \
     for ( ptr = (statusptr); ptr; ptr = ptr->statusPtr )                      \
     {                                                                         \
       LALPrintError( "\nLevel %i: %s\n", ptr->level, ptr->Id );               \
@@ -848,6 +918,34 @@ extern int lalDebugLevel;
     return
   
 #endif /* NOLALMACROS */
+
+/* these just have to be macros... */
+
+#define BEGINFAIL( statusptr )                                                \
+do {                                                                          \
+  if ( !(statusptr) ) {                                                       \
+    ABORT( statusptr, -8, "BEGINFAIL: null status pointer" );                 \
+  }                                                                           \
+  if ( !( (statusptr)->statusPtr ) ) {                                        \
+    ABORT( statusptr, -8, "BEGINFAIL: null status pointer pointer" );         \
+  }                                                                           \
+  if ( (statusptr)->statusPtr->statusCode ) {                                 \
+    LALStatus *statusPtrSave = (statusptr)->statusPtr;                        \
+    (statusptr)->statusPtr = NULL;                                            \
+    ATTATCHSTATUSPTR( statusptr );                                            \
+    do
+
+#define ENDFAIL( statusptr )                                                  \
+    while ( 0 );                                                              \
+    DETATCHSTATUSPTR( statusptr );                                            \
+    (statusptr)->statusPtr = statusPtrSave;                                   \
+    SETSTATUS( statusptr, -1, "Recursive error" );                            \
+    (void) LALError( statusptr, "ENDFAIL:" );                                 \
+    (void) LALTrace( statusptr, 1 );                                          \
+    return;                                                                   \
+  }                                                                           \
+} while ( 0 )
+
 
 #ifdef  __cplusplus
 }

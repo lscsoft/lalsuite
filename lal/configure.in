@@ -169,6 +169,11 @@ AC_OUTPUT( Makefile                               \
            packages/inspiral/include/Makefile     \
            packages/inspiral/src/Makefile         \
            packages/inspiral/test/Makefile        \
+           packages/pulsar/Makefile               \
+           packages/pulsar/doc/Makefile           \
+           packages/pulsar/include/Makefile       \
+           packages/pulsar/src/Makefile           \
+           packages/pulsar/test/Makefile          \
            packages/framedata/Makefile            \
            packages/framedata/doc/Makefile        \
            packages/framedata/include/Makefile    \

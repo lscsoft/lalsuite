@@ -37,6 +37,7 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/clremoval/src/libclremoval.la       \
            $(top_builddir)/packages/stochastic/src/libstochastic.la     \
            $(top_builddir)/packages/inspiral/src/libinspiral.la         \
+           $(top_builddir)/packages/pulsar/src/libpulsar.la             \
            $(top_builddir)/packages/burstsearch/src/libburstsearch.la   \
            $(top_builddir)/packages/tracksearch/src/libtracksearch.la   \
            $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)
