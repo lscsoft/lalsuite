@@ -20,11 +20,14 @@ endif
 else
 bin_PROGRAMS = 
 endif
-#if PYTHON22
-#bin_SCRIPTS = inspiral_pipeline.py
-#else
-#bin_SCRIPTS = 
-#endif
+bin_SCRIPTS = lalapps_inspiral_pipe_s2
+
+pythonlibdir = ${prefix}/lib/python
+pythonlib_SCRIPTS = inspiral.py
+
+lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
+	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2 
+
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC)
 
