@@ -1484,6 +1484,16 @@ foreach l1 $SegmentList {
 
 			    ## add waveforms to files to transfer
 			    if { [ string length $Twaves ] > 0 } {
+
+				## copy files to working directory
+				set wlist [ split $Twaves "," ]
+
+				foreach fil $wlist {
+				    file copy -force $fil $PrebinFile
+				}
+
+
+				## add files to transfer list
 				set CondorFiles "$CondorFiles,$Twaves"
 			    }
 
