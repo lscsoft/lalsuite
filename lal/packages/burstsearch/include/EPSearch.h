@@ -14,6 +14,7 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALRCSID.h>
+#include <lal/ResampleTimeSeries.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -164,7 +165,7 @@ void
 EPSearch (
             LALStatus               *status,
             EPSearchParams          *params,
-            SnglBurstTable             **burstEvent,
+            SnglBurstTable         **burstEvent,
             UINT4                    tmpDutyCyle
          );
 
@@ -179,6 +180,9 @@ void
 EPConditionData(
     LALStatus             *status,
     REAL4TimeSeries       *series,
+    REAL4                  flow,
+    REAL8                  resampledeltaT,
+    ResampleTSFilter       resampleFiltType,
     void                  *searchParams
     );
 
