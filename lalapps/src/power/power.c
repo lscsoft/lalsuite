@@ -19,6 +19,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
 #include <lal/ResampleTimeSeries.h>
@@ -31,7 +32,7 @@
 
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
-void initializeEPSearch(int argc, char *argv[], EPSearchParams **params, MetadataTable *procparams);
+void parse_command_line(int argc, char *argv[], EPSearchParams **params, MetadataTable *procparams);
 
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
@@ -62,28 +63,28 @@ static size_t min(size_t a, size_t b)
 
 /* Parameters from command line */
 static struct {
-	LIGOTimeGPS startEpoch;     /* gps start time                      */
-	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
-	INT4 maxSeriesLength;       /* RAM-limited input length            */
+	int cluster;                /* TRUE == perform clustering          */
+	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
+	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
+	INT4 printData;
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
 	INT4 seed;                  /* set non-zero to generate noise      */
+	LIGOTimeGPS startEpoch;     /* gps start time                      */
+	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	INT4 verbose;
 } options;
 
 /* some global output flags */
 INT4 geodata;
-INT4 printData;
 INT4 whiteNoise;                    /* insertion of Gaussian white noise   */
-INT4 sineBurst;                     /* insertion of shaped sine burst      */
  
 /* global variables */
 FrChanIn channelIn;                 /* channnel information                */
 FrChanIn mdcchannelIn;              /* mdc signal only channnel info       */
 EPSearchParams *mdcparams;          /* mdc search param                    */
 CHAR ifo[3];                        /* two character interferometer        */
-CHAR comment[LIGOMETA_COMMENT_MAX]; /* string in output file name          */
 CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
 INT4 totalNumPoints;                /* total number of points to analyze   */
@@ -101,7 +102,10 @@ ResampleTSFilter resampFiltType;
 REAL8 fcorner;                      /* corner frequency in Hz              */
 
 
-/* Fill an array with white noise */
+/*
+ * Fill an array with white noise.
+ */
+
 static void makeWhiteNoise(
         LALStatus        *status,
         REAL4TimeSeries  *series,
@@ -137,7 +141,7 @@ static void makeWhiteNoise(
 
 
 /*
- * round a psd length down to a value that is commensurate with the window
+ * Round a PSD length down to a value that is commensurate with the window
  * length and window shift.
  */
 
@@ -150,109 +154,152 @@ static size_t window_commensurate(size_t psdlength, size_t windowlength, size_t 
 
 
 /*
+ * Event clustering
+ */
+
+static SnglBurstTable *cluster_events(LALStatus *stat, SnglBurstTable *burstEvent, int limit)
+{
+	int iterations = 0;
+	int events = 0;
+	int lastevents;
+
+	if(!burstEvent)
+		return(NULL);
+
+	do {
+		LAL_CALL(LALSortSnglBurst(stat, &burstEvent, LALCompareSnglBurstByTimeAndFreq), stat);
+		lastevents = events;
+		LAL_CALL(LALClusterSnglBurstTable(stat, burstEvent, &events), stat);
+	} while((events != lastevents) && (++iterations < limit));
+
+	return(burstEvent);
+}
+
+
+/*
+ * Output routine.
+ */
+
+static void output_results(LALStatus *stat, char *file, MetadataTable *procTable, MetadataTable *procparams, MetadataTable *searchsumm, SnglBurstTable *burstEvent)
+{
+	LIGOLwXMLStream xml;
+	LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+	MetadataTable myTable;
+
+	memset(&xml, 0, sizeof(LIGOLwXMLStream));
+	LAL_CALL(LALOpenLIGOLwXMLFile(stat, &xml, file), stat);
+
+	/* process table */
+	snprintf(procTable->processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+	LAL_CALL(LALGPSTimeNow(stat, &(procTable->processTable->end_time), &accuracy), stat);
+	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *procTable, process_table), stat);
+	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+
+	/* process params table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, process_params_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *procparams, process_params_table), stat);
+	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+
+	/* search summary table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *searchsumm, search_summary_table), stat);
+	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+
+	/* burst table */
+	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, sngl_burst_table), stat);
+	myTable.snglBurstTable = burstEvent;
+	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, myTable, sngl_burst_table), stat);
+	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
+
+	LAL_CALL(LALCloseLIGOLwXMLFile(stat, &xml), stat);
+}
+
+
+/*
  * Entry point
  */
 
 int main( int argc, char *argv[])
 {
-    LALStatus               stat;
-    LALLeapSecAccuracy      accuracy = LALLEAPSEC_LOOSE;
+	LALStatus                stat;
+	LALLeapSecAccuracy       accuracy = LALLEAPSEC_LOOSE;
+	EPSearchParams          *params = NULL;
+	FrStream                *stream = NULL;
+	FrCache                 *frameCache = NULL;
+	PassBandParamStruc       highpassParam;
+	REAL4                    fsafety = 0;
+	CalibrationUpdateParams  calfacts;
+	LIGOTimeGPS              tmpEpoch = {0, 0};
+	LALTimeInterval          tmpInterval;
+	REAL8                    tmpOffset = 0.0;
+	REAL4                    minFreq = 0.0;
+	size_t                   start_sample;
+	int                      usedNumPoints;
+	INT4                     numPoints; /* number of samples from frames */
+	CHAR                     outfilename[256];
 
-    EPSearchParams         *params = NULL;
-    FrStream               *stream = NULL;
-    FrCache                *frameCache = NULL;
-    CHAR                    fname[256];
-    PassBandParamStruc      highpassParam;
-    REAL4                   fsafety = 0;
-    CalibrationUpdateParams calfacts;
-    LIGOTimeGPS		    tmpEpoch = {0, 0};
-    LALTimeInterval         tmpInterval;
-    REAL8                   tmpOffset = 0.0;
-    REAL4                   minFreq = 0.0;    
-    size_t                  start_sample;
-    int                     usedNumPoints;
-    INT4                    numPoints;  /* number of samples from frames */
+	/* data storage */
+	REAL4TimeSeries          series;
+	REAL8TimeSeries          geoSeries;
+	COMPLEX8FrequencySeries  resp;
+	REAL4TimeSeries          mdcSeries;
 
-    /* data storage */
-    REAL4TimeSeries            series;
-    REAL8TimeSeries            geoSeries;
-    COMPLEX8FrequencySeries    resp;
-    REAL4TimeSeries            mdcSeries;
- 
-    /* Burst events */
-    SnglBurstTable      *burstEvent = NULL;
-    SnglBurstTable     **EventAddPoint = &burstEvent;
-    MetadataTable        myTable;
-    MetadataTable        procTable;
-    MetadataTable        procparams;
-    MetadataTable        searchsumm;
-    ProcessParamsTable   *this_proc_param;
-    LIGOLwXMLStream      xmlStream;
+	/* Burst events */
+	SnglBurstTable          *burstEvent = NULL;
+	SnglBurstTable         **EventAddPoint = &burstEvent;
+	MetadataTable            procTable;
+	MetadataTable            procparams;
+	MetadataTable            searchsumm;
 
-    /* units and other things */
-    const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+	/* units and other things */
+	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-    
-    /* Which error handler to use */
-    lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "3" );
 
-    
-    /*******************************************************************
-     * INITIALIZE EVERYTHING                                            *
-     *******************************************************************/
+	/* Which error handler to use */
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level("3");
 
-    memset(&stat, 0, sizeof(stat));
 
-    /* create the process and process params tables */
-    procTable.processTable = (ProcessTable *) 
-      LALCalloc( 1, sizeof(ProcessTable) );
-    LAL_CALL( LALGPSTimeNow ( &stat, &(procTable.processTable->start_time),
-          &accuracy ), &stat );
-    LAL_CALL( populate_process_table( &stat, procTable.processTable, 
-          PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &stat );
-    this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-      LALCalloc( 1, sizeof(ProcessParamsTable) );
+	/*
+	 * Initialize everything
+	 */
 
-    /* parse arguments and fill procparams table */
-    initializeEPSearch( argc, argv, &params, &procparams);
+	memset(&stat, 0, sizeof(stat));
 
-    /* create the search summary table */
-    searchsumm.searchSummaryTable = (SearchSummaryTable *)
-      LALCalloc( 1, sizeof(SearchSummaryTable) );
+	/* create the process and process params tables */
+	procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
+	LAL_CALL(LALGPSTimeNow(&stat, &(procTable.processTable->start_time), &accuracy), &stat);
+	LAL_CALL(populate_process_table(&stat, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
+	procparams.processParamsTable = LALCalloc(1, sizeof(ProcessParamsTable));
 
-    /* fill the comment, if a user has specified one, or leave it blank */
-    if ( ! *comment )
-    {
-      snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-      snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, " " );    
-    } 
-    else 
-    {
-      snprintf( procTable.processTable->comment, LIGOMETA_COMMENT_MAX,
-          "%s", comment );
-      snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-          "%s", comment );
-    }
+	/* parse arguments and fill procparams table */
+	parse_command_line(argc, argv, &params, &procparams);
 
-    /* the number of nodes for a standalone job is always 1 */
-    searchsumm.searchSummaryTable->nnodes = 1;
+	/* create the search summary table */
+	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
 
-    /*set the min. freq to be searched for */
-    minFreq = params->tfTilingInput->flow;
+	/* fill the comment */
+	snprintf(procTable.processTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.comment);
+	snprintf(searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", options.comment);
 
-    /* set the temporary time variable indicating start of chunk */
+	/* the number of nodes for a standalone job is always 1 */
+	searchsumm.searchSummaryTable->nnodes = 1;
+
+	/*set the min. freq to be searched for */
+	minFreq = params->tfTilingInput->flow;
+
+
+    /*
+     * Loop over data small enough to fit into memory 
+     */
+
     tmpEpoch = options.startEpoch;
-
-    /******************************************************************
-     * OUTER LOOP over data small enough to fit into memory 
-     ******************************************************************/
     for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * params->windowShift * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * params->windowShift * (frameSampleRate / targetSampleRate)) {
 
       /* tell operator how we are doing */
-      if(options.verbose) {
+      if(options.verbose)
         fprintf(stdout,"%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
-      }
 
       /* compute the number of points to use in this run */
       numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
@@ -381,9 +428,8 @@ int main( int argc, char *argv[])
       }
 
       /* write diagnostic info to disk */
-      if ( printData ){
-        LALPrintTimeSeries( &series, "./timeseriesasq.dat" );
-      }
+      if(options.printData)
+        LALPrintTimeSeries(&series, "./timeseriesasq.dat");
 
       /* create storage for the response function */
       memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
@@ -461,9 +507,8 @@ int main( int argc, char *argv[])
           fprintf(stdout, "Finished making the injections\n");
 
         /* write diagnostic info to disk */
-        if ( printData ){
-          LALPrintTimeSeries( &series, "./injections.dat" );
-        }
+        if(options.printData)
+          LALPrintTimeSeries(&series, "./injections.dat");
       }
 
       /* if one wants to use mdc signals for injections */
@@ -497,9 +542,8 @@ int main( int argc, char *argv[])
 
 
         /* write diagnostic info to disk */
-        if ( printData ){
-          LALPrintTimeSeries( &mdcSeries, "./timeseriesmdc.dat" );
-        }
+        if(options.printData)
+          LALPrintTimeSeries(&mdcSeries, "./timeseriesmdc.dat");
 
         /* add the signal to the As_Q data */
 
@@ -509,9 +553,8 @@ int main( int argc, char *argv[])
         }
 
         /* write diagnostic info to disk */
-        if ( printData ){
-          LALPrintTimeSeries( &series, "./timeseriesasqmdc.dat" );
-        }
+        if(options.printData)
+          LALPrintTimeSeries(&series, "./timeseriesasqmdc.dat");
 
         /* destroy the mdc data vector */
         LAL_CALL( LALDestroyVector( &stat, &mdcSeries.data), &stat);
@@ -583,84 +626,49 @@ int main( int argc, char *argv[])
 		if(calCacheFile)
 			LAL_CALL(LALCDestroyVector(&stat, &resp.data), &stat);
 	}
-	/*******************************************************************
-	 * outer-most loop ends here
-	 *******************************************************************/
+
+	/*
+	 * Cluster the events.
+	 */
+
+	if(options.cluster)
+		burstEvent = cluster_events(&stat, burstEvent, 500);
+
+	/*
+	 * Output the results.
+	 */
+
+	snprintf(outfilename, sizeof(outfilename)-1, "%s-%s-POWER-%d-%d.xml", ifo, options.comment, options.startEpoch.gpsSeconds, options.stopEpoch.gpsSeconds - options.startEpoch.gpsSeconds);
+	outfilename[sizeof(outfilename)-1] = '\0';
+	output_results(&stat, outfilename, &procTable, &procparams, &searchsumm, burstEvent);
+
+	/*
+	 * Final cleanup.
+	 */
+
+	LALFree(procTable.processTable);
+	LALFree(searchsumm.searchSummaryTable);
+
+	while(procparams.processParamsTable) {
+		ProcessParamsTable *table = procparams.processParamsTable;
+		procparams.processParamsTable = table->next;
+		LALFree(table);
+	}
 
 	LALFree(mdcparams);
 
-    /*******************************************************************
-    * OUTPUT THE RESULTS 
-    *******************************************************************/
-    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    snprintf( fname, sizeof(fname), "%s-%s-POWER-%d-%d.xml",
-            ifo, comment, options.startEpoch.gpsSeconds, 
-            options.stopEpoch.gpsSeconds-options.startEpoch.gpsSeconds);
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, fname), &stat);
+	while(burstEvent) {
+		SnglBurstTable *event = burstEvent;
+		burstEvent = burstEvent->next;
+		LALFree(event);
+	}
 
-
-    /* write the process table */
-    snprintf( procTable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
-    LAL_CALL( LALGPSTimeNow ( &stat, &(procTable.processTable->end_time),
-                &accuracy ), &stat );
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
-            &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procTable, 
-                process_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-    LALFree( procTable.processTable );
-
-    
-    /* write the process params table */
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_params_table ), 
-            &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
-                process_params_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-    while( procparams.processParamsTable )
-    {
-        this_proc_param = procparams.processParamsTable;
-        procparams.processParamsTable = this_proc_param->next;
-        LALFree(this_proc_param);
-    }
-
-    
-    /* write the search summary table */
-    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
-            &stat );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
-                search_summary_table ), &stat );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-    LALFree( searchsumm.searchSummaryTable );
-
-
-    /* Write the results to the burst table */
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-    myTable.snglBurstTable = burstEvent;
-    LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
-                sngl_burst_table), &stat);
-
-    /* clean up memory allocated to hold burst events */
-    while(burstEvent) {
-        SnglBurstTable *event = burstEvent;
-        burstEvent = burstEvent->next;
-        LALFree(event);
-    }
-    LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-    
-    /* close the xml stream */
-    LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
-
-
-	/*****************************************************************
-	 * FINAL CLEANUP                                                 *
-	 *****************************************************************/
 	if(params) {
-		LALFree(params->channelName);
 		LALFree(params->compEPInput);
 		LALFree(params->tfTilingInput);
 		LALFree(params);
 	}
+
 	LALCheckMemoryLeaks();
 	exit(0);
 }
@@ -814,7 +822,7 @@ static INT8 DeltaGPStoINT8(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *star
 }
 
 
-void initializeEPSearch( 
+void parse_command_line( 
 	int argc, 
 	char *argv[], 
 	EPSearchParams **params,
@@ -822,7 +830,6 @@ void initializeEPSearch(
 )
 { 
 	char msg[240];
-	int cluster;
 	int printSpectrum;
 	int c;
 	int option_index;
@@ -833,7 +840,7 @@ void initializeEPSearch(
 	ProcessParamsTable *proc_param = procparams->processParamsTable;
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
-		{"cluster",             no_argument,       &cluster,       TRUE},
+		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"bandwidth",           required_argument, NULL,           'A'},
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
@@ -858,8 +865,8 @@ void initializeEPSearch(
 		{"min-time-bin",        required_argument, NULL,           'U'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
 		{"nsigma",              required_argument, NULL,           'X'},
-		{"printData",           no_argument,       &printData,     TRUE},
-		{"printSpectrum",       no_argument,       &printSpectrum, TRUE},
+		{"printData",           no_argument, &options.printData,  TRUE},
+		{"printSpectrum",       no_argument, &printSpectrum,      TRUE},
 		{"psd-average-method",  required_argument, NULL,           'Y'},
 		{"psd-average-points",  required_argument, NULL,           'Z'},
 		{"ram-limit",           required_argument, NULL,           'a'},
@@ -869,7 +876,7 @@ void initializeEPSearch(
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
 		{"user-tag",            required_argument, NULL,           'h'},
-		{"verbose",             no_argument,       &options.verbose, TRUE},
+		{"verbose",             no_argument, &options.verbose,    TRUE},
 		{"window",              required_argument, NULL,           'i'},
 		{"window-length",       required_argument, NULL,           'W'},
 		{"window-shift",        required_argument, NULL,           'd'},
@@ -906,15 +913,17 @@ void initializeEPSearch(
 	(*params)->tfTilingInput->maxTileBand = 64.0;
 	(*params)->windowShift = 0;
 
+	options.cluster = FALSE;
+	options.comment = "";
 	options.FilterCorruption = -1;
 	options.noiseAmpl = 1.0;
+	options.printData = FALSE;
 	options.PSDAverageLength = 0;
 	options.seed = 1;
 	options.verbose = FALSE;
 
 	cachefile = NULL;
 	calCacheFile = NULL;
-	cluster = FALSE;
 	dirname = NULL;
 	fcorner = 100.0;
 	frameSampleRate = 0;
@@ -923,10 +932,8 @@ void initializeEPSearch(
 	injectionFile = NULL;
 	mdcCacheFile = NULL;
 	mdcparams = NULL;
-	printData = FALSE;
 	printSpectrum = FALSE;
 	resampFiltType = -1;
-	sineBurst = FALSE;
 	targetSampleRate = 0;
 	totalNumPoints = 0;
 	totalNumSegs = 0;
@@ -1235,8 +1242,8 @@ void initializeEPSearch(
 		break;
 
 		case 'h':
-		snprintf(comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		options.comment = optarg;
+		ADD_PROCESS_PARAM("string", "%s", options.comment);
 		break;
 
 		case 'i':
@@ -1313,7 +1320,6 @@ void initializeEPSearch(
 	 * Miscellaneous chores.
 	 */
 
-	(*params)->cluster = cluster;
 	(*params)->printSpectrum = printSpectrum;
 
 	if(options.verbose) {

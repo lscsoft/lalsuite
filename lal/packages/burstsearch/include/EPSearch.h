@@ -24,7 +24,6 @@ NRCSID(EPSEARCHH, "$Id$");
 typedef struct
 tagEPSearchParams {
 	CHAR                  *channelName;
-	BOOLEAN                cluster;
 	BOOLEAN                printSpectrum;
 	INT4                   eventLimit;
 	UINT4                  windowLength;

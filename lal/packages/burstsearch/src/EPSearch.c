@@ -17,7 +17,6 @@ Revision: $Id$
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
@@ -235,7 +234,6 @@ EPSearch(
 	LALWindowParams           winParams;
 	REAL4FrequencySeries     *AverageSpec;
 	REAL4TimeSeries          *cutTimeSeries;
-	INT4                      nevents, dumevents;
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
 
@@ -374,21 +372,6 @@ EPSearch(
 		tfTiling->planesComputed=FALSE;
 		tfTiling->excessPowerComputed=FALSE;
 		tfTiling->tilesSorted=FALSE;
-	}
-
-	/*
-	 * Cluster the events if requested.
-	 */
-
-	if(params->cluster && *burstEvent) {
-		i = nevents = 0;
-		do {
-			LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
-			CHECKSTATUSPTR(status);
-			dumevents = nevents;
-			LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
-			CHECKSTATUSPTR(status);
-		} while((dumevents != nevents) && (++i < 500));
 	}
 
 	/*
