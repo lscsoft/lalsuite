@@ -25,6 +25,16 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     exit
 fi
 
+if [ x$1 = x ]; then
+    prog=$CFS_DEFAULT;
+    extra_args=
+else
+    prog=$1;
+    shift
+    extra_args="$@"
+fi
+
+
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ x$LAL_DATA_PATH = x ]; then
     echo
@@ -43,12 +53,6 @@ if [ ! -x "$FCOMPARE" ] ; then
 fi
 
 
-if [ x$1 = x ]; then
-    prog=$CFS_DEFAULT;
-else
-    prog=$1;
-fi
-
 ## Tests start here 
 ## --------------------
 echo
@@ -64,8 +68,8 @@ if [ ! -x "$prog" ]; then
     echo "Cannot execute '$prog' ... exiting"
     exit 1
 fi
-echo "$prog $CFSparams1"
-time $prog $CFSparams1
+echo "$prog $CFSparams1 $extra_args"
+time $prog $CFSparams1 $extra_args
 
 echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref1' ... "
@@ -82,9 +86,9 @@ echo
 echo "----------------------------------------------------------------------"
 echo "Test 2) isotropic sky-grid:"
 echo "----------------------------------------------------------------------"
-echo "$prog $CFSparams2"
+echo "$prog $CFSparams2 $extra_args"
 
-time $prog $CFSparams2
+time $prog $CFSparams2 $extra_args
 
 echo
 echo -n "Comparing output-file 'Fstats' with reference-version 'Fstats.ref2' ... "
