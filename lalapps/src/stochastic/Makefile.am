@@ -4,21 +4,15 @@
 if FRAME
 if LALFRAME
 STOCHPROGRAM = lalapps_stochastic
-endif
-endif
-if LALMETAIO
-STOPPPROGRAM = lalapps_stopp
-endif
-bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
-bin_PROGRAMS = lalapps_olapredfcn $(STOCHPROGRAM) ${STOPPPROGRAM}
-if FRAME
-if LALFRAME
 lalapps_stochastic_SOURCES = stochastic.c
 endif
 endif
 if LALMETAIO
+STOPPPROGRAM = lalapps_stopp
 lalapps_stopp_SOURCES = stopp.c
 endif
+bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
+bin_PROGRAMS = lalapps_olapredfcn $(STOCHPROGRAM) ${STOPPPROGRAM}
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
 pythonlibdir = ${prefix}/lib/python
