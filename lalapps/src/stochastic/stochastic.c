@@ -71,15 +71,15 @@ char *optarg;
 int optind;
 
 /* flags for getopt_long */
-static int middle_segment_flag = 0;
-static int inject_flag = 0;
-static int apply_mask_flag = 0;
-static int high_pass_flag = 0;
-static int overlap_hann_flag = 0;
-static int verbose_flag = 0;
-static int test_flag = 0;
-static int post_analysis_flag = 0;
-static int recenter_flag = 0;
+static int middle_segment_flag;
+static int inject_flag;
+static int apply_mask_flag;
+static int high_pass_flag;
+static int overlap_hann_flag;
+static int verbose_flag;
+static int test_flag;
+static int post_analysis_flag;
+static int recenter_flag;
 
 /* parameters for the stochastic search */
 
