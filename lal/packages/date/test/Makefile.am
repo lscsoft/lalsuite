@@ -35,3 +35,4 @@ TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC \
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

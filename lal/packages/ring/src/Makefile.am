@@ -12,3 +12,4 @@ EXTRA_DIST = LALRingDown.m4 LALRingDownBase.m4
 
 LALRingDown.c: LALRingDown.m4 LALRingDownBase.m4
 	cd $(srcdir) && m4 LALRingDown.m4 > LALRingDown.c
+@DVIMKFILE@

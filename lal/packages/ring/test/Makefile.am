@@ -15,3 +15,4 @@ TESTS = RingTest RingSearchTest LALRingDownTest LALWienerTest AvgSpecTest
 MOSTLYCLEANFILES = .dvi-dep *.out *.dat snr-*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

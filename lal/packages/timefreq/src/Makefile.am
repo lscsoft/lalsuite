@@ -23,3 +23,4 @@ EXTRA_DIST = \
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
+@DVIMKFILE@

@@ -4,3 +4,4 @@ libtracksearch_la_SOURCES = TrackSearch.c TSData.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
+@DVIMKFILE@

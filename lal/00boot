@@ -108,64 +108,27 @@ fail () {
 echo ">>> 00boot: checking versions of aclocal, automake, autoheader and autoconf"
 
 
-if test -z "$AUTOMAKE" ; then
-  for AUTOMAKE in automake-1.8 automake-1.5 automake ; do
-    case "`$AUTOMAKE --version 2>/dev/null`" in
-      *\ 1.8*) break;;
-      *\ 1.5*) break;;
-      *\ 1.7*) break;;
-      *\ 1.6*) break;;
-    esac
-  done
-fi
+ACLOCAL=${ACLOCAL:-"aclocal"}
+AUTOMAKE=${AUTOMAKE:-"automake"}
+AUTOCONF=${AUTOCONF:-"autoconf"}
+AUTOHEADER=${AUTOHEADER:-"autoheader"}
 
-if test -z "$ACLOCAL" ; then
-  for ACLOCAL in aclocal-1.8 aclocal-1.5 aclocal ; do
-    case "`$ACLOCAL --version 2>/dev/null`" in
-      *\ 1.8*) break;;
-      *\ 1.5*) break;;
-      *\ 1.7*) break;;
-      *\ 1.6*) break;;
-    esac
-  done
-fi
-
-AUTOMAKE="${AUTOMAKE:-automake}"
-ACLOCAL="${ACLOCAL:-aclocal}"
-AUTOCONF="${AUTOCONF:-autoconf}"
-AUTOHEADER="${AUTOHEADER:-autoheader}"
 automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
 autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/^.* \([0-9.]*\)/\1/p'`"
-if test -z "$automake_version"; then
-  fail "finding program automake"
-fi
-case "$automake_version" in
-  1.4* )
-  echo ">>> 00boot: warning: version 1.4 of aclocal/automake may not work"
-  echo ">>> 00boot:          recommend using aclocal/automake version 1.8"
-  ;;
-  1.6* | 1.7* )
-  echo ">>> 00boot: warning: version 1.6/1.7 of aclocal/automake may cause build"
-  echo ">>> 00boot:          problems: If you modify any Makefile.am file you must"
-  echo ">>> 00boot:          re-run the top-level config.status before doing a make."
-  ;;
-esac
 if test -z "$aclocal_version"; then
   fail "finding program aclocal"
 fi
-case "$aclocal_version" in
-  1.4* )
-  echo ">>> 00boot: warning: version 1.4 of aclocal/automake may not work"
-  echo ">>> 00boot:          recommend using aclocal/automake version 1.8"
-  ;;
-  1.6* | 1.7* )
-  echo ">>> 00boot: warning: version 1.6/1.7 of aclocal/automake may cause build"
-  echo ">>> 00boot:          problems: If you modify any Makefile.am file you must"
-  echo ">>> 00boot:          re-run the top-level config.status before doing a make."
-  ;;
-esac
+if test -z "$automake_version"; then
+  fail "finding program automake"
+fi
+if test -z "$autoconf_version"; then
+  fail "finding program autoconf"
+fi
+if test -z "$autoheader_version"; then
+  fail "finding program autoheader"
+fi
 case "$autoconf_version" in
   2.5*)
   CONFIGFILE="configure.ac"
@@ -513,6 +476,12 @@ AC_SUBST(LIBLISTBASE)
 AC_SUBST(LIBLISTMPI)
 AC_SUBST(LIBLISTFRAME)
 AC_SUBST(LIBLISTMPIFRAME)
+INCLUDEMKFILE=\$srcdir/misc/include.mk
+DOCMKFILE=\$srcdir/misc/doc.mk
+DVIMKFILE=\$srcdir/misc/dvi.mk
+AC_SUBST_FILE(INCLUDEMKFILE)
+AC_SUBST_FILE(DOCMKFILE)
+AC_SUBST_FILE(DVIMKFILE)
 EOF
 
 # Output
@@ -559,10 +528,10 @@ EOF
 for pkg in $lal_pkg_list; do
   pkgdir=packages/$pkg
   echo "AC_CONFIG_FILES([$pkgdir/Makefile])" >> $CONFIGFILE
-  echo "AC_CONFIG_FILES([$pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk])" >> $CONFIGFILE
-  echo "AC_CONFIG_FILES([$pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk])" >> $CONFIGFILE
-  echo "AC_CONFIG_FILES([$pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk])" >> $CONFIGFILE
-  echo "AC_CONFIG_FILES([$pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk])" >> $CONFIGFILE
+  echo "AC_CONFIG_FILES([$pkgdir/doc/Makefile])" >> $CONFIGFILE
+  echo "AC_CONFIG_FILES([$pkgdir/include/Makefile])" >> $CONFIGFILE
+  echo "AC_CONFIG_FILES([$pkgdir/src/Makefile])" >> $CONFIGFILE
+  echo "AC_CONFIG_FILES([$pkgdir/test/Makefile])" >> $CONFIGFILE
 done
 echo "AC_OUTPUT" >> $CONFIGFILE
 else
@@ -591,6 +560,9 @@ $prefixstring
 )
 AC_OUTPUT([ \
   lal.pc \
+  lalframe.pc \
+  lalmetaio.pc \
+  lalmpi.pc \
   lalsupport.pc \
   lal-config \
   Makefile \
@@ -606,10 +578,10 @@ EOF
 for pkg in $lal_pkg_list; do
   pkgdir=packages/$pkg
   echo "  $pkgdir/Makefile \\" >> $CONFIGFILE
-  echo "  $pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk \\" >> $CONFIGFILE
-  echo "  $pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk \\" >> $CONFIGFILE
-  echo "  $pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk \\" >> $CONFIGFILE
-  echo "  $pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk \\" >> $CONFIGFILE
+  echo "  $pkgdir/doc/Makefile \\" >> $CONFIGFILE
+  echo "  $pkgdir/include/Makefile \\" >> $CONFIGFILE
+  echo "  $pkgdir/src/Makefile \\" >> $CONFIGFILE
+  echo "  $pkgdir/test/Makefile \\" >> $CONFIGFILE
 done
 echo "])" >> $CONFIGFILE
 fi
@@ -619,22 +591,14 @@ fi
 
 rm -f acinclude.m4 acconfig.h || fail "removing acinclude.m4 acconfig.h"
 cat misc/lal.m4 > acinclude.m4 || fail "creating acinclude.m4"
-case "$automake_version" in
-  1.5*)
-  cat misc/lalam15patch.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-  ;;
-esac
-
 cat misc/lallibtool.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-case "$autoconf_version" in
-  2.1*)
-  cp misc/acconfig.h acconfig.h || fail "creating acconfig.h"
-  cat misc/old-pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-  break
-  ;;
-  *)
+
+if test "$AUTOCONF25" = "yes"; then
   cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
-esac
+else
+  cat misc/old-pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
+  cp misc/acconfig.h acconfig.h || fail "creating acconfig.h"
+fi
 
 
 ## Now run m4 to generate sources

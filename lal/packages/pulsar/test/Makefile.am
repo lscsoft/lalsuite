@@ -67,3 +67,4 @@ dvi-local: .dvi-dep
 
 SUFFIXES=.ilwd .dat
 .dat.ilwd:; $(srcdir)/ephemtoilwd.sh $< > $(srcdir)/$@
+@DVIMKFILE@

@@ -19,3 +19,4 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../da
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

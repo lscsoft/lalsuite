@@ -27,3 +27,4 @@ SendRecv.c: SendRecv.m4 SendRecvAtomic.m4 SendRecvVector.m4 SendRecvSeries.m4
 
 Exchange.c: Exchange.m4 ExchangeObject.m4
 	cd $(srcdir) && m4 Exchange.m4 > Exchange.c
+@DVIMKFILE@

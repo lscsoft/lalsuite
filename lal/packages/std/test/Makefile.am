@@ -16,3 +16,4 @@ EXTRA_TEXSOURCES = LALPrimerTest.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -45,3 +45,4 @@ ArrayFactoriesTest.c: ArrayFactoriesTest.m4 ArrayFactoriesTestFunction.m4
 
 ArraySequenceFactoriesTest.c: ArraySequenceFactoriesTest.m4 ArraySequenceFactoriesTestFunction.m4
 	cd $(srcdir) && m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c
+@DVIMKFILE@

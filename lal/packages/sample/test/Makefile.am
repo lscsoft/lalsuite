@@ -9,3 +9,4 @@ TESTS = LALSampleTest LALTemplateTest
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

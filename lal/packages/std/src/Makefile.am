@@ -14,3 +14,4 @@ dvi-local: .dvi-dep
 
 Grid.c: Grid.m4 LALCreateDestroyGrid.m4
 	cd $(srcdir) && m4 Grid.m4 > Grid.c
+@DVIMKFILE@

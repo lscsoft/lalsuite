@@ -41,3 +41,4 @@ EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat injection.xml
 MOSTLYCLEANFILES = .dvi-dep WHITENED-SB*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

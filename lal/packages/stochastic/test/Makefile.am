@@ -76,3 +76,4 @@ EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckS
 MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

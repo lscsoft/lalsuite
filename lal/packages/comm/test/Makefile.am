@@ -27,3 +27,4 @@ MOSTLYCLEANFILES = .dvi-dep PI* Slave*.out Slave*.err machines killscript lamhos
 CLEANFILES = SendRecvTest ExchangeTest
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -16,3 +16,4 @@ EXTRA_DIST = test_getLayer.dat wavelet1.dat params_getLayer0.dat layer0.dat  \
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -4,8 +4,6 @@
 ## build, and install the software required to build LAL.  The software
 ## includes the following:
 ##verse
-##	autoconf-2.59
-##	automake-1.8.5
 ##	fftw-3.0.1 (both single- and double-precision libraries required)
 ##	gsl-1.5
 ##	libframe-6.14 (optional but recommended)
@@ -28,8 +26,6 @@
 ## Edit "LSCSOFT_PREFIX" to change where to install the software:
 #verbatim
 LSCSOFT_PREFIX=${LSCSOFT_PREFIX:-"$HOME/opt/lscsoft"}
-LSCSOFT_BINDIR=$LSCSOFT_PREFIX/bin
-LSCSOFT_ETCDIR=$LSCSOFT_PREFIX/etc
 LSCSOFT_INCDIR=$LSCSOFT_PREFIX/include
 LSCSOFT_LIBDIR=$LSCSOFT_PREFIX/lib
 LSCSOFT_SRCDIR=$LSCSOFT_PREFIX/src
@@ -63,17 +59,9 @@ fail() {
 }
 #/ignore
 
-# update "PATH" so that the correct programs will be run
-#verbatim
-PATH=$LSCSOFT_BINDIR:$PATH
-export PATH
-#/verbatim
-
 # setup directories
 #verbatim
 mkdir -p $LSCSOFT_PREFIX || fail
-mkdir -p $LSCSOFT_BINDIR || fail
-mkdir -p $LSCSOFT_ETCDIR || fail
 mkdir -p $LSCSOFT_INCDIR || fail
 mkdir -p $LSCSOFT_LIBDIR || fail
 mkdir -p $LSCSOFT_SRCDIR || fail
@@ -83,8 +71,6 @@ mkdir -p $LSCSOFT_TMPDIR || fail
 # get required autoconf, automake, fftw3, frame, gsl, and metaio
 # you can use "lynx -dump" or "wget -O-" instead of "curl"
 #verbatim
-curl $LALSRCURL/autoconf-2.59.tar.gz > $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || fail
-curl $LALSRCURL/automake-1.8.5.tar.gz > $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 curl $LALSRCURL/fftw-3.0.1.tar.gz > $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
 curl $LALSRCURL/gsl-1.5.tar.gz > $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
 curl $LALSRCURL/libframe-6.14.tar.gz > $LSCSOFT_TMPDIR/libframe-6.14.tar.gz || fail
@@ -94,28 +80,10 @@ curl $LALSRCURL/libmetaio-5.4.tar.gz > $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || f
 # unpack these archives in "LSCSOFT_SRCDIR"
 #verbatim
 cd $LSCSOFT_SRCDIR || fail
-tar -zxvf $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || fail
-tar -zxvf $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/libframe-6.14.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || fail
-#/verbatim
-
-# build and install autoconf
-#verbatim
-cd $LSCSOFT_SRCDIR/autoconf-2.59 || fail
-./configure --prefix=$LSCSOFT_PREFIX || fail
-make || fail
-make install || fail
-#/verbatim
-
-# build and install automake
-#verbatim
-cd $LSCSOFT_SRCDIR/automake-1.8.5 || fail
-./configure --prefix=$LSCSOFT_PREFIX || fail
-make || fail
-make install || fail
 #/verbatim
 
 # build and install fftw3
@@ -156,8 +124,8 @@ make install || fail
 
 ### write environment configuration file
 #ignore
-rm -f $LSCSOFT_ETCDIR/lscsoft-user-env.sh || fail
-cat > $LSCSOFT_ETCDIR/lscsoft-user-env.sh <<\EOF
+rm -f $LSCSOFT_PREFIX/etc/lscsoft-user-env.sh || fail
+cat > $LSCSOFT_PREFIX/etc/lscsoft-user-env.sh <<\EOF
 # Source this file to set up your environment to use lscsoft software.
 # This requires that LSCSOFT_LOCATION be set.
 # LSCSOFT_PREFIX will be set by this script to save the current location

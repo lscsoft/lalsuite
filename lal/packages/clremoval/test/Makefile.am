@@ -10,3 +10,4 @@ EXTRA_DIST = $(DATA)
 MOSTLYCLEANFILES = .dvi-dep CLRoutdata.asc
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

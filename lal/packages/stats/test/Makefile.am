@@ -15,3 +15,4 @@ EXTRA_DIST = CheckStatus.c CheckStatus.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

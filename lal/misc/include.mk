@@ -5,7 +5,7 @@ include-link:
           targetdir=`cd $(top_builddir)/include/lal && pwd`; \
           if test ! -r $$targetdir/$$file ; then \
 	    rm -f $$targetdir/$$file; \
-            @LN_S@ $$sourcedir/$$file $$targetdir; \
-            echo "@LN_S@ $$sourcedir/$$file $$targetdir"; \
+            $(LN_S) $$sourcedir/$$file $$targetdir; \
+            echo "$(LN_S) $$sourcedir/$$file $$targetdir"; \
           fi; \
         done

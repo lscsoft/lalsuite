@@ -89,3 +89,4 @@ StreamGridInput.c: StreamGridInput.m4 LALReadGrid.m4
 
 StreamGridOutput.c: StreamGridOutput.m4 LALWriteGrid.m4
 	cd $(srcdir) && m4 StreamGridOutput.m4 > StreamGridOutput.c
+@DVIMKFILE@

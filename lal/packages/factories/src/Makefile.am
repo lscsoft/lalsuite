@@ -28,3 +28,4 @@ ArrayFactories.c: ArrayFactories.m4 CreateArray.m4 DestroyArray.m4 ResizeArray.m
 
 ArraySequenceFactories.c: ArraySequenceFactories.m4 CreateArraySequence.m4 DestroyArraySequence.m4
 	cd $(srcdir) && m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c
+@DVIMKFILE@

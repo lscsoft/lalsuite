@@ -46,3 +46,4 @@ TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest \
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

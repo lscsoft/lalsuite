@@ -23,3 +23,4 @@ dvi-local: .dvi-dep
 
 FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 	cd $(srcdir) && m4 FrameSeries.m4 > FrameSeries.c
+@DVIMKFILE@

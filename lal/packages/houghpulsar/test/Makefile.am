@@ -40,3 +40,4 @@ TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)/../../pulsar/test
 MOSTLYCLEANFILES = .dvi-dep OutHough.asc OutHistogram.asc
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

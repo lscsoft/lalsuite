@@ -11,3 +11,4 @@
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = TfrPswvTest TfrRspTest TfrSpTest TfrWvTest
 EXTRA_DIST = TfrPswvTest.c TfrRspTest.c TfrSpTest.c TfrWvTest.c
+@DVIMKFILE@

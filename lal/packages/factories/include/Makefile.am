@@ -13,3 +13,5 @@ SeqFactories.h: SeqFactoriesH.m4 SeqFactoriesBaseH.m4 ArraySeqFactoriesBaseH.m4
 AVFactories.h: AVFactoriesH.m4 VFactoriesBaseH.m4 AFactoriesBaseH.m4
 	cd $(srcdir) && m4 AVFactoriesH.m4 > AVFactories.h
 
+@INCLUDEMKFILE@
+@DVIMKFILE@

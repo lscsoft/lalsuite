@@ -8,3 +8,4 @@ EXTRA_DIST = $(TEXFILES)
 dvi-local: $(DVIFILES)
 .tex.dvi:; @LATEX@ $< ; @LATEX@ $<
 
+@DOCMKFILE@

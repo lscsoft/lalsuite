@@ -9,3 +9,4 @@ TESTS = VectorOpsTest VectorIndexRangeTest
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

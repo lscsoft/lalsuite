@@ -11,3 +11,4 @@ TESTS = BandPassTest IIRFilterTest LPCTest
 MOSTLYCLEANFILES = .dvi-dep out.dat
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

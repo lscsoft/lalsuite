@@ -26,3 +26,4 @@ MiscMatlab.c: MiscMatlab.m4 MiscMatlabBase.m4
 
 VectorIndexRange.c: VectorIndexRangeC.m4 VectorIndexRangeBaseC.m4
 	cd $(srcdir) && m4 VectorIndexRangeC.m4 > VectorIndexRange.c
+@DVIMKFILE@

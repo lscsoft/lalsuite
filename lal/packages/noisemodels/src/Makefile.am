@@ -25,3 +25,4 @@ DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
 
+@DVIMKFILE@

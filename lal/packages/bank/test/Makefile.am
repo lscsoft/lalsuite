@@ -36,3 +36,4 @@ EXTRA_DIST = CoarseTest.par demo
 MOSTLYCLEANFILES = .dvi-dep *.out plot.dat
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

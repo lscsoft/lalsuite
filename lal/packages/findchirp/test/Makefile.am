@@ -25,3 +25,4 @@ MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = FindChirpTmpltTest
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -17,3 +17,4 @@ CLEANFILES = *.dat
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 
+@DVIMKFILE@

@@ -9,12 +9,12 @@ TEXSOURCES = $(SOURCES) $(HEADERS) $(EXTRA_TEXSOURCES)
 	@ for file in *.tex ; do \
 	    filepath="`pwd`/$$file" ; \
 	    if test ! -f $(top_builddir)/doc/autodoc/$$file ; then \
-	      cmd="@LN_S@ $$filepath $(top_builddir)/doc/autodoc" ; \
+	      cmd="$(LN_S) $$filepath $(top_builddir)/doc/autodoc" ; \
 	      echo "$$cmd" ; \
 	      $$cmd ; \
 	    fi ; \
 	    if test ! -f ../doc/.adoc/$$file ; then \
-	      cmd="@LN_S@ $$filepath ../doc/.adoc" ; \
+	      cmd="$(LN_S) $$filepath ../doc/.adoc" ; \
 	      echo "$$cmd" ; \
 	      $$cmd ; \
 	    fi ; \

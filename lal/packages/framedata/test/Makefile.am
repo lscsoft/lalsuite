@@ -46,3 +46,4 @@ catalog.test:
 
 catalog:
 	$(srcdir)/mkcatalog.sh catalog $(srcdir) $(pkgdatadir)
+@DVIMKFILE@

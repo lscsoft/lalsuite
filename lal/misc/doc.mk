@@ -1,6 +1,3 @@
-TEXFLAGS = @TEXFLAGS@
-LATEX = @LATEX@
-MKIND = @MKIND@
 .dvi-dep: ../include/.dvi-dep ../src/.dvi-dep ../test/.dvi-dep
 	@ test -d .adoc || mkdir .adoc
 	@ if test ! -f .adoc/main.tex ; then \
@@ -12,12 +9,12 @@ MKIND = @MKIND@
 	@ for file in $(DOCSOURCEFILES) ; do \
 	    filepath=`cd $(srcdir) && pwd`/$$file ; \
 	    if test ! -f $(top_builddir)/doc/autodoc/$$file ; then \
-	      cmd="@LN_S@ $$filepath $(top_builddir)/doc/autodoc" ; \
+	      cmd="$(LN_S) $$filepath $(top_builddir)/doc/autodoc" ; \
 	      echo "$$cmd" ; \
 	      $$cmd ; \
 	    fi ; \
 	    if test ! -f .adoc/$$file ; then \
-	      cmd="@LN_S@ $$filepath .adoc" ; \
+	      cmd="$(LN_S) $$filepath .adoc" ; \
 	      echo "$$cmd" ; \
 	      $$cmd ; \
 	    fi ; \
@@ -26,7 +23,7 @@ MKIND = @MKIND@
 	  && ${LATEX} main ${TEXFLAGS} && ${LATEX} main ${TEXFLAGS}
 	@ for file in main.dvi main.pdf main.ps ; do \
 	    if test -f .adoc/$$file ; then \
-	      test -f $$file || @LN_S@ .adoc/$$file . ; \
+	      test -f $$file || $(LN_S) .adoc/$$file . ; \
 	    fi; \
 	  done
 	@ touch .dvi-dep

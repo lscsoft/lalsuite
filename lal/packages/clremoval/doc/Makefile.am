@@ -6,3 +6,4 @@ EXTRA_DIST = $(DOCSOURCEFILES)
 dvi-local: .dvi-dep
 distclean-local:
 	-rm -fr .adoc
+@DOCMKFILE@

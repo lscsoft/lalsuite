@@ -16,3 +16,4 @@ MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

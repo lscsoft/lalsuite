@@ -21,3 +21,4 @@ DISTCLEANFILES = *.tex
 EXTRA_DIST = LALfctTest.c timingfunctions.c timingfunctions.h \
              LALfctSample.c LALFCTInterfaceTest.c LALSNRTest.c
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -42,3 +42,4 @@ MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out \
 
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

@@ -24,3 +24,4 @@ TESTS = TFCThresholdsTest1 TFClustersTest1 TFClustersTest2 TFClustersTest3 TFClu
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

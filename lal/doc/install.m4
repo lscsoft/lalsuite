@@ -57,8 +57,6 @@ This is where to get sources:
 get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
 you can use "lynx -dump" or "wget -O-" instead of "curl"
 
-        curl $LALRPMURL/autoconf-2.59-3.noarch.rpm > autoconf-2.59-3.noarch.rpm
-        curl $LALRPMURL/automake-1.8.3-1.noarch.rpm > automake-1.8.3-1.noarch.rpm
         curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
         curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
         curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
@@ -71,8 +69,6 @@ you can use "lynx -dump" or "wget -O-" instead of "curl"
 
 now login as root and install the RPMs
 
-        rpm -Uvh autoconf-2.59-3.noarch.rpm
-        rpm -Uvh automake-1.8.3-1.noarch.rpm
         rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
         rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
         rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
@@ -86,8 +82,6 @@ follow these instructions.
 
 first download the source RPMs
 
-        curl $LALRPMURL/autoconf-2.59-3.src.rpm > autoconf-2.59-3.src.rpm
-        curl $LALRPMURL/automake-1.8.3-1.src.rpm > automake-1.8.3-1.src.rpm
         curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
         curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
         curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
@@ -96,8 +90,6 @@ first download the source RPMs
 now login as root and build binary RPMs from the source RPMs (this will
 take a very long time)
 
-        rpmbuild --rebuild autoconf-2.59-3.src.rpm
-        rpmbuild --rebuild automake-1.8.3-1.src.rpm
         rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
         rpmbuild --rebuild gsl-1.5-1.src.rpm
         rpmbuild --rebuild libframe-6.14-1.src.rpm
@@ -106,8 +98,6 @@ take a very long time)
 finally install the new binary RPMs
 
         cd /usr/src/redhat/RPMS
-        rpm -Uvh noarch/autoconf-2.59-3.noarch.rpm
-        rpm -Uvh noarch/automake-1.8.4-1.noarch.rpm
         rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
         rpm -Uvh i386/gsl-1.5-1.i386.rpm
         rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm

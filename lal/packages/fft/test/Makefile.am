@@ -13,3 +13,4 @@ TESTS = ComplexFFTTest RealFFTTest TimeFreqFFTTest AverageSpectrumTest
 MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@

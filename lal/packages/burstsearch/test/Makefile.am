@@ -30,3 +30,4 @@ DISTCLEANFILES = *.tex
 EXTRA_DIST = ExcessPowerTest.c
 EXTRA_TEXSOURCES = ExcessPowerTest.c
 dvi-local: .dvi-dep
+@DVIMKFILE@

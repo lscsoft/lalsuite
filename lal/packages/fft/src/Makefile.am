@@ -19,3 +19,4 @@ EXTRA_DIST = qthread.c IntelComplexFFT.c IntelRealFFT.c \
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
+@DVIMKFILE@
