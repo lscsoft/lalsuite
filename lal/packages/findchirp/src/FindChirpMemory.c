@@ -9,6 +9,8 @@
  *-----------------------------------------------------------------------
  */
 
+
+
 #if 0
 <lalVerbatim file="FindChirpMemoryCV">
 Author: Brown D. A.
@@ -467,9 +469,16 @@ LALCreateFindChirpSegmentVector (
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
-  if ( params->approximant != TaylorF2 && params->approximant != BCV )
+
+
+
+
+
+
+
+  if ( params->approximant != TaylorF2 && params->approximant != BCV && params->approximant !=BCVSpin )
   {
-    ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+	ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
   }
 
 
