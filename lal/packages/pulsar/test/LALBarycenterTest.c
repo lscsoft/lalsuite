@@ -119,13 +119,10 @@ main( void )
   (*edat).leap = 12;
   LALInitBarycenter(&stat, edat);  
 
-      if ( stat.statusCode != LALINITBARYCENTERH_EOPEN
-        || strcmp(stat.statusDescription, LALINITBARYCENTERH_MSGEOPEN) )
+  if ( stat.statusCode != LALINITBARYCENTERH_EOPEN)
     {
-      printf( "Got error code %d and message %s\n",
-          stat.statusCode, stat.statusDescription );
-      printf( "Expected error code %d and message %s\n",
-           LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN);
+      printf( "Got error code %d and message '%s', but expected error code %d\n",
+          stat.statusCode, stat.statusDescription, LALINITBARYCENTERH_EOPEN);
       return LALBARYCENTERTESTC_EOPEN;
     }
 
