@@ -9,6 +9,7 @@ $Id$
 #include <string.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/BurstSearch.h>
+#include <lal/Date.h>
 #include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
@@ -222,6 +223,10 @@ EPSearch (
       CHECKSTATUSPTR (status);
       LALComputeFrequencySeries (status->statusPtr, fseries, cutTimeSeries, dftparams);
       CHECKSTATUSPTR (status);
+  
+      /* delete the timeseries */
+      LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
+      CHECKSTATUSPTR(status);
 
       /* normalize the data stream so that rms of Re or Im is 1 */
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
@@ -296,14 +301,13 @@ EPSearch (
                 && (tileCount < params->events2Master) )
         {
           INT8 tstartNS = 0;
-          
+
           /* increment local and global counter */
           tileCount++;
           (params->numEvents)++;
 
           /* convert epoch to GPS nanoseconds */
-          tstartNS  = 1000000000L * (INT8) cutTimeSeries->epoch.gpsSeconds;
-          tstartNS += (INT8) cutTimeSeries->epoch.gpsNanoSeconds;
+	  LALGPStoINT8(status->statusPtr, &tstartNS, &fseries->epoch);
 
           /* allocate memory for the burst event */
           if ( (*burstEvent) == NULL )
@@ -335,10 +339,6 @@ EPSearch (
       params->tfTiling->planesComputed=FALSE;
       params->tfTiling->excessPowerComputed=FALSE;
       params->tfTiling->tilesSorted=FALSE;
-  
-      /*reset the timeseries */
-      LALDestroyREAL4TimeSeries(status->statusPtr,cutTimeSeries);
-      CHECKSTATUSPTR (status);
     }
   
     nevents = 0;
@@ -385,16 +385,12 @@ EPSearch (
 /* <lalVerbatim file="EPInitSearchCP"> */
 void EPInitSearch(
         LALStatus             *status,
-        void                 **searchParams,
+        EPSearchParams       **params,
         CHAR                  *argv[],
         INT4                   argc
         )
 /* </lalVerbatim> */
 {
-
-    EPSearchParams *params;
-
-
     INITSTATUS (status, "LALInitSearchPRB", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
 
@@ -478,47 +474,28 @@ void EPInitSearch(
      *
      */
 
-    *searchParams = params = LALMalloc (sizeof( EPSearchParams )); 
-    if ( !params )
+    *params = LALMalloc (sizeof( EPSearchParams )); 
+    if ( !*params )
     {
         ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
     }
 
-    params->tfTilingInput = 
-        (CreateTFTilingIn *) LALMalloc (sizeof(CreateTFTilingIn));
-    if ( !params->tfTilingInput )
-    {
-        LALFree (*searchParams); *searchParams = NULL;
-        ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
-    }
-
-    params->initParams = (EPInitParams *) LALMalloc (sizeof(EPInitParams));
-    if ( !params-> initParams)
-    {
-        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
-        LALFree (*searchParams); *searchParams = NULL;
-        ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
-    }
-
-    params->compEPInput = 
-        (ComputeExcessPowerIn *) LALMalloc (sizeof(ComputeExcessPowerIn));
-    if ( !params-> compEPInput)
-    {
-        LALFree (params->initParams); params->initParams = NULL;
-        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
-        LALFree (*searchParams); *searchParams = NULL;
-        ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
-    }
-
+    (*params)->tfTilingInput = LALMalloc (sizeof(CreateTFTilingIn));
+    (*params)->initParams = LALMalloc (sizeof(EPInitParams));
+    (*params)->compEPInput = LALMalloc (sizeof(ComputeExcessPowerIn));
     /* EK - Channel name to process (e.g. "ifodmro") */
-    params->channelName = (CHAR *) LALMalloc(strlen( argv[15] )+1 );
-    if ( !params->channelName )
+    (*params)->channelName = LALMalloc(strlen( argv[15] )+1 );
+
+    if ( !(*params)->tfTilingInput || !(*params)-> initParams ||
+         !(*params)-> compEPInput || !(*params)->channelName )
     {
-        LALFree (params->compEPInput); params->compEPInput = NULL;
-        LALFree (params->initParams); params->initParams = NULL;
-        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
+        LALFree ((*params)->tfTilingInput); (*params)->tfTilingInput = NULL;
+        LALFree ((*params)->initParams); (*params)->initParams = NULL;
+        LALFree ((*params)->compEPInput); (*params)->compEPInput = NULL;
+	LALFree ((*params)->channelName); (*params)->channelName = NULL;
+        LALFree (*params); *params = NULL;
         ABORT (status, EPSEARCHH_EALOC, EPSEARCHH_MSGEALOC);
-    }     
+    }
 
     /*
      * 
@@ -527,70 +504,70 @@ void EPInitSearch(
      */
 
     /* Number of data points in a segment */
-    params->initParams->numPoints         = atoi( argv[1] );
+    (*params)->initParams->numPoints        = atoi( argv[1] );
     /* Number of overlapping data segments */
-    params->initParams->numSegments       = atoi( argv[2] );
+    (*params)->initParams->numSegments      = atoi( argv[2] );
     /* Number of segments sent to slave */
-    params->initParams->segDutyCycle      = atoi( argv[12] ); 
+    (*params)->initParams->segDutyCycle     = atoi( argv[12] ); 
     /* Overlap betweeen segments (# of points) */
-    params->ovrlap                        = atoi( argv[3] );  
+    (*params)->ovrlap                       = atoi( argv[3] );  
     /* Identify events with alpha less that this value */
-    params->alphaThreshold                = atof( argv[13] ); 
+    (*params)->alphaThreshold               = atof( argv[13] ); 
     /* Number of data points in a segment */
-    params->ntotT                         = params->initParams->numPoints;      
+    (*params)->ntotT                        = (*params)->initParams->numPoints;
 
     /* Amount of overlap between neighboring TF tiles */
-    params->tfTilingInput->overlapFactor  = atoi( argv[4] );  
+    (*params)->tfTilingInput->overlapFactor = atoi( argv[4] );  
     /* Smallest extent in freq of TF tiles to search */
-    params->tfTilingInput->minFreqBins    = atoi( argv[5] );  
+    (*params)->tfTilingInput->minFreqBins   = atoi( argv[5] );  
     /* Smallest extent in time of TF tiles to search */
-    params->tfTilingInput->minTimeBins    = atoi( argv[6] );  
+    (*params)->tfTilingInput->minTimeBins   = atoi( argv[6] );  
     /* Lowest frequency in Hz to be searched */
-    params->tfTilingInput->flow           = atof( argv[7] );  
+    (*params)->tfTilingInput->flow          = atof( argv[7] );  
     /* Frequency resolution of first TF plane */
-    params->tfTilingInput->deltaF         = atof( argv[8] );  
+    (*params)->tfTilingInput->deltaF        = atof( argv[8] );  
     /* Length (N_F) of first TF plane (with N_T = 1) */
-    params->tfTilingInput->length         = atoi( argv[9] );  
+    (*params)->tfTilingInput->length        = atoi( argv[9] );  
     /* threshold number of sigma */
-    params->compEPInput->numSigmaMin      = atof( argv[10] ); 
+    (*params)->compEPInput->numSigmaMin     = atof( argv[10] ); 
     /* default alpha value for tiles with sigma < numSigmaMin */
-    params->compEPInput->alphaDefault     = atof( argv[11] ); 
+    (*params)->compEPInput->alphaDefault    = atof( argv[11] ); 
     /* EK - Max. number of events to communicate to master */
-    params->events2Master                 = atoi( argv[14] );
+    (*params)->events2Master                = atoi( argv[14] );
     /* EK - Channel name to process (e.g. "ifodmro") */
-    strcpy( params->channelName, argv[15] );
+    strcpy( (*params)->channelName, argv[15] );
     /* Simulation type:  currently ignored. */
-    params->simType                       =  atoi( argv[16] );
-    params->simType = 0;
+    (*params)->simType                      =  atoi( argv[16] );
+    (*params)->simType = 0;
     /* Spectrum method to use */
     if ( !strcmp( argv[17], "useMean" ) ) {
-        params->initParams->method            = useMean;
+        (*params)->initParams->method       = useMean;
     } 
     else if ( !strcmp( argv[17], "useMedian" ) ) {
-        params->initParams->method            = useMedian;
+        (*params)->initParams->method       = useMedian;
     }
     else {
         ABORT( status, EPSEARCHH_ESPEC, EPSEARCHH_MSGESPEC);
     }
     /* Window to use on the data */
-    params->winParams.type                = atoi( argv[18] );
+    (*params)->winParams.type               = atoi( argv[18] );
 
     /* initialize parameter structures */
-    params->tfTiling     = NULL;
-    params->epSegVec     = NULL;
-    params->numSlaves    = NULL;
+    (*params)->tfTiling     = NULL;
+    (*params)->epSegVec     = NULL;
+    (*params)->numSlaves    = NULL;
 
     /* allocate memory for the conditioned segments */
-    LALCreateEPDataSegmentVector (status->statusPtr, &(params->epSegVec), 
-            params->initParams);  
+    LALCreateEPDataSegmentVector (status->statusPtr, &((*params)->epSegVec), 
+            (*params)->initParams);  
     CHECKSTATUSPTR (status);
 
     /* initialize parameters */
-    params->haveData        = 0;
-    params->currentSegment  = 0;
-    params->numEvents       = 0;
-    params->searchMaster    = 0;
-    params->tfTilingInput->maxTileBand = 128.0;
+    (*params)->haveData        = 0;
+    (*params)->currentSegment  = 0;
+    (*params)->numEvents       = 0;
+    (*params)->searchMaster    = 0;
+    (*params)->tfTilingInput->maxTileBand = 128.0;
 
 
     DETATCHSTATUSPTR (status);
@@ -611,7 +588,7 @@ void EPConditionData(
 	REAL4                  flow,
 	REAL8                  resampledeltaT,
 	ResampleTSFilter       resampFiltType,
-        void                  *searchParams
+        EPSearchParams        *params
         )
 /* </lalVerbatim> */
 {
@@ -620,7 +597,6 @@ void EPConditionData(
     REAL4                        *dummyData    = NULL;  
     REAL4                         fsafety=0;
     EPDataSegmentVector          *dataSegVec = NULL;
-    EPSearchParams               *params;
     PassBandParamStruc            highpassParam;
 
     /* resample parameters */
@@ -631,15 +607,13 @@ void EPConditionData(
     INITSTATUS (status, "LALConditionData", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
 
-    params = (EPSearchParams *) searchParams;
-
     /****************************************************************
      *
      * identify multiDimData sequences by their names 
      *
      ***************************************************************/
 
-    ASSERT (searchParams, status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP);
+    ASSERT (params, status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP);
 
     /****************************************************************
      * 
@@ -717,8 +691,7 @@ void EPConditionData(
     /* no need for the next line with segments twice as long 
      * dummyData += (params->ovrlap);
      */
-    dataTimeNS  = 1000000000L * (INT8) series->epoch.gpsSeconds;
-    dataTimeNS += (INT8) series->epoch.gpsNanoSeconds;
+    LALGPStoINT8(status->statusPtr, &dataTimeNS, &series->epoch);
     /* no need for the next line with segments twice as long 
      * dataTimeNS += (INT8) (1e9 * params->ovrlap * series->deltaT);
      */
@@ -767,11 +740,7 @@ void EPConditionData(
                     (params->initParams->numPoints - params->ovrlap) 
                     * i * dummySegment->data->deltaT);
 
-            dummySegment->data->epoch.gpsSeconds = 
-                (INT4) (dummyNS/1000000000L);
-
-            dummySegment->data->epoch.gpsNanoSeconds = 
-                (INT4) (dummyNS%1000000000L);
+	    LALINT8toGPS(status->statusPtr, &dummySegment->data->epoch, &dummyNS);
         }
 
         dummySegment->data->f0 = 0.0;
@@ -812,45 +781,42 @@ void EPConditionData(
 void
 EPFinalizeSearch(
         LALStatus             *status,
-        void                 **searchParams
+        EPSearchParams       **params
         )
 /* </lalVerbatim> */
 {
-  EPSearchParams *params;
-
   INITSTATUS (status, "LALFinalizeSearch", EPSEARCHC);
   ATTATCHSTATUSPTR (status);
 
-  /* check searchParams exists and cast approriately */
-  if ( !(*searchParams) ){
+  /* check params exists */
+  if ( !params || !*params ){
     ABORT( status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP );
   }
-  params = (EPSearchParams *) *searchParams;
 
   /* destroy memory for conditioned segments [ Now moved inside the power code]*/
-  /* LALDestroyEPDataSegmentVector(status->statusPtr, &(params->epSegVec));*/
+  /* LALDestroyEPDataSegmentVector(status->statusPtr, &(*params->epSegVec));*/
   
-  if ( params->searchMaster )
+  if ( (*params)->searchMaster )
   {
     /* free numSlaves */
-    LALFree (params->numSlaves);
+    LALFree ((*params)->numSlaves);
   }
   
   /* free compEPInput */
-  LALFree (params->compEPInput);
+  LALFree ((*params)->compEPInput);
 
   /* free EPInitParams */
-  LALFree (params->initParams); 
+  LALFree ((*params)->initParams); 
 
   /* free TFTiling initialisation parameters */
-  LALFree (params->tfTilingInput);
+  LALFree ((*params)->tfTilingInput);
   
   /* EK - modified; added channel name */
-  LALFree(params->channelName);
+  LALFree ((*params)->channelName);
 
-  /* free searchParams */
-  LALFree (*searchParams);
-  *searchParams = NULL;
+  /* free params */
+  LALFree (*params);
+  *params = NULL;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
