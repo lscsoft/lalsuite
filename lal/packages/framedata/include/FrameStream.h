@@ -328,7 +328,23 @@ LALFrGetINT2TimeSeries(
     );
 
 void
+LALFrGetINT2TimeSeriesMetadata(
+    LALStatus      *status,
+    INT2TimeSeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
 LALFrGetINT4TimeSeries(
+    LALStatus      *status,
+    INT4TimeSeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetINT4TimeSeriesMetadata(
     LALStatus      *status,
     INT4TimeSeries *series,
     FrChanIn       *chanin,
@@ -344,7 +360,23 @@ LALFrGetINT8TimeSeries(
     );
 
 void
+LALFrGetINT8TimeSeriesMetadata(
+    LALStatus      *status,
+    INT8TimeSeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
 LALFrGetREAL4TimeSeries(
+    LALStatus       *status,
+    REAL4TimeSeries *series,
+    FrChanIn        *chanin,
+    FrStream        *stream
+    );
+
+void
+LALFrGetREAL4TimeSeriesMetadata(
     LALStatus       *status,
     REAL4TimeSeries *series,
     FrChanIn        *chanin,
@@ -360,6 +392,14 @@ LALFrGetREAL8TimeSeries(
     );
 
 void
+LALFrGetREAL8TimeSeriesMetadata(
+    LALStatus       *status,
+    REAL8TimeSeries *series,
+    FrChanIn        *chanin,
+    FrStream        *stream
+    );
+
+void
 LALFrGetCOMPLEX8TimeSeries(
     LALStatus          *status,
     COMPLEX8TimeSeries *series,
@@ -368,7 +408,23 @@ LALFrGetCOMPLEX8TimeSeries(
     );
 
 void
+LALFrGetCOMPLEX8TimeSeriesMetadata(
+    LALStatus          *status,
+    COMPLEX8TimeSeries *series,
+    FrChanIn           *chanin,
+    FrStream           *stream
+    );
+
+void
 LALFrGetCOMPLEX16TimeSeries(
+    LALStatus           *status,
+    COMPLEX16TimeSeries *series,
+    FrChanIn            *chanin,
+    FrStream            *stream
+    );
+
+void
+LALFrGetCOMPLEX16TimeSeriesMetadata(
     LALStatus           *status,
     COMPLEX16TimeSeries *series,
     FrChanIn            *chanin,
