@@ -53,6 +53,7 @@
 #include "tmpltbank.h"
 
 RCSID( "$Id$" );
+#define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -677,6 +678,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 #define USAGE \
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
+"  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
@@ -755,6 +757,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"version",                 no_argument,       0,                'V'},    
     {"resample-filter",         required_argument, 0,                'r'},
     /* template bank generation parameters */
     {"minimum-mass",            required_argument, 0,                'A'},
@@ -1335,6 +1338,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         haveSpace = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "LIGO/LSC Standalone Inspiral Template Bank Code\n" 
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
+            "CVS Version: " CVS_ID_STRING "\n" );
+        exit( 0 );
         break;
 
       case '?':

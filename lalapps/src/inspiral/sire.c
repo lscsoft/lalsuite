@@ -33,6 +33,7 @@
 RCSID("$Id$");
 
 #define PROGRAM_NAME "sire"
+#define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -309,7 +310,7 @@ int main( int argc, char *argv[] )
       case 'V':
         fprintf( stdout, "Single Inspiral Reader and Injection Analysis\n"
             "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
-            "CVS Version: $Id$\n" );
+            "CVS Version: " CVS_ID_STRING "\n" );
         exit( 0 );
         break;
 
