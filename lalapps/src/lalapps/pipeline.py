@@ -1100,14 +1100,14 @@ class ScienceData:
       start = seg.start()
       stop = seg.end()
       id = seg.id()
-      if start > stop:
+      if start > ostop:
         # disconnected, so flush out the existing segment (if any)
         if ostop >= 0:
           x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
           outlist.append(x)
         ostart = start
         ostop = stop
-      elif stop > start:
+      elif stop > ostop:
         # extend the current segment
         ostop = stop
 
