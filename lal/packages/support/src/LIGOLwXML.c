@@ -358,7 +358,7 @@ LALWriteLIGOLwXMLTable (
             tablePtr.snglInspiralTable->ttotal,
             tablePtr.snglInspiralTable->psi0,
             tablePtr.snglInspiralTable->psi3,
-            tablePtr.snglInspiralTable->f_cut,
+            tablePtr.snglInspiralTable->f_final,
             tablePtr.snglInspiralTable->snr,
             tablePtr.snglInspiralTable->chisq,
             tablePtr.snglInspiralTable->chisq_dof,

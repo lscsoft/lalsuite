@@ -318,7 +318,7 @@ tagSnglInspiralTable
   REAL4         ttotal;
   REAL4         psi0;
   REAL4         psi3;
-  REAL4         f_cut;
+  REAL4         f_final;
   REAL4         snr;
   REAL4         chisq;
   INT4          chisq_dof;

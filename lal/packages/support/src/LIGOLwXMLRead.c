@@ -578,7 +578,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"ttotal",                  -1, 22},
     {"psi0",                    -1, 23},
     {"psi3",                    -1, 24},
-    {"f_cut",                   -1, 25},
+    {"f_final",                 -1, 25},
     {"snr",                     -1, 26},
     {"chisq",                   -1, 27},
     {"chisq_dof",               -1, 28},
@@ -765,7 +765,7 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 25 )
         {
-          thisEvent->f_cut = r4colData;
+          thisEvent->f_final = r4colData;
         }
         else if ( tableDir[j].idx == 26 )
         {
@@ -856,7 +856,7 @@ InspiralTmpltBankFromLIGOLw (
     {"ttotal",  -1, 9},
     {"psi0",    -1, 10},
     {"psi3",    -1, 11},
-    {"f_cut",   -1, 12},
+    {"f_final", -1, 12},
     {NULL,      0, 0}
   };
 

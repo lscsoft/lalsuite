@@ -515,20 +515,19 @@ int main ( int argc, char *argv[] )
         "tmpltbank" );
     LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
         channelName );
-    tmplt->mass1  = (REAL4) coarseList[0].params.mass1;
-    tmplt->mass2  = (REAL4) coarseList[0].params.mass2;
-    tmplt->mchirp = (REAL4) coarseList[0].params.chirpMass;
-    tmplt->eta    = (REAL4) coarseList[0].params.eta;
-    tmplt->tau0   = (REAL4) coarseList[0].params.t0;
-    tmplt->tau2   = (REAL4) coarseList[0].params.t2;
-    tmplt->tau3   = (REAL4) coarseList[0].params.t3;
-    tmplt->tau4   = (REAL4) coarseList[0].params.t4;
-    tmplt->tau5   = (REAL4) coarseList[0].params.t5;
-    tmplt->ttotal = (REAL4) coarseList[0].params.tC;
-    tmplt->psi0   = (REAL4) coarseList[0].params.psi0;
-    tmplt->psi3   = (REAL4) coarseList[0].params.psi3;
-    /*have replaced fendBCV by fFinal in the following line. Thomas jan 2004*/
-    tmplt->f_cut  = (REAL4) coarseList[0].params.fFinal;
+    tmplt->mass1   = (REAL4) coarseList[0].params.mass1;
+    tmplt->mass2   = (REAL4) coarseList[0].params.mass2;
+    tmplt->mchirp  = (REAL4) coarseList[0].params.chirpMass;
+    tmplt->eta     = (REAL4) coarseList[0].params.eta;
+    tmplt->tau0    = (REAL4) coarseList[0].params.t0;
+    tmplt->tau2    = (REAL4) coarseList[0].params.t2;
+    tmplt->tau3    = (REAL4) coarseList[0].params.t3;
+    tmplt->tau4    = (REAL4) coarseList[0].params.t4;
+    tmplt->tau5    = (REAL4) coarseList[0].params.t5;
+    tmplt->ttotal  = (REAL4) coarseList[0].params.tC;
+    tmplt->psi0    = (REAL4) coarseList[0].params.psi0;
+    tmplt->psi3    = (REAL4) coarseList[0].params.psi3;
+    tmplt->f_final = (REAL4) coarseList[0].params.fFinal;
 
     for ( i = 1; i < numCoarse; ++i )
     {
@@ -539,20 +538,19 @@ int main ( int argc, char *argv[] )
           "tmpltbank" );
       LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
           channelName );
-      tmplt->mass1  = (REAL4) coarseList[i].params.mass1;
-      tmplt->mass2  = (REAL4) coarseList[i].params.mass2;
-      tmplt->mchirp = (REAL4) coarseList[i].params.chirpMass;
-      tmplt->eta    = (REAL4) coarseList[i].params.eta;
-      tmplt->tau0   = (REAL4) coarseList[i].params.t0;
-      tmplt->tau2   = (REAL4) coarseList[i].params.t2;
-      tmplt->tau3   = (REAL4) coarseList[i].params.t3;
-      tmplt->tau4   = (REAL4) coarseList[i].params.t4;
-      tmplt->tau5   = (REAL4) coarseList[i].params.t5;
-      tmplt->ttotal = (REAL4) coarseList[i].params.tC;
-      tmplt->psi0   = (REAL4) coarseList[i].params.psi0;
-      tmplt->psi3   = (REAL4) coarseList[i].params.psi3;
-      /*have replaced fendBCV by fFinal in the following line. Thomas jan 2004*/
-      tmplt->f_cut  = (REAL4) coarseList[i].params.fFinal;
+      tmplt->mass1   = (REAL4) coarseList[i].params.mass1;
+      tmplt->mass2   = (REAL4) coarseList[i].params.mass2;
+      tmplt->mchirp  = (REAL4) coarseList[i].params.chirpMass;
+      tmplt->eta     = (REAL4) coarseList[i].params.eta;
+      tmplt->tau0    = (REAL4) coarseList[i].params.t0;
+      tmplt->tau2    = (REAL4) coarseList[i].params.t2;
+      tmplt->tau3    = (REAL4) coarseList[i].params.t3;
+      tmplt->tau4    = (REAL4) coarseList[i].params.t4;
+      tmplt->tau5    = (REAL4) coarseList[i].params.t5;
+      tmplt->ttotal  = (REAL4) coarseList[i].params.tC;
+      tmplt->psi0    = (REAL4) coarseList[i].params.psi0;
+      tmplt->psi3    = (REAL4) coarseList[i].params.psi3;
+      tmplt->f_final = (REAL4) coarseList[i].params.fFinal;
     }
   }
 
@@ -1169,7 +1167,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         if ( maxFcutTmplts < 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "number of templates in f_cut direction must be >= 0"
+              "number of templates in f_final direction must be >= 0"
               "(%d specified)\n",
               long_options[option_index].name, maxFcutTmplts );
           exit( 1 );
