@@ -136,10 +136,10 @@ LALFindChirpBCVTemplate (
   /* set up pointers */
   expPsi    = fcTmplt->data->data;
   xfac      = params->xfacVec->data;
-  numPoints = fcTmplt->data->length;
+  numPoints = 2 * (fcTmplt->data->length - 1);
 
   /* store the waveform approximant */
-  fcTmplt->tmplt.approximant = BCV;
+  tmplt->approximant = BCV;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );

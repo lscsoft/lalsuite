@@ -150,7 +150,7 @@ LALFindChirpBCVSpinTemplate (
 
   /* set up pointers */
   expPsi      = fcTmplt->data->data;
-  numPoints   = fcTmplt->data->length;
+  numPoints   = 2 * (fcTmplt->data->length - 1);
   xfac        = params->xfacVec->data;
   xfac        = params->xfacVec->data;
   
@@ -160,7 +160,7 @@ LALFindChirpBCVSpinTemplate (
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
   
   /* store the waveform approximant */
-  fcTmplt->tmplt.approximant = BCVSpin;
+  tmplt->approximant = BCVSpin;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
