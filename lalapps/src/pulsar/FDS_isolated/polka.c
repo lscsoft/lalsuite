@@ -339,6 +339,17 @@ int main(int argc,char *argv[])
 #endif
   fclose(fpOut);
 
+  fprintf(stdout,"%%1\n");
+  for (i=0; i < CList1.length; i++)
+    {
+      if (CList1.Ctag[i]) fprintf(stdout,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);      
+    }
+  fprintf(stdout,"%%2\n");
+  for (i=0; i < CList2.length; i++)
+    {
+      if (CList2.Ctag[i]) fprintf(stdout,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);      
+    }
+
   LALFree(indices1F);
   LALFree(indices2F);
   LALFree(indices2f);
