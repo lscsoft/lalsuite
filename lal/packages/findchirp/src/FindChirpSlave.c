@@ -218,6 +218,7 @@ MedianSpec(
   INT4  middle = 0;       /* local loop counter */
   INT4  inner  = 0;       /* local loop counter */
   REAL4 returnVal = 0.0;  /* holder for return value */
+  REAL4 *s = NULL;
 
   ASSERT( p, status, 
       FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
@@ -229,7 +230,7 @@ MedianSpec(
       FINDCHIRPENGINEH_EZERO, FINDCHIRPENGINEH_MSGEZERO );
 
   /* allocate memory array for insert sort, test for success */
-  REAL4 *s = (REAL4 *) LALMalloc( numSegs * sizeof(REAL4) );
+  *s = (REAL4 *) LALMalloc( numSegs * sizeof(REAL4) );
   if ( ! s )
   {
     ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
