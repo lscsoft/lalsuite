@@ -197,7 +197,7 @@ class CondorDAGJob(CondorJob):
     CondorJob.__init__(self, universe, executable, 1)
     self.__notifcation = 'never'
     self.__var_args = []
-    self.__bad_macro_chars = re.compile(r'-_]')
+    self.__bad_macro_chars = re.compile(r'[-_]')
 
   def add_var_arg(self, arg):
     """
@@ -231,7 +231,7 @@ class CondorDAGNode:
     self.__vars = {}
     self.__retry = 0
     self.__parents = []
-    self.__bad_macro_chars = re.compile(r'-_]')
+    self.__bad_macro_chars = re.compile(r'[-_]')
     self.set_name()
 
   def __repr__(self):
