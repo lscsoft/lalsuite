@@ -4,15 +4,15 @@ INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c \
               inspiralfrutils.c inspiralfrutils.h
 TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c \
                inspiralfrutils.c inspiralfrutils.h
-TRIGTMPLTSRC = trig2tmplt.c ligolwbank.h ligolwbank.c
+TRIGTOTMPLTSRC = trigtotmplt.c ligolwbank.h ligolwbank.c
 PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
 if FRAME
 if DATAFLOW
-bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trig2tmplt \
+bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
                lalapps_print_inspiral
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
-lalapps_trig2tmplt_SOURCES = $(TRIGTMPLTSRC)
+lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
 lalapps_print_inspiral_SOURCES = $(PRINTINSPIRALSRC)
 else
 bin_PROGRAMS = 
@@ -26,7 +26,7 @@ else
 bin_SCRIPTS = 
 endif
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(TRIGTMPLTSRC) $(PRINTINSPIRALSRC) \
+             $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
              inspiral_pipeline.py
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
