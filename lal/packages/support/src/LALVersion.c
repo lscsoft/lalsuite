@@ -12,11 +12,24 @@
 
 NRCSID( LALVERSIONC, "$Id$" );
 
+#undef LALsnprintf
+
 const char *lalVersion       = LAL_VERSION;
 const int   lalVersionMajor  = LAL_VERSION_MAJOR;
 const int   lalVersionMinor  = LAL_VERSION_MINOR;
 const char *lalConfigureArgs = LAL_CONFIGURE_ARGS;
 const char *lalConfigureDate = LAL_CONFIGURE_DATE;
+
+int
+LALsnprintf( char *str, size_t size, const char *fmt, ... )
+{
+  va_list ap;
+  int n;
+  va_start( ap, fmt );
+  n = LALvsnprintf( str, size, fmt, ap );
+  va_end( ap );
+  return n;
+}
 
 void
 LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
@@ -28,10 +41,10 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
   ASSERT( size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE );
 
   nchar = verbose ?
-    snprintf( message, size, "This is LAL Version %s\nCompiled on %s\n"
+    LALsnprintf( message, size, "This is LAL Version %s\nCompiled on %s\n"
         "With arguments %s\n(RCS %s)\n",
         lalVersion, lalConfigureDate, lalConfigureArgs, LALVERSIONC ) :
-    snprintf( message, size, "This is LAL Version %s\n", lalVersion ) ;
+    LALsnprintf( message, size, "This is LAL Version %s\n", lalVersion ) ;
 
   if ( nchar < 0 )
   {

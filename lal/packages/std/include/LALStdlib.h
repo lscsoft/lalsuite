@@ -42,6 +42,7 @@ for certain standard modules used by many LAL routines:
 </lalLaTeX>
 <lalVerbatim> */
 #include <stdio.h>
+#include <stdarg.h>
 #include <lal/LALMalloc.h>
 /* </lalVerbatim> 
 
@@ -58,9 +59,22 @@ NRCSID (LALSTDLIBH, "$Id$");
 #define LALFopen  fopen    /* will be replaced by custom unit */
 #define LALFclose fclose   /* will be replaced by custom unit */
 
+/*
+ * Different operating systems still do snprintf differently,
+ * so use LALsnprintf which is snprintf (if present) otherwise
+ * it is sprintf.
+ */
+int LALsnprintf( char *, size_t, const char *, ... );
+int LALvsnprintf( char *, size_t, const char *, va_list );
+#ifdef LAL_HAVE_SNPRINTF
+#  define LALsnprintf snprintf
+#  define LALvsnprintf vsnprintf
+#else /* dangerous */
+#  define LALvsnprintf( str, size, fmt, ap ) vsprintf( str, fmt, ap )
+#endif
+
 /* These are non-ANSI standard routines that will be allowed in LAL */
 int getopt( int, char * const *, const char * );
-int snprintf( char *, size_t, const char *, ... );
 FILE *popen( const char *, const char * );
 int pclose( FILE * );
 

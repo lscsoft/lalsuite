@@ -77,6 +77,15 @@ dnl Checks for library functions.
 AC_CHECK_FUNCS(getopt)
 AC_CHECK_FUNCS(getopt_long)
 AC_FUNC_VPRINTF
+AC_CACHE_CHECK(for snprintf, ac_cv_func_snprintf,
+[AC_TRY_RUN([#include <stdio.h>
+int snprintf( char *, size_t, const char *, ... );
+int main () { char a[3]; snprintf( a, sizeof( a ), "%d", 1 ); return 0; }
+], ac_cv_func_snprintf=yes, ac_cv_func_snprintf=no,
+ac_cv_func_snprintf=no)])
+if test $ac_cv_func_snprintf = yes; then
+  AC_DEFINE(LAL_HAVE_SNPRINTF)
+fi
 AC_CHECK_FUNCS(putenv)
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
