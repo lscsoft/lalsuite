@@ -610,6 +610,7 @@ Patrick Brady
 %
 \verb$--gps-start-time$ \textsc{seconds} 
 \verb$--gps-end-time$ \textsc{seconds} 
+[\verb$--write-all-triggers$] \newline
 %
 \textsc{(LIGO Lightweight XML files)}
 
@@ -689,16 +690,17 @@ coincident triggers with end times after \textsc{GPS seconds}.
 \item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  Look for
 coincident triggers with end times before \textsc{GPS seconds}.
 
-\item[\texttt{--output} \textsc{file}] Required.  Name of the file
-to be used for output.  The output format is LIGO lightweight XML with
-a \texttt{process} and \texttt{process\_params} table. If any 
-coincident events are found, they will be written to a \texttt{sngl\_inspiral}
-table in the same file.
-
 %\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
 %within \textsc{msec} msec window.   The clustering algorithm
 %identifies the first trigger in a cluster,  then displaces it if its
 %\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
+
+\item[\texttt{--write-all-triggers}] Optional.  The default behaviour is to
+only write unique triggers from IFO A. Hoewever, since a trigger from IFO A
+may match two or more triggers from IFO B, it is sometimes useful to write
+the all the triggers from IFO A, so that there is a one-to-one map between the
+IFO A trigger file and IFO B trigger file. This option causes the IFO A
+trigger to be written in this way.
 
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string} to the
 comment field in the process table. If not specified, no comment is added. 
@@ -729,7 +731,6 @@ error.
 lalapps_inca --ifo-a L1 --ifo-b H1 \
 --drhoplus 1.0 --drhominus 1.0 --dm 1.0 --dt 0.01 \
 --gps-start-time 734357353 --gps-end-time 734358353 \
---output L1H1-INCA-734357353-1024.xml \
 L1-INSPIRAL-734357353-1024.xml H1-INSPIRAL-734357353-1024.xml
 \end{verbatim}
 
