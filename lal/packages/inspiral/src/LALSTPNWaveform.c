@@ -60,6 +60,7 @@ typedef struct LALSTPNstructparams {
 	REAL8 S1dot15;
 	REAL8 S2dot15;
         REAL8 Sdot20;
+	REAL8 epnorb[9]; /*added for stopping test */
 } LALSTPNparams;
 
 /* my function to set STPN derivatives*/
@@ -82,6 +83,8 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     REAL8 dS1x,dS1y,dS1z;
     REAL8 dS2x,dS2y,dS2z;
     REAL8 omega2;
+    REAL8 test; /*Michele-041208: added test, see below*/
+    REAL8 dotS1S2; /*Michele-041208: addede since it is used twice, see below*/
     LALSTPNparams *params = (LALSTPNparams*)mparams;
 
     REAL8 v, v2, v3, v4, v7, v11;
@@ -125,26 +128,58 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 	+ v * ( params->wdotorb[3] 
 	+ v * (	params->wdotorb[4] 
 	+ v * (	params->wdotorb[5] 
-	+ v * ( params->wdotorb[6] 
-	+ v * ( params->wdotorb[7] *  log(omega) 
-	+ v * ( params->wdotorb[8] ) ) ) ) ) ) ) );
+	+ v * ( params->wdotorb[6] +  params->wdotorb[7] *  log(omega) 
+	+ v * ( params->wdotorb[8] ) ) ) ) ) ) ) ;
 
+  /* Michele-041208: this evaluates the part of the test coming from the orbital energy */
+
+    test = -0.5 * params->eta * (
+				 (2.0/3.0) * (1.0/v) * params->epnorb[0]
+				 + params->epnorb[1]
+				 + (4.0/3.0) * v * (params->epnorb[2]
+				 + (5.0/3.0) * v * (params->epnorb[3]
+				 +  2.0      * v * (params->epnorb[4]
+				 + (7.0/3.0) * v * (params->epnorb[5]
+				 + (8.0/3.0) * v * (params->epnorb[6]
+				 +  3.0      * v * (params->epnorb[7]
+				 + (10.0/3.0)* v *  params->epnorb[8] )))))) );
+
+    
+    
     domega += params->wspin15 * omega * 
 	( LNhx * (113.0 * S1x + 113.0 * S2x + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x) +
 	  LNhy * (113.0 * S1y + 113.0 * S2y + 75.0 * params->m2m1 * S1y + 75.0 * params->m1m2 * S2y) +
 	  LNhz * (113.0 * S1z + 113.0 * S2z + 75.0 * params->m2m1 * S1z + 75.0 * params->m1m2 * S2z) );
 
+
     dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
     dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
 
+    /* Michele-041208: added dotS1S2 since it's used twice, also in test */
+    dotS1S2 = (S1x*S2x + S1y*S2y + S1z*S2z);
+
     domega += params->wspin20 * v4 *
-	( 247.0 * (S1x*S2x + S1y*S2y + S1z*S2z) -
+	( 247.0 * dotS1S2 -
 	  721.0 * dotLNS1 * dotLNS2 );
 
     domega *= domeganew;
-
+ 
+    /* Michele-041208: this evaluates the part of the test coming from the spin energy terms */
+    /* If more terms come in, they need to be added by hand */
+    
+    if(params->wspin15 != 0.0)
+      test += -0.5 * params->eta *
+	(5.0/3.0) * v2 * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 +
+			   (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
+    
+    /* Michele-041208: here we multiply and divide by eta to keep parallelism
+       with the formula above; hopefully the compiler will simplify*/
+    
+    if(params->wspin20 != 0.0)
+      test += -0.5 * params->eta *
+	2.0       * v  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2) / params->eta;
     /* dLN, 1.5PN*/
-
+    
     omega2 = omega * omega;
 
     tmpx = (4.0 + 3.0*params->m2m1) * S1x + (4.0 + 3.0*params->m1m2) * S2x;
@@ -207,6 +242,7 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     dS2z += params->Sdot20 * omega2 * (-tmpz - 3.0 * dotLNS1 * crossz);
 
     /* -? the original equations had one additional spin term*/
+    /* Michele-041208: but I think it was an experimental term introduced by Yi and Alessandra */
 
     /* dphi*/
     
@@ -228,7 +264,12 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 
     dvalues->data[8] = dS2x;
     dvalues->data[9] = dS2y;
-    dvalues->data[10]= dS2z;
+    dvalues->data[10]= dS2z; 
+
+    /* Michele-041208: not a derivative, but pass it back here anyway */ 
+
+    dvalues->data[11] = test;
+
 }
                 
 /*  <lalVerbatim file="LALSTPNWaveformForInjectionCP"> */
@@ -245,12 +286,13 @@ LALSTPNWaveformForInjection (LALStatus        *status,
   LALSTPNparams *mparams;
 
   /* declare code parameters and variables*/
-  INT4 		nn = 11;              /* number of dynamical variables*/
-  INT4 		count;                /* integration steps performed*/
-  INT4 		length;               /* memory allocation structure*/
-  INT4 		j;                    /* counter*/
+  INT4 		nn = 11+1;              /* number of dynamical variables*/  
+                                        /* Michele-041208: added one for "test" */
+  INT4 		count;                  /* integration steps performed*/
+  INT4 		length;                 /* memory allocation structure*/
+  INT4 		j;                      /* counter*/
   
-  rk4In 	in4;                 /* used to setup the Runge-Kutta integration*/
+  rk4In 	in4;                   /* used to setup the Runge-Kutta integration*/
   
   expnCoeffs 	ak;
   expnFunc 	func;
@@ -280,6 +322,7 @@ LALSTPNWaveformForInjection (LALStatus        *status,
 
   /* declare dynamical variables*/
   REAL8 vphi, omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
+  REAL8 test=0;
   REAL8 alpha, omegadot;
   REAL8 f2a, apcommon;
 
@@ -352,6 +395,13 @@ CHAR message[256];
      struct tagInspiralTemplate *next;
      struct tagInspiralTemplate *fine;
      } InspiralTemplate; */
+
+
+  /* Michele-041208: in my code I used to compute some members of the
+     "params" structure (such as totalMass, eta) from more basic ones (such as mass1, mass2).
+     Am I to assume that all the parameter fields have already been set when "params" is passed? 
+
+     Thomas 10/12/2004 : yes ny using LALInspiralParameterCalc function called in LALInspiralInit */
 
 
  /* Make sure parameter and waveform structures exist. */
@@ -454,17 +504,33 @@ CHAR message[256];
   yt.data 		= &dummy.data[3*nn];
   dym.data 		= &dummy.data[4*nn];
   dyt.data 		= &dummy.data[5*nn];
-  
-  /* setup coefficients for PN equations*/
+
+    /* setup coefficients for PN equations*/
 
   mparams->m2m1 = params->mass2 / params->mass1;
   mparams->m1m2 = params->mass1 / params->mass2;
   mparams->eta = params->eta;
   mparams->wdotnew = (96.0/5.0) * params->eta;
 
+ /* Michele-041208: I trust (but did not check), that the same numbering
+     that I used for the wdotorb[] coefficients is shared by the ak
+     terms, especially given that wdotorb[6] and wdotorb[7] are both
+     3PN terms for me 
 
-  for (j = newtonian; j <= 8; j++)
+     Thomas-10Dec04 Indeed wdotorb[6] and [7] are part of 3PN and I took that 
+     into account in the LALInspiralSetup function. */
+
+  /* Michele-041208: added epnorb initialization; is newtonian = 0? */
+
+  for (j = newtonian; j <= 8; j++) {
     mparams->wdotorb[j] = ak.ST[j];
+    mparams->epnorb[j] = 0.0;
+  }
+
+  mparams->epnorb[0] = 1.0;
+
+  /* Michele-041208: modified for epnorb initialization; perhaps the logic is not the best */
+
   
   switch (params->order){
   case     newtonian:
@@ -479,6 +545,8 @@ CHAR message[256];
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 	= 0.0;
     mparams->Sdot20 	= 0.0;
+    mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
+
     break; 
   case     onePointFivePN:
     for (j = params->order + 1; j <= 8; j++)
@@ -489,7 +557,9 @@ CHAR message[256];
     mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;   
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 	= 0.0;
-    mparams->Sdot20 	= 0.0;
+    mparams->Sdot20 	= 0.0; 
+    mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
+
     break; 
   case     twoPN:
   case     twoPointFivePN:
@@ -504,6 +574,13 @@ CHAR message[256];
     mparams->LNhdot15 	= 0.5;
     mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
     mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;    
+    mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta); /* 1PN*/
+    mparams->epnorb[4]  = (1.0/24.0) * (-81.0 + 57.0*params->eta - params->eta*params->eta); /* 2PN*/
+    if(params->order == threePN || params->order == threePointFivePN)
+      mparams->epnorb[6]  = ( -(675.0/64.0) /* 3PN*/
+			      +( (209323.0/4032.0) -(205.0/96.0)*LAL_PI*LAL_PI
+				 -(110.0/9.0) * (-1987.0/3080.0) ) * params->eta
+			      -(155.0/96.0)*params->eta*params->eta - (35.0/5184.0)*params->eta*params->eta*params->eta );
     break;
   }
 
@@ -584,6 +661,12 @@ CHAR message[256];
 
   /* -? the original BCV target model had one additional stopping test*/
   /*    that I should probably reinstate*/
+  /* Michele-041208: you do a do-while loop, while I had a while; we're trusting that the first
+     step does not exit already, which is probably acceptable */
+
+  /* Thomas-10Dev04: I do not remember why I did .... but not for nothing for sure. 
+   It might be an empty bin at beginning or a shit im time of one bin in the coherent 
+   code...*/
 
   do {
 
@@ -660,7 +743,13 @@ CHAR message[256];
 
       t = (++count - params->nStartPad) * dt;
   }  
-  while(omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) ;
+ while(test < 0.0 && omegadot > 0 && LNhz*LNhz < 1.0 - LNhztol && omega/unitHz < 1000.0) ;
+  
+  /* Michele-041208: modified, added test */
+  /* Michele-041208: to check, is omega really in Hz? */
+  /* Michele-041208: the original Mathematica code, stopped the
+     inspiral at the ISCO for order = newtonian. This is not currently implemented here. */
+  
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
 
@@ -671,13 +760,13 @@ CHAR message[256];
   /* -? I will comment this out to compare with my Mathematica code*/
 
 
-  sprintf(message, "cycles = %lf", vphi/3.14159);
+  sprintf(message, "cycles = %f", vphi/3.14159);
   LALInfo(status, message);
 
 
   if ( (vphi/LAL_PI) < 2 ){
-    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
-	    vphi/LAL_PI );
+    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
+	    (double)(vphi/LAL_PI) );
     LALWarning(status, message);
     
   }
