@@ -47,7 +47,7 @@ enum { mTotElem, etaElem, distElem, incElem, phiElem, lonElem, latElem,
   psiElem, numElem };
 
 FILE *fplog;
-ProcessParamsTable   *this_proc_param;
+SimInspiralTable *this_sim_insp;
 
 
 /*
@@ -275,6 +275,7 @@ int sky_position( double *dist, double *alpha, double *delta )
     *dist  = lmc_dist;
     *alpha = lmc_alpha;
     *delta = lmc_delta;
+    sprintf( this_sim_insp->source, "LMC" );
   }
   else if ( u < plmc + psmc ) /* SMC event */
   {
@@ -282,10 +283,12 @@ int sky_position( double *dist, double *alpha, double *delta )
     *dist  = smc_dist;
     *alpha = smc_alpha;
     *delta = smc_delta;
+    sprintf( this_sim_insp->source, "SMC" );
   }
   else /* galactic event */
   {
     fprintf( fplog, "\tMW" );
+    sprintf( this_sim_insp->source, "MW" );
     return galactic_sky_position( dist, alpha, delta );
   }
 
@@ -317,14 +320,6 @@ int inj_params( double *injPar )
     sprintf( fname, "%s/%s", path ? path : PREFIX "/" PACKAGE "/share",
         basename );
     fp = fopen( fname, "r" );
-    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-      LALCalloc( 1, sizeof(ProcessParamsTable) );
-    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--bns-masses-path" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "lstring" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, fname );
 
     if ( ! fp )
     {
@@ -390,6 +385,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;
+  ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
 
   lalDebugLevel = LALMSGLVL3;
@@ -404,7 +400,9 @@ int main( int argc, char *argv[] )
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     LALCalloc( 1, sizeof(ProcessParamsTable) );
 
-  injections.simInspiralTable = NULL;
+  /* create the first injection */
+  this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
+    LALCalloc( 1, sizeof(SimInspiralTable) );
 
   tlisthead.tinj = tinj;
   tlisthead.next = NULL;
@@ -434,9 +432,9 @@ int main( int argc, char *argv[] )
   snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
       "%s", PROGRAM_NAME );
   snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-      "--bns-masses-path" );
-  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "lstring" );
-  snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, fname );
+      "--seed" );
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
+  snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%d", rand_seed );
 
   /* open logfile for injection parameters */
   fplog = fopen( "injlog.txt", "w" );
@@ -519,13 +517,16 @@ int main( int argc, char *argv[] )
   for ( inj = 0; inj < ninj; ++inj )
   {
     int elem;
-    long tsec = (long)( tlistelem->tinj / 1000000000LL );
-    long tnan = (long)( tlistelem->tinj % 1000000000LL );
+    long tsec = this_sim_insp->end_time_geocent.gpsSeconds = 
+      (long)( tlistelem->tinj / 1000000000LL );
+    long tnan = this_sim_insp->end_time_geocent.gpsNanoSeconds = 
+      (long)( tlistelem->tinj % 1000000000LL );
     double gmst;
     double deffH;
     double deffL;
-    gmst = greenwich_mean_sidereal_time( tsec, tnan, 32 );
-    fprintf( fplog, "%ld.%09ld\t%e", tsec, tnan, gmst * 12.0 / M_PI );
+    gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
+    fprintf( fplog, "%ld.%09ld\t%e", tsec, tnan, 
+        (this_sim_insp->end_time_gmst = gmst * 12.0 / M_PI) );
     tlistelem = tlistelem->next;
     inj_params( injPar );
     fprintf( fp, "%s%e", inj ? " " : "", injPar[0] );
@@ -538,9 +539,24 @@ int main( int argc, char *argv[] )
       else
         fprintf( fplog, "\t%e", injPar[elem] );
     }
-    deffH = eff_dist( nxH, nyH, injPar, gmst );
-    deffL = eff_dist( nxL, nyL, injPar, gmst );
+
+    this_sim_insp->mtotal = injPar[mTotElem];
+    this_sim_insp->eta = injPar[etaElem];
+    this_sim_insp->distance = injPar[distElem];
+    this_sim_insp->longitude = injPar[lonElem];
+    this_sim_insp->latitude = injPar[latElem];
+    this_sim_insp->inclination = injPar[incElem];
+    this_sim_insp->coa_phase = injPar[phiElem];
+    this_sim_insp->polarization = injPar[psiElem];
+
+    this_sim_insp->eff_dist_h = deffH = eff_dist( nxH, nyH, injPar, gmst );
+    this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst );
     fprintf( fplog, "\t%e\t%e\n", deffH / MPC, deffL / MPC );
+    if ( inj < ninj - 1 )
+    {
+      this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
+        LALCalloc( 1, sizeof(SimInspiralTable) );
+    }
   }
 
   fprintf( fp, "</real_4>\n" );
