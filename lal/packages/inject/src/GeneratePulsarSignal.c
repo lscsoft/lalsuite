@@ -161,7 +161,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
-  UINT4 SSBduration;
+  REAL8 SSBduration;
   LIGOTimeGPS time = {0,0};
   REAL4TimeSeries *output;
   UINT4 i;
@@ -213,10 +213,12 @@ LALGeneratePulsarSignal (LALStatus *stat,
   /*----------*/
 
   time = params->startTimeGPS;
-  time.gpsSeconds += params->duration;
+  TRY ( LALAddFloatToGPS (stat->statusPtr, &time, &time, params->duration), stat);
+
   TRY (LALConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
-  SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds;
-  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
+
+  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &time, &(sourceParams.spinEpoch)), stat);
+  sourceParams.length = (UINT4)( SSBduration / sourceParams.deltaT );
   /* ----------
      FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
   sourceParams.length   += (UINT4)(1.5*LTT/ sourceParams.deltaT);
@@ -267,7 +269,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
     ABORT (stat,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
   }
-  LALCreateVector (stat->statusPtr, &(output->data), (UINT4)( params->samplingRate * params->duration) );
+  LALCreateVector (stat->statusPtr, &(output->data), (UINT4) ceil( params->samplingRate * params->duration) );
   BEGINFAIL(stat) {
     LALFree (output);
   } ENDFAIL(stat);
