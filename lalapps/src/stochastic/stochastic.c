@@ -2142,11 +2142,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* allocate memory for temporary segments - to be re-worked */
   for (i = 0; i < segsInInt; i++)
   {
-    segOne[i]= segTwo[i] = NULL;
-    LAL_CALL(LALCreateVector(&status, &(segOne[i]), segmentLength), &status);
-    LAL_CALL(LALCreateVector(&status, &(segTwo[i]), segmentLength), &status);
-    memset(segOne[i]->data, 0, segOne[i]->length * sizeof(*segOne[i]->data));
-    memset(segTwo[i]->data, 0, segTwo[i]->length * sizeof(*segTwo[i]->data));
+    segOne[i] = XLALCreateREAL4Vector(segmentLength);
+    segTwo[i] = XLALCreateREAL4Vector(segmentLength);
   }
 
   /* allocate memory for injections - to be re-worked */
@@ -2183,15 +2180,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* allocate memory for temporary monte carlo segments */
     for (i = 0; i < segsInInt; i++)
     {
-      MCrespOne[i]= MCrespTwo[i] = NULL;
-      LAL_CALL(LALCCreateVector(&status, &(MCrespOne[i]), MCfreqLength), \
-          &status);
-      LAL_CALL(LALCCreateVector(&status, &(MCrespTwo[i]), MCfreqLength), \
-          &status);
-      memset(MCrespOne[i]->data, 0, \
-          MCrespOne[i]->length * sizeof(*MCrespOne[i]->data));
-      memset(MCrespTwo[i]->data, 0, \
-          MCrespTwo[i]->length * sizeof(*MCrespTwo[i]->data));
+      MCrespOne[i] = XLALCreateCOMPLEX8Vector(MCfreqLength);
+      MCrespTwo[i] = XLALCreateCOMPLEX8Vector(MCfreqLength);
     }
   }
 
@@ -2203,11 +2193,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   filterLength = numFMax - numFMin + 1;
 
   /* allocate memory for calibrated PSDs */
-  calPsdOne = calPsdTwo = NULL;
-  LAL_CALL(LALCreateVector(&status, &calPsdOne, filterLength), &status);
-  LAL_CALL(LALCreateVector(&status, &calPsdTwo, filterLength), &status);
-  memset(calPsdOne->data, 0, calPsdOne->length * sizeof(*calPsdOne->data));
-  memset(calPsdTwo->data, 0, calPsdTwo->length * sizeof(*calPsdTwo->data));
+  calPsdOne = XLALCreateREAL4Vector(filterLength);
+  calPsdTwo = XLALCreateREAL4Vector(filterLength);
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
@@ -2215,13 +2202,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* allocate memory for temporary response functions */
   for (i = 0; i < segsInInt; i++)
   {
-    respOne[i]= respTwo[i] = NULL;
-    LAL_CALL(LALCCreateVector(&status, &(respOne[i]), filterLength), &status);
-    LAL_CALL(LALCCreateVector(&status, &(respTwo[i]), filterLength), &status);
-    memset(respOne[i]->data, 0, respOne[i]->length * \
-        sizeof(*respOne[i]->data));
-    memset(respTwo[i]->data, 0, respTwo[i]->length * \
-        sizeof(*respTwo[i]->data));
+    respOne[i] = XLALCreateCOMPLEX8Vector(filterLength);
+    respTwo[i] = XLALCreateCOMPLEX8Vector(filterLength);
   }
 
   if (vrbflg)
