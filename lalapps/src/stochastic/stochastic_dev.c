@@ -19,11 +19,13 @@
 #include <FrameL.h>
 
 #include <lal/AVFactories.h>
+#include <lal/BandPassTimeSeries.h>
 #include <lal/Calibration.h>
 #include <lal/ComplexFFT.h>
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
+#include <lal/IIFilter.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
