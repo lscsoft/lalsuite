@@ -141,23 +141,6 @@ from the \texttt{inject} package.
 
 /* --- structure for storing the parameters needed to do an injection ---- */
 typedef struct
-tagInspiralInjection
-{
-  INT8                          coaTime;
-  REAL4                         totalMass;
-  REAL4                         eta;
-  REAL4                         dist;
-  REAL4                         inclination;
-  REAL4                         coaPhase;
-  REAL4                         longitude;
-  REAL4                         latitude;
-  REAL4                         polarization;
-  struct tagInspiralInjection  *next;
-}
-InspiralInjection;
-
-/* --- structure for storing the parameters needed to do an injection ---- */
-typedef struct
 tagFindChirpStandardCandle
 {
   CHAR                          ifo[2];
@@ -622,7 +605,7 @@ void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
-    InspiralInjection          *events,
+    SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
     );
 

@@ -16,6 +16,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpEngine.h>
 
@@ -25,13 +26,13 @@ void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
-    InspiralInjection          *events,
+    SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
     )
 {
   UINT4                 k;
   DetectorResponse      detector;
-  InspiralInjection    *thisEvent = NULL;
+  SimInspiralTable     *thisEvent = NULL;
   PPNParamStruc         ppnParams;
   CoherentGW            waveform;
   INT8                  waveformStartTime;
@@ -172,11 +173,11 @@ LALFindChirpInjectSignals (
 
 
     /* input fields */
-    ppnParams.mTot = thisEvent->totalMass;
+    ppnParams.mTot = thisEvent->mtotal;
     ppnParams.eta  = thisEvent->eta;
-    ppnParams.d    = thisEvent->dist;
+    ppnParams.d    = thisEvent->distance * 1.0e6 * LAL_PC_SI;
     ppnParams.inc  = thisEvent->inclination;
-    ppnParams.phi  = thisEvent->coaPhase;
+    ppnParams.phi  = thisEvent->coa_phase;
 
     /* frequency cutoffs */
     ppnParams.fStartIn = 40.0;
@@ -213,15 +214,16 @@ LALFindChirpInjectSignals (
     }
 
     /* get the gps start time of the signal to inject */
-    waveformStartTime = thisEvent->coaTime - 
-      (INT8) ( 1000000000.0 * ppnParams.tc );
+    LALGPStoINT8( status->statusPtr, &waveformStartTime, 
+        &(thisEvent->geocent_end_time) );
+    CHECKSTATUSPTR( status );
+    waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
     /* clear the signal structure */
     memset( &signal, 0, sizeof(REAL4TimeSeries) );
 
     /* set the start times for injection */
-    LALINT8toGPS( status->statusPtr, 
-        &(signal.epoch), &waveformStartTime );
+    LALINT8toGPS( status->statusPtr, &(signal.epoch), &waveformStartTime );
     CHECKSTATUSPTR( status );
     memcpy( &(waveform.a->epoch), &(signal.epoch), 
         sizeof(LIGOTimeGPS) );
