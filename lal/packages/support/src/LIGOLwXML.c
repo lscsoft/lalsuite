@@ -158,6 +158,12 @@ LALBeginLIGOLwXMLTable (
     case sngl_inspiral_table:
       fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
+    case multi_inspiral_table:
+      fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      break;
+    case sim_inspiral_table:
+      fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      break;
     case summ_value_table:
       fprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
@@ -348,6 +354,65 @@ LALWriteLIGOLwXMLTable (
             tablePtr.snglInspiralTable->sigmasq
             );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
+      }
+      break;
+    case multi_inspiral_table:
+      while( tablePtr.multiInspiralTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, MULTI_INSPIRAL_ROW,
+            tablePtr.multiInspiralTable->ifos,
+            tablePtr.multiInspiralTable->search,
+            tablePtr.multiInspiralTable->end_time.gpsSeconds,
+            tablePtr.multiInspiralTable->end_time.gpsNanoSeconds,
+            tablePtr.multiInspiralTable->impulse_time.gpsSeconds,
+            tablePtr.multiInspiralTable->impulse_time.gpsNanoSeconds,
+            tablePtr.multiInspiralTable->amplitude,
+            tablePtr.multiInspiralTable->eff_distance,
+            tablePtr.multiInspiralTable->coa_phase,
+            tablePtr.multiInspiralTable->mass1,
+            tablePtr.multiInspiralTable->mass2,
+            tablePtr.multiInspiralTable->mchirp,
+            tablePtr.multiInspiralTable->eta,
+            tablePtr.multiInspiralTable->tau0,
+            tablePtr.multiInspiralTable->tau2,
+            tablePtr.multiInspiralTable->tau3,
+            tablePtr.multiInspiralTable->tau4,
+            tablePtr.multiInspiralTable->tau5,
+            tablePtr.multiInspiralTable->ttotal,
+            tablePtr.multiInspiralTable->snr,
+            tablePtr.multiInspiralTable->chisq,
+            tablePtr.multiInspiralTable->chisq_dof,
+            tablePtr.multiInspiralTable->sigmasq,
+            tablePtr.multiInspiralTable->ligo_axis_ra,
+            tablePtr.multiInspiralTable->ligo_axis_dec,
+            tablePtr.multiInspiralTable->ligo_angle,
+            tablePtr.multiInspiralTable->ligo_angle_sig
+            );
+        tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
+      }
+      break;
+    case sim_inspiral_table:
+      while( tablePtr.simInspiralTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, SIM_INSPIRAL_ROW,
+            tablePtr.simInspiralTable->end_time_geocent.gpsSeconds,
+            tablePtr.simInspiralTable->end_time_geocent.gpsNanoSeconds,
+            tablePtr.simInspiralTable->end_time_gmst,
+            tablePtr.simInspiralTable->source,
+            tablePtr.simInspiralTable->mtotal,
+            tablePtr.simInspiralTable->eta,
+            tablePtr.simInspiralTable->distance,
+            tablePtr.simInspiralTable->longitude,
+            tablePtr.simInspiralTable->latitude,
+            tablePtr.simInspiralTable->inclination,
+            tablePtr.simInspiralTable->coa_phase,
+            tablePtr.simInspiralTable->polarization,
+            tablePtr.simInspiralTable->eff_dist_h,
+            tablePtr.simInspiralTable->eff_dist_l
+            );
+        tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
       }
       break;
     case summ_value_table:

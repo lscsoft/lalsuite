@@ -71,6 +71,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_TRANSDATA_NAME_MAX 33
 #define LIGOMETA_TRANSDATA_UNITS_MAX 17
 #define LIGOMETA_TRANSDATA_DATA_MAX 17
+#define LIGOMETA_SOURCE_MAX 17
 
 #if 0
 <lalLaTeX>
@@ -98,6 +99,8 @@ typedef enum
   sngl_burst_table,
   sngl_inspiral_table,
   sngl_transdata_table,
+  multi_inspiral_table,
+  sim_inspiral_table,
   summ_value_table
 }
 MetadataTableType;
@@ -219,6 +222,7 @@ tagEventIDColumn
   struct tagSnglBurstTable      *snglBurstTable;
   struct tagSnglInspiralTable   *snglInspiralTable;
   struct tagSummValueTable      *summValueTable;
+  struct tagMultiInspiralTable  *multiInspiralTable;
   struct tagSnglTransdataTable  *snglTransdataTable;
 }
 EventIDColumn;
@@ -318,6 +322,81 @@ SnglInspiralTable;
 
 Document table.
 
+\subsubsection*{Type \texttt{MultiInspiralTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagMultiInspiralTable
+{
+  struct tagMultiInspiralTable *next;
+  CHAR          ifos[LIGOMETA_IFOS_MAX];
+  CHAR          search[LIGOMETA_SEARCH_MAX];
+  LIGOTimeGPS   end_time;
+  LIGOTimeGPS   impulse_time;
+  REAL4         amplitude;
+  REAL4         eff_distance;
+  REAL4         coa_phase;
+  REAL4         mass1;
+  REAL4         mass2;
+  REAL4         mchirp;
+  REAL4         eta;
+  REAL4         tau0;
+  REAL4         tau2;
+  REAL4         tau3;
+  REAL4         tau4;
+  REAL4         tau5;
+  REAL4         ttotal;
+  REAL4         snr;
+  REAL4         chisq;
+  INT4          chisq_dof;
+  REAL4         sigmasq;
+  REAL4         ligo_axis_ra;
+  REAL4         ligo_axis_dec;
+  REAL4         ligo_angle;
+  REAL4         ligo_angle_sig;
+  EventIDColumn *event_id;
+}
+MultiInspiralTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
+Document table.
+
+\subsubsection*{Type \texttt{SimInspiralTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagSimInspiralTable
+{
+  struct tagSimInspiralTable *next;
+  LIGOTimeGPS    end_time_geocent;
+  REAL4          end_time_gmst;
+  CHAR           source[LIGOMETA_SOURCE_MAX];
+  REAL4          mtotal;
+  REAL4          eta;
+  REAL4          distance;
+  REAL4          longitude;
+  REAL4          latitude;
+  REAL4          inclination;
+  REAL4          coa_phase;
+  REAL4          polarization;
+  REAL4          eff_dist_h;
+  REAL4          eff_dist_l;
+}
+SimInspiralTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+Document table.
+
 \subsubsection*{Type \texttt{SnglTransdataTable}}
 
 </lalLaTeX>
@@ -394,6 +473,8 @@ tagMetadataTable
   SearchSummvarsTable   *searchSummvarsTable;
   SnglBurstTable        *snglBurstTable;
   SnglInspiralTable     *snglInspiralTable;
+  MultiInspiralTable    *multiInspiralTable;
+  SimInspiralTable      *simInspiralTable;
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
 }
