@@ -62,6 +62,43 @@ typedef enum {
 } LALUserVarType;
 /* </lalVerbatim> */
 
+
+/* <lalLaTeX> 
+\subsection*{Macros}
+
+The following macros make it a bit easier to register the
+user-variables in a constistent way. The convention followed is that
+the C-variable corresponding to the user-variable \verb+Name+ is
+called \verb+uvar_[Name]+. These macros register a user-variable "name"
+of type \verb+REAL8+, \verb+INT4+, \verb+BOOLEAN+ or \verb+CHAR*+
+respectively. 
+</lalLaTeX> */
+/* <lalVerbatim> 
+regREALUserVar(stat,name,option,help)	
+regINTUserVar(stat,name,option,help) 
+regBOOLUserVar(stat,name,option,help)
+regSTRINGUserVar(stat,name,option,help)
+</lalVerbatim> */
+/* <lalLaTeX> 
+Some examples of use:
+</lalLaTeX> */
+/* <lalVerbatim> 
+CHAR *uvar_inDataFilename;
+REAL8 uvar_startTime;
+BOOLEAN uvar_binaryoutput;
+INT4 uvar_nTsft;
+regSTRINGUserVar(stat, inDataFilename,  'i', "Name of input parameter file");
+regREALUserVar(stat,   startTime,	'G', "Detector GPS time to start data");
+regBOOLUserVar(stat,   binaryoutput,	'b', "Output time-domain data in binary format");
+regINTUserVar(stat,    nTsft,		'N', "Number of SFTs nTsft");
+</lalVerbatim> */
+
+#define regREALUserVar(stat,name,option,help) LALRegisterREALUserVar((stat), #name, option, help, &(uvar_ ## name))
+#define regINTUserVar(stat,name,option,help) LALRegisterINTUserVar((stat), #name, option, help, &(uvar_ ## name))
+#define regBOOLUserVar(stat,name,option,help)LALRegisterBOOLUserVar((stat), #name, option, help, &(uvar_ ## name))
+#define regSTRINGUserVar(stat,name,option,help) LALRegisterSTRINGUserVar((stat), #name, option, help, &(uvar_ ## name))
+
+
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{UserInputHV}}
 \newpage\input{UserInputC}
@@ -69,7 +106,11 @@ typedef enum {
 ******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
-void LALRegisterUserVar (LALStatus *stat, const CHAR *name, LALUserVarType type, CHAR optchar, const CHAR *helpstr, void *cvar);
+void LALRegisterREALUserVar (LALStatus *stat, const CHAR *name, CHAR optchar, const CHAR *helpstr, REAL8 *cvar);
+void LALRegisterINTUserVar (LALStatus *stat,  const CHAR *name, CHAR optchar, const CHAR *helpstr, INT4 *cvar);
+void LALRegisterBOOLUserVar (LALStatus *stat, const CHAR *name, CHAR optchar, const CHAR *helpstr, BOOLEAN *cvar);
+void LALRegisterSTRINGUserVar (LALStatus *stat,const CHAR *name,CHAR optchar, const CHAR *helpstr, CHAR **cvar);
+
 void LALDestroyUserVars (LALStatus *stat);
 
 void LALUserVarReadAllInput(LALStatus *stat, int argc, char *argv[]);

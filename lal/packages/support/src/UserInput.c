@@ -59,11 +59,19 @@ static LALUserVariable UVAR_vars;	/* empty head */
 extern char *optarg;
 extern int optind, opterr, optopt;
 
+/* internal prototypes */
+static void LALRegisterUserVar (LALStatus *stat, const CHAR *name, LALUserVarType type, CHAR optchar, const CHAR *helpstr, void *cvar);
+
+
 /*----------------------------------------------------------------------
  * "register" a user-variable with the module
  * effectively put an appropriate entry into UVAR_vars
+ *
+ * NOTE: don't use this directly, as it's not type-safe!!
+ *      ==> use one of the 4 wrappers below!
+ *
  *----------------------------------------------------------------------*/
-void
+static void
 LALRegisterUserVar (LALStatus *stat, 
 		    const CHAR *name, 
 		    LALUserVarType type, 
@@ -100,6 +108,53 @@ LALRegisterUserVar (LALStatus *stat,
   RETURN (stat);
 
 } /* LALRegisterUserVar() */
+
+
+
+/* these are trivial type-specific wrappers to allow tighter type-checking! */
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterREALUserVar (LALStatus *stat, 
+			const CHAR *name, 
+			CHAR optchar, 
+			const CHAR *helpstr, 
+			REAL8 *cvar)
+{ /* </lalVerbatim> */
+  LALRegisterUserVar (stat, name, UVAR_REAL8, optchar, helpstr, cvar);
+}
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterINTUserVar (LALStatus *stat, 
+		       const CHAR *name, 
+		       CHAR optchar, 
+		       const CHAR *helpstr, 
+		       INT4 *cvar)
+{ /* </lalVerbatim> */
+  LALRegisterUserVar (stat, name, UVAR_INT4, optchar, helpstr, cvar);
+} 
+
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterBOOLUserVar (LALStatus *stat, 
+		       const CHAR *name, 
+		       CHAR optchar, 
+		       const CHAR *helpstr, 
+		       BOOLEAN *cvar)
+{ /* </lalVerbatim> */
+  LALRegisterUserVar (stat, name, UVAR_BOOL, optchar, helpstr, cvar);
+} 
+
+/* <lalVerbatim file="UserInputCP"> */
+void
+LALRegisterSTRINGUserVar (LALStatus *stat, 
+			  const CHAR *name, 
+			  CHAR optchar, 
+			  const CHAR *helpstr, 
+			  CHAR **cvar)
+{ /* </lalVerbatim> */
+  LALRegisterUserVar (stat, name, UVAR_STRING, optchar, helpstr, cvar);
+} 
+
 
 
 
