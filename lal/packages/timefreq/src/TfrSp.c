@@ -32,6 +32,7 @@
  */
 
 #include <lal/TimeFreq.h>
+#include <lal/RealFFT.h>
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
 
@@ -96,9 +97,10 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	}
     }
   
-  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+  /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
+  /*TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
 
   TRY(LALSCreateVector(stat->statusPtr, &ptmp, tfr->fRow/2 + 1), stat);
   TRY(LALSCreateVector(stat->statusPtr, &windSig, tfr->fRow), stat);
@@ -148,7 +150,6 @@ void LALTfrSp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   
   TRY(LALSDestroyVector(stat->statusPtr, &ptmp), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSig), stat);
-
   TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
 
   DETATCHSTATUSPTR (stat);

@@ -1,15 +1,15 @@
 ## Process this file with automake to produce Makefile.in
-#noinst_LTLIBRARIES = libtimefreq.la
-#libtimefreq_la_SOURCES = \
-#  CreateTimeFreqParam.c \
-#  CreateTimeFreqRep.c \
-#  DestroyTimeFreqParam.c \
-#  DestroyTimeFreqRep.c \
-#  Dwindow.c \
-#  TfrPswv.c \
-#  TfrRsp.c \
-#  TfrSp.c \
-#  TfrWv.c
+noinst_LTLIBRARIES = libtimefreq.la
+libtimefreq_la_SOURCES = \
+  CreateTimeFreqParam.c \
+  CreateTimeFreqRep.c \
+  DestroyTimeFreqParam.c \
+  DestroyTimeFreqRep.c \
+  Dwindow.c \
+  TfrPswv.c \
+  TfrRsp.c \
+  TfrSp.c \
+  TfrWv.c
 EXTRA_DIST = \
   CreateTimeFreqParam.c \
   CreateTimeFreqRep.c \

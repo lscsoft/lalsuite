@@ -89,7 +89,7 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
 
   /* Make sure the window length is smaller than the number of freq bins: */
   ASSERT ((INT4)param->windowT->length < tfr->fRow, stat, TFR_EWSIZ, TFR_MSGEWSIZ);
-/* ??   ASSERT (param->windowT->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);  */
+/* ??ASSERT (param->windowT->length%2 != 0, stat, TFR_EWSIZ, TFR_MSGEWSIZ);  */
 
   /* Make sure the timeInstant indicates existing time instants */
   for (column=0 ; column<tfr->tCol ; column++)
@@ -101,9 +101,10 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
 	}
     }
   
-  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+  /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
 
   TRY(LALCCreateVector(stat->statusPtr, &vtmp, tfr->fRow/2 + 1), stat);
   TRY(LALSCreateVector(stat->statusPtr, &lacf, tfr->fRow), stat);
@@ -187,7 +188,7 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
 			  + R2 * param->windowF->data[hwlF-tau])/normF;
        }
      
-     LALFwdRealFFT (stat->statusPtr, vtmp, lacf, plan);   
+     LALForwardRealFFT (stat->statusPtr, vtmp, lacf, plan); 
      
      for (row = 0; row < tfr->fRow/2+1 ; row++)
        tfr->map[column][row]= vtmp->data[row].re;
@@ -201,7 +202,7 @@ void LALTfrPswv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPa
   TRY(LALCDestroyVector(stat->statusPtr, &vtmp), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &lacf), stat);
 
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
 
   DETATCHSTATUSPTR (stat);
 

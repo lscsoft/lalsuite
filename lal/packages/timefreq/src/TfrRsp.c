@@ -113,9 +113,10 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	}
     }
   
-  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+    /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
 
   TRY(LALSCreateVector(stat->statusPtr, &windowT, param->windowT->length), stat);
   TRY(LALSCreateVector(stat->statusPtr, &windowD, param->windowT->length), stat);
@@ -176,9 +177,9 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
 	    * windowD->data[hwl + tau]/normH;
 	}
       
-      LALFwdRealFFT(stat->statusPtr, vtmpH, windSigH, plan);   
-      LALFwdRealFFT(stat->statusPtr, vtmpT, windSigT, plan);   
-      LALFwdRealFFT(stat->statusPtr, vtmpD, windSigD, plan);   
+      LALForwardRealFFT(stat->statusPtr, vtmpH, windSigH, plan);   
+      LALForwardRealFFT(stat->statusPtr, vtmpT, windSigT, plan);   
+      LALForwardRealFFT(stat->statusPtr, vtmpD, windSigD, plan);   
       
       normhatf = tfr->fRow / (2.0 * LAL_PI);
 
@@ -229,7 +230,7 @@ void LALTfrRsp (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPar
   TRY(LALSDestroyVector(stat->statusPtr, &windSigH), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSigT), stat);
   TRY(LALSDestroyVector(stat->statusPtr, &windSigD), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
 
   DETATCHSTATUSPTR (stat);
 

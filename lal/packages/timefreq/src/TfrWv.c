@@ -87,10 +87,10 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
 	  ASSERT (tfr->timeInstant[column] < (INT4)sig->length, stat, TFR_EBADT, TFR_MSGEBADT);
 	}
     }
-  
-  TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
-  TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);
+  /* ??TRY(LALEstimateFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
+    /*??*/TRY(LALCreateForwardRealFFTPlan(stat->statusPtr, &plan,(UINT4)tfr->fRow,0),stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
+  /* ??TRY(LALMeasureFwdRealFFTPlan(stat->statusPtr, &plan, tfr->fRow), stat);*/
 
   TRY(LALSCreateVector(stat->statusPtr, &lacf, tfr->fRow), stat);
   TRY(LALCCreateVector(stat->statusPtr, &vtmp, tfr->fRow/2+1), stat);
@@ -115,7 +115,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
       if ((time<=(INT4)sig->length-tau-1)&(time>=tau))
 	lacf->data[tau] =  sig->data[time+tau]*sig->data[time-tau];
       
-      LALFwdRealFFT(stat->statusPtr, vtmp, lacf, plan);   
+      LALForwardRealFFT(stat->statusPtr, vtmp, lacf, plan);   
       
       for (row = 0; row < (tfr->fRow/2+1); row++)
 	tfr->map[column][row] = vtmp->data[row].re;
@@ -128,7 +128,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   TRY(LALSDestroyVector(stat->statusPtr, &lacf), stat);
   TRY(LALCDestroyVector(stat->statusPtr, &vtmp), stat);
 
-  TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);
+  /* ??TRY(LALDestroyRealFFTPlan(stat->statusPtr, &plan), stat);*/
 
   DETATCHSTATUSPTR (stat);
 
