@@ -2292,7 +2292,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* lal initialisation variables */
   LALStatus status = blank_status;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
-
+  
   /* xml */
   CHAR baseName[FILENAME_MAX];
   StochasticTable *stochHead = NULL;
@@ -2301,41 +2301,26 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* counter */
   INT4 i;
 
-  /* input data */
+  /* data structures */
   REAL4TimeSeries *seriesOne;
   REAL4TimeSeries *seriesTwo;
-
-  /* timing */
+  REAL4FrequencySeries *overlap;
+  REAL4FrequencySeries *mask;
+  REAL4FrequencySeries *omegaGW;
+  REAL4Window *dataWindow;
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
 
-  /* segments */
+  /* variables */
   INT4 numSegments;
   INT4 duration, durationEff, extrasec;
-  INT4 segsInInt, segMiddle;
+  INT4 segsInInt;
   INT4 segmentLength;
   INT4 padData;
-
-  /* window */
-  REAL4Window *dataWindow;
-
-  /* PSDs */
   REAL8 deltaF;
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-
-  /* overlap reduction function */
-  REAL4FrequencySeries *overlap;
-
-  /* frequency mask */
-  REAL4FrequencySeries *mask;
-
-  /* optimal filter */
-  REAL4FrequencySeries *optFilter = NULL;
-
-  /* gravitational wave spectrum */
-  REAL4FrequencySeries *omegaGW;
 
   /* error handler */
   status.statusPtr = NULL;
@@ -2371,7 +2356,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   duration = endTime - startTime;
   numSegments = duration / segmentDuration;
   segsInInt = intervalDuration / segmentDuration;
-  segMiddle = (segsInInt - 1) / 2;
   
   /* recentre */
   if (recentre_flag)
@@ -2476,7 +2460,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   save_xml_file(&status, accuracy, outputPath, baseName, stochHead);
 
   /* cleanup */
-  XLALDestroyREAL4FrequencySeries(optFilter);
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
