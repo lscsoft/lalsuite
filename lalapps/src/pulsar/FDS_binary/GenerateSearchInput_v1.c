@@ -121,7 +121,7 @@ int ReadCommandLine(int argc,char *argv[])
   doppler=4e-4; /* p */
   dterms=16; /* k */
   estimflag=0; /* m */
-  signalflag=1; /* S */
+  signalflag=0; /* S */
   binflag=0;   /* determines wether we output a binary template file or not */
   thresh=0.0; /* T */
   tstart=0; /* q */
@@ -147,7 +147,7 @@ int ReadCommandLine(int argc,char *argv[])
       {"alpha", required_argument, 0, 'a'},
       {"delta", required_argument, 0, 'd'},
       {"ifo", required_argument, 0, 'I'},
-      {"f_min", required_argument, 0, 'f'},
+      {"fmin", required_argument, 0, 'f'},
       {"band", required_argument, 0, 'b'},
       {"fres", required_argument, 0, 'r'},
       {"doppler", required_argument, 0, 'p'},
@@ -280,7 +280,7 @@ int ReadCommandLine(int argc,char *argv[])
       fprintf(stdout,"\t--alpha       FLOAT\t Sky position alpha (equatorial coordinates) in radians [DEFAULT=0.0 ]\n");
       fprintf(stdout,"\t--delta       FLOAT\t Sky position delta (equatorial coordinates) in radians [DEFAULT=0.0 ]\n");
       fprintf(stdout,"\t--ifo         STRING\t Detector (LLO,LHO,GEO,VIRGO,TAMA) [DEFAULT=LLO]\n");
-      fprintf(stdout,"\t--f_min        FLOAT\t Minimum search frequency in Hz [DEFAULT=0.0] \n");
+      fprintf(stdout,"\t--fmin        FLOAT\t Minimum search frequency in Hz [DEFAULT=0.0] \n");
       fprintf(stdout,"\t--band        FLOAT\t Bandwidth to be searched in Hz [DEFAULT=0.0]\n");
       fprintf(stdout,"\t--fres        FLOAT\t Frequency resolution to be used in Hz [DEFAULT=0.0]\n");
       fprintf(stdout,"\t--ephem       STRING\t Location of ephemeris data [DEFAULT=./]\n");
@@ -288,7 +288,7 @@ int ReadCommandLine(int argc,char *argv[])
       fprintf(stdout,"\t--datadir     STRING\t Directory containing data to be searhed [DEFAULT=NULL]\n");
       fprintf(stdout,"\t--basename    STRING\t Location and basename of output SFT's [DEFAULT=NULL]\n");
       fprintf(stdout,"\t--estim       BOOLEAN\t Set if estimated parameters required [DEFAULT=FALSE]\n");
-      fprintf(stdout,"\t--signal      BOOLEAN\t Set if data has only signal ppresent [DEFAULT=TRUE]\n");
+      fprintf(stdout,"\t--signal      BOOLEAN\t Set if data has only signal ppresent [DEFAULT=FALSE]\n");
       fprintf(stdout,"\t--window      INTEGER\t Window size to used in running median [DEFAULT=60]\n");
       fprintf(stdout,"\t--dterms      INTEGER\t Number of terms to use in the Dirichelet kernel [DEFAULT=16]\n");
       fprintf(stdout,"\t--bintempfile STRING\t Name of file to contain binary template [DEFAULT=bintemplate.data]\n");
