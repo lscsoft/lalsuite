@@ -8,7 +8,6 @@
 #include <time.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <glob.h>
 #include <getopt.h>
 #include <lal/AVFactories.h>

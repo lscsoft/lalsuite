@@ -19,8 +19,7 @@
 
 
 #include "ComputeFStatisticBinary_v2.h"    /* BINARY-MOD - Using modified header file */
-#include "../FDS_isolated/rngmed.h"
-#include "../FDS_isolated/clusters.h"
+#include "clusters.h"
 #include "../FDS_isolated/DopplerScan.h"
 
 RCSID( "$Id$");
@@ -117,7 +116,6 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
-BOOLEAN uvar_searchNeighbors;
 
 /* try this */
 BOOLEAN uvar_openDX;
@@ -178,7 +176,7 @@ INT4 NormaliseSFTData(void);
 void initUserVars (LALStatus *stat);
 
 /* BINARY-MOD - declaration of binary template reading function */
-INT4 ReadBinaryTemplateBank();
+INT4 ReadBinaryTemplateBank(void);
 
 /*----------------------------------------------------------------------
  * Helper function (Yousuke): 
@@ -318,16 +316,9 @@ int main(int argc,char *argv[])
 
 
     if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
-    /*----------------------------------------------------------------------
-     * Helper function (Yousuke): 
-     * Refine the skyRegion to search only at neighboring grid points of the 
-     * center of the original skyRegion. 
-     *----------------------------------------------------------------------*/
-    if ( uvar_searchNeighbors ) {
-      LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
-    } else {
-      LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
-    }
+
+    LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+
     /*----------------------------------------------------------------------*/
     if (lalDebugLevel) LALPrintError ("done.\n");
     if ( uvar_outputSkyGrid ) {
@@ -607,9 +598,6 @@ initUserVars (LALStatus *stat)
   uvar_workingDir = LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
-  uvar_searchNeighbors = FALSE;
-
-
 
   /* register all our user-variables */
  
@@ -653,9 +641,6 @@ initUserVars (LALStatus *stat)
 
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
-
-  LALregBOOLUserVar(stat,	searchNeighbors,	 	 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
-
 
 
   DETATCHSTATUSPTR (stat);
@@ -2833,7 +2818,7 @@ void use_boinc_filename1(char **orig_name ) {
 
 /**************************************************************************************/
 
-int ReadBinaryTemplateBank()
+int ReadBinaryTemplateBank(void)
 {
 
   FILE *BTBfp;
