@@ -294,11 +294,11 @@ collectJob.add_opt( "bucket", sharedDir )
 collectJob.add_condor_cmd( "getenv", "True" )
 
 # Create SFT extraction job
-extractJob = CondorDAGJob( "scheduler",  "narrowBandExtract" )
+extractJob = CondorDAGJob( "scheduler",  "lalapps_narrowBandExtract" )
 extractJob.set_sub_file(                "narrowBandExtract.sub" )
 extractJob.set_stdout_file( outputDir + "narrowBandExtract.out" )
 extractJob.set_stderr_file( outputDir + "narrowBandExtract.err" )
-extractJob.add_opt( "frequency", "%f" % frequency )
+extractJob.add_opt( "start-frequency", "%f" % frequency )
 extractJob.add_opt( "bandwidth", "%f" % bandwidth )
 extractJob.add_opt( "input",  outputDir + sftPath )
 extractJob.add_opt( "output", nbsftname )
