@@ -60,8 +60,8 @@ LALInspiralWaveNormaliseLSO
    ) 
 {  /*  </lalVerbatim>  */
 
-  INT4 i, n, nby2, k;
-  REAL8 psdvalue, f;
+  INT4 i, n, nby2;
+  REAL8 psd, f;
 
   INITSTATUS (status, "LALInspiralWaveNormaliseLSO", LALINSPIRALWAVENORMALISEC);
   ATTATCHSTATUSPTR(status);
@@ -76,13 +76,12 @@ LALInspiralWaveNormaliseLSO
 
   for (i=1; i<nby2; i++) 
   {
-     k = n-i;
-     psdvalue = in->psd->data[i];
      f = i*in->df;
      if (f>in->fCutoff) break;
-     if (psdvalue) 
+     psd = in->psd->data[i];
+     if (psd) 
      {
-	*norm += (pow(filter->data[i], 2.) + pow(filter->data[k], 2.))/psdvalue;
+	*norm += (pow(filter->data[i], 2.) + pow(filter->data[n-i], 2.))/(psd*0.5);
      }
   }
 
@@ -92,9 +91,9 @@ LALInspiralWaveNormaliseLSO
 
   (*norm) *= 2.;
 
-  if (in->psd->data[0]) *norm += pow(filter->data[0], 2.)/in->psd->data[0];
+  if (in->psd->data[0]) *norm += pow(filter->data[0], 2.)/(0.5*in->psd->data[0]);
   f = nby2*in->df;
-  if (f<in->fCutoff) if (in->psd->data[nby2]) *norm += pow(filter->data[nby2], 2.)/in->psd->data[nby2];
+  if (f<in->fCutoff) if (in->psd->data[nby2]) *norm += pow(filter->data[nby2], 2.)/(0.5*in->psd->data[nby2]);
 
   *norm /= ((double) n * in->samplingRate);
   *norm = sqrt(*norm);

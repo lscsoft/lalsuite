@@ -68,13 +68,13 @@ LALColoredNoise
          don't need the factor 2 in the normalisation
          x = sqrt(2. * psd.data[i] / length);
       */
-      x = sqrt(psd.data[i] / length);
+      x = sqrt(2.*psd.data[i]);
       noisy->data[i] *= x;
       noisy->data[j] *= x;
    }
-   x = sqrt(psd.data[0] / length);
+   x = sqrt(2.*psd.data[0]);
    noisy->data[0] *= x;
-   x = sqrt(psd.data[nby2] / length);
+   x = sqrt(2.*psd.data[nby2]);
    noisy->data[nby2] *= x;
 
    DETATCHSTATUSPTR(status);

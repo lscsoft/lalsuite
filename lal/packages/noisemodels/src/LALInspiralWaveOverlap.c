@@ -21,7 +21,7 @@ where the maximum occured and the phase at the maximum.
 \begin{verbatim}
 LALInspiralWave
 LALREAL4VectorFFT
-LALInspiralWaveNormalise
+LALInspiralWaveNormaliseLSO
 LALInspiralWaveCorrelate
 \end{verbatim}
 
@@ -47,6 +47,7 @@ LALInspiralWaveOverlap
    InspiralWaveCorrelateIn corrin;
    REAL8 norm, x, y, z, phase;
    INT4 i, nBegin, nEnd;
+   InspiralWaveNormaliseIn normin;
 
    INITSTATUS (status, "LALInspiralWaveOverlap", LALINSPIRALWAVEOVERLAPC);
    ATTATCHSTATUSPTR(status);
@@ -94,11 +95,15 @@ LALInspiralWaveOverlap
    CHECKSTATUSPTR(status);
    LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, overlapin->fwdp);
    CHECKSTATUSPTR(status);
-   LALInspiralWaveNormalise(status->statusPtr, &filter1, &norm, overlapin->psd);
+   normin.psd = &(overlapin->psd);
+   normin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
+   normin.fCutoff = overlapin->param.fCutoff;
+   normin.samplingRate = overlapin->param.tSampling;
+   LALInspiralWaveNormaliseLSO(status->statusPtr, &filter1, &norm, &normin);
    CHECKSTATUSPTR(status);
-   LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, overlapin->psd);
+   LALInspiralWaveNormaliseLSO(status->statusPtr, &filter2, &norm, &normin);
    CHECKSTATUSPTR(status);
-   corrin.fCutoff = overlapin->param.tSampling/2.;
+   corrin.fCutoff = overlapin->param.fCutoff;
    corrin.samplingRate = overlapin->param.tSampling;
    corrin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
    corrin.psd = overlapin->psd;

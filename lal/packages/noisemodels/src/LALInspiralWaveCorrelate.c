@@ -99,8 +99,8 @@ LALInspiralWaveCorrelate
         i1 = corrin.signal1.data[k];
         i2 = corrin.signal2.data[k];
 
-        buff.data[i] = (r1*r2 + i1*i2) / psd;
-        buff.data[k] = (i1*r2 - r1*i2) / psd;
+        buff.data[i] = (r1*r2 + i1*i2) / (0.5*psd);
+        buff.data[k] = (i1*r2 - r1*i2) / (0.5*psd);
 	/*
 	 * printf("%d %e %e\n", i, buff.data[i], buff.data[k]);
 	 */
@@ -117,7 +117,7 @@ LALInspiralWaveCorrelate
   {
      r1 = corrin.signal1.data[0];
      r2 = corrin.signal2.data[0];
-     buff.data[0] = r1*r2 / psd;
+     buff.data[0] = r1*r2 / (0.5*psd);
      /*
       * printf("%d %e %e\n", i, buff.data[0], buff.data[0]);
       */
@@ -133,7 +133,7 @@ LALInspiralWaveCorrelate
   {
      r1 = corrin.signal1.data[nby2];
      r2 = corrin.signal2.data[nby2];
-     buff.data[nby2] = r1*r2 / psd;
+     buff.data[nby2] = r1*r2 / (0.5*psd);
      /*
       * printf("%d %e %e\n", i, buff.data[nby2], buff.data[nby2]);
       */

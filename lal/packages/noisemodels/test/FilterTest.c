@@ -106,7 +106,7 @@ main ( void )
 /*---------------------------------------------------------------------------*/
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
-   coarseIn.mMin = 2.0;
+   coarseIn.mMin = 3.0;
    coarseIn.mMax = 10.0;
    coarseIn.MMax = 2.*coarseIn.mMax;
    coarseIn.massRange = MinMaxComponentMass;
@@ -236,7 +236,7 @@ main ( void )
 /* REPORTSTATUS(&status); */
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
-   ntrials=10;
+   ntrials=5;
    fprintf(FilterTest, "#mass1 mass2 totalMass t0 t2 t3 t4 mass1 mass2 totalMass t0 t2 t3 t4 omax \n");
    fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, i);
    fprintf(stderr,"----------------------------------------------\n");

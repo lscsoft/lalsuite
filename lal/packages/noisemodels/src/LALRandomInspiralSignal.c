@@ -114,7 +114,7 @@ random
 LALInspiralParameterCalc
 LALInspiralWave
 LALREAL4VectorFFT
-LALInspiralWaveNormalise
+LALInspiralWaveNormaliseLSO
 LALCreateRandomParams
 LALNormalDeviates
 LALDestroyRandomParams
@@ -154,6 +154,7 @@ LALRandomInspiralSignal
    AddVectorsIn addIn;
    INT4 valid;
    static RandomParams *randomparams;
+   InspiralWaveNormaliseIn normin;
    
    INITSTATUS (status, "LALRandomInspiralSignal", LALRANDOMINSPIRALSIGNALC);
    ATTATCHSTATUSPTR(status);
@@ -249,6 +250,10 @@ LALRandomInspiralSignal
 	   }
    }
 
+   normin.psd = &(randIn->psd);
+   normin.df = randIn->param.tSampling / (REAL8) signal->length;
+   normin.fCutoff = randIn->param.fCutoff;
+   normin.samplingRate = randIn->param.tSampling;
 
    switch (randIn->type) 
    {
@@ -257,7 +262,7 @@ LALRandomInspiralSignal
          CHECKSTATUSPTR(status);
          LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
          CHECKSTATUSPTR(status);
-         LALInspiralWaveNormalise(status->statusPtr, signal, &norm, randIn->psd);
+	 LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
          CHECKSTATUSPTR(status);
          break;
       case 1:
@@ -301,7 +306,7 @@ LALRandomInspiralSignal
          CHECKSTATUSPTR(status);
          LALREAL4VectorFFT(status->statusPtr, &buff, signal, randIn->fwdp);
          CHECKSTATUSPTR(status);
-         LALInspiralWaveNormalise(status->statusPtr, &buff, &norm, randIn->psd);
+	 LALInspiralWaveNormaliseLSO(status->statusPtr, &buff, &norm, &normin);
          CHECKSTATUSPTR(status);
 
          addIn.v1 = &buff;

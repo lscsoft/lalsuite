@@ -120,12 +120,12 @@ main ( void )
 
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;
-   randIn.SignalAmp = 10.;
-   randIn.NoiseAmp = 1.0;
+   randIn.SignalAmp = 2.8;
+   randIn.NoiseAmp = 1.;
    randIn.useed = 82488;
    randIn.mMin = 4.0;
-   randIn.mMax = 5.0;
-   randIn.MMax = 10.0;
+   randIn.mMax = 4.001;
+   randIn.MMax = 2.*randIn.mMax;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
    randIn.param.nStartPad=1000;
@@ -166,8 +166,9 @@ main ( void )
    overlapin.revp = revp;
    file = fopen("RandomInspiralSignalTest.out", "w");
 
-   i=10;
+   i=3;
    while (i--) {
+	   /*
       randIn.type = 0;
       LALRandomInspiralSignal(&status, &signal, &randIn);
       fprintf(stderr, "%d %e %e\n", i, randIn.param.mass1, randIn.param.mass2);
@@ -187,7 +188,7 @@ main ( void )
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
-			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
+			      overlapout.phase, overlapout.bin, overlapout.max);
       }
 
       randIn.type = 1;
@@ -206,9 +207,10 @@ main ( void )
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
-			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
+			      overlapout.phase, overlapout.bin, overlapout.max);
       }
 
+      */
       randIn.type = 2;
       LALRandomInspiralSignal(&status, &signal, &randIn);
       fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e \n",  
@@ -228,7 +230,7 @@ main ( void )
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
-			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
+			      overlapout.phase, overlapout.bin, overlapout.max);
       }
    }
 
