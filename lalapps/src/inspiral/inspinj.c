@@ -992,7 +992,11 @@ int main( int argc, char *argv[] )
     double todH;
     double todL;
 
+    /* get gmst (radians) */
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
+
+    /* save gmst (hours) in sim_inspiral table */
+    this_sim_insp->end_time_gmst = gmst * 12.0 / LAL_PI;
 
     tlistelem = tlistelem->next;
 
