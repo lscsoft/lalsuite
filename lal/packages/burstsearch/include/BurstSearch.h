@@ -7,6 +7,7 @@ $Id$
 #define _BURSTSEARCH_H
 
 #include <lal/ExcessPower.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -40,15 +41,6 @@ tagBurstEventList
   INT4                                   numEvents;
 }
 BurstEventList;
-
-void
-LALTFTileToBurstEvent (
-               LALStatus                            *status,
-               BurstEvent                           *burstEvent,
-               TFTile                               *event,
-               INT8                                  tstart,
-               REAL4                                 flow
-               );
 
 #ifdef  __cplusplus
 }

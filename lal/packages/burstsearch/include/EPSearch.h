@@ -11,6 +11,7 @@ $Id$
 #include <lal/TFTransform.h>
 #include <lal/ExcessPower.h>
 #include <lal/BurstSearch.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -168,7 +169,7 @@ void
 EPSearch (
             LALStatus               *status,
             EPSearchParams          *params,
-            BurstEvent             **burstEvent,
+            SnglBurstTable             **burstEvent,
             UINT4                    tmpDutyCyle
          );
 
@@ -191,6 +192,17 @@ EPFinalizeSearch(
     LALStatus             *status,
     void                 **searchParams
     );
+
+void
+LALTFTileToBurstEvent (
+               LALStatus                            *status,
+               SnglBurstTable                          *burstEvent,
+               TFTile                               *event,
+               INT8                                  tstart,
+               EPSearchParams                       *params
+               );
+
+
 
 /************************************************************/
 /* new method added to obtain median of power spectrum data */
