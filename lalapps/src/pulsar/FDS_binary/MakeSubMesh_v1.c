@@ -15,7 +15,7 @@ static LALStatus status;
 REAL8 sma0,period,ecc,argp;
 REAL8 *sma,*dist;
 LIGOTimeGPS tperi0,*tperi,TstartDET,TstartSSB,tperiCURRENT;
-REAL8 fmax,tspan,ecc,argp,period;
+REAL8 f_max,tspan,ecc,argp,period;
 INT4 tperisecMIN,tperisecMAX,tperinsMIN,tperinsMAX,TstartsecMIN,TstartsecMAX;
 REAL8 smaMIN,smaMAX,mismatch,sma0FULL;
 REAL8 gamXX,gamXY,gamYY;
@@ -176,7 +176,7 @@ int ReadFullBank()
   if (ReadMeshFileHeader(fbfp,&BMFheader)) return 1;
 
   /* put all the output into the correct variables */
-  fmax=BMFheader.fmax;
+  f_max=BMFheader.f_max;
   tspan=BMFheader.tspan;
   TstartDET.gpsSeconds=BMFheader.tstart.gpsSeconds;
   TstartDET.gpsNanoSeconds=BMFheader.tstart.gpsNanoSeconds;
@@ -333,7 +333,7 @@ INT4 OutputSortedDist()
   if (sbfp!=NULL) {
 
     /* setup the header input */
-    BMFheader.fmax=fmax;
+    BMFheader.f_max=f_max;
     BMFheader.tspan=tspan;
     BMFheader.tstart.gpsSeconds=TstartDET.gpsSeconds;
     BMFheader.tstart.gpsNanoSeconds=TstartDET.gpsNanoSeconds;
