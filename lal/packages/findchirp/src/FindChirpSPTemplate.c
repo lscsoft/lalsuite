@@ -90,7 +90,7 @@ LALFindChirpSPTemplate (
   REAL4 c15;
   REAL4 c20;
 
-  /* taylor coefficents */
+  /* chebychev coefficents for expansion of sin and cos */
   const REAL4 s2 = -0.16605;
   const REAL4 s4 =  0.00761;
   const REAL4 c2 = -0.49670;
