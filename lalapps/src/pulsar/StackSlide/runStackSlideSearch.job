@@ -30,6 +30,12 @@
 # 10/28/04 gam; change unused windowFilterFlag to REAL8 orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle
 # 12/06/04 gam; add gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line;
 # 12/06/04 gam; change calibrationFlag to cosInclinationAngle
+# 01/06/05 gam; Use better estimate of maximum of Earth's orbital velocity over c to make code more efficient.
+#               But also include searchRunningMedianBlockSize extra bins for running median normalization
+#               Also, use abs(maximum spindown) to add extra bins for spindown
+# 01/06/05 gam; Use length of tEffBLK to determine how to round BLK start frequency and band.
+
+set maxEarthOrbVelOverC 1.1e-4; # Should be overestimate by 10%.
 
 if {[string range $IFONICKNAME 0 0] == "H"} {
     set IFOName "LHO";
@@ -51,7 +57,7 @@ set gpsEpochStartTimeNan $templateGPSEpochStartTimeNan; # 12/06/04 gam; UINT4 GP
 set gpsStartTimeSec $ANALYSIS_START_TIME;  # GPS start time of data requested, seconds 
 # set gpsStartTimeNan 0;                   # 12/06/04 gam; # GPS start time of data requested, nanoseconds
 # set sampleRate 4096;                     # 12/06/04 gam; # Sample rate of time domain data
-set duration $SAMPLE_TIME;               # Duration in seconds that search code will run on.
+set duration $SAMPLE_TIME;                 # Duration in seconds that search code will run on.
 
 # NOTE THAT THIS JOB ASSUMES INPUT BLKS OF DATA ARE SFTs
 set numBLKs $NUMSFTS;                           # Actual number of input SFTs
@@ -63,14 +69,29 @@ set tEffBLK $INPUTSFTTIME;                          # Used to get dfBLK = 1/tEff
 # Adjust f0BLK and bandBLK to bring in extra bins for sliding.  Overestimate maximum possible doppler shift (5.0e-4*f0)
 #set fOffset [expr 5.0e-4*$INPUTSUMF0 + ($duration/$tBLK)/(1.0*$tEffBLK)]; # 03/10/04 gam;
 # 03/10/04 gam; Change fOffset to bring in only 10 extra bin for spindown for better normalization of the noise.
-set fOffset [expr 5.0e-4*($INPUTSUMF0 + $INPUTSUMBAND) + 20.0/(1.0*$tEffBLK)];
+# set fOffset [expr 5.0e-4*($INPUTSUMF0 + $INPUTSUMBAND) + 20.0/(1.0*$tEffBLK)];
+# 01/06/05 gam; compute offset more accurately
+set extraBandDueToSpindown [expr $templateNumSpinDown*abs($templateStopFDeriv1)*$SAMPLE_TIME];
+set fOffset [expr $maxEarthOrbVelOverC*($INPUTSUMF0 + $INPUTSUMBAND) + $extraBandDueToSpindown + $searchRunningMedianBlockSize/(1.0*$tEffBLK)];
+
+# 01/06/05 gam; round depending on SFT time:
+if {$tEffBLK == 1800} {
+   set roundWithThisFactor 100.0;
+} elseif {$tEffBLK == 60} {
+   set roundWithThisFactor 10.0;
+} else {
+   set roundWithThisFactor $INPUTSFTTIME;
+}
+
 set f0BLK   [expr $INPUTSUMF0 - $fOffset];    # Start frequency of the input SFTs
-set f0BLK   [expr (floor($f0BLK*100.0))/100.0];
+#set f0BLK   [expr (floor($f0BLK*100.0))/100.0]; # 01/06/05 gam;
+set f0BLK   [expr (floor($f0BLK*$roundWithThisFactor))/$roundWithThisFactor];
 if {$f0BLK < 0.0} {
   PrintError "Computed f0BLK = $f0BLK is too small to allow sliding. Increase f0BLK.";
 }
 set bandBLK [expr $INPUTSUMBAND + 2.0*$fOffset];  # Band width of the input SFTs.
-set bandBLK [expr (ceil($bandBLK*100.0))/100.0];
+#set bandBLK [expr (ceil($bandBLK*100.0))/100.0]; # 01/06/05 gam;
+set bandBLK [expr (ceil($bandBLK*$roundWithThisFactor))/$roundWithThisFactor];
 set nBinsPerBLK [expr floor($tEffBLK*$bandBLK + 0.5)]; # Number of frequency bins in one SUM
 
 set numBLKsPerSTK  1;                          # Number of BLKs to use to make one STK

@@ -1,13 +1,31 @@
-function TurnLEandMCdataIntoUL(listSearchXMLfiles,listMCxmlFiles,injectedH0,confidence, numSFT,inputLE)
-% Usage: TurnLEandMCdataIntoUL(listSearchXMLfiles,listMCxmlFiles,injectedH0,confidence, numSFT,inputLE)
+function TurnLEandMCdataIntoUL(listSearchXMLfiles,listMCxmlFiles,injectedH0,confidence,numSFT,inputLE,outputFile,graphOption)
+% Usage: TurnLEandMCdataIntoUL(listSearchXMLfiles,listMCxmlFiles,injectedH0,confidence,numSFT,inputLE)
 % searchXMLfile: file with list of files with output of StackSlide Search
 % listMCxmlFiles: file with list of files with output of corresponding Monte Carlo Simulation
 % injectedH0: value of signal amplitude h_0 injected during Monte Carlo Simulation
 % confidence: confidence wanted in ouput upper limit (UL).
 % numSFT: number of SFTs used in the search.
 % inputLE: if > 0 then uses this as the Loudest Event (LE); otherwise get LE from searchXMLfile.
+% outputFile: name of output file
+% graphOption: if > 0 then display plots
 % Finds UL with specified confidence based on LE; histograms the power from the MC Simulation.
 
+% convert parameters when needed:
+if (ischar(injectedH0))
+    injectedH0=str2num(injectedH0);
+end
+if (ischar(confidence))
+    confidence=str2num(confidence);
+end
+if (ischar(numSFT))
+    numSFT=str2num(numSFT);
+end
+if (ischar(inputLE))
+    inputLE=str2num(inputLE);
+end
+if (ischar(graphOption))
+    graphOption=str2num(graphOption);
+end
 % Read in the search results files:
 searchFileList = textRead(listSearchXMLfiles,'%s');
 searchFileListLength = length(searchFileList);
@@ -37,27 +55,25 @@ for i=1:searchFileListLength;
 end
 
 % Open file for output
-target = listSearchXMLfiles; % use name of file with list of result files as target name for this search
-outputFile = sprintf('%s%s','ULoutFromLEandMC_',target);
 fid = fopen(outputFile,'w');
 
 % Print basic info about the search
 startFreq = min(start_freqs);
 [maxFreq, iMaxFreq] = max(start_freqs);
 searchBand = maxFreq + bands(iMaxFreq) - startFreq;
-fprintf('\nIFO, target, startFreq, band = %s, %s, %g, %g\n',IFO,target,startFreq,searchBand);
-fprintf(fid,'\nIFO, target, startFreq, band = %s, %s, %g, %g\n',IFO,target,startFreq,searchBand);
+fprintf('\nIFO, startFreq, band = %s, %g, %g\n',IFO, startFreq,searchBand);
+fprintf(fid,'\nIFO, startFreq, band = %s, %g, %g\n',IFO, startFreq,searchBand);
  
-fprintf('\n Table Loudest Events: \n\n');
-fprintf(fid,'\n Table Loudest Events: \n\n');
-fprintf('        RA          DEC       fDeriv        frequency       power         width \n');
-fprintf(fid,'        RA          DEC       fDeriv        frequency       power         width \n');
-for i=1:length(freqs)
-  if (loudestEventPowers(i) > 0.0)
-    fprintf('%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
-    fprintf(fid,'%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
-  end
-end
+%fprintf('\n Table Loudest Events: \n\n');
+%fprintf(fid,'\n Table Loudest Events: \n\n');
+%fprintf('        RA          DEC       fDeriv        frequency       power         width \n');
+%fprintf(fid,'        RA          DEC       fDeriv        frequency       power         width \n');
+%for i=1:length(freqs)
+%  if (loudestEventPowers(i) > 0.0)
+%    fprintf('%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+%    fprintf(fid,'%12.6f %12.6f %15.6e %12.6f %12.6f %12.6f\n',RAs(i),DECs(i),fDerivs(i),freqs(i),loudestEventPowers(i),widths(i));
+%  end
+%end
 % Set up overall loudest event, and print loudest event for each frequency band.
 if (inputLE > 0)
   loudestEvent = inputLE;
@@ -94,29 +110,35 @@ h0UpperLimit = sqrt( 2.0*(loudestEvent - 1.0)*injectedH0*injectedH0/d2 );
 % find uncertainty in Loudest Event
 percentUncertainty = (1.0/sqrt(numSFT))/d2;
 uncertainty = percentUncertainty*h0UpperLimit; 
-fprintf('\n The %g confidence Upper Limit = %g +/- %g \n\n',100.0*confidence,h0UpperLimit,uncertainty);
-fprintf(fid,'\n The %g confidence Upper Limit = %g +/- %g \n\n',100.0*confidence,h0UpperLimit,uncertainty);
+fprintf('\nThe %g confidence Upper Limit = %g +/- %g \n',100.0*confidence,h0UpperLimit,uncertainty);
+fprintf(fid,'\nThe %g confidence Upper Limit = %g +/- %g \n',100.0*confidence,h0UpperLimit,uncertainty);
 
-% Adjust power to h0UpperLimit
-power = (power - 1.0)*h0UpperLimit*h0UpperLimit/(injectedH0*injectedH0);
-power = power + 1.0;
+fprintf('Frequency and Upper Limit = \n');
+fprintf('%20.10f %20.10e\n',startFreq, h0UpperLimit);
+fprintf(fid,'Frequency and Upper Limit = \n');
+fprintf(fid,'%20.10f %20.10e\n',startFreq, h0UpperLimit);
 
-nBins = 50;
-[y,x] = hist(power,nBins);
-hist(power,nBins);
-%plot(x,y,'+');
-%C = (numSTK^numSTK)/factorial(numSTK-1);
-C = 1;
-xplot = min(x) + [0:960]*(max(x) - min(x))/999.0;
-yPDF = C*xplot.^(numSFT-1).*exp(-1.0*numSFT*xplot);
-yPDFint = trapz(xplot,yPDF);
-yint = trapz(x,y);
-yPDF = yint*yPDF/yPDFint;
-xlabel('STACKSLIDE POWER');
-ylabel('NUMBER');
-%hold
-%plot(xplot,yPDF,'r');
-%hold
+if graphOption > 0
+  % Adjust power to h0UpperLimit
+  power = (power - 1.0)*h0UpperLimit*h0UpperLimit/(injectedH0*injectedH0);
+  power = power + 1.0;
+  nBins = 50;
+  [y,x] = hist(power,nBins);
+  hist(power,nBins);
+  %plot(x,y,'+');
+  %C = (numSTK^numSTK)/factorial(numSTK-1);
+  %C = 1;
+  %xplot = min(x) + [0:960]*(max(x) - min(x))/999.0;
+  %yPDF = C*xplot.^(numSFT-1).*exp(-1.0*numSFT*xplot);
+  %yPDFint = trapz(xplot,yPDF);
+  %yint = trapz(x,y);
+  %yPDF = yint*yPDF/yPDFint;
+  %xlabel('STACKSLIDE POWER');
+  %ylabel('NUMBER');
+  %hold
+  %plot(xplot,yPDF,'r');
+  %hold
+end
 
 fclose(fid);
 return;
