@@ -236,10 +236,10 @@ FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-informa
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR Fstatsfilename[256]; 		/* Fstats file name*/
-CHAR ckp_fname[260];			/* filename of checkpoint-file, global for polka */
+CHAR Fstatsfilename[256];	/* Fstats file name*/
+CHAR ckp_fname[260];		/* filename of checkpoint-file, global for polka */
 CHAR *Outputfilename; 		/* Name of output file, either Fstats- or Polka file name*/
-
+INT4 cfsRunNo = 0;		/* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -585,7 +585,13 @@ int main(int argc,char *argv[])
       /* Show some progress */
 #if USE_BOINC
       {
-	double local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
+	double local_fraction_done;
+	if (cfsRunNo == 1)
+	  local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2;
+	else if (cfsRunNo == 2)
+	  local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))/2+0.5;
+	else
+	  local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
 	if (local_fraction_done<0.0)
 	  local_fraction_done=0.0;
 	if (local_fraction_done>1.0)
@@ -2816,6 +2822,10 @@ void worker() {
   CHAR Fstatsfilename1[260];
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3));a1++);
+  if(a1==globargc)
+    cfsRunNo = 0;
+  else
+    cfsRunNo = 1;
   retval=boincmain(a1,globargv);
   /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
@@ -2825,6 +2835,7 @@ void worker() {
     if (!retval){
       /* find second // delimiter */ 
       for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
+      cfsRunNo = 2;
       if(a2==globargc)
         retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
       else
