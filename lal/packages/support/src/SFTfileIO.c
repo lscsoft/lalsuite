@@ -464,6 +464,7 @@ LALReadSFTheader (LALStatus  *status,
   SFTHeader  header1;
   CHAR *rawheader = NULL;
   CHAR *ptr = NULL;
+  CHAR inVersion[8];
   REAL8 version;
   BOOLEAN swapEndian = 0;
 
@@ -481,30 +482,24 @@ LALReadSFTheader (LALStatus  *status,
   }
   
   /* read version-number */
-  if  (fread (&version, sizeof(version), 1, fp) != 1) {
+  if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
     if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
-  /* check endian-ness */
-  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
-    endian_swap ((CHAR*)&version, sizeof(version),1);
+  /* try version 1.0 */
+  version = 1.0;
+  /* try swapping the version if it is not equal */
+  if(memcmp(inVersion,&version,sizeof(version))){
+    endian_swap (inVersion, sizeof(inVersion),1);
     swapEndian = 1;
-  }
-
-  /* fail if still not conformant to spec */
-  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
-    fclose (fp);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
-  }
-
-  /* check compatibility of version with this function */
-  if (version != 1) {
-    fclose (fp);
-    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
-    ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
+    /* fail if still not true */
+    if(memcmp(inVersion,&version,sizeof(version))){
+      fclose (fp);
+      if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+      ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    }
   }
 
   /* read the whole header */
@@ -606,6 +601,7 @@ LALReadSFTdata(LALStatus *status,
   SFTHeader  header;
   UINT4 offset, readlen;
   REAL4 *rawdata = NULL;
+  CHAR inVersion[8];
   REAL8 version;
   BOOLEAN swapEndian = 0;
   UINT4 i;
@@ -636,22 +632,25 @@ LALReadSFTdata(LALStatus *status,
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
 
-  /* read version */
-  if (fread (&version, sizeof(version), 1, fp) != 1) {
+  /* read version-number */
+  if  (fread (inVersion, sizeof(inVersion), 1, fp) != 1) {
     fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
-  }
-
-  /* check endian-ness */
-  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
-    endian_swap ((CHAR*)&version, sizeof(version), 1);
-    swapEndian = 1;
-  }
-
-  /* fail if still not conformant to spec */
-  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
-    fclose (fp);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* try version 1.0 */
+  version = 1.0;
+  /* try swapping the version if it is not equal */
+  if(memcmp(inVersion,&version,sizeof(version))){
+    endian_swap (inVersion, sizeof(inVersion),1);
+    swapEndian = 1;
+    /* fail if still not true */
+    if(memcmp(inVersion,&version,sizeof(version))){
+      fclose (fp);
+      if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
+      ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+    }
   }
 
   /* check compatibility of version with this function */
