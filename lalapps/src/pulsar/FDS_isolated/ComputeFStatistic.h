@@ -59,6 +59,7 @@ typedef struct {
   LALDetector Detector;         /* Our detector*/
   EphemerisData *edat;		/* ephemeris data */
 
+  CHAR *skyRegion;		/* sky-region (polygon) to search over */
 } ConfigVariables;
   
 struct headertag {
