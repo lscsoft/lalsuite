@@ -156,7 +156,7 @@ main(int argc, char *argv[])
 	  d2 = 1.0 - scalar / (norm1*norm2);
 	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
 	  d4 = getMaxErrSFT (sft1, sft2);
-	  printf (" (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2)) = %10.3e, maxErr =%10.3e\n", 
+	  printf ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", 
 		  d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
   {
     REAL4 ret;
     REAL8 norm1, norm2, normdiff, scalar;
-    REAL8 d1, d2, d3;
+    REAL8 d1, d2, d3,d4;
 
 
     LAL_CALL( scalarProductSFTVector (&status, &ret, SFTs1, SFTs1 ), &status);
@@ -183,11 +183,13 @@ main(int argc, char *argv[])
     d1 = (norm1 - norm2)/norm1;
     d2 = 1.0 - scalar / (norm1*norm2);
     d3 = normdiff / ( norm1*norm1 + norm2*norm2);
+    d4 = getMaxErrSFTVector (SFTs1, SFTs2);
 
     if ( uvar_verbose )
-      printf ("\nTOTAL: (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2) = %10.3e\n", d1, d2, d3);
+      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n", 
+	      d1, d2, d3, d4);
     else
-      printf ("%10.3e", d3);
+      printf ("%10.3e  %10.3e", d3, d4);
 
   } /* combined total measures */
 
@@ -267,7 +269,17 @@ REAL4
 getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2)
 {
   UINT4 i;
-  
+  REAL4 maxErr, thisErr;
+
+  maxErr = 0;
+
+  for (i=0; i<sftvect1->length; i++)
+    {
+      thisErr = getMaxErrSFT ( &(sftvect1->data[i]), &(sftvect2->data[i]));
+      maxErr = mymax (maxErr, thisErr);
+    }
+
+  return(maxErr);
 
 } /* getMaxErrSFTVector() */
 
