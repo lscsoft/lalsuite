@@ -792,7 +792,8 @@ LALInspiralCreateBCVBank (
   {
 	  LALInspiralBCVRegularFcutBank( status->statusPtr, 
 	      list, nlist, coarseIn);
-	  CHECKSTATUSPTR( status )};
+	  CHECKSTATUSPTR( status );
+  }
   else
   {
 	  LALInspiralBCVFcutBank( status->statusPtr, 
