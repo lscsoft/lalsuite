@@ -159,16 +159,26 @@ typedef struct {
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{GeneratePulsarSignalHV}}
+
 \newpage\input{GeneratePulsarSignalC}
+
+\newpage\input{SimulatePulsarSignalC}
 ******************************************************* </lalLaTeX> */
 
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+void LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params);
+
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);                      /* 07/14/04 gam */
-void LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params); /* 07/14/04 gam */
+void 
+LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
+void 
+LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
+
+
+
 
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
