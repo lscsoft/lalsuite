@@ -99,7 +99,7 @@ AC_DEFUN([LAL_ENABLE_FFTW3],
             no)  fftw3=false;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-fftw3) ;;
           esac
-        ], [ fftw3=false ] )
+        ], [ fftw3=true ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_FRAME],
