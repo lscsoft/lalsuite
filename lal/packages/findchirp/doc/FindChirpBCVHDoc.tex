@@ -1,0 +1,447 @@
+For the binary black hole inspiral we use the BCV templates.
+
+\subsubsection*{BCV Templates}
+\label{BCV}
+
+The signal-to-noise ratio (SNR) for a signal $s$ and a template $h$ is given by
+\begin{equation}
+<s,h> = 2 \int_{-\infty}^{\infty} \frac{\tilde{s}^{\ast}(f) \tilde{h}(f)}
+{S_h(|f|)} df =
+4 \Re \int_0^{\infty} \frac{\tilde{s}^{\ast}(f) \tilde{h}(f)}{S_h(f)} df
+\label{SNRdef}
+\end{equation}
+and $S_h(f)$ being the one-sided noise power spectral density.
+The last equality in Eq.~(\ref{SNRdef}) holds only if $\tilde{s}(f)$ and
+$\tilde{h}(f)$ are the Fourier-transforms of real time-functions.
+
+The effective frequency-domain template given by Buonanno, Chen and Vallisneri
+\cite{BCVPaper} is
+\begin{equation}
+\tilde{h}(f) = A(f) e^{i \psi(f)}
+\label{tmplt}
+\end{equation}
+where
+\begin{equation}
+A(f) = f^{-7/6} (1-\alpha f^{2/3}) \theta (f_{cut}-f),
+\end{equation}
+\begin{equation}
+\psi(f) = \phi_0 + 2 \pi f t_0 + f^{-5/3} (\psi_0 + \psi_{1/2} f^{1/3} +
+\psi_1 f^{2/3} + \psi_{3/2} f + \ldots).
+\end{equation}
+In these expressions, $t_0$ and $\phi_0$ are the time of arrival and the
+frequency-domain phase offset respectively,
+and $\theta$ is the Heaviside step function.
+For most inspiral templates approximated by the template (\ref{tmplt}),
+it is sufficient to use the parameters $\psi_0$ and $\psi_{3/2}$ and set all
+other $\psi$ coefficients equal to 0.
+So in the following:
+\begin{eqnarray}
+\psi(f) &=& \phi_0 + 2 \pi f t_0 + f^{-5/3} (\psi_0 + \psi_{3/2} f)\\
+&=& \phi_0 + \psi'(f) . \\
+\end{eqnarray}
+
+To simplify the equations, the abbreviation
+\begin{equation}
+I_k \equiv \int_0^{f_{cut}} \frac{df}{f^k S_h(f)}
+\end{equation}
+is used in the following.
+
+Notice that in the code, $\psi_0$ is \texttt{psi0} and $\psi_{3/2}$ is
+\texttt{psi3}.
+
+\subsubsection*{Normalization of the Template}
+\label{NormOfTemplate}
+
+The amplitude $A(f)$ can be written as:
+\begin{equation}
+A(f) = A_1(f) + \alpha A_2(f)
+\end{equation}
+where
+\begin{eqnarray}
+A_1(f) &=& f^{-7/6} \theta(f_{cut}-f) \\
+A_2(f) &=& - f^{-1/2} \theta(f_{cut}-f).
+\end{eqnarray}
+Then $\tilde{h}(f)$ can be written as
+\begin{equation}
+\tilde{h}(f) = \tilde{h}_1(f) + \alpha \tilde{h}_2(f)
+\end{equation}
+where
+\begin{eqnarray}
+\tilde{h}_1(f) &=& A_1(f) e^{i \psi(f)} = f^{-7/6} \theta(f_{cut}-f)
+e^{i \psi(f)} \\
+\tilde{h}_2(f) &=& A_2(f) e^{i \psi(f)} = - f^{-1/2} \theta(f_{cut}-f)
+e^{i \psi(f)}.
+\end{eqnarray}
+
+We begin by orthonormalizing $\tilde{h}_1(f)$ and $\tilde{h}_2(f)$, which 
+results in
+$\hat{h}_1(f)$ and $\hat{h}_2(f)$.
+Specifically:
+\begin{eqnarray}
+\hat{h}_1(f) &=& c_1 h_1(f) = (a_1 + i b_1) h_1(f) \\
+\hat{h}_2(f) &=& c_2 h_2(f) = (a_2 + i b_2) h_2(f)
+\end{eqnarray}
+where $a_1$, $b_1$, $a_2$ and $b_2$ are real numbers.
+Normalizing $\tilde{h}_1$ gives:
+\begin{eqnarray}
+&& <\hat{h}_1,\hat{h}_1> = 1  \quad \Rightarrow \quad
+ 4 \Re \int_0^{\infty} \frac{c_1^{\ast} \tilde{h}_1^{\ast}(f) c_1 
+\tilde{h}_1(f)}{S_h(f)} df
+= 1 \:  \Rightarrow \\
+&& |c_1|^2 \int_0^{\infty} \frac{f^{-7/3} \theta(f_{cut} -f)}{S_h(f)} df
+= \frac{1}{4} \quad \Rightarrow \quad
+ a_1^2 + b_1^2 = \frac{1}{4 I_{7/3}}. \\
+\label{Normalization1}
+\end{eqnarray}
+Normalizing $\tilde{h}_2$ gives:
+\begin{eqnarray}
+&& <\hat{h}_2,\hat{h}_2> = 1  \quad \Rightarrow \quad
+ 4 \Re \int_0^{\infty} \frac{c_2^{\ast} \tilde{h}_2^{\ast}(f) c_2 
+\tilde{h}_2(f)}{S_h(f)} df
+= 1 \:  \Rightarrow \\
+&& |c_2|^2 \int_0^{\infty} \frac{f^{-1} \theta(f_{cut} -f)}{S_h(f)} df
+= \frac{1}{4} \quad \Rightarrow \quad
+ a_2^2 + b_2^2 = \frac{1}{4 I_{1}}. \\
+\label{Normalization2}
+\end{eqnarray}
+Orthonormalizing $\hat{h}_1$ and $\hat{h}_2$ gives:
+\begin{eqnarray}
+&&<\hat{h}_1,\hat{h}_2> = 0 \quad \Rightarrow \quad
+4 \Re \int_0^{\infty} \frac{c_1^{\ast} \tilde{h}_1^{\ast}(f) c_2 
+\tilde{h}_2(f)}{S_h(f)} df
+= 0 \quad \Rightarrow \quad \\
+&& \Re \big \{ (a_1-i b_1)(a_2 +i b_2) \Big \} \int_0^{\infty} \frac{f^{-5/3}
+\theta(f_{cut}-f)}{S_h(f)} df = 0 \quad \Rightarrow a_1 a_2+b_1 b_2 =0
+. \\
+\label{Normalization3}
+\end{eqnarray}
+In solving Eqs (\ref{Normalization1}), (\ref{Normalization2}) and
+(\ref{Normalization3}), one of the unknowns
+ can be set equal to an arbitrary number.
+It is convenient to set $b_2=0$.
+Then the remaining 3 unknowns are calculated:
+\begin{eqnarray}
+a_1 &=& 0 \\
+b_1 &=& \frac{1}{2 \sqrt{I_{7/3}}} \label{b1}\\
+a_2 &=& \frac{1}{2 \sqrt{I_1}}.
+\label{a2}
+\end{eqnarray}
+
+The template $\tilde{h}(f)$ can also be normalized.
+Specifically, it is assumed that the normalized template is
+\begin{equation}
+\hat{h}(f) = g \tilde{h}(f) = (g_1 + i g_2) \tilde{h}(f)
+\end{equation}
+where $g_1$ and $g_2$ are real numbers.
+Taking into account the fact that $\hat{h}_1$ and $\hat{h}_2$ are
+orthonormalized,
+the normalization of $h$ gives
+\begin{eqnarray}
+&& <\hat{h}, \hat{h}> = 1 \: \Rightarrow \:
+4 \Re |g|^2 \int_0^{\infty} \frac{\hat{h}_1^{\ast} \hat{h}_1 +
+\alpha \hat{h}_1^{\ast} \hat{h}_2 + \alpha \hat{h}_1 \hat{h}_2^{\ast} +
+\alpha^2 \hat{h}_2^{\ast} \hat{h}_2 }{S_h(f)} df = 1 \: \Rightarrow \\
+&& g_1^2 + g_2^2 = \frac{1}{1+\alpha^2} \\
+\label{Normalize}
+\end{eqnarray}
+We set $g_2 = 0$ for simplicity, so
+\begin{equation}
+g = g_1 = \frac{1}{\sqrt{1 + \alpha^2}}.
+\end{equation}
+
+Finally, the normalized template is
+\begin{eqnarray}
+\hat{h}(f) &=& \frac{1}{\sqrt{1+\alpha^2}} \Big [ \hat{h}_1(f) +
+\alpha \hat{h}_2(f) \Big ] \\
+    &=& \frac{1}{\sqrt{1+\alpha^2}} \Big [ i b_1 A_1(f) e^{i \psi(f)} +
+\alpha \: a_2 A_2(f) e^{i \psi(f)} \Big ] \\
+\label{NormalizedTmplt}
+\end{eqnarray}
+where $b_1$ and $a_2$ are given by Eqs (\ref{b1}) and (\ref{a2}) respectively.
+
+
+\subsubsection*{Maximization of the SNR}
+\label{SNRMaximization}
+
+The Fourier-transformed data can, in general, be written as:
+\begin{equation}
+\tilde{s}(f) = R(f) + i I(f).
+\end{equation}
+The following brakets are defined:
+\begin{eqnarray}
+\hat{z}_1 &=& <\tilde{s}, \hat{h}_1> \\
+\hat{z}_2 &=& <\tilde{s}, \hat{h}_2> .
+\end{eqnarray}
+Calculation of those gives:
+\begin{eqnarray}
+\hat{z}_1 &=&  4 \Re \int_{0}^{\infty} \frac{\tilde{s}^{\ast}(f)
+\hat{h}_1(f)}{S_h(f)} df
+    =  4 \Re \int_{0}^{\infty} \frac{ (R-iI) b_1 A_1 e^{i (\psi+\pi/2)}}
+{S_h} df \\
+    &=& \int_0^{\infty} 4 \frac{b_1 A_1}{S_h} (-R \sin\psi + I\cos\psi) df \\
+    &=&\int_0^{\infty} \frac{4 b_1 A_1}{S_h} \Big [ -R (\sin\psi'\cos\phi_0
++\sin\phi_0 \cos\psi') + I(\cos\psi'\cos\phi_0-\sin\psi'\sin\phi_0) \Big ] df\\
+    &=& \cos\phi_0 \int_0^{\infty} \frac{4 b_1 A_1}{S_h} (-R \sin\psi'+
+I\cos\psi') df \\
+    &&+\sin\phi_0 \int_0^{\infty} \frac{4 b_1 A_1}{S_h} (-R\cos\psi'
+-I\sin\psi') df \\
+    &=&\cos\phi_0 K_1 + \sin\phi_0 K_3 
+\label{z1}
+\end{eqnarray}
+where the integrals $K_1$ and $K_3$ are defined by the above equation.
+By a similar calculation we obtain
+\begin{eqnarray}
+\hat{z}_2 &=&  4 \Re \int_{0}^{\infty} \frac{\tilde{s}^{\ast}(f) \hat{h}_2(f)}
+{S_h(f)} df \\
+    &=& \cos\phi_0 \int_0^{\infty} \frac{4 a_2 A_2}{S_h} (R\cos\psi'
++I\sin\psi') df  \\
+    &&+\sin\phi_0 \int_0^{\infty} \frac{4 a_2 A_2}{S_h} (-R\sin\psi'
++I\cos\psi')df\\
+    &=& \cos\phi_0 K_2 + \sin\phi_0 K_4.
+\label{z2}
+\end{eqnarray}
+Notice that
+\begin{eqnarray}
+K_1 &=& \int_0^{\infty} \frac{4 b_1 A_1}{S_h}(-R\sin\psi'+I\cos\psi')df \\
+    &=&\int_0^{\infty} \frac{4 b_1 A_1}{S_h} \bigg \{ - \Im\Big [(R-iI)
+	 (\cos\psi'+i\sin\psi')\Big ] \bigg \} df \\
+	&=&-\Im \Big \{\int_0^{\infty} df \frac{4 b_1 A_1}{S_h} \tilde{s}^{\ast}
+	 e^{i \psi'}  \Big \} 
+\label{K1}
+\end{eqnarray}
+and by the same reasoning
+\begin{eqnarray}
+\label{K2}
+K_2 &=& \Re \Big \{ \int_0^{\infty} df \frac{4 a_2 A_2}{S_h} \tilde{s}^{\ast}
+	e^{i \psi'} \Big \} \\
+\label{K3}
+K_3 &=& - \Re \Big \{ \int_0^{\infty} df \frac{4 b_1 A_1}{S_h} \tilde{s}^{\ast}
+	e^{i \psi'} \Big \} \\
+\label{K4}
+K_4 &=& -\Im \Big \{ \int_0^{\infty} df \frac{4 a_2 A_2}{S_h} \tilde{s}^{\ast}
+	e^{i \psi'} \Big \}.
+\end{eqnarray}
+
+For the normalized template $\hat{h}$, the SNR is
+\begin{eqnarray}
+\rho &=& <\tilde{s},\hat{h}> = <\tilde{s}, \frac{1}{\sqrt{1+\alpha^2}}
+\hat{h}_1 + \frac{\alpha}
+{\sqrt{1+\alpha^2}} \hat{h}_2 > \\
+    &=& \frac{1}{\sqrt{1+\alpha^2}} \hat{z}_1 + \frac{\alpha}
+{\sqrt{1+\alpha^2}} \hat{z}_2 .\\
+    &=& \frac{1}{\sqrt{1+\alpha^2}} (\cos\phi_0 K_1 + \sin\phi_0 K_3) +
+ \frac{\alpha}{\sqrt{1+\alpha^2}} (\cos\phi_0 K_2 + \sin\phi_0 K_4) \\
+\end{eqnarray}
+Set:
+\begin{eqnarray}
+\alpha &=&\tan\omega \quad \Rightarrow \quad \frac{\alpha}{\sqrt{1+\alpha^2}} =
+\sin\omega \\
+    && \frac{1}{\sqrt{1+\alpha^2}} = \cos\omega.
+\end{eqnarray}
+Then:
+\begin{eqnarray}
+\rho &=& K_1 \cos\omega \cos\phi_0 + K_3 \cos\omega \sin\phi_0 + K_2 \sin\omega
+\cos\phi_0 + K_4 \sin\omega \sin\phi_0 \: \Rightarrow \\
+\rho &=& \frac{1}{2} K_1 [\cos(\omega+\phi_0) + \cos(\omega-\phi_0)] +
+    \frac{1}{2} K_2 [\sin(\omega+\phi_0) + \sin(\omega-\phi_0)]  \\
+&& +\frac{1}{2} K_3 [\sin(\omega+\phi_0) - \sin(\omega-\phi_0)] +
+    \frac{1}{2} K_4 [\cos(\omega-\phi_0) - \cos(\omega+\phi_0)] \:
+\Rightarrow \\
+2 \rho &=& [K_1 - K_4] \cos(\omega+\phi_0) + [K_1+K_4] \cos(\omega-\phi_0) +
+    [K_2+K_3] \sin(\omega+\phi_0)  \\
+    && \quad \quad + [K_2-K_3] \sin(\omega-\phi_0). \\
+\end{eqnarray}
+Now set
+\begin{eqnarray}
+\label{OmegaMinusPhi}
+A &=& \omega - \phi_0 \\
+B &=& \omega + \phi_0 \label{OmegaPlusPhi}
+\end{eqnarray}
+so that the expression for the SNR becomes
+\begin{equation}
+2 \rho = (K_1+K_4) \cos A + (K_2-K_3) \sin A + (K_1-K_4) \cos B + (K_2+K_3)
+\sin B.
+\label{MaxSNR}
+\end{equation}
+
+To maximize with respect to $A$ we take the first derivative
+\begin{equation}
+\frac{\partial(2 \rho)}{\partial A} = - (K_1+K_4) \sin A
++(K_2-K_3) \cos A
+\end{equation}
+and set that equal to 0, which gives
+\begin{equation}
+\frac{\partial(2 \rho)}{\partial A} \Big |_{A_0} = 0 \: \Rightarrow
+\: \tan A_0 =\frac{K_2-K_3}{K_1+K_4}. \\
+\label{TANA}
+\end{equation}
+Then the sine and cosine of $A_0$ can be found:
+\begin{eqnarray}
+\sin A_0 &=& \pm \frac{\tan A_0}{\sqrt{1 + \tan^2 A_0}} = \pm
+\frac{K_2-K_3}{\sqrt{(K_1+K_4)^2 +(K_2-K_3)^2}},  \label{SINA} \\
+\cos A_0 &=& \pm \frac{1}{\sqrt{1 + \tan^2 A_0}} = \pm
+\frac{K_1+K_4}{\sqrt{(K_1+K_4)^2 +(K_2-K_3)^2}}.
+\label{COSA}
+\end{eqnarray}
+Notice that for Eq.~(\ref{TANA}) to be satisfied, the same sign must be kept
+in Eqs (\ref{SINA}) and (\ref{COSA}).
+To find the values that correspond to the maximum, we take the second
+derivative of $\rho$ with respect to $A$:
+\begin{equation}
+\frac{\partial^2(2 \rho)}{\partial A^2}\Big |_{A_0} < 0 \: \Rightarrow
+\: \Big [ - (K_1+K_4) \cos A - (K_2-K_3) \sin A \Big ]_{A_0} < 0
+\end{equation}
+which is satisfied if the $+$ sign is considered in Eqs (\ref{SINA}) and
+(\ref{COSA}).
+
+To maximize with respect to $B$ we take the first derivative
+\begin{equation}
+\frac{\partial(2 \rho)}{\partial B}  = - (K_1-K_4) \sin B
++(K_2+K_3) \cos B
+\end{equation}
+and set that equal to 0, which gives
+\begin{equation}
+\frac{\partial(2 \rho)}{\partial B} \Big |_{B_0} = 0 \: \Rightarrow
+\: \tan B_0 =\frac{K_2+K_3}{K_1-K_4}. \\
+\label{TANB}
+\end{equation}
+Then the sine and cosine of $B_0$ can be found:
+\begin{eqnarray}
+\sin B_0 &=& \pm \frac{\tan B_0}{\sqrt{1 + \tan^2 B_0}} = \pm
+\frac{K_2+K_3}{\sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}},  \label{SINB} \\
+\cos B_0 &=& \pm \frac{1}{\sqrt{1 + \tan^2 B_0}} = \pm
+\frac{K_1-K_4}{\sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}}.
+\label{COSB}
+\end{eqnarray}
+Again, the same sign must be kept in Eqs (\ref{SINB}) and (\ref{COSB}).
+To find the values that correspond to the maximum, we take the second
+derivative of $\rho$ with respect to $B$:
+\begin{equation}
+\frac{\partial^2(2 \rho)}{\partial B^2}\Big |_{B_0} < 0 \: \Rightarrow
+\: \Big [ - (K_1-K_4) \cos B - (K_2+K_3) \sin B \Big ]_{B_0} < 0
+\end{equation}
+which is satisfied if the $+$ sign is considered in Eqs (\ref{SINB}) and
+(\ref{COSB}).
+
+Substituting the expressions for the sines and cosines of $A_0$ and
+$B_0$
+into Eq.~(\ref{MaxSNR}), the maximum SNR is:
+\begin{equation}
+ \rho_{max} = \frac{1}{2} \sqrt{(K_1+K_4)^2 + (K_2-K_3)^2} +
+\frac{1}{2} \sqrt{(K_1-K_4)^2 +(K_2+K_3)^2}.
+\end{equation}
+To achieve a simpler form for the SNR, we can use Eqs (\ref{K1})-(\ref{K4}) to 
+combine the integrals $K_1$, $K_2$, $K_3$ and
+$K_4$.  
+That gives
+\begin{eqnarray}
+K_1 + K_4 &=& - \Im \int_0^{\infty}  \frac{4 [b_1 A_1(f) + a_2 A_2(f)]}{S_h(f)}
+\tilde{s}^{\ast}(f) e^{i \psi'(f)} df, \\
+K_2 - K_3 &=& \Re \int_0^{\infty}  \frac{4[b_1 A_1(f) + a_2 A_2(f)]}{S_h(f)}
+\tilde{s}^{\ast}(f) e^{i \psi'(f)} df,\\
+K_1 - K_4 &=& - \Im \int_0^{\infty}  \frac{4[b_1 A_1(f) - a_2 A_2(f)]}{S_h(f)}
+\tilde{s}^{\ast}(f) e^{i \psi'(f)} df, \\
+K_2 + K_3 &=& - \Re \int_0^{\infty}  \frac{4[b_1 A_1(f) - a_2 A_2(f)]}{S_h(f)}
+\tilde{s}^{\ast}(f) e^{i \psi'(f)} df.
+\end{eqnarray}
+Finally, the maximum SNR can be written as:
+\begin{eqnarray}
+\rho_{max} &=&  \Bigg | \int_0^{\infty} \frac{2 [b_1
+A_1(f) + a_2 A_2(f)]}{S_h(f)} \tilde{s}^{\ast}(f) e^{i \psi'(f)} df \Bigg | \\
+ && + \Bigg |
+\int_0^{\infty} \frac{2[b_1 A_1(f) - a_2 A_2(f)]}{S_h(f)} \tilde{s}^{\ast}(f)
+e^{i \psi'(f)} df \Bigg | \\
+        &=& 2| F_1 -  F_2 | + 2| F_1 + F_2 |
+\label{rhomax}
+\end{eqnarray}
+where $F_1$ and $F_2$ are the two integrals 
+\begin{equation}
+F_{1} = b_1 \int_0^{f_{cut}} \frac{ f^{-7/6}}
+{S_h(f)} \tilde{s}^{\ast}(f) e^{i \psi'(f)} df , \quad
+F_{2} = a_2 \int_0^{f_{cut}} \frac{ f^{-1/2}}
+{S_h(f)} \tilde{s}^{\ast}(f) e^{i \psi'(f)} df .
+\end{equation}
+
+\subsubsection*{Final Form of the Template}
+\label{FinalForm}
+
+Combining the results given in the previous sections, the final form of the 
+template is:
+\begin{eqnarray}
+\hat{h}(f) &=& \frac{1}{\sqrt{1+\alpha^2}} i b_1 A_1(f) e^{i \phi_0}
+e^{i \psi'(f)} + \frac{\alpha}{\sqrt{1+\alpha^2}} a_2 A_2(f)
+e^{i \phi_0} e^{i \psi'(f)} \\
+    &=& \cos\omega (\cos\phi_0 + i \sin\phi_0)
+i b_1 A_1(f) e^{i \psi'(f)}  + \sin\omega (\cos\phi_0
++ i \sin\phi_0)  a_2 A_2(f) e^{i \psi'(f)}  \\
+    &=& \cos\omega \cos\phi_0 \big ( i b_1 A_1 e^{i \psi'} \big ) -
+\cos\omega \sin\phi_0 \big(b_1 A_1 e^{i \psi'}\big ) + \sin\omega \cos\phi_0
+\big ( a_2 A_2 e^{i \psi'} \big ) \\
+    && + \sin\omega \sin\phi_0 (i a_2 A_2
+e^{i \psi'} \big )\\
+    &=& \Big [ \cos(\omega+\phi_0) + \cos(\omega-\phi_0) \Big ]
+\frac{i b_1}{2} A_1 e^{i \psi'} - \Big [ \sin(\omega +\phi_0) -
+\sin(\omega-\phi_0) \Big ] \frac{b_1}{2} A_1 e^{i \psi'}\\
+    && +\Big[ \sin(\omega+\phi_0)+\sin(\omega-\phi_0)\Big]
+\frac{a_2}{2} f^{2/3} A_1 e^{i \psi'} 
+    + \Big[ \cos(\omega-\phi_0) -
+\cos(\omega+\phi_0) \Big] \frac{i a_2}{2} f^{2/3} A_1 e^{i \psi'} \\
+    &=&\big ( \cos B_0 + \cos A_0 \big )
+\frac{i b_1}{2} A_1 e^{i \psi'} - \big ( \sin B_0 -
+\sin A_0 \big ) \frac{b_1}{2} A_1 e^{i \psi'}\\
+        && +\big( \sin B_0+\sin A_0\big)
+\frac{a_2}{2} f^{2/3} A_1 e^{i \psi'}
+        + \big( \cos A_0 -
+\cos B_0\big) \frac{i a_2}{2} f^{2/3} A_1 e^{i \psi'} \: , \\
+\end{eqnarray}
+or, finally:
+\begin{eqnarray}
+\hat{h}(f) &=& f^{-7/6} \: \theta(f_{cut}-f)\: e^{i \psi'(f)} \Big \{ \: 
+\frac{b_1}{2} \big [ i (\cos A_0
++ \cos B_0) + (\sin A_0 - \sin B_0) \big ]  \\
+&& +f^{2/3} \frac{a_2}{2} \big[ i (\cos A_0 - \cos B_0 ) +
+(\sin A_0 + \sin B_0) \big ] \Big \}.
+\end{eqnarray}
+
+\subsubsection*{The $\chi^2$-veto}
+\label{ChisquaredVeto}
+
+If we are working with $p$ bins the maximum SNR for the template must be 
+divided into $p$ equal parts. In this case, since we have two different 
+amplitude-parts of the template, we have to calculate two sets of bin
+boundaries.
+For the first set, the quantity
+\begin{displaymath}
+\int_0^{\infty} \frac{4 [b_1 A_1(f) - a_2 A_2(f) ]^2 }{S_h(f)} df =
+\int_0^{f_{cut}} \frac{4 [b_1 f^{-7/6} + a_2 f^{-1/2}]^2}{S_h(f)} df
+\end{displaymath}
+must be divided into $p$ equal pieces.
+For the second set, the quantity
+\begin{displaymath}
+\int_0^{\infty} \frac{4 [b_1 A_1(f) + a_2 A_2(f) ]^2 }{S_h(f)} df =
+\int_0^{f_{cut}} \frac{4 [b_1 f^{-7/6} - a_2 f^{-1/2}]^2}{S_h(f)} df
+\end{displaymath} 
+must be divided into $p$ equal pieces.
+
+To check if the total SNR is smoothly distributed over the bins,
+take:
+\begin{eqnarray}
+\chi^2 &=& p \sum_{l=1}^p  \Big | \int_{f_l}^{f_{l+1}} \frac{2 [b_1
+     A_1(f) - a_2 A_2(f)]}{S_h(f)} \tilde{s}^{\ast}(f) e^{i \psi'(f)} df
+     - \frac{1}{p} \int_{0}^{\infty} \frac{2 [b_1A_1(f) - a_2 A_2(f)]}
+{S_h(f)} \tilde{s}^{\ast}(f) e^{i \psi'(f)} df \Big |^2 \\
+	 &&+ p\sum_{l=1}^p\Big |\int_{f_l}^{f_{l+1}} \frac{2 [b_1 A_1(f) + a_2
+     A_2(f)]}{S_h(f)}\tilde{s}^{\ast}(f)e^{i \psi'(f)} df-\frac{1}{p} 
+     \int_{0}^{\infty} \frac{2[b_1 A_1(f) + a_2 A_2(f)]}{S_h(f)}
+\tilde{s}^{\ast}(f)e^{i \psi'(f)} df\Big |^2 \\
+\end{eqnarray}
+or
+\begin{equation}
+\chi^2 =  p \sum_{l=1}^p  \Big |2 (F_1^l+F_2^l) 
+     - \frac{2}{p} (F_1+F_2) \Big |^2 + p \sum_{l=1}^p  \Big |2 (F_1^l-F_2^l)
+     - \frac{2}{p} (F_1-F_2) \Big |^2.
+\end{equation}
+
+%\bibliographystyle{unsrt}
+%\bibliography{References}
+
