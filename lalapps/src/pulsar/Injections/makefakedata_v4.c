@@ -16,6 +16,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Random.h>
+#include <gsl/gsl_math.h>
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
@@ -1030,8 +1031,8 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 {
   LALParsedDataFile *fileContents = NULL;
   CHAR *thisline;
-  UINT4 i;
-  COMPLEX8Vector *data;
+  UINT4 i, startline;
+  COMPLEX8Vector *data = NULL;
   COMPLEX8FrequencySeries *ret = NULL;
   const CHAR *readfmt = "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT;
   REAL8 amp, phi;
@@ -1044,10 +1045,13 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
   ASSERT (*transfer == NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
   ASSERT (fname != NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 
-
   TRY ( LALParseDataFile (stat->statusPtr, &fileContents, fname), stat);
+  /* skip first line if containing NaN's ... */
+  startline = 0;
+  if ( strstr(fileContents->lines->tokens[startline], "NaN" ) != NULL )
+    startline ++;
 
-  LALCCreateVector (stat->statusPtr, &data, fileContents->lines->nTokens);
+  LALCCreateVector (stat->statusPtr, &data, fileContents->lines->nTokens - startline);
   BEGINFAIL(stat)
     TRY ( LALDestroyParsedDataFile(stat->statusPtr, &fileContents), stat);    
   ENDFAIL(stat);
@@ -1062,13 +1066,10 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
   LALSnprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
   ret->name[LALNameLength-1]=0;
 
-  /* read first line to get some info */
-  thisline = fileContents->lines->tokens[0];
-
   /* initialize loop */
   f0 = f1 = 0;
 
-  for (i=0; i < fileContents->lines->nTokens; i++)
+  for (i=startline; i < fileContents->lines->nTokens; i++)
     {
       thisline = fileContents->lines->tokens[i];
 
@@ -1079,6 +1080,12 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 	  goto failed;
 	}
       
+      if ( !gsl_finite(amp) || !gsl_finite(phi) )
+	{
+	  LALPrintError ("\nERROR: non-finite number encountered in actuation-function at f!=0. Line=%d\n\n", i);
+	  goto failed;
+	}
+
       /* first line: set f0 */
       if ( i == 0 )
 	ret->f0 = f1;
@@ -1088,7 +1095,7 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 	ret->deltaF = f1 - ret->f0;
 	
       /* check constancy of frequency-step */
-      if ( (f1 - f0 != ret->deltaF) && i )
+      if ( (f1 - f0 != ret->deltaF) && (i > 1) )
 	{
 	  LALPrintError ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
 			 (f1-f0), ret->deltaF, i, fname);
