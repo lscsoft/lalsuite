@@ -187,18 +187,19 @@ int main(int argc, char **argv)
 /******************************************************************************************
  ******************************************************************************************/
 
+enum { nmax = 100, n1max = 100 };
 
 int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude)
 {
   int i,j,p,l,k,m;
   float *ampfft, *ampfftre, *ampfftim;
   float sum1, sum_ii;
-  float ampre[n][n1/2+1], ampim[n][n1/2+1];
-  float correlation[n][n1], eamp[n][n1];
-  float rhom[n1];
-  float *redum[n], *imdum[n], *ampdum[n];
-  float e_real[n][n1/2+1], e_imagin[n][n1/2+1];
-  float c[n];
+  float ampre[nmax][n1max/2+1], ampim[nmax][n1max/2+1];
+  float correlation[nmax][n1max], eamp[nmax][n1max];
+  float rhom[n1max];
+  float *redum[nmax], *imdum[nmax], *ampdum[nmax];
+  float e_real[nmax][n1max/2+1], e_imagin[nmax][n1max/2+1];
+  float c[nmax];
   float *rho_max, *shift, *corr;
   float *RE, *IM, *re, *im;
   float *ampshift, *o_re, *o_im;
@@ -207,7 +208,13 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude)
   int index,toshift;
   float sumfinal, rho_max_min;
 
-
+  if ( n > nmax || n1 > n1max )
+  {
+    fprintf( stderr, "Error:\n" );
+    fprintf( stderr, "n  = %d, nmax  = %d\n", n, nmax );
+    fprintf( stderr, "n1 = %d, n1max = %d\n", n1, n1max );
+    exit( 1 );
+  }
 
 
 
@@ -649,10 +656,9 @@ float zminproduct(int num, float *re, float *im, float *amp)
       LALSDestroyVector( &stat, &hvec );
       LALCDestroyVector( &stat, &Hvec );
 
-      return 4.0*sum;
-
       free(reA);
       free(imA);
-   
+
+      return 4.0*sum;
 }
 
