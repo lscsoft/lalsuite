@@ -169,7 +169,7 @@ REAL8 uvar_dDelta;
 REAL8 uvar_DeltaBand;
 REAL8 uvar_f1dot;
 REAL8 uvar_df1dot;
- REAL8 uvar_f1dotBand;
+REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
 CHAR *uvar_ephemDir;
 CHAR *uvar_ephemYear;
