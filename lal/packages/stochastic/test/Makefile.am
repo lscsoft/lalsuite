@@ -1,5 +1,7 @@
 # Process this file with automake to produce Makefile.in
-check_PROGRAMS =  StochasticCrossCorrelationTest  SZeroPadAndFFTTest \
+check_PROGRAMS =  StochasticCrossCorrelationStatisticTest  \
+	          StochasticCrossCorrelationSpectrumTest  \
+	          SZeroPadAndFFTTest \
                   StochasticOptimalFilterTest     StochasticOmegaGWTest \
                   OverlapReductionFunctionTest    StochasticInverseNoiseTest \
                   DirichletTest              SCoarseGrainFrequencySeriesTest
@@ -8,9 +10,14 @@ check_PROGRAMS =  StochasticCrossCorrelationTest  SZeroPadAndFFTTest \
 #                   DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #                   DFalseDismissalTest   DFDismissalVsFAlarmTest
 
-StochasticCrossCorrelationTest_SOURCES = StochasticCrossCorrelationTest.c \
-                                         CheckStatus.c
-StochasticCrossCorrelationTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+StochasticCrossCorrelationStatisticTest_SOURCES = \
+                               StochasticCrossCorrelationStatisticTest.c \
+                               CheckStatus.c
+StochasticCrossCorrelationStatisticTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+StochasticCrossCorrelationSpectrumTest_SOURCES = \
+                               StochasticCrossCorrelationSpectrumTest.c \
+                               CheckStatus.c
+StochasticCrossCorrelationSpectrumTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 SZeroPadAndFFTTest_SOURCES = SZeroPadAndFFTTest.c CheckStatus.c
 SZeroPadAndFFTTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 StochasticOptimalFilterTest_SOURCES = StochasticOptimalFilterTest.c \
@@ -42,7 +49,8 @@ SCoarseGrainFrequencySeriesTest_SOURCES = SCoarseGrainFrequencySeriesTest.c Chec
 SCoarseGrainFrequencySeriesTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
-TESTS =	  StochasticCrossCorrelationTest         SZeroPadAndFFTTest \
+TESTS =	  StochasticCrossCorrelationStatisticTest \
+          StochasticCrossCorrelationSpectrumTest  SZeroPadAndFFTTest \
           StochasticOptimalFilterTest           StochasticOmegaGWTest \
           OverlapReductionFunctionTest           StochasticInverseNoiseTest \
           DirichletTest                     SCoarseGrainFrequencySeriesTest
