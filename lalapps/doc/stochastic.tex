@@ -1,6 +1,108 @@
-\section{Programs Related to Stochastic Background Searches}
+\section{Stochastic Search Programs}
 \label{section:stochastic}
+
+This section of \textsc{LALApps} contains programs that can be used to
+search interferometer data for stochastic gravitational wave
+backgrounds.
+
+\clearpage
 \input{olapredfcn}
 
 \clearpage
-\input{stochasticPipeline}
+\subsection{Program \texttt{lalapps\_stochastic\_pipe}}
+\label{program:stochastic-pipeline}
+\idx[Program]{stochastic\_pipeline.py}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_stochastic_pipe$ --- python script to generate Condor DAGs
+to run the stochastic pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+  -h, --help               display this message
+  -v, --version            print version information and exit
+
+  -d, --datafind           run LSCdataFind to create frame cache files
+  -s, --stochastic         run lalapps_stochastic
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+\end{verbatim}
+
+\item[Description] \verb$lalapps_stochastic_pipe$ generates a Condor DAG
+to run the stochastic search pipeline. The configuration should specify
+the parameters needed to run the jobs and must be specified with the
+\verb$--config-file$ option. A file containing science segments to
+analysed should be specified in the \verb$[input]$ section of the
+configuration file with a line such as
+\begin{verbatim}
+segments = S2H1L1v03_selectedsegs.txt
+\end{verbatim}
+This should contain four whitespace separated columns:
+\begin{verbatim}
+  segment_id    gps_start_time    gps_end_time    duration
+\end{verbatim}
+that define the science segments to be used. Lines starting with an
+octothorpe are ignored.
+
+\item[Example]
+Generate a DAG to run a stochastic search on a pair of interferometers
+specified in the configuration file. The generated DAG is then submitted
+with \texttt{condor\_submit\_dag}
+\begin{verbatim}
+lalapps_inspiral_pipe --log-path /home/ram/dag_logs \
+--datafind --stochastic --config-file stochastic_H1L1.ini
+
+condor_submit_dag stochastic_H1L1.dag
+\end{verbatim}
+
+\item[Author]
+Adam Mercer
+\end{entry}
+
+\clearpage
+\subsection{Program \texttt{lalapps\_stochastic}}
+\label{program:lalapps-stochastic}
+\idx[Program]{lalapps\_stochastic}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_stochastic$ --- standalone stochastic analysis code.
+
+\item[Synopsis]
+\begin{verbatim}
+ --help                        print this message
+ --version                     display version
+ --verbose                     verbose mode
+ --debug-level LEVEL           set lalDebugLevel
+ --gps-start-time SEC          GPS start time
+ --gps-end-time SEC            GPS end time
+ --segment-duration SEC        segment duration
+ --resample-rate F             resample rate
+ --f-min F                     minimal frequency
+ --f-max F                     maximal frequency
+ --hann-duration SEC           hann duration
+ --ifo-one IFO                 ifo for first stream
+ --ifo-two IFO                 ifo for second stream
+ --data-cache-one FILE         cache file for first stream
+ --data-cache-two FILE         cache file for second stream
+ --calibration-cache-one FILE  first stream calibration cache
+ --calibration-cache-two FILE  second stream calibration cache
+ --apply-mask                  apply frequency masking
+ --inject                      inject a signal into the data
+ --scale-factor N              scale factor for injection
+ --seed N                      seed
+ --overlap-hann                overlaping hann windows for data windowing
+ --high-pass-filter            perform high pass filtering
+\end{verbatim}
+
+\item[Description] \verb$lalapps_stochastic$ runs the standalone
+stochastic analysis code.
+
+\item[Author] 
+Adam Mercer, Tania Regimbau
+\end{entry}
