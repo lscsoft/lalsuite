@@ -111,7 +111,7 @@ int main(){
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=0; loopz <= 1; loopz++){
-        for(loopw=0; loopw <= 2; loopw++){
+        for(loopw=0; loopw <= 1; loopw++){
           LALSCreateVector(&stat, &list->coordinates, dim);
           list->coordinates->data[0] = loopx;
           list->coordinates->data[1] = loopy;
@@ -131,7 +131,7 @@ int main(){
                                                                                                                                                 
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
-      for(loopw=1; loopw <= 20; loopw++){
+      for(loopw=0; loopw <= 1; loopw++){
         LALSCreateVector(&stat, &list->coordinates, dim);
         list->coordinates->data[0] = loopx;
         list->coordinates->data[1] = loopy;
@@ -152,7 +152,7 @@ int main(){
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=3; loopz <= 4; loopz++){
-        for(loopw=1; loopw <=4; loopw++){
+        for(loopw=0; loopw <=1; loopw++){
           if( ((loopx==6)||(loopx==19)) && (loopy<16) && (loopy>5)) continue;
           if((loopy==15)&&(((loopx<20)&&(loopx>14))||((loopx<7)&&(loopx>1)))) continue;
           if((loopx>9)&&(loopx<12)&&(((loopy>6)&&(loopy<10))||(loopy==12))) continue;
