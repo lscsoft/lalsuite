@@ -252,13 +252,13 @@ int main ( int argc, char *argv[] )
   {
     /* compute the dynamic range scaling for the psd computation */
     dynRange = (REAL8) pow( 2.0, dynRangeExponent );
-    if ( vrbflg )
-      fprintf( stderr, "using dynamic range scaling %le\n", dynRange );
   }
   else
   {
     dynRange = 1.0;
   }
+  if ( vrbflg )
+    fprintf( stdout, "using dynamic range scaling %le\n", dynRange );
 
 
   /*
