@@ -41,7 +41,8 @@ S1.LLO.RDS.sorted, S1.LHO.full.sorted, S1.LHO.RDS.sorted) which are
 sorted by GPS time.  S1 is replaced by the run name.
 
 INPUTS:  listing of "*.gwf" files under /netdat[ac]/s001 - /netdat[ac]/s296
-OUTPUTS: alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
+OUTPUTS: alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,
+         S1.LHO.RDS.sorted
 
 ================================================================================
 
@@ -107,10 +108,12 @@ where FILE1 contains segment numbers, start times, and SFT length
 and FILE2  contains ordered frame file names
 and DIRNAME is a directory number to place output job files.
 
-For example
-./lalapps_make_job_input_data S1-H1.60 S1.LHO.full.sorted S1-H1.60-lists
-./lalapps_make_job_input_data S1-H2.60 S1.LHO.full.sorted S1-H2.60-lists
-./lalapps_make_job_input_data S1-L1.60 S1.LLO.full.sorted S1-L1.60-lists
+For example:
+mkdir /scratch/ballen/S2-L1.60-lists
+
+./lalapps_make_job_input_data S1-H1.60 S1.LHO.full.sorted /scratch/ballen/S1-H1.60-lists/
+./lalapps_make_job_input_data S1-H2.60 S1.LHO.full.sorted /scratch/ballen/S1-H2.60-lists/
+./lalapps_make_job_input_data S1-L1.60 S1.LLO.full.sorted /scratch/ballen/S1-L1.60-lists/
 
 The output of this is a set of files containing paths to the data that
 is needed to build the SFTs, and the start times of the SFTs.  For
@@ -138,12 +141,11 @@ OUTPUTS: jobtimes.*, jobdata.*.ffl, joberror.* files
 STEP 3:
 
 Make the SFTs.  You do this by running a condor job.  To do this, you
-need the following steps.
+need to carry out the following steps.
 
 (1) Create a working directory to store the Condor job files and SFTs
     and input data:
     mkdir /scratch/ballen/S2-L1.60-condor   [Job files: input]
-    mkdir /scratch/ballen/S2-L1.60-lists    [Segment/data lists: input]
     mkdir /scratch/ballen/S2-L1.60-sft      [SFT output]
 
 (2) Copy the condor script condor.sub to /scratch/ballen/S2-L1.60-condor.
