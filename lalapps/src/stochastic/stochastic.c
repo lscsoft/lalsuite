@@ -306,9 +306,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     endTime = startTime + durationEff;
   }
 
-  if (verbose_flag)
-    fprintf(stdout, "%d\n", numIntervals);
-
   if (overlap_hann_flag)
   {
     /* numSegments = 2 * numSegments - 1; */
