@@ -13,6 +13,9 @@ NC=load('/home/badkri/S2results/CLEAN_L1');
 DirectoryMC = '/home/badkri/MCresults/';
 Detector = 'L1_coarse';
 
+MCfilepath = strcat(DirectoryMC,Detector);
+MCfilepre  = strcat(MCfilepath,'/MC_L1_');
+
 fileoutput1 = strcat(Detector,'_CofH');
 fid1 = fopen(fileoutput1, 'w');
 
@@ -46,8 +49,6 @@ for fband=1:Nbands;
 end
 
 
-MCfilepath = strcat(DirectoryMC,Detector);
-MCfilepre  = strcat(MCfilepath,'/MC_');
 
 for bandnumber=1:Nbands;
   bn=bandnumber+199;
