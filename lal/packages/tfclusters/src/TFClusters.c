@@ -61,17 +61,15 @@ LALComputeSpectrogram (
 \idx{LALComputeSpectrogram()}
 
 \subsubsection*{Description}
-Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
-No window is applied, but FFTs can overlap if \texttt{deltaT * timeBins} is larger than the time series duration.
-The power is the norm square of the (normalized) discrete Fourier transform.
+Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. This is essentially a wrapper to the function \texttt{LALTimeSeriesToTFPlane} from the \texttt{burstsearch} package, with a rectangular window and no overlap. The power is the norm square of the (normalized) discrete Fourier transform.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALCreateForwardRealFFTPlan()
-LALCCreateVector()
-LALForwardRealFFT()
-LALCDestroyVector()
-LALDestroyRealFFTPlan()
+LALCreateTFPlane()
+LALCreateRealDFTParams()
+LALTimeSeriesToTFPlane()
+LALDestroyRealDFTParams()
+LALDestroyTFPlane()
 \end{verbatim}
 
 \vfill{\footnotesize\input{TFClustersCV}}
@@ -85,17 +83,15 @@ LALComputeSpectrogram (
 		       REAL4TimeSeries *tseries
 		       )
 {
-  UINT4 sid, olap, NN, minF;
   INT4 i,j;
   REAL8 *power;
 
+  COMPLEX8TimeFrequencyPlane *tfp=NULL;
+  VerticalTFTransformIn input;
   LALWindowParams winParams;
   TFPlaneParams *params;
 
-  RealFFTPlan *pfwd = NULL;
-  REAL4Vector Pvec;
-  COMPLEX8Vector *Hvec = NULL;
-  REAL8 norm;
+  
 
   INITSTATUS (status, "LALComputeSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
@@ -118,26 +114,11 @@ LALComputeSpectrogram (
   ASSERT ( tseries, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
   ASSERT ( tseries->data, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP);
 
-  ASSERT ( (REAL8)(tseries->data->length) * tseries->deltaT <=
+  ASSERT ( (REAL8)(tseries->data->length) * tseries->deltaT ==
 	   (REAL8)(tspec->timeBins) * tspec->deltaT,
 	   status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP);
 
-  /* check compatibility */
-  ASSERT ( (REAL8)tspec->freqBins < 0.5 * tspec->deltaT / tseries->deltaT,
-	   status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
-
-  /* determine overlap */
-  olap = (UINT4)floor((tspec->deltaT - (REAL8)(tseries->data->length)/(REAL8)(tspec->timeBins)) / tseries->deltaT);
-
-  NN = (UINT4)floor(tspec->deltaT / tseries->deltaT);
-
-  ASSERT( tseries->data->length == olap + tspec->timeBins * (NN - olap),
-	  status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
-
-  minF = (UINT4)floor(tspec->flow * tspec->deltaT);
-
-  ASSERT( tspec->freqBins + minF == NN/2 + 1,
-	  status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
+  
 
   /* copy tspec */
   params = (TFPlaneParams *)LALMalloc(sizeof(TFPlaneParams));
@@ -149,41 +130,42 @@ LALComputeSpectrogram (
   params->flow = tspec->flow; 
   params->deltaT = tspec->deltaT;
 
-  out->params = params;
+  
+  
+  /* Get TF representation */
+  LALCreateTFPlane(status->statusPtr, &tfp, params);
+  CHECKSTATUSPTR (status);
+
+  input.startT = 0;
+  input.dftParams = NULL;
+	
+  winParams.type = Rectangular;
+  winParams.length = 2 * (INT4)((params->deltaT)/(2.0*(tseries->deltaT)));
+
+  LALCreateRealDFTParams(status->statusPtr, &(input.dftParams), &winParams, 1);
+  CHECKSTATUSPTR (status);
+
+  LALTimeSeriesToTFPlane(status->statusPtr, tfp, tseries, &input);
+  CHECKSTATUSPTR (status);
+	
+  LALDestroyRealDFTParams(status->statusPtr, &(input.dftParams));
+  CHECKSTATUSPTR (status);
 
 
-  /* memory for output */
+
+  /* next compute the square of the norm of the tf transform (the power) */
   power = (REAL8 *)LALMalloc(params->timeBins * params->freqBins * sizeof(REAL8));
   if(!power)
     {ABORT ( status, TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC );}
 
-  out->power = power;
-
-
-  /* Set Fourier plans */
-  LALCreateForwardRealFFTPlan(status->statusPtr, &pfwd, NN, 1 );
-  CHECKSTATUSPTR (status);
-
-  Pvec.length = (UINT4)floor(NN/2 + 1);
-  
-  LALCCreateVector( status->statusPtr, &Hvec, NN/2 + 1 );
-  CHECKSTATUSPTR (status);
-
-  norm = 2.0 * (REAL8)NN;
-
-  /* Get TF representation */
-  for(sid = 0; sid < params->timeBins; sid++) {
-    Pvec.data = tseries->data->data + sid * (NN - olap);
-    LALForwardRealFFT(status->statusPtr, Hvec, &Pvec, pfwd);
-
+  for(i=0;i<params->timeBins;i++)
     for(j=0;j<params->freqBins;j++)
-      power[sid*params->freqBins + j] = ((REAL8)Hvec->data[j].re * (REAL8)Hvec->data[j].re + (REAL8)Hvec->data[j].im * (REAL8)Hvec->data[j].im) / norm;
-  }
+      power[i*params->freqBins + j] = (REAL8)(tfp->data[i*params->freqBins + j].re) * (REAL8)(tfp->data[i*params->freqBins + j].re) + (REAL8)(tfp->data[i*params->freqBins + j].im) * (REAL8)(tfp->data[i*params->freqBins + j].im);
 
-  LALCDestroyVector( status->statusPtr, &Hvec );
-  CHECKSTATUSPTR (status);
+  out->power = power;
+  out->params = params;
 
-  LALDestroyRealFFTPlan( status->statusPtr, &pfwd );
+  LALDestroyTFPlane(status->statusPtr, &tfp);
   CHECKSTATUSPTR (status);
 
   /* Normal exit */
