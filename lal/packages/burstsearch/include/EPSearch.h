@@ -51,6 +51,7 @@ EPConditionData(
 	REAL4             flow,
 	REAL8             resampledeltaT,
 	ResampleTSFilter  resampleFiltType,
+	INT4              corruption,
 	EPSearchParams   *params
 );
 

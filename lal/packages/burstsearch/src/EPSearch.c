@@ -31,7 +31,6 @@ $Id$
 
 NRCSID (EPSEARCHC, "$Id$");
 
-#define TRUE 1
 #define FALSE 0
 
 extern INT4 lalDebugLevel;
@@ -153,31 +152,28 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
-	INT4 numevents;
+	INT4 count;
 
-	LALInfo(status->statusPtr, "Converting times into sngl_burst events");
-	CHECKSTATUSPTR (status);
+	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
+		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
-	for(numevents = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (numevents < params->eventLimit); tile = tile->nextTile, numevents++) {
-		*event = TFTileToBurstEvent(tile, epoch, params); 
-
-		event = &(*event)->next;
+		addpoint = &(*addpoint)->next;
 	}
 
-	return(event);
+	return(addpoint);
 }
 
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
-EPSearch (
-        LALStatus               *status,
-        REAL4TimeSeries         *tseries,
-        EPSearchParams          *params,
-        SnglBurstTable         **burstEvent
-        )
+EPSearch(
+	LALStatus        *status,
+	REAL4TimeSeries  *tseries,
+	EPSearchParams   *params,
+	SnglBurstTable  **burstEvent
+)
 /******** </lalVerbatim> ********/
 { 
     int                       start_sample;
@@ -289,7 +285,7 @@ EPSearch (
       WeighTFTileList(tfTiling, 10000);
 
       /* convert the TFTiles into sngl_burst events for output */
-      EventAddPoint = TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+      EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
       /* reset the flags on the tftiles */
       tfTiling->planesComputed=FALSE;
@@ -333,93 +329,58 @@ EPSearch (
  ********************************************************************/
 /* <lalVerbatim file="EPConditionDataCP"> */
 void EPConditionData(
-        LALStatus             *status,
-        REAL4TimeSeries       *series,
-	REAL4                  flow,
-	REAL8                  resampledeltaT,
-	ResampleTSFilter       resampFiltType,
-        EPSearchParams        *params
-        )
+	LALStatus        *status,
+	REAL4TimeSeries  *series,
+	REAL4             flow,
+	REAL8             resampledeltaT,
+	ResampleTSFilter  resampFiltType,
+	INT4              corruption,
+	EPSearchParams   *params
+)
 /* </lalVerbatim> */
 {
-    UINT4                         i,j;
-    INT8                          dataTimeNS  = 0;
-    REAL4                        *dummyData    = NULL;  
-    REAL4                         fsafety=0;
-    PassBandParamStruc            highpassParam;
+	ResampleTSParams    resampleParams = (ResampleTSParams) { };
+	const REAL8         epsilon = 1.0e-8;
+	REAL4               fsafety;
+	PassBandParamStruc  highpassParam;
 
-    /* resample parameters */
-    UINT4                  resampleChan = 0;
-    ResampleTSParams       resampleParams;
-    const REAL8            epsilon = 1.0e-8;
+	INITSTATUS (status, "LALConditionData", EPSEARCHC);
+	ATTATCHSTATUSPTR (status);
 
-    INITSTATUS (status, "LALConditionData", EPSEARCHC);
-    ATTATCHSTATUSPTR (status);
+	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-    /****************************************************************
-     *
-     * identify multiDimData sequences by their names 
-     *
-     ***************************************************************/
+	/*
+	 * Resample the time series if necessary
+	 */
 
-    ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	if(!(fabs(resampledeltaT - series->deltaT) < epsilon)) {
+		resampleParams.deltaT = resampledeltaT;
+		resampleParams.filterType = resampFiltType;
+		LALResampleREAL4TimeSeries(status->statusPtr, series, &resampleParams);
+		CHECKSTATUSPTR (status);
+	}
 
-    /* **************************************************************
-     *
-     * Resample the data if necessary
-     *
-     * *************************************************************/
+	/*
+	 * High-pass filter the time series.
+	 */
 
-    /* set the time series parameters of the input data and resample params */
-    memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-    resampleParams.deltaT = resampledeltaT;
-
-    if( ! ( fabs( resampleParams.deltaT - series->deltaT ) < epsilon ) )
-      {
-	resampleChan = 1;
-	
-	if ( resampFiltType == 0 )
-	  {
-	    resampleParams.filterType = LDASfirLP;
-	  }
-	else if ( resampFiltType == 1 )
-	  {
-	    resampleParams.filterType = defaultButterworth;
-	  }
-      }
-    
-    /*resample if required to */
-    if ( resampleChan )
-      {
-	LALResampleREAL4TimeSeries(status->statusPtr, series, &resampleParams);
+	highpassParam.nMax = 4;
+	fsafety = params->tfTilingInput->flow - 10.0;
+	highpassParam.f2 = fsafety > 150.0 ? 150.0 : fsafety;
+	highpassParam.f1 = -1.0;
+	highpassParam.a2 = 0.1;
+	highpassParam.a1 = -1.0;
+	LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
 	CHECKSTATUSPTR (status);
-      }
 
-    /* ***************************************************************
-     *
-     * translate InPut to DataSegment and allocate memory for response
-     * function data
-     *
-     ****************************************************************/
+	/*
+	 * The filter corrupts the ends of the time series.  Chop them off.
+	 */
 
-    /* Set up for a highpass filter */
-    highpassParam.nMax = 4;
-    fsafety = params->tfTilingInput->flow - 10.0;
-    highpassParam.f2 = fsafety > 150.0 ? 150.0 : fsafety;
-    highpassParam.f1 = -1.0;
-    highpassParam.a2 = 0.1;
-    highpassParam.a1 = -1.0;
-    LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
-    CHECKSTATUSPTR (status);
-            
-    LALShrinkREAL4TimeSeries(status->statusPtr, series, params->windowShift, series->data->length - 2*params->windowShift);
-    CHECKSTATUSPTR (status);
-    /****************************************************************
-     * 
-     * clean up and return
-     *
-     ****************************************************************/
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
+	LALShrinkREAL4TimeSeries(status->statusPtr, series, corruption, series->data->length - 2 * corruption);
+	CHECKSTATUSPTR (status);
 
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
 }

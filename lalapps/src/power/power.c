@@ -520,7 +520,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, params), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, params->windowShift, params), &stat);
 
       /* add information about times to summary table */
       {
@@ -1199,9 +1199,9 @@ void initializeEPSearch(
 
 		case 'b':
 		if(!strcmp("ldas", optarg))
-			resampFiltType = 0;
+			resampFiltType = LDASfirLP;
 		else if(!strcmp("butterworth", optarg))
-			resampFiltType = 1;
+			resampFiltType = defaultButterworth;
 		else {
 			sprintf(msg, "must be \"ldas\", or \"butterworth\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
