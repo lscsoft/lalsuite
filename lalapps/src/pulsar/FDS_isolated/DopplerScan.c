@@ -68,7 +68,6 @@ static PtoleMetricIn empty_metricpar;
 static DopplerScanGrid empty_grid;
 static MetricParamStruc empty_MetricParamStruc;
 static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
-static gsl_complex complex_zero;
 
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
@@ -1369,10 +1368,16 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
  * 
  */
 void
-refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen)
+refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen, UINT4 Dterms)
 {
-  UINT4 oldLen, l, k;
-  gsl_complex Xd, Yk, Rlk, z;
+  UINT4 oldLen, k;
+  REAL8 Rlk_Re, Rlk_Im, Xd_Re, Xd_Im;
+  REAL8 Yk_Re, Yk_Im;
+  REAL8 phase, phaseN;
+  REAL8 x;
+  REAL8 a, b, c, d, Ooa;
+  UINT4 lstar;
+  INT4 l;
   COMPLEX16Vector *ret = NULL;
 
   INITSTATUS( stat, "refineCOMPLEX16Vector", DOPPLERSCANC );  
@@ -1389,22 +1394,51 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *
 
   for (k=0; k <= newLen - 1; k++)
     {
-      Yk = complex_zero;
+      Yk_Re = Yk_Im = 0;
 
-      for (l=0; l <= oldLen - 1; l++)
+      lstar = (UINT4)(1.0*k * oldLen / newLen + 0.5);
+
+      for (l = (INT4)lstar - Dterms; l <= (INT4)(lstar + Dterms); l++)
 	{
-	  GSL_SET_REAL (&Xd, in->data[l].re);
-	  GSL_SET_IMAG (&Xd, in->data[l].im);
+	  if ( l < 0 || l >= (INT4)oldLen)
+	    continue;
 
-	  Rlk = DFTinterpolator (l, k, oldLen, newLen);
-	  z = gsl_complex_mul ( Xd, Rlk);
-	  Yk = gsl_complex_add (Yk, z);
+	  Xd_Re = in->data[l].re;
+	  Xd_Im = in->data[l].im;
+
+	  /* treat special case of all summands being 1: happens if x is integer */
+	  x = 1.0 * l * newLen - k * oldLen;
+	  x /= 1.0 * oldLen * newLen;
+	  if ( x == (INT4)x )
+	    {
+	      Rlk_Re = oldLen;
+	      Rlk_Im = 0;
+	    }
+	  else
+	    { 	  /* otherwise: calculate geometric sum: */
+	      phase = 2.0 * LAL_PI * x;
+	      phaseN = phase * oldLen;
+	      
+	      a = 1.0 - cos(phase);
+	      Ooa = 1.0 / a;
+	      b = 1.0 - cos(phaseN);
+	      c = sin(phase);
+	      d = sin(phaseN);
+	      
+	      Rlk_Re = 0.5*(b + c*d*Ooa);
+	      Rlk_Im = 0.5*(c*b*Ooa - d);
+	    }
+
+	  if (k==40)
+	    printf ("%d %f %f\n", l, Rlk_Re, Rlk_Im);
+
+	  Yk_Re += Xd_Re*Rlk_Re - Xd_Im*Rlk_Im;
+	  Yk_Im += Xd_Im*Rlk_Re + Xd_Re*Rlk_Im;
+
 	} /* for k <= N-1 */
 
-      ret->data[k].re = GSL_REAL (Yk);
-      ret->data[k].re /= oldLen;
-      ret->data[k].im = GSL_IMAG (Yk);
-      ret->data[k].im /= oldLen;
+      ret->data[k].re = Yk_Re / oldLen;
+      ret->data[k].im = Yk_Im / oldLen;
 
     }  /* for k <= M-1 */
 
@@ -1413,47 +1447,3 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* refineCOMPLEX16Vector() */
-
-
-/** Interpolation matrix entry (l, k), for frequency-steps 1/N and 1/M
- */
-gsl_complex
-DFTinterpolator (INT4 l, INT4 k, UINT4 N, UINT4 M)
-{
-  REAL8 phase, phaseN;
-  gsl_complex nominator, denominator, res, z; 
-  REAL8 ind;
-
-  /* treat special case of all summands being 1: happens if ind is integer */
-  ind = 1.0 * (l * M - k * N)/(1.0 * M * N);
-  if ( ind == (INT4)ind )
-    {
-      GSL_SET_REAL (&res, 0);
-      GSL_SET_IMAG (&res, N);
-      return (res);
-    }
-
-  /* otherwise: calculate sum of geometric sum: */
-  phase = 2.0 * LAL_PI * ( (1.0 * l) / N - (1.0 * k) / M);
-  phaseN = phase * N;
-
-  /* calculate nominator */
-  GSL_SET_REAL (&z, 0);
-  GSL_SET_IMAG (&z, phaseN);
-
-  z = gsl_complex_negative ( gsl_complex_exp ( z ) );
-  nominator = gsl_complex_add_real ( z , 1.0);
-
-  /* calculate denominator */
-  GSL_SET_REAL (&z, 0);
-  GSL_SET_IMAG (&z, phase);
-
-  z = gsl_complex_negative ( gsl_complex_exp ( z ) );
-  denominator = gsl_complex_add_real ( z , 1.0);
-
-  /* calculate ratio */
-  res = gsl_complex_div (nominator, denominator);
-
-  return(res);
-
-} /* DFTinterpolator() */
