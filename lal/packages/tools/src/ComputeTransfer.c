@@ -388,8 +388,9 @@ LALUpdateCalibration(
   {
     ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
   }
-  /* XXX first point AT or AFTER requested time XXX */
-  i = ceil( dt / params->sensingFactor->deltaT );
+  
+  /* find the first point at or before the requested time */
+  i = (UINT4) floor( dt / params->sensingFactor->deltaT );
  
   length = 0;  
 
