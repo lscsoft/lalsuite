@@ -8,7 +8,19 @@
  * 	\section{Header \texttt{GenerateInspiral.h}}
  * 	\label{s:GenerateInspiral.h}
  * 	
- * 	Header file for the inspiral injection interface code.
+ * 	Header file for the inspiral injection interface code. The 
+ * 	code contained in GenerateInspiral.c is an interface between the 
+ * 	injection package and the inspiral package. More precisely, the 
+ * 	function GenerateInspiral.c is used within the FindChirpSimulation.c
+ * 	file of the FindChirp package in order to inject waveforms into real
+ * 	data. The injection is done through the inject package in order to 
+ * 	take into account the interferometer position, binary orientation ...
+ * 	
+ * 	GenerateInspiral has the capability of injecting both waveform designed 
+ * 	within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning 
+ * 	waveform) and the inject package (so-called PPN waveform).
+ *
+ * 	There is also a test code as well which allows to check the output of the code.
  * 	
  * 	\subsection*{Synopsis}
  * 	\begin{verbatim}
@@ -46,7 +58,8 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 /* </lalErrTable> */
 
 
-/* EOB a 3PN */
+/* parameter for the EOB at 3PN. In principle, the three 
+ * following parameter should be set to zero. */
 #define GENERATEINSPIRAL_ZETA2       0.
 #define GENERATEINSPIRAL_OMEGAS      0.
 #define GENERATEINSPIRAL_THETA       0.
@@ -56,20 +69,20 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 #define GENERATEINSPIRAL_SOURCETHETA 1.
 #define GENERATEINSPIRAL_SOURCEPHI   2.
 
-#define GENERATEINSPIRAL_SPIN1X       1 
-#define GENERATEINSPIRAL_SPIN1Y       1 
-#define GENERATEINSPIRAL_SPIN1Z       1 
+#define GENERATEINSPIRAL_SPIN1X      1. 
+#define GENERATEINSPIRAL_SPIN1Y      1.
+#define GENERATEINSPIRAL_SPIN1Z      1.
 
-#define GENERATEINSPIRAL_SPIN2X       1
-#define GENERATEINSPIRAL_SPIN2Y       1
-#define GENERATEINSPIRAL_SPIN2Z       1
+#define GENERATEINSPIRAL_SPIN2X      1. 
+#define GENERATEINSPIRAL_SPIN2Y      1. 
+#define GENERATEINSPIRAL_SPIN2Z      1. 
 
-#define GENERATEINSPIRAL_ORBITTHETA0 1.5
-#define GENERATEINSPIRAL_ORBITPHI0   0
+#define GENERATEINSPIRAL_ORBITTHETA0 1.
+#define GENERATEINSPIRAL_ORBITPHI0   0. 
 
 /* idem for CW waveform*/
 #define GENERATEINSPIRAL_F0         100.
-#define GENERATEINSPIRAL_ARG         0
+#define GENERATEINSPIRAL_ARG         0.
 #define GENERATEINSPIRAL_UDOT        0.5
 #define GENERATEINSPIRAL_RP          0.5
 #define GENERATEINSPIRAL_E           0.   
@@ -77,7 +90,7 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 
 /* A reference number for the method already 
  * implemented in the injection package. Should add PPN to 
- * the inspiral strucutre. the two others are useless here
+ * the inspiral strucutre. The two others are useless here a
  * */
 typedef enum {  
    PPN       	= 101,
