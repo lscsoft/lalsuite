@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         return stat.statusCode;
       }
 
-    detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+    detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
     place_and_date.p_detector = &detector;
     place_and_date.p_date     = &date;
 

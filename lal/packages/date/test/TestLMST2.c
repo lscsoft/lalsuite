@@ -92,7 +92,7 @@ main(int argc, char *argv[])
         gpstime.gpsSeconds     = 468979210;
         gpstime.gpsNanoSeconds = 0;
 
-        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
         place_and_date.p_detector = &detector;
         place_and_date.p_date     = &date;
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
         gpstime.gpsSeconds = 461125153;
         gpstime.gpsNanoSeconds = date.residualNanoSeconds;
 
-        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
         place_and_date.p_detector = &detector;
         place_and_date.p_date     = &date;
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
@@ -234,7 +234,7 @@ main(int argc, char *argv[])
         gpstime.gpsSeconds = 453168010;
         gpstime.gpsNanoSeconds = 0;
 
-        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
         place_and_date.p_detector = &detector;
         place_and_date.p_date     = &date;
 
@@ -283,7 +283,7 @@ main(int argc, char *argv[])
 
         gpstime.gpsSeconds += 3600;
 
-        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
         place_and_date.p_detector = &detector;
         place_and_date.p_date     = &date;
 
@@ -336,7 +336,7 @@ main(int argc, char *argv[])
         gpstime.gpsSeconds = 453168010;
         gpstime.gpsNanoSeconds = date.residualNanoSeconds;
 
-        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        detector.frDetector.vertexLongitudeRadians = 0.;  /* Greenwich */
         place_and_date.p_detector = &detector;
         place_and_date.p_date     = &date;
 
