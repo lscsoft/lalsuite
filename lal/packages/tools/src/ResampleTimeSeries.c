@@ -314,7 +314,7 @@ LALDecimateREAL4TimeSeries(
 
   delay = delay * 0.5 * filt_ord;
 
-  printf("data shuffling done %e %e\n",ts->deltaT * delay, delay);
+  printf("Time delay %e sec\n",ts->deltaT * delay);
   ts->deltaT = params->deltaT;
   ts->data->length /= ratio;
   LALRealloc( ts->data->data, ts->data->length * sizeof(REAL4) );
