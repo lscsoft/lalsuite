@@ -11,8 +11,8 @@ RCSID("$Id$");
 #define MAXSTR 2048
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input infile [--threshold threshold] \
-    --freq fstart fstop df [--help]\n"
+#define USAGE "Usage: %s --input infile --table tablename --outfile filename \
+    [--snrstar snrstar] [--noplayground] [--help]\n"
 
 #define SNGLINSPIRALREADER_EARG   1
 #define SNGLINSPIRALREADER_EROW   2
@@ -46,16 +46,18 @@ static int getline(char *line, int max, FILE *fpin)
  * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
  * 
  ***************************************************************************/
-static int isPlayground(SearchSummaryTable *table){
+static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
     INT4 runStart=729273613;
     INT4 playInterval=6370;
     INT4 playLength=600;
-    INT4 segStart,segEnd;
+    INT4 segStart,segEnd,segMiddle;
 
-    segStart = (table->out_start_time.gpsSeconds - runStart)%playInterval;
-    segEnd   = (table->out_end_time.gpsSeconds - runStart)%playInterval;
-
-    if (segStart < 600 || segEnd <600){
+    segStart = (gpsStart - runStart)%playInterval;
+    segEnd   = (gpsEnd - runStart)%playInterval;
+    segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
+    segMiddle = (segMiddle - runStart)%playInterval;
+    
+    if (segStart < 600 || segEnd < 600 || segMiddle < 600){
         return TRUE;
     }
 
@@ -225,7 +227,9 @@ int main(int argc, char **argv)
                     &searchSummaryIndex), &stat);
 
         /* check for events and playground */
-        if ( ( playground && !(isPlayground(&searchSummaryTable))) ){
+        if ( ( playground && 
+                    !(isPlayground(searchSummaryTable.out_start_time.gpsSeconds,
+                           searchSummaryTable.out_end_time.gpsSeconds ))) ){
             fprintf(stdout,"File %i %s: not in playground, continuing\n",
                     fileCounter,line);
             continue;
@@ -269,6 +273,12 @@ int main(int argc, char **argv)
 
             /* get the inspiral event */
             getSnglInspiralEvent(&stat, triggerEnv, &inspiralEvent, &tableIndex);
+
+            /* check for events and playground */
+            if ( ( playground ) && 
+                        (inspiralEvent.end_time.gpsSeconds-729273613)%6370 >600 ){
+                continue;
+            }
 
             /* check that event satisfies threshold */
             if (inspiralEvent.snr < snrstar){

@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include <time.h>
 #include <config.h>
 #include <lalapps.h>
@@ -24,6 +25,10 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
+
+#define USAGE \
+"lalapps_inspinj_s1 --gps-start-time gpsStartTime --gps-end-time gpsEndTime \
+    [--seed seed]\n"
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
 
@@ -257,15 +262,22 @@ int sky_position( double *dist, double *alpha, double *delta )
   const double smc_alpha = ( 0.0 + 52.7 / 60.0 ) * M_PI / 12.0;
   const double smc_delta = -( 72.0 + 50.0 / 60.0 ) * M_PI / 180.0;
   const double smc_dist  = 58.0 * KPC;
+  const double m31_alpha = ( 0.0 + 42.7 / 60.0 ) * M_PI / 12.0;
+  const double m31_delta = ( 41.0 + 16.0 / 60.0 ) * M_PI / 180.0;
+  const double m31_dist  = 770 * KPC;
   const double lmc_lumin = 0.2074; /* reddening-corrected luminosity ratio */
   const double smc_lumin = 0.0336; /* reddening-corrected luminosity ratio */
+  const double m31_lumin = 2.421;  /* XXX no redenning;  RC3 L_B ratio XXX */
   const double lmc_fudge = 0.55; /* fudge-factor accounting for metalicity */
   const double smc_fudge = 0.60; /* fudge-factor accounting for metalicity */
+  const double m31_fudge = 1.00; /* fudge-factor accounting for metalicity */
   double lmc_ratio = lmc_lumin * lmc_fudge;
   double smc_ratio = smc_lumin * smc_fudge;
-  double norm = 1 + lmc_ratio + smc_ratio;
+  double m31_ratio = m31_lumin * m31_fudge;
+  double norm = 1 + lmc_ratio + smc_ratio + m31_ratio;
   double plmc = lmc_ratio / norm;
   double psmc = smc_ratio / norm;
+  double pm31 = m31_ratio / norm;
   double u;
 
   u = my_urandom();
@@ -284,6 +296,14 @@ int sky_position( double *dist, double *alpha, double *delta )
     *alpha = smc_alpha;
     *delta = smc_delta;
     sprintf( this_sim_insp->source, "SMC" );
+  }
+  else if ( u < plmc + psmc + pm31 ) /* M31 event */
+  {
+    fprintf( fplog, "\tM31" );
+    *dist  = m31_dist;
+    *alpha = m31_alpha;
+    *delta = m31_delta;
+    sprintf( this_sim_insp->source, "M31" );
   }
   else /* galactic event */
   {
@@ -364,9 +384,11 @@ int main( int argc, char *argv[] )
   double nyH[3] = { -0.9140, +0.0261, -0.4049 };
   double nxL[3] = { -0.9546, -0.1416, -0.2622 };
   double nyL[3] = { +0.2977, -0.4879, -0.8205 };
-  const long gpsStartTime   = 714150013;  /* Aug 23, 2002  08:00:00 PDT */
-  const long gpsStopTime    = 715618813;  /* Sep 09, 2002  08:00:00 PDT */
-  const double meanTimeStep = 526 / M_PI; /* seconds between injections     */
+  const long S1StartTime   = 714150013;  /* Aug 23, 2002  08:00:00 PDT */
+  const long S1StopTime    = 715618813;  /* Sep 09, 2002  08:00:00 PDT */
+  long gpsStartTime = S1StartTime;
+  long gpsStopTime = S1StopTime;
+  const double meanTimeStep = 2630 / M_PI; /* seconds between injections     */
 
   long long tinj              = 1000000000LL * gpsStartTime;
   struct time_list  tlisthead;
@@ -388,6 +410,17 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
 
+  /* getopt arguments */
+  struct option long_options[] =
+  {
+    /* parameters used to generate calibrated power spectrum */
+    {"gps-start-time",          required_argument, 0,                'a'},
+    {"gps-end-time",            required_argument, 0,                'b'},
+    {"seed",                    required_argument, 0,                's'},
+    {0, 0, 0, 0}
+  };
+  int c;
+
   lalDebugLevel = LALMSGLVL3;
 
   /* create the process and process params tables */
@@ -404,37 +437,120 @@ int main( int argc, char *argv[] )
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
 
-  tlisthead.tinj = tinj;
-  tlisthead.next = NULL;
-  /* sanity check on arguments; if one argument, use it as random seed */
-  if ( argc == 1 )
-    seed_random( (rand_seed = 1001) );
-  else
+  /* parse the arguments */
+  while ( 1 )
   {
-    if ( argc == 2 )
+    /* getopt_long stores long option here */
+    int option_index = 0;
+
+    c = getopt_long_only( argc, argv, 
+        "a:b:", long_options, &option_index );
+
+    /* detect the end of the options */
+    if ( c == - 1 )
     {
-      char *s = argv[1];
-      while ( *s )
-        if ( ! isdigit( *s++ ) )
-        {
-          fprintf( stderr, "Error: Seed must be an integer\n" );
-          fprintf( stderr, "Usage: %s [seed]\n", argv[0] );
-          return 1;
-        }
-      seed_random( (rand_seed = atoi( argv[1] )) );
+      break;
     }
-    else
+
+    switch ( c )
     {
-      fprintf( stderr, "Usage: %s [seed]\n", argv[0] );
-      return 1;
+      case 0:
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
+
+      case 'a':
+        {
+          long int gstartt = atol( optarg );
+          if ( gstartt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n",
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          if ( gstartt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          gpsStartTime = gstartt;
+          tinj              = 1000000000LL * gpsStartTime;
+          /* ADD_PROCESS_PARAM( "int", "%ld", gstartt ); */
+        }
+        break;
+
+      case 'b':
+        {
+          long int gendt = atol( optarg );
+          if ( gendt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }
+          else if ( gendt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }            
+          gpsStopTime = gendt;
+          /* ADD_PROCESS_PARAM( "int", "%ld", gendt ); */
+        }
+        break;
+
+      case 's':
+        {
+            int s = atoi( optarg );
+            seed_random( s );
+            rand_seed = s;
+            snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+                    "%s", PROGRAM_NAME );
+            snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+                    "--seed" );
+            snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
+            snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%d", rand_seed );
+            /* ADD_PROCESS_PARAM( "int", "%ld", gendt ); */
+        }
+        break;
+
+      case '?':
+        fprintf( stderr, USAGE );
+        exit( 1 );
+        break;
+
+      default:
+        fprintf( stderr, "unknown error while parsing options\n" );
+        fprintf( stderr, USAGE );
+        exit( 1 );
     }
   }
-  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-      "%s", PROGRAM_NAME );
-  snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-      "--seed" );
-  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-  snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "%d", rand_seed );
+
+  tlisthead.tinj = tinj;
+  tlisthead.next = NULL;
+
 
   /* open logfile for injection parameters */
   fplog = fopen( "injlog.txt", "w" );
