@@ -165,7 +165,9 @@ LALGPStoUTC (LALStatus                *status,
   time_t       tmptime;
   LALUnixDate  tmputc;
   char         tmpstamp[32];
+#if 0
   CHAR         infostr[128];
+#endif
   INT4         i;
 
   INITSTATUS (status, "LALGPStoUTC", GPSTOUTCC);
@@ -189,22 +191,26 @@ LALGPStoUTC (LALStatus                *status,
   /* we use Unix epoch as our origin */
   unixTime = p_gpsTime->gpsSeconds + UNIXGPS;
 
+#if 0
   if (lalDebugLevel > 0)
     {
       sprintf(infostr, "Max. tested GPS is %d\n", maxtestedGPS);
       LALInfo(status, infostr);
     }
+#endif
       
   /* 1998-Dec-31 23:59:60 (if leap seconds are taken into account) */
   tmptime = (22*365 + 7*366)* SECS_PER_DAY + 23;
   gmtime_r(&tmptime, &tmputc);
 
+#if 0
   if (lalDebugLevel > 0)
     {
       asctime_r(&tmputc, tmpstamp);
       sprintf(infostr, "tmputc = %s\n", tmpstamp);
       LALInfo(status, infostr);
     }
+#endif
 
   /*
    * if GPS is later than maxtestedGPS
@@ -268,10 +274,12 @@ LALGPStoUTC (LALStatus                *status,
       while (i < numleaps && leaps[i] + i - 1 < unixTime)
         ++i;
 
+#if 0
       if (lalDebugLevel > 0)
         sprintf(infostr, "unixTime = %ld; leaps[%d] = %ld", unixTime,
                 i, leaps[i]);
       LALInfo(status, infostr);
+#endif
 
       if (unixTime == (leaps[i] + i - 1))
         {
@@ -437,6 +445,7 @@ LALUTCtoGPS (LALStatus                *status,
   gpsref.unixDate.tm_wday = 0;
   gpsref.unixDate.tm_yday = 0;
 
+#if 0
   if (lalDebugLevel >= 8)
     {
       sprintf(infostr, "Date given: %d-%d-%d %d:%d:%d %d\n",
@@ -447,6 +456,7 @@ LALUTCtoGPS (LALStatus                *status,
 
       LALInfo(status, infostr);
     }
+#endif
 
   INITSTATUS(status, "LALUTCtoGPS", GPSTOUTCC);
 
@@ -679,11 +689,13 @@ LALLeapSecs (LALStatus                    *status,
           DATEH_MSGEACCPARAMOUTOFRANGE);
   
 
+#if 0
   if (lalDebugLevel > 0)
     {
       sprintf(infostr, "Max. tested GPS is %d\n", maxtestedGPS);
       LALInfo(status, infostr);
     }
+#endif
 
   /*
    * if GPS is later than maxtestedGPS
@@ -724,11 +736,13 @@ LALLeapSecs (LALStatus                    *status,
       *p_leapSecs = gpsLeaps[i-1].tai_utc;
     }
 
+#if 0
   if (lalDebugLevel >= 7)
     {
       sprintf(infostr, "Format = %d\n", p_formatAndAcc->format);
       LALInfo(status, infostr);
     }
+#endif
 
   if (p_formatAndAcc->format == LALLEAPSEC_GPSUTC)
     {

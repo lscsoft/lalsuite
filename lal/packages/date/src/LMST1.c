@@ -311,11 +311,13 @@ LALGMST1 (LALStatus     *status,
       break;
     }
 
+#if 0
   if (lalDebugLevel > 0)
     {
       sprintf(infostr, "LALGMST1: *p_gmst = %g\n", *p_gmst);
       LALInfo(status, infostr);
     }
+#endif
 
   DETATCHSTATUSPTR(status);
   RETURN (status);
