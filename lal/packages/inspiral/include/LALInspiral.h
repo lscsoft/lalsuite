@@ -201,7 +201,7 @@ The inspiral waveform parameter structure containing information about the
   \item \texttt { *segmentIdVec:} Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search.
   \item \texttt { number:} Unique ID number for this template needed for the LDAS implementation of the inspiral search.
   \item \texttt { minMatch:} The minimal match specified by the user when the bank that contains this template was created.
-  \item \texttt { nStartPad:} Number of leading elements in the signal generation to be set to zero (input). If template is requested, that value must be set to zero. In the injection routines, that nStartPad is set to zero. 
+  \item \texttt { nStartPad:} Number of leading elements in the signal generation to be set to zero (input). If template is requested, that value must be set to zero. In the injection routines related to inject package, that nStartPad is set to zero. However, for injection performed using the inspiral package, that value can be set to non zero. 
   \item \texttt { nEndPad:} Number of trailing bins to be set to zero, the 
   resulting waveform will have at least this many bins zero at the end, probably
   more since we always deal with an integer power of 2 array (input). 
