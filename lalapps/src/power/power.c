@@ -825,8 +825,11 @@ int main( int argc, char *argv[])
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
+    
     LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
     LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
+    LALFree( cachefile );
+    LALFree( dirname );
     LALCheckMemoryLeaks();
 
     return 0;
