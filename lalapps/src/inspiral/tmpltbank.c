@@ -1063,10 +1063,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalid argument to --%s:\n"
               "number of seconds to pad from input data"
               "must be greater than 0: (%d specified)\n", 
-              long_options[option_index].name, numSegments );
+              long_options[option_index].name, padData );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%d", numSegments );
+        ADD_PROCESS_PARAM( "int", "%d", padData );
         break;
 
       case 'z':
