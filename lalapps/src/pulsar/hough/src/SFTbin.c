@@ -676,10 +676,11 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   REAL8    *leftWing=NULL;
   REAL8    *rightWing=NULL;
   COMPLEX8 *inData;
-  const gsl_rng_type *t;
-  gsl_rng  *r;  
-  
-  
+  FILE *fp=NULL;   
+  INT4 seed, ranCount;  
+  RandomParams *randPar=NULL;
+  static REAL4Vector *ranVector=NULL; 
+  REAL4 *randVal;
   /* --------------------------------------------- */
   INITSTATUS (status, "CleanCOMPLEX8SFT", SFTBINC);
   ATTATCHSTATUSPTR (status);   
@@ -710,14 +711,22 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   minBin = floor(f0/deltaF + 0.5);
   maxBin = minBin + length - 1;
 
-  /* set up the gsl random number generation variables */
-  gsl_rng_env_setup();
-  t = gsl_rng_default;
-  r = gsl_rng_alloc(t);
-
   tempDataRe = LALMalloc(2*window*sizeof(REAL8));
   tempDataIm = LALMalloc(2*window*sizeof(REAL8));
 
+  fp=fopen("/dev/urandom", "r");
+  ASSERT(fp, status, SFTBINH_EFILE, SFTBINH_MSGEFILE);  
+
+  ranCount = fread(&seed, sizeof(seed), 1, fp);
+  ASSERT(ranCount==1, status, SFTBINH_EREAD, SFTBINH_MSGEREAD);  
+
+  fclose(fp);
+
+  TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status);
+  TRY ( LALCreateVector (status->statusPtr, &ranVector, nLines), status);
+  TRY ( LALNormalDeviates (status->statusPtr, ranVector, randPar), status);
+  TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  
+  
   /* loop over the lines */
   for (count = 0; count < nLines; count++){
     
@@ -746,46 +755,51 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
 	tempDataRe[k + window] = inData->re;
 	tempDataIm[k + window] = inData->im;
-    }
+      }
     
-    meanRe = gsl_stats_mean(tempDataRe,1,20);
-    meanIm = gsl_stats_mean(tempDataIm,1,20);
-    stdRe = gsl_stats_sd(tempDataRe,1,20);
-    stdIm = gsl_stats_sd(tempDataIm,1,20);
+      meanRe = gsl_stats_mean(tempDataRe,1,window);
+      meanIm = gsl_stats_mean(tempDataIm,1,window);
+      stdRe = gsl_stats_sd(tempDataRe,1,window);
+      stdIm = gsl_stats_sd(tempDataIm,1,window);
+      
+      /* set sft value at central frequency to noise */
+      inData = sft->data->data + lineBin - minBin;
+      randVal = ranVector->data + count;  
+      inData->re = meanRe + stdRe * (*randVal);
+      inData->im = meanIm + stdIm * (*randVal);
+      
     
-    /* set sft value at central frequency to noise */
-    inData = sft->data->data + lineBin - minBin;
-    inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-    inData->im = gsl_ran_gaussian(r, stdIm) + meanIm;
-    
-    /* now go left and set the left wing to noise */
-    /* make sure that we are always within the sft band */
-    /* and set bins to zero only if Wing width is smaller than "width" */ 
-    if ((leftWingBins <= width)){
-      for (leftCount = 0; leftCount < leftWingBins; leftCount++){
-	if ( (lineBin - minBin - leftCount > 0)){
-	  inData = sft->data->data + lineBin - minBin - leftCount - 1;
-	  inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-	  inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
+      /* now go left and set the left wing to noise */
+      /* make sure that we are always within the sft band */
+      /* and set bins to zero only if Wing width is smaller than "width" */ 
+      if ((leftWingBins <= width)){
+	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
+	  if ( (lineBin - minBin - leftCount > 0)){
+	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
+	    inData->re = meanRe + stdRe * (*randVal);
+	    inData->im = meanIm + stdIm * (*randVal);
+	  }
+	}
+      }
+      
+      /* now go right making sure again to stay within the sft band */
+      if ((rightWingBins <= width )){
+	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
+	  if ( (maxBin - lineBin - rightCount > 0)){
+	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
+	    inData->re = meanRe + stdRe * (*randVal);
+	    inData->im = meanIm + stdIm * (*randVal);
+	  }
 	}
       }
     }
-    
-    /* now go right making sure again to stay within the sft band */
-    if ((rightWingBins <= width )){
-      for (rightCount = 0; rightCount < rightWingBins; rightCount++){
-	if ( (maxBin - lineBin - rightCount > 0)){
-	  inData = sft->data->data + lineBin - minBin + rightCount + 1;
-	  inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-	  inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
-	}
-      }
-    }
-    }
-  }
+  } /* end loop over lines */
+
+  /* free memory */
   LALFree(tempDataRe);
   LALFree(tempDataIm);
-  
+  TRY (LALDestroyVector (status->statusPtr, &ranVector), status);
+
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);

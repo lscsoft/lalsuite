@@ -50,7 +50,7 @@ INT4 lalDebugLevel=0;
 
 #define MAXFILENAMELENGTH 256
 /* defaults chosen for L1 */
-#define LINEFILE "./linenoiseS2LLO4KC.txt"
+
 #define HARMONICFILE "./harmonicsS2LLO4KC.txt" 
 #define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"
 #define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"
@@ -59,7 +59,7 @@ INT4 lalDebugLevel=0;
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define WINDOWSIZE 100
 
-#define USAGE "Usage: %s \n [-d debuglevel] \n [-w window size] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
+#define USAGE "Usage: %s [-d debuglevel] (0)\n [-w window size] (100)\n [-H harmonics file name] (./harmonicsS2LLO4KC.txt)\n [-i input sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs)\n [-o output sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean) \n [-f start frequency] (150.0 Hz) \n [-b bandwidth] (300Hz) \n [-h print usage] \n"
 
 
 /* Usage format string. */
@@ -110,7 +110,6 @@ int main(int argc, char *argv[]){
   static LineNoiseInfo   lines;
   static LineHarmonicsInfo harmonics; 
   
-  CHAR *linefname;           /* file with line noise info */
   CHAR *harmonicfname;        /* file with harmonics info */
   CHAR *inputSFTDir;    /* directory for unclean sfts */
   CHAR *outputSFTDir;   /* directory for cleaned sfts */
@@ -122,7 +121,6 @@ int main(int argc, char *argv[]){
   CHAR tempstr1[256], tempstr2[256]; 
 
   /* set defaults */
-  linefname = LINEFILE;
   harmonicfname = HARMONICFILE; 
   fStart = STARTFREQ;
   fBand = BANDFREQ;  

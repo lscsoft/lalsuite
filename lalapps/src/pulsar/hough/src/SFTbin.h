@@ -74,6 +74,8 @@ Routines for reading SFT binary files
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/SFTfileIO.h>
+#include <lal/Random.h>
+#include <lal/PulsarDataTypes.h>
 
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_rng.h>
