@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <endian.h>
 #include "SFTReferenceLibrary.h"
 
 /* some local prototypes */
