@@ -32,7 +32,7 @@
 
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
-void parse_command_line(int argc, char *argv[], EPSearchParams **params, MetadataTable *procparams);
+void parse_command_line(int argc, char *argv[], EPSearchParams *params, MetadataTable *procparams);
 
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
@@ -54,12 +54,11 @@ int main( void )
 #define TRUE       1
 #define FALSE      0
 
-/* this is a temporary function to make some code below more readable.
- * Obviously the argument and return types are sub-optimal... */
-static size_t min(size_t a, size_t b)
-{
-	return(a < b ? a : b);
-}
+/*
+ * ============================================================================
+ *                                Global Data
+ * ============================================================================
+ */
 
 /* Parameters from command line */
 static struct {
@@ -103,40 +102,16 @@ REAL8 fcorner;                      /* corner frequency in Hz              */
 
 
 /*
- * Fill an array with white noise.
+ * ============================================================================
+ *                               Misc Utilities
+ * ============================================================================
  */
 
-static void makeWhiteNoise(
-        LALStatus        *status,
-        REAL4TimeSeries  *series,
-	INT4              seed,
-	REAL4             amplitude
-        )
+/* this is a temporary function to make some code below more readable.
+ * Obviously the argument and return types are sub-optimal... */
+static size_t min(size_t a, size_t b)
 {
-    long length = series->data->length;
-    long index = 0;
-    static RandomParams *rparams = NULL;
-
-    INITSTATUS (status, "makeWhiteNoise", POWERC);
-    ATTATCHSTATUSPTR (status);
-
-    /* generate Gaussian white noise with unit variance */
-    LALCreateRandomParams(status->statusPtr, &rparams, seed);
-    CHECKSTATUSPTR (status);
-    LALNormalDeviates(status->statusPtr, series->data, rparams);
-    CHECKSTATUSPTR (status);
-    LALDestroyRandomParams(status->statusPtr, &rparams);
-    CHECKSTATUSPTR (status);
-
-    /* apply gain factor to noise in time series */
-    for(index = 0; index < length; index++) {
-        double sample = series->data->data[index];
-        sample *= amplitude;
-        series->data->data[index] = sample;
-    }
-
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
+	return(a < b ? a : b);
 }
 
 
@@ -154,7 +129,45 @@ static size_t window_commensurate(size_t psdlength, size_t windowlength, size_t 
 
 
 /*
- * Event clustering
+ * ============================================================================
+ *                       Fill an array with white noise
+ * ============================================================================
+ */
+
+static void makeWhiteNoise(
+	LALStatus        *status,
+	REAL4TimeSeries  *series,
+	INT4              seed,
+	REAL4             amplitude
+)
+{
+	int i;
+	static RandomParams *rparams = NULL;
+
+	INITSTATUS(status, "makeWhiteNoise", POWERC);
+	ATTATCHSTATUSPTR(status);
+
+	/* generate Gaussian white noise with unit variance */
+	LALCreateRandomParams(status->statusPtr, &rparams, seed);
+	CHECKSTATUSPTR(status);
+	LALNormalDeviates(status->statusPtr, series->data, rparams);
+	CHECKSTATUSPTR(status);
+	LALDestroyRandomParams(status->statusPtr, &rparams);
+	CHECKSTATUSPTR(status);
+
+	/* apply gain factor to noise in time series */
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] *= amplitude;
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+}
+
+
+/*
+ * ============================================================================
+ *                              Event clustering
+ * ============================================================================
  */
 
 static SnglBurstTable *cluster_events(LALStatus *stat, SnglBurstTable *burstEvent, int limit)
@@ -177,7 +190,9 @@ static SnglBurstTable *cluster_events(LALStatus *stat, SnglBurstTable *burstEven
 
 
 /*
- * Output routine.
+ * ============================================================================
+ *                                   Output
+ * ============================================================================
  */
 
 static void output_results(LALStatus *stat, char *file, MetadataTable *procTable, MetadataTable *procparams, MetadataTable *searchsumm, SnglBurstTable *burstEvent)
@@ -217,14 +232,16 @@ static void output_results(LALStatus *stat, char *file, MetadataTable *procTable
 
 
 /*
- * Entry point
+ * ============================================================================
+ *                                Entry point
+ * ============================================================================
  */
 
 int main( int argc, char *argv[])
 {
 	LALStatus                stat;
 	LALLeapSecAccuracy       accuracy = LALLEAPSEC_LOOSE;
-	EPSearchParams          *params = NULL;
+	EPSearchParams           params;
 	FrStream                *stream = NULL;
 	FrCache                 *frameCache = NULL;
 	PassBandParamStruc       highpassParam;
@@ -287,7 +304,7 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->nnodes = 1;
 
 	/*set the min. freq to be searched for */
-	minFreq = params->tfTilingInput->flow;
+	minFreq = params.tfTilingInput->flow;
 
 
     /*
@@ -299,21 +316,20 @@ int main( int argc, char *argv[])
 
       /* tell operator how we are doing */
       if(options.verbose)
-        fprintf(stdout,"%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
+        fprintf(stderr, "%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
 
       /* compute the number of points to use in this run */
       numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
 
-      if(options.verbose) {
-        fprintf(stdout,"reading %i points...\n", numPoints);
-      }
+      if(options.verbose)
+        fprintf(stderr, "reading %i points...\n", numPoints);
 
       /* create and initialize the time series vector */
       series.data = NULL;
       LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
       memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
       series.epoch = tmpEpoch;
-      strcpy(series.name, params->channelName);
+      strcpy(series.name, params.channelName);
       series.f0 = 0.0;
       series.deltaT = 1.0/((REAL8)frameSampleRate);
       series.sampleUnits = lalADCCountUnit;
@@ -349,7 +365,7 @@ int main( int argc, char *argv[])
           LAL_CALL( LALDCreateVector( &stat, &geoSeries.data, numPoints), &stat);
           memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL8) );
           geoSeries.epoch = tmpEpoch;
-          strcpy(geoSeries.name, params->channelName);
+          strcpy(geoSeries.name, params.channelName);
           geoSeries.deltaT = 1.0/((REAL8)frameSampleRate);
           geoSeries.f0 = 0.0;
           geoSeries.sampleUnits = lalADCCountUnit;
@@ -363,7 +379,7 @@ int main( int argc, char *argv[])
           /* high pass filter before casting REAL8 to REAL4 */
 
           highpassParam.nMax = 4;
-          fsafety = params->tfTilingInput->flow - 10.0;
+          fsafety = params.tfTilingInput->flow - 10.0;
           highpassParam.f2 = fsafety > fcorner ? fcorner : fsafety;
           highpassParam.f1 = -1.0;
           highpassParam.a2 = 0.1;
@@ -448,8 +464,7 @@ int main( int argc, char *argv[])
 
         /* generate the response function for the current time */
         if(options.verbose) 
-          fprintf( stdout, "generating response at time %d sec %d ns\n",
-              resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
+          fprintf(stderr, "generating response at time %d sec %d ns\n", resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
 
         /* getting the response is handled differently for geo */
         if(geodata){
@@ -484,13 +499,13 @@ int main( int argc, char *argv[])
 
         /* read in list from file and make the injections */
         if(options.verbose)
-          fprintf(stdout, "Reading in SimBurst Table\n");
+          fprintf(stderr, "Reading in SimBurst Table\n");
 
         LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile,
               startTime, stopTime), &stat );
 
         if(options.verbose)
-          fprintf(stdout, "Injecting signals into time series\n");
+          fprintf(stderr, "Injecting signals into time series\n");
 
         LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, &resp ), 
             &stat ); 
@@ -504,7 +519,7 @@ int main( int argc, char *argv[])
         }
 
         if(options.verbose)
-          fprintf(stdout, "Finished making the injections\n");
+          fprintf(stderr, "Finished making the injections\n");
 
         /* write diagnostic info to disk */
         if(options.printData)
@@ -517,7 +532,7 @@ int main( int argc, char *argv[])
         INT4 i;
 
         if(options.verbose)
-          fprintf(stdout, "Using MDC frames for injections\n");
+          fprintf(stderr, "Using MDC frames for injections\n");
 
         /*open mdc cache */
         LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
@@ -563,7 +578,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, options.FilterCorruption, params), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
 
       /* add information about times to summary table */
       {
@@ -592,12 +607,15 @@ int main( int argc, char *argv[])
 		 ***********************************************/
 
 		if(options.verbose)
-			fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
+			fprintf(stderr, "Got %i points to analyse after conditioning\n", series.data->length);
 
-		if(options.PSDAverageLength > series.data->length)
-			options.PSDAverageLength = window_commensurate(series.data->length, params->windowLength, params->windowShift);
+		if(options.PSDAverageLength > series.data->length) {
+			options.PSDAverageLength = window_commensurate(series.data->length, params.windowLength, params.windowShift);
+			if(options.verbose)
+				fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d\n", options.PSDAverageLength);
+		}
 
-		for(start_sample = 0; start_sample + (params->windowLength - params->windowShift) < series.data->length; start_sample += options.PSDAverageLength - (params->windowLength - params->windowShift)) {
+		for(start_sample = 0; start_sample + (params.windowLength - params.windowShift) < series.data->length; start_sample += options.PSDAverageLength - (params.windowLength - params.windowShift)) {
 			REAL4TimeSeries *interval;
 
 			if(start_sample + options.PSDAverageLength > series.data->length)
@@ -606,22 +624,23 @@ int main( int argc, char *argv[])
 			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.PSDAverageLength), &stat);
 
 			if(options.verbose)
-				fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
+				fprintf(stderr, "Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
 
-			LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
+			LAL_CALL(EPSearch(&stat, interval, &params, EventAddPoint), &stat);
 			while(*EventAddPoint)
 				EventAddPoint = &(*EventAddPoint)->next;
 
 			LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
 		}
- 
 
-		/* compute the start time for the next chunk */
+
+		/*
+		 * Reset for next run
+		 */
+
 		tmpOffset = (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate;
 		LAL_CALL(LALFloatToInterval(&stat, &tmpInterval, &tmpOffset), &stat);
 		LAL_CALL(LALIncrementGPS(&stat, &tmpEpoch, &tmpEpoch, &tmpInterval), &stat);
-
-		/* clean up memory from that run */
 		LAL_CALL(LALSDestroyVector(&stat, &series.data), &stat);
 		if(calCacheFile)
 			LAL_CALL(LALCDestroyVector(&stat, &resp.data), &stat);
@@ -663,20 +682,19 @@ int main( int argc, char *argv[])
 		LALFree(event);
 	}
 
-	if(params) {
-		LALFree(params->compEPInput);
-		LALFree(params->tfTilingInput);
-		LALFree(params);
-	}
+	LALFree(params.compEPInput);
+	LALFree(params.tfTilingInput);
 
 	LALCheckMemoryLeaks();
 	exit(0);
 }
 
 
-/*************************************************************************
- * INITIALIZE AND PARSE ARGUMENTS
- *************************************************************************/
+/*
+ * ============================================================================
+ *                       Initialize and parse arguments
+ * ============================================================================
+ */
 
 static void print_usage(char *program)
 {
@@ -825,7 +843,7 @@ static INT8 DeltaGPStoINT8(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *star
 void parse_command_line( 
 	int argc, 
 	char *argv[], 
-	EPSearchParams **params,
+	EPSearchParams *params,
 	MetadataTable *procparams 
 )
 { 
@@ -887,19 +905,11 @@ void parse_command_line(
 	 * Allocate memory.
 	 */
 
-	*params = LALMalloc(sizeof(EPSearchParams));
-	if(!*params) {
-		print_alloc_fail(argv[0], "for *params");
-		exit(1);
-	}
-
-	(*params)->tfTilingInput = LALMalloc(sizeof(*(*params)->tfTilingInput));
-	(*params)->compEPInput = LALMalloc(sizeof(*(*params)->compEPInput));
-	if(!(*params)->tfTilingInput || !(*params)->compEPInput) {
-		LALFree((*params)->tfTilingInput);
-		LALFree((*params)->compEPInput);
-		LALFree(*params);
-		*params = NULL;
+	params->tfTilingInput = LALMalloc(sizeof(*params->tfTilingInput));
+	params->compEPInput = LALMalloc(sizeof(*params->compEPInput));
+	if(!params->tfTilingInput || !params->compEPInput) {
+		LALFree(params->tfTilingInput);
+		LALFree(params->compEPInput);
 		print_alloc_fail(argv[0], "");
 		exit(1);
 	}
@@ -908,10 +918,10 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
-	(*params)->channelName = NULL;
-	(*params)->eventLimit = 999;
-	(*params)->tfTilingInput->maxTileBand = 64.0;
-	(*params)->windowShift = 0;
+	params->channelName = NULL;
+	params->eventLimit = 999;
+	params->tfTilingInput->maxTileBand = 64.0;
+	params->windowShift = 0;
 
 	options.cluster = FALSE;
 	options.comment = "";
@@ -945,13 +955,13 @@ void parse_command_line(
 
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
-		(*params)->tfTilingInput->length = atoi(optarg);
-		if((*params)->tfTilingInput->length <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", (*params)->tfTilingInput->length);
+		params->tfTilingInput->length = atoi(optarg);
+		if(params->tfTilingInput->length <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput->length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->tfTilingInput->length);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->length);
 		break;
 
 		case 'B':
@@ -960,11 +970,11 @@ void parse_command_line(
 		break;
 
 		case 'C':
-		(*params)->channelName = optarg;
-		channelIn.name = (*params)->channelName;
+		params->channelName = optarg;
+		channelIn.name = params->channelName;
 		channelIn.type = ADCDataChannel;
 		memcpy(ifo, channelIn.name, sizeof(ifo) - 1);
-		ADD_PROCESS_PARAM("string", "%s", (*params)->channelName);
+		ADD_PROCESS_PARAM("string", "%s", params->channelName);
 		break;
 
 		case 'D':
@@ -973,23 +983,23 @@ void parse_command_line(
 		break;
 
 		case 'E':
-		(*params)->compEPInput->alphaDefault = atof(optarg);
-		if((*params)->compEPInput->alphaDefault <= 0.0 || (*params)->compEPInput->alphaDefault >= 1.0) {
-			sprintf(msg, "must be in range [0,1] (%f specified)", (*params)->compEPInput->alphaDefault);
+		params->compEPInput->alphaDefault = atof(optarg);
+		if(params->compEPInput->alphaDefault <= 0.0 || params->compEPInput->alphaDefault >= 1.0) {
+			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput->alphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", (*params)->compEPInput->alphaDefault);
+		ADD_PROCESS_PARAM("float", "%e", params->compEPInput->alphaDefault);
 		break;
 
 		case 'F':
-		(*params)->eventLimit = atoi(optarg);
-		if((*params)->eventLimit < 1 || (*params)->eventLimit > 999) {
-			sprintf(msg, "must be in range [1,999] (%i specified)", (*params)->eventLimit);
+		params->eventLimit = atoi(optarg);
+		if(params->eventLimit < 1 || params->eventLimit > 999) {
+			sprintf(msg, "must be in range [1,999] (%i specified)", params->eventLimit);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit( 1 );
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->eventLimit);
+		ADD_PROCESS_PARAM("int", "%d", params->eventLimit);
 		break;
 
 		case 'G':
@@ -1076,13 +1086,13 @@ void parse_command_line(
 		break;
 
 		case 'Q':
-		(*params)->tfTilingInput->flow = atof(optarg);
-		if((*params)->tfTilingInput->flow < 0.0) {
-			sprintf(msg,"must be >= 0.0 (%f specified)", (*params)->tfTilingInput->flow);
+		params->tfTilingInput->flow = atof(optarg);
+		if(params->tfTilingInput->flow < 0.0) {
+			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput->flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", (*params)->tfTilingInput->flow);
+		ADD_PROCESS_PARAM("float", "%e", params->tfTilingInput->flow);
 		break;
 
 		case 'R':
@@ -1103,23 +1113,23 @@ void parse_command_line(
 		break;
 
 		case 'T':
-		(*params)->tfTilingInput->minFreqBins = atoi(optarg);
-		if((*params)->tfTilingInput->minFreqBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", (*params)->tfTilingInput->minFreqBins);
+		params->tfTilingInput->minFreqBins = atoi(optarg);
+		if(params->tfTilingInput->minFreqBins <= 0) {
+			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput->minFreqBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->tfTilingInput->minFreqBins);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->minFreqBins);
 		break;
 
 		case 'U':
-		(*params)->tfTilingInput->minTimeBins = atoi(optarg);
-		if((*params)->tfTilingInput->minTimeBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", (*params)->tfTilingInput->minTimeBins);
+		params->tfTilingInput->minTimeBins = atoi(optarg);
+		if(params->tfTilingInput->minTimeBins <= 0) {
+			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput->minTimeBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->tfTilingInput->minTimeBins);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->minTimeBins);
 		break;
 
 		case 'V':
@@ -1134,32 +1144,32 @@ void parse_command_line(
 		break;
 
 		case 'W':
-		(*params)->windowLength = atoi(optarg);
-		if((*params)->windowLength <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", (*params)->windowLength);
+		params->windowLength = atoi(optarg);
+		if(params->windowLength <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", params->windowLength);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->windowLength);
+		ADD_PROCESS_PARAM("int", "%d", params->windowLength);
 		break;
 
 		case 'X':
-		(*params)->compEPInput->numSigmaMin = atof(optarg);
-		if((*params)->compEPInput->numSigmaMin <= 1.0) {
-			sprintf(msg, "must be > 0 (%f specified)", (*params)->compEPInput->numSigmaMin);
+		params->compEPInput->numSigmaMin = atof(optarg);
+		if(params->compEPInput->numSigmaMin <= 1.0) {
+			sprintf(msg, "must be > 0 (%f specified)", params->compEPInput->numSigmaMin);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", (*params)->compEPInput->numSigmaMin);
+		ADD_PROCESS_PARAM("float", "%e", params->compEPInput->numSigmaMin);
 		break;
 
 		case 'Y':
 		if(!strcmp(optarg, "useMean"))
-			(*params)->method = useMean;
+			params->method = useMean;
 		else if(!strcmp(optarg, "useMedian"))
-			(*params)->method = useMedian;
+			params->method = useMedian;
 		else if (!strcmp(optarg, "useUnity"))
-			(*params)->method = useUnity;
+			params->method = useUnity;
 		else {
 			sprintf(msg, "must be \"useMean\", \"useMedian\", or \"useUnity\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -1207,8 +1217,8 @@ void parse_command_line(
 		break;
 
 		case 'd':
-		(*params)->windowShift = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", (*params)->windowShift);
+		params->windowShift = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", params->windowShift);
 		break;
 
 		case 'e':
@@ -1222,23 +1232,23 @@ void parse_command_line(
 		break;
 
 		case 'f':
-		(*params)->tfTilingInput->overlapFactor = atoi(optarg);
-		if((*params)->tfTilingInput->overlapFactor < 0) {
-			sprintf(msg, "must be > 0 (%i specified)", (*params)->tfTilingInput->overlapFactor);
+		params->tfTilingInput->overlapFactor = atoi(optarg);
+		if(params->tfTilingInput->overlapFactor < 0) {
+			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput->overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->tfTilingInput->overlapFactor);
+		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput->overlapFactor);
 		break;
 
 		case 'g':
-		(*params)->alphaThreshold = atof(optarg);
-		if((*params)->alphaThreshold < 0.0) {
-			sprintf(msg, "must be > 0 (%f specified)", (*params)->alphaThreshold);
+		params->alphaThreshold = atof(optarg);
+		if(params->alphaThreshold < 0.0) {
+			sprintf(msg, "must be > 0 (%f specified)", params->alphaThreshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", (*params)->alphaThreshold);
+		ADD_PROCESS_PARAM("float", "%e", params->alphaThreshold);
 		break;
 
 		case 'h':
@@ -1247,13 +1257,13 @@ void parse_command_line(
 		break;
 
 		case 'i':
-		(*params)->windowType = atoi(optarg);
-		if((*params)->windowType >= NumberWindowTypes) {
-			sprintf(msg, "must be <= %d (%i specified)", NumberWindowTypes, (*params)->windowType);
+		params->windowType = atoi(optarg);
+		if(params->windowType >= NumberWindowTypes) {
+			sprintf(msg, "must be <= %d (%i specified)", NumberWindowTypes, params->windowType);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->windowType);
+		ADD_PROCESS_PARAM("int", "%d", params->windowType);
 		break;
 
 		case 'j':
@@ -1307,27 +1317,25 @@ void parse_command_line(
 	 * length and shift.
 	 */
 
-	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, (*params)->windowLength, (*params)->windowShift);
+	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
 	 * Check for missing parameters
 	 */
 
-	if(!check_for_missing_parameters(&stat, argv[0], long_options, *params))
+	if(!check_for_missing_parameters(&stat, argv[0], long_options, params))
 		exit(1);
 
 	/*
 	 * Miscellaneous chores.
 	 */
 
-	(*params)->printSpectrum = printSpectrum;
+	params->printSpectrum = printSpectrum;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples at a time\n", argv[0], options.maxSeriesLength);
 		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.PSDAverageLength);
 	}
 }
-
-#undef ADD_PROCESS_PARAMS
 
 #endif
