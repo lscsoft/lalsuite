@@ -452,15 +452,15 @@ int main( int argc, char *argv[])
       mdcSeries.data = NULL;
       LAL_CALL( LALCreateVector( &stat, &mdcSeries.data, numPoints), &stat);
       memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
-      mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-      mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+      mdcSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+      mdcSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
       strcpy(mdcSeries.name, mdcparams->channelName);
       mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
       mdcSeries.f0 = 0.0;
       mdcSeries.sampleUnits = lalADCCountUnit;
       LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
-      mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-      mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+      mdcSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
+      mdcSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
       LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
 
       /* get the mdc signal data */
