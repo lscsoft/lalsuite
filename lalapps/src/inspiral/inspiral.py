@@ -141,7 +141,7 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     cp = ConfigParser object from which options are read.
     """
     self.__universe = 'scheduler'
-    self.__executable = 'lalapps_inca'
+    self.__executable = cp.get('condor','inca')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
     
