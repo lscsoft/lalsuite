@@ -598,7 +598,6 @@ LALFindChirpSlave (
     
     if ( ! params->bandPassed )
     {
-#if 0
       REAL4                     fsafety = 0;
       PassBandParamStruc        highpassParam;
       REAL4TimeSeries          *rawChannel;
@@ -626,7 +625,6 @@ LALFindChirpSlave (
       LALButterworthREAL4TimeSeries( status->statusPtr, 
           rawChannel, &highpassParam );
       CHECKSTATUSPTR (status);
-#endif
 
       params->bandPassed = 1;
     }
