@@ -31,7 +31,7 @@
 #include <lalapps.h>
 #include <processtable.h>
 
-int snprintf(char *str, size_t size, const  char  *format, ...);
+int snprintf(char *str, size_t size, const char *format, ...);
 
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
@@ -103,11 +103,19 @@ ResampleTSFilter resampFiltType;
  * ============================================================================
  */
 
-/* this is a temporary function to make some code below more readable.
- * Obviously the argument and return types are sub-optimal... */
+/* return the smaller of two size_t variables. */
 static size_t min(size_t a, size_t b)
 {
 	return(a < b ? a : b);
+}
+
+/* compare two GPS times */
+static int LIGOTimeGPSlt(LALStatus *stat, LIGOTimeGPS gps1, LIGOTimeGPS gps2)
+{
+	LALGPSCompareResult result;
+
+	LAL_CALL(LALCompareGPS(stat, &result, &gps1, &gps2), stat);
+	return(result < 0);
 }
 
 
@@ -1034,8 +1042,8 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
  */
 
 /*
- * Take the time series and analyze it in intervals corresponding to the
- * length of time for which the instrument's noise is stationary.
+ * Analyze a time series in intervals corresponding to the length of time
+ * for which the instrument's noise is stationary.
  */
 
 static SnglBurstTable **analyze_series(
@@ -1046,28 +1054,23 @@ static SnglBurstTable **analyze_series(
 )
 {
 	REAL4TimeSeries *interval;
-	size_t start;
+	size_t i, start;
+	size_t overlap = params->windowLength - params->windowShift;
 
-	/* check if we have enough data */
 	if(options.PSDAverageLength > series->data->length) {
 		options.PSDAverageLength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
-			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d\n", options.PSDAverageLength);
+			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", options.PSDAverageLength);
 	}
 
-	for(start = 0; start + (params->windowLength - params->windowShift) < series->data->length; start += options.PSDAverageLength - (params->windowLength - params->windowShift)) {
-		/* shift last piece backwards to align with end of time
-		 * series. */
-		if(start + options.PSDAverageLength > series->data->length)
-			start = series->data->length - options.PSDAverageLength;
-
-		/* extract the data to analyze */
+	for(i = 0; i < series->data->length - overlap; i += options.PSDAverageLength - overlap) {
+		start = min(i, series->data->length - options.PSDAverageLength);
+		
 		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, options.PSDAverageLength), stat);
 
 		if(options.verbose)
 			fprintf(stderr, "Analyzing samples %i -- %i\n", start, start + interval->data->length);
 
-		/* generate a list of burst events from the time series. */
 		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
@@ -1158,6 +1161,7 @@ int main( int argc, char *argv[])
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
+	LALTimeInterval           corruptionInterval;
 	int                       usedNumPoints;
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
@@ -1211,7 +1215,7 @@ int main( int argc, char *argv[])
 	 */
 
 	epoch = options.startEpoch;
-	for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * options.FilterCorruption * (frameSampleRate / targetSampleRate)) {
+	for(usedNumPoints = 0; usedNumPoints < totalNumPoints - 2 * options.FilterCorruption * frameSampleRate / targetSampleRate; usedNumPoints += numPoints - 2 * options.FilterCorruption * frameSampleRate / targetSampleRate) {
 		/* tell operator how we are doing */
 		if(options.verbose)
 			fprintf(stderr, "%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
@@ -1288,6 +1292,12 @@ int main( int argc, char *argv[])
 			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
 
 		/*
+		 * Determine the time that was lost due to filter corruption.
+		 */
+
+		LAL_CALL(LALDeltaGPS(&stat, &corruptionInterval, &series->epoch, &epoch), &stat);
+
+		/*
 		 * Store the start and end times of the data that actually
 		 * gets analyzed.
 		 */
@@ -1307,7 +1317,9 @@ int main( int argc, char *argv[])
 		 * Reset for next run
 		 */
 
-		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (numPoints - 2.0 * options.FilterCorruption * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, numPoints), &stat);
+		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &corruptionInterval), &stat);
+		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &corruptionInterval), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
 
