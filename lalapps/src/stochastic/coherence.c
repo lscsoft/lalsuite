@@ -48,7 +48,7 @@
 #include <lal/BandPassTimeSeries.h>
 #include "stochastic.h"
 
-NRCSID (STOCHASTICC, "$Id$");
+NRCSID (COHERENCEC, "$Id$");
 RCSID ("$Id$");
 
 /* cvs info */
@@ -190,7 +190,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   windowPSDLength = (UINT4)(resampleRate / deltaF);
 
   /* set parameters for PSD estimation */
-  if (overlap_flag)
+  if (overlap_hann_flag)
    { overlapPSDLength = windowPSDLength / 2;}
   else 
     { overlapPSDLength = 0;}
@@ -290,7 +290,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    for (segLoop = 0; segLoop < numSegments; segLoop++)
     {
      /* define segment epoch */
-     gpsStartTime.gpsSeconds = startTime + (segLoop * segmentShift);
+     gpsStartTime.gpsSeconds = startTime + (segLoop * segmentDuration);
      segment1.epoch = segment2.epoch = gpsStartTime;
     
      if (verbose_flag)
