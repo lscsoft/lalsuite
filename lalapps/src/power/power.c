@@ -1447,8 +1447,6 @@ int main( int argc, char *argv[])
 	 */
 
 	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
-		/* compute the number of points to use in this run */
-
 		/*
 		 * Get the data,
 		 */
