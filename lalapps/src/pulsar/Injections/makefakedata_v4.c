@@ -58,6 +58,8 @@ typedef struct
   REAL8 fmin_eff;	/* 'effective' fmin: round down such that fmin*Tsft = integer! */
   REAL8Vector *spindown;
   SFTVector *noiseSFTs;
+  BOOLEAN binaryPulsar;
+  LIGOTimeGPS orbitRefTime;
 } ConfigVars_t;
 
 /* Locations of the earth and sun ephemeris data */
@@ -112,6 +114,13 @@ REAL8 uvar_f1dot;
 REAL8 uvar_f2dot;
 REAL8 uvar_f3dot;
 
+/* orbital parameters */
+REAL8 uvar_orbitRefTime;
+REAL8 uvar_orbitOmega;
+REAL8 uvar_orbitRPeriNorm;
+REAL8 uvar_orbitEccent;
+REAL8 uvar_orbitAngSpeed;
+
 /*----------------------------------------------------------------------
  * main function 
  *----------------------------------------------------------------------*/
@@ -157,8 +166,18 @@ main(int argc, char *argv[])
   params.pulsar.phi0		   = uvar_phi0;
   params.pulsar.f0		   = uvar_f0;
 
-  /* orbital params (currently null) */
-  params.orbit = NULL;
+  /* orbital params */
+  if (GV.binaryPulsar)
+    {
+      params.orbit = LALCalloc (1, sizeof (BinaryOrbitParams));
+      params.orbit->orbitEpoch = GV.orbitRefTime;
+      params.orbit->omega = uvar_orbitOmega;
+      params.orbit->rPeriNorm = uvar_orbitRPeriNorm;
+      params.orbit->oneMinusEcc = 1 - uvar_orbitEccent;
+      params.orbit->angularSpeed = uvar_orbitAngSpeed;
+    }
+  else
+    params.orbit = NULL;
 
   /* detector params */
   params.transfer = NULL;	/* detector transfer function (NULL if not used) */	
@@ -216,8 +235,11 @@ main(int argc, char *argv[])
   if (SFTs) 
     LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
 
-  LAL_CALL (freemem(&status, &GV), &status);	/* free the rest */
+  /* free orbital params if used */
+  if (params.orbit)
+    LALFree (params.orbit);
 
+  LAL_CALL (freemem(&status, &GV), &status);	/* free the rest */
 
   LALCheckMemoryLeaks(); 
 
@@ -365,6 +387,28 @@ InitMakefakedata (LALStatus *stat,
   imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
   GV->fmin_eff = (REAL8)imin / uvar_Tsft;
 
+  /* if any orbital parameters specified, we need all of them ! */
+  {
+    BOOLEAN set1 = UVARwasSet(&uvar_orbitRefTime);
+    BOOLEAN set2 = UVARwasSet(&uvar_orbitOmega);
+    BOOLEAN set3 = UVARwasSet(&uvar_orbitRPeriNorm);
+    BOOLEAN set4 = UVARwasSet(&uvar_orbitEccent);
+    BOOLEAN set5 = UVARwasSet(&uvar_orbitAngSpeed);
+    if (set1 || set2 || set3 || set4 || set5)
+    {
+      if (! (set1 && set2 && set3 && set4 && set5) ) {
+	LALPrintError ("Please either specify  ALL orbital parameters or NONE!\n");
+	ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+      }
+
+      TRY (LALFloatToGPS (stat->statusPtr, &(GV->orbitRefTime), &uvar_orbitRefTime), stat);
+      GV->binaryPulsar = TRUE;
+
+    } /* if at least one orbital parameter was set */
+
+  } /* check orbital parameters */
+
+
   /* read noise-sft's if given */
   if (uvar_noiseDir)
     {
@@ -436,6 +480,14 @@ initUserVars (LALStatus *stat)
   regREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
   regREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
   regREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
+
+  /* the orbital parameters */
+  regREALUserVar(stat, 	orbitRefTime, 	 0 , UVAR_OPTIONAL, "Reference time for orbital parameters (in SSB)");
+  regREALUserVar(stat,  orbitOmega,      0 , UVAR_OPTIONAL, "argument of periapsis (radians)");
+  regREALUserVar(stat, 	orbitRPeriNorm,  0 , UVAR_OPTIONAL, "projected, normalized periapsis (s) ");
+  regREALUserVar(stat, 	orbitEccent,	 0 , UVAR_OPTIONAL, "orbital eccentricity");
+  regREALUserVar(stat,  orbitAngSpeed,   0 , UVAR_OPTIONAL, "angular speed at periapsis (Hz)");
+
   regBOOLUserVar(stat,   help,		'h', UVAR_HELP    , "Print this help/usage message");
 
   DETATCHSTATUSPTR (stat);
@@ -475,7 +527,6 @@ void freemem (LALStatus* stat, ConfigVars_t *GV)
   /* Clean up earth/sun Ephemeris tables */
   LALFree(GV->edat.ephemE);
   LALFree(GV->edat.ephemS);
-
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
