@@ -1574,7 +1574,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* see if there is a softlink to earth.zip */
     if (!boinc_resolve_filename("earth.zip", zippedname,sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
-      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "earth"))) {
+      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
 	fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", zippedname, boinczipret);
 	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
@@ -1582,7 +1582,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* see if there is a softlink to sun.zip */
     if (!boinc_resolve_filename("sun.zip", zippedname, sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
-      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "sun"))) {
+      if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
 	fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", zippedname, boinczipret);
 	boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
