@@ -1023,9 +1023,9 @@ LALSimulateCoherentGW_exp (LALStatus        *stat,
   REAL8 heteroFac, phi0;
 
   /* Variables required by the TCENTRE_exp() macro, above. */
-  REAL4 realIndex;
+  REAL8 realIndex;
   UINT4 uintIndex;
-  REAL4 indexFrac;
+  REAL8 indexFrac;
 
 
   INITSTATUS( stat, "LALSimulateCoherentGW_exp", SIMULATECOHERENTGWC );
