@@ -1142,6 +1142,276 @@ static void save_xml_file(LALStatus *status,
   return;
 }
 
+/* function to perform the stochastic search */
+static StochasticTable *stochastic_search(LALStatus *status,
+    REAL4TimeSeries *series_one,
+    REAL4TimeSeries *series_two,
+    REAL4FrequencySeries *overlap,
+    REAL4FrequencySeries *omega,
+    REAL4Window *window,
+    INT4 num_segments,
+    INT4 filter_length,
+    INT4 segs_in_interval,
+    INT4 segment_length)
+{
+  /* counters */
+  INT4 i, j, k;
+
+  /* variables */
+  INT4 num_intervals;
+  INT4 segment_shift;
+  REAL4Vector *cal_psd_one;
+  REAL4Vector *cal_psd_two;
+  INT4 middle_segment;
+  REAL4TimeSeries *segment_one = NULL;
+  REAL4TimeSeries *segment_two = NULL;
+  COMPLEX8FrequencySeries *response_one = NULL;
+  COMPLEX8FrequencySeries *response_two = NULL;
+  LIGOTimeGPS seg_epoch;
+  LIGOTimeGPS analysis_epoch;
+  REAL8 delta_f;
+  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  REAL4FrequencySeries *psd_one = NULL;
+  REAL4FrequencySeries *psd_two = NULL;
+  REAL4FrequencySeries *inv_psd_one = NULL;
+  REAL4FrequencySeries *inv_psd_two = NULL;
+  REAL4FrequencySeries *opt_filter = NULL;
+  REAL8 sigma;
+  COMPLEX8FrequencySeries *zero_pad_one = NULL;
+  COMPLEX8FrequencySeries *zero_pad_two = NULL;
+  COMPLEX8FrequencySeries *cc_spectra = NULL;
+  REAL8 y;
+  StochasticTable *stochHead = NULL;
+  StochasticTable *thisStoch = NULL;
+
+  /* calculate number of intervals, and required shift to get to next
+   * interval */
+  if (overlap_hann_flag)
+  {
+    num_intervals = (2 * (num_segments - 2)) - 1;
+    segment_shift = segmentDuration / 2;
+  }
+  else
+  {
+    num_intervals = num_segments - 2;
+    segment_shift = segmentDuration;
+  }
+
+  /* get middle segment number */
+  middle_segment = (segs_in_interval - 1) / 2;
+
+  /* get delta_f for optimal filter */
+  delta_f = 1./(REAL8)PSD_WINDOW_DURATION;
+
+  /* allocate memory for calibrated PSDs */
+  cal_psd_one = XLALCreateREAL4Vector(filter_length);
+  cal_psd_two = XLALCreateREAL4Vector(filter_length);
+
+  if (vrbflg)
+    fprintf(stdout, "Starting analysis loop...\n");
+
+  /* loop over intervals */
+  for (j = 0; j < num_intervals; j++)
+  {	
+    /* initialize average PSDs */
+    for (i = 0; i < filter_length; i++)
+    {
+      cal_psd_one->data[i] = 0;
+      cal_psd_two->data[i] = 0;
+    }
+
+    /* loop over segments in the interval */
+    for (k = 0; k < segs_in_interval; k++)
+    {
+      /* set segment start time */
+      LAL_CALL(LALAddFloatToGPS(status, &seg_epoch, &series_one->epoch, \
+            (REAL8)((j * segment_shift) + (k * segmentDuration))), status);
+
+      /* is this the analysis segment? */
+      if (k == middle_segment)
+        analysis_epoch = seg_epoch;
+
+      if (vrbflg)
+      {
+        fprintf(stdout, "Request data at GPS time %d\n", \
+            seg_epoch.gpsSeconds);
+      }
+
+      /* cut segments from series */
+      segment_one = cut_time_series(status, series_one, seg_epoch, \
+          segmentDuration);
+      segment_two = cut_time_series(status, series_two, seg_epoch, \
+          segmentDuration);
+
+      /* compute response */
+      response_one = generate_response(status, ifoOne, calCacheOne, \
+          seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
+          calibOffset);
+      response_two = generate_response(status, ifoTwo, calCacheTwo, \
+          seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
+          calibOffset);
+
+      /* check if on middle segment and if we want to include this in
+       * the analysis */
+      if ((k == middle_segment) && (!middle_segment_flag))
+      {
+        if (vrbflg)
+          fprintf(stdout, "Ignoring middle segment..\n");
+      }
+      else
+      {
+        if (vrbflg)
+          fprintf(stdout, "Estimating PSDs...\n");
+
+        /* compute uncalibrated PSDs */
+        psd_one = estimate_psd(status, segment_one, fMin, filter_length);
+        psd_two = estimate_psd(status, segment_two, fMin, filter_length);
+
+        if (vrbflg)
+          fprintf(stdout, "Generating inverse noise...\n");
+
+        /* compute inverse calibrate PSDs */
+        inv_psd_one = inverse_noise(status, psd_one, response_one);
+        inv_psd_two = inverse_noise(status, psd_two, response_two);
+
+        /* sum over calibrated PSDs for average */
+        for (i = 0; i < filter_length; i++)
+        {
+          cal_psd_one->data[i] += 1. / inv_psd_one->data->data[i];
+          cal_psd_two->data[i] += 1. / inv_psd_two->data->data[i];
+        }
+      }
+    }
+
+    /* average calibrated PSDs and take inverse */
+    for (i = 0; i < filter_length; i++)
+    {
+      /* average */
+      if (!middle_segment_flag)
+      {
+        cal_psd_one->data[i] /= (REAL4)(segs_in_interval - 1);
+        cal_psd_two->data[i] /= (REAL4)(segs_in_interval - 1);
+      }
+      else
+      {
+        cal_psd_one->data[i] /= (REAL4)segs_in_interval;
+        cal_psd_two->data[i] /= (REAL4)segs_in_interval;
+      }
+      /* take inverse */
+      inv_psd_one->data->data[i] = 1. / cal_psd_one->data[i];
+      inv_psd_two->data->data[i] = 1. / cal_psd_two->data[i];
+    }
+
+    if (vrbflg)
+      fprintf(stdout, "Generating optimal filter...\n");
+
+    /* build optimal filter */
+    opt_filter = optimal_filter(status, overlap, omega, inv_psd_one, \
+        inv_psd_two, window, &sigma);
+
+    if (vrbflg)
+    {
+      fprintf(stdout, "Analysing segment at GPS %d\n", \
+          analysis_epoch.gpsSeconds);
+    }
+
+    /* cut analysis segment from full series */
+    segment_one = cut_time_series(status, series_one, analysis_epoch, \
+        segmentDuration);
+    segment_two = cut_time_series(status, series_two, analysis_epoch, \
+        segmentDuration);
+
+    if (vrbflg)
+      fprintf(stdout, "Performing zero pad and FFT...\n");
+
+    /* zero pad and fft */
+    zero_pad_one = zero_pad_and_fft(status, segment_one, delta_f, \
+        segment_length + 1, window);
+    zero_pad_two = zero_pad_and_fft(status, segment_two, delta_f, \
+        segment_length + 1, window);
+
+    if (vrbflg)
+      fprintf(stdout, "Calculating cross correlation spectrum...\n");
+
+    /* get response functions for analysis segments */
+    response_one = generate_response(status, ifoOne, calCacheOne, \
+        analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
+        calibOffset);
+    response_two = generate_response(status, ifoTwo, calCacheTwo, \
+        analysis_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
+        calibOffset);
+
+    /* calculate cc spectrum */
+    cc_spectra = cc_spectrum(status, zero_pad_one, zero_pad_two, \
+        response_one, response_two, opt_filter);
+
+    if (cc_spectra_flag)
+    {
+      /* save out cc spectra as frame */
+      if (vrbflg)
+        fprintf(stdout, "Saving ccSpectra to frame...\n");
+      write_ccspectra_frame(cc_spectra, ifoOne, ifoTwo, \
+          analysis_epoch, segmentDuration);
+    }
+      
+    /* cc statistic */
+    y = cc_statistic(cc_spectra);
+
+    /* display results */
+    if (vrbflg)
+    {
+      fprintf(stdout, "Interval %d\n", j + 1);
+      fprintf(stdout, "  GPS time  = %d\n", analysis_epoch.gpsSeconds);
+      fprintf(stdout, "  y         = %e\n", y);
+      fprintf(stdout, "  sigma     = %e\n", sigma);
+    }
+
+    /* allocate memory for table */
+    if (!stochHead)
+    {
+      stochHead = thisStoch = (StochasticTable *) \
+                  LALCalloc(1, sizeof(StochasticTable));
+    }
+    else
+    {
+      thisStoch = thisStoch->next = (StochasticTable *) \
+                  LALCalloc(1, sizeof(StochasticTable));
+    }
+
+    /* populate columns */
+    LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
+    LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
+    LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
+    LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
+    thisStoch->start_time.gpsSeconds = analysis_epoch.gpsSeconds;
+    thisStoch->start_time.gpsNanoSeconds = analysis_epoch.gpsNanoSeconds;
+    thisStoch->duration.gpsSeconds = segmentDuration;
+    thisStoch->duration.gpsNanoSeconds = 0;
+    thisStoch->f_min = fMin;
+    thisStoch->f_max = fMax;
+    thisStoch->cc_stat = y;
+    thisStoch->cc_sigma = sigma;
+  }
+
+  /* clean up */
+  XLALDestroyREAL4Vector(cal_psd_one);
+  XLALDestroyREAL4Vector(cal_psd_two);
+  XLALDestroyREAL4TimeSeries(segment_one);
+  XLALDestroyREAL4TimeSeries(segment_two);
+  XLALDestroyCOMPLEX8FrequencySeries(response_one);
+  XLALDestroyCOMPLEX8FrequencySeries(response_two);
+  XLALDestroyREAL4FrequencySeries(psd_one);
+  XLALDestroyREAL4FrequencySeries(psd_two);
+  XLALDestroyREAL4FrequencySeries(inv_psd_one);
+  XLALDestroyREAL4FrequencySeries(inv_psd_two);
+  XLALDestroyREAL4FrequencySeries(opt_filter);
+  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_one);
+  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_two);
+  XLALDestroyCOMPLEX8FrequencySeries(cc_spectra);
+
+  return(stochHead);
+}
+
 /* display usage information */
 static void display_usage()
 {
@@ -2028,12 +2298,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticTable *stochHead = NULL;
   StochasticTable *thisStoch = NULL;
 
-  /* counters */
-  INT4 i, j, k;
-
-  /* results */
-  REAL8 y;
-  REAL8 sigmaTheo;
+  /* counter */
+  INT4 i;
 
   /* input data */
   REAL4TimeSeries *seriesOne;
@@ -2042,40 +2308,22 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* timing */
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
-  LIGOTimeGPS gpsSegStartTime;
-  LIGOTimeGPS gpsAnalysisTime;
 
   /* segments */
   INT4 numSegments;
   INT4 duration, durationEff, extrasec;
-  INT4 segsInInt, numIntervals, segMiddle;
+  INT4 segsInInt, segMiddle;
   INT4 segmentLength;
-  INT4 segmentShift;
   INT4 padData;
-  REAL4TimeSeries *segmentOne = NULL;
-  REAL4TimeSeries *segmentTwo = NULL;
 
   /* window */
   REAL4Window *dataWindow;
-
-  /* response functions */
-  COMPLEX8FrequencySeries *responseOne = NULL;
-  COMPLEX8FrequencySeries *responseTwo = NULL;
-  INT4 respLength;
-  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* PSDs */
   REAL8 deltaF;
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
-  REAL4FrequencySeries *psdOne = NULL;
-  REAL4FrequencySeries *psdTwo = NULL;
-  REAL4Vector *calPSDOne, *calPSDTwo;
-
-  /* calibrated inverse noise*/
-  REAL4FrequencySeries *calInvPSDOne = NULL;
-  REAL4FrequencySeries *calInvPSDTwo = NULL;
 
   /* overlap reduction function */
   REAL4FrequencySeries *overlap;
@@ -2088,13 +2336,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* gravitational wave spectrum */
   REAL4FrequencySeries *omegaGW;
-
-  /* zero pad and fft */
-  COMPLEX8FrequencySeries *zeroPadOne = NULL;
-  COMPLEX8FrequencySeries *zeroPadTwo = NULL;
-
-  /* cross correlation spectrum */
-  COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
   /* error handler */
   status.statusPtr = NULL;
@@ -2226,241 +2467,27 @@ INT4 main(INT4 argc, CHAR *argv[])
     XLALDestroyREAL4FrequencySeries(mask);
   }
 
-  /* calculate number of intervals, and required shift to get to next
-   * interval */
-  if (overlap_hann_flag)
-  {
-    numIntervals = (2 * (numSegments - 2)) - 1;
-    segmentShift = segmentDuration / 2;
-  }
-  else
-  {
-    numIntervals = numSegments - 2;
-    segmentShift = segmentDuration;
-  }
-
-  /* allocate memory for calibrated PSDs */
-  calPSDOne = XLALCreateREAL4Vector(filterLength);
-  calPSDTwo = XLALCreateREAL4Vector(filterLength);
-
-  /* set length of response functions */
-  respLength = (UINT4)(fMax / deltaF) + 1;
-
-  if (vrbflg)
-    fprintf(stdout, "Starting analysis loop...\n");
-
-  /* loop over intervals */
-  for (j = 0; j < numIntervals; j++)
-  {	
-    /* initialize average PSDs */
-    for (i = 0; i < filterLength; i++)
-    {
-      calPSDOne->data[i] = 0;
-      calPSDTwo->data[i] = 0;
-    }
-
-    /* loop over segments in the interval */
-    for (k = 0; k < segsInInt; k++)
-    {
-      /* set segment start time */
-      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
-            (REAL8)((j * segmentShift) + (k * segmentDuration))), &status);
-
-      /* is this the analysis segment? */
-      if (k == segMiddle)
-        gpsAnalysisTime = gpsSegStartTime;
-
-      if (vrbflg)
-      {
-        fprintf(stdout, "Request data at GPS time %d\n", \
-            gpsSegStartTime.gpsSeconds);
-      }
-
-      /* cut segments from series */
-      segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
-          segmentDuration);
-      segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
-          segmentDuration);
-
-      /* compute response */
-      responseOne = generate_response(&status, ifoOne, calCacheOne, \
-          gpsSegStartTime, fMin, deltaF, countPerAttoStrain, filterLength, \
-          calibOffset);
-      responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-          gpsSegStartTime, fMin, deltaF, countPerAttoStrain, filterLength, \
-          calibOffset);
-
-      /* check if on middle segment and if we want to include this in
-       * the analysis */
-      if ((k == segMiddle) && (!middle_segment_flag))
-      {
-        if (vrbflg)
-          fprintf(stdout, "Ignoring middle segment..\n");
-      }
-      else
-      {
-        if (vrbflg)
-          fprintf(stdout, "Estimating PSDs...\n");
-
-        /* compute uncalibrated PSDs */
-        psdOne = estimate_psd(&status, segmentOne, fMin, filterLength);
-        psdTwo = estimate_psd(&status, segmentTwo, fMin, filterLength);
-
-        if (vrbflg)
-          fprintf(stdout, "Generating inverse noise...\n");
-
-        /* compute inverse calibrate PSDs */
-        calInvPSDOne = inverse_noise(&status, psdOne, responseOne);
-        calInvPSDTwo = inverse_noise(&status, psdTwo, responseTwo);
-
-        /* sum over calibrated PSDs for average */
-        for (i = 0; i < filterLength; i++)
-        {
-          calPSDOne->data[i] += 1. / calInvPSDOne->data->data[i];
-          calPSDTwo->data[i] += 1. / calInvPSDTwo->data->data[i];
-        }
-      }
-    }
-
-    /* average calibrated PSDs and take inverse */
-    for (i = 0; i < filterLength; i++)
-    {
-      /* average */
-      if (!middle_segment_flag)
-      {
-        calPSDOne->data[i] /= (REAL4)(segsInInt - 1);
-        calPSDTwo->data[i] /= (REAL4)(segsInInt - 1);
-      }
-      else
-      {
-        calPSDOne->data[i] /= (REAL4)segsInInt;
-        calPSDTwo->data[i] /= (REAL4)segsInInt;
-      }
-      /* take inverse */
-      calInvPSDOne->data->data[i] = 1. / calPSDOne->data[i];
-      calInvPSDTwo->data->data[i] = 1. / calPSDTwo->data[i];
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Generating optimal filter...\n");
-
-    /* build optimal filter */
-    optFilter = optimal_filter(&status, overlap, omegaGW, calInvPSDOne, \
-        calInvPSDTwo, dataWindow, &sigmaTheo);
-
-    if (vrbflg)
-    {
-      fprintf(stdout, "Analysing segment at GPS %d\n", \
-          gpsAnalysisTime.gpsSeconds);
-    }
-
-    /* cut analysis segment from full series */
-    segmentOne = cut_time_series(&status, seriesOne, gpsAnalysisTime, \
-        segmentDuration);
-    segmentTwo = cut_time_series(&status, seriesTwo, gpsAnalysisTime, \
-        segmentDuration);
-
-    if (vrbflg)
-      fprintf(stdout, "Performing zero pad and FFT...\n");
-
-    /* zero pad and fft */
-    zeroPadOne = zero_pad_and_fft(&status, segmentOne, deltaF, \
-        segmentLength + 1, dataWindow);
-    zeroPadTwo = zero_pad_and_fft(&status, segmentTwo, deltaF, \
-        segmentLength + 1, dataWindow);
-
-    if (vrbflg)
-      fprintf(stdout, "Calculating cross correlation spectrum...\n");
-
-    /* get response functions for analysis segments */
-    responseOne = generate_response(&status, ifoOne, calCacheOne, \
-        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength, \
-        calibOffset);
-    responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength, \
-        calibOffset);
-
-    /* calculate cc spectrum */
-    ccSpectrum = cc_spectrum(&status, zeroPadOne, zeroPadTwo, \
-        responseOne, responseTwo, optFilter);
-
-    if (cc_spectra_flag)
-    {
-      /* save out cc spectra as frame */
-      if (vrbflg)
-        fprintf(stdout, "Saving ccSpectra to frame...\n");
-      write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
-          gpsAnalysisTime, segmentDuration);
-    }
-      
-    /* cc statistic */
-    y = cc_statistic(ccSpectrum);
-
-    /* display results */
-    if (vrbflg)
-    {
-      fprintf(stdout, "Interval %d\n", j + 1);
-      fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
-      fprintf(stdout, "  y         = %e\n", y);
-      fprintf(stdout, "  sigmaTheo = %e\n", sigmaTheo);
-    }
-
-    /* allocate memory for table */
-    if (!stochHead)
-    {
-      stochHead = thisStoch = (StochasticTable *) \
-                  LALCalloc(1, sizeof(StochasticTable));
-    }
-    else
-    {
-      thisStoch = thisStoch->next = (StochasticTable *) \
-                  LALCalloc(1, sizeof(StochasticTable));
-    }
-
-    /* populate columns */
-    LALSnprintf(thisStoch->ifo_one, LIGOMETA_IFO_MAX, ifoOne);
-    LALSnprintf(thisStoch->ifo_two, LIGOMETA_IFO_MAX, ifoTwo);
-    LALSnprintf(thisStoch->channel_one, LIGOMETA_CHANNEL_MAX, channelOne);
-    LALSnprintf(thisStoch->channel_two, LIGOMETA_CHANNEL_MAX, channelTwo);
-    thisStoch->start_time.gpsSeconds = gpsAnalysisTime.gpsSeconds;
-    thisStoch->start_time.gpsNanoSeconds = gpsAnalysisTime.gpsNanoSeconds;
-    thisStoch->duration.gpsSeconds = segmentDuration;
-    thisStoch->duration.gpsNanoSeconds = 0;
-    thisStoch->f_min = fMin;
-    thisStoch->f_max = fMax;
-    thisStoch->cc_stat = y;
-    thisStoch->cc_sigma = sigmaTheo;
-  }
+  /* perform search */
+  stochHead = stochastic_search(&status, seriesOne, seriesTwo, overlap, \
+      omegaGW, dataWindow, numSegments, filterLength, segsInInt, \
+      segmentLength);
 
   /* save out xml table */
   save_xml_file(&status, accuracy, outputPath, baseName, stochHead);
 
   /* cleanup */
-  XLALDestroyREAL4TimeSeries(segmentOne);
-  XLALDestroyREAL4TimeSeries(segmentTwo);
-  XLALDestroyREAL4FrequencySeries(psdOne);
-  XLALDestroyREAL4FrequencySeries(psdTwo);
-  XLALDestroyREAL4Vector(calPSDOne);
-  XLALDestroyREAL4Vector(calPSDTwo);
-  XLALDestroyCOMPLEX8FrequencySeries(responseOne);
-  XLALDestroyCOMPLEX8FrequencySeries(responseTwo);
   XLALDestroyREAL4FrequencySeries(optFilter);
-  XLALDestroyREAL4FrequencySeries(calInvPSDOne);
-  XLALDestroyREAL4FrequencySeries(calInvPSDTwo);
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
-  XLALDestroyCOMPLEX8FrequencySeries(zeroPadOne);
-  XLALDestroyCOMPLEX8FrequencySeries(zeroPadTwo);
-  XLALDestroyCOMPLEX8FrequencySeries(ccSpectrum);
 
   /* free memory used in the stochastic xml table */
-  while (stochHead)
+  while(stochHead)
   {
     thisStoch = stochHead;
-    stochHead = stochHead->next;
-    LALFree(thisStoch);
-  }
+		stochHead = stochHead->next;
+		LALFree(thisStoch);
+	}
 
   /* free calloc'd memory */
   if (strcmp(frameCacheOne, frameCacheTwo))
