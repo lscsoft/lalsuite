@@ -28,7 +28,8 @@ LALInspiralWave3Templates.c\
 LALInspiralDerivatives.c\
 LALRungeKutta4.c\
 LALEOBWaveform.c\
-LALEOBWaveformTemplates.c
+LALEOBWaveformTemplates.c\
+LALUSPA.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

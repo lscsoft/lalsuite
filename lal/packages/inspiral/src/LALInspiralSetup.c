@@ -283,7 +283,7 @@ void LALInspiralSetup (LALStatus *status,
   ak->pta4 = 9.275495/14.450688 + 2.84875*ieta*eta/2.58048 
            + 1855.*ieta*eta*eta/2048.;
   ak->pta5 = -(3.8645/17.2032 + 15./2048.*ieta*eta) * LAL_PI;
-  ak->pta6 =  (83.1032450749357/5.6782522275840 - 53./40.*LAL_PI*LAL_PI 
+  ak->pta6 =  (83.1032450749357/5.7682522275840 - 53./40.*LAL_PI*LAL_PI 
            - 107./56. * ak->EulerC + (-123.292747421/4.161798144 
            + 2.255/2.048 *LAL_PI*LAL_PI + 385./48. * ak->lambda 
            - 55./16.* ak->theta) * ieta * eta + 1.54565/18.35008 * ieta*eta*eta 
@@ -308,6 +308,7 @@ void LALInspiralSetup (LALStatus *status,
 
   ak->fta7 = (-1.88516689/4.33520640 - 2.8099/5.7344 * ieta*eta
            + 1.22659/12.90240 * ieta*eta*eta)*LAL_PI;
+  ak->ftl6 = 107./280.;
 
 /* Initialize members of the structures which get fed into 
    phasing2() and frequency2(). 

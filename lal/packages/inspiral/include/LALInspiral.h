@@ -250,7 +250,7 @@ typedef struct {
    double tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6; 
    double pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6; 
    double ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6; 
-   double ftaN, fta2, fta3, fta4, fta5, fta6, fta7; 
+   double ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
 
    double samplingrate, samplinginterval;
    double eta, totalmass, m1, m2;

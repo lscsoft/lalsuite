@@ -50,7 +50,7 @@ brackets):
 
 #include <stdio.h>
 #include <lal/LALInspiral.h>
-
+#include <lal/RealFFT.h>
 INT4 lalDebugLevel=1;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
@@ -59,22 +59,22 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
   int i=0;
   FILE *outfile1;
 
-  outfile1=fopen("wave1.dat","w");
+  outfile1=fopen("wave1.dat","a");
 
   do 
      fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
-
   while (n-++i); 
+
   fprintf(outfile1,"&\n");
   fclose(outfile1);
 }
 
 
-int main ( void ) {
-   REAL4Vector signal1, signal2;
-   InspiralTemplate params;
-   double dt;
+int main () {
+   static REAL4Vector *signal1, *signal2;
    static LALStatus status;
+   InspiralTemplate params;
+   REAL8 dt;
    UINT4 n;
 
    params.ieta=1; 
@@ -84,43 +84,43 @@ int main ( void ) {
    params.startPhase=0.83038459; 
    params.fLower=40.0; 
    params.fCutoff=1000.00;
-   params.tSampling=4000.0;
+   params.tSampling=2048.0;
    params.signalAmplitude=1.0;
-   params.nStartPad=1000;
+   params.nStartPad=8000;
    params.nEndPad=1000;
    params.order=6;
-   params.approximant=EOB;
+   params.approximant=TaylorT1;
    params.massChoice=m1Andm2;
    params.OmegaS=0.;
    params.Theta=0.;
-
-   LALInspiralWaveLength (&status, &n, params);
-/*
-   CHECKSTATUSPTR(&status);
-*/
-   LALInspiralParameterCalc (&status, &params);
-/*
-   CHECKSTATUSPTR(&status);
-*/
-   n = 65536;
-   fprintf(stderr, "signal length=%d\n", n);
-   signal1.length = signal2.length = n;
-   signal1.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
-   signal2.data = (REAL4*) LALMalloc(sizeof(REAL4)*n);
-/*
-   LALInspiralWave(&status, &signal1, &params);
-*/
-   LALInspiralWaveTemplates (&status, &signal1, &signal2, &params);
-/*
-   CHECKSTATUSPTR(&status);
-*/
    dt = 1./params.tSampling;
-   printf_timeseries(signal1.length, signal1.data, dt, params.startTime);
+
+   LALInspiralWaveLength(&status, &n, params);
+   LALInspiralParameterCalc(&status, &params);
+   fprintf(stderr, "signal length=%d\n", n);
+   LALCreateVector(&status, &signal1, n);
+   LALCreateVector(&status, &signal2, n);
+   LALInspiralWave(&status, signal1, &params);
+   LALInspiralWaveTemplates (&status, signal1, signal2, &params);
+
+   if (params.approximant==TaylorF2)
+   {
+      static RealFFTPlan *fwdp,*revp;
 /*
-   printf_timeseries(signal2.length, signal2.data, dt, params.startTime);
+      LALCreateForwardRealFFTPlan(&status, &fwdp, n, 0);
 */
-   if (signal1.data != NULL) LALFree(signal1.data);
-   if (signal2.data != NULL) LALFree(signal2.data);
+      LALCreateReverseRealFFTPlan(&status, &revp, n, 0);
+      LALREAL4VectorFFT(&status, signal2, signal1, revp);
+/*
+      LALDestroyRealFFTPlan (&status, &fwdp);
+*/
+      LALDestroyRealFFTPlan (&status, &revp);
+   }
+   printf_timeseries(signal1->length, signal1->data, dt, params.startTime);
+   printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
+
+   LALDestroyVector(&status, &signal1);
+   LALDestroyVector(&status, &signal2);
    LALCheckMemoryLeaks();
 
    return 0;

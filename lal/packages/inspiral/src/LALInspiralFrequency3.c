@@ -234,7 +234,7 @@ void LALInspiralFrequency3_6PN (
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
-             + ak->fta6*theta6);
+             + (ak->fta6 + ak->ftl6*log(2.*theta))*theta6);
   RETURN(status);
 }
 
@@ -266,7 +266,7 @@ void LALInspiralFrequency3_7PN (
              + ak->fta3*theta3
              + ak->fta4*theta4
              + ak->fta5*theta5
-             + ak->fta6*theta6
+             + (ak->fta6 + ak->ftl6*log(theta))*theta6
              + ak->fta7*theta7);
   RETURN(status);
 }

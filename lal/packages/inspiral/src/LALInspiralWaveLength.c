@@ -49,9 +49,10 @@ ChooseModel
 NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveLengthCP"> */
-void LALInspiralWaveLength(LALStatus       *status, 
-                           UINT4            *length,
-                           InspiralTemplate params) 
+void LALInspiralWaveLength(
+   LALStatus        *status, 
+   UINT4            *length,
+   InspiralTemplate params) 
 { /* </lalVerbatim>  */
 
    INT4 ndx;

@@ -28,9 +28,8 @@ t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{tofv}
 \end{equation}
 
-\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$, $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and
-$\mathcal{F}(v)$.
-
+\texttt{LALInspiralVelocity} calculates $v$, given $t(v)$, 
+$t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 
 \subsubsection*{Algorithm}
 
@@ -73,15 +72,14 @@ void LALInspiralVelocity(LALStatus *status,
   rootIn.xmin = ak->v0/2.;
   rootIn.xacc = 1.0e-8;
 
-
-
   funcParams = (void *) ak;
 
 
-     if (ak->t==ak->t0) {
+  if (ak->t==ak->t0) 
+  {
      *v = ak->v0;
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+     DETATCHSTATUSPTR(status);
+     RETURN(status);
   }
 
   LALDBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
@@ -89,6 +87,4 @@ void LALInspiralVelocity(LALStatus *status,
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
-
 }

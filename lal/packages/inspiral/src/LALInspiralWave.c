@@ -161,8 +161,11 @@ void LALInspiralWave(LALStatus *status,
            LALEOBWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
       break;
-      case TaylorF1:
       case TaylorF2:
+           LALUSPA(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+      break;
+      case TaylorF1:
       case PadeF1:
       case INSPA:
       case IRSPA:
