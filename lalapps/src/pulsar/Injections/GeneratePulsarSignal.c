@@ -33,8 +33,6 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 
 /*----------------------------------------------------------------------*/
 /* prototypes for internal functions */
-static void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
-static void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 static void write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set);
 static void write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set);
 /*----------------------------------------------------------------------*/
@@ -201,8 +199,8 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarS
   doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   TRY (LALFloatToGPS (stat->statusPtr, &ssb, &doubleTime), stat);
 
-  printf ("\nDEBUG: checking  ConvertGPS2SSB(): difference = %d s, %d ns\n", 
-	  ssb.gpsSeconds - emit.te.gpsSeconds, ssb.gpsNanoSeconds - emit.te.gpsNanoSeconds );
+  printf ("\nDEBUG: checking  ConvertGPS2SSB(): difference = %e s\n", 
+	  1.0*(ssb.gpsSeconds - emit.te.gpsSeconds)+ (ssb.gpsNanoSeconds - emit.te.gpsNanoSeconds)*1.0e-9);
 
   *SSBout = emit.te;
 
@@ -375,7 +373,7 @@ PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname)
 void
 write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set)
 {
-  REAL4 timestamp; 
+  REAL8 timestamp; 
   UINT4 i;
 
 
@@ -393,7 +391,7 @@ write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set)
 
   for( i = 0; i < series->data->length; i++)
     {
-      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
+      fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
       timestamp += series->deltaT;
     }
 
@@ -404,7 +402,7 @@ write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set)
 void
 write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set)
 {
-  REAL4 timestamp; 
+  REAL8 timestamp; 
   UINT4 i;
   /* Print set header. */
   fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);

@@ -103,6 +103,8 @@ typedef struct {
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
 void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
+void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
+void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

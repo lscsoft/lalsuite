@@ -344,6 +344,7 @@ int write_timeseries(LALStatus *, int iSFT);
 int freemem(LALStatus *);
 int window_data(LALStatus *);
 int correct_phase(LALStatus *, int iSFT);
+void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -544,6 +545,7 @@ int main(int argc,char *argv[]) {
   {
     PulsarSignalParams params;
     static REAL4TimeSeries Tseries;
+    LIGOTimeGPS time1, time2;
 
     params.pulsar.TRefSSB = SSBpulsarparams;
     params.pulsar.Alpha = genTayParams.position.longitude;
@@ -556,13 +558,21 @@ int main(int argc,char *argv[]) {
     params.pulsar.f = genTayParams.f;
     params.orbit = NULL;
     params.transferFunction = cwDetector.transfer;
-    params.site = &(baryinput.site);
+    params.site = &(Detector);
     params.ephemerides = edat;
 
     params.startTimeGPS = timestamps[0]; 
     params.duration = timestamps[nTsft-1].gpsSeconds - timestamps[0].gpsSeconds + Tsft;
     params.samplingRate = 2.0 * Band;		
     params.fHeterodyne = fmin;
+
+
+    compute_one_SSB(&status, &time1, &timestamps[0]);
+    ConvertGPS2SSB (&status, &time2, timestamps[0], &params);
+
+    printf ("\nDEBUG: difference SSB-time: %e s\n", 
+	    1.0*(time1.gpsSeconds - time2.gpsSeconds) + (time1.gpsNanoSeconds - time2.gpsNanoSeconds)*1e-9 );
+
 
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
@@ -741,9 +751,6 @@ void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin)
   doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   LALFloatToGPS(status, &ssb, &doubleTime);
   
-  
-
-
   *ssbout=ssb;
   return;
 }
