@@ -298,6 +298,7 @@ LALBurstInjectSignals(
   BurstParamStruc    burstParam;
   REAL4TimeSeries    signal;
   SimBurstTable     *simBurst=NULL;
+  LALDetector       *tmpDetector=NULL,*nullDetector=NULL;
 
   INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );
@@ -324,7 +325,7 @@ LALBurstInjectSignals(
   detector.transfer->f0 = resp->f0;
   detector.transfer->deltaF = resp->deltaF;
 
-  detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+  tmpDetector = detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
   /* set the detector site */
   switch ( series->name[0] )
   {
@@ -339,6 +340,7 @@ LALBurstInjectSignals(
     default:
       LALFree( detector.site );
       detector.site = NULL;
+      tmpDetector = NULL;
       LALWarning( stat, "Unknown detector site, computing plus mode "
           "waveform with no time delay" );
       break;
@@ -410,6 +412,12 @@ LALBurstInjectSignals(
     {
       burstParam.system = COORDINATESYSTEM_HORIZON;
     }
+    else if ( !( strcmp( simBurst->coordinates, "ZENITH" ) ) )
+    {
+      /* set coordinate system for completeness */
+      burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+      detector.site = NULL;
+    }
     else if ( !( strcmp( simBurst->coordinates, "GEOGRAPHIC" ) ) )
     {
       burstParam.system = COORDINATESYSTEM_GEOGRAPHIC;
@@ -457,6 +465,9 @@ LALBurstInjectSignals(
     LALFree( waveform.a );   waveform.a = NULL;
     LALFree( waveform.f );   waveform.f = NULL;
     LALFree( waveform.phi );  waveform.phi = NULL;
+
+    /* reset the detector site information in case it changed */
+    detector.site = tmpDetector;
 
     /* move on to next one */
     simBurst = simBurst->next;
