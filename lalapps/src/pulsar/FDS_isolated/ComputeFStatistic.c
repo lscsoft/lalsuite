@@ -247,7 +247,7 @@ extern "C" {
   void EstimateFLines(LALStatus *status);
   void NormaliseSFTDataRngMdn (LALStatus *status);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
-  int writeFLines(INT4 *maxIndex, int *bytes_written);
+  int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum);
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
   int compare(const void *ip, const void *jp);
   INT4 writeFaFb(INT4 *maxIndex);
@@ -258,7 +258,7 @@ extern "C" {
   static void swap4(char *location);
   static void swap8(char *location);
   void swapheader(struct headertag *thisheader);
-  void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
+  void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
   void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
   void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 #ifdef FILE_AMCOEFFS
@@ -348,7 +348,8 @@ int main(int argc,char *argv[])
   FILE *fpOut = NULL;
 
   UINT4 loopcounter;		/* Checkpoint-counters for restarting checkpointed search */
-  long fstat_bytecounter;	 	
+  long fstat_bytecounter;
+  UINT4 checksum=0;             /* Checksum of fstats file contents */
 
   lalDebugLevel = 0 ;  
   vrbflg = 1;	/* verbose error-messages */
@@ -499,10 +500,11 @@ int main(int argc,char *argv[])
 
   loopcounter = 0;
   fstat_bytecounter = 0;
-
+  checksum =0;
+  
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
-    LAL_CALL (getCheckpointCounters( stat, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), stat); 
+    LAL_CALL (getCheckpointCounters( stat, &loopcounter, &checksum, &fstat_bytecounter, Fstatsfilename, ckp_fname ), stat); 
 
 
   /* allow for checkpointing: 
@@ -563,7 +565,7 @@ int main(int argc,char *argv[])
 		LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
 		return COMPUTEFSTATC_ECHECKPOINT;
 	      }
-	      if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, fstat_bytecounter) < 0) {
+	      if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, checksum, fstat_bytecounter) < 0) {
 		LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
 		return COMPUTEFSTATC_ECHECKPOINT;
 	      }
@@ -650,7 +652,7 @@ int main(int argc,char *argv[])
 	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	    
 	      /*  for every cluster writes the information about it in file Fstats */
-	      if (writeFLines(maxIndex, &bytesWritten) )
+	      if (writeFLines(maxIndex, &bytesWritten, &checksum))
 		{
 		  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
 		  return COMPUTEFSTAT_EXIT_WRITEFSTAT;
@@ -1282,12 +1284,14 @@ void CreateDemodParams (LALStatus *status)
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex, int *bytes_written)
+int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
 {
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2,mean,var,std,R,fr;
   INT4 imax;
   int numBytes = 0;
+  unsigned char tmpline[1024];
+  UINT4 localchecksum=*checksum;
 
   log2=medianbias;
  
@@ -1327,21 +1331,38 @@ int writeFLines(INT4 *maxIndex, int *bytes_written)
     fr=uvar_Freq + imax*GV.dFreq;
 
     /*    print the output */
-    if (fpstat)
-      {
-	numBytes += fprintf(fpstat, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
-			  fr, Alpha, Delta, N, mean, std, max);
-
-	if (numBytes <= 0) {
-	  fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
-	  return 4;
-	}
+    if (fpstat) {
+      int i;
+      int howmany2=0;
+      int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
+			 fr, Alpha, Delta, N, mean, std, max);
+      
+      if (howmany <= 0) {
+	fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
+	return 4;
       }
-
+      
+      howmany2=fwrite(tmpline, 1, howmany, fpstat);
+      
+      if (howmany2!=howmany) {
+	fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
+	return 4;
+      }
+      
+      /* update bytecount */
+      numBytes+=howmany;
+      
+      /* update checksum sum */
+      for (i=0; i<howmany; i++)
+	localchecksum+=(int)tmpline[i];
+      
+    }
+    
   }/*  end i loop over different clusters */
-
+  
   /* return total number of bytes written into fstats-file */
   *bytes_written = numBytes;
+  *checksum=localchecksum;
 
   return 0;
 
@@ -2843,22 +2864,31 @@ void sighandler(int sig){
 
  *  The name of the checkpoint-file is <fname>.ckp
  *  @param[OUT] loopcounter	number of completed loops (refers to main-loop in main())
+ *  @param[OUT] checksum        checksum of file (up the bytecounter bytes)
  *  @param[OUT] bytecounter	bytes nominally written to fstats file (for consistency-check)
  *  @param[IN]  fstat_fname	Name of Fstats-file. 
  */
 void
-getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname)
+getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname)
 {
   FILE *fp;
   UINT4 lcount; 	/* loopcounter */
   long bcount;		/* and bytecounter read from ckp-file */
   long flen;
   char lastnewline='\0';
-
+  UINT4 cksum;           /* as read for .ckp file */
+  UINT4 computecksum;    /* as computed from contents of Fstats file */
+  int i;
+  int savelaldebuglevel=lalDebugLevel;
+  
   INITSTATUS( stat, "getChkptCounters", rcsid );
 
   ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( ckp_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+#if 0
+  lalDebugLevel=1;
+#endif
 
   /* if anything goes wrong in here: start main-loop from beginning  */
   *loopcounter = 0;	
@@ -2871,9 +2901,9 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
     RETURN(stat);
   }
   
-  /* try reading checkpoint-counters: two INT's loopcounter and fstat_bytecounter */
+  /* try reading checkpoint-counters: three INT's loopcounter, checksum, and fstat_bytecounter */
   if (lalDebugLevel) LALPrintError ("found! \nTrying to read checkpoint counters from it...");
-  if ( 3 != fscanf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &bcount, &lastnewline) || lastnewline!='\n') {
+  if ( 4 != fscanf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &cksum, &bcount, &lastnewline) || lastnewline!='\n') {
     if (lalDebugLevel) LALPrintError ("failed! \nStarting main-loop from beginning.\n");
     goto exit;
   }
@@ -2885,6 +2915,8 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
     if (lalDebugLevel) LALPrintError ("none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
+
+
   /* seek to end of fstats file */
   if (fseek( fp, 0, SEEK_END)) {	/* something gone wrong seeking .. */
     if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
@@ -2904,11 +2936,35 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
     goto exit;
   }
   
+  /* compute checksum */
+  computecksum=0;
+  if (fseek( fp, 0, SEEK_SET)) {	/* something gone wrong seeking .. */
+    if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    goto exit;
+  }
+  for (i=0; i<bcount; i++) {
+    int onechar=getc(fp);
+    if (onechar==EOF)
+      goto exit;
+    else
+      computecksum+=onechar;
+  }
+  if (computecksum!=cksum) {
+    if (lalDebugLevel) 
+      LALPrintError ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
+    goto exit;
+  }
+
   if (lalDebugLevel) LALPrintError ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
 
   *loopcounter = lcount;
   *bytecounter = bcount;
-  
+  *checksum=cksum;
+
+#if 0
+  lalDebugLevel=savelaldebuglevel;
+#endif
+
  exit:
   fclose( fp );
   RETURN(stat);
