@@ -292,6 +292,14 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			options->maxSnr = atof(optarg);
 			break;
 
+			case 'q':
+			/*
+			 * only events with time after this are selected
+			 */
+			options->trigStartTimeFlag = TRUE;
+			options->trigStartTime = atoi(optarg);
+			break;
+
 			case 'r':
 			/*
 			 * only events with time before this are selected
