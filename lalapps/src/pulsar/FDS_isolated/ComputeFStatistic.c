@@ -91,17 +91,12 @@ int main(int argc,char *argv[])
   }
 #endif
 	
-  scanInit.Alpha = GV.Alpha;
-  scanInit.AlphaBand = GV.AlphaBand;
   scanInit.dAlpha = GV.dAlpha;
-  scanInit.Delta = GV.Delta;
-  scanInit.DeltaBand = GV.DeltaBand;
   scanInit.dDelta = GV.dDelta;
 
   /* use metric-grid? and if so, for what maximal mismatch? */
   scanInit.useMetric = GV.useMetric;
   scanInit.metricMismatch = GV.metricMismatch;
-  scanInit.flipTiling = GV.flipTiling;
 
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
@@ -111,9 +106,28 @@ int main(int argc,char *argv[])
   if (GV.FreqBand > 0) scanInit.fmax += GV.FreqBand;
   scanInit.Detector = GV.Detector;
 
+  /* parse (Alpha+AlphaBand, Delta+DeltaBand) into a sky-region string */
+  {
+    REAL8 a, d, Da, Dd;
+    REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
+    a = GV.Alpha;
+    d = GV.Delta;
+    Da = GV.AlphaBand + eps;
+    Dd = GV.DeltaBand + eps;
+
+    scanInit.skyRegion = LALMalloc (512); /* should be enough for 4 points... */
+    sprintf (scanInit.skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+	     a, d, 
+	     a + Da, d, 
+	     a + Da, d + Dd,
+	     a, d + Dd );
+  }
 
 
   InitDopplerScan ( &status, &thisScan, scanInit);
+
+  LALFree (scanInit.skyRegion);
+
   if (status.statusCode != 0)
     {
       REPORTSTATUS( &status );
@@ -1131,7 +1145,6 @@ INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   GV.useMetric = LAL_METRIC_NONE;
   GV.metricMismatch = 0.02;
-  GV.flipTiling = 0;
   /* ---------------------------------------------------------------------- */
 
   while (1)
@@ -1161,13 +1174,12 @@ INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	  {"Fthreshold", 	required_argument, 0, 	'F'},
 	  {"useMetric", 	required_argument, 0, 	'M'},
 	  {"metricMismatch",	required_argument, 0, 	'X'},
-	  {"flipTiling", 	no_argument, 0, 	'x'},
 	  {"help", 		no_argument, 0, 	'h'},
 	  {"debug", 		required_argument, 0, 	'v'},
 	  {0, 0, 0, 0}
 	};
 
-      c = getopt_long(argc, argv, "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:pr:Ss:t:v:X:xy:z:", long_options, &option_index);
+      c = getopt_long(argc, argv, "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:pr:Ss:t:v:X:y:z:", long_options, &option_index);
 
       if (c == -1) 
 	break;
@@ -1263,10 +1275,6 @@ INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	  GV.metricMismatch = atof (optarg);
 	  break;
 	  
-	case 'x':
-	  GV.flipTiling = 1;
-	  break;
-	  
 	case 'v':
 	  lalDebugLevel = atoi (optarg);
 	  break;
@@ -1301,7 +1309,6 @@ INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	  fprintf(stdout,"\t --BaseName(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n");
 	  fprintf(stdout,"\t --useMetric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n");
 	  fprintf(stdout,"\t --metricMismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n");
-	  fprintf(stdout,"\t --flipTiling(-x)\t\tUse flipped coordinate order for tiling: {alpha,delta}\n");
 	  fprintf(stdout,"\t --debug(-v)\t\tINT2\tSet lalDebugLevel (Default=0)\n");
 	  fprintf(stdout,"\t --help(-h)\t\t\tPrint this message.\n");
 	  exit(0);

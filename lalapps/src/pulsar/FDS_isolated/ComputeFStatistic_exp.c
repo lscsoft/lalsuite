@@ -120,29 +120,46 @@ int main(int argc,char *argv[])
   }
 #endif
 	
-  scanInit.Alpha = GV.userInput.Alpha;
-  scanInit.AlphaBand = GV.userInput.AlphaBand;
   scanInit.dAlpha = GV.userInput.dAlpha;
-  scanInit.Delta = GV.userInput.Delta;
-  scanInit.DeltaBand = GV.userInput.DeltaBand;
   scanInit.dDelta = GV.userInput.dDelta;
 
   /* use metric-grid? and if so, for what maximal mismatch? */
   scanInit.useMetric = GV.userInput.useMetric;
   scanInit.metricMismatch = GV.userInput.metricMismatch;
-  scanInit.flipTiling = GV.userInput.flipTiling;
 
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
-  /*   scanInit.obsDuration = 36000; */
 
   scanInit.fmax  = GV.userInput.Freq;
   if (GV.userInput.FreqBand > 0) scanInit.fmax += GV.userInput.FreqBand;
   scanInit.Detector = GV.Detector;
 
-  scanInit.skyRegion = GV.userInput.skyRegion;
+  if (GV.userInput.skyRegion)
+    {
+      scanInit.skyRegion = LALMalloc (strlen (GV.userInput.skyRegion) + 1);
+      strcpy (scanInit.skyRegion, GV.userInput.skyRegion);
+    }
+  else	 /* parse (Alpha+AlphaBand, Delta+DeltaBand) into a sky-region string */
+    {
+      REAL8 a, d, Da, Dd;
+      REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
+      a = GV.userInput.Alpha;
+      d = GV.userInput.Delta;
+      Da = GV.userInput.AlphaBand + eps;
+      Dd = GV.userInput.DeltaBand + eps;
+
+      scanInit.skyRegion = LALMalloc (512); /* should be enough for 4 points... */
+      sprintf (scanInit.skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+	      a, d, 
+	      a + Da, d, 
+	      a + Da, d + Dd,
+	      a, d + Dd );
+    }
 
   InitDopplerScan ( &status, &thisScan, scanInit);
+  
+  LALFree (scanInit.skyRegion);
+  
   if (status.statusCode != 0)
     {
       REPORTSTATUS( &status );
@@ -2019,12 +2036,21 @@ ReadUserInput (int argc, char *argv[], UserInput *input)
       return 1;
     }      
 
-  if(input->Alpha > LAL_TWOPI)
+  /* don't allow negative bands (for safty in griding-routines) */
+  if ( (input->AlphaBand < 0) ||  (input->DeltaBand < 0) )
     {
-      fprintf(stderr,"Value of Alpha > 2pi.\n");
+      fprintf (stderr, "\nNegative value of sky-bands not allowed (alpha or delta)!\n");
       return 1;
     }
 
+  /* check consistency of bounds for the sky-region */
+  /*  FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut" */
+  if ( (input->Alpha < 0) || (input->Alpha >= LAL_TWOPI) || (fabs(input->Delta) > LAL_PI_2) 
+       ||(input->Alpha + input->AlphaBand >= LAL_TWOPI) || (input->Delta + input->DeltaBand > LAL_PI_2) )
+    {
+      fprintf (stderr, "\nSorry, sky-region is not supposed to cross either 0-meridian or a pole!\n");
+      return 1;
+    }
 
   return 0;
   
@@ -2291,8 +2317,7 @@ ReadCfgfileInput (UserInput *input, CHAR *cfgfile)
   LALReadConfigINT2Variable   (&status, &(input->EphemYear), 	cfg, "EphemYear");
 
   LALReadConfigINT2Variable   (&status, &(input->useMetric), 	cfg, "useMetric");	
-  LALReadConfigREAL8Variable  (&status,&(input->metricMismatch),cfg, "metricMismatch");	
-  LALReadConfigBOOLVariable   (&status, &(input->flipTiling), 	cfg, "flipTiling");	
+  LALReadConfigREAL8Variable  (&status, &(input->metricMismatch),cfg, "metricMismatch");	
 
   /* reading of fixed-size array string is slightly more tricky */
   string.length = sizeof (input->DataDir) - 1;
@@ -2310,7 +2335,6 @@ ReadCfgfileInput (UserInput *input, CHAR *cfgfile)
   
   LALReadConfigSTRINGVariable (&status, &(input->skyRegion), 	cfg, "skyRegion");
   
-
   /* ok, that should be it: check if there were more definitions we did not read */
   LALCheckConfigReadComplete (&status, cfg, CONFIGFILE_ERROR);	/* let's be strict about this */
 
