@@ -115,7 +115,7 @@ arguments = --lal-cache \\
   --start $(frstart) --end $(frend)
 environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)
 log = %s.log
-error = datafind/frcache-$(site)-$(frstart)-$(frend).err
+error = datafind/frcache-$(site)-$(frstart)-$(frend).$(cluster).$(process).err
 output = cache/frcache-$(site)-$(frstart)-$(frend).out
 notification = never
 queue
@@ -143,8 +143,8 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
 log = %s.log
-error = bank/tmpltbank-$(ifo)-$(start)-$(end).err
-output = bank/tmpltbank-$(ifo)-$(start)-$(end).out
+error = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).err
+output = bank/tmpltbank-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
 queue""" % self.basename
     sub_fh.close()
@@ -169,8 +169,8 @@ arguments = --gps-start-time $(start) --gps-end-time $(end) \\
           print >> sub_fh, "--" + arg, self.config[sec][arg], 
     print >> sub_fh, """
 log = %s.log
-error = inspiral/inspiral-$(ifo)-$(start)-$(end).err
-output = inspiral/inspiral-$(ifo)-$(start)-$(end).out
+error = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).err
+output = inspiral/inspiral-$(ifo)-$(start)-$(end).$(cluster).$(process).out
 notification = never
 queue
 """ % (self.basename)
