@@ -108,7 +108,7 @@ void LALCreateCOMPLEX8FrequencySeries(
 	size_t length
 )
 {
-	INITSTATUS(status, "LALNewREAL4FrequencySeries", FREQUENCYSERIESC);
+	INITSTATUS(status, "LALCreateCOMPLEX8FrequencySeries", FREQUENCYSERIESC);
 
 	*output = XLALCreateCOMPLEX8FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
 
@@ -166,7 +166,7 @@ void LALCreateREAL4FrequencySeries(
 	size_t length
 )
 {
-	INITSTATUS(status, "LALNewREAL4FrequencySeries", FREQUENCYSERIESC);
+	INITSTATUS(status, "LALCreateREAL4FrequencySeries", FREQUENCYSERIESC);
 
 	*output = XLALCreateREAL4FrequencySeries(name, epoch, f0, deltaF, sampleUnits, length);
 

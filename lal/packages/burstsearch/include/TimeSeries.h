@@ -18,6 +18,15 @@ $Id$
 #define LAL_RANGE_ERR	4
 #define LAL_RANGE_MSG	"parameter out of range"
 
+void XLALDestroyCOMPLEX8TimeSeries(
+	COMPLEX8TimeSeries *series
+);
+
+void LALDestroyCOMPLEX8TimeSeries(
+	LALStatus *status,
+	COMPLEX8TimeSeries *series
+);
+
 void XLALDestroyREAL4TimeSeries(
 	REAL4TimeSeries *series
 );
@@ -25,6 +34,46 @@ void XLALDestroyREAL4TimeSeries(
 void LALDestroyREAL4TimeSeries(
 	LALStatus *status,
 	REAL4TimeSeries *series
+);
+
+COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries(
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+);
+
+void LALCreateCOMPLEX8TimeSeries(
+	LALStatus *status,
+	COMPLEX8TimeSeries **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+);
+
+REAL4TimeSeries *XLALCreateREAL4TimeSeries(
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+);
+
+void LALCreateREAL4TimeSeries(
+	LALStatus *status,
+	REAL4TimeSeries **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
 );
 
 REAL4TimeSeries *XLALCutREAL4TimeSeries(

@@ -8,6 +8,32 @@
 NRCSID(TIMESERIESC, "$Id$");
 
 
+void XLALDestroyCOMPLEX8TimeSeries(
+	COMPLEX8TimeSeries *series
+)
+{
+	if(series) {
+		if(series->data)
+			LALFree(series->data->data);
+		LALFree(series->data);
+	}
+	LALFree(series);
+}
+
+
+void LALDestroyCOMPLEX8TimeSeries(
+	LALStatus *status,
+	COMPLEX8TimeSeries *series
+)
+{
+	INITSTATUS(status, "LALDestroyCOMPLEX8TimeSeries", TIMESERIESC);
+
+	XLALDestroyCOMPLEX8TimeSeries(series);
+
+	RETURN(status);
+}
+
+
 void XLALDestroyREAL4TimeSeries(
 	REAL4TimeSeries *series
 )
@@ -29,6 +55,122 @@ void LALDestroyREAL4TimeSeries(
 	INITSTATUS(status, "LALDestroyREAL4TimeSeries", TIMESERIESC);
 
 	XLALDestroyREAL4TimeSeries(series);
+
+	RETURN(status);
+}
+
+
+COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries(
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	COMPLEX8TimeSeries *new;
+	COMPLEX8Sequence *sequence;
+	COMPLEX8 *data;
+
+	new = LALMalloc(sizeof(*new));
+	sequence = LALMalloc(sizeof(*sequence));
+	data = LALMalloc(length * sizeof(*data));
+	if(!new || !sequence || !data) {
+		LALFree(new);
+		LALFree(sequence);
+		LALFree(data);
+		return(NULL);
+	}
+
+	strncpy(new->name, name, LALNameLength);
+	new->epoch = epoch;
+	new->f0 = f0;
+	new->deltaT = deltaT;
+	new->sampleUnits = sampleUnits;
+	new->data = sequence;
+	sequence->data = data;
+	sequence->length = length;
+
+	return(new);
+}
+
+
+void LALCreateCOMPLEX8TimeSeries(
+	LALStatus *status,
+	COMPLEX8TimeSeries **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	INITSTATUS(status, "LALCreateCOMPLEX8TimeSeries", TIMESERIESC);
+
+	*output = XLALCreateCOMPLEX8TimeSeries(name, epoch, f0, deltaT, sampleUnits, length);
+
+	if(!*output)
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+
+	RETURN(status);
+}
+
+
+REAL4TimeSeries *XLALCreateREAL4TimeSeries(
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	REAL4TimeSeries *new;
+	REAL4Sequence *sequence;
+	REAL4 *data;
+
+	new = LALMalloc(sizeof(*new));
+	sequence = LALMalloc(sizeof(*sequence));
+	data = LALMalloc(length * sizeof(*data));
+	if(!new || !sequence || !data) {
+		LALFree(new);
+		LALFree(sequence);
+		LALFree(data);
+		return(NULL);
+	}
+
+	strncpy(new->name, name, LALNameLength);
+	new->epoch = epoch;
+	new->f0 = f0;
+	new->deltaT = deltaT;
+	new->sampleUnits = sampleUnits;
+	new->data = sequence;
+	sequence->data = data;
+	sequence->length = length;
+
+	return(new);
+}
+
+
+void LALCreateREAL4TimeSeries(
+	LALStatus *status,
+	REAL4TimeSeries **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaT,
+	LALUnit sampleUnits,
+	size_t length
+)
+{
+	INITSTATUS(status, "LALCreateREAL4TimeSeries", TIMESERIESC);
+
+	*output = XLALCreateREAL4TimeSeries(name, epoch, f0, deltaT, sampleUnits, length);
+
+	if(!*output)
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
