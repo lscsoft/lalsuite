@@ -98,7 +98,7 @@ int main( void )
   frdet1.yArmAltitudeRadians    = 0.;
   frdet1.yArmAzimuthRadians     = 0.;
 
-  LALCreateDetector(&stat, &detector1, &frdet1, LALIFODIFFDETECTOR);
+  LALCreateDetector(&stat, &detector1, &frdet1, LALDETECTORTYPE_IFODIFF);
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
@@ -118,7 +118,7 @@ int main( void )
   frdet2.yArmAltitudeRadians    = 0.;
   frdet2.yArmAzimuthRadians     = 0.;
 
-  LALCreateDetector(&stat, &detector2, &frdet2, LALIFODIFFDETECTOR);
+  LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
 
   /*
    * Set a GPS time that's close to 0h GMST1. (Found this by trial and
