@@ -46,7 +46,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
     { "channel-name",            required_argument, 0, 'c' },
     { "calibration-cache",       required_argument, 0, 'C' },
     { "debug-level",             required_argument, 0, 'd' },
-    { "data-cache",              required_argument, 0, 'D' },
+    { "frame-cache",             required_argument, 0, 'D' },
     { "cutoff-frequency",        required_argument, 0, 'e' },
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "bank-min-frequency",      required_argument, 0, 'f' },
@@ -115,7 +115,7 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'd': /* debug-level */
         set_debug_level( optarg );
         break;
-      case 'D': /* data-cache */
+      case 'D': /* frame-cache */
         params->dataCache = optarg;
         break;
       case 'e': /* cutoff-frequency */
@@ -181,13 +181,13 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
       case 'Q': /* bank max quality */
         params->bankParams.maxQuality = atof( optarg );
         break;
-      case 'r': /* data-cache */
+      case 'r': /* random seed */
         params->randomSeed = atoi( optarg );
         break;
       case 'R': /* dynamic range factor */
         params->dynRangeFac = atof( optarg );
         break;
-      case 's': /* data-cache */
+      case 's': /* sample rate */
         params->sampleRate = atof( optarg );
         break;
       case 'S': /* segment-duration */
@@ -402,7 +402,7 @@ static int ring_usage( const char *program )
   fprintf( stderr, "--debug-level=dbglvl       set the LAL debug level\n" );
 
   fprintf( stderr, "\ndata reading options:\n" );
-  fprintf( stderr, "--data-cache=datacache     name of the frame cache file\n" );
+  fprintf( stderr, "--frame-cache=cachefile    name of the frame cache file\n" );
   fprintf( stderr, "--channel-name             data channel to analyze\n" );
   fprintf( stderr, "--gps-start-time=tstart    GPS start time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-start-time-ns=tstartns  nanosecond residual of start time\n" );
