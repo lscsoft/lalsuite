@@ -73,7 +73,6 @@ static struct {
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	INT4 verbose;
-	int whiteNoise;             /* insertion of Gaussian white noise   */
 } options;
 
 /* some global output flags */
@@ -172,7 +171,7 @@ static void print_usage(char *program)
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
 "	 --default-alpha <alpha>\n" \
-"	 --event-limit <count>\n" \
+"	[--event-limit <count>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
@@ -189,15 +188,15 @@ static void print_usage(char *program)
 "	[--mdc-channel <channel name>]\n" \
 "	 --min-freq-bin <nfbin>\n" \
 "	 --min-time-bin <ntbin>\n" \
-"	 --noise-amplitude <amplitude>\n" \
+"	[--noise-amplitude <amplitude>]\n" \
 "	 --nsigma <sigma>\n" \
 "	[--printData]\n" \
 "	[--printSpectrum]\n" \
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
-"	 --ram-limit <MebiBytes>\n" \
+"	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-filter <filter type>\n" \
-"	 --seed <seed>\n" \
+"	[--seed <seed>]\n" \
 "	 --target-sample-rate <Hz>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
@@ -242,6 +241,18 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 
 	for(index = 0; long_options[index].name; index++) {
 		switch(long_options[index].val) {
+			case 'A':
+			arg_is_missing = !params->tfTilingInput.length;
+			break;
+
+			case 'C':
+			arg_is_missing = !params->channelName;
+			break;
+
+			case 'E':
+			arg_is_missing = params->compEPInput.alphaDefault > 1.0;
+			break;
+
 			case 'I':
 			arg_is_missing = !frameSampleRate;
 			break;
@@ -256,12 +267,36 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !gpstmp;
 			break;
 
+			case 'Q':
+			arg_is_missing = params->tfTilingInput.flow < 0.0;
+			break;
+
+			case 'T':
+			arg_is_missing = params->tfTilingInput.minFreqBins <= 0;
+			break;
+
+			case 'U':
+			arg_is_missing = params->tfTilingInput.minTimeBins <= 0;
+			break;
+
+			case 'W':
+			arg_is_missing = !params->windowLength;
+			break;
+
+			case 'X':
+			arg_is_missing = params->compEPInput.numSigmaMin <= 0.0;
+			break;
+
+			case 'Y':
+			arg_is_missing = params->method == (unsigned) -1;
+			break;
+
 			case 'Z':
 			arg_is_missing = !options.PSDAverageLength;
 			break;
 
-			case 'a':
-			arg_is_missing = !options.maxSeriesLength;
+			case 'b':
+			arg_is_missing = resampFiltType == (unsigned) -1;
 			break;
 
 			case 'd':
@@ -272,7 +307,19 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !targetSampleRate;
 			break;
 
+			case 'f':
+			arg_is_missing = !params->tfTilingInput.overlapFactor;
+			break;
+
+			case 'g':
+			arg_is_missing = params->alphaThreshold < 0.0;
+			break;
+
 			case 'i':
+			arg_is_missing = params->windowType == NumberWindowTypes;
+			break;
+
+			case 'j':
 			arg_is_missing = options.FilterCorruption < 0;
 			break;
 
@@ -354,9 +401,20 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
+	params->alphaThreshold = -1.0;
 	params->channelName = NULL;
 	params->eventLimit = 999;
+	params->method = -1;
+	params->compEPInput.alphaDefault = 2.0;
+	params->compEPInput.numSigmaMin = -1.0;
+	params->tfTilingInput.flow = -1.0;
+	params->tfTilingInput.length = 0;
+	params->tfTilingInput.minFreqBins = 0;
+	params->tfTilingInput.minTimeBins = 0;
 	params->tfTilingInput.maxTileBand = 64.0;
+	params->tfTilingInput.overlapFactor = 0;
+	params->windowType = NumberWindowTypes;
+	params->windowLength = 0;
 	params->windowShift = 0;
 
 	options.calCacheFile = NULL;
@@ -364,12 +422,11 @@ void parse_command_line(
 	options.comment = "";
 	options.fcorner = 100.0;
 	options.FilterCorruption = -1;
-	options.noiseAmpl = 1.0;
+	options.noiseAmpl = -1.0;
 	options.printData = FALSE;
 	options.PSDAverageLength = 0;
 	options.seed = 1;
 	options.verbose = FALSE;
-	options.whiteNoise = FALSE;
 
 	cachefile = NULL;
 	dirname = NULL;
@@ -569,7 +626,6 @@ void parse_command_line(
 
 		case 'V':
 		options.noiseAmpl = atof(optarg);
-		options.whiteNoise = TRUE;
 		if(options.noiseAmpl <= 0.0) {
 			sprintf(msg, "must be > 0.0 (%f specified)", options.noiseAmpl);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
@@ -590,8 +646,8 @@ void parse_command_line(
 
 		case 'X':
 		params->compEPInput.numSigmaMin = atof(optarg);
-		if(params->compEPInput.numSigmaMin <= 1.0) {
-			sprintf(msg, "must be > 0 (%f specified)", params->compEPInput.numSigmaMin);
+		if(params->compEPInput.numSigmaMin <= 0.0) {
+			sprintf(msg, "must be > 0.0 (%f specified)", params->compEPInput.numSigmaMin);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
@@ -668,7 +724,7 @@ void parse_command_line(
 
 		case 'f':
 		params->tfTilingInput.overlapFactor = atoi(optarg);
-		if(params->tfTilingInput.overlapFactor < 0) {
+		if(params->tfTilingInput.overlapFactor <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
@@ -678,8 +734,8 @@ void parse_command_line(
 
 		case 'g':
 		params->alphaThreshold = atof(optarg);
-		if(params->alphaThreshold < 0.0) {
-			sprintf(msg, "must be > 0 (%f specified)", params->alphaThreshold);
+		if(params->alphaThreshold <= 0.0) {
+			sprintf(msg, "must be > 0.0 (%f specified)", params->alphaThreshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
@@ -733,8 +789,7 @@ void parse_command_line(
 	} while(c != -1);
 
 	/*
-	 * Convert the start and stop epochs, along with the sample rate, to a
-	 * total number of samples to analyze.
+	 * Convert the start and stop times to LIGOTimeGPS structures.
 	 */
 
 	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
@@ -748,18 +803,18 @@ void parse_command_line(
 	options.maxSeriesLength = (ram * 1024 * 1024) / (4 * sizeof(REAL4));
 
 	/*
-	 * Ensure PSDAverageLength is comensurate with the analysis window
-	 * length and shift.
-	 */
-
-	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
-
-	/*
 	 * Check for missing parameters
 	 */
 
 	if(!check_for_missing_parameters(&stat, argv[0], long_options, params))
 		exit(1);
+
+	/*
+	 * Ensure PSDAverageLength is comensurate with the analysis window
+	 * length and shift.
+	 */
+
+	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
 	 * Miscellaneous chores.
@@ -1242,7 +1297,9 @@ int main( int argc, char *argv[])
 
 	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
 		/* compute the number of points to use in this run */
-		numPoints = min(options.maxSeriesLength, DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * frameSampleRate);
+		numPoints = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * frameSampleRate;
+		if(options.maxSeriesLength)
+			numPoints = min(options.maxSeriesLength, numPoints);
 
 		/*
 		 * Get the data,
@@ -1256,7 +1313,7 @@ int main( int argc, char *argv[])
 		 * to the series.
 		 */
 
-		if(options.whiteNoise) {
+		if(options.noiseAmpl > 0.0) {
 			if(!series) {
 				size_t i;
 				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, numPoints), &stat);
