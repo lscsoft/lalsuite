@@ -19,8 +19,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
-
-/* #include <lal/PrintFTSeries.h> */
+#include <lal/PrintFTSeries.h>
 
 #include "lalapps.h"
 
@@ -66,5 +65,3 @@ void
 olapredfcn_print_options ( 
     void 
     );
-
-void LALPrintFrequencySeries( REAL4FrequencySeries *series , const CHAR *filename );
