@@ -1039,6 +1039,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
             responseOne.epoch  = responseTwo.epoch  = gpsCalibTime;
 
+            /* set response function to unity for GEO */
             if (strncmp(ifoOne, "G1", 2) == 0)
             {
               for (i = 0; i < filterLength; i++)
@@ -1081,6 +1082,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               }
             }
 
+            /* set response function to unity for GEO */
             if (strncmp(ifoTwo, "G1", 2) == 0)
             {
               for (i = 0; i < filterLength; i++)
