@@ -1,5 +1,5 @@
 /* <lalVerbatim file="TimeSeriesHV">
-Author: Cannon, K. C.
+Author: Kipp Cannon <kipp@gravity.phys.uwm.edu>
 $Id$
 </lalVerbatim>
  */

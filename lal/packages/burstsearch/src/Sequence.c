@@ -1,5 +1,5 @@
 /* <lalVerbatim file="SequenceCV">
-Author: Cannon, K. C.
+Author: Kipp Cannon <kipp@gravity.phys.uwm.edu>
 $Id$
 </lalVerbatim>
  */
