@@ -3,7 +3,7 @@
 
 if LALFRAME
 LALFRAMEPROGRAMS = lalapps_stochastic
-lalapps_stochastic_SOURCES = stochastic.c stochastic.h
+lalapps_stochastic_SOURCES = stochastic.c helper.c stochastic.h
 if LALMETAIO
 LALMETAIOFRAMEPROGRAMS = lalapps_stopp
 lalapps_stopp_SOURCES = stopp.c

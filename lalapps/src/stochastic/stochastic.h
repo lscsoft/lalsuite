@@ -18,27 +18,27 @@ extern "C" {
 NRCSID(STOCHASTICH, "$Id$");
 
 /* helper functions */
-static void parse_options(INT4 argc, CHAR *argv[]);
-static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
+void parse_options(INT4 argc, CHAR *argv[]);
+REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
     CHAR *cacheFile, CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end,
     INT4 buffer);
-static REAL4TimeSeries *get_ligo_data(LALStatus *status, FrStream *stream,
+REAL4TimeSeries *get_ligo_data(LALStatus *status, FrStream *stream,
     CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
-static REAL4TimeSeries *get_geo_data(LALStatus *status, FrStream *stream,
+REAL4TimeSeries *get_geo_data(LALStatus *status, FrStream *stream,
     CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
-static REAL8 delta_gps_to_float(LALStatus *status, LIGOTimeGPS end,
+REAL8 delta_gps_to_float(LALStatus *status, LIGOTimeGPS end,
     LIGOTimeGPS start);
-static REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
+REAL4FrequencySeries *omega_gw(LALStatus *status, REAL4 alpha,
     REAL8 fRef, REAL4 omegaRef, UINT4 length, REAL8 f0, REAL8 deltaF,
     LIGOTimeGPS time);
-static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
+REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
     UINT4 length, REAL8 f0, REAL8 deltaF, INT4 siteOne, INT4 siteTwo,
     LIGOTimeGPS time);
-static LIGOTimeGPS increment_gps(LALStatus *status, LIGOTimeGPS time,
+LIGOTimeGPS increment_gps(LALStatus *status, LIGOTimeGPS time,
     INT4 increment);
-static REAL4TimeSeries *cut_time_series(LALStatus *status,
+REAL4TimeSeries *cut_time_series(LALStatus *status,
     REAL4TimeSeries *input, LIGOTimeGPS start, LIGOTimeGPS end);
-static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
+void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
     CHAR *ifoOne, CHAR *ifoTwo, LIGOTimeGPS time, INT4 duration);
 
 #ifdef  __cplusplus
