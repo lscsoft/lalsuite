@@ -76,6 +76,9 @@ LALDestroyRealFFTPlan
 /***************************** <lalErrTable file="GEO600InspiralSearchSlaveCE"> */
 /***************************** </lalErrTable> */
 
+#include <config.h>
+#if defined HAVE_MPI_H && defined HAVE_GSL_FFT_REAL_H
+
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
@@ -475,3 +478,4 @@ GEO600InspiralSearchSlave
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
+#endif

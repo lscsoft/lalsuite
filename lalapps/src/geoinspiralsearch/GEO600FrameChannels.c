@@ -29,6 +29,11 @@ Author: Sathyaprakash, B.S.
 File to contain a routine to get a single channel of Data continuously 
 from a directory of frame files 
 */
+
+#include <config.h>
+
+#ifdef HAVE_FRAMEL_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -667,5 +672,6 @@ float ran2(long *idum)
 #undef EPS
 #undef RNMX
 
+#endif
 
 

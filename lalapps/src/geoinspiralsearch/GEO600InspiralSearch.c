@@ -30,21 +30,26 @@ This code filters the GEO600 data through a template bank.
 
 /***************************** <lalErrTable file="GEO600InspiralSearchCE"> */
 /***************************** </lalErrTable> */
+#include <config.h>
+#include <stdio.h>
+
+#if !defined HAVE_GSL_GSL_FFT_REAL_H || !defined HAVE_LIBGSL \
+ || !defined HAVE_MYSQL_H || !defined HAVE_LIBMYSQLCLIENT \
+ || !defined HAVE_FRAMEL_H || !defined HAVE_LIBFRAME \
+ || !defined HAVE_MPI_H
+
+ int main( void ) { return fputs( "disabled\n", stderr ), 77; }
+
+#else
 
 #include <mpi.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
-#include <lal/GEO600InspiralSearch.h>
+#include <GEO600InspiralSearch.h>
 
 INT4 lalDebugLevel=1;
      
-#if !defined HAVE_GSL || !defined HAVE_MYSQL
-
-int main( void ) { return fputs( "disabled\n", stderr ), 77; }
-
-#else
-
 int 
 main (int argc, char * argv[]) 
 {

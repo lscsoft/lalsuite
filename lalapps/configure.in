@@ -48,10 +48,15 @@ fi
 AC_CHECK_LIB(lal, LALVersion, , AC_MSG_ERROR(could not find the LAL library))
 AC_CHECK_LIB(lalsupport, LALOpenDataFile, , AC_MSG_ERROR(could not find the LAL support library))
 AC_CHECK_LIB(lalframe, LALFrOpen)
+AC_CHECK_LIB(gsl, gsl_version)
+AC_CHECK_LIB(mysqlclient, mysql_init)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(getopt.h)
+AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
+AC_CHECK_HEADERS(mysql.h)
+AC_CHECK_HEADERS(mpi.h)
 AC_CHECK_HEADERS([lal/LALStdlib.h])
 if test "${frame}" = "true"; then
   AC_CHECK_HEADERS(FrameL.h, , LALAPPS_DISABLE_FRAME)

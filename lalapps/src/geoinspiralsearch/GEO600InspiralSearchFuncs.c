@@ -25,6 +25,9 @@ Author: Sathyaprakash, B.S.
 
 </lalLaTeX>  */
 
+#include <config.h>
+#if defined HAVE_GSL_GSL_FFT_REAL && defined HAVE_MYSQL_H
+
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
@@ -1209,4 +1212,4 @@ WriteToLALProcessTable (LALProcessTable procTable, LALDBConnect *conn)
 	mysql_close(&mysql);
 	return;
 }
-
+#endif

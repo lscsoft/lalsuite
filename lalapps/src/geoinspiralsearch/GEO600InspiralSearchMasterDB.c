@@ -90,6 +90,8 @@ WriteInspiralEvents
 /***************************** <lalErrTable file="GEO600InspiralSearchDoubleMasterDBCE"> */
 /***************************** </lalErrTable> */
 
+#if defined HAVE_MPI_H && defined HAVE_GSL_GSL_FFT_REAL_H
+
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/RealFFT.h>
@@ -734,3 +736,4 @@ GEO600InspiralSearchDoubleMasterDB
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
+#endif

@@ -43,25 +43,29 @@ LALDestroyVector
 /***************************** <lalErrTable file="GEO600InspiralSearchCE"> */
 /***************************** </lalErrTable> */
 
+#include <config.h>
 #include <stdio.h>
+
+#if !defined HAVE_GSL_GSL_FFT_REAL_H || !defined HAVE_LIBGSL \
+ || !defined HAVE_MYSQL_H || !defined HAVE_LIBMYSQLCLIENT \
+ || !defined HAVE_FRAMEL_H || !defined HAVE_LIBFRAME
+
+int main( void ) { return fputs( "disabled\n", stderr ), 77; }
+
+#else
+
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
 #include <lal/GEO600InspiralSearch.h>
 #include <lal/FrameRead.h>
 #include <lal/AVFactories.h>
-#include <gsl_fft_real.h>
+#include <gsl/gsl_fft_real.h>
  
 NRCSID (INSPIRALSEARCHC, "$Id$");
 
 INT4 lalDebugLevel=1;
      
-#if !defined HAVE_GSL || !defined HAVE_MYSQL
-
-int main( void ) { return fputs( "disabled\n", stderr ), 77; }
-
-#else
-
 int 
 main () 
 {
