@@ -101,7 +101,7 @@ LALFindChirpBCVSpinFilterSegment (
   REAL8                 K = 0.0;
   REAL8                 L = 0.0;
   REAL8                 M = 0.0;
-  REAL4                 Beta; /* Spin parameter */  
+  REAL4                 beta; /* Spin parameter */  
   REAL8                 rootI;
   REAL8                 denominator;
   REAL8                 rootDenominator;
@@ -110,7 +110,7 @@ LALFindChirpBCVSpinFilterSegment (
   COMPLEX8             *inputData1;
 
   REAL4			rhoSq;
-  REAL4 		rho;
+  REAL4 		rho = 0.0;
   REAL4                 invRho;
   REAL4                 alphaFac;
   REAL4                 alphaFac1;
@@ -301,7 +301,7 @@ LALFindChirpBCVSpinFilterSegment (
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
   wtilde     = input->segment->dataBCV->data->data; 
 
-  Beta = 100.0;
+  beta = 100.0;
 
   deltaTto2by3 = pow(deltaT, Twoby3);
   deltaF  =  1.0/((REAL4)numPoints * deltaT);
@@ -315,7 +315,7 @@ LALFindChirpBCVSpinFilterSegment (
   if (doTest == 1)
   {   
   	fprintf (stdout, "numPoints = %d\n", numPoints);  
-  	fprintf (stdout, "Beta: %e \n", Beta);
+  	fprintf (stdout, "beta: %e \n", beta);
   	fprintf (stdout, "deltaT: %e \n", deltaT);
   	fprintf (stdout, "input->segment->data->data->length: %d \n",
 		    input->segment->data->data->length);
@@ -330,13 +330,13 @@ LALFindChirpBCVSpinFilterSegment (
   {
     	I += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re ;
     	J += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
-      		cos(Beta * ampBCVSpin2[k] * deltaTto2by3);                
+      		cos(beta * ampBCVSpin2[k] * deltaTto2by3);                
     	K += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
-      		sin(Beta * ampBCVSpin2[k] * deltaTto2by3);
+      		sin(beta * ampBCVSpin2[k] * deltaTto2by3);
     	L += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
-      		sin(2 * Beta * ampBCVSpin2[k] * deltaTto2by3);
+      		sin(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
    	M += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
-      		cos(2 * Beta * ampBCVSpin2[k] * deltaTto2by3);
+      		cos(2 * beta * ampBCVSpin2[k] * deltaTto2by3);
    
 	if (doTest == 1)
 	{
@@ -390,7 +390,7 @@ LALFindChirpBCVSpinFilterSegment (
   A2Vec->data[0] = 0;
   A3Vec->data[0] = 0;
 
-  if (Beta == 0.0)
+  if (beta == 0.0)
   {
  	/* fprintf(stdout,"Inside beta = 0 loop \n"); */
 
@@ -416,13 +416,13 @@ LALFindChirpBCVSpinFilterSegment (
   	{
     		A1Vec->data[k] = ampBCVSpin1[k] / rootI;
     		A2Vec->data[k] = ampBCVSpin1[k] 
-                        * (   ( cos(Beta * ampBCVSpin2[k] * deltaTto2by3) )    
+                        * (   ( cos(beta * ampBCVSpin2[k] * deltaTto2by3) )    
 			-  (J/I) ) * rootI
      	                / rootDenominator ;
     		A3Vec->data[k] = (ampBCVSpin1[k]/denominator1) * 
-        	        ( sin(Beta * ampBCVSpin2[k]  * deltaTto2by3) 
+        	        ( sin(beta * ampBCVSpin2[k]  * deltaTto2by3) 
                 	- (K/I)
-                        - (numerator1 * ( cos(Beta * ampBCVSpin2[k] 
+                        - (numerator1 * ( cos(beta * ampBCVSpin2[k] 
                         * deltaTto2by3) - (J/I) )/denominator )  ) 
                         * rootI;          		
 	
@@ -1014,17 +1014,17 @@ LALFindChirpBCVSpinFilterSegment (
         		alpha3 = qBCVSpin2[j].re * invRho;
         		alpha6 = qBCVSpin2[j].im * invRho;
 
-                	thisEvent->alpha = alpha1; 
-                	thisEvent->tau0  = alpha2;
-                	thisEvent->tau2  = alpha3;
-  			thisEvent->tau3  = alpha4;
-  			thisEvent->tau4  = alpha5;
-  			thisEvent->tau5  = alpha6;
+                	thisEvent->alpha1 = alpha1; 
+                	thisEvent->alpha2 = alpha2;
+                	thisEvent->alpha3 = alpha3;
+  			thisEvent->alpha4 = alpha4;
+  			thisEvent->alpha5 = alpha5;
+  			thisEvent->alpha6 = alpha6;
  
                 	/* record the beta value */
                		/* eventually beta will be provided FROM 
 				the template bank */
-                	thisEvent->eta    = Beta; 
+                	thisEvent->beta = beta; 
                         /* copy the template into the event */
           		thisEvent->psi0   = (REAL4) input->tmplt->psi0;
           		thisEvent->psi3   = (REAL4) input->tmplt->psi3;
@@ -1035,7 +1035,6 @@ LALFindChirpBCVSpinFilterSegment (
 	                (16.0 * LAL_MTSUN_SI * LAL_PI 
 			* LAL_PI * thisEvent->psi0) ;*/
           	
-			/* need eta to store Beta!! */
                 	/*thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
               		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );*/
           		thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
