@@ -9,6 +9,8 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpLinkedList.c \
   FindChirpFilterInit.c FindChirpChisqInit.c \
   FindChirpFilter.c FindChirpChisq.c \
   FindChirpSPData.c FindChirpSPTemplate.c \
+  FindChirpBCVData.c FindChirpBCVTemplate.c \
+  FindChirpBCVFilter.c FindChirpBCVChisq.c \
   FindChirpSimulation.c
 
 TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \

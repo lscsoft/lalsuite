@@ -5,6 +5,7 @@
 pkginclude_HEADERS = FindChirp.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
+                     FindChirpBCV.h \
                      FindChirpEngine.h \
 		     TwoInterfFindChirp.h
 MOSTLYCLEANFILES = .dvi-dep

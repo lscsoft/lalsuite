@@ -51,6 +51,7 @@
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/FindChirpBCV.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/FindChirpEngine.h>
 
@@ -1258,13 +1259,13 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALFindChirpSPData( &status, fcSegVec, dataSegVec, 
             fcDataParams ), &status );
     }
-#if 0
     else if ( approximant == BCV )
     {
       if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCV\n" );
       LAL_CALL( LALFindChirpBCVData( &status, fcSegVec, dataSegVec, 
             fcDataParams ), &status );
     }
+#if 0
     else if ( approximant == BCVSpin )
     {
       if ( vrbflg ) fprintf( stdout, 
@@ -1354,13 +1355,13 @@ int main( int argc, char *argv[] )
               tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
         fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
       }
-#if 0
       else if ( approximant == BCV )
       {
         LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
               tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
         fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
       }
+#if 0
       else if ( approximant == BCVSpin )
       {
         LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
@@ -1415,12 +1416,12 @@ int main( int argc, char *argv[] )
             LAL_CALL( LALFindChirpFilterSegment( &status, 
                   &eventList, fcFilterInput, fcFilterParams ), &status );
           }
-#if 0
           else if ( approximant == BCV )
           {
             LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                   &eventList, fcFilterInput, fcFilterParams ), &status );
           }
+#if 0
           else if ( approximant == BCVSpin )
           {
             LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,

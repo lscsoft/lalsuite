@@ -5,7 +5,8 @@ DOCSOURCEFILES = findchirp.tex \
                  FindChirpEngineHDoc.tex FindChirpFilterCDoc.tex \
                  FindChirpEngineCDoc.tex FindChirpBCVHDoc.tex \
                  FindChirpBCVSpinDataCDoc.tex \
-                 FindChirpDataCDoc.tex FindChirpFilterInitCDoc.tex
+                 FindChirpDataCDoc.tex FindChirpFilterInitCDoc.tex \
+                 FindChirpBCVDataCDoc.tex
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)
