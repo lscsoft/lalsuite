@@ -223,7 +223,8 @@ if ( lalDebugLevel & LALERROR )                                      \
 }                                                                    \
 else (void)(0)
 
-#include "LALDemod.h"
+#include <lal/LALDemod.h>
+#include <lal/LALInitBarycenter.h>
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 
@@ -560,8 +561,8 @@ int main(int argc, char **argv)
   
   /* Set up parameter structure */  
   /* Source position */
-  genTayParams.position.latitude  = signalParams->skyP->alpha;
-  genTayParams.position.longitude = signalParams->skyP->delta;
+  genTayParams.position.latitude  = signalParams->skyP->delta;
+  genTayParams.position.longitude = signalParams->skyP->alpha;
   genTayParams.position.system = COORDINATESYSTEM_EQUATORIAL;
   /* Source polarization angle */
   /* Note, that the way we compute the statistic, we don't care what this value is. */
@@ -881,8 +882,8 @@ int main(int argc, char **argv)
   amParams->earth = &earth;
   amParams->edat = edat;
   amParams->das->pDetector = &cachedDetector; 
-  amParams->das->pSource->equatorialCoords.latitude = signalParams->skyP->alpha;
-  amParams->das->pSource->equatorialCoords.longitude = signalParams->skyP->delta;
+  amParams->das->pSource->equatorialCoords.latitude = templateParams->skyP->delta;
+  amParams->das->pSource->equatorialCoords.longitude = templateParams->skyP->alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = genTayParams.psi;
@@ -910,7 +911,7 @@ int main(int argc, char **argv)
 	REAL8 teemp=0.0;
        
 	TimeToFloat(&teemp, &(timeStamps[k]));
-	teemp += (REAL8)nDeltaF*dfSFT;
+	teemp += 0.5/dfSFT;
 	FloatToTime(&(midTS[k]), &teemp);
       }
     /* Compute the AM coefficients */
