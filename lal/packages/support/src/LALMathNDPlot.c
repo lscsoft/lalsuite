@@ -59,6 +59,8 @@
    * Windows users unless you have another path configured in your \MATHEMATICA
    * installation. It is necessary to change the file name within the notebook to avoid
    * overwriting previous files.
+   * \item The number of projections is N!/(3!(N-3)!).  Thus plotting 6 dimensions would 
+   * produce 20 projections, 7 dimensions would yeilds 35 amd 8 gives 56.
      \end{itemize}
      </lalLaTeX>
      END SUBSUBSECTION - NOTES ------------------------------------------------------- */
@@ -81,7 +83,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
                                                                                                                                                 
-#define INSTRUCTIONS    fprintf(nb, "Sit down.  This is going to be complicated")
+#define INSTRUCTIONS    fprintf(nb, "This notebook may be evaluated recursively by typing ctrl+A and then shift+enter.  HOWEVER, depending on the number of templates and dimensions this maybe undesirable either for time or for risk of crashing your computer.  It is recommended that each section be evluated as needed.  The Initialization and User Variables sections affect the notebook globally.  They must be evaluated first.  The 3-dimensional projections are iteratively represented in the sections below the User Varibles as PointList (x1, x2, x3) etc.  By evaluating the entire Image Generation sections you also create may create animated plots (if AnimationPlot := True) but they may be time (and memory) consuming.  If you only wish to plot a still image I suggest that you leave the user variable AnimationPlot := False.")
                                                                                                                                               
                                                                                                                                                 
 NRCSID(LALMATHNDPLOTC, "$Id$");
@@ -107,13 +109,18 @@ LALMathNDPlot( LALStatus *stat,
 
                                                                                                                                                 
   INITSTATUS( stat, "LALMathNDPlot", LALMATHNDPLOTC );
-                                                                                                                                                
-  if (!first)
+  
+  /* Check that the PointList isn't NULL */                                                                                                       if (!first)
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
-                                                                                                                                                
+  
+  /* Open a file for writing a notebook */
   if ((nb = fopen("MathNDNotebook.nb", "w")) == NULL)
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
   
+  /* Appropriately handle the inputs for ntiles and pointsize to assure
+     that a propter PointSize is chosen.  Also print a warning if the 
+     length of the MathNDPointList is not equal in length to the parameter
+     ntiles passed to this function. */
   if (!PointSize){
     if (!ntiles){
       list=first;
@@ -175,6 +182,9 @@ LALMathNDPlot( LALStatus *stat,
     END_SECTIONCELL;
     BEG_GROUPCELL;
       BEG_INPUTCELL;
+        fprintf(nb, "AnimationPlot\t:= False;");
+      END_INPUTCELL;
+      BEG_INPUTCELL;
         fprintf(nb, "AnimationSize\t= {400,400};");
       END_INPUTCELL;
       BEG_INPUTCELL;
@@ -184,7 +194,7 @@ LALMathNDPlot( LALStatus *stat,
         fprintf(nb, "PtSize\t= %f;", PtSize);
       END_INPUTCELL;
       BEG_INPUTCELL;
-        fprintf(nb, "AnimationName\t:= \"AnimationTilePlot.gif\""); /* dont forget to giv a unique name */
+        fprintf(nb, "AnimationName\t:= \"AnimationTilePlot\""); /* dont forget to giv a unique name */
       END_INPUTCELL;
       BEG_INPUTCELL;
         fprintf(nb, "StillName\t:= \"StillTilePlot\""); /* dont forget to give a unique name for each section */
@@ -199,16 +209,17 @@ LALMathNDPlot( LALStatus *stat,
         fprintf(nb, "FrameTime\t= 0.2;");
       END_INPUTCELL;
       for(counter = 1; counter <= dim; counter++){
-        BEG_INPUTCELL; /* This needs to have N-labels */
+        BEG_INPUTCELL; /* Create an axis label for each dimension */
           fprintf(nb, "X%iAxisLabel := \"x%i\"", counter, counter);
         END_INPUTCELL;
         }
       BEG_TEXTCELL;
+        fprintf(nb, "AnimationPlot:\tFlag to set for generating animations (may take a while to run)\n");
         fprintf(nb, "AnimationSize:\tThe size of the final animation in PIXELS x PIXELS\n");
         fprintf(nb, "StillSize:\t\tThe size of the final still image in PIXELS x PIXELS\n");
         fprintf(nb, "PtSize:\t\tThe relative size of the template points to the final display width.\n");
         fprintf(nb, "\t\t\tIt is given as a decimal part of one. (e.g. PtSize=0.02 is 1/20 of the display width)\n");
-        fprintf(nb, "AnimationName:\tWhat to name the final animation - must use .gif extension\n");
+        fprintf(nb, "AnimationName:\tWhat to name the final animation.\n");
         fprintf(nb, "StillName:\t\tWhat to name the final still image - extension determined by StillType\n");
         fprintf(nb, "StillType:\t\tThe file type and extension for the still image\n");
         fprintf(nb, "\t\t\tChoose any standard format (e.g. JPG, GIF, PDF, EPS, etc.)\n");
@@ -220,7 +231,7 @@ LALMathNDPlot( LALStatus *stat,
         fprintf(nb, "XiAxisLabel:\t\tSets the Xi-axis label\n");
       END_TEXTCELL_;
     END_GROUPCELLC;
-    /* begin iterations of permutations */
+    /* begin iterations of projection permutations */
     for(x = 0; x < dim; x++){
       for(y = (x+1); y < dim; y++){
         for(z = (y+1); z < dim; z++){
@@ -255,32 +266,32 @@ LALMathNDPlot( LALStatus *stat,
                   (x+1), (y+1), (z+1));
         END_INPUTCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "Do[tile%i%i%i[T]=Show[TILES%i%i%i, Background -> RGBColor[.93, .91, .89], ",
+          fprintf(nb, "If[AnimationPlot,{Do[tile%i%i%i[T]=Show[TILES%i%i%i, Background -> RGBColor[.93, .91, .89], ",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
-          fprintf(nb, "ViewPoint -> {1-(.99 T/frames)^2, T/(4 frames), 2 (T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
+          fprintf(nb, "ViewPoint -> {1-(.99 T/frames)^2, T/(4 frames), 2 (T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}],\n");
           fprintf(nb, "Do[tile%i%i%i[frames+T]=Show[TILES%i%i%i, Background -> RGBColor[.93, .91, .89], ViewPoint -> {.005+(T/frames)^2, ",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
-          fprintf(nb, "0.25-T/(4 frames), 2-2 (.99 T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
+          fprintf(nb, "0.25-T/(4 frames), 2-2 (.99 T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}]}];\n");
         END_INPUTCELL_;
       END_GROUPCELLC;
       BEG_GROUPCELL;
         BEG_SECTIONCELL;
-          fprintf(nb, "Animation Generation (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
+          fprintf(nb, "Image Export (x%i,x%i,x%i)", (x+1), (y+1), (z+1));
         END_SECTIONCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "images%i%i%i = Evaluate[Table[tile%i%i%i[j], {j, 0, 2 frames, 1}]];\n",
+          fprintf(nb, "If[AnimationPlot, images%i%i%i = Evaluate[Table[tile%i%i%i[j], {j, 0, 2 frames, 1}]]];\n",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
         END_INPUTCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "Export[StillName%i%i%i<>\".\"<>ToLowerCase[StillType], still%i%i%i, StillType, ImageSize->StillSize, ",
+          fprintf(nb, "Export[StillName<>\"%i%i%i\"<>\".\"<>ToLowerCase[StillType], still%i%i%i, StillType, ImageSize->StillSize, ",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
           fprintf(nb, "ConversionOptions->{\"ColorReductionDither\" -> False}]");
         END_INPUTCELL;
         BEG_INPUTCELL;
-          fprintf(nb, "Export[AnimationName%i%i%i, images%i%i%i, \"GIF\", ImageSize -> AnimationSize, ",
+          fprintf(nb, "If[AnimationPlot, Export[AnimationName<>\"%i%i%i\"<>\".gif\", images%i%i%i, \"GIF\", ImageSize -> AnimationSize, ",
                   (x+1), (y+1), (z+1), (x+1), (y+1), (z+1));
           fprintf(nb, "ConversionOptions -> {\"Loop\" -> True,\"AnimationDisplayTime\" -> FrameTime, ");
-          fprintf(nb, "\"ColorReductionDither\" -> False}]");
+          fprintf(nb, "\"ColorReductionDither\" -> False}]]");
         END_INPUTCELL_;
       END_GROUPCELLC_;
     END_GROUPCELLC; 

@@ -48,8 +48,7 @@
   /*SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" ------------------------- <lalLaTeX>
     \subsubsection{Notes}
     \begin{itemize}
-  * \item It is likely unreasonable to plot more than 5 dimensions because the number of
-  * projections is N!/(3!(N-3)!).
+  * \item No notes yet.
     \end{itemize}
     </lalLaTeX>
     END - SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" --------------------------- */
@@ -94,6 +93,7 @@ int main(){
   INT4 loopx = 0;                       /* loop counters */
   INT4 loopy = 0;
   INT4 loopz = 0;
+  INT4 loopw = 0;
   INT4 ntiles = 0;
   MathNDPointList *list = NULL;         /* Pointer to structure for mathematica plot */
   MathNDPointList *first = NULL;
@@ -111,63 +111,69 @@ int main(){
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=0; loopz <= 1; loopz++){
+        for(loopw=0; loopw <= 2; loopw++){
+          LALSCreateVector(&stat, &list->coordinates, dim);
+          list->coordinates->data[0] = loopx;
+          list->coordinates->data[1] = loopy;
+          list->coordinates->data[2] = loopz;
+          list->coordinates->data[3] = loopw;
+          list->GrayLevel = 0.0;
+          ntiles++;
+          if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
+            LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+            printf(LALMATHNDPLOTTESTC_MSGEMEM);
+            return LALMATHNDPLOTTESTC_EMEM;
+            }
+          }
+        }
+      }
+    }
+                                                                                                                                                
+  for(loopx=1; loopx <= 20; loopx++){
+    for(loopy=1; loopy <= 20; loopy++){
+      for(loopw=1; loopw <= 20; loopw++){
         LALSCreateVector(&stat, &list->coordinates, dim);
         list->coordinates->data[0] = loopx;
         list->coordinates->data[1] = loopy;
-        list->coordinates->data[2] = loopz;
-        list->coordinates->data[3] = 0;
-        list->GrayLevel = 0.0;
+        list->coordinates->data[2] = 2;
+        list->coordinates->data[3] = loopw;
+        list->GrayLevel = 1.0;
         ntiles++;
         if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
           LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
           printf(LALMATHNDPLOTTESTC_MSGEMEM);
           return LALMATHNDPLOTTESTC_EMEM;
-        }
+          }
+        } 
       }
     }
-  }
-                                                                                                                                                
-  for(loopx=1; loopx <= 20; loopx++){
-    for(loopy=1; loopy <= 20; loopy++){
-      LALSCreateVector(&stat, &list->coordinates, dim);
-      list->coordinates->data[0] = loopx;
-      list->coordinates->data[1] = loopy;
-      list->coordinates->data[2] = 2;
-      list->coordinates->data[3] = 0;
-      list->GrayLevel = 1.0;
-      ntiles++;
-      if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-        LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
-        printf(LALMATHNDPLOTTESTC_MSGEMEM);
-        return LALMATHNDPLOTTESTC_EMEM;
-      }
-    }
-  }
 
   /* LAL!!! */
   for(loopx=1; loopx <= 20; loopx++){
     for(loopy=1; loopy <= 20; loopy++){
       for(loopz=3; loopz <= 4; loopz++){
-        if( ((loopx==6)||(loopx==19)) && (loopy<16) && (loopy>5)) continue;
-        if((loopy==15)&&(((loopx<20)&&(loopx>14))||((loopx<7)&&(loopx>1)))) continue;
-        if((loopx>9)&&(loopx<12)&&(((loopy>6)&&(loopy<10))||(loopy==12))) continue;
-        if(((loopx==9)||(loopx==12)) && ((loopy>9)&&(loopy<13))) continue;
-        if(((loopx==8)||(loopx==13)) && ((loopy>12)&&(loopy<16))) continue;
-        LALSCreateVector(&stat, &list->coordinates, dim);
-        list->coordinates->data[0] = loopx;
-        list->coordinates->data[1] = loopy;
-        list->coordinates->data[2] = loopz;
-        list->coordinates->data[3] = 0;
-        list->GrayLevel = 0.0;
-        ntiles++;
-        if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
-          LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
-          printf(LALMATHNDPLOTTESTC_MSGEMEM);
-          return LALMATHNDPLOTTESTC_EMEM;
+        for(loopw=1; loopw <=4; loopw++){
+          if( ((loopx==6)||(loopx==19)) && (loopy<16) && (loopy>5)) continue;
+          if((loopy==15)&&(((loopx<20)&&(loopx>14))||((loopx<7)&&(loopx>1)))) continue;
+          if((loopx>9)&&(loopx<12)&&(((loopy>6)&&(loopy<10))||(loopy==12))) continue;
+          if(((loopx==9)||(loopx==12)) && ((loopy>9)&&(loopy<13))) continue;
+          if(((loopx==8)||(loopx==13)) && ((loopy>12)&&(loopy<16))) continue;
+          LALSCreateVector(&stat, &list->coordinates, dim);
+          list->coordinates->data[0] = loopx;
+          list->coordinates->data[1] = loopy;
+          list->coordinates->data[2] = loopz;
+          list->coordinates->data[3] = loopw;
+          list->GrayLevel = 0.0;
+          ntiles++;
+          if ((list = list->next = (MathNDPointList *) LALCalloc(1, sizeof(MathNDPointList))) == NULL){
+            LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+            printf(LALMATHNDPLOTTESTC_MSGEMEM);
+            return LALMATHNDPLOTTESTC_EMEM;
+            }
+          }
         }
       }
     }
-  }
                                                                                                                                                 
                                                                                                                                                 
   list->next = NULL;
