@@ -570,47 +570,90 @@ stochastic analysis code.
 \item[Options]\leavevmode
 \begin{entry}
 \item[\option{--help}]
-Display usage information
+Display usage information and exit.
+
 \item[\option{--version}]
-Display version information
+Display version information and exit.
+
 \item[\option{--verbose}]
-Run in verbose mode, code display set by set progress information
+Enable the output of informational messages.
+
 \item[\option{--debug-level} \parm{N}]
-Sets the LAL Debug Level to \parm{N}
+Sets the LAL debug level to \parm{N}. The default value is
+\texttt{LALMSGLVL2}, displaying error and warning messages. A useful
+setting is 65 which turns off memory padding, but keeps memory tracking
+and error messages. If you want to turn off memory tracking completly,
+then use 33.
+
+\item[\option{--user-tag}~\parm{TAG}]
+Set the user tag to the string \parm{TAG}. This string must not contain
+spaces or dashes (``-''). This string will appear in the name of the
+file to which output information is written, and is recorded in the
+various XML tables within the file.
+
 \item[\option{--gps-start-time} \parm{N}]
 Sets the GPS time from which data should be read to \parm{N}
+
 \item[\option{--gps-end-time} \parm{N}]
 Sets the GPS time to which data should be read to \parm{N}
+
 \item[\option{--interval-duration} \parm{N}]
 Sets the interval duration to \parm{N}
+
 \item[\option{--segment-duration} \parm{N}]
 Sets the segment duration to \parm{N}
-\item[\option{--sample-rate} \parm{N}]
-Sets the sample rate of the input data to \parm{N}
+
 \item[\option{--resample-rate} \parm{N}]
-Sets the resample rate to \parm{N}
+Down-convert the input data stream to a sample rate of \parm{N} samples
+per second prior to analysis.  This can be used to reduce the number of CPU
+cycles required to analyze a given quantity of input data.
+
 \item[\option{--f-min} \parm{N}]
 Sets the minimum frequency of the search band to \parm{N}
+
 \item[\option{--f-max} \parm{N}]
 Sets the maximum frequency of the search band to \parm{N}
+
 \item[\option{--ifo-one} \parm{IFO}]
 Sets the IFO for the first stream to be \parm{IFO}, currently supported
 IFO's are H1, H2, L1 and G1
+
 \item[\option{--ifo-two} \parm{IFO}]
 Sets the IFO for the second stream to be \parm{IFO}, currently supported
 IFO's are H1, H2, L1 and G1
+
 \item[\option{--channel-one} \parm{CHANNEL}]
 Sets the channel for the first stream to be \parm{CHANNEL}
+
 \item[\option{--channel-two} \parm{CHANNEL}]
 Sets the channel for the second stream to be \parm{CHANNEL}
+
 \item[\option{--frame-cache-one} \parm{FILE}]
-Sets the frame cache file for the first stream to be \parm{FILE}
+Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
+cache file \parm{FILE} for the first detector.  LAL frame cache files
+are explained in the ``framedata'' package in LAL and can be constructed
+by making calls to \prog{LSCdataFind} on some systems.
+
 \item[\option{--frame-cache-two} \parm{FILE}]
-Sets the frame cache file for the second stream to be \parm{FILE}
+Obtain the locations of input \texttt{.gwf} frame files from the LAL frame
+cache file \parm{FILE} for the second detector.  LAL frame cache files
+are explained in the ``framedata'' package in LAL and can be constructed
+by making calls to \prog{LSCdataFind} on some systems.
+
 \item[\option{--calibration-cache-one} \parm{FILE}]
-Sets the calibration cache file for the first stream to be \parm{FILE}
+Specify the location of calibration information for the first detector.
+\parm{FILE} gives the path to a LAL-format frame cache file describing
+locations of \texttt{.gwf} frame files that provide the calibration data
+($\alpha$ and $\beta$ coefficients) for the analysis.  Frame cache files
+are explained in the ``framedata'' package in LAL.
+
 \item[\option{--calibration-cache-two} \parm{FILE}]
-Sets the calibration cache file for the second stream to be \parm{FILE}
+Specify the location of calibration information for the second detector.
+\parm{FILE} gives the path to a LAL-format frame cache file describing
+locations of \texttt{.gwf} frame files that provide the calibration data
+($\alpha$ and $\beta$ coefficients) for the analysis.  Frame cache files
+are explained in the ``framedata'' package in LAL.
+
 \item[\option{--calibration-offset} \parm{N}]
 Sets the calibration offset to \parm{N}
 \item[\option{--apply-mask}]
@@ -632,8 +675,6 @@ Set the attenuation coefficent for the high pass filter to \parm{N}
 Sets the high pass filter order to \parm{N}
 \item[\option{--recentre}]
 Centre the data
-\item[\option{--post-analysis}]
-Perform post analysis
 \item[\option{--middle-segment}]
 Include the middle segment in the power spectra estimation
 \item[\option{--inject}]
