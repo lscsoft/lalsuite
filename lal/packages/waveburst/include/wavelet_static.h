@@ -21,7 +21,7 @@ static void _assignWavelet(Wavelet **left,Wavelet *right);
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right);
 
 static void _createClusterWavelet(ClusterWavelet **w);
-static double _setMask(ClusterWavelet *wavelet, int nc, BOOLEAN aura, Wavelet *original);
+static double _setMask(ClusterWavelet *wavelet, int nc, BOOLEAN aura);
 static void _pMaskPushBack(ClusterWavelet *wavelet, PixelWavelet *pix);
 static void _copyPixel(PixelWavelet *to, PixelWavelet *from);
 static void _assignPixel(PixelWavelet **to, PixelWavelet *from);
@@ -271,8 +271,11 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   int M;
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
+  if(right->original!=NULL) _assignWavelet(&(*left)->original,right->original);
   (*left)->pMaskCount=right->pMaskCount;
   (*left)->clusterCount=right->clusterCount;
+  (*left)->clusterType=right->clusterType;
+  (*left)->simulationType=right->simulationType;
   (*left)->nonZeroFractionAfterPercentile=right->nonZeroFractionAfterPercentile;
   (*left)->nonZeroFractionAfterCoincidence=right->nonZeroFractionAfterCoincidence;
   (*left)->nonZeroFractionAfterSetMask=right->nonZeroFractionAfterSetMask;
@@ -281,6 +284,7 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   (*left)->nonZeroFractionAfterVetoes=right->nonZeroFractionAfterVetoes;
   (*left)->pixelSwapApplied=right->pixelSwapApplied;
   (*left)->pixelMixerApplied=right->pixelMixerApplied;
+
   M = _getMaxLayer(right->wavelet)+1;
   if(right->medians!=NULL)
     {
@@ -469,10 +473,10 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 
 static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds)
 {
-  return (double)nanoseconds*pow(10,-9)/ts->deltaT+0.5;
+  return nanoseconds*pow(10,-9)/ts->deltaT+0.5;
 }
 
-static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura, Wavelet *original)
+static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 {
   register int i;
   register int j;
@@ -497,6 +501,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura, Wavelet *origina
   register int* pN;
   int nM;
   Slice S;
+  Wavelet *original=w->original;
   
   if(w->wavelet->treeType!=BINARY) return 1.;
 
@@ -784,6 +789,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura, Wavelet *origina
     w->pMask[k]->amplitudeOriginal=-1.0;
     w->pMask[k]->amplitude=w->wavelet->data->data->data[S.start+S.step*j];
     w->pMask[k]->amplitudeOriginal=original->data->data->data[S.start+S.step*j];
+
     w->pMask[k]->neighborsCount=0;
 
     pN = &(w->pMask[k]->neighbors[0]);
@@ -1394,23 +1400,26 @@ static void _clusterProperties(ClusterWavelet *w)
 void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan)
 {
   *sec=(UINT4)t;
-  *nan=(UINT4)((t-*sec)*100000000);
+  *nan=(UINT4)((t-*sec)*pow(10,9));
 }
 
 double _secNanToDouble(UINT4 sec, UINT4 nan)
 {
-  return ((double)sec + ((double)nan)/((double)100000000.0));
+  return ((double)sec + (double)nan/pow(10,9));
 }
 
 static void _createClusterWavelet(ClusterWavelet **w)
 {
   *w=(ClusterWavelet*)LALMalloc(sizeof(ClusterWavelet));
   (*w)->wavelet=NULL;
+  (*w)->original=NULL;
   (*w)->medians=NULL;
   (*w)->norm50=NULL;
   (*w)->pMaskCount=0;
   (*w)->clusterCount=0;
   (*w)->clusterCountFinal=0;
+  (*w)->clusterType=ORIGINAL_CL;
+  (*w)->simulationType=0;
   (*w)->pMask=NULL;
   (*w)->sCuts=NULL;  
   (*w)->cList=NULL;
@@ -1450,6 +1459,11 @@ static void _freeClusterWavelet(ClusterWavelet **w)
     {
       _freeWavelet(&(*w)->wavelet);
       (*w)->wavelet=NULL;
+    }
+  if((*w)->original!=NULL)
+    {
+      _freeWavelet(&(*w)->original);
+      (*w)->original=NULL;
     }
   if((*w)->medians!=NULL)
     {

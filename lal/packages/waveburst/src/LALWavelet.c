@@ -59,7 +59,7 @@ NRCSID( LALWAVELETC, "$Id$" );
 /******* DECLARE LOCAL (static) FUNCTIONS ************/
 
 #include "wavelet_static.h"
-/*  #include "../include/wavelet_test_static.h" */
+
 
 /******* DEFINE GLOBAL FUNCTIONS ************/
 
@@ -157,7 +157,7 @@ LALPixelSwapWavelet(LALStatus *status,
 /******** </lalVerbatim> ********/
 {
   INT4 i, j, M, nS;
-  REAL4TimeSeries *a, *b;
+  REAL4TimeSeries *a, *b, *ao, *bo;
 
   INITSTATUS( status, "LALPixelSwapWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -170,14 +170,20 @@ LALPixelSwapWavelet(LALStatus *status,
   for(i=0; i<M; i++){
     _getLayer(&a,i,input->in->wavelet);
     _assignREAL4TimeSeries(&b,a);
+    _getLayer(&ao,i,input->in->original);
+
+    _assignREAL4TimeSeries(&bo,ao);
 
     for(j=0; j<nS; j++){
-      b->data->data[j]=a->data->data[nS-1-j];
+      b->data->data[j]=a->data->data[(j+nS/2)%nS];
+      bo->data->data[j]=ao->data->data[(j+nS/2)%nS];
     }
     _putLayer(b, i, (*output)->out->wavelet);
+    _putLayer(bo,i, (*output)->out->original);
   }
 
   (*output)->out->pixelSwapApplied=TRUE;
+  (*output)->out->clusterType=SWAPPED_CL;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -190,40 +196,59 @@ LALPixelMixerWavelet(LALStatus *status,
 		     InputPixelMixerWavelet *input)
 /******** </lalVerbatim> ********/
 {
-  INT4 i, j, nS;
+  INT4 i, j, k, nS, M;
   RandomParams *rparams;
   REAL4 x;
+  REAL4TimeSeries *a, *b, *ao, *bo;
 
   INITSTATUS( status, "LALPixelMixerWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
 
-  nS=input->in->wavelet->data->data->length;
-
   LALCreateRandomParams(status->statusPtr,&rparams,input->seed);
-
   _assignClusterWavelet(&(*output)->out, input->in);
 
-  for(i=0; i<nS; i++)
-    {
-      (*output)->out->wavelet->data->data->data[i] = 0.0;
-    }
 
-  for(i=0; i<nS; i++)
-    {
-      if(input->in->wavelet->data->data->data[i] != 0.0)
+/*   bzero((*output)->out->wavelet->data->data->data, */
+/* 	sizeof(REAL4)*input->in->wavelet->data->data->length); */
+/*   bzero((*output)->out->original->data->data->data, */
+/* 	sizeof(REAL4)*input->in->original->data->data->length); */
+  
+
+  M = _getMaxLayer(input->in->wavelet)+1;
+  nS=input->in->wavelet->data->data->length/M;
+
+  for(i=0; i<M; i++){
+    _getLayer(&a,i,input->in->wavelet);
+    _assignREAL4TimeSeries(&b,a);
+    _getLayer(&ao,i,input->in->original);
+    _assignREAL4TimeSeries(&bo,ao);
+
+
+    for(j=0;j<nS;j++)
+      {
+	b->data->data[j]=bo->data->data[j]=0.0;
+      }
+
+    for(j=0; j<nS; j++){
+      if(a->data->data[j]!=0.0)
 	{
 	  do
 	    {
 	      LALUniformDeviate(status->statusPtr,&x,rparams);
-	      j=(INT4)(x*(nS-1));
+	      k=(INT4)(x*(nS-1));
 	    }
-	  while((*output)->out->wavelet->data->data->data[j] != 0.0);
-	  (*output)->out->wavelet->data->data->data[j] = 
-	    input->in->wavelet->data->data->data[i];
+	  while(b->data->data[k]!=0.0);
+	  
+	  b->data->data[k]=a->data->data[j];
+	  bo->data->data[k]=ao->data->data[j];
 	}
     }
+    _putLayer(b, i, (*output)->out->wavelet);
+    _putLayer(bo,i, (*output)->out->original);
+  }
 
   (*output)->out->pixelMixerApplied=TRUE;
+  (*output)->out->clusterType=MIXED_CL;
   LALDestroyRandomParams(status->statusPtr,&rparams);
 
   DETATCHSTATUSPTR(status);
@@ -527,8 +552,9 @@ LALClusterWavelet(LALStatus *status,
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
   _assignClusterWavelet(&((*output)->w),input->w);
+  /*   _assignWavelet(&((*output)->w->original),input->original);*/
   (*output)->w->nonZeroFractionAfterSetMask = 
-    _setMask((*output)->w, input->minClusterSize, input->aura, input->original);
+    _setMask((*output)->w, input->minClusterSize, input->aura);
   ncluster=_clusterMain((*output)->w);
   _clusterProperties((*output)->w);
 

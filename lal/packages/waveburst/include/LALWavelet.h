@@ -91,6 +91,8 @@ enum TREETYPE {DIADIC, BINARY};
 
 enum COINCIDENCETYPE {GG,GV};
 
+typedef enum { ORIGINAL_CL, SWAPPED_CL, MIXED_CL } CLUSTER_TYPE;
+
 
 /*************************************<lalLaTeX file="WaveburstStructs">
 \subsubsection*{struct \texttt{Slice}}
@@ -253,6 +255,7 @@ typedef struct
 tagClusterWavelet
 {
   Wavelet *wavelet;
+  Wavelet *original;
 
   REAL4 *medians;
   REAL4 *norm50;
@@ -260,7 +263,8 @@ tagClusterWavelet
   UINT4 pMaskCount;
   UINT4 clusterCount;
   UINT4 clusterCountFinal;
-  INT4 clusterType;
+  CLUSTER_TYPE clusterType;
+  INT4 simulationType;
   REAL4 delta_t;
   REAL4 delta_f;
 

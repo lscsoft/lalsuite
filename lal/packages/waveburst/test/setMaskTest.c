@@ -127,8 +127,8 @@ int main( )
 	{
 	  is->nonZeroFractionAfterCoincidence=1.0;
 	}
-
-      _setMask(is,p->nc,p->aura,is->wavelet);
+      _assignWavelet(&is->original, is->wavelet);
+      _setMask(is,p->nc,p->aura);
  
      
       testRecord.result=compareWavelets_MD_TS_PM(is,should,FALSE) > 0 ? TRUE : FALSE;
