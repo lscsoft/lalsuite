@@ -51,7 +51,7 @@ int ComputePSD(struct CommandLineArgsTag CLA)
   FILE *fp,*fpo;
   INT4 i,j=0,offset,ndeltaf;
   size_t errorcode;
-  float Sh;
+  double Sh;
   char filename[256];
 
   strcpy(filename,CLA.outputfile);
@@ -149,7 +149,7 @@ int ReadSFTDirectory(struct CommandLineArgsTag CLA)
   glob(command, GLOB_ERR|GLOB_MARK, NULL, &globbuf);
 
   /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-  while (fileno < globbuf.gl_pathc) 
+  while (fileno < (int)globbuf.gl_pathc) 
     {
       strcpy(filelist[fileno],globbuf.gl_pathv[fileno]);
       fileno++;
