@@ -16,17 +16,17 @@ b. If this does not work, check the following:
 
 i. LAL must be built and installed WITHOUT the "--disable-static" flag set during configure, so that liblal.a and liblalsupport.a exist.
 
-ii. Check that /ldcg and $LALPREFIX are set up.
+ii. Check that $LALPREFIX is set up.
  
 If the include files and library files you need are not under these directories, then edit the Makefile to give the locations on your system.  The lines to consider are:
 
 # header file directories
 LAL_INCLUDE=$(LALPREFIX)/include
-LDCG_INCLUDE=/ldcg/include
+USR_INCLUDE=/usr/include
  
 # library file directories
 LAL_LIB=$(LALPREFIX)/lib
-LDCG_LIB=/ldcg/lib
+USR_LIB=/usr/lib
 
 3. Run "./runComputeStackSlideSUM.tclsh" and "./runComputeStackSlideSUM.tclsh -h" to get instructions on how to run the code.
 

@@ -6,15 +6,15 @@
 OSType=`uname`
 
 # your compiler
-CC=gcc
+CC=/usr/bin/gcc
 
 # header file directories
 LAL_INCLUDE=$(LALPREFIX)/include
-LDCG_INCLUDE=/ldcg/include
+USR_INCLUDE=/usr/include
 
 # library file directories
 LAL_LIB=$(LALPREFIX)/lib
-LDCG_LIB=/ldcg/lib
+USR_LIB=/usr/lib
 
 # libraries
 #LRFFTW = rfftw
@@ -23,10 +23,10 @@ LLAL = lal
 LALS = lalsupport
 
 # compiler options
-CFLAGS =  -Wall -v -ggdb -I$(LAL_INCLUDE) -I$(LDCG_INCLUDE)
+CFLAGS =  -Wall -v -ggdb -I$(LAL_INCLUDE) -I$(USR_INCLUDE)
 
 # linking options
-LDFLAGS =  -L$(LAL_LIB) -L$(LDCG_LIB)
+LDFLAGS =  -L$(LAL_LIB) -L$(USR_LIB)
 LIBS =  -l$(LALS) -l$(LLAL) -lm
 
 # the object files
