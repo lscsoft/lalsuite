@@ -363,6 +363,7 @@ NRCSID (LALSTATUSMACROSH, "$Id$");
 extern int debuglevel;
 
 #define INITSTATUS(statusptr, id)                                     \
+do                                                                    \
 {                                                                     \
   INT4 level;                                                         \
   if(!(statusptr))                                                    \
@@ -377,9 +378,10 @@ extern int debuglevel;
   memset((statusptr),0,sizeof(Status));                               \
   (statusptr)->level = level > 0 ? level : 1 ;                        \
   (statusptr)->Id    = (id);                                          \
-}
+} while (0)
 
 #define RETURN(statusptr)                                             \
+do                                                                    \
 {                                                                     \
   (statusptr)->file=__FILE__;                                         \
   (statusptr)->line=__LINE__;                                         \
@@ -403,9 +405,10 @@ extern int debuglevel;
               (statusptr)->statusDescription);                        \
       return;                                                         \
     }                                                                 \
-}
+} while (0)
 
 #define ABORT(statusptr,code,mesg)                                    \
+do                                                                    \
 {                                                                     \
   (statusptr)->file=__FILE__;                                         \
   (statusptr)->line=__LINE__;                                         \
@@ -435,9 +438,10 @@ extern int debuglevel;
               (mesg));                                                \
       return;                                                         \
     }                                                                 \
-}
+} while (0)
 
 #define ASSERT(assertion,statusptr,code,mesg)                         \
+do                                                                    \
 {                                                                     \
   if(!(assertion))                                                    \
     {                                                                 \
@@ -471,9 +475,10 @@ extern int debuglevel;
 	  return;                                                     \
 	}                                                             \
     }                                                                 \
-}
+} while (0)
 
 #define ATTATCHSTATUSPTR(statusptr)                                   \
+do                                                                    \
 {                                                                     \
   ASSERT(!(statusptr)->statusPtr,statusptr,-2,                        \
 	 "ATTATCHSTATUSPTR: non-null status pointer");                \
@@ -481,17 +486,19 @@ extern int debuglevel;
   ASSERT((statusptr)->statusPtr,statusptr,-4,                         \
 	 "ATTATCHSTATUSPTR: memory allocation error");                \
   (statusptr)->statusPtr->level=(statusptr)->level + 1;               \
-}
+} while (0)
 
 #define DETATCHSTATUSPTR(statusptr)                                   \
+do                                                                    \
 {                                                                     \
   ASSERT((statusptr)->statusPtr,statusptr,-8,                         \
 	 "DETATCHSTATUSPTR: null status pointer");                    \
   LALFree((statusptr)->statusPtr);                                    \
   (statusptr)->statusPtr=NULL;                                        \
-}
+} while (0)
 
 #define TRY(function,statusptr)                                       \
+do                                                                    \
 {                                                                     \
   (function);                                                         \
   if((statusptr)->statusPtr->statusCode)                              \
@@ -509,9 +516,10 @@ extern int debuglevel;
 	}                                                             \
       return;                                                         \
     }                                                                 \
-}
+} while (0)
 
 #define CHECKSTATUSPTR(statusptr)                                     \
+do                                                                    \
 {                                                                     \
   if((statusptr)->statusPtr->statusCode)                              \
     {                                                                 \
@@ -528,9 +536,10 @@ extern int debuglevel;
 	}                                                             \
       return;                                                         \
     }                                                                 \
-}
+} while (0)
 
 #define REPORTSTATUS(statusptr)                                       \
+do                                                                    \
 {                                                                     \
   Status *ptr;                                                        \
   for(ptr=(statusptr);ptr;ptr=(ptr->statusPtr))                       \
@@ -547,6 +556,6 @@ extern int debuglevel;
       }                                                               \
       LALPrintError("\tfile %s, line %i\n",ptr->file,ptr->line);      \
     }                                                                 \
-}
+} while (0)
 
 #endif
