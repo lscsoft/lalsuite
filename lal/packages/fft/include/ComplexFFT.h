@@ -72,7 +72,7 @@ typedef struct tagComplexFFTPlan ComplexFFTPlan;
  * \newpage\input{ComplexFFTTestC}
  **** </lalLaTeX> */
 
-#define KEEP_OLD_COMPLEX_FFT
+/* #define KEEP_OLD_COMPLEX_FFT */
 
 void
 LALCreateForwardComplexPlan(

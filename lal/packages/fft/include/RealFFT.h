@@ -78,7 +78,7 @@ typedef struct tagRealFFTPlan RealFFTPlan;
  * \newpage\input{RealFFTTestC}
  **** </lalLaTeX> */
 
-#define KEEP_OLD_REAL_FFT
+/* #define KEEP_OLD_REAL_FFT */
 
 void
 LALCreateForwardRealFFTPlan(
