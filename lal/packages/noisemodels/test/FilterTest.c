@@ -192,7 +192,7 @@ main ( void )
 /* REPORTSTATUS(&status); */
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
-   ntrials=1000;
+   ntrials=10;
    fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, i);
    fprintf(stderr,"----------------------------------------------\n");
    fprintf(stderr, "   psi0             psi3        Overlap/SNR\n");
@@ -204,10 +204,12 @@ main ( void )
 	      
       int numTemplates=0;
       randIn.type = 0;
+      /*
       randIn.param.massChoice = m1Andm2;
-      randIn.param.approximant = EOB;
-      LALRandomInspiralSignal(&status, &signal, &randIn);
+      */
       randIn.param.massChoice = psi0psi3;
+      randIn.param.approximant = BCV;
+      LALRandomInspiralSignal(&status, &signal, &randIn);
 /*
       LALREAL4VectorFFT(&status, &correlation, &signal, revp);
       for (j=0; j<signal.length; j++) printf("%e\n", correlation.data[j]);
@@ -217,8 +219,20 @@ main ( void )
       randIn.param.massChoice = m1Andm2;
       LALInspiralParameterCalc(&status, &randIn.param);
       /* We shall choose the cutoff at r=3M for EOB waveforms */
-      randIn.param.fCutoff = 1./(pow(3.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
-      randIn.param.fendBCV = randIn.param.fendBCV;
+      switch (randIn.param.approximant)
+      {
+	   case EOB:
+	      randIn.param.fCutoff = 1./(pow(3.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
+	      break;
+	   case BCV:
+	      randIn.param.fCutoff = randIn.param.fendBCV;
+	      break;
+	   default:
+	      randIn.param.fendBCV = randIn.param.fCutoff;
+	      break;
+      }
+      randIn.param.fendBCV = randIn.param.fCutoff;
+
       randIn.param.approximant = BCV;
       overlapin.signal = signal;
       overlapin.param = randIn.param;
