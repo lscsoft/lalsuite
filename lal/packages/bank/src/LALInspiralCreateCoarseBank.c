@@ -355,7 +355,7 @@ PSItoMasses (
 
 
 
-NRCSID (LALINSPIRALCREATECOARSEBANKC, "Id: $");
+NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralCreateCoarseBankCP"> */
 
