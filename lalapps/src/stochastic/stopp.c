@@ -187,6 +187,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* close xml file */
   LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
+  /* check for memory leaks and exit */
   LALCheckMemoryLeaks();
   exit(0);
 }
