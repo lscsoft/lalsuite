@@ -600,8 +600,8 @@ Patrick Brady
 %
 [\verb$--no-playground$]
 [\verb$--playground-only$]
-\verb$--ifo-a$ \textsc{IFO} 
-\verb$--ifo-b$ \textsc{IFO} \newline
+\verb$--ifo-a$ \textsc{IFOA} 
+\verb$--ifo-b$ \textsc{IFOB} \newline
 %
 [\verb$--drhoplus$ \textsc{$\delta\rho_{+}$}]
 [\verb$--drhominus$ \textsc{$\delta\rho_{-}$}]
@@ -610,15 +610,36 @@ Patrick Brady
 %
 \verb$--gps-start-time$ \textsc{seconds} 
 \verb$--gps-end-time$ \textsc{seconds} 
-\verb$--output$ \textsc{file} \newline
 %
 \textsc{(LIGO Lightweight XML files)}
 
 \item[Description] 
 \verb$lalapps_inca$ performs coincidence on triggers from the inspiral
 search code.  At present it works for only two interferometers. The names
-of the two interferometers must be given. The default behavior outputs
-triggers during playground times to the file \textsc{file};  to obtain
+of the two interferometers must be given. Output is written to a LIGO
+lightweight XML files. Two XML output files are written.  The primary output
+file contains the \texttt{process} and \texttt{process\_params} tables for the
+job and a \texttt{sngl\_inspiral} table containing the triggers from
+\textsc{IFOA} that are found to be in coincidence with triggers in
+\textsc{IFOB}. The secondary output file conatins only a
+\texttt{sngl\_inspiral} table which contains the triggers from \textsc{IFOB}
+that are found to be in coincidence with the triggers from \textsc{IFOA} (So
+that both \texttt{sngl\_inspiral} files contain the same number of
+triggers).
+
+The output files are named in the standard way for inspiral pipeline output.
+The primary triggers are in a file named\\
+\begin{center}
+\texttt{IFOA-INCA\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+and the secondary triggers are in a file named\\
+\begin{center}
+\texttt{IFOB-INCA\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+If a \texttt{--user-tag} is not specified on the comman line, the
+\texttt{\_USERTAG} part of the filename will be omitted.
+
+The default behavior outputs triggers during playground times only. To obtain
 those triggers that are not in the playground, use the \verb$--no-playground$
 flag.     
 %Events can also be clustered
@@ -634,11 +655,11 @@ which lie in the playground data set.
 \item[\texttt{--playground-only}] Optional.  Record only triggers that
 occour in the playground times.  This is the default behaviour.
 
-\item[\texttt{--ifo-a} \textsc{IFO}] Required. This is the name of the
+\item[\texttt{--ifo-a} \textsc{IFOA}] Required. This is the name of the
 interfereometer to use as the interferometer A in the coincidence algorithm.
 It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
-\item[\texttt{--ifo-b} \textsc{IFO}] Required. This is the name of the
+\item[\texttt{--ifo-b} \textsc{IFOB}] Required. This is the name of the
 interfereometer to use as the interferometer B in the coincidence algorithm.
 It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
@@ -747,14 +768,14 @@ the loop over IFO A triggers restarts.
 playground data, start looping over triggers from IFO B.
 \begin{enumerate}
 \item For each trigger from IFO B that is within $\delta t$ of
-\texttt{currentTrigger[0]}, call \\
-\texttt{LALCompareSnglInspiral()} to check if the triggers match as determied
-by the options on the command line. If the trigger match, record them for
-later output as coincident triggers.
-
-\item If the \texttt{currentTrigger[1]} is not within $\delta t$, of
-\texttt{currentTrigger[0]} continue loop over triggers from IFO A.
+\texttt{currentTrigger[0]}
+\item Call \texttt{LALCompareSnglInspiral()} to check if the triggers match as
+determied by the options on the command line. If the trigger match, record
+them for later output as coincident triggers.
 \end{enumerate}
+
+\item Increment \texttt{currentTrigger[0]} and continue loop over triggers
+from IFO A.
 \end{enumerate}
 \end{enumerate}
 
