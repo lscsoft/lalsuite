@@ -344,7 +344,7 @@ int main(int argc, char **argv)
     * Read in list of candidate events and apply vetoes to them.
     ********************************************************************/
     fprintf(fpout,"# Building a list of triggers\n"); fflush(fpout);
-    buildEventList( &eventhead, vwindows, candidates, TRIGGERS, 1);
+    buildEventList( &eventhead, vwindows, candidates, TRIGGERS, 1, 1.0);
     triggerHistogram = calloc( numbins, sizeof(int*) );
     for ( i = 0; i < numbins; ++i )
     {
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
     * Read in list of injection events and apply vetoes to them.
     ********************************************************************/
     fprintf(fpout,"# Building a list of injection triggers\n"); fflush(fpout);
-    buildEventList( &Ieventhead, vwindows, candidates, INJECTIONS, 1);
+    buildEventList( &Ieventhead, vwindows, candidates, INJECTIONS, 1, 1.0);
     injectHistogram = calloc( numbins, sizeof(int*) );
     for ( i = 0; i < numbins; ++i )
     {

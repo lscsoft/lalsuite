@@ -281,7 +281,7 @@ int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry)
 * rules in candParams.
 *******************************************************************/
 int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams candidates,
-        int injectflag, int maxflag)
+        int injectflag, int maxflag, float calfudge)
 {
     int status,iVetoS,iVetoNS,iVetoSNR,iCandCHISQ,iCandEDIST,iCandMCHIRP;
     int iCandMASS1,iCandMASS2;
@@ -345,7 +345,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
             break;
         }
 
-        snrVtemp = candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
+        snrVtemp = calfudge * candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
         chiVtemp = candEnv->ligo_lw.table.elt[iCandCHISQ].data.real_4;  
         edistVtemp = candEnv->ligo_lw.table.elt[iCandEDIST].data.real_4;  
         mchirpVtemp = candEnv->ligo_lw.table.elt[iCandMCHIRP].data.real_4;  

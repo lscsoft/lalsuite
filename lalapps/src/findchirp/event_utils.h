@@ -88,7 +88,7 @@ candEvent;
 
 int buildVetoTimes( vetoParams *thisentry);
 int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams candidates,
-        int injectflag, int maxflag);
+        int injectflag, int maxflag, float calfudge);
 int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry);
 int build2DHistogram(candEvent *eventhead, const char *outputfile, int **hist, int nbins, float minsnr, float maxchisq);
 int computeUL(const char *outputfile, int **triggerHistogram,

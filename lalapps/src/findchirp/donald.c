@@ -321,9 +321,9 @@ int main(int argc, char **argv)
      * 
      ****************************************************************/
     for ( i=0 ; i<numIFO ; i++ ){
-        
-        fprintf(fpout,"# Working on IFO %s out of %i\n",ifo[i].ifoname,numIFO);
 
+        float calfudge=1.0;
+        
         if ( ( fp = fopen( ifo[i].cfgfile, "r" ) ) == NULL ) {
             fprintf(stderr,  "Error opening IFO file %s\n", ifo[i].cfgfile );
             return RESPONSEC_EFILE;
@@ -404,7 +404,7 @@ int main(int argc, char **argv)
          ********************************************************************/
         fprintf(fpout,"# Building a list of triggers\n"); fflush(fpout);
         buildEventList( &(ifo[i].eventhead), ifo[i].vwindows, 
-                ifo[i].candidates, TRIGGERS, 0);
+                ifo[i].candidates, TRIGGERS, 0, 1.0);
 
         /******************************************************************** 
          * Print out the list of events that were found
@@ -430,8 +430,13 @@ int main(int argc, char **argv)
          * Read in list of injection events and apply vetoes to them.
          ********************************************************************/
         fprintf(fpout,"# Building a list of injection triggers\n"); fflush(fpout);
+        if (!(strcmp(ifo[i].ifoname,"H1"))){
+            calfudge = 1.11/0.87;
+        }
+        fprintf(fpout,"Using calibration fudge factor %f for %s\n",
+                calfudge, ifo[i].ifoname);
         buildEventList( &(ifo[i].Ieventhead), ifo[i].vwindows, 
-                ifo[i].candidates, INJECTIONS, 0);
+                ifo[i].candidates, INJECTIONS, 0, calfudge);
 
         /******************************************************************** 
          * Print out the list of events that were found
