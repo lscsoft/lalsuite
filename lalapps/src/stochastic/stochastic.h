@@ -10,12 +10,6 @@
 #ifndef _STOCHASTIC_H
 #define _STOCHASTIC_H
 
-#include <lal/Calibration.h>
-#include <lal/DetectorSite.h>
-#include <lal/LALStdlib.h>
-#include <lal/SimulateSB.h>
-#include <lal/Units.h>
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
