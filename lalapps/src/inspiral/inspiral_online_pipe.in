@@ -224,8 +224,8 @@ for seg in data:
     sinca = inspiral.IncaNode(sinca_job)
     for insp in sub_insp:
       sinca.set_ifo_a(ifo)
-      sinca.add_var_opt('gps-start-time',chunk.start())
-      sinca.add_var_opt('gps-end-time',chunk.end())
+      sinca.set_start(chunk.start())
+      sinca.set_end(chunk.end())
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
       dag.add_node(sinca)
@@ -234,8 +234,8 @@ for seg in data:
 # use inca to concatenate all the inspiral files and dump result in /cluster
 inca = inspiral.IncaNode(inca_job)
 inca.set_ifo_a(ifo)
-inca.add_var_opt('gps-start-time',dag_start_time)
-inca.add_var_opt('gps-end-time',dag_end_time)
+inca.set_start(dag_start_time)
+inca.set_end(dag_end_time)
 for sinca in sinca_nodes:
   inca.add_parent(sinca)
   inca.add_var_arg(sinca.get_output_a())
