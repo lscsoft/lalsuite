@@ -1806,6 +1806,48 @@ INT4 main(INT4 argc, CHAR *argv[])
   return 0;
 }
 
+#define USAGE \
+  "Usage: lalapps_stochastic [options]\n"\
+  " -h, --help                          print this message\n"\
+  " -v, --version                       display version\n"\
+  " --verbose                           verbose mode\n"\
+  " --post-analysis                     post analysis\n"\
+  " -z, --debug-level N                 set lalDebugLevel\n"\
+  " -t, --gps-start-time N              GPS start time\n"\
+  " -T, --gps-stop-time N               GPS stop time\n"\
+  " -L, --interval-duration N           interval duration\n"\
+  " -l, --segment-duration N            segment duration\n"\
+  " -A, --sample-rate N                 sample rate\n"\
+  " -a, --resample-rate N               resample rate\n"\
+  " -f, --f-min N                       minimum frequency\n"\
+  " -F, --f-max N                       maximum frequency\n"\
+  " --high-pass-filter                  apply high pass filter\n"\
+  " -k, --hpf-frequency N               high pass filter knee frequency\n"\
+  " -p, --hpf-attenuation N             high pass filter attenuation\n"\
+  " -P, --hpf-order N                   high pass filter order\n"\
+  " --overlap-hann                      use overlap window\n"\
+  " -w, --hann-duration N               hann duration\n"\
+  " -i, --ifo-one IFO                   ifo for first stream\n"\
+  " -I, --ifo-two IFO                   ifo for second stream\n"\
+  " -d, --frame-cache-one FILE          cache file for first stream\n"\
+  " -D, --frame-cache-two FILE          cache file for second stream\n"\
+  " -r, --calibration-cache-one FILE    first stream calibration cache\n"\
+  " -R, --calibration-cache-two FILE    second stream calibration cache\n"\
+  " -c, --calibration-offset N          offset for calibration time\n"\
+  " --apply-mask                        apply frequency masking\n"\
+  " -b, --mask-bin N                    number of bin for frequency mask\n"\
+  " --inject                            inject a signal into the data\n"\
+  " -o, --scale-factor N                scale factor for injection\n"\
+  " -g, --seed N                        seed for injections\n"\
+  " -N, --trials N                      number of trial for MC\n"\
+  " -S, --output-dir DIR                directory for output files\n"\
+  " --test                              print intermediate results\n"\
+  " -U, --test-interval N               interval number for test\n"\
+  " -V, --test-segment N                segment number test\n"\
+  " -W, --test-trial N                  trial number for test\n"\
+  " -z, --debug-level N                 debugging level\n"\
+  "\n"
+
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
 {
@@ -1827,7 +1869,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
       {"gps-end-time", required_argument, 0, 'T'},
-      {"segment-big-duration", required_argument, 0, 'L'},
+      {"interval-duration", required_argument, 0, 'L'},
       {"segment-duration", required_argument, 0, 'l'},
       {"sample-rate", required_argument, 0, 'A'},
       {"resample-rate", required_argument, 0, 'a'},
@@ -1847,11 +1889,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"mask-bin", required_argument, 0, 'b'},
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
-      {"number-of-injection", required_argument, 0, 'N'},
+      {"trials", required_argument, 0, 'N'},
       {"output-dir", required_argument, 0, 'S'},
-      {"test-big-segment-number", required_argument, 0, 'U'},
-      {"test-small-segment-number", required_argument, 0, 'V'},
-      {"test-trial-number", required_argument, 0, 'W'},
+      {"test-interval", required_argument, 0, 'U'},
+      {"test-segment", required_argument, 0, 'V'},
+      {"test-trial", required_argument, 0, 'W'},
       {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'v'},
       {0, 0, 0, 0}
@@ -1885,7 +1927,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'h':
         /* HELP!!! */
-        displayUsage(0);
+        fprintf(stdout, USAGE);
+        exit(0);
         break;
 
       case 't':
@@ -2086,64 +2129,27 @@ void parseOptions(INT4 argc, CHAR *argv[])
         exit(0);
         break;
 
+      case '?':
+        exit(1);
+        break;
+
       default:
-        displayUsage(1);
+        fprintf(stderr, "unknown error while parsing options\n");
+        exit(1);
     }
   }
 
   if (optind < argc)
   {
-    displayUsage(1);
+    fprintf(stderr, "extraneous command line arguments:\n");
+    while(optind < argc)
+    {
+      fprintf(stderr, "%s\n", argv[optind++]);
+    }
+    exit(1);
   }
 
   return;
-}
-
-/* display program usage */
-void displayUsage(INT4 exitcode)
-{
-  fprintf(stderr, "Usage: pipeline [options]\n");
-  fprintf(stderr, "Options:\n");
-  fprintf(stderr, " -h                    print this message\n");
-  fprintf(stderr, " -V                    display version\n");
-  fprintf(stderr, " --verbose             verbose mode\n");
-  fprintf(stderr, " --post-analysis       post analysis\n");
-  fprintf(stderr, " -z                    set lalDebugLevel\n");
-  fprintf(stderr, " -t                    GPS start time\n");
-  fprintf(stderr, " -T                    GPS stop time\n");
-  fprintf(stderr, " -L                    interval duration\n");
-  fprintf(stderr, " -l                    segment duration\n");
-  fprintf(stderr, " -A                    sample rate\n");
-  fprintf(stderr, " -a                    resample rate\n");
-  fprintf(stderr, " -f                    minimal frequency\n");
-  fprintf(stderr, " -F                    maximal frequency\n");
-  fprintf(stderr, " -- high-pass-filter   apply high pass filter\n");
-  fprintf(stderr, " -k                    high pass filter knee frequency\n");
-  fprintf(stderr, " -p                    high pass filter attenuation\n");
-  fprintf(stderr, " -P                    high pass filter order\n");        
-  fprintf(stderr, " --overlap-hann        use overlap window\n");             
-  fprintf(stderr, " -w                    hann duration\n");
-  fprintf(stderr, " -i                    ifo for first stream\n");
-  fprintf(stderr, " -I                    ifo for second stream\n");
-  fprintf(stderr, " -d                    cache file for first stream\n");
-  fprintf(stderr, " -D                    cache file for second stream\n");
-  fprintf(stderr, " -r                    first stream calibration cache\n");
-  fprintf(stderr, " -R                    second stream calibration cache\n");
-  fprintf(stderr, " -c                    offset for calibration time\n");
-  fprintf(stderr, " --apply-mask          apply frequency masking\n");
-  fprintf(stderr, " -b                    number of bin for frequency mask\n");
-  fprintf(stderr, " --inject              inject a signal into the data\n");
-  fprintf(stderr, " -o                    scale factor for injection\n");
-  fprintf(stderr, " -g                    seed\n");
-  fprintf(stderr, " -N                    number of trial for MC\n");
-  fprintf(stderr, " -S                    directory for output files\n");
-  fprintf(stderr, " --test                print intermediate results\n");
-  fprintf(stderr, " -U                    interval number for test\n"); 
-  fprintf(stderr, " -V                    segment number test\n"); 
-  fprintf(stderr, " -W                    trial number for test\n"); 
-  fprintf(stderr, " -v                    version\n");   
-  fprintf(stderr, " -z                    debugging level\n");     
-  exit(exitcode);
 }
 
 /* function to read data from frames */
