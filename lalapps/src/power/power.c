@@ -177,6 +177,7 @@ int main( int argc, char *argv[])
     LALTimeInterval tmpInterval;
     REAL8                 tmpOffset = 0.0;
     REAL4                 minFreq = 0.0;    
+    int                   start_sample;
 
     /* data storage */
     REAL4TimeSeries            series;
@@ -589,27 +590,28 @@ int main( int argc, char *argv[])
       /*******************************************************************
        * DO THE SEARCH                                                    *
        *******************************************************************/
-      while ( params->currentSegment < params->initParams->numSegments )
+      start_sample = 0;
+      while( start_sample < series.data->length )
       {
         UINT4                tmpDutyCycle=0;
         UINT4                dumCurrentSeg=params->currentSegment;
         SnglBurstTable      *tmpEvent     = NULL;
         REAL4TimeSeries  *interval;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, params->currentSegment * params->ovrlap, min(33.5 / series.deltaT, (params->initParams->numSegments - params->currentSegment - 1) * params->ovrlap + (2.0 / series.deltaT))), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(33.5 / series.deltaT, (series.data->length - start_sample))), &stat);
 
         /* count the segments to analyze */
-        for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
-            dumCurrentSeg < params->initParams->numSegments ; tmpDutyCycle++ )
-        {
-          dumCurrentSeg++;
-        }
+	for ( tmpDutyCycle=0 ; tmpDutyCycle < params->initParams->segDutyCycle && 
+		dumCurrentSeg < params->initParams->numSegments ; tmpDutyCycle++ )
+	  {
+	    dumCurrentSeg++;
+	  }
 
         /* tell operator how we are doing */
         if (verbose)
         {
-          fprintf(stdout,"Analyzing segments %i -- %i\n", params->currentSegment,
-              params->currentSegment + tmpDutyCycle - 1);
+          fprintf(stdout,"Analyzing from %i -- %i\n", start_sample,
+		  start_sample + min(33.5 /series.deltaT, (series.data->length - start_sample)));
         }
 
         /* This is the main engine of the excess power method */ 
@@ -640,9 +642,10 @@ int main( int argc, char *argv[])
 
         LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
 
-        /* increment to the next segment number to be analyzed */
-        params->currentSegment += tmpDutyCycle;
-      }
+        /* move to the next start point*/
+	start_sample += tmpDutyCycle * params->ovrlap ; 
+      } 
+
 
       /* compute the start time for the next chunk */
       tmpOffset = (REAL8)(numPoints - 2 * params->ovrlap)/((REAL8) sampleRate);
