@@ -43,9 +43,10 @@ const LALFrDetector lalCachedBars[LALNumCachedBars]
       115.0L + 49.0L / 60.0L,
       0,
       0, (90.0+ 0.0)*LAL_PI_180, 0, 0 } ,
+    /* Taken from Finn and Lazzarini gr-qc/0104040 */
     { "ALLEGRO (post-2000)",
-    -( 91.0L + ( 10.0L + (43.7L/60.0L) ) / 60.0L),
-       30.0L + ( 24.0L + (45.9L/60.0L) ) / 60.0L,
-      11.1,
+    -( 91.0L + ( 10.0L + (43.766L/60.0L) ) / 60.0L),
+       30.0L + ( 24.0L + (45.110L/60.0L) ) / 60.0L,
+      0,
       0, (90.0+40.0)*LAL_PI_180, 0, 0 }
 };
