@@ -62,6 +62,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo_two = None
     self.__f_min = None
     self.__f_max = None
+    self.__usertag = None
 
   def set_ifo_one(self, ifo):
     """
@@ -171,6 +172,13 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__f_max
 
+  def set_user_tag(self,usertag):
+    """
+    Set the user tag
+    """
+    self.add_var_opt('user-tag',usertag)
+    self.__usertag = usertag
+
   def get_output(self):
     """
     Returns the file name of output from the stochastic code. This must be
@@ -180,10 +188,15 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       self.get_ifo_one() or not self.get_ifo_two():
         raise StochasticError, "Start time, end time, ifo one or ifo " \
           "two has not been set"
-    out = self.get_ifo_one() + self.get_ifo_two() + '-' "stochastic"
-    out = out + '-' + str(self.get_start()) + '-' + str(self.get_end())
-    out = out + '.xml'
-    return out
+
+    basename = self.get_ifo_one() + self.get_ifo_two() + '-' 'stochastic'
+
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+               str(self.get_end()) + '.xml'
+    return filename
 
 
 class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):

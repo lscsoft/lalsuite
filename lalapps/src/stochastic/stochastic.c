@@ -1810,8 +1810,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   parse_options(argc, argv);
 
   /* get xml file name */
-  LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
-      ifoOne, ifoTwo, startTime, endTime);
+  if (userTag)
+  {
+    LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic_%s-%d-%d.xml", \
+        ifoOne, ifoTwo, userTag, startTime, endTime);
+  }
+  else
+  {
+    LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
+        ifoOne, ifoTwo, startTime, endTime);
+  }
 
   /* get number of segments */
   duration = endTime - startTime;
