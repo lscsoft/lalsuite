@@ -182,6 +182,7 @@ AC_OUTPUT( 				\
 	src/pulsar/FDS_griphyn/Makefile \
 	src/pulsar/hough/Makefile	\
 	src/pulsar/hough/src/Makefile   \
+	src/pulsar/FDS_binary/Makefile  \
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
