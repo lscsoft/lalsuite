@@ -471,7 +471,7 @@ int main( int argc, char *argv[] )
 	if ( writeRawData )
 	{
 	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      "RAW" );
+	      NULL );
 	}
 	/* perform injections into this file's data only, preserve name*/
 	LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
@@ -505,7 +505,7 @@ int main( int argc, char *argv[] )
       }
 
       if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
-      frOutFile = FrFileONew( fname, 0 );
+      frOutFile = FrFileONew( fname, 3 );
       FrameWrite( outFrame, frOutFile );
       FrFileOEnd( frOutFile );
       if ( vrbflg ) fprintf( stdout, "done\n" );
