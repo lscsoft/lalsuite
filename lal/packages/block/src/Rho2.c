@@ -400,10 +400,6 @@ const	INT4		two = 2;
 	/*  ndx = ndx + 2  */
 	(*index) = (*index) + 1;
 
-	if(( (*index) < 2 )||( (*index) > N - 2))
-	  fprintf(stdout,"index = %d\t%d\n",(*index),N);
-	fflush(stdout);
-
 	LALI4DestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
 	LALDDestroyVector( status->statusPtr, &xbar0k);
