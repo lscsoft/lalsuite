@@ -48,6 +48,7 @@ CHAR *channelName = NULL;               /* channel string               */
 UINT4 inputDataLength = 0;              /* number of points in input    */
 
 /* data conditioning parameters */
+INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
 REAL4  highPassFreq     = 0;            /* high pass frequency          */
@@ -241,11 +242,32 @@ int main( int argc, char *argv[] )
    *
    */
 
+  /* set the time series parameters of the input data and resample params */
+  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
+  if ( resampFiltType == 0 )
+  {
+    resampleParams.filterType = LDASorderTen;
+  }
+  else if ( resampFiltType == 1 )
+  {
+    resampleParams.filterType = defaultButterworth;
+  }
 
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
+  if ( resampleParams.filterType == LDASorderTen )
+  {
+    /* get the time series ten sample points later */
+    INT8 rawStartTimeNS;
+    LAL_CALL( LALGPStoINT8( &status, &rawStartTimeNS, &(chan.epoch) ), 
+        &status );
+    rawStartTimeNS += (INT8) (1.0e9 * 10.0 / (REAL8) sampleRate);
+    LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &rawStartTimeNS ), 
+        &status );
+  }
 
   /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
@@ -294,10 +316,6 @@ int main( int argc, char *argv[] )
       "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
       chan.name, chan.data->length, chan.deltaT, 
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
-
-  /* set the time series parameters of the input data */
-  memset( &resampleParams, 0, sizeof(ResampleTSParams) );
-  resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
 
 
   /*
@@ -424,7 +442,6 @@ int main( int argc, char *argv[] )
 
 
   /* if the input and requested sample rates differ, downsample the data */
-  resampleParams.filterType = LDASorderTen;
   if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
   {
     if (vrbflg) fprintf( stdout, "resampling input data from %e to %e\n",
@@ -469,15 +486,12 @@ int main( int argc, char *argv[] )
   }
 
   /* remove pad from requested data from start and end of time series */
-  if ( padData )
-  {
-    memmove( chan.data->data, chan.data->data + padData * sampleRate, 
-        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-    LALRealloc( chan.data->data, 
-        (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-    chan.data->length -= 2 * padData * sampleRate;
-    chan.epoch.gpsSeconds += padData;
-  }
+  memmove( chan.data->data, chan.data->data + padData * sampleRate, 
+      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+  LALRealloc( chan.data->data, 
+      (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
+  chan.data->length -= 2 * padData * sampleRate;
+  chan.epoch.gpsSeconds += padData;
 
   if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
       "start and end:\ndata channel sample interval (deltaT) = %e\n"
@@ -955,6 +969,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"calibration-cache",       required_argument, 0,                'p'},
     {"snr-threshold",           required_argument, 0,                'q'},
     {"chisq-threshold",         required_argument, 0,                'r'},
+    {"resample-filter",         required_argument, 0,                'R'},
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
@@ -990,7 +1005,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:s:t:u:v:w:x:z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:R:s:t:u:v:w:x:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1337,6 +1352,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'R':
+        if ( ! strcmp( "ldas", optarg ) )
+        {
+          resampFiltType = 0;
+        }
+        else if ( ! strcmp( "butterworth", optarg ) )
+        {
+          resampFiltType = 1;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown resampling filter type: "
+              "%s (must be ldas or butterworth)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+
       case 's':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
@@ -1582,6 +1618,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( fLow < 0 )
   {
     fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
+    exit( 1 );
+  }
+  if ( resampFiltType < 0 )
+  {
+    fprintf( stderr, "--resample-filter must be specified\n" );
     exit( 1 );
   }
   if ( specType < 0 )
