@@ -310,7 +310,7 @@ FUNCM (
   void *sequence;
                                                                                 
   INITSTATUS (status, "FUNCM", FRAMESERIESC);
-  ATTACHSTATUSPTR (status);
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
   ASSERT (stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
