@@ -254,9 +254,13 @@ Contents:
 System-specific installation instructions:
 
 
-SGI running IRIX 6.5.3 with gcc:
+SGI running IRIX 6.5 with gcc:
 
   * Configure with the option --with-cc="gcc -n32".
+
+  * If you put shared objects (e.g., of the frame library) in non-standard
+    places and are hoping to use LD_LIBRARY_PATH to locate them, you may need
+    to set the environment variable LD_LIBRARYN32_PATH too.
 
 
 Alpha running Linux with ccc --- making shared libraries:
