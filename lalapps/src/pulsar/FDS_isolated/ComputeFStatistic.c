@@ -186,7 +186,7 @@ int main(int argc,char *argv[])
 #ifdef FILE_FSTATS  
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
-  if (uvar_outputLabel)
+  if ( UVARwasSet(&uvar_outputLabel) )
     strcat(Fstatsfilename,uvar_outputLabel);
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
@@ -230,7 +230,7 @@ int main(int argc,char *argv[])
       
       LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
-      for(s=0;s<GV.SpinImax;s++)
+      for(s=0;s<=GV.SpinImax;s++)
 	{
 	  DemodParams->spinDwn[0]=uvar_f1dot + s*uvar_df1dot;
 	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
@@ -1267,7 +1267,10 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   if( !UVARwasSet (&uvar_df1dot) ) 
     uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
 
-  cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of frequency values to calculate F for */
+  if (UVARwasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
+    cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
+  else
+    cfg->SpinImax = 0;
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
