@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 
 #include "detresponse.h"
@@ -39,8 +40,8 @@ xfclose(FILE * stream)
 
 char *
 mystrlcpy(char       * dst,
-        const char * src,
-        size_t       len)
+          const char * src,
+          size_t       len)
 {
   char * retval = strncpy(dst, src, len);
   dst[DETRESPONSE_MIN(len, strlen(src)+1) - 1] = '\0';
@@ -112,6 +113,64 @@ void print_time_info(const LALTimeIntervalAndNSample * p_time_info)
          (*p_time_info).nSample);
 }
 
+/*
+ * stolen from the doxygen source
+ */
+int 
+mystrncasecmp(char *s1, char *s2, unsigned int n)
+{
+  if (n == 0)
+    return 0;
+  
+  while ((n-- != 0)
+         && (tolower(*(unsigned char *)s1) == tolower(*(unsigned char *)s2)))
+    {
+      if (n == 0 || *s1 == '\0' || *s2 == '\0')
+        return 0;
+      s1++;
+      s2++;
+    }
+  
+  return tolower(*(unsigned char *) s1) - tolower(*(unsigned char *) s2);
+}
+
+
+
+
+void
+square_timeseries(REAL4TimeSeries * in)
+{
+  size_t i;
+
+  for (i = 0; i < in->data->length; ++i)
+    {
+      in->data->data[i] *= in->data->data[i];
+    }
+}
+
+
+
+void
+add_timeseries(REAL4TimeSeries * sum, REAL4TimeSeries * a,
+               REAL4TimeSeries * b)
+{
+  size_t i;
+
+  /* assume that all the info about the timeseries a & b are the same */
+  (void)mystrlcpy(sum->name, a->name, LALNameLength);
+  sum->epoch = a->epoch;
+  sum->deltaT = a->deltaT;
+  sum->f0 = a->f0;
+  sum->sampleUnits = a->sampleUnits;
+
+  for (i = 0; i < sum->data->length; ++i)
+    {
+      sum->data->data[i] = a->data->data[i] + b->data->data[i];
+    }
+}
+
+
+  
 REAL8
 deg_to_rad(REAL8 degrees)
 {

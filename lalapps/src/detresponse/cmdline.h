@@ -34,6 +34,8 @@ struct gengetopt_args_info
 
   int help_given ;	/* Whether help was given.  */
   int version_given ;	/* Whether version was given.  */
+  int single_source_given ;	/* Whether single-source was given.  */
+  int whole_sky_given ;	/* Whether whole-sky was given.  */
   int source_name_given ;	/* Whether source-name was given.  */
   int right_ascension_given ;	/* Whether right-ascension was given.  */
   int declination_given ;	/* Whether declination was given.  */

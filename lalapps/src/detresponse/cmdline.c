@@ -42,11 +42,15 @@ cmdline_parser_print_help (void)
   cmdline_parser_print_version ();
   printf("\n"
   "Purpose:\n"
-  "  compute time series of detector response function (antenna pattern)\n"
+  "  compute time series of detector response function (antenna pattern). Outputs files with F+^2, Fx^2, (F+^2 + Fx^2); OR integrals of the above over the whole sky.\n"
   "\n"
   "Usage: %s [OPTIONS]...\n", PACKAGE);
   printf("   -h         --help                      Print help and exit\n");
   printf("   -V         --version                   Print version and exit\n");
+  printf("\n");
+  printf("   Group: single_src_or_whole_sky\n");
+  printf("   -S         --single-source             Compute response with single source; requires source data\n");
+  printf("   -W         --whole-sky                 Compute response integrated over whole sky; doesn't require source data\n");
   printf("   -NSTRING   --source-name=STRING        Name of source (default='NONAME_SOURCE')\n");
   printf("   -rDOUBLE   --right-ascension=DOUBLE    Right Ascension of source, in rad\n");
   printf("   -dDOUBLE   --declination=DOUBLE        Declination of source, in rad\n");
@@ -80,9 +84,13 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
 {
   int c;	/* Character of the parsed option.  */
   int missing_required_options = 0;
+  int single_src_or_whole_sky_group_counter = 0;
+  
 
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
+  args_info->single_source_given = 0 ;
+  args_info->whole_sky_given = 0 ;
   args_info->source_name_given = 0 ;
   args_info->right_ascension_given = 0 ;
   args_info->declination_given = 0 ;
@@ -116,6 +124,8 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
       static struct option long_options[] = {
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
+        { "single-source",	0, NULL, 'S' },
+        { "whole-sky",	0, NULL, 'W' },
         { "source-name",	1, NULL, 'N' },
         { "right-ascension",	1, NULL, 'r' },
         { "declination",	1, NULL, 'd' },
@@ -130,7 +140,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { NULL,	0, NULL, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVN:r:d:o:D:s:n:u:i:v:e:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVSWN:r:d:o:D:s:n:u:i:v:e:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -145,6 +155,28 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
           clear_args ();
           cmdline_parser_print_version ();
           exit (EXIT_SUCCESS);
+
+        case 'S':	/* Compute response with single source; requires source data.  */
+          if (args_info->single_source_given)
+            {
+              fprintf (stderr, "%s: `--single-source' (`-S') option given more than once\n", PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->single_source_given = 1;
+          single_src_or_whole_sky_group_counter += 1;
+        break;
+
+        case 'W':	/* Compute response integrated over whole sky; doesn't require source data.  */
+          if (args_info->whole_sky_given)
+            {
+              fprintf (stderr, "%s: `--whole-sky' (`-W') option given more than once\n", PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->whole_sky_given = 1;
+          single_src_or_whole_sky_group_counter += 1;
+        break;
 
         case 'N':	/* Name of source.  */
           if (args_info->source_name_given)
@@ -280,22 +312,13 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         } /* switch */
     } /* while */
 
+  if ( single_src_or_whole_sky_group_counter != 1)
+    {
+      fprintf (stderr, "%s: %d options of group single_src_or_whole_sky were given. One is required\n", PACKAGE,single_src_or_whole_sky_group_counter);
+      missing_required_options = 1;
+    }
+  
 
-  if (! args_info->right_ascension_given)
-    {
-      fprintf (stderr, "%s: '--right-ascension' ('-r') option required\n", PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->declination_given)
-    {
-      fprintf (stderr, "%s: '--declination' ('-d') option required\n", PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->orientation_given)
-    {
-      fprintf (stderr, "%s: '--orientation' ('-o') option required\n", PACKAGE);
-      missing_required_options = 1;
-    }
   if (! args_info->detector_given)
     {
       fprintf (stderr, "%s: '--detector' ('-D') option required\n", PACKAGE);

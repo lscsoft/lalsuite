@@ -2,13 +2,17 @@
 #package "detresponse"
 #version "1.0"
 
-purpose "compute time series of detector response function (antenna pattern)"
+purpose "compute time series of detector response function (antenna pattern). Outputs files with F+^2, Fx^2, (F+^2 + Fx^2); OR integrals of the above over the whole sky."
+
+defgroup "single_src_or_whole_sky" yes
+groupoption "single-source" S "Compute response with single source; requires source data" group="single_src_or_whole_sky"
+groupoption "whole-sky"     W "Compute response integrated over whole sky; doesn't require source data" group="single_src_or_whole_sky"
 
 # options to describe source
 option "source-name"      N   "Name of source" string default="NONAME_SOURCE" no
-option "right-ascension"  r   "Right Ascension of source, in rad" double yes
-option "declination"      d   "Declination of source, in rad" double yes
-option "orientation"      o   "Orientation of source, in rad" double yes
+option "right-ascension"  r   "Right Ascension of source, in rad" double no
+option "declination"      d   "Declination of source, in rad" double no
+option "orientation"      o   "Orientation of source, in rad" double no
 
 # options to specify detector
 #   at the moment, lal supports the following detectors and modes

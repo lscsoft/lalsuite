@@ -17,15 +17,18 @@ void generate_timeseries_response(LALStatus * status)
   LALDetAndSource           det_and_src = {NULL,NULL};
   LALDetAMResponseSeries    det_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
+  REAL4TimeSeries           tmp_series;
   LALTimeIntervalAndNSample time_info;
   char  cross_file_name[LALNameLength];
   char  plus_file_name[LALNameLength];
+  char  sum_file_name[LALNameLength];
 
   
 
   /* null out strings */
   cross_file_name[0] = '\0';
   plus_file_name[0] = '\0';
+  sum_file_name[0] = '\0';
 
   if (args_info.detector_given)
     {
@@ -43,7 +46,8 @@ void generate_timeseries_response(LALStatus * status)
         detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
       else if (mystrncasecmp(args_info.detector_arg,"test", LALNameLength) == 0)
         {
-          (void)mystrlcpy(test_frdetector.name, "TEST - North Pole", LALNameLength);
+          (void)mystrlcpy(test_frdetector.name, "TEST - North Pole",
+                          LALNameLength);
           test_frdetector.vertexLongitudeRadians = 0.;
           test_frdetector.vertexLatitudeRadians  = LAL_PI_2;
           test_frdetector.vertexElevation        = 0.;
@@ -88,11 +92,15 @@ void generate_timeseries_response(LALStatus * status)
   (void)mystrlcpy(plus_file_name, args_info.source_name_arg, LALNameLength);
   (void)strncat(plus_file_name, "_plus.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
-  
+  (void)mystrlcpy(sum_file_name, args_info.source_name_arg, LALNameLength);
+  (void)strncat(sum_file_name, "_sum.txt",
+                (LALNameLength - strlen(args_info.source_name_arg)));
+    
   if ((lalDebugLevel & 1) && (verbosity_level & 4))
     {
       printf("cross_file_name = %s\n", cross_file_name);
       printf("plus_file_name  = %s\n", plus_file_name);
+      printf("sum_file_name   = %s\n", sum_file_name);
     }
 
   det_and_src.pDetector = &detector;
@@ -130,21 +138,33 @@ void generate_timeseries_response(LALStatus * status)
   plus_series.data   = NULL;
   cross_series.data  = NULL;
   scalar_series.data = NULL;
+  tmp_series.data    = NULL;
 
   det_response_series.pPlus   = &(plus_series);
   det_response_series.pCross  = &(cross_series);
   det_response_series.pScalar = &(scalar_series);
 
-  LALSCreateVector(status, &(det_response_series.pPlus->data), 1);
-  LALSCreateVector(status, &(det_response_series.pCross->data), 1);
-  LALSCreateVector(status, &(det_response_series.pScalar->data), 1);
+  LALSCreateVector(status, &(det_response_series.pPlus->data),
+                   time_info.nSample);
+  LALSCreateVector(status, &(det_response_series.pCross->data),
+                   time_info.nSample);
+  LALSCreateVector(status, &(det_response_series.pScalar->data),
+                   time_info.nSample);
+  LALSCreateVector(status, &(tmp_series.data), time_info.nSample);
 
   LALComputeDetAMResponseSeries(status, &det_response_series,
                                 &det_and_src, &time_info);
 
+
+  /* want F+^2, Fx^2, and (F+^2 + Fx^2) */
+  square_timeseries(det_response_series.pPlus);
+  square_timeseries(det_response_series.pCross);
+  add_timeseries(&tmp_series, det_response_series.pPlus,
+                 det_response_series.pCross);
+
   LALSPrintTimeSeries(det_response_series.pPlus, plus_file_name);
   LALSPrintTimeSeries(det_response_series.pCross, cross_file_name);
-
+  LALSPrintTimeSeries(&tmp_series, sum_file_name);
 
   /*
    * house keeping
@@ -152,4 +172,7 @@ void generate_timeseries_response(LALStatus * status)
   LALSDestroyVector(status, &(det_response_series.pPlus->data));
   LALSDestroyVector(status, &(det_response_series.pCross->data));
   LALSDestroyVector(status, &(det_response_series.pScalar->data));
+  LALSDestroyVector(status, &(tmp_series.data));
+
+  LALCheckMemoryLeaks();
 }
