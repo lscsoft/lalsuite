@@ -114,6 +114,10 @@ char *fstatbuff=NULL;
 int boincmain(int argc, char *argv[]);
 void worker();
 
+#ifdef RUN_POLKA
+int polka(int argc,char *argv[]);
+#endif
+
 extern double fraction_done;
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
@@ -2815,7 +2819,7 @@ void worker() {
       else
 	retval=boincmain(a2-a1-1,&(globargv[a1+1]));
       if (!retval)
-	retval=polka(globargv-a2-1,&(globargv[a2+1]));
+	retval=polka(globargc - a2 - 1, &(globargv[a2+1]));
     }
     /* remove checkpoint-files */
     remove (ckp_fname);
