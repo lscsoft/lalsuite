@@ -427,18 +427,18 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 void
 VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList *head;  /* pointer to head of linked list of buffers */
-  BufferList *here;  /* pointer to current position in list */
+  BufferList *head = NULL;  /* pointer to head of linked list of buffers */
+  BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
   CHAR *start, *end; /* start and end of a token on a line */
   UINT4 length = 0;  /* number of sequence elements to be read */
   UINT4 vectorLength = 0; /* number of components per element */
   UINT4 nTot = 0, n; /* number of data read, and countdown index */
-  DATA *data;        /* pointer to data in buffers */
-  TYPE *sData;       /* pointer to data in output sequence */
+  DATA *data = NULL;        /* pointer to data in buffers */
+  TYPE *sData = NULL;       /* pointer to data in output sequence */
   VTYPE sCopy; /* internal copy of series */
   CreateVectorSequenceIn in; /* structure to create sequence */
-  int numRead; /* number of values read per call of fscanf() */
+  int numRead = 0; /* number of values read per call of fscanf() */
 
   INITSTATUS( stat, "VFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );
