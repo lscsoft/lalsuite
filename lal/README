@@ -72,12 +72,27 @@ rather than 2401. If you receive an error similar to
 you will need to obtain a newer version of CVS (OS X users may use the CVS
 available via Fink).
 
+Choose a directory in which you are going to build and install LAL, for 
+example ${HOME}/opt/lal
+
+Set the environment variable LAL_LOCATION to this directory. If you use a
+bourne shell (e.g. bash) type
+
+  LAL_LOCATION=${HOME}/opt/lal          # <- change this as appropriate
+  export LAL_LOCATION
+
+If you use a C-shell (e.g. tcsh) type
+
+  setenv LAL_LOCATION ${HOME}/opt/lal   # <- change this as appropriate
+
 Next use CVS to checkout the lal source code. Type the following, again
 replacing USERNAME with your lscsoft user name (or anonymous):
 
+  mkdir -p ${LAL_LOCATION}/src
+  cd ${LAL_LOCATION}/src
   cvs -d :pserver:USERNAME@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lal
 
-This will create a directory called lal in your current working directory
+This will create a directory called lal the directory ${LAL_LOCATION}
 which contains the contents of the LAL CVS archive.
 
 

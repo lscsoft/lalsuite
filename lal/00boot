@@ -719,6 +719,11 @@ echo "
 *       Now run './configure' with appropriate options          *
 *       to configure LAL.                                       *
 *                                                               *
-*	Consult the file 'README.install' for details.          *
+*       If you are building LAL for use with LALApps, see       *
+*       the LALApps README file for futher instructions         *
+*                                                               *
+*       Otherwise consult the file                              *
+*                                                               *
+*           README.install                                      *
 *                                                               *
 *****************************************************************"

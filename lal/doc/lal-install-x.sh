@@ -1,18 +1,26 @@
 #!/bin/sh -x
 
-## Perform the installation of LAL and LALApps.  The following commands
-## will download, build, and install LAL and LALApps.  This requires
-## the software installed in the pre-install to have been built and installed.
+## Perform the installation of LAL. The following commands will build and 
+## install LAL.
+##
+## This requires the software installed in the pre-install to have been 
+## built and installed. LAL will be built in the directory specified by
+## the environment variable LAL_LOCATION.
+##
 ## If the software was not installed in a standard location, such as
 ## "/usr" or "/usr/local", then the location of the software must be specified.
 ## To do so, the location of this software is given by the environment variable
 ## "LSCSOFT_LOCATION" which must be set before these commands are executed.
 
+#ignore
 # set "LSCSOFT_LOCATION" to the location where the required software
 # (described in the pre-install instructions) has been installed
-#ignore
 if test -z "$LSCSOFT_LOCATION"; then
   echo "ERROR: environment variable LSCSOFT_LOCATION not defined" 1>&2
+  exit 1
+fi
+if test -z "$LAL_LOCATION"; then
+  echo "ERROR: environment variable LAL_LOCATION not defined" 1>&2
   exit 1
 fi
 #/ignore
@@ -22,14 +30,13 @@ PKG_CONFIG_PATH=$LSCSOFT_LOCATION/lib/pkgconfig:$PKG_CONFIG_PATH
 export PATH LD_LIBRARY_PATH PKG_CONFIG_PATH
 #/verbatim
 
-# set "LAL_PREFIX" to the location where you wish to install lal and lalapps
 #ignore
-LAL_PREFIX=${LAL_PREFIX:-"$LSCSOFT_LOCATION/devel"}
+LAL_PREFIX=$LAL_LOCATION
 ### for example (don't actually do this)
 if 0; then
 #/ignore
 #verbatim
-LAL_PREFIX=$LSCSOFT_LOCATION/devel
+LAL_PREFIX=$LAL_LOCATION
 #/verbatim
 #ignore
 fi

@@ -4,7 +4,7 @@
 ## build, and install the software required to build LAL.  The software
 ## includes the following:
 ##verse
-##      pkgconfig-0.15.0
+##	pkgconfig-0.15.0
 ##	fftw-3.0.1 (both single- and double-precision libraries required)
 ##	gsl-1.5
 ##	libframe-6.14 (optional but recommended)
@@ -16,17 +16,16 @@
 ## of the software are also available for installation.  See the RPMs
 ## section for instructions on obtaining these.
 ##
-## The software is installed in the directory "LSCSOFT_PREFIX".
+## The software is installed in the directory "LSCSOFT_LOCATION".
 ## If this variable is not set, it will be installed in "$HOME/opt/lscsoft"
-## by default. To install in some other location, set "LSCSOFT_PREFIX"
+## by default. To install in some other location, set "LSCSOFT_LOCATION"
 ## to that location.
 ## 
 ## The commands listed below are appropriate for a Bourne-shell (e.g., bash);
 ## they will need to be modified appropriately for C-shells (e.g., tcsh).
 
-## Edit "LSCSOFT_PREFIX" to change where to install the software:
 #verbatim
-LSCSOFT_PREFIX=${LSCSOFT_PREFIX:-"$HOME/opt/lscsoft"}
+LSCSOFT_PREFIX=${LSCSOFT_LOCATION:-"$HOME/opt/lscsoft"}
 LSCSOFT_INCDIR=$LSCSOFT_PREFIX/include
 LSCSOFT_LIBDIR=$LSCSOFT_PREFIX/lib
 LSCSOFT_SRCDIR=$LSCSOFT_PREFIX/src
@@ -219,15 +218,27 @@ endif
 EOF
 #/ignore
 
-## Finally, you need to set the environment variable "LSCSOFT_LOCATION"
-## to be where you have installed this software.
+## To setup your environment to use the software that has been installed
+## please add the following to your .profile if you use a bourne shell
+## (e.g. bash):
 ### (don't actually do it... for illustration purposes only)
 #ignore
 if 0 ; then
 #/ignore
 #verbatim
-  LSCSOFT_LOCATION=$LSCSOFT_PREFIX
-  export LSCSOFT_LOCATION
+LSCSOFT_LOCATION=${HOME}/opt/lscsoft # <- change this as appropriate
+export LSCSOFT_LOCATION
+if [ -f ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh ] ; then
+  . ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
+fi
+#/verbatim
+## If you are using a C shell (e.g., tcsh), instead add these lines to
+## your .login:
+#verbatim
+setenv LSCSOFT_LOCATION ${HOME}/opt/lscsoft # <- change this as appropriate
+if ( -r ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh ) then
+  source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
+endif
 #/verbatim
 #ignore
 fi
@@ -241,15 +252,19 @@ cat <<EOF
 To setup your environment to use the software that has been installed
 please add the following to your .profile:
 
-        LSCSOFT_LOCATION=$LSCSOFT_PREFIX
-        export LSCSOFT_LOCATION
-        . \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
+  LSCSOFT_LOCATION=$LSCSOFT_LOCATION
+  export LSCSOFT_LOCATION
+  if [ -f \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh ] ; then
+    . \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
+  fi
 
 If you are using a C shell (e.g., tcsh), instead add these lines to
 your .login:
 
-        setenv LSCSOFT_LOCATION $LSCSOFT_PREFIX
-        source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
+  setenv LSCSOFT_LOCATION $LSCSOFT_LOCATION
+  if ( -r \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh ) then
+    source \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
+  endif
 
 =======================================================================
 EOF

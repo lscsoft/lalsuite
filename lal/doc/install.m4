@@ -40,79 +40,9 @@ Or just follow the instructions below.
 
 Building LAL requires some software to be pre-installed.  This section
 describes how to download and install this software if it is missing from
-your system.  If you wish to install pre-compiled RPMs you can skip to that
-section [Section 1.2].  The next section describes how to build the required
-software from source.
-
-1.1 BUILDING REQUIRED SOFTWARE FROM SOURCE
+your system.  
 
 include(@@lal-preinstall.txt@@)
-
-1.2 INSTALLING REQUIRED SOFTWARE FROM BINARY RPMS
-
-WARNING: These instructions are intended to be helpful for users of RPM who
-wish to install the software required by LAL system-wide.  However, these
-instructions and the provided RPMs are not officially supported, and may not
-work on all systems.
-
-The commands listed below are appropriate for a Bourne-shell (e.g., bash);
-they will need to be modified appropriately for C-shells (e.g., tcsh).
-This is where to get sources:
-        
-        LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
-
-get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
-you can use "lynx -dump" or "wget -O-" instead of "curl"
-
-        curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
-        curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
-        curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
-        curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
-        curl $LALRPMURL/libframe-6.14-1.i386.rpm > libframe-6.14-1.i386.rpm
-        curl $LALRPMURL/libframe-devel-6.14-1.i386.rpm > libframe-devel-6.14-1.i386.rpm
-        curl $LALRPMURL/libframe-utils-6.14-1.i386.rpm > libframe-utils-6.14-1.i386.rpm
-        curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
-        curl $LALRPMURL/libmetaio-devel-5.4-3.i386.rpm > libmetaio-devel-5.4-3.i386.rpm
-
-now login as root and install the RPMs
-
-        rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
-        rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
-        rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
-        rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
-
-
-1.3 BUILDING REQUIRED SOFTWARE FROM SOURCE RPMS
-
-If you cannot use these binary RPMs and you wish to build from source RPMs,
-follow these instructions.
-
-first download the source RPMs
-
-        curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
-        curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
-        curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
-        curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
-
-now login as root and build binary RPMs from the source RPMs (this will
-take a very long time)
-
-        rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
-        rpmbuild --rebuild gsl-1.5-1.src.rpm
-        rpmbuild --rebuild libframe-6.14-1.src.rpm
-        rpmbuild --rebuild libmetaio-5.4-3.src.rpm
-
-finally install the new binary RPMs
-
-        cd /usr/src/redhat/RPMS
-        rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
-        rpm -Uvh i386/gsl-1.5-1.i386.rpm
-        rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm
-        rpm -Uvh i386/libframe-6.14-1.i386.rpm
-        rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
-        rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
-        rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
-
 
 2. INSTALLING LAL
 
