@@ -151,6 +151,7 @@ bins in the fine-grained series.
 
 \subsubsection*{Uses}
 \begin{verbatim}
+strncpy()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -254,7 +255,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
   /* checks for duplicate pointers: */
-
+  /* to be uncommented as soon as the MDC is over
   ASSERT(output != input, status,
          COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR);
@@ -266,7 +267,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   ASSERT(output->data->data != input->data->data, status,
          COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR);
-
+  */
   /* extract coarse-grained parameters  */
   lengthCoarse = params->length;
   f0Coarse     = params->f0;
@@ -497,6 +498,20 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
          COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
          COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
+  /* checks for duplicate pointers: */
+
+  ASSERT(output != input, status,
+         COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
+         COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR);
+
+  ASSERT(output->data != input->data, status,
+         COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
+         COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR);
+
+  ASSERT(output->data->data != input->data->data, status,
+         COARSEGRAINFREQUENCYSERIESH_ESAMEPTR,
+         COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR);
+
   /* extract coarse-grained parameters  */
   lengthCoarse = params->length;
   f0Coarse     = params->f0;
@@ -622,7 +637,10 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     output->data->data[0].re = ( input->data->data[0].re + 2.0 * value.re )
       / resRatio;
+    /* to be uncommented after MDC; was not actually relevant,
+       since never had f0Coarse == 0.0
     output->data->data[0].im = 0.0;
+    */ 
 
     /* :TODO: ?  check that imaginary parts of DC vanish? */
 
