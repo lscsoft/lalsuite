@@ -549,6 +549,7 @@ INT4 k,m;
  
 REAL4 deltaT=input->AS_Q.deltaT, To=input->To;
 INT4 length = input->AS_Q.data->length;
+INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 
  INITSTATUS( status, "LALGetFactors", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
@@ -594,6 +595,7 @@ INT4 length = input->AS_Q.data->length;
 
   for(m=0; m < (UINT4)(deltaT*length) / To; m++)
     {
+      int facterrflag=0;
 
       /* assign and window the data */
       for(k=0;k<(INT4)(To/asq.deltaT +0.5);k++)
@@ -620,6 +622,42 @@ INT4 length = input->AS_Q.data->length;
 
       LALComputeCalibrationFactors(status->statusPtr,&factors,&params);
       CHECKSTATUSPTR( status );
+
+      /* check alpha */
+      if( (factors.alpha.re < 0.3) ||  (factors.alpha.re > 2.0) ) 
+	{
+	 factors.alpha.re = 1.0;
+	 if (m>0) factors.alpha.re=output->alpha.data->data[m-1].re;
+	 facterrflag=1;
+	}
+
+      /* check alphabeta */
+      if( (factors.alphabeta.re < 0.3) ||  (factors.alphabeta.re > 2.0) ) 
+	{
+	 factors.alphabeta.re = 1.0;
+	 if (m>0) factors.alphabeta.re=output->alphabeta.data->data[m-1].re;
+	 facterrflag=1;
+	}
+
+      /* check beta */
+      if( (factors.beta.re < 0.3) ||  (factors.beta.re > 2.0) ) 
+	{
+	 factors.beta.re = 1.0;
+	 if (m>0) factors.beta.re=output->beta.data->data[m-1].re;
+	 facterrflag=1;
+	}
+
+      if (facterrflag == 1)
+	{
+	  fprintf(stderr,"%d %e %e %e %e %e %e %e %e %e %e %e %e\n",localtime+(int)m*To, 
+		  factors.alphabeta.re,factors.alphabeta.im,
+		  factors.beta.re,factors.beta.im,
+		  factors.alpha.re,factors.alpha.im,
+		  factors.asq.re*2/To,factors.asq.im*2/To,
+		  factors.darm.re*2/To,factors.darm.im*2/To,
+		  factors.exc.re*2/To,factors.exc.im*2/To);
+	  facterrflag=0;
+	}
 
       output->alpha.data->data[m]= factors.alpha;
       output->beta.data->data[m]= factors.beta;
