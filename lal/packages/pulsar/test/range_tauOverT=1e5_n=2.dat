@@ -1,0 +1,6 @@
+# Parameter space ranges for normalized spindown parameters F[n] (the
+# Taylor coefficients of f/f0 as a function of t/T), where the
+# spindown timescale is on the order of 1e5 times T.
+
+-1.0e-05 -1.0e-10
+ 1.0e-05  1.0e-10
