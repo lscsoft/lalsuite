@@ -4,19 +4,24 @@
 #include <string.h>
 #include <getopt.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lalapps.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <processtable.h>
 #include "event_utils.h"
+
 RCSID("$Id$");
 
 #define MAXSTR 2048
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input infile --table tablename --outfile filename \
-    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] \
-    [--clusteralgorithm clusterchoice] [--help]\n"
+#define USAGE \
+"Usage: %s --input infile --table tablename \n" \
+"--outfile filename [--snrstar snrstar] [--noplayground] [--sort] \n" \
+"[--cluster msec] [--clusteralgorithm clusterchoice] [--help]\n"
 
 #define SNGLINSPIRALREADER_EARG   1
 #define SNGLINSPIRALREADER_EROW   2
@@ -28,6 +33,21 @@ RCSID("$Id$");
 
 #define TRUE  1
 #define FALSE 0
+    
+#define PROGRAM_NAME "snglInspiralReader"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+  calloc( 1, sizeof(ProcessParamsTable) ); \
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+   PROGRAM_NAME ); \
+   LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+     long_options[option_index].name ); \
+     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 static int getline(char *line, int max, FILE *fpin)
 {
@@ -77,6 +97,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
 int main(int argc, char **argv)
 {
     static LALStatus         stat;
+    LALLeapSecAccuracy	     accuracy = LALLEAPSEC_LOOSE;
     INT4                     retVal=0;
     FILE                     *fpin=NULL;
     INT4                     fileCounter=0;
@@ -100,6 +121,9 @@ int main(int argc, char **argv)
     SnglInspiralTable        *currentEvent=NULL,*prevEvent=NULL;
     SnglInspiralTable         inspiralEvent,*inspiralEventList=NULL;
     MetadataTable             myTable;
+    ProcessParamsTable	     *this_proc_param;
+    MetadataTable	      proctable;
+    MetadataTable	      procparams;
     LIGOLwXMLStream           xmlStream;
     INT4                      numEvents;
 
@@ -107,11 +131,28 @@ int main(int argc, char **argv)
 
     struct MetaioParseEnvironment triggerParseEnv;
     const MetaioParseEnv triggerEnv = &triggerParseEnv;
+    
+    int			      c;
 
     /*******************************************************************
      * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
      *******************************************************************/
-   int c;
+ 
+    /* set up inital debugging values */
+    lal_errhandler = LAL_ERR_EXIT;
+    set_debug_level( "33" );
+
+    /* create the process and process params tables */
+    proctable.processTable = (ProcessTable *) 
+	calloc( 1, sizeof(ProcessTable) );
+    LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->start_time),
+	&accuracy ), &stat );
+    LAL_CALL( populate_process_table( &stat, proctable.processTable, 
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &stat );
+    this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+	calloc( 1, sizeof(ProcessParamsTable) );
+ 
+        
     while (1)
     {
 	/* getopt arguments */
@@ -161,6 +202,7 @@ int main(int argc, char **argv)
 	    /* file containing list of xml files to use */
 	    {
 		sprintf(inputfile,"%s",optarg);
+		ADD_PROCESS_PARAM( "string", "%s", inputfile );
     	    }
 	    break;	
 	
@@ -168,6 +210,7 @@ int main(int argc, char **argv)
 	    /* table to be read from xml file */
 	    {
 		tablename = optarg;
+		ADD_PROCESS_PARAM( "string", "%s", tablename );
 	    }
 	    break;
 	
@@ -175,6 +218,7 @@ int main(int argc, char **argv)
 	    /* output file name */
 	    {
 		outfileName = optarg;
+	    	ADD_PROCESS_PARAM( "string", "%s", outfileName );
 	    }
 	    break;
 
@@ -183,6 +227,7 @@ int main(int argc, char **argv)
 	    * SNR > snrstar are kept */
 	    {
 		snrstar = atof( optarg );
+		ADD_PROCESS_PARAM( "float", "%e", snrstar );
 	    }
 	    break;
 
@@ -191,6 +236,7 @@ int main(int argc, char **argv)
 	    {
 		dtime = atoi( optarg );
 		cluster = TRUE;
+		ADD_PROCESS_PARAM( "int", "%d", dtime );
 	    }
 	    break;
     
@@ -210,10 +256,12 @@ int main(int argc, char **argv)
 		{
 		    fprintf( stderr, "invalid argument to  --%s:\n"
 			"unknown clustering specified:\n "
-			"%s (must be one of: snr_and_chisq, snrsq_over_chisq)\n",
+			"%s (must be one of: snr_and_chisq, 
+			    snrsq_over_chisq)\n",
 			long_options[option_index].name, optarg);
 		    exit( 1 );
 		}
+		ADD_PROCESS_PARAM( "string", "%s", optarg );
 	    }
 	    break;
    
@@ -221,6 +269,7 @@ int main(int argc, char **argv)
 	    /* don't restrict to the playground data */
 	    {
 		playground = FALSE;
+		ADD_PROCESS_PARAM( "string", "%s", " " );
 	    }
 	    break;
     
@@ -237,6 +286,7 @@ int main(int argc, char **argv)
 	    /* sort the events in time */
 	    {
 		sort = TRUE;
+		ADD_PROCESS_PARAM( "string", "%s", " " );
 	    }
 	    break;
 
@@ -258,6 +308,7 @@ int main(int argc, char **argv)
 	exit( 1 );
     }	  
 
+  
     if (inputfile == NULL)
     {
         LALPrintError( "Must supply an xml file to parse\n" );
@@ -285,8 +336,7 @@ int main(int argc, char **argv)
     /*******************************************************************
     * initialize things
     *******************************************************************/
-    lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "1" );
+    /*   set_debug_level( "1" );*/
     memset( &inspiralEvent, 0, sizeof(inspiralEvent) );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
@@ -454,8 +504,42 @@ int main(int argc, char **argv)
         memset(&inspiralEvent, 0, sizeof(inspiralEvent));
     }
 
-    /* close the output file */
+    /* close the sngl_inspiral table */
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+
+    /* write out the process and process params tables */
+    LAL_CALL( LALGPSTimeNow ( &stat, &(proctable.processTable->end_time),
+	&accuracy ), &stat );
+    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, process_table ), 
+	&stat );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, proctable, 
+        process_table ), &stat );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+    LALFree( proctable.processTable );
+
+    /* erase the first empty process params entry */
+    {
+	ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
+	procparams.processParamsTable = procparams.processParamsTable->next;
+	LALFree( emptyPPtable );
+    }
+
+    /* write the process params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
+		process_params_table ),	&stat );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
+	process_params_table ), &stat );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+    while( procparams.processParamsTable )
+    {
+	this_proc_param = procparams.processParamsTable;
+	procparams.processParamsTable = this_proc_param->next;
+        LALFree( this_proc_param );
+    }
+
+
+    
+    /* close the output file */
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
     LALCheckMemoryLeaks();
 
