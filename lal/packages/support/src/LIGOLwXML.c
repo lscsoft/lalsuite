@@ -316,6 +316,8 @@ LALWriteLIGOLwXMLTable (
             tablePtr.snglBurstTable->channel,
             tablePtr.snglBurstTable->start_time.gpsSeconds,
             tablePtr.snglBurstTable->start_time.gpsNanoSeconds,
+	    tablePtr.snglBurstTable->peak_time.gpsSeconds,
+            tablePtr.snglBurstTable->peak_time.gpsNanoSeconds,
             tablePtr.snglBurstTable->duration,
             tablePtr.snglBurstTable->central_freq,
             tablePtr.snglBurstTable->bandwidth,

@@ -96,7 +96,7 @@ LALTFTileToBurstEvent (
                )
 /******** </lalVerbatim> ********/
 {
-  INT8 dummyNS;
+  INT8 dummyNS, peakNS;
   REAL4 flow;
 
   INITSTATUS (status, "LALCountEPEvents", COUNTEPEVENTSC);
@@ -112,6 +112,9 @@ LALTFTileToBurstEvent (
   burstEvent->start_time.gpsNanoSeconds = (INT4) (dummyNS%1000000000L);
   burstEvent->duration         = (REAL4) (event->tend - event->tstart + 1) * 
     event->deltaT;
+  peakNS = dummyNS + (0.5 * burstEvent->duration * 1e9);
+  burstEvent->peak_time.gpsSeconds     = (INT4) (peakNS/1000000000L);
+  burstEvent->peak_time.gpsNanoSeconds = (INT4) (peakNS%1000000000L);
   burstEvent->central_freq = flow + 
     (REAL4) (event->fstart + event->fend + 1) / (2.0 * event->deltaT);
   burstEvent->bandwidth        = (REAL4) (event->fend - event->fstart + 1) / 
