@@ -63,6 +63,7 @@ RCSID( "$Id$" );
 
 
 long long atoll(const char *nptr);
+char *strsep(char **stringp, const char *delim);
 
 
 /*
@@ -73,12 +74,11 @@ long long atoll(const char *nptr);
 
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
-int   debugflg = 0;                     /* internal debugging flag      */
 
 /* input data parameters */
 UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time    */
 UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time      */
-CHAR  *channelName      = NULL;         /* name of data channel         */
+CHAR  *fqChanName      = NULL;          /* name of data channel         */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
@@ -113,31 +113,71 @@ int    writeChisq       = 0;            /* write chisq time series      */
 
 int main( int argc, char *argv[] )
 {
-
-
-
-  /*
-   *
-   * general variables in execution
-   *
-   */
-
-
-  /* current getopt argument */
-  int                   c;
+  /* getopt arguments */
+  struct option long_options[] =
+  {
+    /* these options set a flag */
+    {"verbose",                 no_argument,       &vrbflg,           1 },
+    {"enable-event-cluster",    no_argument,       &eventCluster,     1 },
+    {"disable-event-cluster",   no_argument,       &eventCluster,     0 },
+    {"enable-output",           no_argument,       &enableOutput,     1 },
+    {"disable-output",          no_argument,       &enableOutput,     0 },
+    /* these options don't set a flag */
+    {"gps-start-time",          required_argument, 0,                'a'},
+    {"gps-end-time",            required_argument, 0,                'b'},
+    {"channel-name",            required_argument, 0,                'c'},
+    {"segment-length",          required_argument, 0,                'd'},
+    {"number-of-segments",      required_argument, 0,                'e'},
+    {"segment-overlap",         required_argument, 0,                'f'},
+    {"sample-rate",             required_argument, 0,                'g'},
+    {"help",                    no_argument,       0,                'h'},
+    {"low-frequency-cutoff",    required_argument, 0,                'i'},
+    {"spectrum-type",           required_argument, 0,                'j'},
+    {"inverse-spec-length",     required_argument, 0,                'k'},
+    {"dynamic-range-exponent",  required_argument, 0,                'l'},
+    {"start-template",          required_argument, 0,                'm'},
+    {"stop-template",           required_argument, 0,                'n'},
+    {"chisq-bins",              required_argument, 0,                'o'},
+    {"hierarchy-depth",         required_argument, 0,                'p'},
+    {"rhosq-thresholds",        required_argument, 0,                'q'},
+    {"chisq-thresholds",        required_argument, 0,                'r'},
+    {"comment",                 required_argument, 0,                's'},
+    {"debug-level",             required_argument, 0,                'z'},
+    /* frame writing options */
+    {"write-raw-data",          no_argument,       &writeRawData,     1 },
+    {"write-filter-data",       no_argument,       &writeFilterData,  1 },
+    {"write-response",          no_argument,       &writeResponse,    1 },
+    {"write-spec",              no_argument,       &writeSpec,        1 },
+    {"write-rhosq",             no_argument,       &writeRhosq,       1 },
+    {"write-chisq",             no_argument,       &writeChisq,       1 },
+    {0, 0, 0, 0}
+  };
+  int c;
 
   /* lal function variables */
   LALStatus             status = blank_status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   INT4                  inputDataLength = 0;
 
-  /* input data */
+  /* input data parameters */
+  CHAR   site[2];               /* single character site code + null */
+  CHAR   ifo[3];                /* two character ifo code + null     */
+  CHAR  *channelName = NULL;    /* null terminated channel string    */
+
+  /* frame input data */
+#if 0
   FrStream                     *frStream       = NULL;
   FrChanIn                     *frChan         = NULL;
-  REAL4TimeSeries              *dataChannel    = NULL;
+#endif
+
+  /* raw input data storage */
+  INT4                          haveDynRange = 0;
+  REAL4TimeSeries               chan;
+  REAL4FrequencySeries          spec;
+  COMPLEX8FrequencySeries       resp;
+  DataSegmentVector            *dataSegVec = NULL;
   
   /* findchirp data structures */
-  DataSegmentVector            *dataSegVec     = NULL;
   FindChirpInitParams          *fcInitParams   = NULL;
   FindChirpSegmentVector       *fcSegVec       = NULL;
   FindChirpSPDataParams        *fcDataParams   = NULL;
@@ -161,13 +201,15 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
+  set_debug_level( "MEMDBG" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) 
     LALCalloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
         &accuracy ), &status );
+  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+      " ", optarg);
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
@@ -184,44 +226,6 @@ int main( int argc, char *argv[] )
 
   while ( 1 )
   {
-    static struct option long_options[] =
-    {
-      /* these options set a flag */
-      {"verbose",                 no_argument,       &vrbflg,           1 },
-      {"debug",                   no_argument,       &debugflg,         1 },
-      {"enable-event-cluster",    no_argument,       &eventCluster,     1 },
-      {"disable-event-cluster",   no_argument,       &eventCluster,     0 },
-      {"enable-output",           no_argument,       &enableOutput,     1 },
-      {"disable-output",          no_argument,       &enableOutput,     0 },
-      {"write-raw-data",          no_argument,       &writeRawData,     1 },
-      {"write-filter-data",       no_argument,       &writeFilterData,  1 },
-      {"write-response",          no_argument,       &writeResponse,    1 },
-      {"write-spec",              no_argument,       &writeSpec,        1 },
-      {"write-rhosq",             no_argument,       &writeRhosq,       1 },
-      {"write-chisq",             no_argument,       &writeChisq,       1 },
-      /* these options don't set a flag */
-      {"gps-start-time",          required_argument, 0,                'a'},
-      {"gps-end-time",            required_argument, 0,                'b'},
-      {"channel-name",            required_argument, 0,                'c'},
-      {"segment-length",          required_argument, 0,                'd'},
-      {"number-of-segments",      required_argument, 0,                'e'},
-      {"segment-overlap",         required_argument, 0,                'f'},
-      {"sample-rate",             required_argument, 0,                'g'},
-      {"help",                    no_argument,       0,                'h'},
-      {"low-frequency-cutoff",    required_argument, 0,                'i'},
-      {"spectrum-type",           required_argument, 0,                'j'},
-      {"inverse-spec-length",     required_argument, 0,                'k'},
-      {"dynamic-range-exponent",  required_argument, 0,                'l'},
-      {"start-template",          required_argument, 0,                'm'},
-      {"stop-template",           required_argument, 0,                'n'},
-      {"chisq-bins",              required_argument, 0,                'o'},
-      {"hierarchy-depth",         required_argument, 0,                'p'},
-      {"rhosq-thresholds",        required_argument, 0,                'q'},
-      {"chisq-thresholds",        required_argument, 0,                'r'},
-      {"comment",                 required_argument, 0,                's'},
-      {0, 0, 0, 0}
-    };
-
     /* getopt_long stores long option here */
     int option_index = 0;
 
@@ -255,8 +259,11 @@ int main( int argc, char *argv[] )
           long long int gstartt = atoll( optarg );
           if ( gstartt < 441417609 )
           {
-            fprintf( stderr, "GPS start time is prior to " 
-                "Jan 01, 1994  00:00:00 UTC: %lld\n", gstartt );
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%lld specified)\n",
+                long_options[option_index].name, gstartt );
             exit( 1 );
           }
           gpsStartTimeNS = (UINT8) gstartt * 1000000000LL;
@@ -269,8 +276,11 @@ int main( int argc, char *argv[] )
           long long int gendt = atoll( optarg );
           if ( gendt > 999999999 )
           {
-            fprintf( stderr, "GPS end time is after " 
-                "Sep 14, 2011  01:46:26 UTC: %lld\n", gendt );
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%lld specified)\n", 
+                long_options[option_index].name, gendt );
             exit( 1 );
           }
           gpsEndTimeNS = (UINT8) gendt * 1000000000LL;
@@ -280,10 +290,31 @@ int main( int argc, char *argv[] )
 
       case 'c':
         {
-          size_t chanlen = strlen( optarg );
-          channelName = (CHAR *) LALMalloc( ++chanlen );
-          memcpy( channelName, optarg, chanlen );
+          /* create storage for the channel name and copy it */
+          char *channamptr = NULL;
+          size_t chanlen = strlen( optarg ) + 1;
+          fqChanName = (CHAR *) LALCalloc( chanlen, sizeof(CHAR) );
+          memcpy( fqChanName, optarg, chanlen );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
+          
+          /* check that we have a proper channel name */
+          if ( ! (channamptr = strstr( fqChanName, ":" ) ) )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "channel name must be a full LIGO channel name "
+                "e.g. L1:LSC-AS_Q\n(%s specified)\n",
+                long_options[option_index].name, optarg );
+            exit( 1 );
+          }
+          chanlen = strlen( ++channamptr ) + 1;
+          channelName = (CHAR *) LALCalloc( chanlen, sizeof(CHAR) );
+          memcpy( channelName, channamptr, chanlen );
+
+          /* copy the first character to site and the first two to ifo */
+          memset( site, 0, sizeof(site) );
+          memset( ifo, 0, sizeof(ifo) );
+          memcpy( site, optarg, sizeof(site) - 1 );
+          memcpy( ifo, optarg, sizeof(ifo) - 1 );
         }
         break;
 
@@ -291,37 +322,52 @@ int main( int argc, char *argv[] )
         numPoints = (INT4) atoi( optarg );
         if ( numPoints < 2 || numPoints % 2 )
         {
-          fprintf( stderr, "invalid number of points in data segment: %d\n",
-              numPoints );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of points must be a non-zero power of 2: "
+              "(%d specified) \n", 
+              long_options[option_index].name, numPoints );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", numPoints );
         break;
 
       case 'e':
         numSegments = (INT4) atoi( optarg );
         if ( numSegments < 1 )
         {
-          fprintf( stderr, "invalid number data segments: %d\n", numSegments );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of data segment must be greater than 0: "
+              "(%d specified)\n", 
+              long_options[option_index].name, numSegments );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", numSegments );
         break;
 
       case 'f':
         ovrlap = (INT4) atoi( optarg );
         if ( ovrlap < 0 )
         {
-          fprintf( stderr, "invalid data segment overlap: %d\n", ovrlap );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "data segment overlap must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, ovrlap );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", ovrlap );
         break;
 
       case 'g':
         sampleRate = (INT4) atoi( optarg );
         if ( sampleRate < 2 || sampleRate > 16384 || sampleRate % 2 )
         {
-          fprintf( stderr, "invalid sample rate: %d\n", sampleRate );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "rate must be power of 2 between 2 and 16384 inclusive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, sampleRate );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", sampleRate );
         break;
 
       case 'h':
@@ -333,10 +379,13 @@ int main( int argc, char *argv[] )
         fLow = (REAL4) atof( optarg );
         if ( fLow < 40 )
         {
-          fprintf( stdout, "low frequency cutoff is less than 40 Hz: %f Hz\n",
-              fLow );
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "low frequency cutoff is less than 40 Hz: "
+              "(%f Hz specified)\n",
+              long_options[option_index].name, fLow );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "float", "%f", fLow );
         break;
 
       case 'j':
@@ -354,7 +403,10 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          fprintf( stderr, "unknown power spectrum type: %s\n", optarg );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown power spectrum type: "
+              "%s (must be file, mean or median)\n", 
+              long_options[option_index].name, optarg );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "string", "%s", optarg );
@@ -362,56 +414,73 @@ int main( int argc, char *argv[] )
 
       case 'k':
         invSpecTrunc = (INT4) atoi( optarg );
-        if ( invSpecTrunc < 1 )
+        if ( invSpecTrunc < 0 )
         {
-          fprintf( stderr, "length of inverse spectrum is less than 1 second"
-              ": %d\n", invSpecTrunc );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "inverse spectrum length must be positive or zero: "
+              "(%d specified)\n", 
+              long_options[option_index].name, invSpecTrunc );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", invSpecTrunc );
         break;
 
       case 'l':
         dynRangeExponent = (REAL4) atof( optarg );
+        haveDynRange = 1;
+        ADD_PROCESS_PARAM( "float", "%e", dynRangeExponent );
         break;
           
       case 'm':
         startTemplate = (INT4) atoi( optarg );
         if ( startTemplate < 0 )
         {
-          fprintf( stderr, "template bank start index is invalid: %d\n", 
-              startTemplate );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "template bank start index must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, startTemplate );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", startTemplate );
         break;
 
       case 'n':
         stopTemplate = (INT4) atoi( optarg );
         if ( stopTemplate < 0 )
         {
-          fprintf( stderr, "template bank stop index is invalid: %d\n", 
-              stopTemplate );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "template bank stop index must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, stopTemplate );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", stopTemplate );
         break;
 
       case 'o':
         numChisqBins = (INT4) atoi( optarg );
         if ( numChisqBins < 0 )
         {
-          fprintf( stderr, "invalid number of chisq veto bins: %d\n", 
-              numChisqBins );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of chisq veto bins must be positive: "
+              "(%d specified)\n", 
+              long_options[option_index].name, numChisqBins );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", numChisqBins );
         break;
 
       case 'p':
         hierDepth = (INT4) atoi( optarg );
         if ( hierDepth < 0 || hierDepth > 1 )
         {
-          fprintf( stderr, "invalid hierarchical search depth: %d\n", 
-              hierDepth );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "search depth must be 0 or 1: "
+              "(%d specified)\n", 
+              long_options[option_index].name, hierDepth );
           exit( 1 );
         }
+        ADD_PROCESS_PARAM( "int", "%d", hierDepth );
         break;
 
       case 'q':
@@ -435,8 +504,9 @@ int main( int argc, char *argv[] )
       case 's':
         if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
         {
-          fprintf( stderr, "--comment must be less than %d characters",
-              LIGOMETA_COMMENT_MAX );
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "comment must be less than %d characters\n",
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX );
           exit( 1 );
         }
         else
@@ -446,13 +516,17 @@ int main( int argc, char *argv[] )
         }
         break;
 
+      case 'z':
+        set_debug_level( optarg );
+        break;
+
       case '?':
         fprintf( stderr, USAGE );
         exit( 1 );
         break;
 
       default:
-        fprintf( stderr, "unknown error while parsing options\n\n" );
+        fprintf( stderr, "unknown error while parsing options\n" );
         fprintf( stderr, USAGE );
         exit( 1 );
     }
@@ -493,8 +567,8 @@ int main( int argc, char *argv[] )
   }
   else
   {
-    fprintf( stderr, "--enable-output or --disable-output "
-        "argument must be specified\n" );
+    fprintf( stderr, "one of --enable-output or --disable-output "
+        "arguments must be specified\n" );
     exit( 1 );
   }
 
@@ -522,8 +596,8 @@ int main( int argc, char *argv[] )
   }
   else
   {
-    fprintf( stderr, "--enable-event-cluster or --disable-event-cluster "
-        "argument must be specified\n" );
+    fprintf( stderr, "one of --enable-event-cluster or "
+        "--disable-event-cluster arguments must be specified\n" );
     exit( 1 );
   }
 
@@ -536,9 +610,14 @@ int main( int argc, char *argv[] )
 
 
   /* check validity of input data time */
-  if ( ! gpsStartTimeNS || ! gpsEndTimeNS )
+  if ( ! gpsStartTimeNS )
   {
-    fprintf( stderr, "gps start and end time must be specified\n" );
+    fprintf( stderr, "--gps-start-time must be specified\n" );
+    exit( 1 );
+  }
+  if ( ! gpsEndTimeNS )
+  {
+    fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
 
@@ -553,24 +632,24 @@ int main( int argc, char *argv[] )
   /* check validity of data length parameters */
   if ( numPoints < 0 )
   {
-    fprintf( stderr, "segment length must be specified\n" );
+    fprintf( stderr, "--segment-length must be specified\n" );
     exit( 1 );
   }
   if ( numSegments < 0 )
   {
-    fprintf( stderr, "number data segments must be specified\n" );
+    fprintf( stderr, "--number-of-segments must be specified\n" );
     exit( 1 );
   }
   if ( ovrlap < 0 )
   {
-    fprintf( stderr, "data segment overlap must be specified\n" );
+    fprintf( stderr, "--segment-overlap must be specified\n" );
     exit( 1 );
   }
 
   /* check sample rate has been sepcified */
   if ( sampleRate < 0 )
   {
-    fprintf( stderr, "filter sample rate must be specified\n" );
+    fprintf( stderr, "--sample-rate must be specified\n" );
     exit( 1 );
   }
 
@@ -596,39 +675,57 @@ int main( int argc, char *argv[] )
   /* check filter parameters have been specified */
   if ( numChisqBins < 0 )
   {
-    fprintf( stderr, "number of chi squared veto bins must be positive\n" );
+    fprintf( stderr, "--chisq-bins must be specified\n" );
     exit( 1 );
   }
   if ( fLow < 0 )
   {
-    fprintf( stderr, "low frequency cutoff must be specified\n" );
+    fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
     exit( 1 );
   }
   if ( specType < 0 )
   {
-    fprintf( stderr, "power spectrum estimation type must be specified\n" );
+    fprintf( stderr, "--spectrum-type must be specified\n" );
     exit( 1 );
   }
   if ( invSpecTrunc < 0 )
   {
-    fprintf( stderr, "duration of inverse power spectrum must be specified\n" );
+    fprintf( stderr, "--inverse-spec-length must be specified\n" );
     exit( 1 );
   }
-  if ( dynRangeExponent < 0 )
+  if ( ! haveDynRange )
   {
-    fprintf( stderr, "dynamic range exponent must be specified\n" );
+    fprintf( stderr, "--dynamic-range-exponent must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check that a channel has been requested and fill the ifo and site */
+  if ( ! fqChanName )
+  {
+    fprintf( stderr, "--channel-name must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check that the thresholds have been specified */
+  if ( ! rhosqStr )
+  {
+    fprintf( stderr, "--rhosq-thresholds must be specified\n" );
+    exit( 1 );
+  }
+  if ( ! chisqStr )
+  {
+    fprintf( stderr, "--chisq-thresholds must be specified\n" );
     exit( 1 );
   }
 
 
-  /*
+  /* 
    *
-   * create the data structures needed for the filtering
+   * create and populate findchip initialization structure 
    *
    */
 
 
-  /* create and populate findchip initialization structure */
   if ( ! ( fcInitParams = (FindChirpInitParams *) 
       LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
   {
@@ -639,14 +736,63 @@ int main( int argc, char *argv[] )
   fcInitParams->numSegments    = numSegments;
   fcInitParams->numChisqBins   = numChisqBins;
   fcInitParams->createRhosqVec = writeRhosq;
+  fcInitParams->ovrlap         = ovrlap;
 
-  /* create data storage */
-  if ( ! ( dataChannel = (REAL4TimeSeries *) 
-      LALCalloc( 1, sizeof(REAL4TimeSeries) ) ) )
-  {
-    fprintf( stderr, "could not allocate memory for input data time series\n" );
-    exit( 1 );
-  }
+
+  /*
+   *
+   * read in the input data
+   *
+   */
+  
+
+  /* create storage for the input data */
+  memset( &chan, 0, sizeof(REAL4TimeSeries) );
+  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
+      &status );
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
+      &status );
+
+  /* set the time series parameters of the input data */
+  LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &gpsStartTimeNS ), 
+      &status );
+  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  
+  /* create the data segment vector and findchirp segment vector */
+  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
+        &chan, &spec, &resp, fcInitParams ), &status );
+  /* read the data channel time series from frames */
+
+  /* call the magic calibration function to get the calibration */
+  
+  /* read in the template bank from a text file */
+
+
+  /*
+   *
+   * pre-condition the data channel
+   *
+   */
+  
+
+  /* band pass the data to get rid of low frequency crap */
+
+  /* compute the median power spectrum for the data channel */
+
+
+  /*
+   *
+   * create the data structures needed for findchirp
+   *
+   */
+
+
+  /* create the findchirp data storage */
   LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
         fcInitParams ), &status );
 
@@ -674,33 +820,6 @@ int main( int argc, char *argv[] )
       &status );
 
 
-
-  /*
-   *
-   * read in the input data
-   *
-   */
-  
-
-  /* read the data channel time series from frames */
-
-  /* call the magic calibration function to get the calibration */
-  
-  /* read in the template bank from a text file */
-
-
-  /*
-   *
-   * pre-condition the data channel
-   *
-   */
-  
-
-  /* band pass the data to get rid of low frequency crap */
-
-  /* compute the median power spectrum for the data channel */
-
-
   /*
    *
    * findchirp engine
@@ -714,7 +833,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * free the structures used for the data filtering
+   * free the structures used by findchirp
    *
    */
 
@@ -733,8 +852,20 @@ int main( int argc, char *argv[] )
       &status );
 
   LALFree( fcInitParams );
-  LALFree( dataChannel );
   
+
+  /*
+   *
+   * free the data storage
+   *
+   */
+
+
+  LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
+  LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
+
 
   /*
    *
@@ -750,8 +881,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, RESULT_FILE ), &status );
 
   /* write the process table */
-  sprintf( proctable.processTable->ifos, "L1" );
-  sprintf( proctable.processTable->comment, "monkey" );
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
@@ -779,8 +909,9 @@ int main( int argc, char *argv[] )
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
-
-  /* check for memory leaks and exit */
+  /* free the rest of the memory, check for memory leaks and exit */
+  LALFree( fqChanName );
+  LALFree( channelName );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
