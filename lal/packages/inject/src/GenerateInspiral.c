@@ -17,7 +17,7 @@
 	\input{LALGenerateInspiralGetModelFromStringCP}
 	\input{LALGenerateInspiralPopulatePPNCP}
 	\input{LALGenerateInspiralPopulateInspiralCP}
-	\input{LALGenerateInspiralPopulateInspiralSpinCP}
+
 
      	\idx{LALGenerateInspiral}
         \idx{LALGenerateInspiralGetApproxFromString}
@@ -25,7 +25,7 @@
 	\idx{LALGenerateInspiralGetModelFromString}
 	\idx{LALGenerateInspiralPopulatePPN}
 	\idx{LALGenerateInspiralPopulateInspiral}
-	\idx{LALGenerateInspiralPopulateInspiralSpin}
+
 
 	\begin{description}
  	\item[\texttt{LALGenerateInspiral()}] create an inspiral binary 
@@ -62,10 +62,6 @@
 	InspiralTemplate strucuture if the model chosen belongs to the 
 	inspiral package.
 
-   	\item[\texttt{LALGenerateInspiralPopulateInspiralSpin()}] Populate 
-	some extra InspiralTemplate parameters related to spin if the model 
-	is SpinTaylor. That functions might be merge with 
-	\texttt{LALGenerateInspiralPopulatePPN()}
 	\end{description}
  
    	\subsubsection*{Algorithm}
@@ -184,12 +180,7 @@ void LALGenerateInspiral(
 						thisEvent, 
 						ppnParams);
       CHECKSTATUSPTR(status);      
-      /* Some additional spin parameters ? Has to be checked. 
-       * For the time being there is no way to use that with xml file injection anyway.
-       * */
-      LALGenerateInspiralPopulateInspiralSpin(	status ->statusPtr, 
-		      				&inspiralParams);		
-      CHECKSTATUSPTR(status);      
+
       /* the waveform generation itself*/
       LALInspiralWaveForInjection(	status->statusPtr,
 		      			waveform, 
@@ -376,43 +367,6 @@ void LALGenerateInspiralGetApproxFromString(LALStatus *status,
 
 
 
-/* Do we still need that function ? */
-void 
-ComputeSpin(InspiralTemplate *params)
-{
-  REAL8 mass1Sq;
-  REAL8 mass2Sq;
-  REAL8 spin1Frac;
-  REAL8 spin2Frac;
-  REAL8 spin1Phi;
-  REAL8 spin2Phi;
-  REAL8 spin1Theta;
-  REAL8 spin2Theta;
-
-  mass1Sq = pow(params->mass1*LAL_MTSUN_SI,2.L); 
-  mass2Sq = pow(params->mass2*LAL_MTSUN_SI,2.L); 
-  spin1Frac = params->spin1[0];  
-  spin2Frac = params->spin2[0];
-
-  params->sourceTheta = LAL_PI/6.L;
-  params->sourcePhi   = LAL_PI/6.L;
-
-  spin1Theta = params->spin1[1];
-  spin2Theta = params->spin2[1];
-  spin1Phi   = params->spin1[2];
-  spin2Phi   = params->spin2[2]; 
-  
-  params->spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);
-  params->spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
-  params->spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);	 	 
-  params->spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
-  params->spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
-  params->spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);  
-
-}
-
-
-
 
 
 /* That function is just a copy and paste of FindChirpSimulation.c 
@@ -438,7 +392,12 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
   ppnParams->phi  = thisEvent->coa_phase;
   
   /* frequency cutoffs */
-  ppnParams->fStartIn = 40.0;   /* It has to be a parameter in thisEvent*/
+  if (thisEvent->fLower >0 ){
+    ppnParams->fStartIn = thisEvent->fLower;   
+  }
+  else {
+    ppnParams->fStartIn = 40.;
+  }
   ppnParams->fStopIn  = -1.0 /  /* fCutoff of the inspiral package ?? why negative ?*/
     (6.0 * sqrt(6.0) * LAL_PI * ppnParams->mTot * LAL_MTSUN_SI);
   
@@ -508,32 +467,23 @@ void LALGenerateInspiralPopulateInspiral(LALStatus		*status,
   
   inspiralParams->massChoice  = m1Andm2;      
   
-  DETATCHSTATUSPTR( status );
-  RETURN( status );  
-}
 
-
-/*TO DO and finlize if we want to use spin injection with SpinTaylorT3*/
-/* <lalVerbatim file="LALGenerateInspiralPopulateInspiralSpinCP"> */
-void LALGenerateInspiralPopulateInspiralSpin(LALStatus        *status,
-					     InspiralTemplate *inspiralParams)
-/* </lalVerbatim> */
-{
-  INITSTATUS( status, "LALGenerateInspiralPopulateInspiralSpin", 
-		  GENERATEINSPIRALC );
-  ATTATCHSTATUSPTR( status );
-
-  /* not needed ???*/
   inspiralParams->sourceTheta = GENERATEINSPIRAL_SOURCETHETA;
   inspiralParams->sourcePhi   = GENERATEINSPIRAL_SOURCEPHI;
-  inspiralParams->spin1[0]    = GENERATEINSPIRAL_SPIN1X; 
-  inspiralParams->spin2[0]    = GENERATEINSPIRAL_SPIN2X;
-  inspiralParams->spin1[1]    = GENERATEINSPIRAL_SPIN1Y;
-  inspiralParams->spin2[1]    = GENERATEINSPIRAL_SPIN2Y;
-  inspiralParams->spin1[2]    = GENERATEINSPIRAL_SPIN1Z;
-  inspiralParams->spin2[2]    = GENERATEINSPIRAL_SPIN2Z;
-  inspiralParams->orbitTheta0 = GENERATEINSPIRAL_ORBITTHETA0;
-  inspiralParams->orbitPhi0   = GENERATEINSPIRAL_ORBITPHI0;
+  inspiralParams->spin1[0]    = thisEvent->spin1x;
+  inspiralParams->spin2[0]    = thisEvent->spin2x;
+  inspiralParams->spin1[1]    = thisEvent->spin1y;
+  inspiralParams->spin2[1]    = thisEvent->spin2y;
+  inspiralParams->spin1[2]    = thisEvent->spin1z;
+  inspiralParams->spin2[2]    = thisEvent->spin2z;
+
+  /*put an assert here, theta0 can not be equal to zero.*/
+  /*  if (orbitTheta0 == 0){
+    ABORT()
+    }
+  */
+  inspiralParams->orbitTheta0 = thisEvent->theta0;
+  inspiralParams->orbitPhi0   = thisEvent->phi0;
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
