@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Units.h DetectorSite.h DetResponse.h Calibration.h
+pkginclude_HEADERS = Units.h DetectorSite.h DetResponse.h Calibration.h CoherentEstimation.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
