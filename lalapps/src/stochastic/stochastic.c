@@ -27,6 +27,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/PrintFTSeries.h>
 
 #include <lalapps.h>
 #include <processtable.h>
@@ -65,6 +66,7 @@ static int high_pass_flag;
 static int overlap_hann_flag;
 static int recentre_flag;
 static int cc_spectra_flag;
+static int debug_flag;
 extern int vrbflg;
 
 /* xml comment/tags */
@@ -1197,6 +1199,9 @@ static StochasticTable *stochastic_search(LALStatus *status,
   StochasticTable *stochHead = NULL;
   StochasticTable *thisStoch = NULL;
 
+  /* debug file */
+  CHAR debug_filename[FILENAME_MAX];
+
   /* calculate number of intervals, and required shift to get to next
    * interval */
   if (overlap_hann_flag)
@@ -1256,6 +1261,17 @@ static StochasticTable *stochastic_search(LALStatus *status,
       segment_two = cut_time_series(status, series_two, seg_epoch, \
           segmentDuration);
 
+      /* save intermediate products */
+      if (debug_flag)
+      {
+        LALSnprintf(debug_filename, FILENAME_MAX, "segment_1-%d.dat", \
+            seg_epoch.gpsSeconds);
+        LALSPrintTimeSeries(segment_one, debug_filename);
+        LALSnprintf(debug_filename, FILENAME_MAX, "segment_2-%d.dat", \
+            seg_epoch.gpsSeconds);
+        LALSPrintTimeSeries(segment_two, debug_filename);
+      }
+
       /* compute response */
       response_one = generate_response(status, ifoOne, calCacheOne, \
           seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
@@ -1263,6 +1279,17 @@ static StochasticTable *stochastic_search(LALStatus *status,
       response_two = generate_response(status, ifoTwo, calCacheTwo, \
           seg_epoch, fMin, delta_f, countPerAttoStrain, filter_length, \
           calibOffset, segmentDuration);
+
+      /* save intermediate products */
+      if (debug_flag)
+      {
+        LALSnprintf(debug_filename, FILENAME_MAX, "response_1-%d.dat", \
+            seg_epoch.gpsSeconds + calibOffset);
+        LALCPrintFrequencySeries(response_one, debug_filename);
+        LALSnprintf(debug_filename, FILENAME_MAX, "response_2-%d.dat", \
+            seg_epoch.gpsSeconds + calibOffset);
+        LALCPrintFrequencySeries(response_two, debug_filename);
+      }
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
@@ -1315,12 +1342,31 @@ static StochasticTable *stochastic_search(LALStatus *status,
       inv_psd_two->data->data[i] = 1. / cal_psd_two->data[i];
     }
 
+    /* save intermediate products */
+    if (debug_flag)
+    {
+      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_1-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALSPrintFrequencySeries(inv_psd_one, debug_filename);
+      LALSnprintf(debug_filename, FILENAME_MAX, "inv_psd_2-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALSPrintFrequencySeries(inv_psd_two, debug_filename);
+    }
+
     if (vrbflg)
       fprintf(stdout, "Generating optimal filter...\n");
 
     /* build optimal filter */
     opt_filter = optimal_filter(status, overlap, omega, inv_psd_one, \
         inv_psd_two, window, &sigma);
+
+    /* save intermediate products */
+    if (debug_flag)
+    {
+      LALSnprintf(debug_filename, FILENAME_MAX, "opt_filter-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALSPrintFrequencySeries(opt_filter, debug_filename);
+    }          
 
     if (vrbflg)
     {
@@ -1334,6 +1380,17 @@ static StochasticTable *stochastic_search(LALStatus *status,
     segment_two = cut_time_series(status, series_two, analysis_epoch, \
         segmentDuration);
 
+    /* save intermediate products */
+    if (debug_flag)
+    {
+      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_1-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALSPrintTimeSeries(segment_one, debug_filename);
+      LALSnprintf(debug_filename, FILENAME_MAX, "analysis_segment_2-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALSPrintTimeSeries(segment_two, debug_filename);
+    }
+
     if (vrbflg)
       fprintf(stdout, "Performing zero pad and FFT...\n");
 
@@ -1342,6 +1399,17 @@ static StochasticTable *stochastic_search(LALStatus *status,
         segment_length + 1, window);
     zero_pad_two = zero_pad_and_fft(status, segment_two, delta_f, \
         segment_length + 1, window);
+
+    /* save intermediate products */
+    if (debug_flag)
+    {
+      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_1-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALCPrintFrequencySeries(zero_pad_one, debug_filename);
+      LALSnprintf(debug_filename, FILENAME_MAX, "zero_pad_2-%d.dat", \
+          analysis_epoch.gpsSeconds);
+      LALCPrintFrequencySeries(zero_pad_two, debug_filename);
+    }    
 
     if (vrbflg)
       fprintf(stdout, "Calculating cross correlation spectrum...\n");
@@ -1432,6 +1500,7 @@ static void display_usage()
   fprintf(stdout, " --help                        print this message\n");
   fprintf(stdout, " --version                     display version\n");
   fprintf(stdout, " --verbose                     verbose mode\n");
+  fprintf(stdout, " --debug                       debug mode\n");
   fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
   fprintf(stdout, " --user-tag STRING             set the user tag\n"); 
   fprintf(stdout, " --comment STRING              set the comment\n");
@@ -1493,6 +1562,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       {"recentre", no_argument, &recentre_flag, 1},
       {"cc-spectra", no_argument, &cc_spectra_flag, 1},
+      {"debug", no_argument, &debug_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"version", no_argument, 0, 'b'},
