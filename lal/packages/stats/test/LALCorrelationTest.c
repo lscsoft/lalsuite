@@ -69,7 +69,7 @@ static INT4 compareOutputs(OutputCorrelation *is, OutputCorrelation *should);
 int lalDebugLevel = LALMSGLVL3;
 const CHAR fileName[] = "data.txt";
 
-int main( int argc, char *argv[] )
+int main( void )
 {
   static LALStatus     status;
 
