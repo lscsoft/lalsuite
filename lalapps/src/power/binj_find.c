@@ -37,11 +37,40 @@ RCSID("$Id$");
 struct options_t {
 	int verbose;
 
+	int playground;
+	int noplayground;
+
 	/* central_freq threshold */
 	INT4 maxCentralfreqFlag;
 	REAL4 maxCentralfreq;
 	INT4 minCentralfreqFlag;
 	REAL4 minCentralfreq;
+
+	/* confidence threshold */
+	INT4 maxConfidenceFlag;
+	REAL4 maxConfidence;
+
+	/* duration thresholds */
+	INT4 minDurationFlag;
+	REAL4 minDuration;
+	INT4 maxDurationFlag;
+	REAL4 maxDuration;
+
+	/* bandwidth threshold */
+	INT4 maxBandwidthFlag;
+	REAL4 maxBandwidth;
+
+	/* amplitude threshold */
+	INT4 maxAmplitudeFlag;
+	REAL4 maxAmplitude;
+	INT4 minAmplitudeFlag;
+	REAL4 minAmplitude;
+
+	/* snr threshold */
+	INT4 maxSnrFlag;
+	REAL4 maxSnr;
+	INT4 minSnrFlag;
+	REAL4 minSnr;
 };
 
 /*
@@ -52,10 +81,34 @@ static void set_option_defaults(struct options_t *options)
 {
 	options->verbose = 0;
 
+	options->playground = FALSE;
+	options->noplayground = FALSE;
+
 	options->maxCentralfreqFlag = 0;
 	options->maxCentralfreq = 0.0;
 	options->minCentralfreqFlag = 0;
 	options->minCentralfreq = 0.0;
+
+	options->maxConfidenceFlag = 0;
+	options->maxConfidence = 0.0;
+
+	options->minDurationFlag = 0;
+	options->minDuration = 0.0;
+	options->maxDurationFlag = 0;
+	options->maxDuration = 0.0;
+
+	options->maxBandwidthFlag = 0;
+	options->maxBandwidth = 0.0;
+
+	options->maxAmplitudeFlag = 0;
+	options->maxAmplitude = 0.0;
+	options->minAmplitudeFlag = 0;
+	options->minAmplitude = 0.0;
+
+	options->maxSnrFlag = 0;
+	options->maxSnr = 0.0;
+	options->minSnrFlag = 0;
+	options->minSnr = 0.0;
 }
 
 /*
@@ -174,6 +227,75 @@ static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct optio
 
 
 /*
+ * Trim a SnglBurstTable
+ */
+
+static int keep_this_event(SnglBurstTable *event, struct options_t options)
+{
+	if (options.maxConfidenceFlag && !(event->confidence < options.maxConfidence))
+		return(FALSE);
+
+	if (options.minDurationFlag && !(event->duration > options.minDuration))
+		return(FALSE);
+
+	if (options.maxDurationFlag && !(event->duration < options.maxDuration))
+		return(FALSE);
+
+	if (options.minCentralfreqFlag && !(event->central_freq > options.minCentralfreq))
+		return(FALSE);
+
+	if (options.maxCentralfreqFlag && !(event->central_freq < options.maxCentralfreq))
+		return(FALSE);
+
+	if (options.maxBandwidthFlag && !(event->bandwidth < options.maxBandwidth))
+		return(FALSE);
+
+	if (options.minAmplitudeFlag && !(event->amplitude > options.minAmplitude))
+		return(FALSE);
+
+	if (options.maxAmplitudeFlag && !(event->amplitude < options.maxAmplitude))
+		return(FALSE);
+
+	if (options.minSnrFlag && !(event->snr > options.minSnr))
+		return(FALSE);
+
+	if (options.maxSnrFlag && !(event->snr < options.maxSnr))
+		return(FALSE);
+
+	if (options.playground && !(isPlayground(event->start_time.gpsSeconds, event->start_time.gpsSeconds)))
+		return(FALSE);
+
+	return(TRUE);
+}
+
+static SnglBurstTable *free_this_event(SnglBurstTable * event)
+{
+	SnglBurstTable *next = event ? event->next : NULL;
+	LALFree(event);
+	return(next);
+}
+
+static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
+{
+	SnglBurstTable *head, *prev;
+
+	while(event && !keep_this_event(event, options))
+		event = event->next;
+	head = event;
+
+/* FIXME: don't check the first event again */
+	for(prev = event; event; event = prev->next) {
+		if(keep_this_event(event, options))
+			prev = event;
+		else
+			prev->next = free_this_event(event);
+	}
+
+	return(head);
+}
+
+
+/*
  * Entry point.
  */
 
@@ -181,11 +303,8 @@ int main(int argc, char **argv)
 {
 	static LALStatus stat;
 	FILE *fpin = NULL;
-	BOOLEAN playground = FALSE;
-	BOOLEAN noplayground = FALSE;
 
 	INT4 sort = FALSE;
-	INT4 pass = TRUE;
 	size_t len = 0;
 	INT4 ndetected = 0;
 	INT4 ninjected = 0;
@@ -207,40 +326,14 @@ int main(int argc, char **argv)
 	INT8 injPeakTime = 0;
 	INT8 burstStartTime = 0;
 
-	/* confidence threshold */
-	INT4 maxConfidenceFlag = 0;
-	REAL4 maxConfidence = 0.0;
-
-	/* duration thresholds */
-	INT4 minDurationFlag = 0;
-	REAL4 minDuration = 0.0;
-	INT4 maxDurationFlag = 0;
-	REAL4 maxDuration = 0.0;
-
-	/* bandwidth threshold */
-	INT4 maxBandwidthFlag = 0;
-	REAL4 maxBandwidth = 0.0;
-
-	/* amplitude threshold */
-	INT4 maxAmplitudeFlag = 0;
-	REAL4 maxAmplitude = 0.0;
-	INT4 minAmplitudeFlag = 0;
-	REAL4 minAmplitude = 0.0;
-
-	/* snr threshold */
-	INT4 maxSnrFlag = 0;
-	REAL4 maxSnr = 0.0;
-	INT4 minSnrFlag = 0;
-	REAL4 minSnr = 0.0;
-
 	CHAR line[MAXSTR];
 
 	/* search summary */
 	SearchSummaryTable *searchSummary = NULL;
 
 	/* triggers */
-	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL, *prevEvent = NULL;
-	SnglBurstTable burstEvent, *burstEventList = NULL, *outEventList = NULL;
+	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
+	SnglBurstTable burstEvent, *burstEventList = NULL;
 	SnglBurstTable *detEventList = NULL, *detTrigList = NULL, *prevTrig = NULL;
 
 	/* injections */
@@ -268,21 +361,21 @@ int main(int argc, char **argv)
 			/* these options set a flag */
 			{"verbose", no_argument, &options.verbose, 1},
 			/* parameters which determine the output xml file */
-			{"input", required_argument, 0, 'a'},
-			{"injfile", required_argument, 0, 'b'},
-			{"injmadefile", required_argument, 0, 'c'},
-			{"max-confidence", required_argument, 0, 'd'},
-			{"gps-start-time", required_argument, 0, 'e'},
-			{"gps-end-time", required_argument, 0, 'f'},
-			{"min-centralfreq", required_argument, 0, 'g'},
-			{"max-centralfreq", required_argument, 0, 'h'},
-			{"injfoundfile", required_argument, 0, 'j'},
-			{"playground", no_argument, 0, 'k'},
-			{"noplayground", no_argument, 0, 'n'},
-			{"help", no_argument, 0, 'o'},
-			{"sort", no_argument, 0, 'p'},
-			{"detsnglfile", required_argument, 0, 'q'},
-			{0, 0, 0, 0}
+			{"input", required_argument, NULL, 'a'},
+			{"injfile", required_argument, NULL, 'b'},
+			{"injmadefile", required_argument, NULL, 'c'},
+			{"max-confidence", required_argument, NULL, 'd'},
+			{"gps-start-time", required_argument, NULL, 'e'},
+			{"gps-end-time", required_argument, NULL, 'f'},
+			{"min-centralfreq", required_argument, NULL, 'g'},
+			{"max-centralfreq", required_argument, NULL, 'h'},
+			{"injfoundfile", required_argument, NULL, 'j'},
+			{"playground", no_argument, &options.playground, 1},
+			{"noplayground", no_argument, &options.noplayground, 1},
+			{"help", no_argument, NULL, 'o'},
+			{"sort", no_argument, NULL, 'p'},
+			{"detsnglfile", required_argument, NULL, 'q'},
+			{NULL, 0, NULL, 0}
 		};
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
@@ -327,8 +420,8 @@ int main(int argc, char **argv)
 
 		case 'd':
 			/* the confidence must be smaller than this number */
-			maxConfidenceFlag = 1;
-			maxConfidence = atof(optarg);
+			options.maxConfidenceFlag = 1;
+			options.maxConfidence = atof(optarg);
 			break;
 
 		case 'e':
@@ -358,16 +451,6 @@ int main(int argc, char **argv)
 			len = strlen(optarg) + 1;
 			injFoundFile = (CHAR *) calloc(len, sizeof(CHAR));
 			memcpy(injFoundFile, optarg, len);
-			break;
-
-		case 'k':
-			/* restrict to the playground data */
-			playground = TRUE;
-			break;
-
-		case 'n':
-			/* don't restrict to the playground data */
-			noplayground = TRUE;
 			break;
 
 		case 'o':
@@ -517,74 +600,14 @@ int main(int argc, char **argv)
   /****************************************************************
    * do any requested cuts
    ***************************************************************/
-	tmpEvent = burstEventList;
-	while (tmpEvent) {
 
-		/* check the confidence */
-		if (maxConfidenceFlag && !(tmpEvent->confidence < maxConfidence))
-			pass = FALSE;
-
-		/* check min duration */
-		if (minDurationFlag && !(tmpEvent->duration > minDuration))
-			pass = FALSE;
-
-		/* check max duration */
-		if (maxDurationFlag && !(tmpEvent->duration < maxDuration))
-			pass = FALSE;
-
-		/* check min centralfreq */
-		if (options.minCentralfreqFlag && !(tmpEvent->central_freq > options.minCentralfreq))
-			pass = FALSE;
-
-		/* check max centralfreq */
-		if (options.maxCentralfreqFlag && !(tmpEvent->central_freq < options.maxCentralfreq))
-			pass = FALSE;
-
-		/* check max bandwidth */
-		if (maxBandwidthFlag && !(tmpEvent->bandwidth < maxBandwidth))
-			pass = FALSE;
-
-		/* check min amplitude */
-		if (minAmplitudeFlag && !(tmpEvent->amplitude > minAmplitude))
-			pass = FALSE;
-
-		/* check max amplitude */
-		if (maxAmplitudeFlag && !(tmpEvent->amplitude < maxAmplitude))
-			pass = FALSE;
-
-		/* check min snr */
-		if (minSnrFlag && !(tmpEvent->snr > minSnr))
-			pass = FALSE;
-
-		/* check max snr */
-		if (maxSnrFlag && !(tmpEvent->snr < maxSnr))
-			pass = FALSE;
-
-		/* check if trigger starts in playground */
-		if (playground && !(isPlayground(tmpEvent->start_time.gpsSeconds, tmpEvent->start_time.gpsSeconds)))
-			pass = FALSE;
-
-		/* set it for output if it passes */
-		if (pass) {
-			if (outEventList == NULL) {
-				outEventList = currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-				prevEvent = currentEvent;
-			} else {
-				currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-				prevEvent->next = currentEvent;
-			}
-			memcpy(currentEvent, tmpEvent, sizeof(SnglBurstTable));
-			prevEvent = currentEvent;
-			currentEvent = currentEvent->next = NULL;
-		}
-		tmpEvent = tmpEvent->next;
-		pass = TRUE;
-	}
+	burstEventList = trim_event_list(burstEventList, options);
 
   /*****************************************************************
    * sort the remaining triggers
    *****************************************************************/
-	LAL_CALL(LALSortSnglBurst(&stat, &(outEventList), LALCompareSnglBurstByTime), &stat);
+
+	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
 
   /*****************************************************************
@@ -592,11 +615,11 @@ int main(int argc, char **argv)
    *****************************************************************/
 
 	currentSimBurst = outSimList;
-	currentEvent = detEventList = outEventList;
+	currentEvent = detEventList = burstEventList;
 
 	while (currentSimBurst != NULL) {
 		/* check if the injection is made in the playground */
-		if ((playground && !(isPlayground(currentSimBurst->l_peak_time.gpsSeconds, currentSimBurst->l_peak_time.gpsSeconds))) == 0) {
+		if ((options.playground && !(isPlayground(currentSimBurst->l_peak_time.gpsSeconds, currentSimBurst->l_peak_time.gpsSeconds))) == 0) {
 			ninjected++;
 
 			/* write the injected signals to an output file */
