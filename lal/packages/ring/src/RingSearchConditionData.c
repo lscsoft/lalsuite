@@ -8,6 +8,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Units.h>
+#include <lal/BandPassTimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
 #include <lal/RingSearch.h>
@@ -62,6 +63,33 @@ LALRingSearchConditionData(
 
   params->sampleRate = 1 / data->channel->deltaT;
 
+  /* check that the amount of data is correct */
+  if ( ( 2 * data->channel->data->length ) % params->segmentSize )
+  {
+    ABORT( status, RINGSEARCHH_ENSEG, RINGSEARCHH_MSGENSEG );
+  }
+  params->numSegments = 2 * data->channel->data->length / params->segmentSize - 1;
+
+
+  /*
+   *
+   * High-pass filter the data.
+   *
+   */
+
+  if ( params->lowFrequency > 0 )
+  {
+    PassBandParamStruc highpassParams;
+    highpassParams.nMax = 4;
+    highpassParams.f1   = -1;
+    highpassParams.a1   = -1;
+    highpassParams.f2   = params->lowFrequency;
+    highpassParams.a2   = 0.1;
+    LALDButterworthREAL4TimeSeries( status->statusPtr, data->channel,
+        &highpassParams );
+    CHECKSTATUSPTR( status );
+  }
+
 
   /*
    *
@@ -82,16 +110,9 @@ LALRingSearchConditionData(
 
   /*
    *
-   * Segment the data and compute the power spectrum.
+   * Compute the average power spectrum.  Store it in invSpectrum for now.
    *
    */
-
-  if ( ( 2 * data->channel->data->length ) % params->segmentSize )
-  {
-    ABORT( status, RINGSEARCHH_ENSEG, RINGSEARCHH_MSGENSEG );
-  }
-  params->numSegments = 2 * data->channel->data->length / params->segmentSize
-    - 1;
 
   if ( data->spectrum ) /* copy given spectrum to inverse spectrum */
   {
@@ -103,100 +124,29 @@ LALRingSearchConditionData(
     params->invSpectrum->deltaF      = data->spectrum->deltaF;
     params->invSpectrum->f0          = data->spectrum->f0;
   }
-  else
+  else /* compute the average spectrum */
   {
-    params->invSpectrum->epoch  = data->channel->epoch;
-    params->invSpectrum->deltaF = params->sampleRate / params->segmentSize;
-    params->invSpectrum->f0     = 0;
-    memset( params->invSpectrum->data->data, 0,
-        params->invSpectrum->data->length
-        * sizeof( *params->invSpectrum->data->data ) );
-  }
-  strncpy( params->invSpectrum->name, "inverse spectrum",
-      sizeof( params->invSpectrum->name ) );
-
-  params->dataSegment = LALCalloc( params->numSegments,
-      sizeof( *params->dataSegment ) );
-  if ( ! params->dataSegment )
-  {
-    ABORT( status, RINGSEARCHH_EALOC, RINGSEARCHH_MSGEALOC );
-  }
-
-  for ( i = 0; i < params->numSegments; ++i )
-  {
-    REAL4TimeSeries ser = *data->channel;
-    REAL4Vector     vec;
-    REAL8 dt;
-    INT8 timeNS;
-
-    /* create a dummy time series for this segment of data */
-    vec.length = params->segmentSize;
-    vec.data   = data->channel->data->data + i * params->segmentSize / 2;
-    ser.data   = &vec;
-    dt = 0.5 * i * params->segmentSize * ser.deltaT;
-    timeNS  = (INT8)( 1000000000 ) * (INT8)( ser.epoch.gpsSeconds );
-    timeNS += (INT8)( ser.epoch.gpsNanoSeconds );
-    timeNS += (INT8)( 1e9 * dt );
-    ser.epoch.gpsSeconds     = timeNS / (INT8)( 1000000000 );
-    ser.epoch.gpsNanoSeconds = timeNS % (INT8)( 1000000000 );
-
-    /* create this segment's frequency series */
-    LALCCreateVector( status->statusPtr, &params->dataSegment[i].data,
-        params->segmentSize / 2 + 1 );
+    LALWindowParams       windowParams;
+    AverageSpectrumParams avgSpecParams;
+    windowParams.type     = Hann;
+    windowParams.length   = params->segmentSize;
+    avgSpecParams.window  = NULL;
+    avgSpecParams.plan    = params->forwardPlan;
+    avgSpecParams.method  = params->avgSpecMeth;
+    avgSpecParams.overlap = params->segmentSize / 2;
+    LALCreateREAL4Window( status->statusPtr, &avgSpecParams.window,
+        &windowParams );
     CHECKSTATUSPTR( status );
-
-    /* TODO: NAME */
-
-    /* fft the dummy time series */
-    LALTimeFreqRealFFT( status->statusPtr, params->dataSegment + i, &ser,
-        params->forwardPlan );
-    CHECKSTATUSPTR( status );
-
-
-    if ( ! data->spectrum ) /* compute the spectrum from the data */
+    LALREAL4AverageSpectrum( status->statusPtr, params->invSpectrum,
+        data->channel, &avgSpecParams );
+    BEGINFAIL( status )
     {
-      for ( k = 0; k < params->invSpectrum->data->length; ++k )
-      {
-        REAL4 re = params->dataSegment[i].data->data[k].re;
-        REAL4 im = params->dataSegment[i].data->data[k].im;
-        params->invSpectrum->data->data[k] += re * re + im * im;
-      }
+      LALDestroyREAL4Window( status->statusPtr, &avgSpecParams.window );
     }
-
-    /* multiply by the response function */
-    LALCCVectorMultiply( status->statusPtr, params->dataSegment[i].data,
-        params->dataSegment[i].data, data->response->data );
-    CHECKSTATUSPTR( status );
-
-    /* get the units right */
-    unitPair.unitOne = &params->dataSegment[i].sampleUnits;
-    unitPair.unitTwo = &data->response->sampleUnits;
-    LALUnitMultiply( status->statusPtr, &params->dataSegment[i].sampleUnits,
-        &unitPair );
+    ENDFAIL( status );
+    LALDestroyREAL4Window( status->statusPtr, &avgSpecParams.window );
     CHECKSTATUSPTR( status );
   }
-
-  /* correct power spectrum normalization prior to inversion */
-  if ( ! data->spectrum )
-  {
-    for ( k = 1; k < params->invSpectrum->data->length; ++k )
-    {
-      params->invSpectrum->data->data[k] *= 2 * params->invSpectrum->deltaF;
-      params->invSpectrum->data->data[k] /= params->numSegments;
-    }
-    /* power spectrum units prior to inversion */
-    unitPair.unitOne = &data->channel->sampleUnits;
-    unitPair.unitTwo = &data->channel->sampleUnits;
-    LALUnitMultiply( status->statusPtr, &params->invSpectrum->sampleUnits,
-        &unitPair );
-    CHECKSTATUSPTR( status );
-    unitPair.unitOne = &params->invSpectrum->sampleUnits;
-    unitPair.unitTwo = &lalSecondUnit;
-    LALUnitMultiply( status->statusPtr, &params->invSpectrum->sampleUnits,
-        &unitPair );
-    CHECKSTATUSPTR( status );
-  }
-
 
 
   /*
@@ -204,6 +154,9 @@ LALRingSearchConditionData(
    * Compute inverse power spectrum perhaps doing truncation.
    *
    */
+
+  strncpy( params->invSpectrum->name, "inverse spectrum",
+      sizeof( params->invSpectrum->name ) );
 
   cut = params->lowFrequency / params->invSpectrum->deltaF;
 
@@ -282,24 +235,77 @@ LALRingSearchConditionData(
   CHECKSTATUSPTR( status );
 
 
+
   /*
    *
-   * Multiply data segments by inverse spectrum.
+   * Segment the data.  Multiply segments by response and invSpectrum.
    *
    */
 
+  params->dataSegment = LALCalloc( params->numSegments,
+      sizeof( *params->dataSegment ) );
+  if ( ! params->dataSegment )
+  {
+    ABORT( status, RINGSEARCHH_EALOC, RINGSEARCHH_MSGEALOC );
+  }
+
+
   for ( i = 0; i < params->numSegments; ++i )
   {
+    REAL4TimeSeries ser = *data->channel;
+    REAL4Vector     vec;
+    REAL8 dt;
+    INT8 timeNS;
+
+    /* create a dummy time series for this segment of data */
+    vec.length = params->segmentSize;
+    vec.data   = data->channel->data->data + i * params->segmentSize / 2;
+    ser.data   = &vec;
+    dt = 0.5 * i * params->segmentSize * ser.deltaT;
+    timeNS  = (INT8)( 1000000000 ) * (INT8)( ser.epoch.gpsSeconds );
+    timeNS += (INT8)( ser.epoch.gpsNanoSeconds );
+    timeNS += (INT8)( 1e9 * dt );
+    ser.epoch.gpsSeconds     = timeNS / (INT8)( 1000000000 );
+    ser.epoch.gpsNanoSeconds = timeNS % (INT8)( 1000000000 );
+
+    /* create this segment's frequency series */
+    LALCCreateVector( status->statusPtr, &params->dataSegment[i].data,
+        params->segmentSize / 2 + 1 );
+    CHECKSTATUSPTR( status );
+
+    /* keep the same name as the original data so it can be extracted later */
+    strncpy( params->dataSegment[i].name, ser.name,
+        sizeof( params->dataSegment[i].name ) );
+
+    /* fft the dummy time series */
+    LALTimeFreqRealFFT( status->statusPtr, params->dataSegment + i, &ser,
+        params->forwardPlan );
+    CHECKSTATUSPTR( status );
+
+    /* multiply by the response function */
+    LALCCVectorMultiply( status->statusPtr, params->dataSegment[i].data,
+        params->dataSegment[i].data, data->response->data );
+    CHECKSTATUSPTR( status );
+
+    /* get the units right */
+    unitPair.unitOne = &params->dataSegment[i].sampleUnits;
+    unitPair.unitTwo = &data->response->sampleUnits;
+    LALUnitMultiply( status->statusPtr, &params->dataSegment[i].sampleUnits,
+        &unitPair );
+    CHECKSTATUSPTR( status );
+
+    /* now multiply by the inverse spectrum */
     LALSCVectorMultiply( status->statusPtr, params->dataSegment[i].data,
         params->invSpectrum->data, params->dataSegment[i].data );
     CHECKSTATUSPTR( status );
+
+    /* get units right again after this multiplication */
     unitPair.unitOne = &params->dataSegment[i].sampleUnits;
     unitPair.unitTwo = &params->invSpectrum->sampleUnits;
     LALUnitMultiply( status->statusPtr, &params->dataSegment[i].sampleUnits,
         &unitPair );
     CHECKSTATUSPTR( status );
   }
-
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

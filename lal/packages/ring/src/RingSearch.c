@@ -44,12 +44,12 @@ NRCSID( RINGSEARCHC, "$Id$" );
 void
 LALRingSearch(
     LALStatus         *status,
-    RingEventList    **output,
+    SnglBurstTable   **output,
     RingSearchInput   *input,
     RingSearchParams  *params
     )
 { /* </lalVerbatim> */
-  RingEventList           *thisEvent = NULL;
+  SnglBurstTable          *thisEvent = NULL;
   REAL4TimeSeries          signal;
   REAL4TimeSeries          result;
   COMPLEX8FrequencySeries  stilde;
@@ -186,26 +186,6 @@ LALRingSearch(
           params->reversePlan );
       CHECKSTATUSPTR( status );
 
-#if 0
-      if ( seg == 0 && ntmplt == 0 )
-      {
-        CHAR unitStringData[LALUnitTextSize];
-        CHARVector unitString = { LALUnitTextSize, unitStringData };
-        FILE *fp = fopen( "snr.out", "w" );
-        fprintf( fp, "# %s\n", result.name );
-        fprintf( fp, "# GPS Time: %d.%09d\n", result.epoch.gpsSeconds,
-            result.epoch.gpsNanoSeconds );
-        LALUnitAsString( status->statusPtr, &unitString, &result.sampleUnits );
-        CHECKSTATUSPTR( status );
-        fprintf( fp, "# Units: %s\n", unitString.data );
-        for ( j = 0; j < result.data->length; ++j )
-        {
-          fprintf( fp, "%e\t%e\n", j * result.deltaT,
-              2 * params->dynRangeFac * result.data->data[j] / sigma );
-        }
-      }
-#endif
-
       /* search for threshold crossing in middle of segment */
       for ( j = result.data->length / 4; j < 3 * result.data->length / 4; ++j )
       {
@@ -234,27 +214,33 @@ LALRingSearch(
             {
               ABORT( status, RINGSEARCHH_EALOC, RINGSEARCHH_MSGEALOC );
             }
-            thisEvent->startTimeNS = timeNS;
-            thisEvent->snr         = snr;
-            thisEvent->amplitude   = snr / sigma;
-            thisEvent->confidence  = 0; /* FIXME */
-            thisEvent->duration    = duration;
-            thisEvent->frequency   =
+            strncpy( thisEvent->ifo, params->ifoName,
+                sizeof( thisEvent->ifo ) );
+            strncpy( thisEvent->search, "ring",
+                sizeof( thisEvent->search ) );
+            strncpy( thisEvent->channel, params->dataSegment[seg].name,
+                sizeof( thisEvent->channel ) );
+            thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
+            thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
+            thisEvent->duration     = duration;
+            thisEvent->central_freq =
               params->templateBank->tmplt[tmplt].frequency;
-            thisEvent->quality     = 
+            thisEvent->bandwidth    = 
+              params->templateBank->tmplt[tmplt].frequency /
               params->templateBank->tmplt[tmplt].quality;
-            thisEvent->mass        = 0; /* FIXME */
-            strncpy( thisEvent->ifoName, params->ifoName,
-                sizeof( thisEvent->ifoName ) );
+            thisEvent->snr          = snr;
+            thisEvent->amplitude    = snr / sigma;
+            thisEvent->confidence   = 0; /* FIXME */
           }
           else /* maximize within existing event */
           {
             if ( snr > thisEvent->snr )
             {
-              thisEvent->startTimeNS = timeNS;
-              thisEvent->snr         = snr;
-              thisEvent->amplitude   = snr / sigma;
-              thisEvent->confidence  = 0; /* FIXME */
+              thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
+              thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
+              thisEvent->snr        = snr;
+              thisEvent->amplitude  = snr / sigma;
+              thisEvent->confidence = 0; /* FIXME */
             }
           }
           /* update last event time */

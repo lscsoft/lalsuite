@@ -48,7 +48,7 @@ int main( void )
   const float srate  = 1024;
   const int   nseg   = 3;
 
-  const char *argv[] = { "filterparams", "-segsz", "65536", "-speclen", "4096",
+  char *argv[] = { "filterparams", "-segsz", "65536", "-speclen", "4096",
       "-flow", "40", "-fmin", "150", "-fmax", "200", "-qmin", "2",
       "-qmax", "10", "-maxmm", "0.1", "-thresh", "6", "-scale", "2000", NULL };
   int argc = sizeof( argv ) / sizeof( *argv ) - 1;
@@ -63,7 +63,7 @@ int main( void )
 
   static RingSearchInput          input;
   static RingSearchData           data;
-  static RingEventList           *events;
+  static SnglBurstTable          *events;
   static RingSearchParams        *params;
 
   RAT4 minusOne = { -1, 0 };
@@ -202,11 +202,11 @@ int main( void )
 
   while ( events )
   {
-    RingEventList *next = events->next;
+    SnglBurstTable *next = events->next;
     fprintf( stdout, "%9d.%09d %e %e %e %e\n",
-        (int)( events->startTimeNS / 1000000000 ),
-        (int)( events->startTimeNS % 1000000000 ),
-        events->snr, events->amplitude, events->frequency, events->quality );
+        events->start_time.gpsSeconds, events->start_time.gpsNanoSeconds,
+        events->snr, events->amplitude, events->central_freq,
+        events->central_freq / events->bandwidth );
     LALFree( events );
     events = next;
   }

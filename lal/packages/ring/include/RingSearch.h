@@ -23,6 +23,8 @@
 #define _RINGSEARCH_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
 #include <lal/Ring.h>
@@ -81,6 +83,7 @@ tagRingSearchParams
   REAL4FrequencySeries    *invSpectrum;
   RealFFTPlan             *forwardPlan;
   RealFFTPlan             *reversePlan;
+  AvgSpecMethod            avgSpecMeth;
   REAL4                    dynRangeFac;
   UINT4                    invSpecTrunc;
   REAL4                    lowFrequency;
@@ -185,46 +188,6 @@ RingSearchData;
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
-typedef struct
-tagRingEventList
-{
-  CHAR  ifoName[3];
-  INT8  startTimeNS;
-  REAL4 duration;
-  REAL4 amplitude;
-  REAL4 frequency;
-  REAL4 quality;
-  REAL4 mass;
-  REAL4 snr;
-  REAL4 confidence;
-  struct tagRingEventList *next;
-}
-RingEventList;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * This structure is a node on a linked list of events returned by the
- * \verb+LALRingSearch()+ function.  The fields are:
- *
- * \begin{description}
- * \item[\texttt{ifoName}] The IFO name (e.g., ``H1,'' ``L1,'' etc.).
- * \item[\texttt{startTimeNS}] The start time of the event in GPS nanoseconds.
- * \item[\texttt{duration}] The duration of the event in seconds.
- * \item[\texttt{amplitude}] The amplitude of the event.
- * \item[\texttt{frequency}] The central frequency of the ring filter.
- * \item[\texttt{quality}] The quality factor of the ring filter.
- * \item[\texttt{mass}] The mass of a black hole corresponding to the ring
- *   filter.
- * \item[\texttt{snr}] The amplitude signal-to-noise ratio of the event.
- * \item[\texttt{confidence}] The statistical confidence of this event.
- * \item[\texttt{next}] Pointer to the next element in the linked list.
- * \end{description}
- *
- *
- * \subsubsection*{Type \texttt{RingSearchInput}}
- * \idx[Type]{RingSearchInput}
- *
- **** </lalLaTeX> */
 /**** <lalVerbatim> */
 typedef struct
 tagRingSearchInput
@@ -276,7 +239,7 @@ AvgSpecParams;
 void LALRingSearchInit(
     LALStatus         *status,
     RingSearchParams **searchParams,
-    const CHAR       **argv,
+    CHAR             **argv,
     INT4               argc
     );
 
@@ -296,7 +259,7 @@ LALRingSearchConditionData(
 void
 LALRingSearch(
     LALStatus         *status,
-    RingEventList    **output,
+    SnglBurstTable   **output,
     RingSearchInput   *input,
     RingSearchParams  *params
     );

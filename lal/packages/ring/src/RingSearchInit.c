@@ -77,7 +77,7 @@ NRCSID( RINGSEARCHINITC, "$Id$" );
 void LALRingSearchInit(
     LALStatus         *status,
     RingSearchParams **searchParams,
-    const CHAR       **argv,
+    CHAR             **argv,
     INT4               argc
     )
 { /* </lalVerbatim> */
@@ -102,6 +102,7 @@ void LALRingSearchInit(
   params->myProcNumber   = -1;
   params->dynRangeFac    =  1;
   params->maximizeEvents = -1; /* natural amount: duration of filter */
+  params->avgSpecMeth    = useMedian; /* default method */
 
   while ( --argc > 0 )
   {
@@ -120,6 +121,17 @@ void LALRingSearchInit(
     {
       params->invSpecTrunc = atoi( *++argv );
       --argc;
+    }
+    else if ( strstr( *argv, "-avgspec" ) )
+    {
+      char *meth = *++argv;
+      --argc;
+      if ( strstr( meth, "unity" ) )
+        params->avgSpecMeth = useUnity;
+      else if ( strstr( meth, "mean" ) )
+        params->avgSpecMeth = useMean;
+      else
+        params->avgSpecMeth = useMedian; /* default */
     }
     else if ( strstr( *argv, "-flow" ) )
     {
