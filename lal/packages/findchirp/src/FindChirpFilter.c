@@ -1260,29 +1260,12 @@ LALFindChirpBCVFilterSegment (
     /* but set to 1.5 seconds.                   */
     /* chirpTime is not recorded                 */
     /* just used to maximize over chirp.         */
-#if 0
-    REAL4 eta = input->tmplt->eta;
-    REAL4 m1 = input->tmplt->mass1;
-    REAL4 m2 = input->tmplt->mass2;
-    REAL4 fmin = input->segment->fLow;
-    REAL4 m = m1 + m2;
-    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
-    REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
-    REAL4 c3 = -32*LAL_PI/3;
-    REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
-    REAL4 x2 = x*x;
-    REAL4 x3 = x*x2;
-    REAL4 x4 = x2*x2;
-    REAL4 x8 = x4*x4;
-    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8; 
-#endif
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
     REAL4 m = m1 + m2;
     REAL4 fmin = input->segment->fLow;
     REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
-    REAL4 chirpTime = 1.5;
+    REAL4 chirpTime = 1.0;
 
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
@@ -1560,7 +1543,7 @@ LALFindChirpBCVFilterSegment (
            CHECKSTATUSPTR( status );
 
            /* set the impuse time for the event */
-           /* thisEvent->template_duration = (REAL8) chirpTime; */
+           thisEvent->template_duration = (REAL8) chirpTime; 
 
 	   /* record the ifo and channel name for the event */
 	   strncpy( thisEvent->ifo, input->segment->data->name,
@@ -1658,7 +1641,7 @@ LALFindChirpBCVFilterSegment (
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    /* thisEvent->template_duration = (REAL8) chirpTime; */
+    thisEvent->template_duration = (REAL8) chirpTime; 
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name,
