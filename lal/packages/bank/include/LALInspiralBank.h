@@ -32,6 +32,7 @@ Header file for the template placement codes.
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -521,6 +522,31 @@ LALInspiralSpinBank(
     InspiralTemplateList **tiles,
     INT4      		 *ntiles,
     InspiralCoarseBankIn  coarseIn
+    );
+
+#if 0
+void
+LALInspiralSpinBankBoundary(
+    LALStatus            *status,
+    NDTemplateBankInput  *input,
+    NDTemplateBankOutput *output,
+    INT2                 *flag
+    );
+
+void
+LALInspiralSpinBankMetric(
+    LALStatus           *status,
+    NDTemplateBankInput *input,
+    REAL4Array          *metric
+    );
+#endif
+
+void
+LALInspiralBankGeneration(
+    LALStatus            *status,
+    InspiralCoarseBankIn *in,
+    SnglInspiralTable    **out,
+    INT4                 *count
     );
 
 void 
