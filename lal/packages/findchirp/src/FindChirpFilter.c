@@ -949,7 +949,7 @@ LALFindChirpFilterSegment (
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
 
-    if ( lalDebugLevel | LALINFO )
+    if ( lalDebugLevel & LALINFO )
     {
       CHAR infomsg[256];
 
@@ -971,7 +971,7 @@ LALFindChirpFilterSegment (
     ignoreIndex = numPoints / 4;
   }
 
-  if ( lalDebugLevel | LALINFO )
+  if ( lalDebugLevel & LALINFO )
   {
     CHAR infomsg[256];
 
@@ -1559,7 +1559,7 @@ LALFindChirpBCVFilterSegment (
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
 
-    if ( lalDebugLevel | LALINFO )
+    if ( lalDebugLevel & LALINFO )
     {
       CHAR infomsg[256];
 
@@ -1581,7 +1581,7 @@ LALFindChirpBCVFilterSegment (
     ignoreIndex = numPoints / 4;
   }
 
-  if ( lalDebugLevel | LALINFO )
+  if ( lalDebugLevel & LALINFO )
   {
     CHAR infomsg[256];
 
