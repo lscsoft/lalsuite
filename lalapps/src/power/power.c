@@ -1028,7 +1028,7 @@ static REAL4TimeSeries *get_geo_data(
 	highpassParam.nMax = 4;
 	highpassParam.f2 = options.fcorner;
 	highpassParam.f1 = -1.0;
-	highpassParam.a2 = 0.1;
+	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
 	LAL_CALL(LALButterworthREAL8TimeSeries(stat, geo, &highpassParam), stat);
 
