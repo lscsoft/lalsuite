@@ -43,6 +43,7 @@ typedef struct VetoFile_struct {
   int colS, colNS, colDur, colSnr;
   int colDurType, colSnrType;
   double tLast, tLastNeg, tLastPos;
+  double lastDur;
   float lastSnr;
   int readit;
   int eof;
@@ -117,6 +118,8 @@ int main( int argc, char **argv )
   double dur;
   double tLastNeg = 0.0;
   double tUseNeg = 0.0, tUsePos;
+  double tUse, tDur;
+  float tSnr;
   float snrThresh;
   int usevfile;
 
@@ -129,8 +132,11 @@ int main( int argc, char **argv )
   /* Ring buffer of veto events */
   int vbufW = 0;
   int vbufR = 0;
+  double tVeto[RINGBUFSIZE];
   double tVetoNeg[RINGBUFSIZE];
   double tVetoPos[RINGBUFSIZE];
+  double tVetoDur[RINGBUFSIZE];
+  float tVetoSnr[RINGBUFSIZE];
   float cSnrThresh[RINGBUFSIZE];
   Range* rVeto[RINGBUFSIZE];
   int usedVeto[RINGBUFSIZE];
@@ -146,6 +152,7 @@ int main( int argc, char **argv )
     vetoFile[ivfile].tLast = 0.0;
     vetoFile[ivfile].tLastNeg = 0.0;
     vetoFile[ivfile].tLastPos = 0.0;
+    vetoFile[ivfile].lastDur = 0.0;
     vetoFile[ivfile].lastSnr = 0.0;
     vetoFile[ivfile].readit = 1;
     vetoFile[ivfile].eof = 0;
@@ -880,6 +887,10 @@ int main( int argc, char **argv )
       be relevant --*/
     while ( vbufR != vbufW && tVetoPos[vbufR] < tCand ) {
       if ( debug >= 2 ) printf( " Discarding an event from the ring buffer\n" );
+      if ( ! usedVeto[vbufR] ) {
+	printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
+	        timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+      }
       vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
     }
 
@@ -931,6 +942,7 @@ int main( int argc, char **argv )
 	      vFile->tLast = (double) ( atoi(ttext) - timeBase ) + secfrac;
 	      vFile->tLastNeg = vFile->tLast + vFile->winNeg;
 	      vFile->tLastPos = vFile->tLast + dur + vFile->winPos;
+	      vFile->lastDur = dur;
 
 	      /*-- I'm not sure whether an SNR or significance is given in a
 		.dat file, so just set the SNR to 1 --*/
@@ -959,7 +971,7 @@ int main( int argc, char **argv )
 	      if ( vFile->colDurType == METAIO_TYPE_REAL_8 ) {
 		dur = table->elt[vFile->colDur].data.real_8;
 	      } else {
-		dur = (double) table->elt[vFile->colDur].data.real_4;
+		dur = (double)table->elt[vFile->colDur].data.real_4;
 	      }
 	    } else {
 	      dur = 0.0;
@@ -980,6 +992,7 @@ int main( int argc, char **argv )
 	      + 1.0e-9 * (double) table->elt[vFile->colNS].data.int_4s;
 	    vFile->tLastNeg = vFile->tLast + vFile->winNeg;
 	    vFile->tLastPos = vFile->tLast + dur + vFile->winPos;
+	    vFile->lastDur = dur;
 
 	  }  /*-- End code branch for different kinds of input files --*/
 
@@ -1003,6 +1016,7 @@ int main( int argc, char **argv )
 	vFile = &(vetoFile[ivfile]);
 	if ( vFile->eof ) continue;
 	if ( vFile->tLastNeg < tUseNeg ) {
+	  tUse = vFile->tLast;
 	  tUseNeg = vFile->tLastNeg;
 	  /*-- Account for Patrick's "veto clustering" criterion --*/
 	  if ( tUseNeg > tUsePos && tUseNeg-tUsePos < minLiveInterval ) {
@@ -1010,6 +1024,8 @@ int main( int argc, char **argv )
 	    tUseNeg = tUsePos;
 	  }
 	  tUsePos = vFile->tLastPos;
+	  tDur = vFile->lastDur;
+	  tSnr = vFile->lastSnr;
 	  snrThresh = vFile->snrRatio * vFile->lastSnr;
 	  usevfile = ivfile;
 	}
@@ -1053,7 +1069,7 @@ int main( int argc, char **argv )
 	if ( vrfile && tDeadNeg > -2.0e9 ) {
 	  if ( debug >= 3 ) {
 	    printf( "Writing out veto range: %.6f %.6f\n",
-		    timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
+		    timeBaseD+tDeadNeg,timeBaseD+tDeadPos );
 	  }
 	  fprintf( vrfile, "%.6lf %.6lf\n",
 		   timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
@@ -1075,7 +1091,12 @@ int main( int argc, char **argv )
 
       /*-- If this veto event is too long ago to be relevant, don't add it to
 	the ring buffer --*/
-      if ( tdead2 < tCand ) continue;
+      if ( tdead2 < tCand ) {
+	/*-- Report event as unused --*/
+	printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
+	        timeBaseD+tUse, tDur, tSnr);
+	continue;
+      }
 
       /*-- Make sure we have more room in the ring buffer for this veto --*/
       if ( vbufW == vbufR-1 || vbufW == vbufR-1+RINGBUFSIZE ) {
@@ -1087,8 +1108,11 @@ int main( int argc, char **argv )
       if ( debug >= 2 ) printf( "  adding to ring buffer\n" );
 
       /*-- Add this veto event to the ring buffer --*/
+      tVeto[vbufW] = tUse;
       tVetoNeg[vbufW] = tUseNeg;
       tVetoPos[vbufW] = tUsePos;
+      tVetoDur[vbufW] = tDur;
+      tVetoSnr[vbufW] = tSnr;
       cSnrThresh[vbufW] = snrThresh;
       rVeto[vbufW] = vRange;
       usedVeto[vbufW] = 0;
@@ -1120,6 +1144,10 @@ int main( int argc, char **argv )
 	  in the ring buffer, drop it --*/
 	if ( iveto == vbufR ) {
 	  if ( debug >= 2 ) printf( " Dropping an event from the ring buffer\n" );
+	  if ( ! usedVeto[vbufR] ) {
+	    printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
+		    timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+	  }
 	  vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
 	}
 	
@@ -1180,6 +1208,15 @@ int main( int argc, char **argv )
 
   } /*-- End loop over candidate events --*/
 
+  /*-- Dump any unused vetoes still in the ring buffer --*/
+  while ( vbufR != vbufW ) {
+    if ( ! usedVeto[vbufR] ) {
+      printf("Unused veto at %16.6f with duration=%9.6f, SNR=%10.4f\n",
+	      timeBaseD+tVeto[vbufR], tVetoDur[vbufR], tVetoSnr[vbufR] );
+    }
+    vbufR++; if ( vbufR == RINGBUFSIZE ) { vbufR = 0; }
+  }
+
   /*------ Close files ------*/
 
   if ( outEnv->fileRec.fp ) {
@@ -1204,7 +1241,7 @@ int main( int argc, char **argv )
       if ( vrfile ) {
 	if ( debug >= 3 ) {
 	  printf( "Writing out veto range: %.6f %.6lf\n",
-		  timeBaseD+tDeadNeg, timeBaseD+cRange->t2);
+		  timeBaseD+tDeadNeg,timeBaseD+cRange->t2);
 	}
 	fprintf( vrfile, "%.6lf %.6lf\n",
 		 timeBaseD+tDeadNeg, timeBaseD+cRange->t2 );
@@ -1215,7 +1252,7 @@ int main( int argc, char **argv )
     if ( vrfile && tDeadNeg > 0.0 ) {
       if ( debug >= 3 ) {
 	printf( "Writing out veto range: %.6f %.6f\n",
-		timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
+		timeBaseD+tDeadNeg,timeBaseD+tDeadPos );
       }
       fprintf( vrfile, "%.6lf %.6lf\n",
 	       timeBaseD+tDeadNeg, timeBaseD+tDeadPos );
