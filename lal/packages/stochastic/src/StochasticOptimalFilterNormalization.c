@@ -29,13 +29,15 @@ the optimal filter for stochastic searches is defined as
 The normalization constant $\lambda$ is chosen so that the expected mean
 value of the cross-correlation statistic is \cite{stochastic:Allen:1999}
 \begin{equation}
-\mu = \frac{3 {H_0}^2}{20\pi^2}\, T \int_{-\infty}^{\infty} df\, |f|^{-3}\,
+\mu = \frac{3 {H_0}^2}{20\pi^2}\, T \,\overline{w_1w_2}
+\int_{-\infty}^{\infty} df\, |f|^{-3}\,
 \gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f) 
 \widetilde{Q}(f) = \Omega_{\scriptstyle{\rm R}} T
 \label{stochastic:e:mu}
 \end{equation}
 where $T$ is the integration time
-(\textit{cf.}~(\ref{stochastic:e:ymax})), and
+(\textit{cf.}~(\ref{stochastic:e:ymax})), $w_1$ and $w_2$ are the functions
+used to window the data, and 
 $\Omega_{\scriptstyle{\rm R}} =\Omega_{\scriptstyle{\rm
     GW}}(f_{\scriptstyle{\rm R}})$ is the overall strength of the
 stochastic background (see
@@ -43,7 +45,8 @@ Sec.~\ref{stochastic:ss:OverlapReductionFunction.c}).  This sets the
 value at
 \begin{equation}
 \label{stochastic:e:lambda}
-\lambda = \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\lambda = \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+               {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
       \int_{-\infty}^\infty \frac{df}{f^6} 
       \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P_1(f)P_2(f)}
@@ -53,17 +56,22 @@ value at
 The same integral used to calculate $\lambda$ also allows one to
 calculate the expected variance per unit integration time of the
 cross-correlation statistic, since
-\begin{equation}
-\label{stochastic:e:variance}
+\begin{eqnarray}
   \frac{\sigma^2}{T} 
-  = \frac{1}{4}\int_{-\infty}^{\infty} df\, P_1(f)\, P_2(f)\,
+  &=& \frac{\overline{(w_1w_2)^2}}{4}\int_{-\infty}^{\infty} df
+  \, P_1(f)\, P_2(f)\,
   \left(
     \widetilde{Q}(f)
   \right)^2
-  = \frac{\lambda}{4} \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
-  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}(f)
-  = \frac{5\pi^2}{3 {H_0}^2}\,\Omega_{\scriptstyle{\rm R}} \,\lambda
-\end{equation}
+  = \frac{\lambda}{4} \overline{(w_1w_2)^2} 
+\int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
+  \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}(f) 
+  \nonumber
+  \\
+\label{stochastic:e:variance}
+  &=& \frac{5\pi^2}{3 {H_0}^2}\,\overline{(w_1w_2)^2}
+\,\Omega_{\scriptstyle{\rm R}} \,\lambda
+\end{eqnarray}
 where we have used (\ref{stochastic:e:Q}) to replace one of the two
 factors of $\widetilde{Q}(f)$ and (\ref{stochastic:e:mu}) to replace
 the integral.
@@ -81,40 +89,43 @@ The routine \texttt{LALStochasticOptimalFilterNormalization()} first uses
 $\lambda$ (the amplitude ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ is
 found by logarithmic interpolation using the reference frequency
 $f_{\scriptstyle{\rm R}}$ specified in the parameter structure and the
-input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm
-    GW}}(f)$).
+input series representing ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$).
 
 The precise behavior of the normalization depends on the boolean
 parameter \verb+parameters->heterodyned+, which indicates whether the
 filter is to be used on heterodyned data or not.  In the case of
 heterodyned data, the integral is approximated by the sum
-$$
-\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\begin{eqnarray}
+\lambda &\approx& \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+                     {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
   \delta f\sum_{k=0}^{N-1}
   (f_0 + k\,\delta f)^{-6}
   \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
 \right)^{-1}
-\approx
+\nonumber
+\\
+&\approx&
 \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
 \left(
       \int_{f_0}^{f_0+N\delta f} \frac{df}{f^6} 
       \frac{[\gamma(f)\,\Omega_{\scriptstyle{\rm GW}}(f)]^2}{P_1(f)P_2(f)}
 \right)^{-1}
-$$
+\end{eqnarray}
 (Leaving out frequencies outside the band is equivalent to assuming
 one or both of the noise PSDs $P_{1,2}(f)$ blows up outside that
 range.)
 
 In the case of non-heterodyned data with $f_0=0$, we calculate
-$$
-\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}{3\,{H_0}^2}
+\begin{equation}
+\lambda \approx \frac{20\pi^2\, \Omega_{\scriptstyle{\rm R}}}
+                     {3\,{H_0}^2 \overline{w_1w_2}}
 \left(
   \delta f\, 2\ {\mathrm{Re}}  \sum_{k=0 \scriptstyle{\rm or } 1}^{N-1}
   (k\,\delta f)^{-6}
   \frac{(\gamma[k]\,\Omega_{\scriptstyle{\rm GW}}[k])^2}{P_1[k]P_2[k]}
 \right)^{-1}
-$$
+\end{equation}
 which includes negative frequencies as well.  The difference
 between the two is because the cross-correlation statistic appearing
 in the definition (\ref{stochastic:e:mu}) is the one calculated by
@@ -255,7 +266,7 @@ LALStochasticOptimalFilterNormalization(
 
   /* normalization factor */
   UINT4      i;
-  UINT4       xRef;
+  UINT4      xRef;
   REAL4      omega1;
   REAL4      omega2;
   REAL8      freq1;
@@ -264,6 +275,11 @@ LALStochasticOptimalFilterNormalization(
   REAL4      omegaRef;   
   REAL8      lambdaInv;
   REAL8      f6; 
+
+  /* windowing */
+  REAL4      w2, meanW2, meanW4;
+  REAL4      *sPtrW1, *sPtrW2, *sStopPtr;
+  UINT4      winLength;
 
   UINT4       length;
 
@@ -286,6 +302,11 @@ LALStochasticOptimalFilterNormalization(
 
   /* output structure */
   ASSERT(output != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* parameter structure */
+  ASSERT(parameters != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
@@ -348,6 +369,45 @@ LALStochasticOptimalFilterNormalization(
   ASSERT(input->inverseNoisePSD2->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* Checks that only apply if windowing is specified */
+
+  if ( parameters->window1 || parameters->window2 )
+  {     
+    /* window 1 parameter */
+    ASSERT(parameters->window1 != NULL, status, 
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    
+    /* window 2 parameter */
+    ASSERT(parameters->window2 != NULL, status, 
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    
+    /* data member of window 1 */
+    ASSERT(parameters->window1->data != NULL, status, 
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+    /* data member of window 2 */
+    ASSERT(parameters->window2->data != NULL, status, 
+           STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    
+    winLength = parameters->window1->length;
+
+    ASSERT(winLength != 0, status,
+           STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+           STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+    
+    /* Check that windows are the same length */
+    if ( parameters->window2->length != winLength )
+    {
+      ABORT(status,
+            STOCHASTICCROSSCORRELATIONH_EMMLEN,
+            STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    }
+  }
 
   /*** done with null pointers ***/
 
@@ -448,6 +508,7 @@ LALStochasticOptimalFilterNormalization(
          STOCHASTICCROSSCORRELATIONH_EOORFREF,
          STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
+
   /* EVERYHTING OKAY HERE! ---------------------------------------------- */
 
   /* All the powers we use are integers, so we can do this once here */
@@ -574,13 +635,41 @@ LALStochasticOptimalFilterNormalization(
     unitPair.unitTwo = &tmpUnit1;
     
     LALUnitMultiply(status->statusPtr,
-		    &(output->variance->units), &unitPair);
+                    &(output->variance->units), &unitPair);
     
     BEGINFAIL( status ) 
       if (output->normalization == NULL) LALFree(lamPtr);
     ENDFAIL( status );
   }
 
+
+  /* Calculate properties of windows */
+
+  if ( parameters->window1 == NULL )
+  {
+    meanW2 = meanW4 = 1.0;
+  }
+  else
+  {
+    meanW2 = meanW4 = 0.0;
+    for ( sPtrW1 = parameters->window1->data, sPtrW2 = parameters->window2->data,
+            sStopPtr = sPtrW1 + winLength;
+          sPtrW1 < sStopPtr; ++sPtrW1, ++sPtrW2 )
+    {
+      w2 = *sPtrW1 * *sPtrW2;
+      meanW2 += w2;
+      meanW4 += w2 * w2;
+    }
+    meanW2 /= winLength;
+    meanW4 /= winLength;
+
+    if ( meanW2 < 0 )
+    {
+      ABORT(status, 
+            STOCHASTICCROSSCORRELATIONH_ENONPOSWIN,
+            STOCHASTICCROSSCORRELATIONH_MSGENONPOSWIN);
+    }
+  }
 
   /************** calculate lambda ***********************/
   /* find omegaRef */
@@ -628,18 +717,18 @@ LALStochasticOptimalFilterNormalization(
 
   lambdaInv /= ( omegaRef / deltaF )
     * ( (20.0L * LAL_PI * LAL_PI) 
-	/ ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
-	);
+        / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
+        );
   
   if ( !parameters->heterodyned ) lambdaInv *= 2.0;
   
-  lamPtr->value = 1 / lambdaInv;
+  lamPtr->value = 1 / ( lambdaInv * meanW2 ) ;
   
   if (output->variance != NULL) 
   {
     output->variance->value 
-      = ( (5.0L * LAL_PI * LAL_PI) 
-	  / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
+      = meanW4 * ( (5.0L * LAL_PI * LAL_PI) 
+          / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
       * omegaRef / lambdaInv;
   }
   if (output->normalization == NULL) LALFree(lamPtr);

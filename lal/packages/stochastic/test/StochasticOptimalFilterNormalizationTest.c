@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
   StochasticOptimalFilterNormalizationInput             input;
   StochasticOptimalFilterNormalizationOutput            output;
   StochasticOptimalFilterNormalizationParameters        params;
+
   REAL4WithUnits           normOut, varOut;
 
   REAL4FrequencySeries     realBadData;
@@ -236,6 +237,7 @@ int main(int argc, char *argv[])
   ParseOptions (argc, argv);
 
   /* define valid params */ 
+
   overlap.name[0] = '\0';
   overlap.f0     = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_F0;
   overlap.deltaF = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_DELTAF;
@@ -254,6 +256,7 @@ int main(int argc, char *argv[])
  
   params.fRef = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FREF;
   params.heterodyned = STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_FALSE;
+  params.window1 = params.window2 = NULL;
 
   strncpy(overlap.name, "", LALNameLength);
 

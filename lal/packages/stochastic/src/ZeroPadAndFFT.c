@@ -189,21 +189,22 @@ LALSZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to window function is non-null */
-  ASSERT(parameters->window != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  /* These checks are only relevant if a window function is specified */
 
-  /* check that pointer to data member of window function is non-null */
-  ASSERT(parameters->window->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  if (parameters->window != NULL)
+  {
+    /* check that pointer to data member of window function is non-null */
+    ASSERT(parameters->window->data != NULL, status, 
+	   STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that window function is same length as input time series */
-  if ( parameters->window->length != length ) {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    /* check that window function is same length as input time series */
+    if ( parameters->window->length != length )
+    {
+      ABORT(  status,
+	      STOCHASTICCROSSCORRELATIONH_EMMLEN,
+	      STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    }
   }
 
   /* check that zero-padded output is not shorter than input */
@@ -265,19 +266,39 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALSCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  /* window data */
-  sStopPtr = input->data->data + input->data->length;
-  for ( sPtr = input->data->data, hBarPtr = hBar.data->data,
-	  windowPtr = parameters->window->data ;
-	sPtr < sStopPtr ;
-	++sPtr, ++hBarPtr, ++windowPtr )
+  if ( parameters->window == NULL ) 
   {
-    *(hBarPtr) = *(sPtr) * *(windowPtr);
+    sPtr = memcpy( hBar.data->data, input->data->data, length*sizeof(REAL4) );
+    if ( sPtr != hBar.data->data )
+    {
+      TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
+	    STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+    }
+  }
+  else 
+  {
+    /* window data */
+    sStopPtr = input->data->data + input->data->length;
+    for ( sPtr = input->data->data, hBarPtr = hBar.data->data,
+	    windowPtr = parameters->window->data ;
+	  sPtr < sStopPtr ;
+	  ++sPtr, ++hBarPtr, ++windowPtr )
+    {
+      *(hBarPtr) = *(sPtr) * *(windowPtr);
+    }
   }
 
   /* zero pad */
-  memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(REAL4));
-    
+  sPtr =
+    memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(REAL4));
+  if ( sPtr != hBar.data->data + length )
+  {
+    TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
+	  STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+  }
+  
   /* take DFT */
   LALTimeFreqRealFFT(status->statusPtr, output, &hBar, parameters->fftPlan);
   /* Can't use TRY because we have memory allocated */
@@ -357,22 +378,22 @@ LALCZeroPadAndFFT(LALStatus                *status,
          STOCHASTICCROSSCORRELATIONH_ENULLPTR,
          STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
-  /* check that pointer to window function is non-null */
-  ASSERT(parameters->window != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+  /* These checks are only relevant if a window function is specified */
 
-  /* check that pointer to data member of window function is non-null */
-  ASSERT(parameters->window->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-
-  /* check that window function is same length as input time series */
-  if ( parameters->window->length != length ) {
-    ABORT(  status,
-         STOCHASTICCROSSCORRELATIONH_EMMLEN,
-         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-  }
+  if (parameters->window != NULL)
+  {
+    /* check that pointer to data member of window function is non-null */
+    ASSERT(parameters->window->data != NULL, status, 
+	   STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+    
+    /* check that window function is same length as input time series */
+    if ( parameters->window->length != length ) {
+      ABORT(  status,
+	      STOCHASTICCROSSCORRELATIONH_EMMLEN,
+	      STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    }
+  }    
 
   /* check that zero-padded output is not shorter than input */
   fullLength = parameters->length;
@@ -425,19 +446,39 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* allocate memory for zero-padded vector */
   TRY(LALCCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  /* window data */
-  cStopPtr = input->data->data + input->data->length;
-  for ( cPtr = input->data->data, hBarPtr = hBar.data->data,
-	  windowPtr = parameters->window->data ;
-	cPtr < cStopPtr ;
-	++cPtr, ++hBarPtr, ++windowPtr )
+  if ( parameters->window == NULL ) 
   {
-    hBarPtr->re = cPtr->re * *(windowPtr);
-    hBarPtr->im = cPtr->im * *(windowPtr);
+    cPtr = memcpy( hBar.data->data, input->data->data, length*sizeof(COMPLEX8) );
+    if ( cPtr != hBar.data->data )
+    {
+      TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
+      ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
+	    STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+    }
+  }
+  else 
+  {
+    /* window data */
+    cStopPtr = input->data->data + input->data->length;
+    for ( cPtr = input->data->data, hBarPtr = hBar.data->data,
+	    windowPtr = parameters->window->data ;
+	  cPtr < cStopPtr ;
+	  ++cPtr, ++hBarPtr, ++windowPtr )
+    {
+      hBarPtr->re = cPtr->re * *(windowPtr);
+      hBarPtr->im = cPtr->im * *(windowPtr);
+    }
   }
 
   /* zero pad */
-  memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(COMPLEX8));
+  cPtr = 
+    memset(hBar.data->data + length, 0, (fullLength - length)*sizeof(COMPLEX8));
+  if ( cPtr != hBar.data->data + length )
+  {
+    TRY(LALCDestroyVector(status->statusPtr, &(hBar.data)), status);
+    ABORT(status, STOCHASTICCROSSCORRELATIONH_EMEMORY,
+	  STOCHASTICCROSSCORRELATIONH_MSGEMEMORY );
+  }
 
   /* take DFT */
   LALTimeFreqComplexFFT(status->statusPtr, output, &hBar, parameters->fftPlan);

@@ -212,6 +212,8 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 #define STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ     14
 #define STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO 15
 #define STOCHASTICCROSSCORRELATIONH_EWRONGUNITS    16
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSWIN     17
+#define STOCHASTICCROSSCORRELATIONH_EMEMORY        18
 #define STOCHASTICCROSSCORRELATIONH_ENOTYETHETERO 255
 
 #define STOCHASTICCROSSCORRELATIONH_MSGENULLPTR    "Null pointer"
@@ -230,6 +232,8 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 #define STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ   "Non-symmetric response tensor"
 #define STOCHASTICCROSSCORRELATIONH_MSGENONZEROHETERO "Non-zero heterodyning frequency specified for real time series"
 #define STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS "Inconsistent input units"
+#define STOCHASTICCROSSCORRELATIONH_MSGENONPOSWIN  "Zero or negative total for window functions"
+#define STOCHASTICCROSSCORRELATIONH_MSGEMEMORY     "Memory error"
 #define STOCHASTICCROSSCORRELATIONH_MSGENOTYETHETERO   "Non-zero heterodyning frequency not yet implemented"
 
 /************************************ </lalErrTable> */
@@ -604,8 +608,8 @@ The windowing function with which the second data stream was windowed
 typedef struct tagStochasticOptimalFilterNormalizationParameters {
   REAL8               fRef;
   BOOLEAN             heterodyned;
-  REAL4Vector         window1;
-  REAL4Vector         window2;
+  REAL4Vector        *window1;
+  REAL4Vector        *window2;
 } StochasticOptimalFilterNormalizationParameters;
 
 /********** <lalVerbatim file="StochasticCrossCorrelationHPON"> *********/

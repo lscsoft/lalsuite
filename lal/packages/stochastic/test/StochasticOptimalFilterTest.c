@@ -889,8 +889,10 @@ int main(int argc, char *argv[])
   normIn.inverseNoisePSD2             = &(invNoise2);
 
   /* fill normalziation parameters */
-  normParams.fRef = STOCHASTICOPTIMALFILTERTESTC_FREF;
+  normParams.fRef        = STOCHASTICOPTIMALFILTERTESTC_FREF;
   normParams.heterodyned = STOCHASTICOPTIMALFILTERTESTC_FALSE;
+  normParams.window1     = NULL;
+  normParams.window2     = NULL;
 
   /* calculate normalization */
   LALStochasticOptimalFilterNormalization(&status, &normOut, 

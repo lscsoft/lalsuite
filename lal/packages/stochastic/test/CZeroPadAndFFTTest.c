@@ -39,7 +39,6 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{null pointer to input series}
 \item \textit{null pointer to parameter structure}
 \item \textit{null pointer to FFT plan}
-\item \textit{null pointer to window function}
 \item \textit{null pointer to data member of window function}
 \item \textit{null pointer to data member of output series}
 \item \textit{null pointer to data member of input series}
@@ -348,19 +347,6 @@ main( int argc, char *argv[] )
      }
      printf("  PASS: null pointer to FFT plan results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
      badParams.fftPlan = goodParams.fftPlan;
-
-     /* test behavior for null pointer to window function */
-     badParams.window = NULL;
-     LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, &badParams);
-     if ( ( code = CheckStatus( &status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
-				STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
-				CZEROPADANDFFTTESTC_ECHK,
-				CZEROPADANDFFTTESTC_MSGECHK ) ) )
-     {
-       return code;
-     }
-     printf("  PASS: null pointer to window function results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
-     badParams.window = goodParams.window;
    
      /* test behavior for null pointer to data member of output series */
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, &goodParams);
