@@ -150,6 +150,13 @@ data.make_chunks_from_unused(
 ifo = cp.get('pipeline','ifo')
 run = cp.get('pipeline','run')
 
+# create a shell script to copy the data to the dmt
+cluster_cp_script = open('cluster_cp_ln.sh','w')
+cluster_cp_script.write("""cp -f ${1} /cluster/inspiral/%s/%s/${1}
+ln -sf /cluster/inspiral/%s/%s/${1} /cluster/inspiral/dmt/%s/${1}""" % 
+  (run,ifo,run,ifo,ifo) )
+cluster_cp_script.close()
+
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
 
@@ -216,12 +223,11 @@ for seg in data:
     for insp in sub_insp:
       sinca.add_parent(insp)
       sinca.add_var_arg(insp.get_output())
-      sinca.set_post_script("/bin/cp %s /cluster/inspiral/%s/%s" % 
-        (sinca.get_output_a(), run, ifo))
+    sinca.set_post_script("cluster_cp_ln.sh %s" % sinca.get_output_a())
     dag.add_node(sinca)
     sinca_nodes.append(sinca)
 
-# use inca to concatenate all the inspiral files and dump result in /cluster
+# use inca to concatenate all the inspiral files
 inca = inspiral.IncaNode(inca_job)
 inca.set_ifo_a(ifo)
 inca.set_start(dag_start_time)
@@ -229,9 +235,6 @@ inca.set_end(dag_end_time)
 for sinca in sinca_nodes:
   inca.add_parent(sinca)
   inca.add_var_arg(sinca.get_output_a())
-inca_post_script = open( 'inca_post_script.sh', 'w' )
-inca_post_script.write("cp %s /cluster/inspiral/%s/" % 
-  (inca.get_output_a(), run) )
 dag.add_node(inca)
 
 # write the dag
