@@ -67,6 +67,7 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   UINT4 SSBduration;
   LIGOTimeGPS time = {0,0};
   REAL4TimeSeries *output;
+  UINT4 i;
 
   INITSTATUS( stat, "LALGeneratePulsarSignal", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
@@ -86,17 +87,6 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   sourceParams.f0 = params->pulsar.f0;
   /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi<=delta<=pi] */
   TRY( LALNormalizeSkyPosition (stat->statusPtr, &(sourceParams.position), &(params->pulsar.position)), stat);
-
-
-  /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
-     so we have to do that here: */
-  if (params->pulsar.spindown)
-    {
-      UINT4 i;
-      TRY ( LALDCreateVector (stat->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), stat);
-      for (i=0; i < sourceParams.f->length; i++)
-	sourceParams.f->data[i] = params->pulsar.spindown->data[i] / params->pulsar.f0;
-    }
 
   /* if pulsar is in binary-orbit, set binary parameters */
   if (params->orbit)
@@ -138,10 +128,23 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   sourceParams.length   += (UINT4)(1.5*LTT/ sourceParams.deltaT);
   /*----------*/
 
-  /*
-   * finally, call the function to generate the source waveform 
-   */
+  /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
+     so we have to do that here: */
+  if (params->pulsar.spindown)
+    {
+      TRY ( LALDCreateVector (stat->statusPtr, &(sourceParams.f), params->pulsar.spindown->length), stat);
+      for (i=0; i < sourceParams.f->length; i++)
+	sourceParams.f->data[i] = params->pulsar.spindown->data[i] / params->pulsar.f0;
+    }
+
+  /* finally, call the function to generate the source waveform */
   TRY ( LALGenerateSpinOrbitCW (stat->statusPtr, &sourceSignal, &sourceParams), stat);
+
+  /* free spindown-vector right away, so we don't forget */
+  if (sourceParams.f) {
+    TRY ( LALDDestroyVector (stat->statusPtr, &(sourceParams.f) ), stat);
+  }
+
   /* check that sampling interval was short enough */
   if ( sourceParams.dfdt > 2.0 )  /* taken from makefakedata_v2 */
     {
@@ -149,7 +152,9 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
       ABORT (stat, PULSARSIGNALH_ESAMPLING, PULSARSIGNALH_MSGESAMPLING);
     }
 
-  TRY (PrintGWSignal (stat->statusPtr, &sourceSignal, "signal2.agr"), stat);
+  if (lalDebugLevel >= 3) {
+    TRY (PrintGWSignal (stat->statusPtr, &sourceSignal, "signal2.agr"), stat);
+  }
 
   /*----------------------------------------------------------------------
    *
@@ -167,11 +172,15 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   TRY ( ConvertSSB2GPS (stat->statusPtr, &time, params->pulsar.TRefSSB, params), stat);
   detector.heterodyneEpoch = time;
   
-  /* ok, but we also need to prepare the output time-series */
-  output = LALMalloc ( sizeof (*output) );
-  output->data = LALMalloc (sizeof(*(output->data)));
-  output->data->length = (UINT4)( params->samplingRate * params->duration );
-  output->data->data = LALMalloc ( output->data->length * (sizeof(*(output->data->data))) );
+  /* ok, we  need to prepare the output time-series */
+  if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
+    ABORT (stat,  PULSARSIGNALH_EMEM,  PULSARSIGNALH_MSGEMEM);
+  }
+  LALCreateVector (stat->statusPtr, &(output->data), (UINT4)( params->samplingRate * params->duration) );
+  BEGINFAIL(stat) {
+    LALFree (output);
+  } ENDFAIL(stat);
+
   output->deltaT = 1.0 / params->samplingRate;
   output->f0 = params->fHeterodyne;
   output->epoch = params->startTimeGPS;
@@ -294,12 +303,16 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
 	LALDestroySFTVector (stat->statusPtr, &sftvect);
       } ENDFAIL(stat);
 
-      /* now prepare the i'th output SFT with the result */
+      /* prepare the i'th output SFT with the result */
       thisSFT->epoch = timestamps->data[iSFT];	/* set the proper timestamp */
       thisSFT->f0 = signal->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
     } /* for iSFT < numSFTs */ 
+
+  /* Now add the noise-SFTs if given */
+  
+  /* ... */
 
 
   /* clean up */ /* FIXME: buffering */

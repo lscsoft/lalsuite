@@ -1,10 +1,10 @@
 TODO
 -----
+* check timeseries without heterodyning
 
-* check source-pos coordinates and "normalize" them if they 
-   are 'non-canonical' -> mention in documentation 
+* prepare a "test suite" for pulsar-signal generation
 
-* complete LALSignalToSFTs()
+* complete LALSignalToSFTs() (missing: add noise-SFTs)
 
 * test-check final SFTs against makefakedata_v2
 
@@ -14,8 +14,10 @@ TODO
 
 * do MEASURE the FFTW-plan, and allow some plan-buffering!
 
-* check if timestamps-ordered == timestamps-delivered... 
+* check if timestamps-asked for == timestamps-delivered... 
 	(i.e. timestamps consistent with sampling of time-series?)
+
+* move LALNormalizeSkyPosition() into LAL (+add documentation + tests)
 
 done
 ----
@@ -28,3 +30,6 @@ done
  
 * allow transfer-function==NULL -> use unit transfer in this case
 	-> NULL seems ok
+
+* check source-pos coordinates and "normalize" them if they 
+   are 'non-canonical' -> mention in documentation 
