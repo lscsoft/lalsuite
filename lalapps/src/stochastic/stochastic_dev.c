@@ -47,7 +47,7 @@
 
 #include <lalapps.h>
 
-#include "stochastic.h"
+#include "stochastic_dev.h"
 
 NRCSID (STOCHASTICDEVC, "$Id$");
 RCSID ("$Id$");
