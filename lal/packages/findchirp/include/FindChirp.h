@@ -989,14 +989,6 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
-void
-LALRandomPPNParamStruc (
-    LALStatus                  *status,
-    PPNParamStruc              *PPNparams,
-    InspiralCoarseBankIn       *massParams,
-    RandomParams               *randomParams
-    );
-
 #ifdef  __cplusplus
 #pragma {
 }

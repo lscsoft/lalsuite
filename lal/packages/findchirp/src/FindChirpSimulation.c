@@ -64,7 +64,6 @@ LALFree()
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
-#include <lal/Random.h>
 #include <lal/DetectorSite.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SimulateCoherentGW.h>
@@ -386,66 +385,6 @@ LALFindChirpInjectSignals (
   if ( detector.site ) LALFree( detector.site );
   LALFree( detector.transfer );
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="FindChirpSimulationCP"> */
-void
-LALRandomPPNParamStruc (
-    LALStatus                  *status,
-    PPNParamStruc              *PPNparams,
-    InspiralCoarseBankIn       *massParams,
-    RandomParams               *randomParams
-    )
-/* </lalVerbatim> */
-{
-  REAL4 m1, m2;
-  REAL8 mDiff;
-  REAL8 cannonDist = 1.0e6;       /* cannonical distance in pc */
-
-  INITSTATUS( status, "LALRandomPPNParamStruc", FINDCHIRPSIMULATIONC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( PPNparams, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( massParams, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( randomParams, status,
-      FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-  /* fixed parameters. */
-  PPNparams->position.latitude = PPNparams->position.longitude = 0.0;
-  PPNparams->position.system = COORDINATESYSTEM_EQUATORIAL;
-  PPNparams->psi = 0.0;
-  PPNparams->lengthIn = 0;
-  PPNparams->epoch.gpsSeconds = 0;
-  PPNparams->epoch.gpsNanoSeconds = 0;
-  PPNparams->deltaT = massParams->tSampling;
-
-  /* set up the masses */
-  mDiff = massParams->mMax - massParams->mMin;
-  TRY( LALUniformDeviate( status->statusPtr, &m1, randomParams ), status );
-  TRY( LALUniformDeviate( status->statusPtr, &m2, randomParams ), status );
-  m1 = massParams->mMin + mDiff * m1;
-  m2 = massParams->mMin + mDiff * m2;
-  PPNparams->mTot = m1 + m2;
-  PPNparams->eta = m1 * m2 / ( PPNparams->mTot * PPNparams->mTot );
-
-  /* other params */
-  PPNparams->inc = 0.0;
-  PPNparams->phi = 0.0;
-  PPNparams->d = cannonDist * LAL_PC_SI;
-  PPNparams->fStartIn = massParams->fLower;
-
-  /* fStopIn is negative to allow bypass of the bad pn waveform stop */
-  PPNparams->fStopIn = -1.0 / 
-    (6.0 * sqrt(6.0) * LAL_PI * PPNparams->mTot * LAL_MTSUN_SI);
-
-  /* ppn parameter */
-  PPNparams->ppn = NULL;
-  
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
