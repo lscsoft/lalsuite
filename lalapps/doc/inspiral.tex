@@ -784,7 +784,8 @@ playground data set.
 
 \item[\texttt{--deltat} \textsc{dt}] Optional.  This gives the maximum time
 difference \textsc{dt} allowed between the injection and trigger.  If
-not specified, the default is 20msec.  
+not specified, the default is 20msec.  The time difference is calculated between
+the trigger time and the end time for the injection at the detector. 
 
 \item[\texttt{--cluster} \textsc{clust}] Optional.  Cluster triggers
 within \textsc{clust} msec window.   The clustering algorithm
@@ -831,3 +832,155 @@ Steve Fairhurst
 \clearpage
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% PROGRAM:   inspmultiawg
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\subsection{Program \texttt{lalapps\_inspmultiawg}}
+\label{program:lalapps-inspmultiawg}
+\idx[Program]{lalapps\_inspmultiawg}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspmultiawg$ --- injects specified inspiral chirps into zero
+data.  Intended for producing the hardware injection data.
+
+\item[Synopsis]
+\begin{verbatim}
+--help                  display this message
+--source SFILE          source file containing details of injection
+--response RESPFILE     file containing the response function
+--summary SUMFILE       write found injection to file
+--ifo IFO               name of interferomter (optional)
+--flow FSTART           start frequency of injection (default 40 Hz)
+--fhigh FSTOP           end frequency of injection (default: end at ISCO)
+--length LENGTH         length of the data (default 64 seconds)
+--samplerate FREQ       rate at which data is sampled (default (16384Hz)
+--debug-level DEBUG     give the lal debug level
+\end{verbatim}
+
+\item[Description] 
+\verb$lalapps_inspmultiawg$ injects inspiral chirps into zero data.  The details
+of several chirps can be specified using the command \verb$--source$, otherwise,
+a single inspiral of two 1.4 solar mass neutron stars will be injected.  Each
+chirp is injected into a new file containing zero data of $\texttt{LENGTH}$
+seconds, sampled at $\texttt{FREQ}$ Hz, and each injection begins at the
+beginning of the data.  The response function can be provided in
+$\texttt{RESPFILE}$.  The chirp is output to a file
+named
+\begin{verbatim}
+IFO_inspiral_NUMBER.txt
+\end{verbatim}
+where $\texttt{IFO}$ is the name of the interferometer, and $\texttt{NUMBER}$ is
+the injection number.  A summary of the injections performed can be saved in
+$\texttt{SUMFILE}$.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--sourcefile} \textsc{sfile}] Optional.  Reads source information
+from the file \textsc{sfile}.  If absent, it injects a single 
+1.4$M_\odot$--1.4$M_\odot$ inspiral, optimally oriented, at a distance
+of $1.0Mpc$.
+
+\item[\texttt{--response} \textsc{respfile}] Optional. Reads a detector response
+function from the file \textsc{respfile}.  If absent, it generates raw
+dimensionless strain.
+
+\item[\texttt{--summary} \textsc{sumfile}] Optional. The \textsc{sumfile} format
+is LIGO lightweight XML with \texttt{process}, \texttt{process\_params} and
+\texttt{sim\_inspiral} tables.  The \texttt{sim\_inspiral} table contains
+details of all the injections performed.  The details of the injection are
+obtained from the source file.
+
+\item[\texttt{--length} \textsc{sec}] Optional.  Specify the length of data into
+which the signal will be injected.  The default is 64 seconds.
+
+\item[\texttt{--samplerate} \textsc{freq}] Optional.  Specify the rate at which
+the data is sampled.  The default is 16384 Hz.
+
+\item[\texttt{--ifo} \textsc{ifo}] Optional.  Give the name of the
+interferometer for which the injections are intended.  This is only used in
+naming the output files.
+
+\item[\texttt{--flow} \textsc{fstart}] Optional.  Give the start frequency
+\textsc{fstart} for the inspiral.  The default is 40 Hz
+
+\item[\texttt{--fhigh} \textsc{sftop}] Optional.  Give the end frequency
+\textsc{fstop} for the inspiral.  The default behaviour is that the inspiral
+will continue to ISCO.  If set to a negative number, the generator will use its
+absolute value as the terminating frequency, but will ignore post-Newtonian
+breakdown. 
+
+\item[\texttt{--debug-level} \textsc{debug}]  Optional.  Set the LAL debug
+level.  The default is 33.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\paragraph{Format for \texttt{sourcefile}:} The source file consists
+of any number of lines of data, each specifying a chirp waveform.
+Each line must begin with a character code (\verb@CHAR@ equal to one
+of \verb@'i'@, \verb@'f'@, or \verb@'c'@), followed by 6
+whitespace-delimited numerical fields: the epoch of the chirp
+(\verb@INT8@ seconds), the two binary masses (\verb@REAL4@
+$M_\odot$), the distance to the source (\verb@REAL4@ Mpc), and the
+source's inclination and phase at coalescence (\verb@REAL4@ degrees).
+The character codes have the following meanings:
+\begin{itemize}
+\item[\texttt{'i'}] The epoch represents the GPS time of the start of
+the chirp waveform.
+\item[\texttt{'f'}] The epoch represents the GPS time of the end of
+the chirp waveform.
+\item[\texttt{'c'}] The epoch represents the GPS time when the
+binaries would coalesce in the point-mass approximation.
+\end{itemize}
+Since the injection is started at time $t=0$, it is recommended that the
+\texttt{'i'} option is used.
+
+Thus a typical input line for two $1.4M_\odot$ objects at 1.1 Mpc
+inclined $30^\circ$ with an initial phase of $45^\circ$, beginning at
+70 seconds (after the start of the injections), will have the following line in the input
+file:
+\begin{verbatim}
+i 70 1.4 1.4 1.1 30.0 45.0
+\end{verbatim}
+The time parameter (in this case 70 sec) does not affect the output data in any
+way.  It is simply stored in the \texttt{sim\_inspiral} table of the
+\textsc{sumfile}, in order to make analysis of the injections easier.
+
+\paragraph{Format for \texttt{respfile}:} The response function $R(f)$
+gives the real and imaginary components of the transformation
+\emph{from} ADC output $o$ \emph{to} tidal strain $h$ via
+$\tilde{h}(f)=R(f)\tilde{o}(f)$.  It is inverted internally to give
+the detector \emph{transfer function} $T(f)=1/R(f)$.  The format
+\verb@respfile@ is a header specifying the GPS epoch $t_0$ at which
+the response was taken (\verb@INT8@ nanoseconds), the lowest frequency
+$f_0$ at which the response is given (\verb@REAL8@ Hz), and the
+frequency sampling interval $\Delta f$ (\verb@REAL8@ Hz):
+
+\medskip
+\begin{tabular}{l}
+\verb@# epoch = @$t_0$ \\
+\verb@# f0 = @$f_0$ \\
+\verb@# deltaF = @$\Delta f$
+\end{tabular}
+\medskip
+
+\noindent followed by two columns of \verb@REAL4@ data giving the real
+and imaginary components of $R(f_0+k\Delta f)$.
+
+\paragraph{Format for the data output:} The data output in the files
+\verb$IFO_inspiral_NUMBER.txt$ is a single column of \verb$REAL4$ ADC data.
+
+\item[Example]
+\begin{verbatim}
+lalapps_inspmultiawg --source s3.sources \
+--response response_l1.txt --summary summ.xml --ifo l1
+\end{verbatim}
+
+\item[Author] 
+Steve Fairhurst
+\end{entry}
+\clearpage
