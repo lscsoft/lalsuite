@@ -98,7 +98,7 @@ tagInspiralMetric
    REAL8            theta;   /* Angle from t0 to x0 */
    CoordinateSpace space;    /* Coordinate space in which metric is computed */
    INT4 iflso;
-   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
+   REAL8FrequencySeries *shf; /* one sided strain power spectral density */
 } 
 InspiralMetric;
 /* </lalVerbatim>  */
@@ -162,7 +162,7 @@ tagInspiralCoarseBankIn
   REAL8           fLower;         /* Lower frequency cutoff */
   REAL8           fUpper;         /* Upper frequency cutoff */
   REAL8           tSampling;      /* Sampling rate */
-  void            (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
+  REAL8FrequencySeries shf;
   Order            order;          /* Post-Newtonian order of the waveform */
   Approximant     approximant;    /* Approximant of the waveform */
   CoordinateSpace space;          /* which of t0-t2 or t0-t3 coordinates */
@@ -181,25 +181,12 @@ InspiralCoarseBankIn;
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 xmin, xmax, ndx, norm;
-   void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
+   REAL8FrequencySeries *shf;
 } InspiralMomentsIn;
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
 \idx[Type]{InspiralMomentsIn}
-</lalLaTeX>  */
-
-
-/*  <lalVerbatim file="LALInspiralBankHS"> */
-typedef struct {
-   REAL8 ndx;
-   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f);
-} InspiralMomentsIntegrandIn;
-
-/* </lalVerbatim>  */
-
-/*  <lalLaTeX>
-\idx[Type]{InspiralMomentsIntegrandIn}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
