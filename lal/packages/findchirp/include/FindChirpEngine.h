@@ -89,6 +89,8 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_EHETR 15
 #define FINDCHIRPENGINEH_ESPEC 16
 #define FINDCHIRPENGINEH_ESTPE 17
+#define FINDCHIRPENGINEH_EZERO 18
+#define FINDCHIRPENGINEH_EAOVR 19
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -106,6 +108,8 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGEHETR "Attempting to simulate heterodyned GW"
 #define FINDCHIRPENGINEH_MSGESPEC "Strain power spectral density missing"
 #define FINDCHIRPENGINEH_MSGESTPE "Unknown power spectrum estimation method"
+#define FINDCHIRPENGINEH_MSGEZERO "Zero length"
+#define FINDCHIRPENGINEH_MSGEAOVR "Array overrun"
 /* </lalErrTable> */
 
 
