@@ -1,0 +1,62 @@
+****** lalapps FDS_binary directory Contents description ******
+---------------------------------------------------------------
+
+***************************************************************
+ComputeFStatisticBinary_v2.c (+ ComputeFStatisticBinary_v2.h)
+
+	The driver code for the frequency domain F-statistic 
+	search for GW's from NS's in binary orbits.
+
+***************************************************************
+GenerateBinaryMesh_v1.c (+ GenerateBinaryMesh_v1.h)
+
+	The code used to generate a bank of filters for use in
+	a search for sources in circular orbits.  It uses a 
+	flat mesh to cover a 2D parameter space over orbital
+	parameters.
+
+***************************************************************
+MakeSubMesh_v1.c
+
+	A code that, given a binary template file, finds the 
+	nearest N filters from given point in the space covered
+	by that file.  It uses the parameter space metric to 
+	define distances. 
+
+***************************************************************
+OrbitalParameterConversion_v1.c
+
+	Contains functions allowing the consistent 
+	transformation from the orbital parameters, orbital
+	radius and time of periapse passage to the parameters
+	X and Y used for template placement.
+
+***************************************************************
+ReadWriteBinaryHeader_v1.c
+
+	Contains functions for reading and writing the header 
+	information stored in every search template file.
+
+***************************************************************
+GenerateBinaryInput_v1.c
+
+	A code for generating an input configuration file for 
+	use with lalapps_makefakedata.
+
+***************************************************************
+GenerateRandomBinaryInput_v1.c
+
+	A code used to generate an input configuration file
+	for use with lalapps_makefakedata, where the user can
+	specify wether random values of the input variables 
+	are required chosen from an input range.
+
+***************************************************************
+GenerateSearchInput_v1.c       
+
+	A code used to generate an input configuration file for
+	use with lalapps_ComputeFStatisticBinary.
+
+***************************************************************
+More codes and more complete descriptions will follow.
+(C Messenger - University of Birmingham)	
