@@ -143,8 +143,6 @@ class BurcaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['burca']:
       self.add_ini_opts(cp,sec)
 
-    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
-
     self.set_stdout_file('logs/burca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/burca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('burca.sub')
@@ -332,7 +330,7 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise PowerError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() + '-POWER'
+    basename = self.get_ifo() + '--POWER'
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
@@ -357,5 +355,69 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     with the --frame-cache argument.
     @param file: calibration file to use.
     """
-    self.add_var_opt('injection', file)
+    self.add_var_opt('injection-file', file)
     self.add_input_file(file)
+
+class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A BurcaNode runs an instance of the burca code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_burca.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+    self.__start = 0
+    self.__end = 0
+    self.__output = None
+
+  def __set_output(self):
+    """
+    Private method to set the file to write the cache to. Automaticaly set
+    once the ifo, start and end times have been set.
+    """
+    if self.__start and self.__end :
+      self.__output = 'coin/' + 'HL' + '-' + str(self.__start) 
+      self.__output = self.__output + '-' + str(self.__end) + '.xml'
+                     
+  def set_ifoa(self,file):
+    """
+    Set the LAL frame cache to to use. The frame cache is passed to the job
+    with the --frame-cache argument.
+    @param file: calibration file to use.
+    """
+    self.add_var_opt('ifo-a', file)
+    self.add_input_file(file)
+
+  def set_ifob(self,file):
+    """
+    Set the LAL frame cache to to use. The frame cache is passed to the job
+    with the --frame-cache argument.
+    @param file: calibration file to use.
+    """
+    self.add_var_opt('ifo-b', file)
+    self.add_input_file(file)   
+
+  def set_start(self,time):
+    """
+    Set the start time of the datafind query.
+    time = GPS start time of query.
+    """
+    self.__start = time
+    self.__set_output()
+
+  def set_end(self,time):
+    """
+    Set the end time of the datafind query.
+    time = GPS end time of query.
+    """
+    self.__end = time
+    self.__set_output()
+
+  def get_output(self):
+    """
+    Return the output file, i.e. the file containing the frame cache data.
+    """
+    return self.__output
