@@ -292,12 +292,6 @@ int main( int argc, char *argv[] )
         bankFileName );
     exit( 1 );
   }
-  else if ( numTmplts == 0 )
-  {
-    fprintf( stdout, "no templates found in template bank file: %s\n"
-        "exiting without searching for events.\n", bankFileName );
-    goto cleanexit;
-  }
 
   if ( vrbflg ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
@@ -321,11 +315,23 @@ int main( int argc, char *argv[] )
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) ); 
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-      PROGRAM_NAME ); \
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
+      PROGRAM_NAME );
+  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
   LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
   LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
       bankHead->minMatch );
+
+  /* if there are no tmplts, store the time we would have analyzed and exit */
+  if ( numTmplts == 0 )
+  {
+    fprintf( stdout, "no templates found in template bank file: %s\n"
+        "exiting without searching for events.\n", bankFileName );
+    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+      gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
+    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+      gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+    goto cleanexit;
+  }
 
   /* create the linked list of template nodes for coarse templates */
   for ( bankCurrent = bankHead; bankCurrent; bankCurrent = bankCurrent->next )
@@ -1087,14 +1093,11 @@ cleanexit:
   }
   
   /* write the search summary table */
-  if ( numTmplts )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-          search_summary_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
-          search_summary_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  }
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+        search_summary_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
+        search_summary_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   free( searchsumm.searchSummaryTable );
 
   /* write the search summvars table */
