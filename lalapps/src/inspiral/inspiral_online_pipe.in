@@ -179,7 +179,7 @@ for seg in data:
   df = pipeline.LSCDataFindNode(df_job)
   df.set_start(seg.start() - pad)
   df.set_end(seg.end() + pad)
-  df.set_observatory(ifo1[0])
+  df.set_observatory(ifo[0])
   if prev_df: 
     df.add_parent(prev_df)
   dag.add_node(df)
@@ -205,8 +205,6 @@ for seg in data:
     insp.set_start(chunk.start())
     insp.set_end(chunk.end())
     insp.add_var_opt('trig-start-time',chunk.trig_start())
-    insp.add_var_opt('snr-threshold',ifo1_snr)
-    insp.add_var_opt('chisq-threshold',ifo1_chisq)
     insp.set_ifo(ifo)
     insp.set_cache(df.get_output())
     insp.set_bank(bank.get_output())
