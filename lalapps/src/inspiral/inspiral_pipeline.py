@@ -166,7 +166,7 @@ queue
     for seg in self.segments:
       jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
       print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
-      if not cache: print >> dag_fh, 'done',
+      if cache: print >> dag_fh, 'done',
       print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
       jobname, site, seg.startpad, seg.endpad )
     for i in range(1,len(self.segments)):
@@ -180,7 +180,7 @@ queue
       for chunk in seg.chunks:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
-        if not bank: print >> dag_fh, 'done',
+        if bank: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
@@ -194,7 +194,7 @@ self.config['input'][string.lower(ifo) + '-cal'])
         parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
-        if not inspiral: print >> dag_fh, 'done',
+        if inspiral: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
@@ -209,18 +209,20 @@ Usage: inspiral_pipeline.py [OPTIONS]
    -f, --config-file FILE       use configuration file FILE
    -v, --version                print version information and exit
    -h, --help                   print help information
-   -c, --cache                  query LDR to generate cache files
-   -b, --bank                   run the bank generation code in the DAG
-   -i, --inspiral               run the inspiral code in the DAG
+   -c, --cache                  flag the LALdataFind query as done
+   -b, --bank                   flag the template bank generation as done
+   -i, --inspiral               flag the inspiral code as done
 
 This program generates a DAG to run the inspiral code. The configuration
 file should specify the parameters needed to run the jobs and must be
 specified with the --config-file (or -f) option.
 
-If the --cache (or -c) option is specified the DAG will generate frame
+TODO: fix this documentation
+
+Unless the --cache (or -c) option is specified the DAG will generate frame
 cache files by querying LDR, otherwise these will be expected to exist.
 
-The DAG will have each template bank generation job marked as done unless the
+The DAG will template bank generation job marked as done unless the
 --bank (or -b) option is given. Similarly the DAG will have the inspiral jobs
 marked as done unless the --inspiral (or -i) option is given. If the bank
 generation is not specified and the inspiral is specifed, the DAG will 
