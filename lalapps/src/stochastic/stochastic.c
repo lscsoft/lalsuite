@@ -2473,7 +2473,7 @@ void readDataPair(LALStatus *status,
 
     /* cast the GEO data to REAL4 in the channel time series */
     /* which already has the correct amount of memory allocated */
-    for (j = 0; j < dataStream1.data->length; ++j)
+    for (j = 0; j < dataStream1.data->length; j++)
     {
       dataStream1.data->data[j] = geoScaleFactor * \
                                   (REAL4)(dataStreamGeo.data->data[j]);
@@ -2564,7 +2564,7 @@ void readDataPair(LALStatus *status,
 
       /* cast the GEO data to REAL4 in the channel time series */
       /* which already has the correct amount of memory allocated */
-      for (j = 0; j < dataStream2.data->length; ++j)
+      for (j = 0; j < dataStream2.data->length; j++)
       {
         dataStream2.data->data[j] = geoScaleFactor * \
                                     (REAL4)(dataStreamGeo.data->data[j]);
