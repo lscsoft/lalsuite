@@ -376,7 +376,7 @@ LALGetClusters (
 
   
   /* clean to mins */
-  if(mins > 1)
+  if(mins > 1 && mins != -1U)
     {
       ts = NULL;
       tf=tt=NULL;
