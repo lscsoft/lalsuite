@@ -40,24 +40,24 @@ Routines for reading and writing SFT binary files
 \begin{description}
 
 \item{LALReadSFTfile():} basic SFT reading-function. Given filename
-(\verb+fname+) and frequency-limits (\verb+fmin, fmax+), returns the
+(\verb+fname+) and frequency-limits (\verb+fMin, fMax+), returns the
 SFTtype containing the data.
 
 \textbf{Note 1:} the \emph{actual} returned frequency-band is
-\verb+[floor(fmin), ceil(fmax)]+, i.e. the requested
+\verb+[floor(fMin), ceil(fMax)]+, i.e. the requested
 frequency-band is guaranteed to be contained in the output (if present
 in the SFT-file), but can be slightly larger.
 
-\textbf{Note 2:} The special input \verb+fmin=fmax=0+ means to read and
+\textbf{Note 2:} The special input \verb+fMin=fMax=0+ means to read and
 return the \emph{whole} frequency-band contained in the SFT-file.
 
 \item{LALReadSFTfiles():} higher-level SFT-reading function to read a
 list of SFT files and return an \verb+SFTvector+. The handling of
-\verb+fmin, fmax+ is identical to \verb+LALReadSFTfile+.
+\verb+fMin, fMax+ is identical to \verb+LALReadSFTfile+.
 
 \textbf{Note 1:} currently the argument of \verb+globdir+ is interpreted
 a bit unconventionally, namely if you pass \verb+"path1/subdir/pattern"+,
-this will be matched \verb+"path1/subdir/*pattern*"+. This might be
+this will be matched \verb+"path1/subdir/+\verb+*pattern*"+. This might be
 changed in the near future to require you to specify the file-pattern
 explicitly. 
 
@@ -157,8 +157,8 @@ static const size_t header_len_v1 = 32;
 void
 LALReadSFTfile (LALStatus *stat, 
 		SFTtype **sft, 		/* output SFT */
-		REAL8 fmin, 		/* lower frequency-limit */
-		REAL8 fmax,		/* upper frequency-limit */
+		REAL8 fMin, 		/* lower frequency-limit */
+		REAL8 fMax,		/* upper frequency-limit */
 		const CHAR *fname)	/* path+filename */
 { /* </lalVerbatim> */
   SFTHeader  header;		/* SFT file-header version1 */
@@ -175,7 +175,7 @@ LALReadSFTfile (LALStatus *stat,
   ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
   ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (fMin <= fMax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
   /* read the header */
   TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
@@ -183,8 +183,8 @@ LALReadSFTfile (LALStatus *stat,
   /* ----- figure out which data we want to read ----- */
   deltaF = 1.0 / header.timeBase;
 
-  /* special case: fmin==fmax==0 means "read all" */
-  if ( (fmin == 0) && (fmax == 0) )
+  /* special case: fMin==fMax==0 means "read all" */
+  if ( (fMin == 0) && (fMax == 0) )
     {
       fminBinIndex = header.fminBinIndex;
       fmaxBinIndex = fminBinIndex + header.length - 1;
@@ -195,8 +195,8 @@ LALReadSFTfile (LALStatus *stat,
        * The rounding here is chosen such that the required 
        * frequency-interval is _guaranteed_ to lie within the 
        * returned range  */
-      fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
-      fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
+      fminBinIndex = (INT4) floor (fMin * header.timeBase);  /* round this down */
+      fmaxBinIndex = (INT4) ceil  (fMax * header.timeBase);  /* round up */
     }
 
   readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
@@ -249,8 +249,8 @@ LALReadSFTfile (LALStatus *stat,
 void
 LALReadSFTfiles (LALStatus *stat,
 		 SFTVector **sftvect,	/* output SFT vector */
-		 REAL8 fmin,		/* lower frequency-limit */
-		 REAL8 fmax,		/* upper frequency-limit */
+		 REAL8 fMin,		/* lower frequency-limit */
+		 REAL8 fMax,		/* upper frequency-limit */
 		 const CHAR *globdir)	/* "path/filepattern" */
 { /* </lalVerbatim> */
 
@@ -265,7 +265,7 @@ LALReadSFTfiles (LALStatus *stat,
   ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
   ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (fMin <= fMax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
 
 
   /* make filelist 
@@ -278,7 +278,7 @@ LALReadSFTfiles (LALStatus *stat,
 
   for (i=0; i < numSFTs; i++)
     {
-      LALReadSFTfile (stat->statusPtr, &sft, fmin, fmax, fnames->data[i]);
+      LALReadSFTfile (stat->statusPtr, &sft, fMin, fMax, fnames->data[i]);
       BEGINFAIL (stat) {
 	if (out) LALDestroySFTVector (stat->statusPtr, &out);
       } ENDFAIL (stat);

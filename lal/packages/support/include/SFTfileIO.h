@@ -131,8 +131,8 @@ typedef struct tagSFTHeader {
 void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
 void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
-void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
-void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fmin, REAL8 fmax, const CHAR *glob);
+void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
+void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fMin, REAL8 fMax, const CHAR *glob);
 
 void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format);
 
