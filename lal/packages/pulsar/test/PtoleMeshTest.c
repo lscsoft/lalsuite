@@ -268,10 +268,11 @@ int main( int argc, char **argv )
   /* Write what we've got to file mesh.dat */
   if( nonGrace )
   {
+    TwoDMeshNode *node;
     fp = fopen( "mesh.dat", "w" );
     if( !fp )
       return PTOLEMESHTESTC_EFIO;
-    TwoDMeshNode *node;
+
     for( node = firstNode; node; node = node->next )
       fprintf( fp, "%e %e\n", node->y, node->x );
     fclose( fp );
