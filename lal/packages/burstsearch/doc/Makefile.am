@@ -5,6 +5,6 @@ SUFFIXES = .tex .dvi
 MOSTLYCLEANFILES = *.log *.aux
 CLEANFILES = Thresholds.dvi TFTransform.dvi ExcessPower.dvi \
              Thresholds.pdf TFTransform.pdf ExcessPower.pdf
-EXTRA_DIST = $(TEXFILES) *.ps
+EXTRA_DIST = $(TEXFILES)
 dvi-local: $(DVIFILES)
 .tex.dvi:; @LATEX@ $< ; @LATEX@ $<
