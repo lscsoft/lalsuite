@@ -755,6 +755,10 @@ static void display_usage()
   fprintf(stdout, " --version                     display version\n");
   fprintf(stdout, " --verbose                     verbose mode\n");
   fprintf(stdout, " --debug-level N               set lalDebugLevel\n");
+  fprintf(stdout, " --user-tag STRING             set the user tag\n"); 
+  fprintf(stdout, " --comment STRING              set the comment\n");
+  fprintf(stdout, " --output-dir DIR              directory for output files\n");
+  fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
   fprintf(stdout, " --gps-start-time N            GPS start time\n");
   fprintf(stdout, " --gps-end-time N              GPS end time\n");
   fprintf(stdout, " --interval-duration N         interval duration\n");
@@ -785,16 +789,12 @@ static void display_usage()
   fprintf(stdout, " --scale-factor N              scale factor for injection\n");
   fprintf(stdout, " --seed N                      random seed\n");
   fprintf(stdout, " --trials N                    number of trials for Monte Carlo\n");
-  fprintf(stdout, " --output-dir DIR              directory for output files\n");
   fprintf(stdout, " --geo-hpf-frequency N         GEO high pass filter knee frequency\n");
   fprintf(stdout, " --geo-hpf-attenuation N       GEO high pass filter attenuation\n");
   fprintf(stdout, " --geo-hpf-order N             GEO high pass filter order\n");
   fprintf(stdout, " --alpha N                     exponent on filter spectrum\n");
   fprintf(stdout, " --f-ref N                     reference frequency for filter spectrum\n");
   fprintf(stdout, " --omega0 N                    reference omega_0 for filter spectrum\n");
-  fprintf(stdout, " --comment STRING              set the process table comment to STRING\n");
-  fprintf(stdout, " --user-tag STRING             set the process_params usertag to STRING\n");
-  fprintf(stdout, " --cc-spectra                  save out cross correlation spectra\n");
 }
 
 /* parse command line options */
