@@ -63,11 +63,13 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_EDIV0 4
 #define LALINSPIRALH_ESIZE 8
 #define LALINSPIRALH_ECHOICE 16
+#define LALINSPIRALH_EORDER 4 
 #define LALINSPIRALH_MSGENULL "Arguments contained an unexpected null pointer"
 #define LALINSPIRALH_MSGEMEM "Memory allocation error"
 #define LALINSPIRALH_MSGEDIV0 "Division by zero"
 #define LALINSPIRALH_MSGESIZE "Invalid input range"
 #define LALINSPIRALH_MSGECHOICE "Invalid choice for an input parameter"
+#define LALINSPIRALH_MSGEORDER "Invalid choice for order of PN models"
 
 
 /* </lalErrTable> */

@@ -79,7 +79,8 @@ LALInspiralSetup (
    ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    vpole = 0.0;
-   ak->omegaS = 0.;
+   ak->omegaS = params->OmegaS;
+   ak->zeta2  = params->Zeta2; 
    ak->ieta = params->ieta;
    ak->EulerC = 0.577;
    ak->lambda = -(1987./3080. + 3./11. * params->OmegaS);

@@ -47,6 +47,7 @@ int main (void) {
 
    params.approximant=EOB;
    params.OmegaS = 0.;
+   params.Zeta2 = 0.; /*use by EOB @ 3PN*/
    params.Theta = 0.;
    params.ieta=1; 
    params.mass1=10; 
