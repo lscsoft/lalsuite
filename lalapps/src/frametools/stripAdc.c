@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
     {
      sprintf(outFile1,"%s-%d-16.gwf", in.outFrameFile, frame->GTimeS);
      oFile = NULL;
-     if ((oFile = FrFileONewH(outFile1,COMPRESSION, "stripAdc2.c")) == NULL)
+     if ((oFile = FrFileONewH(outFile1,COMPRESSION, "stripAdc.c")) == NULL)
      {
       printf("Error opening output file %s!\n", outFile1);
       fprintf(ofp2,"Error opening output file %s!\n", outFile1);
