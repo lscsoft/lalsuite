@@ -121,9 +121,7 @@ int main( int argc, char *argv[] )
   FindChirpSPTmpltParams       *fcTmpltParams  = NULL;
   FindChirpFilterParams        *fcFilterParams = NULL;
   FindChirpFilterInput         *fcFilterInput  = NULL;
-#if 0
   FindChirpStandardCandle       candle;
-#endif
 
   /* inspiral template structures */
   INT4                          numTmplts    = 0;
@@ -197,7 +195,6 @@ int main( int argc, char *argv[] )
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
 
-#if 0
   /* create the standard candle */
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
   strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
@@ -208,7 +205,6 @@ int main( int argc, char *argv[] )
   candle.tmplt.mu = candle.tmplt.mass1 * candle.tmplt.mass2 / 
     candle.tmplt.totalMass;
   candle.tmplt.eta = candle.tmplt.mu / candle.tmplt.totalMass;
-#endif
 
   
 
@@ -677,7 +673,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
       &status );
 
-#if 0
   /* compute the standard candle */
   {
       REAL4 cannonDist = 1.0; /* Mpc */
@@ -700,7 +695,6 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) 
         fprintf( stdout, "candle.effDistance = %e Mpc\n", candle.effDistance );
     }
-#endif
   
 
   /*
