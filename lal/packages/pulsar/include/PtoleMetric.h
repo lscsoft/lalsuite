@@ -1,5 +1,5 @@
 /**************************************** <lalVerbatim file="PtoleMetricHV">
-Author: Owen, B. J.
+Author: Jones, D. I.    Owen, B. J.
 $Id$
 ********************************************************** </lalVerbatim> */
 
@@ -122,6 +122,8 @@ LALPtoleMetric( LALStatus      *status,
 /**************************************************************** <lalLaTeX>
 \newpage\input{PtoleMetricTestC}
 \newpage\input{PtoleMeshTestC}
+\newpage\input{GeneralMetricTestC}
+\newpage\input{GeneralMeshTestC}
 ************************************************************* </lalLaTeX> */
 
 #ifdef  __cplusplus
