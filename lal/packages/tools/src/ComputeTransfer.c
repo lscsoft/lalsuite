@@ -388,10 +388,6 @@ LALUpdateCalibration(
       status );
 
   dt = epoch - first_cal;
-  if ( dt + params->sensingFactor->deltaT  < 0 )
-  {
-    ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
-  }
   
   /* find the first point at or before the requested time */
   if ( (i_r4 = floor( dt / params->sensingFactor->deltaT ) ) < 0 )
