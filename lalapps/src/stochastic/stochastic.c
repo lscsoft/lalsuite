@@ -902,6 +902,38 @@ static COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
   return(zero_pad);
 }
 
+/* wrapper function for generating the cross correlation spectra */
+static COMPLEX8FrequencySeries *cc_spectra(LALStatus *status,
+    COMPLEX8FrequencySeries *zero_pad_one,
+    COMPLEX8FrequencySeries *zero_pad_two,
+    COMPLEX8FrequencySeries *response_one,
+    COMPLEX8FrequencySeries *response_two,
+    REAL4FrequencySeries *opt_filter,
+    BOOLEAN match)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *series;
+  StochasticCrossCorrelationCalInput cc_input;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &series, "cc_spectra", \
+        opt_filter->epoch, opt_filter->f0, opt_filter->deltaF, \
+        lalDimensionlessUnit, opt_filter->data->length), status);
+
+  /* set inputs */
+  cc_input.hBarTildeOne = zero_pad_one;
+  cc_input.hBarTildeTwo = zero_pad_two;
+  cc_input.responseFunctionOne = response_one;
+  cc_input.responseFunctionTwo = response_two;
+  cc_input.optimalFilter = opt_filter;
+  
+  /* calculate spectrum */
+  LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(status, series, \
+        &cc_input, match), status);
+
+  return(series);
+}
+
 /* display usage information */
 static void display_usage()
 {
