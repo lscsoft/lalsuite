@@ -159,7 +159,9 @@ main(int argc, char *argv[])
  
     } /* for i < nLines1 */
 
-
+  LAL_CALL ( LALDestroyConfigData ( &status, &Fstats1), &status);
+  LAL_CALL ( LALDestroyConfigData ( &status, &Fstats2), &status);
+  LAL_CALL ( LALDestroyUserVars (&status), &status);
 
   LALCheckMemoryLeaks(); 
 
