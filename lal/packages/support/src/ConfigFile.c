@@ -119,7 +119,7 @@ more convenient to use the \verb+UserInput+ infrastructure
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <ctype.h>
+/* #include <ctype.h> */  /* don't use this, as it binds us to GLIBC_2.3 symbols!! */
 
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -141,6 +141,22 @@ extern INT4 lalDebugLevel;
 
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
+CHAR my_tolower (CHAR in);
+/* ctype replacements w/o locale */
+static int TOLOWER(int c);
+static const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
+
+
+static const char digit_chars[] = "0123456789";
+
+#define ISDIGIT(c) \
+    ((c) && strchr(digit_chars, (c)) != NULL)
+
+static const char space_chars[] = " \f\n\r\t\v";
+
+#define ISSPACE(c) \
+    ((c) && strchr(space_chars, (c)) != NULL)
 
 
 
@@ -638,6 +654,10 @@ LALCheckConfigReadComplete (LALStatus *stat,
 
 
 
+/* ---------------------------------------------------------------------- 
+ *   INTERNAL FUNCTIONS FOLLOW HERE
+ *----------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------
  * little helper function:  turn a string into lowercase
  *----------------------------------------------------------------------*/
@@ -651,16 +671,30 @@ LALLowerCaseString (LALStatus *stat, CHAR *string)
   ASSERT (string != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   for (i=0; i < strlen (string); i++)
-    string[i] = tolower( string[i] );
+    string[i] = TOLOWER( string[i] );
   
   RETURN (stat);
 
 } /* LALLowerCaseString() */
 
-
-/* ---------------------------------------------------------------------- 
- *   INTERNAL FUNCTIONS FOLLOW HERE
+/*----------------------------------------------------------------------
+ * tolower() replacement w/o locale
  *----------------------------------------------------------------------*/
+static int
+TOLOWER(int c)
+{
+    if (c) {
+        char *p = strchr(upper_chars, c);
+
+        if (p) {
+            c = lower_chars[p - upper_chars];
+        }
+    }
+    return c;
+} /* TOLOWER() */
+
+/*----------------------------------------------------------------------*/
+
 
 /* ----------------------------------------------------------------------
  * cleanConfig(): do some preprocessing on the config-file, namely 'erase' 
