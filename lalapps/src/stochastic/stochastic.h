@@ -23,7 +23,7 @@ typedef struct tagStreamPair {
 } StreamPair;
 
 typedef struct tagReadDataPairParams {
-	UINT8 startTime;
+	UINT8 start;
 	INT4 duration;
 	CHAR *frameCacheOne;
 	CHAR *frameCacheTwo;
@@ -32,8 +32,6 @@ typedef struct tagReadDataPairParams {
 	CHAR *channelOne;
 	CHAR *channelTwo;
 	INT4 buffer;
-	INT4 sampleRate;
-	INT4 resampleRate;
 } ReadDataPairParams;
 
 void parseOptions(INT4 argc, CHAR *argv[]);

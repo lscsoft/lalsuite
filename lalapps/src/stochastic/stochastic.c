@@ -395,8 +395,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamParams.channelOne = channelOne;
   streamParams.channelTwo = channelTwo;
   streamParams.buffer = 0;
-  streamParams.sampleRate = sampleRate;
-  streamParams.resampleRate = resampleRate;
   streamParams.duration = segmentDuration + 2 * padData;
   streamPair.streamOne = &segmentPadOne;
   streamPair.streamTwo = &segmentPadTwo;
@@ -953,6 +951,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   ccSpectrum.deltaF = deltaF;
   ccSpectrum.f0 = fMin;
 
+  if (verbose_flag)
+    fprintf(stdout, "Allocating memory for CC Spectrum...\n");
+
   /* allocate memory for CC spectrum*/
   ccSpectrum.data = NULL;
   LAL_CALL(LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
@@ -1022,7 +1023,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                   gpsStartTime.gpsSeconds);
             }
 
-            streamParams.startTime = gpsStartPadTime.gpsSeconds;
+            streamParams.start = gpsStartPadTime.gpsSeconds;
             LAL_CALL(readDataPair(&status, &streamPair, &streamParams), \
                 &status);
 
@@ -1211,7 +1212,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsStartTime.gpsSeconds = startTime + (interLoop + \
               numSegments - 1) * segmentDuration;
           gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
-          streamParams.startTime = gpsStartPadTime.gpsSeconds;
+          streamParams.start = gpsStartPadTime.gpsSeconds;
 
           if (verbose_flag)
           {
@@ -2752,23 +2753,14 @@ void readDataPair(LALStatus *status,
   REAL4TimeSeries dataStreamOne, dataStreamTwo;
   ResampleTSParams resampleParams;
   LIGOTimeGPS bufferStartTime;
-  UINT8 startTime;
-  INT4 buffer;
-  INT4 resampleRate, sampleRate;
   PassBandParamStruc geoHighpassParam;
-
-  /* read parameters */
-  startTime = params->startTime;
-  buffer = params->buffer;
-  resampleRate = params->resampleRate;
-  sampleRate = params->sampleRate;
 
   /* initialise status pointer */
   INITSTATUS(status, "readDataPair", STOCHASTICC);
   ATTATCHSTATUSPTR(status);
 
   /* buffer start time */
-  bufferStartTime.gpsSeconds = startTime - buffer;
+  bufferStartTime.gpsSeconds = params->start - params->buffer;
   bufferStartTime.gpsNanoSeconds = 0;
 
   /* set channels */
@@ -2786,10 +2778,10 @@ void readDataPair(LALStatus *status,
   /* allocate memory */
   dataStreamOne.data = dataStreamTwo.data = NULL;
   LALSCreateVector(status->statusPtr, &(dataStreamOne.data), \
-      sampleRate * (params->duration + (2 * buffer)));
+      sampleRate * (params->duration + (2 * params->buffer)));
   CHECKSTATUSPTR(status);
   LALSCreateVector(status->statusPtr, &(dataStreamTwo.data), \
-      sampleRate * (params->duration + (2 * buffer)));
+      sampleRate * (params->duration + (2 * params->buffer)));
   CHECKSTATUSPTR(status);
   memset(dataStreamOne.data->data, 0, \
       dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
@@ -2801,7 +2793,7 @@ void readDataPair(LALStatus *status,
     dataStreamGEO.epoch = bufferStartTime;
     dataStreamGEO.data = NULL;
     LALDCreateVector(status->statusPtr, &(dataStreamGEO.data), \
-        sampleRate * (params->duration + (2 * buffer)));
+        sampleRate * (params->duration + (2 * params->buffer)));
     CHECKSTATUSPTR(status);
     memset(dataStreamGEO.data->data, 0, \
         dataStreamGEO.data->length * sizeof(*dataStreamGEO.data->data));
@@ -2965,7 +2957,7 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
 
     /* set resample parameters */
-    resampleParams.deltaT = 1.0 / (REAL8)resampleRate;
+    resampleParams.deltaT = 1.0 / resampleRate;
     resampleParams.filterType = defaultButterworth;
 
     /* resample */
@@ -2980,8 +2972,8 @@ void readDataPair(LALStatus *status,
   /* build output */
   strncpy(streamPair->streamOne->name,dataStreamOne.name, LALNameLength);
   strncpy(streamPair->streamTwo->name,dataStreamTwo.name, LALNameLength);
-  streamPair->streamOne->epoch.gpsSeconds = startTime;
-  streamPair->streamTwo->epoch.gpsSeconds = startTime;
+  streamPair->streamOne->epoch.gpsSeconds = params->start;
+  streamPair->streamTwo->epoch.gpsSeconds = params->start;
   streamPair->streamOne->epoch.gpsNanoSeconds = 0;
   streamPair->streamTwo->epoch.gpsNanoSeconds = 0;
   streamPair->streamOne->deltaT = 1./(REAL8)resampleRate;
@@ -2994,9 +2986,9 @@ void readDataPair(LALStatus *status,
   for (i = 0; i < params->duration * resampleRate; i++)
   {
     streamPair->streamOne->data->data[i] = \
-      dataStreamOne.data->data[i + (resampleRate * buffer)];
+      dataStreamOne.data->data[i + (resampleRate * params->buffer)];
     streamPair->streamTwo->data->data[i] = \
-      dataStreamTwo.data->data[i + (resampleRate * buffer)];
+      dataStreamTwo.data->data[i + (resampleRate * params->buffer)];
   }
 
   /* clean up */
