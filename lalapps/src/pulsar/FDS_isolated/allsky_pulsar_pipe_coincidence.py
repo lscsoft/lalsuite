@@ -198,8 +198,17 @@ polka_args = ' '.join(['./lalapps_polka','-1',FstatsFileName1,'-2',FstatsFileNam
 print 'running: ',polka_args
 os.system(polka_args)
 
+gzip_polka_out=''.join(['gzip ', polka_out])
+print 'running: ',gzip_polka_out
+os.system(gzip_polka_out)
+
+polka_out=''.join([polka_out,'.gz'])
 shutil.copy(polka_out,starting_dir)
 
+unzip_polka_out=''.join(['gunzip ', polka_out])
+print 'running: ',unzip_polka_out
+os.system(unzip_polka_out)
+polka_out=''.join(['polka_out',''.join(['-',str(freq)])])
 
 # -------------------------------------------------------------------------------- #
 
