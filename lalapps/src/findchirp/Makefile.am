@@ -3,7 +3,7 @@
 if LALMETAIO
 LALMETAIOPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
                 lalapps_donald lalapps_snglInspiralReader \
-		lalapps_inspinj_find
+		lalapps_inspinj_find lalapps_gpstogmst
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -14,6 +14,7 @@ lalapps_random_bank_SOURCES = random_bank.c
 lalapps_chirplen_SOURCES = chirplen.c
 lalapps_effdist_SOURCES = effdist.c
 lalapps_inspinj_SOURCES = inspinj.c
+lalapps_gpstogmst_SOURCES = gpstogmst.c
 if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
