@@ -17,6 +17,29 @@
 #include <gsl/gsl_histogram.h>
 
 
+
+#include <lal/LALConfig.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/FrameStream.h>
+#include <lal/FrameCalibration.h>
+#include <lal/Window.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/IIRFilter.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
+
+
+
 /* Here, I defined my own xml table outside the lal strcuture although it can be put
    into the liXmlHeader files I guess. I dont want to use the lal definition for the
    time being in order to avoid any overlap with other users. */
@@ -555,3 +578,10 @@ void
 BEFillOverlapOutput(InspiralWaveOverlapOut overlapout, 
 		    OverlapOutputIn *this);
 
+
+
+
+void 
+LALCreateRealPsd(LALStatus *status, 
+		 InspiralCoarseBankIn *bankIn,
+		 RandomInspiralSignalIn randIn);
