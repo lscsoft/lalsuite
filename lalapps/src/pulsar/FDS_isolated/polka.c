@@ -282,10 +282,13 @@ int main(int argc,char *argv[])
     }     
 
   /* allocate space */
-  if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4) * numCoincidences))){
-    fprintf(stderr,"Unable to allocate index array in main\n");
-    return 1;
+  if (numCoincidences != 0){ 
+    if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4) * numCoincidences))){
+      fprintf(stderr,"Unable to allocate index array in main\n");
+      return 1;
+    }
   }
+
   for (i=0; i < numCoincidences; i++) 
     indicesCCfa[i]=i;
 
@@ -328,7 +331,9 @@ int main(int argc,char *argv[])
       LALFree(indices4F);  
     }
   
-  LALFree ( CC );
+  if (numCoincidences != 0){ 
+    LALFree ( CC );
+  }
   
   LALCheckMemoryLeaks(); 
 
