@@ -361,8 +361,6 @@ int main( int argc, char *argv[] )
       searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
         gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
     }
-
-    goto cleanexit;
   }
 
 
@@ -1229,8 +1227,6 @@ int main( int argc, char *argv[] )
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );
   }
-
-cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing xml data to disk\n" );
 
