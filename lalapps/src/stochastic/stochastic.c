@@ -211,7 +211,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
   FrCache *calibCache = NULL;
 
-
   /* data structures for PSDs */
   INT4 overlapPSDLength;
   INT4 psdTempLength;
@@ -1776,15 +1775,61 @@ INT4 main(INT4 argc, CHAR *argv[])
  }
 
 
+#define USAGE \
+  "Usage: " PROGRAM_NAME " [options]\n"\
+  " -h, --help                        print this message\n"\
+  " -v, --version                     display version\n"\
+  "     --verbose                     verbose mode\n"\
+  "     --debug                       save out intermediate products\n"\
+  " -z, --debug-level N               set lalDebugLevel\n"\
+  " -t, --gps-start-time N            GPS start time\n"\
+  " -T, --gps-end-time N              GPS end time\n"\
+  " -L, --interval-duration N         interval duration\n"\
+  " -l, --segment-duration N          segment duration\n"\
+  " -A, --sample-rate N               sample rate\n"\
+  " -a, --resample-rate N             resample rate\n"\
+  " -f, --f-min N                     minimal frequency\n"\
+  " -F, --f-max N                     maximal frequency\n"\
+  " -i, --ifo-one IFO                 ifo for first stream\n"\
+  " -I, --ifo-two IFO                 ifo for second stream\n"\
+  " -d, --frame-cache-one FILE        cache file for first stream\n"\
+  " -D, --frame-cache-two FILE        cache file for second stream\n"\
+  " -r, --calibration-cache-one FILE  first stream calibration cache\n"\
+  " -R, --calibration-cache-two FILE  second stream calibration cache\n"\
+  " -c, --calibration-offset N        calibration offset\n"\
+  "     --apply-mask                  apply frequency masking\n"\
+  " -b, --mask-bin N                  number of bins to mask\n"\
+  "     --overlap-hann                overlaping hann windows\n"\
+  " -w, --hann-duration N             hann duration\n"\
+  "     --high-pass-filter            apply high pass filtering\n"\
+  " -k, --hpf-frequency N             high pass filter knee frequency\n"\
+  " -p, --hpf-attenuation N           high pass filter attenuation\n"\
+  " -P, --hpf-order N                 high pass filter order\n"\
+  "     --recenter                    recenter jobs\n"\
+  "     --post-analysis               perform post analysis\n"\
+  "     --middle-segment              include middle segment in PSD estimation\n"\
+  "     --inject                      inject a signal into the data\n"\
+  " -o, --scale-factor N              scale factor for injection\n"\
+  " -g, --seed N                      random seed\n"\
+  " -N, --trials N                    number of trials for Monte Carlo\n"\
+  " -S, --output-dir DIR              directory for output files\n"\
+  "     --test                        output intermeadiate results for testing\n"\
+  " -U, --test-interval N             interval to test\n"\
+  " -V, --test-segment N              segment to test\n"\
+  " -W, --test-trial N                trail to test\n"\
+  " -K, --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
+  " -q, --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
+  " -Q, --geo-hpf-order N             GEO high pass filter order\n"
+
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
- {
+{
   int c = -1;
 
   while(1)
-   {
+  {
     static struct option long_options[] =
-     {
+    {
       /* options that set a flag */
       {"inject", no_argument, &inject_flag, 1},
       {"middle-segment", no_argument, &middle_segment_flag, 1},
@@ -1823,325 +1868,286 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"mask-bin", required_argument, 0, 'b'},
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
-      {"number-of-injection", required_argument, 0, 'N'},
+      {"trials", required_argument, 0, 'N'},
       {"output-dir", required_argument, 0, 'S'},
-      {"test-big-segment-number", required_argument, 0, 'U'},
-      {"test-small-segment-number", required_argument, 0, 'V'},
-      {"test-trial-number", required_argument, 0, 'W'},
+      {"test-interval", required_argument, 0, 'U'},
+      {"test-segment", required_argument, 0, 'V'},
+      {"test-trial", required_argument, 0, 'W'},
       {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'v'},
       {0, 0, 0, 0}
-     };
+    };
 
     /* getopt_long stores the option here */
     int option_index = 0;
 
-    c = getopt_long(argc, argv, 
-                  "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v",
- 		   long_options, &option_index);
+    c = getopt_long(argc, argv, \
+        "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v", \
+        long_options, &option_index);
 
     if (c == -1)
-     {
+    {
       /* end of options, break loop */
       break;
-     }
+    }
 
     switch(c)
-     {
+    {
       case 0:
-             /* If this option set a flag, do nothing else now. */
-             if (long_options[option_index].flag != 0)
-              break;
-             printf ("option %s", long_options[option_index].name);
-             if (optarg)
-              printf (" with arg %s", optarg);
-             printf ("\n");
-             break;
+        /* If this option set a flag, do nothing else now. */
+        if (long_options[option_index].flag != 0)
+          break;
+        printf ("option %s", long_options[option_index].name);
+        if (optarg)
+          printf (" with arg %s", optarg);
+        printf ("\n");
+        break;
 
       case 'h':
-               /* HELP!!! */
-               displayUsage(0);
-               break;
+        /* HELP!!! */
+        fprintf(stdout, USAGE);
+        exit(0);
+        break;
 
       case 't':
-               /* start time */
-	       startTime = atoi(optarg);
-	       break;
+        /* start time */
+        startTime = atoi(optarg);
+        break;
 
       case 'T':
-	       /* stop time */
-	       stopTime = atoi(optarg);
-	       break;
+        /* stop time */
+        stopTime = atoi(optarg);
+        break;
+
       case 'L':
-	       /* duration */
-	       intervalDuration = atoi(optarg);
-	       break;
+        /* duration */
+        intervalDuration = atoi(optarg);
+        break;
 
       case 'l':
-	       /* duration */
-	       segmentDuration = atoi(optarg);
-	       break;
+        /* duration */
+        segmentDuration = atoi(optarg);
+        break;
+
       case 'A':
-               /* sample rate */
-               sampleRate = atoi(optarg);
-               break;
+        /* sample rate */
+        sampleRate = atoi(optarg);
+        break;
 
       case 'a':
-	       /* resampling */
-	       resampleRate = atoi(optarg);
-	       break;
+        /* resampling */
+        resampleRate = atoi(optarg);
+        break;
 
       case 'f':
-	       /* minimal frequency */
-	       fMin = atoi(optarg);
-	       break;
+        /* minimal frequency */
+        fMin = atoi(optarg);
+        break;
 
       case 'F':
-	       /* maximal frequency */
-	       fMax = atoi(optarg);
-	       break;
+        /* maximal frequency */
+        fMax = atoi(optarg);
+        break;
 
       case 'w':
-	       /* hann window duration */
-	       hannDuration = atoi(optarg);
-	       break;
+        /* hann window duration */
+        hannDuration = atoi(optarg);
+        break;
 
       case 'k':
-	       /* high pass knee filter frequency  */
-	       highPassFreq= atof(optarg);
-	       break;
-                          
+        /* high pass knee filter frequency  */
+        highPassFreq = atof(optarg);
+        break;
+
       case 'p':
-	       /* high pass filter attenuation  */
-	       highPassAt = atof(optarg);
-	       break;
+        /* high pass filter attenuation  */
+        highPassAt = atof(optarg);
+        break;
 
       case 'P':
-	       /* high pass filter order  */
-	       highPassOrder = atoi(optarg);
-	       break;
+        /* high pass filter order  */
+        highPassOrder = atoi(optarg);
+        break;
 
       case 'K':
-	       /* GEO high pass knee filter frequency  */
-	       geoHighPassFreq= atof(optarg);
-	       break;
-                          
+        /* GEO high pass knee filter frequency */
+        geoHighPassFreq = atof(optarg);
+        break;
+
       case 'q':
-	       /*GEO high pass filter attenuation  */
-	       geoHighPassAt = atof(optarg);
-	       break;
+        /*GEO high pass filter attenuation */
+        geoHighPassAt = atof(optarg);
+        break;
 
       case 'Q':
-	       /* GEO high pass filter order  */
-	       geoHighPassOrder = atoi(optarg);
-	       break;
+        /* GEO high pass filter order */
+        geoHighPassOrder = atoi(optarg);
+        break;
+
       case 'i':
-	       /* ifo for first stream */
-	       strncpy(ifo1, optarg, LALNameLength);
+        /* ifo for first stream */
+        strncpy(ifo1, optarg, LALNameLength);
 
-	       /* set site and channel */
-	       if (strncmp(ifo1, "H1", 2) == 0)
-		{
-		 site1 = 0;
-		 strncpy(channel1, "H1:LSC-AS_Q", LALNameLength);
-		}
-	       else if (strncmp(ifo1, "H2", 2) == 0)
-		{
-		 site1 = 0;
-		 strncpy(channel1, "H2:LSC-AS_Q", LALNameLength);
-		}
-	       else if (strncmp(ifo1, "L1", 2) == 0)
-		{
-		 site1 = 1;
-		 strncpy(channel1, "L1:LSC-AS_Q", LALNameLength);
-	        }
-               else if (strncmp(ifo1, "G1", 2) == 0)
-		{
-		 site1 = 3;
-		 strncpy(channel1, "G1:DER_DATA_H", LALNameLength);
-	        }
-	       else
-		{
-		 fprintf(stderr, "First IFO not recognised...\n");
-		 exit(1);
-		}
+        /* set site and channel */
+        if (strncmp(ifo1, "H1", 2) == 0)
+        {
+          site1 = 0;
+          strncpy(channel1, "H1:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo1, "H2", 2) == 0)
+        {
+          site1 = 0;
+          strncpy(channel1, "H2:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo1, "L1", 2) == 0)
+        {
+          site1 = 1;
+          strncpy(channel1, "L1:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo1, "G1", 2) == 0)
+        {
+          site1 = 3;
+          strncpy(channel1, "G1:DER_DATA_H", LALNameLength);
+        }
+        else
+        {
+          fprintf(stderr, "First IFO not recognised...\n");
+          exit(1);
+        }
 
-	       break;
+        break;
 
-       case 'I':
-		/* ifo for second stream */
-		strncpy(ifo2, optarg, LALNameLength);
+      case 'I':
+        /* ifo for second stream */
+        strncpy(ifo2, optarg, LALNameLength);
 
-		/* set site and channel */
-		if (strncmp(ifo2, "H1", 2) == 0)
-		 {
-		  site2 = 0;
-		  strncpy(channel2, "H1:LSC-AS_Q", LALNameLength);
-		 }
-		else if (strncmp(ifo2, "H2", 2) == 0)
-		 {
-		  site2 = 0;
-		  strncpy(channel2, "H2:LSC-AS_Q", LALNameLength);
-		 }
-		else if (strncmp(ifo2, "L1", 2) == 0)
-		 {
-		  site2 = 1;
-		  strncpy(channel2, "L1:LSC-AS_Q", LALNameLength);
-		 }
-                else if (strncmp(ifo2, "G1", 2) == 0)
-		{
-		 site1 = 3;
-		 strncpy(channel2, "G1:DER_DATA_H", LALNameLength);
-	        }
-		 else
-		  {
-		   fprintf(stderr, "Second IFO not recognised...\n");
-		   exit(1);
-		  }
+        /* set site and channel */
+        if (strncmp(ifo2, "H1", 2) == 0)
+        {
+          site2 = 0;
+          strncpy(channel2, "H1:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo2, "H2", 2) == 0)
+        {
+          site2 = 0;
+          strncpy(channel2, "H2:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo2, "L1", 2) == 0)
+        {
+          site2 = 1;
+          strncpy(channel2, "L1:LSC-AS_Q", LALNameLength);
+        }
+        else if (strncmp(ifo2, "G1", 2) == 0)
+        {
+          site1 = 3;
+          strncpy(channel2, "G1:DER_DATA_H", LALNameLength);
+        }
+        else
+        {
+          fprintf(stderr, "Second IFO not recognised...\n");
+          exit(1);
+        }
 
-		 break;
-     
+        break;
 
-	case 'd':
-         	 /* data cache one */
-                 strncpy(frameCache1, optarg, 200);
-        	 break;
+      case 'd':
+        /* data cache one */
+        strncpy(frameCache1, optarg, 200);
+        break;
 
-        case 'D':
-                /* data cache two */
-                strncpy(frameCache2, optarg, 200);
-                break;
-   
-        case 'r':
-         	/* calibration cache one */
-                strncpy(calCache1, optarg, 200);
-                break;
+      case 'D':
+        /* data cache two */
+        strncpy(frameCache2, optarg, 200);
+        break;
 
-        case 'R':
-                /* calibration cache two */
-        	strncpy(calCache2, optarg, 200);
-                break;
-   
-         case 'c':
-	       /* calibration time offset */
-	       calibOffset = atoi(optarg);
- 	       break;
+      case 'r':
+        /* calibration cache one */
+        strncpy(calCache1, optarg, 200);
+        break;
 
-         case 'b':
-                 /* bin for frequency mask */
-                 maskBin = atoi(optarg);
-                 break;
+      case 'R':
+        /* calibration cache two */
+        strncpy(calCache2, optarg, 200);
+        break;
 
-        case 'o':
-		/* scale factor */
-		scaleFactor = atof(optarg);
-		break;
+      case 'c':
+        /* calibration time offset */
+        calibOffset = atoi(optarg);
+        break;
 
-	case 'g':
-		/* seed */
-		seed = atoi(optarg);
-		break;
+      case 'b':
+        /* number of bins to mask for frequency mask */
+        maskBin = atoi(optarg);
+        break;
 
-        case 'N':
-	        /* number of injection */
-		NLoop = atoi(optarg);
-		break;
+      case 'o':
+        /* scale factor */
+        scaleFactor = atof(optarg);
+        break;
 
-        case 'S':
-                 /* directory for output files */
-                 strncpy(outputFilePath, optarg, LALNameLength);
-                 break;
+      case 'g':
+        /* seed */
+        seed = atoi(optarg);
+        break;
 
-        case 'U':
-		/* interval number for test */
-		testInter = atoi(optarg);
-		break;
+      case 'N':
+        /* number of injection */
+        NLoop = atoi(optarg);
+        break;
 
-        case 'V':
-		/* segment number for test */
-		testSeg = atoi(optarg);
-		break;
+      case 'S':
+        /* directory for output files */
+        strncpy(outputFilePath, optarg, LALNameLength);
+        break;
 
-        case 'W':
-		/* trial  number for test */
-		testTrial = atoi(optarg);
-		break;
+      case 'U':
+        /* interval number for test */
+        testInter = atoi(optarg);
+        break;
 
-        case 'z':
-		/* set debug level */
-		set_debug_level( optarg );
-		break;
+      case 'V':
+        /* segment number for test */
+        testSeg = atoi(optarg);
+        break;
 
-	case 'v':
-		/* display version info and exit */
-		fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
-		exit(0);
-	        break;
+      case 'W':
+        /* trial  number for test */
+        testTrial = atoi(optarg);
+        break;
 
-		default:
-		displayUsage(1);
-       }
+      case 'z':
+        /* set debug level */
+        set_debug_level( optarg );
+        break;
+
+      case 'v':
+        /* display version info and exit */
+        fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
+        exit(0);
+        break;
+
+      case '?':
+        exit(1);
+        break;
+
+      default:
+        fprintf(stderr, "Unknown error while parsing options\n");
+        exit(1);
     }
+  }
 
-   if (optind < argc)
+  if (optind < argc)
+  {
+    fprintf(stderr, "Extraneous command line arguments:\n");
+    while(optind < argc)
     {
-     displayUsage(1);
+      fprintf(stderr, "%s\n", argv[optind++]);
     }
+    exit(1);
+  }
 
   return;
 }
-
-/* display program usage */
-void displayUsage(INT4 exitcode)
- {
-  fprintf(stderr, "Usage: pipeline [options]\n");
-  fprintf(stderr, "Options:\n");
-  fprintf(stderr, " -h                    print this message\n");
-  fprintf(stderr, " -V                    display version\n");
-  fprintf(stderr, " --verbose             verbose mode\n");
-  fprintf(stderr, " --middle-segment      use middle segment for psd estimation\n");
-  fprintf(stderr, " --recenter            recenter jobs\n");
-  fprintf(stderr, " --post-analysis       post analysis\n");
-  fprintf(stderr, " -z                    set lalDebugLevel\n");
-  fprintf(stderr, " -t                    GPS start time\n");
-  fprintf(stderr, " -T                    GPS stop time\n");
-  fprintf(stderr, " -L                    interval duration\n");
-  fprintf(stderr, " -l                    segment duration\n");
-  fprintf(stderr, " -A                    sample rate\n");
-  fprintf(stderr, " -a                    resample rate\n");
-  fprintf(stderr, " -f                    minimal frequency\n");
-  fprintf(stderr, " -F                    maximal frequency\n");
-  fprintf(stderr, " -- high-pass-filter   apply high pass filter\n");
-  fprintf(stderr, " -k                    high pass filter knee frequency\n");
-  fprintf(stderr, " -p                    high pass filter attenuation\n");
-  fprintf(stderr, " -P                    high pass filter order\n");        
-  fprintf(stderr, " --overlap-hann        use overlap window\n");             
-  fprintf(stderr, " -w                    hann duration\n");
-  fprintf(stderr, " -i                    ifo for first stream\n");
-  fprintf(stderr, " -I                    ifo for second stream\n");
-  fprintf(stderr, " -d                    cache file for first stream\n");
-  fprintf(stderr, " -D                    cache file for second stream\n");
-  fprintf(stderr, " -r                    first stream calibration cache\n");
-  fprintf(stderr, " -R                    second stream calibration cache\n");
-  fprintf(stderr, " -c                    offset for calibration time\n");
-  fprintf(stderr, " --apply-mask          apply frequency masking\n");
-  fprintf(stderr, " -b                    number of bin for frequency mask\n");
-  fprintf(stderr, " --inject              inject a signal into the data\n");
-  fprintf(stderr, " -o                    scale factor for injection\n");
-  fprintf(stderr, " -g                    seed\n");
-  fprintf(stderr, " -N                    number of trial for MC\n");
-  fprintf(stderr, " -S                    directory for output files\n");
-  fprintf(stderr, " --test                print intermediate results for test purpose\n");
-  fprintf(stderr, " -U                    interval number for test\n"); 
-  fprintf(stderr, " -V                    segment number test\n"); 
-  fprintf(stderr, " -W                    trial number for test\n"); 
-  fprintf(stderr, " -v                    version\n");   
-  fprintf(stderr, " -z                    debugging level\n");     
-  exit(exitcode);
-}
-
-
-
 
 /* function to read data in frames */
 void readDataPair(LALStatus *status,
@@ -2414,4 +2420,6 @@ void readDataPair(LALStatus *status,
  RETURN( status );
 }
 
-
+/*
+ * vim: et
+ */
