@@ -343,3 +343,61 @@ If the --bank (or -b) option is specified, both the frame cache query and
 generation of the template bank are marked as done. The cache files and
 template banks are expected to exist by the inspiral code.
 \end{verbatim}
+
+
+
+\clearpage
+\subsection{Program \texttt{lalapps\_inspinj\_s1}}
+\label{program:lalapps-inspinj-s1}
+\idx[Program]{lalapps\_inspinj\_s1}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inspinj_s1$ --- generates a list of binary systems and
+their parameters suitable for use with the inspiral search code.
+
+\item[Synopsis]
+\verb$lalapps_inspinj_s1$ 
+[\verb$--gps-start-time$ \textsc{gpsstarttime}] 
+[\verb$--gps-end-time$ \textsc{gpsendtime}] 
+[\verb$time-step$ \textsc{tstep}] 
+\verb$--seed$ \textsc{seed}
+
+\item[Description] 
+\verb$lalapps_inspinj_s1$ contructs a list of binary neutron star
+inspiral signal parameters based on the mass distribution supplied in
+the file \texttt{BNSMasses.dat},  a spatial distribution representing
+the Milky Way,  LMC,  SMC and M31.   (The code should be extended to
+include other galaxies out to LIGO design range.)   The internal
+angles are randomly distributed,  the host galaxy is randomly selected
+according to the blue-light luminosity.   The interval between
+injections is constant and determined by $\textsc{tstep}/\pi$ to
+insure that it is not commensurate with any other times in the
+problem.   The injections span the time interval from \textsc{gpsstarttime} 
+to \textsc{gpsendtime}.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--gps-start-time} \textsc{gpsstarttime}] Optional.  The earliest
+time for which an injection should be constructed.   Default is 
+714150013 (Aug 23, 2002  08:00:00 PDT).
+
+\item[\texttt{--gps-end-time} \textsc{gpsendtime}] Optional. The latest
+time for which an injection should be constructed.  Default is
+715618813 (Sep 09, 2002  08:00:00 PDT).
+
+\item[\texttt{--time-step} \textsc{timestep}] Optional. The fixed interval
+between injections is $\textsc{timestep}/\pi$ seconds.   Default is the fixed
+interval $2630 / \pi$ seconds between injections.
+
+\item[\textsc{--seed} \textsc{seed}] The seed used to initialize the
+random number generator.
+\end{entry}
+
+\item[Example]
+
+\item[Author] 
+Jolien Creighton (Duncan Brown and Patrick Brady)
+\end{entry}
+\clearpage
+
