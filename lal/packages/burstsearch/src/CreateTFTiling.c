@@ -251,7 +251,7 @@ LALCreateTFTiling (
 	  while (tstart <= timeBins - deltat)
 	    {
 	      deltaf=input->minFreqBins;
-	      while (deltaf <= freqBins && deltaf/(*thisPlane)->params->deltaT < 64.0)      
+	      while (deltaf <= freqBins && deltaf/(*thisPlane)->params->deltaT < input->maxTileBand)
 		{
 		  incrementF = 1+deltaf/input->overlapFactor;
 		  fstart=0;

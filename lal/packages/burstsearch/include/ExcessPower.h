@@ -84,6 +84,7 @@ tagCreateTFTilingIn
   REAL8                            flow;    /* lowest freq to search       */
   REAL8                            deltaF;  
   INT4                             length;  
+  REAL8                            maxTileBand;
 }
 CreateTFTilingIn;
 

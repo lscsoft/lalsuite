@@ -709,6 +709,8 @@ void EPInitSearch(
     params->currentSegment  = 0;
     params->numEvents       = 0;
     params->searchMaster    = 0;
+    params->tfTilingInput->maxTileBand = 64.0;
+
 
     DETATCHSTATUSPTR (status);
     RETURN (status);
