@@ -34,19 +34,22 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
+
+/*
+ * Read a line of text from a file, striping the newline character if read.
+ * Return an empty string on any error.
+ */
+
 static int getline(char *line, int max, FILE *fpin)
 {
-    int i;
-    CHAR tmpline[MAXSTR];
+	char *end;
 
-    for (i=0;i<MAXSTR;i++) { *(line+i) = '\0' ; }
-    if (fgets(tmpline, max, fpin) == NULL){
-        return 0;
-    }
-    else{
-        strncpy(line,tmpline,strlen(tmpline)-1);
-        return strlen(line);
-    }
+	if(!fgets(line, max, fpin))
+		line[0] = '\0';
+	end = strchr(line, '\n');
+	if(end)
+		*end = '\0';
+	return(strlen(line));
 }
 
 
@@ -55,7 +58,8 @@ static int getline(char *line, int max, FILE *fpin)
  * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
  * Remember to check if doing S2 or S3
  ***************************************************************************/
-static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
+static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
+{
     INT4 runStart=729273613;
     INT4 playInterval=6370;
     INT4 playLength=600;
@@ -66,11 +70,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
     segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
     segMiddle = (segMiddle - runStart)%playInterval;
     
-    if (segStart < playLength || segEnd < playLength || segMiddle < playLength){
-        return TRUE;
-    }
-
-    return FALSE;
+    return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
 /****************************************************************************
@@ -409,7 +409,6 @@ int main(int argc, char **argv)
     while ( getline(line, MAXSTR, fpin) ){
 
       INT4 tmpStartTime=0,tmpEndTime=0;
-      INT4 remainder;
 
       fileCounter++;
       if (verbose_flag)
