@@ -999,7 +999,8 @@ int main(int argc, char **argv)
 	playtimeGPS.gpsSeconds);
     if( injectfile )
     {
-      fprintf( fp, "number of injections %d \n",numInjects);
+      fprintf( fp, "number of files analysed %d \n", fileCounter );
+      fprintf( fp, "number of injections %d \n", numInjects);
       fprintf( fp, "number of injections in playground %d \n", 
 	  numPlayInjects);	
       fprintf( fp, "number of injections in analysed playground %d \n", 
