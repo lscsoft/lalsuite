@@ -282,6 +282,9 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     else:
       bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
+
+    self.add_output_file(bank)
+
     return bank
 
 
@@ -299,6 +302,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
 
   def get_output(self):
     """
@@ -315,8 +319,12 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag
 
-    return basename + '-' + str(self.get_start()) + '-' + \
+    filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+    self.add_output_file(filename)
+
+    return filename
 
 
 class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
