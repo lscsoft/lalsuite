@@ -377,6 +377,13 @@ LALTimeCutSingleInspiral(
     );
 
 void
+LALalphaFCutSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4                       alphaFcut
+    );
+
+void
 LALIfoScanSingleInspiral(
     LALStatus                  *status,
     SnglInspiralTable         **output,

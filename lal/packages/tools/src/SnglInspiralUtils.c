@@ -2,7 +2,7 @@
  * 
  * File Name: SnglInspiralUtils.c
  *
- * Author: Brady, P. R., Brown, D. A., and Fairhurst, S
+ * Author: Brady, P. R., Brown, D. A., Fairhurst, S. and Messaritaki, E.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="SnglInspiralUtilsCV">
-Author: Brown, D. A. and Fairhurst, S.
+Author: Brown, D. A., Fairhurst, S. and Messaritaki, E.
 $Id$
 </lalVerbatim> 
 #endif
@@ -49,6 +49,7 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 \idx{LALCompareSnglInspiral()}
 \idx{LALClusterSnglInspiralTable()}
 \idx{LALTimeCutSingleInspiral()}
+\idx{LALalphaFCutSingleInspiral()}
 \idx{LALIfoScanSingleInspiral()}
 \idx{LALPlayTestSingleInspiral()}
 \idx{LALCreateTrigBank()}
@@ -92,6 +93,10 @@ window is returned.
 \texttt{LALTimeCutSingleInspiral()} takes in a linked list of single inspiral
 tables and returns only those which occur after the given \texttt{startTime}
 and before the \texttt{endTime}.
+
+\texttt{LALalphaFCutSingleInspiral()} takes in a linked list of single inspiral
+tables and returns only those triggers which have alphaF values below a
+specific alphaFcut. It is relevant for the BCV search only.
 
 \texttt{LALIfoScanSingleInspiral()} scans through a linked list of single
 inspiral tables and returns those which are from the requested \texttt{ifo}.
@@ -558,6 +563,65 @@ LALTimeCutSingleInspiral(
   RETURN (status);
 
 }  
+
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALalphaFCutSingleInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead,
+    REAL4                       alphaFcut
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+
+  INITSTATUS( status, "LALalphaFCutSingleInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+
+
+  /* Remove all the triggers with alphaF > alphaFcut */
+
+  thisEvent = *eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    if ( (tmpEvent->alpha * pow(tmpEvent->f_final,(2.0/3.0))) <= alphaFcut )
+    {
+      /* keep this template */
+      if ( ! inspiralEventList  )
+      {
+        inspiralEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      LALFree( tmpEvent );
+    }
+  }
+  *eventHead = inspiralEventList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}  
+
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
