@@ -4,18 +4,26 @@ noinst_LIBRARIES = liblal.a
 VCREATEC = \
         I2CreateVector.c I4CreateVector.c \
         I8CreateVector.c \
+        U2CreateVector.c U4CreateVector.c \
+        U8CreateVector.c \
+        SCreateVector.c DCreateVector.c CreateVector.c \
         SCreateVector.c DCreateVector.c CreateVector.c \
         CCreateVector.c ZCreateVector.c CHARCreateVector.c 
 
 VDESTROYC = \
         I2DestroyVector.c I4DestroyVector.c \
         I8DestroyVector.c \
+        U2DestroyVector.c U4DestroyVector.c \
+        U8DestroyVector.c \
         SDestroyVector.c DDestroyVector.c DestroyVector.c \
         CDestroyVector.c ZDestroyVector.c CHARDestroyVector.c 
 
 VSCREATEC = \
         I2CreateVectorSequence.c I4CreateVectorSequence.c \
         I8CreateVectorSequence.c \
+        U2CreateVectorSequence.c U4CreateVectorSequence.c \
+        U8CreateVectorSequence.c \
+        SCreateVectorSequence.c DCreateVectorSequence.c \
         SCreateVectorSequence.c DCreateVectorSequence.c \
         CreateVectorSequence.c \
         CCreateVectorSequence.c ZCreateVectorSequence.c \
@@ -24,6 +32,8 @@ VSCREATEC = \
 VSDESTROYC = \
         I2DestroyVectorSequence.c I4DestroyVectorSequence.c \
         I8DestroyVectorSequence.c \
+        U2DestroyVectorSequence.c U4DestroyVectorSequence.c \
+        U8DestroyVectorSequence.c \
         SDestroyVectorSequence.c DDestroyVectorSequence.c \
         DestroyVectorSequence.c \
         CDestroyVectorSequence.c ZDestroyVectorSequence.c \
@@ -38,7 +48,7 @@ EXTRA_DIST = \
 LIBLAL = $(top_srcdir)/lib/liblal.a
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 
-TYPECODES = Z C D S I2 I4 I8 CHAR ""
+TYPECODES = Z C D S I2 I4 I8 U2 U4 U8 CHAR ""
 
 .PHONY: liblal.a
 liblal.a: $(liblal_a_OBJECTS) $(liblal_a_DEPENDENCIES)

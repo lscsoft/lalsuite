@@ -86,29 +86,35 @@ NRCSID (SEQFACTORIESH, "$Id$");
 #define DESTROYVECSEQ_MSGEDPTR "(*seq)->data == NULL" /* EDPTR */
 
 typedef struct tagCreateVectorSequenceIn {
-  INT4 length;
-  INT4 vectorLength;
+  UINT4 length;
+  UINT4 vectorLength;
 } CreateVectorSequenceIn;
 
 /*
  * 9. Functions Declarations (i.e., prototypes).
  */
 
-void CreateSequence(Status *, REAL4Sequence **, INT4);
-void CHARCreateSequence(Status *, CHARSequence **, INT4);
-void I2CreateSequence(Status *, INT2Sequence **, INT4);
-void I4CreateSequence(Status *, INT4Sequence **, INT4);
-void I8CreateSequence(Status *, INT8Sequence **, INT4);
-void SCreateSequence(Status *, REAL4Sequence **, INT4);
-void DCreateSequence(Status *, REAL8Sequence **, INT4);
-void CCreateSequence(Status *, COMPLEX8Sequence **, INT4);
-void ZCreateSequence(Status *, COMPLEX16Sequence **, INT4);
+void CreateSequence(Status *, REAL4Sequence **, UINT4);
+void CHARCreateSequence(Status *, CHARSequence **, UINT4);
+void I2CreateSequence(Status *, INT2Sequence **, UINT4);
+void I4CreateSequence(Status *, INT4Sequence **, UINT4);
+void I8CreateSequence(Status *, INT8Sequence **, UINT4);
+void U2CreateSequence(Status *, UINT2Sequence **, UINT4);
+void U4CreateSequence(Status *, UINT4Sequence **, UINT4);
+void U8CreateSequence(Status *, UINT8Sequence **, UINT4);
+void SCreateSequence(Status *, REAL4Sequence **, UINT4);
+void DCreateSequence(Status *, REAL8Sequence **, UINT4);
+void CCreateSequence(Status *, COMPLEX8Sequence **, UINT4);
+void ZCreateSequence(Status *, COMPLEX16Sequence **, UINT4);
 
 void DestroySequence(Status *, REAL4Sequence **);
 void CHARDestroySequence(Status *, CHARSequence **);
 void I2DestroySequence(Status *, INT2Sequence **);
 void I4DestroySequence(Status *, INT4Sequence **);
 void I8DestroySequence(Status *, INT8Sequence **);
+void U2DestroySequence(Status *, UINT2Sequence **);
+void U4DestroySequence(Status *, UINT4Sequence **);
+void U8DestroySequence(Status *, UINT8Sequence **);
 void SDestroySequence(Status *, REAL4Sequence **);
 void DDestroySequence(Status *, REAL8Sequence **);
 void CDestroySequence(Status *, COMPLEX8Sequence **);
@@ -128,6 +134,15 @@ void I4CreateVectorSequence(Status *,
 			     CreateVectorSequenceIn *);
 void I8CreateVectorSequence(Status *, 
 			     INT8VectorSequence **,
+			     CreateVectorSequenceIn *);
+void U2CreateVectorSequence(Status *, 
+			     UINT2VectorSequence **,
+			     CreateVectorSequenceIn *);
+void U4CreateVectorSequence(Status *, 
+			     UINT4VectorSequence **,
+			     CreateVectorSequenceIn *);
+void U8CreateVectorSequence(Status *, 
+			     UINT8VectorSequence **,
 			     CreateVectorSequenceIn *);
 void SCreateVectorSequence(Status *, 
 			     REAL4VectorSequence **,
@@ -152,6 +167,12 @@ void I4DestroyVectorSequence(Status *,
 			     INT4VectorSequence **);
 void I8DestroyVectorSequence(Status *, 
 			     INT8VectorSequence **);
+void U2DestroyVectorSequence(Status *, 
+			     UINT2VectorSequence **);
+void U4DestroyVectorSequence(Status *, 
+			     UINT4VectorSequence **);
+void U8DestroyVectorSequence(Status *, 
+			     UINT8VectorSequence **);
 void SDestroyVectorSequence(Status *, 
 			     REAL4VectorSequence **);
 void DDestroyVectorSequence(Status *, 

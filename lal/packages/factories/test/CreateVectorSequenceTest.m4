@@ -3,6 +3,9 @@ dnl To create the c-source for the typecode x test program, execute
 dnl     m4 -DTYPECODE=x cvt.m4
 dnl $Id$
 dnl $Log$
+dnl Revision 1.2  2000/02/26 21:18:11  jolien
+dnl Modified to accomodate new unsigned types
+dnl
 dnl Revision 1.1  2000/02/16 01:58:29  jolien
 dnl Initial entry
 dnl
@@ -14,6 +17,9 @@ ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
 ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
 ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
 ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
+ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
+ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
+ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`STYPE',`format(`%sVectorSequence',TYPE)')

@@ -20,6 +20,18 @@ noinst_PROGRAMS = \
 	I8CreateVectorTest \
 	I8DestroyVectorSequenceTest \
 	I8DestroyVectorTest \
+	U2CreateVectorSequenceTest \
+	U2CreateVectorTest \
+	U2DestroyVectorSequenceTest \
+	U2DestroyVectorTest \
+	U4CreateVectorSequenceTest \
+	U4CreateVectorTest \
+	U4DestroyVectorSequenceTest \
+	U4DestroyVectorTest \
+	U8CreateVectorSequenceTest \
+	U8CreateVectorTest \
+	U8DestroyVectorSequenceTest \
+	U8DestroyVectorTest \
 	CCreateVectorSequenceTest \
 	CCreateVectorTest \
 	CDestroyVectorSequenceTest \
@@ -57,6 +69,18 @@ I8CreateVectorSequenceTest_SOURCES = I8CreateVectorSequenceTest.c
 I8CreateVectorTest_SOURCES = I8CreateVectorTest.c
 I8DestroyVectorSequenceTest_SOURCES = I8DestroyVectorSequenceTest.c
 I8DestroyVectorTest_SOURCES = I8DestroyVectorTest.c
+U2CreateVectorSequenceTest_SOURCES = U2CreateVectorSequenceTest.c
+U2CreateVectorTest_SOURCES = U2CreateVectorTest.c
+U2DestroyVectorSequenceTest_SOURCES = U2DestroyVectorSequenceTest.c
+U2DestroyVectorTest_SOURCES = U2DestroyVectorTest.c
+U4CreateVectorSequenceTest_SOURCES = U4CreateVectorSequenceTest.c
+U4CreateVectorTest_SOURCES = U4CreateVectorTest.c
+U4DestroyVectorSequenceTest_SOURCES = U4DestroyVectorSequenceTest.c
+U4DestroyVectorTest_SOURCES = U4DestroyVectorTest.c
+U8CreateVectorSequenceTest_SOURCES = U8CreateVectorSequenceTest.c
+U8CreateVectorTest_SOURCES = U8CreateVectorTest.c
+U8DestroyVectorSequenceTest_SOURCES = U8DestroyVectorSequenceTest.c
+U8DestroyVectorTest_SOURCES = U8DestroyVectorTest.c
 CCreateVectorSequenceTest_SOURCES = CCreateVectorSequenceTest.c
 CCreateVectorTest_SOURCES = CCreateVectorTest.c
 CDestroyVectorSequenceTest_SOURCES = CDestroyVectorSequenceTest.c
@@ -94,6 +118,18 @@ I8CreateVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
 I8CreateVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
 I8DestroyVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
 I8DestroyVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U2CreateVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U2CreateVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U2DestroyVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U2DestroyVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U4CreateVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U4CreateVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U4DestroyVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U4DestroyVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U8CreateVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U8CreateVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
+U8DestroyVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
+U8DestroyVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
 CCreateVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
 CCreateVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
 CDestroyVectorSequenceTest_LDADD = $(top_srcdir)/lib/liblal.a
@@ -113,7 +149,7 @@ ZDestroyVectorTest_LDADD = $(top_srcdir)/lib/liblal.a
 
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 TESTS = $(PROGRAMS)
-TYPECODES = Z C D S I2 I4 I8 CHAR ""
+TYPECODES = Z C D S I2 I4 I8 U2 U4 U8 CHAR ""
 EXTRA_DIST = \
         CreateVectorTest.m4 DestroyVectorTest.m4 \
         CreateVectorSequenceTest.m4 DestroyVectorSequenceTest.m4

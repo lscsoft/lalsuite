@@ -9,6 +9,9 @@ ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')')
 ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')')
 ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')')
 ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')')
+ifelse(TYPECODE,`U2',`define(`TYPE',`UINT2')')
+ifelse(TYPECODE,`U4',`define(`TYPE',`UINT4')')
+ifelse(TYPECODE,`U8',`define(`TYPE',`UINT8')')
 ifelse(TYPECODE,`CHAR',`define(`TYPE',`CHAR')')
 ifelse(TYPECODE,`',`define(`TYPE',`REAL4')')
 define(`VTYPE',`format(`%sVector',TYPE)')
@@ -29,7 +32,7 @@ define(`PROGFILE',`format(`%s.c',PROG)')
  * PROG
  * 
  * SYNOPSIS 
- * INT4 PROG ( Status *,  VTYPE **vector );
+ * void PROG ( Status *,  VTYPE **vector );
  * 
  * DESCRIPTION 
  * Returns to system storage allocated by CPROG
