@@ -144,7 +144,7 @@ void LALSHeapSort(LALStatus      *stat,
 
 /* <lalVerbatim file="HeapSortD"> */
 void LALSHeapIndex(LALStatus      *stat,
-		INT4Vector  *index,
+		INT4Vector  *idx,
 		REAL4Vector *vector)
 { /* </lalVerbatim> */
   INT4 i;
@@ -158,21 +158,21 @@ void LALSHeapIndex(LALStatus      *stat,
 
   INITSTATUS(stat,"LALSHeapIndex",HEAPSORTC);
 
-  /* Make sure all pointers are valid, and the index vector is of the
+  /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(index,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(idx,stat,SORT_ENUL,SORT_MSGENUL);
   ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(index->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==index->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(idx->data,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(vector->length==idx->length,stat,SORT_ELEN,SORT_MSGELEN);
 
   n=vector->length;
   data=vector->data;
 
-  /* Initialize the index vector. */
-  for(i=0,indx=index->data;i<n;i++,indx++)
+  /* Initialize the idx vector. */
+  for(i=0,indx=idx->data;i<n;i++,indx++)
     *indx=i;
-  indx=index->data;
+  indx=idx->data;
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
@@ -224,7 +224,7 @@ void LALSHeapRank(LALStatus      *stat,
   INT4       i;
   INT4       *indx;
   INT4       *rnk;
-  INT4Vector *index=NULL;
+  INT4Vector *idx=NULL;
 
   INITSTATUS(stat,"LALSHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
@@ -237,12 +237,12 @@ void LALSHeapRank(LALStatus      *stat,
   ASSERT(rank->data,stat,SORT_ENUL,SORT_MSGENUL);
   ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
 
-  /* Make the temporary index vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&index,vector->length),stat);
-  TRY(LALSHeapIndex(stat->statusPtr,index,vector),stat);
+  /* Make the temporary idx vector. */
+  TRY(LALI4CreateVector(stat->statusPtr,&idx,vector->length),stat);
+  TRY(LALSHeapIndex(stat->statusPtr,idx,vector),stat);
 
   /* Invert to get the rank vector. */
-  indx=index->data;
+  indx=idx->data;
   rnk=rank->data;
   for(i=0;i<(int)vector->length;i++)
   {
@@ -250,7 +250,7 @@ void LALSHeapRank(LALStatus      *stat,
   }
 
   /* Free memory and exit. */
-  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
@@ -317,7 +317,7 @@ void LALDHeapSort(LALStatus      *stat,
 
 /* <lalVerbatim file="HeapSortD"> */
 void LALDHeapIndex(LALStatus      *stat,
-		INT4Vector  *index,
+		INT4Vector  *idx,
 		REAL8Vector *vector)
 { /* </lalVerbatim> */
   INT4 i;
@@ -331,23 +331,23 @@ void LALDHeapIndex(LALStatus      *stat,
 
   INITSTATUS(stat,"LALDHeapIndex",HEAPSORTC);
 
-  /* Make sure all pointers are valid, and the index vector is of the
+  /* Make sure all pointers are valid, and the idx vector is of the
      same length as the data vector. */
   ASSERT(vector,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(index,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(idx,stat,SORT_ENUL,SORT_MSGENUL);
   ASSERT(vector->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(index->data,stat,SORT_ENUL,SORT_MSGENUL);
-  ASSERT(vector->length==index->length,stat,SORT_ELEN,SORT_MSGELEN);
+  ASSERT(idx->data,stat,SORT_ENUL,SORT_MSGENUL);
+  ASSERT(vector->length==idx->length,stat,SORT_ELEN,SORT_MSGELEN);
 
   n=vector->length;
   data=vector->data;
 
-  /* Initialize the index vector. */
-  for(i=0,indx=index->data;i<n;i++,indx++)
+  /* Initialize the idx vector. */
+  for(i=0,indx=idx->data;i<n;i++,indx++)
   {
     *indx=i;
   }
-  indx=index->data;
+  indx=idx->data;
 
   /* A vector of length 0 or 1 is already sorted. */
   if(n<2)
@@ -399,7 +399,7 @@ void LALDHeapRank(LALStatus      *stat,
   INT4       i;
   INT4       *indx;
   INT4       *rnk;
-  INT4Vector *index=NULL;
+  INT4Vector *idx=NULL;
 
   INITSTATUS(stat,"LALDHeapRank",HEAPSORTC);
   ATTATCHSTATUSPTR(stat);
@@ -412,18 +412,18 @@ void LALDHeapRank(LALStatus      *stat,
   ASSERT(rank->data,stat,SORT_ENUL,SORT_MSGENUL);
   ASSERT(vector->length==rank->length,stat,SORT_ELEN,SORT_MSGELEN);
 
-  /* Make the temporary index vector. */
-  TRY(LALI4CreateVector(stat->statusPtr,&index,vector->length),stat);
-  TRY(LALDHeapIndex(stat->statusPtr,index,vector),stat);
+  /* Make the temporary idx vector. */
+  TRY(LALI4CreateVector(stat->statusPtr,&idx,vector->length),stat);
+  TRY(LALDHeapIndex(stat->statusPtr,idx,vector),stat);
 
   /* Invert to get the rank vector. */
-  indx=index->data;
+  indx=idx->data;
   rnk=rank->data;
   for(i=0;i<(int)vector->length;i++)
     rnk[indx[i]]=i;
 
   /* Free memory and exit. */
-  TRY(LALI4DestroyVector(stat->statusPtr,&index),stat);
+  TRY(LALI4DestroyVector(stat->statusPtr,&idx),stat);
   DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
