@@ -68,7 +68,7 @@ Defines the astrophysical parameters of the pulsar.
 </lalLaTeX> */
 /* <lalVerbatim> */
 typedef struct {
-  LIGOTimeGPS tRef;	/* reference GPS time of pulsar parameters */
+  LIGOTimeGPS tRef;	/* reference time of pulsar parameters (in SSB!) */
   SkyPosition position;	/* source location (in radians) */
   REAL4 psi;            /* polarization angle (radians) at TRef */
   REAL4 aPlus, aCross;  /* polarization amplitudes at TRef */
@@ -86,7 +86,7 @@ Defines the astrophysical parameters of the binary orbit of the pulsar.
 </lalLaTeX> */
 /* <lalVerbatim> */
 typedef struct {
-  LIGOTimeGPS orbitEpoch; /* time of periapsis passage */
+  LIGOTimeGPS orbitEpoch; /* time of periapsis passage (in SSB) */
   REAL8 omega;            /* argument of periapsis (radians) */
   REAL8 rPeriNorm;        /* projected, normalized periapsis (s) */
   REAL8 oneMinusEcc;      /* 1 - orbital eccentricity */
