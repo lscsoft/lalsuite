@@ -490,7 +490,7 @@ int main(int argc,char *argv[]){
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
-#if (0)
+#if (1)
 	/* Normalize data according to the GEO SFT specifications */
 	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
 #endif
