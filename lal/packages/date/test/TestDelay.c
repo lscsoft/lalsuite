@@ -59,7 +59,7 @@ NRCSID( LALTESTDELAYC, "$Id$" );
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
 
 
-int lalDebugLevel = LALALLDBG;
+int lalDebugLevel = 0;
 
 int main( void )
 {
