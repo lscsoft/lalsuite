@@ -53,6 +53,292 @@ static int getline(char *line, int max, FILE *fpin)
 }
 
 
+/*
+ * Command-line options
+ */
+
+struct options_t {
+	int verbose;
+	int playground;
+	int noplayground;
+	int sort;
+
+	/* confidence threshold */
+	BOOLEAN maxConfidenceFlag;
+	REAL4 maxConfidence;
+
+	/* time window */
+	BOOLEAN trigStartTimeFlag;
+	INT4 trigStartTime;
+	BOOLEAN trigStopTimeFlag;
+	INT4 trigStopTime;
+
+	/* duration thresholds */
+	BOOLEAN minDurationFlag;
+	REAL4 minDuration;
+	BOOLEAN maxDurationFlag;
+	REAL4 maxDuration;
+
+	/* central_freq threshold */
+	BOOLEAN maxCentralfreqFlag;
+	REAL4 maxCentralfreq;
+	BOOLEAN minCentralfreqFlag;
+	REAL4 minCentralfreq;
+
+	/* bandwidth threshold */
+	BOOLEAN maxBandwidthFlag;
+	REAL4 maxBandwidth;
+
+	/* amplitude threshold */
+	BOOLEAN maxAmplitudeFlag;
+	REAL4 maxAmplitude;
+	BOOLEAN minAmplitudeFlag;
+	REAL4 minAmplitude;
+
+	/* snr threshold */
+	BOOLEAN maxSnrFlag;
+	REAL4 maxSnr;
+	BOOLEAN minSnrFlag;
+	REAL4 minSnr;
+};
+
+
+/*
+ * Set defaults for command-line options.
+ * (ANSI C structure initialization sucks)
+ */
+
+static void set_option_defaults(struct options_t *options)
+{
+	options->verbose = FALSE;
+	options->playground = FALSE;
+	options->noplayground = FALSE;
+	options->sort = FALSE;
+
+	options->maxConfidenceFlag = FALSE;
+	options->maxConfidence = 0.0;
+
+	options->trigStartTimeFlag = FALSE;
+	options->trigStartTime = 0;
+	options->trigStopTimeFlag = FALSE;
+	options->trigStopTime = 0;
+
+	options->minDurationFlag = FALSE;
+	options->minDuration = 0.0;
+	options->maxDurationFlag = FALSE;
+	options->maxDuration = 0.0;
+
+	options->maxCentralfreqFlag = FALSE;
+	options->maxCentralfreq = 0.0;
+	options->minCentralfreqFlag = FALSE;
+	options->minCentralfreq = 0.0;
+
+	options->maxBandwidthFlag = FALSE;
+	options->maxBandwidth = 0.0;
+
+	options->maxAmplitudeFlag = FALSE;
+	options->maxAmplitude = 0.0;
+	options->minAmplitudeFlag = FALSE;
+	options->minAmplitude = 0.0;
+
+	options->maxSnrFlag = FALSE;
+	options->maxSnr = 0.0;
+	options->minSnrFlag = FALSE;
+	options->minSnr = 0.0;
+}
+
+
+/*
+ * Parse command line arguments.
+ */
+
+static void parse_command_line(int argc, char **argv, struct options_t *options, char **infile, char **outfile)
+{
+	struct option long_options[] = {
+		/* these options set a flag */
+		{"verbose",         no_argument,        &options->verbose, TRUE},
+		/* parameters which determine the output xml file */
+		{"input",           required_argument,  NULL,  'a'},
+		{"outfile",         required_argument,  NULL,  'c'},
+		{"max-confidence",  required_argument,  NULL,  'd'},
+		{"min-duration",    required_argument,  NULL,  'e'},
+		{"max-duration",    required_argument,  NULL,  'f'},
+		{"min-centralfreq", required_argument,  NULL,  'g'},
+		{"max-centralfreq", required_argument,  NULL,  'h'},
+		{"max-bandwidth",   required_argument,  NULL,  'i'},
+		{"min-amplitude",   required_argument,  NULL,  'j'},
+		{"max-amplitude",   required_argument,  NULL,  'k'},
+		{"min-snr",         required_argument,  NULL,  'l'},
+		{"max-snr",         required_argument,  NULL,  'm'},
+		{"trig-start-time", required_argument,  NULL,  'q'},
+		{"trig-stop-time",  required_argument,  NULL,  'r'},
+		{"playground",      no_argument,        &options->playground, TRUE},
+		{"noplayground",    no_argument,        &options->noplayground, TRUE},
+		{"help",            no_argument,        NULL,  'o'}, 
+		{"sort",            no_argument,        &options->sort,  TRUE},
+		{0, 0, 0, 0}
+	};
+	int c;
+	int option_index;
+
+	while(1) {
+		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
+
+		/* detect the end of the options */
+		if(c == -1)
+			break;
+
+		switch(c) {
+			case 0:
+			/* if this option set a flag, do nothing else now */
+			if ( long_options[option_index].flag != 0 )
+				break;
+			else {
+				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
+				exit( 1 );
+			}
+			break;
+
+			case 'a':
+			/*
+			 * file containing list of xml files to use
+			 */
+			*infile = optarg;
+			break;	
+
+			case 'c':
+			/*
+			 * output file name
+			 */
+			*outfile = optarg;
+			break;
+
+			case 'd':
+			/*
+			 * the confidence must be smaller than this number
+			 */
+			options->maxConfidenceFlag = TRUE;
+			options->maxConfidence = atof(optarg);
+			break;
+
+			case 'e':
+			/*
+			 * only events with duration greater than this are
+			 * selected
+			 */
+			options->minDurationFlag = TRUE;
+			options->minDuration = atof(optarg);
+			break;
+
+			case 'f':
+			/*
+			 * only events with duration less than this are
+			 * selected
+			 */
+			options->maxDurationFlag = TRUE;
+			options->maxDuration = atof(optarg);
+			break;
+
+			case 'g':
+			/*
+			 * only events with centralfreq greater than this
+			 * are selected
+			 */
+			options->minCentralfreqFlag = TRUE;
+			options->minCentralfreq = atof(optarg);
+			break;
+
+			case 'h':
+			/*
+			 * only events with centralfreq less than this are
+			 * selected
+			 */
+			options->maxCentralfreqFlag = TRUE;
+			options->maxCentralfreq = atof(optarg);
+			break;
+
+			case 'i': 
+			/*
+			 * only events with bandwidth less than this are
+			 * selected
+			 */
+			options->maxBandwidthFlag = TRUE;
+			options->maxBandwidth = atof(optarg);
+			break;
+    
+			case 'j':
+			/*
+			 * only events with amp. more than this are
+			 * selected
+			 */
+			options->minAmplitudeFlag = TRUE;
+			options->minAmplitude = atof(optarg);
+			break;
+
+			case 'k':
+			/*
+			 * only events with amp. less than this are
+			 * selected
+			 */
+			options->maxAmplitudeFlag = TRUE;
+			options->maxAmplitude = atof(optarg);
+			break;
+
+			case 'l':
+			/*
+			 * only events with snr more than this are selected
+			 */
+			options->minSnrFlag = TRUE;
+			options->minSnr = atof(optarg);
+			break;
+
+			case 'm':
+			/*
+			 * only events with snr less than this are selected
+			 */
+			options->maxSnrFlag = TRUE;
+			options->maxSnr = atof(optarg);
+			break;
+
+			case 'r':
+			/*
+			 * only events with time before this are selected
+			 */
+			options->trigStopTimeFlag = TRUE;
+			options->trigStopTime = atoi(optarg);
+			break;
+
+			case 'o':
+			/*
+			 * print help
+			 */
+			LALPrintError(USAGE, *argv);
+			exit(SNGLBURSTREADER_EARG);
+
+			default:
+			exit(SNGLBURSTREADER_EARG);
+		}   
+	}
+
+	if(optind < argc) {
+		fprintf(stderr, "extraneous command line arguments:\n");
+		while(optind < argc)
+			fprintf(stderr, "%s\n", argv[optind++]);
+		exit(SNGLBURSTREADER_EARG);
+	}
+
+	if(!*infile) {
+		LALPrintError( "Must supply an xml file to parse\n" );
+		exit(SNGLBURSTREADER_EARG);
+	}
+
+	if(!*outfile) {
+		LALPrintError( "Outfile name must be specified\n" );
+		exit(SNGLBURSTREADER_EARG);
+	}
+}
+
+
 /****************************************************************************
  * 
  * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
@@ -73,6 +359,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
     return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
+
 /****************************************************************************
  *
  * The main program
@@ -81,353 +368,79 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 
 int main(int argc, char **argv)
 {
-    static LALStatus         stat;
-    FILE                     *fpin=NULL;
-    FILE                     *fpout=NULL;
-    INT4                     fileCounter=0;
-    BOOLEAN                  playground=FALSE;
-    BOOLEAN                  noplayground=FALSE;
-    INT4                     sort=FALSE;
-    INT4                     pass=TRUE;
+	static LALStatus         stat;
+	FILE                     *fpin=NULL;
+	FILE                     *fpout=NULL;
+	INT4                     fileCounter=0;
 
-    /*number of events*/
-    INT8                     numEvents;
+	/*number of events*/
+	INT8                     numEvents;
 
-    /* confidence threshold */
-    INT4                     maxConfidenceFlag=0;
-    REAL4                    maxConfidence=0.0;
-
-    /* time window */
-    INT4                     trigStartTimeFlag=0;
-    INT4                     trigStartTime=0;
-    INT4                     trigStopTimeFlag=0;
-    INT4                     trigStopTime=0;
-
-    /* duration thresholds */
-    INT4                     minDurationFlag=0;
-    REAL4                    minDuration=0.0;
-    INT4                     maxDurationFlag=0;
-    REAL4                    maxDuration=0.0;
-
-    /* central_freq threshold */
-    INT4                     maxCentralfreqFlag=0;
-    REAL4                    maxCentralfreq=0.0;
-    INT4                     minCentralfreqFlag=0;
-    REAL4                    minCentralfreq=0.0;
-
-    /* bandwidth threshold */ 
-    INT4                     maxBandwidthFlag=0;
-    REAL4                    maxBandwidth=0.0;
-
-    /* amplitude threshold */
-    INT4                     maxAmplitudeFlag=0;
-    REAL4                    maxAmplitude=0.0;
-    INT4                     minAmplitudeFlag=0;
-    REAL4                    minAmplitude=0.0;
-
-    /* snr threshold */
-    INT4                     maxSnrFlag=0;
-    REAL4                    maxSnr=0.0;                           
-    INT4                     minSnrFlag=0;
-    REAL4                    minSnr=0.0;         
-
-    /*searchsummary info */
-    SearchSummaryTable      *searchSummary=NULL;
-    INT4                    timeAnalyzed=0;
+	/*searchsummary info */
+	SearchSummaryTable      *searchSummary=NULL;
+	INT4                    timeAnalyzed=0;
 
 
-    CHAR                     inputfile[MAXSTR],line[MAXSTR];
+	CHAR                     line[MAXSTR];
 
-    CHAR                     *outfileName=NULL;
-    SnglBurstTable        *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
-    SnglBurstTable         burstEvent,*burstEventList=NULL,*outEventList=NULL;
-    MetadataTable             myTable;
-    LIGOLwXMLStream           xmlStream;
-
-    static int		      verbose_flag = 0;
-
-    /*******************************************************************
-     * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
-     *******************************************************************/
-   int c;
-    while (1)
-    {
-	/* getopt arguments */
-	static struct option long_options[] = 
-	{
-	    /* these options set a flag */
-	    {"verbose",         no_argument,	&verbose_flag, 1 },
- 	    /* parameters which determine the output xml file */
-	    {"input",		required_argument,  0,	'a'},
-	    {"outfile",		required_argument,  0,	'c'},
-	    {"max-confidence",	required_argument,  0,	'd'},
-	    {"min-duration",	required_argument,  0,	'e'},
-	    {"max-duration",	required_argument,  0,	'f'},
-            {"min-centralfreq", required_argument,  0,  'g'},
-	    {"max-centralfreq", required_argument,  0,  'h'},
-	    {"max-bandwidth",   required_argument,  0,  'i'},
-	    {"min-amplitude",   required_argument,  0,  'j'},
-	    {"max-amplitude",   required_argument,  0,  'k'},
-	    {"min-snr",         required_argument,  0,  'l'},
-	    {"max-snr",         required_argument,  0,  'm'},
-	    {"trig-start-time", required_argument,  0,  'q'},
-	    {"trig-stop-time",  required_argument,  0,  'r'},
-	    {"playground",	no_argument,        0,	'n'},
-	    {"noplayground",	no_argument,        0,	's'},
-	    {"help",		no_argument,	    0,	'o'}, 
-	    {"sort",		no_argument,	    0,	'p'},
-	    {0, 0, 0, 0}
-	};
-	/* getopt_long stores the option index here. */
-	int option_index = 0;
- 
-    	c = getopt_long ( argc, argv, "a:c:d:e:f:g:h:i:", 
-				long_options, &option_index );
-
-	/* detect the end of the options */
-	if ( c == - 1 )
-	    break;
-
-        switch ( c )
-	{
-	case 0:
-	    /* if this option set a flag, do nothing else now */
-	    if ( long_options[option_index].flag != 0 )
-	    {
-		break;
-	    }
-	    else
-	    {
-		fprintf( stderr, "error parsing option %s with argument %s\n",
-		    long_options[option_index].name, optarg );
-		exit( 1 );
-	    }
-	    break;
-
-	case 'a':
-	    /* file containing list of xml files to use */
-	    {
-		sprintf(inputfile,"%s",optarg);
-    	    }
-	    break;	
-	
-	case 'c':
-	    /* output file name */
-	    {
-		outfileName = optarg;
-	    }
-	    break;
-
-	case 'd':
-	    /* the confidence must be smaller than this number */
-	    {
-              maxConfidenceFlag = 1;
-              maxConfidence = atof( optarg );
-	    }
-	    break;
-
-	case 'e':
-	    /* only events with duration greater than this are selected */
-	    {
-              minDurationFlag = 1;
-              minDuration = atof( optarg );
-	    }
-	    break;
-    
-	case 'f':
-	    /* only events with duration less than this are selected */
-	    {
-              maxDurationFlag = 1;
-              maxDuration = atof( optarg );
-	    }
-	    break;
-
-	case 'g':
-	     /* only events with centralfreq greater than this are selected */
-	    {
-              minCentralfreqFlag = 1;
-              minCentralfreq = atof( optarg );
-	    }
-	    break;
-    
-	case 'h':
-	    /* only events with centralfreq less than this are selected */
-	    {
-              maxCentralfreqFlag = 1;
-              maxCentralfreq = atof( optarg );
-	    }
-	    break;
-
-	case 'i': 
-             /* only events with bandwidth less than this are selected */
-	    {
-              maxBandwidthFlag = 1;
-              maxBandwidth = atof( optarg );
-	    }
-	    break;
-    
-	case 'j':
-	    /* only events with amp. more than this are selected */
-	    {
-              minAmplitudeFlag = 1;
-              minAmplitude = atof( optarg );
-	    }
-	    break;
-
-	case 'k':
-	    /* only events with amp. less than this are selected */
-            {
-              maxAmplitudeFlag = 1;
-              maxAmplitude = atof( optarg );
-	    }
-	    break;
-
-        case 'l':
-            /* only events with snr more than this are selected */
-	    {
-              minSnrFlag = 1;
-              minSnr = atof( optarg );
-	    }
-	    break;
-
-	case 'm':
-	    /* only events with snr less than this are selected */
-            {
-              maxSnrFlag = 1;
-              maxSnr = atof( optarg );
-	    }
-	    break;
-   
-	case 'n':
-	    /* don't restrict to the playground data */
-	    {
-		playground = TRUE;
-	    }
-	    break;
-
-	case 's':
-	    /* don't restrict to the playground data */
-	    {
-		noplayground = TRUE;
-	    }
-	    break;
-    
-	case 'q':
-	    /* only events with time after this are selected */
-            {
-              trigStartTimeFlag = 1;
-              trigStartTime = atoi( optarg );
-	    }
-	    break;
-   
-	case 'r':
-	    /* only events with time before this are selected */
-            {
-              trigStopTimeFlag = 1;
-              trigStopTime = atoi( optarg );
-	    }
-	    break;
-   
-	case 'o':
-	    /* print help */
-	    {
-		LALPrintError( USAGE, *argv );
-		return SNGLBURSTREADER_EARG;
-	    }
-	    break;
-
-	    
-	case 'p':
-	    /* sort the events in time */
-	    {
-		sort = TRUE;
-	    }
-	    break;
-
-	    
-	default:
-	    {
-		return SNGLBURSTREADER_EARG;
-	    }
-	}   
-    }
-
-    if ( optind < argc )
-    {
-	fprintf( stderr, "extraneous command line arguments:\n" );
-	    while ( optind < argc )
-	{
-	    fprintf ( stderr, "%s\n", argv[optind++] );
-	}
-	exit( 1 );
-    }	  
-
-    if (inputfile == NULL)
-    {
-        LALPrintError( "Must supply an xml file to parse\n" );
-        return SNGLBURSTREADER_EARG;
-    }
-
-    if ( ! outfileName )
-    {
-    	LALPrintError( "Outfile name must be specified\n" );
-	return SNGLBURSTREADER_EARG;
-    }
+	CHAR                     *infile=NULL,*outfile=NULL;
+	SnglBurstTable        *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
+	SnglBurstTable         burstEvent,*burstEventList=NULL,*outEventList=NULL;
+	MetadataTable             myTable;
+	LIGOLwXMLStream           xmlStream;
+	struct options_t options;
 
 
-    /*******************************************************************
-    * END PARSE ARGUMENTS                                              *
-    *******************************************************************/
+	/*******************************************************************
+	* initialize things
+	*******************************************************************/
 
+	set_option_defaults(&options);
+	parse_command_line(argc, argv, &options, &infile, &outfile);
 
-    /*******************************************************************
-    * initialize things
-    *******************************************************************/
-    lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "1" );
-    memset( &burstEvent, 0, sizeof(SnglBurstTable) );
-    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    xmlStream.fp = NULL;
-    numEvents = 0;
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level( "1" );
+	memset( &burstEvent, 0, sizeof(SnglBurstTable) );
+	memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+	xmlStream.fp = NULL;
+	numEvents = 0;
     
     /*****************************************************************
      * OPEN FILE WITH LIST OF XML FILES (one file per line)
      ****************************************************************/
-    if ( !(fpin = fopen(inputfile,"r")) ){
+    if ( !(fpin = fopen(infile,"r")) ){
         LALPrintError("Could not open input file\n");
     }
 
     /*****************************************************************
      * loop over the xml files
      *****************************************************************/
-    currentEvent = tmpEvent = burstEventList = NULL;
-    if (verbose_flag)
-      {
-	fpout = fopen("./EPjobstartstop.dat","w");
-	fprintf(fpout,"#This file contains the start & stop times of all jobs that succeded\n" );
-      }
-    while ( getline(line, MAXSTR, fpin) ){
+	currentEvent = tmpEvent = burstEventList = NULL;
+	if (options.verbose) {
+		fpout = fopen("./EPjobstartstop.dat","w");
+		fprintf(fpout,"#This file contains the start & stop times of all jobs that succeded\n" );
+	}
+    while ( getline(line, MAXSTR, fpin) ) {
 
       INT4 tmpStartTime=0,tmpEndTime=0;
 
       fileCounter++;
-      if (verbose_flag)
-      {
-        fprintf(stderr,"Working on file %s\n", line);
-      }
+		if (options.verbose)
+			fprintf(stderr,"Working on file %s\n", line);
 
       /*Read the searchsummary table */
       SearchSummaryTableFromLIGOLw( &searchSummary, line);
       tmpStartTime=searchSummary->in_start_time.gpsSeconds;
       tmpEndTime=searchSummary->in_end_time.gpsSeconds;
-      /*write out the start and stop time */
-      if (verbose_flag)
-	{
-	  fprintf(fpout,"%d  %d  %d\n",tmpStartTime,tmpEndTime,tmpEndTime-tmpStartTime );
-	
-	  /*total time analysed */
-	  timeAnalyzed += (tmpEndTime-tmpStartTime);
-	}
+
+		/*write out the start and stop time */
+		if (options.verbose) {
+			fprintf(fpout,"%d  %d  %d\n",tmpStartTime,tmpEndTime,tmpEndTime-tmpStartTime );
+
+			/*total time analysed */
+			timeAnalyzed += (tmpEndTime-tmpStartTime);
+		}
+
       while (searchSummary)
 	{
 	  SearchSummaryTable *thisEvent;
@@ -460,108 +473,99 @@ int main(int argc, char **argv)
     }
 
     /* print out the total time analysed */
-      if (verbose_flag)
-	{
-	  fprintf(fpout,"#Total time analysed= %d\n",timeAnalyzed);
-	  fclose(fpout);
+	if (options.verbose) {
+		fprintf(fpout,"#Total time analysed= %d\n",timeAnalyzed);
+		fclose(fpout);
 	}
-    /****************************************************************
-     * do any requested cuts
-     ***************************************************************/
-    tmpEvent = burstEventList;
-    while ( tmpEvent ){
 
-      /* check if in after specified time window */
-      if( trigStartTimeFlag && !(tmpEvent->start_time.gpsSeconds > trigStartTime) )
-        pass = FALSE;
+	/****************************************************************
+	* do any requested cuts
+	***************************************************************/
+	tmpEvent = burstEventList;
+	while(tmpEvent) {
+		BOOLEAN pass = TRUE;
 
-      /* check if in before specified end time */
-      if( trigStopTimeFlag && !(tmpEvent->start_time.gpsSeconds < trigStopTime) )
-        pass = FALSE;
+		/* check if in after specified time window */
+		if( options.trigStartTimeFlag && !(tmpEvent->start_time.gpsSeconds > options.trigStartTime) )
+			pass = FALSE;
 
-      /* check the confidence */
-      if( maxConfidenceFlag && !(tmpEvent->confidence < maxConfidence) )
-        pass = FALSE;
+		/* check if in before specified end time */
+		if( options.trigStopTimeFlag && !(tmpEvent->start_time.gpsSeconds < options.trigStopTime) )
+			pass = FALSE;
 
-      /* check min duration */
-      if( minDurationFlag && !(tmpEvent->duration > minDuration) )
-        pass = FALSE;
+		/* check the confidence */
+		if( options.maxConfidenceFlag && !(tmpEvent->confidence < options.maxConfidence) )
+			pass = FALSE;
 
-      /* check max duration */
-      if( maxDurationFlag && !(tmpEvent->duration < maxDuration) )
-        pass = FALSE;
+		/* check min duration */
+		if( options.minDurationFlag && !(tmpEvent->duration > options.minDuration) )
+			pass = FALSE;
 
-      /* check min centralfreq */
-      if( minCentralfreqFlag && !(tmpEvent->central_freq > minCentralfreq) )
-        pass = FALSE;
+		/* check max duration */
+		if( options.maxDurationFlag && !(tmpEvent->duration < options.maxDuration) )
+			pass = FALSE;
 
-      /* check max centralfreq */
-      if( maxCentralfreqFlag && !(tmpEvent->central_freq < maxCentralfreq) )
-        pass = FALSE;
+		/* check min centralfreq */
+		if( options.minCentralfreqFlag && !(tmpEvent->central_freq > options.minCentralfreq) )
+			pass = FALSE;
 
-      /* check max bandwidth */
-      if( maxBandwidthFlag && !(tmpEvent->bandwidth < maxBandwidth) )
-        pass = FALSE;
+		/* check max centralfreq */
+		if( options.maxCentralfreqFlag && !(tmpEvent->central_freq < options.maxCentralfreq) )
+			pass = FALSE;
 
-      /* check min amplitude */
-      if( minAmplitudeFlag && !(tmpEvent->amplitude > minAmplitude) )
-        pass = FALSE;
+		/* check max bandwidth */
+		if( options.maxBandwidthFlag && !(tmpEvent->bandwidth < options.maxBandwidth) )
+			pass = FALSE;
 
-      /* check max amplitude */
-      if( maxAmplitudeFlag && !(tmpEvent->amplitude < maxAmplitude) )
-        pass = FALSE;
+		/* check min amplitude */
+		if( options.minAmplitudeFlag && !(tmpEvent->amplitude > options.minAmplitude) )
+			pass = FALSE;
 
-      /* check min snr */
-      if( minSnrFlag && !(tmpEvent->snr > minSnr) )
-        pass = FALSE;
+		/* check max amplitude */
+		if( options.maxAmplitudeFlag && !(tmpEvent->amplitude < options.maxAmplitude) )
+			pass = FALSE;
 
-      /* check max snr */
-      if( maxSnrFlag && !(tmpEvent->snr < maxSnr) )
-        pass = FALSE;
+		/* check min snr */
+		if( options.minSnrFlag && !(tmpEvent->snr > options.minSnr) )
+			pass = FALSE;
 
-      /* check if trigger starts in playground */
-      if ( playground && !(isPlayground(tmpEvent->peak_time.gpsSeconds,
-              tmpEvent->peak_time.gpsSeconds)) )
-        pass = FALSE;
+		/* check max snr */
+		if( options.maxSnrFlag && !(tmpEvent->snr < options.maxSnr) )
+			pass = FALSE;
 
-      if ( noplayground && (isPlayground(tmpEvent->peak_time.gpsSeconds,
-              tmpEvent->peak_time.gpsSeconds))  )
-	pass = FALSE;
+		/* check if trigger starts in playground */
+		if ( options.playground && !(isPlayground(tmpEvent->peak_time.gpsSeconds, tmpEvent->peak_time.gpsSeconds)) )
+			pass = FALSE;
+
+		if ( options.noplayground && (isPlayground(tmpEvent->peak_time.gpsSeconds, tmpEvent->peak_time.gpsSeconds))  )
+			pass = FALSE;
 	
-      /* set it for output if it passes */  
-      if ( pass )
-      {
-        if (outEventList == NULL)
-        {
-          outEventList = currentEvent = (SnglBurstTable *)
-            LALCalloc(1, sizeof(SnglBurstTable) );
-          prevEvent = currentEvent;
-        }
-        else 
-        {
-          currentEvent = (SnglBurstTable *)
-            LALCalloc(1, sizeof(SnglBurstTable) );
-          prevEvent->next = currentEvent;
-        }
-        memcpy( currentEvent, tmpEvent, sizeof(SnglBurstTable));
-        prevEvent = currentEvent;
-        currentEvent = currentEvent->next = NULL;
-      }
-      tmpEvent = tmpEvent->next;
-      pass = TRUE;
-    }
-    
-    tmpEvent = outEventList;
-    while( tmpEvent )
-      {
-	tmpEvent = tmpEvent->next;
-	numEvents++;
-      }
+		/* set it for output if it passes */  
+		if ( pass ) {
+			if (outEventList == NULL) {
+				outEventList = currentEvent = (SnglBurstTable *)
+				LALCalloc(1, sizeof(SnglBurstTable) );
+				prevEvent = currentEvent;
+			} else {
+				currentEvent = (SnglBurstTable *)
+				LALCalloc(1, sizeof(SnglBurstTable) );
+				prevEvent->next = currentEvent;
+			}
+			memcpy( currentEvent, tmpEvent, sizeof(SnglBurstTable));
+			prevEvent = currentEvent;
+			currentEvent = currentEvent->next = NULL;
+		}
+		tmpEvent = tmpEvent->next;
+	}
+  
+	tmpEvent = outEventList;
+	while( tmpEvent ) {
+		tmpEvent = tmpEvent->next;
+		numEvents++;
+	}
 
-    if (verbose_flag)
-      {
-        fprintf(stderr,"Total no. of triggers %ld\n", numEvents);
-      }
+	if (options.verbose)
+	fprintf(stderr,"Total no. of triggers %ld\n", numEvents);
 
 
     /*****************************************************************
@@ -575,7 +579,7 @@ int main(int argc, char **argv)
     /*****************************************************************
      * open output xml file
      *****************************************************************/
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
     LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
     myTable.snglBurstTable = outEventList;
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
