@@ -1,10 +1,8 @@
 dnl $Id$
 define(`SEQUENCETYPE',DATATYPE`Sequence')
-/* <lalVerbatim> */
 void `XLALDestroy'SEQUENCETYPE (
 	SEQUENCETYPE *sequence
 )
-/* </lalVerbatim> */
 {
 	if(sequence)
 		LALFree(sequence->data);
@@ -12,12 +10,10 @@ void `XLALDestroy'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALDestroy'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALDestroy'SEQUENCETYPE", SEQUENCEC);
 	`XLALDestroy'SEQUENCETYPE (sequence);
@@ -25,11 +21,9 @@ void `LALDestroy'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	SEQUENCETYPE *new;
 	DATATYPE *data;
@@ -49,13 +43,11 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALCreate'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCreate'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -65,13 +57,11 @@ void `LALCreate'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	SEQUENCETYPE *new = NULL;
 
@@ -89,7 +79,6 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALCut'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE **output,
@@ -97,7 +86,6 @@ void `LALCut'SEQUENCETYPE (
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCut'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -108,13 +96,11 @@ void `LALCut'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	if(!sequence || !sequence->data)
 		return(0);
@@ -137,14 +123,12 @@ size_t `XLALShrink'SEQUENCETYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALShrink'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALShrink'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);

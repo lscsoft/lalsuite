@@ -1,11 +1,9 @@
 dnl $Id$
 define(`SERIESTYPE',DATATYPE`FrequencySeries')
 define(`SEQUENCETYPE',DATATYPE`Sequence')
-/* <lalVerbatim> */
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 )
-/* </lalVerbatim> */
 {
 	if(series)
 		`XLALDestroy'SEQUENCETYPE (series->data);
@@ -13,12 +11,10 @@ void `XLALDestroy'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALDestroy'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALDestroy'SERIESTYPE", FREQUENCYSERIESC);
 	`XLALDestroy'SERIESTYPE (series);
@@ -26,7 +22,6 @@ void `LALDestroy'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	CHAR *name,
 	LIGOTimeGPS epoch,
@@ -35,7 +30,6 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	LALUnit sampleUnits,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
@@ -62,7 +56,6 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -73,7 +66,6 @@ void `LALCreate'SERIESTYPE (
 	LALUnit sampleUnits,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", FREQUENCYSERIESC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -83,13 +75,11 @@ void `LALCreate'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
@@ -113,7 +103,6 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
@@ -121,7 +110,6 @@ void `LALCut'SERIESTYPE (
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALCut'SERIESTYPE", FREQUENCYSERIESC);
 
@@ -135,13 +123,11 @@ void `LALCut'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	if(!series)
 		return(0);
@@ -151,14 +137,12 @@ size_t `XLALShrink'SERIESTYPE (
 }
 
 
-/* <lalVerbatim> */
 void `LALShrink'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
-/* </lalVerbatim> */
 {
 	INITSTATUS(status, "`LALShrink'SERIESTYPE", FREQUENCYSERIESC);
 
