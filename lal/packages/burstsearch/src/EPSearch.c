@@ -22,6 +22,7 @@ $Id$
 #include <lal/TimeFreqFFT.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALRCSID.h>
+#include <lal/ResampleTimeSeries.h>
 
 NRCSID (EPSEARCHC, "$Id$");
 
@@ -746,6 +747,9 @@ void EPInitSearch(
 void EPConditionData(
         LALStatus             *status,
         REAL4TimeSeries       *series,
+	REAL4                  flow,
+	REAL8                  resampledeltaT,
+	ResampleTSFilter       resampFiltType,
         void                  *searchParams
         )
 /* </lalVerbatim> */
@@ -757,6 +761,11 @@ void EPConditionData(
     EPDataSegmentVector          *dataSegVec = NULL;
     EPSearchParams               *params;
     PassBandParamStruc            highpassParam;
+
+    /* resample parameters */
+    UINT4                  resampleChan = 0;
+    ResampleTSParams       resampleParams;
+    const REAL8            epsilon = 1.0e-8;
 
     INITSTATUS (status, "LALConditionData", EPSEARCHC);
     ATTATCHSTATUSPTR (status);
@@ -792,6 +801,37 @@ void EPConditionData(
         ABORT (status, EPSEARCHH_EDATZ, EPSEARCHH_MSGEDATZ); 
     }
 
+
+    /* **************************************************************
+     *
+     * Resample the data if necessary
+     *
+     * *************************************************************/
+
+    /* set the time series parameters of the input data and resample params */
+    memset( &resampleParams, 0, sizeof(ResampleTSParams) );
+    resampleParams.deltaT = resampledeltaT;
+
+    if( ! ( fabs( resampleParams.deltaT - series->deltaT ) < epsilon ) )
+      {
+	resampleChan = 1;
+	
+	if ( resampFiltType == 0 )
+	  {
+	    resampleParams.filterType = LDASfirLP;
+	  }
+	else if ( resampFiltType == 1 )
+	  {
+	    resampleParams.filterType = defaultButterworth;
+	  }
+      }
+    
+    /*resample if required to */
+    if ( resampleChan )
+      {
+	LALResampleREAL4TimeSeries(status->statusPtr, series, &resampleParams);
+	CHECKSTATUSPTR (status);
+      }
 
     /* ***************************************************************
      *
