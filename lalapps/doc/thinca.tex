@@ -14,22 +14,41 @@
 \option{--debug-level}~\parm{level} \newline \hspace*{0.5in} 
 [\option{--user-tag}~\parm{usertag}] \newline \hspace*{0.5in} 
 \option{--gps-start-time}~\parm{start\_time} \newline \hspace*{0.5in}           
-\option{--gps-end-time}~\parm{end\_time} \newline \hspace*{0.5in}            
+\option{--gps-end-time}~\parm{end\_time} \newline \hspace*{0.5in} 
+[\option{--check-times}] \newline \hspace*{0.5in} 
 [\option{--g1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h2-triggers}]  \newline \hspace*{0.5in}
 [\option{--l1-triggers}]  \newline \hspace*{0.5in}
 [\option{--t1-triggers}]  \newline \hspace*{0.5in}
 [\option{--v1-triggers}]  \newline \hspace*{0.5in}
+[\option{--g1-time-accuracy}~\parm{g1\_dt}]  \newline \hspace*{0.5in}
+[\option{--h1-time-accuracy}~\parm{h1\_dt}]  \newline \hspace*{0.5in}
+[\option{--h2-time-accuracy}~\parm{h2\_dt}]  \newline \hspace*{0.5in}
+[\option{--l1-time-accuracy}~\parm{l1\_dt}]  \newline \hspace*{0.5in}
+[\option{--t1-time-accuracy}~\parm{t1\_dt}]  \newline \hspace*{0.5in}
+[\option{--v1-time-accuracy}~\parm{v1\_dt}]  \newline \hspace*{0.5in}
+[\option{--g1-mass-accuracy}~\parm{g1\_dm}]  \newline \hspace*{0.5in}
+[\option{--h1-mass-accuracy}~\parm{h1\_dm}]  \newline \hspace*{0.5in}
+[\option{--h2-mass-accuracy}~\parm{h2\_dm}]  \newline \hspace*{0.5in}
+[\option{--l1-mass-accuracy}~\parm{l1\_dm}]  \newline \hspace*{0.5in}
+[\option{--t1-mass-accuracy}~\parm{t1\_dm}]  \newline \hspace*{0.5in}
+[\option{--v1-mass-accuracy}~\parm{v1\_dm}]  \newline \hspace*{0.5in}
+[\option{--g1-mchirp-accuracy}~\parm{g1\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--h1-mchirp-accuracy}~\parm{h1\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--h2-mchirp-accuracy}~\parm{h2\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--l1-mchirp-accuracy}~\parm{l1\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--t1-mchirp-accuracy}~\parm{t1\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--v1-mchirp-accuracy}~\parm{v1\_dmchirp}]  \newline \hspace*{0.5in}
+[\option{--g1-eta-accuracy}~\parm{g1\_deta}]  \newline \hspace*{0.5in}
+[\option{--h1-eta-accuracy}~\parm{h1\_deta}]  \newline \hspace*{0.5in}
+[\option{--h2-eta-accuracy}~\parm{h2\_deta}]  \newline \hspace*{0.5in}
+[\option{--l1-eta-accuracy}~\parm{l1\_deta}]  \newline \hspace*{0.5in}
+[\option{--t1-eta-accuracy}~\parm{t1\_deta}]  \newline \hspace*{0.5in}
+[\option{--v1-eta-accuracy}~\parm{v1\_deta}]  \newline \hspace*{0.5in}
 \option{--parameter-test}
 \parm{(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta)}
 \newline \hspace*{0.5in}
-[\option{--dm}]~\parm{dm} \newline \hspace*{0.5in}
-[\option{--psi0}]~\parm{dpsi0} \newline \hspace*{0.5in}
-[\option{--psi3}]~\parm{dpsi3} \newline \hspace*{0.5in}
-[\option{--dmchirp}]~\parm{dmchirp} \newline \hspace*{0.5in}
-[\option{--deta}]~\parm{deta} \newline \hspace*{0.5in}
-\option{--dt}~\parm{dt} \newline \hspace*{0.5in}
 \option{--data-type}~\parm{(playground\_only|exclude\_play|all\_data)} 
 \newline \hspace*{0.5in}
 \option{LIGOLW XML input files} 
@@ -58,23 +77,13 @@ if not, the code exits without testing for coincidences.
 
 The code now tests for any pairs of coincident triggers.  This is done in the
 function \texttt{LALCreateTwoIFOCoincList()}.  Triggers are considered
-coincident if their end times differ by less than \textsc{dt} and their mass
-parameters pass coincidence.  We test on one of \texttt{(m1\_and\_m2 |
-mchirp\_and\_eta | psi0\_and\_psi3)}, making use of \textsc{dm};
-\textsc{dpsi0} and \textsc{dpsi3}; \textsc{dmchirp} and \textsc{deta}
-respectively to test the relevant mass parameters.  Additionally, if demanding
-coincidence over m1 and m2, it then tests that 
-%
-\begin{equation} \frac{\left|D_\mathrm{IFOA} -
-  D_\mathrm{IFOA}\right|}{D_\mathrm{IFOA}} <
-  \frac{\epsilon}{\rho_\mathrm{IFOB}} + \kappa.  \end{equation}
-% 
-Currently, the values of $\kappa$ and $\epsilon$ are hardwired to $1000$ and
-$2$ respectively.  This essentially disables the effective distance test.
-Additionally, the time and mass coincidence parameters are the same for all
-interferometer pairs.  This should be changed as our timing resolution between
-H1 and H2 will be better than between other sites, also different instruments
-may have better parameter estimation accuaracy.  At the end of the process, we
+coincident if their end times and mass parameters pass coincidence.  We test
+either on the two component masses if \texttt{m1\_and\_m2} is specified or the
+chirp mass and mass ratio if \texttt{mchirp\_and\_eta} is specified.  To pass
+time coincidence, the end times must differ by less than \textsc{ifoa\_dt} $+$
+\textsc{ifob\_dt} $+$ light travel time.  Similarly, we require that the mass
+parameters agree within \textsc{ifoa\_dm} $+$ \textsc{ifob\_dm}.
+At the end of the process, we
 have a list of pairs of triggers from different instruments which pass the
 time and mass coincidence tests.  These need to be searched for triple and
 quadruple coincidences, but this has not yet been implemented.
@@ -141,29 +150,22 @@ Required. Choose which parameters to use when testing for coincidenc.
 Depending on which test is chosen, the allowed windows on the appropriate
 parameters should be set as described below.
 
-\item[\texttt{--dm} \textsc{dm}] Optional. Accept triggers as coincident if
-both m1 and m2 agree within \textsc{dm}.  If not supplied, then \textsc{dm}$=
-0$.
+\item[\texttt{--ifo-time-accuracy} \textsc{ifo\_dt}] Required for any ifo for
+which we have triggers. Set the accuracy with which the given \texttt{ifo} can
+recover the end time of a signal.  The timing accuracy is specified in
+milliseconds. Here, \texttt{ifo} is one of g1, h1, h2, l1, t1, v1.
 
-\item[\texttt{--dpsi0} \textsc{dpsi0}] Optional. Accept
-triggers as coincident if $\psi_{0}$ parameters agree within
-\textsc{dpsi0}.  If not supplied,  then \textsc{dpsi0}$= 0$.
+\item[\texttt{--ifo-mass-accuracy} \textsc{ifo\_dm}] Optional. Set the
+accuracy with which the given \texttt{ifo} can recover the component masses of
+a signal.  The mass accuracy is set in solar masses.
 
-\item[\texttt{--dpsi3} \textsc{dpsi3}] Optional. Accept
-triggers as coincident if $\psi_{3}$ parameters agree within
-\textsc{dpsi3}.  If not supplied,  then \textsc{dpsi3}$= 0$.
+\item[\texttt{--ifo-mchirp-accuracy} \textsc{ifo\_dmchirp}] Optional. Set the
+accuracy with which the given \texttt{ifo} can recover the chirp mass of a
+signal.  The chirp mass accuracy is set in solar masses.
 
-\item[\texttt{--dmchirp} \textsc{dmchirp}] Optional. Accept
-triggers as coincident if mchirp agrees within \textsc{dmchirp}.  If not
-supplied, then \textsc{dmchirp}$ = 0$.
-
-\item[\texttt{--deta} \textsc{deta}] Optional. Accept triggers
-as coincident if $\eta$ agrees within \textsc{deta}.  If not supplied,
-then \textsc{deta} $= 0$.
-
-\item[\texttt{--dt} \textsc{dt}] Required. Accept triggers as
-coincident if their end times agree within \textsc{dt} milliseconds.  
-
+\item[\texttt{--ifo-eta-accuracy} \textsc{ifo\_deta}] Optional. Set the
+accuracy with which the given \texttt{ifo} can recover the mass ratio $\eta$
+of a signal.
 
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
 to the comment field in the process table. If not specified, no comment
@@ -200,59 +202,22 @@ error.
 \item[Example]
 \begin{verbatim}
 lalapps_thinca \
---playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
---user-tag SNR6_INJ --debug-level 33 --gps-start-time 734323079
---gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
-L1-INSPIRAL_INJ-734323015-2048.xml H1-INSPIRAL_INJ-734323015-2048.xml
+--data-type playground_only --h1-triggers --h2-triggers --l1-triggers \
+--h1-time-accuracy 1 --h2-time-accuracy 1.5 --l1-time accuracy 1 \
+--parameter-test mchirp_and_eta --h1-mchirp-accuracy 0.02 \
+--h2-mchirp-accuracy 0.03 --l1-mchirp-accuracy 0.04 \ 
+--h1-eta-accuracy 1 --h2-eta-accuracy 1 --l1-eta-accuracy 1 \
+--gps-start-time 777001000 --gps-end-time 777002000 \
+H1-INSPIRAL-777000500-2048.xml H2-INSPIRAL-777000700-2048.xml \
+L1-INSPIRAL-777000500-2048.xml
 \end{verbatim}
 
 \item[Algorithm]
-The code maintains two pointers to triggers from each ifo,
-\texttt{currentTrigger[0]} and \texttt{currentTrigger[1]}, corresponding to
-the current trigger from IFO A and B respectively.
+Not yet documented.
 
-\begin{enumerate}
-\item An empty linked list of triggers from each interferometer is created.
-Each input file is read in and the code determines which IFO the triggers in
-the file correspond to. The triggers are appended to the linked list for the
-corresponding interferometer.
-
-\item If there are no triggers read in from either of the interferometers,
-the code exits cleanly.
-
-\item The triggers for each interferometer is sorted by the \texttt{end\_time}
-of the trigger.
-
-\item \texttt{currentTrigger[0]} is set to point to the first trigger from IFO
-A that is after the specified GPS start time for coincidence. If no trigger is
-found after the start time, the code exits cleanly.
-
-\item Loop over each trigger from IFO A that occurs before the specified GPS
-end time for coincidence:
-\begin{enumerate}
-\item \texttt{currentTrigger[1]} is set to point to the first trigger from IFO
-B that is within the time coincidence window, $\delta t$, of
-\texttt{currentTrigger[0]}. If no IFO B trigger exists within this window,
-\texttt{currentTrigger[0]} is incremented to the next trigger from IFO A and
-the loop over IFO A triggers restarts.
-
-\item If the trigger \texttt{currentTrigger[0]} \emph{is, is not} in the
-playground data, start looping over triggers from IFO B.
-\begin{enumerate}
-\item For each trigger from IFO B that is within $\delta t$ of
-\texttt{currentTrigger[0]}
-\item Call \texttt{LALCompareSnglInspiral()} to check if the triggers match as
-determined by the options on the command line. If the trigger match, record
-them for later output as coincident triggers.
-\end{enumerate}
-
-\item Increment \texttt{currentTrigger[0]} and continue loop over triggers
-from IFO A.
-\end{enumerate}
-\end{enumerate}
 
 \item[Author] 
-Patrick Brady, Duncan Brown and Steve Fairhurst
+Steve Fairhurst
 \end{entry}
 
 
