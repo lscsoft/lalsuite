@@ -43,6 +43,7 @@ events that satisfy certain criteria.
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
+#include <lal/Random.h>
 
 /******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
@@ -89,10 +90,10 @@ enum TREETYPE {DIADIC, BINARY};
 
   /*enum SLICETYPE {F,L};  */
 
-enum COINCIDENCETYPE {GG,GV};
+  /*enum COINCIDENCETYPE {GG,GV};*/
 
 typedef enum { ORIGINAL_CL, SWAPPED_CL, MIXED_CL } CLUSTER_TYPE;
-
+typedef enum { NONE_CO=-1, CROSS_CO=0, RECTANGLE_CO=1 } COINCIDENCE_LEVEL;
 
 /*************************************<lalLaTeX file="WaveburstStructs">
 \subsubsection*{struct \texttt{Slice}}
@@ -142,6 +143,16 @@ tagWavelet
   UINT4 HPFilterLength;
   UINT4 LPFilterLength;
   REAL4TimeSeries *data;
+
+  REAL8 *PForward;
+  REAL8 *PInverse;
+  REAL8 *UForward;
+  REAL8 *UInverse;
+
+  REAL8 *pLForward;
+  REAL8 *pLInverse;
+  REAL8 *pHForward;
+  REAL8 *pHInverse;
 }
 Wavelet;
 
@@ -475,7 +486,7 @@ typedef struct
 tagInputPixelMixerWavelet
 {
   ClusterWavelet *in;
-  UINT4 seed;
+  RandomParams *rparams;
 }
 InputPixelMixerWavelet;
 
@@ -512,7 +523,9 @@ tagInputCoincidenceWavelet
 {
   ClusterWavelet *one;
   ClusterWavelet *two;
-  UINT4 timeWindowNanoSec;
+  INT4 timeWindowPixels;
+  INT4 freqWindowPixels;
+  INT4 coincidenceLevel;
 }
 InputCoincidenceWavelet;
 
@@ -592,6 +605,49 @@ tagOutputGetClusterParameters
 }
 OutputGetClusterParameters;
 
+typedef struct 
+tagInputForwardWavelet
+{
+  Wavelet *w;
+  INT4 level;
+  INT4 layer;
+}
+InputForwardWavelet;
+
+typedef struct 
+tagInputInverseWavelet
+{
+  Wavelet *w;
+  INT4 level;
+  INT4 layer;
+}
+InputInverseWavelet;
+
+typedef struct tagInputt2wWavelet
+{
+  Wavelet *w;
+  INT4 ldeep;
+}
+Inputt2wWavelet;
+
+typedef struct tagOutputt2wWavelet
+{
+  Wavelet *w;
+}
+Outputt2wWavelet;
+
+typedef struct tagInputw2tWavelet
+{
+  Wavelet *w;
+  INT4 ldeep;
+} 
+Inputw2tWavelet;
+
+typedef struct tagOutputw2tWavelet
+{
+  Wavelet *w;
+}
+Outputw2tWavelet;
 
 void
 LALGetLayerWavelet(LALStatus *status,
@@ -673,5 +729,18 @@ void
 LALFreeOutCluster(LALStatus *status,
 		  OutputClusterWavelet **cl);
 
+void LALForwardWavelet(LALStatus *status,
+		       InputForwardWavelet *input);
+
+void LALInverseWavelet(LALStatus *status,
+		       InputInverseWavelet *input);
+
+void LALt2wWavelet(LALStatus *status,
+		   Inputt2wWavelet *input,
+		   Outputt2wWavelet **output);
+
+void LALw2tWavelet(LALStatus *status,
+		   Inputw2tWavelet *input,
+		   Outputw2tWavelet **output);
 
 #endif
