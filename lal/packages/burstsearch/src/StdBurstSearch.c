@@ -310,6 +310,10 @@ A parabolic window function is used.
 	    bptr->norm += wwin[k] * wwin[k];
 	  }
 
+	  /* for psd normalization */
+	  bptr->norm = pow(bptr->norm, 2.0);
+
+
 /******** <lalLaTeX file="StdBurstSearchC"> ********
 The response function is resampled to the frequency resolution defined by the segment duration.
 ********* </lalLaTeX> ********/
@@ -493,7 +497,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  fprintf(stderr,"%g\t%g\t%g\t%g\t%g\t%g\n",(REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime),q0,rp.P0,rp.Q,rp.P,Pmax);
 	  */
 
-	  snr += Pmax / rp.P0 + rp.Q;
+	  snr += Pmax / (rp.P0 + rp.Q);
 	  totalPower += Pmax;
 
 	  {
@@ -528,7 +532,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 \item amplitude is set to sqrt(total in-band power).
 ********* </lalLaTeX> *******/
 
-	amplitude = sqrt(totalPower * 2.0 / bptr->nTime);
+	amplitude = sqrt(totalPower * (data->data->deltaT * bptr->nTime));
 
 /*set amplitude to sqrt(maximum of power); get strain per rtHz 
   amplitude = sqrt(mlik * 2.0 * data->data->deltaT); */
