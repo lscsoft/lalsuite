@@ -84,8 +84,7 @@ RCSID("$Id$");
 "  --dpsi0 Dpsi0             psi0 coincidence window\n"\
 "  --dpsi3 Dpsi3             psi3 coincidence window\n"\
 "  --alphaf-cut AlphaFCut    ignore BCV trigs with alphaF > AlphaFCut for\n"\
-"                            the coincidence step, BUT:\n"\
-"                            NO CUT is performed if set to 0 \n"\
+"                            the coincidence step\n"\
 "  --dmchirp Dmchirp         mchirp coincidence window\n"\
 "  --deta  Deta              eta coincidence window\n"\
 "  --dt Dt                   time coincidence window (milliseconds)\n"\
