@@ -132,7 +132,8 @@ LALFindChirpTemplateInit (
       }
       ENDFAIL( status );
       
-      memset( xfac, 0, outputPtr->xfacVec->length * sizeof(REAL4) );
+      memset( outputPtr->xfacVec->data, 0, 
+          outputPtr->xfacVec->length * sizeof(REAL4) );
       
       /* create an fft plan for the time domain waveform */
       LALCreateForwardRealFFTPlan( status->statusPtr, &(outputPtr->fwdPlan), 
