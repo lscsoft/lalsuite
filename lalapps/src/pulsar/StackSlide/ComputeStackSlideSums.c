@@ -23,6 +23,8 @@
 /* Code currently assumes params->numSUMsPerParamSpacePt = params->duration/params->tSUM = 1; need to upgrade to more general case */
 /* Compute Correct Power Stats, snr, confidence, etc... */
 /* Need analysis of SUMs to search for events above threshold and width of events; time analyze SUMs to veto lines vs signals. */
+/* Input SFTs are not sorted; thus actualStartTime and actualEndTime are not always correct; this only affects search summary table but should be fixed */
+/* Check if endtime is OK, or should endtime - tBKL be used to not get SFTs with end time past gpsStartTime + duration? */
 
 /* REVISIONS: */
 /* 12/03/03 gam; Based code on StackSlide.c from LALWrapper DSO */
@@ -39,6 +41,8 @@
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 05/28/04 gam; Use LALUniformDeviate from LAL utilities package (include <lal/Random.h>) to generate random mismatch during Monte Carlo. */
+/* 06/01/04 gam; Make sure CHECKSTATUSPTR called after every LAL function call */
+/* 06/01/04 gam; pPulsarSignalParams->startTimeGPS and duration should be based on gpsStartTime and duration, not actualStartTime */
 
 /*********************************************/
 /*                                           */
@@ -709,7 +713,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   }    
   pPulsarSignalParams->site = &cachedDetector;     
   pPulsarSignalParams->ephemerides = params->edat;
-  pPulsarSignalParams->startTimeGPS = params->actualStartTime;
+  /* pPulsarSignalParams->startTimeGPS = params->actualStartTime; */ /* 06/01/04 gam; uses gpsStartTime requested; not actualStartTime */
+  pPulsarSignalParams->startTimeGPS.gpsSeconds = (INT4)params->gpsStartTimeSec;
+  pPulsarSignalParams->startTimeGPS.gpsNanoSeconds = (INT4)params->gpsStartTimeNan;
   pPulsarSignalParams->duration = (UINT4)params->duration;
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
   pPulsarSignalParams->fHeterodyne = params->f0BLK;  
@@ -936,7 +942,8 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       }
     
       LALDestroySFTVector(status->statusPtr, &outputSFTs);
-
+      CHECKSTATUSPTR (status); /* 06/01/04 gam */
+      
       LALFree(signal->data->data);
       LALFree(signal->data);
       LALFree(signal);
