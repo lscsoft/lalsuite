@@ -383,71 +383,74 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
     INT4 duration)
 {
   /* variables */
-  COMPLEX8 *data;
   CHAR hertz[] = "Hz";
-  CHAR comment[] = "Created by $Id$";
+  CHAR comment[] = "$Id$";
   CHAR source[FILENAME_MAX];
   CHAR fname[FILENAME_MAX];
   CHAR units[LALUnitNameSize];
   struct FrFile *frfile;
-  UINT4 nframes;
+  struct FrameH *frame;
+  struct FrVect *vect;
+  struct FrProcData *proc;
 
+  /* set frame filename */
   LALSnprintf(source, sizeof(source), "%s%s", ifoOne, ifoTwo);
-  LALSnprintf(fname, sizeof(fname), "%s%s-ccSpectra-%d-%d.gwf", ifoOne, \
-      ifoTwo, time.gpsSeconds, duration);
+  LALSnprintf(fname, sizeof(fname), "%s-ccSpectra-%d-%d.gwf", source, \
+      time.gpsSeconds, duration);
+
+  /* setup frame file */
   frfile = FrFileONew(fname, 0);
 
-  data = series->data->data;
-  nframes = 1;
+  /* set frame properties */
+  frame = FrameHNew(source);
+  frame->run = 0;
+  frame->frame = 0;
+  frame->GTimeS = time.gpsSeconds;
+  frame->GTimeN = time.gpsNanoSeconds;
+  frame->dt = duration;
+
+  /* allocate memory for frame */
+  proc = LALCalloc(1, sizeof(*proc));
+  vect = FrVectNew1D(series->name, FR_VECT_8C, series->data->length, \
+      series->deltaF, hertz, units);
+
+  /* check that memory has been allocated */
+  if (!vect)
   {
-    UINT4 ncpy;
-    struct FrameH *frame;
-    struct FrVect *vect;
-    struct FrProcData *proc;
-    ncpy = series->data->length;
-    frame = FrameHNew( source );
-    frame->run = 0;
-    frame->frame = 0;
-    frame->GTimeS = time.gpsSeconds;
-    frame->GTimeN = time.gpsNanoSeconds;
-    frame->dt = duration;
-
-    proc = LALCalloc(1, sizeof(*proc));
-    vect = FrVectNew1D(series->name, FR_VECT_8C, series->data->length, \
-        series->deltaF, hertz, units);
-    if (!vect)
-    {
-      LALFree(proc);
-      FrVectFree(vect);
-      fprintf(stderr, "unable to allocate memory for frame.\n");
-      exit(1);
-    }
-    vect->startX[0] = series->f0;
-
-    FrStrCpy(&proc->name, "CCSPECTRA");
-    FrStrCpy(&proc->comment, comment);
-    proc->next = frame->procData;
-    frame->procData = proc;
-    proc->classe = FrProcDataDef();
-    proc->type = 2;
-    proc->data = vect;
-    proc->subType = 0;
-    proc->tRange = duration;
-    proc->fRange = series->data->length * series->deltaF;
-    /* frequency is in vector */
-
-    memcpy(vect->dataD, data, ncpy * sizeof(*series->data->data));
-
-    /* write frame */
-    FrameWrite(frame, frfile);
-
-    /* free frame */
-    FrVectFree(vect); 
-    vect=NULL;
+    LALFree(proc);
+    FrVectFree(vect);
+    fprintf(stderr, "unable to allocate memory for frame.\n");
+    exit(1);
   }
 
+  /* set start frequency */
+  vect->startX[0] = series->f0;
+
+  /* set frame properties */
+  FrStrCpy(&proc->name, "CCSPECTRA");
+  FrStrCpy(&proc->comment, comment);
+  proc->next = frame->procData;
+  frame->procData = proc;
+  proc->classe = FrProcDataDef();
+  proc->type = 2;
+  proc->data = vect;
+  proc->subType = 0;
+  proc->tRange = duration;
+  proc->fRange = series->data->length * series->deltaF;
+  
+  /* copy data into frame structure */
+  memcpy(vect->dataD, series->data->data, \
+      series->data->length * sizeof(*series->data->data));
+
+  /* write frame */
+  FrameWrite(frame, frfile);
+
+  /* free frame */
+  FrVectFree(vect); 
+  vect=NULL;
+
   /* end frame file */
-  FrFileOEnd( frfile );
+  FrFileOEnd(frfile);
 }
 
 /*
