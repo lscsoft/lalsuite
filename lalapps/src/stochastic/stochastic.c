@@ -1682,8 +1682,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* output to file */
         outOne = fopen(outputFilenameOne, "a");
-        fprintf(outOne,"%d %e %e %e\n", gpsStartTime.gpsSeconds, \
-            y, sqrt(varTheo), varTheo);
+        fprintf(outOne,"%d %e %e\n", gpsStartTime.gpsSeconds, y, \
+            sqrt(varTheo));
         fclose(outOne);
       }
     }
