@@ -347,7 +347,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   numSegments = duration / segmentDuration;
   segsInInt = intervalDuration / segmentDuration;
   numIntervals = (numSegments * segmentDuration) / intervalDuration;
-  segMiddle = (INT4)((segsInInt - 1) / 2);
+  segMiddle = (segsInInt - 1) / 2;
   segmentShift = segmentDuration;
 
   /* recentre */
@@ -370,6 +370,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (overlap_hann_flag)
     segmentShift = segmentDuration / 2;
+  else
+    segmentShift = segmentDuration;
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -2712,6 +2714,20 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         "multiple of the segment\nduration (%d)\n", intervalDuration, \
         segmentDuration);
     exit(1);
+  }
+
+  /* if a resample buffer is required, is the total duration greater
+   * than the interval duration */
+  if ((sampleRate != resampleRate) || (high_pass_flag))
+  {
+    if ((endTime - startTime - 2) < intervalDuration)
+    {
+      fprintf(stderr, "Not enough data specified between start (%d) and "\
+          "end (%d) times,\nfor specified interval duration (%d), when "
+          "resample buffer is considered\n", startTime, endTime, \
+          intervalDuration);
+      exit(1);
+    }
   }
 
   /* min frequency same as max */
