@@ -240,8 +240,8 @@ data channel used to create the \texttt{FindChirpSegment}.
 normalization quantity $\mathcal{S(k)}$. This for stationary phase 
 templates this is 
 \begin{equation}
-\mathcal{S}(k) = \sum_{k'=1}^{k} 
-\frac{\left(\frac{k'}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k'\right|\right)}
+\mathcal{S}(k) = \sum_{k=1}^{k} 
+\frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}
 \end{equation}
 where $1 \le k \le N/2$. For time domain templates, this quantity is recomputed for each template, with $|h(f)|^2$ replacing $(k'/N)^{-7/3}$.
 
