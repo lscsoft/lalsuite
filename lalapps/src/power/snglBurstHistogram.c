@@ -25,7 +25,7 @@ static int getline(char *line, int max, FILE *fpin)
 }
 
 /* Usage format string. */
-#define USAGE "Usage: %s --input xmlfile [--threshold threshold] \
+#define USAGE "Usage: %s --input infile [--threshold threshold] \
     --freq fstart fstop df [--help]\n"
 
 #define POWERC_ENORM  0
@@ -64,7 +64,6 @@ int main(int argc, char **argv)
     REAL4                    threshold=1.0,logThreshold=0.0;
     FILE                     *fpin;
 
-    CHAR                     xmlfile[MAXSTR];
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
 
     INT4                      iTriggerConfidence=0;
