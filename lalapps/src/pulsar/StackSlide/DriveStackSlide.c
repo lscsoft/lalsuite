@@ -92,6 +92,10 @@
 /* 09/27/04 gam; if numBLKsPerSTK == 1 then want to ensure 1 to 1 correspondence between BLKs and STKs */
 /*               WARNING: also, should avoid other cases for now until we decide how to handle         */
 /*                        overlapping SFTs and gaps that are not multiples of tBLK!                    */
+/* 10/28/04 gam; if (params->weightFlag & 1) > 0 then use PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
+/* 10/28/04 gam; if (params->weightFlag & 2) > 0 then include beam pattern F_+ in PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
+/* 10/28/04 gam; if (params->weightFlag & 4) > 0 then include beam pattern F_x in PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
+/* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
 
 /*********************************************/
 /*                                           */
@@ -282,7 +286,7 @@ void StackSlideInitSearch(
 
 		case 39: params->weightFlag = (INT2)atoi(argv[i]); break;
 
-		case 40: params->windowFilterFlag = (INT2)atoi(argv[i]); break;
+		case 40: params->orientationAngle = (REAL8)atof(argv[i]); break;
 
 		case 41: params->normalizationFlag = (INT2)atoi(argv[i]); break;
 		case 42: params->f0NRM = (REAL8)atof(argv[i]); break;
@@ -470,10 +474,15 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set calibrationFlag    %23d; #38 INT2 whether to calibrate input data (< 0 already done, 0 no, 1 yes). \n", params->calibrationFlag);
     	fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n");
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set weightFlag         %23d; #39 INT2 whether to weight BLKs with beam pattern response (currently unused). \n", params->weightFlag);
+    	fprintf(stdout,"set weightFlag         %23d; #39 INT2 how to weight STKs. \n", params->weightFlag);
+    	fprintf(stdout,"#The weightFlag rules are: \n");        
+    	fprintf(stdout,"# if (params->weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
+    	fprintf(stdout,"# if (params->weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
+    	fprintf(stdout,"# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights.\n");
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set windowFilterFlag   %23d; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) \n", params->windowFilterFlag);
-    	fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n");
+    	/* fprintf(stdout,"set windowFilterFlag   %23d; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) \n", params->windowFilterFlag); */ /* 10/28/04 gam */
+    	/* fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n"); */ /* 10/28/04 gam */
+    	fprintf(stdout,"set orientationAngle   %23.16e; #40 REAL8 orientation angle in radians used to find F_+ and F_x when used to weight STKs or if using fixed polarization for a Monte Carlo Simulation. \n", params->orientationAngle);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set normalizationFlag  %23d; #41 INT2 what normalization to do. \n", params->normalizationFlag);
     	fprintf(stdout,"set f0NRM              %23.16e; #42 REAL8 frequency to start with when finding norms. \n", params->f0NRM);
@@ -482,7 +491,7 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set normalizationParameter %23.16e; #45 REAL4 see uses below. \n", params->normalizationParameter);
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
-    	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median, \n"); /* 04/14/04 gam; now implemented */
+    	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
     	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
     	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
@@ -1167,6 +1176,7 @@ void StackSlideApplySearch(
   INT4          i = 0;         /* all purpose index */
   INT4          j = 0;         /* all purpose index */  /* 02/04/04 gam */
   INT4          k = 0;         /* another all purpose index */
+  INT4          isav = 0;      /* 10/28/04 gam; saved index value */ 
    
   INITSTATUS( status, "StackSlideApplySearch", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR(status);
@@ -1198,6 +1208,8 @@ void StackSlideApplySearch(
     REAL4 stkNRM = 0.0;   /* 03/03/04 gam */
     INT4 nrmBinCount = 0; /* 03/03/04 gam */
     FILE *fpPSD; /* 04/15/04 gam */
+    BOOLEAN weightSTKsIncludingBeamPattern = 0; /* 10/28/04 gam */
+    INT2 plusOrCross = 0;                       /* 10/28/04 gam */
     
 /**********************************************/
 /*                                            */
@@ -1306,6 +1318,42 @@ void StackSlideApplySearch(
 	params->STKData[i]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
 	params->STKData[i]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
 	params->STKData[i]->data->data=(REAL4 *)LALMalloc(params->nBinsPerSTK*sizeof(REAL4));
+ }
+
+ /* 10/28/04 gam; allocate memory for parameters needed if weighting of STKs is done */
+ if ( (params->weightFlag & 1) > 0 )  {    
+    /* 10/28/04 gam; params->inverseSquareMedians is a container with inverse square medians for each STK for each frequency bin; for use with powerFlux style weighting of STKs */
+    /* 10/28/04 gam; params->sumInverseSquareMedians is container with sum of inverse square medians for each frequency bin; for use with powerFlux style weighting of STKs. */    
+    params->inverseSquareMedians=(REAL4Vector **)LALMalloc(params->numSTKs*sizeof(REAL4Vector *));
+    for(i=0;i<params->numSTKs;i++) {
+        params->inverseSquareMedians[i]=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+        params->inverseSquareMedians[i]->data=(REAL4 *)LALMalloc(params->nBinsPerSTK*sizeof(REAL4));
+    }
+    params->sumInverseSquareMedians=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+    params->sumInverseSquareMedians->data=(REAL4 *)LALMalloc(params->nBinsPerSTK*sizeof(REAL4));
+    for(i=0;i<params->nBinsPerSTK;i++) {
+        params->sumInverseSquareMedians->data[i] = 0.0; /* initialize */
+    }
+    if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
+       /* 10/28/04 gam; savSTKDATA is for reuse with powerFlux style weighting of STKs for each sky position */     
+       params->savSTKData=(REAL4Vector **)LALMalloc(params->numSTKs*sizeof(REAL4Vector *));    
+       for(i=0;i<params->numSTKs;i++) {
+           params->savSTKData[i]=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+           params->savSTKData[i]->data=(REAL4 *)LALMalloc(params->nBinsPerSTK*sizeof(REAL4));
+       }
+       /* 10/28/04 gam; container for squared detector response F_+^2 or F_x^2 for one sky position, one polarization angle, for midpoints of a timeStamps */
+       params->detResponseTStampMidPts=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+       params->detResponseTStampMidPts->data=(REAL4 *)LALMalloc(params->numSTKs*sizeof(REAL4));
+    } else {
+       params->savSTKData = NULL;
+       params->detResponseTStampMidPts = NULL;
+    }
+ } else {
+   /* else do not save medians */
+   params->savSTKData = NULL;
+   params->detResponseTStampMidPts = NULL;
+   params->inverseSquareMedians = NULL;
+   params->sumInverseSquareMedians = NULL;
  }
 
  if (params->stackTypeFlag == 0) {
@@ -1453,19 +1501,24 @@ void StackSlideApplySearch(
                 #endif
               }
 
-              /* Note NO factor of 2; makes mean STK power = 1, but NRM is not the one-sided power spectral density */
-              for(istkNRM=0;istkNRM<mediansOffset1;istkNRM++) {
-                  params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[0];
-              }
+              /* 10/28/04 gam; if weightFlag set save inverse square medians for later weighting of STKs; else normalize now with medians */
+              if ( (params->weightFlag & 1) > 0 )  { 
+                 /* Call function that save inverse square medians for weighting STKs */
+                 SaveInverseSquareMedians(params->inverseSquareMedians, params->sumInverseSquareMedians, params->weightFlag, medians, k, mediansOffset1, mediansOffset2, mediansLengthm1, params->nBinsPerSTK);
+              } else {              
+                 /* Note NO factor of 2; makes mean STK power = 1, but NRM is not the one-sided power spectral density */
+                 for(istkNRM=0;istkNRM<mediansOffset1;istkNRM++) {
+                     params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[0];
+                 }
 
-              for(istkNRM=mediansOffset1;istkNRM<mediansOffset2;istkNRM++) {
-                  params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[istkNRM-mediansOffset1];
+                 for(istkNRM=mediansOffset1;istkNRM<mediansOffset2;istkNRM++) {
+                     params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[istkNRM-mediansOffset1];
+                 }
 
-              }
-              
-              for(istkNRM=mediansOffset2;istkNRM<params->nBinsPerSTK;istkNRM++) {
-                  params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[mediansLengthm1];
-              }
+                 for(istkNRM=mediansOffset2;istkNRM<params->nBinsPerSTK;istkNRM++) {
+                     params->STKData[k]->data->data[istkNRM] = params->STKData[k]->data->data[istkNRM]/medians->data[mediansLengthm1];
+                 }              
+              } /* END if ( (params->weightFlag & 1) > 0 )  */
       
            } /* END for(k=0;k<params->numSTKs;k++) */
 
@@ -2076,7 +2129,27 @@ void StackSlideApplySearch(
          stksldParams->numFreqDerivTotal = 0;
     }
     stksldParams->freqDerivData = NULL;
-
+    
+    /* 10/28/04 gam; weight STKs depending on value of params->weightFlag */
+    isav = -1;                             /* initialize */
+    weightSTKsIncludingBeamPattern = 0;    /* default value is False */
+    plusOrCross = 1;                       /* default value; 1 = get F_+, 0 = get F_x */
+    if ( (params->weightFlag & 1) > 0 )  { 
+       if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
+            /* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */ 
+            SaveSTKData(params->savSTKData, params->STKData, params->numSTKs, params->nBinsPerSTK);
+            weightSTKsIncludingBeamPattern = 1;
+            if ( (params->weightFlag & 2) > 0 ) {
+               plusOrCross = 1; /* get F_+ */
+            } else {
+               plusOrCross = 0; /* get F_x */
+            }               
+       } else {
+            /* Just need to apply weights once */       
+            WeightSTKsWithoutBeamPattern(params->STKData, params->inverseSquareMedians, params->sumInverseSquareMedians, params->numSTKs, params->nBinsPerSTK);
+       }
+    }
+    
   /* 02/11/04 gam; Change code to process 1 SUM per job; Move for loop over SUMs here */
   for(kSUM=0;kSUM<params->numSUMsTotal;kSUM++) {
     
@@ -2087,7 +2160,26 @@ void StackSlideApplySearch(
     if (params->numFreqDerivTotal != 0) {
          stksldParams->freqDerivData = &(params->freqDerivData[j]);
     }    
-            
+
+    /* 10/28/04 gam; weight STKs; the weights depend on F_+ and F_x when weightSTKsIncludingBeamPattern is True */
+    if (weightSTKsIncludingBeamPattern) {
+        if (i != isav) {
+       
+         /* 10/28/04 gam; get squared detector response F_+^2 or F_x^2 for one sky position, one polarization angle, for midpoints of a timeStamps */
+         GetDetResponseTStampMidPts(status->statusPtr, params->detResponseTStampMidPts, params->timeStamps, params->numSTKs, params->tSTK,
+              &cachedDetector, params->skyPosData[i], params->orientationAngle, COORDINATESYSTEM_EQUATORIAL, plusOrCross);
+         
+         /* 10/28/04 gam; apply powerFlux style weights including detector beam pattern response */
+         WeightSTKsIncludingBeamPattern(params->STKData,
+               params->savSTKData,
+               params->inverseSquareMedians,
+               params->sumInverseSquareMedians,
+               params->detResponseTStampMidPts,
+               params->numSTKs, params->nBinsPerSTK, params->tSTK);            
+        }
+        isav = i;
+    }
+    
      /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */     
     StackSlide(status->statusPtr,params->SUMData,params->STKData,stksldParams);
     CHECKSTATUSPTR (status);
@@ -2434,6 +2526,29 @@ void StackSlideApplySearch(
 	     LALFree(params->STKData[i]);
          }
          LALFree(params->STKData);
+         
+         /* 10/28/04 gam; deallocate memory for parameters needed if weighting of STKs is done */
+         if ( (params->weightFlag & 1) > 0 )  {    
+             for(i=0;i<params->numSTKs;i++) {
+                 LALFree(params->inverseSquareMedians[i]->data);
+                 LALFree(params->inverseSquareMedians[i]);
+
+             }         
+             LALFree(params->inverseSquareMedians);
+             LALFree(params->sumInverseSquareMedians->data);
+             LALFree(params->sumInverseSquareMedians);
+             
+             if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
+                 for(i=0;i<params->numSTKs;i++) {
+                    LALFree(params->savSTKData[i]->data);
+                    LALFree(params->savSTKData[i]);
+
+                 }
+                 LALFree(params->savSTKData);
+                 LALFree(params->detResponseTStampMidPts->data);
+                 LALFree(params->detResponseTStampMidPts);
+            } 
+        } /* END if ( (params->weightFlag & 1) > 0 ) */         
 
          /* Deallocate memory for the freqDerivData structure */
          /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
@@ -3299,6 +3414,131 @@ Machine dependent: to be fixed!
 	
  }
 #endif
+
+/* 10/28/04 gam; function that saves inverse square medians for weighting STKs */
+void SaveInverseSquareMedians(REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT2 weightFlag, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK)
+{
+
+          INT4 i;
+
+          for(i=0;i<mediansOffset1;i++) {
+                inverseSquareMedians[k]->data[i] = 1.0/(medians->data[0] * medians->data[0]);
+          }
+
+          for(i=mediansOffset1;i<mediansOffset2;i++) {
+               inverseSquareMedians[k]->data[i] = 1.0/(medians->data[i-mediansOffset1] * medians->data[i-mediansOffset1]);
+          }
+          
+          for(i=mediansOffset2;i<nBinsPerSTK;i++) {
+              inverseSquareMedians[k]->data[i] = 1.0/(medians->data[mediansLengthm1] * medians->data[mediansLengthm1]);
+          }
+                    
+          /* NOTE: it is assumed that sumInverseSquareMedians have been initialized to zero */
+          if ( ( (weightFlag & 2) > 0 ) || ( (weightFlag & 4) > 0 ) ) {
+             /* Just continue; will have to compute later using F_+ or F_x for each point on the sky */
+          } else {
+             for(i=0;i<nBinsPerSTK;i++) {                    
+                   sumInverseSquareMedians->data[i] += inverseSquareMedians[k]->data[i];
+             }                      
+          }
+} /* END SaveInverseSquareMedians */
+
+/* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */                        
+void SaveSTKData(REAL4Vector ** savSTKData, REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK)
+{
+     INT4 i,k;
+     for(k=0;k<numSTKs;k++) {
+         for(i=0;i<nBinsPerSTK;i++) {
+             savSTKData[k]->data[i] = STKData[k]->data->data[i];
+         }
+     }
+} /* END SaveSTKData */
+
+/* 10/28/04 gam; apply powerFlux style weights */
+void WeightSTKsWithoutBeamPattern(REAL4FrequencySeries **STKData, REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT4 numSTKs, INT4 nBinsPerSTK)
+{
+    INT4 i,k;
+    for(k=0;k<numSTKs;k++) {
+        for(i=0;i<nBinsPerSTK;i++) {
+            STKData[k]->data->data[i] = inverseSquareMedians[k]->data[i] * STKData[k]->data->data[i] / sumInverseSquareMedians->data[i];
+        }
+    }
+} /* END WeightSTKsWithoutBeamPattern */
+
+/* 10/28/04 gam; apply powerFlux style weights including detector beam pattern response */
+void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
+           REAL4Vector ** savSTKData,
+           REAL4Vector **inverseSquareMedians,
+           REAL4Vector *sumInverseSquareMedians,
+           REAL4Vector *detResponseTStampMidPts,
+           INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK)
+{
+    INT4 i,k;
+    REAL4 detRes4 = 0; /* 4th power of detector response; note that detResponseTStampMidPts is aleady the square of F_+ or F_x*/
+        
+    for(i=0;i<nBinsPerSTK;i++) {
+        sumInverseSquareMedians->data[i] = 0.0; /* initialize */
+    }
+           
+    for(k=0;k<numSTKs;k++) {
+        detRes4 = detResponseTStampMidPts->data[k] * detResponseTStampMidPts->data[k];
+        for(i=0;i<nBinsPerSTK;i++) {
+            sumInverseSquareMedians->data[i] += detRes4*inverseSquareMedians[k]->data[i];
+        }
+    }
+    
+    for(k=0;k<numSTKs;k++) {
+        for(i=0;i<nBinsPerSTK;i++) {
+            STKData[k]->data->data[i] = detResponseTStampMidPts->data[k] *
+                   inverseSquareMedians[k]->data[i] * savSTKData[k]->data[i] / sumInverseSquareMedians->data[i];
+        }
+    }
+} /* END WeightSTKsIncludingBeamPattern */
+
+
+/* 10/28/04 gam; get squared detector response F_+^2 or F_x^2 for one sky position, one polarization angle, for midpoints of a timeStamps */
+void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampMidPts, LIGOTimeGPS *timeStamps, INT4 numSTKs, REAL8 tSTK,
+     LALDetector *cachedDetector, REAL8 *skyPosData, REAL8 orientationAngle, CoordinateSystem coordSystem, INT2 plusOrCross)
+{
+    INT4 i;
+    LALDetAMResponse response;  /* output of LALComputeDetAMResponse */
+    LALDetAndSource      *das;  /* input for LALComputeDetAMResponse */
+    LALGPSandAcc   timeAndAcc;  /* input for LALComputeDetAMResponse */
+    REAL8 halftSTK = 0.5*tSTK;  /* half the time of one STK */    
+    LIGOTimeGPS midTS;          /* midpoint time for an STK */
+    
+    INITSTATUS(stat,"GetDetResponseTStampMidPts",DRIVESTACKSLIDEC);
+    ATTATCHSTATUSPTR(stat);       
+    
+    /* Set up das, the Detector and Source info */
+    das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
+    das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
+    das->pDetector = cachedDetector;
+    das->pSource->equatorialCoords.latitude = skyPosData[0];
+    das->pSource->equatorialCoords.longitude = skyPosData[1];
+    
+    das->pSource->orientation = orientationAngle;  
+    das->pSource->equatorialCoords.system = coordSystem;
+    timeAndAcc.accuracy=LALLEAPSEC_STRICT;
+                                                                                                                            
+    /* loop that calls LALComputeDetAMResponse to find F_+ and F_x at the midpoint of each SFT for ZERO Psi */
+    for(i=0; i<numSTKs; i++) {
+      /* Find mid point from timestamp, half way through SFT. */
+      TRY ( LALAddFloatToGPS (stat->statusPtr, &midTS, &(timeStamps[i]), halftSTK), stat);
+      timeAndAcc.gps=midTS;
+      TRY ( LALComputeDetAMResponse(stat->statusPtr, &response, das, &timeAndAcc), stat);
+      if (plusOrCross > 0) {
+         detResponseTStampMidPts->data[i] = response.plus * response.plus;
+      } else {
+         detResponseTStampMidPts->data[i] = response.cross * response.cross;
+      }
+    }
+    LALFree(das->pSource);
+    LALFree(das);
+  
+    DETATCHSTATUSPTR(stat);
+    RETURN(stat);
+}  
 
 /******************************************/
 /*                                        */

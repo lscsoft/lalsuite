@@ -56,6 +56,8 @@
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
+/* 10/28/04 gam; if (params->weightFlag & 1) > 0 then use PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
+/* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
   
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -458,7 +460,9 @@ typedef struct tagStackSlideSearchParams {
 
   INT2    weightFlag;                /* Flag that specifies whether to weight BLKs or STKs with a(t) or b(t).  */
 
-  INT2    windowFilterFlag;          /* Flag that specifies whether any filtering or windowing was done or should be done. (If < 0 then specifies what was done in the time domain) */
+  REAL8   orientationAngle;          /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
+  
+  /* INT2    windowFilterFlag;       */   /* 10/28/04 gam */ /* Flag that specifies whether any filtering or windowing was done or should be done. (If < 0 then specifies what was done in the time domain) */
   /* REAL8   windowFilterParam1;     */   /* 03/03/04 gam */ /* 1st parameter to use in windowing or filtering */
   /* REAL8   windowFilterParam2;     */   /* 02/17/04 gam */ /* 2nd paramter to use in windowing or filtering */
   /* REAL8   windowFilterParam3;     */   /* 02/17/04 gam */ /* 3rd paramter to use in windowing or filtering */
@@ -566,6 +570,11 @@ typedef struct tagStackSlideSearchParams {
   REAL4FrequencySeries **STKData;  /* Container for STKs */
   REAL4FrequencySeries **SUMData;  /* Container for SUMs */
 
+  REAL4Vector **savSTKData;              /* 10/28/04 gam; save STKs for reuse with powerFlux style weighting of STKs for each sky position */
+  REAL4Vector *detResponseTStampMidPts;  /* 10/28/04 gam; container for detector response F_+ or F_x for one sky position, one polarization angle, for midpoints of a timeStamps */
+  REAL4Vector **inverseSquareMedians;    /* 10/28/04 gam; container with inverse square medians for each STK for each frequency bin; for use with powerFlux style weighting of STKs */
+  REAL4Vector *sumInverseSquareMedians;  /* 10/28/04 gam; container with sum of inverse square medians for each frequency bin; for use with powerFlux style weighting of STKs. */
+  
   INT4 iMinBLK;      /* Index of minimum frequency in BLK band */
   INT4 iMaxBLK;      /* Index of maximum frequency in BLK band */
   INT4 iMinNRM;      /* Index of mimimum frequency to include when normalizing BLKs */
@@ -651,6 +660,22 @@ void LALUpdateLoudestFromSUMs( SnglStackSlidePeriodicTable *loudestPeaksArray, c
 /* void LALFindStackSlidePeaks( SnglStackSlidePeriodicTable **pntrToPeaksPntr, const REAL4FrequencySeries *oneSUM, LALFindStackSlidePeakParams *params ); */ /* 03/02/04 gam */
 void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4FrequencySeries *oneSUM, LALFindStackSlidePeakParams *params );
 void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN returnData, StackSlideSkyPatchParams *params); /* 01/31/04 gam*/
+/* 10/28/04 gam; function that saves inverse square medians for weighting STKs */                 
+void SaveInverseSquareMedians(REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT2 weightFlag, REAL4Vector *medians, INT4 k, INT4 mediansOffset1, INT4 mediansOffset2, INT4 mediansLengthm1, INT4 nBinsPerSTK);
+/* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */
+void SaveSTKData(REAL4Vector ** savSTKData, REAL4FrequencySeries **STKData, INT4 numSTKs, INT4 nBinsPerSTK);
+/* 10/28/04 gam; apply powerFlux style weights */
+void WeightSTKsWithoutBeamPattern(REAL4FrequencySeries **STKData, REAL4Vector **inverseSquareMedians, REAL4Vector *sumInverseSquareMedians, INT4 numSTKs, INT4 nBinsPerSTK);
+/* 10/28/04 gam; get squared detector response F_+^2 or F_x^2 for one sky position, one polarization angle, for midpoints of a timeStamps */
+void GetDetResponseTStampMidPts(LALStatus *stat, REAL4Vector *detResponseTStampMidPts, LIGOTimeGPS *timeStamps, INT4 numSTKs, REAL8 tSTK,
+     LALDetector *cachedDetector, REAL8 *skyPosData, REAL8 orientationAngle, CoordinateSystem coordSystem, INT2 plusOrCross);
+/* 10/28/04 gam; apply powerFlux style weights including detector beam pattern response */
+void WeightSTKsIncludingBeamPattern(REAL4FrequencySeries **STKData,
+           REAL4Vector ** savSTKData,
+           REAL4Vector **inverseSquareMedians,
+           REAL4Vector *sumInverseSquareMedians,
+           REAL4Vector *detResponseTStampMidPts,
+           INT4 numSTKs, INT4 nBinsPerSTK, REAL8 tSTK);
 /******************************************/
 /*                                        */
 /* END SECTION: prototype declarations    */
