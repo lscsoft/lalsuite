@@ -37,10 +37,6 @@ void FUNC (
 
 	length = ((REAL8Sequence*)(data))->length;
 
-	/*  length must be greater than one  */
-	ASSERT ( length > 1, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
-
-
 	for (iterator = 0; iterator < length; iterator++)
 	{
 		sum += ((STYPE*)(data))->data[iterator];
@@ -55,6 +51,8 @@ void FUNC (
 		RETURN(status);
 	}
 
+        /*  length must be greater than one  */
+        ASSERT ( length > 1, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
 
 	for (iterator = 0; iterator < length; iterator++)
 	{
