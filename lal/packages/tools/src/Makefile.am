@@ -5,7 +5,7 @@ libtools_la_SOURCES = \
   CreateDetector.c DetResponse.c ComputeTransfer.c CoherentEstimation.c \
   ResampleTimeSeries.c SnglInspiralUtils.c SnglBurstUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
-  MakeTemplateBank.c NDTemplateBank.c
+  MakeTemplateBank.c NDTemplateBank.c ComputeStrain.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
