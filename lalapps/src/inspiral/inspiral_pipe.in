@@ -375,7 +375,10 @@ for i in range(len(data)):
     chunk = data[i][j]
     inca = inspiral.IncaNode(inca_job)
     # inca should work on the trigger start/end times to avoid duplicates
-    inca.set_start(chunk.start() + overlap/2)
+    if chunk.trig_start() > 0:
+      inca.set_start(chunk.trig_start())
+    else:
+      inca.set_start(chunk.start() + overlap/2)
     inca.set_end(chunk.end() - overlap/2)
     inca.set_ifo_a(ifo1)
     inca.set_ifo_b(ifo2)
