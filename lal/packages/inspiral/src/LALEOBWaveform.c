@@ -760,8 +760,8 @@ Userful for debugging: Make sure a solution for r exists.
      case twoPN:
      case twoPointFivePN:
        rootIn.function = LALrOfOmega;
-       rootIn.xmax = 100.;
-       rootIn.xmin = 6.;
+       rootIn.xmax = 300.;
+       rootIn.xmin = 3.;
        LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
        CHECKSTATUSPTR(status);
        break;
@@ -771,8 +771,8 @@ Userful for debugging: Make sure a solution for r exists.
        pr3in.omegaS = params->OmegaS;
        pr3in.zeta2 = params->Zeta2;
        pr3in.omega = omega;
-       rootIn.xmax = 100.;
-       rootIn.xmin = 6.;
+       rootIn.xmax = 300.;
+       rootIn.xmin = 3.;
        LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
        CHECKSTATUSPTR(status);
        break;
