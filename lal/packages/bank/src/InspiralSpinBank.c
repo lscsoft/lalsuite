@@ -150,16 +150,6 @@ static INT4 test(
 
 /* END - Internal structures and functions --------------------------------- */
 
-static void
-LALInspiralSpinBankMetric(
-   LALStatus 		*,
-   REAL4Array	 	*,
-   InspiralMomentsEtc 	*,
-   InspiralTemplate	*,
-   REAL4		*
-   ); /* LALInspiralSpinBankMetric() Prototype */
-
-
 
 /* LALINSPIRALSPINBANKMETRIC() --------------------------------------------- */
 static void
@@ -269,14 +259,17 @@ LALInspiralSpinBank(
   
   
   /* Check to make sure that all the parameters are okay */
-  if (coarseIn.mmCoarse <= 0){
-    ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-    }
-
-  if ((coarseIn.mMin <= 0) || (coarseIn.MMax <= 0) || 
-      (coarseIn.mMin >= coarseIn.MMax) || (3.0*coarseIn.MMax >= 15.0)){
-    ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
-    }
+  ASSERT( coarseIn.mmCoarse > 0, status, LALINSPIRALBANKH_ECHOICE,
+          LALINSPIRALBANKH_MSGECHOICE );
+  ASSERT( coarseIn.mmCoarse < 1, status, LALINSPIRALBANKH_ECHOICE,
+          LALINSPIRALBANKH_MSGECHOICE );
+  /* Another mass bound needed, or go to psi bounds instead? */
+  ASSERT( coarseIn.mMin > 0, status, LALINSPIRALBANKH_ECHOICE,
+          LALINSPIRALBANKH_MSGECHOICE );
+  ASSERT( coarseIn.MMax > 0, status, LALINSPIRALBANKH_ECHOICE,
+          LALINSPIRALBANKH_MSGECHOICE );
+  ASSERT( coarseIn.MMax > 2*coarseIn.mMin, status, LALINSPIRALBANKH_ECHOICE,
+          LALINSPIRALBANKH_MSGECHOICE );
 
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
   /*
