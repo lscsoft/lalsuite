@@ -329,6 +329,7 @@ insp_job = inspiral.InspiralJob(cp)
 l_insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
+lho_inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
 if usertag:
@@ -341,6 +342,7 @@ insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 l_insp_job.set_sub_file( basename + '.l1_inspiral' + subsuffix )
 trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
+lho_inca_job.set_sub_file( basename + '.lho_inca' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
@@ -349,6 +351,7 @@ if usertag:
   l_insp_job.add_opt('user-tag',usertag)
   trig_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
+  lho_inca_job.add_opt('user-tag',usertag)
 
 # add the injections
 if inj_file:
@@ -363,6 +366,7 @@ if condor_prio:
   l_insp_job.add_condor_cmd('priority',condor_prio)
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
+  lho_inca_job.add_condor_cmd('priority',condor_prio)
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -678,9 +682,12 @@ print "done"
 print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
 sys.stdout.flush()
 
+# make sure we use the range cut for analyzing the LHO conincidences
+lho_inca_job.add_opt('ifo-b-range-cut')
+
 for seg in l1_h1_h2_data:
   # do the second inca to get the H1 triggers that are in H2 or can't be seen
-  inca2 = inspiral.IncaNode(inca_job)
+  inca2 = inspiral.IncaNode(lho_inca_job)
   inca2.set_start(seg.start())
   inca2.set_end(seg.end())
   inca2.set_ifo_a('H1')
@@ -689,7 +696,7 @@ for seg in l1_h1_h2_data:
   inca2.add_var_opt('dt',cp.get('pipeline','hh-dt'))
   inca2.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
   inca2.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
-  # XXX need to add argument that makes inca check the H2 range XXX
+  inca2.add_var_opt('ifo-b-snr-threshold',h2_snr)
   # do the third inca to clobber and L1 triggers that we can
   inca3 = inspiral.IncaNode(inca_job)
   inca3.set_start(seg.start())
