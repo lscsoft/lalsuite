@@ -27,8 +27,15 @@ FrameH *fr_add_proc_REAL4TimeSeries (
 {
   char          chname[256];
   struct        series fdata;
-
-  LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  
+  if ( suffix )
+  {
+    LALSnprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+  }
+  else
+  {
+    LALSnprintf( chname, sizeof(chname), "%s", chan->name );
+  } 
     fdata.name = chname;
     fdata.tbeg = chan->epoch;
     memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
