@@ -731,7 +731,7 @@ LALFindChirpBCVFilterSegment (
             thisEvent->chisq     = 0;
             thisEvent->chisq_dof = 0;
           }
-          thisEvent->sigmasq = input->fcTmplt->tmpltNorm;
+          thisEvent->sigmasq = sqrt( norm / a1 );
           thisEvent->eff_distance =
             input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
@@ -851,7 +851,7 @@ LALFindChirpBCVFilterSegment (
       thisEvent->chisq     = 0;
       thisEvent->chisq_dof = 0;
     }
-    thisEvent->sigmasq = input->fcTmplt->tmpltNorm;
+    thisEvent->sigmasq = sqrt( norm / a1 );
     thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
       thisEvent->snr;
     thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
