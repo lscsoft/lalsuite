@@ -117,6 +117,10 @@ BOOLEAN FILE_FSTATS = 1;
 #include "boinc_zip.h"
 #endif
 
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+
 #if BOINC_APP_GRAPHICS
 #include "graphics_api.h"
 #endif
@@ -2936,7 +2940,7 @@ int main(int argc, char *argv[]){
      boinc_api functions are used */
 #if BOINC_APP_GRAPHICS == 2
   {
-	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB);
+	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB,  RTLD_LAZY);
 	  if(handle != NULL) {
         set_search_pos_hook      = dlsym(handle,"set_search_pos");
         fraction_done_hook       = dlsym(handle,"fraction_done");
