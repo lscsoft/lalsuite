@@ -79,6 +79,7 @@ void LALComputeAM (LALStatus          *status,
   {
     LALFrDetector det = params->das->pDetector->frDetector;
     zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
+    if(params->das->pDetector->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
   }  
 
   cos2psi = cos(2.0 * params->polAngle); 
