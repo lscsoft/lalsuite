@@ -592,6 +592,12 @@ int main( int argc, char *argv[] )
   double nyH[3] = { -0.9140, +0.0261, -0.4049 };
   double nxL[3] = { -0.9546, -0.1416, -0.2622 };
   double nyL[3] = { +0.2977, -0.4879, -0.8205 };
+  double nxG[3] = { -0.6261, -0.5522, +0.5506 };
+  double nyG[3] = { -0.4453, +0.8665, +0.2255 };
+  double nxT[3] = { +0.6490, +0.7608, +0.0000 };
+  double nyT[3] = { -0.4437, +0.3785, -0.8123 };
+  double nxV[3] = { -0.7005, +0.2085, +0.6826 };
+  double nyV[3] = { -0.0538, -0.9691, +0.2408 };
   const long S2StartTime   = 729273613;  /* Feb 14 2003 16:00:00 UTC */
   const long S2StopTime    = 734367613;  /* Apr 14 2003 15:00:00 UTC */
   long gpsStartTime = S2StartTime;
@@ -619,7 +625,9 @@ int main( int argc, char *argv[] )
   LALPlaceAndGPS       *place_and_gps;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  LALDetector           geo = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   LALDetector		tama = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  LALDetector           virgo = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   SkyPosition	       *sky_pos;
   DetTimeAndASource    *det_time_and_source;
   REAL8			time_diff;
@@ -893,7 +901,6 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(DetTimeAndASource));
   sky_pos->system = COORDINATESYSTEM_EQUATORIAL;
 
-
   /* create the first injection */
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
@@ -1009,6 +1016,9 @@ int main( int argc, char *argv[] )
     double gmst;
     double deffH;
     double deffL;
+    double deffG;
+    double deffT;
+    double deffV;
 
     /* get gmst (radians) */
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
@@ -1043,7 +1053,9 @@ int main( int argc, char *argv[] )
     this_sim_insp->polarization = injPar[psiElem];
     this_sim_insp->eff_dist_h = deffH = eff_dist( nxH, nyH, injPar, gmst )/MPC;
     this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst )/MPC;
-
+    this_sim_insp->eff_dist_g = deffG = eff_dist( nxG, nyG, injPar, gmst )/MPC;
+    this_sim_insp->eff_dist_t = deffT = eff_dist( nxT, nyT, injPar, gmst )/MPC;
+    this_sim_insp->eff_dist_v = deffV = eff_dist( nxV, nyV, injPar, gmst )/MPC;
     place_and_gps->p_gps = &(this_sim_insp->geocent_end_time);
     det_time_and_source->p_det_and_time = place_and_gps;
     sky_pos->longitude = this_sim_insp->longitude;
@@ -1070,6 +1082,38 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->l_end_time),
           &site_time ), &status );
     
+    /* compute site arrival time for geo */
+    place_and_gps->p_detector = &geo;
+    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+          det_time_and_source), &status );
+    LAL_CALL( LALGPStoFloat( &status, &site_time, 
+          &(this_sim_insp->geocent_end_time) ), &status );
+    site_time += time_diff;
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->g_end_time),
+          &site_time ), &status );
+
+    /* compute site arrival time for tama */
+    place_and_gps->p_detector = &tama;
+    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+          det_time_and_source), &status );
+    LAL_CALL( LALGPStoFloat( &status, &site_time, 
+          &(this_sim_insp->geocent_end_time) ), &status );
+    site_time += time_diff;
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->t_end_time),
+          &site_time ), &status );
+
+    /* compute site arrival time for virgo */
+    place_and_gps->p_detector = &virgo;
+    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+          det_time_and_source), &status );
+    LAL_CALL( LALGPStoFloat( &status, &site_time, 
+          &(this_sim_insp->geocent_end_time) ), &status );
+    site_time += time_diff;
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->v_end_time),
+          &site_time ), &status );
+
+
+
     if ( inj < ninj - 1 )
     {
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
@@ -1159,18 +1203,9 @@ int main( int argc, char *argv[] )
 		&(this_sim_insp->h_end_time) ),  &status );
 	  LAL_CALL( LALGPStoFloat( &status, &ltime, 
 		&(this_sim_insp->l_end_time) ),  &status );
+	  LAL_CALL( LALGPStoFloat( &status, &ttime, 
+		&(this_sim_insp->t_end_time) ),  &status );
 	  
-	  /* compute site arrival time for tama */
-	  place_and_gps->p_gps = &(this_sim_insp->geocent_end_time);
-	  det_time_and_source->p_det_and_time = place_and_gps;
-	  sky_pos->longitude = this_sim_insp->longitude;
-	  sky_pos->latitude = this_sim_insp->latitude;
-	  det_time_and_source->p_source = sky_pos;
-	  place_and_gps->p_detector = &tama;
-	  LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
-	    det_time_and_source), &status );
-	  ttime = injtime + time_diff;
-
 	  fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
 	     ttime );
 	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e",
