@@ -70,16 +70,11 @@ void LALComputeCalibrationFactors(
   const REAL8 tiny = LAL_REAL8_MIN;
   COMPLEX16 alpha;
   COMPLEX16 alphabeta;
+  COMPLEX16 beta;
   COMPLEX16 DARM_CTRL;
   COMPLEX16 AS_Q;
   COMPLEX16 EXC;
-  COMPLEX16 RQ;
-  COMPLEX16 RD,OneMinusRD;
-  COMPLEX16 C0;
-  COMPLEX16 A0;
-  COMPLEX16 R0;
-  COMPLEX16 H0;
-  COMPLEX16 H;
+  COMPLEX16 G0,D0;
   REAL8 f0;
   REAL8 a;
   REAL8 b;
@@ -117,12 +112,8 @@ void LALComputeCalibrationFactors(
 
   f0 = params->lineFrequency;
   
-  R0 = params->responseFactor;
-  C0 = params->sensingFactor;
-  A0 = params->actuationFactor;
-
-  cmul(&H0,&R0,&C0);
-  H0.re -= 1.0;        /* Open loop gain */
+  G0 = params->openloop;
+  D0 = params->digital;
 
 
   /* ------------------------------------- match filtering ----------------------------------- */
@@ -196,42 +187,43 @@ void LALComputeCalibrationFactors(
     RETURN(status);
   }
 
-  /* Adjust excitation for the fact that it does not see the entire actuation function */
 
- 
-  DARM_CTRL.re -= EXC.re;
-  DARM_CTRL.im -= EXC.im;
-  
-
-  EXC.re *= params->mu; 
-  EXC.im *= params->mu; 
-  
   /* ------------------------------ compute alpha*beta ------------------------------------- */
 
-  cdiv( &RD, &DARM_CTRL, &EXC );
-
-  OneMinusRD.re=1.0-RD.re;
-  OneMinusRD.im=-RD.im;
-  
-  if ( fabs( OneMinusRD.re ) < tiny && fabs( OneMinusRD.im ) < tiny )
   {
-    ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+    COMPLEX16 RD, RDminus1;
+
+    cdiv( &RD, &EXC, &DARM_CTRL);
+    RDminus1.re=RD.re-1.0;
+    RDminus1.im=RD.im;
+    cdiv( &alphabeta, &RDminus1, &G0 );
   }
 
-  cdiv( &alphabeta, &RD, &OneMinusRD );
-  cdiv( &alphabeta, &alphabeta, &H0 );
-
   /* ------------------------------- compute alpha ----------------------------------------- */
+  {
+    COMPLEX16 RQ;
 
-  cdiv( &RQ, &AS_Q, &EXC );
-  cdiv( &alpha, &RQ, &OneMinusRD);
-  cdiv( &alpha, &alpha, &A0 );
-  cdiv( &alpha, &alpha, &C0 );
+    cdiv( &RQ, &AS_Q, &DARM_CTRL );
+    cmul( &alpha, &RQ, &D0);
+    cdiv( &alpha, &alpha, &G0 );
+    alpha.re *= -1.0;
+    alpha.im *= -1.0;
+  }
+  /* ------------------------------- compute beta ----------------------------------------- */
 
-  /* ------------------ Done, now put alpha and alpha*beta in the output structure --------- */
+  {
+    COMPLEX16 DmL,DmLoQ;
+
+    DmL.re = DARM_CTRL.re - EXC.re;
+    DmL.im = DARM_CTRL.im - EXC.im;
+    cdiv( &DmLoQ, &DmL , &AS_Q );
+    cdiv( &beta, &DmLoQ, &D0);
+  }
+  /* ------------------ Done, now put alpha, beta  and alpha*beta in the output structure --------- */
 
   output->alphabeta=alphabeta;
   output->alpha=alpha;
+  output->beta=beta;
 
   RETURN( status );
 }
