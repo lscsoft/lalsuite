@@ -19,6 +19,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/DataBuffer.h>
 #include <lal/Comm.h>
+#include <lal/LALInspiral.h>
+#include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpExch.h>
 #include <lal/FindChirpSP.h>
@@ -59,7 +61,6 @@ enum ExchObjectType
 {
   ExchDataSegment,
   ExchFindChirpSegment,
-  ExchInspiralBankIn,
   ExchInspiralTemplate,
   ExchInspiralEvent,
   ExchFinished
@@ -89,6 +90,16 @@ tagFindChirpSlaveParams
 }
 FindChirpSlaveParams;
 
+typedef struct
+tagInspiralTemplateNode
+{
+  UINT4                                 level;
+  struct tagInspiralTemplateNode       *next;
+  struct tagInspiralTemplateNode       *prev;
+  InspiralTemplate                     *tmpltPtr;
+}
+InspiralTemplateNode;
+
 
 void
 LALFindChirpMaster (
@@ -103,6 +114,13 @@ LALFindChirpSlave (
     BOOLEAN                    *notFinished,
     FindChirpSegmentVector     *fcSegVec,
     FindChirpSlaveParams        *params 
+    );
+
+void
+LALFindChirpCreateInspiralBank (
+    LALStatus                  *status,
+    InspiralCoarseBankIn       *bankIn,
+    InspiralTemplate          **head
     );
 
 void

@@ -104,47 +104,6 @@ LALExchangeDataSegment (
   RETURN (status);
 }
 
-void
-LALExchangeInspiralBankIn (
-    LALStatus         *status,
-    InspiralBankIn *bankIn,
-    ExchParams     *exchParams
-    )
-{
-  CHARVector box; /* a box to hold some bytes of data */
-
-  INITSTATUS (status, "LALExchangeInspiralBankIn", FINDCHIRPEXCHC);
-  ATTATCHSTATUSPTR (status);
-
-  /* only do a minimal check to see if arguments are somewhat reasonable */
-  ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-  ASSERT (bankIn, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
-
-  /* stuff the template bank input into a box */
-  box.length = sizeof (InspiralBankIn);
-  box.data   = (CHAR *) bankIn;
-
-  if (exchParams->send)  /* I am sending */
-  {
-    INT4 dest = exchParams->partnerProcNum;
-
-    /* send box */
-    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
-    CHECKSTATUSPTR (status);
-  }
-  else /* I am receiving */
-  {
-    INT4 source = exchParams->partnerProcNum;
-
-    /* receive box */
-    LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
-    CHECKSTATUSPTR (status);
-  }
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
 
 void
 LALExchangeInspiralTemplate (

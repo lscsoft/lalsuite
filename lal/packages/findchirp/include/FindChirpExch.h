@@ -44,13 +44,6 @@ LALExchangeDataSegment (
     );
 
 void
-LALExchangeInspiralBankIn (
-    LALStatus         *status,
-    InspiralBankIn *bankIn,
-    ExchParams     *exchParams
-    );
-
-void
 LALExchangeInspiralTemplate (
     LALStatus           *status,
     InspiralTemplate *tmplt,

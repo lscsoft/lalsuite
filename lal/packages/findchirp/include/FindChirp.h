@@ -82,31 +82,6 @@ NRCSID (FINDCHIRPH, "$Id$");
  */
 
 
-/* the various interferometer codes */
-typedef enum
-{
-  Caltech40m, 
-  Hanford4km, 
-  Hanford2km, 
-  Livingston4km, 
-  GEO600m, 
-  TAMA300m
-}
-Detector;
-
-/* input for specifying a template bank */
-typedef struct
-tagInspiralBankIn
-{
-  REAL4                         mMin;
-  REAL4                         mMax;
-  REAL4                         ffCoarse;
-  REAL4                         ffFine;
-  Detector                      detector;
-  Method                        method;
-}
-InspiralBankIn;
-
 /* structure for describing a binary insipral event */
 typedef struct
 tagInspiralEvent
