@@ -436,10 +436,10 @@ funcName=tdb;
 	ifMax=ifMin+nDeltaF/2.0;
 	fMin=dfSFT*ifMin;
 	/* Maximum search band frequency, in Hz */
-	if0Max=ifMax-ceil((f0Band/2.0)/dfSFT);
+	if0Max=ceil((f0+f0Band/2.0)/dfSFT);
 	f0Max=dfSFT*if0Max;
 	/* Minimum search band frequency, in Hz*/
-	if0Min=ifMin+floor((f0Band/2.0)/dfSFT);
+	if0Min=floor((f0-f0Band/2.0)/dfSFT);
 	f0Min=dfSFT*if0Min;
 	/* DeFT band, in Hz */
 	f0Band=f0Max-f0Min;
