@@ -74,12 +74,14 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 int main (void) {
    static REAL4Vector *signal1, *signal2;
    static LALStatus status;
-   InspiralTemplate params;
-   REAL8 dt;
+   static InspiralTemplate params;
+   static REAL8 dt;
    UINT4 n, i;
 
+   params.OmegaS = 0.;
+   params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=1.4; 
+   params.mass1=10.; 
    params.mass2=10.; 
    params.startTime=0.0; 
    params.startPhase=0.0;
@@ -89,7 +91,7 @@ int main (void) {
    params.order=4;
    params.approximant=TaylorT3;
    params.signalAmplitude=1.0;
-   params.nStartPad=1000;
+   params.nStartPad=000;
    params.nEndPad=1000;
    params.massChoice=m1Andm2;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
@@ -123,6 +125,7 @@ int main (void) {
 			   else
 			   {
 				   LALInspiralWave(&status, signal2, &params);
+    if (params.approximant==2 && params.order==4) printf_timeseries(signal1->length, signal2->data, dt, params.startTime);
 				   /*
 				   REPORTSTATUS(&status);
 				   */

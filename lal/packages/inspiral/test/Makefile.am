@@ -2,7 +2,7 @@
 check_PROGRAMS = LALInspiralTest ChirpSpace LALInspiralSpinningBHBinariesTest
 LALInspiralTest_SOURCES = LALInspiralTest.c
 ChirpSpace_SOURCES = ChirpSpace.c
-LALInspiralSpinningBHBinariesTest_SOURCES =  LALInspiralSpinningBHBinariesTest.c
+LALInspiralSpinningBHBinariesTest_SOURCES =  LALInspiralSpinningBHBinariesTest.c 
 LALInspiralTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ChirpSpace_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 LALInspiralSpinningBHBinariesTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
