@@ -1369,13 +1369,13 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
  * 
  */
 void
-refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen)
+refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen)
 {
   UINT4 oldLen, l, k;
   gsl_complex Xd, Yk, Rlk, z;
   COMPLEX16Vector *ret = NULL;
 
-  INITSTATUS( stat, "refineFrequencies", DOPPLERSCANC );  
+  INITSTATUS( stat, "refineCOMPLEX16Vector", DOPPLERSCANC );  
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( out, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
@@ -1402,7 +1402,9 @@ refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, 
 	} /* for k <= N-1 */
 
       ret->data[k].re = GSL_REAL (Yk);
+      ret->data[k].re /= oldLen;
       ret->data[k].im = GSL_IMAG (Yk);
+      ret->data[k].im /= oldLen;
 
     }  /* for k <= M-1 */
 
@@ -1410,7 +1412,7 @@ refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, 
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
-} /* RefineFrequencies() */
+} /* refineCOMPLEX16Vector() */
 
 
 /** Interpolation matrix entry (l, k), for frequency-steps 1/N and 1/M

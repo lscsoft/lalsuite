@@ -162,7 +162,8 @@ void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
 
 
 gsl_complex DFTinterpolator (INT4 l, INT4 k, UINT4 N, UINT4 M);
-void refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen);
+
+void refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen);
 
 
 /********************************************************** <lalLaTeX>
