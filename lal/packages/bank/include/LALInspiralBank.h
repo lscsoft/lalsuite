@@ -202,8 +202,8 @@ defined by the search region
 \item \texttt{InspiralMomentsIn}
 Inputs to the function that computes the moments of the PSD.
 	The moment is defined as:
-	$$\int_{x_{\rm min}}^{x_{\rm max}} 
-\frac{x^{-{p}/3}}{S_h(x)} dx,$$
+	$$I(p) \equiv \int_{x_{\rm min}}^{x_{\rm max}} 
+\frac{x^{-p}}{S_h(x)} dx,$$
 	where $x=f/f_0$ is a scaled frequency, $f_0$
 	being a fiducial frequency, taken in these routines
 	as the user supplied lower cutoff of the detector
@@ -212,9 +212,8 @@ Inputs to the function that computes the moments of the PSD.
 \begin{itemize}
 \item \texttt{xmin}: lower limit of the integral $x_{\rm min}$
 \item \texttt{xmax}: upper limit of the integral $x_{\rm max}$
-\item \texttt{ndx}: index $p/3$ (without the negative sign) in the moment integral as above
-(please note that \texttt{ndx} is $\mathbf p/3$ and {\it not} just $p.$)
-\item \texttt{norm}: norm to be used in computing, the returned value is
+\item \texttt{ndx}: index $p$ (without the negative sign) in the moment integral as above
+\item \texttt{norm}: norm to be used in computing the moment, the returned value is
 the above integral divided by the norm.
 \item \texttt{*shf}: the frequency series containing the noise psd.
 \end{itemize}
@@ -483,8 +482,34 @@ tagInspiralMomentsEtc
 InspiralMomentsEtc;
 /*  </lalVerbatim>  */
 /*  <lalLaTeX> 
-\idx[Type]{InspiralFineBankIn} 
+\idx[Type]{InspiralMomentsEtc} 
 </lalLaTeX>  */
+
+
+
+/*  <lalVerbatim file="LALInspiralMomentsEtcBCVH"> */
+typedef struct
+tagInspiralMomentsEtcBCV
+{
+  REAL8 n0, n15;
+  REAL8 j[9];
+  REAL8 i[23];
+  REAL8 alpha;
+  REAL8 fcut;
+
+  REAL8 M1[2][2];
+  REAL8 M2[2][2];
+  REAL8 M3[2][2];
+
+
+
+} 
+InspiralMomentsEtcBCV;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{InspiralMomentsEtcBCV} 
+</lalLaTeX>  */
+
 
 
 
@@ -623,6 +648,28 @@ LALInspiralComputeMetric(
    InspiralTemplate    *params,
    InspiralMomentsEtc  *moments
 );
+
+
+
+
+
+
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralComputeMetricBCVC}
+</lalLaTeX>  */
+
+void 
+LALInspiralComputeMetricBCV
+(
+  	LALStatus             *status,
+	InspiralMetric        *metric,
+	REAL8FrequencySeries  *psd,
+	InspiralTemplate      *params
+);
+
+
 
 
 
@@ -949,4 +996,3 @@ LALRectangleVertices(
 #endif
 
 #endif /* _LALINSPIRALBANK_H */
-
