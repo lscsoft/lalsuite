@@ -104,6 +104,7 @@ main ( void )
    randIn.NoiseAmp = 1.0;
    randIn.useed = 92048;
    randIn.mMin = 4.0;
+   randIn.mMax = 5.0;
    randIn.MMax = 10.0;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 

@@ -116,7 +116,7 @@ main ( void )
    coarseIn.fUpper = 1000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 2048.;
-   coarseIn.order = 3;
+   coarseIn.order = 4;
    coarseIn.approximant = TaylorT1;
    coarseIn.space = Tau0Tau3;
 /* minimum value of eta */
@@ -185,6 +185,7 @@ main ( void )
    fprintf(FilterTest, "&\n");
    LALInspiralSetSearchLimits(&status, &bankPars, coarseIn);
    randIn.mMin = coarseIn.mMin;
+   randIn.mMax = coarseIn.mMax;
    randIn.MMax = coarseIn.MMax;
    randIn.t0Min = bankPars.x0Min;
    randIn.t0Max = bankPars.x0Max;
@@ -271,7 +272,7 @@ main ( void )
 ------------------------------------------------------------------------*/
          g00=list[j].metric.g00; 
          g11=list[j].metric.g11; 
-         ang=list[j].metric.theta;
+         ang=abs(list[j].metric.theta);
          h00 = g00 * cos(ang)*cos(ang) + g11 * sin(ang)*sin(ang);
          h11 = g11 * cos(ang)*cos(ang) + g00 * sin(ang)*sin(ang);
          h01 = (g00-g11) * cos(ang)*sin(ang);
@@ -279,15 +280,15 @@ main ( void )
          if (match > coarseIn.mmCoarse/2.) {
            overlapin.param = list[j].params;
            LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-            if (omax < overlapout.max) {
+           if (omax < overlapout.max) {
                 omax = overlapout.max;
                 overlapoutmax = overlapout;
                 jmax = j;
             }
          }
      }
-     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax/2.);
-     fprintf(FilterTest,"%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax/2.);
+     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
+     fprintf(FilterTest,"%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
    fflush(stdout);
    }
    fclose(FilterTest);
