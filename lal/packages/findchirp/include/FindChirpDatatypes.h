@@ -240,10 +240,10 @@ data channel used to create the \texttt{FindChirpSegment}.
 normalization quantity $\mathcal{S(k)}$. This for stationary phase 
 templates this is 
 \begin{equation}
-\mathcal{S}(k) = \sum_{k=1}^{k} 
-\frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}
+\mathcal{S}(k) = \sum_{k\prime=1}^{k} 
+\frac{\left(\frac{k\prime}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\prime\right|\right)}
 \end{equation}
-where $1 \le k \le N/2$. For time domain templates, this quantity is recomputed for each template, with $|h(f)|^2$ replacing $(k'/N)^{-7/3}$.
+where $1 \le k \le N/2$. For time domain templates, this quantity is recomputed for each template, with $|h(f)|^2$ replacing $(k\prime/N)^{-7/3}$.
 
 \item[\texttt{REAL4 a1}] BCV-template normalization parameter.
 
@@ -258,7 +258,7 @@ template. This is
 \end{equation}
 for stationary phase and BCV templates. For time domain templates, this
 quantity is recomputed for each template, with $|h(f)|^2$ replacing
-$(k'/N)^{-7/3}$. This quantity is used in the computation of the $\chi^2$ bin
+$(k/N)^{-7/3}$. This quantity is used in the computation of the $\chi^2$ bin
 boundaries.
 
 \item[\texttt{REAL4Vector *tmpltPowerVecBCV}] Additional weighted template
