@@ -265,13 +265,15 @@ Now build LAL as follows:
    make
    make install
 
-If you run a bourne shell (e.g. bash) type:
+Make sure you have access to the software you just installed. You can either
+log out and log back in (safest) or if you run a bourne shall (e.g. bash)
+type:
 
-   source ${LAL_LOCATION}/etc/lal-user-env.sh
+  source ${LAL_LOCATION}/etc/lal-user-env.sh
 
-If you run a C-shell (e.g. tcsh) type:
-
-   source ${LAL_LOCATION}/etc/lal-user-env.csh
+or if you run a C-shell (e.g. tcsh) type:
+  
+  source ${LAL_LOCATION}/etc/lal-user-env.csh
 
 Now build LALApps as follows. If you want to build LALApps to run in the
 condor standard universe, and you have condor installed on the machine that
@@ -317,11 +319,72 @@ reporting bugs.
 
 5.3 Installing on a LSCdataGrid cluster machine
 
+If you are building LAL and LALApps on an an LSCdataGrid cluster machine, for
+example the UWM cluster or a LIGO lab cluster, then the required pre-requisite
+software should already be installed. 
 
+The following LSC systems have the software installed:
+
+System                  Action needed to access software
+
+hydra.phys.uwm.edu      None: the software is installed in /usr
+contra.phys.uwm.edu     None: the software is installed in /usr
+
+If you are running on an LSCdataGrid system not listed above, contact the
+administrator of the system to find out which scripts and/or environment
+variables need to be set for you to be able to see the requred software.
+
+Once you have access to the pre-requisite software, to install LAL type the
+following, making sure you you have LAL_LOCATION set to where you decided to
+install LAL and LALApps.
+
+  cd ${LAL_LOCATION}/src/lal
+  ./configure --prefix=${LAL_LOCATION}
+  make
+  make install
+
+Add the following to your .profile if you use a bourne shell (e.g. bash):
+        
+  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
+  export LAL_LOCATION
+  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
+    . ${LAL_LOCATION}/etc/lal-user-env.sh
+  fi
+        
+If you are using a C shell (e.g., tcsh), instead add these lines to
+your .login:
+
+  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
+  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
+    source ${LAL_LOCATION}/etc/lal-user-env.csh
+  endif
+
+Make sure you have access to the software you just installed. You can either
+log out and log back in (safest) or if you run a bourne shall (e.g. bash)
+type:
+
+  source ${LAL_LOCATION}/etc/lal-user-env.sh
+
+or if you run a C-shell (e.g. tcsh) type:
+  
+  source ${LAL_LOCATION}/etc/lal-user-env.csh
+
+Now build and install LALApps by typing the following. If you want to build
+LALApps to run in the condor standard universe, and you have condor installed
+on the machine that you are building on, add --enable-condor to the configure
+options:
+
+  cd ${LAL_LOCATION}/src/lalapps
+  ./configure --prefix=${LAL_LOCATION}
+  make
+  make install
+
+You are now ready to use LALApps! Please see the LALApps README.contrib for
+help on adding code to LALApps and the LALApps README.bugs for information on
+reporting bugs.
 
 
 ------------------------------------------------------------------------------
-
 
 5.4 Installing the required software as RPMs or .debs from a repository
 
@@ -334,27 +397,27 @@ The commands listed below are appropriate for a Bourne-shell (e.g., bash);
 they will need to be modified appropriately for C-shells (e.g., tcsh).
 This is where to get sources:
         
-        LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
+  LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
 
 get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
 you can use "lynx -dump" or "wget -O-" instead of "curl"
 
-        curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
-        curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
-        curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
-        curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
-        curl $LALRPMURL/libframe-6.14-1.i386.rpm > libframe-6.14-1.i386.rpm
-        curl $LALRPMURL/libframe-devel-6.14-1.i386.rpm > libframe-devel-6.14-1.i386.rpm
-        curl $LALRPMURL/libframe-utils-6.14-1.i386.rpm > libframe-utils-6.14-1.i386.rpm
-        curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
+  curl $LALRPMURL/fftw3-3.0.1-2.i386.rpm > fftw-3.0.1-2.i386.rpm
+  curl $LALRPMURL/fftw3-devel-3.0.1-2.i386.rpm > fftw-devel-3.0.1-2.i386.rpm
+  curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
+  curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
+  curl $LALRPMURL/libframe-6.14-1.i386.rpm > libframe-6.14-1.i386.rpm
+  curl $LALRPMURL/libframe-devel-6.14-1.i386.rpm > libframe-devel-6.14-1.i386.rpm
+  curl $LALRPMURL/libframe-utils-6.14-1.i386.rpm > libframe-utils-6.14-1.i386.rpm
+  curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
         curl $LALRPMURL/libmetaio-devel-5.4-3.i386.rpm > libmetaio-devel-5.4-3.i386.rpm
 
 now login as root and install the RPMs
 
-        rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
-        rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
-        rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
-        rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
+  rpm -Uvh fftw-3.0.1-2.i386.rpm fftw-devel-3.0.1-2.i386.rpm
+  rpm -Uvh gsl-1.5-1.i386.rpm gsl-devel-1.5-1.i386.rpm
+  rpm -Uvh libframe-6.14-1.i386.rpm libframe-devel-6.14-1.i386.rpm libframe-utils-6.14-1.i386.rpm
+  rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
 
 
 1.3 BUILDING REQUIRED SOFTWARE FROM SOURCE RPMS
@@ -364,27 +427,26 @@ follow these instructions.
 
 first download the source RPMs
 
-        curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
-        curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
-        curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
-        curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
+  curl $LALRPMURL/fftw3-3.0.1-2.src.rpm > fftw3-3.0.1-2.src.rpm
+  curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
+  curl $LALRPMURL/libframe-6.14-1.src.rpm > libframe-6.14-1.src.rpm
+  curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
 
 now login as root and build binary RPMs from the source RPMs (this will
 take a very long time)
 
-        rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
-        rpmbuild --rebuild gsl-1.5-1.src.rpm
-        rpmbuild --rebuild libframe-6.14-1.src.rpm
-        rpmbuild --rebuild libmetaio-5.4-3.src.rpm
+  rpmbuild --rebuild fftw3-3.0.1-2.src.rpm
+  rpmbuild --rebuild gsl-1.5-1.src.rpm
+  rpmbuild --rebuild libframe-6.14-1.src.rpm
+  rpmbuild --rebuild libmetaio-5.4-3.src.rpm
 
 finally install the new binary RPMs
 
-        cd /usr/src/redhat/RPMS
-        rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
-        rpm -Uvh i386/gsl-1.5-1.i386.rpm
-        rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm
-        rpm -Uvh i386/libframe-6.14-1.i386.rpm
-        rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
-        rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
-        rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
-
+  cd /usr/src/redhat/RPMS
+  rpm -Uvh i386/fftw3-3.0.1-2.i386.rpm
+  rpm -Uvh i386/gsl-1.5-1.i386.rpm
+  rpm -Uvh i386/gsl-devel-1.5-1.i386.rpm
+  rpm -Uvh i386/libframe-6.14-1.i386.rpm
+  rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
+  rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
+  rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
