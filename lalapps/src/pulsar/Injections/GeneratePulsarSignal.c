@@ -59,19 +59,20 @@ extern INT4 lalDebugLevel;
  * generate a time-series at the detector for a given pulsar
  ***********************************************************************/
 void
-LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarSignalParams *params)
+LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params)
 {
   static SpinOrbitCWParamStruc sourceParams;
   static CoherentGW sourceSignal;
   DetectorResponse detector;
   UINT4 SSBduration;
   LIGOTimeGPS time = {0,0};
+  REAL4TimeSeries *output;
 
   INITSTATUS( stat, "LALGeneratePulsarSignal", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
   ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
-  ASSERT (signal->data == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
+  ASSERT (*signal == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
 
   /*----------------------------------------------------------------------
    *
@@ -166,17 +167,18 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarS
   detector.heterodyneEpoch = time;
   
   /* ok, but we also need to prepare the output time-series */
-  signal->data = LALMalloc (sizeof(*(signal->data)));
-  signal->data->length = (UINT4)( params->samplingRate * params->duration );
-  signal->data->data = LALMalloc ( signal->data->length * (sizeof(*(signal->data->data))) );
-  signal->deltaT = 1.0 / params->samplingRate;
-  signal->f0 = params->fHeterodyne;
-  signal->epoch = params->startTimeGPS;
+  output = LALMalloc ( sizeof (*output) );
+  output->data = LALMalloc (sizeof(*(output->data)));
+  output->data->length = (UINT4)( params->samplingRate * params->duration );
+  output->data->data = LALMalloc ( output->data->length * (sizeof(*(output->data->data))) );
+  output->deltaT = 1.0 / params->samplingRate;
+  output->f0 = params->fHeterodyne;
+  output->epoch = params->startTimeGPS;
 
 
-  printf ("\nLaenge time-series: %d samples\n", signal->data->length);
+  printf ("\nLaenge time-series: %d samples\n", output->data->length);
   
-  TRY ( LALSimulateCoherentGW (stat->statusPtr, signal, &sourceSignal, &detector ), stat );
+  TRY ( LALSimulateCoherentGW (stat->statusPtr, output, &sourceSignal, &detector ), stat );
 
 			       
   /*----------------------------------------------------------------------*/
@@ -187,6 +189,8 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarS
   LALFree (sourceSignal.f);
   TRY (LALDDestroyVector (stat->statusPtr, &(sourceSignal.phi->data )), stat);
   LALFree (sourceSignal.phi);
+
+  *signal = output;
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);

@@ -388,7 +388,7 @@ int main(int argc,char *argv[]) {
   /* new stuff */
   UINT4 i;
   SFTVector *SFTs = NULL;
-  static REAL4TimeSeries Tseries;
+  REAL4TimeSeries *Tseries = NULL;
 
   
   programname=argv[0];
@@ -599,7 +599,7 @@ int main(int argc,char *argv[]) {
     if (params.pulsar.spindown)
       LALDDestroyVector (&status, &(params.pulsar.spindown) );
 
-    SUB (LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
+    SUB (LALPrintR4TimeSeries (&status, Tseries, "test2.agr"), &status);
 
     sftParams.Tsft = Tsft;
     sftParams.timestamps = LALCalloc(1, sizeof(LIGOTimeGPSVector));
@@ -607,7 +607,7 @@ int main(int argc,char *argv[]) {
     sftParams.timestamps->data = timestamps;
     sftParams.noiseSFTs = NULL;
 
-    SUB ( LALSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
+    SUB ( LALSignalToSFTs (&status, &SFTs, Tseries, &sftParams), &status);
 
     LALFree (sftParams.timestamps);
 
@@ -714,8 +714,9 @@ int main(int argc,char *argv[]) {
   /* free the stuff */
   LALDestroySFTVector (&status, &SFTs);
 
-  LALFree (Tseries.data->data);
-  LALFree (Tseries.data);
+  LALFree (Tseries->data->data);
+  LALFree (Tseries->data);
+  LALFree (Tseries);
 
   
   if (freemem(&status))

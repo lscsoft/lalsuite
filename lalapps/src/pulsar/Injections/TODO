@@ -13,6 +13,9 @@ TODO
 
 * do MEASURE the FFTW-plan, and allow some plan-buffering!
 
+* check if timestamps-ordered == timestamps-delivered... 
+	(i.e. timestamps consistent with sampling of time-series?)
+
 done
 ----
 

@@ -157,7 +157,7 @@ typedef struct {
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
 void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
