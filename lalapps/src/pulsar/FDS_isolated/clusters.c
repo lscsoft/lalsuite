@@ -179,26 +179,34 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
     }
   }/*end loop on outliers*/
   
+  /* 
+     MAP: please check if it is correct to delete the lines that
+     follow.  The problem is that (i+1-k) below can exceed the allowed
+     range of the array!
+  */
+#if 0
+  /* WARNING: SEGV AHEAD!! */
   NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1;
-  Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k];
+  Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k];  
+#endif
 
   if (Nclust == 0){
     Iclust[Nclust]=input->outliers->outlierIndexes[Nclust];
+    NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1;
   }
-
+  
   if (Nclust != 0 && k!=0){ 	/*  if the last considered outlier was part of a cluster */
     				/*  and the really last outlier belongs to */
 	    			/*  the same cluster */
-     k++;
-     Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k]; 
-     NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1; 
-   } 
+    k++;
+    Iclust[Nclust]=input->outliers->outlierIndexes[i+1-k]; 
+    NclustPoints[Nclust]=input->outliers->outlierIndexes[i]-input->outliers->outlierIndexes[i0]+1; 
+  } 
   
   if (Nclust != 0 && k==0){ /* if the last outlier is isolated */
     Iclust[Nclust]=input->outliers->outlierIndexes[i];
     NclustPoints[Nclust]=1;
   }
-
 
   /*  count how many points per cluster and in total  */
   NtotCheck=0;
