@@ -1,4 +1,4 @@
-/*-----------------------------------------------------------------------
+ /*-----------------------------------------------------------------------
  *
  * File Name: makefakedata_v2.c
  *
@@ -11,7 +11,7 @@
  *
  *            2003/10/03 modified by Bruce Allen for S2 pulsar
  *                       injections
- *
+ *           
  *-----------------------------------------------------------------------
  */
 
@@ -35,7 +35,7 @@ Produces fake SFT data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+makefakedata [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-I input dir]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,7 +258,7 @@ char timestampsname[128];
 /* non-null values mean to create the files! */
 char *freqbasefilename=NULL;
 char *timebasefilename=NULL;
-char *noisedir=NULL;
+char *noisedir="/sft/S2-LIGO/S2_H1_FunkyCal30MinSFTs/";
 char filelist[MAXFILES][MAXFILENAMELENGTH];
 REAL8 GPStime=-1.0;
 INT4 pulsar_defined_at_fiducial_SSB=0;
@@ -316,7 +316,7 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -1436,6 +1436,7 @@ void usage(FILE *fp){
 	  "-S Double-precision number    SSB fiducial time at which pulsar defined  [Use Detector's first timestamp]\n"
 	  "-X Double-precision number    Include time (minus arg) in STRAIN file    [No column of times]\n"
 	  "-E Character String           Directory path for ephemeris files         [./ (current directory)]\n"
+	  "-D Character String           Input noise dir                            [/sft/S2-LIGO/S2_H1_FunkyCal30MinSFTs/]\n"
 	  "-w                            Window data in time domain before doing FFT\n"
 	  "-b                            Output time-domain data in IEEE754 binary format\n"
 	  "-m                            DON'T output 1234.5 before time-domain binary samples\n"
@@ -1462,7 +1463,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   opterr=0;
 
-  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:wbmh"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmh"))!=-1))
     switch (c) {
     case 'i':
       /* Name of input data file */
@@ -1552,6 +1553,14 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
       sprintf(earthdata,"%s/%s", optarg, EARTHDATA);
       sprintf(sundata,  "%s/%s", optarg, SUNDATA);
       break;
+    case 'D':
+      if (!(noisedir=(char *)malloc((strlen(optarg)+2)))){
+	syserror("No memory remaining to store input sft dir name\n");
+	exit(1);
+      }
+      sprintf(noisedir, "%s", optarg);
+      break; 
+      /* input sft directory */
     case 'w':
       /* window data in time domain before FFTing it */
       do_windowing=1;
