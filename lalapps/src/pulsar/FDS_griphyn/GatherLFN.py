@@ -10,6 +10,9 @@ LRC to obtain a URL good for transfer and move the file. After the
 file is moved register its new location in the local LRC and add
 it to the list.
 
+If requested create a symlink from an existing local path for a
+file to the local working directory.
+
 The input list of LFNs should have each LFN on a seperate line.
 It is expected that the input will be the output from QueryMetadataLFN.
 """
@@ -243,6 +246,31 @@ def verifyLocalPath(pfn):
 
         return os.access(path, os.R_OK)
 
+def linkFile(pfn):
+        """
+        Create a symlink in bucket directory to local PFN pfn.
+        """
+
+        global bucketDir
+
+        if bucketDir: 
+                linkDir = os.path.abspath(bucketDir)
+        else:
+                linkDir = os.getcwd()
+
+        src = urlparse.urlparse(pfn)[2]
+        filename = os.path.basename(src)
+
+        dest = os.path.join(linkDir, filename)
+
+        if not os.path.exists(dest):
+            try:
+                    os.symlink(src, dest)
+            except Exception, e:
+                    msg = "Unable to setup symlink %s -> %s: %s" % (src, dest, e)
+                    raise QueryException, msg
+                
+
 def unpublishLocal(pfn, myRLS):
         """
         Delete a LFN -> PFN mapping in the catalog.
@@ -267,7 +295,7 @@ NAME
 
 SYNOPSIS
         GatherLFN --input=PATH --server=URL [ --bucket=DIRECTORY ]
-                [ --output=PATH ] [ --bucket=PATH ]
+                [ --output=PATH ] [ --bucket=PATH ] [ --symlink ]
 
         GatherLFN --version
 
@@ -286,6 +314,11 @@ DESCRIPTION
         -b, --bucket
                 directory into which files should be moved if 
                 necessary, defaults to current working directory
+
+        -l, --symlink
+                create symlinks from existing local paths to 
+                bucket directory (default is current working
+                directory) if necessary
 
         -s, --server
                 URL for the RLS server
@@ -315,11 +348,12 @@ longopt = [
         "server=",
         "output=",
         "bucket=",
+        "symlink=",
         "version",
         "help"
         ]
 
-shortopt = "i:s:o:vhb:"
+shortopt = "i:s:o:vhlb:"
 
 
 try:
@@ -334,6 +368,7 @@ inputPath = None
 rlsURL = None
 outputPath = None
 bucketDir = None
+symlink = None
 
 
 for o, a in opts:
@@ -348,6 +383,8 @@ for o, a in opts:
                 rlsURL = a
         elif o in ("-o", "--output"):
                 outputPath = a
+        elif o in ("-l", "--symlink"):
+                symlink = True
         elif o in ("-V", "--version"):
                 print >>sys.stderr, versionN
                 sys.exit(0)
@@ -399,6 +436,11 @@ if outputPath:
                         print >>sys.stderr, "Use --help for usage"
                         sys.exit(1)
 
+# print out our environment to stdout
+print "Runtime environment for lalapps_GatherLFN:"
+for v in os.environ:
+        print "        %s=%s" % (v, os.environ[v])
+
 # make sure that GLOBUS_LOCATION is in our environment
 
 try:
@@ -444,6 +486,8 @@ for lfn in lfnList:
                         if verifyLocalPath(pfn):
                                 print "file at local URL %s is readable" % pfn
                                 localPathList.append(pfn)
+                                if symlink:
+                                        linkFile(pfn)
                                 local = True
                         else:
                                 unpublishLocal(pfn, myRLS)
