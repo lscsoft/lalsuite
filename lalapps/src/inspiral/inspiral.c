@@ -1402,6 +1402,12 @@ int main( int argc, char *argv[] )
   fcFilterParams->computeNegFreq = 0;
   fcFilterParams->chisqParams->approximant = approximant;
 
+  /* set up parameters for the filter output veto */
+#if 0
+  fcFilterParams->filterOutputVetoParams = (FindChirpFilterOutputVetoParams *)
+    LALCalloc( 1, sizeof(FindChirpFilterOutputVetoParams) );
+#endif
+
   LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
       &status );
   LAL_CALL( LALFindChirpChisqVetoInit( &status, fcFilterParams->chisqParams, 
