@@ -193,6 +193,7 @@ CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
+INT8   outTimeNS        = 0;            /* search summ out time         */
 int    enableOutput     = -1;           /* write out inspiral events    */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
@@ -441,28 +442,30 @@ int main( int argc, char *argv[] )
     fprintf( stdout, "no templates found in template bank file: %s\n"
         "exiting without searching for events.\n", bankFileName );
 
-    if ( trigStartTimeNS )
+    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
+        gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
+
+    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
+            &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+
+    if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
     {
       LAL_CALL( LALINT8toGPS( &status, 
             &(searchsumm.searchSummaryTable->out_start_time), 
             &trigStartTimeNS ), &status );
     }
-    else
-    {
-      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-        gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
-    }
+    
+    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
+        gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
 
-    if ( trigEndTimeNS )
+    LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
+            &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+
+    if ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) )
     {
       LAL_CALL( LALINT8toGPS( &status, 
             &(searchsumm.searchSummaryTable->out_end_time), 
             &trigEndTimeNS ), &status );
-    }
-    else
-    {
-      searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-        gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
     }
   }
 
@@ -1258,32 +1261,39 @@ int main( int argc, char *argv[] )
       &status );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
   LAL_CALL( LALFloatToGPS( &status, 
-        &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
+      &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
       &status );
 
-  if ( trigStartTimeNS )
+
+  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
+      &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+
+  if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
   {
     /* override with trigger start time */
-    LAL_CALL( LALINT8toGPS( &status, 
-          &(searchsumm.searchSummaryTable->out_start_time), 
-          &trigStartTimeNS ), &status );
+    LAL_CALL( LALINT8toGPS( &status,
+        &(searchsumm.searchSummaryTable->out_start_time), 
+        &trigStartTimeNS ), &status );
   }
 
   LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
       &status );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
   LAL_CALL( LALFloatToGPS( &status, 
-        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
+      &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
       &status );
 
-  if ( trigEndTimeNS )
+  
+  LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
+        &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+
+  if ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) )
   {
     /* override with trigger end time */
     LAL_CALL( LALINT8toGPS( &status, 
-          &(searchsumm.searchSummaryTable->out_end_time), 
-          &trigEndTimeNS ), &status );
+        &(searchsumm.searchSummaryTable->out_end_time), 
+        &trigEndTimeNS ), &status );
   }
-
 
   /* 
    *
