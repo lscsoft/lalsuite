@@ -436,7 +436,7 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(vsnprintf)
 AC_CHECK_FUNCS(putenv)
 
-dnl Set package install path
+dnl Set package documentation install path
 AC_SUBST([pkgdocdir], [${prefix}/doc/${PACKAGE_NAME}-${PACKAGE_VERSION}])
 
 dnl Setup automake conditionals
