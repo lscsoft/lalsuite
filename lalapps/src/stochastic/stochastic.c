@@ -2418,6 +2418,9 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   params.deltaT = 1./resampleRate;
   params.filterType = defaultButterworth;
 
+  if (vrbflg)
+    fprintf(stdout, "Opening frame cache \"%s\"...\n", cacheFile);
+
   /* open frame stream */
   LAL_CALL(LALFrCacheImport(status, &frameCache, cacheFile), status);
   LAL_CALL(LALFrCacheOpen(status, &stream, frameCache), status);
@@ -2479,20 +2482,29 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
   channelIn.name = channel;
   channelIn.type = ADCDataChannel;
 
+  if (vrbflg)
+    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
+  if (vrbflg)
+    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+
   /* get the series meta data */
   LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(status, series, &channelIn, \
         stream), status);
+
+  if (vrbflg)
+    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = delta_gps_to_float(status, end, start) / series->deltaT;
   LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
 
   if (vrbflg)
-    fprintf(stdout, "Reading channel %s...\n", channel);
+    fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
@@ -2520,27 +2532,36 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   channelIn.name = channel;
   channelIn.type = ADCDataChannel;
 
+  if (vrbflg)
+    fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
+
   /* create and initialise time series */
   LAL_CALL(LALCreateREAL8TimeSeries(status, &geo, channel, start, 0, 0, \
         lalADCCountUnit, 0), status);
 
+  if (vrbflg)
+    fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
+
   /* get the series meta data */
   LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(status, geo, &channelIn, \
         stream), status);
+
+  if (vrbflg)
+    fprintf(stderr, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
   length = delta_gps_to_float(status, end, start) / series->deltaT;
   LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
 
   if (vrbflg)
-    fprintf(stdout, "Reading channel %s...\n", channel);
+    fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
   LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channelIn, stream), status);
 
   if (vrbflg)
-    fprintf(stdout, "High pass filtering GEO data...\n");
+    fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
 
   /* high pass filter before casting to a REAL4 */
   highPassParam.nMax = geoHighPassOrder;
@@ -2549,6 +2570,9 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   highPassParam.a1 = -1;
   highPassParam.a2 = geoHighPassAtten;
   LAL_CALL(LALButterworthREAL8TimeSeries(status, geo, &highPassParam), status);
+
+  if (vrbflg)
+    fprintf(stdout, "Casting \"%s\" as a REAL4...\n", channel);
 
   /* cast as a REAL4 */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &series, geo->name, geo->epoch, \
