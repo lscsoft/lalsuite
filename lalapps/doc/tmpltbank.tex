@@ -2,118 +2,247 @@
 \label{program:lalapps-tmpltbank}
 \idx[Program]{lalapps\_tmpltbank}
 \begin{entry}
-\item[Synopsis]
-\noindent \verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
-\begin{verbatim}
 
---help                          --verbose                   
---version                       --debug-level LEVEL      
---user-tag STRING               --comment STRING       
---gps-start-time SEC            --gps-end-time SEC  
---pad-data T                    --glob-frame-data         
---frame-type TAG                --frame-cache          
---calibration-cache FILE        --channel-name CHAN          
---calibrated-data TYPE          --geo-high-pass-freq F   
---geo-high-pass-order O         --geo-high-pass-atten A  
---sample-rate F                 --resample-filter TYPE      	
---disable-high-pass             --enable-high-pass F         
---high-pass-order O             --high-pass-attenuation A   
---spectrum-type TYPE            --segment-length N      
---number-of-segments N          --standard-candle           
---candle-snr SNR                --candle-mass1 M             
---candle-mass2 M                --low-frequency-cutoff F     
---high-frequency-cutoff F       --minimum-mass MASS        
---maximum-mass MASS             --minimum-psi0 PSI0          
---maximum-psi0 PSI0             --minimum-psi3 PSI3          
---maximum-psi3 PSI3             --maximum-fcut-tmplts N    
---alpha ALPHA                   --minimal-match M       
---order ORDER                   --approximant APPROX          
---space SPACE                   --write-raw-data           
---write-response                --dynamic-range-exponent X  
+\item[Name] 
+\verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
 
-\end{verbatim}
+\item[Synopsis]\noindent
+\prog{lalapps\_sire} \newline \hspace*{0.5in}
+[\option{--help}]\newline \hspace*{0.5in}   
+[\option{--verbose}]\newline \hspace*{0.5in}                   
+[\option{--version}]\newline \hspace*{0.5in}    
+[\option{--debug-level}~\parm{level}]\newline \hspace*{0.5in}    
+[\option{--user-tag}~\parm{usertag}]\newline \hspace*{0.5in}      
+[\option{--comment}~\parm{comment}]\newline \hspace*{0.5in}  
+\option{--gps-start-time}~\parm{gps\_start}\newline \hspace*{0.5in} 
+\option{--gps-end-time}~\parm{gps\_end}\newline \hspace*{0.5in} 
+[\option{--pad-data}~\parm{time\_pad}]\newline \hspace*{0.5in} 
+[\option{--glob-frame-data}]\newline \hspace*{0.5in}  
+[\option{--frame-type}~\parm{type}]\newline \hspace*{0.5in}           
+[\option{--frame-cache}~\parm{cache\_file}]\newline \hspace*{0.5in}  
+\option{--calibration-cache}~\parm{cal\_file}\newline \hspace*{0.5in}
+\option{--glob-calibration-data}\newline \hspace*{0.5in}
+\option{--channel-name}~\parm{channel}\newline \hspace*{0.5in}      
+[\option{--calibrated-data}~\parm{cal\_type}]\newline \hspace*{0.5in}
+[\option{--geo-high-pass-freq}~\parm{geo\_freq}]\newline \hspace*{0.5in}
+[\option{--geo-high-pass-order}~\parm{geo\_order}]\newline \hspace*{0.5in}
+[\option{--geo-high-pass-atten}~\parm{geo\_atten}]\newline \hspace*{0.5in}
+\option{--sample-rate}~\parm{sample\_freq}\newline \hspace*{0.5in} 
+\option{--resample-filter}~\parm{filter\_type}\newline \hspace*{0.5in} 
+[\option{--disable-high-pass}]\newline \hspace*{0.5in} 
+[\option{--enable-high-pass}~\parm{high\_freq}]\newline \hspace*{0.5in} 
+[\option{--high-pass-order}~\parm{high\_order}]\newline \hspace*{0.5in}    
+[\option{--high-pass-attenuation}~\parm{high\_atten}]\newline \hspace*{0.5in}   
+\option{--spectrum-type}~\parm{spectype}\newline \hspace*{0.5in} 
+[\option{--dynamic-range-exponent}~\parm{exp}]\newline \hspace*{0.5in} 
+\option{--segment-length}~\parm{seglen}\newline \hspace*{0.5in} 
+[\option{--number-of-segments}~\parm{segnum}]\newline \hspace*{0.5in}
+[\option{--standard-candle}]\newline \hspace*{0.5in}   
+[\option{--candle-snr}~\parm{candle\_snr}]\newline \hspace*{0.5in}  
+[\option{--candle-mass1}~\parm{candle\_mass1}]\newline \hspace*{0.5in}
+[\option{--candle-mass2}~\parm{candle\_mass2}]\newline \hspace*{0.5in}
+\option{--low-frequency-cutoff}~\parm{cutlow}\newline \hspace*{0.5in}
+\option{--high-frequency-cutoff}~\parm{cuthigh}\newline \hspace*{0.5in} 
+[\option{--minimum-mass}~\parm{minmass}]\newline \hspace*{0.5in}
+[\option{--maximum-mass}~\parm{maxmass}]\newline \hspace*{0.5in}
+[\option{--minimum-psi0}~\parm{psi0min}]\newline \hspace*{0.5in}
+[\option{--maximum-psi0}~\parm{psi0max}]\newline \hspace*{0.5in}
+[\option{--minimum-psi3}~\parm{psi3min}]\newline \hspace*{0.5in}
+[\option{--maximum-psi3}~\parm{psi3max}]\newline \hspace*{0.5in}
+[\option{--maximum-fcut-tmplts}~\parm{maxTemp}]\newline \hspace*{0.5in}
+[\option{--alpha}~\parm{alpha}]\newline \hspace*{0.5in}
+\option{--minimal-match}~\parm{match}\newline \hspace*{0.5in} 
+\option{--order}~\parm{order}\newline \hspace*{0.5in}  
+\option{--approximant}~\parm{approx}\newline \hspace*{0.5in}
+\option{--space}~\parm{space}\newline \hspace*{0.5in} 
+[\option{--write-raw-data}]\newline \hspace*{0.5in}   
+[\option{--write-response}]\newline \hspace*{0.5in}   
+[\option{--write-spectrum}]\newline \hspace*{0.5in}   
+[\option{--write-strain-spectrum}]\newline \hspace*{0.5in}   
+
+
+
 
 \item[Options]
 \noindent The following command line arguments are available when running tmpltbank.c
 \\
-\item[\texttt{--help}] display the help message which gives brief explanations
-of the command arguments.  
-\item[\option{--verbose}] print progress information as the code executes.
-\item[\option{--version}] print version information and exit without running 
-the tmpltbank code. 
-\item[\option{--debug-level} \textsc{LEVEL}] Sets the LAL debug level to \texttt{LEVEL}.  
+
+
+
+\item[\option{--alpha} \parm{ alpha}] 
+Set BCV amplitude correction to \parm{alpha}.
+
+\item[\option{--approximant} \parm{ approx}] 
+Sets the approximant of the waveform to \parm{approx}. \option{Taylor2} is the standard stationary phase frequency domain chirp used in the BNS search. Available parameters: \option{TaylorT1}, \option{TaylorT2}, \option{TaylorT3}, \option{TaylorF1}, \option{TaylorF2}, \option{PadeT1}, \option{PadeF1}, \option{EOB}, \option{BCV}, \option{SpinTaylorT3}, \option{BCVSpin}.
+
+
+\item[\option{--calibrated-data} \parm{type}] 
+Calibrated data of \parm{type} \option{real\_4} or \option{real\_8}.
+
+\item[\option{--calibration-cache} \parm{cal\_file}] 
+Obtain calibration from LAL frame cache \parm{cal\_file}.
+
+\item[\option{--candle-mass1} \parm{candle\_mass1}] 
+Mass  \parm{candle\_mass1} of first component in candle binary.  Must be specified is the option \option{--standard-candle} is set.
+
+\item[\option{--candle-mass2} \parm{candle\_mass2}] 
+Mass \parm{candle\_mass2} of second component in candle binary. Must be specified is the option \option{--standard-candle} is set.
+
+\item[\option{--candle-snr} \parm{candle\_snr}] 
+Set the signal-to-noise ratio of standard candle to \parm{candle\_snr}. Must be specified is the option \option{--standard-candle} is set.
+
+\item[\option{--channel-name} \parm{channel}] 
+Read data from interferometer channel \parm{channel}.
+
+\item[\option{--comment} \parm{comment}] 
+Set the process table comment to \parm{comment}.
+
+\item[\option{--debug-level} \parm{level}] 
+Sets the LAL debug level to \parm{level}.  
 1 and 33 are the commonest choices for this code.  Debug level 1 is used for 
 developing code because it enables memory and error checking.  Since memory 
 checking is slow the correct choice for production code is 33.  
 See the LAL documentation for more information.  
-\item[\option{--user-tag} \textsc{STRING}] Set the user tag to the string \texttt{STRING}.  
-This string must not contain spaces or dashes (``-'').  This string will appear 
-in the name of the file to which output information is written, and is recorded 
-in the various XML tables within the file.
-\item[\option{--comment} \textsc{STRING}] set the process table comment to STRING.
-\item[\option{--gps-start-time} \textsc{SEC}] Set the integer part of the GPS time from 
-which you wish to begin reading data.
-\item[\option{--gps-end-time} \textsc{SEC}] Set the integar part of the GPS time you want
+
+\item[\option{--disable-high-pass}] 
+Turn off the IIR highpass filter.  This is an optimistc option. Someday the data will be so good we won't need high pass filtering!  
+
+\item[\option{--dynamic-range-exponent} \parm{exp}] 
+Set dynamic range scaling to ${2}^{exp}$.
+
+\item[\option{--enable-high-pass} \parm{high\_freq}] 
+High pass data above \parm{high\_freq} Hz using an IIR filter.
+
+\item[\option{--frame-cache} \parm{cache\_file}] 
+This option is used instead of \option{--glob-frame-data} to read frame data from a frame cache file \parm{cache\_file}. 
+
+\item[\option{--frame-type} \parm{type}] 
+This option specified the type of frames containing the input data. This option must be specified with the \option{--glob-frame-data} option.???????????
+
+\item[\option{--geo-high-pass-atten} \parm{geo\_atten}] 
+Set the attenuation of the high pass filter to \parm{geo\_atten}. Only if \option{--calibrated-data} is set to \option{real\_8}.
+
+\item[\option{--geo-high-pass-freq} \parm{geo\_freq}] 
+This sets the high pass filter frequency for GEO data above \parm{geo\_freq} Hz using an IIR filter. Only if \option{--calibrated-data} is set to \option{real\_8}.
+
+\item[\option{--geo-high-pass-order} \parm{geo\_order}] 
+Set the order of the GEO high pass filter to \parm{geo\_order}. Only if \option{--calibrated-data} is set to \option{real\_8}.
+
+\item[\option{--glob-calibration-data}] 
+Is this option is specified, the calibration is obtained by globbing in the working directory.?????????
+
+\item[\option{--glob-frame-data}] 
+This option along with \option{--frame-type}
+can be used instead of \option{--frame-cache} to read data stored locally in 
+the working directory.  It finds files of the specified frame type with a *.gwf 
+extension. 
+
+\item[\option{--gps-end-time} \parm{gps\_end}] 
+Set the integer part of the GPS time \parm{gps\_end} you want
 to stop reading data. 
-\item[\option{--pad-data} \textsc{T}] This flag specifies an amount of time to add to 
+
+\item[\option{--gps-start-time} \parm{gps\_start}] 
+Set the integer part of the GPS time \parm{gps\_start} from which you wish to begin reading data.
+
+\item[\texttt{--help}] display the help message which gives brief explanations
+of the command arguments.  
+
+\item[\option{--high-frequency-cutoff} \parm{cuthigh}] 
+Do not filter above \parm{cuthigh} Hz.
+
+\item[\option{--high-pass-attenuation} \parm{high\_atten}] 
+Set the attenuation of the high pass filter to \parm{high\_atten}.
+
+\item[\option{--high-pass-order} \parm{high\_order}] 
+Set the order of the high pass filter to \parm{high\_order}.
+
+\item[\option{--low-frequency-cutoff} \parm{cutlow}] 
+Do not filter below \parm{cutlow} Hz.
+
+\item[\option{-maximum-fcut-tmplts} \parm{ maxTemp}] 
+Set the maximum number of templates in fcut direction to \parm{maxTemp}.
+
+\item[\option{--maximum-mass} \parm{maxmass}] 
+Set maximum component mass of bank to \parm{maxmass}.
+
+\item[\option{--maximum-psi0} \parm{psi0max}] 
+Set maximum range of BCV parameter psi0 to \parm{ psi0max}.
+
+\item[\option{--maximum-psi3} \parm{psi3max}] 
+Set maximum range of BCV parameter psi3 to  \parm{ psi3max}.
+
+\item[\option{--minimal-match} \parm{match}] 
+Specifies the minimal match \parm{match} between templates in the 
+bank and all possible signals in the parameter space.
+
+\item[\option{--minimum-mass} \parm{minmass}] 
+Set minimum component mass of bank to \parm{minmass}.
+
+\item[\option{--minimum-psi0} \parm{psi0min}] 
+Set minimum range of BCV parameter psi0 to \parm{ psi0min}.
+
+\item[\option{--minimum-psi3} \parm{psi3min}] 
+Set minimum range of BCV parameter psi3 to \parm{ psi3min}.
+
+\item[\option{--number-of-segments} \parm{segnum}] 
+Set number of data segments to \parm{segnum}.
+
+\item[\option{--order} \parm{order}] 
+This sets the order of the waveform to \parm{order}. Usually it is set to \option{twoPN} (second order post newtonian). Available parameters: \option{newtonian}, \option{oneHalfPN}, \option{onePN}, \option{onePointFivePN}, \option{twoPN}, \option{twoPointFivePN}, \option{threePN}, \option{threePointFivePN}.
+
+\item[\option{--pad-data} \parm{time\_pad}] 
+This flag specifies an amount of time \parm{time\_pad} to add to 
 the beginning and end of the input time series data.  Padding the data is 
 necessary because resampling and filtering corrupts these portions. 
 8 seconds is the accepted choice for this paramenter.  See LAL documentation 
 for a description of resampling and high pass filtering.  
-\item[\option{--glob-frame-data}] This option along with \texttt{--frame-type}
-can be used instead of \texttt{--frame-cache} to read data stored locally in 
-the working directory.  It finds files of the specified frame type with a *.gwf 
-extension. 
-\item[\option{--frame-cache}] This option is used instead of 
-\texttt{--glob-frame-data} to read frame data from a frame cache file. 
-\item[\option{--calibration-cache} \textsc{FILE}] obtain calibration from LAL frame 
-cache FILE
-\item[\option{--channel-name} \textsc{CHAN}] read data from interferometer channel CHAN
-\item[\option{--calibrated-data} \textsc{TYPE}] calibrated data of TYPE real\_4 or real\_8
 
-\item[\option{--geo-high-pass-freq} \textsc{F}] This sets the high pass filter frequency
-for GEO data above F Hz using an IIR filter.
-\item[\option{--geo-high-pass-order} \textsc{O}] set the order of the GEO high pass 
-filter to O
-\item[\option{--geo-high-pass-atten} \textsc{A}] set the attenuation of the high pass 
-filter to A
-\item[\option{--sample-rate} \textsc{F}] Specifies the sampling frequency at which you
+\item[\option{--resample-filter} \parm{filter\_type}] 
+Set resample filter \parm{filter\_type} to \option{ldas} or \option{butterworth}. In the normal case the \parm{ldas} filter is used.
+
+\item[\option{--sample-rate} \parm{sample\_freq}] 
+Specifies the sampling frequency \parm{sample\_freq} at which you
 want to filter the data downsampling if necessary.
-\item[\option{--resample-filter} \textsc{TYPE}] set resample filter to TYPE [ldas|butterworth]
-\item[\option{--disable-high-pass}] turn off the IIR highpass filter.  This is an 
-optimistc option.  Someday the data will be so good we won't need high pass filtering!  
-\item[\option{--enable-high-pass} \textsc{F}] high pass data above F Hz using an IIR filter
-\item[\option{--high-pass-order} \textsc{O}] set the order of the high pass filter to O
-\item[\option{--high-pass-attenuation}] A set the attenuation of the high pass filter to A
-\item[\option{--spectrum-type} \textsc{TYPE}] use PSD estimator TYPE [mean|median]
-\item[\option{--dynamic-range-exponent} \textsc{X}] set dynamic range scaling to ${2}^X$
-\item[\option{--segment-length} \textsc{N}] set data segment length to N points
-\item[\option{--number-of-segments} \textsc{N}] set number of data segments to N
-\item[\option{--standard-candle}] compute a standard candle from the PSD
-\item[\option{--candle-snr} \textsc{SNR}] signal-to-noise ratio of standard candle
-\item[\option{--candle-mass1} \textsc{M}] mass of first component in candle binary
-\item[\option{--candle-mass2} \textsc{M}] mass of second component in candle binary
-\item[\option{--low-frequency-cutoff} \textsc{F}] do not filter below F Hz
-\item[\option{--high-frequency-cutoff} \textsc{F}] upper frequency cutoff in Hz
-\item[\option{--minimum-mass} \textsc{MASS}] set minimum component mass of bank to MASS
-\item[\option{--maximum-mass} \textsc{MASS}] set maximum component mass of bank to MASS
-\item[\option{--minimum-psi0} \textsc{ PSI0}] set minimum range of BCV parameter psi0 to PSI0
-\item[\option{--maximum-psi0} \textsc{ PSI0}] set maximum range of BCV parameter psi0 to PSI0
-\item[\option{--minimum-psi3} \textsc{ PSI3}] set minimum range of BCV parameter psi3 to PSI3
-\item[\option{--maximum-psi3} \textsc{ PSI3}] set maximum range of BCV parameter psi3 to PSI3
-\item[\option{-maximum-fcut-tmplts} \textsc{ N}] maximum number of tmplts in fcut direction is N
-\item[\option{--alpha} \textsc{ ALPHA}] set BCV amplitude correction to ALPHA
-\item[\option{--minimal-match} \textsc{ M}] The minimal match M between templates in the 
-bank and all possible signals in the parameter space. 
-\item[\option{--order} \textsc{ ORDER}] This sets the post-Newtonian order of the waveform to
-ORDER.   
-\item[\option{--approximant} \textsc{ APPROX}] Sets the approximant of the waveform to APPROX
-\item[\option{--space} \textsc{ SPACE}] In order to make the template bank coordinates nice
-and friendly these parameters are used instead of masses.  
-\item[\option{--write-raw-data}] write raw data to a frame file
-\item[\option{--write-response}] write the computed response function to a frame
-\item[\option{--write-spectrum}] write the uncalibrated psd to a frame
-\item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
+
+\item[\option{--segment-length} \parm{seglen}] 
+Set data segment length to \parm{seglen} points.
+
+\item[\option{--space} \parm{ space}] 
+In order to make the template bank coordinates nice and friendly these parameters are used instead of masses.
+Usually {\tt Tau0Tau3} is used. Available parameters:
+\option{Tau0Tau2}, \option{Tau0Tau3}, \option{Psi0Psi3}.
+
+\item[\option{--spectrum-type} \parm{spec\_type}] 
+Use PSD estimator \parm{spec\_type} \option{mean} or \option{median} to choose how the average is calculated. Since the median average is less affected by a loud glitch \option{median} is used generally.
+
+\item[\option{--standard-candle}] 
+Compute a standard candle from the PSD. In that case the arguments \option{candle-mass1}, \option{candle-mass2} and  \option{candle-snr} must also be specified.
+
+\item[\option{--verbose}] print progress information as the code executes.
+
+\item[\option{--version}] print version information and exit without running 
+the tmpltbank code. 
+
+\item[\option{--user-tag} \parm{usertag}] 
+Set the user tag to the string \parm{usertag}.  
+This string must not contain spaces or dashes (``-'').  This string will appear 
+in the name of the file to which output information is written, and is recorded 
+in the various XML tables within the file.
+
+\item[\option{--write-raw-data}] 
+Write raw data to a frame file.
+
+\item[\option{--write-response}] 
+Write the computed response function to a frame.
+
+\item[\option{--write-spectrum}] 
+Write the uncalibrated psd to a frame.
+
+\item[\option{--write-strain-spectrum}] 
+Write the calibrated strain psd to a text file.
+
+ 
+
 
 \item[Description]
 \noindent \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
@@ -154,5 +283,5 @@ lalapps_tmpltbank \
 \end{verbatim}
 
 \item[Author]
-\noindent Duncan Brown
+\noindent Duncan Brown and Alexander Dietz
 \end{entry}
