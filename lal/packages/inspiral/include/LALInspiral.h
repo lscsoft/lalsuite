@@ -186,6 +186,8 @@ tagInspiralTemplate
 {
   INT4 ieta;
   INT4 level;
+  INT4 *segmentId;
+  UINT4 numSegments;
   INT4 number;
   INT4 nStartPad;
   INT4 nEndPad;
