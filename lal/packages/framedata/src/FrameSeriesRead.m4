@@ -169,13 +169,13 @@ FUNC (
   mult = sizeof( *series->data->data ) / sizeof( *vect->FRDATA );
   dest = series->data->data;
   need = series->data->length;
-  if ( noff * mult > vect->nData )
+  if ( noff > vect->nData )
   {
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
   }
 
   /* number of points to copy */
-  ncpy = ( vect->nData - noff < need * mult ) ? ( vect->nData - noff ) / mult : need;
+  ncpy = ( vect->nData - noff < need ) ? ( vect->nData - noff ) : need;
   memcpy( dest, vect->FRDATA + noff * mult, ncpy * sizeof( *series->data->data ) );
   dest += ncpy;
   need -= ncpy;
