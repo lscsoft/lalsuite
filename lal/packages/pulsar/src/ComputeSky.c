@@ -49,7 +49,7 @@ values are calculated using the analytical formulae given in the
 
 NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
 
-static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw);
+static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw);
 
 
 /* <lalVerbatim file="ComputeSkyCP"> */
@@ -124,7 +124,7 @@ ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
 /* Note: this routine will be replaced by Barycenter(), written  */
 /* by C. Cutler, Albert-Einstein-Institut.  			 */
 
-static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw) 
+static void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw) 
 {
 
 	/*RA alpha and DEC delta have their usual meanings, but units 

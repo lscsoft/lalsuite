@@ -141,7 +141,7 @@ tagCSParams
 	REAL8		tSFT;		/* timescale of SFT */
 	LIGOTimeGPS	*tGPS;		/* GPS time of 1st data sample of each SFT */
 	REAL8 		*skyPos; 	/* array of sky positions */
-	CHAR 	*sw;		/* switch to turn on/off modulation */
+	const CHAR 	*sw;		/* switch to turn on/off modulation */
 }
 CSParams;
 
