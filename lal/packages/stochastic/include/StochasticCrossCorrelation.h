@@ -17,7 +17,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 
 \begin{figure}[htb!]
 \begin{center}
-\begin{picture}(382,150)(-32,0)
+\begin{picture}(410,250)(-32,-110)
 \put(168,123){\vector(1,0){15}}
 \put(168,123){\line(1,0){25}}
 \put(195,120){$Y$}
@@ -51,49 +51,70 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
     \texttt{OptimalFilter}
   }
 }
-\put(110,30){\vector(0,1){15}}
-\put(110,30){\line(0,1){25}}
-%\put(107,40){$({P^{\scriptstyle{\rm HW}}_{1,2}})^{-1}$}
-\put(112,40){$\frac{1}{P^{\scriptstyle{\rm HW}}_{1,2}}$}
-%\put(117,40){$\frac{\tilde{R}_{1,2}}{P_{1,2}}$}
-\put(140,30){\vector(0,1){15}}
-\put(140,30){\line(0,1){25}}
-% \put(142,40){${P_{1,2}}^{-1}$}
-\put(142,40){$\frac{1}{P_{1,2}}$}
-%\put(142,40){$\frac{|\tilde{R}_{1,2}|^2}{P_{1,2}}$}
-\put(40,0)
+\put(260,30){\vector(0,1){15}}
+\put(260,30){\line(0,1){25}}
+\put(262,40){$\lambda$}
+\put(343,13){\vector(1,0){15}}
+\put(343,13){\line(1,0){25}}
+\put(370,10){$\sigma^2/T$}
+\put(190,0)
 {
-  \framebox(115,30)
+  \framebox(150,30)
   {
-    \texttt{InverseNoise}
+    \texttt{Normalization}
   }
 }
-\put(210,30){\vector(0,1){15}}
-\put(210,30){\line(0,1){25}}
-\put(212,40){$\Omega_{\scriptstyle{\rm GW}}$}
-\put(-2,2){$\tilde{R}_{1,2}$}
-\put(18,5){\vector(1,0){15}}
-\put(18,5){\line(1,0){25}}
-\put(-2,20){$P^{\scriptstyle{\rm W}}_{1,2}$}
-\put(18,23){\vector(1,0){15}}
-\put(18,23){\line(1,0){25}}
-\put(165,0)
+\put(200,-30){\vector(0,1){25}}
+\put(200,-30){\line(0,1){30}}
+\put(202,-10){$\Omega_{\scriptstyle{\rm GW}}$}
+\put(200,-10){\line(-1,0){35}}
+\put(165,-10){\line(0,1){65}}
+\put(165,-10){\vector(0,1){55}}
+\put(167,40){$\Omega_{\scriptstyle{\rm GW}}$}
+\put(170,-60)
 {
-  \framebox(75,30)
+  \framebox(70,30)
   {
     \texttt{OmegaGW}
   }
 }
-\put(280,30){\vector(0,1){15}}
-\put(280,30){\line(0,1){25}}
-\put(282,40){$\gamma$}
-\put(250,0)
+\put(280,-30){\vector(0,1){20}}
+\put(280,-30){\line(0,1){30}}
+\put(282,-15){$\gamma$}
+\put(280,-20){\line(-1,0){130}}
+\put(150,-20){\line(0,1){75}}
+\put(150,-20){\vector(0,1){55}}
+\put(152,30){$\gamma$}
+\put(250,-60)
 {
-  \framebox(100,30)
+  \framebox(70,30)
   {
     \texttt{Overlap}
   }
 }
+\put(125,-80){\line(0,1){135}}
+\put(125,-80){\vector(0,1){100}}
+%\put(107,40){$({P^{\scriptstyle{\rm HW}}_{1,2}})^{-1}$}
+\put(127,20){$\frac{1}{P^{\scriptstyle{\rm HW}}_{1,2}}$}
+%\put(117,40){$\frac{\tilde{R}_{1,2}}{P_{1,2}}$}
+\put(330,-80){\line(0,1){80}}
+\put(330,-80){\vector(0,1){45}}
+% \put(142,40){${P_{1,2}}^{-1}$}
+\put(332,-35){$\frac{1}{P_{1,2}}$}
+%\put(142,40){$\frac{|\tilde{R}_{1,2}|^2}{P_{1,2}}$}
+\put(115,-110)
+{
+  \framebox(225,30)
+  {
+    \texttt{InverseNoise}
+  }
+}
+\put(73,-108){$\tilde{R}_{1,2}$}
+\put(93,-105){\vector(1,0){15}}
+\put(93,-105){\line(1,0){25}}
+\put(73,-90){$P^{\scriptstyle{\rm W}}_{1,2}$}
+\put(93,-87){\vector(1,0){15}}
+\put(93,-87){\line(1,0){25}}
 \end{picture}
 \end{center}
 \caption{\label{stochastic:f:CrossCorrFlowchart} Relationship among
@@ -120,6 +141,11 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
   (Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c})
   containing the function
   \texttt{LALStochasticOptimalFilter()};
+  \texttt{Normalization} represents the module
+  \texttt{StochasticOptimalFilterNormalization.c} 
+  (Sec.~\ref{stochastic:ss:StochasticOptimalFilterNormalization.c})
+  containing the function
+  \texttt{LALStochasticOptimalFilterNormalization()};
   \texttt{InverseNoise} represents the module
   \texttt{StochasticInverseNoise.c}  
   (Sec.~\ref{stochastic:ss:StochasticInverseNoise.c})
@@ -408,14 +434,6 @@ $1/P_2^{\scriptstyle{\rm HW}}(f)
 =1/(\tilde{R_2}(f)P_2(f))
 =\tilde{R_2}(f)^* / P_2^{\scriptstyle{\rm W}}(f)$ of the
 half-whitened noise power spectral density for the second detector.
-\item[\texttt{REAL4FrequencySeries *unWhitenedInverseNoisePSD1}]
- The reciprocal
-$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1^{\scriptstyle{\rm W}}(f)$ of the
-unwhitened noise power spectral density for the first detector.
-\item[\texttt{REAL4FrequencySeries *unWhitenedInverseNoisePSD2}]
- The reciprocal
-$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2^{\scriptstyle{\rm W}}(f)$ of the
-unwhitened noise power spectral density for the second detector.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
@@ -425,32 +443,7 @@ typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *omegaGW;
   COMPLEX8FrequencySeries  *halfWhitenedInverseNoisePSD1;
   COMPLEX8FrequencySeries  *halfWhitenedInverseNoisePSD2;
-  REAL4FrequencySeries     *unWhitenedInverseNoisePSD1;
-  REAL4FrequencySeries     *unWhitenedInverseNoisePSD2;
 } StochasticOptimalFilterInput;
-
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{\texttt{struct StochasticOptimalFilterParameters}}
-\idx[Type]{StochasticOptimalFilterParameters}
-
-\noindent 
-Contains the parameters of \texttt{LALStochasticOptimalFilter()}.
-The fields are:
- 
-\begin{description}
-\item[\texttt{REAL8 fRef}]
-The reference frequency used in defining the normalization.
-\item[\texttt{BOOLEAN heterodyned}]
-Indicates whether the filter is to be used on heterodyned data or not.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
-typedef struct tagStochasticOptimalFilterParameters {
-  REAL8               fRef;
-  BOOLEAN             heterodyned;
-} StochasticOptimalFilterParameters;
 
 /********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
 
@@ -459,7 +452,7 @@ LALStochasticOptimalFilter(
             LALStatus                                *status,
             COMPLEX8FrequencySeries                  *optimalFilter,
             const StochasticOptimalFilterInput       *input,
-            const StochasticOptimalFilterParameters  *parameters);
+            const REAL4WithUnits                     *lambda);
 
 /********** </lalVerbatim> *********/
 
@@ -565,7 +558,7 @@ typedef struct tagStochasticOptimalFilterNormalizationParameters {
 void
 LALStochasticOptimalFilterNormalization(
             LALStatus                                            *status,
-	    StochasticOptimalFilterNormalizationOutput           *output,
+            StochasticOptimalFilterNormalizationOutput           *output,
             const StochasticOptimalFilterNormalizationInput      *input,
             const StochasticOptimalFilterNormalizationParameters *parameters);
 
