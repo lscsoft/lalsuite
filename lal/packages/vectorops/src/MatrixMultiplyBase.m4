@@ -123,7 +123,7 @@ void F3 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        UINT4		iterator, index;
+        UINT4		iterator, myindex;
 	UINT4		row, column;
 
         INITSTATUS( status, "F3" , MATLABMATRIXMULTC);
@@ -161,8 +161,8 @@ void F3 (
 		{
 			for( column = 0; column < length->data[1]; column++)
 			{
-				index = (row * length->data[1]) + column;
-				(*result)->data[index] = B->data[index] * A;
+				myindex = (row * length->data[1]) + column;
+				(*result)->data[myindex] = B->data[myindex] * A;
 			}
 	        }
         }
@@ -195,7 +195,7 @@ void F4 (
         UINT4Vector     *length;
         UINT4           ndims;
         UINT4		ndims2;
-        UINT4            iterator, index;
+        UINT4            iterator, myindex;
         UINT4            row, column;
 
         INITSTATUS( status, "F4" , MATLABMATRIXMULTC);
@@ -243,8 +243,8 @@ void F4 (
 		{
 			for( column = 0; column < length->data[1]; column++)
 			{
-                                index = (row * length->data[1]) + column;
-				(*result)->data[index] = (A->data[index]) * (B->data[index]);
+                                myindex = (row * length->data[1]) + column;
+				(*result)->data[myindex] = (A->data[myindex]) * (B->data[myindex]);
 			}
 		}
 	}

@@ -22,7 +22,7 @@ void F1 (
 {
 	/*  Variable Declarations  */
 	INT4	iterator;
-	INT4	index;
+	INT4	myindex;
 	INT4	length;
 
 	INITSTATUS( status, "F1" , MATLABMATRIXSUMC);
@@ -44,17 +44,17 @@ void F1 (
 	LAL`'TYPECODE`'CreateVector( status->statusPtr, result, length);
 	CHECKSTATUSPTR( status );
 
-	index = 0;
+	myindex = 0;
 
-	while ( index < length )
+	while ( myindex < length )
 	{
-		(*result)->data[index] = 0;
-		for (iterator = -1; iterator < index; iterator++)
+		(*result)->data[myindex] = 0;
+		for (iterator = -1; iterator < myindex; iterator++)
 		{
-			(*result)->data[index] += ((VTYPE*)(data))->data[iterator+1];
+			(*result)->data[myindex] += ((VTYPE*)(data))->data[iterator+1];
 		}
 
-		index++;
+		myindex++;
 	}
 
         DETATCHSTATUSPTR( status );
@@ -97,14 +97,14 @@ void F2 (
 }
 
 /******************************* <lalLaTeX file="MiscMatlabC">
-\begin{verbatim}void F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *index )\end{verbatim}
+\begin{verbatim}void F3 (LALStatus *status, TYPE *result, VTYPE *data, INT4 *myindex )\end{verbatim}
 *************************************************** </lalLaTeX> */
 
 void F3 (
         LALStatus		*status,
         TYPE			*result,
         VTYPE		*data,
-	INT4			*index
+	INT4			*myindex
 )
 {
         /*  Variable Declarations  */
@@ -123,14 +123,14 @@ void F3 (
         ASSERT ( length >= 1, status, MATLABMATRIXH_ELNTH, MATLABMATRIXH_MSGELNTH);
 
 	(*result) = ((VTYPE*)(data))->data[length - 1];
-	(*index) = length - 1;
+	(*myindex) = length - 1;
 
         for (iterator = 0; iterator < length; iterator++)
         {
                 if ( ((VTYPE*)(data))->data[iterator] > (*result) )
 		{
 			(*result) = ((VTYPE*)(data))->data[iterator];
-			(*index) = iterator;
+			(*myindex) = iterator;
 		}
         }
 

@@ -169,7 +169,7 @@ void F4 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        UINT4		iterator, index;
+        UINT4		iterator, myindex;
 	UINT4		row, column;
 
         INITSTATUS( status, "F4" , MATLABMATRIXPOWC);
@@ -206,8 +206,8 @@ void F4 (
 		{
 			for( column = 0; column < length->data[1]; column++)
 			{
-				index = (row * length->data[1]) + column;
-				(*result)->data[index] = pow( A, B->data[index] );
+				myindex = (row * length->data[1]) + column;
+				(*result)->data[myindex] = pow( A, B->data[myindex] );
 			}
 	        }
         }
@@ -239,7 +239,7 @@ void F5 (
         /*  Variable Declarations  */
         UINT4Vector     *length;
         UINT4           ndims;
-        UINT4            iterator, index;
+        UINT4            iterator, myindex;
         UINT4            row, column;
 
         INITSTATUS( status, "F5" , MATLABMATRIXPOWC);
@@ -277,8 +277,8 @@ void F5 (
 		{
 			for( column = 0; column < length->data[1]; column++)
 			{
-                                index = (row * length->data[1]) + column;
-				(*result)->data[index] = pow( A->data[index], B );
+                                myindex = (row * length->data[1]) + column;
+				(*result)->data[myindex] = pow( A->data[myindex], B );
 			}
 		}
         }
@@ -311,7 +311,7 @@ void F6 (
         UINT4Vector     *length;
         UINT4           ndims;
         UINT4           ndims2;
-        UINT4            iterator, index;
+        UINT4            iterator, myindex;
         UINT4            row, column;
 
         INITSTATUS( status, "F6" , MATLABMATRIXPOWC);
@@ -360,8 +360,8 @@ void F6 (
 		{
 			for( column = 0; column < length->data[1]; column++)
 			{
-                                index = (row * length->data[1]) + column;
-				(*result)->data[index] = pow( (A->data[index]) , (B->data[index]));
+                                myindex = (row * length->data[1]) + column;
+				(*result)->data[myindex] = pow( (A->data[myindex]) , (B->data[myindex]));
 			}
 		}
 	}

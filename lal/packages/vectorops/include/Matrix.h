@@ -1769,7 +1769,7 @@ void LALDMax (
         LALStatus		*status,
         REAL8			*result,
         REAL8Vector		*data,
-	INT4			*index
+	INT4			*myindex
 );
 
 void LALDFlipVector (
@@ -1794,7 +1794,7 @@ void LALSMax (
         LALStatus		*status,
         REAL4			*result,
         REAL4Vector		*data,
-	INT4			*index
+	INT4			*myindex
 );
 
 void LALSFlipVector (
@@ -1819,7 +1819,7 @@ void LALI2Max (
         LALStatus		*status,
         INT2			*result,
         INT2Vector		*data,
-	INT4			*index
+	INT4			*myindex
 );
 
 void LALI2FlipVector (
@@ -1844,7 +1844,7 @@ void LALI4Max (
         LALStatus		*status,
         INT4			*result,
         INT4Vector		*data,
-	INT4			*index
+	INT4			*myindex
 );
 
 void LALI4FlipVector (
@@ -1869,7 +1869,7 @@ void LALI8Max (
         LALStatus		*status,
         INT8			*result,
         INT8Vector		*data,
-	INT4			*index
+	INT4			*myindex
 );
 
 void LALI8FlipVector (
