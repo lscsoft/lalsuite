@@ -136,7 +136,7 @@ gps_start2 = int(sgps_start2)
 sNpolka = cp.get('mc-params','Npolka')
 Npolka = int(sNpolka)
 
-Ninjmax=600
+Ninjmax=6000
 
 # -------------------------------------------------------------------------------- #
 
@@ -924,7 +924,7 @@ outCdata_file.close()
 
 #inj_data_file.close()
 copydir=''.join([starting_dir,'/confidence_data/'])
-shutil.copy(inj_out,starting_dir)
+#shutil.copy(inj_out,starting_dir)
 
 
 # -------------------------------------------------------------------------------- #
