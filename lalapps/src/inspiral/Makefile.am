@@ -1,14 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c \
+INSPIRALSRC = inspiral.h inspiral.c \
               inspiralfrutils.c inspiralfrutils.h
-TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c tmpltbank.h \
+TMPLTBANKSRC = tmpltbank.c tmpltbank.h \
                inspiralfrutils.c inspiralfrutils.h
-TRIGTOTMPLTSRC = trigtotmplt.c ligolwbank.h ligolwbank.c
-PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
-COHERESRC = coherent_inspiral.c ligolwbank.h ligolwbank.c inspiral.h \
+TRIGTOTMPLTSRC = trigtotmplt.c
+PRINTINSPIRALSRC = print_inspiral.c
+COHERESRC = coherent_inspiral.c inspiral.h \
             inspiralfrutils.c inspiralfrutils.h
-INCASRC = inca.c ligolwbank.h ligolwbank.c
+INCASRC = inca.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
