@@ -586,7 +586,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* allocate memory for reduced frequency band PSDs */
   psd1.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  psd2.data = (REAL4Sequence*)LALCalloc(2, sizeof(REAL4Sequence));
+  psd2.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
   psd1.data->length = filterLength;
   psd2.data->length = filterLength;
 
