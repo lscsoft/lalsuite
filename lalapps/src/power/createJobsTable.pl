@@ -61,25 +61,42 @@ my $runNum = f_getRunNumber(${$params}{'OUTPUT_PATH'},$DATE);
  f_setupOutputDirs(${$params}{'OUTPUT_PATH'}, $DATE, $runNum);
  
  #set the path for all program output files
-my $output = ${$params}{OUTPUT_PATH};
-my $runPath = $output  . "/$DATE-$runNum";
+my $outputPath = ${$params}{OUTPUT_PATH};
+my $runID = "$DATE-$runNum";
+my $runPath = $outputPath  . "/$runID";
  
 #build the parameter dependent globals
-my $JOBS_TABLE = "$runPath/power_jobs.tbl";
+my $JOBS_TABLE = "$runPath/${$params}{'JOBS_TABLE'}";
 
-#copy the parameters file to the output directory
-print "cp $parametersPath $runPath\n";
-system ("cp $parametersPath $runPath"); 
 
 
 #-----------------------------------------------------------------------------------
 #  MAIN
 #-----------------------------------------------------------------------------------
 
-open LOG, ">>$runPath/" . ${$params}{'LOG'};
+open LOG, ">>$runPath/${$params}{'LOG'}";
 my $t = localtime();
 print LOG "Starting $0 at: $t\n"; # $0 stores program name
 print "Starting $0 at: $t\n";
+
+#copy the parameters file to the output directory
+print "cp $parametersPath $runPath\n";
+system ("cp $parametersPath $runPath"); 
+
+#Get the description for this run
+print "\n\nEnter a description for this run: ";
+my $description;
+while(<STDIN>){
+	chomp;
+	$description = $_;
+	last;
+}
+close STDIN;
+
+# write the description to the runs table
+open RUN_TABLE, ">>$outputPath/${$params}{'RUN_TABLE'}" or die "Couldn't open " . ${$params}{'RUN_TABLE'} . ".\n";
+print RUN_TABLE "$runID\t$ENV{'USER'}\t$description\n"; 
+close RUN_TABLE;
 
 #if the jobs table exists, move it to a backup file
 if (-f "$runPath/$JOBS_TABLE"){ rename "$runPath/$JOBS_TABLE", "$runPath/$JOBS_TABLE.bak";}
@@ -100,21 +117,30 @@ if(${$params}{'USE_PLAYGROUND'}){
 
 # now create the submit script using quality data file and the 
 # the playground seconds hash array
-f_createJobsForGoodData (
+lf_createJobsForGoodData (
 									$runPath,
 									${$params}{'DATA_QUALITY_FILE'}, 
 									scalar(${$params}{'TIME_CHUNK_MIN_SIZE'}), 
 									scalar(${$params}{'TIME_CHUNK_MAX_SIZE'}),
 									$playgroundSeconds);
 
+# update the html page that lists the job runs
+f_updateNotebook( $params);
+					
+# update the notebook page that give stats for this run
+f_updateNotebookPage( 
+					$params,
+					$runPath,
+					$runID);
+
 my $totalTime = time() - $startTime;
-print "Completed in 	$totalTime seconds.\n";
+print "Completed in $totalTime seconds.\n";
 print LOG "Completed in $totalTime seconds\n.";
 print "The jobs table for run $DATE-$runNum has been created. \n\n".
 			"To submit the jobs to condor, run:\n\nprocessJobsTable.pl $runPath/$parametersFile $DATE-$runNum\n\n";
 
 #-----------------------------------------------------------------------------------
-#  f_createJobsForGoodData
+#  lf_createJobsForGoodData
 #-----------------------------------------------------------------------------------
 #  - Reads the data quality file
 # - throws away bad chunks
@@ -122,13 +148,13 @@ print "The jobs table for run $DATE-$runNum has been created. \n\n".
 #-----------------------------------------------------------------------------------
 #  lists chunks of good data from the  data quality file that are in the playground
 #-----------------------------------------------------------------------------------
-sub f_createJobsForGoodData {
+sub lf_createJobsForGoodData {
 
 	my ($runPath, $dataQualityFile, $minChunkSize, $maxChunkSize, $playgroundSecondsHash) = @_;
 	my ($chunkStart, $chunkStop);
 	
 	open DATA_QUALITY_FILE, $dataQualityFile
-			or die "In f_createJobsForGoodData: Couldn't open $dataQualityFile." ;	
+			or die "In lf_createJobsForGoodData: Couldn't open $dataQualityFile." ;	
 	
 	while(<DATA_QUALITY_FILE>){
 		chomp;
@@ -195,29 +221,35 @@ sub  f_processChunk {
 		my $outfile = "$runPath/xml/$startSec-$duration.xml";
 		my $framecache = ${$params}{'CACHE_PATH'} . "/" . ${$params}{'INSTRUMENT'} . "-$startSec-$duration";
 		
-		f_findData($startSec,  $stopSec,$framecache);
+		f_buildCacheFile($startSec,  $stopSec,$framecache);
 		f_writeJobsTable($runPath,$startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
 	}
 }
 
 #-----------------------------------------------------------------------------------
-#   f_findData
+#   f_buildCacheFile
 #-----------------------------------------------------------------------------------
-#  - Takes the stop and start
+#  - Checks to see if the cache file $framechache exists and has data. If it 
+#	doesn't exist or doesn't have data, then function makes system call to 
+#   LALdataFind to build the cachefile. Sometimes LALdataFind creates empty cachefiles
+#   an additional check is made to make sure the new cachefile has data.
 # 
 #-----------------------------------------------------------------------------------
-#  Returns 
+#  Returns the size in bytes of the cachefile
 #-----------------------------------------------------------------------------------
-sub f_findData {
+sub f_buildCacheFile {
 	my ($startSec, $stopSec, $framecache) = @_;
 	
 	#only call LALdataFind if the cache file doesn't currently exist.
-	if (! -f $framecache){
+	if (! -f $framecache or -s $framecache == 0){
 		my $cmd =  "LALdataFind --lal-cache --instrument " . ${$params}{'INSTRUMENT'} . " --type RDS_R_L1 " .
 		 		" --start $startSec --end $stopSec > $framecache";
 		print "$cmd\n";
-		system $cmd;
+		system $cmd;	
+		
+		if (-s $framecache == 0) {die "Framechache file = 0";}
 	}
+	return (-s $framecache);
 }
 
 #-----------------------------------------------------------------------------------

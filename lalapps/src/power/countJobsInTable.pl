@@ -17,7 +17,7 @@ $programPath =~ s/(\w+)\.pl$//;
 use lib split(":", $ENV{'PATH'}), qw($programPath);
 
 #load the power tools module which contains functions shared by the scripts
-use power_tools;
+use power_tools qw(STATUS);
 
 # Check to make sure date of table is included as arg
 my $USAGE = "\nusage: countJobsTable.pl PARAMETERS_FILE YYMMDD-RUN_NUM  \n\n";
@@ -64,4 +64,4 @@ foreach(sort keys %statusCount){
 	print "$_ =", $statusCount{$_},"\n";
 }
 print "\nTOTAL = $i \n";
-print "Total Seconds Analyzed: $amountOfData\n\n";
+print "Seconds Analyzed: $amountOfData\n\n";

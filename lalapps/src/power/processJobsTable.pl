@@ -22,12 +22,19 @@ my $programPath = $0;
 # now clean the filename off the path
 $programPath =~ s/(\w+)\.pl$//;
 
-print $programPath,"\n\n";
 use lib split(":", $ENV{'PATH'}), qw($programPath);
 
 #load the power tools module which contains functions shared by the scripts
 use power_tools;
 
+my %STATUS = (
+					P => "Pending",
+					R => "Running",
+					C => "Complete",
+					U => "User Review Required",
+					E => "Error",
+					NF => "Output file not found");
+					
 # Check to make sure date of table is included as arg
 my $USAGE = "\nusage: processJobsTable.pl  PARAMETERS_FILE YYMMDD-RUN_NUM \n\n";
 if(! $ARGV[1])
@@ -38,18 +45,12 @@ if(! $ARGV[1])
 #get the date and runNum
 # NEED TO ADD ERROR CHECKING HERE !!!!
 my ($DATE, $RUN_NUM) = split '-', $ARGV[1];	
+my $RUN_ID = $ARGV[1];
 
 my $parametersFile = $ARGV[0];
 
 my $params = f_parseParametersFile($parametersFile);
 
-my %STATUS = (
-					P => "Pending",
-					R => "Running",
-					C => "Complete",
-					U => "User Review Required",
-					E => "Error",
-					NF => "Output file not found");
 #-----------------------------------------------------------------------------------
 #  MAIN
 #-----------------------------------------------------------------------------------
@@ -57,10 +58,10 @@ my %STATUS = (
 my $startTime = time();
 
 #set the path for all program output files
-my $runPath = ${$params}{OUTPUT_PATH}  . "/$DATE-$RUN_NUM";
+my $runPath = ${$params}{OUTPUT_PATH}  . "/$RUN_ID";
 
 #build the parameter dependent globals
-my $JOBS_TABLE = "$runPath/power_jobs.tbl";
+my $JOBS_TABLE = "$runPath/${$params}{'JOBS_TABLE'}";
 my $CONDOR_SUBMIT_FILE = "$runPath/power_jobs.sub";
 
 open LOG, ">>$runPath/" . ${$params}{'LOG'};
@@ -81,6 +82,12 @@ my $returnCode = f_processJobsTable ($JOBS_TABLE);
 if ($returnCode){					
 	f_submitJobs($CONDOR_SUBMIT_FILE);
 }
+
+# update the notebook page that give stats for this run
+f_updateNotebookPage( 
+					$params,
+					$runPath,
+					$RUN_ID);
 
 $t = localtime();
 print "$0 finished at $t\n";
@@ -135,7 +142,6 @@ sub f_processJobsTable {
 		} else {
 			die "Unknown status code: $statusCode\n";
 		}
-		
 		 my $record = "$statusCode\t$STATUS{$statusCode}\t$startSec\t$stopSec\t$framecache\t$outfile\n";
 		print TMP_TABLE $record;
 	}
@@ -192,34 +198,32 @@ sub f_checkForProgramCompletion{
 		# so it won't execute and then switched to a
 		# faster -s test. dsmackin 07/30/03
 		sub no_longer_used { 
-			use XML::DOM;
-			use XML::DOM::NodeList;
+			#use XML::DOM;
+			#use XML::DOM::NodeList;
 			
-			my $parser = new XML::DOM::Parser;
-			my $doc = $parser->parsefile ($outfile);
+			#my $parser = new XML::DOM::Parser;
+			#my $doc = $parser->parsefile ($outfile);
 			
-			my $data = $doc->getElementsByTagName ("Stream")->item(0)->getFirstChild->getNodeValue;
+			#my $data = $doc->getElementsByTagName ("Stream")->item(0)->getFirstChild->getNodeValue;
 			
 			#clean the whitespace characters off the end of the string
-			$data =~ s/^\s*//;
-			$data =~ s/\s*$//;
+			#$data =~ s/^\s*//;
+			#$data =~ s/\s*$//;
 			
 			#put the rows into an array. Use the array length as the event count
-			my @events = split "\n", $data;
-			my $numEvents = scalar(@events);
+			#my @events = split "\n", $data;
+			#my $numEvents = scalar(@events);
 			
-			print "$numEvents found for $outfile.\n";
-			$doc->dispose();
+			#print "$numEvents found for $outfile.\n";
+			#$doc->dispose();
 	
-			if($numEvents > 0 ) { #return status complete
-				return "C";
-			} else { #Need the user to look into this job. There's probably an error.
-				return "U";
-			}
+			#if($numEvents > 0 ) { #return status complete
+			#	return "C";
+			#} else { #Need the user to look into this job. There's probably an error.
+			#	return "U";
+			#}
 		}#READ NOTE ABOVE !
 		
-		#my $size = -s $outfile;
-		#print "size=", $size, "\n";
 		if( -s $outfile < 3000){ # then file seems too small; might be an error
 			return "U";
 		}else{

@@ -18,7 +18,7 @@ open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
 open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
-my @lengths = qw(512 1024 2048 4096);
+my @lengths = qw(600 700 800 900 1000 1024);
 
 my $cacheFileLength = 10000;
 

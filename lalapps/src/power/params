@@ -1,20 +1,58 @@
 #-----------------------------------------------------------------------------------
 # INSTRUMENT AND QUALITY FILE SETUP
 #-----------------------------------------------------------------------------------
-DATA_SET_NAME="S2H1v02"
-DATA_QUALITY_FILE="/scratch/power/input/S2H1v02_segs.txt"
+INSTRUMENT=L	
+TYPE=RDS_R_L1
+
+DATA_SET_NAME=S2H2v02
+DATA_QUALITY_FILE=/scratch/power/input/S2L1v02_segs.txt
 
 #To allow data outside of playground, set USE_PLAYGROUND to 0
-USE_PLAYGROUND=0
+USE_PLAYGROUND=1
 PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
 
-INSTRUMENT=H	
-TYPE=RDS_R_L1
+
+#-----------------------------------------------------------------------------------
+#  GLOBAL VARIABLES
+#-----------------------------------------------------------------------------------
+TIME_CHUNK_MAX_SIZE=1024
+TIME_CHUNK_MIN_SIZE=4
+
+# value should be 6 unless the table structure changes
+JOBS_TABLE_FIELDS=6
+
+EXECUTABLE=/home/dsmackin/bin/lalapps_power
+
+
+#-----------------------------------------------------------------------------------
+#  OUTPUT
+#-----------------------------------------------------------------------------------
+
+# all output files and folders, except for HTML, will go under this path
+OUTPUT_PATH=/scratch/power/tests
+
+JOBS_TABLE=power_jobs.tbl
+LOG=power_jobs.log
+
+#table contains runs id and description for all runs
+RUN_TABLE=power_runs.tbl
+
+#the notebook will contain a list of runs with descriptions
+# and links to individual notebook pages wich contain more
+# information about a specific run. The path can be but does not have to be
+# on a Web server.
+HTML_PATH=/home/dsmackin/public_html/current_summary/
+
+#name of the file to contain the list of runs/description in HTML
+NOTEBOOK=power_notebook.html
+
+#path for CACHE_FILES
+CACHE_PATH=/scratch/power/cache
+
 
 #-----------------------------------------------------------------------------------
 # LALApps_power  PARAMETERS
 #-----------------------------------------------------------------------------------
-
 # number of points to analyze per second
 # do not change this value
 NPTS=16384
@@ -63,24 +101,3 @@ SPECTYPE="useMedian"
 
 # Must be an integer. 2 works well.
 WINDOW=2
-
-#-----------------------------------------------------------------------------------
-#  GLOBAL VARIABLES
-#-----------------------------------------------------------------------------------
-
-TIME_CHUNK_MAX_SIZE=600
-TIME_CHUNK_MIN_SIZE=16
-
-#path for CACHE_FILES
-CACHE_PATH="/scratch/power/cache"
-
-EXECUTABLE=/home/dsmackin/bin/lalapps_power
-
-#OUTPUT FILES
-OUTPUT_PATH="/scratch/power/tests"
-CONDOR_SUBMIT_FILE="OUTPUT_PATH/Search-DATA_SET_NAME-DATE.sub"
-LOG="run.log"
-
-# value should be 6 unless the table structure changes
-JOBS_TABLE_FIELDS=6
-
