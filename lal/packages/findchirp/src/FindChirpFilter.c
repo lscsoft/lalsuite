@@ -65,6 +65,7 @@ and $\phi(t)$ is the phase evolution of the inspiral waveform.
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALError.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -73,6 +74,9 @@ and $\phi(t)$ is the phase evolution of the inspiral waveform.
 #include <lal/FindChirpFilterOutputVeto.h>
 
 double rint(double x);
+/* debugging */
+extern int vrbflg;                      /* verbocity of lal function    */
+
 
 NRCSID (FINDCHIRPFILTERC, "$Id$");
 
@@ -89,7 +93,6 @@ LALFindChirpFilterSegment (
 {
   UINT4                 j, k, kmax;
   UINT4                 numPoints;
-  UINT4                 firstEventIndex;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
@@ -247,6 +250,17 @@ LALFindChirpFilterSegment (
 
   /* number of points in a segment */
   numPoints = params->qVec->length;
+
+  /* XXX XXX XXX XXX */
+ if ( lalDebugLevel & LALINFO )
+  {
+    CHAR infomsg[256];
+
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+        "249Filter_epoch.GPSseconds = %d", 
+        input->segment->data->epoch.gpsSeconds);
+    LALInfo( status, infomsg );
+  }
 
   /* template and data */
   inputData = input->segment->data->data->data;
@@ -418,7 +432,6 @@ LALFindChirpFilterSegment (
     if ( modqsq > modqsqThresh )
     {
       haveEvent = 1;        /* mark segment to have events    */
-      firstEventIndex = j;  /* PRB: don't know what this does */
       break;
     }
   }
@@ -452,11 +465,12 @@ LALFindChirpFilterSegment (
   }
 
   /* process events in the filter output */
-  if (haveEvent )
+  if ( haveEvent )
   {
     LALFindChirpClusterEvents( status->statusPtr, eventList, input,
-            params, q, kmax, numPoints, deltaEventIndex, ignoreIndex, 
+            params, q, kmax, numPoints, ignoreIndex, 
             norm, modqsqThresh, chisqThreshFac, numChisqBins, searchName );
+    CHECKSTATUSPTR( status );
   }
 
   /*

@@ -42,17 +42,17 @@ LALFindChirpClusterEvents (
     COMPLEX8                   *q,
     UINT4                       kmax,
     UINT4                       numPoints,
-    UINT4                       deltaEventIndex,
     UINT4                       ignoreIndex,
     REAL4                       norm,
     REAL4                       modqsqThresh,
     REAL4                       chisqThreshFac,
     UINT4                       numChisqBins,
     CHAR                        searchName[LIGOMETA_SEARCH_MAX] 
-    )
+		)
 /* </lalVerbatim> */
 {
   UINT4                 eventStartIdx = 0;
+  UINT4  		deltaEventIndex = 0;
   UINT4                 j;
   SnglInspiralTable    *thisEvent = NULL;
 
@@ -76,6 +76,17 @@ LALFindChirpClusterEvents (
    * Apply one of the clustering algorithms
    *
    */
+
+   /* set deltaEventIndex depending on clustering method used */
+   if ( params->clusterMethod == tmplt )
+   {
+     deltaEventIndex = (UINT4) rint( (input->fcTmplt->tmplt.tC / params->deltaT) + 1.0 );
+   }
+   else if ( params->clusterMethod == window )
+   {
+     deltaEventIndex = (UINT4) rint( (params->clusterWindow / params->deltaT) + 1.0 );
+   }
+
 
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
@@ -118,7 +129,7 @@ LALFindChirpClusterEvents (
           thisEvent->end_time.gpsSeconds = j;
           thisEvent->snr = modqsq;
         }
-        else if ( params->maximiseOverChirp &&
+        else if (  ! params->clusterMethod == noClustering  &&
             j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
             modqsq > thisEvent->snr )
         {
@@ -127,13 +138,14 @@ LALFindChirpClusterEvents (
           thisEvent->snr = modqsq;
         }
         else if ( j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-            ! params->maximiseOverChirp )
+              params->clusterMethod == noClustering  )
         {
           /* clean up this event */
           SnglInspiralTable *lastEvent;
           LALFindChirpStoreEvent(status->statusPtr, input, params,
               thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
               searchName );
+          CHECKSTATUSPTR( status );
 
           /* store the start of the crossing */
           eventStartIdx = j;
@@ -167,6 +179,10 @@ LALFindChirpClusterEvents (
     LALFindChirpStoreEvent(status->statusPtr, input, params,
          thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
          searchName );
+    CHECKSTATUSPTR( status );
   }
 
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }

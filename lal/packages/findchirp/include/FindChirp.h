@@ -377,14 +377,24 @@ phase templates the post-Newtonian order is always two.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+typedef enum {
+   noClustering,
+   tmplt,
+   window
+ } Clustering;
+/* </lalVerbatim> */
+
+/* <lalVerbatim> */
 typedef struct
 tagFindChirpFilterParams
 {
   REAL8                         deltaT;
+  REAL4				clusterWindow;			/*XXX*/
   REAL4                         rhosqThresh;
   REAL4                         chisqThresh;
   REAL4                         norm;
   UINT4                         maximiseOverChirp;
+  Clustering			clusterMethod;			/*XXX*/
   Approximant                   approximant;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
@@ -762,7 +772,6 @@ LALFindChirpClusterEvents (
 		COMPLEX8                   *q,
 		UINT4                       kmax,
                 UINT4                 numPoints,
-                UINT4                 deltaEventIndex,
                 UINT4                       ignoreIndex,
 		REAL4                       norm,
                 REAL4                 modqsqThresh,

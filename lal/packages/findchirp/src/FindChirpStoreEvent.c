@@ -166,4 +166,8 @@ LALFindChirpStoreEvent (
   /* compute the time since the snr crossing */
   thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
   thisEvent->event_duration *= (REAL8) deltaT;
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
