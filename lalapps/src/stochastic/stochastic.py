@@ -27,9 +27,9 @@ class StochasticError(exceptions.Exception):
 class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_stochastic job used by the stochastic pipeline. The static 
-	options are read from the section [stochastic] in the ini file.  The 
-	stdout and stderr from the job are directed to the logs directory.
-	The path to the executable and the universe is determined from the ini
+  options are read from the section [stochastic] in the ini file.  The 
+  stdout and stderr from the job are directed to the logs directory.
+  The path to the executable and the universe is determined from the ini
   file.
   """
   def __init__(self,cp):
@@ -40,7 +40,7 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
     pipeline.AnalysisJob.__init__(self,cp)
-    
+
     for sec in ['stochastic']:
       self.add_ini_opts(cp,sec)
 
@@ -61,7 +61,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__ifo_one = None
     self.__ifo_two = None
-    
+
   def set_ifo_one(self, ifo):
     """
     Set the interferometer code to use as IFO One.
@@ -108,6 +108,24 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def set_calibration_one(self,ifo,start):
     """
+    Set the path to the calibration cache file for the given IFO.
+    """
+    cal_path = self.job().get_config('calibration','path')
+    cal_file = self.job().get_config('calibration',ifo)
+    cal = os.path.join(cal_path,cal_file)
+    self.add_var_opt('calibration-cache-one',cal)
+
+  def set_calibration_two(self,ifo,start):
+    """
+    Set the path to the calibration cache file for the given IFO.
+    """
+    cal_path = self.job().get_config('calibration','path')
+    cal_file = self.job().get_config('calibration',ifo)
+    cal = os.path.join(cal_path,cal_file)
+    self.add_var_opt('calibration-cache-two',cal)
+
+  def set_calibrationS2_one(self,ifo,start):
+    """
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
     time is during S2, we use the correct cache file.
@@ -125,7 +143,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     cal = os.path.join(cal_path,cal_file)
     self.add_var_opt('calibration-cache-one',cal)
 
-  def set_calibration_two(self,ifo,start):
+  def set_calibrationS2_two(self,ifo,start):
     """
     Set the path to the calibration cache file for the given IFO. During
     S2, the Hanford 2km IFO had two calibration epochs, so if the start
@@ -142,15 +160,17 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       cal_file = self.job().get_config('calibration',ifo)
 
     cal = os.path.join(cal_path,cal_file)
-    self.add_var_opt('calibration-cache-two',cal)			
+    self.add_var_opt('calibration-cache-two',cal)
 
   def get_output(self):
     """
     Returns the file name of output from the stochastic code. This must be
-		kept synchronized with the name of the output file in stochastic.c.
+    kept synchronized with the name of the output file in stochastic.c.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_one() or not self.get_ifo_two():
       raise StochasticError, "Start time, end time, ifo one or ifo two has not been set"
     out = 'stoch-' + self.get_ifo_one() + self.get_ifo_two() + '-'
     out = out + str(self.get_start()) + '-' + str(self.get_stop())
     return out + '.dat'
+
+# vim: et
