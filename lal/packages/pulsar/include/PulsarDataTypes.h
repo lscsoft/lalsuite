@@ -68,7 +68,7 @@ Defines the astrophysical parameters of the pulsar.
 </lalLaTeX> */
 /* <lalVerbatim> */
 typedef struct {
-  LIGOTimeGPS TRefSSB;	/* reference-time (in SSB!) for pulsar parameters */
+  LIGOTimeGPS tRef;	/* reference GPS time of pulsar parameters */
   SkyPosition position;	/* source location (in radians) */
   REAL4 psi;            /* polarization angle (radians) at TRef */
   REAL4 aPlus, aCross;  /* polarization amplitudes at TRef */

@@ -200,7 +200,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 
 
   /* pulsar reference-time in SSB frame !*/
-  sourceParams.spinEpoch = params->pulsar.TRefSSB;
+  sourceParams.spinEpoch = params->pulsar.tRef;
 
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
@@ -260,11 +260,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
-  /* we need to set the heterodyne epoch in GPS time, but we want to use
-   * the pulsar reference-time for that (which is in SSB), so we have to convert it first
-   */
-  TRY ( LALConvertSSB2GPS (stat->statusPtr, &tmpTime, params->pulsar.TRefSSB, params), stat);
-  detector.heterodyneEpoch = tmpTime;
+  detector.heterodyneEpoch = params->startTimeGPS;  /* set the heterodyne epoch to the start-time */
   
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
