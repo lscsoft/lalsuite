@@ -1611,6 +1611,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     lal_errhandler = LAL_ERR_EXIT;
   }
 
+  /* delete empty first entry */
+  this_proc_param = procparams.processParamsTable;
+  procparams.processParamsTable = procparams.processParamsTable->next;
+  free(this_proc_param);
+
   /* write out xml */
   if (vrbflg)
     fprintf(stdout, "Writing output XML files...\n");
