@@ -1,0 +1,23 @@
+#!/bin/sh
+
+## This is a script for the software librarian to use to generate neccessary
+## files from the minimal set in the cvs archive.
+##
+## This script is not to be included in the distribution.
+
+cd packages/factories/src
+m4 VectorFactories.m4 > VectorFactories.c
+m4 VectorSequenceFactories.m4 > VectorSequenceFactories.c
+m4 ArrayFactories.m4 > ArrayFactories.c
+cd ../../..
+
+cd packages/factories/test
+m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c
+m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c
+m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
+cd ../../..
+
+aclocal
+mklibmake
+automake
+autoconf
