@@ -26,6 +26,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
+#include <lal/TimeDelay.h>
 
 #define USAGE \
 "lalapps_inspinj [options]\n"\
@@ -217,47 +218,6 @@ double greenwich_mean_sidereal_time( int gpssec, int gpsnan, int taiutc )
   gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
   gmst *= 2.0 * LAL_PI; /* radians */
   return gmst;
-}
-
-
-/*
- *
- * functions to get time of day at sites from gps seconds
- *
- */
-
-
-/* this is crude... may not get leap seconds exactly right */
-struct tm * lho_time( int gpssec )
-{
-  time_t now = (time_t)gpssec + (time_t)315964811;
-  putenv( "TZ=PST08PDT,M4.1.0,M10.5.0" );
-  return localtime( &now );
-}
-
-/* this is crude... may not get leap seconds exactly right */
-struct tm * llo_time( int gpssec )
-{
-  time_t now = (time_t)gpssec + (time_t)315964811;
-  putenv( "TZ=CST06CDT,M4.1.0,M10.5.0" );
-  return localtime( &now );
-}
-
-/* leap seconds may not be correct */
-int site_time_of_day( double *lhotod, double *llotod, int gpssec, int gpsnan )
-{
-  struct tm *t;
-  t = lho_time( gpssec );
-  *lhotod  = t->tm_hour;
-  *lhotod += t->tm_min / 60.0;
-  *lhotod += t->tm_sec / 3600.0;
-  *lhotod += gpsnan / 3600000000000.0;
-  t = llo_time( gpssec );
-  *llotod  = t->tm_hour;
-  *llotod += t->tm_min / 60.0;
-  *llotod += t->tm_sec / 3600.0;
-  *llotod += gpsnan / 3600000000000.0;
-  return 0;
 }
 
 
@@ -650,6 +610,15 @@ int main( int argc, char *argv[] )
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
+  /* site end time */
+  LALPlaceAndGPS       *place_and_gps;
+  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  SkyPosition	       *sky_pos;
+  DetTimeAndASource    *det_time_and_source;
+  REAL8			time_diff;
+  REAL8                 site_time;
+
   /* xml output data */
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
@@ -875,6 +844,14 @@ int main( int argc, char *argv[] )
     free( this_proc_param );
   }
 
+  /* create the detector time map structures */
+  place_and_gps = (LALPlaceAndGPS *) calloc( 1, sizeof(LALPlaceAndGPS) );
+  sky_pos =  (SkyPosition *) 	calloc( 1, sizeof(SkyPosition ) );
+  det_time_and_source = (DetTimeAndASource *) 
+    calloc( 1, sizeof(DetTimeAndASource));
+  sky_pos->system = COORDINATESYSTEM_EQUATORIAL;
+
+
   /* create the first injection */
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
@@ -1026,8 +1003,32 @@ int main( int argc, char *argv[] )
     this_sim_insp->eff_dist_h = deffH = eff_dist( nxH, nyH, injPar, gmst )/MPC;
     this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst )/MPC;
 
-    site_time_of_day( &todH, &todL, tsec, tnan );
+    place_and_gps->p_gps = &(this_sim_event->geocent_end_time);
+    det_time_and_source->p_det_and_time = place_and_gps;
+    sky_pos->longitude = currentSimEvent->longitude;
+    sky_pos->latitude = currentSimEvent->latitude;
+    det_time_and_source->p_source = sky_pos;
 
+    /* compute site arrival time for lho */
+    place_and_gps->p_detector = &lho;
+    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+          det_time_and_source), &status );
+    LAL_CALL( LALGPStoFloat( &status, &site_time, 
+          &(this_sim_event->geocent_end_time) ), &status );
+    site_time += time_diff;
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_event->h_end_time) 
+          &site_time ), &status );
+    
+    /* compute site arrival time for llo */
+    place_and_gps->p_detector = &llo;
+    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+          det_time_and_source), &status );
+    LAL_CALL( LALGPStoFloat( &status, &site_time, 
+          &(this_sim_event->geocent_end_time) ), &status );
+    site_time += time_diff;
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_event->l_end_time) 
+          &site_time ), &status );
+    
     if ( inj < ninj - 1 )
     {
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
