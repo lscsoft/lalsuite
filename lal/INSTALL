@@ -172,8 +172,8 @@ Contents:
 
     1.2.  If you are installing LAL on your personal account, use:
 
-          ./configure --prefix=/home/alice [--with-extra-cppflags=CPPFLAGS] \
-                  [--with-extra-libs=LIBS] [options]
+          ./configure --prefix=/home/alice [--with-extra-cppflags=<cppflags>] \
+                  [--with-extra-libs=<libs>] [options]
           make
           make install
 
