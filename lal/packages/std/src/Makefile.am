@@ -2,7 +2,7 @@
 noinst_LTLIBRARIES = libstd.la
 
 libstd_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c LALGSL.c \
-  StringToken.c StringConvert.c Grid.c
+  XLALError.c StringToken.c StringConvert.c Grid.c
 
 EXTRA_DIST = LALPrimer.c Grid.m4 LALCreateDestroyGrid.m4
 EXTRA_TEXSOURCES = LALPrimer.c

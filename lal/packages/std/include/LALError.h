@@ -27,6 +27,8 @@ that allow functions to abort.
 
 #include <lal/LALDatatypes.h>
 
+#include <lal/XLALError.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif

@@ -110,6 +110,8 @@ do nothing.
 #include <lal/LALError.h>
 #include <lal/LALRCSID.h>
 
+#include <lal/XLALGSL.h>
+
 #include <gsl/gsl_errno.h>
 
 #ifdef  __cplusplus
