@@ -15,14 +15,15 @@ Author: Sylvestre, J
 $Id$
 ********* </lalVerbatim> ********/
 
+#include <config.h>
 #include <lal/StdBurstSearch.h>
 #include <lal/Sort.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/TFClusters.h>
 #include <lal/AVFactories.h>
 #include <lal/TFCThresholds.h>
-#include "lal/LALRCSID.h"
-#include <strings.h>
+#include <lal/LALRCSID.h>
+#include <string.h>
 
 NRCSID (TFCLUSTERSETGC, "$Id$");
 
@@ -71,7 +72,7 @@ parameter index & type & description \\ \hline
 \end{verbatim}
 ********* </lalLaTeX> ********/
 
-#ifdef linux
+#ifndef WORDS_BIGENDIAN
   static void endian_swap(char * pdata, int dsize, int nelements);
 #endif
 
@@ -380,7 +381,7 @@ parameter index & type & description \\ \hline
 
       memcpy(trans_data->trans_data, &(list.sizes[i]), sizeof(UINT4));
 
-#ifdef linux
+#ifndef WORDS_BIGENDIAN
       endian_swap((char *)(trans_data->trans_data), sizeof(UINT4), 1);
 #endif
 
@@ -389,7 +390,7 @@ parameter index & type & description \\ \hline
 	memcpy(trans_data->trans_data + 2*sizeof(UINT4)+(sizeof(REAL8)+2*sizeof(UINT4))*j, &(list.f[i][j]), sizeof(UINT4));
 	memcpy(trans_data->trans_data + 3*sizeof(UINT4)+(sizeof(REAL8)+2*sizeof(UINT4))*j, &(list.P[i][j]), sizeof(REAL8));
 
-#ifdef linux
+#ifndef WORDS_BIGENDIAN
 	endian_swap((char *)(trans_data->trans_data + sizeof(UINT4)+(sizeof(REAL8)+2*sizeof(UINT4))*j), sizeof(UINT4), 2);
 	endian_swap((char *)(trans_data->trans_data + 3*sizeof(UINT4)+(sizeof(REAL8)+2*sizeof(UINT4))*j), sizeof(REAL8), 1);
 #endif
@@ -413,7 +414,7 @@ parameter index & type & description \\ \hline
 }
 
 
-#ifdef linux
+#ifndef WORDS_BIGENDIAN
 static void endian_swap(char * pdata, int dsize, int nelements)
 
 {
