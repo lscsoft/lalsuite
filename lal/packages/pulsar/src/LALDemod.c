@@ -9,7 +9,7 @@ Computes a demodulated Fourier transform (DeFT) given a set of input short Fouri
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALDemodCP}
-\index{\texttt{LALDemod()}}
+\idx{LALDemod()}
 
 \subsubsection*{Description}
 
@@ -20,7 +20,9 @@ The {\bf parameter structure} defines the search frequency band
 
 The {\bf input} is: \verb@**input@, an array of structures of type \verb@FFT@. This data type will soon disappear as it is just a complex8frequencyseries.
 
-The {\bf output} is a pointer a double containing the values of $\mathcal{F}$. Will be modified to also output $F_a$ and $F_b$.
+The {\bf output} is a pointer a structure of type \verb+LALFstat+ containing an array of the values of $\mathcal{F}$. 
+In addition, if \verb+DemodPar->returnFaFb == TRUE+, the values of $F_a$ and $F_b$ will be returned in addition.
+(Memory has to be allocated correctly beforehand!)
 
 \subsubsection*{Algorithm}
 
@@ -57,14 +59,12 @@ None
 #define LALDEMOD_C
 #endif
 
+#include <lal/LALStatusMacros.h>
 #include <lal/LALDemod.h>
 NRCSID( LALDEMODC, "$Id$" );
 
 /* <lalVerbatim file="LALDemodCP"> */
-void LALDemod(LALStatus *status, 
-	double *F, 
-	FFT **input, 
-	DemodPar *params) 
+void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
 { 
 
@@ -100,14 +100,19 @@ void LALDemod(LALStatus *status,
 
   INITSTATUS( status, "LALDemod", LALDEMODC );
 
+  /* catch some obvious programming errors */
+  ASSERT ( (Fstat != NULL)&&(Fstat->F != NULL), status, LALDEMODH_ENULL, LALDEMODH_MSGENULL );
+  if (params->returnFaFb)
+    {
+      ASSERT ( (Fstat->Fa != NULL)&&(Fstat->Fb != NULL), status, LALDEMODH_ENULL, LALDEMODH_MSGENULL );
+    }
+
   /* variable redefinitions for code readability */
   spOrder=params->spinDwnOrder;
   spinDwn=params->spinDwn;
   skyConst=params->skyConst;
   deltaF=(*input)->fft->deltaF;
   nDeltaF=(*input)->fft->data->length;
-
-/*   fprintf(stdout,"(using own LALDemod.c)");   */
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -218,7 +223,13 @@ void LALDemod(LALStatus *status,
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
     FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
 	  	  	
-    F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
+    Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
+    if (params->returnFaFb)
+      {
+	Fstat->Fa[i] = Fa;
+	Fstat->Fb[i] = Fb;
+      }
+
 
   }
   /* Clean up */
@@ -230,5 +241,6 @@ void LALDemod(LALStatus *status,
   LALFree(cosVal);
 
   RETURN( status );
-}
+
+} /* LALDemod() */
 

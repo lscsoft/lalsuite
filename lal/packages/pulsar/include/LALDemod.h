@@ -92,6 +92,7 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
@@ -111,17 +112,24 @@ extern "C" {
 
 NRCSID (LALDEMODH, "$Id$"); 
 
+/********************************************************** <lalLaTeX>
+\subsection*{Error codes}
+</lalLaTeX>
+***************************************************** <lalErrTable> */
+#define LALDEMODH_ENULL 		1
+
+#define LALDEMODH_MSGENULL 	"Arguments contained an unexpected null pointer"
+
+/*************************************************** </lalErrTable> */
 
 #define SMALL	0.000000001
 
 /* <lalLaTeX>
 
-\subsection*{Structures}
+\subsection*{Types}
 
-\begin{verbatim}
-struct DemodPar
-\end{verbatim}
-\index{\texttt{DemodPar}}
+\subsubsection*{Structure \texttt{DemodPar}}
+\idx[Type]{DemodPar}
 
 \noindent This structure contains the parameters for the demodulation routine.   The parameters are:
 
@@ -137,7 +145,23 @@ struct DemodPar
 \item[\texttt{INT4 Dterms}] Terms used in the computation of the dirichlet kernel 
 \item[\texttt{INT4 ifMin}] The index of the minimum frequency of the SFT frequency band.
 \item[\texttt{INT4 imax}] How many frequencies are serached.
+\item[\texttt{BOOLEAN returnFaFb}] Wether or not to include the values Fa/Fb in the return-structure Fstat.
+\end{description}
 
+
+\subsubsection*{Structure \texttt{LALFstat}}
+\idx[Type]{LALFstat}
+
+\noindent This structure contains the results from LALDemod: either
+only the value of the $\mathcal{F}$-statistic $F$, or also the values
+of the individual "filters" $F_a$ and $F_b$, depending on the
+\texttt{DemodPar->returnFaFb}. \\
+\emph{NOTE:} the memory has to be allocated before calling \texttt{LALDemod()}.
+
+\begin{description}
+\item[\texttt{REAL8 *F}]  Array of values of the $\mathcal{F}$ statistic. 
+\item[\texttt{COMPLEX16 *Fa}] Results of match filter with $a(t)$.
+\item[\texttt{COMPLEX16 *Fb}] Results of match filter with $b(t)$.
 \end{description}
 
 
@@ -156,7 +180,16 @@ typedef struct DemodParTag{
   INT4          Dterms;         /*Terms used in the computation of the dirichlet kernel*/
   INT4          ifmin;          /*smallest frequency index in SFTs */
   INT4          imax;           /*maximum # of values of F to calculate */
+  BOOLEAN	returnFaFb;	/* wether or not to include the values Fa/Fb in the return LALFstat */
 }DemodPar;
+
+
+typedef struct {
+  REAL8         *F;            /* Array of value of the F statistic */
+  COMPLEX16     *Fa;           /* Results of match filter with a(t) */
+  COMPLEX16     *Fb;           /* Results of match filter with b(t) */
+} LALFstat;
+
 
 
 /*This structure will hold a single FFT*/
@@ -169,7 +202,10 @@ typedef struct FFTTag
 \vfill{\footnotesize\input{LALDemodHV}}
 \newpage\input{LALDemodC}
 ******************************************************* </lalLaTeX> */
-void LALDemod (LALStatus *stat, double  *F, FFT **input, DemodPar *params);
+
+/* Function prototypes */
+
+void LALDemod (LALStatus *stat, LALFstat *Fstat, FFT **input, DemodPar *params);
 
 	
 /* <lalLaTeX>
