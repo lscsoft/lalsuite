@@ -14,7 +14,7 @@
   \usepackage[pdftex]{graphicx}
 \fi
 \usepackage{pdfdraftcopy}
-\draftstring{DRAFT}
+\draftstring{}
 
 \ligodocdraft{{\ }}
 \ligodocdist{LIGO Scientific Collaboration}
@@ -34,6 +34,8 @@
 \begin{table}[ht]
 \centering
 \begin{tabular}{|l|l|}
+\hline
+November 18, 2004 & All times in SFT filenames should be in seconds; simplify SFTtype description. \\
 \hline
 September 22, 2004 & Added new section: SFT File Naming Convention \\
 \hline
@@ -423,8 +425,8 @@ and
 
 \begin{enumerate}
 \item SFT file names are to follow the conventions of LIGO technical
-document LIGO-T010150-00-E, "Naming Convention for Frame Files which are
-to be Processed by LDAS," for class 2 frames, except with an extension
+document LIGO-T010150-00-E, ``Naming Convention for Frame Files which are
+to be Processed by LDAS,'' for class 2 frames, except with an extension
 of .sft rather than .gwf:
 
 {\bf S-D-G-T}.sft,
@@ -469,7 +471,7 @@ automatically index SFTs with names as specified here.
 field D:
 
 \begin{enumerate}
-\item The description field, D, for SFTs will be an underscore "\_"
+\item The description field, D, for SFTs will be an underscore ``\_''
 delimited alphanumeric string with these subfields:
 
 {\bf D = numSFTs\_IFO\_SFTtype[\_Misc]}, where
@@ -481,12 +483,10 @@ generated the SFT, e.g., G1, H1, H2, L1, T1, or V1.  This field must
 always begin with an uppercase letter.
 
 \item {\bf SFTtype} is the type of SFT(s) in the file, and must be a concatenation
-of tbase, units, and SFT, e.g., 30mSFT for 30 minute SFTs, 60sSFT for 60
+of tbase in seconds and SFT, e.g., 1800SFT for 30 minute SFTs, 60SFT for 60
 second SFTs.  Note that this information is redundant but required since
 it ensures that SFTs of a given type are indexed uniquely (many scripts
-and programs use the D field as an index; see also comment b below). It
-is also permissible to append an optional SFT version number after SFT:
-e.g., 30mSFTv2 for 30 minute SFTs with version 2 headers.
+and programs use the D field as an index; see also comment b below).
 
 \item {\bf Misc} is an optional field that contains any other pertinent information
 about the SFTs, e.g., the run name, the input channel name, the
@@ -516,18 +516,16 @@ that SFTs files are uniquely identified by these scripts and programs.
 \item Example SFT files names
 \begin{itemize}
 \item A 30 minute H2 SFT:\\
-   H-1\_H2\_30mSFT-735627918-1800.sft
-\item A 30 minute H2 SFT with explicit designation of its v2 header:\\
-   H-1\_H2\_30mSFTv2-735627918-1800.sft
+   H-1\_H2\_1800SFT-735627918-1800.sft
 \item A 30 minute S2 H1 SFT:\\
-   H-1\_H1\_30mSFT\_S2-733467931-1800.sft
+   H-1\_H1\_1800SFT\_S2-733467931-1800.sft
 \item A file with 1887 30 minute H1 SFTs for the 352 to 353 Hz frequency band, (with gaps in time):\\
-   H-1887\_H1\_30mSFT\_352to353Hzband-733467931-4622400.sft
+   H-1887\_H1\_1800SFT\_352to353Hzband-733467931-4622400.sft
 \item A 30 minute S3 GEO SFTs produced from h(t):\\
-   G-1\_G1\_30mSFT\_S3hot-732465218-1800.sft
+   G-1\_G1\_1800SFT\_S3hot-732465218-1800.sft
 \item A 60 second S2 L1 SFT from the L1:LSC-AS\_Q channel for v2 of the calibration and version 
   6 of the data quality segments:\\
-   L-1\_L1\_60sSFT\_S2ASQv2Calv6DQ-788901256-60.sft
+   L-1\_L1\_60SFT\_S2ASQv2Calv6DQ-788901256-60.sft
 \end{itemize}
 
 \item Thus note that Misc is left as an arbitrary subfield of the D field
