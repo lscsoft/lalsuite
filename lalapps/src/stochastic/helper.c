@@ -486,6 +486,32 @@ REAL4TimeSeries *rectangular_window(LALStatus *status,
   return(series);
 }
 
+/* function to return a hann window */
+REAL4Vector *hann_window(LALStatus *status,
+    INT4 length)
+{
+  /* variables */
+  REAL4Vector *series;
+  LALWindowParams params;
+
+  /* allocate memory */
+  series = XLALCreateVector(length);
+  if (!series)
+  {
+    fprintf(stderr, "failed to allocate memory for hann window...\n");
+    exit(1);
+  }
+
+  /* set window parameters */
+  params.length = length;
+  params.type = Hann;
+
+  /* generate window */
+  LAL_CALL(LALWindow(status, series, &params), status);
+
+  return(series);
+}
+
 /*
  * vim: et
  */
