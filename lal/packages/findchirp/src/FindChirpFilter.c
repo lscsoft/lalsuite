@@ -1270,12 +1270,22 @@ LALFindChirpBCVFilterSegment (
 
 
   {
-    /* length of the chirp:                      */
-    REAL4 eta = input->tmplt->eta;
-    REAL4 m1 = input->tmplt->mass1;
-    REAL4 m2 = input->tmplt->mass2;
+    /* length of the chirp:                                            */
+    /* calculated according to chirplen, using the values of M and eta */
+    /* for the BCV tempaltes, as calculated using psi0 and psi3        */ 
+    REAL4 psi0 = input->tmplt->psi0;
+    REAL4 psi3 = input->tmplt->psi3;
+    REAL4 fFinal = input->tmplt->fFinal;
+
+    /*
+     * REAL4 eta = input->tmplt->eta;
+     * REAL4 m1 = input->tmplt->mass1;
+     * REAL4 m2 = input->tmplt->mass2;
+     */ 
+
     REAL4 fmin = input->segment->fLow;
-    REAL4 m = m1 + m2;
+    REAL4 m = - psi3 / (16.0 * LAL_PI * LAL_PI * psi0) ;
+    REAL4 eta = 3.0 / (128.0 * psi0 * pow( (m*LAL_PI), (5.0/3.0)) );
     REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
@@ -1285,12 +1295,11 @@ LALFindChirpBCVFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL8 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    /* to ensure that chirpTime > 0 */
+    REAL8 chirpTime = sqrt( (c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8) * 
+		            (c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8) ); 
+    /* REAL8 chirpTime=0.0005; */
 
-    /* template parameters */
-    REAL4 psi0 = input->tmplt->psi0;                        
-    REAL4 psi3 = input->tmplt->psi3;                        
-    REAL4 fFinal = input->tmplt->fFinal;                  
     /* k that corresponds to fFinal, currently not used      */
     /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
     /* BCV normalization parameters */
@@ -1504,8 +1513,8 @@ LALFindChirpBCVFilterSegment (
 #endif
 
         /* compute the chisq threshold: this is slow! */
-        LALFindChirpChisqVeto( status->statusPtr, params->chisqVec,
-            params->chisqInput, params->chisqParams );
+        LALFindChirpBCVChisqVeto( status->statusPtr, params->chisqVec,
+            params->chisqInput, params->chisqInputBCV, params->chisqParams );
         CHECKSTATUSPTR (status);
 
         haveChisq = 1;
