@@ -7,8 +7,8 @@
  * Revision: $Id$
  *
  * History:   Created by Sintes June 25, 2001
- *            Modified...  "   August 6, 2001
- *
+ *            Modified  "   August 6, 2001
+ *            Modified by Badri Krishnan Feb 2003 
  *-----------------------------------------------------------------------
  */
 
@@ -149,7 +149,7 @@ INT4 lalDebugLevel=0;
 
 /* Usage format string. */
 
-#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]\n"
+#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]\n"
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]){
   UINT4 k;                       
   
   REAL8 f0, alpha, delta, veloMod;
-
+  REAL8 patchSizeX, patchSizeY;
 
   /************************************************************/
   /* Set up the default parameters. */
@@ -235,6 +235,8 @@ int main(int argc, char *argv[]){
   f0 =  F0;
   parRes.f0 =  F0;
   parRes.deltaF = DF;
+  parRes.patchSizeX = parDem.patchSizeX = patchSizeX = 0.0;       /* Initialization */
+  parRes.patchSizeY = parDem.patchSizeY = patchSizeY = 0.0;
   parRes.minWidthRatio = MWR;
 
   f0Bin = F0*TCOH;
@@ -324,6 +326,18 @@ int main(int argc, char *argv[]){
         return TESTHOUGHMAPC_EARG;
       }
     }
+     /* Parse patch size option. */
+    else if ( !strcmp( argv[arg], "-s" ) ) {
+      if ( argc > arg + 2 ) {
+        arg++;
+	parRes.patchSizeX = patchSizeX = atof(argv[arg++]);
+        parRes.patchSizeY = patchSizeY = atof(argv[arg++]);
+      } else {
+        ERROR( TESTHOUGHMAPC_EARG, TESTHOUGHMAPC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return TESTHOUGHMAPC_EARG;
+      }
+    }
     /* Unrecognized option. */
     else {
       ERROR( TESTHOUGHMAPC_EARG, TESTHOUGHMAPC_MSGEARG, 0 );
@@ -347,6 +361,10 @@ int main(int argc, char *argv[]){
   
   xSide = patch.xSide;
   ySide = patch.ySide;
+
+  /* Update patch size data */ 
+  patchSizeX = parDem.patchSizeX = parRes.patchSizeX = patch.patchSizeX;
+  patchSizeY = parDem.patchSizeY = parRes.patchSizeY = patch.patchSizeY;
 
   /******************************************************************/
   /* memory allocation again and settings */

@@ -7,7 +7,7 @@
  * Revision: $Id$
  *
  * History:   Created by Sintes June 7, 2001
- *            Modified...
+ *            Modified by Badri Krishnan Feb 2003
  *
  *-----------------------------------------------------------------------
  */
@@ -36,7 +36,7 @@ Tests the construction of the Look up Table ({\sc LUT})
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-TestConstructPLUT [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+TestConstructPLUT [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -127,7 +127,7 @@ INT4 lalDebugLevel=0;
 
 /* Usage format string. */
 
-#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]\n"
+#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta][-s patchSizeX patchSizeY]\n"
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -200,6 +200,7 @@ int main(int argc, char *argv[]){
   INT4 arg;                         /* Argument counter */
   INT4 i,j,k,binPoint;              /* Index counter, etc */
   REAL8 f0, alpha, delta, veloMod;
+  REAL8 patchSizeX, patchSizeY;
 
 
   /************************************************************/
@@ -213,6 +214,8 @@ int main(int argc, char *argv[]){
 
   parRes.f0 =  F0;
   parRes.deltaF = DF;
+  parRes.patchSizeX = parDem.patchSizeX = patchSizeX = 0.0;       /* Initialization */
+  parRes.patchSizeY = parDem.patchSizeY = patchSizeY = 0.0;
   parRes.minWidthRatio = MWR;
   f0 = F0;
 
@@ -220,12 +223,14 @@ int main(int argc, char *argv[]){
 
   parDem.deltaF = DF;
   parDem.skyPatch.alpha = 0.0;
-  parDem.skyPatch.delta = -LAL_PI_2; 
+  parDem.skyPatch.delta = -LAL_PI_2;   
+
 
   alpha = ALPHA;
   delta = DELTA;
   veloMod = VTOT;
   
+
   /***************************************************/
   /* Memory allocation  and other settings  */
   /***************************************************/
@@ -296,6 +301,18 @@ int main(int argc, char *argv[]){
         return TESTCONSTRUCTPLUTC_EARG;
       }
     }
+     /* Parse patch size option. */
+    else if ( !strcmp( argv[arg], "-s" ) ) {
+      if ( argc > arg + 2 ) {
+        arg++;
+	parRes.patchSizeX = patchSizeX = atof(argv[arg++]);
+        parRes.patchSizeY = patchSizeY = atof(argv[arg++]);
+      } else {
+        ERROR( TESTCONSTRUCTPLUTC_EARG, TESTCONSTRUCTPLUTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return TESTCONSTRUCTPLUTC_EARG;
+      }
+    }
     /* Unrecognized option. */
     else {
       ERROR( TESTCONSTRUCTPLUTC_EARG, TESTCONSTRUCTPLUTC_MSGEARG, 0 );
@@ -318,7 +335,10 @@ int main(int argc, char *argv[]){
   
   xSide = patch.xSide;
   ySide = patch.ySide;
- 
+
+  /* Update patch size data */ 
+  patchSizeX = parDem.patchSizeX = parRes.patchSizeX = patch.patchSizeX;
+  patchSizeY = parDem.patchSizeY = parRes.patchSizeY = patch.patchSizeY;
   /******************************************************************/
   /* memory allocation again and settings */
   /******************************************************************/
@@ -332,7 +352,7 @@ int main(int argc, char *argv[]){
 
 
   /******************************************************************/
-  /* Case: no spins, patch at south pole */
+  /* Case: no spins, patch at south pole   */
   /******************************************************************/
 
   parDem.veloC.x = veloMod*cos(delta)*cos(alpha);

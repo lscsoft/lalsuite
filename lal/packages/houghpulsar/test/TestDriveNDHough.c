@@ -1,8 +1,8 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: TestDriveHough.c
+ * File Name: TestDriveNDHough.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Krishnan, B. 
  *
  * Revision: $Id$
  *
@@ -16,8 +16,8 @@
  * 1.  An author and Id block
  */
 
-/************************************ <lalVerbatim file="TestDriveHoughCV">
-Author: Sintes, A. M. 
+/************************************ <lalVerbatim file="TestDriveNDHoughCV">
+Author: Sintes, A. M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -29,14 +29,14 @@ $Id$
 /* ************************************************ <lalLaTeX>
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \ \texttt{TestDriveHough.c}}
-\label{s:TestDriveHough.c}
+\subsection{Program \ \texttt{TestDriveNDHough.c}}
+\label{s:TestDriveNDHough.c}
 Tests the construction 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-TestDriveHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+TestDriveNDHough [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,13 +73,13 @@ lut}.   The \verb@-p@ option sets the velocity orientation of the detector
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Exit codes}
 \vspace{0.1in}
-\input{TESTDRIVEHOUGHCErrorTable}
+\input{TESTDRIVENDHOUGHCErrorTable}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
 \begin{verbatim}
 LALHOUGHPatchGrid()
-LALHOUGHParamPLUT()
+LALNDHOUGHParamPLUT()
 LALHOUGHConstructPLUT()
 LALHOUGHConstructSpacePHMD()
 LALHOUGHupdateSpacePHMDup()
@@ -96,7 +96,7 @@ LALCheckMemoryLeaks()
 \subsubsection*{Notes}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{TestDriveHoughCV}}
+\vfill{\footnotesize\input{TestDriveNDHoughCV}}
 
 ********************************************   </lalLaTeX> */
 
@@ -105,23 +105,23 @@ LALCheckMemoryLeaks()
 #include <lal/LALHough.h>
 
 
-NRCSID (TESTDRIVEHOUGHC, "$Id$");
+NRCSID (TESTDRIVENDHOUGHC, "$Id$");
 
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="TESTDRIVEHOUGHCErrorTable"> */
-#define TESTDRIVEHOUGHC_ENORM 0
-#define TESTDRIVEHOUGHC_ESUB  1
-#define TESTDRIVEHOUGHC_EARG  2
-#define TESTDRIVEHOUGHC_EBAD  3
-#define TESTDRIVEHOUGHC_EFILE 4
+/************** <lalErrTable file="TESTDRIVENDHOUGHCErrorTable"> */
+#define TESTDRIVENDHOUGHC_ENORM 0
+#define TESTDRIVENDHOUGHC_ESUB  1
+#define TESTDRIVENDHOUGHC_EARG  2
+#define TESTDRIVENDHOUGHC_EBAD  3
+#define TESTDRIVENDHOUGHC_EFILE 4
 
-#define TESTDRIVEHOUGHC_MSGENORM "Normal exit"
-#define TESTDRIVEHOUGHC_MSGESUB  "Subroutine failed"
-#define TESTDRIVEHOUGHC_MSGEARG  "Error parsing arguments"
-#define TESTDRIVEHOUGHC_MSGEBAD  "Bad argument values"
-#define TESTDRIVEHOUGHC_MSGEFILE "Could not create output file"
+#define TESTDRIVENDHOUGHC_MSGENORM "Normal exit"
+#define TESTDRIVENDHOUGHC_MSGESUB  "Subroutine failed"
+#define TESTDRIVENDHOUGHC_MSGEARG  "Error parsing arguments"
+#define TESTDRIVENDHOUGHC_MSGEBAD  "Bad argument values"
+#define TESTDRIVENDHOUGHC_MSGEFILE "Could not create output file"
 /******************************************** </lalErrTable> */
 
 
@@ -130,7 +130,7 @@ NRCSID (TESTDRIVEHOUGHC, "$Id$");
 INT4 lalDebugLevel=0;
 
 #define F0 500.0          /*  frequency to build the LUT. */
-#define TCOH 100000.0     /*  time baseline of coherent integration. */
+#define TCOH 3600.0     /*  time baseline of coherent integration. */
 #define DF    (1./TCOH)   /*  frequency  resolution. */
 #define ALPHA 0.0
 #define DELTA 0.0
@@ -153,7 +153,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, TESTDRIVEHOUGHC, statement ? statement :  \
+              __LINE__, TESTDRIVENDHOUGHC, statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -162,15 +162,15 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              TESTDRIVEHOUGHC, (statement) );                     \
+              TESTDRIVENDHOUGHC, (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \
 do {                                                                 \
   if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( TESTDRIVEHOUGHC_ESUB, TESTDRIVEHOUGHC_MSGESUB,      \
+    ERROR( TESTDRIVENDHOUGHC_ESUB, TESTDRIVENDHOUGHC_MSGESUB,      \
            "Function call \"" #func "\" failed:" );                  \
-    return TESTDRIVEHOUGHC_ESUB;                                  \
+    return TESTDRIVENDHOUGHC_ESUB;                                  \
   }                                                                  \
 } while (0)
 /******************************************************************/
@@ -297,9 +297,9 @@ int main(int argc, char *argv[]){
         arg++;
         lalDebugLevel = atoi( argv[arg++] );
       } else {
-        ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+        ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTDRIVEHOUGHC_EARG;
+        return TESTDRIVENDHOUGHC_EARG;
       }
     }
     /* Parse output file option. */
@@ -308,9 +308,9 @@ int main(int argc, char *argv[]){
         arg++;
         fname = argv[arg++];
       } else {
-        ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+        ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTDRIVEHOUGHC_EARG;
+        return TESTDRIVENDHOUGHC_EARG;
       }
     }
     /* Parse frequency option. */
@@ -321,9 +321,9 @@ int main(int argc, char *argv[]){
 	parRes.f0 =  f0;
 	f0Bin = f0*TCOH;      
       } else {
-        ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+        ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTDRIVEHOUGHC_EARG;
+        return TESTDRIVENDHOUGHC_EARG;
       }
     }
     /* Parse velocity position options. */
@@ -333,9 +333,9 @@ int main(int argc, char *argv[]){
 	alpha = atof(argv[arg++]);
 	delta = atof(argv[arg++]);
       } else {
-        ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+        ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTDRIVEHOUGHC_EARG;
+        return TESTDRIVENDHOUGHC_EARG;
       }
     }
     /* Parse patch size option. */
@@ -345,24 +345,24 @@ int main(int argc, char *argv[]){
 	parRes.patchSizeX = patchSizeX = atof(argv[arg++]);
         parRes.patchSizeY = patchSizeY = atof(argv[arg++]);
       } else {
-        ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+        ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTDRIVEHOUGHC_EARG;
+        return TESTDRIVENDHOUGHC_EARG;
       }
     }
     /* Unrecognized option. */
     else {
-      ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
+      ERROR( TESTDRIVENDHOUGHC_EARG, TESTDRIVENDHOUGHC_MSGEARG, 0 );
       LALPrintError( USAGE, *argv );
-      return TESTDRIVEHOUGHC_EARG;
+      return TESTDRIVENDHOUGHC_EARG;
     }
   } /* End of argument parsing loop. */
   /******************************************************************/
 
   if ( f0 < 0 ) {
-    ERROR( TESTDRIVEHOUGHC_EBAD, TESTDRIVEHOUGHC_MSGEBAD, "freq<0:" );
+    ERROR( TESTDRIVENDHOUGHC_EBAD, TESTDRIVENDHOUGHC_MSGEBAD, "freq<0:" );
     LALPrintError( USAGE, *argv  );
-    return TESTDRIVEHOUGHC_EBAD;
+    return TESTDRIVENDHOUGHC_EBAD;
   }
 
 
@@ -374,9 +374,10 @@ int main(int argc, char *argv[]){
   xSide = patch.xSide;
   ySide = patch.ySide;
 
-  /* Update patch size data */ 
+   /* Update patch size data */ 
   patchSizeX = parDem.patchSizeX = parRes.patchSizeX = patch.patchSizeX;
   patchSizeY = parDem.patchSizeY = parRes.patchSizeY = patch.patchSizeY;
+
 
   /******************************************************************/
   /* memory allocation again and settings */
@@ -408,9 +409,6 @@ int main(int argc, char *argv[]){
   parDem.skyPatch.alpha = 0.0;
   parDem.skyPatch.delta = -LAL_PI_2; 
 
-  parDem.positC.x = 0.0; 
-  parDem.positC.y = 0.0; 
-  parDem.positC.z = 0.0; 
 
   parDem.timeDiff = 0.0;
   parDem.spin.length = 0;
@@ -425,7 +423,7 @@ int main(int argc, char *argv[]){
     alpha +=  STEPALPHA; /* shift alpha several degrees */
 
     /* calculate parameters needed for buiding the LUT */
-    SUB( LALHOUGHParamPLUT( &status, &parLut, f0Bin, &parDem ),  &status );
+    SUB( LALNDHOUGHParamPLUT( &status, &parLut, f0Bin, &parDem ),  &status );
     
     /* build the LUT */
     SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ), 
@@ -491,8 +489,8 @@ int main(int argc, char *argv[]){
   }
 
   if ( !fp ){
-    ERROR( TESTDRIVEHOUGHC_EFILE, TESTDRIVEHOUGHC_MSGEFILE, 0 );
-    return TESTDRIVEHOUGHC_EFILE;
+    ERROR( TESTDRIVENDHOUGHC_EFILE, TESTDRIVENDHOUGHC_MSGEFILE, 0 );
+    return TESTDRIVENDHOUGHC_EFILE;
   }
 
  
@@ -542,8 +540,11 @@ int main(int argc, char *argv[]){
   
   LALCheckMemoryLeaks(); 
 
-  INFO( TESTDRIVEHOUGHC_MSGENORM );
-  return TESTDRIVEHOUGHC_ENORM;
+  INFO( TESTDRIVENDHOUGHC_MSGENORM );
+  return TESTDRIVENDHOUGHC_ENORM;
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+
+

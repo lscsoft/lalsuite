@@ -1,13 +1,13 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: TestPeak2PHMD.c
+ * File Name: TestNDConstructPLUT.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes June 7, 2001
- *            Modified...
+ *            Modified by Badri Krishnan Feb 2003
  *
  *-----------------------------------------------------------------------
  */
@@ -16,8 +16,8 @@
  * 1.  An author and Id block
  */
 
-/************************************ <lalVerbatim file="TestPeak2PHMDCV">
-Author: Sintes, A. M. 
+/************************************ <lalVerbatim file="TestNDConstructPLUTCV">
+Author: Sintes, A. M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -29,14 +29,14 @@ $Id$
 /* ************************************************ <lalLaTeX>
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Program \ \texttt{TestPeak2PHMD.c}}
-\label{s:TestPeak2PHMD.c}
-Tests the construction of Partial-Hough-Map-Derivatives ({\sc phmd})
+\subsection{Program \ \texttt{TestNDConstructPLUT.c}}
+\label{s:TestNDConstructPLUT.c}
+Tests the construction of the Look up Table ({\sc LUT})
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Usage}
 \begin{verbatim}
-TestPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
+TestNDConstructPLUT [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,13 +45,10 @@ TestPeak2PHMD [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta]
 %TO BE CHANGED
 
 This program generates a patch grid, calculates the parameters needed for
-building a {\sc lut}, builds the {\sc lut}, constructs a {\sc phmd} at a
-certain frequency (shifted from the frequency at which the {\sc lut} was built),
- and outputs the {\sc phmd} into a file. The sky patch is set at the south pole, 
+building the {\sc LUT}, builds the {\sc LUT} and outputs a partial Hough map
+derivative into a file. The sky patch is set at the south pole, 
 no spin-down parameters are assumed for the demodulation and
- every third  peak in the spectrum is selected. The peak-gram frequency interval
- is large enough to ensure compatibility with the {\sc lut} and the frequency of
- the {\sc phmd}. \\
+ every third  peak in the spectrum is selected.\\
 
  By default, running this program with no arguments simply tests the subroutines,
 producing an output file called \verb@OutHough.asc@.  All default parameters are set from
@@ -61,22 +58,21 @@ The \verb@-d@ option sets the debug level to the specified value
 \verb@debuglevel@.  The \verb@-o@ flag tells the program to print the partial Hough map
 derivative  to the specified data file \verb@outfile@.  The
 \verb@-f@ option sets the intrinsic frequency \verb@f0@ at which build the {\sc
-lut}.   The \verb@-p@ option sets the velocity orientation of the detector
+LUT}.   The \verb@-p@ option sets the velocity orientation of the detector
 \verb@alpha@, \verb@delta@ (in radians). 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Exit codes}
 \vspace{0.1in}
-\input{TESTPEAK2PHMDCErrorTable}
+\input{TESTNDCONSTRUCTPLUTCErrorTable}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Uses}
 \begin{verbatim}
 LALHOUGHPatchGrid()
-LALHOUGHParamPLUT()
+LALNDHOUGHParamPLUT()
 LALHOUGHConstructPLUT()
-LALHOUGHPeak2PHMD()
 LALPrintError()
 LALMalloc()
 LALFree()
@@ -88,32 +84,32 @@ LALCheckMemoryLeaks()
 \subsubsection*{Notes}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{TestPeak2PHMDCV}}
+\vfill{\footnotesize\input{TestNDConstructPLUTCV}}
 
 ********************************************   </lalLaTeX> */
 
 
 
-#include <lal/PHMD.h>
+#include <lal/LUT.h>
 
 
-NRCSID (TESTPEAK2PHMDC, "$Id$");
+NRCSID (TESTNDCONSTRUCTPLUTC, "$Id$");
 
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="TESTPEAK2PHMDCErrorTable"> */
-#define TESTPEAK2PHMDC_ENORM 0
-#define TESTPEAK2PHMDC_ESUB  1
-#define TESTPEAK2PHMDC_EARG  2
-#define TESTPEAK2PHMDC_EBAD  3
-#define TESTPEAK2PHMDC_EFILE 4
+/************** <lalErrTable file="TESTNDCONSTRUCTPLUTCErrorTable"> */
+#define TESTNDCONSTRUCTPLUTC_ENORM 0
+#define TESTNDCONSTRUCTPLUTC_ESUB  1
+#define TESTNDCONSTRUCTPLUTC_EARG  2
+#define TESTNDCONSTRUCTPLUTC_EBAD  3
+#define TESTNDCONSTRUCTPLUTC_EFILE 4
 
-#define TESTPEAK2PHMDC_MSGENORM "Normal exit"
-#define TESTPEAK2PHMDC_MSGESUB  "Subroutine failed"
-#define TESTPEAK2PHMDC_MSGEARG  "Error parsing arguments"
-#define TESTPEAK2PHMDC_MSGEBAD  "Bad argument values"
-#define TESTPEAK2PHMDC_MSGEFILE "Could not create output file"
+#define TESTNDCONSTRUCTPLUTC_MSGENORM "Normal exit"
+#define TESTNDCONSTRUCTPLUTC_MSGESUB  "Subroutine failed"
+#define TESTNDCONSTRUCTPLUTC_MSGEARG  "Error parsing arguments"
+#define TESTNDCONSTRUCTPLUTC_MSGEBAD  "Bad argument values"
+#define TESTNDCONSTRUCTPLUTC_MSGEFILE "Could not create output file"
 /******************************************** </lalErrTable> */
 
 
@@ -122,7 +118,7 @@ NRCSID (TESTPEAK2PHMDC, "$Id$");
 INT4 lalDebugLevel=0;
 
 #define F0 500.0          /*  frequency to build the LUT. */
-#define TCOH 100000.0     /*  time baseline of coherent integration. */
+#define TCOH 3600.0     /*  time baseline of coherent integration. */
 #define DF    (1./TCOH)   /*  frequency  resolution. */
 #define ALPHA 0.0
 #define DELTA 0.0
@@ -131,7 +127,7 @@ INT4 lalDebugLevel=0;
 
 /* Usage format string. */
 
-#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta] [-s patchSizeX patchSizeY]\n"
+#define USAGE "Usage: %s [-d debuglevel] [-o outfile] [-f f0] [-p alpha delta][-s patchSizeX patchSizeY]\n"
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -142,7 +138,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, TESTPEAK2PHMDC, statement ? statement :  \
+              __LINE__, TESTNDCONSTRUCTPLUTC, statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -151,15 +147,15 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              TESTPEAK2PHMDC, (statement) );                     \
+              TESTNDCONSTRUCTPLUTC, (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \
 do {                                                                 \
   if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( TESTPEAK2PHMDC_ESUB, TESTPEAK2PHMDC_MSGESUB,      \
+    ERROR( TESTNDCONSTRUCTPLUTC_ESUB, TESTNDCONSTRUCTPLUTC_MSGESUB,      \
            "Function call \"" #func "\" failed:" );                  \
-    return TESTPEAK2PHMDC_ESUB;                                  \
+    return TESTNDCONSTRUCTPLUTC_ESUB;                                  \
   }                                                                  \
 } while (0)
 /******************************************************************/
@@ -183,8 +179,6 @@ int main(int argc, char *argv[]){
   static HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
   static HOUGHResolutionPar parRes;
   static HOUGHDemodPar   parDem;  /* demodulation parameters */
-  static HOUGHPeakGram   pg;
-  static HOUGHphmd       phmd; /* the partial Hough map derivative */
   /* ------------------------------------------------------- */
 
   INT8   f0Bin;           /* freq. bin to construct LUT */
@@ -197,15 +191,14 @@ int main(int argc, char *argv[]){
   /* HoughDT PHMD[SIDEY][SIDEX+1]; */
   
   HoughDT *PHMD;
- 
+
   HoughDT *pointer;
 
   CHAR *fname = NULL;               /* The output filename */
   FILE *fp=NULL;                    /* Output file */
 
   INT4 arg;                         /* Argument counter */
-  INT4 i,j,k;                       /* Index counter, etc */
-  UINT4 ii;
+  INT4 i,j,k,binPoint;              /* Index counter, etc */
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
 
@@ -218,39 +211,36 @@ int main(int argc, char *argv[]){
   maxNBorders = MAX_N_BORDERS;  /* from LUT.h */
   xSideMax    = SIDEX;   /* from LUT.h */
   ySideMax    = SIDEY;   /* from LUT.h */
-  
-  f0 =  F0;
+
   parRes.f0 =  F0;
   parRes.deltaF = DF;
   parRes.patchSizeX = parDem.patchSizeX = patchSizeX = 0.0;       /* Initialization */
   parRes.patchSizeY = parDem.patchSizeY = patchSizeY = 0.0;
   parRes.minWidthRatio = MWR;
+  f0 = F0;
 
   f0Bin = F0*TCOH;
 
   parDem.deltaF = DF;
   parDem.skyPatch.alpha = 0.0;
-  parDem.skyPatch.delta = -LAL_PI_2; 
+  parDem.skyPatch.delta = -LAL_PI_2;   
+
 
   alpha = ALPHA;
   delta = DELTA;
   veloMod = VTOT;
   
-  /***********************************************************/
-  /* Memory allocation and other settings  */
-  /***********************************************************/
+
+  /***************************************************/
+  /* Memory allocation  and other settings  */
+  /***************************************************/
+  
   lut.maxNBins = maxNBins; 
   lut.maxNBorders = maxNBorders;
   lut.border = 
          (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
   lut.bin = 
          (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
-
-  phmd.maxNBorders = maxNBorders;	 
-  phmd.leftBorderP = 
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-  phmd.rightBorderP = 
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
 	   
   patch.xSideMax = xSideMax;
   patch.ySideMax = ySideMax;
@@ -259,7 +249,6 @@ int main(int argc, char *argv[]){
   patch.xCoor = (REAL8 *)LALMalloc(xSideMax*sizeof(REAL8));
   patch.yCoor = (REAL8 *)LALMalloc(ySideMax*sizeof(REAL8));
 
- 
   /********************************************************/  
   /* Parse argument list.  i stores the current position. */
   /********************************************************/  
@@ -271,9 +260,9 @@ int main(int argc, char *argv[]){
         arg++;
         lalDebugLevel = atoi( argv[arg++] );
       } else {
-        ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+        ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTPEAK2PHMDC_EARG;
+        return TESTNDCONSTRUCTPLUTC_EARG;
       }
     }
     /* Parse output file option. */
@@ -282,9 +271,9 @@ int main(int argc, char *argv[]){
         arg++;
         fname = argv[arg++];
       } else {
-        ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+        ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTPEAK2PHMDC_EARG;
+        return TESTNDCONSTRUCTPLUTC_EARG;
       }
     }
     /* Parse frequency option. */
@@ -295,9 +284,9 @@ int main(int argc, char *argv[]){
 	parRes.f0 =  f0;
 	f0Bin = f0*TCOH;      
       } else {
-        ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+        ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTPEAK2PHMDC_EARG;
+        return TESTNDCONSTRUCTPLUTC_EARG;
       }
     }
     /* Parse velocity position options. */
@@ -307,9 +296,9 @@ int main(int argc, char *argv[]){
 	alpha = atof(argv[arg++]);
 	delta = atof(argv[arg++]);
       } else {
-        ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+        ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTPEAK2PHMDC_EARG;
+        return TESTNDCONSTRUCTPLUTC_EARG;
       }
     }
      /* Parse patch size option. */
@@ -319,24 +308,24 @@ int main(int argc, char *argv[]){
 	parRes.patchSizeX = patchSizeX = atof(argv[arg++]);
         parRes.patchSizeY = patchSizeY = atof(argv[arg++]);
       } else {
-        ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+        ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
-        return TESTPEAK2PHMDC_EARG;
+        return TESTNDCONSTRUCTPLUTC_EARG;
       }
     }
     /* Unrecognized option. */
     else {
-      ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
+      ERROR( TESTNDCONSTRUCTPLUTC_EARG, TESTNDCONSTRUCTPLUTC_MSGEARG, 0 );
       LALPrintError( USAGE, *argv );
-      return TESTPEAK2PHMDC_EARG;
+      return TESTNDCONSTRUCTPLUTC_EARG;
     }
   } /* End of argument parsing loop. */
   /******************************************************************/
 
   if ( f0 < 0 ) {
-    ERROR( TESTPEAK2PHMDC_EBAD, TESTPEAK2PHMDC_MSGEBAD, "freq<0:" );
+    ERROR( TESTNDCONSTRUCTPLUTC_EBAD, TESTNDCONSTRUCTPLUTC_MSGEBAD, "freq<0:" );
     LALPrintError( USAGE, *argv  );
-    return TESTPEAK2PHMDC_EBAD;
+    return TESTNDCONSTRUCTPLUTC_EBAD;
   }
 
   /******************************************************************/
@@ -346,18 +335,13 @@ int main(int argc, char *argv[]){
   
   xSide = patch.xSide;
   ySide = patch.ySide;
-  
+
   /* Update patch size data */ 
   patchSizeX = parDem.patchSizeX = parRes.patchSizeX = patch.patchSizeX;
   patchSizeY = parDem.patchSizeY = parRes.patchSizeY = patch.patchSizeY;
-
   /******************************************************************/
   /* memory allocation again and settings */
   /******************************************************************/
-  
-  phmd.ySide = ySide;
-  phmd.firstColumn = NULL;
-  phmd.firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
    
   PHMD = (HoughDT *)LALMalloc((xSide+1)*ySide*sizeof(HoughDT));
 
@@ -366,58 +350,32 @@ int main(int argc, char *argv[]){
     lut.border[i].xPixel = (COORType *)LALMalloc(ySide*sizeof(COORType));
   }
 
+
   /******************************************************************/
-  /* Case: no spins, patch at south pole */
+  /* Case: no spins, patch at south pole   */
   /******************************************************************/
 
   parDem.veloC.x = veloMod*cos(delta)*cos(alpha);
   parDem.veloC.y = veloMod*cos(delta)*sin(alpha);
   parDem.veloC.z = veloMod*sin(delta);
 
-  parDem.positC.x = 0.0; 
+  /*parDem.positC.x = 0.0; 
   parDem.positC.y = 0.0; 
-  parDem.positC.z = 0.0; 
+  parDem.positC.z = 0.0;*/ 
   parDem.timeDiff = 0.0;
   parDem.spin.length = 0;
   parDem.spin.data = NULL;
   
   /******************************************************************/
-  /* Frequency-bin  of the Partial Hough Map*/
-  /******************************************************************/
-
-  phmd.fBin = f0Bin + 21; /* a bit shifted from the LUT */
-
-  /******************************************************************/
-  /* A Peakgram for testing                                         */
-  /******************************************************************/
-  pg.deltaF = DF;
-  pg.fBinIni = (phmd.fBin) - MAX_N_BINS ;
-  pg.fBinFin = (phmd.fBin) + 5*MAX_N_BINS;
-  pg.length = 1; /* could be much smaller */
-  pg.peak = NULL;
-  pg.peak = (INT4 *)LALMalloc( (pg.length) * sizeof(INT4));
-
-  /* for (ii=0; ii< pg.length; ++ii){  pg.peak[ii] = 8*ii;  } */
-  /* this peakgram is for testing */
-  pg.peak[0] = MAX_N_BINS; 
-
-
-  /******************************************************************/
   /* calculate parameters needed for buiding the LUT */
   /******************************************************************/
-  SUB( LALHOUGHParamPLUT( &status, &parLut, f0Bin, &parDem ),  &status );
+  SUB( LALNDHOUGHParamPLUT( &status, &parLut, f0Bin, &parDem ),  &status );
 
   /******************************************************************/
   /* build the LUT */
   /******************************************************************/
   SUB( LALHOUGHConstructPLUT( &status, &lut, &patch, &parLut ), &status );
-
-  /******************************************************************/
-  /* build a PHMD from a peakgram and LUT  */
-  /******************************************************************/
-
-  SUB( LALHOUGHPeak2PHMD( &status, &phmd, &lut, &pg ), &status );
- 
+  
   /******************************************************************/
   /* construct  PHMD[i][j] accordingly  */
   /*******************************************************/
@@ -429,46 +387,85 @@ int main(int argc, char *argv[]){
     ++pointer;
   }
 
-  /* first column correction */
-  for ( k=0; k< ySide; ++k ){
-    PHMD[k*(xSide+1) +0] = phmd.firstColumn[k];
-  }
-  
-  /* left borders =>  +1 */
-  for (k=0; k< phmd.lengthLeft; ++k){
-    INT2 xindex, yLower,yUpper;
-    COORType    *xPixel;
+  binPoint = lut.iniBin + lut.nBin;
 
-    yLower = (*(phmd.leftBorderP[k])).yLower;
-    yUpper = (*(phmd.leftBorderP[k])).yUpper;
-    xPixel =  &( (*(phmd.leftBorderP[k])).xPixel[0] );
+   /* just as a test examples */
 
-    for(j=yLower; j<=yUpper;++j){
-      xindex = xPixel[j];
-      PHMD[j*(xSide+1) + xindex] += 1;
+  for( k= lut.iniBin; k < binPoint ; k+=2 ){ 
+  /* this should be for plotting each two bins! 
+     so one can see all border with +1 or -1 */
+
+  /* for( k= -2; k < 3 ; k+=2 ){ */ 
+        /* now just 3 peaks selected -2,0,+2 */
+   
+
+    INT2 lb1,rb1,lb2,rb2; /* The border index. If zero means that */
+        /* it does not intersect the patch, or nothing to clip */
+    INT2 max1,min1,max2,min2;
+    INT2 xindex;
+
+    /* conversion of "peak index" (separation to the f0 frequency)
+       into the bin in the LUT */
+
+    i = k;
+    if( k < 0) i = binPoint -1-k;
+
+    /*reading the bin information */
+
+    lb1 = lut.bin[i].leftB1;
+    rb1 = lut.bin[i].rightB1;
+    lb2 = lut.bin[i].leftB2;
+    rb2 = lut.bin[i].rightB2;
+
+    max1 = lut.bin[i].piece1max;
+    min1 = lut.bin[i].piece1min; 
+    max2 = lut.bin[i].piece2max;
+    min2 = lut.bin[i].piece2min; 
+
+    /* drawing the annuli borders */ 
+    if(lb1){
+      for(j = lut.border[lb1].yLower;
+	  j <= lut.border[lb1].yUpper; j++ ){
+	xindex =  lut.border[lb1].xPixel[j];
+	PHMD[j*(xSide+1) + xindex] += 1;
+      }
     }
-  }
-
-  /* right borders =>  -1 */
-  for (k=0; k< phmd.lengthRight; ++k){
-    INT2 xindex, yLower,yUpper;
-    COORType    *xPixel;
-
-    yLower = (*(phmd.rightBorderP[k])).yLower;
-    yUpper = (*(phmd.rightBorderP[k])).yUpper;
-    xPixel =  &( (*(phmd.rightBorderP[k])).xPixel[0] );
-
-    for(j=yLower; j<=yUpper;++j){
-      xindex = xPixel[j];
-      PHMD[j*(xSide+1) + xindex] -= 1;
+    if(lb2){
+      for(j = lut.border[lb2].yLower;
+	  j <= lut.border[lb2].yUpper; j++ ){
+	xindex =  lut.border[lb2].xPixel[j];
+	PHMD[j*(xSide+1) + xindex] += 1;
+      }
     }
+    if(rb1){
+      for(j = lut.border[rb1].yLower;
+	  j <= lut.border[rb1].yUpper; j++ ){
+	xindex =  lut.border[rb1].xPixel[j];
+	PHMD[j*(xSide+1) + xindex] -= 1;
+      }
+    }
+    if(rb2){
+      for(j = lut.border[rb2].yLower;
+	  j <= lut.border[rb2].yUpper; j++ ){
+	xindex =  lut.border[rb2].xPixel[j];
+	PHMD[j*(xSide+1) + xindex] -= 1;
+      }
+    }
+ 
+    /* correcting border effects */
+
+    /* note: if max1<min1, nothing should be done! */
+    for(j=min1; j<=max1; ++j){ PHMD[j*(xSide+1)] += 1; }
+
+    for(j=min2; j<=max2; ++j){ PHMD[j*(xSide+1)] += 1; }
+
   }
 
 
-  /******************************************************************/
-  /* printing the results into a particular file                    */
-  /* if the -o option was given, or into  FILEOUT                   */ 
-  /******************************************************************/
+  /*******************************************************/
+  /* printing the results into a particular file         */
+  /* if the -o option was given, or into  FILEOUT        */ 
+  /*******************************************************/
 
   if ( fname ) {
     fp = fopen( fname, "w" );
@@ -477,14 +474,14 @@ int main(int argc, char *argv[]){
   }
 
   if ( !fp ){
-    ERROR( TESTPEAK2PHMDC_EFILE, TESTPEAK2PHMDC_MSGEFILE, 0 );
-    return TESTPEAK2PHMDC_EFILE;
+    ERROR( TESTNDCONSTRUCTPLUTC_EFILE, TESTNDCONSTRUCTPLUTC_MSGEFILE, 0 );
+    return TESTNDCONSTRUCTPLUTC_EFILE;
   }
 
  
   for(j=ySide-1; j>=0; --j){
     for(i=0;i<xSide;++i){
-      fprintf( fp ," %d",  PHMD[j*(xSide+1) + i]);
+      fprintf( fp ," %d",  PHMD[j*(xSide+1) + i] );
       fflush( fp );
     }
     fprintf( fp ," \n");
@@ -493,12 +490,9 @@ int main(int argc, char *argv[]){
   
   fclose( fp );
 
-
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
-
-  LALFree(pg.peak);
   
   for (i=0; i<maxNBorders; ++i){
     LALFree( lut.border[i].xPixel);
@@ -507,18 +501,22 @@ int main(int argc, char *argv[]){
   LALFree( lut.border);
   LALFree( lut.bin);
     
-  LALFree( phmd.leftBorderP);
-  LALFree( phmd.rightBorderP);
-  LALFree( phmd.firstColumn);
   LALFree( PHMD);
   
   LALFree( patch.xCoor);
   LALFree( patch.yCoor);
-    
+  
   LALCheckMemoryLeaks(); 
 
-  INFO( TESTPEAK2PHMDC_MSGENORM );
-  return TESTPEAK2PHMDC_ENORM;
+  INFO( TESTNDCONSTRUCTPLUTC_MSGENORM );
+  return TESTNDCONSTRUCTPLUTC_ENORM;
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+
+
+
+
+
+
