@@ -1,0 +1,517 @@
+#!/usr/bin/env python2.2
+"""
+burst_pipeline.py - standalone burst pipeline driver script
+This has been created by modifying Duncan Brown's original script for running
+the standalone inspiral code
+
+$Id$
+
+This script produced the necessary condor submit and dag files to run
+the standalone burst code on LIGO data
+"""
+
+__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+import os
+import sys
+import string
+import getopt
+import re
+import tempfile
+import ConfigParser
+
+def isplay(t):
+  if ((t - 729273613) % 6370) < 600:
+    return 1
+  else:
+    return 0
+
+class BurstChunk:
+  def __init__(self,start,end):
+    self.start = start
+    self.end = end
+    self.length = end - start
+
+class ScienceSegment:
+  def __init__(self,id,start,end,duration,segpad):
+    self.id = id
+    self.start = start
+    self.end = end
+    self.duration = duration
+    self.used = 0
+    self.chunks = []
+    self.segpad = segpad
+    self.startpad = self.start - self.segpad
+    self.endpad = self.end + self.segpad
+
+  def createchunks(self,length,overlap,mindur,play_only):
+    dur = self.duration
+    if dur >= 300:
+      start = self.start
+      seg_incr = length - overlap
+      self.mindur = mindur
+      fixedur = dur
+      subdur = 0
+      used = 0
+      while dur >= mindur:
+        if dur >= length:
+          middle = start + length/2
+          end = start + length
+          used += length
+        else:
+          middle = start + dur/2
+          end = start + dur
+          used += dur
+        if (not play_only) or ( play_only 
+          and ( isplay(start) or isplay(middle) or isplay(end) ) ):
+          self.chunks.append(BurstChunk(start,end))
+        start += seg_incr
+        dur -= seg_incr
+        if (dur < mindur and dur > 0 ):
+          subdur = dur
+        if (not play_only) or ( play_only 
+          and ( isplay(start) or isplay(middle) or isplay(end) ) ):    
+          self.used = fixedur - subdur
+
+      """
+      time (without overlap) = fixedur
+      time (dur>40s. & without overlap) = fixedur - subdur
+      time (with overlap) = used
+      time (dur>40s. & with overlap) = used
+      """
+
+class BurstPipeline:
+  """
+  Contains a dictionary of science segments and chunks that
+  define the data to analyze and how it should be analyzed
+  """
+  def __init__(self,config_file):
+    """
+    configfile = the name of the file containing configuration parameters
+    """
+    # parse the configuration file into a dictionary
+    self.config = {}
+    cp = ConfigParser.ConfigParser()
+    cp.read(config_file)
+    for sec in cp.sections():
+      name = string.lower(sec)
+      self.config[name] = {}
+      for opt in cp.options(sec):
+        self.config[name][opt] = string.strip(cp.get(sec,opt))
+    self.basename = config_file.split('.')[0]
+    tempfile.template = self.basename
+    self.logfile = tempfile.mktemp()
+
+  def parsesegs(self):
+    self.segments = []
+    segpad = int(self.config['burst']['pad-data'])
+    # lines that start with an octothorpe are comments
+    comment_line = re.compile(r'\A#')
+    for line in open(self.config['input']['segments']):
+      if not comment_line.match(line):
+        segpars = tuple(map(int,line.split()))
+        # change this line if the format of the science segment file changes
+        self.segments.append( 
+          ScienceSegment(segpars[0],segpars[1],segpars[2],segpars[3],segpad) )
+  
+  def createchunks(self,play_only):
+    # compute the chunk and overlap length in seconds
+    chunk_length = int(self.config['datacond']['chunk-length'])
+    overlap = int(self.config['datacond']['overlap'])
+    mindur = int(self.config['datacond']['mindur'])
+    for seg in self.segments:
+      seg.createchunks(chunk_length,overlap,mindur,play_only)
+
+  def status(self,play_only):
+    log_fh = open( self.basename + '.pipeline.log', 'w' )
+    print >> log_fh, """$Id$"""
+    total_science_used = 0
+    total_science = 0
+    num_chunks = 0
+    for sciseg in self.segments:
+      total_science += sciseg.duration
+      total_science_used += sciseg.used
+      num_chunks += len(sciseg.chunks)
+    print >> log_fh, """\
+Read %d science segments
+Got %d seconds of science data
+Have imposed a min. duration of %d seconds
+The amount of data is %d seconds
+Created %d burst chunks for analysis\
+""" % ( len(self.segments), total_science, sciseg.mindur, total_science_used, num_chunks )
+    if play_only:
+      print >> log_fh, "filtering only segments that overlap with playground"
+    print >> log_fh, "condor log file is", self.logfile
+    log_fh.close()
+
+  def frcachesub(self):
+    sub_fh = open( self.basename + '.frcache.sub', 'w' )
+    print >> sub_fh, """\
+universe = scheduler
+executable = %s
+arguments = --lal-cache \\
+  --observatory $(site) --type %s \\
+  --gps-start-time $(frstart) --gps-end-time $(frend) \\
+  --server=dataserver.phys.uwm.edu \\
+  --url-type file \\
+  --match localhost  
+environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
+log = %s
+error = datafind/frcache-$(site)-$(frstart)-$(frend).$(cluster).$(process).err
+output = cache/frcache-$(site)-$(frstart)-$(frend).out
+notification = never
+queue
+""" % (self.config['condor']['datafind'],
+       self.config['input']['datatype'],
+       self.logfile)
+    sub_fh.close()
+
+    """
+    Here we will run datafind to find the MDC signal frames
+    The mdc cache files will be in dir:./mdcache
+    It is assumed that the data cache files are already present in ./cache
+    """
+  def mdccachesub(self):
+    sub_fh = open( self.basename + '.mdccache.sub', 'w' )
+    print >> sub_fh, """\
+universe = scheduler
+executable = %s
+arguments = --lal-cache \\
+  --observatory HL --type %s \\
+  --gps-start-time $(frstart) --gps-end-time $(frend) \\
+  --server=dataserver.phys.uwm.edu \\
+  --url-type file \\
+  --match localhost
+environment = LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH);PYTHONPATH=$ENV(PYTHONPATH)
+log = %s
+error = mdcdatafind/mdccache-$(frstart)-$(frend).$(cluster).$(process).err
+output = mdccache/mdccache-$(frstart)-$(frend).out
+notification = never
+queue
+""" % (self.config['condor']['datafind'],
+       self.config['input']['mdcdatatype'],
+       self.logfile)
+    sub_fh.close()
+
+
+  def burstsub(self):
+
+    boolargs = re.compile(r'(printSpectrum|verbose)')
+    sub_fh = open( self.basename + '.burst.sub', 'w' )
+    print >> sub_fh, """\
+universe = %s
+executable = %s
+arguments =  --npts $(npts) \\
+  --channel $(channel) \\
+  --mdcchannel $(mdcchannel) \\
+  --threshold $(alphath) \\
+  --start_time $(jobstart) \\
+  --stop_time $(jobend) \\ 
+  --framecache cache/frcache-$(site)-$(frstart)-$(frend).out \\
+  --mdccache mdccache/mdccache-$(frstart)-$(frend).out \\
+  --comment $(usertag) \\
+  --cluster \\
+ """ % (self.config['condor']['universe'],self.config['condor']['burst']),
+    for sec in ['arg']:
+      for arg in self.config[sec].keys():
+        if boolargs.match(arg):
+          if re.match(self.config[sec][arg],'true'): 
+            print >> sub_fh, "--" + arg,
+        else:
+          print >> sub_fh, "--" + arg, self.config[sec][arg], 
+    print >> sub_fh, """
+log = %s
+error = burst/burst-$(ifo)-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = burst/burst-$(ifo)-$(jobstart)-$(jobend).$(cluster).$(process).out
+notification = never
+queue
+""" % (self.logfile)
+
+
+    
+
+  def coincsub(self):
+
+    sub_fh = open( self.basename + '.coinc1.sub', 'w' )
+    print >> sub_fh, """\
+universe = standard
+executable = %s
+arguments = --ifo-a H1-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --ifo-b H2-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --outfile H1H2-$(usertag)-POWER-$(jobstart)-$(duration).xml --dt 350 \\
+  --noplayground 
+log = %s
+error = coin/H1H2-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = coin/H1H2-$(jobstart)-$(jobend).$(cluster).$(process).out
+notification = never
+queue
+""" % (self.config['condor']['coinc'],self.logfile)
+
+    sub_fh = open( self.basename + '.coinc2.sub', 'w' )
+    print >> sub_fh, """\
+universe = standard
+executable = %s
+arguments = --ifo-a L1-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --ifo-b H1H2-$(usertag)-POWER-$(jobstart)-$(duration).xml \\
+  --outfile H1H2L1-$(usertag)-POWER-$(jobstart)-$(duration).xml --dt 350 \\
+  --noplayground 
+log = %s
+error = coin/H1H2L1-$(jobstart)-$(jobend).$(cluster).$(process).err
+output = coin/H1H2L1-$(jobstart)-$(jobend).$(cluster).$(process).out
+notification = never
+queue
+""" % (self.config['condor']['coinc'],self.logfile)
+
+    
+
+
+
+  def builddag(self,cache,coin):
+    chanH1 = self.config['input']['channel-name']
+    chanH2 = self.config['input']['channelh-name']
+    chanL1 = self.config['input']['channell-name']
+    mdcchanH1 = self.config['input']['mdcchannel-name']
+    mdcchanH2 = self.config['input']['mdcchannelh-name']
+    mdcchanL1 = self.config['input']['mdcchannell-name']
+    siteH1 = chanH1[0]
+    siteH2 = chanH2[0]
+    siteL1 = chanL1[0]
+    ifoH1  = chanH1[0:2]
+    ifoH2  = chanH2[0:2]
+    ifoL1  = chanL1[0:2]
+    t      = int(self.config['datacond']['t'])
+    srate  = int(self.config['arg']['srate'])
+    olap   = int(self.config['arg']['olap'])
+    usertag = self.config['input']['user-tag']
+    cala   = self.config['calib']['cala']
+    calb   = self.config['calib']['calb']
+    alphathL = float(self.config['input']['alphal'])
+    alphathH = float(self.config['input']['alphah'])
+ 
+    dag_fh = open( self.basename + ".dag", "w" )
+    seg_fh = open( self.basename + ".txt", "w" )
+    
+
+    # jobs to generate the frame cache files
+    for seg in self.segments:
+      jobname = 'frcache_%s_%d_%d' % (siteH1,seg.startpad,seg.endpad)
+      print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
+      if cache: print >> dag_fh, 'DONE',
+      print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
+      jobname, siteH1, seg.startpad, seg.endpad )
+    for i in range(1,len(self.segments)):
+      print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
+        siteH1,self.segments[i-1].startpad,self.segments[i-1].endpad,
+        siteH1,self.segments[i].startpad,self.segments[i].endpad)
+    for seg in self.segments:
+      jobname = 'frcache_%s_%d_%d' % (siteL1,seg.startpad,seg.endpad)
+      print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
+      if cache: print >> dag_fh, 'DONE',
+      print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
+      jobname, siteL1, seg.startpad, seg.endpad )
+    for i in range(1,len(self.segments)):
+      print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
+        siteL1,self.segments[i-1].startpad,self.segments[i-1].endpad,
+        siteL1,self.segments[i].startpad,self.segments[i].endpad)
+
+    # jobs to generate the mdc cache files
+    for seg in self.segments:
+      jobname = 'mdccache_%d_%d' % (seg.startpad,seg.endpad)
+      print >> dag_fh, 'JOB %s %s.mdccache.sub' % (jobname,self.basename),
+      if cache: print >> dag_fh, 'DONE',
+      print >> dag_fh, '\nVARS %s frstart="%s" frend="%s"' % (
+      jobname, seg.startpad, seg.endpad )
+    for i in range(1,len(self.segments)):
+      print >> dag_fh, 'PARENT mdccache_%s_%s CHILD mdccache_%s_%s' % (
+        self.segments[i-1].startpad,self.segments[i-1].endpad,
+        self.segments[i].startpad,self.segments[i].endpad)
+
+    # jobs to run the burst code
+    for seg in self.segments:
+      parentA = 'frcache_%s_%s_%s' % (siteH1,seg.startpad,seg.endpad)
+      parentB = 'mdccache_%s_%s' % (seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoH1,seg.startpad+8,seg.endpad-8)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+      VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" mdcchannel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+      """ % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,seg.startpad+8,seg.endpad-8,chanH1,mdcchanH1,(t*srate),seg.endpad-seg.startpad, usertag, alphathH)
+      print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+      print >> seg_fh, '%d  %d  %d' % (seg.startpad+8, seg.endpad-8,seg.endpad - seg.startpad-16 )
+    for seg in self.segments:
+      parentA = 'frcache_%s_%s_%s' % (siteL1,seg.startpad,seg.endpad)
+      parentB = 'mdccache_%s_%s' % (seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoL1,seg.startpad+8,seg.endpad-8)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+      VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" mdcchannel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+      """ % ( jobname,siteL1,ifoL1,seg.startpad,seg.endpad,seg.startpad+8,seg.endpad-8,chanL1,mdcchanL1,(t*srate),seg.endpad-seg.startpad, usertag, alphathL)
+      print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+    for seg in self.segments:          
+      parentA = 'frcache_%s_%s_%s' % (siteH2,seg.startpad,seg.endpad)
+      parentB = 'mdccache_%s_%s' % (seg.startpad,seg.endpad)
+      jobname = 'burst_%s_%s_%s' % (ifoH2,seg.startpad+8,seg.endpad-8)
+      print >> dag_fh, 'JOB %s %s.burst.sub' % (jobname,self.basename),
+      print >> dag_fh, """
+      VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" jobstart="%d" jobend="%d" channel="%s" mdcchannel="%s" npts = "%d" frduration="%s" usertag="%s" alphath="%g"\
+      """ % ( jobname,siteH2,ifoH2,seg.startpad,seg.endpad,seg.startpad+8,seg.endpad-8,chanH2,mdcchanH2,(t*srate),seg.endpad-seg.startpad, usertag, alphathH)
+      print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+
+
+
+     # jobs to run the coinc code
+    for seg in self.segments:
+      parentA = 'burst_%s_%s_%s' % (ifoH1,seg.startpad+8,seg.endpad-8)
+      parentB = 'burst_%s_%s_%s' % (ifoH2,seg.startpad+8,seg.endpad-8)
+      jobname = 'coinc_1_%s_%s' % (seg.startpad+8,seg.endpad-8)
+      if coin:
+        print >> dag_fh, 'JOB %s %s.coinc1.sub' % (jobname,self.basename),
+        print >> dag_fh, """
+        VARS %s ifo="%s" ifo="%s" jobstart="%d" jobend="%d" duration="%d" usertag="%s"\
+        """ % ( jobname,ifoH1,ifoH2,seg.startpad+8,seg.endpad-8,seg.endpad-seg.startpad-16,usertag)
+        print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+    for seg in self.segments:
+      parentA = 'burst_%s_%s_%s' % (ifoL1,seg.startpad+8,seg.endpad-8)
+      parentB = 'coinc_1_%s_%s' % (seg.startpad+8,seg.endpad-8)
+      jobname = 'coinc_2_%s_%s' % (seg.startpad+8,seg.endpad-8)
+      if coin:
+        print >> dag_fh, 'JOB %s %s.coinc2.sub' % (jobname,self.basename),
+        print >> dag_fh, """
+        VARS %s ifo="%s" jobstart="%d" jobend="%d" duration="%d" usertag="%s"\
+        """ % ( jobname,ifoL1,seg.startpad+8,seg.endpad-8,seg.endpad-seg.startpad-16,usertag)
+        print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+
+
+    dag_fh.close()
+     
+def usage():
+  msg = """\
+Usage: burst_pipeline.py [OPTIONS] 
+
+   -f, --config-file FILE   use configuration file FILE
+   -p, --play               only create chunks that overlap with playground
+   -v, --version            print version information and exit
+   -h, --help               print help information
+   -c, --cache              flag the frame cache query as done
+   -k, --coin               run the coincidence jobs
+   -l, --log-path           directory to write condor log file
+
+This program generates a DAG to run the burst code. The configuration file 
+should specify the parameters needed to run the jobs and must be specified 
+with the --config-file (or -f) option. 
+
+A directory which condor uses to write a log file must be specified with the
+--log-file (or -l) option. This must be a non-NFS mounted directory. The name
+of the log file is automatically created and will be unique for each
+invocation of burst_pipeline.py.
+
+A file containing science segments to be analyzed should be specified in the 
+[input] section of the configuration file with a line such as
+
+segments = S2TripleCoincidetScienceSegments.txt
+
+This should contain four whitespace separated coulumns:
+
+  segment_id    gps_start_time  gps_end_time    duration
+
+that define the science segments to be used. Lines starting with # are ignored.
+
+The length of the number of burst segments, their overlap and length is 
+determined from the config file and the length of a burst chunk is
+computed.
+
+The chunks start and stop times are computed from the science segment times
+and used to build the DAG.
+
+If the --play (or -p) flag is specified, then only chunks that overlap the S2
+playground defined by:
+
+  ((t - 729273613) % 6370) < 600
+
+are included in the DAG.
+
+If the --cache (or -c) option is specifed, the generation of the frame cache 
+files is marked as done in the DAG.
+
+
+\
+"""
+  print msg
+
+shortop = "f:vhckpl:"
+longop = [
+  "config-file=",
+  "version",
+  "help",
+  "cache",
+  "coin",
+  "play",
+  "log-path="
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+
+config_file = None
+no_cache = None
+no_coin = None
+play_only = None
+log_path = None
+
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print """$Id$"""
+    sys.exit(0)
+  if o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  if o in ("-f", "--config-file"):
+    config_file = a
+  if o in ("-c", "--cache"):
+    no_cache = 1
+  if o in ("-k", "--coin"):
+    no_coin = 1
+  if o in ("-p", "--play"):
+    play_only = 1
+  if o in ("-l", "--log-path"):
+    log_path = a
+
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use -f FILE or --config-file FILE to specify location."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use -l PATH or --log-path PATH to specify a location."
+  sys.exit(1)
+tempfile.tempdir = log_path
+
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('mdccache')
+except: pass
+try: os.mkdir('datafind')
+except: pass
+try: os.mkdir('mdcdatafind')
+except: pass
+try: os.mkdir('burst')
+except: pass
+try: os.mkdir('coin')
+except: pass
+try: os.mkdir('binj')
+except: pass
+
+pipeline = BurstPipeline(config_file)
+pipeline.parsesegs()
+pipeline.createchunks(play_only)
+pipeline.status(play_only)
+pipeline.frcachesub()
+pipeline.mdccachesub()
+pipeline.burstsub()
+pipeline.coincsub()
+pipeline.builddag(no_cache,no_coin)
