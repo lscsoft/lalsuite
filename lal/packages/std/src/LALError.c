@@ -314,6 +314,12 @@ LALInitStatus( LALStatus *status, const char *function, const char *id,
       LALPrepareAbort( status, -2, "INITSTATUS: non-null status pointer",
                        file, line );
     }
+    else if ( xlalErrno )
+    {
+      LALPrepareAbort( status, -16, "INITSTATUS: non-zero xlalErrno",
+                       file, line );
+      exitcode = 1;
+    }
   }
   else
   {
@@ -336,6 +342,11 @@ LALPrepareReturn( LALStatus *status, const char *file, const int line )
     (void) LALError( status, "RETURN:" );
   }
   (void) LALTrace( status, 1 );
+  if ( xlalErrno )
+  {
+    LALPrepareAbort( status, -32, "RETURN: untrapped XLAL error",
+        file, line );
+  }
   return 1;
 }
 

@@ -72,7 +72,10 @@ NRCSID( REALFFTH, "$Id$" );
  * 
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
-typedef struct tagRealFFTPlan RealFFTPlan;
+typedef struct tagREAL4FFTPlan REAL4FFTPlan;
+typedef struct tagREAL8FFTPlan REAL8FFTPlan;
+#define tagRealFFTPlan tagREAL4FFTPlan
+#define RealFFTPlan REAL4FFTPlan
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
  * 
@@ -83,147 +86,171 @@ typedef struct tagRealFFTPlan RealFFTPlan;
  * \newpage\input{RealFFTTestC}
  **** </lalLaTeX> */
 
-/* #define KEEP_OLD_REAL_FFT */
+/*
+ *
+ * XLAL REAL4 functions
+ *
+ */
+
+REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
+REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl );
+void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
+
+int XLALREAL4ForwardFFT( COMPLEX8Vector *output, REAL4Vector *input,
+    REAL4FFTPlan *plan );
+int XLALREAL4ReverseFFT( REAL4Vector *output, COMPLEX8Vector *input,
+    REAL4FFTPlan *plan );
+int XLALREAL4VectorFFT( REAL4Vector *output, REAL4Vector *input,
+    REAL4FFTPlan *plan );
+int XLALREAL4PowerSpectrum( REAL4Vector *spec, REAL4Vector *data,
+    REAL4FFTPlan *plan );
+
+/*
+ *
+ * XLAL REAL8 functions
+ *
+ */
+
+REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl );
+REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl );
+void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
+
+int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
+    REAL8FFTPlan *plan );
+int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
+    REAL8FFTPlan *plan );
+int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
+    REAL8FFTPlan *plan );
+int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
+    REAL8FFTPlan *plan );
+
+/*
+ *
+ * LAL REAL4 functions
+ *
+ */
 
 void
-LALCreateForwardRealFFTPlan(
+LALCreateForwardREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan,
+    REAL4FFTPlan **plan,
     UINT4         size,
     INT4          measure
     );
+#define LALCreateForwardRealFFTPlan LALCreateForwardREAL4FFTPlan
 
 void
-LALCreateReverseRealFFTPlan(
+LALCreateReverseREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan,
+    REAL4FFTPlan **plan,
     UINT4         size,
     INT4          measure
     );
+#define LALCreateReverseRealFFTPlan LALCreateReverseREAL4FFTPlan
 
 void
-LALDestroyRealFFTPlan(
+LALDestroyREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan
+    REAL4FFTPlan **plan
     );
+#define LALDestroyRealFFTPlan LALDestroyREAL4FFTPlan
 
 void
-LALForwardRealFFT(
+LALForwardREAL4FFT(
     LALStatus      *status,
     COMPLEX8Vector *output,
     REAL4Vector    *input,
-    RealFFTPlan    *plan
+    REAL4FFTPlan    *plan
     );
+#define LALForwardRealFFT LALForwardREAL4FFT
 
 void
-LALReverseRealFFT(
+LALReverseREAL4FFT(
     LALStatus      *status,
     REAL4Vector    *output,
     COMPLEX8Vector *input,
-    RealFFTPlan    *plan
+    REAL4FFTPlan    *plan
     );
+#define LALReverseRealFFT LALReverseREAL4FFT
 
 void
-LALRealPowerSpectrum (
+LALREAL4PowerSpectrum (
     LALStatus   *status,
     REAL4Vector *spec,
     REAL4Vector *data,
-    RealFFTPlan *plan
+    REAL4FFTPlan *plan
     );
+#define LALRealPowerSpectrum LALREAL4PowerSpectrum
 
 void
 LALREAL4VectorFFT(
     LALStatus   *status,
     REAL4Vector *output,
     REAL4Vector *input,
-    RealFFTPlan *plan
+    REAL4FFTPlan *plan
     );
 
-/** OLD ROUTINES **/
-#ifdef KEEP_OLD_FFT
-#define KEEP_OLD_REAL_FFT
-#endif
-
-#ifdef KEEP_OLD_REAL_FFT
-
-void
-LALEstimateFwdRealFFTPlan (
-    LALStatus       *stat,
-    RealFFTPlan **plan,
-    UINT4         size
-    );
+/*
+ *
+ * LAL REAL8 functions
+ *
+ */
 
 void
-LALEstimateInvRealFFTPlan (
-    LALStatus       *stat,
-    RealFFTPlan **plan,
-    UINT4         size
+LALCreateForwardREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan,
+    UINT4         size,
+    INT4          measure
     );
 
 void
-LALMeasureFwdRealFFTPlan (
-    LALStatus       *stat,
-    RealFFTPlan **plan,
-    UINT4         size
+LALCreateReverseREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan,
+    UINT4         size,
+    INT4          measure
     );
 
 void
-LALMeasureInvRealFFTPlan (
-    LALStatus       *stat,
-    RealFFTPlan **plan,
-    UINT4         size
+LALDestroyREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan
     );
 
 void
-LALREAL4VectorSequenceFFT (
-    LALStatus              *stat,
-    REAL4VectorSequence *vout,
-    REAL4VectorSequence *vinp,
-    RealFFTPlan         *plan
-    );
-
-
-void
-LALFwdRealFFT (
-    LALStatus         *stat,
-    COMPLEX8Vector *vout,
-    REAL4Vector    *vinp,
-    RealFFTPlan    *plan
+LALForwardREAL8FFT(
+    LALStatus      *status,
+    COMPLEX16Vector *output,
+    REAL8Vector    *input,
+    REAL8FFTPlan    *plan
     );
 
 void
-LALInvRealFFT (
-    LALStatus         *stat,
-    REAL4Vector    *vout,
-    COMPLEX8Vector *vinp,
-    RealFFTPlan    *plan
+LALReverseREAL8FFT(
+    LALStatus      *status,
+    REAL8Vector    *output,
+    COMPLEX16Vector *input,
+    REAL8FFTPlan    *plan
     );
 
 void
-LALFwdRealSequenceFFT (
-    LALStatus                 *stat,
-    COMPLEX8VectorSequence *vout,
-    REAL4VectorSequence    *vinp,
-    RealFFTPlan            *plan
+LALREAL8PowerSpectrum (
+    LALStatus   *status,
+    REAL8Vector *spec,
+    REAL8Vector *data,
+    REAL8FFTPlan *plan
     );
 
 void
-LALInvRealSequenceFFT (
-    LALStatus                 *stat,
-    REAL4VectorSequence    *vout,
-    COMPLEX8VectorSequence *vinp,
-    RealFFTPlan            *plan
+LALREAL8VectorFFT(
+    LALStatus   *status,
+    REAL8Vector *output,
+    REAL8Vector *input,
+    REAL8FFTPlan *plan
     );
-
-void
-LALRealSequencePowerSpectrum (
-    LALStatus              *stat,
-    REAL4VectorSequence *vout,
-    REAL4VectorSequence *vinp,
-    RealFFTPlan         *plan
-    );
-
-#endif /*  KEEP_OLD_REAL_FFT */
 
 #ifdef  __cplusplus
 #pragma {

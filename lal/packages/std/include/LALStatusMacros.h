@@ -102,6 +102,14 @@ The \verb@statusPtr@ field could not be deallocated at the end of all
 subroutine calls; one of the subroutines must have lost it or set it
 to \verb@NULL@. \\
 
+\tt -16 & \vspace{-1.4ex}\tt INITSTATUS: non-zero xlalErrno &
+The \verb@xlalError@ variable is non-zero, which suggests that an
+error in an XLAL routine has occured and has not been handled. \\
+
+\tt -16 & \vspace{-1.4ex}\tt RETURN: untrapped XLAL error code &
+The \verb@xlalError@ variable is non-zero, which indicates that an
+error in an XLAL routine has occured and has not been handled. \\
+
 \hline
 \end{tabular}
 \end{center}
@@ -768,6 +776,10 @@ NRCSID (LALSTATUSMACROSH, "$Id$");
 extern int lalDebugLevel;
 extern const int lalNoDebug;
 
+#define LAL_EXLAL     16384
+#define LAL_MSGEXLAL  "Failure in an XLAL routine"
+#define ABORTXLAL(sp) ABORT(sp,LAL_EXLAL,LAL_MSGEXLAL)
+
 #ifndef NOLALMACROS
 
 #define INITSTATUS( statusptr, funcname, id )                                 \
@@ -785,6 +797,10 @@ extern const int lalNoDebug;
     {                                                                         \
       ABORT( statusptr, -2, "INITSTATUS: non-null status pointer" );          \
     }                                                                         \
+    else if ( xlalErrno )                                                     \
+    {                                                                         \
+      ABORT( statusptr, -16, "INITSTATUS: non-zero xlalErrno" );              \
+    }                                                                         \
   }                                                                           \
   else                                                                        \
     lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"                \
@@ -798,6 +814,10 @@ extern const int lalNoDebug;
     if ( (statusptr)->statusCode )                                            \
       (void) LALError( statusptr, "RETURN:" );                                \
     (void) LALTrace( statusptr, 1 );                                          \
+    if ( xlalErrno )                                                          \
+    {                                                                         \
+      ABORT( statusptr, -32, "RETURN: untrapped XLAL error" );                \
+    }                                                                         \
     return;                                                                   \
   }                                                                           \
   else (void)(0)

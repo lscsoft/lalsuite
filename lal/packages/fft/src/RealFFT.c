@@ -17,6 +17,12 @@
  * \idx{LALForwardRealFFT()}
  * \idx{LALReverseRealFFT()}
  * \idx{LALRealPowerSpectrum()}
+ * \idx{LALCreateForwardREAL4FFTPlan()}
+ * \idx{LALCreateReverseREAL4FFTPlan()}
+ * \idx{LALDestroyREAL4FFTPlan()}
+ * \idx{LALForwardREAL4FFT()}
+ * \idx{LALReverseREAL4FFT()}
+ * \idx{LALREAL4PowerSpectrum()}
  * \idx{LALREAL4VectorFFT()}
  * 
  * \subsubsection*{Description}
@@ -130,15 +136,8 @@
 
 #ifdef LAL_FFTW3_ENABLED
 #include <fftw3.h>
-#elif defined HAVE_SRFFTW_H
-#include <srfftw.h>
-#elif defined HAVE_RFFTW_H
-#include <rfftw.h>
-#ifndef FFTW_ENABLE_FLOAT
-#error "included rfftw.h is not for single-precision"
-#endif
 #else
-#error "don't have srfftw.h, rfftw.h, or fftw3.h"
+#error "FFTW3 is **REQUIRED**"
 #endif
 
 #include <lal/LALStdlib.h>
@@ -146,99 +145,623 @@
 #include <lal/RealFFT.h>
 #include <lal/FFTWMutex.h>
 
-/* tell FFTW to use LALMalloc and LALFree */
-#ifdef LAL_FFTW3_ENABLED
-#define FFTWHOOKS ((void)0)
-#else
-#define FFTWHOOKS \
-  do { fftw_malloc_hook = LALMallocShort; fftw_free_hook = LALFree; } while(0)
-#endif
 
 NRCSID( REALFFTC, "$Id$" );
 
 
 struct
-tagRealFFTPlan
+tagREAL4FFTPlan
 {
   INT4       sign;
   UINT4      size;
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_plan  plan;
-#else
-  rfftw_plan plan;
-#endif
+  fftwf_plan plan;
 };
+
+struct
+tagREAL8FFTPlan
+{
+  INT4       sign;
+  UINT4      size;
+  fftw_plan  plan;
+};
+
+
+/*
+ *
+ * REAL4 XLAL Functions
+ *
+ */
+
+
+REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
+{
+  static const char *func = "XLALCreateREAL4FFTPlan";
+  REAL4FFTPlan *plan;
+  REAL4 *tmp1;
+  REAL4 *tmp2;
+  int flags = FFTW_UNALIGNED;
+
+  if ( ! size )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  /* based on measurement level, set fftw3 flags to perform 
+   * requested degree of measurement */
+  switch ( measurelvl )
+  {
+    case 0: /* estimate */
+      flags |= FFTW_ESTIMATE;
+      break;
+    default: /* exhaustive measurement */
+      flags |= FFTW_EXHAUSTIVE;
+      /* fall-through */
+    case 2: /* lengthy measurement */
+      flags |= FFTW_PATIENT;
+      /* fall-through */
+    case 1: /* measure the best plan */
+      flags |= FFTW_MEASURE;
+      break;
+  }
+
+  /* allocate memory for the plan and the temporary arrays */
+  plan = LALMalloc( sizeof( *plan ) );
+  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  if ( ! plan || ! tmp1 || ! tmp2 )
+  {
+    if ( plan ) LALFree( plan );
+    if ( tmp1 ) LALFree( tmp1 );
+    if ( tmp2 ) LALFree( tmp2 );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+  }
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  if ( fwdflg ) /* forward */
+    plan->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
+  else /* reverse */
+    plan->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+
+  /* free temporary arrays */
+  LALFree( tmp2 );
+  LALFree( tmp1 );
+
+  /* check to see success of plan creation */
+  if ( ! plan->plan )
+  {
+    LALFree( plan );
+    XLAL_ERROR_NULL( func, XLAL_EFAILED );
+  }
+
+  /* now set remaining plan fields */
+  plan->size = size;
+  plan->sign = ( fwdflg ? -1 : 1 );
+
+  return plan;
+}
+
+
+REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl )
+{
+  static const char *func = "XLALCreateForwardREAL4FFTPlan";  
+  REAL4FFTPlan *plan;
+  plan = XLALCreateREAL4FFTPlan( size, 1, measurelvl );
+  if ( ! plan )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return plan;
+}
+
+
+REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl )
+{
+  static const char *func = "XLALCreateForwardREAL4FFTPlan";  
+  REAL4FFTPlan *plan;
+  plan = XLALCreateREAL4FFTPlan( size, 0, measurelvl );
+  if ( ! plan )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return plan;
+}
+
+
+void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
+{
+  static const char *func = "XLALDestroyREAL4FFTPlan";
+  if ( ! plan )
+    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+  if ( ! plan->plan )
+    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  fftwf_destroy_plan( plan->plan );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  memset( plan, 0, sizeof( *plan ) );
+  LALFree( plan );
+  return;
+}
+
+int XLALREAL4ForwardFFT( COMPLEX8Vector *output, REAL4Vector *input,
+    REAL4FFTPlan *plan )
+{
+  static const char *func = "XLALREAL4ForwardFFT";
+  REAL4 *tmp;
+  UINT4 k;
+
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size || plan->sign != -1 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( input->length != plan->size || output->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* create temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* do the fft */
+  fftwf_execute_r2r( plan->plan, input->data, tmp );
+
+  /* now unpack the results into the output vector */
+
+  /* dc component */
+  output->data[0].re = tmp[0];
+  output->data[0].im = 0.0;
+
+  /* other components */
+  for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
+  {
+    output->data[k].re = tmp[k];
+    output->data[k].im = tmp[plan->size - k];
+  }
+
+  /* Nyquist frequency */
+  if ( plan->size%2 == 0 ) /* n is even */
+  {
+    output->data[plan->size/2].re = tmp[plan->size/2];
+    output->data[plan->size/2].im = 0.0;
+  }
+
+  LALFree( tmp );
+  return 0;
+}
+
+
+int XLALREAL4ReverseFFT( REAL4Vector *output, COMPLEX8Vector *input,
+    REAL4FFTPlan *plan )
+{
+  static const char *func = "XLALREAL4ReverseFFT";
+  REAL4 *tmp;
+  UINT4 k;
+
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size || plan->sign != 1 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( output->length != plan->size || input->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( input->data[0].im != 0.0 )
+    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of DC must be zero */
+  if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
+    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
+
+  /* create temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* unpack input into temporary array */
+
+  /* dc component */
+  tmp[0] = input->data[0].re;
+
+  /* other components */
+  for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size / 2 rounded up */
+  {
+    tmp[k]              = input->data[k].re;
+    tmp[plan->size - k] = input->data[k].im;
+  }
+
+  /* Nyquist component */
+  if ( plan->size%2 == 0 ) /* n is even */
+    tmp[plan->size/2] = input->data[plan->size/2].re;
+
+  /* perform the fft */
+  fftwf_execute_r2r( plan->plan, tmp, output->data );
+
+  /* cleanup and exit */
+  LALFree( tmp );
+  return 0;
+}
+
+
+int XLALREAL4VectorFFT( REAL4Vector *output, REAL4Vector *input,
+    REAL4FFTPlan *plan )
+{
+  static const char *func = "XLALREAL4VectorFFT";
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data || output->data == input->data )
+    XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */
+  if ( output->length != plan->size || input->length != plan->size )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* do the fft */
+  fftwf_execute_r2r( plan->plan, input->data, output->data );
+  return 0;
+}
+
+
+int XLALREAL4PowerSpectrum( REAL4Vector *spec, REAL4Vector *data,
+    REAL4FFTPlan *plan )
+{
+  static const char *func = "XLALREAL4PowerSpectrum";
+  REAL4 *tmp;
+  UINT4 k;
+
+  if ( ! spec || ! data || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! spec->data || ! data->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( data->length != plan->size || spec->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* allocate temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* transform the data */
+  fftwf_execute_r2r( plan->plan, data->data, tmp );
+
+  /* now reconstruct the spectrum from the temporary storage */
+
+  /* dc component */
+  spec->data[0] = tmp[0] * tmp[0];
+
+  /* other components */
+  for (k = 1; k < (plan->size + 1)/2; ++k) /* k < size/2 rounded up */
+  {
+    REAL4 re = tmp[k];
+    REAL4 im = tmp[plan->size - k];
+    spec->data[k] = re * re + im * im;
+  }
+
+  /* Nyquist frequency */
+  if ( plan->size%2 == 0 ) /* size is even */
+    spec->data[plan->size/2] = tmp[plan->size/2] * tmp[plan->size/2];
+
+  /* clenup and exit */
+  LALFree( tmp );
+  return 0;
+}
+
+
+
+/*
+ *
+ * REAL8 XLAL Functions
+ *
+ */
+
+
+
+REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
+{
+  static const char *func = "XLALCreateREAL8FFTPlan";
+  REAL8FFTPlan *plan;
+  REAL8 *tmp1;
+  REAL8 *tmp2;
+  int flags = FFTW_UNALIGNED;
+
+  if ( ! size )
+    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+
+  /* based on measurement level, set fftw3 flags to perform 
+   * requested degree of measurement */
+  switch ( measurelvl )
+  {
+    case 0: /* estimate */
+      flags |= FFTW_ESTIMATE;
+      break;
+    default: /* exhaustive measurement */
+      flags |= FFTW_EXHAUSTIVE;
+      /* fall-through */
+    case 2: /* lengthy measurement */
+      flags |= FFTW_PATIENT;
+      /* fall-through */
+    case 1: /* measure the best plan */
+      flags |= FFTW_MEASURE;
+      break;
+  }
+
+  /* allocate memory for the plan and the temporary arrays */
+  plan = LALMalloc( sizeof( *plan ) );
+  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  if ( ! plan || ! tmp1 || ! tmp2 )
+  {
+    if ( plan ) LALFree( plan );
+    if ( tmp1 ) LALFree( tmp1 );
+    if ( tmp2 ) LALFree( tmp2 );
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+  }
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  if ( fwdflg ) /* forward */
+    plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
+  else /* reverse */
+    plan->plan = fftw_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+
+  /* free temporary arrays */
+  LALFree( tmp2 );
+  LALFree( tmp1 );
+
+  /* check to see success of plan creation */
+  if ( ! plan->plan )
+  {
+    LALFree( plan );
+    XLAL_ERROR_NULL( func, XLAL_EFAILED );
+  }
+
+  /* now set remaining plan fields */
+  plan->size = size;
+  plan->sign = ( fwdflg ? -1 : 1 );
+
+  return plan;
+}
+
+
+REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl )
+{
+  static const char *func = "XLALCreateForwardREAL8FFTPlan";  
+  REAL8FFTPlan *plan;
+  plan = XLALCreateREAL8FFTPlan( size, 1, measurelvl );
+  if ( ! plan )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return plan;
+}
+
+
+REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl )
+{
+  static const char *func = "XLALCreateForwardREAL8FFTPlan";  
+  REAL8FFTPlan *plan;
+  plan = XLALCreateREAL8FFTPlan( size, 0, measurelvl );
+  if ( ! plan )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return plan;
+}
+
+
+void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
+{
+  static const char *func = "XLALDestroyREAL8FFTPlan";
+  if ( ! plan )
+    XLAL_ERROR_VOID( func, XLAL_EFAULT );
+  if ( ! plan->plan )
+    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  fftw_destroy_plan( plan->plan );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  memset( plan, 0, sizeof( *plan ) );
+  LALFree( plan );
+  return;
+}
+
+int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
+    REAL8FFTPlan *plan )
+{
+  static const char *func = "XLALREAL8ForwardFFT";
+  REAL8 *tmp;
+  UINT4 k;
+
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size || plan->sign != -1 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( input->length != plan->size || output->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* create temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* do the fft */
+  fftw_execute_r2r( plan->plan, input->data, tmp );
+
+  /* now unpack the results into the output vector */
+
+  /* dc component */
+  output->data[0].re = tmp[0];
+  output->data[0].im = 0.0;
+
+  /* other components */
+  for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size/2 rounded up */
+  {
+    output->data[k].re = tmp[k];
+    output->data[k].im = tmp[plan->size - k];
+  }
+
+  /* Nyquist frequency */
+  if ( plan->size%2 == 0 ) /* n is even */
+  {
+    output->data[plan->size/2].re = tmp[plan->size/2];
+    output->data[plan->size/2].im = 0.0;
+  }
+
+  LALFree( tmp );
+  return 0;
+}
+
+
+int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
+    REAL8FFTPlan *plan )
+{
+  static const char *func = "XLALREAL8ReverseFFT";
+  REAL8 *tmp;
+  UINT4 k;
+
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size || plan->sign != 1 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( output->length != plan->size || input->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+  if ( input->data[0].im != 0.0 )
+    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of DC must be zero */
+  if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
+    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
+
+  /* create temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* unpack input into temporary array */
+
+  /* dc component */
+  tmp[0] = input->data[0].re;
+
+  /* other components */
+  for ( k = 1; k < (plan->size + 1)/2; ++k ) /* k < size / 2 rounded up */
+  {
+    tmp[k]              = input->data[k].re;
+    tmp[plan->size - k] = input->data[k].im;
+  }
+
+  /* Nyquist component */
+  if ( plan->size%2 == 0 ) /* n is even */
+    tmp[plan->size/2] = input->data[plan->size/2].re;
+
+  /* perform the fft */
+  fftw_execute_r2r( plan->plan, tmp, output->data );
+
+  /* cleanup and exit */
+  LALFree( tmp );
+  return 0;
+}
+
+
+int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
+    REAL8FFTPlan *plan )
+{
+  static const char *func="XLALREAL8VectorFFT";
+  if ( ! output || ! input || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! output->data || ! input->data || output->data == input->data )
+    XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */
+  if ( output->length != plan->size || input->length != plan->size )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* do the fft */
+  fftw_execute_r2r( plan->plan, input->data, output->data );
+  return 0;
+}
+
+
+int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
+    REAL8FFTPlan *plan )
+{
+  static const char *func = "XLALREAL8PowerSpectrum";
+  REAL8 *tmp;
+  UINT4 k;
+
+  if ( ! spec || ! data || ! plan )
+    XLAL_ERROR( func, XLAL_EFAULT );
+  if ( ! plan->plan || ! plan->size )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! spec->data || ! data->data )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( data->length != plan->size || spec->length != plan->size/2 + 1 )
+    XLAL_ERROR( func, XLAL_EBADLEN );
+
+  /* allocate temporary storage space */
+  tmp = LALMalloc( plan->size * sizeof( *tmp ) );
+  if ( ! tmp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* transform the data */
+  fftw_execute_r2r( plan->plan, data->data, tmp );
+
+  /* now reconstruct the spectrum from the temporary storage */
+
+  /* dc component */
+  spec->data[0] = tmp[0] * tmp[0];
+
+  /* other components */
+  for (k = 1; k < (plan->size + 1)/2; ++k) /* k < size/2 rounded up */
+  {
+    REAL8 re = tmp[k];
+    REAL8 im = tmp[plan->size - k];
+    spec->data[k] = re * re + im * im;
+  }
+
+  /* Nyquist frequency */
+  if ( plan->size%2 == 0 ) /* size is even */
+    spec->data[plan->size/2] = tmp[plan->size/2] * tmp[plan->size/2];
+
+  /* clenup and exit */
+  LALFree( tmp );
+  return 0;
+}
+
+
+
+
+/*
+ *
+ * LAL Functions
+ *
+ */
+
+
 
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALCreateForwardRealFFTPlan(
+LALCreateForwardREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan,
+    REAL4FFTPlan **plan,
     UINT4         size,
     INT4          measure
     )
 { /* </lalVerbatim> */
-#ifdef LAL_FFTW3_ENABLED
-  REAL4 *tmp1;
-  REAL4 *tmp2;
-  int flags = FFTW_UNALIGNED;
-  if ( measure == 0 ) flags |= FFTW_ESTIMATE;
-  else if ( measure == 1 ) flags |= FFTW_MEASURE;
-  else if ( measure == 2 ) flags |= FFTW_PATIENT;
-  else flags |= FFTW_EXHAUSTIVE;
-#else
-  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
-#endif
-  INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
-  FFTWHOOKS;
+  INITSTATUS( status, "LALCreateForwardREAL4FFTPlan", REALFFTC );
 
-#ifndef LAL_FFTW3_ENABLED
-  ASSERT( fftw_sizeof_fftw_real() == 4, status,
-      REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
-#endif
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
 
-  /* allocate memory */
-  *plan = LALMalloc( sizeof( **plan ) );
+  *plan = XLALCreateREAL4FFTPlan( size, 1, measure );
   if ( ! *plan )
   {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = -1;
-
-#ifdef LAL_FFTW3_ENABLED
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ));
-  if ( !tmp1 || !tmp2 )
-  {
-    if ( tmp1 ) LALFree( tmp1 );
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-#endif
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef LAL_FFTW3_ENABLED
-  (*plan)->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_R2HC, flags );
-#else
-  (*plan)->plan = rfftw_create_plan( size, FFTW_REAL_TO_COMPLEX, flags );
-#endif
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef LAL_FFTW3_ENABLED
-  LALFree( tmp2 );
-  LALFree( tmp1 );
-#endif
-  if ( ! (*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EBADLEN:
+        ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EFAILED:
+        ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+      default:
+        ABORTXLAL( status );
+    }
   }
 
   RETURN( status );
@@ -247,73 +770,35 @@ LALCreateForwardRealFFTPlan(
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALCreateReverseRealFFTPlan(
+LALCreateReverseREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan,
+    REAL4FFTPlan **plan,
     UINT4         size,
     INT4          measure
     )
 { /* </lalVerbatim> */
-#ifdef LAL_FFTW3_ENABLED
-  REAL4 *tmp1;
-  REAL4 *tmp2;
-  int flags = FFTW_UNALIGNED;
-  if ( measure == 0 ) flags |= FFTW_ESTIMATE;
-  else if ( measure == 1 ) flags |= FFTW_MEASURE;
-  else if ( measure == 2 ) flags |= FFTW_PATIENT;
-  else flags |= FFTW_EXHAUSTIVE;
-#else
-  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
-#endif
-  INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
-  FFTWHOOKS;
+  INITSTATUS( status, "LALCreateForwardREAL4FFTPlan", REALFFTC );
 
-#ifndef LAL_FFTW3_ENABLED
-  ASSERT( fftw_sizeof_fftw_real() == 4, status,
-      REALFFTH_ESNGL, REALFFTH_MSGESNGL );  
-#endif
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
 
-  /* allocate memory */
-  *plan = LALMalloc( sizeof( **plan ) );
+  *plan = XLALCreateREAL4FFTPlan( size, 0, measure );
   if ( ! *plan )
   {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = 1;
-
-#ifdef LAL_FFTW3_ENABLED
-  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
-  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
-  if ( !tmp1 || !tmp2 )
-  {
-    if ( tmp1 ) LALFree( tmp1 );
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
-  }
-#endif
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef LAL_FFTW3_ENABLED
-  (*plan)->plan = fftwf_plan_r2r_1d( size, tmp1, tmp2, FFTW_HC2R, flags );
-#else
-  (*plan)->plan = rfftw_create_plan( size, FFTW_COMPLEX_TO_REAL, flags );
-#endif
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-#ifdef LAL_FFTW3_ENABLED
-  LALFree( tmp2 );
-  LALFree( tmp1 );
-#endif
-  if ( ! (*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EBADLEN:
+        ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EFAILED:
+        ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+      default:
+        ABORTXLAL( status );
+    }
   }
 
   RETURN( status );
@@ -322,47 +807,44 @@ LALCreateReverseRealFFTPlan(
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALDestroyRealFFTPlan(
+LALDestroyREAL4FFTPlan(
     LALStatus    *status,
-    RealFFTPlan **plan
+    REAL4FFTPlan **plan
     )
 { /* </lalVerbatim> */
-  INITSTATUS( status, "LALDestroyRealFFTPlan", REALFFTC );
-  FFTWHOOKS;
+  INITSTATUS( status, "LALDestroyREAL4FFTPlan", REALFFTC );
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-
-  /* destroy plan and set to NULL pointer */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_destroy_plan( (*plan)->plan );
-#else
-  rfftw_destroy_plan( (*plan)->plan );
-#endif
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-  LALFree( *plan );
+  XLALDestroyREAL4FFTPlan( *plan );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+      default:
+        ABORTXLAL( status );
+    }
+  }
   *plan = NULL;
-
   RETURN( status );
 }
 
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALForwardRealFFT(
+LALForwardREAL4FFT(
     LALStatus      *status,
     COMPLEX8Vector *output,
     REAL4Vector    *input,
-    RealFFTPlan    *plan
+    REAL4FFTPlan    *plan
     )
 { /* </lalVerbatim> */
-  REAL4 *tmp;
+  int code;
   UINT4 n;
-  UINT4 k;
-
-  INITSTATUS( status, "LALForwardRealFFT", REALFFTC );
-
-  FFTWHOOKS;
+  INITSTATUS( status, "LALForwardREAL4FFT", REALFFTC );
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -380,56 +862,51 @@ LALForwardRealFFT(
 
   ASSERT( plan->sign == -1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
 
-  tmp = LALMalloc( n * sizeof( *tmp ) );
-  if ( ! tmp )
+  code = XLALREAL4ForwardFFT( output, input, plan );
+  if ( code )
   {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( plan->sign != -1 ) /* plan sign was wrong */
+        {
+          ABORT( status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
   }
 
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_execute_r2r( plan->plan, input->data, tmp );
-#else
-  rfftw_one( plan->plan, (fftw_real *) input->data, tmp );
-#endif
-
-  /* dc component */
-  output->data[0].re = tmp[0];
-  output->data[0].im = 0;
-
-  /* other components */
-  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n/2 rounded up */
-  {
-    output->data[k].re = tmp[k];
-    output->data[k].im = tmp[n - k];
-  }
-
-  /* Nyquist frequency */
-  if ( n % 2 == 0 ) /* n is even */
-  {
-    output->data[n / 2].re = tmp[n / 2];
-    output->data[n / 2].im = 0;
-  }
-
-  LALFree( tmp );
   RETURN( status );
 }
 
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALReverseRealFFT(
+LALReverseREAL4FFT(
     LALStatus      *status,
     REAL4Vector    *output,
     COMPLEX8Vector *input,
-    RealFFTPlan    *plan
+    REAL4FFTPlan    *plan
     )
 { /* </lalVerbatim> */
-  REAL4 *tmp;
+  int code;
   UINT4 n;
-  UINT4 k;
-
-  INITSTATUS( status, "LALReverseRealFFT", REALFFTC );
-  FFTWHOOKS;
+  INITSTATUS( status, "LALReverseREAL4FFT", REALFFTC );
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -441,65 +918,63 @@ LALReverseRealFFT(
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
   ASSERT( input->length == n / 2 + 1, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
-
-  ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
-
-  /* make sure that Nyquist is purely real if number of points is even */
+  ASSERT( input->data[0].im == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
   ASSERT( n % 2 || input->data[n / 2].im == 0, status,
       REALFFTH_EDATA, REALFFTH_MSGEDATA );
 
-  tmp = LALMalloc( n * sizeof( *tmp ) );
-  if ( ! tmp )
+  ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+
+  code = XLALREAL4ReverseFFT( output, input, plan );
+  if ( code )
   {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( plan->sign != 1 ) /* plan sign was wrong */
+        {
+          ABORT( status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      case XLAL_EDOM: /* either DC or Nyquist imaginary part was non zero */
+        ABORT( status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+      default:
+        ABORTXLAL( status );
+    }
   }
 
-  /* dc component */
-  tmp[0] = input->data[0].re;
-
-  /* other components */
-  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n / 2 rounded up */
-  {
-    tmp[k]     = input->data[k].re;
-    tmp[n - k] = input->data[k].im;
-  }
-
-  /* Nyquist component */
-  if ( n % 2 == 0 ) /* n is even */
-  {
-    tmp[n / 2] = input->data[n / 2].re;
-  }
-
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_execute_r2r( plan->plan, tmp, output->data );
-#else
-  rfftw_one( plan->plan, tmp, (fftw_real *) output->data );
-#endif
-
-  LALFree( tmp );
   RETURN( status );
 }
 
 
 /* <lalVerbatim file="RealFFTCP"> */  
 void
-LALRealPowerSpectrum (
+LALREAL4PowerSpectrum (
     LALStatus   *status,
     REAL4Vector *spec,
     REAL4Vector *data,
-    RealFFTPlan *plan
+    REAL4FFTPlan *plan
     )
 { /* </lalVerbatim> */
-  REAL4 *tmp;
+  int code;
   UINT4 n;
-  UINT4 k;
 
-  INITSTATUS( status, "LALRealPowerSpectrum", REALFFTC );
-
-  FFTWHOOKS;
+  INITSTATUS( status, "LALREAL4PowerSpectrum", REALFFTC );
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -514,34 +989,31 @@ LALRealPowerSpectrum (
   ASSERT( data->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
   ASSERT( spec->length == n/2 + 1, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
 
-  tmp = LALMalloc( n * sizeof( *tmp ) );
-  if ( ! tmp )
+  code = XLALREAL4PowerSpectrum( spec, data, plan );
+  if ( code )
   {
-    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
   }
 
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_execute_r2r( plan->plan, data->data, tmp );
-#else
-  rfftw_one( plan->plan, (fftw_real *) data->data, tmp );
-#endif
-
-  /* dc component */
-  spec->data[0] = tmp[0] * tmp[0];
-
-  /* other components */
-  for (k = 1; k < (n + 1)/2; ++k) /* k < n/2 rounded up */
-  {
-    REAL4 re = tmp[k];
-    REAL4 im = tmp[n - k];
-    spec->data[k] = re * re + im * im;
-  }
-
-  /* Nyquist frequency */
-  if (n % 2 == 0) /* n is even */
-    spec->data[n / 2] = tmp[n / 2] * tmp[n / 2];
-
-  LALFree( tmp );
   RETURN( status );
 }
 
@@ -552,12 +1024,11 @@ LALREAL4VectorFFT(
     LALStatus   *status,
     REAL4Vector *output,
     REAL4Vector *input,
-    RealFFTPlan *plan
+    REAL4FFTPlan *plan
     )
 { /* </lalVerbatim> */
+  int code;
   INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
-
-  FFTWHOOKS;
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -577,17 +1048,388 @@ LALREAL4VectorFFT(
   ASSERT( input->length == plan->size, status,
       REALFFTH_ESZMM, REALFFTH_MSGESZMM );
 
-#ifdef LAL_FFTW3_ENABLED
-  fftwf_execute_r2r( plan->plan, input->data, output->data );
-#else
-  rfftw_one( plan->plan, (fftw_real *)input->data, (fftw_real *)output->data );
-#endif
+  code = XLALREAL4VectorFFT( output, input, plan );
+  if ( code )
+  {
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        if ( ! plan->size ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( output->data == input->data ) /* same data pointers */
+        {
+          ABORT( status, REALFFTH_ESAME, REALFFTH_MSGESAME );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
+  }
 
   RETURN( status );
 }
 
-#undef FFTWHOOKS
 
-/* double precision routines if they are available */
-#if defined LAL_FFTW3_ENABLED && HAVE_LIBFFTW3
-#endif
+/*
+ *
+ * LAL REAL8 Functions
+ *
+ */
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALCreateForwardREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALCreateForwardREAL8FFTPlan", REALFFTC );
+
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+
+  *plan = XLALCreateREAL8FFTPlan( size, 1, measure );
+  if ( ! *plan )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EBADLEN:
+        ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EFAILED:
+        ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALCreateReverseREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALCreateForwardREAL8FFTPlan", REALFFTC );
+
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+
+  *plan = XLALCreateREAL8FFTPlan( size, 0, measure );
+  if ( ! *plan )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EBADLEN:
+        ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EFAILED:
+        ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+  
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALDestroyREAL8FFTPlan(
+    LALStatus    *status,
+    REAL8FFTPlan **plan
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALDestroyREAL8FFTPlan", REALFFTC );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  XLALDestroyREAL8FFTPlan( *plan );
+  if ( xlalErrno )
+  {
+    int code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+  *plan = NULL;
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALForwardREAL8FFT(
+    LALStatus      *status,
+    COMPLEX16Vector *output,
+    REAL8Vector    *input,
+    REAL8FFTPlan    *plan
+    )
+{ /* </lalVerbatim> */
+  int code;
+  UINT4 n;
+  INITSTATUS( status, "LALForwardREAL8FFT", REALFFTC );
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( input->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( output->length == n / 2 + 1, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  ASSERT( plan->sign == -1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+
+  code = XLALREAL8ForwardFFT( output, input, plan );
+  if ( code )
+  {
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( plan->sign != -1 ) /* plan sign was wrong */
+        {
+          ABORT( status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALReverseREAL8FFT(
+    LALStatus      *status,
+    REAL8Vector    *output,
+    COMPLEX16Vector *input,
+    REAL8FFTPlan    *plan
+    )
+{ /* </lalVerbatim> */
+  int code;
+  UINT4 n;
+  INITSTATUS( status, "LALReverseREAL8FFT", REALFFTC );
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( input->length == n / 2 + 1, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( input->data[0].im == 0, status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
+      REALFFTH_EDATA, REALFFTH_MSGEDATA );
+
+  ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+
+  code = XLALREAL8ReverseFFT( output, input, plan );
+  if ( code )
+  {
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( plan->sign != 1 ) /* plan sign was wrong */
+        {
+          ABORT( status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      case XLAL_EDOM: /* either DC or Nyquist imaginary part was non zero */
+        ABORT( status, REALFFTH_EDATA, REALFFTH_MSGEDATA );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALREAL8PowerSpectrum (
+    LALStatus   *status,
+    REAL8Vector *spec,
+    REAL8Vector *data,
+    REAL8FFTPlan *plan
+    )
+{ /* </lalVerbatim> */
+  int code;
+  UINT4 n;
+
+  INITSTATUS( status, "LALREAL8PowerSpectrum", REALFFTC );
+
+  ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( spec->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( data->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( data->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( spec->length == n/2 + 1, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  code = XLALREAL8PowerSpectrum( spec, data, plan );
+  if ( code )
+  {
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_ENOMEM:
+        ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+      case XLAL_EINVAL:
+        if ( ! n ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALREAL8VectorFFT(
+    LALStatus   *status,
+    REAL8Vector *output,
+    REAL8Vector *input,
+    REAL8FFTPlan *plan
+    )
+{ /* </lalVerbatim> */
+  int code;
+  INITSTATUS( status, "LALREAL8VectorFFT", REALFFTC );
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  /* make sure that it is not the same data! */
+  ASSERT( output->data != input->data, status,
+      REALFFTH_ESAME, REALFFTH_MSGESAME );
+
+  ASSERT( plan->size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( output->length == plan->size, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( input->length == plan->size, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  code = XLALREAL8VectorFFT( output, input, plan );
+  if ( code )
+  {
+    code = xlalErrno;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        if ( ! plan->size ) /* plan size was invalid */
+        {
+          ABORT( status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+        }
+        else if ( output->data == input->data ) /* same data pointers */
+        {
+          ABORT( status, REALFFTH_ESAME, REALFFTH_MSGESAME );
+        }
+        else /* one of the data pointers was NULL */
+        {
+          ABORT( status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+        }
+      case XLAL_EBADLEN: /* size mismatch */
+        ABORT( status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+      default:
+        ABORTXLAL( status );
+    }
+  }
+
+  RETURN( status );
+}
+

@@ -67,7 +67,10 @@ NRCSID( COMPLEXFFTH, "$Id$" );
  * 
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
-typedef struct tagComplexFFTPlan ComplexFFTPlan;
+typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
+typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
+#define tagComplexFFTPlan tagCOMPLEX8FFTPlan
+#define ComplexFFTPlan COMPLEX8FFTPlan
 /**** </lalVerbatim> */
 /**** <lalLaTeX>
  * 
@@ -78,73 +81,107 @@ typedef struct tagComplexFFTPlan ComplexFFTPlan;
  * \newpage\input{ComplexFFTTestC}
  **** </lalLaTeX> */
 
-/* #define KEEP_OLD_COMPLEX_FFT */
+/*
+ *
+ * XLAL COMPLEX8 functions
+ *
+ */
+
+COMPLEX8FFTPlan * XLALCreateCOMPLEX8FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+COMPLEX8FFTPlan * XLALCreateForwardCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
+COMPLEX8FFTPlan * XLALCreateReverseCOMPLEX8FFTPlan( UINT4 size, int measurelvl );
+void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
+int XLALCOMPLEX8VectorFFT( COMPLEX8Vector *output, COMPLEX8Vector *input,
+    COMPLEX8FFTPlan *plan );
+
+/*
+ *
+ * XLAL COMPLEX16 functions
+ *
+ */
+
+COMPLEX16FFTPlan * XLALCreateCOMPLEX16FFTPlan( UINT4 size, int fwdflg, int measurelvl );
+COMPLEX16FFTPlan * XLALCreateForwardCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
+COMPLEX16FFTPlan * XLALCreateReverseCOMPLEX16FFTPlan( UINT4 size, int measurelvl );
+void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
+int XLALCOMPLEX16VectorFFT( COMPLEX16Vector *output, COMPLEX16Vector *input,
+    COMPLEX16FFTPlan *plan );
+
+/*
+ *
+ * LAL COMPLEX8 functions
+ *
+ */
 
 void
-LALCreateForwardComplexFFTPlan(
+LALCreateForwardCOMPLEX8FFTPlan(
     LALStatus       *status,
-    ComplexFFTPlan **plan,
+    COMPLEX8FFTPlan **plan,
     UINT4            size,
     INT4             measure
     );
+#define LALCreateForwardComplexFFTPlan LALCreateForwardCOMPLEX8FFTPlan
 
 void
-LALCreateReverseComplexFFTPlan(
+LALCreateReverseCOMPLEX8FFTPlan(
     LALStatus       *status,
-    ComplexFFTPlan **plan,
+    COMPLEX8FFTPlan **plan,
     UINT4            size,
     INT4             measure
     );
+#define LALCreateReverseComplexFFTPlan LALCreateReverseCOMPLEX8FFTPlan
 
 void
-LALDestroyComplexFFTPlan (
+LALDestroyCOMPLEX8FFTPlan (
     LALStatus       *status,
-    ComplexFFTPlan **plan
+    COMPLEX8FFTPlan **plan
     );
+#define LALDestroyComplexFFTPlan LALDestroyCOMPLEX8FFTPlan
 
 void
 LALCOMPLEX8VectorFFT (
     LALStatus      *status,
     COMPLEX8Vector *output,
     COMPLEX8Vector *input,
-    ComplexFFTPlan *plan
+    COMPLEX8FFTPlan *plan
     );
 
-#ifdef KEEP_OLD_FFT
-#define KEEP_OLD_COMPLEX_FFT
-#endif
-
-#ifdef KEEP_OLD_COMPLEX_FFT
-
-void
-LALEstimateFwdComplexFFTPlan (
-    LALStatus          *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
-    );
+/*
+ *
+ * LAL COMPLEX8 functions
+ *
+ */
 
 void
-LALEstimateInvComplexFFTPlan (
-    LALStatus          *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
+LALCreateForwardCOMPLEX16FFTPlan(
+    LALStatus       *status,
+    COMPLEX16FFTPlan **plan,
+    UINT4            size,
+    INT4             measure
     );
 
 void
-LALMeasureFwdComplexFFTPlan (
-    LALStatus          *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
+LALCreateReverseCOMPLEX16FFTPlan(
+    LALStatus       *status,
+    COMPLEX16FFTPlan **plan,
+    UINT4            size,
+    INT4             measure
     );
 
 void
-LALMeasureInvComplexFFTPlan (
-    LALStatus          *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
+LALDestroyCOMPLEX16FFTPlan (
+    LALStatus       *status,
+    COMPLEX16FFTPlan **plan
     );
 
-#endif /* KEEP_OLD_COMPLEX_FFT */
+void
+LALCOMPLEX16VectorFFT (
+    LALStatus      *status,
+    COMPLEX16Vector *output,
+    COMPLEX16Vector *input,
+    COMPLEX16FFTPlan *plan
+    );
+
 
 #ifdef  __cplusplus
 #pragma {
