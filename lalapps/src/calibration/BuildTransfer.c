@@ -12,7 +12,7 @@ NRCSID( RESPONSEC, "$Id$" );
 
 
 #define MAXSTR 256
-#define PPOLE  0.0      /* Pendulum frequency in Hz                         */
+#define PPOLE  0.76      /* Pendulum frequency in Hz                         */
 #define FMIN   20.0     /* Lowest frequency filled with correct calibration */
 
 #define RESPONSEC_ENORM  0
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     REAL4  amplitude=0.0;
     REAL4 *farray = NULL, *amparray = NULL, *phasearray = NULL;
     INT4   response=1;                     /* compute response if 1, transfer if 0 */
-    INT4   i,gpsTime;
+    INT4   i,gpsTime=0;
     UINT4  location;
     CHAR   respline[MAXSTR];
     fresponse *fresponse_entry = NULL, *thisentry = NULL, *preventry = NULL;
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
         else if (!strcmp( argv[arg], "-a") ) {
             arg++;
             /* Factor of two to account for light travel path */
-            amplitude = atof( argv[arg++] ) / 2.0; 
+            amplitude = atof( argv[arg++] ); 
         }
         /* Check for unrecognized options. */
         else if ( argv[arg][0] == '-' ) {
@@ -325,7 +325,7 @@ int main(int argc, char **argv)
              ********************************************************/
             intParams.y = &amparray[location];
             LALSPolynomialInterpolation(&stat, &intOutput, freq, &intParams); 
-            amp = amplitude / ((-freq*freq + PPOLE*PPOLE) * intOutput.y);
+            amp = PPOLE*PPOLE * amplitude / ((-freq*freq + PPOLE*PPOLE) * intOutput.y);
 
             /********************************************************
              * interpolate the PHASE
