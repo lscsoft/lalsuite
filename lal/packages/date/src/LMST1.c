@@ -46,24 +46,30 @@
  *    LMST1():  GMST1()
  * 
  * NOTES
- * This is from the Explanatory Supplement to the Astronomical Almanac,
- * 1992, Ch. 2, Sec. 24, and also Section B of the Almanac. The formula
- * computes GMST1 for 0h UT1.  To  compute GMST1 for other times, a simple
- * linear interpolation is done.  
+ * GMST1 is from NOVAS - C Version 2.0.1 (10 Dec 99): Naval Observatory
+ * Vector Astrometry Subroutines. See http://aa.usno.navy.mil/AA/
+ *
+ * The basic formula is from the Explanatory Supplement to the Astronomical
+ * Almanac, 1992, Ch. 2, Sec. 24, and also Section B of the Almanac. The
+ * formula computes GMST1 for 0h UT1.  To compute GMST1 for other times, a
+ * simple linear interpolation is done.
  * 
- *-----------------------------------------------------------------------
- */
+ *----------------------------------------------------------------------- */
 
 #include "LALRCSID.h"
 
 NRCSID (LMST1C, "$Id$");
 
+#include <math.h>
 #include "Date.h"
 #include "date_value.h"
 
 
 /*
  * Compute GMST1 in requested units given date UTC.
+ * Use algorithm as coded in NOVAS-C Version 2.0.1 (10 Dec 99)
+ *   Naval Observatory Vector Astrometry Subroutines
+ *  C Version
  */
 void
 GMST1 (Status        *status,
@@ -71,17 +77,18 @@ GMST1 (Status        *status,
        const LALDate *date,
        INT4           outunits)
 {
-    REAL8 du;
+    REAL8 jdate;
+    REAL8 jd_hi, jd_lo;
+    INT4  tmp;
+    REAL8 st;
     REAL8 tu;
     REAL8 tu2;
-    LALDate tmpdate;
-    REAL8   interval;
-    REAL8 ut2mst; /* conversion factor: UT1 -> Mean Sidereal Time */
-    const REAL8      a =   24110.54841;
-    const REAL8      b = 8640185.812866;
-    const REAL8      c =       0.093104;
-    const REAL8      d =      -6.2e-6;
-    
+    const REAL8      a =         -6.2e-6;
+    const REAL8      b =          0.093104;
+    const REAL8      c =      67310.54841;
+    const REAL8      d =    8640184.812866;
+    const REAL8      e = 3155760000.0;
+
     INITSTATUS (status, "GMST1", LMST1C);
 
     /*
@@ -97,42 +104,31 @@ GMST1 (Status        *status,
             GMST1_ENULLOUTPUT, GMST1_MSGENULLOUTPUT);
 
     /*
-     * Make a date structure for midnight of the input date
-     */
-    tmpdate.unixDate.tm_sec   = 0;
-    tmpdate.unixDate.tm_min   = 0;
-    tmpdate.unixDate.tm_hour  = 0;
-    tmpdate.unixDate.tm_mday  = date->unixDate.tm_mday;
-    tmpdate.unixDate.tm_mon   = date->unixDate.tm_mon;
-    tmpdate.unixDate.tm_year  = date->unixDate.tm_year;
-    
-    /*
      * Compute GMST1 for 0h UT1 on given date in seconds since J2000.0 
      */
-    JulianDate(status, &du, &tmpdate);
-    du -= J2000_0;
-    tu  = du / JDAYS_PER_CENT;
-    tu2 = tu * tu;
-    
-    *gmst = a + b * tu + c * tu2 + d * tu * tu2;
+    JulianDate(status, &jdate, date);
+    jdate -= J2000_0;
+    tmp    = (INT4)jdate;  /* get the integral part of jdate */
+    jd_hi  = (REAL8)tmp;
+    jd_lo  = jdate - jd_hi;
 
-    while (*gmst < 0)
+    tu     = jdate / JDAYS_PER_CENT;
+    tu2    = tu * tu;
+
+    jd_hi /= JDAYS_PER_CENT;
+    jd_lo /= JDAYS_PER_CENT;
+    
+    st = a*tu2*tu + b*tu2 + c + d*jd_lo + e*jd_lo
+        + d*jd_hi + e*jd_hi;
+
+    *gmst = fmod(st, (REAL8)SECS_PER_DAY);
+
+    if (*gmst < 0.)
         *gmst += (REAL8)SECS_PER_DAY;
 
     /*
-     * Add the equivalent mean sidereal time interval
-     * from 0h to given time UT1
+     * Convert GMST to requested units
      */
-    interval = (REAL8)(date->unixDate.tm_sec) +
-        60. * (REAL8)(date->unixDate.tm_min) +
-        3600. * (REAL8)(date->unixDate.tm_hour);
-
-    /* Eqn 2.241-3 of Expl. Suppl. to Astr. Almanac (this is probably
-     * overkill at REAL8 precision) */
-    ut2mst = 1.002737909350795 + 5.9006e-11*tu - 5.9e-15*tu2;
-    
-    *gmst += ut2mst * interval;
-
     switch (outunits)
     {
     case MST_SEC:
@@ -145,7 +141,7 @@ GMST1 (Status        *status,
         break;
     case MST_RAD:
         *gmst /= (REAL8)SECS_PER_HOUR / (REAL8)DEGS_PER_HOUR * 180. /
-            LAL_PI;
+            (REAL8)LAL_PI;
         break;
     default:
         break;
@@ -167,7 +163,7 @@ LMST1 (Status        *status,
        INT4           outunits)
 {
     REAL8 gmst;
-	REAL8 day = 0;
+	REAL8 day;
 
     INITSTATUS (status, "LMST1", LMST1C);
 
@@ -205,8 +201,8 @@ LMST1 (Status        *status,
 		day        = 360.;
         break;
     case MST_RAD:
-        longitude /= 180. / LAL_PI;
-		day        = LAL_TWOPI;
+        longitude /= 180. / (REAL8)LAL_PI;
+		day        = (REAL8)LAL_TWOPI;
         break;
     default:
         break;

@@ -215,6 +215,9 @@ computed above.  The Mean Sidereal Time interval is obtained by multiplying
 the UT time interval by $1.002737909350795 + 5.9006\times10^{-11}T_{U} +
 5.9\times10^{-15}T_{U}^{2}$.
 
+The implementation used in \texttt{GMST1()} is copied from NOVAS
+(\texttt{http://aa.usno.navy.mil/AA/}).  It gives better precision than a
+naive translation of the above algorithm.
 
 \subsection{Accuracy}
 This implementation for computing GMST1 is accurate to about 1 sidereal
@@ -232,7 +235,7 @@ where the equation of equinoxes $= \frac{1}{15}(\Delta\psi \cos\epsilon +
 is the mean obliquity of th eecliptic and $\Omega$ is the mean longitude of
 the ascending node of the Moon.  The Equation of the Equinoxes is tabulated
 in the \textit{Astronomical Almanac}, and can be interpolated.  It can also
-be computed using software from the US Naval Observatory
+be computed using the NOVAS software from the US Naval Observatory
 (\texttt{http://aa.usno.navy.mil/AA/}). For the year 2000, the Equation of
 the Equinoxes goes to an absolute maximum of about 1 sidereal second.
 
