@@ -177,6 +177,8 @@ int getFrameData(char *fQuery,
 	  char tname[] = "/tmp/getFrameDataXXXXXX";
 	  char cmd[2048];
 	  int fid = mkstemp(tname);
+	  char gotIt = 0;
+
 	  if(fid==-1) {
 	    fprintf(stderr,"Can't create temp file\n");
 	    return 1;
@@ -193,6 +195,7 @@ int getFrameData(char *fQuery,
 	    
 	    while(fgets(buf,2048,in)) {
 	      if(strstr(buf,type)) {
+		gotIt = 1;
 		write(fid,buf,strlen(buf));
 	      }
 	    }
@@ -200,7 +203,14 @@ int getFrameData(char *fQuery,
 	    fclose(in);
 	  }
 
+	  *buf = '\n';
+	  write(fid,buf,1);
 	  close(fid);
+
+	  if(!gotIt) {
+	    fprintf(stderr,"No frame file matches request for type %s\n",type);
+	    return 1;
+	  }
 
 	  /* get the data */
 	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
