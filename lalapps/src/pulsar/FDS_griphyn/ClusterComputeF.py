@@ -176,11 +176,11 @@ for opt, value in options:
   elif opt in ( "-e", "--end" ):
     end = long( value )
   elif opt in ( "-i", "--instrument" ):
-    instrument = int( value )
+    instrument =  value 
   elif opt in ( "-f", "--frequency" ):
-    frequency = double( value )
+    frequency = float( value )
   elif opt in ( "-b", "--bandwidth" ):
-    bandwidth = double( value )
+    bandwidth = float( value )
   elif opt in ( "-d", "--spindown" ):
     spindown = float( value )
   elif opt in ( "-p", "--spinband" ):
@@ -197,6 +197,8 @@ for opt, value in options:
     num = int( value )
   elif opt in ( "-c", "--calibration" ):
     calibration = value
+  elif opt in  ("-r", "--rls-server" ):
+     rls_server = value
   elif opt in ( "-v", "--calibration-version" ):
     calibration_version = int( value )
   elif opt in ( "-V", "--version" ):
@@ -206,6 +208,7 @@ for opt, value in options:
     print >>sys.stderr, sys.argv[0] + ": Unrecognized option " + opt
     print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
     sys.exit( 2 )
+
 if len( args ) < 1:
   print >>sys.stderr, sys.argv[0] + ": Missing argument"
   print >>sys.stderr, "Use " + sys.argv[0] + " --help for usage"
