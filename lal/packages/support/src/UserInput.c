@@ -239,6 +239,7 @@ LALUserVarReadCmdline (LALStatus *stat,
   int longindex = -1;
 
   INITSTATUS( stat, "LALUserVarReadCmdline", USERINPUTC );
+  ATTATCHSTATUSPTR (stat);
 
   ASSERT (argv, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (UVAR_vars.next, stat, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
@@ -337,10 +338,13 @@ LALUserVarReadCmdline (LALStatus *stat,
 	case UVAR_BOOL:
 	  ret = -1;
 
-	  if (optarg == NULL)	/* no argument: counts a 'true' */
+	  if (optarg == NULL)	/* no argument: counts as 'true' */
 	    ret = 1;
-	  else		/* parse bool-argument: should be consistent with bool-parsing in ConfigFile! */
+	  else		/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
+	      /* get rid of case ambiguities */
+	      TRY (LALLowerCaseString (stat->statusPtr, optarg), stat);
+
 	      if      ( !strcmp(optarg, "yes") || !strcmp(optarg, "true") || !strcmp(optarg,"1") )
 		ret = 1;
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
@@ -396,6 +400,7 @@ LALUserVarReadCmdline (LALStatus *stat,
 
   LALFree (long_options);
 
+  DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
 } /* LALUserVarReadCmdline() */
@@ -612,6 +617,7 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
 
   INT4 i;
   CHAR* fname = NULL;
+  CHAR *tmp;
   LALUserVariable *ptr;
 
   INITSTATUS( stat, "LALUserVarReadAllInput", USERINPUTC);
@@ -623,14 +629,31 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
   /* pre-process command-line: have we got a config-file ? */
   for (i=1; i < argc; i++)
     {
-      if ( argv[i][0] == '@' )
+      tmp = argv[i];
+      if ( *tmp == '@' )
 	{
-	  fname = LALCalloc (1, strlen(argv[i]+1) + 1 );
-	  if (fname == NULL) {
+	  if (fname != NULL) {
+	    ABORT (stat, USERINPUTH_EONECONFIG, USERINPUTH_MSGEONECONFIG);
+	  }
+
+	  tmp ++;
+	  if ( (fname = LALCalloc (1, strlen(tmp) + 5 )) == NULL) {
 	    ABORT (stat, USERINPUTH_EMEM,  USERINPUTH_MSGEMEM);
 	  }
-	  strcpy (fname, argv[i]+1);
-	}
+	  /* NOTE: if the filename given is not a relative or absolute path, 
+	   * we want to ensure it is interpreted relative to the CURRENT directory,
+	   * NOT relative to LAL_DATA_PATH (if set), as we cannot rely on it containg
+	   * the local directory.
+	   *
+	   * ==> therefore we ensure that the path is relative to "./" in that case.
+	   */
+	  if ( (tmp[0] != '.') || (tmp[0] != '/') )
+	    sprintf (fname, "./%s", tmp);
+	  else
+	    strcpy (fname, tmp);
+	
+	} /* if argument starts with '@' */
+
     } /* for i < argc */
 
 
