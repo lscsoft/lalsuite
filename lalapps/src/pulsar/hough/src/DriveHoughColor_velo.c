@@ -44,7 +44,7 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-o outfile-basename] \n\
         This is a string that prefixes some output filenames.\n\
         It might contain a path. Filenames are formed by \n\
-        appending .<number> histo  and stats\n\
+        appending .<number> histo events and stats\n\
  	If not set, the program will write into ./outHM1/HM.<number>\n\
  [-V time-velocity data file]\n\
         This is a string of the output time-velocity data file.\n\
@@ -160,8 +160,10 @@ int main(int argc, char *argv[]){
   INT4   nSpin1Max;
   REAL8  f1jump;
   
-  FILE   *fp1=NULL;
+  FILE   *fp1 = NULL;
   CHAR   filestats[256];
+  FILE   *fpEvents = NULL;
+  CHAR   fileEvents[256];
   UINT2  blocksRngMed;
 
 #ifdef TIMING
@@ -205,6 +207,7 @@ int main(int argc, char *argv[]){
   fnameTime = FILETIME; 
   blocksRngMed = BLOCKSRNGMED;
   SUB( RngMedBias( &status, &normalizeThr, blocksRngMed ), &status );
+  
   /*****************************************************************/
   /*    Parse argument list.  i stores the current position.       */
   /*****************************************************************/
@@ -390,6 +393,27 @@ int main(int argc, char *argv[]){
   }
   /******************************************************************/
  
+ /******************************************************************/  
+  /* opening the output statitstic and event files */
+  /******************************************************************/  
+  
+   strcpy(  filestats, fnameOut);
+   strcat(  filestats, "stats");
+   fp1=fopen(filestats,"w");
+   if ( !fp1 ){
+     fprintf(stderr,"Unable to find file %s\n", filestats);
+     return DRIVEHOUGHCOLOR_EFILE;
+   }
+   setlinebuf(fp1); /*line buffered on */  
+
+   strcpy(  fileEvents, fnameOut);
+   strcat(  fileEvents, "events");
+   fpEvents=fopen(fileEvents,"w");
+   if ( !fpEvents ){
+     fprintf(stderr,"Unable to find file %s\n", fileEvents);
+     return DRIVEHOUGHCOLOR_EFILE;
+   }
+   setlinebuf(fpEvents); /*line buffered on */  
   
   /******************************************************************/
   /* Looking into the SFT data files */
@@ -460,7 +484,7 @@ int main(int argc, char *argv[]){
   }
  
   /* ****************************************************************/
-  /* reading from SFT, times and generating peakgrams for white noise */
+  /* reading from SFT, times and generating peakgrams  */
   /* ****************************************************************/
 
   timeV.length = mObsCoh;
@@ -727,17 +751,6 @@ int main(int argc, char *argv[]){
   }
  
   /******************************************************************/  
-  /* opening the output statitstic file */
-  /******************************************************************/  
-  
-   strcpy(  filestats, fnameOut);
-   strcat(  filestats, "stats");
-   fp1=fopen(filestats,"w");
-   if ( !fp1 ){
-    fprintf(stderr,"Unable to find file %s\n", filestats);
-    return DRIVEHOUGHCOLOR_EFILE;
-   }
-  setlinebuf(fp1); /*line buffered on */
   /******************************************************************/  
 
   fBin= f0Bin;
@@ -950,10 +963,11 @@ int main(int argc, char *argv[]){
   if( PrintHistogram( &histTotal, fnameOut) ) return 7;
 
   /******************************************************************/
-  /* closing file with statistics results */
+  /* closing files with statistics results and events */
   /******************************************************************/  
   fclose(fp1);
-  
+  fclose(fpEvents);
+ 
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
