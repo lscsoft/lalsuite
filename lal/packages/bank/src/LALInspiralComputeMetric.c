@@ -703,7 +703,7 @@ LALGetInspiralMomentsBCV (
 
 
    in.shf->deltaF *= params->fLower;
-   
+  /* 
    printf("#M1=\n");
    printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
 	    moments->M1[0][0],
@@ -724,6 +724,7 @@ LALGetInspiralMomentsBCV (
 	    moments->M3[1][0],
 	    moments->M3[1][1] );
      printf("\n");
+*/
 }
 
 #undef Dim
