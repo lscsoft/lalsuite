@@ -107,20 +107,16 @@ optimistc option.  Someday the data will be so good we won't need high pass filt
 \item[\option{--minimal-match} \textsc{ M}] The minimal match M between templates in the 
 bank and all possible signals in the parameter space. 
 \item[\option{--order} \textsc{ ORDER}] This sets the post-Newtonian order of the waveform to
-ORDER.  The options are (newtonian|oneHalfPN|onePN|onePointFivePN|twoPN|
-twoPointFive|threePN|threePointFivePN)
+ORDER.  The options are 
 \item[\option{--approximant} \textsc{ APPROX}] Sets the approximant of the waveform to APPROX
-The options are (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|PadeT1|PadeT2|EOB|BCV
-|SpinTaylorT3|BCVSpin)
 \item[\option{--space} \textsc{ SPACE}] In order to make the template bank coordinates nice
-and friendly these parameters are used instead of masses.  The options are
-(Tau0Tau2|Tau0Tau3|Psi0Psi3).  Tau coordinates are in terms of the chirptimes and
-Psi coordinates are for BCV searches.
+and friendly these parameters are used instead of masses.  
 \item[\option{--write-raw-data}] write raw data to a frame file
 \item[\option{--write-response}] write the computed response function to a frame
 \item[\option{--write-spectrum}] write the uncalibrated psd to a frame
 \item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
 \end{entry}
+
 \subsubsection{Description}
 \begin{entry} 
 \noindent \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
