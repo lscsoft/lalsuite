@@ -212,15 +212,19 @@ LALDestroyUserVars (LALStatus *stat)
 	}
 
       /* free list-entry behind us (except for the head) */
-      if (lastptr)
+      if (lastptr) {
 	LALFree (lastptr);
+	lastptr=NULL;
+      }
 
       lastptr = ptr;
 
     } /* while ptr->next */
 
-  if (lastptr)
+  if (lastptr) {
     LALFree (lastptr);
+    lastptr=NULL;
+  }
 
   /* clean head */
   memset (&UVAR_vars, 0, sizeof(UVAR_vars));
@@ -308,8 +312,16 @@ LALUserVarReadCmdline (LALStatus *stat,
    * properly reset/initialized. We do this using the (undocumented) feature of GNU getopt
    * of setting optind to 0. As we're linking our private version of GNU getopt, this should be
    * guaranteed to work.
+   * 
+   * Bruce's notes: read getopt_long() source code, and in particular
+   * _getopt_internal() to see what is initialized.
    */
   optind = 0; 	/* reset getopt(), getopt_long() */
+
+  /* not needed but good security anyway */
+  optarg=NULL;
+  opterr=0;
+  optopt=0;
 
   /* parse the command-line */
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
@@ -320,6 +332,7 @@ LALUserVarReadCmdline (LALStatus *stat,
 	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
 	printf ("\n%s\n", helpstring);
 	LALFree (helpstring);
+	helpstring=NULL;
 	ABORT (stat, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
       if (c != 0) 	/* find short-option character */
@@ -413,6 +426,7 @@ LALUserVarReadCmdline (LALStatus *stat,
 	  }
 	  if ( *(CHAR**)(ptr->varp) != NULL) {	 /* something allocated here before? */
 	    LALFree ( *(CHAR**)(ptr->varp) );
+	    (*(CHAR**)(ptr->varp))=NULL;
 	  }
 
 	  *(CHAR**)(ptr->varp) = LALCalloc (1, strlen(optarg) + 1);
@@ -433,6 +447,7 @@ LALUserVarReadCmdline (LALStatus *stat,
     } /* while getopt_long() */
 
   LALFree (long_options);
+  long_options=NULL;
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -493,8 +508,10 @@ LALUserVarReadCfgfile (LALStatus *stat,
 	  TRY( LALReadConfigSTRINGVariable (stat->statusPtr, &stringbuf, cfg, ptr->name, &wasRead), stat);
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
-	      if ( *(CHAR**)(ptr->varp) != NULL)	 /* something allocated here before? */
+	      if ( *(CHAR**)(ptr->varp) != NULL) {	 /* something allocated here before? */
 		LALFree ( *(CHAR**)(ptr->varp) );
+		( *(CHAR**)(ptr->varp) )=NULL;
+	      }
 
 	      *(CHAR**)(ptr->varp) = stringbuf;
 	      ptr->state |= UVAR_WAS_SET;
@@ -590,6 +607,7 @@ LALUserVarHelpString (LALStatus *stat,
 	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
 	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
 	  LALFree (valstr);
+	  valstr=NULL;
 	}
       
       if (ptr->optchar != 0)
@@ -679,6 +697,7 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
   if (fname) {
     TRY (LALUserVarReadCfgfile (stat->statusPtr, fname), stat);
     LALFree (fname);
+    fname=NULL;
   }
 
   /* now do proper cmdline parsing: overloads config-file settings */
@@ -693,6 +712,7 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
 	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
 	printf ("\n%s\n", helpstring);
 	LALFree (helpstring);
+	helpstring=NULL;
 	DETATCHSTATUSPTR (stat);
 	RETURN (stat);
       } /* if help requested */
@@ -876,7 +896,9 @@ LALUserVarGetLog (LALStatus *stat, CHAR **logstr,  UserVarLogFormat format)
       strcat (record, append);
 
       LALFree (valstr);
+      valstr=NULL;
       LALFree (append);
+      append=NULL;
     } /* while ptr->next */
   
   *logstr = record;
