@@ -3,7 +3,8 @@ pkginclude_HEADERS = FindChirp.h \
                      FindChirpChisq.h \
                      FindChirpSP.h \
                      FindChirpExch.h \
-                     FindChirpEngine.h
+                     FindChirpEngine.h \
+		     TwoInterfFindChirp.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
