@@ -152,11 +152,12 @@ typedef struct {
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
 void AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal, SFTParams *params);
 
-
+void write_SFT (LALStatus *stat, SFTtype *sft, const CHAR *fname);
 void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
+void compare_SFTs (COMPLEX8Vector *sft1, COMPLEX8Vector *sft2);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

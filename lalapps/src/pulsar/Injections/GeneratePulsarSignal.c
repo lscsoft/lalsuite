@@ -99,8 +99,8 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   time = params->startTimeGPS;
   time.gpsSeconds += params->duration;
   TRY (ConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
-  SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds +2 ;
-  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT ) + 1;
+  SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds;
+  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
 
   /*
    * finally, call the function to generate the source waveform 
@@ -190,6 +190,11 @@ AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal
    */
   numSamples = (UINT4) ceil( 2.0 * params->FreqBand * params->Tsft);	/* round up */
   Band = 1.0 * numSamples / (2.0 * params->Tsft );
+
+  printf ("\nFreqBand = %f\n", params->FreqBand);
+  printf ("nsamples = %d\n", numSamples);
+  printf ("->Band = %f\n", Band);
+  printf ("Tsft = %f\n", params->Tsft);
 
   /* Prepare FFT: compute plan for FFTW */
   TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat);
@@ -296,16 +301,9 @@ AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal
 void
 ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params)
 {
-
-  LIGOTimeGPS ssb;
   EarthState earth;
   EmissionTime emit;
   BarycenterInput baryinput;
-  /* just here for checking that we get the same as in makefakedata_v2 (remove eventually) */
-  REAL8 doubleTime;
-  REAL8 Ts=GPSin.gpsSeconds;
-  REAL8 Tns=GPSin.gpsNanoSeconds;
-
 
   INITSTATUS( stat, "ConvertGPS2SSB", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
@@ -313,7 +311,6 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarS
   ASSERT (SSBout != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
 
-  baryinput.tgps = GPSin;
   baryinput.site = *(params->site);
   /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
   baryinput.site.location[0] /= LAL_C_SI;
@@ -323,15 +320,10 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarS
   baryinput.delta = params->pulsar.Delta;
   baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
 
+  baryinput.tgps = GPSin;
+
   TRY (LALBarycenterEarth(stat->statusPtr, &earth, &GPSin, params->ephemerides), stat);
   TRY (LALBarycenter(stat->statusPtr, &emit, &baryinput, &earth), stat);
-
-  /* RP: this was used in makefakedata_v2: check that we get the same! */
-  doubleTime= emit.deltaT + Ts + Tns*1.E-9;
-  TRY (LALFloatToGPS (stat->statusPtr, &ssb, &doubleTime), stat);
-
-  printf ("\nDEBUG: checking  ConvertGPS2SSB(): difference = %e s\n", 
-	  1.0*(ssb.gpsSeconds - emit.te.gpsSeconds)+ (ssb.gpsNanoSeconds - emit.te.gpsNanoSeconds)*1.0e-9);
 
   *SSBout = emit.te;
 
@@ -378,8 +370,8 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, PulsarS
       delta += SSBin.gpsNanoSeconds;
       delta -= SSBofguess.gpsNanoSeconds;
       
-      /* break if we've converged: +/- 2 NanoSeconds seems good enough!  */
-      if (delta > -2 && delta < 2)
+      /* break if we've converged: let's be strict to < 1 ns ! */
+      if (delta == 0)
 	break;
 
       /* use delta to make next guess */
@@ -537,3 +529,95 @@ write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set)
   return;
 
 } /* write_timeSeriesR4() */
+
+
+
+
+void 
+write_SFT (LALStatus *stat, SFTtype *sft, const CHAR *fname)
+{
+  FILE *fp;
+  REAL4 rpw,ipw;
+  INT4 i;
+  REAL8 freqBand;
+
+  struct headertag {
+    REAL8 endian;
+    INT4  gps_sec;
+    INT4  gps_nsec;
+    REAL8 tbase;
+    INT4  firstfreqindex;
+    INT4  nsamples;
+  } header;
+
+  INITSTATUS( stat, "write_SFT", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  fp = fopen (fname, "w");
+
+  if( !fp ) {
+    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+  }
+
+  header.endian=1.0;
+  header.gps_sec = sft->epoch.gpsSeconds;
+  header.gps_nsec = sft->epoch.gpsNanoSeconds;
+
+  freqBand = (sft->data->length -1 ) * sft->deltaF;
+  header.tbase = (REAL4) ( (sft->data->length - 1.0) / freqBand);
+  header.firstfreqindex = (INT4)(sft->f0 * header.tbase + 0.5);
+  header.nsamples=sft->data->length - 1;
+
+  printf ("\nwrite_SFT():\nfreqBand = %f\n", freqBand);
+  printf ("f0 = %f\ndf = %f\nnsamples = %d\n", sft->f0, sft->deltaF, header.nsamples);
+  printf ("Tsft = %f\n", header.tbase);  
+
+  /* write header */
+  if (fwrite( (void*)&header, sizeof(header), 1, fp) != 1) {
+    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+  }
+
+  for (i=0; i < header.nsamples; i++)
+    {
+      rpw = sft->data->data[i].re;
+      ipw = sft->data->data[i].im;
+
+      if (fwrite((void*)&rpw, sizeof(REAL4), 1, fp) != 1) { 
+	ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS); 
+      }
+      if (fwrite((void*)&ipw, sizeof(REAL4),1,fp) != 1) {  
+	ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS); 
+      }
+        
+    } /* for i < nsamples */
+  
+  fclose(fp);
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+  
+} /* write_SFT() */
+
+/* little debug-function: compare two sft's and print relative errors */
+void
+compare_SFTs (COMPLEX8Vector *sft1, COMPLEX8Vector *sft2)
+{
+  UINT4 i;
+  REAL4 maxdiff = 0;
+
+  if (sft1->length != sft2->length) 
+    {
+      printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->length, sft2->length);
+      return;
+    }
+#define MAX(x,y) (x > y ? x : y)
+
+  for (i=0; i < sft1->length; i++)
+    {
+      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data[i].re - sft2->data[i].re) / (sft1->data[i].re + sft2->data[i].re) ) );
+      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data[i].im - sft2->data[i].im) / (sft1->data[i].im + sft2->data[i].im) ) );
+    }
+
+  printf ("\ncompare_SFTs(): maximal relative difference: %f\n", maxdiff);
+
+} /* compare_SFTs() */

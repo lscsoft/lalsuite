@@ -250,7 +250,7 @@ char *lalWatch;
 /***************************/
 
 /* Seconds added atthe end and at the beginning of Taylor series*/
-#define LTT 1000
+#define LTT 000
 /* Maximum # of files in a directory  */
 #define MAXFILES 40000        
 /* Maximum # of characters of a SFT filename */
@@ -380,6 +380,11 @@ int main(int argc,char *argv[]) {
   int iSFT;
   SpinOrbitCWParamStruc spinorbit;
   REAL4 dfdt;
+
+  /* new stuff */
+  UINT4 i;
+  static SFTVector SFTs;
+  static REAL4TimeSeries Tseries;
   
   programname=argv[0];
   
@@ -542,11 +547,10 @@ int main(int argc,char *argv[]) {
    *********************************************************************************/
   {
     PulsarSignalParams params;
-    static REAL4TimeSeries Tseries;
     LIGOTimeGPS time1, time2;
-    static SFTVector SFTs;
+
     SFTParams sftParams;
-    UINT4 i;
+    CHAR fname[256];
 
     params.pulsar.TRefSSB = SSBpulsarparams;
     params.pulsar.Alpha = genTayParams.position.longitude;
@@ -577,26 +581,21 @@ int main(int argc,char *argv[]) {
 
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
-    SUB ( LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
+    SUB (LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
 
     sftParams.FreqBand = Band;
     sftParams.Tsft = Tsft;
-    sftParams.Nsft = 0; /* not used */
+    sftParams.Nsft = 0; /* FIXME: not used yet */
     sftParams.timestamps = NULL;
     sftParams.noiseSFTs = NULL;
 
     SUB (AddSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
 
-
-    /* free the stuff */
     for (i=0; i < SFTs.length; i++) 
       {
-	SUB (LALCDestroyVector (&status, &(SFTs.SFTs[i].data) ), &status);
+	sprintf (fname, "SFT_comp.%05d", i);
+	write_SFT (&status, &(SFTs.SFTs[i]), fname);
       }
-    LALFree ( SFTs.SFTs );
-
-    LALFree (Tseries.data->data);
-    LALFree (Tseries.data);
 
   }
   /**********************************************************************************/
@@ -661,9 +660,23 @@ int main(int argc,char *argv[]) {
 	 name.  If no path name is set, this means don't output SFTs*/
       if (write_SFTS(&status, iSFT))
 	return 1;  
+
+      printf ("\nComparing SFT %d:", iSFT);
+      compare_SFTs (fvec, SFTs.SFTs[iSFT].data );
     }
 
   } /* end of loop over different SFTs */
+
+  /* free the stuff */
+  for (i=0; i < SFTs.length; i++) 
+    {
+      SUB (LALCDestroyVector (&status, &(SFTs.SFTs[i].data) ), &status);
+    }
+  LALFree ( SFTs.SFTs );
+  
+  LALFree (Tseries.data->data);
+  LALFree (Tseries.data);
+
   
   if (freemem(&status))
     return 1;
@@ -745,7 +758,7 @@ int set_default(LALStatus* status) {
   return 0;
 }
 
-
+#define oneBillion 1000000000
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin) {
   REAL8 doubleTime;
   LIGOTimeGPS ssb;
@@ -763,12 +776,19 @@ void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin)
 #endif
 
   LALBarycenterEarth(status, &earth, gpsin, edat);
+  baryinput.tgps = *gpsin;
   LALBarycenter(status, &emit, &baryinput, &earth);
   
+  /* this is the old calculation: makes errors up to 100ns.
+     we just leave it here for comparison for now
+  */
   doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   LALFloatToGPS(status, &ssb, &doubleTime);
-  
-  *ssbout=ssb;
+  if (lalDebugLevel)
+    printf ("\nDiscrepancy in old GPS->SSB conversion: %d ns\n", 
+	    (emit.te.gpsSeconds - ssb.gpsSeconds)*oneBillion + (emit.te.gpsNanoSeconds - ssb.gpsNanoSeconds) );
+
+  *ssbout = emit.te;
   return;
 }
 
@@ -1003,7 +1023,10 @@ int prepare_cwDetector(LALStatus* status){
 }
 
 /*Allocates space for timeseries */
-int prepare_timeSeries(LALStatus* status) {
+int prepare_timeSeries(LALStatus* status) 
+{
+  REAL8 t0, t1, duration;
+  UINT4 len0;
 
   status->statusCode = 0;
 
@@ -1014,10 +1037,16 @@ int prepare_timeSeries(LALStatus* status) {
   totalTimeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
 
   timeSeries->data->length = Band*Tsft*2;
-  totalTimeSeries->data->length = nTsft * Band*Tsft*2;
 
-  printf ("\nLaenge der Timeseries: %d samples, %d bytes\n", 
-	  totalTimeSeries->data->length, totalTimeSeries->data->length * sizeof(REAL4) ); 
+
+  len0 = nTsft * Tsft * 2 * Band;
+
+  LALGPStoFloat (status, &t0, &(timestamps[0]) );
+  LALGPStoFloat (status, &t1, &(timestamps[nTsft-1]) );
+  duration = t1 - t0 + Tsft;
+  totalTimeSeries->data->length = duration * Band * 2.0;
+
+  printf ("\nlenth: %d vs %d\n", len0, totalTimeSeries->data->length);
 
   totalTimeSeries->data->data = (REAL4 *)LALMalloc(totalTimeSeries->data->length*sizeof(REAL4));
 
@@ -1134,7 +1163,7 @@ int read_timestamps(LALStatus* status,REAL8 startattime) {
     for (i=0;i<nTsft;i++){
       frac=time-(int)time;
       timestamps[i].gpsSeconds=(int)time;
-      timestamps[i].gpsNanoSeconds=1000000000*frac;
+      timestamps[i].gpsNanoSeconds=1e9*frac;
       time+=Tsft;
     }
   }
