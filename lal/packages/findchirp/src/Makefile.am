@@ -8,7 +8,8 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpFilter.c \
   FindChirpChisq.c FindChirpSPData.c FindChirpSPTemplate.c \
   FindChirpTmplt.c FindChirpLinkedList.c FindChirpSimulation.c
 FINDCHIRPMPISOURCES = FindChirpExch.c FindChirpMaster.c FindChirpSlave.c
-TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c
+TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \
+  TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c
 
 if MPI
 libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(FINDCHIRPMPISOURCES) \
