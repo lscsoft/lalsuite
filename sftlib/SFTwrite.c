@@ -133,28 +133,26 @@ int main(void) {
   tmp=1000000000;
   dosystem("cat SFT-test1 > SFT-bad10");
   modify_bytes("SFT-bad10", 12, (char *)&tmp, 4);
-  modify_checksum("SFT-bad10",14553276594141125530ULL, 0ULL);
+  modify_checksum("SFT-bad10",14553276594141125530ULL, 13919267759677155442ULL);
   tmp=-1;
   dosystem("cat SFT-test1 > SFT-bad11");
   modify_bytes("SFT-bad11", 12, (char *)&tmp, 4);
-  modify_checksum("SFT-bad11",9905878389211410491ULL, 0ULL);
+  modify_checksum("SFT-bad11",9905878389211410491ULL, 12381252028459463649ULL);
   /* first frequency index negative */
   tmp=-1;
   dosystem("cat SFT-test1 > SFT-bad12");
   modify_bytes("SFT-bad12", 24, (char *)&tmp, 4);
-  modify_checksum("SFT-bad12",5605290681458522985ULL, 0ULL);
+  modify_checksum("SFT-bad12",5605290681458522985ULL, 7307622666058252853ULL);
   /* number of samples negative */
   tmp=-1;
   dosystem("cat SFT-test1 > SFT-bad13");
   modify_bytes("SFT-bad13", 28, (char *)&tmp, 4);
-  modify_checksum("SFT-bad13", 14214363586458317283ULL, 0ULL);
+  modify_checksum("SFT-bad13", 14214363586458317283ULL, 6130423751169108856ULL);
   /* time base not positive */
   dtmp=-60.0;
   dosystem("cat SFT-test1 > SFT-bad14");
   modify_bytes("SFT-bad14", 16, (char *)&dtmp, 8);
-  modify_checksum("SFT-bad14", 9944972421627148413ULL, 0ULL);
-
-
+  modify_checksum("SFT-bad14", 9944972421627148413ULL, 15720824585133081082ULL);
 
   printf("To test SFTs, do for example:\n"
 	 "./SFTvalidate SFT-good SFT-test[1234567]\n"
