@@ -300,7 +300,7 @@ void LALDetectorVel(LALStatus    *status,
   
   /* set other barycentering info */
   baryinput.tgps = *time0;
-  baryinput.dInv = 0;
+  baryinput.dInv = 0.0;
 
   /* for the purposes of calculating the velocity of the earth */
   /* at some given time, the position of the source in the sky should not matter. */
