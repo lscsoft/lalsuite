@@ -45,3 +45,5 @@ parse_and_sort  LLO  full $run
 parse_and_sort  LHO  RDS  $run
 parse_and_sort  LHO  full $run
 parse_and_sort  NDAS RDS  $run
+grep L $run.NDAS.RDS.sorted > $run.LLO.NRDS.sorted
+grep H $run.NDAS.RDS.sorted > $run.LLO.NRDS.sorted
