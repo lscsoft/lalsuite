@@ -4,6 +4,7 @@ INSPIRALSRC = inspiral.c
 TMPLTBANKSRC = tmpltbank.c
 COHERESRC = coherent_inspiral.c
 INCASRC = inca.c
+THINCASRC = thinca.c
 LTINCASRC = lt_inca.c
 SIRESRC = sire.c
 INSPINJSRC = inspinj.c
@@ -20,10 +21,12 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inspinj lalapps_splitbank \
                lalapps_minj lalapps_bbhinj \
 	             lalapps_tama2ligolw lalapps_inspfrinj \
-               lalapps_gwf2xml lalapps_lt_inca
+               lalapps_gwf2xml lalapps_lt_inca \
+							 lalapps_thinca
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
+lalapps_thinca_SOURCES = $(THINCASRC)
 lalapps_lt_inca_SOURCES = $(LTINCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
