@@ -223,6 +223,18 @@ extern int vrbflg;
 
 DopplerScanState emptyScan;
 
+/* initialize LAL-status.  
+ * Note: for this to be thread safe, you MUST not use *this* status structure 
+ * for LAL functions that are called from the graphics thread.  Of course there 
+ * is probably no need to call LAL functions from the graphics thread, so this 
+ * should not be an issue.
+ *
+ * NOTE2: This is the global *head* of main's status structure.
+ *        The ONLY reason for this to be global is for the signal-handler to 
+ *        be able to access it. 
+ *        You should NEVER use this struct directly ANYWHERE in the code !!
+ */
+LALStatus global_status;
 
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
@@ -245,15 +257,6 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 }
 #endif
 
-
-/* initialize status.  Note: for this to be thread safe, you MUST not
-   use *this* status structure for LAL functions that are called from
-   the graphics thread.  Of course there is probably no need to call
-   LAL functions from the graphics thread, so this should not be an
-   issue.
-*/
-LALStatus status = blank_status;
-
 /** 
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
@@ -265,6 +268,7 @@ int boincmain(int argc, char *argv[])
 int main(int argc,char *argv[]) 
 #endif
 {
+  LALStatus *stat = &global_status;
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
   CHAR Fstatsfilename[256]; 		/* Fstats file name*/
@@ -292,11 +296,11 @@ int main(int argc,char *argv[])
 #endif
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars(&status), &status); 	
+  LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
+  LAL_CALL (initUserVars(stat), stat); 	
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
+  LAL_CALL (LALUserVarReadAllInput(stat, argc,argv), stat);	
 
   if (uvar_help)	/* if help was requested, we're done here */
     return 0;
@@ -305,17 +309,17 @@ int main(int argc,char *argv[])
      assumptions that might not be true */
 #if !USE_BOINC
   /* keep a log-file recording all relevant parameters of this search-run */
-  LAL_CALL (WriteFStatLog (&status, argv), &status);
+  LAL_CALL (WriteFStatLog (stat, argv), stat);
 #endif /* !USE_BOINC */
 
   /* main initialization of the code: */
-  LAL_CALL ( InitFStat(&status, &GV), &status);
+  LAL_CALL ( InitFStat(stat, &GV), stat);
 
   /* read in SFT-data */
   if (ReadSFTData()) return 4;
 
   /* normalize SFTs by running median */
-  LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
+  LAL_CALL (NormaliseSFTDataRngMdn(stat), stat);
 
 #ifdef FILE_FMAX
   {
@@ -348,7 +352,7 @@ int main(int argc,char *argv[])
   t0 = SFTData[0]->fft->epoch;
   t1 = SFTData[GV.SFTno-1]->fft->epoch;
   scanInit.obsBegin = t0;
-  LAL_CALL ( LALDeltaFloatGPS( &status, &duration, &t1, &t0), &status);
+  LAL_CALL ( LALDeltaFloatGPS( stat, &duration, &t1, &t0), stat);
   scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
   scanInit.fmax += uvar_FreqBand;
@@ -358,9 +362,9 @@ int main(int argc,char *argv[])
   scanInit.skyGridFile = uvar_skyGridFile;	/* if applicable */
 
   if ( uvar_searchNeighbors ) {
-    LAL_CALL ( InitDopplerScanOnRefinedGrid( &status, &thisScan, &scanInit ), &status );
+    LAL_CALL ( InitDopplerScanOnRefinedGrid( stat, &thisScan, &scanInit ), stat );
   } else {
-    LAL_CALL ( InitDopplerScan( &status, &thisScan, &scanInit), &status); 
+    LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
   }
   if (lalDebugLevel) LALPrintError ("done.\n");
 
@@ -368,7 +372,7 @@ int main(int argc,char *argv[])
   if ( uvar_outputSkyGrid ) 
     {
       LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+      LAL_CALL (writeSkyGridFile( stat, thisScan.grid, uvar_outputSkyGrid, &scanInit), stat);
       LALPrintError (" done.\n\n");
     }
 
@@ -433,7 +437,7 @@ int main(int argc,char *argv[])
 
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
-    LAL_CALL (getCheckpointCounters( &status, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), &status); 
+    LAL_CALL (getCheckpointCounters( stat, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), stat); 
 
 
   /* allow for checkpointing: 
@@ -449,7 +453,7 @@ int main(int argc,char *argv[])
   if ( loopcounter > 0 ) {
     UINT4 i;
     for (i=0; i < loopcounter; i++) {
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+      LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
       if (thisScan.state == STATE_FINISHED) {
 	LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
 	return COMPUTEFSTATC_ECHECKPOINT; 
@@ -519,13 +523,13 @@ int main(int argc,char *argv[])
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
 					(100.0* loopcounter / thisScan.numGridPoints));
       
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+      LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
 
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
 	break;
 
-      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &(dopplerpos.skypos) ), &status);
+      LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &(dopplerpos.skypos) ), stat);
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
@@ -536,17 +540,17 @@ int main(int argc,char *argv[])
       set_search_pos((float)(180.0*Alpha/LAL_PI), (float)(180.0*Delta/LAL_PI));
 #endif /* USE_BOINC and !NO_BOINC_GRAPHICS*/
 
-      LAL_CALL (CreateDemodParams(&status), &status);
+      LAL_CALL (CreateDemodParams(stat), stat);
       /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
 
-	  LAL_CALL ( LALDemod(&status, &Fstat, SFTData, DemodParams), &status);
+	  LAL_CALL ( LALDemod(stat, &Fstat, SFTData, DemodParams), stat);
 
 	  /*  This fills-in highFLines that contains the outliers of F*/
 	  if (GV.FreqImax > 5) {
-	    LAL_CALL (EstimateFLines(&status), &status);
+	    LAL_CALL (EstimateFLines(stat), stat);
 	  }
 	  
 	  /* if user requested it, we output ALL F-statistic results */
@@ -616,9 +620,9 @@ int main(int argc,char *argv[])
   remove (ckp_fname);
   
   /* Free DopplerScan-stuff (grid) */
-  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+  LAL_CALL ( FreeDopplerScan(stat, &thisScan), stat);
   
-  LAL_CALL ( Freemem(&status), &status);
+  LAL_CALL ( Freemem(stat), stat);
   
   return 0;
   
@@ -2616,7 +2620,9 @@ int main(int argc, char *argv[]){
 void sighandler(int sig){
   void *array[64];
   size_t size;
-  LALStatus *mystat=&status;
+
+  LALStatus *mystat = &global_status;	  /* the only place in the universe where we're
+					   * allowed to use the global_status struct !! */
 
   fprintf(stderr, "Application caught signal %d\n", sig);
   if (mystat)
