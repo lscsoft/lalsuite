@@ -162,6 +162,14 @@ LALCompareSnglBurst(
     );
 
 void
+LALCompareSimBurstAndSnglBurst(
+    LALStatus             *status,
+    SimBurstTable         *aPtr,
+    SnglBurstTable        *bPtr,
+    SnglBurstAccuracy     *params
+    );
+
+void
 LALClusterSnglBurstTable (
 	      LALStatus        *status,
               SnglBurstTable   *burstEvent,

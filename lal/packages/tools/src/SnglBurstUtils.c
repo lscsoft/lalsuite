@@ -239,6 +239,46 @@ LALCompareSnglBurst(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
+LALCompareSimBurstAndSnglBurst(
+    LALStatus             *status,
+    SimBurstTable         *aPtr,
+    SnglBurstTable        *bPtr,
+    SnglBurstAccuracy     *params
+    )
+/* </lalVerbatim> */
+{
+  INT8 ta1, ta2, tb1, tb2;
+  REAL4 fa1, fa2, fb1, fb2;
+  REAL4 dm1, dm2;
+  REAL4 sigmaRatio;
+
+  INITSTATUS (status, "LALCompareSimBurstAndSnglBurst", SNGLBURSTUTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  params->match=0;
+
+  LALGPStoINT8( status->statusPtr, &ta1, &(aPtr->geocent_peak_time) );
+  LALGPStoINT8( status->statusPtr, &tb1, &(bPtr->start_time) );
+
+  tb2 = tb1 + ( NANOSEC * bPtr->duration );
+  fa1 = (aPtr->freq);
+  fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
+  fb2 = (bPtr->central_freq) + 0.5*(bPtr->bandwidth);
+
+  if( (tb1 < ta1) && (ta1 < tb2) )
+  {
+    if( (fb1 < fa1) && (fa1 < fb2) )
+    {
+      params->match = 1;
+    }
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
 LALClusterSnglBurstTable (
 	      LALStatus        *status,
               SnglBurstTable   *burstEvent,
