@@ -514,6 +514,7 @@ GetInspiralMoments (
 
 
 
+/*  <lalVerbatim file="LALInspiralCreateCoarseBankCP"> */
 void 
 LALInspiralCreateFlatBank(
 		LALStatus            *status, 
