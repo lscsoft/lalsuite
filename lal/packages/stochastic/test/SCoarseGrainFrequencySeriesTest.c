@@ -1,4 +1,4 @@
-/******************************** <lalVerbatim file="SCoarseGrainFrequencySeriesTestCV">
+/****************** <lalVerbatim file="SCoarseGrainFrequencySeriesTestCV">
 Author: UTB Relativity Group; contact J. T. Whelan
 $Id$
 ********************************* </lalVerbatim> */
@@ -124,7 +124,7 @@ fabs()
 
 NRCSID(SCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 
-#define SCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-6
+#define SCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-8
 
 #define SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC      1234
 #define SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS       56789
@@ -191,7 +191,7 @@ main( int argc, char *argv[] )
    REAL4                   *sPtr;
 
    const REAL4    testInputDataData[SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0] 
-                     = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+                     = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
 
    const REAL4 expectedOutput1DataData[SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1] 
                      = {0.5, 2.0, 4.0, 6.0};
@@ -425,7 +425,8 @@ main( int argc, char *argv[] )
 
    /* coarse grain */
    LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-   if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+   if ( code = CheckStatus( &status, 0 , "",
+			    SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
    {
      return code;
@@ -442,7 +443,8 @@ main( int argc, char *argv[] )
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+       printf("Exiting with error: %s\n",
+	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -454,12 +456,14 @@ main( int argc, char *argv[] )
             SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1);
    }
    if ( fabs(goodOutput.deltaF-SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1)
-        / SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1 > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+        / SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1 
+	> SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+       printf("Exiting with error: %s\n",
+	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -469,15 +473,19 @@ main( int argc, char *argv[] )
    {
      printf("epoch=%d seconds, %d nanoseconds; should be %d seconds, %d nanoseconds\n",
             goodOutput.epoch.gpsSeconds, goodOutput.epoch.gpsNanoSeconds,
-            SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC, SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
+            SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
+	    SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
-   if ( goodOutput.epoch.gpsSeconds != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
-        || goodOutput.epoch.gpsNanoSeconds != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
+   if ( goodOutput.epoch.gpsSeconds 
+	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
+        || goodOutput.epoch.gpsNanoSeconds 
+	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
      {
-       printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+       printf("Exiting with error: %s\n",
+	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -495,6 +503,7 @@ main( int argc, char *argv[] )
 
    if (optVerbose) 
    {
+     unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
      if ( code = CheckStatus(&status, 0 , "",
                              SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -547,13 +556,14 @@ main( int argc, char *argv[] )
      printf("hBarTilde(0)=%g, should be %g\n",
             goodOutput.data->data[0], expectedOutput1DataData[0]);
    }
-   if (0 &&  fabs(goodOutput.data->data[0] - expectedOutput1DataData[0])
+   if (fabs(goodOutput.data->data[0] - expectedOutput1DataData[0])
         / expectedOutput1DataData[0] > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
        {
-         printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+         printf("Exiting with error: %s\n",
+		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -566,13 +576,201 @@ main( int argc, char *argv[] )
        printf("hBarTilde(%f Hz)=%g, should be %g\n",
               f, goodOutput.data->data[i], expectedOutput1DataData[i]);
      }
-     if (0 && fabs(goodOutput.data->data[i] - expectedOutput1DataData[i])
+     if (fabs(goodOutput.data->data[i] - expectedOutput1DataData[i])
          / expectedOutput1DataData[i] > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL)
      {
        printf("  FAIL: Valid data test\n");
        if (optVerbose)
        {
-         printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+         printf("Exiting with error: %s\n",
+		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+       }
+       return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+     }
+   }
+
+   LALSDestroyVector(&status, &goodOutput.data);
+   if ( code = CheckStatus(&status, 0 , "",
+			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
+
+
+   /*-------Test #2-------*/
+
+   params.f0                      = SCOARSEGRAINFREQUENCYSERIESTESTC_F02;
+   params.deltaF               = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2;
+   params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2;
+
+   LALSCreateVector(&status, &(goodOutput.data),
+		    SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2);
+   if ( code = CheckStatus(&status, 0 , "",
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
+
+   /* coarse grain */
+   LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
+   if ( code = CheckStatus( &status, 0 , "",
+			    SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
+   {
+     return code;
+   }
+
+   /* check output f0 */
+   if (optVerbose)
+   {
+     printf("f0=%g, should be %g\n", goodOutput.f0,
+	    SCOARSEGRAINFREQUENCYSERIESTESTC_F02);
+   }
+   if (goodOutput.f0)
+   {
+     printf("  FAIL: Valid data test #2\n");
+     if (optVerbose)
+     {
+       printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+     }
+     return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+
+   /* check output deltaF */
+   if (optVerbose)
+   {
+     printf("deltaF=%g, should be %g\n", goodOutput.deltaF,
+            SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2);
+   }
+   if ( fabs(goodOutput.deltaF-SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2)
+        / SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2 > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   {
+     printf("  FAIL: Valid data test #2\n");
+     if (optVerbose)
+     {
+       printf("Exiting with error: %s\n", SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+     }
+     return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+
+   /* check output epoch */
+   if (optVerbose)
+   {
+     printf("epoch=%d seconds, %d nanoseconds; should be %d seconds, %d nanoseconds\n",
+            goodOutput.epoch.gpsSeconds, goodOutput.epoch.gpsNanoSeconds,
+            SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
+	    SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
+   }
+   if ( goodOutput.epoch.gpsSeconds 
+	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
+        || goodOutput.epoch.gpsNanoSeconds 
+	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
+   {
+     printf("  FAIL: Valid data test #2\n");
+     if (optVerbose)
+     {
+       printf("Exiting with error: %s\n",
+	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+     }
+     return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+
+   /* check output units */
+   unitPair.unitOne = goodInput.sampleUnits;
+   unitPair.unitTwo = goodOutput.sampleUnits;
+   LALUnitCompare(&status, &result, &unitPair);
+   if ( code = CheckStatus(&status, 0 , "",
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
+
+   if (optVerbose) 
+   {
+     unitString = NULL;
+     LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
+     if ( code = CheckStatus(&status, 0 , "",
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+    
+     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+     if ( code = CheckStatus(&status, 0 , "",
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+     printf( "Units are \"%s\", ", unitString->data );
+     
+     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+     if ( code = CheckStatus(&status, 0 , "",
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+     printf( "should be \"%s\"\n", unitString->data );
+     
+     LALCHARDestroyVector(&status, &unitString);
+     if ( code = CheckStatus(&status, 0 , "",
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+   }
+
+   if (!result)
+   {
+     printf("  FAIL: Valid data test #2\n");
+     if (optVerbose)
+     {
+       printf("Exiting with error: %s\n", 
+              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+     }
+     return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+
+   /* check output values */
+   if (optVerbose) 
+   {
+     printf("hBarTilde(0)=%g, should be %g\n",
+            goodOutput.data->data[0], expectedOutput2DataData[0]);
+   }
+   if (fabs(goodOutput.data->data[0] - expectedOutput2DataData[0])
+        / expectedOutput2DataData[0] > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   {
+     printf("  FAIL: Valid data test #2\n");
+     if (optVerbose)
+       {
+         printf("Exiting with error: %s\n",
+		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+       }
+     return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
+   }
+   
+   for (i=1; i<SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2; ++i)
+   {
+     f = i * SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF2;
+     if (optVerbose) 
+     {
+       printf("hBarTilde(%f Hz)=%g, should be %g\n",
+              f, goodOutput.data->data[i], expectedOutput2DataData[i]);
+     }
+     if (fabs(goodOutput.data->data[i] - expectedOutput2DataData[i])
+         / expectedOutput2DataData[i] > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL)
+     {
+       printf("  FAIL: Valid data test #2 \n");
+       if (optVerbose)
+       {
+         printf("Exiting with error: %s\n",
+		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
        return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
@@ -580,13 +778,8 @@ main( int argc, char *argv[] )
 
    /* clean up valid data */
    LALSDestroyVector(&status, &goodInput.data);
-   if ( code = CheckStatus(&status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
-                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
-   {
-     return code;
-   }
-   LALSDestroyVector(&status, &goodOutput.data);
-   if ( code = CheckStatus(&status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+   if ( code = CheckStatus(&status, 0 , "",
+			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
    {
      return code;
@@ -608,13 +801,15 @@ main( int argc, char *argv[] )
      goodOutput.data = NULL;
 
      LALSCreateVector(&status, &goodInput.data, optInLength);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
      }
      LALSCreateVector(&status, &goodOutput.data, optOutLength);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -622,7 +817,8 @@ main( int argc, char *argv[] )
 
      /* Read input file */
      LALSReadFrequencySeries(&status, &goodInput, optInputFile);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -630,7 +826,8 @@ main( int argc, char *argv[] )
      
      /* coarse grain */
      LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -642,13 +839,15 @@ main( int argc, char *argv[] )
      
      /* clean up valid data */
      LALSDestroyVector(&status, &goodInput.data);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
      }
      LALSDestroyVector(&status, &goodOutput.data);
-     if ( code = CheckStatus( &status, 0 , "", SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+     if ( code = CheckStatus( &status, 0 , "",
+			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;

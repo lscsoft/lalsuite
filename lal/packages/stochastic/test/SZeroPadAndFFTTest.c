@@ -582,6 +582,7 @@ main( int argc, char *argv[] )
 
    if (optVerbose) 
    {
+     unitString = NULL;
      LALCHARCreateVector(&status, &unitString, LALUnitTextSize);
      if ( code = CheckStatus(&status, 0 , "",
                              SZEROPADANDFFTTESTC_EFLS,
