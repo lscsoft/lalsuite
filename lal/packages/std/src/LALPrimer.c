@@ -26,12 +26,12 @@ void
 REAL4Divide( Status *stat, REAL4 *output, REAL4 numer, REAL4 denom )
      /* Computes the ratio of two REAL4 numbers. */
 {
-  REAL4 invDenom;
-
   INITSTATUS( stat, "REAL4Divide", LALPRIMERC );
   ATTATCHSTATUSPTR( stat );
-  TRY( REAL4Invert( stat->statusPtr, &invDenom, denom ), stat );
-  *output = numer*invDenom;
+
+  TRY( REAL4Invert( stat->statusPtr, output, denom ), stat );
+  *output *= numer;
+
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
