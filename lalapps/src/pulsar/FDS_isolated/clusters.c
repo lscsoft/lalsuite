@@ -60,7 +60,7 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
      with the prototype: 
      > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
      while the new prototype is :
-     > LALDRunningMedian(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
+     > LALDRunningMedian2(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
   */
   {      
     LALRunningMedianPar par;
@@ -69,7 +69,7 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
     medians.length = M;
     medians.data = dmp;
     /* now cross your fingers and make a sacrifice to the gods.. */
-    TRY ( LALDRunningMedian(stat->statusPtr, &medians, input, par), stat);
+    TRY ( LALDRunningMedian2(stat->statusPtr, &medians, input, par), stat);
   }
 
 
@@ -280,7 +280,7 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 	 with the prototype: 
 	 > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
 	 while the new prototype is :
-	 > LALDRunningMedian(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
+	 > LALDRunningMedian2(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
       */
       {      
 	LALRunningMedianPar par;
@@ -291,7 +291,7 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 	medians.length = output->NclustPoints[lpc];
 	medians.data = RDMP1;
 	/* now cross our fingers and make some sacrifice to the gods.. */
-	TRY ( LALDRunningMedian(stat->statusPtr, &medians, &inData, par), stat);
+	TRY ( LALDRunningMedian2(stat->statusPtr, &medians, &inData, par), stat);
       }
       
       /*  compute max of output data */
