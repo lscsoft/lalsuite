@@ -7,6 +7,8 @@ $Id$
 /* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
 /* 10/12/04 gam; include INCLUDE_SEQUENTIAL_MISMATCH to make make pulsar parameters more varied. */
 /* 10/12/04 gam; update error conditions. */
+/* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */
+/* 02/02/05 gam; fix warnings about setting ephemeris files pointers equal to constant strings and unused variables. */
 
 /********************************************************** <lalLaTeX>
 
@@ -92,7 +94,8 @@ example uses of the functions tested by this code.
 #include <lal/Random.h>
 
 /* prototype for function that runs the tests */
-void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv);
+/* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
+void RunGeneratePulsarSignalTest(LALStatus *status);
 
 NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
 
@@ -103,6 +106,8 @@ NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
 /*********************************************************/
 int main(int argc, char **argv)
 {
+
+  int mainArgc = 0; /* 02/02/05 gam; */
   static LALStatus status; /* status structure */
   
   /* initialize status */
@@ -110,8 +115,12 @@ int main(int argc, char **argv)
   status.statusPtr = NULL;
   status.statusDescription = NULL;
 
+  mainArgc = argc; /* 02/02/05 gam; get rid of warning about unused argc */
+  
   /* Actual test are performed by this function */
-  RunGeneratePulsarSignalTest(&status,argc,argv);
+  /* RunGeneratePulsarSignalTest(&status,argc,argv); */ /* 02/02/05 gam */
+  RunGeneratePulsarSignalTest(&status);
+
   if (status.statusCode) {
      fprintf(stderr,"Error: statusCode = %i statusDescription = %s \n", status.statusCode, status.statusDescription);
      return 1;
@@ -138,13 +147,14 @@ int main(int argc, char **argv)
 /* START FUNCTION: RunGeneratePulsarSignalTest           */
 /*                                                       */
 /*********************************************************/
-void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
+/* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv) */ /* 02/02/05 gam */
+void RunGeneratePulsarSignalTest(LALStatus *status)
 {
   INT4    i, j, k;         /* all purpose indices */
   INT4    iSky = 0;        /* for loop over sky positions */
   INT4    jDeriv = 0;      /* for loop over spindowns */
   INT4    testNumber = 0;  /* which test is being run */
-  
+
   /* The input and output structs used by the functions being tested */
   PulsarSignalParams *pPulsarSignalParams = NULL;
   REAL4TimeSeries *signal = NULL;
@@ -159,6 +169,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   LALDetector cachedDetector;  
   CHAR IFO[6] = "LHO";
   EphemerisData *edat = NULL;
+  CHAR sunFile[13] = "sun00-04.dat";     /* 02/02/05 gam */
+  CHAR earthFile[15] = "earth00-04.dat"; /* 02/02/05 gam */
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT}; /* Call LALLeapSecs to get edat->leap */
   INT4 leap; /* 2nd arg to LALLeapSecFormatAndAcc is INT4 while edat->leap is INT2. */
   
@@ -271,6 +283,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
         } /* END if (k == 0) ELSE ... */
   } /* END for(iSky=0;iSky<numSkyPosTotal;iSky++) */
   
+  freqDerivData = NULL; /* 02/02/05 gam */
   if (numSpinDown > 0) {
     freqDerivData=(REAL8 **)LALMalloc(numFreqDerivTotal*sizeof(REAL8 *));
     for(jDeriv=0;jDeriv<numFreqDerivTotal;jDeriv++) {
@@ -299,8 +312,10 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
   edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
   /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
-  edat->ephiles.sunEphemeris = "sun00-04.dat";
-  edat->ephiles.earthEphemeris = "earth00-04.dat";
+  /* edat->ephiles.sunEphemeris = "sun00-04.dat";
+  edat->ephiles.earthEphemeris = "earth00-04.dat"; */
+  edat->ephiles.sunEphemeris = sunFile;     /* 02/02/05 gam */
+  edat->ephiles.earthEphemeris = earthFile; /* 02/02/05 gam */
   LALLeapSecs(status->statusPtr,&leap,&(timeStamps->data[0]),&formatAndAcc);
   CHECKSTATUSPTR (status);
   edat->leap = (INT2)leap;
@@ -369,14 +384,17 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   /* pSFTandSignalParams->resTrig = 64; */ /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
   /* pSFTandSignalParams->resTrig = 128; */ /* 10/08/04 gam; length sinVal and cosVal; domain = -2pi to 2pi inclusive; resolution = 4pi/resTrig */
   pSFTandSignalParams->resTrig = 0; /* 10/12/04 gam; turn off using LUTs since this is more typical. */
-  pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-  pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-  pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-  for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
-     /* pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig); */ /* 10/08/04 gam */
-     pSFTandSignalParams->trigArg[k]= -1.0*((REAL8)LAL_TWOPI) + 2.0 * ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
-     pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
-     pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
+  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */  
+  if (pSFTandSignalParams->resTrig > 0) {
+    pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+    pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+    pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+    for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
+       /* pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig); */ /* 10/08/04 gam */
+       pSFTandSignalParams->trigArg[k]= -1.0*((REAL8)LAL_TWOPI) + 2.0 * ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
+       pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
+       pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
+    }
   }
   pSFTandSignalParams->pSigParams = pPulsarSignalParams;
   pSFTandSignalParams->pSFTParams = pSFTParams;
@@ -701,9 +719,12 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
   LALFree(pSkyConstAndZeroPsiAMResponse);
-  LALFree(pSFTandSignalParams->trigArg);
-  LALFree(pSFTandSignalParams->sinVal);
-  LALFree(pSFTandSignalParams->cosVal);
+  /* 02/02/05 gam; if NOT pSFTandSignalParams->resTrig > 0 should not create trigArg etc... */  
+  if (pSFTandSignalParams->resTrig > 0) {
+    LALFree(pSFTandSignalParams->trigArg);
+    LALFree(pSFTandSignalParams->sinVal);
+    LALFree(pSFTandSignalParams->cosVal);
+  }
   LALFree(pSFTandSignalParams);
             
   /* deallocate skyPosData */
