@@ -1,33 +1,36 @@
 % $Id$
 
-\section{Program \texttt{lalapps\_olapredfcn}}
+\section{Program \prog{lalapps\_olapredfcn}}
 \label{program:lalapps-olapredfcn}
 \idx[Program]{lalapps\_olapredfcn}
 
 \begin{entry}
 
 \item[Name]
-%
-  \verb$lalapps_olapredfcn$ --- computes overlap reduction function given
-  a pair of known detectors.
+\prog{lalapps\_olapredfcn} --- computes overlap reduction function given
+a pair of known detectors.
 
 \item[Synopsis]
-%
-  \verb$lalapps_olapredfcn $[\verb$-h$]\verb$ $[\verb$-q$]\verb$ $[\verb$-v$]
-  \verb$ $[\verb$-d debugLevel $]\verb+ \+\newline
-  \verb$   $
-  \verb$-s siteID1 $[\verb$-a azimuth1$]
-  \verb$-t siteID2 $[\verb$-b azimuth2$]\verb+ \+\newline
-  \verb$   $
-  [\verb$-f fLow$]\verb$ -e deltaF$\verb$ -n numPoints$\verb$ -o outfile$
-                         
+\prog{lalapps\_olapredfcn} \newline \hspace*{0.5in}
+[\option{-h}] \newline \hspace*{0.5in}
+[\option{-q}] \newline \hspace*{0.5in}
+[\option{-v}] \newline \hspace*{0.5in}
+[\option{-d}~\parm{debugLevel}] \newline \hspace*{0.5in}
+\option{-s}~\parm{siteID1} \newline \hspace*{0.5in}
+[\option{-a}~\parm{azimuth1}] \newline \hspace*{0.5in}
+\option{-t}~\parm{siteID2} \newline \hspace*{0.5in}
+[\option{-b}~\parm{azimuth2}] \newline \hspace*{0.5in}
+[\option{-f}~\parm{fLow}] \newline \hspace*{0.5in}
+\option{-e}~\parm{deltaF} \newline \hspace*{0.5in}
+\option{-n}~\parm{numPoints} \newline \hspace*{0.5in}
+\option{-o}~\parm{outfile}
+
 \item[Description]
-%
-  \verb$lalapps_olapredfcn$ computes the overlap reduction function
-  $\gamma(f)$ for a pair of known gravitational wave detectors.  It
-  uses the LAL function \verb$LALOverlapReductionFunction()$, which is
-  documented in the LAL Software Documentation under the
-  \texttt{stochastic} package.
+\prog{lalapps\_olapredfcn} computes the overlap reduction function
+$\gamma(f)$ for a pair of known gravitational wave detectors. It uses
+the LAL function \texttt{LALOverlapReductionFunction()}, which is
+documented in the LAL Software Documentation under the
+\texttt{stochastic} package.
 
 \item[Options]\leavevmode
 \begin{entry}
