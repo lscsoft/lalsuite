@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: duck.c
+ * File Name: sire.c
  *
  * Author: Brady, P. R, Brown, D. A., and Fairhurst, S
  * 
@@ -32,13 +32,13 @@
 
 RCSID("$Id$");
 
-#define PROGRAM_NAME "duck"
+#define PROGRAM_NAME "sire"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
 #define USAGE \
-"Usage: lalapps_duck [options]\n"\
+"Usage: lalapps_sire [options]\n"\
 "\n"\
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
