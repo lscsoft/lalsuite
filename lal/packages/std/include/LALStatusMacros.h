@@ -371,8 +371,14 @@ do                                                                    \
 	      (funcname),__FILE__,__LINE__,(id));                     \
       LALAbort(msg);                                                  \
     }                                                                 \
-  ASSERT(!(statusptr)->statusPtr,statusptr,-2,                        \
-	 "INITSTATUS: non-null status pointer");                      \
+  if((statusptr)->statusPtr) /* this may cause a memory leak */       \
+    {                                                                 \
+      if(!(statusptr)->level) (statusptr)->level = 1;                 \
+      (statusptr)->Id        = (id);                                  \
+      (statusptr)->function  = (funcname);                            \
+      (statusptr)->statusPtr = NULL; /* warning: dislocated memory */ \
+      ABORT(statusptr,-2,"INITSTATUS: non-null status pointer");      \
+    }                                                                 \
   level = (statusptr)->level;                                         \
   memset((statusptr),0,sizeof(Status));                               \
   (statusptr)->level    = level > 0 ? level : 1 ;                     \
