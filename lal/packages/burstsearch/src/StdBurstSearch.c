@@ -526,7 +526,11 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 \item central\_freq is set to the in-band frequency with the largest signal power.
 ********* </lalLaTeX> ********/
 	/* set "central_freq" to maximum of power */
-	central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
+	if(mfi>0) {
+	  central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
+	} else {
+	  central_freq = input->central_freq;
+	}
 
 /******** <lalLaTeX file="StdBurstSearchC"> ********
 \item amplitude is set to sqrt(total in-band power).
