@@ -737,19 +737,25 @@ int main(int argc, char *argv[]){
 	strcat( filestats, tempstr);
       }
       strcat( filestats, "/");
-      if (mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
-	{
-	  fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
-	  return 1;  /* stop the program */
-	}
-
+      errno = 0;
+      {
+	/* check whether file can be created or if it exists already 
+	   if not then exit */
+	INT4 mkdir_result;
+	mkdir_result = mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
+	if ( (mkdir_result == -1) && (errno != EEXIST) )
+	  {
+	    fprintf(stderr, "unable to create skypatch directory %d\n", skyCounter);
+	    return 1;  /* stop the program */
+	  }
+      }
       /* create the base filenames for the stats, histo and event files*/
       strcat( filestats, fbasenameOut);
       strcpy(filehisto, filestats);
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
 #endif
-
+      
       /* create and open the stats file for writing */
       strcat(  filestats, "stats");
       fp1=fopen(filestats,"w");
