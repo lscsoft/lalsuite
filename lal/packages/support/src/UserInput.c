@@ -334,42 +334,52 @@ LALUserVarReadCmdline (LALStatus *stat,
 
       switch (ptr->type)
 	{
-	  INT2 ret;
+	  INT2 ans;
 	case UVAR_BOOL:
-	  ret = -1;
+	  ans = -1;
 
 	  if (optarg == NULL)	/* no argument: counts as 'true' */
-	    ret = 1;
+	    ans = 1;
 	  else		/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
 	      TRY (LALLowerCaseString (stat->statusPtr, optarg), stat);
 
 	      if      ( !strcmp(optarg, "yes") || !strcmp(optarg, "true") || !strcmp(optarg,"1") )
-		ret = 1;
+		ans = 1;
 	      else if ( !strcmp (optarg, "no") || !strcmp(optarg,"false") || !strcmp(optarg,"0") )
-		ret = 0;
+		ans = 0;
 	      else {	/* failed to parse BOOL properly */
-		LALPrintError ("illegal bool-value `%s`\n", optarg);
-		ABORT (stat, USERINPUTH_EBOOL, USERINPUTH_MSGEBOOL);
+		LALPrintError ("\nIllegal bool-value `%s`\n\n", optarg);
+		ABORT (stat, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	      }
 	    } /* parse bool-argument */
 	  
 	  /* only set if we properly parsed something */
-	  if (ret != -1) {
-	    *(BOOLEAN*)(ptr->varp)  = (BOOLEAN)ret;
+	  if (ans != -1) {
+	    *(BOOLEAN*)(ptr->varp)  = (BOOLEAN)ans;
 	    ptr->state |= UVAR_WAS_SET;
 	  }
 
 	  break;
 
 	case UVAR_INT4:
-	  *(INT4*)(ptr->varp) = (INT4) atoi (optarg);
+	  if ( 1 != sscanf ( optarg, "%" LAL_INT4_FORMAT, (INT4*)(ptr->varp)) )
+	    {
+	      LALPrintError ("\nIllegal INT4 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
+	      ABORT (stat, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
+	    }
+
 	  ptr->state |= UVAR_WAS_SET;
 	  break;
 
 	case UVAR_REAL8:
-	  *(REAL8*)(ptr->varp) = (REAL8) atof (optarg);
+	  if ( 1 != sscanf ( optarg, "%" LAL_REAL8_FORMAT, (REAL8*)(ptr->varp)) )
+	    {
+	      LALPrintError ("\nIllegal REAL8 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
+	      ABORT (stat, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
+	    }
+
 	  ptr->state |= UVAR_WAS_SET;
 	  break;
 

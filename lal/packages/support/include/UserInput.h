@@ -36,22 +36,24 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_EMEM		3
 #define USERINPUTH_EOPT		4
 #define USERINPUTH_ENOUVARS	5
-#define USERINPUTH_EBOOL	6
+#define USERINPUTH_ECMDLARG     6
 #define USERINPUTH_EUNKNOWN	7
 #define USERINPUTH_ENOTSET	8
 #define USERINPUTH_EDEBUG	9
 #define USERINPUTH_EONECONFIG   10
+
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
 #define USERINPUTH_MSGEMEM	"Out of memory"
 #define USERINPUTH_MSGEOPT	"Unknown command-line option encountered"
 #define USERINPUTH_MSGENOUVARS	"No user-variables have been registered!"
-#define USERINPUTH_MSGEBOOL	"Illegal BOOLEAN option-value"
+#define USERINPUTH_MSGECMDLARG   "Illegal command-line argument"
 #define USERINPUTH_MSGEUNKNOWN	"Unknown user-variable"
 #define USERINPUTH_MSGENOTSET	"Required user-variable was not set"
 #define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
 #define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
+
 /*************************************************** </lalErrTable> */
 
 /* <lalLaTeX> 
