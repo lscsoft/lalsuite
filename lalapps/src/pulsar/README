@@ -161,6 +161,16 @@ NOTE: a script that does the same job (make_job_input_data.sh) by calling LSCdat
 has been written by David Hammer and is now checked into CVS.  It will be documented
 after some polishing.
 
+The make_job_input_data.sh still should be improved, but it does work.
+Here is an example of how it is used.
+
+./make_job_input_scripts.sh S2-L1.60-CAL L L1 S2-L1.60-CAL-lists 10 \
+> L1-60-CAL.sh 
+chmod +x L1-60-CAL.sh 
+./L1-60-CAL.sh 2>L1-60-CAL.err >L1-60-CAL.out 
+
+The input data for the jobs will be put in the S2-L1.60-CAL-lists/ dir.
+
 ================================================================================
 
 STEP 3:
