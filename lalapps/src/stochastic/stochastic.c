@@ -1322,7 +1322,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"mask-bin", required_argument, 0, 'b'},
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
-      {"number-of-injection", required_argument, 0, 'N'},
+      {"number-of-injections", required_argument, 0, 'N'},
       {"output-dir", required_argument, 0, 'S'},
       {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'V'},
@@ -1546,39 +1546,40 @@ void parseOptions(INT4 argc, CHAR *argv[])
 /* display program usage */
 void displayUsage(INT4 exitcode)
  {
+	 fprintf(stderr, CVS_ID "\n");
   fprintf(stderr, "Usage: pipeline [options]\n");
   fprintf(stderr, "Options:\n");
-  fprintf(stderr, " -h                    print this message\n");
-  fprintf(stderr, " -V                    display version\n");
-  fprintf(stderr, " --verbose             verbose mode\n");
-  fprintf(stderr, " -z                    set lalDebugLevel\n");
-  fprintf(stderr, " -t                    GPS start time\n");
-  fprintf(stderr, " -T                    GPS stop time\n");
-  fprintf(stderr, " -l                    segment duration\n");
-  fprintf(stderr, " -A                    sample rate\n");
-  fprintf(stderr, " -a                    resample rate\n");
-  fprintf(stderr, " -f                    minimal frequency\n");
-  fprintf(stderr, " -F                    maximal frequency\n");
-  fprintf(stderr, " -- high-pass-filter   apply high pass filter\n");
-  fprintf(stderr, " -k                    high pass filter knee frequency\n");
-  fprintf(stderr, " -p                    high pass filter attenuation\n");
-  fprintf(stderr, " -P                    high pass filter order\n");        
-  fprintf(stderr, " --overlap-hann        use overlap window\n");             
-  fprintf(stderr, " -w                    hann duration\n");
-  fprintf(stderr, " -i                    ifo for first stream\n");
-  fprintf(stderr, " -I                    ifo for second stream\n");
-  fprintf(stderr, " -d                    cache file for first stream\n");
-  fprintf(stderr, " -D                    cache file for second stream\n");
-  fprintf(stderr, " -r                    first stream calibration cache\n");
-  fprintf(stderr, " -R                    second stream calibration cache\n");
-  fprintf(stderr, " -c                    offset for calibration time\n");
-  fprintf(stderr, " --apply-mask          apply frequency masking\n");
-  fprintf(stderr, " -b                    number of bin for frequency mask\n");
-  fprintf(stderr, " --inject              inject a signal into the data\n");
-  fprintf(stderr, " -o                    scale factor for injection\n");
-  fprintf(stderr, " -g                    seed\n");
-  fprintf(stderr, " -N                    number of trial for MC\n");
-  fprintf(stderr, " -S                    directory for output files\n");        
+  fprintf(stderr, " -h, --help                     print this message\n");
+  fprintf(stderr, " -V, --version                  display version\n");
+  fprintf(stderr, " --verbose                      verbose mode\n");
+  fprintf(stderr, " -z, --debug-level N            set lalDebugLevel\n");
+  fprintf(stderr, " -t, --gps-start-time N         GPS start time\n");
+  fprintf(stderr, " -T, --gps-ent-time N           GPS stop time\n");
+  fprintf(stderr, " -l, --segment-duration N       segment duration\n");
+  fprintf(stderr, " -A, --sample-rate N            sample rate\n");
+  fprintf(stderr, " -a, --resample-rate N          resample rate\n");
+  fprintf(stderr, " -f, --f-min N                  minimal frequency\n");
+  fprintf(stderr, " -F, --f-max N                  maximal frequency\n");
+  fprintf(stderr, " --high-pass-filter             apply high pass filter\n");
+  fprintf(stderr, " -k, --hpf-frequency N          high pass filter knee frequency\n");
+  fprintf(stderr, " -p, --hpf-attenuation N        high pass filter attenuation\n");
+  fprintf(stderr, " -P, --hpf-order N              high pass filter order\n");        
+  fprintf(stderr, " --overlap-hann                 use overlap window\n");             
+  fprintf(stderr, " -w, --hann-duration N          hann duration\n");
+  fprintf(stderr, " -i, --ifo-one IFO              ifo for first stream\n");
+  fprintf(stderr, " -I, --ifo-two IFO              ifo for second stream\n");
+  fprintf(stderr, " -d, --frame-cache-one F        cache file for first stream\n");
+  fprintf(stderr, " -D, --frame-cache-two F        cache file for second stream\n");
+  fprintf(stderr, " -r, --calibration-cache-one F  first stream calibration cache\n");
+  fprintf(stderr, " -R, --calibration-cache-two F  second stream calibration cache\n");
+  fprintf(stderr, " -c, --calibration-offset N     offset for calibration time\n");
+  fprintf(stderr, " --apply-mask                   apply frequency masking\n");
+  fprintf(stderr, " -b, --mask-bin N               number of bin for frequency mask\n");
+  fprintf(stderr, " --inject                       inject a signal into the data\n");
+  fprintf(stderr, " -o, --scale-factor N           scale factor for injection\n");
+  fprintf(stderr, " -g, --seed N                   seed\n");
+  fprintf(stderr, " -N, --number-of-injections N   number of trial for MC\n");
+  fprintf(stderr, " -S, --output-dir DIR           directory for output files\n");        
   exit(exitcode);
 }
 
