@@ -38,10 +38,11 @@ LALInspiralComputeChisq
    )
 {  /*  </lalVerbatim>  */
 
-  REAL8 flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR, mSevenBy3;
+  REAL8 c2, flso, df, duration, totalModelSNR, SNRPerBin, binSNR, totalSNR, diffSNR, mSevenBy3;
   INT4 n, k_0, k_N, ki, count, k, k_start, k_end, i;
   UINT4 binIndexLength;
   INT4Vector *binIndexes = NULL;
+  REAL8Vector *binSNRs = NULL;
 
   INITSTATUS (status, "LALInspiralComputeChisq", LALINSPIRALCOMPUTECHISQ);
   ATTATCHSTATUSPTR(status);
@@ -52,6 +53,7 @@ LALInspiralComputeChisq
 
   binIndexLength = params->nBins + 1;
   LALI4CreateVector(status->statusPtr, &binIndexes, binIndexLength);
+  LALDCreateVector(status->statusPtr, &binSNRs, binIndexLength-1);
   
   flso = 1.0/(pow(6.0,3.0/2.0)*LAL_PI*params->totalMass);
 
@@ -74,7 +76,10 @@ LALInspiralComputeChisq
      if (input->psd->data[k]) totalModelSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
   }
 
-  SNRPerBin = totalModelSNR/(double)params->nBins;
+  c2 = SNRPerBin = totalModelSNR/(double)params->nBins;
+  fprintf(stderr, "SNRPerBin=%e\n", SNRPerBin);
+  /*
+  */
 
   count = 0;
   binIndexes->data[count] = k_0;
@@ -85,24 +90,57 @@ LALInspiralComputeChisq
    */
 
   k = k_start;
-  while(k < k_N)
+  while(count < params->nBins-1)
   {
      binSNR = 0.0;
      for(k=k_start; k<=k_N; k++)
      {
-        if (input->psd->data[k]) binSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
+	double dSNR, ePlus, eMinus;
+        if (input->psd->data[k]) binSNR += (dSNR=pow( (float)k*df, mSevenBy3) / input->psd->data[k]);
 
            if (binSNR > SNRPerBin)
 	   {  
 		   count++;
-		   binIndexes->data[count] = k;
-		   k_start = k+1;
+		   /* The following is added so that we are as close to the SNRPerBin
+		    * as possible; bug noted by S. Babak on April 22, 2003. Also, instead of
+		    * using SNRPerBin we shall use the actual SNR in the bin
+		    */
+		   ePlus = binSNR - SNRPerBin;
+		   eMinus = SNRPerBin + dSNR - binSNR;
+		   if (ePlus < eMinus)
+		   {
+			   binIndexes->data[count] = k;
+			   binSNRs->data[count-1] = binSNR;
+			   k_start = k+1;
+			   /*
+			   fprintf(stderr, "I%d %d %e %e %e\n", count, k, binSNRs->data[count-1], ePlus, eMinus);
+			    */
+		   }
+		   else
+		   {
+			   binIndexes->data[count] = k-1;
+			   binSNRs->data[count-1] = binSNR-dSNR;
+			   k_start = k;
+			   /*
+			   fprintf(stderr, "E%d %d %e %e %e\n", count, k, binSNRs->data[count-1], ePlus, eMinus);
+			   */
+		   }
 		   break;
 	   }
      }
   }
   count++;
+  binSNR = 0.;
+  for(k=k_start; k<=k_N; k++)
+  {
+	  if (input->psd->data[k]) binSNR += pow( (float)k*df, mSevenBy3) / input->psd->data[k];
+  }
+			   
   binIndexes->data[count] = k_N;
+  binSNRs->data[count-1] = binSNR;
+  /*
+  fprintf(stderr, "E%d %d %e\n", count, k, binSNRs->data[count-1]);
+  */
 
   if (count != params->nBins) 
   {
@@ -122,7 +160,6 @@ LALInspiralComputeChisq
       fprintf(stdout, "%e %d\n", binIndexes->data[i]*df, i);
    } 
   
-   exit(0);
    */
 
   /* Now get the total SNR from the data */
@@ -138,6 +175,7 @@ LALInspiralComputeChisq
   /* the expected SNR per chisq bin in the frequency space */
 
   SNRPerBin = totalSNR / (double)params->nBins;
+  c2 /= SNRPerBin;
 
   /* Now we need to sum up the SNR in each of the bins defined and stored in binIndexes->data[k] 
    * Then we take the difference between this figure and the SNRPerBin calculated immediately
@@ -157,14 +195,16 @@ LALInspiralComputeChisq
       }
 
       binSNR *= 2.;
-      diffSNR = 1. - binSNR/SNRPerBin;
+      diffSNR = 1. - c2*binSNR/binSNRs->data[i];
+      // diffSNR = 1. - binSNR/SNRPerBin;
       *chisq += diffSNR * diffSNR;
    }
    /*
-   fprintf(stderr, "snr=%e chisq=%e\n", totalSNR, *chisq);
    */
+   fprintf(stderr, "snr=%e chisq=%e\n", totalSNR, *chisq);
       
   LALI4DestroyVector(status->statusPtr, &binIndexes);
+  LALDDestroyVector(status->statusPtr, &binSNRs);
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

@@ -197,6 +197,8 @@ main ( void )
       else
       {
 	      LALInspiralParameterCalc(&status, &randIn.param);
+	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
+	      randIn.param.fCutoff = 4000.;
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);

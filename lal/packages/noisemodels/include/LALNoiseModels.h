@@ -88,9 +88,11 @@ Detector;
 typedef struct
 tagInspiralWaveCorrelateIn 
 {
-   REAL4Vector signal1;
-   REAL4Vector signal2;
-   REAL8Vector psd;
+   REAL8        df;
+   REAL8        fCutoff;
+   REAL4Vector  signal1;
+   REAL4Vector  signal2;
+   REAL8Vector  psd;
    RealFFTPlan *revp;
 }
 InspiralWaveCorrelateIn;

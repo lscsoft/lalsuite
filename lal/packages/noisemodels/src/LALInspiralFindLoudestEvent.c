@@ -228,7 +228,7 @@ LALInspiralFindLoudestEvent
    distanceNorm = sqrt(distanceNorm);
    distanceNorm *= df * pow(totalMass, 5.L/6.L) * sqrt(5.L*eta/12.L)/pow(LAL_PI,2.L/3.L) ;
    /*
-   printf("FindEvents: %e %e %e %e\n", flso, totalMass/LAL_MTSUN_SI, eta, distanceNorm);
+   printf("FindEvents: flso=%e mass=%e eta=%e norm=%e\n", flso, totalMass/LAL_MTSUN_SI, eta, distanceNorm);
    */
 
    *nEvents = 0;
@@ -236,6 +236,8 @@ LALInspiralFindLoudestEvent
    x = output1.data[nBegin];
    y = output2.data[nBegin];
    z = sqrt(x*x + y*y);
+   if (z>findeventsin->Threshold) (*nEvents)++;
+       
    eventlist->snr = z;
    eventlist->param = findeventsin->param;
    eventlist->phase = atan2(y,x);
@@ -244,8 +246,8 @@ LALInspiralFindLoudestEvent
    dist = distanceNorm/ z;
    eventlist->effDistance = LAL_C_SI * dist / LAL_PC_SI /1.e6;
    eventlist->amplitude = 4.*eta*(totalMass/dist)*pow(LAL_PI*totalMass*100.,2.L/3.L);
-   eventlist->bin = i;
-   eSec = (double) i / findeventsin->param.tSampling;
+   eventlist->bin = nBegin;
+   eSec = (double) nBegin / findeventsin->param.tSampling;
    eventlist->impulseTime = findeventsin->currentGPSTime + (int) eSec;
    eventlist->impulseTimeNS = (int) (1.e9 * (eSec - (int) eSec));
    eSec += findeventsin->param.tC;
@@ -253,7 +255,7 @@ LALInspiralFindLoudestEvent
    eventlist->endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
    eventlist->sigmasq = statsout1.stddev;
 
-   for (i=nBegin; i<nEnd; i++) 
+   for (i=nBegin+1; i<nEnd; i++) 
    {
        x = output1.data[i];
        y = output2.data[i];
@@ -278,8 +280,6 @@ LALInspiralFindLoudestEvent
           eventlist->endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
 
           eventlist->sigmasq = statsout1.stddev;
-
-	  
        }
 
    }
@@ -294,7 +294,8 @@ LALInspiralFindLoudestEvent
    LALInspiralComputeSNRIntegrand(status->statusPtr, &output1, corrin, &params);
 
    chisqDataVec.SNRIntegrand = &output1;
-   chisqDataVec.psd = &findeventsin->psd;
+   chisqDataVec.psd = &(findeventsin->psd);
+
    chisqParams.totalMass = totalMass;
    chisqParams.fLower = findeventsin->param.fLower;
    chisqParams.deltaT = params.deltaT;

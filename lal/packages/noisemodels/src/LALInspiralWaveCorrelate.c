@@ -54,11 +54,11 @@ LALInspiralWaveCorrelate
    (
    LALStatus                *status,
    REAL4Vector              *output,
-   InspiralWaveCorrelateIn  corrin
+   InspiralWaveCorrelateIn   corrin
    )
 {  /*  </lalVerbatim>  */
   INT4 n, nby2, i, k;
-  REAL8 psd, r1, r2, i1, i2;
+  REAL8 psd, r1, r2, i1, i2, f;
   REAL4Vector buff;
 
 
@@ -91,6 +91,8 @@ LALInspiralWaveCorrelate
 
      if (psd) {
 /* 
+     f = (REAL8)i * corrin.df;
+     if (psd && f > corrin.fCutoff) {
      the following line computes output = signal1 . signal2* 
 */
         r1 = corrin.signal1.data[i];

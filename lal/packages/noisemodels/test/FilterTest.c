@@ -110,7 +110,7 @@ main ( void )
    coarseIn.mMax = 10.0;
    coarseIn.MMax = 2.*coarseIn.mMax;
    coarseIn.massRange = MinMaxComponentMass;
-   coarseIn.mmCoarse = 0.80;
+   coarseIn.mmCoarse = 0.90;
    coarseIn.mmFine = 0.95;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 1000;
@@ -143,9 +143,9 @@ main ( void )
       coarseIn.space
    );
    fflush(stdout);
-   randIn.type = 0;
-   randIn.SignalAmp = 8.0;
-   randIn.NoiseAmp = 1.0;
+   randIn.type = 2;
+   randIn.SignalAmp = 10.;
+   randIn.NoiseAmp = 1.e0;
    randIn.useed = 218092;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
