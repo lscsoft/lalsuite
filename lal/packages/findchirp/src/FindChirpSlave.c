@@ -230,7 +230,7 @@ MedianSpec(
       FINDCHIRPENGINEH_EZERO, FINDCHIRPENGINEH_MSGEZERO );
 
   /* allocate memory array for insert sort, test for success */
-  *s = (REAL4 *) LALMalloc( numSegs * sizeof(REAL4) );
+  s = LALMalloc( numSegs * sizeof(REAL4) );
   if ( ! s )
   {
     ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
