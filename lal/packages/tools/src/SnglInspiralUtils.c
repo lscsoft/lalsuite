@@ -105,6 +105,9 @@ LALSortSnglInspiral(
   }
   thisEvent->next = NULL;
 
+  /* free the internal memory */
+  LALFree( eventHandle );
+
   RETURN( status );
 }
 
@@ -173,3 +176,6 @@ LALCompareSnglInspiralByTime(
     return 0;
   }
 }
+
+
+
