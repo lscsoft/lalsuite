@@ -195,7 +195,7 @@ if usertag:
   inca_job.add_opt('user-tag',usertag)
 
 # add the injections
-if inj_file
+if inj_file:
   insp_job.add_opt('injection-file',inj_file)
 
 # set the condor job priority
