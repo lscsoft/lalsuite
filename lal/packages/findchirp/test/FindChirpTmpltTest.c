@@ -27,7 +27,8 @@ void PrintInspiralBank (
 int
 main (int argc, char *argv[])
 {
-  static LALStatus  stat;
+  FILE                         *fp = NULL;
+  static LALStatus              stat;
 
   InspiralTemplate             *tmplt = NULL;
 
@@ -35,7 +36,7 @@ main (int argc, char *argv[])
   FindChirpCreateBankParams    *createBankParams;
 
   const UINT4                   numSegments = 7;
-  const UINT4                   numPts = 1048576;
+  const UINT4                   numPts = 262145;
   UINT4                         k;
   
   /*
@@ -54,16 +55,16 @@ main (int argc, char *argv[])
   }
 
   /* bank generation parameters */
-  bankIn->mMin          = 5.0;
-  bankIn->MMax          = 20.0;
-  bankIn->mmCoarse      = 0.97;
+  bankIn->mMin          = 1.0;
+  bankIn->MMax          = 6.0;
+  bankIn->mmCoarse      = 0.95;
   bankIn->mmFine        = 0.99;
   bankIn->fLower        = 40.;
-  bankIn->fUpper        = 1000.0;
+  bankIn->fUpper        = 1500.0;
   bankIn->iflso         = 0;
-  bankIn->tSampling     = 2048.;
+  bankIn->tSampling     = 4096.;
   bankIn->order         = twoPN;
-  bankIn->approximant   = TaylorT2;
+  bankIn->approximant   = TaylorT1;
   bankIn->space         = Tau0Tau2;
   bankIn->etamin        = bankIn->mMin * ( bankIn->MMax - bankIn->mMin) /
     ( bankIn->MMax * bankIn->MMax );
@@ -96,18 +97,32 @@ main (int argc, char *argv[])
   REPORTSTATUS( &stat );
   if ( stat.statusCode ) return stat.statusCode;
 
-  for( k = 0; k < bankIn->shf.data->length ; ++k )
+  fp = fopen( "spec.dat", "r" );
+
+  if ( ! fp )
   {
-    REAL8 freq = (REAL8) k * bankIn->shf.deltaF;
-    if ( freq < bankIn->fLower )
+    for( k = 0; k < bankIn->shf.data->length ; ++k )
     {
-      LALLIGOIPsd( NULL, bankIn->shf.data->data + k, bankIn->fLower );
-    }
-    else
-    {
-      LALLIGOIPsd( NULL, bankIn->shf.data->data + k, freq );
+      REAL8 freq = (REAL8) k * bankIn->shf.deltaF;
+      if ( freq < bankIn->fLower )
+      {
+        LALLIGOIPsd( NULL, bankIn->shf.data->data + k, bankIn->fLower );
+      }
+      else
+      {
+        LALLIGOIPsd( NULL, bankIn->shf.data->data + k, freq );
+      }
     }
   }
+  else
+  {
+    for( k = 0; k < bankIn->shf.data->length ; ++k )
+    {
+      fscanf( fp, "%le\n", bankIn->shf.data->data + k );
+    }
+    fclose( fp );
+  }
+
   
 
   /*
