@@ -71,7 +71,6 @@ extern INT4 lalDebugLevel;
 
 #define FMT_STRING "string"    /* reading in quoted strings needs some special treatment */
 #define WHITESPACE " \t"
-#define COMMENT_CHARS	"#%"
 
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
@@ -499,15 +498,27 @@ cleanConfig (CHARSequence *text)
 {
   size_t len;  /* comment length */
   CHAR *ptr, *ptr2, *eol;
+  BOOLEAN inQuotes = 0;
 
   /* clean out comments, by replacing them by '\n' */
   ptr = text->data;
 
-  while ( (ptr += strcspn(ptr, COMMENT_CHARS)) < (text->data + text->length-1) )
+  while ( *ptr )
     {
-      len = strcspn (ptr, "\n"); 
-      memset ( (void*)ptr, '\n', len); 	
-    } /* while comment found */
+      if ( (*ptr) == '\"' )
+	inQuotes = !inQuotes;
+
+      if ( ((*ptr) == '#') || ( (*ptr) == ';') )
+	if ( !inQuotes )	/* only consider as comments if not quoted */
+	  {
+	    len = strcspn (ptr, "\n"); 
+	    memset ( (void*)ptr, '\n', len); 	
+	  }
+	
+      ptr ++;
+
+    } /* while *ptr */
+
   
   /* do line-gluing when '\' is found at end-of-line */
   ptr = text->data;

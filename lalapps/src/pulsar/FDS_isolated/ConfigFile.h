@@ -16,16 +16,23 @@ Header file for ConfigFile reading.
 
 \noindent This module provides routines for reading formatted
 config-files containing definitions of the form \mbox{\texttt{variable = value}}.
-Comments are allowed using either '\#' or '\%'. You can also use
+The general syntax is somewhat similar to the one provided by the
+perl-module \texttt{ConfigParser} (cf. 
+\verb+http://www.python.org/doc/current/lib/module-ConfigParser.html+ )
+but (currently) without the possibility of "chapters".
+Comments are allowed using either '\#' or ';'. You can also use
 standard line-continuation  using a '\verb+\+' at the end of the line.
-The general syntax is best illustrated using a simple example:
+Also note that '\#' or ';' within double-quotes '\"' are \emph{not}
+treated as comment-characters.  The general syntax is best illustrated
+using a simple example: 
 \begin{verbatim}
 # comment line
-var1 = 1.0    % you can also comment using percent-sign
+var1 = 1.0    ; you can also comment using semi-colons
 somevar = some text. \
        You can also use \
-       line-continuation
+       line-continuation	
    var3 = 4      # whatever that means
+note : "this is also possible, and # here does nothing"
 # etc etc.
 \end{verbatim}
 
@@ -84,7 +91,7 @@ NRCSID( CONFIGFILEH, "$Id$" );
 #define CONFIGFILEH_MSGEVAR		"Config variable not found."
 #define CONFIGFILEH_MSGEFMT		"Config variable not readable using given format-string."
 #define CONFIGFILEH_MSGETOKENS		"The input ConfigData seems corrupted."
-#define CONFIGFILEH_MSGENONULL		"Input pointer is not NULL"
+#define CONFIGFILEH_MSGENONULL		"Output pointer is not NULL"
 #define CONFIGFILEH_MSGESTRICT		"Strictness parameter out of range"
 #define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
 #define CONFIGFILEH_MSGEMEM		"Out of memory"
