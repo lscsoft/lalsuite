@@ -11,7 +11,14 @@ Module to generate subsequent sky-position.
 
 \subsubsection*{Prototypes}
 \input{GeneratePulsarSignalCP}
-\idx{NextSkyPosition()}
+\idx{LALGeneratePulsarSignal()}
+\idx{LALSignalToSFTs()}
+\idx{LALCreateSFTVector()}
+\idx{LALDestroySFTVector()}
+\idx{LALDestroyTimestampVector()}
+\idx{LALConvertSSB2GPS()}
+\idx{LALConvertGPS2SSB()}
+\idx{LALNormalizeSkyPosition()}
 
 \subsubsection*{Description}
 
@@ -20,6 +27,19 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 \subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALGenerateSpinOrbitCW()	LALSimulateCoherentGW()
+LALBarycenterEarth() 		LALBarycenter()
+LALCreateForwardRealFFTPlan() 	LALDestroyRealFFTPlan()
+LALForwardRealFFT()
+LALAddFloatToGPS() 		LALDeltaFloatGPS()
+LALCalloc()			LALFree()
+LALDCreateVector()		LALDDestroyVector()
+LALCCreateVector()		LALCDestroyVector()
+LALCreateVector()
+LALSDestroyVector() 		LALSDestroyVectorSequence()
+LALPrintError()
+\end{verbatim}
 
 \subsubsection*{Notes}
 
@@ -108,10 +128,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 
 
   /* pulsar reference-time in SSB frame !*/
-  if (params->pulsar.TRefSSB.gpsSeconds != 0)
-    sourceParams.spinEpoch = params->pulsar.TRefSSB;
-  else
-    sourceParams.spinEpoch = time;	/* use start-time */
+  sourceParams.spinEpoch = params->pulsar.TRefSSB;
 
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
@@ -347,8 +364,6 @@ LALSignalToSFTs (LALStatus *stat,
 
     } /* for iSFT < numSFTs */ 
 
-
-
   /* clean up */ /* FIXME: buffering */
   LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
 
@@ -369,8 +384,9 @@ LALSignalToSFTs (LALStatus *stat,
 
 
 
-
-/* create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins */
+/*----------------------------------------------------------------------
+ * create a whole vector of <numSFT> SFTs with <SFTlen> frequency-bins 
+ *----------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
 LALCreateSFTVector (LALStatus *stat, 
@@ -423,6 +439,9 @@ LALCreateSFTVector (LALStatus *stat,
 
 } /* LALCreateSFTVector() */
 
+/*----------------------------------------------------------------------
+ * destroy an SFT-vector
+ *----------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
 LALDestroySFTVector (LALStatus *stat, 
@@ -453,11 +472,44 @@ LALDestroySFTVector (LALStatus *stat,
 
 
 /*----------------------------------------------------------------------
+ * de-allocate a LIGOTimeGPSVector
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
+{ /* </lalVerbatim> */
+  UINT4 i;
+
+  INITSTATUS( stat, "DestroyTimestampVector", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+
+  for (i=0; i < (*vect)->length; i++)
+    LALFree ( (*vect)->data);
+
+  LALFree ( *vect );
+  
+  *vect = NULL;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+  
+} /* LALDestroyTimestampVector() */
+
+
+
+/*----------------------------------------------------------------------
  * convert earth-frame GPS time into barycentric-frame SSB time for given source
  *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params)
-{
+LALConvertGPS2SSB (LALStatus* stat, 
+		   LIGOTimeGPS *SSBout, 	/* output: arrival-time in SSB */
+		   LIGOTimeGPS GPSin, 		/* input: GPS-arrival time at detector */
+		   const PulsarSignalParams *params) /* define source-location and detector */
+{ /* </lalVerbatim> */
   EarthState earth;
   EmissionTime emit;
   BarycenterInput baryinput;
@@ -496,7 +548,7 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
-} /* ConvertGPS2SSB() */
+} /* LALConvertGPS2SSB() */
 
 
 /*----------------------------------------------------------------------
@@ -505,9 +557,14 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
  * NOTE: this uses simply the inversion-routine used in the original
  *       makefakedata_v2
  *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
-ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const PulsarSignalParams *params)
-{
+LALConvertSSB2GPS (LALStatus *stat, 
+		   LIGOTimeGPS *GPSout,		 /* output: GPS-arrival-time at detector */
+		   LIGOTimeGPS SSBin, 		 /* input: signal arrival time at SSB */
+		   const PulsarSignalParams *params) /* params defining source-location and detector */
+{ /* </lalVerbatim> */
+
   LIGOTimeGPS SSBofguess;
   LIGOTimeGPS GPSguess;
   INT4 iterations, E9=1000000000;
@@ -515,7 +572,6 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
 
   INITSTATUS( stat, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
-
 
   /* 
    * To start root finding, use SSBpulsarparams as guess 
@@ -567,6 +623,198 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
 } /* ConvertSSB2GPS() */
 
 
+
+/*----------------------------------------------------------------------
+ * if sky-position is not in "normal-range", normalize it correspondingly 
+ * based on Alicia's function with some additional "unwinding" added  
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn)
+{ /* </lalVerbatim> */
+  SkyPosition tmp;	/* allow posOut == posIn */
+
+  INITSTATUS( stat, "NormalizeSkyPosition", GENERATEPULSARSIGNALC);
+  
+  ASSERT (posIn, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
+  ASSERT (posOut, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
+
+  tmp = *posIn;
+  
+  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
+   * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
+  /* normalize longitude */
+  while (tmp.longitude < 0)
+    tmp.longitude += LAL_TWOPI;
+  while (tmp.longitude >= LAL_TWOPI)
+    tmp.longitude -= LAL_TWOPI;
+
+  /* pre-normalize (unwind) latitude */
+  while (tmp.latitude <= -LAL_PI)
+    tmp.latitude += LAL_TWOPI;
+  while (tmp.latitude > LAL_TWOPI)
+    tmp.latitude -= LAL_TWOPI;
+
+  /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
+  /* this requires also a change in longitude by adding/subtracting PI */
+  if (tmp.latitude > LAL_PI_2)
+    {
+      tmp.latitude = LAL_PI - tmp.latitude;
+      if (tmp.longitude < LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  if (tmp.latitude < -LAL_PI_2)
+    {
+      tmp.latitude = -LAL_PI - tmp.latitude;
+      if (tmp.longitude <= LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  *posOut = tmp;
+
+  RETURN (stat);
+
+} /* LALNormalizeSkyPosition() */
+
+
+
+/************************************************************************
+ * the following are INTERNAL FUNCTIONS not to be called outside of this 
+ * module 
+ ************************************************************************/
+
+/*----------------------------------------------------------------------
+ * given a start-time, duration and Tsft, returns a list of timestamps
+ * covering this time-stretch.
+ * returns NULL on out-of-memory
+ *----------------------------------------------------------------------*/
+LIGOTimeGPSVector* 
+make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
+{
+  LALStatus status;
+  UINT4 i;
+  UINT4 numSFTs;
+  LIGOTimeGPS tt;
+  LIGOTimeGPSVector *timestamps = NULL;
+
+  numSFTs = (UINT4)( duration / Tsft );			/* floor */
+  timestamps = LALCalloc (1, sizeof( *timestamps) );
+
+  timestamps->length = numSFTs;
+  if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) 
+    return (NULL);
+
+  tt = *tStart;	/* initialize to start-time */
+  for (i = 0; i < numSFTs; i++)
+    {
+      timestamps->data[i] = tt;
+      /* get next time-stamp */
+      /* NOTE: we add the interval Tsft successively instead of
+       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
+       * with a REAL8 interval, which becomes critial from about 100days on...
+       */
+      LALAddFloatToGPS( &status, &tt, &tt, Tsft);
+      if (status.statusCode)	/* error */
+	return (NULL);
+
+    } /* for i < numSFTs */
+  
+  return (timestamps);
+  
+} /* make_timestamps() */
+
+/*----------------------------------------------------------------------
+ *   check that all timestamps given lie within the range [t0, t1] 
+ *    return: 0 if ok, -1 if not
+ *----------------------------------------------------------------------*/
+int
+check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
+{
+  static LALStatus status1, status2;
+  REAL8 diff0, diff1;
+  UINT4 i;
+
+  for (i = 0; i < timestamps->length; i ++)
+    {
+      LALDeltaFloatGPS (&status1, &diff0, &(timestamps->data[i]), &t0);
+      LALDeltaFloatGPS (&status2, &diff1, &t1, &(timestamps->data[i]));
+
+      /* catch errors */
+      if (status1.statusCode || status2.statusCode)
+	return (-2);
+
+      /* check timestamps-bounds */
+      if ( (diff0 < 0) || (diff1 < 0) ) 
+	return (-1);
+
+    } /* for i < numSFTs */
+
+  return (0);
+
+} /* check_timestamp_bounds() */
+
+/*----------------------------------------------------------------------
+ * check if frequency-range and resolution of noiseSFTs is consistent with signal
+ * ABORT if not
+ *----------------------------------------------------------------------*/
+void
+checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
+{
+  UINT4 i;
+  SFTtype *thisSFT;
+  REAL8 fn0, fn1, deltaFn, shift;
+  UINT4 nshift;
+
+  INITSTATUS( stat, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
+
+  for (i=0; i < sfts->length; i++)
+    {
+      thisSFT = &(sfts->data[i]);
+      deltaFn = thisSFT->deltaF;
+      fn0 = thisSFT->f0;
+      fn1 = f0 + thisSFT->data->length * deltaFn;
+      
+      if (deltaFn != deltaF) {
+	ABORT (stat,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
+      }
+
+      if ( (f0 < fn0) || (f1 > fn1) ) {
+	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
+      }
+      
+      shift = (fn0 - f0) / deltaF;
+      /* frequency bins have to coincide! ==> check that shift is integer!  */
+      nshift = (UINT4)(shift+0.5);
+      if ( fabs( nshift - shift) > eps ) {
+	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
+      }
+
+    } /* for i < numSFTs */
+
+  RETURN (stat);
+
+} /* checkNoiseSFTs() */
+
+
+
+/***********************************************************************
+ *
+ * the following are temporary DEBUGGING + TESTING functions only
+ *
+ ***********************************************************************/
 
 /*----------------------------------------------------------------------
  * export a REAL4 time-series in an xmgrace graphics file 
@@ -823,103 +1071,6 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 } /* compare_SFTs() */
 
 
-
-
-void
-LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
-{
-  UINT4 i;
-
-  INITSTATUS( stat, "DestroyTimestampVector", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  for (i=0; i < (*vect)->length; i++)
-    LALFree ( (*vect)->data);
-
-  LALFree ( *vect );
-  
-  *vect = NULL;
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-  
-} /* LALDestroyTimestampVector() */
-
-
-
-
-/***********************************************************************
- * given a start-time, duration and Tsft, returns a list of timestamps
- * covering this time-stretch.
- * returns NULL on out-of-memory
- ***********************************************************************/
-LIGOTimeGPSVector* 
-make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
-{
-  LALStatus status;
-  UINT4 i;
-  UINT4 numSFTs;
-  LIGOTimeGPS tt;
-  LIGOTimeGPSVector *timestamps = NULL;
-
-  numSFTs = (UINT4)( duration / Tsft );			/* floor */
-  timestamps = LALCalloc (1, sizeof( *timestamps) );
-
-  timestamps->length = numSFTs;
-  if ( (timestamps->data = LALCalloc (1, numSFTs * sizeof (*timestamps->data) )) == NULL) 
-    return (NULL);
-
-  tt = *tStart;	/* initialize to start-time */
-  for (i = 0; i < numSFTs; i++)
-    {
-      timestamps->data[i] = tt;
-      /* get next time-stamp */
-      /* NOTE: we add the interval Tsft successively instead of
-       * via iSFT*Tsft, because this way we avoid possible ns-rounding problems
-       * with a REAL8 interval, which becomes critial from about 100days on...
-       */
-      LALAddFloatToGPS( &status, &tt, &tt, Tsft);
-      if (status.statusCode)	/* error */
-	return (NULL);
-
-    } /* for i < numSFTs */
-  
-  return (timestamps);
-  
-} /* make_timestamps() */
-
-/* check that all timestamps given lie within the range [t0, t1] 
-   return: 0 if ok, -1 if not
-*/
-int
-check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
-{
-  static LALStatus status1, status2;
-  REAL8 diff0, diff1;
-  UINT4 i;
-
-  for (i = 0; i < timestamps->length; i ++)
-    {
-      LALDeltaFloatGPS (&status1, &diff0, &(timestamps->data[i]), &t0);
-      LALDeltaFloatGPS (&status2, &diff1, &t1, &(timestamps->data[i]));
-
-      /* catch errors */
-      if (status1.statusCode || status2.statusCode)
-	return (-2);
-
-      /* check timestamps-bounds */
-      if ( (diff0 < 0) || (diff1 < 0) ) 
-	return (-1);
-
-    } /* for i < numSFTs */
-
-  return (0);
-
-} /* check_timestamp_bounds */
-
 /* write an SFT in xmgrace-readable format */
 void 
 LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
@@ -1003,111 +1154,6 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   
 } /* write_SFT() */
 
-/* if sky-position is not in "normal-range", normalize it correspondingly */
-/* based on Alicia's function with some additional "unwinding" added  */
-void
-LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn)
-{
-  SkyPosition tmp;	/* allow posOut == posIn */
-
-  INITSTATUS( stat, "NormalizeSkyPosition", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-  
-  ASSERT (posIn, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
-  ASSERT (posOut, stat, GENERATEPULSARSIGNALH_ENULL ,  GENERATEPULSARSIGNALH_MSGENULL );
-
-  tmp = *posIn;
-  
-  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
-   * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
-  /* normalize longitude */
-  while (tmp.longitude < 0)
-    tmp.longitude += LAL_TWOPI;
-  while (tmp.longitude >= LAL_TWOPI)
-    tmp.longitude -= LAL_TWOPI;
-
-  /* pre-normalize (unwind) latitude */
-  while (tmp.latitude <= -LAL_PI)
-    tmp.latitude += LAL_TWOPI;
-  while (tmp.latitude > LAL_TWOPI)
-    tmp.latitude -= LAL_TWOPI;
-
-  /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
-  /* this requires also a change in longitude by adding/subtracting PI */
-  if (tmp.latitude > LAL_PI_2)
-    {
-      tmp.latitude = LAL_PI - tmp.latitude;
-      if (tmp.longitude < LAL_PI)
-	{
-	  tmp.longitude += LAL_PI;
-	}
-      else
-	{
-	  tmp.longitude -= LAL_PI;
-	}
-    }
-
-  if (tmp.latitude < -LAL_PI_2)
-    {
-      tmp.latitude = -LAL_PI - tmp.latitude;
-      if (tmp.longitude <= LAL_PI)
-	{
-	  tmp.longitude += LAL_PI;
-	}
-      else
-	{
-	  tmp.longitude -= LAL_PI;
-	}
-    }
-
-  *posOut = tmp;
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* LALNormalizeSkyPosition() */
-
-/*----------------------------------------------------------------------
- * check if frequency-range and resolution of noiseSFTs is consistent with signal
- * ABORT if not
- *----------------------------------------------------------------------*/
-void
-checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
-{
-  UINT4 i;
-  SFTtype *thisSFT;
-  REAL8 fn0, fn1, deltaFn, shift;
-  UINT4 nshift;
-
-  INITSTATUS( stat, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
-
-  for (i=0; i < sfts->length; i++)
-    {
-      thisSFT = &(sfts->data[i]);
-      deltaFn = thisSFT->deltaF;
-      fn0 = thisSFT->f0;
-      fn1 = f0 + thisSFT->data->length * deltaFn;
-      
-      if (deltaFn != deltaF) {
-	ABORT (stat,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
-      }
-
-      if ( (f0 < fn0) || (f1 > fn1) ) {
-	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
-      }
-      
-      shift = (fn0 - f0) / deltaF;
-      /* frequency bins have to coincide! ==> check that shift is integer!  */
-      nshift = (UINT4)(shift+0.5);
-      if ( fabs( nshift - shift) > eps ) {
-	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
-      }
-
-    } /* for i < numSFTs */
-
-  RETURN (stat);
-
-} /* checkNoiseSFTs() */
 
 /* dump an SFT into a text-file */
 void 

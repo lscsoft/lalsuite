@@ -7,7 +7,8 @@ $Id$
 \section{Header \texttt{GeneratePulsarSignal.h}}
 \label{s:GeneratePulsarSignal.h}
 
-Header file for GeneratePulsarSignal.
+Provides structures and prototypes for the pulsar signal-generation
+routines in GeneratePulsarSignal.c.
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -66,42 +67,68 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 
 /*************************************************** </lalErrTable> */
 
-  
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{GeneratePulsarSignalHV}}
-\newpage\input{GeneratePulsarSignalC}
-******************************************************* </lalLaTeX> */
+/*************************************************** 
+<lalLaTeX>
 
-/* New structures and types */
+\subsection*{Types}
+\idx[Type]{PulsarSourceParams}
+\idx[Type]{BinaryOrbitParams}
+\idx[Type]{PulsarSignalParams}
+\idx[Type]{SFTParams}
+\idx[Type]{SFTtype}
+\idx[Type]{SFTVector}
 
+\subsubsection*{Structure \texttt{PulsarSourceParams}}
+
+Defines the astrophysical parameters of the pulsar. 
+
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef struct {
-  LIGOTimeGPS TRefSSB;	/* reference time for pulsar parameters (in SSB time!) */
-  			/* if ZERO, startTimeGPS is used instead */
-  SkyPosition position;	/* source location (in radians!) */
+  LIGOTimeGPS TRefSSB;	/* reference-time (in SSB!) for pulsar parameters */
+  SkyPosition position;	/* source location (in radians) */
   REAL4 psi;            /* polarization angle (radians) at TRef */
-  REAL4 aPlus, aCross;    /* polarization amplitudes at TRef */
-  REAL8 phi0;             /* initial phase (radians) at TRef */
-  REAL8 f0;               /* initial frequency (Hz) at TRef */
-  REAL8Vector *spindown;  /* frequency spindowns at TRef (NOT f0-normalized!) */
+  REAL4 aPlus, aCross;  /* polarization amplitudes at TRef */
+  REAL8 phi0;           /* initial phase (radians) at TRef */
+  REAL8 f0;             /* initial frequency (Hz) at TRef */
+  REAL8Vector *spindown;/* frequency spindowns at TRef (NOT f0-normalized!) */
 } PulsarSourceParams;
+/* </lalVerbatim> */
+/*<lalLaTeX>
 
+\subsubsection*{Structure \texttt{BinaryOrbitParams}}
+
+Defines the astrophysical parameters of the binary orbit of the pulsar.
+
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef struct {
-  LIGOTimeGPS orbitEpoch; /* time of a periapsis passage */
+  LIGOTimeGPS orbitEpoch; /* time of periapsis passage */
   REAL8 omega;            /* argument of periapsis (radians) */
   REAL8 rPeriNorm;        /* projected, normalized periapsis (s) */
   REAL8 oneMinusEcc;      /* 1 - orbital eccentricity */
   REAL8 angularSpeed;     /* angular speed at periapsis (Hz) */
 } BinaryOrbitParams;
+/* </lalVerbatim> */
+/*<lalLaTeX>
 
+\subsubsection*{Structure \texttt{PulsarSignalParams}}
+
+Parameter-structure for \verb+LALGeneratePulsarSignal()+. Defines the
+source-parameters (of the pulsar and its binary orbit, if any), the
+detector-location and the time-series to be produced. 
+
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef struct {
-  /* source-params */
-  PulsarSourceParams pulsar;	  /* defining the actual pulsar-source */
-  BinaryOrbitParams *orbit;	  /* and its binary orbit if applicable (NULL if not) */
+  /* source-parameters */
+  PulsarSourceParams pulsar;	/* defining the actual pulsar-source */
+  BinaryOrbitParams *orbit;	/* and its binary orbit if applicable (NULL if not) */
   
   /* characterize the detector */
   COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function (NULL if not used) */	
-  LALDetector *site;				/* detector location and orientation */  
-  EphemerisData *ephemerides;			/* Earth and Sun ephemerides */
+  LALDetector *site;		/* detector location and orientation */  
+  EphemerisData *ephemerides;	/* Earth and Sun ephemerides */
   
   /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /* start time of output time series */
@@ -109,75 +136,59 @@ typedef struct {
   REAL8 samplingRate;		/* sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/* heterodyning frequency for output time-series */
 } PulsarSignalParams;
+/* </lalVerbatim> */
+/*<lalLaTeX>
 
-/* we need a type for a vector of timestamps */
-/* FIXME: move type into LAL */
-typedef struct {
-  UINT4 	length;
-  LIGOTimeGPS 	*data;
-} LIGOTimeGPSVector;
+\subsubsection*{Structures \texttt{SFTtype} and \texttt{SFTVector}}
 
+These are trivial typedefs used here for simplicity.
 
-/* just for reference: this is the FrequencySeries type: 
- * { 
- *   CHAR              name[LALNameLength]; 
- *   LIGOTimeGPS       epoch; 
- *   REAL8             f0;	 
- *   REAL8             deltaF; 
- *   LALUnit           sampleUnits
- *   COMPLEX8Sequence *data; 
- * } 
- * COMPLEX8FrequencySeries; 
- */
-
-/* we need a "Vector"-type of frequency-series  */
-/* FIXME: move type into LAL */
-typedef struct {
-  UINT4 			length;		/* number of frequency-series */
-  COMPLEX8FrequencySeries 	*data;		/* array of frequency-series */
-} COMPLEX8FrequencySeriesVector;
-
-/* for the lazy */
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef COMPLEX8FrequencySeries 	SFTtype;	
 typedef COMPLEX8FrequencySeriesVector 	SFTVector;
+/* </lalVerbatim> */
+/*<lalLaTeX>
 
-/* this is the current SFT-header in the file-format for storing SFTs
-  struct headertag {
-    REAL8 endian;
-    INT4  gps_sec;
-    INT4  gps_nsec;
-    REAL8 tbase;
-    INT4  firstfreqindex;
-    INT4  nsamples;
-  } header;
-*/
+\subsubsection*{Structure \texttt{SFTParams}}
 
-/* parameter-struct for LALSignalToSFTs() */
+Parameters defining the SFTs to be returned from \verb+LALSignalToSFTs()+.
+
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef struct {
-  REAL8 Tsft;				/* length of an SFT in seconds */
-  LIGOTimeGPSVector *timestamps;	/* timestamps to use for SFT's (can be NULL) */
-  SFTVector *noiseSFTs;			/* noise SFTs to be added to the output (can be NULL) */
+  REAL8 Tsft;			 /* length of each SFT in seconds */
+  LIGOTimeGPSVector *timestamps; /* timestamps to produce SFTs for (can be NULL) */
+  SFTVector *noiseSFTs;		 /* noise SFTs to be added (can be NULL) */
 } SFTParams;
+/* </lalVerbatim> */
+
+  
+/********************************************************** <lalLaTeX>
+\vfill{\footnotesize\input{GeneratePulsarSignalHV}}
+\newpage\input{GeneratePulsarSignalC}
+******************************************************* </lalLaTeX> */
 
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
+void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
 
+void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn);
+
+/* debug- und testing functions */
 void dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
-void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
-void LALCreateSFT (LALStatus *stat, SFTtype **outputSFT, UINT4 length);
 
-void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
-void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
-void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
 
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}
