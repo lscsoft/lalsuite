@@ -3,17 +3,17 @@
 
 if LALFRAME
 LALFRAMEPROGRAMS = lalapps_stochastic lalapps_stochastic_dev
+if LALMETAIO
+LALMETAIOFRAMEPROGRAMS = lalapps_stopp
+else
+LALMETAIOFRAMEPROGRAMS =
+endif
 else
 LALFRAMEPROGRAMS =
 endif
 
-if LALMETAIO
-LALMETAIOPROGRAMS = lalapps_stopp
-else
-LALMETAIOPROGRAMS =
-endif
-
-bin_PROGRAMS = lalapps_olapredfcn $(LALFRAMEPROGRAMS) ${LALMETAIOPROGRAMS}
+bin_PROGRAMS = lalapps_olapredfcn $(LALFRAMEPROGRAMS) \
+${LALMETAIOFRAMEPROGRAMS}
 
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
