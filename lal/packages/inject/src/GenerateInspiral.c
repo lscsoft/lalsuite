@@ -245,25 +245,24 @@ REAL8
 	*buffer3 = inspiralParams.nStartPad;
 	CHECKSTATUSPTR(status);      
 	break;
-	/*
       case TaylorT2: 
 	LALInspiralWave2ForInjection(status->statusPtr, 
-				     inject_hc, 
-				     inject_hp,
-				     inject_phase, 
-				     inject_freq,
+				     waveform,
 				     &inspiralParams);
+	*buffer1 = inspiralParams.tSampling;
+	*buffer2 = inspiralParams.tC;
+	*buffer3 = inspiralParams.nStartPad;
 	CHECKSTATUSPTR(status);      
 	break;
       case TaylorT3: 
 	LALInspiralWave3ForInjection(status->statusPtr, 
-				     inject_hc, 
-				     inject_hp,
-				     inject_phase, 
-				     inject_freq,
+				     waveform,
 				     &inspiralParams);
+	*buffer1 = inspiralParams.tSampling;
+	*buffer2 = inspiralParams.tC;
+	*buffer3 = inspiralParams.nStartPad;
 	CHECKSTATUSPTR(status);      
-	break;*/
+	break;
       case TaylorF1:
       case TaylorF2:      
       case PadeT1:
