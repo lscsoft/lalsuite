@@ -87,7 +87,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
   "%s [options]\n"\
 "  --help               display this message\n"\
 "  --source sfile       source file containing details of injection\n"\
-"  --actuation actfile  file containing the actuation function\n"\
+"  --actuation actfile  file containing the actuation function (default unit)\n"\
 "  --darm2inj dcfactor  calibration between darm_ctrl and injection point\n"\
 "  --summary sumfile    write details of injections to file\n"\
 "  --ifo ifo            name of interferomter (optional)\n"\
@@ -95,7 +95,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --fhigh fstop        end frequency of injection (default: end at ISCO)\n"\
 "  --smooth Qfac        ringdown the end of the injection with Q factor Qfac\n"\
 "  --length length      length of the data (default 64 seconds)\n"\
-"  --samplerate	freq    rate at which data is sampled (default 16384Hz)\n"\
+"  --samplerate freq    rate at which data is sampled (default 16384Hz)\n"\
 "  --debug-level debug  the lal debug level\n"\
 "  --user-tag tag       user-tag added to output file names\n"\
 "\n"
@@ -133,50 +133,50 @@ while (0)
 main(int argc, char **argv)
 {
   /* Command-line parsing variables. */
-  int c;		      /* command-line argument counter */
+  int c;                      /* command-line argument counter */
   static int verbose_flag;
   static LALStatus stat;      /* status structure */
-  CHAR	*sourcefile = NULL;   /* name of sourcefile */
-  CHAR	*actfile = NULL;      /* name of respfile */
-  CHAR	*summfile = NULL;      /* name of summfile */
-  CHAR  *tag = NULL;	      /* user-tag */
-  CHAR  ifo[3]="";	      /* name of IFO */
-  CHAR  fname[256];	      /* name of outfile */
-  INT4	length = LENGTH;      /* length of data segment */
-  INT4	freq = FREQ;	      /* sampling frequency */
-  INT4	npt = NPT;            /* number of output points */
-  REAL8	dt = DT;	      /* output sampling interval */
+  CHAR  *sourcefile = NULL;   /* name of sourcefile */
+  CHAR  *actfile = NULL;      /* name of respfile */
+  CHAR  *summfile = NULL;      /* name of summfile */
+  CHAR  *tag = NULL;          /* user-tag */
+  CHAR  ifo[3]="";            /* name of IFO */
+  CHAR  fname[256];           /* name of outfile */
+  INT4  length = LENGTH;      /* length of data segment */
+  INT4  freq = FREQ;          /* sampling frequency */
+  INT4  npt = NPT;            /* number of output points */
+  REAL8 dt = DT;              /* output sampling interval */
   REAL4 fstart = FSTART;      /* start frequency */
   INT4  fstopset = FALSE;     /* check whether end frequency specified */
-  REAL4 fstop  = FSTOP;	      /* stop frequency */
-  INT4	xmloutput = FALSE;  
+  REAL4 fstop  = FSTOP;       /* stop frequency */
+  INT4  xmloutput = FALSE;  
   LIGOTimeGPS inj_length; /* length of the injection */  
 
   /* File reading variables. */
-  FILE		       *fp = NULL,*fq = NULL;  /* generic file pointer */
-  BOOLEAN		ok = 1;	    /* whether input format is correct */
-  UINT4			i;	    /* generic index over file lines */
-  INT8			epoch;      /* epoch stored as an INT8 */
-  LALLeapSecAccuracy	accuracy = LALLEAPSEC_LOOSE;
+  FILE                 *fp = NULL,*fq = NULL;  /* generic file pointer */
+  BOOLEAN               ok = 1;     /* whether input format is correct */
+  UINT4                 i;          /* generic index over file lines */
+  INT8                  epoch;      /* epoch stored as an INT8 */
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   ProcessParamsTable   *this_proc_param;
-  MetadataTable	        proctable;
-  MetadataTable	        procparams;
+  MetadataTable         proctable;
+  MetadataTable         procparams;
   LIGOLwXMLStream       xmlStream;
   SimInspiralTable     *currentSimEvent=NULL,*prevSimEvent=NULL;
   SimInspiralTable     *simEventList=NULL;
-  MetadataTable	        simTable;
+  MetadataTable         simTable;
 
 
   /* Other global variables. */
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
-  INT4	  numinjects=0;
-  REAL4	  Qfac = 0; /* Q factor for the "ringdown" */
-  INT4	  smoothEnd = FALSE; /* do we include the "ringdown" */
-  REAL4	  dcfactor = 1; /* calibration factor between darm and inj */
+  INT4    numinjects=0;
+  REAL4   Qfac = 0; /* Q factor for the "ringdown" */
+  INT4    smoothEnd = FALSE; /* do we include the "ringdown" */
+  REAL4   dcfactor = 1; /* calibration factor between darm and inj */
 
   /*******************************************************************
-   * BEGIN PARSE ARGUMENTS					     *
+   * BEGIN PARSE ARGUMENTS                                           *
    *******************************************************************/
 
   /* set up inital debugging values */
@@ -201,20 +201,20 @@ main(int argc, char **argv)
     static struct option long_options[] = 
     {
       /* these options set a flag */
-      {"verbose",	      no_argument,  &verbose_flag, 1},
+      {"verbose",             no_argument,  &verbose_flag, 1},
       {"source",              required_argument,  0,  'a'},
       {"actuation",           required_argument,  0,  'b'},
-      {"summary",	      required_argument,  0,  'c'},
-      {"ifo",		      required_argument,  0,  'd'},
-      {"darm2inj",	      required_argument,  0,  'e'},
-      {"length",	      required_argument,  0,  'f'},
-      {"samplerate",	      required_argument,  0,  'g'},
-      {"help",                no_argument,	  0,  'h'},
-      {"smooth",	      required_argument,  0,  'i'},    
-      {"flow",		      required_argument,  0,  'j'},
-      {"fhigh",		      required_argument,  0,  'k'},
-      {"debug-level",	      required_argument,  0,  'l'},
-      {"user-tag",	      required_argument,  0,  'm'},
+      {"summary",             required_argument,  0,  'c'},
+      {"ifo",                 required_argument,  0,  'd'},
+      {"darm2inj",            required_argument,  0,  'e'},
+      {"length",              required_argument,  0,  'f'},
+      {"samplerate",          required_argument,  0,  'g'},
+      {"help",                no_argument,        0,  'h'},
+      {"smooth",              required_argument,  0,  'i'},    
+      {"flow",                required_argument,  0,  'j'},
+      {"fhigh",               required_argument,  0,  'k'},
+      {"debug-level",         required_argument,  0,  'l'},
+      {"user-tag",            required_argument,  0,  'm'},
       {0, 0, 0, 0}
     };
 
@@ -316,7 +316,7 @@ main(int argc, char **argv)
           ADD_PROCESS_PARAM( "float", "%e", Qfac );
           smoothEnd = TRUE;
         }
-        break;	
+        break;  
 
       case 'j':
         /* Parse start frequency */
@@ -354,7 +354,7 @@ main(int argc, char **argv)
 
       default:
         {
-          fprintf( stderr, "unknown error while parsing options\n" );	 
+          fprintf( stderr, "unknown error while parsing options\n" );    
           return INSPAWGFILEC_EARG;
         }
 
@@ -498,6 +498,7 @@ main(int argc, char **argv)
   {
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
+    REAL4 phii;
     CoherentGW waveform,*wf;       /* amplitude and phase structure */
     REAL4TimeSeries signal;        /* GW signal */
     REAL8 time;                    /* length of GW signal */
@@ -677,7 +678,7 @@ main(int argc, char **argv)
           LALSnprintf( fname, sizeof(fname), "%s_inspiral_%d_%s.out",
               tag, numinjects, ifo);
         }
-      }	
+      } 
       else
       {
         if ( !strcmp(ifo,"") )
@@ -745,7 +746,7 @@ main(int argc, char **argv)
 
     /* write the process params table */
     LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-          process_params_table ),	&stat );
+          process_params_table ),       &stat );
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, procparams, 
           process_params_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
