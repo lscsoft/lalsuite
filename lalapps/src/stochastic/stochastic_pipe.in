@@ -34,7 +34,7 @@ Usage: lalapps_stochastic_pipe [options]
   -v, --version            print version information and exit
 
   -d, --datafind           run LALdataFind to create frame cache files
-	-s, --stochastic         run lalapps_stochastic
+  -s, --stochastic         run lalapps_stochastic
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
