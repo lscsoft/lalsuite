@@ -2,6 +2,8 @@ TODO
 -----
 * clarify priorities between Alpha+AlphaBand.. and skyRegion
 
+* implement new user-variable handling
+
 * metric-stuff
 	- debug, compare
 
