@@ -472,12 +472,25 @@ LALInspiralWaveOverlap
 
 void 
 LALInspiralFindEvents 
-   (
-   LALStatus   *status,
-   INT4  *nEvents,
-   InspiralEventsList   **findeventsout,
-   InspiralFindEventsIn *findeventsin
-   );
+      (
+      LALStatus   *status,
+      INT4  *nEvents,
+      InspiralEventsList   **findeventsout,
+      InspiralFindEventsIn *findeventsin
+);
+
+/* <lalLaTeX>
+ * \newpage\input{LALInspiralFindLoudestEventC}
+ * </lalLaTeX>  */
+
+void
+LALInspiralFindLoudestEvent
+      (
+      LALStatus            *status,
+      INT4                 *nEvents,
+      InspiralEventsList   *eventlist,
+      InspiralFindEventsIn *findeventsin
+);
 
 /* <lalLaTeX>
 \newpage\input{LALInspiralFindEventsClusterC}

@@ -115,7 +115,7 @@ main ( void )
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 1000;
    coarseIn.iflso = 0;
-   coarseIn.tSampling = 2048.;
+   coarseIn.tSampling = 4096.;
    coarseIn.order = 4;
    coarseIn.approximant = TaylorT1;
    coarseIn.space = Tau0Tau3;
@@ -143,10 +143,10 @@ main ( void )
       coarseIn.space
    );
    fflush(stdout);
-   randIn.type = 2;
-   randIn.SignalAmp = 10.;
+   randIn.type = 0;
+   randIn.SignalAmp = 20.;
    randIn.NoiseAmp = 1.e0;
-   randIn.useed = 218092;
+   randIn.useed = 128092;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
    randIn.param.nStartPad=2000;
@@ -174,8 +174,8 @@ main ( void )
    for (i=0; i<nlist; i++) {
       fprintf(FilterTest, "%e %e %e %e %e %e %e %e\n", 
          list[i].params.t0, 
-         list[i].params.t2, 
          list[i].params.t3, 
+         list[i].params.t2, 
          list[i].params.t4, 
          list[i].params.totalMass,
          list[i].params.eta, 
@@ -200,7 +200,7 @@ main ( void )
    randIn.param.tSampling = coarseIn.tSampling;
    randIn.param.signalAmplitude = 1.0;
    randIn.param.nEndPad = 2000;
-   randIn.param.order = 6;
+   randIn.param.order = 4;
    randIn.param.approximant = PadeT1;
    randIn.param.massChoice = t03;
    if (randIn.param.massChoice != m1Andm2) 
@@ -288,8 +288,8 @@ main ( void )
             }
          }
      }
-     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax*signal.length);
-     fprintf(FilterTest,"%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax*signal.length);
+     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t3, randIn.param.t2, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
+     fprintf(FilterTest,"%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t3, randIn.param.t2, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
    fflush(stdout);
    }
    fclose(FilterTest);

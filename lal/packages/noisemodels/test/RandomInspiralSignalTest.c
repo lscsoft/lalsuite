@@ -120,11 +120,11 @@ main ( void )
 
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;
-   randIn.SignalAmp = 2.8;
-   randIn.NoiseAmp = 1.;
-   randIn.useed = 82488;
-   randIn.mMin = 4.0;
-   randIn.mMax = 4.001;
+   randIn.SignalAmp = 0.L;
+   randIn.NoiseAmp = 1.L;
+   randIn.useed = 83275488;
+   randIn.mMin = 20.0;
+   randIn.mMax = 40.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
@@ -133,7 +133,7 @@ main ( void )
    randIn.param.mass2 = randIn.mMin;
    randIn.param.ieta = 1; 
    randIn.param.fLower = 40.;
-   randIn.param.fCutoff = 300.;
+   randIn.param.fCutoff = 1000.;
    randIn.param.tSampling = 4000.;
    randIn.param.signalAmplitude = 1.0;
    randIn.param.nEndPad = 0;
@@ -166,7 +166,7 @@ main ( void )
    overlapin.revp = revp;
    file = fopen("RandomInspiralSignalTest.out", "w");
 
-   i=3;
+   i=5;
    while (i--) {
 	   /*
       randIn.type = 0;
@@ -222,7 +222,7 @@ main ( void )
       }
       else
       {
-	      randIn.param.approximant = PadeT1;
+	      randIn.param.approximant = EOB;
 	      LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
