@@ -479,7 +479,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'n':
                /* number of FFT */
-               FFTDuration = atoi(optarg);
+               numFFT = atoi(optarg);
                break;
                           
       case 'i':
