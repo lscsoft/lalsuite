@@ -202,8 +202,6 @@ The possible values are (each value is prefaced by
 
 ********************************** </lalLaTeX> */
 
-#define LALIFODIFFDETECTOR 1
-
 typedef enum {
   LALDETECTORTYPE_ABSENT,       /* No FrDetector associated with the structure */
   LALDETECTORTYPE_IFODIFF,      /* IFO in differential mode */
