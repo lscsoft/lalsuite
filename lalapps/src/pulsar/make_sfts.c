@@ -78,19 +78,22 @@ struct headertag {
   INT4  nsamples;
 } header;
 
-/* Minimum frequency (Hz, float) bandwidth (Hz, float) and baseline time (seconds,k int) for SFTs */
+/* Minimum frequency (Hz, float) bandwidth (Hz, float) and baseline
+   time (seconds,k int) for SFTs */
 #define FMIN  (50.0)
 #define DF    (2000.0)
 
 /* maximum number of start times from input file */
 #define MAXSTART 1000
 
-/*This will hold the SFT and PLAN */
+/* This will hold the SFT and PLAN */
 COMPLEX8Vector *fvec = NULL;
 RealFFTPlan *pfwd = NULL;
 
-
-
+/* This repeatedly tries to re-open a file.  This is useful on a
+   cluster because it's possible that an automount may fail or time
+   out.  This allows a number of tries with a bit of rest in between.
+*/
 FILE* tryopen(char *name, char *mode){
   int count=0;
   FILE *fp;
@@ -111,13 +114,8 @@ FILE* tryopen(char *name, char *mode){
 int main(int argc,char *argv[]){
   static LALStatus status;
   UINT4 npts;
-  /*  FrChanIn  chanin = {NULL, ADCDataChannel }; */
-  /*  FrStream *stream = NULL; */
-  /* FrPos streampos; */
-  /* REAL4Sequence   laltseq; */
-  static REAL4TimeSeries chan; /* must zero the f0 field */
+  static REAL4TimeSeries chan;
   LIGOTimeGPS epoch;
-  /* FrCache *mycache=NULL; */
   INT4 jobnum;
   INT4 starts[MAXSTART],nstarts=0,count=0;
   INT4 i,len2=0;
@@ -125,16 +123,13 @@ int main(int argc,char *argv[]){
   INT4 tbase=INT_MAX,firstbin;
   PassBandParamStruc filterpar;
   REAL8 window[WINLEN];
-  /*  struct tagFrStream *brucehack; */
   char framelist[256];
   int opencount=0;
   
-
-  FrFile *frfile;        /* FrameL frame file */
-  FrVect *frvect;        /* vector holding the frame data */
-  /*  FrVect *frvect2;       // vector holding the missing frame flags */
-
-
+/* FrameL frame file */
+  FrFile *frfile;
+ /* vector holding the frame data */
+  FrVect *frvect;        
 
   printf("Normal startup\n");
   fflush(stdout);
@@ -150,9 +145,13 @@ int main(int argc,char *argv[]){
     }
 #endif 
 
-  /* check command syntax */
+    /* check command syntax.  If code compiled without CONDOR enabled,
+       then it reads arguments from the command line.  If it's
+       compiled with CONDOR defined, then it just takes a single
+       jobnumber from stdin, and other inputs from command line.
+    */
 #ifndef CONDOR
-  if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
+    if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
    int a;
     fprintf(stderr,"Syntax:\n\t%s N DIR1 DIR2 DETECTOR\nwhere 0<=N<=99999.\n",argv[0]);
     fprintf(stderr,"Files used are jobdata.N, jobtimes.N, where N has five digits\n");
@@ -174,8 +173,7 @@ int main(int argc,char *argv[]){
 
   /* construct channel name */
   sprintf(chname,"%s:LSC-AS_Q",argv[4]);
-  /*  chanin.name=chname;  */
-
+  
   { /* read start times values and how many of them there are */
     char timelist[256];
     INT4 tbasei;
@@ -184,7 +182,7 @@ int main(int argc,char *argv[]){
     /* construct name of file containing segment start times */
     sprintf(timelist,"%s/jobtimes.%05d",argv[2],jobnum);
     stfp=tryopen(timelist,"r");
-
+    
     /* read file into an array */
     while (2==fscanf(stfp,"%d %d",starts+nstarts,&tbasei)){
       if (nstarts==0)
@@ -200,7 +198,7 @@ int main(int argc,char *argv[]){
 
       /* and make sure that we are not yet maxed out */
       if (nstarts>=MAXSTART){
-	fprintf(stderr,"More than MAXSTART=%d lines in file: %s.  Increase MAXSTART\n",
+	fprintf(stderr,"More than MAXSTART=%d lines in file: %s.  Increase MAXSTART and recompile\n",
 		MAXSTART,timelist);
 	fflush(stderr);
 	return 3;
