@@ -98,17 +98,19 @@ LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
 INT8  gpsEndTimeNS      = 0;            /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
 INT8  inputLengthNS     = 0;            /* input data length ns         */
+UINT4 numRespPoints     = 0;            /* num points for calc response */
 
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 CHAR   ifo[3];                          /* two character ifo code       */
 CHAR  *channelName      = NULL;         /* channel string               */
+enum { undefined, real4, real8 } cal_data = undefined; /* cal data type */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   frameLength      = -1;           /* length of output frames      */
 INT4   injectSafety     = 0;            /* safety length in injections  */
-UINT4  numFiles         = 0;             /* number of output files needed*/
+UINT4  numFiles         = 0;            /* number of output files needed*/
 
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
@@ -332,7 +334,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
   /* read in the injection data from XML */
   numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
       gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
@@ -347,19 +348,19 @@ int main( int argc, char *argv[] )
     searchsumm.searchSummaryTable->nevents = numInjections;
     memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
     LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
-	  numPoints / 2 + 1 ), &status );
+	  numRespPoints / 2 + 1 ), &status );
     injResp.epoch = inj.epoch ;
-    injResp.deltaF = 1.0 / ( numPoints * inj.deltaT );
+    injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
     strcpy( injResp.name, inj.name );
 
-    if ( frInCacheName )
+    if ( frInCacheName && ! cal_data)
     {
       /* generate the response function for the current time */
       if ( vrbflg ) fprintf( stdout, 
 	  "generating response function at time %d sec %d ns\n"
 	  "length = %d points, deltaF = %e Hz\n",
-	  injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
-	  injResp.data->length, injResp.deltaF );
+      injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
+      injResp.data->length, injResp.deltaF );
       injResp.sampleUnits = strainPerCount;
 
       /* initialize the inj_calfacts */
@@ -670,6 +671,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --frame-cache              obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE   obtain calibration from LAL frame cache FILE\n"\
+"  --calibrated-data TYPE     calibrated data of TYPE real4 or real8\n"\
+"  --num-resp-points          number of points used to determine response function\n"\
 "  --channel-name CHAN        read data from interferometer channel CHAN\n"\
 "\n"\
 "  --injection-file FILE      inject simulated inspiral signals from FILE\n"\
@@ -706,7 +709,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"output-frame-length",     required_argument, 0,                'd'},
     {"help",                    no_argument,       0,                'h'},
     {"dynamic-range-exponent",  required_argument, 0,                'l'},
+    {"calibrated-data",         required_argument, 0,                'y'},
     {"calibration-cache",       required_argument, 0,                'p'},
+    {"num-resp-points",         required_argument, 0,                'N'},
     {"sample-rate",             required_argument, 0,                'r'},
     {"ifo",                     required_argument, 0,                'i'},
     {"comment",                 required_argument, 0,                's'},
@@ -738,8 +743,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"A:B:S:V:Z:"
-	"a:b:c:d:e:hi:l:p:r:s:u:w:z:",
+	"A:B:N:S:V:Z:"
+	"a:b:c:d:e:hi:l:p:r:s:u:w:y:z:",
 	long_options, &option_index );
 
     /* detect the end of the options */
@@ -921,6 +926,47 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	ADD_PROCESS_PARAM( "string", "%s", optarg );
 	break;
 
+
+      case 'N':
+	/* store the number of points used in computing the response */
+        numRespPoints = (INT4) atoi( optarg );
+        if ( numRespPoints < 2 || numRespPoints % 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of points must be an even positive integer,\n"
+              "(%d specified) \n", 
+              long_options[option_index].name, numRespPoints );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numRespPoints );
+        break;
+
+      case 'y':	
+	/* specify which type of calibrated data */
+	{
+	  if ( ! strcmp( "real4", optarg ) )
+	  {
+	    cal_data = real4;
+	  }
+	  else if ( ! strcmp( "real8", optarg ) )
+	  {
+	    cal_data = real8;
+	    fprintf( stderr, "Sorry, code not currently set up to\n"
+		"run on real8 data\n" );
+	    exit( 1 );
+	  }
+	  else
+	  {
+	    fprintf( stderr, "invalid argument to --%s:\n"
+		"unknown data type specified;\n"
+		"%s (must be one of: real4, real8)\n",
+		long_options[option_index].name, optarg);
+	    exit( 1 );
+	  }
+	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
       case 'r':
 	sampleRate = (INT4) atoi( optarg );
 	if ( sampleRate < 1 )
@@ -1011,7 +1057,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'V':
 	/* print version information and exit */
 	fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
-	    "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
+	    "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n"
 	    "CVS Version: " CVS_ID_STRING "\n"
 	    "CVS Tag: " CVS_NAME_STRING "\n" );
 	exit( 0 );
@@ -1148,9 +1194,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       exit( 1 );
     }
     /* check a calibration cache has been specified */
-    if ( ! calCacheName )
+    if ( ! calCacheName && ! cal_data )
     {
-      fprintf( stderr, "--calibration-cache must be specified\n" );
+      fprintf( stderr, "Either --calibration-cache must be specified,\n" 
+	  "or must run on --calibrated-data.\n");
       exit( 1 );
     }
   }
@@ -1163,22 +1210,25 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	  "--sample-rate must be specified\n" );
       exit( 1 );
     }
-    /* check that IFO has been given and makes sense */
-    if ( ! strcmp(ifo,"H1") && ! strcmp(ifo,"H2") && ! strcmp(ifo,"G1") 
-	&& ! strcmp(ifo,"L1") && ! strcmp(ifo,"T1") && ! strcmp(ifo,"V1") )
-    {
-      fprintf( stderr, "If --frame-cache not specified,\n"
-	  "--ifo must be specified and be one of G1, H1, H2, L1, T1, V1\n" );
-      exit( 1 );
-    }
     /* check that neither write-raw-data or write-raw-plus-inj given */
     if ( writeRawData || writeRawPlusInj )
     {
       fprintf( stderr, "Neither --write-raw-data nor --write-raw-plus-inj\n"
-	  "can be specified when  --frame-cache not given\n");
+	  "can be specified when --frame-cache not given\n");
     }
   }
 
+  /* check that we have then number of points to determine response fn */
+  if ( numRespPoints < 0 )
+  {
+    fprintf( stderr, "Must specify --num-resp-points\n"
+	"This gives the number of points used to obtain response,\n"
+	"Response has numRespPoints/2 + 1 points,\n"
+        "Frequency resolution of 1/(numRespPoints * delta T)\n");
+      exit( 1 );
+  }
+  
+    
   return 0;
 }
 
