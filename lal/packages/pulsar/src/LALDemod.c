@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="LALDemodCV">
-Author: Berukoff, S.J.,  Papa, M.A., Allen, B. $Id$
+Author: Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X. $Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -293,8 +293,17 @@ void LALDemod(LALStatus *stat,
 
 		 x=tempFreq-LAL_TWOPI*(REAL8)k;
 		 /* Note that this is a problem if x is small and negative!!! */
-		 realP=(tsin)/(x+SMALL);
-		 imagP=tcos/(x+SMALL);
+		 realP=tsin/x;
+		 imagP=tcos/x;
+
+
+		 /* If x is small then we are in the x=0 case and we need correct x->0 limit of Dirichlet kernel */
+ 		 if(abs(x) < SMALL) 
+ 		   {
+ 		     realP=1.0;
+ 		     imagP=0.0;
+ 		   }	 
+
 		 		 
 		 sftIndex=k1+k-tempifMin;
 
@@ -324,6 +333,16 @@ void LALDemod(LALStatus *stat,
 	       }
 	    }
 	  
+#if(0)
+/* if there's only one SFT need to use different equation for F(because D=0) -- Only useful for debugging */
+if(tempMCohSFT == 1)
+  {
+    xHat->fft->data->data[xHatIndex] = 
+      4.0*(realTemp*realTemp+imagTemp*imagTemp);
+    continue;
+  }
+#endif
+
 	  /* Now, compute normalised periodograms for each statistic */
 	  /* |F_a|^2, |F_b|^2, Re[(F_a)(F_b}^*] */
 	  
@@ -334,7 +353,7 @@ void LALDemod(LALStatus *stat,
 	  /* Compute statistic for this DeFT bin */
 	  /* F = 1/D * (B*|F_a|^2+A*|F_b|^2-2C*Re(F_a * F_b^*)) */
 	  /* Note that the division by D is absorbed into the vals of A,B,C */
-	  xHat->fft->data->data[xHatIndex] = (1.0/params->amcoe->D)*((params->amcoe->B)*fA + 
+	  xHat->fft->data->data[xHatIndex] = (4.0/params->amcoe->D)*((params->amcoe->B)*fA + 
 	                                     (params->amcoe->A)*fB -
 	                                     2.0*(params->amcoe->C)*fAB);
 	}
