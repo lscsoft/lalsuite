@@ -55,12 +55,12 @@ The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
 The \texttt{-f} option sets the maximum frequency of integration (in Hz) to the
 option argument. (The default value is 1000.)
 
-The \texttt{-l} option determines the limits in right ascension and
-declination of the rectangular region over which the mesh is computed.  
-The argument should be given in degrees as
-RA(min):RA(max):dec(min):dec(max).  (The defalut is the octant of the
-sky defined by $0 < {\rm RA} < 90$ and $0< {\rm dec} < 85$;this avoids the
-coordinate singularity at the poles.)
+The \texttt{-l} option determines, for a rectangular search region, the
+limits in right ascension and declination of the grid.  The argument should
+be given in degrees as RA(min):RA(max):dec(min):dec(max).  (The default is
+the octant of the sky defined by $0 < {\rm RA} < 90$ and $0< {\rm dec} <
+85$; this avoids the coordinate singularity at the poles.) This option
+automatically overrides whatever is specified by the \texttt{-r} option.
 
 The \texttt{-m} option sets the maximum mismatch of the mesh to the option
 argument. (Default is 0.02.)
@@ -200,6 +200,7 @@ int main( int argc, char **argv )
                                   /* 1 = Hanford,  2 = Livingston,  */
                                   /* 3 = Virgo,  4 = GEO,  5 = TAMA */
   float a, b, c, d, e, f;         /* To specify center of search region */
+  BOOLEAN rectangular;            /* is the search region rectangular? */
   
   
   /* Set default values. */
@@ -222,13 +223,13 @@ int main( int argc, char **argv )
   ra_max = LAL_PI_2;
   dec_min = 0.0;
   dec_max = LAL_PI_2;
+  rectangular = 0;
 
   /* Parse and sanity-check the command-line options. */
   while( (opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
-      /*float a, b, c, d, e, f;*/
     case '?':
       return GENERALMESHTESTC_EOPT;
     case 'a':
@@ -259,12 +260,15 @@ int main( int argc, char **argv )
       if( sscanf( optarg, "%f:%f:%f:%f", 
 		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
 	{
-	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees" );
+	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees\n" );
+          return GENERALMESHTESTC_EOPT;
 	}
       ra_min  *= LAL_PI_180;
       ra_max  *= LAL_PI_180;
       dec_min *= LAL_PI_180;
       dec_max *= LAL_PI_180;
+      rectangular = 1;
+      radius = 0;
       break;
     case 'm':
       mismatch = atof( optarg );
@@ -276,6 +280,8 @@ int main( int argc, char **argv )
       nonGrace = 1;
       break;
     case 'r':
+      if( rectangular == 1 )
+        break;
       radius = LAL_PI_180/60*atof( optarg );
       if( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
