@@ -1493,9 +1493,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           for (i = 0; i < filterLength; i++)
            {
-
-            calPsd1->data[i] = calPsd1->data[i]  / (REAL4)(numSegments-1);
-            calPsd2->data[i] = calPsd2->data[i]  / (REAL4)(numSegments-1);
+            
+	    if (middle_segment_flag == 0) 
+	     {
+              calPsd1->data[i] = calPsd1->data[i]  / (REAL4)(numSegments-1);
+              calPsd2->data[i] = calPsd2->data[i]  / (REAL4)(numSegments-1);
+             }
+	    else
+	     {
+              calPsd1->data[i] = calPsd1->data[i]  / (REAL4)numSegments;
+              calPsd2->data[i] = calPsd2->data[i]  / (REAL4)numSegments;
+             }
 	    calInvPsd1.data->data[i] = 1. / calPsd1->data[i] ;
             calInvPsd2.data->data[i] = 1. / calPsd2->data[i] ;
            } 
