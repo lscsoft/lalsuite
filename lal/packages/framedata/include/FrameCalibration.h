@@ -57,6 +57,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
 #define FRAMECALIBRATIONH_EDCHE 6
 #define FRAMECALIBRATIONH_EREFR 7
 #define FRAMECALIBRATIONH_ECFAC 8
+#define FRAMECALIBRATIONH_EDTMM 9
 
 #define FRAMECALIBRATIONH_MSGENULL "No calibration generated: Null pointer"
 #define FRAMECALIBRATIONH_MSGENNUL "No calibration generated: Non-null pointer"
@@ -66,6 +67,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
 #define FRAMECALIBRATIONH_MSGEDCHE "No calibration generated: error reference calibration cache"
 #define FRAMECALIBRATIONH_MSGEREFR "No calibration generated: error reading refernce calibration"
 #define FRAMECALIBRATIONH_MSGECFAC "Calibration not updated: no update factor frames in cache"
+#define FRAMECALIBRATIONH_MSGEDTMM "Calibration not updated: mismatch between sample rate of alpha and alpha*beta"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
