@@ -269,6 +269,7 @@ int main(int argc, char *argv[])
 
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -2;
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexSecond] = -1;
+  invNoise1.sampleUnits.powerOfTen = 36;
   invNoise2.sampleUnits = invNoise1.sampleUnits;
 
   overlap.sampleUnits.unitNumerator[LALUnitIndexStrain] = 2;
@@ -286,6 +287,7 @@ int main(int argc, char *argv[])
   hwInvNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
   hwInvNoise1.sampleUnits.unitNumerator[LALUnitIndexADCCount] = -1;
   hwInvNoise1.sampleUnits.unitNumerator[LALUnitIndexSecond] = -1;
+  hwInvNoise1.sampleUnits.powerOfTen = 18;
   hwInvNoise2.sampleUnits = hwInvNoise1.sampleUnits;
 
   /* allocate memory */
@@ -1643,9 +1645,10 @@ static REAL8 mu(const REAL4FrequencySeries* omegaGW,
   deltaF = omegaGW->deltaF;
   length = omegaGW->data->length;
 
-  constant = (3*(LAL_H0FAC_SI*LAL_H0FAC_SI))/(20*(LAL_PI*LAL_PI));
+  constant = 3.0L * ( (LAL_H0FAC_SI*1.0e+18) * (LAL_H0FAC_SI*1.0e+18) )
+             / ( 20.0L * (LAL_PI*LAL_PI) );
 
-  /* claculate mu */
+  /* calculate mu */
   for(i=1; i < (length);i++)
     {
       f = i*deltaF;
