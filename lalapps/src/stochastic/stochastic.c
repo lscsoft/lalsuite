@@ -84,10 +84,10 @@ UINT8 stopTime = 730793158;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 30;
-CHAR frameCache1[100] = "cachefiles/H-730793097.cache";
-CHAR frameCache2[100] = "cachefiles/L-730793097.cache";
-CHAR calCache1[100] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
-CHAR calCache2[100] = "calibration/L1-CAL-V03-729273600-734367600.cache";
+CHAR frameCache1[200] = "cachefiles/H-730793097.cache";
+CHAR frameCache2[200] = "cachefiles/L-730793097.cache";
+CHAR calCache1[200] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
+CHAR calCache2[200] = "calibration/L1-CAL-V03-729273600-734367600.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
@@ -1472,22 +1472,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 	case 'd':
          	 /* data cache one */
-                 strncpy(frameCache1, optarg, LALNameLength);
+                 strncpy(frameCache1, optarg, 200);
         	 break;
 
         case 'D':
                 /* data cache two */
-                strncpy(frameCache2, optarg, LALNameLength);
+                strncpy(frameCache2, optarg, 200);
                 break;
    
         case 'r':
          	/* calibration cache one */
-                strncpy(calCache1, optarg, LALNameLength);
+                strncpy(calCache1, optarg, 200);
                 break;
 
         case 'R':
                 /* calibration cache two */
-        	strncpy(calCache2, optarg, LALNameLength);
+        	strncpy(calCache2, optarg, 200);
                 break;
    
          case 'c':
