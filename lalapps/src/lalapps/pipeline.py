@@ -9,6 +9,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 import os
+import sys
 import string, re
 import exceptions
 import time
@@ -86,6 +87,13 @@ class CondorJob:
     """
     self.__arguments.append(arg)
 
+  def get_args(self):
+    """
+    Return the list of arguments that are to be passed to the executable.
+    """
+
+    return self.__arguments
+
   def add_opt(self, opt, value):
     """
     Add a command line option to the executable. The order that the arguments
@@ -97,6 +105,13 @@ class CondorJob:
     @param value: value to pass to the option (None for no argument).
     """
     self.__options[opt] = value
+
+  def get_opts(self):
+    """
+    Return the dictionary of opts for the job.
+    """
+
+    return self.__options
 
   def add_short_opt(self, opt, value):
     """
@@ -111,6 +126,13 @@ class CondorJob:
     @param value: value to pass to the option (None for no argument).
     """
     self.__short_options[opt] = value
+
+  def get_short_opts(self):
+    """
+    Return the dictionary of short options for the job.
+    """
+
+    return self.__short_options
 
   def add_ini_opts(self, cp, section):
     """
@@ -294,6 +316,8 @@ class CondorDAGNode:
     self.__retry = 0
     self.__parents = []
     self.__bad_macro_chars = re.compile(r'[_-]')
+    self.__output_files = []
+    self.__input_files = []
     self.set_name()
 
   def __repr__(self):
@@ -344,6 +368,39 @@ class CondorDAGNode:
     a = str( self.__class__ )
     self.__name = md5.md5(t + r + a).hexdigest()
 
+  def add_input_file(self, filename):
+    """
+    Add filename as a necessary input file for this DAG node.
+
+    @param filename: input filename to add
+    """
+    if filename not in self.__input_files:
+        self.__input_files.append(filename)
+
+  def add_output_file(self, filename):
+    """
+    Add filename as a output file for this DAG node.
+
+    @param filename: output filename to add
+    """
+    if filename not in self.__output_files:
+        self.__output_files.append(filename)
+
+  def get_input_files(self):
+    """
+    Return list of input files for this DAG node.
+    """
+
+    return self.__input_files
+
+  def get_output_files(self):
+    """
+    Return list of output files for this DAG node.
+    """
+
+    return self.__output_files
+
+
   def add_macro(self,name,value):
     """
     Add a variable (macro) for this node.  This can be different for
@@ -356,6 +413,15 @@ class CondorDAGNode:
     """
     macro = self.__bad_macro_chars.sub( r'', name )
     self.__opts[macro] = value
+
+  def get_opts(self):
+    """
+    Return the opts for this node. Note that this returns only
+    the options for this instance of the node and not those
+    associated with the underlying job template.
+    """
+
+    return self.__opts
 
   def add_var_opt(self,opt,value):
     """
@@ -378,6 +444,15 @@ class CondorDAGNode:
     """
     self.__args.append(arg)
     self.__job.add_var_arg()
+
+  def get_args(self):
+    """
+    Return the arguments for this node. Note that this returns
+    only the arguments for this instance of the node and not those
+    associated with the underlying job template.
+    """
+
+    return self.__args
 
   def set_retry(self, retry):
     """
@@ -436,6 +511,28 @@ class CondorDAGNode:
       fh.write( 'SCRIPT POST ' + str(self) + ' ' + self.__post_script + ' ' +
         ' '.join(self.__post_script_args) + '\n' )
 
+  def write_input_files(self, fh):
+    """
+    Write as a comment into the DAG file the list of input files
+    for this DAG node.
+
+    @param fh: descriptor of open DAG file.
+    """
+
+    for f in self.__input_files:
+       print >>fh, "## Job %s requires input file %s" % (self.__name, f)
+ 
+  def write_output_files(self, fh):
+    """
+    Write as a comment into the DAG file the list of output files
+    for this DAG node.
+
+    @param fh: descriptor of open DAG file.
+    """
+
+    for f in self.__output_files:
+       print >>fh, "## Job %s generates output file %s" % (self.__name, f)
+
   def set_log_file(self,log):
     """
     Set the Condor log file to be used by this CondorJob.
@@ -452,6 +549,63 @@ class CondorDAGNode:
     if not isinstance(node, CondorDAGNode):
       raise CondorDAGNodeError, "Parent must be a Condor DAG node"
     self.__parents.append( str(node) )
+
+  def get_cmd_line(self):
+    """
+    Return the full command line that will be used when this node
+    is run by DAGman.
+    """
+
+    # pattern to find DAGman macros
+    pat = re.compile(r'\$\((.+)\)')
+
+    # first parse the options and replace macros with values
+    options = self.job().get_opts()
+    macros = self.get_opts()
+
+    cmd = ""
+
+    for k in options:
+        val = options[k]
+        m = pat.match(val)
+        if m:
+            key = m.group(1)
+            value = macros[key]
+
+            cmd += "--%s %s " % (k, value)
+        else:
+            cmd += "--%s %s " % (k, val)
+
+    # second parse the short options and replace macros with values
+    options = self.job().get_short_opts()
+
+    for k in options:
+        val = options[k]
+        m = pat.match(val)
+        if m:
+            key = m.group(1)
+            value = macros[key]
+
+            cmd += "-%s %s " % (k, value)
+        else:
+            cmd += "-%s %s " % (k, val)
+
+    # lastly parse the arguments and replace macros with values
+    args = self.job().get_args()
+    macros = self.get_args()
+
+    for k in args:
+        val = args[k]
+        m = pat.match(val)
+        if m:
+            key = m.group(1)
+            value = macros[key]
+
+            cmd += "%s " % (k, value)
+        else:
+            cmd += "%s " % (k, val)
+
+    return cmd
     
 
 
@@ -530,6 +684,143 @@ class CondorDAG:
       node.write_parents(dagfile)
     dagfile.close()
 
+  def write_dax(self):
+    """
+    Write all the nodes in the workflow to the DAX file.
+    """
+    if not self.__dag_file_path:
+      raise CondorDAGError, "No path for DAX file"
+    try:
+      dagfile = open( self.__dag_file_path, 'w' )
+    except:
+      raise CondorDAGError, "Cannot open file " + self.__dag_file_path
+
+    # write the preamble
+    preamble = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<adag xmlns="http://www.griphyn.org/chimera/DAX"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:schemaLocation="http://www.griphyn.org/chimera/DAX
+        http://www.griphyn.org/chimera/dax-1.8.xsd"
+        name="inspiral" index="0" count="1" version="1.8">
+"""
+
+    print >>dagfile, preamble
+
+    # find unique input and output files from nodes
+    input_file_dict = {}
+    output_file_dict = {}
+ 
+    for node in self.__nodes:
+      input_files = node.get_input_files()
+      output_files = node.get_output_files()
+      for f in input_files:
+         input_file_dict[f] = 1
+      for f in output_files:
+         output_file_dict[f] = 1
+
+    # move union of input and output into inout
+    inout_file_dict = {}
+
+    for f in input_file_dict:
+      if output_file_dict.has_key(f):
+         inout_file_dict[f] = 1
+
+    for f in inout_file_dict:
+         del input_file_dict[f]
+         del output_file_dict[f]
+
+    # print input, inout, and output to dax
+    filelist = input_file_dict.keys()
+    filelist.sort()
+    for f in filelist:
+           msg = """\
+    <filename file="%s" link="input"/>\
+"""
+           print >>dagfile, msg % f
+
+    filelist = inout_file_dict.keys()
+    filelist.sort()
+    for f in filelist:
+           msg = """\
+    <filename file="%s" link="inout"/>\
+"""
+           print >>dagfile, msg % f
+
+    filelist = output_file_dict.keys()
+    filelist.sort()
+    for f in filelist:
+           msg = """\
+    <filename file="%s" link="output"/>\
+"""
+           print >>dagfile, msg % f
+
+    # write the jobs themselves to the DAX, making sure
+    # to replace logical file references by the appropriate
+    # xml, and adding the files used by each job both for
+    # input and output
+
+    # we save the ID number to DAG node name mapping so that
+    # we can easily write out the child/parent relationship
+    # later
+    node_name_id_dict = {}
+
+    id = 0
+    for node in self.__nodes:
+        executable = node.job()._CondorJob__executable
+        node_name = node._CondorDAGNode__name
+
+        id += 1
+        id_tag = "ID%06d" % id
+        node_name_id_dict[node_name] = id_tag
+
+        cmd_line = node.get_cmd_line()
+        
+        # loop through all filenames looking for them in the command
+        # line so that they can be replaced appropriately by xml tags
+        for f in node.get_input_files():
+            xml = '<filename file="%s" />' % f
+            cmd_line = cmd_line.replace(f, xml)
+        for f in node.get_output_files():      
+            xml = '<filename file="%s" />' % f
+            cmd_line = cmd_line.replace(f, xml)
+
+        template = """\
+<job id="%s" namespace="ligo" name="%s" version="1.0" level="1" dv-name="%s">
+     <argument>%s
+     </argument>\
+"""
+        xml = template % (id_tag, executable, node_name, cmd_line)
+
+        print >>dagfile, xml
+
+        for f in node.get_input_files():
+                print >>dagfile, """\
+     <uses file="%s" link="input" dontRegister="false" dontTransfer="false"/>\
+""" % f
+
+        for f in node.get_output_files():
+                print >>dagfile, """\
+     <uses file="%s" link="output" dontRegister="false" dontTransfer="false"/>\
+""" % f
+
+        print >>dagfile, "</job>"
+
+    # print parent-child relationships to DAX
+    
+    for node in self.__nodes:
+        child_id = node_name_id_dict[str(node)]
+        if node._CondorDAGNode__parents:
+                print >>dagfile, '<child ref="%s">' % child_id
+                for parent in node._CondorDAGNode__parents:
+                    parent_id = node_name_id_dict[parent]
+                    print >>dagfile, '     <parent ref="%s"/>' % parent_id
+                print >>dagfile, '</child>'
+
+
+    print >>dagfile, "</adag>"
+
+    dagfile.close()
 
 
 class AnalysisJob:
@@ -576,6 +867,7 @@ class AnalysisNode(CondorDAGNode):
     self.__input = None
     self.__output = None
     self.__calibration = None
+    self.__calibration_cache_path = None
     self.__LHO2k = re.compile(r'H2')
 
   def set_start(self,time):
@@ -586,8 +878,8 @@ class AnalysisNode(CondorDAGNode):
     """
     self.add_var_opt('gps-start-time',time)
     self.__start = time
-    if not self.__calibration and self.__ifo and self.__start > 0:
-      self.calibration()
+    #if not self.__calibration and self.__ifo and self.__start > 0:
+    #  self.calibration()
 
   def get_start(self):
     """
@@ -617,6 +909,7 @@ class AnalysisNode(CondorDAGNode):
     """
     self.__input = file
     self.add_var_opt('input', file)
+    self.add_input_file(file)
 
   def get_input(self):
     """
@@ -631,6 +924,7 @@ class AnalysisNode(CondorDAGNode):
     """
     self.__output = file
     self.add_var_opt('output', file)
+    self.add_output_file(file)
 
   def get_output(self):
     """
@@ -649,8 +943,8 @@ class AnalysisNode(CondorDAGNode):
     """
     self.__ifo = ifo
     self.add_var_opt('channel-name', ifo + ':' + self.job().channel())
-    if not self.__calibration and self.__ifo and self.__start > 0:
-      self.calibration()
+    #if not self.__calibration and self.__ifo and self.__start > 0:
+    #   self.calibration()
 
   def get_ifo(self):
     """
@@ -679,6 +973,30 @@ class AnalysisNode(CondorDAGNode):
     @param file: calibration file to use.
     """
     self.add_var_opt('frame-cache', file)
+    self.add_input_file(file)
+
+  def calibration_cache_path(self):
+    """
+    Determine the path to the correct calibration cache file to use.
+    """
+    if self.__ifo and self.__start > 0:
+        cal_path = self.job().get_config('calibration','path')
+
+        if ( self.__LHO2k.match(self.__ifo) and 
+          (self.__start >= 729273613) and (self.__start <= 734367613) ):
+          if self.__start < int(
+            self.job().get_config('calibration','H2-cal-epoch-boundary')):
+            cal_file = self.job().get_config('calibration','H2-1')
+          else:
+            cal_file = self.job().get_config('calibration','H2-2')
+        else:
+          cal_file = self.job().get_config('calibration',self.__ifo)
+
+        cal = os.path.join(cal_path,cal_file)
+        self.__calibration_cache_path = cal
+    else:
+       msg = "__ifo and __start attributes must be set first"
+       raise CondorDAGNodeError, msg 
 
   def calibration(self):
     """
@@ -686,21 +1004,19 @@ class AnalysisNode(CondorDAGNode):
     During S2 the Hanford 2km IFO had two calibration epochs, so 
     if the start time is during S2, we use the correct cache file.
     """
-    cal_path = self.job().get_config('calibration','path')
 
-    if ( self.__LHO2k.match(self.__ifo) and 
-      (self.__start >= 729273613) and (self.__start <= 734367613) ):
-      if self.__start < int(
-        self.job().get_config('calibration','H2-cal-epoch-boundary')):
-        cal_file = self.job().get_config('calibration','H2-1')
-      else:
-        cal_file = self.job().get_config('calibration','H2-2')
-    else:
-      cal_file = self.job().get_config('calibration',self.__ifo)
+    self.calibration_cache_path()
+    self.add_var_opt('calibration-cache', self.__calibration_cache_path)
+    self.__calibration = self.__calibration_cache_path
+    self.add_input_file(self.__calibration)
 
-    cal = os.path.join(cal_path,cal_file)
-    self.add_var_opt('calibration-cache', cal)
-    self.__calibration = cal
+  def get_calibration(self):
+    """
+    Return the calibration cache file to be used by the
+    DAG.
+    """
+
+    return self.__calibration_cache_path
 
 
 
@@ -1441,6 +1757,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
     if self.__start and self.__end and self.__observatory:
       self.__output = self.__job.get_cache_dir() + '/' + self.__observatory + '-'  
       self.__output += str(self.__start) + '-' + str(self.__end) + '.cache'
+      self.add_output_file(self.__output)
 
   def set_start(self,time):
     """
