@@ -276,7 +276,7 @@ int main( int argc, char *argv[] )
 			     &(paramsIn.gpsEndTime) ), &status );
 
 
-    this_inj->fLower  = paramsIn.fLower; 
+    this_inj->f_lower  = paramsIn.fLower; 
   } /* end loop over injection times */
 
   LAL_CALL( LALDestroyRandomParams( &status, &randParams ), &status );
