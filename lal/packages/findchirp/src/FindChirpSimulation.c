@@ -136,9 +136,8 @@ LALFindChirpInjectSignals (
   LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
   CHECKSTATUSPTR( status );
  
+  /* fixed waveform injection parameters */
   ppnParams.deltaT   = chan->deltaT;
-  ppnParams.fStartIn = 40.0;
-  ppnParams.fStopIn  = 0;
   ppnParams.lengthIn = 0;
   ppnParams.ppn      = NULL;
 
@@ -226,6 +225,11 @@ LALFindChirpInjectSignals (
     ppnParams.d    = thisEvent->dist;
     ppnParams.inc  = thisEvent->inclination;
     ppnParams.phi  = thisEvent->coaPhase;
+
+    /* frequency cutoffs */
+    ppnParams.fStartIn = 40.0;
+    ppnParams.fStopIn  = -1.0 / 
+      (6.0 * sqrt(6.0) * LAL_PI * ppnParams.mTot * LAL_MTSUN_SI);
 
     /* passed fields */
     ppnParams.position.longitude   = thisEvent->longitude;
