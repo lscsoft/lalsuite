@@ -35,16 +35,16 @@ lalDebugLevel
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
-#include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
 NRCSID(FLATMESHTESTC,"$Id$");
 
 /* Default parameter settings. */
 int lalDebugLevel = 0;
 
+static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3);
+void  LALInspiralCreateFlatBank(LALStatus *status, REAL4VectorSequence *list, InspiralBankParams *bankParams);
 static void
 GetInspiralMoments (
 		LALStatus            *status,
@@ -57,21 +57,18 @@ main(int argc, char **argv)
 {
   INT4 arg;
   static LALStatus status;     /* top-level status structure */
-  REAL4 mismatch = 0.05; /* maximum mismatch level */
-  REAL8 minimalmatch = 1.-mismatch; /* minimatch */
-  REAL4Vector *mesh = NULL;      /* mesh of parameter values */
-
-  static InspiralMetric metric;
   static InspiralTemplate params;
-  UINT4   nlist, numPSDpts=262144;
+  UINT4   numPSDpts=262144;
+  INT4 nlist;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
   void *noisemodel = LALLIGOIPsd;
-  InspiralMomentsEtc moments;
-  InspiralBankParams   bankParams; 
-  InspiralCoarseBankIn coarseIn;
-  InspiralTemplateList *list=NULL;
-  REAL4 x0, x1, x0Min, x0Max, x1Min, x1Max;
+  static InspiralCoarseBankIn coarseIn;
+  REAL4VectorSequence *list=NULL;
+  static InspiralMetric metric;
+  static InspiralMomentsEtc moments;
+  static InspiralBankParams   bankParams; 
+  static CreateVectorSequenceIn in; 
 
 /* Number of templates is nlist */
 
@@ -80,8 +77,8 @@ main(int argc, char **argv)
   params.OmegaS = 0.;
   params.Theta = 0.;
   params.ieta=1; 
-  params.mass1=1.; 
-  params.mass2=1.; 
+  params.mass1=10.; 
+  params.mass2=10.; 
   params.startTime=0.0; 
   params.startPhase=0.0;
   params.fLower=40.0; 
@@ -102,7 +99,7 @@ main(int argc, char **argv)
   coarseIn.order = params.order;
   coarseIn.space = Tau0Tau3;
   coarseIn.approximant = params.approximant;
-  coarseIn.mmCoarse = 0.90;
+  coarseIn.mmCoarse = 0.95;
   coarseIn.mmFine = 0.97;
   coarseIn.iflso = 0.0L;
   coarseIn.mMin = 1.0;
@@ -139,97 +136,99 @@ main(int argc, char **argv)
 
   fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
   fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
+  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt ((1.L-coarseIn.mmCoarse)/metric.G00), sqrt ((1.L-coarseIn.mmCoarse)/metric.G11));
+  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt ((1.L-coarseIn.mmCoarse)/metric.g00), sqrt ((1.L-coarseIn.mmCoarse)/metric.g11));
 
-  minimalmatch = 1. - mismatch;
-  LALInspiralUpdateParams(&status, &bankParams, metric, minimalmatch);
-
+  bankParams.metric = &metric;
+  bankParams.minimalMatch = coarseIn.mmCoarse;
+  bankParams.x0Min = 1.0;
+  bankParams.x0Max = 2.5e5;
+  bankParams.x1Min = -2.2e3;
+  bankParams.x1Max = 8.e2;
   /*
-  x0Min = 1.00;
-  x1Min = 0.10;
-  x0Max = 3.00; 
-  x1Max = 0.30;
+  bankParams.x0Min = 0.30;
+  bankParams.x0Max = 43.00; 
+  bankParams.x1Min = 0.15;
+  bankParams.x1Max = 1.25;
   */
 
-  x0Min = 1.e5;
-  x1Min = -1.e3;
-  x0Max = 2.0e5;
-  x1Max = 1.e3;
 
-  for (x0 = x0Min; x0 <= x0Max; x0 += bankParams.dx0)
-  {
-	  for (x1 = x1Min; x1 <= x1Max; x1 += bankParams.dx1)
-	  {
-		  if (!(list = (InspiralTemplateList*) LALRealloc(list, sizeof(InspiralTemplateList)*(nlist+1)))) 
-		  {
-			  exit(1);
-		  }
 	  
-  
-		  list[nlist].ID = nlist; 
-		  list[nlist].params.t0 = x0;
-		  list[nlist].params.t3 = x1;
-		  list[nlist].metric = metric; 
-		  ++(nlist); 
-        
-		  fprintf(stdout, "%10.3e %10.3e\n", x0, x1);
-	  }
-  }
 
-		  
-  fprintf(stdout, "&\n");
+  in.length = 1;
+  in.vectorLength = 2;
+  LALSCreateVectorSequence(&status, &list, &in);
+
+  list->vectorLength = 2;
+  LALInspiralCreateFlatBank(&status, list, &bankParams);
+
+  nlist = list->length;
+  fprintf(stderr, "Number of templates=%d\n", nlist);
 
   /* Prepare to print result. */
   {
-    UINT4 i;
-    UINT4 valid,k=0;
-
-    params.massChoice=t03;
+    UINT4 j;
     /* Print out the template parameters */
-    i = nlist;
-    while ( i--) 
+    for (j=0; j<nlist; j++)
     {
 	/*
 	Retain only those templates that have meaningful masses:
 	*/
-	bankParams.x0 = (REAL8) list[k].params.t0;
-	bankParams.x1 = (REAL8) list[k].params.t3;
-	++k;
-	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-        if (valid) fprintf(stdout, "%10.3e %10.3e\n", bankParams.x0, bankParams.x1);
+	    static InspiralTemplate tempParams;
+	    UINT4 valid=0;
+	    tempParams.massChoice=totalMassAndEta;
+	    tempParams.fLower=params.fLower;
+	    tempParams.order=twoPN;
+	    bankParams.x0 = (REAL8) list->data[2*j];
+	    bankParams.x1 = (REAL8) list->data[2*j+1];
+	    PSItoMasses (&status, &tempParams, &valid, bankParams.x0, bankParams.x1);
+	    fprintf(stdout, "%10.4f %10.4f %10.3f %10.3f\n", 
+			    tempParams.t0, tempParams.t3, bankParams.x0, bankParams.x1);
     }
   }
-
+  exit(0);
   {
+    UINT4 j;
+    UINT4 valid;
+  
+    static RectangleIn RectIn;
+    static RectangleOut RectOut;
 
-  int j;
-  static RectangleIn RectIn;
-  static RectangleOut RectOut;
-     
-  RectIn.dx = sqrt( (1. - coarseIn.mmCoarse)/metric.g00 );
-  RectIn.dy = sqrt( (1. - coarseIn.mmCoarse)/metric.g11 );
-  RectIn.theta = metric.theta;
-
-  for (j=0; j<nlist; j++) 
-  {
-     RectIn.x0 = list[j].params.t0;
-     RectIn.y0 = list[j].params.t3;
-     LALRectangleVertices(&status, &RectOut, &RectIn);
-     printf("%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
-        RectOut.x1, RectOut.y1, 
-        RectOut.x2, RectOut.y2, 
-        RectOut.x3, RectOut.y3, 
-        RectOut.x4, RectOut.y4, 
-        RectOut.x5, RectOut.y5);
-     printf("&\n");
-     /*
-     */
+  
+    RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/metric.g00 );
+    RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/metric.g11 );
+    RectIn.theta = metric.theta;
+    
+    params.massChoice=t03;
+    /* Print out the template parameters */
+    for (j=0; j<nlist; j++)
+    {
+	/*
+	Retain only those templates that have meaningful masses:
+	*/
+	RectIn.x0 = bankParams.x0 = (REAL8) list->data[2*j];
+	RectIn.y0 = bankParams.x1 = (REAL8) list->data[2*j+1];
+	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
+	valid = 1;
+        if (valid) 
+	{
+		LALRectangleVertices(&status, &RectOut, &RectIn);
+		printf("%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
+				RectOut.x1, RectOut.y1, 
+				RectOut.x2, RectOut.y2, 
+				RectOut.x3, RectOut.y3, 
+				RectOut.x4, RectOut.y4, 
+				RectOut.x5, RectOut.y5);
+		printf("&\n");
+	}
+    }
   }
-  /* Free the mesh, and exit. */
-  }
-  LALFree(list);
+  /* Free the list, and exit. */
+  /*
+  LALFree (list->data);
+  LALFree (list);
   LALCheckMemoryLeaks();
+  */
 }
 
 
@@ -300,3 +299,43 @@ GetInspiralMoments (
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
+
+static void PSItoMasses (LALStatus *status, InspiralTemplate *params, UINT4 *valid, REAL4 psi0, REAL4 psi3)
+{
+   
+	INITSTATUS (status, "PsitoMasses", FLATMESHTESTC);
+	ATTATCHSTATUSPTR(status);
+  
+	if (psi3 > 0.L)
+	{
+		*valid = 0;
+	}
+	else
+	{
+		REAL4 totalMass, eta, eightBy3=8.L/3.L, twoBy3=2.L/3.L, fiveBy3 = 5.L/3.L;
+
+		params->totalMass = -psi3/(16.L*LAL_PI * LAL_PI * psi0);
+		eta = params->eta = 3.L/(128.L * psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
+		totalMass = params->totalMass;
+		params->totalMass /= LAL_MTSUN_SI;
+		*valid = 1;
+		/*
+		if (params->eta > 0.25L) 
+		{
+			*valid = 0;
+		}
+		else
+		{
+			LALInspiralParameterCalc(status->statusPtr, params);
+			*valid = 1;
+		}
+		*/
+		params->t0 = 5.0/(256.0*eta*pow(totalMass, fiveby3)*pow(LAL_PI * params->fLower, eightBy3));
+		params->t3 = LAL_PI/(8.0*eta*pow(totalMass, twoBy3)*pow(LAL_PI * params->fLower, fiveBy3));
+	}
+   
+	DETATCHSTATUSPTR(status);
+	RETURN (status);
+}
+
+

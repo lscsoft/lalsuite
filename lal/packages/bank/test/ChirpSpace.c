@@ -51,7 +51,7 @@ int main ( void ) {
     i.e. total mass of the body given by MMax
    */
    type = 0;
-   mmin = 1.;
+   mmin = 5.;
    mmax = 20.;
    Mmax = mmax*2.;
    p.ieta=1; 

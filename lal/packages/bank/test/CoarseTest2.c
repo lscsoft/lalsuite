@@ -59,7 +59,7 @@ main ( void )
    void *noisemodel = LALLIGOIPsd;
    static REAL8 f;
 
-   coarseIn.mmCoarse = 0.90;
+   coarseIn.mmCoarse = 0.95;
    coarseIn.mmFine = 0.99;
    coarseIn.fLower = 40.L;
    coarseIn.fUpper = 2000.L;
