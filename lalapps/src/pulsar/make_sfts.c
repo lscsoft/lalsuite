@@ -91,8 +91,7 @@ int gethostname(char *name, size_t len);
 #endif
 
 /* This is an error handler that prints a bit of extra info */
-void pout(char *fmt, ...)  
-     __attribute__ ((format (printf, 1, 2)));
+void pout(char *fmt, ...)  ;
 
 void pout(char *fmt, ...){
   va_list ap;
@@ -240,9 +239,6 @@ int deltatime(const char *instrument, int gpstime, int *valid){
   return 0;
 }
 
-/* check a number of bounary values of the timing correction */
-void checktimingcorrections(){
-  
   /* check a single value of the timing correction */
   void checkone(int gpstime,const char *instrument){
     int valid;
@@ -250,6 +246,9 @@ void checktimingcorrections(){
     printf("%s  time %d  correction %d%s\n", instrument, gpstime, dt, valid?"":" INVALID");
     return;
   }
+
+/* check a number of bounary values of the timing correction */
+void checktimingcorrections(){
   
 
   /* L1 checks */
@@ -610,7 +609,7 @@ int main(int argc,char *argv[]){
 	     Currently correct for x86 (little endian, format is
 	     E...ESM...M, where E=exponent, S=sign, M=mantissa and MSB
 	     is to the left.) */
-	  const unsigned int mask = ~(0x01);
+	  const unsigned int mask = (unsigned int)(~(0x01));
 	  union {
 	    float f;
 	    unsigned int i;
