@@ -774,9 +774,9 @@ REAL4TimeSeries *get_data( UINT4 segsz )
     if ( tend.gpsSeconds || tend.gpsNanoSeconds )
     {
       INT8 ns;
-      ns  = tstart.gpsSeconds - tend.gpsSeconds;
+      ns  = tend.gpsSeconds - tstart.gpsSeconds;
       ns *= 1000000000;
-      ns += tstart.gpsNanoSeconds - tend.gpsNanoSeconds;
+      ns += tend.gpsNanoSeconds - tstart.gpsNanoSeconds;
       if ( ns > 0 )
         duration = 1e-9 * ns;
     }
