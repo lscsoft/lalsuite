@@ -166,7 +166,8 @@ int lalDebugLevel = 0;
 /* List of whitespace characters used for tokenizing input. */
 #define WHITESPACES " \b\f\n\r\t\v"
 
-/* Maximum length of fprintderr() format string. */
+/* Maximum length of fprintderr() format or error/info message
+   strings. */
 #define MAXLEN 1024
 
 /* Macros for printing errors and testing subroutines. */
@@ -237,6 +238,10 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string );
    uncertainties. */
 int
 fprintderr( FILE *fp, REAL8 x, REAL8 dx );
+
+/* Prototype for a routine to print GPS epochs. */
+int
+fprintepoch( FILE *fp, LIGOTimeGPS epoch );
 
 
 int
@@ -409,7 +414,7 @@ main(int argc, char **argv)
     node.df->data[1] =   0.0013E-14;
     SUB( ParseEpoch( &stat, &(node.fepoch), "JD2450100.0" ), &stat ); */
 
-    /* Instead, kludge it up for PSR J0034-0534. */
+    /* Instead, kludge it up for PSR J0034-0534.
     memcpy( node.jname, "J0034-0534", 11*sizeof(CHAR) );
     node.pos.system  = COORDINATESYSTEM_EQUATORIAL;
     node.dpos.system = COORDINATESYSTEM_EQUATORIAL;
@@ -430,7 +435,7 @@ main(int argc, char **argv)
     node.df->data[0] =   0.00000000015;
     node.f->data[1]  =  -1.436E-15;
     node.df->data[1] =   0.009E-15;
-    SUB( ParseEpoch( &stat, &(node.fepoch), "JD2449550.0" ), &stat );
+    SUB( ParseEpoch( &stat, &(node.fepoch), "JD2449550.0" ), &stat ); */
   }
 
   /* If the detector was specified, set up the detector position. */
@@ -478,6 +483,8 @@ main(int argc, char **argv)
      position and frequency information. */
   if ( infile ) {
     UINT4 i = 0;                     /* line number */
+    UINT4 n = 0;                     /* number of pulsars read */
+    CHAR msg[MAXLEN];                /* error/info message string */
     CHARVectorSequence *file = NULL; /* input file */
     TokenList *list = NULL;          /* input line parsed into tokens */
     INT4 indx[PULSARCATINDEX_NUM];   /* ordering of tokens in line */
@@ -529,13 +536,29 @@ main(int argc, char **argv)
 	  ERROR( PULSARCATTESTC_EMEM, PULSARCATTESTC_MSGEMEM, 0 );
 	  return PULSARCATTESTC_EMEM;
 	}
-	here = here->next;
-	memset( here, 0, sizeof(PulsarCatNode) );
-	SUB( LALReadPulsarCatLine( &stat, here, list, indx ),
-	     &stat );
+	memset( here->next, 0, sizeof(PulsarCatNode) );
+
+	/* Ignore lines that don't parse, moving on to the next. */
+	LALReadPulsarCatLine( &stat, here->next, list, indx );
+	if ( stat.statusCode ) {
+	  LALSnprintf( msg, MAXLEN, "Error reading line %i of %s:"
+		       " skipping", i, infile );
+	  ERROR( 0, msg, 0 );
+	  if ( stat.statusPtr ) {
+	    FREESTATUSPTR( &stat );
+	  }
+	  memset( &stat, 0, sizeof(LALStatus) );
+	  SUB( LALDestroyPulsarCat( &stat, &(here->next) ), &stat );
+	} else {
+	  here = here->next;
+	  n++;
+	}
       }
       SUB( LALDestroyTokenList( &stat, &list ), &stat );
     }
+    LALSnprintf( msg, MAXLEN, "File %s had %i lines and %i parseable"
+		 " pulsars", infile, i, n );
+    INFO( msg );
     SUB( LALCHARDestroyVectorSequence( &stat, &file ), &stat );
   }
 
@@ -564,10 +587,19 @@ main(int argc, char **argv)
     }
     if ( infile )
       here = here->next;
+
+    /* First print epoch information. */
+    if ( site ) {
+      fprintf( fp, "%s time = ", site );
+      fprintepoch( fp, epoch );
+      fprintf( fp, "\n" );
+    }
+
+    /* Now print pulsar information. */
     while ( here ) {
       CompanionNode *companion = here->companion; /* companion data */
       UINT4 compNo = 0; /* companion number */
-      INT8 ep;          /* GPS epoch */
+      fprintf( fp, "\n" );
       if ( here->jname[0] != '\0' ) {
 	fprintf( fp, "PULSAR %s", here->jname );
 	if ( here->bname[0] != '\0' )
@@ -577,6 +609,9 @@ main(int argc, char **argv)
 	fprintf( fp, "PULSAR %s\n", here->bname );
       else
 	fprintf( fp, "PULSAR (Unknown)\n" );
+      fprintf( fp, "epoch = " );
+      fprintepoch( fp, here->posepoch );
+      fprintf( fp, "\n" );
       fprintf( fp, "ra    = " );
       fprintderr( fp, here->pos.longitude, here->dpos.longitude );
       fprintf( fp, " rad\n" );
@@ -589,20 +624,20 @@ main(int argc, char **argv)
       fprintf( fp, "pmdec = " );
       fprintderr( fp, here->pm.latitude, here->dpm.latitude );
       fprintf( fp, " rad/s\n" );
-      SUB( LALGPStoINT8( &stat, &ep, &(here->posepoch) ), &stat );
-      fprintf( fp, "posepoch = %lli ns\n", ep );
+      /* SUB( LALGPStoINT8( &stat, &ep, &(here->posepoch) ), &stat );
+	 fprintf( fp, "posepoch = %lli ns\n", ep ); */
       if ( here->f ) {
 	UINT4 i; /* an index */
-	fprintf( fp, "f0 = " );
+	fprintf( fp, "f0    = " );
 	fprintderr( fp, 2.0*here->f->data[0], 2.0*here->df->data[0] );
 	fprintf( fp, " Hz\n" );
 	for ( i = 1; i < here->f->length; i++ ) {
-	  fprintf( fp, "f%i = ", i );
+	  fprintf( fp, "f%i    = ", i );
 	  fprintderr( fp, 2.0*here->f->data[i], 2.0*here->df->data[i] );
 	  fprintf( fp, " Hz^%i\n", i+1 );
 	}
-	SUB( LALGPStoINT8( &stat, &ep, &(here->fepoch) ), &stat );
-	fprintf( fp, "fepoch = %lli ns\n", ep );
+	/* SUB( LALGPStoINT8( &stat, &ep, &(here->fepoch) ), &stat );
+	   fprintf( fp, "fepoch = %lli ns\n", ep ); */
       }
       if ( here->dist > 0.0 )
 	fprintf( fp, "dist = %15.8e m\n", here->dist );
@@ -614,11 +649,14 @@ main(int argc, char **argv)
 	fprintf( fp, "lcode = %c\n", here->lcode );
       if ( here->ucode >= 'a' && here->ucode <= 'd' )
 	fprintf( fp, "ucode = %c\n", here->ucode );
-      fprintf( fp, "typecode = %i\n", here->typecode );
+      /* fprintf( fp, "typecode = %i\n", here->typecode ); */
       while ( companion ) {
 	fprintf( fp, "Companion %i\n", ++compNo );
-	SUB( LALGPStoINT8( &stat, &ep, &(companion->epoch) ), &stat );
-	fprintf( fp, "  epoch = %lli ns\n", ep );
+	/* SUB( LALGPStoINT8( &stat, &ep, &(companion->epoch) ), &stat );
+	   fprintf( fp, "  epoch = %lli ns\n", ep ); */
+	fprintf( fp, "  epoch = " );
+	fprintepoch( fp, companion->epoch );
+	fprintf( fp, "\n" );
 	fprintf( fp, "  x     = %23.16e s\n", companion->x );
 	fprintf( fp, "  p     = %23.16e s\n", companion->p );
 	fprintf( fp, "  pDot  = %23.16e\n", companion->pDot );
@@ -630,7 +668,6 @@ main(int argc, char **argv)
 	fprintf( fp, "  r     = %23.16e\n", companion->r );
 	companion = companion->next;
       }
-      fprintf( fp, "\n" );
       here = here->next;
     }
     fclose( fp );
@@ -797,4 +834,23 @@ fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
   LALSnprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
 	       lsd );
   return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
+}
+
+
+int
+fprintepoch( FILE *fp, LIGOTimeGPS epoch ) {
+  while ( epoch.gpsNanoSeconds >= 1000000000 ) {
+    epoch.gpsSeconds += 1;
+    epoch.gpsNanoSeconds -= 1000000000;
+  }
+  while ( epoch.gpsNanoSeconds < 0 ) {
+    epoch.gpsSeconds -= 1;
+    epoch.gpsNanoSeconds += 1000000000;
+  }
+  if ( epoch.gpsSeconds < 0 ) {
+    epoch.gpsSeconds += 1;
+    epoch.gpsNanoSeconds -= 1000000000;
+  }
+  return fprintf( fp, "%i s %09i ns", epoch.gpsSeconds,
+		  abs( epoch.gpsNanoSeconds ) );
 }
