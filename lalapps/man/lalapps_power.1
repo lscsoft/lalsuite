@@ -1,0 +1,60 @@
+.TH LALAPPS_POWER "12 March 2003" LALApps LALApps
+.SH NAME
+lalapps_power - runs excess power code on chunks of (simulated) data
+
+.SH SYNOPSIS
+
+.B lalapps_power
+.RB \-\-npts
+.IR numpoints
+.RB \-\-nseg
+.RB \-\-olap
+.RB \-\-olapfctr
+.RB \-\-minfbin
+.RB \-\-mintbin
+.RB \-\-flow
+.RB \-\-delf
+.RB \-\-lngth
+.RB \-\-nsigma
+.RB \-\-alphdef
+.RB \-\-segdcle
+.RB \-\-threshold
+.RB \-\-etomstr
+.RB \-\-channel
+.RB \-\-simtype
+.RB \-\-spectype
+.RB \-\-window
+.RB \-\-help
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_power\fP runs the excess power code from LAL on a chunk of
+real or simulated data.   The results are supplied in LIGO lightweight
+format and a log file is printed.   
+
+.SH OPTIONS
+.TP
+.BI \-\-npts " npoints"
+Specify the number of points per segment of data to be analyzed.
+.TP
+.BI \-\-epoch " gpssec gpsnsec"
+Specify the GPS epoch of the start of the data to be analyzed in the
+format \fIgpssec\fP seconds and \fIgpsnsec\fP nanoseconds.
+.TP
+
+.SH EXAMPLE
+.TP
+The command
+.PP
+.RS
+lalapps_power --npts 16384 --nseg 511 --olap 8192 --olapfctr 3 \
+    --minfbin 2 --mintbin 2 --flow 160.0 --delf 1.0 --lngth 512 --nsigma 2.0 \
+    --alphdef 0.5 --segdcle 512 --threshold 1e-11 --etomstr 500 --framedir ./l1data \
+    --channel L1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
+    --epoch 715665300 0 --numpts 5129920 --printSpectrum 
+.RE
+.PP
+will generate .............
+
+.SH AUTHOR
+Patrick Brady
