@@ -1,0 +1,57 @@
+# -----------------------------------------------------------
+
+# $Id$
+
+# determine architecture
+OSType=`uname`
+
+# your compiler
+CC=/usr/bin/gcc
+
+# header file directories
+LAL_INCLUDE=$(LALPREFIX)/include
+LDCG_INCLUDE=/ldcg/include
+
+# library file directories
+LAL_LIB=$(LALPREFIX)/lib
+LDCG_LIB=/ldcg/lib
+
+# libraries
+#LRFFTW = rfftw
+#LFFTW = fftw
+LLAL = lal
+LALS = lalsupport
+
+# compiler options
+CFLAGS =  -I$(LAL_INCLUDE) -I$(LDCG_INCLUDE)
+
+# linking options
+LDFLAGS =  -L$(LAL_LIB) -L$(LDCG_LIB)
+LIBS =  -l$(LALS) -l$(LLAL) -lm
+
+# the object files
+OBJS = ComputeStackSlideSums.o DriveStackSlide.o StackSlide.o
+
+# ------------------------------------------------------------------
+
+# default target
+
+all: ComputeStackSlideSums
+
+# compile code
+ComputeStackSlideSums.o: ComputeStackSlideSums.c
+	$(CC) $(CFLAGS) -c ComputeStackSlideSums.c DriveStackSlide.c StackSlide.c
+
+
+# link code
+
+ComputeStackSlideSums: $(OBJS)
+	condor_compile $(CC) $(CFLAGS) -o ComputeStackSlideSums $(OBJS) $(LIBS) $(LDFLAGS) 
+
+#---------------------------------------------------------------------------
+
+# cleaning
+
+clean: 
+	/bin/rm -f *.o *.a *~ core ComputeStackSlideSums
+

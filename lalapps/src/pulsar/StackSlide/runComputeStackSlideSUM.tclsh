@@ -1,0 +1,242 @@
+#!/usr/bin/env tclshexe
+
+# File: runComputeStackSlideSUM.tclsh Started: 12/10/03
+# Author: Greg Mendell
+
+# Currently no logs or records are kept
+#set LOGFILE "ComputeStackSlideSUM.log";
+#set RECORDFILE "ComputeStackSlideSUM.rec";
+
+# Revisions
+# 01/21/04 gam; Set job file name on the command line.
+# 01/27/04 gam; Make sure script can handle search of sky positions and spindowns.
+# 01/28/04 gam; change sft_directory to sft_path_pattern = path + pattern to match.
+# 02/27/04 gam; add option to output arguments for condor sub file rather than run.
+# 02/27/04 gam; change puts to Print; use Print procedure to control output to stdout; allow silent running when ::CONDOR_MODE.
+# 02/27/04 gam; clean up run option code.
+# 04/15/04 gam; add optional debug_option as last command line argument.
+# 04/15/04 gam; update instructions.
+# 04/26/04 gam; change example jobs for intial entry into LALapps.
+
+set ::CONDOR_MODE 0; # #02/27/04 default is false.
+set ::RUN 0;         #02/27/04 default value false.
+set ::DEBUG_OPTION_FLAG 0; # 04/15/04 gam
+
+proc Print {thisString} {
+   # if ($::CONDOR_MODE) # 04/15/04 gam
+   if {$::CONDOR_MODE || (($::DEBUG_OPTION_FLAG==1) && $::RUN)} {
+     # Just return; run silently.
+   } else {
+     puts $thisString;
+   }
+}
+
+proc Exit {code} {
+	global argv0;
+	# delete temporary files.
+        if {$code > 1} {
+	    puts "The getOneStackSlideSUM script finished with an error."
+	} elseif {$code == 1} {
+	   # Displayed help.  Just quit without a message.
+	} else {
+            Print "\nThe $argv0 script has finished.";
+	}
+	exit $code;
+}
+
+#-- Check whether user specified all needed command-line arguments
+#if { $argc < 13 || $argc > 14} # 04/15/04 gam
+set firstArg " "; # 04/15/04 gam
+if { $argc < 13 || $argc > 15} {
+    Print " ";
+    #Print "runs ComputeStackSlideSums to get one SUM";
+    Print "Driver script for ComputeStackSlideSums\n";
+    Print "See also README_ComputeStackSlideSums for more about ComputeStackSlideSums.";    
+    Print "See also README_CommandLineArgument for a complete description of the ComputeStackSlideSums command line arguments.\n";
+    Print "Usage:";
+    Print " ";    
+    #Print "$argv0 <ifo> <start_time> <duration> <template_freq> <band_width> <sft_time> <num_sfts> <sft_directory> <template_file> <sun_edat_file> <earth_edat_file> <output_file> \[<run>\]";    
+    # Print "$argv0 <ifo> <start_time> <duration> <template_freq> <band_width> <sft_time> <num_sfts> <sft_directory> <template_file> <job_file> <sun_edat_file> <earth_edat_file> <output_file> \[<run>\]"; # 01/21/04 gam
+    #Print "$argv0 <ifo> <start_time> <duration> <template_freq> <band_width> <sft_time> <num_sfts> <sft_path_pattern> <template_file> <job_file> <sun_edat_file> <earth_edat_file> <output_file> \[<run>\]"; # 01/28/04 gam
+    #Print "$argv0 <ifo> <start_time> <duration> <template_freq> <band_width> <sft_time> <num_sfts> <sft_path_pattern> <template_file> <job_file> <sun_edat_file> <earth_edat_file> <output_file> \[<run|condor>\]"; # 02/27/04 gam
+    Print "$argv0 <ifo> <start_time> <duration> <template_freq> <band_width> <sft_time> <num_sfts> <sft_path_pattern> <template_file> <job_file> <sun_edat_file> <earth_edat_file> <output_file> \[<run|condor>\] \[<debug_option>\]"; # 04/15/04 gam
+    # 04/15/04 gam; added lines between here and Print Usage:
+    if { $argc == 0} {
+       Print "\nRun $argv0 -h to get further help on using this script.\n"; 
+       Exit 1;       
+    } elseif { $argc > 0} {
+       set firstArg [lindex $argv 0];
+       if {$firstArg != "-h"}  {
+         Print "\nError! Some required arguments were missing or incorrect. See usage below.\n";
+       }
+    }            
+    Print " ";
+    Print "ifo:              Nickname of interometer to run on (H1, H2, L1, or G1).";
+    Print "start_time:       Start time.";
+    Print "duration:         Times to run on = \[start_time, start_time + duration).";
+    Print "template_freq:    Central frequency to run on.";
+    Print "band_width:       Band width to run = \[template_freq - band_width/2 , template_freq + band_width/2).";
+    Print "sft_time:         Time baseline used to generate SFTs in seconds (e.g. 60 or 1800).";
+    Print "num_sfts:         Actual number of exiting SFTs for times specified (not equal to duration/sft_time if gaps exists).";
+    # Print "sft_directory:    Directory with SFTs in PULG group format."; #01/28/04 gam
+    Print "sft_path_pattern: Path to SFTs in PULG format plus pattern to match names of SFT files.;"
+    Print "                  For example use \"../*SFT.*\" to match SFTs in the directory above; note \"\" are needed.";
+    #Print "template_file:    File that sets pulsar parameters."; # 01/27/04 gam
+    Print "template_file:    File that sets template parameters e.g., for a pulsar or a search of sky positions and spindowns.";
+    #Print "job_file:         File that sets FILTERPARAMS (including pulsar params and command line args from this script.)"; # 01/21/04 gam # 01/27/04 gam
+    Print "job_file:         File that sets FILTERPARAMS (including template params and command line args from this script).";
+    Print "sun_edat_file:    File with sun ephemeris data.";
+    Print "earth_edat_file:  File with earth ephemeris data.";
+    Print "output_file:      File for output of results in ascii format.";
+    Print "run|condor:       Optional: give either run, condor, or leave blank.";  # 02/27/04 gam
+    Print "                    1. Give \"run\" to run this job in standalone mode.";
+    Print "                    2. Give \"condor\" to output argments for condor job."; 
+    Print "                    3. Leave blank to see standalone cmd without running it.";
+    Print "debug_option:     Optional: give a number or leave blank. This is the debugOptionFlag for ComputeStackSlideSums.";  # 04/15/04 gam
+    Print "                    1. If \"0\" ComputeStackSlideSums provides no debugging.";
+    Print "                    2. If \"1\" ComputeStackSlideSums prints command line arguments to stdout.";
+    Print "                       (The format is that of a tcl resource file that can be used to set the arguments.)";
+    Print "                    3. If \"2\" ComputeStackSlideSums prints a table with events to stdout.";
+    Print "                    4. See README_CommandLineArgument for more debugging options.";
+    Print " ";
+    Print "If template_freq is set to \"default\" then the value for templateFreq0 set in the template_file will be used.";
+    Print " ";    
+    Print "Example 1 (run in standalone mode):";
+    Print " ";
+    # Print "$argv0 G1 714153733 600 1010.7 1 60 10 . testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run"; # 01/28/04 gam
+    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run";    
+    Print " ";    
+    Print "Returns the StackSlide SUM for G1 for a 1 Hz band centered on 1010.7 Hz using 10 SFTs of duration 60 s located in the directory above for GPS times \[714153733, 714153733 + 600), the parameters specified in testPulsar.params, and the Ephemeris data in \$LALPREFIX/share/lal/sun00-04.dat and \$LALPREFIX/share/lal/earth00-04.dat.";
+    Print " ";    
+    Print "Example 2 (run in standalone mode with debug_option 1):"; # 04/15/04 gam
+    Print " ";
+    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 1";
+    Print " ";
+    Print "Same as example 1, but the command line arguments are printed to the screen in the form of a tcl resource file.";
+    Print " ";
+    Print "Example 3 (run in standalone mode with debug_option 2):";
+    Print " ";
+    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 2";
+    Print " ";    
+    Print "Same as example 1, but a table with events printed to the screen.";    
+    Print " ";
+    Print "Example 4 (output condor arguments):";
+    Print " ";    
+    Print "$argv0 G1 714153733 600 1010.7 1 60 10 \"../*SFT.*\" testPulsar.params runStackSlideSearchOn60sSFTs.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt condor";
+    Print " ";
+    Print "Use the condor option with \">> condorsubmitfile.sub\" to append this job to a condor submit file.";
+    if { $argc > 0} {
+       if {$firstArg != "-h"}  {
+         # Print "\nError! Some required arguments were missing. See syntax given above.\n"; # 02/27/04 gam
+         Print "\nError! Some required arguments were missing or incorrect. See usage above.\n"; # 04/15/04 gam
+         Exit 2;
+       } else {
+         Exit 1;       
+       }
+    } else {
+       Exit 1;
+    }
+}
+
+# Names of parameters used in the script
+set ifo [lindex $argv 0];
+set start_time [lindex $argv 1];
+set duration [lindex $argv 2];
+set template_freq [lindex $argv 3];
+set band_width [lindex $argv 4];
+set sft_time [lindex $argv 5];
+set num_sfts [lindex $argv 6];
+set sft_path_pattern [lindex $argv 7];
+set template_file [lindex $argv 8];
+set job_file [lindex $argv 9]; # 01/21/04 gam
+set sun_edat_file [lindex $argv 10];
+set earth_edat_file [lindex $argv 11];
+set output_file [lindex $argv 12];
+
+# Check if this job is to actually run.
+#if {$argc == 14} # 04/15/04 gam
+if {$argc >= 14} {
+  if {[lindex $argv 13] == "run" || [lindex $argv 13] == "-run"} {
+      set ::RUN 1;
+  } elseif {[lindex $argv 13] == "condor" || [lindex $argv 13] == "-condor"} {
+      set ::CONDOR_MODE 1; # 02/27/04 gam; output arguments for condor job; note default is set to 0 above.
+  } else {
+      set ::DEBUG_OPTION_FLAG [lindex $argv 13]; # 04/15/04 gam; allow for ::DEBUG_OPTION_FLAG
+  }
+  if {$argc == 15} {
+     set ::DEBUG_OPTION_FLAG [lindex $argv 14];  # 04/15/04 gam; allow for ::DEBUG_OPTION_FLAG
+     if {!$::RUN && !$::CONDOR_MODE} {
+        set ::CONDOR_MODE 0; # needed to not suppress Print of error message.
+        set ::DEBUG_OPTION_FLAG 0; # needed to not suppress Print of error message.     
+        Print " ";
+        Print "Error! Did not understand the argument before the debug_option.";
+        Print [concat "It should be \"run\", \"condor\", or blank). It was: " [lindex $argv 13]];
+        Print "Note that the debug_option comes after \"run\" or \"condor\" when these are used.";
+        Print " ";
+        Exit 2;
+     }
+  }
+  #puts "::DEBUG_OPTION_FLAG = $::DEBUG_OPTION_FLAG";
+  if {[catch {expr 1*$::DEBUG_OPTION_FLAG} catchOut]}  {
+        set catchOut "Tried to set debug_option to $::DEBUG_OPTION_FLAG; error was $catchOut.";
+        set ::CONDOR_MODE 0; # needed to not suppress Print of error message.
+        set ::DEBUG_OPTION_FLAG 0; # needed to not suppress Print of error message.
+        Print " ";
+        #Print [concat "Error! Did not understand the last argument (should be \"run\", \"condor\", or blank): " [lindex $argv 13]];
+        Print "Error! Did not understand the last argument.";
+        Print "It should be \"run\", \"condor\", the debug_option, or blank).";
+        Print "The debug_option, if given, must be just a number";
+        Print "The debug_option, if given, must come after \"run\" or \"condor\".";
+        Print "$catchOut";
+        Print " ";
+        Exit 2;
+  }
+} 
+
+source $template_file;
+
+# Check whether to use default value of template_freq in tmpTemplateFile.
+if {$template_freq == "default"} {
+   # Set up to use the default value.
+   set template_freq $templateFreq0;
+   Print "Using default value for template_freq = $templateFreq0.";
+} else {
+   # Override the default value with the input value.
+   set templateFreq0 $template_freq;
+}
+
+# Set parameters that can be used by $job_file.
+set ANALYSIS_START_TIME $start_time;
+set SAMPLE_TIME $duration;  
+set INPUTSUMF0 [expr $template_freq - $band_width/2.0];
+set INPUTSUMBAND $band_width;
+set INPUTSFTTIME $sft_time;
+set IFONICKNAME $ifo;
+set NUMSFTS $num_sfts;
+
+# Source the job file.
+# source runComputeStackSlideSUM.job; # 01/21/04 gam
+source $job_file;
+
+# Setting the MAIN command:
+
+#set cmd "exec ./ComputeStackSlideSums $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file"; # 04/15/04 gam
+set cmd "exec ./ComputeStackSlideSums $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file $::DEBUG_OPTION_FLAG";
+
+Print "\ncommand = $cmd\n";
+
+if {$::RUN} {
+  catch {eval $cmd} result;
+  # Print $result;
+  puts $result; # 04/15/04 gam; always print the result regardless if printing is suppressed for other reasons; see Print procedure.
+} elseif {$::CONDOR_MODE} {
+  #set condorArgs "arguments = $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file"; # 04/15/04 gam
+  set condorArgs "arguments = $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file $::DEBUG_OPTION_FLAG";  
+  puts " ";
+  puts $condorArgs;
+  puts "queue";
+} else {
+  Print "Did NOT run command.  Give run as last argument to run this command.\n";
+}
+
+Exit 0;
