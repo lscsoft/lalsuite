@@ -1,0 +1,357 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,epsfig}
+
+\begin{document}
+\huge
+\begin{center}
+TappRpnTdomFreq.c
+\end{center}
+\normalsize
+\vspace{10mm}
+
+\section{Purpose}
+
+The code \texttt{TappRpnTdomFreq.c} generates a chirp waveform for a binary system consisting of two non--spinning point--mass stars in quasi--circular orbits, up to second post--Newtonian order.
+
+
+The code generates the waveform by the following method:
+The waveform may be written in the form
+\begin{equation}
+h(t) = A \left[ \pi f(t) \right]^{2/3} \cos \left[ \phi (t) \right] \,,
+\label{waveform1}
+\end{equation}
+where $f(t)$ is the instantaneous gravitational wave frequency, $\phi(t)$ is the  phase, and the detailed form of the amplitude term $A$ is a constant that depends on the detectors' antenna pattern, the masses of the two stars and the distance to the binary.
+
+We begin with $t$ as a function of $f$, which may be derived by from the knowledge that we may write the time parameter $t$ as
+
+\begin{equation}
+t = t_{a} + \int^{t}_{t_{a}} dt^{\prime}
+\end{equation}
+where $t_{a}$ is the instant when the gravitational wave has a frequency $f_{a}$, which is equal to the lowest frequency below which the detectors' noise rises steeply, making it difficult to extract signal power below $f_{a}$. This equation may be re--written as
+\begin{equation}
+t = t_{a} + \int^{f}_{f_{a}} \frac{dt^{\prime}}{dE} \frac{dE}{df} df
+\end{equation}
+where the gravitational wave luminosity $F(f)$ is given by
+\begin{equation}
+F(f) = -\frac{dE}{dt^{\prime}} \,.
+\end{equation} 
+Writing
+\begin{equation}
+\frac{dE}{df} = E^{\prime}(f)
+\end{equation}
+we then obtain
+\begin{equation}
+t - t_{a} = - \int^{f}_{f_{a}} \frac{E^{\prime}(f)}{F(f)} df \,.
+\label{toff_int}
+\end{equation}
+In order to evaluate the integral we need to know the detailed form of $E^{\prime}(f)$ and $F(f)$. These are given by
+\begin{equation}
+\begin{split}
+E^{\prime} (f) & = \eta m \left[ - \frac{1}{3} (\pi m)^{2/3} f^{-1/3} + \frac{1}{18} (9+\eta) (\pi m)^{4/3} f^{1/3} \right.\\
+	       &   \\
+	       &   + \left. \frac{1}{8} (27-19 \eta + \eta^{2}/3) (\pi m)^{2} f \right]
+\end{split}
+\label{Eoff}
+\end{equation}
+and 
+\begin{equation}
+\begin{split}
+F(f) &  = - \frac{32}{5} \eta^{2} (\pi m f)^{10/3} \left[ 1 + \left( \frac{- 1247}{336} - \frac{35}{12} \eta \right) (\pi m f)^{2/3} + 4 \pi (\pi m f) \right. \\
+     &   \\
+     &  + \left. \left( -\frac{44711}{9072} + \frac{9271}{504} \eta + \frac{65}{18} \eta^{2} \right) (\pi m f)^{4/3} \right] \,.
+\end{split}
+\label{Foff}
+\end{equation}
+This leads us to
+\begin{equation}
+\begin{split}
+t - t_{a} & = \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] + \tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
+          &     \\
+          & - \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]
+\end{split}
+\label{toff1}
+\end{equation}
+where $\tau_{N}$ is usually referred to as the Newtonian chirp time, $\tau_{P^{1}N}$ is the first post--Newtonian chirp time, and so on for $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$. Because the $f/f_{a}$ term appears throughout the above equations, the code works with the instantaneous frequency expressed in units of $f_{a}$, $(f/f_{a})$ rather than in Hz. The chirp times are related to the masses of the stars and $f_{a}$ in the following way:
+\begin{equation}
+\tau_{N} = \frac{5}{256} \eta^{-1} m^{-5/3} (\pi f_{a})^{-8/3} \,,
+\end{equation}
+
+\begin{equation}
+\tau_{P^{1}N} = \frac{3715+4620 \eta}{64512 \eta m (\pi f_{a})^{2}} \,,
+\end{equation}
+
+\begin{equation}
+\tau_{P^{1.5}N} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}
+\end{equation}
+
+and
+\begin{equation}
+\tau_{P^{2}N} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} + \frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right] \,.
+\end{equation}
+
+
+
+
+Eq.(\ref{waveform1}), however, requires $f$ as a function of $t$. In order to obtain this we re--arrange Eq.(\ref{toff1})  into the form
+
+\begin{equation}
+\begin{split}
+t - t_{a} & - \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
+          &     \\
+          & + \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right] = 0 \,.
+\end{split}
+\label{toff2}
+\end{equation}
+The left--hand--side of Eq.(\ref{toff2}) is fed into a root--finding function,  which finds the value of $(f/f_{a})$ which solves the equation for a given $t$, $t_{a}$, $\tau_{N}$, $\tau_{P^{1}N}$, $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$.
+Once we have obtained $(f/f_{a})(t)$ in this way we use it to calculate the phase $\phi(t)$. 
+
+In the same way that we derived the expression for the time formula, we may write the phase of the GW at time $t$ as:
+\begin{equation}
+\phi(t) = \Phi + 2 \pi \int^{t}_{t_{a}} f(t^{\prime}) dt^{\prime}
+\end{equation}
+where $\Phi$ is the phase of the wave at $t=t_{a}$. This equation may be re--written in the form
+\begin{equation}
+\phi(t) = \Phi + 2 \pi \int^{f}_{f_{a}} f \frac{dt}{dE} \frac{dE}{df} df
+\end{equation}
+or,
+\begin{equation}
+\phi(t) = \Phi - 2 \pi \int^{f}_{f_{a}} f \frac{E^{\prime}(f)}{F(f)} df \,.
+\end{equation}
+Once more, knowledge of the functions $E^{\prime}(f)$ (Eq.(\ref{Eoff})) and $F(f)$ (Eq.(\ref{Foff})) enables us to obtain the time dependence of the phase $\phi(t)$,
+
+\begin{equation}
+\begin{split}
+\phi(t) & = \frac{16 \pi f_{a} \tau_{N}}{5} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + 4 \pi f_{a}\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1} \right]  \\
+        &     \\
+        & - 5 \pi f_{a} \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2/3} \right] + 8 \pi f_{a} \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1/3} \right] + \Phi \,.
+\end{split}
+\label{phioff}
+\end{equation}
+
+This part of the calculation is performed by the function \\ \texttt{TappRpnTdomFreqPhase}. The notation $\phi(t)$ on the LHS of this equation is used because although the formula actually tells us $\phi(f/f_{a})$, we have calculated $(f/f_{a})(t)$ and used this value in the formula.
+
+To summarise, we first of all find the value of $(f/f_{a})$ which solves Eq.(\ref{toff2}). This is $(f/f_{a})(t)$. This value of $(f/f_{a})(t)$ is then substituted into Eq.(\ref{phioff}) to give us the phase $\phi(t) = \phi((f/f_{a})(t))$. Then both $(f/f_{a})(t)$ and $\phi(t)$ may be substituted into Eq.(\ref{waveform1}) to calculate the waveform $h(t)$.
+
+It must be noted that it is possible to expand the energy and flux functions in terms of the GW frequency as we have done here, or as a function of relative velocity $v$ of the stars. The connection between the two formulations is
+\begin{equation}
+v = (\pi m f)^{1/3} \,.
+\end{equation}
+
+\section{Algorithms}
+
+The code uses the roots by bisection method which has been provided by Jolien Creighton.
+
+\section{Arguments}
+
+
+The function header is of the form:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+void \texttt{TappRpnTdomFreq}&(\texttt{Status $\ast$status},     \\
+                                   &\texttt{REAL8Vector $\ast$output}, \\
+                                   &\texttt{InspiralTemplate $\ast$params})
+\end{tabular}
+
+\vspace{5mm}
+
+The structure which is of type \texttt{Status}, which is pointed to by the pointer \texttt{status} writes information to the screen should the code encounter
+a problem. The output structure is of the form \texttt{REAL8Vector} and is pointed to by the pointer \texttt{output}.
+The inputs needed come from the input structure which is of type \texttt{InspiralInput}, and which is pointed to by the pointer \texttt{params}.
+
+The output structure has the form
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef struct} & \texttt{tagREAL8Vector} \{ \\
+                        & \texttt{INT4 m;} \\
+                        & \texttt{REAL8 $\ast$data;}  \\
+                        & \} \texttt{REAL8Vector;}
+\end{tabular}
+
+\vspace{5mm}
+
+where \texttt{m} is the number of data points which make up the waveform, and \texttt{signal} is a pointer to the waveform itself. The input structure is of the form
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef struct} & \texttt{InspiralTemplate} \{ \\
+                        & \texttt{REAL8 m1;} \\
+                        & \texttt{REAL8 m2;}  \\
+                        & \texttt{REAL8 spin1[3];}  \\
+                        & \texttt{REAL8 spin2[3];}  \\
+                        & \texttt{REAL8 inclination;}  \\
+                        & \texttt{REAL8 eccentricity;}  \\
+                        & \texttt{REAL8 totalMass;} \\
+                        & \texttt{REAL8 mu;}  \\
+                        & \texttt{REAL8 eta;}  \\
+                        & \texttt{REAL8 fLower;}  \\
+                        & \texttt{REAL8 fCutoff;}  \\
+                        & \texttt{REAL8 tSampling;}  \\
+                        & \texttt{REAL8 phaseShift;} \\
+                        & \texttt{INT4  nStartPad;}  \\
+                        & \texttt{INT4  nEndPad;}  \\
+                        & \texttt{InputMasses MassChoice;}  \\
+                        & \texttt{InspiralMethod method;}  \\
+                        & \} \texttt{InspiralInput;}
+\end{tabular}
+
+\vspace{5mm}
+
+The parameters which are represented by these input are as follows: \texttt{m1} and \texttt{m2} are the masses of the compact objects in solar masses, \texttt{totalMass} is their combined mass $m=m_{1}+m_{2}$, \texttt{mu} is the reduced mass $\mu=m_{1}m_{2}/(m_{1}+m_{2})$, \texttt{eta} is the symmetric mass ratio $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$, \texttt{fLower} is the frequency at which the detectors' noise curve rises steeply (the seismic limit), \texttt{fCutoff} is the frequency at which the user can choose to terminate the waveform, \texttt{tSampling} is the time interval between samples in units of seconds, \texttt{phaseShift} is the initial phase given to the signal, \texttt{nStartPad} is the number of zeros which are added at the start of the waveform and \texttt{nEndPad} is the number of zeros which are added at the end of the waveform. The code also calculates $f_{lso}$, which is the frequency of the binary at the last stable orbit. If the user specifies \texttt{fCutoff} to be larger than $f_{lso}$, then the code will truncate the waveform when it reaches $f_{lso}$. 
+
+The range of values which we allow is as follows: The smallest total mass of any system $m_{min}$ allowed is 0.4~$\rm{M_{\odot}}$, and the maximum total mass allowed is $m_{max}=100~\rm{M_{\odot}}$. The symmetric mass ratio $\eta$ should lie in the range $0 \leq \eta \leq 1/4$ and $\mu$ should always be positive.
+
+The parameter \texttt{MassChoice} is of type \texttt{enum InputMasses}, which determines which pair of input masses the user has defined. This typedef is as follows:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{m1Andm2,} \\
+                      & \texttt{totalMassAndEta,}  \\
+                      & \texttt{totalMassAndMu} \\
+                      & \} \texttt{InputMasses;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+
+
+
+\section{Operating Instructions}
+
+When this function is called each of the following input structure members must be defined:
+\texttt{fLower}, \texttt{fCutoff}, \texttt{tSampling}, \texttt{phaseShift}, \texttt{nStartPad} and \texttt{nEndPad}. From the remaining five input members (\texttt{m1,m2,totalMass,mu,eta}), it is not necessary to define all five. Instead, only  one of the following pairs needs to be defined: (\texttt{m1,m2}), (\texttt{totalMass,mu}), or (\texttt{totalMass,eta}). Given these inputs, the function is able to generate all the other parameters it needs in order to compute the waveform.
+
+Here is an example of a code fragment which shows how the members of the input structure (which is pointed to by the pointer \texttt{params}) are initialized, and how the function is then called. In this example, we have chosen to define the pair \texttt{m1} and \texttt{m2} as inputs.
+
+\vspace{5mm}
+
+\noindent
+\begin{verbatim}
+/* Declare the structures to be used  */
+\end{verbatim}
+\texttt{InspiralTemplate params;} \\
+\texttt{REAL8Vector $\ast$output;} \\
+\texttt{Status status;} \\
+\begin{verbatim}
+/* Define a pointer for the output waveform 
+   and allocate the correct amount 
+   of memory for it  */
+\end{verbatim}
+\texttt{output=(REAL8Vector $\ast$)LALMalloc(sizeof(REAL8Vector));} \\
+\begin{verbatim}
+/* Initialize the inputs  */
+\end{verbatim}
+\texttt{params.fLower} = 40.0;\\
+\texttt{params.fCutoff} = 1000.0; \\
+\texttt{params.tSampling} = 1.0/4000.0; \\
+\texttt{params.phaseShift} = 0.0; \\
+\texttt{params.nStartPad} = 0; \\
+\texttt{params.nEndPad} = 0; \\
+\texttt{params.massChoice=m1Andm2}\\
+\texttt{params.m1} = 1.0; \\
+\texttt{params.m2} = 1.0; \\
+\begin{verbatim}
+/* Call the function to generate the waveform  */
+\end{verbatim}
+\texttt{TappRpnTdomFreq (\&status, output, \&params);}
+\begin{verbatim}
+/* Write the data to the screen  */
+i=0; 
+do 
+  fprintf(stderr,"%e\n",output->data[i]); 
+while (n-++i);
+\end{verbatim}
+
+Inside the function \texttt{TappRpnTdomFreq()}, error checks are made upon its arguments, using the ASSERTHANDLER macro. Because each of the arguments to the function involves a pointer being passed to the function (e.g.\ \texttt{output, params}), we check that each of the pointers are not NULL pointers, i.e.\ they have been defined and have had the appropriate amount of memory allocated to them.
+
+Inside the function \texttt{TappRpnTdomFreq()}, this looks like:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{void TappRpnTdomFreq} & (\texttt{Status $\ast$status}, \\
+                        & \texttt{REAL8Vector $\ast$output}, \\
+                        & \texttt{InspiralTemplate $\ast$params)}
+\end{tabular}
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+ASSERT & (output!=NULL,  \\
+    &  status,    \\
+    &  TAPPRPNTDOMFREQ\_ENULL, \\
+    &  TAPPRPNTDOMFREQ\_MSGENULL1);
+\end{tabular}
+
+\vspace{5mm}
+
+This above example checks whether the pointer \texttt{output} is a NULL pointer or not. If it is a NULL pointer, then an error message which is defined by the character string \texttt{TAPPRPNTDOMFREQ\_MSGENULL1} is sent to the screen. 
+
+
+\section{Options}
+
+The options available to the user are the choice of input parameters. As explained above, from the following list of five $(m_{1},m_{2},m,\mu,\eta)$, the user need only specify any one of the following pairs $(m_{1},m_{2})$, $(m,\eta)$ or $(m,\mu)$. The pair which the user decides to use is contained within the input structure, where the possible choices are \\ \texttt{params.massChoice=m1Andm2}, \\ \texttt{params.massChoice=totalMassAndMu} or \\ \texttt{params.massChoice=totalMassAndEta}.
+
+
+\section{Accuracy}
+
+All variables are decalred to be REAL8, which means that they are double precision.
+Each double precision variable has an approximate precision of 15 significant figures. The root--finding function uses the bisection method, and it has a tolerance parameter which we need to input by hand. According to Numerical Recipes, the value which should be chosen is dependent upon the range within which you want to search for roots. In our case, the upper limit for the search is the upper frequency which the waveform will attain. Here we are taking this to be 1000 Hz. Since the code expresses frequencies in units of the seismic wall frequency $f_{a}$ (which we are taking here to be 40 Hz), this upper frequency in these units is 25. The lower limit for the search is $f_{a}$, and so the range in which we need to search in absolute values is 1--25. Initially we know that the root lies between these limits. Each time the code loops, this interval is divided by two. The final range within which we are willing to accept that the root lies is given by our choice of the tolerance paraneter which controls how many iterations the code will perform. Numerical Recipes advises that a good rule of thumb is to take the tolerance to be
+\begin{equation}
+\mathrm{tol} = \epsilon \times \frac{(|x_{1}|+|x_{2}|)}{2}
+\end{equation}
+where $\epsilon$ is the machine precision (which is typically in the range $3 \times 10^{-8}$), and $x_{1}$ and $x_{2}$ are the initial brackets. Using these values we obtain an estimate for the tolerance of $4 \times 10^{-7}$.
+
+%The Numerical Recipes code has a limit on the allowed number of iterations before the code gives up. This is set to 40. If we know that the initial bracketing interval is $\epsilon_{0} = 24$ units, then the number of iterations implied for a final tolerance of $\epsilon = 4 \times 10^{-7}$ units is
+%\begin{equation}
+%n = \log_{2} \frac{\epsilon_{0}}{\epsilon} = 26
+%\end{equation}
+%For comparison, the number of iterations needed for final tolerances of $1 \times 10^{-8}$, $1 \times 10^{-9}$ and $1 \times 10^{-10}$ are 32, 35 and 38 respectively (to the next highest integer).
+
+
+
+\section{Error conditions}
+
+We first of all check that each of the pointers passed to the function \\ \texttt{TappRpnTdomFreq()} as an argument , i.e.\ \texttt{Status}, \texttt{output} and \texttt{params}, are not NULL pointers. If any of them are NULL, then an error message is sent to the screen.
+
+Checks are performed upon the other inputs to make sure that they have values with the expected ranges. We check that the number of zeros at the start and at the end of the waveform is greater than or equal to zero, that the lower and upper frequency limits are greater than zero, that the time interval between samples is greater than zero, and that the lower frequency cutoff is smaller than the upper frequency cutoff. 
+We also check that the highest frequency which is generated by the code is not larger than the Nyquist frequency. If any of these conditions are not met, then an appropriate error message specific to that error is written to the screen.
+
+\section{Tests}
+
+We have performed a cross--check of this code with \texttt{TappRpnTdomTime()}, which is designed to perform the same task. The test was as follows. We took the waveform generated by \texttt{TappRpnTdomFreq()} and generated a zero phase and a $\pi/2$ waveform which was used as a "template" waveform. Then we generated a waveform with \texttt{TappRpnTdomTime()} with exactly the same input parameters and used this waveform as the "signal" waveform. This waveform was correlated with the two template waveforms and the overlap was calculated. If a perfect match were achieved, then the overlap would equal unity. We did this calculation for masses in the range 1--50 $\rm{M_{\odot}}$. The results are shown in figure \ref{overlap1}. The data in figure \ref{overlap1} show the results for a tolerance of $1 \times 10^{-8}$. 
+
+\begin{figure}
+\begin{center}
+%\psfig{file=overlap.ps,width=140mm,clip=}
+\caption{The overlap as a function of the masses of the compact objects.}
+\label{overlap1}
+\end{center}
+\end{figure}
+
+We have also tested the code against itself to see how the waveform changes if you vary the tolerance which the root--finding function uses to calculate the frequency of the wave as a function of time. We took the waveform generated using the tolerance set to $1 \times 10^{-10}$ and used it as a "template" waveform. The masses of the compact objects were $m_{1}=m_{2}=1.4 \, \rm{M_{\odot}}$. A zero phase and a $\pi/2$ phase waveform were generated in this way. Then a set "signal" waveforms were generated using a number of different tolerances. These waveforms were correlated with the two template waveforms and the overlap was calculated. If a perfect match were achieved, then the overlap would equal unity. The overlap achieved between the template and waveforms generated to tolerances of $1 \times 10^{-9}$, $1 \times 10^{-8}$, $1 \times 10^{-7}$, $1 \times 10^{-6}$, $1 \times 10^{-5}$ and $1 \times 10^{-4}$ were 1.000000, 1.000000, 0.9999999, 0.9999967, 0.9998100 and 0.9604042 respectively. These results suggest that we use a tolerance of at least $10^{-7}$, which agrees with our prediction from Numerical Recipes of $4 \times 10^{-7}$.
+
+
+
+\section{Uses}
+
+This function directly calls the following functions:
+
+\vspace{5mm}
+
+\noindent
+\texttt{InspiralParameterCalc} \\
+\texttt{BracketRoot} \\
+\texttt{BisectionFindRoot} \\
+\texttt{TappRpnTdomFreqPhase} \\
+
+and the functions \texttt{BracketRoot} and \texttt{BisectionFindRoot} both call the function \\ \texttt{TappRpnTdomFreqToff}. Each of these codes will have its own document, the title of which will be the same as the name of the code it describes.
+
+\end{document}

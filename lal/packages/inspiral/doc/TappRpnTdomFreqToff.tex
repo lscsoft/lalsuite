@@ -1,0 +1,204 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\huge
+\begin{center}
+TappRpnTdomFreqToff.c
+\end{center}
+\normalsize
+\vspace{10mm}
+
+\section{Purpose}
+
+The code \texttt{TappRpnTdomFreqToff.c} calculates the quantity which we may call toff, which is given by the following equation:
+
+\begin{equation}
+\begin{split}
+\mathrm{toff} = t - t_{a}  &  - \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\  
+    &  \\
+          & + \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]  \,.
+\end{split}
+\label{toff}
+\end{equation}
+
+The terms in this equation are defined as follows:
+The parameter $t$ represents time, $\tau_{N}$ is the Newtonian chirp time, $\tau_{P^{1}N}$ is the first post--Newtonian chirp time, and so on for $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$. The parameter $f$ is the instantaneous frequency of the gravitational wave, and $f_{a}$ is the value of this frequency when the wave enters the lower end of the detectors' bandwidth. Here we will neglect the $t_{a}$ term, which is the instant at which the wave enters the lower end of the detectors bandwidth, and which can be defined alsewhere. If we define 
+\begin{equation}
+\tau_{c} = \tau_{N} + \tau_{P^{1}N} - \tau_{P^{1.5}N} + \tau_{P^{2}N}
+\end{equation}
+then Eq.(\ref{toff}) becomes
+\begin{equation}
+\begin{split}
+\mathrm{toff} = t - t_{a}  &  - \tau_{N} + \tau_{N}\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{P^{1}N} + \tau_{P^{1}N} \left( \frac{f}{f_{a}} \right)^{-2} \\
+      &      \\
+      & + \tau_{P^{1.5}N} - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{P^{2}N} + \tau_{P^{2}N} \left( \frac{f}{f_{a}} \right)^{-4/3}
+\end{split}
+\end{equation}
+i.e.\
+\begin{equation}
+\begin{split}
+\mathrm{toff} = t - t_{a}  &  + \tau_{N} \left( \frac{f}{f_{a}} \right)^{-8/3} + \tau_{P^{1}N} \left( \frac{f}{f_{a}} \right)^{-2} \\
+   &   \\
+   & - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{P^{2}N} \left( \frac{f}{f_{a}} \right)^{-4/3} - \tau_{c}
+\end{split}
+\label{toff2}
+\end{equation}
+
+
+
+
+\section{Algorithms}
+
+The code uses no algorithms as such, it merely evaluates the equation shown above.
+
+\section{Arguments}
+
+The function header is of the form:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{void TappRpnTdomFreqToff} & (\texttt{Status $\ast$status}, \\
+                        & \texttt{REAL4 $\ast$toff}, \\
+			& \texttt{REAL4 f}, \\
+                        & \texttt{void $\ast$params)} 
+\end{tabular}
+
+\vspace{5mm}
+
+The structure which is of type \texttt{Status}, which is pointed to by the pointer \texttt{status} writes information to the screen should the code encounter a problem. 
+
+The double precision output will be pointed to by the pointer \texttt{toff}. The parameter $f$ represents the frequency in units of $f_{a}$.
+
+The other inputs needed are contained within an structure which is of type \texttt{void $\ast$} and which is pointed to by the pointer \texttt{params}.
+The parameters $\tau_{N}$, $\tau_{P^{1}N}$, $\tau_{P^{1.5}N}$, $\tau_{P^{2}N}$ and $\tau_{c}$ and $t$ are passed to the function as members of this structure, as follows
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{void TappRpnTdomFreqToff} & (\texttt{Status $\ast$status}, \\
+                        & \texttt{REAL4 $\ast$toff}, \\
+			& \texttt{REAL4 f}, \\
+                        & \texttt{void $\ast$params)} 
+\end{tabular}
+
+\begin{verbatim}
+/* Perform a cast operation to convert the pointer to type
+void *  into a pointer to type InspiralToffInput *  */
+\end{verbatim}
+\texttt{InspiralToffInput $\ast$toffIn;} \\
+\texttt{toffIn = (InspiralToffInput *) params;}
+
+\begin{tabular}{ll}
+$\tau_{N}$        &= \texttt{toffIn->t0}  \\
+$\tau_{P^{1}N}$   &= \texttt{toffIn->t1}  \\
+$\tau_{P^{1.5}N}$ &= \texttt{toffIn->t15}  \\
+$\tau_{P^{2}N}$   &= \texttt{toffIn->t2}  \\
+$\tau_{c}$        &= \texttt{toffIn->tc}  \\
+$t$               &= \texttt{toffIn->t}  \\
+\end{tabular}
+
+\vspace{5mm}
+
+These may then be used in Eq. (\ref{toff2}).
+
+
+\section{Operating Instructions}
+
+Here is a simple example of the function having its inputs initialized and then being called:
+
+\vspace{5mm}
+
+\noindent
+\begin{verbatim}
+/* Declare the inputs and outputs to be used  */
+\end{verbatim}
+\texttt{InspiralToffInput toffIn;} \\
+\texttt{void *funcParams:} \\
+\texttt{REAL4 answer;} \\
+\texttt{Status status;}
+\begin{verbatim}
+/* Initialize the inputs  */
+\end{verbatim}
+\texttt{toffIn.t0} = $\frac{5}{256} \eta^{-1} m^{-5/3} (\pi f_{a})^{-8/3}$; \\
+\\
+\texttt{toffIn.t1} = $\frac{3715+4620 \eta}{64512 \eta m (\pi f_{a})^{2}}$ \\
+\\
+\texttt{toffIn.t15} = $\frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}$ \\
+\\
+\texttt{toffIn.t2} = $\frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} + \frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right]$ \\
+\\
+\texttt{toffIn.tc} = $\tau_{N} + \tau_{P^{1}N} - \tau_{P^{1.5}N} + \tau_{P^{2}N}$ \\
+\\
+\texttt{toffIn.t} = $t$ \\
+\begin{verbatim}
+/* Perform a cast operation to convert the pointer to a 
+structure of type InspiralToffInput to a pointer 
+to type to void *    */
+\end{verbatim}
+\texttt{funcParams = (void *) \&toffIn;}
+\begin{verbatim}
+/* Call the function  */
+\end{verbatim}
+\texttt{TappRpnTdomFreqToff (\&status, \&answer, f, funcParams);}
+\begin{verbatim}
+printf("answer=%e\n",answer);
+\end{verbatim}
+
+Inside the function \texttt{TappRpnTdomFreqToff()}, error checks are made upon the inputs, using the ASSERT macro. Because each of the arguments to the function involve pointers being passed to the function (e.g.\ \texttt{params}), we first of all check that each of the pointers are not NULL pointers.
+
+Inside the function \texttt{HANDLER()}, this looks like this:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{void TappRpnTdomFreqToff} & (\texttt{Status $\ast$status}, \\
+                        & \texttt{REAL4 $\ast$toff}, \\
+			& \texttt{REAL4 f}, \\
+                        & \texttt{void $\ast$params)}
+\end{tabular}
+
+\begin{tabular}{ll}
+ASSERT & (toff!=NULL,  \\
+       &  status,    \\
+       &  TAPPRPNTDOMFREQPHASE\_ENULL, \\
+       &  TAPPRPNTDOMFREQTOFF\_MSGENULL1);
+\end{tabular}
+
+\vspace{5mm}
+
+This above example checks whether the pointer \texttt{toff} is a NULL pointer or not.  If it is a NULL pointer, then an error message which is defined by the character string \texttt{TAPPRPNTDOMFREQTOFF\_MSGENULL1} is sent to the screen.
+
+
+
+
+
+\section{Options}
+There are no options to this function.
+
+\section{Accuracy}
+
+\section{Error Conditions}
+We first of all check that each of the pointers passed to the function \\ \texttt{TappRpnTdomFreqToff()} are not NULL pointers. If any of them are NULL, then an appropriate error message is written to the screen.
+
+We check that the inputted frequency is greater than zero, and that the inputted time is greater than or equal to zero. If any of these conditions are not met, then an appropriate error message specific to that error is written to the screen. 
+
+
+\section{Tests}
+
+This function is tested as a part of the test of the function TappRpnTdomFreq(). For a discussion of this test, see the documentation for that function.
+
+\section{Uses}
+
+This function does not call any other functions.
+
+
+\section{References}
+For a fuller description of how this function is used in the generation of an inspiral waveform, see the documentation for the function \texttt{TappRpnTdomFreq()}.
+The nomenclature adopted is the same as that used in Sathyaprakash, PRD, 50, R7111, 1994, which may be consulted for further details.
+ 
+
+
+
+\end{document}

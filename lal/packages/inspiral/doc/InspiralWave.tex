@@ -1,0 +1,318 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\huge
+\begin{center}
+InspiralWave.c
+\end{center}
+\normalsize
+\vspace{10mm}
+
+\section{Purpose}
+
+The code \texttt{InspiralWave.c} is the user interface to the inspiral codes. It takes from the user all the physical parameters which specify the binary, and calls the relevent code generation function.
+
+
+
+
+\section{Algorithms}
+
+This code uses no algorithms.
+
+
+\section{Arguments}
+
+The function header is of the form:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+void \texttt{InspiralWave}&(\texttt{Status $\ast$status},     \\
+                                   &\texttt{REAL8Vector $\ast$signal}, \\
+                                   &\texttt{InspiralTemplate $\ast$params})
+\end{tabular}
+
+\vspace{5mm}
+
+The structure which is of type \texttt{Status}, which is pointed to by the pointer \texttt{status} writes information to the screen should the code encounter a problem. The output structure is of the form \texttt{REAL8Vector} and is pointed to by the pointer \texttt{signal}. This is the required waveform.
+The inputs needed come from the input structure which is of type \texttt{InspiralTemplate}, and which is pointed to by the pointer \texttt{params}.
+
+The output structure has the form
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef struct} & \texttt{tagREAL8Vector} \{ \\
+                        & \texttt{UINT4 length;} \\
+                        & \texttt{REAL8 $\ast$data;}  \\
+                        & \} \texttt{REAL8Vector;}
+\end{tabular}
+
+\vspace{5mm}
+
+\vspace{5mm}
+
+
+The input structure is of the form
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef struct} & \texttt{tagInspiralTemplate} \{ \\
+                        & \texttt{INT4 number;} \\
+                        & \texttt{REAL8 mass1;} \\
+                        & \texttt{REAL8 mass2;}  \\
+                        & \texttt{REAL8 spin1[3];}  \\
+                        & \texttt{REAL8 spin2[3];}  \\
+                        & \texttt{REAL8 inclination;} \\
+                        & \texttt{REAL8 eccentricity;} \\
+                        & \texttt{REAL8 totalMass;} \\
+                        & \texttt{REAL8 mu;}  \\
+                        & \texttt{REAL8 eta;}  \\
+                        & \texttt{REAL8 fLower;}  \\
+                        & \texttt{REAL8 fCutoff;} \\
+                        & \texttt{REAL8 tSampling;} \\
+                        & \texttt{REAL8 startPhase;} \\
+                        & \texttt{REAL8 startTime;} \\
+                        & \texttt{REAL8 signalAmplitude;} \\
+                        & \texttt{REAL8 nStartPad;} \\
+                        & \texttt{REAL8 nEndPad;} \\
+                        & \texttt{INT4 ieta;} \\
+                        & \texttt{InspiralMethod method;}  \\
+                        & \texttt{InputMasses massChoice;}  \\
+                        & \texttt{Order order;}  \\
+                        & \texttt{Domain domain;}  \\
+                        & \texttt{Approximant approximant;}  \\
+                        & \} \texttt{InspiralTemplate;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+
+
+The parameters which are represented by these input are as follows: \texttt{number} is a label for each template, \texttt{mass1} and \texttt{mass2} are the masses of the compact objects in solar masses, \texttt{spin1} and \texttt{spin2} are the spins of the objects, \texttt{inclination} is the angle of inclination which the binary system makes to the observer, \texttt{eccentricity} is the eccentricity of the objects' orbit, \texttt{totalMass} is their combined mass $m=m_{1}+m_{2}$, \texttt{mu} is the reduced mass $\mu=m_{1}m_{2}/(m_{1}+m_{2})$, \texttt{eta} is the symmetric mass ratio $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$, \texttt{fLower} is the frequency at which the detectors' noise curve rises steeply (the seismic limit), \texttt{fCutoff} is the frequency at which the user can choose to terminate the waveform, \texttt{tSampling} is the sampling rate in units if Hertz, \texttt{startPhase} is the initial phase given to the signal, \texttt{startTime} is the time at which the frequency of the wave is \texttt{fLower},  \texttt{signalAmplitude} is the choice of amplitude for the waveform, \texttt{nStartPad} is the number of zeros which are added at the start of the waveform and \texttt{nEndPad} is the number of zeros which are added at the end of the waveform. \texttt{ieta} is a parameter which distinguishes between the cases $\eta=0$ and $\eta \neq 0$. If the user sets \texttt{ieta}=0 then test mass waveforms will be generated.
+
+The parameter \texttt{method} is of type \texttt{enum Method}, which tells the function which code is to be used to generate the waveform. This typedef is as follows:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{one,} \\
+                      & \texttt{two,}  \\
+                      & \texttt{three,} \\
+                      & \texttt{best} \\
+                      & \} \texttt{Method;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+The choices available represent the following possibilities.
+
+Theoretical calculations have given us post--Newtonian expansions (i.e.\ a series in terms of ascending powers of $x\equiv v^{2}$) of an energy function $E(x)$ and a GW luminosity function $\mathcal{F}(v)$, together which define the gravitational wave phasing formula:
+
+\begin{eqnarray}
+t(v) & = & t_{\rm ref} + m \int_v^{v_{\rm ref}} \, 
+\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\ 
+\phi (v) & = & \phi_{\rm ref} + 2 \int_v^{v_{\rm ref}}  v^3 \, 
+\frac{E'(v)}{{\cal F}(v)} \, dv,
+\label{phasing formula}
+\end{eqnarray}
+
+where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW frequency, and $m$ is the total mass of the binary. 
+
+The variable $t$ is in our hands, and the phasing formula is solved by finding the value of $v$ (for a given $t$) which satisfies the first of the equations in Eq. (\ref{phasing formula}). This value of $v$ is then substituted into the second equation to yield $\phi(t)$.
+
+There are basically three ways of solving the problem:
+
+
+\begin{enumerate}
+
+\item Leave  $E^{\prime}(v)/\mathcal{F}(v)$ as it is and integrate the equations numerically. This corresponds to method \texttt{one} in the enum \texttt{Method} above.
+
+\item Re--expand $E^{\prime}(v)/\mathcal{F}(v)$ in which case the integrals can be done analytically to obtain
+a {\it parametric} representation of the phasing formula in terms of
+polynomial expressions in the auxiliary variable $v$
+\begin {eqnarray}
+\phi^{(2)}(v)&=& \phi_{\rm ref} +
+\phi^v_N (v)\sum_{k=0}^{n} \hat{\phi}^v_k v^k, \nonumber\\
+t^{(2)}(v)&=& t_{\rm ref} +t^v_N(v) \sum_{k=0}^{n} \hat{t}^v_k v^k,
+\label{eq:phase2}
+\end {eqnarray}
+This corresponds to method \texttt{two} in the enum \texttt{Method} above.
+
+\item the second of the polynomials in Eq.~(\ref{eq:phase2}) can
+be inverted and the resulting polynomial for $v$ in terms of
+$t$ can be substituted in $\phi^{(2)}(v)$ to arrive at an explicit  time-domain
+phasing formula
+\begin{equation}
+\phi^{(3)}(t)=\phi_{\rm ref}+\phi_N^t \sum_{k=0}^{n}
+\hat{\phi}^t_k\theta^k
+\end{equation}
+\begin{equation}
+F^{(3)}(t)= F_N^t \sum_{k=0}^{n} \hat{F}^t_k \theta^k,
+\end{equation}
+where \\$\theta=[\eta (t_{\rm ref}-t)/(5m)]^{-1/8}$, \\ 
+$F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)$ is the instantaneous GW frequency.
+This corresponds to method \texttt{three} in the enum \texttt{Method} above.
+
+\end{enumerate}
+
+
+If the user chooses method \texttt{two} or \texttt{three}, then they also need to choose one of the following ways of inputting the mass of the binary, which is handled by the parameter \texttt{MassChoice}, which is of type \texttt{enum InputMasses}. This typedef is as follows:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{m1Andm2,} \\
+                      & \texttt{totalMassAndEta,}  \\
+                      & \texttt{totalMassAndMu} \\
+                      & \} \texttt{InputMasses;}
+\end{tabular}
+
+\vspace{5mm}
+
+The choice \texttt{m1Andm2} corresponds to choosing to declare the masses $m_{1}$ and $m_{2}$ of the two objects in the binary. The choice \texttt{totalMassAndEta} corresponds to declaring $m=m_{1}+m_{2}$ and $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$, and the choice \texttt{totalMassAndMu} corresponds to declaring $m=m_{1}+m_{2}$ and $\mu=m_{1}m_{2}/(m_{1}+m_{2})$ as inputs. Each choice is completely equivalent, so user may choose the most convenient pair of inputs.
+
+The parameter \texttt{order}, which is of type \texttt{enum Order}, lets the user choose to which order of post--Newtonian expansion they would like to go. This enum is defined as follows:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{newtonian,} \\
+                      & \texttt{oneHalfPN,}  \\
+                      & \texttt{onePN} \\
+                      & \texttt{onePointFivePN} \\
+                      & \texttt{twoPN} \\
+                      & \texttt{twoPointFivePN} \\
+                      & \} \texttt{Order;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+The parameter \texttt{domain}, which is of type \texttt{enum Domain}, lets the user to choose to generate the waveform in the time or frequency domain. This enum is defined as:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{time,} \\
+                      & \texttt{frequency,}  \\
+                      & \} \texttt{Domain;}
+\end{tabular}
+
+\vspace{5mm}
+
+At the moment, only time domain waveforms are available.
+
+If the user has chosen method \texttt{one}, (i.e.\ they have chosen to integrate $E^{\prime}(v)/\mathcal{F}(v)$ numerically) then they have the additional choice of specifying the form of the expansion which defines $E^{\prime}(v)/\mathcal{F}(v)$. This ratio can be expressed in the form of a \emph{Taylor series} (T--Approximants) or by using \emph{P--Approximants}. This choice is handled by the parameter \texttt{approximant}, which is of type \texttt{enum Approximant}, and which is defined as follows:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef enum} & \{ \\
+                      & \texttt{taylor,} \\
+                      & \texttt{pade,}  \\
+                      & \} \texttt{Approximant;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+\section{Operating Instructions}
+
+Here is an example of a code fragment which shows how the members of the input structure are initialized, and how the function is then called.
+
+\vspace{5mm}
+
+\noindent
+\begin{verbatim}
+/* Declare the structures to be used  */
+\end{verbatim}
+\texttt{REAL8Vector signal;} \\
+\texttt{InspiralTemplate params;} \\
+\texttt{Status status;} \\
+\begin{verbatim}
+/* Initialize the inputs  */
+\end{verbatim}
+\texttt{params.ieta} = 1; \\
+\texttt{params.mass1} = 10.0; \\
+\texttt{params.mass2} = 10.0; \\
+\texttt{params.startTime} = 0.0; \\
+\texttt{params.startPhase} = 0.0; \\
+\texttt{params.fCutoff} = 1000.0; \\
+\texttt{params.tSampling} = 4000.0; \\
+\texttt{params.signalAmplitude} = 1.0; \\
+\texttt{params.nStartPad} = 0; \\
+\texttt{params.nEndPad} = 0; \\
+\texttt{params.method} = three; \\
+\texttt{params.order} = twoPN; \\
+\texttt{params.domain} = time; \\
+\texttt{params.approximant} = taylor; \\
+\texttt{params.massChoice} = m1Andm2; \\
+\begin{verbatim}
+/* Call the function */
+\end{verbatim}
+\texttt{InspiralWave (\&status, \&signal, \&params);}
+\begin{verbatim}
+/* Write the data to the screen  */
+  fprintf(stderr,"%e\n",signal.data); 
+\end{verbatim}
+
+Inside the function \texttt{InspiralWave}, error checks are made upon its arguments, using the ASSERT macro. Because each of the arguments to the function involves a pointer being passed to the function (e.g.\ \texttt{signal, params}), we check that each of the pointers are not NULL pointers.
+Inside the function \texttt{InspiralWave}, this looks like:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+void \texttt{InspiralWave}&(\texttt{Status $\ast$status},     \\
+                                   &\texttt{REAL8Vector $\ast$signal}, \\
+                                   &\texttt{InspiralTemplate $\ast$params})
+\end{tabular}
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+ASSERT & (signal,  \\
+       &  status,    \\
+       &  INSPIRALWAVE\_ENULL, \\
+       &  INSPIRALWAVE\_MSGENULL);
+\end{tabular}
+
+\vspace{5mm}
+
+This above example checks whether the pointer \texttt{signal} is a NULL pointer or not. If it is a NULL pointer, then an error message which is defined by the character string \texttt{INSPIRALWAVE\_MSGENULL} is sent to the screen.
+
+
+\section{Options}
+
+The user may choose from one of three methods of solving the gravitational wave phasing formula. If method \texttt{one} is chosen, then the user may choose to use T or P--Approximants for the energy and flux functions. Then the order of post--Newtonian expansion mey be chosen. If the user chooses methods \texttt{two} or \texttt{three} then only T--Approximants are available, but the user may choose the order of post--Newtonian expansion. At the moment, only time domain waveforms are available.
+
+\section{Accuracy}
+
+All variables are decalred to be REAL8, which means that they are double precision.
+Each double precision variable has an approximate precision of 15 significant figures.
+
+
+\section{Error conditions}
+
+We check that each of the pointers passed to the function \\ \texttt{InspiralWave} as an argument , i.e.\ \texttt{Status}, \texttt{signal} and \texttt{params}, are not NULL pointers. If any of them are NULL, then an error message is sent to the screen.
+
+
+\section{Tests}
+
+This code has been extensively tested by B. Sathyaprakash. This test included a comparison to the routines in the GRASP library.
+
+\section{Uses}
+
+This function immediately calls the functions \texttt{InspiralSetup}, \texttt{TappRpnTdomFreq}, \texttt{ChooseModel}, \texttt{InspiralDerivatives} and \texttt{RungeKutta4}
+
+
+
+\end{document}

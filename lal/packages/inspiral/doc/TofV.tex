@@ -1,0 +1,180 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+
+\begin{document}
+\huge
+\begin{center}
+TofV.c
+\end{center}
+\normalsize
+\vspace{10mm}
+
+\section{Purpose}
+
+The function \texttt{TofV} calculates the quantity which we denote tofv, which is given by the following equation
+\begin{equation}
+\mathrm{tofv} = t(v) - t_{0} + m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
+\label{tofv}
+\end{equation}
+
+\texttt{TofV} calculates tofv, given $t(v)$, $t_{0}$, $m$, $v_{0}$, $v$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
+
+
+
+
+\section{Algorithms}
+
+\texttt{TofV} uses the function \texttt{DRombergIntegrate}, to evaluate the integral.
+
+
+\section{Arguments}
+
+The function header is of the form:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+void \texttt{TofV}&(\texttt{Status $\ast$status},     \\
+                                   &\texttt{REAL8 $\ast$tofv}, \\
+                                   &\texttt{REAL8 v}, \\
+                                   &\texttt{void $\ast$params})
+\end{tabular}
+
+\vspace{5mm}
+
+The structure which is of type \texttt{Status}, which is pointed to by the pointer \texttt{status} writes information to the screen should the code encounter a problem. The output is of type \texttt{REAL8} and is pointed to by the pointer \texttt{tofv}. The inputs needed come from the input structure which is of type \texttt{void $\ast$}, and which is pointed to by the pointer \texttt{params}. This structure is really a structure which was originally of type \texttt{TofVIn}, but which has been cast into type \texttt{void $\ast$} so that it could be fed as an input to the function \texttt{DBisectionFindRoot}, which will call this function. The other input is the velocity $v$, which comes from the variable \texttt{v}. 
+
+The input structure has the form
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+\texttt{typedef struct} & \texttt{tagTofVIn} \{ \\
+                        & \texttt{REAL8 t;} \\
+                        & \texttt{REAL8 v0;} \\
+                        & \texttt{REAL8 t0;} \\
+                        & \texttt{REAL8 vlso;} \\
+                        & \texttt{REAL8 totalmass;} \\
+                        & \texttt{EnergyFunction $\ast$dEnergy;}  \\
+                        & \texttt{FluxFunction $\ast$flux;}  \\
+                        & \texttt{expnCoeffs $\ast$coeffs;}  \\
+                        & \} \texttt{TofVIn;}
+\end{tabular}
+
+\vspace{5mm}
+
+
+Now \texttt{dEnergy} is a pointer to the function which represents $E^{\prime}(v)$. This function is of the form
+
+\vspace{5mm}
+
+\texttt{typedef REAL8 EnergyFunction(REAL8, expnCoeffs *)};
+
+\vspace{5mm}
+
+Similarly, \texttt{flux} is a pointer to the function which represents $\mathcal{F}(v)$. This function has the form
+
+\vspace{5mm}
+
+\texttt{typedef REAL8 FluxFunction(REAL8, expnCoeffs *)};
+
+\vspace{5mm}
+
+The pointers to these functions are set by calling the function \texttt{ChooseModel}.
+
+\texttt{expnCoeffs} is a structure which holds all of the coefficients needed to calculate the post--Newtonain expansions of $E^{\prime}(v)$ and $\mathcal{F}(v)$. The members of this structure are filled up by calls to the functions \texttt{InspiralSetup} and \texttt{ChooseModel}.
+
+
+
+
+
+
+
+
+
+\section{Operating Instructions}
+
+Here is an example of a code fragment which shows how the members of the input structure are initialized, and how the function is then called.
+
+\vspace{5mm}
+
+\noindent
+\begin{verbatim}
+/* Declare the structures to be used  */
+\end{verbatim}
+\texttt{TofVIn input;} \\
+\texttt{REAL8 v;} \\
+\texttt{REAL8 tofv;} \\
+\texttt{Status status;} \\
+\begin{verbatim}
+/* Initialize the inputs  */
+\end{verbatim}
+\texttt{input.t} = 0.0; \\
+\texttt{input.t0} = 0.0; \\
+\texttt{input.v0} = $(\pi m f_{0})^{1/3}$; \\
+\texttt{input.vlso} = $1/\sqrt{6}$; \\
+\texttt{input.totalmass} = 20.0; \\
+\texttt{input.dEnergy} = pointer to the derivative of the energy function; \\
+\texttt{input.flux} = pointer to the flux function; \\
+\texttt{input.coeffs} = structure for the coefficients; \\
+\texttt{v} = $v$;
+\begin{verbatim}
+/* Call the function */
+\end{verbatim}
+\texttt{TofV (\&status, \&tofv, v, \&input);}
+\begin{verbatim}
+/* Write the data to the screen  */
+  fprintf(stderr,"%e\n",tofv); 
+\end{verbatim}
+
+Inside the function \texttt{TofV}, error checks are made upon its arguments, using the ASSERT macro. Inside the function \texttt{TofV}, this looks like:
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+void \texttt{TofV}&(\texttt{Status $\ast$status},     \\
+                                   &\texttt{REAL8 $\ast$tofv}, \\
+                                   &\texttt{REAL8 v}, \\
+                                   &\texttt{void $\ast$params})
+\end{tabular}
+
+\vspace{5mm}
+
+\begin{tabular}{ll}
+ASSERT & (tofv,  \\
+       &  status,    \\
+       &  TOFV\_ENULL, \\
+       &  TOFV\_MSGENULL);
+\end{tabular}
+
+\vspace{5mm}
+
+This above example checks whether the pointer \texttt{tofv} is a NULL pointer or not. If it is a NULL pointer, then an error message which is defined by the character string \texttt{TOFV\_MSGENULL} is sent to the screen.
+
+
+\section{Options}
+
+There are no options for this function.
+
+
+\section{Accuracy}
+
+All variables are decalred to be REAL8, which means that they are double precision.
+Each double precision variable has an approximate precision of 15 significant figures.
+
+
+\section{Error conditions}
+
+We check that each of the pointers passed to the function \\ \texttt{TofV} as an argument , i.e.\ \texttt{Status}, \texttt{tofv} and \texttt{params}, are not NULL pointers. If any of them are NULL, then an error message is sent to the screen.
+
+
+\section{Tests}
+
+This code has been extensively tested by B. Sathyaprakash. This test included a comparison to the routines in the GRASP library.
+
+\section{Uses}
+
+This function calls the function \texttt{DRombergIntegrate},  which itself calls the function \texttt{TofVIntegrand}.
+
+
+\end{document}
