@@ -875,7 +875,7 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
       v2y = vertex[(i+1) % N].latitude;
 
       /* pre-select candidate edges */
-      if ( (py <  MIN(v1y,  v2y)) || (py >  MAX(v1y, v2y) ) || (v1y == v2y) )
+      if ( (py <=  MIN(v1y,  v2y)) || (py >  MAX(v1y, v2y) ) || (v1y == v2y) )
 	continue;
 
       /* now calculate the actual intersection point of the horizontal ray with the edge in question*/
