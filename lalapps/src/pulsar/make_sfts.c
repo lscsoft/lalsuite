@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <signal.h>
 
 /* INT_MAX */
 #include <limits.h>
@@ -343,6 +344,19 @@ void print50(float *array, char *name){
 }
 #endif
 
+/* some signal handlers */
+void sighandler(int sig){
+
+  if (sig==SIGSEGV)
+    fprintf(stderr,"Caught signal SIGSEGV\n");
+  if (sig==SIGFPE)
+    fprintf(stderr,"Caught signal SIGFPE\n");
+
+  fflush(NULL);
+
+  exit(128+sig);
+}
+
 int main(int argc,char *argv[]){
   static LALStatus status;
   UINT4 npts;
@@ -372,7 +386,14 @@ int main(int argc,char *argv[]){
   FrFile *frfile;
   /* vector holding the frame data */
   FrVect *frvect;        
-  
+
+  /* install signal handlers */
+  if (signal(SIGSEGV, sighandler)==SIG_IGN)
+    signal(SIGSEGV, SIG_IGN);
+
+  if (signal(SIGFPE, sighandler)==SIG_IGN)
+    signal(SIGFPE, SIG_IGN);
+
 #if (0)
   /* check the timing correction code */
   checktimingcorrections();
