@@ -774,10 +774,9 @@ find_files (const CHAR *globdir)
   struct dirent *entry;
 #else
   intptr_t dir;
-  struct _finddata_t *entry;
+  struct _finddata_t entry;
 #endif
-  CHAR *dname;
-  const CHAR *ptr1, *ptr2;
+  CHAR *dname, *ptr1, *ptr2;
   CHAR fpattern[512];
   size_t dirlen;
   CHAR **filelist = NULL; 
@@ -792,14 +791,15 @@ find_files (const CHAR *globdir)
   ptr1 = strrchr (globdir, '\\');
 #endif
 
-  if (ptr1) 
-    dirlen = (size_t)(ptr1 - globdir)+1;
+  if (ptr1)
+    dirlen = (size_t)(ptr1 - globdir) + 1;
   else
     dirlen = 2;   /* for "." */
 
   if ( (dname = LALCalloc (1, dirlen)) == NULL) {
     return (NULL);
   }
+ 
   if (ptr1) {
     strncpy (dname, globdir, dirlen);
     dname[dirlen-1] = '\0';
@@ -809,26 +809,29 @@ find_files (const CHAR *globdir)
   
   /* copy the rest as a substring for matching */
   if (ptr1)
-    ptr2 = ptr1 + 1;
+    strcpy (fpattern, ptr1+1);
   else
-    ptr2 = globdir;
-  strcpy (fpattern, ptr2);
+    strcpy (fpattern, globdir);
 
 #ifndef _MSC_VER
   /* now go through the filelist in this directory */
-  if ( (dir = opendir(dname)) == NULL)
+  if ( (dir = opendir(dname)) == NULL) {
+    LALPrintError ("Can't open data-directory `%s`\n", dname);
+    LALFree (dname);
+    return (NULL);
+  }
 #else
-  /* TODO: adapt filspec: insert wildcards */
-  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+strlen(fpattern)+2)) == NULL)
-      return(NULL);
-  sprintf(ptr1,"%s\\*%s",dname,fpattern);  
-  if ( (dir = _findfirst(ptr1,entry)) == -1)
+  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+strlen(fpattern)+4)) == NULL)
+    return(NULL);
+  sprintf(ptr1,"%s\\*%s*",dname,fpattern);  
+  dir = _findfirst(ptr1,&entry);
+  LALFree(ptr1);
+  if (dir == -1) {
+    LALPrintError ("Can't find file for pattern `%s`\n", ptr1);
+    LALFree (dname);
+    return (NULL);
+  }
 #endif
-    {
-      LALPrintError ("Can't open data-directory `%s`\n", dname);
-      LALFree (dname);
-      return (NULL);
-    }
 
 #ifndef _MSC_VER
   while ( (entry = readdir (dir)) != NULL )
@@ -837,9 +840,9 @@ find_files (const CHAR *globdir)
 #endif
     {
 #ifndef _MSC_VER
-      if ( strstr (entry->d_name, fpattern) ) 	/* found a matching file */
+      if ( strstr (entry->d_name, fpattern) ) /* found a matching file */
 #else
-      if ( strstr (entry->name, fpattern) ) 	/* found a matching file */
+      if ( strstr (entry.name, fpattern) ) /* found a matching file */
 #endif
 	{
 	  numFiles ++;
@@ -850,7 +853,7 @@ find_files (const CHAR *globdir)
 #ifndef _MSC_VER
 	  namelen = strlen(entry->d_name) + strlen(dname) + 2 ;
 #else
-	  namelen = strlen(entry->name) + strlen(dname) + 2 ;
+	  namelen = strlen(entry.name) + strlen(dname) + 2 ;
 #endif
 	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	    for (j=0; j < numFiles; j++)
@@ -862,14 +865,13 @@ find_files (const CHAR *globdir)
 #ifndef _MSC_VER
 	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->d_name);
 #else
-	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->name);
+	  sprintf(filelist[numFiles-1], "%s\\%s", dname, entry.name);
 #endif
 	}
 
-#ifndef _MSC_VER
-  } /* while more directory entries */
-#else
-  } while ( _findnext (dir,entry) == 0 );
+    } /* while more directory entries */
+#ifdef _MSC_VER
+  while ( _findnext (dir,&entry) == 0 );
 #endif
 
 #ifndef _MSC_VER
@@ -896,49 +898,7 @@ find_files (const CHAR *globdir)
 
   return (ret);
 } /* find_files() */
-#ifdef MSVC_FOUND
-/* Windows implementation */
-StringVector *
-find_files (const CHAR *filespec)
-{
-  struct snode {
-    char*string;
-    struct snode*next;
-  }
-  struct snode*first;
-  struct snode*last;
-  UINT4 nonames;
 
-  fitem = _findfirst(filespec);
-  first = LALMalloc(sizeof(struct snode));
-  if (first == NULL)
-    ERROR;
-  first.sring = LALMalloc(strlen(fitem));
-  if (first.string == NULL)
-    ERROR;
-  first.next = NULL;
-  strcpy(first.string, fitem);
-
-  last = first;
-  length = 1;
-
-  while ((fitem = _findnext(filespec)) > 0) {
-
-    last->next = LALMalloc(sizeof(struct snode));
-    if (last->next == NULL)
-      ERROR;
-    last->sring = LALMalloc(strlen(fitem));
-    if (last->sring == NULL)
-      ERROR;
-    last->next = NULL;
-    strcpy(last->string, fitem);
-
-    last = last->next;
-    length++;
-  }
-
-} /* find_files() */
-#endif
 
 void
 DestroyStringVector (StringVector *strings)

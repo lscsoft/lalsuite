@@ -76,10 +76,17 @@ INT4 lalDebugLevel=3;
 #define MAXFILENAMELENGTH 64
 #define NFSIZE 5
 #define THRESHOLD 2.0
-#define OUTFILE1 "./TestOutputSFT.0"
-#define OUTFILE2 "./TestOutputSFT.1"
 #define INFILE  "inputsft.0" /* little endian sft */
 #define INFILE2 "inputsft.1" /* big endian sft */
+#ifndef _MSC_VER
+#define OUTFILE1 "./TestOutputSFT.0"
+#define OUTFILE2 "./TestOutputSFT.1"
+#define FPATTERN "./OutputSFT"
+#else
+#define OUTFILE1 ".\\TestOutputSFT.0"
+#define OUTFILE2 ".\\TestOutputSFT.1"
+#define FPATTERN ".\\OutputSFT"
+#endif
 
 /* Usage format string. */
 
@@ -248,7 +255,7 @@ int main(int argc, char *argv[]){
   printf ("Testing LALReadSFTfiles()\n");
 
   /* now re-read OUTFILE1 and OUTFILE2 using a pattern */
-  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, "./OutputSFT"), &status);
+  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, FPATTERN), &status);
   
   if(sftvect->length != 2)
     {
