@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
 	printf("Timebase:             %-16f\n", info.tbase);
 	printf("First frequency bin:  %d\n", info.firstfreqindex);
 	printf("Number of freq bins:  %d\n", info.nsamples);
+	printf("Detector prefix:      %c%c\n", info.detector[0], info.detector[1]);
 	printf("64-bit CRC checksum:  %llu\n", info.crc64);
 	printf("Comment length bytes: %d\n", info.comment_length);
 	printf("Endian order:         %s\n", swapendian?"reversed":"native");
