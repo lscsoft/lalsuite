@@ -246,11 +246,6 @@ while (0)
 char *lalWatch;
 #endif
 
-/* Prototype for the range function. */
-void
-LALDecRange( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
-
-
 int
 main(int argc, char **argv)
 {

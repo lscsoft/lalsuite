@@ -200,6 +200,8 @@ LALRectIntersect( LALStatus           *stat,
 
 /* <lalLaTeX>
 \newpage\input{FlatMeshTestC}
+
+\newpage\input{DirectedMeshTestC}
 </lalLaTeX> */
 
 #ifdef __cplusplus
