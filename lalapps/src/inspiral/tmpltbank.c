@@ -100,6 +100,7 @@ REAL4  highPassAtten    = -1;           /* attenuation of the td filter */
 REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
+INT4   globCalData      = 0;            /* glob for calibration frames  */
 REAL4  dynRangeExponent = 0;            /* exponent of dynamic range    */
 REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
 INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
@@ -150,6 +151,8 @@ int main ( int argc, char *argv[] )
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrCacheSieve  sieve;
+  const size_t  calGlobLen = 12;
+  CHAR         *calGlobPattern;
 
   /* frame output data */
   struct FrFile *frOutFile = NULL;
@@ -183,7 +186,7 @@ int main ( int argc, char *argv[] )
   LIGOLwXMLStream       results;
 
   /* counters and other variables */
-  UINT4 cut, j, k;
+  UINT4 cut, i, j, k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   CHAR  fname[256];
   LALUnitPair pair;
@@ -639,15 +642,48 @@ int main ( int argc, char *argv[] )
       - gpsStartTime.gpsSeconds;
     calfacts.ifo = ifo;
 
+    /* create the lal calibration frame cache */
+    if ( globCalData )
+    {
+      calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
+      LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR), 
+          "*%c*CAL*.gwf", fqChanName[0] );
+      if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
+          "in current directory\n", calGlobPattern );
+    }
+    else
+    {
+      calGlobPattern = NULL;
+      if ( vrbflg ) fprintf( stdout, 
+          "reading calibration data from cache: %s\n", calCacheName );
+    }
+
+    LAL_CALL( LALCreateCalibFrCache( &status, &calCache, calCacheName, 
+          NULL, calGlobPattern ), &status );
+
+    if ( calGlobPattern ) LALFree( calGlobPattern );
+
+    /* store the name of the calibration files used */
+    for ( i = 0; i < calCache->numFrameFiles; ++i )
+    {
+      this_search_summvar = this_search_summvar->next = 
+        (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+          "calibration frame %d", i );
+      LALSnprintf( this_search_summvar->string, 
+          LIGOMETA_STRING_MAX * sizeof(CHAR), "%s", 
+          calCache->frameFiles[i].url );
+    }
+
     /* generate the response function for the current time */
     if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
         "response parameters f0 = %e, deltaF = %e, length = %d\n",
         resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
         resp.f0, resp.deltaF, resp.data->length );
-    LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
-        &status );
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
           &calfacts ), &status );
+
+    /* descroy the frame cache for the calibrated data */
     LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
 
     if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
@@ -999,6 +1035,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --frame-type TAG             input data is contained in frames of type TAG\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"  --glob-calibration-data      obtain calibration by globbing in working dir\n"\
 "\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
 "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
@@ -1064,6 +1101,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"standard-candle",         no_argument,       &computeCandle,    1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
+    {"glob-calibration-data",   no_argument,       &globCalData,      1 },
     /* parameters used to generate calibrated power spectrum */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -2076,12 +2114,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-
-  /* check that the calibration frame cache has been specified */
-  if ( ! calData && ! calCacheName )
+  /* check we can calibrate the data if it's not h(t) */
+  if ( ! calData )
   {
-    fprintf( stderr, "--calibration-cache must be specified\n" );
-    exit( 1 );
+    if ( ! ( calCacheName || globCalData ) )
+    {
+      fprintf( stderr, "either --calibration-cache or "
+          "--glob-calibration-data must be specified\n" );
+      exit( 1 );
+    }
+    else if ( calCacheName && globCalData )
+    {
+      fprintf( stderr, "only one of --calibration-cache or "
+          "--glob-calibration-data can be specified\n" );
+      exit( 1 );
+    }
+  }
+  else
+  {
+    if ( calCacheName || globCalData )
+    {
+      fprintf( stderr, "neither --calibration-cache nor "
+          "--glob-calibration-data\nshould be given for calibrated data\n" );
+      exit( 1 );
+    }
+  }
+
+  /* record the glob calibration data option in the process params */
+  if ( globCalData )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-calibration-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* check that the bank type has been specified */

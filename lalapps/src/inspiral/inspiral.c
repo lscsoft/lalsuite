@@ -141,7 +141,7 @@ REAL4 minimalMatch = -1;                /* override bank minimal match  */
 REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
 INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
 REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
-enum { undefined, real_4, real_8 } cal_data = undefined; /* cal data type */
+enum { undefined, real_4, real_8 } calData = undefined; /* cal data type */
 
 /* data conditioning parameters */
 LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
@@ -158,6 +158,7 @@ INT4   badMeanPsd       = 0;            /* use a mean with no overlap   */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
+INT4   globCalData      = 0;            /* glob for calibration frames  */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
 int   injectOverhead    = 0;            /* inject h+ into detector      */
 
@@ -213,6 +214,8 @@ int main( int argc, char *argv[] )
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrCacheSieve  sieve;
+  const size_t  calGlobLen = 12;
+  CHAR         *calGlobPattern;
 
   /* frame output data */
   struct FrFile *frOutFile  = NULL;
@@ -578,7 +581,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
@@ -631,7 +634,7 @@ int main( int argc, char *argv[] )
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* create storage for the GEO input data */
     LAL_CALL( LALDCreateVector( &status, &(geoChan.data), numInputPoints ), 
@@ -644,7 +647,7 @@ int main( int argc, char *argv[] )
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
       chan.deltaT, numInputPoints );
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* read in the GEO data here */
     PassBandParamStruc geoHighpassParam;
@@ -694,7 +697,7 @@ int main( int argc, char *argv[] )
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
-    if ( cal_data == real_4 )
+    if ( calData == real_4 )
     {
       /* multiply the input data by dynRange */
       for ( j = 0 ; j < numInputPoints ; ++j )
@@ -838,8 +841,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALINT8toGPS( &status, &(calfacts.duration), 
         &durationNS ), &status );
 
-
-  if ( cal_data )
+  if ( calData )
   {
     /* if we are using calibrated data set the response to unity */
     for( k = 0; k < resp.data->length; ++k )
@@ -852,8 +854,40 @@ int main( int argc, char *argv[] )
   }
   else
   {
+    /* create the lal calibration frame cache */
+    if ( globCalData )
+    {
+      calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
+      LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR), 
+          "*%c*CAL*.gwf", fqChanName[0] );
+      if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
+          "in current directory\n", calGlobPattern );
+    }
+    else
+    {
+      calGlobPattern = NULL;
+      if ( vrbflg ) fprintf( stdout, 
+          "reading calibration data from cache: %s\n", calCacheName );
+    }
+
+    LAL_CALL( LALCreateCalibFrCache( &status, &calCache, calCacheName, 
+          NULL, calGlobPattern ), &status );
+
+    if ( calGlobPattern ) LALFree( calGlobPattern );
+
+    /* store the name of the calibration files used */
+    for ( i = 0; i < calCache->numFrameFiles; ++i )
+    {
+      this_search_summvar = this_search_summvar->next = 
+        (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+          "calibration frame %d", i );
+      LALSnprintf( this_search_summvar->string, 
+          LIGOMETA_STRING_MAX * sizeof(CHAR), "%s", 
+          calCache->frameFiles[i].url );
+    }
+    
     /* get the response from the frame data */
-    LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), &status );
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
           &calfacts), &status );
     LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
@@ -937,7 +971,7 @@ int main( int argc, char *argv[] )
         injResp.sampleUnits = strainPerCount;
         strcpy( injResp.name, chan.name );
 
-        if ( cal_data )
+        if ( calData )
         {
           /* if we are using calibrated data set the response to unity */
           if ( vrbflg ) fprintf( stdout, 
@@ -967,9 +1001,43 @@ int main( int argc, char *argv[] )
           LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
                 &durationNS ), &status );
 
+          /* create the lal calibration frame cache */
+          if ( globCalData )
+          {
+            calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
+            LALSnprintf( calGlobPattern, calGlobLen * sizeof(CHAR), 
+                "*%c*CAL*.gwf", fqChanName[0] );
+            if ( vrbflg ) fprintf( stdout, 
+                "globbing for %s calibration frame files "
+                "in current directory\n", calGlobPattern );
+          }
+          else
+          {
+            calGlobPattern = NULL;
+            if ( vrbflg ) fprintf( stdout, 
+                "reading calibration data from cache: %s\n", calCacheName );
+          }
+
+          LAL_CALL( LALCreateCalibFrCache( &status, &calCache, calCacheName, 
+                NULL, calGlobPattern ), &status );
+
+          if ( calGlobPattern ) LALFree( calGlobPattern );
+
+          /* store the name of the calibration files used */
+          for ( i = 0; i < calCache->numFrameFiles; ++i )
+          {
+            this_search_summvar = this_search_summvar->next = 
+              (SearchSummvarsTable *) 
+              LALCalloc( 1, sizeof(SearchSummvarsTable) );
+            LALSnprintf( this_search_summvar->name, 
+                LIGOMETA_NAME_MAX * sizeof(CHAR), 
+                "injection calibration frame %d", i );
+            LALSnprintf( this_search_summvar->string, 
+                LIGOMETA_STRING_MAX * sizeof(CHAR), "%s", 
+                calCache->frameFiles[i].url );
+          }
+          
           /* extract the calibration from frames */
-          LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
-              &status );
           LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
                 &inj_calfacts ), &status );
           LAL_CALL( LALDestroyFrCache( &status, &calCache), &status );
@@ -2271,6 +2339,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --frame-type TAG             input data is contained in frames of type TAG\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
+"  --glob-calibration-data      obtain calibration by globbing in working dir\n"\
 "\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
 "  --calibrated-data TYPE       calibrated data of TYPE real_4 or real_8\n"\
@@ -2352,6 +2421,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"inject-overhead",         no_argument,       &injectOverhead,   1 },
     {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
+    {"glob-calibration-data",   no_argument,       &globCalData,      1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2707,11 +2777,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           if ( ! strcmp( "real_4", optarg ) )
           {
-            cal_data = real_4;
+            calData = real_4;
           }
           else if ( ! strcmp( "real_8", optarg ) )
           {
-            cal_data = real_8;
+            calData = real_8;
           }
           else
           {
@@ -3423,7 +3493,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     }
   }
 
-  if ( cal_data == real_8 )
+  if ( calData == real_8 )
   {
     /* check that geo high pass parameters have been specified */
     if ( geoHighPassFreq < 0 )
@@ -3578,11 +3648,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
-  /* check that the calibration frame cache has been specified */
-  if ( ! cal_data && ! calCacheName )
+  /* check we can calibrate the data if it's not h(t) */
+  if ( ! calData )
   {
-    fprintf( stderr, "--calibration-cache must be specified\n" );
-    exit( 1 );
+    if ( ! ( calCacheName || globCalData ) )
+    {
+      fprintf( stderr, "either --calibration-cache or "
+          "--glob-calibration-data must be specified\n" );
+      exit( 1 );
+    }
+    else if ( calCacheName && globCalData )
+    {
+      fprintf( stderr, "only one of --calibration-cache or "
+          "--glob-calibration-data can be specified\n" );
+      exit( 1 );
+    }
+  }
+  else
+  {
+    if ( calCacheName || globCalData )
+    {
+      fprintf( stderr, "neither --calibration-cache nor "
+          "--glob-calibration-data\nshould be given for calibrated data\n" );
+      exit( 1 );
+    }
+  }
+
+  /* record the glob calibration data option in the process params */
+  if ( globCalData )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--glob-calibration-data" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* check that a template bank has been specified */
