@@ -24,16 +24,19 @@ CreateRandomPPNParamStruc (
     REAL4              *m2,
     REAL4               mMin,
     REAL4               mMax,
+    REAL4               fmin,
     REAL8               deltaT,
     RandomParams       *rpar
     )
 {
   REAL4         mDiff      = mMax - mMin;
   REAL4         cannonDist = 1.0e6;       /* cannonical distance in pc */
-  REAL4         fmin       = 25.0;
 
   INITSTATUS( status, "CreateRandomPPNParamStruc", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
+
+  /* debugging */
+  fmin       = 40.0;
 
   /* fixed parameters. */
   params->position.latitude = params->position.longitude = 0.0;
@@ -57,7 +60,8 @@ CreateRandomPPNParamStruc (
   params->phi = 0.0;
   params->d = cannonDist * LAL_PC_SI;
   params->fStartIn = fmin;
-  params->fStopIn = 0; /* terminate on condition not frequency */
+  params->fStopIn = 1.0 / 
+    (6.0 * sqrt(6.0) * LAL_PI * params->mTot * LAL_MTSUN_SI);
 
   /* ppn parameter */
   params->ppn = NULL;
@@ -393,6 +397,7 @@ LALFindChirpSlave (
           memset( data, 0, tdLength * sizeof(REAL4) );
           for( k = 0; k < fdLength ; ++k )
           {
+#if 0
             REAL8 psd;
             REAL8 freq = (REAL8) k * deltaF;
             if ( freq < params->dataParams->fLow )
@@ -404,6 +409,7 @@ LALFindChirpSlave (
               LALLIGOIPsd( NULL, &psd, freq );
               spec[k] = (REAL4) psd;
             }
+#endif
             resp[k].re = response;
             resp[k].im = 0.0;
           }
@@ -412,7 +418,8 @@ LALFindChirpSlave (
           memset( &ppnParams, 0, sizeof(PPNParamStruc) );
           CreateRandomPPNParamStruc( status->statusPtr, 
               &ppnParams, &mass1, &mass2, 
-              params->simParams->mMin, params->simParams->mMax, deltaT,
+              params->simParams->mMin, params->simParams->mMax, 
+              params->dataParams->fLow, deltaT,
               params->simParams->randomParams );
           CHECKSTATUSPTR( status );
 
@@ -428,6 +435,15 @@ LALFindChirpSlave (
           memset( &waveform, 0, sizeof(CoherentGW) );
           LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
           CHECKSTATUSPTR( status );
+#ifdef INSPIRAL_SO_DEBUG
+          fprintf( stdout, "%s\n", ppnParams.termDescription );
+          fprintf( stdout, "fStartIn = %e\n", ppnParams.fStartIn );
+          fprintf( stdout, "fStopIn  = %e\n", ppnParams.fStopIn );
+          fprintf( stdout, "fStart   = %e\n", ppnParams.fStart );
+          fprintf( stdout, "fStop    = %e\n", ppnParams.fStop );
+          fprintf( stdout, "length   = %d\n", ppnParams.length );
+          fflush( stdout );
+#endif
 
           /* place the waveform in the middle of the data segment       */
           if ( ppnParams.length > tdLength )
