@@ -13,8 +13,14 @@ int SetLaTeXFlags( LALEnvironment *LaTeXEnv, char *sourcefile , FILE *inSrc )
         LaTeXEnv->On         = 0             ;
         LaTeXEnv->InFilePtr  = inSrc         ;
         LaTeXEnv->OutFilePtr = NULL          ;
+        LaTeXEnv->fileName   = NULL           ;
         LaTeXEnv->sourceFile = sourcefile    ;
+        LaTeXEnv->allCaps    = '\0'          ;
+        LaTeXEnv->errCodePrfx= '\0'          ;
+        LaTeXEnv->dfltFile   = '\0'          ;
         LaTeXEnv->suffix     = ".tex\0"      ;
+        LaTeXEnv->cnvtnVioltn= 0             ;
+        LaTeXEnv->lineCount  = 0             ;
         LaTeXEnv->Preamble   = TopOfLaTeXEnv ;
         LaTeXEnv->PostFix    = EndOfLaTeXEnv ;
     
@@ -29,6 +35,7 @@ int SetLaTeXFlags( LALEnvironment *LaTeXEnv, char *sourcefile , FILE *inSrc )
 int WriteLaTeX( char *line , LALEnvironment *Env )
 {  
         char *onFlagOnCurrentLine;
+        int i;
         onFlagOnCurrentLine = strstr(line, Env->OnFlag );
 
         if( onFlagOnCurrentLine  ){ 
@@ -37,6 +44,14 @@ int WriteLaTeX( char *line , LALEnvironment *Env )
         }
         else
         {
+             /* 
+              * Elliminate leading *'s from the latex, ie like in
+              * this comment block
+              *
+             */
+             i = 0;
+             while(*(line+i) == ' ' && *(line+i) != '\0') { i++; }
+             if(*(line+i) == '*') { *(line+i)=' '; }
              /* if we are in the in body of the LaTeX,  we print the line */
              fputs(line,Env->OutFilePtr );
         }

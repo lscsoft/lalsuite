@@ -7,13 +7,19 @@
 int SetVerbatimFlags( LALEnvironment *VerbatimEnv, char *sourcefile , FILE *inSrc )
 {
         VerbatimEnv->OnFlag     = "<lalVerbatim"   ;
-        VerbatimEnv->OffFlag    = "</lalVerbatim" ;
+        VerbatimEnv->OffFlag    = "</lalVerbatim"  ;
         VerbatimEnv->closer     = ">"              ;
         VerbatimEnv->On         = 0                ;
         VerbatimEnv->InFilePtr  = inSrc            ;
         VerbatimEnv->OutFilePtr = NULL             ;
+        VerbatimEnv->fileName   = NULL             ;
         VerbatimEnv->sourceFile = sourcefile       ;
+        VerbatimEnv->allCaps    = '\0'             ;
+        VerbatimEnv->errCodePrfx= '\0'             ;
+        VerbatimEnv->dfltFile   = '\0'             ;
         VerbatimEnv->suffix     = ".tex\0"         ;
+        VerbatimEnv->cnvtnVioltn= 0                ;
+        VerbatimEnv->lineCount  = 0                ;
         VerbatimEnv->Preamble   = TopOfVerbatimEnv ;
         VerbatimEnv->PostFix    = EndOfVerbatimEnv ;
 

@@ -33,7 +33,7 @@ CloseAFile(FILE *filePtr, int timeStamp )
         time_t tp;
         if (timeStamp){
              time( &tp );
-             fprintf(filePtr ,"%%Laldoc Closed at: %s",
+             fprintf(filePtr ,"%%Laldoc Closed at: %s\n",
                      asctime(localtime(&tp)));
         }
         fclose((FILE *)filePtr);

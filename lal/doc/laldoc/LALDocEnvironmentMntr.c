@@ -113,7 +113,7 @@ CheckForEnvConflicts( LALEnvironment *LaTeXEnv    ,
     }
     if( VerbatimEnv->On ){
             if( ErrTableEnv->On ){
-                    if((strcmp( ErrTableEnv->fileName, VerbatimEnv->fileName)!=0)){
+                    if((strcmp( ErrTableEnv->fileName, VerbatimEnv->fileName)==0)){
                             LALDocErr("Verbatim/ErrTable output conflict.",
                             LaTeXEnv->sourceFile , __LINE__ , __FILE__ , 1 );   
                     }

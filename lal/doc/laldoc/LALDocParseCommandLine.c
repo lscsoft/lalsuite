@@ -36,6 +36,11 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
                 FullSourceStr[i]    = '\0';
         }
 
+        if( argcount < 2 ) {
+        fprintf(stderr ,"You need to specify some command lines options\n");
+                exit(BADEXIT);
+        }
+        
         if( strcmp(argvector[1], "-h") == 0 ){
                 fprintf(stderr ,"Help: Must specify an input and exception file\n");
                 exit(BADEXIT);
@@ -64,6 +69,8 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
                         *(FullErrStr+i) = *(ErrDir+i);
                         i++;
                 }
+                *(FullErrStr+dirLen)='/';
+                dirLen++;
         }
         /* ... copy the error file name onto the end of the directory and  ... */
         i=0;
@@ -91,6 +98,8 @@ int ParseCommandLine( int  argcount , char **argvector , char *source ,
                         *(FullSourceStr+i) = *(SourceDir+i);
                         i++;
                 }
+                *(FullSourceStr+dirLen)='/';
+                dirLen++;
         }
         /* ... copy the input file name onto the end of the directory and  ... */
         i=0;

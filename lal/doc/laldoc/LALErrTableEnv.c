@@ -7,16 +7,22 @@
  */
 int SetErrTableFlags( LALEnvironment *ErrTableEnv, char *sourcefile , FILE *inSrc )
 {
-        ErrTableEnv->OnFlag     = "<lalErrTable"   ;
-        ErrTableEnv->OffFlag    = "</lalErrTable" ;
-        ErrTableEnv->closer     = ">"              ;
-        ErrTableEnv->On         = 0                ;
-        ErrTableEnv->InFilePtr  = inSrc            ;
-        ErrTableEnv->OutFilePtr = NULL             ;
-        ErrTableEnv->sourceFile = sourcefile       ;
-        ErrTableEnv->suffix     = ".tex\0"         ;
-        ErrTableEnv->Preamble   = TopOfErrTableEnv ;
-        ErrTableEnv->PostFix    = EndOfErrTableEnv ;
+        ErrTableEnv->OnFlag       = "<lalErrTable"   ;
+        ErrTableEnv->OffFlag      = "</lalErrTable>" ;
+        ErrTableEnv->closer       = ">"              ;
+        ErrTableEnv->On           = 0                ;
+        ErrTableEnv->InFilePtr    = inSrc            ;
+        ErrTableEnv->OutFilePtr   = NULL             ;
+        ErrTableEnv->fileName     = NULL             ;
+        ErrTableEnv->sourceFile   = sourcefile       ;
+        ErrTableEnv->allCaps      = '\0'             ;
+        ErrTableEnv->errCodePrfx  = '\0'             ;
+        ErrTableEnv->dfltFile     = '\0'             ;
+        ErrTableEnv->suffix       = ".tex\0"         ;
+        ErrTableEnv->cnvtnVioltn  = 0                ;
+        ErrTableEnv->lineCount    = 0                ;
+        ErrTableEnv->Preamble     = TopOfErrTableEnv ;
+        ErrTableEnv->PostFix      = EndOfErrTableEnv ;
 
       
         return 0;
@@ -35,10 +41,19 @@ int WriteErrTable( char *line , LALEnvironment *Env )
 
         if( onFlagOnCurrentLine  ){
 
+           /*
+            * This routine determines that the Error Table On Flag
+            * has been set. It then searches for the file and 
+            * writes the table.  Then it repositions the file
+            * pointer back to the line just below the 
+            * Error Table On flag as if nothing has happened.
+           */
+           Env->cnvtnVioltn = 0;  /* initialize the convention violation flag*/
+           /* Get the file position at the top of the environment, ... */
            fgetpos( Env->InFilePtr , &linePtr);
-           /* Build and print the entire table ... */
+           /* ... find and print the entire table, ... */
            LALDocConstructErrorTable( Env );
-           /* and reset the file  position. */
+           /* and reset the file  position as if nothing has happened. */
            fsetpos( Env->InFilePtr , &linePtr);
                     
         }
@@ -61,9 +76,9 @@ TopOfErrTableEnv(void *recastToEnv )
 
     /* put the header in for the table  */
     fprintf(Env->OutFilePtr,"\\begin{center}");
-    fprintf(Env->OutFilePtr,"\\begin{tabular}{|lcp{4.5in}|}");
+    fprintf(Env->OutFilePtr,"\\begin{tabular}{|ccp{4.5in}|}");
     fprintf(Env->OutFilePtr,"\\hline");
-    fprintf(Env->OutFilePtr,"\n\\it name & code & description \\\\ ");
+    fprintf(Env->OutFilePtr,"\n \\texttt{<}\\textit{name}\\texttt{>} & code & description \\\\ ");
     fprintf(Env->OutFilePtr,"\\hline");
 
     return recastToEnv;
@@ -71,9 +86,9 @@ TopOfErrTableEnv(void *recastToEnv )
 
 /*
  *
- * Routine that closes the verbatim environment:
+ * Routine that closes the table  environment and writes the caption:
  *
- */
+*/
 void *
 EndOfErrTableEnv(void  *recastToEnv )
 {
@@ -86,25 +101,28 @@ EndOfErrTableEnv(void  *recastToEnv )
     fprintf(Env->OutFilePtr,"\n\\end{center}");
 
     fprintf(Env->OutFilePtr,"\n\\vspace{-.1in}");
+
+    if( Env->cnvtnVioltn ) {
+    fprintf(Env->OutFilePtr,"The status codes in the table above did not obey  ");
+    fprintf(Env->OutFilePtr, "the LAL naming convention, i.e. \n");
+    fprintf(Env->OutFilePtr, "the code does not use the file name in all caps ");
+    fprintf(Env->OutFilePtr, "as the prefix for the error names.\n");
+    fprintf(Env->OutFilePtr, "Consult the source code for the full names.\n");
+    fprintf(Env->OutFilePtr, "Better yet, fix the code.\n");
+    }
+    else{
     fprintf(Env->OutFilePtr,"The status codes in the table above are stored in ");
     fprintf(Env->OutFilePtr, "the constants\n");
     fprintf(Env->OutFilePtr, "\\verb@%s_E@\\texttt{<}\\textit{name}\\texttt{>},\n",
           Env->errCodePrfx );
     fprintf(Env->OutFilePtr, "and the status descriptions in\n");
-    fprintf(Env->OutFilePtr, "\\verb@%s_MSGE@\\texttt{<}\\textit{name}\\texttt{>}.",
-          Env->errCodePrfx );
-    if(strcmp(Env->errCodePrfx,Env->allCaps)){
-    fprintf(Env->OutFilePtr,"By convention the status codes are usually stored in ");
-    fprintf(Env->OutFilePtr, "the constants\n");
-    fprintf(Env->OutFilePtr, "\\verb@%s_E@\\texttt{<}\\textit{name}\\texttt{>},\n",
-          Env->allCaps );
-    fprintf(Env->OutFilePtr, "and the status descriptions in\n");
     fprintf(Env->OutFilePtr, "\\verb@%s_MSGE@\\texttt{<}\\textit{name}\\texttt{>}. ",
-          Env->allCaps );
-    fprintf(Env->OutFilePtr,"This file violates the naming convention.");
+          Env->errCodePrfx );
+        
     }
-
-
+    fprintf(Env->OutFilePtr,"The source code ");
+    fprintf(Env->OutFilePtr,"with these messages is in \\verb@%s@",
+          Env->sourceFile );
+    fprintf(Env->OutFilePtr, " on line \\verb@l.%i@.", lineNum );
     return recastToEnv;
 }
-

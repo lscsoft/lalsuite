@@ -11,7 +11,7 @@ ParseErrLine(char *Ptr , LALEnvironment *Env,
  *
  * The table information in the code should be bracketed
  * by delimiters.  The entries must obey the file naming 
- * convention Crap1.c --> CRAP1C_EMYMESSAGE, etc.
+ * convention Crap1.H --> CRAP1H_EMYMESSAGE, etc.
  * The entries may be grouped any which way.   The routine will
  * abort if it determines that for some Error Code there
  * does not exist a corresponding error string.
@@ -160,27 +160,56 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
     }
 
 
-    /* Find the all caps file name */
+    /* 
+     * Find the all caps file name 
+    */
     sscanf(Ptr,"%s", caps );
     position = strstr(caps,"_");
     *position = '\0';
     sscanf(caps,"%s", Env->errCodePrfx);
+
+    /* 
+     * If there is ever an error code code convention violation flag it. 
+     * [Flag it the first time, but ignore it after that.]
+    */
+    if( !Env->cnvtnVioltn &&  strcmp(Env->errCodePrfx, Env->allCaps) ) {
+            Env->cnvtnVioltn = 1;
+            LALDocErr("Violation of LAL Error Table Naming Convention.",
+                       Env->sourceFile , __LINE__ , __FILE__ , 0 );
+    }
     
-    /* Find the Error Name and Descripiton */
+    /* 
+     * Find the Error Name and Descripiton               
+     * Look for E's and M's, stop if they aren't there.   
+    */
     position = strstr(Ptr,"_");
-    if(*(position+1) == 'E' ) sscanf(position+2,"%s",errName);
-    if(*(position+1) == 'M' ) sscanf(position+5,"%s",errName);
+    switch ( *(position+1)  ){
+            case 'E' :  { sscanf(position+2,"%s",errName);
+                          break; 
+                        }
+            case 'M' :  { sscanf(position+5,"%s",errName);
+                          break;
+                        }
+            default  :  { LALDocErr("Bad Error Table: Mind your E's and MSGE's.",
+                          Env->sourceFile , __LINE__ , __FILE__ , 1 );
+                          break;
+                        }
+    }
 
     position = strstr(position," ");
     savePosition = position ;
     sscanf(position,"%s",errStr);
 
-    /* Read the Error Number, ... */
-    if ( isdigit( (int) errStr[0] ) ) {      
+    /* 
+     * Read the Error Number, ... 
+    */
+    if ( isdigit( (int)errStr[0] ) ) {      
          sscanf(position,"%s",errNum);
          *errStr = '\0' ;
     }
-    /* ... or read the error description string. */
+    /* 
+     * ... or read the error description string. 
+    */
     else
     {
         *errNum = '\0' ;

@@ -22,21 +22,22 @@ typedef void *(func) (void *p);
 typedef struct 
 tagLALEnviroment
 {  
-    char *OnFlag     ; /*  String that turns the environment on         */
-    char *OffFlag    ; /*  String that turns the environment off        */
-    char *closer     ; /*  closeing brace ie ">"                        */
-    int   On         ; /*  1 when in evironment, 0 when not             */
-    FILE *InFilePtr  ; /*  file ptr to input source                     */
-    FILE *OutFilePtr ; /*  file ptr  for output                         */
-    char *fileName   ; /*  file Name for output                         */
-    char *sourceFile ; /*  source file being parsed                     */
-    char *allCaps    ; /*  string file.c -> FILEC                       */
-    char *errCodePrfx; /*  error codes prefix. Should agree with allCaps*/
-    char *dfltFile   ; /*  string file.H -> fileH.tex                   */
-    char *suffix     ; /*  string added to filename ie ".tex"           */
-    int  lineCount   ; /*  numbr of lines in environment (counting ends)*/
-    func *Preamble   ; /*  a function that prepares top of output       */
-    func *PostFix    ; /*  a function that prepares end of output       */
+    char *OnFlag     ; /* String that turns the environment on          */
+    char *OffFlag    ; /* String that turns the environment off         */
+    char *closer     ; /* closeing brace ie ">"                         */
+    int   On         ; /* 1 when in evironment, 0 when not              */
+    FILE *InFilePtr  ; /* file ptr to input source                      */
+    FILE *OutFilePtr ; /* file ptr  for output                          */
+    char *fileName   ; /* file Name for output                          */
+    char *sourceFile ; /* source file being parsed                      */
+    char *allCaps    ; /* string file.c -> FILEC                        */
+    char *dfltFile   ; /* string file.H -> fileH.tex                    */
+    char *suffix     ; /* string added to filename ie ".tex"            */
+    char *errCodePrfx; /* error codes prefix. Should agree with allCaps */
+    int  cnvtnVioltn ; /* 1 if some convention is violated, 0 otherwise */
+    int  lineCount   ; /* numbr of lines in environment (counting ends) */
+    func *Preamble   ; /* a function that prepares top of output        */
+    func *PostFix    ; /* a function that prepares end of output        */
 } LALEnvironment;
 
 FILE *OpenAFile(char * file, char *readwriteappend , int timestamp  );
