@@ -56,6 +56,7 @@ LALCreateReverseRealFFTPlan
 LALInspiralParameterCalc
 LALInspiralWaveLength
 LALInspiralWaveOverlap
+LALInspiralFindEventsCluster 
 LALNoiseSpectralDensity 
 LALRandomInspiralSignal
 \end{verbatim}
@@ -91,7 +92,7 @@ main ( void )
  */
 
    static LALStatus status;
-   INT4 i;
+   INT4 i, j;
    REAL8 dt;
    REAL8 df;
    REAL8 t0;
@@ -101,6 +102,11 @@ main ( void )
    InspiralWaveOverlapIn overlapin;
    InspiralWaveOverlapOut overlapout;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
+   InspiralEventsList *eventlist=NULL;
+	      
+   InspiralFindEventsIn findeventsin;
+   INT4 nEvents=0;
+
    FILE *file;
 /*---------------------------------------------------------------------------*/
 
@@ -128,7 +134,7 @@ main ( void )
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
-   randIn.param.nStartPad=3000;
+   randIn.param.nStartPad = 3000;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
    randIn.param.ieta = 1; 
@@ -141,7 +147,7 @@ main ( void )
    randIn.param.Theta = 0.0;
    randIn.param.approximant = EOB;
    randIn.param.order = twoPN;
-   randIn.param.massChoice = m1Andm2;
+   randIn.param.massChoice = totalMassAndEta;
    randIn.etaMin = randIn.mMin * ( randIn.MMax - randIn.mMin) /
       pow(randIn.MMax,2.);
 
@@ -154,6 +160,17 @@ main ( void )
    randIn.psi0Max = 100000.L;
    randIn.psi3Min = -1000.L;
    randIn.psi3Max = 1000.L;
+	      
+   findeventsin.currentGPSTime = 0;
+   findeventsin.Threshold = 4.0;
+   findeventsin.ClusterThreshold = 2.;
+   findeventsin.displayPSD = 0;
+   findeventsin.displayData = 0;
+   findeventsin.displayTemplates = 0;
+   findeventsin.displayCorrelation = 1;
+   findeventsin.displayCorrelationStats = 0;
+   findeventsin.nBegin = 0;
+   findeventsin.nEnd = 0;
 
    dt = 1./randIn.param.tSampling;
    t0 = 0.0;
@@ -174,6 +191,11 @@ main ( void )
 
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
+
+   findeventsin.fwdp = fwdp;
+   findeventsin.revp = revp;
+   findeventsin.psd = randIn.psd;
+
    file = fopen("RandomInspiralSignalTest.out", "w");
 
    randIn.param.approximant = PadeT1;
@@ -189,7 +211,6 @@ main ( void )
       }
       else
       {
-   
 	      randIn.param.approximant = PadeT1;
 	      LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
@@ -221,9 +242,11 @@ main ( void )
       }
 
       randIn.type = 2;
-      randIn.param.approximant = PadeT1;
-      randIn.param.massChoice = psi0Andpsi3;
+      randIn.param.approximant = TaylorT1;
+      randIn.param.massChoice = m1Andm2;
+      randIn.param.nStartPad = 3000;
       LALRandomInspiralSignal(&status, &signal, &randIn);
+      randIn.param.nStartPad = 0;
       if (TimeDomain)
       {
 	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
@@ -244,6 +267,22 @@ main ( void )
 			      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2,
 			      randIn.param.psi0, randIn.param.psi3,
 			      overlapout.phase, overlapout.bin, overlapout.max);
+	      findeventsin.signal = signal;
+	      findeventsin.param = randIn.param;
+	      LALInspiralFindEventsCluster (&status, &nEvents, &eventlist, &findeventsin);
+	      fprintf(stderr, "Number of Events=%d\n", nEvents);
+	      if (nEvents) 
+	      {
+		      
+		      for (j=0; j<nEvents; j++)
+		      {
+		      
+			      fprintf(stderr, "%d %d %e %e\n", 
+					      eventlist[j].impulseTime, eventlist[j].endTime, eventlist[j].snr, eventlist[j].chisq);
+		      }
+		      LALFree(eventlist);
+		      eventlist = NULL;
+	      }
       }
    }
 
