@@ -84,6 +84,7 @@ LALInspiralFindLoudestEvent
    InspiralSNRIntegrandParams params;
    InspiralChisqDataVec chisqDataVec;
    InspiralChisqParams chisqParams;
+   InspiralWaveNormaliseIn normin;
 
    INITSTATUS (status, "LALInspiralFindLoudestEvent", LALINSPIRALFINDEVENTSC);
    ATTATCHSTATUSPTR(status);
@@ -93,6 +94,7 @@ LALInspiralFindLoudestEvent
 
    output1.length = output2.length = findeventsin->signal.length;
    filter1.length = filter2.length = findeventsin->signal.length;
+   SNRZeroIntegrand.length = findeventsin->signal.length;
 
    ASSERT (findeventsin->nEnd >= 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
    ASSERT (findeventsin->nEnd <= (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
@@ -141,7 +143,7 @@ LALInspiralFindLoudestEvent
       filter2.data = NULL;
       ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
    }
-   if (!(SNRZeroIntegrand.data = (REAL4*) LALMalloc(sizeof(REAL4)*findeventsin->psd.length))) {
+   if (!(SNRZeroIntegrand.data = (REAL4*) LALMalloc(sizeof(REAL4)*SNRZeroIntegrand.length))) {
       LALFree(output1.data);
       LALFree(output2.data);
       LALFree(filter1.data);
@@ -173,13 +175,19 @@ LALInspiralFindLoudestEvent
    CHECKSTATUSPTR(status);
    LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, findeventsin->fwdp);
    CHECKSTATUSPTR(status);
-   LALInspiralWaveNormalise(status->statusPtr, &filter1, &norm, findeventsin->psd);
+   normin.psd = &(findeventsin->psd);
+   normin.df = df;
+   normin.fCutoff = findeventsin->param.fCutoff;
+   normin.samplingRate = findeventsin->param.tSampling;
+   LALInspiralWaveNormaliseLSO(status->statusPtr, &filter1, &norm, &normin);
    CHECKSTATUSPTR(status);
-   LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, findeventsin->psd);
+   LALInspiralWaveNormaliseLSO(status->statusPtr, &filter2, &norm, &normin);
    CHECKSTATUSPTR(status);
    corrin.psd = findeventsin->psd;
    corrin.revp = findeventsin->revp;
    corrin.signal1 = findeventsin->signal;
+   corrin.fCutoff = findeventsin->param.fCutoff;
+   corrin.samplingRate = findeventsin->param.tSampling;
 
    corrin.signal2 = filter1;
    LALInspiralWaveCorrelate(status->statusPtr, &output1, corrin);
@@ -193,16 +201,17 @@ LALInspiralFindLoudestEvent
 	   buffer.data[i-nBegin] = output1.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
    CHECKSTATUSPTR(status);
+	   
+   for (i=nBegin;i<nEnd;i++) 
+	   buffer.data[i-nBegin] = output2.data[i];
+   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
+   CHECKSTATUSPTR(status);
 
    if (findeventsin->displayCorrelationStats)
    {
-	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
    
-	   for (i=nBegin;i<nEnd;i++) 
-		   buffer.data[i-nBegin] = output2.data[i];
-	   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
-	   CHECKSTATUSPTR(status);
-	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
    }
    
    if (findeventsin->displayCorrelation)
@@ -210,7 +219,7 @@ LALInspiralFindLoudestEvent
       for (i=nBegin;i<nEnd;i++) 
          {
             x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
-            printf("%e %e\n",i*dt, x);
+            printf("%e %e\n", i*dt, x);
          }
          printf("&\n");   
    }
@@ -253,7 +262,7 @@ LALInspiralFindLoudestEvent
    eSec += findeventsin->param.tC;
    eventlist->endTime = findeventsin->currentGPSTime + (int) eSec;
    eventlist->endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
-   eventlist->sigmasq = statsout1.stddev;
+   eventlist->sigmasq = (statsout1.var + statsout2.var)/2.;
 
    for (i=nBegin+1; i<nEnd; i++) 
    {
@@ -278,8 +287,7 @@ LALInspiralFindLoudestEvent
 	  eSec += findeventsin->param.tC;
           eventlist->endTime = findeventsin->currentGPSTime + (int) eSec;
           eventlist->endTimeNS = (int) (1.e9 * (eSec - (int) eSec));
-
-          eventlist->sigmasq = statsout1.stddev;
+          eventlist->sigmasq = (statsout1.var + statsout2.var)/2.;
        }
 
    }
@@ -291,9 +299,9 @@ LALInspiralFindLoudestEvent
    params.phase = eventlist->phase;
    params.deltaT = 1.0/findeventsin->param.tSampling;
    corrin.signal2 = filter1;
-   LALInspiralComputeSNRIntegrand(status->statusPtr, &output1, corrin, &params);
+   LALInspiralComputeSNRIntegrand(status->statusPtr, &SNRZeroIntegrand, corrin, &params);
 
-   chisqDataVec.SNRIntegrand = &output1;
+   chisqDataVec.SNRIntegrand = &SNRZeroIntegrand;
    chisqDataVec.psd = &(findeventsin->psd);
 
    chisqParams.totalMass = totalMass;
@@ -303,7 +311,7 @@ LALInspiralFindLoudestEvent
    LALInspiralComputeChisq(status->statusPtr, &chisq, &chisqDataVec, &chisqParams); 
 
    eventlist->chisq = chisq;
-   eventlist->chisqDOF = *nEvents;
+   eventlist->chisqDOF = 2*(chisqParams.nBins-1);
 
    LALFree(filter1.data);
    LALFree(filter2.data);

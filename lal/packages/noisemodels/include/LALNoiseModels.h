@@ -90,6 +90,7 @@ tagInspiralWaveCorrelateIn
 {
    REAL8        df;
    REAL8        fCutoff;
+   REAL8        samplingRate;
    REAL4Vector  signal1;
    REAL4Vector  signal2;
    REAL8Vector  psd;
@@ -194,6 +195,7 @@ tagInspiralFindEventsIn
    INT4             nBegin;
    INT4             nEnd;
    REAL8            Threshold;
+   REAL8            ClusterThreshold;
    REAL4Vector      signal;
    REAL8Vector      psd;
    InspiralTemplate param;
@@ -240,6 +242,18 @@ InspiralEventsList;
 \index{\texttt{InspiralEventsList}} 
 </lalLaTeX>  */
 
+
+/*  <lalVerbatim file="LALInspiralWaveNormaliseLSOHS"> */
+typedef struct
+tagInspiralWaveNormaliseIn
+{
+  REAL8        df;
+  REAL8        fCutoff; 
+  REAL8        samplingRate;
+  REAL8Vector *psd;
+} 
+InspiralWaveNormaliseIn;
+/*  </lalVerbatim>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct
@@ -340,6 +354,19 @@ LALInspiralWaveNormalise
    REAL4Vector *dh, 
    REAL8       *norm, 
    REAL8Vector psd
+   );
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralWaveNormaliseLSOC}
+</lalLaTeX>  */
+
+void 
+LALInspiralWaveNormaliseLSO 
+   (
+   LALStatus               *status, 
+   REAL4Vector             *filter, 
+   REAL8                   *norm,
+   InspiralWaveNormaliseIn *in
    );
 
 /* <lalLaTeX>

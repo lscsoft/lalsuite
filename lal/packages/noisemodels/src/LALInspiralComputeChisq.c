@@ -77,8 +77,8 @@ LALInspiralComputeChisq
   }
 
   c2 = SNRPerBin = totalModelSNR/(double)params->nBins;
-  fprintf(stderr, "SNRPerBin=%e\n", SNRPerBin);
   /*
+  fprintf(stderr, "SNRPerBin=%e\n", SNRPerBin);
   */
 
   count = 0;
@@ -200,8 +200,8 @@ LALInspiralComputeChisq
       *chisq += diffSNR * diffSNR;
    }
    /*
-   */
    fprintf(stderr, "snr=%e chisq=%e\n", totalSNR, *chisq);
+   */
       
   LALI4DestroyVector(status->statusPtr, &binIndexes);
   LALDDestroyVector(status->statusPtr, &binSNRs);

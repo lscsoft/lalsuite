@@ -98,7 +98,8 @@ LALInspiralWaveOverlap
    CHECKSTATUSPTR(status);
    LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, overlapin->psd);
    CHECKSTATUSPTR(status);
-   corrin.fCutoff = overlapin->param.fCutoff;
+   corrin.fCutoff = overlapin->param.tSampling/2.;
+   corrin.samplingRate = overlapin->param.tSampling;
    corrin.df = overlapin->param.tSampling / (REAL8) overlapin->signal.length;
    corrin.psd = overlapin->psd;
    corrin.signal1 = overlapin->signal;

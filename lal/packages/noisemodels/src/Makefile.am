@@ -10,8 +10,10 @@ LALNoiseSpectralDensity.c\
 LALInspiralComputeChisq.c\
 LALInspiralComputeSNRIntegrand.c\
 LALInspiralFindEvents.c\
+LALInspiralFindEventsCluster.c\
 LALInspiralFindLoudestEvent.c\
 LALInspiralWaveNormalise.c\
+LALInspiralWaveNormaliseLSO.c\
 LALInspiralWaveOverlap.c\
 LALRandomInspiralSignal.c\
 LALStatsREAL4Vector.c\

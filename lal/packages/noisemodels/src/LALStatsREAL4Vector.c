@@ -59,7 +59,7 @@ LALStatsREAL4Vector
       x = vector->data[i];
       if (out->max < x) out->max = x;
       if (out->min > x) out->min = x;
-      out->mean+=vector->data[i];
+      out->mean+=x;
    }
    out->mean/=(REAL8) n;
    

@@ -164,7 +164,7 @@ LALInspiralFindEvents
    LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, findeventsin->psd);
    CHECKSTATUSPTR(status);
    corrin.df = df;
-   corrin.fCutoff = findeventsin->param.fCutoff;
+   corrin.fCutoff = findeventsin->param.tSampling/2.;
    corrin.psd = findeventsin->psd;
    corrin.signal1 = findeventsin->signal;
    corrin.signal2 = filter1;
@@ -179,25 +179,26 @@ LALInspiralFindEvents
    for (i=nBegin;i<nEnd;i++) 
 	   buffer.data[i-nBegin] = output1.data[i];
    LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
-
    CHECKSTATUSPTR(status);
+
+	   
+   for (i=nBegin;i<nEnd;i++) 
+	   buffer.data[i-nBegin] = output2.data[i];
+   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
+   CHECKSTATUSPTR(status);
+
    if (findeventsin->displayCorrelationStats)
    {
-   
-	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.max);   
-   
-	   for (i=nBegin;i<nEnd;i++) 
-		   buffer.data[i-nBegin] = output2.data[i];
-	   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
-	   CHECKSTATUSPTR(status);
-	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.min, statsout1.max);   
+	   fprintf(stderr, "mean=%e std=%e min=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.min, statsout2.max);   
    }
+   
    if (findeventsin->displayCorrelation)
    {
       for (i=nBegin;i<nEnd;i++) 
          {
             x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
-            printf("%e %e\n",i*dt, x);
+            printf("%e %e\n", i*dt, x);
          }
          printf("&\n");   
    }

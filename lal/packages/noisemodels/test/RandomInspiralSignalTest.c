@@ -122,7 +122,7 @@ main ( void )
    overlapin.nEnd = 0;
    randIn.SignalAmp = 10.;
    randIn.NoiseAmp = 1.0;
-   randIn.useed = 92048;
+   randIn.useed = 82488;
    randIn.mMin = 4.0;
    randIn.mMax = 5.0;
    randIn.MMax = 10.0;
@@ -133,7 +133,7 @@ main ( void )
    randIn.param.mass2 = randIn.mMin;
    randIn.param.ieta = 1; 
    randIn.param.fLower = 40.;
-   randIn.param.fCutoff = 1000.;
+   randIn.param.fCutoff = 300.;
    randIn.param.tSampling = 4000.;
    randIn.param.signalAmplitude = 1.0;
    randIn.param.nEndPad = 0;
@@ -166,7 +166,7 @@ main ( void )
    overlapin.revp = revp;
    file = fopen("RandomInspiralSignalTest.out", "w");
 
-   i=1;
+   i=10;
    while (i--) {
       randIn.type = 0;
       LALRandomInspiralSignal(&status, &signal, &randIn);
@@ -182,9 +182,12 @@ main ( void )
 	      randIn.param.approximant = PadeT1;
 	      LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
+	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      overlapin.param = randIn.param;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
       }
 
       randIn.type = 1;
@@ -197,17 +200,17 @@ main ( void )
       else
       {
 	      LALInspiralParameterCalc(&status, &randIn.param);
-	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
-	      randIn.param.fCutoff = 4000.;
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
+	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
       }
 
       randIn.type = 2;
       LALRandomInspiralSignal(&status, &signal, &randIn);
-      fprintf(stderr, "Parameters of the signal \n\n");
       fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e \n",  
 		      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2);
       if (TimeDomain)
@@ -221,6 +224,7 @@ main ( void )
 	      LALInspiralParameterCalc(&status, &randIn.param);
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
+	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  

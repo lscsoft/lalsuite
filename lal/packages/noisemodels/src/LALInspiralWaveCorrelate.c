@@ -88,11 +88,10 @@ LALInspiralWaveCorrelate
   {
      k=n-i;
      psd = corrin.psd.data[i];
-
-     if (psd) {
-/* 
      f = (REAL8)i * corrin.df;
-     if (psd && f > corrin.fCutoff) {
+     if (psd && f < corrin.fCutoff) {
+/* 
+     if (psd) {
      the following line computes output = signal1 . signal2* 
 */
         r1 = corrin.signal1.data[i];
@@ -113,7 +112,8 @@ LALInspiralWaveCorrelate
      }
   }
   psd = corrin.psd.data[0];
-  if (psd) 
+  f = 0;
+  if (psd && f<corrin.fCutoff) 
   {
      r1 = corrin.signal1.data[0];
      r2 = corrin.signal2.data[0];
@@ -128,7 +128,8 @@ LALInspiralWaveCorrelate
   }
 
   psd = corrin.psd.data[nby2];
-  if (psd) 
+  f = nby2 * corrin.df;
+  if (psd && f<corrin.fCutoff) 
   {
      r1 = corrin.signal1.data[nby2];
      r2 = corrin.signal2.data[nby2];
@@ -144,7 +145,7 @@ LALInspiralWaveCorrelate
 
   LALREAL4VectorFFT(status->statusPtr,output,&buff,corrin.revp);
   CHECKSTATUSPTR(status);
-  for (i=0; i<n; i++) output->data[i] /= (double) n;
+  for (i=0; i<n; i++) output->data[i] /= ((double) n * corrin.samplingRate);
 
 
   /* 
