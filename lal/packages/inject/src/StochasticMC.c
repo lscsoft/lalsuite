@@ -589,14 +589,14 @@ void LALStochasticMC (LALStatus *status,
     {
       LALCCreateVector(status->statusPtr, &response[i],freqlen);
     }
-  //wFilter1.epoch.gpsSeconds = caltime;
+  /*wFilter1.epoch.gpsSeconds = caltime;*/
   wFilter1.epoch.gpsNanoSeconds = 0;
   wFilter1.deltaF = deltaF ;
   wFilter1.f0 = f0;
   wFilter1.sampleUnits = countPerStrain;
   wFilter1.data = response[0];
 
-  //wFilter2.epoch.gpsSeconds = caltime;
+  /*wFilter2.epoch.gpsSeconds = caltime;*/
   wFilter2.epoch.gpsNanoSeconds = 0;
   wFilter2.deltaF = deltaF  ;
   wFilter2.f0 = f0;
