@@ -13,8 +13,8 @@ lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
 	DopplerScan.c DopplerScan.h
 
-ComputeFStatistic_v2_SOURCES =  ComputeFStatistic_v2.c ComputeFStatistic.h	\
-		rngmed.c rngmed.h clusters.c clusters.h  			\
+ComputeFStatistic_v2_SOURCES =  ComputeFStatistic_v2.c 	\
+		rngmed.c rngmed.h clusters.c clusters.h  \
 		DopplerScan.c DopplerScan.h
 
 lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c SemiAnalyticF.h
