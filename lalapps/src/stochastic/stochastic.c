@@ -54,8 +54,8 @@
 
 #include "stochastic.h"
 
-NRCSID (STOCHASTICC, "$Id$");
-RCSID ("$Id$");
+NRCSID(STOCHASTICC, "$Id$");
+RCSID("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"
@@ -2534,13 +2534,13 @@ void readDataPair(LALStatus *status,
   INT4 i;
 
   /* variables */
-  FrCache *frCache1 = NULL;
-  FrStream *frStream1 = NULL;
-  FrCache *frCache2 = NULL;
-  FrStream *frStream2 = NULL;
-  FrChanIn frChanIn1, frChanIn2;
-  REAL8TimeSeries dataStreamGeo;
-  REAL4TimeSeries dataStream1, dataStream2;
+  FrCache *frCacheOne = NULL;
+  FrStream *frStreamOne = NULL;
+  FrCache *frCacheTwo = NULL;
+  FrStream *frStreamTwo = NULL;
+  FrChanIn frChanInOne, frChanInTwo;
+  REAL8TimeSeries dataStreamGEO;
+  REAL4TimeSeries dataStreamOne, dataStreamTwo;
   ResampleTSParams resampleParams;
   LIGOTimeGPS bufferStartTime;
   UINT8 startTime;
@@ -2563,61 +2563,61 @@ void readDataPair(LALStatus *status,
   bufferStartTime.gpsNanoSeconds = 0;
 
   /* set channels */
-  frChanIn1.name = params->channelOne;
-  frChanIn2.name = params->channelTwo;
-  frChanIn2.type = ADCDataChannel;
-  frChanIn1.type = ADCDataChannel;
+  frChanInOne.name = params->channelOne;
+  frChanInTwo.name = params->channelTwo;
+  frChanInTwo.type = ADCDataChannel;
+  frChanInOne.type = ADCDataChannel;
 
   /* initial data structures */
-  dataStream1.epoch =  dataStream2.epoch  = bufferStartTime;
+  dataStreamOne.epoch =  dataStreamTwo.epoch  = bufferStartTime;
 
   if (verbose_flag)
     fprintf(stdout, "Allocating memory for raw data streams...\n");
 
   /* allocate memory */
-  dataStream1.data = dataStream2.data = NULL;
-  LALSCreateVector(status->statusPtr, &(dataStream1.data), \
+  dataStreamOne.data = dataStreamTwo.data = NULL;
+  LALSCreateVector(status->statusPtr, &(dataStreamOne.data), \
       sampleRate * (params->duration + (2 * buffer)));
   CHECKSTATUSPTR(status);
-  LALSCreateVector(status->statusPtr, &(dataStream2.data), \
+  LALSCreateVector(status->statusPtr, &(dataStreamTwo.data), \
       sampleRate * (params->duration + (2 * buffer)));
   CHECKSTATUSPTR(status);
-  memset(dataStream1.data->data, 0, \
-      dataStream1.data->length * sizeof(*dataStream1.data->data));
-  memset(dataStream2.data->data, 0, \
-      dataStream2.data->length * sizeof(*dataStream2.data->data));
+  memset(dataStreamOne.data->data, 0, \
+      dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
+  memset(dataStreamTwo.data->data, 0, \
+      dataStreamTwo.data->length * sizeof(*dataStreamTwo.data->data));
 
   if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
   {
-    dataStreamGeo.epoch = bufferStartTime;
-    dataStreamGeo.data = NULL;
-    LALDCreateVector(status->statusPtr, &(dataStreamGeo.data), \
+    dataStreamGEO.epoch = bufferStartTime;
+    dataStreamGEO.data = NULL;
+    LALDCreateVector(status->statusPtr, &(dataStreamGEO.data), \
         sampleRate * (params->duration + (2 * buffer)));
     CHECKSTATUSPTR(status);
-    memset(dataStreamGeo.data->data, 0, \
-        dataStreamGeo.data->length * sizeof(*dataStreamGeo.data->data));
+    memset(dataStreamGEO.data->data, 0, \
+        dataStreamGEO.data->length * sizeof(*dataStreamGEO.data->data));
   }
 
   if (verbose_flag)
     fprintf(stdout, "Opening first frame cache...\n");
 
   /* open first frame cache */
-  LALFrCacheImport(status->statusPtr, &frCache1, params->frameCacheOne);
+  LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
   CHECKSTATUSPTR(status);
-  LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
+  LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
   CHECKSTATUSPTR(status);
 
   if (verbose_flag)
-    fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);
+    fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInOne.name);
 
   /* read first channel */
-  LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+  LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
   CHECKSTATUSPTR(status);
 
   if (strncmp(ifoOne, "G1", 2) == 0)
   {
-    LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
-        &frChanIn1, frStream1);
+    LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGEO, \
+        &frChanInOne, frStreamOne);
     CHECKSTATUSPTR(status);
 
     /* high pass the GEO data */
@@ -2626,36 +2626,36 @@ void readDataPair(LALStatus *status,
     geoHighpassParam.f2 = (REAL8)geoHighPassFreq;
     geoHighpassParam.a1 = -1;
     geoHighpassParam.a2 = geoHighPassAtten;
-    LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
+    LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGEO, \
         &geoHighpassParam);
     CHECKSTATUSPTR(status);
 
     /* cast the GEO data to REAL4 in the channel time series */
     /* which already has the correct amount of memory allocated */
-    for (j = 0; j < dataStream1.data->length; j++)
+    for (j = 0; j < dataStreamOne.data->length; j++)
     {
-      dataStream1.data->data[j] = geoScaleFactor * \
-                                  (REAL4)(dataStreamGeo.data->data[j]);
+      dataStreamOne.data->data[j] = geoScaleFactor * \
+                                  (REAL4)(dataStreamGEO.data->data[j]);
     }
 
     /* re-copy the data paramaters from the GEO channel */
     /* to input data channel */
-    LALSnprintf(dataStream1.name, LALNameLength * sizeof(CHAR), "%s", \
-        dataStreamGeo.name);
-    dataStream1.epoch = dataStreamGeo.epoch;
-    dataStream1.deltaT = dataStreamGeo.deltaT;
-    dataStream1.f0 = dataStreamGeo.f0;
-    dataStream1.sampleUnits = dataStreamGeo.sampleUnits;
+    LALSnprintf(dataStreamOne.name, LALNameLength * sizeof(CHAR), "%s", \
+        dataStreamGEO.name);
+    dataStreamOne.epoch = dataStreamGEO.epoch;
+    dataStreamOne.deltaT = dataStreamGEO.deltaT;
+    dataStreamOne.f0 = dataStreamGEO.f0;
+    dataStreamOne.sampleUnits = dataStreamGEO.sampleUnits;
 
     /* free the REAL8 GEO input data */
-    LALDDestroyVector(status->statusPtr, &dataStreamGeo.data);
+    LALDDestroyVector(status->statusPtr, &dataStreamGEO.data);
     CHECKSTATUSPTR(status);
-    dataStreamGeo.data = NULL;
+    dataStreamGEO.data = NULL;
   }
   else
   {
-    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream1, \
-        &frChanIn1, frStream1);
+    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
+        &frChanInOne, frStreamOne);
     CHECKSTATUSPTR(status);
   }
   if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
@@ -2663,21 +2663,21 @@ void readDataPair(LALStatus *status,
     if (verbose_flag)
     {
       fprintf(stdout, "Reading in channel \"%s\" from same cache...\n", \
-        frChanIn2.name);
+        frChanInTwo.name);
     }
 
     /* read in second channel */
-    LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+    LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
     CHECKSTATUSPTR(status);
-    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, &frChanIn2, \
-        frStream1);
+    LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, &frChanInTwo, \
+        frStreamOne);
     CHECKSTATUSPTR(status);
 
     if (verbose_flag)
       fprintf(stdout, "Closing frame cache...\n");
 
     /* close frame cache */
-    LALFrClose(status->statusPtr, &frStream1);
+    LALFrClose(status->statusPtr, &frStreamOne);
     CHECKSTATUSPTR(status);
   }
   else
@@ -2686,29 +2686,29 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Closing first frame cache...\n");
 
     /* close first frame cache */
-    LALFrClose(status->statusPtr, &frStream1);
+    LALFrClose(status->statusPtr, &frStreamOne);
     CHECKSTATUSPTR(status);
 
     if (verbose_flag)
       fprintf(stdout, "Opening second frame cache...\n");
 
     /* open second frame cache and read in second channel */
-    LALFrCacheImport(status->statusPtr, &frCache2, params->frameCacheTwo);
+    LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
     CHECKSTATUSPTR(status);
-    LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
+    LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
     CHECKSTATUSPTR(status);
 
     if (verbose_flag)
-      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);
+      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInTwo.name);
 
     /* read in second channel */
-    LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
+    LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamTwo);
     CHECKSTATUSPTR(status);
 
     if (strncmp(ifoTwo, "G1", 2) == 0)
     {
-      LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
-          &frChanIn2, frStream2);
+      LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGEO, \
+          &frChanInTwo, frStreamTwo);
       CHECKSTATUSPTR(status);
       
       /* high pass the GEO data */
@@ -2717,27 +2717,27 @@ void readDataPair(LALStatus *status,
       geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
       geoHighpassParam.a1 = -1;
       geoHighpassParam.a2 = geoHighPassAtten;
-      LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
+      LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGEO, \
           &geoHighpassParam);
       CHECKSTATUSPTR(status);
 
       /* cast the GEO data to REAL4 in the channel time series */
       /* which already has the correct amount of memory allocated */
-      for (j = 0; j < dataStream2.data->length; j++)
+      for (j = 0; j < dataStreamTwo.data->length; j++)
       {
-        dataStream2.data->data[j] = geoScaleFactor * \
-                                    (REAL4)(dataStreamGeo.data->data[j]);
+        dataStreamTwo.data->data[j] = geoScaleFactor * \
+                                    (REAL4)(dataStreamGEO.data->data[j]);
       }
 
       /* free the REAL8 GEO input data */
-      LALDDestroyVector(status->statusPtr, &dataStreamGeo.data);
+      LALDDestroyVector(status->statusPtr, &dataStreamGEO.data);
       CHECKSTATUSPTR(status);
-      dataStreamGeo.data = NULL;
+      dataStreamGEO.data = NULL;
     }
     else
     {
-      LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, \
-          &frChanIn2, frStream2);
+      LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+          &frChanInTwo, frStreamTwo);
       CHECKSTATUSPTR(status);
     }
 
@@ -2745,7 +2745,7 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Closing second frame cache...\n");
 
     /* close second frame stream */
-    LALFrClose(status->statusPtr, &frStream2);
+    LALFrClose(status->statusPtr, &frStreamTwo);
     CHECKSTATUSPTR(status);
   }
 
@@ -2760,17 +2760,17 @@ void readDataPair(LALStatus *status,
     resampleParams.filterType = defaultButterworth;
 
     /* resample */
-    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream1, \
+    LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
         &resampleParams);
     CHECKSTATUSPTR(status);
-    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2, \
+    LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
         &resampleParams);
     CHECKSTATUSPTR(status);
   }
 
   /* build output */
-  strncpy(streamPair->streamOne->name,dataStream1.name, LALNameLength);
-  strncpy(streamPair->streamTwo->name,dataStream2.name, LALNameLength);
+  strncpy(streamPair->streamOne->name,dataStreamOne.name, LALNameLength);
+  strncpy(streamPair->streamTwo->name,dataStreamTwo.name, LALNameLength);
   streamPair->streamOne->epoch.gpsSeconds = startTime;
   streamPair->streamTwo->epoch.gpsSeconds = startTime;
   streamPair->streamOne->epoch.gpsNanoSeconds = 0;
@@ -2778,22 +2778,22 @@ void readDataPair(LALStatus *status,
   streamPair->streamOne->deltaT = 1./(REAL8)resampleRate;
   streamPair->streamTwo->deltaT = 1./(REAL8)resampleRate;
   streamPair->streamOne->f0 = streamPair->streamTwo->f0 = 0;
-  streamPair->streamOne->sampleUnits = dataStream1.sampleUnits;
-  streamPair->streamTwo->sampleUnits = dataStream2.sampleUnits;
+  streamPair->streamOne->sampleUnits = dataStreamOne.sampleUnits;
+  streamPair->streamTwo->sampleUnits = dataStreamTwo.sampleUnits;
 
   /* remove buffer, and hence corruption due to resampling */
   for (i = 0; i < params->duration * resampleRate; i++)
   {
     streamPair->streamOne->data->data[i] = \
-      dataStream1.data->data[i + (resampleRate * buffer)];
+      dataStreamOne.data->data[i + (resampleRate * buffer)];
     streamPair->streamTwo->data->data[i] = \
-      dataStream2.data->data[i + (resampleRate * buffer)];
+      dataStreamTwo.data->data[i + (resampleRate * buffer)];
   }
 
   /* clean up */
-  LALSDestroyVector(status->statusPtr, &(dataStream1.data));
+  LALSDestroyVector(status->statusPtr, &(dataStreamOne.data));
   CHECKSTATUSPTR(status);
-  LALSDestroyVector(status->statusPtr, &(dataStream2.data));
+  LALSDestroyVector(status->statusPtr, &(dataStreamTwo.data));
   CHECKSTATUSPTR(status);
 
   /* return status */
