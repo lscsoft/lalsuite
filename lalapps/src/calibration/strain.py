@@ -67,9 +67,9 @@ class StrainJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
-    self.set_stdout_file('logs/string-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/string-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
-    self.set_sub_file('string.sub')
+    self.set_stdout_file('logs/strain-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/strain-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('strain.sub')
     
 
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
