@@ -4,7 +4,7 @@
  * [Purpose] Compute number of templates in a bank 
  * [USAGE]   Use -h option 
  * [INPUT]   Use -h option
- * [OUTPUT]  ascii on stdout
+ * [OUTPUT]  ascii or stdout
  * [DOC]     In lalapps.pdf
  * ************************************************ */
 
@@ -44,8 +44,8 @@ RCSID("");
 #define BANKNUMBEROFTEMPLATES_FLOWER       		  40.
 #define BANKNUMBEROFTEMPLATES_TSAMPLING    		2048.
 #define BANKNUMBEROFTEMPLATES_FUPPER       		1000.
-#define BANKNUMBEROFTEMPLATES_ORDER_SIGNAL     	twoPN
-#define BANKNUMBEROFTEMPLATES_ORDER_TEMPLATE   	twoPN
+#define BANKNUMBEROFTEMPLATES_ORDER_SIGNAL     	        twoPN
+#define BANKNUMBEROFTEMPLATES_ORDER_TEMPLATE   	        twoPN
 #define BANKNUMBEROFTEMPLATES_MMCOARSE     		0.8
 #define BANKNUMBEROFTEMPLATES_MMFINE       		0.9
 #define BANKNUMBEROFTEMPLATES_MMIN            		5.
@@ -55,7 +55,7 @@ RCSID("");
 #define BANKNUMBEROFTEMPLATES_ALPHAMIN    		0.
 #define BANKNUMBEROFTEMPLATES_ALPHAMAX    		1.
 #define BANKNUMBEROFTEMPLATES_ALPHABANK       		0.01
-#define BANKNUMBEROFTEMPLATES_SPACE    		Psi0Psi3
+#define BANKNUMBEROFTEMPLATES_SPACE    		        Psi0Psi3
 #define BANKNUMBEROFTEMPLATES_IFLSO           		0.
 #define BANKNUMBEROFTEMPLATES_PSI0MIN        		10.
 #define BANKNUMBEROFTEMPLATES_PSI0MAX    		250000.
@@ -78,14 +78,15 @@ RCSID("");
 #define BANKNUMBEROFTEMPLATES_USEED        		122888
 #define BANKNUMBEROFTEMPLATES_LOWGM                    3
 #define BANKNUMBEROFTEMPLATES_HIGHGM                   6
+
 /* Other Parameters  1 = true ; 0 = false	*/
 #define BANKNUMBEROFTEMPLATES_QUIETFLAG       	        0 				/* silent 				*/ 
 #define BANKNUMBEROFTEMPLATES_AMBIGUITYFUNCTION      	0				/* Print Ambiguity function		*/
 #define BANKNUMBEROFTEMPLATES_FMAXIMIZATION      	0				/* Print SNR function of fendBCV	*/
-#define BANKNUMBEROFTEMPLATES_PRINTOVERLAP             0				/* Print Best Overlap 			*/
-#define BANKNUMBEROFTEMPLATES_PRINTFILTER              0				/* Print corresponding Filter		*/
-#define BANKNUMBEROFTEMPLATES_PRINTBANK		0				/* print the bank of template 		*/
-#define BANKNUMBEROFTEMPLATES_CHECK                    0				/* Just check that SNR=1 for identical parameters */
+#define BANKNUMBEROFTEMPLATES_PRINTOVERLAP           	0				/* Print Best Overlap 			*/
+#define BANKNUMBEROFTEMPLATES_PRINTFILTER              	0				/* Print corresponding Filter		*/
+#define BANKNUMBEROFTEMPLATES_PRINTBANK			0				/* print the bank of template 		*/
+#define BANKNUMBEROFTEMPLATES_CHECK                    	0				/* Just check that SNR=1 for identical parameters */
 #define BANKNUMBEROFTEMPLATES_RANDOMINJECTION		1				/* Type of injection: random  ?		*/		
 #define BANKNUMBEROFTEMPLATES_REGULARINJECTION		0				/* Type of injection: regular ?		*/		
 
@@ -93,7 +94,7 @@ RCSID("");
 #define DeltaT      				256 
 
 typedef enum{
-  LIGOI,
+    LIGOI,
     LIGOII,
     GEO,
     TAMA,
@@ -116,13 +117,14 @@ typedef enum {
  */
 typedef struct	
 {
-  INT4 signal; /*random signal*/
-  INT4 template;/*template and bank*/
+  INT4 signal; 		/*random signal*/
+  INT4 template;	/*template and bank*/
   INT4 bank;
   char *inputPSD;
   DetectorName NoiseModel;
   char *filename;
   double alphaMin, alphaMax, dalpha;
+  INT4 printBank;
 
 } OtherParamIn;
 
@@ -160,19 +162,23 @@ int
 main (int argc, char **argv ) 
 {
   /* --- Variables ---*/
-  INT4    	i,     kk,    nlist;
+  INT4    	i,     kk,    nlist, j;
   REAL4  	temp;
   REAL8    	df, alpha;
   REAL4Vector   signal;
-  void   			*noisemodel;
   RandomInspiralSignalIn	randIn;						/* random signal waveform to inject	*/
   OtherParamIn			otherIn;					/* personal structure to parse params	*/
   InspiralTemplateList 		*list=NULL;
   static LALStatus 		status;
   InspiralCoarseBankIn      	coarseIn; 					/* strcture for the bank of templates	*/
   FILE 				*Finput;   
+    static RectangleIn RectIn;
+    static RectangleOut RectOut;
 
-
+ FILE *fpr;
+  
+  
+  fpr = fopen("BankNumber.out", "w");
 
   lalDebugLevel = 0;
 
@@ -204,17 +210,17 @@ main (int argc, char **argv )
   df = randIn.param.tSampling/(float) signal.length;
   switch (otherIn.NoiseModel)
     {
-    case LIGOI:  noisemodel = LALLIGOIPsd ; 
-      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
+    case LIGOI:
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALLIGOIPsd, df), &status);
       break;
-    case VIRGO: noisemodel = LALVIRGOPsd;  
-      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
+    case VIRGO: 
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALVIRGOPsd, df), &status);
       break;
-    case GEO:   noisemodel = LALGEOPsd;    
-      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
+    case GEO:  
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALGEOPsd, df), &status);
       break;
-    case TAMA:  noisemodel = LALTAMAPsd;  
-      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
+    case TAMA:  
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALTAMAPsd, df), &status);
       break;
     case REALPSD:
       /* Read psd dans le fichier InputPSD.dat */
@@ -231,8 +237,8 @@ main (int argc, char **argv )
       fclose(Finput);
       break;
         
-    default:    noisemodel = LALLIGOIPsd; 
-      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, df), &status);
+    default:    
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALLIGOIPsd, df), &status);
       break;
     }
 
@@ -245,7 +251,7 @@ main (int argc, char **argv )
 
       LAL_CALL(LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn), &status);
       
-      printf( "%lf %d\n",alpha,nlist);
+      printf( "%f %d\n",alpha,nlist);
       LALFree(list);
       list=NULL;
     }
@@ -254,11 +260,54 @@ main (int argc, char **argv )
     
     coarseIn.approximant = TaylorF2;
     LAL_CALL(LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn), &status);
-      
-      printf( " %d\n",nlist);
-      LALFree(list);
-      list=NULL;
-    }
+       for (j=0; j<nlist; j++)
+      {
+	fprintf(fpr, "%e %e %e %e\n", 
+		list[j].params.t0, 
+		list[j].params.t3,
+		list[j].params.mass1, 
+		list[j].params.mass2 
+		);
+      }
+    fprintf(fpr, "&\n");
+    
+    
+    RectIn.dx = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list[0].metric.g00 );
+    RectIn.dy = sqrt(2.0 * (1. - coarseIn.mmCoarse)/list[0].metric.g11 );
+    RectIn.theta = list[0].metric.theta;
+    for (j=0; j<nlist; j++)
+      {
+	
+	/*
+	  Retain only those templates that have meaningful masses:
+	*/
+	RectIn.x0 = (REAL8) list[j].params.t0;
+	RectIn.y0 = (REAL8) list[j].params.t3;
+	
+	
+	
+	
+	LALRectangleVertices(&status, &RectOut, &RectIn);
+	fprintf(fpr, "%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
+		RectOut.x1, RectOut.y1, 
+		RectOut.x2, RectOut.y2, 
+		RectOut.x3, RectOut.y3, 
+		RectOut.x4, RectOut.y4, 
+		RectOut.x5, RectOut.y5);
+	
+	fprintf(fpr, "&\n");
+	
+      }
+  
+
+
+    fclose(fpr);
+    
+    printf( " %d\n",nlist);
+    LALFree(list);
+    list=NULL;
+  }
+
 
   
 
@@ -391,10 +440,13 @@ ParseParameters(	int 			*argc,
   		coarseIn->tSampling = randIn->param.tSampling = atof(argv[i]);  
 		randIn->param.fCutoff 	= coarseIn->tSampling/2. - 1.;
 	}      
-      else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
-		coarseIn->mMin = randIn->mMin = atof(argv[++i]); 
+       else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
+			coarseIn->mMin = randIn->mMin = atof(argv[++i]); 
 		randIn->param.mass1 = randIn->param.mass2 = randIn->mMin;
 		coarseIn->mMax = randIn->mMax = atof(argv[++i]); 
+		coarseIn->MMax = randIn->MMax = coarseIn->mMax * 2.; 
+  		randIn->etaMin = coarseIn->mMin * (coarseIn->MMax - coarseIn->mMin) 
+	  			/coarseIn->MMax/ coarseIn->MMax;
 	}
       else if (strcmp(argv[i],	"--psi0-range")	==0) {
 		coarseIn->psi0Min = randIn->psi0Min = atof(argv[++i]);
@@ -530,7 +582,8 @@ void Help()
 	       							  BANKNUMBEROFTEMPLATES_LOWGM, BANKNUMBEROFTEMPLATES_HIGHGM);
   fprintf(stderr,"   --noise-model   : design sensitivity (LIGOI)\n"); 
   fprintf(stderr,"         --bank    : SPA or BCV  (%7.2d)\n",    BANKNUMBEROFTEMPLATES_BANK);
-
+  fprintf(stderr,"--mass-range		: minimal mass of component stars    			(%7.2f, %7.2f) Mo\n",
+		  BANKNUMBEROFTEMPLATES_MMIN,  BANKNUMBEROFTEMPLATES_MMAX);
 
 
 }
