@@ -185,7 +185,7 @@ All three routines calculate $\widetilde{\bar{h}}_{1}[\ell]^* \
 the result to that of \verb+input->optimalFilter+ with
 \texttt{LALCCoarseGrainFrequencySeries()}.  
 
-The functions \texttt{LALStochasticCrossCorrelationStatistic()} and
+The functions \texttt{LALStochasticCrossCorrelationStatistic()} and\\
 \texttt{LALStochasticHeterodynedCrossCorrelationStatistic()} simply
 then combine this with the input $\widetilde{Q}[\ell]$ to calculate
 (\ref{stochastic:e:shortcut}) or (\ref{stochastic:e:heterodyned})

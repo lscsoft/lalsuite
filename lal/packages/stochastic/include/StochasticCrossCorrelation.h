@@ -660,8 +660,8 @@ OverlapReductionFunctionParameters;
 \idx[Type]{LALDetectorPair}
 
 \noindent Holds structures defining the location and orientation of a
-pair of interferometric gravitational wave detectors.  This is the
-input to \texttt{LALOverlapReductionFunction()}.  The fields are:
+pair of gravitational wave detectors.  This is the input to 
+\texttt{LALOverlapReductionFunction()}.  The fields are:
 
 \begin{description}
 \item[\texttt{LALDetector detectorOne}]
