@@ -760,9 +760,10 @@ main (INT4 argc, CHAR **argv )
   else{										 /* --- the real code is here --- */
     /* --- The main loop --- */
 
-	Foutput = fopen("FF.sr4","w");
-	fclose(Foutput); 
-	
+	if (otherIn.PrintBankOverlap){	
+		Foutput = fopen("FF.sr4","w");
+		fclose(Foutput); 
+	}	
     while (++ntrials <= otherIn.ntrials) 
       {
         randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
@@ -773,7 +774,7 @@ main (INT4 argc, CHAR **argv )
 	else
 	{
           randIn.param.massChoice = m1Andm2;
-	   randIn.param.massChoice = totalMassAndEta;
+	   randIn.param.massChoice = totalMassUAndEta;
 	}
 	 /* Let's compute the random parameters of the waveform to inject*/
 	 for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
@@ -1481,14 +1482,14 @@ PrintResults(	    	InspiralTemplate       	bank,
  if (bank.approximant==BCV){  
   	fprintf(stdout, "%e %e ", bank.psi0, bank.psi3);  /*triggered */
 	fprintf(stdout, "%e %e    ", injected.psi0, injected.psi3);
-      	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+      	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, bank.eta);
       	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
       	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
 	}
   else{
   	fprintf(stdout, "%e %e ", bank.t0, bank.t3);  /*triggered */
 	fprintf(stdout, "%e %e    ", injected.t0, injected.t3);
-	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+	fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, bank.eta);
 	fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
 	fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
 	}
