@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: trigger2tmplt.c
+ * File Name: trigg2tmplt.c
  *
  * Author: Brown, D. A.
  * 
@@ -35,24 +35,22 @@ RCSID( "$Id$" );
 
 int compareTmplts ( const void *a, const void *b )
 {
-  SnglInspiralTable *aPtr, *bPtr;
-
-  aPtr = (SnglInspiralTable *) a;
-  bPtr = (SnglInspiralTable *) b;
+  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
+  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
 
   if ( aPtr->mass1 > bPtr->mass1 )
   {
     return 1;
   }
-  else if ( aPtr->mass1 < bPtr->mass1 )
+  else if ( aPtr->mass1 < bPtr->mass2 )
   {
     return -1;
   }
-  if ( aPtr->mass2 > bPtr->mass2 )
+  else if ( (aPtr->mass2 > bPtr->mass2) && (aPtr->mass1 == bPtr->mass1) )
   {
     return 1;
   }
-  else if ( aPtr->mass2 < bPtr->mass2 )
+  else if ( (aPtr->mass2 < bPtr->mass2) && (aPtr->mass1 == bPtr->mass1) )
   {
     return -1;
   }
@@ -85,9 +83,7 @@ int main ( int argc, char *argv[] )
     {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
-  int i;
-  int numEvents;
-  REAL4 epsilon = 1e-6;
+  int i, numEvents, numUniq;
   SnglInspiralTable    *eventHead = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -201,8 +197,12 @@ int main ( int argc, char *argv[] )
    *
    */
 
+  
+  if ( vrbflg ) 
+    fprintf( stdout, "reading sngl_inspiral table from %s\n", inputFileName );
 
-  numEvents = SnglInspiralTableFromLIGOLw( &eventHead, inputFileName, 0, 0 );
+  numEvents = SnglInspiralTableFromLIGOLw( &eventHead, inputFileName, 0, -1 );
+
   if ( numEvents < 0 )
   {
     fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
@@ -211,7 +211,7 @@ int main ( int argc, char *argv[] )
   }
   else if ( numEvents == 0 )
   {
-    fprintf( stdout, "no sngl_iinspiral events found in file: %s\n"
+    fprintf( stdout, "no sngl_inspiral events found in file: %s\n"
         "exiting cleanly\n" , inputFileName );
     LALFree( inputFileName );
     LALFree( outputFileName );
@@ -229,7 +229,7 @@ int main ( int argc, char *argv[] )
    */
 
 
-  /* create an array of ptrs and qsort it */
+  /* create an array of ptrs, qsort it and turn it back into a linked list */
   eventHandle = (SnglInspiralTable **) 
     LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
 
@@ -240,27 +240,29 @@ int main ( int argc, char *argv[] )
   }
 
   if ( vrbflg ) fprintf( stdout, "sorting events... " );
-  qsort( eventHandle, numEvents, sizeof(SnglInspiralTable *), compareTmplts );
+  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), compareTmplts );
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
-  /* remove duplicate templates from the sorted list */
-  prevEvent = eventHead;
+  /* create a linked list of sorted templates */
+  prevEvent = eventHead = eventHandle[0];
+  numUniq = 1;
   for ( i = 1; i < numEvents; ++i )
   {
-    thisEvent = eventHandle[i];
-    if ( (fabs( prevEvent->mass1 - thisEvent->mass1 ) < epsilon) &&
-        (fabs( prevEvent->mass2 - thisEvent->mass2 ) < epsilon) )
+    if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
+        (prevEvent->mass2 == eventHandle[i]->mass2) ) 
     {
-      /* remove this event from the linked list */
-      if ( vrbflg ) 
-        fprintf( stdout, "removing event %d from linked list\n", i );
-      prevEvent->next = thisEvent->next;
-      LALFree( thisEvent );
-      thisEvent = prevEvent->next;
+      /* discard the event as it is a duplicate */
+      LALFree( eventHandle[i] );
     }
-    prevEvent = thisEvent;
+    else
+    {
+      /* add the event to the linked list */
+      prevEvent = prevEvent->next = eventHandle[i];
+      ++numUniq;
+    }
   }
-
+  prevEvent->next = NULL;
+  
 
   /*
    *
@@ -280,6 +282,9 @@ int main ( int argc, char *argv[] )
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
+  if ( vrbflg ) fprintf( stdout, "wrote %d sngl_inspiral rows to %s\n", 
+      numUniq, outputFileName );
+
 
   /*
    *
@@ -293,7 +298,7 @@ int main ( int argc, char *argv[] )
   {
     thisEvent = eventHead;
     eventHead = eventHead->next;
-    LALFree( eventHead );
+    LALFree( thisEvent );
   }
   LALFree( inputFileName );
   LALFree( outputFileName );
