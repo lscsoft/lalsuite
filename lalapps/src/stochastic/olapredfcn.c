@@ -82,12 +82,12 @@ int main( int argc, char *argv[] )
 		   optAzimuth1 );
 	}
 	barGeom.xArmAzimuthRadians = 
-	  (90.0-optAzimuth1)*LAL_PI_180;
+	  optAzimuth1 * LAL_PI_180;
       } 
       else if ( optVerbose ) {
 	fprintf( stderr, "Using IGEC azimuth of %.3f degrees East of North\n",
 		 (REAL4)
-		 (90.0 - barGeom.xArmAzimuthRadians*LAL_180_PI)
+		 ( barGeom.xArmAzimuthRadians * LAL_180_PI )
 		 );
       }
 
@@ -121,12 +121,12 @@ int main( int argc, char *argv[] )
 		   optAzimuth2 );
 	}
 	barGeom.xArmAzimuthRadians = 
-	  (90.0-optAzimuth2)*LAL_PI_180;
+	  optAzimuth2 * LAL_PI_180;
       } 
       else if ( optVerbose ) {
 	fprintf( stderr, "Using IGEC azimuth of %.3f degrees East of North\n",
 		 (REAL4)
-		 (90.0 - barGeom.xArmAzimuthRadians*LAL_180_PI)
+		 ( barGeom.xArmAzimuthRadians * LAL_180_PI )
 		 );
       }
 
