@@ -1,0 +1,116 @@
+%!PS-Adobe-2.0 EPSF-2.0
+%%Title: Quasiperiodic polarization phase diagram
+%%Creator: Teviet Creighton
+%%CreationDate: Thu Jun 21 21:01:50 2001
+%%Orientation: Portrait
+%%Pages: 0
+%%BoundingBox: 126 246 546 626
+%%EndComments
+
+
+% Draw bounding box.
+%126 246 moveto 126 636 lineto 546 636 lineto 546 246 lineto
+%closepath stroke newpath
+
+
+% Define some constants.
+/amp  180 def % long axis amplitude
+/f    0.7 def % flattening factor
+/psi   30 def % polarization phase
+/phi   45 def % wave phase
+/psir 110 def % radius of psi arrow
+/phir  80 def % radius of phi arrow
+
+% Derive some constants.
+
+% x and y coordinates of phase point in rotated frame
+/xp amp phi sin phi cos f mul div dup mul 1 add sqrt div def
+/yp xp phi sin mul phi cos div def
+
+
+
+% Begin drawing.
+306 396 translate
+1 setlinewidth
+0 setgray
+
+% Draw ellipse and semiaxes.
+gsave 0.4 setgray 2 setlinewidth psi rotate 1 f scale
+0 0 moveto amp 0 lineto stroke 0 0 moveto 0 amp lineto stroke
+0.7 setgray 0 0 amp 0 360 arc closepath stroke grestore
+
+% Draw psi arrow.
+gsave 0.4 setgray psi rotate
+0 0 psir 1 sub psi neg 2 add -520 psir div arc -2 0 rlineto 3 6 rlineto
+3 -6 rlineto -2 0 rlineto 0 0 psir 1 add -520 psir div psi neg 2 add arcn
+closepath fill grestore
+
+% Draw phase point.
+gsave 2 setlinewidth psi rotate
+0.7 setgray 0 0 moveto xp yp lineto stroke
+0 setgray xp yp 3 0 360 arc closepath fill grestore
+
+% Draw phi arrow.
+gsave 0.7 setgray psi phi add rotate
+0 0 phir 1 sub phi neg 2 add -520 phir div arc -2 0 rlineto 3 6 rlineto
+3 -6 rlineto -2 0 rlineto 0 0 phir 1 add -520 phir div phi neg 2 add arcn
+closepath fill grestore
+
+% Draw axes.
+-1 -1 moveto
+0 201 rlineto -3 0 rlineto 4 9 rlineto 4 -9 rlineto -3 0 rlineto 0 -199 rlineto
+199 0 rlineto 0 3 rlineto 9 -4 rlineto -9 -4 rlineto 0 3 rlineto -201 0 rlineto
+closepath fill
+
+
+% Draw labels.
+/char 1 string def
+
+% h_plus, h_cross
+/Times-Italic findfont 20 scalefont setfont
+215 -5 moveto (h) show
+/Symbol findfont 14 scalefont setfont
+0 -3 rmoveto (+) show
+/Times-Italic findfont 20 scalefont setfont
+-5 215 moveto (h) show
+/Symbol findfont 14 scalefont setfont
+char 0 180 put 1 -3 rmoveto char show
+
+% 2 delta psi
+/Symbol findfont 20 scalefont setfont
+psi 0.3 mul dup cos psir mul exch sin psir mul moveto
+char 0 106 put 5 0 rmoveto (F) show
+
+% A_1, A_2
+gsave psi rotate
+/Times-Italic findfont 20 scalefont setfont
+amp 24 sub 8 moveto (A) show
+/Times-Roman findfont 14 scalefont setfont
+0 -3 rmoveto (1) show
+/Times-Italic findfont 20 scalefont setfont
+-24 amp f mul 20 sub moveto (A) show
+/Times-Roman findfont 14 scalefont setfont
+0 -3 rmoveto (2) show
+grestore
+
+% phi
+/Symbol findfont 20 scalefont setfont
+gsave psi rotate
+phi 0.5 mul dup cos phir mul exch sin phir mul moveto
+5 0 rmoveto (f) show grestore
+
+% phase point
+/Times-Italic findfont 20 scalefont setfont
+gsave psi rotate xp yp moveto psi neg rotate
+-5 10 rmoveto (p) show
+/Times-Roman findfont 20 scalefont setfont
+(\() show
+/Times-Italic findfont 20 scalefont setfont
+(t) show
+/Times-Roman findfont 20 scalefont setfont
+2 0 rmoveto (\)) show
+grestore
+
+
+%showpage
+%%EOF
