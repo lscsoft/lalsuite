@@ -141,26 +141,9 @@ D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
   Physics}.  (Wiley \& Sons, New York, 2001)
 ******************************************************* </lalLaTeX> */ 
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _STRING_H
+#include <lal/LALStdlib.h>
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _UNITS_H
-#include "Units.h"
-#ifndef _UNITS_H
-#define _UNITS_H
-#endif
-#endif
+#include <lal/Units.h>
 
 NRCSID( UNITDEFSC, "$Id$" );
 

@@ -43,19 +43,8 @@ standard form.
 #define TRUE 1
 #define FALSE 0
 
-#ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _UNITS_H
-#include "Units.h"
-#ifndef _UNITS_H
-#define _UNITS_H
-#endif
-#endif
+#include <lal/LALStdlib.h>
+#include <lal/Units.h>
 
 NRCSID( UNITMULTIPLYC, "$Id$" );
 
