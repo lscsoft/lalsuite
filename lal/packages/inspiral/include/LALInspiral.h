@@ -860,6 +860,11 @@ void LALRungeKutta4(
   rk4In *,
   void *);
 
+void LALUSPA (
+   LALStatus *status, 
+   REAL4Vector *signal,
+   InspiralTemplate *params);
+
 void LALEOBWaveform(
 	LALStatus *status,
 	REAL4Vector *signal,
