@@ -22,10 +22,10 @@ void `LALDestroy'SERIESTYPE (
 </lalLaTeX> <lalVerbatim file="TimeSeriesCreateP"> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	const CHAR *name,
-	LIGOTimeGPS epoch,
+	const LIGOTimeGPS *epoch,
 	REAL8 f0,
 	REAL8 deltaT,
-	LALUnit sampleUnits,
+	const LALUnit *sampleUnits,
 	size_t length
 );
 /* </lalVerbatim> */

@@ -24,10 +24,10 @@ void `LALDestroy'SERIESTYPE (
 
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	const CHAR *name,
-	LIGOTimeGPS epoch,
+	const LIGOTimeGPS *epoch,
 	REAL8 f0,
 	REAL8 deltaT,
-	LALUnit sampleUnits,
+	const LALUnit *sampleUnits,
 	size_t length
 )
 {
@@ -46,10 +46,10 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 		strncpy(new->name, name, LALNameLength);
 	else
 		new->name[0] = '\0';
-	new->epoch = epoch;
+	new->epoch = *epoch;
 	new->f0 = f0;
 	new->deltaT = deltaT;
-	new->sampleUnits = sampleUnits;
+	new->sampleUnits = *sampleUnits;
 	new->data = sequence;
 
 	return(new);
@@ -69,7 +69,7 @@ void `LALCreate'SERIESTYPE (
 {
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", TIMESERIESC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	*output = `XLALCreate'SERIESTYPE (name, epoch, f0, deltaT, sampleUnits, length);
+	*output = `XLALCreate'SERIESTYPE (name, &epoch, f0, deltaT, &sampleUnits, length);
 	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
 	RETURN(status);
 }
