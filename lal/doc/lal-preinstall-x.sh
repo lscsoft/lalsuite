@@ -231,11 +231,11 @@ export LSCSOFT_LOCATION
 if [ -f ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh ] ; then
   . ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
 fi
+#/verbatim
 #ignore
 fi
 if 0 ; then
 #/ignore
-#/verbatim
 ## If you are using a C shell (e.g., tcsh), instead add these lines to
 ## your .login:
 #verbatim
