@@ -56,16 +56,25 @@ which you will want to make SFTs. The files:
   S2-H1segments.txt
   S2-H2segments.txt
   S2-L1segments.txt
-contain this data for the S2 run.  The files were obtained from
-Gabriella Gonzalez's web page:
+contain this data for the S2 run. 
+
+ The S1 files were obtained from Gabriella Gonzalez's web page:
 http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/
 http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/
-and contain two lines of text, that
-will be ignored by the SFT code, followed by three columns of
-integers:
+
+and contain two lines of text, that will be ignored by the SFT code,
+followed by three columns of integers:
+
 START-GPS   STOP-GPS   LENGTH
 The first two columns are the start and end GPS times of the locked
 stretch, and the third column is the STOP-START difference.
+
+The S2 files were derived from Keith Rile's web pages:
+http://tenaya.physics.lsa.umich.edu/~keithr/S2DQ/
+and more specifically from:
+http://tenaya.physics.lsa.umich.edu/~keithr/S2DQ/S2L1v02_segs.txt
+http://tenaya.physics.lsa.umich.edu/~keithr/S2DQ/S2H1v02_segs.txt
+http://tenaya.physics.lsa.umich.edu/~keithr/S2DQ/S2H2v02_segs.txt
 
 You can use the script
 ./make_locked_data_list S2 60
