@@ -188,7 +188,7 @@ int main( int argc, char *argv[])
 
     /* Burst events */
     SnglBurstTable      *burstEvent = NULL;
-    SnglBurstTable     **EventAddPoint;
+    SnglBurstTable     **EventAddPoint = &burstEvent;
     MetadataTable        myTable;
     MetadataTable        procTable;
     MetadataTable        procparams;
@@ -250,8 +250,7 @@ int main( int argc, char *argv[])
     minFreq = params->tfTilingInput->flow;
 
     /* set the temporary time variable indicating start of chunk */
-    tmpEpoch.gpsSeconds = startEpoch.gpsSeconds;
-    tmpEpoch.gpsNanoSeconds = startEpoch.gpsNanoSeconds;
+    tmpEpoch = startEpoch;
 
     /* set the time series parameters of the input data and resample params 
     memset( &resampleParams, 0, sizeof(ResampleTSParams) );
@@ -289,8 +288,7 @@ int main( int argc, char *argv[])
       series.data = NULL;
       LAL_CALL( LALCreateVector( &stat, &series.data, numPoints), &stat);
       memset( series.data->data, 0, series.data->length*sizeof(REAL4) );
-      series.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-      series.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+      series.epoch = tmpEpoch;
       strcpy(series.name, params->channelName);
       /*      series.deltaT = 1.0/((REAL8) sampleRate);*/
       series.f0 = 0.0;
@@ -327,15 +325,13 @@ int main( int argc, char *argv[])
           geoSeries.data = NULL;
           LAL_CALL( LALDCreateVector( &stat, &geoSeries.data, numPoints), &stat);
           memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL8) );
-          geoSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-          geoSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+          geoSeries.epoch = tmpEpoch;
           strcpy(geoSeries.name, params->channelName);
           geoSeries.deltaT = 1.0/((REAL8) sampleRate);
           geoSeries.f0 = 0.0;
           geoSeries.sampleUnits = lalADCCountUnit;
           LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
-          geoSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-          geoSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+          geoSeries.epoch = tmpEpoch;
           LAL_CALL( LALFrSeek(&stat, &(geoSeries.epoch), stream), &stat);
 
           /* get the data */
@@ -354,8 +350,7 @@ int main( int argc, char *argv[])
           for(i=0;i<numPoints;i++){
             series.data->data[i] = (REAL4) geoSeries.data->data[i];
           }
-          series.epoch.gpsSeconds = geoSeries.epoch.gpsSeconds;
-          series.epoch.gpsNanoSeconds = geoSeries.epoch.gpsNanoSeconds;
+          series.epoch = geoSeries.epoch;
           strcpy(series.name, geoSeries.name);
           series.deltaT = geoSeries.deltaT;
           series.f0 = geoSeries.f0;
@@ -366,8 +361,7 @@ int main( int argc, char *argv[])
         else
         {
           LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
-          series.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-          series.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+          series.epoch = tmpEpoch;
           LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
 
           /* get the data */
@@ -516,15 +510,13 @@ int main( int argc, char *argv[])
         mdcSeries.data = NULL;
         LAL_CALL( LALCreateVector( &stat, &mdcSeries.data, numPoints), &stat);
         memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
-        mdcSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-        mdcSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+        mdcSeries.epoch = tmpEpoch;
         strcpy(mdcSeries.name, mdcparams->channelName);
         mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
         mdcSeries.f0 = 0.0;
         mdcSeries.sampleUnits = lalADCCountUnit;
         LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
-        mdcSeries.epoch.gpsSeconds     = tmpEpoch.gpsSeconds;
-        mdcSeries.epoch.gpsNanoSeconds = tmpEpoch.gpsNanoSeconds;
+        mdcSeries.epoch = tmpEpoch;
         LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
 
         /* get the mdc signal data */
@@ -583,7 +575,6 @@ int main( int argc, char *argv[])
       /*******************************************************************
        * DO THE SEARCH                                                    *
        *******************************************************************/
-      EventAddPoint = &burstEvent;
       for(start_sample = 0; start_sample < (int) series.data->length; start_sample += params->initParams->segDutyCycle * params->ovrlap)
       {
         REAL4TimeSeries *interval;
@@ -591,7 +582,7 @@ int main( int argc, char *argv[])
         LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, min(33.5 / series.deltaT, (series.data->length - start_sample))), &stat);
 
         if (verbose)
-          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + min(33.5 / series.deltaT, (series.data->length - start_sample)));
+          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
 
         LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
 
@@ -676,14 +667,11 @@ int main( int argc, char *argv[])
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
                 sngl_burst_table), &stat);
 
-
     /* clean up memory allocated to hold burst events */
-    while (burstEvent)
-    {
-        SnglBurstTable *thisEvent;
-        thisEvent = burstEvent;
+    while(burstEvent) {
+        SnglBurstTable *event = burstEvent;
         burstEvent = burstEvent->next;
-        LALFree( thisEvent );
+        LALFree(event);
     }
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
 
