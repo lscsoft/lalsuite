@@ -320,7 +320,7 @@ FUNCM (
   memset (series, 0, sizeof(*series));
 
   /* call FUNC to populate the series' metadata */
-  FUNC (status, series, chanin, stream);
+  FUNC (status->statusPtr, series, chanin, stream);
   CHECKSTATUSPTR (status);
 
   /* restore the sequence address */
