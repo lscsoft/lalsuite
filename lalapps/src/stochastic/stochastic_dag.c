@@ -152,6 +152,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 error;
 
   /* input data segment */
+  INT4 duration;
+  INT4 durationEff;
+  INT4 extrasec;
   INT4 numSegments;
   INT4 numJobs;
   INT4 segMiddle;
@@ -295,13 +298,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* parse command line options */
   parseOptions(argc, argv);
 
-  /* initialize gps time structures */
-  gpsStartTime.gpsSeconds = startTime;
-  gpsStartTime.gpsNanoSeconds = 0.;
-  gpsStartPadTime.gpsSeconds = startTime - padData;
-  gpsStartPadTime.gpsNanoSeconds = 0.;
-  gpsCalibTime.gpsSeconds = startTime + calibOffset;
-  gpsCalibTime.gpsNanoSeconds = 0.;
+  /* should data be padded */
+  if ((sampleRate == resampleRate) && (high_pass_flag == 0))
+  {
+    padData = 0;
+  }
+  else
+  {
+    padData = 1;
+  }
 
   if (vrbflg)
   {
@@ -310,10 +315,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get number of segments */
   numSegments = (INT4)(intervalDuration / segmentDuration);
-  numJobs = (INT4)((stopTime - startTime) / segmentDuration ) - \
+  duration = stopTime - startTime;
+  numJobs = (INT4)((duration - (2*padData)) / segmentDuration ) - \
     numSegments + 1;
   segMiddle = (INT4) ((numSegments - 1) / 2);
   segmentShift = segmentDuration;
+
+  /* recenter */
+  durationEff = (INT4)((duration - (2*padData)) / segmentDuration ) * \
+    segmentDuration;
+  extrasec = duration - durationEff;
+  startTime = startTime + (INT4)(extrasec/2);
+  stopTime = startTime + durationEff;
 
   if (vrbflg)
   {
@@ -325,6 +338,14 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* numSegments = 2 * numSegments - 1; */
     segmentShift = segmentDuration / 2;
   }
+
+  /* initialize gps time structure */
+  gpsStartTime.gpsSeconds = startTime;
+  gpsStartTime.gpsNanoSeconds = 0;
+  gpsStartPadTime.gpsSeconds = startTime - padData;
+  gpsStartPadTime.gpsNanoSeconds = 0;
+  gpsCalibTime.gpsSeconds = startTime + calibOffset;
+  gpsCalibTime.gpsNanoSeconds = 0;
 
   if ((sampleRate == resampleRate) && (high_pass_flag == 0))
   {
@@ -1627,7 +1648,8 @@ INT4 main(INT4 argc, CHAR *argv[])
         if (vrbflg)
         {
           fprintf(stdout, "job %d:", jobLoop);
-          fprintf(stdout, "varTheo = %e s\n", varTheo);
+          fprintf(stdout, "varTheo = %e s, sigmatheo = %e\n", varTheo, \
+              sqrt(varTheo));
         }
 
         gpsStartTime.gpsSeconds = startTime + \
@@ -1713,7 +1735,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* output to file */
         out1 = fopen(outputFilename1, "a");
-        fprintf(out1,"%d %e %e\n", gpsStartTime.gpsSeconds, y, varTheo);
+        fprintf(out1,"%d %e %e %e\n", gpsStartTime.gpsSeconds, y, \
+            sqrt(varTheo), varTheo);
         fclose(out1);
       }
     }
