@@ -1379,6 +1379,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   free(ifoOne);
   free(ifoTwo);
 
+  /* check for memory leaks and exit */
   LALCheckMemoryLeaks();
   exit(0);
 }
@@ -2409,12 +2410,14 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   FrStream *stream = NULL;
   FrCache *frameCache = NULL;
   ResampleTSParams params;
-  size_t length = 0;
+  size_t length;
+
+  /* calculate number of data points */
+  length = delta_gps_to_float(status, end, start) * resampleRate;
 
   /* apply resample buffer */
   if (buffer)
   {
-    length = delta_gps_to_float(status, end, start) * resampleRate;
     start.gpsSeconds -= buffer;
     end.gpsSeconds += buffer;
   }
