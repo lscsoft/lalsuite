@@ -15,7 +15,8 @@ isolated_src = $(isolated_DIR)/rngmed.c $(isolated_DIR)/DopplerScan.c $(isolated
 
 bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
-	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	
+	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	\
+	lalapps_CalculateSensitivity
 
 EXTRA_DIST = clusters.h
 
@@ -35,3 +36,6 @@ lalapps_GenerateBinaryInput_SOURCES = GenerateBinaryInput_v1.c
 
 lalapps_GenerateSearchInput_SOURCES = GenerateSearchInput_v1.c ReadWriteBinaryHeader_v1.c \
 	GenerateBinaryMesh_v1.h
+
+lalapps_CalculateSensitivity_SOURCES = CalculateSensitivity_v1.c ReadSourceFile_v1.c \
+	CalculateSensitivity_v1.h
