@@ -34,7 +34,7 @@ RCSID( "$Id$");
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 
-#define FILE_FSTATS
+BOOLEAN FILE_FSTATS = 1;
 /*
 #define FILE_FMAX
 #define FILE_FLINES
@@ -90,11 +90,13 @@ extern double fraction_done;
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
 #define COMPUTEFSTATC_EMEM   		4
+#define COMPUTEFSTATC_ECHECKPOINT	5
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
+#define COMPUTEFSTATC_MSGECHECKPOINT	"Illegal checkpoint"
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
 
@@ -150,7 +152,7 @@ REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set
 
 FILE *fp_mergedSFT;		/**< input-file containing merged SFTs */
 FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
-FILE *fpstat;			/**< output-file: F-statistic candidates and cluster-information */
+FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-information */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
@@ -169,7 +171,7 @@ void Freemem (LALStatus *status);
 INT4 EstimateFLines(LALStatus *status);
 INT4 NormaliseSFTDataRngMdn (LALStatus *status);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
-INT4 writeFLines(INT4 *maxIndex);
+int writeFLines(INT4 *maxIndex, int *bytes_written);
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
@@ -181,6 +183,7 @@ static void swap2(char *location);
 static void swap4(char *location);
 static void swap8(char *location);
 void swapheader(struct headertag *thisheader);
+void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname);
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
@@ -217,6 +220,7 @@ int main(int argc,char *argv[])
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
   CHAR Fstatsfilename[256]; 		/* Fstats file name*/
+  CHAR ckp_fname[260];			/* filename of checkpoint-file */
   INT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
@@ -224,8 +228,10 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
-  FILE *fpOut=NULL;
-  UINT4 loopcounter;
+  FILE *fpOut = NULL;
+
+  UINT4 loopcounter;		/* Checkpoint-counters for restarting checkpointed search */
+  long fstat_bytecounter;	 	
 
   lalDebugLevel = 0 ;  
   vrbflg = 1;	/* verbose error-messages */
@@ -281,19 +287,6 @@ int main(int argc,char *argv[])
       fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
       return 2;
     }
-  }
-#endif
-#ifdef FILE_FSTATS  
-  /*      open file */
-  strcpy(Fstatsfilename,"Fstats");
-  if ( LALUserVarWasSet(&uvar_outputLabel) )
-    strcat(Fstatsfilename,uvar_outputLabel);
-#if USE_BOINC
-  use_boinc_filename0(Fstatsfilename);
-#endif /* USE_BOINC */
-  if (!(fpstat=fopen(Fstatsfilename,"wb"))){
-    fprintf(stderr,"in Main: unable to open Fstats file\n");
-    return 2;
   }
 #endif
   
@@ -366,14 +359,62 @@ int main(int argc,char *argv[])
 	}
     } /* if outputFstat */
 
+  /* prepare main output-file "Fstats": get actual filename */
+  strcpy(Fstatsfilename,"Fstats");
+  if ( uvar_outputLabel )
+    strcat(Fstatsfilename,uvar_outputLabel);
+  /* prepare checkpointing file */
+  strcpy(ckp_fname, Fstatsfilename);
+  strcat(ckp_fname, ".ckp");
 
-  if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
+#if USE_BOINC
+  use_boinc_filename0(Fstatsfilename);
+  use_boinc_filename0(ckp_fname)
+#endif /* USE_BOINC */
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
    */
+
+  /* we allow for checkpointing here, so we might not actually start this
+   * loop at 0, but at some previously stored loop-counter.
+   * In addition we retrieve the number of bytes that SHOULD have
+   * been written to fstats-file so far, in order to catch file-corruptions.
+   */
+
   loopcounter = 0;
+  fstat_bytecounter = 0;
+
+  /* Checkpointed information is retrieved from checkpoint-file (if found) */
+  LAL_CALL (getCheckpointCounters( &status, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), &status); 
+
+
+  /* allow for checkpointing: 
+   * open fstats file for writing or appending, depending on loopcounter. 
+   */
+  if ( FILE_FSTATS && ( (fpstat=fopen( Fstatsfilename, loopcounter>0 ? "ab" : "wb")) == NULL) )
+    {
+      fprintf(stderr,"in Main: unable to open Fstats file\n");
+      return 2;
+    }
+
+  /* if we checkpointed in the loop we need to "spool forward" accordingly in our sky-position list */
+  if ( loopcounter > 0 )
+    {
+      UINT4 i;
+      for (i=0; i < loopcounter; i++)
+	{
+	  LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+	  if (thisScan.state == STATE_FINISHED)
+	    {
+	      LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
+	      exit (COMPUTEFSTATC_ECHECKPOINT); 
+	    }
+	}
+    } /* if loopcounter > 0 */
+    
+
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -423,13 +464,17 @@ int main(int argc,char *argv[])
 	  /*  This fills-in highFLines  */
 	  if (highFLines != NULL && highFLines->Nclusters > 0)
 	    {
+	      int bytesWritten = 0;
+
 	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	    
 	      /*  for every cluster writes the information about it in file Fstats */
-	      if (writeFLines(maxIndex)){
-		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-		return 6;
-	      }
+	      if (writeFLines(maxIndex, &bytesWritten) )
+		{
+		  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
+		  return 6;
+		}
+	      fstat_bytecounter += (long)bytesWritten;	/* bookkeeping of nominal length of Fstats-file */
 	   	  
 	      if (uvar_EstimSigParam)
 		{
@@ -451,7 +496,28 @@ int main(int argc,char *argv[])
 
 	} /* For GV.spinImax */
 
-      loopcounter ++;
+      loopcounter ++;		/* number of *completed* loops */
+
+      /* flush fstats-file and write checkpoint-file */
+      if (fpstat)
+	{
+	  FILE *fp;
+	  if ( (fp = fopen(ckp_fname, "wb")) == NULL) /* overwrite old file */
+	    {
+	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
+	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	    }
+	  if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld", loopcounter, fstat_bytecounter) < 0)
+	    {
+	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
+	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	    }
+	  fclose (fp);
+	  fflush (fpstat);
+
+	} /* if fpstat */
+
+      /* Show some progress */
 #if USE_BOINC
       {
 	double local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
@@ -478,9 +544,11 @@ int main(int argc,char *argv[])
 #ifdef FILE_FMAX  
   fclose(fpmax);
 #endif
-#ifdef FILE_FSTATS  
-  fclose(fpstat);
-#endif
+
+  if (fpstat) fclose(fpstat);
+
+  /* remove checkpoint-file */
+  remove (ckp_fname);
   
   /* Free DopplerScan-stuff (grid) */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
@@ -588,7 +656,6 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
   LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
-
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1045,12 +1112,12 @@ void CreateDemodParams (LALStatus *status)
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex){
-
+int writeFLines(INT4 *maxIndex, int *bytes_written)
+{
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2,mean,var,std,R,fr;
   INT4 imax;
-  INT4 err;
+  int numBytes = 0;
 
   log2=medianbias;
  
@@ -1088,21 +1155,27 @@ int writeFLines(INT4 *maxIndex){
     var=var/N;
     std=sqrt(var);
     fr=uvar_Freq + imax*GV.dFreq;
-#ifdef FILE_FSTATS  
-/*    print the output */
-  err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
-	      Alpha, Delta, N, mean, std, max);
 
-  if (err<=0) {
-    fprintf(stderr,"writeFLines couldn't print to Fstas!\n");
-    return 4;
-  }
-#endif
+    /*    print the output */
+    if (fpstat)
+      {
+	numBytes += fprintf(fpstat, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
+			  fr, Alpha, Delta, N, mean, std, max);
+
+	if (numBytes <= 0) {
+	  fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
+	  return 4;
+	}
+      }
 
   }/*  end i loop over different clusters */
 
+  /* return total number of bytes written into fstats-file */
+  *bytes_written = numBytes;
+
   return 0;
-}
+
+} /* writeFLines() */
 
 /** [OBSOLETE] Normalize SFTs using the mean.
  * This function is obsolete, as we use the running-median now. 
@@ -2718,6 +2791,77 @@ int main(int argc, char *argv[]){
   boinc_finish(returnvalue);
   return 0;
 }
-
-
 #endif /*USE_BOINC*/
+
+
+/** Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
+ *  The name of the checkpoint-file is <fname>.ckp
+ *  @param[OUT] loopcounter	number of completed loops (refers to main-loop in main())
+ *  @param[OUT] bytecounter	bytes nominally written to fstats file (for consistency-check)
+ *  @param[IN]  fstat_fname	Name of Fstats-file. 
+ */
+void
+getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckp_fname)
+{
+  FILE *fp;
+  UINT4 lcount; 	/* loopcounter */
+  long bcount;		/* and bytecounter read from ckp-file */
+  long flen;
+
+  INITSTATUS( stat, "getChkptCounters", rcsid );
+
+  ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( ckp_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  /* if anything goes wrong in here: start main-loop from beginning  */
+  *loopcounter = 0;	
+  *bytecounter = 0;
+
+  /* try opening checkpoint-file read-only */
+  if (lalDebugLevel) LALPrintError("Checking presence of checkpoint-file ... ");
+  if ( (fp = fopen(ckp_fname, "rb")) == NULL) 
+    {
+      if (lalDebugLevel) LALPrintError ("none found. \nStarting main-loop from beginning.\n");
+      RETURN(stat);
+    }
+
+  /* try reading checkpoint-counters: two INT's loopcounter and fstat_bytecounter */
+  if (lalDebugLevel) LALPrintError ("found! \nTrying to read checkpoint counters from it...");
+  if ( 2 != fscanf (fp, "%" LAL_UINT4_FORMAT " %ld", &lcount, &bcount))
+    {
+      if (lalDebugLevel) LALPrintError ("failed! \nStarting main-loop from beginning.\n");
+      fclose( fp );
+      RETURN(stat);
+    }
+  fclose( fp );
+
+  /* checkpoint-file read successfully: check consistency with fstats-file */
+  if (lalDebugLevel) LALPrintError ("ok.\nChecking if fstats-file is ok ...");
+  if ( (fp = fopen(fstat_fname, "rb")) == NULL) {
+    if (lalDebugLevel) LALPrintError ("none found.\nStarting main-loop from beginning.\n");
+    RETURN(stat);
+  }
+  /* seek to end of fstats file */
+  if ( 0 != fseek( fp, 0, SEEK_END) ) {	/* something gone wrong seeking .. */
+    if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    RETURN(stat);
+  }
+
+  /* is bytecounter consistent with length of this file? */
+  flen = ftell(fp);
+  if ( bcount != flen )
+    {
+      if (lalDebugLevel) 
+	LALPrintError ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
+      RETURN(stat);
+    }
+  fclose( fp );
+
+  if (lalDebugLevel) LALPrintError ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
+
+  *loopcounter = lcount;
+  *bytecounter = bcount;
+
+  RETURN(stat);
+
+} /* getChkptCounters() */ 
