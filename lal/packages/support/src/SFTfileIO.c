@@ -306,12 +306,12 @@ LALReadSFTfile (LALStatus *stat,
 
 
 /* ----------------------------------------------------------------------
- * read a whole bunch of SFTs at once: given a vector of filenames, return
- * a vector of SFTs
+ * read a whole bunch of SFTs at once: given a file-pattern, read and 
+ * return a vector of SFTs
  *
  * the input-glob is a bit special: the file-part is interpreted as a 
- * match-string: so test1/thisdir/SFT  found match all "*SFt* files
- * in test1/thisdir/
+ * match-string: so test1/thisdir/SFT  would match all "*SFT* files
+ * in test1/thisdir/ !
  *
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="SFTfileIOD"> */
