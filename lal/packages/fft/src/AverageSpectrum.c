@@ -1,3 +1,5 @@
+#include <math.h>
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -21,7 +23,6 @@ int XLALREAL4ModifiedPeriodogram(
   static const char *func = "XLALREAL4ModifiedPeriodogram";
   REAL4Vector *work;
   REAL4 normfac;
-  UINT4 length;
   UINT4 k;
 
   if ( ! periodogram || ! tseries || ! plan )
@@ -636,7 +637,7 @@ int XLALREAL4SpectrumInvertTruncate(
     XLAL_ERROR( func, XLAL_EFAULT );
   if ( ! spectrum->data )
     XLAL_ERROR( func, XLAL_EINVAL );
-  if ( ! spectrum->deltaF <= 0.0 )
+  if ( spectrum->deltaF <= 0.0 )
     XLAL_ERROR( func, XLAL_EINVAL );
   if ( lowfreq < 0 )
     XLAL_ERROR( func, XLAL_EINVAL );
@@ -682,11 +683,14 @@ int XLALREAL4SpectrumInvertTruncate(
     /* reconstruct spectrum */
     XLALREAL4PowerSpectrum( spectrum->data, vector, fwdplan );
 
+    /* clear the low frequency components... again, and Nyquist too */
+    memset( spectrum->data->data, 0, cut * sizeof( *spectrum->data->data ) );
+    spectrum->data->data[spectrum->data->length - 1] = 0.0;
+
     /* rescale spectrum: 0.5 to undo factor of two from REAL4PowerSpectrum */
     /* seglen^2 for the reverse fft (squared because power spectrum) */
     normfac = 0.5 / ( seglen * seglen );
-
-    for ( k = cut; k < spectrum->data->length; ++k )
+    for ( k = cut; k < spectrum->data->length - 1; ++k )
       spectrum->data->data[k] *= normfac;
 
     /* cleanup workspace */
