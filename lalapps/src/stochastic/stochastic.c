@@ -249,7 +249,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numFMin, numFMax;
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
-  REAL4FrequencySeries psdTempOne, psdTempTwo, psdOne, psdTwo;
+  REAL4FrequencySeries *psdTempOne;
+  REAL4FrequencySeries *psdTempTwo;
+  REAL4FrequencySeries *psdOne;
+  REAL4FrequencySeries *psdTwo;
   REAL4Vector *calPsdOne, *calPsdTwo;
   LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
@@ -504,46 +507,23 @@ INT4 main(INT4 argc, CHAR *argv[])
   winparPSD.length = windowPSDLength;
   winparPSD.type = Hann;
 
-  /* set metadata fields for PSDs */
-  strncpy(psdTempOne.name, "psdTempOne", LALNameLength);
-  strncpy(psdTempTwo.name, "psdTempTwo", LALNameLength);
-  psdTempOne.sampleUnits = psdTempTwo.sampleUnits = psdUnits;
-  psdTempOne.deltaF = psdTempTwo.deltaF = deltaF;
-  psdTempOne.f0 = psdTempTwo.f0 = 0;
-
   if (vrbflg)
     fprintf(stdout, "Allocating memory for PSDs...\n");
 
   /* allocate memory for PSDs */
-  psdTempOne.data = psdTempTwo.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &(psdTempOne.data), psdTempLength), \
-      &status);
-  LAL_CALL(LALCreateVector(&status, &(psdTempTwo.data), psdTempLength), \
-      &status);
-  memset(psdTempOne.data->data, 0, \
-      psdTempOne.data->length * sizeof(*psdTempOne.data->data));
-  memset(psdTempTwo.data->data, 0, \
-      psdTempTwo.data->length * sizeof(*psdTempTwo.data->data));
-
-  /* reduced frequency band PSDs */
-  /* set metadata fields for reduced frequency band PSDs */
-  strncpy(psdOne.name, "psdOne", LALNameLength);
-  strncpy(psdTwo.name, "psdTwo", LALNameLength);
-  psdOne.deltaF = psdTwo.deltaF = deltaF;
-  psdOne.f0 = psdTwo.f0 = fMin;
-  psdOne.sampleUnits = psdTwo.sampleUnits = psdUnits;
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTempOne, "psdTempOne", \
+        gpsStartTime, 0, deltaF, psdUnits, psdTempLength), &status);
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTempTwo, "psdTempTwo", \
+        gpsStartTime, 0, deltaF, psdUnits, psdTempLength), &status);
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");
   
   /* allocate memory for reduced frequency band PSDs */
-  psdOne.data = psdTwo.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &psdOne.data, filterLength), &status);
-  LAL_CALL(LALCreateVector(&status, &psdTwo.data, filterLength), &status);
-  memset(psdOne.data->data, 0, psdOne.data->length * \
-      sizeof(*psdOne.data->data));
-  memset(psdTwo.data->data, 0, psdTwo.data->length * \
-      sizeof(*psdTwo.data->data));
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdOne, "psdOne", \
+        gpsStartTime, fMin, deltaF, psdUnits, filterLength), &status);
+  LAL_CALL(LALCreateREAL4FrequencySeries(&status, &psdTwo, "psdTwo", \
+        gpsStartTime, fMin, deltaF, psdUnits, filterLength), &status);
 
   /* allocate memory for calibrated PSDs */
   calPsdOne = calPsdTwo = NULL;
@@ -627,9 +607,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       calInvPsdTwo.data->length * sizeof(*calInvPsdTwo.data->data));
 
   /* set inverse noise inputs */
-  inverseNoiseInOne.unCalibratedNoisePSD = &psdOne;
+  inverseNoiseInOne.unCalibratedNoisePSD = psdOne;
   inverseNoiseInOne.responseFunction = responseOne;
-  inverseNoiseInTwo.unCalibratedNoisePSD = &psdTwo;
+  inverseNoiseInTwo.unCalibratedNoisePSD = psdTwo;
   inverseNoiseInTwo.responseFunction = responseTwo;
 
   /* set inverse noise outputs */
@@ -1443,9 +1423,9 @@ INT4 main(INT4 argc, CHAR *argv[])
               fprintf(stdout, "Estimating PSDs...\n");
 
             /* compute uncalibrated PSDs */
-            LAL_CALL(LALREAL4AverageSpectrum(&status, &psdTempOne, \
+            LAL_CALL(LALREAL4AverageSpectrum(&status, psdTempOne, \
                   segmentOne, &specparPSD), &status);
-            LAL_CALL(LALREAL4AverageSpectrum(&status, &psdTempTwo, \
+            LAL_CALL(LALREAL4AverageSpectrum(&status, psdTempTwo, \
                   segmentTwo, &specparPSD), &status);
 
             if (vrbflg)
@@ -1457,8 +1437,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             /* reduce to the optimal filter frequency range */
             for (i = 0; i < filterLength; i++)
             {
-              psdOne.data->data[i] =  psdTempOne.data->data[i + numFMin];
-              psdTwo.data->data[i] =  psdTempTwo.data->data[i + numFMin];
+              psdOne->data->data[i] =  psdTempOne->data->data[i + numFMin];
+              psdTwo->data->data[i] =  psdTempTwo->data->data[i + numFMin];
             }
 
             if (vrbflg)
@@ -1714,10 +1694,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4TimeSeries(&status, segmentPadTwo), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
   LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
-  LAL_CALL(LALDestroyVector(&status, &(psdTempOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(psdTempTwo.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(psdOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(psdTwo.data)), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTempOne), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTempTwo), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdOne), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, psdTwo), &status);
   LAL_CALL(LALDestroyVector(&status, &(calPsdOne)), &status);
   LAL_CALL(LALDestroyVector(&status, &(calPsdTwo)), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, responseTempOne), \
