@@ -372,7 +372,6 @@ SimInspiralTableFromLIGOLw (
           else if ( tableDir[j].idx == 7 )
           {
             thisSim->inclination = realData;
-            break;
           }
           else if ( tableDir[j].idx == 8 )
           {
