@@ -1,6 +1,6 @@
 #!/usr/bin/env @PYTHONPROG@
 """
-power_pipe.py - standalone power pipeline driver script
+power_pipe.in - standalone power pipeline driver script
 
 $Id$
 
@@ -31,9 +31,11 @@ Usage: lalapps_power_pipe [options]
   -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
 
   -d, --datafind           run LSCdataFind to create frame cache files
-  -r, --power              run lalapps_inspiral on the first IFO
+  -r, --power              run lalapps_power on the first IFO
 
-  -j, --injections FILE    add simulated bursts from FILE
+  -c, --makeinjfiles       create the xml files with inj parameters
+  -j, --injections         add simulated bursts
+  -m, --mdcinjections      add mdc injections 
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -44,13 +46,15 @@ Usage: lalapps_power_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrj:u:P:f:l:"
+shortop = "hvdrcjmp:u:P:f:l:"
 longop = [
   "help",
   "version",
   "datafind",
   "power",
-  "injections=",
+  "makeinjfiles",
+  "injections",
+  "mdcinjections",
   "playground-only",
   "user-tag=",
   "priority=",
@@ -67,7 +71,9 @@ except getopt.GetoptError:
 config_file = None
 do_datafind = None
 do_power = None
-inj_file = None
+do_makeinjfiles = None
+do_inj = None
+do_mdcinj = None
 usertag = None
 playground_only = 0
 condor_prio = None
@@ -85,8 +91,12 @@ for o, a in opts:
     do_datafind = 1
   elif o in ("-r", "--power"):
     do_power = 1
+  elif o in ("-c", "--makeinjfiles"):
+    do_makeinjfiles = 1
   elif o in ("-j", "--injections"):
-    inj_file = a
+    do_inj = 1
+  elif o in ("-m", "--mdcinjections"):
+    do_mdcinj = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -117,6 +127,11 @@ try: os.mkdir('cache')
 except: pass
 try: os.mkdir('logs')
 except: pass
+
+#try and make a directory to store the mdccache files
+if do_mdcinj: 
+  try: os.mkdir('mdccache')
+  except: pass
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
@@ -151,6 +166,8 @@ else:
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
+inj_job = power.InjJob(cp)
+mdcinj_job = power.MdcDataFindJob(cp)
 pow_job = power.PowerJob(cp)
 
 # set better submit file names than the default
@@ -159,15 +176,13 @@ if usertag:
 else:
   subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
+inj_job.set_sub_file( basename + '.inj' + subsuffix )
+mdcinj_job.set_sub_file( basename + '.mdcinj' + subsuffix )
 pow_job.set_sub_file( basename + '.power' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
   pow_job.add_opt('user-tag',usertag)
-
-# add the injections
-if inj_file:
-  pow_job.add_opt('injection-file',inj_file)
 
 # set the condor job priority
 if condor_prio:
@@ -193,14 +208,15 @@ data.read(cp.get('input','segments'),minduration)
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
 ifo1_snr = cp.get('pipeline','threshold')
+ifo1_calibration = cp.get('calibration','H1')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
 first_df2 = None
 
-# create a list to store the inspiral jobs
-insp_nodes = []
+# create a list to store the burst jobs
+burst_nodes = []
 
 for seg in data:
   # find all the data
@@ -216,15 +232,47 @@ for seg in data:
 
   prev_df1 = df1
 
+  # find all the mdc data
+  mdcdf1 = power.MdcDataFindNode(mdcinj_job)
+  mdcdf1.set_start(seg.start() - pad)
+  mdcdf1.set_end(seg.end() + pad)
+  mdcdf1.set_observatory(ifo1[0])
+
+  if do_datafind: 
+    mdcdf1.add_parent(df1)
+  if do_mdcinj:
+    dag.add_node(mdcdf1)
+
+  # set the injecton jobs
+  inj1 = power.InjNode(inj_job)
+  inj1.set_start(seg.start())
+  inj1.set_end(seg.end())
+
+ 
+  if do_datafind: 
+    inj1.add_parent(df1)
+  if do_makeinjfiles:
+    dag.add_node(inj1)
+
+  # set the power jobs
   pow1 = power.PowerNode(pow_job)
   pow1.set_start(seg.start())
   pow1.set_end(seg.end())
   pow1.set_ifo(ifo1)
   pow1.set_cache(df1.get_output())
+  if do_mdcinj:
+    pow1.set_mdccache(mdcdf1.get_output())
+  if do_inj: 
+    pow1.set_inj(inj1.get_output())
+    pow1.add_var_opt('calibration-cache',ifo1_calibration)
   pow1.add_var_opt('threshold',ifo1_snr)
 
   if do_datafind: 
     pow1.add_parent(df1)
+  if do_mdcinj: 
+    pow1.add_parent(mdcdf1)
+  if do_makeinjfiles:
+    pow1.add_parent(inj1)	
   if do_power: 
     dag.add_node(pow1)
 
