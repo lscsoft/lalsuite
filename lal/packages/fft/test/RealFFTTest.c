@@ -101,6 +101,7 @@ int main( int argc, char *argv[] )
   RealFFTPlan    *fwd = NULL;
   RealFFTPlan    *rev = NULL;
   REAL4Vector    *dat = NULL;
+  REAL4Vector    *rfft = NULL;
   REAL4Vector    *ans = NULL;
   COMPLEX8Vector *dft = NULL;
   COMPLEX8Vector *fft = NULL;
@@ -148,6 +149,8 @@ int main( int argc, char *argv[] )
 
     LALSCreateVector( &status, &dat, n );
     TestStatus( &status, CODES( 0 ), 1 );
+    LALSCreateVector( &status, &rfft, n );
+    TestStatus( &status, CODES( 0 ), 1 );
     LALSCreateVector( &status, &ans, n );
     TestStatus( &status, CODES( 0 ), 1 );
     LALCCreateVector( &status, &dft, n / 2 + 1 );
@@ -188,7 +191,7 @@ int main( int argc, char *argv[] )
       lbn = log( n ) / log( 2 );
       var = 2.5 * lbn * eps * eps * ssq / n;
       tol = 5 * sqrt( var ); /* up to 5 sigma excursions */
-      fp ? fprintf( fp, "eps = %e \ntol = %e\n", eps, tol ) : 0;
+      fp ? fprintf( fp, "\neps = %e \ntol = %e\n", eps, tol ) : 0;
 
       /*
        *
@@ -197,6 +200,16 @@ int main( int argc, char *argv[] )
        */
       LALForwardRealFFT( &status, fft, dat, fwd );
       TestStatus( &status, CODES( 0 ), 1 );
+      LALREAL4VectorFFT( &status, rfft, dat, fwd );
+      TestStatus( &status, CODES( 0 ), 1 );
+      LALREAL4VectorFFT( &status, ans, rfft, rev );
+      TestStatus( &status, CODES( 0 ), 1 );
+      fp ?  fprintf( fp, "rfft()\t\trfft(rfft())\trfft(rfft())\n\n"  ) : 0;
+      for ( j = 0; j < n; ++j )
+      {
+        fp ? fprintf( fp, "%e\t%e\t%e\n", 
+            rfft->data[j], ans->data[j], ans->data[j] / n ) : 0;
+      }
       if ( n < 128 )
       {
         LALForwardRealDFT( &status, dft, dat );
@@ -207,6 +220,8 @@ int main( int argc, char *argv[] )
          * Check accuracy of FFT vs DFT.
          *
          */
+        fp ? fprintf( fp, "\nfftre\t\tfftim\t\t" ) : 0;
+        fp ? fprintf( fp, "dtfre\t\tdftim\n" ) : 0;
         for ( k = 0; k <= n / 2; ++k )
         {
           REAL8 fftre = fft->data[k].re;
@@ -251,6 +266,7 @@ int main( int argc, char *argv[] )
        */
       LALReverseRealFFT( &status, ans, fft, rev );
       TestStatus( &status, CODES( 0 ), 1 );
+      fp ? fprintf( fp, "\ndat->data[j]\tans->data[j] / n\n" ) : 0;
       for ( j = 0; j < n; ++j )
       {
         REAL8 err = fabs( dat->data[j] - ans->data[j] / n );
@@ -271,6 +287,8 @@ int main( int argc, char *argv[] )
     }
 
     LALSDestroyVector( &status, &dat );
+    TestStatus( &status, CODES( 0 ), 1 );
+    LALSDestroyVector( &status, &rfft );
     TestStatus( &status, CODES( 0 ), 1 );
     LALSDestroyVector( &status, &ans );
     TestStatus( &status, CODES( 0 ), 1 );

@@ -125,6 +125,7 @@ main( int argc, char *argv[] )
        : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
+  fflush( stdout );
 
   LALCOMPLEX8VectorFFT( &status, bvec, avec, pfwd );
   TestStatus( &status, CODES( 0 ), 1 );
@@ -134,6 +135,7 @@ main( int argc, char *argv[] )
     fp ? fprintf( fp, "%+f\t%+f\n", bvec->data[i].re, bvec->data[i].im ) : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
+  fflush( stdout );
 
   LALCOMPLEX8VectorFFT( &status, cvec, bvec, prev );
   TestStatus( &status, CODES( 0 ), 1 );
@@ -144,14 +146,19 @@ main( int argc, char *argv[] )
     cvec->data[i].im /= n;
     fp ? fprintf( fp, "%+.0f\t%+.0f\n", cvec->data[i].re, cvec->data[i].im )
        : 0;
+    fflush( stdout );
     if ( fabs( avec->data[i].re - cvec->data[i].re ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
+      fprintf( stderr, "avec->data[%d].re = %e\n", i, avec->data[i].re );
+      fprintf( stderr, "cvec->data[%d].re = %e\n", i, cvec->data[i].re );
       return 1;
     }
     if ( fabs( avec->data[i].im - cvec->data[i].im ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
+      fprintf( stderr, "avec->data[%d].im = %e\n", i, avec->data[i].im );
+      fprintf( stderr, "cvec->data[%d].im = %e\n", i, cvec->data[i].im );
       return 1;
     }
   }
