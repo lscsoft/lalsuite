@@ -167,6 +167,13 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
 
+AC_MSG_CHECKING(for gethostname prototype in unistd.h)
+AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE,1,
+[Define if gethostname prototype is in unistd.h]),
+AC_MSG_RESULT(no))
+
+
 dnl AC_TRY_RUN needs to be done with libtool to avoid requirement of setting
 dnl LD_LIBRARY_PATH... redefine ac_link to use libtool:
 ac_link="./libtool $ac_link"
