@@ -49,6 +49,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 
+#include <lal/FrequencySeries.h>
+#include <lal/GenerateBurst.h>
+
+
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -151,11 +155,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 /* Reads raw data */
 int ReadData(struct CommandLineArgsTag CLA);
 
+/* High pass filters and casts data to REAL4 */
+int ProcessData(struct CommandLineArgsTag CLA);
+
 /* Adds injections if an xml injection file is given */
 int AddInjections(struct CommandLineArgsTag CLA);
 
-/* High pass filters and casts data to REAL4 */
-int ProcessData(struct CommandLineArgsTag CLA);
+/* High pass filters data again if an injection has been made */
+int ProcessData2(struct CommandLineArgsTag CLA);
 
 /* DownSamples data */
 int DownSample();
@@ -208,12 +215,14 @@ int main(int argc,char *argv[])
  
  if (ReadData(CommandLineArgs)) return 2;
 
+ if (ProcessData(CommandLineArgs)) return 4;
+
  if(CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
+     /* high pass filter data again with added injection */
+     if (ProcessData2(CommandLineArgs)) return 3;
    }
-
- if (ProcessData(CommandLineArgs)) return 4;
  
  if (DownSample()) return 5;
 
@@ -236,8 +245,54 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
+int ProcessData2(struct CommandLineArgsTag CLA)
+{
+
+  PassBandParamStruc highpassParams;
+
+  highpassParams.nMax =  8;
+  highpassParams.f1   = -1;
+  highpassParams.a1   = -1;
+  highpassParams.f2   = CLA.flow;
+  highpassParams.a2   = 0.9; /* this means 10% attenuation at f2 */
+
+  LALDButterworthREAL4TimeSeries( &status, &GV.ht_proc, &highpassParams ); 
+  TESTSTATUS( &status ); 
+
+  return 0;
+}
+
+/*******************************************************************************/
+
 int AddInjections(struct CommandLineArgsTag CLA)
 {
+
+  INT4 startTime = GV.ht.epoch.gpsSeconds;
+  INT4 stopTime = startTime + GV.ht_proc.data->length * GV.ht_proc.deltaT;
+  SimBurstTable *injections = NULL;
+  int i;
+
+  COMPLEX8 one = {1.0, 0.0};
+  COMPLEX8FrequencySeries *response;
+  const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+
+  LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 
+				   0.0, 1.0 / (GV.ht_proc.data->length * GV.ht_proc.deltaT), 
+				   strainPerCount, GV.ht_proc.data->length / 2 + 1);
+  
+  for(i = 0; i < (int)response->data->length; i++)
+			response->data->data[i] = one;
+
+  LALSimBurstTableFromLIGOLw(&status, &injections, CLA.InjectionFile, startTime, stopTime);
+
+  LALBurstInjectSignals(&status, &GV.ht_proc, injections, response); 
+
+  /* free the injection table */
+  while(injections) {
+    SimBurstTable *thisEvent = injections;
+    injections = injections->next;
+    LALFree(thisEvent);
+  }
 
   return 0;
 }
