@@ -42,7 +42,7 @@ Input shoud be from
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel;
 #define EARTHEPHEMERIS "./earth00-04.dat"
 #define SUNEPHEMERIS "./sun00-04.dat"
 
@@ -62,9 +62,10 @@ INT4 lalDebugLevel=1;
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
 #define BLOCKSRNGMED 101 /* Running median window size */
-#define NH0 1 /* number of h0 values to be anlyzed */
+#define NH0 2 /* number of h0 values to be analyzed */
 #define H0MIN 1.0e-23
-#define NMCLOOP 10 /* number of Monte-Carlos */
+#define H0MAX 1.0e-22
+#define NMCLOOP 2 /* number of Monte-Carlos */
 #define NTEMPLATES 16 /* number templates for each Monte-Carlo */
 
 #define SFTDIRECTORY "/home/badkri/L1sfts"
@@ -178,7 +179,7 @@ int main(int argc, char *argv[]){
   
   uvar_nh0 = NH0;
   uvar_h0Min = H0MIN;
-  uvar_h0Max = H0MIN;
+  uvar_h0Max = H0MAX;
 
   uvar_nMCloop = NMCLOOP;
   nTemplates = NTEMPLATES;  
@@ -204,7 +205,9 @@ int main(int argc, char *argv[]){
   uvar_harmonicsfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_harmonicsfile,HARMONICSFILE);  
 
-  uvar_fnameout = FILEOUT;
+  uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
+  strcpy(uvar_fnameout, FILEOUT);
+
   uvar_blocksRngMed = BLOCKSRNGMED;
 
 
@@ -285,6 +288,93 @@ int main(int argc, char *argv[]){
 
     LALFree(fnamelog); 
   }
+
+
+  /* real line noise information */
+  /* find number of harmonics */
+  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  nHarmonicSets = harmonics.nHarmonicSets; 
+  
+  /* convert harmonics to explicit lines */
+  nLines = 0;
+  if (nHarmonicSets > 0)
+    {
+      REAL8 dopplerFreq;
+      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
+      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+    
+
+      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      
+      for (count1=0; count1 < nHarmonicSets; count1++)
+	{
+	  nLines += *(harmonics.numHarmonics + count1);
+	}
+
+      
+      lines2.nLines = nLines;
+      lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      
+      lines.nLines = nLines;
+      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      
+      SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
+      
+      dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
+      SUB( ChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
+			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
+      nLines = lines.nLines;
+      
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+
+      LALFree(harmonics.startFreq);
+      LALFree(harmonics.gapFreq);
+      LALFree(harmonics.numHarmonics);
+      LALFree(harmonics.leftWing);
+      LALFree(harmonics.rightWing);
+      
+    }  /* done with reading line noise info */
+
+
+  /* check that the band is not covered by lines */
+  {
+    INT4  counter=0, j, flag;
+    REAL8 sampFreq, stepFreq, dopplerWing;
+
+    dopplerWing = (uvar_f0 + uvar_fSearchBand)*VTOT;
+    stepFreq = (uvar_fSearchBand + 2*dopplerWing)/100.0;
+
+    for (j=0; j<100; j++)
+      {
+	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
+	SUB( CheckLines (&status, &flag, &lines, sampFreq), &status); 
+	if ( flag>0 ) counter++;
+      }
+    /* exit if more than 90% is covered by lines */
+    if (counter > 90 )
+      {
+	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
+	/* deallocate memory and exit */
+	if (nLines > 0)
+	  {
+	    LALFree(lines.lineFreq);
+	    LALFree(lines.leftWing);
+	    LALFree(lines.rightWing);
+	  }
+	exit(0);
+      }
+  }
+  
+
 
 
   if ( (uvar_AllSkyFlag == 0) ) 
@@ -445,83 +535,6 @@ int main(int argc, char *argv[]){
       timeV.data[j].gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
       ++sft;
     }    
-  }
-
-  /* real line noise information */
-  /* find number of harmonics */
-  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
-  nHarmonicSets = harmonics.nHarmonicSets; 
-  
-  /* convert harmonics to explicit lines */
-  if (nHarmonicSets > 0)
-    {
-      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
-      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-    
-
-      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
-      
-      nLines = 0;
-      for (count1=0; count1 < nHarmonicSets; count1++)
-	{
-	  nLines += *(harmonics.numHarmonics + count1);
-	}
-
-      if (nLines > 0)
-	{
-          REAL8 dopplerFreq;
-
-	  lines2.nLines = nLines;
-	  lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-
-	  lines.nLines = nLines;
-	  lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-	  	  
-	  SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
-          
-	  dopplerFreq = fWings/timeBase;
-	  SUB( ChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
-			    uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
-
-	  LALFree(lines2.lineFreq);
-	  LALFree(lines2.leftWing);
-	  LALFree(lines2.rightWing);
-	}
-
-      LALFree(harmonics.startFreq);
-      LALFree(harmonics.gapFreq);
-      LALFree(harmonics.numHarmonics);
-      LALFree(harmonics.leftWing);
-      LALFree(harmonics.rightWing);
-      
-    }  /* done with reading line noise info */
-
-
-
-  /* check that the band is not covered by lines */
-  {
-    INT4  counter=0, j, flag;
-    REAL8 sampFreq, stepFreq;
-    stepFreq = (uvar_fSearchBand + 2*fWings/timeBase)/100.0;
-    for (j=0; j<100; j++)
-      {
-	sampFreq = uvar_f0 - fWings/timeBase + j*stepFreq;
-	SUB( CheckLines (&status, &flag, &lines2, sampFreq), &status); 
-	if ( flag>0 ) counter++;
-      }
-    /* exit if more than 90% is covered by lines */
-    if (counter > 90 )
-      {
-	fprintf(stdout, "Too many lines in this band...nothing to do! \n");
-	exit(0);
-      }
   }
 
 
@@ -918,9 +931,9 @@ int main(int argc, char *argv[]){
 
   if (nLines > 0)
     {
-      LALFree(lines2.lineFreq);
-      LALFree(lines2.leftWing);
-      LALFree(lines2.rightWing);
+      LALFree(lines.lineFreq);
+      LALFree(lines.leftWing);
+      LALFree(lines.rightWing);
     }
 
   SUB (LALDestroyUserVars(&status), &status);  

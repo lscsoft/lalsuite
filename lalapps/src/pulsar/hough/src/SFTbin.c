@@ -780,11 +780,20 @@ void ChooseLines (LALStatus        *status,
 	}
     }
 
-  /* now reallocate memory for outLine */
-  outLine->nLines = nLinesOut;
-  outLine->lineFreq = (REAL8 *)LALRealloc(outLine->lineFreq, nLinesOut*sizeof(REAL8));
-  outLine->leftWing = (REAL8 *)LALRealloc(outLine->leftWing, nLinesOut*sizeof(REAL8));
-  outLine->rightWing = (REAL8 *)LALRealloc(outLine->rightWing, nLinesOut*sizeof(REAL8));
+  /* if there are no lines inband then free memory */
+  if (nLinesOut == 0)
+    {
+      LALFree(outLine->lineFreq);
+      LALFree(outLine->leftWing);
+      LALFree(outLine->rightWing);
+    }
+  else  /* else reallocate memory for outLine */
+    {
+      outLine->nLines = nLinesOut;
+      outLine->lineFreq = (REAL8 *)LALRealloc(outLine->lineFreq, nLinesOut*sizeof(REAL8));
+      outLine->leftWing = (REAL8 *)LALRealloc(outLine->leftWing, nLinesOut*sizeof(REAL8));
+      outLine->rightWing = (REAL8 *)LALRealloc(outLine->rightWing, nLinesOut*sizeof(REAL8));
+    }
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
