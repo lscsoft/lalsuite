@@ -28,7 +28,7 @@
   " --input FILE                 read input data from FILE\n"\
   " --output FILE                write output data to FILE\n"
 
-int main( int argc, char *argv[] )
+INT4 main(INT4 argc, CHAR *argv[])
 {
 	/*  program option variables */
 	CHAR *inputFileName = NULL;
@@ -36,16 +36,11 @@ int main( int argc, char *argv[] )
 	FILE *out = NULL;
 
 	/* xml data structures */
-	int                   numSegments = 0;
+	INT4 numSegments = 0;
+	StochasticTable *stochHead = NULL;
+	StochasticTable *thisStoch = NULL;
 
-	StochasticTable    *stochHead = NULL;
-	StochasticTable    *thisStoch = NULL;
-
-	/*
-	 *
-	 * parse command line arguments
-	 *
-	 */
+	/* parse command line arguments */
 
 	while (1)
 	{
