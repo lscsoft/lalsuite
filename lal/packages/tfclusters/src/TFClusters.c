@@ -64,8 +64,13 @@ LALComputeSpectrogram (
 Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. This is essentially a wrapper to the function \texttt{LALTimeSeriesToTFPlane} from the \texttt{burstsearch} package, with a rectangular window and no overlap. The power is the norm square of the (normalized) discrete Fourier transform.
 
 \subsubsection*{Uses}
-
-\subsubsection*{Notes}
+\begin{verbatim}
+LALCreateTFPlane()
+LALCreateRealDFTParams()
+LALTimeSeriesToTFPlane()
+LALDestroyRealDFTParams()
+LALDestroyTFPlane()
+\end{verbatim}
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
@@ -191,6 +196,10 @@ LALGetClusters (
 First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}. 
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALInitCList()
+LALFreeCList()
+\end{verbatim}
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -724,8 +733,6 @@ LALClustersPowerThreshold (
 \subsubsection*{Description}
 This function loops over all clusters in \texttt{*in}; for each cluster it computes its total power by summing over the pixels of the cluster, and computes the probability for Gaussian noise to produce a cluster with this total power at this stage of the analysis. This probability is compared to \texttt{dir->alpha}; if smaller, the cluster from \texttt{*in} is appended to \texttt{*out}. Therefore, \texttt{dir->alpha} is the fraction of clusters that had survive the first cuts that will pass this one, assuming Gaussian noise as input of the algorithm.
 
-\subsubsection*{Uses}
-
 \subsubsection*{Notes}
 \begin{itemize}
 \item \texttt{*out} must be initialized by a proper call to \texttt{LALInitCList()} before calling this function.
@@ -881,6 +888,11 @@ LALMergeClusterLists (
 Merge \texttt{*A} and \texttt{*B} into cluster list \texttt{*out}. The merging is done so that any two clusters that overlapp or that have black pixels that are nearest neighbors will be replaced by the union of the two clusters in \texttt{*out}. The clusters that don't satisfy these two conditions are just copied into \texttt{*out}.
 
 \subsubsection*{Uses}
+\begin{verbatim}
+LALCopyCList()
+LALInitCList()
+LALFreeCList()
+\end{verbatim}
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -1252,7 +1264,11 @@ LALCopyCList (
 
 \subsubsection*{Description}
 Make a copy of \texttt{*src} onto \texttt{*dest}.
+
 \subsubsection*{Uses}
+\begin{verbatim}
+LALFreeCList()
+\end{verbatim}
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -1338,10 +1354,6 @@ LALPlainSpectrogram(
 \subsubsection*{Description}
 Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T} and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. Also set the length of \texttt{*tspec} so it matches \texttt{*tseries}.
 
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 void 
@@ -1391,10 +1403,6 @@ LALInitCList (
 
 \subsubsection*{Description}
 Initialize \texttt{*clist} and set its parameters to \texttt{*tspec}.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
@@ -1460,8 +1468,6 @@ LALFillCListDir (
 
 \subsubsection*{Description}
 Initialize \texttt{*cldir}. This means allocating memory for \texttt{cldir->s1}, \texttt{cldir->s2}, \texttt{cldir->d} according to the value of \texttt{cldir->sigma}, and for the threshold vector \texttt{cldir->rho}; all the values of \texttt{cldir->rho} are initialized to \texttt{rho}.
-
-\subsubsection*{Uses}
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -1572,10 +1578,6 @@ LALFreeCListDir (
 
 \subsubsection*{Description}
 Release allocated memory.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/

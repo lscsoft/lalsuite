@@ -28,7 +28,7 @@ extern "C" {
 NRCSID (TFCTHRESHOLDSH, "$Id$");
 
 
- /******************************** <lalErrTable file="TFClustersHErrTab"> */
+ /******************************** <lalErrTable file="TFCThresholdsHErrTab"> */
 #define TFCTHRESHOLDSH_ENULLP       1
 #define TFCTHRESHOLDSH_E01 128
 #define TFCTHRESHOLDSH_EEGOAL 129

@@ -45,7 +45,7 @@ static REAL4 *vector(long nl, long nh);
 
 static void free_vector(REAL4 *v, long nl);
 
-/******** <lalLaTeX file="TFClustersC"> ********
+/******** <lalLaTeX file="TFCThresholdsC"> ********
 \noindent
 Computes thresholds on the power from a best fit to the Rice distribution.
 \subsubsection*{Prototype}
@@ -62,13 +62,11 @@ LALTFCRiceThreshold ( LALStatus *status,
 \subsubsection*{Description}
 Computes the thresholds on the power at every frequency, using a best fit to the Rice distribution. 
 
-\subsubsection*{Uses}
-
 \subsubsection*{Notes}
 \begin{itemize}
 \item \texttt{rho} must be pointing to allocated memory. 
 \end{itemize}
-\vfill{\footnotesize\input{TFClustersCV}}
+\vfill{\footnotesize\input{TFCThresholdsCV}}
 ********* </lalLaTeX> ********/
 
 #define EPS 1.0e-6 /* error on Romberg integration */
