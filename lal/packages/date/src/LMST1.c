@@ -204,9 +204,11 @@ A useful resource is \url{http://aa.usno.navy.mil/}.
 NRCSID (LMST1C, "$Id$");
 
 #include <math.h>
+#include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include "date_value.h"
 
+#define INFOSTR_LEN 256
 
 /*
  * Compute GMST1 in requested units given date UTC.
@@ -234,7 +236,7 @@ LALGMST1 (LALStatus     *status,
   const REAL8      d =    8640184.812866;
   const REAL8      e = 3155760000.0;
 
-  char infostr[256];
+  char infostr[INFOSTR_LEN];
 
   INITSTATUS (status, "LALGMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
@@ -311,13 +313,11 @@ LALGMST1 (LALStatus     *status,
       break;
     }
 
-#if 0
-  if (lalDebugLevel > 0)
-    {
-      sprintf(infostr, "LALGMST1: *p_gmst = %g\n", *p_gmst);
-      LALInfo(status, infostr);
-    }
-#endif
+  if (lalDebugLevel | LALINFO)
+  {
+    LALSnprintf(infostr, INFOSTR_LEN, "LALGMST1: *p_gmst = %g\n", *p_gmst);
+    LALInfo(status, infostr);
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN (status);
