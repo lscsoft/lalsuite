@@ -60,6 +60,13 @@ static size_t min(size_t a, size_t b)
 	return(a < b ? a : b);
 }
 
+/* Parameters from command line */
+static struct {
+	LIGOTimeGPS startEpoch;
+	LIGOTimeGPS stopEpoch;
+	INT4 maxSeriesLength;       /* RAM-limited input length            */
+	size_t psdAverageLength;    /* number of samples to use for PSD    */
+} options;
 
 /* some global output flags */
 INT4 verbose;
@@ -78,8 +85,6 @@ CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
 REAL4 noiseAmpl;                    /* gain factor for white noise         */
 INT4 seed;                          /* set non-zero to generate noise      */
-INT4 maxSeriesLength;               /* RAM-limited input length            */
-size_t psdAverageLength;            /* number of samples to use for PSD    */
 INT4 totalNumPoints;                /* total number of points to analyze   */
 UINT4 totalNumSegs;                 /* total number of segments to analyze */
 LIGOTimeGPS startEpoch;             /* gps start time                      */
@@ -231,7 +236,7 @@ int main( int argc, char *argv[])
       }
 
       /* compute the number of points to use in this run */
-      numPoints = min(maxSeriesLength, (totalNumPoints - usedNumPoints));
+      numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
 
       if(verbose) {
         fprintf(stdout,"reading %i points...\n", numPoints);
@@ -533,20 +538,20 @@ int main( int argc, char *argv[])
        * available 
        */
 
-      if(psdAverageLength > series.data->length)
-	      psdAverageLength = series.data->length;
+      if(options.psdAverageLength > series.data->length)
+	      options.psdAverageLength = series.data->length;
 
-      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->windowShift); start_sample += psdAverageLength - 3 * params->windowShift) {
+      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->windowShift); start_sample += options.psdAverageLength - 3 * params->windowShift) {
         REAL4TimeSeries *interval;
 
 	/* if the no. of points left is less than the psdAverageLength then
 	 * move the epoch back so that it can cut out psdAvaregeLength of data 
 	 */
 
-	if(series.data->length - start_sample < psdAverageLength)
-	  start_sample = series.data->length - psdAverageLength;
+	if(series.data->length - start_sample < options.psdAverageLength)
+	  start_sample = series.data->length - options.psdAverageLength;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, psdAverageLength), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.psdAverageLength), &stat);
 	
         if (verbose)
           fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
@@ -732,6 +737,57 @@ static void print_alloc_fail(const char *prog, const char *msg)
 	snprintf( proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 }
 
+static int check_for_missing_parameters(LALStatus *stat, char *prog, struct option *long_options, EPSearchParams *params)
+{
+	int index;
+	int got_all_arguments = TRUE;
+	int arg_is_missing;
+	INT8 gpstmp;
+
+	for(index = 0; long_options[index].name; index++) {
+		switch(long_options[index].val) {
+			case 'I':
+			arg_is_missing = !frameSampleRate;
+			break;
+
+			case 'K':
+			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &stopEpoch), stat);
+			arg_is_missing = !gpstmp;
+			break;
+
+			case 'M':
+			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &startEpoch), stat);
+			arg_is_missing = !gpstmp;
+			break;
+
+			case 'Z':
+			arg_is_missing = !options.psdAverageLength;
+			break;
+
+			case 'a':
+			arg_is_missing = !options.maxSeriesLength;
+			break;
+
+			case 'd':
+			arg_is_missing = !params->windowShift;
+			break;
+
+			case 'e':
+			arg_is_missing = !targetSampleRate;
+			break;
+
+			default:
+			arg_is_missing = FALSE;
+			break;
+		}
+		if(arg_is_missing) {
+			print_missing_argument(prog, long_options[index].name);
+			got_all_arguments = FALSE;
+		}
+	}
+	return(got_all_arguments);
+}
+
 
 static INT8 DeltaGPStoINT8(LALStatus *stat, LIGOTimeGPS *stop, LIGOTimeGPS *start)
 {
@@ -853,7 +909,7 @@ void initializeEPSearch(
 	noiseAmpl = 1.0;
 	printData = FALSE;
 	printSpectrum = FALSE;
-	psdAverageLength = 0;
+	options.psdAverageLength = 0;
 	resampFiltType = -1;
 	seed = 1;
 	sineBurst = FALSE;
@@ -1118,8 +1174,8 @@ void initializeEPSearch(
 		break;
 
 		case 'Z':
-		psdAverageLength = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", psdAverageLength);
+		options.psdAverageLength = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", options.psdAverageLength);
 		break;
 
 		case 'a':
@@ -1227,21 +1283,6 @@ void initializeEPSearch(
 	} while(c != -1);
 
 	/*
-	 * Check for missing parameters
-	 */
-
-	if(!gpsStartTimeNS || !gpsStopTimeNS || !frameSampleRate ||
-	!targetSampleRate || !ram || !psdAverageLength ||
-	!(*params)->windowShift) {
-		print_missing_argument(argv[0], "<FIXME>");
-		exit(1);
-	}
-
-	/*
-	 * Check for incorrect parameters.
-	 */
-
-	/*
 	 * Convert the start and stop epochs, along with the sample rate, to a
 	 * total number of samples to analyze.
 	 */
@@ -1255,16 +1296,21 @@ void initializeEPSearch(
 	 * time series to read in.
 	 */
 
-	maxSeriesLength = ram / (4 * sizeof(REAL4));
+	options.maxSeriesLength = (ram * 1024 * 1024) / (4 * sizeof(REAL4));
+
+	/*
+	 * Check for missing parameters
+	 */
+
+	if(!check_for_missing_parameters(&stat, argv[0], long_options, *params))
+		exit(1);
 
 	/*
 	 * Ensure the psdAverageLength is comensurate with the analysis window
 	 * length and shift.
 	 */
 
-	psdAverageLength = ((psdAverageLength - (*params)->windowLength) / (*params)->windowShift) * (*params)->windowShift + (*params)->windowLength;
-	if(verbose)
-		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], psdAverageLength);
+	options.psdAverageLength = ((options.psdAverageLength - (*params)->windowLength) / (*params)->windowShift) * (*params)->windowShift + (*params)->windowLength;
 
 	/*
 	 * Miscellaneous chores.
@@ -1272,6 +1318,11 @@ void initializeEPSearch(
 
 	(*params)->cluster = cluster;
 	(*params)->printSpectrum = printSpectrum;
+
+	if(verbose) {
+		fprintf(stderr, "%s: available RAM limits analysis to %d samples at a time\n", argv[0], options.maxSeriesLength);
+		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.psdAverageLength);
+	}
 }
 
 #undef ADD_PROCESS_PARAMS
