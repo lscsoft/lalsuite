@@ -1022,7 +1022,7 @@ class ScienceData:
         x = ScienceSegment(tuple([id,st,en,du]))
         self.__sci_segs.append(x)
 
-  def make_chunks(self,length,overlap,play=0,sl=0,excl_play=0):
+  def make_chunks(self,length,overlap=0,play=0,sl=0,excl_play=0):
     """
     Divide each ScienceSegment contained in this object into AnalysisChunks.
     length = length of chunk in seconds.
