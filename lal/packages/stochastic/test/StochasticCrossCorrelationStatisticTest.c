@@ -34,7 +34,7 @@ filter.
 First, it tests that the correct error codes 
 (\textit{cf.}\ Sec.~\ref{stochastic:s:StochasticCrossCorrelation.h})
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NEDEBUG+ is set, as
+\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
 the corresponding checks in the code are made using the ASSERT macro):
 \begin{itemize}
 \item \textit{null pointer to output structure}

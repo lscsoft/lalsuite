@@ -34,7 +34,7 @@ frequency series.
 First, it tests that the correct error codes 
 (\textit{cf.}\ Sec.~\ref{stochastic:s:CoarseGrainFrequencySeries.h})
 are generated for the following error conditions (tests in
-\textit{italics} are not performed if \verb+LAL_NEDEBUG+ is set, as
+\textit{italics} are not performed if \verb+LAL_NDEBUG+ is set, as
 the corresponding checks in the code are made using the ASSERT macro):
 \begin{itemize}
 \item \textit{null pointer to output series}
@@ -43,16 +43,25 @@ the corresponding checks in the code are made using the ASSERT macro):
 \item \textit{null pointer to data member of input series}
 \item \textit{null pointer to data member of data member of input series}
 \item \textit{null pointer to data member of data member of output series}
+\item \textit{duplicate pointers to input and output series}
+\item \textit{duplicate pointers to data members of input and output series}
+\item \textit{duplicate pointers to data members of data members of input and output series}
 \item \textit{zero length}
 \item \textit{negative frequency spacing}
 \item \textit{zero frequency spacing}
 \end{itemize}
 
 It then verifies that the correct
-values are obtained for some simple test cases \textbf{:TODO:}.  For each
-successful test (both of these valid data and the invalid ones
-described above), it prints ``\texttt{PASS}'' to standard output; if a
-test fails, it prints ``\texttt{FAIL}''.
+values are obtained for some simple test cases
+\begin{itemize}
+\item $\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}$, $f'_0=f_0$, $\delta f'=1$, $\delta
+f=2$, $N=3$; the expected output is $\{h_k\}=\{1/2,2,4,6\}$.
+\item $\{h_\ell'\}=\{0,1,2,3,4,5,6,7\}$, $f'_0=f_0$, $\delta f'=1$, $\delta
+f=3$, $N=3$; the expected output is $\{h_k\}=\{2/3,3,6\}$.
+\end{itemize}
+For each successful test (both of these valid data and the invalid
+ones described above), it prints ``\texttt{PASS}'' to standard output;
+if a test fails, it prints ``\texttt{FAIL}''.
 
 If the \texttt{filename} arguments are present, it also reads a
 frequency series from a file, calls
@@ -84,6 +93,10 @@ fabs()
 \subsubsection*{Notes}
 
 \begin{itemize}
+\item In addition to the error checks tested in this routine, the
+  function checks for errors related to inconsistency of coarse
+  graining parameters.  Tests of these error checks are still to be
+  added to this test program.
 \item No specific error checking is done on user-specified data.  If
   \texttt{length} is missing, the resulting default will cause a bad
   data error.
@@ -222,15 +235,15 @@ main( int argc, char *argv[] )
    goodOutput.data                = NULL;
 
    params.f0                      = SCOARSEGRAINFREQUENCYSERIESTESTC_F01;
-   params.deltaF               = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1;
-   params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1;
+   params.deltaF               = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
+   params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
 
    badInput = goodInput;
    badOutput = goodOutput;
 
    /* allocate input and output vectors */
    LALSCreateVector(&status, &(goodInput.data),
-		    SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
+                    SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
    if ( code = CheckStatus(&status, 0 , "",
                            SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
@@ -359,8 +372,68 @@ main( int argc, char *argv[] )
        return code;
      }
 
-     /* test behavior for zero length
-     goodInput.data->length = goodOutput.data->length = 0;
+          /* test behavior for duplicate pointers */
+
+     /* input and output series */
+     LALSCoarseGrainFrequencySeries(&status, &goodInput, &goodInput, &params);
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     {
+       return code;
+     }
+     printf("  PASS: duplicate pointers to input and output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
+
+     badOutput = goodInput;
+     badOutput.data = goodInput.data;
+
+     /* data members of input and output series */
+     LALSCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     {
+       return code;
+     }
+     printf("  PASS: duplicate pointers to data members of input and output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
+
+     badOutput.data = NULL;
+
+     /* data members of data members of input and output series */
+     LALSCreateVector(&status, &(badOutput.data),
+                      SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0);
+     if ( code = CheckStatus(&status, 0 , "",
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+     sPtr = badOutput.data->data;
+     badOutput.data->data = goodInput.data->data;
+     LALSCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ESAMEPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGESAMEPTR,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
+     {
+       return code;
+     }
+     printf("  PASS: duplicate pointers to data members of data members of input and output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
+     badOutput.data->data = sPtr;
+     LALSDestroyVector(&status, &(badOutput.data));
+     if ( code = CheckStatus(&status, 0 , "",
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+     {
+       return code;
+     }
+
+     /* test behavior for zero length */
+     /* input */
+
+     goodInput.data->length = 0;
      LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
      if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
                              COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
@@ -369,49 +442,87 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     printf("  PASS: zero length results in error:\n       \"%s\"\n",
+     printf("  PASS: zero length in input results in error:\n       \"%s\"\n",
             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
-     */
-     /* reassign valid length 
+
      goodInput.data->length = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
      goodOutput.data->length = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1;
-*/
-     /* test behavior for negative frequency spacing 
-     goodInput.deltaT = -SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAT;
+
+     /* output */
+
+     goodOutput.data->length = params.length = 0;
      LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status,
-                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAT,
-                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAT,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_EZEROLEN,
+                             COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN,
                              SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
      {
        return code;
      }
-     printf("  PASS: negative time spacing results in error:\n       \"%s\"\n",
-            COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAT);
-    */
-     /* test behavior for zero time spacing 
-     goodInput.deltaT = 0;
+     printf("  PASS: zero length in output results in error:\n       \"%s\"\n",
+            COARSEGRAINFREQUENCYSERIESH_MSGEZEROLEN);
+
+     goodOutput.data->length = params.length
+       = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
+
+     /* test behavior for negative frequency spacing */
+     goodInput.deltaF = params.deltaF 
+       = -SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
      LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
      if ( code = CheckStatus(&status,
-                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAT,
-                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAT,
+                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
                              SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
-     {
+     { 
        return code;
      }
-     printf("  PASS: zero time spacing results in error:\n       \"%s\"\n",
-            COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAT);
-*/
-     /* reassign valid time spacing 
-     goodInput.deltaT = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAT;
-     */
+     printf("  PASS: negative frequency spacing results in error:\n       \"%s\"\n",
+            COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
+
+     /* test behavior for zero frequency spacing */
+     goodInput.deltaF = params.deltaF = 0;
+     LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
+     if ( code = CheckStatus(&status,
+                             COARSEGRAINFREQUENCYSERIESH_ENONPOSDELTAF,
+                             COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
+                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK)) 
+     { 
+       return code;
+     }
+     printf("  PASS: zero frequency spacing results in error:\n       \"%s\"\n",
+            COARSEGRAINFREQUENCYSERIESH_MSGENONPOSDELTAF);
+
+     /* reassign valid frequency spacing */
+     goodInput.deltaF = params.deltaF 
+       = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
-#endif /* NDEBUG */
+#endif /* LAL_NDEBUG */
+
+   LALSDestroyVector(&status, &(goodOutput.data));
+   if ( code = CheckStatus(&status, 0 , "",
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
 
    /* TEST VALID DATA HERE --------------------------------------------- */
+
+   params.f0                      = SCOARSEGRAINFREQUENCYSERIESTESTC_F01;
+   params.deltaF               = SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1;
+   params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1;
+
+   /* allocate input and output vectors */
+   LALSCreateVector(&status, &(goodOutput.data), SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
+   if ( code = CheckStatus(&status, 0 , "",
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
+   {
+     return code;
+   }
 
    /* fill input time-series parameters */
    strncpy(goodInput.name,"Dummy test data",LALNameLength);
@@ -426,7 +537,7 @@ main( int argc, char *argv[] )
    /* coarse grain */
    LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
    if ( code = CheckStatus( &status, 0 , "",
-			    SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
    {
      return code;
@@ -436,7 +547,7 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("f0=%g, should be %g\n", goodOutput.f0,
-	    SCOARSEGRAINFREQUENCYSERIESTESTC_F01);
+            SCOARSEGRAINFREQUENCYSERIESTESTC_F01);
    }
    if (goodOutput.f0)
    {
@@ -444,7 +555,7 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("Exiting with error: %s\n",
-	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -457,13 +568,13 @@ main( int argc, char *argv[] )
    }
    if ( fabs(goodOutput.deltaF-SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1)
         / SCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF1 
-	> SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+        > SCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
      {
        printf("Exiting with error: %s\n",
-	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -474,18 +585,18 @@ main( int argc, char *argv[] )
      printf("epoch=%d seconds, %d nanoseconds; should be %d seconds, %d nanoseconds\n",
             goodOutput.epoch.gpsSeconds, goodOutput.epoch.gpsNanoSeconds,
             SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
-	    SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
+            SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
    if ( goodOutput.epoch.gpsSeconds 
-	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
+        != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
         || goodOutput.epoch.gpsNanoSeconds 
-	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
+        != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test\n");
      if (optVerbose)
      {
        printf("Exiting with error: %s\n",
-	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -563,7 +674,7 @@ main( int argc, char *argv[] )
      if (optVerbose)
        {
          printf("Exiting with error: %s\n",
-		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+                SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -583,7 +694,7 @@ main( int argc, char *argv[] )
        if (optVerbose)
        {
          printf("Exiting with error: %s\n",
-		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+                SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
        return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
@@ -591,7 +702,7 @@ main( int argc, char *argv[] )
 
    LALSDestroyVector(&status, &goodOutput.data);
    if ( code = CheckStatus(&status, 0 , "",
-			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
    {
      return code;
@@ -605,7 +716,7 @@ main( int argc, char *argv[] )
    params.length               = SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2;
 
    LALSCreateVector(&status, &(goodOutput.data),
-		    SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2);
+                    SCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2);
    if ( code = CheckStatus(&status, 0 , "",
                            SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                            SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
@@ -616,7 +727,7 @@ main( int argc, char *argv[] )
    /* coarse grain */
    LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
    if ( code = CheckStatus( &status, 0 , "",
-			    SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                            SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) )
    {
      return code;
@@ -626,7 +737,7 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("f0=%g, should be %g\n", goodOutput.f0,
-	    SCOARSEGRAINFREQUENCYSERIESTESTC_F02);
+            SCOARSEGRAINFREQUENCYSERIESTESTC_F02);
    }
    if (goodOutput.f0)
    {
@@ -661,18 +772,18 @@ main( int argc, char *argv[] )
      printf("epoch=%d seconds, %d nanoseconds; should be %d seconds, %d nanoseconds\n",
             goodOutput.epoch.gpsSeconds, goodOutput.epoch.gpsNanoSeconds,
             SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC,
-	    SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
+            SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS);
    }
    if ( goodOutput.epoch.gpsSeconds 
-	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
+        != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHSEC
         || goodOutput.epoch.gpsNanoSeconds 
-	!= SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
+        != SCOARSEGRAINFREQUENCYSERIESTESTC_EPOCHNS )
    {
      printf("  FAIL: Valid data test #2\n");
      if (optVerbose)
      {
        printf("Exiting with error: %s\n",
-	      SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+              SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
      }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -750,7 +861,7 @@ main( int argc, char *argv[] )
      if (optVerbose)
        {
          printf("Exiting with error: %s\n",
-		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+                SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
      return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
    }
@@ -770,7 +881,7 @@ main( int argc, char *argv[] )
        if (optVerbose)
        {
          printf("Exiting with error: %s\n",
-		SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
+                SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS);
        }
        return SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS;
      }
@@ -779,7 +890,7 @@ main( int argc, char *argv[] )
    /* clean up valid data */
    LALSDestroyVector(&status, &goodInput.data);
    if ( code = CheckStatus(&status, 0 , "",
-			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
    {
      return code;
@@ -787,7 +898,7 @@ main( int argc, char *argv[] )
 
    LALSDestroyVector(&status, &goodOutput.data);
    if ( code = CheckStatus(&status, 0 , "",
-			   SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
+                           SCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
                             SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) 
    {
      return code;
@@ -810,14 +921,14 @@ main( int argc, char *argv[] )
 
      LALSCreateVector(&status, &goodInput.data, optInLength);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
      }
      LALSCreateVector(&status, &goodOutput.data, optOutLength);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -826,7 +937,7 @@ main( int argc, char *argv[] )
      /* Read input file */
      LALSReadFrequencySeries(&status, &goodInput, optInputFile);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -835,7 +946,7 @@ main( int argc, char *argv[] )
      /* coarse grain */
      LALSCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, &params);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
@@ -848,14 +959,14 @@ main( int argc, char *argv[] )
      /* clean up valid data */
      LALSDestroyVector(&status, &goodInput.data);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
      }
      LALSDestroyVector(&status, &goodOutput.data);
      if ( code = CheckStatus( &status, 0 , "",
-			      SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
+                              SCOARSEGRAINFREQUENCYSERIESTESTC_EUSE,
                               SCOARSEGRAINFREQUENCYSERIESTESTC_MSGEUSE) ) 
      {
        return code;
