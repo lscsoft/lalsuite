@@ -1,3 +1,6 @@
+// include string for makeTclPointer kludge
+#include <string>
+
 #include "Translation.h"
 
 #include "datacondAPI/TimeSeries.hh"
@@ -10,8 +13,18 @@ enum {
   TRANS_FAIL=0
 };
 
+
 using General::GPSTime;
 using namespace datacondAPI;
+
+// begin makeTclPointer kludge
+std::string
+makeTclPointer(void const*, const std::string &)
+{
+  return "";
+}
+// end makeTclPointer kludge
+
 
 int
 TranslateREAL4TimeSeries( translation_direction Direction,

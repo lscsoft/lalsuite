@@ -16,7 +16,7 @@ LDFLAGS= \
 	--rpath=$(DATACOND)/lib \
 	--rpath=/ldcg/lib
 
-LIBS=-ldatacondCaller -lstlport_gcc -llal -llalframe -llalapps -lm 
+LIBS=-ldatacondCaller -lstlport_gcc -llal -llalframe -llalapps -lm -ldl
 
 INCLUDES=-I$(DATACOND)/include -I$(LAL)/include -I../ -I/ldcg/include/stlport -I/ldcg/include -I. 
 
