@@ -159,7 +159,8 @@ LALPolycoToTimingDifference( LALStatus       *stat,
        next one.  (It has already been determined that we will never
        step past the final fitting region.) */
     if((t+=dt)>tNext){
-      t+=(*t0-*(++t0));
+      t+=*t0++;
+      t-=*t0;
       tNext=*(++tBound)-*t0;
       poly+=nPoly;
     }

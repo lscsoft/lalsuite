@@ -310,7 +310,7 @@ Superset( REAL4 *mesh, REAL4 *matrix, REAL4 *yMin, UINT4 *nMax,
   REAL4 *x, *y; /* current position in x and y coordinates */
 
   /* Allocate local memory. */
-  n = (INT4 *) LALMalloc( dim*sizeof( INT4 ) );
+  n = (UINT4 *) LALMalloc( dim*sizeof( INT4 ) );
   if ( !n )
     return 1;
   x = (REAL4 *) LALMalloc( dim*sizeof( REAL4 ) );

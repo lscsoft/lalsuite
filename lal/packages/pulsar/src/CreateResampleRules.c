@@ -506,7 +506,9 @@ ConstantRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
     /* Otherwise, transform our times into the next fitting region,
        and get the new coefficients.  (This parallels the computations
        before the start of the loop.) */
-    b1=(*t0-*(++t0))/dt;
+    b1=*t0++;
+    b1-=*t0;
+    b1/=dt;
     t+=b1;
     tBound++;
     poly+=nPoly;
@@ -673,7 +675,9 @@ LinearRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
     /* Otherwise, transform our times into the next fitting region,
        and get the new coefficients.  (This parallels the computations
        before the start of the loop.) */
-    b1=(*t0-*(++t0))/dt;
+    b1=*t0++;
+    b1-=*t0;
+    b1/=dt;
     t+=b1;
     tNext+=b1;
     tBound++;
@@ -924,7 +928,9 @@ QuadraticRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
     /* Otherwise, transform our times into the next fitting region,
        and get the new coefficients.  (This parallels the computations
        before the start of the loop.) */
-    b1=(*t0-*(++t0))/dt;
+    b1=*t0++;
+    b1-=*t0;
+    b1/=dt;
     t+=b1;
     tNext+=b1;
     tBound++;
