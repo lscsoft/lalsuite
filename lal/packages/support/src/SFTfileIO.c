@@ -58,7 +58,10 @@ LALHO()
 #include <sys/types.h>
 #ifndef _MSC_VER
 #include <dirent.h>
+#else
+#include <io.h>
 #endif
+
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 
@@ -693,16 +696,21 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  * This is not really a glob, but a "trick": the globdir is interpreted as
  *  "directory/pattern", ie. we actually match "directory/ *pattern*"
  *
+ * looks pretty ugly with all the #ifdefs for the Microsoft C compiler
  *----------------------------------------------------------------------*/
-#ifndef _MSC_VER
 StringVector *
 find_files (const CHAR *globdir)
 {
+#ifndef _MSC_VER
+  DIR *dir;
+  struct dirent *entry;
+#else
+intptr_t dir;
+struct _finddata_t *entry;
+#endif
   CHAR *dname, *ptr1, *ptr2;
   CHAR fpattern[512];
   size_t dirlen;
-  DIR *dir;
-  struct dirent *entry;
   CHAR **filelist = NULL; 
   UINT4 numFiles = 0;
   StringVector *ret = NULL;
@@ -730,24 +738,44 @@ find_files (const CHAR *globdir)
   ptr2 = ptr1 + 1;
   strcpy (fpattern, ptr2);
 
+#ifndef _MSC_VER
   /* now go through the filelist in this directory */
   if ( (dir = opendir(dname)) == NULL)
+#else
+  /* TODO: adapt filspec: insert wildcards */
+  if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+strlen(fpattern)+2)) == NULL)
+      return(NULL);
+  sprintf(ptr1,"%s\\*%s",dname,fpattern);  
+  if ( (dir = _findfirst(ptr,entry)) == -1)
+#endif
     {
       LALPrintError ("Can't open data-directory `%s`\n", dname);
       LALFree (dname);
       return (NULL);
     }
 
+#ifndef _MSC_VER
   while ( (entry = readdir (dir)) != NULL )
+#else
+  do
+#endif
     {
+#ifndef _MSC_VER
       if ( strstr (entry->d_name, fpattern) ) 	/* found a matching file */
+#else
+      if ( strstr (entry->name, fpattern) ) 	/* found a matching file */
+#endif
 	{
 	  numFiles ++;
 	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
 	    return (NULL);
 	  }
 
+#ifndef _MSC_VER
 	  namelen = strlen(entry->d_name) + strlen(dname) + 2 ;
+#else
+	  namelen = strlen(entry->name) + strlen(dname) + 2 ;
+#endif
 	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	    for (j=0; j < numFiles; j++)
 	      LALFree (filelist[j]);
@@ -755,12 +783,24 @@ find_files (const CHAR *globdir)
 	    return (NULL);
 	  }
 
+#ifndef _MSC_VER
 	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->d_name);
+#else
+	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->name);
+#endif
 	}
 
-    } /* while more directory entries */
+#ifndef _MSC_VER
+  } /* while more directory entries */
+#else
+  } while ( _findnext (dir,entry) == 0 );
+#endif
 
+#ifndef _MSC_VER
   closedir (dir);
+#else
+  _findclose(dir);
+#endif
   LALFree (dname);
 
   /* ok, did we find anything? */
@@ -779,19 +819,49 @@ find_files (const CHAR *globdir)
   ret->data = filelist;
 
   return (ret);
+} /* find_files() */
+#ifdef MSVC_FOUND
+/* Windows implementation */
+StringVector *
+find_files (const CHAR *filespec)
+{
+  struct snode {
+    char*string;
+    struct snode*next;
+  }
+  struct snode*first;
+  struct snode*last;
+  UINT4 nonames;
+
+  fitem = _findfirst(filespec);
+  first = LALMalloc(sizeof(struct snode));
+  if (first == NULL)
+    ERROR;
+  first.sring = LALMalloc(strlen(fitem));
+  if (first.string == NULL)
+    ERROR;
+  first.next = NULL;
+  strcpy(first.string, fitem);
+
+  last = first;
+  length = 1;
+
+  while ((fitem = _findnext(filespec)) > 0) {
+
+    last->next = LALMalloc(sizeof(struct snode));
+    if (last->next == NULL)
+      ERROR;
+    last->sring = LALMalloc(strlen(fitem));
+    if (last->sring == NULL)
+      ERROR;
+    last->next = NULL;
+    strcpy(last->string, fitem);
+
+    last = last->next;
+    length++;
+  }
 
 } /* find_files() */
-#else
-/* Windows dummy version */
-StringVector *
-find_files (const CHAR *globdir)
-{
-  static StringVector ret;
-  static CHAR * cpt;
-  cpt = globdir;
-  ret.length = 1;
-  ret.data = &cpt; 
-}
 #endif
 
 void
