@@ -175,6 +175,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
+  MetadataTable		summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -629,7 +630,7 @@ int main( int argc, char *argv[] )
         inputSummary = NULL;
       }
       
-      if ( useRangeCut )
+      if ( numIFO == 2 )
       {
 	INT4 haveSummValue = 0;
 	SummValueTable *thisSummValue = NULL;
@@ -641,9 +642,8 @@ int main( int argc, char *argv[] )
 	
 	if ( haveSummValue < 1 || ! thisSummValue )
 	{
-	  fprintf( stderr, "error: unable to read summ_value table from %s\n", 
-	      argv[i] );
-	  exit( 1 );
+	  if ( vrbflg ) fprintf( stdout, 
+	      "Unable to read summ_value table from %s\n", argv[i] );
 	}
 	else
 	{
@@ -670,13 +670,23 @@ int main( int argc, char *argv[] )
 	      if ( strncmp( thisSummValue->comment, "1.4_1.4_8",
 		  LIGOMETA_SUMMVALUE_COMM_MAX ) )
 	      {
-		fprintf( stderr, "error: effective distance not calculated\n");
-		fprintf( stderr, "using 1.4-1.4 solar mass, snr = 8\n");
-		fprintf( stderr, "comment was %s\n", thisSummValue->comment );
-		exit( 1 );
+		fprintf( stdout, "effective distance not calculated\n");
+		fprintf( stdout, "using 1.4-1.4 solar mass, snr = 8\n");
+		fprintf( stdout, "comment was %s\n", thisSummValue->comment );
+		tempSummValue = thisSummValue;
+		thisSummValue = thisSummValue->next;
+		LALFree( tempSummValue );
 	      }
 	      else
 	      {
+		if ( vrbflg )
+		{  
+		  fprintf( stdout, "got inspiral effective distance of %f ",
+		     thisSummValue->value );
+		  fprintf( stdout, "between %d and %d GPS secs for ifo %s\n",
+		    thisSummValue->start_time.gpsSeconds, 
+		    thisSummValue->end_time.gpsSeconds, thisSummValue->ifo );
+		}
 		/* locate the ifo associated to this summ_value and store it */
 		for ( j = 0; j < numIFO ; ++j )
 		{
@@ -693,20 +703,23 @@ int main( int argc, char *argv[] )
 		    else
 		    {
 		      /* append to the end of the linked list */
-		      currentEffRange[j]->next = thisSummValue;
-		      currentEffRange[j] = currentEffRange[j]->next;
+		      currentEffRange[j] = currentEffRange[j]->next = 
+			  thisSummValue;
 		    }
-		    currentEffRange[j]->next = NULL;
 		    thisSummValue = thisSummValue->next;
+		    currentEffRange[j]->next = NULL;
 		    break;
 		  }
 		}
 		if ( ! knownIFO )
 		{
 		  /* catch an unknown ifo name among the input files */
-		  fprintf( stderr, "Error: unknown interferometer %s\n", 
+		  if ( vrbflg ) fprintf( stdout, 
+		      "Unknown interferometer %s\n, discarding", 
 		    thisSummValue->ifo );
-		  exit( 1 );
+		  tempSummValue = thisSummValue;
+		  thisSummValue = thisSummValue->next;
+		  LALFree( tempSummValue );
 		}
 	      } /* close for ( j = 0; j < numIFO ; ++j ) */
 	    }
@@ -1220,7 +1233,18 @@ cleanexit:
           search_summary_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
-    /* write the sngl_inspiral table using events from IFO A */
+    /* write the summ_value table for ifoName[j] */
+    if ( inspEffRange[j] )
+    {
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+            summ_value_table), &status );
+      summValueTable.summValueTable = inspEffRange[j];
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
+            summ_value_table), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+    }
+
+    /* write the sngl_inspiral table using events from ifoName[j] */
     if ( coincidentEvents[j] )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
