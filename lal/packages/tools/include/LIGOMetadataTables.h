@@ -93,6 +93,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 \idx[Type]{SummValueTable}
 \idx[Type]{CoincInspiralTable}
 \idx[Type]{StochasticTable}
+\idx[Type]{StochSummTable}
 
 \subsubsection*{Type \texttt{MetadataTableType}}
 </lalLaTeX>
@@ -115,6 +116,7 @@ typedef enum
   sim_inst_params_table,
   coinc_inspiral_table,
   stochastic_table,
+	stoch_summ_table,
   ext_triggers_table
 }
 MetadataTableType;
@@ -613,7 +615,38 @@ StochasticTable;
 #if 0
 <lalLaTeX>
 
-Document table.
+The \texttt{StochasticTable} contains output parameters relevant for the
+stochastic search. The IFOs, channels, start time, duration, minimum and
+maximum frequency, cross correlation statistic and theoretical variance
+are stored.
+
+\subsubsection*{Type \texttt{StochSummTable}}
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagStochSummTable
+{
+  struct tagStochSummTable *next;
+  CHAR          ifo_one[LIGOMETA_IFO_MAX];
+  CHAR          ifo_two[LIGOMETA_IFO_MAX];
+  CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
+  CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS   start_time;
+  LIGOTimeGPS   end_time;
+  REAL8         f_min;
+  REAL8         f_max;
+  REAL8         y_opt;
+  REAL8         error;
+}
+StochSummTable;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+The \texttt{StochSummTable} contains a summary of a stochastic search. It
+can be used to fully summerise the parameters used for a full search.
 
 \subsubsection*{Type \texttt{ExtTriggerTable}}
 
@@ -687,6 +720,7 @@ tagMetadataTable
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
   StochasticTable       *stochasticTable;
+  StochSummTable        *stochSummTable;
   ExtTriggerTable       *extTriggerTable;
 }
 MetadataTable;

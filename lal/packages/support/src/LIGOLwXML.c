@@ -593,7 +593,29 @@ LALWriteLIGOLwXMLTable (
             tablePtr.stochasticTable->cc_sigma
             );
         tablePtr.stochasticTable = tablePtr.stochasticTable->next;
-      }  
+      }
+      break;
+    case stoch_summ_table:
+      while( tablePtr.stochSummTable )
+      {
+        FIRST_TABLE_ROW
+        fprintf( xml->fp, STOCH_SUMM_ROW,
+            tablePtr.stochSummTable->ifo_one,
+            tablePtr.stochSummTable->ifo_two,
+            tablePtr.stochSummTable->channel_one,
+            tablePtr.stochSummTable->channel_two,
+            tablePtr.stochSummTable->start_time.gpsSeconds,
+            tablePtr.stochSummTable->start_time.gpsNanoSeconds,
+            tablePtr.stochSummTable->end_time.gpsSeconds,
+            tablePtr.stochSummTable->end_time.gpsNanoSeconds,
+            tablePtr.stochSummTable->f_min,
+            tablePtr.stochSummTable->f_max,
+            tablePtr.stochSummTable->y_opt,
+            tablePtr.stochSummTable->error
+            );
+        tablePtr.stochSummTable = tablePtr.stochSummTable->next;
+      }
+      break;
   case ext_triggers_table:
     while( tablePtr.extTriggerTable )
       {
