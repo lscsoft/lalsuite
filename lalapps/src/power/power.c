@@ -4,7 +4,7 @@
 
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
-int initializeEPSearch( int argc, char *argv[], void **searchParams,
+int initializeEPSearch( int argc, char *argv[], EPSearchParams **params,
         MetadataTable  *procparams );
 
 NRCSID( POWERC, "power $Id$");
@@ -165,7 +165,7 @@ int main( int argc, char *argv[])
     static LALStatus      stat;
     LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-    void                 *searchParams  = NULL;
+    EPSearchParams       *searchParams  = NULL;
     EPSearchParams       *params        = NULL;
     FrStream             *stream        = NULL;
     FrCache              *frameCache    = NULL;
@@ -769,7 +769,7 @@ this_proc_param = this_proc_param->next ; \
 int initializeEPSearch( 
         int            argc, 
         char          *argv[], 
-        void         **searchParams,
+        EPSearchParams **params,
         MetadataTable  *procparams 
         )
 { 
@@ -831,7 +831,6 @@ int initializeEPSearch(
     int c;
     size_t len=0;
     ProcessParamsTable *this_proc_param = procparams->processParamsTable;
-    EPSearchParams     *params;
     LALStatus           stat = blank_status;
 
     /*
@@ -840,39 +839,24 @@ int initializeEPSearch(
      *
      */
 
-    *searchParams = params = LALMalloc (sizeof( EPSearchParams )); 
-    if ( !params )
+    *params = LALMalloc (sizeof( EPSearchParams )); 
+    if ( !*params )
     {
         fprintf(stderr, "Memory allocation failed for searchParams\n");
         exit(1);
     }
 
-    params->tfTilingInput = 
-        (CreateTFTilingIn *) LALMalloc (sizeof(CreateTFTilingIn));
-    if ( !params->tfTilingInput )
+    (*params)->tfTilingInput = LALMalloc (sizeof(CreateTFTilingIn));
+    (*params)->initParams = LALMalloc (sizeof(EPInitParams));
+    (*params)->compEPInput = LALMalloc (sizeof(ComputeExcessPowerIn));
+    if ( !(*params)->tfTilingInput || !(*params)->initParams ||
+         !(*params)->compEPInput )
     {
-        LALFree (*searchParams); *searchParams = NULL;
+        LALFree ((*params)->tfTilingInput);
+        LALFree ((*params)->initParams);
+        LALFree ((*params)->compEPInput);
+        LALFree (*params); *params = NULL;
         fprintf(stderr, "Memory allocation failed for tfTilingInput\n");
-        exit(1);
-    }
-
-    params->initParams = (EPInitParams *) LALMalloc (sizeof(EPInitParams));
-    if ( !params-> initParams)
-    {
-        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
-        LALFree (*searchParams); *searchParams = NULL;
-        fprintf(stderr, "Memory allocation failed for initParams\n");
-        exit(1);
-    }
-
-    params->compEPInput = 
-        (ComputeExcessPowerIn *) LALMalloc (sizeof(ComputeExcessPowerIn));
-    if ( !params-> compEPInput)
-    {
-        LALFree (params->initParams); params->initParams = NULL;
-        LALFree (params->tfTilingInput); params->tfTilingInput = NULL;
-        LALFree (*searchParams); *searchParams = NULL;
-        fprintf(stderr, "Memory allocation failed for compEPInput\n");
         exit(1);
     }
 
@@ -920,19 +904,19 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     /* default alpha value for tiles with sigma < numSigmaMin */
-                    params->compEPInput->alphaDefault     = alphaDflt;                    
+                    (*params)->compEPInput->alphaDefault     = alphaDflt;                    
                     ADD_PROCESS_PARAM( "float", "%e", alphaDflt );
                 }
                 break;
 
             case 'b':
                 /* channel to be used in the analysis */
-                params->channelName = (CHAR *) LALMalloc(strlen( optarg )+1 );
-                if (! params->channelName ){
+                (*params)->channelName = (CHAR *) LALMalloc(strlen( optarg )+1 );
+                if (! (*params)->channelName ){
                     fprintf(stderr,"Error allocating memory for channel name\n");
                 }
-                strcpy( params->channelName, optarg );
-                channelIn.name = params->channelName;
+                strcpy( (*params)->channelName, optarg );
+                channelIn.name = (*params)->channelName;
                 channelIn.type = ADCDataChannel;
 
                 /* copy the first character to site and the first two to ifo */
@@ -960,7 +944,7 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     /* default alpha value for tiles with sigma < numSigmaMin */
-                    params->tfTilingInput->deltaF = delf;
+                    (*params)->tfTilingInput->deltaF = delf;
                     ADD_PROCESS_PARAM( "float", "%e", delf );
                 }
                 break;
@@ -976,7 +960,7 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     /* EK - Max. number of events to communicate to master */
-                    params->events2Master = events;
+                    (*params)->events2Master = events;
                     ADD_PROCESS_PARAM( "int", "%d", events );
                 }
                 break;
@@ -991,7 +975,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, flow );
                         exit( 1 );
                     }
-                    params->tfTilingInput->flow = flow;
+                    (*params)->tfTilingInput->flow = flow;
                     ADD_PROCESS_PARAM( "float", "%e", flow );
                 }
                 break;
@@ -1032,7 +1016,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmplength);
                         exit( 1 );
                     }
-                    params->tfTilingInput->length = tmplength;
+                    (*params)->tfTilingInput->length = tmplength;
                     ADD_PROCESS_PARAM( "int", "%d", tmplength );                    
                 }
                 break;
@@ -1047,7 +1031,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, minfbin);
                         exit( 1 );
                     }
-                    params->tfTilingInput->minFreqBins = minfbin;
+                    (*params)->tfTilingInput->minFreqBins = minfbin;
                     ADD_PROCESS_PARAM( "int", "%d", minfbin );                    
                 }
                 break;
@@ -1062,7 +1046,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, mintbin);
                         exit( 1 );
                     }
-                    params->tfTilingInput->minTimeBins = mintbin;
+                    (*params)->tfTilingInput->minTimeBins = mintbin;
                     ADD_PROCESS_PARAM( "int", "%d", mintbin );                    
                 }
                 break;
@@ -1078,7 +1062,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpm);
                         exit( 1 );
                     }
-                    params->initParams->numPoints = tmpm;
+                    (*params)->initParams->numPoints = tmpm;
                     ADD_PROCESS_PARAM( "int", "%d", tmpm );                    
                 }
                 break;
@@ -1124,7 +1108,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpseg);
                         exit( 1 );
                     }
-                    params->initParams->numSegments = tmpseg;
+                    (*params)->initParams->numSegments = tmpseg;
                     ADD_PROCESS_PARAM( "int", "%d", tmpseg );                    
                 }
                 break;
@@ -1139,7 +1123,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpsigma);
                         exit( 1 );
                     }
-                    params->compEPInput->numSigmaMin  = tmpsigma;
+                    (*params)->compEPInput->numSigmaMin  = tmpsigma;
                     ADD_PROCESS_PARAM( "float", "%e", tmpsigma );  
                 }
                 break;
@@ -1154,7 +1138,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpolap);
                         exit( 1 );
                     }
-                    params->ovrlap = tmpolap;
+                    (*params)->ovrlap = tmpolap;
                     ADD_PROCESS_PARAM( "int", "%d", tmpolap ); 
                 }
                 break;
@@ -1169,7 +1153,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpolap);
                         exit( 1 );
                     }
-                    params->tfTilingInput->overlapFactor = tmpolap;
+                    (*params)->tfTilingInput->overlapFactor = tmpolap;
                     ADD_PROCESS_PARAM( "int", "%d", tmpolap ); 
                 }
                 break;
@@ -1185,7 +1169,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpseg);
                         exit( 1 );
                     }
-                    params->initParams->segDutyCycle      = tmpseg; 
+                    (*params)->initParams->segDutyCycle      = tmpseg; 
                     ADD_PROCESS_PARAM( "int", "%d", tmpseg ); 
                 }
                 break;
@@ -1202,7 +1186,7 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     tmpsim = 0;
-                    params->simType =  tmpsim;
+                    (*params)->simType =  tmpsim;
                     ADD_PROCESS_PARAM( "int", "%d", tmpsim ); 
                 }
                 break;
@@ -1210,13 +1194,13 @@ int initializeEPSearch(
             case 'v':
                 /* Spectrum method to use */
                 if ( !strcmp( optarg, "useMean" ) ) {
-                    params->initParams->method            = useMean;
+                    (*params)->initParams->method            = useMean;
                 } 
                 else if ( !strcmp( optarg, "useMedian" ) ) {
-                    params->initParams->method            = useMedian;
+                    (*params)->initParams->method            = useMedian;
                 }
                 else if ( !strcmp( optarg, "useUnity" ) ) {
-                    params->initParams->method            = useUnity;
+                    (*params)->initParams->method            = useUnity;
                 }
                 else {
 
@@ -1403,7 +1387,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpth);
                         exit( 1 );
                     }
-                    params->alphaThreshold = tmpth;              
+                    (*params)->alphaThreshold = tmpth;              
                     ADD_PROCESS_PARAM( "float", "%e", tmpth );  
                 }
                 break;
@@ -1418,7 +1402,7 @@ int initializeEPSearch(
                                 long_options[option_index].name, tmpwin);
                         exit( 1 );
                     }
-                    params->winParams.type                = tmpwin;
+                    (*params)->winParams.type                = tmpwin;
                     ADD_PROCESS_PARAM( "int", "%d", tmpwin ); 
                 }
                 break;
@@ -1583,20 +1567,20 @@ int initializeEPSearch(
       * sampleRate;
 
     /* compute the total number of segments to be analyzed */
-    totalNumSegs = (INT4) (( totalNumPoints - 3 * params->ovrlap ) /
-      ( params->initParams->numPoints - params->ovrlap ));
+    totalNumSegs = (INT4) (( totalNumPoints - 3 * (*params)->ovrlap ) /
+      ( (*params)->initParams->numPoints - (*params)->ovrlap ));
 
     /* initialize parameter structures */
-    params->tfTiling     = NULL;
-    params->epSegVec     = NULL;
-    params->numSlaves    = NULL;
+    (*params)->tfTiling     = NULL;
+    (*params)->epSegVec     = NULL;
+    (*params)->numSlaves    = NULL;
 
     /* initialize parameters */
-    params->haveData        = 0;
-    params->currentSegment  = 0;
-    params->numEvents       = 0;
-    params->searchMaster    = 0;
-    params->tfTilingInput->maxTileBand = 64.0;
+    (*params)->haveData        = 0;
+    (*params)->currentSegment  = 0;
+    (*params)->numEvents       = 0;
+    (*params)->searchMaster    = 0;
+    (*params)->tfTilingInput->maxTileBand = 64.0;
 
     return 0;
 }
