@@ -83,7 +83,7 @@ The cosmic star formation rate used in these functions corresponds to Madau mode
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include <lal/AstroOmega.h>
+#include "AstroOmega.h"
 
 NRCSID (ASTROOMEGAGENERALC, "$Id$");
 
@@ -98,7 +98,7 @@ void LALAstroOmegaSource (LALStatus *s, REAL8 *omeganu, REAL8 nu, void *p)
    AstroOmegaGeneralParams params;
    AstroOmegaGeneralSourceParams gsourcep;
    AstroOmegaCosmoParams cosmop;
-   REAL8 omegaz, zmax, numaxSource, factSource,test;   
+   REAL8 omegaz, zmax, numaxSource, factSource;   
    INITSTATUS (s, "LALAstroOmegaSource", ASTROOMEGAGENERALC);
    ATTATCHSTATUSPTR (s);
   
@@ -155,7 +155,7 @@ static void dAstroOmegaSource (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
   AstroOmegaGeneralSourceParams gsourcep;
   AstroOmegaCosmoParams cosmop; 
   REAL8LALSDensity *SDensitySource;
-  REAL8 vRz, vEz, dEgw,nu,nuz, numaxSource, factSource;
+  REAL8 vRz, vEz, dEgw, nu, nuz, numaxSource, factSource;
   
   INITSTATUS (s, "dAstroOmegaSource", ASTROOMEGAGENERALC);
   ATTATCHSTATUSPTR (s); 
