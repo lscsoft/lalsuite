@@ -117,7 +117,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
         return end_mod_play;
       }
     }
-    else if ( seg_length < play_length )
+    else if ( seg_length <= play_length )
     {
       if ( (play_length < end_mod_play) && 
           (end_mod_play < seg_length + play_length ) )
