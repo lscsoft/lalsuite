@@ -205,7 +205,7 @@ LALInspiralCreateCoarseBank(
   InspiralTemplate *tempPars;
   InspiralMetric metric;
   InspiralMomentsEtc moments;
-  INT4 validPars;
+  INT4 validPars, i;
   REAL8 x01, x02, x11, x12, dist1, dist2, ndx1, ndx2, a25;
 
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
@@ -403,6 +403,21 @@ LALInspiralCreateCoarseBank(
     bankParsOld = bankPars;
   } 
   LALFree(tempPars);
+
+  /* record the minimal match of the bank in the template and   */
+  /* set up the tmplts as a linked list so that it can be       */
+  /* manipulated easily by findchirp                            */
+  for ( i = 0; i < *nlist - 1 ; ++i )
+  {
+    (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
+    (*list)[i].params.next     = &((*list)[i+1].params);
+    (*list)[i].params.fine     = NULL;
+  }
+  (*list)[i].params.minMatch = (REAL4) coarseIn.mmCoarse;
+  (*list)[i].params.next = NULL;
+  (*list)[i].params.fine = NULL;
+
+  
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
