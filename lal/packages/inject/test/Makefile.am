@@ -2,8 +2,6 @@
 check_PROGRAMS = BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest SimulatePopcornTest
 InjectTest_SOURCES = InjectTest.c
 InjectTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-##InterfaceTest_SOURCES = InterfaceTest.c
-##InterfaceTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 BasicInjectTest_SOURCES = BasicInjectTest.c
 BasicInjectTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 GeneratePPNInspiralTest_SOURCES = GeneratePPNInspiralTest.c
