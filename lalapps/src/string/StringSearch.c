@@ -91,6 +91,7 @@ struct CommandLineArgsTag {
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
+  char *outputFileName;         /* Name of xml output filename */
   INT4 GPSStart;              /* GPS start time of segment to be analysed */
   INT4 GPSEnd;                /* GPS end time of segment to be analysed */
   INT4 NoOfSegs;              /* Number of fixed length sub-segments between GPSStart and GPSEnd */
@@ -190,7 +191,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector,
 	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
 
 /* Writes out the xml file with the events it found  */
-int OutputEvents();
+int OutputEvents(struct CommandLineArgsTag CLA);
 
 /* Frees the memory */
 int FreeMem(void);                                        
@@ -223,7 +224,7 @@ int main(int argc,char *argv[])
 
  if (FindStringBurst(CommandLineArgs)) return 9;
 
- if (OutputEvents()) return 10;
+ if (OutputEvents(CommandLineArgs)) return 10;
 
  if (FreeMem()) return 12;
 
@@ -309,19 +310,24 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 /*******************************************************************************/
 
-int OutputEvents()
+int OutputEvents(struct CommandLineArgsTag CLA)
 {
     
   LIGOLwXMLStream xml;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   MetadataTable myTable;
 
-  snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
-	   searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
-	   searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
-	   searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
-  outfilename[sizeof(outfilename)-1] = '\0';
-
+  if (!CLA.outputFileName)
+    {
+      snprintf(outfilename, sizeof(outfilename)-1, "%s-STRINGSEARCH-%d-%d.xml", ifo,
+	       searchsumm.searchSummaryTable->in_start_time.gpsSeconds,
+	       searchsumm.searchSummaryTable->in_end_time.gpsSeconds - 
+	       searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+      outfilename[sizeof(outfilename)-1] = '\0';
+    }else{
+      snprintf(outfilename, sizeof(outfilename)-1, "%s", CLA.outputFileName);
+      outfilename[sizeof(outfilename)-1] = '\0';
+    }
 
   memset(&xml, 0, sizeof(LIGOLwXMLStream));
   LALOpenLIGOLwXMLFile(&status, &xml, outfilename);
@@ -402,7 +408,7 @@ int OutputEvents()
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurstTable **thisEvent)
 {
-  int p;
+  int p,pend=0,pstart=0;
 
   /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
@@ -418,7 +424,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	{
           INT8  timeNS, peaktime;
 	  REAL8 duration;
-	  INT4 pstart=p;
+	  pstart=p;
 	  timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
           timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
@@ -448,6 +454,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 		}
 	      p++;
 	    }
+	  pend=p-1;
 
 	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * (pmax-pstart) );
 	  duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
@@ -911,6 +918,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"threshold",           required_argument, NULL,           't'},
     {"frame-cache",         required_argument, NULL,           'F'},
     {"channel-name",        required_argument, NULL,           'C'},
+    {"outfile",             required_argument, NULL,           'o'},
     {"gps-end-time",        required_argument, NULL,           'E'},
     {"gps-start-time",      required_argument, NULL,           'S'},
     {"injection-file",      required_argument, NULL,           'i'},
@@ -925,7 +933,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:g:";
+  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:g:o:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -944,6 +952,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->FrCacheFile=NULL;
   CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
+  CLA->outputFileName=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->NoOfSegs=0;
@@ -1009,6 +1018,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->InjectionFile=optarg;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'o':
+      /* name of xml injection file */
+      CLA->outputFileName=optarg;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'S':
       /* GPS start time of search */
        CLA->GPSStart=atof(optarg);
@@ -1064,6 +1078,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
       fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
+      fprintf(stdout,"\t--outfile (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
