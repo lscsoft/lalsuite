@@ -2,7 +2,7 @@
  * 
  * File Name: CVectorAbs.c
  * 
- * Author: Creighton, T. D.
+ * Authors: Creighton, T. D., Sintes, A. M. 
  * 
  * Revision: $Id$
  * 
@@ -24,16 +24,19 @@
  * 
  * NOTES
  * 
- *----------------------------------------------------------------------- */
+ *----------------------------------------------------------------------- 
+ */
+
 
 #include <math.h>
 #include "LALStdlib.h"
+#include "LALConstants.h"
 #include "VectorOps.h"
 
 NRCSID(CVECTORABSC,"$Id$");
 
 void
-CVectorAbs (
+CVectorAbs(
     Status               *status,
     REAL4Vector          *out,
     const COMPLEX8Vector *in
@@ -44,14 +47,19 @@ CVectorAbs (
   INT4      n;
 
   INITSTATUS (status, "CVectorAbs", CVECTORABSC);
-
+  
+  /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
-  ASSERT (in, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
+  ASSERT (in,  status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
 
+  /* Make sure the data pointers are not NULL: */
   ASSERT (out->data, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
-  ASSERT (in->data, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
-
-  ASSERT (out->length > 0, status, VECTOROPS_ESIZE, VECTOROPS_MSGESIZE);
+  ASSERT (in->data,  status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
+  
+ /* Make sure the size is correct (invalid input size): */
+  ASSERT (out->length > 0, status, VECTOROPS_ESIZE, VECTOROPS_MSGESIZE); 
+  
+  /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPS_ESZMM, VECTOROPS_MSGESZMM);
 
@@ -71,8 +79,15 @@ CVectorAbs (
     }
     else
     {
-      REAL4 ratio = ar/ai;
-      *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
+      if (fabs(ai) < LAL_REAL4_MIN)
+      {
+         *b=0.0;   /* to avoid NaN */
+      }
+      else
+      {
+         REAL4 ratio = ar/ai;
+         *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
+      }
     }
 
     ++a;

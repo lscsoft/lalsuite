@@ -1,21 +1,22 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: ZVectorAbs.c
+ * File Name: CVectorAngle.c
  * 
- * Authors: Creighton, T. D., Sintes, A. M. 
+ * Author:   Sintes, A. M. 
  * 
  * Revision: $Id$
  * 
  *----------------------------------------------------------------------- 
  * 
  * NAME 
- * ZVectorAbs
+ * CVectorAngle
  * 
  * SYNOPSIS 
  *
  *
  * DESCRIPTION 
- * Computes the magnitudes of a complex vector.
+ * Computes the phase angle of a complex vector 
+ * in the interval [-pi,pi] radians.
  * 
  * DIAGNOSTICS 
  * Null pointer, invalid input size, size mismatch.
@@ -33,20 +34,20 @@
 #include "LALConstants.h"
 #include "VectorOps.h"
 
-NRCSID(ZVECTORABSC,"$Id$");
+NRCSID(CVECTORANGLEC,"$Id$");
 
 void
-ZVectorAbs(
+CVectorAngle (
     Status               *status,
-    REAL8Vector          *out,
-    const COMPLEX16Vector *in
+    REAL4Vector          *out,
+    const COMPLEX8Vector *in
     )
 {
-  COMPLEX16 *a;
-  REAL8    *b;
+  COMPLEX8 *a;
+  REAL4    *b;
   INT4      n;
 
-  INITSTATUS (status, "ZVectorAbs", ZVECTORABSC);
+  INITSTATUS (status, "CVectorAngle", CVECTORANGLEC);
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
@@ -69,26 +70,18 @@ ZVectorAbs(
 
   while (n-- > 0)
   {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-
-    if (fabs(ar) > fabs(ai))
+    REAL4 ar = a->re;
+    REAL4 ai = a->im;
+    
+    if ((fabs(ar)<LAL_REAL4_MIN) && (fabs(ai)<LAL_REAL4_MIN))
     {
-      REAL8 ratio = ai/ar;
-      *b=fabs(ar)*sqrt(1.0 + ratio*ratio);
+      *b=0.0;   /* to avoid NaN when ar=ai=0.0 */
     }
     else
     {
-      if (fabs(ai) < LAL_REAL8_MIN)
-      {
-         *b=0.0;   /* to avoid NaN */
-      }
-      else
-      {
-         REAL8 ratio = ar/ai;
-         *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
-      }
+      *b= atan2(ai,ar);
     }
+    
 
     ++a;
     ++b;

@@ -48,6 +48,46 @@ void SSVectorMultiply(
     const REAL4Vector    *in2
     );
 
+void CVectorAbs (
+    Status               *status,
+    REAL4Vector          *out,
+    const COMPLEX8Vector *in
+    );
+
+
+void CVectorAngle (
+    Status               *status,
+    REAL4Vector          *out,
+    const COMPLEX8Vector *in
+    );
+
+
+void UnwrapREAL4Angle (
+    Status               *status,
+    REAL4Vector          *out,
+    const REAL4Vector    *in
+    );
+
+
+void ZVectorAbs (
+    Status                *status,
+    REAL8Vector           *out,
+    const COMPLEX16Vector *in
+    );
+
+
+void ZVectorAngle (
+    Status                *status,
+    REAL8Vector           *out,
+    const COMPLEX16Vector *in
+    );
+
+
+void UnwrapREAL8Angle (
+    Status               *status,
+    REAL8Vector          *out,
+    const REAL8Vector    *in
+    );
 \end{verbatim}
 
 \subsection{Description}
@@ -71,6 +111,27 @@ $\texttt{w.data[i]}=\texttt{a.data[i]}\times\texttt{v.data[i]}$.
 The \verb:SSVectorMultiply (&status, &c, &a, &b): function computes
 $\texttt{c.data[i]}=\texttt{a.data[i]}\times\texttt{b.data[i]}$.
 
+The \verb:CVectorAbs (&status, &a, &u): function computes
+the magnitude of a complex vector \texttt{u}.
+$\texttt{a.data[i]}=\texttt{sqrt} (
+\texttt{u.data[i].re}^2 + \texttt{v.data[i].im}^2 ) $.
+
+
+The \verb:CVectorAngle (&status, &a, &u): function computes
+the phase angle of a complex vector \texttt{u}
+ in the interval $[-\pi, \pi]$ radians.\\
+$\texttt{a.data[i]}=\texttt{atan2} (
+\texttt{u.data[i].im}, \texttt{v.data[i].re} ) $.
+
+The \verb:UnwrapREAL4Angle (&status, &a, &b): function
+ corrects the radian phase angles of a real vector  \texttt{b}
+ by adding multiples of
+ $\pm\pi$ when the absolute jumps between consecutive
+ angle elements are greater than $\pi$ radians.
+This function detects branch cut crossings, but it can be 
+ fooled by sparse, rapidly changing phase values.
+
+
 \subsection{Operating Instructions}
 
 % Detailed usage 
@@ -91,6 +152,9 @@ REAL4Vector *c;
 (void) CCVectorDivide            (status, w, u, v);
 (void) SCVectorMultiply          (status, w, a, v);
 (void) SSVectorMultiply          (status, c, a, b);
+(void) CVectorAbs                (status, a, u);
+(void) CVectorAngle              (status, a, u);
+(void) UnwrapREAL4Angle          (status, a, b);
 \end{verbatim}
 
 \subsubsection{Arguments}
@@ -108,6 +172,8 @@ of type \texttt{<COMPLEX8Vector>}.  They must be non-NULL, have positive length
 of type \texttt{<REAL4Vector>}.  They must be non-NULL, have positive length
 ($\texttt{c->length}>0$), and have allocated memory for data
 ($\texttt{c->data}\neq\texttt{NULL}$).
+For the UnwrapREAL4Angle function, \texttt{a}, and \texttt{b} should  not
+point to the same memory location ($\texttt{a != b}$).
 \end{itemize}
 
 \subsubsection{Options}
@@ -128,6 +194,7 @@ code   & description   & \\\hline
 ENULL  & null pointer  & address of vector and data must be non-NULL\\
 ESIZE  & invalid size  & vector length must be positive\\
 ESZMM  & size mismatch & vector lengths must agree\\
+ESAME & invalid pointer & Input/Output addresses must be different\\
 \hline
 \end{tabular}
 \caption{Error conditions for all VectorOperations}\label{tbl:CV}
@@ -145,6 +212,35 @@ Sec.~5.4 of Ref.~\cite{ptvf:1992}.  The formula used is:
   \end{array}
   \right.
 \]
+
+The algorithm for UnwrapREAL4Angle
+ (Inspired from the MATLAP function unwrap):
+\begin{verbatim}
+
+  a = in->data;
+  b = out->data;
+  n = out->length;
+  
+  cumsum = 0.0;
+  phaseI = *a;
+  *b = phaseI;
+  --n;
+
+  while (n-- > 0)
+  {
+    ++a;
+    ++b;
+    phaseII = *a;
+    diffph = phaseII - phaseI;
+    phaseI = phaseII;
+    
+    cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
+    
+    *b= phaseII + cumsum;
+  }
+
+\end{verbatim}
+
 
 % Describe algorithm by which work is done
 
@@ -170,6 +266,12 @@ the vector operations:
 \item complex-complex division using \texttt{ccVectorDivide()}
 \item scalar-complex multiplication using \texttt{scVectorMultiply()}
 \item scalar-scalar multiplication using \texttt{ssVectorMultiply()}
+\item compute  the magnitude of a complex vector using
+      \texttt{CVectorAbs2()}
+\item compute  the phase angle of a complex vector using
+      \texttt{CVectorAngle()}
+\item correct  the phase angle  using
+           \texttt{UnwrapREAL4Angle()}
 \end{itemize}
 \item Error return tests
 \begin{itemize}
@@ -177,14 +279,13 @@ the vector operations:
 \item vector argument with NULL data field
 \item vector argument with zero length field
 \item vector arguments with different length fields
+\item Input/Output arguments are pointing to the same memory location
 \end{itemize}
 \end{itemize}
 
 \subsection{Uses}
 
 % What LAL, other routines does this one call?
-
-\texttt{InitStatus}, \texttt{StatusHandler}
 
 \subsection{Notes}
 

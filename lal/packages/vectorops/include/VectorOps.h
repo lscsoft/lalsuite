@@ -2,7 +2,7 @@
  *
  * File Name: VectorOps.h
  *
- * Authors: Creighton, J. D. E., Creighton, T. D.
+ * Authors: Creighton, J. D. E., Creighton, T. D., Sintes, A. M.
  *
  * Revision: $Id$
  *
@@ -24,7 +24,7 @@
 #ifndef _VECTOROPS_H
 #define _VECTOROPS_H
 
-#include "LALRCSID.h"
+#include "LALDatatypes.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -36,10 +36,12 @@ NRCSID (VECTOROPSH, "$Id$");
 #define VECTOROPS_ENULL 1
 #define VECTOROPS_ESIZE 2
 #define VECTOROPS_ESZMM 4
+#define VECTOROPS_ESAME 8
 
 #define VECTOROPS_MSGENULL "Null pointer"
 #define VECTOROPS_MSGESIZE "Invalid input size"
 #define VECTOROPS_MSGESZMM "Size mismatch"
+#define VECTOROPS_MSGESAME "Input/Output data vectors are the same"
 
 void
 CCVectorMultiply (
@@ -73,6 +75,20 @@ CVectorAbs (
     );
 
 void
+CVectorAngle (
+    Status               *,
+    REAL4Vector          *,
+    const COMPLEX8Vector *
+    );
+
+void
+UnwrapREAL4Angle (
+    Status               *,
+    REAL4Vector          *,
+    const REAL4Vector    *
+    );
+
+void
 ZZVectorMultiply (
     Status                *,
     COMPLEX16Vector       *, 
@@ -101,6 +117,20 @@ ZVectorAbs (
     Status                *,
     REAL8Vector           *,
     const COMPLEX16Vector *
+    );
+
+void
+ZVectorAngle (
+    Status                *,
+    REAL8Vector           *,
+    const COMPLEX16Vector *
+    );
+
+void
+UnwrapREAL8Angle (
+    Status               *,
+    REAL8Vector          *,
+    const REAL8Vector    *
     );
 
 void

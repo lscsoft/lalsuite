@@ -5,10 +5,14 @@ liblal_a_SOURCES = \
         CCVectorMultiply.c \
         CCVectorMultiplyConjugate.c \
         CVectorAbs.c \
+        CVectorAngle.c \
+        UnwrapREAL4Angle.c \
         ZZVectorDivide.c   \
         ZZVectorMultiply.c \
         ZZVectorMultiplyConjugate.c \
         ZVectorAbs.c \
+        ZVectorAngle.c \
+        UnwrapREAL8Angle.c \
         SCVectorMultiply.c \
         SSVectorMultiply.c \
         DZVectorMultiply.c \

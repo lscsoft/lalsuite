@@ -2,7 +2,7 @@
  * 
  * File Name: VectorOpsTest.c
  * 
- * Author: Creighton, J. D. E.
+ * Author: Creighton, J. D. E., Sintes, A. M.
  * 
  * Revision: $Id$
  * 
@@ -31,7 +31,9 @@
  */
 
 #include <stdio.h>
+#include <math.h>
 #include "LALStdlib.h"
+#include "LALConstants.h"
 #include "AVFactories.h"
 #include "VectorOps.h"
 
@@ -129,6 +131,87 @@ main ()
   SDestroyVector(&status, &x1);
   SDestroyVector(&status, &x2);
   SDestroyVector(&status, &x3);
+  SDestroyVector(&status, &y1);
+  LALFree(y2);
+  LALFree(y3->data);
+  LALFree(y3);
+
+  x1 = x2 = x3 = y1 = y2 = y3 = NULL;
+  z1 = z2 = z3 = NULL;
+  
+  
+  CCreateVector(&status, &z1, size);
+  
+  SCreateVector(&status, &x1, size);
+  SCreateVector(&status, &x2, size);
+  SCreateVector(&status, &x3, size);
+  
+  
+   for (i = 0; i < size; ++i)
+  {
+    z1->data[i].re = (12.0 + i) *cos(LAL_PI/3.0*i);
+    z1->data[i].im = (12.0 + i )*sin(LAL_PI/3.0*i);
+  }
+  
+   printf("\n"); 
+   CVectorAbs(&status, x1, z1);  
+   for (i = 0; i < size; ++i)
+    printf(" Abs(% f,%f)  = %f \n",
+           z1->data[i].re, z1->data[i].im,
+           x1->data[i]);
+           
+    CVectorAngle(&status, x2, z1);
+    for (i = 0; i < size; ++i)    
+     printf(" Angle(%f,%f)  = %f \n",
+           z1->data[i].re, z1->data[i].im,
+           x2->data[i]);
+ 
+    UnwrapREAL4Angle(&status, x3, x2); 
+     for (i = 0; i < size; ++i)    
+     printf(" Unwrap Phase Angle ( %f )  = %f \n",
+           x2->data[i],
+           x3->data[i]);
+  
+  
+  SCreateVector(&status, &y1, size/2);
+  
+  y2         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  y2->data   = NULL;
+  y2->length = size;
+  
+  y3         = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  y3->data   = (REAL4 *)LALMalloc(size*sizeof(REAL4));
+  y3->length = 0;
+
+  printf("\n");
+  
+    CVectorAbs(&status, x1, NULL);
+    CVectorAbs(&status, NULL, z1);
+    CVectorAbs(&status, y1, z1);
+    CVectorAbs(&status, y2, z1);
+    CVectorAbs(&status, y3, z1);
+    
+    
+    CVectorAngle(&status, x2, NULL);
+    CVectorAngle(&status, NULL, z1);
+    CVectorAngle(&status, y1, z1);
+    CVectorAngle(&status, y2, z1);
+    CVectorAngle(&status, y3, z1);
+    
+    UnwrapREAL4Angle(&status, x3, NULL);   
+    UnwrapREAL4Angle(&status, NULL, x2);   
+    UnwrapREAL4Angle(&status, y1, x2);   
+    UnwrapREAL4Angle(&status, y2, x2);   
+    UnwrapREAL4Angle(&status, y3, x2);   
+    UnwrapREAL4Angle(&status, x2, x2);   
+ 
+
+  CDestroyVector(&status, &z1);
+ 
+  SDestroyVector(&status, &x1);
+  SDestroyVector(&status, &x2);
+  SDestroyVector(&status, &x3);
+  
   SDestroyVector(&status, &y1);
   LALFree(y2);
   LALFree(y3->data);

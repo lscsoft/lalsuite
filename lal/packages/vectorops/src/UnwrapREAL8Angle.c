@@ -1,52 +1,59 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: ZVectorAbs.c
+ * File Name: UnwrapREAL8Angle.c
  * 
- * Authors: Creighton, T. D., Sintes, A. M. 
+ * Author:   Sintes, A. M. 
  * 
  * Revision: $Id$
  * 
  *----------------------------------------------------------------------- 
  * 
  * NAME 
- * ZVectorAbs
+ * UnwrapREAL8Angle
  * 
  * SYNOPSIS 
  *
  *
  * DESCRIPTION 
- * Computes the magnitudes of a complex vector.
+ * Corrects the radian phase angles by adding multiples of
+ * + or - pi when the absolute jumps between consecutive
+ * angle elements are greater than pi radians.
+ * This function detects branch cut crossings, but it can be 
+ * fooled by sparse, rapidly changing phase values.
  * 
  * DIAGNOSTICS 
- * Null pointer, invalid input size, size mismatch.
+ * Null pointer, invalid input size, size mismatch, invalid pointer.
  *
  * CALLS
  * 
  * NOTES
- * 
+ * Inspired from the MATLAP function unwrap
  *----------------------------------------------------------------------- 
  */
 
 
-#include <math.h>
 #include "LALStdlib.h"
 #include "LALConstants.h"
 #include "VectorOps.h"
 
-NRCSID(ZVECTORABSC,"$Id$");
+NRCSID(UNWRAPREAL8ANGLEC,"$Id$");
 
 void
-ZVectorAbs(
+UnwrapREAL8Angle (
     Status               *status,
     REAL8Vector          *out,
-    const COMPLEX16Vector *in
+    const REAL8Vector    *in
     )
 {
-  COMPLEX16 *a;
+  REAL8    *a;
   REAL8    *b;
   INT4      n;
-
-  INITSTATUS (status, "ZVectorAbs", ZVECTORABSC);
+  REAL8     cumsum;
+  REAL8     phaseI;
+  REAL8     phaseII;
+  REAL8     diffph;
+  
+  INITSTATUS (status, "UnwrapREAL8Angle", UNWRAPREAL8ANGLEC );
   
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPS_ENULL, VECTOROPS_MSGENULL);
@@ -62,36 +69,31 @@ ZVectorAbs(
   /* Make sure the lengths are the same (size mismatch): */
   ASSERT (in->length == out->length, status,
           VECTOROPS_ESZMM, VECTOROPS_MSGESZMM);
+          
+  /* Make sure the arguments are not pointing to the same memory location */
+  ASSERT (out != in, status, VECTOROPS_ESAME, VECTOROPS_MSGESAME);
+
 
   a = in->data;
   b = out->data;
   n = out->length;
+  
+  cumsum = 0.0;
+  phaseI = *a;
+  *b = phaseI;
+  --n;
 
   while (n-- > 0)
   {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-
-    if (fabs(ar) > fabs(ai))
-    {
-      REAL8 ratio = ai/ar;
-      *b=fabs(ar)*sqrt(1.0 + ratio*ratio);
-    }
-    else
-    {
-      if (fabs(ai) < LAL_REAL8_MIN)
-      {
-         *b=0.0;   /* to avoid NaN */
-      }
-      else
-      {
-         REAL8 ratio = ar/ai;
-         *b=fabs(ai)*sqrt(1.0 + ratio*ratio);
-      }
-    }
-
     ++a;
     ++b;
+    phaseII = *a;
+    diffph = phaseII - phaseI;
+    phaseI = phaseII;
+    
+    cumsum += LAL_TWOPI*( (diffph < - LAL_PI) - (diffph > LAL_PI) );
+    
+    *b= phaseII + cumsum;
   }
 
   RETURN (status);
