@@ -31,8 +31,18 @@ extern "C" {
  **** </lalLaTeX> */
 /**** <lalErrTable> */
 #define CALIBRATIONH_ENULL 001
+#define CALIBRATIONH_ESIZE 002
+#define CALIBRATIONH_ESZMM 004
+#define CALIBRATIONH_EZERO 010
+#define CALIBRATIONH_ETIME 020
+#define CALIBRATIONH_EUNIT 040
 
 #define CALIBRATIONH_MSGENULL "Null pointer"
+#define CALIBRATIONH_MSGESIZE "Invalid size"
+#define CALIBRATIONH_MSGESZMM "Size mismatch"
+#define CALIBRATIONH_MSGEZERO "Zero factor"
+#define CALIBRATIONH_MSGETIME "Time out of range"
+#define CALIBRATIONH_MSGEUNIT "Incompatible units"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -87,7 +97,47 @@ CalibrationRecord;
  *
  **** </lalLaTeX> */
 
+
+typedef struct
+tagCalibrationFunctions
+{
+  COMPLEX8FrequencySeries *responseFunction;
+  COMPLEX8FrequencySeries *sensingFunction;
+}
+CalibrationFunctions;
+
+typedef struct
+tagCalibrationUpdateParams
+{
+  LIGOTimeGPS epoch;
+  COMPLEX8TimeSeries *openLoopFactor;
+  COMPLEX8TimeSeries *sensingFactor;
+}
+CalibrationUpdateParams;
+
+
+
+
 void LALComputeTransfer( LALStatus *status, CalibrationRecord *calrec );
+
+
+void
+LALUpdateCalibration(
+    LALStatus               *status,
+    CalibrationFunctions    *output,
+    CalibrationFunctions    *input,
+    CalibrationUpdateParams *params
+    );
+
+void
+LALResponseConvert(
+    LALStatus               *status,
+    COMPLEX8FrequencySeries *output,
+    COMPLEX8FrequencySeries *input
+    );
+
+
+
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/

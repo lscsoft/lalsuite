@@ -179,3 +179,292 @@ LALComputeTransfer( LALStatus                 *stat,
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
 }
+
+
+
+
+
+#define cini COMPLEX8 tmpa, tmpb, tmpc; REAL4 tmpx, tmpy
+
+#define cmul( a, b ) \
+( tmpa = (a), tmpb = (b), \
+  tmpc.re = tmpa.re * tmpb.re - tmpa.im * tmpb.im, \
+  tmpc.im = tmpa.re * tmpb.im + tmpa.im * tmpb.re, \
+  tmpc )
+
+#define cdiv( a, b ) \
+( tmpa = (a), tmpb = (b), \
+  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
+    ( tmpx = tmpb.im / tmpb.re, \
+      tmpy = tmpb.re + tmpx * tmpb.im, \
+      tmpc.re = ( tmpa.re + tmpx * tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im - tmpx * tmpa.re ) / tmpy, \
+      tmpc ) : \
+    ( tmpx = tmpb.re / tmpb.im, \
+      tmpy = tmpb.im + tmpx * tmpb.re, \
+      tmpc.re = ( tmpa.re * tmpx + tmpa.im ) / tmpy, \
+      tmpc.im = ( tmpa.im * tmpx - tmpa.re ) / tmpy, \
+      tmpc ) )
+
+#define cinv( b ) \
+( tmpb = (b), \
+  fabs( tmpb.re ) >= fabs( tmpb.im ) ? \
+    ( tmpx = tmpb.im / tmpb.re, \
+      tmpy = tmpb.re + tmpx * tmpb.im, \
+      tmpc.re = 1 / tmpy, \
+      tmpc.im = -tmpx / tmpy, \
+      tmpc ) : \
+    ( tmpx = tmpb.re / tmpb.im, \
+      tmpy = tmpb.im + tmpx * tmpb.re, \
+      tmpc.re = tmpx / tmpy, \
+      tmpc.im = -1 / tmpy, \
+      tmpc ) )
+
+
+void
+LALUpdateCalibration(
+    LALStatus               *status,
+    CalibrationFunctions    *output,
+    CalibrationFunctions    *input,
+    CalibrationUpdateParams *params
+    )
+{
+  const REAL4 tiny = 1e-6;
+  cini;
+  COMPLEX8Vector *save;
+  COMPLEX8 *R;
+  COMPLEX8 *C;
+  COMPLEX8 *R0;
+  COMPLEX8 *C0;
+  COMPLEX8 a;
+  COMPLEX8 ab;
+  REAL4 dt;
+  UINT4 n;
+  UINT4 i;
+
+  INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
+
+  /* check input */
+  ASSERT( input, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->sensingFunction, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->responseFunction, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->sensingFunction->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->responseFunction->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->sensingFunction->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( input->responseFunction->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  n = input->sensingFunction->data->length;
+  ASSERT( (int)n > 0, status, CALIBRATIONH_ESIZE, CALIBRATIONH_MSGESIZE );
+  ASSERT( input->responseFunction->data->length == n, status,
+      CALIBRATIONH_ESZMM, CALIBRATIONH_MSGESZMM );
+
+  /* check output */
+  ASSERT( output, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->sensingFunction, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->responseFunction, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->sensingFunction->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->responseFunction->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->sensingFunction->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->responseFunction->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( output->sensingFunction->data->length == n, status,
+      CALIBRATIONH_ESZMM, CALIBRATIONH_MSGESZMM );
+  ASSERT( output->responseFunction->data->length == n, status,
+      CALIBRATIONH_ESZMM, CALIBRATIONH_MSGESZMM );
+
+  /* check params */
+  ASSERT( params, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->sensingFactor, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->openLoopFactor, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->sensingFactor->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->openLoopFactor->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->sensingFactor->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->openLoopFactor->data->data, status,
+      CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
+  ASSERT( params->openLoopFactor->data->length ==
+      params->sensingFactor->data->length, status,
+      CALIBRATIONH_ESZMM, CALIBRATIONH_MSGESZMM );
+
+  R0 = input->responseFunction->data->data;
+  C0 = input->sensingFunction->data->data;
+  R = output->responseFunction->data->data;
+  C = output->sensingFunction->data->data;
+
+  save = output->responseFunction->data;
+  output->responseFunction = input->responseFunction;
+  output->responseFunction->data = save;
+  output->responseFunction->epoch = params->epoch;
+
+  save = output->sensingFunction->data;
+  output->sensingFunction = input->sensingFunction;
+  output->sensingFunction->data = save;
+  output->sensingFunction->epoch = params->epoch;
+
+  /* locate correct value of a and ab -- ignore nanoseconds */
+  dt = params->epoch.gpsSeconds - params->sensingFactor->epoch.gpsSeconds;
+  if ( dt < 0 )
+  {
+    ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
+  }
+  i = floor( dt / params->sensingFactor->deltaT );
+  if ( i >= params->sensingFactor->data->length )
+  {
+    ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
+  }
+  a  = params->sensingFactor->data->data[i];
+  ab = params->openLoopFactor->data->data[i];
+  if ( fabs( a.re ) < tiny && fabs( a.im ) < tiny )
+  {
+    ABORT( status, CALIBRATIONH_EZERO, CALIBRATIONH_MSGEZERO );
+  }
+
+  for ( i = 0; i < n; ++i )
+  {
+    COMPLEX8 tmp;
+    /* compute the reference open loop function */
+    tmp = cmul( C0[i], R0[i] );
+    tmp.re -= 1;
+    /* update the open loop function */
+    tmp = cmul( ab, tmp );
+    /* update the sensing function */
+    C[i] = cmul( a, C0[i] );
+    /* compute the updated response function */
+    tmp.re += 1;
+    R[i] = cdiv( tmp, C[i] );
+  }
+
+  RETURN( status );
+}
+
+void
+LALResponseConvert(
+    LALStatus               *status,
+    COMPLEX8FrequencySeries *output,
+    COMPLEX8FrequencySeries *input
+    )
+{
+  cini;
+  LALUnit unitOne;
+  LALUnit unitTwo;
+  UINT4 i;
+  INT4 inv;
+  INT4 fac;
+  INT4 bad;
+
+  INITSTATUS( status, "LALResponseConvert", COMPUTETRANSFERC );
+  ATTATCHSTATUSPTR( status );
+
+  output->epoch = input->epoch;
+
+  /*
+   * Interpolate to requested frequencies.
+   * Just do linear interpolation of real and imag components.
+   */
+  for ( i = 0; i < output->data->length; ++i )
+  {
+    REAL4 x;
+    UINT4 j;
+    x = i * output->deltaF / input->deltaF;
+    j = floor( x );
+    if ( j > input->data->length - 2 )
+      j = input->data->length - 2;
+    x -= j;
+    output->data->data[i].re = input->data->data[j].re 
+      + x * ( input->data->data[j+1].re - input->data->data[j].re );
+    output->data->data[i].im = input->data->data[j].im 
+      + x * ( input->data->data[j+1].im - input->data->data[j].im );
+  }
+
+
+  /*
+   * Use output units to figure out:
+   *   1. Whether we want strain/ct or ct/strain
+   *   2. Overall (power of ten) factor to apply.
+   */
+
+  /* determine if units need to be inverted or not (or if they are bad) */
+  LALUnitNormalize( status->statusPtr, &unitOne, output->sampleUnits );
+  CHECKSTATUSPTR( status );
+  LALUnitNormalize( status->statusPtr, &unitTwo, input->sampleUnits );
+  CHECKSTATUSPTR( status );
+  bad = 0;
+  inv = -1;
+  for ( i = 0; i < LALNumUnits; ++i )
+  {
+    if ( unitOne.unitDenominatorMinusOne[i] != unitTwo.unitDenominatorMinusOne[i] )
+    {
+      bad = 1;
+      break;
+    }
+    if ( unitOne.unitNumerator[i] == unitTwo.unitNumerator[i] )
+    {
+      if ( unitOne.unitNumerator[i] ) /* if this unit exists */
+      {
+        inv = 0; /* we don't need to invert */
+        if ( inv == 1 ) /* error: some units need to be inverted, others not */
+        {
+          bad = 1;
+          break;
+        }
+      }
+    }
+    else
+    {
+      if ( unitOne.unitNumerator[i] == -unitTwo.unitNumerator[i] )
+      {
+        /* this unit needs to be inverted */
+        inv = 1;
+      }
+      else /* error: output units not equal to input or inverse of input */
+      {
+        bad = 1;
+        break;
+      }
+    }
+  }
+  if ( bad ) /* units were bad: abort */
+  {
+    ABORT( status, CALIBRATIONH_EUNIT, CALIBRATIONH_MSGEUNIT );
+  }
+
+  /* determine if there is a scale factor that needs to be applied */
+  fac = unitOne.powerOfTen - ( inv ? -unitTwo.powerOfTen : unitTwo.powerOfTen );
+
+  /* perform conversion(s) */
+
+  if ( inv ) /* invert data */
+  {
+    for ( i = 0; i < output->data->length; ++i )
+    {
+      output->data->data[i] = cinv( output->data->data[i] );
+    }
+  }
+
+  if ( fac ) /* scale data */
+  {
+    REAL4 scale = pow( 10.0, -fac );
+    for ( i = 0; i < output->data->length; ++i )
+    {
+      output->data->data[i].re *= scale;
+      output->data->data[i].im *= scale;
+    }
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
