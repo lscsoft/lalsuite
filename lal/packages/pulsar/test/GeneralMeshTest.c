@@ -243,7 +243,7 @@ int main( int argc, char **argv )
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return GENERALMESHTESTC_EOPT;
       }
-      center.longitude = (15*a+b/60+c/3600)*LAL_PI_180;
+      center.longitude = (15*a+b/4+c/240)*LAL_PI_180;
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'd':
@@ -372,9 +372,9 @@ int main( int argc, char **argv )
 
   /* Read in ephemeris data from files: */
   eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  eph->ephiles.earthEphemeris = "earth03.dat";
-  eph->ephiles.sunEphemeris = "sun03.dat";
-  eph->leap = 14; /* Ben: Is this right for 2003? Automate. */
+  eph->ephiles.earthEphemeris = "earth00-04.dat";
+  eph->ephiles.sunEphemeris = "sun00-04.dat";
+  eph->leap = 13; /* OK for 2000-2004 */
  
 
   LALInitBarycenter( &stat, eph );

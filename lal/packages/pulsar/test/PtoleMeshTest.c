@@ -179,7 +179,7 @@ int main( int argc, char **argv )
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return PTOLEMESHTESTC_EOPT;
       }
-      center.longitude = (15*a+b/60+c/3600)*LAL_PI_180;
+      center.longitude = (15*a+b/4+c/240)*LAL_PI_180;
       center.latitude = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'e':

@@ -229,7 +229,7 @@ int main( int argc, char *argv[] ) {
 	{
 	  fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
 	}
-      ra_point = (15*a+b/60+c/3600)*LAL_PI_180;
+      ra_point = (15*a+b/4+c/240)*LAL_PI_180;
       dec_point = (d+e/60+f/3600)*LAL_PI_180;
       break;
     case 'd':
