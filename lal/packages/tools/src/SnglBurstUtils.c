@@ -16,7 +16,6 @@ $Id$
 </lalVerbatim> 
 #endif
 
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -79,6 +78,11 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 static INT8 start_time(const SnglBurstTable *x)
 {
 	return(XLALGPStoINT8(&x->start_time));
+}
+
+static INT8 peak_time(const SnglBurstTable *x)
+{
+	return(XLALGPStoINT8(&x->peak_time));
 }
 
 static INT8 end_time(const SnglBurstTable *x)
@@ -175,7 +179,7 @@ XLALCompareSnglBurstByStartTime(
 
 	if(ta > tb)
 		return(1);
-	else if(ta < tb)
+	if(ta < tb)
 		return(-1);
 	return(0);
 }
@@ -193,16 +197,15 @@ XLALCompareSnglBurstByPeakTime(
 )
 /* </lalVerbatim> */
 {
-	const REAL8 epsilon = 1e-8;	/* seconds */
-	REAL8 dt = XLALDeltaFloatGPS(&(*a)->peak_time, &(*b)->peak_time);
+	INT8 ta, tb;
+	INT8 epsilon = 10;	/* nanoseconds */
 
-	/* force times to compare equal if |dt| < epsilon */
-	if(fabs(dt) < epsilon)
-		dt = 0.0;
+	ta = peak_time(*a);
+	tb = peak_time(*b);
 
-	if(dt > 0.0)
+	if(ta > tb + epsilon)
 		return(1);
-	if(dt < 0.0)
+	if(ta < tb - epsilon)
 		return(-1);
 	return(0);
 }
@@ -222,7 +225,7 @@ XLALCompareSnglBurstByTime(
 {
 	if(start_time(*a) > end_time(*b))
 		return(1);	/* a's interval lies after b's interval */
-	else if(end_time(*a) < start_time(*b))
+	if(end_time(*a) < start_time(*b))
 		return(-1);	/* a's interval lies before b's interval */
 	return(0);	/* a and b's intervals are continuous */
 }
@@ -247,7 +250,7 @@ XLALCompareSnglBurstByLowFreq(
 
 	if(flowa > flowb)
 		return(1);
-	else if(flowa < flowb)
+	if(flowa < flowb)
 		return(-1);
 	return(0);
 }
@@ -267,7 +270,7 @@ XLALCompareSnglBurstByFreq(
 {
 	if(lo_freq(*a) > hi_freq(*b))
 		return(1);	/* a's band lies above b's band */
-	else if(hi_freq(*a) < lo_freq(*b))
+	if(hi_freq(*a) < lo_freq(*b))
 		return(-1);	/* a's band lies below b's band */
 	return(0);	/* a and b's bands are continuous */
 }
@@ -468,9 +471,8 @@ XLALClusterSnglBurstTable (
 					LALFree(b);
 					did_cluster = 1;
 				} else {
-					if(bailoutfunc)
-						if(bailoutfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b))
-							break;
+					if(bailoutfunc && bailoutfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b))
+						break;
 					prev = b;
 				}
 			}
