@@ -549,9 +549,11 @@ LALCreateFindChirpSegmentVector (
          &(segPtr[i].b2), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
+#if 0
       LALCreateVector (status->statusPtr,
        &(segPtr[i].tmpltPowerVec), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
+#endif
 
       LALCreateVector (status->statusPtr,
        &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);  
@@ -643,7 +645,7 @@ LALDestroyFindChirpSegmentVector (
     }
 
     /* chi squared frequency bins */
-    if ( segPtr[i].chisqBinVec->length )
+    if ( segPtr[i].chisqBinVec->data )
     {
       LALFree( segPtr[i].chisqBinVec->data );
     }
@@ -690,11 +692,13 @@ LALDestroyFindChirpSegmentVector (
       LALDestroyVector( status->statusPtr, &(segPtr[i].b2) );
       CHECKSTATUSPTR( status );
     }
+#if 0
     if ( segPtr[i].tmpltPowerVec )
     {
       LALDestroyVector( status->statusPtr, &(segPtr[i].tmpltPowerVec) );
       CHECKSTATUSPTR( status );
     }
+#endif
     if ( segPtr[i].tmpltPowerVecBCV )
     {
       LALDestroyVector( status->statusPtr, &(segPtr[i].tmpltPowerVecBCV) );
