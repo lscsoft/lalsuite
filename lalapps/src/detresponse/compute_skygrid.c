@@ -29,13 +29,11 @@ static double vorbrel;
 /* gps = time when vel. is needed */   
 /* inputs = detector, ephemerides */
 static double doppler(LALStatus * status, 
-                      LIGOTimeGPS * gps,    
-                      AvgVelPar * inputs,
+                      REAL8         velocity[3],  
                       SkyPosition * source_loc)
 {
   /* the reference frame in which everything is done is the barycentric,
   * with J2000 equatorial defining the x-y plane */
-  double          velocity[3];
   double          e_source[3];
   double          doppler_factor = 0.;
   double          sin_theta;
@@ -66,9 +64,7 @@ static double doppler(LALStatus * status,
   e_source[1] = sin_theta * sin(source_loc->longitude);
   e_source[0] = sin_theta * cos(source_loc->longitude);
   
-  LALDetectorVel(status, velocity, gps, inputs);
-  
-  for (i = 0; i < 3; ++i)
+ for (i = 0; i < 3; ++i)
     doppler_factor += velocity[i] * e_source[i];
 
   /* printf("doppler_factor = %20.14e\n", doppler_factor); */
@@ -94,7 +90,9 @@ static double approx_doppler(LIGOTimeGPS * gps,
 }
 #endif
 
-
+/*
+ * relval() is deprecated
+ */
 static double relval(double ra, double dec, int i, int nrelvals)
 {
   int j;
@@ -166,6 +164,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
   LALGPSandAcc            gps_and_acc;
   LIGOTimeGPS             start_time;
   LALTimeInterval         time_interval;
+  REAL8                   det_velocity[3];
   AvgVelPar               detectorvel_inputs;     /* yea yea I know */
 
   CHAR                    cross_file_name[LALNameLength];
@@ -344,6 +343,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       printf("relfreq_file_name = %s\n", relfreq_file_name);
     }    
     
+    LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+    
     Pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
     for (j = start_ra; j < end_ra; ++j)
     {
@@ -380,8 +381,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
         grid_cros_sq->data[cnt] = response.cross * response.cross;
         grid_plus_sq->data[cnt] = response.plus  * response.plus;
         grid_sum_sq->data[cnt]  = grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt];
-        grid_relfreq->data[cnt] = doppler(status, &(gps_and_acc.gps), 
-                                    &detectorvel_inputs, 
+        grid_relfreq->data[cnt] = doppler(status, det_velocity,
                                     &(source.equatorialCoords));
       }
     }
@@ -421,6 +421,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
       fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
       snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
       
+      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+      
       for (j = start_ra; j < end_ra; ++j)
       {
         source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
@@ -438,8 +440,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
           grid_plus_sq->data[cnt] = response.plus  * response.plus;
           grid_sum_sq->data[cnt]  = (grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt]);
           
-          grid_relfreq->data[cnt] = doppler(status, &(gps_and_acc.gps), 
-                                      &detectorvel_inputs, 
+          grid_relfreq->data[cnt] = doppler(status, det_velocity, 
                                       &(source.equatorialCoords));
         }
       }
@@ -515,6 +516,8 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
     
     for (k = 0; k < (UINT4)args_info.nsample_arg; ++k)
     {
+      LALDetectorVel(status, det_velocity, &(gps_and_acc.gps), &detectorvel_inputs);
+          
       for (j = start_ra; j < end_ra; ++j)
       {
         source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
@@ -534,8 +537,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
             args_info.nsample_arg;
           grid_sum_sq->data[cnt]  += (grid_cros_sq->data[cnt] + grid_plus_sq->data[cnt]) /
             args_info.nsample_arg;
-          grid_relfreq->data[cnt] += doppler(status, &(gps_and_acc.gps), 
-                                       &detectorvel_inputs, 
+          grid_relfreq->data[cnt] += doppler(status, det_velocity, 
                                        &(source.equatorialCoords));
         }
       }
@@ -576,7 +578,7 @@ ab2(double y_center, double y_front, double y_back, double delta)
 }
 
 
-compute_approx_doppler_coeffs()
+approx_doppler_coeffs()
 {
   double delta_ra = LAL_PI / (REAL8)num_ra;
   double delta_sin_dec = 1. / (REAL8)num_dec;
@@ -584,16 +586,14 @@ compute_approx_doppler_coeffs()
 
   double a1, a2, b1, b2;
 
-  for (j = 0; j < num_ra; ++j)
+  for (j = start_ra; j < end_ra; ++j)
   {
     source.equatorialCoords.longitude = Pi_num_ra * (1. + 2.*j);
 
-    for (i = 0; i < num_dec; ++i)
+    for (i = start_dec; i < end_dec; ++i)
     {
-      cnt = j*num_dec + i;
-      source.equatorialCoords.latitude = 
-        asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
-
+      cnt = j*count_dec + i - cnt_offset;
+      source.equatorialCoords.latitude = asin(-1. + (1. + 2.*i)/(REAL8)num_dec);
     }
   }
 }
