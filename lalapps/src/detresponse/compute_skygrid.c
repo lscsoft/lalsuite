@@ -12,9 +12,9 @@
 static const INT4 grid_lim = NUM_RA * NUM_DEC;
 static const INT4 dec_lim  = (NUM_DEC - 1)/2;
 
-static const double rad2deg = 180./M_PI;
+static const double rad2deg = 180./LAL_PI;
 static const double eps = 23.5;
-static const double vorb = 2.*M_PI*1.5e11/(365.25*24.*3600.);
+static const double vorb = 2.*LAL_PI*1.5e11/(365.25*24.*3600.);
 static const double clight = 2.998e8;
 
 static double vorbrel;
@@ -35,7 +35,7 @@ static double relval(double ra, double dec, int i, int nrelvals)
     
     latdet = 46.5;
     radearth = 6.38e6;
-    vrotrel = 2.*M_PI*radearth/(24.*3600.)/.997/clight*cos(latdet/rad2deg);
+    vrotrel = 2.*LAL_PI*radearth/(24.*3600.)/.997/clight*cos(latdet/rad2deg);
         
     numdays = 59.;
     phipinit = 180. - 34./365.25*360.;
