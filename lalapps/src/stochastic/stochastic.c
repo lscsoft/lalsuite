@@ -2146,7 +2146,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* loop over intervals */
   for (interLoop = 0; interLoop < numIntervals; interLoop++)
   {	
-    /* loop over segments */
+    /* loop over segments  */
     for (segLoop = 0; segLoop < segsInInt; segLoop++)
     {
       /* get segment start/end time */
@@ -2218,24 +2218,19 @@ INT4 main(INT4 argc, CHAR *argv[])
       responseOne->epoch = gpsCalibTime;
       responseTwo->epoch = gpsCalibTime;
 
-      /* copy to temporary storage */
+      /* get response function for current segment from temporary
+       * storage */
       for (i = 0; i < filterLength; i++)
       {
         responseOne->data->data[i] = respOne[segLoop]->data[i];
         responseTwo->data->data[i] = respTwo[segLoop]->data[i];
       }
 
+      /* get current segment from temporary storage */
       for (i = 0; i < segmentLength; i++)
       {
         segmentOne->data->data[i] = segOne[segLoop]->data[i];
         segmentTwo->data->data[i] = segTwo[segLoop]->data[i];
-      }
-
-      /* store in memory */
-      for (i = 0; i < segmentLength; i++)
-      {
-        segOne[segLoop]->data[i] = segmentOne->data->data[i];
-        segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
       }
 
       /* check if on middle segment and if we want to include this in
