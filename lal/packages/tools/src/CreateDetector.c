@@ -188,6 +188,12 @@ LALCreateDetector()
 \subsubsection*{Notes}
 
 \begin{itemize}
+\item The conventions in the \texttt{LALFrDetector} structure are an
+  extension of those used in version 4 of the frame specification
+  \cite{tools:LIGOVIRGO:2000} and do not agree with the conventions
+  used by LDAS, which are an anticipation of the yet-to-be-released
+  version 5 frame spec.  The \texttt{LALFrDetector} structure will
+  change once a final version 5 frame spec is available.
 \item If the location and response tensor information for a
 \texttt{LALDetector} are filled in by hand (e.g., for testing
 purposes), the \texttt{type} field should be set to
@@ -341,7 +347,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       $
       \left(
         \begin{array}{ccc}
-	0.2438740 &  -0.0990838 & -0.2325762 \\
+        0.2438740 &  -0.0990838 & -0.2325762 \\
         -0.0990838 &  -0.4478258 &   0.1878331 \\
         -0.2325762 &   0.1878331 &   0.2039518
         \end{array}
@@ -351,7 +357,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       $
       \left(
         \begin{array}{ccc}
-	 0.0968250 &  0.3657823 &   -0.1221373 \\
+         0.0968250 &  0.3657823 &   -0.1221373 \\
          0.3657823 &  -0.2229681 &   -0.2497174 \\
         -0.1221373 &  -0.2497174 &    0.1261431
         \end{array}
@@ -369,8 +375,8 @@ NRCSID( CREATEDETECTORC, "$Id$" );
          114.425\,\textrm{m})$
 \\ \hline
       $({\mathcal{A}}_X,\zeta_X)$
-	& $( 0,           1.23163347457)$
-	& $( 0,          2.02358883997)$
+        & $( 0,           1.23163347457)$
+        & $( 0,          2.02358883997)$
 \\ \hline
       $({\mathcal{A}}_Y,\zeta_Y)$
       & $( 0,           2.80242980137)$
@@ -407,7 +413,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       $
       \left(
         \begin{array}{ccc}
-	 0.1121397 & 0.3308421 & -0.1802193 \\
+         0.1121397 & 0.3308421 & -0.1802193 \\
          0.3308421 & 0.2177940 &  0.1537258 \\
         -0.1802193 & 0.1537258 & -0.3299337
         \end{array}
@@ -417,7 +423,7 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       $
       \left(
         \begin{array}{ccc}
-	-0.3537959 &  0.2734713 &  0.1095458 \\
+        -0.3537959 &  0.2734713 &  0.1095458 \\
          0.2734713 &  0.0115214 &  0.2049027 \\
          0.1095458 &  0.2049027 &  0.3422745
         \end{array}
@@ -435,8 +441,8 @@ NRCSID( CREATEDETECTORC, "$Id$" );
          0\,\textrm{m})$
 \\ \hline
       $({\mathcal{A}}_X,\zeta_X)$
-	& $( 0,          3.14159265359)$
-	& $( 0,          4.71238898038)$
+        & $( 0,          3.14159265359)$
+        & $( 0,          4.71238898038)$
 \\ \hline
       $({\mathcal{A}}_Y,\zeta_Y)$
       & $( 0,         4.71238898038)$
@@ -496,8 +502,8 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       LALDETECTORTYPE_IFODIFF,
       { "VIRGO Interferometer",
         10.50449661L, 43.63141447L, 51.884,
-	0.0,           1.23163347457,
-	0.0,           2.80242980137
+        0.0,           1.23163347457,
+        0.0,           2.80242980137
       }
     },
     { { 3.85630994953e+06L,   666598.956352L,   5.01964141692e+06L},
@@ -507,9 +513,9 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "GEO-600 Interferometer",
-	9.80719277L, 52.24514666L, 114.425,
-	0.0,          2.02358883997,
-	0.0,          0.377195321953
+        9.80719277L, 52.24514666L, 114.425,
+        0.0,          2.02358883997,
+        0.0,          0.377195321953
       }
     },
     { { -3.94640898771e+06L,  3.36625903242e+06L, 3.69915069189e+06L},
@@ -520,8 +526,8 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       LALDETECTORTYPE_IFODIFF,
       { "TAMA-300 Interferometer",
         139.53605556L,  35.67655556L,    90,
-	0.0,         3.14159265359,
-	0.0,         4.71238898038
+        0.0,         3.14159265359,
+        0.0,         4.71238898038
       }
     },
     { { -2.49064958399e+06L,  -4.65869968229e+06L,  3.56206411337e+06L},
@@ -532,8 +538,8 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       LALDETECTORTYPE_IFODIFF,
       { "Caltech-40 Interferometer",
         -118.13L,  34.17L,      0,
-	0.0,            4.71238898038,
-	0.0,            0.0
+        0.0,            4.71238898038,
+        0.0,            0.0
       }
     }
 };
