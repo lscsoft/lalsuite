@@ -8,8 +8,8 @@
 
 [condor]
 universe = standard
-datafind = /usr1/lcldsk/ldg-3.0/ldg-server/bin/LSCdataFind
-stochastic = @RINGEXECPATH@/lalapps_stochastic
+datafind = /ldcg/stow_pkgs/ldg-3.0/ldg/ldg-server/bin/LSCdataFind
+stochastic = @EXECPATH@/lalapps_stochastic
 
 [input]
 segments = S3_H1L1v03_nonplay_segs.txt

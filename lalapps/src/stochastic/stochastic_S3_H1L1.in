@@ -8,7 +8,7 @@
 
 [condor]
 universe = standard
-datafind = /usr1/lcldsk/ldg-3.0/ldg-server/bin/LSCdataFind
+datafind = /ldcg/stow_pkgs/ldg-3.0/ldg/ldg-server/bin/LSCdataFind
 stochastic = @EXECPATH@/lalapps_stochastic
 stopp = @EXECPATH@/lalapps_stopp
 
