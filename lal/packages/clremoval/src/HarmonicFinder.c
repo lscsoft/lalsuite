@@ -139,7 +139,7 @@ void LALHarmonicFinder (LALStatus  *status,
 
   INT4    i,j;
 
-  REAL4   devF,fL,fmax;
+  REAL4   devF,fL,myfmax;
   REAL4   Tobs;
   
   REAL8   sumpx,mean1,std1,mn2,sn2;
@@ -193,7 +193,7 @@ void LALHarmonicFinder (LALStatus  *status,
   kf = out->data;
 
   Tobs = fabs(1.0 / in2->deltaF );
-  fmax = fabs(in2->deltaF) *(n - 1.0);
+  myfmax = fabs(in2->deltaF) *(n - 1.0);
  
   /* create extra vectors */
   TRY(LALSCreateVector(status->statusPtr, &pxs,  n), status);
