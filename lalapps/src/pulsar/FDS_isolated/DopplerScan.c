@@ -90,6 +90,7 @@ void plotGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, 
 
 void freeGrid (DopplerScanGrid *grid);
 void printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const DopplerScanInit *init);
+const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
@@ -1447,3 +1448,27 @@ refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* refineCOMPLEX16Vector() */
+
+
+/*
+============
+va ['stolen' from Quake2 (GPL'ed)]
+
+does a varargs printf into a temp buffer, so I don't need to have
+varargs versions of all text functions.
+FIXME: make this buffer size safe someday
+============
+*/
+const char *va(const char *format, ...)
+{
+        va_list         argptr;
+        static char     string[1024];
+
+        va_start (argptr, format);
+        vsprintf (string, format,argptr);
+        va_end (argptr);
+
+        return string;
+}
+
+
