@@ -1083,7 +1083,7 @@ class ScienceData:
         seg.set_unused(0)
 
   def make_short_chunks_from_unused(
-    self,min_length,overlap,play=0,sl=0,excl_play=0):
+    self,min_length,overlap=0,play=0,sl=0,excl_play=0):
     """
     Create a chunk that uses up the unused data in the science segment
     min_length = the unused data must be greater than min_length to make a
