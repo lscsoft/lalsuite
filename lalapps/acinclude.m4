@@ -15,10 +15,10 @@ AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 AC_DEFUN([LALAPPS_WITH_LAL_PREFIX],
 [AC_ARG_WITH(
         lal_prefix,
-        [  --with-lal-prefix=LALPREFIX  location where to find LAL installation],
+        [  --with-lal-prefix=LAL_PREFIX  location where to find LAL installation],
         [ if test -n "${with_lal_prefix}"
           then
-            LALPREFIX="${with_lal_prefix}"
+            LAL_PREFIX="${with_lal_prefix}"
           fi
         ],)
 ])

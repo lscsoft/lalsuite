@@ -60,10 +60,10 @@ dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
 
 dnl LAL and LALSupport (required).
-if test -n "$LALPREFIX" ; then
-  PKG_CONFIG_PATH="$LALPREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
-  LAL_CFLAGS="-I$LALPREFIX/include"
-  LAL_LIBS="-L$LALPREFIX/lib -llalsupport -llal"
+if test -n "$LAL_PREFIX" ; then
+  PKG_CONFIG_PATH="$LAL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH"
+  LAL_CFLAGS="-I$LAL_PREFIX/include"
+  LAL_LIBS="-L$LAL_PREFIX/lib -llalsupport -llal"
 fi
 PKG_CHECK_MODULES(LAL, lal lalsupport, [ true ], [ false ])
 CPPFLAGS="$CPPFLAGS $LAL_CFLAGS"
