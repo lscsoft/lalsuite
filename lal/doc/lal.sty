@@ -1,0 +1,30 @@
+\renewcommand\bibname{References}
+\renewenvironment{thebibliography}[1]
+     {\section*{\bibname}%
+      \list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+\let\keepverbatim\verbatim
+\def\verbatim{\color{blue}\keepverbatim}
+\def\verb{\relax\ifmmode\hbox\else\leavevmode\null\fi
+  \bgroup
+    \color{blue}%
+    \verb@eol@error \let\do\@makeother \dospecials
+    \verbatim@font\@noligs
+    \@ifstar\@sverb\@verb}
+\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+%\def\tt{\ttfamily\color{blue}}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}

@@ -1,0 +1,145 @@
+\documentclass[oneside]{book}
+\usepackage{../lal,fancyhdr,epsfig,psfig,color,hyperref,makeidx}
+\includeonly{std,support,hello,factories,tdfilters}
+
+%define page size
+\setlength{\textheight}{9.0in}
+\setlength{\textwidth}{6.0in}
+\setlength{\topmargin}{-0.00in}
+\setlength{\oddsidemargin}{-0.25in}
+\setlength{\evensidemargin}{\oddsidemargin}
+\sloppy
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\bf\nouppercase\rightmark}
+\rhead{ \bf Pg \thepage}
+
+\makeindex
+
+\newfont{\lsdfont}{cmbx10 at 72pt}
+
+\begin{document}
+
+% \reversemarginpar
+% \let\marginpar\mparorig
+% \providecommand{\marginpar}[1]{\mbox{}\mparorig{\raggedleft\hspace{0pt}#1}}
+
+% The title page:
+\title{\sffamily\bfseries\Huge
+\textcolor{red}{\lsdfont L}AL
+\raisebox{-2.5ex}{\textcolor{green}{\lsdfont S}\hspace{-0.1em}oftware}
+\hspace{-2em}
+\raisebox{-0.5ex}{\textcolor{blue}{\lsdfont D}\hspace{-0.2em}ocumentation}}
+\author{\bf Members of the LSC}
+\maketitle
+
+
+
+% The table of contents.
+\tableofcontents
+
+\chapter*{Preface}
+\textbf{The LAL specification and style guide has precedence over any
+statements about programming practice stated in this document, period.}
+
+\part{Coding and Documentation Instructions}
+
+\chapter{Instructions for code documentation}
+\section{How to import code and comments from the source code to 
+your \LaTeX\ documentation}
+
+In addition to a knowledge of \LaTeX, there are only four additional
+instructions you need to know to extract a code fragment, a comment block, or
+a piece of \LaTeX\ source from your source-code files and insert it into your
+documentation file.  They are:
+\begin{verbatim}
+ <lalVerbatim file="FileName"> 
+ </lalVerbatim> 
+
+ <lalLaTeX file="FileName"> 
+ </lalLaTeX > 
+\end{verbatim}
+Use these commands (and the standard \LaTeX\ command \verb@\input{}@), changes
+in the in-line documentation of the source-code will be captured---exactly as
+they appear in the source---in the comprehensive manual.  This allows the
+programmers to simultaneously serve several difficult masters:
+\begin{description}
+\item[$\bullet$ ] 
+Produce a comprehensive, coherent manual of the entire software package.
+\vspace*{-0.05in}
+\item[$\bullet$ ] 
+Keep the primary source of the documentation close to the code.
+\item[$\bullet$] 
+Insure that changes in the code and comments are immediately and automatically
+captured in the comprehensive manual.
+\item[$\bullet$ ] 
+Use \LaTeX\ which is suitable for equation writing.
+\vspace*{-0.051in}
+\end{description}
+
+
+Using the first pair of instructions, everything between
+\texttt{<lalVerbatim file="FileName">} and \texttt{</lalVerbatim>} will be
+wrapped in a \LaTeX\ verbatim environment and written to the file
+\texttt{FileName.tex} for later insertion in the documentation.  The insertion
+can be done with the \LaTeX\ command \verb@\input{FileName}@.
+
+As an example, look at the code fragment in the source file 
+\texttt{packages/hello/src/LALHello.c}.
+\begin{verbatim}
+#include <stdio.h>
+#include "LALStdlib.h"
+#include "LALHello.h"
+
+/* <lalVerbatim file="LALHelloNRCSID"> */
+NRCSID( LALHELLOC, "$Id$" );
+/* </lalVerbatim> */
+\end{verbatim}
+When you run \texttt{make dvi} (this will be automated) in the package
+directory, a parser sifts the code file. It wraps what is in between
+\texttt{<lalVerbatim file="LALHelloNRCSID"> } and the \texttt{</lalVerbatim>}
+in the \LaTeX\ "verbatim environment", and writes the result to the file
+\texttt{LALHelloNRCSID.tex }.  This file can be put into the documentation
+with the \LaTeX\ command {\verb@\input{LALHelloNRCSID}@}. The result is: 
+\input{LALHelloNRCSID}
+The marginpar is the line number and file name of where the fragment came
+from.
+
+The second pair of commands (\texttt{<lalLaTeX file="FileName">} and the
+\texttt{</lalLaTeX>}) writes the intervening \LaTeX\ source to the file (no
+verbatim wrapping this time) for later insertion.
+
+\part{Documentation of the LAL packages}
+\include{std}
+\include{support}
+\include{hello}
+\include{factories}
+%\include{vectorops}
+%\include{utilities}
+\include{tdfilters}
+%\include{window}
+%\include{fft}
+%\include{timefreq}
+%\include{stochastic}
+%\include{framedata}
+%\include{comm}
+%\include{findchirp}
+%\include{pulsar}
+
+\part{Some Coding Details:}
+\chapter{The RCSID goes in every code file}
+In every code file (i.e., \texttt{file.h, file.c}) there is macro that looks
+like
+\input{LALHelloNRCSID}
+This macro assign a character variable (in this case \texttt{LALHELLOC} in the
+file \texttt{LALHello.c}) the string with the cvs-supplied revision numbers.
+The reason we use this macro is that it gives no "unused variable" warnings
+form the \texttt{.h}-files when the code is compiled with the \texttt{-Wall}
+option.
+
+\chapter{The status macro}
+
+\printindex
+
+\end{document}
