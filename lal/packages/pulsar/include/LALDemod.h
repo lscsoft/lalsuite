@@ -106,7 +106,7 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 #include <lal/LALBarycenter.h>
 
 #ifdef __cplusplus
-#extern "C" {
+extern "C" {
 #endif
 
 NRCSID (LALDEMODH, "$Id$"); 
