@@ -36,7 +36,6 @@ Suppose we would like to form a timestamp string for the current time.
 The following program would accomplish this:
 
 \begin{verbatim}
-#include <time.h>
 #include <lal/Date.h>
 int main(int argc, char *argv[])
 {

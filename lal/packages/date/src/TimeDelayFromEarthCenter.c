@@ -38,8 +38,9 @@ delay, then, is the amount of time it takes light to travel that
 projected distance.
 
 The GPS time for the detector is taken to be the time when the signal
-arrives at the center of the Earth.  As in Anderson, \emph{et al.}, we
-make this approximation as this makes little difference.
+arrives at the center of the Earth.  As in Anderson, \textit{et al.}
+\cite{ABCF:2000}, we make this approximation as this makes little
+difference.
 
 \subsubsection*{Uses}
 
@@ -75,10 +76,6 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
                              const DetTimeAndASource *p_det_time_and_source )
 { /* </lalVerbatim> */
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
-
-  /* a and b are WGS-84 ellipsoid parameters (semimajor and semiminor axes) */
-  const REAL8 a2 = LAL_AWGS84_SI * LAL_AWGS84_SI;
-  const REAL8 b2 = LAL_BWGS84_SI * LAL_BWGS84_SI;
 
   /* latitude and longitude for detector */
   REAL8 lat, lon;

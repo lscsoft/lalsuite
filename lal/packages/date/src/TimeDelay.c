@@ -23,7 +23,7 @@ detectors.
 
 This function computes the difference in time of arrival of a signal at two
 detectors from the same source.  The two detectors and the source are
-passed in a \verb@TwoDetectorsAndASource@ structure.  The time delay is
+passed in a \texttt{TwoDetectorsAndASource} structure.  The time delay is
 defined to be $\delta t = t_2 - t_1$ where $t_1$ is the time the signal
 arrives at the first detector and $t_2$ is the time the signal arrives at
 the second detector.
@@ -31,7 +31,7 @@ the second detector.
 
 \subsubsection*{Algorithm}
 
-TBA. See Anderson, \emph{et al.} in the mean time.
+TBA. See Anderson, \textit{et al.} \cite{ABCF:2000} in the mean time.
 
 Note that GPS time is passed with both the detectors.  The GPS time of the
 second detector is \emph{ignored}, and the GPS time for the first detector
@@ -76,28 +76,8 @@ LALTimeDelay( LALStatus                    *stat,
 { /* </lalVerbatim> */
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   
-  /* a and b are WGS-84 ellipsoid parameters (semimajor and semiminor axes) */
-  const REAL8 a2 = LAL_AWGS84_SI * LAL_AWGS84_SI;
-  const REAL8 b2 = LAL_BWGS84_SI * LAL_BWGS84_SI;
-
-  /* latitude and longitude for each detector */
-  REAL8 lat1, lon1;
-  REAL8 lat2, lon2;
-
-  /* cos(lat) and sin(lat) for each detector */
-  REAL8 cosLat1, sinLat1;
-  REAL8 cosLat2, sinLat2;
-
-    /* local radius of curvature at each detector */
-  REAL8 R1;
-  REAL8 R2;
-
-  /* radius of curvature plus height above ellipsoid for each detector */
-  REAL8 Rh1;
-  REAL8 Rh2;
-
   /* GMST of first detector, in radians */
-  REAL8 gmst1;
+  REAL8        gmst1;
   
   LALDate      date;
 
@@ -107,9 +87,7 @@ LALTimeDelay( LALStatus                    *stat,
   REAL8       sin_pol_angle;  /* sine of src polar angle */
   REAL8       ehat_src[3];    /* unit vector of source location */
 
-  /* location vectors for the two detectors in Earth-fixed frame */
-  REAL8 detLoc1[3];
-  REAL8 detLoc2[3];
+  /* displacement vector between the two detectors in Earth-fixed frame */
   REAL8 deltaLoc[3];
 
   /* loop counter */

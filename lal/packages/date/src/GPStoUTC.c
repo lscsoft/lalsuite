@@ -87,19 +87,6 @@ int main(int argc, char *argv[])
 
 NRCSID (GPSTOUTCC, "$Id$");
 
-#ifndef _REENTRANT
-#    define _REENTRANT
-#endif
-
-#ifndef __USE_POSIX
-#    define __USE_POSIX
-#endif
-
-/* The __USE_POSIX #define above is supposed to give us the
- * prototype for gmtime_r and asctime_r in <time.h>, but it
- * DOESN'T */
-#include <time.h>
-
 #include <lal/Date.h>
 #include "date_value.h"
 
