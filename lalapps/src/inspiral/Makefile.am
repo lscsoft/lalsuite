@@ -35,7 +35,7 @@ lalapps_inspiral_pipe: inspiral_pipe.in
 lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2
 
-pkgdata_DATA = BNSMasses.dat inspsrcs.dat
+pkgdata_DATA = BNSMasses.dat inspsrcs.dat inspiral_pipe.ini s2_dag.ini
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(SIRESRC) \
