@@ -354,7 +354,7 @@ LALFinalizeExchange(
     ExchParams **exchParams
     )
 { /* </lalVerbatim> */
-  INT2       magic = 0xA505; /* A SOS */
+  INT2       magic = (INT2)0xA505; /* A SOS */
   INT2Vector goodbye;
 
   INITSTATUS( status, "LALFinalizeExchange", EXCHANGEC );
