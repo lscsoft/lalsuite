@@ -343,7 +343,8 @@ typedef enum {
    t01,
    t02,
    t03,
-   t04
+   t04,
+   psi0psi3
  } InputMasses;
 /* </lalVerbatim>  */
 

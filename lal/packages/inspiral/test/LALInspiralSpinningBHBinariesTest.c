@@ -103,7 +103,7 @@ int main (void) {
    params.Theta = 0.;
    params.ieta=1; 
    params.mass1=10.0; 
-   params.mass2=10.0; 
+   params.mass2=1.0; 
    params.startTime=0.0; 
    params.startPhase=0.0;
    params.fLower=40.0; 

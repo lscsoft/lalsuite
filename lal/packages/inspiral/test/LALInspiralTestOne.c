@@ -19,6 +19,7 @@ and {\tt Order}.
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
+#include <xlocale.h>
 INT4 lalDebugLevel=0;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
@@ -45,21 +46,21 @@ int main (void) {
    static REAL8 dt;
    UINT4 n, i;
 
-   params.approximant=TaylorT3;
+   params.approximant=EOB;
    params.OmegaS = 0.;
    params.Theta = 0.;
    params.ieta=1; 
-   params.mass1=5; 
-   params.mass2=5; 
+   params.mass1=10; 
+   params.mass2=1.4; 
    params.startTime=0.0; 
    params.startPhase=0.;
    params.fLower=40.0; 
    params.fCutoff=2000.0;
    params.tSampling=4096.0;
-   params.order=6;
+   params.order=4;
    params.signalAmplitude=1.0;
-   params.nStartPad=0;
-   params.nEndPad=0;
+   params.nStartPad=1000;
+   params.nEndPad=1200;
    params.massChoice=m1Andm2;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
    dt = 1./params.tSampling;
@@ -71,13 +72,11 @@ int main (void) {
    LALCreateVector(&status, &signal1, n);
    LALCreateVector(&status, &signal2, n);
 
-   /*
    params.psi0 = 72639.;
    params.psi3 = -768.78;
    params.alpha = 0.766;
    params.fendBCV = 331.4;
    params.approximant = BCV;
-   */
 			   
    if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV) 
    {

@@ -76,17 +76,22 @@ LALBCVWaveform(
   Fiveby3 = 5./3.;
 
   df = params->tSampling/(REAL8)n;
-  totalMass = params->totalMass * LAL_MTSUN_SI;
   alpha = params->alpha / pow(params->fendBCV, Twoby3);
 
+  /*
+  totalMass = params->totalMass * LAL_MTSUN_SI;
   shift = LAL_TWOPI * (params->tC - (float)n /params->tSampling 
 		  - params->startTime - params->nStartPad/params->tSampling);
-
+  */
+  shift = -LAL_TWOPI * (params->nStartPad/params->tSampling);
   phi = - params->startPhase + LAL_PI/4.;
+  /*
   amp0 = params->signalAmplitude * pow(5./(384.*params->eta), 0.5) * 
 	   totalMass * pow(LAL_PI * totalMass,-Sevenby6) * 
 	   params->tSampling * (2. / signal->length); 
 
+   */
+  amp0 = 1.0L;
   /*  Computing BCV waveform */
 
   signal->data[0] = 0.0;
