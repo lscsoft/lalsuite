@@ -41,10 +41,10 @@ class InspiralPipeline:
     # compute the chunk and overlap length in seconds
     numpoints = int(self.config['datacond']['segment-length'])
     numseg = int(self.config['datacond']['number-of-segments'])
-    overlap = int(self.config['datacond']['segment-overlap'])
+    overlap = int(self.config['inspiral']['segment-overlap'])
     srate = int(self.config['datacond']['sample-rate'])
     self.chunk = (numpoints * numseg - ( numseg - 1 ) * overlap ) / srate
-    self.overlap = int(self.config['datacond']['segment-overlap']) / srate
+    self.overlap = overlap / srate
 
   def parsesegs(self):
     self.segments = []
