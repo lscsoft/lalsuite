@@ -427,13 +427,14 @@ int main( int argc, char *argv[] )
     REAL4 col_seven = 0;
     REAL4 col_eight = 0;
     REAL4 col_nine = 0;
+    REAL4 col_ten = 0;
     INT4 num_columns = 0;
 
     
     /* effective distance not required */
-    num_columns =  sscanf( line, "%lf %f %f %f %f %f %f %f %f\n", &trig_time,
-	  &snr, &chisq, &mtot, &eta, 
-	  &col_six, &col_seven, &col_eight, &col_nine ); 
+    num_columns =  sscanf( line, "%lf %f %f %f %f %f %f %f %f %f\n", 
+	&trig_time, &snr, &chisq, &mtot, &eta, 
+	&col_six, &col_seven, &col_eight, &col_nine, &col_ten ); 
     
     
     if( num_columns >= 5 )
@@ -449,7 +450,7 @@ int main( int argc, char *argv[] )
       exit ( 1 );
     }
 
-    if( num_columns == 6 )
+    if( num_columns == 6 || num_columns == 10)
     {
       if ( vrbflg )
       {
