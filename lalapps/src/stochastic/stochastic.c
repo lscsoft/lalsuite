@@ -61,13 +61,6 @@ RCSID("$Id$");
 /* window duration for psd estimation */
 #define PSD_WINDOW_DURATION 4
 
-/* system error checking */
-extern int errno;
-
-/* variables for getopt options parsing */
-extern char *optarg;
-extern int optind;
-
 /* flags for getopt_long */
 static int middle_segment_flag;
 static int inject_flag;
