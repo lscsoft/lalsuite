@@ -272,8 +272,8 @@ void LALPeriodo2PSDrng (LALStatus  *status,
    
     /* calling Mohanty's function. It is not LAL compliant */
     /*rngmed(data, length, blockSize, medians); */
-    
-    TRY( LALDRunningMedian(status->statusPtr,
+    /* this now calls Bernd's functions since other one is buggy */
+    TRY( LALDRunningMedian2(status->statusPtr,
     			 &mediansV, &inputV, rngmedPar), status);
     
 
