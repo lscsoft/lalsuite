@@ -521,8 +521,8 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 
 	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
 
-	LAL_CALL(LALGPStoINT8(stat, start, &searchSummary->in_start_time), stat);
-	LAL_CALL(LALGPStoINT8(stat, end, &searchSummary->in_end_time), stat);
+	LAL_CALL(LALGPStoINT8(stat, start, &searchSummary->out_start_time), stat);
+	LAL_CALL(LALGPStoINT8(stat, end, &searchSummary->out_end_time), stat);
 
 	if(fpout)
 		fprintf(fpout, "%lld  %lld  %lld\n", *start, *end, *end - *start);
