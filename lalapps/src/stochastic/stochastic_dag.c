@@ -2200,23 +2200,22 @@ void readDataPair(LALStatus *status,
   /* initial data structures */
   dataStream1.epoch =  dataStream2.epoch = bufferStartTime;
 
+  /* set resample parameters */
+  resampleParams.deltaT = 1.0 / (REAL8)resampleRate;
+  resampleParams.filterType = defaultButterworth;
+
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for raw data streams...\n");
   }
 
-  /* allocate memory */
-  dataStream1.data = dataStream2.data = NULL;
+  /* allocate memory for first raw stream*/
+  dataStream1.data = NULL;
   LALSCreateVector( status->statusPtr, &(dataStream1.data), \
-      sampleRate * (params->duration + (2 * buffer)));
-  CHECKSTATUSPTR (status);
-  LALSCreateVector( status->statusPtr, &(dataStream2.data), \
       sampleRate * (params->duration + (2 * buffer)));
   CHECKSTATUSPTR (status);
   memset( dataStream1.data->data, 0, \
       dataStream1.data->length * sizeof(*dataStream1.data->data));
-  memset( dataStream2.data->data, 0, \
-      dataStream2.data->length * sizeof(*dataStream2.data->data));
 
   if (vrbflg)
   {
@@ -2240,7 +2239,34 @@ void readDataPair(LALStatus *status,
   LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream1, &frChanIn1, \
       frStream1);
   CHECKSTATUSPTR (status);
-  
+
+  /* resample */
+  if (resampleRate != sampleRate)
+  {
+    if (vrbflg)
+    {
+      fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
+    }
+
+    /* resample */
+    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream1, \
+        &resampleParams);
+    CHECKSTATUSPTR( status );
+  }
+
+  if (vrbflg)
+  {
+    fprintf(stdout, "Allocating memory for second raw data stream...\n");
+  }
+
+  /* allocate memory for second raw stream */
+  dataStream2.data = NULL;
+  LALSCreateVector(status->statusPtr, &(dataStream2.data), \
+      sampleRate * (params->duration + (2 * buffer)));
+  CHECKSTATUSPTR( status );
+  memset(dataStream2.data->data, 0, \
+      dataStream2.data->length * sizeof(*dataStream2.data->data));
+
   if (strcmp(params->frameCache1, params->frameCache2) == 0)
   {
     if (vrbflg)
@@ -2252,7 +2278,6 @@ void readDataPair(LALStatus *status,
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
     CHECKSTATUSPTR (status);
-
     LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, &frChanIn2, \
         frStream1);
     CHECKSTATUSPTR (status);
@@ -2318,14 +2343,7 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
     }
 
-    /* set resample parameters */
-    resampleParams.deltaT = 1./(REAL8)resampleRate;
-    resampleParams.filterType = defaultButterworth;
-
     /* resample */
-    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream1, \
-        &resampleParams);
-    CHECKSTATUSPTR (status);
     LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2, \
         &resampleParams);
     CHECKSTATUSPTR (status);
