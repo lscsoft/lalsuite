@@ -33,7 +33,7 @@ LALTwoInterfFindChirpSPDataInit (
   UINT4                                        j;
   UINT4                                        k;
   REAL4                                       *amp;
-  FindChirpSPDataParams                       *dataParamPtr;
+  FindChirpDataParams                         *dataParamPtr;
   const REAL4                                  exponent = -7.0/6.0;
   TwoInterfFindChirpSPDataParamsVector        *vectorPtr;
 
@@ -83,8 +83,8 @@ LALTwoInterfFindChirpSPDataInit (
   vectorPtr->length = params->numDetectors;
   
   /* create vector sub-structures */
-  dataParamPtr = vectorPtr->data = (FindChirpSPDataParams *)
-    LALCalloc( 1, vectorPtr->length*sizeof(FindChirpSPDataParams) );
+  dataParamPtr = vectorPtr->data = (FindChirpDataParams *)
+    LALCalloc( 1, vectorPtr->length*sizeof(FindChirpDataParams) );
   if ( ! dataParamPtr )
   {
     ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
@@ -211,7 +211,7 @@ LALTwoInterfFindChirpSPDataFinalize (
 {
   UINT4                                        i;
   TwoInterfFindChirpSPDataParamsVector        *vectorPtr;
-  FindChirpSPDataParams                       *dataParamPtr;
+  FindChirpDataParams                         *dataParamPtr;
 
   INITSTATUS( status, "LALTwoInterfFindChirpSPDataFinalize", TWOINTERFFINDCHIRPSPDATAC );
   ATTATCHSTATUSPTR( status );
@@ -297,7 +297,7 @@ LALTwoInterfFindChirpSPData (
 /* </lalVerbatim> */
 {
   UINT4                                  n; 
-  FindChirpSPDataParams                 *params[2];
+  FindChirpDataParams                   *params[2];
   FindChirpSegmentVector                *fcSegVecPtr[2];
   DataSegmentVector                     *dataSegVecPtr[2];
 

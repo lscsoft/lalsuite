@@ -497,7 +497,7 @@ typedef struct
 tagTwoInterfFindChirpSPDataParamsVector
 {
   UINT4                         length;
-  FindChirpSPDataParams        *data;
+  FindChirpDataParams          *data;
 }
 TwoInterfFindChirpSPDataParamsVector;
 #if 0

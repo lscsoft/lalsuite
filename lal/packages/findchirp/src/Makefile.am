@@ -17,7 +17,7 @@ TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \
   TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c \
   TwoInterfFindChirpChisq.c
 
-libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES)
+libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
