@@ -821,7 +821,7 @@ l1_chunks_analyzed = []
 
 print "setting up jobs to filter L1 data...",
 sys.stdout.flush()
-(prev_df,l1_chunks_analyzed) = analyze_ifo(l1_data,'L1',l1_single_data,
+(prev_df,l1_chunks_analyzed) = analyze_ifo(l1_data,'L1',l1_data_to_do,
   tmplt_job,insp_job,df_job,l1_snr,l1_chisq,pad,prev_df,dag,usertag=None)
 print "done"
   
