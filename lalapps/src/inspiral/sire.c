@@ -101,6 +101,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
 }
 
 int sortTriggers = 0;
+DataType dataType;
 
 int main( int argc, char *argv[] )
 {
@@ -126,7 +127,6 @@ int main( int argc, char *argv[] )
   INT4 hardware = 0;
   int  enableTrigStartTime = 1;
 
-  extern DataType  dataType;
   int j;
   FILE *fp = NULL;
   glob_t globbedFiles;
