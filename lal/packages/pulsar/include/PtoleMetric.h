@@ -91,8 +91,11 @@ metric components are evaluated. These are dimensionless.
 
 \item[\texttt{REAL4 maxFreq}] The maximum frequency to be searched, in Hz.
 
-\item[\texttt{LALFrDetector site}] The detector site, used only for its
+\item[\texttt{LALDetector *site}] The detector site, used only for its
 latitude and longitude.
+
+\item[\texttt{EphemerisData *ephemeris}] Not used for the Ptolemaic
+approximation, this is for compatibility with other metrics.
 
 \end{description}
 
