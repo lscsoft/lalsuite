@@ -749,9 +749,12 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "candle m = %e\ncandle mu = %e\n"
             "candle.rhosq = %e\nchan.deltaT = %e\n"
             "numPoints = %d\nfcSegVec->data->segNorm = %e\n"
-            "candleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n",
+            "candleTmpltNorm = %e\ncandle.effDistance = %e Mpc\n"
+            "candle.sigmasq = %e\n",
             m, mu, candle.rhosq, chan.deltaT, numPoints, 
-            fcSegVec->data->segNorm, candleTmpltNorm, candle.effDistance );
+            fcSegVec->data->segNorm, candleTmpltNorm, candle.effDistance,
+            candle.sigmasq );
+        fflush( stdout );
       }
     }
   
