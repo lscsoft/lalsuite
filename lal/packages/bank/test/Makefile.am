@@ -33,6 +33,6 @@ InspiralSpinBankwNDTemplateBankTest_LDADD = $(top_builddir)/packages/support/src
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest InspiralSpinBankwNDTemplateBankTest
 EXTRA_DIST = CoarseTest.par demo 
-MOSTLYCLEANFILES = .dvi-dep *.out
+MOSTLYCLEANFILES = .dvi-dep *.out plot.dat
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
