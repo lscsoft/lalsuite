@@ -100,14 +100,6 @@ char *get_next_line( char *line, size_t size, FILE *fp )
   return s;
 }
 
-/* range of data to analyze */
-enum
-{
-  undefined, 
-  play_only, 
-  not_play, 
-  all_data 
-} useData = undefined;
 int sortTriggers = 0;
 
 int main( int argc, char *argv[] )
@@ -134,6 +126,7 @@ int main( int argc, char *argv[] )
   INT4 hardware = 0;
   int  enableTrigStartTime = 1;
 
+  extern DataType  dataType;
   int j;
   FILE *fp = NULL;
   glob_t globbedFiles;
@@ -216,11 +209,11 @@ int main( int argc, char *argv[] )
     /* getopt arguments */
     static struct option long_options[] = 
     {
-      {"verbose",                 no_argument,            &vrbflg,         1 },
-      {"sort-triggers",           no_argument,            &sortTriggers,   1 },
-      {"playground-only",         no_argument,    (int *) &useData, play_only},
-      {"exclude-playground",      no_argument,    (int *) &useData,  not_play},
-      {"all-data",                no_argument,    (int *) &useData,  all_data},
+      {"verbose",             no_argument,           &vrbflg,              1 },
+      {"sort-triggers",       no_argument,     &sortTriggers,              1 },
+      {"playground-only",     no_argument, (int *) &dataType, playground_only},
+      {"exclude-playground",  no_argument, (int *) &dataType,    exclude_play},
+      {"all-data",            no_argument, (int *) &dataType,        all_data},
       {"help",                    no_argument,            0,              'h'},
       {"debug-level",             required_argument,      0,              'z'},
       {"user-tag",                required_argument,      0,              'Z'},
@@ -560,9 +553,9 @@ int main( int argc, char *argv[] )
       LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
-  switch ( useData )
+  switch ( dataType )
   {
-    case play_only:
+    case playground_only:
       if ( vrbflg )
         fprintf( stdout, "using data from playground times only\n" );
       LALSnprintf( procparams.processParamsTable->program, 
@@ -575,13 +568,13 @@ int main( int argc, char *argv[] )
           LIGOMETA_TYPE_MAX, " " );
       break;
       
-    case not_play:
+    case exclude_play:
       if ( vrbflg )
         fprintf( stdout, "excluding all triggers in playground times\n" );
       LALSnprintf( procparams.processParamsTable->program, 
           LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
       LALSnprintf( procparams.processParamsTable->param,
-          LIGOMETA_PARAM_MAX, "--exclude-playground" );
+          LIGOMETA_PARAM_MAX, "--exclude-play" );
       LALSnprintf( procparams.processParamsTable->type, 
           LIGOMETA_TYPE_MAX, "string" );
       LALSnprintf( procparams.processParamsTable->value, 
@@ -647,7 +640,7 @@ int main( int argc, char *argv[] )
     }
 
     /* discard all injection events that are not in the data we want */
-    if ( useData != all_data )
+    if ( dataType != all_data )
     {
       numSimDiscard = 0;
 
@@ -663,8 +656,8 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALGPSIsPlayground( &stat, &isPlayground, 
               &(thisSimEvent->geocent_end_time)), &stat );
 
-        if ( (useData == play_only && isPlayground) || 
-            (useData == not_play && ! isPlayground) )
+        if ( (dataType == playground_only && isPlayground) || 
+            (dataType == exclude_play && ! isPlayground) )
         {
           /* store the head of the linked list */
           if ( ! simEventHead ) simEventHead = thisSimEvent;
@@ -872,13 +865,13 @@ int main( int argc, char *argv[] )
     triggerTimeNS = outEndNS - outStartNS;
 
     /* check for events and playground */
-    if ( useData != all_data )
+    if ( dataType != all_data )
     {
       LAL_CALL( LALPlaygroundInSearchSummary( &stat, searchSummaryTable,
             &inPlay, &outPlay ), &stat );
       LAL_CALL( LALGPStoINT8( &stat, &outPlayNS, &outPlay ), &stat );
 
-      if ( useData == play_only )
+      if ( dataType == playground_only )
       {
         if ( outPlayNS )
         {
@@ -898,7 +891,7 @@ int main( int argc, char *argv[] )
           continue;
         }
       }
-      else if ( useData == not_play )
+      else if ( dataType == exclude_play )
       {
         /* increment the total trigger time by the out time minus */
         /* the time that is in the playground                     */
@@ -987,9 +980,9 @@ int main( int argc, char *argv[] )
         LAL_CALL( LALGPSIsPlayground( &stat, &isPlay, &(thisEvent->end_time) ),
             &stat );
 
-        if ( (useData == all_data || 
-            (useData == play_only && isPlay) ||
-            (useData == not_play && ! isPlay))
+        if ( (dataType == all_data || 
+            (dataType == playground_only && isPlay) ||
+            (dataType == exclude_play && ! isPlay))
             && ( snrStar < 0 || thisEvent->snr > snrStar) )
         {
           /* keep the trigger and increment the count of triggers */
@@ -1456,12 +1449,12 @@ int main( int argc, char *argv[] )
     /* write out a summary file */
     fp = fopen( summFileName, "w" );
 
-    switch ( useData )
+    switch ( dataType )
     {
-      case play_only:
+      case playground_only:
         fprintf( fp, "using data from playground times only\n" );
         break;
-      case not_play:
+      case exclude_play:
         fprintf( fp, "excluding all triggers in playground times\n" );
         break;
       case all_data:
