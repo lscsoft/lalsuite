@@ -8,7 +8,8 @@ $Id$
 \subsection{Module \texttt{ReadNoiseSpectrum.c}}
 \label{ss:ReadNoiseSpectrum.c}
 
-Reads in various noise spectra from data files provided with LAL.
+Function to read in noise spectrum from a formatted ascii file and return the 
+amplitude noise spectrum in $\textrm{strain}/\sqrt{\textrm{Hz}}$.
 
 \subsubsection*{Prototypes}
 \input{ReadNoiseSpectrumCP}
@@ -17,9 +18,20 @@ Reads in various noise spectra from data files provided with LAL.
 \subsubsection*{Description}
 
 \verb@LALReadNoiseSpectrum()@ fills the contents of the REAL4FrequencySeries
-\verb@spectrum@ from data read from data files.  
+\verb@spectrum@ from data read from formatted ascii file with name \verb@fname@.
+The ascii file should have a header (greater than or equal to one line) which is
+indicated by a $\#$ at the start of the line.   The first line of the file must
+contain the number of points at which the spectrum is sampled.  If the spectrum 
+is sampled at 500 different points,  then the first line would be
+\begin{verbatim}
+    # npoints=500   
+\end{verbatim}
+Replace 500 by the number of sample points in your particular data. 
 
-The function reads in ......
+The REAL4FrequencySeries \verb@spectrum@ should be allocated before calling the 
+routine which uses the \verb@length@ and metadata information to determine the 
+evenly sampled output that is reqruired.   The function does nearest neighbor 
+interpolation to get the points in the outpu frequency series.
 
 \subsubsection*{Uses}
 \begin{verbatim}

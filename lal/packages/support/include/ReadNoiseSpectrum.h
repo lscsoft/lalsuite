@@ -1,3 +1,35 @@
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: ReadNoiseSpectrum.h
+ *
+ * Author: Brady, P. R.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
+
+#if 0
+<lalVerbatim file="ReadNoiseSpectrumHV">
+Author: Brady, P. R. 
+$Id$
+</lalVerbatim> 
+<lalLaTeX>
+\section{Header \texttt{ReadNoiseSpectrum.h}}
+\label{s:ReadNoiseSpectrum.h}
+
+Provides function to read in a file containing a possibly unequally sampled 
+noise amplitude spectrum ($\textrm{strain}/\sqrt(\textrm{Hz})$) and return as
+a frequency series.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/ReadNoiseSpectrum.h>
+\end{verbatim}
+
+</lalLaTeX>
+#endif
+
 #ifndef _READNOISESPECTRUMH_H
 #define _READNOISESPECTRUMH_H
 
@@ -34,7 +66,18 @@ NRCSID (READNOISESPECTRUMH, "$Id$");
 
 #define LALREADNOISESPECTRUM_MAXLINELENGTH 2048
 
-void LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fname);
+void LALReadNoiseSpectrum(
+    LALStatus *stat, 
+    REAL4FrequencySeries *spectrum, 
+    CHAR *fname
+    );
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{ReadNoiseSpectrumHV}}
+\newpage\input{ReadNoiseSpectrumC}
+</lalLaTeX> */
+#endif
 
 #ifdef  __cplusplus
 #pragma {
