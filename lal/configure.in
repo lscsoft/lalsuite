@@ -93,7 +93,7 @@ if test "$GCC" = yes; then
   CFLAGS="$CFLAGS $lal_gcc_flags"
 fi
 
-AC_OUTPUT( [ Makefile                               \
+AC_OUTPUT([Makefile                               \
              doc/Makefile                           \
              doc/laldoc/Makefile                    \
              doc/laldoc/ldoc-pkg.sh                 \
@@ -227,5 +227,5 @@ AC_OUTPUT( [ Makefile                               \
              packages/tracksearch/include/Makefile  \
              packages/tracksearch/src/Makefile      \
              packages/tracksearch/test/Makefile     \
-           ], [ chmod +x doc/laldoc/ldoc-pkg.sh ] )
+           ],[chmod +x doc/laldoc/ldoc-pkg.sh])
 
