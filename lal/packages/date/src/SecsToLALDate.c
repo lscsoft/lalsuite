@@ -148,8 +148,7 @@ LALSecsToLALDate(LALStatus  *status,
     sec = fmod(min * (REAL8)SECS_PER_MIN, (REAL8)SECS_PER_MIN);
 
     /*
-     * Set the non-required fields to zero, to fix problem with
-     * strftime(3c) in DateString().
+     * Set the non-required fields to zero
      */
     date->unixDate.tm_mday = 0;
     date->unixDate.tm_mon  = 0;

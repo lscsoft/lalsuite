@@ -115,13 +115,37 @@ typedef enum
   MST_RAD,       /* radians */
 } LALMSTUnits;
 
+/* <lalLaTeX>
+\subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
+\index{\texttt{LALLeapSecAccuracy}}
+
+This enumerated type is used as a parameter for \texttt{LALUtime()} to
+specify if complete accuracy is required in use of leap seconds.  The
+allowed values are:
+
+\medskip\noindent
+\begin{tabular}{ll}
+  \verb@LALLEAPSEC_LOOSE@ & may miss leap seconds \\
+  \verb@LALLEAPSEC_STRICT@ & require all leap seconds
+\end{tabular}
+\bigskip
+
+</lalLaTeX> */
+typedef enum
+{
+  LALLEAPSEC_LOOSE,
+  LALLEAPSEC_STRICT
+} LALLeapSecAccuracy;
+    
+
 
 /* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALUnixDate}}
 \index{\texttt{LALUnixDate}}
 
-This structure is just the standard Unix \texttt{tm} structure.
+This structure is just the standard Unix \texttt{tm} structure.  We shall
+{\em always} ignore the daylight savings time field, \texttt{tm_isdst}.
 
 </lalLaTeX> */
 
@@ -195,46 +219,16 @@ LALTimeInterval;
 /* <lalLaTeX>
 
 
-\subsubsection{Structure \texttt{LALTimezone}}
-\index{\texttt{LALTimezone}}
-
-This structure is used for storing information about time zones.  The
-fields are:
-
-\begin{description}
-\item[\texttt{INT4 secondsWest}] Seconds West of UTC (Greenwich); default 0
-\item[\texttt{INT4 dst}] Daylight Savings Time correction to apply; default 0
-\end{description}
-
-</lalLaTeX> */
-
-/*
- * Encode timezone information
- */
-typedef struct
-tagLALTimezone
-{
-    INT4 secondsWest; /* seconds West of UTC; default 0 */
-    INT4 dst;         /* Daylight Savings Time correction to apply; default
-                       * 0 */
-}
-LALTimezone;
-
-/* <lalLaTeX>
-
-
 \subsubsection{Structure \texttt{LALDate}}
 \index{\texttt{LALDate}}
 
-This structure is an extension of \texttt{LALUnixDate} to include
-residual nanosecond information and timezone information.  The fields
-are:
+This structure is an extension of \texttt{LALUnixDate} to include residual
+nanosecond information.  The fields are:
 
 \begin{description}
 \item[\texttt{LALUnixDate unixDate}] Unix date in \texttt{struct tm}
   format 
 \item[\texttt{INT4 residualNanoSeconds}] Residual nanoseconds
-\item[\texttt{LALTimezone timezone}] Timezone information
 \end{description}
 </lalLaTeX> */
 
@@ -246,7 +240,6 @@ tagLALDate
 {
     LALUnixDate unixDate;
     INT4        residualNanoSeconds; /* residual nanoseconds */
-    LALTimezone timezone;            /* timezone information */
 }
 LALDate;
 
@@ -345,9 +338,9 @@ void LALGPStoU(LALStatus*,
 \newpage\input{UtimeC}
 </lalLaTeX> */
 
-void LALUtime ( LALStatus           *status,
-                LALDate             *utc,
-                const LIGOTimeUnix  *unixtime);
+void LALUtime ( LALStatus                *status,
+                LALDate                  *utc,
+                const LIGOTimeUnix       *unixtime );
 
 /* <lalLaTeX>
 \newpage\input{DateStringC}

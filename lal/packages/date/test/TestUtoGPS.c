@@ -2,6 +2,7 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 
+
 /* $Id$ */
 
 extern char *tzname[2];
@@ -84,7 +85,7 @@ testunixtime(LALStatus *status, const LIGOTimeUnix *time1)
     LIGOTimeUnix tmp;
 
     INITSTATUS (status, "testunixtime", TESTUTOGPSC);
-    
+
     tmp.unixSeconds     = time1->unixSeconds;
     tmp.unixNanoSeconds = time1->unixNanoSeconds;
     
@@ -96,6 +97,7 @@ testunixtime(LALStatus *status, const LIGOTimeUnix *time1)
     printone(status, &tmp);
     printf("           |            |                             |                             |         \n");
 
+    
     RETURN (status);
 }
         
@@ -109,7 +111,7 @@ main(int argc, char *argv[])
     LALDate      date;
     time_t       now;
     CHARVector  *timestamp;
-    time_t      tmptime;
+    time_t       tmptime;
     static LALStatus status;
 
 
@@ -136,7 +138,7 @@ main(int argc, char *argv[])
 
     printf("Current time:\t");
 
-    time(&tmptime);
+    tmptime = time(NULL);
     unixtime.unixSeconds = tmptime;
 
     printf("unixtime = %13d;\t\t", unixtime.unixSeconds);
@@ -146,15 +148,16 @@ main(int argc, char *argv[])
     printf("gpstime = %13d\n", gpstime.gpsSeconds);
     printf("\n");
 
-
-    time(&tmptime);
+    tmptime = time(NULL);
+    fprintf(stderr, "FOO 1\n");
     unixtime.unixSeconds = tmptime;
+    fprintf(stderr, "FOO 2\n");
     unixtime.unixNanoSeconds = 0;
+    fprintf(stderr, "FOO 3\n");
     LALUtime(&status, &date, &unixtime);
+    fprintf(stderr, "FOO 4\n");
     LALDateString(&status, timestamp, &date);
-    /*
-    printf("Current UTC time: %s\n", timestamp->data);
-    */
+    fprintf(stderr, "FOO 5\n");
 
     printf("Various times, some which include leap second - look for '60' in the seconds field of the time:\n\n");
 
@@ -178,6 +181,8 @@ main(int argc, char *argv[])
     unixtime.unixSeconds = 784880277;
     testunixtime(&status, &unixtime);
     unixtime.unixSeconds = 911110677;
+    testunixtime(&status, &unixtime);
+    unixtime.unixSeconds = time(NULL);
     testunixtime(&status, &unixtime);
 
     return 0;

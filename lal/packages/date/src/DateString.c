@@ -82,12 +82,12 @@ LALDateString (LALStatus     *status,
                CHARVector    *timestamp,
                const LALDate *date)
 { /* </lalVerbatim> */
-  char tmpmon[2];
-  char tmpmday[2];
-  char tmphour[2];
-  char tmpmin[2];
-  char tmpsec[2];
-  char tmpwday[3];
+  CHAR tmpmon[3];
+  CHAR tmpmday[3];
+  CHAR tmphour[3];
+  CHAR tmpmin[3];
+  CHAR tmpsec[3];
+  CHAR tmpwday[4];
   
   INITSTATUS (status, "LALDateString", DATESTRINGC);
 
@@ -98,15 +98,9 @@ LALDateString (LALStatus     *status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
   /*
-   * Check pointer to output variable.
-   */
-  ASSERT (timestamp != (CHARVector *)NULL, status,
-          DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-
-  /*
    * Check that timestamp buffer is large enough
    */
-  ASSERT (timestamp->length >= 26, status,
+  ASSERT (timestamp->length >= 32, status,
           DATEH_EBUFFTOOSMALL, DATEH_MSGEBUFFTOOSMALL);
 
   /*
@@ -117,35 +111,39 @@ LALDateString (LALStatus     *status,
            "%Y-%m-%d %H:%M:%S UTC %a", &(date->unixDate));
   */
 
-
   /*
    * AVOID STRFTIME() since it causes seg faults on Solaris.  We give
    * the locale-specific day name.
    */
-  if (date->unixDate.tm_mon >= 9)
+  if (date->unixDate.tm_mon >= 10) {
     sprintf(tmpmon, "%2d", date->unixDate.tm_mon + 1);
-  else
+  } else {
     sprintf(tmpmon, "0%1d", date->unixDate.tm_mon + 1);
+  }
 
-  if (date->unixDate.tm_mday >= 10)
+  if (date->unixDate.tm_mday >= 10) {
     sprintf(tmpmday, "%2d", date->unixDate.tm_mday);
-  else
+  } else {
     sprintf(tmpmday, "0%1d", date->unixDate.tm_mday);
+  }
 
-  if (date->unixDate.tm_hour >= 10)
+  if (date->unixDate.tm_hour >= 10) {
     sprintf(tmphour, "%2d", date->unixDate.tm_hour);
-  else
+  } else {
     sprintf(tmphour, "0%1d", date->unixDate.tm_hour);
+  }
 
-  if (date->unixDate.tm_min >= 10)
+  if (date->unixDate.tm_min >= 10) {
     sprintf(tmpmin, "%2d", date->unixDate.tm_min);
-  else
+  } else {
     sprintf(tmpmin, "0%1d", date->unixDate.tm_min);
+  }
 
-  if (date->unixDate.tm_sec >= 10)
+  if (date->unixDate.tm_sec >= 10) {
     sprintf(tmpsec, "%2d", date->unixDate.tm_sec);
-  else
+  } else {
     sprintf(tmpsec, "0%1d", date->unixDate.tm_sec);
+  }
 
   switch(date->unixDate.tm_wday) {
   case 0:
@@ -181,7 +179,7 @@ LALDateString (LALStatus     *status,
     break;
   }
   
-  sprintf(timestamp->data, "%4d-%s-%s %s:%s:%s UTC %s",
+  sprintf(timestamp->data, "%d-%s-%s %s:%s:%s UTC %s",
           date->unixDate.tm_year + 1900,
           tmpmon, tmpmday, tmphour, tmpmin, tmpsec, tmpwday);
 

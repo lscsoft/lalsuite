@@ -108,7 +108,7 @@ main(int argc, char *argv[])
     date.unixDate.tm_year = ltime->tm_year;
     date.unixDate.tm_wday = ltime->tm_wday;
     date.unixDate.tm_yday = ltime->tm_yday;
-    date.unixDate.tm_isdst = ltime->tm_isdst;
+    date.unixDate.tm_isdst = 0; 
 
     JulianDate(&status, &jDate, &date);
     printf("\tJulian Date                = %10.1f\n", jDate);
