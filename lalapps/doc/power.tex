@@ -16,34 +16,47 @@ Put a summary of the excess power algorithm here .........
 \begin{entry}
 
 \item[Name]
-\verb$lalapps_power$ --- runs excess power code on chunks of (simulated) data.
+\verb$lalapps_power$ --- runs excess power code on chunks of real or simulated
+data.
 
 \item[Synopsis]
-\verb$lalapps_power$ \verb$--npts$ \textsc{npts} \verb$--nseg$ \textsc{nseg}
-\verb$--olap$ \textsc{olap} \verb$--olapfctr$ \textsc{olapfctr}
+\verb$lalapps_power$ 
+\verb$--npts$ \textsc{npts} 
+\verb$--nseg$ \textsc{nseg}
+\verb$--olap$ \textsc{olap} 
+\verb$--olapfctr$ \textsc{olapfctr}
 $\backslash$ \newline \hspace*{0.25in}
-\verb$--minfbin$ \textsc{minfbin} \verb$--mintbin$ \textsc{mintbin} 
-\verb$--flow$ \textsc{flow} \verb$--delf$ \textsc{delf} 
+\verb$--minfbin$ \textsc{minfbin} 
+\verb$--mintbin$ \textsc{mintbin} 
+\verb$--flow$ \textsc{flow} 
+\verb$--delf$ \textsc{delf} 
 \verb$--lngth$ \textsc{lngth} 
 $\backslash$ \newline \hspace*{0.25in}
 \verb$--nsigma$ \textsc{nsigma}
-\verb$--alphdef$ \textsc{alphdef}  \verb$--segdcle$ \textsc{segdcle} 
+\verb$--alphdef$ \textsc{alphdef}  
+\verb$--segdcle$ \textsc{segdcle} 
 \verb$--threshold$ \textsc{threshold} 
 $\backslash$ \newline \hspace*{0.25in}
 \verb$--etomstr$ \textsc{etomstr}
-\verb$--channel$ \textsc{channel} \verb$--simtype$ \textsc{simtype} 
+\verb$--channel$ \textsc{channel} 
+\verb$--simtype$ \textsc{simtype} 
 \verb$--spectype$ \textsc{spectype} 
 $\backslash$ \newline \hspace*{0.25in}
-\verb$--window$ \textsc{window} \verb$--start_time$ \textsc{sec} 
+\verb$--window$ \textsc{window} 
+\verb$--start_time$ \textsc{sec} 
 \verb$--start_time_ns$ \textsc{nsec} 
+\verb$--numpts$ \textsc{numpts} 
 $\backslash$ \newline \hspace*{0.25in}
-\verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
 \verb$--srate$ \textsc{srate} 
-$\backslash$ \newline \hspace*{0.25in}
+[\verb$--printSpectrum$] 
 [\verb$--cluster$]
-[\verb$--noise$ \textsc{var}] [\verb$--seed$ \textsc{seed}] 
+[\verb$--noise$ \textsc{var}] 
+[\verb$--seed$ \textsc{seed}] 
 $\backslash$ \newline \hspace*{0.25in}
+[\verb$--calcache$ \textsc{calcache}] 
+[\verb$--injfile$ \textsc{injfile}] 
 [\verb$--comment$ \textsc{comment}]
+[\verb$--dbglevel$ \textsc{dbglevel}]
 
 \item[Description] 
 \verb$lal_power$ runs the excess power code from LAL on a chunk of
@@ -63,6 +76,28 @@ $d$ is an integer.
 
 \item Minimum frequency bandwidth.
 \end{itemize}
+
+The input data for a real search should be in frame format.   This
+data is located using the LAL frame cache file mechanism.    The code
+can be used for Monte-Carlo simulations to determine search efficiency
+by providing a list of injections to be made;  this injections list
+should be in LIGO lightweight format and can be generated using the
+\verb+lalapps_binj+ program described in Sec.~\ref{program:lalapps-binj}. 
+
+The output data is written as \verb+sngl_burst+ triggers in LIGO
+lightweight XML files.   The files are named according to a
+standardized naming convention
+\begin{quote}
+\{IFO\}-\{comment\}-POWER-\{GPS Start Time\}-\{duration\}.xml
+\end{quote}
+So,  if a search was run on the Hanford 4km interferometer and
+generated triiggers starting at 731488397 and the triggers cover 33
+seconds after that time,  then the file name would be 
+\begin{quote}
+H1-test\_this\_again-POWER-731488397-33.xml
+\end{quote}
+where the comment was \verb+test_this_again+.   Note that the comment
+should not include spaces and should use underscores instead.
 
 \item[Options]\leavevmode
 \begin{entry}
@@ -152,6 +187,21 @@ directory,  or a filename including absolute path.   These cache files
 are explained in the \emph{framedata} package in LAL and can be
 constructed by making calls to \emph{LALdataFind} on some systems.
 
+\item[\texttt{--calcache} \textsc{calcache}] A LAL format frame
+cache file.    The \textsc{calcache} can be a filename in the local
+directory,  or a filename including absolute path.   These cache files
+are explained in the \emph{framedata} package in LAL.   A calibration
+cache file should give information for the frames needed to construct
+the relevant calibration information from the reference calibrations
+and the $\alpha$ and $\beta$ coefficients.   
+
+\item[\texttt{--injfile} \textsc{injfile}]  A LIGO lightweight XML
+file containing a list of injections to be made.   The file should
+contain a \verb+sim_burst+ table which is used to determine
+information about the types of injections to be made.    This file may
+be constructed by hand,  or once can use the \verb+lalapps_binj+
+program described in Sec. \ref{program:lalapps-binj}.   
+
 \item[\texttt{--simtype} \textsc{simtype}] Type of simulation. Set it to 0,
 although it is ignored in the current version of the code.
 
@@ -204,19 +254,20 @@ runs.
 
 \item[\texttt{--dbglevel}] Set the lalDebugLevel.  The default is
 \texttt{LALMSGLVL2}.   A useful setting is 65 which turns off memory
-padding,  but keeps memory tracking and error messages.
+padding,  but keeps memory tracking and error messages.   If you want
+to turn off memory tracking completely,  then use 33.
 \end{entry}
 
 
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
-lalapps_power --npts 2048 --nseg 719 --olap 1024 --olapfctr 3 \
-    --minfbin 2 --mintbin 2 --flow 100.0 --delf 1.0 --lngth 512 --nsigma 2.0 \
-    --alphdef 0.5 --segdcle 32 --threshold 1.0e-13 --etomstr 10 \
-    --channel S1:LSC-AS_Q --simtype 0 --spectype useMedian --window 2 \
-    --epoch  693768279 0 --numpts 1048576 --printSpectrum --noise 1 11 \
-    --comment simulation
+lalapps_power --cluster --npts 4096 --nseg 64 --olap 2048 --olapfctr 3 \
+--minfbin 2 --mintbin 2 --flow 60 --delf 1 --lngth 1024 --srate 4096 \   
+--nsigma 2 --alphdef 0.5 --segdcle 32 --threshold 1.0e-05 --etomstr 100 \  
+--channel L1:LSC-AS_Q  --simtype 0 --spectype useMedian --window 2 \
+--start_time 731488397 --start_time_ns 0 --numpts 137216 --noiseamp 1 \
+--seed 8 --comment test_this_again --dbglevel 33 --verbose
 \end{verbatim}
 
 \item[Author]
@@ -384,7 +435,7 @@ lalapps_burca --ifo-a L-POWER-734357353-1024.xml \
 --start-time 734357353  --stop-time 734358353 --noplayground
 \end{verbatim}
 \item[Author] 
-Patrick Brady
+Patrick Brady and Saikat Ray-Majumder
 \end{entry}
 \clearpage
 
