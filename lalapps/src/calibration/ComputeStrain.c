@@ -42,7 +42,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include "filters-H1-S2.h"                      /* files that contains the filter coefficients */
+#include "filters-L1-S2.h"                      /* files that contains the filter coefficients */
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -55,12 +55,12 @@ extern int optind, opterr, optopt;
 #define USR 16                            /* Upsampling factor */
 #define MAXALPHAS 10000                    /* Maximum number of calibration factors in a science segment */
 
-#define SLUDGEFACTOR 4096                 /* Number of samples in AS_Q to keep as extra sludge for smooth filtering */
+#define SLUDGEFACTOR 16384                 /* Number of samples in AS_Q to keep as extra sludge for smooth filtering */
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define CHANNEL "H1:Calibrated-Strain"
+#define CHANNEL "L1:Calibrated-Strain"
 
 /***************************************************************************/
 /* Complex division routine -- used to calculate beta from alpha and alpha*beta */
@@ -210,7 +210,8 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 int i,j,DT,p; 
-FrOutPar opar = { "./H", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0, 2 };
+FrOutPar opar = { "/data/hoft/L1/L", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0, 2 };
+
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadFiles(CommandLineArgs)) return 3;
@@ -359,11 +360,6 @@ FrOutPar opar = { "./H", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0, 2 };
 	    GV.h.data->data[p]= GV.hR.data->data[p]+ GV.hC.data->data[p];
 	  }
 
-/* 	  for (p=0; p<GV.h.data->length;p++) {  */
-/*  	     fprintf(stdout,"%1.10e  %1.16e\n",j*T+p*GV.h.deltaT,GV.h.data->data[p]); */
-/*   	  }   */
-	  /*	  fprintf(stdout,"\n\n"); */
-
 	  /* WRITE A FRAME */
 	  strncpy( GV.h.name, CHANNEL, sizeof( GV.h.name ) );
 	  GV.h.epoch.gpsSeconds=GV.gpsepoch.gpsSeconds;
@@ -457,7 +453,7 @@ int LowPasshR(int j)
   int n;
   PassBandParamStruc filterpar;
 
-  filterpar.name  = "Butterworth Low Pass at 7 kHz";
+  filterpar.name  = "Butterworth Low Pass";
   filterpar.nMax  = 12;
   filterpar.f2    = -1.0;
   filterpar.a2    = -1.0;
@@ -488,9 +484,9 @@ int HighPass1(int j)
   int n;
   PassBandParamStruc filterpar;
 
-  filterpar.name  = "Butterworth High Pass at 100 Hz";
-  filterpar.nMax  = 5;
-  filterpar.f2    = 100.0;
+  filterpar.name  = "Butterworth High Pass";
+  filterpar.nMax  = 10;
+  filterpar.f2    = 40.0;
   filterpar.a2    = 0.5;
   filterpar.f1    = -1.0;
   filterpar.a1    = -1.0;
@@ -520,9 +516,9 @@ int HighPass2(int j)
   int n;
   PassBandParamStruc filterpar;
 
-  filterpar.name  = "Butterworth High Pass at 30 Hz";
-  filterpar.nMax  = 5;
-  filterpar.f2    = 30.0;
+  filterpar.name  = "Butterworth High Pass";
+  filterpar.nMax  = 10;
+  filterpar.f2    = 40.0;
   filterpar.a2    = 0.5;
   filterpar.f1    = -1.0;
   filterpar.a1    = -1.0;
@@ -815,7 +811,7 @@ int MakeFilters(void)
   GV.Cinv.xOrder=CinvDirectOrder;
 
   /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l<GV.Cinv.xOrder;l++) GV.Cinv.b[l]=CinvDirectCoefs[l];           /* DON"T FORGET THIS!!!!!!!!! */
+  for(l=0;l<GV.Cinv.xOrder;l++) GV.Cinv.b[l]=CinvDirectCoefs[l];
   for(l=0;l<GV.Cinv.yOrder;l++) GV.Cinv.a[l]=CinvRecursCoefs[l];
   for(l=0;l<GV.Cinv.yOrder-1;l++) GV.Cinv.yhist[l]=0.0;
   for(l=0;l<GV.Cinv.xOrder-1;l++) GV.Cinv.xhist[l]=0.0;
@@ -957,7 +953,7 @@ FILE *fpAlpha=NULL;
   /* If we have a user input factors file then open it */
   if(CLA.alphafile != NULL)
     {
-      fpAlpha=fopen(CLA.alphafile,"w");
+      fpAlpha=fopen(CLA.alphafile,"a");
       if (fpAlpha==NULL) 
 	{
 	  fprintf(stderr,"Could not open %s!\n",CLA.alphafile);
@@ -1036,9 +1032,6 @@ FILE *fpAlpha=NULL;
 
       localgpsepoch.gpsSeconds = localgpsepoch.gpsSeconds+To;
     }
-
-/*   GV.alpha[0]=GV.alpha[1]=GV.alpha[2]=0.903737; */
-/*   GV.beta[0]=GV.beta[1]=GV.beta[2]=1.0; */
 
   /* Clean up */
   LALDestroyVector(&status,&darm.data);
