@@ -57,6 +57,8 @@ before calling this function.
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
+#define INSPIRAL_MINIMALWAVELENGTH 64
+
 NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveLengthCP"> */
@@ -70,7 +72,7 @@ LALInspiralWaveLength(
 
    INT4 ndx;
    REAL8 x;
-
+   CHAR message[256];
    expnCoeffs ak;
    expnFunc func;
 
@@ -84,13 +86,28 @@ LALInspiralWaveLength(
 
    LALInspiralSetup (status->statusPtr, &ak, &params);
    CHECKSTATUSPTR(status);
+   
    LALInspiralChooseModel(status->statusPtr, &func, &ak, &params);
-   CHECKSTATUSPTR(status);
-
-   x = (ak.tn) * params.tSampling + params.nStartPad + params.nEndPad;
-
-   ndx = ceil(log10(x)/log10(2.));
-   *length = pow(2, ndx);
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+   /* not checkstatus before but we check if everything is fine, 
+      then we return the length otherwise length is zero*/
+   if (status->statusPtr->statusCode == 0){
+	   /*we add a minimal value and 10 % of overestimation */
+      	   x	= 1.1 * (ak.tn) * params.tSampling + params.nStartPad 
+   		   + params.nEndPad + INSPIRAL_MINIMALWAVELENGTH;
+	   ndx 	= ceil(log10(x)/log10(2.));
+      	   *length = pow(2, ndx);
+     
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+   }
+   else { 
+	sprintf(message,
+	       	"size is zero for the following waveform: totalMass = %lf, fLower = %lf, approximant = %d @ %lfPN"
+	       , params.mass1 + params.mass2, params.fLower, params.approximant, params.order/2.);
+       	LALWarning(status, message);
+       	*length = 0;
+       
+       DETATCHSTATUSPTR(status);
+       RETURN(status);
+     }
 }
