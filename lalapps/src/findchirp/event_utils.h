@@ -6,8 +6,10 @@
 
 #define EVENTUTILSH_ENULLP 1
 #define EVENTUTILSH_EGETRO 2
+#define EVENTUTILSH_EFILE  3
 #define EVENTUTILSH_MSGENULLP "Null pointer"
 #define EVENTUTILSH_MSGEGETRO "Error getting row from table"
+#define EVENTUTILSH_MSGEFILE  "Error opening file"
 
 typedef struct
 tagSnglInspiralIndex
@@ -85,7 +87,17 @@ tagSearchSummaryIndex
 }
 SearchSummaryIndex;
 
-
+typedef struct
+tagSnglInspiralErrors
+{
+    INT4  match;
+    REAL4 dRhoPlus;
+    REAL4 dRhoMinus;
+    INT8  dtime;
+    REAL4 dm;
+}
+SnglInspiralErrors;
+    
 typedef struct
 tagcandParams{
     char       name[256];
@@ -214,3 +226,16 @@ LALClusterSnglInspiralTable (
               INT4              dtime
 	      );
 
+void
+LALCompareSnglInspiral(
+        LALStatus                *status,
+        SnglInspiralTable        *aPtr,
+        SnglInspiralTable        *bPtr,
+        SnglInspiralErrors       *params
+    );
+
+void readInspiralTriggers( 
+        LALStatus *status, 
+        SnglInspiralTable **eventList, 
+        const CHAR *fname
+        );

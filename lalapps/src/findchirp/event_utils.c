@@ -24,7 +24,7 @@ NRCSID (EVENT_UTILSC, "$Id$");
 #include "donald.h"
 #include "event_utils.h"
 
-
+float fabsf(float x);
 /*******************************************************************
  *
  * This file provides the following functions:
@@ -155,6 +155,90 @@ getSnglInspiralEvent(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+/****************************************************************************
+ * 
+ * TEMPORARY FUNCTION TO READ IN INSPIRAL TRIGGER FILE UNTIL DUNCAN's
+ * CODE GETS INTO LAL
+ * 
+ ***************************************************************************/
+void readInspiralTriggers( 
+        LALStatus *status, 
+        SnglInspiralTable **eventList, 
+        const CHAR *fname
+        )
+{
+    INT4 retVal=0;
+    struct MetaioParseEnvironment triggerParseEnv;
+    const MetaioParseEnv triggerEnv = &triggerParseEnv;
+
+    SnglInspiralIndex         tableIndex;
+    SnglInspiralTable         inspiralEvent; 
+    SnglInspiralTable        *currentEvent=NULL, *prevEvent=NULL;
+
+    INITSTATUS (status, "readInspiralTriggers", EVENT_UTILSC);
+    ATTATCHSTATUSPTR (status);
+
+    /* open xml file at inspiral table */
+    if ( (retVal = MetaioOpenTable( triggerEnv, fname, "sngl_inspiral")) !=0 ){
+        fprintf(stderr, "Error opening injection file %s\n", fname );
+        MetaioAbort( triggerEnv ); 
+        ABORT( status, EVENTUTILSH_EFILE, EVENTUTILSH_MSGEFILE );
+    }
+
+    /* Locate the relevant columns in the inspiral table */
+    buildSnglInspiralIndex(status->statusPtr, triggerEnv, &tableIndex);
+    CHECKSTATUSPTR(status);
+
+    /* Loop over the triggers */
+    while (1) {
+
+        /* get the next row */
+        retVal = MetaioGetRow(triggerEnv);
+        if ( retVal == -1 ) {
+            printf( "Error while getting row from file %s\n",fname);
+            MetaioAbort( triggerEnv ); 
+            ABORT( status, EVENTUTILSH_EFILE, EVENTUTILSH_MSGEFILE );
+        } else if ( retVal == 0 ) {
+            /*-- Reached end of file --*/
+            break;
+        }
+
+        /* get the inspiral event */
+        getSnglInspiralEvent(status->statusPtr, triggerEnv, &inspiralEvent, &tableIndex);
+        CHECKSTATUSPTR(status);
+        
+        /* allocate memory for the inspiral event */
+        if ( (*eventList) == NULL )
+        {
+            currentEvent=(*eventList)=
+                (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
+        }
+        else 
+        {
+            currentEvent =
+                (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
+        }
+
+        /* copy event into linked list element */
+        memcpy(currentEvent, &inspiralEvent, sizeof(SnglInspiralTable) );
+
+        /* point to the next event */
+        currentEvent->next = NULL;
+        if (prevEvent != NULL) prevEvent->next = currentEvent;
+        prevEvent = currentEvent;
+        currentEvent = currentEvent->next;
+
+    }
+
+    MetaioAbort(triggerEnv);
+
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+
+}
+
+
 
 void
 buildSimInspiralIndex(
@@ -307,6 +391,53 @@ getSearchSummaryTable(
     DETATCHSTATUSPTR (status);
     RETURN (status);
 }
+
+
+
+
+void
+LALCompareSnglInspiral(
+        LALStatus                *status,
+        SnglInspiralTable        *aPtr,
+        SnglInspiralTable        *bPtr,
+        SnglInspiralErrors       *params
+    )
+{
+    INT8 ta, tb;
+    REAL4 dm1, dm2;
+    REAL4 sigmaRatio;
+
+    INITSTATUS (status, "LALCompareSnglInspiral", EVENT_UTILSC);
+    ATTATCHSTATUSPTR (status);
+
+    params->match=0;
+
+    LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
+    LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+
+    if( labs(ta-tb) < params->dtime ){
+
+        dm1 = fabsf( aPtr->mass1 - bPtr->mass1 );
+        dm2 = fabsf( aPtr->mass2 - bPtr->mass2 );
+
+        if ( dm1 < params->dm && dm2 < params->dm ){
+
+            sigmaRatio = (bPtr->sigmasq / aPtr->sigmasq);
+
+            if ( sigmaRatio * aPtr->snr -  bPtr->snr < params->dRhoPlus &&
+                    bPtr->snr - sigmaRatio * aPtr->snr < params->dRhoMinus ){
+                params->match = 1;
+            }
+        }
+    }
+
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+}
+
+
+
+
 
 /*******************************************************************
 * Function builds a set of times that are vetoed according to the
