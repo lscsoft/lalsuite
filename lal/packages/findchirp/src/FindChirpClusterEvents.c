@@ -11,6 +11,13 @@
 
 #if 0
 <lalVerbatim file="FindChirpClusterEventsCV">
+Author: Brown D. A., Woods D.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpClusterEvents.c}}
+\label{ss:FindChirpClusterEvents.c}
 
 </lalLaTeX>
 #endif

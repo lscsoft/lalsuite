@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpStoreEvent.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A.,  Woods D.
  * 
  * Revision: $Id$
  * 
@@ -11,6 +11,13 @@
 
 #if 0
 <lalVerbatim file="FindChirpStoreEventCV">
+Author: Brown D. A., Woods D.
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpStoreEvent.c}}
+\label{ss:FindChirpStoreEvent.c}
 
 </lalLaTeX>
 #endif
