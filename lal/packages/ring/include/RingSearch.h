@@ -188,7 +188,6 @@ RingSearchData;
  *
  **** </lalLaTeX> */
 /**** <lalVerbatim> */
-/**** <lalVerbatim> */
 typedef struct
 tagRingSearchInput
 {
