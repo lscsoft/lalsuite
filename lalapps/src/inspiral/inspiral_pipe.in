@@ -238,6 +238,9 @@ ifo2 = cp.get('pipeline','ifo2')
 ifo1_snr = cp.get('pipeline','ifo1-snr-threshold')
 ifo2_snr = cp.get('pipeline','ifo2-snr-threshold')
 
+# set the name of the ifo to generate the triggered bank from
+trig_job.add_opt('ifo-a',ifo1)
+
 # create all the LALdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
@@ -305,7 +308,9 @@ for seg in data:
       dag.add_node(insp1)
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
-    trigbank.set_input(insp1.get_output())
+    trigbank.add_var_arg(insp1.get_output())
+    trigbank.set_start(chunk.start())
+    trigbank.set_end(chunk.end())
     if usertag:
       trigbank.set_output(ifo2 + '-TRIGBANK_' + usertag + '_' + ifo1 + '-' 
         + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml')

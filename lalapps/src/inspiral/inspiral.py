@@ -274,10 +274,26 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_trigtotmplt.
+    job = A CondorDAGJob that can run an instance of inca in trigtotmplt mode.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.__output = None
+
+  def set_output(self,file):
+    """
+    Sets the name of triggered template bank file.
+    file = template bank file name.
+    """
+    self.__output = file
+    self.add_var_opt('triggered-bank',file)
+
+  def get_output(self):
+    """
+    Returns the name of the triggered template bank file.
+    """
+    return self.__output
+    
 
 
 class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
