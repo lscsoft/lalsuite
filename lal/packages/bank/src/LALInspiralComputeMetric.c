@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALInspiralComputeMetricCV">
-Author: Churches, D. K., Sathyaprakash, B. S.
+Author: Churches, D. K., Cokelaer, T., Sathyaprakash, B. S.
 $Id$
 </lalVerbatim>  */
 
@@ -340,6 +340,14 @@ InspiralComputeMetricGetPsiCoefficients(
 		InspiralTemplate   *params, 
 		InspiralMomentsEtc *moments);
 
+static void
+LALGetInspiralMomentsBCV (
+			  InspiralMomentsEtcBCV   *moments,
+			  REAL8FrequencySeries    *psd,
+			  InspiralTemplate        *params );
+
+
+
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
@@ -508,5 +516,216 @@ InspiralComputeMetricGetPsiCoefficients(
 
 }
 
+/* <lalVerbatim file="LALInspiralComputeMetricCP">  */
+void 
+LALInspiralComputeMetricBCV
+(
+  	LALStatus             *status,
+	InspiralMetric        *metric,
+	REAL8FrequencySeries  *psd,
+	InspiralTemplate      *params
+)
+{ /* </lalVerbatim> */
+
+
+  static REAL8 g[Dim][Dim];
+  static InspiralMomentsEtcBCV moments;
+  
+
+  
+  double num;
+
+  moments.alpha = params->alpha;
+  moments.n0 = 5.L/3.L;
+  moments.n15 = 2.L/3.L;
+  LALGetInspiralMomentsBCV(&moments, psd, params);
+
+  num =  moments.M3[0][0] *moments.M3[1][1] 
+    - moments.M3[0][1] * moments.M3[1][0];
+  
+
+  g[0][0] =moments.M2[0][0]*(moments.M3[1][1]*moments.M2[0][0]
+			     -moments.M3[0][1]*moments.M2[0][1])
+    +moments.M2[0][1]*(-moments.M3[0][1]*moments.M2[0][0]
+		       +moments.M3[0][0]*moments.M2[0][1]);
+  g[0][0] /=num;
+
+   
+  g[1][1] =moments.M2[0][1]*(moments.M3[1][1]*moments.M2[0][1]
+			     -moments.M3[0][1]*moments.M2[1][1])
+    +moments.M2[1][1]*(-moments.M3[0][1]*moments.M2[0][1]
+		       +moments.M3[0][0]*moments.M2[1][1]);
+  g[1][1]/=num;
+   
+   
+  g[0][1] = moments.M2[0][0]*(moments.M3[1][1]*moments.M2[0][1]
+			      -moments.M3[0][1]*moments.M2[1][1])
+    +moments.M2[0][1]*(-moments.M3[0][1]*moments.M2[0][1]
+		       +moments.M3[0][0]*moments.M2[1][1]);
+  g[0][1] /=num ;
+	         
+   metric->G00 = .5 *(moments.M1[0][0] - g[0][0] );
+   metric->G01 = .5 *(moments.M1[0][1] - g[0][1] );
+   metric->G11 = .5 *(moments.M1[1][1] - g[1][1] );
+
+   {
+	   double a, b, c, q, det;
+	   
+	   a = metric->G00;
+	   b = metric->G01;
+	   c = metric->G11;
+	   det = a * c - b * b;
+	   q = sqrt( (a-c)*(a-c) + 4. * b*b );
+	   metric->g00 = 0.5 * (a + c - q);
+	   metric->g11 = 0.5 * (a + c + q);
+	   if (a==c)
+	   {
+		   metric->theta = LAL_PI/2.;
+	   }
+	   else
+	   {
+		   /*
+		    * metric->theta = 0.5 * atan(2.*b/(a-c));
+		    *
+		    * We want to always measure the angle from the
+		    * semi-major axis to the tau0 axis which is given by
+		    * the following line as opposed to the line above
+		    */
+		   metric->theta = atan(b/(metric->g00 - c));
+	   }
+   }
+}
+
+
+static void
+LALGetInspiralMomentsBCV (
+		InspiralMomentsEtcBCV   *moments,
+		REAL8FrequencySeries    *psd,
+		InspiralTemplate        *params 
+		)
+{
+  
+  UINT4 k;
+  InspiralMomentsIn in;
+  double q;
+  long i;
+  
+  LALStatus  *status = LALCalloc(1, sizeof(*status));
+  ;
+  INITSTATUS (status, "LALInspiralComputeMetricBCV", LALINSPIRALCOMPUTEMETRICC);
+  ATTATCHSTATUSPTR(status);
+  
+  
+  /* rewrite the following lines in proper way (normalisation factor) */
+  
+  
+  for (i=0; i< psd->data->length ; i++)
+    {
+      psd->data->data[i] =psd->data->data[i] * 1e45;
+    }
+
+   in.shf = psd;  
+   in.xmin = params->fLower;
+   in.xmax = params->fCutoff;
+
+  
+   /* First compute the norm */
+   
+   in.norm = 1.L;
+   for (k=0; k<=22; k++){
+     if (k<=17) /* positive value*/
+       in.ndx = (REAL8)k / 3.L;
+     else  /* negative -1,-2 ...-6 */
+       in.ndx = (17.- (REAL8)k) /3.L;
+     
+     LALInspiralMoments(status->statusPtr, &moments->i[k], in); 
+     
+     CHECKSTATUSPTR(status);
+   }
+   
+      
+   in.norm = moments->i[7] -2.*moments->alpha * moments->i[5] +    
+     moments->alpha * moments->alpha*moments->i[3];
+   
+  
+   /**/
+   /* 17 */
+   q = 2* moments->n0; /*=10/3 */
+   moments->M1[0][0] = (moments->i[17] -2.*moments->alpha * moments->i[15] +    
+			moments->alpha * moments->alpha*moments->i[13]) / in.norm;
+   /* 14 */
+   q = moments->n0 +moments->n15; 
+   moments->M1[0][1] = (moments->i[14] -2.*moments->alpha * moments->i[12] +    
+			moments->alpha * moments->alpha*moments->i[10]) / in.norm;
+   /* 11 */
+   q = 2 * moments->n15; 
+   moments->M1[1][1] = (moments->i[11] -2.*moments->alpha * moments->i[9] +    
+			moments->alpha * moments->alpha*moments->i[7]) / in.norm;
+  
+   moments->M1[1][0]=moments->M1[0][1] ;
+   
+   /*  12 */
+   q = moments->n0; 
+   moments->M2[0][0] = (moments->i[12] -2.*moments->alpha * moments->i[10] +    
+			moments->alpha * moments->alpha*moments->i[8]) / in.norm;   
+   /* 9 */
+   q = moments->n15; 
+
+   moments->M2[0][1] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
+			moments->alpha * moments->alpha*moments->i[5]) / in.norm;   
+   /*  9 */
+   q = moments->n0-1;   
+
+   moments->M2[1][0] = (moments->i[9] -2.*moments->alpha * moments->i[7] +    
+			moments->alpha * moments->alpha*moments->i[5]) / in.norm;
+   /*  6 */
+   q = moments->n15-1; 
+   moments->M2[1][1] = (moments->i[6] -2.*moments->alpha * moments->i[4] +    
+			moments->alpha * moments->alpha*moments->i[2]) / in.norm;
+   
+   /* 7 */
+   q = 0; 
+   moments->M3[0][0] = (moments->i[7] -2.*moments->alpha * moments->i[5] +    
+			moments->alpha * moments->alpha*moments->i[3]) / in.norm;   
+   /* 4 */
+   q = -1; 
+   moments->M3[0][1] = (moments->i[4] -2.*moments->alpha * moments->i[2] +    
+			moments->alpha * moments->alpha*moments->i[0]) / in.norm;   
+   /* 1 */
+   q = -2; 
+   moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[-1] +    
+			moments->alpha * moments->alpha*moments->i[-3]) / in.norm;
+   
+   moments->M3[1][0]=moments->M3[0][1] ;
+
+
+
+
+
+   in.shf->deltaF *= params->fLower;
+   
+   printf("#M1=\n");
+   printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+	    moments->M1[0][0],
+	    moments->M1[0][1],
+	    moments->M1[1][0],
+	    moments->M1[1][1] );
+    printf("#M2=\n");
+     
+     printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+	    moments->M2[0][0],
+	    moments->M2[0][1],
+	    moments->M2[1][0],
+	    moments->M2[1][1] );
+     printf("#M3=\n");     
+     printf("#%15.12lf %15.12lf \n# %15.12lf %15.12lf\n",
+	    moments->M3[0][0],
+	    moments->M3[0][1],
+	    moments->M3[1][0],
+	    moments->M3[1][1] );
+     printf("\n");
+}
+
 #undef Dim
 #undef Order
+
