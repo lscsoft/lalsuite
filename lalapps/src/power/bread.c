@@ -8,9 +8,26 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/FrameCache.h>
 #include <lalapps.h>
 
 RCSID("$Id$");
+
+#include <unistd.h>
+#ifndef HAVE_GETHOSTNAME_PROTOTYPE
+int gethostname(char *name, int len);
+#endif
+
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
+
+#include <errno.h>
+#include <unistd.h>
+#include <sys/param.h>
+#define STR( x ) #x
+#define XSTR( x ) STR( x )
+#define MAXPROTOCOLLEN 16
 
 #define MAXSTR 2048
 
@@ -36,24 +53,6 @@ RCSID("$Id$");
 
 #define TRUE  1
 #define FALSE 0
-
-
-/*
- * Read a line of text from a file, striping the newline character if read.
- * Return an empty string on any error.
- */
-
-static int getline(char *line, int max, FILE *file)
-{
-	char *end;
-
-	if(!fgets(line, max, file))
-		line[0] = '\0';
-	end = strchr(line, '\n');
-	if(end)
-		*end = '\0';
-	return(strlen(line));
-}
 
 
 /*
@@ -126,9 +125,9 @@ static void set_option_defaults(struct options_t *options)
 	options->maxConfidence = 0.0;
 
 	options->trigStartTimeFlag = FALSE;
-	options->trigStartTime = 0;
+	options->trigStartTime = -1;
 	options->trigStopTimeFlag = FALSE;
-	options->trigStopTime = 0;
+	options->trigStopTime = -1;
 
 	options->minDurationFlag = FALSE;
 	options->minDuration = 0.0;
@@ -549,6 +548,60 @@ static int output_txt_file(FILE *fpout, SnglBurstTable *snglBursts){
   return 0;
 }
 
+
+static int path_from_fileurl( CHAR *filepath, FrStat *file )
+{
+  char prot[MAXPROTOCOLLEN + 1] = "";
+  char host[MAXHOSTNAMELEN + 1] = "";
+  int n;
+
+  /* get protocol, hostname, and path */
+  if ( ! file || ! file->url )
+  {
+	  fprintf(stderr,"No file passed in\n");
+	  return 1;
+  }
+  n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
+      XSTR( MAXHOSTNAMELEN ) "[^/]%" XSTR( MAXPATHLEN ) "s", prot, host, filepath );
+  if ( n != 3 ) /* perhaps the hostname has been omitted */
+  {
+    n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
+        XSTR( MAXPATHLEN ) "s", prot, filepath );
+    if ( n == 2 )
+      strcpy( host, "localhost" );
+    else
+    {
+      strncpy( filepath, file->url, MAXPATHLEN );
+      strcpy( prot, "none" );
+    }
+  }
+
+  if ( ! strcmp( prot, "file" ) )
+  {
+    if ( strcmp( host, "localhost" ) )
+    { /* make sure the host *is* localhost */
+      char localhost[MAXHOSTNAMELEN + 1];
+      gethostname( localhost, MAXHOSTNAMELEN );
+      if ( strcmp( host, localhost ) )
+      { /* nope */
+        fprintf( stderr, "Can not read files from remote hosts.\n" );
+        return 1;
+      }
+    }
+  }
+  else
+  {
+    fprintf( stderr, "Unsupported protocol %s.", prot );
+    return 1;
+  }
+
+  return 0;
+}
+
+
+
+
+
 /*
  * Entry Point
  */
@@ -556,7 +609,6 @@ static int output_txt_file(FILE *fpout, SnglBurstTable *snglBursts){
 int main(int argc, char **argv)
 {
 	static LALStatus  stat;
-	FILE              *fpin;
 	FILE              *fpout;
 	INT4              timeAnalyzed;
 	CHAR              line[MAXSTR];
@@ -567,6 +619,10 @@ int main(int argc, char **argv)
 	MetadataTable     searchsumm;
 	LIGOLwXMLStream   xmlStream;
 	struct options_t  options;
+	FrCache *fileCache = NULL;
+	FrCacheSieve fileCacheSieve;
+	UINT4			  j;
+
 
 
 	/*
@@ -598,10 +654,17 @@ int main(int argc, char **argv)
 	 * Loop over the xml input files
 	 */
 
-	if(!(fpin = fopen(infile,"r"))) {
-		LALPrintError("Could not open list of input files\n");
-		exit(SNGLBURSTREADER_EFILE);
+	/* open the file cache and create an internal cache */
+	LAL_CALL(LALFrCacheImport(&stat, &fileCache, infile), &stat);
+	if ( options.trigStartTimeFlag || options.trigStopTimeFlag ){
+		fileCacheSieve.srcRegEx=NULL;
+		fileCacheSieve.dscRegEx=NULL;
+		fileCacheSieve.urlRegEx=NULL;
+		fileCacheSieve.earliestTime=options.trigStartTime;
+		fileCacheSieve.latestTime=options.trigStopTime;
+		fileCache = XLALFrSieveCache( fileCache, &fileCacheSieve );
 	}
+
 
 	if(options.verbose) {
 		fpout = fopen("./EPjobstartstop.dat","w");
@@ -613,9 +676,13 @@ int main(int argc, char **argv)
 	addpoint = &burstEventList;
 	timeAnalyzed = 0;
 
-	while(getline(line, MAXSTR, fpin)) {
+	for (j=0 ; j<fileCache->numFrameFiles ; j++) {
+
+		if ( path_from_fileurl(line, &(fileCache->frameFiles[j])) )
+			exit(1);
+		
 		if(options.verbose)
-			fprintf(stderr, "Working on file %s\n", line);
+			fprintf(stderr, "Working on file %s\n", fileCache->frameFiles[j].url);
 
 		/*
 		 * Read the search summary table
