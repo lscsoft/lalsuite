@@ -108,9 +108,9 @@ version: shall be 2.0 .
     double.  If this field is not an exact integer in the range 1 to
     1000000, then software reading this data should assume that it is
     byte-swapped and take appropriate measures to reverse the byte
-    swapping.  If the byte swapping does NOT cause the version number
-    to lie between 1 and 1000000, then the SFT does not comply with
-    these specifications.
+    ordering.  If byte swapping does NOT cause the version number
+    to be an exact integer between 1 and 1000000, then the SFT does
+    not comply with these specifications.
 
 gps_sec: Integer part of the GPS time in seconds of the first sample used to make
          this SFT.
