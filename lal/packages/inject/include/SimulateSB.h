@@ -165,12 +165,15 @@ The number of points in the output time series.
 \item[\texttt{REAL8 deltaT}]
 The temporal spacing of the output time series.
 
+\item[\texttt{INT4 seed}]
+The random number seed for the stochastic simulation.
+
 \item[\texttt{LALDetector *detector1}]
-The site location and orinetation information of first detector involved in 
+The site location and orientation information of first detector involved in 
 the stochastic background search.
 
 \item[\texttt{LALDetector *detector2}]
-The site location and orinetation information of second detector involved in 
+The site location and orientation information of second detector involved in 
 the stochastic background search.
 
 \item[\texttt{LALUnit SSimStochBGTimeSeries1Unit}]
