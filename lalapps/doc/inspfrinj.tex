@@ -10,68 +10,77 @@
 \begin{verbatim}
 lalapps_inspfrinj [options]
  
-  --help                    display this message
-  --verbose                 print progress information
-  --version                 print version information and exit
-  --debug-level LEVEL       set the LAL debug level to LEVEL
-  --user-tag STRING         set the process_params usertag to STRING
-  --comment STRING          set the process table comment to STRING
+ [--help ]       
+ [--verbose ]   
+ [--version ]  
+ [--debug-level LEVEL ]   
+ [--user-tag STRING ]     
+ [--comment STRING ]    
  
-  --gps-start-time SEC      GPS second of data start time
-  --gps-start-time-ns NS    GPS nanosecond of data start time
-  --gps-end-time SEC        GPS second of data end time
-  --gps-end-time-ns NS      GPS nanosecond of data end time
+  --gps-start-time SEC
+ [--gps-start-time-ns NS ] 
+  --gps-end-time SEC     
+ [--gps-end-time-ns NS ] 
  
-  --frame-cache             obtain frame data from LAL frame cache FILE
-  --calibration-cache FILE  obtain calibration from LAL frame cache FILE
-  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8
-  --num-resp-points N       num points to determine response function (4194304)
-  --channel-name CHAN       read data from interferometer channel CHAN
+ [--frame-cache FRAME_CACHE    
+  --channel-name CHAN ]  
  
-  --injection-file FILE     inject simulated inspiral signals from FILE
-  --inject-overhead         inject signals from overhead detector
-  --inject-safety SEC       inject signals ending up to SEC after gps end time
+ [--ifo  IFO       
+  --sample-rate SAMPLE_RATE ] 
+
+  --calibration-cache CAL_CACHE 
+  --calibrated-data TYPE  
+  
+  --num-resp-points N    
  
-  --write-raw-data          write out the raw frame files
-  --write-inj-only          write out frames containing only injections
-  --write-raw-plus-inj      write out frames containing raw data with inj
+  --injection-file FILE
+ [--inject-overhead ]  
+ [--inject-safety SEC ]
  
-  --output-frame-length SEC write out data in frames of length SEC
-  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf
-                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf
+ [--write-raw-data ] 
+ [--write-inj-only ]
+ [--write-raw-plus-inj ]
  
-  --ifo  IFO                specify the IFO (only if not reading frames)
-  --sample-rate             data sample rate (only if not reading frames)
+  --output-frame-length OUTPUT_LENGTH
+ [--output-file-name OUTPUT_NAME ]
+ 
 \end{verbatim}
 
 \item[Description] 
 
-\verb$lalapps_frinspinj$ performs inspiral injections into frame files.
-This code is essentially a copy of those parts of
-\verb$lalapps_inspiral$ responsible for reading in the data and
-performing the injections.  The injection details are read in from the 
-\verb$sim_inspiral$ table of a LIGO lightweight xml file.  
+\texttt{lalapps\_frinspinj} generates injections and stores them as
+frame files.  This code is essentially a copy of those parts of
+\texttt{lalapps\_inspiral} responsible for reading in the data and
+performing the injections.  The injection details are read in from the
+\texttt{sim\_inspiral} table of a LIGO lightweight xml file.  The
+injections are then generated using LALFindChirpInjectSignals.  The
+injection data is output to frame files.  The length of the output
+frames is specified by \texttt{output-frame-length}.
 
-The code operates in two different ways.  If a \verb$frame-cache$ file
-is specified, then the raw data is read in.  This data can either be
-uncalibrated, in which case a calibration cache must be specified, or
-calibrated, in which case the \verb$--calibrated-data$ flag must be set.
-At present the code only works with real 4 data.  The injection data is
-then calculated from the signals in the \verb$sim_inspiral$ table.  The
-response function is either unity for strain data or is computed from
-the calibration cache.  When working with uncalibrated data, the number
-of points used to determine the response function will have an effect,
-albeit minor, on the injection signals.  By default, the value
-\verb$--num-resp-points$ is set to 4194304.  This matches the value
-used by lalapps\_inspiral when working with 256 second segments and a
-channel sampled at 16384 Hz.  The output frames can contain any of
-the following: raw data, injection only and raw plus injection.  
+The code is capable of generating both calibrated and uncalibrated
+injections.  To obtain calibrated h(t) injections the option
+\texttt{calibrated-data} must be specified (at present the code only
+works for real\_4 data).  Alternatively, if a \textsc{CAL\_CACHE} is
+given, then uncalibrated injections will be produced using the a
+response function generated from the calibration data in the cache.  The
+calibration coefficients will by default be averaged over the duration
+of the data.  When working with uncalibrated data, the number of points
+used to determine the response function will have an effect, albeit
+minor, on the injection signals.  By default, the value
+\texttt{num-resp-points} is set to 4194304.  This matches the value used
+by \texttt{lalapps\_inspiral} when working with 256 second segments and
+a channel sampled at 16384 Hz.
 
-If no input frame data is given, the code can produce strain data
-injections for the relevant interferometer.  In this case, it is
-necessary to specify the sample rate for the output data.  Since no
-input data is read in, the output data can only contain the injection
-only channel.
+If input data is given by a \textsc{FRAME\_CACHE}, the code will read in
+this data.  In this case, the sample rate and ifo will be determined
+from the data and channel name respectively.  The output frames can
+contain any of the following: raw data, injection only and raw plus
+injection.  
+
+If no input data is provided, then the \textsc{IFO} and
+\textsc{SAMPLE\_RATE} must be given on the command line.  Since no input
+data is read in, the output data can only contain the injection only
+channel.
 
 The output of \verb$lalapps_frinspinj$ is an xml file and one or several
 frame files.  The xml file contains
@@ -99,6 +108,105 @@ The channels stored in the output frame are determined by which of
 \verb$CHAN$, \verb$CHAN_INSP_INJ_ONLY$ and
 \verb$CHAN_RAW_PLUS_INSP_INJ$.  In the case where no input data is
 given, the single output channel name is \verb$IFO:STRAIN_INSP_INJ_ONLY$.
+
+\item[Options]\leavevmode
+\begin{entry}
+
+\item[\texttt{--help}]  Optional.  Print a help message and exit.
+
+\item[\texttt{--verbose}] Optional.  Print out the author, CVS version
+and tag information and exit.
+
+\item[\texttt{--version}] Optional.  Print out the author, CVS version and
+tag information and exit.
+  
+\item[\texttt{--debug-level} \textsc{LEVEL}] Optional. Set the LAL debug
+level to \textsc{level}. If not specified the default is 1.
+
+\item[\texttt{--user-tag} \textsc{USERTAG}] Optional. Set the user tag
+for this job to be \textsc{USERTAG}. May also be specified on the command
+line as \texttt{-userTag} for LIGO database compatibility.  This will
+affect the naming of the output file.
+
+\item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
+to the comment field in the process table. If not specified, no comment
+is added. 
+
+\item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Start
+time, GPS seconds.
+
+\item[\texttt{--gps-start-time-ns} \textsc{GPS seconds}] Optional.
+Start time, GPS nanoseconds.  If not specified, then set to zero.
+
+\item[\texttt{--gps-end-time} \textsc{GPS seconds}] Required.  End
+time, GPS seconds.
+
+\item[\texttt{--gps-end-time-ns} \textsc{GPS seconds}] Optional.
+Start time, GPS nanoseconds.  If not specified, then set to zero.
+
+\item[\texttt{--frame-cache} \textsc{FRAME\_CACHE}] Optional.  Name of
+the frame cache file.  If this is not specified then the code will not
+read in any input data.  Hence it will be unable to produce the raw or
+raw\_plus\_inj frames.
+
+\item[\texttt{--channel-name} \textsc{CHAN}] Optional.  Input data
+channel name.  This must be specified if the \texttt{frame-cache} file
+is specified. 
+ 
+\item[\texttt{--ifo} \textsc{IFO}] Optional.  Set input interferometer
+name to \textsc{IFO}.  This information is required unless a
+\texttt{channel-name} is specified (in this case the \textsc{IFO} is
+obtained from the channel name).
+
+\item[\texttt{--sample-rate} \textsc{SAMPLE\_RATE}] Optional.  Set the
+sample rate (in Hz) at which the injections should be produced.  This is
+required unless a frame cache is given (in this case, the sample rate of
+the injections matches the input data).
+
+
+\item[\texttt{--calibration-cache} \textsc{CAL\_CACHE}] Optional.
+Specify the \textsc{CAL\_CACHE} to obtain the calibration information.
+
+\item[\texttt{--calibrated-data }\textsc{TYPE}]  Optional.  Use
+calibrated data as input/output.  This will produce strain data
+injections.  This option must be specified if no calibration cache is
+given.  
+  
+\item[\texttt{--num-resp-points} \textsc{N}] Required.  The number of
+points used to generate the response function.  If generating
+uncalibrated injections, this can actually change slightly the injection
+data.   
+ 
+\item[\texttt{--injection-file} \textsc{FILE}] Required. Read in the
+injection data from \textsc{FILE}.  This should contain a
+\texttt{sim\_inspiral} table with a list of injections.
+
+\item[\texttt{--inject-overhead}] Optional.  Perform the injections
+directly overhead the interferometer and optimally oriented.
+
+\item[\texttt{--inject-safety} \textsc{SEC}] Optional.  Inject signals
+whose end time is up to \texttt{SEC} after the gps end time.
+ 
+\item[\texttt{--write-raw-data}]  Optional.  Write out a frame
+containing the raw data.  This can only be done if the raw data has been
+read in from frames.
+
+\item[\texttt{--write-inj-only}]  Optional.  Write out a frame
+containing only the injection data.
+
+\item[\texttt{--write-raw-plus-inj}]  Optional.  Write out a frame
+containing the raw data with the injections added.
+  
+\item[\texttt{--output-frame-length} \textsc{OUTPUT\_LENGTH}]  Required.
+Specify the length of the output frames to be \textsc{output\_length}
+seconds.
+
+\item[\texttt{--output-file-name} \textsc{OUTPUT\_NAME} ] Optional.
+Set the output file name.  This overrides the default file naming
+convention given above.
+
+\end{entry}
+
 
 \item[Example]
 \begin{verbatim}
