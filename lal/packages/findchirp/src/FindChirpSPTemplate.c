@@ -490,7 +490,8 @@ LALFindChirpBCVTemplate (
 /* work needed here ... check x1 */
 
   /* frequency cutoffs */
-  fHi  = tmplt->fendBCV;
+  /* replace fendBCV by fFinal (Thomas jan 2003)*/
+  fHi  = tmplt->fFinal;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
   

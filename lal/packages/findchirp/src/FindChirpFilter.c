@@ -1275,7 +1275,8 @@ LALFindChirpBCVFilterSegment (
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
     REAL4 psi3 = input->tmplt->psi3;                        
-    REAL4 fendBCV = input->tmplt->fendBCV;                  
+    /*replaced fendBCV by fFinal (thomas janvier 2003)*/
+    REAL4 fendBCV = input->tmplt->fFinal;                  
     /* k that corresponds to fendBCV  */
     UINT4 kendBCV = floor( numPoints * deltaT * fendBCV );  
     /* BCV normalization parameters */
