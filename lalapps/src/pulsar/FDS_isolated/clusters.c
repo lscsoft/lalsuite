@@ -64,8 +64,8 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
   */
   {      
     LALRunningMedianPar par;
-    par.blocksize = windowSize;
     REAL8Vector medians;
+    par.blocksize = windowSize;
     medians.length = M;
     medians.data = dmp;
     /* now cross your fingers and make a sacrifice to the gods.. */
@@ -286,8 +286,8 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
       */
       {      
 	LALRunningMedianPar par;
-	par.blocksize = smallBlock;
 	REAL8Vector inData, medians;
+	par.blocksize = smallBlock;
 	inData.length = k;
 	inData.data = RDMP2;
 	medians.length = output->NclustPoints[lpc];
