@@ -81,11 +81,11 @@ INT4 lalDebugLevel=3;
 #ifndef _MSC_VER
 #define OUTFILE1 "./TestOutputSFT.0"
 #define OUTFILE2 "./TestOutputSFT.1"
-#define FPATTERN "./OutputSFT"
+#define FPATTERN "./Test*SFT?[0-9]"
 #else
 #define OUTFILE1 ".\\TestOutputSFT.0"
 #define OUTFILE2 ".\\TestOutputSFT.1"
-#define FPATTERN ".\\OutputSFT"
+#define FPATTERN ".\\Test*SFT?[0-9]"
 #endif
 
 /* Usage format string. */
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]){
   
   if(sftvect->length != 2)
     {
-      LALPrintError ("Exactly TWO SFTs were expected with pattern './SFT', but got %d\n", sftvect->length);
+      LALPrintError ("Exactly TWO SFTs were expected with pattern '%s', but got only %d\n", FPATTERN, sftvect->length);
       return SFTFILEIOTESTC_ESUB;
     }
 

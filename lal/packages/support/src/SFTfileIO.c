@@ -135,6 +135,8 @@ void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 
+int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
+
 /* number of bytes in SFT-header v1.0 */
 static const size_t header_len_v1 = 32;	
 
@@ -776,45 +778,61 @@ find_files (const CHAR *globdir)
   intptr_t dir;
   struct _finddata_t entry;
 #endif
-  CHAR *dname, *ptr1, *ptr2;
-  CHAR fpattern[512];
+  CHAR *dname, *ptr1;
+  CHAR *fpattern;
   size_t dirlen;
   CHAR **filelist = NULL; 
   UINT4 numFiles = 0;
   StringVector *ret = NULL;
   UINT4 j;
   UINT4 namelen;
+  CHAR *thisFname;
+
+  /* First we separate the globdir into directory-path and file-pattern */
 
 #ifndef _MSC_VER
-  ptr1 = strrchr (globdir, '/');
+#define DIR_SEPARATOR '/'
 #else
-  ptr1 = strrchr (globdir, '\\');
+#define DIR_SEPARATOR '\\'
 #endif
 
+  /* any path specified or not ? */
+  ptr1 = strrchr (globdir, DIR_SEPARATOR);
   if (ptr1)
-    dirlen = (size_t)(ptr1 - globdir) + 1;
-  else
-    dirlen = 2;   /* for "." */
+    { /* yes, copy directory-path */
+      dirlen = (size_t)(ptr1 - globdir) + 1;
+      if ( (dname = LALCalloc (1, dirlen)) == NULL) 
+	return (NULL);
+      strncpy (dname, globdir, dirlen);
+      dname[dirlen-1] = '\0';
 
-  if ( (dname = LALCalloc (1, dirlen)) == NULL) {
-    return (NULL);
-  }
- 
-  if (ptr1) {
-    strncpy (dname, globdir, dirlen);
-    dname[dirlen-1] = '\0';
-  }
-  else
-    strcpy (dname, ".");
+      ptr1 ++; /* skip dir-separator */
+      /* copy the rest as a glob-pattern for matching */
+      if ( (fpattern = LALCalloc (1, strlen(ptr1) + 1)) == NULL )
+	{
+	  LALFree (dname);
+	  return (NULL);
+	}
+      strcpy (fpattern, ptr1);   
+
+    } /* if ptr1 */
+  else /* no pathname given, assume "." */
+    {
+      if ( (dname = LALCalloc(1, 2)) == NULL) 
+	return (NULL);
+      strcpy (dname, ".");
+
+      if ( (fpattern = LALCalloc(1, strlen(globdir)+1)) == NULL)
+	{
+	  LALFree (dname);
+	  return (NULL);
+	}
+      strcpy (fpattern, globdir);	/* just file-pattern given */
+    } /* if !ptr */
   
-  /* copy the rest as a substring for matching */
-  if (ptr1)
-    strcpy (fpattern, ptr1+1);
-  else
-    strcpy (fpattern, globdir);
 
 #ifndef _MSC_VER
-  /* now go through the filelist in this directory */
+  /* now go through the file-list in this directory */
   if ( (dir = opendir(dname)) == NULL) {
     LALPrintError ("Can't open data-directory `%s`\n", dname);
     LALFree (dname);
@@ -835,39 +853,37 @@ find_files (const CHAR *globdir)
 
 #ifndef _MSC_VER
   while ( (entry = readdir (dir)) != NULL )
+    {
+      thisFname = entry->d_name;
 #else
   do
-#endif
     {
-#ifndef _MSC_VER
-      if ( strstr (entry->d_name, fpattern) ) /* found a matching file */
-#else
-      if ( strstr (entry.name, fpattern) ) /* found a matching file */
+      thisFname = entry.name;
 #endif
+      /* now check if glob-pattern fpattern matches the current filename */
+      if ( amatch(thisFname, fpattern) )
 	{
 	  numFiles ++;
 	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
+	    LALFree (dname);
+	    LALFree (fpattern);
 	    return (NULL);
 	  }
 
-#ifndef _MSC_VER
-	  namelen = strlen(entry->d_name) + strlen(dname) + 2 ;
-#else
-	  namelen = strlen(entry.name) + strlen(dname) + 2 ;
-#endif
+	  namelen = strlen(thisFname) + strlen(dname) + 2 ;
+
 	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	    for (j=0; j < numFiles; j++)
 	      LALFree (filelist[j]);
 	    LALFree (filelist);
+	    LALFree (dname);
+	    LALFree (fpattern);
 	    return (NULL);
 	  }
 
-#ifndef _MSC_VER
-	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->d_name);
-#else
-	  sprintf(filelist[numFiles-1], "%s\\%s", dname, entry.name);
-#endif
-	}
+	  sprintf(filelist[numFiles-1], "%s%c%s", dname, DIR_SEPARATOR, thisFname);
+
+	} /* if filename matched pattern */
 
     } /* while more directory entries */
 #ifdef _MSC_VER
@@ -879,7 +895,9 @@ find_files (const CHAR *globdir)
 #else
   _findclose(dir);
 #endif
+
   LALFree (dname);
+  LALFree (fpattern);
 
   /* ok, did we find anything? */
   if (numFiles == 0)
