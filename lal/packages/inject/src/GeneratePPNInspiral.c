@@ -627,12 +627,14 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       REAL4 f2a;
       REAL4 phase = 0.0;
 
+#if 0
       /* Check if we're still in a valid PN regime. */
       if ( x > xMax ) {
 	params->termCode = GENERATEPPNINSPIRALH_EPNFAIL;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEPNFAIL;
 	goto terminate;
       }
+#endif
 
       /* Compute the frequency.  Note that this also computes the
          global variables x2 and x3, which may be used later. */
