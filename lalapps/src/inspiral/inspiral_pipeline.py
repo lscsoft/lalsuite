@@ -142,15 +142,15 @@ queue
     for seg in self.segments:
       (id, start, end, length) = seg['segment']
       jobname = 'frcache_%s_%s_%s' % (site,start,end)
-      print >> dag_fh, 'job %s %s.frcache.condor' % (jobname,self.basename),
+      print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
       if not cache: print >> dag_fh, 'done',
-      print >> dag_fh, '\nvars %s site="%s"' % (jobname,site)
-      print >> dag_fh, 'vars %s frstart="%s"' % (jobname,start)
-      print >> dag_fh, 'vars %s frend="%s"' % (jobname,end)
+      print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
+      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,start)
+      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,end)
     for i in range(1,len(self.segments)):
       (id, start_p, end_p, length) = self.segments[i-1]['segment']
       (id, start_c, end_c, length) = self.segments[i]['segment']
-      print >> dag_fh, 'parent frcache_%s_%s_%s child frcache_%s_%s_%s' % (
+      print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
         site,start_p,end_p,site,start_c,end_c)
     
     # jobs to generate the template banks
@@ -159,18 +159,18 @@ queue
       parent = 'frcache_%s_%s_%s' % (site,frstart,frend)
       for start,end in seg['chunks']:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,start,end)
-        print >> dag_fh, 'job %s %s.tmpltbank.condor' % (jobname,self.basename),
+        print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
-        print >> dag_fh, '\nvars %s site="%s"' % (jobname,site)
-        print >> dag_fh, 'vars %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'vars %s frstart="%s"' % (jobname,frstart)
-        print >> dag_fh, 'vars %s frend="%s"' % (jobname,frend)
-        print >> dag_fh, 'vars %s start="%d"' % (jobname,start)
-        print >> dag_fh, 'vars %s end="%d"' % (jobname,end)
-        print >> dag_fh, 'vars %s channel="%s"' % (jobname,chan)
-        print >> dag_fh, 'vars %s calcache="%s"' % (jobname,
+        print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
+        print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,frstart)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,frend)
+        print >> dag_fh, 'VARS %s start="%d"' % (jobname,start)
+        print >> dag_fh, 'VARS %s end="%d"' % (jobname,end)
+        print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
+        print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
           self.config['input'][string.lower(ifo) + '-cal'])
-        print >> dag_fh, 'parent %s child %s' % (parent, jobname)
+        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
     # jobs to run the inspiral code
     for seg in self.segments:
@@ -178,18 +178,18 @@ queue
       for start,end in seg['chunks']:
         parent = 'tmpltbank_%s_%s_%s' % (ifo,start,end)
         jobname = 'inspiral_%s_%s_%s' % (ifo,start,end)
-        print >> dag_fh, 'job %s %s.inspiral.condor' % (jobname,self.basename),
+        print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
-        print >> dag_fh, '\nvars %s site="%s"' % (jobname,site)
-        print >> dag_fh, 'vars %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'vars %s frstart="%s"' % (jobname,frstart)
-        print >> dag_fh, 'vars %s frend="%s"' % (jobname,frend)
-        print >> dag_fh, 'vars %s start="%d"' % (jobname,start)
-        print >> dag_fh, 'vars %s end="%d"' % (jobname,end)
-        print >> dag_fh, 'vars %s channel="%s"' % (jobname,chan)
-        print >> dag_fh, 'vars %s calcache="%s"' % (jobname,
+        print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
+        print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,frstart)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,frend)
+        print >> dag_fh, 'VARS %s start="%d"' % (jobname,start)
+        print >> dag_fh, 'VARS %s end="%d"' % (jobname,end)
+        print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
+        print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
           self.config['input'][string.lower(ifo) + '-cal'])
-        print >> dag_fh, 'parent %s child %s' % (parent, jobname)
+        print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     dag_fh.close()
 
   def status(self):
