@@ -426,7 +426,7 @@ print "done"
 
 ##############################################################################
 # Step 4: Compute the ScienceSegments for the L1/H2 double coincident data
-print "computing L1/H2 double coincident data..."
+print "computing L1/H2 double coincident data...",
 sys.stdout.flush()
 
 l1_data_out = copy.deepcopy(l1_data)
