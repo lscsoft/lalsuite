@@ -70,6 +70,7 @@ know.
 #define _PULSARCAT_H
 
 #include <lal/LALStdlib.h>
+#include <lal/StringInput.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Date.h>
 
@@ -83,13 +84,15 @@ NRCSID( PULSARCATH, "$Id$" );
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define PULSARCATH_ENUL    1
-#define PULSARCATH_EOUT    2
-#define PULSARCATH_EMEM    3
+#define PULSARCATH_ENUL   1
+#define PULSARCATH_EOUT   2
+#define PULSARCATH_EMEM   3
+#define PULSARCATH_EPARSE 4
 
-#define PULSARCATH_MSGENUL    "Unexpected null pointer in arguments"
-#define PULSARCATH_MSGEOUT    "Output handle points to a non-null pointer"
-#define PULSARCATH_MSGEMEM    "Memory allocation error"
+#define PULSARCATH_MSGENUL   "Unexpected null pointer in arguments"
+#define PULSARCATH_MSGEOUT   "Output handle points to a non-null pointer"
+#define PULSARCATH_MSGEMEM   "Memory allocation error"
+#define PULSARCATH_MSGEPARSE "Error parsing input file"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
@@ -249,6 +252,69 @@ typedef struct tagPulsarCatNode {
   struct tagPulsarCatNode *next; /* next node in list */
 } PulsarCatNode;
 
+/******************************************************** <lalLaTeX>
+
+\subsubsection*{Enumeration \texttt{PulsarCatIndex}}
+\idx[Type]{PulsarCatIndex}
+
+\noindent This enumerated type is used to give a default ordering to
+the fields in the pulsar catalogue.  This is used, for instance, when
+reading pulsar catalogue data from a file.  The values are of the form
+\verb@PULSARCATINDEX_@$\langle\mathrm{label}\rangle$, where the
+(currently) allowed values of $\langle\mathrm{label}\rangle$ are:
+
+\idx[Constant]{PULSARCATINDEX\_NAME}
+\idx[Constant]{PULSARCATINDEX\_RAJ}
+\idx[Constant]{PULSARCATINDEX\_RAJERR}
+\idx[Constant]{PULSARCATINDEX\_DECJ}
+\idx[Constant]{PULSARCATINDEX\_DECJERR}
+\idx[Constant]{PULSARCATINDEX\_PMRA}
+\idx[Constant]{PULSARCATINDEX\_PMRAERR}
+\idx[Constant]{PULSARCATINDEX\_PMDEC}
+\idx[Constant]{PULSARCATINDEX\_PMDECERR}
+\idx[Constant]{PULSARCATINDEX\_POSEPOCH}
+\idx[Constant]{PULSARCATINDEX\_F}
+\idx[Constant]{PULSARCATINDEX\_FERR}
+\idx[Constant]{PULSARCATINDEX\_F1}
+\idx[Constant]{PULSARCATINDEX\_F1ERR}
+\idx[Constant]{PULSARCATINDEX\_F2}
+\idx[Constant]{PULSARCATINDEX\_F2ERR}
+\idx[Constant]{PULSARCATINDEX\_PEPOCH}
+\idx[Constant]{PULSARCATINDEX\_Dist}
+\idx[Constant]{PULSARCATINDEX\_NUM}
+\medskip\noindent
+\begin{tabular}{ll@{\qquad}ll}
+\verb@NAME@  & pulsar name & & \\
+\verb@RAJ@   & J2000 right ascension & \verb@RAJERR@  & its uncertainty \\
+\verb@DECJ@  & J2000 declination     & \verb@DECJERR@ & its uncertainty \\
+\verb@PMRA@  & right ascension proper motion & \verb@PMRAERR@  & its uncertainty \\
+\verb@PMDEC@ & declination proper motion     & \verb@PMDECERR@ & its uncertainty \\
+\verb@POSEPOCH@ & position measurement epoch & & \\
+\verb@F@  & spin frequency                   & \verb@FERR@  & its uncertainty \\
+\verb@F1@ & spin frequency derivative        & \verb@F1ERR@ & its uncertainty \\
+\verb@F1@ & spin frequency second derivative & \verb@F2ERR@ & its uncertainty \\
+\verb@PEPOCH@ & spin measurement epoch & & \\
+\verb@Dist@ & distance & & \\
+\verb@NUM@ & number of enum values & &
+\end{tabular}
+
+
+******************************************************* </lalLaTeX> */
+
+typedef enum {
+  PULSARCATINDEX_NAME,
+  PULSARCATINDEX_RAJ,   PULSARCATINDEX_RAJERR,
+  PULSARCATINDEX_DECJ,  PULSARCATINDEX_DECJERR,
+  PULSARCATINDEX_PMRA,  PULSARCATINDEX_PMRAERR,
+  PULSARCATINDEX_PMDEC, PULSARCATINDEX_PMDECERR,
+  PULSARCATINDEX_POSEPOCH,
+  PULSARCATINDEX_F,     PULSARCATINDEX_FERR,
+  PULSARCATINDEX_F1,    PULSARCATINDEX_F1ERR,
+  PULSARCATINDEX_F2,    PULSARCATINDEX_F2ERR,
+  PULSARCATINDEX_PEPOCH,
+  PULSARCATINDEX_Dist,
+  PULSARCATINDEX_NUM,
+} PulsarCatIndex;
 
 /* <lalLaTeX>
 \vfill{\footnotesize\input{PulsarCatHV}}
@@ -275,6 +341,20 @@ LALUpdatePulsarCat( LALStatus      *stat,
 void
 LALDestroyPulsarCat( LALStatus     *stat,
 		     PulsarCatNode **head );
+
+/* <lalLaTeX>
+\newpage\input{PulsarCatInputC}
+</lalLaTeX> */
+void
+LALReadPulsarCatHead( LALStatus *stat,
+		      INT4      indx[PULSARCATINDEX_NUM],
+		      TokenList *list );
+
+void
+LALReadPulsarCatLine( LALStatus     *stat,
+		      PulsarCatNode *node,
+		      TokenList     *list,
+		      INT4          indx[PULSARCATINDEX_NUM] );
 
 /* <lalLaTeX>
 \newpage\input{PulsarCatTestC}

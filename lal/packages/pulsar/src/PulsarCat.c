@@ -177,10 +177,10 @@ fact( UINT2 n );
 static UINT4
 fact( UINT2 n )
 {
-  UINT4 fact = 1;
+  UINT4 value = 1;
   while ( n )
-    fact *= n--;
-  return fact;
+    value *= n--;
+  return value;
 }
 
 
@@ -399,6 +399,7 @@ LALUpdatePulsarCat( LALStatus      *stat,
   while ( head ) {
     TRY( LALUpdatePulsarCatNode( stat->statusPtr, head, detectorTime,
 				 edat ), stat );
+    head = head->next;
   }
 
   /* Done. */
@@ -425,6 +426,9 @@ LALDestroyPulsarCat( LALStatus    *stat,
     CompanionNode *companion = here->companion; /* companion sublist */
     if ( here->f ) {
       TRY( LALDDestroyVector( stat->statusPtr, &(here->f) ), stat );
+    }
+    if ( here->df ) {
+      TRY( LALDDestroyVector( stat->statusPtr, &(here->df) ), stat );
     }
     while ( companion ) {
       CompanionNode *here2 = companion; /* current node */

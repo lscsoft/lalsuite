@@ -47,7 +47,7 @@ PulsarCatTest_SOURCES = PulsarCatTest.c
 PulsarCatTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest LALDemodTest
-TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest
+TESTS = StackMetricTest FlatMeshTest TwoDMeshTest ResampleTest FoldAmplitudesTest LALBarycenterTest PtoleMetricTest PtoleMeshTest FitToPulsarTest PulsarCatTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = earth*.ilwd sun*.ilwd

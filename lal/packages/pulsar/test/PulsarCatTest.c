@@ -13,7 +13,8 @@ Tests routines to manipulate pulsar data.
 \subsubsection*{Usage}
 \begin{verbatim}
 PulsarCatTest [-p posepoch ra dec pmra pmdec] [-l site earthfile sunfile] [-h]
-              [-t newepoch] [-o outfile] [-d debuglevel] [fepoch f0 [f1 ...]]
+              [-t newepoch] [-i infile] [-o outfile] [-d debuglevel]
+              [fepoch f0 [f1 ...]]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -39,9 +40,16 @@ not specified, the detector is placed at the solar system barycentre.
 \item[\texttt{-t}] Sets the new epoch to which the pulsar data will be
 updated.  See below for parsing formats for \verb@newepoch@.  If the
 \verb@-t@ option is not given, \verb@-t J2000.0@ is assumed.
-\item[\texttt{-o}] Writes the generated time series to the file
-\verb@outfile@.  If absent, the routines are exercised, but no output
-is written.
+\item[\texttt{-i}] Reads the pulsar data from the file \verb@infile@,
+whose format is described below.  This overrides the position and spin
+information read from the command line.  If the name \verb@stdin@ is
+given, it will read from standard input, \emph{not} from a file named
+\verb@stdin@.
+\item[\texttt{-o}] Writes the pulsar data to the file \verb@outfile@.
+If the name \verb@stdout@ or \verb@stderr@ is given, it will write to
+standard output or standard error (respectively), \emph{not} to a file
+named \verb@stdout@ or \verb@stderr@.  If the \verb@-o@ option is not
+given, the routines are exercised, but no output is written.
 \item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If
 absent, level 0 is assumed.
 \end{itemize}
@@ -62,6 +70,12 @@ Julian days preceded by \verb@JD@ (e.g.\ \verb@JD2451545.0@), or as an
 refer to noon UTC, January 1, 2000.  Also, note that each Julian epoch
 is assumed to be exactly 365.25 Julian days, so J2001.0 corresponds to
 18:00 UTC, January 1, 2001.
+
+If an input file is specified, it should consist of a header line
+that, when tokenized, can be parsed by \verb@LALReadPulsarCatHead()@,
+followed by one or more lines of pulsar data parseable (when
+tokenized) by \verb@LALReadPulsarCatLine()@.  Blank lines (with no
+tokens) or divider lines (with only one token) will be skipped.
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
@@ -86,6 +100,13 @@ This routine simply parses the input arguments, stuffs the data into a
 \verb@PulsarCatNode@ structure, and then calls
 \verb@LAUpdatePulsarCatNode()@ to update it to the new epoch.
 
+If the \verb@-i@ option is given, the corresponding file is opened and
+read by \verb@LALCHARReadVectorSequence()@, then each line is
+tokenized by \verb@LALCreateTokenList()@.  
+
+Output via the \verb@-o@ option is in a custom human-readable format,
+which should be easy to figure out.
+
 \subsubsection*{Uses}
 \begin{verbatim}
 lalDebugLevel
@@ -95,11 +116,20 @@ LALDCreateVector()              LALDDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
 LALUniformDeviate()             LALInitBarycenter()
 LALGPStoINT8()                  LALINT8toGPS()
+LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
+LALCreateTokenList()            LALDestroyTokenList()
+LALReadPulsarCatHead()          LALReadPulsarCatLine()
 LALStringToD()                  LALStringToI8()
 LALLeapSec()                    LALUpdatePulsarCat()
+LALSnprintf()
 \end{verbatim}
 
 \subsubsection*{Notes}
+
+At present the routine is kludged up to ignore pulsar position and
+frequency information from the command line, using hardwired
+parameters for \mbox{PSR J0034-0534} instead.  It can still override
+this with the \verb@-i@ option.
 
 \vfill{\footnotesize\input{PulsarCatTestCV}}
 
@@ -109,7 +139,10 @@ LALLeapSec()                    LALUpdatePulsarCat()
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/StringInput.h>
+#include <lal/StreamInput.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 #include <lal/Random.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
@@ -127,13 +160,14 @@ int lalDebugLevel = 0;
 /* Usage format string. */
 #define USAGE "Usage: %s [-p posepoch ra dec pmra pmdec]\n" \
 "\t[-l site earthfile sunfile] [-h]\n" \
-"\t[-t newepoch] [-o outfile] [-d debuglevel] [fepoch f0 [f1 ...]]\n"
+"\t[-t newepoch] [-i infile] [-o outfile] [-d debuglevel]\n" \
+"\t[fepoch f0 [f1 ...]]\n"
 
-/* Maximum output message length. */
-#define MSGLEN (1024)
+/* List of whitespace characters used for tokenizing input. */
+#define WHITESPACES " \b\f\n\r\t\v"
 
-/* Upper cutoff frequency for default detector response function. */
-#define FSTOP (16384.0)
+/* Maximum length of fprintderr() format string. */
+#define MAXLEN 1024
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -199,6 +233,11 @@ char *lalWatch;
 static void
 ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string );
 
+/* Prototype for a routine to print floating-point numbers with
+   uncertainties. */
+int
+fprintderr( FILE *fp, REAL8 x, REAL8 dx );
+
 
 int
 main(int argc, char **argv)
@@ -206,6 +245,7 @@ main(int argc, char **argv)
   static LALStatus stat;       /* status structure */
   int arg;                     /* command-line argument counter */
   BOOLEAN posGiven = 0;        /* whether position was given */
+  CHAR *infile = NULL;         /* name of infile */
   CHAR *outfile = NULL;        /* name of outfile */
   CHAR *earthfile = NULL;      /* name of earthfile */
   CHAR *sunfile = NULL;        /* name of sunfile */
@@ -266,6 +306,17 @@ main(int argc, char **argv)
       if ( argc > arg + 1 ) {
 	arg++;
 	SUB( ParseEpoch( &stat, &epoch, argv[arg++] ), &stat );
+      } else {
+	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return PULSARCATTESTC_EARG;
+      }
+    }
+    /* Parse input file option. */
+    else if ( !strcmp( argv[arg], "-i" ) ) {
+      if ( argc > arg + 1 ) {
+	arg++;
+	infile = argv[arg++];
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -333,6 +384,53 @@ main(int argc, char **argv)
     SUB( LALDestroyRandomParams( &stat, &params ), &stat );
     node.posepoch.gpsSeconds = J2000GPS;
     node.posepoch.gpsNanoSeconds = 0;
+
+    /* Instead, kludge it up for PSR J1939+2134, B1937+21.
+    memcpy( node.jname, "J1939+2134", 11*sizeof(CHAR) );
+    memcpy( node.bname, "B1937+21", 9*sizeof(CHAR) );
+    node.pos.system  = COORDINATESYSTEM_EQUATORIAL;
+    node.dpos.system = COORDINATESYSTEM_EQUATORIAL;
+    node.pm.system   = COORDINATESYSTEM_EQUATORIAL;
+    node.dpm.system  = COORDINATESYSTEM_EQUATORIAL;
+    node.pos.latitude   = 0.3766960555;
+    node.dpos.latitude  = 0.0000000034;
+    node.pos.longitude  = 5.1471621406;
+    node.dpos.longitude = 0.0000000015;
+    node.pm.latitude   = -7.13E-17;
+    node.dpm.latitude  =  0.14E-17;
+    node.pm.longitude  = -2.00E-17;
+    node.dpm.longitude =  0.12E-17;
+    SUB( ParseEpoch( &stat, &(node.posepoch), "JD2447500.0" ), &stat );
+    SUB( LALDCreateVector( &stat, &(node.f), 2 ), &stat );
+    SUB( LALDCreateVector( &stat, &(node.df), 2 ), &stat );
+    node.f->data[0]  = 641.92825287201;
+    node.df->data[0] =   0.00000000017;
+    node.f->data[1]  =  -4.3313E-14;
+    node.df->data[1] =   0.0013E-14;
+    SUB( ParseEpoch( &stat, &(node.fepoch), "JD2450100.0" ), &stat ); */
+
+    /* Instead, kludge it up for PSR J0034-0534. */
+    memcpy( node.jname, "J0034-0534", 11*sizeof(CHAR) );
+    node.pos.system  = COORDINATESYSTEM_EQUATORIAL;
+    node.dpos.system = COORDINATESYSTEM_EQUATORIAL;
+    node.pm.system   = COORDINATESYSTEM_EQUATORIAL;
+    node.dpm.system  = COORDINATESYSTEM_EQUATORIAL;
+    node.pos.latitude   = -0.097334152;
+    node.dpos.latitude  =  0.000000097;
+    node.pos.longitude  =  0.149940232;
+    node.dpos.longitude =  0.000000036;
+    node.pm.latitude   = -0.5E-15;
+    node.dpm.latitude  =  3.5E-15;
+    node.pm.longitude  =  2.3E-15;
+    node.dpm.longitude =  1.7E-15;
+    SUB( ParseEpoch( &stat, &(node.posepoch), "JD2449550.0" ), &stat );
+    SUB( LALDCreateVector( &stat, &(node.f), 2 ), &stat );
+    SUB( LALDCreateVector( &stat, &(node.df), 2 ), &stat );
+    node.f->data[0]  = 532.71343832081;
+    node.df->data[0] =   0.00000000015;
+    node.f->data[1]  =  -1.436E-15;
+    node.df->data[1] =   0.009E-15;
+    SUB( ParseEpoch( &stat, &(node.fepoch), "JD2449550.0" ), &stat );
   }
 
   /* If the detector was specified, set up the detector position. */
@@ -376,27 +474,100 @@ main(int argc, char **argv)
     SUB( LALInitBarycenter( &stat, edat ), &stat );
   }
 
+  /* If an input file was specified, it overrides the preceding
+     position and frequency information. */
+  if ( infile ) {
+    UINT4 i = 0;                     /* line number */
+    CHARVectorSequence *file = NULL; /* input file */
+    TokenList *list = NULL;          /* input line parsed into tokens */
+    INT4 indx[PULSARCATINDEX_NUM];   /* ordering of tokens in line */
+    PulsarCatNode *here = &node;     /* structure for current line */
+    FILE *fp = NULL;                 /* input file pointer */
+
+    /* Read in file. */
+    if ( !strcmp( infile, "stdin" ) )
+      fp = stdin;
+    else
+      fp = fopen( infile, "r" ); 
+    if ( fp == NULL ) {
+      ERROR( PULSARCATTESTC_EFILE, PULSARCATTESTC_MSGEFILE, infile );
+      return PULSARCATTESTC_EFILE;
+    }
+    SUB( LALCHARReadVectorSequence( &stat, &file, fp ), &stat );
+    fclose( fp );
+
+    /* Read header, skipping blank or divider lines. */
+    SUB( LALCreateTokenList( &stat, &list, file->data, WHITESPACES ),
+	 &stat );
+    while ( list->nTokens < 3 && ++i < file->length ) {
+      SUB( LALDestroyTokenList( &stat, &list ), &stat );
+      SUB( LALCreateTokenList( &stat, &list, file->data +
+			       i*file->vectorLength, WHITESPACES ),
+	   &stat );
+    }
+    if ( i >= file->length ) {
+      WARNING( "No header found in input file" );
+    } else {
+      SUB( LALReadPulsarCatHead( &stat, indx, list ), &stat );
+    }
+    SUB( LALDestroyTokenList( &stat, &list ), &stat );
+
+    /* Read body, skipping blank or divider lines. */
+    while ( ++i < file->length ) {
+      SUB( LALCreateTokenList( &stat, &list, file->data +
+			       i*file->vectorLength, WHITESPACES ),
+	   &stat );
+      while ( list->nTokens < 3 && ++i < file->length ) {
+	SUB( LALDestroyTokenList( &stat, &list ), &stat );
+	SUB( LALCreateTokenList( &stat, &list, file->data +
+				 i*file->vectorLength, WHITESPACES ),
+	     &stat );
+      }
+      if ( i < file->length ) {
+	if ( !( here->next = (PulsarCatNode *)
+		LALMalloc( sizeof(PulsarCatNode) ) ) ) {
+	  ERROR( PULSARCATTESTC_EMEM, PULSARCATTESTC_MSGEMEM, 0 );
+	  return PULSARCATTESTC_EMEM;
+	}
+	here = here->next;
+	memset( here, 0, sizeof(PulsarCatNode) );
+	SUB( LALReadPulsarCatLine( &stat, here, list, indx ),
+	     &stat );
+      }
+      SUB( LALDestroyTokenList( &stat, &list ), &stat );
+    }
+    SUB( LALCHARDestroyVectorSequence( &stat, &file ), &stat );
+  }
+
 
   /*******************************************************************
    * CONVERSION                                                      *
    *******************************************************************/
 
   /* Perform update. */
-  SUB( LALUpdatePulsarCatNode( &stat, &node, &detectorTime, edat ),
+  SUB( LALUpdatePulsarCat( &stat, &node, &detectorTime, edat ),
        &stat );
 
   /* If output was requested, print output. */
   if ( outfile ) {
-    PulsarCatNode *here = &node;
-    FILE *fp = fopen( outfile, "w" );
+    PulsarCatNode *here = &node; /* current position in catalogue */
+    FILE *fp = NULL;             /* output file pointer */
+    if ( !strcmp( outfile, "stdout" ) )
+      fp = stdout;
+    else if ( !strcmp( outfile, "stderr" ) )
+      fp = stderr;
+    else
+      fp = fopen( outfile, "w" );
     if ( fp == NULL ) {
       ERROR( PULSARCATTESTC_EFILE, PULSARCATTESTC_MSGEFILE, outfile );
       return PULSARCATTESTC_EFILE;
     }
+    if ( infile )
+      here = here->next;
     while ( here ) {
       CompanionNode *companion = here->companion; /* companion data */
       UINT4 compNo = 0; /* companion number */
-      INT8 ep; /* an epoch */
+      INT8 ep;          /* GPS epoch */
       if ( here->jname[0] != '\0' ) {
 	fprintf( fp, "PULSAR %s", here->jname );
 	if ( here->bname[0] != '\0' )
@@ -406,19 +577,32 @@ main(int argc, char **argv)
 	fprintf( fp, "PULSAR %s\n", here->bname );
       else
 	fprintf( fp, "PULSAR (Unknown)\n" );
-      fprintf( fp, "ra    = %23.16e rad\n", here->pos.longitude );
-      fprintf( fp, "dec   = %23.16e rad\n", here->pos.latitude );
-      fprintf( fp, "pmra  = %23.16e rad/s\n", here->pm.longitude );
-      fprintf( fp, "pmdec = %23.16e rad/s\n", here->pm.latitude );
+      fprintf( fp, "ra    = " );
+      fprintderr( fp, here->pos.longitude, here->dpos.longitude );
+      fprintf( fp, " rad\n" );
+      fprintf( fp, "dec   = " );
+      fprintderr( fp, here->pos.latitude, here->dpos.latitude );
+      fprintf( fp, " rad\n" );
+      fprintf( fp, "pmra  = " );
+      fprintderr( fp, here->pm.longitude, here->dpm.longitude );
+      fprintf( fp, " rad/s\n" );
+      fprintf( fp, "pmdec = " );
+      fprintderr( fp, here->pm.latitude, here->dpm.latitude );
+      fprintf( fp, " rad/s\n" );
       SUB( LALGPStoINT8( &stat, &ep, &(here->posepoch) ), &stat );
-      fprintf( fp, "posepoch = %lli\n", ep );
+      fprintf( fp, "posepoch = %lli ns\n", ep );
       if ( here->f ) {
 	UINT4 i; /* an index */
-	fprintf( fp, "f = %23.16e Hz\n", here->f->data[0] );
-	for ( i = 1; i < here->f->length; i++ )
-	  fprintf( fp, "    %23.16e Hz^%i\n", here->f->data[i], i+1 );
+	fprintf( fp, "f0 = " );
+	fprintderr( fp, 2.0*here->f->data[0], 2.0*here->df->data[0] );
+	fprintf( fp, " Hz\n" );
+	for ( i = 1; i < here->f->length; i++ ) {
+	  fprintf( fp, "f%i = ", i );
+	  fprintderr( fp, 2.0*here->f->data[i], 2.0*here->df->data[i] );
+	  fprintf( fp, " Hz^%i\n", i+1 );
+	}
 	SUB( LALGPStoINT8( &stat, &ep, &(here->fepoch) ), &stat );
-	fprintf( fp, "fepoch = %lli\n", ep );
+	fprintf( fp, "fepoch = %lli ns\n", ep );
       }
       if ( here->dist > 0.0 )
 	fprintf( fp, "dist = %15.8e m\n", here->dist );
@@ -434,7 +618,7 @@ main(int argc, char **argv)
       while ( companion ) {
 	fprintf( fp, "Companion %i\n", ++compNo );
 	SUB( LALGPStoINT8( &stat, &ep, &(companion->epoch) ), &stat );
-	fprintf( fp, "  epoch = %lli\n", ep );
+	fprintf( fp, "  epoch = %lli ns\n", ep );
 	fprintf( fp, "  x     = %23.16e s\n", companion->x );
 	fprintf( fp, "  p     = %23.16e s\n", companion->p );
 	fprintf( fp, "  pDot  = %23.16e\n", companion->pDot );
@@ -446,6 +630,7 @@ main(int argc, char **argv)
 	fprintf( fp, "  r     = %23.16e\n", companion->r );
 	companion = companion->next;
       }
+      fprintf( fp, "\n" );
       here = here->next;
     }
     fclose( fp );
@@ -457,8 +642,14 @@ main(int argc, char **argv)
    *******************************************************************/
 
   /* Destroy any allocated memory. */
+  if ( node.next ) {
+    SUB( LALDestroyPulsarCat( &stat, &(node.next) ), &stat );
+  }
   if ( node.f ) {
     SUB( LALDDestroyVector( &stat, &(node.f) ), &stat );
+  }
+  if ( node.df ) {
+    SUB( LALDDestroyVector( &stat, &(node.df) ), &stat );
   }
   if ( edat ) {
     if ( edat->ephemE )
@@ -536,4 +727,74 @@ ParseEpoch( LALStatus *stat, LIGOTimeGPS *epoch, const CHAR *string )
   /* That's all. */
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
+}
+
+
+int
+fprintderr( FILE *fp, REAL8 x, REAL8 dx ) {
+  CHAR format[MAXLEN]; /* format string for fprintf() */
+  INT4 gsd = 0;        /* place index of greatest significant digit */
+  INT4 lsd = 0;        /* place index of least significant digit */
+  REAL8 norm;          /* normalization factor */
+
+  /* Compute gsd, lsd, y, and dy. */
+  if ( dx < LAL_REAL8_EPS*fabs( x ) )
+    dx = 0.0;
+  if ( dx > 0.0 ) {
+    REAL8 lsdd = log( 0.5*dx )/log( 10.0 );
+    if ( lsdd >= 0.0 )
+      lsd = (INT4)( lsdd );
+    else
+      lsd = (INT4)( lsdd ) - 1;
+  }
+  if ( x != 0.0 ) {
+    REAL8 gsdd = log( fabs( x ) )/log( 10.0 );
+    if ( gsdd >= 0.0 )
+      gsd = (INT4)( gsdd );
+    else
+      gsd = (INT4)( gsdd ) - 1;
+  }
+
+  /* If x is zero, format is determined entirely by dx. */
+  if ( x == 0.0 ) {
+    if ( dx <= 0.0 )
+      return fprintf( fp, "0" );
+    if ( abs( lsd ) > 3 ) {
+      norm = pow( 10.0, -lsd );
+      return fprintf( fp, "( 0 +/- %.0f )e%+i", dx*norm, lsd );
+    }
+    if ( lsd <= 0 ) {
+      LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+      return fprintf( fp, format, 0.0, dx );
+    }
+    norm = pow( 10.0, -lsd );
+    LALSnprintf( format, MAXLEN, "0 +/- %%.0f%%0%ii", lsd );
+    return fprintf( fp, format, dx*norm, 0 );
+  }
+
+  /* If number is exact to 8-byte precision, print it as such. */
+  if ( dx <= 0.0 ) {
+    if ( abs( gsd ) > 3 )
+      return fprintf( fp, "%.16e", x );
+    LALSnprintf( format, MAXLEN, "%%.%if", 16 - gsd );
+    return fprintf( fp, format, x );
+  }
+
+  /* Otherwise, format depends on x and dx. */
+  if ( gsd < lsd )
+    gsd = lsd;
+  if ( lsd > 3 || gsd < -3 ) {
+    norm = pow( 10.0, -gsd );
+    LALSnprintf( format, MAXLEN, "( %%.%if +/- %%.%if )e%+i",
+		 gsd - lsd, gsd - lsd, gsd );
+    return fprintf( fp, format, x*norm, dx*norm );
+  }
+  if ( lsd <= 0 ) {
+    LALSnprintf( format, MAXLEN, "%%.%if +/- %%.%if", -lsd, -lsd );
+    return fprintf( fp, format, x, dx );
+  }
+  norm = pow( 10.0, -lsd );
+  LALSnprintf( format, MAXLEN, "%%.0f%%0%ii +/- %%.0f%%0%ii", lsd,
+	       lsd );
+  return fprintf( fp, format, x*norm, 0, dx*norm, 0 );
 }
