@@ -42,7 +42,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 MOSTLYCLEANFILES = ring-*.dat *RING*.xml *RING*.asc *RING*.gwf \
 		   S2_H1_dag.*S2_RING_001.*
-CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_cosmicstring_pipe S2_H1_dag.ini S3_H1_StringDag.ini
+CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_cosmicstring_pipe S2_H1_dag.ini
 EXTRA_DIST = ring.c StringSearch.c\
              F-600000000-6-10.F F-600000060-6-10.F F-600000120-6-10.F \
              H-CAL_FAC-600000000-6000.gwf H-CAL_REF-600000000-64.gwf \
