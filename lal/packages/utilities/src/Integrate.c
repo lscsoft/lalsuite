@@ -67,7 +67,7 @@ STrapezoid (
     CHECKSTATUSPTR (status);
     input->function (status->statusPtr, &y1, input->xmax, params);
     CHECKSTATUSPTR (status);
-    output->integral = (input->xmax - input->xmin)*(y1 - y0)/2;
+    output->integral = (input->xmax - input->xmin)*(y1 + y0)/2;
   }
 
   DETATCHSTATUSPTR (status);
@@ -112,7 +112,7 @@ DTrapezoid (
     CHECKSTATUSPTR (status);
     input->function (status->statusPtr, &y1, input->xmax, params);
     CHECKSTATUSPTR (status);
-    output->integral = (input->xmax - input->xmin)*(y1 - y0)/2;
+    output->integral = (input->xmax - input->xmin)*(y1 + y0)/2;
   }
 
   DETATCHSTATUSPTR (status);
