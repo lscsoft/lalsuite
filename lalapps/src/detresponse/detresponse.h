@@ -36,7 +36,7 @@ FILE *xfopen(const char *path, const char *mode);
 int   xfclose(FILE *stream);
 
 /* wrap strncpy(3) */
-char *strlcpy(char *dst, const char *src, size_t len);
+char *mystrlcpy(char *dst, const char *src, size_t len);
 
 /* print detector parameters */
 void PrintLALDetector(LALDetector * const detector);

@@ -55,17 +55,17 @@ main(int argc, char **argv)
 
   if (args_info.detector_given)
     {
-      if (strncasecmp(args_info.detector_arg, "lho", LALNameLength) == 0)
+      if (mystrncasecmp(args_info.detector_arg, "lho", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-      else if (strncasecmp(args_info.detector_arg, "llo", LALNameLength) == 0)
+      else if (mystrncasecmp(args_info.detector_arg, "llo", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-      else if (strncasecmp(args_info.detector_arg, "virgo", LALNameLength) == 0)
+      else if (mystrncasecmp(args_info.detector_arg, "virgo", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-      else if (strncasecmp(args_info.detector_arg, "geo", LALNameLength) == 0)
+      else if (mystrncasecmp(args_info.detector_arg, "geo", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-      else if (strncasecmp(args_info.detector_arg, "tama", LALNameLength) == 0)
+      else if (mystrncasecmp(args_info.detector_arg, "tama", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-      else if (strncasecmp(args_info.detector_arg, "cit", LALNameLength) == 0)
+      else if (mystrncasecmp(args_info.detector_arg, "cit", LALNameLength) == 0)
         detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
       else
         {
@@ -92,10 +92,10 @@ main(int argc, char **argv)
   if (verbosity_level & 4)
     print_source(&source);
 
-  (void)strlcpy(cross_file_name, args_info.source_name_arg, LALNameLength);
+  (void)mystrlcpy(cross_file_name, args_info.source_name_arg, LALNameLength);
   (void)strncat(cross_file_name, "_cross.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
-  (void)strlcpy(plus_file_name, args_info.source_name_arg, LALNameLength);
+  (void)mystrlcpy(plus_file_name, args_info.source_name_arg, LALNameLength);
   (void)strncat(plus_file_name, "_plus.txt",
                 (LALNameLength - strlen(args_info.source_name_arg)));
   

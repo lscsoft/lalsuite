@@ -38,7 +38,7 @@ xfclose(FILE * stream)
 }
 
 char *
-strlcpy(char       * dst,
+mystrlcpy(char       * dst,
         const char * src,
         size_t       len)
 {

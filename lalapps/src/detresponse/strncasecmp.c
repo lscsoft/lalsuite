@@ -10,7 +10,7 @@
 
 
 int 
-strncasecmp(char *s1, char *s2, unsigned int n)
+mystrncasecmp(char *s1, char *s2, unsigned int n)
 {
         if (n == 0)
                 return 0;
