@@ -13,7 +13,7 @@ Destroys an object of type \verb@ResampleRules@.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DestroyResampleRulesCP}
-\index{\texttt{LALDestroyResampleRules()}}
+\idx{LALDestroyResampleRules()}
 
 \subsubsection*{Description}
 

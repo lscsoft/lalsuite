@@ -45,7 +45,7 @@ Generates a reference interference signal.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{RefInterferenceD}
-\index{\texttt{LALRefInterference()}}
+\idx{LALRefInterference()}
 
 \subsubsection*{Description}
 Given the complex vector  \verb@*in1@ of length $n/2+1$, containing

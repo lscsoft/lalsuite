@@ -240,7 +240,7 @@ NRCSID (CLRH, "$Id: CLR.h");
 \begin{verbatim}
 struct REAL4TVectorCLR
 \end{verbatim}
-\index{\texttt{REAL4TVectorCLR}}
+\idx[Type]{REAL4TVectorCLR}
 
 \noindent This structure stores the time domain data and other 
 information needed in order to remove all the line interference 
@@ -259,7 +259,7 @@ harmonics.  The fields are:
 \begin{verbatim}
 struct REAL4FVectorCLR
 \end{verbatim}
-\index{\texttt{REAL4FVectorCLR}}
+\idx[Type]{REAL4FVectorCLR}
 
 \noindent This structure stores the spectrum, $\vert\tilde x(\nu)\vert^2$,
  and other information

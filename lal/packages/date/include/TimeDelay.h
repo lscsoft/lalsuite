@@ -60,7 +60,7 @@ NRCSID( TIMEDELAYH, "$Id$" );
 \begin{verbatim}
 TwoDetsTimeAndASource
 \end{verbatim}
-\index{\texttt{TwoDetsTimeAndASource}}
+\idx[Type]{TwoDetsTimeAndASource}
 
 \noindent This structure stores two pointers to \verb+LALPlaceAndGPS+
 structures, and a pointer to a \verb+SkyPosition+ structure.  The
@@ -92,7 +92,7 @@ TwoDetsTimeAndASource;
 \begin{verbatim}
 DetTimeAndASource}
 \end{verbatim}
-\index{\texttt{DetTimeAndASource}}
+\idx[Type]{DetTimeAndASource}
 
 \noindent This structure stores one pointer to a \verb+LALPlaceAndGPS+
 structure, and a pointer to a \verb+SkyPosition+ structure.  The

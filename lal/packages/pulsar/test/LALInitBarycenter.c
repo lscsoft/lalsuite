@@ -12,7 +12,7 @@ Reads Earth and Sun position information from data files.
 
 \subsubsection*{Prototypes}
 \input{LALInitBarycenterCP}
-\index{\texttt{LALInitBarycenter()}}
+\idx{LALInitBarycenter()}
 
 \subsubsection*{Description}
 

@@ -24,12 +24,12 @@ algorithm.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{HeapSortCP}
-\index{\texttt{LALSHeapSort()}}
-\index{\texttt{LALSHeapIndex()}}
-\index{\texttt{LALSHeapRank()}}
-\index{\texttt{LALDHeapSort()}}
-\index{\texttt{LALDHeapIndex()}}
-\index{\texttt{LALDHeapRank()}}
+\idx{LALSHeapSort()}
+\idx{LALSHeapIndex()}
+\idx{LALSHeapRank()}
+\idx{LALDHeapSort()}
+\idx{LALDHeapIndex()}
+\idx{LALDHeapRank()}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ pair of interferometers.
 
 \subsubsection*{Prototypes}
 %\input{TwoInterfFindChirpFilterCP}
-\index{\texttt{LALTwoInterfFindChirpFilter()}}
+\idx{LALTwoInterfFindChirpFilter()}
 
 \subsubsection*{Description}
 

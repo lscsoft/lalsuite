@@ -111,7 +111,7 @@ NRCSID (DATEH, "$Id$");
 \subsection*{Types}
 
 \subsubsection*{Enumeration \texttt{LALMSTUnits}}
-\index{\texttt{LALMSTUnits}}
+\idx[Type]{LALMSTUnits}
 
 This enumerated type is used as a parameter for Mean Sidereal Time
 routines to specify the units in which to return the Mean Sidereal
@@ -138,7 +138,7 @@ typedef enum
 
 /* <lalLaTeX>
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
-\index{\texttt{LALLeapSecAccuracy}}
+\idx[Type]{LALLeapSecAccuracy}
 
 This enumerated type is used as a parameter for \texttt{LALGPStoUTC()} and
 \texttt{LALUTCtoGPS()} to specify if complete accuracy is required in use
@@ -167,7 +167,7 @@ typedef enum
 /* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALUnixDate}}
-\index{\texttt{LALUnixDate}}
+\idx[Type]{LALUnixDate}
 
 This structure is just the standard Unix \texttt{tm} structure.  We shall
 {\em always} ignore the daylight savings time field, \verb+tm_isdst+.
@@ -186,7 +186,7 @@ LALUnixDate;
 
 
 \subsubsection{Structure \texttt{LALTimeInterval}}
-\index{\texttt{LALTimeInterval}}
+\idx[Type]{LALTimeInterval}
 
 This structure is used for storing intervals of \texttt{LIGOTimeGPS}
 and \texttt{LIGOTimeUnix} times.  The fields are:
@@ -214,7 +214,7 @@ LALTimeInterval;
 
 
 \subsubsection{Structure \texttt{LALDate}}
-\index{\texttt{LALDate}}
+\idx[Type]{LALDate}
 
 This structure is an extension of \texttt{LALUnixDate} to include residual
 nanosecond information.  The fields are:
@@ -242,7 +242,7 @@ LALDate;
 
 
 \subsubsection{Structure \texttt{LALPlaceAndGPS}}
-\index{\texttt{LALPlaceAndGPS}}
+\idx[Type]{LALPlaceAndGPS}
 
 This structure stores pointers to a \texttt{LALDetector} and a
 \texttt{LIGOTimeGPS}. Its sole purpose is to aggregate these
@@ -271,7 +271,7 @@ LALPlaceAndGPS;
 
 
 \subsubsection{Structure \texttt{LALPlaceAndDate}}
-\index{\texttt{LALPlaceAndDate}}
+\idx[Type]{LALPlaceAndDate}
 
 Like \texttt{LALPlaceAndGPS}, this structure aggregates a pointer to a
 detector and a pointer to a date.  This is another convenience

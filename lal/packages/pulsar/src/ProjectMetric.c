@@ -13,7 +13,7 @@ Projects out the zeroth dimension of a metric.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ProjectMetricCP}
-\index{\texttt{LALProjectMetric()}}
+\idx{LALProjectMetric()}
 
 \subsubsection*{Description}
 

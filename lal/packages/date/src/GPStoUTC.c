@@ -13,8 +13,8 @@ Converts between GPS time (in seconds and nanoseconds) and UTC in a
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{GPStoUTCCP}
-\index{\texttt{LALGPStoUTC()}}
-\index{\texttt{LALUTCtoGPS()}}
+\idx{LALGPStoUTC()}
+\idx{LALUTCtoGPS()}
 
 \subsubsection*{Description}
 

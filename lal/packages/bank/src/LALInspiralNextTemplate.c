@@ -13,7 +13,7 @@ current template, but in the positive $\tau_{2(3)}$ axis.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralNextTemplateCP}
-\index{\verb&LALInspiralNextTemplate()&}
+\idx{LALInspiralNextTemplate()}
 
 \subsubsection*{Description}
 

@@ -13,7 +13,7 @@ Resamples a time series according to a set of resampling rules.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ApplyResampleRulesCP}
-\index{\texttt{LALApplyResampleRules()}}
+\idx{LALApplyResampleRules()}
 
 \subsubsection*{Description}
 

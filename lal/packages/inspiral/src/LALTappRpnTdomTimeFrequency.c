@@ -14,7 +14,7 @@ post-Nowtonian order.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomTimeFrequencyCP}
-\index{\verb&LALTappRpnTdomTimeFrequency()&}
+\idx{LALTappRpnTdomTimeFrequency()}
 
 \subsubsection*{Description}
 

@@ -11,8 +11,8 @@ Example module for LAL.
 
 \subsubsection*{Prototypes}
 \input{LALSampleCP}
-\index{\texttt{LALREAL8Invert()}}
-\index{\texttt{LALREAL8Divide()}}
+\idx{LALREAL8Invert()}
+\idx{LALREAL8Divide()}
 
 \subsubsection*{Description}
 

@@ -39,7 +39,7 @@ custom units (strain and ADC counts).
 \subsection*{Structures}
 
 \subsubsection*{LALUnitPair}
-\index{\texttt{LALUnitPair}}
+\idx[Type]{LALUnitPair}
 Consists of a pair of unit structures; used as an input structure for
 the \texttt{LALUnitCompare()} and \texttt{LALUnitMultiply()} functions.
 The fields are:
@@ -49,7 +49,7 @@ The fields are:
 \end{description}
 
 \subsubsection*{RAT4}
-\index{\texttt{RAT4}}
+\idx[Type]{RAT4}
 A four-byte rational number, used as a parameter structure for
 \texttt{LALUnitRaise()}.  The fields are:
 \begin{description}

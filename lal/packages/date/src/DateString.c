@@ -14,7 +14,7 @@ given the date in an \texttt{LALDate} structure.
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{DateStringCP}
-\index{\texttt{LALDateString()}}
+\idx{LALDateString()}
 
 \subsubsection*{Description}
 

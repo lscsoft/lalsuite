@@ -14,7 +14,7 @@ space.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TwoDMeshPlotCP}
-\index{\texttt{LALPlotTwoDMesh()}}
+\idx{LALPlotTwoDMesh()}
 
 \subsubsection*{Description}
 

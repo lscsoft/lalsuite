@@ -13,15 +13,15 @@ Reads the entire contents of a file into a vector sequence.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{StreamVectorSequenceInputCP}
-\index{\texttt{LALCHARReadVectorSequence()}}
-\index{\texttt{LALI2ReadVectorSequence()}}
-\index{\texttt{LALI4ReadVectorSequence()}}
-\index{\texttt{LALI8ReadVectorSequence()}}
-\index{\texttt{LALU2ReadVectorSequence()}}
-\index{\texttt{LALU4ReadVectorSequence()}}
-\index{\texttt{LALU8ReadVectorSequence()}}
-\index{\texttt{LALSReadVectorSequence()}}
-\index{\texttt{LALDReadVectorSequence()}}
+\idx{LALCHARReadVectorSequence()}
+\idx{LALI2ReadVectorSequence()}
+\idx{LALI4ReadVectorSequence()}
+\idx{LALI8ReadVectorSequence()}
+\idx{LALU2ReadVectorSequence()}
+\idx{LALU4ReadVectorSequence()}
+\idx{LALU8ReadVectorSequence()}
+\idx{LALSReadVectorSequence()}
+\idx{LALDReadVectorSequence()}
 
 \subsubsection*{Description}
 

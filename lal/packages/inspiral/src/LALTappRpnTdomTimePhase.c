@@ -17,7 +17,7 @@ order.
 
 \input{LALTappRpnTdomTimePhaseCP}
 
-\index{\verb&LALTappRpnTdomTimePhase()&}
+\idx{LALTappRpnTdomTimePhase()}
 
 \subsubsection*{Description}
 

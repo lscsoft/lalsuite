@@ -16,7 +16,7 @@ their symmetric mass ratio $\eta$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralValidParamsCP}
-\index{\verb&LALInspiralValidParams()&}
+\idx{LALInspiralValidParams()}
 
 \subsubsection*{Description}
 

@@ -13,8 +13,8 @@ Computes the composition of two time transformations.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TCompCP}
-\index{\texttt{LALTComp()}}
-\index{\texttt{LALDTComp()}}
+\idx{LALTComp()}
+\idx{LALDTComp()}
 
 \subsubsection*{Description}
 

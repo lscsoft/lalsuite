@@ -13,7 +13,7 @@ Module to calculate the LHS of Eq.(4) in the documentation for
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqTofFCP}
-\index{\verb&LALTappRpnTdomFreqTofF()&}
+\idx{LALTappRpnTdomFreqTofF()}
 
 \subsubsection*{Description}
 

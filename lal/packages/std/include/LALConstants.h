@@ -42,6 +42,31 @@ NRCSID (LALCONSTANTSH, "$Id$");
 /* <lalLaTeX>
 
 \subsection*{Mathematical constants}
+\idx[Constant]{LAL\_REAL4\_MANT}
+\idx[Constant]{LAL\_REAL4\_MAX}
+\idx[Constant]{LAL\_REAL4\_MIN}
+\idx[Constant]{LAL\_REAL4\_EPS}
+\idx[Constant]{LAL\_REAL8\_MANT}
+\idx[Constant]{LAL\_REAL8\_MAX}
+\idx[Constant]{LAL\_REAL8\_MIN}
+\idx[Constant]{LAL\_REAL8\_EPS}
+\idx[Constant]{LAL\_E}
+\idx[Constant]{LAL\_LOG2E}
+\idx[Constant]{LAL\_LOG10E}
+\idx[Constant]{LAL\_LN2}
+\idx[Constant]{LAL\_LN10}
+\idx[Constant]{LAL\_SQRT2}
+\idx[Constant]{LAL\_SQRT1\_2}
+\idx[Constant]{LAL\_GAMMA}
+\idx[Constant]{LAL\_PI}
+\idx[Constant]{LAL\_TWOPI}
+\idx[Constant]{LAL\_PI\_2}
+\idx[Constant]{LAL\_PI\_4}
+\idx[Constant]{LAL\_1\_PI}
+\idx[Constant]{LAL\_2\_PI}
+\idx[Constant]{LAL\_2\_SQRTPI}
+\idx[Constant]{LAL\_PI\_180}
+\idx[Constant]{LAL\_180\_PI}
 
 The following constants define the precision and range of
 floating-point arithmetic in LAL.  They are taken from the IEEE
@@ -150,6 +175,32 @@ Name & Value & Expression \\
 /* <lalLaTeX>
 
 \subsection*{Physical constants}
+\idx[Constant]{LAL\_C\_SI}
+\idx[Constant]{LAL\_EPSILON0\_SI}
+\idx[Constant]{LAL\_MU0\_SI}
+\idx[Constant]{LAL\_GEARTH\_SI}
+\idx[Constant]{LAL\_PATM\_SI}
+\idx[Constant]{LAL\_G\_SI}
+\idx[Constant]{LAL\_H\_SI}
+\idx[Constant]{LAL\_HBAR\_SI}
+\idx[Constant]{LAL\_MPL\_SI}
+\idx[Constant]{LAL\_LPL\_SI}
+\idx[Constant]{LAL\_TPL\_SI}
+\idx[Constant]{LAL\_K\_SI}
+\idx[Constant]{LAL\_R\_SI}
+\idx[Constant]{LAL\_MOL}
+\idx[Constant]{LAL\_BWIEN\_SI}
+\idx[Constant]{LAL\_SIGMA\_SI}
+\idx[Constant]{LAL\_AMU\_SI}
+\idx[Constant]{LAL\_MP\_SI}
+\idx[Constant]{LAL\_ME\_SI}
+\idx[Constant]{LAL\_QP\_SI}
+\idx[Constant]{LAL\_ALPHA}
+\idx[Constant]{LAL\_RE\_SI}
+\idx[Constant]{LAL\_LAMBDAE\_SI}
+\idx[Constant]{LAL\_AB\_SI}
+\idx[Constant]{LAL\_MUB\_SI}
+\idx[Constant]{LAL\_MUN\_SI}
 
 The following physical constants are defined to have exact values.
 The values of $c$ and $g$ are taken from~\cite{Barnet:1996},
@@ -264,6 +315,32 @@ Name & Value & Description \\
 /* <lalLaTeX>
 
 \subsection*{Astrophysical parameters}
+\idx[Constant]{LAL\_REARTH\_SI}
+\idx[Constant]{LAL\_AWGS84\_SI}
+\idx[Constant]{LAL\_BWGS84\_SI}
+\idx[Constant]{LAL\_MEARTH\_SI}
+\idx[Constant]{LAL\_IEARTH}
+\idx[Constant]{LAL\_EEARTH}
+\idx[Constant]{LAL\_RSUN\_SI}
+\idx[Constant]{LAL\_MSUN\_SI}
+\idx[Constant]{LAL\_MRSUN\_SI}
+\idx[Constant]{LAL\_MTSUN\_SI}
+\idx[Constant]{LAL\_LSUN\_SI}
+\idx[Constant]{LAL\_AU\_SI}
+\idx[Constant]{LAL\_PC\_SI}
+\idx[Constant]{LAL\_YRTROP\_SI}
+\idx[Constant]{LAL\_YRSID\_SI}
+\idx[Constant]{LAL\_DAYSID\_SI}
+\idx[Constant]{LAL\_LYR\_SI}
+\idx[Constant]{LAL\_H0\_SI}
+\idx[Constant]{LAL\_H0FAC\_SI}
+\idx[Constant]{LAL\_RHOC\_SI}
+\idx[Constant]{LAL\_RHOCFAC\_SI}
+\idx[Constant]{LAL\_TCBR\_SI}
+\idx[Constant]{LAL\_VCBR\_SI}
+\idx[Constant]{LAL\_RHOCBR\_SI}
+\idx[Constant]{LAL\_NCBR\_SI}
+\idx[Constant]{LAL\_SCBR\_SI}
 
 The following parameters are derived from measured properties of the
 Earth and Sun.  The values are taken from~\cite{Barnet:1996}, except

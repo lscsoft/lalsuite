@@ -193,7 +193,7 @@ For the sake of LAL namespace conventions, these termination codes are
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{PPNParamStruc}}
-\index{\texttt{PPNParamStruc}}
+\idx[Type]{PPNParamStruc}
 
 This structure stores the parameters for constructing a restricted
 post${}^2$-Newtonian waveform.  It is divided into three parts:
@@ -304,7 +304,7 @@ typedef struct tagPPNParamStruc {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{GalacticInspiralParamStruc}}
-\index{\texttt{GalacticInspiralParamStruc}}
+\idx[Type]{GalacticInspiralParamStruc}
 
 This structure stores the position and mass parameters of a galactic
 inspiral event.  The fields are:

@@ -13,7 +13,7 @@ These are the energy and flux functions which are used in the gravitational wave
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTofVIntegrandCP}
-\index{\verb&LALTofVIntegrand()&}
+\idx{LALTofVIntegrand()}
 
 \subsubsection*{Description}
 

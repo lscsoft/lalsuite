@@ -12,7 +12,7 @@ standard cross-correlation statistic.
 
 \subsubsection*{Prototypes}
 \input{StochasticOptimalFilterCP}
-\index{\texttt{LALStochasticOptimalFilter()}}
+\idx{LALStochasticOptimalFilter()}
 
 \subsubsection*{Description}
 

@@ -11,7 +11,7 @@ A routine to transform a second rank tensor under a given transformation.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALMatrixTransformCP}
-\index{\verb&LALMatrixTransform()&}
+\idx{LALMatrixTransform()}
 
 \subsubsection*{Description}
 Given the matrix of transformation in \texttt{data1} and a second rank tensor

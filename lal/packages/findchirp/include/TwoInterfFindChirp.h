@@ -87,7 +87,7 @@ extern "C" {
   (Sec.~\ref{twointerffindchirp:ss:TwoInterfFindChirp.c})}
 
 \subsubsection*{\texttt{struct TwoInterfInspiralEvent}}
-\index{\texttt{TwoInterfInspiralEvent}}
+\idx[Type]{TwoInterfInspiralEvent}
 
 \noindent Contains the list and description of events detected by 
 \texttt{LALTwoInterfFindChirp()}. 
@@ -125,7 +125,7 @@ extern "C" {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct TwoInterfFindChirpInitParams}}
-\index{\texttt{TwoInterfFindChirpInitParams}}
+\idx[Type]{TwoInterfFindChirpInitParams}
 
 \noindent Contains the parameters needed to create the filter-input structure
 \texttt{LALTwoInterfFindChirpFilterInput()}. 
@@ -161,7 +161,7 @@ extern "C" {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct TwoInterfFindChirpFilterParams}}
-\index{\texttt{TwoInterfFindChirpFilterParams}}
+\idx[Type]{TwoInterfFindChirpFilterParams}
 
 \noindent Contains the parameters needed for a chirp search by the 
 function \texttt{LALTwoInterfFindChirpFilterSegment()}. 
@@ -191,7 +191,7 @@ function \texttt{LALTwoInterfFindChirpFilterSegment()}.
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct TwoInterfFindChirpFilterInput}}
-\index{\texttt{TwoInterfFindChirpFilterInput}}
+\idx[Type]{TwoInterfFindChirpFilterInput}
 
 \noindent Contains the input structures needed for a chirp 
 search by the function \texttt{LALTwoInterfFindChirpFilterSegment()}. 

@@ -14,7 +14,7 @@ set of resampling rules.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{RulesToTimingDifferenceCP}
-\index{\texttt{LALRulesToTimingDifference()}}
+\idx{LALRulesToTimingDifference()}
 
 \subsubsection*{Description}
 

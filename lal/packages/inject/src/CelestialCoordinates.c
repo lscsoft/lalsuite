@@ -13,10 +13,10 @@ Converts among Galactic, ecliptic, and equatorial coordinates.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CelestialCoordinatesCP}
-\index{\texttt{LALGalacticToEquatorial()}}
-\index{\texttt{LALEquatorialToGalactic()}}
-\index{\texttt{LALEclipticToEquatorial()}}
-\index{\texttt{LALEquatorialToEcliptic()}}
+\idx{LALGalacticToEquatorial()}
+\idx{LALEquatorialToGalactic()}
+\idx{LALEclipticToEquatorial()}
+\idx{LALEquatorialToEcliptic()}
 
 \subsubsection*{Description}
 

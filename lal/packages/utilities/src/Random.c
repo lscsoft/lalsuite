@@ -13,10 +13,10 @@ Functions for generating random numbers.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{RandomCP}
-\index{\texttt{LALCreateRandomParams()}}
-\index{\texttt{LALDestroyRandomParams()}}
-\index{\texttt{LALUniformDeviate()}}
-\index{\texttt{LALNormalDeviates()}}
+\idx{LALCreateRandomParams()}
+\idx{LALDestroyRandomParams()}
+\idx{LALUniformDeviate()}
+\idx{LALNormalDeviates()}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ The code \texttt{LALRungeKutta4.c} solves a system of $n$ coupled first--order d
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALRungeKutta4CP}
-\index{\verb&LALRungeKutta4()&}
+\idx{LALRungeKutta4()}
 
 \subsubsection*{Description}
 

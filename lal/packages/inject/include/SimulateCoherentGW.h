@@ -261,7 +261,7 @@ NRCSID( SIMULATECOHERENTGWH, "$Id$" );
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{CoherentGW}}
-\index{\texttt{CoherentGW}}
+\idx[Type]{CoherentGW}
 
 \noindent This structure stores a representation of a plane
 gravitational wave propagating from a particular point on the sky.
@@ -319,7 +319,7 @@ typedef struct tagCoherentGW {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{DetectorResponse}}
-\index{\texttt{CoherentGW}}
+\idx[Type]{CoherentGW}
 
 \noindent This structure contains information required to determine
 the response of a detector to a gravitational waveform.  The fields

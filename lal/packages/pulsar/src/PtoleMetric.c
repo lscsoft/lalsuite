@@ -13,7 +13,7 @@ approximation.
 
 \subsubsection*{Prototypes}
 \input{PtoleMetricCP}
-\index{\texttt{PtoleMetric}}
+\idx{PtoleMetric}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ Module to calculate the determinant of a 3-dimensional matrix $g_{ij}$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALDeterminant3CP}
-\index{\verb&LALDeterminant()& 3D determinant}
+\idx{LALDeterminant() 3D determinant}
 
 \subsubsection*{Description}
 

@@ -12,8 +12,8 @@ string corresponding to a unit structure.
 
 \subsubsection*{Prototypes}
 \input{UnitDefsCP}
-\index{\texttt{LALUnitAsString()}}
-\index{\texttt{LALParseUnitString()}}
+\idx{LALUnitAsString()}
+\idx{LALParseUnitString()}
 
 \subsubsection*{Description}
 
@@ -47,6 +47,48 @@ None.
 \subsubsection*{Notes}
 
 \subsubsection*{Predefined Units}
+\idx[Constant]{lalMeterUnit}
+\idx[Constant]{lalKiloGramUnit}
+\idx[Constant]{lalSecondUnit}
+\idx[Constant]{lalAmpereUnit} 
+\idx[Constant]{lalKelvinUnit}
+\idx[Constant]{lalStrainUnit} 
+\idx[Constant]{lalADCCountUnit} 
+\idx[Constant]{lalHertzUnit} 
+\idx[Constant]{lalNewtonUnit} 
+\idx[Constant]{lalPascalUnit} 
+\idx[Constant]{lalJouleUnit} 
+\idx[Constant]{lalWattUnit} 
+\idx[Constant]{lalCoulombUnit} 
+\idx[Constant]{lalVoltUnit} 
+\idx[Constant]{lalOhmUnit} 
+\idx[Constant]{lalFaradUnit} 
+\idx[Constant]{lalWeberUnit} 
+\idx[Constant]{lalHenryUnit} 
+\idx[Constant]{lalTeslaUnit} 
+\idx[Constant]{lalYottaUnit} 
+\idx[Constant]{lalZettaUnit} 
+\idx[Constant]{lalExaUnit} 
+\idx[Constant]{lalPetaUnit} 
+\idx[Constant]{lalTeraUnit} 
+\idx[Constant]{lalGigaUnit} 
+\idx[Constant]{lalMegaUnit} 
+\idx[Constant]{lalKiloUnit} 
+\idx[Constant]{lalHectoUnit} 
+\idx[Constant]{lalDekaUnit} 
+\idx[Constant]{lalDeciUnit} 
+\idx[Constant]{lalCentiUnit} 
+\idx[Constant]{lalMilliUnit} 
+\idx[Constant]{lalMicroUnit} 
+\idx[Constant]{lalNanoUnit} 
+\idx[Constant]{lalPicoUnit} 
+\idx[Constant]{lalFemtoUnit} 
+\idx[Constant]{lalAttoUnit} 
+\idx[Constant]{lalZeptoUnit} 
+\idx[Constant]{lalYoctoUnit} 
+\idx[Constant]{lalGramUnit} 
+\idx[Constant]{lalAttoStrainUnit} 
+\idx[Constant]{lalPicoFaradUnit} 
 
 This file also defines a number of \texttt{constant} unit structures
 (declared \texttt{extern} in \texttt{Units.h}).  Zeroth is

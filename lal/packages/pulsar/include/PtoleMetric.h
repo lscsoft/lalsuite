@@ -70,7 +70,7 @@ NRCSID( PTOLEMETRICH, "$Id$" );
 \begin{verbatim}
 PtoleMetricIn
 \end{verbatim}
-\index{\texttt{PtoleMetricIn}}
+\idx[Type]{PtoleMetricIn}
 
 \noindent This structure will likely be changed to match up better with
 those under the \texttt{StackMetric.h} header. It contains the bare

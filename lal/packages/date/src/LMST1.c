@@ -15,10 +15,10 @@ GMST1) computations.
 \vspace{0.1in}
 
 \input{LMST1CP}
-\index{\texttt{LALGMST1()}}
-\index{\texttt{LALGPStoGMST1()}}
-\index{\texttt{LALLMST1()}}
-\index{\texttt{LALGPStoLMST1()}}
+\idx{LALGMST1()}
+\idx{LALGPStoGMST1()}
+\idx{LALLMST1()}
+\idx{LALGPStoLMST1()}
 
 
 \subsubsection*{Description}

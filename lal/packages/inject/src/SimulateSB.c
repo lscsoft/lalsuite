@@ -14,7 +14,7 @@ desired power spectrum, $\Omega_{\scriptstyle{\rm GW}}(f)$.
 
 \subsubsection*{Prototypes}
 \input{SimulateSBCP}
-\index{\texttt{LALSimulateSB()}}
+\idx{LALSimulateSB()}
 
 \subsubsection*{Description}
 

@@ -11,11 +11,11 @@ LAL memory allocation routines.
 
 \subsubsection*{Prototypes}
 \input{LALMallocCP}
-\index{\texttt{LALMalloc()}}
-\index{\texttt{LALCalloc()}}
-\index{\texttt{LALRealloc()}}
-\index{\texttt{LALFree()}}
-\index{\texttt{LALCheckMemoryLeaks()}}
+\idx{LALMalloc()}
+\idx{LALCalloc()}
+\idx{LALRealloc()}
+\idx{LALFree()}
+\idx{LALCheckMemoryLeaks()}
 
 \subsubsection*{Description}
 

@@ -114,8 +114,8 @@ NRCSID(IIRFILTERH,"$Id$");
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{<datatype>IIRFilter}}
-\index{\texttt{REAL4IIRFilter}}
-\index{\texttt{REAL8IIRFilter}}
+\idx[Type]{REAL4IIRFilter}
+\idx[Type]{REAL8IIRFilter}
 
 This structure stores the direct and recursive filter coefficients, as
 well as the history of the auxiliary sequence $w$.  \verb@<datatype>@

@@ -143,7 +143,7 @@ NRCSID(PULSARTIMESH,"$Id$");
 \begin{verbatim}
 PulsarTimesParamStruc
 \end{verbatim}
-\index{\texttt{PulsarTimesParamStruc}}
+\idx[Type]{PulsarTimesParamStruc}
 
 \noindent This structure stores a superset of all constant parameters
 required by the functions provided by this header

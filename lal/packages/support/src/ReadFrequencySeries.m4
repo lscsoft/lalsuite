@@ -12,11 +12,11 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ReadFrequencySeriesCP}
-\index{\texttt{LALZReadFrequencySeries()}}
-\index{\texttt{LALCReadFrequencySeries()}}
-\index{\texttt{LALDReadFrequencySeries()}}
-\index{\texttt{LALSReadFrequencySeries()}}
-\index{\texttt{LALReadFrequencySeries()}}
+\idx{LALZReadFrequencySeries()}
+\idx{LALCReadFrequencySeries()}
+\idx{LALDReadFrequencySeries()}
+\idx{LALSReadFrequencySeries()}
+\idx{LALReadFrequencySeries()}
 
 \subsubsection*{Description}
 

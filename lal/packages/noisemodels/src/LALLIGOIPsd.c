@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the initial LIGO detect
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALLIGOIPsdCP}
-\index{\verb&LALLIGOIPsd()&}
+\idx{LALLIGOIPsd()}
 
 \subsubsection*{Description}
 

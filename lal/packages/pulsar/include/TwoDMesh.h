@@ -108,7 +108,7 @@ NRCSID(TWODMESHH,"$Id$");
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{TwoDMeshNode}}
-\index{\texttt{TwoDMeshNode}}
+\idx[Type]{TwoDMeshNode}
 
 \noindent This structure represents a single node in a linked list of
 mesh points, specified in the coordinate system used to place it.  The
@@ -150,7 +150,7 @@ typedef struct tagTwoDMeshNode {
 /******************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{TwoDMeshParamStruc}}
-\index{\texttt{TwoDMeshParamStruc}}
+\idx[Type]{TwoDMeshParamStruc}
 
 \noindent This structure stores the parameters required by the
 two-dimensional mesh placement functions.  The fields are:
@@ -228,7 +228,7 @@ typedef struct tagTwoDMeshParamStruc{
 /******************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{TwoDColumnParamStruc}}
-\index{\texttt{TwoDColumnParamStruc}}
+\idx[Type]{TwoDColumnParamStruc}
 
 \noindent This structure stores additional parameters required when
 laying down a single column of a two-dimensional mesh.  The area to be

@@ -6,17 +6,17 @@ $Id$
 
 \section{Header \texttt{Window.h}}
 \label{s:Window.h}
-\index{\texttt{Rectangular}}
-\index{\texttt{Hann}}
-\index{\texttt{Welch}}
-\index{\texttt{Bartlett}}
-\index{\texttt{Parzen}}
-\index{\texttt{Papoulis}}
-\index{\texttt{Apodize}}
-\index{\texttt{Taper}}
-\index{\texttt{Power Spectrum}}
-\index{\texttt{Bias in power spectrum}}
-\index{\texttt{Spectral Estimation}}
+\idx[Constant]{Rectangular}
+\idx[Constant]{Hann}
+\idx[Constant]{Welch}
+\idx[Constant]{Bartlett}
+\idx[Constant]{Parzen}
+\idx[Constant]{Papoulis}
+\index{Apodize}
+\index{Taper}
+\index{Power Spectrum}
+\index{Bias in power spectrum}
+\index{Spectral Estimation}
 
 This header file contains enums that define the different types
 of windows, and a parameter block which is used as input to
@@ -124,8 +124,8 @@ NRCSID (WINDOWH, "$Id$");
 
 \subsection*{Types}
 \subsubsection*{\texttt{enum WindowType}}
-\index{\texttt{WindowType}}
-\index{\texttt{WINDOWNAMELIST}}
+\idx[Type]{WindowType}
+\idx[Constant]{WINDOWNAMELIST}
 
 This enum defines the different possible types of windows that can be generated.
 Any code should take into account that this list may grow if someone adds their
@@ -176,7 +176,7 @@ typedef enum {Rectangular,
 /***************************************************************************<lalLaTeX>
 
 \subsubsection*{\texttt{Structure LALWindowParams}}
-\index{\texttt{LALWindowParams}}
+\idx[Type]{LALWindowParams}
 This structure stores the parameters used to call the window function.
 It is also used to return the sum of the vector squared.
 The structure is defined by

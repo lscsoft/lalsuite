@@ -11,10 +11,10 @@
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
  * \input{TimeFreqFFTCP}
- * \index{\texttt{LALTimeFreqRealFFT()}}
- * \index{\texttt{LALFreqTimeRealFFT()}}
- * \index{\texttt{LALTimeFreqComplexFFT()}}
- * \index{\texttt{LALFreqTimeComplexFFT()}}
+ * \idx{LALTimeFreqRealFFT()}
+ * \idx{LALFreqTimeRealFFT()}
+ * \idx{LALTimeFreqComplexFFT()}
+ * \idx{LALFreqTimeComplexFFT()}
  *
  * \subsubsection*{Description}
  * 

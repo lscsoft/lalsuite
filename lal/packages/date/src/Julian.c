@@ -13,9 +13,9 @@ Converts between Gregorian date and Julian Days/Dates.
 \subsection*{Prototypes}
 \vspace{0.1in}
 \input{JulianCP}
-\index{\texttt{LALJulianDay()}}
-\index{\texttt{LALJulianDate()}}
-\index{\texttt{LALModJulianDate()}}
+\idx{LALJulianDay()}
+\idx{LALJulianDate()}
+\idx{LALModJulianDate()}
 
 
 \subsubsection*{Description}

@@ -70,7 +70,7 @@ NRCSID (LALBARYCENTERH,"$Id$");
 \begin{verbatim}
 struct EphemerisFilenames
 \end{verbatim}
-\index{\verb&EphemerisFilenames&}
+\idx[Type]{EphemerisFilenames}
 \noindent This structure contains two pointers
 to data files containing arrays of center-of-mass
 positions for the Earth and Sun, respectively.
@@ -96,7 +96,7 @@ units of seconds, and accelerations have units 1/sec.
 \begin{verbatim}
 struct EphemerisData
 \end{verbatim}
-\index{\verb&EphemerisData&}
+\idx[Type]{EphemerisData}
 \noindent This structure contains all information about the
 center-of-mass positions of the Earth and Sun, listed at regular
 time intervals. The fields are
@@ -138,7 +138,7 @@ of Sun's acceleration at that instant. Units are 1/sec.
 \begin{verbatim}
 struct EarthState
 \end{verbatim}
-\index{\verb&EarthState&}
+\idx[Type]{EarthState}
 \noindent Basic output structure of LALBarycenterEarth.c.
 \begin{description}
 \item[\texttt{REAL8  einstein}] the einstein delay equiv TDB - TDT 
@@ -167,7 +167,7 @@ for short-term nutation.
 \begin{verbatim}
 struct BarycenterInput
 \end{verbatim}
-\index{\verb&BarycenterInput&}
+\idx[Type]{BarycenterInput}
 \noindent Basic input structure to LALBarycenter.c.
 \begin{description}
 \item[\texttt{LIGOTimeGPS  tgps}] input GPS arrival time. 
@@ -185,7 +185,7 @@ coords (radians).
 \begin{verbatim}
 struct EmissionTime
 \end{verbatim}
-\index{\verb&EmissionTime&}
+\idx[Type]{EmissionTime}
 \noindent Basic output structure produced by LALBarycenter.c.
 \begin{description}
 \item[\texttt{  REAL8  deltaT}] $t_e$(TDB) - $t_a$(GPS) (+ constant = ``light-travel-time from source to SSB'') 

@@ -13,15 +13,15 @@ Reads data from a single line in a file.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{StreamVectorInputCP}
-\index{\texttt{LALCHARReadVector()}}
-\index{\texttt{LALI2ReadVector()}}
-\index{\texttt{LALI4ReadVector()}}
-\index{\texttt{LALI8ReadVector()}}
-\index{\texttt{LALU2ReadVector()}}
-\index{\texttt{LALU4ReadVector()}}
-\index{\texttt{LALU8ReadVector()}}
-\index{\texttt{LALSReadVector()}}
-\index{\texttt{LALDReadVector()}}
+\idx{LALCHARReadVector()}
+\idx{LALI2ReadVector()}
+\idx{LALI4ReadVector()}
+\idx{LALI8ReadVector()}
+\idx{LALU2ReadVector()}
+\idx{LALU4ReadVector()}
+\idx{LALU8ReadVector()}
+\idx{LALSReadVector()}
+\idx{LALDReadVector()}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ Module to generate two inspiral waveforms simultaneously, which differ in phase 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomTimeTemplatesCP}
-\index{\verb&LALTappRpnTdomTimeTemplates()&}
+\idx{LALTappRpnTdomTimeTemplates()}
 
 \subsubsection*{Description}
 

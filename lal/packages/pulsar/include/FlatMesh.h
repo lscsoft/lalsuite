@@ -129,7 +129,7 @@ NRCSID(FLATMESHH,"$Id$");
 \begin{verbatim}
 FlatMeshParamStruc
 \end{verbatim}
-\index{\texttt{FlatMeshParamStruc}}
+\idx[Type]{FlatMeshParamStruc}
 
 \noindent This structure stores and passes parameters for computing a
 search mesh by the routines in the module \verb@FlatMesh.c@: it

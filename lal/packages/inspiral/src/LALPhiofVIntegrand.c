@@ -12,7 +12,7 @@ The function \texttt{LALPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\pr
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALPhiofVIntegrandCP}
-\index{\verb&LALPhiofVIntegrand()&}
+\idx{LALPhiofVIntegrand()}
 
 \subsubsection*{Description}
 

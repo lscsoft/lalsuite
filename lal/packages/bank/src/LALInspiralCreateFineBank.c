@@ -12,7 +12,7 @@ Function to create a fine grid of templates.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralCreateFineBankCP}
-\index{\verb&LALInspiralCreateFineBank()&}
+\idx{LALInspiralCreateFineBank()}
 
 \subsubsection*{Description}
 

@@ -24,9 +24,9 @@
  * 
  * %% Document here any structures defined in the header.  
  * %% Also include any of them in the index; e.g.:
- * %% \index{\texttt{ExampleOutput}}
- * %% \index{\texttt{ExampleInput}}
- * %% \index{\texttt{ExampleParams}}
+ * %% \idx[Type]{ExampleOutput}
+ * %% \idx[Type]{ExampleInput}
+ * %% \idx[Type]{ExampleParams}
  * 
  * \vfill{\footnotesize\input{ExampleHV}}
  * \newpage\input{ExampleC}

@@ -13,7 +13,7 @@ inspiralling binary system.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralVelocityCP}
-\index{\verb&LALInspiralVelocity()&}
+\idx{LALInspiralVelocity()}
 
 \subsubsection*{Description}
 

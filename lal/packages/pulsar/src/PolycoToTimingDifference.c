@@ -14,7 +14,7 @@ polynomial fit.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PolycoToTimingDifferenceCP}
-\index{\texttt{LALPolycoToTimingDifference()}}
+\idx{LALPolycoToTimingDifference()}
 
 \subsubsection*{Description}
 

@@ -11,7 +11,7 @@ Raises an \texttt{LALUnit} structure to a specified rational power.
 
 \subsubsection*{Prototypes}
 \input{UnitRaiseCP}
-\index{\texttt{LALUnitRaise()}}
+\idx{LALUnitRaise()}
 
 \subsubsection*{Description}
 

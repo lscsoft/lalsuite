@@ -11,7 +11,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralParameterCalcCP}
-\index{\verb&LALInspiralParameterCalc()&}
+\idx{LALInspiralParameterCalc()}
 
 \subsubsection*{Description}
 

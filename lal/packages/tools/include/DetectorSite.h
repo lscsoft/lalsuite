@@ -159,13 +159,13 @@ NRCSID (DETECTORSITEH, "$Id$");
 /********************************* <lalLaTeX> 
 
 \subsubsection*{The \texttt{LALDetectorType} enumeration}
-\index{\texttt{LALDetectorType}}
-\index{\texttt{LALDETECTORTYPE\_ABSENT}}
-\index{\texttt{LALDETECTORTYPE\_IFODIFF}}
-\index{\texttt{LALDETECTORTYPE\_IFOXARM}}
-\index{\texttt{LALDETECTORTYPE\_IFOYARM}}
-\index{\texttt{LALDETECTORTYPE\_IFOCOMM}}
-\index{\texttt{LALDETECTORTYPE\_CYLBAR}}
+\idx[Type]{LALDetectorType}
+\idx[Constant]{LALDETECTORTYPE\_ABSENT}
+\idx[Constant]{LALDETECTORTYPE\_IFODIFF}
+\idx[Constant]{LALDETECTORTYPE\_IFOXARM}
+\idx[Constant]{LALDETECTORTYPE\_IFOYARM}
+\idx[Constant]{LALDETECTORTYPE\_IFOCOMM}
+\idx[Constant]{LALDETECTORTYPE\_CYLBAR}
 
 Since data from bars as well as interferometers can be written to
    frames, we need an additional piece of information to interpret the
@@ -222,7 +222,7 @@ typedef enum {
 
 \subsubsection*{Cached Detectors}
 
-\index{\texttt{lalCachedDetectors[]}} In practice, we will often be
+\idx[Variable]{lalCachedDetectors[]} In practice, we will often be
 working with fixed unchanging site geometry, e.g., for the LIGO
 interferometers; to avoid constantly reconstructing the corresponding
 \texttt{LALDetector}s, we should define some constant
@@ -239,13 +239,13 @@ finds one, it returns a copy of that; if not, it creates one.
 
 The header \texttt{DetectorSite.h} also defines an enumeration of the
 indices of the known detectors:
-\index{\texttt{LALDetectorIndexLHODIFF}}
-\index{\texttt{LALDetectorIndexLLODIFF}}
-\index{\texttt{LALDetectorIndexVIRGODIFF}}
-\index{\texttt{LALDetectorIndexGEO600DIFF}}
-\index{\texttt{LALDetectorIndexTAMA300DIFF}}
-\index{\texttt{LALDetectorIndexCIT40DIFF}}
-\index{\texttt{LALNumCachedDetectors}}
+\idx[Constant]{LALDetectorIndexLHODIFF}
+\idx[Constant]{LALDetectorIndexLLODIFF}
+\idx[Constant]{LALDetectorIndexVIRGODIFF}
+\idx[Constant]{LALDetectorIndexGEO600DIFF}
+\idx[Constant]{LALDetectorIndexTAMA300DIFF}
+\idx[Constant]{LALDetectorIndexCIT40DIFF}
+\idx[Constant]{LALNumCachedDetectors}
 ********************************** </lalLaTeX> */
 
 /********************************** <lalVerbatim> */
@@ -274,7 +274,7 @@ differential mode is
 /********************************* <lalLaTeX> 
 
 \subsubsection*{Structure \texttt{LALFrDetector}}
-\index{\texttt{LALFrDetector}}
+\idx[Type]{LALFrDetector}
 
 The \texttt{LALFrDetector} structure holds site geometry information
 in the same format as the \texttt{FrDetector} structure defined in the
@@ -317,7 +317,7 @@ typedef struct tagLALFrDetector
 /********************************* <lalLaTeX> 
 
 \subsubsection*{Structure \texttt{LALDetector}}
-\index{\texttt{LALDetector}}
+\idx[Type]{LALDetector}
 
 The \texttt{LALDetector} structure is intended to be the way that detector
    geometry information is passed to LAL routines. 

@@ -15,9 +15,9 @@ the LAL library---only within test programs.
 FILE *LALFopen( const char *path, const char *mode );
 int LALFclose( FILE *stream );
 \end{verbatim}
-\index{\texttt{LALOpenDataFile()}}
-\index{\texttt{LALFopen()}}
-\index{\texttt{LALFclose()}}
+\idx{LALOpenDataFile()}
+\idx{LALFopen()}
+\idx{LALFclose()}
 
 \subsection*{Description}
 

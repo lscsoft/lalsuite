@@ -12,11 +12,11 @@ Functions for root finding.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\index{\texttt{LALComputeSpectrum()}}
-\index{\texttt{LALCreateSpectrumBuffer()}}
-\index{\texttt{LALDestroySpectrumBuffer()}}
-\index{\texttt{LALAddSpectrum()}}
-\index{\texttt{LALAverageSpectrum()}}
+\idx{LALComputeSpectrum()}
+\idx{LALCreateSpectrumBuffer()}
+\idx{LALDestroySpectrumBuffer()}
+\idx{LALAddSpectrum()}
+\idx{LALAverageSpectrum()}
 
 \input{SpecBufferCP}
 

@@ -13,8 +13,8 @@ Applies an IIR filter to a data stream.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{IIRFilterVectorCP}
-\index{\texttt{LALIIRFilterREAL4Vector()}}
-\index{\texttt{LALIIRFilterREAL8Vector()}}
+\idx{LALIIRFilterREAL4Vector()}
+\idx{LALIIRFilterREAL8Vector()}
 
 \subsubsection*{Description}
 

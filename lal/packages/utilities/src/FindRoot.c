@@ -13,10 +13,10 @@ Functions for root finding.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{FindRootCP}
-\index{\texttt{LALSBracketRoot()}}
-\index{\texttt{LALDBracketRoot()}}
-\index{\texttt{LALSBisectionFindRoot()}}
-\index{\texttt{LALDBisectionFindRoot()}}
+\idx{LALSBracketRoot()}
+\idx{LALDBracketRoot()}
+\idx{LALSBisectionFindRoot()}
+\idx{LALDBisectionFindRoot()}
 
 \subsubsection*{Description}
 

@@ -16,7 +16,7 @@ equation
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTofVCP}
-\index{\verb&LALTofV()&}
+\idx{LALTofV()}
 
 \subsubsection*{Description}
 

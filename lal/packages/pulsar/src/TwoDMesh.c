@@ -14,9 +14,9 @@ Creates or destroys a hierarchical mesh of templates on an
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TwoDMeshCP}
-\index{\texttt{LALCreateTwoDMesh()}}
-\index{\texttt{LALDestroyTwoDMesh()}}
-\index{\texttt{LALRefineTwoDMesh()}}
+\idx{LALCreateTwoDMesh()}
+\idx{LALDestroyTwoDMesh()}
+\idx{LALRefineTwoDMesh()}
 
 \subsubsection*{Description}
 

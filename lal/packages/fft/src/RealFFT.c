@@ -11,13 +11,13 @@
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
  * \input{RealFFTCP}
- * \index{\texttt{LALCreateForwardRealFFTPlan()}}
- * \index{\texttt{LALCreateReverseRealFFTPlan()}}
- * \index{\texttt{LALDestroyRealFFTPlan()}}
- * \index{\texttt{LALForwardRealFFT()}}
- * \index{\texttt{LALReverseRealFFT()}}
- * \index{\texttt{LALRealPowerSpectrum()}}
- * \index{\texttt{LALREAL4VectorFFT()}}
+ * \idx{LALCreateForwardRealFFTPlan()}
+ * \idx{LALCreateReverseRealFFTPlan()}
+ * \idx{LALDestroyRealFFTPlan()}
+ * \idx{LALForwardRealFFT()}
+ * \idx{LALReverseRealFFT()}
+ * \idx{LALRealPowerSpectrum()}
+ * \idx{LALREAL4VectorFFT()}
  * 
  * \subsubsection*{Description}
  * 

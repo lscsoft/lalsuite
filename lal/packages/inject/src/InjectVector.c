@@ -14,7 +14,7 @@ with dithering.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{InjectVectorCP}
-\index{\texttt{LALSI2InjectVector()}}
+\idx{LALSI2InjectVector()}
 
 \subsubsection*{Description}
 

@@ -13,7 +13,7 @@ non--spinning point--mass stars in quasi--circular orbits, up to second post--Ne
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqCP}
-\index{\verb&LALTappRpnTdomFreq()&}
+\idx{LALTappRpnTdomFreq()}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ of gravitational wave detectors.
 
 \subsubsection*{Prototypes}
 \input{OverlapReductionFunctionCP}
-\index{\texttt{LALOverlapReductionFunction()}}
+\idx{LALOverlapReductionFunction()}
 
 \subsubsection*{Description}
 

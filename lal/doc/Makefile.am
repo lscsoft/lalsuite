@@ -5,8 +5,8 @@ SUBDIRS = laldoc autodoc
 INSTALLFILES = lalspec.dvi lalspec.ps lalspec.pdf lsd.dvi lsd.ps lsd.pdf
 DISTCLEANFILES = $(INSTALLFILES)
 EXTRA_DIST = ligodcc.cls lalspec.tex lsd.tex lal.sty \
-             lsdFigDirStructure.eps schedule.eps \
-             lsdFigDirStructure.pdf schedule.pdf
+             lsdFigDirStructure.eps merger.eps \
+             lsdFigDirStructure.pdf merger.pdf
 
 pkgdocdir=${prefix}/doc/@PACKAGE@-@VERSION@
 

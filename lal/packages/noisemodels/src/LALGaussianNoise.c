@@ -10,7 +10,7 @@ Module to create GaussianNoise.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALGaussianNoiseCP}
-\index{\verb&LALGaussianNoise()&}
+\idx{LALGaussianNoise()}
 
 \subsubsection*{Description}
 Using a random number seed (unsigned integer) this module returns a

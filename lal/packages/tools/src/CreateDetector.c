@@ -12,7 +12,7 @@ structure and the type of detector.
 
 \subsubsection*{Prototypes}
 \input{CreateDetectorCP}
-\index{\texttt{LALCreateDetector()}}
+\idx{LALCreateDetector()}
 
 \subsubsection*{Description}
 
@@ -141,7 +141,7 @@ and finally that
 \end{eqnarray}
 
 \subsubsection*{Cached Detectors}
-\index{\texttt{lalCachedDetectors[]}}
+\idx[Variable]{lalCachedDetectors[]}
 
 To avoid repeatedly calculating the Cartesian co\"{o}rdinates and
 response tensor of known detectors, the constant array

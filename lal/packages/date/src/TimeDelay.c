@@ -16,7 +16,7 @@ detectors.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TimeDelayCP}
-\index{\texttt{LALTimeDelay()}}
+\idx{LALTimeDelay()}
 
 
 \subsubsection*{Description}

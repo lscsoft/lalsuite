@@ -64,7 +64,7 @@ NRCSID( COARSEGRAINFREQUENCYSERIESH,
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct FrequencySamplingParams}}
-\index{\texttt{FrequencySamplingParams}}
+\idx[Type]{FrequencySamplingParams}
 
 \noindent 
 Contains the parameters needed to specify the sampling of a

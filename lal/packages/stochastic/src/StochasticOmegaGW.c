@@ -11,7 +11,7 @@ Generates a frequency series containing a simple power law spectrum.
 
 \subsubsection*{Prototypes}
 \input{StochasticOmegaGWCP}
-\index{\texttt{LALStochasticOmegaGW()}}
+\idx{LALStochasticOmegaGW()}
 
 \subsubsection*{Description}
 The strength of a stochastic gravitational wave background is

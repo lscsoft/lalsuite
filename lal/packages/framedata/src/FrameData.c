@@ -13,10 +13,10 @@ Functions for reading frame data.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{FrameDataCP}
-\index{\texttt{LALInitializeFrameData()}}
-\index{\texttt{LALFinalizeFrameData()}}
-\index{\texttt{LALGetFrameData()}}
-\index{\texttt{LALGetFrameDataResponse()}}
+\idx{LALInitializeFrameData()}
+\idx{LALFinalizeFrameData()}
+\idx{LALGetFrameData()}
+\idx{LALGetFrameDataResponse()}
 
 \subsubsection*{Description}
 

@@ -14,8 +14,8 @@ just includes replacements for \texttt{snprintf}.
 int LALSnprintf( char *str, size_t size, const char *fmt, ... );
 int LALVsnprintf( char *str, size_t size, const char *fmt, va_list ap );
 \end{verbatim}
-\index{\texttt{LALSnprintf()}}
-\index{\texttt{LALVsnprintf()}}
+\idx{LALSnprintf()}
+\idx{LALVsnprintf()}
 
 \subsection*{Description}
 

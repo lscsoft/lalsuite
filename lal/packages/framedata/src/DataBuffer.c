@@ -14,9 +14,9 @@ and calibration information.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DataBufferCP}
-\index{\texttt{LALCreateDataBuffer()}}
-\index{\texttt{LALDestroyDataBuffer()}}
-\index{\texttt{LALGetData()}}
+\idx{LALCreateDataBuffer()}
+\idx{LALDestroyDataBuffer()}
+\idx{LALGetData()}
 
 \subsubsection*{Description}
 

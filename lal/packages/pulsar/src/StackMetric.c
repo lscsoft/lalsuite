@@ -13,7 +13,7 @@ Computes the parameter space metric for a coherent pulsar search.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{StackMetricCP}
-\index{\texttt{LALStackMetric()}}
+\idx{LALStackMetric()}
 
 \subsubsection*{Description}
 

@@ -68,7 +68,7 @@ NRCSID( LALINSPIRALBANKH, "$Id$" );
 </lalLaTeX>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{Detector}} 
+\idx[Type]{Detector} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
@@ -80,11 +80,11 @@ CoordinateSpace;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{CoordinateSpace}} 
+\idx[Type]{CoordinateSpace} 
 </lalLaTeX>  */
 
 /*  <lalLaTeX>
-\index{\texttt{LALInspiralMetric}}
+\idx[Type]{LALInspiralMetric}
 </lalLaTeX>  */
 
 /* Metric and its dimension */
@@ -104,7 +104,7 @@ InspiralMetric;
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{InspiralMetric}} 
+\idx[Type]{InspiralMetric} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
@@ -122,7 +122,7 @@ InspiralTemplateList;
 /* </lalVerbatim>  */
  
 /*  <lalLaTeX>
-\index{\texttt{InspiralTemplateList}}
+\idx[Type]{InspiralTemplateList}
 </lalLaTeX>  */
 
 
@@ -146,7 +146,7 @@ InspiralBankParams;
 /* </lalVerbatim>  */
  
 /*  <lalLaTeX>
-\index{\texttt{InspiralBankParams}}
+\idx[Type]{InspiralBankParams}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
@@ -177,7 +177,7 @@ InspiralCoarseBankIn;
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
-\index{\texttt{InspiralCoarseBankIn}}
+\idx[Type]{InspiralCoarseBankIn}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
@@ -188,7 +188,7 @@ typedef struct {
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
-\index{\texttt{InspiralMomentsIn}}
+\idx[Type]{InspiralMomentsIn}
 </lalLaTeX>  */
 
 
@@ -201,7 +201,7 @@ typedef struct {
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
-\index{\texttt{InspiralMomentsIntegrandIn}}
+\idx[Type]{InspiralMomentsIntegrandIn}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALInspiralBankHS"> */
@@ -213,7 +213,7 @@ tagInspiralFineBankIn
 } InspiralFineBankIn;
 /*  </lalVerbatim>  */
 /*  <lalLaTeX> 
-\index{\texttt{InspiralFineBankIn}} 
+\idx[Type]{InspiralFineBankIn} 
 </lalLaTeX>  */
 
 /*  <lalLaTeX>

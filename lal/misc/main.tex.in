@@ -12,6 +12,7 @@
 \rhead{ \bf Pg \thepage}
 
 \makeindex
+\newcommand\idx[2][Function]{\index{#1!#2@\texttt{#2}}}
 
 \begin{document}
 

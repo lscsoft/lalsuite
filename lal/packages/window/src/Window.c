@@ -23,7 +23,7 @@ It should be straighforward to add additional window functions if
 they are desired.
 \subsubsection*{Prototypes}
 \input{WindowCP}
-\index{\texttt{LALWindow()}}
+\idx{LALWindow()}
 Note that the \texttt{paramters} argument handles both input and output.
 
 \subsubsection*{Description}

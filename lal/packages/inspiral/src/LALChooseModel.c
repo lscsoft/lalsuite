@@ -12,7 +12,7 @@ Module to set the pointers to the required energy and flux functions.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALChooseModelCP}
-\index{\verb&LALChooseModel()&}
+\idx{LALChooseModel()}
 
 \subsubsection*{Description}
 

@@ -1,6 +1,6 @@
 \documentclass[oneside]{book}
 \tracingstats=1
-\usepackage{lal,array,fancyhdr,graphicx,color,hyperref,makeidx,wrapfig}
+\usepackage{lal,array,fancyhdr,geometry,graphicx,color,hyperref,makeidx,wrapfig}
 \includeonly{%
   std,%
   support,%
@@ -30,11 +30,12 @@
   }
 
 %define page size
-\setlength{\textheight}{9.0in}
-\setlength{\textwidth}{6.0in}
-\setlength{\topmargin}{-0.00in}
-\setlength{\oddsidemargin}{-0.25in}
-\setlength{\evensidemargin}{\oddsidemargin}
+%\setlength{\textheight}{9.0in}
+%\setlength{\textwidth}{6.0in}
+%\setlength{\topmargin}{-0.00in}
+%\setlength{\oddsidemargin}{-0.25in}
+%\setlength{\evensidemargin}{\oddsidemargin}
+\geometry{letterpaper,tmargin=0.5in,headheight=0.2in,headsep=0.3in,hmargin=1in}
 \sloppy
 
 \pagestyle{fancy}
@@ -50,20 +51,21 @@
 
 \begin{document}
 
+\frontmatter
+
 % \reversemarginpar
 % \let\marginpar\mparorig
 % \providecommand{\marginpar}[1]{\mbox{}\mparorig{\raggedleft\hspace{0pt}#1}}
 
 % The title page:
 \title{
-\vspace*{-1.0in}
+%\vspace*{-1.0in}
 \sffamily\bfseries\Huge
 \textcolor{red}{\lsdfont L}AL
 \raisebox{-2.5ex}{\textcolor{green}{\lsdfont S}\hspace{-0.1em}oftware}
 \hspace{-2em}
-\raisebox{-0.5ex}{\textcolor{blue}{\lsdfont D}\hspace{-0.2em}ocumentation} \\
-\vspace*{-4.0in}
-\center{\includegraphics[width=1.2\linewidth,angle=0]{schedule} }
+\raisebox{-0.5ex}{\textcolor{blue}{\lsdfont D}\hspace{-0.2em}ocumentation}\\[\bigskipamount]
+\includegraphics[height=5in]{merger}
 }
 \author{\bf Members of the LSC}
 \date{RCS \rcs$Revision$\rcs$Date$UTC --- Compiled:
@@ -76,7 +78,7 @@
 % The table of contents.
 \tableofcontents
 
-\chapter*{Preface}
+\chapter{Preface}
 The formal document governing the LAL-code and documentation is the
 {\bf LIGO Data Analysis System Numerical Algorithms Library
 Specification and Style Guide}
@@ -94,6 +96,8 @@ formal process to change it.
 The first part of this document gives a brief introduction to the LAL
 and some coding and documentation instructions.  The second part is
 the documentation of the LAL code itself.
+
+\mainmatter
 
 \part{Coding and Documentation Instructions}
 
@@ -483,13 +487,13 @@ When this  document is built an index is also constructed. There are a few
 code items that you must place in the index.
 \begin{itemize}
   \item[$\bullet$] {\bf Functions} must be entered in the index, so
-   users can find them. The \verb@\index{}@ command should be right
+   users can find them. The \verb@\idx{}@ command should be right
    after the prototypes themselves are entered.  This insures the page
    number that appear in the index will be the page where the
    prototype is explained in the document.
-   Use the {\LaTeX} command
+   Use the LAL {\LaTeX} command
   \begin{verbatim}
-  \index{{\texttt MyFunction()} You can put a short explanatory string here.}
+  \idx{MyFunction()}
   \end{verbatim}
   \vspace*{-0.041in}
   \item[$\bullet$] {\bf Non LAL Data Structures}  must appear in the index.
@@ -497,13 +501,23 @@ code items that you must place in the index.
   arguments for a function, but this isn't always possible. If you do
   use non-LAL datatypes, you must document them, and they must be
   included the index, so someone looking at your code can easily find
-  the documentation.  The \verb@\index{}@ command should be right after
+  the documentation.  The \verb@\idx[Type]{}@ command should be right after
   in the section where they are explained in the documentation.  
-  Here is an example of the  {\LaTeX} command you would use to get the
+  Here is an example of the LAL {\LaTeX} command you would use to get the
   name of your structure into the index.
   \begin{verbatim}
-  \index{{\textt MyStruct} You may put a short explanatory string here.}
+  \idx[Type]{MyType}
   \end{verbatim}
+  \vspace*{-0.041in}
+  \item[$\bullet$] {\bf Other Indexable Things} should also be indexed.
+  If the thing is a constant variable, a constant-like macro, or an enum
+  constant, index it using \verb&\idx[Constant]{thing}&.  If the thing is
+  a function-like macro, index it using \verb&\idx{thing}& (which is equivalent
+  to \verb&\idx[Function]{thing}&).  If it is a macro that is non-function-like
+  and non-constant-like then index it using \verb&\idx[Macro]{thing}&.  If the
+  thing is a variable (including function-like variables) then index it using
+  \verb&\idx[Variable]{thing}&.  If the thing is a concept, then just use the
+  standard \LaTeX\ command \verb&\index{thing}&.
 \end{itemize}
 
 
@@ -947,6 +961,8 @@ and {\LaTeX}  ({\tt pdflatex}) is run on it. Then  {\tt lsd.tex} and
 \include{burstsearch}
 %\include{tracksearch}
 \include{tfclusters}
+
+\backmatter
 
 \printindex
 

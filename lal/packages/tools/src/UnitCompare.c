@@ -12,7 +12,7 @@ equivalent, false otherwise.
 
 \subsubsection*{Prototypes}
 \input{UnitCompareCP}
-\index{\texttt{LALUnitCompare()}}
+\idx{LALUnitCompare()}
 
 \subsubsection*{Description}
 

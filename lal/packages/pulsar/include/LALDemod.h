@@ -121,7 +121,7 @@ NRCSID (LALDEMODH, "$Id$");
 \begin{verbatim}
 struct DemodPar
 \end{verbatim}
-\index{\texttt{DemodPar}}
+\idx[Type]{DemodPar}
 
 \noindent This structure contains the parameters for the demodulation routine.   The parameters are:
 
@@ -139,7 +139,7 @@ struct DemodPar
 \begin{verbatim}
 struct SkyPos
 \end{verbatim}
-\index{\texttt{SkyPos}}
+\idx[Type]{SkyPos}
 \noindent This structure contains the basic parameters of a sky position.  These are:
 \begin{description}
 \item[\texttt{REAL8 alpha}]  The inclination, in radians.
@@ -150,7 +150,7 @@ struct SkyPos
 \begin{verbatim}
 struct Spindown
 \end{verbatim}
-\index{\texttt{Spindown}}
+\idx[Type]{Spindown}
 \noindent This structure contains the values of the spindown parameters.  Included are
 \begin{description}
 \item[\texttt{INT4 m}]  The maximum order of spindown parameter employed, or the number of spindown parameters per spindown parameter set.
@@ -160,7 +160,7 @@ struct Spindown
 \begin{verbatim}
 struct ParameterSet
 \end{verbatim}
-\index{\texttt{ParameterSet}}
+\idx[Type]{ParameterSet}
 \noindent This is a structure which contains all the parameters that describe a source.  Included are
 \begin{description}
 \item[\texttt{SkyPos *skyP}]
@@ -170,7 +170,7 @@ struct ParameterSet
 \begin{verbatim}
 struct FFT
 \end{verbatim}
-\index{\texttt{FFT}}
+\idx[Type]{FFT}
 \noindent This structure is used to hold all Fourier domain data.  Note that it is different from the LAL definition of a \verb@SequenceOfFrequencySeries@ variable in that the \verb@FFT@ structure allows one to record information specific to each individual FFT; the LAL structure does not allow this functionality at present.  The fields contained within are
 \begin{description}
 \item[\texttt{COMPLEX16FrequencySeries *fft}]  Holds the data (within \verb@fft->data->data@) and other parameters relevant to each transform.

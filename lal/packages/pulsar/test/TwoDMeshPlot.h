@@ -81,7 +81,7 @@ constants \verb@TWODMESHPLOTH_@\texttt{<}\textit{name}\texttt{>}.
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{TwoDMeshPlotStruc}}
-\index{\texttt{TwoDMeshPlotStruc}}
+\idx[Type]{TwoDMeshPlotStruc}
 
 \noindent This structure stores parameters specifying how to plot a
 PostScript diagram of the parameter mesh.  The fields are:

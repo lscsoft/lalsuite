@@ -8,7 +8,7 @@ $Id$
 
 \subsubsection*{Prototypes}
 \input{FoldAmplitudesCP}
-\index{\texttt{LALFoldAmplitudes()}}
+\idx{LALFoldAmplitudes()}
 
 \subsubsection*{Description}
 

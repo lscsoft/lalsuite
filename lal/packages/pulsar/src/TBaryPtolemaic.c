@@ -14,8 +14,8 @@ circular model of the Earth's orbit.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TBaryPtolemaicCP}
-\index{\texttt{LALTBaryPtolemaic()}}
-\index{\texttt{LALDTBaryPtolemaic()}}
+\idx{LALTBaryPtolemaic()}
+\idx{LALDTBaryPtolemaic()}
 
 \subsubsection*{Description}
 

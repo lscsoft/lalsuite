@@ -13,10 +13,10 @@ Converts among equatorial, geographic, and horizon coordinates.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TerrestrialCoordinatesCP}
-\index{\texttt{LALEquatorialToGeographic()}}
-\index{\texttt{LALGeographicToEquatorial()}}
-\index{\texttt{LALSystemToHorizon()}}
-\index{\texttt{LALHorizonToSystem()}}
+\idx{LALEquatorialToGeographic()}
+\idx{LALGeographicToEquatorial()}
+\idx{LALSystemToHorizon()}
+\idx{LALHorizonToSystem()}
 
 \subsubsection*{Description}
 

@@ -11,7 +11,7 @@ Module to update the parameters used in creating a coarse bank.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
-\index{\verb&LALInspiralUpdateParams()&}
+\idx{LALInspiralUpdateParams()}
 
 \subsubsection*{Description}
 While scanning the $\tau_0$-direction after reaching the 

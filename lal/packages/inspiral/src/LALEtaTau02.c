@@ -19,7 +19,7 @@ equation in \texttt{x} for a given \texttt{eta}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALEtaTau02CP}
-\index{\verb&LALEtaTau02()&}
+\idx{LALEtaTau02()}
 
 \subsubsection*{Description}
 None.

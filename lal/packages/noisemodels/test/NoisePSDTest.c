@@ -9,7 +9,7 @@ Module to create NoiseSpectralDensity.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{NoisePSDTestCP}
-\index{\verb&NoisePSDTest()&}
+\idx{NoisePSDTest()}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}

@@ -237,7 +237,7 @@ NRCSID( SKYCOORDINATESH, "$Id$" );
 \subsection*{Types}
 
 \subsubsection*{Enumeration \texttt{CoordinateSystem}}
-\index{\texttt{CoordinateSystem}}
+\idx[Type]{CoordinateSystem}
 
 This enumerated type is used to identify data as being in one of the
 coordinate systems discussed above.  The allowed values are:
@@ -267,7 +267,7 @@ typedef enum {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{SkyPosition}}
-\index{\texttt{SkyPosition}}
+\idx[Type]{SkyPosition}
 
 This structure stores the two spherical coordinates of a sky position;
 i.e.\ a generic latitude and longitude.  The structure is not defined
@@ -297,7 +297,7 @@ typedef struct tagSkyPosition {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{EarthPosition}}
-\index{\texttt{EarthPosition}}
+\idx[Type]{EarthPosition}
 
 This structure stores the location of a point on (or near) the surface
 of the Earth in both geodetic and geocentric coordinates, as described
@@ -335,7 +335,7 @@ typedef struct tagEarthPosition {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{ConvertSkyParams}}
-\index{\texttt{EarthPosition}}
+\idx[Type]{EarthPosition}
 
 This structure stores parameters for the function
 \verb@LALConvertSkyPosition()@.  The fields are:

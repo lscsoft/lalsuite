@@ -14,8 +14,8 @@ smoothly-varying spin.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TSpinCP}
-\index{\texttt{LALTSpin()}}
-\index{\texttt{LALDTSpin()}}
+\idx{LALTSpin()}
+\idx{LALDTSpin()}
 
 \subsubsection*{Description}
 

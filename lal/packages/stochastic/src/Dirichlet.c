@@ -11,7 +11,7 @@ Calculates the values of the Dirichlet kernel.
 
 \subsubsection*{Prototypes}
 \input{DirichletCP}
-\index{\texttt{LALDirichlet()}}
+\idx{LALDirichlet()}
 
 \subsubsection*{Description}
 

@@ -13,7 +13,7 @@ whitening filter (frequency-domain instrument response).
 
 \subsubsection*{Prototypes}
 \input{StochasticInverseNoiseCP}
-\index{\texttt{LALStochasticInverseNoise()}}
+\idx{LALStochasticInverseNoise()}
 
 \subsubsection*{Description}
 

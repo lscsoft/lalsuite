@@ -95,7 +95,7 @@ extern "C" {
   (Sec.~\ref{stochastic:ss:SimulateSB.c})}
 
 \subsubsection*{\texttt{struct SimulateSBOutput}}
-\index{\texttt{SimulateSBOutput}}
+\idx[Type]{SimulateSBOutput}
 
 \noindent Contains the output data produced by 
 \texttt{LALSimulateSB()}. It contains 
@@ -123,7 +123,7 @@ the second interferometric detector.
   /*********************************************************** <lalLaTeX> 
 							       
 \subsubsection*{\texttt{struct SimulateSBInput}}
-\index{\texttt{SimulateSBInput}}
+\idx[Type]{SimulateSBInput}
 							       
 \noindent Contains the input data needed by 
 \texttt{LALSimulateSB()}
@@ -162,7 +162,7 @@ The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
 
 
 \subsubsection*{\texttt{struct SimulateSBParams}}
-\index{\texttt{SimulateSBParams}}
+\idx[Type]{SimulateSBParams}
 
 \noindent Contains the parameters used by
 \texttt{LALSimulateSB()} to determine the whitened stochastic background 
@@ -224,7 +224,7 @@ zero mean and unit variance.
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct SimulateSBInitParams}}
-\index{\texttt{SimulateSBInitParams}}
+\idx[Type]{SimulateSBInitParams}
 
 \noindent Contains the parameters used by
 \texttt{LALSimulateSB()} to create its output structure.

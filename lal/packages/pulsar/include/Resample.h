@@ -118,7 +118,7 @@ NRCSID(RESAMPLEH,"$Id$");
 \begin{verbatim}
 struct ResampleRules
 \end{verbatim}
-\index{\texttt{ResampleRules}}
+\idx[Type]{ResampleRules}
 
 \noindent This structure stores the rules for taking a time series
 $t$, sampled at constant intervals $\Delta t$, and resampling it at
@@ -174,7 +174,7 @@ typedef struct tagResampleRules{
 \begin{verbatim}
 struct PolycoStruc
 \end{verbatim}
-\index{\texttt{PolycoStruc}}
+\idx[Type]{PolycoStruc}
 
 \noindent This structure stores the parameters of the piecewise
 polynomial fit of $\tau-t$ as a function of $t$.  See
@@ -233,7 +233,7 @@ typedef struct tagPolycoStruc{
 \begin{verbatim}
 struct ResampleParamStruc
 \end{verbatim}
-\index{\texttt{ResampleParamStruc}}
+\idx[Type]{ResampleParamStruc}
 
 \noindent This structure stores extra parameters required to construct
 a \verb@ResampleRules@ object from a \verb@PolycoStruc@ object.  The

@@ -15,7 +15,7 @@ Computes the input parameters for a PPN inspiral.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{GetInspiralParamsCP}
-\index{\texttt{LALGalacticInspiralParams()}}
+\idx{LALGalacticInspiralParams()}
 
 \subsubsection*{Description}
 

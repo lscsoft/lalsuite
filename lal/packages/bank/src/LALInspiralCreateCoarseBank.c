@@ -12,7 +12,7 @@ Module to create a coarse grid of templates.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralCreateCoarseBankCP}
-\index{\verb&LALInspiralCreateCoarseBank()&}
+\idx{LALInspiralCreateCoarseBank()}
 
 \subsubsection*{Description}
 The function first lays a set of templates along the $\eta=1/4$ curve

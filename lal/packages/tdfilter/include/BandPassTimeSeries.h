@@ -48,7 +48,7 @@ NRCSID(BANDPASSTIMESERIESH,"$Id$");
 \subsection*{Types}
 
 \subsubsection*{Structure \texttt{PassBandParamStruc}}
-\index{\texttt{PassBandParamStruc}}
+\idx[Type]{PassBandParamStruc}
 
 This structure stores data used for constructing a low- or high-pass
 filter: either the order and characteristic frequency of the filter,

@@ -14,7 +14,7 @@ instantaneous frequency of the wave, up to $2^{nd}$ post--Newtonian order.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqPhaseCP}
-\index{\verb&LALTappRpnTdomFreqPhase()&}
+\idx{LALTappRpnTdomFreqPhase()}
 
 \subsubsection*{Description}
 

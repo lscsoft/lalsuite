@@ -14,7 +14,7 @@ piecewise polynomial fit to the canonical time $\tau(t)$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CreateResampleRulesCP}
-\index{\texttt{LALCreateResampleRules()}}
+\idx{LALCreateResampleRules()}
 
 \subsubsection*{Description}
 

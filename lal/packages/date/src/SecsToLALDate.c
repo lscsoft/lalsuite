@@ -14,7 +14,7 @@ Converts time in seconds to time in an \texttt{LALDate} structure.
 \vspace{0.1in}
 
 \input{SecsToLALDateCP}
-\index{\texttt{LALSecsToLALDate()}}
+\idx{LALSecsToLALDate()}
 
 \subsubsection*{Description}
 

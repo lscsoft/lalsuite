@@ -45,7 +45,7 @@ reference signal.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CleanAllD}
-\index{\texttt{LALCleanAll()}}
+\idx{LALCleanAll()}
 
 \subsubsection*{Description}
 This routine cleans data in the time domain from line harmonic interference

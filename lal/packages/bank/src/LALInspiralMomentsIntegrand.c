@@ -11,7 +11,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralMomentsIntegrandCP}
-\index{\verb&LALInspiralMomentsIntegrand()&}
+\idx{LALInspiralMomentsIntegrand()}
 
 \subsubsection*{Description}
 

@@ -11,7 +11,7 @@
  *
  * \subsubsection*{Prototypes}
  * \input{ExampleCP}
- * %% \index{\texttt{LALExample()}}
+ * %% \idx{LALExample()}
  * 
  * \subsubsection*{Description}
  * 

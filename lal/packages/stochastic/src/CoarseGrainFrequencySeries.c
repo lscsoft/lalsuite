@@ -12,8 +12,8 @@ frequncy resolution.
 
 \subsubsection*{Prototypes}
 \input{CoarseGrainFrequencySeriesCP}
-\index{\texttt{LALSCoarseGrainFrequencySeries()}}
-\index{\texttt{LALCCoarseGrainFrequencySeries()}}
+\idx{LALSCoarseGrainFrequencySeries()}
+\idx{LALCCoarseGrainFrequencySeries()}
 
 \subsubsection*{Description}
 

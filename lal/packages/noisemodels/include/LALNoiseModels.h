@@ -78,7 +78,7 @@ Detector;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{Detector}} 
+\idx[Type]{Detector} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -92,7 +92,7 @@ CorrelateIn;
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
-\index{\texttt{CorrelateIn}}
+\idx[Type]{CorrelateIn}
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -106,7 +106,7 @@ AddVectorsIn;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{AddVectorsIn}} 
+\idx[Type]{AddVectorsIn} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -124,7 +124,7 @@ RandomInspiralSignalIn;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{RandomInspiralSignalIn}} 
+\idx[Type]{RandomInspiralSignalIn} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -139,7 +139,7 @@ OverlapIn;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{OverlapIn}} 
+\idx[Type]{OverlapIn} 
 </lalLaTeX>  */
 
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
@@ -152,7 +152,7 @@ OverlapOut;
 /*  </lalVerbatim>  */
 
 /*  <lalLaTeX> 
-\index{\texttt{OverlapOut}} 
+\idx[Type]{OverlapOut} 
 </lalLaTeX>  */
 
 /*  <lalLaTeX>

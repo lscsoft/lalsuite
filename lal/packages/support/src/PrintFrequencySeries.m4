@@ -15,17 +15,17 @@ file.  For use in non-production and test code only.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PrintFrequencySeriesCP}
-\index{\texttt{LALZPrintFrequencySeries()}}
-\index{\texttt{LALCPrintFrequencySeries()}}
-\index{\texttt{LALDPrintFrequencySeries()}}
-\index{\texttt{LALSPrintFrequencySeries()}}
-\index{\texttt{LALI2PrintFrequencySeries()}}
-\index{\texttt{LALI4PrintFrequencySeries()}}
-\index{\texttt{LALI8PrintFrequencySeries()}}
-\index{\texttt{LALU2PrintFrequencySeries()}}
-\index{\texttt{LALU4PrintFrequencySeries()}}
-\index{\texttt{LALU8PrintFrequencySeries()}}
-\index{\texttt{LALPrintFrequencySeries()}}
+\idx{LALZPrintFrequencySeries()}
+\idx{LALCPrintFrequencySeries()}
+\idx{LALDPrintFrequencySeries()}
+\idx{LALSPrintFrequencySeries()}
+\idx{LALI2PrintFrequencySeries()}
+\idx{LALI4PrintFrequencySeries()}
+\idx{LALI8PrintFrequencySeries()}
+\idx{LALU2PrintFrequencySeries()}
+\idx{LALU4PrintFrequencySeries()}
+\idx{LALU8PrintFrequencySeries()}
+\idx{LALPrintFrequencySeries()}
 
 \subsubsection*{Description}
 

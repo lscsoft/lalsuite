@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the VIRGO detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALVIRGOPsdCP}
-\index{\verb&LALVIRGOPsd()&}
+\idx{LALVIRGOPsd()}
 
 \subsubsection*{Description}
 

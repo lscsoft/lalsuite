@@ -16,7 +16,7 @@ at center of Earth-fixed frame.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TimeDelayFromEarthCenterCP}
-\index{\texttt{LALTimeDelayFromEarthCenter()}}
+\idx{LALTimeDelayFromEarthCenter()}
 
 \subsubsection*{Description}
 

@@ -14,7 +14,7 @@ integers, with dithering.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{InjectTimeSeriesCP}
-\index{\texttt{LALSI2InjectTimeSeries()}}
+\idx{LALSI2InjectTimeSeries()}
 
 \subsubsection*{Description}
 

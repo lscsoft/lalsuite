@@ -14,8 +14,8 @@ Routines for zero-padding and Fourier transforming a time series.
 
 \subsubsection*{Prototypes}
 \input{ZeroPadAndFFTCP}
-\index{\texttt{LALSZeroPadAndFFT()}}
-\index{\texttt{LALCZeroPadAndFFT()}}
+\idx{LALSZeroPadAndFFT()}
+\idx{LALCZeroPadAndFFT()}
 
 \subsubsection*{Description}
 

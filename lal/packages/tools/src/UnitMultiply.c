@@ -11,7 +11,7 @@ Multiplies two \texttt{LALUnit} structures.
 
 \subsubsection*{Prototypes}
 \input{UnitMultiplyCP}
-\index{\texttt{LALUnitMultiply()}}
+\idx{LALUnitMultiply()}
 
 This function multiplies together the \texttt{LALUnit} structures
 \texttt{input->unitOne} and \texttt{input->unitTwo}, thus allowing a

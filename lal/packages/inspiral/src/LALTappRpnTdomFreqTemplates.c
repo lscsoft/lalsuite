@@ -12,7 +12,7 @@ Module which generates two inspiral waveforms which differ in phase by $\pi/2$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTappRpnTdomFreqTemplatesCP}
-\index{\verb&LALTappRpnTdomFreqTemplates()&}
+\idx{LALTappRpnTdomFreqTemplates()}
 
 \subsubsection*{Description}
 

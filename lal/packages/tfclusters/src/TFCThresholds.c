@@ -57,7 +57,7 @@ LALTFCRiceThreshold ( LALStatus *status,
 		      RiceThresholdParams* thr
 		      );
 }
-\index{\texttt{LALTFCRiceThreshold()}}
+\idx{LALTFCRiceThreshold()}
 
 \subsubsection*{Description}
 Computes the thresholds on the power at every frequency, using a best fit to the Rice distribution. 

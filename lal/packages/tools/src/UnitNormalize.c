@@ -12,7 +12,7 @@ all of the rational exponents into LCD form.
 
 \subsubsection*{Prototypes}
 \input{UnitNormalizeCP}
-\index{\texttt{LALUnitsNormalize()}}
+\idx{LALUnitsNormalize()}
 
 \subsubsection*{Description}
  

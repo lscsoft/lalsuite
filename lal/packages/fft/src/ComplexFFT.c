@@ -11,10 +11,10 @@
  * \subsubsection*{Prototypes}
  * \vspace{0.1in}
  * \input{ComplexFFTCP}
- * \index{\texttt{LALCreateForwardComplexFFTPlan()}}
- * \index{\texttt{LALCreateReverseComplexFFTPlan()}}
- * \index{\texttt{LALDestroyComplexFFTPlan()}}
- * \index{\texttt{LALCOMPLEX8VectorFFT()}}
+ * \idx{LALCreateForwardComplexFFTPlan()}
+ * \idx{LALCreateReverseComplexFFTPlan()}
+ * \idx{LALDestroyComplexFFTPlan()}
+ * \idx{LALCOMPLEX8VectorFFT()}
  * 
  * \subsubsection*{Description}
  * 

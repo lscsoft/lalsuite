@@ -12,15 +12,15 @@ production code, except in very specific circumstances.
 
 \subsubsection*{Prototypes}
 \input{LALErrorCP}
-\index{\texttt{lalRaiseHook}}
-\index{\texttt{lalAbortHook}}
-\index{\texttt{LALPrintError()}}
-\index{\texttt{LALRaise()}}
-\index{\texttt{LALAbort()}}
-\index{\texttt{LALError()}}
-\index{\texttt{LALWarning()}}
-\index{\texttt{LALInfo()}}
-\index{\texttt{LALTrace()}}
+\idx[Variable]{lalRaiseHook}
+\idx[Variable]{lalAbortHook}
+\idx{LALPrintError()}
+\idx{LALRaise()}
+\idx{LALAbort()}
+\idx{LALError()}
+\idx{LALWarning()}
+\idx{LALInfo()}
+\idx{LALTrace()}
 
 \subsubsection*{Description}
 
@@ -143,15 +143,15 @@ we will not bother with additional usage information.
 
 \vspace{1ex}
 \input{LALErrorCP2}
-\index{\texttt{LALInitStatus()}}
-\index{\texttt{LALPrepareReturn()}}
-\index{\texttt{LALAttatchStatusPtr()}}
-\index{\texttt{LALDetatchStatusPtr()}}
-\index{\texttt{LALPrepareAbort()}}
-\index{\texttt{LALPrepareAssertFail()}}
-\index{\texttt{LALCheckStatusPtr()}}
-\index{\texttt{FREESTATUSPTR()}}
-\index{\texttt{REPORTSTATUS()}}
+\idx{LALInitStatus()}
+\idx{LALPrepareReturn()}
+\idx{LALAttatchStatusPtr()}
+\idx{LALDetatchStatusPtr()}
+\idx{LALPrepareAbort()}
+\idx{LALPrepareAssertFail()}
+\idx{LALCheckStatusPtr()}
+\idx{FREESTATUSPTR()}
+\idx{REPORTSTATUS()}
 
 \subsubsection*{Uses}
 \begin{verbatim}

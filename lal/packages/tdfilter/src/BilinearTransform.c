@@ -13,8 +13,8 @@ Transforms the complex frequency coordinate of a ZPG filter.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{BilinearTransformCP}
-\index{\texttt{LALWToZCOMPLEX8ZPGFilter()}}
-\index{\texttt{LALWToZCOMPLEX16ZPGFilter()}}
+\idx{LALWToZCOMPLEX8ZPGFilter()}
+\idx{LALWToZCOMPLEX16ZPGFilter()}
 
 \subsubsection*{Description}
 

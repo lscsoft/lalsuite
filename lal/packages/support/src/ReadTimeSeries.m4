@@ -12,10 +12,10 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ReadTimeSeriesCP}
-\index{\texttt{LALZReadTimeSeries()}}
-\index{\texttt{LALCReadTimeSeries()}}
-\index{\texttt{LALDReadTimeSeries()}}
-\index{\texttt{LALSReadTimeSeries()}}
+\idx{LALZReadTimeSeries()}
+\idx{LALCReadTimeSeries()}
+\idx{LALDReadTimeSeries()}
+\idx{LALSReadTimeSeries()}
 
 \subsubsection*{Description}
 

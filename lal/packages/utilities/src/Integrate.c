@@ -13,8 +13,8 @@ Functions for generating random numbers.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{IntegrateCP}
-\index{\texttt{LALSRombergIntegrate()}}
-\index{\texttt{LALDRombergIntegrate()}}
+\idx{LALSRombergIntegrate()}
+\idx{LALDRombergIntegrate()}
 
 \subsubsection*{Description}
 

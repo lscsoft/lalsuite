@@ -13,8 +13,8 @@ Functions for generating random numbers.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{InterpolateCP}
-\index{\texttt{LALSPolynomialInterpolation()}}
-\index{\texttt{LALDPolynomialInterpolation()}}
+\idx{LALSPolynomialInterpolation()}
+\idx{LALDPolynomialInterpolation()}
 
 \subsubsection*{Description}
 

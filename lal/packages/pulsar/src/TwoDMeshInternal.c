@@ -14,8 +14,8 @@ parameter space.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{TwoDMeshInternalCP}
-\index{\texttt{LALTwoDMesh()}}
-\index{\texttt{LALTwoDColumn()}}
+\idx{LALTwoDMesh()}
+\idx{LALTwoDColumn()}
 
 \subsubsection*{Description}
 

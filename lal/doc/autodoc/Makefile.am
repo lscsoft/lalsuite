@@ -9,15 +9,15 @@ MKIND = @MKIND@
 dvi-local:
 	rm -f *.aux
 	@ docdir=`cd $(top_srcdir)/doc && pwd` ; \
-          sources="$$docdir/ligodcc.cls $$docdir/lal.sty $$docdir/lalspec.tex $$docdir/lsd.tex $$docdir/lsdFig* $$docdir/schedule.*"; \
+          sources="$$docdir/ligodcc.cls $$docdir/lal.sty $$docdir/lalspec.tex $$docdir/lsd.tex $$docdir/lsdFig* $$docdir/merger.*"; \
           for file in $$sources ; do \
             if test ! -f `basename $$file` ; then \
 	      cmd="@LN_S@ $$file ."; echo "$$cmd"; $$cmd; \
 	    fi; \
           done
 	${LATEX} lalspec && ${LATEX} lalspec && ${LATEX} lalspec
-	pool_size=400000 ${LATEX} lsd && ${MKIND} lsd && \
 	pool_size=400000 ${LATEX} lsd && \
+	pool_size=400000 ${LATEX} lsd && ${MKIND} lsd && \
 	pool_size=400000 ${LATEX} lsd
 	@ for file in lalspec.dvi lalspec.pdf lalspec.ps lsd.dvi lsd.pdf lsd.ps; do \
 	    if test -f $$file ; then \

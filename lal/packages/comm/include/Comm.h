@@ -142,7 +142,7 @@ MPIMessage;
  * <lalLaTeX>
  *
  * \subsubsection*{Structure \texttt{MPIMessage}}
- * \index{\texttt{MPIMessage}}
+ * \idx[Type]{MPIMessage}
  *
  * This structure is sent to a remote process, via \verb+LALMPISendMsg()+,
  * to alert that process that there is a message.  Note that
@@ -204,8 +204,8 @@ InitExchParams;
  * <lalLaTeX>
  *
  * \subsubsection*{Structures \texttt{ExchParams} and \texttt{InitExchParams}}
- * \index{\texttt{ExchParams}}
- * \index{\texttt{InitExchParams}}
+ * \idx[Type]{ExchParams}
+ * \idx[Type]{InitExchParams}
  *
  * These structures are used in the \verb+Exch+-type routines.  The structure
  * \verb+InitExchParams+ are the parameters used in initializing an exchange

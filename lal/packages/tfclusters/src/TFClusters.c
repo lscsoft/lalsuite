@@ -58,7 +58,7 @@ LALComputeSpectrogram (
 		       REAL4TimeSeries *tseries
 		       )
 }
-\index{\texttt{LALComputeSpectrogram()}}
+\idx{LALComputeSpectrogram()}
 
 \subsubsection*{Description}
 Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. This is essentially a wrapper to the function \texttt{LALTimeSeriesToTFPlane} from the \texttt{burstsearch} package, with a rectangular window and no overlap. The power is the norm square of the (normalized) discrete Fourier transform.
@@ -185,7 +185,7 @@ LALGetClusters (
 		CListDir *dir
 		)
 }
-\index{\texttt{LALGetClusters()}}
+\idx{LALGetClusters()}
 
 \subsubsection*{Description}
 First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}. 
@@ -719,7 +719,7 @@ LALClustersPowerThreshold (
 			   CListDir *dir
 			   )
 }
-\index{\texttt{LALClustersPowerThreshold()}}
+\idx{LALClustersPowerThreshold()}
 
 \subsubsection*{Description}
 This function loops over all clusters in \texttt{*in}; for each cluster it computes its total power by summing over the pixels of the cluster, and computes the probability for Gaussian noise to produce a cluster with this total power at this stage of the analysis. This probability is compared to \texttt{dir->alpha}; if smaller, the cluster from \texttt{*in} is appended to \texttt{*out}. Therefore, \texttt{dir->alpha} is the fraction of clusters that had survive the first cuts that will pass this one, assuming Gaussian noise as input of the algorithm.
@@ -875,7 +875,7 @@ LALMergeClusterLists (
 		      CList *B
 		      )
 }
-\index{\texttt{LALMergeClusterLists()}}
+\idx{LALMergeClusterLists()}
 
 \subsubsection*{Description}
 Merge \texttt{*A} and \texttt{*B} into cluster list \texttt{*out}. The merging is done so that any two clusters that overlapp or that have black pixels that are nearest neighbors will be replaced by the union of the two clusters in \texttt{*out}. The clusters that don't satisfy these two conditions are just copied into \texttt{*out}.
@@ -1237,7 +1237,7 @@ LALCopyCList (
 	      CList *src
 	      );
 }
-\index{\texttt{LALCopyCList()}}
+\idx{LALCopyCList()}
 
 \subsubsection*{Description}
 Make a copy of \texttt{*src} onto \texttt{*dest}.
@@ -1322,7 +1322,7 @@ LALPlainSpectrogram(
 		    REAL8 T
 		    )
 }
-\index{\texttt{LALPlainSpectrogram()}}
+\idx{LALPlainSpectrogram()}
 
 \subsubsection*{Description}
 Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T} and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. Also set the length of \texttt{*tspec} so it matches \texttt{*tseries}.
@@ -1376,7 +1376,7 @@ LALInitCList (
 	      TFPlaneParams *tspec
 	      )
 }
-\index{\texttt{LALInitCList()}}
+\idx{LALInitCList()}
 
 \subsubsection*{Description}
 Initialize \texttt{*clist} and set its parameters to \texttt{*tspec}.
@@ -1445,7 +1445,7 @@ LALFillCListDir (
 		 REAL8 rho
 		 )
 }
-\index{\texttt{LALFillCListDir()}}
+\idx{LALFillCListDir()}
 
 \subsubsection*{Description}
 Initialize \texttt{*cldir}. This means allocating memory for \texttt{cldir->s1}, \texttt{cldir->s2}, \texttt{cldir->d} according to the value of \texttt{cldir->sigma}, and for the threshold vector \texttt{cldir->rho}; all the values of \texttt{cldir->rho} are initialized to \texttt{rho}.
@@ -1530,7 +1530,7 @@ LALFreeCList(
 	     CList *clist
 	     )
 }
-\index{\texttt{LALFreeCList()}}
+\idx{LALFreeCList()}
 
 \vspace{0.1in}
 \texttt{
@@ -1541,7 +1541,7 @@ LALFreeSpecgram(
 		Spectrogram *power
 		)
 }
-\index{\texttt{LALFreeSpecgram()}}
+\idx{LALFreeSpecgram()}
 
 \vspace{0.1in}
 \texttt{
@@ -1552,7 +1552,7 @@ LALFreeCListDir (
 		 CListDir *cdir
 		 )
 }
-\index{\texttt{LALFreeCListDir()}}
+\idx{LALFreeCListDir()}
 
 \subsubsection*{Description}
 Release allocated memory.

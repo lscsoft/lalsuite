@@ -14,7 +14,7 @@ to describe distances on the signal manifold.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralComputeMetricCP}
-\index{\verb&LALInspiralComputeMetric()&}
+\idx{LALInspiralComputeMetric()}
 
 \subsubsection*{Description}
 

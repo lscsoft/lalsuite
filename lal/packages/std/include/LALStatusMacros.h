@@ -30,6 +30,7 @@ status: the status structure \verb@LALStatus@, and the global integer
 sections.
 
 \subsubsection{The \texttt{LALStatus} structure}
+\idx[Type]{LALStatus}
 
 LAL routines store their current execution status in a linked list of
 structures of type \verb@LALStatus@, with each node in the list
@@ -106,6 +107,7 @@ to \verb@NULL@. \\
 \end{center}
 
 \subsubsection{The \texttt{lalDebugLevel}}
+\idx[Variable]{lalDebugLevel}
 
 The \verb@lalDebugLevel@ is a global variable, set at runtime, that
 determines how much and what kind of debugging information will be
@@ -176,6 +178,18 @@ messages \\
 \hline
 \end{tabular}
 \end{center}
+\idx[Constant]{LALNDEBUG}
+\idx[Constant]{LALERROR}
+\idx[Constant]{LALWARNING}
+\idx[Constant]{LALINFO}
+\idx[Constant]{LALTRACE}
+\idx[Constant]{LALMEMINFO}
+\idx[Constant]{LALMEMDBG}
+\idx[Constant]{LALMSGLVL1}
+\idx[Constant]{LALMSGLVL2}
+\idx[Constant]{LALMSGLVL3}
+\idx[Constant]{LALMEMTRACE}
+\idx[Constant]{LALALLDBG}
 
 The most significant bit
 of \verb@lalDebugLevel@ has a special meaning in that it is not
@@ -216,6 +230,7 @@ cases the error should be trapped, reported in the status structure,
 and control returned to the calling routine.
 
 \subsubsection{Assigning an RCS \texttt{\$Id\$} string}
+\idx{NRCSID()}
 
 Every source file should have a unique character string identifying
 that version of that file.  The standard convention, for a file
@@ -231,6 +246,7 @@ file \verb@LALRCSID.h@):
 name and version number of the source file.
 
 \subsubsection{Initializing the status structure}
+\idx{INITSTATUS()}
 
 The first instruction in any function, after variable declarations,
 should be the macro \verb@INITSTATUS()@, which takes three arguments:
@@ -246,6 +262,7 @@ the program to terminate with a \verb@SIGABRT@ signal, as described
 above.
 
 \subsubsection{Normal return from a function}
+\idx{RETURN()}
 
 Upon completion, the function should issue the macro \verb@RETURN()@,
 which takes one argument: the function's status pointer.
@@ -264,6 +281,7 @@ assign the fields of \verb@*stat@ by hand, and then issue
 \verb@RETURN()@.
 
 \subsubsection{Abnormal return from a function}
+\idx{ABORT()}
 
 The standard method to terminate a function unsuccessfully is with the
 \verb@ABORT()@ macro, which takes three arguments: the status pointer,
@@ -283,6 +301,7 @@ does \emph{not} raise a \verb@SIGABRT@ signal, but instead returns
 control to the calling routine.
 
 \subsubsection{Error checking within a function}
+\idx{ASSERT()}
 
 Another way to indicate an unsuccessful termination is with the macro
 \verb@ASSERT()@, which takes as arguments a test statement, a status
@@ -313,6 +332,10 @@ memory before returning.  Instead, you must explicitly check the
 assertion, and, if it fails, free the memory and call \verb@ABORT()@.
 
 \subsubsection{Calling subroutines}
+\idx{ATTATCHSTATUSPTR()}
+\idx{DETATCHSTATUSPTR()}
+\idx{CHECKSTATUSPTR()}
+\idx[Macro]{TRY()}
 
 If the function is to call other LAL functions as subroutines, four
 more macros are used to report possible errors arising in these
@@ -405,6 +428,8 @@ calling another subroutine.
 \end{enumerate}
 
 \subsubsection{Cleaning up after subroutine failure}
+\idx[Macro]{BEGINFAIL()}
+\idx[Macro]{ENDFAIL()}
 
 Although they are convenient, the \verb@TRY()@ and
 \verb@CHECKSTATUSPTR()@ macros have a serious drawback in that they
@@ -475,6 +500,11 @@ cleanup routines start to fail, it is probably beyond the scope of the
 LAL function to deal with the resulting memory leaks.
 
 \subsubsection{Issuing status messages}
+\idx{LALError()}
+\idx{LALWarning()}
+\idx{LALInfo()}
+\idx{LALTrace()}
+\idx{REPORTSTATUS()}
 
 The module \verb@LALError.c@ defines the functions \verb@LALError()@,
 \verb@LALWarning()@, \verb@LALInfo()@, and \verb@LALTrace()@ to issue
@@ -502,6 +532,8 @@ code.
 
 \subsubsection{Setting the initial \texttt{LALStatus} structure and
 global \texttt{lalDebugLevel}}
+\idx[Type]{LALStatus}
+\idx[Variable]{lalDebugLevel}
 
 As mentioned above, any module including \verb@LALStatusMacros.h@
 includes the global variable \verb@lalDebugLevel@ as an

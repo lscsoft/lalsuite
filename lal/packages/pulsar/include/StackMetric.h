@@ -123,7 +123,7 @@ NRCSID(STACKMETRICH,"$Id$");
 \begin{verbatim}
 MetricParamStruc
 \end{verbatim}
-\index{\texttt{MetricParamStruc}}
+\idx[Type]{MetricParamStruc}
 
 \noindent This structure stores and passes parameters for computing a
 parameter-space metric.  It points to the canonical time function used

@@ -14,9 +14,9 @@ Calculates the value of the standard optimally-filtered
 cross-correlation statistic for stochastic background searches.
 
 \subsubsection*{Prototypes}
-\index{\texttt{LALStochasticCrossCorrelationStatistic()}}
-\index{\texttt{LALStochasticHeterodynedCrossCorrelationStatistic()}}
-\index{\texttt{LALStochasticCrossCorrelationSpectrum()}}
+\idx{LALStochasticCrossCorrelationStatistic()}
+\idx{LALStochasticHeterodynedCrossCorrelationStatistic()}
+\idx{LALStochasticCrossCorrelationSpectrum()}
 \input{StochasticCrossCorrelationCP}
 
 \subsubsection*{Description}

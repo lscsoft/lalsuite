@@ -13,8 +13,8 @@ pulse emission time, in TDB.
 
 \subsubsection*{Prototypes}
 \input{LALBarycenterCP}
-\index{\texttt{LALBarycenter()}}
-\index{\texttt{LALBarycenter()}}
+\idx{LALBarycenter()}
+\idx{LALBarycenter()}
 
 \subsubsection*{Description}
 

@@ -12,7 +12,7 @@ Module to calculate the noise power spectral density for the TAMA detector.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTAMAPsdCP}
-\index{\verb&LALTAMAPsd()&}
+\idx{LALTAMAPsd()}
 
 \subsubsection*{Description}
 

@@ -10,7 +10,7 @@ Module to compute the correlation of two data sets.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALCorrelateCP}
-\index{\verb&LALCorrelate()&}
+\idx{LALCorrelate()}
 
 \subsubsection*{Description}
 The module expects two inputs \texttt{signal1, signal2}

@@ -43,7 +43,7 @@ $Id$
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{HarmonicFinderD}
-\index{\texttt{LALHarmonicFinder()}}
+\idx{LALHarmonicFinder()}
 
 \subsubsection*{Description}
 This routine determines the lower and upper frequency limit (in bins)

@@ -12,7 +12,7 @@ Interface routine needed to generate a T- or a P-approximant.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveCP}
-\index{\verb&LALInspiralWave()&}
+\idx{LALInspiralWave()}
 
 \subsubsection*{Description}
 

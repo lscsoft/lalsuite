@@ -13,8 +13,8 @@ Destroys ZPG filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DestroyZPGFilterCP}
-\index{\texttt{LALDestroyCOMPLEX8ZPGFilter()}}
-\index{\texttt{LALDestroyCOMPLEX16ZPGFilter()}}
+\idx{LALDestroyCOMPLEX8ZPGFilter()}
+\idx{LALDestroyCOMPLEX16ZPGFilter()}
 
 \subsubsection*{Description}
 

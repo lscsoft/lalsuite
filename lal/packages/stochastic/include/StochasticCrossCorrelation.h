@@ -223,7 +223,7 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 \input{StochasticCrossCorrelationHPCC}
 
 \subsubsection*{\texttt{struct REAL4WithUnits}}
-\index{\texttt{REAL4WithUnits}}
+\idx[Type]{REAL4WithUnits}
 
 \noindent
 Represents a dimensionful number as a 4-byte float with an associated
@@ -248,7 +248,7 @@ typedef struct tagREAL4WithUnits {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct COMPLEX8WithUnits}}
-\index{\texttt{COMPLEX8WithUnits}}
+\idx[Type]{COMPLEX8WithUnits}
 
 \noindent
 Represents a dimensionful number as a single-precision (8-byte) complex
@@ -274,7 +274,7 @@ typedef struct tagCOMPLEX8WithUnits {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct StochasticCrossCorrelationInput}}
-\index{\texttt{StochasticCrossCorrelationInput}}
+\idx[Type]{StochasticCrossCorrelationInput}
 
 \noindent Contains the input data needed by 
 \texttt{LALStochasticCrossCorrelationStatistic()}
@@ -376,7 +376,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
 \input{StochasticCrossCorrelationHPOF}
 
 \subsubsection*{\texttt{struct StochasticOptimalFilterInput}}
-\index{\texttt{StochasticOptimalFilterInput}}
+\idx[Type]{StochasticOptimalFilterInput}
 
 \noindent 
 Contains the inputs of \texttt{LALStochasticOptimalFilter()}.
@@ -450,7 +450,7 @@ LALStochasticOptimalFilter(
 \input{StochasticCrossCorrelationHPIN}
 
 \subsubsection*{\texttt{struct StochasticInverseNoiseOutput}}
-\index{\texttt{StochasticInverseNoiseOutput}}
+\idx[Type]{StochasticInverseNoiseOutput}
 
 \noindent 
 Contains the outputs of \texttt{LALStochasticInverseNoise()}.
@@ -477,7 +477,7 @@ typedef struct tagStochasticInverseNoiseOutput {
 
 /********************************************************** <lalLaTeX>
 \subsubsection*{\texttt{struct StochasticInverseNoiseInput}}
-\index{\texttt{StochasticInverseNoiseInput}}
+\idx[Type]{StochasticInverseNoiseInput}
 
 \noindent 
 Contains the inputs to \texttt{LALStochasticInverseNoise()}.
@@ -526,7 +526,7 @@ LALStochasticInverseNoise(
 \input{StochasticCrossCorrelationHPOG}
 
 \subsubsection*{\texttt{struct StochasticOmegaGWParameters}}
-\index{\texttt{StochasticOmegaGWParameters}}
+\idx[Type]{StochasticOmegaGWParameters}
 
 \noindent 
 Contains the parameters used by \texttt{LALStochasticOmegaGW()} to define a 
@@ -595,7 +595,7 @@ LALStochasticOmegaGW (
 \input{StochasticCrossCorrelationHPOR}
 
 \subsubsection*{\texttt{struct OverlapReductionFunctionParameters}}
-\index{\texttt{OverlapReductionFunctionParameters}}
+\idx[Type]{OverlapReductionFunctionParameters}
 
 \noindent Contains the parameters used by
 \texttt{LALOverlapReductionFunction()} to determine the format of its
@@ -624,7 +624,7 @@ OverlapReductionFunctionParameters;
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct LALDetectorPair}}
-\index{\texttt{LALDetectorPair}}
+\idx[Type]{LALDetectorPair}
 
 \noindent Holds structures defining the location and orientation of a
 pair of interferometric gravitational wave detectors.  This is the

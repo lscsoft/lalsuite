@@ -14,7 +14,7 @@ and flux function are solved numerically.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALTimeDomain2CP}
-\index{\verb&LALTimeDomain2()&}
+\idx{LALTimeDomain2()}
 
 \subsubsection*{Description}
 

@@ -74,7 +74,7 @@ NRCSID (SEQFACTORIESH, "$Id$");
 \begin{verbatim}
 CreateVectorSequenceIn
 \end{verbatim}
-\index{\texttt{CreateVectorSequenceIn}}
+\idx[Type]{CreateVectorSequenceIn}
 
 \noindent This structure stores the input required for creating a vector
 sequence.  This input includes the length of the sequence (i.e., the number of

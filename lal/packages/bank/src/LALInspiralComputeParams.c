@@ -15,7 +15,7 @@ symmetric mass ratio) and the individual mass of the compact objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralComputeParamsCP}
-\index{\verb&LALInspiralComputeParams()&}
+\idx{LALInspiralComputeParams()}
 
 \subsubsection*{Description}
 

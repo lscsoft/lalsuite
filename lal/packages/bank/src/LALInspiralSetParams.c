@@ -13,7 +13,7 @@ based on the values in the \texttt{InspiralCoarseBankIn} structure.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetParamsCP}
-\index{\verb&LALInspiralSetParams()&}
+\idx{LALInspiralSetParams()}
 
 \subsubsection*{Description}
 

@@ -13,7 +13,7 @@ Automatically converts among sky coordinate systems.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SkyCoordinatesCP}
-\index{\texttt{LALConvertSkyCoordinates()}}
+\idx{LALConvertSkyCoordinates()}
 
 \subsubsection*{Description}
 

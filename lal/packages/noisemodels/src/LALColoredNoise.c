@@ -11,7 +11,7 @@ of power spectral density \texttt{psd}.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALColoredNoiseCP}
-\index{\verb&LALColoredNoise()&}
+\idx{LALColoredNoise()}
 
 \subsubsection*{Description}
 \subsubsection*{Algorithm}

@@ -2,8 +2,9 @@
 \ProvidesClass{ligodcc}
 \RequirePackage{array}
 \RequirePackage{calc}
+\RequirePackage{geometry}
 \RequirePackage{times}
-\RequirePackage{vmargin}
+%\RequirePackage{vmargin}
 \newcommand\@ligodccptsize{2}
 \DeclareOption{10pt}{\renewcommand\@ligodccptsize{0}}
 \DeclareOption{11pt}{\renewcommand\@ligodccptsize{1}}
@@ -12,8 +13,9 @@
 \ProcessOptions
 \LoadClass[letterpaper,1\@ligodccptsize pt]{article}
 
-\setpapersize{USletter}
-\setmargins{1in}{1in}{6.5in}{9in}{10pt}{26pt}{10pt}{36pt}
+%\setpapersize{USletter}
+%\setmargins{1in}{1in}{6.5in}{9in}{10pt}{26pt}{10pt}{36pt}
+\geometry{letterpaper,tmargin=0.5in,headheight=0.2in,headsep=0.3in,hmargin=1in}
 
 \def\ps@headings{%
   \def\@oddfoot{\hfil\mbox{\small page \thepage{} of

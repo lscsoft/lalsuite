@@ -26,7 +26,7 @@ ${\cal D}_N(x)$.
 \begin{verbatim}
 struct DirichletParameters
 \end{verbatim}
-\index{\texttt{DirichletParameters}}
+\idx[Type]{DirichletParameters}
 
 \noindent
 Contains parameters that specify the Dirichlet kernel $\mathcal{D}_N(x)$.

@@ -10,7 +10,7 @@ Routine that returns the version of LAL.
 
 \subsubsection*{Prototypes}
 \input{LALVersionCP}
-\index{\texttt{LALVersion()}}
+\idx{LALVersion()}
 
 \subsubsection*{Description}
 

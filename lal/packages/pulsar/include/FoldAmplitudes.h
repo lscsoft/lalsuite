@@ -52,8 +52,8 @@ typedef struct tagFoldAmplitudesParams
 
 \end{verbatim}
 
-\index{\texttt{FoldAmplitudesInput}}
-\index{\texttt{FoldAmplitudesParams}}
+\idx[Type]{FoldAmplitudesInput}
+\idx[Type]{FoldAmplitudesParams}
 
 \vfill{\footnotesize\input{FoldAmplitudesHV}}
 \newpage\input{FoldAmplitudesC}

@@ -90,7 +90,7 @@ tagEtaTau04In
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{EtaTau04In}}
+\idx[Type]{EtaTau04In}
 </lalLaTeX>  */
 
 
@@ -105,7 +105,7 @@ tagEtaTau02In
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{EtaTau02In}}
+\idx[Type]{EtaTau02In}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -121,7 +121,7 @@ typedef enum {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InputMasses}}
+\idx[Type]{InputMasses}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -132,7 +132,7 @@ typedef enum {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{Domain}}
+\idx[Type]{Domain}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -147,7 +147,7 @@ typedef enum {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{Order}}
+\idx[Type]{Order}
 </lalLaTeX>  */
 
 
@@ -160,7 +160,7 @@ typedef enum {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{Approximant}}
+\idx[Type]{Approximant}
 </lalLaTeX>  */
 
 
@@ -175,7 +175,7 @@ typedef enum {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{Method}}
+\idx[Type]{Method}
 </lalLaTeX>  */
 
 
@@ -228,7 +228,7 @@ tagInspiralTemplate
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralTemplate}}
+\idx[Type]{InspiralTemplate}
 </lalLaTeX>  */
 
 
@@ -247,7 +247,7 @@ InspiralwavePhaseInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralwavePhaseInput}}
+\idx[Type]{InspiralwavePhaseInput}
 </lalLaTeX>  */
 
 
@@ -261,7 +261,7 @@ InspiralwavePhaseOutput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralwavePhaseOutput}}
+\idx[Type]{InspiralwavePhaseOutput}
 </lalLaTeX>  */
 
 
@@ -279,7 +279,7 @@ InspiralwaveFrequencyInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralwaveFrequencyInput}}
+\idx[Type]{InspiralwaveFrequencyInput}
 </lalLaTeX>  */
 
 
@@ -293,7 +293,7 @@ InspiralwaveFrequencyOutput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralwaveFrequencyOutput}}
+\idx[Type]{InspiralwaveFrequencyOutput}
 </lalLaTeX>  */
 
 
@@ -315,7 +315,7 @@ InspiralParamsInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralParamsInput}}
+\idx[Type]{InspiralParamsInput}
 </lalLaTeX>  */
 
 
@@ -339,7 +339,7 @@ InspiralParamsOutput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralParamsOutput}}
+\idx[Type]{InspiralParamsOutput}
 </lalLaTeX>  */
 
 
@@ -358,7 +358,7 @@ InspiralPhasesInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralPhasesInput}}
+\idx[Type]{InspiralPhasesInput}
 </lalLaTeX>  */
 
 
@@ -377,7 +377,7 @@ InspiralToffInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralToffInput}}
+\idx[Type]{InspiralToffInput}
 </lalLaTeX>  */
 
 
@@ -469,7 +469,7 @@ typedef struct {
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{expnCoeffs}}
+\idx[Type]{expnCoeffs}
 </lalLaTeX>  */
 
 
@@ -489,7 +489,7 @@ expnFunc;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{expnFunc}}
+\idx[Type]{expnFunc}
 </lalLaTeX>  */
 
 
@@ -505,7 +505,7 @@ TofVIntegrandIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{TofVIntegrandIn}}
+\idx[Type]{TofVIntegrandIn}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -521,7 +521,7 @@ InspiralDerivativesIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralDerivativesIn}}
+\idx[Type]{InspiralDerivativesIn}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -542,7 +542,7 @@ rk4In;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{rk4In}}
+\idx[Type]{rk4In}
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralHS">  */
@@ -562,7 +562,7 @@ TimeDomainIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{TimeDomainIn}}
+\idx[Type]{TimeDomainIn}
 </lalLaTeX>  */
 
 
@@ -584,7 +584,7 @@ TofVIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{TofVIn}}
+\idx[Type]{TofVIn}
 </lalLaTeX>  */
 
 
@@ -604,7 +604,7 @@ InspiralPhaseIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{InspiralPhaseIn}}
+\idx[Type]{InspiralPhaseIn}
 </lalLaTeX>  */
 
 
@@ -620,7 +620,7 @@ PhiofVIntegrandIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
-\index{\texttt{PhiofVIntegrandIn}}
+\idx[Type]{PhiofVIntegrandIn}
 </lalLaTeX>  */
 
 /*  <lalLaTeX>

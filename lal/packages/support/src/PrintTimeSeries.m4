@@ -15,17 +15,17 @@ file.  For use in non-production and test code only.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PrintTimeSeriesCP}
-\index{\texttt{LALZPrintTimeSeries()}}
-\index{\texttt{LALCPrintTimeSeries()}}
-\index{\texttt{LALDPrintTimeSeries()}}
-\index{\texttt{LALSPrintTimeSeries()}}
-\index{\texttt{LALI2PrintTimeSeries()}}
-\index{\texttt{LALI4PrintTimeSeries()}}
-\index{\texttt{LALI8PrintTimeSeries()}}
-\index{\texttt{LALU2PrintTimeSeries()}}
-\index{\texttt{LALU4PrintTimeSeries()}}
-\index{\texttt{LALU8PrintTimeSeries()}}
-\index{\texttt{LALPrintTimeSeries()}}
+\idx{LALZPrintTimeSeries()}
+\idx{LALCPrintTimeSeries()}
+\idx{LALDPrintTimeSeries()}
+\idx{LALSPrintTimeSeries()}
+\idx{LALI2PrintTimeSeries()}
+\idx{LALI4PrintTimeSeries()}
+\idx{LALI8PrintTimeSeries()}
+\idx{LALU2PrintTimeSeries()}
+\idx{LALU4PrintTimeSeries()}
+\idx{LALU8PrintTimeSeries()}
+\idx{LALPrintTimeSeries()}
 
 \subsubsection*{Description}
 

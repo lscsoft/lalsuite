@@ -15,7 +15,7 @@ Computes a parametrized post-Newtonian inspiral waveform.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{GeneratePPNInspiralCP}
-\index{\texttt{LALGeneratePPNInspiral()}}
+\idx{LALGeneratePPNInspiral()}
 
 \subsubsection*{Description}
 

@@ -15,7 +15,7 @@ Computes the response of a detector to a coherent gravitational wave.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SimulateCoherentGWCP}
-\index{\texttt{LALSimulateCoherentGW()}}
+\idx{LALSimulateCoherentGW()}
 
 \subsubsection*{Description}
 
