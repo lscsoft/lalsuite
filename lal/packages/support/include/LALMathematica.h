@@ -145,8 +145,8 @@
 
   /*NEWPAGE - MODULES INPUT - "LALMath3DPlot.c" ---------------------------------------*/
     /* <lalLaTeX> 
-    \newpage\input{LALMath3DPlotC} 
-    </lalLaTeX>
+    \newpage\input{LALMath3DPlotC}
+    </lalLaTeX> 
     END - MODULES INPUT - "LALMath3DPlot.c" -------------------------------------------*/ 
   
 /*END SECTION - HEADER - "LalMathematica.h" -------------------------------------------*/

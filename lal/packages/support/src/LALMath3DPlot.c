@@ -40,10 +40,14 @@ $Id$
      </lalLaTeX> 
      END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
 
+  /* <lalLaTeX>
+     \includegraphics{LALMathematicaHplot1}
+     </lalLaTeX>*/
+
   /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
      \subsubsection{Notes}
      \begin{itemize}
-   * \item The output of this function is "Math3DNotebook.nb" and will appear in the 
+   * \item The output of this function is ``Math3DNotebook.nb" and will appear in the 
    * directory of the program that called this function.
    * \item Exported Mathematica graphics have no preferred directory and will appear in
    * your home directory for unix users and in the Mathematica directory for Windows 
