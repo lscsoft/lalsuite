@@ -854,7 +854,7 @@ int main( int argc, char *argv[] )
   if ( dataCheckpoint )
   {
 #ifdef LALAPPS_CONDOR
-    condor_compress_ckpt = 0;
+    condor_compress_ckpt = 1;
     if ( ckptPath[0] )
     {
       LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt", 
