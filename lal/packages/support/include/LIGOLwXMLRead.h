@@ -119,12 +119,21 @@ with columns in an xml file.
 \newpage\input{LIGOLwXMLReadC}
 </lalLaTeX> */
 
+MetaTableDirectory * XLALCreateMetaTableDir(
+      const MetaioParseEnv    env,
+      MetadataTableType       table
+      );
+
 void
 LALCreateMetaTableDir(
     LALStatus              *status,
     MetaTableDirectory    **tableDir,
     const MetaioParseEnv    env,
     MetadataTableType       table
+    );
+
+SnglBurstTable * XLALSnglBurstTableFromLIGOLw (
+    CHAR               *fileName
     );
 
 void

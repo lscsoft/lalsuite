@@ -149,6 +149,292 @@ tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
   </lalLaTeX>
 #endif
 
+/*
+ *
+ * XLAL Routines.
+ *
+ */
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+MetaTableDirectory * XLALCreateMetaTableDir(
+      const MetaioParseEnv    env,
+      MetadataTableType       table
+      )
+  /* </lalVerbatim> */
+{
+  static const char   *func = "XLALCreateMetaTableDir";
+  MetaTableDirectory  *tableDir;
+  INT4 i;
+
+  switch( table )
+  {
+    case no_table:
+      XLAL_ERROR( func, XLAL_EINVAL );
+      break;
+    case process_table:
+      break;
+    case process_params_table:
+      break;
+    case search_summary_table:
+      break;
+    case search_summvars_table:
+      break;
+    case sngl_burst_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"ifo",                     -1, 0},
+          {"search",                  -1, 1},
+          {"channel",                 -1, 2},
+          {"start_time",              -1, 3},
+          {"start_time_ns",           -1, 4},
+          {"duration",                -1, 5},
+          {"central_freq",            -1, 6},
+          {"bandwidth",               -1, 7},
+          {"amplitude",               -1, 8},
+          {"snr",                     -1, 9},
+          {"confidence",              -1, 10},
+          {"peak_time",               -1, 11},
+          {"peak_time_ns",            -1, 12},
+          {NULL,                       0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR( func, XLAL_EFAILED );
+          }
+        }
+
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
+      break;
+    case sngl_inspiral_table:
+      break;
+    case multi_inspiral_table:
+      break;
+    case sim_inspiral_table:
+      break;
+    case sim_burst_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"waveform",                     -1, 0},
+          {"geocent_peak_time",            -1, 1},
+          {"geocent_peak_time_ns",         -1, 2},
+          {"h_peak_time",                  -1, 3},
+          {"h_peak_time_ns",               -1, 4},
+          {"l_peak_time",                  -1, 5},
+          {"l_peak_time_ns",               -1, 6},
+          {"peak_time_gmst",               -1, 7},
+          {"dtplus",                       -1, 8},
+          {"dtminus",                      -1, 9},
+          {"longitude",                    -1, 10},
+          {"latitude",                     -1, 11},
+          {"coordinates",                  -1, 12},
+          {"polarization",                 -1, 13},
+          {"hrss",                         -1, 14},
+          {"hpeak",                        -1, 15},
+          {"freq",                         -1, 16},
+          {"tau",                          -1, 17},
+          {"zm_number",                    -1, 18},
+          {NULL,                            0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR( func, XLAL_EFAILED );
+          }
+        }
+
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
+      break;
+    case summ_value_table:
+      break;
+    default: 
+      XLAL_ERROR( func, XLAL_EFAILED );
+  }
+
+  return tableDir;
+}
+
+#define XLAL_CLOBBER_EVENTS \
+  while ( eventHead ); \
+{ \
+  thisEvent = eventHead; \
+  eventHead = (eventHead)->next; \
+  LALFree( thisEvent ); \
+  thisEvent = NULL; \
+}
+
+#define CLOBBER_EVENTS \
+  while ( *eventHead ); \
+{ \
+  thisEvent = *eventHead; \
+  *eventHead = (*eventHead)->next; \
+  LALFree( thisEvent ); \
+  thisEvent = NULL; \
+}
+
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  static const char   *func = "XLALSnglBurstTableFromLIGOLw";
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  SnglBurstTable                       *thisEvent = NULL;
+  SnglBurstTable                       *eventHead = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  /* open the sngl_burst XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "sngl_burst" );
+  if ( mioStatus )
+  {
+    XLAL_ERROR( func, XLAL_EIO );
+  }
+
+  /* create table directory to find columns in file*/
+  tableDir = XLALCreateMetaTableDir(env, sngl_burst_table);
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* count the rows in the file */
+    i++;
+
+    /* allocate memory for the template we are about to read in */
+    if ( ! eventHead )
+    {
+      thisEvent = eventHead = (SnglBurstTable *) 
+        LALCalloc( 1, sizeof(SnglBurstTable) );
+    }
+    else
+    {
+      thisEvent = thisEvent->next = (SnglBurstTable *) 
+        LALCalloc( 1, sizeof(SnglBurstTable) );
+    }
+    if ( ! thisEvent )
+    {
+      fprintf( stderr, "could not allocate burst event\n" );
+      XLAL_CLOBBER_EVENTS;
+      MetaioClose( env );
+      XLAL_ERROR( func, XLAL_ENOMEM );
+    }
+
+    /* parse the contents of the row into the InspiralTemplate structure */
+    for ( j = 0; tableDir[j].name; ++j )
+    {
+      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+      /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
+      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( thisEvent->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        LALSnprintf( thisEvent->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        thisEvent->start_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        thisEvent->start_time.gpsNanoSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+        thisEvent->duration = r4colData;
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+        thisEvent->central_freq = r4colData;
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+        thisEvent->bandwidth = r4colData;
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        thisEvent->amplitude = r4colData;
+      }
+      else if ( tableDir[j].idx == 9 )
+      {
+        thisEvent->snr = r4colData;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        thisEvent->confidence = r4colData;
+      }
+      else if ( tableDir[j].idx == 11 )
+      {
+        thisEvent->peak_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 12 )
+      {
+        thisEvent->peak_time.gpsNanoSeconds = i4colData;
+      }
+      else
+      {
+        XLAL_CLOBBER_EVENTS;
+        XLAL_ERROR( func, XLAL_EIO);
+      }
+    }
+    /* count the number of triggers parsed */
+    nrows++;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    XLAL_CLOBBER_EVENTS;
+    MetaioClose( env );
+    XLAL_ERROR( func, XLAL_EIO);
+  }
+
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+
+  return eventHead;
+}
+
+
+
+/*
+ *
+ * LAL Functions
+ *
+ */
+
   /* <lalVerbatim file="LIGOLwXMLReadCP"> */
   void
   LALCreateMetaTableDir(
@@ -271,15 +557,6 @@ tables, a call is made to \verb+LALCreateMetaTableDir+.  For all other tables,
   /* Normal exit */
   DETATCHSTATUSPTR (status);
   RETURN( status );
-}
-
-#define CLOBBER_EVENTS \
-  while ( *eventHead ); \
-{ \
-  thisEvent = *eventHead; \
-  *eventHead = (*eventHead)->next; \
-  LALFree( thisEvent ); \
-  thisEvent = NULL; \
 }
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
