@@ -421,44 +421,44 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
-	params->alphaThreshold = -1.0;
-	params->channelName = NULL;
-	params->eventLimit = 999;
-	params->method = -1;
-	params->compEPInput.alphaDefault = 2.0;
-	params->compEPInput.numSigmaMin = -1.0;
-	params->tfTilingInput.flow = -1.0;
-	params->tfTilingInput.length = 0;
-	params->tfTilingInput.minFreqBins = 0;
-	params->tfTilingInput.minTimeBins = 0;
-	params->tfTilingInput.maxTileBand = 64.0;
-	params->tfTilingInput.overlapFactor = 0;
-	params->windowType = NumberWindowTypes;
-	params->windowLength = 0;
-	params->windowShift = 0;
+	params->alphaThreshold = -1.0;	/* impossible */
+	params->channelName = NULL;	/* impossible */
+	params->eventLimit = 999;	/* default */
+	params->method = -1;	/* impossible */
+	params->compEPInput.alphaDefault = 2.0;	/* impossible */
+	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
+	params->tfTilingInput.flow = -1.0;	/* impossible */
+	params->tfTilingInput.length = 0;	/* impossible */
+	params->tfTilingInput.minFreqBins = 0;	/* impossible */
+	params->tfTilingInput.minTimeBins = 0;	/* impossible */
+	params->tfTilingInput.maxTileBand = 64.0;	/* default */
+	params->tfTilingInput.overlapFactor = 0;	/* impossible */
+	params->windowType = NumberWindowTypes;	/* impossible */
+	params->windowLength = 0;	/* impossible */
+	params->windowShift = 0;	/* impossible */
 
-	options.calCacheFile = NULL;
-	options.cluster = FALSE;
-	options.comment = "";
-	options.fcorner = 100.0;
-	options.FilterCorruption = -1;
-	options.noiseAmpl = -1.0;
-	options.printData = FALSE;
-	options.PSDAverageLength = 0;
-	options.seed = 1;
-	options.verbose = FALSE;
+	options.calCacheFile = NULL;	/* default */
+	options.cluster = FALSE;	/* default */
+	options.comment = "";	/* default */
+	options.fcorner = 100.0;	/* default */
+	options.FilterCorruption = -1;	/* impossible */
+	options.noiseAmpl = -1.0;	/* default */
+	options.printData = FALSE;	/* default */
+	options.PSDAverageLength = 0;	/* impossible */
+	options.seed = 1;	/* default */
+	options.verbose = FALSE;	/* default */
 
-	cachefile = NULL;
-	dirname = NULL;
-	frameSampleRate = 0;
-	geodata = FALSE;
-	memset(ifo, 0, sizeof(ifo));
-	injectionFile = NULL;
-	mdcCacheFile = NULL;
-	mdcparams = NULL;
-	printSpectrum = FALSE;
-	resampFiltType = -1;
-	targetSampleRate = 0;
+	cachefile = NULL;	/* default */
+	dirname = NULL;	/* default */
+	frameSampleRate = 0;	/* impossible */
+	geodata = FALSE;	/* default */
+	memset(ifo, 0, sizeof(ifo));	/* default */
+	injectionFile = NULL;	/* default */
+	mdcCacheFile = NULL;	/* default */
+	mdcparams = NULL;	/* default */
+	printSpectrum = FALSE;	/* default */
+	resampFiltType = -1;	/* default */
+	targetSampleRate = 0;	/* impossible */
 
 	/*
 	 * Parse command line.
@@ -858,6 +858,7 @@ void parse_command_line(
  *                                   Input
  * ============================================================================
  */
+
 
 static REAL4TimeSeries *get_geo_data(
 	LALStatus *stat,
