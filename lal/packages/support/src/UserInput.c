@@ -368,7 +368,7 @@ LALUserVarHelpString (LALStatus *stat,
   CHAR strbuf[UVAR_MAXHELPLINE];	/* should be enough for one line...*/
   CHAR defaultstr[100]; /* for display of default-value */
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
-  const CHAR *typestr[] = {"BOOL", "INT", "FLOAT", "STRING"}; 
+  const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING"}; 
   LALUserVariable *ptr;
   CHAR *helpstr = NULL;
   size_t newlen = 0;
