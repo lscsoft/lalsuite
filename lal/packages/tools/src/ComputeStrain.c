@@ -91,7 +91,7 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  /* copy AS_Q input into residual strain as double */  
  for (p=0; p<(int)output->hR.data->length; p++) 
    {
-    output->hR.data->data[p]=input->AS_Q.data->data[p];
+    output->hR.data->data[p]=input->DARM_ERR.data->data[p];
    }
 
  /* copy DARM_CTRL input into control strain as double */  
@@ -123,13 +123,13 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  /* ---------- Compute Residual Strain -------------*/
 
  /* to get the residual strain we must first divide AS_Q by alpha */
-/*  if (!input->delta && !input->testsensing) */
-/*    { */
-/*      if(XLALhROverAlpha(&(output->hR), output))  */
-/*        { */
-/* 	 ABORT(status,116,"Broke at hR/alpha"); */
-/*        } */
-/*    } */
+ if (!input->delta && !input->testsensing)
+   {
+     if(XLALhROverAlphaBeta(&(output->hR), output)) 
+       {
+	 ABORT(status,116,"Broke at hR/alpha");
+       }
+   }
 
  /* then we upsample (and smooth it with a low pass filter) */
  if(XLALUpsamplehR(&uphR, &(output->hR), input->CinvUSF)) 
@@ -228,7 +228,6 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  LALFreeFilter(status->statusPtr,AAWings,input->NAA);
  CHECKSTATUSPTR( status );
  /* ===================== */
-
 
  /* Copy data into x and y time series for parallel filtering */
  for (p=0; p < (int)output->hC.data->length; p++){
@@ -475,43 +474,6 @@ void LALMakeFIRHP(LALStatus *status, REAL8IIRFilter *HPFIR)
   RETURN( status );
 
 }
-/*******************************************************************************/
-
-
-int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
-{
-  int n,m;
-  REAL8 time,InterpolatedBeta;
-  static REAL8 beta[MAXALPHAS],tainterp[MAXALPHAS];
-
-  /* copy output betas into local array */
-  for(m=0; m < (int)output->beta.data->length; m++)
-    {
-      beta[m]=output->beta.data->data[m].re;
-      tainterp[m]= m*output->beta.deltaT;
-    }
-
-  time=0.0;    /* time variable */
-
-  {
-    gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
-    gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->beta.data->length);
-    gsl_spline_init(spline_alpha,tainterp,beta,output->beta.data->length);
-
-    for (n = 0; n < (int)hC->data->length; n++) 
-      {
-	InterpolatedBeta=gsl_spline_eval(spline_alpha,time,acc_alpha); 
-	hC->data->data[n] *= InterpolatedBeta;
-	time=time+hC->deltaT;
-      }
-
-    /* clean up GSL spline interpolation stuff */
-    gsl_spline_free(spline_alpha);
-    gsl_interp_accel_free(acc_alpha);
-  }
-
-  return 0;
-}
 
 /*******************************************************************************/
 
@@ -534,36 +496,36 @@ int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 
 /*******************************************************************************/
 
-int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
+int XLALhROverAlphaBeta(REAL8TimeSeries *hR, StrainOut *output)
 {
   int n,m;
-  double time,InterpolatedAlpha;
-  double alpha[MAXALPHAS],tainterp[MAXALPHAS];
+  double time,InterpolatedAlphaBeta;
+  double alphabeta[MAXALPHAS],tainterp[MAXALPHAS];
 
   /* copy output alphas into local array */
-  for(m=0; m < (int)output->alpha.data->length; m++)
+  for(m=0; m < (int)output->alphabeta.data->length; m++)
     {
-      alpha[m]=output->alpha.data->data[m].re;
-      tainterp[m]= m*output->alpha.deltaT;
+      alphabeta[m]=output->alphabeta.data->data[m].re;
+      tainterp[m]= m*output->alphabeta.deltaT;
     }
 
   time=0.0;    /* time variable */
   
   {
-    gsl_interp_accel *acc_alpha = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
-    gsl_spline *spline_alpha = gsl_spline_alloc(gsl_interp_cspline,output->alpha.data->length);
-    gsl_spline_init(spline_alpha,tainterp,alpha,output->alpha.data->length);
+    gsl_interp_accel *acc_alphabeta = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
+    gsl_spline *spline_alphabeta = gsl_spline_alloc(gsl_interp_cspline,output->alphabeta.data->length);
+    gsl_spline_init(spline_alphabeta,tainterp,alphabeta,output->alphabeta.data->length);
 
     for (n = 0; n < (int)hR->data->length; n++) 
       {
-	InterpolatedAlpha=gsl_spline_eval(spline_alpha,time,acc_alpha);
+	InterpolatedAlphaBeta=gsl_spline_eval(spline_alphabeta,time,acc_alphabeta);
 	
-	hR->data->data[n] /= InterpolatedAlpha;
+	hR->data->data[n] /= InterpolatedAlphaBeta;
 	time=time+hR->deltaT;
       }
   /* clean up GSL spline interpolation stuff */
-  gsl_spline_free(spline_alpha);
-  gsl_interp_accel_free(acc_alpha);
+  gsl_spline_free(spline_alphabeta);
+  gsl_interp_accel_free(acc_alphabeta);
   }
 
   return 0;
@@ -661,6 +623,7 @@ INT4 length = input->AS_Q.data->length;
 
       output->alpha.data->data[m]= factors.alpha;
       output->beta.data->data[m]= factors.beta;
+      output->alphabeta.data->data[m]= factors.alphabeta;
 
       if(m == MAXALPHAS)
 	{
