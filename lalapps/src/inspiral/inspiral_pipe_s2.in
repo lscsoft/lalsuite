@@ -408,9 +408,9 @@ l1_data.make_chunks(length,overlap,0)
 h1_data.make_chunks(length,overlap,0)
 h2_data.make_chunks(length,overlap,0)
 
-l1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
-h1_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
-h2_data.make_chunks_from_unused(length,overlap/2,0,overlap/2)
+l1_data.make_chunks_from_unused(length,overlap/2,0,0)
+h1_data.make_chunks_from_unused(length,overlap/2,0,0)
+h2_data.make_chunks_from_unused(length,overlap/2,0,0)
 print "done"
 
 ##############################################################################
@@ -813,6 +813,15 @@ for o, a in opts:
 log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
+
+print >> log_fh, "\n===========================================\n"
+print >> log_fh, "Science Segments and master chunks:\n"
+for sci_data in [l1_data, h1_data, h2_data]:
+  print >> log_fh, sci_data
+  for seg in sci_data:
+    print >> log_fh, " ", seg
+    for chunk in seg:
+      print >> log_fh, "   ", chunk
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
