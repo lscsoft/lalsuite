@@ -64,12 +64,13 @@ NRCSID( NEARESTGRIDPOINTSC, "$Id$" );
 #define NEARESTGRIDPOINTSH_MSGESUB		"Failure in a subroutine call."
 #define NEARESTGRIDPOINTSH_MSGEMEM		"Memory allocation error."
 
+
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 
 			       DopplerScanState *theScan, /* output */ 
 			       DopplerScanInit scanInit   /* input */ )
 {
-  INT4 i;
+  UINT4 ic;
   INT4 targetNumGridPoints = 40; 
   INT4 tolerance = 20;           
   INT4 trialCounter = 0, maxTrial = 10;
@@ -81,7 +82,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   SkyPosition centerOfMass;
 
   void RefineSkyRegion (LALStatus *status,  DopplerScanInit *scanInit, DopplerScanState *scanState,  SkyPosition *skyPosition, REAL8 *ratio);
-  void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, DopplerScanInit *scanInit, SkyRegion *skyRegion);
+  void ComputeCenterOfMass (LALStatus *status,  SkyPosition *skyPosition, SkyRegion *skyRegion);
 
 
   INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEARESTGRIDPOINTSC );
@@ -90,10 +91,15 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   ASSERT ( &scanInit, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
   ASSERT ( theScan != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
 
+
+  TRY( InitDopplerScan ( status->statusPtr, theScan, scanInit ), status );
+
+  test = ( (INT4) theScan->numGridPoints ) - targetNumGridPoints;
+
   tmpSkyRegion.vertices = NULL; 
   TRY( ParseSkyRegion ( status->statusPtr, &tmpSkyRegion, scanInit.skyRegion ), status );
   /* Compute a center of the mass, construct an initial sky polygon */
-  TRY( ComputeCenterOfMass ( status->statusPtr, &centerOfMass, &scanInit, &tmpSkyRegion ), status );
+  TRY( ComputeCenterOfMass ( status->statusPtr, &centerOfMass, &tmpSkyRegion ), status );
   if ( status->statusCode ) {
     LALFree(tmpSkyRegion.vertices);
     REPORTSTATUS ( status );
@@ -101,10 +107,6 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   }
   LALFree(tmpSkyRegion.vertices);
 
-
-  TRY( InitDopplerScan ( status->statusPtr, theScan, scanInit), status );
-
-  test = ( (INT4) theScan->numGridPoints ) - targetNumGridPoints;
 
   while ( ( abs(test) > tolerance ) && ( trialCounter < maxTrial ) )
     {
@@ -139,10 +141,10 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 
   if ( lalDebugLevel >= 3 ) {
     fprintf(stderr,"%10d\n",theScan->numGridPoints);
-    for ( i = 0; i < (theScan->skyRegion.numVertices); i++ ) {
+    for ( ic = 0; ic < (theScan->skyRegion.numVertices); ic++ ) {
       fprintf(stderr, "( %20.16f, %20.16f )\n",
-	      theScan->skyRegion.vertices[i].longitude,
-	      theScan->skyRegion.vertices[i].latitude);
+	      theScan->skyRegion.vertices[ic].longitude,
+	      theScan->skyRegion.vertices[ic].latitude);
     }
     fprintf(stderr, "\n");
   }
@@ -165,7 +167,6 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 void 
 ComputeCenterOfMass ( LALStatus *status, 
 		     SkyPosition *skyposCM, /* output center of mass of the vertices pointed by scanInit */
-		     DopplerScanInit *scanInit, /* input/output Initial vertices and will be refined vertices */ 
 		     SkyRegion *skyRegion /* input Initial vertices. */)
 {
   REAL8 longitudeCM = 0.0, latitudeCM = 0.0;
@@ -173,7 +174,6 @@ ComputeCenterOfMass ( LALStatus *status,
 
   INITSTATUS( status, "ComputeCenterOfMass", NEARESTGRIDPOINTSC );
   /* This traps coding errors in the calling routine. */
-  ASSERT ( scanInit, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
   ASSERT ( skyRegion, status, NEARESTGRIDPOINTSH_ENULL , NEARESTGRIDPOINTSH_MSGENULL );  
   ASSERT ( skyposCM != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
 
@@ -294,4 +294,5 @@ RefineSkyRegion (LALStatus *status,
 
   RETURN( status );
 } /* void RefineSkyRegion() */
+
 
