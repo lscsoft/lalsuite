@@ -118,12 +118,11 @@ AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 AC_TRY_RUN([
 #include <lal/LALConfig.h>
 #ifdef LAL_QTHREAD
-int main() { return 1; }
+int main( void ) { return 0; }
 #else
-int main() { return 0; }
+int main( void ) { return 1; }
 #endif
 ],
-AC_MSG_RESULT([no]),
 AC_MSG_RESULT([yes])
 [
 if test x$condor != xtrue ; then 
@@ -148,6 +147,7 @@ if test x$condor != xtrue ; then
 fi
 ]
 ,
+AC_MSG_RESULT([no]),
 AC_MSG_RESULT([unknown]) ) ] )
 
 ## libtool.m4 - Configure libtool for the host system. -*-Shell-script-*-
