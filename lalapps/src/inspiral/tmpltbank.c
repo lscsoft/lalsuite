@@ -648,6 +648,7 @@ int main ( int argc, char *argv[] )
         &status );
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
           &calfacts ), &status );
+    LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
 
     if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
         "alpha = %f, alpha_beta = %f\n",
