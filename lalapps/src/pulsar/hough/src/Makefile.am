@@ -5,8 +5,11 @@
 #INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 #LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
+AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = SFTclean MCInject
+bin_PROGRAMS = SFTclean MCInject DriveHoughColor_v2
 
 SFTclean_SOURCES = SFTclean.c SFTbin.h SFTbin.c
 MCInject_SOURCES = MCInjectComputeHoughII.c MCInjectComputeHough.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
+
+DriveHoughColor_v2_SOURCES = DriveHoughColor_v2.c  DriveHoughColor.h SFTbin.c PeakSelect.c
