@@ -528,11 +528,11 @@ if slide_time:
   print "re-computing L1/H2 double coincident data with slide...",
   sys.stdout.flush()
   for seg in h1_data:
-    h1_data.set_start(h1_data.start() + slide_time)
-    h1_data.set_end(h1_data.end() + slide_time)
+    seg.set_start(seg.start() + slide_time)
+    seg.set_end(seg.end() + slide_time)
   for seg in h2_data:
-    h1_data.set_start(h2_data.start() + slide_time)
-    h1_data.set_end(h2_data.end() + slide_time)
+    seg.set_start(seg.start() + slide_time)
+    seg.set_end(seg.end() + slide_time)
   l1_h2_data = copy.deepcopy(l1_data)
   l1_h2_data.intersection(h2_data)
   l1_h2_data.intersection(not_h1_data)
