@@ -1163,48 +1163,48 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* do some sanity checks on the user-input before we proceed */
   if (! LALUserVarWasSet(&uvar_IFO) )
     {
-      LALPrintError("No interferometer specified (option 'IFO')\n");
+      LALPrintError("\nNo interferometer specified (option 'IFO')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
-      LALPrintError ( "Must use -D or -B option.\n"
+      LALPrintError ( "\nMust use -D or -B option.\n"
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
-		      "Try ./ComputeFStatistic -h \n");
+		      "Try ./ComputeFStatistic -h \n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
     }
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
-      LALPrintError ( "Cannot use -D option with -B option.\n"
-		      "Try ./ComputeFStatistic -h \n" );
+      LALPrintError ( "\nCannot use -D option with -B option.\n"
+		      "Try ./ComputeFStatistic -h \n\n" );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   if (uvar_EphemDir == NULL)
     {
-      LALPrintError ("No ephemeris directory specified (option 'EphemDir')\n");
+      LALPrintError ("\nNo ephemeris directory specified (option 'EphemDir')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   if (uvar_EphemYear == NULL)
     {
-      LALPrintError ("No ephemeris year specified (option 'EphemYear')\n");
+      LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   if( ! LALUserVarWasSet (&uvar_Freq))
     {
-      LALPrintError ("No search frequency specified; (option 'Freq')\n");
+      LALPrintError ("\nNo search frequency specified; (option 'Freq')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
-      LALPrintError ("Negative value of sky-bands not allowed (alpha or delta)!\n");
+      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -1234,7 +1234,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   fp=fopen(cfg->EphemEarth,"r");
   if (fp==NULL) 
     {
-      fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
+      LALPrintError ("\nCould not open ephemeris-file %s\n\n", cfg->EphemEarth);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
   fclose(fp);
@@ -1244,7 +1244,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   fp=fopen(cfg->EphemSun,"r");
   if (fp==NULL) 
     {
-      fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
+      LALPrintError("\nCould not open ephemeris-file %s\n\n", cfg->EphemSun);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
   fclose(fp);
@@ -1316,7 +1316,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     
     if(globbuf.gl_pathc==0)
       {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",uvar_DataDir);
+	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
@@ -1326,7 +1326,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 	fileno++;
 	if (fileno > MAXFILES)
 	  {
-	    fprintf(stderr,"Too many files in directory! Exiting... \n");
+	    LALPrintError ("\nToo many files in directory! Exiting... \n\n");
 	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
 	  }
       }
@@ -1353,7 +1353,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("Unknown detector. Allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n");
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -1364,7 +1364,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     errorcode=fread((void*)&header,sizeof(header),1,fp);
     if (errorcode!=1) 
       {
-	fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
+	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
@@ -1443,7 +1443,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* safety-check: only allow EITHER of skyRegion OR (Alpha,AlphaBand, Delta, DeltaBand) */
   if ( !LALUserVarWasSet(&uvar_skyRegion) && (!LALUserVarWasSet(&uvar_Alpha)||!LALUserVarWasSet(&uvar_Delta)) ) 
     {
-      LALPrintError ("Either (Alpha,Delta) or a skyRegion have to be specified!\n");
+      LALPrintError ("\nEither (Alpha,Delta) or a skyRegion HAVE to be specified!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   /* now check that only one of those two has been given! ;) */
@@ -1451,7 +1451,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
        && (LALUserVarWasSet(&uvar_Alpha)||LALUserVarWasSet(&uvar_Delta)
 	   ||LALUserVarWasSet(&uvar_AlphaBand)||LALUserVarWasSet(&uvar_DeltaBand)) ) 
     {
-      LALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
+      LALPrintError ("\nYou can only specify EITHER (Alpha,Delta,AlphaBand,DeltaBand) OR skyRegion !\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
