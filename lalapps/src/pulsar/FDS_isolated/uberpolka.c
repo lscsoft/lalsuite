@@ -1,10 +1,10 @@
 /*********************************************************************************/
 /*       uberpolka - the pulsar koinzidenz analysis code for einstein@home       */
 /*                                                                               */
-/*                                     X. Siemens                                */
+/*                   Xavier Siemens,  Bruce Allen,  Bernd Machenschalk           */
+/*                                                                               */
 /*                   (takes in two Fstats file to look for coincidence)          */
-/*                    modified by Bernd Machenschalk for Einstein@Home           */
-/*                    further modified by Bruce Allen for Einstein@Home          */
+/*                                                                               */
 /*                                  UWM - January  2005                          */
 /*********************************************************************************/
 
@@ -206,7 +206,7 @@ int main(int argc,char *argv[])
                           
                           /* Now loop over candidates found in the second list and do the fine coincidence test */
                           if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
-                          while ( p->iCand <  (int)CLength2-1 &&  !compareCIStructs(p, p+1) )
+                          while ( (int)p->iCand <  (int)CLength2-1 &&  !compareCIStructs(p, p+1) )
                             { 
                               p++;
                               if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
