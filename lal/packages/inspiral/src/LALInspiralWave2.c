@@ -165,7 +165,7 @@ LALInspiralWave2(
   
   rootIn.xmax = 1.1*fu;
   rootIn.xacc = 1.0e-8;
-  rootIn.xmin = 0.999999*fs;
+  rootIn.xmin = 0.99999*fs;
   
   i=0;
   while (i<startShift) 
@@ -178,7 +178,7 @@ LALInspiralWave2(
      of type void * rather than InspiralToffInput  */
   
   funcParams = (void *) &toffIn;
-  
+ fprintf(stderr,"fu=%lf fs=%lf fHigh=%lf\n",fu, fs  ,fHigh); 
   toffIn.t = 0.0;
   freq = fs;
   count=1;
@@ -195,7 +195,14 @@ LALInspiralWave2(
        Determine the frequency at the current time by solving timing2(v;tC,t)=0 
     */
     LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
-    CHECKSTATUSPTR(status);
+    if (status->statusPtr->statusCode!=0)
+    {
+	    freq = fHigh+1;
+	    status->statusPtr->statusCode = 0;
+	    fprintf(stderr,"put a warning here here\n");
+	    CHECKSTATUSPTR(status);
+    }
+    
     } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
   params->fFinal = fOld;
   params->tC = toffIn.t;
