@@ -131,7 +131,7 @@ void LALGenerateInspiral(
 					 package, we need to fill that 
 					 structure*/
   	
-  
+  CHAR msg[1024];  
   INITSTATUS(status, "LALGenerateInspiral",GENERATEINSPIRALC);
   ATTATCHSTATUSPTR(status);
 
@@ -200,7 +200,44 @@ void LALGenerateInspiral(
 						ppnParams);				 
 	CHECKSTATUSPTR(status);      	      
       }      
-    }      
+    } 
+/*  fprintf(stderr,"%e %e\n", waveform->phi->data->data[0],
+	  waveform->phi->data->data[waveform->phi->data->length-1]);*/
+
+ LALSnprintf( msg, sizeof(msg)/sizeof(*msg),
+        "Injected waveform parameters:\n"
+        "ppnParams->mTot 	= %e\n"
+        "ppnParams->eta 	= %e\n"
+        "ppnParams->d 		= %e\n"
+        "ppnParams->inc 	= %e\n"
+        "ppnParams->phi 	= %e\n"
+	"ppnParams->psi      	= %e\n"
+        "ppnParams->fStartIn 	= %e\n"
+	"ppnParams->fStopIn	= %e\n"
+        "ppnParams->psi         = %e\n"
+        "ppnParams->position.longitude 	= %e\n"
+        "ppnParams->position.latitude  	= %e\n"
+	"ppnParams->position.system	  	= %e\n"
+	"ppnParams->epoch.gpsSeconds		= %e\n"       
+	"ppnParams->epoch.gpsNanoSeconds	= %e\n"
+        " ppnParams->tC  =%e\n"
+        " ppnParams->dfdt  =%e\n", 
+        ppnParams->mTot, 
+        ppnParams->eta, 
+        ppnParams->d,
+        ppnParams->inc,
+        ppnParams->psi,
+        ppnParams->phi, 
+	ppnParams->fStartIn,
+	ppnParams->fStopIn,	
+        ppnParams->psi,
+        ppnParams->position.longitude,
+        ppnParams->position.latitude,
+	ppnParams->position.system,
+	ppnParams->epoch.gpsSeconds,	
+  	ppnParams->epoch.gpsNanoSeconds,
+	      ppnParams->tc, ppnParams->dfdt );     
+  LALInfo( status, msg );
   
   /*  if (approximant==SpinTaylorT3)  ComputeSpin(&inspiralParams);*/
   
@@ -380,7 +417,7 @@ void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
 				     SimInspiralTable      *thisEvent)
 /* </lalVerbatim> */
 {
-  CHAR                  warnMsg[512];
+  CHAR                  warnMsg[1024];
 
   INITSTATUS( 	status, 
 		" LALGenerateInspiralPopulatePPN", 
