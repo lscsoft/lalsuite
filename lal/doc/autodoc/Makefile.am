@@ -18,9 +18,9 @@ dvi-local:
 	@LN_S@ `pwd`/$(srcdir)/../lsdFig* .
 	rm -f schedule.*
 	@LN_S@ `pwd`/$(srcdir)/../schedule.* .
-	@LATEX@ lsd.tex
+	pool_size=400000 @LATEX@ lsd.tex
 	@MKIND@ lsd.idx
-	@LATEX@ lsd.tex
-	@LATEX@ lsd.tex
+	pool_size=400000 @LATEX@ lsd.tex
+	pool_size=400000 @LATEX@ lsd.tex
 	rm -f lsd.tex
 	mv lsd.* ..
