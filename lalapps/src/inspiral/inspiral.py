@@ -414,6 +414,19 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__ifo_b
 
+  def set_user_tag(self,usertag):
+    """
+    Set the usertag for a given job
+    """
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag of the job
+    """
+    return self.__usertag
+
   def get_output_a(self):
     """
     Returns the file name of output from inca for ifo a. This must be kept
