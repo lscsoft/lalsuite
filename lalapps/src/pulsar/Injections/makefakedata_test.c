@@ -1792,7 +1792,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   /* timestamps file name */
   r=fscanf(fp, "%s %[^\n]",timestampsname,dmp);
   if (r==2 && GPStime != -1.0) {
-    error( "Since -G option given, ignoring timestamps file %s\n",
+    if (lalDebugLevel) error( "Since -G option given, ignoring timestamps file %s\n",
 	   timestampsname);
   }
   else  if (r!=2 && GPStime==-1.0) {
