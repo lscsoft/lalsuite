@@ -212,7 +212,7 @@ burca_job.set_sub_file( basename + '.burca' + subsuffix )
 # set the usertag in the jobs
 if usertag:
   pow_job.add_opt('user-tag',usertag)
-  burca_job.add_opt('user-tag',usertag)
+  
 
 # set the condor job priority
 if condor_prio:
