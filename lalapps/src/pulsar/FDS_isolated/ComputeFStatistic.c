@@ -126,6 +126,7 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #define fopen boinc_fopen
+#define remove boinc_delete_file
 
 char *fstatbuff = NULL;
 int boincmain(int argc, char *argv[]);
@@ -2962,7 +2963,7 @@ void worker() {
   retval=boincmain(a1,globargv);
   /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
-	/* remember first file names */
+    /* remember first file names */
     strncpy(Fstatsfilename1,Fstatsfilename,260);
     strncpy(ckptfname1,ckp_fname,260);
     if (!retval){
