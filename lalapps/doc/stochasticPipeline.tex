@@ -1,0 +1,39 @@
+\subsection{Program \texttt{lalapps\_stochasticPipeline}}
+\label{program:lalapps-stochasticPipeline}
+\idx[Program]{lalapps\_stochasticPipeline}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_stochasticPipeline$ --- standalone stochastic analysis
+pipeline.
+
+\item[Synopsis]
+\begin{verbatim}
+ -h                  print this message
+ -t startTime        GPS start time
+ -T streamDuration   duration of stream
+ -l segmentDuration  segment duration
+ -a resampleRate     resample rate
+ -f fMin             minimal frequency
+ -F fMax             maximal frequency
+ -w hannDuration     hann duration
+ -i ifoOne           ifo for first stream
+ -I ifoTwo           ifo for second stream
+ -d dataCacheOne     cache file for first stream
+ -D dataCacheTwo     cache file for second stream
+ -r calibCacheOne    first stream calibration cache
+ -R calibCacheTwo    second stream calibration cache
+ -m                  inject a signal into the data
+ -o scaleFactor      scale factor for injection
+ -g seed             seed
+ -k                  apply frequency masking
+ -v                  verbose mode
+ -z debugLevel       set lalDebugLevel
+\end{verbatim}
+
+\item[Description] \verb$lalapps_stochasticPipeline$ runs the standalone
+stochastic analysis pipeline.
+
+\item[Author] 
+Adam Mercer, Tania Regimbau
+\end{entry}
