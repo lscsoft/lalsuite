@@ -243,13 +243,9 @@ LALStochasticOptimalFilterNormalization(
 /* </lalVerbatim> */
 {
 
-  REAL4     gamma;
-  REAL4     omega;
   REAL4     omegaTimesGamma;
   REAL4     p1Inv;
   REAL4     p2Inv;
-
-  COMPLEX8  *cPtrOptimalFilter;
 
   REAL8      f;
   REAL8      f0;
@@ -265,7 +261,6 @@ LALStochasticOptimalFilterNormalization(
   REAL8      freq2;
   REAL4      exponent;
   REAL4      omegaRef;   
-  REAL8      realFactor;   /* constants used to calculate lambda */
   REAL8      lambdaInv;
   REAL8      f6; 
 

@@ -265,7 +265,6 @@ LALOverlapReductionFunction(
   UINT4  i, j;
   REAL4  trace1, trace2;
   REAL4  d1DotS[3], d2DotS[3];
-  REAL4  f;
   REAL4  s[3];
   REAL4  distance;
   REAL4  c1, c2, c3;

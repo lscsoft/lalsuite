@@ -190,8 +190,6 @@ INT4 code;
 
 static void Usage (const char *program, int exitflag);
 static void ParseOptions (int argc, char *argv[]);
-static REAL8 mu(const REAL4FrequencySeries*, const REAL4FrequencySeries*,
-                const COMPLEX8FrequencySeries*);
 
 /************* <lalErrTable file="StochasticOptimalFilterNormalizationTestCE"> */
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_ENOM 0
@@ -219,7 +217,6 @@ int main(int argc, char *argv[])
 
   REAL4FrequencySeries     realBadData;
   REAL4*                   realTempPtr;
-  COMPLEX8*                complexTempPtr;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -227,12 +224,8 @@ int main(int argc, char *argv[])
   REAL4FrequencySeries     invNoise1;
   REAL4FrequencySeries     invNoise2;
 
-  REAL8                    omegaRef;
-
   INT4       i;
   REAL8      f;
-  REAL8      muTest;  /*refers to the calculated mu to test normalization*/
-  REAL8      testNum;     /*temporary value used to check optimal output */
  
   LALUnitPair              unitPair;
   LALUnit                  expectedUnit;
