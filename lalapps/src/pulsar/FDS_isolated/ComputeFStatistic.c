@@ -412,11 +412,12 @@ int main(int argc,char *argv[])
 		  if (EstimateSignalParameters(maxIndex)) return 7;
 		} /* if signal-estimation */
 	  
-	      if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-		LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 	  
 	      LALFree(maxIndex);
 	    } /* if highFLines found */
+
+	  if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
+	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 
 	  
 	  /* Set the number of the clusters detected to 0 at each iteration 
