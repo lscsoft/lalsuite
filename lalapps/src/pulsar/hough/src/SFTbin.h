@@ -219,6 +219,11 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
 		   COMPLEX8SFTData1    *sft		   
 		   );
 
+void SFT2Periodogram (LALStatus  *status,
+                   REAL8Periodogram1    *peri,
+		   SFTtype    *sft		   
+		   );
+
 void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1    *peri,
 		   COMPLEX16SFTData1    *sft		   
