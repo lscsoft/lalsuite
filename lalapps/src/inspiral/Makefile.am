@@ -1,7 +1,9 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c
-TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c
+INSPIRALSRC = ligolwbank.h ligolwbank.c inspiral.h inspiral.c \
+              inspiralfrutils.c inspiralfrutils.h
+TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c \
+               inspiralfrutils.c inspiralfrutils.h
 if FRAME
 if DATAFLOW
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank
