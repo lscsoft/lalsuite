@@ -450,8 +450,12 @@ tagFindChirpFilterParams
   BOOLEAN                       computeNegFreq;
   COMPLEX8Vector               *qVec;
   COMPLEX8Vector               *qVecBCV;
+  COMPLEX8Vector               *qVecBCVSpin1;
+  COMPLEX8Vector               *qVecBCVSpin2;
   COMPLEX8Vector               *qtildeVec;
   COMPLEX8Vector               *qtildeVecBCV;
+  COMPLEX8Vector               *qtildeVecBCVSpin1;
+  COMPLEX8Vector               *qtildeVecBCVSpin2;
   ComplexFFTPlan               *invPlan;
   REAL4TimeSeries              *rhosqVec;
   REAL4Vector                  *chisqVec;

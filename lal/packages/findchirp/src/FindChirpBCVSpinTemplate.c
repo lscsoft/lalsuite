@@ -175,6 +175,8 @@ LALFindChirpBCVSpinTemplate (
         psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
+                   /* where is psi2 used? */
+
       /* XXX work needed here... check psi */
       /* leaving psi calc here, needs to be inside template loop 
        * but not inside loop over data segments 

@@ -62,17 +62,19 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 chisqThreshFac;
   REAL4                 modChisqThresh;
   UINT4                 numChisqBins;
-  UINT4                 eventStartIdx = 0;
-  REAL4                 chirpTime     = 0;
-  BOOLEAN               haveChisq     = 0;
-  COMPLEX8             *qtilde        = NULL; 
-  COMPLEX8             *qtildeBCV     = NULL; 
-  COMPLEX8             *q             = NULL; 
-  COMPLEX8             *qBCV          = NULL;
-  COMPLEX8             *inputData     = NULL;
-  COMPLEX8             *inputDataBCV  = NULL;
-  COMPLEX8             *tmpltSignal   = NULL;
-  SnglInspiralTable    *thisEvent     = NULL;
+  UINT4                 eventStartIdx  = 0;
+  REAL4                 chirpTime      = 0;
+  BOOLEAN               haveChisq      = 0;
+  COMPLEX8             *qtilde         = NULL; 
+  COMPLEX8             *qtildeBCVSpin1 = NULL; 
+  COMPLEX8             *qtildeBCVSpin2 = NULL; 
+  COMPLEX8             *q              = NULL; 
+  COMPLEX8             *qBCVSpin1      = NULL;
+  COMPLEX8             *qBCVSpin2      = NULL;
+  COMPLEX8             *inputData      = NULL;
+  COMPLEX8             *inputDataBCV   = NULL;
+  COMPLEX8             *tmpltSignal    = NULL;
+  SnglInspiralTable    *thisEvent      = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
   FindChirpSegment      *fcSeg;
   DataSegment           *dataSeg; 
@@ -186,10 +188,13 @@ LALFindChirpBCVSpinFilterSegment (
 
 
   /* workspace vectors */
-  q    = params->qVec->data;
-  qBCV = params->qVecBCV->data;
-  qtilde    = params->qtildeVec->data;
-  qtildeBCV = params->qtildeVecBCV->data;
+  q         = params->qVec->data;
+  qBCVSpin1 = params->qVecBCVSpin1->data;
+  qBCVSpin2 = params->qVecBCVSpin2->data; 
+
+  qtilde         = params->qtildeVec->data;
+  qtildeBCVSpin1 = params->qtildeVecBCVSpin1->data;
+  qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data; 
   
   
   /* template and data */
@@ -278,8 +283,7 @@ LALFindChirpBCVSpinFilterSegment (
 
 
   inputData1 = fcSeg->data->data->data;
-  /*  inputData2 = fcSeg->data->data->data;
-      inputData3 = fcSeg->data->data->data; i dont think ill need these   */
+ 
   
   /*
    *
@@ -291,41 +295,34 @@ LALFindChirpBCVSpinFilterSegment (
    */
 
 
-  memset( qtilde,    0, numPoints * sizeof(COMPLEX8) );
-  memset( qtildeBCV, 0, numPoints * sizeof(COMPLEX8) );
+  memset( qtilde,         0, numPoints * sizeof(COMPLEX8) );
+  memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
+  memset( qtildeBCVSpin2, 0, numPoints * sizeof(COMPLEX8) );
 
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r        = inputData1[k].re;
     REAL4 s        = 0.0 - inputData1[k].im;         /* note complex conjugate */
-    /* REAL4 rBCV     = inputData2[k].re;
-       REAL4 sBCV     = 0.0 - inputData2[k].im; */   /* note complex conjugate */
-    /* REAL4 rBCVSpin = inputData3[k].re;
-       REAL4 sBCVSpin = 0.0 - inputData3[k].im;  */  /* note complex conjugate */
-
+   
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = tmpltSignal[k].im;     
  
  
     qtilde[k].re        = r * x - s * y ;
     qtilde[k].im        = r * y + s * x ;
-    /* qtildeBCV[k].re     = rBCV * x - sBCV * y ;
-       qtildeBCV[k].im     = rBCV * y + sBCV * x ; */
-    /*    qtildeBCVSpin[k].re = rBCVSpin * x - sBCVSpin * y ;
-	  qtildeBCVSpin[k].im = rBCVSpin * y + sBCVSpin * x ; */
+     
     
-    
-    qtildeBCV[k]     = qtilde[k];
-    /*qtildeBCVSpin[k] = qtilde[k]; */
+    qtildeBCVSpin1[k]     = qtilde[k];
+    qtildeBCVSpin2[k] = qtilde[k]; 
 
-    qtilde[k].re        *= a1;
-    qtildeBCV[k].re     *= a2;
-    /*qtildeBCVSpin[k].re *= a3; */
+    qtilde[k].re         *= a1;
+    qtildeBCVSpin1[k].re *= a2;
+    qtildeBCVSpin2[k].re *= a3; 
 
-    qtilde[k].im        *= a1;
-    qtildeBCV[k].im     *= a2;
-    /*qtildeBCVSpin[k].im *= a3; */
+    qtilde[k].im         *= a1;
+    qtildeBCVSpin1[k].im *= a2;
+    qtildeBCVSpin2[k].im *= a3; 
 
   }
 
@@ -336,32 +333,26 @@ LALFindChirpBCVSpinFilterSegment (
     {
       REAL4 r        = inputData1[k].re;
       REAL4 s        = 0.0 - inputData1[k].im;    /* note complex conjugate */
-      /* REAL4 rBCV     = inputData2[k].re;
-	 REAL4 sBCV     = 0.0 - inputData2[k].im; */   /* note complex conjugate */
-      /* REAL4 rBCVSpin = inputData3[k].re;
-	 REAL4 sBCVSpin = 0.0 - inputData3[k].im;  */  /* note complex conjugate */
+     
 
       REAL4 x = tmpltSignal[k].re;
       REAL4 y = tmpltSignal[k].im;
 
       qtilde[k].re = r * x - s * y ;
       qtilde[k].im = r * y + s * x ;
-      /*qtildeBCV[k].re = rBCV * x - sBCV * y ;
-	qtildeBCV[k].im = rBCV * y + sBCV * x ;*/
-      /*qtildeBCVSpin[k].re = rBCVSpin * x - sBCVSpin * y ;
-	qtildeBCVSpin[k].im = rBCVSpin * y + sBCVSpin * x ; */
+     
 
-      qtildeBCV[k]     = qtilde[k];
-      /*qtildeBCVSpin[k] = qtilde[k]; */
+      qtildeBCVSpin1[k] = qtilde[k];
+      qtildeBCVSpin2[k] = qtilde[k]; 
 
      
-      qtilde[k].re        *= a1;
-      qtildeBCV[k].re     *= a2;
-      /*qtildeBCVSpin[k].re *= a3; */
+      qtilde[k].re         *= a1;
+      qtildeBCVSpin1[k].re *= a2;
+      qtildeBCVSpin2[k].re *= a3; 
 
-      qtilde[k].im        *= a1;
-      qtildeBCV[k].im     *= a2;
-      /*qtildeBCVSpin[k].im *= a3; */
+      qtilde[k].im         *= a1;
+      qtildeBCVSpin1[k].im *= a2;
+      qtildeBCVSpin2[k].im *= a3; 
 
     }
    }
@@ -376,13 +367,13 @@ LALFindChirpBCVSpinFilterSegment (
 		   params->qtildeVec, params->invPlan );
    CHECKSTATUSPTR( status );
 
-   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV, 
-		   params->qtildeVecBCV, params->invPlan );
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin1, 
+		   params->qtildeVecBCVSpin1, params->invPlan );
    CHECKSTATUSPTR( status );
 
-   /* LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin, 
-		   params->qtildeVecBCVSpin, params->invPlan );
-		   CHECKSTATUSPTR( status );*/
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin2, 
+		   params->qtildeVecBCVSpin2, params->invPlan );
+		   CHECKSTATUSPTR( status );
 
    /* 
     *
@@ -397,8 +388,8 @@ LALFindChirpBCVSpinFilterSegment (
    /*  for ( j = 0; j < numPoints; ++j)
        { 
    rhosq[j]   = q[j].re * q[j].re + q[j].im * q[j].im; 
-   rhosq[j]  += qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im; 
-   rhosq[j]  += qBCVSpin[j].re * qBCVSpin[j].re + qBCVSpin[j].im * qBCVSpin[j].im; 
+   rhosq[j]  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
+   rhosq[j]  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im; 
    } */
 
 /*code*/
