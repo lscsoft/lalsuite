@@ -557,3 +557,94 @@ Patrick Brady
 \end{entry}
 \clearpage
 
+
+\subsection{Program \texttt{lalapps\_inca}}
+\label{program:lalapps-inca}
+\idx[Program]{lalapps\_inca}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_inca$ --- program does inspiral coincidence analysis.
+
+\item[Synopsis]
+\verb$lalapps_inca$ 
+\verb$--ifo-a$ \textsc{trigfile.a} \verb$--ifo-b$ \textsc{trigfile.b} 
+\verb$--start-time$ \textsc{startcoincidence} \verb$--stop-time$ \textsc{endcoincidence} 
+\verb$--drho-plus$ \textsc{drhoplus} \verb$--drho-minus$ \textsc{drhominus} 
+\verb$--dt$ \textsc{deltat} \verb$--dm$ \textsc{deltam} 
+\verb$--outfile$ \textsc{outfile} \verb$--noplayground$ 
+[\verb$--help$]
+
+\item[Description] 
+\verb$lalapps_inca$ performs coincidence on triggers from the inspiral
+search code.  (At present it works for only two interferometers.) It
+must be called with at least one input file from each instrument. The
+default behavior outputs triggers during playground times to the file
+\textsc{outfile};  to obtain all triggers,  use the
+\verb$--noplayground$ flag.     
+%Events can also be clustered
+%within \textsc{msec} msec or a template bank for triggered searches
+%can be constructed.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--ifo-a} \textsc{trigfile.a}] Required.  A LIGO lightweight
+XML file with triggers from interferometer A.  This argument can be
+called multiple times.  Triggers are sorted \emph{after} all files
+have been read in. 
+
+\item[\texttt{--ifo-b} \textsc{trigfile.b}] Required.  A LIGO lightweight
+XML file with triggers from interferometer B.  This argument can be
+called multiple times.  Triggers are sorted \emph{after} all files
+have been read in. 
+
+\item[\texttt{--start-time} \textsc{startcoincidence}] Optional.  Look for
+coincident triggers with end times after \textsc{startcoincidence}.
+If not supplied,  the $\textsc{startcoincidence} = 0$.
+
+\item[\texttt{--stop-time} \textsc{endcoincidence}]  Optional. Look for
+coincident triggers with end times before \textsc{endcoincidence}.
+If not supplied,  then $\textsc{endcoincidence} = 977788813$, i.e.
+00:00 Dec 31, 2010 UTC.
+
+\item[\texttt{--drhoplus} \textsc{drhoplus}] Optional. Accept triggers with
+$\rho_B < (\sigma_B/\sigma_A) \rho_A + \textsc{drhoplus}$ as
+possible coincidences.  If not supplied,  then $\textsc{drhoplus} =
+0$.
+
+\item[\texttt{--drhominus} \textsc{drhominus}] Optional. Accept triggers with
+$\rho_B > (\sigma_B/\sigma_A) \rho_A - \textsc{drhominus}$ as
+possible coincidences.  If not supplied,  then $\textsc{drhominus} =
+0$.
+
+\item[\texttt{--dm} \textsc{deltam}] Optional. Accept triggers as coincident if
+both mass parameters agree within \textsc{deltam}.  If not supplied,  then 
+$\textsc{deltam} = 0$.
+
+\item[\texttt{--dt} \textsc{deltat}] Optional. Accept triggers as coincident if
+their end times agree within \textsc{deltat} in msec.  If not supplied,  then 
+$\textsc{deltat} = 0$.
+
+\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
+to be used for output.  The output format is LIGO lightweight XML with
+only a \texttt{sngl\_inspiral} table.
+
+\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
+default behaviour returns only those triggers which lie in the
+playground data set.  
+
+\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
+within \textsc{msec} msec window.   The clustering algorithm
+identifies the first trigger in a cluster,  then displaces it if its
+\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\item[Example]
+
+\item[Author] 
+Patrick Brady
+\end{entry}
+\clearpage
+
