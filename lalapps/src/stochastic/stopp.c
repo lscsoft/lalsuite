@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
+#include <errno.h>
 #include <getopt.h>
 
 #include <lal/Date.h>
@@ -38,6 +38,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 {
   /* status */
   LALStatus status = blank_status;
+
+  /* system error checking */
+  extern int errno;
 
   /* getopt flags */
   static int text_flag;
@@ -145,7 +148,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       struct stat infileStatus;
 
       /* if the named file does not exist, exit with an error */
-      if (stat(argv[i], &infileStatus) == -1)
+      if ((stat(argv[i], &infileStatus) == -1) && (errno = ENOENT))
       {
         fprintf(stderr, "Error opening input file \"%s\"\n", argv[i]);
         exit(1);
