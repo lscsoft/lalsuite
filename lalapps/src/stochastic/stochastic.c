@@ -145,7 +145,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* simulated output structures */
 	REAL4TimeSeries SimStochBGOne;
 	REAL4TimeSeries SimStochBGTwo;
-    
+
 	/* data structures for PSDs */
 	INT4 overlapPSDLength;
 	INT4 psdTempLength;
@@ -244,7 +244,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	parseOptions(argc, argv);
 
 	/* open output file */
-	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
+	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", \
 			ifoOne, ifoTwo, (INT4)startTime, (INT4)stopTime);
 	if ((out = fopen(outputFilename, "w")) == NULL)
 	{
@@ -258,13 +258,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* get number of segments */
-	streamDuration = ((stopTime - startTime) / segmentDuration ) * segmentDuration;
+	streamDuration = ((stopTime - startTime) / segmentDuration ) * \
+		segmentDuration;
 	numSegments = streamDuration / segmentDuration;
 
-	/* get number of segments */
-	numSegments = streamDuration / segmentDuration;
-
-        /* set length for data segments */
+	/* set length for data segments */
 	segmentLength = segmentDuration * resampleRate;
 
 	/* set metadata fields for data segments */
@@ -363,8 +361,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 		MCoutput.SSimStochBG1 = &SimStochBGOne;
 		MCoutput.SSimStochBG2 = &SimStochBGTwo;
 	}
-
-	
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -888,7 +884,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	ccSpectrum.deltaF = deltaF;
 	ccSpectrum.f0 = fMin;
 
-	/* allocate memory for CC spectrum*/
+	/* allocate memory for CC spectrum */
 	ccSpectrum.data = NULL;
 	LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
 			&status );
@@ -900,20 +896,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 	ccIn.hBarTildeTwo = &hBarTildeTwo;
 	ccIn.optimalFilter = &optFilter;
 
-	
 	/*
 	 ** loop over segments **
 	 */
 
-        if (verbose_flag)
+	if (verbose_flag)
 	{
 		fprintf(stdout, "Looping over %d segments...\n", numSegments);
 	}
-        
-        lal_errhandler = LAL_ERR_RTRN;
+
+	/* only return errors, don't exit on them */
+	lal_errhandler = LAL_ERR_RTRN;
+
 	for (segLoop = 0; segLoop < numSegments; segLoop++)
 	{
-                                
 		/* define segment epoch */
 		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentDuration);
 		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
@@ -925,83 +921,89 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "Performing search on segment %d of %d...\n", \
 					segLoop + 1, numSegments);
 		}
-                
-                /* compute response function */
+
+		if (verbose_flag)
+		{
+			fprintf(stdout, "Generating response functions...\n");
+		}
+
+		/* compute response function */
 		responseTempOne.epoch = gpsCalTime;
 		responseTempTwo.epoch = gpsCalTime;
-                
+
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
 					ifoOne, &duration), &status );
 
-		if (status.statusCode !=0)
-		  {
-		    clear_status(&status);
-                    if (segLoop < (numSegments - 1))
-		     continue; 
-                    else
-		     break;   
-		  }               
-               
-		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo, &duration), &status );
-                if (status.statusCode !=0)
-		  {
-		    clear_status(&status);
-                    if (segLoop < (numSegments - 1))
-		     continue; 
-                    else
-		     break;   
-		  }
-		
-		if (verbose_flag)
+		if (status.statusCode != 0)
 		{
-			fprintf(stdout, "Getting appropriate frequencresponse " \
-					"functions...\n");
+			clear_status(&status);
+			if (segLoop < (numSegments - 1))
+				continue;
+			else
+				break;
 		}
 
-        	/* read data and downsample */
-        	if (verbose_flag)
-        	{
-        		fprintf(stdout, "Reading data...\n");
-        	}
-
-        	/* read data */
-                streamParams.startTime = gpsStartTime.gpsSeconds;
-        	LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
-                if (status.statusCode !=0)
-		  {
-		    clear_status(&status);
-                    if (segLoop < (numSegments - 1))
-		     continue; 
-                    else
-		     break;   
-		  }
-               
-        	/* save */
-        	if (verbose_flag)
-        	{
-        		LALSPrintTimeSeries(&segmentOne, "segment1.dat");
-         		LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
-        	}
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
+					ifoTwo, &duration), &status );
 		
+		if (status.statusCode != 0)
+		{
+			clear_status(&status);
+			if (segLoop < (numSegments - 1))
+				continue;
+			else
+				break;
+		}
+
+		/* read data and downsample */
+		if (verbose_flag)
+		{
+			fprintf(stdout, "Reading data...\n");
+		}
+
+		/* read data */
+		streamParams.startTime = gpsStartTime.gpsSeconds;
+		LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+		if (status.statusCode !=0)
+		{
+			clear_status(&status);
+			if (segLoop < (numSegments - 1))
+				continue;
+			else
+				break;
+		}
+
+		/* save */
+		if (verbose_flag)
+		{
+			LALSPrintTimeSeries(&segmentOne, "segment1.dat");
+			LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
+		}
+
 		/* simulate signal */
 		if (inject_flag)
 		{
-		        /* set parameters for monte carlo */
+			/* set parameters for monte carlo */
 			MCparams.startTime = gpsStartTime.gpsSeconds;
 			seed = (INT4)(time(NULL));
 			MCparams.seed = seed;
 
+			if (verbose_flag)
+			{
+				fprintf(stdout, "Performing Monte Carlo...\n");
+			}
+
 			/* perform monte carlo */
-			LAL_CALL(monteCarlo(&status, &MCoutput, &MCinput, &MCparams), &status);	                        
-                        if (status.statusCode !=0)
-		         {
-		          clear_status(&status);
-                          if (segLoop < (numSegments - 1))
-		           continue; 
-                          else
-		           break;   
-	        	}
+			LAL_CALL(monteCarlo(&status, &MCoutput, &MCinput, &MCparams), &status);
+
+			if (status.statusCode != 0)
+			{
+				clear_status(&status);
+				if (segLoop < (numSegments - 1))
+					continue;
+				else
+					break;
+			}
 
 			/* output the results */
 			if (verbose_flag)
@@ -1011,7 +1013,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			}
 
 			/* multiply by scale factor and inject into real data */
-			for (i = 0; i < segmentLength ; i++)
+			for (i = 0; i < segmentLength; i++)
 			{
 				segmentOne.data->data[i] = segmentOne.data->data[i] + \
 					(scaleFactor * SimStochBGOne.data->data[i]);
@@ -1020,14 +1022,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 			}
 		}
 
-         
 		/* output the results */
 		if (verbose_flag)
 		{
 			LALSPrintTimeSeries(&segmentOne, "segment1.dat");
 			LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
 		}
-                
 
 		/* zero pad and fft */
 		LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
@@ -1071,13 +1071,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 			LALSPrintFrequencySeries(&psdOne, "psd1.dat");
 			LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
 		}
-
-		if (verbose_flag)
-		{
-			fprintf(stdout, "Generating response functions...\n");
-		}
-
-		
 
 		/* reduce to the optimal filter frequency range */
 		responseOne.epoch = gpsCalTime;
@@ -1127,9 +1120,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 				pow(10.,normLambda.units.powerOfTen));
 		varTheo = (REAL8)(segmentDuration * normSigma.value * \
 				pow(10.,normSigma.units.powerOfTen));
-		
 
-		/* save */
+		/* report normalisation constants */
 		if (verbose_flag)
 		{
 			fprintf(stdout, "lambda = %e s^-1\n", lambda);
@@ -1183,20 +1175,21 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "y = %f\n\n", y);
 		}
 
-                if (status.statusCode !=0)
-		  {
-		    clear_status(&status);
-                    if (segLoop < (numSegments - 1))
-		     continue; 
-                    else
-		     break;   
-		  }
+		if (status.statusCode !=0)
+		{
+			clear_status(&status);
+			if (segLoop < (numSegments - 1))
+				continue; 
+			else
+				break;   
+		}
 
 		/* output to file */
-	       	fprintf(out, "%e %e\n", varTheo, y);
+		fprintf(out, "%e %e\n", varTheo, y);
 	}
 
-        lal_errhandler = LAL_ERR_EXIT;
+	/* exit on error */
+	lal_errhandler = LAL_ERR_EXIT;
 
 	/* cleanup */
 
