@@ -154,6 +154,19 @@ static size_t window_commensurate(
 
 
 /*
+ * Return TRUE if the given integer is an integer power of 2.  The trick
+ * here is that integer powers of 2 (and only integer powers of 2) share
+ * exactly 0 bits with the integer 1 less than themselves, so we check to
+ * see if that's the case.
+ */
+
+static int is_power_of_2(int x)
+{
+	return(!((x - 1) & x));
+}
+
+
+/*
  * ============================================================================
  *                       Initialize and parse arguments
  * ============================================================================
@@ -344,6 +357,7 @@ void parse_command_line(
 )
 { 
 	char msg[240];
+	int args_are_bad = FALSE;
 	int printSpectrum;
 	int c;
 	int option_index;
@@ -450,7 +464,7 @@ void parse_command_line(
 		if(params->tfTilingInput.length <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.length);
 		break;
@@ -478,7 +492,7 @@ void parse_command_line(
 		if(params->compEPInput.alphaDefault <= 0.0 || params->compEPInput.alphaDefault >= 1.0) {
 			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput.alphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.alphaDefault);
 		break;
@@ -488,7 +502,7 @@ void parse_command_line(
 		if(params->eventLimit < 1 || params->eventLimit > 999) {
 			sprintf(msg, "must be in range [1,999] (%i specified)", params->eventLimit);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit( 1 );
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->eventLimit);
 		break;
@@ -505,10 +519,10 @@ void parse_command_line(
 
 		case 'I':
 		frameSampleRate = (INT4) atoi(optarg);
-		if(frameSampleRate < 2 || frameSampleRate > 16384 || frameSampleRate % 2) {
+		if(frameSampleRate < 2 || frameSampleRate > 16384 || !is_power_of_2(frameSampleRate)) {
 			sprintf(msg, "must be a power of 2 in the range [2,16384] (%d specified)", frameSampleRate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", frameSampleRate);
 		break;
@@ -517,7 +531,7 @@ void parse_command_line(
 		options.fcorner = atof(optarg);
 		if(options.fcorner <= 0) {
 			print_bad_argument(argv[0], long_options[option_index].name, "must be > 0");
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		geodata = TRUE;
 		ADD_PROCESS_PARAM("double", "%e", options.fcorner);
@@ -528,7 +542,7 @@ void parse_command_line(
 		if(gpstmp < 441417609 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%lld specified)", gpstmp);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		gpsStopTimeNS += gpstmp * 1000000000LL;
 		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
@@ -539,7 +553,7 @@ void parse_command_line(
 		if(gpstmp < 0 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		gpsStopTimeNS += gpstmp;
 		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
@@ -550,7 +564,7 @@ void parse_command_line(
 		if(gpstmp < 441417609 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%lld specified)", gpstmp);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		gpsStartTimeNS += gpstmp * 1000000000LL;
 		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
@@ -561,7 +575,7 @@ void parse_command_line(
 		if(gpstmp < 0 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		gpsStartTimeNS += gpstmp;
 		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
@@ -582,7 +596,7 @@ void parse_command_line(
 		if(params->tfTilingInput.flow < 0.0) {
 			sprintf(msg,"must be >= 0.0 (%f specified)", params->tfTilingInput.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float", "%e", params->tfTilingInput.flow);
 		break;
@@ -596,12 +610,13 @@ void parse_command_line(
 		mdcparams = LALMalloc(sizeof(*mdcparams));
 		if(!mdcparams) {
 			print_alloc_fail(argv[0], "for mdcparams");
-			exit(1);
+			args_are_bad = TRUE;
+		} else {
+			mdcparams->channelName = optarg;
+			mdcchannelIn.name = mdcparams->channelName;
+			mdcchannelIn.type = ADCDataChannel;
+			ADD_PROCESS_PARAM("string", "%s", mdcparams->channelName);
 		}
-		mdcparams->channelName = optarg;
-		mdcchannelIn.name = mdcparams->channelName;
-		mdcchannelIn.type = ADCDataChannel;
-		ADD_PROCESS_PARAM("string", "%s", mdcparams->channelName);
 		break;
 
 		case 'T':
@@ -609,7 +624,7 @@ void parse_command_line(
 		if(params->tfTilingInput.minFreqBins <= 0) {
 			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minFreqBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minFreqBins);
 		break;
@@ -619,7 +634,7 @@ void parse_command_line(
 		if(params->tfTilingInput.minTimeBins <= 0) {
 			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minTimeBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minTimeBins);
 		break;
@@ -629,7 +644,7 @@ void parse_command_line(
 		if(options.noiseAmpl <= 0.0) {
 			sprintf(msg, "must be > 0.0 (%f specified)", options.noiseAmpl);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float", "%e", options.noiseAmpl);
 		break;
@@ -639,7 +654,7 @@ void parse_command_line(
 		if(params->windowLength <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", params->windowLength);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->windowLength);
 		break;
@@ -649,7 +664,7 @@ void parse_command_line(
 		if(params->compEPInput.numSigmaMin <= 0.0) {
 			sprintf(msg, "must be > 0.0 (%f specified)", params->compEPInput.numSigmaMin);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.numSigmaMin);
 		break;
@@ -664,7 +679,7 @@ void parse_command_line(
 		else {
 			sprintf(msg, "must be \"useMean\", \"useMedian\", or \"useUnity\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
@@ -679,7 +694,7 @@ void parse_command_line(
 		if(ram <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", ram);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", ram);
 		break;
@@ -692,7 +707,7 @@ void parse_command_line(
 		else {
 			sprintf(msg, "must be \"ldas\", or \"butterworth\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
@@ -702,7 +717,7 @@ void parse_command_line(
 		if(options.seed <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", options.seed);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", options.seed);
 		break;
@@ -714,10 +729,10 @@ void parse_command_line(
 
 		case 'e':
 		targetSampleRate = (INT4) atoi(optarg);
-		if(targetSampleRate < 2 || targetSampleRate > 16384 || targetSampleRate % 2) {
+		if(targetSampleRate < 2 || targetSampleRate > 16384 || !is_power_of_2(targetSampleRate)) {
 			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", targetSampleRate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", targetSampleRate);
 		break;
@@ -727,7 +742,7 @@ void parse_command_line(
 		if(params->tfTilingInput.overlapFactor <= 0) {
 			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.overlapFactor);
 		break;
@@ -737,7 +752,7 @@ void parse_command_line(
 		if(params->alphaThreshold <= 0.0) {
 			sprintf(msg, "must be > 0.0 (%f specified)", params->alphaThreshold);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float", "%e", params->alphaThreshold);
 		break;
@@ -752,7 +767,7 @@ void parse_command_line(
 		if(params->windowType >= NumberWindowTypes) {
 			sprintf(msg, "must be <= %d (%i specified)", NumberWindowTypes, params->windowType);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", params->windowType);
 		break;
@@ -762,7 +777,7 @@ void parse_command_line(
 		if(options.FilterCorruption < 0) {
 			sprintf(msg, "must be > 0 (%d specified)", options.FilterCorruption);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			exit(1);
+			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int", "%d", options.FilterCorruption);
 		break;
@@ -787,6 +802,9 @@ void parse_command_line(
 		exit(1);
 		break;
 	} while(c != -1);
+
+	if(args_are_bad)
+		exit(1);
 
 	/*
 	 * Convert the start and stop times to LIGOTimeGPS structures.
@@ -855,7 +873,7 @@ static REAL4TimeSeries *get_geo_data(
 
 	/* get the data */
 	if(options.verbose)
-		fprintf(stderr, "reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_geo_data(): reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
 	geo->epoch = start;
 	LAL_CALL(LALFrSeek(stat, &geo->epoch, stream), stat);
@@ -894,7 +912,7 @@ static REAL4TimeSeries *get_ligo_data(
 
 	/* get the data */
 	if(options.verbose)
-		fprintf(stderr, "reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_ligo_data(): reading %u samples at GPS time %u.%09u s\n", series->data->length, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 	series->epoch = start;
 	LAL_CALL(LALFrSeek(stat, &series->epoch, stream), stat);
@@ -1280,11 +1298,11 @@ int main( int argc, char *argv[])
 
 	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
-		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapCorrection.seconds, overlapCorrection.nanoSeconds);
+		fprintf(stderr, "%s: time series overlap correction is %u.%09u s\n", argv[0], overlapCorrection.seconds, overlapCorrection.nanoSeconds);
 
-	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, (REAL8) -2.0 * options.FilterCorruption / targetSampleRate - overlap), &stat);
+	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -2.0 * options.FilterCorruption / targetSampleRate - overlap), &stat);
 	if(options.verbose)
-		fprintf(stderr, "series epochs must be less than %u.%09u s\n", boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
+		fprintf(stderr, "%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 	}
 
 
@@ -1369,7 +1387,7 @@ int main( int argc, char *argv[])
 		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / targetSampleRate, resampFiltType, options.FilterCorruption, &params), &stat);
 
 		if(options.verbose)
-			fprintf(stderr, "Got %u samples (%.9f s) to analyse after conditioning\n", series->data->length, series->data->length * series->deltaT);
+			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
 
 		/*
 		 * Store the start and end times of the data that actually
