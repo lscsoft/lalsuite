@@ -48,6 +48,12 @@ AC_CHECK_LIB(m, main)
 AC_LIB_FFTW
 AC_LIB_RFFTW
 AC_FFTW_WORKS
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
+
+dnl Checks for optional libraries and header files.
 if test "${frame}" = "true"; then
         AC_CHECK_LIB(Frame, FrLibIni, ,
           [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] , )
@@ -116,10 +122,6 @@ if test "${mpi}" = "true"; then
     AC_MSG_RESULT(no)
     AC_MSG_ERROR(mpi does not work))
 fi
-
-dnl Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
