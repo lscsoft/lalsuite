@@ -1048,170 +1048,189 @@ int main( int argc, char *argv[] )
     numSimDiscard    = 0;
     numEventsDiscard = 0;
     numEventsCoinc   = 0;
-    
-    /* begin loop over the sim_inspiral events */
-    while ( thisSimEvent )
+
+    if ( ! thisEvent )
     {
-      /* compute the end time in nanosec for the injection */
-      /* at the relevant detector                          */
-      if ( ! strcmp( "L1", thisEvent->ifo ) )
-      {
-        LAL_CALL( LALGPStoINT8( &stat, &simTime, &(thisSimEvent->l_end_time) ), 
-            &stat );
-      }
-      else if ( ! strcmp( "H1", thisEvent->ifo ) || 
-          ! strcmp( "H2", thisEvent->ifo ) )
-      {
-        LAL_CALL( LALGPStoINT8( &stat, &simTime, &(thisSimEvent->h_end_time) ),
-            &stat );
-      }
-      else
-      {
-        fprintf( stderr, "unknown detector found in event list: %s\n", 
-            thisEvent->ifo );
-        exit( 1 );
-      }
+      /* no triggers in the input data, so all injections are missed */
+      if ( vrbflg ) fprintf( stdout, "no triggers in input data\n" );
 
-      /* find the first inspiral event after the current sim event */
-      while ( thisEvent )
+      thisMissedSim = missedSimHead = thisSimEvent;
+
+      while ( thisMissedSim )
       {
-        coincidence = 0;
-
-        /* compute the time in nanosec for the inspiral */
-        LAL_CALL( LALGPStoINT8( &stat, &inspiralTime, &(thisEvent->end_time) ),
-            &stat );
-
-        if ( inspiralTime < (simTime - inject_dt) )
-        {
-          /* discard this event and move on to the next one */
-          if ( prevEvent ) prevEvent->next = thisEvent->next;
-          tmpEvent = thisEvent;
-          thisEvent = thisEvent->next;
-          LALFree( tmpEvent );
-          ++numEventsProcessed;
-          ++numEventsDiscard;
-          if ( vrbflg ) fprintf( stdout, "-" );
-        }
-        else
-        {
-          /* we have reached the negative coincincidence window */
-          break;
-        }
-      }
-
-      while ( thisEvent )
-      {
-        /* compute the time in nanosec for the inspiral */
-        LAL_CALL( LALGPStoINT8( &stat, &inspiralTime, &(thisEvent->end_time) ),
-            &stat );
-
-        if ( inspiralTime < (simTime + inject_dt) )
-        {
-          /* this event is within the coincidence window  */
-          /* store this event and move on to the next one */
-          if ( ! eventHead ) eventHead = thisEvent;
-          prevEvent = thisEvent;
-          thisEvent = thisEvent->next;
-          coincidence = 1;
-          ++numEventsProcessed;
-          ++numEventsCoinc;
-          if ( vrbflg ) fprintf( stdout, "+" );
-        }
-        else
-        {
-          /* we have reached the end of the positive coincincidence window */
-          break;
-        }
-      }
-
-      if ( coincidence )
-      {
-        /* keep this event in the list and move to the next sim event */
-        if ( ! simEventHead ) simEventHead = thisSimEvent;
-        prevSimEvent = thisSimEvent;
-        ++numSimFound;
-        ++numSimProcessed;
-        thisSimEvent = thisSimEvent->next;
-        if ( vrbflg ) fprintf( stdout, "F" );
-      }
-      else
-      {
-        /* save this sim event in the list of missed events... */
-        if ( ! missedSimHead )
-        {
-          missedSimHead = thisMissedSim = thisSimEvent;
-        }
-        else
-        {
-          thisMissedSim = thisMissedSim->next = thisSimEvent;
-        }
-
-        /* ...and remove it from the list of found events */
-        if ( prevSimEvent ) prevSimEvent->next = thisSimEvent->next;
-        ++numSimMissed;
+        /* count the number of injections just stuck in the missed list */
         if ( vrbflg ) fprintf( stdout, "M" );
-
-        /* move to the next sim in the list */
+        ++numSimMissed;
         ++numSimProcessed;
-        thisSimEvent = thisSimEvent->next;
-
-        /* make sure the missed sim list is terminated */
-        thisMissedSim->next = NULL;
+        thisMissedSim = thisMissedSim->next;
       }
-
-      if ( ! thisEvent )
+    }
+    else
+    {
+      /* begin loop over the sim_inspiral events */
+      while ( thisSimEvent )
       {
-        /* these are no more events to process so all the rest of the */
-        /* injections must be put in the missed injections list       */
-        if ( ! missedSimHead )
+        /* compute the end time in nanosec for the injection */
+        /* at the relevant detector                          */
+        if ( ! strcmp( "L1", thisEvent->ifo ) )
         {
-          /* this and any subsequent events are in the missed sim list */
-          if ( thisSimEvent ) thisMissedSim = missedSimHead = thisSimEvent;
+          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
+                &(thisSimEvent->l_end_time) ), &stat );
+        }
+        else if ( ! strcmp( "H1", thisEvent->ifo ) || 
+            ! strcmp( "H2", thisEvent->ifo ) )
+        {
+          LAL_CALL( LALGPStoINT8( &stat, &simTime, 
+                &(thisSimEvent->h_end_time) ), &stat );
         }
         else
         {
-          if ( thisSimEvent )
+          fprintf( stderr, "unknown detector found in event list: %s\n", 
+              thisEvent->ifo );
+          exit( 1 );
+        }
+
+        /* find the first inspiral event after the current sim event */
+        while ( thisEvent )
+        {
+          coincidence = 0;
+
+          /* compute the time in nanosec for the inspiral */
+          LAL_CALL( LALGPStoINT8( &stat, &inspiralTime, 
+                &(thisEvent->end_time) ), &stat );
+
+          if ( inspiralTime < (simTime - inject_dt) )
           {
-            /* append the rest of the list to the list of missed injections */
-            thisMissedSim = thisMissedSim->next = thisSimEvent;
+            /* discard this event and move on to the next one */
+            if ( prevEvent ) prevEvent->next = thisEvent->next;
+            tmpEvent = thisEvent;
+            thisEvent = thisEvent->next;
+            LALFree( tmpEvent );
+            ++numEventsProcessed;
+            ++numEventsDiscard;
+            if ( vrbflg ) fprintf( stdout, "-" );
           }
           else
           {
-            /* there are no injections after this one */
-            thisMissedSim = thisMissedSim->next = NULL;
+            /* we have reached the negative coincincidence window */
+            break;
           }
         }
 
-        /* terminate the list of found injections correctly */
-        if ( prevSimEvent ) prevSimEvent->next = NULL;
-        
-        while ( thisMissedSim )
+        while ( thisEvent )
         {
-          /* count the number of injections just stuck in the missed list */
-          if ( vrbflg ) fprintf( stdout, "M" );
-          ++numSimMissed;
-          ++numSimProcessed;
-          thisMissedSim = thisMissedSim->next;
-        }
-        thisSimEvent = NULL;
-        break;
-      }
-    }
+          /* compute the time in nanosec for the inspiral */
+          LAL_CALL( LALGPStoINT8( &stat, &inspiralTime, 
+                &(thisEvent->end_time) ), &stat );
 
-    if ( thisEvent )
-    {
-      /* discard any remaining inspiral triggers */
-      /* as we have run out of injections        */
-      tmpEvent = thisEvent->next;
-      thisEvent->next = NULL;
-      while ( tmpEvent )
+          if ( inspiralTime < (simTime + inject_dt) )
+          {
+            /* this event is within the coincidence window  */
+            /* store this event and move on to the next one */
+            if ( ! eventHead ) eventHead = thisEvent;
+            prevEvent = thisEvent;
+            thisEvent = thisEvent->next;
+            coincidence = 1;
+            ++numEventsProcessed;
+            ++numEventsCoinc;
+            if ( vrbflg ) fprintf( stdout, "+" );
+          }
+          else
+          {
+            /* we have reached the end of the positive coincincidence window */
+            break;
+          }
+        }
+
+        if ( coincidence )
+        {
+          /* keep this event in the list and move to the next sim event */
+          if ( ! simEventHead ) simEventHead = thisSimEvent;
+          prevSimEvent = thisSimEvent;
+          ++numSimFound;
+          ++numSimProcessed;
+          thisSimEvent = thisSimEvent->next;
+          if ( vrbflg ) fprintf( stdout, "F" );
+        }
+        else
+        {
+          /* save this sim event in the list of missed events... */
+          if ( ! missedSimHead )
+          {
+            missedSimHead = thisMissedSim = thisSimEvent;
+          }
+          else
+          {
+            thisMissedSim = thisMissedSim->next = thisSimEvent;
+          }
+
+          /* ...and remove it from the list of found events */
+          if ( prevSimEvent ) prevSimEvent->next = thisSimEvent->next;
+          ++numSimMissed;
+          if ( vrbflg ) fprintf( stdout, "M" );
+
+          /* move to the next sim in the list */
+          ++numSimProcessed;
+          thisSimEvent = thisSimEvent->next;
+
+          /* make sure the missed sim list is terminated */
+          thisMissedSim->next = NULL;
+        }
+
+        if ( ! thisEvent )
+        {
+          /* these are no more events to process so all the rest of the */
+          /* injections must be put in the missed injections list       */
+          if ( ! missedSimHead )
+          {
+            /* this and any subsequent events are in the missed sim list */
+            if ( thisSimEvent ) thisMissedSim = missedSimHead = thisSimEvent;
+          }
+          else
+          {
+            if ( thisSimEvent )
+            {
+              /* append the rest of the list to the list of missed injections */
+              thisMissedSim = thisMissedSim->next = thisSimEvent;
+            }
+            else
+            {
+              /* there are no injections after this one */
+              thisMissedSim = thisMissedSim->next = NULL;
+            }
+          }
+
+          /* terminate the list of found injections correctly */
+          if ( prevSimEvent ) prevSimEvent->next = NULL;
+
+          while ( thisMissedSim )
+          {
+            /* count the number of injections just stuck in the missed list */
+            if ( vrbflg ) fprintf( stdout, "M" );
+            ++numSimMissed;
+            ++numSimProcessed;
+            thisMissedSim = thisMissedSim->next;
+          }
+          thisSimEvent = NULL;
+          break;
+        }
+      }
+
+      if ( thisEvent )
       {
-        thisEvent = tmpEvent;
-        tmpEvent = tmpEvent->next;
-        LALFree( thisEvent );
-        ++numEventsDiscard;
-        ++numEventsProcessed;
-        if ( vrbflg ) fprintf( stdout, "-" );
+        /* discard any remaining inspiral triggers */
+        /* as we have run out of injections        */
+        tmpEvent = thisEvent->next;
+        thisEvent->next = NULL;
+        while ( tmpEvent )
+        {
+          thisEvent = tmpEvent;
+          tmpEvent = tmpEvent->next;
+          LALFree( thisEvent );
+          ++numEventsDiscard;
+          ++numEventsProcessed;
+          if ( vrbflg ) fprintf( stdout, "-" );
+        }
       }
     }
 
