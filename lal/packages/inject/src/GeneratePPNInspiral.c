@@ -575,8 +575,9 @@ LALGeneratePPNInspiral( LALStatus     *stat,
     }
   }
 
-  /* Compute initial dimensionless time, and record actual initial
-     frequency in case it is different. */
+  /* Compute initial dimensionless time, record actual initial
+     frequency (in case it is different), and record dimensional
+     time-to-coalescence. */
   t0 = pow( xStart, -8.0 );
   FREQ( yStart, xStart );
   if ( yStart >= yMax ) {
@@ -584,6 +585,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	   GENERATEPPNINSPIRALH_MSGEFBAD );
   }
   params->fStart = yStart*fFac;
+  params->tc = t0 * ( 5.0*LAL_MTSUN_SI*mTot ) / eta;
 
   /*******************************************************************
    * GENERATE WAVEFORM                                               *

@@ -101,7 +101,7 @@ t_\mathrm{off} & = & \frac{t_0-t_A}{\Delta t_A}  \; , \nonumber \\
 Then, for each output sample time $t_k$, we compute:
 \begin{eqnarray}
 t & = & t_\mathrm{off} + k \times dt \; , \nonumber \\
-j & = & t \bmod1                     \; , \nonumber \\
+j & = & \lfloor t \rfloor            \; , \nonumber \\
 f & = & t - j                        \; . \nonumber
 \end{eqnarray}
 The time series sampled at the new time is then:

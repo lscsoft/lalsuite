@@ -196,11 +196,10 @@ For the sake of LAL namespace conventions, these termination codes are
 \idx[Type]{PPNParamStruc}
 
 This structure stores the parameters for constructing a restricted
-post${}^2$-Newtonian waveform.  It is divided into three parts:
-parameters passed along to the output structure but not used by
-waveform generator, parameters used as input to the waveform
-generator, and parameters set by the generator to evaluate its
-success.
+post-Newtonian waveform.  It is divided into three parts: parameters
+passed along to the output structure but not used by waveform
+generator, parameters used as input to the waveform generator, and
+parameters set by the generator to evaluate its success.
 
 \bigskip\noindent\textit{Passed fields:}
 \begin{description}
@@ -247,12 +246,15 @@ generated until a termination condition (above) is met.
 generated waveform.  If zero, the waveforms can be arbitrarily long.
 
 \item[\texttt{REAL4Vector *ppn}] The parameters $p_n$ selecting the
-type of post-Newtonian expansion.  If \verb@ppn=NULL@, a ``normal''
-(physical) expansion is assumed.
+type of post-Newtonian expansion.  If \verb@ppn@=\verb@NULL@, a
+``normal'' (physical) expansion is assumed.
 \end{description}
 
 \medskip\noindent\textit{Output fields:}
 \begin{description}
+\item[\texttt{REAL8 tc}] The time $t_c-t$ from the start of the
+waveform to coalescence (in the point-mass approximation), in s.
+
 \item[\texttt{REAL4 dfdt}] The maximum value of $\Delta f\Delta t$
 encountered over any timestep $\Delta t$ used in generating the
 waveform.
@@ -293,6 +295,7 @@ typedef struct tagPPNParamStruc {
   REAL4Vector *ppn; /* post-Newtonian selection parameters */
 
   /* Output parameters. */
+  REAL8 tc;         /* time to coalescence from start of waveform */
   REAL4 dfdt;       /* maximum value of df*dt over any timestep */
   REAL4 fStart;     /* actual start frequency (Hz) */
   REAL4 fStop;      /* actual stop frequency (Hz) */
