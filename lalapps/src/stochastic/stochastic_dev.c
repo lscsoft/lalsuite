@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <math.h>
 
 #include <getopt.h>
@@ -1336,6 +1338,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 static void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
+  struct stat fileStatus;
 
   while(1)
   {
@@ -1627,6 +1630,16 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(frameCacheOne, optarg, optarg_len);
+
+        /* check that file exists */
+        if ( stat(frameCacheOne, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, frameCacheOne);
+          exit(1);
+        }
+
         break;
 
       case 'D':
@@ -1634,6 +1647,16 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(frameCacheTwo, optarg, optarg_len);
+
+        /* check that file exists */
+        if ( stat(frameCacheTwo, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, frameCacheTwo);
+          exit(1);
+        }
+
         break;
 
       case 'r':
@@ -1641,6 +1664,16 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(calCacheOne, optarg, optarg_len);
+
+        /* check that file exists */
+        if ( stat(calCacheOne, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, calCacheOne);
+          exit(1);
+        }
+
         break;
 
       case 'R':
@@ -1648,6 +1681,16 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(calCacheTwo, optarg, optarg_len);
+
+        /* check that file exists */
+        if ( stat(calCacheTwo, &fileStatus) == -1)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "File does not exist: (%s specified)\n", \
+              long_options[option_index].name, calCacheTwo);
+          exit(1);
+        }
+
         break;
 
       case 'z':
