@@ -365,7 +365,7 @@ LALExtractFrameResponse(
       /* make sure we get the first point before the requested cal time */
       alphaDeltaT = sensemonTS.deltaT;
       TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            0.0 - ( sensemonTS.deltaT + fuzz ) ), status );
+            fuzz - sensemonTS.deltaT ), status );
       sensemonTS.epoch = seekEpoch;
 
       GET_POS;
@@ -506,7 +506,7 @@ LALExtractFrameResponse(
 
       /* make sure we get the first point before the requested cal time */
       TRY( LALAddFloatToGPS( status->statusPtr, &seekEpoch, &(output->epoch),
-            0.0 - ( a.deltaT + fuzz ) ), status );
+            fuzz - a.deltaT ), status );
       a.epoch = ab.epoch = seekEpoch;
 
       GET_POS;
