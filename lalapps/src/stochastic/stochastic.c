@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <math.h>
+#include <errno.h>
 
 #include <unistd.h>
 #include <getopt.h>
@@ -61,6 +62,9 @@ RCSID ("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "lalapps_stochastic"
+
+/* system error checking */
+extern int errno;
 
 /* variables for getopt options parsing */
 char *optarg;
@@ -2250,7 +2254,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(frameCacheOne, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(frameCacheOne, &fileStatus) == -1)
+        if ((stat(frameCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -2267,7 +2271,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(frameCacheTwo, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(frameCacheTwo, &fileStatus) == -1)
+        if ((stat(frameCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -2284,7 +2288,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(calCacheOne, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(calCacheOne, &fileStatus) == -1)
+        if ((stat(calCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -2301,7 +2305,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(calCacheTwo, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(calCacheTwo, &fileStatus) == -1)
+        if ((stat(calCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -2343,7 +2347,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(outputFilePath, optarg, optarg_len);
 
         /* check */
-        if (stat(outputFilePath, &fileStatus) == -1)
+        if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "Directory does not exist: (%s specified)\n", \
