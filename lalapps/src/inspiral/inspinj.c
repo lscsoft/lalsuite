@@ -619,7 +619,7 @@ int main( int argc, char *argv[] )
   static int ilwd = 0;
   int tamaOutput = 0;
   int writeDeff = 0;
-
+  int i = 0;
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
 
@@ -874,7 +874,7 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
 	PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-        "--write-eff-dist" );
+	"--write-eff-dist" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
@@ -1011,7 +1011,7 @@ int main( int argc, char *argv[] )
     long tnan = this_sim_insp->geocent_end_time.gpsNanoSeconds = 
       (long)( tlistelem->tinj % 1000000000LL );
     double gmst;
-    
+
     /* get gmst (radians) */
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
 
@@ -1051,7 +1051,7 @@ int main( int argc, char *argv[] )
     /* inspinj has an independent way of calculating the effective distances.
        Calculate them instead using this */
     /* XXX Need to implement check that inspinj answers agree with LAL XXX */
-    
+
     /* Hanford */
     this_sim_insp->eff_dist_h = eff_dist( nxH, nyH, injPar, gmst )/MPC;
 
@@ -1066,7 +1066,7 @@ int main( int argc, char *argv[] )
 
     /* Virgo */
     this_sim_insp->eff_dist_v = eff_dist( nxV, nyV, injPar, gmst )/MPC;
-    
+
     if ( inj < ninj - 1 )
     {
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
@@ -1142,18 +1142,35 @@ int main( int argc, char *argv[] )
 	fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
 	fprintf( fq, "geocentric end time  hanford end time   " );
 	fprintf( fq, "livingston end time   tama end time     " );
-        if ( writeDeff )
-        {
-          fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
+	if ( writeDeff )
+	{
+	  fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
 	}
-        fprintf( fq, "  mtotal        eta      distance(kpc) " );
+	fprintf( fq, "  mtotal        eta      distance(kpc) " );
 	fprintf( fq, " longitude     latitude    " );
-	fprintf( fq, "inclination   coa_phase   polarization\n");
+	fprintf( fq, "inclination   coa_phase   polarization");
+	fprintf( fq, "   tama pol  end-time GMST\n");
 
 	this_sim_insp = injections.simInspiralTable;
 	while ( this_sim_insp )
 	{
-	  REAL8 injtime, ltime, htime, ttime;
+	  double injtime, ltime, htime, ttime;
+	  double psiTAMA = 0;
+	  double x[3];
+	  double y[3];
+
+	  /* the z-axis for TAMA coordinated (orthogonal to nxT, xyT) */
+	  double nzT[3] = { -0.6180, +0.5272, +0.5832 };
+
+	  double theta;
+	  double phi;
+	  double psi;
+
+	  double xDotz;
+	  double yDotz;
+
+
+	  /* turn the end times into floats */
 	  LAL_CALL( LALGPStoFloat( &status, &injtime, 
 		&(this_sim_insp->geocent_end_time) ),  &status );
 	  LAL_CALL( LALGPStoFloat( &status, &htime, 
@@ -1163,22 +1180,57 @@ int main( int argc, char *argv[] )
 	  LAL_CALL( LALGPStoFloat( &status, &ttime, 
 		&(this_sim_insp->t_end_time) ),  &status );
 
+	  /* calculate the polarization angle for the TAMA detector */
+	  theta = 0.5 * LAL_PI - this_sim_insp->latitude;
+	  phi = this_sim_insp->longitude 
+	    - LAL_PI * this_sim_insp->end_time_gmst / 12.0;
+	  psi = this_sim_insp->polarization;
+
+	  x[0] = +( sin( phi ) * cos( psi ) 
+	      - sin( psi ) * cos( phi ) * cos( theta ) );
+	  x[1] = -( cos( phi ) * cos( psi ) 
+	      + sin( psi ) * sin( phi ) * cos( theta ) );
+	  x[2] = sin( psi ) * sin( theta );
+	  y[0] = -( sin( phi ) * sin( psi ) 
+	      + cos( psi ) * cos( phi ) * cos( theta ) );
+	  y[1] = +( cos( phi ) * sin( psi ) 
+	      - cos( psi ) * sin( phi ) * cos( theta ) );
+	  y[2] = cos( psi ) * sin( theta );
+	  xDotz = 0;
+	  yDotz = 0;
+	  for ( i = 0; i < 3; ++i )
+	  {  
+	    xDotz += x[i] * nzT[i];
+	    yDotz += y[i] * nzT[i];
+	  }
+
+	  /* ensure the angle is between zero and 2 pi */
+	  psiTAMA = atan2( xDotz, yDotz );
+	  if ( psiTAMA < 0 )
+	  {
+	    psiTAMA += 2 * LAL_PI;
+	  }
+
+	  /* write out the entry */
 	  fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
 	      ttime );
-          if ( writeDeff )
-          {
-            fprintf( fq, "%12.6e %12.6e %12.6e ", 
-                1.0e+03 * this_sim_insp->eff_dist_h,
-                1.0e+03 * this_sim_insp->eff_dist_l, 
-                1.0e+03 * this_sim_insp->eff_dist_t );
+	  if ( writeDeff )
+	  {
+	    fprintf( fq, "%12.6e %12.6e %12.6e ", 
+		1.0e+03 * this_sim_insp->eff_dist_h,
+		1.0e+03 * this_sim_insp->eff_dist_l, 
+		1.0e+03 * this_sim_insp->eff_dist_t );
 	  }
-          fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
+	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
 	      (this_sim_insp->mass1 + this_sim_insp->mass2), 
 	      this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
 	      this_sim_insp->longitude, this_sim_insp->latitude );
-	  fprintf( fq, "%12.6e %12.6e %12.6e\n", 
+	  fprintf( fq, "%12.6e %12.6e %12.6e", 
 	      this_sim_insp->inclination, this_sim_insp->coa_phase,
 	      this_sim_insp->polarization );
+	  fprintf( fq, " %12.6e %12.6e\n", psiTAMA,
+	      this_sim_insp->end_time_gmst );
+
 	  this_sim_insp = this_sim_insp->next;
 	}
       }
