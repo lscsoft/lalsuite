@@ -1467,7 +1467,7 @@ void readDataPair(LALStatus *status,
 	sampleRate = params->sampleRate;
 
 	/* initialise status pointer */
-	INITSTATUS( status, "readDataPair", STOCHASTICC );
+	INITSTATUS( status, "readDataPair", STOCHASTICDEVC );
 	ATTATCHSTATUSPTR( status );
 
 	/* buffer start time */
