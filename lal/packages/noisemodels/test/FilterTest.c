@@ -75,18 +75,19 @@ void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 INT4 lalDebugLevel=0;
      
 int 
-main ( void ) 
+main (  int argc, char **argv ) 
 {
    REAL4VectorSequence *list=NULL;
    static LALStatus status;
    static InspiralBankParams bankParams;
 	   
-   INT4 ntrials, i, j, nlist, jmax;
+   INT4 ntrials, i, j, nlist, jmax, approximant;
    REAL8 df, omax;
+/*
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
+*/
    REAL4Vector signal, correlation;
-   UINT4 numPSDpts = 1048576;
-   UINT4 numFcutTemplates=4;
+   UINT4 numFcutTemplates=5;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
@@ -97,8 +98,73 @@ main ( void )
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    FILE *FilterTest;
    FilterTest = fopen("FilterTest.out", "w");
-
    static InspiralTemplateList *tmpltList=NULL;
+
+
+   randIn.useed = 128092;
+   ntrials=2;
+   randIn.mMin = 5.0;
+   randIn.mMax = 20.0;
+   randIn.param.fLower = 60;
+   randIn.param.alpha = 0;  
+   randIn.param.fendBCV = 300;
+   bankParams.minimalMatch = 0.80;
+   approximant = 0;
+   i=1;
+   while(i <argc)
+     {
+       if (strcmp(argv[i],"-fl")==0)
+	 randIn.param.fLower = atof(argv[++i]);
+       else if (strcmp(argv[i],"-mMin")==0)
+	 randIn.mMin = atof(argv[++i]); 
+       else if (strcmp(argv[i],"-mMax")==0)
+	   randIn.mMax = atof(argv[++i]);
+       else if (strcmp(argv[i],"-fbcv")==0)
+	    randIn.param.fendBCV = atof(argv[++i]);
+       else if (strcmp(argv[i],"-alpha")==0)
+	    randIn.param.alpha = atof(argv[++i]); 
+       else if (strcmp(argv[i],"-n")==0)
+	  ntrials = atoi(argv[++i]);       
+       else if (strcmp(argv[i],"-seed")==0)
+	 randIn.useed = atoi(argv[++i])+1;
+       else if (strcmp(argv[i],"-mm")==0)
+	 bankParams.minimalMatch =atof(argv[++i]);
+       else if (strcmp(argv[i], "-approximant")==0)
+	{
+	if (strcmp(argv[++i],"TaylorT1")==0)
+	approximant = 0;
+	else if (strcmp(argv[i],"TaylorT2")==0)
+        approximant = 1;
+	else if (strcmp(argv[i],"TaylorT3")==0)
+        approximant = 2;
+	else if (strcmp(argv[i],"TaylorF1")==0)
+        approximant = 3;
+	else if (strcmp(argv[i],"TaylorF2")==0)
+        approximant = 4;
+	else if (strcmp(argv[i],"PadeT1")==0)
+        approximant = 5;
+	else if (strcmp(argv[i],"PadeF1")==0)
+        approximant = 6;
+	else if (strcmp(argv[i],"EOB")==0)
+        approximant = 7;
+	else if (strcmp(argv[i],"BCV")==0)
+        approximant = 8;
+	else if (strcmp(argv[i],"SpinTaylorT3")==0)
+        approximant = 9;
+	randIn.param.approximant = approximant;	
+	}	
+       else
+            {
+              printf("help here");
+              break;
+            }
+       i++;       
+     }
+
+
+   
+
+
 
    LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
    fprintf(stderr, "This test code does three things:\n");
@@ -110,10 +176,9 @@ main ( void )
    fprintf(stderr, "Results of the run are written in FilterTest.out\n");
 
    bankParams.x0Min = 0.0;
-   bankParams.x0Max = 2.5e4;
-   bankParams.x1Min = -2.2e2;
-   bankParams.x1Max = 100.0;
-   bankParams.minimalMatch = 0.90;
+   bankParams.x0Max = 3.0e5;
+   bankParams.x1Min = -2.2e3;
+   bankParams.x1Max = 0.0;
 
 /*---------------------------------------------------------------------------*/
 /* Prepare parameters needed to create a verctor sequence to store BCV templates */
@@ -131,7 +196,7 @@ main ( void )
    randIn.type = 0;
    randIn.SignalAmp = 10.0;
    randIn.NoiseAmp = 1.0;
-   randIn.useed = 128092;
+
    randIn.param.startTime=0.0; 
    randIn.param.startPhase=0.88189; 
    randIn.param.nStartPad=2000;
@@ -139,7 +204,7 @@ main ( void )
    randIn.psi0Max = bankParams.x0Max;
    randIn.psi3Max = bankParams.x1Max;
    randIn.psi3Min = bankParams.x1Min;
-   randIn.param.fLower = 40.;
+
    randIn.param.fCutoff = 1000.;
    randIn.param.tSampling = 2048;
    randIn.param.signalAmplitude = 1.0;
@@ -147,13 +212,9 @@ main ( void )
    randIn.param.order = 4;
    randIn.param.approximant = PadeT1;
    randIn.param.massChoice = m1Andm2;
-   randIn.param.fendBCV = 1000.;
-   randIn.mMin = 5.0;
-   randIn.mMax = 10.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.mass1 = randIn.mMin;
    randIn.param.mass2 = randIn.mMin;
-   randIn.param.alpha = 0.;
 
    signal.length = 0.;
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
@@ -174,7 +235,7 @@ main ( void )
    bankParams.metric = &metric;
    LALInspiralCreateFlatBank(&status, list, &bankParams);
    nlist = list->length;
-   printf("#nlist before=%d\n&\n", nlist);
+
    tmpltList = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * nlist);
   
    /* Print out the template parameters */
@@ -231,7 +292,6 @@ main ( void )
    fprintf(stderr, "   psi0             psi3        Overlap/SNR\n");
    fprintf(stderr,"----------------------------------------------\n");
 
-   ntrials=3;
    fprintf(FilterTest, "#Signal Length=%d Number of sims=%d\n", signal.length, ntrials);
    fprintf(FilterTest, "   psi0            psi3        Overlap/SNR\n");
    fprintf(FilterTest, "psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
@@ -240,51 +300,20 @@ main ( void )
 		   randIn.psi0Min,randIn.psi0Max,randIn.psi3Min,randIn.psi3Max);
    while (ntrials--) 
    {
-	      
-      int numTemplates=0;
       randIn.type = 0;
       /*
       randIn.param.massChoice = psi0Andpsi3;
       */
       randIn.param.massChoice = m1Andm2;
-      randIn.param.approximant = EOB;
-      LALRandomInspiralSignal(&status, &signal, &randIn);
-      randIn.param.massChoice = psi0Andpsi3;
-/*
-      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
-      for (j=0; j<signal.length; j++) 
-      {
-	      printf("%e\n", correlation.data[j]);
-      }
-      break;
-      LALInspiralParameterCalc(&status, &randIn.param);
-*/
-      /* We shall choose the cutoff at r=3M for EOB waveforms */
-      /*
-      randIn.param.massChoice = m1Andm2;
-      LALInspiralParameterCalc(&status, &randIn.param);
-      switch (randIn.param.approximant)
-      {
-	   case EOB:
-	      randIn.param.fCutoff = 1./(pow(3.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
-	      break;
-	   case BCV:
-	      randIn.param.fCutoff = randIn.param.fendBCV;
-	      break;
-	   default:
-	      randIn.param.fendBCV = randIn.param.fCutoff;
-	      break;
-      }
-      randIn.param.fendBCV = randIn.param.fCutoff;
-      */
+      randIn.param.approximant = PadeT1;
+      
+	LALRandomInspiralSignal(&status, &signal, &randIn);
 
-      /*
-      overlapin.param = tmpltList[j].params;
-      */
       overlapin.param = randIn.param;
       overlapin.signal = signal;
       overlapin.param.approximant = BCV;
       overlapin.param.massChoice = psi0Andpsi3;
+      
       jmax = 0;
       omax = 0.0;
 	      
@@ -292,20 +321,11 @@ main ( void )
       {
      	      overlapin.param.psi0 = tmpltList[j].params.psi0;
 	      overlapin.param.psi3 = tmpltList[j].params.psi3;
-	      overlapin.param.fCutoff = tmpltList[j].params.fendBCV;
 	      overlapin.param.fendBCV = tmpltList[j].params.fendBCV;
+	      overlapin.param.fCutoff = tmpltList[j].params.fendBCV;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-	      tmpltList[j].params.fFinal = overlapin.param.fFinal;
-	      fprintf(FilterTest, "%e %e %e %e\n", 
-			      overlapin.param.psi0, 
-			      overlapin.param.psi3, 
-			      overlapin.param.fFinal, 
-			      overlapout.max);
-	      fprintf(stderr, "%e %e %e %e\n", 
-			      overlapin.param.psi0, 
-			      overlapin.param.psi3, 
-			      overlapin.param.fFinal, 
-			      overlapout.max);
+              tmpltList[j].params.fFinal = overlapin.param.fFinal;
+	      
 	      if (omax < overlapout.max) 
 	      {
 		      omax = overlapout.max;
@@ -316,7 +336,7 @@ main ( void )
       fprintf(stderr, "%e %e %e %e %e %e %e %e %e\n", 
 		      tmpltList[jmax].params.psi0, 
 		      randIn.param.psi0, 
-		      tmpltList[jmax].params.psi3, 
+                      tmpltList[jmax].params.psi3,
 		      randIn.param.psi3, 
 		      tmpltList[jmax].params.fFinal, 
 		      randIn.param.fFinal,
