@@ -293,8 +293,9 @@ sub f_getDateYYMMDD{
 sub f_buildCacheFile {
 	my ($startSec, $stopSec, $framecache, $instrument) = @_;
 	
+	#print "start=$startSec\nstop=$stopSec\ninstrument=$instrument\nFrameCache=$framecache\n";
 	#only call LALdataFind if the cache file doesn't currently exist.
-	if (! -f $framecache or -s $framecache == 0){
+	unless(-f $framecache and -s $framecache > 0){
 	
 		#error END OF FRAME data sometimes occurs for unknown reasons. Making the
 		# cache file 1 second longer fixes the problem
@@ -303,11 +304,12 @@ sub f_buildCacheFile {
 		print "$cmd\n";
 		system $cmd;	
 		
-		if (-s $framecache == 0) {
-			print LOG "Error: Framecache file $framecache size 0\n";
-			print "Error: Framecache file $framecache size 0\n";
+		unless (-f $framecache && -s $framecache != 0) {
+			print "Warning: Framecache file $framecache was not created. Either the data " .
+				"was not found or LALdataFind failed.\n";
 			unlink ($framecache);
-			return 0;}
+			return 0;
+		}
 	}
 	return (-s $framecache);
 }

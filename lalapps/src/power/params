@@ -17,7 +17,7 @@ TIME_CHUNK_MIN_SIZE=4
 EXECUTABLE=/home/dsmackin/bin/lalapps_power
 
 # Make sure intstrument is consistent for 
-INSTRUMENT=L
+INSTRUMENT=H
 
 #To limit the ananalysis of data to the playground, set USE_PLAYGROUND = 1
 # To use all data, set USE_PLAYGROUND=1
@@ -35,8 +35,8 @@ CONDOR_UNIVERSE=Vanilla
 #-----------------------------------------------------------------------------------
 #INSTRUMENT, DATA_SET_NAME, and DATA_QUALITY_FILE need to be matched 
 # lalapps_power parameter CHANNEL
-#DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
-DATA_QUALITY_FILE=/scratch/power/input/injections.txt
+DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
+#DATA_QUALITY_FILE=/scratch/power/input/injections.txt
 
 # path to playground file
 PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
@@ -110,7 +110,7 @@ THRESHOLD="10.0e-30"
 ETOMSTR=10
 
 # data channel
-CHANNEL="L1:LSC-AS_Q"
+CHANNEL="H1:LSC-AS_Q"
 
 # does not currently do anything but keep it set to 0
 SIMTYPE=0

@@ -81,7 +81,7 @@ my %STATUS = (
 #  MAIN
 #-----------------------------------------------------------------------------------
 
-open LOG, ">>$runPath/${$params}{'LOG'}";
+open LOG, ">>$runPath/${$params}{'LOG'}" or die "Couldn't open log $runPath/${$params}{'LOG'}\n";
 my $t = localtime();
 print LOG "Starting $0 at: $t\n"; # $0 stores program name
 print "Starting $0 at: $t\n";
@@ -231,7 +231,7 @@ sub  f_processChunk {
 		my $outfile = "$runPath/xml/$startSec-$duration.xml";
 		my $framecache = ${$params}{'CACHE_PATH'} . "/" . ${$params}{'INSTRUMENT'} . "-$startSec-$duration";
 		
-		my $statusCode = "P";
+		my $statusCode = "P"; 
 		
 		#build the cache file. if it is 0 length, then change status to BC - Bad Caceh File
 		if (f_buildCacheFile($startSec,  $stopSec,$framecache, ${$params}{'INSTRUMENT'}) == 0 ){$statusCode = "BC";}
