@@ -1,0 +1,24 @@
+.TH LALAPPS_FRJOIN 1 "11 July 2001" LALApps LALApps
+.SH NAME
+lalapps_frjoin - joins frame files together
+
+.SH SYNOPSIS
+.B lalapps_frjoin
+.IR outfile
+.IR infiles
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_frjoin\fP joins the input frame files \fIinfiles\fP together and
+writes them to the output frame file \fIoutfile\fP.
+
+.SH EXAMPLE
+.PP
+To join two LIGO frame files from Hanford:
+.PP
+.RS
+lalapps_frextr out.F H-RDS_R_L1-730155008-16.gwf H-RDS_R_L1-730155024-16.gwf
+.RE
+
+.SH AUTHOR
+Jolien Creighton
