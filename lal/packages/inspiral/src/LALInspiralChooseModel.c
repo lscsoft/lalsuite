@@ -675,6 +675,7 @@ LALInspiralChooseModel(
    case TaylorT1:
    case TaylorT2:
    case TaylorT3:
+   case TaylorF1:
    case EOB:
    case PadeT1:
    case PadeF1:
