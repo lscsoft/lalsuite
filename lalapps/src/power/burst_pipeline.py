@@ -68,7 +68,7 @@ class ScienceSegment:
 class BurstPipeline:
   """
   Contains a dictionary of science segments and chunks that
-  define the data to analyze and hos it should be analyzed
+  define the data to analyze and how it should be analyzed
   """
   def __init__(self,config_file):
     """
@@ -160,6 +160,8 @@ arguments =  --nseg $(nseg) \\
   --channel $(channel) \\
   --start_time $(start) \\ 
   --framecache cache/frcache-$(site)-$(frstart)-$(frend).out \\
+  --calcache /ldas_outgoing/calibration/cache_files/$(ifo)-CAL-V03-729273600-734367600.cache \\
+  --injfile HL-INJECTIONS_1_hpeak-1_19-freq250-729273613-5094000.xml \\
   --comment realdata-$(start) \\
   --cluster \\
  """ % (self.config['condor']['universe'],self.config['condor']['burst']),
@@ -185,8 +187,8 @@ queue
     print >> sub_fh, """\
 universe = %s
 executable = %s
-arguments = --ifo-a L-realdata-$(start)-POWER-$(start)-$(duration).xml \\
-  --ifo-b H-realdata-$(start)-POWER-$(start)-$(duration).xml \\
+arguments = --ifo-a L1-realdata-$(start)-POWER-$(start)-$(duration).xml \\
+  --ifo-b H1-realdata-$(start)-POWER-$(start)-$(duration).xml \\
   --outfile coincidence-$(start)-$(end).xml --dt 10
 log = %s
 error = coin/coinc-$(start)-$(end).$(cluster).$(process).err
@@ -274,25 +276,23 @@ VARS %s ifo="%s" ifo="%s" start="%d" end="%d" chunklen="%d" duration="%d"\
      
 def usage():
   msg = """\
-Usage: burst_pipeline.py [OPTIONS]
+Usage: burst_pipeline.py [OPTIONS] 
 
    -f, --config-file FILE   use configuration file FILE
    -p, --play               only create chunks that overlap with playground
    -v, --version            print version information and exit
    -h, --help               print help information
    -c, --cache              flag the frame cache query as done
-   -b, --bank               flag the bank generation and cache query as done
    -l, --log-path           directory to write condor log file
 
-This program generates a DAG to run the inspiral code. The configuration file 
+This program generates a DAG to run the burst code. The configuration file 
 should specify the parameters needed to run the jobs and must be specified 
-with the --config-file (or -f) option. See the LALapps documentation for more
-information on the syntax of the configuation file.
+with the --config-file (or -f) option. 
 
 A directory which condor uses to write a log file must be specified with the
 --log-file (or -l) option. This must be a non-NFS mounted directory. The name
 of the log file is automatically created and will be unique for each
-invocation of inspiral_pipeline.py.
+invocation of burst_pipeline.py.
 
 A file containing science segments to be analyzed should be specified in the 
 [input] section of the configuration file with a line such as
@@ -305,9 +305,9 @@ This should contain four whitespace separated coulumns:
 
 that define the science segments to be used. Lines starting with # are ignored.
 
-The length of the number of inspiral segments, their overlap and length is 
-determined from the config file and the length of an inspiral chunk is
-computed (typically this is 1024 seconds for S2).
+The length of the number of burst segments, their overlap and length is 
+determined from the config file and the length of a burst chunk is
+computed.
 
 The chunks start and stop times are computed from the science segment times
 and used to build the DAG.
@@ -320,12 +320,9 @@ playground defined by:
 are included in the DAG.
 
 If the --cache (or -c) option is specifed, the generation of the frame cache 
-files is marked as done in the DAG. The cache files are expected to exist by
-the bank generation and inspiral codes.
+files is marked as done in the DAG.
 
-If the --bank (or -b) option is specified, both the frame cache query and
-generation of the template bank are marked as done. The cache files and
-template banks are expected to exist by the inspiral code.
+
 \
 """
   print msg
