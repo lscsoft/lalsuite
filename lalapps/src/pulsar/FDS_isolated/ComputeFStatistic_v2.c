@@ -46,15 +46,12 @@ typedef struct {
   CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
   UINT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
   UINT4 SpinImax;		/**< number of spindown-bins to compute F for */
-  UINT4 ifmax;			/**< highest frequency-bin needed in calculation */
-  UINT4 ifmin;			/**< lowest frequency-bin needed */
   REAL8 dFreq;			/**< frequency resolution */
   LIGOTimeGPS Tstart;		/**< start time of observation */
   REAL8 tSFT;			/**< length of an SFT in seconds */
   REAL8 tObs;			/**< total observation time in seconds */
   UINT4 SFTno;			/**< number of SFTs in input */
   UINT4 nsamples;		/**< number of frequency-bins in an SFT */
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH]; /**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
@@ -91,27 +88,6 @@ typedef struct BinaryTemplateBanktag {
 
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
-
-/* USE_BOINC should be set to 1 to be run under BOINC */
-#ifndef USE_BOINC
-#define USE_BOINC 0
-#endif
-#if USE_BOINC
-#define USE_BOINC_DEBUG 0
-/* for getpid() */
-#include <sys/types.h>
-#include <unistd.h>
-
-typedef int bool;
-extern int boinc_init(bool standalone);
-extern int boinc_finish(int);
-extern int boinc_resolve_filename(const char*, char*, int len);
-extern int boinc_init_graphics();
-extern int boinc_finish_graphics();
-void use_boinc_filename1(char** orig_name);
-void use_boinc_filename0(char* orig_name);
-#endif /* USE_BOINC */
-
 
 /*----------------------------------------------------------------------*/
 /* Error-codes */
@@ -213,7 +189,7 @@ INT4 EstimateFLines(LALStatus *status);
 INT4 NormaliseSFTDataRngMdn (LALStatus *status);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
+INT4 PrintTopValues(REAL8 TwoFthr, UINT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
@@ -252,7 +228,7 @@ int main(int argc,char *argv[])
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
   CHAR Fstatsfilename[256]; 		/* Fstats file name*/
   CHAR Fmaxfilename[256]; 		/* Fmax file name*/
-  INT4 spdwn;				/* counter over spindown-params */
+  UINT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
@@ -262,22 +238,6 @@ int main(int argc,char *argv[])
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
-
-#if USE_BOINC
-  /* boinc_init() needs to be run before any boinc_api functions are used */
-  boinc_init(FALSE);
-  boinc_init_graphics();
-#if USE_BOINC_DEBUG
-  {
-    char commandstring[256];
-    /* char *cmd_name = argv[0]; */
-    pid_t process_id=getpid();
-    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
-    system(commandstring);
-    sleep(20);
-  }
-#endif /*USE_BOINC_DEBUG*/
-#endif /*USE_BOINC*/
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
@@ -305,9 +265,7 @@ int main(int argc,char *argv[])
   strcpy(Fmaxfilename,"Fmax");
   if (uvar_outputLabel)
     strcat(Fmaxfilename,uvar_outputLabel);
-#if USE_BOINC
-  use_boinc_filename0(Fmaxfilename);
-#endif /* USE_BOINC */
+
   if (!(fpmax=fopen(Fmaxfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
     return 2;
@@ -317,9 +275,7 @@ int main(int argc,char *argv[])
   strcpy(Fstatsfilename,"Fstats");
   if ( uvar_outputLabel )
     strcat(Fstatsfilename, uvar_outputLabel);
-#if USE_BOINC
-  use_boinc_filename0(Fstatsfilename);
-#endif /* USE_BOINC */
+
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
@@ -485,7 +441,7 @@ int main(int argc,char *argv[])
 	  /* now, if user requested it, we output ALL F-statistic results */
 	  if ((fpOut)&&(!uvar_binary)) 
 	    {
-	      INT4 i;
+	      UINT4 i;
 	      printf("outputting isolated Fstat\n");
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
@@ -498,7 +454,7 @@ int main(int argc,char *argv[])
 	  /* BINARY-MOD - output binary search F-stat with binary params */
 	  if ((fpOut)&&(uvar_binary)) 
 	    {
-	      INT4 i;
+	      UINT4 i;
 	      printf("printing binary output\n");
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
@@ -568,11 +524,6 @@ int main(int argc,char *argv[])
 
 
   LAL_CALL ( Freemem(&status), &status);
-
-#if USE_BOINC
-  boinc_finish_graphics();
-  boinc_finish(0);
-#endif
 
   return 0;
 
@@ -940,7 +891,7 @@ void CreateDemodParams (LALStatus *status)
   EmissionTime emit;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-  INT4 k;
+  UINT4 k;
 
   INITSTATUS (status, "CreateDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1008,7 +959,7 @@ void CreateDemodParams (LALStatus *status)
   DemodParams->df=GV.dFreq;
 
   DemodParams->Dterms=uvar_Dterms;
-  DemodParams->ifmin=GV.ifmin;
+  DemodParams->ifmin=(INT4) (SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
@@ -1039,7 +990,7 @@ void CreateBinaryDemodParams (LALStatus *status)
   EmissionTime emit;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-  INT4 k;
+  UINT4 k;
 
   INITSTATUS (status, "CreateBinaryDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1115,7 +1066,9 @@ void CreateBinaryDemodParams (LALStatus *status)
   DemodParams->df=GV.dFreq;
 
   DemodParams->Dterms=uvar_Dterms;
-  DemodParams->ifmin=GV.ifmin;
+  
+  DemodParams->ifmin=(INT4) (SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
+
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
@@ -1317,8 +1270,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->tSFT = 1.0 / SFTvect->data[0].deltaF;
   cfg->SFTno = SFTvect->length;
   cfg->nsamples = SFTvect->data[0].data->length;
-  cfg->ifmin = (INT4)(SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
-  cfg->ifmax = cfg->ifmin + cfg->nsamples - 1;
 
   /* extract timestamps-vector from SFT-data */
   /* and prepare SFT-data in FFT-struct to feed it into LALDemod() (FIXME)*/
@@ -1352,12 +1303,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * set up and check ephemeris-file locations
    */
 
-#if USE_BOINC
-  strcat(cfg->EphemEarth,"earth");
-  strcat(cfg->EphemSun,"sun");
-  use_boinc_filename0(cfg->EphemEarth);
-  use_boinc_filename0(cfg->EphemSun);
-#else 
   if (LALUserVarWasSet (&uvar_EphemDir) )
     {
       sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_EphemDir, uvar_EphemYear);
@@ -1368,7 +1313,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       sprintf(cfg->EphemEarth, "earth%s.dat", uvar_EphemYear);
       sprintf(cfg->EphemSun, "sun%s.dat",  uvar_EphemYear);
     }
-#endif /* !USE_BOINC */
 
   /*----------------------------------------------------------------------
    * initialize detector 
@@ -1760,15 +1704,12 @@ int compare(const void *ip, const void *jp)
  * Basic strategy: sort the array by values of F, then look at the 
  * top ones. Then search for the points above threshold. 
  */
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
+INT4 PrintTopValues(REAL8 TwoFthr, UINT4 ReturnMaxN)
 {
-
-  INT4 *indexes,i,j,iF,ntop,err,N;
+  INT4 *indexes,iF,ntop,err,N;
   REAL8 mean=0.0, std=0.0 ,log2 /*=log(2.0)*/;
-
+  UINT4 i, j;
   log2=medianbias;
-
-
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -2036,7 +1977,7 @@ INT4 EstimateFLines(LALStatus *status)
 INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 {
   INT4 i,j,m,lpc,il;                         /* loop indices */
-  INT4 Ntot,nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
+  INT4 Ntot;
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
@@ -2052,17 +1993,14 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   if (uvar_SignalOnly != 1)
     LALRngMedBias (status, &medianbias, windowSize);
 
+  LALDCreateVector(status, &Sp, GV.nsamples);
+  LALDCreateVector(status, &RngMdnSp, GV.nsamples);
 
-  LALDCreateVector(status, &Sp, (UINT4)nbins);
-  LALDCreateVector(status, &RngMdnSp, (UINT4)nbins);
-
-  nbins=(INT2)nbins;
-
-  if(!(N= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
+  if(!(N= (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8)))){ 
     printf("Memory allocation failure of N");
     return 0;
   }
-   if(!(Sp1= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
+   if(!(Sp1= (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8)))){ 
     printf("Memory allocation failure of Sp1");
     return 0;
   }
@@ -2071,13 +2009,13 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   for (i=0;i<GV.SFTno;i++)         
     {
       /* Set to zero the values */
-      for (j=0;j<nbins;j++){
+      for (j=0;j<GV.nsamples;j++){
 	RngMdnSp->data[j] = 0.0;
 	Sp->data[j]       = 0.0;
       }
       
       /* loop over SFT data to estimate noise */
-      for (j=0;j<nbins;j++){
+      for (j=0;j<GV.nsamples;j++){
 	xre=SFTvect->data[i].data->data[j].re;
 	xim=SFTvect->data[i].data->data[j].im;
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
@@ -2101,7 +2039,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 
       /*Compute Normalization factor*/
       /* for signal only case as well */  
-      for (lpc=0;lpc<nbins;lpc++){
+      for (lpc=0;lpc<GV.nsamples;lpc++){
 	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
       }
       
@@ -2109,7 +2047,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 	B=(1.0*GV.nsamples)/(1.0*GV.tSFT);
 	deltaT=1.0/(2.0*B);
 	norm=deltaT/sqrt(GV.tSFT);
-	for (lpc=0;lpc<nbins;lpc++){
+	for (lpc=0;lpc<GV.nsamples;lpc++){
 	  N[lpc]=norm;
 	}
       }
@@ -2117,7 +2055,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /*  loop over SFT data to normalise it (with N) */
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
-      for (j=0;j<nbins;j++){
+      for (j=0;j<GV.nsamples;j++){
 	xre=SFTvect->data[i].data->data[j].re;
 	xim=SFTvect->data[i].data->data[j].im;
 	xreNorm=N[j]*xre; 
@@ -2137,32 +2075,6 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   return 0;
 
 } /* NormaliseSFTDataRngMed() */
-
-/*******************************************************************************/
-/* BOINC-specific functions follow here */
-#if USE_BOINC
-void use_boinc_filename0(char *orig_name ) {
-  char resolved_name[512];
-  if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, "Can't resolve file %s\n", orig_name);
-    boinc_finish(2);
-  }
-  strcpy(orig_name, resolved_name);
-  return;
-}
-
-void use_boinc_filename1(char **orig_name ) {
-  char resolved_name[512];
-  if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
-    fprintf(stderr, "Can't resolve file %s\n", *orig_name);
-    boinc_finish(2);
-  }
-  *orig_name = calloc(strlen(resolved_name)+1,1);
-  strcpy(*orig_name, resolved_name);
-  return;
-}
-
-#endif /*USE_BOINC*/
 
 /**************************************************************************************/
 
