@@ -251,7 +251,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticCrossCorrelationCalInput ccIn;
   BOOLEAN epochsMatch = 1;
   REAL4WithUnits ccStat;
-  COMPLEX8FrequencySeries ccSpectrum;
+  COMPLEX8FrequencySeries *ccSpectrum;
 
   /* set default error behaviour */
   status.statusPtr = NULL;
@@ -772,17 +772,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   optFilterIn.calibratedInverseNoisePSD1 = calInvPSDOne;
   optFilterIn.calibratedInverseNoisePSD2 = calInvPSDTwo;
 
-  /* set metadata fields for CC spectrum */
-  strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
-  ccSpectrum.deltaF = deltaF;
-  ccSpectrum.f0 = fMin;
-
   /* allocate memory for CC spectrum*/
-  ccSpectrum.data = NULL;
-  LAL_CALL(LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
-      &status);
-  memset(ccSpectrum.data->data, 0, \
-      ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
+        "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
+        filterLength), &status);
 
   /* set CC inputs */
   ccIn.hBarTildeOne = hBarTildeOne;
@@ -1078,11 +1071,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* cc spectrum */
       LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
-            &ccSpectrum, &ccIn, epochsMatch), &status);
+            ccSpectrum, &ccIn, epochsMatch), &status);
 
       LALSnprintf(debugFilename, LALNameLength, "%d-ccSpectrum.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALCPrintFrequencySeries(&ccSpectrum, debugFilename);
+      LALCPrintFrequencySeries(ccSpectrum, debugFilename);
     }
 
     if (vrbflg)
@@ -1138,6 +1131,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, overlap), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, omegaGW), &status);
   LAL_CALL(LALDestroyREAL4FrequencySeries(&status, optFilter), &status);
+  LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, ccSpectrum), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
   if (apply_mask_flag)
   {
