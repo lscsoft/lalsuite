@@ -36,7 +36,7 @@ run the inspiral hierarchical pipeline.
   -o, --output-segs       output the segment lists of analyzed data
 \end{verbatim}
 
-\item[Description] \verb$lalapps_inspiral_pipe$ generates a Condor DAG to run
+\item[Description] \verb$lalapps_inspiral_hipe$ generates a Condor DAG to run
 the hierarchical inspiral analysis pipeline.  The current pipeline is only a
 prototype, all the features are not yet implemented.  It currently works for
 the three LIGO interferometers.  
@@ -50,12 +50,13 @@ H1-H2-L1.  The options \verb$--h1-data$, \verb$--h2-data$ and \verb$--l1-data$
 allow you to choose which of the interferometers' data to analyze.  Similarly,
 the \verb$--one-ifo$, \verb$--two-ifo$ and \verb$--three-ifo$ flags determine
 whether to analyze times during which one, two or three instruments
-respectively were operational.  If the \verb$--analyze-all$ flag is set, the
-pipeline will analyze all data from all instruments.  If the
-\verb$--output-segments$ option is chosen, the pipeline will output segment
-lists for the non-empty data types.  The file names are
-"h1\_l1\_segs\_analyzed.txt" etc, or if the analyis is restricted to
-playground, they are "h1\_l1\_play\_segs\_analyzed.txt".
+respectively were operational.  Thus, by specifying \verb$--h1-data$,
+\verb$--l1-data$ and \verb$--two-ifo$, the pipeline will analyze only the H1-L1
+double coincident times.  If the \verb$--analyze-all$ flag is set, the pipeline
+will analyze all data from all instruments.  If the \verb$--output-segments$
+option is chosen, the pipeline will output segment lists for the non-empty data
+types.  The file names are "h1\_l1\_segs\_analyzed.txt" etc, or if the analyis
+is restricted to playground, they are "h1\_l1\_play\_segs\_analyzed.txt".
 
 There are several steps of the pipeline which have been implemented to date.
 The full hierarchical pipeline will involve more steps than are currently
