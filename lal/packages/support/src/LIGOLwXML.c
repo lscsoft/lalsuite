@@ -130,6 +130,17 @@ This requires editing the table specific reading codes in
 </lalLaTeX>
 #endif
 
+/* JC: ISO C89 COMPILERS ARE REQUIRED TO SUPPORT STRINGS UP TO 509 CHARS LONG;
+ * MANY OF THE STRINGS IN THE ORIGINAL MACROS WERE LONGER.  TO FIX I CHANGED
+ * THE ORIGINAL MACROS TO BE A SERIES OF FPUTS COMMANDS AND PREFIXED THEM
+ * WITH PRINT_.  I RENAMED FPRINTF TO MYFPRINTF AND THEN CREATED THIS MACRO
+ * TO PREFIX THE PRINT_ TO THE PREVIOUS NAME SO IT EXPANDS AS THE NEW MACRO.
+ *
+ * IF YOU DON'T LIKE IT, FIX IT, BUT MAKE SURE THAT THE STRINGS ARE SMALLER
+ * THAN 509 CHARS.
+ */
+#define myfprintf(fp,oldmacro) PRINT_ ## oldmacro(fp)
+
 /* <lalVerbatim file="LIGOLwXMLCP"> */
 void
 LALOpenLIGOLwXMLFile (
@@ -147,7 +158,7 @@ LALOpenLIGOLwXMLFile (
   {
     ABORT( status, LIGOLWXMLH_EOPEN, LIGOLWXMLH_MSGEOPEN );
   }
-  fprintf( xml->fp, LIGOLW_XML_HEADER );
+  myfprintf( xml->fp, LIGOLW_XML_HEADER );
   xml->table = no_table;
   RETURN( status );
 }
@@ -168,7 +179,7 @@ LALCloseLIGOLwXMLFile (
   {
     ABORT( status, LIGOLWXMLH_ECLOS, LIGOLWXMLH_MSGECLOS );
   }
-  fprintf( xml->fp, LIGOLW_XML_FOOTER );
+  myfprintf( xml->fp, LIGOLW_XML_FOOTER );
   fclose( xml->fp );
   xml->fp = NULL;
   RETURN( status );
@@ -198,43 +209,43 @@ LALBeginLIGOLwXMLTable (
       ABORT( status, LIGOLWXMLH_ENTAB, LIGOLWXMLH_MSGENTAB );
       break;
     case process_table:
-      fprintf( xml->fp, LIGOLW_XML_PROCESS );
+      myfprintf( xml->fp, LIGOLW_XML_PROCESS );
       break;
     case process_params_table:
-      fprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
+      myfprintf( xml->fp, LIGOLW_XML_PROCESS_PARAMS );
       break;
     case search_summary_table:
-      fprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
+      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMARY );
       break;
     case search_summvars_table:
-      fprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
+      myfprintf( xml->fp, LIGOLW_XML_SEARCH_SUMMVARS );
       break;
     case sngl_burst_table:
-      fprintf( xml->fp, LIGOLW_XML_SNGL_BURST );
+      myfprintf( xml->fp, LIGOLW_XML_SNGL_BURST );
       break;
     case sngl_inspiral_table:
-      fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      myfprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
     case multi_inspiral_table:
-      fprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
+      myfprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
       break;
     case sim_inspiral_table:
-      fprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
+      myfprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
       break;
     case sim_burst_table:
-      fprintf( xml->fp, LIGOLW_XML_SIM_BURST );
+      myfprintf( xml->fp, LIGOLW_XML_SIM_BURST );
       break;
     case summ_value_table:
-      fprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
+      myfprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
       break;
     case sim_inst_params_table:
-      fprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
+      myfprintf( xml->fp, LIGOLW_XML_SIM_INST_PARAMS );
       break;
     case stochastic_table:
-      fprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
+      myfprintf( xml->fp, LIGOLW_XML_STOCHASTIC );
       break;
     case ext_triggers_table:
-      fprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
+      myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
@@ -260,7 +271,7 @@ LALEndLIGOLwXMLTable (
   {
     ABORT( status, LIGOLWXMLH_EENDT, LIGOLWXMLH_MSGEENDT );
   }
-  fprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
+  myfprintf( xml->fp, LIGOLW_XML_TABLE_FOOTER );
   xml->table = no_table;
   RETURN( status );
 }

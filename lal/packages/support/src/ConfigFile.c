@@ -148,12 +148,12 @@ static const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
 
-static const char digit_chars[] = "0123456789";
+/* static const char digit_chars[] = "0123456789"; */
 
 #define ISDIGIT(c) \
     ((c) && strchr(digit_chars, (c)) != NULL)
 
-static const char space_chars[] = " \f\n\r\t\v";
+/* static const char space_chars[] = " \f\n\r\t\v"; */
 
 #define ISSPACE(c) \
     ((c) && strchr(space_chars, (c)) != NULL)

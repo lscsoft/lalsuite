@@ -100,7 +100,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     UINT4 j;         /* dummy index*/
     REAL8 *f=NULL;  /* dummy variable for frequency values */
     REAL8 *s=NULL;  /* dummy variable for spectrum values */
-    REAL4 freq, fmin, df;
+    REAL4 freq, myfmin, df;
     UINT4 location;
     DInterpolateOut  intOutput;
     DInterpolatePar  intParams;
@@ -147,10 +147,10 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     /* populate the frequency series */
     intParams.n=4;
     location = 0;
-    fmin = spectrum->f0;
+    myfmin = spectrum->f0;
     df = spectrum->deltaF;
     for(j=0 ; j < spectrum->data->length  ; j++) {
-        freq = fmin + ((REAL4) j)*df;
+        freq = myfmin + ((REAL4) j)*df;
 
         /* if the frequency is above lowest in noise file ... */
         if ( freq >= f[0] )

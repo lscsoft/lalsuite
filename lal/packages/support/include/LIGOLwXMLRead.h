@@ -95,7 +95,7 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 typedef struct
 tagMetaTableDirectory
 {
-  CHAR *name;
+  const CHAR *name;
   INT4   pos;
   INT4   idx;
 }
@@ -186,6 +186,11 @@ LALStochasticTableFromLIGOLw (
     StochasticTable **stochHead,
 		CHAR             *fileName
 		);
+
+int
+LALStochSummTableFromLIGOLw (
+    StochSummTable **stochSummHead,
+    CHAR *fileName);
 
 int
 LALExtTriggerTableFromLIGOLw ( 

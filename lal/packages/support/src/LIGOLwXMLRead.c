@@ -352,7 +352,7 @@ LALSnglBurstTableFromLIGOLw (
     for ( j = 0; tableDir[j].name; ++j )
     {
       REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-      REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+      /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
       INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
 
       if ( tableDir[j].idx == 0 )
@@ -487,7 +487,8 @@ LALSimBurstTableFromLIGOLw (
     i++;
 
     /* get the injetcion time and check that it is within the time window */
-    if ( ! stopTime || geo_time > startTime && geo_time < stopTime )
+    /* JC: I'VE ADDED PARENTHESES HERE... HOPE THEY'RE IN THE RIGHT PLACE! */
+    if ( ! stopTime || ( geo_time > startTime && geo_time < stopTime ) )
     {
 
       /* allocate memory for the template we are about to read in */
@@ -1304,7 +1305,8 @@ SimInspiralTableFromLIGOLw (
     INT4 geo_time = env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
 
     /* get the injetcion time and check that it is within the time window */
-    if ( ! endTime || geo_time > startTime && geo_time < endTime )
+    /* JC: AGAIN... HOPE PARENTHESES ARE RIGHT! */
+    if ( ! endTime || ( geo_time > startTime && geo_time < endTime ) )
     {
       /* allocate memory for the template we are about to read in */
       if ( ! *simHead )
@@ -2369,7 +2371,7 @@ LALExtTriggerTableFromLIGOLw (
       for ( j = 0; tableDir[j].name; ++j )
       {
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-        REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+        /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
 
         if ( tableDir[j].idx == 0 )

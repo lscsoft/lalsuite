@@ -324,7 +324,7 @@ void LALXMGRPlotMesh( LALStatus          *status,
   INT4          i;
   INT4          set = 0;
   TwoDMeshNode *node;
-  REAL4 xlast, ylast;
+  REAL4 xlast = 0, ylast = 0;
 
   INITSTATUS( status, "LALXMGRPlotMesh", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
