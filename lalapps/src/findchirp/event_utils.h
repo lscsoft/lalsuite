@@ -208,14 +208,6 @@ LALClusterSnglInspiralTable (
 	      INT4		clusterchoice
 	      );
 
-void
-LALCompareSnglInspiral(
-        LALStatus                *status,
-        SnglInspiralTable        *aPtr,
-        SnglInspiralTable        *bPtr,
-        SnglInspiralAccuracy       *params
-    );
-
 void readInspiralTriggers( 
         LALStatus *status, 
         SnglInspiralTable **eventList, 
