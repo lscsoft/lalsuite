@@ -14,10 +14,10 @@ dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CPP
+AC_CANONICAL_HOST
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
   CC="$CONDOR_COMPILE $CC"
-  AC_CANONICAL_HOST
   case "$host" in
     *-*-linux* | *-*-osf* | *-*-hpux* ) CFLAGS="$CFLAGS -static" AC_DISABLE_SHARED;;
   esac
@@ -34,8 +34,15 @@ AC_CHECK_PROGS(DVIPS, dvips, echo)
 
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
-LALAPPS_CHECK_LAL
-AC_CHECK_LIB(lalsupport, LALOpenDataFile)
+rm -f confjunk.c
+echo 'int lalDebugLevel=0;' > confjunk.c
+$CC -c confjunk.c
+dnl LALAPPS_CHECK_LAL
+AC_CHECK_LIB(lal, LALVersion, ,
+  AC_MSG_ERROR(could not find the LAL library), confjunk.o)
+AC_CHECK_LIB(lalsupport, LALOpenDataFile, ,
+  AC_MSG_ERROR(could not find the LAL support library), confjunk.o)
+rm -f confjunk.c confjunk.o
 
 dnl Checks for header files.
 AC_HEADER_STDC
