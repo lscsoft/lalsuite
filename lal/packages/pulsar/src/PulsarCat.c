@@ -78,42 +78,48 @@ in \verb@*edat@.  This is done in a loop (since updating the epoch can
 conceivably change the pulsar location), until the correct epoch is
 determined to within $3\mu$s, the percision of \verb@LALBarycenter()@.
 
-Next, the pulsar location is updated using its proper motions, and the
-frequency and spindown are updated using the following formula:
-$$
-\left.\frac{d^k f}{dt^k}\right|_{t=t_2} = \sum_{j=k}^N
-	\frac{(t_2-t_1)^{j-k}}{(j-k)!}
-	\left.\frac{d^j f}{dt^j}\right|_{t=t_1} \;.
-$$
-
-Uncertainties are propagated using linear propagation methods, under
-the conservative presumption that all errors are independent.  Thus
-the uncertainty $\sigma_k$ in the frequency component $d^kf/dt^k$ is
-given by:
-$$
-\left[\sigma_k|_{t=t_2}\right]^2 =
-	\sum_{j=k}^N\left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
-		\sigma_j|_{t=t_1}\right]^2 +
-	\left[\sigma_t\sum_{j=k+1}^N \frac{(t_2-t_1)^{j-k-1}}{(j-k-1)!}
-		\left.\frac{d^j f}{dt^j}\right|_{t=t_1}\right]^2 \;,
-$$
-where $\sigma_t$ is the uncertainty in the time interval, either
-3$\mu$s (the precision limit of \verb@LALBarycenter()@) or $10^{-16}$
-times the interval (the precision limit of \verb@REAL8@ arithmetic).
-
-An additional uncertainty is assessed based on the assumption that
+Next, the pulsar location $\vec{\lambda}$ is updated using its proper
+motions $\dot{\vec{\lambda}}$, and an uncertainty is computed using
+linear error propagation (assuming uncorrelated position and proper
+motion errors):
+\begin{eqnarray}
+\lambda_i|_{t=t_2} & = & \lambda_i|_{t=t_1} + \dot{\lambda}_i(t_2-t_1)
+	\;,\nonumber\\
+\sigma_{\lambda_i}|_{t=t_2} & = & \sqrt{
+	\left[\sigma_{\lambda_i}|_{t=t_2}\right]^2 +
+	\left[\sigma_{\dot{\lambda}_i} (t_2-t_1)\right]^2}
+	\;,\nonumber
+\end{eqnarray}
+where $t_1$ is the old position epoch and $t_2$ is the new epoch.
+Similarly, the $k^\mathrm{th}$ frequency derivative
+$f^{(k)}=d^kf/dt^k$ is updated and its uncertainty computed using the
+following formulae:
+\begin{eqnarray}
+f^{(k)}|_{t=t_2} & = & \sum_{j=k}^N \frac{(t_2-t_1)^{j-k}}{(j-k)!}
+	f^{(j)}|_{t=t_1} \;,\nonumber\\
+\sigma_{f^{(k)}}|_{t=t_2} & = & \sqrt{\sum_{j=k}^N
+	\left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
+	\sigma_{f^{(j)}}|_{t=t_1}\right]^2} \;,\nonumber
+\end{eqnarray}
+where $t_1$ is the old spin epoch and $t_2$ is the new epoch.  An
+additional spin uncertainty is assessed based on the assumption that
 there may be unmeasured higher-order derivatives of the spin.  The
-inverse spin timescale $\tau^{-1}=\max_{k=1}^N\{f^{-1}(d^k
-f/dt^k)^{1/k}\}$ is roughly the time that the spin frequency will
-change by an amount comparable to its initial value.  Na\"ively, the
-next higher frequency derivative will be of order
-$d^{N+1}f/dt^{N+1}\sim f(\tau^{-1})^{N+1}$, and will introduce a
-further error in $d^k f/dt^k$ equal to: %"
+inverse spin timescale $\tau^{-1}=\max_{k=1}^N\{(f^{(k)}/f)^{1/k}\}$
+is roughly the time that the spin frequency will change by an amount
+comparable to its initial value.  Na\"ively, the next higher frequency
+derivative will be of order $f^{(N+1)}\sim f(\tau^{-1})^{N+1}$, and
+will introduce a further error in $f^{(k)}$ equal to: %"
 $$
-\delta_k \approx f\left[\tau^{-1}(t_2-t_1)\right]^{N+1}
+\delta_{f^{(k)}} \approx f\left[\tau^{-1}(t_2-t_1)\right]^{N+1}
 	(t_2-t_1)^{-k} \;.
 $$
 This uncertainty is added in quadrature to the other errors.
+
+In both position and spin uncertainty calculations, the uncertainty in
+the time shift, $\sigma_{\Delta t}\sim3\mu$s or $\sim10^{-15}\Delta t$
+(whichever is larger), is assumed to be negligible.  This is a good
+assumption as long as spin frequencies are much less than 300kHz and
+observation times will not be much greater than spindown timescales.
 
 Finally, the properties of any companion orbits are updated using
 their first time derivatives, under the implicit assumption that
@@ -149,8 +155,6 @@ LALDDestroyVector()           LALFree()
 \end{verbatim}
 
 \subsubsection*{Notes}
-
-The error propagation has not yet been implemented.
 
 \vfill{\footnotesize\input{PulsarCatCV}}
 
@@ -190,8 +194,9 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
   UINT4 i, j;  /* indecies */
   INT8 t1, t2; /* old and new SSB reference times (ns) */
   REAL8 dt;    /* (new SSB time) - (old SSB time) (s) */
-  ConvertSkyParams params; /* sky coordinate parameters */
-  CompanionNode *here;     /* paramaters of system companions */
+  CoordinateSystem oldSystem; /* original sky coordinate system */
+  ConvertSkyParams params;    /* sky coordinate parameters */
+  CompanionNode *here;        /* paramaters of system companions */
 
   INITSTATUS( stat, "LALUpdatePulsarCatNode", PULSARCATC );
   ATTATCHSTATUSPTR( stat );
@@ -210,12 +215,16 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 	    PULSARCATH_MSGENUL );
   }
 
-  /* Make sure that the sky positions is in equatorial celestial
-     coordinates, since that's what the subroutines require. */
+  /* If there is any proper motion, express the sky position in the
+     same coordinates as the proper motion. */
+  oldSystem = node->pos.system;
   memset( &params, 0, sizeof(ConvertSkyParams) );
-  params.system = COORDINATESYSTEM_EQUATORIAL;
-  TRY( LALConvertSkyCoordinates( stat->statusPtr, &(node->pos),
-				 &(node->pos), &params ), stat );
+  if ( node->pm.latitude != 0.0 || node->pm.longitude != 0.0 ) {
+    params.system = node->pm.system;
+    params.gpsTime = &(node->posepoch);
+    TRY( LALConvertSkyCoordinates( stat->statusPtr, &(node->pos),
+				   &(node->pos), &params ), stat );
+  }
 
   /* Compute the new epoch, if this isn't trivial. */
   TRY( LALGPStoINT8( stat->statusPtr, &t1, &(node->posepoch) ),
@@ -229,6 +238,8 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
     BarycenterInput input; /* input to LALBarycenter() */
 
     /* Set up barycentring. */
+    params.system = COORDINATESYSTEM_EQUATORIAL;
+    params.gpsTime = detectorTime->p_gps;
     memset( &input, 0, sizeof(BarycenterInput) );
     input.tgps = *(detectorTime->p_gps);
     input.site = *(detectorTime->p_detector);
@@ -246,11 +257,17 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
     /* Repeatedly apply barycentring and adjust pulsar position until
        we converge to a consistent SSB epoch. */
     do {
-      EarthState earth; /* parameters for LALBarycenter() */
+      EarthState earth;   /* parameters for LALBarycenter() */
+      SkyPosition newPos; /* new sky position */
       dt2 = (INT8)( 1.0e9*emit.deltaT );
       dt = (1.0e-9)*(REAL8)( dt1 + dt2 );
-      input.alpha = node->pos.longitude + node->pmra*dt;
-      input.delta = node->pos.latitude + node->pmdec*dt;
+      newPos.system = node->pos.system;
+      newPos.latitude = node->pos.latitude + node->pm.latitude*dt;
+      newPos.longitude = node->pos.longitude + node->pm.longitude*dt;
+      TRY( LALConvertSkyCoordinates( stat->statusPtr, &newPos,
+				     &newPos, &params ), stat );
+      input.alpha = newPos.longitude;
+      input.delta = newPos.latitude;
       TRY( LALBarycenterEarth( stat->statusPtr, &earth,
 			       detectorTime->p_gps, edat ), stat );
       TRY( LALBarycenter( stat->statusPtr, &emit, &input, &earth ),
@@ -261,10 +278,33 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 
   /* Adjust pulsar position. */
   dt = (1.0e-9)*(REAL8)( t2 - t1 );
-  node->pos.longitude += node->pmra*dt;
-  node->pos.latitude += node->pmdec*dt;
   TRY( LALINT8toGPS( stat->statusPtr, &(node->posepoch), &t2 ),
        stat );
+  node->pos.longitude += node->pm.longitude*dt;
+  node->pos.latitude += node->pm.latitude*dt;
+  params.system = oldSystem;
+  params.gpsTime = &(node->posepoch);
+  TRY( LALConvertSkyCoordinates( stat->statusPtr, &(node->pos),
+				 &(node->pos), &params ), stat );
+
+  /* Adjust pulsar position uncertainty, if possible. */
+  if ( node->dpos.system == node->dpm.system ) {
+    REAL8 sigma;        /* a term in the error equation */
+    REAL8 sumSigSq = 0; /* sum of squares of terms */
+    sigma = node->dpos.latitude;
+    sumSigSq += sigma*sigma;
+    sigma = node->dpm.latitude*dt;
+    sumSigSq += sigma*sigma;
+    node->dpos.latitude = sqrt( sumSigSq );
+    sigma = node->dpos.longitude;
+    sumSigSq += sigma*sigma;
+    sigma = node->dpm.longitude*dt;
+    sumSigSq += sigma*sigma;
+    node->dpos.longitude = sqrt( sumSigSq );
+  } else if ( node->dpm.latitude != 0.0 ||
+	      node->dpm.longitude != 0.0 ) {
+    LALWarning( stat, "Cannot propagate proper motion errors" );
+  }
 
   /* Adjust pulsar spin frequency and derivatives. */
   if ( node->f ) {
@@ -272,10 +312,37 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
 	 stat );
     dt = (1.0e-9)*(REAL8)( t2 - t1 );
     for ( i = 0; i < node->f->length; i++ ) {
-      REAL8 dtN = 1.0;
+      REAL8 dtN = 1.0; /* dt to various powers */
       for ( j = i + 1; j < node->f->length; j++ )
 	node->f->data[i] += node->f->data[j]*( dtN *= dt )
 	  /fact( j - i );
+    }
+
+    /* Adjust spin uncertainties, if possible. */
+    if ( node->df ) {
+      REAL4 dtAbs = fabs( dt ); /* magnitude of time shift */
+      REAL4 tauInv = 0.0;       /* inverse spindown timescale */
+      if ( node->f->data[0] != 0.0 ) {
+	for ( i = 1; i < node->f->length; i++ ) {
+	  REAL4 tauTmp = node->f->data[i]/node->f->data[0];
+	  tauTmp = pow( fabs( tauTmp ), 1.0/((REAL4)(i)) );
+	  if ( tauTmp > tauInv )
+	    tauInv = tauTmp;
+	}
+      }
+      tauInv = pow( tauInv*dtAbs, node->f->length + 1.0 );
+      for ( i = 0; i < node->f->length; i++ ) {
+	REAL8 dtN = 1.0;                 /* dtAbs to various powers */
+	REAL8 sigma = node->df->data[i]; /* term in error equation */
+	REAL8 sumSigSq = sigma*sigma;    /* sum of squares of terms */
+	for ( j = i + 1; j < node->f->length; j++ ) {
+	  sigma = node->df->data[j]*( dtN *= dtAbs )/fact( j - i );
+	  sumSigSq += sigma*sigma;
+	}
+	sigma = tauInv/pow( dtAbs, (REAL4)( i ) );
+	sumSigSq += sigma*sigma;
+	node->df->data[i] = sqrt( sumSigSq );
+      }
     }
   }
   TRY( LALINT8toGPS( stat->statusPtr, &(node->fepoch), &t2 ),

@@ -24,7 +24,7 @@ command-line arguments.  The following option flags are accepted (in
 any order):
 \begin{itemize}
 \item[\texttt{-p}] The pulsar position at time \verb@posepoch@ is set
-to \verb@ra@ degrees right ascension and \verb@dec@ degrees
+to \verb@ra@ radians right ascension and \verb@dec@ radians
 declination, with proper motions of \verb@pmra@ and \verb@pmdec@
 milliarcseconds per year, respectively.  See below for parsing formats
 for \verb@posepoch@.  If the \verb@-p@ option is not specified, a
@@ -238,8 +238,9 @@ main(int argc, char **argv)
 	node.pos.system = COORDINATESYSTEM_EQUATORIAL;
 	node.pos.longitude = atof( argv[arg++] );
 	node.pos.latitude = atof( argv[arg++] );
-	node.pmra = atof( argv[arg++] );
-	node.pmdec = atof( argv[arg++] );
+	node.pm.system = COORDINATESYSTEM_EQUATORIAL;
+	node.pm.longitude = atof( argv[arg++] );
+	node.pm.latitude = atof( argv[arg++] );
 	posGiven = 1;
       } else {
 	ERROR( PULSARCATTESTC_EARG, PULSARCATTESTC_MSGEARG, 0 );
@@ -380,25 +381,9 @@ main(int argc, char **argv)
    * CONVERSION                                                      *
    *******************************************************************/
 
-  if ( node.f ) {
-    UINT4 i;
-    printf( "f = (1/0!)( %.7e Hz^1 ) t^0\n", node.f->data[0] );
-    for ( i = 1; i < node.f->length; i++ )
-      printf( "  + (1/%i!)( %.7e Hz^%i ) t^%i\n", i, node.f->data[i],
-	      i+1, i );
-  }
-
   /* Perform update. */
   SUB( LALUpdatePulsarCatNode( &stat, &node, &detectorTime, edat ),
        &stat );
-
-  if ( node.f ) {
-    UINT4 i;
-    printf( "f = (1/0!)( %.7e Hz^1 ) t^0\n", node.f->data[0] );
-    for ( i = 1; i < node.f->length; i++ )
-      printf( "  + (1/%i!)( %.7e Hz^%i ) t^%i\n", i, node.f->data[i],
-	      i+1, i );
-  }
 
   /* If output was requested, print output. */
   if ( outfile ) {
@@ -423,8 +408,8 @@ main(int argc, char **argv)
 	fprintf( fp, "PULSAR (Unknown)\n" );
       fprintf( fp, "ra    = %23.16e rad\n", here->pos.longitude );
       fprintf( fp, "dec   = %23.16e rad\n", here->pos.latitude );
-      fprintf( fp, "pmra  = %23.16e rad/s\n", here->pmra );
-      fprintf( fp, "pmdec = %23.16e rad/s\n", here->pmdec );
+      fprintf( fp, "pmra  = %23.16e rad/s\n", here->pm.longitude );
+      fprintf( fp, "pmdec = %23.16e rad/s\n", here->pm.latitude );
       SUB( LALGPStoINT8( &stat, &ep, &(here->posepoch) ), &stat );
       fprintf( fp, "posepoch = %lli\n", ep );
       if ( here->f ) {

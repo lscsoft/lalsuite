@@ -162,15 +162,16 @@ pulsar data, storing data for a single pulsar.  The fields are:
 \item[\texttt{CHAR jname[12]}] The J2000 pulsar name (e.g.\
 \verb@J0024-7203U@), terminated by a \verb@'\0'@ character.
 
-\item[\texttt{SkyPosition bpos}] The B1950 pulsar position.
+\item[\texttt{SkyPosition pos}] The J2000 pulsar position, in radians.
 
-\item[\texttt{SkyPosition jpos}] The J2000 pulsar position.
+\item[\texttt{SkyPosition dpos}] Uncertainty in \verb@pos@, in
+radians.
 
-\item[\texttt{REAL4 pmra}] The proper motion in right ascension, in
-radians per year.
+\item[\texttt{SkyPosition pm}] The pulsar proper motion, in radians
+per second.
 
-\item[\texttt{REAL4 pmdec}] The proper motion in declination, in
-radians per year.
+\item[\texttt{SkyPosition dpm}] Uncertainty in \verb@pm@, in radians
+per second.
 
 \item[\texttt{LIGOTimeGPS posepoch}] The epoch of the postion
 measurement.
@@ -179,6 +180,9 @@ measurement.
 \verb@f->data[0]@, and its time derivatives
 \verb@f->data[1]@$\ldots$\verb@f->data[@$k$\verb@]@$\ldots$, in units
 of Hz${}^{k+1}$.
+
+\item[\texttt{REAL8Vector *df}] The uncertainty in the frequency and
+its time derivatives, in the same units.
 
 \item[\texttt{LIGOTimeGPS fepoch}] The epoch of the spin and phase
 measurements.
@@ -225,13 +229,15 @@ list.
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagPulsarCatNode {
-  CHAR bname[10];  /* B1950 pulsar name */
-  CHAR jname[12];  /* J2000 pulsar name */
-  SkyPosition pos; /* J2000 pulsar position */
-  REAL4 pmra;      /* proper motion in right ascension (rad/yr) */
-  REAL4 pmdec;     /* proper motion in declination (rad/yr) */
+  CHAR bname[10];   /* B1950 pulsar name */
+  CHAR jname[12];   /* J2000 pulsar name */
+  SkyPosition pos;  /* J2000 pulsar position */
+  SkyPosition dpos; /* J2000 pulsar position uncertainty */
+  SkyPosition pm;   /* pulsar proper motion (rad/s) */
+  SkyPosition dpm;  /* pulsar proper motion uncertainty (rad/s) */
   LIGOTimeGPS posepoch; /* epoch of the postion measurement */
   REAL8Vector *f;       /* spin frequency and its time derivatives */
+  REAL8Vector *df;      /* uncertainty in frequency and derivatives */
   LIGOTimeGPS fepoch;   /* epoch of the spin measurements */
   REAL4 dist; /* distance to pulsar (m) */
   REAL4 dmin; /* lower-limit distance to pulsar (m) */
