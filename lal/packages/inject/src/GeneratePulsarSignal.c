@@ -430,7 +430,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   output->epoch = params->startTimeGPS;
 
   
-  TRY ( LALSimulateCoherentGW_exp (stat->statusPtr, output, &sourceSignal, &detector ), stat );
+  TRY ( LALSimulateCoherentGW (stat->statusPtr, output, &sourceSignal, &detector ), stat );
 
 			       
   /*----------------------------------------------------------------------*/
