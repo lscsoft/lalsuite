@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: SFTbin.h
+ * File Name: SFTfileIO.h
  *
  * Authors: Sintes, A.M.,  Krishnan, B.,   Prix, R.  &inspired from Siemens, X.
  *
@@ -12,7 +12,7 @@
  *-----------------------------------------------------------------------
  */
  
-/* *********************************** <lalVerbatim file="SFTbinHV">
+/* *********************************** <lalVerbatim file="SFTfileIOHV">
 Author: Sintes, A.M., 
 $Id$
 ************************************* </lalVerbatim> */
@@ -46,15 +46,15 @@ $Id$
    	      	   
 /* <lalLaTeX>  *********************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTbinIO.h}}
-\label{s:SFTbinIO.h}
+\section{Header \texttt{SFTfileIO.h}}
+\label{s:SFTfileIO.h}
 Routines for reading SFT binary files
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Synopsis}
 
 \begin{verbatim}
-#include <lal/SFTbinIO.h>
+#include <lal/SFTfileIO.h>
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -66,9 +66,9 @@ Routines for reading SFT binary files
 \vfill{\footnotesize\input{SFTbinHV}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTbinIOC}
+\newpage\input{SFTfileIOC}
 %%%%%%%%%% Test program. %%
-\newpage\input{SFTbinIOTestC}
+\newpage\input{SFTfileIOTestC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,8 +79,8 @@ Routines for reading SFT binary files
  *     Note the naming convention!
  */
 
-#ifndef _SFTBINIO_H
-#define _SFTBINIO_H
+#ifndef _SFTFILEIO_H
+#define _SFTFILEIO_H
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately 
@@ -100,6 +100,7 @@ Routines for reading SFT binary files
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/PulsarDataTypes.h>
 
 /*
  *   Protection against C++ name mangling
@@ -113,7 +114,7 @@ extern "C" {
  * 6. Assignment of Id string using NRCSID()  
  */
   
-NRCSID (SFTBINIOH, "$Id$");
+NRCSID (SFTFILEIOH, "$Id$");
   
 /*
  * 7. Error codes and messages. This must be auto-extracted for 
@@ -122,31 +123,31 @@ NRCSID (SFTBINIOH, "$Id$");
   
 /* <lalErrTable file="SFTbinHErrorTable"> */
   
-#define SFTBINH_ENULL 1
-#define SFTBINH_EFILE 2
-#define SFTBINH_EHEADER 3
-#define SFTBINH_EENDIAN 4
-#define SFTBINH_EVAL 5
-#define SFTBINH_ESEEK 9
-#define SFTBINH_EREAD 10
-#define SFTBINH_EWRITE 11
+#define SFTFILEIOH_ENULL 1
+#define SFTFILEIOH_EFILE 2
+#define SFTFILEIOH_EHEADER 3
+#define SFTFILEIOH_EENDIAN 4
+#define SFTFILEIOH_EVAL 5
+#define SFTFILEIOH_ESEEK 9
+#define SFTFILEIOH_EREAD 10
+#define SFTFILEIOH_EWRITE 11
 
-#define SFTBINH_ENONULL 12
-#define SFTBINH_EFREQBAND 13
-#define SFTBINH_EMEM 14
+#define SFTFILEIOH_ENONULL 12
+#define SFTFILEIOH_EFREQBAND 13
+#define SFTFILEIOH_EMEM 14
 
-#define SFTBINH_MSGENULL "Null pointer"
-#define SFTBINH_MSGEFILE "Could not open file"
-#define SFTBINH_MSGEHEADER "Incorrect header in file"
-#define SFTBINH_MSGEENDIAN "Incorrect endian type" 
-#define SFTBINH_MSGEVAL  "Invalid value"
-#define SFTBINH_MSGESEEK "fseek failed"
-#define SFTBINH_MSGEREAD "fread failed"
-#define SFTBINH_MSGEWRITE "fwrite failed"
+#define SFTFILEIOH_MSGENULL "Null pointer"
+#define SFTFILEIOH_MSGEFILE "Could not open file"
+#define SFTFILEIOH_MSGEHEADER "Incorrect header in file"
+#define SFTFILEIOH_MSGEENDIAN "Incorrect endian type" 
+#define SFTFILEIOH_MSGEVAL  "Invalid value"
+#define SFTFILEIOH_MSGESEEK "fseek failed"
+#define SFTFILEIOH_MSGEREAD "fread failed"
+#define SFTFILEIOH_MSGEWRITE "fwrite failed"
 
-#define SFTBINH_MSGENONULL  "Output pointer not NULL"
-#define SFTBINH_MSGEFREQBAND "Required frequency-band is not in SFT"
-#define SFTBINH_MSGEMEM 	"Out of memory"
+#define SFTFILEIOH_MSGENONULL  "Output pointer not NULL"
+#define SFTFILEIOH_MSGEFREQBAND "Required frequency-band is not in SFT"
+#define SFTFILEIOH_MSGEMEM 	"Out of memory"
 /* </lalErrTable>  */
 
 
@@ -166,37 +167,14 @@ NRCSID (SFTBINIOH, "$Id$");
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-  typedef struct tagSFTHeader1{
+  typedef struct tagSFTHeader {
     REAL8  endian;
     INT4   gpsSeconds;
     INT4   gpsNanoSeconds;
     REAL8  timeBase;
     INT4   fminBinIndex;
     INT4   length;  
-  } SFTHeader1;
-  
-  typedef struct tagCOMPLEX8SFTData1{  /* simple case */
-    LIGOTimeGPS  epoch; /* epoch of first series sample */
-    REAL8        timeBase;
-    INT4         fminBinIndex;
-    INT4         length; /* number of elements in data */ 
-    COMPLEX8     *data;  /* pointer to the data */
-  } COMPLEX8SFTData1;
-
-  typedef struct tagCOMPLEX8SFTvector1{  
-    UINT4                length; /* number of elements  */ 
-    COMPLEX8SFTData1     *sft;  /* pointer to the data */
-  } COMPLEX8SFTvector1;
-  
-  typedef struct tagCOMPLEX16SFTData1{  /* simple case */
-    LIGOTimeGPS  epoch; /* epoch of first series sample */
-    REAL8        timeBase;
-    INT4         fminBinIndex;
-    INT4         length; /* number of elements in data */ 
-    COMPLEX16     *data;  /* pointer to the data */
-  } COMPLEX16SFTData1;
-
-typedef COMPLEX8FrequencySeries         SFTtype;
+  } SFTHeader;
 
 /* just for reference: this is the FrequencySeries type:
  * {
@@ -219,38 +197,10 @@ typedef COMPLEX8FrequencySeries         SFTtype;
  * 12. Functions Declarations (i.e., prototypes).
  */
 
-void LALReadSFTbinHeader1 (LALStatus  *status,
-                   SFTHeader1    *header,
-		   CHAR          *fname
-		   );
-
-void LALReadSFTtype (LALStatus  *status,
-		 SFTtype    *sft,  /* asumed  memory is allocated  */
-		 CHAR       *fname,
-		 INT4       fminBinIndex
-		 );
-
-void ReadCOMPLEX8SFTbinData1 (LALStatus  *status,
-		   COMPLEX8SFTData1    *sft,
-		   CHAR                *fname
-		   );
-
-void ReadCOMPLEX16SFTbinData1 (LALStatus  *status,
-		   COMPLEX16SFTData1    *sft,
-		   CHAR                 *fname
-		   );
-void WriteCOMPLEX8SFTbinData1 (LALStatus          *status,
-		       COMPLEX8SFTData1   *sft,
-		       CHAR               *outfname
-		       );
-
-void WriteCOMPLEX16SFTbinData1 (LALStatus          *status,
-		       COMPLEX16SFTData1   *sft,
-		       CHAR                *outfname
-		       );
-
-  /* reinhard's draft */
-void ReadSFTfile (LALStatus *status, SFTtype **sft, const CHAR *fname, REAL8 fmin, REAL8 fmax);
+void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
+void LALReadSFTtype (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
+void LALWriteSFTtoFile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
+void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
 
 
 #ifdef  __cplusplus
