@@ -394,201 +394,62 @@ LALUTCtoGPS (LALStatus                *status,
   ASSERT (p_utcDate != (LALDate *)NULL, status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-  ASSERT (p_utcDate->unixdate.tm_year < 80 ||
+  /* Can't convert dates before 1980-Jan-06 */
+  ASSERT (p_utcDate->unixDate.tm_year > 80 ||
           (p_utcDate->unixDate.tm_year == 80 &&
-           p_utcDate->unixDate.tm_mon == 0 &&
-           p_utcDate->unixDate.tm_day < 6), status,
+           (p_utcDate->unixDate.tm_mon > 0 ||
+            (p_utcDate->unixDate.tm_mon == 0 &&
+             p_utcDate->unixDate.tm_mday >= 6))), status,
           DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
 
-  /* For dates before the beginning of GPS */
-  if ((p_utcDate->unixDate.tm_year < 80) ||
-      (p_utcDate->unixDate.tm_year == 80 && p_utcDate->unixDate.tm_mon == 0 &&
-       p_utcDate->unixDate.tm_mday < 6))
-    {
-      if (*p_accuracy == LALLEAPSEC_STRICT)
-        {
-          ABORT(status, DATEH_ERANGEGPSTOUTC, DATEH_MSGERANGEGPSTOUTC);
-        }
-      else if (*p_accuracy == LALLEAPSEC_LOOSE)
-        {
-          LALWarning(status, "conversion may be inaccurate for times before 1980-Jan-06 00:00:00 UTC (GPS 0)");
-        }
-      else
-        {
-          LALWarning(status, "conversion may be inaccurate for times before 1980-Jan-06 00:00:00 UTC (GPS 0)");
-        }
-    }
+  LALInfo(status, ">= 1980-01-06 only");
 
-  if (p_utcDate->unixDate.tm_year < 72)
-    {
-      ABORT(status, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
-    }
-
-  tmpdate.unixDate.tm_year = p_utcDate->unixDate.tm_year;
-  tmpdate.unixDate.tm_mon  = p_utcDate->unixDate.tm_mon;
-  tmpdate.unixDate.tm_mday = p_utcDate->unixDate.tm_mday;
-  tmpdate.unixDate.tm_hour = p_utcDate->unixDate.tm_hour;
-  tmpdate.unixDate.tm_min  = p_utcDate->unixDate.tm_min;
-  tmpdate.unixDate.tm_sec  = p_utcDate->unixDate.tm_sec;
-  tmpdate.residualNanoSeconds = p_utcDate->residualNanoSeconds;
-
-  /* count back how much time to 1980-01-06 */
-  if (tmpdate.unixDate.tm_year < gpsref.unixDate.tm_year)
-    {
-      LALInfo(status, "Before 1980-01-01");
+  /* start counting from the origin */
+  tmpdate.unixDate.tm_year = 80;
+  tmpdate.unixDate.tm_mon  =  0;
+  tmpdate.unixDate.tm_mday =  6;
+  tmpdate.unixDate.tm_hour =  0;
+  tmpdate.unixDate.tm_min  =  0;
+  tmpdate.unixDate.tm_sec  =  0;
+  tmpdate.residualNanoSeconds = 0;
       
-      if (tmpdate.unixDate.tm_hour > 0 && tmpdate.unixDate.tm_min > 0 &&
-          tmpdate.unixDate.tm_sec > 0)
-        {
-          dsecs -= SECS_PER_DAY - (tmpdate.unixDate.tm_hour * SECS_PER_HOUR +
-            tmpdate.unixDate.tm_min * SECS_PER_MIN +
-            tmpdate.unixDate.tm_sec);
-          tmpdate.unixDate.tm_hour = 0;
-          tmpdate.unixDate.tm_min = 0;
-          tmpdate.unixDate.tm_sec = 0;
-
-          if (tmpdate.unixDate.tm_mday == days_in_month(&tmpdate))
-            {
-              tmpdate.unixDate.tm_mday = 1;
-              tmpdate.unixDate.tm_mon++;
-            }
-          else
-            {
-              tmpdate.unixDate.tm_mday++;
-            }
-        }
-        
-      if (tmpdate.unixDate.tm_mday > 1)
-        {
-          ddays -= (days_in_month(&tmpdate) - tmpdate.unixDate.tm_mday);
-          tmpdate.unixDate.tm_mday = 1;
-          if (tmpdate.unixDate.tm_mon < 11)
-            {
-              tmpdate.unixDate.tm_mon++;
-            }
-          else
-            {
-              tmpdate.unixDate.tm_mon = 0;
-              tmpdate.unixDate.tm_year++;
-            }
-        }
-
-      while (tmpdate.unixDate.tm_mon >= 0 && tmpdate.unixDate.tm_mon < 12)
-        {
-          ddays -= days_in_month(&tmpdate);
-          tmpdate.unixDate.tm_mon++;
-        }
-      tmpdate.unixDate.tm_mon = 0;
+  while (tmpdate.unixDate.tm_year < p_utcDate->unixDate.tm_year)
+    {
+      ddays += days_in_year(&tmpdate);
       tmpdate.unixDate.tm_year++;
-      
-      while (tmpdate.unixDate.tm_year < gpsref.unixDate.tm_year)
-        {
-          ddays -= days_in_year(&tmpdate);
-          tmpdate.unixDate.tm_year++;
-        }
-
-      ddays -= 5;  /* 5 days in early Jan 1980 */
-
-      dsecs += ddays * SECS_PER_DAY;
-
-      /* add in any leap seconds that come after given date */
-      i = 0;
-      while (i < nleaps && leap_sec_data[i].year < 80)
-        {
-          if ((leap_sec_data[i].year > p_utcDate->unixDate.tm_year) &&
-              (leap_sec_data[i].mon  > p_utcDate->unixDate.tm_mon))
-            {
-              dsecs--;
-            }
-          ++i;
-        }
-
-      p_gpsTime->gpsSeconds = dsecs;
-      p_gpsTime->gpsNanoSeconds = -tmpdate.residualNanoSeconds;
     }
-  else if (tmpdate.unixDate.tm_year == 80 &&
-           tmpdate.unixDate.tm_mon  == 0  &&
-           tmpdate.unixDate.tm_mday < 6)
+  ddays -= 5; /* 5 days in early Jan 1980 */
+
+  while (tmpdate.unixDate.tm_mon < p_utcDate->unixDate.tm_mon)
     {
-      LALInfo(status, "Between 1980-01-01 and 1980-01-06");
-              
-      if (tmpdate.unixDate.tm_hour > 0 &&
-          tmpdate.unixDate.tm_min > 0 &&
-          tmpdate.unixDate.tm_sec > 0)
-        {
-          dsecs -= SECS_PER_DAY -
-            (tmpdate.unixDate.tm_hour * SECS_PER_HOUR +
-             tmpdate.unixDate.tm_min * SECS_PER_MIN +
-             tmpdate.unixDate.tm_sec);
-
-          tmpdate.unixDate.tm_hour = 0;
-          tmpdate.unixDate.tm_min  = 0;
-          tmpdate.unixDate.tm_sec  = 0;
-          tmpdate.unixDate.tm_mday++;
-        }
-          
-      while (tmpdate.unixDate.tm_mday < 6)
-        {
-          ddays -= 1;
-          tmpdate.unixDate.tm_mday++;
-        }
-
-      /* no leap seconds */
-      dsecs += ddays * SECS_PER_DAY;
-
-      p_gpsTime->gpsSeconds     = dsecs;
-      p_gpsTime->gpsNanoSeconds = -tmpdate.residualNanoSeconds;
+      ddays += days_in_month(&tmpdate);
+      tmpdate.unixDate.tm_mon++;
     }
-  else /* tmpdate.unixDate.tm_year >= 1980-01-06 */
+
+  ddays += p_utcDate->unixDate.tm_mday - 1;
+  dsecs  = ddays * SECS_PER_DAY;
+
+  dsecs += p_utcDate->unixDate.tm_hour * SECS_PER_HOUR +
+    p_utcDate->unixDate.tm_min * SECS_PER_MIN +
+    p_utcDate->unixDate.tm_sec;
+
+  /* add in leap seconds */
+  i = 9;   /* corresponds to the leap sec data for 1981-Jul-1 */
+  while (i < nleaps)
     {
-      LALInfo(status, ">= 1980-01-06");
-
-      /* start counting from the origin */
-      tmpdate.unixDate.tm_year = 80;
-      tmpdate.unixDate.tm_mon  =  0;
-      tmpdate.unixDate.tm_mday =  6;
-      tmpdate.unixDate.tm_hour =  0;
-      tmpdate.unixDate.tm_min  =  0;
-      tmpdate.unixDate.tm_sec  =  0;
-      tmpdate.residualNanoSeconds = 0;
-      
-      while (tmpdate.unixDate.tm_year < p_utcDate->unixDate.tm_year)
-        {
-          ddays += days_in_year(&tmpdate);
-          tmpdate.unixDate.tm_year++;
-        }
-      ddays -= 5; /* 5 days in early Jan 1980 */
-
-      while (tmpdate.unixDate.tm_mon < p_utcDate->unixDate.tm_mon)
-        {
-          ddays += days_in_month(&tmpdate);
-          tmpdate.unixDate.tm_mon++;
-        }
-
-      ddays += p_utcDate->unixDate.tm_mday - 1;
-      dsecs  = ddays * SECS_PER_DAY;
-
-      dsecs += p_utcDate->unixDate.tm_hour * SECS_PER_HOUR +
-        p_utcDate->unixDate.tm_min * SECS_PER_MIN +
-        p_utcDate->unixDate.tm_sec;
-
-      /* add in leap seconds */
-      i = 9;   /* corresponds to the leap sec data for 1981-Jul-1 */
-      while (i < nleaps)
-        {
-          if (leap_sec_data[i].year < p_utcDate->unixDate.tm_year)
-              dsecs++;
-          else if (leap_sec_data[i].year == p_utcDate->unixDate.tm_year &&
-                   leap_sec_data[i].mon <= p_utcDate->unixDate.tm_mon)
-            dsecs++;
+      if (leap_sec_data[i].year < p_utcDate->unixDate.tm_year)
+        dsecs++;
+      else if (leap_sec_data[i].year == p_utcDate->unixDate.tm_year &&
+               leap_sec_data[i].mon <= p_utcDate->unixDate.tm_mon)
+        dsecs++;
           
-          ++i;
-        }
-
-      p_gpsTime->gpsSeconds = dsecs;
-      p_gpsTime->gpsNanoSeconds = p_utcDate->residualNanoSeconds;
+      ++i;
     }
+
+  p_gpsTime->gpsSeconds = dsecs;
+  p_gpsTime->gpsNanoSeconds = p_utcDate->residualNanoSeconds;
+
 
   RETURN (status);
 } /* END: LALUTCtoGPS() */
