@@ -2541,7 +2541,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
   if (siteOne != siteTwo)
   {
     /* only need second frame cache if ifos differ */
-    if (frameCacheOne == NULL)
+    if (frameCacheTwo == NULL)
     {
       fprintf(stderr, "--frame-cache-two must be specified\n");
       exit(1);
