@@ -17,6 +17,10 @@
 
 NRCSID( COMPLEXFFTC, "$Id$" );
 
+#ifdef LAL_QTHREAD
+extern int dummy_have_qthread;
+#endif
+
 struct
 tagComplexFFTPlan
 {
@@ -45,6 +49,10 @@ LALCreateForwardComplexFFTPlan(
     )
 {
   INT8 fftStat;
+
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
 
@@ -91,6 +99,10 @@ LALCreateReverseComplexFFTPlan(
 {
   INT8 fftStat;
 
+#ifdef LAL_QTHREAD
+    dummy_have_qthread = 0;
+#endif
+
   INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -134,6 +146,10 @@ LALDestroyComplexFFTPlan (
 {
   INT8 fftStat;
 
+#ifdef LAL_QTHREAD
+    dummy_have_qthread = 0;
+#endif
+
   INITSTATUS( status, "LALDestroyComplexFFTPlan", COMPLEXFFTC );
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -158,6 +174,10 @@ LALCOMPLEX8VectorFFT (
     )
 {
   INT8 fftStat;
+
+#ifdef LAL_QTHREAD
+    dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
 

@@ -210,6 +210,7 @@ AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
 AM_CONDITIONAL(METAIO, test x$dataflow = xtrue)
 AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
+AM_CONDITIONAL(QTHREAD, text x$qthread = xtrue)
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -286,7 +287,11 @@ if test "${intelfft}" = "false" ; then
   fi
 else
   AC_MSG_WARN(Using Intel FFT routines)
-  AC_CHECK_LIB(pthread, pthread_create, , [AC_MSG_ERROR(could not find pthread library)])
+  if test "x${qthread}" = "xtrue" ; then
+    LAL_INTEL_MKL_QTHREAD_WARNING
+  else
+    AC_CHECK_LIB(pthread, pthread_create, , [AC_MSG_ERROR(could not find pthread library)])
+  fi
   AC_CHECK_LIB(guide, __kmp_abort, , [AC_MSG_ERROR(could not find pthread library)])
   AC_CHECK_HEADERS(pthread.h, , [AC_MSG_ERROR(could not find pthread header)])
   if test "${enable_static}" = "yes"; then

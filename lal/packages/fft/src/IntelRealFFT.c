@@ -17,6 +17,8 @@
 
 NRCSID( REALFFTC, "$Id$" );
 
+extern int dummy_have_qthread;
+
 struct
 tagRealFFTPlan
 {
@@ -46,6 +48,10 @@ LALCreateForwardRealFFTPlan(
     )
 {
   INT8  fftStat;
+
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
 
@@ -104,6 +110,10 @@ LALCreateReverseRealFFTPlan(
 {
   INT8  fftStat;
 
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
+
   INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -159,6 +169,10 @@ LALDestroyRealFFTPlan(
 {
   INT8  fftStat;
 
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
+
   INITSTATUS( status, "LALDestroyRealFFTPlan", REALFFTC );
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -188,6 +202,10 @@ LALForwardRealFFT(
   INT8 fftStat;
   UINT4 n;
   UINT4 k;
+
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALForwardRealFFT", REALFFTC );
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -244,6 +262,10 @@ LALReverseRealFFT(
   INT8 fftStat;
   UINT4 n;
   UINT4 k;
+
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALReverseRealFFT", REALFFTC );
 
@@ -304,6 +326,10 @@ LALRealPowerSpectrum (
   UINT4 n;
   UINT4 k;
 
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
+
   INITSTATUS( status, "LALRealPowerSpectrum", REALFFTC );
   
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -354,6 +380,10 @@ LALREAL4VectorFFT(
   INT8 fftStat;
   UINT4 n;
   UINT4 k;
+
+#ifdef LAL_QTHREAD
+  dummy_have_qthread = 0;
+#endif
 
   INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
 

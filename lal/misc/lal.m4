@@ -155,6 +155,7 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
         [ case "${enableval}" in
             yes) intelfft=true;;
             no)  intelfft=false ;;
+            condor) intelfft=true ; qthread=true ; AC_DEFINE(LAL_QTHREAD, 1, Use fake qthread library for MKL Condor compatibility) ;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-intelfft) ;;
           esac
         ], [ intelfft=false ] )
@@ -194,6 +195,25 @@ AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
             *) AC_MSG_ERROR(bad value for ${enableval} for --enable-pthread-lock) ;;
           esac
         ], [ lal_pthread_lock=false ] )
+])
+
+AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
+[echo "**************************************************************"
+ echo "* LAL will be linked against the fake POSIX thread library!  *"
+ echo "*                                            .               *"
+ echo "* This build of LAL will not be thread safe and cannot be    *"
+ echo "* linked agaubst the system pthread library.                 *"
+ echo "*                                                            *"
+ echo "* The environment variables                                  *"
+ echo "*                                                            *"
+ echo "*    MKL_SERIAL=true                                         *"
+ echo "*    KMP_LIBRARY=serial                                      *"
+ echo "*                                                            *"
+ echo "* must be set before running executables linked against this *"
+ echo "* build of LAL.                                              *"
+ echo "*                                                            *"
+ echo "* Please see the documention of the FFT package for details. *"
+ echo "**************************************************************"
 ])
 
 AC_DEFUN([LAL_INTEL_FFT_LIBS_MSG_ERROR],
