@@ -98,6 +98,7 @@ CHAR *ifoOne = NULL;
 CHAR *ifoTwo = NULL;
 INT4 siteOne;
 INT4 siteTwo;
+INT4 calibOffset = 0;
 
 /* frequency band */
 INT4 fMin = -1;
@@ -883,11 +884,17 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* compute response function */
     respTempOneA->epoch = gpsSegmentAStart;
+    respTempOneA->epoch.gpsSeconds += calibOffset;
     respTempOneB->epoch = gpsSegmentBStart;
+    respTempOneB->epoch.gpsSeconds += calibOffset;
     respTempOneC->epoch = gpsSegmentCStart;
+    respTempOneC->epoch.gpsSeconds += calibOffset;
     respTempTwoA->epoch = gpsSegmentAStart;
+    respTempTwoA->epoch.gpsSeconds += calibOffset;
     respTempTwoB->epoch = gpsSegmentBStart;
+    respTempTwoB->epoch.gpsSeconds += calibOffset;
     respTempTwoC->epoch = gpsSegmentCStart;
+    respTempTwoC->epoch.gpsSeconds += calibOffset;
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
     LAL_CALL(LALExtractFrameResponse(&status, respTempOneA, calCacheOne, \
@@ -1164,6 +1171,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --frame-cache-two FILE        cache file for second stream\n"\
   " --calibration-cache-one FILE  first stream calibration cache\n"\
   " --calibration-cache-two FILE  second stream calibration cache\n"\
+  " --calibration-offset N        calibration offset\n"\
   " --apply-mask                  apply frequency masking\n"\
   " --mask-bin N                  number of bins to mask\n"\
   " --overlap-hann                overlaping hann windows\n"\
@@ -1215,6 +1223,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"frame-cache-two", required_argument, 0, 'D'},
       {"calibration-cache-one", required_argument, 0, 'r'},
       {"calibration-cache-two", required_argument, 0, 'R'},
+      {"calibration-offset", required_argument, 0, 'o'},
       {"debug-level", required_argument, 0, 'z'},
       {"hpf-frequency", required_argument, 0, 'k'},
       {"hpf-attenuation", required_argument, 0, 'p'},
@@ -1549,6 +1558,11 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        break;
+
+      case 'o':
+        /* calibration offset */
+        calibOffset = atoi(optarg);
         break;
 
       case 'z':
