@@ -214,3 +214,33 @@ void readInspiralTriggers(
         SnglInspiralTable **eventList, 
         const CHAR *fname
         );
+
+void
+buildSimInspiralIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SimInspiralIndex        *params
+        );
+
+void
+getSimInspiralVars(
+        LALStatus                *status,
+        const MetaioParseEnv      triggerEnv,
+        SimInspiralTable        *inspiralEvent,
+        SimInspiralIndex        *params
+        );
+
+void
+getSearchSummaryTable(
+        LALStatus                *status,
+        const MetaioParseEnv      triggerEnv,
+        SearchSummaryTable        *table,
+        SearchSummaryIndex        *params
+        );
+
+void
+buildSearchSummaryIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SearchSummaryIndex        *params
+        );
