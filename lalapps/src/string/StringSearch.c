@@ -214,13 +214,6 @@ int main(int argc,char *argv[])
 /************************************* MAIN PROGRAM ENDS *************************************/
 
 
-
-
-
-
-
-
-
 /*******************************************************************************/
 
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, 
@@ -741,25 +734,10 @@ int ReadData(struct CommandLineArgsTag CLA)
 
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
 {
-  INT4 c, errflg = 0;
+  INT4 errflg = 0;
   optarg = NULL;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
-  int option_index;
-  
-  /* Initialize default values */
-  CLA->flow=0.0;
-  CLA->FrCacheFile=NULL;
-  CLA->InjectionFile=NULL;
-  CLA->ChannelName=NULL;
-  CLA->GPSStart=0;
-  CLA->GPSEnd=0;
-  CLA->NoOfSegs=0;
-  CLA->TruncSecs=0;
-  CLA->power=0.0;
-  CLA->fbanklow=0.0;
-  CLA->threshold=0.0;
-  CLA->fakenoiseflag=0;
-  
+
   /* Need to add long options */
   struct option long_options[] = {
     {"low-freq-cutoff",     required_argument, NULL,           'f'},
@@ -775,15 +753,38 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"cusp-search",                no_argument, NULL,         'c' },
     {"kink-search",                no_argument, NULL,         'k' },
     {"fake-gaussian-noise",        no_argument, NULL,         'n' },
-    {NULL, 0, NULL, 0}
+    {"help",        no_argument, NULL,         'h' },
+    {0, 0, 0, 0}
   };
+  char args[] = "hnckf:b:t:F:C:E:S:i:N:T:";
 
-
+  /* Initialize default values */
+  CLA->flow=0.0;
+  CLA->FrCacheFile=NULL;
+  CLA->InjectionFile=NULL;
+  CLA->ChannelName=NULL;
+  CLA->GPSStart=0;
+  CLA->GPSEnd=0;
+  CLA->NoOfSegs=0;
+  CLA->TruncSecs=0;
+  CLA->power=0.0;
+  CLA->fbanklow=0.0;
+  CLA->threshold=0.0;
+  CLA->fakenoiseflag=0;
+  
   /* Scan through list of command line arguments */
-  opterr = 1;	/* enable error messages */
-  optind = 0;	/* start scanning from argv[0] */
-  do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) 
+  while ( 1 )
+  {
+    int option_index = 0; /* getopt_long stores long option here */
+    int c;
+
+    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    if ( c == -1 ) /* end of options */
+      break;
+
+    switch ( c )
     {
+
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
@@ -810,7 +811,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       ADD_PROCESS_PARAM("string");
       break;
     case 'i':
-      /* name channel */
+      /* name of xml injection file */
       CLA->InjectionFile=optarg;
       ADD_PROCESS_PARAM("string");
       break;
@@ -873,7 +874,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Unrecognized option argument %c\n",c);
       exit(1);
       break;
-    }while(c != -1);
+    }
+    }
 
   if(CLA->flow == 0.0)
     {
