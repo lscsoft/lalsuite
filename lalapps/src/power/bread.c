@@ -95,6 +95,28 @@ int main(int argc, char **argv)
     INT4                     maxDurationFlag=0;
     REAL4                    maxDuration=0.0;
 
+    /* central_freq threshold */
+    INT4                     maxCentralfreqFlag=0;
+    REAL4                    maxCentralfreq=0.0;
+    INT4                     minCentralfreqFlag=0;
+    REAL4                    minCentralfreq=0.0;
+
+    /* bandwidth threshold */ 
+    INT4                     maxBandwidthFlag=0;
+    REAL4                    maxBandwidth=0.0;
+
+    /* amplitude threshold */
+    INT4                     maxAmplitudeFlag=0;
+    REAL4                    maxAmplitude=0.0;
+    INT4                     minAmplitudeFlag=0;
+    REAL4                    minAmplitude=0.0;
+
+    /* snr threshold */
+    INT4                     maxSnrFlag=0;
+    REAL4                    maxSnr=0.0;                           
+    INT4                     minSnrFlag=0;
+    REAL4                    minSnr=0.0;         
+
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
 
     CHAR                     *outfileName=NULL;
@@ -122,9 +144,16 @@ int main(int argc, char **argv)
 	    {"max-confidence",	required_argument,  0,	'd'},
 	    {"min-duration",	required_argument,  0,	'e'},
 	    {"max-duration",	required_argument,  0,	'f'},
-	    {"noplayground",	required_argument,  0,	'g'},
-	    {"help",		no_argument,	    0,	'h'}, 
-	    {"sort",		no_argument,	    0,	'i'},
+            {"min-centralfreq", required_argument,  0,  'g'},
+	    {"max-centralfreq", required_argument,  0,  'h'},
+	    {"max-bandwidth",   required_argument,  0,  'i'},
+	    {"min-amplitude",   required_argument,  0,  'j'},
+	    {"max-amplitude",   required_argument,  0,  'k'},
+	    {"min-snr",         required_argument,  0,  'l'},
+	    {"max-snr",         required_argument,  0,  'm'},
+	    {"noplayground",	required_argument,  0,	'n'},
+	    {"help",		no_argument,	    0,	'o'}, 
+	    {"sort",		no_argument,	    0,	'p'},
 	    {0, 0, 0, 0}
 	};
 	/* getopt_long stores the option index here. */
@@ -190,15 +219,71 @@ int main(int argc, char **argv)
               maxDuration = atof( optarg );
 	    }
 	    break;
-   
+
 	case 'g':
+	     /* only events with centralfreq greater than this are selected */
+	    {
+              minCentralfreqFlag = 1;
+              minCentralfreq = atof( optarg );
+	    }
+	    break;
+    
+	case 'h':
+	    /* only events with centralfreq less than this are selected */
+	    {
+              maxCentralfreqFlag = 1;
+              maxCentralfreq = atof( optarg );
+	    }
+	    break;
+
+	case 'i': 
+             /* only events with bandwidth less than this are selected */
+	    {
+              maxBandwidthFlag = 1;
+              maxBandwidth = atof( optarg );
+	    }
+	    break;
+    
+	case 'j':
+	    /* only events with amp. more than this are selected */
+	    {
+              minAmplitudeFlag = 1;
+              minAmplitude = atof( optarg );
+	    }
+	    break;
+
+	case 'k':
+	    /* only events with amp. less than this are selected */
+            {
+              maxAmplitudeFlag = 1;
+              maxAmplitude = atof( optarg );
+	    }
+	    break;
+
+        case 'l':
+            /* only events with snr more than this are selected */
+	    {
+              minSnrFlag = 1;
+              minSnr = atof( optarg );
+	    }
+	    break;
+
+	case 'm':
+	    /* only events with snr less than this are selected */
+            {
+              maxSnrFlag = 1;
+              maxSnr = atof( optarg );
+	    }
+	    break;
+   
+	case 'n':
 	    /* don't restrict to the playground data */
 	    {
 		playground = FALSE;
 	    }
 	    break;
     
-	case 'h':
+	case 'o':
 	    /* print help */
 	    {
 		LALPrintError( USAGE, *argv );
@@ -207,7 +292,7 @@ int main(int argc, char **argv)
 	    break;
 
 	    
-	case 'i':
+	case 'p':
 	    /* sort the events in time */
 	    {
 		sort = TRUE;
@@ -317,6 +402,34 @@ int main(int argc, char **argv)
 
       /* check max duration */
       if( maxDurationFlag && !(tmpEvent->duration < maxDuration) )
+        pass = FALSE;
+
+      /* check min centralfreq */
+      if( minCentralfreqFlag && !(tmpEvent->central_freq > minCentralfreq) )
+        pass = FALSE;
+
+      /* check max centralfreq */
+      if( maxCentralfreqFlag && !(tmpEvent->central_freq < maxCentralfreq) )
+        pass = FALSE;
+
+      /* check max bandwidth */
+      if( maxBandwidthFlag && !(tmpEvent->bandwidth < maxBandwidth) )
+        pass = FALSE;
+
+      /* check min amplitude */
+      if( minAmplitudeFlag && !(tmpEvent->amplitude > minAmplitude) )
+        pass = FALSE;
+
+      /* check max amplitude */
+      if( maxAmplitudeFlag && !(tmpEvent->amplitude < maxAmplitude) )
+        pass = FALSE;
+
+      /* check min snr */
+      if( minSnrFlag && !(tmpEvent->snr > minSnr) )
+        pass = FALSE;
+
+      /* check max snr */
+      if( maxSnrFlag && !(tmpEvent->snr < maxSnr) )
         pass = FALSE;
 
       /* check if trigger starts in playground */
