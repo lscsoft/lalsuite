@@ -207,8 +207,7 @@ int main(int argc,char *argv[])
 		      for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
 			{
 			  CandINDICES *p, can;
-			  INT4 keepgoing;
-			  
+			  			  
 			  can.iFreq=iFreq2;
 			  can.iAlpha=iAlpha2;
 			  can.iDelta=iDelta2;
@@ -219,42 +218,21 @@ int main(int argc,char *argv[])
 			    {
 			      /* Now we've found at least one candidate */
 			      /* we need to move to the right edge (without segfaulting!) */
-			      if ( p->iCandSorted > 0)
-				{
-				  keepgoing = 1;
-				  while ( keepgoing )
-				    {
-				      if( (p->iFreq == (p-1)->iFreq) && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha)) 
-					{
-					  p--;
-					}else{
-					  keepgoing=0;
-					}
-				      if ( p->iCandSorted == 0 )
-					{
-					  keepgoing=0;
-					}
-				    }
-				}
-			      /* Now p points to first coincident event in the second list */
+
+			      while ((p->iCandSorted > 0) && (p->iFreq == (p-1)->iFreq) 
+				     && ( p->iDelta == (p-1)->iDelta) && ( p->iAlpha == (p-1)->iAlpha))
+				p--;
+			    
+			  /* Now p points to first coincident event in the second list */
 			      
-			      /* Now loop over candidates found in the second list and do the fine coincidence test */
-			      keepgoing = 1;
-			      while (keepgoing)
-				{
-				  if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
-				  if ( p->iCandSorted ==  (int)CList2.length - 1)
-				    {
-				      keepgoing=0;
-				      continue;
-				    }
-				  if( (p->iFreq == (p+1)->iFreq) && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha)) 
-				    {
-				      p++;
-				    }else{
-				      keepgoing=0;
-				    }
-				}
+			  /* Now loop over candidates found in the second list and do the fine coincidence test */
+			  if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+			  while ( (p->iCandSorted <  (int)CList2.length) &&  (p->iFreq == (p+1)->iFreq) 
+				  && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha))
+			    { 
+			      p++;
+			      if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+			    }
 
 			    }/* check that besearch was non-null */
 			} /* loop over deltas */
@@ -262,26 +240,26 @@ int main(int argc,char *argv[])
 		}/* loop over frequencies */    
 	    } /* check that frequency lies between two input bounds */
 	} /* loop over 1st candidate list */
-
+      
       LALFree(SortedC1);
       LALFree(SortedC2);
-
+      
     }
 
   /* freeing a CList is a bit tedious, so we use a macro */
 #define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); LALFree((x).Ctag);LALFree((x).CtagCounter);} while(0)
   
- 
+  
   /* Ouput candidates */
   if (OutputCoincidences( PolkaCommandLineArgs )) return 4;
-
+  
   if(CList1.length) freeCList(CList1);
   if(CList2.length) freeCList(CList2);
 
   LALCheckMemoryLeaks(); 
 
   return 0;
-
+ 
 }
 
 /*******************************************************************************/
@@ -496,7 +474,6 @@ int compareCIStructs(const void *a, const void *b)
 	    return 0;
 	}
     }
-
   return 1;
 }
 
@@ -603,7 +580,6 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 	  TRY( LALDestroyParsedDataFile ( stat->statusPtr, &Fstats ), stat);
 	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
 	}
-
     }
 
 
@@ -619,7 +595,6 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
 		     "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
 		     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
 		     &(cands.f[i]), &(cands.Alpha[i]), &(cands.Delta[i]), &dmp, &dmp, &dmp, &(cands.F[i]) );
-
 
       if ( read != 7 )
 	{
