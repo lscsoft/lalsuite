@@ -63,7 +63,7 @@ status & status                    & Explanation                           \\
 \begin{verbatim}
 struct PassBandParamStruc
 \end{verbatim}
-\index{\verb&PassBandParamStruc&}
+\index{\texttt{PassBandParamStruc}}
 
 \noindent This structure stores data used for constructing a low- or
 high-pass filter: either the order and characteristic frequency of the

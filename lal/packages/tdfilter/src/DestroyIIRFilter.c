@@ -13,8 +13,8 @@ Destroys IIR filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{DestroyIIRFilterCP}
-\index{\verb&LALDestroyREAL4IIRFilter()&}
-\index{\verb&LALDestroyREAL8IIRFilter()&}
+\index{\texttt{LALDestroyREAL4IIRFilter()}}
+\index{\texttt{LALDestroyREAL8IIRFilter()}}
 
 \subsubsection*{Description}
 

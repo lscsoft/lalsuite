@@ -13,8 +13,8 @@ Creates IIR filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CreateIIRFilterCP}
-\index{\verb&LALCreateREAL4IIRFilter()&}
-\index{\verb&LALCreateREAL8IIRFilter()&}
+\index{\texttt{LALCreateREAL4IIRFilter()}}
+\index{\texttt{LALCreateREAL8IIRFilter()}}
 
 \subsubsection*{Description}
 

@@ -13,10 +13,10 @@ Computes an instant-by-instant IIR filter response.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{IIRFilterCP}
-\index{\verb&LALIIRFilterREAL4()&}
-\index{\verb&LALIIRFilterREAL8()&}
-\index{\verb&LALSIIRFilter()&}
-\index{\verb&LALDIIRFilter()&}
+\index{\texttt{LALIIRFilterREAL4()}}
+\index{\texttt{LALIIRFilterREAL8()}}
+\index{\texttt{LALSIIRFilter()}}
+\index{\texttt{LALDIIRFilter()}}
 
 \subsubsection*{Description}
 

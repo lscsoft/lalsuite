@@ -157,8 +157,8 @@ by the symbol \verb@IIRFILTERH_MSGE@\textit{name}.
 \begin{verbatim}
 <datatype>IIRFilter
 \end{verbatim}
-\index{\verb&REAL4IIRFilter&}
-\index{\verb&REAL8IIRFilter&}
+\index{\texttt{REAL4IIRFilter}}
+\index{\texttt{REAL8IIRFilter}}
 
 \noindent This structure stores the direct and recursive filter
 coefficients, as well as the history of the auxiliary sequence $w$.

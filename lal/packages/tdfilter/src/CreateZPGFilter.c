@@ -13,8 +13,8 @@ Creates ZPG filter objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{CreateZPGFilterCP}
-\index{\verb&LALCreateCOMPLEX8ZPGFilter()&}
-\index{\verb&LALCreateCOMPLEX16ZPGFilter()&}
+\index{\texttt{LALCreateCOMPLEX8ZPGFilter()}}
+\index{\texttt{LALCreateCOMPLEX16ZPGFilter()}}
 
 \subsubsection*{Description}
 

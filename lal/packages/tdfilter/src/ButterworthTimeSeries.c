@@ -19,8 +19,8 @@ Applies a low- or high-pass Butterworth filter to a time series.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{ButterworthTimeSeriesD}
-\index{\verb&LALButterworthREAL4TimeSeries()&}
-\index{\verb&LALButterworthREAL8TimeSeries()&}
+\index{\texttt{LALButterworthREAL4TimeSeries()}}
+\index{\texttt{LALButterworthREAL8TimeSeries()}}
 
 \subsubsection*{Description}
 
