@@ -2033,8 +2033,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
 
   /* create fft plan */
-  LAL_CALL(LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
-        psdWindowLength, 0), &status);
+  specparPSD.plan = XLALCreateForwardREAL4FFTPlan(psdWindowLength, 0);
 
   if (vrbflg)
     fprintf(stdout, "Creating window for PSD estimation...\n");
@@ -2064,8 +2063,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   fftDataLength = (zeroPadLength / 2) + 1;
 
   /* create fft plan */
-  LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fftDataPlan, \
-        zeroPadLength, 0), &status);
+  fftDataPlan = XLALCreateForwardREAL4FFTPlan(zeroPadLength, 0);
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for zeropad...\n");
@@ -2758,8 +2756,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
   XLALDestroyREAL4TimeSeries(segmentTwo);
-  LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
-  LAL_CALL(LALDestroyRealFFTPlan(&status, &fftDataPlan), &status);
+  XLALDestroyREAL4FFTPlan(specparPSD.plan);
+  XLALDestroyREAL4FFTPlan(fftDataPlan);
   XLALDestroyREAL4FrequencySeries(psdTempOne);
   XLALDestroyREAL4FrequencySeries(psdTempTwo);
   XLALDestroyREAL4FrequencySeries(psdOne);
