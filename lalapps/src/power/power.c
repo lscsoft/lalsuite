@@ -1580,7 +1580,7 @@ int main( int argc, char *argv[])
 	 * Output the results.
 	 */
 
-	snprintf(outfilename, sizeof(outfilename)-1, "%s-%s-POWER-%d-%d.xml", ifo, options.comment, options.startEpoch.gpsSeconds, options.stopEpoch.gpsSeconds - options.startEpoch.gpsSeconds);
+	snprintf(outfilename, sizeof(outfilename)-1, "%c-%s_%s_POWER-%d-%d.xml", ifo[0], ifo, options.comment, options.startEpoch.gpsSeconds, options.stopEpoch.gpsSeconds - options.startEpoch.gpsSeconds);
 	outfilename[sizeof(outfilename)-1] = '\0';
 	output_results(&stat, outfilename, &procTable, &procparams, &searchsumm, burstEvent);
 
