@@ -1927,7 +1927,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsCalibTime;
   REAL4TimeSeries *segmentOne = NULL;
   REAL4TimeSeries *segmentTwo = NULL;
-  REAL4Vector *segOne[100], *segTwo[100];
 
   /* window for segment data streams */
   REAL4Window *dataWindow;
@@ -1935,7 +1934,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* response functions */
   COMPLEX8FrequencySeries *responseOne = NULL;
   COMPLEX8FrequencySeries *responseTwo = NULL;
-  COMPLEX8Vector *respOne[100], *respTwo[100];
   INT4 respLength;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
@@ -2070,13 +2068,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   intervalLength = intervalDuration * resampleRate;
   segmentLength = segmentDuration * resampleRate;
 
-  /* allocate memory for temporary segments - to be re-worked */
-  for (i = 0; i < segsInInt; i++)
-  {
-    segOne[i] = XLALCreateREAL4Vector(segmentLength);
-    segTwo[i] = XLALCreateREAL4Vector(segmentLength);
-  }
-
   /* get bins for min and max frequencies */
   numFMin = (INT4)(fMin / deltaF);
   numFMax = (INT4)(fMax / deltaF);
@@ -2090,13 +2081,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set parameters for response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
-
-  /* allocate memory for temporary response functions */
-  for (i = 0; i < segsInInt; i++)
-  {
-    respOne[i] = XLALCreateCOMPLEX8Vector(filterLength);
-    respTwo[i] = XLALCreateCOMPLEX8Vector(filterLength);
-  }
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
@@ -2146,56 +2130,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* loop over intervals */
   for (interLoop = 0; interLoop < numIntervals; interLoop++)
   {	
-    /* loop over segments */
-    for (segLoop = 0; segLoop < segsInInt; segLoop++)
-    {
-      /* get segment start/end time */
-      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
-            (REAL8)((interLoop * segmentShift) + \
-                    (segLoop * segmentDuration))), &status);
-      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
-            (REAL8)segmentDuration), &status);
-
-      /* is this the analysis segment */
-      if (segLoop == segMiddle)
-      {
-        gpsAnalysisTime = gpsSegStartTime;
-      }
-
-      if (vrbflg)
-      {
-        fprintf(stdout, "request data at GPS time %d\n", \
-            gpsSegStartTime.gpsSeconds);
-      }
-
-      /* cut segments from series */
-      segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
-          gpsSegEndTime);
-      segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
-          gpsSegEndTime);
-
-      /* store in memory */
-      for (i = 0; i < segmentLength; i++)
-      {
-        segOne[segLoop]->data[i] = segmentOne->data->data[i];
-        segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
-      }
-
-      /* compute response functions */
-      gpsCalibTime.gpsSeconds = gpsSegStartTime.gpsSeconds + calibOffset;
-      responseOne = generate_response(&status, ifoOne, calCacheOne, \
-          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-      responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
-
-      /* store in memory */
-      for (i = 0; i < filterLength; i++)
-      {
-        respOne[segLoop]->data[i] = responseOne->data->data[i];
-        respTwo[segLoop]->data[i] = responseTwo->data->data[i];
-      }
-    }
-
     /* initialize average PSDs */
     for (i = 0; i < filterLength; i++)
     {
@@ -2203,6 +2137,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       calPsdTwo->data[i] = 0;
     }
 
+    /* loop over segments in the interval */
     for (segLoop = 0; segLoop < segsInInt; segLoop++)
     {
       /* set segment start and end time */
@@ -2216,26 +2151,30 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
             (REAL8)calibOffset), &status);
 
-      /* set epoch for segments and response functions */
-      segmentOne->epoch = gpsSegStartTime;
-      segmentTwo->epoch = gpsSegStartTime;
-      responseOne->epoch = gpsCalibTime;
-      responseTwo->epoch = gpsCalibTime;
-
-      /* get response function for current segment from temporary
-       * storage */
-      for (i = 0; i < filterLength; i++)
+      /* is this the analysis segment */
+      if (segLoop == segMiddle)
       {
-        responseOne->data->data[i] = respOne[segLoop]->data[i];
-        responseTwo->data->data[i] = respTwo[segLoop]->data[i];
+        gpsAnalysisTime = gpsSegStartTime;
       }
 
-      /* get current segment from temporary storage */
-      for (i = 0; i < segmentLength; i++)
+      if (vrbflg)
       {
-        segmentOne->data->data[i] = segOne[segLoop]->data[i];
-        segmentTwo->data->data[i] = segTwo[segLoop]->data[i];
+        fprintf(stdout, "Request data at GPS time %d\n", \
+            gpsSegStartTime.gpsSeconds);
       }
+
+      /* cut segments from series */
+      segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
+          gpsSegEndTime);
+      segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
+          gpsSegEndTime);
+
+      /* compute response functions */
+      responseOne = generate_response(&status, ifoOne, calCacheOne, \
+          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+      responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
+          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
@@ -2301,12 +2240,13 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsAnalysisTime.gpsSeconds);
     }
 
-    /* copy to temporary storage */
-    for (i = 0; i < segmentLength; i++)
-    {
-      segmentOne->data->data[i] = segOne[segMiddle]->data[i];
-      segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
-    }
+    /* cut analysis segment from series */
+    LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsAnalysisTime, \
+          (REAL8)segmentDuration), &status);
+    segmentOne = cut_time_series(&status, seriesOne, gpsAnalysisTime, \
+        gpsSegEndTime);
+    segmentTwo = cut_time_series(&status, seriesTwo, gpsAnalysisTime, \
+        gpsSegEndTime);
 
     if (vrbflg)
       fprintf(stdout, "Constructing cross correlation spectrum...\n");
@@ -2525,13 +2465,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
-  for (i = 0; i <segsInInt; i++)
-  {
-    XLALDestroyCOMPLEX8Vector(respOne[i]);
-    XLALDestroyCOMPLEX8Vector(respTwo[i]);
-    XLALDestroyREAL4Vector(segOne[i]);
-    XLALDestroyREAL4Vector(segTwo[i]);
-  }
 
   /* free memory used in the stochastic xml table */
   while (stochHead)
