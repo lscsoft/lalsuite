@@ -2353,12 +2353,8 @@ EstimateFLines(LALStatus *stat)
    clustersInput->outliersParams= outliersParams;
    clustersInput->outliers      = outliers;     
    
-   /* clusters of outliers in F get written in SpLines which is */
-   /* the global highFLines*/
-   if ((j=DetectClusters(clustersInput, SpClParams, SpLines))) {
-     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);	/* tmp: FIXME */
-   }
-   
+   /* clusters of outliers in F get written in SpLines which is the global highFLines*/
+   TRY (DetectClusters(stat->statusPtr, clustersInput, SpClParams, SpLines), stat);
    
    /*  sum of points in all lines */
    Ntot=0;
