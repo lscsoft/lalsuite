@@ -117,8 +117,9 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   ASSERT ( pgI <= firstBin, status, PHMDH_EINT, PHMDH_MSGEINT);
   ASSERT ( pgF >= lastBin,  status, PHMDH_EINT, PHMDH_MSGEINT);
 
-  /* -------------------------------------------   */
+  /* -------------------------------------------------------------------   */
   /* initialization */
+  /* -------------------------------------------------------------------   */
   n= pg->length;
 
   lengthLeft = 0;
@@ -134,78 +135,117 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   minPeakBin = firstBin - pgI;
   maxPeakBin =  lastBin - pgI;
     
-  /* -------------------------------------------   */
-  if(n){ /* only if there are peaks present */
-    INT2  lb1,rb1,lb2,rb2;
-    INT2  max1,min1,max2,min2;
-    INT2  nBinPos;
+ /* -------------------------------------------------------------------   */
+         /* -------------------------------------------   */
+  if(n){  /* only if there are peaks present */
+         /* -------------------------------------------   */
+    INT2   lb1,rb1,lb2,rb2;
+    INT2   max1,min1,max2,min2;
+    INT2   nBinPos;
+    UCHAR  test1;
 
     nBinPos = (lut->iniBin) + (lut->nBin) -1;
-
-    /* searching for the initial peak to look at */
-    searchIndex = (n * minPeakBin ) /(pgF-pgI+1);
-    
-    while( pg->peak[searchIndex -1] >=  minPeakBin )
-      --searchIndex;
-
-    while( pg->peak[searchIndex] <  minPeakBin )
-      ++searchIndex;
-    
     shiftPeak = pgI - (phmd->fBin);
 
-    /* for all the interesting peaks (or none) */
-    while( (thisPeak = pg->peak[searchIndex] ) <=  maxPeakBin ){
-      /* relative Index */
-      relatIndex = thisPeak + shiftPeak;
+   /* -------------------------------------------------------------------   */
+   /* searching for the initial peak to look at */
+   /* -------------------------------------------------------------------   */
 
-      i = relatIndex;
-      if( relatIndex < 0 )  i =  nBinPos - relatIndex;
-
-      /* Reading the bin information */
-      lb1 = lut->bin[i].leftB1;
-      rb1 = lut->bin[i].rightB1;
-      lb2 = lut->bin[i].leftB2;
-      rb2 = lut->bin[i].rightB2;
-      
-      max1 = lut->bin[i].piece1max;
-      min1 = lut->bin[i].piece1min; 
-      max2 = lut->bin[i].piece2max;
-      min2 = lut->bin[i].piece2min; 
-
-      /* border selection from lut */
-
-      if(lb1){
-	phmd->leftBorderP[lengthLeft] = &( lut->border[lb1] );
-	++lengthLeft;
+    searchIndex = (n * minPeakBin ) /(pgF-pgI+1);
+    if (searchIndex >= n) { searchIndex = n-1;}
+  
+    /* moving backwards */
+    /* -----------------*/
+    
+    test1=1;
+    while (searchIndex >0 && test1) {
+      if ( pg->peak[searchIndex -1] >=  minPeakBin ) {
+        --searchIndex;
       }
-
-      if(lb2){
-	phmd->leftBorderP[lengthLeft] = &( lut->border[lb2] );
-	++lengthLeft;
-      }
-
-      if(rb1){
-	phmd->rightBorderP[lengthRight] = &( lut->border[rb1] );
-	++lengthRight;
-      }
-
-      if(rb2){
-	phmd->rightBorderP[lengthRight] = &( lut->border[rb2] );
-	++lengthRight;
-      }
-
-      /* correcting 1st column */
-      for(j=min1; j<=max1; ++j) { phmd->firstColumn[j] = 1; }
-      for(j=min2; j<=max2; ++j) { phmd->firstColumn[j] = 1; }
-
-
-      ++searchIndex;
+      else {
+        test1=0;
+      } 
     }
+    
+    /* moving forwards */
+    /* -----------------*/
+    
+    test1=1;
+    while (searchIndex < n-1  && test1) {
+      if ( pg->peak[searchIndex] <  minPeakBin ) {
+        ++searchIndex;
+      }
+      else {
+        test1=0;
+      } 
+    }
+    
+    /* -------------------------------------------------------------------   */
+    /* for all the interesting peaks (or none) */
+    /* -------------------------------------------------------------------   */
+    
+    test1=1;
+    
+    while (searchIndex < n  && test1) {
+      thisPeak = pg->peak[searchIndex];
+      
+      if (thisPeak > maxPeakBin) {
+        test1=0;
+      } else {
+        if ( thisPeak >= minPeakBin) { /* we got a peak */
+	  /* relative Index */
+	  relatIndex = thisPeak + shiftPeak;
+	  
+	  i = relatIndex;
+	  if( relatIndex < 0 )  i =  nBinPos - relatIndex;
+	  
+	  /* Reading the bin information */
+	  lb1 = lut->bin[i].leftB1;
+	  rb1 = lut->bin[i].rightB1;
+	  lb2 = lut->bin[i].leftB2;
+	  rb2 = lut->bin[i].rightB2;
+	  
+	  max1 = lut->bin[i].piece1max;
+	  min1 = lut->bin[i].piece1min; 
+	  max2 = lut->bin[i].piece2max;
+	  min2 = lut->bin[i].piece2min; 
+	  
+	  /* border selection from lut */
+	  
+	  if(lb1){
+	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb1] );
+	    ++lengthLeft;
+	  }
+	  
+	  if(lb2){
+	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb2] );
+	    ++lengthLeft;
+	  }
+	  
+	  if(rb1){
+	    phmd->rightBorderP[lengthRight] = &( lut->border[rb1] );
+	    ++lengthRight;
+	  }
 
+	  if(rb2){
+	    phmd->rightBorderP[lengthRight] = &( lut->border[rb2] );
+	    ++lengthRight;
+	  }
+	  
+	  /* correcting 1st column */
+	  for(j=min1; j<=max1; ++j) { phmd->firstColumn[j] = 1; }
+	  for(j=min2; j<=max2; ++j) { phmd->firstColumn[j] = 1; }
+	  
+	}
+        ++searchIndex;
+      }
+      /* -------------------------------------------------------------------   */
+            
+    }
   }
-
-  /* -------------------------------------------   */
- 
+  
+  /* -------------------------------------------------------------------   */
+  
   phmd->lengthLeft = lengthLeft;
   phmd->lengthRight= lengthRight;
   /* -------------------------------------------   */
