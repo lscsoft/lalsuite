@@ -24,6 +24,17 @@ AC_DEFUN(LAL_WITH_EXTRA_CPPFLAGS,
 	],)
 ])
 
+AC_DEFUN(LAL_WITH_CFLAGS,
+[AC_ARG_WITH(
+	cflags, 
+        [  --with-cflags=CFLAGS        C compiler flags],
+	[ if test -n "${with_cflags}"
+	  then
+	    CFLAGS="${with_cflags}";
+	  fi
+	],)
+])
+
 AC_DEFUN(LAL_WITH_EXTRA_CFLAGS,
 [AC_ARG_WITH(
 	extra_cflags, 
@@ -1430,6 +1441,21 @@ AC_CACHE_VAL(lt_cv_prog_cc_pic,
 	lt_cv_prog_cc_pic='-Kconform_pic'
 	lt_cv_prog_cc_static='-Bstatic'
       fi
+      ;;
+
+    linux*)
+      case "`echo $CC | sed \"s%.*/%%\"`" in
+        icc|ecc)
+          lt_cv_prog_cc_wl='-Wl,'
+          lt_cv_prog_cc_pic='-KPIC'
+          lt_cv_prog_cc_static='-static'
+          ;;
+        ccc)
+          lt_cv_prog_cc_wl='-Wl,'
+          # All Alpha code is PIC
+          lt_cv_prog_cc_static='-non_shared'
+          ;;
+        esac
       ;;
 
     *)

@@ -161,8 +161,9 @@ AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
 
 LAL_WITH_CC
 LAL_WITH_MPICC
-LAL_WITH_EXTRA_CPPFLAGS
+LAL_WITH_CFLAGS
 LAL_WITH_EXTRA_CFLAGS
+LAL_WITH_EXTRA_CPPFLAGS
 LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 LAL_WITH_GCC_FLAGS
@@ -215,7 +216,7 @@ AC_SUBST(TEXFLAGS)
 dnl Set needed compiler flags
 AC_MSG_CHECKING([for additional compiler flags])
 case "${host_os}" in
-  solaris*) CFLAGS="-D_POSIX_C_SOURCE=200101L"
+  solaris*) CFLAGS="$CFLAGS -D_POSIX_C_SOURCE=200101L"
   AC_MSG_RESULT([-D_POSIX_SOURCE=200101L]);;
   *) AC_MSG_RESULT(none);;
 esac
@@ -223,6 +224,10 @@ esac
 dnl Checks for libraries.
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
+dnl if solaris, check for sunmath library
+case "${host_os}" in
+  solaris*) AC_CHECK_LIB(sunmath, sincosp);;
+esac
 
 dnl Checks for fft libraries.
 if test "${intelfft}" = "false" ; then
@@ -272,6 +277,9 @@ fi
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
+case "${host_os}" in
+  solaris*) AC_CHECK_HEADERS(sunmath.h);;
+esac
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
 AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
