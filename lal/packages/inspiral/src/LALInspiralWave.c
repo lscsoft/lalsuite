@@ -289,6 +289,7 @@ LALInspiralWaveForInjection(
        CHECKSTATUSPTR(status);
 	   break;
       case BCV:
+	/*       LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/
       case BCVSpin:
       case TaylorF1:
       case TaylorF2:

@@ -672,7 +672,10 @@ LALInspiralWave3ForInjection (
       
       waveform->a->sampleUnits = lalStrainUnit;
       waveform->f->sampleUnits = lalHertzUnit;
-      waveform->phi->sampleUnits = lalDimensionlessUnit;
+      waveform->phi->sampleUnits = lalDimensionlessUnit;  
+      waveform->position = ppnParams->position;
+      waveform->psi = ppnParams->psi;
+
       LALSnprintf( waveform->a->name, LALNameLength, "T3 inspiral amplitudes" );
       LALSnprintf( waveform->f->name, LALNameLength, "T3 inspiral frequency" );
       LALSnprintf( waveform->phi->name, LALNameLength, "T3  inspiral phase" );

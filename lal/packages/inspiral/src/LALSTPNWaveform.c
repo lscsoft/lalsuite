@@ -738,6 +738,8 @@ CHAR message[256];
       waveform->f->sampleUnits 	= lalHertzUnit;
       waveform->phi->sampleUnits	= lalDimensionlessUnit;
       waveform->shift->sampleUnits 	= lalDimensionlessUnit;
+      waveform->position = ppnParams->position;
+      waveform->psi = ppnParams->psi;
       
       /* -? should add this ? 
 	 waveform->position = params->position;

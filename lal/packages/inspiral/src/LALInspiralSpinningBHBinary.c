@@ -466,7 +466,8 @@ void
 LALInspiralSpinModulatedWaveForInjection(
 					 LALStatus        *status,
 					 CoherentGW *waveform,
-					 InspiralTemplate *params
+					 InspiralTemplate *params,
+					 PPNParamStruc  *ppnParams	
 					 )
 { /* </lalVerbatim> */
   
@@ -778,9 +779,13 @@ LALInspiralSpinModulatedWaveForInjection(
     waveform->a->sampleUnits = lalStrainUnit;
     waveform->f->sampleUnits = lalHertzUnit;
     waveform->phi->sampleUnits = lalDimensionlessUnit;
-    LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
-    LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
-    LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+    waveform->position = ppnParams->position;
+    waveform->psi = ppnParams->psi;
+
+
+    LALSnprintf( waveform->a->name, LALNameLength, "Spinning inspiral amplitudes" );
+    LALSnprintf( waveform->f->name, LALNameLength, "Spinning inspiral frequency" );
+    LALSnprintf( waveform->phi->name, LALNameLength, "Spinning inspiral phase" );
     
     
     params->tC = count / params->tSampling ;
