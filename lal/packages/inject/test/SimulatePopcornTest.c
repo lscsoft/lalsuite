@@ -1,6 +1,5 @@
 /* <lalVerbatim file="SimulatePopcornTestCV">
-Author: Tania Regimbau 
-$Id$
+Author: Tania Regimbau $Id$
 </lalVerbatim> */
 
 /*<lalLaTeX>
@@ -41,17 +40,17 @@ NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
 /**   define parameters here   **/
 
-/*detectors*/
+//detectors
 
-#define LALPOPCORN_START 714265182
+#define LALPOPCORN_START 714382918
 #define LALPOPCORN_RESP0 "H2.dat"
 #define LALPOPCORN_RESP1 "L1.dat"
 #define LALPOPCORN_NDATASET 2
-#define LALPOPCORN_LENGTH 4
-#define LALPOPCORN_SRATE 1024
+#define LALPOPCORN_LENGTH 4.
+#define LALPOPCORN_SRATE 1024.
 #define LALPOPCORN_FREF -1.
-#define LALPOPCORN_SEED 3
-#define LALPOPCORN_WFDURATION 0.001
+#define LALPOPCORN_SEED 1
+#define LALPOPCORN_WFDURATION 0.01
 #define LALPOPCORN_LAMBDA 0.01
 #define LALPOPCORN_SITE0 0
 #define LALPOPCORN_SITE1 1
@@ -61,13 +60,14 @@ NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
 
 /*sine gaussian waveform;*/
+
 static void wformfunc (REAL4 *result,REAL4 x)
  {
-   REAL4 fo, to, duration;
-   fo = 500.;
+   REAL4 fo, duration, sigma, A;
+   A = 1.E-14;
    duration = LALPOPCORN_WFDURATION;
-   to=duration/6.;
-   *result =  exp(-(x*x)/(2.*to*to))*sin(2.*Pi*fo*x);
+   sigma=duration/6.; fo = sqrt(2.)/sigma;
+   *result =  A*exp(-(x*x)/(2.*sigma*sigma))*sin(2.*Pi*fo*x);
    return;
  }
 
@@ -84,6 +84,8 @@ int main (int argc, char* argv[])
   /* output parameters declaration */
   REAL4TimeSeries                    Popcorn0;
   REAL4TimeSeries                    Popcorn1;
+  REAL4FrequencySeries               omegagw0;
+  REAL4FrequencySeries               omegagw1;
 
   REAL8                              totnorm2zero;
   REAL8                              totnorm2one;
@@ -97,6 +99,8 @@ int main (int argc, char* argv[])
   /*others*/ 
   UINT4 i, j, n, nfreq, start;
   REAL4 deltat=(1./LALPOPCORN_SRATE);
+  REAL4 deltaf=(1./LALPOPCORN_LENGTH);
+
   char fname[50];
   FILE *pfresp0,*pfresp1,*pfzero,*pfone;
  
@@ -121,7 +125,6 @@ int main (int argc, char* argv[])
   for (i=0;i<2;i++)
       LALCCreateVector(&status, &response[i],nfreq); 
  
-  /*t.gpsSeconds = LALPOPCORN_START;*/
   t.gpsSeconds = start;
   t.gpsNanoSeconds = 0;
 
@@ -144,16 +147,17 @@ int main (int argc, char* argv[])
   PopcornInput.wfilter1 = &response1;
   
  /* TEST INVALID DATA HERE */ 
+ 
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
     {
-     /*test behavior for null pointer to real time series for output */
+      /*test behavior for null pointer to real time series for output*/
      LALSimPopcornTimeSeries(&status,NULL,&PopcornInput,&PopcornParams);
      printf("  PASS: null pointer to output series results in error: \n"
              "\"%s\"\n", SIMULATEPOPCORNH_MSGENULLP);
     }
   
-#endif /* LAL_NDEBUG */
+#endif
 
  /* TEST VALID DATA HERE */
   
@@ -164,6 +168,14 @@ int main (int argc, char* argv[])
    
   PopcornOutput.SimPopcorn0 = &Popcorn0;
   PopcornOutput.SimPopcorn1 = &Popcorn1; 
+ 
+  omegagw0.data = NULL;
+  LALSCreateVector(&status, &(omegagw0.data), nfreq);
+  omegagw1.data = NULL;
+  LALSCreateVector(&status, &(omegagw1.data), nfreq);
+   
+  PopcornOutput.omega0 = &omegagw0;
+  PopcornOutput.omega1 = &omegagw1; 
 
   LALSimPopcornTimeSeries (&status,&PopcornOutput,&PopcornInput,&PopcornParams);
  /* Mean square */
@@ -179,19 +191,8 @@ int main (int argc, char* argv[])
   totnorm2one/=n;
   printf("Mean square of whitened output no. 2 is: %e\n",totnorm2one);
 
- /*ascii*/
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
-  pfzero=LALFopen(fname,"w");
-  LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
-  pfone=LALFopen(fname,"w");
-
-   for(i=0;i<n;i++)
-   {
-    fprintf(pfzero,"%f\t%e\n",(i*deltat),Popcorn0.data->data[i]);
-    fprintf(pfone,"%f\t%e\n",(i*deltat),Popcorn1.data->data[i]);
-   }
   
-  /*ilwd*/
+ /*ilwd*/
  /*
  LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.ilwd",start);
  pfzero=LALFopen(fname,"w");
@@ -202,12 +203,12 @@ int main (int argc, char* argv[])
  fprintf(pfzero,"<ilwd comment='"POPCORN_FILENAMEOUT0"%d'",start); 
  fprintf(pfzero," name='"POPCORN_FILENAMEOUT0"%d' size='1'>\n",start);
  fprintf(pfzero,
-  " <real_8 dims='1048576' name='"POPCORN_FILENAMEOUT0"%d'>",start);
+  " <real_8 dims='%d' name='"POPCORN_FILENAMEOUT0"%d'>",n,start);
  
  fprintf(pfone,"<ilwd comment='"POPCORN_FILENAMEOUT1"%d'",start); 
  fprintf(pfone," name='"POPCORN_FILENAMEOUT1"%d' size='1'>\n",start);
  fprintf(pfone,
-  " <real_8 dims='1048576' name='"POPCORN_FILENAMEOUT1"%d'>",start);
+  " <real_8 dims='%d' name='"POPCORN_FILENAMEOUT1"%d'>",n,start);
  
  for(i=0;(UINT4)i<n;i++)
   {
@@ -216,18 +217,52 @@ int main (int argc, char* argv[])
   }
  fprintf(pfzero,"</real_8>");fprintf(pfone,"</real_8>");
  fprintf(pfzero," </ilwd>");fprintf(pfone," </ilwd>");
-*/
+ LALFclose(pfzero);LALFclose(pfone);
+ */
 
+ /*ascii*/
+ 
+  LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d.dat",start);
+  pfzero=LALFopen(fname,"w");
+  LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d.dat",start);
+  pfone=LALFopen(fname,"w");
+
+   for(i=0;i<n;i++)
+   {
+    fprintf(pfzero,"%f\t%e\n",(i*deltat),Popcorn0.data->data[i]);
+    fprintf(pfone,"%f\t%e\n",(i*deltat),Popcorn1.data->data[i]);
+    }
  
  LALFclose(pfzero);LALFclose(pfone);
 
+/*omega spectrum*/
+ 
+    LALSnprintf(fname,50,POPCORN_FILENAMEOUT0"%d_omega.dat",start);
+  pfzero=LALFopen(fname,"w");
+    LALSnprintf(fname,50,POPCORN_FILENAMEOUT1"%d_omega.dat",start);
+  pfone=LALFopen(fname,"w");
 
+   for(i=0;i<n/2;i++)
+   {
+    fprintf(pfzero,"%f\t%e\n",(i*deltaf),omegagw0.data->data[i]);
+    fprintf(pfone,"%f\t%e\n",(i*deltaf),omegagw1.data->data[i]);
+    }
+ 
+ LALFclose(pfzero);LALFclose(pfone);
+ 
  /* clean up valid data */
  LALSDestroyVector(&status, &(Popcorn0.data));
  LALSDestroyVector(&status, &(Popcorn1.data));
+ LALSDestroyVector(&status, &(omegagw0.data));
+ LALSDestroyVector(&status, &(omegagw1.data));
 
- /*LALCheckMemoryLeaks();*/ 
+ /*LALCheckMemoryLeaks();*/
 
    
  } 
   
+
+
+
+
+
