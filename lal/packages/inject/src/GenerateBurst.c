@@ -265,6 +265,7 @@ LALGenerateBurst(
       *aData++   = 0;
     }
   }
+
   else if ( !( strcmp( simBurst->waveform, "StringCusp" ) ) )
   {
     TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
