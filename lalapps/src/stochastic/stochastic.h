@@ -30,8 +30,8 @@ typedef struct tagStreamPair {
 typedef struct tagReadDataPairParams {
 	UINT8 startTime;
 	INT4 duration;
-	CHAR *dataCacheOne;
-	CHAR *dataCacheTwo;
+	CHAR *frameCacheOne;
+	CHAR *frameCacheTwo;
 	CHAR *ifoOne;
 	CHAR *ifoTwo;
 	CHAR *channelOne;

@@ -5,7 +5,7 @@
  * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  *
  * $Id$
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,8 +81,8 @@ UINT8 stopTime;
 INT4 streamDuration = 60;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
-CHAR dataCacheOne[LALNameLength];
-CHAR dataCacheTwo[LALNameLength];
+CHAR frameCacheOne[LALNameLength];
+CHAR frameCacheTwo[LALNameLength];
 CHAR calCacheOne[LALNameLength];
 CHAR calCacheTwo[LALNameLength];
 CHAR channelOne[LALNameLength];
@@ -256,7 +256,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* open output file */
 	LALSnprintf(outputFilename, LALNameLength, "stoch-%s%s-%d-%d.dat", 
-            ifoOne, ifoTwo, (INT4)startTime, (INT4)stopTime);
+			ifoOne, ifoTwo, (INT4)startTime, (INT4)stopTime);
 	if ((out = fopen(outputFilename, "w")) == NULL)
 	{
 		fprintf(stderr, "Can't open file for output...\n");
@@ -267,7 +267,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	{
 		fprintf(stdout, "Calculating number of segments...\n");
 	}
-	
+
 	/* get number of segments */
 	streamDuration = stopTime - startTime;
 	numSegments = streamDuration / segmentDuration;
@@ -306,8 +306,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* set stream input parameters */
 	streamParams.duration = streamDuration;
-	streamParams.dataCacheOne = dataCacheOne;
-	streamParams.dataCacheTwo = dataCacheTwo;
+	streamParams.frameCacheOne = frameCacheOne;
+	streamParams.frameCacheTwo = frameCacheTwo;
 	streamParams.ifoOne = ifoOne;
 	streamParams.ifoTwo = ifoTwo;
 	streamParams.channelOne = channelOne;
@@ -321,56 +321,56 @@ INT4 main(INT4 argc, CHAR *argv[])
 	streamPair.streamOne = &streamOne;
 	streamPair.streamTwo = &streamTwo;
 
-        if (inject_flag)
-	{ 
-        	/* set parameter structure for monte carlo simulations */
-        	MCparams.lengthSegment = calibDuration * resampleRate;
-        	if ((segmentDuration % calibDuration) == 0)
-        	{
-         		MCparams.numSegment = segmentDuration / calibDuration;
-        	}
-        	else
-        	{
-        		MCparams.numSegment = (segmentDuration / calibDuration) + 1;
-        	}
-        	MCparams.sampleRate = resampleRate;
-        	MCparams.startTime = startTime;
-        	MCparams.seed = seed;
-        	MCparams.fRef = fRef;
-        	MCparams.f0 = 0.;
-        	MCparams.omegaRef = omegaRef;
-        	MCparams.alpha = alpha;
-        	MCparams.siteOne = siteOne;
-        	MCparams.siteTwo = siteTwo;
+	if (inject_flag)
+	{
+		/* set parameter structure for monte carlo simulations */
+		MCparams.lengthSegment = calibDuration * resampleRate;
+		if ((segmentDuration % calibDuration) == 0)
+		{
+			MCparams.numSegment = segmentDuration / calibDuration;
+		}
+		else
+		{
+			MCparams.numSegment = (segmentDuration / calibDuration) + 1;
+		}
+		MCparams.sampleRate = resampleRate;
+		MCparams.startTime = startTime;
+		MCparams.seed = seed;
+		MCparams.fRef = fRef;
+		MCparams.f0 = 0.;
+		MCparams.omegaRef = omegaRef;
+		MCparams.alpha = alpha;
+		MCparams.siteOne = siteOne;
+		MCparams.siteTwo = siteTwo;
 
-        	/* set input structure for monte carlo simulations */
-        	MCinput.ifoOne = ifoOne;
-         	MCinput.ifoTwo = ifoTwo;
-        	MCinput.calCacheOne = calCacheOne;
-        	MCinput.calCacheTwo = calCacheTwo;
-        	MCLength = MCparams.numSegment * MCparams.lengthSegment;
+		/* set input structure for monte carlo simulations */
+		MCinput.ifoOne = ifoOne;
+		MCinput.ifoTwo = ifoTwo;
+		MCinput.calCacheOne = calCacheOne;
+		MCinput.calCacheTwo = calCacheTwo;
+		MCLength = MCparams.numSegment * MCparams.lengthSegment;
 
-        	if (verbose_flag)
-        	{
-        		fprintf(stdout, "Allocating memory for MC...\n");
-        	}
+		if (verbose_flag)
+		{
+			fprintf(stdout, "Allocating memory for MC...\n");
+		}
 
-        	/* allocate memory for monte carlo */
-        	SimStochBGOne.data = NULL;
-        	LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
-        			&status );
-        	SimStochBGTwo.data = NULL;
-        	LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
-        			&status );
-        	memset(SimStochBGOne.data->data, 0, \
-        			SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
-        	memset(SimStochBGTwo.data->data, 0, \
-        			SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
+		/* allocate memory for monte carlo */
+		SimStochBGOne.data = NULL;
+		LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
+				&status );
+		SimStochBGTwo.data = NULL;
+		LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
+				&status );
+		memset(SimStochBGOne.data->data, 0, \
+				SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
+		memset(SimStochBGTwo.data->data, 0, \
+				SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
 
-        	/* output structure for LALStochasticMC */
-        	MCoutput.SSimStochBG1 = &SimStochBGOne;
-        	MCoutput.SSimStochBG2 = &SimStochBGTwo;
-        }
+		/* output structure for LALStochasticMC */
+		MCoutput.SSimStochBG1 = &SimStochBGOne;
+		MCoutput.SSimStochBG2 = &SimStochBGTwo;
+	}
 
 	/* set length for data segments */
 	segmentLength = segmentDuration * resampleRate;
@@ -990,31 +990,31 @@ INT4 main(INT4 argc, CHAR *argv[])
 				(segLoop * segmentLength)];
 		}
 
-                /* simulate signal */
-        	if (inject_flag)
-        	{
-                        MCparams.startTime = gpsStartTime.gpsSeconds;
-        	        seed = (INT4)(time(NULL));
-                        MCparams.seed = seed;
-         		/* perform monte carlo */
-                	monteCarlo(&status, &MCoutput, &MCinput, &MCparams);	
+		/* simulate signal */
+		if (inject_flag)
+		{
+			MCparams.startTime = gpsStartTime.gpsSeconds;
+			seed = (INT4)(time(NULL));
+			MCparams.seed = seed;
+			/* perform monte carlo */
+			monteCarlo(&status, &MCoutput, &MCinput, &MCparams);	
 
-        		/* output the results */
-        		if (verbose_flag)
-        		{
-        			LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
-        			LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
-        		}
+			/* output the results */
+			if (verbose_flag)
+			{
+				LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
+				LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
+			}
 
-        		/* multiply by scale factor and inject into real data */
-        		for (i = 0; i < streamLength ; i++)
-        		{
-			segmentOne.data->data[i] = segmentOne.data->data[i] + \
-				(scaleFactor * SimStochBGOne.data->data[i]);
-			segmentTwo.data->data[i] = segmentTwo.data->data[i] + \
-				(scaleFactor * SimStochBGTwo.data->data[i]);
-        		}
-        	}
+			/* multiply by scale factor and inject into real data */
+			for (i = 0; i < streamLength ; i++)
+			{
+				segmentOne.data->data[i] = segmentOne.data->data[i] + \
+					(scaleFactor * SimStochBGOne.data->data[i]);
+				segmentTwo.data->data[i] = segmentTwo.data->data[i] + \
+					(scaleFactor * SimStochBGTwo.data->data[i]);
+			}
+		}
 
 
 		/* output the results */
@@ -1081,9 +1081,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 		responseTempOne.epoch = gpsCalTime;
 		responseTempTwo.epoch = gpsCalTime;
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-				ifoOne, &duration), &status );
+					ifoOne, &duration), &status );
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-				ifoTwo, &duration), &status );
+					ifoTwo, &duration), &status );
 
 		if (verbose_flag)
 		{
@@ -1114,9 +1114,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		/* compute inverse calibrate and half calibrated PSDs */
 		LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutOne, \
-				&inverseNoiseInOne), &status );
+					&inverseNoiseInOne), &status );
 		LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutTwo, \
-				&inverseNoiseInTwo), &status );
+					&inverseNoiseInTwo), &status );
 
 		/* save */
 		if (verbose_flag)
@@ -1134,7 +1134,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		/* compute variance and normalisation for optimal filter */
 		LAL_CALL( LALStochasticOptimalFilterNormalization(&status, &normOutput, \
-				&normInput, &normParams), &status );
+					&normInput, &normParams), &status );
 		lambda = (REAL8)(normLambda.value * \
 				pow(10.,normLambda.units.powerOfTen));
 		varTheo = (REAL8)(segmentDuration * normSigma.value * \
@@ -1187,7 +1187,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 		/* cc statistic */
 		LAL_CALL( LALStochasticCrossCorrelationStatistic(&status, &ccStat, &ccIn, \
-				epochsMatch), &status );
+					epochsMatch), &status );
 
 		y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
 		yWhitenedSum += y * inVarTheo;
@@ -1240,11 +1240,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status );
-        if (inject_flag)
+	if (inject_flag)
 	{       
 		LAL_CALL( LALDestroyVector(&status, &SimStochBGOne.data), &status );
 		LAL_CALL( LALDestroyVector(&status, &SimStochBGTwo.data), &status );
-        }
+	}
 	/* close output file */
 	fclose(out);
 
@@ -1275,8 +1275,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			{"hann-duration", required_argument, 0, 'w'},
 			{"ifo-one", required_argument, 0, 'i'},
 			{"ifo-two", required_argument, 0, 'I'},
-			{"data-cache-one", required_argument, 0, 'd'},
-			{"data-cache-two", required_argument, 0, 'D'},
+			{"frame-cache-one", required_argument, 0, 'd'},
+			{"frame-cache-two", required_argument, 0, 'D'},
 			{"calibration-cache-one", required_argument, 0, 'r'},
 			{"calibration-cache-two", required_argument, 0, 'R'},
 			{"scale-factor", required_argument, 0, 'o'},
@@ -1291,7 +1291,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 		c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:o:g:z:V", \
 				long_options, &option_index);
-		
+
 		if (c == -1)
 		{
 			/* end of options, break loop */
@@ -1408,12 +1408,12 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 			case 'd':
 				/* data cache one */
-				strncpy(dataCacheOne, optarg, LALNameLength);
+				strncpy(frameCacheOne, optarg, LALNameLength);
 				break;
 
 			case 'D':
 				/* data cache two */
-				strncpy(dataCacheTwo, optarg, LALNameLength);
+				strncpy(frameCacheTwo, optarg, LALNameLength);
 				break;
 
 			case 'r':
@@ -1478,9 +1478,9 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --hann-duration SEC           hann duration\n");
 	fprintf(stderr, " --ifo-one IFO                 ifo for first stream\n");
 	fprintf(stderr, " --ifo-two IFO                 ifo for second stream\n");
-	fprintf(stderr, " --data-cache-one FILE         cache file for first " \
+	fprintf(stderr, " --frame-cache-one FILE        cache file for first " \
 			"stream\n");
-	fprintf(stderr, " --data-cache-two FILE         cache file for second " \
+	fprintf(stderr, " --frame-cache-two FILE        cache file for second " \
 			"stream\n");
 	fprintf(stderr, " --calibration-cache-one FILE  " \
 			"first stream calibration cache\n");
@@ -1569,7 +1569,7 @@ void readDataPair(LALStatus *status,
 	}
 
 	/* open first frame cache */
-	LALFrCacheImport(status->statusPtr, &frCacheOne, params->dataCacheOne);
+	LALFrCacheImport(status->statusPtr, &frCacheOne, params->frameCacheOne);
 	CHECKSTATUSPTR( status );
 	LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
 	CHECKSTATUSPTR( status );
@@ -1586,7 +1586,7 @@ void readDataPair(LALStatus *status,
 			&frChanInOne, frStreamOne);
 	CHECKSTATUSPTR( status );
 
-	if (strcmp(params->dataCacheOne, params->dataCacheTwo) == 0)
+	if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
 	{
 		if (verbose_flag)
 		{
@@ -1627,7 +1627,7 @@ void readDataPair(LALStatus *status,
 		}
 
 		/* open second frame cache and read in second channel */
-		LALFrCacheImport(status->statusPtr, &frCacheTwo, params->dataCacheTwo);
+		LALFrCacheImport(status->statusPtr, &frCacheTwo, params->frameCacheTwo);
 		CHECKSTATUSPTR( status );
 		LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
 		CHECKSTATUSPTR( status );
@@ -1857,9 +1857,9 @@ void monteCarlo(LALStatus *status,
 	LALCCreateVector(status->statusPtr, &(responseTwo.data), freqLength);
 	CHECKSTATUSPTR( status );
 	memset(responseOne.data->data, 0, \
-	       responseOne.data->length * sizeof(*responseOne.data->data));
+			responseOne.data->length * sizeof(*responseOne.data->data));
 	memset(responseTwo.data->data, 0, \
-	       responseTwo.data->length * sizeof(*responseTwo.data->data));
+			responseTwo.data->length * sizeof(*responseTwo.data->data));
 
 	/* set response function averaging */
 	duration.gpsSeconds = 0;
@@ -2211,7 +2211,7 @@ void monteCarloSplice(LALStatus *status,
 		LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, \
 				&SBParams);
 		CHECKSTATUSPTR( status );
-		
+
 		/* store in the appropriate vector */
 		if (loop % 2 == 0)
 		{
@@ -2277,7 +2277,7 @@ void SinusoidalSplice(REAL4Vector **longData,
 {
 	/* counters */
 	INT4 i, j;
-	
+
 	UINT4 segLen;
 	INT4 nOutputPts;
 	UINT4 nSplicePts;
