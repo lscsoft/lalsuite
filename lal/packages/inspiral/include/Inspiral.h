@@ -153,6 +153,8 @@ tagInspiralTemplate
   Order order;
   Domain domain;
   Approximant approximant;
+  struct tagInspiralTemplate *next;
+  struct tagInspiralTemplate *fine;
  }
  InspiralTemplate;
 

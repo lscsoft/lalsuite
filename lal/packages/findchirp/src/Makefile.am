@@ -2,7 +2,12 @@
 noinst_LTLIBRARIES = libfindchirp.la
 
 if FRAMEANDMPI
-libfindchirp_la_SOURCES = FindChirpExch.c
+libfindchirp_la_SOURCES = FindChirpExch.c \
+                          FindChirpMemory.c \
+                          FindChirpFilter.c \
+                          FindChirpChisq.c \
+                          FindChirpSPData.c \
+                          FindChirpSPTemplate.c
 else
 libfindchirp_la_SOURCES = 
 endif

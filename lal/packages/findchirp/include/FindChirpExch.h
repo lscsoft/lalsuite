@@ -15,6 +15,8 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Comm.h>
 #include <lal/DataBuffer.h>
+#include <lal/Inspiral.h>
+#include <lal/FindChirp.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -47,12 +49,12 @@ ExchObjectType;
 typedef struct
 tagExchParams
 {
-  ExchObjectType exchObjectType;
   INT4           send;
   INT4           numObjects;
   INT4           partnerProcNum;
   INT4           myProcNum;
   MPI_Comm       mpiComm;
+  ExchObjectType exchObjectType;
 }
 ExchParams;
 
@@ -65,90 +67,12 @@ tagInitExchParams
 InitExchParams;
 
 
-
-typedef enum
-{
-  M1AndM2,
-  TotalMassAndEta,
-  TotalMassAndMu
-}
-InputMasses;
-
-
-typedef enum
-{
-  Best,
-  TaylorTime20,
-  TaylorFreq20,
-  Papprox20
-}
-InspiralMethod;
-
-
-typedef struct
-tagInspiralTemplate
-{
-  INT4           number;
-  REAL4          mass1; 
-  REAL4          mass2;
-  REAL4          spin1[3];
-  REAL4          spin2[3];
-  REAL4          inclination;
-  REAL4          eccentricity;
-  REAL8          totalMass; 
-  REAL8          mu; 
-  REAL8          eta;
-  REAL8          fLower;
-  REAL8          fCutoff;
-  REAL8          tSampling;
-  REAL8          phaseShift;
-  INT4           nStartPad;
-  INT4           nEndPad;
-  InputMasses    massChoice;
-  InspiralMethod method;
- }
-InspiralTemplate;
-
-/* the various interferometer codes */
-typedef enum
-{
-  Caltech40m, Hanford4km, Hanford2km, Livingston4km, GEO600m, TAMA300m
-}
-Detector;
-
-/* input for specifying a template bank */
-typedef struct
-tagInspiralBankIn
-{
-  REAL4          mMin;
-  REAL4          mMax;
-  REAL4          ffCoarse;
-  REAL4          ffFine;
-  Detector       detector;
-  InspiralMethod method;
-}
-InspiralBankIn;
-
-
-typedef struct
-tagInspiralEvent
-{
-  LIGOTimeGPS      time;
-  InspiralTemplate tmplt;
-  REAL4            snrsq;
-  REAL4            chisq;
-  REAL4            sigma;
-}
-InspiralEvent;
-
-
 void
 LALInitializeExchange (
     LALStatus      *status,
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
     InitExchParams *params
-    /* INT4         myProcNum */
     );
 
 void
@@ -156,6 +80,13 @@ LALFinalizeExchange (
     LALStatus      *status,
     ExchParams **exchParams
     );
+
+void
+LALExchangeUINT4 (
+    LALStatus         *status,
+    UINT4             *object,
+    ExchParams        *exchParms
+                 );
 
 void
 LALExchangeDataSegment (
@@ -184,6 +115,21 @@ LALExchangeInspiralEvent (
     InspiralEvent *event,
     ExchParams    *exchParams
     );
+
+void
+LALExchangeInspiralEventList (
+    LALStatus     *status,
+    InspiralEvent **eventHead,
+    ExchParams    *exchParams
+    );
+
+void
+LALExchangeTemplateBank (
+    LALStatus         *status,
+    InspiralTemplate **tmpltHead,
+    ExchParams        *exchParms
+                 );
+
 
 #ifdef  __cplusplus
 }

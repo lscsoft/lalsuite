@@ -152,7 +152,7 @@ Slave (LALStatus *status, MPIId id)
   bankIn.ffCoarse = 0.9;
   bankIn.ffFine   = 0.99;
   bankIn.detector = Caltech40m;
-  bankIn.method   = Best;
+  bankIn.method   = best;
 
   LALExchangeInspiralBankIn (status->statusPtr, &bankIn, thisExch);
 

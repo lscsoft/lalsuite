@@ -21,7 +21,6 @@ LALInitializeExchange (
     ExchParams **exchParamsOut,
     ExchParams  *exchParamsInp,
     InitExchParams *params
-    /* INT4         myProcNum */
     )
 {
   MPIMessage hello; /* initialization message */
@@ -35,6 +34,7 @@ LALInitializeExchange (
   /* now allocate memory for output exchange parameters */
   *exchParamsOut = (ExchParams *) LALMalloc (sizeof(ExchParams));
   ASSERT (*exchParamsOut, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+  /* memset( *exchParamsOut, 0, sizeof(ExchParams) ); */
 
   if (exchParamsInp) /* I am initializing the exchange */
   {
@@ -150,6 +150,49 @@ LALFinalizeExchange (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+void
+LALExchangeUINT4 (
+    LALStatus     *status,
+    UINT4         *object,
+    ExchParams    *exchParams
+    )
+{
+  CHARVector box; /* a box to hold some bytes of data */
+
+  INITSTATUS (status, "ExchangeDataRequest", FINDCHIRPEXCHC);
+  ATTATCHSTATUSPTR (status);
+
+  /* only do a minimal check to see if arguments are somewhat reasonable */
+  ASSERT (exchParams, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+  ASSERT (object, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+
+  /* stuff the event into a box */
+  box.length = sizeof (UINT4);
+  box.data   = (CHAR *) object;
+
+  if (exchParams->send)  /* I am sending */
+  {
+    INT4 dest = exchParams->partnerProcNum;
+
+    /* send box */
+    LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
+    CHECKSTATUSPTR (status);
+  }
+  else /* I am receiving */
+  {
+    INT4 source = exchParams->partnerProcNum;
+
+    /* receive box */
+    LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
+    CHECKSTATUSPTR (status);
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
 
 void
 LALExchangeDataSegment (
@@ -359,6 +402,152 @@ LALExchangeInspiralEvent (
     /* receive box */
     LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+void
+LALExchangeInspiralEventList (
+    LALStatus     *status,
+    InspiralEvent **eventHead,
+    ExchParams    *exchParams
+    )
+{
+  InspiralEvent   *eventCurrent = NULL;
+  InspiralEvent   *prev         = NULL;
+
+  INITSTATUS (status, "LALExchangeInspiralEvent", FINDCHIRPEXCHC);
+  ATTATCHSTATUSPTR (status);
+
+  if (exchParams->send)  /* I am sending */
+  {
+
+    /* check that we have a bank to send */
+    ASSERT (*eventHead, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+
+    /* exchange the template bank */
+    for (eventCurrent = *eventHead;
+        eventCurrent != NULL;
+        eventCurrent = eventCurrent->next
+        )
+    {
+      LALExchangeInspiralEvent (status->statusPtr, eventCurrent, exchParams);
+      CHECKSTATUSPTR (status);
+    }
+
+    ASSERT (!eventCurrent, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+
+  }
+  else /* I am receiving */
+  {
+
+    /* check that this is a new list */
+    ASSERT (!*eventHead, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+
+    /* recieve the template bank */
+    do
+    {
+      /* create memory for the template */
+      eventCurrent = (InspiralEvent *) LALMalloc (sizeof(InspiralEvent));
+
+      /* make a note of the first node in the list to return */
+      if ( *eventHead == NULL ) *eventHead = eventCurrent;
+
+      /* recieve the template */
+      LALExchangeInspiralEvent (status->statusPtr, eventCurrent, exchParams);
+      CHECKSTATUSPTR (status);
+
+      /* point the previous node to this node */
+      if ( prev != NULL ) prev->next = eventCurrent;
+      prev = eventCurrent;
+
+    } while ( eventCurrent->next != NULL );
+
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+void
+LALExchangeTemplateBank (
+    LALStatus         *status,
+    InspiralTemplate **tmpltHead,
+    ExchParams        *exchParms
+                 )
+{
+  InspiralTemplate   *tmpltCurrent = NULL;
+  InspiralTemplate   *tmpltFine    = NULL;
+  InspiralTemplate   *prev         = NULL;
+
+  INITSTATUS (status, "LALExchangeTemplateBank", FINDCHIRPEXCHC);
+  ATTATCHSTATUSPTR (status);
+
+  if (exchParms->send)  /* I am sending */
+  {
+
+    /* check that we have a bank to send */
+    ASSERT (*tmpltHead, status, FINDCHIRPEXCH_ENULL, FINDCHIRPEXCH_MSGENULL);
+
+    /* exchange the template bank */
+    for (tmpltCurrent = *tmpltHead;
+        tmpltCurrent != NULL;
+        tmpltCurrent = tmpltCurrent->next
+        )
+    {
+      LALExchangeInspiralTemplate (status->statusPtr, tmpltCurrent, exchParms);
+      CHECKSTATUSPTR (status);
+
+      /* exchange the fine grids */
+      if (tmpltCurrent->fine != NULL)
+      {
+        LALExchangeTemplateBank (status->statusPtr, &(tmpltCurrent->fine), exchParms);
+        CHECKSTATUSPTR (status);
+      }
+    }
+
+    ASSERT (!tmpltCurrent, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+
+  }
+  else /* I am receiving */
+  {
+
+    /* check that this is a new list */
+    ASSERT (!*tmpltHead, status, FINDCHIRPEXCH_ENNUL, FINDCHIRPEXCH_MSGENNUL);
+
+    /* recieve the template bank */
+    do
+    {
+      /* create memory for the template */
+      tmpltCurrent = (InspiralTemplate *) LALMalloc (sizeof(InspiralTemplate));
+
+      /* make a note of the first node in the list to return */
+      if ( *tmpltHead == NULL ) *tmpltHead = tmpltCurrent;
+
+      /* recieve the template */
+      LALExchangeInspiralTemplate (status->statusPtr, tmpltCurrent, exchParms);
+      CHECKSTATUSPTR (status);
+
+      /* get the fine grids */
+      if (tmpltCurrent->fine != NULL)
+      {
+        tmpltFine = NULL;
+        LALExchangeTemplateBank (status->statusPtr, &tmpltFine, exchParms);
+        CHECKSTATUSPTR (status);
+
+        /* set the fine pointer */
+        tmpltCurrent->fine = tmpltFine;
+      }
+
+      /* point the previous node to this node */
+      if ( prev != NULL ) prev->next = tmpltCurrent;
+      prev = tmpltCurrent;
+
+    } while ( tmpltCurrent->next != NULL );
+
   }
 
   DETATCHSTATUSPTR (status);
