@@ -97,9 +97,29 @@ latitude and longitude.
 \item[\texttt{EphemerisData *ephemeris}] Not used for the Ptolemaic
 approximation, this is for compatibility with other metrics.
 
+\item[\texttt{LALPulsarMetricType metricType}] the type of metric to use: analytic, Ptolemaic or fully ephemeris-based.
+
 \end{description}
 
-************************************************************* </lalLaTeX> */
+\subsection*{Constants}
+
+\begin{verbatim}
+enum LALPulsarMetricType
+\end{verbatim}
+\idx[Type]{LALPulsarMetricType}
+
+\noindent Constants defining different types of pulsar-metrics.
+</lalLaTeX> */
+/* <lalVerbatim> */
+typedef enum
+{
+  LAL_PMETRIC_NONE = 0,
+  LAL_PMETRIC_COH_PTOLE_ANALYTIC,	/* analytic ptolemaic approx for the metric */
+  LAL_PMETRIC_COH_PTOLE_NUMERIC,	/* numerical metric using ptole-approximation in timing */
+  LAL_PMETRIC_COH_EPHEM,		/* numerical exact metric using ephemeris-timing */
+  LAL_PMETRIC_LAST
+} LALPulsarMetricType;
+/* </lalVerbatim> */
 
 typedef struct
 tagPtoleMetricIn
@@ -111,6 +131,7 @@ tagPtoleMetricIn
   REAL4          maxFreq;
   LALDetector    *site;
   EphemerisData  *ephemeris;
+  LALPulsarMetricType metricType;
 }
 PtoleMetricIn;
 
