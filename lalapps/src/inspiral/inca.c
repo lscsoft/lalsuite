@@ -59,6 +59,7 @@ RCSID("$Id$");
 "  --gps-end-time time    GPS end time for coincidence\n"\
 "  --user-tag string      set the process params user tag\n"\
 "  --comment string       add a process table comment to the output\n"\
+"  --write-all-triggers   write duplicate triggers from IFO A\n" \
 "  --help                 display this message\n"\
 "  --debug-level level    set the LAL debug level\n"\
 "\n[LIGO_LW XML files] are a space separated list of the input trigger files.\n"
@@ -78,6 +79,7 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
+  INT4  writeAllTrigs = 0;
   INT4  usePlayground = 1;
   INT4  verbose = 0;
   INT4  startCoincidence = -1;
@@ -114,6 +116,7 @@ int main( int argc, char *argv[] )
     {"verbose",                 no_argument,       &verbose,          1 },
     {"no-playground",           no_argument,       &usePlayground,    0 },
     {"playground-only",         no_argument,       &usePlayground,    1 },
+    {"write-all-triggers",      no_argument,       &writeAllTrigs,    1 },
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"drhoplus",                required_argument, 0,                'c'},
@@ -175,6 +178,9 @@ int main( int argc, char *argv[] )
     {
       break;
     }
+    
+    /* store the length of the option (plust the terminating null) */
+    optarg_len = strlen(optarg) + 1;
 
     switch ( c )
     {
@@ -305,7 +311,6 @@ int main( int argc, char *argv[] )
 
       case 'Z':
         /* create storage for the usertag */
-        optarg_len = strlen(optarg) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( userTag, optarg, optarg_len );
 
@@ -353,6 +358,19 @@ int main( int argc, char *argv[] )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
+  }
+
+  /* store the write all trigs option */
+  if ( writeAllTrigs )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--write-all-triggers" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* store the playground argument in the process_params */
@@ -603,7 +621,7 @@ int main( int argc, char *argv[] )
           for ( j = 0; j < MAXIFO; ++j )
           {
             /* only record the triggers from the primary ifo once */
-            if ( j || ( ! j && ! have_ifo_a_trigger ) )
+            if ( writeAllTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
             {
               if ( ! coincidentEvents[j] )
               {
