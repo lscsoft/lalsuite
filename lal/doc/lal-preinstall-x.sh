@@ -6,9 +6,9 @@
 ##verse
 ##	autoconf-2.59
 ##	automake-1.8.5
-##	fftw-3.0.1
+##	fftw-3.0.1 (both single- and double-precision libraries required)
 ##	gsl-1.5
-##	libframe-6.13 (optional but recommended)
+##	libframe-6.14 (optional but recommended)
 ##	libmetaio-5.4 (optional but recommended)
 ##/verse
 ## If this software is already on your system, you can use the existing
@@ -87,7 +87,7 @@ curl $LALSRCURL/autoconf-2.59.tar.gz > $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || f
 curl $LALSRCURL/automake-1.8.5.tar.gz > $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 curl $LALSRCURL/fftw-3.0.1.tar.gz > $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
 curl $LALSRCURL/gsl-1.5.tar.gz > $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
-curl $LALSRCURL/libframe-6.13.tar.gz > $LSCSOFT_TMPDIR/libframe-6.13.tar.gz || fail
+curl $LALSRCURL/libframe-6.14.tar.gz > $LSCSOFT_TMPDIR/libframe-6.14.tar.gz || fail
 curl $LALSRCURL/libmetaio-5.4.tar.gz > $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || fail
 #/verbatim
 
@@ -98,7 +98,7 @@ tar -zxvf $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
-tar -zxvf $LSCSOFT_TMPDIR/libframe-6.13.tar.gz || fail
+tar -zxvf $LSCSOFT_TMPDIR/libframe-6.14.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || fail
 #/verbatim
 
@@ -140,8 +140,8 @@ make install || fail
 
 # build and install libframe
 #verbatim
-cd $LSCSOFT_SRCDIR/libframe-6.13 || fail
-./configure --prefix=$LSCSOFT_PREFIX || fail
+cd $LSCSOFT_SRCDIR/libframe-6.14 || fail
+./configure --prefix=$LSCSOFT_PREFIX --disable-ocatave || fail
 make || fail
 make install || fail
 #/verbatim
