@@ -84,7 +84,7 @@ AC_DEFUN(LAL_ENABLE_FRAME,
         frame,
         [  --enable-frame          compile code that requires Frame library [default=no] ],
         [ case "${enableval}" in
-            yes) frame=true  ;;
+            yes) frame=true;;
             no)  frame=false ;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
           esac
@@ -96,7 +96,7 @@ AC_DEFUN(LAL_ENABLE_MPI,
         mpi,
         [  --enable-mpi            compile code that requires MPI [default=no] ],
         [ case "${enableval}" in
-            yes) mpi=true  ;;
+            yes) mpi=true;;
             no)  mpi=false ;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
           esac

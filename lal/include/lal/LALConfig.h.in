@@ -46,6 +46,12 @@
 /* Use pthread mutex lock for threadsafety */
 #undef LAL_PTHREAD_LOCK
 
+/* Define if using Frame library */
+#undef LAL_FRAME_ENABLED
+
+/* Define if using MPI */
+#undef LAL_MPI_ENABLED
+
 #endif /* _LALCONFIG_H */
 
 #endif /* CONFIG_H__LAL */

@@ -194,9 +194,11 @@ LAL_SRFFTW_WORKS
 
 dnl Checks for optional libraries and header files.
 if test "${frame}" = "true"; then
+  AC_DEFINE(LAL_FRAME_ENABLED,1,Define if using Frame library)
   LAL_CHECK_FRAMELIB
 fi
 if test "${mpi}" = "true"; then
+  AC_DEFINE(LAL_MPI_ENABLED,1,Define if using MPI)
   LAL_CHECK_MPI
 fi
 if test "${lal_pthread_lock}" = "true"; then
