@@ -7,12 +7,15 @@
 /*********************************************************************************/
 
 #include <errno.h>
+#include <lal/LALDemod.h>
+
 #include "ComputeFStatistic.h"
+
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
 DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
-double *F;
+LALFstat Fstat;
 INT4 lalDebugLevel=0,i;
 static LALStatus status;
 AMCoeffs amc;
@@ -32,11 +35,11 @@ int main(int argc,char *argv[])
 
   if (CreateDemodParams(CommandLineArgs)) return 5;
 
-  LALDemod(&status,F,SFTData,DemodParams);
+  LALDemod(&status, &Fstat, SFTData, DemodParams);
 
   for(i=0;i < GV.imax ;i++)
     {
-      fprintf(stdout,"%20.10f %20.15f\n",GV.startingdemodfreq+i*GV.demodfreqres,F[i]);
+      fprintf(stdout,"%20.10f %20.15f\n",GV.startingdemodfreq+i*GV.demodfreqres,Fstat.F[i]);
     }
 
   if (Freemem()) return 8;
@@ -188,6 +191,7 @@ int CreateDemodParams(struct CommandLineArgsTag CLA)
 
   DemodParams->Dterms=GV.Dterms;
   DemodParams->ifmin=GV.ifmin;
+  DemodParams->returnFaFb = 0;	 /* don't need Fa/Fb here */
 
   ComputeSky(&status,DemodParams->skyConst,0,csParams);        /* compute the */
 						               /* "sky-constants" A and B */
@@ -477,7 +481,9 @@ int SetGlobalVariables(struct CommandLineArgsTag CLA)
 
    /* allocate F-statistic array */
 
-  F=(double *)LALMalloc(GV.imax*sizeof(double));
+  Fstat.F =(REAL8*)LALMalloc(GV.imax*sizeof(double));
+  Fstat.Fa = NULL;   /* not needed here */
+  Fstat.Fb = NULL;
 
 
   return 0;  
@@ -683,7 +689,7 @@ int Freemem()
   /*Free timestamps*/
   LALFree(timestamps);
 
-  LALFree(F);
+  LALFree(Fstat.F);
 
   /*Free DemodParams*/
 
