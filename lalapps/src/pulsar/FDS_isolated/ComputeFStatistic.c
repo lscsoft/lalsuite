@@ -50,42 +50,36 @@ RCSID( "$Id$");
 /*************************************************** </lalErrTable> */
 
 
-/*----------------------------------------------------------------------*/
-/* 
- * User-specified variables: provided either by default, config-file or command-line
- * NOTE: these HAVE to follow the name-convention "uvar_VarName"
- */
-
-INT4 uvar_Dterms 	= 16;
-INT4 uvar_IFO 		= -1;
-BOOLEAN uvar_SignalOnly = 0;
-BOOLEAN uvar_EstimSigParam = 0;
-REAL8 uvar_Freq 	= 0.0;
-REAL8 uvar_dFreq 	= 0.0;
-REAL8 uvar_FreqBand 	= 0.0;
-REAL8 uvar_Alpha 	= 0.0;
-REAL8 uvar_dAlpha 	= 0.001;
-REAL8 uvar_AlphaBand 	= 0;
-REAL8 uvar_Delta 	= 0.0;
-REAL8 uvar_dDelta 	= 0.001;
-REAL8 uvar_DeltaBand 	= 0;
-REAL8 uvar_Spin;
-REAL8 uvar_dSpin 	= 0.0;
-REAL8 uvar_SpinBand;
-REAL8 uvar_Fthreshold 	= 10.0;
-CHAR *uvar_EphemYear	= NULL;
-INT4  uvar_metricType 	=  LAL_METRIC_NONE;	
-REAL8 uvar_metricMismatch = 0.02;
-CHAR *uvar_skyRegion	= NULL;
-CHAR *uvar_DataDir	= NULL;
-CHAR *uvar_EphemDir	= NULL;
-CHAR *uvar_BaseName	= NULL;
-INT4 uvar_debug;		/* NOTE: don't use this, it's a dummy!! lalDebugLevel is set independently */
+/*----------------------------------------------------------------------
+ * User-variables: provided either by default, config-file or command-line */
+INT4 uvar_Dterms;
+INT4 uvar_IFO;
+BOOLEAN uvar_SignalOnly;
+BOOLEAN uvar_EstimSigParam;
+REAL8 uvar_Freq;
+REAL8 uvar_dFreq;
+REAL8 uvar_FreqBand;
+REAL8 uvar_Alpha;
+REAL8 uvar_dAlpha;
+REAL8 uvar_AlphaBand;
+REAL8 uvar_Delta;
+REAL8 uvar_dDelta;
+REAL8 uvar_DeltaBand;
+REAL8 uvar_f1dot;
+REAL8 uvar_df1dot;
+REAL8 uvar_f1dotBand;
+REAL8 uvar_Fthreshold;
+CHAR *uvar_EphemDir;
+CHAR *uvar_EphemYear;
+INT4  uvar_metricType;
+REAL8 uvar_metricMismatch;
+CHAR *uvar_skyRegion;
+CHAR *uvar_DataDir;
+CHAR *uvar_BaseName;
+INT4 uvar_debug;
 BOOLEAN uvar_help;
-CHAR *uvar_outputLabel 	= NULL;
-
+CHAR *uvar_outputLabel;
 /*----------------------------------------------------------------------*/
-
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
 DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
@@ -130,45 +124,13 @@ int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 INT4 NormaliseSFTData(void);
 
-
 void initUserVars (LALStatus *stat);
 
-/* register all our "user-variables", which can be read from cmd-line and config-file */
-void
-initUserVars (LALStatus *stat)
-{
-  INITSTATUS( stat, "initUserVars", rcsid );
+#define EPHEM_YEARS  "00-04"
+#define SFT_BNAME  "SFT"
 
-  regINTUserVar(stat,	Dterms,		't', "Number of terms to keep in Dirichlet kernel sum");
-  regREALUserVar(stat, 	Freq, 		'f', "Starting search frequency in Hz");
-  regREALUserVar(stat, 	FreqBand, 	'b', "Demodulation frequency band in Hz");
-  regREALUserVar(stat, 	dFreq, 		'r', "Demodulation frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
-  regREALUserVar(stat, 	Alpha, 		'a', "Sky position alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	AlphaBand, 	'z', "Band in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dAlpha, 	'l', "Resolution in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	Delta, 		'd', "Sky position delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	DeltaBand, 	'c', "Band in delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dDelta, 	'g', "Resolution in delta (equatorial coordinates) in radians");
-  regSTRINGUserVar(stat,DataDir, 	'D', "Directory where SFT's are located");
-  regSTRINGUserVar(stat,EphemDir, 	'E', "Directory where Ephemeris files are located");
-  regSTRINGUserVar(stat,EphemYear, 	'y', "Year (or range of years) of ephemeris files to be used");
-  regINTUserVar(stat, 	IFO, 		'I', "Detector, must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
-  regBOOLUserVar(stat, 	SignalOnly, 	'S', "Signal only flag");
-  regREALUserVar(stat, 	Spin, 		's', "Starting spindown parameter");
-  regREALUserVar(stat, 	SpinBand, 	'm', "Spindown band");
-  regREALUserVar(stat, 	dSpin, 		'e', "Spindown resolution (default 1/(2*Tobs*Tsft*Nsft)");
-  regBOOLUserVar(stat, 	EstimSigParam, 	'p',"Do Signal Parameter Estimation");
-  regREALUserVar(stat, 	Fthreshold,	'F', "Signal Set the threshold for selection of 2F");
-  regSTRINGUserVar(stat,BaseName, 	'i', "The base name of the input  file you want to read");
-  regINTUserVar(stat, 	metricType,	'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = Coherent+Ptole");
-  regREALUserVar(stat, 	metricMismatch,	'X',"Maximal mismatch for metric tiling");
-  regINTUserVar(stat, 	debug, 		'v', "Set lalDebugLevel");
-  regBOOLUserVar(stat, 	help, 		'h', "Print this message");
-  regSTRINGUserVar(stat,skyRegion, 	'R', "Specify sky-region by polygon");
-  regSTRINGUserVar(stat,outputLabel,	'o',"Label to be appended to all output file-names");
-
-  RETURN (stat);
-} /* initUserVars() */
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 /*----------------------------------------------------------------------
  * MAIN
@@ -180,7 +142,7 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
-  INT4 i, s;
+  INT4 s;
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
@@ -189,37 +151,18 @@ int main(int argc,char *argv[])
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
-  /*----------------------------------------------------------------------
-   * ok, this is awkward, but the LALDebugLevel has to be set _first thing_, 
-   * before any calls to LALMalloc etc have been made, so we do it my hand: 
-   */
-  for (i=1; i < argc; i++) {
-    if ( strncmp (argv[i], "-v", 2) == 0 ) {
-      if (strlen(argv[i]) == 2) {
-	if (i+1<argc) lalDebugLevel = atoi (argv[i+1]);
-      } else { lalDebugLevel = atoi (argv[i]+2); }
-    }
-  } /* for cmd-line */
-  /*----------------------------------------------------------------------*/
-
   /* register all user-variable */
   LAL_CALL (initUserVars (&status), &status); 	
+
+  uvar_debug = lalDebugLevel;
 
   /* do ALL cmdline and cfgfile handling */
   LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
 
-  /* print help-string and exit if -h was specified */
   if (uvar_help)
-    {
-      /* little hack here: default for uvar_help = False, therefore we have to set that back: */
-      CHAR *helpstr = NULL;
-      uvar_help = 0;
-      LALUserVarHelpString (&status, &helpstr);
-      printf ("Arguments are (short alternative arguments in brackets):\n");
-      printf (helpstr);
-      LALFree (helpstr);
-      exit (0);
-    }
+    exit (0);
+
+  lalDebugLevel = uvar_debug;	/* can only be done here! */
 
   LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
 
@@ -295,7 +238,7 @@ int main(int argc,char *argv[])
       /* loop over spin params */
       for(s=0;s<GV.SpinImax;s++)
 	{
-	  DemodParams->spinDwn[0]=uvar_Spin + s*uvar_dSpin;
+	  DemodParams->spinDwn[0]=uvar_f1dot + s*uvar_df1dot;
 	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
 	  
 	  /*  This fills-in highFLines that are then used by discardFLines */
@@ -364,6 +307,85 @@ int main(int argc,char *argv[])
   return 0;
 
 } /* main() */
+
+
+/* register all our "user-variables", which can be read from cmd-line and config-file */
+void
+initUserVars (LALStatus *stat)
+{
+  INITSTATUS( stat, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
+  /* set a few defaults */
+  uvar_Dterms 	= 16;
+  uvar_FreqBand = 0.0;
+  uvar_dFreq = 0;
+
+  uvar_Alpha 	= 0.0;
+  uvar_Delta 	= 0.0;
+  uvar_AlphaBand = 0;
+  uvar_DeltaBand = 0;
+  uvar_dAlpha 	= 0.001;
+  uvar_dDelta 	= 0.001;
+  uvar_skyRegion = NULL;
+
+  uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar_EphemYear, EPHEM_YEARS);
+
+  uvar_BaseName	= LALCalloc (1, strlen(SFT_BNAME)+1);
+  strcpy (uvar_BaseName, SFT_BNAME);
+
+  uvar_SignalOnly = FALSE;
+  uvar_EstimSigParam = FALSE;
+ 
+  uvar_f1dot = 0.0;
+  uvar_df1dot 	= 0.0;
+  uvar_f1dotBand = 0.0;
+  
+  uvar_Fthreshold = 10.0;
+
+  uvar_metricType =  LAL_METRIC_NONE;	
+  uvar_metricMismatch = 0.02;
+
+  uvar_debug = lalDebugLevel;
+
+  uvar_help = FALSE;
+  uvar_outputLabel = NULL;
+
+  /* register all our user-variables */
+ 
+  regINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  regREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  regREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  regREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
+  regREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  regREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  regREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  regREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  regREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  regREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  regSTRINGUserVar(stat,DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
+  regSTRINGUserVar(stat,BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  regSTRINGUserVar(stat,EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
+  regSTRINGUserVar(stat,EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  regINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  regBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  regREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  regREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  regREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  regBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  regREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic, 2 = Ptole-numeric");
+  regREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  regINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
+  regBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
+  regSTRINGUserVar(stat,skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  regSTRINGUserVar(stat,outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+} /* initUserVars() */
+
 
 
 /*******************************************************************************/
@@ -1250,9 +1272,9 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   cfg->FreqImax=(INT4)(uvar_FreqBand/uvar_dFreq+.5)+1;  /*Number of frequency values to calculate F for */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( uvar_dSpin == 0.0 ) uvar_dSpin=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
+  if( uvar_df1dot == 0.0 ) uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
 
-  cfg->SpinImax=(int)(uvar_SpinBand/uvar_dSpin+.5)+1;  /*Number of frequency values to calculate F for */
+  cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of frequency values to calculate F for */
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
