@@ -409,7 +409,7 @@ int main(int argc,char *argv[])
 	  if (thisScan.state == STATE_FINISHED)
 	    {
 	      LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
-	      exit (COMPUTEFSTATC_ECHECKPOINT); 
+	      return COMPUTEFSTATC_ECHECKPOINT; 
 	    }
 	}
     } /* if loopcounter > 0 */
@@ -424,12 +424,12 @@ int main(int argc,char *argv[])
 	  if ( (fp = fopen(ckp_fname, "wb")) == NULL) /* overwrite old file */
 	    {
 	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
-	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	      return COMPUTEFSTATC_ECHECKPOINT;
 	    }
 	  if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld", loopcounter, fstat_bytecounter) < 0)
 	    {
 	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
-	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	      return COMPUTEFSTATC_ECHECKPOINT;
 	    }
 	  fclose (fp);
 	  fflush (fpstat);
