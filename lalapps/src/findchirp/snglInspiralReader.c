@@ -366,50 +366,45 @@ int main(int argc, char **argv)
         /* open xml file at search summary table */
         if ( (retVal = MetaioOpenTable( triggerEnv, line, searchSummaryName))
 		       	!=0 ){
-            fprintf(stderr, "Error opening injection file %s for %s\n", 
-                    line, searchSummaryName );
-            if (fileCounter>1){
-            MetaioAbort( triggerEnv ); 
-            exit(SNGLINSPIRALREADER_EFILE);
-            } else {
-                fprintf(stderr,"Proceeding anyway\n");
-            }
+            fprintf(stderr, "Error opening injection file %s for
+                %s\n", line, searchSummaryName );
+            fprintf(stderr,"Proceeding anyway\n");
         }
 
         if ( !retVal ){
-        /* get the search summary table */
-        LAL_CALL( buildSearchSummaryIndex(&stat, triggerEnv, 
-		    &searchSummaryIndex), &stat);
-        LAL_CALL( getSearchSummaryTable(&stat, triggerEnv, &searchSummaryTable, 
-                    &searchSummaryIndex), &stat);
+          /* get the search summary table */
+          LAL_CALL( buildSearchSummaryIndex(&stat, triggerEnv, 
+                &searchSummaryIndex), &stat);
+          LAL_CALL( getSearchSummaryTable(&stat, triggerEnv, &searchSummaryTable, 
+                &searchSummaryIndex), &stat);
 
-        /* check for events and playground */
-        if ( ( playground && 
+          /* check for events and playground */
+          if ( ( playground && 
                 !(isPlayground(searchSummaryTable.out_start_time.gpsSeconds,
-                           searchSummaryTable.out_end_time.gpsSeconds ))) ){
+                    searchSummaryTable.out_end_time.gpsSeconds ))) ){
             fprintf(stdout,"File %i %s: not in playground, continuing\n",
-                    fileCounter,line);
+                fileCounter,line);
             continue;
-        }
-        else if ( searchSummaryTable.nevents == 0 ){
+          }
+          else if ( searchSummaryTable.nevents == 0 ){
             fprintf(stdout,"File %i %s: no events, continuing\n",
-                    fileCounter,line);
+                fileCounter,line);
             continue;
-        }
-        else {
+          }
+          else {
             fprintf(stdout,"File %i %s: processing\n",
-                    fileCounter,line);
-        }
+                fileCounter,line);
+          }
 
-        /* close the stream */
-        MetaioAbort( triggerEnv );
+          /* close the stream */
+          MetaioAbort( triggerEnv );
         }
         
         /* open xml file at inspiral table */
         if ( (retVal = MetaioOpenTable( triggerEnv, line, tablename)) !=0 ){
-            fprintf(stderr, "Error opening injection file %s\n", line );
+            fprintf(stderr, "File %s has no inspiral table\n", line );
             MetaioAbort( triggerEnv ); 
-            exit(SNGLINSPIRALREADER_EFILE);
+            continue;
         }
 
         /* Locate the relevant columns in the inspiral table */
