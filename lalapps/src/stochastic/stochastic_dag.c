@@ -101,9 +101,9 @@ INT4 fMin = -1;
 INT4 fMax = -1;
 
 /* omegaGW parameters */
-REAL4 alpha = 0.0;
-REAL4 fRef = 100.0;
-REAL4 omegaRef = 1.;
+REAL4 alpha = 0;
+REAL4 fRef = 100;
+REAL4 omegaRef = 1;
 
 /* monte carlo parameters */
 REAL4 scaleFactor = -1;
@@ -1812,6 +1812,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -F, --f-max N                       maximum frequency\n"\
   " -i, --ifo-one IFO                   ifo for first stream\n"\
   " -I, --ifo-two IFO                   ifo for second stream\n"\
+  " -e, --omega-alpha N                 omega_gw exponent\n"\
+  " -E, --omega-fref N                  omega_gw reference frequency\n"\
+  " -O, --omega0 N                      omega_0\n"\
   " -d, --frame-cache-one FILE          cache file for first stream\n"\
   " -D, --frame-cache-two FILE          cache file for second stream\n"\
   " -r, --calibration-cache-one FILE    first stream calibration cache\n"\
@@ -1864,6 +1867,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"resample-rate", required_argument, 0, 'a'},
       {"f-min", required_argument, 0, 'f'},
       {"f-max", required_argument, 0, 'F'},
+      {"omega-alpha", required_argument, 0, 'e'},
+      {"omega-fref", required_argument, 0, 'E'},
+      {"omega0", required_argument, 0, 'O'},
       {"hann-duration", required_argument, 0, 'w'},
       {"hpf-frequency", required_argument, 0, 'k'},
       {"hpf-attenuation", required_argument, 0, 'p'},
@@ -2057,6 +2063,39 @@ void parseOptions(INT4 argc, CHAR *argv[])
               "Maximum frequency is less than 0 Hz: (%d specified)\n", \
               long_options[option_index].name, fMax);
           exit(1);
+        }
+
+        break;
+
+      case 'e':
+        /* omega exponent */
+        alpha = atof(optarg);
+        break;
+
+      case 'E':
+        /* omega reference frequency */
+        fRef = atof(optarg);
+
+        /* check */
+        if (fRef < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference frequency is less than 0 Hz: (%f specified)\n", \
+              long_options[option_index].name, fRef);
+        }
+
+        break;
+
+      case 'O':
+        /* omega 0 */
+        omegaRef = atof(optarg);
+
+        /* check */
+        if (omegaRef <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Omega_0 is less than or equal to 0: (%f specified)\n", \
+              long_options[option_index].name, omegaRef);
         }
 
         break;
@@ -2595,6 +2634,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
   {
     fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
         "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* reference frequency less than min */
+  if (fRef < fMin)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than minimum " \
+        "frequency (%d Hz)\n", fRef, fMin);
+    exit(1);
+  }
+
+  /* reference frequency greater than max */
+  if (fRef > fMax)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is greater than " \
+        "maximum frequency (%d Hz)\n", fRef, fMax);
     exit(1);
   }
 
