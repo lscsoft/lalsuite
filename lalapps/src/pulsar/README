@@ -151,4 +151,11 @@ need to carry out the following steps.
 (2) Copy the condor script condor.sub to /scratch/ballen/S2-L1.60-condor.
     Modify the file to refer to the correct IFO, if necessary
 
-(3) 
+(3) Copy lalapps_make_sfts to /scratch/ballen/S2-L1.60-condor.  Then
+    from within that directory, do
+    condor_submit condor.sub
+
+(4) At this point you can monitor the output by watching the output
+    directory /scratch/ballen/S2-L1.60-sft/.  Log, error and output
+    files will be written to err.*, log.* and out.* for each of the
+    different jobs.
