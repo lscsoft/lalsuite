@@ -89,8 +89,8 @@ NRCSID( FRAMESTREAMC, "$Id$" );
  *
  */
 
-#ifndef MAXHOSTNAME
-#define MAXHOSTNAME 256
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
 #endif
 
 
