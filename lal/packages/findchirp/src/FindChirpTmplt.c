@@ -104,6 +104,7 @@ LALFindChirpCreateInspiralBank (
   tmpltPtr->level = 0;
   tmpltPtr->next = NULL;
   tmpltPtr->fine = NULL;
+  tmpltPtr->segmentIdVec = NULL;
 
   /* create the list of segments to be filtered... */
   LALI4CreateVector( status->statusPtr, &(tmpltPtr->segmentIdVec), 
@@ -141,6 +142,7 @@ LALFindChirpCreateInspiralBank (
     tmpltPtr->level = 0;
     tmpltPtr->next = NULL;
     tmpltPtr->fine = NULL;
+    tmpltPtr->segmentIdVec = NULL;
 
     /* create the list of segments to be filtered... */
     LALI4CreateVector( status->statusPtr, &(tmpltPtr->segmentIdVec), 
@@ -225,6 +227,7 @@ LALFindChirpCreateInspiralBank (
         fineTmpltPtr->level = 1;
         fineTmpltPtr->next = NULL;
         fineTmpltPtr->fine = NULL;
+	fineTmpltPtr->segmentIdVec = NULL;
 
         /* create the list of segments to be filtered... */
         LALI4CreateVector( status->statusPtr, &(fineTmpltPtr->segmentIdVec), 
@@ -265,6 +268,7 @@ LALFindChirpCreateInspiralBank (
           fineTmpltPtr->level = 1;
           fineTmpltPtr->next = NULL;
           fineTmpltPtr->fine = NULL;
+	  fineTmpltPtr->segmentIdVec = NULL;
 
           /* create the list of segments to be filtered... */
           LALI4CreateVector( status->statusPtr, &(fineTmpltPtr->segmentIdVec), 
