@@ -101,6 +101,8 @@ computed will be used to compute the output power spectrum.
 
 \item[\texttt{useMedian}] The median value of the individual power spectra 
 computed will be used to compute the output power spectrum.
+
+\item[\texttt{NumberAvgSpecMethods}] gives the number of defined methods.
 \end{description}
 
 </lalLaTeX> */
@@ -109,7 +111,8 @@ typedef enum
 {
   useUnity,
   useMean,
-  useMedian
+  useMedian,
+  NumberAvgSpecMethods
 } 
 AvgSpecMethod;
 
