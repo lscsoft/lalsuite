@@ -496,12 +496,32 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 </lalLaTeX> 
 #endif
 
+
 /*
  *
  * function prototypes for memory management functions
  *
  */
 
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpLinkedListC}
+</lalLaTeX>
+#endif
+
+void
+LALFindChirpCreateTmpltNode (
+    LALStatus                  *status,
+    InspiralTemplate           *tmplt,
+    InspiralTemplateNode      **tmpltNode
+    );
+
+void
+LALFindChirpDestroyTmpltNode ( 
+    LALStatus                  *status,
+    InspiralTemplateNode      **tmpltNode
+    );
 
 #if 0
 <lalLaTeX>
@@ -549,73 +569,6 @@ void
 LALDestroyFindChirpSegmentVector (
     LALStatus                  *status,
     FindChirpSegmentVector    **vector
-    );
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpLinkedListC}
-</lalLaTeX>
-#endif
-
-void
-LALFindChirpCreateTmpltNode (
-    LALStatus                  *status,
-    InspiralTemplate           *tmplt,
-    InspiralTemplateNode      **tmpltNode
-    );
-
-void
-LALFindChirpDestroyTmpltNode ( 
-    LALStatus                  *status,
-    InspiralTemplateNode      **tmpltNode
-    );
-
-
-/*
- *
- * function prototypes for initialization, finalization and filter functions
- *
- */
-
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpFilterC}
-</lalLaTeX>
-#endif
-
-void
-LALFindChirpFilterInit (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFindChirpFilterFinalize (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output
-    );
-
-void
-LALCreateFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALDestroyFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output
-    );
-
-void
-LALFindChirpFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
     );
 
 
@@ -671,6 +624,55 @@ void
 LALFindChirpTemplateFinalize (
     LALStatus                  *status,
     FindChirpTmpltParams      **output
+    );
+
+
+
+/*
+ *
+ * function prototypes for initialization, finalization and filter functions
+ *
+ */
+
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpFilterC}
+</lalLaTeX>
+#endif
+
+void
+LALFindChirpFilterInit (
+    LALStatus                  *status,
+    FindChirpFilterParams     **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALFindChirpFilterFinalize (
+    LALStatus                  *status,
+    FindChirpFilterParams     **output
+    );
+
+void
+LALCreateFindChirpInput (
+    LALStatus                  *status,
+    FindChirpFilterInput      **output,
+    FindChirpInitParams        *params
+    );
+
+void
+LALDestroyFindChirpInput (
+    LALStatus                  *status,
+    FindChirpFilterInput      **output
+    );
+
+void
+LALFindChirpFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
     );
 
 
