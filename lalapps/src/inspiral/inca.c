@@ -27,6 +27,7 @@
 RCSID("$Id$");
 
 #define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -564,8 +565,9 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
-            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
-            "CVS Version: " CVS_ID_STRING "\n" );
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
         break;
 

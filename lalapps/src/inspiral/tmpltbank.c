@@ -54,6 +54,7 @@
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -1381,7 +1382,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Template Bank Code\n" 
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
-            "CVS Version: " CVS_ID_STRING "\n" );
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
         break;
 
