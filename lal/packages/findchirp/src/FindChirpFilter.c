@@ -752,7 +752,6 @@ LALFindChirpFilterSegment (
           {
             thisEvent->chisq   = 0;
           }
-          /* XXX fixed bug found by Nelson: double check this with notes */
           thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
               input->segment->segNorm * input->fcTmplt->tmpltNorm );
           thisEvent->effDist = 
@@ -813,7 +812,6 @@ LALFindChirpFilterSegment (
     {
       thisEvent->chisq = 0;
     }
-    /* XXX fixed bug found by Nelson: double check this with notes */
     thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
         input->segment->segNorm * input->fcTmplt->tmpltNorm );
     thisEvent->effDist = 
