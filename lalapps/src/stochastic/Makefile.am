@@ -20,7 +20,7 @@ ${LALMETAIOFRAMEPROGRAMS}
 lalapps_olapredfcn_SOURCES = olapredfcn.c olapredfcn.h olapredfcn_args.c \
                              olapredfcn_bars.c
 
-bin_SCRIPTS = lalapps_stochastic_pipe
+bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = stochastic.py
 
@@ -33,6 +33,10 @@ lalapps_stochastic_pipe: stochastic_pipe.in python_config.sed
 	sed -f python_config.sed stochastic_pipe.in > lalapps_stochastic_pipe
 	chmod +x lalapps_stochastic_pipe
 
-CLEANFILES = python_config.sed lalapps_stochastic_pipe
+lalapps_stochastic_bayes: stochastic_bayes.in python_config.sed
+	sed -f python_config.sed stochastic_bayes.in > lalapps_stochastic_bayes
+	chmod +x lalapps_stochastic_bayes
+
+CLEANFILES = python_config.sed lalapps_stochastic_pipe lalapps_stochastic_bayes
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
