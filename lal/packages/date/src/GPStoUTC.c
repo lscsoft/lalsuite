@@ -108,12 +108,12 @@ NRCSID (GPSTOUTCC, "$Id$");
 struct tm *gmtime_r( const time_t *, struct tm * );
 char *asctime_r( const struct tm *, char * );
 
-/* latest time for which this routine will work: 2003-Mar-30 23:59:00 UTC */
-/* 24 leap seconds because of the two interpolated ones: 1970-Jan-1 and
- * 1970-Jan-22 */
+
+/* UPDATEME */
+/* latest time for which this routine will work: 2003-Dec-31 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 733103953;
+static const INT4 maxtestedGPS = 756950412;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -128,6 +128,7 @@ LALGPStoUTC (LALStatus                *status,
                                                       accounting:
                                                       LALLEAPSEC_LOOSE, or LALLEAPSEC_STRICT */
 { /* </lalVerbatim> */
+  /* UPDATEME */
   /* this is a table of Unix epoch times when leap
    * seconds were introduced */
   static const time_t leaps[]={
@@ -387,6 +388,7 @@ LALUTCtoGPS (LALStatus                *status,
                                                       LALLEAPSEC_LOOSE, or LALLEAPSEC_STRICT */
 { /* </lalVerbatim> */
 
+  /* UPDATEME */
   /*
    * Table of leap seconds
    */
@@ -472,9 +474,10 @@ LALUTCtoGPS (LALStatus                *status,
 
   LALInfo(status, ">= 1980-01-06 only");
 
+  /* UPDATEME */
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2003-Mar-30 23:59:00
+   * Use by: 2003-Dec-31 23:59:59 UTC
    *
    * if date is later
    *    check accuracy param
@@ -488,12 +491,12 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 103 ||
       (p_utcDate->unixDate.tm_year == 103 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_MAR ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_MAR &&
-         p_utcDate->unixDate.tm_mday == 30 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
+         p_utcDate->unixDate.tm_mday == 31 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
-         p_utcDate->unixDate.tm_sec > 0))))
+         p_utcDate->unixDate.tm_sec > 59))))
     {
       /* check accuracy param */
       if (*p_accuracy == LALLEAPSEC_STRICT) /* strict accuracy */
@@ -511,7 +514,7 @@ LALUTCtoGPS (LALStatus                *status,
     }
   
   
-  /* start counting from the origin */
+  /* start counting from the origin of GPS */
   tmpdate.unixDate.tm_year = 80;
   tmpdate.unixDate.tm_mon  = LALMONTH_JAN;
   tmpdate.unixDate.tm_mday =  6;
@@ -628,6 +631,7 @@ LALLeapSecs (LALStatus                    *status,
                                                                accuracy parameters */
 { /* </lalVerbatim> */
 
+  /* UPDATEME */
   /* Table of TAI-UTC */
   static const gps_leap_sec_t gpsLeaps[] =
     {

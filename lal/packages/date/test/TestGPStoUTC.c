@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-
   sprintf(refstamp, "1980-01-06 00:00:00 UTC Sun");
   
   if (lalDebugLevel > 0)
@@ -126,7 +125,6 @@ int main(int argc, char *argv[])
       return 1;
     }
 
-
   /*
    * GPS 599184012 == 1998-12-31 23:59:60 UTC Thu (leap second introduced)
    */
@@ -177,10 +175,11 @@ int main(int argc, char *argv[])
     }
 
   /*
-   * GPS 701654354 == 2002-Mar-31 23:59:01 (one second past expiry)
+   * UPDATEME
+   * GPS 756950413 == 2004-Jan-01 00:00:00 (one second past expiry)
    * Expect to fail with status code 5
    */
-  gpsTime.gpsSeconds     = 701654354;
+  gpsTime.gpsSeconds     = 756950413;
   gpsTime.gpsNanoSeconds = 0;
   
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
@@ -203,7 +202,8 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-  sprintf(refstamp, "2002-03-31 23:59:01 UTC Sun");
+  /* UPDATEME */
+  sprintf(refstamp, "2004-01-01 00:00:00 UTC Thu");
   
   if (lalDebugLevel > 0)
     {
@@ -252,6 +252,7 @@ int main(int argc, char *argv[])
           return status.statusCode;
         }
     }
+
 
   /*
    * GPS 701654413 == 2002-04-01 00:00:00 UTC
