@@ -252,7 +252,7 @@ LALFindChirpBCVSpinFilterSegment (
    * Choose level of output
    */
 
-  doTest      = 0; /* 1 writes out many files, useful for testing */
+  doTest = 1; /* 1 writes out many files, useful for testing */
      
   if (doTest ==1)
   {	  
@@ -301,7 +301,7 @@ LALFindChirpBCVSpinFilterSegment (
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
   wtilde     = input->segment->dataBCV->data->data; 
 
-  beta = 100.0;
+  beta = 0.0;
 
   deltaTto2by3 = pow(deltaT, Twoby3);
   deltaF  =  1.0/((REAL4)numPoints * deltaT);
@@ -903,7 +903,7 @@ LALFindChirpBCVSpinFilterSegment (
   /* temporarily set chirpTime equal to 0.5 seconds */
   chirpTime = 0.5;
   deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
-                                                                                                                             
+  
   /* ignore corrupted data at start and end */
   ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
   
@@ -920,24 +920,21 @@ LALFindChirpBCVSpinFilterSegment (
                     ( qBCVSpin2[j].re * qBCVSpin2[j].re 
 		    + qBCVSpin2[j].im * qBCVSpin2[j].im ) )
                     * normFacSq;
-                                                                                                     			
+                
+	
+	 
+	rho    = pow(rhoSq, 0.5);
+	invRho = 1/rho;
+	
 	if (doTest ==1)
-	{	
-	 	rho    = pow(rhoSq, 0.5);
+	{       	
 		fprintf (fpRho1, "%d\t%e\n", j, rho);
 	}
-		
-	invRho = 1/rho;
-
-      	/*  fprintf (stdout, "modqsqThresh %e\n", modqsqThresh); */
 	
 	/* if snrsq exceeds threshold at any point */
    	if ( rhoSq > modqsqThresh )
     	{
-                /* fprintf (stdout, "rhoSq %e\n", rhoSq);
-                 fprintf (stdout, "rho   %e\n", rho); */
-                
-   		if (! *eventList )    /* if *eventlist is empty */        
+		if (! *eventList )    /* if *eventlist is empty */        
                 {
  			/* store the start of the crossing */
           		eventStartIdx = j;
@@ -1038,7 +1035,25 @@ LALFindChirpBCVSpinFilterSegment (
                 	/*thisEvent->eta = 3.0 / (128.0*thisEvent->psi0 *
               		pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );*/
           		thisEvent->f_final  = (REAL4) input->tmplt->fFinal ;
-                                                                                                                             
+                        
+		if (doTest ==1)
+		{
+                	fprintf (stdout, "rhoSq  %e\n", rhoSq); 
+			fprintf (stdout, "rho    %e\n", rho);
+			fprintf (stdout, "alpha1 %e\n", alpha1);
+			fprintf (stdout, "alpha2 %e\n", alpha2);
+			fprintf (stdout, "alpha3 %e\n", alpha3);
+			fprintf (stdout, "alpha4 %e\n", alpha4);
+			fprintf (stdout, "alpha5 %e\n", alpha5);
+			fprintf (stdout, "alpha6 %e\n", alpha6);
+			fprintf (stdout, "fFinal %e\n", fFinal);
+			fprintf (stdout, "beta   %e\n", beta);
+			fprintf (stdout, "psi0   %e\n", input->tmplt->psi0);
+			fprintf (stdout, "psi3   %e\n", input->tmplt->psi3);
+		}	
+
+			
+			
           		/* set the type of the template used in the analysis */
           		LALSnprintf( thisEvent->search, 
 				LIGOMETA_SEARCH_MAX * sizeof(CHAR),
