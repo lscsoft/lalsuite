@@ -284,6 +284,8 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.__ifo_a = None
+    self.__ifo_b = None
     
   def set_ifo_a(self, ifo):
     """
@@ -291,6 +293,13 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     ifo = IFO code (e.g. L1, H1 or H2).
     """
     self.add_var_opt('ifo-a', ifo)
+    self.__ifo_a = ifo
+
+  def get_ifo_a(self):
+    """
+    Returns the IFO code of the primary interferometer.
+    """
+    return self.__ifo_a
 
   def set_ifo_b(self, ifo):
     """
@@ -298,13 +307,20 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     ifo = IFO code (e.g. L1, H1 or H2).
     """
     self.add_var_opt('ifo-b', ifo)
+    self.__ifo_b = ifo
 
-  def set_output(self, file):
+  def get_ifo_b(self):
     """
-    Name the inca output file based on the standard naming convention with
-    string at the start for the ifos.
-    file = prefix for inca output file.
+    Returns the IFO code of the primary interferometer.
     """
-    out = file + '-INCA-' + str(self.get_start()) + '-'
-    out = out + str(self.get_end() - self.get_start()) + '.xml'
-    pipeline.AnalysisNode.set_output(self,out)
+    return self.__ifo_b
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inca code. This must be kept
+    synchronized with the name of the output file in inca.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo_a():
+      raise InspiralError, "Start time, end time or ifo a has not been set"
+    out = self.get_ifo_a() + '-INCA-' + str(self.get_start()) + '-'
+    return out + str(self.get_end() - self.get_start()) + '.xml'
