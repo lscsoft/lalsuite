@@ -45,6 +45,12 @@ RCSID("$Id$");
  */
 
 struct options_t {
+	CHAR *inputFile;
+	CHAR *injectionFile;
+	CHAR *injmadeFile;
+	CHAR *injFoundFile;
+	CHAR *outSnglFile;
+
 	int verbose;
 
 	int playground;
@@ -52,6 +58,10 @@ struct options_t {
 
 	int best_confidence;
 	int best_peaktime;
+
+	/* times of comparison */
+	INT4 gpsStartTime;
+	INT4 gpsEndTime;
 
 	/* central_freq threshold */
 	INT4 maxCentralfreqFlag;
@@ -92,6 +102,15 @@ struct options_t {
 
 static void set_option_defaults(struct options_t *options)
 {
+	const long S2StartTime = 729273613;	/* Feb 14 2003 16:00:00 UTC */
+	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
+
+	options->inputFile = NULL;
+	options->injectionFile = NULL;
+	options->injmadeFile = NULL;
+	options->injFoundFile = NULL;
+	options->outSnglFile = NULL;
+
 	options->verbose = FALSE;
 
 	options->playground = FALSE;
@@ -99,6 +118,9 @@ static void set_option_defaults(struct options_t *options)
 
 	options->best_confidence = FALSE;
 	options->best_peaktime = FALSE;
+
+	options->gpsStartTime = S2StartTime;
+	options->gpsEndTime = S2StopTime;
 
 	options->maxCentralfreqFlag = FALSE;
 	options->maxCentralfreq = 0.0;
@@ -125,6 +147,118 @@ static void set_option_defaults(struct options_t *options)
 	options->maxSnr = 0.0;
 	options->minSnrFlag = FALSE;
 	options->minSnr = 0.0;
+}
+
+
+static void parse_command_line(int argc, char *argv[], struct options_t *options)
+{
+	struct option long_options[] = {
+		{"verbose", no_argument, &options->verbose, TRUE},
+		{"input-trig", required_argument, NULL, 'a'},
+		{"input-inj", required_argument, NULL, 'b'},
+		{"output-inj-made", required_argument, NULL, 'c'},
+		{"max-confidence", required_argument, NULL, 'd'},
+		{"gps-start-time", required_argument, NULL, 'e'},
+		{"gps-end-time", required_argument, NULL, 'f'},
+		{"min-centralfreq", required_argument, NULL, 'g'},
+		{"max-centralfreq", required_argument, NULL, 'h'},
+		{"output-inj-found", required_argument, NULL, 'j'},
+		{"playground", no_argument, &options->playground, TRUE},
+		{"noplayground", no_argument, &options->noplayground, TRUE},
+		{"help", no_argument, NULL, 'o'},
+		{"output-trig", required_argument, NULL, 'q'},
+		{"best-confidence", no_argument, &options->best_confidence, TRUE},
+		{"best-peaktime", no_argument, &options->best_peaktime, TRUE},
+		{NULL, 0, NULL, 0}
+	};
+	int c, option_index = 0;
+
+	while (1) {
+		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
+
+		/* detect the end of the options */
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 0:
+			/* this option sets a flag */
+			break;
+
+		case 'a':
+			options->inputFile = optarg;
+			break;
+
+		case 'b':
+			options->injectionFile = optarg;
+			break;
+
+		case 'c':
+			options->injmadeFile = optarg;
+			break;
+
+		case 'd':
+			/* the confidence must be smaller than this number */
+			options->maxConfidenceFlag = TRUE;
+			options->maxConfidence = atof(optarg);
+			break;
+
+		case 'e':
+			/* only events with duration greater than this are selected */
+			options->gpsStartTime = atoi(optarg);
+			break;
+
+		case 'f':
+			/* only events with duration less than this are selected */
+			options->gpsEndTime = atoi(optarg);
+			break;
+
+		case 'g':
+			/* only events with centralfreq greater than this are selected */
+			options->minCentralfreqFlag = TRUE;
+			options->minCentralfreq = atof(optarg);
+			break;
+
+		case 'h':
+			/* only events with centralfreq less than this are selected */
+			options->maxCentralfreqFlag = TRUE;
+			options->maxCentralfreq = atof(optarg);
+			break;
+
+		case 'j':
+			options->injFoundFile = optarg;
+			break;
+
+		case 'o':
+			/* print help */
+			LALPrintError(USAGE, *argv);
+			exit(BINJ_FIND_EARG);
+
+		case 'q':
+			options->outSnglFile = optarg;
+			break;
+
+		default:
+			exit(BINJ_FIND_EARG);
+		}
+	}
+
+	if (optind < argc) {
+		fprintf(stderr, "extraneous command line arguments:\n");
+		while (optind < argc)
+			fprintf(stderr, "%s\n", argv[optind++]);
+		exit(1);
+	}
+
+	if(!(options->best_confidence ^ options->best_peaktime)) {
+		LALPrintError("Must specify exactly one of --best-confidence or --best-peaktime\n");
+		exit(BINJ_FIND_EARG);
+	}
+
+	if (!options->inputFile || !options->injectionFile || !options->injmadeFile  || !options->injFoundFile || !options->outSnglFile) {
+		LALPrintError("Must specify --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n");
+		exit(BINJ_FIND_EARG);
+	}
 }
 
 
@@ -486,21 +620,8 @@ int main(int argc, char **argv)
 	INT4 ndetected;
 	INT4 ninjected;
 	INT4 timeAnalyzed;
-	const long S2StartTime = 729273613;	/* Feb 14 2003 16:00:00 UTC */
-	const long S2StopTime = 734367613;	/* Apr 14 2003 15:00:00 UTC */
 
 	static struct options_t options;
-
-	/* filenames */
-	CHAR *inputFile = NULL;
-	CHAR *injectionFile = NULL;
-	CHAR *injmadeFile = NULL;
-	CHAR *injFoundFile = NULL;
-	CHAR *outSnglFile = NULL;
-
-	/* times of comparison */
-	INT4 gpsStartTime = S2StartTime;
-	INT4 gpsEndTime = S2StopTime;
 
 	/* triggers */
 	SnglBurstTable *event, *bestmatch;
@@ -518,9 +639,6 @@ int main(int argc, char **argv)
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
-	/* switch variable */
-	int c;
-
 	/*
 	 * Initialize things.
 	 */
@@ -533,123 +651,13 @@ int main(int argc, char **argv)
 	 */
 
 	set_option_defaults(&options);
-	while (1) {
-		/* getopt arguments */
-		static struct option long_options[] = {
-			/* these options set a flag */
-			{"verbose", no_argument, &options.verbose, 1},
-			/* parameters which determine the output XML file */
-			{"input-trig", required_argument, NULL, 'a'},
-			{"input-inj", required_argument, NULL, 'b'},
-			{"output-inj-made", required_argument, NULL, 'c'},
-			{"max-confidence", required_argument, NULL, 'd'},
-			{"gps-start-time", required_argument, NULL, 'e'},
-			{"gps-end-time", required_argument, NULL, 'f'},
-			{"min-centralfreq", required_argument, NULL, 'g'},
-			{"max-centralfreq", required_argument, NULL, 'h'},
-			{"output-inj-found", required_argument, NULL, 'j'},
-			{"playground", no_argument, &options.playground, 1},
-			{"noplayground", no_argument, &options.noplayground, 1},
-			{"help", no_argument, NULL, 'o'},
-			{"output-trig", required_argument, NULL, 'q'},
-			{"best-confidence", no_argument, &options.best_confidence, 1},
-			{"best-peaktime", no_argument, &options.best_peaktime, 1},
-			{NULL, 0, NULL, 0}
-		};
-		/* getopt_long stores the option index here. */
-		int option_index = 0;
-
-		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
-
-		/* detect the end of the options */
-		if (c == -1)
-			break;
-
-		switch (c) {
-		case 0:
-			/* this option sets a flag */
-			break;
-
-		case 'a':
-			inputFile = optarg;
-			break;
-
-		case 'b':
-			injectionFile = optarg;
-			break;
-
-		case 'c':
-			injmadeFile = optarg;
-			break;
-
-		case 'd':
-			/* the confidence must be smaller than this number */
-			options.maxConfidenceFlag = TRUE;
-			options.maxConfidence = atof(optarg);
-			break;
-
-		case 'e':
-			/* only events with duration greater than this are selected */
-			gpsStartTime = atoi(optarg);
-			break;
-
-		case 'f':
-			/* only events with duration less than this are selected */
-			gpsEndTime = atoi(optarg);
-			break;
-
-		case 'g':
-			/* only events with centralfreq greater than this are selected */
-			options.minCentralfreqFlag = TRUE;
-			options.minCentralfreq = atof(optarg);
-			break;
-
-		case 'h':
-			/* only events with centralfreq less than this are selected */
-			options.maxCentralfreqFlag = TRUE;
-			options.maxCentralfreq = atof(optarg);
-			break;
-
-		case 'j':
-			injFoundFile = optarg;
-			break;
-
-		case 'o':
-			/* print help */
-			LALPrintError(USAGE, *argv);
-			exit(BINJ_FIND_EARG);
-
-		case 'q':
-			outSnglFile = optarg;
-			break;
-
-		default:
-			exit(BINJ_FIND_EARG);
-		}
-	}
-
-	if (optind < argc) {
-		fprintf(stderr, "extraneous command line arguments:\n");
-		while (optind < argc)
-			fprintf(stderr, "%s\n", argv[optind++]);
-		exit(1);
-	}
-
-	if(!(options.best_confidence ^ options.best_peaktime)) {
-		LALPrintError("Must specify exactly one of --best-confidence or --best-peaktime\n");
-		exit(BINJ_FIND_EARG);
-	}
-
-	if (!inputFile || !injectionFile || !injmadeFile  || !injFoundFile || !outSnglFile) {
-		LALPrintError("Must specify --input-trig, --input-inj, --output-trig, --output-inj-made, and --output-inj-found\n");
-		exit(BINJ_FIND_EARG);
-	}
+	parse_command_line(argc, argv, &options);
 
 	/*
 	 * Read and trim the injection list.
 	 */
 
-	simBurstList = read_injection_list(&stat, injectionFile, gpsStartTime, gpsEndTime, options);
+	simBurstList = read_injection_list(&stat, options.injectionFile, options.gpsStartTime, options.gpsEndTime, options);
 
 	/*
 	 * Read and trim the trigger list;  remove injections from the
@@ -658,7 +666,7 @@ int main(int argc, char **argv)
 	 * trigger list too.
 	 */
 
-	burstEventList = read_trigger_list(&stat, inputFile, &timeAnalyzed, &simBurstList, options);
+	burstEventList = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &simBurstList, options);
 	if(options.verbose)
 		fprintf(stderr, "Sorting triggers...\n");
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
@@ -719,7 +727,7 @@ int main(int argc, char **argv)
 	xmlStream.fp = NULL;
 
 	/* List of injections that were actually made */
-	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injmadeFile), &stat);
+	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injmadeFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
 	myTable.simBurstTable = simBurstList;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
@@ -727,7 +735,7 @@ int main(int argc, char **argv)
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 	/* List of injections which were detected */
-	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injFoundFile), &stat);
+	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.injFoundFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
 	myTable.simBurstTable = detectedInjections;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sim_burst_table), &stat);
@@ -735,7 +743,7 @@ int main(int argc, char **argv)
 	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 	/* List of triggers corresponding to injection */
-	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outSnglFile), &stat);
+	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, options.outSnglFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sngl_burst_table), &stat);
 	myTable.snglBurstTable = detectedTriggers;
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, myTable, sngl_burst_table), &stat);
