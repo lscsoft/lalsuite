@@ -16,9 +16,11 @@ endif
 
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF lalapps_polka lalapps_FstatShapeTestLAL ComputeFStatisticBinary  compareFstats $(FRAMEPROGRAMS) ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh
 
-lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
-	rngmed.c rngmed.h clusters.c clusters.h  			\
-	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+CFSsources = 	ComputeFStatistic.c ComputeFStatistic.h		\
+		rngmed.c rngmed.h clusters.c clusters.h  	\
+		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+
+lalapps_ComputeFStatistic_SOURCES = $(CFSsources)
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
@@ -43,3 +45,9 @@ compareFstats_SOURCES = compareFstats.c
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h clusters.c clusters.h  			\
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+
+## some optional BOINC-related stuff follows here:
+EXTRA_PROGRAMS = cfsBOINC
+cfsBOINC_SOURCES = $(CFSsources) cppdummy.C
+cfsBOINC_LDFLAGS =  -L$(HOME_BOINC)/lib -lboinc
+cfsBOINC_CPPFLAGS = -I$(HOME_BOINC)/include -DUSE_BOINC -DNO_BOINC_GRAPHICS
