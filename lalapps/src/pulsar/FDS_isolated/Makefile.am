@@ -54,7 +54,8 @@ cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/search_info.C
 cfsBOINC_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC 
 cfsBOINC_LDFLAGS =  $(AM_LDFLAGS)  -static
-cfsBOINC_LDADD = -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut
+cfsBOINC_LDADD = -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -lboinc -lboinc_api -lboinc_graphics_api -lboincglut -lglut \
+	-lGL -lGLU -lXmu
 
 ## Bruce: these don't seem to be needed explicitly for me? are they for you?
 ## -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
