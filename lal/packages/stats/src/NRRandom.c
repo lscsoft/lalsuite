@@ -45,7 +45,7 @@ Code taken from Numerical Recipes in C.  Version 2.08
 ******************************************************* </lalLaTeX> */
 
 #include <math.h>
-#include <NRRandom.h>
+#include <lal/NRRandom.h>
 
 NRCSID( NRRANDOMC, "$Id$");
 
