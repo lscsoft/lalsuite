@@ -52,7 +52,7 @@ extern char *optarg;
 extern int   optind;
 
 INT4 lalDebugLevel = 2;   /* set to 2 to get full status information for tests */
-INT4 verbose    = 1;
+INT4 verbose    = 0;
 
 
 static void
