@@ -861,9 +861,9 @@ if tama_coincidence:
     for h1_h2_done in h1_h2_inca_nodes:
       if ( h1_h2_done.get_chunk().start() == seg.start() and 
         h1_h2_done.get_chunk().end() == seg.end() ):
-        lt_inca2.add_parent(h1_h2_done.get_dag_node())
+        if ligo_analysis: lt_inca2.add_parent(h1_h2_done.get_dag_node())
         lt_inca2.add_var_arg(h1_h2_done.get_dag_node().get_output_a())
-        inca3.add_parent(h1_h2_done.get_dag_node())
+        if ligo_analysis: inca3.add_parent(h1_h2_done.get_dag_node())
         inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
     # add all H2 master segments that overlap with segment to input
     for t_done in tama_segs_analyzed:
@@ -940,10 +940,13 @@ if tama_coincidence:
     playground_only,usertag,tama_output)
   sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_job,dag,
     playground_only,usertag,tama_output)
-  # one last sire that contains all the LIGO triggers.
+  # a sire that contains all the TAMA triggers.
+  sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_job,dag,
+    playground_only,usertag,tama_output)
+  # one last sire that contains all the coincident LIGO triggers.
   sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
     sire_job,dag,playground_only,usertag,tama_output)
-  # and all the TAMA triggers 
+  # and all the coincident TAMA triggers 
   sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
     sire_job,dag,playground_only,usertag,tama_output)
 
@@ -960,7 +963,7 @@ if inj_file:
     sire_segs(h1_h2_inca_nodes,'output_b','H2-INCA_H1H2',
       sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
     # one last sire that contains all the LIGO triggers.
-    sire_segs(ligo_inca_nodes,'output_a','LIGO-TRIGGERS',sire_job,dag,
+    sire_segs(ligo_inca_nodes,'output_a','LIGO-TRIGGERS',sire_inj_job,dag,
       playground_only,usertag,tama_output,inj_file)
   if tama_coincidence:
     sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_inj_job,dag,
@@ -975,7 +978,7 @@ if inj_file:
       playground_only,usertag,tama_output,inj_file)
     # one last sire that contains all the LIGO triggers.
     sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
-      sire_job,dag,playground_only,usertag,tama_output,inj_file)
+      sire_inj_job,dag,playground_only,usertag,tama_output,inj_file)
 
 print "done"
 
