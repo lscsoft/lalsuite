@@ -21,9 +21,10 @@ and {\tt Order}.
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=1;
 
 void printf_timeseries (int n, float *signal, double delta, double t0) ;
+
 void printf_timeseries (int n, float *signal, double delta, double t0) 
 {
   int i=0;
@@ -40,47 +41,63 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 }
 
 
-int main (void) {
+int main (int argc , char **argv) {
    static REAL4Vector *signal1, *signal2;
    static LALStatus status;
    static InspiralTemplate params;
    static REAL8 dt;
    UINT4 n, i;
 
+   if (argc==1)
+     {
+       params.psi0 = 100000;
+       params.psi3 = -1000;
+       params.mass1= 10;
+       params.mass2= 10;          
+     }
+   else if (argc==3)
+     {
+       params.psi0 = atof(argv[1]);
+       params.psi3 = atof(argv[2]);
+       params.mass1= atof(argv[1]);
+       params.mass2= atof(argv[2]);
+     }
+   
    params.approximant=EOB;
    params.OmegaS = 0.;
-   params.Zeta2 = 0.; /*use by EOB @ 3PN*/
-   params.Theta = 0.;
-   params.ieta=1; 
-   params.mass1=10; 
-   params.mass2=1.4; 
+   params.Zeta2  = 0.; /*use by EOB @ 3PN*/
+   params.Theta  = 0.;
+   params.ieta   = 1; 
+   params.mass1  = 3; 
+   params.mass2  = 3; 
    params.startTime=0.0; 
    params.startPhase=0.;
-   params.fLower=40.0; 
-   params.fCutoff=2000.0;
-   params.tSampling=4096.0;
-   params.order=4;
+   params.fLower  = 20.0; 
+   params.fCutoff = 1000.0;
+   params.tSampling = 2048.0;
+   params.order = 4;
    params.signalAmplitude=1.0;
-   params.nStartPad=1000;
-   params.nEndPad=1200;
+   params.nStartPad = 0;
+   params.nEndPad = 1200;
    params.massChoice=m1Andm2;
    params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
    dt = 1./params.tSampling;
 
    LALInspiralWaveLength(&status, &n, params);
+  
    LALInspiralParameterCalc(&status, &params);
    fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
    fprintf(stderr, "Signal length=%d, t0=%e, t2=%e, m1=%e, m2=%e, fLower=%e, fUpper=%e\n", n, params.t0, params.t2, params.mass1, params.mass2, params.fLower, params.fCutoff);
    LALCreateVector(&status, &signal1, n);
    LALCreateVector(&status, &signal2, n);
 
-   params.psi0 = 72639.;
-   params.psi3 = -768.78;
-   params.alpha = 0.766;
-   params.fFinal = 331.4;
-   params.approximant = BCV;
+   
+   
+   params.alpha = 0.;
+   params.fFinal = 1000.;
+   params.approximant = EOB;
 			   
-   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV) 
+   if (params.approximant==TaylorF1 || params.approximant==TaylorF2 || params.approximant==BCV  || params.approximant==BCVSpin) 
    {
 	RealFFTPlan *revp = NULL;
 	COMPLEX8Vector *Signal1 = NULL;
