@@ -106,10 +106,11 @@ static REAL4 square_modulus(COMPLEX8 z)
 	return(z.re*z.re + z.im*z.im);
 }
 
-static void ComputeAverageSpectrum(
+static void ComputeAverageSpectrum_old(
 	LALStatus *status,
-	REAL4 *AverageSpec,
-        EPSearchParams *params,
+	REAL4FrequencySeries *AverageSpec,
+	REAL4TimeSeries *tseries,
+	EPSearchParams *params,
 	INT4 numSegs,
 	EPDataSegment *segment
 )
@@ -159,8 +160,8 @@ static void ComputeAverageSpectrum(
       /* find median value over time slices for each frequency */
       for (j = 0; j < flength; j++)
       {
-        EPMedian(&AverageSpec[j], ptr, j, flength, numSegs, status);
-        AverageSpec[j] /= LAL_LN2; /* scale to match mean method */
+        EPMedian(&AverageSpec->data->data[j], ptr, j, flength, numSegs, status);
+        AverageSpec->data->data[j] /= LAL_LN2; /* scale to match mean method */
       }
 
       LALFree(ptr);     
@@ -177,11 +178,11 @@ static void ComputeAverageSpectrum(
 
         /* normalize the data stream so that rms of Re or Im is 1 */
         for (j=0 ; j < (INT4)fseries.data->length ; j++)
-          AverageSpec[j] += square_modulus(fseries.data->data[j]);
+          AverageSpec->data->data[j] += square_modulus(fseries.data->data[j]);
       }
       for (j=0 ; j < (INT4)fseries.data->length ; j++)
       {
-        AverageSpec[j] /= numSegs;
+        AverageSpec->data->data[j] /= numSegs;
       }
     }  /* end of original code using mean */
     
@@ -189,7 +190,7 @@ static void ComputeAverageSpectrum(
     /* force power spectrum to unity */
     {
       for (j=0 ; j < (INT4)fseries.data->length ; j++)
-        AverageSpec[j] = 1.0;
+        AverageSpec->data->data[j] = 1.0;
     }
 
     /* default case for unknown method */
@@ -224,7 +225,6 @@ EPSearch (
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
-    AverageSpectrumParams     AverageSpecParams;
     REAL4FrequencySeries     *AverageSpec;
     INT4                      nevents, dumevents;
 
@@ -232,6 +232,7 @@ EPSearch (
     ATTATCHSTATUSPTR (status);
 
     /* make sure that arguments are not NULL */
+    ASSERT (tseries, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
     ASSERT (params, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
     ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
@@ -257,7 +258,7 @@ EPSearch (
     LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
     CHECKSTATUSPTR(status);
 
-    ComputeAverageSpectrum(status->statusPtr, AverageSpec->data->data, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
+    ComputeAverageSpectrum_old(status->statusPtr, AverageSpec, tseries, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
     CHECKSTATUSPTR(status);
 
     /* write diagnostic info to disk */
