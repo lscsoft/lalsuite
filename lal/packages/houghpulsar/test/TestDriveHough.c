@@ -2,7 +2,7 @@
  *
  * File Name: TestDriveHough.c
  *
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
  * Revision: $Id$
  *
@@ -17,7 +17,7 @@
  */
 
 /************************************ <lalVerbatim file="TestDriveHoughCV">
-Author: Sintes, A. M. 
+Author: Sintes, A. M., Krishnan, B. 
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -101,7 +101,6 @@ LALCheckMemoryLeaks()
 ********************************************   </lalLaTeX> */
 
 
-
 #include <lal/LALHough.h>
 
 
@@ -136,7 +135,7 @@ INT4 lalDebugLevel=0;
 #define DELTA 0.0
 #define MWR 1             /*.minWidthRatio */
 #define FILEOUT "OutHough.asc"      /* file output */
-#define MOBSCOH 300
+#define MOBSCOH 10
 #define NFSIZE  5
 #define STEPALPHA 0.005
 
@@ -196,12 +195,11 @@ int main(int argc, char *argv[]){
 
   static HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
   static HOUGHDemodPar   parDem;  /* demodulation parameters */
-  
+  static HOUGHSizePar    parSize;
   static HOUGHMapTotal   ht;   /* the total Hough map */
   /* ------------------------------------------------------- */
 
   UINT2  maxNBins, maxNBorders;
-  UINT2  xSideMax, ySideMax;
   
   INT8   f0Bin;           /* freq. bin to construct LUT */
   INT8   fBin;
@@ -216,15 +214,11 @@ int main(int argc, char *argv[]){
   INT4 k; 
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
-
+ 
   /************************************************************/
   /* Set up the default parameters. */
   /* **********************************************************/
   
-  maxNBins    = MAX_N_BINS;     /* from LUT.h */
-  maxNBorders = MAX_N_BORDERS;  /* from LUT.h */
-  xSideMax    = SIDEX;   /* from LUT.h */
-  ySideMax    = SIDEY;   /* from LUT.h */
   
   lutV.length    = MOBSCOH;
   pgV.length     = MOBSCOH;
@@ -242,49 +236,22 @@ int main(int argc, char *argv[]){
   ht.map = NULL;
 
   f0 =  F0;
-  parRes.f0 =  F0;
-  parRes.deltaF = DF;
-  parRes.patchSizeX = parDem.patchSizeX = patchSizeX = 0.0;       /* Initialization */
-  parRes.patchSizeY = parDem.patchSizeY = patchSizeY = 0.0;
-  parRes.minWidthRatio = MWR;
-
   f0Bin = F0*TCOH;
+  
+  parRes.f0Bin =  f0Bin;
+  parRes.deltaF = DF;
+  parRes.patchSkySizeX  = patchSizeX = 1.0/(TCOH*F0*VEPI);
+  parRes.patchSkySizeY  = patchSizeY = 1.0/(TCOH*F0*VEPI);
+  parRes.pixelFactor = PIXELFACTOR;
+  parRes.pixErr = PIXERR;
+  parRes.linErr = LINERR;
+  parRes.vTotC = VTOT; 
+  
+ 
   alpha = ALPHA;
   delta = DELTA;
   veloMod = VTOT;
 
-  /******************************************/
-  /*  Memory allocation and other settings  */
-  /******************************************/
-  
-  lutV.lut = (HOUGHptfLUT *)LALMalloc(MOBSCOH*sizeof(HOUGHptfLUT));
-  pgV.pg = (HOUGHPeakGram *)LALMalloc(MOBSCOH*sizeof(HOUGHPeakGram));
-  phmdVS.phmd =(HOUGHphmd *)LALMalloc(MOBSCOH*NFSIZE*sizeof(HOUGHphmd));
-  freqInd.data =  ( UINT8 *)LALMalloc(MOBSCOH*sizeof(UINT8));
-  
-  for(j=0; j<lutV.length; ++j){
-    lutV.lut[j].maxNBins = maxNBins;
-    lutV.lut[j].maxNBorders = maxNBorders;
-    lutV.lut[j].border = 
-         (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
-    lutV.lut[j].bin = 
-         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));	 
-  }
-  
-  for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-    phmdVS.phmd[j].maxNBorders = maxNBorders;
-    phmdVS.phmd[j].leftBorderP = 
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-    phmdVS.phmd[j].rightBorderP = 
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-  }
-  
-  patch.xSideMax = xSideMax;
-  patch.ySideMax = ySideMax;
-  patch.xCoor = NULL;
-  patch.yCoor = NULL;
-  patch.xCoor = (REAL8 *)LALMalloc(xSideMax*sizeof(REAL8));
-  patch.yCoor = (REAL8 *)LALMalloc(ySideMax*sizeof(REAL8));
 
   /********************************************************/  
   /* Parse argument list.  i stores the current position. */
@@ -317,9 +284,9 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-	f0 = atof(argv[arg++]);
-	parRes.f0 =  f0;
-	f0Bin = f0*TCOH;      
+	f0 = atof(argv[arg++]);	
+	f0Bin = f0*TCOH;  
+	parRes.f0Bin =  f0Bin;    
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -342,8 +309,8 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-s" ) ) {
       if ( argc > arg + 2 ) {
         arg++;
-	parRes.patchSizeX = patchSizeX = atof(argv[arg++]);
-        parRes.patchSizeY = patchSizeY = atof(argv[arg++]);
+	parRes.patchSkySizeX = patchSizeX = atof(argv[arg++]);
+        parRes.patchSkySizeY = patchSizeY = atof(argv[arg++]);
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -369,18 +336,52 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /* create patch grid */
   /******************************************************************/
-  SUB( LALHOUGHPatchGrid( &status, &patch, &parRes ),  &status );
+
+  SUB( LALHOUGHComputeSizePar( &status, &parSize, &parRes ),  &status );
+ 
+  xSide = parSize.xSide;
+  ySide = parSize.ySide;
+  maxNBins = parSize.maxNBins;
+  maxNBorders = parSize.maxNBorders;
   
-  xSide = patch.xSide;
-  ySide = patch.ySide;
-
-  /* Update patch size data */ 
-  patchSizeX = parDem.patchSizeX = parRes.patchSizeX = patch.patchSizeX;
-  patchSizeY = parDem.patchSizeY = parRes.patchSizeY = patch.patchSizeY;
+  /* allocate memory based on xSide and ySide */
+  patch.xSide = xSide;
+  patch.ySide = ySide;
+  
+  patch.xCoor = NULL;
+  patch.yCoor = NULL;
+  patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
+  patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+  
+  SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 
   /******************************************************************/
-  /* memory allocation again and settings */
+  /* memory allocation and settings */
   /******************************************************************/
+ 
+  lutV.lut = (HOUGHptfLUT *)LALMalloc(MOBSCOH*sizeof(HOUGHptfLUT));
+  pgV.pg = (HOUGHPeakGram *)LALMalloc(MOBSCOH*sizeof(HOUGHPeakGram));
+  phmdVS.phmd =(HOUGHphmd *)LALMalloc(MOBSCOH*NFSIZE*sizeof(HOUGHphmd));
+  freqInd.data =  ( UINT8 *)LALMalloc(MOBSCOH*sizeof(UINT8));
+  
+  for(j=0; j<lutV.length; ++j){
+    lutV.lut[j].maxNBins = maxNBins;
+    lutV.lut[j].maxNBorders = maxNBorders;
+    lutV.lut[j].border = 
+         (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+    lutV.lut[j].bin = 
+         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));	 
+  }
+  
+  for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+    phmdVS.phmd[j].maxNBorders = maxNBorders;
+    phmdVS.phmd[j].leftBorderP = 
+       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+    phmdVS.phmd[j].rightBorderP = 
+       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+  }
+  
+
   ht.xSide = xSide;
   ht.ySide = ySide;
   ht.map   = NULL;
@@ -425,7 +426,7 @@ int main(int argc, char *argv[]){
     alpha +=  STEPALPHA; /* shift alpha several degrees */
 
     /* calculate parameters needed for buiding the LUT */
-    SUB( LALHOUGHParamPLUT( &status, &parLut, f0Bin, &parDem ),  &status );
+    SUB( LALHOUGHParamPLUT( &status, &parLut, &parSize, &parDem ),  &status );
     
     /* build the LUT */
     SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ), 
@@ -441,9 +442,9 @@ int main(int argc, char *argv[]){
 
   for (j=0;j< MOBSCOH;++j){  /* create all the peakgrams */
    pgV.pg[j].deltaF = DF;
-   pgV.pg[j].fBinIni = (fBin) - MAX_N_BINS ;
-   pgV.pg[j].fBinFin = (fBin)+ 5*MAX_N_BINS;
-   pgV.pg[j].length = MAX_N_BINS; /* could be much smaller */
+   pgV.pg[j].fBinIni = (fBin) - maxNBins;
+   pgV.pg[j].fBinFin = (fBin)+ 5*maxNBins;
+   pgV.pg[j].length = maxNBins; /* could be much smaller */
    pgV.pg[j].peak = NULL;
    pgV.pg[j].peak = (INT4 *)LALMalloc( ( pgV.pg[j].length) * sizeof(INT4));
 
