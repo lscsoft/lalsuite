@@ -54,7 +54,7 @@ equations instead of the integrals. These are:
 \frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}.
 \label{eq:ode2}
 \end{equation}
-These are implimented in modules {\tt LALInspiralWave1.}
+These are implemented in modules {\tt LALInspiralWave1.}
  
 \item Re-expand $E^{\prime}(v)/\mathcal{F}(v)$ in a Taylor expansion
 in which case the integrals can be solved analytically to obtain a 
@@ -67,7 +67,7 @@ t(v)&=& t_{\rm ref} +t_N(v) \sum_{k=0}^{n} {t}_k v^k,
 \label{eq:InspiralWavePhase2}
 \end {eqnarray}
 This corresponds to \texttt{TaylorT2} in the enum \texttt{Approximant} \cite{dis3}.
-These are implimented in modules {\tt LALInspiralWave2.}
+These are implemented in modules {\tt LALInspiralWave2.}
  
 \item The second of the polynomials in Eq.~(\ref{eq:InspiralWavePhase2}) can
 be inverted and the resulting polynomial for $v$ in terms of
@@ -83,7 +83,7 @@ where $\theta=[\eta (t_{\rm ref}-t)/(5m)]^{-1/8}$,
 $F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)$ is the instantaneous GW frequency
 and $\eta=m_1 m_2/m^2$ is the symmetric mass ratio.
 This corresponds to the {\tt Approximant} \texttt{TaylorT3}  \cite{BDIWW,BIWW,dis3}.
-These are implimented in modules {\tt LALInspiralWave3.}
+These are implemented in modules {\tt LALInspiralWave3.}
 \end{enumerate}
 The expansion coefficients in PN expansions of the various physical
 quantities are summarized in Tables \ref{table:energy} and \ref{table:flux}.
@@ -285,7 +285,7 @@ $$\psi_5 =  \frac{5}{3} \left ( \frac{7729}{252} + \eta \right ) \pi +
    \frac{8}{3} \left ( \frac{38645}{672} + \frac{15}{8} \eta \right ) 
 	\ln \left ( \frac{v}{v_{\rm ref}} \right )\pi.$$
 Eq.~(\ref{eq:InspiralFourierPhase:f2}) is (one of) the  standardly used frequency-domain phasing formulas.
-This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation2}
+This is what is implemented in {\tt LALInspiralStationaryPhaseApproximation2}
 and corresponds to \texttt{TaylorF2} in the enum \texttt{Approximant.}
 
 Alternatively, substituting (without doing any re-expansion or re-summation) 
@@ -301,7 +301,7 @@ most efficiently computed by a pair of coupled, non-linear, ODE's:
 \label {eq:frequencyDomainODE}
 \end{equation}
 rather  than by numerically computing the integral in  
-Eqs.~(\ref{eq:InspiralFourierPhase}).  However, the current implimentation 
+Eqs.~(\ref{eq:InspiralFourierPhase}).  However, the current implementation 
 in {\tt LALInspiralStationaryPhaseApproximation1} solves the integral 
 and corresponds to \texttt{TaylorF1} in the  \texttt{enum Approximant.}
 
@@ -410,9 +410,10 @@ r_{\rm lr}^3 - 3 r_{\rm lr}^2 + 5 \eta = 0.
 \label{eq:LightRing}
 \end{equation}
 \section{Spinning Modulated Chirps}
+\label{sec:smirches}
 Waveforms from spinning black hole binaries at 2PN order can be
 generated using the choice {\tt SpinTaylorT3} in the {\tt enum
-Approximant.} Current implimentation closely follows Ref.~\cite{ACST94}.
+Approximant.} Current implementation closely follows Ref.~\cite{ACST94}.
 The orbital plane of a binary consisting of rapidly spinning compact
 objects precesses causing the polarization of the wave received at an
 antenna to continually change. This change depends on the source location

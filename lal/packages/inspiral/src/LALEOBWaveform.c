@@ -797,6 +797,7 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    params->rFinal = rOld;
    params->vFinal = v;
    params->fFinal = pow(v,3.)/(LAL_PI*m);
+   params->fCutoff = params->fFinal;
    while (count < (INT4)signal->length) 
    {
        *(signal->data + count) = 0.;
