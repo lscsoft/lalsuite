@@ -91,6 +91,12 @@ typedef struct CoincidentCandidateTag
   REAL8 fa2;       	
 } CoincidentCandidate;
 
+typedef struct CoincidentPairsTag 
+{
+  UINT4 c1;             /* number in Fstats file that corresponds to first member of pair */
+  UINT4 c2;             /* number in Fstats file that corresponds to second member of pair */
+  REAL8 fa;             /* joint false alarm for that pair */
+} CoincidentPairs;
 
 
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
@@ -109,6 +115,7 @@ extern INT4 lalDebugLevel;
 CandidateList CList1, CList2, CList3, CList4; /* treat up to 4 candidate files */
 
 CoincidentCandidate *CC;
+CoincidentPairs *CP;
 
 #ifndef FALSE
 #define FALSE (1==0)
@@ -250,6 +257,8 @@ int main(int argc,char *argv[])
 		{	
 		  int j;
 		  CoincidentCandidate *thisCC;
+		  CoincidentPairs *thisCP;
+
 		  /* tag the candidates that have been found in coincidence */
 		  CList1.Ctag[indices1F[i]]=1;
 		  CList2.Ctag[indices2f[f]]=1;
@@ -260,7 +269,13 @@ int main(int argc,char *argv[])
 		    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
 		    return 1;	/* got lazy here.. */
 		  }
+		  if ( (CP = LALRealloc ( CP, numCoincidences * sizeof(CoincidentPairs) )) == NULL) {
+		    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+		    return 1;	/* got lazy here.. */
+		  }
+
 		  thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
+		  thisCP = &(CP[ numCoincidences - 1]);	/* point to current new coincidences */
 
 		  thisCC->f1 = f1;
 		  thisCC->Alpha1 = Alpha1;
@@ -289,6 +304,10 @@ int main(int argc,char *argv[])
 		    }
 
 		  thisCC->fa = thisCC->fa1 * thisCC->fa2;
+
+		  thisCP->c1=indices1F[i];
+		  thisCP->c2=indices2f[f];
+		  thisCP->fa=thisCC->fa;
 
 		}
 	    }
@@ -349,6 +368,12 @@ int main(int argc,char *argv[])
     {
       if (CList2.Ctag[i]) fprintf(stdout,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);      
     }
+  fprintf(stdout,"%%coincidences\n");
+  for (i=0; i < numCoincidences; i++) 
+    {
+      fprintf(stdout,"%d %d %le\n", CP[i].c1,CP[i].c2,CP[i].fa);
+    }
+
 
   LALFree(indices1F);
   LALFree(indices2F);
@@ -371,6 +396,7 @@ int main(int argc,char *argv[])
   
   if (numCoincidences != 0){ 
     LALFree ( CC );
+    LALFree ( CP );
     LALFree(indicesCCfa);
 
   }
