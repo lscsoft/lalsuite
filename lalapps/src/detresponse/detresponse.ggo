@@ -46,6 +46,7 @@ option "sampling-interval"     i   "sampling time interval, in seconds" double n
 #                         "line" means flat, with the GPS time as the first entry in the line
 #                         (instead of in a comment line)
 option "format"      F   "output format" string default="mam" no
+option "output-dir"	O	"Output directory" string default="." no
 
 # misc. options
 option "verbosity"   v   "verbosity level for debugging" int default="0" no

@@ -34,6 +34,7 @@ struct gengetopt_args_info
   int nsample_arg;	/* number of samples.  */
   double sampling_interval_arg;	/* sampling time interval, in seconds.  */
   char * format_arg;	/* output format (default='mam').  */
+  char * output_dir_arg;	/* Output directory (default='.').  */
   int verbosity_arg;	/* verbosity level for debugging (default='0').  */
   int debug_arg;	/* debug level (default='0').  */
 
@@ -54,6 +55,7 @@ struct gengetopt_args_info
   int nsample_given ;	/* Whether nsample was given.  */
   int sampling_interval_given ;	/* Whether sampling-interval was given.  */
   int format_given ;	/* Whether format was given.  */
+  int output_dir_given ;	/* Whether output-dir was given.  */
   int verbosity_given ;	/* Whether verbosity was given.  */
   int debug_given ;	/* Whether debug was given.  */
 

@@ -59,6 +59,7 @@ cmdline_parser_print_help (void)
   printf("  -u, --nsample=INT               number of samples\n");
   printf("  -i, --sampling-interval=DOUBLE  sampling time interval, in seconds\n");
   printf("  -F, --format=STRING             output format  (default=`mam')\n");
+  printf("  -O, --output-dir=STRING         Output directory  (default=`.')\n");
   printf("  -v, --verbosity=INT             verbosity level for debugging  (default=`0')\n");
   printf("  -e, --debug=INT                 debug level  (default=`0')\n");
 }
@@ -105,6 +106,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->nsample_given = 0 ;
   args_info->sampling_interval_given = 0 ;
   args_info->format_given = 0 ;
+  args_info->output_dir_given = 0 ;
   args_info->verbosity_given = 0 ;
   args_info->debug_given = 0 ;
 #define clear_args() { \
@@ -112,6 +114,7 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
   args_info->detector_arg = NULL; \
   args_info->start_time_nanosec_arg = 0 ;\
   args_info->format_arg = gengetopt_strdup("mam") ;\
+  args_info->output_dir_arg = gengetopt_strdup(".") ;\
   args_info->verbosity_arg = 0 ;\
   args_info->debug_arg = 0 ;\
 }
@@ -146,13 +149,14 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
         { "nsample",	1, NULL, 'u' },
         { "sampling-interval",	1, NULL, 'i' },
         { "format",	1, NULL, 'F' },
+        { "output-dir",	1, NULL, 'O' },
         { "verbosity",	1, NULL, 'v' },
         { "debug",	1, NULL, 'e' },
         { NULL,	0, NULL, 0 }
       };
 
       stop_char = 0;
-      c = getopt_long (argc, argv, "hVSWptaN:r:d:o:D:s:n:u:i:F:v:e:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVSWptaN:r:d:o:D:s:n:u:i:F:O:v:e:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -335,6 +339,19 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
           if (args_info->format_arg)
             free (args_info->format_arg); /* free default string */
           args_info->format_arg = gengetopt_strdup (optarg);
+          break;
+
+        case 'O':	/* Output directory.  */
+          if (args_info->output_dir_given)
+            {
+              fprintf (stderr, "%s: `--output-dir' (`-O') option given more than once\n", CMDLINE_PARSER_PACKAGE);
+              clear_args ();
+              exit (EXIT_FAILURE);
+            }
+          args_info->output_dir_given = 1;
+          if (args_info->output_dir_arg)
+            free (args_info->output_dir_arg); /* free default string */
+          args_info->output_dir_arg = gengetopt_strdup (optarg);
           break;
 
         case 'v':	/* verbosity level for debugging.  */

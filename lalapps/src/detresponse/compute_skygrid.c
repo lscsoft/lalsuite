@@ -367,11 +367,12 @@ void compute_skygrid(LALStatus * status)
     CHAR                    ser_plus_file_name[LALNameLength];
     CHAR                    ser_sum_file_name[LALNameLength];
     CHAR                    ser_relfreq_file_name[LALNameLength];
-    
-    (void)mystrlcpy(cross_file_name, "ser_whole_sky_cross", LALNameLength);
-    (void)mystrlcpy(plus_file_name, "ser_whole_sky_plus", LALNameLength);
-    (void)mystrlcpy(sum_file_name, "ser_whole_sky_sum", LALNameLength);
-    (void)mystrlcpy(relfreq_file_name, "ser_whole_sky_relfreq", LALNameLength);
+    CHAR		    times_file_name[LALNameLength];
+
+    snprintf(cross_file_name,LALNameLength,"%s/ser_whole_sky_cross", args_info.output_dir_arg);
+    snprintf(plus_file_name,LALNameLength,"%s/ser_whole_sky_plus", args_info.output_dir_arg);
+    snprintf(sum_file_name,LALNameLength,"%s/ser_whole_sky_sum", args_info.output_dir_arg);
+    snprintf(relfreq_file_name,LALNameLength,"%s/ser_whole_sky_relfreq", args_info.output_dir_arg);
     
     /* zero out arrays */
     skygrid_zero(grid_cros_sq);
@@ -379,7 +380,8 @@ void compute_skygrid(LALStatus * status)
     skygrid_zero(grid_sum_sq);
     skygrid_zero(grid_relfreq);
     
-    timesfile = xfopen("times.txt", "w");
+    snprintf(times_file_name,LALNameLength,"%s/times.txt", args_info.output_dir_arg);
+    timesfile = xfopen(times_file_name, "w");
     
     for (k = 0; k < (int)args_info.nsample_arg; ++k)
     {
