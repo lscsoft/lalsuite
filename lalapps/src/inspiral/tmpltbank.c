@@ -97,6 +97,7 @@ CoordinateSpace space;                  /* coordinate space used        */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeResponse    = 0;            /* write response function used */
 int    writeSpectrum    = 0;            /* write computed psd to file   */
+int    writeStrainSpec  = 0;            /* write computed stain spec    */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
@@ -108,7 +109,6 @@ int main ( int argc, char *argv[] )
   LALStatus             status = blank_status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-#if 0
   /* frame input data */
   FrCache      *frInCache = NULL;
   FrStream     *frStream = NULL;
@@ -126,7 +126,12 @@ int main ( int argc, char *argv[] )
   /* structures for preconditioning */
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
-#endif
+
+  /* templates */
+  InspiralCoarseBankIn          bankIn;
+  InspiralTemplateList         *coarseList = NULL;
+  SnglInspiralTable            *tmplt  = NULL;
+  INT4                          numCoarse = 0;
 
   /* output data */
   MetadataTable         templateBank;
@@ -136,10 +141,13 @@ int main ( int argc, char *argv[] )
   LIGOLwXMLStream       results;
 
   /* counters and other variables */
-#if 0
+  INT4 i;
+  UINT4 cut, k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-#endif
   CHAR  fname[256];
+  LALUnitPair pair;
+  REAL8 respRe, respIm;
+  REAL8 shf;
 
   /*
    *
@@ -179,19 +187,260 @@ int main ( int argc, char *argv[] )
   templateBank.snglInspiralTable = NULL;
 
 
+  /*
+   *
+   * read in the input data and compute a calibrated strain spectrum
+   *
+   */
 
 
+  /* create storage for the input data */
+  memset( &chan, 0, sizeof(REAL4TimeSeries) );
+  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
+      &status );
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
+      &status );
+
+  /* set the time series parameters of the input data */
+  chan.epoch = startTime;
+  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  chan.deltaT = 1.0 / (REAL8) sampleRate;
+  memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
+  /* read the data channel time series from frames */
+  if ( frInCacheName )
+  {
+    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
+    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+  }
+  else
+  {
+    LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+  }
+  LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
+  frChan.name = fqChanName;
+  frChan.type = ADCDataChannel;
+  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+      &status );
+  LAL_CALL( LALFrClose( &status, &frStream ), &status );
+  if ( frInCacheName )
+  {
+    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+  }
+
+  if ( writeRawData )
+  {
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "INPUT" );
+  }
+
+  /* high pass the data to get a prevent bleeding of low frequences in psd */
+  if ( highPass )
+  {
+    PassBandParamStruc highpassParam;
+    highpassParam.nMax = 4;
+    highpassParam.f1 = highPassFreq;
+    highpassParam.f2 = -1.0;
+    highpassParam.a1 = 0.1;
+    highpassParam.a2 = -1.0;
+
+    LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
+        &status );
+  }
+
+  /* compute the windowed power spectrum for the data channel */
+  avgSpecParams.window = NULL;
+  avgSpecParams.plan = NULL;
+  LAL_CALL( LALCreateForwardRealFFTPlan( &status, 
+        &(avgSpecParams.plan), numPoints, 0 ), &status );
+  switch ( specType )
+  {
+    case 0:
+      avgSpecParams.method = useMean;
+      break;
+    case 1:
+      avgSpecParams.method = useMedian;
+      break;
+  }
+   
+  wpars.type = Hann;
+  wpars.length = numPoints;
+  avgSpecParams.overlap = numPoints / 2;
+
+  LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
+        &wpars ), &status );
+  LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
+      &status );
+  LAL_CALL( LALDestroyREAL4Window( &status, &(avgSpecParams.window) ), 
+      &status );
+  LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
+
+  /* write the spectrum data to a file */
+  if ( writeSpectrum )
+  {
+    strcpy( spec.name, chan.name );
+    outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
+        &spec, "ct/sqrtHz", "PSD" );
+  }
+
+  /* set the parameters of the response to match the data and spectrum */
+  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  resp.deltaF = spec.deltaF;
+  resp.f0 = spec.f0;
+  resp.sampleUnits = strainPerCount;
+
+  /* generate the response function for the current time */
+  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
+      &status );
+
+  /* write the calibration data to a file */
+  if ( writeResponse )
+  {
+    strcpy( resp.name, chan.name );
+    outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
+        &resp, "strain/ct", "RESPONSE" );
+  }
+
+  /* set low frequency cutoff of power spectrum */
+  cut = fLow / spec.deltaF > 1 ?  fLow / spec.deltaF : 1;
+
+  /* compute a calibrated strain power spectrum */
+  bankIn.shf.epoch = spec.epoch;
+  memcpy( bankIn.shf.name, spec.name, LALNameLength * sizeof(CHAR) );
+  bankIn.shf.deltaF = spec.deltaF;
+  bankIn.shf.f0 = spec.f0;
+  bankIn.shf.data = NULL;
+  pair.unitOne = &(spec.sampleUnits);
+  pair.unitTwo = &(resp.sampleUnits);
+  LAL_CALL( LALUnitMultiply( &status, &(bankIn.shf.sampleUnits), &pair ), 
+      &status );
+  LAL_CALL( LALDCreateVector( &status, &(bankIn.shf.data), spec.data->length ),
+      &status );
+  memset( bankIn.shf.data->data, 0, 
+      bankIn.shf.data->length * sizeof(COMPLEX8) );
+
+  shf = spec.data->data[cut] * 
+    ( resp.data->data[cut].re * resp.data->data[cut].re +
+      resp.data->data[cut].im * resp.data->data[cut].im );
+  for ( k = 1; k < cut ; ++k )
+  {
+    bankIn.shf.data->data[k] = shf;
+  }
+  for ( k = cut; k < bankIn.shf.data->length; ++k )
+  {
+    respRe = (REAL8) resp.data->data[k].re;
+    respIm = (REAL8) resp.data->data[k].im;
+    bankIn.shf.data->data[k] = (REAL8) spec.data->data[k] *
+      ( respRe * respRe + respIm * respIm );
+  }
+
+  /* write the scaled strain spectrum data to a file */
+  if ( writeStrainSpec )
+  {
+    strcpy( spec.name, chan.name );
+    outFrame = fr_add_proc_REAL8FrequencySeries( outFrame, 
+        &(bankIn.shf), "strain/sqrtHz", "STRAIN_PSD" );
+  }
+
+  /* bank generation parameters */
+  bankIn.massRange     = MinMaxComponentMass;
+  bankIn.mMin          = (REAL8) minMass;
+  bankIn.mMax          = (REAL8) maxMass;
+  bankIn.MMax          = bankIn.mMax * 2.0;
+  bankIn.mmCoarse      = (REAL8) minMatch;
+  bankIn.mmFine        = 0.99; /* doesn't matter since no fine bank yet */
+  bankIn.fLower        = (REAL8) fLow;
+  bankIn.fUpper        = (REAL8) fUpper;
+  bankIn.iflso         = 0; /* currently not implemented */
+  bankIn.tSampling     = (REAL8) sampleRate;
+  bankIn.order         = order;
+  bankIn.approximant   = approximant;
+  bankIn.space         = space;
+  bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
+    ( bankIn.MMax * bankIn.MMax );
+
+  /* generate the template bank */
+  LAL_CALL( LALInspiralCreateCoarseBank( &status, &coarseList, &numCoarse, 
+        bankIn ), &status );
+
+  /* convert the templates to sngl_inspiral structures for writing to XML */
+  if ( numCoarse )
+  {
+    tmplt = templateBank.snglInspiralTable = (SnglInspiralTable *)
+      LALCalloc( 1, sizeof(SnglInspiralTable) );
+    LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+    LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+        "tmpltbank" );
+    LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+        channelName );
+    tmplt->mass1  = (REAL4) coarseList[0].params.mass1;
+    tmplt->mass2  = (REAL4) coarseList[0].params.mass2;
+    tmplt->mchirp = (REAL4) coarseList[0].params.chirpMass;
+    tmplt->eta    = (REAL4) coarseList[0].params.eta;
+    tmplt->tau0   = (REAL4) coarseList[0].params.t0;
+    tmplt->tau2   = (REAL4) coarseList[0].params.t2;
+    tmplt->tau3   = (REAL4) coarseList[0].params.t3;
+    tmplt->tau4   = (REAL4) coarseList[0].params.t4;
+    tmplt->tau5   = (REAL4) coarseList[0].params.t5;
+    tmplt->ttotal = (REAL4) coarseList[0].params.tC;
+    for ( i = 1; i < numCoarse; ++i )
+    {
+      tmplt = tmplt->next = (SnglInspiralTable *)
+        LALCalloc( 1, sizeof(SnglInspiralTable) );
+      LALSnprintf( tmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), ifo );
+      LALSnprintf( tmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR), 
+          "tmpltbank" );
+      LALSnprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+          channelName );
+      tmplt->mass1  = (REAL4) coarseList[i].params.mass1;
+      tmplt->mass2  = (REAL4) coarseList[i].params.mass2;
+      tmplt->mchirp = (REAL4) coarseList[i].params.chirpMass;
+      tmplt->eta    = (REAL4) coarseList[i].params.eta;
+      tmplt->tau0   = (REAL4) coarseList[i].params.t0;
+      tmplt->tau2   = (REAL4) coarseList[i].params.t2;
+      tmplt->tau3   = (REAL4) coarseList[i].params.t3;
+      tmplt->tau4   = (REAL4) coarseList[i].params.t4;
+      tmplt->tau5   = (REAL4) coarseList[i].params.t5;
+      tmplt->ttotal = (REAL4) coarseList[i].params.tC;
+    }
+  }
 
 
+  /*
+   *
+   * free the data storage
+   *
+   */
 
 
+  LALFree( coarseList );
+  LAL_CALL( LALDDestroyVector( &status, &(bankIn.shf.data) ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
+  LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
 
 
+  /*
+   *
+   * write the result results to disk
+   *
+   */
 
 
-
-
-
+  /* write the output frame */
+  if ( writeRawData || writeResponse || writeSpectrum || writeStrainSpec )
+  {
+    snprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
+        site, startTime.gpsSeconds,
+        endTime.gpsSeconds - startTime.gpsSeconds );
+    frOutFile = FrFileONew( fname, 0 );
+    FrameWrite( outFrame, frOutFile );
+    FrFileOEnd( frOutFile );
+  }
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
@@ -224,11 +473,32 @@ int main ( int argc, char *argv[] )
     LALFree( this_proc_param );
   }
 
+  /* write the template bank to the file */
+  if ( templateBank.snglInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank, 
+          sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
+  while ( templateBank.snglInspiralTable )
+  {
+    tmplt = templateBank.snglInspiralTable;
+    templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
+    LALFree( tmplt );
+  }
+
+
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
 
   /* free the rest of the memory, check for memory leaks and exit */
+  LALFree( calCacheName );
+  LALFree( frInCacheName );
+  LALFree( channelName );
+  LALFree( fqChanName );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
@@ -280,6 +550,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-response",          no_argument,       &writeResponse,    1 },
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
+    {"write-strain-spectrum",   no_argument,       &writeStrainSpec,  1 },
     {0, 0, 0, 0}
   };
   int c;
@@ -748,7 +1019,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
-  if ( endTime.gpsSeconds )
+  if ( ! endTime.gpsSeconds )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
@@ -777,13 +1048,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( sampleRate < 0 )
   {
     fprintf( stderr, "--sample-rate must be specified\n" );
-    exit( 1 );
-  }
-
-  /* check calibration has been given */
-  if ( ! calCacheName )
-  {
-    fprintf( stderr, "--calibration must be specified\n" );
     exit( 1 );
   }
 
