@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
     /*strftime(refstr, 64, "%Hh %Mm %S", &(mstdate.unixDate)); */
     /*sprintf(tmpstr, "%.4fs", mstdate.residualNanoSeconds * 1.e-9);*/
-    /*strcat(refstr, tmpstr+1); /* remove leading 0 */
+    /*strcat(refstr, tmpstr+1); / * remove leading 0 */
     /*printf("   get: %s\n", refstr);*/
 
     sprintf(refstr, "%2dh %2dm %2d", mstdate.unixDate.tm_hour,
