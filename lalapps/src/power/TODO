@@ -1,15 +1,31 @@
 Condor scripts:
 ==============
 
-*  bring new script up to the same level as the old ones
++  bring new script up to the same level as the old ones
+        - add a lalapps_binj node to the dag and to the script
 
-power tasks:
+*  Write a DAG script to handle S3 analysis
+        - should be able to handle all double, trip, quad data
+        - use science master segments then handle overlaps downstream
+        
+
+Power tasks:
 ============
+
++  Modify to use call to LALComputeSpectrum() instead of in-line code
++  Add ability to resample the data following inspiral code
++  Fix threshold computing codes
 
 *  Add ability to output spectrum, etc. as frames
 *  Add ability to output hrss for the burst triggers found
-*  Fix all search summary information to work correctly
+*  Check that all search summary information works correctly
 *  Add clustering algorithms suggested by PRB & JDEC
+        - cluster by peak (central) time of tiles
+        - Jolien's suggestion (cannot remember right now)
+
+o  Make sure can filter auxilliary channels
+o  Fix injection codes to be able to take arbitrary signals
+        - this is a substantial job,  needs a couple of weeks
  
 
 burca tasks:
@@ -33,8 +49,7 @@ multiPower:
 *  Develop a code to do multi-detector power searches
 
 
-burstInjections:
-===============
+Burst-inspiral coincidence:
+==========================
 
-* Enhance burst injection code for arbitrary waveforms
-* 
+*  Write code to do burst inspiral coincidence
