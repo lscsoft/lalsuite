@@ -198,11 +198,9 @@ LALModComputeExcessPower (
 /******** </lalVerbatim> ********/
 {
   TFTile             *thisTile;
-  INT4 count = 0;
 
   INITSTATUS (status, "LALModComputeExcessPower", COMPUTEEXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
-
 
   /* make sure that arguments are not NULL */
   ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -247,10 +245,7 @@ LALModComputeExcessPower (
       INT4 t2;
       INT4 k1;
       INT4 k2;
-      INT4 k;
-      INT4 n;
-      FILE *fp;    
-
+ 
       /* check plane index is in required range */
       ASSERT((thisTile->whichPlane >=0) && (thisTile->whichPlane < tfTiling->numPlanes), status, LAL_RANGE_ERR, LAL_RANGE_MSG); 
 
