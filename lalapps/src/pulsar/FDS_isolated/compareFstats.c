@@ -73,7 +73,7 @@ main(int argc, char *argv[])
   REAL8 eps8 = 10.0 * LAL_REAL8_EPS;
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   REAL8 relErr;
-  UINT4 nlines1, nlines2;
+  UINT4 nlines1, nlines2, minlines;
   BOOLEAN diff_found = 0;
   
   lalDebugLevel = 0;
@@ -108,12 +108,17 @@ main(int argc, char *argv[])
       LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname1, DONE_MARKER);
       diff_found=1;
     }
+  else
+    nlines1 --; /* avoid stepping on DONE-marker in comparison */
 
   if ( strcmp(line2, DONE_MARKER ) )  
     {
       LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname2, DONE_MARKER);
       diff_found=1;
     }
+  else
+    nlines2 --;	/* avoid stepping on DONE-marker in comparison */
+    
   
   if ( nlines1 != nlines2 )
     {
@@ -123,7 +128,8 @@ main(int argc, char *argv[])
     }
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
-  for (i=0; i < (nlines1 - 1) ; i++)	/* avoid last line containing '*DONE*' */
+  minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
+  for (i=0; i < minlines ; i++)
     {
       line1 = Fstats1->lines->tokens[i];
       line2 = Fstats2->lines->tokens[i];
