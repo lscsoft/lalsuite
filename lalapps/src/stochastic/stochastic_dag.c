@@ -72,7 +72,6 @@ static int high_pass_flag;
 static int overlap_hann_flag;
 static int test_flag;
 static int post_analysis_flag;
-static int condor_flag;
 extern int vrbflg;
 
 /* parameters for the stochastic search */
@@ -302,17 +301,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* parse command line options */
   parseOptions(argc, argv);
-
-  /* read parameters into input parameter file */
-  if (condor_flag)
-  { 
-    fscanf(stdin,"%lld\n", &startTime);
-    fscanf(stdin,"%lld\n", &stopTime);
-    fscanf(stdin,"%s\n%s\n", frameCache1, frameCache2);
-    fscanf(stdin,"%s\n%s\n", calCache1, calCache2); 
-    if (inject_flag)
-    { seed = 2 * NLoop * seed;}
-  }
 
   /* initialize gps time structure */  
   gpsStartTime.gpsSeconds = startTime;
@@ -1835,7 +1823,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"post-analysis", no_argument, &post_analysis_flag,1},
       {"verbose", no_argument, &vrbflg, 1},
       {"test", no_argument, &test_flag, 1},
-      {"condor", no_argument, &condor_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
