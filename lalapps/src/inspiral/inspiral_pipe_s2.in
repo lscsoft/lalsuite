@@ -236,6 +236,9 @@ if slide_time_ns and not slide_time:
 
 # if slide time is specified, turn off 
 if slide_time:
+  if abs(slide_time) >= max_slide:
+    print "Slide time must be less than", max_slide
+    sys.exit(1)
   print "Slide time of", slide_time, "sec", slide_time_ns, "ns given"
   print "Turning off parts of pipeline not needed for background estimation"
 
