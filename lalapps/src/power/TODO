@@ -1,38 +1,30 @@
 Condor scripts:
 ==============
 
-* use a DAG to submit jobs to the cluster
-* expand DAG to include generation of summary information
-* expand DAG to include clustering and coincidence step
+*  bring new script up to the same level as the old ones
+
+power tasks:
+============
+
+*  Add ability to output spectrum, etc. as frames
+*  Add ability to output hrss for the burst triggers found
+*  Fix all search summary information to work correctly
+*  Add clustering algorithms suggested by PRB & JDEC
+ 
+
+burca tasks:
+============
+
+*  Make sure it provided search summary information
+*  Enhance in line with the method used for inca
+*  Time-slide capability
 
 
-Power code tasks:
-================
+bread/binj_find tasks:
+=====================
 
-*  Move the output to the end of power.c  [Testing]
-*  Add proctable to power.c  [Testing]
-*  Add ability to notch out lines  [Testing]
-*  Add ability to output spectrum, etc.
-*  Add ability to read in the calibration data
-*  Add ability to read in injection files
-*  Add ability to inject into data
-*  Add ability to output calibrated power in band
-  
-
-snglBurstHistogram:
-==================
-
-*  Modify time-freq output to produce 3-d plot [Done]
-*  Add ability to parse the xml files when proctable is present [Done]
-
-
-sngBurstCoincidence:
-===================
-
-*  Add a code which takes three xml files & looks for coincidence
-*  Enhance code to do sensible clustering (difficult)
-*  Enhance code to check freq coincidence
-*  Enhance code to check amplitude consistency
+*  unify these codes so that we don't have to maintain both
+*  enhance binj_find to find best match out of triggers
 
 
 multiPower:
@@ -44,5 +36,5 @@ multiPower:
 burstInjections:
 ===============
 
-* add ability to read in list of injections to make
-* add burstInject rouotine to LAL (needs response function)
+* Enhance burst injection code for arbitrary waveforms
+* 
