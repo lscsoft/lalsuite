@@ -33,14 +33,14 @@ NRCSID( LALGSLTESTC, "$Id$" );
 
 /* macro for testing handler */
 extern gsl_error_handler_t *gsl_error_handler;
-void *original_handler;
+gsl_error_handler_t *original_handler;
 #define TESTHANDLER \
   if ( original_handler != gsl_error_handler ) \
     { fprintf( stderr, "Error: handler was not restored!\n" ); exit(2); } \
   else ((void)(0))
 
 /* function for clearing status pointer */
-void ClearStatus( LALStatus *status )
+static void ClearStatus( LALStatus *status )
 {
   if ( status->statusPtr )
   {
@@ -59,7 +59,7 @@ void ClearStatus( LALStatus *status )
 
 
 /* call the GSL log routine to test the GSL macros */
-void Logarithm( LALStatus *status, REAL8 *output, REAL8 input )
+static void Logarithm( LALStatus *status, REAL8 *output, REAL8 input )
 {
   INITSTATUS( status, "Logarithm", LALGSLTESTC );
   ATTATCHSTATUSPTR( status );
@@ -86,7 +86,7 @@ void Logarithm( LALStatus *status, REAL8 *output, REAL8 input )
 
 /* here is a really stupid Heaviside function: take the log of x;
  * return 1 if no error otherwise return 0 */
-double Heaviside( double x, void * params )
+static double Heaviside( double x, void * params )
 {
   LALStatus newStatus;
   double dummy;
@@ -110,9 +110,9 @@ double Heaviside( double x, void * params )
   return ans;
 }
 
-void Integral( LALStatus *status, REAL8 *y, REAL8 a, REAL8 b, REAL8 eps )
+static void Integral( LALStatus *status, REAL8 *y, REAL8 a, REAL8 b, REAL8 eps )
 {
-  gsl_integration_workspace *work;
+  gsl_integration_workspace *work = NULL;
   gsl_function F;
   REAL8  err;
   INITSTATUS( status, "Integral", LALGSLTESTC );

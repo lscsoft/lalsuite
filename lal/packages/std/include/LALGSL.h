@@ -126,7 +126,7 @@ LALGSLErrorHandler(
     const char *reason,
     const char *file,
     int line,
-    int gsl_error
+    int errnum
     );
 
 #ifdef LAL_PTHREAD_LOCK

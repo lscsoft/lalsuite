@@ -285,6 +285,96 @@ the array bounds were overwritten.
 #include <signal.h>
 
 #include <lal/LALConfig.h>
+#include <lal/LALMalloc.h>
+#include <lal/LALStdio.h>
+#include <lal/LALError.h>
+
+/*
+ *
+ * XLAL Routines.
+ *
+ */
+
+#define XLAL_TEST_POINTER( ptr, size, func )                               \
+    if ( ! (ptr) && (size) )                                               \
+       XLAL_ERROR_NULL( func, XLAL_ENOMEM );                               \
+    else (void)(0)
+#define XLAL_TEST_POINTER_LONG( ptr, size, func, file, line )              \
+    if ( ! (ptr) && (size) )                                               \
+    {                                                                      \
+       char msg[64];                                                       \
+       LALSnprintf( msg, sizeof( msg ), "%s in %s:%d", func, file, line ); \
+       XLAL_ERROR_NULL( msg, XLAL_ENOMEM );                                \
+    }                                                                      \
+    else (void)(0)
+
+
+void * (XLALMalloc)( size_t n )
+{
+  static const char *func = "XLALMalloc";
+  void *p;
+  p = LALMallocShort( n );
+  XLAL_TEST_POINTER( p, n, func );
+  return p;
+}
+
+void * XLALMallocLong( size_t n, const char *file, int line )
+{
+  static const char *func = "XLALMallocLong";
+  void *p;
+  p = LALMallocLong( n, file, line );
+  XLAL_TEST_POINTER_LONG( p, n, func, file, line );
+  return p;
+}
+
+void * (XLALCalloc)( size_t m, size_t n )
+{
+  static const char *func = "XLALCalloc";
+  void *p;
+  p = LALCallocShort( m, n );
+  XLAL_TEST_POINTER( p, m * n, func );
+  return p;
+}
+
+void * XLALCallocLong( size_t m, size_t n, const char *file, int line )
+{
+  static const char *func = "XLALCallocLong";
+  void *p;
+  p = LALCallocLong( m, n, file, line );
+  XLAL_TEST_POINTER_LONG( p, m * n, func, file, line );
+  return p;
+}
+
+void * (XLALRealloc)( void *p, size_t n )
+{
+  static const char *func = "XLALRealloc";
+  p = LALReallocShort( p, n );
+  XLAL_TEST_POINTER( p, n, func );
+  return p;
+}
+
+void * XLALReallocLong( void *p, size_t n, const char *file, int line )
+{
+  static const char *func = "XLALReallocLong";
+  p = LALReallocLong( p, n, file, line );
+  XLAL_TEST_POINTER_LONG( p, n, func, file, line );
+  return p;
+}
+
+void XLALFree( void *p )
+{
+  if ( p ) LALFree( p );
+  return;
+}
+
+
+/*
+ *
+ * LAL Routines... only if compiled with debugging enabled.
+ * (otherwise the LALMalloc-family reverts to the standard malloc-family).
+ *
+ */
+
 
 #if ! defined NDEBUG && ! defined LAL_NDEBUG
 
@@ -297,8 +387,6 @@ static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #include <lal/LALStdlib.h>
-#include <lal/LALError.h>
-#include <lal/LALMalloc.h>
 
 NRCSID( LALMALLOCC, "$Id$" );
 
@@ -335,10 +423,17 @@ static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
 extern int    lalDebugLevel;
 
+/* need this to turn off gcc warnings about unused functions */
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* Useful function for debugging */
 /* Checks to make sure alloc list is OK */
 /* Returns 0 if list is corrupted; 1 if list is OK */
-static int CheckAllocList( void )
+UNUSED static int CheckAllocList( void )
 {
   int    count = 0;
   size_t total = 0;
@@ -355,7 +450,7 @@ static int CheckAllocList( void )
 /* Useful function for debugging */
 /* Finds the node of the alloc list previous to the desired alloc */
 /* Returns NULL if not found or if the alloc node is the head */
-static struct allocNode *FindPrevAlloc( void *p )
+UNUSED static struct allocNode *FindPrevAlloc( void *p )
 {
   struct allocNode *node = allocList;
   if ( p == node->addr ) /* top of list */
@@ -372,7 +467,7 @@ static struct allocNode *FindPrevAlloc( void *p )
 /* Useful function for debugging */
 /* Finds the node of the alloc list for the desired alloc */
 /* Returns NULL if not found  */
-static struct allocNode *FindAlloc( void *p )
+UNUSED static struct allocNode *FindAlloc( void *p )
 {
   struct allocNode *node = allocList;
   while ( node )

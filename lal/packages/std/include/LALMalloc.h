@@ -42,6 +42,17 @@ extern "C" {
 
 NRCSID( LALMALLOCH, "$Id$" );
 
+void *XLALMalloc( size_t n );
+void *XLALMallocLong( size_t n, const char *file, int line );
+void *XLALCalloc( size_t m, size_t n );
+void *XLALCallocLong( size_t m, size_t n, const char *file, int line );
+void *XLALRealloc( void *p, size_t n );
+void *XLALReallocLong( void *p, size_t n, const char *file, int line );
+void  XLALFree( void *p );
+#define XLALMalloc( n )        XLALMallocLong( n, __FILE__, __LINE__ )
+#define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
+#define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
+
 #if defined NDEBUG || defined LAL_NDEBUG
 
 #define LALMalloc                          malloc     
