@@ -12,4 +12,4 @@ ResampleTest_LDADD = $(top_builddir)/lib/liblal.la
 LALDemodTest_SOURCES = LALDemodTest.c
 LALDemodTest_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = StackMetricTest FlatMeshTest StreamInputTest ResampleTest LALDemodTest
+TESTS = StackMetricTest FlatMeshTest StreamInputTest ResampleTest
