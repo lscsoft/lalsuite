@@ -377,7 +377,7 @@ fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha4\" Type=\"real
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha5\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:alpha6\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:beta\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1x\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1y\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin1z\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:spin2x\" Type=\"real_4\"/>\n" , fp ) == EOF || \
