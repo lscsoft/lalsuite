@@ -150,7 +150,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
-#include "TimeFreqFFT.h"
+#include <lal/TimeFreqFFT.h>
 #include <lal/LALConstants.h>
 
 NRCSID( TIMEFREQFFTC, "$Id$" );
@@ -523,14 +523,6 @@ LALREAL4AverageSpectrum (
   fSeries->epoch = tSeries->epoch;
   fSeries->f0 = tSeries->f0;
   fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries->deltaT );
-  /* THIS IS WRONG: GIVES SQUARE-ROOT OF CORRECT UNITS */
-  /*
-  pair.unitOne = &(tSeries->sampleUnits);
-  pair.unitTwo = &lalHertzUnit;
-  LALUnitRaise( status->statusPtr, &unit, pair.unitTwo, &negRootTwo );
-  CHECKSTATUSPTR( status );
-  pair.unitTwo = &unit;
-  */
   pair.unitOne = &(tSeries->sampleUnits);
   pair.unitTwo = &(tSeries->sampleUnits);
   LALUnitMultiply( status->statusPtr, &unit, &pair );
@@ -751,14 +743,6 @@ LALCOMPLEX8AverageSpectrum (
   fSeries->epoch = tSeries0->epoch;
   fSeries->f0 = tSeries0->f0;
   fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries0->deltaT );
-  /* THIS IS WRONG: GIVES SQUARE-ROOT OF CORRECT UNITS */
-  /*
-  pair.unitOne = &(tSeries->sampleUnits);
-  pair.unitTwo = &lalHertzUnit;
-  LALUnitRaise( status->statusPtr, &unit, pair.unitTwo, &negRootTwo );
-  CHECKSTATUSPTR( status );
-  pair.unitTwo = &unit;
-  */
   pair.unitOne = &(tSeries0->sampleUnits);
   pair.unitTwo = &(tSeries0->sampleUnits);
   LALUnitMultiply( status->statusPtr, &unit, &pair );
