@@ -226,6 +226,21 @@ int main(int argc,char *argv[])
 	  locate(CList2.f,CList2.length,f1min,&if2min,indices2f);
 	  locate(CList2.f,CList2.length,f1max,&if2max,indices2f);
 
+	  /* look for repeats in the frequency and make sure we include them in our search for coincidences */
+	  /* This potential problem was pointed out by Peter Shawhan during the code review */ 
+	  /* look only until second to last */
+	  while ( (if2min < (int)CList2.length-2) && (CList2.f[indices2f[if2min]] == CList2.f[indices2f[if2min+1]]) )
+	    if2min++;
+	  /* then check last one separately to avoid seg faults */
+	  if ( (if2min == (int)CList2.length-2) && (CList2.f[indices2f[if2min]] == CList2.f[indices2f[if2min+1]]))
+	    if2min++;
+	  /* look only until second  */
+	  while ( (if2max > 1) && (CList2.f[indices2f[if2max]] == CList2.f[indices2f[if2max-1]]) )
+	    if2max--;
+	  /* then check first one separately to avoid seg faults */
+	  if ( (if2max == 1) && (CList2.f[indices2f[if2max]] == CList2.f[indices2f[if2max-1]]))
+	    if2max--;
+
 	  /* alpha */
 	  Alpha1=CList1.Alpha[indices1F[i]];
 	  /* delta */
@@ -369,7 +384,7 @@ int main(int argc,char *argv[])
 	    if (CList1.Ctag[i]) 
 	      {
 		k++;
-		fprintf(fpOut,"%16.12f %l0.8f %l0.8f %l0.5f\n",
+		fprintf(fpOut,"%16.12f %10.8f %10.8f %20.17f\n",
 			CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
 		CList1.CtagCounter[i]=k;
 	      }
@@ -383,7 +398,7 @@ int main(int argc,char *argv[])
 	    if (CList2.Ctag[i]) 
 	      {
 		k++;
-		fprintf(fpOut,"%16.12f %l0.8f %l0.8f %l0.5f\n",
+		fprintf(fpOut,"%16.12f %10.8f %10.8f %20.17f\n",
 			CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
 		CList2.CtagCounter[i]=k;
 	      }    
