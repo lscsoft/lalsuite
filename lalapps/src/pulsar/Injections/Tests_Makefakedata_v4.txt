@@ -111,3 +111,9 @@ differences observed in the respective time-series, which seem to
 originate from internal rounding/interpolation errors in LALSimulateCoherentGW(). 
 
 **********************************************************************
+
+NOTE: after moving to the better optimized LALSimulateCoherentGW_exp()
+function, the above results are identically the same.
+
+(rp, 29/05/2004)
+**********************************************************************

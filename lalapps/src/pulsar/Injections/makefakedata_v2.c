@@ -184,6 +184,8 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 #include <lal/LALVersion.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
+#include <lal/GeneratePulsarSignal.h>
+
 /* Locations of the earth and sun ephemeris data */
 #define EARTHDATA "earth00-04.dat"
 #define SUNDATA "sun00-04.dat"
@@ -318,7 +320,7 @@ COMPLEX8Vector *fvecn = NULL;
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
-INT4 lalDebugLevel = 3;
+INT4 lalDebugLevel = 0;
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -350,6 +352,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data);
 void usage(FILE *fp);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -553,6 +556,15 @@ int main(int argc,char *argv[]) {
 	  "\tmaximum df*dt = %f\n", dfdt );
     return 1;
   }
+
+  if (lalDebugLevel >= 3)
+    {
+      FILE *fp;
+      fp = fopen ("debug_phi_v2.dat", "w");
+      write_timeSeriesR8 (fp, cgwOutput.phi);
+      fclose (fp);
+    }
+
 
   /* This is the main loop that produces output data */
   for (iSFT=0;iSFT<nTsft;iSFT++){
@@ -1206,7 +1218,6 @@ int make_filelist(void) {
 int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   FILE *fp;
-  REAL4 norm;
   size_t errorcode;
   UINT4 i;
 
@@ -1282,11 +1293,12 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   fclose(fp);
 
-  norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
+  /*  norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
+   */
 
   for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += scale*fvecn->data[i].re*norm;
-    fvec->data[i].im += scale*fvecn->data[i].im*norm;
+    fvec->data[i].re += scale*fvecn->data[i].re;
+    fvec->data[i].im += scale*fvecn->data[i].im;
   }
   
   return 0;
@@ -1332,7 +1344,7 @@ int write_SFTS(int iSFT){
 
 
   FILE *fp;
-  REAL4 rpw,ipw,norm;
+  REAL4 rpw,ipw;
   /* REAL8 fr; */
   char filename[256], filenumber[16];
   int errorcode;
@@ -1362,7 +1374,7 @@ int write_SFTS(int iSFT){
   header.gps_nsec=timestamps[iSFT].gpsNanoSeconds;
   header.tbase=Tsft;
   header.firstfreqindex=(INT4)(fmin*Tsft+0.5);
-  header.nsamples=fvec->length-1;
+  header.nsamples=fvec->length;
   
   /* write header */
   errorcode=fwrite((void*)&header,sizeof(header),1,fp);
@@ -1371,12 +1383,14 @@ int write_SFTS(int iSFT){
     return 1;
   }
 
+  /*
   norm=((REAL4)header.nsamples)*1.0/((REAL4)(fvec->length));
+  */
 
-  for (i=0;i<fvec->length-1;i++){
+  for (i=0;i<fvec->length;i++){
 
-    rpw=norm*fvec->data[i].re;
-    ipw=norm*fvec->data[i].im;
+    rpw = fvec->data[i].re;
+    ipw = fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  
     if (errorcode!=1){

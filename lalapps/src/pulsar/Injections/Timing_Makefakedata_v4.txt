@@ -1,0 +1,429 @@
+Timing-protocol: makefakedata_v4
+================================
+
+********************************************************************************
+** Initial timing: 29/05/2004
+********************************************************************************
+
+makefakedata_v2:
+------------------------------
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 36.76      7.36     7.36       20     0.37     0.37  LALSimulateCoherentGW
+ 29.77     13.32     5.96                             floor
+ 10.99     15.52     2.20                             sin
+  9.99     17.52     2.00                             cos
+  2.15     17.95     0.43                             r2hc_2
+  1.25     18.20     0.25                             hf_10
+  1.15     18.43     0.23                             write
+  0.80     18.59     0.16                             fwrite
+  0.70     18.73     0.14                             hf_12
+  0.55     18.84     0.11                             hf_15
+  0.45     18.93     0.09       20     0.00     0.00  write_SFTS
+  0.40     19.01     0.08                             _IO_new_file_xsputn
+  0.35     19.08     0.07       20     0.00     0.00  correct_phase
+  0.30     19.14     0.06                             __strtod_internal
+  0.30     19.20     0.06                             search
+  0.25     19.25     0.05                             doblock
+  0.25     19.30     0.05                             r2hc_10
+  0.25     19.35     0.05       20     0.00     0.00  LALForwardRealFFT
+  0.20     19.39     0.04                             fftwf_sincos
+  0.15     19.42     0.03                             open
+  0.15     19.45     0.03                             __mpn_submul_1
+  0.15     19.48     0.03                             fftwf_md5end
+  0.15     19.51     0.03                             fftwf_mktensor
+  0.10     19.53     0.02                             _IO_vfscanf
+  0.10     19.55     0.02                             __mpn_mul_1
+  0.10     19.57     0.02                             applicable
+  0.10     19.59     0.02                             apply
+  0.10     19.61     0.02                             compute
+  0.10     19.63     0.02                             fabs
+  0.10     19.65     0.02                             fftwf_md5putb
+  0.10     19.67     0.02                             fftwf_problem_dft_p
+  0.10     19.69     0.02                             fftwf_problem_rdft_p
+  0.10     19.71     0.02                             flockfile
+  0.10     19.73     0.02                             fscanf
+  0.10     19.75     0.02                             funlockfile
+  0.05     19.76     0.01                             _IO_default_xsputn
+  0.05     19.77     0.01                             _IO_file_write
+  0.05     19.78     0.01                             __errno_location
+  0.05     19.79     0.01                             __mpn_addmul_1
+  0.05     19.80     0.01                             __mpn_cmp
+  0.05     19.81     0.01                             _int_malloc
+  0.05     19.82     0.01                             apply
+  0.05     19.83     0.01                             apply
+  0.05     19.84     0.01                             apply_r2hc
+  0.05     19.85     0.01                             fftwf_ct_uglyp
+  0.05     19.86     0.01                             fftwf_tensor_compress_contiguous
+  0.05     19.87     0.01                             finish
+  0.05     19.88     0.01                             hash
+  0.05     19.89     0.01                             malloc_consolidate
+  0.05     19.90     0.01                             memalign
+  0.05     19.91     0.01                             mkplan
+  0.05     19.92     0.01                             mkplan
+  0.05     19.93     0.01                             mkplan
+  0.05     19.94     0.01                             mkplan
+  0.05     19.95     0.01                             mmap64
+  0.05     19.96     0.01                             print
+  0.05     19.97     0.01                             print
+  0.05     19.98     0.01                             r2hcII_10
+  0.05     19.99     0.01                             str_to_mpn
+  0.05     20.00     0.01                             strlen
+  0.05     20.01     0.01                             vfprintf
+  0.02     20.02     0.01                             fftwf_md5int
+  0.02     20.02     0.01                             fftwf_md5unsigned
+  0.00     20.02     0.00     1560     0.00     0.00  LALDR_Set33Matrix
+  0.00     20.02     0.00     1289     0.00     0.00  LALFree
+  0.00     20.02     0.00      905     0.00     0.00  LALCallocLong
+  0.00     20.02     0.00      720     0.00     0.00  LALDR_Multiply33Matrix
+  0.00     20.02     0.00      700     0.00     0.00  gcd
+  0.00     20.02     0.00      503     0.00     0.00  LALSnprintf
+  0.00     20.02     0.00      384     0.00     0.00  LALMallocLong
+  0.00     20.02     0.00      360     0.00     0.00  LALDR_EulerRotation
+  0.00     20.02     0.00      240     0.00     0.00  LALDR_DotProd33Matrix
+  0.00     20.02     0.00      240     0.00     0.00  LALDR_Transpose33Matrix
+  0.00     20.02     0.00      142     0.00     0.00  LALBarycenter
+  0.00     20.02     0.00      142     0.00     0.00  LALBarycenterEarth
+  0.00     20.02     0.00      122     0.00     0.00  LALSDestroyVector
+  0.00     20.02     0.00      121     0.00     0.00  LALSCreateVector
+  0.00     20.02     0.00      120     0.00     0.00  LALComputeDetAMResponse
+  0.00     20.02     0.00      120     0.00     0.00  LALGMST1
+  0.00     20.02     0.00      120     0.00     0.00  LALGPStoGMST1
+  0.00     20.02     0.00      120     0.00     0.00  LALGPStoUTC
+  0.00     20.02     0.00      120     0.00     0.00  LALIncrementGPS
+  0.00     20.02     0.00      120     0.00     0.00  LALJulianDate
+  0.00     20.02     0.00      120     0.00     0.00  LALJulianDay
+  0.00     20.02     0.00      100     0.00     0.00  LALUnitNormalize
+  0.00     20.02     0.00       40     0.00     0.00  LALUnitCompare
+  0.00     20.02     0.00       21     0.00     0.00  LALDCreateVector
+  0.00     20.02     0.00       21     0.00     0.00  LALDDestroyVector
+  0.00     20.02     0.00       20     0.00     0.00  LALCVectorAbs
+  0.00     20.02     0.00       20     0.00     0.00  LALCVectorAngle
+  0.00     20.02     0.00       20     0.00     0.00  LALComputeDetAMResponseSeries
+  0.00     20.02     0.00       20     0.00     0.00  LALDeltaGPS
+  0.00     20.02     0.00       20     0.00     0.00  LALFloatToInterval
+  0.00     20.02     0.00       20     0.00     0.00  LALIntervalToFloat
+  0.00     20.02     0.00       20     0.00     0.00  LALUnitMultiply
+  0.00     20.02     0.00       20     0.00     0.00  LALUnwrapREAL4Angle
+  0.00     20.02     0.00       20     0.00     0.00  write_timeseries
+  0.00     20.02     0.00        6     0.00     0.00  parseR4
+  0.00     20.02     0.00        5     0.00     0.00  parseR8
+  0.00     20.02     0.00        2     0.00     0.00  LALCCreateVector
+  0.00     20.02     0.00        2     0.00     0.00  LALCDestroyVector
+  0.00     20.02     0.00        2     0.00     0.00  LALOpenDataFile
+  0.00     20.02     0.00        2     0.00     0.00  compute_one_SSB
+  0.00     20.02     0.00        2     0.00     0.00  parseI4
+  0.00     20.02     0.00        1     0.00     0.00  LALCheckMemoryLeaks
+  0.00     20.02     0.00        1     0.00     0.00  LALCreateForwardRealFFTPlan
+  0.00     20.02     0.00        1     0.00     0.00  LALDestroyRealFFTPlan
+  0.00     20.02     0.00        1     0.00     0.00  LALGenerateSpinOrbitCW
+  0.00     20.02     0.00        1     0.00     0.00  LALGenerateTaylorCW
+  0.00     20.02     0.00        1     0.00     0.00  LALInitBarycenter
+  0.00     20.02     0.00        1     0.00     0.00  LALSCreateVectorSequence
+  0.00     20.02     0.00        1     0.00     0.00  LALSDestroyVectorSequence
+  0.00     20.02     0.00        1     0.00     0.00  cleanup
+  0.00     20.02     0.00        1     0.00     0.00  compute_SSBtimes
+  0.00     20.02     0.00        1     0.00     0.00  freemem
+  0.00     20.02     0.00        1     0.00     7.57  main
+  0.00     20.02     0.00        1     0.00     0.00  prepare_baryinput
+  0.00     20.02     0.00        1     0.00     0.00  prepare_cwDetector
+  0.00     20.02     0.00        1     0.00     0.00  prepare_fvec
+  0.00     20.02     0.00        1     0.00     0.00  prepare_timeSeries
+  0.00     20.02     0.00        1     0.00     0.00  read_commandline_and_file
+  0.00     20.02     0.00        1     0.00     0.00  read_timestamps
+  0.00     20.02     0.00        1     0.00     0.00  set_default
+
+makefakedata_v4:
+------------------------------
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 30.87      5.05     5.05        1     5.05     5.05  LALSimulateCoherentGW
+ 26.16      9.33     4.28                             floor
+ 15.46     11.86     2.53                             sin
+ 14.43     14.22     2.36                             cos
+  2.75     14.67     0.45                             r2hc_2
+  1.22     14.87     0.20                             write
+  1.10     15.05     0.18                             hf_12
+  0.86     15.19     0.14                             hf_10
+  0.79     15.32     0.13                             hf_15
+  0.73     15.44     0.12       20     0.01     0.01  correct_phase
+  0.49     15.52     0.08       20     0.00     0.00  LALWriteSFTtoFile
+  0.37     15.58     0.06                             _IO_vfscanf
+  0.31     15.63     0.05                             r2hcII_10
+  0.24     15.67     0.04       20     0.00     0.00  LALForwardRealFFT
+  0.24     15.71     0.04                             __strtod_internal
+  0.24     15.75     0.04                             _int_memalign
+  0.24     15.79     0.04                             fftwf_sincos
+  0.24     15.83     0.04                             munmap
+  0.24     15.87     0.04                             open
+  0.24     15.91     0.04                             str_to_mpn
+  0.18     15.94     0.03                             apply_r2hc
+  0.18     15.97     0.03                             search
+  0.12     15.99     0.02                             __i686.get_pc_thunk.bx
+  0.12     16.01     0.02                             doblock
+  0.12     16.03     0.02                             fftwf_md5putc
+  0.12     16.05     0.02                             fftwf_mkplan_dft_ct
+  0.12     16.07     0.02                             fftwf_problem_dft_p
+  0.12     16.09     0.02                             malloc_consolidate
+  0.12     16.11     0.02                             mkplan
+  0.12     16.13     0.02                             round_and_return
+  0.06     16.14     0.01                             __errno_location
+  0.06     16.15     0.01                             __mpn_mul
+  0.06     16.16     0.01                             _int_malloc
+  0.06     16.17     0.01                             applicable
+  0.06     16.18     0.01                             applicable
+  0.06     16.19     0.01                             apply
+  0.06     16.20     0.01                             fftwf_dft_ct_applicable
+  0.06     16.21     0.01                             fftwf_malloc_plain
+  0.06     16.22     0.01                             fftwf_md5int
+  0.06     16.23     0.01                             fftwf_md5putb
+  0.06     16.24     0.01                             fftwf_mkplan_rdft_hc2hc
+  0.06     16.25     0.01                             fftwf_problem_rdft_p
+  0.06     16.26     0.01                             fftwf_rdft_hc2hc_applicable
+  0.06     16.27     0.01                             mkplan
+  0.06     16.28     0.01                             mkplan
+  0.06     16.29     0.01                             mkplan
+  0.06     16.30     0.01                             mkplan
+  0.06     16.31     0.01                             mkplan
+  0.06     16.32     0.01                             mkplan
+  0.06     16.33     0.01                             mkplan
+  0.06     16.34     0.01                             r2hc_10
+  0.06     16.35     0.01                             sYSMALLOc
+  0.03     16.36     0.01                             __i686.get_pc_thunk.cx
+  0.03     16.36     0.01                             zero
+  0.00     16.36     0.00      858     0.00     0.00  LALDR_Set33Matrix
+  0.00     16.36     0.00      679     0.00     0.00  LALFree
+  0.00     16.36     0.00      581     0.00     0.00  LALCallocLong
+  0.00     16.36     0.00      396     0.00     0.00  LALDR_Multiply33Matrix
+  0.00     16.36     0.00      270     0.00     0.00  LALSnprintf
+  0.00     16.36     0.00      198     0.00     0.00  LALDR_EulerRotation
+  0.00     16.36     0.00      132     0.00     0.00  LALDR_DotProd33Matrix
+  0.00     16.36     0.00      132     0.00     0.00  LALDR_Transpose33Matrix
+  0.00     16.36     0.00      100     0.00     0.00  LALBarycenter
+  0.00     16.36     0.00      100     0.00     0.00  LALBarycenterEarth
+  0.00     16.36     0.00       98     0.00     0.00  LALMallocLong
+  0.00     16.36     0.00       82     0.00     0.00  LALDeltaFloatGPS
+  0.00     16.36     0.00       66     0.00     0.00  LALComputeDetAMResponse
+  0.00     16.36     0.00       66     0.00     0.00  LALGMST1
+  0.00     16.36     0.00       66     0.00     0.00  LALGPStoGMST1
+  0.00     16.36     0.00       66     0.00     0.00  LALGPStoUTC
+  0.00     16.36     0.00       66     0.00     0.00  LALIncrementGPS
+  0.00     16.36     0.00       66     0.00     0.00  LALJulianDate
+  0.00     16.36     0.00       66     0.00     0.00  LALJulianDay
+  0.00     16.36     0.00       28     0.00     0.00  LALReadConfigVariable
+  0.00     16.36     0.00       28     0.00     0.00  RegisterUserVar
+  0.00     16.36     0.00       28     0.00     0.00  gcd
+  0.00     16.36     0.00       26     0.00     0.00  LAL_ERR_EXIT
+  0.00     16.36     0.00       22     0.00     0.00  LALAddFloatToGPS
+  0.00     16.36     0.00       20     0.00     0.00  LALCCreateVector
+  0.00     16.36     0.00       20     0.00     0.00  LALCDestroyVector
+  0.00     16.36     0.00       16     0.00     0.00  LALReadConfigREAL8Variable
+  0.00     16.36     0.00       16     0.00     0.00  LALRegisterREALUserVar
+  0.00     16.36     0.00       10     0.00     0.00  LALReadConfigSTRINGVariable
+  0.00     16.36     0.00        6     0.00     0.00  LALRegisterSTRINGUserVar
+  0.00     16.36     0.00        6     0.00     0.00  UVARwasSet
+  0.00     16.36     0.00        4     0.00     0.00  LALNormalizeSkyPosition
+  0.00     16.36     0.00        4     0.00     0.00  LALReadConfigBOOLVariable
+  0.00     16.36     0.00        4     0.00     0.00  LALRegisterBOOLUserVar
+  0.00     16.36     0.00        4     0.00     0.00  LALSCreateVector
+  0.00     16.36     0.00        4     0.00     0.00  LALSDestroyVector
+  0.00     16.36     0.00        4     0.00     0.00  LALUnitNormalize
+  0.00     16.36     0.00        3     0.00     0.00  LALConvertGPS2SSB
+  0.00     16.36     0.00        2     0.00     0.00  LALCHARCreateVector
+  0.00     16.36     0.00        2     0.00     0.00  LALDCreateVector
+  0.00     16.36     0.00        2     0.00     0.00  LALDDestroyVector
+  0.00     16.36     0.00        2     0.00     0.00  LALOpenDataFile
+  0.00     16.36     0.00        2     0.00     0.00  LALReadConfigINT4Variable
+  0.00     16.36     0.00        2     0.00     0.00  LALRegisterINTUserVar
+  0.00     16.36     0.00        2     0.00     0.00  LALUnitCompare
+  0.00     16.36     0.00        1     0.00     0.00  InitMakefakedata
+  0.00     16.36     0.00        1     0.00     0.00  LALCHARDestroyVector
+  0.00     16.36     0.00        1     0.00     0.00  LALCHARReadSequence
+  0.00     16.36     0.00        1     0.00     0.00  LALCheckConfigReadComplete
+  0.00     16.36     0.00        1     0.00     0.00  LALCheckMemoryLeaks
+  0.00     16.36     0.00        1     0.00     0.00  LALComputeDetAMResponseSeries
+  0.00     16.36     0.00        1     0.00     0.00  LALCreateForwardRealFFTPlan
+  0.00     16.36     0.00        1     0.00     0.00  LALCreateSFTVector
+  0.00     16.36     0.00        1     0.00     0.00  LALCreateTimestampVector
+  0.00     16.36     0.00        1     0.00     0.00  LALCreateTokenList
+  0.00     16.36     0.00        1     0.00     0.00  LALCreateVector
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyConfigData
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyRealFFTPlan
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroySFTVector
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyTimestampVector
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyTokenList
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyUserVars
+  0.00     16.36     0.00        1     0.00     0.00  LALDestroyVector
+  0.00     16.36     0.00        1     0.00     0.00  LALFloatToInterval
+  0.00     16.36     0.00        1     0.00     5.05  LALGeneratePulsarSignal
+  0.00     16.36     0.00        1     0.00     0.00  LALGenerateSpinOrbitCW
+  0.00     16.36     0.00        1     0.00     0.00  LALGenerateTaylorCW
+  0.00     16.36     0.00        1     0.00     0.00  LALInitBarycenter
+  0.00     16.36     0.00        1     0.00     0.00  LALLeapSecs
+  0.00     16.36     0.00        1     0.00     0.00  LALLoadConfigFile
+  0.00     16.36     0.00        1     0.00     0.00  LALSCreateVectorSequence
+  0.00     16.36     0.00        1     0.00     0.00  LALSDestroyVectorSequence
+  0.00     16.36     0.00        1     0.00     0.16  LALSignalToSFTs
+  0.00     16.36     0.00        1     0.00     0.00  LALUserVarCheckRequired
+  0.00     16.36     0.00        1     0.00     0.00  LALUserVarReadAllInput
+  0.00     16.36     0.00        1     0.00     0.00  LALUserVarReadCfgfile
+  0.00     16.36     0.00        1     0.00     0.00  LALUserVarReadCmdline
+  0.00     16.36     0.00        1     0.00     0.00  check_timestamp_bounds
+  0.00     16.36     0.00        1     0.00     0.00  cleanConfig
+  0.00     16.36     0.00        1     0.00     0.00  freemem
+  0.00     16.36     0.00        1     0.00     0.00  initUserVars
+  0.00     16.36     0.00        1     0.00     5.29  main
+  0.00     16.36     0.00        1     0.00     0.00  read_timestamps
+
+
+********************************************************************************
+*** now, using our modified LALSimulateCoherentGW_exp()
+***
+*** modifications are: 
+***  - use cast (UINT4) instead of floor(), 
+***  - store sinp, cosp, sins, coss for double-use
+***
+********************************************************************************
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 47.94      4.54     4.54        1     4.54     4.54  LALSimulateCoherentGW_exp
+ 16.47      6.10     1.56                             sin
+ 12.99      7.33     1.23                             cos
+  4.22      7.73     0.40                             r2hc_2
+  2.64      7.98     0.25                             hf_10
+  2.11      8.18     0.20                             write
+  1.69      8.34     0.16       20     0.01     0.01  LALForwardRealFFT
+  1.48      8.48     0.14                             hf_15
+  1.16      8.59     0.11       20     0.01     0.01  LALWriteSFTtoFile
+  1.06      8.69     0.10                             hf_12
+  0.95      8.78     0.09                             __strtod_internal
+  0.74      8.85     0.07                             _IO_vfscanf
+  0.53      8.90     0.05                             r2hcII_10
+  0.42      8.94     0.04                             doblock
+  0.42      8.98     0.04                             fftwf_sincos
+  0.42      9.02     0.04                             r2hc_10
+  0.32      9.05     0.03                             __i686.get_pc_thunk.bx
+  0.32      9.08     0.03                             search
+  0.21      9.10     0.02                             _int_malloc
+  0.21      9.12     0.02                             applicable
+  0.21      9.14     0.02                             apply
+  0.21      9.16     0.02                             fftwf_mkplan_dft_ct
+  0.21      9.18     0.02                             fftwf_problem_rdft_p
+  0.21      9.20     0.02                             malloc_consolidate
+  0.21      9.22     0.02                             mkplan
+  0.21      9.24     0.02                             mkplan
+  0.21      9.26     0.02                             munmap
+  0.11      9.27     0.01                             __mpn_mul_1
+  0.11      9.28     0.01                             __mpn_submul_1
+  0.11      9.29     0.01                             _int_memalign
+  0.11      9.30     0.01                             applicable_f
+  0.11      9.31     0.01                             compute
+  0.11      9.32     0.01                             fftwf_destroy_plan
+  0.11      9.33     0.01                             fftwf_dft_ct_applicable
+  0.11      9.34     0.01                             fftwf_md5putc
+  0.11      9.35     0.01                             fftwf_md5puts
+  0.11      9.36     0.01                             fftwf_mkplan_rdft_hc2hc
+  0.11      9.37     0.01                             fftwf_problem_dft_p
+  0.11      9.38     0.01                             fftwf_tensor_compress
+  0.11      9.39     0.01                             fftwf_tensor_md5
+  0.11      9.40     0.01                             memalign
+  0.11      9.41     0.01                             mkplan
+  0.11      9.42     0.01                             mkplan
+  0.11      9.43     0.01                             mkplan
+  0.11      9.44     0.01                             mkplan
+  0.11      9.45     0.01                             mkplan
+  0.11      9.46     0.01                             open
+  0.11      9.47     0.01                             round_and_return
+  0.00      9.47     0.00      858     0.00     0.00  LALDR_Set33Matrix
+  0.00      9.47     0.00      679     0.00     0.00  LALFree
+  0.00      9.47     0.00      581     0.00     0.00  LALCallocLong
+  0.00      9.47     0.00      396     0.00     0.00  LALDR_Multiply33Matrix
+  0.00      9.47     0.00      270     0.00     0.00  LALSnprintf
+  0.00      9.47     0.00      198     0.00     0.00  LALDR_EulerRotation
+  0.00      9.47     0.00      132     0.00     0.00  LALDR_DotProd33Matrix
+  0.00      9.47     0.00      132     0.00     0.00  LALDR_Transpose33Matrix
+  0.00      9.47     0.00      100     0.00     0.00  LALBarycenter
+  0.00      9.47     0.00      100     0.00     0.00  LALBarycenterEarth
+  0.00      9.47     0.00       98     0.00     0.00  LALMallocLong
+  0.00      9.47     0.00       82     0.00     0.00  LALDeltaFloatGPS
+  0.00      9.47     0.00       66     0.00     0.00  LALComputeDetAMResponse
+  0.00      9.47     0.00       66     0.00     0.00  LALGMST1
+  0.00      9.47     0.00       66     0.00     0.00  LALGPStoGMST1
+  0.00      9.47     0.00       66     0.00     0.00  LALGPStoUTC
+  0.00      9.47     0.00       66     0.00     0.00  LALIncrementGPS
+  0.00      9.47     0.00       66     0.00     0.00  LALJulianDate
+  0.00      9.47     0.00       66     0.00     0.00  LALJulianDay
+  0.00      9.47     0.00       28     0.00     0.00  LALReadConfigVariable
+  0.00      9.47     0.00       28     0.00     0.00  RegisterUserVar
+  0.00      9.47     0.00       28     0.00     0.00  gcd
+  0.00      9.47     0.00       26     0.00     0.00  LAL_ERR_EXIT
+  0.00      9.47     0.00       22     0.00     0.00  LALAddFloatToGPS
+  0.00      9.47     0.00       20     0.00     0.00  LALCCreateVector
+  0.00      9.47     0.00       20     0.00     0.00  LALCDestroyVector
+  0.00      9.47     0.00       20     0.00     0.00  correct_phase
+  0.00      9.47     0.00       16     0.00     0.00  LALReadConfigREAL8Variable
+  0.00      9.47     0.00       16     0.00     0.00  LALRegisterREALUserVar
+  0.00      9.47     0.00       10     0.00     0.00  LALReadConfigSTRINGVariable
+  0.00      9.47     0.00        6     0.00     0.00  LALRegisterSTRINGUserVar
+  0.00      9.47     0.00        6     0.00     0.00  UVARwasSet
+  0.00      9.47     0.00        4     0.00     0.00  LALNormalizeSkyPosition
+  0.00      9.47     0.00        4     0.00     0.00  LALReadConfigBOOLVariable
+  0.00      9.47     0.00        4     0.00     0.00  LALRegisterBOOLUserVar
+  0.00      9.47     0.00        4     0.00     0.00  LALSCreateVector
+  0.00      9.47     0.00        4     0.00     0.00  LALSDestroyVector
+  0.00      9.47     0.00        4     0.00     0.00  LALUnitNormalize
+  0.00      9.47     0.00        3     0.00     0.00  LALConvertGPS2SSB
+  0.00      9.47     0.00        2     0.00     0.00  LALCHARCreateVector
+  0.00      9.47     0.00        2     0.00     0.00  LALDCreateVector
+  0.00      9.47     0.00        2     0.00     0.00  LALDDestroyVector
+  0.00      9.47     0.00        2     0.00     0.00  LALOpenDataFile
+  0.00      9.47     0.00        2     0.00     0.00  LALReadConfigINT4Variable
+  0.00      9.47     0.00        2     0.00     0.00  LALRegisterINTUserVar
+  0.00      9.47     0.00        2     0.00     0.00  LALUnitCompare
+  0.00      9.47     0.00        1     0.00     0.00  InitMakefakedata
+  0.00      9.47     0.00        1     0.00     0.00  LALCHARDestroyVector
+  0.00      9.47     0.00        1     0.00     0.00  LALCHARReadSequence
+  0.00      9.47     0.00        1     0.00     0.00  LALCheckConfigReadComplete
+  0.00      9.47     0.00        1     0.00     0.00  LALCheckMemoryLeaks
+  0.00      9.47     0.00        1     0.00     0.00  LALComputeDetAMResponseSeries
+  0.00      9.47     0.00        1     0.00     0.00  LALCreateForwardRealFFTPlan
+  0.00      9.47     0.00        1     0.00     0.00  LALCreateSFTVector
+  0.00      9.47     0.00        1     0.00     0.00  LALCreateTimestampVector
+  0.00      9.47     0.00        1     0.00     0.00  LALCreateTokenList
+  0.00      9.47     0.00        1     0.00     0.00  LALCreateVector
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyConfigData
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyRealFFTPlan
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroySFTVector
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyTimestampVector
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyTokenList
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyUserVars
+  0.00      9.47     0.00        1     0.00     0.00  LALDestroyVector
+  0.00      9.47     0.00        1     0.00     0.00  LALFloatToInterval
+  0.00      9.47     0.00        1     0.00     4.54  LALGeneratePulsarSignal
+  0.00      9.47     0.00        1     0.00     0.00  LALGenerateSpinOrbitCW
+  0.00      9.47     0.00        1     0.00     0.00  LALGenerateTaylorCW
+  0.00      9.47     0.00        1     0.00     0.00  LALInitBarycenter
+  0.00      9.47     0.00        1     0.00     0.00  LALLeapSecs
+  0.00      9.47     0.00        1     0.00     0.00  LALLoadConfigFile
+  0.00      9.47     0.00        1     0.00     0.00  LALSCreateVectorSequence
+  0.00      9.47     0.00        1     0.00     0.00  LALSDestroyVectorSequence
+  0.00      9.47     0.00        1     0.00     0.16  LALSignalToSFTs
+  0.00      9.47     0.00        1     0.00     0.00  LALUserVarCheckRequired
+  0.00      9.47     0.00        1     0.00     0.00  LALUserVarReadAllInput
+  0.00      9.47     0.00        1     0.00     0.00  LALUserVarReadCfgfile
+  0.00      9.47     0.00        1     0.00     0.00  LALUserVarReadCmdline
+  0.00      9.47     0.00        1     0.00     0.00  check_timestamp_bounds
+  0.00      9.47     0.00        1     0.00     0.00  cleanConfig
+  0.00      9.47     0.00        1     0.00     0.00  freemem
+  0.00      9.47     0.00        1     0.00     0.00  initUserVars
+  0.00      9.47     0.00        1     0.00     4.81  main
+  0.00      9.47     0.00        1     0.00     0.00  read_timestamps
