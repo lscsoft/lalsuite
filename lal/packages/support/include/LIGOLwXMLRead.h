@@ -18,8 +18,13 @@ $Id$
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <metaio.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALConstants.h>
+#include <lal/LALInspiral.h>
+#include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
@@ -112,6 +117,37 @@ LALSnglInspiralTableFromLIGOLw (
     INT4                stopEvent
     );
 
+/* these functions need to be lalified, but they are in support... */
+
+int
+SnglInspiralTableFromLIGOLw (
+    SnglInspiralTable **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    );
+
+int
+InspiralTmpltBankFromLIGOLw (
+    InspiralTemplate   **bankHead,
+    CHAR                *fileName,
+    INT4                startTmplt,
+    INT4                stopTmplt
+    );
+
+int
+SimInspiralTableFromLIGOLw (
+    SimInspiralTable   **simHead,
+    CHAR                *fileName,
+    INT4                 startTime,
+    INT4                 endTime
+    );
+
+int
+SearchSummaryTableFromLIGOLw (
+    SearchSummaryTable **sumHead,
+    CHAR                *fileName
+    );
 
 #ifdef  __cplusplus
 }
