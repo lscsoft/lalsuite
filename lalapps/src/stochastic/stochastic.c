@@ -2243,11 +2243,10 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
           memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
           calfacts.ifo = ifoOne;
-          LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheOne), \
-              &status);
+          calibCache = XLALFrImportCache(calCacheOne);
           LAL_CALL(LALExtractFrameResponse(&status, responseTempOne, \
                 calibCache, &calfacts), &status);
-          LAL_CALL(LALDestroyFrCache(&status, &calibCache), &status);
+          XLALFrDestroyCache(calibCache);
 
           /* reduce to the optimal filter frequency range */
           for (i = 0; i < filterLength; i++)
@@ -2277,11 +2276,10 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
           memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
           calfacts.ifo = ifoTwo;
-          LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheTwo ), \
-              &status);
-          LAL_CALL(LALExtractFrameResponse( &status, responseTempTwo, \
+          calibCache = XLALFrImportCache(calCacheTwo);
+          LAL_CALL(LALExtractFrameResponse(&status, responseTempTwo, \
                 calibCache, &calfacts), &status);
-          LAL_CALL(LALDestroyFrCache( &status, &calibCache), &status);
+          XLALFrDestroyCache(calibCache);
 
           /* reduce to the optimal filter frequency range */
           for (i = 0; i < filterLength; i++)
