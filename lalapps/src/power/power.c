@@ -128,6 +128,9 @@ INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
 CHAR      *injectionFile  = NULL;   /* file with list of injections       */
 
+/* GEO data high pass corner freq. */
+REAL8	  fcorner	= 100.0;	/* corner frequency in Hz */
+
 /* parameters for the sine-gaussian injection testing */
 REAL4                 sineFreq      = 100.0;   /* nominal frequency of sine burst */
 REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
@@ -148,6 +151,8 @@ int main( int argc, char *argv[])
     FrCache              *frameCache    = NULL;
     CHAR                  fname[256];
     BOOLEAN               epochSet      = FALSE;
+    PassBandParamStruc    highpassParam;
+    REAL4                 fsafety=0;
 
     /* data storage */
     REAL4TimeSeries            series;
@@ -260,7 +265,7 @@ int main( int argc, char *argv[])
           /* create and initialize the time series vector */
           geoSeries.data = NULL;
           LAL_CALL( LALDCreateVector( &stat, &geoSeries.data, numPoints), &stat);
-          memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL4) );
+          memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL8) );
           geoSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
           geoSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
           strcpy(geoSeries.name, params->channelName);
@@ -274,6 +279,17 @@ int main( int argc, char *argv[])
 
           /* get the data */
           LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
+
+	  /* high pass filter before casting REAL8 to REAL4 */
+
+	  highpassParam.nMax = 4;
+    	  fsafety = params->tfTilingInput->flow - 10.0;
+    	  highpassParam.f2 = fsafety > fcorner ? fcorner : fsafety;
+    	  highpassParam.f1 = -1.0;
+    	  highpassParam.a2 = 0.1;
+    	  highpassParam.a1 = -1.0;
+    	  LAL_CALL( LALButterworthREAL8TimeSeries(&stat, &geoSeries, &highpassParam), &stat);
+
           for(i=0;i<numPoints;i++){
             series.data->data[i] = (REAL4) geoSeries.data->data[i];
           }
@@ -283,6 +299,8 @@ int main( int argc, char *argv[])
           series.deltaT = geoSeries.deltaT;
           series.f0 = geoSeries.f0;
           series.sampleUnits = lalADCCountUnit;
+	  LAL_CALL( LALDDestroyVector( &stat, &geoSeries.data), &stat);
+
         }
         else
         {
@@ -563,7 +581,6 @@ int initializeEPSearch(
         /* these options set a flag */
         {"verbose",                 no_argument,       &verbose,           TRUE },
         {"cluster",                 no_argument,       &cluster,           TRUE },
-        {"geodata",                 no_argument,       &geodata,           TRUE },
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
         {"channel",                 required_argument, 0,                 'b'}, 
@@ -600,6 +617,8 @@ int initializeEPSearch(
 	{"sinWidth",                required_argument, 0,                 'H'},
         {"calcache",                required_argument, 0,                 'I'},
         {"injfile",                 required_argument, 0,                 'J'},
+	/* geo data flag, argument is corner freq. of high pass filter */
+	{"geodata",		    required_argument, 0,		  'K'},
         /* output options */
         {"printData",               no_argument,       &printData,         1 },
         {"printSpectrum",           no_argument,       &printData,         1 },
@@ -659,7 +678,7 @@ int initializeEPSearch(
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:J:",
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:J:K:",
                 long_options, &option_index );
 
         /* detect the end of the options */
@@ -1190,6 +1209,20 @@ int initializeEPSearch(
                 memcpy( injectionFile, optarg, len );
                 injFlag = TRUE;
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
+                break;
+
+	     case 'K':
+	       {
+		/* read flag parameter to determine high pass corner freq. */
+		REAL8 tmpfcorner = atof(optarg);
+                  if (tmpfcorner <= 0){
+                      fprintf(stderr,"invalid argument to --%s:\n",
+                              long_options[option_index].name);
+                      exit( 1 );
+                  }
+                  fcorner = tmpfcorner;
+		  geodata = TRUE;
+                }
                 break;
 
            case '?':
