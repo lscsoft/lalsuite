@@ -620,7 +620,7 @@ int main(int argc, char *argv[]){
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
   injectPar.spnFmax.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
-  injectPar.spnFmax.data[0] = (nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
+  injectPar.spnFmax.data[0] = -(nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
   
   pulsarInject.spindown.length = msp;
   pulsarTemplate.spindown.length = msp;
