@@ -33,11 +33,27 @@ $Id$
 
   /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
      \subsubsection{Description}
-   * This module contains a function for plotting 3D template banks by creating a Mathematica
-   * notebook.  The notebook renders the templates as points in a three dimensional lattice.
-   * The plot is animated so the user can see the template bank from different perspectives.
+   * This module contains a function for plotting 3D template banks by creating a 
+   * Mathematica notebook.  The notebook renders the templates as points in a three 
+   * dimensional lattice.  The plot is animated so the user can see the template bank 
+   * from different perspectives.
      </lalLaTeX> 
      END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
+
+  /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
+     \subsubsection{Notes}
+     \begin{itemize}
+   * \item The output of this function is "Math3DNotebook.nb" and will appear in the 
+   * directory of the program that called this function.
+   * \item Exported Mathematica graphics have no preferred directory and will appear in
+   * your home directory for unix users and in the Mathematica directory for Windows 
+   * users unless you have another path configured in your Mathematica installation. It
+   * is necessary to change the file name within the notebook to avoid overwriting 
+   * previous files.
+     \end{itemize}
+     </lalLaTeX>
+     END SUBSUBSECTION - NOTES ------------------------------------------------------- */
+     
 /*END - SUBSECTION - MODULE - LALMath3DPlot.c" --------------------------------------- */
 
 /*<lalLaTeX>  
@@ -119,7 +135,10 @@ LALMath3DPlot( LALStatus *stat,
         fprintf(nb, "AnimationName\t:= \"AnimationTilePlot.gif\"");
       END_INPUTCELL;
       BEG_INPUTCELL;
-        fprintf(nb, "StillName\t:= \"StillTilePlot.gif\"");
+        fprintf(nb, "StillName\t:= \"StillTilePlot\"");
+      END_INPUTCELL;
+      BEG_INPUTCELL;
+        fprintf(nb, "StillType\t:=\"EPS\"");
       END_INPUTCELL;
       BEG_INPUTCELL;
         fprintf(nb, "frames\t= 30;");
@@ -140,7 +159,9 @@ LALMath3DPlot( LALStatus *stat,
         fprintf(nb, "AnimationSize:\tThe size of the final animation in PIXELS x PIXELS\n");
         fprintf(nb, "StillSize:\t\tThe size of the final still image in PIXELS x PIXELS\n");
         fprintf(nb, "AnimationName:\tWhat to name the final animation - must use .gif extension\n");
-        fprintf(nb, "StillName:\t\tWhat to name the final still image - must use .gif extension\n");
+        fprintf(nb, "StillName:\t\tWhat to name the final still image - extension determined by StillType\n");
+        fprintf(nb, "StillType:\t\tThe file type and extension for the still image\n");
+        fprintf(nb, "\t\t\tChoose any standard format (e.g. JPG, GIF, PDF, EPS, etc.)\n");
         fprintf(nb, "frames:\t\tThe number of frames for each rotation of the image.\n"); 
         fprintf(nb, "\t\t\tThe final image will have 2 times the number frames\n");
         fprintf(nb, "FrameTime:\t\tSets the delay time in seconds between each frame in the animated gif\n");
@@ -193,7 +214,7 @@ LALMath3DPlot( LALStatus *stat,
           fprintf(nb, "images = Evaluate[Table[tile[j], {j, 0, 2 frames, 1}]];\n");
         END_INPUTCELL;
         BEG_INPUTCELL; 
-          fprintf(nb, "Export[StillName, still, \"GIF\", ImageSize->StillSize, ConversionOptions->{\"ColorReductionDither\" -> False}]");
+          fprintf(nb, "Export[StillName<>\".\"<>ToLowerCase[StillType], still, StillType, ImageSize->StillSize, ConversionOptions->{\"ColorReductionDither\" -> False}]");
         END_INPUTCELL;
         BEG_INPUTCELL;
           fprintf(nb, "Export[AnimationName, images, \"GIF\", ImageSize -> AnimationSize, ConversionOptions -> {\"Loop\" -> True,\"AnimationDisplayTime\" -> FrameTime,");
