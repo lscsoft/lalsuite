@@ -31,12 +31,16 @@ RCSID("$Id$");
   "Usage: " PROGRAM_NAME " [options] [xml files]\n"\
   " --help                       display this message\n"\
   " --version                    display version\n"\
+  " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* status */
   LALStatus status = blank_status;
+
+  /* getopt flags */
+  static int text_flag;
 
   /* counters */
   INT4 i;
@@ -52,12 +56,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   MetadataTable outputTable;
   StochasticTable **stochHandle = NULL;
 
+  /* text output file */
+  FILE *out;
+
   /* parse command line arguments */
   while (1)
   {
     /* getopt arguments */
     static struct option long_options[] = 
     {
+      /* options that set a flag */
+      {"text", no_argument, &text_flag, 1},
+      /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
       {"output", required_argument, 0, 'o'},
@@ -169,23 +179,51 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* opening xml file stream */
-  memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-  LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), &status);
-
-  /* write stochastic table */
-  if (stochHead)
+  if (text_flag)
   {
-    outputTable.stochasticTable = stochHead;
-    LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
-        &status);
-    LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
-          stochastic_table), &status);
-    LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-  }
+    /* output as text file */
 
-  /* close xml file */
-  LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+    /* open output file */
+    if ((out = fopen(outputFileName, "w")) == NULL)
+    {
+      fprintf(stderr, "Can't open file \"%s\" for output...\n", \
+          outputFileName);
+      exit(1);
+    }
+
+    /* write details of events */
+    for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+    {
+      fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
+          thisStoch->cc_stat, thisStoch->cc_sigma);
+    }
+
+    /* close output file */
+    fclose(out);
+  }
+  else
+  {
+    /* output as xml file */
+
+    /* open xml file stream */
+    memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+    LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
+        &status);
+
+    /* write stochastic table */
+    if (stochHead)
+    {
+      outputTable.stochasticTable = stochHead;
+      LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
+          &status);
+      LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
+            stochastic_table), &status);
+      LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
+    }
+
+    /* close xml file */
+    LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+  }
 
   /* check for memory leaks and exit */
   LALCheckMemoryLeaks();
