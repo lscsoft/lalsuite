@@ -477,7 +477,7 @@ int main(int argc,char *argv[]){
   /* Compute measured plan for FFTW */
   LALCreateForwardRealFFTPlan(&status, &pfwd, (UINT4)npts, 0);
   TESTSTATUS(&status);
-  
+
   /* Main loop to write SFTs */
   for (count=0;count<nstarts;count++) {
     struct stat buff;
@@ -632,38 +632,36 @@ int main(int argc,char *argv[]){
 #endif
 
 #ifdef TIMESHIFT
-      {
-	/* correct data for timing errors.  This is a bit of a hack.  We
-	   can do it either just before or just after the FFT. This is
-	   equivalent if the timing error equals an integer multiple of
-	   the sample time.  Otherwise the correct way to do it is by
-	   modifying the FFT output by multiplying by exp(2pi i f dt).
-	   Here, we take the easy route, which gets it right to
-	   sufficient accuracty (+- 30 us) for our purposes.  Note that
-	   there are a number of approximations built in to either way
-	   of doing it, all of which boil down to: it works if the
-	   timing errors are very small compared to the SFT time.
-	   
-	   A positive value of deltatime() means that the correct time
-	   stamp for the first datum recorded in the frame is LATER than
-	   the frame time stamp.  A negative value of deltatime() means
-	   that the correct time stamp for the first datum recorded in
-	   the frame is EARLIER than the frame time stamp.
-	*/
-	if (microsec){
-	  int nshift;
-	  double fshift=1.e-6*microsec*SRATE;
-	  
-	  if (fshift>=0.0)
-	    nshift=(int)(fshift+0.5);
-	  else
-	    nshift=(int)(fshift-0.5);
-	  
-	  if (nshift){
-	    shifter(chan.data->data, npts, nshift);
-	    printf("Shifting %s data sample at time %d forward %d samples\n",
-		   argv[4], epoch.gpsSeconds, nshift);
-	  }
+      /* correct data for timing errors.  This is a bit of a hack.  We
+	 can do it either just before or just after the FFT. This is
+	 equivalent if the timing error equals an integer multiple of
+	 the sample time.  Otherwise the correct way to do it is by
+	 modifying the FFT output by multiplying by exp(2pi i f dt).
+	 Here, we take the easy route, which gets it right to
+	 sufficient accuracty (+- 30 us) for our purposes.  Note that
+	 there are a number of approximations built in to either way
+	 of doing it, all of which boil down to: it works if the
+	 timing errors are very small compared to the SFT time.
+	 
+	 A positive value of deltatime() means that the correct time
+	 stamp for the first datum recorded in the frame is LATER than
+	 the frame time stamp.  A negative value of deltatime() means
+	 that the correct time stamp for the first datum recorded in
+	 the frame is EARLIER than the frame time stamp.
+      */
+      if (microsec){
+	int nshift;
+	double fshift=1.e-6*microsec*SRATE;
+	
+	if (fshift>=0.0)
+	  nshift=(int)(fshift+0.5);
+	else
+	  nshift=(int)(fshift-0.5);
+	
+	if (nshift){
+	  shifter(chan.data->data, npts, nshift);
+	  printf("Shifting %s data sample at time %d forward %d samples\n",
+		 argv[4], epoch.gpsSeconds, nshift);
 	}
       }
 #endif
@@ -683,8 +681,6 @@ int main(int argc,char *argv[]){
 	return 7;
       }
       
-
-
 #ifdef PRINT50
       print50(chan.data->data, "SHIFTED");
 #endif
