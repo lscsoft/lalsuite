@@ -172,7 +172,7 @@ static int list_files( char ***flist, const char *dirname, const char *pattern )
   }
 
   rewinddir( dir );
-  *flist = calloc( nfile + 1, sizeof( **flist ) );
+  *flist = LALCalloc( nfile + 1, sizeof( **flist ) );
   nfile = 0;
   while ( ( ent = readdir( dir ) ) )
     if ( ! fnmatch( pattern, ent->d_name, 0 ) )
