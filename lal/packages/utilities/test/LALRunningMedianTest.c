@@ -300,6 +300,10 @@ int main( int argc, char **argv )
 
   /* test error conditions */
 
+#ifndef LAL_NDEBUG
+    if ( ! lalNoDebug )
+        {
+
   /* blocksize = 0 checks */
 
   memset(&stat, 0, sizeof(LALStatus));
@@ -354,9 +358,16 @@ int main( int argc, char **argv )
   else
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
 
+        } /* if ( ! lalNoDebug ) */
+#endif /* LAL_NDEBUG */
+
 
   /* now set the blocksize corretly for the rest of the program */
   param.blocksize = blocksize;
+
+#ifndef LAL_NDEBUG
+    if ( ! lalNoDebug )
+        {
 
   /* NULL pointer input check */
 
@@ -390,6 +401,8 @@ int main( int argc, char **argv )
   else
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
 
+        } /* if ( ! lalNoDebug ) */
+#endif /* LAL_NDEBUG */
 
   /* finaly restore status after checking error conditions */
   memset(&stat, 0, sizeof(LALStatus));
