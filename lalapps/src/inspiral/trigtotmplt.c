@@ -139,7 +139,7 @@ int main ( int argc, char *argv[] )
   };
   int i, numEvents, numUniq = 0;
   REAL4 minMatch = -1;
-  CHAR                 *userTag = NULL
+  CHAR                 *userTag = NULL;
   SnglInspiralTable    *eventHead = NULL;
   SnglInspiralTable    *thisEvent = NULL;
   SnglInspiralTable    *prevEvent = NULL;
@@ -527,7 +527,7 @@ cleanexit:
    */
 
 
-  if userTag free ( userTag );
+  if ( userTag ) free ( userTag );
   free( inputFileName );
   free( outputFileName );
   LALCheckMemoryLeaks();
