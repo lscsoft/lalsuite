@@ -208,7 +208,7 @@ LALHCapDerivatives(
    B = (1. - 6.*eta/r2)/A;
    dA = 2./r2 - 6.*eta/pow(r,4.);
    dB = (-dA * B + 12.*eta/r3)/A;
-   hcap = pow (A*(1. + p2/B + q*q/r2), 0.5);
+   hcap = pow (A*(1. + p2/B + q2/r2), 0.5);
    Hcap = pow (1. + 2.*eta*(hcap - 1.), 0.5) / eta;
    etahH = eta*hcap*Hcap;
 
@@ -219,6 +219,9 @@ LALHCapDerivatives(
 
    dvalues->data[2] = -0.5 * (dA * hcap * hcap/A - p2 * A * dB/(B*B) - 2. * A * q2/r3) / etahH;
    dvalues->data[3] = -ak->flux(v, ak->coeffs)/(eta * v*v*v); 
+   /*
+   printf("%e %e %e %e %e %e %e %e\n", r, s, p, q, A, B, hcap, Hcap);
+   */
 }
 
 /*  <lalVerbatim file="LALEOBWaveformCP"> */
@@ -231,7 +234,7 @@ LALEOBWaveform (
 { /* </lalVerbatim> */
 
    INT4 count, nn=4;
-   REAL8 eta, m, rn, r, rOld, s, p, q, dt, t, h, v, omega, f;
+   REAL8 eta, m, rn, r, rOld, s, p, q, dt, t, h, v, omega, f, dR;
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
@@ -386,8 +389,12 @@ Userful for debugging: Make sure a solution for r exists.
    }
 
    t = 0.0;
+   /* Choose rOld larger than r now; it doesn't matter how large; just to 
+    * kickoff the while statement below
+    */
    rOld = r+0.1;
-   while (r>=rn && r<rOld) 
+   dR = 0.0;
+   while ((r-dR)>=rn && r<rOld) 
    {
       ASSERT(count< (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       rOld = r;
@@ -406,9 +413,10 @@ Userful for debugging: Make sure a solution for r exists.
       p = values.data[2] = newvalues.data[2];
       q = values.data[3] = newvalues.data[3];
 
+      dR = rOld-r;
       t = (++count-params->nStartPad) * dt;
 /*----------------------------------------------------------
-      printf("%e %e %e %e %e %e %e %e\n", t, r*r*r*p, r, v, s, p, q, h);
+      printf("%e %e %e %e %e %e %e\n", t, r, v, s, p, q, dR);
       if (v>ak->vlso) printf("TLSO=%e\n", t);
       printf("&\n");
 ----------------------------------------------------------*/
