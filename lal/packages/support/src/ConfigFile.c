@@ -134,6 +134,9 @@ extern INT4 lalDebugLevel;
 #define FMT_STRING "string"    /* reading in quoted strings needs some special treatment */
 #define WHITESPACE " \t"
 
+#define TRUE   (1==1)
+#define FALSE  (1==0)
+
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
 
@@ -247,7 +250,8 @@ void
 LALReadConfigVariable (LALStatus *stat, 
 		       void *varp, 			/* output: result gets written here! */
 		       const LALConfigData *cfgdata, 	/* input: pre-parsed config-data */
-		       const LALConfigVar *param)	/* var-name, fmt-string, strictness */
+		       const LALConfigVar *param,	/* var-name, fmt-string, strictness */
+		       BOOLEAN *wasRead)		/* output: did we succeed in reading? */
 { /* </lalVerbatim> */
   CHAR *found = NULL;
   INT2 ret = 0;
@@ -266,6 +270,8 @@ LALReadConfigVariable (LALStatus *stat,
   ASSERT( varp != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( param->varName != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
   ASSERT( param->fmt != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
+
+  *wasRead = FALSE;
 
   /* let's look for the variable-name in the token-list (has to at beginning of line!) */
   for (i=0; i<cfgdata->lines->nTokens; i++)
@@ -336,6 +342,8 @@ LALReadConfigVariable (LALStatus *stat,
 
   /* ok, we have successfully read in the config-variable: let's make a note of it */
   cfgdata->wasRead[linefound] = 1;
+  
+  *wasRead = TRUE;
 
   RETURN (stat);
 
@@ -351,7 +359,8 @@ void
 LALReadConfigBOOLVariable (LALStatus *stat, 
 			   BOOLEAN *varp, 		 /* output: variable to store result */
 			   const LALConfigData *cfgdata, /* input: pre-parsed config-data */
-			   const CHAR *varName)		 /* input: variable-name to read */
+			   const CHAR *varName,		 /* input: variable-name to read */
+			   BOOLEAN *wasRead)		 /* output: did we succeed in reading? */
 { /* </lalVerbatim> */
 
   CHAR *tmp = NULL;
@@ -359,6 +368,8 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 
   INITSTATUS( stat, "LALReadConfigBOOLVariable", CONFIGFILEC );
   ATTATCHSTATUSPTR (stat);
+
+  *wasRead = FALSE;
 
   /* first read the value as a string */
   TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
@@ -376,11 +387,15 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 	  LALFree (tmp);
 	  ABORT (stat, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
 	}
+      LALFree (tmp);
       
       if (ret != -1)	/* only set value of something has been found */
-	*varp = (BOOLEAN) ret;
-      LALFree (tmp);
-    }
+	{
+	  *varp = (BOOLEAN) ret;
+	  *wasRead = TRUE;
+	}
+
+    } /* if tmp */
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -395,7 +410,8 @@ void
 LALReadConfigINT4Variable (LALStatus *stat, 
 			   INT4 *varp, 
 			   const LALConfigData *cfgdata, 
-			   const CHAR *varName)
+			   const CHAR *varName,
+			   BOOLEAN *wasRead)
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
 
@@ -403,9 +419,9 @@ LALReadConfigINT4Variable (LALStatus *stat,
 
   param.varName = varName;
   param.fmt = "%" LAL_INT4_FORMAT;
-  param.strictness = CONFIGFILE_WARN;
+  param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param);
+  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
   
   RETURN (stat);
 
@@ -419,7 +435,8 @@ void
 LALReadConfigREAL8Variable (LALStatus *stat, 
 			    REAL8 *varp, 
 			    const LALConfigData *cfgdata, 
-			    const CHAR *varName)
+			    const CHAR *varName,
+			    BOOLEAN *wasRead)
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
 
@@ -427,9 +444,9 @@ LALReadConfigREAL8Variable (LALStatus *stat,
 
   param.varName = varName;
   param.fmt = "%" LAL_REAL8_FORMAT;
-  param.strictness = CONFIGFILE_WARN;
+  param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param);
+  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
   
   RETURN (stat);
 
@@ -439,6 +456,9 @@ LALReadConfigREAL8Variable (LALStatus *stat,
  * specialization to STRING variables 
  * NOTE: this means the rest of the line after the variable, and NOT "%s" ! 
  * here we need the pointer to the char-pointer
+ *
+ * NOTE2: we don't need the wasRead-flag here, as we can set the 
+ *        return-string to NULL
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
@@ -448,15 +468,19 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
 			     const CHAR *varName)	/* variable-name to be read */
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
+  BOOLEAN wasRead = FALSE;
 
   INITSTATUS( stat, "LALReadConfigSTRINGVariable", CONFIGFILEC );
 
   param.varName = varName;
   param.fmt = FMT_STRING;
-  param.strictness = CONFIGFILE_WARN;
+  param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param);
+  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, &wasRead);
   
+  if (!wasRead)	/* if reading failed, we report it by NULL-string */
+    *varp = NULL;
+
   RETURN (stat);
 
 } /* LALReadConfigSTRINGVariable() */
@@ -485,7 +509,8 @@ void
 LALReadConfigSTRINGNVariable (LALStatus *stat, 
 			      CHARVector *varp, 	/* output: must be allocated! */
 			      const LALConfigData *cfgdata, /* pre-parsed config-data */
-			      const CHAR *varName)	/* variable-name */
+			      const CHAR *varName,	/* variable-name */
+			      BOOLEAN *wasRead)
 { /* </lalVerbatim> */
   CHAR *tmp = NULL;
 
@@ -496,7 +521,7 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
   ASSERT( varp != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp->data != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   ASSERT( varp->length != 0, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-
+  
   TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
 
   if (tmp != NULL)
@@ -505,7 +530,10 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
       varp->data[varp->length-1] = '\0';
       LALFree (tmp);
       varp->length = strlen (varp->data);
+      *wasRead = TRUE;
     }
+  else
+    *wasRead = FALSE;
     
   DETATCHSTATUSPTR (stat);
   RETURN (stat);  

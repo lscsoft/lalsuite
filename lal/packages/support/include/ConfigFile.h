@@ -119,12 +119,46 @@ typedef struct {
 void LALLoadConfigFile (LALStatus *stat, LALConfigData **cfgdata, const CHAR *fname);
 void LALDestroyConfigData (LALStatus *stat, LALConfigData **cfgdata);
 
-void LALReadConfigBOOLVariable    (LALStatus *stat, BOOLEAN *varp,   const LALConfigData *cfgdata, const CHAR *varName);
-void LALReadConfigINT4Variable    (LALStatus *stat, INT4 *varp,      const LALConfigData *cfgdata, const CHAR *varName);
-void LALReadConfigREAL8Variable   (LALStatus *stat, REAL8 *varp,     const LALConfigData *cfgdata, const CHAR *varName);
-void LALReadConfigSTRINGVariable  (LALStatus *stat, CHAR **varp,     const LALConfigData *cfgdata, const CHAR *varName);
-void LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp,const LALConfigData *cfgdata, const CHAR *varName);
-void LALReadConfigVariable        (LALStatus *stat, void *varp,      const LALConfigData *cfgdata, const LALConfigVar *param);
+void 
+LALReadConfigBOOLVariable (LALStatus *stat, 
+			  BOOLEAN *varp, 
+			  const LALConfigData *cfgdata, 
+			  const CHAR *varName, 
+			  BOOLEAN *wasRead);
+
+void
+LALReadConfigINT4Variable (LALStatus *stat,
+			   INT4 *varp, 
+			   const LALConfigData *cfgdata, 
+			   const CHAR *varName, 
+			   BOOLEAN *wasRead);
+
+void
+LALReadConfigREAL8Variable (LALStatus *stat, 
+			    REAL8 *varp, 
+			    const LALConfigData *cfgdata, 
+			    const CHAR *varName, 
+			    BOOLEAN *wasRead);
+
+void 
+LALReadConfigSTRINGVariable (LALStatus *stat, 
+			     CHAR **varp, 
+			     const LALConfigData *cfgdata, 
+			     const CHAR *varName);
+
+void
+LALReadConfigSTRINGNVariable (LALStatus *stat, 
+			      CHARVector *varp,
+			      const LALConfigData *cfgdata, 
+			      const CHAR *varName,
+			      BOOLEAN *wasRead);
+
+void
+LALReadConfigVariable (LALStatus *stat, 
+		       void *varp,
+		       const LALConfigData *cfgdata,
+		       const LALConfigVar *param,
+		       BOOLEAN *wasRead);
 
 void LALCheckConfigReadComplete (LALStatus *stat, const LALConfigData *cfgdata, ConfigStrictness strict);
 
