@@ -566,15 +566,16 @@ header.  The two flags are named \verb@NDEBUG@ and \verb@NOLALMACROS@.
 
 \subsubsection{The \texttt{NDEBUG} flag}
 
-Setting the \verb@NDEBUG@ flag turns off debugging and error-reporting
-code, in order to get condensed production-line programs.  As far as
-error reporting is concerned, setting the \verb@NDEBUG@ flag at
-compile time is similar to setting \verb@lalDebugLevel@ equal to zero at
-runtime, in that it suppresses all status messages and memory leak
-detection.  However, the \verb@NDEBUG@ flag accoplishes this by
-telling the compiler preprocessor to remove the relevant code from the
-object file, thus eliminating frequent and unnecessary tests on
-\verb@lalDebugLevel@.
+Setting the \verb@NDEBUG@ (or \verb@LAL_NDEBUG@) flag turns off debugging and
+error-reporting code, in order to get condensed production-line programs.  As
+far as error reporting is concerned, setting the \verb@NDEBUG@ flag at compile
+time is similar to setting \verb@lalDebugLevel@ equal to zero at runtime, in
+that it suppresses all status messages and memory leak detection.  However,
+the \verb@NDEBUG@ flag accoplishes this by telling the compiler preprocessor
+to remove the relevant code from the object file, thus eliminating frequent
+and unnecessary tests on \verb@lalDebugLevel@.  When debugging is turned off,
+the global integer variable \verb@lalNoDebug@ is non-zero; otherwise it is
+zero.
 
 Compiling with the \verb@NDEBUG@ flag set also removes all
 \verb@ASSERT()@ macros from the object code, in keeping with the
@@ -728,6 +729,7 @@ extern "C" {
 NRCSID (LALSTATUSMACROSH, "$Id$");
 
 extern int lalDebugLevel;
+extern const int lalNoDebug;
 
 #ifndef NOLALMACROS
 
