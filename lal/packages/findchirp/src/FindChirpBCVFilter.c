@@ -242,8 +242,8 @@ LALFindChirpBCVFilterSegment (
     /* calculated according to chirplen, using the values of M and eta */
     /* for the BCV tempaltes, as calculated using psi0 and psi3        */ 
 
+#if 0
     /* REAL4 eta = input->tmplt->eta; */
-
     /* m1 and m2 are currently equal to 0 in the BCV template bank */
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
@@ -260,8 +260,11 @@ LALFindChirpBCVFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-
     chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
+#endif
+
+    /* temporarily set chirpTime equal to 0.5 seconds */
+    chirpTime = 0.5;
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
     /* ignore corrupted data at start and end */
@@ -271,10 +274,18 @@ LALFindChirpBCVFilterSegment (
     {
       CHAR infomsg[256];
 
+#if 0
       LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
           "m = %e eta = %e => %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
           m, eta, chirpTime, deltaEventIndex,
+          input->segment->invSpecTrunc, ignoreIndex );
+#endif
+
+      LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+          "chirp time = %e seconds => %d points\n"
+          "invSpecTrunc = %d => ignoreIndex = %d\n",
+          chirpTime, deltaEventIndex,
           input->segment->invSpecTrunc, ignoreIndex );
       LALInfo( status, infomsg );
     }
