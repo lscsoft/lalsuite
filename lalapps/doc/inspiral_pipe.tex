@@ -32,7 +32,9 @@ run the inspiral pipeline.
 \item[Description] \verb$lalapps_inspiral_pipe$ generates a Condor DAG to run
 the inspiral analysis pipeline. The configuration file should specify the
 parameters needed to run the jobs and must be specified with the
-\verb$--config-file$ option.  A file containing science segments to be
+\verb$--config-file$ option. A typical .ini file is the following:
+\input{inifile}
+A file containing science segments to be
 analyzed should be specified in the \verb$[input]$ section of the
 configuration file with a line such as
 \begin{verbatim}
@@ -46,11 +48,11 @@ that define the science segments to be used. Lines starting with an octothorpe
 are ignored.
 
 The analysis chunk size is determined from the number of data segments and
-their length and overlap specified in config file. A chunk length is typically
-this is 1024 seconds for S2.  The chunks start and stop times are computed
+their length and overlap specified in config file. A chunk length is 
+is 2048 seconds for S2.  The chunks start and stop times are computed
 from the science segment times and used to build the DAG.
 
-The once the DAG file has been created it should be submitted to the Condor
+Once the DAG file has been created it should be submitted to the Condor
 pool with the \verb$condor_submit_dag$ command.
 
 \item[Options]\leavevmode
