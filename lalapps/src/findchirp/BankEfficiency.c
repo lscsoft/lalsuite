@@ -295,11 +295,11 @@ PrintResults(
 	    InspiralTemplate       injected,
 	    InspiralWaveOverlapOut overlapout);
 
+extern int lalDebugLevel=1;
 
 int
 main (int argc, char **argv ) 
 {
-lalDebugLevel=1;
 
    /* --- Variables ---*/
   double frequency;
