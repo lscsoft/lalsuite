@@ -137,4 +137,14 @@ OUTPUTS: jobtimes.*, jobdata.*.ffl, joberror.* files
 
 STEP 3:
 
-Make the SFTs.  You do this by running a condor job.  The condor
+Make the SFTs.  You do this by running a condor job.  To do this, you
+need the following steps.
+
+(1) Create a working directory to store the Condor job files and SFTs
+    and input data:
+    mkdir /scratch/ballen/S2-L1.60-condor   [Job files: input]
+    mkdir /scratch/ballen/S2-L1.60-lists    [Segment/data lists: input]
+    mkdir /scratch/ballen/S2-L1.60-sft      [SFT output]
+
+(2) Copy the condor script condor.sub to /scratch/ballen/S2-L1.60-condor.
+    Modify the file to refer to the correct IFO, if necessary
