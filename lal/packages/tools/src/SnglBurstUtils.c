@@ -260,6 +260,7 @@ LALCompareSimBurstAndSnglBurst(
   LALGPStoINT8( status->statusPtr, &ta1, &(aPtr->geocent_peak_time) );
   LALGPStoINT8( status->statusPtr, &tb1, &(bPtr->start_time) );
 
+
   tb2 = tb1 + ( NANOSEC * bPtr->duration );
   fa1 = (aPtr->freq);
   fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
@@ -267,10 +268,10 @@ LALCompareSimBurstAndSnglBurst(
 
   if( (tb1 < ta1) && (ta1 < tb2) )
   {
-    if( (fb1 < fa1) && (fa1 < fb2) )
-    {
+     if( (fb1 < fa1) && (fa1 < fb2) )
+       {
       params->match = 1;
-    }
+       }
   }
 
   DETATCHSTATUSPTR (status);
@@ -320,7 +321,7 @@ LALClusterSnglBurstTable (
 	CHECKSTATUSPTR(status);
 	ta2 = ta1 + ( NANOSEC * prevEvent->duration );
 
-    /* compute the start and stop frequencies */
+        /* compute the start and stop frequencies */
 
 	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
 	fa2 = fa1 + prevEvent->bandwidth;
@@ -336,6 +337,7 @@ LALClusterSnglBurstTable (
 		 ta2 = tb2 > ta2 ? tb2 : ta2 ;
 
 		 LALINT8toGPS(status->statusPtr, &(prevEvent->start_time), &ta1);
+		 CHECKSTATUSPTR(status);
 		 prevEvent->central_freq = 0.5 * (fa1 + fa2);
 		 prevEvent->bandwidth = (fa2 - fa1);
 		 prevEvent->duration = (REAL4)(ta2 - ta1)/1.0e9;
@@ -343,6 +345,7 @@ LALClusterSnglBurstTable (
 		 if ( prevEvent->confidence > thisEvent->confidence )
 		   {
 		     prevEvent->confidence = thisEvent->confidence;
+		     prevEvent->peak_time = thisEvent->peak_time;		    
 		   }
 
 		 /* otherwise just dump this event from cluster */
