@@ -9,21 +9,30 @@
  *-----------------------------------------------------------------------
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#if !defined HAVE_GSL_GSL_FFT_REAL_H || !defined HAVE_LIBGSL
+int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
+#else
+
 #include <math.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
 #include <config.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_roots.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -58,6 +67,18 @@ RCSID( "$Id$" );
 "  --halo-radius RMAX       set the maximum halo radius to RMAX kpc (50)\n"\
 "\n"
 
+#define KPC ( 1e3 * LAL_PC_SI )
+#define MPC ( 1e6 * LAL_PC_SI )
+#define GPC ( 1e9 * LAL_PC_SI )
+
+extern int vrbflg;
+struct halo_pdf_params
+{
+  double u;
+  double a;
+};
+
+
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... )
 {
@@ -81,11 +102,19 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   return pp;
 }
 
-#define KPC ( 1e3 * LAL_PC_SI )
-#define MPC ( 1e6 * LAL_PC_SI )
-#define GPC ( 1e9 * LAL_PC_SI )
 
-extern int vrbflg;
+double halo_pdf( 
+    double      r, 
+    void       *p
+    )
+{
+  struct halo_pdf_params *params = (struct halo_pdf_params *)p;
+  double u = (params->u);
+  double a = (params->a);
+
+  return r - a * atan2(r,a) - u;
+}
+
 
 int main( int argc, char *argv[] )
 {
@@ -103,24 +132,30 @@ int main( int argc, char *argv[] )
   CHAR         *userTag = NULL;
   REAL4         minMass = 0.1;
   REAL4         maxMass = 1.0;
-  REAL4         a = 8.5 * KPC;          /* core radius */
-  REAL4         Rmax = 50.0 * KPC;      /* halo radius */
+  REAL4         r_core = 8.5 * KPC;     /* core radius */
+  REAL4         r_max = 50.0 * KPC;     /* halo radius */
   REAL4         q = 1.0;                /* flatten halo */
 
-  /* parameters of the injection */
-  GalacticInspiralParamStruc    galacticPar;
-  PPNParamStruc                 injection;
+  /* program variables */
+  RandomParams *randParams = NULL;
+  REAL4  u;
+  REAL4  deltaM;
 
-#if 0
-  /* site end time and effective distance */
-  LALPlaceAndGPS       *place_and_gps;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  SkyPosition	       *sky_pos;
-  DetTimeAndASource    *det_time_and_source;
-  REAL8			time_diff;
-  REAL8                 site_time;
-#endif
+  int i, stat;
+  const int maxIter = 1000;
+  const double tol = 1e-6;
+  const gsl_root_fsolver_type *solver_type;
+  gsl_root_fsolver *solver;
+  gsl_function pdf;
+
+  struct halo_pdf_params pdf_params;
+
+  double r_lo, r_hi, r;
+  double cosphi, sinphi;
+  double pdf_norm;
+
+  GalacticInspiralParamStruc galacticPar;
+  LALGPSCompareResult        compareGPS;
 
   /* xml output data */
   CHAR                  fname[256];
@@ -128,7 +163,7 @@ int main( int argc, char *argv[] )
   MetadataTable         procparams;
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
-  SimInspiralTable     *this_inj;
+  SimInspiralTable     *this_inj = NULL;
   LIGOLwXMLStream       xmlfp;
 
   /* getopt arguments */
@@ -166,7 +201,7 @@ int main( int argc, char *argv[] )
   LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
-
+  
 
   /*
    *
@@ -327,18 +362,18 @@ int main( int argc, char *argv[] )
 
       case 'p':
         /* core-radius */
-        a = (REAL4) atof( optarg );
-        if ( a <= 0 )
+        r_core = (REAL4) atof( optarg );
+        if ( r_core <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "galactic core radius must be > 0: "
               "(%f kpc specified)\n",
-              long_options[option_index].name, a );
+              long_options[option_index].name, r_core );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%e", a );
+              "float", "%e", r_core );
         break;
 
       case 'q':
@@ -359,18 +394,18 @@ int main( int argc, char *argv[] )
 
       case 'r':
         /* max halo radius */
-        Rmax = (REAL4) atof( optarg );
-        if ( Rmax <= 0 )
+        r_max = (REAL4) atof( optarg );
+        if ( r_max <= 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "halo radius must be greater than 0: "
               "(%f kpc specified)\n",
-              long_options[option_index].name, Rmax );
+              long_options[option_index].name, r_max );
           exit( 1 );
         }
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
-              "float", "%e", Rmax );
+              "float", "%e", r_max );
         break;
 
       case 'Z':
@@ -417,23 +452,124 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( vrbflg )
-    fprintf( stderr, "generating injections between %d and %d\n",
-        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
+
+  /*
+   *
+   * initialization
+   *
+   */
+
+
+  /* initialize the random number generator */
+  LAL_CALL( LALCreateRandomParams( &status, &randParams, randSeed ), &status );
+
+  /* initialize the gsl solver with the spatial pdf */
+  pdf.function = &halo_pdf;
+  pdf.params   = &pdf_params;
+  solver_type = gsl_root_fsolver_bisection;
+  solver = gsl_root_fsolver_alloc( solver_type );
+  pdf_params.a = r_core;
+
+  /* normalization for the spatial pdf */
+  pdf_norm = r_max - r_core * atan2( r_max, r_core );
+
+  /* mass range */
+  deltaM = maxMass - minMass;
+
+  /* null out the head of the linked list */
+  injections.simInspiralTable = NULL;
 
 
   /*
    *
-   * initialize variables and create storage for the first injection
+   * loop over duration of desired output times
    *
    */
-  
 
-  memset( &galacticPar, 0, sizeof(GalacticInspiralParamStruc) );
-  memset( &injection, 0, sizeof(PPNParamStruc) );
-  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-  this_inj = injections.simInspiralTable = (SimInspiralTable *)
-    LALCalloc( 1, sizeof(SimInspiralTable) );
+
+  /* set the time of the first injection */
+  galacticPar.geocentEndTime = gpsStartTime;
+  LAL_CALL( LALCompareGPS( &status, &compareGPS, 
+        &(galacticPar.geocentEndTime), &gpsEndTime ), &status );
+
+  while ( compareGPS == LALGPS_EARLIER )
+  {
+    /* uniformly distributed masses */
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    galacticPar.m1 = minMass + u * deltaM;
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    galacticPar.m2 = minMass + u * deltaM;
+    
+    /* spatial distribution */
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    pdf_params.u = u * pdf_norm;
+
+    r_lo = 0.0;
+    r_hi = r_max;
+    gsl_root_fsolver_set( solver, &pdf, r_lo, r_hi );
+
+    for ( i = 0; i < maxIter; ++i )
+    {
+      gsl_root_fsolver_iterate( solver );
+      r = gsl_root_fsolver_root( solver );
+      r_lo = gsl_root_fsolver_x_lower( solver );
+      r_hi = gsl_root_fsolver_x_upper( solver );
+      stat = gsl_root_test_interval( r_lo, r_hi, 0, tol );
+      if ( stat == GSL_SUCCESS )
+        break;
+    }
+
+    if ( stat != GSL_SUCCESS )
+    {
+      fprintf( stderr, "could not find root after %d iterations\n", maxIter );
+      exit( 1 );
+    }
+
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    sinphi = 2.0 * u - 1.0;
+    cosphi = sqrt( 1.0 - sinphi*sinphi );
+    
+    galacticPar.rho = r * cosphi;
+    galacticPar.z   = q * r * sinphi;
+
+    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+    galacticPar.lGal = LAL_TWOPI * u;    
+
+    if ( vrbflg ) fprintf( stdout, "%e %e %e %e %e\n", 
+        galacticPar.m1, galacticPar.m2,
+        galacticPar.rho * cos( galacticPar.lGal ),
+        galacticPar.rho * sin( galacticPar.lGal ),
+        galacticPar.z );
+
+    /* create the sim_inspiral table */
+    if ( injections.simInspiralTable )
+    {
+      this_inj = this_inj->next = (SimInspiralTable *)
+        LALCalloc( 1, sizeof(SimInspiralTable) );
+    }
+    else
+    {
+      injections.simInspiralTable = this_inj = (SimInspiralTable *)
+        LALCalloc( 1, sizeof(SimInspiralTable) );
+    }
+
+    /* populate the sim_inspiral table */
+    LAL_CALL( LALGalacticInspiralParamsToSimInspiralTable( &status,
+          this_inj, &galacticPar, randParams ), &status );
+
+    /* increment the injection time */
+    LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
+          &(galacticPar.geocentEndTime), meanTimeStep ), &status );
+    if ( timeInterval )
+    {
+      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+      LAL_CALL( LALAddFloatToGPS( &status, &(galacticPar.geocentEndTime),
+            &(galacticPar.geocentEndTime), u * timeInterval ), &status );
+    }
+    LAL_CALL( LALCompareGPS( &status, &compareGPS, 
+          &(galacticPar.geocentEndTime), &gpsEndTime ), &status );
+
+  } /* end loop over injection times */
 
 
   /*
@@ -458,6 +594,7 @@ int main( int argc, char *argv[] )
   }
 
   /* open the xml file */
+  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
   /* write the process table */
@@ -493,11 +630,14 @@ int main( int argc, char *argv[] )
   }
 
   /* write the sim_inspiral table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
-        sim_inspiral_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+  if ( injections.simInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
+          sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+  }
   while ( injections.simInspiralTable )
   {
     this_inj = injections.simInspiralTable;
@@ -512,5 +652,4 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
   return 0;
 }
-
-
+#endif
