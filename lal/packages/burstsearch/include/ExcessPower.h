@@ -118,14 +118,16 @@ void
 LALComputeTFPlanes (
                  LALStatus                             *status,
                  TFTiling                           *tfTiling,
-                 COMPLEX8FrequencySeries            *freqSeries
+                 COMPLEX8FrequencySeries            *freqSeries,
+                 UINT4                              windowShift
                  );
 
 void
 LALModComputeTFPlanes (
                  LALStatus                             *status,
                  TFTiling                           *tfTiling,
-                 COMPLEX8FrequencySeries            *freqSeries
+                 COMPLEX8FrequencySeries            *freqSeries,
+                 UINT4                              windowShift
                  );
 
 void
