@@ -962,7 +962,50 @@ int main( int argc, char *argv[] )
     SnglInspiralTable   **eventHandle = NULL;
     SnglInspiralTable    *thisEvent = NULL;
     SnglInspiralTable    *prevEvent = NULL;
-    
+
+    /* sort the templates by time and remove all the tmplts   */
+    /* before and after the requested gps start and end times */
+    numTriggers[0] = 0;
+    thisEvent = inspiralEventList[0];
+    inspiralEventList[0] = NULL;
+
+    if ( vrbflg ) fprintf( stdout, 
+        "discarding triggers outside start/end times: " );
+    while ( thisEvent )
+    {
+      SnglInspiralTable *tmpEvent = thisEvent;
+      thisEvent = thisEvent->next;
+
+      if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
+          tmpEvent->end_time.gpsSeconds < endCoincidence )
+      {
+        /* keep this template */
+        if ( ! inspiralEventList[0] )
+        {
+          inspiralEventList[0] = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers[0];
+        if ( vrbflg ) fprintf( stdout, "+" );
+      }
+      else
+      {
+        /* discard this template */
+        LALFree( tmpEvent );
+        if ( vrbflg ) fprintf( stdout, "-" );
+      }
+    }
+
+    if ( vrbflg ) fprintf( stdout, " done\nkept %d templates\n", 
+        numTriggers[0] );
+
+    numEvents = numTriggers[0];
+     
     eventHandle = (SnglInspiralTable **) 
       LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
 
@@ -994,6 +1037,8 @@ int main( int argc, char *argv[] )
     }
 
     /* create a linked list of sorted templates */
+    if ( vrbflg ) fprintf( stdout, 
+        "discarding template with duplicate masses: " );
     coincidentEvents[0] = prevEvent = eventHandle[0];
     numTriggers[0] = 1;
     for ( i = 1; i < numEvents; ++i )
@@ -1005,12 +1050,14 @@ int main( int argc, char *argv[] )
         {
           /* discard the event as it is a duplicate */
           LALFree( eventHandle[i] );
+          if ( vrbflg ) fprintf( stdout, "-" );
         }
         else
         {
           /* add the event to the linked list */
           prevEvent = prevEvent->next = eventHandle[i];
           ++numTriggers[0];
+          if ( vrbflg ) fprintf( stdout, "+" );
         }
       }
       else if ( errorParams.approximant == BCV )
@@ -1020,12 +1067,14 @@ int main( int argc, char *argv[] )
         {
           /* discard the event as it is a duplicate */
           LALFree( eventHandle[i] );
+          if ( vrbflg ) fprintf( stdout, "-" );
         }
         else
         {
           /* add the event to the linked list */
           prevEvent = prevEvent->next = eventHandle[i];
           ++numTriggers[0];
+          if ( vrbflg ) fprintf( stdout, "+" );
         }
       }
       else
@@ -1035,57 +1084,14 @@ int main( int argc, char *argv[] )
       }
     }
     prevEvent->next = NULL;
-
-    if ( vrbflg ) fprintf( stdout, "found %d sngl_inspiral rows for bank %s\n", 
-        numTriggers[0], trigBankFile );
-
-    LALFree( eventHandle );
-
-    /* now sort the templates by time and remove all the   */
-    /* tmplts before and after the gps start and end times */
-    if ( vrbflg ) fprintf( stdout, "sorting templates by time... " );
-    LAL_CALL( LALSortSnglInspiral( &status, &(coincidentEvents[0]),
-          LALCompareSnglInspiralByTime ), &status );
-    if ( vrbflg ) fprintf( stdout, "done\n" );
-
-    numTriggers[0] = 0;
-    thisEvent = coincidentEvents[0];
-    coincidentEvents[0] = NULL;
-
-    if ( vrbflg ) fprintf( stdout, 
-        "discarding triggers outside start/end times: " );
-    while ( thisEvent )
+    if ( vrbflg ) 
     {
-      SnglInspiralTable *tmpEvent = thisEvent;
-      thisEvent = thisEvent->next;
-
-      if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
-          tmpEvent->end_time.gpsSeconds < endCoincidence )
-      {
-        /* keep this template */
-        if ( ! coincidentEvents[0] )
-        {
-          coincidentEvents[0] = tmpEvent;
-        }
-        else
-        {
-          prevEvent->next = tmpEvent;
-        }
-        tmpEvent->next = NULL;
-        prevEvent = tmpEvent;
-        ++numTriggers[0];
-        if ( vrbflg ) fprintf( stdout, "+" );
-      }
-      else
-      {
-        /* discard this template */
-        LALFree( tmpEvent );
-        if ( vrbflg ) fprintf( stdout, "-" );
-      }
+      fprintf( stdout, " done\n" );
+      fprintf( stdout, "found %d sngl_inspiral rows for bank %s\n", 
+          numTriggers[0], trigBankFile );
     }
 
-    if ( vrbflg ) fprintf( stdout, " done\nkept %d templates\n", 
-        numTriggers[0] );
+    LALFree( eventHandle );
 
     /* skip the rest of the inca code and write out the bank */
     goto cleanexit;
