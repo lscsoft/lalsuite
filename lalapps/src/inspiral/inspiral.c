@@ -882,12 +882,13 @@ int main( int argc, char *argv[] )
 	if ( geoData )
         {
           /* generate a unity response function for GEO */
-          if ( vrbflg ) fprintf( stdout, "setting GEO response to unity... " );
+          if ( vrbflg ) fprintf( stdout, "setting GEO response to inverse dynRange... " );
           for ( k = 0; k < injResp.data->length; ++k )
           {
-            injResp.data->data[k].re = 1.0;
-            injResp.data->data[k].im = 0;
+            injResp.data->data[k].re = (REAL4)(1.0/dynRange);
+            injResp.data->data[k].im = 0.0;
           }
+	  injRespPtr = &injResp;
           if ( writeResponse ) 
             outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
                 &injResp, "strain/ct", "RESPONSE_INJ_GEO" );
