@@ -275,7 +275,6 @@ m4 StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c
 m4 StreamSequenceInput.m4 > StreamSequenceInput.c
 m4 StreamSeriesInput.m4 > StreamSeriesInput.c
 m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c
-m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c
 cd ../../..
 
 cd packages/factories/src
