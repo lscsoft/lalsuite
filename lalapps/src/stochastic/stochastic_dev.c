@@ -1030,12 +1030,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     responseTempOne.epoch = gpsSegmentStart;
     responseTempTwo.epoch = gpsSegmentStart;
 
-    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
 
     LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
           &calfacts), &status );
-    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
 
     LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
