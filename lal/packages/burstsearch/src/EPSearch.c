@@ -254,7 +254,7 @@ EPSearch (
     params->numEvents=0;
 
     /* Compute the average spectrum */
-    LALNewREAL4FrequencySeries(status->statusPtr, &AverageSpec, "", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
     CHECKSTATUSPTR(status);
 
     ComputeAverageSpectrum(status->statusPtr, AverageSpec->data->data, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
