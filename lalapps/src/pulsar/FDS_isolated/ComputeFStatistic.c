@@ -149,6 +149,7 @@ void sighandler(int sig);
 #define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error opening FStats file */
 #define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
 #define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
+#define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -489,6 +490,23 @@ int main(int argc,char *argv[])
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
+#if USE_BOINC
+  { /* set a buffer large enough that no output is written to disk
+       unless we fflush().  Policy is fully buffered. Note: the man
+       page says "The setvbuf function may only be used after opening
+       a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON
+       IT."
+    */
+    const int bsize=2*1024*1024;
+    if ((fstatbuff=(char *)LALCalloc(bsize, 1)))
+      setvbuf(fpstat, fstatbuff, _IOFBF, bsize);
+    else {
+      LALPrintError ("Failed to allocate memory for Fstats file buffering. Exiting.\n");
+      return COMPUTEFSTAT_EXIT_NOMEM;
+    }
+  }
+#endif
+
   /* if we checkpointed in the loop we need to "spool forward" accordingly in our sky-position list */
   if ( loopcounter > 0 ) {
     UINT4 i;
@@ -506,18 +524,6 @@ int main(int argc,char *argv[])
     }
   } /* if loopcounter > 0 */
     
-
-#if USE_BOINC
-  {
-    int bsize=2*1024*1024;
-    /* set a buffer large enough that no output is written to disk
-       unless we fflush().  Policy is fully buffered. */
-    if ((fstatbuff=(char *)LALCalloc(1, bsize))) {
-      setvbuf(fpstat, fstatbuff, _IOFBF, bsize); 
-    }
-  }
-#endif
-  
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
