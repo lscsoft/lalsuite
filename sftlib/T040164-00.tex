@@ -473,15 +473,15 @@ field D:
 \item The description field, D, for SFTs will be an underscore "\_"
 delimited alphanumeric string with these subfields:
 
-D = numSFTs\_IFO\_SFTtype[\_Misc],
+{\bf D = numSFTs\_IFO\_SFTtype[\_Misc]}, where
+\begin{itemize}
+\item {\bf numSFTs} is the number of SFTs in the file.
 
-numSFTs is the number of SFTs in the file.
-
-IFO is a two character abbreviation of the interferometer data used to
+\item {\bf IFO} is a two character abbreviation of the interferometer data used to
 generated the SFT, e.g., G1, H1, H2, L1, T1, or V1.  This field must
 always begin with an uppercase letter.
 
-SFTtype is the type of SFT(s) in the file, and must be a concatenation
+\item {\bf SFTtype} is the type of SFT(s) in the file, and must be a concatenation
 of tbase, units, and SFT, e.g., 30mSFT for 30 minute SFTs, 60sSFT for 60
 second SFTs.  Note that this information is redundant but required since
 it ensures that SFTs of a given type are indexed uniquely (many scripts
@@ -489,7 +489,7 @@ and programs use the D field as an index; see also comment b below). It
 is also permissible to append an optional SFT version number after SFT:
 e.g., 30mSFTv2 for 30 minute SFTs with version 2 headers.
 
-Misc is an optional field that contains any other pertinent information
+\item {\bf Misc} is an optional field that contains any other pertinent information
 about the SFTs, e.g., the run name, the input channel name, the
 calibration version, the data quality version, the frequency band,
 etc.... This field can be anything the group or individual that
@@ -506,6 +506,7 @@ IFO, SFTtype, and GPS times. Possible examples of the Misc subfield are:
   be used.)
 \item S4hot: The SFT is from the S4 run using calibrated h(t).
 \end{enumerate}
+\end{itemize}
 
 \item Even though some of the information required in the description
 field, D, is redundant, many scripts and programs (such as LSCdataFind
