@@ -1277,28 +1277,26 @@ LALFindChirpBCVFilterSegment (
     REAL4 psi3 = input->tmplt->psi3;
     REAL4 fFinal = input->tmplt->fFinal;
 
-    /*
-     * REAL4 eta = input->tmplt->eta;
-     */
+    /* REAL4 eta = input->tmplt->eta; */
+
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
 
     REAL4 fmin = input->segment->fLow;
-    REAL4 m = - psi3 / (16.0 * LAL_PI * LAL_PI * psi0) ;
+    /* total mass, in seconds */
+    REAL4 m =  abs(psi3) / (16.0 * LAL_PI * LAL_PI * psi0) ;
     REAL4 eta = 3.0 / (128.0 * psi0 * pow( (m*LAL_PI), (5.0/3.0)) );
-    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+    /*REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);*/
+    REAL4 c0 = 5*m/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
     REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+    REAL4 x  = pow(LAL_PI*m*fmin, 1.0/3.0);
     REAL4 x2 = x*x;
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    /* to ensure that chirpTime > 0 */
-    REAL8 chirpTime = sqrt( (c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8) * 
-		            (c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8) ); 
-    /* REAL8 chirpTime=0.0005; */
+    REAL4 chirpTime = abs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
 
     /* k that corresponds to fFinal, currently not used      */
     /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
@@ -1307,7 +1305,14 @@ LALFindChirpBCVFilterSegment (
     REAL4 b1 = input->segment->b1;  
     REAL4 b2 = input->segment->b2; 
 
-    deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    if (chirpTime < 0.00025)
+    {	    
+      deltaEventIndex = (UINT4) rint( (0.00025 / deltaT) + 1.0 );
+    }
+    else
+    {
+      deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    }
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -1597,13 +1602,18 @@ LALFindChirpBCVFilterSegment (
 	     }
 	     else 
 	     {
-	    	InvTan1 = - LAL_PI / 2.0 ;
+	    	InvTan1 = 3.0 * LAL_PI / 2.0 ;
 	     }
        	   }
-	   else
+	   else if ( Den1 > 0 )
 	   {
 	      InvTan1 = (REAL4) atan( Num1 / Den1 );
 	   }
+	   else 
+	   {  
+              InvTan1 = LAL_PI + (REAL4) atan( Num1 / Den1 ) ;
+	   }
+
 
 	   if ( Den2 == 0 )
            {
@@ -1613,18 +1623,25 @@ LALFindChirpBCVFilterSegment (
              }
              else
              {
-                InvTan2 = - LAL_PI / 2.0 ;
+                InvTan2 = 3.0 * LAL_PI / 2.0 ;
              }
            }
-           else
+           else if ( Den2 > 0 )
            {
               InvTan2 = (REAL4) atan( Num2 / Den2 );
            }
+	   else
+	   {
+	      InvTan2 = LAL_PI + (REAL4) atan(Num2 / Den2 );
+	   }
+
 
 	   thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
 	   omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
 	   thisEvent->alpha = - input->segment->b2 * tan(omega) / 
 		( input->segment->a1 + input->segment->b1*tan(omega) );
+	   /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
+	   /* thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   */
 
            /* copy the template into the event */
 	   thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -1741,13 +1758,18 @@ LALFindChirpBCVFilterSegment (
       }
       else
       {
-        InvTan1 = - LAL_PI / 2.0 ;
+        InvTan1 = 3.0 * LAL_PI / 2.0 ;
       }
     }
-    else
+    else if (Den1 > 0)
     {
       InvTan1 = (REAL4) atan( Num1 / Den1 );
     }
+    else
+    {
+      InvTan1 = LAL_PI + (REAL4) atan( Num1 / Den1 );
+    }
+
 
     if ( Den2 == 0 )
     {
@@ -1757,18 +1779,25 @@ LALFindChirpBCVFilterSegment (
       }
       else
       {
-        InvTan2 = - LAL_PI / 2.0 ;
+        InvTan2 = 3.0 * LAL_PI / 2.0 ;
       }
     }
-    else
+    else if ( Den2 > 0 )
     {
       InvTan2 = (REAL4) atan( Num2 / Den2 );
     }
+    else
+    {
+      InvTan2 = LAL_PI + (REAL4) atan( Num2 / Den2 );
+    }
+
 
     thisEvent->coa_phase = 0.5 * InvTan1 - 0.5 * InvTan2 ;
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - input->segment->b2 * tan(omega) /
         ( input->segment->a1 + input->segment->b1*tan(omega) );
+    /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
+    /* thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   */
 	
 
     /* copy the template into the event */
