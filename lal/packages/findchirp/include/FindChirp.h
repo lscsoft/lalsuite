@@ -68,6 +68,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_ERHOT 15
 #define FINDCHIRPH_ECHIT 16
 #define FINDCHIRPH_ECRUP 17
+#define FINDCHIRPH_ESMSM 18
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -81,6 +82,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGERHOT "Rhosq threshold is zero or negative"
 #define FINDCHIRPH_MSGECHIT "Chisq threshold is zero or negative"
 #define FINDCHIRPH_MSGECRUP "Chirp length or invSpecTrunc too long for length of data segment"
+#define FINDCHIRPH_MSGESMSM "Size mismatch between vectors"
 /* </lalErrTable> */
 
 
@@ -402,6 +404,7 @@ tagFindChirpInitParams
   UINT4                         numSegments;
   UINT4                         numPoints;
   UINT4                         numChisqBins;
+  UINT4                         ovrlap;
   BOOLEAN                       createRhosqVec;
 }
 FindChirpInitParams;
@@ -591,6 +594,22 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 \newpage\input{FindChirpMemoryC}
 </lalLaTeX>
 #endif
+
+void
+LALInitalizeDataSegmentVector (
+    LALStatus                  *status,
+    DataSegmentVector         **dataSegVec,
+    REAL4TimeSeries            *chan,
+    REAL4FrequencySeries       *spec,
+    COMPLEX8FrequencySeries    *resp,
+    FindChirpInitParams        *params
+    );
+
+void
+LALFinalizeDataSegmentVector (
+    LALStatus                  *status,
+    DataSegmentVector         **vector
+    );    
 
 void
 LALCreateDataSegmentVector (

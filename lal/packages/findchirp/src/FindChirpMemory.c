@@ -81,6 +81,166 @@ NRCSID (FINDCHIRPMEMORYC, "$Id$");
 
 /* <lalVerbatim file="FindChirpMemoryCP"> */
 void
+LALInitializeDataSegmentVector (
+    LALStatus                  *status,
+    DataSegmentVector         **dataSegVecPtr,
+    REAL4TimeSeries            *chan,
+    REAL4FrequencySeries       *spec,
+    COMPLEX8FrequencySeries    *resp,
+    FindChirpInitParams        *params
+    )
+/* </lalVerbatim> */
+{
+  INT8  chanStartTime;
+  UINT4 i;
+  UINT4 inputLength;
+  REAL4 *dataPtr;
+  DataSegmentVector *dataSegVec = NULL;
+
+  INITSTATUS( status, "LALPopulateDataSegmentVector", FINDCHIRPMEMORYC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( dataSegVecPtr, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( ! *dataSegVecPtr, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
+  ASSERT( chan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( chan->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( chan->data->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( spec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( resp, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+
+  /* check that there is enough data to populate the data seg vec */
+  inputLength = params->numPoints * params->numSegments - 
+    ( params->numSegments - 1 ) * params->ovrlap;
+  if ( inputLength != chan->data->length )
+  {
+    ABORT( status, FINDCHIRPH_ESMSM, FINDCHIRPH_MSGESMSM );
+  }
+
+  /* allocate memory for the data segment vector */
+  if ( ! (dataSegVec = *dataSegVecPtr = (DataSegmentVector *) 
+        LALCalloc( 1, sizeof(DataSegmentVector) )) )
+  {
+    ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
+  }
+  dataSegVec->length = params->numSegments;
+
+  if ( ! ( dataSegVec->data =  (DataSegment *) 
+        LALCalloc( dataSegVec->length, sizeof(DataSegment) )) )
+  {
+    ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
+  }
+
+  /* allocate the DataSegments in the DataSegmentVector */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    DataSegment *currentSegment = dataSegVec->data + i;
+
+    /* channel */
+    if ( ! (currentSegment->chan = (REAL4TimeSeries *) 
+          LALCalloc( 1, sizeof(REAL4TimeSeries) )) )
+    {
+      ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
+    }
+
+    if ( ! (currentSegment->chan->data = (REAL4Sequence *) 
+          LALCalloc( 1, sizeof(REAL4Sequence) )) )
+    {
+      ABORT (status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC);
+    }
+  }
+
+  /* store the start of the input channel and it's gps start time */
+  dataPtr = chan->data->data;
+  LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
+  CHECKSTATUSPTR( status );
+
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    DataSegment      *currentSegment = dataSegVec->data + i;
+    REAL4Sequence    *origDataPtr;
+
+    /* this should be set to a unique number for each segment   */
+    currentSegment->number = i;
+
+    /* copy the REAL4TimeSeries information into the data segment */
+    origDataPtr = currentSegment->chan->data;
+    memcpy( currentSegment->chan, chan, sizeof(REAL4TimeSeries) );
+    currentSegment->chan->data = origDataPtr;
+
+    /* set the correct GPS time for the current data segment */
+    {
+      INT8 currentSegmentTime = chanStartTime + (INT8) 
+        ( 1.0e9 * 
+          ((REAL8) params->numPoints - (REAL8) params->ovrlap) *
+          (REAL8) i * chan->deltaT
+        );
+
+      LALINT8toGPS( status->statusPtr, &(currentSegment->chan->epoch), 
+          &currentSegmentTime );
+      CHECKSTATUSPTR( status );
+    }
+
+    /* set up the REAL4Sequence to contain the correct data */
+    currentSegment->chan->data->length = params->numPoints;
+    currentSegment->chan->data->data = dataPtr;
+
+    /* advance the dataPtr to the next segment */
+    dataPtr += currentSegment->chan->data->length - params->ovrlap;
+
+    /* power spectrum */
+    currentSegment->spec = spec;
+
+    /* response function */
+    currentSegment->resp = resp;
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="FindChirpMemoryCP"> */
+void
+LALFinalizeDataSegmentVector (
+    LALStatus                  *status,
+    DataSegmentVector         **vector
+    )
+/* </lalVerbatim> */
+{
+  DataSegmentVector *dataSegVec;
+  UINT4 i;
+
+  INITSTATUS( status, "LALFinalizeDataSegmentVector", FINDCHIRPMEMORYC );
+
+  ASSERT( vector, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( *vector, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
+
+  dataSegVec = *vector;
+
+  /* free the DataSegments in the DataSegmentVector */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    DataSegment *currentSegment = dataSegVec->data + i;
+    LALFree( currentSegment->chan->data );
+    LALFree( currentSegment->chan );
+  }
+
+  /* free the dataSegVec to hold the input data for FindChirpData */
+  LALFree( dataSegVec->data );
+  LALFree( dataSegVec );
+  dataSegVec = NULL;
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="FindChirpMemoryCP"> */
+void
 LALCreateDataSegmentVector (
     LALStatus                  *status,
     DataSegmentVector         **vector,
