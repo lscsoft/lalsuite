@@ -5,11 +5,12 @@ FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref
 else
 FRAMEPROGRAMS = 
 endif
-bin_PROGRAMS = $(FRAMEPROGRAMS)
+bin_PROGRAMS = $(FRAMEPROGRAMS) lalapps_ComputeStrain
 if FRAME
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
 endif
+lalapps_ComputeStrain_SOURCES = ComputeStrain.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 pkgdata_DATA = \
