@@ -19,6 +19,27 @@ import getopt
 import re
 import ConfigParser
 
+class InspiralChunk:
+  def __init__(self,start,end):
+    self.start = start
+    self.end = end
+
+class ScienceSegment:
+  def __init__(self,id,start,end,duration):
+    self.id = id
+    self.start = start
+    self.end = end
+    self.duration = duration
+    self.chunks = []
+  def createchunks(self,length,overlap):
+    dur = self.duration
+    start = self.start
+    incr = dur - overlap
+    while dur >= length:
+      self.chunks.append(InspiralChunk(start,start+length))
+      dur =- incr
+      start += incr
+
 class InspiralPipeline:
   """
   Contains a dictionary of science segments and chunks that
@@ -38,29 +59,28 @@ class InspiralPipeline:
       for opt in cp.options(sec):
         self.config[name][opt] = string.strip(cp.get(sec,opt))
     self.basename = config_file.split('.')[0]
+
+  def parsesegs(self):
+    self.segments = []
+    # lines that start with an octothorpe are comments
+    comment_line = re.compile(r'\A#')
+    for line in open(self.config['input']['segments']):
+      if not comment_line.match(line):
+        segpars = tuple(map(int,line.split()))
+        # change this line if the format of the science segment file changes
+        self.segments.append( 
+          ScienceSegment(segpars[0],segpars[1],segpars[2],segpars[3]) )
+  
+  def createchunks(self):
     # compute the chunk and overlap length in seconds
     numpoints = int(self.config['datacond']['segment-length'])
     numseg = int(self.config['datacond']['number-of-segments'])
     overlap = int(self.config['inspiral']['segment-overlap'])
     srate = int(self.config['datacond']['sample-rate'])
-    self.chunk = (numpoints * numseg - ( numseg - 1 ) * overlap ) / srate
-    self.overlap = overlap / srate
-
-  def parsesegs(self):
-    self.segments = []
-    comment_line = re.compile(r'\A#')
-    for line in open(self.config['input']['segments']):
-      if not comment_line.match(line):
-        self.segments.append(
-          { 'segment' : tuple(map(int,line.split())), 'chunks' : [] } )
-
-  def buildchunks(self):
+    chunk_length = (numpoints * numseg - ( numseg - 1 ) * overlap ) / srate
+    chunk_overlap = overlap / srate
     for seg in self.segments:
-      (id, start, end, length) = seg['segment']
-      while length >= self.chunk:
-        seg['chunks'].append(tuple([start,start+self.chunk]))
-        start += self.chunk - self.overlap
-        length -= self.chunk - self.overlap
+      seg.createchunks(chunk_length,chunk_overlap)
 
   def frcachesub(self):
     sub_fh = open( self.basename + '.frcache.condor', 'w' )
@@ -82,7 +102,6 @@ queue
 
   def banksub(self):
     boolargs = re.compile(r'(disable-high-pass|write-strain-spectrum)')
-    args = ()
     sub_fh = open( self.basename + '.tmpltbank.condor', 'w' )
     print >> sub_fh, """\
 universe = %s
@@ -136,37 +155,34 @@ queue
     site = chan[0]
     ifo  = chan[0:2]
     dag_fh = open( self.basename + ".dag", "w" )
-    print >> dag_fh, "dot %s.dot update overwrite" % self.basename
+    print >> dag_fh, "DOT %s.dot UPDATE OVERWRITE" % self.basename
     
     # jobs to generate the frame cache files
     for seg in self.segments:
-      (id, start, end, length) = seg['segment']
-      jobname = 'frcache_%s_%s_%s' % (site,start,end)
+      jobname = 'frcache_%s_%d_%d' % (site,seg.start,seg.end)
       print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
       if not cache: print >> dag_fh, 'done',
       print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
-      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,start)
-      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,end)
+      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
+      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
     for i in range(1,len(self.segments)):
-      (id, start_p, end_p, length) = self.segments[i-1]['segment']
-      (id, start_c, end_c, length) = self.segments[i]['segment']
       print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
-        site,start_p,end_p,site,start_c,end_c)
+        site,self.segments[i-1].start,self.segments[i-1].end,
+        site,self.segments[i].start,self.segments[i].end)
     
     # jobs to generate the template banks
     for seg in self.segments:
-      (id, frstart, frend, length) = seg['segment']
-      parent = 'frcache_%s_%s_%s' % (site,frstart,frend)
-      for start,end in seg['chunks']:
-        jobname = 'tmpltbank_%s_%s_%s' % (ifo,start,end)
+      parent = 'frcache_%s_%s_%s' % (site,seg.start,seg.end)
+      for chunk in seg.chunks:
+        jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
         print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
         print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,frstart)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,frend)
-        print >> dag_fh, 'VARS %s start="%d"' % (jobname,start)
-        print >> dag_fh, 'VARS %s end="%d"' % (jobname,end)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
+        print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
+        print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
         print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
         print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
           self.config['input'][string.lower(ifo) + '-cal'])
@@ -174,32 +190,22 @@ queue
 
     # jobs to run the inspiral code
     for seg in self.segments:
-      (id, frstart, frend, length) = seg['segment']
-      for start,end in seg['chunks']:
-        parent = 'tmpltbank_%s_%s_%s' % (ifo,start,end)
-        jobname = 'inspiral_%s_%s_%s' % (ifo,start,end)
+      for chunk in seg.chunks:
+        parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
+        jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
         print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
         print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,frstart)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,frend)
-        print >> dag_fh, 'VARS %s start="%d"' % (jobname,start)
-        print >> dag_fh, 'VARS %s end="%d"' % (jobname,end)
+        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.start)
+        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.end)
+        print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
+        print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
         print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
         print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
           self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     dag_fh.close()
-
-  def status(self):
-    print "writing to files with basename", self.basename
-    print "generating", self.chunk, "second chunks",
-    print "with", self.overlap, "second overlap"
-    try:
-      print self.segments
-    except AttributeError:
-      print "no science segments defined"
 
 def usage():
   msg = """\
@@ -272,9 +278,8 @@ if not config_file:
 
 pipeline = InspiralPipeline(config_file)
 pipeline.parsesegs()
-pipeline.buildchunks()
+pipeline.createchunks()
 pipeline.frcachesub()
 pipeline.banksub()
 pipeline.inspiralsub()
 pipeline.builddag(do_cache,do_bank,do_inspiral)
-pipeline.status()
