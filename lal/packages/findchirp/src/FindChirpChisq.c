@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="FindChirpChisqCV">
-Author: Anderson, W. G., and Brown D. A.
+Author: Anderson, W. G., and Brown D. A., Modified by Messaritaki E.
 $Id$
 </lalVerbatim>
 
@@ -49,6 +49,13 @@ The function \texttt{LALFindChirpChisqVeto()} perfoms a $\chi^2$ veto on
 an entire data segment using the algorithm described below. On exit the
 vector \texttt{chisqVec} contains the value $\chi^2(t_j)$ for the data
 segment.
+
+The function \texttt{LALFindChirpBCVChisqVeto()} perfoms a $\chi^2$ veto on 
+an entire data segment using the corresponding algorithm for the BCV templates,
+described below. On exit the
+vector \texttt{chisqVec} contains the value $\chi^2(t_j)$ for the data
+segment.
+
 
 \subsubsection*{Algorithm}
 
@@ -426,3 +433,254 @@ LALFindChirpChisqVeto (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
+
+/* <lalVerbatim file="FindChirpChisqCP"> */
+void
+LALFindChirpBCVChisqVeto (
+    LALStatus                  *status,
+    REAL4Vector                *chisqVec,
+    FindChirpChisqInput        *input1,
+    FindChirpChisqInput        *input2,
+    FindChirpChisqParams       *params
+    )
+/* </lalVerbatim> */
+{
+  UINT4                 j, l;
+  UINT4                 numPoints;
+
+  REAL4                *chisq;
+
+  COMPLEX8             *q;
+  COMPLEX8             *qtilde;
+
+  COMPLEX8             *q1;
+  COMPLEX8             *q2;
+  COMPLEX8             *qtilde1;
+  COMPLEX8             *qtilde2;
+
+  UINT4                 numChisqPts;
+  UINT4                 numChisqBins;
+  UINT4                *chisqBin;
+  REAL4                 chisqNorm;
+  REAL4                 rhosq;
+#if 0
+  REAL4                 mismatch;
+#endif
+
+  COMPLEX8             *qtildeBin1;
+  COMPLEX8             *qtildeBin2;
+  COMPLEX8Vector       *qtildeBinVec1;
+  COMPLEX8Vector       *qtildeBinVec2;
+  COMPLEX8Vector      **qBinVecPtr1;
+  COMPLEX8Vector      **qBinVecPtr2;
+
+  REAL4                 b1;
+  REAL4                 a2;
+
+  INITSTATUS( status, "LALFindChirpChisqVeto", FINDCHIRPCHISQC );
+  ATTATCHSTATUSPTR( status );
+
+
+  /*
+   *
+   * check that the arguments are reasonable
+   *
+   */
+
+
+  /* check that the output pointer is non-null and has room to store data */
+  ASSERT( chisqVec, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( chisqVec->data, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+
+  /* check that the parameter structure exists */
+  ASSERT( params, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+
+  /* check that the chisq bin vector is reasonable */
+  ASSERT( params->chisqBinVec, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( params->chisqBinVec->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( params->chisqBinVec->length > 0, status,
+      FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
+
+  /* check that the fft plan exists */
+  ASSERT( params->plan, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+
+  /* check that the input exists */
+  ASSERT( input1, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input2, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+
+  /* check that the input contains some data */
+  ASSERT( input1->qVec, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input1->qVec->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input1->qtildeVec, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input1->qtildeVec->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input2->qVec, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input2->qVec->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input2->qtildeVec, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( input2->qtildeVec->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+
+
+  /* check that the workspace vectors exist */
+  ASSERT( qtildeBinVec1, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( qtildeBinVec1->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( qtildeBinVec1->length > 0, status,
+      FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
+  ASSERT( qtildeBinVec2, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( qtildeBinVec2->data, status,
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( qtildeBinVec2->length > 0, status,
+      FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
+
+#if 0
+  /* check that the bank match has been set */
+  if ( params->bankMatch < 0 || params->bankMatch >= 1 )
+  {
+    ABORT( status, FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+  }
+#endif
+
+
+  /* temporarily */
+  b1 = 7.0 / 3.0 ;
+  a2 = 1.0;
+
+
+  /*
+   *
+   * point local pointers to structure pointers
+   *
+   */
+
+
+  chisq     = chisqVec->data;
+
+  numPoints = input1->qVec->length;
+  q1         = input1->qVec->data;
+  q2         = input2->qVec->data;
+  qtilde1    = input1->qtildeVec->data;
+  qtilde2    = input2->qtildeVec->data;
+
+  numChisqPts  = params->chisqBinVec->length;
+  numChisqBins = numChisqPts - 1;
+  chisqBin     = params->chisqBinVec->data;
+  chisqNorm    = sqrt( params->norm );
+#if 0
+  mismatch     = 1.0 - params->bankMatch;
+#endif
+
+/*  qtildeBin = params->qtildeBinVec->data; */
+
+    qtildeBin1 = qtildeBinVec1->data;
+    qtildeBin2 = qtildeBinVec2->data;
+
+
+  /* 
+   *
+   * fill the numBins time series vectors for the chi-squared statistic
+   *
+   */
+
+
+  for ( l = 0; l < numChisqBins; ++l )
+  {
+    memset( qtildeBin1, 0, numPoints * sizeof(COMPLEX8) );
+    memset( qtildeBin2, 0, numPoints * sizeof(COMPLEX8) );
+
+    memcpy( qtildeBin1 + chisqBin[l], qtilde1 + chisqBin[l],
+        (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
+    mamcpy( qtildeBin2 + chisqBin[l], qtilde2 + chisqBin[l],
+        (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
+
+    LALCOMPLEX8VectorFFT( status->statusPtr, qBinVecPtr1[l],
+        qtildeBinVec1, params->plan );
+    LALCOMPLEX8VectorFFT( status->statusPtr, qBinVecPtr2[l],
+	qtildeBinVec2, params->plan );
+    CHECKSTATUSPTR( status );
+  }
+
+
+  /* 
+   *
+   * calculate the chi-squared value at each time
+   *
+   */
+
+
+  memset( chisq, 0, numPoints * sizeof(REAL4) );
+
+  for ( j = 0; j < numPoints; ++j )
+  {
+    for ( l = 0; l < numChisqBins; ++l )
+    {
+      REAL4 X1 = qBinVecPtr1[l]->data[j].re;
+      REAL4 Y1 = qBinVecPtr1[l]->data[j].im;
+      REAL4 X2 = qBinVecPtr2[l]->data[j].re;
+      REAL4 Y2 = qBinVecPtr2[l]->data[j].im;
+
+#if 0
+      REAL4 deltaXl = chisqNorm * Xl -
+        (chisqNorm * q[j].re / (REAL4) (numChisqBins));
+      REAL4 deltaYl = chisqNorm * Yl -
+        (chisqNorm * q[j].im / (REAL4) (numChisqBins));
+
+      chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
+#endif
+
+      REAL4 mod1 = sqrt( 
+		      ( 2.0 * b1 * X1 - 2.0 * a2 * X2 -  
+      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) *
+                      ( 2.0 * b1 * X1 - 2.0 * a2 * X2 -  
+      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) +
+                      ( 2.0 * b1 * Y1 - 2.0 * a2 * Y2 -  
+      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) *
+                      ( 2.0 * b1 * Y1 - 2.0 * a2 * Y2 - 
+      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) )
+		        );			    
+
+      REAL4 mod2 = sqrt( 
+                      ( 2.0 * b1 * X1 + 2.0 * a2 * X2 -
+      ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) *
+		      ( 2.0 * b1 * X1 + 2.0 * a2 * X2 -     
+      ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) +
+           	      ( 2.0 * b1 * Y1 + 2.0 * a2 * Y2 -    
+      ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) *
+                      ( 2.0 * b1 * Y1 + 2.0 * a2 * Y2 -    
+      ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) 
+                        );
+
+      REAL4 deltachisq = mod1 + mod2 ; 
+            deltachisq *= deltachisq ;
+
+      chisq[j] += deltachisq ;	    
+
+    }
+  }
+
+#if 0
+  /* now modify the value to compute the new veto */
+  for ( j = 0; j < numPoints; ++j ) 
+  {
+    rhosq = params->norm * (q[j].re * q[j].re + q[j].im * q[j].im);
+    chisq[j] /= 1.0 + rhosq * mismatch * mismatch / (REAL4) numChisqBins;
+  }
+#endif
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
