@@ -30,6 +30,19 @@
 /* 01/23/04 gam; Glob for *SFT.* rather than *SFT* to avoid non-SFT files that have SFT in their name. */
 /* 01/28/04 gam; Include what to glob for in params->sftDirectory rather than hard coding */
 /* 04/15/04 gam; Fix help when no command line arguments */
+/* 05/07/04 gam; add alternative to using glob */
+
+/*********************************************/
+/*                                           */
+/* START SECTION: define preprocessor flags  */
+/*                                           */
+/*********************************************/
+/* #define DEBUG_READSFT_CODE */
+/*********************************************/
+/*                                           */
+/* END SECTION: define preprocessor flags    */
+/*                                           */
+/*********************************************/
 
 /*********************************************/
 /*                                           */
@@ -267,15 +280,113 @@ int SetGlobalVariables(StackSlideSearchParams *params)
   size_t errorcode;
   REAL8 df;                         /* freq resolution */
   INT4 fileno=0;   
-  glob_t globbuf;
-  
+  /* glob_t globbuf; */     /* 05/07/04 gam; add alternative to using glob */
+  DIR *pSFTDir;             /* 05/07/04 gam; pointer to SFT directory */
+  struct dirent *dirEntry;  /* 05/07/04 gam; structure that holds a directory entry */
+  INT2 i, j, sftDirNameLen, indSlash, asteriskCount; /* 05/07/04 gam; Used when parsing params->sftDirectory */
+  CHAR sftDirectory[256],sftPattern[256];            /* 05/07/04 gam; parse params->sftDirectory to get sftDirectory and sftPattern. */
+    
   /* INITSTATUS( status, "ReadSFTData", COMPUTESTACKSLIDESUMSC);
   ATTATCHSTATUSPTR (status); */
+  
+  /* 05/07/04 gam; START add alternative to using glob */
+  sftDirNameLen = strlen(params->sftDirectory);
+  if (sftDirNameLen > 256) {
+     fprintf(stderr,"Error: params->sftDirectory cannot contain more than 256 characters. \n");
+     return 1;
+  }  
+  indSlash = -1;
+  /* Find the last slash in params->sftDirectory */
+  for (i=sftDirNameLen-1;i>=0;i--) {
+        #ifdef DEBUG_READSFT_CODE
+          fprintf(stdout,"char[%i]  = %c\n",i,params->sftDirectory[i]);
+          fflush(stdout);
+        #endif
+        if(params->sftDirectory[i] == '/') {
+           indSlash = i;
+           break;
+        }
+  }
+  #ifdef DEBUG_READSFT_CODE
+        fprintf(stdout,"indSlash = %i\n",indSlash);
+        fflush(stdout);
+  #endif  
+  /* If the last character is not a / then check for a pattern to match */  
+  if ( indSlash < (sftDirNameLen-1) ) {
+     asteriskCount = 0;
+     for (i=indSlash+1;i<sftDirNameLen;i++) {
+        if(params->sftDirectory[i] == '*') {
+           asteriskCount++;
+        }
+     }
+     #ifdef DEBUG_READSFT_CODE
+        fprintf(stdout,"asteriskCount = %i\n",asteriskCount);
+        fflush(stdout);
+     #endif
+     if (asteriskCount > 0) {
+       if (indSlash == -1) {
+         strcpy(sftDirectory,"./"); /* params->sftDirectory has no slashes but has asterisks; set sftDirectory to current directory */
+       } else {
+         strncpy(sftDirectory,params->sftDirectory,indSlash+1);
+         sftDirectory[indSlash+1] = '\0';
+       }
+       j = 0;
+       for (i=indSlash+1;i<sftDirNameLen;i++) {
+          #ifdef DEBUG_READSFT_CODE
+            fprintf(stdout,"char[%i]  = %c\n",i,params->sftDirectory[i]);
+            fflush(stdout);
+          #endif
+          if(params->sftDirectory[i] != '*') {
+             sftPattern[j] = params->sftDirectory[i];
+             j++;   
+          }
+       }
+       sftPattern[j] = '\0';
+     } else {
+       /* params->sftDirectory did not end in a slash and contained no asterisks after last slash */
+       strcpy(sftDirectory,params->sftDirectory);
+       strcat(sftDirectory,"/");  /* sftDirectory must end with a slash */
+       sftPattern[0] = '\0';  /* No pattern to match given, so match everything. */
+     }
+  } else {
+    strcpy(sftDirectory,params->sftDirectory);
+    sftPattern[0] = '\0';  /* No pattern to match given, so match everything. */
+  }
+  #ifdef DEBUG_READSFT_CODE
+     fprintf(stdout,"sftDirectory, sftPattern = %s, %s\n",sftDirectory,sftPattern);
+     fflush(stdout);
+  #endif  
+  pSFTDir = opendir(sftDirectory);
+  dirEntry = readdir(pSFTDir);
+  while (dirEntry != NULL) {
+     if ( strstr(dirEntry->d_name,sftPattern) && (dirEntry->d_type == DT_REG) ) {
+        #ifdef DEBUG_READSFT_CODE
+          fprintf(stdout,"d_name, d_type = %s, %i\n",dirEntry->d_name,dirEntry->d_type);
+          fflush(stdout);
+        #endif
+        strcpy(GV.filelist[fileno],sftDirectory);
+        strcat(GV.filelist[fileno],dirEntry->d_name);
+        fileno++;
+        if (fileno > MAXFILES) {
+          fprintf(stderr,"Too many files match params->sftDirectory! Exiting... \n");
+          return 1;
+        }
+     }
+     dirEntry = readdir(pSFTDir);
+  }  
+  closedir(pSFTDir);
+  if(fileno==0) {
+    fprintf(stderr,"No SFTs found in params->sftDirectory %s ... Exiting.\n",params->sftDirectory);
+    return 1;
+  }
+  /* 05/07/04 gam; END add alternative to using glob */
 
+/* 05/07/04 gam; use preprocessor flag to ignor glob code: */
+#ifdef NOTHING      
   /* strcpy(command,params->sftDirectory); */  /* 01/28/04 gam */
   /* strcat(command,"/ *SFT*"); */  /* 01/23/04 gam; Glob for *SFT.* rather than *SFT* */
   /* strcat(command,"/ *SFT.*"); */  /* 01/28/04 gam (Also note added space between / and * to get rid of warning about comment inside comment. */
-  
+
   globbuf.gl_offs = 1;
   /* glob(command, GLOB_ERR, NULL, &globbuf); */ /* 01/28/04 gam; Include what to glob for in params->sftDirectory rather than hard coding */
   glob(params->sftDirectory, GLOB_ERR, NULL, &globbuf);  
@@ -301,8 +412,14 @@ int SetGlobalVariables(StackSlideSearchParams *params)
 	}
     }
   globfree(&globbuf);
+#endif
 
   GV.SFTno=fileno; /* remember this is 1 more than the index value */
+        
+  #ifdef DEBUG_READSFT_CODE
+          fprintf(stdout,"The first SFT in GV.filelist is %s\n",GV.filelist[0]);
+          fflush(stdout);
+  #endif
 
   /* open FIRST file and get info from it*/
   fp=fopen(GV.filelist[0],"r");

@@ -11,6 +11,7 @@
 /* REVISIONS: */
 /* 01/23/04 gam; Increase MAXFILES from 40000 to 80000 to allow running on more SFTs */
 /*               (Should allocate memory for this in the future.)                    */
+/* 05/07/04 gam; add alternative to using glob */
 
 #ifndef _COMPUTESTACKSLIDESUMS_H
 #define _COMPUTESTACKSLIDESUMS_H
@@ -29,7 +30,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <glob.h>
+/* #include <glob.h> */
+/* 05/07/04 gam; add alternative to using glob; include dirent.h instead of glob.h. */
+#include <dirent.h>
 #include <time.h>
 #include <lal/ComputeSky.h>
 #include <lal/LALDatatypes.h>
