@@ -39,13 +39,10 @@ given search area and resolution
 #include <lal/LALError.h>
 #include <lal/LALXMGRInterface.h>
 #include <lal/StringInput.h>
-
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 
-
 #include "DopplerScan.h"
-
 
 NRCSID( DOPPLERSCANC, "$Id$" );
 
@@ -71,6 +68,7 @@ static PtoleMetricIn empty_metricpar;
 static DopplerScanGrid empty_grid;
 static MetricParamStruc empty_MetricParamStruc;
 static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
+static gsl_complex complex_zero;
 
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
@@ -1365,3 +1363,95 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   RETURN (stat);
 
 } /* printFrequencyShifts() */
+
+/** Interpolate frequency-series to newLen frequency-bins.
+ * This is using DFT-interpolation (derived from zero-padding).
+ * 
+ */
+void
+refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen)
+{
+  UINT4 oldLen, l, k;
+  gsl_complex Xd, Yk, Rlk, z;
+  COMPLEX16Vector *ret = NULL;
+
+  INITSTATUS( stat, "refineFrequencies", DOPPLERSCANC );  
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( out, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( in, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *out == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+  ASSERT ( newLen > 0, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  oldLen = in->length;
+
+  TRY (LALZCreateVector (stat->statusPtr, &ret, newLen), stat);
+
+  for (k=0; k <= newLen - 1; k++)
+    {
+      Yk = complex_zero;
+
+      for (l=0; l <= oldLen - 1; l++)
+	{
+	  GSL_SET_REAL (&Xd, in->data[l].re);
+	  GSL_SET_IMAG (&Xd, in->data[l].im);
+
+	  Rlk = DFTinterpolator (l, k, oldLen, newLen);
+	  z = gsl_complex_mul ( Xd, Rlk);
+	  Yk = gsl_complex_add (Yk, z);
+	} /* for k <= N-1 */
+
+      ret->data[k].re = GSL_REAL (Yk);
+      ret->data[k].im = GSL_IMAG (Yk);
+
+    }  /* for k <= M-1 */
+
+  *out = ret;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+} /* RefineFrequencies() */
+
+
+/** Interpolation matrix entry (l, k), for frequency-steps 1/N and 1/M
+ */
+gsl_complex
+DFTinterpolator (INT4 l, INT4 k, UINT4 N, UINT4 M)
+{
+  REAL8 phase, phaseN;
+  gsl_complex nominator, denominator, res, z; 
+  REAL8 ind;
+
+  /* treat special case of all summands being 1: happens if ind is integer */
+  ind = 1.0 * (l * M - k * N)/(1.0 * M * N);
+  if ( ind == (INT4)ind )
+    {
+      GSL_SET_REAL (&res, 0);
+      GSL_SET_IMAG (&res, N);
+      return (res);
+    }
+
+  /* otherwise: calculate sum of geometric sum: */
+  phase = 2.0 * LAL_PI * ( (1.0 * l) / N - (1.0 * k) / M);
+  phaseN = phase * N;
+
+  /* calculate nominator */
+  GSL_SET_REAL (&z, 0);
+  GSL_SET_IMAG (&z, phaseN);
+
+  z = gsl_complex_negative ( gsl_complex_exp ( z ) );
+  nominator = gsl_complex_add_real ( z , 1.0);
+
+  /* calculate denominator */
+  GSL_SET_REAL (&z, 0);
+  GSL_SET_IMAG (&z, phase);
+
+  z = gsl_complex_negative ( gsl_complex_exp ( z ) );
+  denominator = gsl_complex_add_real ( z , 1.0);
+
+  /* calculate ratio */
+  res = gsl_complex_div (nominator, denominator);
+
+  return(res);
+
+} /* DFTinterpolator() */

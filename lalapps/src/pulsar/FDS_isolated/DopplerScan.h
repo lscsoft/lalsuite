@@ -29,6 +29,11 @@ standards for LAL headers.
 #include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
 
+
+#include "gsl/gsl_complex.h"
+#include "gsl/gsl_complex_math.h"
+
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -154,6 +159,11 @@ void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 
 void writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
 void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
+
+
+gsl_complex DFTinterpolator (INT4 l, INT4 k, UINT4 N, UINT4 M);
+void refineFrequencies (LALStatus *stat, COMPLEX16Vector **out, COMPLEX16Vector *in, UINT4 newLen);
+
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
