@@ -2047,7 +2047,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numSegments;
   INT4 duration, durationEff, extrasec;
   INT4 segsInInt, numIntervals, segMiddle;
-  INT4 segmentLength, intervalLength;
+  INT4 segmentLength;
   INT4 segmentShift;
   INT4 padData;
   LIGOTimeGPS gpsCalibTime;
@@ -2149,19 +2149,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   else
     padData = 0;
 
-  /* calculate number of intervals, and required shift to get to next
-   * interval */
-  if (overlap_hann_flag)
-  {
-    numIntervals = (2 * (numSegments - 2)) - 1;
-    segmentShift = segmentDuration / 2;
-  }
-  else
-  {
-    numIntervals = numSegments - 2;
-    segmentShift = segmentDuration;
-  }
-
   /* initialise gps time structures */
   gpsStartTime.gpsSeconds = startTime;
   gpsStartTime.gpsNanoSeconds = 0;
@@ -2196,13 +2183,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* get lengths */
   filterLength = numFMax - numFMin + 1;
-  intervalLength = intervalDuration * resampleRate;
   segmentLength = segmentDuration * resampleRate;
-  respLength = (UINT4)(fMax / deltaF) + 1;
-
-  /* allocate memory for calibrated PSDs */
-  calPsdOne = XLALCreateREAL4Vector(filterLength);
-  calPsdTwo = XLALCreateREAL4Vector(filterLength);
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
@@ -2243,6 +2224,26 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* destroy frequency mask */
     XLALDestroyREAL4FrequencySeries(mask);
   }
+
+  /* calculate number of intervals, and required shift to get to next
+   * interval */
+  if (overlap_hann_flag)
+  {
+    numIntervals = (2 * (numSegments - 2)) - 1;
+    segmentShift = segmentDuration / 2;
+  }
+  else
+  {
+    numIntervals = numSegments - 2;
+    segmentShift = segmentDuration;
+  }
+
+  /* allocate memory for calibrated PSDs */
+  calPsdOne = XLALCreateREAL4Vector(filterLength);
+  calPsdTwo = XLALCreateREAL4Vector(filterLength);
+
+  /* set length of response functions */
+  respLength = (UINT4)(fMax / deltaF) + 1;
 
   if (vrbflg)
     fprintf(stdout, "Starting analysis loop...\n");
