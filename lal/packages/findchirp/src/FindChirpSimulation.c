@@ -16,77 +16,11 @@
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALNoiseModels.h>
+#include <lal/FindChirp.h>
 #include <lal/FindChirpEngine.h>
 
 NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 
-
-#if 0
-/*-----------------------------------------------------------------------*/
-void
-LALFindChirpCreateLoudestEvent (
-    LALStatus                          *status,
-    LoudestInspiralEvent              **loudest,
-    UINT4                               length
-    )
-{
-  INITSTATUS( status, "LALFindChirpCreateLoudestEvent", FINDCHIRPSIMULATIONC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( loudest, status, 
-      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
-  ASSERT( !*loudest, status, 
-      FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
-
-  /* allocate memory for the structure */
-  *loudest = (LoudestInspiralEvent *)
-    LALCalloc( 1, sizeof(LoudestInspiralEvent) );
-  if ( ! *loudest )
-  {
-    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
-  }
-
-  *loudest->length = length;
-
-  /* create storeage for loudest event and (s|s) for each segment */
-  *loudest->event =  (InspiralEvent *)
-    LALCalloc( numSegments, sizeof(InspiralEvent) );
-  *loudest->signalNorm = (REAL4 *)
-    LALCalloc( dataSegVec->length, sizeof(REAL4) );
-  if ( ! params->simParams->loudestEvent || 
-      ! params->simParams->signalNorm )
-  {
-    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
-  }
-
-
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/*-----------------------------------------------------------------------*/
-void
-LALFindChirpDestroyLoudestEvent (
-    LALStatus                          *status,
-    InspiralEvent                      *loudestEvent,
-    UINT4                               numSegments
-    )
-{
-  
-
-  INITSTATUS( status, "LALFindChirpCreateLoudestEvent", FINDCHIRPSIMULATIONC );
-  ATTATCHSTATUSPTR( status );
-
-
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-#endif
-
-
-/*-----------------------------------------------------------------------*/
 void
 LALFindChirpInjectSignals (
     LALStatus                  *status,

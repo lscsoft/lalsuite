@@ -74,7 +74,7 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 
 
 /* --- structure for storing input to the chisq veto --------------------- */
-#pragma <lalVerbatim file="FindChirpChisqHFindChirpChisqInput">
+/* <lalVerbatim file="FindChirpChisqHFindChirpChisqInput"> */
 typedef struct
 tagFindChirpChisqInput
 {
@@ -82,7 +82,7 @@ tagFindChirpChisqInput
   COMPLEX8Vector               *qVec;
 }
 FindChirpChisqInput;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpChisqInput}}
@@ -105,7 +105,7 @@ domain quantity $q_j$ as defined in \texttt{FindChirpFilter()}.
 #endif
 
 /* --- parameter structure for the chisq veto ---------------------------- */
-#pragma <lalVerbatim file="FindChirpChisqHFindChirpChisqParams">
+/* <lalVerbatim file="FindChirpChisqHFindChirpChisqParams"> */
 typedef struct
 tagFindChirpChisqParams
 {
@@ -117,7 +117,7 @@ tagFindChirpChisqParams
   COMPLEX8Vector              **qBinVecPtr;
 }
 FindChirpChisqParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpChisqParams}}

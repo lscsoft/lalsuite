@@ -88,7 +88,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #endif
 
 /* --- the parameter structure for the data conditioning function -------- */
-#pragma <lalVerbatim file="FindChirpSPHFindChirpSPDataParams">
+/* <lalVerbatim file="FindChirpSPHFindChirpSPDataParams"> */
 typedef struct
 tagFindChirpSPDataParams
 {
@@ -104,7 +104,7 @@ tagFindChirpSPDataParams
   UINT4                         invSpecTrunc;
 }
 FindChirpSPDataParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSPDataParams}}
@@ -169,7 +169,7 @@ truncation is performed.
 #endif
 
 /* --- vector of DataSegment, as defined the framedata package ----------- */
-#pragma <lalVerbatim file="FindChirpSPHFindChirpSPTmpltParams">
+/* <lalVerbatim file="FindChirpSPHFindChirpSPTmpltParams"> */
 typedef struct
 tagFindChirpSPTmpltParams
 {
@@ -179,7 +179,7 @@ tagFindChirpSPTmpltParams
   REAL4Vector                  *xfacVec;
 }
 FindChirpSPTmpltParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSPTmpltParams}}

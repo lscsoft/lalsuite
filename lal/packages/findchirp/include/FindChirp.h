@@ -38,9 +38,6 @@ for binary inspiral chirps.
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/DataBuffer.h>
-#ifdef LAL_ENABLE_MPI
-#include <lal/Comm.h>
-#endif
 #include <lal/LALInspiral.h>
 #include <lal/FindChirpChisq.h>
 
@@ -94,14 +91,14 @@ NRCSID (FINDCHIRPH, "$Id$");
 #endif
 
 /* --- enumeraion type for simulations ----------------------------------- */
-#pragma <lalVerbatim file="FindChirpHWaveformGenerator">
+/* <lalVerbatim file="FindChirpHWaveformGenerator"> */
 typedef enum
 {
   findchirpSP,
   injectGenPPN
 }
 WaveformGenerator;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Enumeration Type \texttt{WaveformGenerator}}
@@ -140,7 +137,7 @@ from the \texttt{inject} package.
 #endif
 
 /* --- structure for describing a binary insipral event ------------------ */
-#pragma <lalVerbatim file="FindChirpHInspiralEvent">
+/* <lalVerbatim file="FindChirpHInspiralEvent"> */
 typedef struct
 tagInspiralEvent
 {
@@ -164,7 +161,7 @@ tagInspiralEvent
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{InspiralEvent}}
@@ -214,8 +211,37 @@ interferometer name (e.g. L1, H2, etc.)
 </lalLaTeX>
 #endif
 
+/* --- structure for storing the parameters needed to do an injection ---- */
+typedef struct
+tagInspiralInjection
+{
+  INT8                          coaTime;
+  REAL4                         totalMass;
+  REAL4                         eta;
+  REAL4                         dist;
+  REAL4                         inclination;
+  REAL4                         coaPhase;
+  REAL4                         longitude;
+  REAL4                         latitude;
+  REAL4                         polarization;
+  struct tagInspiralInjection  *next;
+}
+InspiralInjection;
+
+/* --- structure for storing the parameters needed to do an injection ---- */
+typedef struct
+tagFindChirpStandardCandle
+{
+  CHAR                          ifo[2];
+  InspiralTemplate              tmplt;
+  REAL4                         rhosq;
+  REAL4                         sigmasq;
+  REAL4                         effDistance;
+}
+FindChirpStandardCandle;
+
 /* --- vector of DataSegment, as defined the framedata package ----------- */
-#pragma <lalVerbatim file="FindChirpHDataSegmentVector">
+/* <lalVerbatim file="FindChirpHDataSegmentVector"> */
 typedef struct
 tagDataSegmentVector
 {
@@ -223,7 +249,7 @@ tagDataSegmentVector
   DataSegment                  *data;
 }
 DataSegmentVector;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{DataSegmentVector}}
@@ -244,7 +270,7 @@ vector
 #endif
 
 /* --- processed data segment used by FindChirp filter routine ----------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpSegment">
+/* <lalVerbatim file="FindChirpHFindChirpSegment"> */
 typedef struct
 tagFindChirpSegment
 {
@@ -257,7 +283,7 @@ tagFindChirpSegment
   UINT4                         number;
 }
 FindChirpSegment;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSegment}}
@@ -295,7 +321,7 @@ the \texttt{DataSegment} from which the conditioned data was computed.
 #endif
 
 /* --- vector of FindChirpSegment defined above -------------------------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpSegmentVector">
+/* <lalVerbatim file="FindChirpHFindChirpSegmentVector"> */
 typedef struct
 tagFindChirpSegmentVector
 {
@@ -303,7 +329,7 @@ tagFindChirpSegmentVector
   FindChirpSegment             *data;
 }
 FindChirpSegmentVector;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpSegmentVector}}
@@ -324,7 +350,7 @@ the vector
 #endif
 
 /* --- structure to contain an inspiral template ------------------------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpTemplate">
+/* <lalVerbatim file="FindChirpHFindChirpTemplate"> */
 typedef struct
 tagFindChirpTemplate
 {
@@ -332,7 +358,7 @@ tagFindChirpTemplate
   REAL4                         tmpltNorm;
 }
 FindChirpTemplate;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpTemplate}}
@@ -369,7 +395,7 @@ normalisation constant $\sigma$.
   
 
 /* --- parameter structure for all init funtions ------------------------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpInitParams">
+/* <lalVerbatim file="FindChirpHFindChirpInitParams"> */
 typedef struct
 tagFindChirpInitParams
 {
@@ -379,7 +405,7 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
 }
 FindChirpInitParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpInitParams}}
@@ -411,7 +437,7 @@ for this vector if the flag is set to 1.
 
 
 /* --- parameter structure for the filtering function -------------------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpFilterParams">
+/* <lalVerbatim file="FindChirpHFindChirpFilterParams"> */
 typedef struct
 tagFindChirpFilterParams
 {
@@ -430,7 +456,7 @@ tagFindChirpFilterParams
   FindChirpChisqInput          *chisqInput;
 }
 FindChirpFilterParams;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpFilterParams}}
@@ -514,7 +540,7 @@ structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
 
 
 /* --- input to the filtering functions --------------------------------- */
-#pragma <lalVerbatim file="FindChirpHFindChirpFilterInput">
+/* <lalVerbatim file="FindChirpHFindChirpFilterInput"> */
 typedef struct
 tagFindChirpFilterInput
 {
@@ -523,7 +549,7 @@ tagFindChirpFilterInput
   FindChirpSegment             *segment;
 }
 FindChirpFilterInput;
-#pragma </lalVerbatim>
+/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
 \subsubsection*{Structure \texttt{FindChirpFilterInput}}
@@ -640,7 +666,19 @@ LALFindChirpFilterSegment (
     FindChirpFilterParams      *params
     );
 
+#if 0
+<lalLaTeX>
+%% \newpage\input{FindChirpSimulationC}
+</lalLaTeX>
+#endif
 
+void
+LALFindChirpInjectSignals (
+    LALStatus                  *status,
+    REAL4TimeSeries            *chan,
+    InspiralInjection          *events,
+    COMPLEX8FrequencySeries    *resp
+    );
 
 #ifdef  __cplusplus
 #pragma {
