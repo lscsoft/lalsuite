@@ -211,7 +211,6 @@ const	INT4		two = 2;
 
 	fomWithoutMargins = NULL;
 
-
 	/*  length must be greater than one  */
 	ASSERT ( N > 3, status, LALMOMENTH_ELNTH, LALMOMENTH_MSGELNTH);
 
@@ -383,7 +382,7 @@ const	INT4		two = 2;
 	LALDCreateVector( status->statusPtr, &fomWithoutMargins, fom->length - (2 * (*marginOfExclusion)));
 	CHECKSTATUSPTR( status );
 
-	for( k = (*marginOfExclusion); k < (INT4)fom->length - (INT4)(2 * (*marginOfExclusion)); k++ )
+	for( k = (*marginOfExclusion); k < (INT4)fom->length - 2 * (INT4)((*marginOfExclusion)); k++ )
 	  {
 	    fomWithoutMargins->data[k - (*marginOfExclusion)] = fom->data[k];
 	  }
@@ -404,7 +403,7 @@ const	INT4		two = 2;
 	(*result) = log((*result));
 
 	/*  ndx = ndx + 2  */
-	(*index) = (*index) + 1;
+	(*index) = (*index) + 2;
 
 	LALDDestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
