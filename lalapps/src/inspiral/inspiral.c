@@ -51,19 +51,10 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
-#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-    LALCalloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME ); \
-  LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-      long_options[option_index].name ); \
-  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
-
-
+int snprintf(char *str, size_t size, const  char  *format, ...);
 long long atoll(const char *nptr);
 char *strsep(char **stringp, const char *delim);
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
 /*
@@ -82,6 +73,10 @@ CHAR  *fqChanName      = NULL;          /* name of data channel         */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
+CHAR  site[2];                          /* single character site code   */
+CHAR  ifo[3];                           /* two character ifo code       */
+CHAR *channelName = NULL;               /* channel string               */
+INT4  inputDataLength = 0;              /* number of points in input    */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
@@ -110,8 +105,287 @@ int    writeSpec        = 0;            /* write computed psd to file   */
 int    writeRhosq       = 0;            /* write rhosq time series      */
 int    writeChisq       = 0;            /* write chisq time series      */
 
+/* other command line args */
+CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
 int main( int argc, char *argv[] )
+{
+  /* lal function variables */
+  LALStatus             status = blank_status;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
+  /* frame input data */
+#if 0
+  FrStream                     *frStream       = NULL;
+  FrChanIn                     *frChan         = NULL;
+#endif
+
+  /* raw input data storage */
+  REAL4TimeSeries               chan;
+  REAL4FrequencySeries          spec;
+  COMPLEX8FrequencySeries       resp;
+  DataSegmentVector            *dataSegVec = NULL;
+  
+  /* findchirp data structures */
+  FindChirpInitParams          *fcInitParams   = NULL;
+  FindChirpSegmentVector       *fcSegVec       = NULL;
+  FindChirpSPDataParams        *fcDataParams   = NULL;
+  FindChirpSPTmpltParams       *fcTmpltParams  = NULL;
+  FindChirpFilterParams        *fcFilterParams = NULL;
+  FindChirpFilterInput         *fcFilterInput  = NULL;
+  
+  /* output data */
+  MetadataTable         proctable;
+  MetadataTable         procparams;
+  ProcessParamsTable   *this_proc_param;
+  LIGOLwXMLStream       results;
+
+
+  /*
+   *
+   * initialization
+   *
+   */
+
+
+  /* set up inital debugging values */
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level( "MEMDBG" );
+
+  /* create the process and process params tables */
+  proctable.processTable = (ProcessTable *) 
+    LALCalloc( 1, sizeof(ProcessTable) );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
+        &accuracy ), &status );
+  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+       PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+    LALCalloc( 1, sizeof(ProcessParamsTable) );
+  memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
+
+  /* call the argument parse and check function */
+  arg_parse_check( argc, argv, procparams );
+  
+  /* fill the comment, if a user has specified on, or leave it blank */
+  if ( ! *comment )
+  {
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
+  } else {
+    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
+  }
+
+
+  /* 
+   *
+   * create and populate findchip initialization structure 
+   *
+   */
+
+
+  if ( ! ( fcInitParams = (FindChirpInitParams *) 
+      LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
+  {
+    fprintf( stderr, "could not allocate memory for findchirp init params\n" );
+    exit( 1 );
+  }
+  fcInitParams->numPoints      = numPoints;
+  fcInitParams->numSegments    = numSegments;
+  fcInitParams->numChisqBins   = numChisqBins;
+  fcInitParams->createRhosqVec = writeRhosq;
+  fcInitParams->ovrlap         = ovrlap;
+
+
+  /*
+   *
+   * read in the input data
+   *
+   */
+  
+
+  /* create storage for the input data */
+  memset( &chan, 0, sizeof(REAL4TimeSeries) );
+  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
+      &status );
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
+      &status );
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
+      &status );
+
+  /* set the time series parameters of the input data */
+  LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &gpsStartTimeNS ), 
+      &status );
+  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
+  
+  /* create the data segment vector and findchirp segment vector */
+  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
+        &chan, &spec, &resp, fcInitParams ), &status );
+  /* read the data channel time series from frames */
+
+  /* call the magic calibration function to get the calibration */
+  
+  /* read in the template bank from a text file */
+
+
+  /*
+   *
+   * pre-condition the data channel
+   *
+   */
+  
+
+  /* band pass the data to get rid of low frequency crap */
+
+  /* compute the median power spectrum for the data channel */
+
+
+  /*
+   *
+   * create the data structures needed for findchirp
+   *
+   */
+
+
+  /* create the findchirp data storage */
+  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
+        fcInitParams ), &status );
+
+  /* initialize findchirp stationary phase routines */
+  LAL_CALL( LALFindChirpSPDataInit( &status, &fcDataParams, fcInitParams ), 
+      &status );
+  LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams, 
+        fcInitParams ), &status );
+
+  fcDataParams->invSpecTrunc = invSpecTrunc * sampleRate;
+  fcDataParams->fLow = fLow;
+  fcDataParams->dynRange = fcTmpltParams->dynRange = 
+    pow( 2.0, dynRangeExponent );
+  fcTmpltParams->fLow = fLow;
+
+  /* initialize findchirp filter functions */
+  LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
+      &status );
+  fcFilterParams->computeNegFreq = 0;
+
+  LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
+      &status );
+  LAL_CALL( LALFindChirpChisqVetoInit( &status, fcFilterParams->chisqParams, 
+        fcInitParams->numChisqBins, fcInitParams->numPoints ), 
+      &status );
+
+
+  /*
+   *
+   * findchirp engine
+   *
+   */
+  
+
+  /* sleepy bye-byes */
+  sleep( 2 );
+
+
+  /*
+   *
+   * free the structures used by findchirp
+   *
+   */
+
+  LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
+        fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
+      &status );
+  LAL_CALL( LALDestroyFindChirpInput( &status, &fcFilterInput ), 
+      &status );
+  LAL_CALL( LALFindChirpFilterFinalize( &status, &fcFilterParams ), 
+      &status );
+  LAL_CALL( LALFindChirpSPTemplateFinalize( &status, &fcTmpltParams ), 
+      &status );
+  LAL_CALL( LALFindChirpSPDataFinalize( &status, &fcDataParams ),
+      &status );
+  LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
+      &status );
+
+  LALFree( fcInitParams );
+  
+
+  /*
+   *
+   * free the data storage
+   *
+   */
+
+
+  LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
+  LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
+  LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
+
+
+  /*
+   *
+   * write the result results to disk
+   *
+   */
+
+
+  /* store the job end time in the process table */
+
+  /* open the output xml file */
+  memset( &results, 0, sizeof(LIGOLwXMLStream) );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, RESULT_FILE ), &status );
+
+  /* write the process table */
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
+  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
+        &accuracy ), &status );
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
+        process_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  LALFree( proctable.processTable );
+
+  /* write the process params table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
+        process_params_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  while( procparams.processParamsTable )
+  {
+    this_proc_param = procparams.processParamsTable;
+    procparams.processParamsTable = this_proc_param->next;
+    LALFree( this_proc_param );
+  }
+
+  /* write the inspiral events to the file */
+
+  /* close the output xml file */
+  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+
+  /* free the rest of the memory, check for memory leaks and exit */
+  LALFree( fqChanName );
+  LALFree( channelName );
+  LALCheckMemoryLeaks();
+  exit( 0 );
+}
+
+
+#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
+  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+    LALCalloc( 1, sizeof(ProcessParamsTable) ); \
+  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+      PROGRAM_NAME ); \
+  snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      long_options[option_index].name ); \
+  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+
+
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
   /* getopt arguments */
   struct option long_options[] =
@@ -153,69 +427,9 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
   int c;
+  INT4 haveDynRange = 0;
+  ProcessParamsTable *this_proc_param = procparams.processParamsTable;
 
-  /* lal function variables */
-  LALStatus             status = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-  INT4                  inputDataLength = 0;
-
-  /* input data parameters */
-  CHAR   site[2];               /* single character site code + null */
-  CHAR   ifo[3];                /* two character ifo code + null     */
-  CHAR  *channelName = NULL;    /* null terminated channel string    */
-
-  /* frame input data */
-#if 0
-  FrStream                     *frStream       = NULL;
-  FrChanIn                     *frChan         = NULL;
-#endif
-
-  /* raw input data storage */
-  INT4                          haveDynRange = 0;
-  REAL4TimeSeries               chan;
-  REAL4FrequencySeries          spec;
-  COMPLEX8FrequencySeries       resp;
-  DataSegmentVector            *dataSegVec = NULL;
-  
-  /* findchirp data structures */
-  FindChirpInitParams          *fcInitParams   = NULL;
-  FindChirpSegmentVector       *fcSegVec       = NULL;
-  FindChirpSPDataParams        *fcDataParams   = NULL;
-  FindChirpSPTmpltParams       *fcTmpltParams  = NULL;
-  FindChirpFilterParams        *fcFilterParams = NULL;
-  FindChirpFilterInput         *fcFilterInput  = NULL;
-  
-  /* output data */
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  ProcessParamsTable   *this_proc_param;
-  LIGOLwXMLStream       results;
-
-
-  /*
-   *
-   * initialization
-   *
-   */
-
-
-  /* set up inital debugging values */
-  lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "MEMDBG" );
-
-  /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
-    LALCalloc( 1, sizeof(ProcessTable) );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-        &accuracy ), &status );
-  LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-      " ", optarg);
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
-       PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) );
-  
-  
 
   /*
    *
@@ -385,7 +599,7 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, fLow );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "float", "%f", fLow );
+        ADD_PROCESS_PARAM( "float", "%e", fLow );
         break;
 
       case 'j':
@@ -511,8 +725,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-              "%s", optarg);
+          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -545,24 +758,24 @@ int main( int argc, char *argv[] )
   /* enable output is stored in the first process param row */
   if ( enableOutput == 1 )
   {
-    LALSnprintf( procparams.processParamsTable->program, 
+    snprintf( procparams.processParamsTable->program, 
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
+    snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--enable-output" );
-    LALSnprintf( procparams.processParamsTable->type, 
+    snprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "int" );
-    LALSnprintf( procparams.processParamsTable->value, 
+    snprintf( procparams.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, "1" );
   }
   else if ( enableOutput == 0 )
   {
-    LALSnprintf( procparams.processParamsTable->program, 
+    snprintf( procparams.processParamsTable->program, 
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    LALSnprintf( procparams.processParamsTable->param,
+    snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-output" );
-    LALSnprintf( procparams.processParamsTable->type, 
+    snprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "int" );
-    LALSnprintf( procparams.processParamsTable->value, 
+    snprintf( procparams.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, "1" );
   }
   else
@@ -578,21 +791,21 @@ int main( int argc, char *argv[] )
     LALCalloc( 1, sizeof(ProcessParamsTable) );
   if ( eventCluster == 1 )
   {
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--enable-event-cluster" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
   }
   else if ( eventCluster == 0 )
   {
-    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-event-cluster" );
-    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
   }
   else
   {
@@ -718,200 +931,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-
-  /* 
-   *
-   * create and populate findchip initialization structure 
-   *
-   */
-
-
-  if ( ! ( fcInitParams = (FindChirpInitParams *) 
-      LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
-  {
-    fprintf( stderr, "could not allocate memory for findchirp init params\n" );
-    exit( 1 );
-  }
-  fcInitParams->numPoints      = numPoints;
-  fcInitParams->numSegments    = numSegments;
-  fcInitParams->numChisqBins   = numChisqBins;
-  fcInitParams->createRhosqVec = writeRhosq;
-  fcInitParams->ovrlap         = ovrlap;
-
-
-  /*
-   *
-   * read in the input data
-   *
-   */
-  
-
-  /* create storage for the input data */
-  memset( &chan, 0, sizeof(REAL4TimeSeries) );
-  LAL_CALL( LALSCreateVector( &status, &(chan.data), inputDataLength ), 
-      &status );
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( &status, &(spec.data), numPoints / 2 + 1 ), 
-      &status );
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( &status, &(resp.data), numPoints / 2 + 1 ), 
-      &status );
-
-  /* set the time series parameters of the input data */
-  LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &gpsStartTimeNS ), 
-      &status );
-  memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
-  
-  /* create the data segment vector and findchirp segment vector */
-  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
-        &chan, &spec, &resp, fcInitParams ), &status );
-  /* read the data channel time series from frames */
-
-  /* call the magic calibration function to get the calibration */
-  
-  /* read in the template bank from a text file */
-
-
-  /*
-   *
-   * pre-condition the data channel
-   *
-   */
-  
-
-  /* band pass the data to get rid of low frequency crap */
-
-  /* compute the median power spectrum for the data channel */
-
-
-  /*
-   *
-   * create the data structures needed for findchirp
-   *
-   */
-
-
-  /* create the findchirp data storage */
-  LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
-        fcInitParams ), &status );
-
-  /* initialize findchirp stationary phase routines */
-  LAL_CALL( LALFindChirpSPDataInit( &status, &fcDataParams, fcInitParams ), 
-      &status );
-  LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams, 
-        fcInitParams ), &status );
-
-  fcDataParams->invSpecTrunc = invSpecTrunc * sampleRate;
-  fcDataParams->fLow = fLow;
-  fcDataParams->dynRange = fcTmpltParams->dynRange = 
-    pow( 2.0, dynRangeExponent );
-  fcTmpltParams->fLow = fLow;
-
-  /* initialize findchirp filter functions */
-  LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
-      &status );
-  fcFilterParams->computeNegFreq = 0;
-
-  LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
-      &status );
-  LAL_CALL( LALFindChirpChisqVetoInit( &status, fcFilterParams->chisqParams, 
-        fcInitParams->numChisqBins, fcInitParams->numPoints ), 
-      &status );
-
-
-  /*
-   *
-   * findchirp engine
-   *
-   */
-  
-
-  /* sleepy bye-byes */
-  sleep( 2 );
-
-
-  /*
-   *
-   * free the structures used by findchirp
-   *
-   */
-
-  LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
-        fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
-      &status );
-  LAL_CALL( LALDestroyFindChirpInput( &status, &fcFilterInput ), 
-      &status );
-  LAL_CALL( LALFindChirpFilterFinalize( &status, &fcFilterParams ), 
-      &status );
-  LAL_CALL( LALFindChirpSPTemplateFinalize( &status, &fcTmpltParams ), 
-      &status );
-  LAL_CALL( LALFindChirpSPDataFinalize( &status, &fcDataParams ),
-      &status );
-  LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
-      &status );
-
-  LALFree( fcInitParams );
-  
-
-  /*
-   *
-   * free the data storage
-   *
-   */
-
-
-  LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec ), &status );
-  LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
-  LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
-  LAL_CALL( LALCDestroyVector( &status, &(resp.data) ), &status );
-
-
-  /*
-   *
-   * write the result results to disk
-   *
-   */
-
-
-  /* store the job end time in the process table */
-
-  /* open the output xml file */
-  memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, RESULT_FILE ), &status );
-
-  /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
-  LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-        &accuracy ), &status );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  LALFree( proctable.processTable );
-
-  /* write the process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    LALFree( this_proc_param );
-  }
-
-  /* write the inspiral events to the file */
-
-  /* close the output xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-
-  /* free the rest of the memory, check for memory leaks and exit */
-  LALFree( fqChanName );
-  LALFree( channelName );
-  LALCheckMemoryLeaks();
-  exit( 0 );
+  return 0;
 }
+
+#undef ADD_PROCESS_PARAM
