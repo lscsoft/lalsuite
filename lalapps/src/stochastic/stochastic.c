@@ -1433,16 +1433,16 @@ static void monte_carlo(LALStatus *status,
     REAL4TimeSeries *mc_two,
     REAL8 omega_ref,
     REAL8 f_ref,
-    REAL8 exponent,
-    REAL8 deltaF)
+    REAL8 exponent)
 {
   /* counter */
-  INT4 i;
+  UINT4 i;
 
   /* variables */
   INT4 length;
   struct timeval tv;
   INT4 duration;
+  REAL8 delta_f;
 
   /* structures for generating fake data */
   SSSimStochBGInput input;
@@ -1451,7 +1451,7 @@ static void monte_carlo(LALStatus *status,
   REAL4FrequencySeries *omega;
   COMPLEX8FrequencySeries *response_one;
   COMPLEX8FrequencySeries *response_two;
-  LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* get current time, used for seed */
   gettimeofday(&tv, NULL);
@@ -1462,31 +1462,30 @@ static void monte_carlo(LALStatus *status,
   /* get duration */
   duration = endTime - startTime;
 
-  /* allocate memory for monte carlo series, if required */
-  if (mc_one == NULL)
-  {
-    LAL_CALL(LALCreateREAL4TimeSeries(status, &mc_one, series_one->name, \
-          series_one->epoch, series_one->f0, series_one->deltaT, \
-          series_one->sampleUnits, series_one->data->length), status);
-  }
-  if (mc_two == NULL)
-  {
-    LAL_CALL(LALCreateREAL4TimeSeries(status, &mc_two, series_two->name, \
-          series_two->epoch, series_two->f0, series_two->deltaT, \
-          series_two->sampleUnits, series_two->data->length), status);
-  }
+  /* get delta_f */
+  delta_f = 1./(series_one->deltaT * series_one->data->length);
 
   /* generate spectrum */
   omega = omega_gw(status, exponent, f_ref, omega_ref, length, \
-      series_one->f0, deltaF);
+      series_one->f0, delta_f);
 
   /* generate response functions */
   response_one = generate_response(status, ifoOne, calCacheOne, \
-      series_one->epoch, fMin, deltaF, countPerAttoStrain, length, \
-      calibOffset, duration);
+      series_one->epoch, series_one->f0, delta_f, countPerStrain, \
+      length, calibOffset, duration);
   response_two = generate_response(status, ifoTwo, calCacheTwo, \
-      series_two->epoch, fMin, deltaF, countPerAttoStrain, length, \
-      calibOffset, duration);
+      series_two->epoch, series_two->f0, delta_f, countPerStrain, \
+      length, calibOffset, duration);
+
+  /* set dc to zero */
+  response_one->data->data[0].re = 0;
+  response_one->data->data[0].im = 0;
+  response_two->data->data[0].re = 0;
+  response_two->data->data[0].im = 0;
+
+  /* set nyquist to be real */
+  response_one->data->data[length - 1].im = 0;
+  response_two->data->data[length - 1].im = 0;
 
   /* set up input structure */
   input.omegaGW = omega;
@@ -1498,8 +1497,8 @@ static void monte_carlo(LALStatus *status,
   output.SSimStochBG2 = mc_two;
 
   /* set up parameter structure */
-  params.length = mc_one->data->length;
-  params.deltaT = mc_one->deltaT;
+  params.length = series_one->data->length;
+  params.deltaT = series_one->deltaT;
   params.seed = tv.tv_usec;
   params.detectorOne = lalCachedDetectors[siteOne];
   params.detectorTwo = lalCachedDetectors[siteTwo];
@@ -1516,6 +1515,10 @@ static void monte_carlo(LALStatus *status,
     mc_one->data->data[i] += series_one->data->data[i];
     mc_two->data->data[i] += series_two->data->data[i];
   }
+
+  /* correctly set epoch */
+  mc_one->epoch = series_one->epoch;
+  mc_two->epoch = series_two->epoch;
 
   /* cleanup */
   XLALDestroyREAL4FrequencySeries(omega);
