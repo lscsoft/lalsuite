@@ -199,8 +199,8 @@ int main(int argc, char *argv[]){
 
   /* open output file for writing */
   fpOut= fopen(uvar_fnameOut, "w");
-  setlinebuf(fpOut);  /* line buffered on */  
-
+  /*setlinebuf(fpOut);*/  /* line buffered on */  
+  setvbuf(fpOut, (char *)NULL, _IOLBF, 0);
 
   /*****************************************************************/
   /* read template file */
