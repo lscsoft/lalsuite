@@ -744,33 +744,6 @@ class ScienceSegment:
     """
     return cmp(self.start(),other.start())
 
-  def make_chunks_bad_play(self,length=0,overlap=0,play=0,sl=0):
-    """
-    Divides the science segment into chunks of length seconds overlapped by
-    overlap seconds. If the play option is set, only chunks that contain S2
-    playground data are generated. If the user has a more complicated way
-    of generating chunks, this method should be overriden in a sub-class.
-    Any data at the end of the ScienceSegment that is too short to contain a 
-    chunk is ignored. The length of this unused data is stored and can be
-    retrieved with the unused() method.
-    length = length of chunk in seconds.
-    overlap = overlap between chunks in seconds.
-    play = only generate chunks that overlap with S2 playground data.
-    sl = slide by sl seconds before determining playground data.
-    """
-    time_left = self.dur()
-    start = self.start()
-    increment = length - overlap
-    while time_left >= length:
-      middle = start + length / 2
-      end = start + length
-      if (not play) or ( play 
-       and ( s2play(start-sl) or s2play(middle-sl) or s2play(end-sl) ) ):
-        self.__chunks.append(AnalysisChunk(start,end))
-      start += increment
-      time_left -= increment
-    self.__unused = time_left - overlap
-
   def make_chunks(self,length=0,overlap=0,play=0,sl=0):
     """
     Divides the science segment into chunks of length seconds overlapped by
@@ -1114,6 +1087,38 @@ class ScienceData:
     # flush out the final segment (if any)
     if ostop >= 0:
       x = ScienceSegment(tuple([id,ostart,ostop,ostop-ostart]))
+      outlist.append(x)
+
+    self.__sci_segs = outlist
+    return len(self)
+
+
+  def invert(self):
+    """
+    Inverts the ScienceSegments in the class (i.e. set NOT).  Returns the
+    number of ScienceSegments after inversion.
+    """
+
+    # check for an empty list
+    if len(self) == 0:
+      # return a segment representing all time
+      self.__sci_segs = ScienceSegment(tuple(0,0,1999999999,1999999999))
+
+    # go through the list checking for validity as we go
+    outlist = []
+    ostart = 0
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      if start < 0 or stop < start or start < ostart:
+        raise SegmentError, "Invalid list"
+      if start > 0:
+        x = ScienceSegment(tuple([0,ostart,start,start-ostart]))
+        outlist.append(x)
+      ostart = stop
+
+    if ostart < 1999999999:
+      x = ScienceSegment(tuple([0,ostart,1999999999,1999999999-ostart]))
       outlist.append(x)
 
     self.__sci_segs = outlist
