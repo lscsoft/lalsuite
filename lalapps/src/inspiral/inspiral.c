@@ -412,7 +412,11 @@ int main( int argc, char *argv[] )
 
   if ( injectionFile )
   {
-    INT4 injSafety = 0; /* get injections within 10 mins of the segment */
+    /* get injections within 500 seconds of either end of the segment.   */
+    /* a 0.4,0.4 MACHO starting at 30.0 Hz has length 435.374683 seconds */
+    /* so this should be plenty of safety. better to waste cpu than miss */
+    /* injected signals...                                               */
+    INT4 injSafety = 500;
     int  numInjections = 0;
     SimInspiralTable    *injections = NULL;
     SimInspiralTable    *thisInj = NULL;
