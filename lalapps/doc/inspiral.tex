@@ -202,6 +202,7 @@ Duncan Brown
   --channel-name CHAN          read data from interferometer channel CHAN
 
   --injection-file FILE        inject simulated inspiral signals from FILE
+  --inject-overhead            inject signals directly overhead detector
 
   --bank-file FILE             read template bank parameters from FILE
   --minimal-match M            override bank minimal match with M (sets delta)
@@ -727,17 +728,24 @@ Patrick Brady, Duncan Brown and Steve Fairhurst
 \verb$lalapps_inspinj$ --- produces inspiral injection data files.
 
 \item[Synopsis]
-\verb$lalapps_inspinj$ 
-[\verb$--help$]
-\verb$--source-file$ \textsc{sfile}
-\verb$--mass-file$ \textsc{mfile}
-\verb$--gps-start-time$ \textsc{tstart} 
-\verb$--gps-end-time$ \textsc{tend} 
-[\verb$--time-step$ \textsc{tstep}]
-[\verb$--seed$ \textsc{seed}]
-[\verb$--waveform$ \textsc{wave}]
-[\verb$--usertag$ \textsc{tag}]
-[\verb$--ilwd$]
+\verb$lalapps_inspinj$ \quad
+%
+[\texttt{--help}]\quad
+\texttt{--source-file} \textsc{sfile} \quad
+\texttt{--mass-file} \textsc{mfile}\newline
+%
+[\texttt{--gps-start-time} \textsc{tstart}]\quad 
+[\texttt{--gps-end-time} \textsc{tend}]\newline
+%
+[\texttt{--time-step} \textsc{tstep}]
+[\texttt{--time-interval} \textsc{tinterval}]\newline
+%
+[\texttt{--seed} \textsc{seed}]\quad
+[\texttt{--waveform} \textsc{wave}]\quad
+[\texttt{--usertag} \textsc{tag}]\newline
+%
+[\texttt{--tama-output}]\quad
+[\texttt{--ilwd}]
 
 \item[Description] 
 \verb$lalapps_inspinj$
@@ -750,9 +758,10 @@ in  a  datafile.  The  possible  mass pairs for the binary neutron star com-
 panions are also specified in a (different) datafile.
 
 The output of this program  is  a  list  of  the  injected events,  starting
-at  the specified start time, ending at the specified end time, and containing
-one set  of  random inspiral parameters every specified time step.  The output
-is written to a file name in the standard inspiral pipeline format:
+at  the specified start time and ending at the specified end time.  One 
+injection with random inspiral parameters will be made every specified time
+step, and will be randomly placed within the specified time interval.  
+The output is written to a file name in the standard inspiral pipeline format:
 \begin{center}
 \begin{verbatim}
 HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
@@ -789,7 +798,15 @@ S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
 
 \item[\texttt{--time-step} \textsc{tstep}]
 Optional. Sets the time step interval between injections. The injections will
-occur at \textsc{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
+occur with an average spacing of \textsc{tstep} seconds. Defaults to 
+$2630/\pi$.
+
+\item[\texttt{--time-interval} \textsc{tinterval}]
+Optional. Sets the time interval during which an injection can occur. 
+Injections are uniformly distributed over the interval.  Setting \textsc{tstep}
+to $6370$ and \textsc{tinterval} to 600 guarantees there will be one injection
+into each playground segment and they will be randomly distributed within the
+playground times.
 
 \item[\texttt{--seed} \textsc{seed}]
 Optional. Seed the random number generator with the integer \textsc{seed}.
@@ -804,6 +821,34 @@ data. Defaults is \texttt{GeneratePPNtwoPN}.
 \item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
 job to be \textsc{string}. May also be specified on the command line as 
 \texttt{-userTag} for LIGO database compatibility.
+
+\item[\texttt{--tama-output}]
+Optional.  If this option is given, \verb+lalapps_inspinj+ also produces a 
+text output file:
+\begin{center}
+\begin{verbatim}
+HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.txt
+\end{verbatim}
+\end{center}
+which contains the following fields:
+
+\begin{itemize}
+\item geocentric end time
+\item Hanford end time
+\item Livingston end time
+\item Tama end time
+\item total mass, $M_{\mathrm{TOT}}$
+\item mass ratio, $\eta$
+\item distance to source (in Mpc)
+\item longitude
+\item latitude
+\item inclination
+\item coalescence phase
+\item polarization
+\end{itemize}
+
+In the above, all times are recorded as double precision real numbers and all
+angles are in radians.  
 
 \item[\texttt{--ilwd}] Optional. If this option is given,
 \verb+lalapps_inspinj+ also produces two ILWD-format files, injepochs.ilwd and
