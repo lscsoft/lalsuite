@@ -1,7 +1,7 @@
 dnl acinclude.m4
 dnl $Id$
 
-AC_DEFUN(LALAPPS_WITH_EXTRA_CPPFLAGS,
+AC_DEFUN([LALAPPS_WITH_EXTRA_CPPFLAGS],
 [AC_ARG_WITH(
 	extra_cppflags, 
         [  --with-extra-cppflags=CPPFLAGS  additional C preprocessor flags],
@@ -12,7 +12,7 @@ AC_DEFUN(LALAPPS_WITH_EXTRA_CPPFLAGS,
 	],)
 ])
 
-AC_DEFUN(LALAPPS_WITH_EXTRA_CFLAGS,
+AC_DEFUN([LALAPPS_WITH_EXTRA_CFLAGS],
 [AC_ARG_WITH(
 	extra_cflags, 
         [  --with-extra-cflags=CFLAGS  additional C compiler flags],
@@ -23,7 +23,7 @@ AC_DEFUN(LALAPPS_WITH_EXTRA_CFLAGS,
 	],)
 ])
 
-AC_DEFUN(LALAPPS_WITH_EXTRA_LDFLAGS,
+AC_DEFUN([LALAPPS_WITH_EXTRA_LDFLAGS],
 [AC_ARG_WITH(
 	extra_ldflags, 
         [  --with-extra-ldflags=LDFLAGS  additional linker flags],
@@ -34,7 +34,7 @@ AC_DEFUN(LALAPPS_WITH_EXTRA_LDFLAGS,
 	],)
 ])
 
-AC_DEFUN(LALAPPS_WITH_EXTRA_LIBS,
+AC_DEFUN([LALAPPS_WITH_EXTRA_LIBS],
 [AC_ARG_WITH(
 	extra_libs, 
         [  --with-extra-libs=LIBS  additional -l and -L linker flags],
@@ -45,7 +45,7 @@ AC_DEFUN(LALAPPS_WITH_EXTRA_LIBS,
 	],)
 ])
 
-AC_DEFUN(LALAPPS_WITH_CC,
+AC_DEFUN([LALAPPS_WITH_CC],
 [AC_ARG_WITH(
         cc, 
         [  --with-cc=CC            use the CC C compiler],
@@ -56,7 +56,7 @@ AC_DEFUN(LALAPPS_WITH_CC,
         ],)
 ])
 
-AC_DEFUN(LALAPPS_ENABLE_CONDOR,
+AC_DEFUN([LALAPPS_ENABLE_CONDOR],
 [AC_ARG_ENABLE(
 	condor,
 	[  --enable-condor         compile for use with condor [default=no] ],
@@ -68,7 +68,7 @@ AC_DEFUN(LALAPPS_ENABLE_CONDOR,
         ], [ condor=false ] )
 ])
 
-AC_DEFUN(LALAPPS_ENABLE_FRAME,
+AC_DEFUN([LALAPPS_ENABLE_FRAME],
 [AC_ARG_ENABLE(
         frame,
         [  --enable-frame          compile code that requires Frame library [default=yes] ],
@@ -80,7 +80,7 @@ AC_DEFUN(LALAPPS_ENABLE_FRAME,
         ], [ frame=true ] )
 ])
 
-AC_DEFUN(LALAPPS_ENABLE_DATAFLOW,
+AC_DEFUN([LALAPPS_ENABLE_DATAFLOW],
 [AC_ARG_ENABLE(
         dataflow,
         [  --enable-dataflow       compile code that requires metaio/dataflow library [default=no] ],
@@ -103,7 +103,7 @@ AC_ARG_ENABLE(
 ])
 
 
-AC_DEFUN(LALAPPS_DISABLE_FRAME,
+AC_DEFUN([LALAPPS_DISABLE_FRAME],
 [echo "**************************************************************"
  echo "*                                                            *"
  echo "* Frame support will be DISABLED:                            *"
