@@ -404,17 +404,17 @@ void LALPtoleMetric( LALStatus *status,
 
   /* orbital t^2 cos */
 
-  I[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o,3);
+  I[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
 
   /* spin t^2 cos */
-  I[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s,3);
+  I[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
 
   /* orbital t^2 sin */
-  I[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o,3);
+  I[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
 
   /*spin t^2 sin */
 
-  I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s,3);
+  I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
 
   /* The 4-dim metric components: */
   /* g_pp = */
@@ -472,10 +472,10 @@ void LALPtoleMetric( LALStatus *status,
       pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = 2*pow(LAL_PI*f/T,2)*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
+    big_metric->data[12] = 2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
     
     /* g_d1 = */
-    big_metric->data[13] = 2*pow(LAL_PI*f/T,2)*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
+    big_metric->data[13] = 2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
     
     /* g_11 = */
     big_metric->data[14] = pow(LAL_PI*f*T,2)/5;
