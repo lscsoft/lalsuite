@@ -2849,44 +2849,41 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 
 
 
-#if 0
-
-#define LUT_RES 64	/* lookup-table resolution */
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
 { 
-  UINT4 i, alpha, k;
+
+  INT4 alpha,i;                 /* loop indices */
   REAL8	*xSum=NULL, *ySum=NULL;	/* temp variables for computation of fs*as and fs*bs */
   INT4 s;		        /* local variable for spinDwn calcs. */
   REAL8	xTemp;	                /* temp variable for phase model */
   REAL8	deltaF;	                /* width of SFT band */
+  INT4	k, k1;	                /* defining the sum over which is calculated */
   REAL8 *skyConst;	        /* vector of sky constants data */
   REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
   INT4	spOrder;	        /* maximum spinDwn order */
+  REAL8	x;		        /* local variable for holding x */
   REAL8	realXP, imagXP; 	/* temp variables used in computation of */
+  REAL8	realP, imagP;	        /* real and imaginary parts of P, see CVS */
   INT4	nDeltaF;	        /* number of frequency bins per SFT band */
+  INT4	sftIndex;	        /* more temp variables */
   REAL8	y;		        /* local variable for holding y */
   REAL8 realQ, imagQ;
+  REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
+  INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
   INT4 *tempInt1;
+  INT4 index;
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
+
   REAL8 f;
 
-  REAL8 A = params->amcoe->A;
-  REAL8 B = params->amcoe->B;
-  REAL8 C = params->amcoe->C;
-  REAL8 D = params->amcoe->D;
-  UINT4 M = params->SFTno;
-  /* SW no point in making it re-calculate the limit each iteration */
-  UINT4 klim = 2 * params->Dterms;
+  REAL8 A=params->amcoe->A,B=params->amcoe->B,C=params->amcoe->C,D=params->amcoe->D;
+  INT4 M=params->SFTno;
 
-  static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];  /*LUT values computed by the routine do_trig_lut*/
-  static BOOLEAN firstCall = 1;
-
-  
   INITSTATUS( status, "LALDemod", rcsid );
 
   /* catch some obvious programming errors */
@@ -2897,42 +2894,37 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     }
 
   /* variable redefinitions for code readability */
-  spOrder = params->spinDwnOrder;
-  spinDwn = params->spinDwn;
-  skyConst = params->skyConst;
-  deltaF = (*input)->fft->deltaF;
-  nDeltaF = (*input)->fft->data->length;
+  spOrder=params->spinDwnOrder;
+  spinDwn=params->spinDwn;
+  skyConst=params->skyConst;
+  deltaF=(*input)->fft->deltaF;
+  nDeltaF=(*input)->fft->data->length;
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  if ( firstCall )
-    {
-      for (k=0; k <= LUT_RES; k++)
-	{
-	  sinVal[k] = sin( LAL_TWOPI * k /LUT_RES);
-	  cosVal[k] = cos( LAL_TWOPI * k /LUT_RES);
-	} /* for k < LUT_RES */
-      firstCall = 0;
-    } /* if first call */
-  
+   res=64;
+   sinVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8));
+   cosVal=(REAL8 *)LALMalloc((res+1)*sizeof(REAL8)); 
+   for (k=0; k<=res; k++){
+     sinVal[k]=sin((LAL_TWOPI*k)/res);
+     cosVal[k]=cos((LAL_TWOPI*k)/res);
+   }
+
   /* this loop computes the values of the phase model */
-  xSum = (REAL8 *)LALMalloc( M * sizeof(REAL8) );
-  ySum = (REAL8 *)LALMalloc( M * sizeof(REAL8) );
-  tempInt1 = (INT4*) LALMalloc( M *sizeof(INT4));
-  for(alpha = 0; alpha < M; alpha++)
-    {
-      tempInt1[ alpha ] = 2 * alpha * (spOrder+1) + 1;
-      xSum[alpha] = 0.0;
-      ySum[alpha] = 0.0;
-      for(s=0; s < spOrder; s++) 
-	{
-	  xSum[alpha] += spinDwn[s] * skyConst[ tempInt1[alpha] + 2 + 2*s]; 	
-	  ySum[alpha] += spinDwn[s] * skyConst[ tempInt1[alpha] + 1 + 2*s];
-	} /* for s < spOrder */
-    } /* for alpha < M */
+  xSum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
+  ySum=(REAL8 *)LALMalloc(params->SFTno*sizeof(REAL8));
+  tempInt1=(INT4 *)LALMalloc(params->SFTno*sizeof(INT4));
+  for(alpha=0;alpha<params->SFTno;alpha++){
+    tempInt1[alpha]=2*alpha*(spOrder+1)+1;
+    xSum[alpha]=0.0;
+    ySum[alpha]=0.0;
+    for(s=0; s<spOrder;s++) {
+      xSum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+2+2*s]; 	
+      ySum[alpha] += spinDwn[s] * skyConst[tempInt1[alpha]+1+2*s];
+    }
+  }
 
 
-  f = params->f0;
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< params->imax  ; i++ )
   {
@@ -2941,87 +2933,81 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     Fb.re =0.0;
     Fb.im =0.0;
 
+    f=params->f0+i*params->df;
+
     /* Loop over SFTs that contribute to F-stat for a given frequency */
-    for(alpha = 0; alpha < M; alpha++)
+    for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tsin, tcos, tempFreq0, tempFreq1;
-	COMPLEX8 *Xalpha = input[alpha]->fft->data->data;
+	REAL8 tsin, tcos, tempFreq;
+	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
 	REAL4 a = params->amcoe->a->data[alpha];
 	REAL4 b = params->amcoe->b->data[alpha];
-	UINT4 index;
-	UINT4 sftIndex;	        /* more temp variables */
 
-	xTemp = f * skyConst[tempInt1[alpha]] + xSum[alpha];
+	xTemp=f*skyConst[tempInt1[alpha]]+xSum[alpha];
 
 	realXP=0.0;
 	imagXP=0.0;
 	      
 	/* find correct index into LUT -- pick closest point */
-	tempFreq0 = xTemp - (INT4)xTemp;
-	index = (UINT4)(tempFreq0 * LUT_RES + 0.5);
+	tempFreq=xTemp-(INT4)xTemp;
+	index=(INT4)(tempFreq*res+0.5);
+	      
 	{
-	  REAL8 d = LAL_TWOPI * (tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
-	  REAL8 d2 = 0.5 * d * d;
-	  REAL8 ts = sinVal[index];
-	  REAL8 tc = cosVal[index];
+	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/(REAL8)res);
+	  REAL8 d2=0.5*d*d;
+	  REAL8 ts=sinVal[index];
+	  REAL8 tc=cosVal[index];
 		
-	  tsin = ts + d*tc - d2*ts;
-	  tcos = tc - d*ts - d2*tc - 1.0;
+	  tsin=ts+d*tc-d2*ts;
+	  tcos=tc-d*ts-d2*tc-1.0;
 	}
 		     
-	tempFreq1 = LAL_TWOPI * (tempFreq0 + params->Dterms - 1);
-
-	/* SW pull dereference and calculation out of loop */
-        sftIndex = (UINT4)(xTemp) - params->Dterms + 1 - params->ifmin;
-
-	/* SW only REAL4 arithmetic in this loop */
-	REAL4 tempFreq4 = tempFreq1;
-
-	COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
+	k1=(INT4)xTemp-params->Dterms+1;
 	/* Loop over terms in dirichlet Kernel */
-        for( k = 0; k < klim; k++ )
-          { 
-	    /* SW these ought to be local variables */
-	    /* Data seems to be stored as 4-byte floats.  So make all floats 4-bytes */
-	    /* SW really mustn't be dividing TWICE */
-            REAL4 x = 1.0f / ( tempFreq4 - (REAL4)LAL_TWOPI * (REAL4)k );
-            REAL4 realP = tsin * x;
-            REAL4 imagP = tcos * x;
-	    REAL4 re, im;
-            /* these four lines compute P*xtilde */
+	for(k=0;k<2*params->Dterms;k++)
+	  {
+	    COMPLEX8 Xalpha_k;
+	    x=tempFreq-LAL_TWOPI*(REAL8)k;
+	    realP=tsin/x;
+	    imagP=tcos/x;
 
-	    re = Xalpha_k->re;
-	    im = Xalpha_k->im;
+	    /* If x is small we need correct x->0 limit of Dirichlet kernel */
+	    if(fabs(x) < SMALL) 
+	      {
+		realP=1.0;
+		imagP=0.0;
+	      }	 
+ 
+	    sftIndex=k1+k-params->ifmin;
 
-	    realXP += re * realP;
-	    realXP -= im * imagP;
-	    imagXP += re * imagP;
-	    imagXP += im * realP;
-
-	    /* SW replacement for dereference */
-            Xalpha_k ++;
-
-	  } /* for k < klim */
-
-	y = -LAL_TWOPI * ( f * skyConst[ tempInt1[alpha] -1 ] + ySum[alpha]);
+	    /* these four lines compute P*xtilde */
+	    Xalpha_k=Xalpha[sftIndex];
+	    realXP += Xalpha_k.re*realP;
+	    realXP -= Xalpha_k.im*imagP;
+	    imagXP += Xalpha_k.re*imagP;
+	    imagXP += Xalpha_k.im*realP;
+	  }
+      
+	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
 
 	realQ = cos(y);
 	imagQ = sin(y);
 
 	/* implementation of amplitude demodulation */
 	{
-	  REAL8 realQXP = realXP * realQ - imagXP * imagQ;
-	  REAL8 imagQXP = realXP * imagQ + imagXP * realQ;
-	  Fa.re += a * realQXP;
-	  Fa.im += a * imagQXP;
-	  Fb.re += b * realQXP;
-	  Fb.im += b * imagQXP;
+	  REAL8 realQXP = realXP*realQ-imagXP*imagQ;
+	  REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
+	  Fa.re += a*realQXP;
+	  Fa.im += a*imagQXP;
+	  Fb.re += b*realQXP;
+	  Fb.im += b*imagQXP;
 	}
-      } /* for alpha < SFTno */
+    }      
 
-    FaSq = Fa.re * Fa.re + Fa.im * Fa.im;
-    FbSq = Fb.re * Fb.re + Fb.im * Fb.im;
-    FaFb = Fa.re * Fb.re + Fa.im * Fb.im;
+    FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
+    FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
+    FaFb = Fa.re*Fb.re+Fa.im*Fb.im;
 	  	  	
     Fstat->F[i] = (4.0/(M*D))*(B*FaSq + A*FbSq - 2.0*C*FaFb);
     if (params->returnFaFb)
@@ -3030,21 +3016,23 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	Fstat->Fb[i] = Fb;
       }
 
-    f += params->df;
 
-  } /* for i < imax */
-
+  }
   /* Clean up */
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
   
+  LALFree(sinVal);
+  LALFree(cosVal);
+
   RETURN( status );
 
-} /* TestLALDemod() */
-#endif
+} /* LALDemod() */
 
 
+
+#if 0
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
@@ -3250,3 +3238,4 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 
 } /* LALDemod() */
 
+#endif
