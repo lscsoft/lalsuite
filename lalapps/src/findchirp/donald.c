@@ -272,6 +272,15 @@ int main(int argc, char **argv)
                 return RESPONSEC_EARG;
             }
         }
+        else if ( !strcmp( argv[arg], "--delm" ) ) {
+            if ( argc > arg + 1 ) {
+                arg++;
+                delm = atof(argv[arg++]);
+            }else{
+                fprintf(stderr,  USAGE, *argv );
+                return RESPONSEC_EARG;
+            }
+        }
         /* Check for unrecognized options. */
         else if ( argv[arg][0] == '-' ) {
             fprintf(stderr,  USAGE, *argv );
