@@ -92,9 +92,12 @@ The FFTW~\cite{fj:1998} is used.
 \begin{enumerate}
 \item The sign convention used here agrees with the definition in
 \textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
-by FFTW~\cite{fj:1998}.
+by FFTW~\cite{fj:1998}.  It is also the opposite of that used by the
+\texttt{datacondAPI}.  To convert, use the relation:
+\verb+H_LAL[k] = H_datacond[n-k]+ (for $0<\verb+k+\le\verb+n/2+$).
 \item The result of the inverse FFT must be multiplied by $1/n$ to recover the
-original vector.
+original vector.  This is different from the convension used in the
+\texttt{datacondAPI} where the factor is applied by default.
 \item The size $n$ of the transform can be any positive integer; the
 performance is $O(n\log n)$.  However, better performance is obtained if $n$
 is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or

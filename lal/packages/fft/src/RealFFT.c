@@ -151,10 +151,14 @@ The FFTW~\cite{fj:1998} is used.
 \begin{enumerate}
 \item The sign convention used here agrees with the definition in
 \textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
-by FFTW~\cite{fj:1998}.
+by FFTW~\cite{fj:1998}.  It is also the opposite of that used by the
+\texttt{datacondAPI}.  To convert, use the relation:
+\verb+H_LAL[k].im = -H_datacondAPI[k].im+.
 \item The result of the inverse FFT must be multiplied by $1/n$ to recover the
 original vector.  This is unlike the \textit{Numerical
 Recipes}~\cite{ptvf:1992} convension where the factor is $2/n$ for real FFTs.
+This is also different from the \texttt{datacondAPI} where the normalization
+constant is applied by default.
 \item The size $n$ of the transform can be any positive integer; the
 performance is $O(n\log n)$.  However, better performance is obtained if $n$
 is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or
