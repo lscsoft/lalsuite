@@ -4,6 +4,8 @@
 
 /* $Id$ */
 
+extern char *tzname[2];
+
 INT4 lalDebugLevel = 2;
 
 NRCSID (TESTUTOGPSC, "$Id$");
