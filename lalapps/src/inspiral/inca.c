@@ -69,6 +69,7 @@ RCSID("$Id$");
 "  --ifo-b IFOB              name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
 "  --single-ifo              input triggers from only one IFO\n"\
+"  --single-summ-value       only write the first summ_value table found\n"\
 "  --triggered-bank FILE     write a triggered bank insted of doing inca\n"\
 "  --minimal-match M         set minimal match of triggered bank to M\n"\
 "\n"\
@@ -141,6 +142,7 @@ int main( int argc, char *argv[] )
   REAL4 minMatch = -1;
   INT4  useRangeCut = 0;
   INT4  singleIfo = 0;
+  INT4  singleSummValue = 0;
   REAL4 ifob_snrthresh = IFOB_SNRTHRESH;
   REAL4 d_range[MAXIFO];
 
@@ -176,6 +178,7 @@ int main( int argc, char *argv[] )
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
     {"ifo-b-range-cut",         no_argument,       &useRangeCut,      1 },
     {"single-ifo",              no_argument,       &singleIfo,        1 },
+    {"single-summ-value",       no_argument,       &singleSummValue,  1 },
     {"no-playground",           no_argument,       0,                'Q'},
     {"playground-only",         no_argument,       0,                'R'},
     {"all-data",                no_argument,       0,                'D'},
@@ -1621,9 +1624,20 @@ cleanexit:
     /* write the summ_value table for ifoName[j] */
     if ( inspEffRange[j] )
     {
+      SummValueTable tmpSummValueTable;
+      if ( singleSummValue )
+      {
+        memcpy( &tmpSummValueTable, inspEffRange[j], sizeof(SummValueTable) );
+        tmpSummValueTable.next = NULL;
+        summValueTable.summValueTable = &tmpSummValueTable;
+      }
+      else
+      {
+        summValueTable.summValueTable = inspEffRange[j];
+      }
+
       LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
             summ_value_table), &status );
-      summValueTable.summValueTable = inspEffRange[j];
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
             summ_value_table), &status );
       LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
