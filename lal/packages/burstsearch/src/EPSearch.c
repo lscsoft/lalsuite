@@ -133,7 +133,7 @@ static void ComputeAverageSpectrum(
  * Convert a linked list of tiles to a linked list of burst events.
  */
 
-static void TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 numevents;
 
@@ -148,6 +148,8 @@ static void TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTa
 
 		event = &(*event)->next;
 	}
+
+	return(event);
 }
 
 
@@ -185,14 +187,10 @@ EPSearch (
     CHECKSTATUSPTR(status);
     ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
     CHECKSTATUSPTR(status);
-    if ( params->printSpectrum == TRUE )
-    { 
-        FILE *fp;
-        fp = fopen("average_spectrum.dat","w");
-        for (j=0 ; j<(INT4)AverageSpec->data->length ; j++)
-        {
+    if(params->printSpectrum) { 
+        FILE *fp = fopen("average_spectrum.dat","w");
+        for(j = 0; j < (INT4)AverageSpec->data->length; j++)
             fprintf(fp, "%f\t%g\n", j*AverageSpec->deltaF, AverageSpec->data->data[j]);
-        }    
         fclose(fp);
     }
 
@@ -207,8 +205,7 @@ EPSearch (
     CHECKSTATUSPTR(status);
 
     /* loop over data applying excess power method */
-    for(start_sample = 0; start_sample <= tseries->data->length - 2 * params->windowLength; start_sample += params->windowShift)
-    {
+    for(start_sample = 0; start_sample + 2 * params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
       /* extract two windowLengths from the time series */
       LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, 2 * params->windowLength);
       CHECKSTATUSPTR(status);
@@ -224,8 +221,7 @@ EPSearch (
       CHECKSTATUSPTR(status);
 
       /* normalize the spectrum so that rms of Re or Im is 1 */
-      for (j=0 ; j<(INT4)fseries->data->length ; j++)
-      {
+      for(j=0 ; j<(INT4)fseries->data->length ; j++) {
         REAL4 tmpVar;
         tmpVar = sqrt( 2.0 / AverageSpec->data->data[j] );
         fseries->data->data[j].re *= tmpVar;
@@ -233,16 +229,10 @@ EPSearch (
       }
 
       /* write diagnostic info to disk */
-      if ( params->printSpectrum == TRUE )
-      { 
-        FILE *fp;
-        fp = fopen("frequency_series.dat","w");
-        for (j=0 ; j<(INT4)fseries->data->length ; j++)
-        {
-          fprintf(fp, "%f\t%g\n", j*fseries->deltaF, 
-              sqrt(fseries->data->data[j].re * fseries->data->data[j].re
-                + fseries->data->data[j].im * fseries->data->data[j].im));
-        }    
+      if(params->printSpectrum) { 
+        FILE *fp = fopen("frequency_series.dat","w");
+        for(j = 0; j < (INT4)fseries->data->length; j++)
+          fprintf(fp, "%f\t%g\n", j*fseries->deltaF, sqrt(fseries->data->data[j].re * fseries->data->data[j].re + fseries->data->data[j].im * fseries->data->data[j].im));
         fclose(fp);
       }
 
@@ -283,9 +273,7 @@ EPSearch (
       CHECKSTATUSPTR(status);
 
       /* convert the TFTiles into sngl_burst events for output */
-      TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
-      while(*EventAddPoint)
-        EventAddPoint = &(*EventAddPoint)->next;
+      EventAddPoint = TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
       /* reset the flags on the tftiles */
       tfTiling->planesComputed=FALSE;
@@ -293,19 +281,16 @@ EPSearch (
       tfTiling->tilesSorted=FALSE;
     }
 
-    nevents = 0;
-    dumevents = 1;
-    j = 0;
     /* cluster the events if requested */
     if(params->cluster && *burstEvent) {
-      while((dumevents != nevents) && j < 500) {
-        dumevents = nevents;
+      j = nevents = 0;
+      do {
         LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
         CHECKSTATUSPTR(status);
+        dumevents = nevents;
         LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
         CHECKSTATUSPTR(status);
-        j++;
-      }
+      } while((dumevents != nevents) && (++j < 500));
     }
 
     /* memory clean-up */
@@ -614,8 +599,9 @@ EPFinalizeSearch (
 	ATTATCHSTATUSPTR (status);
 
 	if(params && *params) {
-		LALFree((*params)->tfTilingInput);
 		LALFree((*params)->channelName);
+		LALFree((*params)->compEPInput);
+		LALFree((*params)->tfTilingInput);
 		LALFree(*params);
 		*params = NULL;
 	}

@@ -62,8 +62,8 @@ static size_t min(size_t a, size_t b)
 
 /* Parameters from command line */
 static struct {
-	LIGOTimeGPS startEpoch;
-	LIGOTimeGPS stopEpoch;
+	LIGOTimeGPS startEpoch;     /* gps start time                      */
+	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	size_t psdAverageLength;    /* number of samples to use for PSD    */
 } options;
@@ -87,8 +87,6 @@ REAL4 noiseAmpl;                    /* gain factor for white noise         */
 INT4 seed;                          /* set non-zero to generate noise      */
 INT4 totalNumPoints;                /* total number of points to analyze   */
 UINT4 totalNumSegs;                 /* total number of segments to analyze */
-LIGOTimeGPS startEpoch;             /* gps start time                      */
-LIGOTimeGPS stopEpoch;              /* gps stop time                       */
 INT4 frameSampleRate;               /* sample rate of the frame data       */
 INT4 targetSampleRate;              /* sample rate after resampling        */
 
@@ -136,10 +134,27 @@ static void makeWhiteNoise(
 }
 
 
+/*
+ * round a psd length down to a value that is commensurate with the window
+ * length and window shift.
+ */
+
+static size_t window_commensurate(size_t psdlength, size_t windowlength, size_t windowshift)
+{
+	if(psdlength < windowlength)
+		return(0);
+	return(((psdlength - windowlength) / windowshift) * windowshift + windowlength);
+}
+
+
+/*
+ * Entry point
+ */
+
 int main( int argc, char *argv[])
 {
-    static LALStatus      stat;
-    LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+    LALStatus               stat;
+    LALLeapSecAccuracy      accuracy = LALLEAPSEC_LOOSE;
 
     EPSearchParams         *params = NULL;
     FrStream               *stream = NULL;
@@ -152,7 +167,7 @@ int main( int argc, char *argv[])
     LALTimeInterval         tmpInterval;
     REAL8                   tmpOffset = 0.0;
     REAL4                   minFreq = 0.0;    
-    int                     start_sample;
+    size_t                  start_sample;
     int                     usedNumPoints;
     INT4                    numPoints;  /* number of samples from frames */
 
@@ -184,6 +199,8 @@ int main( int argc, char *argv[])
     /*******************************************************************
      * INITIALIZE EVERYTHING                                            *
      *******************************************************************/
+
+    memset(&stat, 0, sizeof(stat));
 
     /* create the process and process params tables */
     procTable.processTable = (ProcessTable *) 
@@ -223,7 +240,7 @@ int main( int argc, char *argv[])
     minFreq = params->tfTilingInput->flow;
 
     /* set the temporary time variable indicating start of chunk */
-    tmpEpoch = startEpoch;
+    tmpEpoch = options.startEpoch;
 
     /******************************************************************
      * OUTER LOOP over data small enough to fit into memory 
@@ -527,77 +544,65 @@ int main( int argc, char *argv[])
         }
       }
 
-      /*******************************************************************
-       * DO THE SEARCH                                                    *
-       *******************************************************************/
-      if (verbose)
-	fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
+		/***********************************************
+		 * DO THE SEARCH                               *
+		 ***********************************************/
 
-      /* first check if the psdAverageLength of data are available or not?  If
-       * not, then set the psdAverageLength to be equal to the length of data
-       * available 
-       */
+		if (verbose)
+			fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
 
-      if(options.psdAverageLength > series.data->length)
-	      options.psdAverageLength = series.data->length;
+		/* FIXME: this case should be handled in a way that doesn't cause us to omit data */
+		if(options.psdAverageLength > series.data->length)
+			options.psdAverageLength = window_commensurate(series.data->length, params->windowLength, params->windowShift);
 
-      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->windowShift); start_sample += options.psdAverageLength - 3 * params->windowShift) {
-        REAL4TimeSeries *interval;
+		for(start_sample = 0; start_sample + (params->windowLength - params->windowShift) < series.data->length; start_sample += options.psdAverageLength - (params->windowLength - params->windowShift)) {
+			REAL4TimeSeries *interval;
 
-	/* if the no. of points left is less than the psdAverageLength then
-	 * move the epoch back so that it can cut out psdAvaregeLength of data 
-	 */
+			if(start_sample + options.psdAverageLength > series.data->length)
+				start_sample = series.data->length - options.psdAverageLength;
 
-	if(series.data->length - start_sample < options.psdAverageLength)
-	  start_sample = series.data->length - options.psdAverageLength;
+			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.psdAverageLength), &stat);
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.psdAverageLength), &stat);
-	
-        if (verbose)
-          fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
+			if(verbose)
+				fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
 
-        LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
+			LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
+			while(*EventAddPoint)
+				EventAddPoint = &(*EventAddPoint)->next;
 
-        while(*EventAddPoint)
-          EventAddPoint = &(*EventAddPoint)->next;
-
-        LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
-      } 
-
+			LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
+		}
  
-      /* compute the start time for the next chunk */
-      tmpOffset = (REAL8)(numPoints - 2 * (params->windowShift * (frameSampleRate/targetSampleRate)))/((REAL8)frameSampleRate);
-      LAL_CALL( LALFloatToInterval(&stat, &tmpInterval, 
-            &tmpOffset), &stat );
-      LAL_CALL( LALIncrementGPS(&stat, &(tmpEpoch), &(tmpEpoch), 
-            &tmpInterval), &stat );
 
-     /* clean up memory from that run */
-      LAL_CALL(LALSDestroyVector(&stat, &(series.data)), &stat);
-      if(calCacheFile)
-        LAL_CALL(LALCDestroyVector(&stat, &(resp.data)), &stat);
-    } 
-    /*******************************************************************
-     * outer-most loop ends here
-     *******************************************************************/
+		/* compute the start time for the next chunk */
+		tmpOffset = (numPoints - 2.0 * params->windowShift * frameSampleRate / targetSampleRate) / (REAL8) frameSampleRate;
+		LAL_CALL(LALFloatToInterval(&stat, &tmpInterval, &tmpOffset), &stat);
+		LAL_CALL(LALIncrementGPS(&stat, &tmpEpoch, &tmpEpoch, &tmpInterval), &stat);
 
-    if(cachefile)
-	    LALFree(cachefile); 
-    if(dirname)
-	    LALFree(dirname); 
-    if(mdcparams) {
-	    if(mdcparams->channelName)
-		    LALFree(mdcparams->channelName);
-	    LALFree(mdcparams);
-    }
+		/* clean up memory from that run */
+		LAL_CALL(LALSDestroyVector(&stat, &series.data), &stat);
+		if(calCacheFile)
+			LAL_CALL(LALCDestroyVector(&stat, &resp.data), &stat);
+	}
+	/*******************************************************************
+	 * outer-most loop ends here
+	 *******************************************************************/
+
+	LALFree(cachefile); 
+	LALFree(calCacheFile);
+	LALFree(dirname); 
+	if(mdcparams) {
+		LALFree(mdcparams->channelName);
+		LALFree(mdcparams);
+	}
 
     /*******************************************************************
     * OUTPUT THE RESULTS 
     *******************************************************************/
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     snprintf( fname, sizeof(fname), "%s-%s-POWER-%d-%d.xml",
-            ifo, comment, startEpoch.gpsSeconds, 
-            stopEpoch.gpsSeconds-startEpoch.gpsSeconds);
+            ifo, comment, options.startEpoch.gpsSeconds, 
+            options.stopEpoch.gpsSeconds-options.startEpoch.gpsSeconds);
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, fname), &stat);
 
 
@@ -751,12 +756,12 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'K':
-			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &stopEpoch), stat);
+			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &options.stopEpoch), stat);
 			arg_is_missing = !gpstmp;
 			break;
 
 			case 'M':
-			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &startEpoch), stat);
+			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &options.startEpoch), stat);
 			arg_is_missing = !gpstmp;
 			break;
 
@@ -1287,9 +1292,9 @@ void initializeEPSearch(
 	 * total number of samples to analyze.
 	 */
 
-	LAL_CALL(LALINT8toGPS(&stat, &startEpoch, &gpsStartTimeNS), &stat);
-	LAL_CALL(LALINT8toGPS(&stat, &stopEpoch, &gpsStopTimeNS), &stat);
-	totalNumPoints = DeltaGPStoINT8(&stat, &stopEpoch, &startEpoch) * frameSampleRate / 1000000000L;
+	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
+	LAL_CALL(LALINT8toGPS(&stat, &options.stopEpoch, &gpsStopTimeNS), &stat);
+	totalNumPoints = DeltaGPStoINT8(&stat, &options.stopEpoch, &options.startEpoch) * frameSampleRate / 1000000000L;
 
 	/*
 	 * Convert the amount of available RAM to a limit on the length of a
@@ -1306,11 +1311,11 @@ void initializeEPSearch(
 		exit(1);
 
 	/*
-	 * Ensure the psdAverageLength is comensurate with the analysis window
+	 * Ensure psdAverageLength is comensurate with the analysis window
 	 * length and shift.
 	 */
 
-	options.psdAverageLength = ((options.psdAverageLength - (*params)->windowLength) / (*params)->windowShift) * (*params)->windowShift + (*params)->windowLength;
+	options.psdAverageLength = window_commensurate(options.psdAverageLength, (*params)->windowLength, (*params)->windowShift);
 
 	/*
 	 * Miscellaneous chores.
