@@ -31,7 +31,7 @@ LALInspiralWaveCorrelate();
 </lalLaTeX>  */
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALOVERLAPWAVEOVERLAPC, "$Id$");
+NRCSID (LALINSPIRALWAVEOVERLAPC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveOverlapCP"> */
 void
