@@ -266,6 +266,8 @@ if do_datafind:
     
 # now find coincidences between the two inspiral jobs
 for i in range(len(data)):
+  if not len(data[i]):
+    continue
   for j in range(len(data[i])):
     chunk = data[i][j]
     inca = inspiral.IncaNode(inca_job)
