@@ -745,6 +745,12 @@ reference time.
 the last GPS second.
 \end{description}
 
+The macro \verb@LIGOTIMEGPSINITIALIZER@ can be used to statically
+initialize a \verb@LIGOTimeGPS@ object, for example:
+\begin{quote}
+\verb@LIGOTimeGPS epoch = LIGOTIMEGPSINITIALIZER;@
+\end{quote}
+
 </lalLaTeX> */
 
 typedef struct
@@ -754,6 +760,8 @@ tagLIGOTimeGPS
   INT4 gpsNanoSeconds;
 }
 LIGOTimeGPS;
+
+#define LIGOTIMEGPSINITIALIZER ((LIGOTimeGPS) { 0, 0 })
 
 /* <lalLaTeX>
 
@@ -788,6 +796,12 @@ The indexes of the units can be specified using the constants
 \texttt{LALUnitIndexADCCount},
 while \texttt{LALNumUnits} is the total number of units.
 
+The macro \verb@LALUNITINITIALIZER@ can be used to statically initialize a
+\verb@LALUnit@ object, for example:
+\begin{quote}
+\verb@LALUnit unit = LALUNITINITIALIZER;@
+\end{quote}
+
 </lalLaTeX> */
 
 enum
@@ -810,6 +824,8 @@ tagLALUnit
   UINT2 unitDenominatorMinusOne[LALNumUnits];
 }
 LALUnit;
+
+#define LALUNITINITIALIZER ((LALUnit) { 0, { 0 }, { 0 } })
 
 
 /* <lalLaTeX>
