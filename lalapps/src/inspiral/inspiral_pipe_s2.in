@@ -44,13 +44,13 @@ class AnalyzedIFOData:
   def set_chunk(self,chunk):
     self.__analysis_chunk = chunk
 
-  def get_chunk(self,chunk):
+  def get_chunk(self):
     return self.__analysis_chunk
 
   def set_dag_node(self,node):
     self.__dag_node = node
 
-  def get_dag_node(self,node):
+  def get_dag_node(self):
     return self.__dag_node
 
 def chunk_in_segment(chunk,seg):
@@ -304,6 +304,8 @@ overlap = o / r
 ##############################################################################
 # Step 1: read science segs that are greater or equal to the length of data
 # in a chunk (defined by the variable "length" above)
+print "reading in single ifo science segments...",
+sys.stdout.flush()
 l1_data = pipeline.ScienceData()
 h1_data = pipeline.ScienceData()
 h2_data = pipeline.ScienceData()
@@ -311,11 +313,14 @@ h2_data = pipeline.ScienceData()
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
+print "done"
 
 ##############################################################################
 # Step 2: Create analysis chunks from the single IFO science segments.  The
 # instances l1_data, h1_data and h2_data will contain all data that we can
 # analyze (since all the science segments are over length seconds.) 
+print "making master chunks...",
+sys.stdout.flush()
 l1_data.make_chunks(length,overlap,playground_only)
 h1_data.make_chunks(length,overlap,playground_only)
 h2_data.make_chunks(length,overlap,playground_only)
@@ -323,20 +328,52 @@ h2_data.make_chunks(length,overlap,playground_only)
 l1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 h1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 h2_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+print "done"
 
 ##############################################################################
 # Step 3: find all L1 data that overlaps with one of the hanford instruments
+print "determining what L1 data needs to be filtered...",
+sys.stdout.flush()
 l1_lho_data = copy.deepcopy(l1_data)
 all_lho_data = copy.deepcopy(h1_data)
 all_lho_data.union(h2_data)
 l1_lho_data.intersection(all_lho_data)
 l1_lho_data.coalesce()
+print "done"
 
 ##############################################################################
-# Step 4: Determine which of the L1 master chunks needs to be filtered
+# Step 4: Compute the ScienceSegments for the non-overlaping coincidence
+# regions: i.e. H1/L1, H2/L1, H1/H2/L1
+print "determining disjoing coincidence regions...",
+sys.stdout.flush()
+not_h1_data = copy.deepcopy(h1_data)
+not_h1_data.invert()
+not_h2_data = copy.deepcopy(h2_data)
+not_h2_data.invert()
+
+l1_h1_data = copy.deepcopy(l1_data)
+l1_h1_data.intersection(h1_data)
+l1_h1_data.intersection(not_h2_data)
+l1_h1_data.coalesce()
+
+l1_h2_data = copy.deepcopy(l1_data)
+l1_h2_data.intersection(h2_data)
+l1_h2_data.intersection(not_h1_data)
+l1_h2_data.coalesce()
+
+l1_h1_h2_data = copy.deepcopy(l1_data)
+l1_h1_h2_data.intersection(h1_data)
+l1_h1_h2_data.intersection(h2_data)
+l1_h1_h2_data.coalesce()
+print "done"
+
+##############################################################################
+# Step 5: Determine which of the L1 master chunks needs to be filtered
 l1_chunks_analyzed = []
 prev_df = None
 
+print "setting up jobs to filter L1 data...",
+sys.stdout.flush()
 # loop over L1 master science segments
 for seg in l1_data:
   # make sure that we do not do a data find more than once per science segment
@@ -379,11 +416,14 @@ for seg in l1_data:
         if do_inspiral: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         l1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+print "done"
 
 ##############################################################################
-# Step 4: Determine which of the H1 master chunks needs to be filtered
+# Step 6: Determine which of the H1 master chunks needs to be filtered
 h1_chunks_analyzed = []
 
+print "setting up jobs to filter H1 data...",
+sys.stdout.flush()
 # loop over H1 master science segments
 for seg in h1_data:
   # make sure that we do not do a data find more than once per science segment
@@ -422,15 +462,18 @@ for seg in h1_data:
         insp.set_cache(df.get_output())
         insp.set_bank(trigbank.get_output())
         if do_datafind: insp.add_parent(df)
-        if do_trigbank: insp.add_parent(trigbank)
+        if do_h1_trigbank: insp.add_parent(trigbank)
         if do_h1_inspiral: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         h1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+print "done"
 
 ##############################################################################
-# Step 5: Determine which of the H2 master chunks needs to be filtered
+# Step 7: Determine which of the H2 master chunks needs to be filtered
 h2_chunks_analyzed = []
 
+print "setting up jobs to filter H1 data...",
+sys.stdout.flush()
 # loop over H1 master science segments
 for seg in h2_data:
   # make sure that we do not do a data find more than once per science segment
@@ -469,38 +512,16 @@ for seg in h2_data:
         insp.set_cache(df.get_output())
         insp.set_bank(trigbank.get_output())
         if do_datafind: insp.add_parent(df)
-        if do_trigbank: insp.add_parent(trigbank)
+        if do_h2_trigbank: insp.add_parent(trigbank)
         if do_h2_inspiral: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
         h2_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
-
-##############################################################################
-# Step 7: Compute the ScienceSegments for the non-overlaping coincidence
-# regions: i.e. H1/L1, H2/L1, H1/H2/L1
-not_h1_data = copy.deepcopy(h1_data)
-not_h1_data = not_h1_data.inverse()
-not_h2_data = copy.deepcopy(h2_data)
-not_h2_data = not_h2_data.inverse()
-
-l1_h1_data = copy.deepcopy(l1_data)
-l1_h1_data.intersection(h1_data)
-l1_h1_data.intersection(not_h2_data)
-l1_h1_data.coalesce()
-
-l1_h1_data = copy.deepcopy(l1_data)
-l1_h2_data.intersection(h2_data)
-l1_h2_data.intersection(not_h1_data)
-l1_h2_data.coalesce()
-
-l1_h1_h2_data = copy.deepcopy(l1_data)
-l1_h1_h2_data.intersection(h1_data)
-l1_h1_h2_data.intersection(h2_data)
-l1_h1_h2_data.coalesce()
+print "done"
 
 ##############################################################################
 # Step 8: Run inca on each of the disjoint sets of double coincidence data
-
-# L1/H1 double coincident data
+print "setting up jobs to get L1/H1 double coincident triggers...",
+sys.stdout.flush()
 for seg in l1_h1_data:
   inca = inspiral.IncaNode(inca_job)
   inca.set_start(seg.start())
@@ -520,9 +541,11 @@ for seg in l1_h1_data:
     if chunk_in_segment(h1_done.get_chunk(),seg):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h1_done.get_dag_node())
-  if do_l1h1_coincidence: dag.add_node(inca)
+  if do_l1h1_coinc: dag.add_node(inca)
+print "done"
 
-# L1/H2 double coincident data
+print "setting up jobs to get L1/H2 double coincident triggers...",
+sys.stdout.flush()
 for seg in l1_h2_data:
   inca = inspiral.IncaNode(inca_job)
   inca.set_start(seg.start())
@@ -542,13 +565,13 @@ for seg in l1_h2_data:
     if chunk_in_segment(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
-  if do_l1h2_coincidence: dag.add_node(inca)
-
+  if do_l1h2_coinc: dag.add_node(inca)
+print "done"
 
 ##############################################################################
 # Step 9: Run incas on the triple coincident data
-
-# L1/H1/h2 triple coincident data
+print "setting up jobs to get L1/H1/H2 triple coincident triggers...",
+sys.stdout.flush()
 for seg in l1_h1_h2_data:
   # do the first inca to get the triggers that are coincident between h1 and h2
   inca1 = inspiral.IncaNode(inca_job)
@@ -593,10 +616,12 @@ for seg in l1_h1_h2_data:
   inca3.add_parent(inca2)
   inca3.add_var_arg(inca2.get_output())
   # add the nodes to the dag
-  if do_l1h1h2_coincidence:
+  if do_l1h1h2_coinc:
     dag.add_node(inca1)
     dag.add_node(inca2)
     dag.add_node(inca3)
+print "done"
+sys.stdout.flush()
 
 ##############################################################################
 # Write out the DAG, help message and log file
@@ -635,20 +660,20 @@ for o, a in opts:
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
-  "Filtering " + str(len(l1_analyzed_data)) + " L1 master chunks\n" )
-for l1_done in l1_analyzed_data:
+  "Filtering " + str(len(l1_chunks_analyzed)) + " L1 master chunks\n" )
+for l1_done in l1_chunks_analyzed:
   print >> log_fh, l1_done.get_chunk()
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
-  "Filtering " + str(len(h1_analyzed_data)) + " H1 master chunks\n" )
-for h1_done in h1_analyzed_data:
+  "Filtering " + str(len(h1_chunks_analyzed)) + " H1 master chunks\n" )
+for h1_done in h1_chunks_analyzed:
   print >> log_fh, h1_done.get_chunk()
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
-  "Filtering " + str(len(h2_analyzed_data)) + " H2 master chunks\n" )
-for h2_done in h2_analyzed_data:
+  "Filtering " + str(len(h2_chunks_analyzed)) + " H2 master chunks\n" )
+for h2_done in h2_chunks_analyzed:
   print >> log_fh, h2_done.get_chunk()
 
 print >> log_fh, "\n===========================================\n"
