@@ -3,11 +3,13 @@
 ## Perform the installation of LAL and LALApps.  The following commands
 ## will download, build, and install LAL and LALApps.  This requires
 ## the software installed in the pre-install to have been built and installed.
-## The location of this software is given by the environment variable
-## "LSCSOFT_LOCATION" which must be set before these commands are
-## executed.
+## If the software was not installed in a standard location, such as
+## "/usr" or "/usr/local", then the location of the software must be specified.
+## To do so, the location of this software is given by the environment variable
+## "LSCSOFT_LOCATION" which must be set before these commands are executed.
 
-# "LSCSOFT_LOCATION" must be set --- make sure this software is available:
+# set "LSCSOFT_LOCATION" to the location where the required software
+# (described in the pre-install instructions) has been installed
 #ignore
 if test -z "$LSCSOFT_LOCATION"; then
   echo "ERROR: environment variable LSCSOFT_LOCATION not defined" 1>&2
@@ -17,10 +19,8 @@ fi
 #verbatim
 PATH=$LSCSOFT_LOCATION/bin:$PATH
 LD_LIBRARY_PATH=$LSCSOFT_LOCATION/lib:$LD_LIBRARY_PATH
-export PATH LD_LIBRARY_PATH
-
-LSCSOFT_INCDIR=$LSCSOFT_LOCATION/include
-LSCSOFT_LIBDIR=$LSCSOFT_LOCATION/lib
+PKG_CONFIG_PATH=$LSCSOFT_LOCATION/lib:$PKG_CONFIG_PATH
+export PATH LD_LIBRARY_PATH PKG_CONFIG_PATH
 #/verbatim
 
 # set "LAL_PREFIX" to the location where you wish to install lal and lalapps
@@ -35,10 +35,6 @@ LAL_PREFIX=$LSCSOFT_LOCATION/devel
 #ignore
 fi
 #/ignore
-#verbatim
-LAL_INCDIR=$LAL_PREFIX/include
-LAL_LIBDIR=$LAL_PREFIX/lib
-#/verbatim
 
 
 ### the rest of this script should not need to be edited
@@ -52,17 +48,15 @@ fail() {
 }
 #/ignore
 
-# build and install LAL
+# build and install LAL (the "--with-gcc-flags" tells gcc to use flags
+# that will produce warnings about possibly non-portable code)
 #ignore
 if test -x 00boot ; then # distribution from CVS
   ./00boot || fail
 fi
 #/ignore
 #verbatim
-./configure --prefix=$LAL_PREFIX \
-	--with-extra-cppflags=-I$LSCSOFT_INCDIR \
-	--with-extra-libs=-L$LSCSOFT_LIBDIR \
-	--with-gcc-flags --enable-frame --enable-metaio || fail
+./configure --prefix=$LAL_PREFIX --with-gcc-flags || fail
 make || fail
 make install || fail
 #/verbatim

@@ -15,7 +15,8 @@ if [ -n "${LAL_PREFIX}" ]; then
   PATH=`echo "${PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   LD_LIBRARY_PATH=`echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   MANPATH=`echo "${MANPATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
-  export PATH MANPATH LD_LIBRARY_PATH
+  PKG_CONFIG_PATH=`echo "${PKG_CONFIG_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
+  export PATH MANPATH LD_LIBRARY_PATH PKG_CONFIG_PATH
 fi
 
 LAL_PREFIX=${LAL_LOCATION}
@@ -25,8 +26,10 @@ if [ -n "${LAL_PREFIX}" ]; then
   PATH=`echo "${PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   LD_LIBRARY_PATH=`echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   MANPATH=`echo "${MANPATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
+  PKG_CONFIG_PATH=`echo "${PKG_CONFIG_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   PATH=${LAL_LOCATION}/bin:${PATH}
   LD_LIBRARY_PATH=${LAL_LOCATION}/lib:${LD_LIBRARY_PATH}
   MANPATH=${LAL_LOCATION}/man:${MANPATH}
-  export PATH MANPATH LD_LIBRARY_PATH
+  PKG_CONFIG_PATH=${LAL_LOCATION}/lib/pkgconfig:${MANPATH}
+  export PATH MANPATH LD_LIBRARY_PATH PKG_CONFIG_PATH
 fi

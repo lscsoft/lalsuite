@@ -19,12 +19,17 @@ if ( ! ${?MANPATH} ) then
   setenv MANPATH ''
 endif
 
+if ( ! ${?PKG_CONFIG_PATH} ) then
+  setenv PKG_CONFIG_PATH ''
+endif
+
 
 if ( ${?LAL_PREFIX} ) then
   if (  "${LAL_PREFIX}" != "" ) then
     setenv PATH `echo "${PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
     setenv LD_LIBRARY_PATH `echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
     setenv MANPATH `echo "${MANPATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
+    setenv PKG_CONFIG_PATH `echo "${PKG_CONFIG_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   endif
 endif
 
@@ -34,7 +39,9 @@ if ( "${LAL_PREFIX}" != "" ) then
   setenv PATH `echo "${PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   setenv LD_LIBRARY_PATH `echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   setenv MANPATH `echo "${MANPATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
+  setenv PKG_CONFIG_PATH `echo "${PKG_CONFIG_PATH}" | sed -e "s%:${LAL_PREFIX}[^:]*%%g" -e "s%^${LAL_PREFIX}[^:]*:\{0,1\}%%"`
   setenv PATH ${LAL_LOCATION}/bin:${PATH}
   setenv LD_LIBRARY_PATH ${LAL_LOCATION}/lib:${LD_LIBRARY_PATH}
   setenv MANPATH ${LAL_LOCATION}/man:${MANPATH}
+  setenv PKG_CONFIG_PATH ${LAL_LOCATION}/pkgconfig:${MANPATH}
 endif

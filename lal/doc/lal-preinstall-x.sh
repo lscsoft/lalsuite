@@ -7,10 +7,16 @@
 ##	autoconf-2.59
 ##	automake-1.8.5
 ##	fftw-3.0.1
-##	frame-6.13
 ##	gsl-1.5
-##	metaio-5.4
+##	libframe-6.13 (optional but recommended)
+##	libmetaio-5.4 (optional but recommended)
 ##/verse
+## If this software is already on your system, you can use the existing
+## software.  If some of the software is missing, you can use the appropriate
+## part of these instructions to install that component.  Pre-compiled versions
+## of the software are also available for installation.  See the RPMs
+## section for instructions on obtaining these.
+##
 ## The software is installed in the directory "LSCSOFT_PREFIX".
 ## If this variable is not set, it will be installed in "$HOME/opt/lscsoft"
 ## by default. To install in some other location, set "LSCSOFT_PREFIX"
@@ -80,9 +86,9 @@ mkdir -p $LSCSOFT_TMPDIR || fail
 curl $LALSRCURL/autoconf-2.59.tar.gz > $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || fail
 curl $LALSRCURL/automake-1.8.5.tar.gz > $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 curl $LALSRCURL/fftw-3.0.1.tar.gz > $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
-curl $LALSRCURL/frame-6.13.tar.gz > $LSCSOFT_TMPDIR/frame-6.13.tar.gz || fail
 curl $LALSRCURL/gsl-1.5.tar.gz > $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
-curl $LALSRCURL/metaio-5.4.tar.gz > $LSCSOFT_TMPDIR/metaio-5.4.tar.gz || fail
+curl $LALSRCURL/libframe-6.13.tar.gz > $LSCSOFT_TMPDIR/libframe-6.13.tar.gz || fail
+curl $LALSRCURL/libmetaio-5.4.tar.gz > $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || fail
 #/verbatim
 
 # unpack these archives in "LSCSOFT_SRCDIR"
@@ -91,10 +97,9 @@ cd $LSCSOFT_SRCDIR || fail
 tar -zxvf $LSCSOFT_TMPDIR/autoconf-2.59.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/automake-1.8.5.tar.gz || fail
 tar -zxvf $LSCSOFT_TMPDIR/fftw-3.0.1.tar.gz || fail
-tar -zxvf $LSCSOFT_TMPDIR/frame-6.13.tar.gz || fail
-mv v6r13 frame-6.13 || fail
 tar -zxvf $LSCSOFT_TMPDIR/gsl-1.5.tar.gz || fail
-tar -zxvf $LSCSOFT_TMPDIR/metaio-5.4.tar.gz || fail
+tar -zxvf $LSCSOFT_TMPDIR/libframe-6.13.tar.gz || fail
+tar -zxvf $LSCSOFT_TMPDIR/libmetaio-5.4.tar.gz || fail
 #/verbatim
 
 # build and install autoconf
@@ -125,49 +130,6 @@ make # note: ignore fail
 make install # note: ignore fail
 #/verbatim
 
-# build and install frame ---
-#ignore
-if test "`uname`" = "Darwin" ; then 
-#/ignore
-# if you are using Darwin, use the following commands:
-#verbatim
-  cd $LSCSOFT_SRCDIR/frame-6.13/mgr || fail
-  ./makeMacOS || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/Darwin/libFrame.a $LSCSOFT_LIBDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/Darwin/libFrame.dynlib $LSCSOFT_LIBDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/Darwin/FrCheck $LSCSOFT_BINDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/Darwin/FrCopy $LSCSOFT_BINDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/Darwin/FrDump $LSCSOFT_BINDIR || fail
-#/verbatim
-#ignore
-else
-  if test "`uname`" = "Linux" ; then
-    FRBUILD=`uname`-`uname -m`
-  else
-    FRBUILD=`uname`
-  fi
-#/ignore
-# otherwise set "FRBUILD=`uname`" or "FRBUILD=Linux-`uname -i`" for Linux
-# and use these commands:
-#verbatim
-  cd $LSCSOFT_SRCDIR/frame-6.13/mgr || fail
-  ./makegcc || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/$FRBUILD/libFrame.a $LSCSOFT_LIBDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/$FRBUILD/libFrame.so $LSCSOFT_LIBDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/$FRBUILD/FrCheck $LSCSOFT_BINDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/$FRBUILD/FrCopy $LSCSOFT_BINDIR || fail
-  cp -f $LSCSOFT_SRCDIR/frame-6.13/$FRBUILD/FrDump $LSCSOFT_BINDIR || fail
-#/verbatim
-#ignore
-fi
-#/ignore
-# then install the header files
-#verbatim
-cp -f $LSCSOFT_SRCDIR/frame-6.13/src/FrIO.h $LSCSOFT_INCDIR || fail
-cp -f $LSCSOFT_SRCDIR/frame-6.13/src/FrVect.h $LSCSOFT_INCDIR || fail
-cp -f $LSCSOFT_SRCDIR/frame-6.13/src/FrameL.h $LSCSOFT_INCDIR || fail
-#/verbatim
-
 # build and install gsl
 #verbatim
 cd $LSCSOFT_SRCDIR/gsl-1.5 || fail
@@ -176,9 +138,17 @@ make || fail
 make install || fail
 #/verbatim
 
-# build and install metaio
+# build and install libframe
 #verbatim
-cd $LSCSOFT_SRCDIR/metaio-5.4 || fail
+cd $LSCSOFT_SRCDIR/libframe-6.13 || fail
+./configure --prefix=$LSCSOFT_PREFIX || fail
+make || fail
+make install || fail
+#/verbatim
+
+# build and install libmetaio
+#verbatim
+cd $LSCSOFT_SRCDIR/libmetaio-5.4 || fail
 ./configure --prefix=$LSCSOFT_PREFIX || fail
 make || fail
 make install || fail

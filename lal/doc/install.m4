@@ -31,7 +31,80 @@ Or just follow the instructions below.
 
 PRE-INSTALLATION
 
+Building LAL requires some software to be pre-installed.  This section
+describes how to download and install this software if it is missing from
+your system.  If you wish to install pre-compiled RPMs you can skip to that
+section.  The next section describes how to build the required software from
+source.
+
+Building Required Software from Source:
 include(@@lal-preinstall.txt@@)
+
+Installing Required Software from RPMs:
+
+The commands listed below are appropriate for a Bourne-shell (e.g., bash);
+they will need to be modified appropriately for C-shells (e.g., tcsh).
+This is where to get sources:
+        
+        LALRPMURL=http://www.lsc-group.phys.uwm.edu/lal/sources/rpms
+
+get required autoconf, automake, fftw3, gsl, libframe, and libmetaio
+you can use "lynx -dump" or "wget -O-" instead of "curl"
+
+        curl $LALRPMURL/autoconf-2.59-3.noarch.rpm > autoconf-2.59-3.noarch.rpm
+        curl $LALRPMURL/automake-1.8.4-1.i386.rpm > automake-1.8.4-1.i386.rpm
+        curl $LALRPMURL/fftw3-3.0.1-5.i386.rpm > fftw-3.0.1-5.i386.rpm
+        curl $LALRPMURL/gsl-1.5-1.i386.rpm > gsl-1.5-1.i386.rpm
+        curl $LALRPMURL/gsl-devel-1.5-1.i386.rpm > gsl-devel-1.5-1.i386.rpm
+        curl $LALRPMURL/libframe-6.13-1.i386.rpm > libframe-6.13-1.i386.rpm
+        curl $LALRPMURL/libframe-devel-6.13-1.i386.rpm > libframe-devel-6.13-1.i386.rpm
+        curl $LALRPMURL/libframe-utils-6.13-1.i386.rpm > libframe-utils-6.13-1.i386.rpm
+        curl $LALRPMURL/libmetaio-5.4-3.i386.rpm > libmetaio-5.4-3.i386.rpm
+        curl $LALRPMURL/libmetaio-debuginfo-5.4-3.i386.rpm > libmetaio-debuginfo-5.4-3.i386.rpm
+        curl $LALRPMURL/libmetaio-devel-5.4-3.i386.rpm > libmetaio-devel-5.4-3.i386.rpm
+
+now login as root and install the RPMs
+
+        rpm -Uvh autoconf-2.59-3.noarch.rpm
+        rpm -Uvh automake-1.8.4-1.i386.rpm
+        rpm -Uvh fftw-3.0.1-5.i386.rpm
+        rpm -Uvh gsl-1.5-1.i386.rpm
+        rpm -Uvh gsl-devel-1.5-1.i386.rpm
+        rpm -Uvh libframe-6.13-1.i386.rpm
+        rpm -Uvh libframe-devel-6.13-1.i386.rpm
+        rpm -Uvh libframe-utils-6.13-1.i386.rpm
+        rpm -Uvh libmetaio-5.4-3.i386.rpm
+        rpm -Uvh libmetaio-debuginfo-5.4-3.i386.rpm
+        rpm -Uvh libmetaio-devel-5.4-3.i386.rpm
+
+if you cannot use these binary RPMs and you wish to build from source RPMs,
+first download the source RPMs
+
+        curl $LALRPMURL/autoconf-2.59-3.src.rpm > autoconf-2.59-3.src.rpm
+        curl $LALRPMURL/automake-1.8.4-1.src.rpm > automake-1.8.4-1.src.rpm
+        curl $LALRPMURL/fftw3-3.0.1-5.src.rpm > fftw3-3.0.1-5.src.rpm
+        curl $LALRPMURL/gsl-1.5-1.src.rpm > gsl-1.5-1.src.rpm
+        curl $LALRPMURL/libframe-6.13-1.src.rpm > libframe-6.13-1.src.rpm
+        curl $LALRPMURL/libmetaio-5.4-3.src.rpm > libmetaio-5.4-3.src.rpm
+
+now login as root and install the source RPMs
+
+        rpm -Uvh autoconf-2.59-3.src.rpm
+        rpm -Uvh automake-1.8.4-1.src.rpm
+        rpm -Uvh fftw3-3.0.1-5.src.rpm
+        rpm -Uvh gsl-1.5-1.src.rpm
+        rpm -Uvh libframe-6.13-1.src.rpm
+        rpm -Uvh libmetaio-5.4-3.src.rpm
+
+next go to the directory containing the spec files and build the sources
+
+        cd /usr/src/redhat/SPECS
+        TODO: instructions on building the sources
+
+finally install the new binary RPMs
+
+        TODO: instructions on installing binary RPMs
+
 
 INSTALLING LAL
 

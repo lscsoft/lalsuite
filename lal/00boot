@@ -39,6 +39,10 @@ Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                        print this message"
 helpmsg="$helpmsg
+  --quiet                       omit non-error messages"
+helpmsg="$helpmsg
+  --verbose                     echo everything that is done"
+helpmsg="$helpmsg
   --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
 helpmsg="$helpmsg
   --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
@@ -52,6 +56,7 @@ helpmsg="$helpmsg
 INCLUDEDEPS=""
 
 ## Process args
+verbose="false"
 while test $# -gt 0 ; do
   option=$1
   case "$option" in
@@ -60,6 +65,8 @@ while test $# -gt 0 ; do
   esac
   case $option in
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -q | -quiet | --quiet ) exec 1>/dev/null;;
+    -v | -verb* | --verb* ) verbose="true";;
     -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
     -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
     -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
@@ -69,6 +76,37 @@ while test $# -gt 0 ; do
   esac
   shift
 done
+
+test "$verbose" = "true" && set -x
+
+
+echo ">>> 00boot: creating README.install"
+
+## First generate README.install
+test -f README.install || rm -f README.install
+cd doc
+test -f README.install || rm -f README.install
+sed -f scrstrip.sed lal-preinstall-x.sh > lal-preinstall.sh
+sed -f texstrip.sed lal-preinstall-x.sh > lal-preinstall.tex
+sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
+sed -f scrstrip.sed lal-install-x.sh > lal-install.sh
+sed -f texstrip.sed lal-install-x.sh > lal-install.tex
+sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
+m4 install.m4 > README.install
+cp -f README.install ..
+cd ..
+
+
+## Function to report failure
+fail () {
+  echo "!!! 00boot: $1 failed" >&2
+  echo "!!! 00boot: consult the file 'README.install' for help" >&2
+  exit 1
+}
+
+
+echo ">>> 00boot: checking versions of aclocal, automake, autoheader and autoconf"
+
 
 if test -z "$AUTOMAKE" ; then
   for AUTOMAKE in automake automake-1.8 automake-1.5 automake ; do
@@ -101,33 +139,31 @@ aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '1s/[^0-9.]*//p'`"
 autoheader_version="`$AUTOHEADER --version 2>/dev/null | sed -n '1s/[^0-9.]*//p'`"
 autoconf_version="`$AUTOCONF --version 2>/dev/null | sed -n '1s/[^0-9.]*//p'`"
 if test -z "$automake_version"; then
-  echo "Error: missing program automake"
-  exit 1
+  fail "finding program automake"
 fi
 case "$automake_version" in
   1.4* )
-  echo "Warning: Using version 1.4 of aclocal/automake may not work."
-  echo "         Recommend using aclocal/automake version 1.8."
+  echo ">>> 00boot: warning: version 1.4 of aclocal/automake may not work"
+  echo ">>> 00boot:          recommend using aclocal/automake version 1.8"
   ;;
   1.6* | 1.7* )
-  echo "Warning: Using version 1.6/1.7 of aclocal/automake may cause build"
-  echo "         problems: If you modify any Makefile.am file you must re-run"
-  echo "         the top-level config.status before doing a make."
+  echo ">>> 00boot: warning: version 1.6/1.7 of aclocal/automake may cause build"
+  echo ">>> 00boot:          problems: If you modify any Makefile.am file you must"
+  echo ">>> 00boot:          re-run the top-level config.status before doing a make."
   ;;
 esac
 if test -z "$aclocal_version"; then
-  echo "Error: missing program aclocal"
-  exit 1
+  fail "finding program aclocal"
 fi
 case "$aclocal_version" in
   1.4* )
-  echo "Warning: Using version 1.4 of aclocal/automake may not work."
-  echo "         Recommend using aclocal/automake version 1.8."
+  echo ">>> 00boot: warning: version 1.4 of aclocal/automake may not work"
+  echo ">>> 00boot:          recommend using aclocal/automake version 1.8"
   ;;
   1.6* | 1.7* )
-  echo "Warning: Using version 1.6/1.7 of aclocal/automake may cause build"
-  echo "         problems: If you modify any Makefile.am file you must re-run"
-  echo "         the top-level config.status before doing a make."
+  echo ">>> 00boot: warning: version 1.6/1.7 of aclocal/automake may cause build"
+  echo ">>> 00boot:          problems: If you modify any Makefile.am file you must"
+  echo ">>> 00boot:          re-run the top-level config.status before doing a make."
   ;;
 esac
 case "$autoconf_version" in
@@ -141,15 +177,18 @@ case "$autoconf_version" in
   ;;
 esac
 
-echo "Using:
-aclocal-"$aclocal_version": 	`which $ACLOCAL`
-automake-"$automake_version": 	`which $AUTOMAKE`
-autoheader-"$autoheader_version": 	`which $AUTOHEADER`
-autoconf-"$autoconf_version": 	`which $AUTOCONF`"
+echo ">>> 00boot: using:"
+printf ">>> 00boot:\t%-16s %s\n" "aclocal-$aclocal_version:" "`which $ACLOCAL`"
+printf ">>> 00boot:\t%-16s %s\n" "automake-$automake_version:" "`which $AUTOMAKE`"
+printf ">>> 00boot:\t%-16s %s\n" "autoheader-$autoheader_version:" "`which $AUTOHEADER`"
+printf ">>> 00boot:\t%-16s %s\n" "autoconf-$autoconf_version:" "`which $AUTOCONF`"
+
+
+echo ">>> 00boot: creating configuration file"
 
 
 ## Here is the stuff to make configure.in or configure.ac
-rm -f configure.in configure.ac
+rm -f configure.in configure.ac || fail "removing configure.in/configure.ac"
 
 # Preamble
 if test "$AUTOCONF25" = "yes" ; then
@@ -203,17 +242,10 @@ LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 LAL_WITH_GCC_FLAGS
 
-LAL_ENABLE_FFTW3
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FRAME
+LAL_ENABLE_METAIO
 LAL_ENABLE_MPI
-LAL_ENABLE_DATAFLOW
-AM_CONDITIONAL(FRAME, test x$frame = xtrue)
-AM_CONDITIONAL(MPI, test x$mpi = xtrue)
-AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
-AM_CONDITIONAL(METAIO, test x$dataflow = xtrue)
-AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
-AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -260,36 +292,24 @@ esac
 dnl Checks for libraries.
 lal_save_LIBS="$LIBS"
 AC_CHECK_LIB(m, sin)
-AC_CHECK_LIB(gslcblas, main)
-AC_CHECK_LIB(gsl, gsl_strerror, , [AC_MSG_ERROR(could not find GSL library)])
 dnl if solaris, check for sunmath library
 case "${host_os}" in
   solaris*) AC_CHECK_LIB(sunmath, sincosp);;
 esac
+PKG_CHECK_MODULES(GSL, gsl, [ true ], [ false ])
+CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
+LIBS="$LIBS $GSL_LIBS"
+AC_CHECK_LIB(gslcblas, main)
+AC_CHECK_LIB(gsl, gsl_strerror, , [AC_MSG_ERROR(could not find GSL library)])
 
 dnl Checks for fft libraries.
 if test "${intelfft}" = "false" ; then
-  lal_save_pre_fftw3_LIBS="$LIBS"
-  if test "${fftw3}" = "true"; then
-    AC_CHECK_LIB(fftw3f, fftwf_execute_dft, , [AC_MSG_WARN(disabling fftw3)]
-      [fftw3="false"], -lm)
-  fi
-  if test "${fftw3}" = "true"; then
-    AC_CHECK_LIB(fftw3, fftw_execute_dft, , , -lm)
-  fi
-  if test "${fftw3}" = "true"; then
-    AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_WARN(disabling fftw3)]
-      [fftw3="false"])
-  fi
-  if test "${fftw3}" = "true"; then
-    AC_DEFINE(LAL_FFTW3_ENABLED,1,Define if using fftw3 library)
-  else
-    LIBS="$lal_save_pre_fftw3_LIBS"
-    AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
-    AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
-    AC_CHECK_HEADERS(sfftw.h fftw.h, break)
-    AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
-  fi
+  fftw3="true"
+  PKG_CHECK_MODULES(FFTW3, fftw3 fftw3f, [ true ], [ false ])
+  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
+  LIBS="$LIBS $FFTW3_LIBS"
+  AC_CHECK_LIB(fftw3f, fftwf_execute_dft, , [AC_MSG_ERROR(could not find fftw3f library)], -lm)
+  AC_CHECK_LIB(fftw3, fftw_execute_dft, , [AC_MSG_ERROR(could not find fftw3 library)], -lm)
 else
   AC_MSG_WARN(Using Intel FFT routines)
   if test "x${qthread}" = "xtrue" ; then
@@ -311,77 +331,105 @@ else
   AC_CHECK_HEADERS(mkl_fft.h, , [AC_MSG_ERROR(could not find Intel FFT header)])
 fi
 
-if test "${dataflow}" = "true"; then
-  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, , AC_MSG_ERROR(could not find the metaio/dataflow library))
+dnl Checks for optional FrameL and metaio libraries.
+if test "${metaio}" = "true"; then
+  PKG_CHECK_MODULES(METAIO, libmetaio, [ true ], [ false ])
+  lal_pre_metaio_LIBS="$LIBS"
+  LIBS="$LIBS $METAIO_LIBS"
+  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, ,
+                 [AC_MSG_WARN(disabling metaio support)]
+                 [metaio="false"]
+                 [LIBS="$lal_pre_metaio_LIBS"])
+fi
+if test "${frame}" = "true"; then
+  PKG_CHECK_MODULES(FRAME, libframe, [ true ], [ false ])
+  lal_pre_frame_LIBS="$LIBS"
+  LIBS="$LIBS $FRAME_LIBS"
+  AC_SEARCH_LIBS(FrLibIni, Frame, ,
+                 [AC_MSG_WARN(disabling frame library)]
+                 [frame="false"]
+                 [LIBS="$lal_pre_frame_LIBS"])
 fi
 
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
-AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h)])
 case "${host_os}" in
   solaris*) AC_CHECK_HEADERS(sunmath.h);;
 esac
+AC_CHECK_HEADERS(gsl/gsl_errno.h, , [AC_MSG_ERROR(could not find gsl/gsl_errno.h)])
+if test "${intelfft}" = "false" ; then
+  AC_CHECK_HEADERS(fftw3.h, , [AC_MSG_ERROR(could not find fftw3.h)])
+fi
 
 AC_MSG_CHECKING(for gethostname prototype in unistd.h)
-AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
-AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE,1,
-[Define if gethostname prototype is in unistd.h]),
-AC_MSG_RESULT(no))
-if test "${dataflow}" = "true"; then
-  AC_CHECK_HEADERS(metaio.h, , AC_MSG_ERROR(could not find metaio.h))
+AC_EGREP_HEADER(gethostname, unistd.h,AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE, 1, [Define if gethostname prototype is in unistd.h]), AC_MSG_RESULT(no))
+
+if test "${metaio}" = "true"; then
+  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $METAIO_CFLAGS"
+  AC_CHECK_HEADERS(metaio.h, ,
+                   [AC_MSG_WARN(disabling metaio support)]
+                   [metaio="false"]
+                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
 fi
-
-
-dnl AC_TRY_RUN needs to be done with libtool to avoid requirement of setting
-dnl LD_LIBRARY_PATH... redefine ac_link to use libtool:
-ac_link="./libtool $ac_link"
-if test "${fftw3}" = "false"; then
-  if test "${intelfft}" = "false"; then
-    LAL_SFFTW_WORKS
-    LAL_SRFFTW_WORKS
-  fi
-fi
-
-dnl Checks for optional libraries and header files.
-LAL_CFLAGS="-I$includedir/lal"
 if test "${frame}" = "true"; then
-  AC_DEFINE(LAL_FRAME_ENABLED,1,Define if using Frame library)
-  LAL_CHECK_FRAMELIB
-  LAL_FRAME_ENABLED="yes"
-else
-  LAL_FRAME_ENABLED="no"
-fi
-if test "${mpi}" = "true"; then
-  AC_DEFINE(LAL_MPI_ENABLED,1,Define if using MPI)
-  LAL_CHECK_MPI
-  LAL_MPI_ENABLED="yes"
-  LAL_CFLAGS="$LAL_CFLAGS $MPICFLAGS $MPICPPFLAGS"
-else
-  LAL_MPI_ENABLED="no"
-fi
-if test "${dataflow}" = "true"; then
-  AC_DEFINE(LAL_METAIO_ENABLED,1,Define if using MetaIo library)
-  LAL_METAIO_ENABLED="yes"
-else
-  LAL_METAIO_ENABLED="no"
+  lal_pre_frame_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $FRAME_CFLAGS"
+  AC_CHECK_HEADERS(FrameL.h, ,
+                   [AC_MSG_WARN(disabling frame library support)]
+                   [frame="false"]
+                   [CPPFLAGS="$lal_pre_frame_CPPFLAGS"])
 fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
 
+
+dnl Checks for optional MPI libraries and header files.
+if test "${mpi}" = "true"; then
+  AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
+  LAL_CHECK_MPI_FLAGS
+  LIBS="$LIBS $MPI_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $MPI_CPPFLAGS"
+  CFLAGS="$CFLAGS $MPI_CFLAGS"
+  AC_SEARCH_LIBS(MPI_Init, mpi, , [AC_MSG_ERROR([can't find MPI library])])
+  AC_CHECK_HEADERS(mpi.h, , [AC_MSG_ERROR([can't find mpi.h header])])
+else
+  MPI_CFLAGS=
+  MPI_CPPFLAGS=
+  MPI_LDFLAGS=
+fi
+
+
+dnl Define variables describing what was enabled.
+if test "${fftw3}" = "true"; then
+  AC_DEFINE(LAL_FFTW3_ENABLED, 1, [Define if using fftw3 library])
+fi
+if test "${metaio}" = "true"; then
+  AC_DEFINE(LAL_METAIO_ENABLED, 1, [Define if using MetaIo library])
+fi
+if test "${frame}" = "true"; then
+  AC_DEFINE(LAL_FRAME_ENABLED, 1, [Define if using frame library])
+fi
+if test "${mpi}" = "true"; then
+  AC_DEFINE(LAL_MPI_ENABLED, 1, [Define if using MPI])
+fi
+
+
+dnl Record the libraries needed for linking LAL.
 LALLIBADD="$LIBS"
 LIBS="$lal_save_LIBS"
 AC_SUBST(LALLIBADD)
 LAL_LIBADD="$LIBS $LALLIBADD"
-LAL_LIBS="-L$libdir -llal $LAL_LIBADD"
 AC_SUBST(LAL_LIBADD)
-AC_SUBST(LAL_LIBS)
-AC_SUBST(LAL_CFLAGS)
+AC_SUBST(MPI_CFLAGS)
+AC_SUBST(MPI_CPPFLAGS)
+AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(LAL_MPI_ENABLED)
-AC_SUBST(LAL_FRAME_ENABLED)
-AC_SUBST(LAL_METAIO_ENABLED)
+
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
@@ -402,6 +450,16 @@ AC_CHECK_FUNCS(getopt_long)
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(vsnprintf)
 AC_CHECK_FUNCS(putenv)
+
+
+dnl Setup automake conditionals
+AM_CONDITIONAL(FRAME, test x$frame = xtrue)
+AM_CONDITIONAL(MPI, test x$mpi = xtrue)
+AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
+AM_CONDITIONAL(METAIO, test x$metaio = xtrue)
+AM_CONDITIONAL(INTELFFT, test x$intelfft = xtrue)
+AM_CONDITIONAL(QTHREAD, test x$qthread = xtrue)
+
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
 if test "$GCC" = yes; then
@@ -455,7 +513,29 @@ EOF
 if test "$AUTOCONF25" = "yes"; then
 cat >> $CONFIGFILE <<\EOF
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
+AC_OUTPUT_COMMANDS([echo "
+*****************************************************************
+*                                                               *
+*       LAL has now been successfully configured:               *
+*                                                               *
+*               LAL Frame library support is $frameenabled           *
+*               LAL MetaIo library support is $metaioenabled          *
+*               LAL MPI support is $mpienabled                     *
+*                                                               *
+*       Now run 'make' to build LAL                             *
+*	and run 'make install' to install LAL                   *
+*       LAL will be installed under the directory:              *
+*                                                               *
+$prefixstring
+*                                                               *
+*****************************************************************"],
+[frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[prefixstring="`printf '* %61s *' "$prefix"`"]
+)
 AC_CONFIG_FILES([lal.pc])
+AC_CONFIG_FILES([lalsupport.pc])
 AC_CONFIG_FILES([lal-config])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([doc/Makefile])
@@ -479,8 +559,30 @@ echo "AC_OUTPUT" >> $CONFIGFILE
 else
 cat >> $CONFIGFILE <<\EOF
 AC_OUTPUT_COMMANDS([chmod +x lal-config])
+AC_OUTPUT_COMMANDS([echo "
+*****************************************************************
+*                                                               *
+*       LAL has now been successfully configured:               *
+*                                                               *
+*               LAL Frame library support is $frameenabled           *
+*               LAL MetaIo library support is $metaioenabled          *
+*               LAL MPI support is $mpienabled                     *
+*                                                               *
+*       Now run 'make' to build LAL                             *
+*	and run 'make install' to install LAL                   *
+*       LAL will be installed under the directory:              *
+*                                                               *
+$prefixstring
+*                                                               *
+*****************************************************************"],
+[frameenabled="`test x${frame} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[metaioenabled="`test x${metaio} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[mpienabled="`test x${mpi} = xtrue && echo "ENABLED " || echo "DISABLED"`"]
+[prefixstring="`printf '* %61s *' "$prefix"`"]
+)
 AC_OUTPUT([ \
   lal.pc \
+  lalsupport.pc \
   lal-config \
   Makefile \
   doc/Makefile \
@@ -506,125 +608,131 @@ fi
 
 ## Now generate acinclude.m4 and acconfig.h (if needed)
 
-rm -f acinclude.m4 acconfig.h
-cat misc/lal.m4 > acinclude.m4
+rm -f acinclude.m4 acconfig.h || fail "removing acinclude.m4 acconfig.h"
+cat misc/lal.m4 > acinclude.m4 || fail "creating acinclude.m4"
+cat misc/pkg.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 case "$automake_version" in
   1.5*)
-  cat misc/lalam15patch.m4 >> acinclude.m4
+  cat misc/lalam15patch.m4 >> acinclude.m4 || fail "creating acinclude.m4"
   ;;
 esac
 
-cat misc/lallibtool.m4 >> acinclude.m4
+cat misc/lallibtool.m4 >> acinclude.m4 || fail "creating acinclude.m4"
 case "$autoconf_version" in
   2.1*)
-  cp misc/acconfig.h acconfig.h
+  cp misc/acconfig.h acconfig.h || fail "creating acinclude.m4"
   ;;
 esac
 
-## Now generate README.install
-
-test -f README.install || rm -f README.install
-cd doc
-test -f README.install || rm -f README.install
-sed -f scrstrip.sed lal-preinstall-x.sh > lal-preinstall.sh
-sed -f texstrip.sed lal-preinstall-x.sh > lal-preinstall.tex
-sed -f txtstrip.sed lal-preinstall-x.sh > lal-preinstall.txt
-sed -f scrstrip.sed lal-install-x.sh > lal-install.sh
-sed -f texstrip.sed lal-install-x.sh > lal-install.tex
-sed -f txtstrip.sed lal-install-x.sh > lal-install.txt
-m4 install.m4 > README.install
-cp -f README.install ..
-cd ..
 
 ## Now run m4 to generate sources
+echo ">>> 00boot: creating sources"
 
-cd packages/std/src
-m4 Grid.m4 > Grid.c
-cd ../../..
 
-cd packages/support/src
-m4 PrintVector.m4 > PrintVector.c
-m4 PrintTimeSeries.m4 > PrintTimeSeries.c
-m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c
-m4 ReadFrequencySeries.m4 > ReadFrequencySeries.c
-m4 ReadTimeSeries.m4 > ReadTimeSeries.c
-m4 StreamVectorInput.m4 > StreamVectorInput.c
-m4 StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c
-m4 StreamSequenceInput.m4 > StreamSequenceInput.c
-m4 StreamSeriesInput.m4 > StreamSeriesInput.c
-m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c
-m4 StreamGridInput.m4 > StreamGridInput.c
-m4 StreamGridOutput.m4 > StreamGridOutput.c
-cd ../../..
+cd packages/std/src || fail "creating sources in packages/std/src"
+m4 Grid.m4 > Grid.c || fail "creating sources in packages/std/src"
+cd ../../.. || fail "creating sources in packages/std/src"
 
-cd packages/factories/src
-m4 VectorFactories.m4 > VectorFactories.c
-m4 VectorSequenceFactories.m4 > VectorSequenceFactories.c
-m4 ArrayFactories.m4 > ArrayFactories.c
-m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c
-cd ../../..
+cd packages/support/src || fail "creating sources in packages/support/src"
+m4 PrintVector.m4 > PrintVector.c || fail "creating sources in packages/support/src"
+m4 PrintTimeSeries.m4 > PrintTimeSeries.c || fail "creating sources in packages/support/src"
+m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c || fail "creating sources in packages/support/src"
+m4 ReadFrequencySeries.m4 > ReadFrequencySeries.c || fail "creating sources in packages/support/src"
+m4 ReadTimeSeries.m4 > ReadTimeSeries.c || fail "creating sources in packages/support/src"
+m4 StreamVectorInput.m4 > StreamVectorInput.c || fail "creating sources in packages/support/src"
+m4 StreamVectorSequenceInput.m4 > StreamVectorSequenceInput.c || fail "creating sources in packages/support/src"
+m4 StreamSequenceInput.m4 > StreamSequenceInput.c || fail "creating sources in packages/support/src"
+m4 StreamSeriesInput.m4 > StreamSeriesInput.c || fail "creating sources in packages/support/src"
+m4 StreamSeriesOutput.m4 > StreamSeriesOutput.c || fail "creating sources in packages/support/src"
+m4 StreamGridInput.m4 > StreamGridInput.c || fail "creating sources in packages/support/src"
+m4 StreamGridOutput.m4 > StreamGridOutput.c || fail "creating sources in packages/support/src"
+cd ../../.. || fail "creating sources in packages/support/src"
 
-cd packages/factories/include
-m4 SeqFactoriesH.m4 > SeqFactories.h
-m4 AVFactoriesH.m4 > AVFactories.h
-cd ../../..
+cd packages/factories/src || fail "creating sources in packages/factories/src"
+m4 VectorFactories.m4 > VectorFactories.c || fail "creating sources in packages/factories/src"
+m4 VectorSequenceFactories.m4 > VectorSequenceFactories.c || fail "creating sources in packages/factories/src"
+m4 ArrayFactories.m4 > ArrayFactories.c || fail "creating sources in packages/factories/src"
+m4 ArraySequenceFactories.m4 > ArraySequenceFactories.c || fail "creating sources in packages/factories/src"
+cd ../../..  || fail "creating sources in packages/factories/src"
 
-cd packages/factories/test
-m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c
-m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c
-m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
-m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c
-cd ../../..
+cd packages/factories/include || fail "creating sources in packages/factories/include"
+m4 SeqFactoriesH.m4 > SeqFactories.h || fail "creating sources in packages/factories/include"
+m4 AVFactoriesH.m4 > AVFactories.h || fail "creating sources in packages/factories/include"
+cd ../../.. || fail "creating sources in packages/factories/include"
 
-cd packages/vectorops/src
-m4 MatrixDivide.m4 > MatrixDivide.c
-m4 MatrixMultiply.m4 > MatrixMultiply.c
-m4 MatrixPower.m4 > MatrixPower.c
-m4 MiscMatlab.m4 > MiscMatlab.c
-m4 VectorIndexRangeC.m4 > VectorIndexRange.c
-cd ../../..
+cd packages/factories/test || fail "creating sources in packages/factories/include"
+m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c || fail "creating sources in packages/factories/test"
+m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
+m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c || fail "creating sources in packages/factories/test"
+m4 ArraySequenceFactoriesTest.m4 > ArraySequenceFactoriesTest.c || fail "creating sources in packages/factories/test"
+cd ../../.. || fail "creating sources in packages/factories/test"
 
-cd packages/vectorops/include
-m4 VectorIndexRangeH.m4 > VectorIndexRange.h
-cd ../../..
+cd packages/vectorops/src || fail "creating sources in packages/vectorops/src"
+m4 MatrixDivide.m4 > MatrixDivide.c || fail "creating sources in packages/vectorops/src"
+m4 MatrixMultiply.m4 > MatrixMultiply.c || fail "creating sources in packages/vectorops/src"
+m4 MatrixPower.m4 > MatrixPower.c || fail "creating sources in packages/vectorops/src"
+m4 MiscMatlab.m4 > MiscMatlab.c || fail "creating sources in packages/vectorops/src"
+m4 VectorIndexRangeC.m4 > VectorIndexRange.c || fail "creating sources in packages/vectorops/src"
+cd ../../.. || fail "creating sources in packages/vectorops/src"
 
-cd packages/utilities/src
-m4 MatrixOps.m4 > MatrixOps.c
-cd ../../..
+cd packages/vectorops/include || fail "creating sources in packages/vectorops/include"
+m4 VectorIndexRangeH.m4 > VectorIndexRange.h || fail "creating sources in packages/vectorops/include"
+cd ../../.. || fail "creating sources in packages/vectorops/include"
 
-cd packages/stats/src
-m4 LALMoment.m4 > LALMoment.c
-cd ../../..
+cd packages/utilities/src || fail "creating sources in packages/vectorops/include"
+m4 MatrixOps.m4 > MatrixOps.c || fail "creating sources in packages/vectorops/src"
+cd ../../.. || fail "creating sources in packages/vectorops/include"
 
-cd packages/comm/src
-m4 SendRecv.m4 > SendRecv.c
-m4 Exchange.m4 > Exchange.c
-cd ../../..
+cd packages/stats/src || fail "creating sources in packages/stats/src"
+m4 LALMoment.m4 > LALMoment.c || fail "creating sources in packages/stats/src"
+cd ../../.. || fail "creating sources in packages/stats/src"
 
-cd packages/ring/src
-m4 LALRingDown.m4 > LALRingDown.c
-cd ../../..
+cd packages/comm/src || fail "creating sources in packages/comm/src"
+m4 SendRecv.m4 > SendRecv.c || fail "creating sources in packages/comm/src"
+m4 Exchange.m4 > Exchange.c || fail "creating sources in packages/comm/src"
+cd ../../.. || fail "creating sources in packages/comm/src"
 
-cd packages/framedata/src
-m4 FrameSeries.m4 > FrameSeries.c
-cd ../../..
+cd packages/ring/src || fail "creating sources in packages/ring/src"
+m4 LALRingDown.m4 > LALRingDown.c || fail "creating sources in packages/ring/src"
+cd ../../.. || fail "creating sources in packages/ring/src"
 
-cd packages/pulsar/test
-/bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd
-/bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd
-/bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd
-/bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd
-/bin/sh ephemtoilwd.sh earth00.dat > earth00.ilwd
-/bin/sh ephemtoilwd.sh sun00.dat > sun00.ilwd
-/bin/sh ephemtoilwd.sh earth01.dat > earth01.ilwd
-/bin/sh ephemtoilwd.sh sun01.dat > sun01.ilwd
-/bin/sh ephemtoilwd.sh earth02.dat > earth02.ilwd
-/bin/sh ephemtoilwd.sh sun02.dat > sun02.ilwd
-cd ../../..
+cd packages/framedata/src || fail "creating sources in packages/framedata/src"
+m4 FrameSeries.m4 > FrameSeries.c || fail "creating sources in packages/framedata/src"
+cd ../../.. || fail "creating sources in packages/framedata/src"
+
+cd packages/pulsar/test || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh earth98.dat > earth98.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh sun98.dat > sun98.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh earth00.dat > earth00.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh sun00.dat > sun00.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh earth01.dat > earth01.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh sun01.dat > sun01.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh earth02.dat > earth02.ilwd || fail "creating sources in packages/pulsar/test"
+/bin/sh ephemtoilwd.sh sun02.dat > sun02.ilwd || fail "creating sources in packages/pulsar/test"
+cd ../../.. || fail "creating sources in packages/pulsar/test"
 
 ## Generate the Makefile.in's and the configure script
 
-$ACLOCAL
-$AUTOHEADER
-$AUTOMAKE $INCLUDEDEPS
-$AUTOCONF
+echo ">>> 00boot: running aclocal"
+$ACLOCAL || fail "aclocal"
+echo ">>> 00boot: running autoheader"
+$AUTOHEADER || fail "autoheader"
+echo ">>> 00boot: running automake"
+$AUTOMAKE $INCLUDEDEPS || fail "automake"
+echo ">>> 00boot: running autoconf"
+$AUTOCONF || fail "autoconf"
+
+echo ">>> 00boot: done"
+echo "
+*****************************************************************
+*                                                               *
+*       00boot has been run.                                    *
+*                                                               *
+*       Now run './configure' with appropriate options          *
+*       to configure LAL.                                       *
+*                                                               *
+*	Consult the file 'README.install' for details.          *
+*                                                               *
+*****************************************************************"

@@ -91,28 +91,17 @@ AC_DEFUN([LAL_WITH_CC],
         ],)
 ])
 
-AC_DEFUN([LAL_ENABLE_FFTW3],
-[AC_ARG_ENABLE(
-        [fftw3],
-        [  --enable-fftw3          use fftw3 [default=no] ],
-        [ case "${enableval}" in
-            yes) fftw3=true;;
-            no)  fftw3=false;;
-            *) AC_MSG_ERROR(bad value ${enableval} for --enable-fftw3) ;;
-          esac
-        ], [ fftw3=true ] )
-])
 
 AC_DEFUN([LAL_ENABLE_FRAME],
 [AC_ARG_ENABLE(
         [frame],
-        [  --enable-frame          compile code that requires Frame library [default=no] ],
+        [  --enable-frame          compile code that requires Frame library [default=yes] ],
         [ case "${enableval}" in
             yes) frame=true;;
             no)  frame=false ;;
             *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
           esac
-        ], [ frame=false ] )
+        ], [ frame=true ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_MPI],
@@ -127,26 +116,16 @@ AC_DEFUN([LAL_ENABLE_MPI],
         ], [ mpi=false ] )
 ])
 
-AC_DEFUN([LAL_ENABLE_DATAFLOW],
+AC_DEFUN([LAL_ENABLE_METAIO],
 [AC_ARG_ENABLE(
-  [dataflow],
-  [  --enable-dataflow       compile code that requires metaio/dataflow library [default=no] ],
-  [ case "${enableval}" in
-      yes) dataflow=true;;
-      no)  dataflow=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
-    esac
-  ], [ dataflow=false ] )
-AC_ARG_ENABLE(
   [metaio],
-  [  --enable-metaio         compile code that requires metaio/dataflow library [default=no] ],
+  [  --enable-metaio         compile code that requires metaio/dataflow library [default=yes] ],
   [ case "${enableval}" in
       yes) metaio=true;;
       no)  metaio=false ;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
     esac
-  ], [ metaio=false ] )
-  if test "x$metaio" = "xtrue" ; then dataflow=true ; fi
+  ], [ metaio=true ] )
 ])
 
 AC_DEFUN([LAL_ENABLE_INTELFFT],
@@ -238,124 +217,33 @@ AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
 ])
 
 
-
-AC_DEFUN([LAL_FFTW_MSG_ERROR],
-[echo "**************************************************************"
- echo "* You must install FFTW (v >= 2.0) on your system.           *"
- echo "* FFTW is avaliable from http://www.fftw.org                 *"
- echo "* FFTW must be configured with the --enable-float argument.  *"
- echo "* Install FFTW on your system using the commands:            *"
- echo "*                                                            *"
- echo "*   ./configure --enable-float                               *"
- echo "*   make                                                     *"
- echo "*   make install                                             *"
- echo "*                                                            *"
- echo "* Remove the file config.cache before re-running configure.  *"
- echo "*                                                            *"
- echo "* Please see the instructions in the file INSTALL.           *"
- echo "**************************************************************"
-AC_MSG_ERROR([single precision FFTW must be properly installed.])
-])
-
-AC_DEFUN([LAL_SFFTW_WORKS],
-[AC_MSG_CHECKING([whether single precison FFTW works])
-AC_TRY_RUN([
-#include <stdio.h>
-#ifdef HAVE_SFFTW_H
-#include <sfftw.h>
-#elif HAVE_FFTW_H
-#include <fftw.h>
-#else
-#error "don't have either sfftw.h or fftw.h"
-#endif
-int main() { return (sizeof(fftw_real)!=4 || fftw_sizeof_fftw_real()!=4); }
-],
-AC_MSG_RESULT([yes]),
-AC_MSG_RESULT([no])
-[
-echo "**************************************************************"
-echo "* FFTW does not seem to be working.                          *"
-echo "* Possible problems:                                         *"
-echo "*   - FFTW version < 2.0                                     *"
-echo "*   - Could not find header sfftw.h, fftw.h, or fftw3.h      *"
-echo "*   - FFTW was not configured with the --enable-float option *"
-echo "* Consult file config.log for details                        *"
-]
-LAL_FFTW_MSG_ERROR,
-AC_MSG_RESULT([unknown]) ) ] )
-
-AC_DEFUN([LAL_SRFFTW_WORKS],
-[AC_MSG_CHECKING([whether single precison real FFTW works])
-AC_TRY_RUN([
-#include <stdio.h>
-#ifdef HAVE_SRFFTW_H
-#include <srfftw.h>
-#elif HAVE_RFFTW_H
-#include <rfftw.h>
-#else
-#error "don't have either srfftw.h or rfftw.h"
-#endif
-int main() { return sizeof(fftw_real) - 4; }
-],
-AC_MSG_RESULT([yes]),
-AC_MSG_RESULT([no])
-[
-echo "**************************************************************"
-echo "* FFTW does not seem to be working.                          *"
-echo "* Possible problems:                                         *"
-echo "*   - FFTW version < 2.0                                     *"
-echo "*   - Could not find header srfftw.h, rfftw.h, or fftw3.h    *"
-echo "*   - FFTW was not configured with the --enable-float option *"
-echo "* Consult file config.log for details                        *"
-echo "**************************************************************"
-]
-LAL_FFTW_MSG_ERROR,
-AC_MSG_RESULT([unknown]) ) ] )
-
-AC_DEFUN([LAL_CHECK_FRAMELIB],
-[ if test "${frame}" = "true"; then
-        lal_check_framelib_save_LIBS="$LIBS"
-        AC_CHECK_LIB(Frame, FrLibIni, ,
-          [AC_MSG_ERROR([couldn't find Frame library for --enable-frame])] )
-        AC_MSG_CHECKING([whether Frame library version >= 6.00])
-        AC_TRY_RUN([#include "FrameL.h"
-          int main() { return FRAMELIB_VERSION < 6.00 ? 1 : 0 ; }],
-          AC_MSG_RESULT([yes]),
-          [AC_MSG_RESULT([no])
-            AC_MSG_ERROR([FrameL.h not found or FRAMELIB_VERSION < 6.00])],
-          AC_MSG_RESULT([unknown]))
-        LIBS="$lal_check_framelib_save_LIBS"
-  fi
-])
-
-AC_DEFUN([LAL_CHECK_MPI],
-[ AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
-  AC_MSG_CHECKING([for mpicc flags])
+AC_DEFUN([LAL_CHECK_MPI_FLAGS],
+[ AC_MSG_CHECKING([for mpicc flags])
   SHOWARG=""
-  MPICPPFLAGS=""
-  MPICFLAGS=""
-  MPILDFLAGS=""
-  MPITYPE=NONE
+  MPI_CPPFLAGS=""
+  MPI_CFLAGS=""
+  MPI_LDFLAGS=""
+  MPI_TYPE=NONE
   if (($MPICC -compile_info 1>/dev/null 2>/dev/null) && ($MPICC -link_info 1>/dev/null 2>/dev/null)) ; then
-    MPITYPE=mpich
+    MPI_TYPE=MPICH
     for mpiarg in `$MPICC -compile_info` ; do
       case $mpiarg in
-        -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
-        -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
+        -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
+        -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
       esac
     done
     for mpiarg in `$MPICC -link_info` ; do
       case $mpiarg in
-        -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
-        -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
+        -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
+        -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
       esac
     done
   else
     if ($MPICC -show 1>/dev/null 2>/dev/null) ; then
-      MPITYPE=MPICH
+      MPI_TYPE=MPICH
       SHOWARG="-show"
     elif ($MPICC -showme 1>/dev/null 2>/dev/null) ; then
-      MPITYPE=LAM
+      MPI_TYPE=LAM
       SHOWARG="-showme"
     else
       AC_MSG_WARN([couldn't determine mpi compile flags])
@@ -363,53 +251,18 @@ AC_DEFUN([LAL_CHECK_MPI],
     if test -n "$SHOWARG" ; then
       for mpiarg in `$MPICC $SHOWARG` ; do
         case $mpiarg in
-          -D*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
-          -I*) MPICPPFLAGS="$MPICPPFLAGS $mpiarg" ;;
-          -L*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
-          -l*) MPILDFLAGS="$MPILDFLAGS $mpiarg" ;;
-          -pthread) MPILDFLAGS="$MPILDFLAGS -lpthread" ;;
-          -Wl*) MPICFLAGS="$MPICFLAGS $mpiarg" ;;
+          -D*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
+          -I*) MPI_CPPFLAGS="$MPI_CPPFLAGS $mpiarg" ;;
+          -L*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
+          -l*) MPI_LDFLAGS="$MPI_LDFLAGS $mpiarg" ;;
+          -pthread) MPI_LDFLAGS="$MPI_LDFLAGS -lpthread" ;;
+          -Wl*) MPI_CFLAGS="$MPI_CFLAGS $mpiarg" ;;
         esac
       done
     fi
   fi
-  AC_MSG_RESULT([$MPICPPFLAGS $MPICFLAGS $MPILDFLAGS])
-  LIBS="$LIBS $MPILDFLAGS"
-  CPPFLAGS="$CPPFLAGS $MPICPPFLAGS"
-  CFLAGS="$CFLAGS $MPICFLAGS"
-  AC_CHECK_HEADER(mpi.h, ,AC_MSG_ERROR([can't find mpi.h]))
-  AC_MSG_CHECKING([whether mpi works])
-  AC_TRY_LINK([#include <mpi.h>
-    ], MPI_Finalize();,
-    AC_MSG_RESULT([yes]),
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([mpi does not work]))
-  AC_MSG_CHECKING([mpi type])
-  AC_TRY_COMPILE([
-    #include <mpi.h>
-    #ifndef LAM_MPI
-    #error "not LAM"
-    #endif], , [ MPITYPE=LAM
-                 AC_MSG_RESULT([lam])],
-    AC_TRY_COMPILE([
-      #include <mpi.h>
-      #ifndef MPICH_NAME
-      #erro "not MPICH"
-      #endif], , [ MPITYPE=MPICH
-                   AC_MSG_RESULT([mpich])],
-      [
-      if test $MPITYPE = MPICH ; then
-      AC_MSG_RESULT([couldn't determine... guessing mpich])
-      elif test $MPITYPE = LAM ; then
-      AC_MSG_RESULT([couldn't determine... assuming lam])
-      else
-      AC_MSG_RESULT([couldn't determine.])
-      AC_MSG_ERROR([mpi must be either lam or mpich])
-      fi
-      ]
-    )
-  )
-  AC_SUBST(MPITYPE)dnl
+  AC_MSG_RESULT([$MPI_CPPFLAGS $MPI_CFLAGS $MPI_LDFLAGS])
+  AC_SUBST(MPI_TYPE)dnl
 ])
 
 
@@ -438,4 +291,3 @@ AC_DEFINE_UNQUOTED(LAL_TYPE_NAME, $LAL_CV_NAME)
 undefine([LAL_TYPE_NAME])dnl
 undefine([LAL_CV_NAME])dnl
 ])
-
