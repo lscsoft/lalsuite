@@ -1057,7 +1057,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       
       /* cc statistic */
       LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
-            &ccIn,epochsMatch), &status);
+            &ccIn, epochsMatch), &status);
       y = (REAL8)(ccStat.value * pow(10., ccStat.units.powerOfTen));
 
       /* save */
