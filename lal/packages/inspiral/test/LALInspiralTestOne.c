@@ -1,7 +1,7 @@
 /*  <lalVerbatim file="LALInspiralTestOneCV">
 Author: Sathyaprakash, B. S.
 $Id$
-$Tag: $
+$Name$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
