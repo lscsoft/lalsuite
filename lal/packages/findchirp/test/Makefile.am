@@ -20,3 +20,4 @@ FindChirpMain_SOURCES = FindChirpMain.c FindChirpMaster.c FindChirpSlave.c
 FindChirpMain_LDADD = $(top_srcdir)/lib/liblal.a @MPILIBS@
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = PI* Slave*.out Slave*.err machines killscript
+CLEANFILES = FindChirpMain
