@@ -90,7 +90,7 @@ NRCSID( FRAMECALIBRATIONC, "$Id$" );
 
 #define REF_TYPE "CAL_REF"
 #define FAC_TYPE "CAL_FAC"
-#define SENSEMON_FAC_TYPE "SenseMonitor_%s_M"
+#define SENSEMON_FAC_TYPE "SenseMonitor"
 
 #define RETURN_POINT_CAL \
   calfuncs.responseFunction->sampleUnits = strainPerCount; \
@@ -301,8 +301,7 @@ LALExtractFrameResponse(
   do
   {
     /* try and get sensemon frames */
-    LALSnprintf( facDsc, LALNameLength * sizeof(CHAR), 
-        SENSEMON_FAC_TYPE, ifo );
+    LALSnprintf( facDsc, LALNameLength * sizeof(CHAR), SENSEMON_FAC_TYPE );
     LALFrCacheSieve( status->statusPtr, &facCache, calCache, &sieve );
     BEGINFAIL( status )
     {
