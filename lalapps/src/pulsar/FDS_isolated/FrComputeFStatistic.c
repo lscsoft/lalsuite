@@ -227,7 +227,7 @@ int main(int argc,char *argv[])
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
 
       /* Have we scanned all DopplerPositions yet? */
-      if (dopplerpos.finished)  
+      if (thisScan.state == STATE_FINISHED)
 	break;
 
       LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
@@ -346,7 +346,7 @@ initUserVars (LALStatus *stat)
   
   uvar_Fthreshold = 10.0;
 
-  uvar_metricType =  LAL_METRIC_NONE;	
+  uvar_metricType =  LAL_PMETRIC_NONE;	
   uvar_metricMismatch = 0.02;
 
   uvar_help = FALSE;
