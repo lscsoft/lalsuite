@@ -37,7 +37,7 @@ REAL8 f0MIN,f0MAX,h0MIN,h0MAX;
 REAL8 f1dot,f2dot,f3dot;
 REAL8 aplus,across;
 INT4 seed;
-INT4 nsft,band,fmin;
+INT4 nsft,band,f_min;
 REAL8 tobs;
 INT4 tstart,tsft;
 BOOLEAN alphaflag=0;
@@ -60,7 +60,7 @@ BOOLEAN tstartflag=0;
 BOOLEAN nsftflag=0;
 BOOLEAN tsftflag=0;
 BOOLEAN bandflag=0;
-BOOLEAN fminflag=0;
+BOOLEAN f_minflag=0;
 BOOLEAN allskyflag=0;
 REAL8 alpha,delta,sindelta,f0,h0,sma,period,argp,ecc;
 LIGOTimeGPS tperiGPS;
@@ -74,7 +74,6 @@ int OuptutRandomConfigFile();
 int MakeSafeBinaryParams(); 
 int ReadCommandLine(int argc,char *argv[]);
 int OutputRandomConfigFile();
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 int main(int argc,char *argv[]) 
 {
@@ -294,8 +293,8 @@ int GenRandomParams()
   }
 
   /* calculate min frequency */
-  if ((bandflag) || (fminflag)) {
-    fmin=floor(f0-((REAL8)band/2.0));
+  if ((bandflag) || (f_minflag)) {
+    f_min=floor(f0-((REAL8)band/2.0));
   }
 
   /* make the binary parameters realistic for the chosen sft length */
@@ -544,7 +543,7 @@ int MakeSafeBinaryParams()
     case 'n':
       band=atoi(optarg);
       bandflag=1;
-      fminflag=1;
+      f_minflag=1;
       break;
     case 'm':
       temp=optarg;
@@ -610,11 +609,8 @@ int MakeSafeBinaryParams()
 
 int OutputRandomConfigFile() 
 {
-  FILE *fpin,*fpout,*fpcla;
-  char name[256];
-  char *line;
-  char temp[256];
-  char clargs[2048];
+  FILE *fpin,*fpout,*fpgen,*fporb,*fpnuis;
+  char name[256],line[256];
   /* defining the actual strings to identify in the input file */
   char *phi0text="phi0";
   char *psitext="psi";
@@ -633,9 +629,8 @@ int OutputRandomConfigFile()
   char *orbitArgPeriapsetext="orbitArgPeriapse";
   char *orbitTperiSSBsectext="orbitTperiSSBsec";
   char *orbitTperiSSBnstext="orbitTperiSSBns";
-  char *fmintext="fmin";
+  char *f_mintext="f_min";
   char *bandtext="Band";
-  size_t len = 0;
   int i;
  
   /* opening the input config file */
@@ -654,98 +649,106 @@ int OutputRandomConfigFile()
   /* He we are simply outputting to file a string of commandline arguments  */
   /* which can be catted into the program lalapps_GenerateSearchInput so    */
   /* that a search of exactly matched parameters can be done */
-  fpcla=fopen("clargsfile.out","w");
-  if (fpcla==NULL) {
+  /* this file contains cla's for orbital parameters */ 
+  fporb=fopen("orbparamsfile.out","w");
+  if (fporb==NULL) {
     fprintf(stderr,"Unable to open file\n");
     return 1;
   }
-  
-  
+  /* this one contains cla's for general parameters */
+  fpgen=fopen("genparamsfile.out","w");
+  if (fpgen==NULL) {
+    fprintf(stderr,"Unable to open file\n");
+    return 1;
+  }
+  /* here we are opening a file to output nuisance parameters to a seperate file */
+  fpnuis=fopen("nuisancefile.out","w");
+  if (fpnuis==NULL) {
+    fprintf(stderr,"Unable to open file\n");
+    return 1;
+  }
+ 
   i=0;
-  /* cycle through the input file and identify the appropriate lines */ 
-  while (getline(&line, &len, fpin)!=EOF) 
-  {
+  /* read in the input file and identify the appropriate lines */ 
+  while (fgets(line,255,fpin))  
+    {
+
     /* get the first column string to compare */
-    sscanf(line,"%s",name);
+    sscanf(line,"%s",name); 
+    fprintf(stdout,"name is %s\n",name);
     
     /* if any of the following strings are found and are to be replaced the change line */
     if ((strcmp(name,ifotext)==0)&&(ifoflag)) {
       sprintf(line,"detector\t= %s\t\t# Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME\n",ifo);
-      sprintf(temp,"--ifo %s ",ifo); 
-      strcat(clargs,temp);
+      fprintf(fpgen,"ifo %s\n",ifo); 
     }
-    if ((strcmp(name,nsfttext)==0)&&(nsftflag)) {
+    else if ((strcmp(name,nsfttext)==0)&&(nsftflag)) {
       sprintf(line,"nTsft\t\t= %d\t\t# number of SFTs to calculate\n",nsft);
     }
-    if ((strcmp(name,fmintext)==0)&&(fminflag)) {
-      sprintf(line,"fmin\t\t= %d\t\t# lowest SFT-frequency in Hz\n",fmin);
+    else  if ((strcmp(name,f_mintext)==0)&&(f_minflag)) {
+      sprintf(line,"f_min\t\t= %d\t\t# lowest SFT-frequency in Hz\n",f_min);
     }
-    if ((strcmp(name,bandtext)==0)&&(bandflag)) {
+    else if ((strcmp(name,bandtext)==0)&&(bandflag)) {
       sprintf(line,"Band\t\t= %d\t\t# SFT frequency band in Hz\n",band);
     }
-    if ((strcmp(name,longitudetext)==0)&&(alphaflag)) {
+    else if ((strcmp(name,longitudetext)==0)&&(alphaflag)) {
       sprintf(line,"longitude\t= %6.12f\t# source longitude (in_radians)\n",alpha);
-      sprintf(temp,"--alpha %6.12f ",alpha); 
-      strcat(clargs,temp);
+      fprintf(fpgen,"alpha %6.12f\n",alpha); 
     }
-    if ((strcmp(name,latitudetext)==0)&&(deltaflag)) {
+    else if ((strcmp(name,latitudetext)==0)&&(deltaflag)) {
       sprintf(line,"latitude\t= %6.12f\t# source latitude (in radians)\n",delta);
-      sprintf(temp,"--delta %6.12f ",delta); 
-      strcat(clargs,temp);
+      fprintf(fpgen,"delta %6.12f\n",delta); 
     }
-    if ((strcmp(name,aPlustext)==0)&&(aplusflag)) {
+    else if ((strcmp(name,aPlustext)==0)&&(aplusflag)) {
       sprintf(line,"aPlus\t\t= %6.12f\t# plus-polarization amplitude a_+ (strain)\n",aplus);
+      fprintf(fpnuis,"cosiota %6.12f\n",cosiota);
     }
-    if ((strcmp(name,aCrosstext)==0)&&(acrossflag)) {
+    else if ((strcmp(name,aCrosstext)==0)&&(acrossflag)) {
       sprintf(line,"aCross\t\t= %6.12f\t# cross-polarization amplitude a_x (strain)\n",across);
     }
-    if ((strcmp(name,psitext)==0)&&(psiflag)) {
+    else if ((strcmp(name,psitext)==0)&&(psiflag)) {
       sprintf(line,"psi\t\t= %6.12f\t# wave polarization angle Psi\n",psi);
+      fprintf(fpnuis,"psi %6.12f\n",psi);
     }
-    if ((strcmp(name,phi0text)==0)&&(phiflag)) {
+    else if ((strcmp(name,phi0text)==0)&&(phiflag)) {
       sprintf(line,"phi0\t\t= %6.12f\t# initial wave-phase phi0 (at reference-time tRef)\n",phi);
+      fprintf(fpnuis,"phi %6.12f\n",phi);
     }
-    if ((strcmp(name,f0text)==0)&&(f0flag)) {
+    else if ((strcmp(name,f0text)==0)&&(f0flag)) {
       sprintf(line,"f0\t\t= %6.12f\t# intrinsic signal frequency f0 (at tRef)\n",f0);
       f0flag=0;
-      sprintf(temp,"--fmin %6.12f ",f0); 
-      strcat(clargs,temp);
+      fprintf(fpgen,"f0 %6.12f\n",f0); 
     }
-    if ((strcmp(name,tsfttext)==0)&&(tsftflag)) {
-      sprintf(line,"Tsft\t\t= %d\t# length of SFTs in seconds\n",tsft);
+    else if ((strcmp(name,tsfttext)==0)&&(tsftflag)) {
+      sprintf(line,"tsft\t\t= %d\t# length of SFTs in seconds\n",tsft);
     }
-    if ((strcmp(name,tstarttext)==0)&&(tstartflag)) {
+    else if ((strcmp(name,tstarttext)==0)&&(tstartflag)) {
       sprintf(line,"startTime\t= %d\t# GPS start time of (contiguous) output time-series\n",tstart);
+      fprintf(fpgen,"tstart %d\n",tstart); 
     }
-    if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(smaflag)) {
+    else if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(smaflag)) {
       sprintf(line,"orbitSemiMajorAxis\t= %6.12f\t# Projected orbital semi-major axis a in seconds (i.e. a*sin(i)/c)\n",sma);
-      sprintf(temp,"--smaxis %6.12f ",sma); 
-      strcat(clargs,temp);
+      fprintf(fporb,"sma %6.12f\n",sma); 
     }
-    if ((strcmp(name,orbitEccentricitytext)==0)&&(eccflag)) {
+    else if ((strcmp(name,orbitEccentricitytext)==0)&&(eccflag)) {
       sprintf(line,"orbitEccentricity\t= %6.12f\t# Orbital eccentricity\n",ecc);
-       sprintf(temp,"--ecc %6.12f ",ecc); 
-      strcat(clargs,temp);
+      fprintf(fporb,"ecc %6.12f\n",ecc); 
     }
-    if ((strcmp(name,orbitTperiSSBsectext)==0)&&(tperiflag)) {
+    else if ((strcmp(name,orbitTperiSSBsectext)==0)&&(tperiflag)) {
       sprintf(line,"orbitTperiSSBsec\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Seconds.\n",tperiGPS.gpsSeconds);
-       sprintf(temp,"--tperisec %d ",tperiGPS.gpsSeconds); 
-      strcat(clargs,temp);
+      fprintf(fporb,"tpsec %d\n",tperiGPS.gpsSeconds); 
     }
-    if ((strcmp(name,orbitTperiSSBnstext)==0)&&(tperiflag)) {
+    else if ((strcmp(name,orbitTperiSSBnstext)==0)&&(tperiflag)) {
       sprintf(line,"orbitTperiSSBns\t\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Nanoseconds.\n",tperiGPS.gpsNanoSeconds);
-       sprintf(temp,"--tperinan %d ",tperiGPS.gpsNanoSeconds); 
-      strcat(clargs,temp);
+      fprintf(fporb,"tpnano %d\n",tperiGPS.gpsNanoSeconds); 
     }
-    if ((strcmp(name,orbitPeriodtext)==0)&&(periodflag)) {
+    else if ((strcmp(name,orbitPeriodtext)==0)&&(periodflag)) {
       sprintf(line,"orbitPeriod\t\t= %6.12f\t# Orbital period (seconds)\n",period);
-      sprintf(temp,"--period %6.12f ",period); 
-      strcat(clargs,temp);
+      fprintf(fporb,"period %6.12f\n",period); 
     }
-    if ((strcmp(name,orbitArgPeriapsetext)==0)&&(argpflag)) {
+    else if ((strcmp(name,orbitArgPeriapsetext)==0)&&(argpflag)) {
       sprintf(line,"orbitArgPeriapse\t= %6.12f\t# Argument of periapsis (radians)\n",argp); 
-      sprintf(temp,"--argp %6.12f ",argp); 
-      strcat(clargs,temp);
+      fprintf(fporb,"argp %6.12f\n",argp); 
     }
     
     /* output the appropriate line to the output file */
@@ -753,11 +756,12 @@ int OutputRandomConfigFile()
 
     
   }
-  fprintf(fpcla,"%s",clargs);
- 
+  
   fclose(fpin);
   fclose(fpout);
-  fclose(fpcla);
+  fclose(fpgen);
+  fclose(fporb);
+  fclose(fpnuis);
   return 0;
   
 }
