@@ -60,6 +60,14 @@ tile between its centre and its edge, as shown in
 Fig.~\ref{fig:tiling}(c).  These triangular corners can be covered
 with one or more extra overlapping tiles of reduced width.
 
+In a parameter space with constant metric, the tile area is maximized
+(and the number of covering tiles minimized) when the column width is
+$\sqrt{2}$ times smaller than the projected horizontal width of the
+ellipses.  When the ellipses vary, it is generally best to determine
+the column width from the \emph{narrowest} ellipse in a column, to
+avoid singular effects when tile widths approach the ellipse widths
+and become infinitesimally high.
+
 For the column-placement algorithm to work effectively, we require
 that the parameter space be representable as a range
 $y\in[y_1(x),y_2(x)]$ between two single-valued functions defined on a
@@ -183,17 +191,18 @@ fourth argument of \verb@*getMetric()@, above.
 desired between any point in the region and the nearest mesh point;
 note that the maximum mismatch is equal to 1 minus the minimum match.
 
-\item[\texttt{REAL4 widthMaxFac}] The minimum factor by which the
-projected width of the local mismatch ellipse must exceed the column
-width, before the mesh placement routine will try a narrower column.
-If set to $\leq1$, the default value
-\verb@TWODMESHINTERNALC_WMAXFAC@=1.2 will be used.
+\item[\texttt{REAL4 widthMaxFac}] The minimum ratio of mismatch
+ellipse width (projected onto the horizontal axis) to column width
+that must be maintained throughout the column: if an ellipse falls
+below this ratio due to shrinkage or rotation, as in Fig 29.1.b, the
+code will try a narrower column.  If set to $\leq1$, the default value
+\verb@TWODMESHINTERNALC_WMAXFAC@=$\sqrt[4]{2}$ will be used.
 
 \item[\texttt{REAL4 widthRetryFac}] If the column is determined to be
 too wide (e.g.\ due to the value of \verb@widthMaxFac@, above), the
 column width will be reduced by the factor \verb@widthRetryFac@.  If
-set to $\leq1$, the default value \verb@TWODMESHINTERNALC_WRETRYFAC@=2
-will be used.
+set to $\leq1$, the default value
+\verb@TWODMESHINTERNALC_WRETRYFAC@=$\sqrt{2}$ will be used.
 
 \item[\texttt{UINT4 maxColumns}] The maximum number of columns the
 mesh placement routine will try before giving up.  If zero, this

@@ -206,8 +206,8 @@ LALMalloc()                 LALDestroyTwoDMesh()
 NRCSID( TWODMESHINTERNALC, "$Id$" );
 
 /* Local constants. */
-#define TWODMESHINTERNALC_WMAXFAC   (1.2)
-#define TWODMESHINTERNALC_WRETRYFAC (2.0)
+#define TWODMESHINTERNALC_WMAXFAC   (1.189207115)
+#define TWODMESHINTERNALC_WRETRYFAC LAL_SQRT2
 
 /* Local macros.  These macros replace repeated code blocks in the
 routines, and operate within the scope of variables declared within

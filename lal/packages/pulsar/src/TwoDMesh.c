@@ -113,6 +113,18 @@ LALCreateTwoDMesh( LALStatus          *stat,
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( !(*mesh), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
 
+  /* Ben wants a warning if the widthMaxFac or widthRetryFac are
+     larger than is reasonable. */
+#ifndef NDEBUG
+  if ( lalDebugLevel&LALWARNING ) {
+    REAL4 retry = params->widthRetryFac;
+    if ( params->widthMaxFac > LAL_SQRT2 )
+      LALWarning( stat, "widthMaxFac > sqrt(2)" );
+    if ( retry > 1.0 && retry*retry > params->widthMaxFac )
+      LALWarning( stat, "widthRetryFac > sqrt(widthMaxFac)" );
+  }
+#endif
+
   /* Create the list using LALTwoDMesh(). */
   params->nOut = 0;
   head.next = NULL;
@@ -158,7 +170,7 @@ LALDestroyTwoDMesh( LALStatus    *stat,
     *mesh = last->next;
     LALFree( last );
     if ( nFree )
-      *nFree -= nSub + 1;
+      *nFree += nSub + 1;
   }
 
   /* If we got here without sigsegving, we're done. */
