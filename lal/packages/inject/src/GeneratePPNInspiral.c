@@ -354,6 +354,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   UINT4 n, nMax;   /* index over timesteps, and its maximum + 1 */
   UINT4 nNext;     /* index where next buffer starts */
   REAL8 t, t0, dt; /* dimensionless time, start time, and increment */
+  REAL4 tStop = 0.0625;  /* time when orbit reaches minimum radius */
   REAL4 x, xStart, xMax; /* x = t^(-1/8), and its maximum range */
   REAL4 y, yStart, yMax; /* normalized frequency and its range */
   REAL4 yOld, dyMax;     /* previous timestep y, and maximum y - yOld */
@@ -498,12 +499,12 @@ LALGeneratePPNInspiral( LALStatus     *stat,
      to the start time from the leading-order term.  We require the
      frequency to be increasing. */
   yStart = params->fStartIn / fFac;
-  if ( params->fStopIn <= 0.0 )
+  if ( params->fStopIn == 0.0 )
     yMax = LAL_REAL4_MAX;
   else {
-    ASSERT( params->fStopIn > params->fStartIn, stat,
+    ASSERT( fabs( params->fStopIn ) > params->fStartIn, stat,
 	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
-    yMax = params->fStopIn / fFac;
+    yMax = fabs( params->fStopIn ) / fFac;
   }
   if ( ( c[j]*fFac < 0.0 ) || ( yStart < 0.0 ) || (yMax < 0.0 ) ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EPBAD,
@@ -511,6 +512,10 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   }
   xStart = pow( yStart/c[j], 1.0/( j + 3.0 ) );
   xMax = LAL_SQRT1_2;
+  if ( params->fStopIn < 0.0 ) {
+    xMax *= -1.0;
+    tStop = 0.0;
+  }
 
   /* The above is exact if the leading-order term is the only one in
      the expansion.  Check to see if there are any other terms. */
@@ -627,14 +632,12 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       REAL4 f2a;
       REAL4 phase = 0.0;
 
-#if 0
       /* Check if we're still in a valid PN regime. */
       if ( x > xMax ) {
 	params->termCode = GENERATEPPNINSPIRALH_EPNFAIL;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEPNFAIL;
 	goto terminate;
       }
-#endif
 
       /* Compute the frequency.  Note that this also computes the
          global variables x2 and x3, which may be used later. */
@@ -678,7 +681,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       n++;
       t = t0 + n*dt;
       yOld = y;
-      if ( t < 0.0625 ) {
+      if ( t <= tStop ) {
 	params->termCode = GENERATEPPNINSPIRALH_ERTOOSMALL;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGERTOOSMALL;
 	goto terminate;

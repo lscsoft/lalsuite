@@ -240,8 +240,12 @@ waveform, in s.
 waveform, in Hz.
 
 \item[\texttt{REAL4 fStopIn}] The requested termination frequency of
-the waveform, in Hz.  If set to $\leq0$, the waveform will be
-generated until a termination condition (above) is met.
+the waveform, in Hz.  If set to 0, the waveform will be generated
+until a termination condition (above) is met.  If set to a negative
+number, the generator will use its absolute value as the terminating
+frequency, but will ignore post-Newtonian breakdown; it will terminate
+only at the requested frequency $-\mathtt{fStopIn}$, a local maximum
+frequency, or the central singularity.
 
 \item[\texttt{UINT4 lengthIn}] The maximum number of samples in the
 generated waveform.  If zero, the waveforms can be arbitrarily long.
