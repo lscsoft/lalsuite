@@ -258,7 +258,7 @@ LALUserVarReadCmdline (LALStatus *stat,
    * (as the head is always skipped), but it has to be in the optstring 
    * to avoid an error if specified on the command-line. 
    * Treatment of debug-option reading has to be done separately using
-   * UVARgetDebugLevle() 
+   * UVARgetDebugLevel() 
    */
   if ( (ptr->help != NULL) && (ptr->optchar != 0) )
     {
@@ -342,8 +342,17 @@ LALUserVarReadCmdline (LALStatus *stat,
 	case UVAR_BOOL:
 	  ans = -1;
 
-	  if (optarg == NULL)	/* no argument: counts as 'true' */
-	    ans = 1;
+	  /* subtlety with optional argument: it's not necessarily found in the *same* argv-entry
+	   * eg, if no '=' was used, so we have to check for that case by hand: */
+
+	  /* if the next entry is not an option, take it as an argument */
+	  if (optarg == NULL && (optind < argc) && (argv[optind][0] != '-') && (argv[optind][0] != '@') )	 
+	    optarg = argv[optind];
+
+	  if ( optarg == NULL )	/* no argument found at all: defaults to TRUE */
+	    {
+	      ans = 1;
+	    }
 	  else		/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
