@@ -85,7 +85,7 @@ COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries(
 	if(new->name)
 		strncpy(new->name, name, LALNameLength);
 	else
-		*new->name = '\0';
+		new->name[0] = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaF = deltaF;
@@ -142,7 +142,7 @@ REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
 	if(new->name)
 		strncpy(new->name, name, LALNameLength);
 	else
-		*new->name = '\0';
+		new->name[0] = '\0';
 	new->epoch = epoch;
 	new->f0 = f0;
 	new->deltaF = deltaF;
