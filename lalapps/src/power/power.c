@@ -441,52 +441,46 @@ int main( int argc, char *argv[])
 
     if (mdcFlag)
     {
-          INT4 i;
-	 
-	  /*open mdc cache */
-          LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
-	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
-	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
+      INT4 i;
 
-          /* create and initialize the mdc time series vector */
-          mdcSeries.data = NULL;
-          LAL_CALL( LALCreateVector( &stat, &mdcSeries.data, numPoints), &stat);
-          memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
-          mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-          mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-          strcpy(mdcSeries.name, mdcparams->channelName);
-          mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
-          mdcSeries.f0 = 0.0;
-          mdcSeries.sampleUnits = lalADCCountUnit;
-          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
-          mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
-          mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-          LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
+      /*open mdc cache */
+      LAL_CALL( LALFrCacheImport( &stat, &frameCache, mdcCacheFile ), &stat);
+      LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat);
+      LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
 
-          /* get the mdc signal data */
-          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
+      /* create and initialize the mdc time series vector */
+      mdcSeries.data = NULL;
+      LAL_CALL( LALCreateVector( &stat, &mdcSeries.data, numPoints), &stat);
+      memset( mdcSeries.data->data, 0, mdcSeries.data->length*sizeof(REAL4) );
+      mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+      mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+      strcpy(mdcSeries.name, mdcparams->channelName);
+      mdcSeries.deltaT = 1.0/((REAL8) sampleRate);
+      mdcSeries.f0 = 0.0;
+      mdcSeries.sampleUnits = lalADCCountUnit;
+      LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
+      mdcSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+      mdcSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+      LAL_CALL( LALFrSeek(&stat, &(mdcSeries.epoch), stream), &stat);
 
-	  /* write diagnostic info to disk */
-	  if ( printData ){
-	    LALPrintTimeSeries( &mdcSeries, "./timeseriesmdc.dat" );
-	  }
+      /* get the mdc signal data */
+      LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &mdcSeries, &mdcchannelIn, stream), &stat);
 
-	  /* add the signal to the As_Q data */
-	  
-	  for(i=0;i<numPoints;i++)
-	    {
-	      series.data->data[i] += mdcSeries.data->data[i];
-	    }
+      /* write diagnostic info to disk */
+      if ( printData ){
+        LALPrintTimeSeries( &mdcSeries, "./timeseriesmdc.dat" );
+      }
 
-	  /* write diagnostic info to disk */
-	  if ( printData ){
-	    LALPrintTimeSeries( &series, "./timeseriesasqmdc.dat" );
-	  }
+      /* add the signal to the As_Q data */
 
-	  /* destroy the mdc data vector */
-	  LAL_CALL( LALDestroyVector( &stat, &mdcSeries.data), &stat);
-	  /* close the frame stream */
-	  LAL_CALL( LALFrClose( &stat, &stream ), &stat);
+      for(i=0;i<numPoints;i++)
+      {
+        series.data->data[i] += mdcSeries.data->data[i];
+      }
+
+      /* write diagnostic info to disk */
+      if ( printData ){
+        LALPrintTimeSeries( &series, "./timeseriesasqmdc.dat" );
       }
 
       /* destroy the mdc data vector */
