@@ -1,0 +1,672 @@
+#!/usr/bin/env python2.2
+"""
+inspiral_pipe_s2.in - S2 inspiral analysis pipeline script
+
+$Id$
+
+This script generates the necessary condor DAG files to analyze the
+data from the second LIGO science run through the S2 inspiral pipeline.
+
+For S2 the first IFO is L1, the second IFO is H1 and the third IFO is H2.
+
+All data from L1 that is coincident with either H1 or H2 is analyzed 
+for triggers. There are three groups of output data. L1H1 double 
+coincident data, L1H2 double coincident data and L1H1H2 triple coincident
+data. Note that L1H1 and L1H2 are exclusive and the double coincident 
+data is exclusive with the triple coincident data.
+"""
+
+__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+##############################################################################
+# import standard modules and append the lalapps prefix to the python path
+import sys, os, copy
+import getopt, re, string
+import tempfile
+import ConfigParser
+sys.path.append('@PYTHONLIBDIR@')
+
+# import the modules we need to build the pipeline
+import pipeline, inspiral
+
+##############################################################################
+# some bookkeeping function to make life easier later
+class AnalyzedIFOData:
+  """
+  Contains the information for the data that needs to be filtered.
+  """
+  def __init__(self,chunk,node):
+    self.__analysis_chunk = chunk
+    self.__dag_node = node
+
+  def set_chunk(self,chunk):
+    self.__analysis_chunk = chunk
+
+  def get_chunk(self,chunk):
+    return self.__analysis_chunk
+
+  def set_dag_node(self,node):
+    self.__dag_node = node
+
+  def get_dag_node(self,node):
+    return self.__dag_node
+
+def chunk_in_segment(chunk,seg):
+  if ( chunk.start() >= seg.start() and chunk.start() <= seg.end() ) or (
+    chunk.end() >= seg.start() and chunk.end() <= seg.end() ):
+    return 1
+  else:
+    return 0
+
+def chunks_overlap(chunk1,chunk2):
+  if ( chunk1.start() >= chunk2.start() and chunk1.start <= chunk2.end() ) or (
+    chunk1.end() >= chunk2.start() and chunk1.end() <= chunk2.end() ):
+    return 1
+  else:
+    return 0
+
+##############################################################################
+# help message
+def usage():
+  msg = """\
+Usage: lalapps_inspiral_pipe [options]
+
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
+  -d, --datafind           create frame cache files
+  
+  -t, --template-bank      generate a template bank for L1
+  -i, --inspiral           generate inspiral triggers for L1
+
+  -T, --h1-triggered-bank  generate a triggered bank for L1H1
+  -U, --h2-triggered-bank  generate a triggered bank for L1H2
+  
+  -I, --h1-inspiral        generate inspiral triggers for L1H1
+  -J, --h2-inspiral        generate inspiral triggers for L1H2
+
+  -C, --l1h1-coincidence   generate run inca to generate triggers for L1H1
+  -D, --l1h2-coincidence   generate run inca to generate triggers for L1H2
+  -E, --l1h1h2-coincidence generate run inca to generate triggers for L1H1H2
+
+  -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -l, --log-path PATH      directory to write condor log file
+  -f, --config-file FILE   use configuration file FILE
+"""
+  print >> sys.stderr, msg
+
+##############################################################################
+# pasrse the command line options to figure out what we should do
+shortop = "hvu:driTUIJCDEj:pP:l:f:"
+longop = [
+  "help",
+  "version",
+  "user-tag=",
+  "datafind",
+  "template-bank",
+  "inspiral",
+  "h1-triggered-bank",
+  "h2-triggered-bank",
+  "h1-inspiral",
+  "h2-inspiral",
+  "l1h1-coincidence",
+  "l1h2-coincidence",
+  "l1h1h2-coincidence",
+  "injections=",
+  "playground-only",
+  "priority=",
+  "log-path=",
+  "config-file=",
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+
+usertag = None
+do_datafind = None
+do_tmpltbank = None
+do_inspiral = None
+do_h1_trigbank = None
+do_h2_trigbank = None
+do_h1_inspiral = None
+do_h2_inspiral = None
+do_l1h1_coinc = None
+do_l1h2_coinc = None
+do_l1h1h2_coinc = None
+inj_file = None
+playground_only = 0
+condor_prio = None
+log_path = None
+config_file = None
+
+for o, a in opts:
+  if o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-v", "--version"):
+    print "$Id$"
+    sys.exit(0)
+  elif o in ("-u", "--user-tag"):
+    usertag = a
+  elif o in ("-d", "--datafind"):
+    do_datafind = 1
+  elif o in ("-t", "--template-bank"):
+    do_tmpltbank = 1
+  elif o in ("-i", "--inspiral"):
+    do_inspiral = 1
+  elif o in ("-T", "--h1-triggered-bank"):
+    do_h1_trigbank = 1
+  elif o in ("-U", "--h2-triggered-bank"):
+    do_h2_trigbank = 1
+  elif o in ("-I", "--h1-inspiral"):
+    do_h1_inspiral = 1
+  elif o in ("-J", "--h2-inspiral"):
+    do_h2_inspiral = 1
+  elif o in ("-C", "--l1h1-coincidence"):
+    do_l1h1_coinc = 1
+  elif o in ("-C", "--l1h2-coincidence"):
+    do_l1h2_coinc = 1
+  elif o in ("-C", "--l1h1h2-coincidence"):
+    do_l1h1h2_coinc = 1
+  elif o in ("-j", "--injections"):
+    inj_file = a
+  elif o in ("-p", "--playground-only"):
+    playground_only = 1
+  elif o in ("-P", "--priority"):
+    condor_prio = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  elif o in ("-f", "--config-file"):
+    config_file = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+##############################################################################
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('logs')
+except: pass
+
+##############################################################################
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+##############################################################################
+# if a usertag has been specified, override the config file
+if usertag:
+  cp.set('pipeline','user-tag',usertag)
+else:
+  try:
+    usertag = string.strip(cp.get('pipeline','user-tag'))
+  except:
+    usertag = None
+
+##############################################################################
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',config_file)
+tempfile.tempdir = log_path
+if usertag:
+  tempfile.template = basename + '.' + usertag + '.dag.log.'
+else:
+  tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+##############################################################################
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag + '.dag')
+else:
+  dag.set_dag_file(basename + '.dag')
+
+##############################################################################
+# create the Condor jobs that will be used in the DAG
+df_job = inspiral.DataFindJob(cp)
+tmplt_job = inspiral.TmpltBankJob(cp)
+insp_job = inspiral.InspiralJob(cp)
+trig_job = inspiral.TrigToTmpltJob(cp)
+inca_job = inspiral.IncaJob(cp)
+
+# set better submit file names than the default
+if usertag:
+  subsuffix = '.' + usertag + '.sub'
+else:
+  subsuffix = '.sub'
+df_job.set_sub_file( basename + '.datafind'+ subsuffix )
+tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
+insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
+trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
+inca_job.set_sub_file( basename + '.inca' + subsuffix )
+
+# set the usertag in the jobs
+if usertag:
+  tmplt_job.add_opt('user-tag',usertag)
+  insp_job.add_opt('user-tag',usertag)
+  trig_job.add_opt('user-tag',usertag)
+  inca_job.add_opt('user-tag',usertag)
+
+# add the injections
+if inj_file:
+  insp_job.add_opt('injection-file',inj_file)
+
+# set the condor job priority
+if condor_prio:
+  df_job.add_condor_cmd('priority',condor_prio)
+  tmplt_job.add_condor_cmd('priority',condor_prio)
+  insp_job.add_condor_cmd('priority',condor_prio)
+  trig_job.add_condor_cmd('priority',condor_prio)
+  inca_job.add_condor_cmd('priority',condor_prio)
+
+##############################################################################
+# get the thresholds, pad and chunk lengths from the values in the ini file
+l1_snr = cp.get('pipeline','l1-snr-threshold')
+h1_snr = cp.get('pipeline','h1-snr-threshold')
+h2_snr = cp.get('pipeline','h2-snr-threshold')
+
+l1_chisq = cp.get('pipeline','l1-chisq-threshold')
+h1_chisq = cp.get('pipeline','h1-chisq-threshold')
+h2_chisq = cp.get('pipeline','h2-chisq-threshold')
+
+pad = int(cp.get('data', 'pad-data'))
+n = int(cp.get('data', 'segment-length'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+o = int(cp.get('inspiral', 'segment-overlap'))
+length = ( n * s - ( s - 1 ) * o ) / r
+overlap = o / r
+
+##############################################################################
+# Step 1: read science segs that are greater or equal to the length of data
+# in a chunk (defined by the variable "length" above)
+l1_data = pipeline.ScienceData()
+h1_data = pipeline.ScienceData()
+h2_data = pipeline.ScienceData()
+
+l1_data.read(cp.get('input','l1-segments'),length)
+h1_data.read(cp.get('input','h1-segments'),length)
+h2_data.read(cp.get('input','h2-segments'),length)
+
+##############################################################################
+# Step 2: Create analysis chunks from the single IFO science segments.  The
+# instances l1_data, h1_data and h2_data will contain all data that we can
+# analyze (since all the science segments are over length seconds.) 
+l1_data.make_chunks(length,overlap,playground_only)
+h1_data.make_chunks(length,overlap,playground_only)
+h2_data.make_chunks(length,overlap,playground_only)
+
+l1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+h1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+h2_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+
+##############################################################################
+# Step 3: find all L1 data that overlaps with one of the hanford instruments
+l1_lho_data = copy.deepcopy(l1_data)
+all_lho_data = copy.deepcopy(h1_data)
+all_lho_data.union(h2_data)
+l1_lho_data.intersection(all_lho_data)
+l1_lho_data.coalesce()
+
+##############################################################################
+# Step 4: Determine which of the L1 master chunks needs to be filtered
+l1_chunks_analyzed = []
+prev_df = None
+
+# loop over L1 master science segments
+for seg in l1_data:
+  # make sure that we do not do a data find more than once per science segment
+  done_df_for_seg = None
+  # loop over the master analysis chunks in the science segment
+  for chunk in seg:
+    # now loop over all the L1 data that we need to filter
+    for seg_to_do in l1_lho_data:
+      #if the current chunk is in one of the segments we need to filter
+      if chunk_in_segment(chunk,seg_to_do):
+        # make sure we have done one and only one datafind for the segment
+        if not done_df_for_seg:
+          df = inspiral.DataFindNode(df_job)
+          df.set_start(seg.start() - pad)
+          df.set_end(seg.end() + pad)
+          if prev_df: df.add_parent(prev_df)
+          if do_datafind: dag.add_node(df)
+          prev_df = df
+          done_df_for_seg = 1
+        # make a template bank job for the master L1 chunk
+        bank = inspiral.TmpltBankNode(tmplt_job)
+        bank.set_start(chunk.start())
+        bank.set_end(chunk.end())
+        bank.set_ifo('L1')
+        bank.set_cache(df.get_output())
+        if do_datafind: bank.add_parent(df)
+        if do_tmpltbank: dag.add_node(bank)
+        # make an inspiral job for the master L1 chunk
+        insp = inspiral.InspiralNode(insp_job)
+        insp.set_start(chunk.start())
+        insp.set_end(chunk.end())
+        insp.add_var_opt('trig-start-time',chunk.trig_start())
+        insp.add_var_opt('snr-threshold',l1_snr)
+        insp.add_var_opt('chisq-threshold',l1_chisq)
+        insp.set_ifo('L1')
+        insp.set_cache(df.get_output())
+        insp.set_bank(bank.get_output())
+        if do_tmpltbank: insp.add_parent(bank)
+        if not do_tmpltbank and do_datafind:insp.add_parent(df)
+        if do_inspiral: dag.add_node(insp)
+        # store this chunk in the list of filtered L1 data
+        l1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+##############################################################################
+# Step 4: Determine which of the H1 master chunks needs to be filtered
+h1_chunks_analyzed = []
+
+# loop over H1 master science segments
+for seg in h1_data:
+  # make sure that we do not do a data find more than once per science segment
+  # loop over the master analysis chunks in the science segment
+  for chunk in seg:
+    # now loop over all the L1 data that we need to filter
+    for seg_to_do in l1_lho_data:
+      #if the current chunk is in one of the segments we need to filter
+      if chunk_in_segment(chunk,seg_to_do):
+        # make sure we have done one and only one datafind for the segment
+        if not done_df_for_seg:
+          df = inspiral.DataFindNode(df_job)
+          df.set_start(seg.start() - pad)
+          df.set_end(seg.end() + pad)
+          if prev_df: df.add_parent(prev_df)
+          if do_datafind: dag.add_node(df)
+          prev_df = df
+          done_df_for_seg = 1
+        # make a trigbank for the master H1 chunk: to do this, we need
+        # the master L1 chunks that overlap with this H1 chunk as input
+        trigbank = inspiral.TrigToTmpltNode(trig_job)
+        trigbank.make_trigbank(chunk,'L1','H1',usertag)
+        for l1_done in l1_chunks_analyzed:
+          if chunks_overlap(chunk,l1_done.get_chunk()):
+            trigbank.add_var_arg(l1_done.get_dag_node().get_output())
+            if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
+            if do_h1_trigbank: dag.add_node(trigbank)
+        # analyze the H1 master chunk with this triggered template bank
+        insp = inspiral.InspiralNode(insp_job)
+        insp.set_start(chunk.start())
+        insp.set_end(chunk.end())
+        insp.set_ifo('H1')
+        insp.add_var_opt('snr-threshold',h1_snr)
+        insp.add_var_opt('chisq-threshold',h1_chisq)
+        insp.add_var_opt('trig-start-time',chunk.trig_start())
+        insp.set_cache(df.get_output())
+        insp.set_bank(trigbank.get_output())
+        if do_datafind: insp.add_parent(df)
+        if do_trigbank: insp.add_parent(trigbank)
+        if do_h1_inspiral: dag.add_node(insp)
+        # store this chunk in the list of filtered L1 data
+        h1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+##############################################################################
+# Step 5: Determine which of the H2 master chunks needs to be filtered
+h2_chunks_analyzed = []
+
+# loop over H1 master science segments
+for seg in h2_data:
+  # make sure that we do not do a data find more than once per science segment
+  # loop over the master analysis chunks in the science segment
+  for chunk in seg:
+    # now loop over all the L1 data that we need to filter
+    for seg_to_do in l1_lho_data:
+      #if the current chunk is in one of the segments we need to filter
+      if chunk_in_segment(chunk,seg_to_do):
+        # make sure we have done one and only one datafind for the segment
+        if not done_df_for_seg:
+          df = inspiral.DataFindNode(df_job)
+          df.set_start(seg.start() - pad)
+          df.set_end(seg.end() + pad)
+          if prev_df: df.add_parent(prev_df)
+          if do_datafind: dag.add_node(df)
+          prev_df = df
+          done_df_for_seg = 1
+        # make a trigbank for the master H2 chunk: to do this, we need
+        # the master L1 chunks that overlap with this H2 chunk as input
+        trigbank = inspiral.TrigToTmpltNode(trig_job)
+        trigbank.make_trigbank(chunk,'L1','H2',usertag)
+        for l1_done in l1_chunks_analyzed:
+          if chunks_overlap(chunk,l1_done.get_chunk()):
+            trigbank.add_var_arg(l1_done.get_dag_node().get_output())
+            if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
+            if do_h2_trigbank: dag.add_node(trigbank)
+        # analyze the H2 master chunk with this triggered template bank
+        insp = inspiral.InspiralNode(insp_job)
+        insp.set_start(chunk.start())
+        insp.set_end(chunk.end())
+        insp.set_ifo('H2')
+        insp.add_var_opt('snr-threshold',h2_snr)
+        insp.add_var_opt('chisq-threshold',h2_chisq)
+        insp.add_var_opt('trig-start-time',chunk.trig_start())
+        insp.set_cache(df.get_output())
+        insp.set_bank(trigbank.get_output())
+        if do_datafind: insp.add_parent(df)
+        if do_trigbank: insp.add_parent(trigbank)
+        if do_h2_inspiral: dag.add_node(insp)
+        # store this chunk in the list of filtered L1 data
+        h2_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+
+##############################################################################
+# Step 7: Compute the ScienceSegments for the non-overlaping coincidence
+# regions: i.e. H1/L1, H2/L1, H1/H2/L1
+not_h1_data = copy.deepcopy(h1_data)
+not_h1_data = not_h1_data.inverse()
+not_h2_data = copy.deepcopy(h2_data)
+not_h2_data = not_h2_data.inverse()
+
+l1_h1_data = copy.deepcopy(l1_data)
+l1_h1_data.intersection(h1_data)
+l1_h1_data.intersection(not_h2_data)
+l1_h1_data.coalesce()
+
+l1_h1_data = copy.deepcopy(l1_data)
+l1_h2_data.intersection(h2_data)
+l1_h2_data.intersection(not_h1_data)
+l1_h2_data.coalesce()
+
+l1_h1_h2_data = copy.deepcopy(l1_data)
+l1_h1_h2_data.intersection(h1_data)
+l1_h1_h2_data.intersection(h2_data)
+l1_h1_h2_data.coalesce()
+
+##############################################################################
+# Step 8: Run inca on each of the disjoint sets of double coincidence data
+
+# L1/H1 double coincident data
+for seg in l1_h1_data:
+  inca = inspiral.IncaNode(inca_job)
+  inca.set_start(seg.start())
+  inca.set_end(seg.end())
+  inca.set_ifo_a('L1')
+  inca.set_ifo_b('H1')
+  inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
+  inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
+  inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
+  # add all L1 master segments that overlap with segment to input
+  for l1_done in l1_chunks_analyzed:
+    if chunk_in_segment(l1_done.get_chunk(),seg):
+      inca.add_var_arg(l1_done.get_dag_node().get_output())
+      if do_inspiral: inca.add_parent(l1_done.get_dag_node())
+  # add all H1 master segments that overlap with segment to input
+  for h1_done in h1_chunks_analyzed:
+    if chunk_in_segment(h1_done.get_chunk(),seg):
+      inca.add_var_arg(h1_done.get_dag_node().get_output())
+      if do_h1_inspiral: inca.add_parent(h1_done.get_dag_node())
+  if do_l1h1_coincidence: dag.add_node(inca)
+
+# L1/H2 double coincident data
+for seg in l1_h2_data:
+  inca = inspiral.IncaNode(inca_job)
+  inca.set_start(seg.start())
+  inca.set_end(seg.end())
+  inca.set_ifo_a('L1')
+  inca.set_ifo_b('H2')
+  inca.add_var_opt('dt',cp.get('pipeline','lh-dt'))
+  inca.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
+  inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
+  # add all L1 master segments that overlap with segment to input
+  for l1_done in l1_chunks_analyzed:
+    if chunk_in_segment(l1_done.get_chunk(),seg):
+      inca.add_var_arg(l1_done.get_dag_node().get_output())
+      if do_inspiral: inca.add_parent(l1_done.get_dag_node())
+  # add all H2 master segments that overlap with segment to input
+  for h2_done in h2_chunks_analyzed:
+    if chunk_in_segment(h2_done.get_chunk(),seg):
+      inca.add_var_arg(h2_done.get_dag_node().get_output())
+      if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
+  if do_l1h2_coincidence: dag.add_node(inca)
+
+
+##############################################################################
+# Step 9: Run incas on the triple coincident data
+
+# L1/H1/h2 triple coincident data
+for seg in l1_h1_h2_data:
+  # do the first inca to get the triggers that are coincident between h1 and h2
+  inca1 = inspiral.IncaNode(inca_job)
+  inca1.set_start(seg.start())
+  inca1.set_end(seg.end())
+  inca1.set_ifo_a('L1')
+  inca1.set_ifo_b('H1')
+  inca1.add_var_opt('dt',cp.get('pipeline','lh-dt'))
+  inca1.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
+  inca1.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
+  # add all L1 master segments that overlap with segment to input
+  for l1_done in l1_chunks_analyzed:
+    if chunk_in_segment(l1_done.get_chunk(),seg):
+      inca1.add_var_arg(l1_done.get_dag_node().get_output())
+      if do_inspiral: inca1.add_parent(l1_done.get_dag_node())
+  # add all H1 master segments that overlap with segment to input
+  for h1_done in h1_chunks_analyzed:
+    if chunk_in_segment(h1_done.get_chunk(),seg):
+      inca1.add_var_arg(h1_done.get_dag_node().get_output())
+      if do_h1_inspiral: inca1.add_parent(h1_done.get_dag_node())
+  # do the second inca to get the H1 triggers that are in H2 or can't be seen
+  inca2 = inspiral.IncaNode(inca_job)
+  inca2.set_start(seg.start())
+  inca2.set_end(seg.end())
+  inca2.set_ifo_a('H1')
+  inca2.set_ifo_b('H2')
+  inca2.add_var_opt('dt',cp.get('pipeline','hh-dt'))
+  inca2.add_var_opt('kappa',cp.get('pipeline','hh-kappa'))
+  inca2.add_var_opt('epsilon',cp.get('pipeline','hh-epsilon'))
+  # XXX need to add argument that makes inca check the H2 range XXX
+  inca2.add_parent(inca1)
+  inca2.add_var_arg(inca1.get_output())
+  # do the third inca to clobber and L1 triggers that we can
+  inca3 = inspiral.IncaNode(inca_job)
+  inca3.set_start(seg.start())
+  inca3.set_end(seg.end())
+  inca3.set_ifo_a('L1')
+  inca3.set_ifo_b('H1')
+  inca3.add_var_opt('dt',cp.get('pipeline','lh-dt'))
+  inca3.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
+  inca3.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
+  inca3.add_parent(inca2)
+  inca3.add_var_arg(inca2.get_output())
+  # add the nodes to the dag
+  if do_l1h1h2_coincidence:
+    dag.add_node(inca1)
+    dag.add_node(inca2)
+    dag.add_node(inca3)
+
+##############################################################################
+# Write out the DAG, help message and log file
+dag.write_sub_files()
+dag.write_dag()
+
+print "\nCreated a DAG file which can be submitted by executing"
+print "\n   condor_submit_dag", dag.get_dag_file()
+print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+If you are running LALdataFind jobs, do not forget to initialize your grid 
+proxy certificate on the condor submit machine by running the commands
+
+  unset X509_USER_PROXY
+  grid-proxy-init -hours 72
+
+Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+If you expect the LALdataFind jobs to take longer to complete, increase the
+time specified in the -hours option to grid-proxy-init. You can check that 
+the grid proxy has been sucessfully created by executing the command:
+
+  grid-cert-info -all -file /tmp/x509up_u`id -u`
+
+This will also give the expiry time of the proxy.
+"""
+
+# write out a log file for this script
+if usertag:
+  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
+else:
+  log_fh = open(basename + '.pipeline.log', 'w')
+  
+log_fh.write( "$Id$" + "\n\n" )
+log_fh.write( "Invoked with arguments:\n" )
+for o, a in opts:
+  log_fh.write( o + ' ' + a + '\n' )
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( 
+  "Filtering " + str(len(l1_analyzed_data)) + " L1 master chunks\n" )
+for l1_done in l1_analyzed_data:
+  print >> log_fh, l1_done.get_chunk()
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( 
+  "Filtering " + str(len(h1_analyzed_data)) + " H1 master chunks\n" )
+for h1_done in h1_analyzed_data:
+  print >> log_fh, h1_done.get_chunk()
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( 
+  "Filtering " + str(len(h2_analyzed_data)) + " H2 master chunks\n" )
+for h2_done in h2_analyzed_data:
+  print >> log_fh, h2_done.get_chunk()
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(l1_h1_data)) + 
+  " L1/H1 double coincident segments\n" )
+for seg in l1_h1_data:
+  print >> log_fh, seg
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write(   "Writing " + str(len(l1_h2_data)) + 
+  " L1/H2 double coincident segments\n" )
+for seg in l1_h2_data:
+  print >> log_fh, seg
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(l1_h1_h2_data)) + 
+  " L1/H1/H2 triple coincident segments\n" )
+for seg in l1_h1_h2_data:
+  print >> log_fh, seg
+
+sys.exit(0)
