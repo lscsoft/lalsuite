@@ -210,7 +210,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 nMax;          /* used to store limits on index ranges */
   INT4 fInit, fFinal; /* index range for which signal->f is defined */
   INT4 shiftInit, shiftFinal; /* ditto for signal->shift */
-  UINT4 dtDelayBy2 = 200;     /* delay table half-interval (s) */
+  UINT4 dtDelayBy2 = 400;     /* delay table half-interval (s) */
   UINT4 dtPolBy2 = 300;       /* polarization table half-interval (s) */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
@@ -985,8 +985,8 @@ LALSimulateCoherentGW_exp (LALStatus        *stat,
   UINT4 nMax;          /* used to store limits on index ranges */
   UINT4 fInit, fFinal; /* index range for which signal->f is defined */
   UINT4 shiftInit, shiftFinal; /* ditto for signal->shift */
-  UINT4 dtDelayBy2 = 200;     /* delay table half-interval (s) */
-  UINT4 dtPolBy2 = 300;       /* polarization table half-interval (s) */
+  UINT4 dtDelayBy2 = 100;     /* delay table half-interval (s) */
+  UINT4 dtPolBy2 = 100;       /* polarization table half-interval (s) */
   REAL4 *outData;             /* pointer to output data */
   REAL8 delayMin, delayMax;   /* min and max values of time delay */
   SkyPosition source;         /* source sky position */
