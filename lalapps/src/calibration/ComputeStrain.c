@@ -42,7 +42,10 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include "filters-L1-S2.h"                      /* files that contains the filter coefficients */
+#include "filters-H1-S2.h"                      /* files that contains the filter coefficients */
+#define CHANNEL "H1:Calibrated-Strain"
+#define DATADIR "/data/hoft/H1/H"
+#define FRAMETYPE "H1_RDS_C02_LX"
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -60,7 +63,7 @@ extern int optind, opterr, optopt;
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
-#define CHANNEL "L1:Calibrated-Strain"
+
 
 /***************************************************************************/
 /* Complex division routine -- used to calculate beta from alpha and alpha*beta */
@@ -210,7 +213,7 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 int i,j,DT,p; 
-FrOutPar opar = { "/data/hoft/L1/L", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0, 2 };
+FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
 
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
@@ -244,7 +247,7 @@ FrOutPar opar = { "/data/hoft/L1/L", "CALIBRATED-STRAIN", ProcDataChannel, 1, 0,
       if(GV.SL[i].seglength < 3*To)
 	{
 	  fprintf(stderr,"Throwing out segment %d, it is shorter than %d seconds\n",GV.SL[i].gpsstart,3*To);
-	  break;
+	  continue;
 	}
 
       GV.gpsepoch.gpsSeconds=GV.SL[i].gpsstart; /* Set global variable epoch */
