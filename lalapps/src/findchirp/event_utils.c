@@ -62,13 +62,13 @@ int buildVetoTimes( vetoParams *thisentry)
 
             /* Must treat the first veto event difficult */
             if ( first ){
-                (*thiswindow).start_time = tVtemp - (*thisentry).dtime;
-                (*thiswindow).end_time = tVtemp + (*thisentry).dtime;
+                (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
+                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
                 first = 0;
             }
             /* If this event is within last veto window,  update veto times */
-            else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).dtime) ){
-                (*thiswindow).end_time = tVtemp + (*thisentry).dtime;
+            else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).minusdtime) ){
+                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
             }
             /* Otherwise allocate next node and update veto window */
             else
@@ -76,8 +76,8 @@ int buildVetoTimes( vetoParams *thisentry)
                 prevwindow=thiswindow;
                 (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
                 thiswindow = (*thiswindow).next_time_window;
-                (*thiswindow).start_time = tVtemp - (*thisentry).dtime;
-                (*thiswindow).end_time = tVtemp + (*thisentry).dtime;
+                (*thiswindow).start_time = tVtemp - (*thisentry).minusdtime;
+                (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
                 (*thiswindow).next_time_window = NULL;
             }
             
@@ -168,6 +168,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
         int injectflag)
 {
     int status,iVetoS,iVetoNS,iVetoSNR,iCandCHISQ,pass,first=1,timeBase=0;
+    int crossingflag=0;
     timeWindow *thiswindow=NULL;
     double tVtemp,snrVtemp,chiVtemp;
     struct MetaioParseEnvironment candParseEnv;
@@ -177,15 +178,15 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
 
     if (injectflag == INJECTIONS){
         if ( (status = MetaioOpen( candEnv, candidates.injectfile)) !=0 ){
-            fprintf(stderr, "Error opening veto file %s\n", candidates.injectfile );
+            fprintf(stderr, "Error opening injection file %s\n", candidates.injectfile );
             MetaioAbort( candEnv ); 
-            return 2;
+            exit(2);
         }
     }else{
         if ( (status = MetaioOpen( candEnv, candidates.triggerfile)) !=0 ){
-            fprintf(stderr, "Error opening veto file %s\n", candidates.triggerfile );
+            fprintf(stderr, "Error opening trigger file %s\n", candidates.triggerfile );
             MetaioAbort( candEnv ); 
-            return 2;
+            exit(2);
         }
     }
 
@@ -224,13 +225,13 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
 
         snrVtemp = candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
         chiVtemp = candEnv->ligo_lw.table.elt[iCandCHISQ].data.real_4;  
+        /* Store the time of the candidate event */
+        tVtemp = (double) ( candEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
+            + 1.0e-9 * (double) candEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
+
         /* Require the SNR > threshold and CHISQ < threshold */
         if ( snrVtemp > candidates.snr_threshold
                 && chiVtemp < candidates.chi_threshold ){
-
-            /* Store the time of the candidate event */
-            tVtemp = (double) ( candEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
-                + 1.0e-9 * (double) candEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
 
                 /* Loop over the time windows for each veto */
                 thiswindow = vwindows;
@@ -253,6 +254,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).snr = snrVtemp;
                     (*thisCEvent).chisq = chiVtemp;
                     first = 0;
+                    crossingflag = 1;
                 }
                 /* If this event is within last veto window,  update veto times */
                 else if ( tVtemp <= ((*thisCEvent).time + candidates.dtime) ){
@@ -263,7 +265,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     }
                 }
                 /* Otherwise allocate next node and update veto window */
-                else
+                else if ( crossingflag == 0 )
                 {
                     (*thisCEvent).next_event = (candEvent *)malloc(sizeof(candEvent)); 
                     thisCEvent = (*thisCEvent).next_event;
@@ -271,12 +273,14 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).snr = snrVtemp;
                     (*thisCEvent).chisq = chiVtemp;
                     (*thisCEvent).next_event = NULL;
+                    crossingflag=1;
                 }
-
             }
-
         }
-
+        else
+        {
+            crossingflag=0;
+        }
     }
 
     MetaioAbort(candEnv);
@@ -289,11 +293,11 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
 * passed into it.
 *******************************************************************/
 int build2DHistogram(candEvent *eventhead, const char *outputfile,
-        int **histogram, int numbins){
+        int **histogram, int numbins, float minsnr, float maxchisq){
     
     FILE *fpout;
     float *snrbin, *chisqbin, snrdiv, chisqdiv;
-    float maxsnr=17.0, minsnr=7.0, maxchisq=10.0, minchisq=0.0;
+    float maxsnr=minsnr+10.0, minchisq=0.0;
     int i,j,k;
     candEvent *thisCEvent=NULL;
 
@@ -324,6 +328,8 @@ int build2DHistogram(candEvent *eventhead, const char *outputfile,
         }
     }
 
+    fprintf(fpout,"# minsnr = %f, snrdiv = %f\n",minsnr,snrdiv);
+    fprintf(fpout,"# minchisq = %f, chisqdiv = %f\n",minchisq,chisqdiv);
     for ( j = 0; j < numbins; ++j )
     {
         for ( k = 0; k < numbins; ++k )
@@ -334,12 +340,83 @@ int build2DHistogram(candEvent *eventhead, const char *outputfile,
     }
 
     fclose(fpout);
-
+    free(snrbin);
+    free(chisqbin);
     return 0;
 }
 
 /************************************************************************
  * Compute the event rate limit using the loudest event method
+ *
+ * NOTE:  the histograms are indexed by histogram[snr][chisq]
+ *
  ***********************************************************************/
+int computeUL(const char *outputfile, int **triggerHistogram,
+        int **injectHistogram, int numbins, float minsnr, float maxchisq,
+        int ninject, float time_analyzed)
+{
+    FILE *fpout;
+    float *snrbin, *chisqbin, snrdiv, chisqdiv, snrloud;
+    float maxsnr=minsnr+10.0, minchisq=0.0, efficiency;
+    double mu;
+    int i,j,k,snrloudk=numbins;
+    Chi2ThresholdIn  thresholdIn;
+    static LALStatus        status;
 
+    /* set up the bin boundaries for the histogram */
+    snrbin     = calloc( numbins + 1, sizeof(float) );
+    chisqbin   = calloc( numbins + 1, sizeof(float) );
+    snrdiv     = ( maxsnr - minsnr ) / (float) numbins;
+    chisqdiv   = ( maxchisq - minchisq ) / (float) numbins;
+    
+    for ( i = 0; i <= numbins; ++i )
+    {
+        snrbin[i] = minsnr + (float) i * snrdiv;
+        chisqbin[i] = minchisq + (float) i * chisqdiv;
+        /*fprintf( stderr, "snrbin[%d] = %f\tchisqbin[%d] = %f\n", 
+                i, snrbin[i], i, chisqbin[i] ); */
+    }
+
+
+    /*****************************************************************
+     * compute the upper limit using the loudest event
+     ****************************************************************/
+    fpout = fopen(outputfile,"w");
+    for ( j = 0; j < numbins; ++j )
+    {
+        for ( k = 0; k < numbins; ++k )
+        {
+            if ( triggerHistogram[k][j] == 0 ){
+                snrloud = snrbin[k];
+                snrloudk = k;
+                break;
+            }
+        }
+        efficiency = ((float)injectHistogram[snrloudk][j]+1e-10)/((float)ninject);
+        fprintf(fpout,"%f %f %f %f\n", chisqbin[j],
+                3.89/(efficiency*time_analyzed), efficiency, snrloud);
+    }
+    fclose(fpout);
+
+    /*****************************************************************
+     * compute the upper limit using the counting method
+     ****************************************************************/
+    fpout = fopen("counting.rates","w");
+    j = numbins-1;
+    
+    for ( k = 0; k < numbins; ++k )
+    {
+        thresholdIn.falseAlarm=0.1;
+        thresholdIn.dof=2.0*(triggerHistogram[k][j]+1);
+        LALChi2Threshold(&status, &mu, &thresholdIn);
+        mu /= 2.0;
+        efficiency = ((float)injectHistogram[k][j]+1e-10)/((float)ninject);
+        fprintf(fpout,"%f %f %f\n", snrbin[k],
+                ((float)mu)/(efficiency*time_analyzed), chisqbin[j]);
+    }
+    fclose(fpout);
+    free(snrbin);
+    free(chisqbin);
+    return 0;
+}
 

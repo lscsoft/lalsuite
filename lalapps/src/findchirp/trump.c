@@ -1,6 +1,8 @@
 #include <lal/LALStdlib.h>
 #include "trump.h"
 
+#define OVRLAP 32.0
+
 INT4 lalDebugLevel = LALMSGLVL3;
 
 static int getline(char *line, int max, FILE *fpin)
@@ -30,12 +32,12 @@ int main(int argc, char **argv)
     FILE  *fp = NULL;                      /* generic file pointer                 */
     FILE  *fpout = NULL;                      /* generic file pointer                 */
     char   vetoline[1024];
-    int    i,pass,coincidence_flag=0;
+    int    i,pass=0,coincidence_flag=0;
     vetoParams *veto_entry=NULL, *thisentry=NULL, *preventry=NULL;
     candParams candidates;
     char  *vcol[128],*eventfile[32];
     timeWindow *thiswindow=NULL,*vwindows=NULL, *awindows=NULL;
-    double timeVetoed;
+    double timeVetoed=0.0;
     candEvent *eventhead=NULL, *thisCEvent=NULL;
     candEvent *Ieventhead=NULL, *thisIEvent=NULL;
     float time_analyzed, coincidence_window=0.01, safety=0.0;
@@ -129,6 +131,8 @@ int main(int argc, char **argv)
             return RESPONSEC_EARG;
         }
     } /* End of argument parsing loop. */
+
+
 
 
     /****************************************************************
@@ -258,22 +262,27 @@ int main(int argc, char **argv)
     fprintf(fpout,"# Determining time analyzed\n"); fflush(fpout);
     time_analyzed=0.0;
     while ( getline(vetoline, MAXSTR, fp) ){
-        double dummy;
-        float interval;
-        if ( ! (awindows) ){
-            thiswindow = awindows = (timeWindow *)malloc(sizeof(timeWindow));
-            (*thiswindow).next_time_window = NULL;
+        double dummys,dummye,ovrlap=safety;
+        int    doneflag, segnum;
+
+        sscanf(vetoline, "%i %lf %lf %i\n", &doneflag, &dummys, &dummye, &segnum);
+        fprintf(fpout, "%i %lf %lf %i\n", doneflag, dummys, dummye, segnum);
+        if (doneflag) {
+            if ( ! (awindows) ){
+                thiswindow = awindows = (timeWindow *)malloc(sizeof(timeWindow));
+                (*thiswindow).next_time_window = NULL;
+            }
+            else
+            {
+                (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
+                thiswindow = (*thiswindow).next_time_window;
+                (*thiswindow).next_time_window = NULL;
+            }
+
+            (*thiswindow).start_time = dummys+ovrlap/2.0;
+            (*thiswindow).end_time = dummye-ovrlap/2.0;
+            time_analyzed+=(dummye-dummys-ovrlap);
         }
-        else
-        {
-            (*thiswindow).next_time_window = (timeWindow *)malloc(sizeof(timeWindow));
-            thiswindow = (*thiswindow).next_time_window;
-            (*thiswindow).next_time_window = NULL;
-        }
-        sscanf(vetoline, "%lf %f\n", &dummy, &interval);
-        (*thiswindow).start_time = dummy;
-        (*thiswindow).end_time = (dummy + interval);
-        time_analyzed+=interval;
     }
 
     fclose(fp);
@@ -311,7 +320,7 @@ int main(int argc, char **argv)
 
                 /* copy the veto information into the structure */
                 vcol[0]=strtok(vetoline,";");
-                for( i=1; i<5 && (vcol[i]=strtok(NULL,";")) ; i++) { }
+                for( i=1; i<6 && (vcol[i]=strtok(NULL,";")) ; i++) { }
 
                 /***********************************************************
                 *
@@ -320,14 +329,16 @@ int main(int argc, char **argv)
                 *          filename: xml file containing veto triggers
                 *          table_column: column to use
                 *          threshold: number above which to make veto
-                *          dtime: how much time to veto
-                *          
+                *          minusdtime: how much time to veto before
+                *          plusdtime: how much time to veto after
+                *
                 ***********************************************************/
                 strcpy(((*thisentry).name), vcol[0]);
                 strcpy(((*thisentry).filename), vcol[1]);
                 strcpy(((*thisentry).table_column), vcol[2]);
                 (*thisentry).threshold = atof(vcol[3]);
-                (*thisentry).dtime = atof(vcol[4]);
+                (*thisentry).minusdtime = atof(vcol[4]);
+                (*thisentry).plusdtime = atof(vcol[5]);
             }
         }
 
@@ -360,10 +371,11 @@ int main(int argc, char **argv)
             * Print out the information that was supplied in the veto files
             ********************************************************************/
             fprintf(fpout,"Veto filename = %s\n",(*thisentry).filename);
-            fprintf(fpout,"%s > %f, dtime = +/-%f\n",
+            fprintf(fpout,"%s > %f, dtime = -%f, +%f\n",
                     (*thisentry).table_column,
                     (*thisentry).threshold,
-                    (*thisentry).dtime);
+                    (*thisentry).minusdtime,
+                    (*thisentry).plusdtime);
             fprintf(fpout,"Time vetoed %f, %f%% \n----\n", timeVetoed, 100.0 * 
                     timeVetoed/time_analyzed);
             fflush(fpout);
@@ -412,7 +424,7 @@ int main(int argc, char **argv)
              *          triggerfile: xml file containing triggers
              *          snr_threshold: threshold on SNR
              *          chi_threshold: threshold on CHISQ
-             *          dtime: ????
+             *          dtime: cluster window
              *          
              ***********************************************************/
             strcpy((candidates.name), vcol[0]);
@@ -449,14 +461,15 @@ int main(int argc, char **argv)
     {
         triggerHistogram[i] = calloc( numbins, sizeof(int) );
     }
-    build2DHistogram( eventhead , "2d-event.dat", triggerHistogram, numbins);
+    build2DHistogram( eventhead , "2d-event.dat", triggerHistogram, numbins,
+            candidates.snr_threshold, candidates.chi_threshold);
 
     
     /******************************************************************** 
     * Print out the list of events that were found
     ********************************************************************/
     if ( ( fp = fopen( "triggers.dat", "w" ) ) == NULL ) {
-                fprintf(stderr,  USAGE, *argv );
+        fprintf(stderr,  USAGE, *argv );
         return RESPONSEC_EFILE;
     }
     i=0;
@@ -479,7 +492,8 @@ int main(int argc, char **argv)
     {
         injectHistogram[i] = calloc( numbins, sizeof(int) );
     }   
-    build2DHistogram( Ieventhead , "2d-inject.dat", injectHistogram, numbins);
+    build2DHistogram( Ieventhead , "2d-inject.dat", injectHistogram, numbins,
+            candidates.snr_threshold, candidates.chi_threshold);
 
     
     /******************************************************************** 
@@ -502,21 +516,22 @@ int main(int argc, char **argv)
     /******************************************************** 
     * Read information about the injections
     ********************************************************/
- /*   if ( ( fp = fopen( candidates.injepochs, "r" ) ) == NULL ) {
-                fprintf(stderr,  USAGE, *argv );
+    if ( ( fp = fopen( candidates.injepochs, "r" ) ) == NULL ) {
+        fprintf(stderr,  USAGE, *argv );
         return RESPONSEC_EFILE;
     }
-*/
+
     /******************************************************** 
     * Count the number of injections that survive
     ********************************************************/
-  /*  countsamples=0;
+    countsamples=0;
     while ( getline(vetoline, MAXSTR, fp) ){
-        int injtimeS,injtimeNS;
-  */      /* skip lines containing "#" */
- /*       if ( !(strstr(vetoline, "#")) ) {
+        double injtimeS,injtimeNS;
+        pass = 0; 
+        /* skip lines containing "#" */
+        if ( !(strstr(vetoline, "#")) ) {
 
-            sscanf(vetoline,"%i %i\n",&injtimeS,&injtimeNS);
+            sscanf(vetoline,"%lf",&injtimeS);
             thiswindow=awindows;
             while ( thiswindow != NULL ){
                 if ((double)injtimeS > (*thiswindow).start_time &&
@@ -539,10 +554,18 @@ int main(int argc, char **argv)
         countsamples+=pass;
     }
     fclose(fp);
-   */
+
+    
+    /**********************************************************
+     * Compute the upper limit
+     *********************************************************/
+    computeUL("loudest.rates", triggerHistogram, injectHistogram, 
+            numbins, candidates.snr_threshold, candidates.chi_threshold, 
+            countsamples, time_analyzed-timeVetoed);
 
     fprintf(fpout,"ninject:=%i;\n", countsamples);
-    fprintf(fpout,"T:=%1.2f/3600\n", (time_analyzed - timeVetoed));
+    fprintf(fpout,"T:=%1.2f sec = %1.2f hr\n", (time_analyzed - timeVetoed),
+            (time_analyzed - timeVetoed)/3600.0);
     fflush(fpout);
     
     fclose(fpout);

@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <lal/Thresholds.h>
 #include "metaio.h"
+#include <lal/LALStdlib.h>
 
 #define MAXSTR       256
 #define MAXDATA  10
@@ -48,11 +50,12 @@ timeWindow;
 typedef struct
 tagvetoParams{
     char       name[256];                   /* A veto name                    */
-    char       filename[256];               /* XML filename                    */
+    char       filename[256];               /* XML filename                   */
     char       table_column[256];           /* Name of database column        */
     int        i_table_column;              /* An index TBD of column         */
     float      threshold;                   /* col > thresh => veto           */ 
-    double     dtime;                       /* veto t_veto-dt < t < t_veto+dt */
+    double     minusdtime;                  /* veto t_veto - dt < t ....      */
+    double     plusdtime;                   /*  ...... < t_veto + dt          */
     timeWindow *vwindows; 
     struct tagvetoParams *next_veto;
 }
@@ -84,4 +87,7 @@ int buildVetoTimes( vetoParams *thisentry);
 int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams candidates,
         int injectflag);
 int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry);
-int build2DHistogram(candEvent *eventhead, const char *outputfile, int **hist, int nbins);
+int build2DHistogram(candEvent *eventhead, const char *outputfile, int **hist, int nbins, float minsnr, float maxchisq);
+int computeUL(const char *outputfile, int **triggerHistogram,
+        int **injectHistogram, int numbins, float minsnr, float maxchisq,
+        int ninject, float time_analyzed);
