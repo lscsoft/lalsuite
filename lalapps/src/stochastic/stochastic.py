@@ -48,6 +48,30 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('stochastic.sub')
 
 
+class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisNode):
+  """
+  A lalapps_stopp job used by the stochastic pipeline. The static
+  options are read from the section [stopp] in the ini file. The stdout
+  and stderr from the job are directed to the logs directory. The path
+  to the executable and the universe is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','stopp')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+
+    for sec in ['stopp']:
+      self.add_ini_opts(cp,sec)
+
+    self.set_stdout_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('stopp.sub')
+
+
 class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   An StochaticNode runs an instance of the stochastic code in a Condor DAG.
@@ -162,9 +186,31 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_one() or not self.get_ifo_two():
       raise StochasticError, "Start time, end time, ifo one or ifo two has not been set"
-    out = self.get_ifo_one() + self.get_ifo_two() + '-'
-    out = out + "stochastic" + '-' + str(self.get_start()) + '-' + str(self.get_stop())
-    return out + '.xml'
+    out = self.get_ifo_one() + self.get_ifo_two() + '-' "stochastic"
+    out = out + '-' + str(self.get_start()) + '-' + str(self.get_stop())
+    out = out + '.xml'
+    return out
+
+
+class StoppNode(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  An StoppNode runs an instance of the stochastic stopp code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDagNode that can run an instance of lalapps_stopp.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__output_file = None
+
+  def set_output_file(self,output_file):
+    """
+    Set the output file.
+    """
+    self.add_var_opt('output',output_file)
+    self.__output_file = output_file
 
 
 class LSCDataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
