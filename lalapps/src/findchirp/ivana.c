@@ -445,7 +445,7 @@ int main( int argc, char **argv )
 
 	/*-- Skip any leading spaces or tabs --*/
 	chptr2 = intext;
-	while ( *chptr2 == ' ' ) { chptr2++; }
+	while ( *chptr2 == ' ' || *chptr2 == '\t' ) { chptr2++; }
 	/*-- If line is blank, go on to the next line --*/
 	if ( strlen(chptr2) == 0 ) { continue; }
 
@@ -1302,7 +1302,8 @@ void PrintUsage()
   printf( "\nAlt. syntax:  ivana <candidate_file> <veto_spec> [<range_spec>]"
 	  " [<output_file>]\n\n" );
 
-  printf( "<candidate_file> is the name of a LIGO_LW table file.\n" );
+  printf( "<candidate_file> is the name of a LIGO_LW table file.  The candidates events\n" );
+  printf( "    must be sorted by time in ascending order, otherwise an error occurs.\n" );
   printf( "<veto_spec> consists of one or more items separated by commas.  Each item has\n"
           "    the form '<file>(<negWindow>,<posWindow>[,<snrRatio>])'.  <snrRatio> is\n"
 	  "    optional; if specified, then signal candidates will NOT be vetoed if the\n"
@@ -1313,9 +1314,11 @@ void PrintUsage()
 	  "               'mich_ctrl5.xml(-0.4,0.4),../data/H2_POBQ_snr7.xml(-.3,.3,2)'\n" );
   printf( "<range_spec> can be a GPS time range separated by a dash,\n"
 	  "    e.g. '693960000-693961000', or the name of a file containing a list of\n"
-	  "    ranges of that form (one per line, optionally followed by a comment).\n"
-	  "    If omitted, the range is taken to extend from the first candidate event\n"
-	  "    to the last candidate event.\n" );
+	  "    ranges.  The file should have lines consisting of a start time and a stop\n"
+          "    time, separated by a dash or a space, optionally followed by additional\n"
+          "    text.  The file can contain comments introduced by '#'.\n"
+	  "    If no range_spec is specified, then the range is taken to extend from the\n"
+          "    time of the first candidate event to the time of the last candidate event.\n" );
   printf( "<output_file> is the name of the output file to store all un-vetoed events in\n"
 	  "    LIGO_LW format.\n" );
   printf( "<veto_range_file> is the name of the output file to generate with veto time\n"
