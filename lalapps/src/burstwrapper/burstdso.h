@@ -121,7 +121,7 @@ extern "C" {
 
     BurstParameterList ETGparams; /* linked list of ETG parameters; each parameter can be a linked list */
 
-    BOOLEAN ETGparamsLOCK;
+    BOOLEAN ETGparamsLOCK; /* ETG parameters are locked: when matrix input, don't permute order of parameters */
 
     UINT4 Nparams; /* number of ETG parameters */
 

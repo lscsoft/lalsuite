@@ -22,7 +22,7 @@
 NRCSID( RECONDITIONDATAC , "ReConditionData.c" );
 RCSID( "ReConditionData.c" );
 
-
+/* units for calibration */
 const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
 int ReConditionData(int Nsymbols,
@@ -30,6 +30,17 @@ int ReConditionData(int Nsymbols,
 		    char *algorithms,
 		    BurstSearchParams *params)
 {
+
+  /* 
+     This function unpack the data, prepares calibration.
+
+     Arguments:
+     Nsumbols: number of datacondAPI symbols
+     symbols: list of datacondAPI symbols (i.e., data inputs)
+     algorithms: not used
+     params: burst search parameters
+  */
+
   static LALStatus             status;
 
   BurstParameter *ptr;
@@ -38,22 +49,36 @@ int ReConditionData(int Nsymbols,
   CHAR *cptr;
   CHAR ccptr[8192];
 
-  {
+  { 
     INT4 i = 0;
     INT4 ki; 
 
     REAL4Vector *ptr_p, *ptr_c;
 
+    /************************************************************/
+    /* Handle __FILE__ case */
+    /* NOTE: this is EXPERIMENTAL code for the stand-alone system */	
+    /************************************************************/
 
+    /* look at 1st ETG parameter */
     ptr = params->ETGparams.next->param.next;
     if(ptr) {
       if(ptr->random == 2) {
-	params->ETGparamsLOCK = 1;
 
-	cptr = strtok(ptr->char_,"_");
+	/* flag random==2 means that input is a matrix stored
+	   in a ilwd file */
 
+	params->ETGparamsLOCK = 1; /* lock ETG parameters */
+
+	/* remove underscores to get symbol name */
+	cptr = strtok(ptr->char_,"_"); 
+
+	/* loop over datacond symbols, try to find a match
+	   to the symbol */
 	for(si=0;si<Nsymbols;si++) {
 	  if(strstr(symbols[si].s_symbol_name, cptr)) { 
+
+	    /* we have a matching name */
 
 	    CHARVectorSequence *cvs;
 
@@ -234,6 +259,11 @@ int ReConditionData(int Nsymbols,
       params->Nwaveform_amplitude = params->Nalpha = params->Ndelta = params->Npsi = 1;
     }
 
+
+
+    /************************************************************/
+    /* Handle injected waveforms */
+    /************************************************************/
     ptr = params->waveforms.next;
 
 #ifdef DEBUGBURST
@@ -357,6 +387,10 @@ for(si=0;si<Nsymbols;si++) {
     }
   
 
+    /************************************************************/
+    /* handle _VECT_ from ETG parameters */
+    /************************************************************/
+
     ptrl = params->ETGparams.next;
     while(ptrl) {
       ptr = ptrl->param.next;
@@ -399,23 +433,33 @@ for(si=0;si<Nsymbols;si++) {
     }
 
 
+    /************************************************************/
     /* get GW data */
+    /************************************************************/
+
+    /* loop over datacond symbols */
     for(si=0;si<Nsymbols;si++) {
+
+      /* match name */
       if(strstr(symbols[si].s_symbol_name, GW_STRAIN_DATA)) {
 	
 	REAL4TimeSeries *r4ts;
 
+	/* make sure it's an output symbol, and it's REAL4 */
 	if(symbols[si].s_direction != DATACOND_SYMBOL_OUTPUT ||
 	   symbols[si].s_translator != TranslateREAL4TimeSeries) {
 	  SABORT (  INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
 	}
 
+	/* pointer to data */
 	r4ts = (REAL4TimeSeries *)(symbols[si].s_user_data);
 
+	/* check length */
 	if(r4ts->data->length != params->Ndata) {
 	  SABORT (  INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
 	}
 
+	/* allocate memory */
 	params->data.data = (REAL4TimeVectorSeries *)LALCalloc(1, sizeof(REAL4TimeVectorSeries));
 	TASSERT(params->data.data, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
 
@@ -431,6 +475,7 @@ for(si=0;si<Nsymbols;si++) {
 
 	}
 
+	/* copy data */
 	memcpy(params->data.data->data->data, r4ts->data->data,params->data.data->data->vectorLength * sizeof(REAL4)); 
 
 	/* set time */
@@ -446,6 +491,7 @@ for(si=0;si<Nsymbols;si++) {
     }
 
     if(si == Nsymbols) {
+      /* can't find the data! */
       SABORT( INITSEARCHH_ENULL, INITSEARCHH_MSGENULL);
     }
 
@@ -453,8 +499,11 @@ for(si=0;si<Nsymbols;si++) {
 
 
 
+    /************************************************************/
     /* set up calibration */
     /* code stolen from inspiral dso */
+    /************************************************************/
+
     {
       REAL4TimeSeries              ats, *chanPtr = &ats;
       REAL4Vector av;

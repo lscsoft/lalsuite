@@ -24,22 +24,16 @@
 #include "burstdso.h"
 #include <lalapps/lalapps.h>
 
+/* largest possible size for TOC */
 #define MAXCOMMENT 16384
 
 NRCSID( RUNSEARCHC, "RunSearch.c" );
 RCSID( "RunSearch.c" );
 
-typedef enum
-{
-  ExchParamList,
-  ExchFinished,
-  ExchDeadSlave,
-  ExchFileLock
-}
-ExchObjectType;
-
+/* LAL status used by signal handler */
 LALStatus *gStatus;
 
+/* signal handler */
 void BurstSigHandler(int);
 
 void BuildOutputFileBinary(LALStatus *status,
@@ -58,39 +52,60 @@ int RunSearch(BurstSearchParams *params,
 	      double f0, 
 	      double f1) {
 
+  /*
+    Applies ETG and PEst functions, write output.
+    
+    Arguments:
+    params: burst search parameters
+    f0, f1: fractional range of jobs to do; (f0,f1)=(0,1) does everything, 
+    (0,0.5) does first half.
+  */
+
   static LALStatus status;
 
-  EventIDColumn boutput, stdOutput;
+  EventIDColumn boutput,  /* output from ETG */
+    stdOutput;            /* output from PEst */
+
+  /* variables used to parse the burst parameters: */
   BurstParameter bparams;
   BurstParameter *bparamsptr, *bptr, *wave=NULL, *wamp;
   BurstParameterList *ETGparams;
-  CHAR comment[MAXCOMMENT];
   REAL4 *wbuf = NULL;
-
   REAL4 wAmp, Alpha, Delta, Psi;
   REAL4Vector *wAmpv, *Alphav, *Deltav, *Psiv;
+  BOOLEAN got_wid = 0;
+  CHAR comment[MAXCOMMENT];
+
 
   UINT4 j, runp, runs;
 
+  /* variables for random numbers */
   RandomParams *rpar = NULL;
   REAL4 arandomnumber;
-  BOOLEAN got_wid = 0;
 
+  /* job handling variables */
   int fid = -1;
   unsigned int i, si, silo, sihi,
     jobsTotal = 0,
     jobsParams = 0;
-  
 
+  /*************************************************************/
+  /* Initialize */
+  /*************************************************************/
+  
   if(params->outputMethod == 2) {
+
+    /* output to a file */
 
 #ifdef DEBUGBURST
     fprintf(stderr,"file to open: %s\n",params->dsoOutput);
     fflush(NULL);
 #endif
 
+    /* open with right permission */
     fid = open(params->dsoOutput,O_WRONLY|O_CREAT|O_TRUNC,S_IRUSR|S_IRGRP|S_IROTH|S_IWOTH|S_IWGRP|S_IWUSR);
 
+    /* check error */
     if(fid == -1) {
 #ifdef DEBUGBURST
       perror("ERROR from fopen:");
@@ -105,10 +120,15 @@ int RunSearch(BurstSearchParams *params,
     fflush(NULL);
 #endif
       
+  } else {
+    /* only support output to file */
+    SABORT(INITSEARCHH_EFILE,INITSEARCHH_MSGEFILE);
   }
 
   
   /* Compute number of jobs */
+
+  /* number of jobs from injections: */
   if(params->MAXinj != 0) {
     jobsTotal = 1 + params->Nwaveforms * params->Ninj / params->Ninj_per_segment;
   } else {
@@ -123,21 +143,30 @@ int RunSearch(BurstSearchParams *params,
     jobsTotal = 1;
   }
 
+  /* number of jobs from ETG parameters: */
   jobsParams = 1;
   for(i=0;i<params->Nparams;i++) {
     jobsTotal *= params->NNparams[i];
     jobsParams *= params->NNparams[i];
   }
 
-  
+  /* initialize random number generator */
   LAL_CALL ( LALCreateRandomParams(&status, &rpar, getpid() * clock()), &status );
 
+  /*************************************************************/
+  /*************************************************************/
   /* loop over jobs */
+  /*************************************************************/
+  /*************************************************************/
+
+  /* low and high index of jobs to run */
   silo = (unsigned int)floor(f0 * (double)jobsTotal);
   sihi = (unsigned int)ceil(f1 * (double)jobsTotal);
 
+  /* loop over job Id called si */
   for(si=silo; si<sihi; ++si) {
 
+    /* variables used to construct job parameters */
     UINT4 wid, waid, aid, did, pid, Nid;
     UINT4 *Pid;
 
@@ -146,10 +175,16 @@ int RunSearch(BurstSearchParams *params,
 
     wid = waid = aid = did = pid = Nid = 0;
 
+    /* initialize */
     bzero(&boutput, sizeof(EventIDColumn));
     bzero(&stdOutput, sizeof(EventIDColumn));
     bzero(&bparams, sizeof(BurstParameter));
 
+    /*************************************************************/
+    /* convert job Id si into a set of parameters to run the job */
+    /*************************************************************/
+
+    /* injections */
     if(si < jobsParams) {
       Nid = 0;
       runs = si;
@@ -454,8 +489,9 @@ int RunSearch(BurstSearchParams *params,
       sprintf(comment,",,,,,,");
     }
 
-
+    /************************************************************/
     /* injection code */
+    /************************************************************/
     if(wid) {
       LALDetAMResponse F; /* response functions */
       DetTimeAndASource dtS; /* for time delays */
@@ -823,7 +859,10 @@ int RunSearch(BurstSearchParams *params,
 
 
 
+    /************************************************************/
     /* pack burst parameters */
+    /************************************************************/
+
     bparamsptr = &bparams;
     ETGparams = params->ETGparams.next;
     i=0;
@@ -985,7 +1024,9 @@ int RunSearch(BurstSearchParams *params,
     fflush(NULL);
 #endif
 
+    /************************************************************/
     /* run ETG */
+    /************************************************************/
 
     {
 
@@ -1055,6 +1096,10 @@ int RunSearch(BurstSearchParams *params,
 
     }
 
+    /************************************************************/
+    /* run standardized output function */
+    /************************************************************/
+
     if(!(params->noLALBurstOutput)) {
 #ifdef DEBUGBURST
       {
@@ -1062,7 +1107,6 @@ int RunSearch(BurstSearchParams *params,
 	  toc;
 #endif
 	
-	/* run standardized output function */
 	LAL_CALL(LALBurstOutput(&status, &stdOutput, &boutput, &(params->oparams)), &status);
 
 #ifdef DEBUGBURST
@@ -1086,7 +1130,9 @@ int RunSearch(BurstSearchParams *params,
       }
     }
 
-    /* prepare output for LDAS */
+    /************************************************************/
+    /* prepare output */
+    /************************************************************/
     switch(params->outputMethod) {
 
       /*
@@ -1111,7 +1157,9 @@ int RunSearch(BurstSearchParams *params,
 	  SABORT(INITSEARCHH_EIN,INITSEARCHH_MSGEIN);
     }
 
+    /************************************************************/
     /* clean up */
+    /************************************************************/
     LALFree(Pid);
 
     {
@@ -1189,6 +1237,9 @@ int RunSearch(BurstSearchParams *params,
 
 
 /***********************************************************************/
+/***********************************************************************/
+
+
 void BuildOutputFileBinary(LALStatus *status,
 			   int fid,
 			   EventIDColumn     *burstEventList,
@@ -1197,6 +1248,18 @@ void BuildOutputFileBinary(LALStatus *status,
 			   UINT4 t0NanoSec
 			   )
 {
+
+  /*
+    Writes data to disk
+
+    Arguments:
+    status: LAL status pointer
+    fid: file identifier
+    burstEventList: data from ETG
+    tag: string describing injection and ETG parameters used (TOC)
+    t0Sec: GPS start of analyzed data
+    t0NanoSec: nanosec portion of GPS start
+  */
 
 #ifndef WORDS_BIGENDIAN
   static void endian_swap(char * pdata, int dsize, int nelements);
@@ -1329,10 +1392,14 @@ void BuildOutputFileBinary(LALStatus *status,
  RETURN (status);
 }
 
+
+/********************************************************************/
 /********************************************************************/
 
 
 void BurstSigHandler(int s) {
+
+  /* replace standard signal handler */
 
   switch(s) {
   case SIGSEGV:
@@ -1357,10 +1424,16 @@ void BurstSigHandler(int s) {
 }
 
 
+/********************************************************************/
+/********************************************************************/
+
+
 #ifndef WORDS_BIGENDIAN
 static void endian_swap(char * pdata, int dsize, int nelements)
 
 {
+
+  /* convert between little and big endian */
 
         int i,j,indx;
         char tempbyte;
@@ -1388,11 +1461,19 @@ static void endian_swap(char * pdata, int dsize, int nelements)
 
 
 /******************************************************************/
+/******************************************************************/
+
 
 int symbolsfree(datacond_symbol_type *symbols) {
+
+  /* unimplemented clean-up function */
+
   return 0;
 }
 
 int bparamsfree(BurstSearchParams *bparams) {
+
+  /* unimplemented clean-up function */
+
   return 0;
 }

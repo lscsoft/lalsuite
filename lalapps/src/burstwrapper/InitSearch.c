@@ -656,56 +656,6 @@ void ParseParameter(
 	params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
 	RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
 	*(params->real4_) = x;
-      }
-    } else {
-
-      /* Have a 4th element, switch it */
-
-      switch(*ptr) {
-
-      case 'l':
-	/* log-spaced interval */
-	for(i=0;i<N;i++) {
-	  if(N>1) {
-	    x = xlo*pow(xhi/xlo,(REAL4)i/(REAL4)(N-1));
-	  } else {
-	    x = xhi;
-	  }
-
-	  /* allocate memory for output (link list) */
-	params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
-	RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
-	params = params->next;
-
-	/* type of each element in link list is real4 */
-	params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
-	RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
-	*(params->real4_) = x;
-      }
-    } else {
-
-      /* Have a 4th element, switch it */
-
-      switch(*ptr) {
-
-      case 'l':
-	/* log-spaced interval */
-	for(i=0;i<N;i++) {
-	  if(N>1) {
-	    x = xlo*pow(xhi/xlo,(REAL4)i/(REAL4)(N-1));
-	  } else {
-	    x = xhi;
-	  }
-
-	  /* allocate memory for output (link list) */
-	  params->next = (BurstParameter *)LALCalloc(1,sizeof(BurstParameter));
-	  RASSERT(params->next, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC);
-	  params = params->next;
-
-	  /* type of each element in link list is real4 */
-	  params->real4_ = (REAL4 *)LALMalloc(sizeof(REAL4)); 
-	  RASSERT(params->real4_, status, INITSEARCHH_EALOC, INITSEARCHH_MSGEALOC); 
-	  *(params->real4_) = x;
 	}
 	break;
 
