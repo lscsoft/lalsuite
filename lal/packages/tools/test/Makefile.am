@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 if FRAME
-NEED_FRAME = ResampleTimeSeriesTest
+NEED_FRAME = ResampleTimeSeriesTest ComputeCalibrationFactorsTest
 else
 NEED_FRAME = 
 endif
@@ -19,9 +19,11 @@ CoherentEstimationTest_SOURCES = CoherentEstimationTest.c
 CoherentEstimationTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 ResampleTimeSeriesTest_SOURCES = ResampleTimeSeriesTest.c
 ResampleTimeSeriesTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-EXTRA_DIST = ResampleTimeSeriesTest.c
+ComputeCalibrationFactorsTest_SOURCES = ComputeCalibrationFactorsTest.c
+ComputeCalibrationFactorsTest_LDADD = $(top_builddir)/packages/framedata/src/liblalframe.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+EXTRA_DIST = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest
+TESTS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest ComputeCalibrationFactorsTest
 MOSTLYCLEANFILES = .dvi-dep PrintVector.* transfer.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
