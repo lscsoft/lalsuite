@@ -448,7 +448,6 @@ main (INT4 argc, CHAR **argv )
   UINT4          ntrials = 0;
   
   REAL4 	temp;
-
   UINT4 	i;
   
   INT8 		il;
@@ -777,7 +776,7 @@ main (INT4 argc, CHAR **argv )
 	Foutput = fopen("FF.sr4","w");
 	fclose(Foutput); 
       }
-    
+
     while (++ntrials <= otherIn.ntrials) 
       {
         randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
@@ -788,7 +787,7 @@ main (INT4 argc, CHAR **argv )
 	else
 	{
           randIn.param.massChoice = m1Andm2;
-	   randIn.param.massChoice = totalMassUAndEta;
+	   randIn.param.massChoice = totalMassAndEta;
 	}
 	 /* Let's compute the random parameters of the waveform to inject*/
 	 for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
@@ -950,57 +949,18 @@ main (INT4 argc, CHAR **argv )
 	 /* --- here we might do something else which is not needed but 
 	  * it is a good check . We get the best templates given by the bank 
 	  * process and vary the last frequency --- */
-	 if (coarseIn.approximant == BCV &&  otherIn.FMaximization)
-	   {
-	     for (fendBCV = list[jmax].params.fLower ;
-		  fendBCV < 800;
-		  fendBCV+=10)
-	       {	   
-		 /* --- we need fcutoff in LALMatrix --- */
-		 k = floor(fendBCV / df);
-		 BEGetMatrixFromVectors(VectorA11, VectorA21, VectorA22, k, &matrix);
-		 
-		 /* --- Template creation --- */
-		 LAL_CALL(LALCreateFilters(&Filter1,
-				  &Filter2,
-				  VectorPowerFm5_3,
-				  VectorPowerFm2_3,
-				  VectorPowerFm7_6,
-				  VectorPowerFm1_2,
-				  matrix,
-				  kMin,					       
-				  list[jmax].params.psi0,
-				  list[jmax].params.psi3
-				  ), &status);
-		 		 		 
-		 overlapin.param.fFinal  = fendBCV;
-		 overlapin.param.fCutoff = fendBCV;
-		 
-		 otherIn.PrintOverlap   = 0;
-		 otherIn.PrintFilter    = 0;
-		 
-		 LAL_CALL(LALWaveOverlapBCV(&status,
-				   &correlation,
-				   &overlapout,
-				   &overlapin,
-				   &Filter1,
-				   &Filter2,
-				   matrix,
-				   otherIn
-				   ), &status);
-		 
-		 PrintResults(list[jmax].params, randIn.param,overlapout, fendBCV, 1);
-		 /* j is just a dummy value to not erase jmax; idem for l*/
-		 KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax, &j, &l, &fMax);
-		 
-	       }
-	     PrintResults(list[jmax].params, randIn.param, overlapoutmax, fendBCV, 1);	     
-	   }
 	 fflush(stdout);	
-       }
-   }
 
-   
+
+	 /* now some studies related to the probability of detection */
+
+
+
+      }
+
+  }
+
+
    /* --- destroy the plans, correlation and signal --- */
    
    LAL_CALL(LALFree(VectorPowerFm5_3.data), &status);
@@ -2450,6 +2410,16 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   ADD_PROCESS_PARAM("int",	"%6d",		"--template",		otherIn.template);
   ADD_PROCESS_PARAM("int",	"%6d",		"--signal",		otherIn.signal);
 
+  switch (otherIn.overlapMethod){
+  case InQuadrature:
+    ADD_PROCESS_PARAM("string",	"%d", 	"OverlapMethod", 	"InQuadrature");
+    break;
+  case AlphaMaximization:
+    ADD_PROCESS_PARAM("string",	"%d", 	"OverlapMethod", 	"AlphaMaximization");
+    break;
+  }
+  
+	  
 #undef ADD_PROCESS_PARAM
 }
 
