@@ -27,7 +27,8 @@ should only be used in test programs.
 
 The routine \verb+LALOpenDataFile()+ is used to open a data file for reading.
 This routine is also to be used in test programs only.  Unless the data file
-is specified with an absolute path (beginning with a \verb+/+), the directory
+is specified with an absolute path (beginning with a \verb+/+), or a specific
+path (beginning with a \verb+./+ or a \verb+../+), the directory
 that the file is in is obtained from the environment variable
 \verb+LAL_DATA_PATH+, which must be set at run-time.  (If the environment
 variable is not set, the default path is \verb+.+ --- i.e., the current
@@ -74,6 +75,11 @@ LALOpenDataFile( const char *fname )
     return NULL;
 
   if ( *fname == '/' ) /* absolute path is given */
+    return LALFopen( fname, "r" );
+
+  n = strlen( fname );
+  if ( *fname == '.' && n > 0 && ( fname[1] == '/' || ( n > 1 && fname[1] == '.'
+          && fname[2] == '/' ) ) ) /* specific path is given */
     return LALFopen( fname, "r" );
 
   path = getenv( "LAL_DATA_PATH" );

@@ -221,7 +221,7 @@ int main( void )
 
   cFrequencySeries2.data = cSequenceOut;
 
-  LALCReadFrequencySeries(&status, &cFrequencySeries2, "cFSInput.dat");
+  LALCReadFrequencySeries(&status, &cFrequencySeries2, "./cFSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -356,7 +356,7 @@ int main( void )
 
   zFrequencySeries2.data = zSequenceOut;
 
-  LALZReadFrequencySeries(&status, &zFrequencySeries2, "zFSInput.dat");
+  LALZReadFrequencySeries(&status, &zFrequencySeries2, "./zFSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -528,7 +528,7 @@ int main( void )
 
   dFrequencySeries2.data = dSequenceOut;
  
-  LALDReadFrequencySeries(&status, &dFrequencySeries2, "dFSInput.dat");
+  LALDReadFrequencySeries(&status, &dFrequencySeries2, "./dFSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -694,7 +694,7 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  LALSReadFrequencySeries(&status, &sFrequencySeries2, "sFSInput.dat");
+  LALSReadFrequencySeries(&status, &sFrequencySeries2, "./sFSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -924,7 +924,7 @@ int main( void )
 
   sTimeSeries2.data = sSequenceOut;
 
-  LALSReadTimeSeries(&status, &sTimeSeries2, "sTSInput.dat");
+  LALSReadTimeSeries(&status, &sTimeSeries2, "./sTSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -1086,7 +1086,7 @@ int main( void )
 
   zTimeSeries2.data = zSequenceOut;
 
-  LALZReadTimeSeries(&status, &zTimeSeries2, "zTSInput.dat");
+  LALZReadTimeSeries(&status, &zTimeSeries2, "./zTSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -1260,7 +1260,7 @@ int main( void )
   }
 
   dTimeSeries2.data = dSequenceOut;
-  LALDReadTimeSeries(&status, &dTimeSeries2, "dTSInput.dat");
+  LALDReadTimeSeries(&status, &dTimeSeries2, "./dTSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
@@ -1422,7 +1422,7 @@ int main( void )
 
   cTimeSeries2.data = cSequenceOut;
  
-  LALCReadTimeSeries(&status, &cTimeSeries2, "cTSInput.dat");
+  LALCReadTimeSeries(&status, &cTimeSeries2, "./cTSInput.dat");
   if (status.statusCode != 0) 
   {
     fprintf(stderr,"[%i]: %s [ReadFTSeriesTest:%s]\n",status.statusCode,
