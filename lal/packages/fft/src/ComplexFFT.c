@@ -103,15 +103,18 @@
 
 #include <config.h>
 
-#ifdef HAVE_SFFTW_H
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+#define USE_FFTW3
+#include <fftw3.h>
+#elif defined HAVE_SFFTW_H
 #include <sfftw.h>
-#elif HAVE_FFTW_H
+#elif defined HAVE_FFTW_H
 #include <fftw.h>
-#else
-#error "don't have either sfftw.h or fftw.h"
-#endif
 #ifndef FFTW_ENABLE_FLOAT
 #error "included fftw.h is not for single-precision"
+#endif
+#else
+#error "don't have sfftw.h, fftw.h, or fftw3.h"
 #endif
 
 #include <lal/LALStdlib.h>
@@ -122,15 +125,23 @@
 NRCSID( COMPLEXFFTC, "$Id$" );
 
 /* tell FFTW to use LALMalloc and LALFree */
+#ifdef USE_FFTW3
+#define FFTWHOOKS ((void)0)
+#else
 #define FFTWHOOKS \
   do { fftw_malloc_hook = LALMallocShort; fftw_free_hook = LALFree; } while(0)
+#endif
 
 struct
 tagComplexFFTPlan
 {
-  INT4      sign;
-  UINT4     size;
-  fftw_plan plan;
+  INT4       sign;
+  UINT4      size;
+#ifdef USE_FFTW3
+  fftwf_plan plan;
+#else
+  fftw_plan  plan;
+#endif
 };
 
 /* <lalVerbatim file="ComplexFFTCP"> */  
@@ -142,12 +153,24 @@ LALCreateForwardComplexFFTPlan(
     INT4             measure
     )
 { /* </lalVerbatim> */
+#ifdef USE_FFTW3
+  COMPLEX8 *tmp1;
+  COMPLEX8 *tmp2;
+  int flags = FFTW_UNALIGNED;
+  if ( measure == 0 ) flags |= FFTW_ESTIMATE;
+  else if ( measure == 1 ) flags |= FFTW_MEASURE;
+  else if ( measure == 2 ) flags |= FFTW_PATIENT;
+  else flags |= FFTW_EXHAUSTIVE;
+#else
   int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+#endif
   INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
+#ifndef USE_FFTW3
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
+#endif
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
   ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
@@ -163,9 +186,29 @@ LALCreateForwardComplexFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = -1;
 
+#ifdef USE_FFTW3
+  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  if ( !tmp1 || !tmp2 )
+  {
+    if ( tmp1 ) LALFree( tmp1 );
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, COMPLEXFFTH_EALOC, COMPLEXFFTH_MSGEALOC );
+  }
+#endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
+#ifdef USE_FFTW3
+  (*plan)->plan = fftwf_plan_dft_1d( size,
+      (fftwf_complex *)tmp1, (fftwf_complex *)tmp2, FFTW_FORWARD, flags );
+#else
   (*plan)->plan = fftw_create_plan( size, FFTW_FORWARD, flags );
+#endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+#ifdef USE_FFTW3
+  LALFree( tmp2 );
+  LALFree( tmp1 );
+#endif
   if ( !(*plan)->plan )
   {
     LALFree( *plan );
@@ -186,12 +229,24 @@ LALCreateReverseComplexFFTPlan(
     INT4             measure
     )
 { /* </lalVerbatim> */
+#ifdef USE_FFTW3
+  COMPLEX8 *tmp1;
+  COMPLEX8 *tmp2;
+  int flags = FFTW_UNALIGNED;
+  if ( measure == 0 ) flags |= FFTW_ESTIMATE;
+  else if ( measure == 1 ) flags |= FFTW_MEASURE;
+  else if ( measure == 2 ) flags |= FFTW_PATIENT;
+  else flags |= FFTW_EXHAUSTIVE;
+#else
   int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+#endif
   INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
   FFTWHOOKS;
 
+#ifndef USE_FFTW3
   ASSERT( fftw_sizeof_fftw_real() == 4, status,
       COMPLEXFFTH_ESNGL, COMPLEXFFTH_MSGESNGL );
+#endif
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
   ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
@@ -207,9 +262,29 @@ LALCreateReverseComplexFFTPlan(
   (*plan)->size = size;
   (*plan)->sign = 1;
 
+#ifdef USE_FFTW3
+  tmp1 = LALMalloc( size * sizeof( *tmp1 ) );
+  tmp2 = LALMalloc( size * sizeof( *tmp2 ) );
+  if ( !tmp1 || !tmp2 )
+  {
+    if ( tmp1 ) LALFree( tmp1 );
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, COMPLEXFFTH_EALOC, COMPLEXFFTH_MSGEALOC );
+  }
+#endif
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
+#ifdef USE_FFTW3
+  (*plan)->plan = fftwf_plan_dft_1d( size,
+      (fftwf_complex *)tmp1, (fftwf_complex *)tmp2, FFTW_BACKWARD, flags );
+#else
   (*plan)->plan = fftw_create_plan( size, FFTW_BACKWARD, flags );
+#endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+#ifdef USE_FFTW3
+  LALFree( tmp2 );
+  LALFree( tmp1 );
+#endif
   if ( !(*plan)->plan )
   {
     LALFree( *plan );
@@ -236,7 +311,11 @@ LALDestroyComplexFFTPlan (
 
   /* destroy plan and set to NULL pointer */
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
+#ifdef USE_FFTW3
+  fftwf_destroy_plan( (*plan)->plan );
+#else
   fftw_destroy_plan( (*plan)->plan );
+#endif
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   LALFree( *plan );
   *plan = NULL;
@@ -275,194 +354,23 @@ LALCOMPLEX8VectorFFT (
   ASSERT( input->length == plan->size, status,
           COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
 
+#ifdef USE_FFTW3
+  fftwf_execute_dft(
+      plan->plan,
+      (fftwf_complex *)input->data,
+      (fftwf_complex *)output->data
+      );
+#else
   fftw_one(
       plan->plan,
       (fftw_complex *)input->data,
       (fftw_complex *)output->data
       );
+#endif
 
   RETURN( status );
 }
 
-#ifdef KEEP_OLD_COMPLEX_FFT
-
-void
-LALEstimateFwdComplexFFTPlan (
-    LALStatus       *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
-    )
-{
-  INITSTATUS( stat, "LALEstimateFwdComplexFFTPlan", COMPLEXFFTC );
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that the plan has not been previously defined */
-  ASSERT( *plan == NULL, stat, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
-
-  /* make sure that the requested size is valid */
-  ASSERT( size > 0, stat, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
-
-  /* allocate memory */
-  *plan = (ComplexFFTPlan *) LALMalloc( sizeof( ComplexFFTPlan ) );
-  ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = 1;
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  (*plan)->plan = (void *)
-    fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_ESTIMATE );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
-  /* check that the plan is not NULL */
-  if ( !(*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  }
-
-  /* normal exit */
-  RETURN( stat );
-}
-
-
-void
-LALEstimateInvComplexFFTPlan (
-    LALStatus       *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
-    )
-{
-  INITSTATUS( stat, "LALEstimateInvComplexFFTPlan", COMPLEXFFTC );
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that the plan has not been previously defined */
-  ASSERT( *plan == NULL, stat, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
-
-  /* make sure that the requested size is valid */
-  ASSERT( size > 0, stat, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
-
-  /* allocate memory */
-  *plan = (ComplexFFTPlan *) LALMalloc( sizeof( ComplexFFTPlan ) );
-  ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = -1;
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  (*plan)->plan = (void *)
-    fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_ESTIMATE );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
-  /* check that the plan is not NULL */
-  if ( !(*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  }
-
-  /* normal exit */
-  RETURN( stat );
-}
-
-
-void
-LALMeasureFwdComplexFFTPlan (
-    LALStatus       *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
-    )
-{
-  INITSTATUS( stat, "LALMeasureFwdComplexFFTPlan", COMPLEXFFTC );
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that the plan has not been previously defined */
-  ASSERT( *plan == NULL, stat, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
-
-  /* make sure that the requested size is valid */
-  ASSERT( size > 0, stat, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
-
-  /* allocate memory */
-  *plan = (ComplexFFTPlan *) LALMalloc( sizeof( ComplexFFTPlan ) );
-  ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = 1;
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  (*plan)->plan = (void *)
-    fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_MEASURE );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
-  /* check that the plan is not NULL */
-  if ( !(*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  }
-
-  /* normal exit */
-  RETURN( stat );
-}
-
-
-void
-LALMeasureInvComplexFFTPlan (
-    LALStatus       *stat,
-    ComplexFFTPlan **plan,
-    UINT4            size
-    )
-{
-  INITSTATUS( stat, "LALMeasureInvComplexFFTPlan", COMPLEXFFTC );
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that the plan has not been previously defined */
-  ASSERT( *plan == NULL, stat, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
-
-  /* make sure that the requested size is valid */
-  ASSERT( size > 0, stat, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
-
-  /* allocate memory */
-  *plan = (ComplexFFTPlan *) LALMalloc( sizeof( ComplexFFTPlan ) );
-  ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* assign plan fields */
-  (*plan)->size = size;
-  (*plan)->sign = -1;
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  (*plan)->plan = (void *)
-    fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_MEASURE );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-
-  /* check that the plan is not NULL */
-  if ( !(*plan)->plan )
-  {
-    LALFree( *plan );
-    *plan = NULL;
-    ABORT( stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  }
-
-  /* normal exit */
-  RETURN( stat );
-}
-
-#endif /* KEEP_OLD_COMPLEX_FFT */
+/* double precision routines if they are available */
+#if defined HAVE_LIBFFTW3 && defined HAVE_FFTW3_H
+#endif
