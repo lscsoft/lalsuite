@@ -1,14 +1,15 @@
-#!/usr/bin/env python2.2
+#!/usr/bin/env python2
 """
 pulsar_pipe.in - standalone pulsar pipeline driver script
 X. Siemens
+modified by M.Alessandra Papa starting in Feb 05
 """
 
 # import standard modules to the python path
 import sys, os, shutil, math,random
 import getopt, re, string,popen2
 import ConfigParser
-sys.path.append('/usr/lib/python2.2')
+sys.path.append('/usr/lib/python2')
 
 pi=3.14159265358979323844
 
@@ -101,7 +102,7 @@ a_search = cp.get('fstat-params','a_search')
 d_search = cp.get('fstat-params','d_search')
 data1 = cp.get('fstat-params','data1')
 data2 = cp.get('fstat-params','data2')
-Fth = cp.get('fstat-params','Fth')
+sFth = cp.get('fstat-params','Fth')
 
 # read coincidence (polka) parameters
 freq_window = cp.get('polka-params','freq_window')
@@ -132,6 +133,8 @@ sgps_start1 = cp.get('mc-params','gps_start1')
 sgps_start2 = cp.get('mc-params','gps_start2')
 gps_start1 = int(sgps_start1)
 gps_start2 = int(sgps_start2)
+sNpolka = cp.get('mc-params','Npolka')
+Npolka = int(sNpolka)
 
 # -------------------------------------------------------------------------------- #
 
@@ -140,13 +143,21 @@ gps_start2 = int(sgps_start2)
 # name of local work directory
 subdir=''.join([local_work_dir,'/','ul-run.',str(job_id)])
 
-# figure out name of results file that we're using to compute the upper limit
-freq = float(start_freq) + float(job_id) * float(coincidence_band)
-res_in=''.join(['results_out-',str(freq)])
+# check that we've got all the polka files that we need
 
-# names of Fstats files
-fstats1_zipped=''.join(['FstatsJOINED-1-',str(freq),'.gz'])
-fstats2_zipped=''.join(['FstatsJOINED-2-',str(freq),'.gz'])
+ipolka=0
+while ipolka < Npolka:
+ freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
+ res_in=''.join(['polka_out-',str(freq_dmp)])
+ gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
+ ipolka=ipolka+1
+ if os.path.exists(gzpd_res_file)!= 1:
+  print "Not all necessary polka files are present"
+  print "could not find ",gzpd_res_in
+  print "Proceeding to next band...."
+  print "...."
+  sys.exit(0)
 
 # remove local work directory in case it exists
 rm_subdir=''.join(['rm -rf ',subdir])
@@ -179,16 +190,12 @@ earth=''.join([starting_dir,'/earth00-04.dat'])
 sun=''.join([starting_dir,'/sun00-04.dat'])
 times1=''.join([starting_dir,'/',ts1])
 times2=''.join([starting_dir,'/',ts2])
-res_file=''.join([starting_dir,'/',res_in])
-fstats1_file=''.join([starting_dir,'/',fstats1_zipped])
-fstats2_file=''.join([starting_dir,'/',fstats2_zipped])
 
 # copy execulables and components to working sub-directory 
 shutil.copy(cfstat,subdir)
 shutil.copy(mkdata,subdir)
 shutil.copy(fstatshape,subdir)
 shutil.copy(makeinveto,subdir)
-shutil.copy(polka,subdir)
 shutil.copy(extract_data,subdir)
 shutil.copy(semi_F,subdir)
 shutil.copy(findSh,subdir)
@@ -196,18 +203,25 @@ shutil.copy(earth,subdir)
 shutil.copy(sun,subdir)
 shutil.copy(times1,subdir)
 shutil.copy(times2,subdir)
-shutil.copy(res_file,subdir)
-shutil.copy(fstats1_file,subdir)
-shutil.copy(fstats2_file,subdir)
 
-# unzip fstats files:
-unzip_fstats1=''.join(['gunzip ',fstats1_zipped])
-os.system(unzip_fstats1)
-fstats1=''.join(['FstatsJOINED-1-',str(freq)])
 
-unzip_fstats2=''.join(['gunzip ',fstats2_zipped])
-os.system(unzip_fstats2)
-fstats2=''.join(['FstatsJOINED-2-',str(freq)])
+
+# copy over and unzip input polka files
+#############################################
+ipolka=0
+while ipolka < Npolka:
+ freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ gzpd_res_in=''.join(['polka_out-',str(freq_dmp),'.gz'])
+ res_in=''.join(['polka_out-',str(freq_dmp)])
+ gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
+ gzpd_res_file=''.join([starting_dir,'/polka_results/',gzpd_res_in])
+ shutil.copy(gzpd_res_file,subdir)
+ print 'Unzipping ',gzpd_res_in
+ unzip_polka=''.join(['gunzip ',gzpd_res_in])
+ os.system(unzip_polka)
+ ipolka=ipolka+1
+#############################################
+
 
 # -------------------------------------------------------------------------------- #
 
@@ -217,12 +231,18 @@ fstats2=''.join(['FstatsJOINED-2-',str(freq)])
 os.mkdir('xdata1/')
 data=data1
 
-fmin=freq-float(coincidence_band)
-band=3*float(coincidence_band)
+freq=float(start_freq) + float(job_id) * float(coincidence_band) * Npolka
+fmin=freq-2.0*float(coincidence_band)
+band=float(coincidence_band) * (Npolka + 4.0)
+
+print 'freq,fmin,band=',freq,fmin,band
 
 # define command line first ifo
+#print e
 extract_args=' '.join(['./lalapps_extractSFTband','-n xdata1/SFT','-d',data,'-N 20',
                        '-b',str(band),'-f',str(fmin)])
+
+print extract_args
 
 # extract data for first ifo
 #print extract_args
@@ -237,20 +257,36 @@ extract_args=' '.join(['./lalapps_extractSFTband','-n xdata2/SFT','-d',data,'-N 
                        '-b',str(band),'-f',str(fmin)])
 
 # extract data for second ifo
-#print extract_args
+print extract_args
 os.system(extract_args)
+
 
 # -------------------------------------------------------------------------------- #
 
 # --------------------------  Target false alarm  -------------------------------- #
 
-results_file=open(res_in,mode='r')
-for line in results_file:
-  [dmp,dmp,dmp,dmp,dmp,dmp,dmp,dmp,dmp,dmp,dmp,dmp,sfa]=line.split(None,13)
-results_file.close()
-#target false alarm:
-fa=float(sfa)
-
+ipolka=0
+fa=100.0
+while ipolka < Npolka:
+ freq_dmp = float(start_freq) + (float(job_id)+ipolka) * float(coincidence_band)
+ res_in=''.join(['polka_out-',str(freq_dmp)])
+ results_file=open(res_in,mode='r')
+ line=results_file.readline()
+ words=line.split()
+ sfa=words[10]
+ results_file.close()
+ fa1=float(sfa)
+ if fa1 < fa:
+   fa=fa1
+   freqFA=freq
+ ipolka=ipolka+1
+fa1=fa
+fa=math.log(fa1)
+print ' *  *  * ' 
+print 'Loudest event was from band ',freqFA
+print 'Target log false alarm is ',fa
+print ' *  *  * '
+#sys.exit(0)
 # -------------------------------------------------------------------------------- #
 
 # --------------------------- MC injection loop  --------------------------------- # 
@@ -264,13 +300,16 @@ while cont:
   i=0
   counter=0
   while i < Ninj:
+
+    print '======================='
+    print 'Injection # ',i
     # Random injection parameters:
     cosi=random.uniform(-1.0,1.0)
     Ap=(1+cosi**2)/2 * h0
     Ac=cosi*h0
     psi=random.uniform(0.0,2*pi)
     phi01=random.uniform(0.0,2*pi)
-    f0=random.uniform(freq,freq+float(coincidence_band))
+    f0=random.uniform(freq,freq+float(coincidence_band)*(Npolka-1))
     alpha=random.uniform(0.0,2*pi)
     cosdelta=random.uniform(-1.0,1.0)
     delta=math.acos(cosdelta)
@@ -279,8 +318,9 @@ while cont:
 
     phi02=2*pi*f0*(gps_start2-gps_start1)  # adjust phase in second injection by time elapsed
 
-    fmin=int(f0*10.0)/10.0-0.1
-    band=0.3
+
+    #fmin=int(f0*10.0)/10.0-0.1
+    #band=0.2
 
 
     #print 'Minimum freq of SFTs:',fmin,'Band:',band
@@ -335,6 +375,9 @@ while cont:
     # run makefakedata using In1.data file
     makefakedata_args=' '.join(['./makefakedata_v2','-i In1.data -n signal1/SFT -I',sifo,'-D xdata1/','-E .'])
     #print makefakedata_args
+    #print 'IFO',sifo,'. Injecting fake signal in real data'
+    #print ' '
+	
     os.system(makefakedata_args)
 
     # mismatched template variables
@@ -343,33 +386,41 @@ while cont:
     alphaT=alpha+AngularDistance*math.cos(theta)
     deltaT=delta+AngularDistance*math.sin(theta)
     fstart=f0-float(freq_window)
+    print 'f0,fstart=',f0,fstart
 
     # search for the signal 
     ifo=ifo1
     cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(fstart),'-b',str(2*float(freq_window)),\
-                          '-I',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),
+                          '--expLALDemod -I ',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),
                           '-D signal1','-E . -y 00-04 -F 0.0','-o -1' ])
     #print cfstat_args
+    #print 'IFO',sifo,'. Searching fake signal in real data'
+    #print ' '
+
     os.system(cfstat_args)    
 
 
-##    print 'Original Fstats1:'
-##    sys.stdout.flush()
-##    os.system('cat Fstats-1')
+    #line_kounter=os.system['cat Fstats-1 | python countlines.py']
 
     fstats1_file=open('Fstats-1',mode='r')
-    line_kounter=0
-    for line in fstats1_file:
-      line_kounter=line_kounter+1
-      [sf1,dmp,dmp,dmp,dmp,dmp,sF1]=line.split(None,7)
+    data=fstats1_file.readlines()
+    line_kounter=len(data)
     fstats1_file.close()
-    if line_kounter != 1:
-      print 'Fstats file larger or smaller than expected. Exiting 1'
-      print 'Original Fstats1:'
-      os.system('cat Fstats-1')
+    if line_kounter != 2:
+      print 'IFO: ',str(ifo),'. Injection and search.'
+      print 'Fstats with ',line_kounter,' lines. Exiting 1'
+      print '========='
       sys.exit(0)
 
-    if float(sf1) < float(freq) or float(sf1) > (float(freq)+float(coincidence_band)):
+    fstats1_file=open('Fstats-1',mode='r')
+    line=fstats1_file.readline()
+    #print "reading..."
+    [sf1,dmp,dmp,dmp,dmp,dmp,sF1]=line.split()
+    #print sf1,sF1
+    fstats1_file.close()
+
+    if float(sf1) < float(freq) or float(sf1) > (float(freq)+float(coincidence_band)*Npolka):
+      print 'discarding injection.... continuing....'
       os.system('rm -rf signal1')            
       continue
     
@@ -379,31 +430,38 @@ while cont:
     # run makefakedata using In1.data file
     makefakedata_args=' '.join(['./makefakedata_v2','-i In2.data -n signal2/SFT -I',sifo,'-D xdata2/','-E .'])
     #print makefakedata_args
+    #print 'IFO',sifo,'. Injecting fake signal in real data'
+    #print ' '
+
+    
     os.system(makefakedata_args)
     # search for the signal 
     ifo=ifo2
     cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(fstart),'-b',str(2*float(freq_window)),\
-                          '-I',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),
+                          '--expLALDemod -I',str(ifo),'-r',str(df),'-a',str(alphaT),'-d',str(deltaT),
                           '-D signal2','-E . -y 00-04 -F 0.0','-o -2'])
     #print cfstat_args
+    #print 'IFO',sifo,'. Searching fake signal in real data'
+    #print ' '
     os.system(cfstat_args)    
+
+
     fstats2_file=open('Fstats-2',mode='r')
-    line_kounter=0
-    for line in fstats2_file:
-      line_kounter=line_kounter+1
-      [sf2,dmp,dmp,dmp,dmp,dmp,sF2]=line.split(None,7)
-    fstats2_file.close()
-    if line_kounter != 1:
-      print 'Fstats file larger or smaller than expected. Exiting 2'
-      print 'Original Fstats2:'
-      os.system('cat Fstats-2')
+    data=fstats2_file.readlines()
+    line_kounter=len(data)
+    fstats2_file.close()      
+
+    if line_kounter != 2:
+      print 'IFO: ',str(ifo),'. Injection and search.'
+      print 'Fstats with ',line_kounter,' lines. Exiting 1'
+      print '========='
       sys.exit(0)
-    
 
-##    print 'Original Fstats2:'
-##    sys.stdout.flush()
-##    os.system('cat Fstats-2')
-
+    fstats2_file=open('Fstats-2',mode='r')
+    line=fstats2_file.readline()
+    [sf2,dmp,dmp,dmp,dmp,dmp,sF2]=line.split()
+    fstats2_file.close()
+  
 
     # calculate theoretical values we expect from the noise and signal parameters
     findSh_1=' '.join(['./lalapps_FindSh -D signal1 -b 0.03 -f',str(float(sf1)-0.015)])
@@ -435,90 +493,86 @@ while cont:
     del myJob
 
 
-    # if the results are greater than out threshold and we are within our coincidence window in f0 then we run polka  
-    if float(sF1) < float(Fth) or float(sF2) < float(Fth) or abs(float(sf1)-float(sf2)) > float(freq_window):  
-      print '%Maximum event is too small or not coincident:', sF1, sF2,  abs(float(sf1)-float(sf2))
+    F1=float(sF1)
+    F2=float(sF2)
+    Fth=float(sFth)
+    f1=float(sf1)
+    f2=float(sf2)
+
+    # if the results are smaller than our threshold or they are
+    # not coincident in frequency   
+    if F1 < Fth or F2 < Fth or abs(f1-f2) > float(freq_window):  
+      print '%Maximum event is too small or not freq. coincident:', F1, F2,  abs(f1-f2)
+      os.system('rm -rf signal1')
+      os.system('rm -rf signal2')            
       sys.stdout.flush()
       
-    # if the results are greater than out threshold and we are within our coincidence window in f0 then we run polka  
-    if float(sF1) > float(Fth) and float(sF2) > float(Fth) and abs(float(sf1)-float(sf2)) < float(freq_window):  
+    # if the results are greater than our threshold and they are
+    # within the coincidence window in frequency
+    # then we compute the false alarm probs. 
+    if F1 > Fth and F2 > Fth and abs(f1-f2) < float(freq_window):  
 
-      # run polka on output of search to compute significances
-      polka_args = ' '.join(['./lalapps_polka','-1 Fstats-1','-2 Fstats-2','-f',\
-                           str(freq_window),'-a',str(alpha_window),'-d',\
-                           str(delta_window),'-o polka_out',\
-                           '-3',fstats1,'-4',fstats2,\
-                           '-s',str(freq),'-e',str(freq+float(coincidence_band))])
-      #print polka_args 
-      os.system(polka_args)
 
-      polka_file=open('polka_out',mode='r')
-      line_kounter=0
-      for line in polka_file:
-        line_kounter=line_kounter+1
-        [sf1,sa1,sd1,sF1,sfa1,sf2,sa2,sd2,sF2,sfa2,sfa]=line.split(None,11)
-      polka_file.close()
-      if line_kounter != 1:
-        print 'Polka file larger or smaller than expected. Exiting 3'
-        print f0,alphaT,deltaT,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0
-        print 'Polka-file:'
+      Ifa1=math.log((1.0+F1/2.0))-(F1/2.0)
+      Ifa2=math.log((1.0+F2/2.0))-(F2/2.0)      
+      Ifa=Ifa1+Ifa2
+
+      print 'F values for the injections: ',F1,F2
+      print 'corresponding log false alarms: ' ,Ifa1,Ifa2
+      print 'joint log false alarm: ',Ifa
+      print 'false alarm of loudest event: ', fa
+      print ' '
+
+      if Ifa > fa:
+        print '%Joint false alarm is too large:',Ifa,'Target was:',fa
+        os.system('rm -rf signal1')
+        os.system('rm -rf signal2')            
         sys.stdout.flush()
-        os.system('cat polka_out')
-        print 'ran:',makefakedata_args
-        print 'ran:',cfstat_args
-        print 'In.data files:'
-        sys.stdout.flush()
-        os.system('cat In1.data')
-        os.system('cat In2.data')
-        os.system('cat Fstats-1')
-        os.system('cat Fstats-2')
-        sys.exit(0)
 
-      # first check if false alarm is lower than for loudest candidate; if so proceed to chi-sq test
-##      print '%False alarm:',sfa,'  Target false alarm:',fa
-##      sys.stdout.flush()
       
-      if float(sfa) > fa:
-        print '%Joint false alarm is too large:',sfa,'Target was:',fa
-        sys.stdout.flush()
-      
-      if float(sfa) <= fa:
+      if Ifa <= fa:
 
-        F1=float(sF1)
+        print '... continuing...'
+
         if F1 > float(Fth_chisq):
+
+          #print 'F1 larger than chi2 thereshold'
+          #print ' '
           # 1) re-run ComputeFstat for a small band with -p (get pulsar parameters) option
           ifo=ifo1
           sifo=sifo1
           data='signal1'
           ts=ts1
-          sa=sa1
-          sd=sd1
+          #sa=sa1
+          #sd=sd1
           sf=sf1
+          sa=alphaT
+          sd=deltaT
           # starting frequency of search is chisq_points points to the left
           chi_fstart=float(sf)-float(chisq_points)*float(df) 
           chi_freq_band=2.0*float(df)*float(chisq_points)     # band is 2*chisq_points 
 
           # define command line for run on first ifo
-          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',str(chi_freq_band),\
-                                '-I',str(ifo),'-r',df,'-a',sa,'-d',sd,'-D',data,'-E . -y 00-04 -F',\
-                                Fth,'-p'])
+          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),\
+                                '-b',str(chi_freq_band),'--expLALDemod -I',str(ifo),\
+                                '-r',df,'-a',str(sa),'-d',str(sd),'-D',data,'-E . -y 00-04 -F',\
+                                str(Fth),'-p'])
 
 
           #print cfstat_args
+          #print 'Running search again with parameter estimation'
+          #print ' '
           os.system(cfstat_args)
-##          print 'Fstats1:'
-##          sys.stdout.flush()
-##          os.system('cat Fstats')
 
           fstats1_file=open('Fstats',mode='r')
-          line_kounter=0
-          for line in fstats1_file:
-            line_kounter=line_kounter+1
+          data=fstats1_file.readlines()
+          line_kounter=len(data)
           fstats1_file.close()
-          if line_kounter != 1:
-            print 'Fstats file larger or smaller than expected. Exiting 1'
-            print 'Chi-sq Fstats1:'
-            os.system('cat Fstats')
+          if line_kounter != 2:
+            print 'IFO: ',str(ifo)
+            print 'Fstats file has ',line_kounter,' lines. Exiting 1'
+            print '===='
+            #os.system('cat Fstats')
             sys.exit(0)
  
     
@@ -527,6 +581,8 @@ while cont:
           makeinveto_args=' '.join(['./lalapps_makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
                                     '-l 1800.0 -n 20','-s',str(int(float(sf))-1),'-b 3.0'])
           #print makeinveto_args
+          #print 'making In.data file for model signal...'
+          #print ' '
           os.system(makeinveto_args)
 
           # make signal directory to put sfts with fake data
@@ -536,12 +592,17 @@ while cont:
           makefakedata_args=' '.join(['./makefakedata_v2','-i In.data -n signal/SFT -I',sifo,'-E .'])
           #print makefakedata_args
           os.system(makefakedata_args)
+          #print 'making the model signal...'
+          #print ' '
     
           # 4) run ComputeFStat on fake signal data with signal only flag (-S)
-          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',str(chi_freq_band),\
-                                '-I',str(ifo),'-r',str(df),'-a',sa,'-d',sd,'-D signal','-E . -y 00-04 -F 0.0',\
-                                '-p -S'])
+          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',\
+                                str(chi_freq_band),'--expLALDemod -I ',str(ifo),'-r',\
+                                str(df),'-a',str(sa),'-d',str(sd),'-D signal',\
+                                '-E . -y 00-04 -F 0.0','-p -S'])
           #print  cfstat_args
+          #print 'searching the model signal to construct vetoe signal'
+          #print ' '
           os.system(cfstat_args)
           
           # remove signal directory
@@ -551,39 +612,53 @@ while cont:
           fstatshape_args=' '.join(['./lalapps_FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > chisq1.txt'])
           #print fstatshape_args
           os.system(fstatshape_args)
+          #print 'running Fstat shape vetoe test'
+          #print ' '
           
           # 6) is chi sq test passed?
+
+
           chisq_file=open('chisq1.txt',mode='r')
-          line_kounter=0
-          for line in chisq_file:
-            line_kounter=line_kounter+1
-            [crap,crap,sdof1,schisq1]=line.split(None,5)
-#            [crap,crap,crap,schisq1]=line.split(None,5)
+          data=chisq_file.readlines()
+          line_kounter=len(data)
           chisq_file.close()
           if line_kounter != 1:
-            print 'Chi sq. larger or smaller than expected. Exiting 4'
-            print 'Chi sq file:'
-            os.system('cat chisq1.txt')
+            print 'IFO: ',str(ifo),', chi2 test.'
+            print 'chisq1.txt file with ',line_kounter,' lines. Exiting 4'
+            print '========='
             sys.exit(0)
 
+          
+          chisq_file=open('chisq1.txt',mode='r')
+          line=chisq_file.readline()
+          [crap,crap,sdof1,schisq1]=line.split()
+          chisq_file.close()
+          
           chisq1=float(schisq1)
           dof1=float(sdof1)    
           chisq_th=dof1*(math.sqrt(F1)/10.0 +1)**2
 #          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F1)/10.0 +1)**2
 
-
+          #print 'Injections chisq= ',chisq1
+          #print 'Threshold at ', chisq_th
+          #print ' '
 
           if chisq1 < chisq_th:
             chisq1_pass=1
           else:
             chisq1_pass=0
-            print '%Candidate 1 did not survive chi sq test'
+            #print '%Candidate 1 did not survive chi sq test'
             sys.stdout.flush()
 
           # clean-up
           os.system('rm chisq1.txt FaFb0* Fstats In.data ParamMLE')
     
         else: chisq1_pass=1
+
+        #print 'pass ?', chisq1_pass
+        #print ' '
+        #print 'Other IFO:,', ifo2
+        #print ' '
 
         F2=float(sF2)
         if F2 > float(Fth_chisq):
@@ -593,42 +668,46 @@ while cont:
           sifo=sifo2
           data='signal2'
           ts=ts2
-          sa=sa2
-          sd=sd2
+          #sa=sa2
+          #sd=sd2
+          sa=alphaT
+          sd=deltaT
           sf=sf2
           # starting frequency of search is chisq_points points to the left
           chi_fstart=float(sf)-float(chisq_points)*float(df) 
           chi_freq_band=2.0*float(df)*float(chisq_points)     # band is 2*chisq_points 
 
           # define command line for run on first ifo
-          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',str(chi_freq_band),\
-                                '-I',str(ifo),'-r',str(df),'-a',sa,'-d',sd,'-D',data,'-E . -y 00-04 -F',\
+          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',\
+                                str(chi_freq_band),'--expLALDemod -I ',str(ifo),'-r',\
+                                str(df),'-a',str(sa),'-d',str(sd),'-D',data,'-E . -y 00-04 -F',\
                                 str(Fth),'-p'])
           #print cfstat_args
           os.system(cfstat_args)
-##          print 'Fstats2:'
-##          sys.stdout.flush()
-##          os.system('cat Fstats')
-
+          #print 'Running search again with parameter estimation'
+          #print ' '
 
           fstats2_file=open('Fstats',mode='r')
-          line_kounter=0
-          for line in fstats2_file:
-            line_kounter=line_kounter+1
+          data=fstats2_file.readlines()
+          line_kounter=len(data)
           fstats2_file.close()
-          if line_kounter != 1:
-            print 'Fstats file larger or smaller than expected. Exiting 1'
-            print 'Chi-sq Fstats2:'
-            os.system('cat Fstats')
+          if line_kounter != 2:
+            print 'IFO: ',str(ifo)
+            print 'Fstats file has ',line_kounter,' lines. Exiting 1'
+            print '===='
+            #os.system('cat Fstats')
             sys.exit(0)
+ 
 
-      
           # 2) run makeinvetofile makes the In.data file for makefakedata
           #    and checks that there's only one outlier
           makeinveto_args=' '.join(['./lalapps_makeInvetofile','-f Fstats -p ParamMLE -o In.data -t',ts,\
                                     '-l 1800.0 -n 20','-s',str(int(float(sf))-1),'-b 3.0'])
           #print makeinveto_args
           os.system(makeinveto_args)
+          #print 'making In.data file for model signal...'
+          #print ' '
+
 
           # make signal directory to put sfts with fake data
           os.mkdir('signal')
@@ -637,13 +716,20 @@ while cont:
           makefakedata_args=' '.join(['./makefakedata_v2','-i In.data -n signal/SFT -I',sifo,'-E .'])
           #print makefakedata_args
           os.system(makefakedata_args)
+          #print 'making the model signal...'
+          #print ' '
+          
     
           # 4) run ComputeFStat on fake signal data with signal only flag (-S)
-          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',str(chi_freq_band),\
-                                '-I',str(ifo),'-r',str(df),'-a',sa,'-d',sd,'-D signal','-E . -y 00-04 -F 0.0',\
-                                '-p -S'])
+          cfstat_args=' '.join(['./lalapps_ComputeFStatistic','-f',str(chi_fstart),'-b',\
+                                str(chi_freq_band),'--expLALDemod -I ',str(ifo),'-r',\
+                                str(df),'-a',str(sa),'-d',str(sd),'-D signal',\
+                                '-E . -y 00-04 -F 0.0','-p -S'])
           #print cfstat_args
           os.system(cfstat_args)
+          #print 'searching the model signal to construct vetoe signal'
+          #print ' '
+          
           
           # remove signal directory
           os.system('rm -rf signal/')
@@ -652,78 +738,93 @@ while cont:
           fstatshape_args=' '.join(['./lalapps_FstatShapeTestLAL -o FaFb00.001 -t FaFb01.001 > chisq2.txt'])
           #print fstatshape_args
           os.system(fstatshape_args)
+          #print 'running Fstat shape vetoe test'
+          #print ' '
 
           # 6) is chi sq test passed?
+
           chisq_file=open('chisq2.txt',mode='r')
-          line_kounter=0
-          for line in chisq_file:
-            line_kounter=line_kounter+1
-            [crap,crap,sdof2,schisq2]=line.split(None,5)
-#            [crap,crap,crap,schisq2]=line.split(None,5)
+          data=chisq_file.readlines()
+          line_kounter=len(data)
           chisq_file.close()
           if line_kounter != 1:
-            print 'Chi sq. larger or smaller than expected. Exiting 5'
-            print 'Chi sq file:'
-            os.system('cat chisq2.txt')
+            print 'IFO: ',str(ifo),', chi2 test.'
+            print 'chisq2.txt file with ',line_kounter,' lines. Exiting 5'
+            print '========='
             sys.exit(0)
-        
+
+          
+          chisq_file=open('chisq2.txt',mode='r')
+          line=chisq_file.readline()
+          [crap,crap,sdof2,schisq2]=line.split()
+          chisq_file.close()
+     
+
           chisq2=float(schisq2)
           dof2=float(sdof2)          
           chisq_th=dof2*(math.sqrt(F2)/10.0 +1)**2 
 #          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F2)/10.0 +1)**2
 
+          #print 'Injections chisq= ',chisq2
+          #print 'Threshold at ', chisq_th
+          #print ' '
+
           if chisq2 < chisq_th:
             chisq2_pass=1
           else:
             chisq2_pass=0
-            print '%Candidate 2 did not survive chi sq test'
+            #print '%Candidate 2 did not survive chi sq test'
             sys.stdout.flush()
-            
+
           # clean-up
           os.system('rm chisq2.txt FaFb0* Fstats In.data ParamMLE')
        
         else: chisq2_pass=1
      
-
-        # Have both candidates passed the chi_sq veto (or not qualified to take it)?
+        #print 'pass ?', chisq2_pass
+        #print ' '
+             
+        #Have both candidates passed the chi_sq veto (or not qualified to take it)?
         if chisq1_pass and chisq2_pass:
           counter=counter+1
 
-##        print sfa1,sfa2,float(sfa),fa,h0,float(sF1),2*float(sF1th),\
-##              float(sF2),2*float(sF2th),abs(float(sf1)-float(sf2)),\
-##              float(counter),float(i+1),float(counter)/float(i+1)
-##        sys.stdout.flush()
-
-##        print >>inj_data_file,sfa1,sfa2,float(sfa),fa,h0,float(sF1),2*float(sF1th),\
-##              float(sF2),2*float(sF2th),abs(float(sf1)-float(sf2)),\
-##              float(counter),float(i+1),float(counter)/float(i+1)
-
-
-    sys.stdout.flush()
-    os.system('rm -rf signal1 signal2')            
-    print f0,alpha,delta,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0,i+1,counter,float(counter)/float(i+1)
+        sys.stdout.flush()
+        os.system('rm -rf signal1 signal2')            
+        print f0,alpha,delta,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0,i+1,counter,float(counter)/float(i+1)
+        
+      #end if Ifa <= fa  
+    #end if injected signals are in coincidence  
+    #increment i, independently of whether fa was big enough 
     i=i+1
-    
+    print 'counter,i= ',counter,i
+
+  #end i-th injection, next injection
   confidenceOLD=confidence  
   confidence=float(counter)/float(Ninj)
-  # first ifo
+      # first ifo
   res_out=''.join(['Confidence.data-',str(freq)])
   outCdata_file=open(res_out,mode='a')
   print >>outCdata_file,h0,confidence
   outCdata_file.close()
   shutil.copy(res_out,starting_dir)
-  
+   
+  print 'confidence =',confidence  
   if abs(confidence-c0) < tol:
-    cont=0
+    if Ninj < 3000:
+      Ninj=Ninj*10
+      tol=tol/math.sqrt(10.0)
+      cont=1
+    else: cont=0
   if confidence > c0:
-    if confidenceOLD < c0:
-      dh0=dh0/2
-    h0=h0-dh0
+      if confidenceOLD < c0:
+        dh0=dh0/2
+      h0=h0-dh0
   if confidence < c0:
-    if confidenceOLD > c0:
-      dh0=dh0/2
-    h0=h0+dh0
+      if confidenceOLD > c0:
+        dh0=dh0/2
+      h0=h0+dh0
 
+print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0                
 inj_data_file.close()
 shutil.copy(inj_out,starting_dir)
 
