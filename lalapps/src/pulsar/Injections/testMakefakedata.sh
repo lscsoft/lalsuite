@@ -1,13 +1,15 @@
 #!/bin/bash
 
+testDIR=mfd_TEST
+
 #prepare test subdirectory
-if [ ! -d testMakefakedata ]; then
-    mkdir testMakefakedata && cd testMakefakedata;
+if [ ! -d $testDIR ]; then
+    mkdir $testDIR && cd $testDIR;
 else
 ## cleanup: remove previous output-SFTs
-    cd testMakefakedata
-    rm SFTtest_v2.00* || 1
-    rm SFTtest_v4.00* || 1
+    cd $testDIR;
+    rm SFTtest_v2.00* || true
+    rm SFTtest_v4.00* || true
 fi
   
 oldcode=../makefakedata_test
@@ -28,26 +30,28 @@ startTime=731210229
 refTime=$startTime
 Tsft=1800
 nTsft=10
-fmin=1008.0
-Band=3.0
+fmin=300.0
+Band=0.4
 aPlus=1.5
 aCross=0.7
 psi=0.5
 phi0=0.9
-f0=1009.0
+f0=300.2
 alpha=1.7
 delta=0.9
+noiseDir="../../"
+noiseSFTs="$noiseDir/SFT.0000[0-9]"
 
 dataTMP=In.data-test
-oldCL="-i $dataTMP  -I $IFO -E $ephemdir -G $startTime -S $refTime -n SFTtest_v2"
-newCL="--Tsft=$Tsft --nTsft=$nTsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --ephemDir=$ephemdir --outSFTbname=SFTtest_v4 --startTime=$startTime --refTime=$refTime"
+oldCL="-i $dataTMP  -I $IFO -E $ephemdir -G $startTime -S $refTime -n SFTtest_v2 -D $noiseDir"
+newCL="--Tsft=$Tsft --nTsft=$nTsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --ephemDir=$ephemdir --outSFTbname=SFTtest_v4 --startTime=$startTime --refTime=$refTime -D$noiseSFTs"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
 $nTsft	%nTsft
 $fmin   %first_SFT_frequency_in_Hz	
 $Band	%SFT_freq_band_in_Hz
-0.0	%sigma_(std_of_noise.When=0_only_signal_present)
+-1.0	%sigma_(std_of_noise.When=0_only_signal_present)
 $aPlus	%Aplus
 $aCross	%Across
 $psi	%psi
@@ -61,13 +65,21 @@ T8	%name_of_time-stamps_file
 
 echo "1) Testing isolated pulsar-signal without noise"
 echo "Running 'reference-code' $oldcode":
-$oldcode $oldCL &> /dev/null
+if ! $oldcode $oldCL; then
+    echo "...failed. Exiting."
+    exit
+fi
 
 # remove temporary In.data - file
 #rm $dataTMP
 
 echo "Running new code $newcode:"
-$newcode $newCL
+echo "Cmd-line args: $newCL"
+if ! $newcode $newCL; then
+    echo "...failed. Exiting."
+    exit
+fi
+
 echo "comparison:"
 ../compareSFTs -1 "./SFTtest_v2*" -2 "./SFTtest_v4*"
 
