@@ -1,0 +1,60 @@
+# Note that runComputeStackSlideSUM.tclsh first sources the tempate_file (e.g., this file) and then the job_file it is given.
+# Thus set filter parameters that change often here and use these to set the rest in a corresponding job file.
+# See README_CommandLineArgument for a complete description of the ComputeStackSlideSums command line arguments.
+# See README_ComputeStackSlideSums for further details.
+# 12/06/04 gam; defaults are set for most parameters in runComputeStackSlideSums.tclsh; only set non-default values here.
+
+# parameters for test pulsar
+set targetName "testBinaryPulsar"; # CHAR; identifies the target of the search
+
+# 12/06/04 gam; can define an epoch for template parameters; the analysis start-time and 0 are the defaults if not set below:
+#set templateGPSEpochStartTime nnnnnnnnn;    # 12/06/04 gam; UINT4 GPS seconds at the detector giving SSB epoch reference time.
+#set templateGPSEpochStartTimeNan nnnnnnnnn; # 12/06/04 gam; UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.
+
+set templateFreq0 1010.7;  # REAL8; note that this can be changed from the command line of runComputeStackSlideSUM.tclsh
+
+set templateStartRA 0;     # REAL8;
+set templateStopRA  0;     # REAL8;
+set templateDeltaRA 0;     # REAL8;
+set templateNumRA 1;       # INT4;
+
+set templateStartDec 0;
+set templateStopDec  0;
+set templateDeltaDec 0;
+set templateNumDec 1;
+
+set templateOrbitalEccentricity 0;
+set templatealphaSX1 4.27;
+set templatedeltaSX1 -0.27;
+set templateArgPeriapse 0;   #argument of periapsis, cen be set to 0 for circular orbit 
+set templateTperiapseSSBSec 731163027;
+set templateTperiapseSSBNanoSec 0;
+set templateSMAcentral 1.44; #central value of semi major axis in parameter space
+set templatedeltaSMA 0;
+
+set templateNumSpinDown 1; 
+
+set templateStartFDeriv1 0;
+set templateStopFDeriv1  0;
+set templateDeltaFDeriv1 0;
+set templateNumFDeriv1   1;
+
+set testbinaryFlag         1; # if = 1 then binary search
+set searchThresholdFlag    1; # if > 0 find peaks; see rules below
+set searchThreshold1     2.8; # peak found if power above this
+set searchThreshold2    1.07; # peak ends if power drops below this
+set searchThreshold3     0.2; # fracPwDrop that indicates a new peak rather than subpeak in a cluster.
+set searchThreshold4     0.0; # unused
+set searchThreshold5     0.0; # unused unless testFlag 1
+set searchMaxWidthBins     3; # maximum width
+
+set searchOutputSUMFlag 2;     #  if > 0 output ascii SUMs; 1 = ouput SUM power, 2 = output frequency and SUM power.
+
+set searchOutputEventFlag 0;  #  if > 0 ouput xml;  1 = output all event, 2 = output only loudest events based on $searchKeepThisNumber.
+set searchKeepThisNumber  1;  # Used only if ((searchEventFlag & 2) > 0):
+                              # if == "all" then keep loudest for each frequency bin analyzed.
+                              # if > 0 and  keep only loudest event for each search band/searchKeepThisNumber band.
+                              # e.g., if == 1 then will keep only the loudest event.
+
+set searchNormalizationFlag 4;        # 04/14/04 gam; use running median; print out into .Sh file estimates of PSD for each SFT.
+set searchRunningMedianBlockSize 50;  # 12/06/04 gam
