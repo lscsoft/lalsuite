@@ -116,7 +116,7 @@ INT4 hannDuration = 1;
 
 /* high pass filtering parameters */
 REAL4 highPassFreq = 40.;
-REAL4 highPassAt = 0.707;
+REAL4 highPassAt = 2.;
 INT4  highPassOrder = 6;
 
 /* number of bins for frequency masking */ 
