@@ -19,9 +19,10 @@ Computes the transfer function from zero-pole-gain representation.
 
 A transfer function can either be specified as a list of coefficients or a 
 list of poles and zeros. The function \verb@LALComputeTransfer()@ computes the 
-frequency representation of the transfer function described by the zeroes,  
-poles and gain in \verb@*calrec@.  The frequency series is returned in 
-\verb@*output@.
+frequency representation of the transfer function \verb+calrec->transfer+
+described by the zeroes,  poles and gain in \verb@*calrec@.   The memory for 
+the frequency series should be allocated before calling this routine which uses
+\verb+calrec->transfer->deltaF+ and \verb+calrec->transfer->data->npoints+.
 
 \subsubsection*{Algorithm}
 
@@ -55,6 +56,9 @@ and zeros are specified by their location in frequency space
 \end{verbatim}
 
 \subsubsection*{Notes}
+The DC component of \verb+calrec->transfer+ is always filled with $1 + i 0$.  
+In most cases,  this should be irrelevant for gravitational wave data analysis,  
+but care should be taken if DC is relevant when this function is used.  
 
 \vfill{\footnotesize\input{ComputeTransferCV}}
 
@@ -94,6 +98,7 @@ LALComputeTransfer( LALStatus                 *stat,
 /* </lalVerbatim> */
 { 
   UINT4         i, j;                    /* indexes               */
+  UINT4         jmin;                    /* used to handle DC     */
   COMPLEX8      dummy, dummyC, factor;   /* dummy complex numbers */
   REAL4         f,df;                    /* freq and interval     */
   REAL8         norm;
@@ -111,6 +116,7 @@ LALComputeTransfer( LALStatus                 *stat,
   dummyC.re = factor.re = 1.0;
   dummyC.im = factor.im = 0.0;
   df = calrec->transfer->deltaF;
+  jmin = 0;
 
   /* compute the normalization constant */
   norm = calrec->gain;
@@ -126,13 +132,20 @@ LALComputeTransfer( LALStatus                 *stat,
     {
       norm /= calrec->zeros->data[i];
     }
-    
+
+  /* Handle DC if necessary */
+  if ( calrec->transfer->f0 == 0.0 )
+  {
+    calrec->transfer->data->data[0].re = 1.0;
+    calrec->transfer->data->data[0].im = 0.0;
+    jmin = 1;
+  }
 
   /* loop over frequency in the output */
-  for ( j=1 ; j<calrec->transfer->data->length ; j++)
+  for ( j=jmin ; j<calrec->transfer->data->length ; j++)
   {
     /* the frequency */
-    f = (REAL4) j * df;
+    f = calrec->transfer->f0 + (REAL4) j * df;
     dummyC.re=1.0;
     dummyC.im=0.0;
 
@@ -161,10 +174,7 @@ LALComputeTransfer( LALStatus                 *stat,
     calrec->transfer->data->data[j].im = norm * dummyC.im;
   }
 
-  /* fill the zero freqeuncy with 1.0 to avoid possible overflows */
-  calrec->transfer->data->data[0].re = norm;
-  calrec->transfer->data->data[0].im = 0.0;
-  
+ 
   /* we're out of here */
   DETATCHSTATUSPTR (stat);
   RETURN( stat );
