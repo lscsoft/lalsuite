@@ -1,7 +1,7 @@
 /******************************** <lalVerbatim file="BankEfficiencyCV">
 Author: Cokelaer, T. and Sathyaprakash, B. S.
 < $Id$
-$Tag:
+$Tag:$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
