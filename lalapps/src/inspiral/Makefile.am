@@ -11,6 +11,7 @@ INSPINJSRC = inspinj.c
 MINJSRC = minj.c
 BBHINJSRC = bbhinj.c
 SPLITBANKSRC = splitbank.c
+TRIGBANKSRC = trigbank.c
 TAMA2LIGOLWSRC = tama2ligolw.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
@@ -22,7 +23,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_minj lalapps_bbhinj \
 	             lalapps_tama2ligolw lalapps_inspfrinj \
                lalapps_gwf2xml lalapps_lt_inca \
-							 lalapps_thinca
+							 lalapps_thinca lalapps_trigbank
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
@@ -34,6 +35,8 @@ lalapps_minj_SOURCES = $(MINJSRC)
 lalapps_bbhinj_SOURCES = $(BBHINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 lalapps_tama2ligolw_SOURCES = $(TAMA2LIGOLWSRC)
+lalapps_trigbank_SOURCES = $(TRIGBANKSRC)
+
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
 else
