@@ -312,8 +312,8 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
 
 /* Definition of a data buffer list for storing the waveform. */
 typedef struct tagPPNInspiralBuffer {
-  REAL4 a[BUFFSIZE];                 /* amplitude data */
-  REAL4 phi[2*BUFFSIZE];             /* phase data */
+  REAL4 a[2*BUFFSIZE];               /* amplitude data */
+  REAL4 phi[BUFFSIZE];               /* phase data */
   struct tagPPNInspiralBuffer *next; /* next buffer in list */
 } PPNInspiralBuffer;
 
@@ -450,8 +450,8 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 
   /* Compute frequency, phase, and amplitude factors. */
   fFac = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  dt = -output->a->deltaT * eta / ( 5.0*LAL_MTSUN_SI );
-  ASSERT( dt > 0.0, stat, GENERATEPPNINSPIRALH_ETBAD,
+  dt = -output->a->deltaT * eta / ( 5.0*LAL_MTSUN_SI*mTot );
+  ASSERT( dt < 0.0, stat, GENERATEPPNINSPIRALH_ETBAD,
 	  GENERATEPPNINSPIRALH_MSGETBAD );
   f2aFac = LAL_TWOPI*LAL_MTSUN_SI*mTot*fFac;
   ASSERT( params->d != 0.0, stat, GENERATEPPNINSPIRALH_EDBAD,
@@ -517,10 +517,14 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   /* First, find the normalized start frequency, and the best guess as
      to the start time from the leading-order term.  We require the
      frequency to be increasing. */
-  ASSERT( params->fStopIn > params->fStartIn, stat,
-	  GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
   yStart = params->fStartIn / fFac;
-  yMax = params->fStopIn / fFac;
+  if ( params->fStopIn <= 0.0 )
+    yMax = LAL_REAL4_MAX;
+  else {
+    ASSERT( params->fStopIn > params->fStartIn, stat,
+	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
+    yMax = params->fStopIn / fFac;
+  }
   if ( ( c[j]*fFac < 0.0 ) || ( yStart < 0.0 ) || (yMax < 0.0 ) ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EPBAD,
 	   GENERATEPPNINSPIRALH_MSGEPBAD );

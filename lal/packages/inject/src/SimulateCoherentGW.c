@@ -194,6 +194,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
      detector->transfer->deltaF. */
   REAL4Vector *aTransfer = NULL;
   REAL4Vector *phiTransfer = NULL;
+  REAL4Vector *phiTemp = NULL;
   REAL4 *aTransData, *phiTransData;
   REAL4 fOff;
   REAL4 df;
@@ -202,6 +203,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL4 realIndex;
   INT4 intIndex;
   REAL4 indexFrac;
+
 
   INITSTATUS( stat, "LALSimulateCoherentGW", SIMULATECOHERENTGWC );
   ATTATCHSTATUSPTR( stat );
@@ -271,12 +273,12 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Generate the table of propagation delays. */
   delayDt = output->deltaT/DELAYDT;
-  in.length = (INT4)( output->data->length*output->deltaT/DELAYDT ) + 1;
+  in.length = (INT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
   TRY( LALSCreateVector( stat->statusPtr, &delay, in.length ), stat );
   delayData = delay->data;
   radius = ( LAL_REARTH_SI/LAL_C_SI )*cos( detector->latitude ) /
     output->deltaT;
-  gpsTime.gpsSeconds = output->epoch.gpsSeconds;
+  gpsTime.gpsSeconds = output->epoch.gpsSeconds - DELAYDT/2;
   gpsTime.gpsNanoSeconds = output->epoch.gpsNanoSeconds;
   for ( i = 0; i < (INT4)( in.length ); i++ ) {
     LIGOTimeUnix unixTime; /* Unix time at current point */
@@ -305,7 +307,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Generate the table of polarization response functions. */
   polDt = output->deltaT/POLDT;
-  in.length = (INT4)( output->data->length*output->deltaT/POLDT ) + 1;
+  in.length = (INT4)( output->data->length*output->deltaT/POLDT ) + 3;
   in.vectorLength = 2;
   LALSCreateVectorSequence( stat->statusPtr, &polResponse, &in );
   BEGINFAIL( stat )
@@ -321,27 +323,36 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Decompose the transfer function into an amplitude and phase
      response. */
   in.length = detector->transfer->data->length;
-  LALSCreateVector( stat->statusPtr, &phiTransfer, in.length );
+  LALSCreateVector( stat->statusPtr, &phiTemp, in.length );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
-  LALCVectorAngle( stat->statusPtr, phiTransfer,
+  LALCVectorAngle( stat->statusPtr, phiTemp,
 		   detector->transfer->data );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
-  LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTransfer );
+  LALSCreateVector( stat->statusPtr, &phiTransfer, in.length );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
+    TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
+	 stat );
+  } ENDFAIL( stat );
+  LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
+  BEGINFAIL( stat ) {
+    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
+  TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
   LALSCreateVector( stat->statusPtr, &aTransfer, in.length );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
@@ -375,8 +386,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
   phiOff += ( output->epoch.gpsNanoSeconds -
 	      signal->phi->epoch.gpsNanoSeconds ) * 1.0e-9 /
     signal->phi->deltaT;
-  polOff = 0.0;
-  delayOff = 0.0;
+  polOff = 0.5;
+  delayOff = 0.5;
 
   /* Compute initial value of i, ensuring that we will never index
      signal->a or signal->phi below their range. */
@@ -425,7 +436,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Set output to zero where the signal is not defined. */
   if ( i > 0 )
     memset( output->data->data, 0, i*sizeof(REAL4) );
-  if ( ( nMax = output->data->length - n ) > 0 )
+  if ( ( nMax = output->data->length - n - 1 ) > 0 )
     memset( output->data->data + n + 1, 0, nMax*sizeof(REAL4) );
 
   /* Keep track of the frequency range of the transfer function, so

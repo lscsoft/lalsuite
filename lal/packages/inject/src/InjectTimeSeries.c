@@ -8,8 +8,8 @@ $Id$
 \subsection{Module \texttt{InjectTimeSeries.c}}
 \label{ss:InjectTimeSeries.c}
 
-Injects a vector of floating-point numbers into a vector of integers,
-with dithering.
+Injects a time series of floating-point numbers into a time series of
+integers, with dithering.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -143,8 +143,8 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
     REAL8 t = offset + i*dt;       /* interpolated signal index */
     INT4 j = (INT4)floor( t );     /* signal index preceding t */
     REAL4 frac = (REAL4)( t - j ); /* interpolation fraction */
-    REAL4 y = frac*signal->data->data[j+1] + /* interpolated signal */
-      ( 1.0 - frac )*signal->data->data[j];  /* value */
+    REAL4 y = frac*(signal->data->data[j+1]) + /* interpolated signal */
+      ( 1.0 - frac )*(signal->data->data[j]);  /* value */
 
     /* Compute the dithering. */
     LALUniformDeviate( stat->statusPtr, &d, internal ); 

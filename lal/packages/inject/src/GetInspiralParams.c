@@ -91,6 +91,7 @@ LALGetInspiralParams( LALStatus                  *stat,
   REAL4 x, y, z;  /* geocentric Galactic Cartesian coordinates */
   REAL4 max, d;   /* maximum of x, y, and z, and normalized distance */
   REAL4 psi, phi, inc; /* polarization, phase, and inclination angles */
+  REAL4 mTot;          /* total binary mass */
   SkyPosition direction; /* direction to the source */
   RandomParams *localParams = NULL; /* local random parameters pointer */
 
@@ -102,6 +103,13 @@ LALGetInspiralParams( LALStatus                  *stat,
 	  GENERATEPPNINSPIRALH_MSGENUL );
   ASSERT( input, stat, GENERATEPPNINSPIRALH_ENUL,
 	  GENERATEPPNINSPIRALH_MSGENUL );
+
+  /* Compute total mass. */
+  mTot = input->m1 + input->m2;
+  if ( mTot == 0.0 ) {
+    ABORT( stat, GENERATEPPNINSPIRALH_EMBAD,
+	   GENERATEPPNINSPIRALH_MSGEMBAD );
+  }
 
   /* Compute Galactic geocentric Cartesian coordinates. */
   x = LAL_DGALCORE_SI + input->rho*cos( input->lGal );
@@ -169,6 +177,10 @@ LALGetInspiralParams( LALStatus                  *stat,
   output->psi = LAL_TWOPI*psi;
   output->phi = LAL_TWOPI*phi;
   output->inc = LAL_TWOPI*inc;
+
+  /* Set output masses. */
+  output->mTot = mTot;
+  output->eta = (input->m1/mTot)*(input->m2/mTot);
 
   /* Clean up and exit. */
   if ( !params ) {

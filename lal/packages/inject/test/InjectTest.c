@@ -83,6 +83,7 @@ strain) at each frequency sample.
 #define INJECTTESTC_EVAL  3
 #define INJECTTESTC_EFILE 4
 #define INJECTTESTC_EMEM  5
+#define INJECTTESTC_EOVER 6
 
 #define INJECTTESTC_MSGENORM "Normal exit"
 #define INJECTTESTC_MSGESUB  "Subroutine failed"
@@ -90,6 +91,7 @@ strain) at each frequency sample.
 #define INJECTTESTC_MSGEVAL  "Input argument out of valid range"
 #define INJECTTESTC_MSGEFILE "Could not open file"
 #define INJECTTESTC_MSGEMEM  "Out of memory"
+#define INJECTTESTC_MSGEOVER "Detector ADC files overlap in time"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
@@ -166,7 +168,9 @@ Under development.  At present it doesn't do anything; it just exits.
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
+#include <lal/Sort.h>
 #include <lal/Random.h>
 #include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
@@ -178,25 +182,39 @@ NRCSID( INJECTTESTC, "$Id$" );
 /* Default parameter settings. */
 int lalDebugLevel = 0;
 
+/* Some global constants. */
+#define NAMELENGTH (1024) /* maximum length of a file name */
+#define NPARAM (4)        /* number of source parameters in sourcefile */
+
 /* Range of random initial offset (nanoseconds). */
-#define INIT_OFFSET_MIN   (-300000000000L)
-#define INIT_OFFSET_RANGE (300000000000L)
+#define INIT_OFFSET_MIN   (-30000000000L)
+#define INIT_OFFSET_RANGE (30000000000L)
 
 /* Range of random offset between signals (nanoseconds). */
-#define OFFSET_MIN   (60000000000)
-#define OFFSET_RANGE (60000000000)
+#define OFFSET_MIN   (30000000000)
+#define OFFSET_RANGE (30000000000)
+
+/* Range of randomly-generated masses. */
+#define M_MIN   (1.0)
+#define M_RANGE (1.0)
 
 /* Parameters of internally-generated data segments. */
-#define EPOCH   (662342400000000000L) /* start of third millenium, UTC */
+/*#define EPOCH   (662342400000000000L)  start of third millenium, UTC */
+#define EPOCH   (315187200000000000L) /* about Jan. 1, 1990 */
 #define DELTAT  (0.0009765625)
-#define NPTS_T  (1048576)
+#define NPTS_T  (65536)
 #define SIGMASQ (10.0)
 
 /* Parameters of internally-generated transfer function. */
-#define F0     (40.0)
-#define DELTAF (560)
+#define F0     (50.0)
+#define DELTAF (400.0)
 #define NPTS_F (2)
-#define TRANS  (1.0)
+#define TRANS  (1.0e17)
+
+/* Other waveform parameters. */
+#define FSTART   (40.0)
+#define FSTOP    (600.0)
+#define DTSAMPLE (0.01)
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-s sourcefile] [-d debuglevel]\n"
@@ -250,6 +268,11 @@ while (0)
 char *lalWatch;
 #endif
 
+/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
+void
+I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );
+
+
 int
 main(int argc, char **argv)
 {
@@ -274,11 +297,18 @@ main(int argc, char **argv)
   INT8 *epoch;          /* array of epochs for each transfer function file */
   REAL8 *f0, *deltaF;   /* arrays giving frequency samples for each file */
   REAL4VectorSequence *sourceList = NULL; /* contents of sourcefile */
+  UINT4 sourceLength;   /* number of lines of sourcefile */
 
   /* Other global variables. */
+  INT4Vector *idx = NULL;      /* index ordering input files */
+  INT4 *id;                    /* pointer to idx->data */
   RandomParams *params = NULL; /* parameters of pseudorandom sequence */
   INT8 tInitial, tFinal; /* earliest and latest possible inject times */
-  INT8 t;                /* current injection time */
+  INT8 t, tEnd;          /* start and stop time of current signal */
+  UINT4 nOut, nSource;   /* current source and output file numbers */
+  DetectorResponse detector; /* the detector in question */
+  INT2TimeSeries output;     /* detector ACD output */
+  CHAR outname[NAMELENGTH];  /* name of current output file */
 
 
   /*******************************************************************
@@ -370,12 +400,24 @@ main(int argc, char **argv)
    *                                                                 *
    *******************************************************************/
 
+  /* First, set up fields of output and transfer functions. */
+  output.data = NULL;
+  detector.transfer = (COMPLEX8FrequencySeries *)
+    LALMalloc( sizeof(COMPLEX8FrequencySeries) );
+  if ( !(detector.transfer) ) {
+    ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+    return INJECTTESTC_EMEM;
+  }
+  detector.transfer->data = NULL;
+
+
   /* Read infile and store the data in structures. */
   if ( infile ) {
     UINT4 vectorLength; /* length of each line */
 
     if ( ( fp = fopen( infile, "r" ) ) == NULL ) {
       ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, infile );
+      return INJECTTESTC_EFILE;
     }
     SUB( LALCHARReadVectorSequence( &stat, &inImage, fp ), &stat );
     fclose( fp );
@@ -388,6 +430,7 @@ main(int argc, char **argv)
     deltaT = (REAL8 *)LALMalloc( inLength*sizeof(REAL8) );
     if ( !( tStart && tStop && deltaT ) ) {
       ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      return INJECTTESTC_EMEM;
     }
     for ( i = 0; i < inLength; i++ ) {
       UINT4 length; /* number of points in the data file */
@@ -399,31 +442,62 @@ main(int argc, char **argv)
 	tStop[i] = tStart[i] + (INT8)( length*deltaT[i] );
     }
 
-    /* Determine the earliest start time and latest stop time. */
-    tInitial = tStart[0];
-    tFinal = tStop[0];
-    for ( i = 0; i < inLength; i++ ) {
-      if ( tStart[i] < tInitial )
-	tInitial = tStart[i];
-      if ( tStop[i] > tFinal )
-	tFinal = tStop[i];
+    /* Sort start and stop times, and make sure they don't overlap. */
+    {
+      REAL8Vector *start = NULL;
+      SUB( LALDCreateVector( &stat, &start, inLength ), &stat );
+      for ( i = 0; i < inLength; i++ )
+	start->data[i] = (REAL8)( tStart[i] );
+      SUB( LALI4CreateVector( &stat, &idx, inLength ), &stat );
+      SUB( LALDHeapIndex( &stat, idx, start ), &stat );
+      SUB( LALDDestroyVector( &stat, &start ), &stat );
+      id = idx->data;
+      for ( i = 0; i < inLength - 1; i++ )
+	if ( tStart[id[i+1]] < tStop[id[i]] ) {
+	  ERROR( INJECTTESTC_EOVER, INJECTTESTC_MSGEOVER, 0 );
+	  return INJECTTESTC_EOVER;
+	}
+      tInitial = tStart[id[0]];
+      tFinal = tStop[id[inLength-1]];
+    }
+
+    /* Read first input file. */
+    {
+      CHAR fname[NAMELENGTH];           /* input file name */
+      INT2VectorSequence *input = NULL; /* input data */
+      sscanf( inImage->data + id[0]*inImage->vectorLength, "%s",
+	      fname );
+      if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
+	ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
+	return INJECTTESTC_EFILE;
+      }
+      SUB( LALI2ReadVectorSequence( &stat, &input, fp ), &stat );
+      fclose( fp );
+      SUB( LALI2CreateVector( &stat, &(output.data), input->length ),
+	   &stat );
+      memcpy( output.data->data, input->data,
+	      input->length*sizeof(INT2) );
+      SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
+      I8ToLIGOTimeGPS( &(output.epoch), tStart[id[0]] );
+      output.deltaT = deltaT[id[0]];
+      sprintf( outname, "%s.sim", fname );
     }
   }
 
   /* If there's no infile, set parameters from #defined constants. */
   else {
     inLength = 1;
+    id = (UINT4 *)LALMalloc( sizeof(UINT4) );
     tStart = (INT8 *)LALMalloc( sizeof(INT8) );
     tStop = (INT8 *)LALMalloc( sizeof(INT8) );
-    deltaT = (REAL8 *)LALMalloc( sizeof(REAL8) );
-    if ( !( tStart && tStop && deltaT ) ) {
+    if ( !( tStart && tStop ) ) {
       ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      return INJECTTESTC_EMEM;
     }
-    *tStart = EPOCH;
-    *tStop = EPOCH + (INT8)( NPTS_T*DELTAT );
-    *deltaT = DELTAT;
+    *id = 0;
+    *tStart = tInitial = EPOCH;
+    *tStop = tFinal = EPOCH + (1000000000L)*(INT8)( NPTS_T*DELTAT );
   }
-
 
   /* Read transferfile and store the data in structures. */
   if ( transferfile ) {
@@ -431,6 +505,7 @@ main(int argc, char **argv)
 
     if ( ( fp = fopen( transferfile, "r" ) ) == NULL ) {
       ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, transferfile );
+      return INJECTTESTC_EFILE;
     }
     SUB( LALCHARReadVectorSequence( &stat, &transferImage, fp ),
 	 &stat );
@@ -438,12 +513,13 @@ main(int argc, char **argv)
 
     /* Create lists of epochs, and start and sample frequencies. */
     transferLength = transferImage->length;
-    vectorLength = inImage->vectorLength;
+    vectorLength = transferImage->vectorLength;
     epoch = (INT8 *)LALMalloc( transferLength*sizeof(INT8) );
     f0 = (REAL8 *)LALMalloc( transferLength*sizeof(REAL8) );
     deltaF = (REAL8 *)LALMalloc( transferLength*sizeof(REAL8) );
     if ( !( epoch && f0 && deltaF ) ) {
       ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
+      return INJECTTESTC_EMEM;
     }
     for ( i = 0; i < transferLength; i++ )
       if ( 3 > sscanf( transferImage->data + i*vectorLength,
@@ -452,29 +528,20 @@ main(int argc, char **argv)
 	transferLength = i;
   }
 
-  /* If there's no transferfile, set parameters from constants. */
-  else {
-    transferLength = 1;
-    epoch = (INT8 *)LALMalloc( sizeof(INT8) );
-    f0 = (REAL8 *)LALMalloc( sizeof(REAL8) );
-    deltaF = (REAL8 *)LALMalloc( sizeof(REAL8) );
-    if ( !( epoch && f0 && deltaF ) ) {
-      ERROR( INJECTTESTC_EMEM, INJECTTESTC_MSGEMEM, 0 );
-    }
-    *epoch = EPOCH;
-    *f0 = F0;
-    *deltaF = DELTAF;
-  }
-
 
   /* Read sourcelist to an array. */
   if ( sourcefile ) {
     if ( ( fp = fopen( sourcefile, "r" ) ) == NULL ) {
       ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, sourcefile );
+      return INJECTTESTC_EFILE;
     }
     SUB( LALSReadVectorSequence( &stat, &sourceList, fp ), &stat );
     fclose( fp );
+    sourceLength = sourceList->length;
+  } else {
+    sourceLength = (UINT4)( -1 );
   }
+
 
   /* Generate random parameters and initial start time. */
   {
@@ -483,12 +550,301 @@ main(int argc, char **argv)
     SUB( LALUniformDeviate( &stat, &frac, params ), &stat );
     t = tInitial + INIT_OFFSET_MIN + (INT8)( INIT_OFFSET_RANGE*frac );
   }
+  /* Generate random initial data, if necessary. */
+  if ( !infile ) {
+    REAL4Vector *deviates = NULL; /* Gaussian random input */
+
+    SUB( LALI2CreateVector( &stat, &(output.data), NPTS_T ), &stat );
+    SUB( LALSCreateVector( &stat, &deviates, NPTS_T ), &stat );
+    SUB( LALNormalDeviates( &stat, deviates, params ), &stat );
+    for ( i = 0; i < NPTS_T; i++ )
+      output.data->data[i] = (INT2)( SIGMASQ*deviates->data[i] );
+    SUB( LALSDestroyVector( &stat, &deviates ), &stat );
+    I8ToLIGOTimeGPS( &(output.epoch), *tStart );
+    output.deltaT = DELTAT;
+    if ( outfile )
+      sprintf( outname, "%s", outfile );
+    else
+      outname[0] = '\0';
+  }
+
+
+  /* Stub to specify the detector. */
+  detector.latitude = 0.0;
+  detector.longitude = 0.0;
+
+
+  /*******************************************************************
+   *                                                                 *
+   * Start injecting sources.                                        *
+   *                                                                 *
+   *******************************************************************/
+
+  nSource = 0;
+  nOut = 0;
+  while ( ( nOut < inLength ) && ( nSource < sourceLength ) &&
+	  ( t < tFinal ) ) {
+    CoherentGW waveform;              /* gravitational waveform */
+    REAL4TimeVectorSeries a, phi;     /* fields of waveform */
+    REAL4TimeSeries signal;           /* detector response */
+
+    /* Compute the waveform. */
+    {
+      GalacticInspiralParamStruc position; /* location of source */
+      PPNParamStruc ppnParams;             /* parameters of source */
+
+      /* Get the source position. */
+      if ( sourcefile ) {
+	position.rho = sourceList->data[NPARAM*nSource];
+	position.z = sourceList->data[NPARAM*nSource + 1];
+	SUB( LALUniformDeviate( &stat, &(position.lGal), params ),
+	     &stat );
+	position.lGal *= LAL_TWOPI;
+	position.m1 = sourceList->data[NPARAM*nSource + 2];
+	position.m2 = sourceList->data[NPARAM*nSource + 3];
+      } else {
+	position.rho = 0.0;
+	position.z = 0.0;
+	position.lGal = 0.0;
+	SUB( LALUniformDeviate( &stat, &(position.m1), params ),
+	     &stat );
+	SUB( LALUniformDeviate( &stat, &(position.m2), params ),
+	     &stat );
+	position.m1 = M_MIN + M_RANGE*position.m1;
+	position.m2 = M_MIN + M_RANGE*position.m2;
+      }
+
+      /* Set up input parameters. */
+      SUB( LALGetInspiralParams( &stat, &ppnParams, &position,
+				 params ), &stat );
+      ppnParams.fStartIn = FSTART;
+      ppnParams.fStopIn = FSTOP;
+      ppnParams.ppn = NULL;
+      ppnParams.lengthIn = 0;
+      a.deltaT = phi.deltaT = DTSAMPLE;
+      a.data = phi.data = NULL;
+      I8ToLIGOTimeGPS( &(a.epoch), t );
+      phi.epoch = a.epoch;
+      waveform.h = NULL;
+      waveform.a = &a;
+      waveform.phi = &phi;
+
+
+      /* DEBUG:
+      printf( "t=%4i m1=%f m2=%f mTot=%f eta=%f\n",
+	      (INT4)( ( t - EPOCH )/1000000000 ), position.m1,
+	      position.m2, ppnParams.mTot, ppnParams.eta );
+      */
+
+
+      /* Generate waveform. */
+      SUB( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ),
+	   &stat );
+      if ( ppnParams.dfdt > 4.0 ) {
+	INFO( "Waveform sampling interval may be too large." );
+      }
+
+      /* Determine end of generated waveform. */
+      tEnd = t + (INT8)( 1.0e9 * waveform.a->deltaT
+			 * waveform.a->data->length ) + 1;
+    }
+
+
+    /* Get the nearest transfer function. */
+    if ( transferfile ) {
+      CHAR fname[NAMELENGTH]; /* name of nearest transfer fn file */
+      INT8 tDiff1 = abs( t - epoch[0] ); /* epoch of closest file */
+      INT4 k = 0;                        /* index of nearest file */
+      REAL4VectorSequence *function = NULL; /* transfer function */
+      for ( i = 1; i < transferLength; i++ ) {
+	INT8 tDiff2 = abs( t - epoch[i] );
+	if ( tDiff2 < tDiff1 ) {
+	  tDiff1 = tDiff2;
+	  k = i;
+	}
+      }
+      sscanf( transferImage->data + k*transferImage->vectorLength,
+	      "%s", fname );
+      if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
+	ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
+	return INJECTTESTC_EFILE;
+      }
+      SUB( LALSReadVectorSequence( &stat, &function, fp ), &stat );
+      fclose( fp );
+      SUB( LALCCreateVector( &stat, &(detector.transfer->data),
+			     function->length ), &stat );
+      memcpy( detector.transfer->data->data, function->data,
+	      2*function->length*sizeof(REAL4) );
+      SUB( LALSDestroyVectorSequence( &stat, &function ), &stat );
+      I8ToLIGOTimeGPS( &(detector.transfer->epoch), epoch[k] );
+      detector.transfer->f0 = f0[k];
+      detector.transfer->deltaF = deltaF[k];
+    }
+
+    /* If there is no transferfile, make up a transfer function. */
+    else {
+      I8ToLIGOTimeGPS( &(detector.transfer->epoch), EPOCH );
+      detector.transfer->f0 = F0;
+      detector.transfer->deltaF = DELTAF;
+      SUB( LALCCreateVector( &stat, &(detector.transfer->data),
+			     NPTS_F ), &stat );
+      for ( i = 0; i < NPTS_F; i++ ) {
+	detector.transfer->data->data[i].re = TRANS;
+	detector.transfer->data->data[i].im = 0.0;
+      }
+    }
+
+
+    /* DEBUG:
+    if ( nSource == 1 ) {
+      FILE *fptest = fopen( "test.wav", "w" );
+      for ( i = 0; i < waveform.a->data->length; i++ )
+	fprintf( fptest, "%10.3e %10.3e %10.3e\n",
+		 waveform.a->data->data[2*i],
+		 waveform.a->data->data[2*i+1],
+		 waveform.phi->data->data[i] );
+      fclose( fptest );
+    }
+    */
+
+
+    /* Compute detector response. */
+    signal.epoch = waveform.a->epoch;
+    signal.deltaT = DELTAT;
+    signal.data = NULL;
+    SUB( LALSCreateVector( &stat, &(signal.data), (UINT4)
+			   (waveform.a->data->length*DTSAMPLE/DELTAT) + 1 ),
+	 &stat );
+    SUB( LALSimulateCoherentGW( &stat, &signal, &waveform, &detector ),
+	 &stat );
+    SUB( LALCDestroyVector( &stat, &(detector.transfer->data) ),
+	 &stat );
+    SUB( LALSDestroyVectorSequence( &stat, &(waveform.a->data) ),
+	 &stat );
+    SUB( LALSDestroyVectorSequence( &stat, &(waveform.phi->data) ),
+	 &stat );
 
 
 
+    /* DEBUG:
+    if ( nSource == 1 ) {
+      FILE *fptest = fopen( "test.sig", "w" );
+      for ( i = 0; i < signal.data->length; i++ )
+	fprintf( fptest, "%10.3e\n", signal.data->data[i] );
+      fclose( fptest );
+    }
+    */
 
 
-  /*LALCheckMemoryLeaks();*/
+    /* Inject signal into detector output. */
+    SUB( LALSI2InjectTimeSeries( &stat, &output, &signal, params ),
+	 &stat );
+    while ( ( nOut < inLength ) && ( tEnd > tStop[id[nOut]] ) ) {
+
+      /* Write data to output file. */
+      if ( outname[0] != '\0' ) {
+	if ( ( fp = fopen( outname, "w" ) ) == NULL ) {
+	  ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, outname );
+	  return INJECTTESTC_EFILE;
+	}
+	for ( i = 0; i < output.data->length; i++ )
+	  fprintf( fp, "%6i\n", output.data->data[i] );
+	fclose( fp );
+	outname[0] = '\0';
+      }
+      nOut++;
+
+      /* Read data from input file. */
+      if ( nOut < inLength ) {
+	CHAR fname[NAMELENGTH];           /* input file name */
+	INT2VectorSequence *input = NULL; /* input data */
+	SUB( LALI2DestroyVector( &stat, &(output.data) ), &stat );
+	sscanf( inImage->data + id[nOut]*inImage->vectorLength, "%s",
+		fname );
+	if ( ( fp = fopen( fname, "r" ) ) == NULL ) {
+	  ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, fname );
+	  return INJECTTESTC_EFILE;
+	}
+	SUB( LALI2ReadVectorSequence( &stat, &input, fp ), &stat );
+	fclose( fp );
+	SUB( LALI2CreateVector( &stat, &(output.data),
+				input->length ), &stat );
+	memcpy( output.data->data, input->data,
+		input->length*sizeof(INT2) );
+	SUB( LALI2DestroyVectorSequence( &stat, &input ), &stat );
+	I8ToLIGOTimeGPS( &(output.epoch), tStart[id[nOut]] );
+	output.deltaT = deltaT[id[nOut]];
+	sprintf( outname, "%s.sim", fname );
+      }
+    }
+
+    /* Signal injection is done, so move on to the next source. */
+    SUB( LALSDestroyVector( &stat, &(signal.data) ), &stat );
+    nSource++;
+    {
+      REAL4 frac; /* random number between 0 and 1 */
+      SUB( LALUniformDeviate( &stat, &frac, params ), &stat );
+      t = tEnd + OFFSET_MIN + (INT8)( OFFSET_RANGE*frac );
+    }
+  }
+
+
+  /*******************************************************************
+   *                                                                 *
+   * Clean up.                                                       *
+   *                                                                 *
+   *******************************************************************/
+
+  /* Print remaining output data. */
+  if ( outname[0] != '\0' ) {
+    if ( ( fp = fopen( outname, "w" ) ) == NULL ) {
+      ERROR( INJECTTESTC_EFILE, INJECTTESTC_MSGEFILE, outname );
+      return INJECTTESTC_EFILE;
+    }
+    for ( i = 0; i < output.data->length; i++ )
+      fprintf( fp, "%6i\n", output.data->data[i] );
+    fclose( fp );
+  }
+
+  /* Destroy remaining memory. */
+  SUB( LALDestroyRandomParams( &stat, &params ), &stat );
+  SUB( LALI2DestroyVector( &stat, &(output.data) ), &stat );
+  LALFree( detector.transfer );
+
+  if ( infile ) {
+    SUB( LALCHARDestroyVectorSequence( &stat, &inImage ), &stat );
+    SUB( LALI4DestroyVector( &stat, &idx ), &stat );
+    LALFree( deltaT );
+  } else {
+    LALFree( id );
+  }
+  LALFree( tStart );
+  LALFree( tStop );
+
+  if ( transferfile ) {
+    SUB( LALCHARDestroyVectorSequence( &stat, &transferImage ),
+	 &stat );
+    LALFree( epoch );
+    LALFree( f0 );
+    LALFree( deltaF );
+  }
+
+  if ( sourcefile ) {
+    SUB( LALSDestroyVectorSequence( &stat, &sourceList ), &stat );
+  }
+
+  LALCheckMemoryLeaks();
   INFO( INJECTTESTC_MSGENORM );
   return INJECTTESTC_ENORM;
+}
+
+
+/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
+void
+I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
+{
+  INT4 s = input / 1000000000;
+  output->gpsSeconds = s;
+  output->gpsNanoSeconds = input - 1000000000*s;
+  return;
 }

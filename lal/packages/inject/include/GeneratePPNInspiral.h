@@ -226,6 +226,10 @@ sight, in radians.
 
 \item[\texttt{REAL4 d}] The distance to the system, in metres.
 
+\item[\texttt{REAL4 phi}] The phase at coalescence $\phi_c$ (or
+arbitrary reference phase for a post${}^{5/2}$-Newtonian
+approximation), in radians.
+
 \item[\texttt{REAL4 fStartIn}] The requested starting frequency of the
 waveform, in Hz.
 
@@ -233,16 +237,12 @@ waveform, in Hz.
 the waveform, in Hz.  If set to $\leq0$, the waveform will be
 generated until a termination condition (above) is met.
 
-\item[\texttt{REAL4 phi}] The phase at coalescence $\phi_c$ (or
-arbitrary reference phase for a post${}^{5/2}$-Newtonian
-approximation), in radians.
+\item[\texttt{UINT4 lengthIn}] The maximum number of samples in the
+generated waveform.  If zero, the waveforms can be arbitrarily long.
 
 \item[\texttt{REAL4Vector *ppn}] The parameters $p_n$ selecting the
 type of post-Newtonian expansion.  If \verb@ppn=NULL@, a ``normal''
 (physical) expansion is assumed.
-
-\item[\texttt{UINT4 maxLength}] The maximum number of samples in the
-generated waveform.  If zero, the waveforms can be arbitrarily long.
 \end{description}
 
 \medskip\noindent\textit{Output fields:}
