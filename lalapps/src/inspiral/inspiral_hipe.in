@@ -52,11 +52,6 @@ class AnalyzedIFOData:
 
     
 ##############################################################################
-# function to compare start times of 2 chunks
-def compare_start( node_1, node_2):
-  return cmp( node_1.get_chunk().start(), node_2.get_chunk().start() )
-
-##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
   chisq,pad,prev_df,dag,usertag=None):
@@ -82,7 +77,7 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
   # loop over the master science segments
   for seg in ifo_data:
 
-    # make sure that we do not do a data find more than once per science segment
+    # make sure that we do not do a datafind more than once per science segment
     done_df_for_seg = None
 
     # loop over the master analysis chunks in the science segment
@@ -109,17 +104,17 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
             prev_df = df
             done_df_for_seg = 1
 
-	  # make a template bank job for the master chunk
-	  bank = inspiral.TmpltBankNode(tmplt_job)
-	  bank.set_start(chunk.start())
-	  bank.set_end(chunk.end())
-	  bank.set_ifo(ifo_name)
-	  bank.set_cache(df.get_output())
+          # make a template bank job for the master chunk
+          bank = inspiral.TmpltBankNode(tmplt_job)
+          bank.set_start(chunk.start())
+          bank.set_end(chunk.end())
+          bank.set_ifo(ifo_name)
+          bank.set_cache(df.get_output())
           bank.calibration()
           if do_datafind: bank.add_parent(df)
           if do_tmpltbank: dag.add_node(bank)
 
-	  # make an inspiral job for the master chunk
+          # make an inspiral job for the master chunk
           insp = inspiral.InspiralNode(insp_job)
           insp.set_start(chunk.start())
           insp.set_end(chunk.end())
@@ -131,19 +126,19 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
           insp.set_cache(df.get_output())
           insp.calibration()
           insp.set_bank(bank.get_output())
-          if do_datafind: insp.add_parent(bank)
+          if do_datafind: insp.add_parent(df)
           if do_tmpltbank: insp.add_parent(bank)
           if do_inspiral: dag.add_node(insp)
 
-	  # store this chunk in the list of filtered L1 data
+          # store this chunk in the list of filtered data
           chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
   return tuple([prev_df,chunks_analyzed])
 
 ##############################################################################
 # function to do inca on single IFO data  
-def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,do_sinca,dag, 
-    usertag=None):
+def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,dag,
+  usertag=None):
   """
   Run inca on the single coincident times from each of the IFOs. Since the way 
   we treat all this data is the same, this function is the same for all cases.
@@ -152,7 +147,6 @@ def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,do_sinca,dag,
   ifo_name = the name of the IFO
   ifo_single = the single IFO science segments 
   single_inca_job = the condor job to do single IFO inca
-  do_sinca = flag to determine if we are doing the single inca jobs
   dag = the DAG to attach the nodes to
   """
 
@@ -169,7 +163,7 @@ def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,do_sinca,dag,
       if inspiral.overlap_test(ifo_done.get_chunk(),seg):
         sinca.add_var_arg(ifo_done.get_dag_node().get_output())
         if do_inspiral: sinca.add_parent(ifo_done.get_dag_node())
-    if do_sinca: dag.add_node(sinca)
+    if do_coincidence: dag.add_node(sinca)
     single_inca_analyzed.append(AnalyzedIFOData(seg,sinca))
 
   return single_inca_analyzed
@@ -177,7 +171,7 @@ def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,do_sinca,dag,
 ##############################################################################
 # function to do inca on double IFO data  
 def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name, 
-  ifo_ab_double,double_inca_job,dt,kappa,epsilon,do_dinca,dag,usertag=None):
+  ifo_ab_double,double_inca_job,dt,kappa,epsilon,dag,usertag=None):
   """
   Run inca on the double coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
@@ -190,9 +184,8 @@ def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_ab_double = the double coincident IFO science segments 
   double_inca_job = the condor job to do two IFO inca
   dt = the time coincidence window
-  kappa = 
-  epsilon =
-  do_dinca = flag to determine whether to do double inca
+  kappa = inca error parameter 
+  epsilon = inca error parameter
   dag = the DAG to attach the nodes to
   """
 
@@ -218,7 +211,7 @@ def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
       if inspiral.overlap_test(done.get_chunk(),seg):
         inca.add_var_arg(done.get_dag_node().get_output())
         if do_inspiral: inca.add_parent(done.get_dag_node())
-    if do_dinca: dag.add_node(inca)
+    if do_coincidence: dag.add_node(inca)
     double_inca_analyzed.append(AnalyzedIFOData(seg,inca))
 
   return double_inca_analyzed
@@ -232,27 +225,33 @@ def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 
 ##############################################################################
 # function to do sweep up data using sire  
-def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,
-  inj_file=None,cluster=None):
+def sire_segs(segments,output,file_name,sire_job,sire_clust_job,dag,
+  usertag=None):
   """
   Do a sire to sweep up all the triggers of a specific kind
-  segments = list of inca segments to use
-  output = which output of inca/inspiral to use
+  
+  segments  = list of inca segments to use
+  output    = which output of inca/inspiral to use
   file_name = output file name
-  sire_job = sire job to use for the analysis
-  dag = name of the dag
-  inj_file = the injection file (if appropriate)
-  cluster = the clustering algorithm
+  sire_job  = sire job to use for the analysis
+  sire_clust_job = sire job with the clustering arguments already added
+  dag       = name of the dag
   """
+  
   sire = inspiral.SireNode(sire_job)
-  tama_output = 0
+  sire_clust = inspiral.SireNode(sire_clust_job) 
+  
+  # set the sire file name
   fname = file_name
   if usertag:
     fname += '_' + usertag
   fname += '.input'
+  
+  # add all the input files
   f = open(fname, 'w')
   for seg in segments:
     sire.add_parent(seg.get_dag_node())
+    sire_clust.add_parent(seg.get_dag_node())
     if output == 'output':
       f.write('%s\n' % seg.get_dag_node().get_output())
     if output == 'output_a':
@@ -260,21 +259,22 @@ def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,
     if output == 'output_b':
       f.write('%s\n' % seg.get_dag_node().get_output_b())
   f.close()
+ 
+  # add the input file name to sire
   sire.add_var_opt('input',fname)
-  if inj_file:
-    sire.set_inj_outputs(file_name,usertag,tama_output,cluster)
-    sire.add_var_opt('injection-file',inj_file)
-    coinc_time = int(cp.get('pipeline','inj-coinc'))
-    sire.add_var_opt('injection-coincidence',coinc_time)
-    if cluster:
-      sire.add_var_opt('cluster-algorithm',cp.get('pipeline','cluster-alg'))
-      sire.add_var_opt('cluster-time',2*coinc_time)
-	  
+  sire_clust.add_var_opt('input',fname)
+  
+  # set the output files names for sire
+  if inj_coinc:
+    sire.set_inj_outputs(file_name,inj_coinc,usertag)
+    sire_clust.set_inj_outputs(file_name,inj_coinc,usertag,cluster)
+    
   else:
-    sire.set_outputs(file_name,usertag,tama_output)
+    sire.set_outputs(file_name,usertag)
+    sire_clust.set_outputs(file_name,usertag,cluster_time)
 
   dag.add_node(sire) 
-
+  dag.add_node(sire_clust) 
 
 ##############################################################################
 # help message
@@ -282,63 +282,59 @@ def sire_segs(segments,output,file_name,sire_job,dag,usertag=None,
 
 def usage():
   msg = """\
-Usage: lalapps_inspiral_pipe [options]
+Usage: lalapps_inspiral_hipe [options]
 
   -h, --help              display this message
   -v, --version           print version information and exit
   -u, --user-tag TAG      tag the job with TAG (overrides value in ini file)
  
-  -a, --h1-analysis       do analysis for h1
-  -b, --h2-analysis       do analysis for h2
-  -l, --l1-analysis       do analysis for l1
+  -a, --h1-data           analyze h1 data
+  -b, --h2-data           analyze h2 data
+  -l, --l1-data           analyze l1 data
+
+  -S, --one-ifo           analyze single ifo data
+  -D, --two-ifo           analyze two interferometer data
+  -T, --three-ifo         analyze three interferometer data
+  
+  -A, --analyze-all       analyze all ifos and all data (over-rides above)
 
   -d, --datafind          run LSCdataFind to create frame cache files
   -t, --template-bank     run lalapps_tmpltbank to generate template banks
   -i, --inspiral          run lalapps_inspiral to generate triggers
-  
-  -S, --single-coinc      collect triggers from single ifo data
-  -D, --double-coinc      do coincidence test on triggers from two ifo data
-  -T, --triple-coinc      do coincidence test on triggers from three ifo data
-  
+  -c, --coincidence       run lalapps_inca to test for coincidence
   -s, --sire              do sires to sweep up triggers
   
-  -j, --injections FILE   add simulated inspirals from FILE
-
-  -p, --playground-only   only create chunks that overlap with playground
   -P, --priority PRIO     run jobs with condor priority PRIO
 
   -f, --config-file FILE  use configuration file FILE
   -l, --log-path PATH     directory to write condor log file
   -o, --output-segs       output the segment lists of analyzed data
-
-  -x, --dax               write abstract DAX file
 """
   print >> sys.stderr, msg
 
 ##############################################################################
 # parse the command line options to figure out what we should do
-shortop = "hvu:abldtiSDTsj:pP:f:l:ox"
+shortop = "hvu:ablSDTAdticsP:f:l:o"
 longop = [
   "help",
-  "user-tag=",
   "version",
-  "h1-analysis",
-  "h2-analysis",
-  "l1-analysis",
+  "user-tag=",
+  "h1-data",
+  "h2-data",
+  "l1-data",
+  "one-ifo",
+  "two-ifo",
+  "three-ifo",
+  "analyze-all",
   "datafind",
   "template-bank",
   "inspiral",
-  "single-coinc",
-  "double-coinc",
-  "triple-coinc",
+  "coincidence",
   "sire",
-  "injections=",
-  "playground-only",
   "priority=",
   "config-file=",
   "log-path=",
   "output-segs",
-  "dax"
   ]
 
 try:
@@ -350,27 +346,24 @@ except getopt.GetoptError:
 do_h1 = None
 do_h2 = None
 do_l1 = None
-num_ifos = 0
+
+do_one_ifo = None
+do_two_ifo = None
+do_three_ifo = None
 
 do_datafind = None
 do_tmpltbank = None
 do_inspiral = None
-
-do_single_coinc = None
-do_double_coinc = None
-do_triple_coinc = None
-
+do_coincidence = None
 do_sire = None
 
-inj_file = None
-
 usertag = None
-playground_only = 0
+inj_file = None
+inj_coinc = 0
 output_segs = 0
 condor_prio = None
 config_file = None
 log_path = None
-do_dax = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -379,37 +372,37 @@ for o, a in opts:
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
-  elif o in ("-a", "--h1-analysis"):
+  elif o in ("-a", "--h1-data"):
     do_h1 = 1
-    ++num_ifos
-  elif o in ("-b", "--h2-analysis"):
+  elif o in ("-b", "--h2-data"):
     do_h2 = 1
-    ++num_ifos
-  elif o in ("-l", "--l1-analysis"):
+  elif o in ("-l", "--l1-data"):
     do_l1 = 1
-    ++num_ifos
+  elif o in ("-S", "--one-ifo"):
+    do_one_ifo = 1
+  elif o in ("-D", "--two-ifo"):
+    do_two_ifo = 1
+  elif o in ("-T", "--three-ifo"):
+    do_three_ifo = 1
+  elif o in ("-A", "--analyze-all"):
+    do_h1 = 1
+    do_h2 = 1
+    do_l1 = 1
+    do_one_ifo = 1
+    do_two_ifo = 1
+    do_three_ifo = 1
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-t", "--template-bank"):
     do_tmpltbank = 1
   elif o in ("-i", "--inspiral"):
     do_inspiral = 1
-  elif o in ("-S", "--single-coinc"):
-    do_single_coinc = 1
-  elif o in ("-D", "--double-coinc"):
-    do_double_coinc = 1
-  elif o in ("-T", "--triple-coinc"):
-    do_triple_coinc = 1
-    print "Triple coincidence testing not yet implemented"
-    print "Will perform datafind/templatebank/inspiral on triple data"
+  elif o in ("-c", "--coincidence"):
+    do_coincidence = 1
   elif o in ("-s", "--sire"):
     do_sire = 1
-  elif o in ("-j", "--injections"):
-    inj_file = a
   elif o in ("-u", "--user-tag"):
     usertag = a
-  elif o in ("-p", "--playground-only"):
-    playground_only = 1
   elif o in ("-o", "--output-segs"):
     output_segs = 1
   elif o in ("-P", "--priority"):
@@ -418,8 +411,6 @@ for o, a in opts:
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
-  elif o in ("-x", "--dax"):
-    do_dax = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -456,7 +447,7 @@ else:
     usertag = string.strip(cp.get('pipeline','user-tag'))
   except:
     usertag = None
-
+  
 ##############################################################################
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file)
@@ -486,7 +477,7 @@ single_inca_job = inspiral.IncaJob(cp)
 double_inca_job = inspiral.IncaJob(cp)
 hh_inca_job = inspiral.IncaJob(cp)
 sire_job = inspiral.SireJob(cp)
-sire_inj_job = inspiral.SireJob(cp)
+sire_clust_job = inspiral.SireJob(cp)
 
 ##############################################################################
 # set better submit file names than the default
@@ -501,7 +492,7 @@ single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 double_inca_job.set_sub_file( basename + '.d_inca' + subsuffix )
 hh_inca_job.set_sub_file( basename + '.hh_inca' + subsuffix )
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
-sire_inj_job.set_sub_file( basename + '.sire_inj' + subsuffix )
+sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
 ##############################################################################
 # set the usertag in the jobs
@@ -512,12 +503,7 @@ if usertag:
   double_inca_job.add_opt('user-tag',usertag)
   hh_inca_job.add_opt('user-tag',usertag)
   sire_job.add_opt('user-tag',usertag)
-  sire_inj_job.add_opt('user-tag',usertag)
-
-##############################################################################
-# add the injections
-if inj_file:
-  insp_job.add_opt('injection-file',inj_file)
+  sire_clust_job.add_opt('user-tag',usertag)
 
 ##############################################################################
 # set the condor job priority
@@ -529,7 +515,92 @@ if condor_prio:
   double_inca_job.add_condor_cmd('priority',condor_prio)
   hh_inca_job.add_condor_cmd('priority',condor_prio)
   sire_job.add_condor_cmd('priority',condor_prio)
-  sire_inj_job.add_condor_cmd('priority',condor_prio)
+  sire_clust_job.add_condor_cmd('priority',condor_prio)
+
+##############################################################################
+# read in the injection-file from the ini file 
+# and add to inspiral and sire jobs
+try:
+  inj_file = string.strip(cp.get('pipeline','injection-file'))
+except:
+  inj_file = None
+  
+if inj_file:
+  insp_job.add_opt('injection-file',inj_file)
+  sire_job.add_opt('injection-file',inj_file)
+  sire_clust_job.add_opt('injection-file',inj_file)
+
+#############################################################################
+# read in playground data mask from ini file 
+# set the playground_only option and add to inca and sire jobs
+try:
+  play_data_mask = string.strip(cp.get('pipeline','playground-data-mask'))
+except:
+  play_data_mask = None
+
+if play_data_mask == 'playground_only':
+  playground_only = 2
+  single_inca_job.add_opt('playground-only',' ')
+  double_inca_job.add_opt('playground-only',' ')
+  sire_job.add_opt('playground-only',' ')
+  sire_clust_job.add_opt('playground-only',' ')
+
+elif play_data_mask == 'exclude_playground':
+  playground_only = 0
+  single_inca_job.add_opt('no-playground',' ')
+  double_inca_job.add_opt('no-playground',' ')
+  sire_job.add_opt('exclude-playground',' ')
+  sire_clust_job.add_opt('exclude-playground',' ')
+
+elif play_data_mask == 'all_data':
+  playground_only = 0
+  single_inca_job.add_opt('no-playground',' ')
+  double_inca_job.add_opt('no-playground',' ')
+  sire_job.add_opt('exclude-playground',' ')
+  sire_clust_job.add_opt('exclude-playground',' ')
+
+else:
+  print "Invalid playground data mask " + play_data_mask + " specified"
+  sys.exit(1)
+
+##############################################################################
+# get the inspiral thresholds from the values in the ini file
+l1_snr = cp.get('inspiral-thresholds','l1-snr-threshold')
+h1_snr = cp.get('inspiral-thresholds','h1-snr-threshold')
+h2_snr = cp.get('inspiral-thresholds','h2-snr-threshold')
+
+l1_chisq = cp.get('inspiral-thresholds','l1-chisq-threshold')
+h1_chisq = cp.get('inspiral-thresholds','h1-chisq-threshold')
+h2_chisq = cp.get('inspiral-thresholds','h2-chisq-threshold')
+
+##############################################################################
+# get the coincidence parameters from the values in the ini file
+hh_dt = cp.get('coincidence-parameters','hh-dt')
+hh_kappa = cp.get('coincidence-parameters','hh-kappa')
+hh_epsilon = cp.get('coincidence-parameters','hh-epsilon')
+
+hl_dt = cp.get('coincidence-parameters','hl-dt')
+hl_kappa = cp.get('coincidence-parameters','hl-kappa')
+hl_epsilon = cp.get('coincidence-parameters','hl-epsilon')
+
+##############################################################################
+# make sure we use the range cut for analyzing the LHO conincidences
+hh_inca_job.add_opt('ifo-b-range-cut',None)
+hh_inca_job.add_opt('ifo-b-snr-threshold',h2_snr)
+
+##############################################################################
+# add the sire parameters to the sire jobs
+cluster_time = cp.get('sire-parameters','cluster-time')
+sire_clust_job.add_opt('cluster-time',cluster_time)
+sire_clust_job.add_opt('cluster-algorithm',
+  cp.get('sire-parameters','cluster-algorithm'))
+
+if inj_file:
+  # add the injection coincidence to the sire jobs
+  inj_coinc = cp.get('sire-parameters','injection-coincidence')
+  sire_job.add_opt('injection-coincidence',inj_coinc)
+  sire_clust_job.add_opt('injection-coincidence',inj_coinc)
+ 
 
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
@@ -541,43 +612,6 @@ o = int(cp.get('inspiral', 'segment-overlap'))
 length = ( n * s - ( s - 1 ) * o ) / r
 overlap = o / r
 
-##############################################################################
-# get the thresholds from the values in the ini file
-l1_snr = cp.get('pipeline','l1-snr-threshold')
-h1_snr = cp.get('pipeline','h1-snr-threshold')
-h2_snr = cp.get('pipeline','h2-snr-threshold')
-
-l1_chisq = cp.get('pipeline','l1-chisq-threshold')
-h1_chisq = cp.get('pipeline','h1-chisq-threshold')
-h2_chisq = cp.get('pipeline','h2-chisq-threshold')
-
-##############################################################################
-# get the coincidence parameters from the values in the ini file
-hh_dt = cp.get('pipeline','hh-dt')
-hh_kappa = cp.get('pipeline','hh-kappa')
-hh_epsilon = cp.get('pipeline','hh-epsilon')
-
-hl_dt = cp.get('pipeline','hl-dt')
-hl_kappa = cp.get('pipeline','hl-kappa')
-hl_epsilon = cp.get('pipeline','hl-epsilon')
-
-##############################################################################
-# make sure we use the range cut for analyzing the LHO conincidences
-hh_inca_job.add_opt('ifo-b-range-cut',None)
-hh_inca_job.add_opt('ifo-b-snr-threshold',h2_snr)
-
-#############################################################################
-# add the playground information to the inca and sire jobs
-if playground_only:
-  single_inca_job.add_opt('playground-only',' ')
-  double_inca_job.add_opt('playground-only',' ')
-  sire_job.add_opt('playground-only',' ')
-  sire_inj_job.add_opt('playground-only',' ')
-else:
-  single_inca_job.add_opt('no-playground',' ')
-  double_inca_job.add_opt('no-playground',' ')
-  sire_job.add_opt('exclude-playground',' ')
-  sire_inj_job.add_opt('exclude-playground',' ')
 
 ##############################################################################
 #  The meat of the DAG generation comes below
@@ -615,7 +649,6 @@ else:
 
 
 
-
 ##############################################################################
 #   Step 1: read science segs that are greater or equal to a chunk 
 #   from the input file
@@ -624,24 +657,39 @@ print "reading in single ifo science segments and creating master chunks...",
 sys.stdout.flush()
 
 # H1
-h1_data = pipeline.ScienceData()  
-if do_h1:
-  h1_data.read(cp.get('input', 'h1-segments'),length) 
+try:
+  h1_segments = cp.get('input', 'h1-segments')
+except:
+  h1_segments = None
+  
+h1_data = pipeline.ScienceData() 
+if h1_segments:
+  h1_data.read(h1_segments,length) 
   h1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
   h1_data.make_chunks_from_unused(length,overlap/2,playground_only,
       0,0,overlap/2)
 
 # H2 
-h2_data = pipeline.ScienceData()   
-if do_h2:
-  h2_data.read(cp.get('input', 'h2-segments'),length) 
+try:
+  h2_segments = cp.get('input', 'h2-segments')
+except:
+  h2_segments = None
+
+h2_data = pipeline.ScienceData()
+if h2_segments:
+  h2_data.read(h2_segments,length) 
   h2_data.make_chunks(length,overlap,playground_only,0,overlap/2)
   h2_data.make_chunks_from_unused(length,overlap/2,playground_only,
       0,0,overlap/2)
 
 # L1  
+try:
+  l1_segments = cp.get('input', 'l1-segments')
+except:
+  l1_segments = None
+  
 l1_data = pipeline.ScienceData()  
-if do_l1:
+if l1_segments:
   l1_data.read(cp.get('input', 'l1-segments'),length) 
   l1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
   l1_data.make_chunks_from_unused(length,overlap/2,playground_only,
@@ -670,32 +718,48 @@ not_h2_data_out.invert()
 not_l1_data_out = copy.deepcopy(l1_data_out)
 not_l1_data_out.invert()
   
-# determine the triple data
-if do_triple_coinc:  
+# determine the triple data, if it is to be analyzed
+h1_h2_l1_triple_data = pipeline.ScienceData() 
+
+if do_three_ifo and do_h1 and do_h2 and do_l1:  
   h1_h2_l1_triple_data = copy.deepcopy(h1_data_out)
   h1_h2_l1_triple_data.intersect_3(h2_data_out,l1_data_out)
 
-# determine the double data
-if do_double_coinc:
-  h1_h2_double_data = copy.deepcopy(h1_data_out)
-  h1_h2_double_data.intersect_3(h2_data_out, not_l1_data_out)
+# determine the double data, if it is to be analyzed
+h1_h2_double_data = pipeline.ScienceData()
+h1_l1_double_data = pipeline.ScienceData()
+h2_l1_double_data = pipeline.ScienceData()
+
+if do_two_ifo:
+  if do_h1 and do_h2:
+    h1_h2_double_data = copy.deepcopy(h1_data_out)
+    h1_h2_double_data.intersect_3(h2_data_out, not_l1_data_out)
   
-  h1_l1_double_data = copy.deepcopy(h1_data_out)
-  h1_l1_double_data.intersect_3(l1_data_out, not_h2_data_out)
+  if do_h1 and do_l1:
+    h1_l1_double_data = copy.deepcopy(h1_data_out)
+    h1_l1_double_data.intersect_3(l1_data_out, not_h2_data_out)
   
-  h2_l1_double_data = copy.deepcopy(h2_data_out)
-  h2_l1_double_data.intersect_3(l1_data_out, not_h1_data_out)
+  if do_h2 and do_l1:
+    h2_l1_double_data = copy.deepcopy(h2_data_out)
+    h2_l1_double_data.intersect_3(l1_data_out, not_h1_data_out)
   
-# determine the single data
-if do_single_coinc:
-  h1_single_data = copy.deepcopy(h1_data_out)
-  h1_single_data.intersect_3(not_h2_data_out, not_l1_data_out)
+# determine the single data, if it is to be analyzed
+h1_single_data = pipeline.ScienceData()
+h2_single_data = pipeline.ScienceData()
+l1_single_data = pipeline.ScienceData()
+ 
+if do_one_ifo:
+  if do_h1:
+    h1_single_data = copy.deepcopy(h1_data_out)
+    h1_single_data.intersect_3(not_h2_data_out, not_l1_data_out)
   
-  h2_single_data = copy.deepcopy(h2_data_out)
-  h2_single_data.intersect_3(not_h1_data_out, not_l1_data_out)
+  if do_h2:
+    h2_single_data = copy.deepcopy(h2_data_out)
+    h2_single_data.intersect_3(not_h1_data_out, not_l1_data_out)
   
-  l1_single_data = copy.deepcopy(l1_data_out)
-  l1_single_data.intersect_3(not_h1_data_out, not_h2_data_out)
+  if do_l1:
+    l1_single_data = copy.deepcopy(l1_data_out)
+    l1_single_data.intersect_3(not_h1_data_out, not_h2_data_out)
   
 ##############################################################################
 # Step 3: Compute the Science Segments to analyze
@@ -751,115 +815,101 @@ print "done"
   
 
 ##############################################################################
-# Step 6: Run inca in single ifo mode on the single ifo triggers.
+# Step 5: Run inca in single ifo mode on the single ifo triggers.
 
-if do_single_coinc: 
-  print "setting up jobs to inca single IFO data...",
-  sys.stdout.flush()
+print "setting up jobs to inca single IFO data...",
+sys.stdout.flush()
 
-  # H1
-  h1_single_inca_nodes = []
-  h1_single_inca_nodes = single_inca(h1_chunks_analyzed,'H1',h1_single_data,
-    single_inca_job,do_single_coinc,dag,usertag)
+# H1
+h1_single_inca_nodes = []
+h1_single_inca_nodes = single_inca(h1_chunks_analyzed,'H1',h1_single_data,
+  single_inca_job,dag,usertag)
 
-  # H2
-  h2_single_inca_nodes = []
-  h2_single_inca_nodes = single_inca(h2_chunks_analyzed,'H2',h2_single_data,
-    single_inca_job,do_single_coinc,dag,usertag)
+# H2
+h2_single_inca_nodes = []
+h2_single_inca_nodes = single_inca(h2_chunks_analyzed,'H2',h2_single_data,
+  single_inca_job,dag,usertag)
 
-  # L1
-  l1_single_inca_nodes = []
-  l1_single_inca_nodes = single_inca(l1_chunks_analyzed,'L1',l1_single_data,
-    single_inca_job,do_single_coinc,dag, usertag)
+# L1
+l1_single_inca_nodes = []
+l1_single_inca_nodes = single_inca(l1_chunks_analyzed,'L1',l1_single_data,
+  single_inca_job,dag, usertag)
 
-  print "done"
+print "done"
   
 ##############################################################################
-# Step 7: Run inca on each of the disjoint sets of double coincidence data
+# Step 6: Run inca on each of the disjoint sets of double coincidence data
 
-if do_double_coinc: 
-  print "setting up jobs to inca double IFO data...",
+print "setting up jobs to inca double IFO data...",
 
-  # H1-H2
-  h1_h2_double_inca_nodes = []
-  h1_h2_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
-      h2_chunks_analyzed,'H2',h1_h2_double_data,hh_inca_job,hh_dt,
-      hh_kappa,hh_epsilon,do_double_coinc,dag,usertag)
+# H1-H2
+h1_h2_double_inca_nodes = []
+h1_h2_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
+  h2_chunks_analyzed,'H2',h1_h2_double_data,hh_inca_job,hh_dt,hh_kappa,
+  hh_epsilon,dag,usertag)
 
-  # H1-L1
-  h1_l1_double_inca_nodes = []
-  h1_l1_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
-      l1_chunks_analyzed,'L1',h1_l1_double_data,double_inca_job,hl_dt,
-      hl_kappa,hl_epsilon,do_double_coinc,dag,usertag)
+# H1-L1
+h1_l1_double_inca_nodes = []
+h1_l1_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
+  l1_chunks_analyzed,'L1',h1_l1_double_data,double_inca_job,hl_dt,hl_kappa,
+  hl_epsilon,dag,usertag)
 
-  # H2-L1
-  h2_l1_double_inca_nodes = []
-  h2_l1_double_inca_nodes = double_inca(h2_chunks_analyzed,'H2',
-      l1_chunks_analyzed,'L1',h2_l1_double_data,double_inca_job,hl_dt,
-      hl_kappa,hl_epsilon,do_double_coinc,dag,usertag)
+# H2-L1
+h2_l1_double_inca_nodes = []
+h2_l1_double_inca_nodes = double_inca(h2_chunks_analyzed,'H2',
+  l1_chunks_analyzed,'L1',h2_l1_double_data,double_inca_job,hl_dt,hl_kappa,
+  hl_epsilon,dag,usertag)
 
-  print "done"
+print "done"
 
 ############################################################################## 
-# Step 8: Run inca on each of the disjoint sets of triple coincidence data
+# Step 7: Run inca on each of the disjoint sets of triple coincidence data
 # since we do not have a triple coincidence tester, we leave this blank
 
-  
+print "setting up jobs to inca three IFO data...",
+
+print "This analysis code does not yet exist"
+
 ############################################################################## 
 # Step 9: Run sire on each of the types of single/double/triple data
 print "setting up sire jobs ...",
 sys.stdout.flush()
 
-if do_single_coinc:
-
-  # a sire for each of the single IFO configurations
-  sire_segs(h1_single_inca_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,dag,
-    usertag)
-  sire_segs(h2_single_inca_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,dag,
-    usertag) 
-  sire_segs(l1_single_inca_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,dag,
-    usertag)
-
-  if inj_file:
-    # do injection sires as well
-    sire_segs(h1_single_inca_nodes,'output_a','H1-SIRE_SINGLE_IFO',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(h2_single_inca_nodes,'output_a','H2-SIRE_SINGLE_IFO',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(l1_single_inca_nodes,'output_a','L1-SIRE_SINGLE_IFO',
-      sire_inj_job,dag,usertag,inj_file)
+if do_one_ifo:
+  # a clustered and unclustered sire for each of the single IFO configurations
+  if do_h1:
+    sire_segs(h1_single_inca_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,
+      sire_clust_job,dag,usertag)
+  if do_h2:
+    sire_segs(h2_single_inca_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,
+      sire_clust_job,dag,usertag)
+  if do_l1:
+    sire_segs(l1_single_inca_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,
+      sire_clust_job,dag,usertag)
+   
 
  
-if do_double_coinc:  
-  # a sire for each of the double IFO configurations
-  sire_segs(h1_h2_double_inca_nodes,'output_a','H1-SIRE_H1H2',
-    sire_job,dag,usertag)
-  sire_segs(h1_h2_double_inca_nodes,'output_b','H2-SIRE_H1H2',
-    sire_job,dag,usertag)
-  sire_segs(h1_l1_double_inca_nodes,'output_a','H1-SIRE_H1H2',
-    sire_job,dag,usertag)
-  sire_segs(h1_l1_double_inca_nodes,'output_a','L1-SIRE_H1H2',
-    sire_job,dag,usertag)
-  sire_segs(h2_l1_double_inca_nodes,'output_a','H2-SIRE_H1H2',
-    sire_job,dag,usertag)
-  sire_segs(h2_l1_double_inca_nodes,'output_a','L1-SIRE_H1H2',
-    sire_job,dag,usertag)
+if do_two_ifo:  
+  # a clustered and unclustered sire for each of the double IFO configurations
+  if do_h1 and do_h2:
+    sire_segs(h1_h2_double_inca_nodes,'output_a','H1-SIRE_H1H2',sire_job,
+      sire_clust_job,dag,usertag)
+    sire_segs(h1_h2_double_inca_nodes,'output_b','H2-SIRE_H1H2',sire_job,
+      sire_clust_job,dag,usertag)
 
-  if inj_file:
-    # do injection sires as well
-    sire_segs(h1_h2_double_inca_nodes,'output_a','H1-SIRE_H1H2',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(h1_h2_double_inca_nodes,'output_b','H2-SIRE_H1H2',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(h1_l1_double_inca_nodes,'output_a','H1-SIRE_H1H2',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(h1_l1_double_inca_nodes,'output_a','L1-SIRE_H1H2',
-      sire_inj_job,dag,usertag,inj_file)
-    sire_segs(h2_l1_double_inca_nodes,'output_a','H2-SIRE_H1H2',
-      sire_inj_job,dag,userta,inj_fileg)
-    sire_segs(h2_l1_double_inca_nodes,'output_a','L1-SIRE_H1H2',
-      sire_inj_job,dag,usertag,inj_file)
+  if do_h1 and do_l1:
+    sire_segs(h1_l1_double_inca_nodes,'output_a','H1-SIRE_H1L1',sire_job,
+      sire_clust_job,dag,usertag)
+    sire_segs(h1_l1_double_inca_nodes,'output_b','L1-SIRE_H1L1',sire_job,
+      sire_clust_job,dag,usertag)
 
+      
+  if do_h2 and do_l1:
+    sire_segs(h2_l1_double_inca_nodes,'output_a','H2-SIRE_H2L1',sire_job,
+      sire_clust_job,dag,usertag)
+    sire_segs(h2_l1_double_inca_nodes,'output_b','L1-SIRE_H2L1',sire_job,
+      sire_clust_job,dag,usertag)
+  
 print "done"
   
 ##############################################################################
@@ -1065,7 +1115,7 @@ if output_segs:
     f = open('h2_l1_play_segs_analyzed.txt', 'w')
   else:  
     f = open('h2_l1_segs_analyzed.txt', 'w')
-  for seg in h2_double_data:
+  for seg in h2_l1_double_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
