@@ -216,6 +216,8 @@ void LALCreateREAL4Window ( LALStatus       *status,
   type = params->type;
   ASSERT( type < NumberWindowTypes, status, WINDOWH_ETYPEUNKNOWN,
 	  WINDOWH_MSGETYPEUNKNOWN );
+  ASSERT( (int)type >= 0, status, WINDOWH_ETYPEUNKNOWN,
+	  WINDOWH_MSGETYPEUNKNOWN );
   length = params->length;
   ASSERT( length > 0, status, WINDOWH_EELENGTH, WINDOWH_MSGEELENGTH );
   dy = 2.0/(REAL4)( length );
