@@ -100,6 +100,7 @@ tagFindChirpSPDataParams
   REAL4Vector                  *wVec;
   COMPLEX8Vector               *wtildeVec;
   REAL4Vector                  *tmpltPowerVec;
+  REAL4Vector                  *tmpltPowerVecBCV;
   REAL4                         deltaT;
   REAL4                         fLow;
   REAL4                         dynRange;
@@ -140,16 +141,25 @@ be cast to floats.
 \item[\texttt{REAL4Vector *wVec}] A vector used as workspace when truncating
 the imverse power spectrum in the time domain.
 
-\item[\texttt{COMPLEX8Vector *wtildeVec}] A which on exit from
+\item[\texttt{COMPLEX8Vector *wtildeVec}] A vector which on exit from
 \texttt{FindChirpSPData()} contains the inverse of the strain one sided power
 spectral density, after trunction in the time domain, that is
 $ \tilde{w}_k = {1}/{\ospsd}$.
 
 \item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
-\texttt{FindChirpSPData()} contains the quantity
+\texttt{FindChirpSPData()} or from \texttt{FindChirpBCVData()} 
+contains the quantity
 \begin{equation}
 \mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
 \end{equation}
+
+\item[\texttt{REAL4Vector *tmpltPowerVec}] A vector which on exit from
+\texttt{FindChirpBCVData()}  
+contains the quantity
+\begin{equation}
+\mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{\ospsd}
+\end{equation}
+
 
 \item[\texttt{REAL4 deltaT}] {\color{red} FIXME} The sampling interval 
 $\Delta t$. Should be a \texttt{REAL8} or derived from the input time series

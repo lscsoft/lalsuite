@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpFilter.c
  *
- * Author: Brown, D. A., Modified by Messaritaki, E.
+ * Author: Brown, D. A., BCV-Modifications by Messaritaki E.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="FindChirpFilterCV">
-Author: Brown D. A.
+Author: Brown D. A., BCV-Modifications by Messaritaki E.
 $Id$
 </lalVerbatim>
 
@@ -238,6 +238,17 @@ LALFindChirpFilterInit (
     ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
   }
 
+  /* create memory for the additional BCV chisq input */
+  outputPtr->chisqInputBCV = (FindChirpChisqInput *)
+    LALCalloc( 1, sizeof(FindChirpChisqInput) );
+  if ( !outputPtr->chisqInputBCV )
+  {
+    LALFree( outputPtr->chisqParams );
+    LALFree( outputPtr );
+    *output = NULL;
+    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+   }
+
 
   /*
    *
@@ -274,6 +285,23 @@ LALFindChirpFilterInit (
   }
   ENDFAIL( status );
 
+
+  /* create additional workspace vector for optimal BCV filter: time domain */
+  LALCCreateVector( status->statusPtr, &(outputPtr->qVecBCV),
+      params->numPoints );
+  BEGINFAIL( status )
+  {
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+        &(outputPtr->invPlan) ), status );
+
+    LALFree( outputPtr->chisqInputBCV );
+    LALFree( outputPtr->chisqParams );
+    LALFree( outputPtr );
+    *output = NULL;
+   }
+   ENDFAIL( status );
+
+
   /* create workspace vector for optimal filter: freq domain */
   LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVec), 
       params->numPoints );
@@ -292,6 +320,26 @@ LALFindChirpFilterInit (
   }
   ENDFAIL( status );
 
+
+  /* create workspace vector for optimal filter: freq domain */
+  LALCCreateVector( status->statusPtr, &(outputPtr->qtildeVecBCV),
+      params->numPoints );
+  BEGINFAIL( status )
+  {
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+        status );
+
+    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+        &(outputPtr->invPlan) ), status );
+
+    LALFree( outputPtr->chisqInputBCV );
+    LALFree( outputPtr->chisqParams );
+    LALFree( outputPtr );
+    *output = NULL;
+  }
+  ENDFAIL( status );
+
+
   /* create workspace vector for chisq filter */
   LALCreateVector (status->statusPtr, &(outputPtr->chisqVec), 
       params->numPoints);
@@ -299,13 +347,18 @@ LALFindChirpFilterInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
         status );
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) ),
+        status );
     TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
+        status );
+    TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
         status );
 
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
         &(outputPtr->invPlan) ), status );
     
     LALFree( outputPtr->chisqInput );
+    LALFree( outputPtr->chisqInputBCV );
     LALFree( outputPtr->chisqParams );
     LALFree( outputPtr );
     *output = NULL;
@@ -332,13 +385,19 @@ LALFindChirpFilterInit (
           status ); 
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ), 
           status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) ),
+          status );
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
           status );
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+          status );
+
 
       TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(outputPtr->invPlan) ), status );
 
       LALFree( outputPtr->chisqInput );
+      LALFree( outputPtr->chisqInputBCV );
       LALFree( outputPtr->chisqParams );
       LALFree( outputPtr );
       *output = NULL;
@@ -405,9 +464,13 @@ LALFindChirpFilterFinalize (
   /* destroy workspace vector for optimal filter: freq domain */
   LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) );
   CHECKSTATUSPTR( status );
+  LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) );
+  CHECKSTATUSPTR( status );
 
   /* destroy workspace vector for optimal filter: freq domain */
   LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) );
+  CHECKSTATUSPTR( status );
+  LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV) );
   CHECKSTATUSPTR( status );
 
   /* destroy workspace vector for chisq filter */
@@ -425,8 +488,9 @@ LALFindChirpFilterFinalize (
   /* parameter structure */
   LALFree( outputPtr->chisqParams );
   
-  /* input structure */
+  /* input structures */
   LALFree( outputPtr->chisqInput );
+  LALFree( outputPtr->chisqInputBCV );
 
 
   /*
@@ -1015,27 +1079,22 @@ LALFindChirpBCVFilterSegment (
   UINT4                 eventStartIdx = 0;
   REAL4                 chirpTime     = 0;
   BOOLEAN               haveChisq     = 0;
-  COMPLEX8             *qtilde        = NULL;
-  COMPLEX8Vector       *qtildeVec1    = NULL; 
-  COMPLEX8Vector       *qtildeVec2    = NULL; 
-  COMPLEX8             *qtilde1       = NULL; 
-  COMPLEX8             *qtilde2       = NULL; 
-  COMPLEX8             *q             = NULL;
-  COMPLEX8Vector       *qVec1         = NULL; 
-  COMPLEX8Vector       *qVec2         = NULL; 
-  COMPLEX8             *q1            = NULL; 
-  COMPLEX8             *q2            = NULL; 
+  COMPLEX8             *qtilde        = NULL; 
+  COMPLEX8             *qtildeBCV     = NULL; 
+  COMPLEX8             *q             = NULL; 
+  COMPLEX8             *qBCV          = NULL;
   COMPLEX8             *inputData     = NULL;
+  COMPLEX8             *inputDataBCV  = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
   LALMSTUnitsAndAcc     gmstUnits;
-  REAL4                 normFFT;              
   REAL4                 b1;                  
   REAL4                 a2;                  
   REAL4                 templateNorm;
+  REAL4                 modqsq;
 
-  FindChirpChisqInput  *chisqInput1;
-  FindChirpChisqInput  *chisqInput2;
+  FindChirpChisqInput  *chisqInput;
+  FindChirpChisqInput  *chisqInputBCV;
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -1070,20 +1129,16 @@ LALFindChirpBCVFilterSegment (
   ASSERT(params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+  ASSERT(params->qVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qVecBCV->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVecBCV->data,status, FINDCHIRPH_ENULL, 
+	  FINDCHIRPH_MSGENULL);
   
-ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qVec1->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qtildeVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qtildeVec1->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
-  ASSERT( qVec2, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qVec2->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qtildeVec2, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( qtildeVec2->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
-
-
   /* check that the chisq parameter and input structures exist */
   ASSERT( params->chisqParams, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->chisqInput, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->chisqInput,   status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->chisqInputBCV,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* if a rhosqVec vector has been created, check we can store data in it */
   if ( params->rhosqVec )
@@ -1118,20 +1173,18 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   /* workspace vectors */
-  q = params->qVec->data;
-  qtilde = params->qtildeVec->data;
-
-  q1 = qVec1->data; 
-  q2 = qVec2->data; 
-  qtilde1 = qtildeVec1->data; 
-  qtilde2 = qtildeVec2->data; 
+  q    = params->qVec->data;
+  qBCV = params->qVecBCV->data;
+  qtilde    = params->qtildeVec->data;
+  qtildeBCV = params->qtildeVecBCV->data;
   
   
   /* template and data */
-  inputData    = input->segment->data->data->data;
-  tmpltSignal  = input->fcTmplt->data->data;
-  templateNorm = input->fcTmplt->tmpltNorm;
-  deltaT       = params->deltaT;
+  inputData     = input->segment->data->data->data;
+  inputDataBCV  = input->segment->dataBCV->data->data;
+  tmpltSignal   = input->fcTmplt->data->data;
+  templateNorm  = input->fcTmplt->tmpltNorm;
+  deltaT        = params->deltaT;
 
   /* the length of the chisq bin vec is the number of bin   */
   /* _boundaries_ so the number of chisq bins is length - 1 */
@@ -1232,30 +1285,33 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /*
    *
-   * compute qtilde, qtilde1, qtilde2 and q, q1, q2 
+   * compute qtilde, qtildeBCV, and q, qBCV 
    *
    */
 
 
-  memset( qtilde, 0, numPoints * sizeof(COMPLEX8) );
-  memset( qtilde1, 0, numPoints * sizeof(COMPLEX8) );
-  memset( qtilde2, 0, numPoints * sizeof(COMPLEX8) );
+  memset( qtilde,    0, numPoints * sizeof(COMPLEX8) );
+  memset( qtildeBCV, 0, numPoints * sizeof(COMPLEX8) );
 
   /* qtilde positive frequency, not DC or nyquist */
   kTop = ( (numPoints/2) < kendBCV ? numPoints/2 : kendBCV );
   for ( k = 1; k < kTop; ++k )
   {
-    REAL4 r = inputData[k].re;
-    REAL4 s = 0 - inputData[k].im;   /* note complex conjugate */
+    REAL4 r1 = inputData[k].re;
+    REAL4 s1 = 0 - inputData[k].im;    /* note complex conjugate */
+    REAL4 r2 = inputDataBCV[k].re;
+    REAL4 s2 = 0 - inputDataBCV[k].im; /* note complex conjugate */
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = tmpltSignal[k].im;     
 
-    qtilde[k].re = r*x - s*y;
-    qtilde[k].im = r*y + s*x;
-    qtilde1[k].re = qtilde[k].re; 
-    qtilde1[k].im = qtilde[k].im; 
-    qtilde2[k].re = qtilde1[k].re * pow(k, (2/3)); 
-    qtilde2[k].im = qtilde1[k].im * pow(k, (2/3)); 
+    qtilde[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) +
+		           a2 * ( r2 * x - s2 * y ) );
+    qtilde[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) +
+		           a2 * ( r2 * y + s2 * x ) );
+    qtildeBCV[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) -
+		              a2 * ( r2 * x - s2 * y ) );
+    qtildeBCV[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) -
+		              a2 * ( r2 * y + s2 * x ) ); 
   }
 
   /* qtilde negative frequency only: not DC or nyquist */
@@ -1264,31 +1320,32 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     kTop = ( (numPoints-1) < kendBCV ? (numPoints-1) : kendBCV );	  
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
-      REAL4 r = inputData[k].re;
-      REAL4 s = 0 - inputData[k].im; /* note complex conjugate */
+      REAL4 r1 = inputData[k].re;
+      REAL4 s1 = 0.0 - inputData[k].im;    /* note complex conjugate */
+      REAL4 r2 = inputDataBCV[k].re;
+      REAL4 s2 = 0.0 - inputDataBCV[k].im; /* note complex conjugate */
       REAL4 x = tmpltSignal[k].re;
-      REAL4 y = tmpltSignal[k].im;   
+      REAL4 y = tmpltSignal[k].im;
 
-      qtilde[k].re = r*x - s*y;
-      qtilde[k].im = r*y + s*x;
-      qtilde1[k].re = qtilde[k].re; 
-      qtilde1[k].im = qtilde[k].im; 
-      qtilde2[k].re = qtilde1[k].re * pow(k, (2/3));
-      qtilde2[k].im = qtilde1[k].im * pow(k, (2/3)); 
-
+      qtilde[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) +
+                             a2 * ( r2 * x - s2 * y ) );
+      qtilde[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) +
+                             a2 * ( r2 * y + s2 * x ) );
+      qtildeBCV[k].re = 2.0 * ( b1 * ( r1 * x - s1 * y ) -
+                                a2 * ( r2 * x - s2 * y ) );
+      qtildeBCV[k].im = 2.0 * ( b1 * ( r1 * y + s1 * x ) -
+                                a2 * ( r2 * y + s2 * x ) );
     }
    }
 
-   /* inverse fft to get q, q1 and q2 */
-   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, params->qtildeVec,
-       params->invPlan ); 
+   /* inverse fft to get q, and qBCV */
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, 
+		   params->qtildeVec, params->invPlan );
    CHECKSTATUSPTR( status );
-   LALCOMPLEX8VectorFFT( status->statusPtr, qVec1, qtildeVec1,
-       params->invPlan ); 
-   CHECKSTATUSPTR( status ); 
-   LALCOMPLEX8VectorFFT( status->statusPtr, qVec2, qtildeVec2,
-       params->invPlan ); 
-   CHECKSTATUSPTR( status ); 
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV, 
+		   params->qtildeVecBCV, params->invPlan );
+   CHECKSTATUSPTR( status );
+
 
 
 
@@ -1305,11 +1362,14 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
   /* normalisation */
-  /*  For the BCV templates, templateNorm is equal to                    */
-  /*  (5*m/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2    */
+  /*  For the BCV templates, templateNorm is equal to                      */
+  /*  (5*eta/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2    */
+  /* which is the square of the normalization factor that multiplies the   */
+  /* template                                                              */
 
   params->norm = norm =
-     (deltaT / (REAL4)numPoints) * (deltaT / (REAL4)numPoints) * templateNorm;
+     (deltaT / (REAL4) numPoints) * (deltaT / (REAL4)numPoints) * templateNorm;
+
 
   /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm ;
@@ -1343,20 +1403,15 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
         sizeof(LIGOTimeGPS) );
     params->rhosqVec->deltaT = input->segment->deltaT;
 
+    modqsq = 0.0;
+
     for ( j = 0; j < numPoints; ++j )
     {
-      REAL4 modq1sq = 
-	      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) * 
-	      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re )    
-	    + ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) * 
-	      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im );    
-      REAL4 modq2sq = 
-              ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) *
-              ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re )      
-            + ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) *
-              ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im );   
-      REAL4 modqsq = modq1sq + modq2sq + 
-	      2.0 * sqrt( modq1sq ) * sqrt( modq2sq ) ;       
+      modqsq += ( q[j].re * q[j].re + q[j].im * q[j].im );
+      modqsq += ( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im );
+      modqsq += ( 2.0 * sqrt( q[j].re * q[j].re + q[j].im * q[j].im ) *
+		   sqrt( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ));
+
       params->rhosqVec->data->data[j] = norm * modqsq;   
     }
   }
@@ -1365,18 +1420,10 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
-      REAL4 modq1sq = 
-	      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) *
-	      ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re )  
-	    + ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) *
-	      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im );    
-      REAL4 modq2sq =      
-              ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) *
-              ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re )         
-            + ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) *
-              ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im );   
-      REAL4 modqsq = modq1sq + modq2sq + 
-              2.0 * sqrt( modq1sq ) * sqrt( modq2sq ) ;       
+     modqsq += ( q[j].re * q[j].re + q[j].im * q[j].im );
+     modqsq += ( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im );
+     modqsq += ( 2.0 * sqrt( q[j].re * q[j].re + q[j].im * q[j].im ) *
+                    sqrt( qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ));
 
 
     /* if snrsq exceeds threshold at any point */
@@ -1389,27 +1436,24 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
             params->chisqVec->length * sizeof(REAL4) );
 
         /* pointers to chisq input */
-#if 0
-        params->chisqInput->qtildeVec = params->qtildeVec;
-        params->chisqInput->qVec      = params->qVec;
-#endif
-	chisqInput1->qtildeVec = qtildeVec1;
-	chisqInput1->qVec = qVec1;
-	chisqInput2->qtildeVec = qtildeVec2;
-	chisqInput2->qVec = qVec2;
+        params->chisqInput->qtildeVec    = params->qtildeVec;
+        params->chisqInput->qVec         = params->qVec;
+	params->chisqInputBCV->qtildeVec = params->qtildeVecBCV;
+	params->chisqInputBCV->qVec      = params->qVecBCV;
 	
         /* pointer to the chisq bin vector in the segment */
-        params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-        params->chisqParams->norm        = norm;
-	params->chisqParams->b1          = b1 ;
-	params->chisqParams->a2          = a2 ;
+        params->chisqParams->chisqBinVec    = input->segment->chisqBinVec;
+	params->chisqParams->chisqBinVecBCV = input->segment->chisqBinVecBCV;
+        params->chisqParams->norm           = norm;
+	params->chisqParams->b1             = b1 ;
+	params->chisqParams->a2             = a2 ;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
 
         /* compute the chisq threshold: this is slow! */
         LALFindChirpBCVChisqVeto( status->statusPtr, params->chisqVec,
-            chisqInput1, chisqInput2, params->chisqParams );
+            params->chisqInput, params->chisqInputBCV, params->chisqParams );
         CHECKSTATUSPTR (status);
 
         haveChisq = 1;

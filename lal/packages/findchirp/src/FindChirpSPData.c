@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpSPData.c
  *
- * Author: Brown D. A.
+ * Author: Brown D. A., BCV-Modifications: Messaritaki E.
  * 
  * Revision: $Id$
  * 
@@ -11,7 +11,7 @@
 
 #if 0 
 <lalVerbatim file="FindChirpSPDataCV">
-Author: Brown, D. A.
+Author: Brown, D. A., BCV-Modifications: Messaritaki E.
 $Id$
 </lalVerbatim> 
 
@@ -189,6 +189,22 @@ LALFindChirpSPDataInit (
     *output = NULL;
   }
   ENDFAIL( status );
+
+  /* additinal BCV template power vector */
+  LALCreateVector( status->statusPtr, &dataParamPtr->tmpltPowerVecBCV,
+      params->numPoints/2 + 1 );
+  BEGINFAIL( status )
+  {
+    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status );
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );    
+    LALFree( dataParamPtr );
+    *output = NULL;
+  }
+  ENDFAIL( status );
+
   
 
   /* normal exit */
@@ -247,6 +263,8 @@ LALFindChirpSPDataFinalize (
   CHECKSTATUSPTR (status);
 
   LALDestroyVector (status->statusPtr, &dataParamPtr->tmpltPowerVec);
+  CHECKSTATUSPTR (status);
+  LALDestroyVector (status->statusPtr, &dataParamPtr->tmpltPowerVecBCV);
   CHECKSTATUSPTR (status);
 
 
@@ -663,22 +681,25 @@ LALFindChirpBCVData (
   REAL4                *w;
   REAL4                *amp;
   COMPLEX8             *wtilde;
-  REAL4                *tmpltPower;
-  REAL4		       *tmpltPower1;
-  REAL4		       *tmpltPower2;
+  REAL4		       *tmpltPower;
+  REAL4		       *tmpltPowerBCV;
 
   REAL4Vector          *dataVec;
   REAL4                *spec;
   COMPLEX8             *resp;
 
   COMPLEX8             *outputData;
+  COMPLEX8             *outputDataBCV;
 
- UINT4                *chisqBin = NULL;
+  UINT4                *chisqBin    = NULL;
+  UINT4                *chisqBinBCV = NULL;
   UINT4                 numChisqBins;
   UINT4                 chisqPt;
   REAL4                 increment;
   REAL4                 nextBin;
   REAL4                 partSum;
+  REAL4                 PowerPlus  = 0.0 ;
+  REAL4                 PowerMinus = 0.0 ;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -704,10 +725,18 @@ LALFindChirpBCVData (
       ": fcSegVec->data" );
   ASSERT( fcSegVec->data->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
-      ": fcSegVec->data->dat" );
+      ": fcSegVec->data->data" );
   ASSERT( fcSegVec->data->data->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
       ": fcSegVec->data->data->data" );
+  ASSERT( fcSegVec->data->dataBCV, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      ": fcSegVec->data->dataBCV" );
+  ASSERT( fcSegVec->data->dataBCV->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      ": fcSegVec->data->dataBCV->data" );
+
+
 
   /* check that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPSPH_ENULL,
@@ -732,6 +761,11 @@ LALFindChirpBCVData (
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->tmpltPowerVec->data, status,
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->tmpltPowerVecBCV, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params->tmpltPowerVecBCV->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+
 
   /* check that the fft plans exist */
   ASSERT( params->fwdPlan, status,
@@ -769,10 +803,11 @@ LALFindChirpBCVData (
    */
 
 
-  w          = params->wVec->data;
-  amp        = params->ampVec->data;
-  wtilde     = params->wtildeVec->data;
-  tmpltPower = params->tmpltPowerVec->data;
+  w             = params->wVec->data;
+  amp           = params->ampVec->data;
+  wtilde        = params->wtildeVec->data;
+  tmpltPower    = params->tmpltPowerVec->data;
+  tmpltPowerBCV = params->tmpltPowerVecBCV->data;
 
 
   /*
@@ -800,11 +835,13 @@ LALFindChirpBCVData (
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
-    outputData   = fcSeg->data->data->data;
+    outputData    = fcSeg->data->data->data;
+    outputDataBCV = fcSeg->dataBCV->data->data;
 
     if ( fcSeg->chisqBinVec->length )
     {
       chisqBin     = fcSeg->chisqBinVec->data;
+      chisqBinBCV  = fcSeg->chisqBinVecBCV->data;
       numChisqBins = fcSeg->chisqBinVec->length - 1;
     }
     else
@@ -933,12 +970,12 @@ LALFindChirpBCVData (
 
     /*
      *
-     * compute segment normalisation, outputData, point fcSeg at data segment
+     * compute BCV normalisationi parameters b1 and a2, 
+     * outputData, point fcSeg at data segment
      *
      */
 
 
-    fcSeg->segNorm = 0.0;
     fcSeg->b1 = 0.0;
     fcSeg->a2 = 0.0;
 
@@ -946,27 +983,45 @@ LALFindChirpBCVData (
     {
       outputData[k].re = 0.0;
       outputData[k].im = 0.0;
+      outputDataBCV[k].re = 0.0;
+      outputDataBCV[k].im = 0.0;
     }
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
+    memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      tmpltPower1[k]   = amp[k] * amp[k] * wtilde[k].re;
-      tmpltPower2[k]   = tmpltPower1[k] *
+      tmpltPower[k]   = amp[k] * amp[k] * wtilde[k].re;
+      tmpltPowerBCV[k]   = tmpltPower[k] *
 	pow( (k/(fcSeg->data->data->length)), 4.0/3.0 );
-      fcSeg->segNorm += tmpltPower[k]; /* probably not necessary for BCV */
-      fcSeg->b1 += tmpltPower1[k];
-      fcSeg->a2 += tmpltPower2[k];
+      fcSeg->b1 += tmpltPower[k];
+      fcSeg->a2 += tmpltPowerBCV[k];
     }
 
     fcSeg->b1 = 1.0 / 2.0 / sqrt( fcSeg->b1 ) ;
     fcSeg->a2 = 1.0 / 2.0 / sqrt( fcSeg->a2 ) ;
 
+    for ( k = 1; k < fcSeg->data->data->length; ++k )
+    {
+      PowerPlus += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
+		          (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] +
+			  2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
+		       	     pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
+      PowerMinus += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
+		          (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] -
+		          2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]* 
+			     pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
+    }
+
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
       outputData[k].re  *= wtilde[k].re * amp[k];
       outputData[k].im  *= wtilde[k].re * amp[k];
+      outputDataBCV[k].re *= outputDataBCV[k].re 
+	      * pow( (k/(fcSeg->data->data->length)), 2.0/3.0 );
+      outputDataBCV[k].im *= outputDataBCV[k].re
+	      * pow( (k/(fcSeg->data->data->length)), 2.0/3.0 );
     }
 
     /* set output frequency series parameters */
@@ -994,9 +1049,10 @@ LALFindChirpBCVData (
      */
 
 
+    /* Fisrt set of chisq bins */
     if ( numChisqBins )
     {
-      increment = (fcSeg->b1 + fcSeg->a2) / (REAL4) numChisqBins;
+      increment = PowerPlus / (REAL4) numChisqBins;
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;
@@ -1006,7 +1062,10 @@ LALFindChirpBCVData (
 
       for ( k = 1; k < fcSeg->data->data->length; ++k )
       {
-        partSum += ( tmpltPower1[k] + tmpltPower2[k] ); 
+        partSum += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
+                      (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] +
+                      2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
+                      pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) ); 
         if ( partSum >= nextBin )
         {
           chisqBin[chisqPt++] = k;
@@ -1017,9 +1076,32 @@ LALFindChirpBCVData (
       chisqBin[numChisqBins] = fcSeg->data->data->length;
     }
 
-    /* final values of normalization constants b1 and a2 */
-    fcSeg->b1 = 1.0 / 2.0 / sqrt( fcSeg->b1 ) ;
-    fcSeg->a2 = 1.0 / 2.0 / sqrt( fcSeg->a2 ) ;
+    /* Second set of chisq bins */
+    if ( numChisqBins )
+    {
+      increment = PowerMinus / (REAL4) numChisqBins;
+      nextBin   = increment;
+      chisqPt   = 0;
+      partSum   = 0.0;
+
+      /* calculate the frequencies of the chi-squared bin boundaries */
+      chisqBinBCV[chisqPt++] = 0;
+
+      for ( k = 1; k < fcSeg->dataBCV->data->length; ++k )
+      {
+        partSum += 4.0 * ( (fcSeg->b1)*(fcSeg->b1)*tmpltPower[k] +
+                   (fcSeg->a2)*(fcSeg->a2)*tmpltPowerBCV[k] -
+                   2.0 * (fcSeg->b1)*(fcSeg->a2)*tmpltPower[k]*
+                   pow( (k/(fcSeg->data->data->length)), 2.0/3.0 ) );
+        if ( partSum >= nextBin )
+        {
+          chisqBinBCV[chisqPt++] = k;
+          nextBin += increment;
+          if ( chisqPt == numChisqBins ) break;
+        }
+      }
+      chisqBinBCV[numChisqBins] = fcSeg->dataBCV->data->length;
+    }
 
 
   } /* end loop over data segments */

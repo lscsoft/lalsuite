@@ -116,9 +116,12 @@ tagFindChirpChisqParams
   REAL4                         bankMatch;
 #endif
   UINT4Vector                  *chisqBinVec;
+  UINT4Vector                  *chisqBinVecBCV;
   ComplexFFTPlan               *plan;
   COMPLEX8Vector               *qtildeBinVec;
+  COMPLEX8Vector               *qtildeBinVecBCV;
   COMPLEX8Vector              **qBinVecPtr;
+  COMPLEX8Vector              **qBinVecPtrBCV;
 }
 FindChirpChisqParams;
 /* </lalVerbatim> */
@@ -145,16 +148,33 @@ Equals $4 \Delta t / (N segNorm)$.
 \item[\texttt{REAL4 bankMatch}] Template bank match...
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the boundaries
-of the bins for the chi-squared veto.
+of the bins for the chi-squared veto for the stationary phase chirps, or the
+boundaries of the bins for the first sum of the chi-squared veto for the 
+BCV templates.
+
+\item[\texttt{UINT4Vector *chisqBinVecBCV}] A vector containing the boundaries
+of the bins for the second part of the chi-squared statistic, for the BCV 
+templates.
 
 \item[\texttt{ComplexFFTPlan *plan}] The FFTW plan used by the inverse DFT.
 
 \item[\texttt{COMPLEX8Vector *qtildeBinVec}] ...
 
+\item[\texttt{COMPLEX8Vector *qtildeBinVecBCV}] ...
+
 \item[\texttt{COMPLEX8Vector **qBinVecPtr}] Pointer to an array of pointers.
-Corresponds to $q_l(t_j)$, which is the contribution of the $l$-th frequency 
+Corresponds to $q^{(1)}_l(t_j)$, which is the contribution of the $l$-th 
+frequency 
 bin to the signal-to-noise ratio at the time $t_j$ (up to the appropriate
-normalization.
+normalization). It is used for both the stationary phase chirps and the
+BCV templates.
+
+\item[\texttt{COMPLEX8Vector **qBinVecPtrBCV}] Pointer to an array of pointers.
+Corresponds to $q^{(2)}_l(t_j)$, which is the contribution of the $l$-th 
+frequency 
+bin to the signal-to-noise ratio at the time $t_j$ (up to the appropriate
+normalization). It is used only for the BCV templates.
+
 \end{description}
 </lalLaTeX>
 #endif
@@ -198,8 +218,8 @@ void
 LALFindChirpBCVChisqVeto (
     LALStatus                  *status,
     REAL4Vector                *chisqVec,
-    FindChirpChisqInput        *input1,
-    FindChirpChisqInput        *input2,
+    FindChirpChisqInput        *input,
+    FindChirpChisqInput        *inputBCV,
     FindChirpChisqParams       *params
     );
 

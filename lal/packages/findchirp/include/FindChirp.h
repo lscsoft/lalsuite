@@ -111,6 +111,7 @@ D_\mathrm{eff}^2 = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
 \end{verbatim}
 
 \input{FindChirpHDoc}
+\input{FindChirpBCVHDoc}
 </lalLaTeX>
 #endif
 
@@ -274,7 +275,9 @@ typedef struct
 tagFindChirpSegment
 {
   COMPLEX8FrequencySeries      *data;
+  COMPLEX8FrequencySeries      *dataBCV;
   UINT4Vector                  *chisqBinVec;
+  UINT4Vector 		       *chisqBinVecBCV;
   REAL8                         deltaT;
   REAL4                         segNorm;
   REAL4                         b1;     
@@ -297,13 +300,24 @@ FindChirpSegment;
 parameters for the \texttt{FindChirpFilter()} function.
 
 \begin{description}
-\item[\texttt{COMPLEX8FrequencySeries *data}] The conditioned input data.
-The conditioneing performed is as described in the documentation for the
+\item[\texttt{COMPLEX8FrequencySeries *data}] The conditioned input data, 
+used for the stationary phase chirps and the BCV templates.
+The conditioning performed is as described in the documentation for the
 module \texttt{FindChirpSPData.c}
+
+\item[\texttt{COMPLEX8FrequencySeries *data1}] The conditioned input data,
+used only for the BCV templates.
+The conditioning performed is as described in the documentation for the
+module \texttt{FindChirpBCVData.c}
 
 \item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the indices of
 the boundaries of the bins of equal power for the $\chi^2$ veto created by 
-\texttt{FindChirpSPData()}
+\texttt{FindChirpSPData()} or \texttt{FindChirpBCVData()}.
+
+\item[\texttt{UINT4Vector *chisqBinVecBCV}] A vector containing the indices of
+the boundaries of the bins of equal power for the second contribution to the 
+$\chi^2$ statistic for the BCV templates, created by 
+\texttt{FindChirpBCVData()}
 
 \item[\texttt{REAL8 deltaT}] The time step $\Delta$ of the time series 
 input data.
@@ -455,12 +469,15 @@ tagFindChirpFilterParams
   UINT4                         maximiseOverChirp;
   BOOLEAN                       computeNegFreq;
   COMPLEX8Vector               *qVec;
+  COMPLEX8Vector               *qVecBCV;
   COMPLEX8Vector               *qtildeVec;
+  COMPLEX8Vector               *qtildeVecBCV;
   ComplexFFTPlan               *invPlan;
   REAL4TimeSeries              *rhosqVec;
   REAL4Vector                  *chisqVec;
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;
+  FindChirpChisqInput          *chisqInputBCV;
 }
 FindChirpFilterParams;
 /* </lalVerbatim> */
@@ -505,7 +522,17 @@ $0$ on entry.
 \texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
 value of $q_j$ on exit. Must not be NULL.
 
+\item[\texttt{COMPLEX8Vector *qVecBCV}] Pointer to the additional vector
+required for the BCV templates, allocated by
+\texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
+value of $q_j$ on exit. Must not be NULL.
+
 \item[\texttt{COMPLEX8Vector *qtildeVec}] Pointer to vector allocated by 
+\texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$. Set to the
+value of $\tilde{q}_k$ on exit. Must not be NULL
+
+\item[\texttt{COMPLEX8Vector *qtildeVecBCV}] Pointer to the additional
+vector required for the BCV templates, allocated by 
 \texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$. Set to the
 value of $\tilde{q}_k$ on exit. Must not be NULL
 
@@ -525,8 +552,14 @@ structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
 \texttt{numChisqBins} is greater than zero.
 
 \item[\texttt{FindChirpChisqInput *chisqInput}] Pointer to input data
-structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
+structure for the \texttt{FindChirpChisqVeto()} function
+and the \texttt{FindCHirpBCVChisqVeto()}. Must not be NULL if
 \texttt{numChisqBins} is greater than zero.
+
+\item[\texttt{FindChirpChisqInput *chisqInputBCV}] Pointer to input data
+structure for the \texttt{FindChirpBCVChisqVeto()} function. Must not be NULL 
+if \texttt{numChisqBins} is greater than zero.
+
 \end{description}
 </lalLaTeX>
 #endif
