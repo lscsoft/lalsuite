@@ -65,8 +65,8 @@ plane.\footnote{These form a right-handed basis, providing an answer to
 the age-old question ``What's Up?'': ``East cross North.''}  The relationship
 is
 \begin{equation}
-\hat{u} =   ( \hat{e}_{\scriptstyle{\rm E}}\cos\zeta
-                           + \hat{e}_{\scriptstyle{\rm N}}\sin\zeta )
+\hat{u} =   ( \hat{e}_{\scriptstyle{\rm E}}\sin\zeta
+                           + \hat{e}_{\scriptstyle{\rm N}}\cos\zeta )
                             \cos{\mathcal{A}}
           + \hat{e}_{\scriptstyle{\rm U}} \sin{\mathcal{A}}
 \ .
@@ -102,8 +102,8 @@ $\hat{u}\cdot\hat{e}_1$, $\hat{u}\cdot\hat{e}_2$, and
 $\hat{u}\cdot\hat{e}_3$.  We first observe that
 \begin{eqnarray}
 \label{tools:e:eE}
-\hat{u}\cdot\hat{e}_{\scriptstyle{\rm E}} &=& \cos{\mathcal{A}}\,\cos\zeta \\
-\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}} &=& \cos{\mathcal{A}}\,\sin\zeta \\
+\hat{u}\cdot\hat{e}_{\scriptstyle{\rm E}} &=& \cos{\mathcal{A}}\,\sin\zeta \\
+\hat{u}\cdot\hat{e}_{\scriptstyle{\rm N}} &=& \cos{\mathcal{A}}\,\cos\zeta \\
 \hat{u}\cdot\hat{e}_{\scriptstyle{\rm U}} &=& \sin{\mathcal{A}}
 \end{eqnarray}
 then that
@@ -303,18 +303,18 @@ NRCSID( CREATEDETECTORC, "$Id$" );
      name & LIGO Hanford Observatory & LIGO Livingston Observatory
 \\ \hline
      $(\lambda,\beta,h)$
-     & $(-119^\circ\!\!.40765714,46^\circ\!\!.4551467,
+     & $(-(119^\circ24'27''\!\!.5657),46^\circ27'18''\!\!.528,
          142.544\,\textrm{m})$
-     & $(-90^\circ\!\!.77424039,30^\circ\!\!.56289433,
+     & $(-(90^\circ46'27''\!\!.2654),30^\circ33'46\!\!.4196,
            -6.574\,\textrm{m})$
 \\ \hline
       $({\mathcal{A}}_X,\zeta_X)$
-      & $(         -6.195\times 10^{-4},      2.199104)$
-      & $(          -3.121\times 10^{-4},      3.4508039)$
+      & $(         -6.195\times 10^{-4},      324^\circ\!\!.0006)$
+      & $(          -3.121\times 10^{-4},     252^\circ\!\!.2835)$
 \\ \hline
       $({\mathcal{A}}_Y,\zeta_Y)$
-      & $(           1.25\times 10^{-5},       3.769901)$
-      & $(          -6.107\times 10^{-4},      5.021600 )$
+      & $(           1.25\times 10^{-5},      234^\circ\!\!.0006)$
+      & $(          -6.107\times 10^{-4},     162^\circ\!\!.2835)$
 \\ \hline
 \hline
       index & \texttt{LALDetectorIndexVIRGODIFF}
@@ -357,9 +357,9 @@ NRCSID( CREATEDETECTORC, "$Id$" );
       $
       \left(
         \begin{array}{ccc}
-         0.0968250 &  0.3657823 &   -0.1221373 \\
-         0.3657823 &  -0.2229681 &   -0.2497174 \\
-        -0.1221373 &  -0.2497174 &    0.1261431
+        -0.0968250 &  -0.3657823 &    0.1221373 \\
+        -0.3657823 &   0.2229681 &    0.2497174 \\
+         0.1221373 &   0.2497174 &   -0.1261431
         \end{array}
       \right)
       $
@@ -369,18 +369,18 @@ NRCSID( CREATEDETECTORC, "$Id$" );
      name & VIRGO Interferometer & GEO-600 Interferometer
 \\ \hline
      $(\lambda,\beta,h)$
-     & $(10^\circ\!\!.50449661,43^\circ\!\!.63141447,
+     & $(10^\circ30'16''\!\!.1878,43^\circ37'\!\!53''.0921,
          51.884\,\textrm{m})$
-     & $(9^\circ\!\!.80719277,52^\circ\!\!.24514666,
+     & $(9^\circ48'25''\!\!.894,52^\circ14'42''\!\!.528,
          114.425\,\textrm{m})$
 \\ \hline
       $({\mathcal{A}}_X,\zeta_X)$
-        & $( 0,           1.23163347457)$
-        & $( 0,          2.02358883997)$
+        & $( 0,          19^\circ\!\!.4326)$
+        & $( 0,          68^\circ\!\!.3883)$
 \\ \hline
       $({\mathcal{A}}_Y,\zeta_Y)$
-      & $( 0,           2.80242980137)$
-      & $(0,          0.377195321953)$
+      & $( 0,           289^\circ\!\!.4326)$
+      & $( 0,           334^\circ\!\!.0569)$
 \\ \hline
 \hline
       index & \texttt{LALDetectorIndexTAMA300DIFF}
@@ -435,18 +435,18 @@ NRCSID( CREATEDETECTORC, "$Id$" );
      name & TAMA-300 Interferometer & Caltech-40 Interferometer
 \\ \hline
      $(\lambda,\beta,h)$
-     & $(139^\circ\!\!.53605556,35^\circ\!\!.67655556,
+     & $(139^\circ32'9''\!\!.8,35^\circ40'35''\!\!.6,
          90\,\textrm{m})$
      & $(-118^\circ\!\!.13,34^\circ\!\!.17,
          0\,\textrm{m})$
 \\ \hline
       $({\mathcal{A}}_X,\zeta_X)$
-        & $( 0,          3.14159265359)$
-        & $( 0,          4.71238898038)$
+        & $( 0,          270^\circ)$
+        & $( 0,          180^\circ)$
 \\ \hline
       $({\mathcal{A}}_Y,\zeta_Y)$
-      & $( 0,         4.71238898038)$
-      & $(0,          0)$
+      & $( 0,         180^\circ)$
+      & $(0,          90^\circ)$
 \\ \hline
 
     \end{tabular}
@@ -465,7 +465,9 @@ NRCSID( CREATEDETECTORC, "$Id$" );
 ******************************************************* </lalLaTeX> */
 
 /*  { name,
-      vertexLatitiudeDegrees, vertexLongitudeDegrees, vertexElevation,
+      vertexLatitiudeRadians,
+      vertexLongitudeRadians, 
+      vertexElevation,
       xArmAltitudeRadians, xArmAzimuthRadians,
       yArmAltitudeRadians, yArmAzimuthRadians }   */
 
@@ -477,9 +479,11 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "LIGO Hanford Observatory",
-        -119.40765714L,  46.4551467L,   142.544,
-          -6.195e-4,      2.199104,
-           1.25e-5,       3.769901
+	- (119.0L + 24.0L/60.0L + 27.5657L/3600.0L ) * LAL_PI_180,
+	(46.0L + 27.0L/60.0L + 18.528L/3600.0L) * LAL_PI_180,
+	142.554,
+	-6.195e-4,     (360.0L + 90.0L - 125.9994L) * LAL_PI_180,
+	1.25e-5,       (360.0L + 90.0L - 215.9994L) * LAL_PI_180
       }
     },
     { { -74276.044L,     -5.496283721e+06L, 3.224257018e+06L },
@@ -489,9 +493,11 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "LIGO Livingston Observatory",
-         -90.77424039L,  30.56289433L,   -6.574,
-          -3.121e-4,      3.4508039,
-          -6.107e-4,      5.021600
+	- (90.0L + 46.0L/60.0L + 27.2654L/3600.0L) * LAL_PI_180,
+	(30.0L + 33.0L/60.0L + 46.4196L/3600.0L) * LAL_PI_180,
+	-6.574,
+	-3.121e-4,   (360.0L + 90.0L - 197.7165L) * LAL_PI_180, 
+	-6.107e-4,   (360.0L + 90.0L - 287.7165L) * LAL_PI_180, 
       }
     },
     { { 4.54637409863e+06L, 842989.697467L, 4.37857696275e+06L},
@@ -501,21 +507,25 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "VIRGO Interferometer",
-        10.50449661L, 43.63141447L, 51.884,
-        0.0,           1.23163347457,
-        0.0,           2.80242980137
+	(10.0L + 30.0L/60.0L + 16.1878L/3600.0L) * LAL_PI_180,
+	(43.0L + 37.0L/60.0L + 53.0921L/3600.0L) * LAL_PI_180,
+	51.884,
+        0.0,           (90.0L - 70.5674L) * LAL_PI_180,
+        0.0,           (360.0L + 90.0L - 160.5674L) * LAL_PI_180
       }
     },
     { { 3.85630994953e+06L,   666598.956352L,   5.01964141692e+06L},
-      { {  0.0968250,  0.3657823,  -0.1221373},
-        {  0.3657823, -0.222968,  -0.2497174},
-        { -0.1221373, -0.2497174,   0.1261431},
+      { { -0.0968250, -0.3657823,   0.1221373},
+        { -0.3657823,  0.222968,    0.2497174},
+        {  0.1221373,  0.2497174,  -0.1261431},
       },
       LALDETECTORTYPE_IFODIFF,
       { "GEO-600 Interferometer",
-        9.80719277L, 52.24514666L, 114.425,
-        0.0,          2.02358883997,
-        0.0,          0.377195321953
+	(9.0L + 48.0L/60.0L + 25.894L/3600.0L) * LAL_PI_180, 
+	(52.0L + 14.0L/60.0L + 42.528L/3600.0L) * LAL_PI_180,
+	114.425,
+	0.0,         (90.0L - 21.6117L) * LAL_PI_180,
+	0.0,         (360.0L + 90.0L - 115.9431L) * LAL_PI_180
       }
     },
     { { -3.94640898771e+06L,  3.36625903242e+06L, 3.69915069189e+06L},
@@ -525,9 +535,11 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "TAMA-300 Interferometer",
-        139.53605556L,  35.67655556L,    90,
-        0.0,         3.14159265359,
-        0.0,         4.71238898038
+	(139.0L + 32.0L/60.0L + 9.8L/3600.0L) * LAL_PI_180,
+	(35.0L + 40.0L/60.0L + 35.6L/3600.0L) * LAL_PI_180,
+	90,
+	0.0, (360.0L + 90.0L - 180.0L) * LAL_PI_180,
+	0.0, (360.0L + 90.0L - 270.0L) * LAL_PI_180
       }
     },
     { { -2.49064958399e+06L,  -4.65869968229e+06L,  3.56206411337e+06L},
@@ -537,9 +549,11 @@ const LALDetector lalCachedDetectors[LALNumCachedDetectors]
       },
       LALDETECTORTYPE_IFODIFF,
       { "Caltech-40 Interferometer",
-        -118.13L,  34.17L,      0,
-        0.0,            4.71238898038,
-        0.0,            0.0
+	-118.13 * LAL_PI_180,
+	34.17 * LAL_PI_180, 
+	0,  
+	0.0,            (360.0L + 90.0L - 270.0L) * LAL_PI_180,
+	0.0,            (90.0L - 0.0L) * LAL_PI_180
       }
     }
 };
@@ -552,8 +566,8 @@ void getCartesianComponents( REAL4 u[3],
                              REAL8 cosLat, REAL8 sinLat,
                              REAL8 cosLon, REAL8 sinLon )
 {
-  REAL8 uNorth = cosAlt * sinAz;
-  REAL8 uEast = cosAlt * cosAz;
+  REAL8 uNorth = cosAlt * cosAz;
+  REAL8 uEast = cosAlt * sinAz;
   /* uUp == sinAlt */
   REAL8 uRho = - sinLat * uNorth + cosLat * sinAlt;
   /* uLambda == uEast */
@@ -614,8 +628,8 @@ void LALCreateDetector( LALStatus             *status,
 
   /* If it's not, construct Cartesian position vector and response tensor */
 
-  latRad = input->vertexLatitudeDegrees * LAL_PI_180;
-  lonRad = input->vertexLongitudeDegrees * LAL_PI_180;
+  latRad = input->vertexLatitudeRadians;
+  lonRad = input->vertexLongitudeRadians;
 
 #if DETECTORSITEH_PRINTF
   printf("LAT = %g radians, LON = %g radians\n", latRad, lonRad);

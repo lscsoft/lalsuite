@@ -114,8 +114,8 @@ PrintLALDetector(LALDetector *detector)
           detector->response[2][1], detector->response[2][2]);
   printf("      { \"%s\",\n", detector->frDetector.name);
   printf("        %.15g, %.15g, %.15g,\n",
-         detector->frDetector.vertexLongitudeDegrees,
-         detector->frDetector.vertexLatitudeDegrees,
+         detector->frDetector.vertexLongitudeRadians,
+         detector->frDetector.vertexLatitudeRadians,
          detector->frDetector.vertexElevation);
   printf("        %.15e, %.15g,\n",
          detector->frDetector.xArmAltitudeRadians,
@@ -179,25 +179,25 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
   }
 
   printf("  Latitude:\n    cached: %g calc: %g diff: %g\n",
-         cachedDetector->frDetector.vertexLatitudeDegrees,
-         constructedDetector.frDetector.vertexLatitudeDegrees,
-         cachedDetector->frDetector.vertexLatitudeDegrees -
-         constructedDetector.frDetector.vertexLatitudeDegrees);
+         cachedDetector->frDetector.vertexLatitudeRadians,
+         constructedDetector.frDetector.vertexLatitudeRadians,
+         cachedDetector->frDetector.vertexLatitudeRadians -
+         constructedDetector.frDetector.vertexLatitudeRadians);
 
-  if ( cachedDetector->frDetector.vertexLatitudeDegrees !=
-         constructedDetector.frDetector.vertexLatitudeDegrees)
+  if ( cachedDetector->frDetector.vertexLatitudeRadians !=
+         constructedDetector.frDetector.vertexLatitudeRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }
 
   printf("  Longitude:\n    cached: %g calc: %g diff: %g\n",
-         cachedDetector->frDetector.vertexLongitudeDegrees,
-         constructedDetector.frDetector.vertexLongitudeDegrees,
-         cachedDetector->frDetector.vertexLongitudeDegrees -
-         constructedDetector.frDetector.vertexLongitudeDegrees);
+         cachedDetector->frDetector.vertexLongitudeRadians,
+         constructedDetector.frDetector.vertexLongitudeRadians,
+         cachedDetector->frDetector.vertexLongitudeRadians -
+         constructedDetector.frDetector.vertexLongitudeRadians);
 
-  if ( cachedDetector->frDetector.vertexLongitudeDegrees !=
-         constructedDetector.frDetector.vertexLongitudeDegrees)
+  if ( cachedDetector->frDetector.vertexLongitudeRadians !=
+         constructedDetector.frDetector.vertexLongitudeRadians)
   {
     return DETECTORSITETESTC_EFLS;
   }

@@ -52,12 +52,12 @@ longitude, latitude, and elevation.  The \textit{longitude} $\lambda$
 is the angle between the half-plane bounded by the symmetry axis of
 the reference ellipsoid containing the point in question and the
 half-plane plane containing the Prime Meridian; it is measured in
-degrees, increases to the East, and ranges from
-$-180^\circ$ to $180^\circ$.  The \textit{latitude} $\beta$ is the
+radians, increases to the East, and ranges from
+$-\pi$ to $\pi$.  The \textit{latitude} $\beta$ is the
 angle between the ray which is normal to the ellipsoid and passes
 through the point in question and the equatorial plane; it is measured
-in degrees, increases to the North, and ranges
-from $-90^\circ$ to $90^\circ$.  The \textit{elevation} $h$ is the
+in radians, increases to the North, and ranges
+from $-\pi/2$ to $\pi/2$.  The \textit{elevation} $h$ is the
 signed distance along this ray from the reference ellipsoid to the
 point in question.  This co\"{o}rdinate system is described in more
 detail in \cite{tools:Althouse:1999}.
@@ -71,8 +71,7 @@ known as the local horizontal.  The altitude ${\mathcal{A}}$ is the angle the
 direction vector makes with the horizontal, ${\mathcal{A}} > 0$ meaning above
 horizontal, ${\mathcal{A}} < 0$ below.  The azimuth angle $\zeta$ is found by
 projecting the direction onto the local horizontal plane, then
-measuring the angle counter-clockwise from East (the direction in
-which longitude increases fastest) to this projected direction.
+measuring the angle clockwise from North to this projected direction.
 
 \subsubsection*{The Cartesian Co\"{o}rdinate System}
 
@@ -81,7 +80,7 @@ The position vector and response tensor contained in the
  a simple orthonormal co\"{o}rdinate system with its origin at
 the center of the earth, an $x^1$ axis which pierces the Earth's
 surface at the intersection of the equator and the prime meridian, an
-$x^2$ axis which pierces the earth's surface at 90 degrees East
+$x^2$ axis which pierces the earth's surface at $\pi/2$ radians East
 longitude on the equator, and an $x^3$ axis which pierces the Earth's
 surface at the North Pole.  The co\"{o}rdinates $x^1$, $x^2$, $x^3$
 correspond to the Earth-fixed co\"{o}rdinates $X_E$, $Y_E$, $Z_E$
@@ -281,10 +280,10 @@ in the same format as the \texttt{FrDetector} structure defined in the
 frames spec. \cite{tools:LIGOVIRGO:2000}  The fields are:
 \begin{description}
   \item[\texttt{CHAR name[LALNameLength]}] A unique identifying string.
-  \item[\texttt{REAL8 vertexLongitudeDegrees}] The geodetic longitude 
-$\lambda$ of the vertex, in degrees.
-  \item[\texttt{REAL8 vertexLatitudeDegrees}] The geodetic latitude
-$\beta$ of the vertex, in degrees.
+  \item[\texttt{REAL8 vertexLongitudeRadians}] The geodetic longitude 
+$\lambda$ of the vertex, in radians.
+  \item[\texttt{REAL8 vertexLatitudeRadians}] The geodetic latitude
+$\beta$ of the vertex, in radians.
   \item[\texttt{REAL4 vertexElevation}] The height of the vertex above
   the reference ellipsoid, in meters.
   \item[\texttt{REAL4 xArmAltitudeRadians}]  The angle ${\mathcal{A}}_X$ up from the
@@ -305,8 +304,8 @@ $\beta$ of the vertex, in degrees.
 typedef struct tagLALFrDetector
 {
   CHAR             name[LALNameLength];
-  REAL8            vertexLongitudeDegrees;
-  REAL8            vertexLatitudeDegrees;
+  REAL8            vertexLongitudeRadians;
+  REAL8            vertexLatitudeRadians;
   REAL4            vertexElevation;
   REAL4            xArmAltitudeRadians;
   REAL4            xArmAzimuthRadians;
