@@ -72,6 +72,7 @@ static struct {
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
 	INT4 printData;
 	size_t PSDAverageLength;    /* number of samples to use for PSD    */
+	INT4 ResampleRate;          /* sample rate after resampling        */
 	INT4 seed;                  /* set non-zero to generate noise      */
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
@@ -88,7 +89,6 @@ EPSearchParams *mdcparams;          /* mdc search param                    */
 CHAR ifo[3];                        /* two character interferometer        */
 CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
-INT4 ResampleRate;                  /* sample rate after resampling        */
 
 /* data conditioning parameters */
 CHAR *injectionFile;                /* file with list of injections        */
@@ -254,9 +254,6 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	return(&(*proc_param)->next);
 }
 
-#define ADD_PROCESS_PARAM(type) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
-
 static int check_for_missing_parameters(LALStatus *stat, char *prog, struct option *long_options, EPSearchParams *params)
 {
 	int index;
@@ -325,7 +322,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'e':
-			arg_is_missing = !ResampleRate;
+			arg_is_missing = !options.ResampleRate;
 			break;
 
 			case 'f':
@@ -401,6 +398,10 @@ void parse_command_line_debug(
 	} while(c != -1);
 }
 
+
+
+#define ADD_PROCESS_PARAM(type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 void parse_command_line( 
 	int argc, 
@@ -497,6 +498,7 @@ void parse_command_line(
 	options.noiseAmpl = -1.0;	/* default */
 	options.printData = FALSE;	/* default */
 	options.PSDAverageLength = 0;	/* impossible */
+	options.ResampleRate = 0;	/* impossible */
 	options.seed = 1;	/* default */
 	options.verbose = FALSE;	/* default */
 
@@ -509,7 +511,6 @@ void parse_command_line(
 	mdcparams = NULL;	/* default */
 	printSpectrum = FALSE;	/* default */
 	resampFiltType = -1;	/* default */
-	ResampleRate = 0;	/* impossible */
 
 	/*
 	 * Parse command line.
@@ -778,9 +779,9 @@ void parse_command_line(
 		break;
 
 		case 'e':
-		ResampleRate = (INT4) atoi(optarg);
-		if(ResampleRate < 2 || ResampleRate > 16384 || !is_power_of_2(ResampleRate)) {
-			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", ResampleRate);
+		options.ResampleRate = (INT4) atoi(optarg);
+		if(options.ResampleRate < 2 || options.ResampleRate > 16384 || !is_power_of_2(options.ResampleRate)) {
+			sprintf(msg, "must be a power of 2 in the rage [2,16384] (%d specified)", options.ResampleRate);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -1425,13 +1426,13 @@ int main( int argc, char *argv[])
 	 * makes us pass a pointer... sigh), and set the outer loop's upper
 	 * bound */
 	{
-	REAL8 overlap = (REAL8) (params.windowLength - params.windowShift) / ResampleRate;
+	REAL8 overlap = (REAL8) (params.windowLength - params.windowShift) / options.ResampleRate;
 
 	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
 		fprintf(stderr, "%s: time series overlap correction is %u.%09u s\n", argv[0], overlapCorrection.seconds, overlapCorrection.nanoSeconds);
 
-	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -2.0 * options.FilterCorruption / ResampleRate - overlap), &stat);
+	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -2.0 * options.FilterCorruption / options.ResampleRate - overlap), &stat);
 	if(options.verbose)
 		fprintf(stderr, "%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
 	}
@@ -1472,10 +1473,10 @@ int main( int argc, char *argv[])
 		if(options.noiseAmpl > 0.0) {
 			if(!series) {
 				size_t i, length;
-				length = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * ResampleRate;
+				length = DeltaGPStoFloat(&stat, &options.stopEpoch, &epoch) * options.ResampleRate;
 				if(options.maxSeriesLength)
 					length = min(options.maxSeriesLength, length);
-				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / ResampleRate, lalADCCountUnit, length), &stat);
+				LAL_CALL(LALCreateREAL4TimeSeries(&stat, &series, params.channelName, epoch, 0.0, (REAL8) 1.0 / options.ResampleRate, lalADCCountUnit, length), &stat);
 				for(i = 0; i < series->data->length; i++)
 					series->data->data[i] = 1.0;
 			}
@@ -1523,7 +1524,7 @@ int main( int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
