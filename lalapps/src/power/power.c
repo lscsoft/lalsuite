@@ -774,19 +774,19 @@ void parse_command_line(
 static REAL4TimeSeries *get_geo_data(
 	LALStatus *stat,
 	FrStream *stream,
+	const char *chname,
 	LIGOTimeGPS epoch,
 	size_t length,
-	EPSearchParams *params
+	REAL4 flow
 )
 {
 	PassBandParamStruc highpassParam;
-	REAL4 fsafety = 0;
 	REAL4TimeSeries *series;
 	REAL8TimeSeries *geoSeries;
 	size_t i;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, params->channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, chname, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
 
 	/* get the data */
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
@@ -796,8 +796,7 @@ static REAL4TimeSeries *get_geo_data(
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
-	fsafety = params->tfTilingInput.flow - 10.0;
-	highpassParam.f2 = fsafety > options.fcorner ? options.fcorner : fsafety;
+	highpassParam.f2 = flow > options.fcorner ? options.fcorner : flow;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.1;
 	highpassParam.a1 = -1.0;
@@ -815,15 +814,15 @@ static REAL4TimeSeries *get_geo_data(
 static REAL4TimeSeries *get_ligo_data(
 	LALStatus *stat,
 	FrStream *stream,
+	const char *chname,
 	LIGOTimeGPS epoch,
-	size_t length,
-	EPSearchParams *params
+	size_t length
 )
 {
 	REAL4TimeSeries *series;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, params->channelName, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
 
 	/* get the data */
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
@@ -859,9 +858,9 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(geodata)
-		series = get_geo_data(stat, stream, epoch, length, params);
+		series = get_geo_data(stat, stream, params->channelName, epoch, length, params->tfTilingInput.flow - 10.0);
 	else
-		series = get_ligo_data(stat, stream, epoch, length, params);
+		series = get_ligo_data(stat, stream, params->channelName, epoch, length);
 
 	/* Clean up */
 	LAL_CALL(LALFrClose(stat, &stream), stat);
@@ -1029,6 +1028,58 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
 
 /*
  * ============================================================================
+ *                               Analysis Loop
+ * ============================================================================
+ */
+
+/*
+ * Take the time series and analyze it in intervals corresponding to the
+ * length of time for which the instrument's noise is stationary.
+ */
+
+static SnglBurstTable **analyze_series(
+	LALStatus *stat,
+	SnglBurstTable **addpoint,
+	REAL4TimeSeries *series,
+	EPSearchParams *params
+)
+{
+	REAL4TimeSeries *interval;
+	size_t start;
+
+	/* check if we have enough data */
+	if(options.PSDAverageLength > series->data->length) {
+		options.PSDAverageLength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
+		if(options.verbose)
+			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d\n", options.PSDAverageLength);
+	}
+
+	for(start = 0; start + (params->windowLength - params->windowShift) < series->data->length; start += options.PSDAverageLength - (params->windowLength - params->windowShift)) {
+		/* shift last piece backwards to align with end of time
+		 * series. */
+		if(start + options.PSDAverageLength > series->data->length)
+			start = series->data->length - options.PSDAverageLength;
+
+		/* extract the data to analyze */
+		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, options.PSDAverageLength), stat);
+
+		if(options.verbose)
+			fprintf(stderr, "Analyzing samples %i -- %i\n", start, start + interval->data->length);
+
+		/* generate a list of burst events from the time series. */
+		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
+		while(*addpoint)
+			addpoint = &(*addpoint)->next;
+
+		LAL_CALL(LALDestroyREAL4TimeSeries(stat, interval), stat);
+	}
+
+	return(addpoint);
+}
+
+
+/*
+ * ============================================================================
  *                              Event clustering
  * ============================================================================
  */
@@ -1106,7 +1157,6 @@ int main( int argc, char *argv[])
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
-	size_t                    start_sample;
 	int                       usedNumPoints;
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
@@ -1245,45 +1295,10 @@ int main( int argc, char *argv[])
 
 
 		/*
-		 * ============================================================
-		 *                 Inner Loop
-		 * ============================================================
-		 *
-		 * Take the data in this run and analyze it in intervals
-		 * corresponding to the length of time for which the
-		 * instrument's noise is stationary.
+		 * Analyze the data
 		 */
 
-		/* check if we have enough data */
-		if(options.PSDAverageLength > series->data->length) {
-			options.PSDAverageLength = window_commensurate(series->data->length, params.windowLength, params.windowShift);
-			if(options.verbose)
-				fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d\n", options.PSDAverageLength);
-		}
-
-		for(start_sample = 0; start_sample + (params.windowLength - params.windowShift) < series->data->length; start_sample += options.PSDAverageLength - (params.windowLength - params.windowShift)) {
-			REAL4TimeSeries *interval;
-
-			/* shift last piece backwards to align with end of
-			 * time series. */
-			if(start_sample + options.PSDAverageLength > series->data->length)
-				start_sample = series->data->length - options.PSDAverageLength;
-
-			/* extract the data to analyze */
-			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, series, start_sample, options.PSDAverageLength), &stat);
-
-			if(options.verbose)
-				fprintf(stderr, "Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
-
-			/* generate a list of burst events from the time
-			 * series. */
-			LAL_CALL(EPSearch(&stat, interval, &params, EventAddPoint), &stat);
-			while(*EventAddPoint)
-				EventAddPoint = &(*EventAddPoint)->next;
-
-			LAL_CALL(LALDestroyREAL4TimeSeries(&stat, interval), &stat);
-		}
-
+		EventAddPoint = analyze_series(&stat, EventAddPoint, series, &params);
 
 		/*
 		 * Reset for next run
@@ -1333,6 +1348,5 @@ int main( int argc, char *argv[])
 	LALCheckMemoryLeaks();
 	exit(0);
 }
-
 
 #endif
