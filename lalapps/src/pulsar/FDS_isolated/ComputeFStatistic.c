@@ -2848,8 +2848,8 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 #endif
 
 
-#define LD_SMALL	1.0e-9
-#define LD_LARGE        1.0e9
+#define LD_SMALL	(1.0e-9 / LAL_TWOPI)
+#define OOTWOPI		(1.0 / LAL_TWOPI)
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
@@ -2874,7 +2874,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
   INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
   INT4 *tempInt1;
-  INT4 index;
+  UINT4 index;
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
@@ -2939,23 +2939,35 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-	REAL8 tsin, tcos, tempFreq;
+	REAL8 tsin, tcos, tempFreq0, tempFreq1;
 	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
 	REAL4 a = params->amcoe->a->data[alpha];
 	REAL4 b = params->amcoe->b->data[alpha];
 	REAL8 x, rem;
 
-	xTemp=f*skyConst[tempInt1[alpha]]+xSum[alpha];
+	/* NOTE: sky-constants are always positive!!
+	 * this can be seen from there definition (-> documentation)
+	 * we will use this fact in the following! 
+	 */
+	xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];	/* >= 0 !! */
+	/* this will now be assumed positive, but we double-check this
+	 * for now to be sure: 
+	 */
+	if ( xTemp < 0 )
+	  {
+	    printf ( "RP is an idiot: the assumption xTemp >= 0 is not generally true!!\n");
+	    exit (-1);
+	  }
 
 	realXP=0.0;
 	imagXP=0.0;
 	      
 	/* find correct index into LUT -- pick closest point */
-	tempFreq=xTemp-(INT4)xTemp;
-	index=(INT4)(tempFreq*res+0.5);
-	      
+	tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
+
+	index = (UINT4)( tempFreq0 * res + 0.5 );	/* positive! */
 	{
-	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/(REAL8)res);
+	  REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)res);
 	  REAL8 d2=0.5*d*d;
 	  REAL8 ts=sinVal[index];
 	  REAL8 tc=cosVal[index];
@@ -2964,40 +2976,75 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	  tcos=tc-d*ts-d2*tc-1.0;
 	}
 		     
-	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
-	k1 = (INT4)xTemp-params->Dterms+1;
+	k1 = (UINT4)xTemp - params->Dterms + 1;
 
 	sftIndex = k1 - params->ifmin;
 
-	x = tempFreq;
+	tempFreq1 = tempFreq0 + params->Dterms - 1; 	/* positive if Dterms > 1 (trivial) */
 
-	/* Loop over terms in dirichlet Kernel */
-	for(k=0; k < klim ; k++)
+	x = LAL_TWOPI * tempFreq1;	/* positive! */
+
+	/* we branch now (instead of inside the central loop)
+	 * depending on wether x can ever become SMALL in the loop or not, 
+	 * because it requires special treatment in the Dirichlet kernel
+	 */
+	if ( tempFreq0 < LD_SMALL ) 
 	  {
-	    COMPLEX8 Xalpha_k = Xalpha[sftIndex];
-	    sftIndex ++;
-	    /* If x is small we need correct x->0 limit of Dirichlet kernel */
-	    if(fabs(x) <  LD_SMALL) 
+	    /* Loop over terms in Dirichlet Kernel */
+	    for(k=0; k < klim ; k++)
 	      {
-		realXP += Xalpha_k.re;
-		imagXP += Xalpha_k.im;
-	      }	 
-	    else
+		COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+		sftIndex ++;
+		/* If x is small we need correct x->0 limit of Dirichlet kernel */
+		if( fabs(x) <  SMALL) 
+		  {
+		    realXP += Xalpha_k.re;
+		    imagXP += Xalpha_k.im;
+		  }	 
+		else
+		  {
+		    realP = tsin / x;
+		    imagP = tcos / x;
+		    /* these four lines compute P*xtilde */
+		    realXP += Xalpha_k.re * realP;
+		    realXP -= Xalpha_k.im * imagP;
+		    imagXP += Xalpha_k.re * imagP;
+		    imagXP += Xalpha_k.im * realP;
+		  }
+		
+		tempFreq1 --;
+		x = LAL_TWOPI * tempFreq1;
+		
+	      } /* for k < klim */
+
+	  } /* if x could become close to 0 */
+	else
+	  {
+	    /* Loop over terms in dirichlet Kernel */
+	    for(k=0; k < klim ; k++)
 	      {
-		realP = tsin / x;
-		imagP = tcos / x;
+		REAL8 xinv = OOTWOPI / tempFreq1;
+		COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+		sftIndex ++;
+		tempFreq1 --;
+		
+		realP = tsin * xinv;
+		imagP = tcos * xinv;
 		/* these four lines compute P*xtilde */
 		realXP += Xalpha_k.re * realP;
 		realXP -= Xalpha_k.im * imagP;
 		imagXP += Xalpha_k.re * imagP;
 		imagXP += Xalpha_k.im * realP;
-	      }
-	    
-	    x -= LAL_TWOPI;
 
-	  } /* for k < klim */
+
+
+		
+	      } /* for k < klim */
+
+	  } /* if x cannot be close to 0 */
 	
-	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
+	
+	y = -LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
 
 	realQ = cos(y);
 	imagQ = sin(y);
