@@ -782,7 +782,13 @@ initUserVars (LALStatus *stat)
   uvar_skyRegion = NULL;
 
   uvar_ephemYear = (CHAR*)LALCalloc (1, strlen(EPHEM_YEARS)+1);
+
+
+#if USE_BOINC
+  strcpy (uvar_ephemYear, "");		  /* the default year-string under BOINC is empty! */
+#else
   strcpy (uvar_ephemYear, EPHEM_YEARS);
+#endif
 
   uvar_BaseName	= (CHAR*)LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
@@ -1662,10 +1668,21 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /*----------------------------------------------------------------------
    * set up and check ephemeris-file locations, and SFT input data
    */
-  
 #if USE_BOINC
-  strcpy(cfg->EphemEarth,"earth");
-  strcpy(cfg->EphemSun,"sun");  
+#define EPHEM_EXT ""
+#else
+#define EPHEM_EXT ".dat"
+#endif  
+  if (LALUserVarWasSet (&uvar_ephemDir) )
+    {
+      sprintf(cfg->EphemEarth, "%s/earth%s" EPHEM_EXT, uvar_ephemDir, uvar_ephemYear);
+      sprintf(cfg->EphemSun, "%s/sun%s" EPHEM_EXT, uvar_ephemDir, uvar_ephemYear);
+    }
+  else
+    {
+      sprintf(cfg->EphemEarth, "earth%s" EPHEM_EXT, uvar_ephemYear);
+      sprintf(cfg->EphemSun, "sun%s" EPHEM_EXT,  uvar_ephemYear);
+    }
   
 #if BOINC_COMPRESS
   /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
@@ -1696,24 +1713,13 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     }
   }
 #endif
-  /* resolve the name of the original unzipped file.  Does nothing if
-     files are NOT softlinks */
+
+#if USE_BOINC
+  /* resolve the name of the ephemeris-files.  Does nothing if files are NOT softlinks */
   use_boinc_filename0(cfg->EphemEarth);
   use_boinc_filename0(cfg->EphemSun);
   
-#else  /* not USE_BOINC */
-  
-  if (LALUserVarWasSet (&uvar_ephemDir) )
-    {
-      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_ephemDir, uvar_ephemYear);
-      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_ephemDir, uvar_ephemYear);
-    }
-  else
-    {
-      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_ephemYear);
-      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_ephemYear);
-    }
-#endif /* !USE_BOINC */
+#endif  /* not USE_BOINC */
   
   if (uvar_mergedSFTFile) {
     long k=0;
