@@ -6,11 +6,11 @@ libtools_la_SOURCES = \
   ResampleTimeSeries.c SnglInspiralUtils.c SnglBurstUtils.c \
 	CoincInspiralUtils.c SimInspiralUtils.c \
   ComputeCalibrationFactors.c LIGOMetadataUtils.c \
-  MakeTemplateBank.c NDTemplateBank.c ComputeStrain.c \
+  NDTemplateBank.c ComputeStrain.c \
   Sequence.c TimeSeries.c FrequencySeries.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
-EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4
+EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4 MakeTemplateBank.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
