@@ -34,8 +34,8 @@ extern int boinc_finish(int);
 extern int boinc_resolve_filename(const char*, char*, int len);
 extern int boinc_init_graphics();
 extern int boinc_finish_graphics();
-extern void use_boinc_filename1(char** orig_name);
-extern void use_boinc_filename0(char* orig_name);
+void use_boinc_filename1(char** orig_name);
+void use_boinc_filename0(char* orig_name);
 #endif /* USE_BOINC */
 
 /*
