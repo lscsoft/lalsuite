@@ -78,6 +78,12 @@ void init_image_with_file_name( char *ckpt_file_name );
 void ckpt_and_exit( void );
 #endif
 
+#define FR_CHECK_GAPS \
+    if ( frStream->state == LAL_FR_GAP ) \
+    { \
+      fprintf( stderr, "error: frame stream contains gaps\n" ); \
+      exit( 1 ); \
+    } \
 
 /*
  *
@@ -500,6 +506,9 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
         &status );
 
+    /* XXX check that there are no gaps in the data XXX */
+    FR_CHECK_GAPS
+
     /* copy the data paramaters from the GEO channel to input data channel */
     LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
     chan.epoch          = geoChan.epoch;
@@ -512,6 +521,9 @@ int main( int argc, char *argv[] )
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
+
+    /* XXX check that there are no gaps in the data XXX */
+    FR_CHECK_GAPS
   }
 
   /* store the input sample rate */
@@ -572,6 +584,9 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
         &status);
 
+    /* XXX check that there are no gaps in the data XXX */
+    FR_CHECK_GAPS
+
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
     /* high pass the GEO data using the parameters specified on the cmd line */
@@ -610,6 +625,9 @@ int main( int argc, char *argv[] )
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
+
+    /* XXX check that there are no gaps in the data XXX */
+    FR_CHECK_GAPS
   }
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
