@@ -51,6 +51,8 @@ RCSID ("$Id$");
 #define fopen boinc_fopen
 /* this global variable communicates the output filename to the calling routine in CFS */
 extern CHAR *Outputfilename;
+/* communicating the progress to the graphics thread */
+extern double *fraction_done_hook;
 #endif
 
 struct PolkaCommandLineArgsTag 
@@ -137,15 +139,15 @@ int main(int argc,char *argv[])
     {
       /* Initialise arrays of sorted candidates to use for bsearch */
       for (i=0;i<CLength1;i++)
-	{
-	  SortedC1[i].iFreq=(INT4) (SortedC1[i].f/(PolkaCommandLineArgs.Deltaf));
-	  SortedC1[i].iDelta=(INT4)(SortedC1[i].Delta/(PolkaCommandLineArgs.DeltaDelta));
+        {
+          SortedC1[i].iFreq=(INT4) (SortedC1[i].f/(PolkaCommandLineArgs.Deltaf));
+          SortedC1[i].iDelta=(INT4)(SortedC1[i].Delta/(PolkaCommandLineArgs.DeltaDelta));
          }
       for (i=0;i<CLength2;i++)
-	{
-	  SortedC2[i].iFreq=(INT4) (SortedC2[i].f/(PolkaCommandLineArgs.Deltaf));
-	  SortedC2[i].iDelta=(INT4)(SortedC2[i].Delta/(PolkaCommandLineArgs.DeltaDelta));
-	}
+        {
+          SortedC2[i].iFreq=(INT4) (SortedC2[i].f/(PolkaCommandLineArgs.Deltaf));
+          SortedC2[i].iDelta=(INT4)(SortedC2[i].Delta/(PolkaCommandLineArgs.DeltaDelta));
+        }
 
       /* sort arrays of candidates */
       qsort(SortedC1, (size_t)CLength1, sizeof(CandidateList), compareCIStructs);
@@ -169,25 +171,25 @@ int main(int argc,char *argv[])
               /* Loop to run bsearch etc. on all surrounding boxes */
               for (iFreq2=SortedC1[i].iFreq-1; iFreq2 <= SortedC1[i].iFreq+1; iFreq2++)
                 {
-		  for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
-		    {
-		      CandidateList *p, can;
-		      
-		      can.iFreq=iFreq2;
-		      can.iDelta=iDelta2;
+                  for (iDelta2=SortedC1[i].iDelta-1; iDelta2 <= SortedC1[i].iDelta+1; iDelta2++)
+                    {
+                      CandidateList *p, can;
+                      
+                      can.iFreq=iFreq2;
+                      can.iDelta=iDelta2;
                           
-		      p=bsearch(&can,SortedC2,(size_t)CLength2, sizeof(CandidateList),compareCIStructs);
-		      
-		      if (p != NULL)
-			{
-			  /* Now we've found at least one candidate */
-			  /* we need to move to the right edge (without segfaulting!) */
-			  
-			  while ( p->iCand > 0 && !compareCIStructs(p, p-1) )
-			    p--;
-			  
+                      p=bsearch(&can,SortedC2,(size_t)CLength2, sizeof(CandidateList),compareCIStructs);
+                      
+                      if (p != NULL)
+                        {
+                          /* Now we've found at least one candidate */
+                          /* we need to move to the right edge (without segfaulting!) */
+                          
+                          while ( p->iCand > 0 && !compareCIStructs(p, p-1) )
+                            p--;
+                          
                           /* Now p points to first coincident event in the second list */
-			  
+                          
                           /* Now loop over candidates found in the second list and do the fine coincidence test */
                           if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
                           while ( p->iCand <  (int)CLength2-1 &&  !compareCIStructs(p, p+1) )
@@ -196,11 +198,18 @@ int main(int argc,char *argv[])
                               if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
                             }
 
-			}/* check that besearch was non-null */
-		    } /* loop over deltas */
-		}/* loop over frequencies */    
-	    } /* check that frequency lies between two input bounds */
-	}/* loop over 1st candidate list */      
+                        }/* check that besearch was non-null */
+                    } /* loop over deltas */
+                }/* loop over frequencies */    
+            } /* check that frequency lies between two input bounds */
+#if USE_BOINC
+          /* update progress, the last % is reserved for polka */
+          boinc_fraction_done((double)CList1.length / (double)i *0.1 +0.9);
+          /* pass variable externally to graphics routines */
+          if (fraction_done_hook != NULL)
+            *fraction_done_hook=(double)CList1.length / (double)i *0.1 +0.9;
+#endif
+        }/* loop over 1st candidate list */      
     }/* check that we have candidates in both files */
   
   /* Ouput candidates */
@@ -423,7 +432,7 @@ int compareCIStructs(const void *a, const void *b)
         return 1;
   
       if (iDelta1 == iDelta2)           
-	return 0;
+        return 0;
     }
   return 1;
 }
@@ -450,30 +459,30 @@ int compareCdaf(const void *a, const void *b)
 
       Alpha1=ip->Alpha;
       Alpha2=jp->Alpha;
-	  
+          
       if (Alpha1 < Alpha2)
-	return -1;
+        return -1;
   
       if (Alpha1 > Alpha2)
-	return 1;
+        return 1;
   
       if (Alpha1 == Alpha2)
-	{
-	  REAL8 freq1,freq2;
+        {
+          REAL8 freq1,freq2;
 
-	  freq1=ip->f;
-	  freq2=jp->f;
+          freq1=ip->f;
+          freq2=jp->f;
 
-	  if (freq1 < freq2)
-	    return -1;
+          if (freq1 < freq2)
+            return -1;
 
-	  if (freq1 > freq2)
-	    return 1;
+          if (freq1 > freq2)
+            return 1;
 
-	  /* This should never ever happen */
-	  if (freq1 == freq2)
-	    return 0;
-	}
+          /* This should never ever happen */
+          if (freq1 == freq2)
+            return 0;
+        }
     }
 
   return 1;
