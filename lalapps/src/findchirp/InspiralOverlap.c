@@ -119,7 +119,6 @@ main (  int argc, char **argv )
    tmpltParam.psi0 = 224810.L;
    tmpltParam.psi3 = -867.58L;
    tmpltParam.fendBCV = 764.5L;
-
    param.alpha = tmpltParam.alpha;
    param.psi0 = tmpltParam.psi0;
    param.psi3 = tmpltParam.psi3;
@@ -134,10 +133,13 @@ main (  int argc, char **argv )
 		   param.fLower = atof(argv[++i]);
 		   tmpltParam.fLower = param.fLower;
 	   }
-	   else if (strcmp(argv[i],"-order")==0)
+	   else if (strcmp(argv[i],"-order1")==0)
 	   {
 		   param.order = atoi(argv[++i]); 
-		   tmpltParam.order = param.order;
+	   }
+	   else if (strcmp(argv[i],"-order2")==0)
+	   {	
+		   tmpltParam.order = atoi(argv[++i]);
 	   }
 	   else if (strcmp(argv[i],"-zeta2")==0)
 		   param.Zeta2 = atof(argv[++i]); 
@@ -299,7 +301,6 @@ main (  int argc, char **argv )
    overlapin.signal = signal;
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
-      
    for (i=0; (UINT4) i<correlation.length; i++) correlation.data[i] = 0.;
    LALInspiralWaveOverlap (&status,&correlation,&overlapout,&overlapin);
    if (!quietFlag) for (i=0; (UINT4) i<correlation.length; i++) printf("%e\n", correlation.data[i]);
@@ -360,31 +361,31 @@ void printf_timeseries (INT4 n, REAL4 *signal, double delta, double t0)
 void
 PrintParams(InspiralTemplate params1, InspiralTemplate param2)
 {
-  printf("\nieta     = %7.2d %7.2d\n",params1.ieta,param2.ieta);
-  printf("level      = %7.2d %7.2d\n",params1.level,param2.level);
-  printf("nStartPad  = %7.2d %7.2d\n",params1.nStartPad,param2.nStartPad);
-  printf("nEndPad    = %7.2d %7.2d\n",params1.nEndPad,param2.nEndPad);
-  printf("minMatch   = %7.2f %7.2f\n",params1.minMatch,param2.minMatch);
-  printf("mass1      = %7.2f %7.2f\n",params1.mass1,param2.mass1); 
-  printf("mass2      = %7.2f %7.2f\n",params1.mass2,param2.mass2);
-  printf("totalMass  = %7.2f %7.2f\n",params1.totalMass,param2.totalMass); 
-  printf("chirpmass  = %7.2f %7.2f\n",params1.chirpMass,param2.chirpMass); 
-  printf("psi0       = %7.2f %7.2f\n",params1.psi0,param2.psi0);
-  printf("psi3       = %7.2f %7.2f\n",params1.psi3,param2.psi3);
-  printf("fendBCV    = %7.2f %7.2f\n",params1.fendBCV,param2.fendBCV);
-  printf("alpha      = %7.2f %7.2f\n",params1.alpha,param2.alpha);
-  printf("alpha1     = %7.2f %7.2f\n",params1.alpha1,param2.alpha1);
-  printf("alpha2     = %7.2f %7.2f\n",params1.alpha2,param2.alpha1);
-  printf("beta       = %7.2f %7.2f\n",params1.beta,param2.beta);
-  printf("tc         = %7.2f %7.2f\n",params1.tC,param2.tC); 
-  printf("eta        = %7.2f %7.2f\n",params1.eta,param2.eta);
-  printf("fLower     = %7.2f %7.2f\n",params1.fLower,param2.fLower);
-  printf("fcutoff    = %7.2f %7.2f\n",params1.fCutoff,param2.fCutoff);
-  printf("tsampling  = %7.2f %7.2f\n",params1.tSampling,param2.tSampling);
-  printf("phase0     = %7.2f %7.2f\n",params1.startPhase,param2.startPhase);
-  printf("t0         = %7.2f %7.2f\n",params1.startTime,param2.startTime);
-  printf("fFinal     = %7.2f %7.2f\n",params1.fFinal,param2.fFinal);
-  printf("zeta2      = %7.2f %7.2f\n",params1.Zeta2,param2.Zeta2);
-  printf("order      = %7.2d %7.2d\n",params1.order,param2.order);
-  printf("approximant= %7.2d %7.2d\n",params1.approximant,param2.approximant);
+  printf("\n#ieta     = %7.2d %7.2d\n",params1.ieta,param2.ieta);
+  printf("#level      = %7.2d %7.2d\n",params1.level,param2.level);
+  printf("#nStartPad  = %7.2d %7.2d\n",params1.nStartPad,param2.nStartPad);
+  printf("#nEndPad    = %7.2d %7.2d\n",params1.nEndPad,param2.nEndPad);
+  printf("#minMatch   = %7.2f %7.2f\n",params1.minMatch,param2.minMatch);
+  printf("#mass1      = %7.2f %7.2f\n",params1.mass1,param2.mass1); 
+  printf("#mass2      = %7.2f %7.2f\n",params1.mass2,param2.mass2);
+  printf("#totalMass  = %7.2f %7.2f\n",params1.totalMass,param2.totalMass); 
+  printf("#chirpmass  = %7.2f %7.2f\n",params1.chirpMass,param2.chirpMass); 
+  printf("#psi0       = %7.2f %7.2f\n",params1.psi0,param2.psi0);
+  printf("#psi3       = %7.2f %7.2f\n",params1.psi3,param2.psi3);
+  printf("#fendBCV    = %7.2f %7.2f\n",params1.fendBCV,param2.fendBCV);
+  printf("#alpha      = %7.2f %7.2f\n",params1.alpha,param2.alpha);
+  printf("#alpha1     = %7.2f %7.2f\n",params1.alpha1,param2.alpha1);
+  printf("#alpha2     = %7.2f %7.2f\n",params1.alpha2,param2.alpha1);
+  printf("#beta       = %7.2f %7.2f\n",params1.beta,param2.beta);
+  printf("#tc         = %7.2f %7.2f\n",params1.tC,param2.tC); 
+  printf("#eta        = %7.2f %7.2f\n",params1.eta,param2.eta);
+  printf("#fLower     = %7.2f %7.2f\n",params1.fLower,param2.fLower);
+  printf("#fcutoff    = %7.2f %7.2f\n",params1.fCutoff,param2.fCutoff);
+  printf("#tsampling  = %7.2f %7.2f\n",params1.tSampling,param2.tSampling);
+  printf("#phase0     = %7.2f %7.2f\n",params1.startPhase,param2.startPhase);
+  printf("#t0         = %7.2f %7.2f\n",params1.startTime,param2.startTime);
+  printf("#fFinal     = %7.2f %7.2f\n",params1.fFinal,param2.fFinal);
+  printf("#zeta2      = %7.2f %7.2f\n",params1.Zeta2,param2.Zeta2);
+  printf("#order      = %7.2d %7.2d\n",params1.order,param2.order);
+  printf("#approximant= %7.2d %7.2d\n",params1.approximant,param2.approximant);
 }
