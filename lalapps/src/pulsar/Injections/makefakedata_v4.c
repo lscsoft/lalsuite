@@ -63,8 +63,7 @@ typedef struct
 } ConfigVars_t;
 
 /* Locations of the earth and sun ephemeris data */
-#define EARTHDATA "earth00-04.dat"
-#define SUNDATA "sun00-04.dat"
+#define EPHEM_YEARS  "00-04"
 #define EPHEMDIR "."
 
 /* local prototypes */
@@ -93,6 +92,7 @@ CHAR *uvar_detector;
 REAL8 uvar_startTime;
 REAL8 uvar_refTime;
 CHAR *uvar_ephemDir;
+CHAR *uvar_ephemYear;
 CHAR *uvar_noiseDir;
 BOOLEAN uvar_doWindowing;
 BOOLEAN uvar_binaryoutput;
@@ -357,10 +357,11 @@ InitMakefakedata (LALStatus *stat,
   TRY ( LALLeapSecs (stat->statusPtr, &leapSecs,  &(GV->startTime), &leapParams), stat);
 
   /* Prepare quantities for barycentering */
-  earthdata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(EARTHDATA) + 2);
-  sundata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(SUNDATA) + 2);
-  sprintf (earthdata, "%s/%s", uvar_ephemDir, EARTHDATA);
-  sprintf (sundata, "%s/%s", uvar_ephemDir, SUNDATA);
+  earthdata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(uvar_ephemYear) + 20);
+  sundata = LALCalloc(1, strlen(uvar_ephemDir) + strlen(uvar_ephemYear) + 20);
+
+  sprintf (earthdata, "%s/%s%s.dat", uvar_ephemDir, "/earth", uvar_ephemYear);
+  sprintf (sundata, "%s/%s%s.dat", uvar_ephemDir, "/sun", uvar_ephemYear);
   edat.ephiles.earthEphemeris = earthdata;
   edat.ephiles.sunEphemeris   = sundata;
   edat.leap = (INT2) leapSecs;
@@ -445,6 +446,10 @@ initUserVars (LALStatus *stat)
   /* set a few defaults first */
   uvar_ephemDir = LALCalloc (1, strlen(EPHEMDIR) + 1);
   strcpy (uvar_ephemDir, EPHEMDIR);
+
+  uvar_ephemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
+  strcpy (uvar_ephemYear, EPHEM_YEARS);
+
   uvar_doWindowing = FALSE;
   uvar_binaryoutput = FALSE;
   uvar_nomagic = FALSE;
@@ -463,6 +468,7 @@ initUserVars (LALStatus *stat)
   regREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
   regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
   regSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
+  regSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   regSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with noise-SFTs");
   regSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
   regREALUserVar(stat,   Tsft, 		 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
