@@ -45,7 +45,7 @@ typedef struct {
   INT4 SpinImax;		/**< number of spindown-bins to compute F for */
   INT4 ifmax;			/**< highest frequency-bin needed in calculation */
   INT4 ifmin;			/**< lowest frequency-bin needed */
-  REAL8 dFreq;			/**< frequency resolution */
+  REAL8 dFreq;			/**< search frequency spacing  */
   REAL8 tsft;			/**< length of an SFT in seconds */
   INT4 SFTno;			/**< number of SFTs in input */
   INT4 nsamples;		/**< number of frequency-bins in an SFT */
