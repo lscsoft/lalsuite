@@ -3,11 +3,8 @@
 Pulsar-search in the frequency domain and related codes.
 -------------------------------------------------------
 
-ComputeFStatistic: for a summary of the command-line and config-file
-		   options, use with the command-line argument
-		   "--help" or "-h", and see the file
-		   "cfs_example.cfg" for more details.  
-
+ComputeFStatistic: for a summary of the command-line and config-file options, use with the command-line
+		   argument "--help" or "-h", and see the file "cfs_example.cfg" for more details.  
 
 FILES:
 ----------
@@ -23,10 +20,10 @@ rngmed.c		: original running-median code, has moved into LAL recently and will d
 DopplerScan.h
 DopplerScan.c		: generate grid in parameter-space do stepping through it (eventually -> LAL ?)
 
-cfs_example.cfg		: config-file example for ComputeFStatistic
+cfs_example.cfg		: example config-file for ComputeFStatistic (use with './lalapps_ComputeFStatistic @cfs_example.cfg')
 
-polka.c			: code that looks for coincidences between two Fstats files 
-			  and orders coincident events in decreasing false alarm
+polka.c			: code that looks for coincidences between two Fstats files and orders coincident
+			  events in decreasing false alarm 
 
 ComputeFStatistic_v2.c	: 'placeholder' for work on major re-write of to turn ComputeFStatistic it into 
 			   a function callable from other codes (ie. in Monte-Carlo simulations, Hough-search etc)
@@ -43,5 +40,18 @@ FstatShapeTestLAL.c	:
 NearestGridPoints.c	:     
 
 FrComputeFStatistic.h
-FrComputeFStatistic.c	: frame-enabled version of ComputeFStatistic, [currently broken]
+FrComputeFStatistic.c	: frame-enabled version of ComputeFStatistic (to be subsumed into main-code?)
+
+testFStat.sh		: shell-script testing the consistency of ComputeFStatistic-results by comparing them
+			  with 'reference-results' in Fstats.ref1 - Fstats.ref3
+
+allsky_pulsar_pipe.ini	      : general config-file for python driver-scripts
+allsky_pulsar_pipe_search.py  : python script driving the main-search pipeline
+allsky_pulsar_pipe_search.sub : config-file
+
+allsky_pulsar_pipe_coincidence.py : python-script for driving coincidence analysis using polka
+allsky_pulsar_pipe_coincidence.sub:
+
+allsky_pulsar_pipe_upper_limit.py  : driver for upper-limit MC analysis
+allsky_pulsar_pipe_upper_limit.sub : 
 
