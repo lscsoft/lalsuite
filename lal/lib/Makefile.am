@@ -40,6 +40,7 @@ liblal_la_LIBADD = \
            $(top_builddir)/packages/inspiral/src/libinspiral.la         \
            $(top_builddir)/packages/bank/src/libbank.la                 \
            $(top_builddir)/packages/pulsar/src/libpulsar.la             \
+           $(top_builddir)/packages/fct/src/libfct.la                   \
            $(top_builddir)/packages/burstsearch/src/libburstsearch.la   \
            $(top_builddir)/packages/tracksearch/src/libtracksearch.la   \
            $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)

@@ -2,7 +2,7 @@
 
 SUBDIRS = std support tools sample hello factories vectorops utilities date \
           tdfilter window fft timefreq clremoval stochastic inspiral bank   \
-          pulsar framedata comm findchirp burstsearch tracksearch
+          pulsar fct framedata comm findchirp burstsearch tracksearch
 
 EXTRA_DIST = \
         $(srcdir)/templates/Makefile.am.example \

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(include/config.h.in)
-AM_INIT_AUTOMAKE(lal, 0.6)
+AM_INIT_AUTOMAKE(lal, 0.7)
 AM_CONFIG_HEADER(include/config.h include/lal/LALConfig.h)
 
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -192,6 +192,11 @@ AC_OUTPUT( Makefile                               \
            packages/pulsar/include/Makefile       \
            packages/pulsar/src/Makefile           \
            packages/pulsar/test/Makefile          \
+           packages/fct/Makefile                  \
+           packages/fct/doc/Makefile              \
+           packages/fct/include/Makefile          \
+           packages/fct/src/Makefile              \
+           packages/fct/test/Makefile             \
            packages/framedata/Makefile            \
            packages/framedata/doc/Makefile        \
            packages/framedata/include/Makefile    \
