@@ -285,7 +285,7 @@ extern "C" {
 "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define MULTI_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e"
 
 #define LIGOLW_XML_SIM_INSPIRAL \
 "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" \
