@@ -141,6 +141,7 @@ int main( int argc, char *argv[] )
 
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
+  setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -737,7 +738,6 @@ cleanexit:
 
 
   if ( verbose ) fprintf( stdout, "freeing memory... " );
-  fflush( stdout );
 
   while( processParamsTable.processParamsTable )
   {
