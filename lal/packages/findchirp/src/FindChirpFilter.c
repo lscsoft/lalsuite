@@ -1514,24 +1514,22 @@ LALFindChirpBCVFilterSegment (
 
     /* REAL4 eta = input->tmplt->eta; */
 
+    /* m1 and m2 are currently equal to 0 in the BCV template bank */
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
-
     REAL4 fmin = input->segment->fLow;
-    /* total mass, in seconds */
-    REAL4 m =  fabs(psi3) / (16.0 * LAL_PI * LAL_PI * psi0) ;
-    REAL4 eta = 3.0 / (128.0 * psi0 * pow( (m*LAL_PI), (5.0/3.0)) );
-    /*REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);*/
-    REAL4 c0 = 5*m/(256*eta);
+    /* total mass and eta, for use in chirpTime calculation */
+    REAL4 m =  fabs(psi3) / (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * psi0) ;
+    REAL4 eta = 3.0 / (128.0*psi0 * pow( (m*LAL_MTSUN_SI*LAL_PI), (5.0/3.0)) );
+    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
     REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-    REAL4 x  = pow(LAL_PI*m*fmin, 1.0/3.0);
+    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
     REAL4 x2 = x*x;
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL4 chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
 
     /* k that corresponds to fFinal, currently not used      */
     /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
@@ -1540,6 +1538,7 @@ LALFindChirpBCVFilterSegment (
     REAL4 b1 = input->segment->b1;  
     REAL4 b2 = input->segment->b2; 
 
+    chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
     /* ignore corrupted data at start and end */
@@ -1550,9 +1549,9 @@ LALFindChirpBCVFilterSegment (
       CHAR infomsg[256];
 
       LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
-          "m1 = %e m2 = %e => %e seconds => %d points\n"
+          "m = %e eta = %e => %e seconds => %d points\n"
           "invSpecTrunc = %d => ignoreIndex = %d\n",
-          m1, m2, chirpTime, deltaEventIndex,
+          m, eta, chirpTime, deltaEventIndex,
           input->segment->invSpecTrunc, ignoreIndex );
       LALInfo( status, infomsg );
     }
