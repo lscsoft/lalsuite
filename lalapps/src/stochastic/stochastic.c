@@ -1774,7 +1774,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* error handler */
   status.statusPtr = NULL;
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level(LALMSGLVL2);
+  set_debug_level("3");
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
