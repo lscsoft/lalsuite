@@ -147,7 +147,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* if the named file does not exist, exit with an error */
       if (stat(argv[i], &infileStatus) == -1)
       {
-        fprintf(stderr, "Error opening input file %s\n", argv[i]);
+        fprintf(stderr, "Error opening input file \"%s\"\n", argv[i]);
         exit(1);
       }
 
@@ -171,7 +171,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       else if (numSegments > 0)
       {
-        fprintf(stdout, "Read in %d segments from file %s\n", numSegments, \
+        fprintf(stdout, "Read in %d segments from file \"%s\"\n", numSegments, \
             argv[i]);
 
         /* scroll to end of list */
