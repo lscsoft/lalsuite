@@ -23,27 +23,10 @@ NRCSID( GENERATEINSPIRALC, "$Id$" );
 #define GENERATEINSPIRALC_MSGEFILE "Could not open file"
 #define GENERATEINSPIRALC_MSGEMEM  "Out of memory"
 
+static void
+ClearStatus (LALStatus *status);
 
-#define SUB( func, statusptr )                                       \
-do                                                                   \
-if ( (func), (statusptr)->statusCode )                               \
-{                                                                    \
-  ERROR( GENERATEINSPIRALC_ESUB, GENERATEINSPIRALC_MSGESUB,                      \
-         "Function call \"" #func "\" failed:" );                    \
-  exit( GENERATEINSPIRALC_ESUB );                                          \
-}                                                                    \
-while (0)
-#define ERROR( code, msg, statement )                                \
-do                                                                   \
-if ( lalDebugLevel & LALERROR )                                      \
-{                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, GENERATEINSPIRALC, statement ? statement :      \
-                 "", (msg) );                                        \
-}                                                                    \
-while (0)
-char *program;
+
 
 void
 LALGenerateInspiral(
@@ -64,7 +47,7 @@ LALGenerateInspiral(
 
   /* Integration parameters. */
 
-  UINT4  nMax;   /* index over timesteps, and its maximum + 1 */
+  INT4  nMax;   /* index over timesteps, and its maximum + 1 */
   CreateVectorSequenceIn in;
 
 
@@ -92,20 +75,24 @@ LALGenerateInspiral(
     
   if (params->method == 0){
     LALInspiralWaveLength(status->statusPtr, &n, params->inspiral);
-    CHECKSTATUSPTR(status);      
+    ClearStatus(status);      
     printf(" #     here length = %d et approx=%d\n", n, params->inspiral.approximant);
     
     
     LALInspiralParameterCalc(status->statusPtr, &params->inspiral);
-    CHECKSTATUSPTR(status);      
+    ClearStatus(status);      
 
     
     
     LALCreateVector(status->statusPtr, &inject_hp, n);
+    ClearStatus(status);      
     LALCreateVector(status->statusPtr, &inject_hc, n);
+    ClearStatus(status);      
     LALCreateVector(status->statusPtr, &inject_freq, n);
+    ClearStatus(status);      
     LALCreateVector(status->statusPtr, &inject_phase, n);
-    CHECKSTATUSPTR(status);      
+    ClearStatus(status);      
+
 
   
 
@@ -119,6 +106,7 @@ LALGenerateInspiral(
 				     inject_phase, 
 				     inject_freq,
 				     &params->inspiral);
+	ClearStatus(status);      
 	break;
       case TaylorT2: 
 	LALInspiralWave2ForInjection(status->statusPtr, 
@@ -127,6 +115,7 @@ LALGenerateInspiral(
 				     inject_phase, 
 				     inject_freq,
 				     &params->inspiral);
+	ClearStatus(status);      
 	break;
       case TaylorT3: 
 	LALInspiralWave3ForInjection(status->statusPtr, 
@@ -135,6 +124,7 @@ LALGenerateInspiral(
 				     inject_phase, 
 				     inject_freq,
 				     &params->inspiral);
+	ClearStatus(status);      
 	break;
       case TaylorF1:
       case TaylorF2:      
@@ -150,20 +140,21 @@ LALGenerateInspiral(
 				   inject_phase, 
 				   inject_freq,
 				   &params->inspiral);
+	ClearStatus(status);      
 	break;
       default: 
 	fprintf(stderr,"nothing to do (bad approximant?)");
 	break;
       }
-
-
-
+    
+    
+    
    nMax = 0;
-   UINT4 padding=0;    
-   // on avance pour eviter le padding avant le signal
+   INT4 padding=0;    
+   /* on avance pour eviter le padding avant le signal*/
    while (inject_freq->data[padding]==0) 
      padding++;
-   //recherche dichotomique du max peut etre
+   /*recherche dichotomique du max peut etre*/
    while (inject_freq->data[padding + nMax]!=0  &&  (padding+nMax) < inject_freq->length)
      {
        nMax++;
@@ -182,7 +173,7 @@ LALGenerateInspiral(
    eta/=mTot;
 
    mu = eta * mTot;
-   cosI = cos( params->inspiral.inclination );//
+   cosI = cos( params->inspiral.inclination );
       
    /* Compute frequency, phase, and amplitude factors. */
    fFac = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
@@ -198,39 +189,41 @@ LALGenerateInspiral(
    * GENERATE WAVEFORM                                               *
    *******************************************************************/
 
-  if ( ( waveform->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
-    ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
-	   GENERATEPPNINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( waveform->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+   if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	  LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+     ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
+	    GENERATEPPNINSPIRALH_MSGEMEM );
+   }
+   memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
+   if ( ( waveform->f = (REAL4TimeSeries *)
+	  LALCalloc(1, sizeof(REAL4TimeSeries) ) ) == NULL ) {
 
-    LALFree( waveform->a ); waveform->a = NULL;
-    ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
-	   GENERATEPPNINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( waveform->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( waveform->a ); waveform->a = NULL;
-    LALFree( waveform->f ); waveform->f = NULL;
-    ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
-	   GENERATEPPNINSPIRALH_MSGEMEM );
-  }
-  CHECKSTATUSPTR(status);
-  memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-  CHECKSTATUSPTR(status);
-
-
+     LALFree( waveform->a ); waveform->a = NULL;
+     ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
+	    GENERATEPPNINSPIRALH_MSGEMEM );
+   }
+   memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
+   if ( ( waveform->phi = (REAL8TimeSeries *)
+	  LALCalloc(1, sizeof(REAL8TimeSeries) ) ) == NULL ) {
+     LALFree( waveform->a ); waveform->a = NULL;
+     LALFree( waveform->f ); waveform->f = NULL;
+     ABORT( status->statusPtr, GENERATEPPNINSPIRALH_EMEM,
+	    GENERATEPPNINSPIRALH_MSGEMEM );
+   }
+   ClearStatus(status);      
+   memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
+   
+   
+   
   in.length = nMax;
   in.vectorLength = 2;
   LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
+  ClearStatus(status);      
   LALSCreateVector( status->statusPtr, &( waveform->f->data ), nMax );
+  ClearStatus(status);      
   LALDCreateVector( status->statusPtr, &( waveform->phi->data ), nMax );
+  ClearStatus(status);        
   
-
 
   n = 0;
   phiC = inject_phase->data[nMax+ padding -1];
@@ -261,23 +254,23 @@ LALGenerateInspiral(
   waveform->phi->sampleUnits = lalDimensionlessUnit;
 
 
-  //  params->ppn->dfdt = dyMax*fFac*params->deltaT;
+  /*  params->ppn->dfdt = dyMax*fFac*params->deltaT;*/
    params->ppn.dfdt = 1.*fFac*params->ppn.deltaT;
   params->ppn.fStop = yOld*fFac;
   params->ppn.length = n;
 
 
-  SUB( LALDestroyVector(status->statusPtr, &inject_hp),status->statusPtr);
-
+  LALDestroyVector(status->statusPtr, &inject_hp);
+  ClearStatus(status);      
   LALDestroyVector(status->statusPtr, &inject_hc);
-
+  ClearStatus(status);      
   LALDestroyVector(status->statusPtr, &inject_freq);
-
+  ClearStatus(status);      
   LALDestroyVector(status->statusPtr, &inject_phase);  
-
-
-  CHECKSTATUSPTR(status);
-
+  ClearStatus(status);      
+  
+  
+  
 
 
   }
@@ -287,22 +280,20 @@ LALGenerateInspiral(
 	{
 	case PPN:
 	  printf("# here ppn\n");
-	  SUB(
-	      LALGeneratePPNInspiral(status->statusPtr, waveform, &params->ppn),
-	      status->statusPtr);
+	  LALGeneratePPNInspiral(status->statusPtr, waveform, &params->ppn);	    
+	  ClearStatus(status);      
 	  printf("# here ppn gfin \n");
 
 	  break;
 	case SpinOrbitCW:
 
-	  SUB(
-	      LALGenerateSpinOrbitCW(status->statusPtr, waveform, &params->socw),
-	      status->statusPtr);
+	  
+	  LALGenerateSpinOrbitCW(status->statusPtr, waveform, &params->socw);
+	  ClearStatus(status);      
 	  break;
 	case TaylorCW:
-	  SUB(
-	      LALGenerateTaylorCW(status->statusPtr, waveform, &params->taylorcw),
-	      status->statusPtr);
+	  LALGenerateTaylorCW(status->statusPtr, waveform, &params->taylorcw);
+	  ClearStatus(status);      
 	  break;
 	}
     }
@@ -311,13 +302,23 @@ LALGenerateInspiral(
   /*if from inspiral pacakge additional computation are needed*/
   
   
-  
-  
-  
-  
-  
-
-
-  DETATCHSTATUSPTR( status );
+  /*  DETATCHSTATUSPTR( status );*/
+  RETURN(status);
 }
 
+
+
+
+
+
+void
+ClearStatus (
+    LALStatus   *status
+            )
+{
+  if (status->statusPtr)
+  {
+    ClearStatus      (status->statusPtr);
+    DETATCHSTATUSPTR (status);
+  }
+}

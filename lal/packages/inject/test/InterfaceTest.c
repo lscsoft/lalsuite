@@ -37,6 +37,9 @@ InterfaceTest [-p parameterfile]
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
+
+
+
 #define INTERFACETESTC_ENORM  0
 #define INTERFACETESTC_ESUB   1
 #define INTERFACETESTC_EARG   2
@@ -92,7 +95,7 @@ NRCSID( INTERFACETESTC, "$Id$" );
 #define INTERFACETEST_APPROXIMANT      PPN
 #define INTERFACETEST_M1          1.4
 #define INTERFACETEST_M2         1.4
-#define INTERFACETEST_DISTANCE   10  //mpc
+#define INTERFACETEST_DISTANCE   10  /*mpc*/
 #define INTERFACETEST_TC          0.
 #define INTERFACETEST_ORDER       4
 #define INTERFACETEST_INCLINATION 0.
@@ -116,10 +119,10 @@ NRCSID( INTERFACETESTC, "$Id$" );
 #define INTERFACETEST_ARG         0
 #define INTERFACETEST_UDOT        0.5
 #define INTERFACETEST_RP          0.5
-#define INTERFACETEST_E           0.   //circle
+#define INTERFACETEST_E           0.   
 #define INTERFACETEST_ALPHA       0.
 #define INTERFACETEST_FBCV        INTERFACETEST_FUPPER
-#define INTERFACETEST_DELTAT      0  //default use deltaT = 1/sampling
+#define INTERFACETEST_DELTAT      0  /*default use deltaT = 1/sampling*/
 #define INTERFACETEST_LENGTH   1024  
 #define INTERFACETEST_LENGTHIN  1e9
 
@@ -133,60 +136,16 @@ NRCSID( INTERFACETESTC, "$Id$" );
 /* Usage format string. */
 #define USAGE "Usage: %s [-p paramfile] \n"
 
-/* Macros for printing errors and testing subroutines. */
-#define ERROR( code, msg, statement )                                \
-do                                                                   \
-if ( lalDebugLevel & LALERROR )                                      \
-{                                                                    \
-  LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, INTERFACETESTC, statement ? statement :      \
-                 "", (msg) );                                        \
-}                                                                    \
-while (0)
 
-#define WARNING( statement )                                         \
-do                                                                   \
-if ( lalDebugLevel & LALWARNING )                                    \
-{                                                                    \
-  LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
-		 "        %s\n", program, __FILE__, __LINE__,        \
-		 INTERFACETESTC, (statement) );                         \
-}                                                                    \
-while (0)
-
-#define INFO( statement )                                            \
-do                                                                   \
-if ( lalDebugLevel & LALINFO )                                       \
-{                                                                    \
-  LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
-		 "        %s\n", program, __FILE__, __LINE__,        \
-		 INTERFACETESTC, (statement) );                         \
-}                                                                    \
-while (0)
-
-
-#define SUB( func, statusptr )                                       \
-do                                                                   \
-if ( (func), (statusptr)->statusCode )                               \
-{                                                                    \
-  ERROR( INTERFACETESTC_ESUB, INTERFACETESTC_MSGESUB,                      \
-         "Function call \"" #func "\" failed:" );                    \
-  exit( INTERFACETESTC_ESUB );                                          \
-}                                                                    \
-while (0)
-
-char *program;
-
-
-
-
-
-
-
-
-void ReadLine(FILE *fp, int *argc,     GeneralInspiralStruc *);
-int  ParametersParse(LALStatus *, int , char **, GeneralInspiralStruc *);
+static void ClearStatus (LALStatus *status);
+void ReadLine(LALStatus *status, 
+	      FILE *fp,
+	      int *argc,
+	      GeneralInspiralStruc *);
+int  ParametersParse(LALStatus *, 
+		     int , 
+		     char **, 
+		     GeneralInspiralStruc *);
 void Help();
 
 INT4 lalDebugLevel=1;
@@ -205,13 +164,12 @@ int main(int argc, char **argv)
   INT4 lineargc=0  ;
   
   FILE *fp =NULL;;
-  program = *argv;
+ 
   
+
   
   if (argc!=3)
     {
-      ERROR( INTERFACETESTC_EARG, INTERFACETESTC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
       return INTERFACETESTC_EARG;
     }
   else
@@ -222,13 +180,12 @@ int main(int argc, char **argv)
 	    paramfile = argv[++i];
 	  i++;
 	}
-
+      
     }
   
   
   if (paramfile){ 
-    if ( ( fp = fopen( paramfile, "r" ) ) == NULL ) {
-      ERROR( INTERFACETESTC_EFILE, "- " INTERFACETESTC_MSGEFILE, paramfile );
+    if ( ( fp = fopen( paramfile, "r" ) ) == NULL ) {   
       return INTERFACETESTC_EFILE;
     }
   }
@@ -240,14 +197,15 @@ int main(int argc, char **argv)
   while( !feof(fp) ) 
     {        
       memset(&params,0,sizeof(GeneralInspiralStruc));
-      ReadLine(fp, &lineargc, &params); 
+      ReadLine(&status, fp, &lineargc, &params); 
+      ClearStatus(&status);
       printf("#number of parameters %d\n", lineargc);      
 
        if (lineargc >0) 
  	{	 
 	  memset(&waveform,0,sizeof(CoherentGW));
-	  SUB(LALGenerateInspiral(&status, &waveform, &params), &status);   
-
+	  LALGenerateInspiral(&status, &waveform, &params);   
+	  ClearStatus(&status);
 	  /*print */
 	  for (i=0; i<waveform.f->data->length; i++) 
 	  printf("%e\n",waveform.f->data->data[i]); 
@@ -257,12 +215,12 @@ int main(int argc, char **argv)
 	  /*free memory*/
 	  if (params.inspiral.approximant !=TaylorT2 || params.inspiral.approximant!=TaylorT3)
 	    {
-	      SUB( LALSDestroyVectorSequence( &status, &(waveform.a->data) ),
-		   &status );    
-	      SUB( LALSDestroyVector( &status, &(waveform.f->data) ),
-		   &status );
-	      SUB( LALDDestroyVector( &status, &(waveform.phi->data) ),
-		   &status );	  	  
+	      LALSDestroyVectorSequence( &status, &(waveform.a->data)); 
+	      ClearStatus(&status);
+	      LALSDestroyVector( &status, &(waveform.f->data) );
+	      ClearStatus(&status);
+	      LALDDestroyVector( &status, &(waveform.phi->data)); 
+	      ClearStatus(&status);
 	      
 	      LALFree( waveform.a );
 	      LALFree( waveform.f );
@@ -270,19 +228,25 @@ int main(int argc, char **argv)
 	    }
 	  
 	  if (params.inspiral.approximant==SpinOrbitCW)
-	    SUB( LALDDestroyVector( &status, &(params.socw.f) ), &status );
+	  {
+	    LALDDestroyVector( &status, &(params.socw.f));
+	    ClearStatus(&status);
+	  }
 	  if (params.inspiral.approximant==TaylorCW)
-	    SUB( LALDDestroyVector( &status, &(params.taylorcw.f)), &status );
-
-
-	 
+	    {
+	      LALDDestroyVector( &status, &(params.taylorcw.f));
+	      ClearStatus(&status);
+	    }
+	  
+	  
+	  
 	}
        lineargc = 0;              
-     } 
+    } 
 
-
-
-
+  
+  
+  
   /*todo check leak memory and co*/
   
   
@@ -295,14 +259,20 @@ int main(int argc, char **argv)
 
 
 
-void ReadLine(FILE *fp, int *argc, GeneralInspiralStruc *params)
+void ReadLine(
+	      LALStatus *status,
+	      FILE *fp, 
+	      int *argc,
+	      GeneralInspiralStruc *params)
 {
-  static LALStatus stat; 
+
   CHARVector *line = NULL ;
   TokenList *tokens = NULL; /* input line parsed into tokens */
 
 
-  SUB(  LALCHARReadVector( &stat, &line, fp ), &stat);
+  LALCHARReadVector( status, &line, fp );
+  ClearStatus (status);
+
     long i;
   for ( i = 0; i < line->length; i++ )
     if ( line->data[i] == '%' || line->data[i] == '#' ) {
@@ -310,20 +280,23 @@ void ReadLine(FILE *fp, int *argc, GeneralInspiralStruc *params)
       i = line->length;
     }
   
-  SUB( LALCreateTokenList( &stat, &tokens, line->data, WHITESPACE), &stat);
-  SUB( LALCHARDestroyVector( &stat, &line), &stat);
+  LALCreateTokenList( status, &tokens, line->data, WHITESPACE);
+  ClearStatus (status);
+  LALCHARDestroyVector( status, &line);
+  ClearStatus (status);
   
-
+  
   *argc = tokens->nTokens;
   if (tokens->nTokens >0)
     {      
-      ParametersParse(&stat,
+      ParametersParse(status,
 		      tokens->nTokens,
 		      tokens->tokens,
 		      params);
     }
-
-   SUB( LALDestroyTokenList(&stat, &tokens), &stat);
+  
+  LALDestroyTokenList(status, &tokens);
+  ClearStatus (status);
    
   
 }
@@ -545,7 +518,7 @@ int  ParametersParse(LALStatus *status,
 	params->ppn.deltaT = 1./ sampling;
       params->ppn.fStartIn = fi ;
       params->ppn.fStopIn = ff;;
-      params->ppn.lengthIn = INTERFACETEST_LENGTHIN;  //taille maximale du signal en points
+      params->ppn.lengthIn = INTERFACETEST_LENGTHIN;  /* taille maximale du signal en points*/
       params->ppn.ppn = NULL;
       break;
     case SpinOrbitCW: 
@@ -566,20 +539,21 @@ int  ParametersParse(LALStatus *status,
       params->socw.phi0=phi0 * LAL_PI/180.0;
       params->socw.f0=f0 ;
       params->socw.omega = arg * LAL_PI/180.0;
-      params->socw.rPeriNorm = rp;   // if =0 -> equivaut a Taylor
+      params->socw.rPeriNorm = rp;   /* if =0 -> equivaut a Taylor*/
       params->socw.oneMinusEcc = 1 - e;
-      params->socw.angularSpeed = udot ;  //
+      params->socw.angularSpeed = udot ;  
       params->socw.f = NULL;
       
       if ( nspin ) {
-	SUB( LALDCreateVector( status, &(params->socw.f), nspin ), status );
+	LALDCreateVector( status, &(params->socw.f), nspin );
+	ClearStatus(status);
       }
       for (i=0; i<nspin; i++)	
 	params->socw.f->data[i] = fdata[i];	  
 	
       
-      // vp = rp * udot entre ]0, 1[
-      //argument  = omega
+      /* vp = rp * udot entre ]0, 1[
+	 argument  = omega*/
       
       break;
     case TaylorCW:
@@ -597,11 +571,12 @@ int  ParametersParse(LALStatus *status,
       params->taylorcw.aPlus=a1;
       params->taylorcw.aCross=a2;
       params->taylorcw.phi0=phi0 * LAL_PI/180.0;
-      params->taylorcw.f0=f0 ;   // ?? pouirquoi ce terme pi 
+      params->taylorcw.f0=f0 ;   /* ?? pouirquoi ce terme pi */
           
       params->taylorcw.f = NULL;
       if ( nspin  ) {
-	SUB( LALDCreateVector( status,&(params->taylorcw.f), nspin ), status );
+	LALDCreateVector( status,&(params->taylorcw.f), nspin );
+	ClearStatus(status);
       }
       for (i=0; i<params->taylorcw.f->length; i++)
 	params->taylorcw.f->data[i] = fdata[i];	  
@@ -695,3 +670,13 @@ int  ParametersParse(LALStatus *status,
 
 
 
+void
+ClearStatus (
+	     LALStatus   *status )
+{
+  if (status->statusPtr)
+  {
+    ClearStatus      (status->statusPtr);
+    ClearStatus (status);
+  }
+}
