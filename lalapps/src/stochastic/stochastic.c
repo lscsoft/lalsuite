@@ -724,6 +724,32 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   return(psd);
 }
 
+/* function to return a unity response function, for use with GEO data */
+static COMPLEX8FrequencySeries *unity_response(LALStatus *status,
+    LIGOTimeGPS epoch,
+    REAL8 f0,
+    REAL8 deltaF,
+    LALUnit units,
+    UINT4 length)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *response;
+  int i;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(status, &response, "response", \
+        epoch, f0, deltaF, units, length), status);
+
+  /* get unity response function */
+  for (i = 0; i < length; i++)
+  {
+    response->data->data[i].re = 1;
+    response->data->data[i].im = 0;
+  }
+
+  return(response);
+}
+
 /* display usage information */
 static void display_usage()
 {
