@@ -1,3 +1,9 @@
+September 14, 2004
+------------------
+After discussions with the pulsar search group, updated spec to require that
+all SFT blocks share some common header info.
+
+
 September 9, 2004
 -----------------
 Release 2.3 of reference library.  Spec updated as per comments
@@ -68,6 +74,15 @@ ______________________________________
 
 4 bytes  INT4   comment_length;
 ______________________________________
+
+
+The SFT blocks in a given SFT file are required to have:
+(1) identical version numbers
+(2) monotonically increasing GPS times
+(3) identical values of tbase
+(4) identical values of first_frequency_index
+(5) identical values of nsamples
+(6) come from the same instrument and instrument channel
 
 
 Note that this HEADER corresponds to the C structure below
@@ -290,3 +305,5 @@ giving
 and 	data_0 = data_1 =0+0i
  	data_2= 0.5+0i
  	data_3 = ...= data_4=0+0i
+
+
