@@ -1,6 +1,6 @@
-\section{Program \texttt{lalapps\_inca}}
-\label{program:lalapps-inca}
-\idx[Program]{lalapps\_inca}
+\section{Program \texttt{lalapps\_thinca}}
+\label{program:lalapps-thinca}
+\idx[Program]{lalapps\_thinca}
 
 \begin{entry}
 \item[Name]
@@ -191,7 +191,7 @@ level to \textsc{level}. If not specified the default is 1.
 \item[\texttt{[LIGO Lightweight XML files]}] The arguments to the program
 should be a list of LIGO Lightweight XML files containing the triggers from
 the two interferometers. The input files can be in any order and do not need
-to be time ordered as \texttt{inca} will sort all the triggers once they are
+to be time ordered as \texttt{thinca} will sort all the triggers once they are
 read in. If the program encounters a LIGO Lightweight XML containing triggers
 from an unknown interferometer (i.e. not IFO A or IFO B) it will exit with an
 error.
@@ -199,7 +199,7 @@ error.
 
 \item[Example]
 \begin{verbatim}
-lalapps_inca \
+lalapps_thinca \
 --playground-only  --dm 0.03 --kappa 1000.0 --ifo-b H1 --ifo-a L1 \
 --user-tag SNR6_INJ --debug-level 33 --gps-start-time 734323079
 --gps-end-time 734324999 --epsilon 2.0 --dt 11.0 \
