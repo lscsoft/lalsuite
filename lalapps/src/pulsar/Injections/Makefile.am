@@ -4,11 +4,13 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata
+bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs
 
 lalapps_Makefakedata_SOURCES = makefakedata_v4.c	
 
 makefakedata_v2_SOURCES =  makefakedata_v2.c
+
+compareSFTs_SOURCES = compareSFTs.c
 
 
 
