@@ -569,8 +569,7 @@ int main( int argc, char *argv[] )
     /* which already has the correct amount of memory allocated */
     if ( vrbflg ) fprintf( stdout, "reading GEO data from frames... " );
 
-
-
+    LAL_CALL(LALFrGetREAL8TimeSeries(&status, &geoChan, &frChan, frStream), &status);
 
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
@@ -584,14 +583,15 @@ int main( int argc, char *argv[] )
         "%3.2f of signal passes at %4.2f Hz\n", 
         geoHighpassParam.nMax, geoHighpassParam.a2, geoHighpassParam.f2 );
 
-
-
+    LAL_CALL( LALButterworthREAL8TimeSeries(&status, &geoChan, &geoHighpassParam), &status);
+        
 
     /* cast the GEO data to REAL4 in the chan time series       */
     /* which already has the correct amount of memory allocated */
 
-
-
+    for(i=0;i<numInputPoints;i++){
+            chan.data->data[i] = (REAL4) geoChan.data->data[i];
+    }
 
     /* re-copy the data paramaters from the GEO channel to input data channel */
     LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
@@ -740,11 +740,24 @@ int main( int argc, char *argv[] )
   durationNS = gpsEndTimeNS - gpsStartTimeNS;
   LAL_CALL( LALINT8toGPS( &status, &duration, 
 	&durationNS ), &status );
-  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
-	&duration ), &status );
 
-  if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-      outFrame, &resp, "strain/ct", "RESPONSE" );
+
+  if(geoData){
+      for(i=0; i<resp.data->length; ++i){
+          resp.data->data[i].re = 1.0;
+	  resp.data->data[i].im = 0.0;
+      }
+      if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+        outFrame, &resp, "strain/ct", "RESPONSE_GEO" );
+
+
+  }else{
+      LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
+        	&duration ), &status );
+  
+     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+           outFrame, &resp, "strain/ct", "RESPONSE" );
+  }
 
   if ( gaussianNoise )
   {
@@ -816,19 +829,32 @@ int main( int argc, char *argv[] )
         strcpy( injResp.name, chan.name );
 
         /* generate the response function for the current time */
-        if ( vrbflg ) fprintf( stdout, 
-            "generating high resolution response at time %d sec %d ns\n"
-            "length = %d points, deltaF = %e Hz\n",
-            resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-            injResp.data->length, injResp.deltaF );
-        LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
-              ifo, &duration ), &status );
 
-        injRespPtr = &injResp;
+	if(geoData){
+             
+	  if ( vrbflg ) fprintf( stdout, "setting GEO response to unity... " );
+          for ( k = 0; k < injResp.data->length; ++k ){
+            injResp.data->data[k].re = 1.0;
+            injResp.data->data[k].im = 0;
+          }
+          if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+              outFrame, &injResp, "strain/ct", "RESPONSE_INJ_GEO" );
 
-        if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-            outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+	}else{
+            if ( vrbflg ) fprintf( stdout, 
+                 "generating high resolution response at time %d sec %d ns\n"
+                 "length = %d points, deltaF = %e Hz\n",
+                 resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+                 injResp.data->length, injResp.deltaF );
+            LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+                      ifo, &duration ), &status );
 
+            injRespPtr = &injResp;
+
+            if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+                       outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+        }
+     
         if ( gaussianNoise )
         {
           /* replace the response function with unity if */
@@ -3171,7 +3197,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           "--geo-high-pass-order must be specified for GEO data\n" );
       exit( 1 );
     }
-    if ( highPassAtten < 0 )
+    if ( geoHighPassAtten < 0 )
     {
       fprintf( stderr, 
           "--geo-high-pass-atten must be specified for GEO data\n" );
