@@ -664,12 +664,13 @@ class AnalysisChunk:
     start = GPS start time of the chunk.
     end = GPS end time of the chunk.
     trig_start = GPS time at which to start generating triggers
+    trig_end = GPS time at which to stop generating triggers
     """
     self.__start = start
     self.__end = end
     self.__length = end - start
     self.__trig_start = trig_start
-    self.__trig_end= trig_end
+    self.__trig_end = trig_end
 
   def __repr__(self):
     if self.__trig_start and self.__trig_end:
@@ -718,12 +719,31 @@ class AnalysisChunk:
 
   def trig_start(self):
     """
-    If this chunk overlaps the previous chunk by more than the regular
-    chunk overlap, return the total amount by which it overlaps the previous
-    chunk. Otherwise return zero.
+    Return the first GPS time at which triggers for this chunk should be
+    generated.
     """
     return self.__trig_start
 
+  def trig_end(self):
+    """
+    Return the last GPS time at which triggers for this chunk should be
+    generated.
+    """
+    return self.__trig_end
+
+  def set_trig_start(self,start):
+    """
+    Set the first GPS time at which triggers for this chunk should be
+    generated.
+    """
+    self.__trig_start = start
+
+  def set_trig_end(self,end):
+    """
+    Set the last GPS time at which triggers for this chunk should be
+    generated.
+    """
+    self.__trig_end = end
 
 
 
