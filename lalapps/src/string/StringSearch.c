@@ -205,10 +205,22 @@ int main(int argc,char *argv[])
    {
      if (AddInjections(CommandLineArgs)) return 3;
      /* high pass filter data again with added injection */
+ 
      if (ProcessData2(CommandLineArgs)) return 3;
    }
+
  
  if (DownSample()) return 5;
+
+/*  { */
+/*     int pp; */
+/*     for (pp=0; pp<(int)GV.ht_proc.data->length; pp++) */
+/*       { */
+/* 	fprintf(stdout,"%e\n",GV.ht_proc.data->data[pp]); */
+/*       } */
+/*     return 0; */
+/*   } */
+
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -273,14 +285,6 @@ int AddInjections(struct CommandLineArgsTag CLA)
 
   /* Inject the signals into the data */
   LALBurstInjectSignals(&status, &GV.ht_proc, injections, response); 
-
-  {
-    int pp;
-    for (pp=0; pp<(int)GV.ht_proc.data->length; pp++)
-      {
-	fprintf(stdout,"%e\n",GV.ht_proc.data->data[pp]);
-      }
-  }
 
   /* free the injection table */
   while(injections) {
@@ -393,7 +397,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
           INT8  timeNS, peaktime;
 	  REAL8 duration;
 	  INT4 pstart=p;
-	  timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.duration*(REAL8)i/(REAL8)(2*CLA.NoOfSegs-1));
+	  timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
           timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
 	  Nevents=Nevents+1;
@@ -503,7 +507,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	    {
 	      vector->data[p] *= 2.0 * GV.StringFilter.deltaF / strtemplate[m].norm;
 	    }
-
 	  if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
 	}
       
@@ -827,7 +830,7 @@ int ReadData(struct CommandLineArgsTag CLA)
      
       for (p=0; p<(int)GV.ht.data->length; p++)
 	{
-	  GV.ht.data->data[p] = v1->data[p]/SCALE;
+	  GV.ht.data->data[p] = 0.1*v1->data[p]/SCALE;
 	}
 
       LALSDestroyVector (&status, &v1);
