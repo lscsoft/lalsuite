@@ -103,6 +103,8 @@ CHAR *uvar_outSFTbname;		/**< Path and basefilename of output SFT files */
 CHAR *uvar_TDDfile;		/**< Filename for ASCII output time-series */
 BOOLEAN uvar_hardwareTDD;	/**< Binary output timeseries in chunks of Tsft for hardware injections. */
 
+CHAR *uvar_logfile;		/**< name of logfile */
+
 /* specify start + duration */
 CHAR *uvar_timestampsFile;	/**< Timestamps file */
 INT4 uvar_startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
@@ -644,6 +646,10 @@ InitUserVars (LALStatus *stat)
 
   uvar_TDDfile = NULL;
 
+#define DEFAULT_LOGFILE "makefakedata.log"
+  uvar_logfile = LALCalloc(1, strlen(DEFAULT_LOGFILE)+1);
+  strcpy (uvar_logfile, DEFAULT_LOGFILE);
+
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
@@ -651,6 +657,8 @@ InitUserVars (LALStatus *stat)
 
   LALregSTRINGUserVar(stat, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
   LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format, in chunks of Tsft seconds");
+
+  LALregSTRINGUserVar(stat, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
   LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
@@ -915,7 +923,7 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
 
 /***********************************************************************/
 /** Log the all relevant parameters of this run into a log-file.
- * The name of the log-file is "makefakedata.log".
+ * The name of the log-file used is uvar_logfile 
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
@@ -923,14 +931,13 @@ WriteMFDlog (LALStatus *stat, char *argv[])
 {
     CHAR *logstr = NULL;
     CHAR command[512] = "";
-    const CHAR *fname = "makefakedata.log";
     FILE *fplog;
 
     INITSTATUS (stat, "WriteMFDlog", rcsid);
     ATTATCHSTATUSPTR (stat);
 
-    if ( (fplog = fopen(fname, "wb" )) == NULL) {
-      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
+    if ( (fplog = fopen(uvar_logfile, "wb" )) == NULL) {
+      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", uvar_logfile);
       ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
 
@@ -949,7 +956,7 @@ WriteMFDlog (LALStatus *stat, char *argv[])
     fprintf (fplog, "# ----------------------------------------------------------------------\n");
     fclose (fplog);
     
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], uvar_logfile);
     system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */
