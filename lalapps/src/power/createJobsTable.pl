@@ -23,12 +23,12 @@ use strict;
 # use f_getDateYYMMDD to get current date
 my $DATE = f_getDateYYMMDD();
 
-my $TIME_CHUNK_SIZE = 64;
+my $TIME_CHUNK_SIZE = 8192;
 my $TIME_CHUNK_MIN_SIZE = 16;
 
 my $DATA_SET_NAME = "S2H1v02";
-my $DATA_QUALITY_FILE = "/scratch/power/input/S2H1v02_segs-TEST.txt";
-my $PLAYGROUND_FILE  = "/scratch/power/input/s2-playground-TEST.txt";
+my $DATA_QUALITY_FILE = "/scratch/power/input/S2H1v02_segs.txt";
+my $PLAYGROUND_FILE  = "/scratch/power/input/s2-playground.txt";
 
 #path for CACHE_FILES
 my $CACHE_PATH = "/scratch/power/cache";
@@ -46,6 +46,8 @@ my $TYPE = "RDS_R_L1";
 #  MAIN
 #-----------------------------------------------------------------------------------
 
+#if the jobs table exists, move it to a backup file
+if (-f $JOBS_TABLE){ rename $JOBS_TABLE, "$JOBS_TABLE.bak";}
 #playgroundSeconds is a reference to a hash array that contains all the playground
 # seconds.
 my $playgroundSeconds = lf_getPlaygroundSeconds($PLAYGROUND_FILE);
@@ -121,8 +123,11 @@ sub f_createJobsForGoodData {
 		}		
 		
 		#process last chunk in data segment
+		#print "Processing last chunk.\n";
 		f_processChunk($chunkStart, $chunkStop);
 	}
+	
+	print "Completed loop.\n";
 	close DATA_QUALITY_FILE;
 	return ;
 }
@@ -138,6 +143,7 @@ sub f_createJobsForGoodData {
 sub  f_processChunk {
 	my ($startSec, $stopSec) = @_;
 	
+	#print "Processing chunk $startSec, $stopSec.\n";
 	#make sure chunk is larger than minimum size
 	if($stopSec - $startSec > $TIME_CHUNK_MIN_SIZE){
 	
@@ -161,10 +167,13 @@ sub  f_processChunk {
 sub f_findData {
 	my ($startSec, $stopSec, $framecache) = @_;
 	
-	my $cmd =  "LALdataFind --lal-cache --instrument $INSTRUMENT --type RDS_R_L1 " .
-	 		" --start $startSec --end $stopSec > $framecache";
-	print "$cmd\n";
-	system $cmd;
+	#only call LALdataFind if the cache file doesn't currently exist.
+	if (! -f $framecache){
+		my $cmd =  "LALdataFind --lal-cache --instrument $INSTRUMENT --type RDS_R_L1 " .
+		 		" --start $startSec --end $stopSec > $framecache";
+		#print "$cmd\n";
+		system $cmd;
+	}
 }
 
 #-----------------------------------------------------------------------------------
@@ -184,9 +193,8 @@ sub f_findData {
 sub  f_writeJobsTable {
 	my ($startSec, $stopSec, $cachefile, $xmlFile, $tableFilePath) = @_;
 	
-	print $tableFilePath, "\n";
 	open TABLE, ">>$tableFilePath" or die "Couldn't open $tableFilePath.";
-	print  "P\tpending\tstart=$startSec\tstop=$stopSec\tcache=$cachefile\t$xmlFile\n";
+	#print  "P\tpending\tstart=$startSec\tstop=$stopSec\tcache=$cachefile\t$xmlFile\n";
 	print TABLE  "P\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
 	close TABLE;
 }

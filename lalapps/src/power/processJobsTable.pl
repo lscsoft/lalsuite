@@ -46,11 +46,14 @@ my $DATA_SET_NAME = "S2H1v02";
 #path for CACHE_FILES
 my $CACHE_PATH = "/home/dsmackin/tmp/cache";
 
+my $EXECUTABLE = "/home/dsmackin/bin/lalapps_power";
+
 #OUTPUT FILES
-my $OUTPUT_PATH = "/home/dsmackin/lal/tests";
+my $OUTPUT_PATH = "/scratch/power/tests/$DATE";
 my $OUTPUT_FILE_ROOT  =  "search$DATE-EPOCH";
-my $CONDOR_SUBMIT_FILE = "Search-$DATA_SET_NAME-$DATE.sub";
+my $CONDOR_SUBMIT_FILE = "/scratch/power/Search-$DATA_SET_NAME-$DATE.sub";
 my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
+my $LOG = "/scratch/power/processTable-$DATE.log";
 
 my $JOBS_TABLE_FIELDS = 6;
 
@@ -68,9 +71,6 @@ my $TYPE = "RDS_R_L1";
 # do not change this value
 my $NPTS = 16384;
 
-# Number of segments to analyze
-my $NSEG = 16;
-
 # do not change, must be $NPTS/2
 my $OLAP =  $NPTS/2;
 
@@ -87,7 +87,7 @@ my $DELF = 1.0;
 
 #Upper limit on frequency.
 # This value must be a power of 2
-my $LNGTH = 512;
+my $LNGTH = 1024;
 
 # Standard diviation; can change this value but make bigger not smaller
 my $NSIGMA = 2.0;
@@ -102,14 +102,14 @@ my $SEGDCLE = 64;
 # is less than the threshold, then an event is considered an Event
 # trigger generator (ETG). This number should be between 1.0e-09 and
 # 1.0e-05
-my $THRESHOLD = "10.0e-15";
+my $THRESHOLD = "10.0e-10";
 
 # Controls how many events get written out per segment
 my $ETOMSTR = 10;
 
 # The source of the data
 my $CHANNEL = "H1:LSC-AS_Q";
-my $FRAMECACHE = "/scratch/LALcaches/S2-RDS-LHO.cache	";
+#my $FRAMECACHE = "/scratch/LALcaches/S2-RDS-LHO.cache	";
 
 # does not currently do anything but keep it set to 0
 my $SIMTYPE = 0;
@@ -126,7 +126,7 @@ my $EPOCH = 729273613;
 #numpts = (number of points in first segment) + (number of points in each offset)(number of offsets)
 # Do not change this value
 # NUMPTS is dynamically set when needed
-my $NUMPTS = $NPTS + ($NPTS - $OLAP)*($NSEG-1) + 2*$OLAP;
+#my $NUMPTS = $NPTS + ($NPTS - $OLAP)*($NSEG-1) + 2*$OLAP;
 
 # If you want to create a file with the print spectrum, uncomment the line with "--printSpectrum"
 #	If you don't want the print spectrum output file, uncomment the line without "--printSpectrum"
@@ -140,6 +140,10 @@ my $PRINT_SPECTRUM = "";
 #  MAIN
 #-----------------------------------------------------------------------------------
 
+open LOG, ">>$LOG";
+print LOG  "Began run at ", localtime(), "\n";
+
+f_setupOutputDirs($OUTPUT_PATH);
 #set up the condor submit file by writing executable line 
 # and other statements relevant to all the jobs to be submitted
 f_writeCondorSubmitFileHeaders( );
@@ -154,7 +158,10 @@ f_writeCondorSubmitFileHeaders( );
 # the playground seconds hash array
 f_processJobsTable ($JOBS_TABLE);
 									
-f_submitJobs($CONDOR_SUBMIT_FILE);							
+f_submitJobs($CONDOR_SUBMIT_FILE);					
+
+print "Completed run at ", localtime(), "\n";
+close LOG;		
 									
 
 #-----------------------------------------------------------------------------------
@@ -170,8 +177,8 @@ sub f_processJobsTable {
 	open JOBS_TABLE, $jobsTableFile
 			or die "In f_processJobsTable: Couldn't open $jobsTableFile." ;	
 				
-	my $tmpTableFile = "jobsTable.tmp";
-	open TMP_TABLE, ">$jobsTableFile"
+	my $tmpTableFile = "/scratch/power/jobsTable.tmp";
+	open TMP_TABLE, ">$tmpTableFile"
 			or die "In f_processJobsTable: Couldn't open $tmpTableFile." ;	
 	
 	while(<JOBS_TABLE>){
@@ -188,6 +195,7 @@ sub f_processJobsTable {
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
 		if ($statusCode eq "P"){
+			print LOG "Adding $startSec - $stopSec to submit file.";
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
 			$statusCode = "R";
 		} elsif ($statusCode eq "R") { #Check output file for completion
@@ -201,8 +209,9 @@ sub f_processJobsTable {
 	}
 	close TMP_TABLE;
 	close JOBS_TABLE;
-	unlink "$jobsTableFile";
-	rename $tmpTableFile, $jobsTableFile;
+	#unlink "$jobsTableFile";
+	print "rename($tmpTableFile, $jobsTableFile)";
+	rename($tmpTableFile, $jobsTableFile);
 	return ;
 }
 
@@ -218,9 +227,9 @@ sub f_processJobsTable {
 #-----------------------------------------------------------------------------------
 sub f_writeCondorSubmitFileHeaders{
 	my $stmts = << "STATEMENTS";
-			Executable = /home/dsmackin/bin/lalapps_power
-			Getenv = True
-			universe=vannilla
+Getenv = True
+Universe = Vanilla
+Executable = $EXECUTABLE
 STATEMENTS
 
 	open ("CONDOR_SUB", ">$CONDOR_SUBMIT_FILE") or die "Couldn't open $CONDOR_SUBMIT_FILE.";
@@ -364,6 +373,29 @@ sub f_submitJobs {
 	
 	#call rescedule to minimize delay before jobs are started
 	system("/opt/condor/sbin/condor_reschedule");
+}
+
+#-----------------------------------------------------------------------------------
+#   f_setupOutputDirs()
+#-----------------------------------------------------------------------------------
+#  - checks to see if output dirs exist. if not, creates them
+#-----------------------------------------------------------------------------------
+#  Returns 
+#-----------------------------------------------------------------------------------
+sub f_setupOutputDirs {
+	my $path = shift;
+	
+	my $xmldir = "$path/xml/";
+	my $logdir = "$path/log/";
+	my $errdir = "$path/err/";
+	my $outdir = "$path/out/";
+	
+	if(! -d $path) { mkdir $path or die "Couldn't create $path.\n";}
+	if(! -d $xmldir) { mkdir $xmldir or die "Couldn't create $xmldir.\n";}
+	if(! -d $logdir) { mkdir $logdir or die "Couldn't create $logdir\n";}
+	if(! -d $errdir) { mkdir $errdir or die "Couldn't create $errdir\n";}
+	if(! -d $outdir) { mkdir $outdir or die "Couldn't create $outdir\n";}			
+	
 }
 
 #-----------------------------------------------------------------------------------

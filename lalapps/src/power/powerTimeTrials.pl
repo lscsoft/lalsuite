@@ -21,11 +21,11 @@ open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
 open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
-my @lengths = qw(256 512 1024 2048);
+my @lengths = qw(256 512 1024 2048 4096);
 
 my $cacheFileLength = 10000;
 
-my $startEpoch = 729273613;
+my $startEpoch = 729283613;
 my $cacheFile = "/scratch/power/segment-" . $startEpoch . "-" . ($startEpoch + $cacheFileLength );
 
 foreach(@lengths){
@@ -34,7 +34,7 @@ foreach(@lengths){
 	print "Starting test of length $_ at at $lt.\n\n";
 	
 	my $nseg = 2*$_ -1;
-	my $numpts = 16384 + (16384/2)*($nseg-1) + 2*$OLAP;
+	my $numpts = 16384 + (16384/2)*($nseg-1) + 2*8192;
 	my $outputFile = "/scratch/power/search_$startEpoch-" . ($startEpoch + $cacheFileLength) ."-nseg_$nseg.xml";
 
 	#TIME RUNNING LALAPPS

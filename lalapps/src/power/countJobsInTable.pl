@@ -18,8 +18,10 @@ if(! $ARGV[0])
 
 #my $DATE = f_getDateYYMMDD();
 my $DATE =$ARGV[0];	
-my $JOBS_TABLE = "/home/dsmackin/lal/power_jobs_$DATE.tbl";
-open TABLE, $JOBS_TABLE;
+my $JOBS_TABLE = "/scratch/power/power_jobs_$DATE.tbl";
+
+print "Counting jobs in table $JOBS_TABLE.\n";	
+open TABLE, "$JOBS_TABLE" or die "Couldn't open $JOBS_TABLE.\n";
 
 my $i=0;
 while(<TABLE>){
