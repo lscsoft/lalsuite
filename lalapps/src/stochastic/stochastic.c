@@ -174,8 +174,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(status, series, &channel_in, \
-        stream), status);
+  XLALFrGetREAL4TimeSeriesMetadata(series, stream);
 
   if (vrbflg)
     fprintf(stderr, "Resizing \"%s\" series...\n", channel);
@@ -188,9 +187,8 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
-  LAL_CALL(LALFrSeek(status, &start, stream), status);
-  LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channel_in, stream), \
-      status);
+  XLALFrSeek(stream, &start);
+  XLALFrGetREAL4TimeSeries(series, stream);
 
   return(series);
 }
@@ -225,8 +223,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(status, geo, &channel_in, \
-        stream), status);
+  XLALFrGetREAL8TimeSeriesMetadata(geo, stream);
 
   if (vrbflg)
     fprintf(stderr, "Resizing \"%s\" series...\n", channel);
@@ -239,8 +236,8 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stdout, "Reading channel \"%s\"...\n", channel);
 
   /* seek to and read data */
-  LAL_CALL(LALFrSeek(status, &start, stream), status);
-  LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channel_in, stream), status);
+  XLALFrSeek(stream, &start);
+  XLALFrGetREAL8TimeSeries(geo, stream);
 
   if (vrbflg)
     fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
@@ -281,10 +278,11 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
-  FrCache *frame_cache = NULL;
+  FrCache *cache = NULL;
   ResampleTSParams resample_params;
   size_t length;
   PassBandParamStruc high_pass_params;
+  int mode = LAL_FR_VERBOSE_MODE;
 
   /* apply resample buffer if required */
   if (buffer)
@@ -297,12 +295,12 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     fprintf(stdout, "Opening frame cache \"%s\"...\n", cache_file);
 
   /* open frame stream */
-  LAL_CALL(LALFrCacheImport(status, &frame_cache, cache_file), status);
-  LAL_CALL(LALFrCacheOpen(status, &stream, frame_cache), status);
-  LAL_CALL(LALDestroyFrCache(status, &frame_cache), status);
+  cache = XLALFrImportCache(cache_file);
+  stream = XLALFrCacheOpen(cache);
+  XLALFrDestroyCache(cache);
 
   /* turn on checking for missing data */
-  stream->mode = LAL_FR_VERBOSE_MODE;
+  XLALFrSetMode(stream, mode);
 
   /* get the data */
   if (strncmp(ifo, "G1", 2) == 0)
@@ -320,7 +318,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   }
 
   /* clean up */
-  LAL_CALL(LALFrClose(status, &stream), status);
+  XLALFrClose(stream);
 
   /* resample if required */
   if (resampleRate)
