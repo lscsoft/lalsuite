@@ -79,3 +79,54 @@ void `LALCreate'SERIESTYPE (
 
 	RETURN(status);
 }
+
+
+SERIESTYPE *`XLALCut'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+)
+{
+	SERIESTYPE *new;
+	SEQUENCETYPE *sequence;
+
+	if(!series || !series->data)
+		return(NULL);
+
+	new = LALMalloc(sizeof(*new));
+	sequence = `XLALCut'SEQUENCETYPE (series->data, first, length);
+	if(!new || !sequence) {
+		LALFree(new);
+		`XLALDestroy'SEQUENCETYPE (sequence);
+		return(NULL);
+	}
+
+	*new = *series;
+	new->data = sequence;
+	new->f0 += first * new->deltaF;
+
+	return(new);
+}
+
+
+void `LALCut'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE **output,
+	SERIESTYPE *input,
+	size_t first,
+	size_t length
+)
+{
+	INITSTATUS(status, "`LALCut'SERIESTYPE", FREQUENCYSERIESC);
+
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first < input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+
+	*output = `XLALCut'SERIESTYPE (input, first, length);
+
+	ASSERT(*output != NULL, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+
+	RETURN(status);
+}

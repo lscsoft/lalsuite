@@ -28,3 +28,17 @@ void `LALCreate'SERIESTYPE (
 	LALUnit sampleUnits,
 	size_t length
 );
+
+SERIESTYPE *`XLALCut'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+);
+
+void `LALCut'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE **output,
+	SERIESTYPE *input,
+	size_t first,
+	size_t length
+);
