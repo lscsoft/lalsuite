@@ -59,19 +59,22 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 /* <lalErrTable> */
 
-#define LALINSPIRALH_ENULL 1
-#define LALINSPIRALH_EMEM 2
-#define LALINSPIRALH_EDIV0 4
-#define LALINSPIRALH_ESIZE 8
+#define LALINSPIRALH_ENULL   1
+#define LALINSPIRALH_EMEM    2
+#define LALINSPIRALH_EDIV0   4
+#define LALINSPIRALH_ESIZE   8
 #define LALINSPIRALH_ECHOICE 16
-#define LALINSPIRALH_EORDER 4 
+#define LALINSPIRALH_EORDER  32 
+#define LALINSPIRALH_EAPPROXIMANT  64 
 
-#define LALINSPIRALH_MSGENULL "Arguments contained an unexpected null pointer"
-#define LALINSPIRALH_MSGEMEM "Memory allocation error"
-#define LALINSPIRALH_MSGEDIV0 "Division by zero"
-#define LALINSPIRALH_MSGESIZE "Invalid input range"
+
+#define LALINSPIRALH_MSGENULL   "Arguments contained an unexpected null pointer"
+#define LALINSPIRALH_MSGEMEM    "Memory allocation error"
+#define LALINSPIRALH_MSGEDIV0   "Division by zero"
+#define LALINSPIRALH_MSGESIZE   "Invalid input range"
 #define LALINSPIRALH_MSGECHOICE "Invalid choice for an input parameter"
-#define LALINSPIRALH_MSGEORDER "Invalid choice for order of PN models"
+#define LALINSPIRALH_MSGEORDER  "Invalid choice for order of PN models"
+#define LALINSPIRALH_MSGEAPPROXIMANT  "Invalid choice for order of PN models"
 
 
 /* </lalErrTable> */
@@ -128,6 +131,9 @@ by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a f
                     Vallisneri \cite{BCV03}. Outputs a frequency-domain wave.
 \item \texttt{BCVSpin:} Detection template family of Buonanno, Chen and 
                     Vallisneri including  spin effects\cite{BCV03b}. Outputs a frequency-domain wave.
+\item \texttt{SpinTaylorT3} Spinning case T3 models
+\item \texttt{SpinTaylor} Spinning case PN models (should replace SpinTaylorT3 in the future)
+
 \end{itemize}
 \input{LALInputMassesH}
 \texttt{InputMasses:}
@@ -374,7 +380,7 @@ typedef enum {
    BCV,
    BCVSpin,
    SpinTaylorT3,
-   SpinTaylorPN,
+   SpinTaylor,
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -754,6 +760,8 @@ tagPhiofVIntegrandIn
 
 /* Function prototypes */
 
+
+/* --- HERE ARE SOME USEFULE PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
 /*  <lalLaTeX>
 \newpage\input{LALInspiralParameterCalcC}
 </lalLaTeX>  */
@@ -770,6 +778,28 @@ void LALInspiralWaveLength (
      LALStatus *status,
      UINT4 *n,
      InspiralTemplate params);
+
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralChooseModelC}
+</lalLaTeX>  */
+
+void LALInspiralChooseModel(
+     LALStatus *status,
+     expnFunc *func,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralSetupC}
+</lalLaTeX>  */
+
+void LALInspiralSetup (
+     LALStatus *status,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
+/* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveC}
@@ -916,7 +946,7 @@ void LALInspiralSpinModulateWaveForInjection(
 
 
 /*  <lalLaTeX>
-%% \newpage\input{LALSTPNWaveformC}
+ \newpage\input{LALSTPNWaveformC}
 </lalLaTeX>  */
 void 
 LALSTPNWaveformForInjection (
@@ -925,25 +955,7 @@ LALSTPNWaveformForInjection (
 			    InspiralTemplate *params
 			    ) ;
 
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralChooseModelC}
-</lalLaTeX>  */
-
-void LALInspiralChooseModel(
-     LALStatus *status,
-     expnFunc *func,
-     expnCoeffs *ak,
-     InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSetupC}
-</lalLaTeX>  */
-
-void LALInspiralSetup (
-     LALStatus *status,
-     expnCoeffs *ak,
-     InspiralTemplate *params);
+/* --- OTHER PROTOTYPES --- */
 
 /*  <lalLaTeX>
 \newpage\input{LALEtaTau02C}
@@ -1245,16 +1257,31 @@ void LALRungeKutta4(
      rk4In *,
      void *);
 
+/* --- PARSING PROTOTYPE FOR INSPIRALTEMPLATE STRCUTURE --- */
 
-/*ajout ParseParametesr*/
+/*  <lalLaTeX>
+\newpage\input{LALInspiralParseParametersC}
+</lalLaTeX>  */
+void LALInspiralITStructureParseParameters(LALStatus *status,
+					   UINT4 argc,
+					   CHAR **argv,
+					   InspiralTemplate *params);
 
-void LALInspiralParseParametersInspiralTemplate(int argc, char **argv,
-						InspiralTemplate *params);
-void LALInspiralInitInspiralTemplateStructure2Dummy (InspiralTemplate *params);
-void LALInspiralCheckInspiralTemplateStructure      (InspiralTemplate  params);
-void LALInspiralSetDefaultInspiralTemplateStructure (InspiralTemplate *params);
-void LALInspiralPrintInspiralTemplateStructure      (InspiralTemplate  params);
-void HelpInspiralTemplate();
+void LALInspiralITStructureInit2Dummy(LALStatus *status, 
+				      InspiralTemplate *params);
+
+void LALInspiralITStructureCheck(LALStatus *status, 
+				 InspiralTemplate  params);
+
+void LALInspiralITStructureSetDefault(LALStatus *status, 
+				      InspiralTemplate *params);
+
+void LALInspiralITStructurePrint(LALStatus *status, 
+				 InspiralTemplate  params);
+
+void LALInspiralITStructureHelp();
+
+/* --- TEST PROTOTYPES --- */
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTestC}
@@ -1262,6 +1289,10 @@ void HelpInspiralTemplate();
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTestOneC}
+</lalLaTeX>  */
+
+/*  <lalLaTeX>
+\newpage\input{LALSTPNWaveformTestC}
 </lalLaTeX>  */
 
 /*  <lalLaTeX>
