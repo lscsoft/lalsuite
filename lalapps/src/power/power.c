@@ -1426,7 +1426,8 @@ int main( int argc, char *argv[])
 	}
 
 	/*
-	 * Cluster the events.
+	 * Cluster the events;  supply an arbitrary iteration limit of 500 on
+	 * the algorithm.
 	 */
 
 	if(options.cluster)
