@@ -157,17 +157,19 @@ NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 
 extern INT4 lalDebugLevel;
 
-static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
-				    INT4                *n,
-				    REAL8               *wc,
-				    REAL8               deltaT);
+static INT4
+ParsePassBandParamStruc( PassBandParamStruc *params,
+			 INT4               *n,
+			 REAL8              *wc,
+			 REAL8              deltaT );
 /* Prototype for a local input parsing routine. */
 
 
 /* <lalVerbatim file="ButterworthTimeSeriesD"> */
-void LALButterworthREAL4TimeSeries(LALStatus             *stat,
-				REAL4TimeSeries    *series,
-				PassBandParamStruc *params)
+void
+LALButterworthREAL4TimeSeries( LALStatus          *stat,
+			       REAL4TimeSeries    *series,
+			       PassBandParamStruc *params )
 { /* </lalVerbatim> */
   INT4 n;    /* The filter order. */
   INT4 type; /* The pass-band type: high, low, or undeterminable. */
@@ -291,9 +293,10 @@ void LALButterworthREAL4TimeSeries(LALStatus             *stat,
 
 
 /* <lalVerbatim file="ButterworthTimeSeriesD"> */
-void LALButterworthREAL8TimeSeries(LALStatus             *stat,
-				REAL8TimeSeries    *series,
-				PassBandParamStruc *params)
+void
+LALButterworthREAL8TimeSeries( LALStatus          *stat,
+			       REAL8TimeSeries    *series,
+			       PassBandParamStruc *params )
 { /* </lalVerbatim> */
   INT4 n;    /* The filter order. */
   INT4 type; /* The pass-band type: high, low, or undeterminable. */
@@ -416,10 +419,11 @@ void LALButterworthREAL8TimeSeries(LALStatus             *stat,
 }
 
 
-static INT4 ParsePassBandParamStruc(PassBandParamStruc  *params,
-				    INT4                *n,
-				    REAL8               *wc,
-				    REAL8               deltaT)
+static INT4
+ParsePassBandParamStruc( PassBandParamStruc *params,
+			 INT4               *n,
+			 REAL8              *wc,
+			 REAL8              deltaT )
      /* This local function parses the pass band parameters according
         to the rules given in the documentation to this module,
         computing the order and characteristic frequency (in the

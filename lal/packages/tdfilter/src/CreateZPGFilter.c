@@ -49,10 +49,10 @@ NRCSID(CREATEZPGFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
-			     COMPLEX8ZPGFilter **output,
-			     INT4              numZeros,
-			     INT4              numPoles)
+void LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
+				 COMPLEX8ZPGFilter **output,
+				 INT4              numZeros,
+				 INT4              numPoles )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALCreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
@@ -68,7 +68,9 @@ void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
 
   /* Create the output structure. */
   *output=(COMPLEX8ZPGFilter *)LALMalloc(sizeof(COMPLEX8ZPGFilter));
-  ASSERT(*output,stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+  if ( !(*output) ) {
+    ABORT(stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+  }
   memset(*output,0,sizeof(COMPLEX8ZPGFilter));
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,
@@ -91,10 +93,10 @@ void LALCreateCOMPLEX8ZPGFilter(LALStatus            *stat,
 
 
 /* <lalVerbatim file="CreateZPGFilterCP"> */
-void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
-			      COMPLEX16ZPGFilter **output,
-			      INT4               numZeros,
-			      INT4               numPoles)
+void LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
+				  COMPLEX16ZPGFilter **output,
+				  INT4               numZeros,
+				  INT4               numPoles )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALCreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
@@ -110,7 +112,9 @@ void LALCreateCOMPLEX16ZPGFilter(LALStatus             *stat,
 
   /* Create the output structure. */
   *output=(COMPLEX16ZPGFilter *)LALMalloc(sizeof(COMPLEX16ZPGFilter));
-  ASSERT(*output,stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+  if ( !(*output) ) {
+    ABORT(stat,ZPGFILTER_EMEM,ZPGFILTER_MSGEMEM);
+  }
   memset(*output,0,sizeof(COMPLEX16ZPGFilter));
 
   /* Allocate the data fields.  If the number of poles or zeros is 0,

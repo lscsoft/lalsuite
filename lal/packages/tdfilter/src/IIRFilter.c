@@ -53,10 +53,11 @@ NRCSID(IIRFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-void LALIIRFilterREAL4(LALStatus         *stat,
-		    REAL4          *output,
-		    REAL4          input,
-		    REAL4IIRFilter *filter)
+void
+LALIIRFilterREAL4( LALStatus      *stat,
+		   REAL4          *output,
+		   REAL4          input,
+		   REAL4IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -106,10 +107,11 @@ void LALIIRFilterREAL4(LALStatus         *stat,
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-void LALIIRFilterREAL8(LALStatus         *stat,
-		    REAL8          *output,
-		    REAL8          input,
-		    REAL8IIRFilter *filter)
+void
+LALIIRFilterREAL8( LALStatus      *stat,
+		   REAL8          *output,
+		   REAL8          input,
+		   REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -159,7 +161,8 @@ void LALIIRFilterREAL8(LALStatus         *stat,
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-REAL4 LALSIIRFilter(REAL4 x, REAL4IIRFilter *filter)
+REAL4
+LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -198,7 +201,8 @@ REAL4 LALSIIRFilter(REAL4 x, REAL4IIRFilter *filter)
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-REAL8 LALDIIRFilter(REAL8 x, REAL8IIRFilter *filter)
+REAL8
+LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */

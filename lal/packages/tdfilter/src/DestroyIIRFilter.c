@@ -45,8 +45,9 @@ NRCSID(DESTROYIIRFILTERC,"$Id$");
 
 
 /* <lalVerbatim file="DestroyIIRFilterCP"> */
-void LALDestroyREAL4IIRFilter(LALStatus         *stat,
-			   REAL4IIRFilter **input)
+void
+LALDestroyREAL4IIRFilter( LALStatus      *stat,
+			  REAL4IIRFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyREAL4IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);
@@ -73,8 +74,9 @@ void LALDestroyREAL4IIRFilter(LALStatus         *stat,
 
 
 /* <lalVerbatim file="DestroyIIRFilterCP"> */
-void LALDestroyREAL8IIRFilter(LALStatus         *stat,
-			   REAL8IIRFilter **input)
+void
+LALDestroyREAL8IIRFilter( LALStatus      *stat,
+			  REAL8IIRFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyREAL8IIRFilter",DESTROYIIRFILTERC);
   ATTATCHSTATUSPTR(stat);

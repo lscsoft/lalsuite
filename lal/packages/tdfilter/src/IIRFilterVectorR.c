@@ -46,9 +46,10 @@ NRCSID(IIRFILTERVECTORRC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterVectorRCP"> */
-void LALIIRFilterREAL4VectorR(LALStatus         *stat,
-			   REAL4Vector    *vector,
-			   REAL4IIRFilter *filter)
+void
+LALIIRFilterREAL4VectorR( LALStatus      *stat,
+			  REAL4Vector    *vector,
+			  REAL4IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */
@@ -105,9 +106,10 @@ void LALIIRFilterREAL4VectorR(LALStatus         *stat,
 
 
 /* <lalVerbatim file="IIRFilterVectorRCP"> */
-void LALIIRFilterREAL8VectorR(LALStatus         *stat,
-			   REAL8Vector    *vector,
-			   REAL8IIRFilter *filter)
+void
+LALIIRFilterREAL8VectorR( LALStatus      *stat,
+			  REAL8Vector    *vector,
+			  REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */

@@ -44,8 +44,9 @@ LALZDestroyVector()
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 
 /* <lalVerbatim file="DestroyZPGFilterCP"> */
-void LALDestroyCOMPLEX8ZPGFilter(LALStatus            *stat,
-			      COMPLEX8ZPGFilter **input)
+void
+LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
+			     COMPLEX8ZPGFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);
@@ -71,8 +72,9 @@ void LALDestroyCOMPLEX8ZPGFilter(LALStatus            *stat,
 
 
 /* <lalVerbatim file="DestroyZPGFilterCP"> */
-void LALDestroyCOMPLEX16ZPGFilter(LALStatus             *stat,
-			       COMPLEX16ZPGFilter **input)
+void
+LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
+			      COMPLEX16ZPGFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
   ATTATCHSTATUSPTR(stat);

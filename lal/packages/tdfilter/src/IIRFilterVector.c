@@ -48,9 +48,10 @@ NRCSID(IIRFILTERVECTORC,"$Id$");
 
 
 /* <lalVerbatim file="IIRFilterVectorCP"> */
-void LALIIRFilterREAL4Vector(LALStatus         *stat,
-			  REAL4Vector    *vector,
-			  REAL4IIRFilter *filter)
+void
+LALIIRFilterREAL4Vector( LALStatus      *stat,
+			 REAL4Vector    *vector,
+			 REAL4IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */
@@ -88,7 +89,9 @@ void LALIIRFilterREAL4Vector(LALStatus         *stat,
   recursCoef=filter->recursCoef->data;
   history=filter->history->data;
   temp=(REAL4 *)LALMalloc(numHist*sizeof(REAL4));
-  ASSERT(temp,stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  if ( !temp ) {
+    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  }
 
   /* Compute the auxiliary data series. */
   for(i=0;(i<recursOrder)&&(i<length);i++,data++){
@@ -134,9 +137,10 @@ void LALIIRFilterREAL4Vector(LALStatus         *stat,
 
 
 /* <lalVerbatim file="IIRFilterVectorCP"> */
-void LALIIRFilterREAL8Vector(LALStatus         *stat,
-			  REAL8Vector    *vector,
-			  REAL8IIRFilter *filter)
+void
+LALIIRFilterREAL8Vector( LALStatus      *stat,
+			 REAL8Vector    *vector,
+			 REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;            /* Loop counter for data vector. */
   INT4 j;            /* Index for filter coeficients. */
@@ -174,7 +178,9 @@ void LALIIRFilterREAL8Vector(LALStatus         *stat,
   recursCoef=filter->recursCoef->data;
   history=filter->history->data;
   temp=(REAL8 *)LALMalloc(numHist*sizeof(REAL8));
-  ASSERT(temp,stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  if ( !temp ) {
+    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  }
 
   /* Compute the auxiliary data series. */
   for(i=0;(i<recursOrder)&&(i<length);i++,data++){

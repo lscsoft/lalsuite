@@ -114,8 +114,9 @@ NRCSID(BILINEARTRANSFORMC,"$Id$");
 
 
 /* <lalVerbatim file="BilinearTransformCP"> */
-void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
-			   COMPLEX8ZPGFilter *filter)
+void
+LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
+			  COMPLEX8ZPGFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;        /* A counter. */
   INT4 j;        /* Another counter. */
@@ -357,8 +358,9 @@ void LALWToZCOMPLEX8ZPGFilter(LALStatus            *stat,
 
 
 /* <lalVerbatim file="BilinearTransformCP"> */
-void LALWToZCOMPLEX16ZPGFilter(LALStatus             *stat,
-			    COMPLEX16ZPGFilter *filter)
+void
+LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
+			   COMPLEX16ZPGFilter *filter )
 { /* </lalVerbatim> */
   INT4 i;        /* A counter. */
   INT4 j;        /* Another counter. */

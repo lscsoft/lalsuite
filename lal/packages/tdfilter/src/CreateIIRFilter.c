@@ -96,9 +96,9 @@ NRCSID(CREATEIIRFILTERC,"$Id$");
 extern INT4 lalDebugLevel;
 
 /* <lalVerbatim file="CreateIIRFilterCP"> */
-void LALCreateREAL4IIRFilter(LALStatus            *stat,
-			  REAL4IIRFilter    **output,
-			  COMPLEX8ZPGFilter *input)
+void LALCreateREAL4IIRFilter( LALStatus         *stat,
+			      REAL4IIRFilter    **output,
+			      COMPLEX8ZPGFilter *input )
 { /* </lalVerbatim> */
   INT4 i;          /* Index counter for zeros and poles. */
   INT4 numZeros;   /* The number of zeros. */
@@ -268,7 +268,9 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
 
   /* Everything seems okay, so initialize the filter. */
   *output=(REAL4IIRFilter *)LALMalloc(sizeof(REAL4IIRFilter));
-  ASSERT(*output,stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  if ( !(*output) ) {
+    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  }
   memset(*output,0,sizeof(REAL4IIRFilter));
   if(numPoles>=numZeros)
     num=numZeros;
@@ -337,9 +339,9 @@ void LALCreateREAL4IIRFilter(LALStatus            *stat,
 
 
 /* <lalVerbatim file="CreateIIRFilterCP"> */
-void LALCreateREAL8IIRFilter(LALStatus             *stat,
-			  REAL8IIRFilter     **output,
-			  COMPLEX16ZPGFilter *input)
+void LALCreateREAL8IIRFilter( LALStatus          *stat,
+			      REAL8IIRFilter     **output,
+			      COMPLEX16ZPGFilter *input )
 { /* </lalVerbatim> */
   INT4 i;           /* Index counter for zeros and poles. */
   INT4 numZeros;    /* The number of zeros. */
@@ -505,7 +507,9 @@ void LALCreateREAL8IIRFilter(LALStatus             *stat,
 
   /* Everything seems okay, so initialize the filter. */
   *output=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
-  ASSERT(*output,stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  if ( !(*output) ) {
+    ABORT(stat,IIRFILTER_EMEM,IIRFILTER_MSGEMEM);
+  }
   memset(*output,0,sizeof(REAL8IIRFilter));
   if(numPoles>=numZeros)
     num=numZeros;
