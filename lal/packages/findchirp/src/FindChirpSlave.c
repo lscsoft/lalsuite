@@ -671,9 +671,6 @@ LALFindChirpSlave (
         LALWindowParams           winParams;
         RealDFTParams            *dftParams = NULL;
 
-        fprintf( stdout, "creating mean power spectrum\n" );
-        fflush( stdout );
-
         memset( &segmentFFT, 0, sizeof(COMPLEX8FrequencySeries) );
         memset( &winParams, 0, sizeof(LALWindowParams) );
 
@@ -725,9 +722,6 @@ LALFindChirpSlave (
         REAL4TimeSeries         dataChanF;
         RealFFTPlan            *fftPlan = NULL;
 
-        fprintf( stdout, "creating median power spectrum\n" );
-        fflush( stdout );
-
         LALCreateForwardRealFFTPlan( status->statusPtr, &fftPlan, tdLength, 0);
         CHECKSTATUSPTR( status );
 
@@ -737,10 +731,6 @@ LALFindChirpSlave (
         avgParams.segsize = tdLength;
         avgParams.fwdplan = fftPlan;
         avgParams.wintype = Rectangular;
-
-        fprintf( stdout, "passing %d points of data at %p to spec calc\n", 
-            dataChanF.data->length, dataChanF.data->data );
-        fflush( stdout );
 
         LALMedianSpectrum( status->statusPtr, specPtr, &dataChanF, &avgParams );
         CHECKSTATUSPTR( status );
