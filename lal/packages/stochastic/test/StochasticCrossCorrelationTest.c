@@ -112,6 +112,12 @@ fabs()
   \item No specific error checking is done on user-specified data.  If
     \texttt{length} is missing, the resulting default will cause a bad
     data error.
+  \item The length of the user-provided series must be specified, even
+    though it could in principle be deduced from the input file,
+    because the data sequences must be allocated before the
+    \texttt{LALCReadFrequencySeries()} function is called.
+  \item If some, but not all, of the \texttt{filename} arguments are
+    present, the user-specified data will be silently ignored.
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticCrossCorrelationTestCV}}

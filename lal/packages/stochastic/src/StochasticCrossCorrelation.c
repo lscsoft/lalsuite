@@ -115,6 +115,11 @@ LALUnitMultiply()
 \item When $f_0=0$, $\widetilde{\bar{h}}_{1}[0]$, $\widetilde{Q}[0]$,
   and $\widetilde{\bar{h}}_{2}[0]$ are assumed to be real, but this is
   not checked.
+\item The optimal filter $\widetilde{Q}(f)$ is represented by a
+  complex frequency series because it will in general be applied to
+  whitened data include the different complex whitening filters for
+  the two streams.  
+  (cf.\ Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c}.)
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticCrossCorrelationCV}}
@@ -158,58 +163,58 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
 
   /*    output structure */
   ASSERT(output != NULL, status,
-	 STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*    input structure */
   ASSERT(input != NULL, status,
-	 STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*       optimal filter */
   ASSERT(input->optimalFilter != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*       first data stream */
   ASSERT(input->hBarTildeOne != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*       second data stream */
   ASSERT(input->hBarTildeTwo != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*          data member for optimal filter */
   ASSERT(input->optimalFilter->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*          data member for first data stream */
   ASSERT(input->hBarTildeOne->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*          data member for second data stream */
   ASSERT(input->hBarTildeTwo->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*             data-data member for first data stream */
   ASSERT(input->optimalFilter->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*             data-data member for first data stream */
   ASSERT(input->hBarTildeOne->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   /*             data-data member for second data stream */
   ASSERT(input->hBarTildeTwo->data->data != NULL, status, 
          STOCHASTICCROSSCORRELATIONH_ENULLP,
-	 STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
 
 
@@ -222,21 +227,21 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
 
   /*    length must be positive */
   ASSERT(length != 0, status,
-	 STOCHASTICCROSSCORRELATIONH_EZEROLEN,
-	 STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
+         STOCHASTICCROSSCORRELATIONH_EZEROLEN,
+         STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN);
 
   /*    start frequency must not be negative */
   if (f0 < 0)
   {
     ABORT( status,
-	 STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-	 STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
+         STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
+         STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN );
   }
 
   /*    frequency spacing must be positive */
   ASSERT(deltaF > 0, status, 
          STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF,
-	 STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
+         STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
 
   /* check for mismatches */
   
@@ -244,42 +249,42 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
   if (input->hBarTildeOne->data->length != length) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMLEN,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+         STOCHASTICCROSSCORRELATIONH_EMMLEN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
   if (input->hBarTildeTwo->data->length != length) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMLEN,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+         STOCHASTICCROSSCORRELATIONH_EMMLEN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
 
   /* start frequency */
   if (input->hBarTildeOne->f0 != f0) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
+         STOCHASTICCROSSCORRELATIONH_EMMFMIN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
   if (input->hBarTildeTwo->f0 != f0) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMFMIN,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
+         STOCHASTICCROSSCORRELATIONH_EMMFMIN,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMFMIN);
   }
 
   /* frequency spacing */
   if (input->hBarTildeOne->deltaF != deltaF) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
+         STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   if (input->hBarTildeTwo->deltaF != deltaF) 
   {
     ABORT(status,
-	 STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
+         STOCHASTICCROSSCORRELATIONH_EMMDELTAF,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
 
   /* epoch (start time) */
@@ -290,8 +295,8 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
         input->hBarTildeTwo->epoch.gpsNanoSeconds) )
   {
      ABORT( status,
-	 STOCHASTICCROSSCORRELATIONH_EMMTIME,
-	 STOCHASTICCROSSCORRELATIONH_MSGEMMTIME );
+         STOCHASTICCROSSCORRELATIONH_EMMTIME,
+         STOCHASTICCROSSCORRELATIONH_MSGEMMTIME );
   }
  
   if (f0 == 0) 
@@ -324,9 +329,9 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
   for ( ; cPtrFilter < cStopPtr; ++cPtrFilter, ++cPtrH1, ++cPtrH2) 
   {
     output->value += (  cPtrH1->re * (  cPtrFilter->re * cPtrH2->re 
-				       - cPtrFilter->im * cPtrH2->im )
+                                       - cPtrFilter->im * cPtrH2->im )
                         + cPtrH1->im * (  cPtrFilter->re * cPtrH2->im
-					 + cPtrFilter->im * cPtrH2->re ) );
+                                         + cPtrFilter->im * cPtrH2->re ) );
   }
   
   /* normalize */

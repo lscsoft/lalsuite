@@ -63,13 +63,13 @@ where $P^{ab}_{cd}(\hat\Omega)$ is a projection operator onto the space
 of symmetric, traceless second-rank tensors orthogonal to $\hat\Omega$.
 
 The overlap reduction function for a pair of identical detectors is a
-maximum when they are co\"{\i}ncident and co\"{a}ligned detectors; it
+maximum when they are co\"{\i}ncident and co\"{a}ligned; it
 decreases when the detectors are shifted apart (so there is a phase
 shift between the signals in the two detectors), or rotated out of
 co\"{a}lignment (so the detectors are sensitive to different
 polarizations).  The overlap reduction function arises naturally when
 calculating the cross-correlated signal due to an isotropic and
-unpolarized stochastic gravity-wave background.
+unpolarized stochastic gravitational-wave background.
 
 Given a choice of two detector sites, a frequency spacing $\delta f$,
 a start frequency $f_0$, and the number of desired values $N$, {\tt
@@ -137,22 +137,35 @@ $\Delta \vec x:=\vec x_1-\vec x_2$, and $\alpha:=2\pi f|\Delta\vec x|/c$.
 as follows:
 
 \begin{enumerate}
-
+  
 \item Gets the locations and response tensors for the two detectors
-from the \texttt{LALDetector} structures in the input.
+  from the \texttt{LALDetector} structures in the input.
 
-\item Constructs the traceless parts $D_{iab}$ of the two detector response
-tensors and finds the distance $d$ and direction $s^a$ between the sites.
-
-\item Calculates the frequency-independent coefficients 
-$D_1^{ab}D_{2ab}$, $D_1^{ab}D_{2a}{}^c s_b s_c$, and 
-$D_1^{ab}D_2^{cd}s_a s_b s_c s_d$ that appear in Eq.~(\ref{stochastic:e:closed1}).
-
-\item Calculates $\gamma(f)$ at each discrete frequency 
-$f_i:=f_0+i\Delta f$, $i=0,1,\cdots N-1$, 
-using a power series expansion for the spherical 
-Bessel functions $j_0(\alpha_i)$, $j_a(\alpha_i)$, $j_2(\alpha_i)$ when
-$\alpha_i:=2\pi f_i |\Delta\vec x|/c<0.01$.
+\item Constructs the traceless parts $D_{iab}$ of the two detector
+  response tensors and finds the distance $|\Delta\vec x|$ and
+  direction $s^a$ between the sites.
+  
+\item Calculates the frequency-independent co\"{e}fficients
+  $D_1^{ab}D_{2ab}$, $D_1^{ab}D_{2a}{}^c s_b s_c$, and
+  $D_1^{ab}D_2^{cd}s_a s_b s_c s_d$ that appear in
+  Eq.~(\ref{stochastic:e:closed1}).
+  
+\item Calculates $\gamma(f)$ at each discrete frequency
+  $f_i:=f_0+i\Delta f$, $i=0,1,\cdots N-1$, using the power series
+  expansion
+  \begin{eqnarray}
+    j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} 
+    + \mathcal{O}(\alpha^6) \\
+    \frac{j_1(\alpha)}{\alpha}
+    &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{8400}
+    + \mathcal{O}(\alpha^6) \\
+    \frac{j_2(\alpha)}{\alpha^2}
+    &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560}
+    + \mathcal{O}(\alpha^6) 
+  \end{eqnarray}
+  for the spherical Bessel functions $j_0(\alpha_i)$,
+  $j_a(\alpha_i)$, $j_2(\alpha_i)$ when $\alpha_i:=2\pi f_i
+  |\Delta\vec x|/c<0.01$.
 
 \end{enumerate}
 
@@ -168,21 +181,22 @@ strncpy()
 \subsubsection*{Notes}
 
 \begin{itemize}
-
-\item The $\gamma(f)$ here is
-related to the unnormalized $\Gamma(f)$ defined by Maggiore
-\cite{stochastic:Maggiore:2000a,stochastic:Maggiore:2000b}
-by $\gamma(f) = \frac{5}{2}\Gamma(f)$.
-This normalization, which  agrees with the literature 
-\cite{stochastic:Flanagan:1993,stochastic:Allen:1997,stochastic:Allen:1999}
-on interferometers, is chosen so that
-$\gamma(f)\equiv 1$ for a pair of co\"{\i}ncident, co\"{a}ligned
-interferometers with perpendicular arms.  It means that, for combinations
-other than a pair of interferometers, our $\gamma(f)$
-is \emph{not} equal to the generalization of  $\gamma(f)$ defined by
-Maggiore, whose relationship to $\Gamma(f)$ depends on the type of detector.
-Defining $\gamma(f)$ as we do allows us to use the formulas from, e.g.,
-\cite{stochastic:Allen:1999}.
+  
+\item The $\gamma(f)$ here is related to the unnormalized $\Gamma(f)$
+  defined by Maggiore
+  \cite{stochastic:Maggiore:2000a,stochastic:Maggiore:2000b} by
+  $\gamma(f) = \frac{5}{2}\Gamma(f)$.  This normalization, which
+  agrees with the literature
+  \cite{stochastic:Flanagan:1993,stochastic:Allen:1997,stochastic:Allen:1999}
+  on interferometers, is chosen so that $\gamma(f)\equiv 1$ for a pair
+  of co\"{\i}ncident, co\"{a}ligned interferometers with perpendicular
+  arms.  It means that, for combinations other than a pair of
+  interferometers, our $\gamma(f)$ is \emph{not} equal to the
+  generalization of $\gamma(f)$ defined by Maggiore, whose
+  relationship to $\Gamma(f)$ depends on the type of detector.
+  Defining $\gamma(f)$ as we do allows us to use the formul{\ae} from,
+  e.g., \cite{stochastic:Allen:1999}, irrespective of the detector
+  type in question.
 
 \end{itemize}
 
@@ -232,10 +246,10 @@ static REAL4 cartesianInnerProduct(REAL4 a[3], REAL4 b[3]);
 /* <lalVerbatim file="OverlapReductionFunctionCP"> */
 void
 LALOverlapReductionFunction(
-		      LALStatus                                *status,
-		      REAL4FrequencySeries                     *output,
-		      const LALDetectorPair                    *detectors,
-		      const OverlapReductionFunctionParameters *parameters)
+                      LALStatus                                *status,
+                      REAL4FrequencySeries                     *output,
+                      const LALDetectorPair                    *detectors,
+                      const OverlapReductionFunctionParameters *parameters)
 /* </lalVerbatim> */
 {
   UINT4            length, halfLength;
@@ -271,13 +285,13 @@ LALOverlapReductionFunction(
   deltaF = parameters->deltaF;
   ASSERT(deltaF > 0, status, 
          STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF, STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF);
-	 
+         
   /* check that minimum frequency is >= 0 */ 
   f0 = parameters->f0;
   if(f0 < 0)
   {
     ABORT( status, STOCHASTICCROSSCORRELATIONH_ENEGFMIN,
-	   STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
+           STOCHASTICCROSSCORRELATIONH_MSGENEGFMIN);
   }
 
   /* check that pointer to output frequency series is not null */
@@ -308,7 +322,7 @@ LALOverlapReductionFunction(
   power.numerator = 2;
   power.denominatorMinusOne = 0;
   TRY( LALUnitRaise(status->statusPtr, &(output->sampleUnits),
-		    &lalStrainUnit, &power), status );
+                    &lalStrainUnit, &power), status );
 
   strncpy(output->name,"Overlap reduction function", LALNameLength);
 
@@ -321,16 +335,16 @@ LALOverlapReductionFunction(
   /* calculate separation vector between sites */
   for ( i=0; i<3; i++) {
     s[i] = (REAL4) (detectors->detectorOne.location[i] -
-		      detectors->detectorTwo.location[i]);
+                      detectors->detectorTwo.location[i]);
     d1[i][i] = detectors->detectorOne.response[i][i];
     d2[i][i] = detectors->detectorTwo.response[i][i];
     for ( j=i; j<3; j++) {
       d1[i][j] = d1[j][i] = detectors->detectorOne.response[i][j];
       d2[i][j] = d2[j][i] = detectors->detectorTwo.response[i][j];
       ASSERT( d1[j][i] == detectors->detectorOne.response[j][i], status,
-	      STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
+              STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
       ASSERT( d2[j][i] == detectors->detectorTwo.response[j][i], status, 
-	      STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
+              STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ, STOCHASTICCROSSCORRELATIONH_MSGENONSYMDIJ);
     }
   }
 
@@ -392,7 +406,7 @@ LALOverlapReductionFunction(
       alpha = deltaAlpha * (REAL4) i;
       evaluateBessels(rho,alpha);
       output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho [2];
-    }	
+    }   
   }
   else 
   {
@@ -401,7 +415,7 @@ LALOverlapReductionFunction(
       alpha = alpha0 + deltaAlpha * (REAL4) i;
       evaluateBessels(rho,alpha);
       output->data->data[i] = c1 * rho[0] + c2 * rho[1] + c3 * rho [2];
-    }	
+    }   
   }
 
   /* normal exit */

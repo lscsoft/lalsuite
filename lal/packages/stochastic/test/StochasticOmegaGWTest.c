@@ -18,13 +18,13 @@ Options:
   -q             quiet: run silently
   -v             verbose: print extra information
   -d level       set lalDebugLevel to level
-  -o filename    print frequency series to file filename
-  -a alpha       set exponent to alpha
-  -O omegaR      set amplitude to omegaR
-  -F fR          set normalization reference freq to fR
+  -a alpha       set power law exponent to alpha
+  -O omegaRef    set amplitude to omegaRef
+  -F fRef        set normalization reference frequency to fRef
   -f f0          set start frequency to f0
-  -e deltaF      use frequency resolution deltaF
-  -n length      length of corresponding time series is 2*length-1
+  -e deltaF      set frequency spacing to deltaF
+  -n length      set number of points in frequency series to length
+  -o filename    print gravitational-wave spectrum to file filename
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -521,13 +521,13 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
-  fprintf (stderr, "  -a alpha       set exponent to alpha\n");
-  fprintf (stderr, "  -O omegaR      set amplitude to omegaR\n");
-  fprintf (stderr, "  -F fR          set normalization reference freq to fR\n");
+  fprintf (stderr, "  -a alpha       set power law exponent to alpha\n");
+  fprintf (stderr, "  -O omegaRef    set amplitude to omegaRef\n");
+  fprintf (stderr, "  -F fRef        set normalization reference frequency to fRef\n");
   fprintf (stderr, "  -f f0          set start frequency to f0\n");
-  fprintf (stderr, "  -e deltaF      use frequency resolution deltaF\n");
-  fprintf (stderr, "  -n length      length of corresponding time series is 2*length-1\n");
-  fprintf (stderr, "  -o filename    print frequency series to file filename\n");
+  fprintf (stderr, "  -e deltaF      set frequency spacing to deltaF\n");
+  fprintf (stderr, "  -n length      set number of points in frequency series to length\n");
+  fprintf (stderr, "  -o filename    print gravitational-wave spectrum to file filename\n");
   exit (exitcode);
 }
 

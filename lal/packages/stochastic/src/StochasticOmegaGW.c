@@ -45,7 +45,7 @@ $100\,\textrm{km}\,\textrm{s}^{-1}\,\textrm{Mpc}^{-1}$.
 The parameter \texttt{parameters.omegaRef} specifies the amplitude
 ${h_{100}}^2\Omega_{\scriptstyle{\rm R}}$ of the spectrum.  This is simply
 defined as the value of ${h_{100}}^2\Omega_{\scriptstyle{\rm GW}}(f)$ at the
-reference frequency $f_{\scriptstyle{\rm R}}$ which is specified by
+reference frequency $f_{\scriptstyle{\rm R}}$ which is specified in
 \texttt{parameters.omegaRef}.
 
 \subsubsection*{Algorithm}
@@ -57,6 +57,8 @@ $\Omega_{\scriptstyle{\rm R}}$.
 If $\alpha\ne 0$, the DC value \texttt{output->data->data[0]} is set
 to 0 or \texttt{LAL\_REAL4\_MAX}, depending on whether $\alpha$ is
 positive or negative, respectively.
+
+The output units are set to be dimensionless.
 
 \subsubsection*{Uses}
 \begin{verbatim}

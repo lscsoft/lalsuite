@@ -113,7 +113,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
   \texttt{ZeroPadAndFFT.c} (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})
   containing the functions
   \texttt{LALSZeroPadAndFFT()} and \texttt{LALCZeroPadAndFFT()};
-  \texttt{Optimal} represents the module
+  \texttt{OptimalFilter} represents the module
   \texttt{StochasticOptimalFilter.c} 
   (Sec.~\ref{stochastic:ss:StochasticOptimalFilter.c})
   containing the function
@@ -396,11 +396,11 @@ Contains the inputs to \texttt{LALStochasticInverseNoise()}.
 The fields are:
  
 \begin{description}
-\item[\texttt{REAL4FrequencySeries whitenedNoisePSD}]
+\item[\texttt{REAL4FrequencySeries *whitenedNoisePSD}]
 The power spectral density $P^{\scriptstyle{\rm W}}(f)$ of the noise
 contribution to the detector output.
 
-\item[\texttt{COMPLEX8FrequencySeries whiteningFilter}]
+\item[\texttt{COMPLEX8FrequencySeries *whiteningFilter}]
 The frequency-domain reponse function $\tilde{R}(f)$.
 \end{description}
 

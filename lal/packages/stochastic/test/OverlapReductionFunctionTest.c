@@ -20,10 +20,10 @@ Options:
   -d level       set lalDebugLevel to level
   -s siteID1     calculate overlap red fcn for site siteID1
   -t siteID2       with site siteID2
-  -o filename    print frequency series to file filename
   -f f0          set start frequency to f0
-  -e deltaF      use frequency resolution deltaF
-  -n length      length of corresponding time series is 2*length-1
+  -e deltaF      set frequency spacing to deltaF
+  -n length      set number of points in frequency series to length
+  -o filename    print overlap reduction function to file filename
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -524,9 +524,9 @@ Usage (const char *program, int exitcode)
              i, lalCachedDetectors[i].frDetector.name);
   }
   fprintf (stderr, "  -f f0          set start frequency to f0\n");
-  fprintf (stderr, "  -e deltaF      use frequency resolution deltaF\n");
-  fprintf (stderr, "  -n length      length of corresponding time series is 2*length-1\n");
-  fprintf (stderr, "  -o filename    print frequency series to file filename\n");
+  fprintf (stderr, "  -e deltaF      set frequency spacing to deltaF\n");
+  fprintf (stderr, "  -n length      set number of points in frequency series to length\n");
+  fprintf (stderr, "  -o filename    print overlap reduction function to file filename\n");
   exit (exitcode);
 }
 

@@ -76,6 +76,11 @@ with the FFTW \cite{stochastic:Frigo:1998} (via the interfaces in the
 primes, so $N$ should be chosen so that $2N-1$ is a power of 3 or
 other suitable number.
 
+\item In the future, we will add a function
+  \texttt{LALCZeroPadAndFFT()} which zero-pads an $N$-point
+  heterodyned complex time series and Fourier transforms it to produce
+  a $2N-1$-point complex frequency series.
+
 \end{itemize}
 
 \vfill{\footnotesize\input{ZeroPadAndFFTCV}}

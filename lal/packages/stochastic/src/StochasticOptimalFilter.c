@@ -49,7 +49,7 @@ produce a ``whitened''\footnote{So named because the instrumental
   dynamic range, for which reason $\widetilde{R}(f)$ is referred to as
   a ``whitening filter''.} data stream
 \begin{equation}
-h_i^{\scriptstyle{\rm W}}(t) = \int_{-\infty}^0 d\tau\, R_i(\tau)\,
+h_i^{\scriptstyle{\rm W}}(t) = \int_0^{\infty} d\tau\, R_i(\tau)\,
 h_i(t-\tau)
 \end{equation}
 which has the simpler frequency-domain representation
@@ -120,8 +120,8 @@ value at
 \end{equation}
 Note that since the mean value of the cross-correlation statistic
 should be the same whether it's calculated from the whitened or % '
-unwhitened data, the normalization constant $\lambda$ involves the 
-unwhitened PSDs $\{P_i(f)|i=1,2\}$.
+unwhitened data, the normalization constant $\lambda$ involves only
+the unwhitened PSDs $\{P_i(f)|i=1,2\}$.
 
 \texttt{LALStochasticOptimalFilter()} generates a complex frequency
 series containing the whitened optimal filter
@@ -182,6 +182,10 @@ LALUnitCompare()
   are far from unity when expressed in the standard SI units.  This
   routine should be modified to use the power-of-ten feature of the
   \texttt{LALUnit} structure to bring the dynamic range in line.
+\item Although $Q(f)$ is real by construction, the whitened optimal
+  filter $\widetilde{Q}^{\scriptstyle{\rm W}}(f)$ will in general be
+  complex because the whitening filters $\widetilde{R}_i(f)$ for the
+  two sites will be different.
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticOptimalFilterCV}}

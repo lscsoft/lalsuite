@@ -18,10 +18,11 @@ Options:
   -q             quiet: run silently
   -v             verbose: print extra information
   -d level       set lalDebugLevel to level
-  -w filename    read whitened Noise from filename 
-  -f filename    read whitening Filter from filename 
-  -u filename    print unwhitened Inverse Noise to filename
-  -m filename    print hw Inverse Noise to filename
+  -n length      frequency series contain length points
+  -w filename    read whitened noise PSD from file filename
+  -f filename    read whitening filter from file filename 
+  -u filename    print unwhitened inverse noise PSD to file filename
+  -m filename    print half-whitened inverse noise PSD to file filename
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -100,9 +101,15 @@ LALCheckMemoryLeaks()
 
 \subsubsection*{Notes}
 \begin{itemize}
-  \item No specific error checking is done on user-specified data.  If
-the \texttt{length} argument missing, the resulting defaults
-will cause a bad data error.
+\item No specific error checking is done on user-specified data.  If
+  the \texttt{length} argument missing, the resulting defaults
+  will cause a bad data error.
+\item The length of the user-provided series must be specified, even
+  though it could in principle be deduced from the input file, because
+  the data sequences must be allocated before the
+  \texttt{LALCReadFrequencySeries()} function is called.
+\item If one \texttt{filename} argument, but not both, is present,
+  the user-specified data will be silently ignored.
 \end{itemize}
 
 \vfill{\footnotesize\input{StochasticInverseNoiseTestCV}}
@@ -1087,11 +1094,11 @@ static void Usage (const char *program, int exitcode)
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
-  fprintf (stderr, "  -n length      length of corresponding frequency series is 2*length-1\n");
-  fprintf (stderr, "  -w filename    read whitened noise from filename \n");
-  fprintf (stderr, "  -f filename    read whitening filter from filename \n");
-  fprintf (stderr, "  -u filename    print unwhitened inverse noise to filename \n");
-  fprintf (stderr, "  -m filename    print half-whitened inverse noise to filename \n");
+  fprintf (stderr, "  -n length      frequency series contain length points\n");
+  fprintf (stderr, "  -w filename    read whitened noise PSD from file filename\n");
+  fprintf (stderr, "  -f filename    read whitening filter from file filename \n");
+  fprintf (stderr, "  -u filename    print unwhitened inverse noise PSD to file filename\n");
+  fprintf (stderr, "  -m filename    print half-whitened inverse noise PSD to file filename\n");
   exit (exitcode);
 }
 

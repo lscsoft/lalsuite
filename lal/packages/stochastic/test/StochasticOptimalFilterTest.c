@@ -13,19 +13,19 @@ Test suite for \texttt{LALStochasticOptimalFilter()}.
 \begin{verbatim}
 ./StochasticOptimalFilterTest [options]
 Options:
-  -h             print this message
+  -h             print usage message
   -q             quiet: run silently
   -v             verbose: print extra information
   -d level       set lalDebugLevel to level
-  -n length      length of corresponding frequency series is 2*length-1
+  -n length      frequency series contain length points
   -f fRef        set normalization reference frequency to fRef
-  -w filename    read OmegaGW from filename 
-  -g filename    read Overlap from filename 
-  -i filename    read Inverse Noise1 from filename 
-  -j filename    read Inverse Noise2 from filename 
-  -s filename    read hw Inverse Noise1 from filename 
-  -t filename    read hw Inverse Noise2 from filename 
-  -o filename    print optimal to filename 
+  -w filename    read gravitational-wave spectrum from file filename
+  -g filename    read overlap reduction function from file filename
+  -i filename    read first inverse noise PSD from file filename
+  -j filename    read second inverse noise PSD from file filename
+  -s filename    read first half-whitened inverse noise PSD from file filename
+  -t filename    read second half-whitened inverse noise PSD from file filename
+  -o filename    print optimal filter to file filename
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -34,7 +34,7 @@ This program tests the function \texttt{LALStochasticOptimalFilter()},
 which generates a normalized optimal filter from a stochastic
 gravitational-wave background spectrum
 $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)$, an overlap reduction
-function $\gamma(f)$, and unwhitened and hralf-whitened noise power
+function $\gamma(f)$, and unwhitened and half-whitened noise power
 spectral densities $\{P_i(f),P^{\scriptstyle{\rm HW}}_i(f)\}$ for a
 pair of detectors.
 
@@ -130,9 +130,16 @@ fabs()
 
 \subsubsection*{Notes}
 \begin{itemize}
-  \item No specific error checking is done on user-specified data.  If
-\texttt{length} is missing, the resulting default
-will cause a bad data error.  If \texttt{fRef} is unspecified, a default value of 1\,Hz is used.
+\item No specific error checking is done on user-specified data.  If
+  \texttt{length} is missing, the resulting default will cause a bad
+  data error.  If \texttt{fRef} is unspecified, a default value of
+  1\,Hz is used.
+\item The length of the user-provided series must be specified, even
+  though it could in principle be deduced from the input file, because
+  the data sequences must be allocated before the
+  \texttt{LALCReadFrequencySeries()} function is called.
+\item If some, but not all, of the \texttt{filename} arguments are
+  present, the user-specified data will be silently ignored.
 \item The routine \texttt{LALStochasticOptimalFilter()} does not yet
   support non-zero heterodyning frequencies.
 \end{itemize}
@@ -1664,16 +1671,15 @@ static void Usage (const char *program, int exitcode)
   fprintf (stderr, "  -q             quiet: run silently\n");
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
-  fprintf (stderr, "  -n length      length of corresponding frequency series is 2*length-1\n");
+  fprintf (stderr, "  -n length      frequency series contain length points\n");
   fprintf (stderr, "  -f fRef        set normalization reference frequency to fRef\n");
-  fprintf (stderr, "  -w filename    read OmegaGW from filename \n");
-  fprintf (stderr, "  -g filename    read Overlap from filename \n"); 
-  fprintf (stderr, "  -i filename    read Inverse Noise1 from filename \n");
-  fprintf (stderr, "  -j filename    read Inverse Noise2 from filename \n");
-  fprintf (stderr, "  -s filename    read hw Inverse Noise1 from filename \n");
-  fprintf (stderr, "  -t filename    read hw Inverse Noise2 from filename \n");
-  fprintf (stderr, "  -o filename    print optimal to filename \n");
-
+  fprintf (stderr, "  -w filename    read gravitational-wave spectrum from file filename\n");
+  fprintf (stderr, "  -g filename    read overlap reduction function from file filename\n"); 
+  fprintf (stderr, "  -i filename    read first inverse noise PSD from file filename\n");
+  fprintf (stderr, "  -j filename    read second inverse noise PSD from file filename\n");
+  fprintf (stderr, "  -s filename    read first half-whitened inverse noise PSD from file filename\n");
+  fprintf (stderr, "  -t filename    read second half-whitened inverse noise PSD from file filename\n");
+  fprintf (stderr, "  -o filename    print optimal filter to file filename\n");
   exit (exitcode);
 }
 
