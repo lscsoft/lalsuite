@@ -97,6 +97,7 @@ struct CommandLineArgsTag {
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
+  INT4 whitespectrumflag;      /* =0 if spectrum is to be computed =1 for white spectrum */
 } CommandLineArgs;
 
 typedef 
@@ -144,6 +145,8 @@ MetadataTable  searchsumm;
 CHAR outfilename[256];
 CHAR ifo[3]; 
 
+REAL4 SAMPLERATE;
+
 int Nevents=0;
 
 /***************************************************************************/
@@ -165,7 +168,7 @@ int AddInjections(struct CommandLineArgsTag CLA);
 /* High pass filters data again if an injection has been made */
 int ProcessData2(struct CommandLineArgsTag CLA);
 
-/* DownSamples data and then rescales by 10^20 to avoid single precision problems */
+/* DownSamples data */
 int DownSample();
 
 /* Computes the average spectrum  */
@@ -204,23 +207,11 @@ int main(int argc,char *argv[])
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
-     /* high pass filter data again with added injection */
- 
+     /* high pass filter data again with added injection */ 
      if (ProcessData2(CommandLineArgs)) return 3;
    }
 
- 
  if (DownSample()) return 5;
-
-/*  { */
-/*     int pp; */
-/*     for (pp=0; pp<(int)GV.ht_proc.data->length; pp++) */
-/*       { */
-/* 	fprintf(stdout,"%e\n",GV.ht_proc.data->data[pp]); */
-/*       } */
-/*     return 0; */
-/*   } */
-
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -490,6 +481,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	  vtilde->data[p].im *= GV.StringFilter.data->data[p]*GV.ht_proc.deltaT;
 	}
 
+
       /* loop over templates  */
       for (m = 0; m < NTemplates; m++)
 	{
@@ -507,10 +499,9 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	    {
 	      vector->data[p] *= 2.0 * GV.StringFilter.deltaF / strtemplate[m].norm;
 	    }
+
 	  if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
 	}
-      
-
     }
   
   LALSDestroyVector( &status, &vector );
@@ -566,7 +557,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	  strtemplate[k].norm=sqrt(t1t1);
 	  strtemplate[k].mismatch=epsilon;
 	  k++;
-/* 	  fprintf(stdout,"Template %d, at f=%f with mismatch %f, %f\n",k-1,f,epsilon,t1t1); */
 	}
       if(k == MAXTEMPLATES)
 	{
@@ -582,10 +572,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 
 
 /*******************************************************************************/
-
 int CreateStringFilter(struct CommandLineArgsTag CLA)
 {
-
   COMPLEX8Vector *vtilde = NULL;
   REAL4Vector    *vector = NULL;
 
@@ -608,12 +596,10 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
  
   for ( p = (int)f_cutoff_index ; p < (int)vtilde->length - 1; p++ )
     {
-
       REAL4 f=p*GV.StringFilter.deltaF;
       
       vtilde->data[p].re = sqrt(pow(f,CLA.power)/(GV.Spec.data->data[p]));
       vtilde->data[p].im = 0;
-
     }
   vtilde->data[vtilde->length - 1].re = 0;
   vtilde->data[vtilde->length - 1].im = 0;
@@ -626,27 +612,28 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   
   /* multiply times df to make sure units are correct */
   for ( p = 0 ; p < (int)vector->length; p++ )
-    {
       vector->data[p] *= GV.StringFilter.deltaF;
-    }
   
   if(CLA.TruncSecs != 0.0) 
     {
-      memset( vector->data + (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)/ 2, 0,
-	      ( vector->length -  (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) * sizeof( *vector->data ) );
+      memset( vector->data + (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5), 0,
+	      ( vector->length -  2* (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) * sizeof( *vector->data ) );
+    }
+  
+  LALForwardRealFFT( &status, vtilde, vector,  GV.fplan);
+  TESTSTATUS( &status );
+
+  for ( p = 0 ; p < (int)vtilde->length - 1; p++ )
+    {
+      REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
+      REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
+
+      GV.StringFilter.data->data[p] = (re * re + im * im);
     }
 
-  LALRealPowerSpectrum( &status, GV.StringFilter.data, vector, GV.fplan );
-  TESTSTATUS( &status );
 
   /* set all values below the cutoff frequency to 0 */
   memset( GV.StringFilter.data->data, 0, f_cutoff_index  * sizeof( *GV.StringFilter.data->data ) );
-
-  /* Correct units not included in LALRealPowerSpectrum */
-  for ( p = (int)f_cutoff_index ; p < (int)GV.StringFilter.data->length; p++ )
-    {
-      GV.StringFilter.data->data[p] *= GV.ht_proc.deltaT*GV.ht_proc.deltaT;
-    }
 
   LALCDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
@@ -657,14 +644,10 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   return 0;
 }
 
-
 /*******************************************************************************/
 int AvgSpectrum(struct CommandLineArgsTag CLA)
 {
-
-  LALWindowParams       windowParams;
-  AverageSpectrumParams avgSpecParams;
-  
+ 
   GV.seg_length = GV.ht_proc.data->length / CLA.NoOfSegs;
   
   LALSCreateVector( &status, &GV.Spec.data, GV.seg_length / 2 + 1 );
@@ -676,22 +659,39 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
   LALCreateReverseRealFFTPlan( &status, &GV.rplan, GV.seg_length, 0 );
   TESTSTATUS( &status );
 
-  windowParams.type     = Hann;
-  windowParams.length   = GV.seg_length;
+  if (CLA.fakenoiseflag && CLA.whitespectrumflag)
+    {
+      int p;
+      for ( p = 0 ; p < (int)GV.Spec.data->length; p++ )
+	{
+	  GV.Spec.data->data[p]=2*SAMPLERATE;
+	}
+      GV.Spec.deltaF=1/(GV.seg_length*GV.ht_proc.deltaT);
+  }
+  else
+    {
+      LALWindowParams       windowParams;
+      AverageSpectrumParams avgSpecParams;
+ 
+      windowParams.type     = Hann;
+      windowParams.length   = GV.seg_length;
 
-  avgSpecParams.window  = NULL;
-  avgSpecParams.plan    = GV.fplan;
-  avgSpecParams.method  = useMean;
-  avgSpecParams.overlap = GV.seg_length / 2;
+      avgSpecParams.window  = NULL;
+      avgSpecParams.plan    = GV.fplan;
+      avgSpecParams.method  = useMean;
+      avgSpecParams.overlap = GV.seg_length / 2;
 
-  LALCreateREAL4Window( &status, &avgSpecParams.window,&windowParams );
-  TESTSTATUS( &status );
+      LALCreateREAL4Window( &status, &avgSpecParams.window,&windowParams );
+      TESTSTATUS( &status );
 
-  LALREAL4AverageSpectrum( &status, &GV.Spec, &GV.ht_proc, &avgSpecParams );
-  TESTSTATUS( &status );
+      LALREAL4AverageSpectrum( &status, &GV.Spec, &GV.ht_proc, &avgSpecParams );
+      TESTSTATUS( &status );
+      
+      LALDestroyREAL4Window( &status, &avgSpecParams.window );
+      TESTSTATUS( &status );
+    }
 
-  LALDestroyREAL4Window( &status, &avgSpecParams.window );
-  TESTSTATUS( &status );
+/*   LALSPrintFrequencySeries( &GV.Spec, "Spectrum.txt" ); */
 
   return 0;
 }
@@ -701,7 +701,6 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
 int DownSample()
 {
   ResampleTSParams resamplepar;
-  int p;
 
   memset( &resamplepar, 0, sizeof( resamplepar ) );
   resamplepar.deltaT     = GV.ht_proc.deltaT * 4.0;
@@ -709,12 +708,6 @@ int DownSample()
 
   LALResampleREAL4TimeSeries( &status, &GV.ht_proc, &resamplepar );
   TESTSTATUS( &status );
-
-  /* Scale data to avoid single float precision problems */
-  for (p=0; p<(int)GV.ht_proc.data->length; p++)
-    {
-      GV.ht_proc.data->data[p] *= SCALE;
-    }
 
   return 0;
 }
@@ -788,6 +781,8 @@ int ReadData(struct CommandLineArgsTag CLA)
   LALSCreateVector(&status,&GV.ht_proc.data,(UINT4)(GV.duration/GV.ht.deltaT +0.5));
   TESTSTATUS( &status );
 
+  SAMPLERATE=GV.ht.deltaT;
+
   /* If we are reading real noise then read it*/
   if (!CLA.fakenoiseflag)
     {
@@ -796,6 +791,12 @@ int ReadData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
       LALFrGetREAL8TimeSeries(&status,&GV.ht,&chanin_ht,framestream);
       TESTSTATUS( &status );
+
+      /* Scale data to avoid single float precision problems */
+      for (p=0; p<(int)GV.ht_proc.data->length; p++)
+	{
+	  GV.ht.data->data[p] *= SCALE;
+	}
     }
   /* otherwise create random data set */
   else
@@ -830,7 +831,7 @@ int ReadData(struct CommandLineArgsTag CLA)
      
       for (p=0; p<(int)GV.ht.data->length; p++)
 	{
-	  GV.ht.data->data[p] = 0.1*v1->data[p]/SCALE;
+	  GV.ht.data->data[p] = v1->data[p];
 	}
 
       LALSDestroyVector (&status, &v1);
@@ -839,7 +840,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
-
 
   return 0;
 }
@@ -867,11 +867,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"settling-time",       required_argument, NULL,           'T'},
     {"cusp-search",                no_argument, NULL,         'c' },
     {"kink-search",                no_argument, NULL,         'k' },
-    {"fake-gaussian-noise",        no_argument, NULL,         'n' },
+    {"test-gaussian-data",         no_argument, NULL,          'n' },
+    {"test-white-spectrum",        no_argument, NULL,         'w' },
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckf:b:t:F:C:E:S:i:N:T:";
+  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -898,6 +899,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->fbanklow=0.0;
   CLA->threshold=0.0;
   CLA->fakenoiseflag=0;
+  CLA->whitespectrumflag=0;
   
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -981,6 +983,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->fakenoiseflag=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'w':
+      /* fake gaussian noise flag */
+      CLA->whitespectrumflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n and -i. One of -k or -c must be specified. They are:\n");
@@ -996,7 +1003,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--no-of-segments (-N)\t\tINTEGER\t Number of non-overlapping sub-segments, N. The 2N-1 segments analysed will overlap by 50%s. \n","%");
       fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
-      fprintf(stdout,"\t--fake-gaussian-noise (-n)\tFLAG\t Use fake gaussian noise.\n");
+      fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
+      fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--help (-n)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg ./lalapps_StringSearch --low-freq-cutoff 40.0 --bank-low-freq-cutoff 40.0 --threshold 80.0 --frame-cache ht_local_cache --channel-name H1:Calibrated-Strain --gps-start-time 732847600 --gps-end-time 732849648 --no-of-segments 32 --settling-time 8 --cusp-search\n");
       exit(0);
