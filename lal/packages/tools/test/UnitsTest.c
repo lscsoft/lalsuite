@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Program \texttt{UnitsTest.c}}
-\label{ss:UnitsTest.c}
+\label{tools:ss:UnitsTest.c}
 
 Test Suite for unit manipulation programs
 

@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{UnitNormalize.c}}
-\label{ss:UnitNormalize.c}
+\label{tools:ss:UnitNormalize.c}
 
 Brings an \texttt{LALUnit} structure into standard form by reducing
 all of the rational exponents into LCD form.
@@ -25,7 +25,7 @@ convert the structure to its simplest form.
 \subsubsection*{Algorithm}
 
 The rational powers are reduced using Euclid's
-algorithm\cite{Geddes:1992}.
+algorithm\cite{tools:Geddes:1992}.
 
 \subsubsection*{Uses}
 
@@ -42,7 +42,7 @@ call it explicitly.
 
 ******************************************************* </lalLaTeX> */ 
 /**************************************** <lalLaTeX file="UnitNormalizeCB">
-\bibitem{Geddes:1992}
+\bibitem{tools:Geddes:1992}
 K.~O.~Geddes, S.~R.~Czapor, and G.~Labahn, \textit{Algorithms for
 computer algebra}.  (Kluwer Academic, Boston, 1992)
 ******************************************************* </lalLaTeX> */ 

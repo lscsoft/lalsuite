@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{UnitDefs.c}}
-\label{ss:UnitDefs.c}
+\label{tools:ss:UnitDefs.c}
 
 Defines basic and derived SI units and a function to produce a text
 string corresponding to a unit structure.
@@ -69,7 +69,7 @@ Constant & Name & Abbr.\ & Physical Quantity \\
 \hline
 \end{tabular}
 \end{center}
-Next, the named derived units in the SI\cite{Halliday:2001}:
+Next, the named derived units in the SI\cite{tools:Halliday:2001}:
 \begin{center}
 \begin{tabular}{|llllll|}
 \hline
@@ -150,7 +150,7 @@ Constant & Name & Abbr.\ & Def.\ & Fundamental\\
 
 ******************************************************* </lalLaTeX> */ 
 /**************************************** <lalLaTeX file="UnitDefsCB">
-\bibitem{Halliday:2001}
+\bibitem{tools:Halliday:2001}
 D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
   Physics}.  (Wiley \& Sons, New York, 2001)
 ******************************************************* </lalLaTeX> */ 
@@ -161,7 +161,7 @@ D.~Halliday, R.~Resnick, and J.~Walker, \textit{Fundamentals of
 
 NRCSID( UNITDEFSC, "$Id$" );
 
-#define UNITDEFSCTEMPSIZE 20
+#define UNITDEFSC_TEMPSIZE 20
 
 /* To convert a units structure to a string repesentation, we need to
  * define the names of the basic units.
@@ -251,7 +251,7 @@ static int readNumber( char temp[], char **charPtrPtr )
 
   tempPtr = temp;
   /* make sure we don't fall off end of temporary array */
-  tempStopPtr = temp + UNITDEFSCTEMPSIZE;
+  tempStopPtr = temp + UNITDEFSC_TEMPSIZE;
 
   if ( ! isdigit(**charPtrPtr) ) return 1;
 
@@ -269,13 +269,13 @@ static int readNumber( char temp[], char **charPtrPtr )
 /* Static function to read a string into a character array */
 /* returns 0 on success, 1 on failure */
 /* leaves *charPtrPtr pointing to first non-letter */
-static int readString( char temp[UNITDEFSCTEMPSIZE], char **charPtrPtr )
+static int readString( char temp[UNITDEFSC_TEMPSIZE], char **charPtrPtr )
 {
   CHAR *tempPtr, *tempStopPtr;
 
   tempPtr = temp;
   /* make sure we don't fall off end of temporary array */
-  tempStopPtr = temp + UNITDEFSCTEMPSIZE; 
+  tempStopPtr = temp + UNITDEFSC_TEMPSIZE; 
 
   if ( ! isalpha(**charPtrPtr) ) return 1;
 
@@ -298,7 +298,7 @@ LALUnitAsString( LALStatus *status,
 /* </lalVerbatim> */
 {
   UINT2        i;
-  CHAR         temp[UNITDEFSCTEMPSIZE];
+  CHAR         temp[UNITDEFSC_TEMPSIZE];
   INT2         numer;
   CHAR         *charPtr, *charStopPtr;
 

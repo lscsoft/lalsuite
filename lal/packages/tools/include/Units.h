@@ -6,7 +6,7 @@ $Id$
 /* <lalLaTeX>
 
 \section{Header \texttt{Units.h}}
-\label{s:Units.h}
+\label{tools:s:Units.h}
 
 Provides prototypes for manipulation of units and declares
 \texttt{extern} constants for the basic and derived SI units.

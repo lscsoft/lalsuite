@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{UnitCompare.c}}
-\label{ss:UnitCompare.c}
+\label{tools:ss:UnitCompare.c}
 
 Compares two \texttt{LALUnit} structures, returning true if they are
 equivalent, false otherwise.
@@ -45,6 +45,7 @@ turn.
 #include <lal/Units.h>
 
 NRCSID( UNITCOMPAREC, "$Id$" );
+
 /* <lalVerbatim file="UnitCompareCP"> */
 void
 LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)

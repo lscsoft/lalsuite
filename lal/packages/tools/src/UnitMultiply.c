@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{UnitMultiply.c}}
-\label{ss:UnitMultiply.c}
+\label{tools:ss:UnitMultiply.c}
 
 Multiplies two \texttt{LALUnit} structures.
 

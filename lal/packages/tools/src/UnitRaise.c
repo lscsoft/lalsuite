@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{UnitRaise.c}}
-\label{ss:UnitRaise.c}
+\label{tools:ss:UnitRaise.c}
 
 Raises an \texttt{LALUnit} structure to a specified rational power.
 
