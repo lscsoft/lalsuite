@@ -20,6 +20,9 @@ RCSID("$Id$");
 #define INCA_MSGROW    "Error reading row from XML table"
 #define INCA_MSGEFILE  "Could not open file"
 
+#define INCA_TIMEWARNING "only triggers before 00:00 Dec 31, \
+2010 will be used"
+
 #define TRUE     1
 #define FALSE    0
 #define MAXIFO   16
@@ -28,8 +31,9 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --ifo-a trigfile.a --ifo-b trigfile.b \
+--start-time startCoincidence --stop-time stopCoincidence \
 --drho-plus dRhoPlus --drho-minus dRhoMinus --dt deltat \
---dm deltam --outfile outfilename [--help]\n"
+--dm deltam --outfile outfilename --noplayground [--help]\n"
 
 
 /****************************************************************************
@@ -60,11 +64,13 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd){
 int main(int argc, char **argv)
 {
     static LALStatus         stat;
-    BOOLEAN                  playground=TRUE;
+    INT4                     playground=TRUE;
+    INT4                     verbose = FALSE;
 
     INT4                     startCoincidence=0;
-    INT4                     endCoincidence=0;
+    INT4                     endCoincidence=977788813;
     INT4                     deltaT=0;
+    INT4                     triggerTime = 0;
 
     CHAR                   **trigFile;
     INT4                     nTrigFile[MAXIFO];
@@ -83,11 +89,14 @@ int main(int argc, char **argv)
     /* getopt arguments */
     struct option long_options[] =
     {
+        /* these options set a flag */
+        {"verbose",                 no_argument,       &verbose,           TRUE },
+        {"noplayground",            no_argument,       &playground,        FALSE },
         /* parameters used to generate calibrated power spectrum */
         {"ifo-a",                   required_argument, 0,                'a'},
         {"ifo-b",                   required_argument, 0,                'b'},
-        {"drho-plus",               required_argument, 0,                'c'},
-        {"drho-minus",              required_argument, 0,                'd'},
+        {"drhoplus",                required_argument, 0,                'c'},
+        {"drhominus",               required_argument, 0,                'd'},
         {"dm",                      required_argument, 0,                'm'},
         {"dt",                      required_argument, 0,                't'},
         {"start-time",              required_argument, 0,                'r'},
@@ -107,8 +116,10 @@ int main(int argc, char **argv)
 
 
     trigFile = (CHAR **) LALCalloc( MAXIFO * MAXFILES, sizeof(CHAR*) );
-    inspiralEventList = (SnglInspiralTable **) LALCalloc( 2, sizeof(SnglInspiralTable) );
-    currentTrigger    = (SnglInspiralTable **) LALCalloc( 2, sizeof(SnglInspiralTable) );
+    inspiralEventList = (SnglInspiralTable **) LALCalloc( 2, 
+            sizeof(SnglInspiralTable) );
+    currentTrigger    = (SnglInspiralTable **) LALCalloc( 2, 
+            sizeof(SnglInspiralTable) );
     memset( &errorParams, 0, sizeof(SnglInspiralErrors) );
     memset( &nTrigFile, 0, MAXIFO * sizeof(INT4) );
 
@@ -227,33 +238,31 @@ int main(int argc, char **argv)
         }
     }
 
-    if ( *trigFile == NULL || (*trigFile+MAXFILES) == NULL ){
-        LALPrintError( "Must supply an xml file to parse\n" );
+    if ( *trigFile == NULL || (*trigFile+MAXFILES) == NULL ||
+            outfileName == NULL ){
+        LALPrintError( "Must supply two input and one output file\n" );
         return INCA_EARG;
     }
 
     /*******************************************************************
      * END PARSE ARGUMENTS                                              *
      *******************************************************************/
-
-
-    /*****************************************************************
-     * open output xml file
-     *****************************************************************/
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), &stat);
+    if (endCoincidence == 977788813)
+        fprintf(stderr,"Warning: %s\n", INCA_TIMEWARNING);
 
 
    /*****************************************************************
      * loop over input files for both ifos
      *****************************************************************/
+    if (verbose) fprintf(stdout,"Looping over files\n");
     for(j=0 ; j<2 ; j++)
     {
 
         currentEvent = tmpEvent = inspiralEventList[j] = NULL;
         for(i=0; i<nTrigFile[j] ; i++)
         {
-            LAL_CALL( readInspiralTriggers(&stat, &tmpEvent, *(trigFile+j*MAXFILES+i)), &stat);
+            LAL_CALL( readInspiralTriggers(&stat, &tmpEvent, 
+                        *(trigFile+j*MAXFILES+i)), &stat);
 
             /* connect results to linked list */
             if (currentEvent == NULL)
@@ -282,10 +291,10 @@ int main(int argc, char **argv)
     }
 
 
-
     /*****************************************************************
      * find the first trigger after coincidence start time
      *****************************************************************/
+    if (verbose) fprintf(stdout,"Moving to first trigger in window\n");
     for(j=0 ; j<2 ; j++)
     {
         currentTrigger[j] = inspiralEventList[j];
@@ -301,7 +310,8 @@ int main(int argc, char **argv)
     /*****************************************************************
      * outer loop over triggers from interferometer A
      ****************************************************************/
-    while (currentTrigger[0] != NULL && 
+    if (verbose) fprintf(stdout,"Start loop over ifo A\n");
+    while ( (currentTrigger[0] != NULL) && 
             (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
     {
         INT8 ta, tb;
@@ -319,48 +329,57 @@ int main(int argc, char **argv)
             currentTrigger[1] = currentTrigger[1]->next;
         }
 
+        if (verbose) fprintf(stdout,"Start loop over ifo B\n");
         /* look for coincident events in B within the time window */
-        tmpEvent = currentTrigger[1];
-        while (tmpEvent != NULL)
+        triggerTime = currentTrigger[0]->end_time.gpsSeconds;
+        if ( (!(isPlayground(triggerTime, triggerTime)) && playground) == 0 )
         {
-            LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->end_time)), &stat);
-            if (tb > ta+deltaT)
+            tmpEvent = currentTrigger[1];
+            while (tmpEvent != NULL)
             {
-                break;
-            }
-            else
-            {
-                /* this is a LAL function which compares events */
-                LAL_CALL( LALCompareSnglInspiral(&stat, currentTrigger[0],
-                            tmpEvent, &errorParams), &stat);
-            }
+                LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->end_time)), &stat);
+                if (tb > ta+deltaT)
+                {
+                    break;
+                }
+                else
+                {
+                    /* this is a LAL function which compares events */
+                    LAL_CALL( LALCompareSnglInspiral(&stat, currentTrigger[0],
+                                tmpEvent, &errorParams), &stat);
+                }
 
-            if (errorParams.match)
-            {
-                if (coincidentEvents == NULL)
+                if (errorParams.match )
                 {
-                    outEvent = coincidentEvents = (SnglInspiralTable *)
-                        LALCalloc(1, sizeof(SnglInspiralTable) );
+                    if (coincidentEvents == NULL)
+                    {
+                        outEvent = coincidentEvents = (SnglInspiralTable *)
+                            LALCalloc(1, sizeof(SnglInspiralTable) );
+                        prevEvent = outEvent;
+                    }
+                    else 
+                    {
+                        outEvent = (SnglInspiralTable *)
+                            LALCalloc(1, sizeof(SnglInspiralTable) );
+                        prevEvent->next = outEvent;
+                    }
+                    memcpy( outEvent, currentTrigger[1], sizeof(SnglInspiralTable));
                     prevEvent = outEvent;
+                    outEvent = outEvent->next = NULL;
                 }
-                else 
-                {
-                    outEvent = (SnglInspiralTable *)
-                        LALCalloc(1, sizeof(SnglInspiralTable) );
-                    prevEvent->next = outEvent;
-                }
-                memcpy( outEvent, currentTrigger[1], sizeof(SnglInspiralTable));
-                prevEvent = outEvent;
-                outEvent = outEvent->next = NULL;
+                tmpEvent = tmpEvent->next;
             }
-            
-            tmpEvent = tmpEvent->next;
         }
 
         currentTrigger[0] = currentTrigger[0]->next;
     }
 
-    /* close the output file */
+
+    /*****************************************************************
+     * open output xml file
+     *****************************************************************/
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
+    LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_inspiral_table), &stat);
     myTable.snglInspiralTable = coincidentEvents;
     LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
                     sngl_inspiral_table), &stat);
@@ -368,7 +387,9 @@ int main(int argc, char **argv)
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 
-    /* clean up the memory that has been allocated */
+    /*****************************************************************
+     * clean up the memory that has been allocated 
+     *****************************************************************/
     while ( coincidentEvents != NULL)
     {
         prevEvent = coincidentEvents;
