@@ -222,6 +222,7 @@ LALRingSearch(
                 sizeof( thisEvent->channel ) );
             thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
             thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
+            thisEvent->peak_time    = thisEvent->start_time;
             thisEvent->duration     = duration;
             thisEvent->central_freq =
               params->templateBank->tmplt[tmplt].frequency;
@@ -238,6 +239,7 @@ LALRingSearch(
             {
               thisEvent->start_time.gpsSeconds     = timeNS / 1000000000;
               thisEvent->start_time.gpsNanoSeconds = timeNS % 1000000000;
+              thisEvent->peak_time  = thisEvent->start_time;
               thisEvent->snr        = snr;
               thisEvent->amplitude  = snr / sigma;
               thisEvent->confidence = 0; /* FIXME */

@@ -84,6 +84,7 @@ tagRingSearchParams
   RealFFTPlan             *forwardPlan;
   RealFFTPlan             *reversePlan;
   AvgSpecMethod            avgSpecMeth;
+  REAL4                    avgSpecNorm;
   REAL4                    dynRangeFac;
   UINT4                    invSpecTrunc;
   REAL4                    lowFrequency;
@@ -107,6 +108,13 @@ tagRingSearchParams
   INT4                     keepResults;
   UINT4                    numResults;
   REAL4TimeSeries         *result;
+  INT4                     testZeroData;
+  INT4                     testInject;
+  LIGOTimeGPS              testInjectTime;
+  REAL4                    testInjectFreq;
+  REAL4                    testInjectQual;
+  REAL4                    testInjectAmpl;
+  REAL4                    testInjectPhase;
 }
 RingSearchParams;
 /**** </lalVerbatim> */

@@ -25,16 +25,18 @@
  * 
  * The routine \verb+LALComputeRingTemplate()+ computes the ringdown waveform
  * \begin{equation}
- *   q(t) = \left\{
+ *   r(t) = \left\{
  *   \begin{array}{ll}
- *     (2\pi)^{1/2}e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for $t\ge0$} \\
+ *     e^{-\pi ft/Q}\cos(2\pi ft) & \mbox{for $t\ge0$} \\
  *     0 & \mbox{for $t<0$}
  *   \end{array}
  *   \right.
  * \end{equation}
  * where the parameters $f$ and $Q$ are specified in the input structure.
  * The output must have an appropriate amount of memory allocated, and must
- * have the desired temporal spacing set.
+ * have the desired temporal spacing set.  Note: Ref.~\cite{JDECreighton}
+ * used a different convention for the ringdown normlization: there the
+ * ringdown waveform was taken to be $q(t)=(2\pi)^{1/2}r(t)$.
  * 
  * The routine \verb+LALComputeBlackHoleRing()+ computes a waveform for a
  * black hole with the specified physical parameters (in the input structure).
@@ -52,14 +54,16 @@
  * \begin{equation}
  *   Q \simeq 2(1-{\hat{a}})^{-9/20}.
  * \end{equation}
- * The strain waveform produced is $h(t)=Aq(t)$ where the amplitude factor
+ * The strain waveform produced is $h(t)=A_q q(t)$ where the amplitude factor
  * is~\cite{JDECreighton}
  * \begin{equation}
- *   A = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
+ *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  *   \left(\frac{\textrm{Mpc}}{r}\right)
  *   \left(\frac{M}{M_\odot}\right)
  *   \left(\frac{\epsilon}{0.01}\right)^{1/2}.
  * \end{equation}
+ * Note that this is written $A_q$ to emphasize that it is the amplitude
+ * factor for $q(t)$ rather than $r(t)$.
  *
  * The routine \verb+LALCreateRingTemplateBank()+ creates a bank of ringdown
  * templates that cover a set range in the parameters $f$ and $Q$.  The bank
@@ -95,12 +99,12 @@ LALComputeRingTemplate(
     RingTemplateInput *input
     )
 { /* </lalVerbatim> */
-  const REAL4 efolds = 10;
-  REAL4 amp;
-  REAL4 fac;
-  REAL4 a;
-  REAL4 y;
-  REAL4 yy;
+  const REAL8 efolds = 10;
+  REAL8 amp;
+  REAL8 fac;
+  REAL8 a;
+  REAL8 y;
+  REAL8 yy;
   UINT4 i;
   UINT4 n;
 
@@ -111,7 +115,8 @@ LALComputeRingTemplate(
   ASSERT( output->data, status, RINGH_ENULL, RINGH_MSGENULL );
 
   /* exponential decay variables */
-  amp = sqrt( 2 * LAL_PI );
+  /* amp = sqrt( 2 * LAL_PI ); */ /* OLD conventions of PRD 022001 (1999) */
+  amp = 1; /* NEW conventions */
   fac = exp( - LAL_PI * input->frequency * output->deltaT / input->quality );
   n = ceil( - efolds / log( fac ) );
 
@@ -166,7 +171,8 @@ LALComputeBlackHoleRing(
   tmplt.frequency = 32000 * ffac / input->solarMasses;
   tmplt.quality = 2 * pow( 1 - input->dimensionlessSpin, -0.45 );
 
-  amp  = 2.415e-21;
+  amp  = 2.415e-21; /* factor given in PRD 022001 (1999) */
+  amp *= sqrt( 2 * LAL_PI ); /* convert NEW conventions to OLD conventions */
   amp *= sqrt( input->percentMassLoss / ( tmplt.quality * ffac ) );
   amp *= input->solarMasses / input->distanceMpc;
 

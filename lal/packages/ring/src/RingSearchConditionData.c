@@ -6,6 +6,7 @@
 #include <math.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/Units.h>
 #include <lal/BandPassTimeSeries.h>
@@ -36,8 +37,8 @@
 
 NRCSID( RINGSEARCHCONDITIONDATAC, "$Id$" );
 
-static const CHAR ifoNames[][3] =
-    { "H0", "H1", "H2", "L0", "L1", "P0", "P1", "P2" };
+/* static const CHAR ifoNames[][3] =
+    { "H0", "H1", "H2", "L0", "L1", "P0", "P1", "P2" }; */
 
 /* <lalVerbatim file="RingSearchConditionDataCP"> */
 void
@@ -157,6 +158,12 @@ LALRingSearchConditionData(
     ENDFAIL( status );
     LALDestroyREAL4Window( status->statusPtr, &avgSpecParams.window );
     CHECKSTATUSPTR( status );
+    /* correct spectrum normalization for unit spectra */
+    if ( params->avgSpecMeth == useUnity && params->avgSpecNorm > 0 )
+    {
+      for ( k = 0; k < params->invSpectrum->data->length; ++k )
+        params->invSpectrum->data->data[k] *= params->avgSpecNorm;
+    }
   }
 
 
@@ -245,6 +252,55 @@ LALRingSearchConditionData(
       &unitPair );
   CHECKSTATUSPTR( status );
 
+
+  /*
+   *
+   * Code for internal testing purposes: zero the data and/or inject
+   * a simple ringdown signal.
+   *
+   */
+
+  if ( params->testZeroData ) /* set data to zero for analysis */
+  {
+    memset( data->channel->data->data, 0,
+        data->channel->data->length * sizeof( *data->channel->data->data ) );
+  }
+  if ( params->testInject ) /* very simple internal injection routine */
+  {
+    INT8 tstart;        /* start time of the data (ns) */
+    INT8 tinject;       /* start time of the ring (ns) */
+    REAL8 dt;           /* time of ring after start of data (s) */
+    UINT4 i;
+    
+    tstart   = (INT8)1000000000 * (INT8)data->channel->epoch.gpsSeconds;
+    tstart  += (INT8)data->channel->epoch.gpsNanoSeconds;
+    tinject  = (INT8)1000000000 * (INT8)params->testInjectTime.gpsSeconds;
+    tinject += (INT8)params->testInjectTime.gpsNanoSeconds;
+    dt       = 1e-9 * (REAL8)( tinject - tstart );
+    for ( i = 0; i < data->channel->data->length; ++i )
+    {
+      REAL8 t; /* time since ringdown start time of this data sample */
+      t = i * data->channel->deltaT - dt;
+      if ( t >= 0 ) /* ringdown has started: do injection */
+      {
+        REAL4 phase;
+        REAL4 exponent;
+        phase = LAL_TWOPI * params->testInjectFreq * t;
+        exponent = 0.5 * phase / params->testInjectQual;
+        if ( exponent < 60.0 )
+        {
+          REAL4 val;
+          val  = exp( - exponent) * cos( phase + params->testInjectPhase );
+          val *= params->testInjectAmpl;
+          data->channel->data->data[i] += val;
+        }
+        else /* ringdown has decayed enough to ignore */
+        {
+          break;
+        }
+      }
+    }
+  }
 
 
   /*
