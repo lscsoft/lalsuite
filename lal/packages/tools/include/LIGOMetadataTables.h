@@ -398,7 +398,10 @@ tagSimInspiralTable
   CHAR           waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS    geocent_end_time;
   LIGOTimeGPS    h_end_time;
-  LIGOTimeGPS    l_end_time;
+  LIGOTimeGPS    l_end_time;  
+  LIGOTimeGPS    g_end_time;
+  LIGOTimeGPS    t_end_time;
+  LIGOTimeGPS    v_end_time;
   REAL8          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];
   REAL4          mass1;
@@ -412,6 +415,9 @@ tagSimInspiralTable
   REAL4          polarization;
   REAL4          eff_dist_h;
   REAL4          eff_dist_l;
+  REAL4          eff_dist_g;
+  REAL4          eff_dist_t;
+  REAL4          eff_dist_v;
   EventIDColumn *event_id;
 }
 SimInspiralTable;

@@ -420,6 +420,12 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simInspiralTable->h_end_time.gpsNanoSeconds,
             tablePtr.simInspiralTable->l_end_time.gpsSeconds,
             tablePtr.simInspiralTable->l_end_time.gpsNanoSeconds,
+	    tablePtr.simInspiralTable->g_end_time.gpsSeconds,
+            tablePtr.simInspiralTable->g_end_time.gpsNanoSeconds,
+            tablePtr.simInspiralTable->t_end_time.gpsSeconds,
+            tablePtr.simInspiralTable->t_end_time.gpsNanoSeconds,
+            tablePtr.simInspiralTable->v_end_time.gpsSeconds,
+            tablePtr.simInspiralTable->v_end_time.gpsNanoSeconds,
             tablePtr.simInspiralTable->end_time_gmst,
             tablePtr.simInspiralTable->source,
             tablePtr.simInspiralTable->mass1,
@@ -432,7 +438,10 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simInspiralTable->coa_phase,
             tablePtr.simInspiralTable->polarization,
             tablePtr.simInspiralTable->eff_dist_h,
-            tablePtr.simInspiralTable->eff_dist_l
+            tablePtr.simInspiralTable->eff_dist_l,
+	    tablePtr.simInspiralTable->eff_dist_g,
+            tablePtr.simInspiralTable->eff_dist_t,
+            tablePtr.simInspiralTable->eff_dist_v
             );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
       }

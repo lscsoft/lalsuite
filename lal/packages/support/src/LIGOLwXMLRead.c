@@ -1089,19 +1089,28 @@ SimInspiralTableFromLIGOLw (
     {"h_end_time_ns",	    -1, 4},
     {"l_end_time",	    -1, 5},
     {"l_end_time_ns",	    -1, 6},
-    {"end_time_gmst",	    -1,	7},
-    {"source",		    -1, 8},
-    {"mass1",               -1, 9},
-    {"mass2",               -1, 10},
-    {"eta",                 -1, 11},
-    {"distance",            -1, 12},
-    {"longitude",           -1, 13},
-    {"latitude",            -1, 14},
-    {"inclination",         -1, 15},
-    {"coa_phase",           -1, 16},
-    {"polarization",        -1, 17},
-    {"eff_dist_h",	    -1, 18},
-    {"eff_dist_l",	    -1, 19},
+    {"g_end_time",	    -1, 7},
+    {"g_end_time_ns",	    -1, 8},
+    {"t_end_time",	    -1, 9},
+    {"t_end_time_ns",	    -1, 10},
+    {"v_end_time",	    -1, 11},
+    {"v_end_time_ns",	    -1, 12},
+    {"end_time_gmst",	    -1,	13},
+    {"source",		    -1, 14},
+    {"mass1",               -1, 15},
+    {"mass2",               -1, 16},
+    {"eta",                 -1, 17},
+    {"distance",            -1, 18},
+    {"longitude",           -1, 19},
+    {"latitude",            -1, 20},
+    {"inclination",         -1, 21},
+    {"coa_phase",           -1, 22},
+    {"polarization",        -1, 23},
+    {"eff_dist_h",	    -1, 24},
+    {"eff_dist_l",	    -1, 25},
+    {"eff_dist_g",	    -1, 26},
+    {"eff_dist_t",	    -1, 27},
+    {"eff_dist_v",	    -1, 28},
     {NULL,                   0, 0}
   };
 
@@ -1200,59 +1209,96 @@ SimInspiralTableFromLIGOLw (
 	  {
 	    thisSim->l_end_time.gpsNanoSeconds = i4colData;
 	  }
-	  else if ( tableDir[j].idx == 7 )
+	  else if ( tableDir[j].idx == 7 ) 	  
+	  {
+	    thisSim->g_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 8 )
+	  {
+	    thisSim->g_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 9 ) 	  
+	  {
+	    thisSim->t_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 10 )
+	  {
+	    thisSim->t_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 11 ) 	  
+	  {
+	    thisSim->v_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 12 )
+	  {
+	    thisSim->v_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 13 )
           {
 	    thisSim->end_time_gmst = r8colData;
 	  }
-	  else if ( tableDir[j].idx == 8 )
+	  else if ( tableDir[j].idx == 14 )
 	  {
 	    LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
 	      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
 	  }
-	  else if ( tableDir[j].idx == 9 )
+	  else if ( tableDir[j].idx == 15 )
 	  {
 	    thisSim->mass1 = r4colData;
           }
-	  else if ( tableDir[j].idx == 10 )
+	  else if ( tableDir[j].idx == 16 )
 	  {
 	    thisSim->mass2 = r4colData;
           }
-          else if ( tableDir[j].idx == 11 )
+          else if ( tableDir[j].idx == 17 )
           {
             thisSim->eta = r4colData;
           }
-          else if ( tableDir[j].idx == 12 )
+          else if ( tableDir[j].idx == 18 )
           {
 	    thisSim->distance = r4colData;
           }
-          else if ( tableDir[j].idx == 13 )
+          else if ( tableDir[j].idx == 19 )
           {
             thisSim->longitude = r4colData;
           }
-          else if ( tableDir[j].idx == 14 )
+          else if ( tableDir[j].idx == 20 )
           {
             thisSim->latitude = r4colData;
           }
-          else if ( tableDir[j].idx == 15 )
+          else if ( tableDir[j].idx == 21 )
           {
             thisSim->inclination = r4colData;
           }
-          else if ( tableDir[j].idx == 16 )
+          else if ( tableDir[j].idx == 22 )
           {
             thisSim->coa_phase = r4colData;
           }
-          else if ( tableDir[j].idx == 17 )
+          else if ( tableDir[j].idx == 23 )
           {
             thisSim->polarization = r4colData;
           }
-	  else if ( tableDir[j].idx == 18 )
+	  else if ( tableDir[j].idx == 24 )
           {
             thisSim->eff_dist_h = r4colData;
           }
-	  else if ( tableDir[j].idx == 19 )
+	  else if ( tableDir[j].idx == 25 )
           {
             thisSim->eff_dist_l = r4colData;
           }
+	  else if ( tableDir[j].idx == 26 )
+          {
+            thisSim->eff_dist_g = r4colData;
+          }
+	  else if ( tableDir[j].idx == 27 )
+          {
+            thisSim->eff_dist_t = r4colData;
+          }
+	  else if ( tableDir[j].idx == 28 )
+          {
+            thisSim->eff_dist_v = r4colData;
+          }
+
           else
           {
             CLOBBER_SIM;
