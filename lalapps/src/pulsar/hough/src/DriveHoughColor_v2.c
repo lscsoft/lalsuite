@@ -465,11 +465,16 @@ int main(int argc, char *argv[]){
     
     meanN = mObsCoh* alphaPeak;
     sigmaN = sqrt(meanN *(1.0 - alphaPeak));
-    erfcInv = 3.9; /* Badri: to be changed using GSL*/
     /* this should be  erfcInv =erfcinv(2.0 *houghFalseAlarm) */
-    
-    houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;
-    
+    /* the function used is basically the inverse of the CDF for the 
+       Gaussian distribution with unit variance and
+       erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
+    /* First check that false alarm is within bounds 
+       and set it to something reasonable if not */
+    if ( (houghFalseAlarm > 0.999)&&(houghFalseAlarm < 0.0) ) 
+      houghFalseAlarm = 0.00000001;
+    erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
+    houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
   }
 
   /* ****************************************************************/
