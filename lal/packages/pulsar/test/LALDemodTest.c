@@ -243,7 +243,7 @@ else (void)(0)
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
-void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw) ;
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw) ;
 
 int lalDebugLevel =3;
 
@@ -255,17 +255,17 @@ int main(int argc, char **argv)
 
 	ParameterSet *signalParams;
 	ParameterSet *templateParams;
-	CHAR *basicInputsFile;
+	CHAR *basicInputsFile = NULL;
 	FILE *bif;
 	REAL8 tObs, tCoh, tSFT, fSample;
 	REAL8 SNR;
 	REAL8 f0;
 	
 	INT4 mCohSFT, mObsCoh, mObsSFT;
-	REAL8 dfSFT, dtSFT, dtEFF, dfCoh;
+	REAL8 dfSFT, /* dtSFT, */ dtEFF /*, dfCoh */;
 	INT4 if0Min, if0Max, ifMin, ifMax;
-	REAL8 f0Min, f0Max, fMin, fMax, f0Band;
-	INT4 nDeltaF, n, nSFT;
+	REAL8 f0Min, f0Max, fMin, /* fMax, */ f0Band;
+	INT4 nDeltaF, n /*, nSFT */;
 
 	LIGOTimeGPS *timeStamps;
 	
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 	
 	REAL8 baseTbary0, tDot, t, tBary;
 	REAL8 dTbary, dTbary2, dTbary3, dTbary4, dTbary5, dTbary6;
-	INT4 i, j, k;
+	INT4 i, /* j, */ k;
 	COMPLEX8Vector *tvec = NULL;
 	
 	FFT **SFTData;
@@ -289,21 +289,21 @@ int main(int argc, char **argv)
 	
 	FFT **xHat;
 	
-	FILE *fp, *fp1;
+	FILE *fp /*, *fp1 */;
 	REAL8 ts=0.0, ts0=0.0;
 	REAL8 tn=0.0;
 	
-	CHAR *modulation=NULL;
-	CHAR *noi=NULL;
+	const CHAR *modulation=NULL;
+	const CHAR *noi=NULL;
 	INT4 deletions=1;
-	CHAR *output=NULL;
+	const CHAR *output=NULL;
 	
 	CHAR filename[13];
 	REAL8 factor;
-	INT4 *maxArray;
-	REAL8 pw, pwMax;
-	INT4 ipwMax;
-	INT2 tmp=0;
+	/* INT4 *maxArray; */
+	/* REAL8 pw, pwMax; */
+	/* INT4 ipwMax; */
+	/* INT2 tmp=0; */
 	INT2 arg;
 
 	/* Parse command line options */	
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
 				basicInputsFile=argv[++arg];
 				arg++;
 			/* } */
-			if(fopen(basicInputsFile,"r")==NULL)
+			if(LALOpenDataFile(basicInputsFile)==NULL)
 			{
 				ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
 				LALPrintError(USAGE, *argv);
@@ -381,7 +381,7 @@ int main(int argc, char **argv)
 	
 /*** GET INPUTS FROM FILES ***/
 
-	bif=LALFopen(basicInputsFile, "r");
+	bif=LALOpenDataFile(basicInputsFile);
 	
 	fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
 	&tObs, &tCoh, &factor, &SNR, &f0Band, &f0,
@@ -409,9 +409,9 @@ int main(int argc, char **argv)
 /* 	The main formula used here is that the gives the maximum allowed time-baseline (Tmax)  */
 /* 	  such that a signal of frequency f0 Doppler modulated due to Earth spin is seen  */
 /* 	  as monochromatic during such observation time: */
-/* 	  Tmax < 9.6e4/sqrt(f0). We have thus taken Tmax=9.4e4/sqrt(f0). A different criterion 
-/* 	  can be chosen by setting the variable "factor" to a suitable  
-/* 	  value. We have rounded the resulting number of samples  
+/* 	  Tmax < 9.6e4/sqrt(f0). We have thus taken Tmax=9.4e4/sqrt(f0). A different criterion */
+/* 	  can be chosen by setting the variable "factor" to a suitable  */
+/* 	  value. We have rounded the resulting number of samples  */
 /* 	  to the nearest smallest power of two. */
  	n=floor((log(factor*94000.0*fSample/sqrt(f0))/log(2.0))); 
 	/* Number of SFT time series data points */
@@ -581,13 +581,13 @@ if(noi!=NULL)
 		LALCOMPLEX8VectorFFT(&status, fvec, tvec, pfwd); 
 		
 		/* write the SIGNAL+NOISE to the SFTData structure and normalize */
-		for(i=0;i<fvec->length;i++)
+		for(i=0;i<(int)fvec->length;i++)
 		{
 			SFTData[k]->fft->data->data[i].re=fvec->data[i].re*dtEFF/sqrt(tSFT);
 			SFTData[k]->fft->data->data[i].im=fvec->data[i].im*dtEFF/sqrt(tSFT);
 		}
 
-       	/***** Uncomment this to enable file output of SFTs and peaks.
+       	/***** Uncomment this to enable file output of SFTs and peaks. *****/
 		/*****
 		
 			pwMax=0;
@@ -708,7 +708,7 @@ if(noi!=NULL)
 			printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
 			for(i=0;i<(if0Max-if0Min)*mCohSFT;i++) 
 			{
-			fprintf(fp,"%24.16lf\t%24.16lf\t%24.16lf\n",f0Min+(REAL8)i/tCoh, 	
+			fprintf(fp,"%24.16f\t%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
 				xHat[k]->fft->data->data[i].re, xHat[k]->fft->data->data[i].im); 			}
 			LALFclose(fp);
 		}
@@ -800,6 +800,7 @@ if(noi!=NULL)
 	
 	LALFree(timeStamps);
 	LALCheckMemoryLeaks(); 
+        return 0;
 }
 
 
@@ -807,7 +808,7 @@ if(noi!=NULL)
 /* Note: this routine will be replaced by Barycenter(), written  */
 /* by C. Cutler, Albert-Einstein-Institut.  			 */
 
-void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw) 
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, const CHAR *sw) 
 {
 
 	/*RA alpha and DEC delta have their usual meanings, but units 

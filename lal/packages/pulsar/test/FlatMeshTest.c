@@ -120,6 +120,7 @@ LALSCreateVector()              LALSDestroyVector()
 
 #include <math.h>
 #include <stdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -251,21 +252,21 @@ main(int argc, char **argv)
   if ( eigenfile ) {
 
     /* Read input files into vector sequences. */
-    if ( !( fp = fopen( eigenfile, "r" ) ) ) {
+    if ( !( fp = LALOpenDataFile( eigenfile ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     eigenfile );
       return FLATMESHTESTC_EFILE;
     }
     SUB( LALSReadVectorSequence( &stat, &matrix, fp ), &stat );
     fclose( fp );
-    if ( !( fp = fopen( inversefile, "r" ) ) ) {
+    if ( !( fp = LALOpenDataFile( inversefile ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     inversefile );
       return FLATMESHTESTC_EFILE;
     }
     SUB( LALSReadVectorSequence( &stat, &matrixInv, fp ), &stat );
     fclose( fp );
-    if ( !( fp = fopen( rangefile, "r" ) ) ) {
+    if ( !( fp = LALOpenDataFile( rangefile ) ) ) {
       ERROR( FLATMESHTESTC_EFILE, "- " FLATMESHTESTC_MSGEFILE,
 	     rangefile );
       return FLATMESHTESTC_EFILE;

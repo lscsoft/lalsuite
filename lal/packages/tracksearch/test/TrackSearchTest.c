@@ -2,6 +2,7 @@
    Example program for the use of the the "TrackSearch() routine;
    */
 
+#include <lal/LALStdio.h>
 #include <lal/TrackSearch.h>
 
 NRCSID (TESTSTSC,"$Id$");
@@ -24,7 +25,7 @@ int main( void )
   params.low=1;
   params.low = params.high/3;
   /* open an input pgm file */
-  fp = fopen("a.pgm","r");
+  fp = LALOpenDataFile("a.pgm");
   fgets(stringd,255,fp);
   fgets(stringd,255,fp);
   /* read the height and width of the image */

@@ -60,6 +60,7 @@ LALSReadVectorSequence()        LALDestroyVectorSequence()
 ******************************************************* </lalLaTeX> */
 
 #include <stdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include "StreamInput.h"
@@ -167,7 +168,7 @@ main(int argc, char **argv)
 
   /* Open input file. */
   if ( infile ) {
-    if ( !( fp = fopen( infile, "r" ) ) ) {
+    if ( !( fp = LALOpenDataFile( infile ) ) ) {
       ERROR( STREAMINPUTTESTC_EFILE, "- " STREAMINPUTTESTC_MSGEFILE,
 	     infile );
       return STREAMINPUTTESTC_EFILE;
@@ -182,7 +183,7 @@ main(int argc, char **argv)
 
   /* Open output file. */
   if ( outfile ) {
-    if ( !( fp = fopen( outfile, "r" ) ) ) {
+    if ( !( fp = fopen( outfile, "w" ) ) ) {
       ERROR( STREAMINPUTTESTC_EFILE, "- " STREAMINPUTTESTC_MSGEFILE,
 	     outfile );
       return STREAMINPUTTESTC_EFILE;
