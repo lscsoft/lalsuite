@@ -163,7 +163,7 @@ size_t `XLALShrink'SERIESTYPE (
 	size_t length
 )
 {
-	return(`XLALResize'SEQUENCETYPE (series->data, first, length));
+	return(`XLALResize'SERIESTYPE (series, first, length));
 }
 
 
