@@ -328,7 +328,7 @@ void getMetric( LALStatus *stat,
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", PTOLEMESHTESTC );
   ATTATCHSTATUSPTR( stat );
-  TRY( LALDCreateVector( stat->statusPtr, &metric, 10 ), stat );
+  TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
 
   /* Translate input. */
   patch->position.longitude = x[1];

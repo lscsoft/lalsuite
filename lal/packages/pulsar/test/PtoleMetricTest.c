@@ -209,7 +209,7 @@ int main( int argc, char *argv[] ) {
     LALPtoleMetric( &status, metric, &in );
   }
   /* Allocate storage for output metric. */
-  LALDCreateVector( &status, &metric, (4+NUM_SPINDOWN)*(5+NUM_SPINDOWN)/2 );
+  LALDCreateVector( &status, &metric, (3+NUM_SPINDOWN)*(4+NUM_SPINDOWN)/2 );
   if( status.statusCode )
   {
     printf( "%s line %d: %s\n", __FILE__, __LINE__, PTOLEMETRICTESTC_MSGEMEM );
