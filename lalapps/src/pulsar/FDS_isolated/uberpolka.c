@@ -537,6 +537,7 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 {
   UINT4 i;
+  INT4 j, uplim;
   UINT4 numlines;
   REAL8 dmp, epsilon=1e-5;
   char line1[256];
@@ -731,12 +732,13 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   fclose(fp);     
 
   /* Finally, check that candidates are in the correct order */
-  for (i=0;i<CLength-1;i++)
+  uplim = -1+(int)CLength;
+  for (j=0; j<uplim; j++)
     {
-      if(compareCdaf(*CList+i,*CList+i+1) != -1)
+      if(compareCdaf(*CList+j,*CList+j+1) != -1)
 	{
 	  LALPrintError( "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
-		  i+1,i+2, fname);
+		  j+1,j+2, fname);
 	  LALFree ((*CList));
 	  return 1;
 	}
