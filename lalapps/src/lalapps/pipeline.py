@@ -627,17 +627,17 @@ class AnalysisNode(CondorDAGNode):
     During S2 the Hanford 2km IFO had two calibration epochs, so 
     if the start time is during S2, we use the correct cache file.
     """
-    cal_path = string.strip(self.__cp.get('calibration','path'))
+    cal_path = self.job().get_config('calibration','path')
 
     if ( self.__LHO2k.match(self.__ifo) and 
       (self.__start >= 729273613) and (self.__start <= 734367613) ):
       if self.__start < int(
         self.__cp.get('calibration','H2-cal-epoch-boundary')):
-        cal_file = string.strip(self.__cp.get('calibration','H2-1'))
+        cal_file = self.job().get_config('calibration','H2-1')
       else:
-        cal_file = string.strip(self.__cp.get('calibration','H2-2'))
+        cal_file = self.job().get_config('calibration','H2-2')
     else:
-      cal_file = string.strip(self.__cp.get('calibration',self.__ifo))
+      cal_file = self.job().get_config('calibration',self.__ifo)
 
     cal = os.path.join(cal_path,cal_file)
     self.add_var_opt('calibration-cache', cal)
