@@ -159,7 +159,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		{"gps-end-time", required_argument, NULL, 'f'},
 		{"min-centralfreq", required_argument, NULL, 'g'},
 		{"max-centralfreq", required_argument, NULL, 'h'},
-		{"output-inj-found", required_argument, NULL, 'j'},
+		{"output-inj-found", required_argument, NULL, 'i'},
 		{"playground", no_argument, &options->playground, TRUE},
 		{"noplayground", no_argument, &options->noplayground, TRUE},
 		{"help", no_argument, NULL, 'o'},
@@ -170,7 +170,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 	};
 	int c, option_index = 0;
 
-	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
+	do switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:oq:", long_options, &option_index)) {
 	case 'a':
 		options->inputFile = optarg;
 		break;
@@ -211,7 +211,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		options->maxCentralfreq = atof(optarg);
 		break;
 
-	case 'j':
+	case 'i':
 		options->injFoundFile = optarg;
 		break;
 
