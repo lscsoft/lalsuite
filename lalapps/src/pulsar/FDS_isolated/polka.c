@@ -1,5 +1,5 @@
 /*********************************************************************************/
-/*                              Pulsar Coincidence Code                          */
+/*                     polka - the pulsar koinzidenz analysis code               */
 /*                                                                               */
 /*			               X. Siemens                                */
 /*                   (takes in two Fstats file to look for coincidence)          */
@@ -18,8 +18,8 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 
-#define MAXCANDIDATES   3000000     /* Maximum # of allowed candidates */
-#define MAXCOINC   3000000     /* Maximum # of allowed coincident candidates */
+#define MAXCANDIDATES   300000     /* Maximum # of allowed candidates */
+#define MAXCOINC   300000     /* Maximum # of allowed coincident candidates */
 
 struct CommandLineArgsTag 
 {
@@ -69,6 +69,7 @@ CoincidentCandidate CC;
 int main(int argc,char *argv[]) 
 {
   INT4 *indices1F=NULL,*indices2f=NULL,*indices2F=NULL,*indicesCCfa=NULL,*indices3F=NULL,*indices4F=NULL;
+  REAL8 MaxAngularDistance;
   int i,k;
   FILE *fpOut;
  
@@ -121,15 +122,13 @@ int main(int argc,char *argv[])
       qsort((void *)indices4F, (size_t)NCands4, sizeof(int), compare4F);
     }      
 
-
-
-  k=0; /* counts coincident events */
-
+  k=0; /* kounts koinzident events */
+  MaxAngularDistance=sqrt(pow(CommandLineArgs.DeltaAlpha,2)+pow(CommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* go through list */
   for (i=0; i < NCands1; i++)
     {
-      REAL8 f1min,f1max,diffa,diffd,difff;
+      REAL8 f1min,f1max,difff;
       REAL8 f1,Alpha1,Delta1,F1;
       int if2min,if2max,f;
 
@@ -143,62 +142,65 @@ int main(int argc,char *argv[])
 
       /* alpha */
       Alpha1=C1.Alpha[indices1F[i]];
-
       /* delta */
       Delta1=C1.Delta[indices1F[i]];
-
       /* F */
       F1=C1.F[indices1F[i]];
       
       for (f=if2max; f <= if2min; f++)
 	{
-	  diffa=fabs(Alpha1 - C2.Alpha[indices2f[f]]);
-	  diffd=fabs(Delta1 - C2.Delta[indices2f[f]]);
+	  REAL8 Alpha2=C2.Alpha[indices2f[f]],Delta2=C2.Delta[indices2f[f]];
+	  REAL8 n1[3],n2[3],AngularDistance;
+	  
+	  n1[0]=cos(Alpha1)*cos(Delta1);
+	  n1[1]=sin(Alpha1)*cos(Delta1);
+	  n1[2]=sin(Delta1);
+
+	  n2[0]=cos(Alpha2)*cos(Delta2);
+	  n2[1]=sin(Alpha2)*cos(Delta2);
+	  n2[2]=sin(Delta2);
+
+	  AngularDistance=acos(n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2]);
+
 	  difff=fabs(f1 - C2.f[indices2f[f]]);
 
 	  /* check difference in frequencies because we're not guaranteed 
 	     sufficient closeness at the edges of array */
 	  if ( difff <= CommandLineArgs.Deltaf) 
 	    {
-	      if ( diffa <= CommandLineArgs.DeltaAlpha || 
-		   fabs(diffa -  LAL_TWOPI) <= CommandLineArgs.DeltaAlpha)
-		{
-		  if ( diffd <= CommandLineArgs.DeltaDelta || 
-		       fabs(diffd -  LAL_PI) <= CommandLineArgs.DeltaDelta )
-		    {	
-		      int j;
+	      if ( AngularDistance <= MaxAngularDistance )
+		{	
+		  int j;
 		      
+		  CC.f1[k]=f1;
+		  CC.Alpha1[k]=Alpha1;
+		  CC.Delta1[k]=Delta1;
+		  CC.F1[k]=F1;
 
-		      CC.f1[k]=f1;
-		      CC.Alpha1[k]=Alpha1;
-		      CC.Delta1[k]=Delta1;
-		      CC.F1[k]=F1;
+		  if(CommandLineArgs.FstatsFile3 != NULL)
+		    {
+		      locate(C3.F,NCands3,CC.F1[k],&j,indices3F);
+		      CC.fa1[k]=(REAL8)(j+1)/(REAL8)NCands3;
+		    }else CC.fa1[k]=(REAL8)(i+1)/(REAL8)NCands1;
 
-		      if(CommandLineArgs.FstatsFile3 != NULL)
-			{
-			  locate(C3.F,NCands3,CC.F1[k],&j,indices3F);
-			  CC.fa1[k]=(REAL8)(j+1)/(REAL8)NCands3;
-			}else CC.fa1[k]=(REAL8)(i+1)/(REAL8)NCands1;
+		  CC.f2[k]=C2.f[indices2f[f]];
+		  CC.Alpha2[k]=C2.Alpha[indices2f[f]];
+		  CC.Delta2[k]=C2.Delta[indices2f[f]];
+		  CC.F2[k]=C2.F[indices2f[f]];
 
-		      CC.f2[k]=C2.f[indices2f[f]];
-		      CC.Alpha2[k]=C2.Alpha[indices2f[f]];
-		      CC.Delta2[k]=C2.Delta[indices2f[f]];
-		      CC.F2[k]=C2.F[indices2f[f]];
-
-		      if(CommandLineArgs.FstatsFile4 != NULL)
-			{
-			  locate(C4.F,NCands4,CC.F2[k],&j,indices4F);
-			  CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands4;
-			}else{
-			  locate(C2.F,NCands2,CC.F2[k],&j,indices2F);
-			  CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands2;
-			}
-
-		      CC.fa[k]=CC.fa1[k]*CC.fa2[k];
-
-		      k++;
-
+		  if(CommandLineArgs.FstatsFile4 != NULL)
+		    {
+		      locate(C4.F,NCands4,CC.F2[k],&j,indices4F);
+		      CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands4;
+		    }else{
+		      locate(C2.F,NCands2,CC.F2[k],&j,indices2F);
+		      CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands2;
 		    }
+
+		  CC.fa[k]=CC.fa1[k]*CC.fa2[k];
+
+		  k++;
+		  
 		}
 	    }
 	}
