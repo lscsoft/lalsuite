@@ -29,7 +29,8 @@ lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2 
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC)
+             $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
+             inspiral_pipe_s2.in
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
