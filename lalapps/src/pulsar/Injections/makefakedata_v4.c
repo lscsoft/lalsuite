@@ -547,7 +547,7 @@ int main(int argc,char *argv[]) {
 
     SFTParams sftParams;
 
-    params.pulsar.TRefSSB = SSBpulsarparams;
+    params.pulsar.tRef = SSBpulsarparams;
     params.pulsar.position = genTayParams.position;
     params.pulsar.psi = genTayParams.psi;
     params.pulsar.aPlus = genTayParams.aPlus;
