@@ -23,9 +23,9 @@
   \label{s:LALMathematica.h}
 * Provides structures, functions and macro definitions for modules
 * that generate Mathematica notebooks.  Currently, the only module
-* that takes advantage of this header file is \texttt{Math3DPlot.c}.
-* \texttt{Math3DPlot.c} generates 3D animated plots of template banks
-* with three parameters.  See the \texttt{Math3DPlot.c} documenation
+* using this header file is \texttt{Math3DPlot.c}, which
+* generates 3D animated plots of template banks having
+* three parameters.  See the \texttt{Math3DPlot.c} documenation
 * for more detail.  
   </lalLaTeX> */
  
@@ -35,15 +35,35 @@
     #include <lal/LALMathematica.h>
     \end{verbatim}
   * This header file defines macros containing Mathematica syntax that 
-  * is otherwise messy to implement into C source files.  The result is 
-  * a very readable module that is similar in style to most markup 
-  * languages (e.g. XML, HTML, etc).  One simply has to use the macros
-  * as tags for inserting their plain text or Mathematica commands.
-  * These insertions will appear in the generated notebook according to
-  * the user's specification.  It makes subsequent editing of source
-  * files very easy.  One doesn't need to worry excessively about 
-  * trying to combine C and Mathematica syntax.  
-    </lalLaTeX> 
+  * is otherwise messy to implement into C source files.  With these 
+  * macros one can easily write a function that will output a mathematica
+  * notebook. Simply\ldots
+    \begin{enumerate}
+  * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".  
+  * \item Use BEG\_NOTEBOOK to start the notebook file.  
+  * \item Use the appropriate BEG and END macros with fprint(nb, ``Your Text") in 
+  * between to write your text to the cells of the notebook.  If you are writing 
+  * Mathematica commands use the INPUT macros; for plain text, use TEXT Macros.  
+  * \item Denote titles and sections with the appropriate macros.  
+  * \item Use END\_NOTEBOOK to end the notebook and 
+  * use fclose(nb) to close the file ``nb". 
+    \end{enumerate}
+  * The result is very readable/changeable source similar in style to most markup 
+  * languages. An example program might look like:
+    \begin{verbatim}
+  FILE *nb;
+  nb = fopen("YourFileName.nb", "rw");
+  BEG_NOTEBOOK;
+  BEG_TITLECELL;
+   fprintf(nb, "Sample Program Title");
+  END_TITLECELL_;
+  BEG_SECTIONCELL;
+    fprintf(nb, "Sample Program Section Name");
+  END_SECTIONCELL;
+  END_NOTEBOOK;
+  fclose(nb);
+  \end{verbatim}
+  </lalLaTeX> 
     END SUBSECTION - SYNOPSIS -------------------------------------------------------- */
 
   /*<lalLaTeX> 
@@ -62,21 +82,37 @@
     \input{LALMathematicaHM}
     \noindent
   * See the source file \texttt{Math3DPlot.c} for an example of how to use these macros
-  * to generate a Mathematica notebook in your own programs.  
+  * to generate a Mathematica notebook in your own program.  
+    \begin{itemize}
+  * \item{NOTEBOOK} Denotes the beginning and ending of the notebook file.  A 
+  * BEG\_NOTEBOOK tag must start the file and an END\_NOTEBOOK tag must end it.
+  * \item{TITLE} Placing an fprint(nb, "Your Title") inbetween these BEG and END tags 
+  * will place a \emph{title font} cell in the notebook.
+  * \item{GROUP} Cells placed in between these tags will be grouped together
+  * \item{SECTION} Same as title except the text printed will be in \emph{section font}.
+  * Subsequent input and text cells following the END\_SECTIONCELL tag will be grouped
+  * with that section until a new BEG\_SECTIONCELL tag is encountered.
+  * \item{INPUT} provides cells to input Mathematica commands.
+  * \item{TEXT} provides cells to input plain text.
+    \end{itemize}
+  * Notice that the file 
+  * pointer must be named ``nb" in order to use the macros defined in this header.  
   * When grouping several cell objects together the last object in the list should have 
-  * an???????tag instead of the END tags without underscores.  The underscore
-  * implies that it is the end of a list and syntactically is simply missing a comma 
-  * delimiter.  When in doubt use the one without the underscore!  The notebook will 
-  * compile most of the time if you always use the tags without an ending underscore.  
-  * However, the notebook will certainly not compile if you misuse the ending underscore 
-  * tag.  When you view the notebook in mathematica you may see the word "NULL" printed on 
-  * a line.  That is an indication that you should use the underscore version of the tag 
-  * which preceeded the "NULL" statement.  That should fix the problem. 
+  * an underscored tag instead of an END tag without an underscore.  
+  * Although the notebook will compile (usually) if you use the tags without an ending 
+  * underscore, the dangling comma is taken as a null member of the list of grouped cells  
+  * and when you view the notebook in mathematica you may see the word ``NULL" printed 
+  * on a line.  That is an indication that you should use the underscore version of the 
+  * tag which preceeded the ``NULL" statement.   
     </lalLaTeX> 
     END SUBSECTION - MACROS ---------------------------------------------------------- */
 
-  /*SUBSECTION - TYPES ----------------------------------------------------------------*/
-    /* <lalLaTeX> 
+  /*<lalLaTeX> 
+    \vfill{\footnotesize\input{LALMathematicaHV}} 
+  </lalLaTeX> */
+
+  /*NEWPAGE - SUBSECTION - TYPES ----------------------------------------------<lalLaTeX>
+    \newpage
     \subsection*{Types} 
     \input{LALMathematicaHT}
     \idx[Type]{Math3DPointList}
@@ -84,18 +120,35 @@
   * The Math3DPointList type is used by \texttt{Math3DPlot.c} as an input structure to 
   * plot 3-dimensional template banks.  It is a linked list and has parameters for each 
   * coordinate x,y,z and the next pointer.  It also has a parameter called GrayLevel 
-  * which must be of the set ?????.  It specifies the shading of the point in the final 
-  * plot.  By creatively assigning its value the intensity of the points may convey 
-  * additional information.  If for no other reason it usually makes the plot more 
-  * readable. 
+  * which must be $\epsilon [0,1]$.  It specifies the shading of the point in the final 
+  * plot with 0 representing black and 1 representing white.  By creatively assigning 
+  * its value the grayscale shade of the points may convey additional information.  
     </lalLaTeX> 
     END SUBSECTION TYPES --------------------------------------------------------------*/
 
-  /*NEWPAGE - MODULES - "LALMath3DPlot.c" ---------------------------------------------*/
+  /*SUBSECTION - NOTES --------------------------------------------------------<lalLaTeX>
+    \subsection*{Notes}
+    \noindent\begin{itemize}
+  * \item Obviously the definitions and functions associated with 
+  * this header are NOT lal complient and thus do not belong in any lal routines except 
+  * test programs.
+  * \item There are many more commands to manipulate Mathematica notebooks that are not
+  * included in this header.  The macros are only what is necessary for a 
+  * \emph{bare minimum} interface.   
+    \end{itemize} 
+    </lalLaTeX>
+    END SUBSECTION NOTES --------------------------------------------------------------*/
+
+  /*<lalLaTeX> 
+    \vfill{\footnotesize\input{LALMathematicaHV}} 
+  </lalLaTeX> */
+
+  /*NEWPAGE - MODULES INPUT - "LALMath3DPlot.c" ---------------------------------------*/
     /* <lalLaTeX> 
     \newpage\input{LALMath3DPlotC} 
-    </lalLaTeX> 
-    END - MODULES - "LALMath3DPlot.c" ------------------------------------------------ */
+    </lalLaTeX>
+    END - MODULES INPUT - "LALMath3DPlot.c" -------------------------------------------*/ 
+  
 /*END SECTION - HEADER - "LalMathematica.h" -------------------------------------------*/
 
 

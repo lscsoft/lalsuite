@@ -32,7 +32,7 @@ $Id$
      END SUBSUBSECTION - PROTOTYPES "LALMath3DPlot()" -------------------------------- */
 
   /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
-     \subsubsection{description}
+     \subsubsection{Description}
    * This module contains a function for plotting 3D template banks by creating a Mathematica
    * notebook.  The notebook renders the templates as points in a three dimensional lattice.
    * The plot is animated so the user can see the template bank from different perspectives.
