@@ -23,7 +23,7 @@
 
 #include "getopt.h"
 
-RCSID ("$Id");
+RCSID ("$Id$");
 
 
 /* some error codes and messages */
