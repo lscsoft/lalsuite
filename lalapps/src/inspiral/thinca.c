@@ -83,7 +83,7 @@ static void print_usage(char *program)
       "\n"\
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
-      "  [--check-times]               Check that all times were analyzed\n"\   
+      "  [--check-times]               Check that all times were analyzed\n"\ 
       "\n"\
       "  [--g1-triggers]               input triggers from G1\n"\
       "  [--h1-triggers]               input triggers from H1\n"\
@@ -116,7 +116,7 @@ int main( int argc, char *argv[] )
 
   extern int vrbflg;
 
-  LALPlaygroundDataMask dataType;
+  LALPlaygroundDataMask dataType = unspecified_data_type;
   INT4  startCoincidence = -1;
   LIGOTimeGPS startCoinc = {0,0};
   INT4  endCoincidence = -1;
