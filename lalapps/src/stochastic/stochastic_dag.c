@@ -66,14 +66,14 @@ char *optarg;
 int optind;
 
 /* flags for getopt_long */
-static int inject_flag = 0;
-static int apply_mask_flag = 0;
-static int high_pass_flag = 0;
-static int overlap_hann_flag = 0;
-static int verbose_flag = 0;
-static int test_flag = 0;
-static int post_analysis_flag = 0;
-static int condor_flag = 0;
+static int inject_flag;
+static int apply_mask_flag;
+static int high_pass_flag;
+static int overlap_hann_flag;
+static int test_flag;
+static int post_analysis_flag;
+static int condor_flag;
+extern int vrbflg;
 
 /* parameters for the stochastic search */
 
@@ -322,8 +322,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0.;
 
-  if (verbose_flag)
-  {fprintf(stdout,"number of jobs:");}
+  if (vrbflg)
+  {
+    fprintf(stdout,"number of jobs:");
+  }
 
   /* get number of segments */
   numSegments = (INT4)(intervalDuration / segmentDuration);
@@ -331,7 +333,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   segMiddle = (INT4) ((numSegments - 1) / 2);
   segmentShift = segmentDuration;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "%d\n", numJobs);
   }
@@ -378,7 +380,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   segment1.deltaT = segment2.deltaT = 1./(REAL8)resampleRate;
   segment1.f0 = segment2.f0 = 0;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for data segments...\n");
   }
@@ -462,7 +464,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (inject_flag)
   {
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Allocating memory for MC...\n");
     }
@@ -579,7 +581,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   psdTemp1.deltaF = psdTemp2.deltaF = deltaF;
   psdTemp1.f0 = psdTemp2.f0 = 0;
 
-  if (verbose_flag)
+  if (vrbflg)
   { fprintf(stdout, "Allocating memory for PSDs...\n");}
 
   /* allocate memory for PSDs */
@@ -601,7 +603,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   psd1.f0 = psd2.f0 = fMin;
   psd1.sampleUnits = psd2.sampleUnits = psdUnits;
 
-  if (verbose_flag)
+  if (vrbflg)
   {fprintf(stdout, "Allocating memory for reduced frequency band PSDs...\n");}
 
   /* allocate memory for reduced frequency band PSDs */
@@ -630,7 +632,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   responseTemp1.deltaF = responseTemp2.deltaF = deltaF;
   responseTemp1.f0 = responseTemp2.f0 = 0;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for response functions...\n");
   }
@@ -655,7 +657,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   response1.deltaF = response2.deltaF = deltaF;
   response1.f0 = response2.f0 = fMin;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for reduced frequency band "
         "response functions...\n");
@@ -687,7 +689,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Creating FFT plan for PSD estimation...\n");
   }
@@ -696,7 +698,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL ( LALCreateForwardRealFFTPlan(&status, &specparPSD.plan,
         windowPSDLength, 0), &status );
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Creating window for PSD estimation...\n");
   }
@@ -713,7 +715,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   calInvPsd1.f0 = calInvPsd2.f0 = fMin;
 
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for inverse noise...\n");
   }
@@ -745,7 +747,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   dataWindow.deltaT = 1./resampleRate;
   dataWindow.f0 = 0;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for data segment window...\n");
   }
@@ -757,7 +759,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   memset( dataWindow.data->data, 0, 
       dataWindow.data->length * sizeof(*dataWindow.data->data));
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Generating data segment window...\n");
   }
@@ -826,7 +828,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   strncpy(hBarTilde1.name, "hBarTilde1", LALNameLength);
   strncpy(hBarTilde2.name, "hBarTilde2", LALNameLength);
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for zeropad...\n");
   }
@@ -855,7 +857,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   overlap.deltaF = deltaF;
   overlap.f0 = fMin;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for the overlap reduction "
         "function...\n");
@@ -876,7 +878,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   detectors.detectorOne = lalCachedDetectors[site1];
   detectors.detectorTwo = lalCachedDetectors[site2];
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Generating the overlap reduction function...\n");
   }
@@ -897,7 +899,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   omegaGW.deltaF = deltaF;
   omegaGW.f0 = fMin;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for spectrum...\n");
   }
@@ -916,7 +918,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   omegaGWParams.f0 = fMin;
   omegaGWParams.deltaF = deltaF;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Generating spectrum for optimal filter...\n");
   }
@@ -937,7 +939,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     mask.f0 = fMin;
     mask.sampleUnits = lalDimensionlessUnit;
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Allocating memory for frequency mask...\n");
     }
@@ -949,7 +951,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     memset(mask.data->data, 0, mask.data->length * sizeof(*mask.data->data));
     memset(maskTemp->data, 0, maskTemp->length * sizeof(*maskTemp->data));
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Generating frequency mask...\n");
     }
@@ -960,7 +962,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       maskTemp->data[i] = 1.;
     }
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Masking multiples of 16 Hz...\n");
     }
@@ -982,7 +984,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
     }
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Masking multiples of 60 Hz...\n");
     }
@@ -1004,7 +1006,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
     }
 
-    if (verbose_flag)
+    if (vrbflg)
     { fprintf(stdout, "Getting appropriate frequency band for mask...\n");}
 
     /* get appropriate band */
@@ -1018,7 +1020,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       LALSPrintFrequencySeries(&mask, "mask.dat");
     }
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
     }
@@ -1057,7 +1059,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   optFilter.deltaF = deltaF;
   optFilter.f0 = fMin;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for optimal filter...\n");
   }
@@ -1122,7 +1124,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
     interval1.epoch = interval2.epoch = gpsStartPadTime;
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf( stdout, "read first interval starting at %d... \n", 
           gpsStartPadTime.gpsSeconds);
@@ -1151,7 +1153,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       LALSPrintTimeSeries(&interval2, "interval2_0.dat");
     }
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf( stdout, "split into %d segments\n", numSegments);
     }
@@ -1170,7 +1172,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* compute response functions */
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Getting appropriate frequency response functions "
           "for segments of the first interval...\n");
@@ -1182,7 +1184,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         (segLoop * segmentDuration) + calibOffset;
       responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
 
-      if (verbose_flag)
+      if (vrbflg)
       {
         fprintf(stdout, "request GPS time %d\n", gpsCalibTime.gpsSeconds);
       }
@@ -1208,7 +1210,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       */
 
       /* reduce to the optimal filter frequency range */
-      if (verbose_flag)
+      if (vrbflg)
       {
         fprintf(stdout, "reduce to optimal filter range\n");
       }
@@ -1293,7 +1295,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       streamPair.stream1 = &segmentPad1;
       streamPair.stream2 = &segmentPad2;
 
-      if (verbose_flag)
+      if (vrbflg)
       {
         fprintf(stdout, "loop over %d jobs\n", numJobs);
       }
@@ -1311,7 +1313,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         if (jobLoop!=0)
         {
-          if (verbose_flag)
+          if (vrbflg)
           {
             fprintf( stdout, "shift segments\n");
           }
@@ -1342,7 +1344,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsStartPadTime.gpsSeconds = gpsStartTime.gpsSeconds - padData;
           streamParams.startTime = gpsStartPadTime.gpsSeconds;
 
-          if (verbose_flag)
+          if (vrbflg)
           {
             fprintf( stdout, "read end segment at GPS %d... \n", 
                 gpsStartPadTime.gpsSeconds);
@@ -1361,7 +1363,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
           responseTemp1.epoch = responseTemp2.epoch = gpsCalibTime;
 
-          if (verbose_flag)
+          if (vrbflg)
           {
             fprintf( stdout, "compute end response function at GPS %d... \n", 
                 gpsCalibTime.gpsSeconds);
@@ -1537,7 +1539,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           if (segLoop != segMiddle)
           {
-            if (verbose_flag)
+            if (vrbflg)
             {
               fprintf(stdout, "Estimating PSDs...\n");
             }
@@ -1548,7 +1550,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTemp2, &segment2, 
                   &specparPSD), &status );
 
-            if (verbose_flag)
+            if (vrbflg)
             {
               fprintf(stdout, "Getting appropriate frequency band "
                   "for PSDs..\n");
@@ -1569,7 +1571,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               LALSPrintFrequencySeries(&psd2, "psd2.dat");
             }
 
-            if (verbose_flag)
+            if (vrbflg)
             {
               fprintf(stdout, "Generating inverse noise...\n");
             }
@@ -1613,7 +1615,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           LALSPrintFrequencySeries(&calInvPsd2, "calInvPsdAvg2.dat");
         }
 
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, "Normalising optimal filter...\n");
         }
@@ -1626,7 +1628,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         varTheo = (REAL8)(segmentDuration * normSigma.value * 
             pow(10.,normSigma.units.powerOfTen));
 
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, "Generating optimal filter...\n");
         }
@@ -1643,7 +1645,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         /* save */
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, "job %d:", jobLoop);
           fprintf(stdout, "varTheo = %e s\n", varTheo);
@@ -1653,7 +1655,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           (jobLoop + segMiddle) * segmentDuration;
 
         /* analyse middle segment */   
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, "analysing segment at GPS %d\n", 
               gpsStartTime.gpsSeconds);
@@ -1686,7 +1688,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           LALCPrintFrequencySeries(&hBarTilde2, "hBarTilde2.dat");
         }
 
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, "Generating cross correlation spectrum...\n");
         }
@@ -1702,7 +1704,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               &ccIn, epochsMatch), &status );
 
         /* save */
-        if (verbose_flag)
+        if (vrbflg)
         {
           LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
         }
@@ -1719,7 +1721,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
 
-        if (verbose_flag)
+        if (vrbflg)
         {
           fprintf(stdout, " y = %e\n",y);
         }
@@ -1745,7 +1747,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       out2 = fopen(outputFilename2, "a");
       fprintf(out2,"%lld %lld %e %e\n", startTime, stopTime, ptEst, error);
       fclose(out2);
-      if (verbose_flag)
+      if (vrbflg)
       {
         fprintf(stdout,"ptEst = %e error = %e\n", ptEst, error);
       }
@@ -1831,7 +1833,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
       {"post-analysis", no_argument, &post_analysis_flag,1},
-      {"verbose", no_argument, &verbose_flag, 1},
+      {"verbose", no_argument, &vrbflg, 1},
       {"test", no_argument, &test_flag, 1},
       {"condor", no_argument, &condor_flag,1},
       /* options that don't set a flag */
@@ -2192,7 +2194,7 @@ void readDataPair(LALStatus *status,
   /* initial data structures */
   dataStream1.epoch =  dataStream2.epoch = bufferStartTime;
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for raw data streams...\n");
   }
@@ -2210,7 +2212,7 @@ void readDataPair(LALStatus *status,
   memset( dataStream2.data->data, 0, 
       dataStream2.data->length * sizeof(*dataStream2.data->data));
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Opening first frame cache...\n");
   }
@@ -2221,7 +2223,7 @@ void readDataPair(LALStatus *status,
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
   CHECKSTATUSPTR (status);
 
-  if (verbose_flag)
+  if (vrbflg)
   {
     fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);
   }
@@ -2235,7 +2237,7 @@ void readDataPair(LALStatus *status,
   
   if (strcmp(params->frameCache1, params->frameCache2) == 0)
   {
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Reading in channel \"%s\" from same cache...\n",
         frChanIn2.name);
@@ -2249,7 +2251,7 @@ void readDataPair(LALStatus *status,
         &frChanIn2, frStream1);
     CHECKSTATUSPTR (status);
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Closing frame cache...\n");
     }
@@ -2260,7 +2262,7 @@ void readDataPair(LALStatus *status,
   }
   else
   {
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Closing first frame cache...\n");
     }
@@ -2269,7 +2271,7 @@ void readDataPair(LALStatus *status,
     LALFrClose(status->statusPtr, &frStream1);
     CHECKSTATUSPTR (status);
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Opening second frame cache...\n");
     }
@@ -2280,7 +2282,7 @@ void readDataPair(LALStatus *status,
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
     CHECKSTATUSPTR (status);
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);
     }
@@ -2292,7 +2294,7 @@ void readDataPair(LALStatus *status,
         &frChanIn2, frStream2);
     CHECKSTATUSPTR (status);	
 
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Closing second frame cache...\n");
     }
@@ -2305,7 +2307,7 @@ void readDataPair(LALStatus *status,
   /* resample */
   if (resampleRate != sampleRate)
   {
-    if (verbose_flag)
+    if (vrbflg)
     {
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
     }
