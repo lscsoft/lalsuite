@@ -27,6 +27,7 @@ routines in GeneratePulsarSignal.c.
 #include <lal/GenerateSpinOrbitCW.h>
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
+#include <lal/PulsarDataTypes.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -67,65 +68,12 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 
 /*************************************************** </lalErrTable> */
 
-/* FIXME: need to document them here */
-/* put those back from LALDatatypes.h, where Jolien didn't want them..*/
-/* we also need a bunch of FFTs */
-typedef struct {
-  UINT4 			length;	
-  COMPLEX8FrequencySeries 	*data;	
-} COMPLEX8FrequencySeriesVector;
-
-/* and a bunch of timestamps */
-typedef struct {
-  UINT4 	length;
-  LIGOTimeGPS 	*data;
-} LIGOTimeGPSVector;
-
-
 /*************************************************** 
 <lalLaTeX>
 
 \subsection*{Types}
-\idx[Type]{PulsarSourceParams}
-\idx[Type]{BinaryOrbitParams}
 \idx[Type]{PulsarSignalParams}
 \idx[Type]{SFTParams}
-\idx[Type]{SFTtype}
-\idx[Type]{SFTVector}
-
-\subsubsection*{Structure \texttt{PulsarSourceParams}}
-
-Defines the astrophysical parameters of the pulsar. 
-
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef struct {
-  LIGOTimeGPS TRefSSB;	/* reference-time (in SSB!) for pulsar parameters */
-  SkyPosition position;	/* source location (in radians) */
-  REAL4 psi;            /* polarization angle (radians) at TRef */
-  REAL4 aPlus, aCross;  /* polarization amplitudes at TRef */
-  REAL8 phi0;           /* initial phase (radians) at TRef */
-  REAL8 f0;             /* initial frequency (Hz) at TRef */
-  REAL8Vector *spindown;/* frequency spindowns at TRef (NOT f0-normalized!) */
-} PulsarSourceParams;
-/* </lalVerbatim> */
-/*<lalLaTeX>
-
-\subsubsection*{Structure \texttt{BinaryOrbitParams}}
-
-Defines the astrophysical parameters of the binary orbit of the pulsar.
-
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef struct {
-  LIGOTimeGPS orbitEpoch; /* time of periapsis passage */
-  REAL8 omega;            /* argument of periapsis (radians) */
-  REAL8 rPeriNorm;        /* projected, normalized periapsis (s) */
-  REAL8 oneMinusEcc;      /* 1 - orbital eccentricity */
-  REAL8 angularSpeed;     /* angular speed at periapsis (Hz) */
-} BinaryOrbitParams;
-/* </lalVerbatim> */
-/*<lalLaTeX>
 
 \subsubsection*{Structure \texttt{PulsarSignalParams}}
 
@@ -154,17 +102,6 @@ typedef struct {
 /* </lalVerbatim> */
 /*<lalLaTeX>
 
-\subsubsection*{Structures \texttt{SFTtype} and \texttt{SFTVector}}
-
-These are trivial typedefs used here for simplicity.
-
-</lalLaTeX> */
-/* <lalVerbatim> */
-typedef COMPLEX8FrequencySeries 	SFTtype;	
-typedef COMPLEX8FrequencySeriesVector 	SFTVector;
-/* </lalVerbatim> */
-/*<lalLaTeX>
-
 \subsubsection*{Structure \texttt{SFTParams}}
 
 Parameters defining the SFTs to be returned from \verb+LALSignalToSFTs()+.
@@ -179,8 +116,6 @@ typedef struct {
 /* </lalVerbatim> */
 
 
-
-  
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{GeneratePulsarSignalHV}}
 \newpage\input{GeneratePulsarSignalC}
