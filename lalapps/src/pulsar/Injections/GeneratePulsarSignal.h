@@ -42,11 +42,14 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define DOPPLERSCANH_ENONULL		2
 #define DOPPLERSCANH_EMEM		3
 #define DOPPLERSCANH_ESAMPLING		4
+#define DOPPLERSCANH_ESSBCONVERT	5
 
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define DOPPLERSCANH_MSGENONULL		"Output pointer is not NULL"
 #define DOPPLERSCANH_MSGEMEM		"Out of memory"
 #define DOPPLERSCANH_MSGESAMPLING	"Waveform sampling interval too large."
+#define DOPPLERSCANH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
+
 /*************************************************** </lalErrTable> */
 
   
@@ -85,16 +88,17 @@ typedef struct {
   COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function */
   LALDetector *site;        		   	/* detector location and orientation */  
   EphemerisData *ephemerides;  			/* Earth and Sun ephemerides */
-
-  /* these are only used if no timestamps are provided */
+  
+  /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /* start time of output time series */
   UINT4 duration;           	/* length of time series in s*/
   REAL8 samplingRate;		/* sampling rate of time-series (=2 * fmax) */
+  REAL8 fHeterodyne;		/* heterodyning frequency for output time-series */
 } PulsarSignalParams;
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
