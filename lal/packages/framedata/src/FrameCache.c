@@ -83,12 +83,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <fnmatch.h>
 #include <regex.h>
+#include <glob.h>
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -502,11 +502,9 @@ LALFrCacheGenerate(
     )
 { /* </lalVerbatim> */
   FrCache *cache;
-  CHAR    *dirname;
-  CHAR     fname[1024];
-  CHAR     path[1024];
-  CHAR     tmp[1024];
-  UINT4    n;
+  glob_t g;
+  int globflags = 0;
+  int i;
 
   INITSTATUS( status, "LALFrCacheGenerate", FRAMECACHEC );
   ATTATCHSTATUSPTR( status );
@@ -515,190 +513,125 @@ LALFrCacheGenerate(
   ASSERT( fnptrn, status, FRAMECACHEH_ENULL, FRAMECACHEH_MSGENULL );
 
   fnptrn = fnptrn ? fnptrn : "*.gwf";
+  dirstr = dirstr ? dirstr : ".";
 
-  /* count files */
-  strncpy( tmp, dirstr ? dirstr : ".", sizeof( tmp ) );
-  dirname = tmp;
-  n = 0;
-  while ( dirname && *dirname )
+  if ( fnptrn[0] && 
+      ( fnptrn[0] == '/'
+        || ( fnptrn[0] == '.' && fnptrn[1] &&
+          ( fnptrn[1] == '/' || ( fnptrn[1] == '.' && fnptrn[2] == '/' ) ) )
+      )
+     )
   {
-    struct dirent *ent;
-    DIR           *dir;
-    CHAR          *nextdir;
-
-    nextdir = strchr( dirname, ':' );
-    if ( nextdir )
-      *nextdir++ = 0;
-
-    if ( *dirname == '/' ) /* absolute path */
+    glob( fnptrn, globflags, NULL, &g );
+  }
+  else /* prepend path from dirname */
+  {
+    CHAR  path[MAXPATHLEN];
+    CHAR  dirname[MAXPATHLEN];
+    CHAR *nextdir;
+    strncpy( dirname, dirstr,  sizeof( dirname ) - 1 );
+    do
     {
-      strncpy( path, dirname, sizeof( path ) - 1 );
+      nextdir = strchr( dirname, ':' );
+      if ( nextdir )
+        *nextdir++ = 0;
+      LALSnprintf( path, sizeof( path ) - 1, "%s/%s", *dirname ? dirname : ".", fnptrn );
+      glob( fnptrn, globflags, NULL, &g );
+      globflags |= GLOB_APPEND;
     }
-    else
-    {
-      getcwd( path, sizeof( path ) - 1 );
-      if ( ! getcwd( path, sizeof( path ) - 1 ) )
-      {
-        ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-      }
-      LALSnprintf( path, sizeof( path ), "%s/%s", path, dirname );
-    }
+    while ( nextdir );
+  }
 
-    dir = opendir( path );
-    if ( ! dir )
-    {
-      ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-    }
-
-    while ( ( ent = readdir( dir ) ) )
-      if ( ! fnmatch( fnptrn, ent->d_name, 0 ) )
-      {
-        struct stat buf;
-        LALSnprintf( fname, sizeof( fname ), "%s/%s", path, ent->d_name );
-        if ( strlen( fname ) != strlen( path ) + strlen( ent->d_name ) + 1 )
-        {
-          ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-        }
-        stat( fname, &buf );
-        if ( S_ISREG( buf.st_mode ) )
-          ++n;
-      }
-
-    dirname = nextdir;
+  if ( ! g.gl_pathc )
+  {
+    globfree( &g );
+    ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
   }
 
   cache = *output = LALCalloc( 1, sizeof( **output ) );
   if ( ! cache )
   {
+    globfree( &g );
     ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
   }
-  cache->numFrameFiles = n;
-  cache->frameFiles = LALCalloc( n, sizeof( *cache->frameFiles ) );
+  cache->numFrameFiles = g.gl_pathc;
+  cache->frameFiles = LALCalloc( g.gl_pathc, sizeof( *cache->frameFiles ) );
   if ( ! cache->frameFiles )
   {
+    globfree( &g );
     LALFree( *output );
     *output = NULL;
     ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
   }
 
   /* copy file names */
-  strncpy( tmp, dirstr ? dirstr : ".", sizeof( tmp ) );
-  dirname = tmp;
-  n = 0;
-  while ( dirname && *dirname )
+  for ( i = 0; i < g.gl_pathc; ++i )
   {
-    struct dirent *ent;
-    DIR           *dir;
-    CHAR          *nextdir;
-
-    nextdir = strchr( dirname, ':' );
-    if ( nextdir )
-      *nextdir++ = 0;
-
-    if ( *dirname == '/' ) /* absolute path */
+    FrStat *file = cache->frameFiles + i;
+    char src[MAXPATHLEN];
+    char dsc[MAXPATHLEN];
+    int t0 = 0;
+    int dt = 0;
+    char *path = g.gl_pathv[i];
+    char *base = strrchr( path, '/' );
+    int c;
+    if ( ! base )
+      base = path;
+    if ( *path == '/' ) /* absolute path */
     {
-      strncpy( path, dirname, sizeof( path ) - 1 );
-    }
-    else
-    {
-      if ( ! getcwd( path, sizeof( path ) - 1 ) )
+      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
+      file->url = LALMalloc( urlsz );
+      if ( ! file->url )
       {
+        globfree( &g );
         TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-        ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
       }
-      LALSnprintf( path, sizeof( path ), "%s/%s", path, dirname );
+      LALSnprintf( file->url, urlsz, "file://localhost%s", path );
     }
-
-    dir = opendir( path );
-    if ( ! dir )
+    else /* relative path */
     {
-      TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-      ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
+      size_t urlsz = strlen( path ) + sizeof( "file://localhost" );
+      CHAR cwd[MAXPATHLEN];
+      getcwd( cwd, MAXPATHLEN - 1 );
+      urlsz += strlen( cwd ) + 1;
+      file->url = LALMalloc( urlsz );
+      if ( ! file->url )
+      {
+        globfree( &g );
+        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+      }
+      LALSnprintf( file->url, urlsz, "file://localhost%s/%s", cwd, path );
     }
 
-    while ( ( ent = readdir( dir ) ) )
-      if ( ! fnmatch( fnptrn, ent->d_name, 0 ) )
+    /* extract src, dsc, t0, and dt from file name */
+    c = sscanf( base ? base : path, "%[a-zA-Z0-9_+#]-%[a-zA-Z0-9_+#]-%d-%d",
+        src, dsc, &t0, &dt );
+    if ( c == 4 ) /* expected format */
+    {
+      file->source = LALMalloc( strlen( src ) + 1 );
+      if ( ! file->source )
       {
-        struct stat buf;
-        LALSnprintf( fname, sizeof( fname ), "%s/%s", path, ent->d_name );
-        if ( strlen( fname ) != strlen( path ) + strlen( ent->d_name ) + 1 )
-        {
-          TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-          ABORT( status, FRAMECACHEH_EPATH, FRAMECACHEH_MSGEPATH );
-        }
-        stat( fname, &buf );
-        if ( S_ISREG( buf.st_mode ) )
-        {
-          FrStat *file = cache->frameFiles + n;
-          char tmpsrc[TMPSTRLEN + 1];
-          char tmpdsc[TMPSTRLEN + 1];
-          char tmpt0[TMPSTRLEN + 1];
-          char tmpdt[TMPSTRLEN + 1];
-          int c;
-
-          /* try to extract frame file stat using current naming convension */
-          c = sscanf( ent->d_name, "%" STR( TMPSTRLEN ) "[a-zA-Z0-9_+#]-%"
-              STR( TMPSTRLEN ) "[a-zA-Z0-9_+#]-%" STR( TMPSTRLEN ) "[0-9]-%"
-              STR( TMPSTRLEN ) "[0-9]", tmpsrc, tmpdsc, tmpt0, tmpdt );
-          if ( c == 4 && atoi( tmpt0 ) > 100000000 ) /* expected format */
-          {
-            file->source = LALMalloc( strlen( tmpsrc ) + 1 );
-            if ( ! file->source )
-            {
-              TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-              ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-            }
-            strcpy( file->source, tmpsrc );
-            file->description = LALMalloc( strlen( tmpdsc ) + 1 );
-            if ( ! file->description )
-            {
-              TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-              ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-            }
-            strcpy( file->description, tmpdsc );
-            file->startTime = atoi( tmpt0 );
-            file->duration = atoi( tmpdt );
-          }
-          else /* try to use old-style naming convensions */
-          {
-            unsigned int t0 = 0;
-            unsigned int m = 0;
-            float dt = 0;
-            *tmpsrc = 0;
-            sscanf( ent->d_name, "%" STR( TMPSTRLEN ) "[a-zA-Z0-9_+#]-%u-%u-%g",
-                tmpsrc, &t0, &m, &dt );
-            if ( t0 > 100000000 ) /* sanity check */
-            {
-              file->startTime = t0;
-              if ( *tmpsrc )
-              {
-                file->source = LALMalloc( strlen( tmpsrc ) + 1 );
-                if ( ! file->source )
-                {
-                  TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-                  ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-                }
-                strcpy( file->source, tmpsrc );
-              }
-              if ( dt > 0 )
-                file->duration = ceil( m * dt );
-              else
-                file->duration = m;
-            }
-          }
-          file->url = LALMalloc( strlen( fname ) + strlen( "file://localhost" ) + 1 );
-          if ( ! file->url )
-          {
-            TRY( LALDestroyFrCache( status->statusPtr, output ), status );
-            ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
-          }
-          sprintf( file->url, "file://localhost%s", fname );
-          ++n;
-        }
+        globfree( &g );
+        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
       }
-
-    dirname = nextdir;
+      strcpy( file->source, src );
+      file->description = LALMalloc( strlen( dsc ) + 1 );
+      if ( ! file->description )
+      {
+        globfree( &g );
+        TRY( LALDestroyFrCache( status->statusPtr, output ), status );
+        ABORT( status, FRAMECACHEH_EALOC, FRAMECACHEH_MSGEALOC );
+      }
+      strcpy( file->description, dsc );
+      file->startTime = t0;
+      file->duration = dt;
+    }
   }
+
+  globfree( &g );
 
   qsort( cache->frameFiles, cache->numFrameFiles, sizeof( *cache->frameFiles ),
       FrStatCompare );
