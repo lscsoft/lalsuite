@@ -670,13 +670,17 @@ LALSimulateCoherentGW( LALStatus        *stat,
      signal->a or signal->phi below their range. */
   i = 0;
   if ( aOff + ( i + delayMin )*aDt < 0.0 ) {
-    i = (INT4)( -aOff/aDt + delayMin );
+    INT4 j = (INT4)floor( -aOff/aDt - delayMax );
+    if ( i < j )
+      i = j;
     while ( ( i < (INT4)( output->data->length ) ) &&
 	    ( aOff + TCENTRE( i )*aDt < 0.0 ) )
       i++;
   }
   if ( phiOff + ( i + delayMin )*phiDt < 0.0 ) {
-    i = (INT4)( -phiOff/phiDt + delayMin );
+    INT4 j = (INT4)( -phiOff/phiDt - delayMax );
+    if ( i < j )
+      i = j;
     while ( ( i < (INT4)( output->data->length ) ) && 
 	    ( phiOff + TCENTRE( i )*phiDt < 0.0 ) )
       i++;
@@ -684,22 +688,24 @@ LALSimulateCoherentGW( LALStatus        *stat,
   if ( i >= (INT4)( output->data->length ) )
     LALWarning( stat, "Signal starts after the end of the output"
 		" time series." );
-  if ( i < 0 )
-    i = 0;
 
   /* Compute final value of i, ensuring that we will never index
      signal->a or signal->phi above their range. */
   n = output->data->length - 1;
   nMax = signal->a->data->length - 1;
   if ( aOff + ( n + delayMax )*aDt > nMax ) {
-    n = (INT4)( ( nMax - aOff )/aDt + delayMax + 1.0 );
+    INT4 j = (INT4)( ( nMax - aOff )/aDt - delayMin + 1.0 );
+    if ( n > j )
+      n = j;
     while ( ( n >= 0 ) &&
 	    ( aOff + TCENTRE( n )*aDt >= nMax ) )
       n--;
   }
   nMax = signal->phi->data->length - 1;
   if ( phiOff + ( n + delayMax )*phiDt > nMax ) {
-    n = (INT4)( ( nMax - phiOff )/phiDt + delayMax + 1.0 );
+    INT4 j = (INT4)( ( nMax - phiOff )/phiDt - delayMin + 1.0 );
+    if ( n > j )
+      n = j;
     while ( ( n >= 0 ) &&
 	    ( phiOff + TCENTRE( n )*phiDt >= nMax ) )
       n--;
@@ -707,19 +713,28 @@ LALSimulateCoherentGW( LALStatus        *stat,
   if ( n < 0 )
     LALWarning( stat, "Signal ends before the start of the output"
 		" time series." );
-  if ( n >= (INT4)( output->data->length ) )
-    n = output->data->length - 1;
 
   /* Compute the values of i for which signal->f is given. */
   if ( signal->f ) {
-    fInit = (INT4)( -fOff/fDt + delayMin );
-    while ( ( fInit < (INT4)( output->data->length ) ) &&
-	    ( fOff + TCENTRE( fInit )*fDt < 0.0 ) )
-      fInit++;
-    fFinal = (INT4)( ( nMax - fOff )/fDt + delayMax + 1.0 );
-    while ( ( fFinal >= 0 ) &&
-	    ( fOff + TCENTRE( fFinal )*fDt >= nMax ) )
-      fFinal--;
+    fInit = i;
+    if ( fOff + ( fInit + delayMin )*fDt < 0.0 ) {
+      INT4 j = (INT4)floor( -fOff/fDt - delayMax );
+      if ( fInit < j )
+	fInit = j;
+      while ( ( fInit <= n ) &&
+	      ( fOff + TCENTRE( fInit )*fDt < 0.0 ) )
+	fInit++;
+    }
+    fFinal = n;
+    nMax = signal->f->data->length - 1;
+    if ( fOff + ( fFinal + delayMax )*fDt > nMax ) {
+      INT4 j = (INT4)( ( nMax - fOff )/fDt - delayMin + 1.0 );
+      if ( fFinal > j )
+	fFinal = j;
+      while ( ( fFinal >= i ) &&
+	      ( fOff + TCENTRE( fFinal )*fDt >= nMax ) )
+	fFinal--;
+    }
   } else {
     fInit = n + 1;
     fFinal = i - 1;
@@ -727,14 +742,25 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Compute the values of i for which signal->shift is given. */
   if ( signal->shift ) {
-    shiftInit = (INT4)( -shiftOff/shiftDt + delayMin );
-    while ( ( shiftInit < (INT4)( output->data->length ) ) &&
-	    ( shiftOff + TCENTRE( shiftInit )*shiftDt < 0.0 ) )
-      shiftInit++;
-    shiftFinal = (INT4)( ( nMax - shiftOff )/shiftDt + delayMax + 1.0 );
-    while ( ( shiftFinal >= 0 ) &&
-	    ( shiftOff + TCENTRE( shiftFinal )*shiftDt >= nMax ) )
-      shiftFinal--;
+    shiftInit = i;
+    if ( shiftOff + ( shiftInit + delayMin )*shiftDt < 0.0 ) {
+      INT4 j = (INT4)floor( -shiftOff/shiftDt - delayMax );
+      if ( shiftInit < j )
+	shiftInit = j;
+      while ( ( shiftInit <= n ) &&
+	      ( shiftOff + TCENTRE( shiftInit )*shiftDt < 0.0 ) )
+	shiftInit++;
+    }
+    shiftFinal = n;
+    nMax = signal->shift->data->length - 1;
+    if ( shiftOff + ( shiftFinal + delayMax )*shiftDt > nMax ) {
+      INT4 j = (INT4)( ( nMax - shiftOff )/shiftDt - delayMin + 1.0 );
+      if ( shiftFinal > j )
+	shiftFinal = j;
+      while ( ( shiftFinal >= i ) &&
+	      ( shiftOff + TCENTRE( shiftFinal )*shiftDt >= nMax ) )
+	shiftFinal--;
+    }
   } else {
     shiftInit = n + 1;
     shiftFinal = i - 1;
