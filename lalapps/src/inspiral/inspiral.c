@@ -58,6 +58,7 @@ REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 
 /* matched filter parameters */
+CHAR *bankFileName      = NULL;         /* name of input template bank  */
 INT4  startTemplate     = -1;           /* index of first template      */
 INT4  stopTemplate      = -1;           /* index of last template       */
 INT4  numChisqBins      = -1;           /* number of chisq bins         */
@@ -261,16 +262,17 @@ int main( int argc, char *argv[] )
 
 
   /* read in the template bank from a ligo lw xml file */
-  numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, BANK_FILE,
+  numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
       startTemplate, stopTemplate );
   if ( numTmplts < 1 )
   {
-    fprintf( stderr, "error: unable to read templates from " BANK_FILE "\n" );
+    fprintf( stderr, "error: unable to read templates from %s\n", 
+        bankFileName );
     exit( 1 );
   }
   if ( vrbflg )
   {
-    fprintf( stdout, "parsed %d templates from " BANK_FILE "\n", numTmplts );
+    fprintf( stdout, "parsed %d templates from %s\n", numTmplts, bankFileName );
   }
 
 
@@ -697,6 +699,7 @@ int main( int argc, char *argv[] )
   LALFree( chisqStr );
   LALFree( calCacheName );
   LALFree( frInCacheName );
+  LALFree( bankFileName );
   LALFree( channelName );
   LALFree( fqChanName );
   LALCheckMemoryLeaks();
@@ -750,6 +753,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
     {"frame-cache",             required_argument, 0,                'u'},
+    {"bank-file",               required_argument, 0,                'v'},
     {"debug-level",             required_argument, 0,                'z'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
@@ -779,7 +783,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:z:", 
+        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1100,6 +1104,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         break;
 
+      case 'v':
+        {
+          /* create storage for the calibration frame cache name */
+          size_t bfnamelen = strlen(optarg) + 1;
+          bankFileName = (CHAR *) LALCalloc( bfnamelen, sizeof(CHAR));
+          memcpy( bankFileName, optarg, bfnamelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
       case 'z':
         set_debug_level( optarg );
         break;
@@ -1322,6 +1336,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( ! calCacheName )
   {
     fprintf( stderr, "--calibration-cache must be specified\n" );
+    exit( 1 );
+  }
+  if ( ! bankFileName )
+  {
+    fprintf( stderr, "--bank-file must be specified\n" );
     exit( 1 );
   }
 
