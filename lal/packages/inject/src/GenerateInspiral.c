@@ -407,7 +407,7 @@ void LALGetApproximantAndOrderFromString(LALStatus *status,
   {*order = onePointFivePN;}
   else if (  (orderptr = strstr(waveform, 	"twoPN") ) )
   {*order = twoPN;}
-  else if (  (orderptr = strstr(waveform,  	"twoPointFive") ) )
+  else if (  (orderptr = strstr(waveform,  	"twoPointFivePN") ) )
   {*order = twoPointFivePN;}
   else if (  (orderptr = strstr(waveform, 	"threePN") ) )
   {*order = threePN;}
