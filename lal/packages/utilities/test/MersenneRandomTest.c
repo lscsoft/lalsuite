@@ -1,0 +1,453 @@
+/****************** <lalVerbatim file="MersenneRandomTestCV">
+Author: Tibbits, M. M.
+$Id$
+********************************* </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+\subsection{Program \texttt{MersenneRandomTest.c}}
+\label{s:MersenneRandomTest.c}
+
+A program to test \texttt{LALMersenneRandom()} and \texttt{LALMersenneRandomVector()}
+\subsubsection*{Usage}
+
+\begin{verbatim}
+./MersenneRandomTest [options]
+Options:
+  -h             print usage message
+  -q             quiet: run silently
+  -v             verbose: print extra information
+  -d level       set lalDebugLevel to level
+\end{verbatim}
+
+This program tests the function
+\texttt{LALMersenneRandom()},which generates a random
+number based on the Mersenne Twister algorithm.
+
+First, it tests that the correct error codes 
+are generated for the following error conditions passed
+to the function LALMersenneRandom() (tests in \textit{italics}
+are not performed if \verb+LAL_NEDEBUG+ is set, as the
+corresponding checks in the code are made using the ASSERT macro):
+
+\begin{itemize}
+\item \textit{null pointer to output structure}
+\item \textit{null pointer to params structure}
+\item \textit{params not initialized}
+\end{itemize}
+
+Second, it tests that the correct error codes 
+are generated for the following error conditions passed
+to the function LALMersenneRandomVector() (tests in \textit{italics}
+are not performed if \verb+LAL_NEDEBUG+ is set, as the
+corresponding checks in the code are made using the ASSERT macro):
+
+\begin{itemize}
+\item \textit{null pointer to output structure}
+\item \textit{null pointer to params structure}
+\item \textit{params not initialized}
+\item \textit{outputVector-$>$length = 0}
+\end{itemize}
+
+Third, it verifies the output of the generator
+for each of the following simple test cases:
+\begin{enumerate}
+\item given a certain seed, does the output match the expected?
+\item does calling the function again reinitialize it to the new seed properly?
+\item does it create a vector of random numbers correctly?
+\end{enumerate}
+
+For each successful test
+(both of these valid data and the invalid ones described above), it
+prints ``\texttt{PASS}'' to standard output; if a test fails, it
+prints ``\texttt{FAIL}''.
+
+\subsubsection*{Exit codes}
+
+\input{MersenneRandomTestCE}
+
+\subsubsection*{Uses}
+
+\begin{verbatim}
+LALMersenneRandom()
+LALMersenneRandomVector()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\begin{itemize}
+\item{Vector must come in allocated}
+\item{params must be initialized before calls can be made.}
+\end{itemize}
+
+\vfill{\footnotesize\input{MersenneRandomTestCV}}
+
+******************************************************* </lalLaTeX> */
+
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+
+#include <math.h>
+#include <string.h>
+#include <stdio.h>
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+#include <lal/Random.h>
+
+
+NRCSID (MERSENNERANDOMTESTC, "$Id$");
+
+
+/* bogus type */
+struct
+tagMTRandomParams
+{
+        UINT4           seed;
+        INT2            initialized;
+        void            *priv;
+};
+
+
+/*  constants  */
+#define MERSENNERANDOMTESTC_TRUE     1
+#define MERSENNERANDOMTESTC_FALSE    0
+
+extern char	*optarg;
+extern int	optind;
+
+
+/*  Setting Global debug level  */
+int	lalDebugLevel	= 0;
+
+
+/*  Setting variables to parse command line flags  */
+BOOLEAN	optVerbose	= MERSENNERANDOMTESTC_FALSE;
+UINT4	optLength	= 0;
+
+INT4
+CheckStatus(LALStatus *status, const INT4 code, const CHAR *message,
+            const INT4 exitcode, const CHAR *error);
+
+
+static void Usage 
+(
+	const char	*program,
+	int		exitflag
+);
+
+static void ParseOptions
+(
+	int		argc,
+	char		*argv[]
+);
+
+
+/*************** <lalErrTable file="MersenneRandomTestCE"> */
+#define	MERSENNERANDOMTESTC_ENOM     0
+#define	MERSENNERANDOMTESTC_EARG     1
+#define	MERSENNERANDOMTESTC_ECHK     2
+#define	MERSENNERANDOMTESTC_EFLS     3
+#define	MERSENNERANDOMTESTC_EUSE     4
+#define	MERSENNERANDOMTESTC_ENULL    5
+#define	MERSENNERANDOMTESTC_EALOC    6
+#define	MERSENNERANDOMTESTC_ENMM     7
+#define	MERSENNERANDOMTESTC_MSGENOM  "Nominal exit"
+#define	MERSENNERANDOMTESTC_MSGEARG  "Error parsing command-line arguments"
+#define	MERSENNERANDOMTESTC_MSGECHK  "Error checking failed to catch bad data"
+#define	MERSENNERANDOMTESTC_MSGEFLS  "Incorrect answer for valid data"
+#define	MERSENNERANDOMTESTC_MSGEUSE  "Bad user-entered data"
+#define	MERSENNERANDOMTESTC_MSGENULL "Null Pointer."
+#define MERSENNERANDOMTESTC_MSGEALOC "Memory Allocation Error"
+#define	MERSENNERANDOMTESTC_MSGENMM  "Randeom Number Mismatch"
+/***************************** </lalErrTable> */
+
+
+
+int main( int argc, char *argv[] )
+{
+
+	static	LALStatus	status;
+
+	/* Variable declarations */
+	REAL8Vector	*outputVector;
+	REAL8Vector	*testVector1;
+	REAL8Vector	*testVector2;
+	REAL8Vector	*testVector3;
+	REAL8Vector	*nullVector;
+	MTRandomParams	*params;
+	MTRandomParams	*nullParams;
+	REAL8		*nullOutput;
+	REAL8		output;
+	UINT8		tempLength;
+	INT8		iterator;
+	INT4		code;
+	INT4		count;
+
+	ParseOptions( argc, argv );
+
+	/*  Initialize Variables  */
+	nullOutput	= NULL;
+	nullVector	= NULL;
+	outputVector	= NULL;
+	testVector1	= NULL;
+	testVector2	= NULL;
+	testVector3	= NULL;
+	nullParams	= NULL;
+	params		= NULL;
+	count		= 0;
+
+	LALDCreateVector(&status, &outputVector, 1000);
+	LALDCreateVector(&status, &testVector1, 1000);
+	LALDCreateVector(&status, &testVector2, 500);
+	LALDCreateVector(&status, &testVector3, 500);
+
+	/*  Initialize Parameter structure  */
+	LALCreateMTRandomParams(&status, 4357, &params);
+
+	printf("\n\nMESG: %s \n",MERSENNERANDOMTESTC);
+
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+	/*******************  Test LALMersenneRandom()  *********************/
+	/* test behavior for null pointer to output structure */
+	LALMersenneRandom(&status, nullOutput, params);
+	if ( ( code = CheckStatus(&status, RANDOMH_ENULL, RANDOMH_MSGENULL,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: null pointer to output structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGENULL);
+
+	/* test behavior for null pointer to params structure */
+	LALMersenneRandom(&status, &output, nullParams);
+	if ( ( code = CheckStatus(&status, RANDOMH_ENULL, RANDOMH_MSGENULL,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: null pointer to params structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGENULL);
+
+	/* test behavior for non-initialized params structure  */
+	params->initialized = 0;
+	LALMersenneRandom(&status, &output, params);
+	if ( ( code = CheckStatus(&status, RANDOMH_EINIT, RANDOMH_MSGEINIT,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+
+	printf("\nPASS: non-initialized params structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGEINIT);
+	params->initialized = 1;
+
+
+	/*******************  Test LALMersenneRandomVector()  *********************/
+	/* test behavior for null pointer to output structure */
+	LALMersenneRandomVector(&status, nullVector, params);
+	if ( ( code = CheckStatus(&status, RANDOMH_ENULL, RANDOMH_MSGENULL,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: null pointer to output structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGENULL);
+
+	/* test behavior for null pointer to params structure */
+	LALMersenneRandomVector(&status, outputVector, nullParams);
+	if ( ( code = CheckStatus(&status, RANDOMH_ENULL, RANDOMH_MSGENULL,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: null pointer to params structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGENULL);
+
+	/* test behavior for non-initialized params structure  */
+	params->initialized = 0;
+	LALMersenneRandomVector(&status, outputVector, params);
+	if ( ( code = CheckStatus(&status, RANDOMH_EINIT, RANDOMH_MSGEINIT,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: non-initialized params structure results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGEINIT);
+	params->initialized = 1;
+
+	/* test behavior for outputVector length = 0  */
+	tempLength = outputVector->length;
+	outputVector->length = 0;
+	LALMersenneRandomVector(&status, outputVector, params);
+	if ( ( code = CheckStatus(&status, RANDOMH_EZERO, RANDOMH_MSGEZERO,
+					MERSENNERANDOMTESTC_ECHK, MERSENNERANDOMTESTC_MSGECHK)) )
+	{
+		return code;
+	}
+	printf("\nPASS: outputVector length = 0 results in error:\n");
+	printf("       \"%s\"\n", RANDOMH_MSGEZERO);
+	outputVector->length = tempLength; 
+  }
+#endif
+
+	for (iterator = 0; iterator < 1000; iterator++)
+	{
+		LALMersenneRandom(&status, &output, params);
+		printf("%10.8f ", output);
+		if (iterator % 8 == 7)
+			printf("\n");
+	}
+
+	LALDestroyMTRandomParams(&status, &params);
+
+	LALCreateMTRandomParams(&status, 4357, &params);
+
+	LALMersenneRandomVector(&status, testVector1, params);
+
+	LALDestroyMTRandomParams(&status, &params);
+
+	LALCreateMTRandomParams(&status, 4357, &params);
+
+	LALMersenneRandomVector(&status, testVector2, params);
+
+	for(iterator = 0; iterator < 500; iterator++)
+	{
+		if (testVector1->data[iterator] == testVector2->data[iterator])
+			count++;
+	}
+
+	LALMersenneRandomVector(&status, testVector3, params);
+
+	for(; iterator < 1000; iterator++)
+	{
+		if (testVector1->data[iterator] == testVector3->data[iterator-500])
+			count++;
+	}
+
+	printf("\ncount := %d\n",count);
+
+	LALDestroyMTRandomParams(&status, &params);
+
+	printf("\n");
+	printf("MESG:	More option available from command line.\n");
+	printf("MESG:	Type MersenneRandomTest -h for options.\n");
+
+	/* normal exit */
+
+	if ( count == 1000 )
+	{
+		return MERSENNERANDOMTESTC_ENOM;
+	}
+	else
+	{
+		return MERSENNERANDOMTESTC_ENMM;
+	}
+}
+
+
+/*  CODE LISTED BEYOND THIS POINT WAS TAKEN FROM STOCHASTICCROSSCORRELATIONTEST.C  */
+
+/*
+ * Usage ()
+ *
+ * Prints a usage message for program program and exits with code exitcode.
+ *
+ */
+
+static void Usage (const char *program, int exitcode)
+{
+  fprintf (stderr, "Usage: %s [options]\n", program);
+  fprintf (stderr, "Options:\n");
+  fprintf (stderr, "  -h             print this message\n");
+  fprintf (stderr, "  -q             quiet: run silently\n");
+  fprintf (stderr, "  -v             verbose: print extra information\n");
+  fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
+  exit (exitcode);
+}
+
+/*
+ * ParseOptions ()
+ *
+ * Parses the argc - 1 option strings in argv[].
+ *
+ */
+
+static void ParseOptions (int argc, char *argv[])
+{
+  while (1)
+  {
+    int c = -1;
+
+    c = getopt (argc, argv, "hqvd:");
+    if (c == -1)
+    {
+      break;
+    }
+
+    switch (c)
+    {        
+      case 'd': /* set debug level */
+        lalDebugLevel = atoi (optarg);
+        break;
+
+      case 'v': /* optVerbose */
+        optVerbose = MERSENNERANDOMTESTC_TRUE;
+        break;
+
+      case 'q': /* quiet: run silently (ignore error messages) */
+        freopen ("/dev/null", "w", stderr);
+        freopen ("/dev/null", "w", stdout);
+        break;
+
+      case 'h':
+        Usage (argv[0], 0);
+        break;
+
+      default:
+        Usage (argv[0], 1);
+    }
+
+  }
+
+  if (optind < argc)
+  {
+    Usage (argv[0], 1);
+  }
+
+  return;
+}
+
+INT4
+CheckStatus(LALStatus *status, const INT4 code, const CHAR *message,
+            const INT4 exitcode, const CHAR *error)
+{
+  
+  if (optVerbose)
+  {
+    REPORTSTATUS (status);
+  }
+  if (status->statusCode!= code) 
+  {
+    if (code) printf ("  FAIL: did not recognize \"%s\"\n", message);
+    if (optVerbose) printf("Exiting with error: %s\n", error);
+    return(exitcode);
+  }
+  else if (code && strcmp(message, status->statusDescription)) 
+  {
+    printf("  FAIL: incorrect error message \"%s\" not \"%s\"\n",
+           status->statusDescription, message);
+    if (optVerbose) printf("Exiting with error: %s\n", error);
+    return(exitcode);
+  }
+  return 0;
+}
+
