@@ -7,7 +7,7 @@ libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
   StreamVectorInput.c StreamVectorSequenceInput.c LALInitBarycenter.c \
-  LALXMGRInterface.c $(top_srcdir)/packages/findchirp/src/FindChirpView.c 
+  LALXMGRInterface.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   ReadFrequencySeries.c ReadTimeSeries.c
