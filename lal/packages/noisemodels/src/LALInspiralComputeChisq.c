@@ -196,7 +196,7 @@ LALInspiralComputeChisq
 
       binSNR *= 2.;
       diffSNR = 1. - c2*binSNR/binSNRs->data[i];
-      // diffSNR = 1. - binSNR/SNRPerBin;
+      /* diffSNR = 1. - binSNR/SNRPerBin; */
       *chisq += diffSNR * diffSNR;
    }
    /*
