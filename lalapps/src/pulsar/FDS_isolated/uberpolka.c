@@ -125,10 +125,12 @@ int main(int argc,char *argv[])
 #endif
 {
   UINT4 i;
-  lalDebugLevel = 0;
 #if USE_BOINC
   REAL8 local_fraction_done;
 #endif
+
+  lalDebugLevel = 0;
+
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
 
