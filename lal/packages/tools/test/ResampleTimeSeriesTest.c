@@ -1,0 +1,254 @@
+/**** <lalVerbatim file="ResampleTimeSeriesTestCV">
+ * Author: Brown, D. A.
+ * $Id$
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
+ * 
+ * Tests the resampling functions.
+ *
+ * \subsubsection*{Usage}
+ *
+ * \begin{verbatim}
+ * ResampleTimeSeriesTest -v [-n POINTS] [-i FREQ] [-o FREQ] [-f FREQ]
+ * \end{verbatim}
+ *
+ * \subsubsection*{Description}
+ *
+ **** </lalLaTeX> */
+
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <lal/LALConfig.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Units.h>
+#include <lal/ResampleTimeSeries.h>
+#include <lal/FrameStream.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
+NRCSID (MAIN, "$Id$");  
+
+extern char *optarg;
+extern int   optind;
+
+int     lalDebugLevel = 1;
+int     verbose = 0;
+UINT4   numPoints = 1048576;
+UINT4   inRate    = 16384;
+UINT4   outRate   = 4096;
+REAL4   sineFreq  = 1000.0;
+ResampleTSFilter filtType = LDASorderTen;
+
+static void
+Usage (const char *program, int exitflag);
+
+static void
+ParseOptions (int argc, char *argv[]);
+
+static void
+TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
+
+int
+main (int argc, char *argv[])
+{
+  static LALStatus      status;
+  REAL4TimeSeries       chan;
+  ResampleTSParams      resampPars;
+  UINT4                 j;
+  FrOutPar in_opar = { "F", "IN", ProcDataChannel, 6, 0, 0 };
+  FrOutPar out_opar = { "F", "OUT", ProcDataChannel, 6, 0, 0 };
+
+  ParseOptions (argc, argv);
+
+  memset( &chan, 0, sizeof(REAL4TimeSeries) );
+  LALSCreateVector( &status, &(chan.data), numPoints );
+  TestStatus (&status, "0", 1);
+
+  chan.sampleUnits = lalADCCountUnit;
+  chan.deltaT = 1.0 / (REAL8) inRate;
+  chan.epoch.gpsSeconds = 100;
+  resampPars.deltaT = 1.0 / (REAL8) outRate;
+  resampPars.filterType = filtType;
+  
+  for ( j = 0; j < chan.data->length; ++j )
+  {
+    chan.data->data[j] = sin( 2.0 * LAL_PI * sineFreq * j * chan.deltaT );
+  }
+
+  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%6.2f_%d_in",
+      inRate, outRate, numPoints, sineFreq, filtType );
+  LALFrWriteREAL4TimeSeries( &status, &chan, &in_opar );
+  TestStatus (&status, "0", 1);
+
+  LALResampleREAL4TimeSeries( &status, &chan, &resampPars );
+  TestStatus (&status, "0", 1);
+
+  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%6.2f_%d_out",
+      inRate, outRate, numPoints, sineFreq, filtType );
+  LALFrWriteREAL4TimeSeries( &status, &chan, &out_opar );
+  TestStatus (&status, "0", 1);
+
+  LALSDestroyVector( &status, &(chan.data) );
+  TestStatus (&status, "0", 1);
+
+  LALCheckMemoryLeaks();
+  return 0;
+}
+
+/*
+ * TestStatus ()
+ *
+ * Routine to check that the status code status->statusCode agrees with one of
+ * the codes specified in the space-delimited string ignored; if not,
+ * exit to the system with code exitcode.
+ *
+ */
+static void
+TestStatus (LALStatus *status, const char *ignored, int exitcode)
+{
+  char  str[64];
+  char *tok;
+
+  if (verbose)
+  {
+    REPORTSTATUS (status);
+  }
+
+  if (strncpy (str, ignored, sizeof (str)))
+  {
+    if ((tok = strtok (str, " ")))
+    {
+      do
+      {
+        if (status->statusCode == atoi (tok))
+        {
+          return;
+        }
+      }
+      while ((tok = strtok (NULL, " ")));
+    }
+    else
+    {
+      if (status->statusCode == atoi (tok))
+      {
+        return;
+      }
+    }
+  }
+
+  fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
+  exit (exitcode);
+}
+
+/*
+ * Usage ()
+ *
+ * Prints a usage message for program program and exits with code exitcode.
+ *
+ */
+static void
+Usage (const char *program, int exitcode)
+{
+  fprintf (stderr, "Usage: %s [options]\n", program);
+  fprintf (stderr, "Options:\n");
+  fprintf (stderr, "  -h         print this message\n");
+  fprintf (stderr, "  -d level   set lalDebugLevel to level\n");
+  fprintf (stderr, "  -v         verbose: print extra information\n");
+  fprintf (stderr, "  -n points  number of points in the raw time series (1048576)\n");
+  fprintf (stderr, "  -i freq    sample rate of input time series (16384)\n");
+  fprintf (stderr, "  -o freq    sample rate of output time series (4096)\n");
+  fprintf (stderr, "  -f freq    frequency of sine wave to inject as input (1000.0)\n");
+  fprintf (stderr, "  -r type    type of filter to use in resampling (ldas)\n");
+  fprintf (stderr, "             [ldas|butterworth|gds]\n");
+  exit (exitcode);
+}
+
+/*
+ * ParseOptions ()
+ *
+ * Parses the argc - 1 option strings in argv[].
+ *
+ */
+static void
+ParseOptions (int argc, char *argv[])
+{
+  while (1)
+  {
+    int c = -1;
+
+    c = getopt (argc, argv, "hvd:n:i:o:f:r:");
+    if (c == -1)
+    {
+      break;
+    }
+
+    switch (c)
+    {
+      case 'h':
+        Usage (argv[0], 0);
+        break;
+
+      case 'v': /* verbose */
+        ++verbose;
+        break;
+
+      case 'd': /* set debug level */
+        lalDebugLevel = atoi (optarg);
+        break;
+
+      case 'n': /* sets number of points */
+        numPoints = (UINT4) atoi( optarg );
+        break;
+
+      case 'i': /* sets number of points */
+        inRate = (UINT4) atoi( optarg );
+        break;
+
+      case 'o': /* sets number of points */
+        outRate = (UINT4) atoi( optarg );
+        break;
+
+      case 'f': /* sets number of points */
+        sineFreq = (REAL4) atof( optarg );
+        break;
+
+      case 'r':
+        if ( ! strcmp( "ldas", optarg ) )
+        {
+          filtType = LDASorderTen;
+        }
+        else if ( ! strcmp( "butterworth", optarg ) )
+        {
+          filtType = defaultButterworth;
+        }
+        else if ( ! strcmp( "gds", optarg ) )
+        {
+          filtType = firLSOne;
+        }
+        else 
+        {
+          Usage (argv[0], 1);
+        }
+        break;
+
+      default:
+        Usage (argv[0], 1);
+    }
+
+  }
+
+  if (optind < argc)
+  {
+    Usage (argv[0], 1);
+  }
+
+  return;
+}
