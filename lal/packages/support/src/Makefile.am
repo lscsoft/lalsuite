@@ -23,7 +23,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c \
   LALInitBarycenter.c LALXMGRInterface.c \
-  LIGOLwXML.c SFTfileIO.c \
+  LIGOLwXML.c SFTfileIO.c glob.c \
   UserInput.c ConfigFile.c getopt.c getopt.h getopt1.c \
   LALMath3DPlot.c LALMathNDPlot.c
 
