@@ -99,7 +99,7 @@ static void ComputeAverageSpectrum(
 	INITSTATUS(status, "ComputeAverageSpectrum", EPSEARCHC);
 	ATTATCHSTATUSPTR(status);
 
-	winParams.type = params->winParams.type;
+	winParams.type = params->windowType;
 	winParams.length = 2 * params->numPoints;
 	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
 	CHECKSTATUSPTR(status);
@@ -133,7 +133,7 @@ static void ComputeAverageSpectrum(
  * Convert a linked list of tiles to a linked list of burst events.
  */
 
-static INT4 TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
+static void TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTable **event, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 numevents;
 
@@ -148,8 +148,6 @@ static INT4 TFTilesToSnglBurstTable(LALStatus *status, TFTile *tile, SnglBurstTa
 
 		event = &(*event)->next;
 	}
-
-	return(numevents);
 }
 
 
@@ -203,13 +201,10 @@ EPSearch (
     CHECKSTATUSPTR(status);
 
     /* create the dft params */
-    winParams.type = params->winParams.type;
+    winParams.type = params->windowType;
     winParams.length = 2 * params->numPoints;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR(status);
-
-    /* point to the start of event list */
-    params->numEvents=0;
 
     /* loop over data applying excess power method */
     for(start_sample = 0; start_sample <= tseries->data->length - lround(2.0 / tseries->deltaT); start_sample += params->ovrlap)
@@ -291,7 +286,7 @@ EPSearch (
       CHECKSTATUSPTR(status);
 
       /* convert the TFTiles into sngl_burst events for output */
-      params->numEvents += TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+      TFTilesToSnglBurstTable(status, tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
       while(*EventAddPoint)
         EventAddPoint = &(*EventAddPoint)->next;
 
@@ -486,9 +481,6 @@ void EPInitSearch(
     (*params)->events2Master                = atoi( argv[14] );
     /* EK - Channel name to process (e.g. "ifodmro") */
     strcpy( (*params)->channelName, argv[15] );
-    /* Simulation type:  currently ignored. */
-    (*params)->simType                      =  atoi( argv[16] );
-    (*params)->simType = 0;
     /* Spectrum method to use */
     if ( !strcmp( argv[17], "useMean" ) ) {
         (*params)->method                   = useMean;
@@ -500,16 +492,9 @@ void EPInitSearch(
         ABORT( status, EPSEARCHH_ESPEC, EPSEARCHH_MSGESPEC);
     }
     /* Window to use on the data */
-    (*params)->winParams.type               = atoi( argv[18] );
-
-    /* initialize parameter structures */
-    (*params)->numSlaves    = NULL;
+    (*params)->windowType                   = atoi( argv[18] );
 
     /* initialize parameters */
-    (*params)->haveData        = 0;
-    (*params)->currentSegment  = 0;
-    (*params)->numEvents       = 0;
-    (*params)->searchMaster    = 0;
     (*params)->tfTilingInput->maxTileBand = 128.0;
 
 
@@ -626,41 +611,22 @@ void EPConditionData(
 
 /* <lalVerbatim file="EPFinalizeSearchCP"> */
 void
-EPFinalizeSearch(
-        LALStatus             *status,
-        EPSearchParams       **params
-        )
+EPFinalizeSearch (
+	LALStatus         *status,
+	EPSearchParams   **params
+)
 /* </lalVerbatim> */
 {
-  INITSTATUS (status, "LALFinalizeSearch", EPSEARCHC);
-  ATTATCHSTATUSPTR (status);
+	INITSTATUS (status, "LALFinalizeSearch", EPSEARCHC);
+	ATTATCHSTATUSPTR (status);
 
-  /* check params exists */
-  if ( !params || !*params ){
-    ABORT( status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP );
-  }
+	if(params && *params) {
+		LALFree((*params)->tfTilingInput);
+		LALFree((*params)->channelName);
+		LALFree(*params);
+		*params = NULL;
+	}
 
-  if ( (*params)->searchMaster )
-  {
-    /* free numSlaves */
-    LALFree ((*params)->numSlaves);
-  }
-  
-  /* free compEPInput */
-  LALFree ((*params)->compEPInput);
-
-  /* free TFTiling initialisation parameters */
-  LALFree ((*params)->tfTilingInput);
-  
-  /* EK - modified; added channel name */
-  LALFree ((*params)->channelName);
-
-  /* free params */
-  LALFree (*params);
-  *params = NULL;
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
 }
-
-

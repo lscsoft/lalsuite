@@ -63,9 +63,7 @@ static size_t min(size_t a, size_t b)
 
 /* some global output flags */
 INT4 verbose;
-INT4 cluster;
 INT4 geodata;
-INT4 printSpectrum;
 INT4 printData;
 INT4 whiteNoise;                    /* insertion of Gaussian white noise   */
 INT4 sineBurst;                     /* insertion of shaped sine burst      */
@@ -192,9 +190,6 @@ int main( int argc, char *argv[])
 
     /* parse arguments and fill procparams table */
     initializeEPSearch( argc, argv, &params, &procparams);
-
-    params->printSpectrum = printSpectrum;
-    params->cluster = cluster;
 
     /* create the search summary table */
     searchsumm.searchSummaryTable = (SearchSummaryTable *)
@@ -769,6 +764,17 @@ void initializeEPSearch(
 	MetadataTable *procparams 
 )
 { 
+	char msg[240];
+	int cluster;
+	int printSpectrum;
+	int c;
+	int option_index;
+	int ram = 0;
+	INT8 gpstmp;
+	INT8 gpsStartTimeNS = 0;
+	INT8 gpsStopTimeNS = 0;
+	ProcessParamsTable *proc_param = procparams->processParamsTable;
+	LALStatus stat = blank_status;
 	struct option long_options[] = {
 		{"cluster",             no_argument,       &cluster,       TRUE},
 		{"bandwidth",           required_argument, NULL,           'A'},
@@ -812,16 +818,6 @@ void initializeEPSearch(
 		{NULL, 0, NULL, 0}
 	};
 
-	char msg[240];
-	int c;
-	int option_index;
-	int ram = 0;
-	INT8 gpstmp;
-	INT8 gpsStartTimeNS = 0;
-	INT8 gpsStopTimeNS = 0;
-	ProcessParamsTable *proc_param = procparams->processParamsTable;
-	LALStatus stat = blank_status;
-
 	/*
 	 * Allocate memory.
 	 */
@@ -847,11 +843,7 @@ void initializeEPSearch(
 	 */
 
 	(*params)->channelName = NULL;
-	(*params)->haveData = 0;
-	(*params)->numEvents = 0;
-	(*params)->numSlaves = NULL;
 	(*params)->tfTilingInput->maxTileBand = 64.0;
-	(*params)->searchMaster = 0;
 
 	cachefile = NULL;
 	calCacheFile = NULL;
@@ -1210,13 +1202,13 @@ void initializeEPSearch(
 		break;
 
 		case 'i':
-		(*params)->winParams.type = atoi(optarg);
-		if((*params)->winParams.type > 6) {
-			sprintf(msg, "must be <= 6 (%i specified)", (*params)->winParams.type);
+		(*params)->windowType = atoi(optarg);
+		if((*params)->windowType >= NumberWindowTypes) {
+			sprintf(msg, "must be <= %d (%i specified)", NumberWindowTypes, (*params)->windowType);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->winParams.type);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->windowType);
 		break;
 
 		/* option sets a flag */
@@ -1261,7 +1253,9 @@ void initializeEPSearch(
 	LAL_CALL(LALINT8toGPS(&stat, &stopEpoch, &gpsStopTimeNS), &stat);
 	totalNumPoints = DeltaGPStoINT8(&stat, &stopEpoch, &startEpoch) * frameSampleRate / 1000000000L;
 
+	(*params)->cluster = cluster;
 	(*params)->numSegments = ram / (4 * sizeof(REAL4));
+	(*params)->printSpectrum = printSpectrum;
 }
 
 #undef ADD_PROCESS_PARAMS
