@@ -79,10 +79,10 @@ for bandnumber=1:Nbands;
      %%%%%%%%%%%%%%%%%%%%Refining h0
      h0min= h0vect(nh0-1);
      h0max= 5.0*h0vect(nh0);
-     if( CH(nh0)> 0.955)
-       small = find( CH<0.945);
+     if( CH(nh0)> 0.96)
+       small = find( CH<0.94);
        h0min = h0vect(length(small));
-       large = find( CH > 0.955);
+       large = find( CH > 0.96);
        h0max = h0vect(large(1));
      end
      fprintf(fid2,'%d %d ', h0min, h0max );
