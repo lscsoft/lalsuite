@@ -127,7 +127,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         break;
 
       default:
-        fprintf(stderr, "unknown error while parsing options\n");
+        fprintf(stderr, "Unknown error while parsing options\n");
         exit(1);
     }
   }
@@ -160,7 +160,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       if (numSegments < 0)
       {
-        fprintf(stderr, "error: unable to read stochastic_table from %s\n", \
+        fprintf(stderr, "Unable to read stochastic_table from \"%s\"\n", \
             argv[i]);
         exit(1);
       }
