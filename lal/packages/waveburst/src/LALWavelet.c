@@ -136,8 +136,15 @@ LALPercentileWavelet( LALStatus *status,
   _createClusterWavelet(&(*output)->out);
   (*output)->out->nsubintervals=input->nsubintervals;
 
+  if(input->interpolate==1)
+    {
+      _interpolate(input);
+    }
+
   _calibrate(input->in, input->R, input->C, input->alpha, input->gamma, 
 	     (*output)->out, input->offsetSec);
+
+  _assignWavelet(&(*output)->out->afterCalibration,input->in);
 
   _whiteAlone(input->in, &(*output)->out->medians, 
 	      &(*output)->out->norm50, (*output)->out->nsubintervals, input->offsetSec);

@@ -30,6 +30,8 @@ static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R,
 		       COMPLEX8FrequencySeries *C,
 		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma, 
 		       ClusterWavelet *w, UINT4 offset);
+static void _interpolate(InputPercentileWavelet  *input);
+static REAL4 _polypredict(REAL4 *pL, REAL4 *pC, REAL4 *pR, int m);
 static void _initCOMPLEX8(COMPLEX8 *n, REAL4 a, REAL4 b);
 static void _plusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two, COMPLEX8 *result);
 static void _minusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
@@ -1023,6 +1025,8 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
   if(right->original!=NULL) _assignWavelet(&(*left)->original,right->original);
+  if(right->afterCalibration!=NULL) 
+    _assignWavelet(&(*left)->afterCalibration,right->afterCalibration);
   /*  if(right->psd!=NULL) _assignREAL4FrequencySeries(&(*left)->psd,right->psd);*/
 
   (*left)->pMaskCount=right->pMaskCount;
@@ -1360,6 +1364,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   int nM;
   Slice S;
   Wavelet *original=w->original;
+  Wavelet *afterCalibration=w->afterCalibration;
   /*  REAL4 minAmp; */
 
   nc--;/*minClusterSize-1*/
@@ -1559,6 +1564,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 
   pix.amplitude=-1.0;
   pix.amplitudeOriginal=-1.0;
+  pix.amplitudeAfterCalibration=-1.0;
   pix.clusterID = 0;     
   pix.neighborsCount=0;
 
@@ -1683,16 +1689,21 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
     _getSliceF(i,w->wavelet,&S); 
     w->pMask[k]->amplitude=-1.0;
     w->pMask[k]->amplitudeOriginal=-1.0;
+    w->pMask[k]->amplitudeAfterCalibration=-1.0;
     w->pMask[k]->amplitude=w->wavelet->data->data->data[S.start+S.step*j];
     w->pMask[k]->amplitudeOriginal=original->data->data->data[S.start+S.step*j];
+    w->pMask[k]->amplitudeAfterCalibration=
+      afterCalibration->data->data->data[S.start+S.step*j];
 
     if(w->pMask[k]->amplitude>=2*w->wavelet->data->data->length-1)
       {
 	w->pMask[k]->amplitude=0.0;
 	w->pMask[k]->amplitudeOriginal=0.0;
+	w->pMask[k]->amplitudeAfterCalibration=0.0;
 	w->pMask[k]->core=FALSE;
 	w->wavelet->data->data->data[S.start+S.step*j]=0.0;
 	original->data->data->data[S.start+S.step*j]=0.0;
+	afterCalibration->data->data->data[S.start+S.step*j]=0.0;
       }
 
     w->pMask[k]->neighborsCount=0;
@@ -1794,6 +1805,7 @@ static void _copyPixel(PixelWavelet *to, PixelWavelet *from)
   to->core=from->core;
   to->amplitude=from->amplitude;
   to->amplitudeOriginal=from->amplitudeOriginal;
+  to->amplitudeAfterCalibration=from->amplitudeAfterCalibration;
   to->neighborsCount=from->neighborsCount;
   for(i=0;i<8;i++){
     to->neighbors[i]=from->neighbors[i];
@@ -2191,6 +2203,91 @@ static void _freeOutCluster(OutputClusterWavelet **cl)
       /*      printf("_freeOutCluster: after LALFree\n");fflush(stdout);*/
       *cl=NULL;
     }
+}
+
+
+static void _interpolate(InputPercentileWavelet  *input)
+{
+  static LALStatus status;
+  Inputt2wWavelet in1;
+  Outputt2wWavelet *out1=(Outputt2wWavelet *)LALCalloc(1,sizeof(Outputt2wWavelet));
+  Inputw2tWavelet in2;
+  Outputw2tWavelet *out2=(Outputw2tWavelet *)LALCalloc(1,sizeof(Outputw2tWavelet));
+  INT4 i, M, j, k;
+  REAL4TimeSeries *a, *b;
+  REAL4 *pb, *pa;
+
+  in1.w=input->in;
+  in1.ldeep=input->int_extradeep;
+  LALt2wWavelet(&status,&in1,&out1);
+
+  M = _getMaxLayer(out1->w)+1;
+
+  /*
+  printf("-->Interpolate: M=%d, m=%d, n=%d, length=%d\n",M,input->int_m,input->int_n,
+	 input->in->data->data->length);fflush(stdout);
+  */
+  for(i=0; i<M; i++)
+    {
+      /*
+      printf("i=%d\n");fflush(stdout);
+      */
+      _getLayer(&a,i,out1->w);
+      _assignREAL4TimeSeries(&b,a);
+      for(k=input->int_n;
+	  k<a->data->length - input->int_n;
+	  k++)
+	{
+	  /*
+	  printf("-->k=%d\n",k);fflush(stdout);
+	  */
+	  b->data->data[k] = 
+	    _polypredict(a->data->data + k  - input->int_n, 
+			 a->data->data + k, 
+			 a->data->data + k + input->int_n, 
+			 input->int_m);
+	  /*
+	  printf("predict=%f real=%f\n",b->data->data[k], a->data->data[k]);
+	  fflush(stdout);
+	  */
+	} 
+      for(j=0;j<a->data->length;j++)
+	{
+	  /*	  printf("-->j=%d\n",j);fflush(stdout);*/
+	  a->data->data[j]-=b->data->data[j];
+	}
+      _putLayer(a, i, out1->w);
+      _freeREAL4TimeSeries(&a);
+      _freeREAL4TimeSeries(&b);
+    }
+
+  in2.w=out1->w;
+  in2.ldeep=input->int_extradeep;
+  LALw2tWavelet(&status,&in2,&out2);
+
+  _freeWavelet(&input->in);
+  _assignWavelet(&input->in, out2->w);
+  _freeWavelet(&out1->w);
+  _freeWavelet(&out2->w);
+  LALFree(out1);
+  LALFree(out2);
+
+}
+
+static REAL4 _polypredict(REAL4 *pL, REAL4 *pC, REAL4 *pR, int m)
+{
+  REAL4* pl, *pr;
+
+  /*  printf("polypredict pR-pL=%d pC-pL=%d pR-pC=%d\n",pR-pL,pC-pL,pR-pC);
+      fflush(stdout);
+  */
+
+  if(pL==pR) return *pL; 
+  pl =  pL==pC-m ? pC+m : pL+1;
+  pr =  pR==pC+m ? pC-m : pR-1;
+
+  return ((pC-pL)*_polypredict(pl,pC,pR,m) +
+	  (pR-pC)*_polypredict(pL,pC,pr,m))/(pR-pL);
 }
 
 
@@ -2966,7 +3063,7 @@ static void _clusterProperties(ClusterWavelet *w)
 	      w->blobs[i].pBlob[bindex] = 
 		w->pMask[w->cList[i][j]]->amplitude;
 	      w->blobs[i].oBlob[bindex] = 
-		w->pMask[w->cList[i][j]]->amplitudeOriginal;
+		w->pMask[w->cList[i][j]]->amplitudeAfterCalibration;
 	    }
 	}
 
@@ -3039,6 +3136,7 @@ static void _createClusterWavelet(ClusterWavelet **w)
   *w=(ClusterWavelet*)LALCalloc(1,sizeof(ClusterWavelet));
   (*w)->wavelet=NULL;
   (*w)->original=NULL;
+  (*w)->afterCalibration=NULL;
   /*  (*w)->psd=NULL;*/
   (*w)->medians=NULL;
   (*w)->norm50=NULL;
@@ -3113,6 +3211,11 @@ static void _freeClusterWavelet(ClusterWavelet **w)
 	  /*printf("_freeClusterWavelet 2\n");fflush(stdout);*/
 	  (*w)->original=NULL;
 	}
+      if((*w)->afterCalibration!=NULL)
+        {
+	  _freeWavelet(&(*w)->afterCalibration);
+	  (*w)->afterCalibration=NULL;
+        }
       /*
       if((*w)->psd!=NULL)
 	{
@@ -4365,21 +4468,27 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
 	output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time];
       output->w->pMask[i]->amplitudeOriginal=
 	output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time];
+      output->w->pMask[i]->amplitudeAfterCalibration=
+	output->w->afterCalibration->data->data->data[S.start+S.step*output->w->pMask[i]->time];
       if(output->w->pMask[i]->amplitude>=2*input->w->wavelet->data->data->length-1)
 	{
 	  output->w->pMask[i]->amplitude=0.0;
 	  output->w->pMask[i]->amplitudeOriginal=0.0;
+	  output->w->pMask[i]->amplitudeAfterCalibration=0.0;
 	  output->w->pMask[i]->core=FALSE;
 	  output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
 	  output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+	  output->w->afterCalibration->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
 	}
       if(output->w->pMask[i]->amplitude==0.0)
 	{
 	  output->w->pMask[i]->amplitude=0.0;
           output->w->pMask[i]->amplitudeOriginal=0.0;
+	  output->w->pMask[i]->amplitudeAfterCalibration=0.0;
           output->w->pMask[i]->core=FALSE;
           output->w->wavelet->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
           output->w->original->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
+	  output->w->afterCalibration->data->data->data[S.start+S.step*output->w->pMask[i]->time]=0.0;
 	}
       else
 	{

@@ -191,6 +191,7 @@ tagPixelWavelet
   UINT4 neighborsCount;
   REAL4 amplitude;/*percentile*/
   REAL4 amplitudeOriginal;
+  REAL4 amplitudeAfterCalibration;
 }
 PixelWavelet;
 
@@ -273,6 +274,7 @@ tagClusterWavelet
 {
   Wavelet *wavelet;
   Wavelet *original;
+  Wavelet *afterCalibration;
 
   UINT4 nsubintervals;
   REAL4 *medians;
@@ -483,6 +485,10 @@ tagInputPercentileWavelet
   INT4 wavefilter;
   UINT4 wf_LPFilterLength;
   UINT4 wf_HPFilterLength;
+  INT4 interpolate;
+  UINT4 int_n;
+  UINT4 int_m;
+  UINT4 int_extradeep;
 }
 InputPercentileWavelet;
 
