@@ -30,6 +30,7 @@ extern INT4 lalDebugLevel;
 
 static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status);
 
+
 /****************************************************************
  *
  * Weights tiles according to the number present of a given
@@ -499,7 +500,6 @@ static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, L
 }
 
 
-
 /***************************************************************
  *
  * Initialize parameters and memory for the EP search
@@ -761,13 +761,17 @@ void EPConditionData(
      * 
      * check that there is enough data to construct the required segments
      * :TODO:  This assumes that overlap is half the number of points
-     * in a segment
+     * in a segment.  
+     *
+     * Also,  ovrlap points of data are ignored at the beginning and
+     * end because of the Butterworth filter corruption.  As a result,
+     * we should have 2 * ovrlap more points than one expects
      *
      ****************************************************************/
 
     if ( series->data->length < 
             params->initParams->numPoints * ( params->initParams->numSegments - 1 ) / 2 +
-            2 * params->ovrlap )
+            4 * params->ovrlap )
     {
         ABORT (status, EPSEARCHH_EDATZ, EPSEARCHH_MSGEDATZ); 
     }
