@@ -295,14 +295,14 @@ PrintResults(
 	    InspiralTemplate       injected,
 	    InspiralWaveOverlapOut overlapout, double a, int b);
 
-extern int lalDebugLevel=1;
+extern int lalDebugLevel=0;
 
 int
 main (int argc, char **argv ) 
 {
 
    /* --- Variables ---*/
-  INT4 nn, nby2, l, lmax;
+  INT4 nn, nby2, l, lmax, nbank=0;;
   INT4	i, j=0,n, k;
   INT4 jmax, nlist, kMin;
   REAL8 df,  frac, fendBCV, fMax;
@@ -384,14 +384,15 @@ main (int argc, char **argv )
 
    /* --- And the bank of templates --- */
    l =  coarseIn.numFcutTemplates;
-   coarseIn.numFcutTemplates = 1;
+   /*   coarseIn.numFcutTemplates = 1;*/
+    
    LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
-   coarseIn.numFcutTemplates = l;
+      coarseIn.numFcutTemplates = l;
 
    if (nlist==0) exit(0);	
 				/* If no points in the bank then noting to do here */
    if (!otherIn.quietFlag)
-     fprintf(stderr,"Bank Generated\n");
+     fprintf(stdout,"Bank Generated\n");
 
    /* --- Let's print some optional comments : the position of templates in the bank ---*/
    if (!otherIn.quietFlag)
@@ -636,11 +637,17 @@ main (int argc, char **argv )
        df    = randIn.param.tSampling / (REAL8)(VectorAmplitude1.length)/2.;
        
        
-       
+       nbank = 0;
        /* otherwise, we use the bank*/                         
        for (j=0; j<nlist; j++) 
 	 {	   
+
+
+
+
 	   overlapin.param 	= list[j].params;	   
+	   overlapin.param 	= randIn.param;	   
+
 	   
 	   switch(otherIn.overlapMethod)
 	     {
@@ -648,20 +655,24 @@ main (int argc, char **argv )
 	       
 	       /*  fend ? */
 	       
-	       for (l = 0; l< (INT4)coarseIn.numFcutTemplates; l++)
+	       /*	         for (l = 0; l< (INT4)coarseIn.numFcutTemplates; l++)
 		 {
 		   if (coarseIn.numFcutTemplates == 1) 
 		     frac = 1;
 		   else
 		     frac = (1.L - 1.L/pow(2.L, 1.5L)) / (coarseIn.numFcutTemplates-1.L);
 		   
-		   fendBCV  = list[j].params.fFinal * (1.L - (REAL8) l * frac);
 
-		       
+		   fendBCV  = list[j].params.fFinal * 
+		     (1.L - (REAL8) l * frac);
+		   
+
+		   
 		   if (fendBCV  > randIn.param.fLower &&
 		       fendBCV < list[j].params.tSampling / 2.0)
 		     {			   
-		       
+	       */    nbank++;
+		     	     fendBCV = list[j].params.fFinal;
 		       overlapin.param.fFinal   =  fendBCV;
 		       overlapin.param.fCutoff  =  fendBCV;
 		       
@@ -686,6 +697,8 @@ main (int argc, char **argv )
 					);
 		       
 		       /* The overlap given two filters and the input signal*/
+		      
+
 		       LALWaveOverlapBCV(&status, 
 					 &correlation,
 					 &overlapout,
@@ -697,8 +710,10 @@ main (int argc, char **argv )
 			   
 		       KeepHighestValues(overlapout, j, l, fendBCV, 
 					 &overlapoutmax, &jmax, &lmax, &fMax);
-		     }
-		 }		 	     	       
+		     
+		       /*		       		     }
+					     }
+		       */    	       
 	       break;
 	     case InQuadrature:
 	       if (coarseIn.approximant ==BCV)
@@ -749,18 +764,18 @@ main (int argc, char **argv )
 		 }/* switch end */
 	       
 	       if (otherIn.ambiguityFunction  == 1 && overlapout.max!=0)
-		 printf("%lf %lf %lf %lf %lf\n", 
+		 printf("%lf %lf %lf %lf %d %lf\n", 
 			list[j].params.psi0,
 			list[j].params.psi3, 
 			overlapout.max,
-			fMax, randIn.param.fFinal);
+			fMax, lmax, randIn.param.fFinal);
 	       
 	     }/*end of the bank process*/
 
 
 	   /*Now print some results or other stuffs*/
 
-
+     
        
        LALInspiralParameterCalc(&status, &list[jmax].params);
        PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, lmax);
@@ -788,8 +803,8 @@ main (int argc, char **argv )
 				VectorPowerFm1_2,
 				matrix,
 				kMin,					       
-				list[j].params.psi0,
-				list[j].params.psi3
+				list[jmax].params.psi0,
+				list[jmax].params.psi3
 				);
 	       
 	       
@@ -811,8 +826,8 @@ main (int argc, char **argv )
 				 );
 
 	       PrintResults(list[jmax].params, randIn.param,overlapout, fendBCV, 1);
-	       
-	       KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax, &jmax, &lmax, &fMax);
+	       /*j is just a dummy value to not erase jmax; idem for l*/
+	       KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax, &j, &l, &fMax);
 
 	     }
 	   PrintResults(list[jmax].params, randIn.param, overlapoutmax, fendBCV, 1);
@@ -967,6 +982,8 @@ ParseParameters(int *argc,
 	{
 	  coarseIn->tSampling  = atof(argv[++i]);
 	  randIn->param.tSampling = coarseIn->tSampling;
+	  randIn->param.fCutoff = coarseIn->tSampling/2-1;;
+
 	}
       else if (strcmp(argv[i],"-mMin")==0)
 	{
@@ -1430,7 +1447,7 @@ void LALCreateMomentVector(LALStatus             *status,
   in.shf = psd;  
   in.xmin = params->fLower;
   in.xmax = params->tSampling/2.;
-  in.norm =    ( psd->deltaF);
+  in.norm =    1./4.;
 
   /* the minimum and maximum frequency where we have four points */
   fMin = psd->f0 + psd->deltaF;
@@ -1647,11 +1664,7 @@ LALWaveOverlapBCV(
   REAL4 phi, phase;
   REAL4 x1_2,x2_2,x3_2,x4_2, V0,V1, V2, rho=0.;
 
-
-  REAL4	df;
-
   x1.length = x2.length = x3.length = x4.length = n;
-
   
   x1.data = (REAL4*) LALMalloc(sizeof(REAL4) * x1.length);
   x2.data = (REAL4*) LALMalloc(sizeof(REAL4) * x2.length);
@@ -1681,7 +1694,7 @@ LALWaveOverlapBCV(
 
     
   
-  df = overlapin->param.tSampling / (REAL8)(Filter1->length)/2.;
+  
 
   
   corrin.signal2      = *Filter1;
