@@ -1056,7 +1056,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     if (vrbflg)
     {
-      fprintf(stdout, "y = %f\n\n", y);
+      fprintf(stdout, "y = %f\n", y);
     }
 
     /* output to file */
