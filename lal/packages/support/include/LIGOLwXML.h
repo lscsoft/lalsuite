@@ -20,6 +20,12 @@ $Id$
 
 Provides functions for writing the LIGO metdata database table structres to
 LIGO light weight XML files.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/LIGOLwXML.h>
+\end{verbatim}
+
 </lalLaTeX>
 #endif
 
