@@ -204,7 +204,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* hann window */
   INT4 hannLength;
-  LALWindowParams hannParams;
   REAL4Vector *hannWindow;
 
   /* high pass filtering */
@@ -568,18 +567,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     /* generate pure Hann window */
     hannLength = hannDuration * resampleRate;
-    hannParams.length = hannLength;
-    hannParams.type = Hann;
-
-    /* allocate memory for hann window */
-    hannWindow = NULL;
-    LAL_CALL(LALSCreateVector(&status, &hannWindow, hannLength), &status);
-    memset(hannWindow->data, 0, \
-        hannWindow->length * sizeof(*hannWindow->data));
-
-    /* generate hann window */
-    LAL_CALL(LALWindow(&status, hannWindow, &hannParams), &status);
-
+    hannWindow = hann_window(&status, hannLength);
+ 
     /* construct Tukey window */
     for (i = 0; i < hannLength / 2; i++)
       dataWindow->data->data[i] = hannWindow->data[i];
