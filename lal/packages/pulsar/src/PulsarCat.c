@@ -81,8 +81,9 @@ determined to within $3\mu$s, the percision of \verb@LALBarycenter()@.
 Next, the pulsar location is updated using its proper motions, and the
 frequency and spindown are updated using the following formula:
 $$
-\left.\frac{d^k f}{dt^k}\right|_{t=t_2} = \sum_{j=k}^N {j\choose k}
-	(t_2-t_1)^{j-k} \left.\frac{d^j f}{dt^j}\right|_{t=t_1} \;.
+\left.\frac{d^k f}{dt^k}\right|_{t=t_2} = \sum_{j=k}^N
+	\frac{(t_2-t_1)^{j-k}}{(j-k)!}
+	\left.\frac{d^j f}{dt^j}\right|_{t=t_1} \;.
 $$
 
 Uncertainties are propagated using linear propagation methods, under
@@ -90,10 +91,11 @@ the conservative presumption that all errors are independent.  Thus
 the uncertainty $\sigma_k$ in the frequency component $d^kf/dt^k$ is
 given by:
 $$
-\sigma_k|_{t=t_2} = \sqrt{\sum_{j=k}^N\left[{j\choose k}(t_2-t_1)^{j-k}
-	\sigma_j|_{t=t_1}\right]^2 + \left[\sigma_t\sum_{j=k+1}^N
-	(j-k){j\choose k}(t_2-t_1)^{j-k-1}
-	\left.\frac{d^j f}{dt^j}\right|_{t=t_1}\right]^2} \;,
+\left[\sigma_k|_{t=t_2}\right]^2 =
+	\sum_{j=k}^N\left[\frac{(t_2-t_1)^{j-k}}{(j-k)!}
+		\sigma_j|_{t=t_1}\right]^2 +
+	\left[\sigma_t\sum_{j=k+1}^N \frac{(t_2-t_1)^{j-k-1}}{(j-k-1)!}
+		\left.\frac{d^j f}{dt^j}\right|_{t=t_1}\right]^2 \;,
 $$
 where $\sigma_t$ is the uncertainty in the time interval, either
 3$\mu$s (the precision limit of \verb@LALBarycenter()@) or $10^{-16}$
@@ -165,20 +167,16 @@ The error propagation has not yet been implemented.
 NRCSID( PULSARCATC, "$Id$" );
 
 
-/* First, define a function to compute C(a,b) = (a!)/[(b!)*(a-b)!] */
+/* First, define a function to compute n!. */
 static UINT4
-choose( UINT4 a, UINT4 b );
+fact( UINT2 n );
 static UINT4
-choose( UINT4 a, UINT4 b )
+fact( UINT2 n )
 {
-  UINT4 numer = 1;
-  UINT4 denom = 1;
-  UINT4 index = b + 1;
-  while ( --index ) {
-    numer *= a - b + index;
-    denom *= index;
-  }
-  return numer/denom;
+  UINT4 fact = 1;
+  while ( n )
+    fact *= n--;
+  return fact;
 }
 
 
@@ -277,7 +275,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
       REAL8 dtN = 1.0;
       for ( j = i + 1; j < node->f->length; j++ )
 	node->f->data[i] += node->f->data[j]*( dtN *= dt )
-	  *choose( j, i );
+	  /fact( j - i );
     }
   }
   TRY( LALINT8toGPS( stat->statusPtr, &(node->fepoch), &t2 ),
