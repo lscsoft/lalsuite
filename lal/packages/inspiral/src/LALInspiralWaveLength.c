@@ -21,12 +21,13 @@ This module calculates the length of a waveform by evaluating the following inte
 t(v) = t_{0} - m \int^{v}_{v_{0}} \frac{E^{\prime}(v)}{\mathcal{F}(v)} \, dv \,\,,
 \end{equation}
 where $t_{0}$ is the starting time for the waveform, $v_{0}$ is its frequency at time $t_{0}$, and $v$
-is the frequency of the waveform at time $t(v)$. Usually we set $v=v_{lso}$, although the user can set
-a lower value for the cutoff if the so desired.
+is the frequency of the waveform at time $t(v)$. The upper limit is choosen to be 
+$v=v_{lso}$ or a user specified cutoff \texttt{fCutoff} in the parameter structure \texttt{InspiralTemplate}
+if that is lower than the LSO.
 
 This gives us the length of the waveform in seconds. If we then multiply this by the sampling
 rate then we get the number of samples needed. We then add on the number of zeros which the user
-wanted to add at the start and end of the waveform, to get the final number of data points needed.
+wants to add at the start and end of the waveform, to get the final number of data points needed.
 
 \subsubsection*{Algorithm}
 
