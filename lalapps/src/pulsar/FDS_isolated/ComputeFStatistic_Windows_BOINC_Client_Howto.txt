@@ -174,7 +174,7 @@ cd fftw-2.1.5
 export CFLAGS=-O2
 #the following makes MSC link to "thread-safe" libraries
 #Not needed for MinGW
-export LDFLAGS=/MD
+#export LDFLAGS=/MD
 ./configure --enable-float --disable-fortran --prefix=/work &&
 make && make install
 #Not needed for MinGW
@@ -245,7 +245,7 @@ cp /lib/libm.a /work/lib/m.lib
 
 #the following makes MSC link to "thread-safe" libraries
 #Not needed for MinGW
-export LDFLAGS=/MD
+#export LDFLAGS=/MD
 
 ./00boot &&
 ./configure --disable-fftw3 --with-extra-cppflags=-I/work/include\
@@ -276,7 +276,7 @@ sed 's/processtable\..//g' $f.pt > $f
 
 #the following makes MSC link to "thread-safe" libraries
 #Not needed for MinGW
-export LDFLAGS=/MD
+#export LDFLAGS=/MD
 
 ./00boot &&
 ./configure --with-extra-cppflags='-I/work/include -DNOGLOB'\
