@@ -265,6 +265,23 @@ LALGenerateBurst(
       *aData++   = 0;
     }
   }
+  else if ( !( strcmp( simBurst->waveform, "StringCusp" ) ) )
+  {
+    TRY( LALDeltaGPS( stat->statusPtr, &dummyInterval, 
+          &(simBurst->geocent_peak_time), &startTime ), stat );
+    TRY( LALIntervalToFloat( stat->statusPtr, &t0, 
+          &dummyInterval ), stat );
+    for ( i = 0; i < n; i++ )
+    {
+      t = i * dt;
+      gtime = fabs( t - t0 );
+      *fData++   = 0.0;
+      *phiData++ = 0.0;
+      *aData++ = hpeak * (pow ( pow(duration,2)+pow(1/f0,2),1./6.) -
+			  pow ( pow(gtime,2)   +pow(1/f0,2),1./6.) ); 
+      *aData++   = 0;
+    }
+  }
   else
   {
     ABORT( stat, GENERATEBURSTH_ETYP, GENERATEBURSTH_MSGETYP );
@@ -450,7 +467,7 @@ LALBurstInjectSignals(
     LALSimulateCoherentGW( stat->statusPtr, 
         &signal, &waveform, &detector );
     CHECKSTATUSPTR( stat );
-    
+
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
     CHECKSTATUSPTR( stat );
