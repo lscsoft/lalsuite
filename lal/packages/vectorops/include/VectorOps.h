@@ -1,25 +1,28 @@
-/*-----------------------------------------------------------------------
+/**** <lalVerbatim file="VectorOpsHV">
+ * Author: J. D. E. Creighton, T. D. Creighton, A. M. Sintes
+ * $Id$
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ * 
+ * \section{Header \texttt{VectorOps.h}}
  *
- * File Name: VectorOps.h
+ * Basic vector manipulation operations.
  *
- * Authors: Creighton, J. D. E., Creighton, T. D., Sintes, A. M.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * VectorOps.h
- *
- * SYNOPSIS
+ * \subsection*{Synopsis}
+ * \begin{verbatim}
  * #include <lal/VectorOps.h>
- *
- * DESCRIPTION
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
+ * \end{verbatim}
+ * 
+ * \subsection*{Error conditions}
+ * \input{VectorOpsHE}
+ * 
+ * \vfill{\footnotesize\input{VectorOpsHV}}
+ * \newpage\input{VectorMultiplyC}
+ * \newpage\input{VectorPolarC}
+ * \newpage\input{VectorOpsTestC}
+ * 
+ **** </lalLaTeX> */
 
 #ifndef _VECTOROPS_H
 #define _VECTOROPS_H
@@ -28,20 +31,23 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 
 NRCSID (VECTOROPSH, "$Id$");
 
-#define VECTOROPS_ENULL 1
-#define VECTOROPS_ESIZE 2
-#define VECTOROPS_ESZMM 4
-#define VECTOROPS_ESAME 8
+/**** <lalErrTable file="VectorOpsHE"> */
+#define VECTOROPSH_ENULL 1
+#define VECTOROPSH_ESIZE 2
+#define VECTOROPSH_ESZMM 4
+#define VECTOROPSH_ESAME 8
 
-#define VECTOROPS_MSGENULL "Null pointer"
-#define VECTOROPS_MSGESIZE "Invalid input size"
-#define VECTOROPS_MSGESZMM "Size mismatch"
-#define VECTOROPS_MSGESAME "Input/Output data vectors are the same"
+#define VECTOROPSH_MSGENULL "Null pointer"
+#define VECTOROPSH_MSGESIZE "Invalid input size"
+#define VECTOROPSH_MSGESZMM "Size mismatch"
+#define VECTOROPSH_MSGESAME "Input/Output data vectors are the same"
+/**** </lalErrTable> */
 
 void
 LALCCVectorMultiply (
@@ -167,6 +173,7 @@ LALDDVectorMultiply(
 
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 

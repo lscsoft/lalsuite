@@ -174,13 +174,13 @@ main ( int argc, char *argv[] )
   if ( ! lalNoDebug )
   {
     LALSSVectorMultiply(&status, x3, x1, NULL);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALSSVectorMultiply(&status, x3, y2, x2);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALSSVectorMultiply(&status, y3, x1, x2);
-    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
     LALSSVectorMultiply(&status, x3, x1, y_1);
-    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
   }
 #endif
 
@@ -263,40 +263,40 @@ main ( int argc, char *argv[] )
   if ( ! lalNoDebug )
   {
     LALCVectorAbs(&status, x1, NULL);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAbs(&status, NULL, z1);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAbs(&status, y_1, z1);
-    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
     LALCVectorAbs(&status, y2, z1);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAbs(&status, y3, z1);
-    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
 
 
     LALCVectorAngle(&status, x2, NULL);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAngle(&status, NULL, z1);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAngle(&status, y_1, z1);
-    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
     LALCVectorAngle(&status, y2, z1);
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAngle(&status, y3, z1);
-    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
 
     LALUnwrapREAL4Angle(&status, x3, NULL);   
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, NULL, x2);   
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, y_1, x2);   
-    TestStatus( &status, CODES(VECTOROPS_ESZMM), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
     LALUnwrapREAL4Angle(&status, y2, x2);   
-    TestStatus( &status, CODES(VECTOROPS_ENULL), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALUnwrapREAL4Angle(&status, y3, x2);   
-    TestStatus( &status, CODES(VECTOROPS_ESIZE), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
     LALUnwrapREAL4Angle(&status, x2, x2);   
-    TestStatus( &status, CODES(VECTOROPS_ESAME), 1 );
+    TestStatus( &status, CODES(VECTOROPSH_ESAME), 1 );
   }
 #endif
 
