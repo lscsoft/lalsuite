@@ -2,8 +2,8 @@
 FRAMEFILES = F-TEST-600000000-60.gwf F-TEST-600000060-60.gwf F-TEST-600000120-60.gwf 
 
 if FRAME
-check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest
-TESTS            = FrameCacheTest.sh FrameStreamTest
+check_PROGRAMS   = FrameStreamTest Read40mData ReadGEOData ReadLHOData MakeFrames FrameCacheTest FrameCalibrationTest
+TESTS            = FrameCacheTest.sh FrameStreamTest FrameCalibrationTest
 else
 check_PROGRAMS   =
 TESTS            = NoTest
@@ -24,9 +24,10 @@ Read40mData_SOURCES = Read40mData.c
 ReadGEOData_SOURCES = ReadGEOData.c
 ReadLHOData_SOURCES = ReadLHOData.c
 MakeFrames_SOURCES = MakeFrames.c
+FrameCalibrationTest_SOURCES = FrameCalibrationTest.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = .dvi-dep *.out *.[0-9][0-9][0-9] catalog.out
+MOSTLYCLEANFILES = .dvi-dep *.out *.[0-9][0-9][0-9] catalog.out Response*.txt
 CLEANFILES = catalog catalog.test
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
