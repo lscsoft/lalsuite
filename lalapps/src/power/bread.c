@@ -39,11 +39,11 @@ RCSID("$Id$");
  * Return an empty string on any error.
  */
 
-static int getline(char *line, int max, FILE *fpin)
+static int getline(char *line, int max, FILE *file)
 {
 	char *end;
 
-	if(!fgets(line, max, fpin))
+	if(!fgets(line, max, file))
 		line[0] = '\0';
 	end = strchr(line, '\n');
 	if(end)
