@@ -1,14 +1,13 @@
 ## Process this file with automake to produce Makefile.in
-noinst_LTLIBRARIES = libframedata.la
-
 OLDFRAMEDATASOURCES = FrameData.c SpecBuffer.c DataBuffer.c
 FRAMEDATASOURCES = FrameStream.c
 
 if FRAME
-libframedata_la_SOURCES = $(FRAMEDATASOURCES)
+lib_LTLIBRARIES = liblalframe.la
+liblalframe_la_SOURCES = $(FRAMEDATASOURCES)
+liblalframe_la_LIBADD = -lFrame
 EXTRA_TEXSOURCES =
 else
-libframedata_la_SOURCES = 
 EXTRA_TEXSOURCES = $(FRAMEDATASOURCES)
 endif
 

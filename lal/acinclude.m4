@@ -206,6 +206,7 @@ AC_MSG_RESULT(unknown) ) ] )
 
 AC_DEFUN(LAL_CHECK_FRAMELIB,
 [ if test "${frame}" = "true"; then
+        lal_check_framelib_save_LIBS="$LIBS"
         AC_CHECK_LIB(Frame, FrLibIni, ,
           [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] )
         AC_MSG_CHECKING([whether Frame library version >= 4.00])
@@ -215,6 +216,7 @@ AC_DEFUN(LAL_CHECK_FRAMELIB,
           [AC_MSG_RESULT(no)
             AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 4.00)],
           AC_MSG_RESULT(unknown))
+        LIBS="$lal_check_framelib_save_LIBS"
   fi
 ])
 
