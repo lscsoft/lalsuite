@@ -22,7 +22,7 @@
  *   -o freq    sample rate of output time series (4096)
  *   -f freq    frequency of sine wave to inject as input (1000.0)
  *   -r type    type of filter to use in resampling (ldas)
- *              [ldas|butterworth|gds]
+ *              [ldas|butterworth]
  * \end{verbatim}
  *
  * \subsubsection*{Description}
@@ -94,7 +94,7 @@ main (int argc, char *argv[])
     chan.data->data[j] = sin( 2.0 * LAL_PI * sineFreq * j * chan.deltaT );
   }
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%6.2f_%d_in",
+  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_in",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &in_opar );
   TestStatus (&status, "0", 1);
@@ -102,7 +102,7 @@ main (int argc, char *argv[])
   LALResampleREAL4TimeSeries( &status, &chan, &resampPars );
   TestStatus (&status, "0", 1);
 
-  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%6.2f_%d_out",
+  LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%d_%d_%d_%.2f_%d_out",
       inRate, outRate, numPoints, sineFreq, filtType );
   LALFrWriteREAL4TimeSeries( &status, &chan, &out_opar );
   TestStatus (&status, "0", 1);
@@ -178,7 +178,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -o freq    sample rate of output time series (4096)\n");
   fprintf (stderr, "  -f freq    frequency of sine wave to inject as input (1000.0)\n");
   fprintf (stderr, "  -r type    type of filter to use in resampling (ldas)\n");
-  fprintf (stderr, "             [ldas|butterworth|gds]\n");
+  fprintf (stderr, "             [ldas|butterworth]\n");
   exit (exitcode);
 }
 
@@ -239,10 +239,6 @@ ParseOptions (int argc, char *argv[])
         else if ( ! strcmp( "butterworth", optarg ) )
         {
           filtType = defaultButterworth;
-        }
-        else if ( ! strcmp( "gds", optarg ) )
-        {
-          filtType = firLSOne;
         }
         else 
         {
