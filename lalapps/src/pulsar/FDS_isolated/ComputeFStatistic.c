@@ -2801,28 +2801,28 @@ void worker() {
   int a1,a2,retval;
   CHAR ckptfile1[260];
   /* find first // delimiter */ 
-  for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3);a1++);
+  for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3));a1++);
   /* if there was no //, argc==a1 and this is old-style command line */
- retval=boincmain(a1,globargv);
+  retval=boincmain(a1,globargv);
   /* handle old-style command line for backward compatibility */
   if(a1<globargc) {
-  strncpy(chkptfile1,ckp_fname,260);
-  if !(retval){
-    /* find second // delimiter */ 
-	for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3);a2++);
-    if(a2==globargc)
-  	  retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
-    else
-      retval=boincmain(a2-a1-1,&(globargv[a1+1]));
-	if !(retval)
-      retval=polka(globargv-a2-1,&(globargv[a2+1]));
-  }
-  /* remove checkpoint-files */
-  remove (ckp_fname);
-  remove (ckptfile1);
-  /* TODO: remove FStat-files */
+    strncpy(chkptfile1,ckp_fname,260);
+    if !(retval){
+      /* find second // delimiter */ 
+      for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
+      if(a2==globargc)
+	retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
+      else
+	retval=boincmain(a2-a1-1,&(globargv[a1+1]));
+      if !(retval)
+	retval=polka(globargv-a2-1,&(globargv[a2+1]));
+    }
+    /* remove checkpoint-files */
+    remove (ckp_fname);
+    remove (ckptfile1);
+    /* TODO: remove FStat-files */
   } else
-  remove (ckp_fname);
+    remove (ckp_fname);
   /* TODO: compression */
 #endif
   boinc_finish(retval);
