@@ -406,6 +406,7 @@ int main(int argc, char *argv[]){
    }
    setlinebuf(fp1); /*line buffered on */  
 
+#ifdef PRINTEVENTS
    strcpy(  fileEvents, fnameOut);
    strcat(  fileEvents, "events");
    fpEvents=fopen(fileEvents,"w");
@@ -414,7 +415,8 @@ int main(int argc, char *argv[]){
      return DRIVEHOUGHCOLOR_EFILE;
    }
    setlinebuf(fpEvents); /*line buffered on */  
-  
+#endif
+
   /******************************************************************/
   /* Looking into the SFT data files */
   /******************************************************************/
@@ -878,10 +880,10 @@ int main(int argc, char *argv[]){
          iHmap, sourceLocation.alpha, sourceLocation.delta,
 	 stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
 	 (fBinSearch*deltaF) );
-	 
+#ifdef PRINTEVENTS
       SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
                       &patch, &parDem), &status );
-      
+#endif      
       ++iHmap;
       
 
@@ -923,10 +925,10 @@ int main(int argc, char *argv[]){
                 iHmap, sourceLocation.alpha, sourceLocation.delta,
 	        stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
 		(fBinSearch*deltaF), ht.spinRes.data[0]);
-		
+#ifdef PRINTEVENTS
            SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
                       &patch, &parDem), &status );
-		      
+#endif    
 	  ++iHmap;
 	  
 	  /* what else with output, equal to non-spin case */
@@ -972,8 +974,9 @@ int main(int argc, char *argv[]){
   /* closing files with statistics results and events */
   /******************************************************************/  
   fclose(fp1);
+#ifdef PRINTEVENTS
   fclose(fpEvents);
- 
+#endif
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
@@ -1223,7 +1226,7 @@ void PrintHoughEvents (LALStatus       *status,
 		  temp, sourceLocation.alpha, sourceLocation.delta, 
 		  f0,0.00);
 	}
-	}      
+      }      
     }
   }
   	 
