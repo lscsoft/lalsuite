@@ -223,6 +223,7 @@ inca.add_var_opt('ifo-a',ifo)
 inca.add_var_opt('gps-start-time',dag_start_time)
 inca.add_var_opt('gps-end-time',dag_end_time)
 for insp in insp_nodes:
+  inca.add_parent(insp)
   inca.add_var_arg(insp.get_output())
 dag.add_node(inca)
 
