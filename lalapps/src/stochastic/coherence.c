@@ -367,7 +367,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    }
 
    /* output the results */
-   fprintf(stdout,"%d\n", j);
+   fprintf(stdout,"%d\n", segLoop);
    for ( i = 0; i < psdLength; i++ )
     {
      fprintf(stdout,"%e\t%e\t%e\n", 
