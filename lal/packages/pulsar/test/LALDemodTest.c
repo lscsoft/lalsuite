@@ -107,7 +107,7 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    The set of SFTs does not necessarily come from contiguous data sets: a set of
    time stamps is created that defines the time of the first sample of each SFT
    data chunk.  The timestamps which are required in many parts of the code are
-   generated in a small subroutine \verb@times()@.  This routine takes as input
+   generated in a small subroutine \verb@times2()@.  This routine takes as input
    the SFT timescale \verb@tSFT@, the number of SFTs which will be created,
    \verb@mObsSFT@, and a switch which lets the code know whether to make even
    timestamps, or timestamps with gaps (see below for more on this).  The
@@ -223,7 +223,12 @@ if ( lalDebugLevel & LALERROR )                                      \
 }                                                                    \
 else (void)(0)
 
-#include "LALDemod.h"
+#include <lal/LALDemod.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/SeqFactories.h>
+#include <unistd.h>
+#include <sys/types.h>
+
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 
@@ -242,7 +247,7 @@ int main(int argc, char **argv)
 
   ParameterSet *signalParams;
   ParameterSet *templateParams;
-  const char *basicInputsFile;
+  char *basicInputsFile;
   FILE *bif;
   REAL8 tObs, tCoh, tSFT;
   REAL8 oneOverSqrtTSFT;
@@ -274,13 +279,10 @@ int main(int argc, char **argv)
 	
   DeFTPeriodogram **xHat;
 	
-  FILE *PeaksFile, *TimeSFile, *SftFile, *XhatFile;
-
   const CHAR *noi=NULL;
   INT4 deletions=0;
   const CHAR *output=NULL;
 	
-  CHAR filename[13];
   REAL8 factor;
   INT2 arg;
 
@@ -294,6 +296,8 @@ int main(int argc, char **argv)
   LALDetector cachedDetector;
 	  
   EphemerisData *edat=NULL;
+  char earthEphemeris[]="earth98.dat";
+  char sunEphemeris[]="sun98.dat";
 
   REAL4TimeSeries *timeSeries = NULL;
 
@@ -330,9 +334,9 @@ int main(int argc, char **argv)
     /* the input file */
     if(!strcmp(argv[arg],"-i"))
       {
-	strcpy(basicInputsFile,argv[++arg]);
+	strcpy(basicInputsFile, argv[++arg]);
 	arg++;
-	if(LALOpenDataFile(basicInputsFile)==NULL)
+	if(LALFopen(basicInputsFile,"r")==NULL)
 	  {
 	    ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
 	    LALPrintError(USAGE, *argv);
@@ -405,7 +409,7 @@ int main(int argc, char **argv)
 	
   /***** GET INPUTS FROM FILES *****/
 
-  bif=LALOpenDataFile(basicInputsFile);
+  bif=LALFopen(basicInputsFile,"r");
 	
   fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n"
 	 " %lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
@@ -547,8 +551,8 @@ int main(int argc, char **argv)
 
   /* Quantities computed for barycentering */
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = "earth98.dat";
-  (*edat).ephiles.sunEphemeris = "sun98.dat";
+  (*edat).ephiles.earthEphemeris = earthEphemeris;
+  (*edat).ephiles.sunEphemeris = sunEphemeris;
 
   /* Read in ephemerides */  
   LALInitBarycenter(&status, edat);
@@ -673,15 +677,6 @@ int main(int argc, char **argv)
     /* Lots of debugging stuff.  If you want to use these, go ahead, but
      * be warned that these files may be HUGE (10s-100s of GB).
      */
-#if(0)   
-    PeaksFile=LALFopen("/scratch/steveb/peaks.data","w");
-#endif
-#if(0)	
-    TimeSFile=LALFopen("/opt/data/new/ts.data","w");
-#endif
-#if(0)
-    SftFile=LALFopen("/opt/data/new/sft.data","w");
-#endif
 
     {
       REAL4Vector *tempTS = NULL; 
@@ -705,14 +700,6 @@ int main(int argc, char **argv)
 	   */
 	  LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector);
   	    
-#if (0)
-	  /* Print out time series if DEBUGging on */
-	  for(i=0; i<len; i++)
-	    {
-	      fprintf(TimeSFile,"%20.10lf\n",ts->data[i]);
-	    }
-#endif
-
 	  /* Write time series of correct size to temp Array, for FFT */
 	  for(i=0;i<len;i++)
 	    {
@@ -734,39 +721,9 @@ int main(int argc, char **argv)
 		tempSFT[cnt].re = fTemp[fL].re * oneOverSqrtTSFT;
 		tempSFT[cnt].im = fTemp[fL].im * oneOverSqrtTSFT;
 
-#if (0)
-		fprintf(SftFile,"%20.12lf %20.12lf\n", (REAL8)fL*dfSFT, tempSFT[cnt].re*tempSFT[cnt].re+tempSFT[cnt].im*tempSFT[cnt].im);
-#endif
-
 		cnt++; fL++;
 		
 	      }
-
-#if(0)
-	    for(i=0;i<cnt-1;i++)
-	      {
-		REAL8 pw,pwMax;
-
-		pw = SFTData[a]->fft->data->data[i].re * 
-		  SFTData[a]->fft->data->data[i].re +
-		  SFTData[a]->fft->data->data[i].im *
-		  SFTData[a]->fft->data->data[i].im;
-		
-		if(pwMax<pw)
-		  {
-		    pwMax=pw;
-		    ipwMax=i;
-		  }
-	      }
-	    {
-	      REAL8 Temp, Temp2, Temp3;
-	      INT4 ipwMax;
-	      TimeToFloat(&Temp, &(timeStamps[a]));
-	      TimeToFloat(&Temp2, &(timeStamps[0]));
-	      Temp3 = (Temp-Temp2)/86400.0;
-	      fprintf(PeaksFile,"%d\t%d\n",ipwMax,a);
-	    }
-#endif
 
 	  }
 	  /* assign particulars to each SFT */
@@ -780,71 +737,6 @@ int main(int argc, char **argv)
       LALSDestroyVector(&status, &tempTS);
     }
     
-
-#if(0)
-    /***** file output of SFT power and peaks. *****/
-    
-    /* If user requested SFT output, generate it here */
-    if (sftoutname) {
-      CHAR fname[64]={"DefaultFileName"};
-      INT4 datasize,errorcode;
-      FILE *fp;
-      
-      struct headertag {
-	REAL8 endian;
-	INT4  gps_sec;
-	INT4  gps_nsec;
-	REAL8 tbase;
-	INT4  firstfreqindex;
-	INT4  nsamples;
-      } header;
-    
-      /* construct file name, and open file */
-      sprintf(fname,"%s_SFT.%05d",sftoutname,k);
-      fp=fopen(fname,"w");
-      if (fp==NULL) {
-	LALPrintError("Unable to open file %s for writing!\n",fname);
-	exit(1);
-      }
-    
-      /* Write header information */
-      header.endian=1.0;
-      header.gps_sec=(REAL8)(timeStamps[k].gpsSeconds);
-      header.gps_nsec=(REAL8)(timeStamps[k].gpsNanoSeconds);
-      header.tbase=tSFT;
-      header.firstfreqindex=ifMin;
-      datasize=header.nsamples=nDeltaF;
-    
-      /* open file, write header into it */
-      errorcode=fwrite((void*)&header,sizeof(header),1,fp);
-      if (errorcode!=1){
-	LALPrintError("Error in writing header into file!\n");
-	exit(1);
-      }
-    
-      /* datasize is number of complex values to output */
-      errorcode=fwrite((void*)SFTData[k]->fft->data->data,2*sizeof(REAL8),datasize,fp);
-      if (errorcode!=datasize){
-	printf("Error in writing data into file!\n");
-	exit(1);
-      }
-    
-      /* close file! */
-      fclose(fp);
-    }
-
-#endif
-    
-#if (0)
-    LALFclose(PeaksFile);
-#endif
-#if (0)
-    LALFclose(SftFile);
-#endif
-#if(0)
-    LALFclose(TimeSFile);
-#endif
-
     /*
      * Note, we have to destroy the memory that GenTay allocates.
      * This is currently (04.02) not documented! 
@@ -1006,17 +898,7 @@ int main(int argc, char **argv)
       /**************************/
       
       LALDemod(&status, *(xHat+k), SFTData, demParams);
-      if(output!=NULL){
-	sprintf(filename,"/scratch/steveb/new/xhat_%d.data",k);
-	XhatFile=LALFopen(filename,"w");
-	printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
-	
-	for(i=0;i<(if0Max-if0Min)*mCohSFT+1;i++) {
-	  fprintf(XhatFile,"%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
-		  xHat[k]->fft->data->data[i]);
-	}
-	LALFclose(XhatFile);
-      }
+
     }
   
 /***** END DEMODULATION *****/
@@ -1142,7 +1024,6 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 
   if(sw!=0){
     int seed;
-    INT4 r;
         
     seed=getpid();
     srand(seed);
