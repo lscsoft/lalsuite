@@ -470,7 +470,7 @@ int main(int argc, char **argv)
     fprintf(fpout,"# Looking for coincidences\n"); fflush(fpout);
     LALSortTriggers(&status,ifo,numIFO);
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
-            TRIGGERS, dummyStart, delm, distance, coincidence_time);
+            TRIGGERS, dummyStart, delm, distance, coincidence_window);
 
     fp = fopen("triggers.dat","w");
     printInspiralEvents(fp,&ifo[0], 3, TRIGGERS);
@@ -483,7 +483,7 @@ int main(int argc, char **argv)
     fclose(fp);
 
     buildMultiInspiralEvents(&multInspEv, coincident_times, ifo, numIFO, 
-            INJECTIONS, dummyStart, delm, distance, coincidence_time);
+            INJECTIONS, dummyStart, delm, distance, coincidence_window);
 
     fp = fopen("injections.dat","w");
     printInspiralEvents(fp,&ifo[0], 3, INJECTIONS);
