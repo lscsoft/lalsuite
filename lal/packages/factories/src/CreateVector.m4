@@ -62,7 +62,6 @@ void FUNC ( Status *status, VTYPE **vector, UINT4 length )
     /* Must free storage pointed to by *vector */
     LALFree( *vector );
     ABORT( status, CREATEVECTOR_EMALLOC, CREATEVECTOR_MSGEMALLOC );
-    return;
   }
   (*vector)->length = length;	/* Set length if storage allocated */
 

@@ -75,7 +75,6 @@ void FUNC ( Status *status, STYPE **vseq, CreateVectorSequenceIn *in )
     /* Must free storage pointed to by *vseq */
     LALFree ((void *) *vseq);
     ABORT (status, CREATEVECSEQ_EMALLOC, CREATEVECSEQ_MSGEMALLOC);
-    return;
   }
  
   /* Set length, vectorLength if storage allocated */
