@@ -206,6 +206,9 @@ BOOLEAN uvar_doCheckpointing;
 BOOLEAN uvar_expLALDemod;
 REAL8 uvar_startTime;
 REAL8 uvar_endTime;
+#if BOINC_COMPRESS
+BOOLEAN uvar_useCompression;
+#endif
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
@@ -776,6 +779,10 @@ initUserVars (LALStatus *stat)
   uvar_expLALDemod = FALSE;
 #endif
 
+#if BOINC_COMPRESS
+  uvar_useCompression = TRUE;
+#endif
+
   /* register all our user-variables */
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
@@ -816,6 +823,9 @@ initUserVars (LALStatus *stat)
 
   LALregREALUserVar(stat, 	startTime, 	 0,  UVAR_OPTIONAL, "Start-time of data to be analysed");
   LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "End-time of data to be analysed");
+#if BOINC_COMPRESS
+  LALregBOOLUserVar(stat,	useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
+#endif
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1567,6 +1577,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 #if BOINC_COMPRESS
   /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
      boinc_resolve() to get the 'real' file name and then unzip */
+  if (uvar_useCompression)
   {
     char zippedname[256];
     int boinczipret;
@@ -2712,18 +2723,19 @@ void worker() {
 
 #if BOINC_COMPRESS
   /* compress the file if it exists */
-  if (!retval) {
-    int boinczipret;
-    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
-    if (boinczipret) {
-      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
-    }
-    if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
-      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
-    }
-  }
+  if (uvar_useCompression && (retval==0) ) 
+    {
+      int boinczipret;
+      boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
+      if (boinczipret) {
+	fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
+	boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
+      }
+      if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
+	fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
+	boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
+      }
+    } /* if useCompression && ok */
 #endif
   
   boinc_finish(retval);
