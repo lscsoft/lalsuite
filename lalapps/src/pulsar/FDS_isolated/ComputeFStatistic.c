@@ -3701,8 +3701,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         sftIndex = k1 - params->ifmin;
 
 	if(sftIndex < 0){
-	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex, alpha, k, xTemp, params->Dterms, params->ifmin);
+	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex, alpha, k1, xTemp, params->Dterms, params->ifmin);
 	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
 
@@ -3775,8 +3775,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         
 
 	if(sftIndex-1 > GV.ifmax-GV.ifmin){
-	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k, xTemp, params->Dterms, params->ifmin);
+	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
 	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
 
