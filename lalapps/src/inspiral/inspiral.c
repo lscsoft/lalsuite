@@ -338,14 +338,13 @@ int main( int argc, char *argv[] )
   /* determine the number of points to get and create storage forr the data */
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
-  chan.deltaT *= 1.0e9;
-  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
+  numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
   LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
       &status );
 
   if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
-      chan.deltaT / 1.0e9, numInputPoints );
+      chan.deltaT, numInputPoints );
 
   /* read the data channel time series from frames */
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
@@ -436,10 +435,11 @@ int main( int argc, char *argv[] )
     if ( resampleChan )
     {
       /* we need a different resolution of response function for injections */
-      REAL8 ratioDeltaT = 
-        ( chan.deltaT * 1.0e9 ) / ( resampleParams.deltaT * 1.0e9 );
-      UINT4 rateRatio = (UINT4) rint ( ratioDeltaT );
+      UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
       UINT4 rawNumPoints = rateRatio * numPoints;
+
+      if ( vrbflg ) fprintf( stdout, "rateRatio = %d\nrawNumPoints = %d\n"
+          "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
 
       memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
       LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
@@ -461,7 +461,7 @@ int main( int argc, char *argv[] )
       injRespPtr = &injResp;
 
       if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-          outFrame, &resp, "strain/ct", "RESPONSE_INJ" );
+          outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
     }
     else
     {
