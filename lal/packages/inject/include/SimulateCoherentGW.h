@@ -319,7 +319,7 @@ typedef struct tagCoherentGW {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{DetectorResponse}}
-\idx[Type]{CoherentGW}
+\idx[Type]{DetectorResponse}
 
 \noindent This structure contains information required to determine
 the response of a detector to a gravitational waveform.  The fields

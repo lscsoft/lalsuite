@@ -242,6 +242,11 @@ NRCSID( SKYCOORDINATESH, "$Id$" );
 This enumerated type is used to identify data as being in one of the
 coordinate systems discussed above.  The allowed values are:
 
+\idx[Constant]{COORDINATESYSTEM\_HORIZON}
+\idx[Constant]{COORDINATESYSTEM\_GEOGRAPHIC}
+\idx[Constant]{COORDINATESYSTEM\_EQUATORIAL}
+\idx[Constant]{COORDINATESYSTEM\_ECLIPTIC}
+\idx[Constant]{COORDINATESYSTEM\_GALACTIC}
 \medskip\noindent
 \begin{tabular}{ll}
 \verb@COORDINATESYSTEM_HORIZON@ & A horizon coordinate system. \\
@@ -335,7 +340,7 @@ typedef struct tagEarthPosition {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structure \texttt{ConvertSkyParams}}
-\idx[Type]{EarthPosition}
+\idx[Type]{ConvertSkyParams}
 
 This structure stores parameters for the function
 \verb@LALConvertSkyPosition()@.  The fields are:

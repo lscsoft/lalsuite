@@ -73,7 +73,7 @@ NRCSID(STREAMINPUTH,"$Id$");
 #define STREAMINPUTH_MSGELEN "No numbers were read"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
+\subsection*{Types}
 
 ******************************************************* </lalLaTeX> */
 

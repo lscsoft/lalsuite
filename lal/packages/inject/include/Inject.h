@@ -81,7 +81,7 @@ NRCSID( INJECTH, "$Id$" );
 #define INJECTH_MSGEBAD "A sampling interval is (effectively) zero"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
+\subsection*{Types}
 ******************************************************* </lalLaTeX> */
 
 /* <lalLaTeX>
