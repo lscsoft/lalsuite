@@ -115,7 +115,12 @@ AC_DEFUN(LALAPPS_DISABLE_FRAME,
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 [AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
 AC_TRY_RUN([
-int main() { return LAL_QTHREAD; }
+#include <lal/LALConfig.h>
+#ifdef LAL_QTHREAD
+int main() { return 1; }
+#else
+int main() { return 0; }
+#endif
 ],
 AC_MSG_RESULT([no]),
 AC_MSG_RESULT([yes])
