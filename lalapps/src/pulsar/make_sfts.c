@@ -23,8 +23,9 @@
 
 /* Frame headers */
 #include <FrameL.h>
+#ifndef FRLONG
 #include "FrIO.h" /* corrected Version of FrIO.h */
-
+#endif
 
 typedef struct
 tagFrFileInfo
