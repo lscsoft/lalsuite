@@ -308,9 +308,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   duration = endTime - startTime;
   numSegments = duration / segmentDuration;
   segsInInt = intervalDuration / segmentDuration;
-  numIntervals = (numSegments * segmentDuration) / intervalDuration;
   segMiddle = (segsInInt - 1) / 2;
-
+  
   /* recentre */
   if (recentre_flag)
   {
@@ -327,9 +326,15 @@ INT4 main(INT4 argc, CHAR *argv[])
     padData = 0;
 
   if (overlap_hann_flag)
+  {
+    numIntervals = (2 * (numSegments - 2)) - 1;
     segmentShift = segmentDuration / 2;
+  }
   else
+  {
+    numIntervals = numSegments - 2;
     segmentShift = segmentDuration;
+  }
 
   /* initialise gps time structures */
   gpsStartTime.gpsSeconds = startTime;
