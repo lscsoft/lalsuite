@@ -111,7 +111,6 @@ substantial speedups for many FFTs, which seems the most likely situation.
 
 ******************************************************* </lalLaTeX> */
 #include <math.h>
-#include <fftw.h>
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -343,7 +342,7 @@ LALSignalToSFTs (LALStatus *stat,
 	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
   
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, FFTW_ESTIMATE), stat); 	
+  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat); 	
 
   /* get some info about time-series */
   tStart = signal->epoch;					/* start-time of time-series */
