@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
   REAL4      expectedReal;
   REAL4      expectedImag;
 
-  LALUnit                  dimensionless = {};
+  LALUnit                  dimensionless = { 0 };
   LALUnitPair              unitPair;
   BOOLEAN                  result;
 

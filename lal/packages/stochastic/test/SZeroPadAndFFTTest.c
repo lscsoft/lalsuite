@@ -210,7 +210,7 @@ main( int argc, char *argv[] )
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
-   LALUnit                dimensionless = {};
+   LALUnit                dimensionless = { 0 };
    CHARVector             *unitString;
 
    for (i=0; i<SZEROPADANDFFTTESTC_LENGTH; ++i)

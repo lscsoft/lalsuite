@@ -518,8 +518,7 @@ Usage (const char *program, int exitcode)
   fprintf (stderr, "  -v             verbose: print extra information\n");
   fprintf (stderr, "  -d level       set lalDebugLevel to level\n");
   fprintf (stderr, "  -s siteID1     calculate overlap red fcn for site siteID1\n");
-  fprintf (stderr, "  -t siteID2       with site siteID2
-\n");
+  fprintf (stderr, "  -t siteID2       with site siteID2\n");
   for (i=0; i<LALNumCachedDetectors; ++i)
   {
     fprintf (stderr, "                   %d = %s\n",

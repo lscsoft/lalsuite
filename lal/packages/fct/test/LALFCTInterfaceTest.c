@@ -207,10 +207,12 @@ REAL4 inspiralA(const REAL4 x)
 /*
   Set these to point to the phase function and amplitude that you want
 */
-LALFCTPhaseFn phi0 = newtPhi;
+/* LALFCTPhaseFn phi0 = newtPhi; */
+#define phi0 newtPhi
 REAL8 phi0Scale = 0.0;
 
-LALFCTPhaseFn phi1 = onePNPhi;
+/* LALFCTPhaseFn phi1 = onePNPhi; */
+#define phi1 onePNPhi
 REAL8 phi1Scale = 0.0;
 
 LALFCTPhaseFn A = unitA;
@@ -235,7 +237,8 @@ LALFCTPhaseFn A = unitA;
 */
 const INT4 numDataSegments = 1;
 
-const INT4 tseries_length = TSERIES_LENGTH;
+/* const INT4 tseries_length = TSERIES_LENGTH; */
+enum { tseries_length = TSERIES_LENGTH };
 
 /* Variables for generating the list of chirp parameters */
 
@@ -248,28 +251,36 @@ INT4 NtemplateList = 0;
 /*
   This is the length of the data cube in the dim0 direction.
 */
-const INT4 data_length = TSERIES_LENGTH/2;
+/* const INT4 data_length = TSERIES_LENGTH/2; */
+enum { data_length = TSERIES_LENGTH/2 };
 
 /*
   This is the length of the data cube in the dim1 direction
   The length can be 1: this corresponds to choosing a single
   value of tau0.
 */
-const INT4 dim1_data_length = 1;
-const INT4 max_dim1_data_length = TSERIES_LENGTH/2;
+/* const INT4 dim1_data_length = 1; */
+/* const INT4 max_dim1_data_length = TSERIES_LENGTH/2; */
+enum { dim1_data_length = 1 };
+enum { max_dim1_data_length = TSERIES_LENGTH/2 };
 
 /*
   This is the length of the data cube in the dim2 direction
   The length can be 1: this corresponds to choosing a single
   value of tau2.
 */
-const INT4 dim2_data_length = 1;
-const INT4 max_dim2_data_length = TSERIES_LENGTH/2;
+/* const INT4 dim2_data_length = 1; */
+/* const INT4 max_dim2_data_length = TSERIES_LENGTH/2; */
+enum { dim2_data_length = 1 };
+enum { max_dim2_data_length = TSERIES_LENGTH/2 };
 
 /* Parameters for setting up the fct plan */
-const INT4 number_of_dimensions = NUMBER_OF_DIMENSIONS;
-const INT4 dimension_0_stride = 1;
-const REAL4 offset = 0.0;
+/* const INT4 number_of_dimensions = NUMBER_OF_DIMENSIONS; */
+/* const INT4 dimension_0_stride = 1; */
+/* const REAL4 offset = 0.0; */
+enum { number_of_dimensions = NUMBER_OF_DIMENSIONS };
+enum { dimension_0_stride = 1 };
+#define offset 0.0
 
 /* delta = 1/N where N is the length of the FCT input */
 const REAL4 delta = 2.0/TSERIES_LENGTH;
@@ -869,7 +880,8 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
 
     const LALFCTSetUnitsInput setUnitsIn = {
 	offset,
-	delta
+	/* delta */
+	2.0/tseries_length
     };
 
     UINT8 output_data_size = 0;

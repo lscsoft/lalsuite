@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
   REAL8      muTest;  /*refers to the calculated mu to test normalization*/
   REAL8      testNum;     /*temporary value used to check optimal output */
  
-  LALUnit                  dimensionless = {};
+  LALUnit                  dimensionless = { 0 };
   LALUnitPair              unitPair;
   BOOLEAN                  result;
 
