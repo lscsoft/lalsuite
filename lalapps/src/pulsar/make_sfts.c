@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <errno.h>
 
 /* INT_MAX */
 #include <limits.h>
@@ -230,7 +231,7 @@ int main(int argc,char *argv[]){
   sprintf(framelist,"%s/jobdata.%05d.ffl",argv[2],jobnum);
   opencount=0;
   while (!(frfile = FrFileINew(framelist))){
-    pout( "Couldnt open frame file %s\n", framelist);
+    pout( "Couldnt open frame file list %s\n", framelist);
     if (opencount++<10)
       sleep(10);
     else
@@ -255,7 +256,8 @@ int main(int argc,char *argv[]){
     struct stat buff;
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
-    
+    int before;
+
     /* time of correct start */
     epoch.gpsSeconds=starts[count];
     epoch.gpsNanoSeconds=0;
@@ -276,7 +278,10 @@ int main(int argc,char *argv[]){
     }
     
     /* read in correct data */
+    before=errno;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
+    if (errno!=before)
+      pout("System error when reading Frame data: %s\n", strerror(errno));
     if (frvect == NULL) {
       pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       continue;
