@@ -116,11 +116,9 @@ LALFindChirpCreateInspiralBank (
   }
   ENDFAIL( status );
 
-  /* ...and turn them all on */
-  for ( i = 0; i < tmpltPtr->segmentIdVec->length; ++i )
-  {
-    tmpltPtr->segmentIdVec->data[i] = 1;
-  }
+  /* ...and turn them all off */
+  memset( tmpltPtr->segmentIdVec->data, 0, 
+      tmpltPtr->segmentIdVec->length * sizeof(INT4) );
 
   /* ...and the rest of the bank */
   for ( tmpltCounter = 1; tmpltCounter < params->numCoarse; ++tmpltCounter )
@@ -155,11 +153,9 @@ LALFindChirpCreateInspiralBank (
     }
     ENDFAIL( status );
 
-    /* ...and turn them all on */
-    for ( i = 0; i < tmpltPtr->segmentIdVec->length; ++i )
-    {
-      tmpltPtr->segmentIdVec->data[i] = 1;
-    }
+    /* ...and turn them all off */
+    memset( tmpltPtr->segmentIdVec->data, 0, 
+        tmpltPtr->segmentIdVec->length * sizeof(INT4) );
   }
 
 

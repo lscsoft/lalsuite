@@ -87,6 +87,7 @@ typedef struct
 tagInspiralEvent
 {
   UINT4                         id;
+  UINT4                         segmentNumber;
   LIGOTimeGPS                   time;
   UINT4                         timeIndex;
   InspiralTemplate              tmplt;

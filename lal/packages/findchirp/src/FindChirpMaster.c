@@ -26,9 +26,10 @@ LALFindChirpMaster (
   INT4                          myRank;
   UINT4                         i;
   UINT4                         numTmpltExch = params->numTmpltExch;
-  InspiralEvent                *thisEvent = NULL;
-  InspiralTemplate             *fineBank  = NULL;
-  InspiralTemplateNode         *thisTmplt = NULL;
+  InspiralEvent                *thisEvent    = NULL;
+  InspiralTemplate             *fineBank     = NULL;
+  InspiralTemplateNode         *thisTmplt    = NULL;
+  InspiralTemplateNode         *tmpltInsert  = NULL;
 
 
   INITSTATUS( status, "LALFindChirpMaster", INSPIRALMASTERC );
@@ -110,6 +111,18 @@ LALFindChirpMaster (
           {
             memcpy( tmpBankHead + i, params->tmpltCurrent->tmpltPtr,
                 sizeof(InspiralTemplate) );
+            (tmpBankHead + i)->segmentIdVec = NULL;
+
+            LALI4CreateVector( status->statusPtr, 
+                &((tmpBankHead + i)->segmentIdVec),
+                params->tmpltCurrent->segmentIdVec->length );
+            CHECKSTATUSPTR( status );
+
+            memcpy( (tmpBankHead + i)->segmentIdVec->data,
+                params->tmpltCurrent->segmentIdVec->data,
+                params->tmpltCurrent->segmentIdVec->length *
+                sizeof(INT4) );
+
             (tmpBankHead + i)->next = NULL;
             (tmpBankHead + i)->fine = NULL;
             if ( i ) (tmpBankHead + i - 1)->next = (tmpBankHead + i);
@@ -121,6 +134,12 @@ LALFindChirpMaster (
           CHECKSTATUSPTR( status );
           
           /* ...and destroy it */
+          for ( i = 0; i < tmpNumTmplts; ++i )
+          {
+            LALI4DestroyVector( status->statusPtr, 
+                &((tmpBankHead + i)->segmentIdVec) );
+            CHECKSTATUSPTR( status );
+          }          
           LALFree( tmpBankHead );
         }
         else /* no templates */
@@ -155,44 +174,48 @@ LALFindChirpMaster (
          */
 
 
-        /* fprintf( stderr, "event handler started\n" ); */
+        fprintf( stderr, "event handler started\n" );
 
-        /* this is a dog: i should think of a better way to do this */
+        /* this is a dog: i should think of a better way to do this     */
 
-        /* loop through event list */
-        for ( thisEvent = *eventList; thisEvent; 
-            thisEvent = thisEvent->next )
-        { 
-          /* look for a template that matches the template id of the event */
-          /* fprintf( stderr, "searching event at %p\n", thisEvent ); */
-          for ( thisTmplt = params->tmpltHead; thisTmplt; 
-              thisTmplt = thisTmplt->next )
+        /* we are guaranteed that a the linked list of events will      */
+        /* come from only _one_ template and _one_ data segment         */
+        /* so we can just look at the first event in the list for       */
+        /* the information that we need (template id and segment id)    */
+        thisEvent = *eventList;
+        tmpltInsert = params->tmpltCurrent;
+
+        fprintf( stderr, "searching event at %p\n", thisEvent );
+
+        /* look for a template that matches the template of the event */
+        for ( thisTmplt = params->tmpltHead; thisTmplt; 
+            thisTmplt = thisTmplt->next )
+        {
+          fprintf( stderr, "searching tmplt at %p\n", thisTmplt );
+
+          if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number )
           {
-            /* for each tmplt that we find, have we inserted that template? */
-            /* fprintf( stderr, "searching tmplt at %p\n", thisTmplt ); */
-            if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number && 
-                ! thisTmplt->inserted )
+            /* insert the fine bank into the list to filter */
+            fprintf( stderr, "inserting fine bank %p \n",
+                thisTmplt->tmpltPtr->fine );
+            for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
+                fineBank = fineBank->next )
             {
-              /* insert the fine bank into the list to filter */
-              /* fprintf( stderr, "inserting fine bank %p \n", */
-              /*    thisTmplt->tmpltPtr->fine ); */
-              for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
-                  fineBank = fineBank->next )
-              {
-                /* fprintf( stderr, "fine tmplt %p\n", fineBank ); */
-                LALFindChirpCreateTmpltNode( status->statusPtr, 
-                    fineBank, &(params->tmpltCurrent) );
-                CHECKSTATUSPTR( status );
+              fprintf( stderr, "fine tmplt %p\n", fineBank );
+              LALFindChirpCreateTmpltNode( status->statusPtr, 
+                  fineBank, &tmpltInsert );
+              CHECKSTATUSPTR( status );
 
-                params->numTmplts++;
-              }
+              /* set the id of the segment to filter against this template */
+              tmpltInsert->segmentIdVec->data[thisEvent->segmentNumber] = 1;
 
-              thisTmplt->inserted = 1;
+              /* increase the count of the number of templates */
+              params->numTmplts++;
             }
           }
         }
 
-        /* fprintf( stderr, "event handler done\n" ); */
+        fprintf( stderr, "event handler done\n" );
 
         break;
 

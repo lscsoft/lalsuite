@@ -23,8 +23,12 @@ LALFindChirpCreateTmpltNode (
   InspiralTemplateNode         *current = NULL;
 
   INITSTATUS( status, "LALFindChirpCreateTmpltNode", FINDCHIRPLINKEDLISTC );
+  ATTATCHSTATUSPTR( status );
 
-  ASSERT( tmplt, status, FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( tmplt, status, 
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( tmplt->segmentIdVec, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
 
 
   /*
@@ -51,6 +55,14 @@ LALFindChirpCreateTmpltNode (
   (*tmpltNode)->inserted = 0;
   (*tmpltNode)->tmpltPtr = tmplt;
 
+  LALI4CreateVector( status->statusPtr, &((*tmpltNode)->segmentIdVec),
+      tmplt->segmentIdVec->length );
+  BEGINFAIL( status )
+  {
+    LALFree( tmpltNode );
+  }
+  ENDFAIL( status );
+
   /* link the list */
   if ( current ) 
   {
@@ -63,6 +75,7 @@ LALFindChirpCreateTmpltNode (
     current->next = *tmpltNode;
   }
 
+  DETATCHSTATUSPTR( status );
   RETURN( status );
 }  
 
@@ -77,6 +90,7 @@ LALFindChirpDestroyTmpltNode (
   InspiralTemplateNode  *next = NULL;
 
   INITSTATUS( status, "FindChirpDestroyTmpltNode", FINDCHIRPLINKEDLISTC );
+  ATTATCHSTATUSPTR( status );
 
   ASSERT( tmpltNode, status, 
       FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
@@ -94,6 +108,8 @@ LALFindChirpDestroyTmpltNode (
   next = (*tmpltNode)->next;
 
   /* destroy the node */
+  LALI4DestroyVector( status->statusPtr, &((*tmpltNode)->segmentIdVec) );
+  CHECKSTATUSPTR( status );
   LALFree( *tmpltNode );
   *tmpltNode = NULL;
 
@@ -109,5 +125,6 @@ LALFindChirpDestroyTmpltNode (
     *tmpltNode = next;
   }
   
+  DETATCHSTATUSPTR( status );
   RETURN( status );
 }  

@@ -149,13 +149,15 @@ PrintInspiralBank (
         current->mass1, current->mass2, current->totalMass,
         current->eta, current->mu,
         current->next, current->fine );
-    fprintf( fp, "   > " );
-    for ( i = 0; i < current->segmentIdVec->length; ++i )
-    {
-      fprintf( fp, "segment[%d] = %d  ",
-          i, current->segmentIdVec->data[i] );
-    }
-    fprintf( fp, "\n\n" );
+    /*
+     * fprintf( fp, "   > " );
+     * for ( i = 0; i < current->segmentIdVec->length; ++i )
+     * {
+     *  fprintf( fp, "segment[%d] = %d  ",
+     *      i, current->segmentIdVec->data[i] );
+     * }
+     * fprintf( fp, "\n\n" );
+     */
     fflush( fp );
     if ( current->fine )
     {

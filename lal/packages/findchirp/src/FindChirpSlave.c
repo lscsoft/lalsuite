@@ -157,8 +157,9 @@ LALFindChirpSlave (
       eventList = NULL;
 
       /* should we filter this segment against this template? */
-      fprintf( stderr, "checking segment %d\n", 
-          fcSegVec->data[i].number );
+      fprintf( stderr, "checking segment %d... %d\n", 
+          fcSegVec->data[i].number,
+          bankCurrent->segmentIdVec->data[fcSegVec->data[i].number] );
       if ( bankCurrent->segmentIdVec->data[fcSegVec->data[i].number] )
       {
         fprintf( stderr, "filtering segment %d\n", 

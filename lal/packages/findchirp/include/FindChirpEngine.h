@@ -96,6 +96,7 @@ tagInspiralTemplateNode
 {
   INT4                                  level;
   INT4                                  inserted;
+  INT4Vector                           *segmentIdVec;
   struct tagInspiralTemplateNode       *next;
   struct tagInspiralTemplateNode       *prev;
   InspiralTemplate                     *tmpltPtr;
