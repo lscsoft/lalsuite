@@ -966,7 +966,7 @@ InspiralTmpltBankFromLIGOLw (
         }
         else if ( tableDir[j].idx == 12 )
         {
-          thisTmplt->fendBCV = colData;
+          thisTmplt->fFinal = colData;
         }
         else
         {
