@@ -10,9 +10,12 @@
 in the framework of inspiral binaries. It is dedicated to BCV bank validation.
 
 \item[Synopsis]
-\verb$lalapps_BankEfficiency$ [\verb$-h$] [\verb$-V$] [\verb$-v$]
+\verb$lalapps_BankEfficiency$ [\verb$-h$] 
 [\verb$-d$ \textit{dbglvl}]
-[\verb$-m$ \textit{mmin}\texttt{-}\textit{mmax}]
+[\verb$--psi0-range$ \textit{psi0 min}\texttt{-}\textit{psi0 max}]
+[\verb$--psi3-range$ \textit{psi3 min}\texttt{-}\textit{psi3 max}]
+[\verb$-mm$ \textit{Minimal Match}]
+
 [\verb$-r$ \textit{range}]
 [\verb$-s$ \textit{seed}]
 [\verb$-t$ \textit{tstart}\texttt{-}\textit{tend}]
@@ -20,39 +23,62 @@ in the framework of inspiral binaries. It is dedicated to BCV bank validation.
 
 \item[Description]
 \verb$lalapps_BankEfficiency$ This application create a bank of templates based on the
-SPA bank or BCV bank. Then perform a Monte Carlo Simulation by injecting known signals
-such as TaylorT1, PadeT1 or EOB and applying the bank for a detection scheme.
+SPA bank or BCV bank. Then, it performs a Monte Carlo Simulation by injecting known signals
+such as TaylorT1, PadeT1 or EOB and computing the overlap between the signal and the 
+bank of templates.
  
-Providing a range of parameters and a minimal match $MM$, the code output the Match as well
-as others output such as mass, triggers in the bank ans so on. 
+It is dedicated to BCV overlap tough  classical overlap in quadrature and SPA bank might
+be used as well. 
+
+In the case of BCV bank, the user have to provide the following parameters: the minimal 
+match $MM$, the alpha parameter (0.01 by default), a range of psi0-psi3 and possibly
+some number of layers for the bank generation. 
+
+For the time being the Bank code is provided by the bank package through the function
+\texttt{LALCreateCoarseBank}. If the option "template" is BCV then the bank will be a BCV bank
+using the fucntion \texttt{LALInspiralBCVFcutBank} (see bnak package for details).
 
 
 
-\item[Options]\leavevmode
+\item[Options related to the simulations]\leavevmode
 \begin{entry}
+\item[\texttt{--alpha-bank}]
+alpha parameter to compute the metric.
+\item[\texttt{--alpha-signal}]
+alpha parameter for an injected BCV waveform.
+\item[\texttt{--fend-bcv}]
+Range of cutoff frequency for the BCV template creation. User must provide two parameters: 
+the lowest and upper frequency cutoff. Those frequency are not expressed in Hz but in term
+of distance betwwen the two objets. for instance at the last stable orbit, the distance 
+between the two objects is 6GM. In the case of an EOB description, the distance between 
+the two objects is closer to 3GM. A good compromise is to use fend-bcv between 8GM and 3GM
+and using the options --number-fcut = 5. 
 \item[\texttt{-h}]
 Print a help message.
-\item[\texttt{-V}]
+\item[\texttt{--mm}]
+Fixe the Minimal Match of the bank.
+\item[\texttt{--n}]
+Number of trials, i.e number of injections.
+\item[\texttt{--number-fcut}]
+Number of layers to create in the BCV bank in the fend-bcv dimension. 
+Given the lower and upper frequency (see option fend-bcv), the bank creates
+n layers each of them having a frequency between lowest fend-bcv and highest fend-bcv.
+\item[\texttt{--psi0-range}]
+Range of paramter psi0. User must give two positive numbers.
+\item[\texttt{--psi3-range}]
+Range of paramter psi3. User must give two negative numbers.
+\item[\texttt{-seed}]
+Random seed.
 \end{entry}
 
-\item[Debug levels]
-The LAL debug level can be specified as an integer or as a string of flags:
+\item[Options related to output]\leavevmode
 \begin{entry}
-\item[\texttt{NDEBUG}]
-kdsj kfjkds
-\end{entry}
+\item[\texttt{--print-bank}]
+Print the bank of templates on stdout. If a BCV-template bank is used then the ouput is composed of
+5 columns: psi0, psi3, number of layer, total mass and final frequency. If it is a SPA bank
+then 4 columns are print: tau0, tau3, and corresponding mass1 and mass2. The number of templates is 
+also printed.
 
-
-The following composite levels are available:
-\begin{entry}
-\item[\texttt{MSGLVL1}]
-Equivalent to \verb$ERROR$
-\item[\texttt{MSGLVL2}]
-Equivalent to \verb$ERROR | WARNING$
-\item[\texttt{MSGLVL3}]
-Equivalent to \verb$ERROR | WARNING | INFO$
-\item[\texttt{ALLDBG}]
-All debugging messages are printed.
 \end{entry}
 
 
