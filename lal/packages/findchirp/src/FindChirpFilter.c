@@ -26,6 +26,7 @@ $Id$
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
@@ -491,6 +492,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *inputData     = NULL;
   COMPLEX8             *tmpltSignal   = NULL;
   SnglInspiralTable    *thisEvent     = NULL;
+  LALMSTUnitsAndAcc     gmstUnits;
 
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -578,6 +580,10 @@ LALFindChirpFilterSegment (
 
   /* number of points in a segment */
   numPoints = params->qVec->length;
+
+  /* set the gmst units and strictness */
+  gmstUnits.units = MST_HRS;
+  gmstUnits.accuracy = LALLEAPSEC_STRICT;
 
 
   /*
@@ -809,6 +815,9 @@ LALFindChirpFilterSegment (
           timeNS += (INT8) (1e9 * timeIndex * deltaT);
           thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
           thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+          LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
+              &(thisEvent->end_time), &gmstUnits );
+          CHECKSTATUSPTR( status );
 
           /* set the impuse time for the event */
           thisEvent->template_duration = (REAL8) chirpTime;
@@ -906,6 +915,9 @@ LALFindChirpFilterSegment (
     timeNS += (INT8) (1e9 * timeIndex * deltaT);
     thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
     thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+    LALGPStoGMST1( status->statusPtr, &(thisEvent->end_time_gmst),
+        &(thisEvent->end_time), &gmstUnits );
+    CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
     thisEvent->template_duration = (REAL8) chirpTime;
