@@ -263,11 +263,11 @@ done
 echo "'" >> configure.in
 
 cat >> configure.in <<EOF
-if test x$mpi = xfalse; then
+if test x\$mpi = xfalse; then
   LIBLISTMPI=
   LIBLISTMPIFRAME=
 fi
-if test x$frame = xfalse; then
+if test x\$frame = xfalse; then
   LIBLISTFRAME=
   LIBLISTMPIFRAME=
 fi
