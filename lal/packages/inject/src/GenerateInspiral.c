@@ -44,7 +44,7 @@ LALGenerateInspiral(
   REAL4 fFac;          /* SI normalization for f and t */
   REAL4 f2aFac;        /* factor multiplying f in amplitude function */
   REAL4 yOld,  apFac, acFac;  /* extra factor in plus and cross amplitudes */
-
+  INT4 padding = -1;
   /* Integration parameters. */
 
   INT4  nMax;   /* index over timesteps, and its maximum + 1 */
@@ -150,7 +150,7 @@ LALGenerateInspiral(
     
     
    nMax = 0;
-   INT4 padding=0;    
+   padding=0;    
    /* on avance pour eviter le padding avant le signal*/
    while (inject_freq->data[padding]==0) 
      padding++;

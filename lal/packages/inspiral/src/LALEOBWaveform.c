@@ -662,10 +662,6 @@ LALEOBWaveform (
    rootIn.xmax = 2.;
    rootIn.xmin = 4.;
    funcParams = (void *) &rofomegain;
-
-
-
-
 /*-------------------------------------------------------------------
 Userful for debugging: Make sure a solution for r exists.
 --------------------------------------------------------
@@ -681,15 +677,21 @@ Userful for debugging: Make sure a solution for r exists.
       printf("%e %e\n", r, x);
    }
 -------------------------------------------------------------------*/
-
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
    CHECKSTATUSPTR(status);
-
+	
+   
+   
+    /*rofOmega */
     switch (params->order)
      {
      case twoPN:
      case twoPointFivePN:
        rootIn.function = LALrOfOmega;
+       rootIn.xmax = 100.;
+       rootIn.xmin = 6.;
+       LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+       CHECKSTATUSPTR(status);
        break;
      case threePN:
        rootIn.function = LALrOfOmega3PN;
@@ -697,16 +699,15 @@ Userful for debugging: Make sure a solution for r exists.
        pr3in.omegaS = params->OmegaS;
        pr3in.zeta2 = params->Zeta2;
        pr3in.omega = omega;
+       rootIn.xmax = 100.;
+       rootIn.xmin = 6.;
+       LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
+       CHECKSTATUSPTR(status);
        break;
      default:
        fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
        exit(0);
      }
-
-   rootIn.xmax = 100.;
-   rootIn.xmin = 6.;
-   LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
-   CHECKSTATUSPTR(status);
 
    params->rInitial = r;
    params->vInitial = v;
@@ -828,6 +829,8 @@ Record the final cutoff frequency of BD Waveforms for record keeping
    }
 
    LALFree(dummy.data);
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }
 
 
@@ -1111,9 +1114,9 @@ Record the final cutoff frequency of BD Waveforms for record keeping
       count++;
    }
 
+   LALFree(dummy.data);
    DETATCHSTATUSPTR(status);
    RETURN(status);
-   LALFree(dummy.data);
 }
 
 

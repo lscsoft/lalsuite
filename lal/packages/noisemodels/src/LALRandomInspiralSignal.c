@@ -227,7 +227,7 @@ LALRandomInspiralSignal
 		   {
 			   case m1Andm2: 
 			   case t03: 
-			   case t02: 
+			   case t02:
 				   if (
 						   randIn->param.mass1 >= randIn->mMin &&
 						   randIn->param.mass2 >= randIn->mMin &&
@@ -294,6 +294,8 @@ LALRandomInspiralSignal
 	 }
 	 else
 	 {
+		 /*add thomas to force to comput fFinal ??*/
+		 randIn->param.fFinal=0;
 		 LALInspiralWave(status->statusPtr, &buff, &randIn->param);
 		 CHECKSTATUSPTR(status);
 		 LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
