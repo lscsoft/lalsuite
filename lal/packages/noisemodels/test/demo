@@ -1,0 +1,14 @@
+# a demo script
+make RandomSignal
+./RandomSignal
+xmgr -par RandomSignal.par RandomSignal.out
+\rm RandomSignal.out
+
+make NoisePSDTest
+NoisePSDTest
+xmgr -par NoisePSDTest.par NoisePSDTest.out
+\rm NoisePSDTest.out
+
+make FilterTest
+FilterTest
+\rm FilterTest.out
