@@ -936,11 +936,6 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
    * function that rounds floating point numbers properly.
    */
   gps = pTimeInfo->epoch;
-  /*
-  dt.seconds     = (INT4)(pTimeInfo->deltaT);
-  dt.nanoSeconds = (INT4)rint((pTimeInfo->deltaT - (REAL8)(dt.seconds)) *
-                              (REAL8)oneBillion);
-  */
 
   TRY(LALFloatToInterval(status->statusPtr, &dt, &(pTimeInfo->deltaT)),
       status);
