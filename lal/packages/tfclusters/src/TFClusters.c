@@ -568,8 +568,8 @@ LALGetClusters (
 
   for(i=0;i<nfriends;i++)
     {
-      if(where[friends1[i]] == -1U &&
-	 where[friends2[i]] == -1U) /* create new burst */
+      if(where[friends1[i]] == -1 &&
+	 where[friends2[i]] == -1) /* create new burst */
 	{
 	  where[friends1[i]] = clist->nclusters;
 	  where[friends2[i]] = clist->nclusters;
@@ -618,8 +618,8 @@ LALGetClusters (
 	    clist->P[clist->nclusters-1][j] = tlist.P[friends2[i]][j - tlist.sizes[friends1[i]]];}
 	}
 
-      if(where[friends1[i]] != -1U &&
-	 where[friends2[i]] == -1U) /* append second */
+      if(where[friends1[i]] != -1 &&
+	 where[friends2[i]] == -1) /* append second */
 	{
 	  where[friends2[i]] = where[friends1[i]];
 
@@ -646,8 +646,8 @@ LALGetClusters (
 	    clist->P[where[friends1[i]]][j+j0] = tlist.P[friends2[i]][j];}
 	}      
 
-      if(where[friends1[i]] == -1U &&
-	 where[friends2[i]] != -1U) /* append first */
+      if(where[friends1[i]] == -1 &&
+	 where[friends2[i]] != -1) /* append first */
 	{
 	  where[friends1[i]] = where[friends2[i]];
 
