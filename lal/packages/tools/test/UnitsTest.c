@@ -112,22 +112,25 @@ int main( int argc, char *argv[] )
   string = NULL;
 
   LALCHARCreateVector(&status, &string, sizeof("m^2 kg s^-3 A^-1")-1);
-#ifndef NDEBUG
+#ifndef LAL_NDEBUG
 
-  LALUnitAsString( &status, NULL, &unit );
-  TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+  if ( ! lalNoDebug )
+  {
+    LALUnitAsString( &status, NULL, &unit );
+    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-  dummy.data = NULL;
+    dummy.data = NULL;
 
-  LALUnitAsString( &status, &dummy, &unit );
-  TestStatus(&status, CODES(UNITSH_ENULLPDOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPDOUT);
+    LALUnitAsString( &status, &dummy, &unit );
+    TestStatus(&status, CODES(UNITSH_ENULLPDOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPDOUT);
 
-  LALUnitAsString( &status, string, NULL );
-  TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-#endif /* NDEBUG */
+    LALUnitAsString( &status, string, NULL );
+    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+  }
+#endif /* LAL_NDEBUG */
 
   unit = lalVoltUnit;
 
@@ -218,75 +221,76 @@ int main( int argc, char *argv[] )
   printf("  PASS: string representation of unity is '%s'\n", string->data);
   LALCHARDestroyVector(&status, &string);
 
-#ifndef NDEBUG
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    printf("Checking Input Validation of LALUnitMultiply:\n");
 
-  printf("Checking Input Validation of LALUnitMultiply:\n");
+    LALUnitMultiply( &status, NULL, &unitPair );
+    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-  LALUnitMultiply( &status, NULL, &unitPair );
-  TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+    LALUnitMultiply( &status, &unit, NULL );
+    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
 
-  LALUnitMultiply( &status, &unit, NULL );
-  TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+    unitPair.unitOne.powerOfTen = 20000;
+    unitPair.unitTwo.powerOfTen = 30000;
 
-  unitPair.unitOne.powerOfTen = 20000;
-  unitPair.unitTwo.powerOfTen = 30000;
+    LALUnitMultiply( &status, &unit, &unitPair );
+    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
-  LALUnitMultiply( &status, &unit, &unitPair );
-  TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
+    unitPair.unitOne.powerOfTen = 0;
+    unitPair.unitTwo.powerOfTen = 0;
+    unitPair.unitOne.unitNumerator[2] = 12345;
+    unitPair.unitOne.unitDenominatorMinusOne[2] = 23456;
+    unitPair.unitTwo.unitNumerator[2] = 23456;
+    unitPair.unitTwo.unitDenominatorMinusOne[2] = 12345;
 
-  unitPair.unitOne.powerOfTen = 0;
-  unitPair.unitTwo.powerOfTen = 0;
-  unitPair.unitOne.unitNumerator[2] = 12345;
-  unitPair.unitOne.unitDenominatorMinusOne[2] = 23456;
-  unitPair.unitTwo.unitNumerator[2] = 23456;
-  unitPair.unitTwo.unitDenominatorMinusOne[2] = 12345;
+    LALUnitMultiply( &status, &unit, &unitPair );
+    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
-  LALUnitMultiply( &status, &unit, &unitPair );
-  TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
+    printf("Checking Input Validation of LALUnitRaise:\n");
 
-  printf("Checking Input Validation of LALUnitRaise:\n");
+    LALUnitRaise( &status, NULL, &unit, &power );
+    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-  LALUnitRaise( &status, NULL, &unit, &power );
-  TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
+    LALUnitRaise( &status, &unit, NULL, &power );
+    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
 
-  LALUnitRaise( &status, &unit, NULL, &power );
-  TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+    LALUnitRaise( &status, &(unitPair.unitOne), &unit, NULL );
+    TestStatus(&status, CODES(UNITSH_ENULLPPARAM), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPPARAM);
 
-  LALUnitRaise( &status, &(unitPair.unitOne), &unit, NULL );
-  TestStatus(&status, CODES(UNITSH_ENULLPPARAM), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPPARAM);
+    unit = lalKiloUnit;
+    power.numerator = 1;
+    power.denominatorMinusOne = 1;
+    LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
+    TestStatus(&status, CODES(UNITSH_ENONINT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENONINT);
 
-  unit = lalKiloUnit;
-  power.numerator = 1;
-  power.denominatorMinusOne = 1;
-  LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
-  TestStatus(&status, CODES(UNITSH_ENONINT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENONINT);
+    unit.unitNumerator[2] = 40000;
+    power.numerator = 2;
+    power.denominatorMinusOne = 0;
+    LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
+    TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
-  unit.unitNumerator[2] = 40000;
-  power.numerator = 2;
-  power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
-  TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
+    printf("Checking Input Validation of LALNormalize:\n");
 
-  printf("Checking Input Validation of LALNormalize:\n");
+    LALUnitRaise( &status, NULL, &unit, &power );
+    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-  LALUnitRaise( &status, NULL, &unit, &power );
-  TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
-
-  LALUnitRaise( &status, &unit, NULL, &power );
-  TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-  
-#endif /* NDEBUG */
+    LALUnitRaise( &status, &unit, NULL, &power );
+    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+  }  
+#endif /* LAL_NDEBUG */
 
   printf("Testing response of LALUnitNormalize to valid data:\n");
 
@@ -309,19 +313,20 @@ int main( int argc, char *argv[] )
   printf("  PASS: 2/6 reduces to 1/3\n");  
 
 
-#ifndef NDEBUG
+#ifndef LAL_NDEBUG
+  if ( ! lalNoDebug )
+  {
+    printf("Checking Input Validation of LALUnitCompare:\n");
 
-  printf("Checking Input Validation of LALUnitCompare:\n");
+    LALUnitCompare( &status, NULL, &unitPair );
+    TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-  LALUnitCompare( &status, NULL, &unitPair );
-  TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
-
-  LALUnitCompare( &status, &answer, NULL );
-  TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
-  printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
-
-#endif /* NDEBUG */
+    LALUnitCompare( &status, &answer, NULL );
+    TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
+    printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
+  }
+#endif /* LAL_NDEBUG */
 
   printf("Testing response of LALUnitCompare to valid data:\n");
 
