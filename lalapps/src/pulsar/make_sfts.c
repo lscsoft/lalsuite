@@ -544,8 +544,10 @@ int main(int argc,char *argv[]){
    pid_t mypid=getpid();
    char commandline[256];
    printf("Memory usage at iteration %d is:\n", count);
-   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm", (int)mypid);
+   fflush(stdout);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 | /bin/sed 's/  */ /g'", (int)mypid);
    system(commandline);
+   fflush(stdout);
  }
 #endif
 
