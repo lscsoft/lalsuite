@@ -12,25 +12,12 @@
 #ifndef _COMM_H
 #define _COMM_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
-#endif
-
-#ifndef _MPI_INCLUDE
 #include "mpi.h"
-#ifndef _MPI_INCLUDE
-#define _MPI_INCLUDE
-#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 NRCSID (COMMH, "$Id$");
@@ -278,4 +265,9 @@ MPIRecvCOMPLEX8FrequencySeries (
     INT4                     source
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _COMM_H */

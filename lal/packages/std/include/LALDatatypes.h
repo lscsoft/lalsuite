@@ -25,18 +25,11 @@
 #ifndef _LALDATATYPES_H
 #define _LALDATATYPES_H
 
-#ifndef _LALCONFIG_H
 #include "LALConfig.h"
-#ifndef _LALCONFIG_H
-#define _LALCONFIG_H
-#endif
-#endif
-
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
-#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 NRCSID (LALDATATYPESH, "$Id$");
@@ -1047,4 +1040,9 @@ tagStatus
 }
 Status;
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALDATATYPES_H */

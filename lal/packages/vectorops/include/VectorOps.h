@@ -24,12 +24,12 @@
 #ifndef _VECTOROPS_H
 #define _VECTOROPS_H
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (VECTOROPSH, "$Id$");
 
@@ -135,4 +135,9 @@ DDVectorMultiply(
     const REAL8Vector    *
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _VECTOROPS_H */

@@ -10,12 +10,12 @@
 #ifndef _RANDOM_H
 #define _RANDOM_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (RANDOMH, "$Id$");
 
@@ -63,4 +63,9 @@ NormalDeviates (
     RandomParams *params
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _RANDOM_H */

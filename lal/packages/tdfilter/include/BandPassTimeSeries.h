@@ -28,26 +28,14 @@ Further documentation is given in the individual routines' modules.
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _IIRFILTER_H
 #include "IIRFilter.h"
-#ifndef _IIRFILTER_H
-#define _IIRFILTER_H
-#endif
+#include "ZPGFilter.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _ZPGFILTER_H
-#include "ZPGFilter.h"
-#ifndef _ZPGFILTER_H
-#define _ZPGFILTER_H
-#endif
-#endif
 
 NRCSID(BANDPASSTIMESERIESH,"$Id$");
 
@@ -131,4 +119,9 @@ void ButterworthREAL8TimeSeries(Status             *stat,
 \newpage\input{BandPassTestC}
 </lalLaTeX> */
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _BANDPASSTIMESERIES_H */

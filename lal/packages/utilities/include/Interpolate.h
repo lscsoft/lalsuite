@@ -10,11 +10,12 @@
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
+#include "LALDatatypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "LALDatatypes.h"
 
 NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
 

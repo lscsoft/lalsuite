@@ -25,12 +25,12 @@
 #ifndef _DIRICHLET_H
 #define _DIRICHLET_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (DIRICHLETH, "$Id$");
 
@@ -59,5 +59,9 @@ typedef struct tagDirichletParameters{
 void 
 Dirichlet ( Status*, REAL4Vector*, DirichletParameters* );
 
-#endif /* _DIRICHLET_H */
 
+#ifdef  __cplusplus
+}
+#endif
+
+#endif /* _DIRICHLET_H */

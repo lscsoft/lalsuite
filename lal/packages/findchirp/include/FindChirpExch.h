@@ -12,26 +12,14 @@
 #ifndef _FINDCHIRPEXCH_H
 #define _FINDCHIRPEXCH_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _COMM_H
 #include "Comm.h"
-#ifndef _COMM_H
-#define _COMM_H
-#endif
+#include "DataBuffer.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _DATABUFFER_H
-#include "DataBuffer.h"
-#ifndef _DATABUFFER_H
-#define _DATABUFFER_H
-#endif
-#endif
 
 NRCSID (FINDCHIRPEXCHH, "$Id$");
 
@@ -185,4 +173,9 @@ ExchangeInspiralEvent (
     ExchParams    *exchParams
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _FINDCHIRPEXCH_H */

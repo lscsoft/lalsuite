@@ -91,19 +91,13 @@ routines never actually use this coefficient.
 #ifndef _IIRFILTER_H
 #define _IIRFILTER_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
+#include "ZPGFilter.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _ZPGFILTER_H
-#include "ZPGFilter.h"
-#ifndef _ZPGFILTER_H
-#define _ZPGFILTER_H
-#endif
-#endif
 
 NRCSID(IIRFILTERH,"$Id$");
 
@@ -240,4 +234,8 @@ void IIRFilterREAL8VectorR(Status         *stat,
 			   REAL8Vector    *vector,
 			   REAL8IIRFilter *filter);
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _IIRFILTER_H */

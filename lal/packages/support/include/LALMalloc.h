@@ -10,12 +10,12 @@
 #ifndef _LALMALLOC_H
 #define _LALMALLOC_H
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (LALMALLOCH, "$Id$");
 
@@ -34,4 +34,9 @@ LALRealloc (void *p, size_t n);
 void
 LALCheckMemoryLeaks (void);
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALMALLOC_H */

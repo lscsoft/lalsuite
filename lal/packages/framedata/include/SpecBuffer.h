@@ -12,26 +12,14 @@
 #ifndef _SPECBUFFER_H
 #define _SPECBUFFER_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _REALFFT_H
 #include "RealFFT.h"
-#ifndef _REALFFT_H
-#define _REALFFT_H
-#endif
+#include "Window.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _WINDOW_H
-#include "Window.h"
-#ifndef _WINDOW_H
-#define _WINDOW_H
-#endif
-#endif
 
 NRCSID (SPECBUFFERH, "$Id$");
 
@@ -114,4 +102,9 @@ AverageSpectrum (
     SpectrumBuffer       *buffer
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _SPECBUFFER_H */

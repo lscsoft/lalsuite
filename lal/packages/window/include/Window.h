@@ -26,12 +26,12 @@
 #ifndef _WINDOW_H
 #define _WINDOW_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (WINDOWH, "$Id$");
 
@@ -76,4 +76,8 @@ WindowParams;
 void
 Window (Status * ,REAL4Vector *, WindowParams *);
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _WINDOW_H */

@@ -10,12 +10,12 @@
 #ifndef _LALHELLO_H
 #define _LALHELLO_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (LALHELLOH, "$Id$");
 
@@ -32,4 +32,9 @@ NRCSID (LALHELLOH, "$Id$");
 void
 LALHello (Status *status, const CHAR *fileName);
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALHELLO_H */

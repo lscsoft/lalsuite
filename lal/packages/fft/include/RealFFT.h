@@ -24,11 +24,10 @@
 #ifndef _RealFFT_H
 #define _RealFFT_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 NRCSID (REALFFTH, "$Id$");
@@ -162,4 +161,9 @@ RealSequencePowerSpectrum (
     RealFFTPlan         *plan
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _RealFFT_H */

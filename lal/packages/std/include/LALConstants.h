@@ -34,11 +34,10 @@
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
-#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 NRCSID (LALCONSTANTSH, "$Id$");
@@ -142,4 +141,9 @@ NRCSID (LALCONSTANTSH, "$Id$");
 #define LAL_NCBR_SI   4.109e8   /* Number density of CBR photons, m^-3 */
 #define LAL_SCBR_SI   3.993e-14 /* Entropy density of CBR, J K^-1 m^-3 */
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALCONSTANTS_H */

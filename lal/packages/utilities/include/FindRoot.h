@@ -10,11 +10,12 @@
 #ifndef _FINDROOT_H
 #define _FINDROOT_H
 
+#include "LALDatatypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "LALDatatypes.h"
 
 NRCSID (FINDROOTH, "$Id$");
 
@@ -83,7 +84,7 @@ DBisectionFindRoot (
 
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif
 
 #endif /* _FINDROOT_H */

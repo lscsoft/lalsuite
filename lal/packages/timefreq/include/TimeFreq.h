@@ -37,7 +37,6 @@
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
- *    Includes should be double-guarded!
  */
 
 #include <stdlib.h>
@@ -47,6 +46,10 @@
 #include "LALConstants.h"
 #include "RealFFT.h"
 #include "AVFactories.h"
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 NRCSID (TIMEFREQH, "$Id$");
 
@@ -157,4 +160,8 @@ void TfrPswv (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
 void TfrRsp (Status*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
 void Dwindow (Status*, REAL4Vector*, REAL4Vector*);
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _TIMEFREQ_H */

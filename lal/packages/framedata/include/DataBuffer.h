@@ -12,26 +12,14 @@
 #ifndef _DATABUFFER_H
 #define _DATABUFFER_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _FRAMEDATA_H
 #include "FrameData.h"
-#ifndef _FRAMEDATA_H
-#define _FRAMEDATA_H
-#endif
+#include "SpecBuffer.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _SPECBUFFER_H
-#include "SpecBuffer.h"
-#ifndef _SPECBUFFER_H
-#define _SPECBUFFER_H
-#endif
-#endif
 
 NRCSID (DATABUFFERH, "$Id$");
 
@@ -126,4 +114,9 @@ GetData (
     DataBuffer  *buffer
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _DATABUFFER_H */

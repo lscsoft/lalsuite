@@ -64,12 +64,12 @@ variable is assumed.
 #ifndef _ZPGFILTER_H
 #define _ZPGFILTER_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID(ZPGFILTERH,"$Id$");
 
@@ -138,4 +138,8 @@ void WToZCOMPLEX8ZPGFilter(Status            *stat,
 void WToZCOMPLEX16ZPGFilter(Status             *stat,
 			    COMPLEX16ZPGFilter *filter);
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _ZPGFILTER_H */

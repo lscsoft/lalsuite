@@ -23,43 +23,17 @@
  *----------------------------------------------------------------------- 
  */
 
-/* 
- * Header contents go here, in order specified:
- * 
- * 1. Prolog (Comment field with file name, author, revision, etc., as 
- *    specified above)
- * 2. include-loop protection (see below). Note the naming convention!
- */
 
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
 
-/*
- * 3. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- *    Includes should be double-guarded!
- */
-
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
 
-/*
- * 4. Header file version string (from CVS; see below). Note the string name. 
- */
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 NRCSID (AVFACTORIESH, "$Id$");
-
-/*
- * 5. Macros. 
- */
 
 #define CREATEVECTOR_ELENGTH  1
 #define CREATEVECTOR_EVPTR    2
@@ -96,24 +70,6 @@ NRCSID (AVFACTORIESH, "$Id$");
 #define DESTROYARRAY_MSGEVPTR "array == NULL" /* EVPTR */
 #define DESTROYARRAY_MSGEUPTR "*array == NULL" /* EUPTR */
 #define DESTROYARRAY_MSGEDPTR "(*array)->data == NULL" /* EDPTR */
-
-/* 
- * 6. Extern Constant Declarations. These should not be present unless a
- *    specific waiver has been granted. 
- */
-
-/* 
- * 7. Extern Global Variables. These should also not be present unless a 
- *    specific waiver has been granted. 
- */ 
-
-/*
- * 8. Structure, enum, union, etc., typdefs.
- */
-
-/*
- * 9. Functions Declarations (i.e., prototypes).
- */
 
 void CHARCreateVector(Status *, CHARVector **, UINT4);
 void I2CreateVector(Status *, INT2Vector **, UINT4);
@@ -165,5 +121,9 @@ void DDestroyArray(Status *, REAL8Array **);
 void CDestroyArray(Status *, COMPLEX8Array **);
 void ZDestroyArray(Status *, COMPLEX16Array **);
 
+
+#ifdef  __cplusplus
+}
 #endif
 
+#endif /* _AVFACTORIES_H */

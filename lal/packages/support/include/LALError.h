@@ -10,12 +10,12 @@
 #ifndef _LALERROR_H
 #define _LALERROR_H
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (LALERRORH, "$Id$");
 
@@ -25,4 +25,9 @@ LALPrintError (const char *fmt, ...);
 void
 LALAbort (const char *msg);
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALERROR_H */

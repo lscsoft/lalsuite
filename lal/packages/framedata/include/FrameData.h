@@ -12,12 +12,12 @@
 #ifndef _FRAMEDATA_H
 #define _FRAMEDATA_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (FRAMEDATAH, "$Id$");
 
@@ -113,4 +113,9 @@ GetFrameDataResponse (
     FrameData               *frameData
     );
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _FRAMEDATA_H */

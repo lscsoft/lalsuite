@@ -25,15 +25,20 @@
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 
-#ifndef _LALRCSID_H
 #include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (PRINTVECTORH, "$Id$");
 
 void PrintVector(REAL4Vector *vector);
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _PRINTVECTOR_H */

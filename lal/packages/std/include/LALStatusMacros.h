@@ -337,51 +337,23 @@
 #ifndef _LALSTATUSMACROS_H
 #define _LALSTATUSMACROS_H
 
-#ifndef _LALCONFIG_H
 #include "LALConfig.h"
-#ifndef _LALCONFIG_H
-#define _LALCONFIG_H
-#endif
-#endif
 
 #ifdef STDC_HEADERS
-# ifndef _STRING_H
-#   include <string.h>
-#   ifndef _STRING_H
-#     define _STRING_H
-#   endif
-# endif
+#include <string.h>
 #else
-# error "ERROR: non ansi standard headers"
+#error "ERROR: non ansi standard headers"
 #endif
 
-#ifndef _LALMALLOC_H
 #include "LALMalloc.h"
-#ifndef _LALMALLOC_H
-#define _LALMALLOC_H
-#endif
-#endif
-
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _LALERROR_H
 #include "LALError.h"
-#ifndef _LALERROR_H
-#define _LALERROR_H
-#endif
+#include "LALRCSID.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
-#ifndef _LALRCSID_H
-#include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
-#endif
-#endif
 
 NRCSID (LALSTATUSMACROSH, "$Id$");
 
@@ -589,4 +561,9 @@ do                                                                    \
     }                                                                 \
 } while (0)
 
+
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALSTATUSMACROS_H */

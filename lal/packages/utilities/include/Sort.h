@@ -25,12 +25,12 @@ elements.
 #ifndef _SORT_H
 #define _SORT_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID(SORTH,"$Id$");
 
@@ -93,4 +93,8 @@ void DHeapRank(Status      *stat,
 \newpage\input{SortTestC}
 </lalLaTeX> */
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _SORT_H */

@@ -10,11 +10,11 @@
 #ifndef _INTEGRATE_H
 #define _INTEGRATE_H
 
+#include "LALDatatypes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "LALDatatypes.h"
 
 NRCSID (INTEGRATEH, "$Id$");
 

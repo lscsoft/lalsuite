@@ -40,33 +40,19 @@
  *    a. Standard library includes
  *    b. LDAS includes
  *    c. LAL includes
- *    Includes should be double-guarded!
  */
 
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _LDAS_CONSTANTS_H
 #include "LDAS_CONSTANTS.h"
-#ifndef _LDAS_CONSTANTS_H
-#define _LDAS_CONSTANTS_H
-#endif
+#include "LALRCSID.h"
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 /*
  * 4. Header file version string (from CVS; see below). Note the string name. 
  */
-
-#ifndef _LALRCSID_H
-#include "LALRCSID.h"
-#ifndef _LALRCSID_H
-#define _LALRCSID_H
-#endif
-#endif
 
 NRCSID (EXAMPLEH, "$Id$");
 
@@ -91,5 +77,10 @@ NRCSID (EXAMPLEH, "$Id$");
 /*
  * 9. Functions Declarations (i.e., prototypes).
  */
+
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif

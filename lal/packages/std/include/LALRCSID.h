@@ -35,6 +35,10 @@
 #ifndef _LALRCSID_H
 #define _LALRCSID_H
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 #if !defined(lint)
 #  ifndef __GNUC__
 #    define RCSID(id)       static volatile const char *rcsid = (id)
@@ -52,4 +56,8 @@
 
 NRCSID (LALRCSIDH, "$Id$");
 
+#ifdef  __cplusplus
+}
 #endif
+
+#endif /* _LALRCSID_H */

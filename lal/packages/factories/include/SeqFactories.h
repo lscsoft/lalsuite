@@ -27,18 +27,11 @@
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
 
-#ifndef _LALDATATYPES_H
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
-
-#ifndef _AVFACTORIES_H
 #include "AVFactories.h"
-#ifndef _AVFACTORIES_H
-#define _AVFACTORIES_H
-#endif
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
 
 NRCSID (SEQFACTORIESH, "$Id$");
@@ -183,5 +176,8 @@ void ZDestroyVectorSequence(Status *,
 			     COMPLEX16VectorSequence **);
 
 
+#ifdef  __cplusplus
+}
 #endif
 
+#endif /* _SEQFACTORIES_H */

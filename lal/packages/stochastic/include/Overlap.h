@@ -25,12 +25,12 @@
 #ifndef _OVERLAP_H
 #define _OVERLAP_H
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
+
+#ifdef  __cplusplus
+extern "C" {
 #endif
-#endif
+
 
 NRCSID (OVERLAPH, "$Id$");
 
@@ -92,5 +92,10 @@ OverlapParameters;
 
 void
 Overlap ( Status *, REAL4Vector *, OverlapParameters * );
+
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif /* _OVERLAP_H */
