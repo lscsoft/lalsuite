@@ -82,7 +82,7 @@ INT4 lalDebugLevel=3;
 #define SFTBASEFILENAME "./data1/SFT."
 #define OUTFILE1 "./TestOutputSFT.0"
 #define OUTFILE2 "./TestOutputSFT.1"
-#define INFILE "./inputsft.0"
+#define INFILE "inputsft.0"
 
 /* Usage format string. */
 

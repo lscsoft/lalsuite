@@ -56,6 +56,7 @@ LALHO()
 #include <sys/types.h>
 #include <dirent.h>
 
+#include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
@@ -109,7 +110,7 @@ void LALReadSFTheader (LALStatus  *status,
   ASSERT (fname,  status, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
   
   /* opening the SFT binary file */
-  fp = fopen( fname, "r");
+  fp = LALOpenDataFile( fname );
   if (fp == NULL) {
     ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
   }
@@ -519,7 +520,7 @@ LALReadSFTdata(LALStatus *status,
   offset = fminBinIndex - header.fminBinIndex;
 
   /* open file for reading */
-  if ( (fp = fopen( fname, "rb")) == NULL) {
+  if ( (fp = LALOpenDataFile( fname )) == NULL) {
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
   /* read version-number and check endianness */
