@@ -437,7 +437,11 @@ ReadClusterInfo( LALStatus *status,
 		 FSTClustInfoPair *clustInfoPair, /*!< output */
 		 FSTUserInput *cla /*!< input */)
 { 
-  const INT8 maxDataPoints = 67108864; /* = 2^26 */
+  const INT8 maxDataPoints = 1048576; /* = 2^20 */
+  /* We will malloc 10 REAL8 arrays of length less than maxDataPoints.
+     maxDataPoints * 10 * 8 byte = 80 MB. 
+  */
+
 
   INT4  nObsv,nTest; 
   REAL8 startFreqO,deltaFreqO; 
@@ -475,23 +479,23 @@ ReadClusterInfo( LALStatus *status,
     fprintf(stderr,"File open error in FstatShapeTest: %s\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fpobsv);
-  if(sscanf(ptr,"%d",&nObsv) != 1) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) ||
+      ( sscanf(ptr,"%d",&nObsv) != 1) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 1 \n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fpobsv);
-  if(sscanf(ptr,"%lf %lf",&fmaxObsv,&Fmaxo) != 2) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) ||
+      ( sscanf(ptr,"%lf %lf",&fmaxObsv,&Fmaxo) != 2) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 2\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fpobsv);
-  if(sscanf(ptr,"%lf %lf",&startFreqO,&deltaFreqO) != 2) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) ||
+      ( sscanf(ptr,"%lf %lf",&startFreqO,&deltaFreqO) != 2) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 3\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fpobsv);
-  if(sscanf(ptr,"%lf %lf %lf",&Aobsv,&Bobsv,&Cobsv) != 3) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) ||
+      ( sscanf(ptr,"%lf %lf %lf",&Aobsv,&Bobsv,&Cobsv) != 3) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 4\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
@@ -504,23 +508,23 @@ ReadClusterInfo( LALStatus *status,
     fprintf(stderr,"File open error in FstatShapeTest: %s\n",cla->testdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fptest);
-  if(sscanf(ptr,"%d",&nTest) != 1) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) || 
+      ( sscanf(ptr,"%d",&nTest) != 1) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 1\n",cla->testdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fptest);
-  if(sscanf(ptr,"%lf %lf",&fmaxTest,&Fmaxt) != 2) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) || 
+      ( sscanf(ptr,"%lf %lf",&fmaxTest,&Fmaxt) != 2) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 2\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fptest);
-  if(sscanf(ptr,"%lf %lf",&startFreqT,&deltaFreqT) != 2) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) || 
+      ( sscanf(ptr,"%lf %lf",&startFreqT,&deltaFreqT) != 2) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 3\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
-  ptr = fgets(buff,sizeof(buff),fptest);
-  if(sscanf(ptr,"%lf %lf %lf",&Atest,&Btest,&Ctest) != 3) {    
+  if( ( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) || 
+      ( sscanf(ptr,"%lf %lf %lf",&Atest,&Btest,&Ctest) != 3) ) {    
     fprintf(stderr,"File format error in FstatShapeTest: %s, line 4\n",cla->obsvdatafile);
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
@@ -563,7 +567,7 @@ ReadClusterInfo( LALStatus *status,
   clustInfoPair->ObsvCI.FSmax = Fmaxo;
 
 
-  /* FIX ME ! 
+  /* 
    * Fstat shape test code does not use neither a(t) nor b(t), but other codes does...
   clustInfoPair->ObsvCI.amc.a = NULL;
   clustInfoPair->ObsvCI.amc.b = NULL:
@@ -583,7 +587,7 @@ ReadClusterInfo( LALStatus *status,
   clustInfoPair->TestCI.FSmax = Fmaxt;
 
 
-  /* FIX ME ! 
+  /* 
    * Fstat shape test code does not use neither a(t) nor b(t), but other codes does...
   clustInfoPair->TestCI.amc.a = NULL;
   clustInfoPair->TestCI.amc.b = NULL;
@@ -970,7 +974,7 @@ ReadData( LALStatus *status,
 
   /* data input begin */
   for( irec = 0; irec < FaFbPair->freqObsv->length; irec++ ) {
-    ptr = fgets(buff,sizeof(buff),fpobsv);
+    if( ( ptr = fgets(buff,sizeof(buff),fpobsv) ) == NULL ) break;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqObsv->data[irec]),
 		   &(FaFbPair->FaFbObsv->Fa[irec].re),
@@ -991,7 +995,7 @@ ReadData( LALStatus *status,
 
 
   for( irec = 0; irec < FaFbPair->freqTest->length; irec++ ) {
-    ptr = fgets(buff,sizeof(buff),fptest);
+    if( ( ptr = fgets(buff,sizeof(buff),fptest) ) == NULL ) break;
     count = sscanf(ptr,"%lf %lf %lf %lf %lf %lf",
 		   &(FaFbPair->freqTest->data[irec]),
 		   &(FaFbPair->FaFbTest->Fa[irec].re),
