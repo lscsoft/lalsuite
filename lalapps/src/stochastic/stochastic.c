@@ -723,7 +723,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   for (i = 0; i < segmentLength; i++)
    { dataWindow.data->data[i] = 1.;}
   if (overlap_hann_flag)
-   { hannDuration = segmentLength;}
+   { hannDuration = segmentDuration;}
 
   if (hannDuration != 0)
    {
@@ -862,80 +862,79 @@ INT4 main(INT4 argc, CHAR *argv[])
    if (verbose_flag)
     { fprintf(stdout, "Generating spectrum for optimal filter...\n");}
 
-   /* generage omegaGW */
-   LAL_CALL( LALStochasticOmegaGW(&status, &omegaGW, &omegaGWParams), 
-             &status );
+  /* generage omegaGW */
+  LAL_CALL( LALStochasticOmegaGW(&status, &omegaGW, &omegaGWParams), 
+            &status );
 
-   /* frequency mask */
-   if (apply_mask_flag)
-    {
-     /* extra bins */ 
-     Nbin = (maskBin - 1) / 2;
-     /* set metadata fields for frequency mask */
-     strncpy(mask.name, "mask", LALNameLength);
-     mask.deltaF = deltaF;
-     mask.f0 = fMin;
-     mask.sampleUnits = lalDimensionlessUnit;
+  /* frequency mask */
+  if (apply_mask_flag)
+   {
+    /* extra bins */ 
+    Nbin = (maskBin - 1) / 2;
+    /* set metadata fields for frequency mask */
+    strncpy(mask.name, "mask", LALNameLength);
+    mask.deltaF = deltaF;
+    mask.f0 = fMin;
+    mask.sampleUnits = lalDimensionlessUnit;
 
-     if (verbose_flag)
-      { fprintf(stdout, "Allocating memory for frequency mask...\n");}
+    if (verbose_flag)
+     {fprintf(stdout, "Allocating memory for frequency mask...\n");}
+    /* allocate memory for frequency mask */
+    mask.data = maskTemp = NULL;
+    LAL_CALL( LALCreateVector(&status, &(mask.data), filterLength), &status );
+    LAL_CALL( LALCreateVector(&status, &maskTemp, respLength), &status );
+    memset(mask.data->data, 0, mask.data->length * sizeof(*mask.data->data));
+    memset(maskTemp->data, 0, maskTemp->length * sizeof(*maskTemp->data));
 
-     /* allocate memory for frequency mask */
-     mask.data = maskTemp = NULL;
-     LAL_CALL( LALCreateVector(&status, &(mask.data), filterLength), &status );
-     LAL_CALL( LALCreateVector(&status, &maskTemp, respLength), &status );
-     memset(mask.data->data, 0, mask.data->length * sizeof(*mask.data->data));
-     memset(maskTemp->data, 0, maskTemp->length * sizeof(*maskTemp->data));
+    if (verbose_flag)
+    { fprintf(stdout, "Generating frequency mask...\n");}
 
-     if (verbose_flag)
-      { fprintf(stdout, "Generating frequency mask...\n");}
+    /* set all values to 1 */
+    for (i = 0; i < respLength; i++)
+     { maskTemp->data[i] = 1.;}
 
-     /* set all values to 1 */
-     for (i = 0; i < respLength; i++)
-      { maskTemp->data[i] = 1.;}
+    if (verbose_flag)
+     { fprintf(stdout, "Masking multiples of 16 Hz...\n");}
 
-     if (verbose_flag)
-      { fprintf(stdout, "Masking multiples of 16 Hz...\n");}
+    /* remove multiples of 16 Hz */
+    for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
+     { 
+      maskTemp->data[i]= 0.;
+      for (j = 0; j < Nbin; j ++)
+	{
+	  if ((i + 1 + j) < respLength) {maskTemp->data[i + 1 + j]= 0.;}
+          if ((i - 1 - j) > 0 ) {maskTemp->data[i - 1 - j]= 0.;}
+        }
+     }
 
-     /* remove multiples of 16 Hz */
-     for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
-      { 
-       maskTemp->data[i]= 0.;
-       for (j = 0; j < Nbin; j ++)
-	 {
-	   if ((i + 1 + j) < respLength) {maskTemp->data[i + 1 + j]= 0.;}
-           if ((i - 1 - j) > 0 ) {maskTemp->data[i - 1 - j]= 0.;}
-         }
-      }
+    if (verbose_flag)
+     { fprintf(stdout, "Masking multiples of 60 Hz...\n");}
 
-     if (verbose_flag)
-      { fprintf(stdout, "Masking multiples of 60 Hz...\n");}
+    /* remove multiples of 60 Hz */
+    for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
+     {
+      maskTemp->data[i] = 0.;
+      for (j = 0; j < Nbin; j ++)
+       {
+        if ((i + 1 + j) < respLength) {maskTemp->data[i + 1 + j]= 0.;}
+        if ((i - 1 - j) > 0 ) {maskTemp->data[i - 1 - j]= 0.;}
+       }
+     }
 
-     /* remove multiples of 60 Hz */
-     for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
-      {
-       maskTemp->data[i] = 0.;
-       for (j = 0; j < Nbin; j ++)
-	 {
-	   if ((i + 1 + j) < respLength) {maskTemp->data[i + 1 + j]= 0.;}
-           if ((i - 1 - j) > 0 ) {maskTemp->data[i - 1 - j]= 0.;}
-         }
-      }
+    if (verbose_flag)
+     { fprintf(stdout, "Getting appropriate frequency band for mask...\n");}
 
-     if (verbose_flag)
-      { fprintf(stdout, "Getting appropriate frequency band for mask...\n");}
+    /* get appropriate band */
+    for (i = 0; i < filterLength; i++)
+     { mask.data->data[i] = maskTemp->data[i + numPointInf];}
 
-     /* get appropriate band */
-     for (i = 0; i < filterLength; i++)
-      { mask.data->data[i] = maskTemp->data[i + numPointInf];}
+    if (test_flag)
+     {
+      LALSPrintFrequencySeries(&mask, "mask.dat");
+     }
 
-     if (test_flag)
-      {
-       LALSPrintFrequencySeries(&mask, "mask.dat");
-      }
-
-     if (verbose_flag)
-      { fprintf(stdout, "Applying frequency mask to spectrum..\n");}
+    if (verbose_flag)
+     { fprintf(stdout, "Applying frequency mask to spectrum..\n");}
 
      /* apply mask to omegaGW */
      for (i = 0; i < filterLength; i++)
@@ -946,83 +945,88 @@ INT4 main(INT4 argc, CHAR *argv[])
    if (test_flag)
     { LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");}
 
-   /* set normalisation parameters */
-   normParams.fRef = fRef;
-   normParams.heterodyned = 0;
-   normParams.window1 = normParams.window2 = dataWindow.data;
+  /* set normalisation parameters */
+  normParams.fRef = fRef;
+  normParams.heterodyned = 0;
+  normParams.window1 = normParams.window2 = dataWindow.data;
 
-   /* set normalisation input */
-   normInput.overlapReductionFunction = &overlap;
-   normInput.omegaGW = &omegaGW;
-   normInput.inverseNoisePSD1 = &calInvPsd1;
-   normInput.inverseNoisePSD2 = &calInvPsd2;
+  /* set normalisation input */
+  normInput.overlapReductionFunction = &overlap;
+  normInput.omegaGW = &omegaGW;
+  normInput.inverseNoisePSD1 = &calInvPsd1;
+  normInput.inverseNoisePSD2 = &calInvPsd2;
  
-   /* set normalisation output */
-   normOutput.normalization = &normLambda;
-   normOutput.variance = &normSigma;
+  /* set normalisation output */
+  normOutput.normalization = &normLambda;
+  normOutput.variance = &normSigma;
 
-   /* set metadata fields for optimal filter */
-   strncpy(optFilter.name, "optFilter", LALNameLength);
-   optFilter.epoch = gpsStartTime;
-   optFilter.deltaF = deltaF;
-   optFilter.f0 = fMin;
+  /* set metadata fields for optimal filter */
+  strncpy(optFilter.name, "optFilter", LALNameLength);
+  optFilter.epoch = gpsStartTime;
+  optFilter.deltaF = deltaF;
+  optFilter.f0 = fMin;
  
-   if (verbose_flag)
-    { fprintf(stdout, "Allocating memory for optimal filter...\n");}
+  if (verbose_flag)
+   { fprintf(stdout, "Allocating memory for optimal filter...\n");}
 
-   /* allocate memory for optimal filter */
-   optFilter.data = NULL;
-   LAL_CALL( LALCreateVector(&status, &(optFilter.data), filterLength), 
-             &status );
-   memset( optFilter.data->data, 0, 
-           optFilter.data->length * sizeof(*optFilter.data->data));
+  /* allocate memory for optimal filter */
+  optFilter.data = NULL;
+  LAL_CALL( LALCreateVector(&status, &(optFilter.data), filterLength), 
+            &status );
+  memset( optFilter.data->data, 0, 
+          optFilter.data->length * sizeof(*optFilter.data->data));
    
-   /* set optimal filter inputs */
-   optFilterIn.overlapReductionFunction = &overlap;
-   optFilterIn.omegaGW = &omegaGW;
-   optFilterIn.calibratedInverseNoisePSD1 = &calInvPsd1;
-   optFilterIn.calibratedInverseNoisePSD2 = &calInvPsd2;
+  /* set optimal filter inputs */
+  optFilterIn.overlapReductionFunction = &overlap;
+  optFilterIn.omegaGW = &omegaGW;
+  optFilterIn.calibratedInverseNoisePSD1 = &calInvPsd1;
+  optFilterIn.calibratedInverseNoisePSD2 = &calInvPsd2;
  
-   /* set metadata fields for CC spectrum */
-   strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
-   ccSpectrum.epoch = gpsStartTime;
-   ccSpectrum.deltaF = deltaF;
-   ccSpectrum.f0 = fMin;
+  /* set metadata fields for CC spectrum */
+  strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
+  ccSpectrum.epoch = gpsStartTime;
+  ccSpectrum.deltaF = deltaF;
+  ccSpectrum.f0 = fMin;
 
-   /* allocate memory for CC spectrum*/
-   ccSpectrum.data = NULL;
-   LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), 
-             &status );
-   memset( ccSpectrum.data->data, 0, 
-           ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
+  /* allocate memory for CC spectrum*/
+  ccSpectrum.data = NULL;
+  LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), 
+            &status );
+  memset( ccSpectrum.data->data, 0, 
+          ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
 
-   /* set CC inputs */
-   ccIn.hBarTildeOne = &hBarTilde1;
-   ccIn.hBarTildeTwo = &hBarTilde2;
-   ccIn.responseFunctionOne = &response1;
-   ccIn.responseFunctionTwo = &response2;
-   ccIn.optimalFilter = &optFilter;
+  /* set CC inputs */
+  ccIn.hBarTildeOne = &hBarTilde1;
+  ccIn.hBarTildeTwo = &hBarTilde2;
+  ccIn.responseFunctionOne = &response1;
+  ccIn.responseFunctionTwo = &response2;
+  ccIn.optimalFilter = &optFilter;
  	   
 
-   /*** DONE HERE WITH ALLOCATION ***/
+  /*** DONE HERE WITH ALLOCATION ***/
+  if (overlap_hann_flag) 
+   {N = 2;}
+  else {N = 1;}
 
-   for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
-    {	
-     /* initialize parameters for post analysis */
-     yOpt = 0.; inVarTheoSum = 0.;
+  for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
+   {	
+    /* initialize parameters for post analysis */
+    yOpt = 0.; inVarTheoSum = 0.;
 
-     /* open output file */
-     LALSnprintf( outputFilename1, LALNameLength, 
-                 "%s/stat-%s%s-%d-%d-%d.dat",
-                  outputFilePath, ifo1, ifo2, 
-                 (INT4)startTime, (INT4)stopTime, MCLoop);
-     /* open output file */
-     LALSnprintf( outputFilename2, LALNameLength,
-                  "%s/post-%s%s-%d-%d-%d.dat",
-	          outputFilePath, ifo1, ifo2,
-	          (INT4)startTime, (INT4)stopTime, MCLoop);
+    /* open output file */
+    LALSnprintf( outputFilename1, LALNameLength, 
+                "%s/stat-%s%s-%d-%d-%d.dat",
+                 outputFilePath, ifo1, ifo2, 
+                (INT4)startTime, (INT4)stopTime, MCLoop);
+    /* open output file */
+    LALSnprintf( outputFilename2, LALNameLength,
+                 "%s/post-%s%s-%d-%d-%d.dat",
+	         outputFilePath, ifo1, ifo2,
+	         (INT4)startTime, (INT4)stopTime, MCLoop);
    
-   
+    for (n = 0; n < N; n ++)
+     {
+      startTime = startTime + (n * segmentShift);
       firstpass = 1; pathology = 0;
    
       for (interLoop = 0; interLoop < numIntervals; interLoop++)
@@ -1168,7 +1172,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	  /* if firstpass = 0, shift data and read extra segment */ 
 	 else
 	   {
-            /* need more work to include overlapping Hann */
             if (verbose_flag)
 	     {
 	      fprintf( stdout, "shift segments\n");
@@ -1597,9 +1600,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	   fprintf(out1,"%d %e %e %e\n", gpsStartTime.gpsSeconds, y,sqrt(varTheo), varTheo);
            fclose(out1);
      }
-    
+    }
        
    lal_errhandler = LAL_ERR_EXIT;
+   /* need to add post analysis for overlapping hann */
    if (post_analysis_flag)
      {
        ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
@@ -1612,7 +1616,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	  fprintf(stdout,"ptEst = %e error = %e\n", ptEst, error);
 	}
      }
-    }
+   }
+
    /* cleanup */
 
    LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
