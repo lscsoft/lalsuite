@@ -17,15 +17,13 @@ NRCSID( FINDCHIRPTMPLTC, "$Id$" );
 void
 LALFindChirpCreateInspiralBank (
     LALStatus                  *status,
-    InspiralCoarseBankIn       *bankIn,
+    InspiralCoarseBankIn       *coarseBankIn,
     InspiralTemplate          **head
     )
 {
+
   INITSTATUS( status, "LALFindChirpCreateInspiralBank", FINDCHIRPTMPLTC );
   ATTATCHSTATUSPTR( status );
-
-
-
 
 
   DETATCHSTATUSPTR( status );
