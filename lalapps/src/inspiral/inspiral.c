@@ -71,6 +71,7 @@ RCSID( "$Id$" );
 #define CANDLE_RHOSQ 64.0
 
 #ifdef LALAPPS_CONDOR
+extern int condor_compress_ckpt;
 void init_image_with_file_name( char *ckpt_file_name );
 void ckpt_and_exit( void );
 #endif
@@ -846,7 +847,8 @@ int main( int argc, char *argv[] )
   if ( dataCheckpoint )
   {
 #ifdef LALAPPS_CONDOR
-    LALSnprintf( fname, sizeof(fname)/sizeof(*fname), "%s.ckpt" );
+    condor_compress_ckpt = 0;
+    LALSnprintf( fname, sizeof(fname)/sizeof(*fname), "%s.ckpt", fileName );
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
     ckpt_and_exit();
