@@ -42,6 +42,14 @@ NRCSID( PULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
+/* FIXME!!!!!: this is done now according to makefakedata_v2, but it really points
+   to a bug in SimulateCoherentGW(), which should be traced at some point!!
+
+   -> we use this time-constant to make the signal start earlier and last longer than
+   really required
+*/
+#define LTT 1000
+
 void
 LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params)
 {
@@ -84,9 +92,6 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   else
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
-  /* start-time in SSB time */
-  TRY (ConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
-  sourceParams.epoch = time;
 
   /* pulsar reference-time in SSB frame !*/
   if (params->pulsar.TRefSSB.gpsSeconds != 0)
@@ -96,11 +101,24 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
 
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
+
+  /* start-time in SSB time */
+  TRY (ConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
+  sourceParams.epoch = time;
+  /* ----------
+     FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
+  sourceParams.epoch.gpsSeconds -= 0.75*LTT;
+  /*----------*/
+
   time = params->startTimeGPS;
   time.gpsSeconds += params->duration;
   TRY (ConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
   SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds;
   sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
+  /* ----------
+     FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
+  sourceParams.length   += (UINT4)(1.5*LTT/ sourceParams.deltaT);
+  /*----------*/
 
   /*
    * finally, call the function to generate the source waveform 

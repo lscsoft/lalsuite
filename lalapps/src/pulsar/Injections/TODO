@@ -1,12 +1,13 @@
 TODO
 -----
+* fix bug of zeroes in beginning/end of time-series
+	(-> see makefakedata_v2 for that)
 
 * complete AddSignalToSFTs()
 
-* test-check against makefakedata_v2
+* test-check final SFTs against makefakedata_v2
 
-* write documentation
-
+* write some documentation
 
 done
 ----

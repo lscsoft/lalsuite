@@ -250,7 +250,7 @@ char *lalWatch;
 /***************************/
 
 /* Seconds added atthe end and at the beginning of Taylor series*/
-#define LTT 000
+#define LTT 1000
 /* Maximum # of files in a directory  */
 #define MAXFILES 40000        
 /* Maximum # of characters of a SFT filename */
