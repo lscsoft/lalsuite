@@ -466,15 +466,18 @@ Patrick Brady and Saikat Ray-Majumder
 [\verb$--usertag$ \textsc{tag}]
 
 \item[Description] 
-\textbf{Warning:}  this is very beta code that we are just starting to
-test.   This documentation could be (is likely) out of date.
-
 \verb$lalapps_binj$
 generates a number of burst  parameters suitable  for using in a Monte
 Carlo injection to test the efficiency of a burst search.  The  various
 parameters (detailed  below)  are specified on the command line or can be
 randomly chosen in a manner appropriate for an burst upper limit
 search.
+
+The longitude $\alpha$ of the source is uniformly distributed in the
+range $[0,2\pi]$, the latitude $\delta$ is defined so that $\cos(\pi - 
+\delta)$ is uniformly distributed in the range $[-1,1]$,  and the 
+polarization angle $\psi$  is uniformly distributed in the
+range $[0,2\pi]$.
 
 The output of this program  is  a  list  of  the  injected events,  starting
 at  the specified start time, ending at the specified end time, and containing
@@ -490,6 +493,9 @@ where \verb$USERTAG$ is \textsc{tag} as specfied on the command line,
 \verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
 the file covers. The file is in the standard LIGO lightweight XML format
 containing a \texttt{sim\_burst} table that describes the injections.
+This table is described in the LAL \texttt{tools} package under
+\texttt{LIGOMetadataTables.h} header.  
+
 If a \texttt{--user-tag} is not specified on the command line, the
 \texttt{\_USERTAG} part of the filename will be omitted.
 
@@ -532,13 +538,27 @@ Optional.  The linear spacing between frequencies used to make
 injections.  Default value is 0 Hz.
 
 \item[\texttt{--waveform} \textsc{wave}]
-Optional. The string \textsc{wave} will be written into the \texttt{waveform}
-column of the \texttt{sim\_burst} table output. This is used by the
-burst code to determine which type of waveforms it should inject into the
-data. Default is \texttt{SineGaussian}.
+Optional.  Default is \texttt{SineGaussian}.   The string
+\textsc{wave} will be written into the \texttt{waveform} column of the
+\texttt{sim\_burst} table output. This is used by the burst code to
+determine which type of waveforms it should inject into the data.
+Types implemented in LAL inject package are:
+\begin{description}
+\item[\texttt{SineGaussian}]  Inject a sine-Gaussian waveform defined by
+\begin{eqnarray}
+A_+(t) &=& h_0 \exp[ - (t-t_0)^2/ \tau^2 ] \sin[ 2 \pi f_0 (t-t_0)] \\
+A_\times(t) &=& 0
+\end{eqnarray}
+
+\item[\texttt{CosGaussian}]  Inject a cos-Gaussian waveform defined by
+\begin{eqnarray}
+A_+(t) &=& h_0 \exp[ - (t-t_0)^2/ \tau^2 ] \cos[ 2 \pi f_0 (t-t_0)] \\
+A_\times(t) &=& 0
+\end{eqnarray}
+\end{description}
 
 \item[\texttt{--tau} \textsc{tau}]
-Optional.  The decay-time for sine-gaussian,  gaussian,  ringdown and
+Optional.  The decay-time $\tau$ for sine-gaussian,  gaussian,  ringdown and
 ring-up waveforms.
 
 \item[\texttt{--quality} \textsc{quality}]
@@ -552,11 +572,11 @@ $$
 where $f_0$ is the frequency of the injection.
 
 \item[\texttt{--freq} \textsc{freq}]
-Optional.  The central frequency for sine-gaussian,  ringdown and
+Optional.  The central frequency $f_0$ for sine-gaussian,  ringdown and
 ring-up waveforms.
 
 \item[\texttt{--hpeak} \textsc{hpeak}]
-Optional.  The peak dimensionless strain for sine-gaussian,  gaussian,  ringdown and
+Optional.  The peak dimensionless strain $h_0$ for sine-gaussian,  gaussian,  ringdown and
 ring-up waveforms.
 
 \item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
