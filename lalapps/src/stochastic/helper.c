@@ -597,6 +597,36 @@ REAL4FrequencySeries *inverse_noise(LALStatus *status,
   return(series);
 }
 
+/* wrapper function for calculating optimal filter */
+REAL4FrequencySeries *optimal_filter(LALStatus *status,
+    REAL4FrequencySeries *overlap,
+    REAL4FrequencySeries *omega,
+    REAL4FrequencySeries *psdOne,
+    REAL4FrequencySeries *psdTwo,
+    REAL4WithUnits normalisation)
+{
+  /* variables */
+  REAL4FrequencySeries *series;
+  StochasticOptimalFilterCalInput input;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "filter", \
+        psdOne->epoch, psdOne->f0, psdOne->deltaF, lalDimensionlessUnit, \
+        psdOne->data->length), status);
+
+  /* set input */
+  input.overlapReductionFunction = overlap;
+  input.omegaGW = omega;
+  input.calibratedInverseNoisePSD1 = psdOne;
+  input.calibratedInverseNoisePSD2 = psdTwo;
+
+  /* generate optimal filter */
+  LAL_CALL(LALStochasticOptimalFilterCal(status, series, &input, \
+        &normalisation), status);
+
+  return(series);
+}
+
 /*
  * vim: et
  */
