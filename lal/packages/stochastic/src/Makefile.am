@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libstochastic.la
 libstochastic_la_SOURCES = StochasticCrossCorrelation.c ZeroPadAndFFT.c \
-  StochasticCrossCorrelationVariance.c StochasticOptimalFilter.c \
+  StochasticOptimalFilter.c StochasticOptimalFilterNormalization.c \
   OverlapReductionFunction.c StochasticOmegaGW.c StochasticInverseNoise.c \
   CoarseGrainFrequencySeries.c Dirichlet.c
 

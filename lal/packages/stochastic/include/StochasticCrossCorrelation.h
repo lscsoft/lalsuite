@@ -332,62 +332,6 @@ LALStochasticCrossCorrelationSpectrum(
 
   /*************************************************************
    *                                                           *
-   *       Structures and prototypes associated with           *
-   *          StochasticCrossCorrelationVariance.c             *
-   *                                                           *
-   *************************************************************/
-
-/********************************************************** <lalLaTeX>
-
-\subsubsection*{Structures and prototypes associated with 
-  \texttt{StochasticCrossCorrelationVariance.c}
-  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelationVariance.c})}
-
-\subsubsection*{Prototypes}
-
-\idx{LALStochasticCrossCorrelationVariance()}
-\input{StochasticCrossCorrelationHPCV}
-
-\subsubsection*{\texttt{struct StochasticCrossCorrelationVarianceInput}}
-\idx[Type]{StochasticCrossCorrelationVarianceInput}
-
-\noindent Contains the input data needed by 
-\texttt{LALStochasticCrossCorrelationVariance()}
-to calculate the expected variance of the standard optimally-filtered
-cross-correlation statistic.  The fields are:
-
-\begin{description}
-\item[\texttt{REAL4FrequencySeries  *noisePSDOne}]
-Power spectral density of the noise in the first detector.
-
-\item[\texttt{REAL4FrequencySeries  *noisePSDTwo}]
-Power spectral density of the noise in the second detector.
-
-\item[\texttt{COMPLEX8FrequencySeries  *optimalFilter}]
-Optimal filter function in the frequency domain.
-\end{description}
-
-*********************************************************** </lalLaTeX> */
-
-typedef struct tagStochasticCrossCorrelationVarianceInput {
-  REAL4FrequencySeries     *noisePSDOne;
-  REAL4FrequencySeries     *noisePSDTwo;
-  COMPLEX8FrequencySeries  *optimalFilter;
-} StochasticCrossCorrelationVarianceInput;
-
-/********** <lalVerbatim file="StochasticCrossCorrelationHPCV"> *********/
-
-void 
-LALStochasticCrossCorrelationVariance(
-            LALStatus                                      *status,
-            REAL4WithUnits                                 *output,
-            const StochasticCrossCorrelationVarianceInput  *input,
-            BOOLEAN                                         heterodyned);
-
-/********** </lalVerbatim> *********/
-
-  /*************************************************************
-   *                                                           *
    * Structures and prototypes associated with ZeroPadAndFFT.c *
    *                                                           *
    *************************************************************/
@@ -516,6 +460,114 @@ LALStochasticOptimalFilter(
             COMPLEX8FrequencySeries                  *optimalFilter,
             const StochasticOptimalFilterInput       *input,
             const StochasticOptimalFilterParameters  *parameters);
+
+/********** </lalVerbatim> *********/
+
+  /*************************************************************
+   *                                                           *
+   *        Structures and prototypes associated with          *
+   *         StochasticOptimalFilterNormalization.c            *
+   *                                                           *
+   *************************************************************/
+
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Structures and protoypes associated with 
+  \texttt{StochasticOptimalFilterNormalization.c}
+  (Sec.~\ref{stochastic:ss:StochasticOptimalFilterNormalization.c})}
+
+\subsubsection*{Prototypes}
+
+\idx{LALStochasticOptimalFilterNormalization()}
+\input{StochasticCrossCorrelationHPON}
+
+\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationOutput}}
+\idx[Type]{StochasticOptimalFilterNormalizationOutput}
+
+\noindent 
+Contains the outputs of \texttt{LALStochasticOptimalFilterNormalization()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{REAL4WithUnits *normalization}]
+The normalization parameter $\lambda$.
+\item[\texttt{REAL4WithUnits *variance}]
+The variance per unit time $\sigma^2/T$ of the cross-correlation statistic.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagStochasticOptimalFilterNormalizationOutput {
+  REAL4WithUnits           *normalization;
+  REAL4WithUnits           *variance;
+} StochasticOptimalFilterNormalizationOutput;
+
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationInput}}
+\idx[Type]{StochasticOptimalFilterNormalizationInput}
+
+\noindent 
+Contains the inputs of \texttt{LALStochasticOptimalFilterNormalization()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{REAL4FrequencySeries *overlapReductionFunction}]
+The overlap reduction function $\gamma(f)$ describing the pair of detector
+sites.
+\item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum 
+$\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
+background.
+\item[\texttt{REAL4FrequencySeries *inverseNoisePSD1}]
+ The reciprocal
+$1/P_1(f)=|\tilde{R_1}(f)|^2/P_1^{\scriptstyle{\rm W}}(f)$ of the
+unwhitened noise power spectral density for the first detector.
+\item[\texttt{REAL4FrequencySeries *inverseNoisePSD2}]
+ The reciprocal
+$1/P_2(f)=|\tilde{R_2}(f)|^2/P_2^{\scriptstyle{\rm W}}(f)$ of the
+unwhitened noise power spectral density for the second detector.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagStochasticOptimalFilterNormalizationInput {
+  REAL4FrequencySeries     *overlapReductionFunction;
+  REAL4FrequencySeries     *omegaGW;
+  REAL4FrequencySeries     *inverseNoisePSD1;
+  REAL4FrequencySeries     *inverseNoisePSD2;
+} StochasticOptimalFilterNormalizationInput;
+
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{\texttt{struct StochasticOptimalFilterNormalizationParameters}}
+\idx[Type]{StochasticOptimalFilterNormalizationParameters}
+
+\noindent 
+Contains the parameters of \texttt{LALStochasticOptimalFilterNormalization()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{REAL8 fRef}]
+The reference frequency used in defining the normalization.
+\item[\texttt{BOOLEAN heterodyned}]
+Indicates whether the filter is to be used on heterodyned data or not.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagStochasticOptimalFilterNormalizationParameters {
+  REAL8               fRef;
+  BOOLEAN             heterodyned;
+} StochasticOptimalFilterNormalizationParameters;
+
+/********** <lalVerbatim file="StochasticCrossCorrelationHPON"> *********/
+
+void
+LALStochasticOptimalFilterNormalization(
+            LALStatus                                            *status,
+	    StochasticOptimalFilterNormalizationOutput           *output,
+            const StochasticOptimalFilterNormalizationInput      *input,
+            const StochasticOptimalFilterNormalizationParameters *parameters);
 
 /********** </lalVerbatim> *********/
 
@@ -760,11 +812,11 @@ LALOverlapReductionFunction(
 \newpage\input{StochasticCrossCorrelationStatisticTestC}
 \newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
 \newpage\input{StochasticCrossCorrelationSpectrumTestC}
-\newpage\input{StochasticCrossCorrelationVarianceC}
 \newpage\input{ZeroPadAndFFTC}
 \newpage\input{SZeroPadAndFFTTestC}
 \newpage\input{CZeroPadAndFFTTestC}
 \newpage\input{StochasticOptimalFilterC}
+\newpage\input{StochasticOptimalFilterNormalizationC}
 \newpage\input{StochasticOptimalFilterTestC}
 \newpage\input{StochasticInverseNoiseC}
 \newpage\input{StochasticInverseNoiseTestC}
