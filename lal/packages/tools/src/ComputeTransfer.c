@@ -477,6 +477,9 @@ LALUpdateCalibration(
   ab.re /= length;
   ab.im /= length;
 
+  /* return the used values of alpha and alphabeta */
+  params->alpha = a;
+  params->alphabeta = ab;
   LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
       "Got %d calibration samples\n"
       "a.re = %e\ta.im = %e\nab.re = %e\tab.im = %e",

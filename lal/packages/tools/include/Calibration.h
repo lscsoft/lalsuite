@@ -171,6 +171,9 @@ tagCalibrationUpdateParams
 {
   LIGOTimeGPS epoch;
   LIGOTimeGPS duration;
+  CHAR *ifo;
+  COMPLEX8 alpha;
+  COMPLEX8 alphabeta;
   COMPLEX8TimeSeries *openLoopFactor;
   COMPLEX8TimeSeries *sensingFactor;
 }

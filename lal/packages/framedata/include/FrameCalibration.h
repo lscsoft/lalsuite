@@ -20,7 +20,7 @@
  **** </lalLaTeX> */
 
 #include <lal/LALDatatypes.h>
-
+#include <lal/Calibration.h>
 #ifndef _FRAMECALIBRATION_H
 #define _FRAMECALIBRATION_H
 
@@ -89,8 +89,7 @@ LALExtractFrameResponse(
     LALStatus               *status,
     COMPLEX8FrequencySeries *output,
     const CHAR              *catalog,
-    const CHAR              *ifo,
-    LIGOTimeGPS		    *duration
+    CalibrationUpdateParams *calfacts
     );
 
 #ifdef __cplusplus
