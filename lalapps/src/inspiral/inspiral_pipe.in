@@ -152,9 +152,9 @@ if do_dax:
 
 # set the file suffix
 if do_dax:
-  dagfilesuffix = '.dag'
-else:
   dagfilesuffix = '.dax'
+else:
+  dagfilesuffix = '.dag'
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
@@ -558,9 +558,17 @@ else:
     dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+if do_dax:
+  print """\nCreated a DAX file which can be submitted to the Grid using
+Pegasus. See the page:
+
+  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html
+
+for instructions."""
+else:
+  print "\nCreated a DAG file which can be submitted by executing"
+  print "\n   condor_submit_dag", dag.get_dag_file()
+  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
@@ -582,8 +590,7 @@ you should use
   export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
 
 Contact the administrator of your cluster to find the hostname and port of the
-LSCdataFind server.
-"""
+LSCdataFind server."""
 
 # write out a log file for this script
 if usertag:
