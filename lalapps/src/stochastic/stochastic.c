@@ -133,7 +133,7 @@ REAL4 geoScaleFactor = 1e18;
 /* geo high pass filter parameters */
 REAL4 geoHighPassFreq = 70;
 INT4  geoHighPassOrder = 8;
-REAL4 geoHighPassAtten = 0.1;
+REAL4 geoHighPassAtten = 0.9;
 
 /* number of bins for frequency masking */
 INT4 maskBin = 1;
@@ -2466,7 +2466,7 @@ void readDataPair(LALStatus *status,
     geoHighpassParam.f1 = -1;
     geoHighpassParam.f2 = (REAL8)geoHighPassFreq;
     geoHighpassParam.a1 = -1;
-    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
+    geoHighpassParam.a2 = geoHighPassAtten;
     LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
         &geoHighpassParam);
     CHECKSTATUSPTR(status);
@@ -2557,7 +2557,7 @@ void readDataPair(LALStatus *status,
       geoHighpassParam.f1 = -1;
       geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
       geoHighpassParam.a1 = -1;
-      geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
+      geoHighpassParam.a2 = geoHighPassAtten;
       LALButterworthREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
           &geoHighpassParam);
       CHECKSTATUSPTR(status);
