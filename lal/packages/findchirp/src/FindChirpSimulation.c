@@ -14,6 +14,7 @@
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>
+#include <lal/DetectorSite.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/FindChirpEngine.h>
 
@@ -150,6 +151,7 @@ LALFindChirpInjectSignals (
 
 
   /* allocate memory and copy the parameters describing the freq series */
+  memset( &detector, 0, sizeof( DetectorResponse ) );
   detector.transfer = (COMPLEX8FrequencySeries *)
     LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
   if ( ! detector.transfer ) 
@@ -161,9 +163,25 @@ LALFindChirpInjectSignals (
   detector.transfer->f0 = resp->f0;
   detector.transfer->deltaF = resp->deltaF;
 
+  detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
   /* set the detector site */
-  /* XXX not sure about this XXX */
-  detector.site = NULL;
+  switch ( chan->name[0] )
+  {
+    case 'H':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+      LALWarning( status, "computing waveform for Hanford." );
+      break;
+    case 'L':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+      LALWarning( status, "computing waveform for Livingstone." );
+      break;
+    default:
+      LALFree( detector.site );
+      detector.site = NULL;
+      LALWarning( status, "Unknown detector site, computing plus mode "
+          "waveform with no time delay" );
+      break;
+  }
 
   /* set up units for the transfer function */
   {
@@ -317,10 +335,11 @@ LALFindChirpInjectSignals (
     LALFree( waveform.f );
     LALFree( waveform.phi );
   }
-
+  
   LALCDestroyVector( status->statusPtr, &( detector.transfer->data ) );
   CHECKSTATUSPTR( status );
 
+  if ( detector.site ) LALFree( detector.site );
   LALFree( detector.transfer );
 
   DETATCHSTATUSPTR( status );
