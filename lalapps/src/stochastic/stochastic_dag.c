@@ -1139,7 +1139,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* split into segments and store */
     for (segLoop = 0; segLoop < numSegments; segLoop++)
     {
-      for (i = 0; i < segmentPadLength; i ++)
+      for (i = 0; i < segmentPadLength; i++)
       {
         segPad1[segLoop]->data[i] = 
           interval1.data->data[i + segLoop * segmentLength];
@@ -1486,7 +1486,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* throw away pad data on each side of the segment */
-          for (i = 0; i < segmentLength; i ++)
+          for (i = 0; i < segmentLength; i++)
           {
             segment1.data->data[i] = \
               segmentPad1.data->data[i + (padData * resampleRate)];
@@ -1503,7 +1503,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* store in memory */
-          for (i = 0; i < segmentLength; i ++)
+          for (i = 0; i < segmentLength; i++)
           {
             seg1[segLoop]->data[i] = segment1.data->data[i];
             seg2[segLoop]->data[i] = segment2.data->data[i];
