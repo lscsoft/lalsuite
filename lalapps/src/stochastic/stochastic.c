@@ -96,8 +96,8 @@ CHAR *frameCache1 = NULL;
 CHAR *frameCache2 = NULL;
 CHAR *calCache1 = NULL;
 CHAR *calCache2 = NULL;
-CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
-CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
+CHAR *channel1 = NULL;
+CHAR *channel2 = NULL;
 CHAR ifo1[LALNameLength] = "H1";
 CHAR ifo2[LALNameLength] = "L1";
 INT4 site1 = 0;
@@ -1784,6 +1784,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -F, --f-max N                     maximal frequency\n"\
   " -i, --ifo-one IFO                 ifo for first stream\n"\
   " -I, --ifo-two IFO                 ifo for second stream\n"\
+  " -z, --channel-one CHANNEL         channel for first stream\n"\
+  " -Z, --channel-two CHANNEL         channel for second stream\n"\
   " -d, --frame-cache-one FILE        cache file for first stream\n"\
   " -D, --frame-cache-two FILE        cache file for second stream\n"\
   " -r, --calibration-cache-one FILE  first stream calibration cache\n"\
@@ -1819,6 +1821,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
   int c = -1;
   struct stat fileStatus;
 
+  /* tempory variables */
+  CHAR *channel1Temp = NULL;
+  CHAR *channel2Temp = NULL;
+
   while(1)
   {
     static struct option long_options[] =
@@ -1852,6 +1858,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"geo-hpf-order", required_argument, 0, 'Q'},
       {"ifo-one", required_argument, 0, 'i'},
       {"ifo-two", required_argument, 0, 'I'},
+      {"channel-one", required_argument, 0, 'y'},
+      {"channel-two", required_argument, 0, 'Y'},
       {"frame-cache-one", required_argument, 0, 'd'},
       {"frame-cache-two", required_argument, 0, 'D'},
       {"calibration-cache-one", required_argument, 0, 'r'},
@@ -1875,7 +1883,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long(argc, argv, \
-        "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v", \
+        "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:y:Y:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v", \
         long_options, &option_index);
 
     if (c == -1)
@@ -2157,26 +2165,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
         /* ifo for first stream */
         strncpy(ifo1, optarg, LALNameLength);
 
-        /* set site and channel */
+        /* set site */
         if (strncmp(ifo1, "H1", 2) == 0)
         {
           site1 = 0;
-          strncpy(channel1, "H1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo1, "H2", 2) == 0)
         {
           site1 = 0;
-          strncpy(channel1, "H2:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo1, "L1", 2) == 0)
         {
           site1 = 1;
-          strncpy(channel1, "L1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo1, "G1", 2) == 0)
         {
           site1 = 3;
-          strncpy(channel1, "G1:DER_DATA_H", LALNameLength);
         }
         else
         {
@@ -2190,26 +2194,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
         /* ifo for second stream */
         strncpy(ifo2, optarg, LALNameLength);
 
-        /* set site and channel */
+        /* set site */
         if (strncmp(ifo2, "H1", 2) == 0)
         {
           site2 = 0;
-          strncpy(channel2, "H1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo2, "H2", 2) == 0)
         {
           site2 = 0;
-          strncpy(channel2, "H2:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo2, "L1", 2) == 0)
         {
           site2 = 1;
-          strncpy(channel2, "L1:LSC-AS_Q", LALNameLength);
         }
         else if (strncmp(ifo2, "G1", 2) == 0)
         {
           site1 = 3;
-          strncpy(channel2, "G1:DER_DATA_H", LALNameLength);
         }
         else
         {
@@ -2217,6 +2217,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        break;
+
+      case 'y':
+        /* channel one */
+        optarg_len = strlen(optarg) + 4;
+        channel1Temp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channel1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channel1Temp, optarg, optarg_len);
+        break;
+
+      case 'Y':
+        /* channel two */
+        optarg_len = strlen(optarg) + 4;
+        channel2Temp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channel2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channel2Temp, optarg, optarg_len);
         break;
 
       case 'd':
@@ -2362,6 +2378,20 @@ void parseOptions(INT4 argc, CHAR *argv[])
     }
     exit(1);
   }
+
+  /* set channels */
+  strcpy(channel1, ifo1);
+  strcpy(channel2, ifo2);
+  strcat(channel1, ":");
+  strcat(channel2, ":");
+  strcat(channel1, channel1Temp);
+  strcat(channel2, channel2Temp);
+  free(channel1Temp);
+  free(channel2Temp);
+
+  printf("channel1 = %s\n", channel1);
+  printf("channel2 = %s\n", channel2);
+  exit(1);
 
   return;
 }
