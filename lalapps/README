@@ -115,18 +115,26 @@ removed it. You are now ready to continue.
 
 4. Decide how you want install LALApps, LAL and the required software
 
-You have the following options for installing the required software. Choose
-the one that suits you best and then follow the relevant instructions below.
+You have the following options for installing LALApps, LAL and the 
+required software. Choose the one that suits you best and then follow the
+relevant instruction below. Once you have completed either 5.1, 5.2 or 5.3 you
+are ready to use and develop LAL and LALApps. 
+
+Section 5.4 explains how to install the required software from RPMs or Debian
+packages and is included for administrators of LSCdataGrid clusters. If you
+are installing on your own machine it is recomended that you follow section
+5.1.
 
  -- you have your own desktop or laptop machine without some or all 
     of the required software		----> follow step 5.1 below
 
  -- you have a LIGOtools distribution (that you control) installed on 
-    your machine 			----> follow step 5.2 below
+    your machine and you want to obtain the required software via
+    LIGOtools				----> follow step 5.2 below
 
- -- you are logged into an LSCdatagrid cluster machine and do not 
-    have root access (for example the UWM cluster or one of the LIGO
-    lab clusters)			----> follow step 5.3 below
+ -- you are logged into an LSCdatagrid cluster machines (for example 
+    the UWM cluster or one of the LIGO lab ldas-grid machines)
+    					----> follow step 5.3 below
 
  -- you are the system administrator of an LSC cluster machine or you 
     want to install the required software as RPMs or .deb files on 
