@@ -117,7 +117,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 /* </lalVerbatim> */
 {
   UINT4 i	= 1;
-  CHAR *end ;
 
 
   INITSTATUS( status, "LALInspiralParseParameters", LALINSPIRALPARSEPARAMETERSC);
@@ -152,7 +151,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	  else params->approximant = TaylorT1; /*is it correct ? */
 	}/* SpinTaylor is not available here only for inject package*/
       else if (strcmp(argv[i], "--order")==0)	       
-	LALStringToU4(status, &(params->order), *argv, &end);
+	params->order = atoi(argv[++i]);
       else if (strcmp(argv[i],"--mass1")==0)
 	params->mass1 = atof(argv[++i]); 
       else if (strcmp(argv[i],"--mass2")==0)
