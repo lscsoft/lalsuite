@@ -100,6 +100,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
+extern char *optarg;
+
 /*<lalErrTable file="InspiralSpinBankTestCE">*/
 #define INSPIRALSPINBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKTESTC_EMEM      1
