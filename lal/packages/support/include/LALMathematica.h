@@ -23,9 +23,10 @@
   \label{s:LALMathematica.h}
   \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
 * Provides structures, functions and macro definitions for modules
-* that generate \MATHEMATICA notebooks. Currently, the only module using this header file 
-* is \texttt{Math3DPlot.c}, which generates 3D animated plots of template banks having
-* three parameters.  See the \texttt{Math3DPlot.c} documenation for more detail.  
+* that generate \MATHEMATICA notebooks. Currently, the only modules using this header file 
+* are \texttt{LALMath3DPlot()}, which generates 3D animated plots of template banks having
+* three parameters and \texttt{LALMathNDPlot()} which plots the 3-dimensional projections 
+* of a bank which is N-dimensional.  
   </lalLaTeX> */
  
   /*SUBSECTION - SYNOPSIS ---------------------------------------------------- <lalLaTeX>
@@ -120,7 +121,10 @@
   * coordinate x,y,z and the next pointer.  It also has a parameter called GrayLevel 
   * which must be $\epsilon [0,1]$.  It specifies the shading of the point in the final 
   * plot with 0 representing black and 1 representing white.  By creatively assigning 
-  * its value the grayscale shade of the points may convey additional information.  
+  * its value the grayscale shade of the points may convey additional information. 
+  * \\
+  * \noindent The MathNDPointList type is similar except the coordinates are stored as
+  * data in the REAL4Vector \texttt{coordinates}.  
     </lalLaTeX> 
     END SUBSECTION TYPES --------------------------------------------------------------*/
 
@@ -141,17 +145,19 @@
     \vfill{\footnotesize\input{LALMathematicaHV}} 
   </lalLaTeX> */
 
-  /*NEWPAGE - MODULES INPUT - "LALMath3DPlot.c" ---------------------------------------*/
+  /*NEWPAGE - MODULES INPUT - "LALMath3DPlot.c" - "LALMathNDPlot.c" -------------------*/
     /* <lalLaTeX> 
     \newpage\input{LALMath3DPlotC}
+    \newpage\input{LALMathNDPlotC}
     </lalLaTeX> 
-    END - MODULES INPUT - "LALMath3DPlot.c" -------------------------------------------*/ 
+    END - MODULES INPUT - "LALMath3DPlot.c" - "LALMathNDPlot.c" -----------------------*/ 
 
-  /*NEWPAGE - TESTS INPUT - "LALMath3DPlotTest.c" -------------------------------------*/
+  /*NEWPAGE - TESTS INPUT - "LALMath3DPlotTest.c" - "LALMathNDPlotTest.c" -------------*/
     /* <lalLaTeX>
     \newpage\input{LALMath3DPlotTestC}
+    \newpage\input{LALMathNDPlotTestC}
     </lalLaTeX>
-    END - TESTS INPUT - "LALMath3DPlotTest.c" -----------------------------------------*/  
+    END - TESTS INPUT - "LALMath3DPlotTest.c" - "LALMathNDPlotTest.c" -----------------*/  
 
 /*END SECTION - HEADER - "LalMathematica.h" -------------------------------------------*/
 
@@ -207,7 +213,15 @@ typedef struct Math3DPointList{
   REAL4 z;  		
   REAL4 GrayLevel;		
   }Math3DPointList;  
+
+typedef struct MathNDPointList{
+  struct MathNDPointList *next;
+  REAL4Vector *coordinates;
+  INT4 dimension;
+  REAL4 GrayLevel;
+  } MathNDPointList;
 /* </lalVerbatim> */
+
 
 void  
 LALMath3DPlot( LALStatus *stat, 
