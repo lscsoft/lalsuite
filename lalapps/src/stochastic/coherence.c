@@ -1,7 +1,6 @@
 /*
- * stochastic.c - SGWB Standalone Analysis Pipeline
+ * coherence.c - SGWB Standalone Analysis Pipeline
  *
- * Adam Mercer <ram@star.sr.bham.ac.uk>
  * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  *
  * $Id$
@@ -56,7 +55,7 @@ RCSID ("$Id$");
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "lalapps_stochastic"
+#define PROGRAM_NAME "lalapps_coherence"
 
 /* variables for getopt options parsing */
 char *optarg;
@@ -624,7 +623,7 @@ void readDataPair(LALStatus *status,
   sampleRate = params->sampleRate;
 
   /* initialise status pointer */
-  INITSTATUS( status, "readDataPair", STOCHASTICC );
+  INITSTATUS( status, "readDataPair",COHERENCEC );
   ATTATCHSTATUSPTR( status );
 
   /* buffer start time */
