@@ -1,0 +1,67 @@
+.TH LALAPPS_MKCALFAC "22 January 2003" LALApps LALApps
+.SH NAME
+lalapps_mkcalfac - generates frame and ILWD calibration factor files
+
+.SH SYNOPSIS
+
+.B lalapps_mkcalfac
+.RB \-run
+.IR run
+.RB \-ifo 'H1'|'H2'|'L1'
+.IR file
+.RB [ [ \-ifo 'H1'|'H2'|'L1'
+.IR file2
+.RB ] ... ]
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_mkcalfac\fP generates frame-format and ILWD-format calibration
+factor files from a set of ascii-format files.
+
+The calibration factors, alpha and alpha x beta, are factors that represent a
+scale change in the gain of the sensing (cavity response) function and the 
+open-loop gain compared to an epoch when a point reference response was
+measured.  These gains are observed to drift with time, and it is necessary
+to use these factors to correct a reference closed-loop response function for
+the interferometer for time of interest.  The factors are determined by using
+injected calibration lines or by other means.
+
+For any given run (e.g., E7, S1, ...) there may be one (L1 at LLO) or two
+(H1 and H2 at LHO) interferometers operating at a given site.  Each
+interferometer has its own ascii-format calibration file.  However, the
+frame-format file containing the calibration factors must include all
+interferometers operating at that site.  Hence, it is possible to specify
+multiple ifos for a given run.  (See the examples below.)
+
+The ascii-format calibration files found at URL:
+http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html
+
+.SH OPTIONS
+.TP
+.BI \-run " run"
+Specify the run \fIrun\fP for the output file names, e.g., E7, S1, etc.
+.TP
+.BI \-ifo " ifo filename"
+Specify the interferometer \fIifo\fP (one of H1, H2, or L1) and the
+associated ascii-format file \fIfilename\fP
+
+.SH EXAMPLE
+.TP
+The command
+.PP
+.RS
+lalapps_mkcalfac -run S1 -ifo L1 S1-L1-CAL-FACTORS.txt
+.RE
+.PP
+will generate S1 calibration factor files for LLO from the ascii file
+S1-L1-CAL-FACTORS.txt.  The command
+.PP
+.RS
+lalapps_mkcalfac -run S1 -ifo H1 S1-H1-CAL-FACTORS.txt -ifo H2 S1-H2-CAL-FACTORS.txt
+.RE
+.PP
+will generate S1 calibration factor files for LHO from the ascii files
+S1-H1-CAL-FACTORS.txt and S1-H2-CAL-FACTORS.txt.
+
+.SH AUTHOR
+Jolien Creighton

@@ -1,0 +1,69 @@
+.TH LALAPPS_MKCALREF "22 January 2003" LALApps LALApps
+.SH NAME
+lalapps_mkcalref - generates frame and ILWD calibration reference files
+
+.SH SYNOPSIS
+
+.B lalapps_mkcalref
+.RB \-run
+.IR run
+.RB \-time
+.IR gpssec
+.RB \-ifo 'H1'|'H2'|'L1'
+.IR responsefile
+.IR sensingfile
+.RB [ [ \-ifo 'H1'|'H2'|'L1'
+.IR responsefile2
+.IR sensingfile2
+.RB ] ... ]
+
+.SH DESCRIPTION
+.PP
+\fIlalapps_mkcalref\fP generates frame-format and ILWD-format calibration
+reference files from a set of ascii-format files.
+
+The calibration reference files contain the complex response (closed-loop)
+function or the sensing (cavity response) function for a particular reference
+time.  These are necessary, along with the calibration factors, alpha and beta,
+to reconstruct the response function for some time of interest.
+
+For any given run (e.g., E7, S1, ...) there may be one (L1 at LLO) or two
+(H1 and H2 at LHO) interferometers operating at a given site.  Each
+interferometer has its own ascii-format calibration file.  However, the
+frame-format file containing the calibration factors must include all
+interferometers operating at that site.  Hence, it is possible to specify
+multiple ifos for a given run and reference time.  However, the precise
+time of calibration is likely to be different for the two interferometers
+at LHO, so, in practice, a given frame file will probably have only one
+interferometer's reference spectrum.
+
+The ascii-format calibration files found at URL:
+http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html
+
+.SH OPTIONS
+.TP
+.BI \-run " run"
+Specify the run \fIrun\fP for the output file names, e.g., E7, S1, etc.
+.TP
+.BI \-time " gpssec"
+Specify the GPS time \fIgpssec\fP of the reference calibration spectra.
+.TP
+.BI \-ifo " ifo responsefile sensingfile"
+Specify the interferometer \fIifo\fP (one of H1, H2, or L1) and the
+associated ascii-format files \fIresponsefile\fP (the response function)
+and \fIsensingfile\fP (the sensing function).
+
+.SH EXAMPLE
+.TP
+The command
+.PP
+.RS
+lalapps_mkcalref -run S1 -time 715388533 -ifo L1 S1-L1-CAL-RESPONSE.txt S1-L1-CAL-CAV_GAIN.txt
+.RE
+.PP
+will generate S1 calibration factor files for LLO from the ascii response file
+S1-L1-CAL-RESPONSE.txt and the ascii sensing file S1-L1-CAL-CAV_GAIN.txt, which
+were recorded at GPS time 715388533.
+
+.SH AUTHOR
+Jolien Creighton
