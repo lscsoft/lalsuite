@@ -476,6 +476,8 @@ tagInputPercentileWavelet
   REAL8TimeSeries *gamma;
   REAL4 nonZeroFraction;
   INT4 nsubintervals;
+  UINT4 offsetSec;
+  UINT4 extradeep;
 }
 InputPercentileWavelet;
 

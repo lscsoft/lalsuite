@@ -15,16 +15,21 @@ static int _getMaxLayer(Wavelet *wavelet);
 static UINT4 _limit(Slice s);
 static int _getLayer(REAL4TimeSeries **layerOut, int indx, Wavelet *wavelet);
 static void _putLayer(REAL4TimeSeries *layerData, int layer, Wavelet *wavelet);
-static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeries *right);
+static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, 
+					   REAL4TimeSeries *right);
 static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *right);
-static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4FrequencySeries *right);
-static void _assignCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **left, COMPLEX8FrequencySeries *right);
+static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,
+					REAL4FrequencySeries *right);
+static void _assignCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **left, 
+					   COMPLEX8FrequencySeries *right);
 static void _assignWavelet(Wavelet **left,Wavelet *right);
 static void _assignBlob(ClusterBlobWavelet *left, ClusterBlobWavelet * right);
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right);
 static void _unitCopy(LALUnit *source, LALUnit *destination);
-static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R, COMPLEX8FrequencySeries *C,
-		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma, ClusterWavelet *w);
+static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R, 
+		       COMPLEX8FrequencySeries *C,
+		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma, 
+		       ClusterWavelet *w, UINT4 offset);
 static void _initCOMPLEX8(COMPLEX8 *n, REAL4 a, REAL4 b);
 static void _plusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two, COMPLEX8 *result);
 static void _minusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
@@ -32,10 +37,13 @@ static void _multiplyCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
 static void _divideCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
 static REAL4 _normCOMPLEX8(COMPLEX8 *one);
 
-static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median);
+static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, 
+		  REAL4 *median, UINT4 offset);
 static void _whiteAlone(Wavelet *wavelet,
                         REAL4 **median,
-                        REAL4 **norm50, UINT4 k);
+                        REAL4 **norm50, UINT4 k, UINT4 offset);
+static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep);
+static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset);
 static void _createClusterWavelet(ClusterWavelet **w);
 static double _setMask(ClusterWavelet *wavelet, int nc, BOOLEAN aura);
 static void _pMaskPushBack(ClusterWavelet *wavelet, PixelWavelet *pix);
@@ -48,7 +56,8 @@ static int _clusterMain(ClusterWavelet *wavelet);
 static int _clusterR(ClusterWavelet *wavelet, int k);
 static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 steps_in_sublayer);
 
-static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input);
+static int _duplicateClusterStructure(OutputClusterWavelet *output, 
+				      InputReuseClusterWavelet *input);
 
 static BOOLEAN _allocateWavelet(Wavelet **wavelet);
 
@@ -83,9 +92,11 @@ static void _freeSpectrogram(Wavelet *w, REAL4 ***spectrogram);
 static void _predict(Wavelet *w, int level, int layer, const double *p_H);
 static void _update(Wavelet *w, int level, int layer, const double *p_L);
 static void _forward(Wavelet *w, int level, int layer);
-static void _forwardFWT(Wavelet *w, int level, int layer, const double *pLPF, const double *pHPF);
+static void _forwardFWT(Wavelet *w, int level, int layer, 
+			const double *pLPF, const double *pHPF);
 static void _inverse(Wavelet *w, int level, int layer);
-static void _inverseFWT(Wavelet *w, int level, int layer, const double *pLPF, const double *pHPF);
+static void _inverseFWT(Wavelet *w, int level, int layer, 
+			const double *pLPF, const double *pHPF);
 static double _Lagrange(const int n, const int i, const double x);
 static double _Nevill(const double x0, int n, double *p, double *q);
 static void _setFilter(Wavelet *w);
@@ -94,7 +105,7 @@ static void _setFilterS(Wavelet *w);
 static void _setFilterD(Wavelet *w);
 static void _setFilterH(Wavelet *w);
 static void _setFilterM(Wavelet *w);
-
+static void _writeWavelet(Wavelet *w, FILE *out);
 
 static const double dbc1[2]={0.70710678118655,0.70710678118655};
 
@@ -2164,10 +2175,10 @@ static void _freeOutCluster(OutputClusterWavelet **cl)
 }
 
 
-static void _calibrate(Wavelet*in, COMPLEX8FrequencySeries *R,
+static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R,
 		       COMPLEX8FrequencySeries *C,
 		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma,
-		       ClusterWavelet *w)
+		       ClusterWavelet *w, UINT4 offset)
 {
   UINT4 i, j, k, M;
   UINT4 j_start, m, m2;
@@ -2261,7 +2272,8 @@ static void _calibrate(Wavelet*in, COMPLEX8FrequencySeries *R,
 	  
 	  if(k==0) a->data->data[j] *= pR[0];
 	  else if(k >= w->nalpha) a->data->data[j] *= pR[w->nalpha - 1];  
-	  else a->data->data[j] *= pR[k] - ((REAL4)(j)-(REAL4)(k*m+m2))*(pR[k-1]-pR[k])/m;
+	  else a->data->data[j] *= pR[k] - 
+		 ((REAL4)(j)-(REAL4)(k*m+m2))*(pR[k-1]-pR[k])/m;
 	}
 
       _putLayer(a, i, in);
@@ -2308,7 +2320,7 @@ static REAL4 _normCOMPLEX8(COMPLEX8 *one)
 
 static void _whiteAlone(Wavelet *wavelet, 
 			REAL4 **median,
-			REAL4 **norm50, UINT4 k)
+			REAL4 **norm50, UINT4 k, UINT4 offset)
 {
   INT4 i, M;
   REAL4TimeSeries *a;
@@ -2321,18 +2333,21 @@ static void _whiteAlone(Wavelet *wavelet,
   for(i=0; i<M; i++)
     {
       _getLayer(&a,i,wavelet);
-      _white(k,a,*norm50+i*k,*median+i*k);
+      _white(k,a,*norm50+i*k,*median+i*k,offset);
       _putLayer(a, i, wavelet);
       _freeREAL4TimeSeries(&a);
     }
 }
 
-static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median)
+
+static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, 
+		  REAL4 *median, UINT4 offset)
 {
   UINT4 i,j;
   UINT4 n=data->data->length;
-  UINT4 m=n/k;
-  UINT4 m2=m/2;
+  UINT4 noffset = (UINT4)(offset/data->deltaT+0.5); 
+  UINT4 m=(n-2*noffset)/k;                         
+  UINT4 m2=m/2+noffset;                            
   REAL4 **aptr;
   REAL4 *p;
   REAL4 a,b;
@@ -2363,10 +2378,10 @@ static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median)
 	      fprintf(stderr,"_white i+j*m=%d i=%d, j=%d, m=%d\n",i+j*m,i,j,m);
 	      exit(1);
 	    }
-	  aptr[i]=data->data->data + i + j*m;
+	  aptr[i]=data->data->data + i + j*m + noffset; 
 	}
       qsort(aptr, m, sizeof(REAL4*),_compare);
-      median[j]=*aptr[m2];
+      median[j]=*aptr[m/2];                             
       norm50[j]=(*(aptr[mR]) - *(aptr[mL]))/2.;
       if(norm50[j]==0)
 	{
@@ -2390,7 +2405,8 @@ static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median)
 
 	  if(i + j*m + m2 >= data->data->length)
 	    {
-	      fprintf(stderr,"_white i+j*m+m2=%d i=%d, j=%d, m=%d m2=%d\n",i+j*m,i,j,m,m2);
+	      fprintf(stderr,"_white i+j*m+m2=%d i=%d, j=%d, m=%d m2=%d\n",
+		      i+j*m,i,j,m,m2);
 	      exit(1);
 	    }
 
@@ -2407,6 +2423,105 @@ static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median)
   return 0;
 }
 
+
+static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep)
+{
+  static LALStatus status;
+  Inputt2wWavelet in1;
+  Outputt2wWavelet *out1=(Outputt2wWavelet *)LALCalloc(1,sizeof(Outputt2wWavelet));
+  Inputw2tWavelet in2;
+  Outputw2tWavelet *out2=(Outputw2tWavelet *)LALCalloc(1,sizeof(Outputw2tWavelet));
+  UINT4 M, i, j;
+  REAL4 *rms=NULL;
+  REAL4 norm;
+  REAL4TimeSeries *a;
+  UINT4 split;
+
+  in1.w=*in;
+  in1.ldeep=extradeep;
+  LALt2wWavelet(&status,&in1,&out1);
+
+  M=_getMaxLayer(out1->w)+1;
+  split=1<<extradeep;
+
+  rms=(REAL4*)LALCalloc(M,sizeof(REAL4));
+
+  for(i=0;i<M;i++)
+    {
+      _getLayer(&a, i, out1->w);
+      rms[i]=_computeRMS(a,offset);
+      /*      printf("rms[%d]=%f\n",i,rms[i]);*/
+      for(j=0;j<a->data->length;j++)
+	{
+	  a->data->data[j]/=rms[i];
+	}
+      _putLayer(a, i, out1->w);
+      _freeREAL4TimeSeries(&a);
+    }
+  
+  in2.w=out1->w;
+  in2.ldeep=extradeep;
+  LALw2tWavelet(&status,&in2,&out2);
+
+  M=_getMaxLayer(out2->w)+1;
+
+  for(i=0;i<M;i++)
+    {
+      norm=0.0;
+      for(j=0;j<split;j++)
+	{
+	  norm+=1/pow(rms[i*split+j],2);
+	}
+      norm=sqrt(split/norm);
+      /*      printf("-->norm[%d]=%f\n",i,norm);fflush(stdout);*/
+      for(j=0;j<w->nsubintervals;j++)
+	{
+	  w->norm50[i*w->nsubintervals+j]*=norm;
+	}
+    }
+
+  _freeWavelet(in);
+  _assignWavelet(in,out2->w);
+  LALFree(rms);
+  _freeWavelet(&out1->w);
+  _freeWavelet(&out2->w);
+  LALFree(out1);
+  LALFree(out2);
+}
+
+static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset)
+{
+  REAL4 result;
+  REAL4 **aptr;
+  UINT4 noffset=(UINT4)(offset/a->deltaT + 0.5);
+  UINT4 m=a->data->length-2*noffset;
+  UINT4 mL, mR;
+  UINT4 i;
+
+  aptr=(REAL4**)LALCalloc(m,sizeof(REAL4*));
+  for(i=0;i<m;i++)
+    {
+      aptr[i]=a->data->data+i+noffset;
+    }
+  /*
+  printf("_computeRMS: after aptr init m=%d noffset=%d\n",m,noffset);fflush(stdout);
+  */
+  qsort(aptr, m, sizeof(REAL4*),_compare);
+  /*
+  printf("_computeRMS: after qsort\n");fflush(stdout);
+  */
+  mL=0.1565*m+0.5;
+  mR=m-mL;
+  result=(*(aptr[mR]) - *(aptr[mL]))/2.;
+  /*
+  printf("_computeRMS: after result\n");fflush(stdout);
+  */
+  LALFree(aptr);
+  /*
+  printf("_computeRMS: after LALFree\n");fflush(stdout);
+  */
+  return result;
+}
 
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
 			  BOOLEAN keepAmplitudes, 
@@ -2842,11 +2957,11 @@ static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 time_steps_in_sublayer)
 
       if(w->pMask[w->cList[number][i]]->core && freq!=0)
 	{
-	  noise+=w->norm50[gindex]*w->norm50[gindex];
+	  noise+=1/(w->norm50[gindex]*w->norm50[gindex]);
 	}
     }
 
-  return sqrt(noise/w->coreSize[number]);
+  return 1/sqrt(noise/w->coreSize[number]);
 }
 
 static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan)
@@ -3742,7 +3857,7 @@ static void _setFilterS(Wavelet *w)
       case 30: pF = sym30; w->HPFilterLength = 60; break;
       default: pF =  sym4; w->HPFilterLength =  8; break;
    }
-   
+
    w->pLInverse = (REAL8*)LALCalloc(w->HPFilterLength,sizeof(REAL8));
    w->pLForward = (REAL8*)LALCalloc(w->HPFilterLength,sizeof(REAL8));
    w->pHInverse = (REAL8*)LALCalloc(w->HPFilterLength,sizeof(REAL8));
@@ -3844,9 +3959,11 @@ static void _setFilterM(Wavelet *w)
   w = NULL;
 }
 
-static void _forwardFWT(Wavelet *w, int level, int layer, const double *pLPF, const double *pHPF)
+static void _forwardFWT(Wavelet *w, int level, int layer, 
+			const double *pLPF, const double *pHPF)
 {
-  const int nS = w->data->data->length>>level;           /* number of samples in the layer*/
+  const int nS = 
+    w->data->data->length>>level;           /* number of samples in the layer*/
   const int kL = -((int)w->HPFilterLength/2-1);               /* k left limit */
   const int iL = nS-(int)w->HPFilterLength;                   /* i left limit */
   const int iR = nS-(int)w->HPFilterLength/2-1;	         /* i right limit */
@@ -4228,5 +4345,31 @@ static void _unitCopy(LALUnit *source, LALUnit *destination)
       destination->unitDenominatorMinusOne[i]=source->unitDenominatorMinusOne[i];
     }
 }
+
+static void _writeWavelet(Wavelet *w, FILE *out)
+{
+  UINT4 i;
+  fprintf(out,"%d\n",w->type);
+  fprintf(out,"%d\n",w->border);
+  fprintf(out,"%d\n",w->treeType);
+  fprintf(out,"%d\n",w->level);
+  fprintf(out,"%d\n",w->HPFilterLength);
+  fprintf(out,"%d\n",w->LPFilterLength);
+  fprintf(out,"%s\n",w->data->name);
+  fprintf(out,"%d\n",w->data->epoch.gpsSeconds);
+  fprintf(out,"%d\n",w->data->epoch.gpsNanoSeconds);
+  fprintf(out,"%f\n",w->data->deltaT);
+  fprintf(out,"%f\n",w->data->f0);
+  fprintf(out,"%d\n",w->data->data->length);
+
+  for(i=0;i<w->data->data->length;i++)
+    {
+      fprintf(out,"%f ",w->data->data->data[i]);
+    }
+  fprintf(out,"\n\n");
+  fflush(stdout);
+}
+
+
 
 #endif

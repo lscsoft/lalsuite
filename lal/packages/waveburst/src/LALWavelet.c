@@ -123,7 +123,8 @@ LALPercentileWavelet( LALStatus *status,
 		      InputPercentileWavelet  *input)
 /******** </lalVerbatim> ********/
 {
-
+  InputTimeIntervalWavelet in;
+  OutputTimeIntervalWavelet out;
 
   INITSTATUS( status, "LALPercentileWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
@@ -135,13 +136,30 @@ LALPercentileWavelet( LALStatus *status,
   _createClusterWavelet(&(*output)->out);
   (*output)->out->nsubintervals=input->nsubintervals;
 
-  _calibrate(input->in, input->R, input->C, input->alpha, input->gamma, (*output)->out);
+  _calibrate(input->in, input->R, input->C, input->alpha, input->gamma, 
+	     (*output)->out, input->offsetSec);
 
   _whiteAlone(input->in, &(*output)->out->medians, 
-	      &(*output)->out->norm50, (*output)->out->nsubintervals);
+	      &(*output)->out->norm50, (*output)->out->nsubintervals, input->offsetSec);
 
-  _assignWavelet(&((*output)->out->wavelet),input->in);
+  _waveFilter(&input->in, (*output)->out, input->offsetSec, input->extradeep);
 
+  in.w=input->in;
+  in.offsetSec=input->offsetSec;
+  in.offsetNan=0;
+  in.durationSec=(int)(input->in->data->data->length*input->in->data->deltaT + 0.5) - 
+    2*input->offsetSec;
+  in.durationNan=0;
+  in.type=TIME_INTERVAL_WAVELET;
+  
+  LALGetTimeIntervalWavelet(status->statusPtr,
+			    &out, &in);
+  CHECKSTATUSPTR(status);
+
+  _assignWavelet(&((*output)->out->wavelet), out.w);
+
+  _freeWavelet(&input->in);
+  _assignWavelet(&input->in,out.w);
 
   (*output)->out->nonZeroFractionAfterPercentile=
     _percentile((*output)->out->wavelet, input->nonZeroFraction, 
@@ -149,7 +167,8 @@ LALPercentileWavelet( LALStatus *status,
 		&(*output)->out->norm10L, &(*output)->out->norm10R);
 
 
-  if(fabs((*output)->out->nonZeroFractionAfterPercentile - input->nonZeroFraction) > maxError1)
+  if(fabs((*output)->out->nonZeroFractionAfterPercentile - 
+	  input->nonZeroFraction) > maxError1)
     {
         ABORT( status, LALWAVELETH_EDIFF, LALWAVELETH_MSGEDIFF );
     } 
@@ -1360,6 +1379,9 @@ void LALt2wWavelet(LALStatus *status,
 
   _assignWavelet(&((*output)->w),input->w);
 
+  if((*output)->w->PForward==NULL && 
+    (*output)->w->pLForward==NULL) _setFilter((*output)->w);
+
   maxLevel = _getMaxLevel((*output)->w,(*output)->w->data->data->length);
   
   levs = (*output)->w->level;
@@ -1398,6 +1420,9 @@ void LALw2tWavelet(LALStatus *status,
 
   _assignWavelet(&((*output)->w),input->w);
 
+  if((*output)->w->PForward==NULL &&
+     (*output)->w->pLForward==NULL) _setFilter((*output)->w);
+
   levs = (*output)->w->level;
   levf = (*output)->w->level - input->ldeep;
   if((input->ldeep == -1) || (levf < 0)) levf = 0;
@@ -1407,7 +1432,17 @@ void LALw2tWavelet(LALStatus *status,
       layf = ((*output)->w->treeType==1) ? 1<<level : 1;
       
       for(layer=0; layer<layf; layer++)
-	_inverse((*output)->w,level,layer);
+	{
+	  /*
+	  printf("Before: level=%d levs=%d ldeep=%d levf=%d layf=%d layer=%d\n",
+		 level,levs,input->ldeep,levf,layf,layer);fflush(stdout);
+	  */
+	  _inverse((*output)->w,level,layer);
+	  /*
+	  printf("After:\n");fflush(stdout);
+	  */
+	}
+      
       
       (*output)->w->level=level;
       
@@ -1440,19 +1475,30 @@ LALGetTimeIntervalWavelet(LALStatus *status,
 
   if(input->type==TIME_INTERVAL_WAVELET)
     {
-      input->offsetSteps=(int)((input->offsetSec+input->offsetNan*pow(10,-9))/input->w->data->deltaT + 0.5);
-      input->durationSteps=(int)((input->durationSec+input->durationNan*pow(10,-9))/input->w->data->deltaT + 0.5);
+      input->offsetSteps=
+	(int)((input->offsetSec+
+	       input->offsetNan*pow(10,-9))/input->w->data->deltaT + 0.5);
+      input->durationSteps=
+	(int)((input->durationSec + 
+	       input->durationNan*pow(10,-9))/input->w->data->deltaT + 0.5);
     }
   if(input->type==STEP_INTERVAL_WAVELET)
     {
       input->offsetSec=(int)(input->offsetSteps*input->w->data->deltaT + 0.5);
-      input->offsetNan=(int)((input->offsetSteps*input->w->data->deltaT-input->offsetSec)*pow(10,9) + 0.5);
+      input->offsetNan=
+	(int)((input->offsetSteps*input->w->data->deltaT - 
+	       input->offsetSec)*pow(10,9) + 0.5);
     }
  
-  if( (input->offsetSteps + input->durationSteps)  > input->w->data->data->length )
+  if( (input->offsetSteps + input->durationSteps)  > 
+      input->w->data->data->length )
     {
-
-      ABORT(status, LALWAVELETH_EOUTOFBOUNDS, LALWAVELETH_MSGEOUTOFBOUNDS);
+      char mess[LALNameLength];
+      sprintf(mess,"offsetSteps=%d durationSteps=%d length=%d\n",
+              input->offsetSteps, input->durationSteps,
+	      input->w->data->data->length);
+      /*      ABORT(status, LALWAVELETH_EOUTOFBOUNDS, LALWAVELETH_MSGEOUTOFBOUNDS);*/
+      ABORT(status, LALWAVELETH_EOUTOFBOUNDS, mess);
     }
 
   interval.seconds=input->offsetSec;
