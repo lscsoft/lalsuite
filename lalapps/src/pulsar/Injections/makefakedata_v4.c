@@ -54,12 +54,8 @@ int parseR4(FILE *fp, char* vname, REAL4 *data, const CHAR *fname);
 int parseR8(FILE *fp, char* vname, REAL8 *data, const CHAR *fname);
 int parseI4(FILE *fp, char* vname, INT4 *data, const CHAR *fname);
 
-
-/* make it a bit easier for us to register all the user-variables in a constistent way */
-#define regUserVar(name,type,option,help) LALRegisterUserVar(stat, #name, type, option, help, &(uvar_ ## name)) 
-
 void initUserVars (LALStatus *stat);
-void read_timestamps (LALStatus* status, LIGOTimeGPSVector **timestamps);
+void read_timestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *fname);
 
 
 /*----------------------------------------------------------------------*/
@@ -141,6 +137,7 @@ main(int argc, char *argv[])
       CHAR *helpstring = NULL;
       LAL_CALL (LALUserVarHelpString (&status, &helpstring), &status);
       printf ("\n%s\n", helpstring);
+      return (0);
     }
   
   /* ------------------------------
@@ -189,7 +186,7 @@ main(int argc, char *argv[])
   if (uvar_timestampsname) 
     {
       LIGOTimeGPS t1, t0;
-      LAL_CALL (read_timestamps (&status, &timestamps), &status);
+      LAL_CALL (read_timestamps (&status, &timestamps, uvar_timestampsname), &status);
       t1 = timestamps->data[uvar_nTsft-1];
       t0 = timestamps->data[0];
       LAL_CALL (LALDeltaFloatGPS(&status, &duration, &t1, &t0), &status);
@@ -264,6 +261,8 @@ main(int argc, char *argv[])
 
 
   /* free memory */
+  LAL_CALL (freemem(&status), &status);
+
 
   LALCheckMemoryLeaks(); 
 
@@ -272,10 +271,11 @@ main(int argc, char *argv[])
 
 
 /* This routine frees up all the memory */
-void freemem(LALStatus* stat)
+void freemem (LALStatus* stat)
 {
 
   INITSTATUS( stat, "freemem", rcsid );
+
   ATTATCHSTATUSPTR (stat);
 
   DETATCHSTATUSPTR (stat);
@@ -286,7 +286,7 @@ void freemem(LALStatus* stat)
 
 /*reads timestamps file and fills-in timestamps vector*/
 void
-read_timestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps)
+read_timestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fname)
 {  
   FILE *fp;
   UINT4 i;
@@ -295,9 +295,11 @@ read_timestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps)
   INITSTATUS( stat, "read_timestamps", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (uvar_timestampsname, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  ASSERT (fname, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  ASSERT (timestamps, stat, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (*timestamps == NULL, stat, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 
-  if ( (fp = fopen( uvar_timestampsname, "r")) == NULL) {
+  if ( (fp = fopen( fname, "r")) == NULL) {
     LALPrintError("Unable to open timestampsname file %s\n", uvar_timestampsname);
     ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
   }
@@ -400,34 +402,34 @@ initUserVars (LALStatus *stat)
 {
   INITSTATUS( stat, "initUserVars", rcsid );
 	      
-  regUserVar(inDataFilename,	UVAR_STRING, 'i', "Name of input parameter file");
-  regUserVar(freqbasefilename, 	UVAR_STRING, 'n', "Basefilename of output SFT files");
-  regUserVar(timebasefilename, 	UVAR_STRING, 't', "Basefilename of output STRAIN files");
-  regUserVar(detector, 		UVAR_STRING, 'I', "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
-  regUserVar(startTime, 	UVAR_REAL8,  'G', "Detector GPS time to start data");
-  regUserVar(refTime, 		UVAR_REAL8,  'S', "Reference time tRef at which pulsar is defined");
-  regUserVar(ephemDir, 		UVAR_STRING, 'E', "Directory path for ephemeris files");
-  regUserVar(noiseDir, 		UVAR_STRING, 'D', "Directory with noise-SFTs");
-  regUserVar(doWindowing, 	UVAR_BOOL,   'w', "Window data in time domain before doing FFT");
-  regUserVar(binaryoutput, 	UVAR_BOOL,   'b', "Output time-domain data in IEEE754 binary format");
-  regUserVar(nomagic, 		UVAR_BOOL,   'm', "DON'T output 1234.5 before time-domain binary samples");
-  regUserVar(debug, 		UVAR_INT4,   'v', "set debug-level");
-  regUserVar(help, 		UVAR_BOOL,   'h', "Print this help/usage message");
-  regUserVar(Tsft, 		UVAR_REAL8,  'T', "SFT time baseline Tsft");
-  regUserVar(nTsft, 		UVAR_INT4,   'N', "Number of SFTs nTsft");
-  regUserVar(fmin, 		UVAR_REAL8,  'F', "minimum frequency fmin of output SFT");
-  regUserVar(Band, 		UVAR_REAL8,  'B', "bandwidth of output SFT");
-  regUserVar(sigma, 		UVAR_REAL8,  's', "noise variance sigma");
-  regUserVar(aPlus, 		UVAR_REAL8,  'a', "Plus polarization amplitude aPlus");
-  regUserVar(aCross, 		UVAR_REAL8,  'x', "Cross polarization amplitude aCross");
-  regUserVar(psi, 		UVAR_REAL8,  'P', "Polarization angle psi");
-  regUserVar(phi0, 		UVAR_REAL8,  'p', "Initial phase phi");
-  regUserVar(f0, 		UVAR_REAL8,  'f', "Pulsar frequency f0 at tRef");
-  regUserVar(latitude, 		UVAR_REAL8,  'a', "Declination [radians] delta of pulsar");
-  regUserVar(longitude, 	UVAR_REAL8,  'd', "Right ascension [radians] alpha of pulsar");
-  regUserVar(f1dot, 		UVAR_REAL8,  '1', "First spindown parameter f'");
-  regUserVar(f2dot, 		UVAR_REAL8,  '2', "Second spindown parameter f''");
-  regUserVar(f3dot, 		UVAR_REAL8,  '3', "Third spindown parameter f'''");
+  regSTRINGUserVar(stat, inDataFilename,  	'i', "Name of input parameter file");
+  regSTRINGUserVar(stat, freqbasefilename,	'n', "Basefilename of output SFT files");
+  regSTRINGUserVar(stat, timebasefilename,	't', "Basefilename of output STRAIN files");
+  regSTRINGUserVar(stat, detector,        	'I', "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
+  regREALUserVar(stat,   startTime,	    	'G', "Detector GPS time to start data");
+  regREALUserVar(stat,   refTime, 		'S', "Reference time tRef at which pulsar is defined");
+  regSTRINGUserVar(stat, ephemDir,		'E', "Directory path for ephemeris files");
+  regSTRINGUserVar(stat, noiseDir,		'D', "Directory with noise-SFTs");
+  regBOOLUserVar(stat,   doWindowing, 		'w', "Window data in time domain before doing FFT");
+  regBOOLUserVar(stat,   binaryoutput,		'b', "Output time-domain data in IEEE754 binary format");
+  regBOOLUserVar(stat,   nomagic,		'm', "DON'T output 1234.5 before time-domain binary samples");
+  regINTUserVar(stat,    debug,			'v', "set debug-level");
+  regBOOLUserVar(stat,   help,			'h', "Print this help/usage message");
+  regREALUserVar(stat,   Tsft, 			'T', "SFT time baseline Tsft");
+  regINTUserVar(stat,    nTsft,			'N', "Number of SFTs nTsft");
+  regREALUserVar(stat,   fmin,			'F', "minimum frequency fmin of output SFT");
+  regREALUserVar(stat,   Band,			'B', "bandwidth of output SFT");
+  regREALUserVar(stat,   sigma,			's', "noise variance sigma");
+  regREALUserVar(stat,   aPlus,			'a', "Plus polarization amplitude aPlus");
+  regREALUserVar(stat,   aCross, 		'x', "Cross polarization amplitude aCross");
+  regREALUserVar(stat,   psi,  			'P', "Polarization angle psi");
+  regREALUserVar(stat,   phi0,			'p', "Initial phase phi");
+  regREALUserVar(stat,   f0,  			'f', "Pulsar frequency f0 at tRef");
+  regREALUserVar(stat,   latitude, 		'a', "Declination [radians] delta of pulsar");
+  regREALUserVar(stat,   longitude,		'd', "Right ascension [radians] alpha of pulsar");
+  regREALUserVar(stat,   f1dot,  		'1', "First spindown parameter f'");
+  regREALUserVar(stat,   f2dot,  		'2', "Second spindown parameter f''");
+  regREALUserVar(stat,   f3dot,  		'3', "Third spindown parameter f'''");
 
   RETURN (stat);
 
