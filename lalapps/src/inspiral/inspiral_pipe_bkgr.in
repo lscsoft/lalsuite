@@ -23,14 +23,14 @@ sys.path.append('@PYTHONLIBDIR@')
 import pipeline, inspiral
 
 def add_ifo1_file(inca,data,s_chunk,ifo1_bn):
-"""
-Go through the science segments in data and get the chunks that overlap with
-the slid chunks. Add them to the input of inca with the correct file name.
-inca = inca dag node to add the jobs to.
-data = unslid data to search.
-s_chunk = slid chunk to use when searching.
-ifo1_bn = base name of ifo 1 inspiral jobs.
-"""
+  """
+  Go through the science segments in data and get the chunks that overlap with
+  the slid chunks. Add them to the input of inca with the correct file name.
+  inca = inca dag node to add the jobs to.
+  data = unslid data to search.
+  s_chunk = slid chunk to use when searching.
+  ifo1_bn = base name of ifo 1 inspiral jobs.
+  """
   for seg in data:
     for chunk in seg:
       if (
@@ -121,9 +121,9 @@ for o, a in opts:
   elif o in ("-j", "--injections"):
     do_inj = 1
   elif o in ("-s", "--slide-time"):
-    slide_data = int(a)
+    slide_sec = int(a)
   elif o in ("-n", "--slide-time-ns"):
-    slide_data = int(a)
+    slide_ns = int(a)
   elif o in ("-p", "--playground-only"):
     playground_only = 1
   elif o in ("-P", "--priority"):
@@ -235,10 +235,10 @@ data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
 
 # create a set of slid science segments and chunks
 s_data = pipeline.ScienceData()
-s_data.read(cp.get('input','segments'),length)
-s_data.slide(slide_sec)
-s_data.make_chunks(length,overlap,playground_only)
-s_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+s_data.read(cp.get('input','segments'),length,slide_sec)
+s_data.make_chunks(length,overlap,playground_only,slide_sec)
+s_data.make_chunks_from_unused(
+  length,overlap/2,playground_only,overlap/2,slide_sec)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -263,11 +263,11 @@ for s_seg in s_data:
   # create the name of the cache file for the second ifo
   df2 = inspiral.DataFindNode(df_job)
   if slide_sec > 0:
-    df2.set_start(seg.start() - pad - slide_sec)
-    df2.set_end(seg.end() + pad)
-  else:
-    df2.set_start(seg.start() - pad)
-    df2.set_end(seg.end() + pad + abs(slide_sec))
+    df2.set_start(s_seg.start() - pad - slide_sec)
+    df2.set_end(s_seg.end() + pad)
+  elif slide_sec < 0:
+    df2.set_start(s_seg.start() - pad)
+    df2.set_end(s_seg.end() + pad + slide_sec)
   df2.set_ifo(ifo2)
   
   # clear the inspiral nodes in this segment
@@ -386,7 +386,7 @@ print >> log_fh, "\n===========================================\n"
 print >> log_fh, s_data
 for s_seg in s_data:
   print >> log_fh, s_seg
-  for chunk in seg:
+  for s_chunk in s_seg:
     print >> log_fh, s_chunk
 
 sys.exit(0)
