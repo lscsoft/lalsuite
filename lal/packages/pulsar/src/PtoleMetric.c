@@ -156,9 +156,9 @@ ASSERT( input->maxFreq > MIN_MAXFREQ, status, PTOLEMETRICH_EPARM,
           PTOLEMETRICH_MSGEPARM );
 
 /* Check for valid detector location. */
-ASSERT( abs(input->site.vertexLatitudeRadians) <= LAL_PI_2, status,
+ASSERT( abs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
 	PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-ASSERT( abs(input->site.vertexLongitudeRadians) <= LAL_PI, status,
+ASSERT( abs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
 	PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
 /* Check that metric has been provided. */
@@ -174,8 +174,8 @@ ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
 /* Detector location: */
-lat = input->site.vertexLatitudeRadians;
-lon = input->site.vertexLongitudeRadians;
+lat = input->site->frDetector.vertexLatitudeRadians;
+lon = input->site->frDetector.vertexLongitudeRadians;
 cos_l = cos(lat);
 sin_l = sin(lat);
 sin_2l = sin(2*lat);
