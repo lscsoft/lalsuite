@@ -208,7 +208,7 @@ typedef enum {
   LALDETECTORTYPE_IFOXARM,      /* IFO in one-armed mode (X arm) */
   LALDETECTORTYPE_IFOYARM,      /* IFO in one-armed mode (Y arm) */
   LALDETECTORTYPE_IFOCOMM,      /* IFO in common mode */
-  LALDETECTORTYPE_CYLBAR,       /* Cylindrical Bar */
+  LALDETECTORTYPE_CYLBAR        /* Cylindrical Bar */
   /* SPHEREMONO,    Resonant Sphere in l=0 mode */
   /* SPHEREQUAD0,   Resonant sphere in l=2, m=0 mode */
   /* SPHEREQUAD1S,  Resonant sphere in l=2, m=+/-1 (sine) mode */

@@ -133,7 +133,7 @@ typedef enum
   MST_SEC,       /* arc seconds */
   MST_HRS,       /* arc hours (i.e. units of Right Ascension) */
   MST_DEG,       /* degrees */
-  MST_RAD,       /* radians */
+  MST_RAD        /* radians */
 } LALMSTUnits;
 
 /* <lalLaTeX>
