@@ -11,6 +11,10 @@
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/TFTransform.h>
+#include <lal/RingSearch.h>
 #include <lal/FindChirpEngine.h>
 
 NRCSID( FINDCHIRPSLAVEC, "$Id$" );
@@ -349,15 +353,15 @@ LALFindChirpSlave (
     {
       DataSegment    *currentDataSeg = dataSegVec->data;
 
-      /* REAL4   dynRange   = params->dataParams->dynRange; */
-
       REAL8   deltaT = currentDataSeg->chan->deltaT;
-      REAL8   deltaF = currentDataSeg->spec->deltaF;
+      REAL8   deltaF = currentDataSeg->resp->deltaF;
 
       UINT4   tdLength = currentDataSeg->chan->data->length;
-      UINT4   fdLength = currentDataSeg->spec->data->length;
+      UINT4   fdLength = currentDataSeg->resp->data->length;
 
+      /* strain PSD should be scaled by this factor so it fits in a REAL4 */
       REAL8   psdFactor = 9.0e-46;
+
       REAL8   minPsd;
       REAL4   response;
       REAL4   transfer;
@@ -366,6 +370,12 @@ LALFindChirpSlave (
       if ( params->simParams->simType == fcBankMinimalMatch )
       {
         InspiralEvent  *loudestEvent = NULL;
+
+        /* check that we have been passed a strain PSD by the datacondAPI */
+        if ( ! params->haveSpec )
+        {
+          ABORT( status, FINDCHIRPENGINEH_ESPEC, FINDCHIRPENGINEH_MSGESPEC );
+        }
 
         /* create storeage for loudest event and (s|s) for each segment */
         loudestEvent = params->simParams->loudestEvent = (InspiralEvent *)
@@ -385,7 +395,6 @@ LALFindChirpSlave (
           PPNParamStruc ppnParams;
           REAL4         mass1, mass2;
           REAL4        *data = currentDataSeg->chan->data->data;
-          /* REAL4        *spec = currentDataSeg->spec->data->data; */
           COMPLEX8     *resp = currentDataSeg->resp->data->data;
 
           /* set the next pointers in the array so ExchInspiralEvent    */
@@ -399,19 +408,6 @@ LALFindChirpSlave (
           memset( data, 0, tdLength * sizeof(REAL4) );
           for( k = 0; k < fdLength ; ++k )
           {
-#if 0
-            REAL8 psd;
-            REAL8 freq = (REAL8) k * deltaF;
-            if ( freq < params->dataParams->fLow )
-            {
-              spec[k] = minPsd;
-            }
-            else
-            {
-              LALLIGOIPsd( NULL, &psd, freq );
-              spec[k] = (REAL4) psd;
-            }
-#endif
             resp[k].re = response;
             resp[k].im = 0.0;
           }
@@ -465,7 +461,6 @@ LALFindChirpSlave (
             REAL8 dx = 1.0;
             REAL8 xMax = waveform.a->data->length - 1;
             REAL8 *phiData = waveform.phi->data->data;
-            /* REAL4 *fData = waveform.f->data->data; */
             REAL4 *aData = waveform.a->data->data;
             for ( x = 0.0, t = 0.0 ; x < xMax; x += dx, t += ppnParams.deltaT ) 
             {
@@ -562,6 +557,9 @@ LALFindChirpSlave (
           resp[k].im = 0.0;
           spec[k] = spectrum;
         }
+
+        /* we have created a psd. don't recreate it later */
+        params->haveSpec = 1;
       }
 
       /* if ConditionData() has created any events to inject, inject them */
@@ -579,6 +577,165 @@ LALFindChirpSlave (
       {
         params->dataConditioned = 0;
       }
+
+      /* unless this is a minimal match or a gaussian noise simulation, */
+      /* (re)bandpass the data and (re)compule the psd                  */
+      if ( params->simParams->simType != fcBankMinimalMatch &&
+          params->simParams->simType != fcGaussianNoise &&
+          params->simParams->simType != fcGaussianNoiseInject )
+      {
+        params->haveSpec = 0;
+      }
+    }
+
+
+   /*
+    *
+    * band pass the data to get rid of low frequency crap
+    *
+    */
+
+    
+    if ( ! params->bandPassed )
+    {
+      REAL4                     fsafety = 0;
+      PassBandParamStruc        highpassParam;
+      REAL4TimeSeries          *rawChannel;
+
+      if ( params->simParams && params->simParams->injectEvent )
+      {
+        rawChannel = params->simParams->chan;
+      }
+      else
+      {
+        rawChannel = (REAL4TimeSeries *) 
+          LALCalloc( 1, sizeof(REAL4TimeSeries) );
+        memcpy( rawChannel, dataSegVec->data->chan, sizeof(REAL4TimeSeries) );
+        rawChannel->data = &(params->dataChannel);
+      }
+
+      /* Set up for a highpass filter */
+      highpassParam.nMax = 4;
+      fsafety = params->dataParams->fLow - 10.0;
+      highpassParam.f1 = fsafety > 150.0 ? 150.0 : fsafety;
+      highpassParam.f2 = -1.0;
+      highpassParam.a1 = 0.1;
+      highpassParam.a2 = -1.0;
+      
+      LALButterworthREAL4TimeSeries( status->statusPtr, 
+          rawChannel, &highpassParam );
+      CHECKSTATUSPTR (status);
+
+      params->bandPassed = 1;
+    }
+
+
+   /*
+    *
+    * compute the PSD of the input data
+    *
+    */
+
+
+    if ( ! params->haveSpec )
+    {
+      REAL4TimeSeries          *chanPtr = dataSegVec->data->chan;
+      REAL4FrequencySeries     *specPtr = dataSegVec->data->spec;
+      REAL4                     deltaT = chanPtr->deltaT;
+      UINT4                     tdLength = chanPtr->data->length;
+      UINT4                     fdLength = tdLength / 2 + 1;
+      RAT4                      negRootTwo = { -1, 1 };
+      LALUnit                   unit;
+      LALUnitPair               pair;
+      RealFFTPlan              *fftPlan = NULL;
+
+      /* set the spectrum frequency series parameters */
+      specPtr->epoch.gpsSeconds = chanPtr->epoch.gpsSeconds;
+      specPtr->epoch.gpsNanoSeconds = chanPtr->epoch.gpsNanoSeconds;
+      specPtr->f0 = 0;
+      specPtr->deltaF = 1.0 / ((REAL8) chanPtr->data->length * deltaT);
+      specPtr->sampleUnits = lalADCCountUnit;
+      pair.unitOne = &lalADCCountUnit;
+      pair.unitTwo = &lalHertzUnit;
+      TRY( LALUnitRaise( status->statusPtr, &unit, 
+            pair.unitTwo, &negRootTwo ), status );
+      pair.unitTwo = &unit;
+      TRY( LALUnitMultiply( status->statusPtr, &(specPtr->sampleUnits),
+            &pair ), status );
+
+      LALCreateForwardRealFFTPlan( status->statusPtr, &fftPlan, tdLength, 0);
+      CHECKSTATUSPTR( status );
+
+      if ( params->specType == fcSpecMean )
+      {
+        /* compute a mean power spectrum estimate from the data */
+        COMPLEX8Sequence         *segmentFFT = NULL;
+        LALWindowParams           windowParams;
+        REAL4 psdnorm = ( 2.0 * deltaT ) / (REAL4) dataSegVec->length;
+
+        fprintf( stdout, "creating mean power spectrum\n" );
+        fflush( stdout );
+
+        memset( &windowParams, 0, sizeof(LALWindowParams) );
+        windowParams.type   = Hann;
+        windowParams.length = tdLength;
+
+        LALCCreateVector( status->statusPtr, &segmentFFT, fdLength );
+        CHECKSTATUSPTR( status );
+        
+        memset( specPtr->data->data, 0, fdLength * sizeof(REAL4) );
+
+        for ( i = 0; i < dataSegVec->length; ++i )
+        {
+          /* compute the fft of each data segment */
+          LALForwardRealFFT( status->statusPtr, segmentFFT, 
+              dataSegVec->data[i].chan->data, fftPlan );
+          CHECKSTATUSPTR (status);
+
+          for ( k = 0; k < fdLength; ++k )
+          {
+            REAL4 fftRe = segmentFFT->data[k].re;
+            REAL4 fftIm = segmentFFT->data[k].im;
+            specPtr->data->data[k] += fftRe * fftRe + fftIm * fftIm;
+            
+          }
+        }
+
+        for ( k = 0; k < fdLength; ++k )
+        {
+          specPtr->data->data[k] = sqrt( specPtr->data->data[k] ) * psdnorm;
+        }
+
+        LALCDestroyVector( status->statusPtr, &segmentFFT );
+        CHECKSTATUSPTR( status );
+      }
+      else if ( params->specType == fcSpecMedian )
+      {
+        /* compute a median power spectrum estimate from the data */
+        AvgSpecParams           avgParams;
+        REAL4TimeSeries         dataChanF;
+
+        fprintf( stdout, "creating median power spectrum\n" );
+        fflush( stdout );
+
+        memcpy( &dataChanF, chanPtr, sizeof(REAL4TimeSeries) );
+        dataChanF.data = &(params->dataChannel);
+
+        avgParams.segsize = tdLength;
+        avgParams.fwdplan = fftPlan;
+
+        LALMedianSpectrum( status->statusPtr, specPtr, &dataChanF, &avgParams );
+        CHECKSTATUSPTR( status );
+      }
+      else
+      {
+        ABORT( status, FINDCHIRPENGINEH_ESTPE, FINDCHIRPENGINEH_MSGESTPE );
+      }
+
+      LALDestroyRealFFTPlan (status->statusPtr, &fftPlan );
+      CHECKSTATUSPTR (status);
+
+      params->haveSpec = 1;
     }
 
 
@@ -588,6 +745,12 @@ LALFindChirpSlave (
     *
     */
 
+
+    /* check that we generated a PSD by now as we can't proceed without one */
+    if ( ! params->haveSpec )
+    {
+      ABORT( status, FINDCHIRPENGINEH_ESPEC, FINDCHIRPENGINEH_MSGESPEC );
+    }
 
     /* eventually there will be a choice of ways to condition the data based */
     /* on the type of template used (stationary phase, time domain, etc.)    */

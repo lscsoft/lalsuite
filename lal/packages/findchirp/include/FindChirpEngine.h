@@ -87,6 +87,8 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_EUSIM 13
 #define FINDCHIRPENGINEH_EWAVL 14
 #define FINDCHIRPENGINEH_EHETR 15
+#define FINDCHIRPENGINEH_ESPEC 16
+#define FINDCHIRPENGINEH_ESTPE 17
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -102,6 +104,8 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGEUSIM "Unkown simulation type requested"
 #define FINDCHIRPENGINEH_MSGEWAVL "Simulated waveform is longer than dataseg"
 #define FINDCHIRPENGINEH_MSGEHETR "Attempting to simulate heterodyned GW"
+#define FINDCHIRPENGINEH_MSGESPEC "Strain power spectral density missing"
+#define FINDCHIRPENGINEH_MSGESTPE "Unknown power spectrum estimation method"
 /* </lalErrTable> */
 
 
@@ -158,6 +162,14 @@ using the parameters in the \texttt{FindChirpSimulationParams} structure.
 \end{description}
 </lalLaTeX>
 #endif
+
+typedef enum
+{
+  fcSpecDatacond,
+  fcSpecMean,
+  fcSpecMedian
+}
+FindChirpSpecType;
 
 
 /* --- structure for managing a list of inspiral templates --------------- */
@@ -241,6 +253,10 @@ FindChirpStandardCandle;
 typedef struct
 tagFindChirpSlaveParams
 {
+  UINT4                         bandPassed;
+  UINT4                         haveSpec;
+  REAL4Sequence                 dataChannel;
+  FindChirpSpecType             specType;
   UINT4                         dataConditioned;
   UINT4                        *inspiralDebugFlagPtr;
   REAL4                        *rhosqThreshVec;
