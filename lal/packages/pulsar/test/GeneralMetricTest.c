@@ -192,6 +192,7 @@ int main( int argc, char *argv[] ) {
   float           c_ellipse;        /* Centers of ellipses */
   float           r_ellipse;        /* Radii of ellipses */
   REAL8           determinant;      /* Determinant of projected metric */
+  REAL4           f0;               /* carrier frequency */
 
   /* Defaults that can be overwritten: */
   metric_code = 1;
@@ -208,10 +209,11 @@ int main( int argc, char *argv[] ) {
   ra_max = 90;
   dec_min = 0;
   dec_max = 85;
+  f0 = 1000;
 
 
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "a:b:c:d:el:m:pt:x" )) != -1) {
+  while ((opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pt:x" )) != -1) {
     switch (opt) {
     case 'a':
       metric_code = atoi( optarg );
@@ -232,6 +234,9 @@ int main( int argc, char *argv[] ) {
       break;
     case 'e':
       lalDebugLevel = 1;
+      break;
+    case 'f':
+      f0 = atof( optarg );
       break;
     case 'l':
       if( sscanf( optarg, "%d:%d:%d:%d", 
@@ -279,7 +284,7 @@ int main( int argc, char *argv[] ) {
   /* Communal constants */
   in.position.longitude = tevlambda->data[1] = ra_point;
   in.position.latitude = tevlambda->data[2] = dec_point;
-  in.maxFreq = tevlambda->data[0] = 1e3;
+  in.maxFreq = tevlambda->data[0] = f0;
 
   /* Detector choice */
   if(detector==1)
