@@ -289,7 +289,7 @@ static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end
 }
 
 
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, SimBurstTable **injection, struct options_t options)
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
 {
 	FILE *infile;
 	char line[MAXSTR];
@@ -302,11 +302,12 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, SimBur
 	if (!(infile = fopen(filename, "r")))
 		LALPrintError("Could not open input file\n");
 
+	*timeAnalyzed = 0;
 	while(getline(line, MAXSTR, infile)) {
 		if(options.verbose)
 			fprintf(stderr, "Working on file %s\n", line);
 
-		read_search_summary_start_end(line, &start, &end, NULL);
+		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
 
 		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
 		while (*injectionaddpoint)
@@ -433,6 +434,7 @@ int main(int argc, char **argv)
 	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
 	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detEventList = NULL, *detTrigList = NULL, *prevTrig = NULL;
+	INT4 timeAnalyzed;
 
 	/* injections */
 	SimBurstTable *simBurstList = NULL;
@@ -606,7 +608,7 @@ int main(int argc, char **argv)
    * search summary tables.
    *****************************************************************/
 
-	burstEventList = read_trigger_list(&stat, inputFile, &simBurstList, options);
+	burstEventList = read_trigger_list(&stat, inputFile, &timeAnalyzed, &simBurstList, options);
 
   /****************************************************************
    * do any requested cuts and sort the remaining triggers
@@ -685,11 +687,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-
-	/* Uncomment the line if have read in the searchsummary info. above */
-	/*fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
-	   timeAnalyzed/3600); */
-
+	fprintf(stdout,"%d sec = %d hours analyzed\n", timeAnalyzed, timeAnalyzed/3600);
 	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
 	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
 
