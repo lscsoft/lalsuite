@@ -598,6 +598,7 @@ LALFindChirpSlave (
     
     if ( ! params->bandPassed )
     {
+#if 0
       REAL4                     fsafety = 0;
       PassBandParamStruc        highpassParam;
       REAL4TimeSeries          *rawChannel;
@@ -625,6 +626,7 @@ LALFindChirpSlave (
       LALButterworthREAL4TimeSeries( status->statusPtr, 
           rawChannel, &highpassParam );
       CHECKSTATUSPTR (status);
+#endif
 
       params->bandPassed = 1;
     }
@@ -647,7 +649,6 @@ LALFindChirpSlave (
       RAT4                      negRootTwo = { -1, 1 };
       LALUnit                   unit;
       LALUnitPair               pair;
-      RealFFTPlan              *fftPlan = NULL;
 
       /* set the spectrum frequency series parameters */
       specPtr->epoch.gpsSeconds = chanPtr->epoch.gpsSeconds;
@@ -663,50 +664,58 @@ LALFindChirpSlave (
       TRY( LALUnitMultiply( status->statusPtr, &(specPtr->sampleUnits),
             &pair ), status );
 
-      LALCreateForwardRealFFTPlan( status->statusPtr, &fftPlan, tdLength, 0);
-      CHECKSTATUSPTR( status );
-
       if ( params->specType == fcSpecMean )
       {
         /* compute a mean power spectrum estimate from the data */
-        COMPLEX8Sequence         *segmentFFT = NULL;
-        LALWindowParams           windowParams;
-        REAL4 psdnorm = ( 2.0 * deltaT ) / (REAL4) dataSegVec->length;
+        COMPLEX8FrequencySeries   segmentFFT;
+        LALWindowParams           winParams;
+        RealDFTParams            *dftParams = NULL;
 
         fprintf( stdout, "creating mean power spectrum\n" );
         fflush( stdout );
 
-        memset( &windowParams, 0, sizeof(LALWindowParams) );
-        windowParams.type   = Hann;
-        windowParams.length = tdLength;
+        memset( &segmentFFT, 0, sizeof(COMPLEX8FrequencySeries) );
+        memset( &winParams, 0, sizeof(LALWindowParams) );
 
-        LALCCreateVector( status->statusPtr, &segmentFFT, fdLength );
+        winParams.type   = Rectangular;
+        winParams.length = tdLength;
+
+        LALCCreateVector( status->statusPtr, &(segmentFFT.data), fdLength );
         CHECKSTATUSPTR( status );
         
         memset( specPtr->data->data, 0, fdLength * sizeof(REAL4) );
 
+        LALCreateRealDFTParams( status->statusPtr , &dftParams, &winParams, 1 );
+        CHECKSTATUSPTR( status );
+
         for ( i = 0; i < dataSegVec->length; ++i )
         {
           /* compute the fft of each data segment */
-          LALForwardRealFFT( status->statusPtr, segmentFFT, 
-              dataSegVec->data[i].chan->data, fftPlan );
+          LALComputeFrequencySeries( status->statusPtr, &segmentFFT, 
+              dataSegVec->data[i].chan, dftParams );
           CHECKSTATUSPTR (status);
 
           for ( k = 0; k < fdLength; ++k )
           {
-            REAL4 fftRe = segmentFFT->data[k].re;
-            REAL4 fftIm = segmentFFT->data[k].im;
+            REAL4 fftRe = segmentFFT.data->data[k].re;
+            REAL4 fftIm = segmentFFT.data->data[k].im;
             specPtr->data->data[k] += fftRe * fftRe + fftIm * fftIm;
-            
           }
         }
 
-        for ( k = 0; k < fdLength; ++k )
+        /* renormalize the psd to conventions document standard */
         {
-          specPtr->data->data[k] = sqrt( specPtr->data->data[k] ) * psdnorm;
+          REAL4 psdnorm = ( 2.0 * deltaT ) / (REAL4) dataSegVec->length;
+          for ( k = 0; k < fdLength; ++k )
+          {
+            specPtr->data->data[k] *= psdnorm;
+          }
         }
 
-        LALCDestroyVector( status->statusPtr, &segmentFFT );
+        LALDestroyRealDFTParams( status->statusPtr , &dftParams );
+        CHECKSTATUSPTR( status );
+
+        LALCDestroyVector( status->statusPtr, &(segmentFFT.data) );
         CHECKSTATUSPTR( status );
       }
       else if ( params->specType == fcSpecMedian )
@@ -714,26 +723,35 @@ LALFindChirpSlave (
         /* compute a median power spectrum estimate from the data */
         AvgSpecParams           avgParams;
         REAL4TimeSeries         dataChanF;
+        RealFFTPlan            *fftPlan = NULL;
 
         fprintf( stdout, "creating median power spectrum\n" );
         fflush( stdout );
+
+        LALCreateForwardRealFFTPlan( status->statusPtr, &fftPlan, tdLength, 0);
+        CHECKSTATUSPTR( status );
 
         memcpy( &dataChanF, chanPtr, sizeof(REAL4TimeSeries) );
         dataChanF.data = &(params->dataChannel);
 
         avgParams.segsize = tdLength;
         avgParams.fwdplan = fftPlan;
+        avgParams.wintype = Rectangular;
+
+        fprintf( stdout, "passing %d points of data at %p to spec calc\n", 
+            dataChanF.data->length, dataChanF.data->data );
+        fflush( stdout );
 
         LALMedianSpectrum( status->statusPtr, specPtr, &dataChanF, &avgParams );
         CHECKSTATUSPTR( status );
+
+        LALDestroyRealFFTPlan (status->statusPtr, &fftPlan );
+        CHECKSTATUSPTR (status);
       }
       else
       {
         ABORT( status, FINDCHIRPENGINEH_ESTPE, FINDCHIRPENGINEH_MSGESTPE );
       }
-
-      LALDestroyRealFFTPlan (status->statusPtr, &fftPlan );
-      CHECKSTATUSPTR (status);
 
       params->haveSpec = 1;
     }

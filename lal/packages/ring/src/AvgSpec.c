@@ -63,6 +63,10 @@ LALMedianSpectrum(
     ABORT( status, RINGSEARCHH_ENSEG, RINGSEARCHH_MSGENSEG );
   }
   numseg = 2 * input->data->length / segsz - 1;
+  if ( numseg < 2 )
+  {
+    ABORT( status, RINGSEARCHH_ELSEG, RINGSEARCHH_MSGELSEG );
+  }
 
   /* set up metadata first */
   output->epoch    = input->epoch;
@@ -126,7 +130,7 @@ LALMedianSpectrum(
   ENDFAIL( status );
 
   /* compute window function */
-  wpar.type = Hann;
+  wpar.type = params->wintype;
   wpar.length = segsz;
   LALWindow( status->statusPtr, window, &wpar );
   BEGINFAIL( status )

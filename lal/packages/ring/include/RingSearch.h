@@ -24,6 +24,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/RealFFT.h>
+#include <lal/Window.h>
 #include <lal/Ring.h>
 
 #ifdef __cplusplus
@@ -47,6 +48,7 @@ NRCSID( RINGSEARCHH, "$Id$" );
 #define RINGSEARCHH_EFLOW 00200
 #define RINGSEARCHH_EFREQ 00400
 #define RINGSEARCHH_EQUAL 01000
+#define RINGSEARCHH_ELSEG 02000
 
 #define RINGSEARCHH_MSGENULL "Null pointer"
 #define RINGSEARCHH_MSGENNUL "Non-null pointer"
@@ -58,6 +60,7 @@ NRCSID( RINGSEARCHH, "$Id$" );
 #define RINGSEARCHH_MSGEFLOW "Invalid low frequency cutoff"
 #define RINGSEARCHH_MSGEFREQ "Invalid bank frequency range"
 #define RINGSEARCHH_MSGEQUAL "Invalid bank quality range"
+#define RINGSEARCHH_MSGELSEG "Less than two segments in data"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -253,6 +256,7 @@ tagAvgSpecParams
 {
   UINT4        segsize;
   RealFFTPlan *fwdplan;
+  WindowType   wintype;
 }
 AvgSpecParams;
 /**** </lalVerbatim> */
@@ -264,6 +268,7 @@ AvgSpecParams;
  * \begin{description}
  * \item[\texttt{segsize}] The size of each segment of data.
  * \item[\texttt{fwdplan}] Forward real FFT plan for that segment size.
+ * \item[\texttt{wintype}] type of window to apply to FFT.
  * \end{description}
  *
  **** </lalLaTeX> */
