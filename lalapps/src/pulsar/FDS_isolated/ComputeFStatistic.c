@@ -403,7 +403,7 @@ initUserVars (LALStatus *stat)
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
-  uvar_metricType = LAL_METRIC_NONE;
+  uvar_metricType =  LAL_METRIC_PTOLE_ANALYTIC;
   uvar_gridType = GRID_FLAT;
 
   uvar_metricMismatch = 0.02;
