@@ -286,7 +286,7 @@ or a similar function, that gives a grid in $(\psi_0, \psi_3)$ space.
 \begin{itemize}
    \item \texttt{list,} Output/Input, an array initially containing the template 
    bank with the values of {\tt list[j]->psi0, list[j]->psi3, list[j]->fLower,} specified,
-   is replaced on return with a re-sized array specifying also {\tt list->fendBCV.}
+   is replaced on return with a re-sized array specifying also {\tt list->fFinal.}
    \item \texttt{Nlist,} Output/Input, the number of templates in the Input bank is
    replaced by the number of templates in the output bank.
    \item \texttt{numFcutTemplates,} Input, the largest number of templates for the
@@ -323,11 +323,11 @@ masses are found to be real. However, we do not demand that the
 symmetric mass ratio is less than a quarter. If the total mass 
 is non-negative then we compute the $(f_{\rm lso}, f_{\rm lr})$
 and choose a user specified {\tt numFcutTemplates} number of 
-templates with their cutoff frequency {\tt list->fendBCV} defined
+templates with their cutoff frequency {\tt list->fFinal} defined
 uniformly spaced in the range $[f_{\rm lso},\ f_{\rm lr}].$
 
 Furthermore, this routine discards all templates for which
-either the mass is not defined or, when defined, {\tt list->fendBCV} is
+either the mass is not defined or, when defined, {\tt list->fFinal} is
 smaller than the user defined lower frequency cutoff or larger
 than the Nyquist frequency of templates.
 Thus, the number of templates returned by this routine could 
@@ -884,7 +884,7 @@ LALInspiralBCVFcutBank (
       UINT4 i;
       REAL8 fMin, fMax, df; 
 
-      fMax = (*list)[j].params.fendBCV;
+      fMax = (*list)[j].params.fFinal;
       df = fMax * frac;
       /* not used for the moment */
       fMin = fMax * ( 1.L - ((REAL8) nf - 1.L) * df );
@@ -903,16 +903,14 @@ LALInspiralBCVFcutBank (
         {
           ++ndx;
 
-          *list = (InspiralTemplateList *) 
+	    *list = (InspiralTemplateList *) 
             LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
           if ( ! *list )
           {
             ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
           }
-
           memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
           (*list)[ndx-1] = (*list)[j];
-          (*list)[ndx-1].params.fendBCV = fendBCV;
           (*list)[ndx-1].params.fFinal = fendBCV;
           (*list)[ndx-1].metric = (*list)[0].metric;
         }
@@ -926,7 +924,6 @@ LALInspiralBCVFcutBank (
   }
 
   *NList = ndx - nlist;
-
   *list = LALRealloc( *list, *NList * sizeof(InspiralTemplateList) );
   if ( ! *list )
   {
@@ -959,7 +956,7 @@ PSItoMasses (
     eta = params->eta = 
       3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
     totalMass = params->totalMass;
-    params->fendBCV = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
+    params->fFinal = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
     params->totalMass /= LAL_MTSUN_SI;
     *valid = 1;
 
