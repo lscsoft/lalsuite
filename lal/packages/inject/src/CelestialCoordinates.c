@@ -36,10 +36,13 @@ intermediate step.
 
 \subsubsection*{Algorithm}
 
-These routines follow the formulae on p.~13 of~\cite{Lang_K:1998},
-which we reproduce below; these are also found in Sec.~12.3
-of~\cite{GRASP_1.9.8:2000}.  All positions are assumed to be in the
-J2000 epoch.
+These routines follow the spherical angle relations on p.~13
+of~\cite{Lang_K:1999}.  Note that the actual formulae for Galactic
+longitude and right ascension in this reference are wrong; we give
+corrected formulae below derived from the sine and cosine equations.
+(The Galactic to equatorial transformations can also be found in
+Sec.~12.3 of~\cite{GRASP_1.9.8:2000}.)  All positions are assumed to
+be in the J2000 epoch.
 
 \paragraph{Galactic coordinates:} The following formulae relate
 Galactic latitude $b$ and longitude $l$ to declination $\delta$ and
@@ -65,8 +68,9 @@ transformations are:
 \delta & = & \arcsin[\cos b\cos\delta_\mathrm{NGP}\sin(l-l_\mathrm{ascend}) +
 		\sin b\sin\delta_\mathrm{NGP}] \;,\\
 \alpha & = & \arctan\!2[\cos b\cos(l-l_\mathrm{ascend}),
-		\cos b\sin(l-l_\mathrm{ascend})
-		- \sin b\cos\delta_\mathrm{NGP}] \nonumber\\
+		\sin b\cos\delta_\mathrm{NGP} -
+		\cos b\sin(l-l_\mathrm{ascend})\sin\delta_\mathrm{NGP}]
+		\nonumber\\
 \label{eq:alpha-galactic}
 & & \quad + \; \alpha_\mathrm{NGP} \;.
 \end{eqnarray}
@@ -171,7 +175,7 @@ LALGalacticToEquatorial( LALStatus   *stat,
   /* Compute components. */
   sinD = cosB*cosDGal*sinL + sinB*sinDGal;
   sinA = cosB*cosL;
-  cosA = cosB*sinL - sinB*cosDGal;
+  cosA = sinB*cosDGal - cosB*sinL*sinDGal;
 
   /* Compute final results. */
   output->system = COORDINATESYSTEM_EQUATORIAL;

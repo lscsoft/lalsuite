@@ -18,7 +18,7 @@ Provides routines to convert among various sky coordinate systems.
 This header covers routines to perform coordinate transformations
 among the various spherical coordinate systems used in astronomy.
 Most of these routines are discussed in Sec.~5.1
-of~\cite{Lang_K:1998}; we reproduce here some of the essential
+of~\cite{Lang_K:1999}; we reproduce here some of the essential
 elements of this discussion.
 
 \begin{wrapfigure}{r}{0.55\textwidth}
@@ -116,7 +116,7 @@ direction perpendicular from the Earth's rotation axis to a reference
 point in Greenwich, UK (the \emph{prime meridian}.  Note that we adopt
 a longitude convention that is consistent with the
 \textit{Astronomical Almanac}, but opposite to that
-in~\cite{Lang_K:1998}, in that our geographic longitudes increase
+in~\cite{Lang_K:1999}, in that our geographic longitudes increase
 \emph{eastward} (counterclockwise) like the rest of our longitudinal
 coordinates.
 
@@ -441,7 +441,7 @@ LALConvertSkyCoordinates( LALStatus        *,
 			  ConvertSkyParams *params );
 
 /* <lalLaTeX>
-%\newpage\input{SkyCoordinatesTestC}
+\newpage\input{SkyCoordinatesTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus

@@ -91,7 +91,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 { /* </lalVerbatim> */
   SkyPosition temp; /* temporary sky position (duh) */
 
-  INITSTATUS( stat, "LALGalacticToEquatorial", SKYCOORDINATESC );
+  INITSTATUS( stat, "LALConvertSkyCoordinates", SKYCOORDINATESC );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */
@@ -122,7 +122,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 	  else
 	    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
 	} else
-	  ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+	  ABORT( stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
       } else
 	TRY( LALGeographicToEquatorial( stat->statusPtr, &temp, &temp,
 					params->gpsTime ), stat );
