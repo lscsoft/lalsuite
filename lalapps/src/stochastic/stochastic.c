@@ -1027,7 +1027,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		responseTempTwo.epoch = gpsStartTime;
                 
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-					ifoOne), &status );
+					ifoOne, $duration), &status );
 
 		if ((status.statusCode !=0)||(responseTempOne.data==NULL))
 		  {
@@ -1040,7 +1040,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                          
                
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo), &status );
+					ifoTwo, $duration), &status );
                 
                 if ((status.statusCode !=0)||(responseTempTwo.data==NULL))
 		  {
@@ -1087,12 +1087,12 @@ INT4 main(INT4 argc, CHAR *argv[])
         		MCresponseTwo.epoch = gpsStartTime;
                 
 			LAL_CALL( LALExtractFrameResponse(&status, &MCresponseOne, calCacheOne, \
-					ifoOne), &status );
+					ifoOne, &duration), &status );
 			
 		    
                
 			LAL_CALL( LALExtractFrameResponse(&status, &MCresponseTwo, calCacheTwo, \
-					ifoTwo), &status );
+					ifoTwo, &duration), &status );
 
                         /* force DC to be 0 and nyquist to be real */
         	       	MCresponseOne.data->data[0].re = 0.;
