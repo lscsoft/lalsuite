@@ -901,6 +901,10 @@ void parse_command_line(
 	 * Convert the start and stop times to LIGOTimeGPS structures.
 	 */
 
+	if(gpsStartTimeNS > gpsStopTimeNS) {
+		fprintf(stderr, "%s: error: GPS start time > GPS stop time\n", argv[0]);
+		exit(1);
+	}
 	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
 	LAL_CALL(LALINT8toGPS(&stat, &options.stopEpoch, &gpsStopTimeNS), &stat);
 
