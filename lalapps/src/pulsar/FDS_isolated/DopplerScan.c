@@ -973,7 +973,7 @@ buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegi
   DopplerScanGrid head = empty_grid;  /* empty head to start grid-list */
   DopplerScanGrid *node = NULL;
 
-  INITSTATUS( stat, "makeFlatGrid", DOPPLERSCANC );
+  INITSTATUS( stat, "buildFlatGrid", DOPPLERSCANC );
 
   ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);

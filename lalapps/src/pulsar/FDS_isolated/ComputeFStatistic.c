@@ -100,6 +100,9 @@ CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
+
+/* try this */
+BOOLEAN uvar_openDX;
 /*----------------------------------------------------------------------*/
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
@@ -264,7 +267,9 @@ int main(int argc,char *argv[])
   scanInit.skyRegion = GV.skyRegion;
   scanInit.skyGridFile = uvar_skyGridFile;
 
+  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status);
+  if (lalDebugLevel) LALPrintError ("done.\n");
 
   if ( uvar_outputSkyGrid ) {
     LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
@@ -272,13 +277,38 @@ int main(int argc,char *argv[])
     LALPrintError (" done.\n\n");
   }
   
-  if (uvar_outputFstat)
-    if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
-      {
-	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	exit(-1);
-      }
+  if (uvar_outputFstat) 
+    {
+      if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  exit(-1);
+	}
+      if ( uvar_openDX )	/* prepend openDX header */
+	{
+	  UINT4 nFreq, nAlpha, nDelta;
+	  nFreq = GV.FreqImax;
+	  nAlpha = (UINT4)(uvar_AlphaBand / uvar_dAlpha) + 1;
+	  nDelta = (UINT4)(uvar_DeltaBand / uvar_dDelta) + 1;
 
+	  /* regular grid or not? */
+	  if ( uvar_gridType == GRID_FLAT )
+	    fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
+	  else
+	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
+
+	  fprintf (fpOut, 
+		   "format = ascii\n"
+		   "field = locations, Fstat\n"
+		   "structure = 3-vector, scalar\n"
+		   "dependency = positions, positions\n"
+		   "interleaving = field\n"
+		   "end\n" );
+	}
+      
+    } /* if outputFstat */
+
+  if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -306,7 +336,7 @@ int main(int argc,char *argv[])
 	  }
 	  
 	  /* now, if user requested it, we output ALL F-statistic results */
-	  if (uvar_outputFstat && fpOut)
+	  if (fpOut) 
 	    {
 	      INT4 i;
 	      for(i=0;i < GV.FreqImax ;i++)
@@ -339,9 +369,7 @@ int main(int argc,char *argv[])
 	  }
 	  
 	  if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-	    fprintf(stderr, "%s: trouble making files Fmax"
-		    "and/or Fstats\n", argv[0]);	  
-	  fflush(stderr);
+	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 	  
 	  if (highFLines != NULL && highFLines->Nclusters > 0){
 	    LALFree(maxIndex);
@@ -357,6 +385,8 @@ int main(int argc,char *argv[])
 
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
+
+  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
 
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -418,6 +448,7 @@ initUserVars (LALStatus *stat)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
+  uvar_openDX = FALSE;	/* write openDX-compatible output-file */
 
   uvar_skyGridFile = NULL;
 
@@ -454,6 +485,8 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
   LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+
+  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1174,7 +1207,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   /* do some sanity checks on the user-input before we proceed */
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
-      LALPrintError ( "\nMust use -D or -B option.\n"
+      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
 		      "Try ./ComputeFStatistic -h \n\n");
@@ -1183,7 +1216,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
-      LALPrintError ( "\nCannot use -D option with -B option.\n"
+      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
 		      "Try ./ComputeFStatistic -h \n\n" );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      

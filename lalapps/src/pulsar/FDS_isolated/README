@@ -1,6 +1,12 @@
-----------------------------------------------------------------------
-Codes for pulsar-search in the frequency domain and related codes.
-----------------------------------------------------------------------
+% -*- mode: text -*-
+
+Pulsar-search in the frequency domain and related codes.
+-------------------------------------------------------
+
+ComputeFStatistic: for a summary of the command-line and config-file
+		   options, use with the command-line argument
+		   "--help" or "-h", and see the file
+		   "cfs_example.cfg" for more details.  
 
 
 FILES:
