@@ -33,8 +33,14 @@ inspiral signals on the data. The resulting triggers are written in an xml
 file.
 
 There is also the capability of outputting the raw data before and after the
-injections, the response function, the uncalibrated power spectrum, the snr
-and the chisq time series, all in frame files.
+injections, the response function, the uncalibrated power spectrum, the snr,
+the chisq time series, and the complex C time series required by the coherent
+code, all in frame files.
+
+\texttt{lalapps\_coherent\_inspiral}: Takes C data frame files as 
+outputted by inspiral.c for up to 4 detectors and constructs the optimal 
+coherent SNR time series.  Triggers are written to an xml file and the time 
+series is written out as a frame file.
 
 \subsection{Triggered Template Bank, Trigger Coincidence and Time Slides}
 
