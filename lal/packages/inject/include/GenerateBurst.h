@@ -42,10 +42,12 @@ NRCSID( GENERATEBURSTH, "$Id$" );
 #define GENERATEBURSTH_ENUL 1
 #define GENERATEBURSTH_EOUT 2
 #define GENERATEBURSTH_EMEM 3
+#define GENERATEBURSTH_ETYP 4
 
 #define GENERATEBURSTH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATEBURSTH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATEBURSTH_MSGEMEM "Out of memory"
+#define GENERATEBURSTH_MSGETYP "Waveform type not implemented"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsection*{Types}
@@ -75,21 +77,9 @@ waveform
 
 /******************************************** <lalVerbatim> */
 typedef struct tagBurstParamStruc {
-  /* Passed parameters. */
-  SkyPosition position; /* location of source on sky */
-  REAL4 psi;            /* polarization angle (radians) */
   LIGOTimeGPS epoch;    /* start time of output time series */
-
-  /* Input parameters. */
   REAL8 deltaT;         /* requested sampling interval (s) */
   UINT4 length;         /* length of time series */
-  REAL4 hrss;           /* root sum square amplitude */
-
-  /* Waveform dependent parameters */
-  SimBurstType burstType;  /* the type of burst to inject */
-  REAL8 f0;               /* central frequency for sine-gaussian      */
-  REAL8 tau;              /* decay time for (sine-)gaussian envelope  */
-
 } BurstParamStruc;
 /******************************************** </lalVerbatim> */
 
@@ -108,16 +98,10 @@ void
 LALGenerateBurst( 
     LALStatus          *stat, 
     CoherentGW         *output, 
+    SimBurstTable      *simBurst,
     BurstParamStruc    *params 
     );
 
-/* <lalLaTeX>
-\newpage\input{SimulateTaylorCWTestC}
-</lalLaTeX> */
-
-/* <lalLaTeX>
-\newpage\input{BurstInjectSignalsCC}
-</lalLaTeX> */
 void
 LALBurstInjectSignals( 
     LALStatus               *stat, 
@@ -125,10 +109,6 @@ LALBurstInjectSignals(
     SimBurstTable           *injections,
     COMPLEX8FrequencySeries *resp
     );
-
-/* <lalLaTeX>
-\newpage\input{SimulateTaylorCWTestC}
-</lalLaTeX> */
 
 #ifdef  __cplusplus
 #pragma {
