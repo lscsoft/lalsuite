@@ -15,24 +15,24 @@ Converts an input stream into a time or frequency series.
 \vspace{0.1in}
 \begin{verbatim}
 void
-LAL<typecode>ReadTimeSeries( LALStatus            *stat,
-                             <datatype>TimeSeries *series,
-                             FILE                 *stream )
+LAL<typecode>ReadTSeries( LALStatus            *stat,
+                          <datatype>TimeSeries *series,
+                          FILE                 *stream )
 
 void
-LAL<typecode>ReadTimeVectorSeries( LALStatus                  *stat,
-                                   <datatype>TimeVectorSeries *series,
-                                   FILE                       *stream )
+LAL<typecode>ReadTVectorSeries( LALStatus                  *stat,
+                                <datatype>TimeVectorSeries *series,
+                                FILE                       *stream )
 
 void
-LAL<typecode>ReadTimeArraySeries( LALStatus                 *stat,
-                                  <datatype>TimeArraySeries *series,
-                                  FILE                      *stream )
+LAL<typecode>ReadTArraySeries( LALStatus                 *stat,
+                               <datatype>TimeArraySeries *series,
+                               FILE                      *stream )
 
 void
-LAL<typecode>ReadFrequencySeries( LALStatus                 *stat,
-                                  <datatype>FrequencySeries *series,
-                                  FILE                      *stream )
+LAL<typecode>ReadFSeries( LALStatus                 *stat,
+                          <datatype>FrequencySeries *series,
+                          FILE                      *stream )
 \end{verbatim}
 
 \idx{LALI2ReadTimeSeries()}

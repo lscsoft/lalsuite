@@ -122,7 +122,7 @@ LALCreateTokenList( LALStatus  *stat,
     ABORT( stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
   }
   if ( !( (*list)->tokens =
-	  (CHAR **)LALMalloc( ( nTokens + 1 )*sizeof(CHAR) ) ) ) {
+	  (CHAR **)LALMalloc( ( nTokens + 1 )*sizeof(CHAR *) ) ) ) {
     LALFree( *list );
     *list = NULL;
     LALFree( copy );
