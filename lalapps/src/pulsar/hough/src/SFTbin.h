@@ -177,6 +177,14 @@ NRCSID (SFTBINH, "$Id$");
     REAL8        *rightWing; /* width to the right */
   } LineNoiseInfo; 
 
+  typedef struct tagLineHarmonicsInfo{
+    INT4         nLines; /* number of sets of harmonics */
+    REAL8        *startFreq; /* starting frequency of set */
+    REAL8        *gapFreq;  /* frequency difference between adjacent harmonics */
+    REAL8        *leftWing; /* width to the left of each line in set */
+    REAL8        *rightWing; /* width to the right */
+  } LineHarmonicsInfo; 
+
 /*
  * 11. Extern Global variables. (discouraged) 
  */
@@ -210,15 +218,26 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
 		   COMPLEX16SFTData1    *sft		   
 		   );
 
+void FindNumberHarmonics (LALStatus           *status,
+			  LineHarmonicsInfo   *harmonicInfo,
+			  CHAR                *fname
+			  );
+
+void  ReadHarmonicsInfo (LALStatus          *status,
+			 LineHarmonicsInfo  *lineInfo,
+			 CHAR               *fname
+			 );
+
+
 void FindNumberLines (LALStatus        *status,
-			LineNoiseInfo    *lineInfo,
-			CHAR             *fname
-			);
+		      LineNoiseInfo    *lineInfo,
+		      CHAR             *fname
+		      );
 
 void ReadLineInfo (LALStatus        *status,
-		     LineNoiseInfo  *lineInfo,
-		     CHAR           *fname
-		     );
+		   LineNoiseInfo  *lineInfo,
+		   CHAR           *fname
+		   );
 
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       COMPLEX8SFTData1   *sft,

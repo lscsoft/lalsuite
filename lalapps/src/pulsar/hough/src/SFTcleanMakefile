@@ -1,0 +1,71 @@
+# ------------------------------------------------------------
+#
+# Makefile for  SFTbin.. and the like
+#
+# Alicia M. Sintes  05-2003
+#
+# $Id$
+#
+# -----------------------------------------------------------
+
+
+# -----------------------------------------------------------
+# determine architecture
+OSType=`uname`
+hello=`date`
+
+# -----------------------------------------------------------
+# your compiler
+CC = gcc
+
+#CC = gcc -DCHECKHOUGHINDEX
+
+# -----------------------------------------------------------
+# header file directory
+LAL_INCLUDE=/afs/aeiw/grawave/Linux/lal/correct/include/
+
+# -----------------------------------------------------------
+# libraries
+
+LAL_LIB = /afs/aeiw/grawave/Linux/lal/lib
+
+LLAL = lal
+LALSUP = lalsupport
+
+THELIBS = -l$(LALSUP) -l$(LLAL) -lm -L$(LAL_LIB)
+
+p=./timer/cycle_counter/Intel/GCC/
+
+# ----------------------------------------------------------
+# compiler options
+
+CFLAGS =  -Wall -g -static -I$(LAL_INCLUDE) -I$p
+
+# -----------------------------------------------------------
+# default target
+all: SFTclean
+
+# -----------------------------------------------------------
+#  produce object files
+
+SFTbin.o: SFTbin.c SFTbin.h 
+	$(CC) -c $(CFLAGS)  SFTbin.c
+
+
+SFTclean.o: SFTclean.c SFTbin.h 
+	$(CC) -c $(CFLAGS) SFTclean.c
+
+# -----------------------------------------------------------
+# link tests code
+# -----------------------------------------------------------
+
+SFTclean: SFTbin.o SFTclean.o
+	$(CC) $(CFLAGS) -o $@ SFTbin.o SFTclean.o $(THELIBS)
+
+# -----------------------------------------------------------
+# cleaning...
+clean:
+	rm -f  SFTbin.o SFTclean.o SFTclean
+
+# -----------------------------------------------------------
+

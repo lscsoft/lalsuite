@@ -390,12 +390,108 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
  
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
+/********************************* <lalVerbatim file="SFTbinD"> */
+void FindNumberHarmonics (LALStatus           *status,
+			  LineHarmonicsInfo   *harmonicInfo,
+			  CHAR                *fname)
+{/*   *********************************************  </lalVerbatim> */
+ /* this function finds the number of harmonic sets in file "fname" and
+    checks the file format */
+
+  FILE *fp = NULL;
+  CHAR  dump[128];
+  INT4  harmonicCount, r; 
+
+  INITSTATUS (status, "FindNumberHarmonics", SFTBINC);
+  ATTATCHSTATUSPTR (status);
+
+  /* make sure arguments are not null */
+  ASSERT (harmonicInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+
+  /* open harmonics file for reading */
+  fp = fopen( fname, "r");
+  ASSERT (fname, status, SFTBINH_EFILE, SFTBINH_MSGEFILE);
+
+  harmonicCount = 0;
+
+  do {
+    r=fscanf(fp,"%lf%lf%lf%lf%s\n", &temp1, &temp2, &temp3, &temp4, dump);
+    /* make sure the line has the right number of entries or is EOF */
+    ASSERT( (r==5)||(r==EOF), status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
+    if (r==5) lineCount++;
+  } while ( r != EOF);
+
+  harmonicInfo->nLines = harmonicCount;
+
+  fclose(fp);
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}
+
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="SFTbinD"> */
+void  ReadHarmonicsInfo (LALStatus          *status,
+			 LineHarmonicsInfo  *lineInfo,
+			 CHAR               *fname)
+{/*   *********************************************  </lalVerbatim> */
+  /* this reads the information about the lines: central frequency, left wing and 
+     right wing */
+  FILE    *fp = NULL;
+  INT4    r, count, nLines;
+  REAL8   *startFreq=NULL;
+  REAL8   *gapFreq=NULL;
+  REAL8   *leftWing=NULL;
+  REAL8   *rightWing=NULL;
+  CHAR    dump[128];
+
+  INITSTATUS (status, "ReadHarmonicsInfo", SFTBINC);
+  ATTATCHSTATUSPTR (status);  
+
+  /* make sure arguments are not null */
+  ASSERT (lineInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (lineInfo->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (lineInfo->startFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (lineInfo->gapFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (lineInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (lineInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+ 
+  /* open line noise file for reading */
+  fp = fopen( fname, "r");
+  ASSERT (fp, status, SFTBINH_EFILE,  SFTBINH_MSGEFILE);
+
+  nLines = lineInfo->nLines;
+  lineFreq = lineInfo->lineFreq;
+  gapFreq = lineInfo->garFreq;
+  leftWing = lineInfo->leftWing;
+  rightWing = lineInfo->rightWing;
+
+  /* read line information from file */
+  for (count = 0; count < nLines; count++){
+    r=fscanf(fp,"%lf%lf%lf%lf%s\n", startFreq+count, gapFreq+count, leftWing+count, rightWing+count, dump);
+    ASSERT(r==5, status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
+  }
+
+  fclose(fp);
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+}
+
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /* *******************************  <lalVerbatim file="SFTbinD"> */
 void FindNumberLines (LALStatus          *status,
 		      LineNoiseInfo      *lineInfo,            
 		      CHAR               *fname)
 {/*   *********************************************  </lalVerbatim> */
-  /* this function counts the number of lines present in ths file fname and
+  /* this function counts the number of lines present in the file "fname" and  
      checks that the format of the lines is correct */
 
   FILE *fp = NULL;
