@@ -81,6 +81,10 @@ BOOLEAN FILE_FSTATS = 1;
 #include "win_lib.h"
 #endif
 
+#ifdef MAC_LIB
+  int setMacIcon(char*fn);
+#endif
+
 #ifdef NO_BOINC_GRAPHICS
 #define BOINC_GRAPHICS 0
 #endif
@@ -3078,6 +3082,11 @@ int main(int argc, char *argv[]){
       sleep(20);
     }
   } /* DEBUGGING */
+#endif
+
+
+#ifdef MAC_LIB
+  setMacIcon(argv[0]);
 #endif
 
   globargc=argc;
