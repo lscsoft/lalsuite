@@ -77,6 +77,7 @@ LALFindChirpBCVSpinFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   REAL4                 deltaT;
+  REAL4                 deltaF;
   REAL4                 norm;
   REAL4                 modqsqThresh;
   REAL4                 rhosqThresh;
@@ -105,18 +106,19 @@ LALFindChirpBCVSpinFilterSegment (
   COMPLEX8              *wtilde;  /* need new pointer name? */
   REAL4                 *amp;
   REAL4                 *ampBCV;
-  REAL4                 *ampBCVSpin1;
-  REAL4                 *ampBCVSpin2;
-  REAL4                 I = 0.0;
-  REAL4                 J = 0.0;
-  REAL4                 K = 0.0;
-  REAL4                 L = 0.0;
-  REAL4                 M = 0.0;
+  REAL8                 *ampBCVSpin1;
+  REAL8                 *ampBCVSpin2;
+  REAL8                 I = 0.0;
+  REAL8                 J = 0.0;
+  REAL8                 K = 0.0;
+  REAL8                 L = 0.0;
+  REAL8                 M = 0.0;
   REAL4                 Beta; /* Spin parameter, value from bank or external loop */  
-  REAL4                 rootI;
-  REAL4                 denominator;
-  REAL4                 rootDenominator;
-  REAL4                 denominator1;
+  REAL8                 rootI;
+  REAL8                 denominator;
+  REAL8                 rootDenominator;
+  REAL8                 denominator1;
+  REAL8                 numerator1;
   REAL4                 a1;
   REAL4                 a2;                  
   REAL4                 a3;     
@@ -130,6 +132,7 @@ LALFindChirpBCVSpinFilterSegment (
 
   REAL4 		rho;
   REAL4                 invMaxRho;
+  REAL4                 invRho;
 
   REAL4			maxRho;
   UINT4			maxRhoCount;
@@ -140,21 +143,44 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 alpha4;
   REAL4                 alpha5;
   REAL4                 alpha6;
+  REAL4                 alphaSumSq;
   REAL4			wvff;
   REAL4                 wvft;              /*params used to produce BCVSpin waveform */	
   
+  REAL4                 Sevenby6 = 7.0/6.0;
+  REAL4			Twoby3   = 2.0/3.0;
+
+  REAL8                 deltaTto7by6;
+  REAL8		        deltaTto2by3;
+     
+
   FILE     		*fpRho =  NULL;
   FILE                  *fpWvtIm =  NULL;
-  FILE                  *fpWvtRe =  NULL;
+  FILE                  *fpRecon =  NULL;
   FILE			*fpWvfIm =  NULL;
   FILE			*fpWvfRe =  NULL;
   FILE                  *fpwtilde = NULL;
   FILE                  *fpf23      = NULL;
- 
+  FILE                  *fpamp =  NULL;
+  FILE                  *fpampBCV =  NULL;
+  FILE                  *fpampBCVSpin1 =  NULL;
+  FILE                  *fpampBCVSpin2 =  NULL;
+  FILE                  *fpA1;
+  FILE                  *fpA2;
+  FILE                  *fpA3;
+  FILE                  *fpalphaSumSq;
 
   RealFFTPlan           *prev = NULL;
   REAL4Vector           *hVec = NULL;
   REAL4Vector           *HVec = NULL;
+  
+  REAL8Vector           *A1Vec = NULL;
+  REAL8Vector           *A2Vec = NULL;
+  REAL8Vector           *A3Vec = NULL;
+ 
+  REAL4                 factor;
+  REAL4                 T0; 
+
 
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -244,12 +270,19 @@ LALFindChirpBCVSpinFilterSegment (
 
 fpRho   = fopen ("rho.dat", "w");
 fpWvtIm = fopen ("wvtIm.dat", "w");
-fpWvtRe = fopen ("wvtRe.dat", "w");
+fpRecon = fopen ("Recon.dat", "w");
 fpWvfIm = fopen ("wvfIm.dat", "w");
 fpWvfRe = fopen ("wvfRe.dat", "w");
 fpwtilde = fopen ("wtilde.dat", "w");
 fpf23     = fopen("f23.dat", "w");
-
+/*fpamp = fopen("amp.dat","w");
+fpampBCV = fopen("ampBCV.dat","w");*/
+fpampBCVSpin1 = fopen("ampBCVSpin1.dat","w");
+fpampBCVSpin2 = fopen("ampBCVSpin2.dat","w");
+fpA1 = fopen ("A1.dat","w");
+fpA2 = fopen ("A2.dat","w");
+fpA3 = fopen ("A3.dat","w");
+fpalphaSumSq = fopen("alphaSumSq.dat","w");
 
 for (i = 0; i < dataSegVec->length; ++i)
 {
@@ -274,7 +307,7 @@ fcSeg = & (fcSegVec->data[i]);
   qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data; 
   
   numPoints = params->qVec->length; 
- 
+fprintf (stdout, "Filter  code, numPoints = %d\n", numPoints); 
   /* template and data */
   inputData     = input->segment->data->data->data;
  /* inputDataBCV  = input->segment->dataBCV->data->data;*/
@@ -297,43 +330,74 @@ fcSeg = & (fcSegVec->data[i]);
   ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
 
-/*fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter \n");*/
+fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter \n");
 
   
   wtilde     = fcDataParams->wtildeVec->data;
 
-/*fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");*/
+fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");
 
 fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);
 
 Beta = 1.0;
 
 fprintf (stdout, "Beta: %e \n", Beta);
+fprintf (stdout, "deltaT: %e \n", deltaT);
+
+/* for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
+    fprintf  (stdout, "%d\t%e\n", k,amp[k]);
+  }*/
+
+fprintf( stdout, "dt 7/6 %e\n",  pow(deltaT, Sevenby6  )); 
+
+deltaTto7by6 = pow(deltaT, Sevenby6);
+deltaTto2by3 = pow(deltaT, Twoby3);
+
+ for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
+    ampBCVSpin1[k] *= deltaTto7by6;
+    ampBCVSpin2[k] *= deltaTto2by3; 
+  }
+
+ for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
+	fprintf(fpampBCVSpin1, "%d\t%e\n", k, ampBCVSpin1[k]);
+        fprintf(fpampBCVSpin2, "%d\t%e\n", k, ampBCVSpin2[k]);
+  }
+
+
+fprintf (stdout, "after amp calcs");
+
 
   for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
-    I += amp[k] * amp[k] * wtilde[k].re ;
-    J += amp[k] * amp[k] * wtilde[k].re * 
+    I += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re ;
+    J += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
       cos(Beta * ampBCVSpin2[k]);                
-    K += amp[k] * amp[k] * wtilde[k].re * 
+    K += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
       sin(Beta * ampBCVSpin2[k]);
-    L += amp[k] * amp[k] * wtilde[k].re * 
+    L += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
       sin(2 * Beta * ampBCVSpin2[k]);
-    M += amp[k] * amp[k] * wtilde[k].re * 
+    M += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re * 
       cos(2 * Beta * ampBCVSpin2[k]);
 
+/*fprintf (stdout, "k=  %d\t I= %e\n ", k, I);*/
 fprintf (fpwtilde, "%d\t%e\n", k, wtilde[k].re);
 fprintf (fpf23, "%d\t%e\n", k, ampBCVSpin2[k]);
 
   }
 
-  /* Taking multiplucation outside loop lessens cost */
+ /* Taking multiplucation outside loop lessens cost */
 
-  I *= 4;
-  J *= 4;
-  K *= 4;
-  L *= 2;
-  M *= 2;
+deltaF  =  1.0/((REAL4)numPoints * deltaT);
+fprintf(stdout, "deltaF %e\n", deltaF);
+
+  I *= 4*deltaF;
+  J *= 4*deltaF;
+  K *= 4*deltaF;
+  L *= 2*deltaF;
+  M *= 2*deltaF;
 
 fprintf (stdout, "I = %e \n", I); 
 fprintf (stdout, "J = %e \n", J);
@@ -341,7 +405,7 @@ fprintf (stdout, "K = %e \n", K);
 fprintf (stdout, "L = %e \n", L);
 fprintf (stdout, "M = %e \n", M);
 
-/*fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");*/
+fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");
 
 
   /* Expensive or well used quantities calc before loop */
@@ -349,20 +413,57 @@ fprintf (stdout, "M = %e \n", M);
  rootI           = sqrt(I);
  denominator     = I*M  +  0.5*pow(I,2) - pow(J,2);
  rootDenominator = sqrt(denominator);
- denominator1    = sqrt ( 0.25 * pow(I,3) 
-	+ M*(pow(J,2) - pow(K,2)) 
-	- 0.5 * I * (pow(J,2) + pow(K,2)) 
-	- I * (pow(L,2) + pow(M,2)) 
-	+ 2*J*K*L );
+ /*denominator1    = sqrt ( (0.25 * pow(I,3)) 
+	+ (M*(pow(J,2) - pow(K,2))) 
+	- (0.5 * I * (pow(J,2) + pow(K,2))) 
+	- (I * (pow(L,2) + pow(M,2))) 
+	+ (2*J*K*L) );*/
+numerator1     = (I*L)-(J*K);
+denominator1   =  sqrt( (0.5*I) - M - ((1/I)*pow(K,2)) +  ((1/I)*pow(numerator1,2)/denominator) );
 
-/*fprintf (stdout, "rootI           = %e \n", rootI);
+
+fprintf (stdout, "rootI           = %e \n", rootI);
 fprintf (stdout, "denominator     = %e \n", denominator);
 fprintf (stdout, "rootDenominator = %e \n", rootDenominator);
-fprintf (stdout, "denominator1    = %e \n", denominator1);*/
+fprintf (stdout, "denominator1    = %e \n", denominator1);
+fprintf (stdout, "numerator1    = %e \n", numerator1);
+
+  
+LALDCreateVector(status->statusPtr, &A1Vec, (numPoints/2)+1);
+LALDCreateVector(status->statusPtr, &A2Vec, (numPoints/2)+1);
+LALDCreateVector(status->statusPtr, &A3Vec, (numPoints/2)+1);
+
+A1Vec->data[0] = 0;
+A2Vec->data[0] = 0;
+A3Vec->data[0] = 0;
+
+ for ( k = 1; k < fcSeg->data->data->length; ++k )
+  {
+    A1Vec->data[k] = ampBCVSpin1[k] / rootI;
+    A2Vec->data[k] = ampBCVSpin1[k] * (   ( cos(Beta * ampBCVSpin2[k]) )    -  (J/I) ) * rootI
+                         / rootDenominator ;
+/*    A3Vec->data[k] = (ampBCVSpin1[k]/denominator1) 
+                         *  ( 
+                               sin(Beta * ampBCVSpin2[k]) 
+	                       - ( (  (I*L) - (J*K)) * cos(Beta * ampBCVSpin2[k]) / denominator)
+                               + ( (  (J*L) - (K*M) + (0.5*I*K)) / denominator ) 
+                            );  */
+
+     A3Vec->data[k] = (ampBCVSpin1[k]/denominator1) * 
+                            ( sin(Beta * ampBCVSpin2[k]) 
+                              - (K/I)
+                              - (numerator1 * ( cos(Beta * ampBCVSpin2[k]) - (J/I) ))/denominator  
+                            );          
+
+  fprintf (fpA1, "%d\t%e\n", k, A1Vec->data[k]);
+  fprintf (fpA2, "%d\t%e\n", k, A2Vec->data[k]);
+  fprintf (fpA3, "%d\t%e\n", k, A3Vec->data[k]);
 
 
- 
- 
+  }
+
+  
+
 
   /*
    * initialising outputData vectors to
@@ -385,24 +486,24 @@ fprintf (stdout, "denominator1    = %e \n", denominator1);*/
    */
 
 
-/*fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");*/
+fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");
 
 
   memset( qtilde,         0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin2, 0, numPoints * sizeof(COMPLEX8) );
 
-/*fprintf (stdout, "numPoints = %d \n", numPoints);*/
+fprintf (stdout, "numPoints = %d \n", numPoints);
 
 
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r        = inputData1[k].re;
-    REAL4 s        = 0.0 - inputData1[k].im;       /* note complex conjugate */
+    REAL4 s        = inputData1[k].im;       /* note complex conjugate */
    
     REAL4 x = tmpltSignal[k].re;
-    REAL4 y = tmpltSignal[k].im;     
+    REAL4 y = - tmpltSignal[k].im;     
  
  
     qtilde[k].re        = r * x - s * y ;
@@ -425,15 +526,21 @@ fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);*/
     qtildeBCVSpin2[k] = qtilde[k]; 
 
     /* real parts */
-    qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
 
-    qtildeBCVSpin1[k].re *= amp[k]/ (rootDenominator * rootI);              
+     qtilde[k].re         *= A1Vec->data[k];
+     qtildeBCVSpin1[k].re *= A2Vec->data[k];
+     qtildeBCVSpin2[k].re *= A3Vec->data[k];
+
+
+ /*  qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
+
+ /*   qtildeBCVSpin1[k].re *= amp[k]/ (rootDenominator * rootI);              
     qtildeBCVSpin1[k].re *=(I * cos(Beta * ampBCVSpin2[k]) -  J);  /* A2 */
 
-    qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
+ /*   qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
     qtildeBCVSpin2[k].re *= (sin(Beta * ampBCVSpin2[k])
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
-	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
+	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */   
 
 /*fprintf (stdout, "qtilde[k].re         = %e \n", qtilde[k].re);
 fprintf (stdout, "qtildeBCVSpin1[k].re = %e \n", qtildeBCVSpin1[k].re);
@@ -443,12 +550,19 @@ fprintf (stdout, "qtildeBCVSpin2[k].re = %e \n", qtildeBCVSpin2[k].re);*/
 
 
     /* imaginary parts */
-    qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
 
-    qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
+     qtilde[k].im         *= A1Vec->data[k];
+     qtildeBCVSpin1[k].im *= A2Vec->data[k];
+     qtildeBCVSpin2[k].im *= A3Vec->data[k];
+
+
+
+/*    qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
+
+/*    qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
     qtildeBCVSpin1[k].im *= (I * cos(Beta * ampBCVSpin2[k]) -  J); /* A2 */
  
-    qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
+/*    qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
     qtildeBCVSpin2[k].im *= (sin(Beta * ampBCVSpin2[k])
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
@@ -460,7 +574,7 @@ fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
 
   }
 
-/*fprintf (stdout, "just after +ve  freq loop \n");*/
+fprintf (stdout, "just after +ve  freq loop \n");
 
   /* qtilde negative frequency only: not DC or nyquist */
   if ( params->computeNegFreq )
@@ -468,11 +582,11 @@ fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
       REAL4 r        = inputData1[k].re;
-      REAL4 s        = 0.0 - inputData1[k].im;    /* note complex conjugate */
+      REAL4 s        = inputData1[k].im;    /* note complex conjugate */
      
 
       REAL4 x = tmpltSignal[k].re;
-      REAL4 y = tmpltSignal[k].im;
+      REAL4 y =  - tmpltSignal[k].im;
 
       qtilde[k].re = r * x - s * y ;
       qtilde[k].im = r * y + s * x ;
@@ -486,13 +600,27 @@ fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
       qtildeBCVSpin1[k] = qtilde[k];
       qtildeBCVSpin2[k] = qtilde[k]; 
 
-      /* real parts */
-      qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
+/*  LALSCreateVector(status->statusPtr, &A1, numPoints);
+  LALSCreateVector(status->statusPtr, &A2, numPoints);
+  LALSCreateVector(status->statusPtr, &A3, numPoints);*/
 
-      qtildeBCVSpin1[k].re *= amp[k]/(rootDenominator * rootI);              
+
+
+
+      /* real parts */
+
+     qtilde[k].re         *= A1Vec->data[k];
+     qtildeBCVSpin1[k].re *= A2Vec->data[k];
+     qtildeBCVSpin2[k].re *= A3Vec->data[k];
+
+
+
+/*      qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
+
+ /*     qtildeBCVSpin1[k].re *= amp[k]/(rootDenominator * rootI);              
       qtildeBCVSpin1[k].re *=(I * cos(Beta * ampBCVSpin2[k]) -  J);  /* A2 */
 
-      qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
+ /*     qtildeBCVSpin2[k].re *= (amp[k]/denominator1); 
       qtildeBCVSpin2[k].re *= (sin(Beta * ampBCVSpin2[k])
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );             /* A3 */
@@ -500,12 +628,19 @@ fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
       
 
       /* imaginary parts */
-      qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
+   
+     qtilde[k].im         *= A1Vec->data[k];
+     qtildeBCVSpin1[k].im *= A2Vec->data[k];
+     qtildeBCVSpin2[k].im *= A3Vec->data[k];
 
-      qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
+
+
+/*   qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
+
+/*      qtildeBCVSpin1[k].im *= amp[k]/(rootDenominator * rootI);  
       qtildeBCVSpin1[k].im *= (I * cos(Beta * ampBCVSpin2[k]) -  J); /* A2 */
  
-      qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
+/*      qtildeBCVSpin2[k].im *= (amp[k]/denominator1); 
       qtildeBCVSpin2[k].im *= (sin(Beta * ampBCVSpin2[k])
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );             /* A3 */
@@ -577,13 +712,34 @@ memset (params->rhosqVec->data->data, 0, numPoints * sizeof (REAL4) );
 maxRho = 0;
 maxRhoCount = 0;
 
+
+ /* accounting for factors of 2 q, qBCVSpin1,  qBCVSpin2. make this more efficient later */                                                                                                                            
+ for ( j = 0; j < numPoints; ++j)
+       {
+           q[j].re *= 2;  
+           q[j].im *= 2;
+           qBCVSpin1[j].re *= 2;
+           qBCVSpin1[j].im *= 2;
+           qBCVSpin2[j].re *= 2;
+           qBCVSpin2[j].im *= 2;
+       }
+
+
+
    for ( j = 0; j < numPoints; ++j)
        {
+
 
 
    rhosq   = q[j].re * q[j].re + q[j].im * q[j].im; 
    rhosq  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
    rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im;
+
+
+  /* calc alpha values at each time step */
+
+
+
  
    /* Inverse FFT normalisation, division by numPoints squared */
 
@@ -591,14 +747,10 @@ maxRhoCount = 0;
 
 /*fprintf (stdout, "rhosq            = %e \n", rhosq);*/
 
-/* to account for 2's  in   eqn 22,23 */
-    
-  rhosq *= 4;
 
    params->rhosqVec->data->data[j] = rhosq;  /*copied from Eirini's code */
 
 /*fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );*/
-
    rho    = pow(rhosq, 0.5);
    
 fprintf (fpRho, "%d\t%e\n", j, rho);
@@ -612,7 +764,22 @@ if (rho > maxRho)
 
 /*fprintf (stdout, "maxRho       = %e \n", maxRho);
 fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);*/
- 
+
+   invRho = 1/rho;
+
+   alpha1 = q[j].re * invRho;
+   alpha2 = q[j].im * invRho;
+   alpha3 = qBCVSpin1[j].re * invRho;
+   alpha4 = qBCVSpin1[j].im * invRho;
+   alpha5 = qBCVSpin2[j].re * invRho;
+   alpha6 = qBCVSpin2[j].im * invRho;
+
+ alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
+                + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+
+
+
+fprintf (fpalphaSumSq, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", j, alphaSumSq, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6);
 
        } 
 
@@ -634,38 +801,40 @@ fprintf (stdout, "alpha4       = %e \n", alpha4);
 fprintf (stdout, "alpha5       = %e \n", alpha5);
 fprintf (stdout, "alpha6       = %e \n", alpha6);
 
+  alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2) 
+                + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+
+fprintf (stdout, "alphaSumSq       = %e \n", alphaSumSq);
+
 
 
                                                                                                                   
  /*calc freq domain waveform, store in qtilde[k]  */
 
-  for ( k = 0; k < (numPoints/2)+1; ++k )
+  qtilde[0].re = 0;
+  qtilde[0].im = 0;
+
+  qtilde[numPoints/2].re = 0;
+  qtilde[numPoints/2].im = 0;
+
+  factor = LAL_TWOPI * 0.8;
+  fprintf(stdout, "factor=%e\n", factor);
+
+  for ( k = 1; k < (numPoints/2); ++k )
   {                                                                                                                          
     REAL4 x = tmpltSignal[k].re;
     REAL4 y = tmpltSignal[k].im;
                                                                                                                              
 /* check here */                                                                                                                             
-    qtilde[k].re         = (alpha1 * x - alpha2 * y) * amp[k]/ rootI ;
-    qtilde[k].re        += (alpha3 * x - alpha4 * y) 
-				*  amp[k]/(rootDenominator * rootI)
-				* (I * cos(Beta * ampBCVSpin2[k]) -  J) ;
-    qtilde[k].re        += (alpha5 * x - alpha6 * y) 
-				* (amp[k]/denominator1)
-				*  (sin(Beta * ampBCVSpin2[k])
-            - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
-            + ( (J*L - K*M + 0.5*I*K) / denominator ) ) ;     
+    qtilde[k].re         = (alpha1 * x - alpha2 * y) * A1Vec->data[k] ;
+    qtilde[k].re        += (alpha3 * x - alpha4 * y) * A2Vec->data[k] ;
+    qtilde[k].re        += (alpha5 * x - alpha6 * y) * A3Vec->data[k] ;     
 
-
-    qtilde[k].im         = (alpha1 * y + alpha2 * x) * amp[k]/ rootI ;
-    qtilde[k].im        += (alpha3 * y + alpha4 * x)
-                                *  amp[k]/(rootDenominator * rootI)
-                                * (I * cos(Beta * ampBCVSpin2[k]) -  J) ;
-    qtilde[k].im        += (alpha5 * y + alpha6 * x)
-                                * (amp[k]/denominator1)
-                                *  (sin(Beta * ampBCVSpin2[k])
-            - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
-            + ( (J*L - K*M + 0.5*I*K) / denominator ) ) ;
-    }
+    qtilde[k].im         = (alpha1 * y + alpha2 * x) * A1Vec->data[k] ;
+    qtilde[k].im        += (alpha3 * y + alpha4 * x) * A2Vec->data[k] ;
+    qtilde[k].im        += (alpha5 * y + alpha6 * x) * A3Vec->data[k] ;
+   
+   }
   
 fprintf (stdout, "numPoints         = %d \n", numPoints);
 
@@ -681,10 +850,12 @@ fprintf (stdout, "numPoints         = %d \n", numPoints);
 COMPLEX8Vector *HVec = NULL;
 */
 
-        for (i=1; i<=(numPoints/2); i++)
+        for (i=1; i<(numPoints/2); i++)
         {
-                HVec->data[i] = qtilde[i].re;
-                HVec->data[numPoints-i] = -qtilde[i].im;  /* - to correct time reversal */
+/* time offset */
+                HVec->data[i] = qtilde[i].re *  cos((REAL4)i*factor) - qtilde[i].im *  sin((REAL4)i*factor);
+                HVec->data[numPoints-i] = -qtilde[i].im *  cos((REAL4)i*factor) - qtilde[i].re *  sin((REAL4)i*factor);  
+/* - to correct time reversal */
 	}       
                 HVec->data[0] = 0.;
                 HVec->data[numPoints/2] = 0.;
@@ -703,10 +874,13 @@ LALReverseRealFFT( status->statusPtr, hVec,
    CHECKSTATUSPTR( status );
 */
 
-fprintf (stdout, "after FFT \n");
+fprintf (stdout, "before FFT \n");
 
 LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
 CHECKSTATUSPTR( status );
+
+fprintf (stdout, "after FFT \n");
+
 
 /*
 LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
@@ -722,23 +896,63 @@ for ( j = 0; j < numPoints; ++j)
 
 /*	fprintf (fpWvtIm, "%d\t%e\n", j, q[j].im);*/
 /*        fprintf (fpWvtRe, "%d\t%e\n", j, q[j].re);*/
- fprintf (fpWvtRe, "%d\t%e\n", j, hVec->data[j]);
+ fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
 
 
        }
+
+fprintf (stdout, "before closing output files \n");
+
 
 fclose (fpRho);
 fclose (fpWvfIm);
 fclose (fpWvfRe);
 fclose (fpWvtIm);
-fclose (fpWvtRe);
+fclose (fpRecon);
 fclose (fpwtilde);
 fclose (fpf23);
 
+/*  fclose (fpamp);
+fclose (fpampBCV); */
+fclose (fpampBCVSpin1);
+fclose (fpampBCVSpin2);
+fclose (fpA1);
+fclose (fpA2);
+fclose (fpA3);
+fclose (fpalphaSumSq);
+
+fprintf (stdout, "after closing output files \n");
+
+
+LALDDestroyVector ( status->statusPtr, &A1Vec);
+
+fprintf (stdout, "after closing A1 \n");
+
+
+LALDDestroyVector ( status->statusPtr, &A2Vec);
+
+                                                                              
+fprintf (stdout, "after closing A2 \n");
+
+
+LALDDestroyVector ( status->statusPtr, &A3Vec);
+
+fprintf (stdout, "after closing A3 \n");
+
+
 LALSDestroyVector ( status->statusPtr, &hVec);
+
+fprintf (stdout, "after closing hVec \n");
+
+
 LALSDestroyVector ( status->statusPtr, &HVec);
 
+fprintf (stdout, "after closing Hvec \n");
+
+
 LALDestroyRealFFTPlan ( status->statusPtr, &prev);
+
+fprintf (stdout, "just before end  of FindChirpBCVSpiFilter");
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
