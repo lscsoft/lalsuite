@@ -237,7 +237,7 @@ void *XLALShrinkREAL4TimeSeries(
 	if(!series)
 		return(NULL);
 
-	series->data = XLALShrinkREAL4Sequence(series->data, first_sample, num_samples);
+	XLALShrinkREAL4Sequence(series->data, first_sample, num_samples);
 	series->epoch = XLALAddFloatToGPS(series->epoch, first_sample * series->deltaT);
 
 	return(series->data);
