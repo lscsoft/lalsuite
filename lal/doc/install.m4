@@ -2,53 +2,31 @@ dnl $Id$
 dnl process this file with m4 to get installation instructions
 INSTALLATION INSTRUCTIONS
 changequote(@@,@@)
-This file describes how to perform a basic install of LAL.  This is not
-quite a minimal install -- support for the frame library is included -- but it
-is probably the best basic installation.  If you are following the instructions
-from this document, please note that the instructions are written for use with
-a Bourne-like shell (e.g., bash) rather than a C-shell (e.g., tcsh).  Really
-the only difference is that you need to change statements like
-
-        MYENV=value
-        export MYENV
-
-(Bourne shell syntax) to
-
-        setenv MYENV value
-
-The instructions in this file are extracted from the shell scripts:
-
-        doc/lal-preinstall-x.sh
-        doc/lal-install-x.sh
-
-Also extracted are nicely-formatted versions of these shell scripts:
-
-        doc/lal-preinstall.sh
-        doc/lal-install.sh
-
-If this file (README.install) or these scripts are not present in the version
-of LAL that you obtained from CVS, it is because they have not yet been
-auto-generated.  Run ./00boot to create them.
-
-You can edit these scripts (as appropriate) and run them to install LAL.
-(But note that these scripts run in a Bourne shell, so you don't need to
-change how the environment variables are set in these scripts.)
-Or just follow the instructions below.
-
+This file describes how to perform a basic install of LAL.
 
 1. PRE-INSTALLATION
 
-Building LAL requires some software to be pre-installed.  This section
-describes how to download and install this software if it is missing from
-your system.  
+Certain software needs to be pre-installed on your system.  For several systems
+it is possible to download and install pre-compiled binaries.  If you need to
+compile the software and install it in your home directory, that is possible
+too.  For instructions, please see:
 
-include(@@lal-preinstall.txt@@)
+        http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
+
+to download binaries for supported systems or
+
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html
+
+to build the software yourself.
+
 
 2. INSTALLING LAL
 
 2.1 BASIC BUILD OF LAL
 
-include(@@lal-install.txt@@)
+For instructions, please see:
+
+        http://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
 
 2.2 MORE DETAILS
 

@@ -14,14 +14,6 @@ There are two LAL mail lists/archives.  These are:
   LAL-Discuss: general LAL discussion forum (but *not* for filing bug reports)
   http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
 
-If you intend to use LAL with LALApps please consult the LALApps README
-available at:
-
-   http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
-
-BEFORE building LAL.
-
-
 ------------------------------------------------------------------------------
 
 2. Getting released versions of LAL
@@ -95,7 +87,6 @@ replacing USERNAME with your lscsoft user name (or anonymous):
 This will create a directory called lal the directory ${LAL_LOCATION}/src
 which contains the contents of the LAL CVS archive.
 
-
 ------------------------------------------------------------------------------
 
 4. Create the various LAL build scripts.
@@ -127,7 +118,6 @@ following commands:
 
 Once you have run 00boot you are ready to build and install LAL. 
 
-
 ------------------------------------------------------------------------------
 
 5. Building and Installing LAL from CVS Sources
@@ -138,20 +128,17 @@ README before continuing.
 The instructions for building and installing LAL can be found in the file
 README.install
 
-
 ------------------------------------------------------------------------------
 
 7. Reporting Bugs in LAL
 
 The file README.bugs gives instructions for filing bug reports for LAL.
 
-
 ------------------------------------------------------------------------------
 
 7. Contributing Code to LAL
 
 The file README.contrib gives instructions for contributing code to LAL.
-
 
 ------------------------------------------------------------------------------
 
@@ -164,7 +151,6 @@ If you wish to log out of the CVS server, type the command
 replacing USERNAME with your lscsoft user name (or anonymous). It is not
 necessary to log out of the CVS server. Developers should generally stay
 logged in to allow them to commit new code and get updates.
-
 
 ------------------------------------------------------------------------------
 
