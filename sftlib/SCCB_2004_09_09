@@ -1,0 +1,101 @@
+> From: Jolien Creighton <jolien@gravity.phys.uwm.edu>
+> Cc: Stuart Anderson <sba@srl.caltech.edu>, John Zweizig <zweizig_j@ligo.caltech.edu>
+> Subject: SCCB report on SFT specification
+> Date: Tue, 07 Sep 2004 17:44:46 -0500
+>
+> Here's the SCCB report on the current draft of the version 2 SFT
+> specification.  We would encourage the developers to contact us if they
+> have any questions.
+>
+> Cheers
+> Jolien
+> (for the SCCB)
+
+
+
+> The SCCB requires modifications to the SFT version 2 specification
+> listed in items 1-6:
+>
+>1. units of tbase should be defined to be seconds
+
+Done.
+
+>2. df should be explicitly stated to be 1/tbase
+
+Done.  But note that in many common cases (eg, tbase=60 seconds), df
+can NOT be exactly represented by an IEEE-754 double.  For example, in
+this case:
+1.0/60.0 = 
+0.001666666..... (base 10) =
+2^-6 x 1.000100010001000... (base 2)
+which can not be represented exactly as an
+IEEE-754 double.  In this case, "approximating" 1/tbase using IEEE-754
+doubles yields the 52-binary-point approximation:
+2^-6 x 1.0001000100010001000100010001000100010001000100010001 (base 2)
+which is (exactly)
+0.0166666666666666664353702032030923874117434024810791015625 (base 10)
+
+The fact that df (for many cases of interest) can not be exactly
+represented as an IEEE-754 double is the primary reason why the SFT
+format uses tbase as fundamental.
+
+>3. padding field should be used to stored what is called S
+
+Unfortunately this can not be done.  The reason is that if an SFT is
+'narrowbanded' this can be done in two ways.  One way is to use a
+downsampled data set (with a smaller value of S).  The other way is to
+simply extract a smaller set of frequency bins from an SFT sampled at
+a higher sample rate.  These would yield identical SFT data files but
+with DIFFERENT values of S.
+
+>4. reading software (or validation program) needs to check that
+>    the comment contains a NUL character followed by NUL characters
+
+Good point.  We've modified the reference library and SFTvalidate code
+to issue an error in the case where either the comment is not NULL
+terminated, or in the case where a NULL character in the comment is
+followed by non-NULL characters.
+
+
+>5. the specification must indicate conventions for the following
+>    metadata within the SFT block:
+>
+>	- full channel name if the data comes from interferometer data
+>	- window name (along with parameters if the name is not sufficient)
+>	  of the window functions
+
+The spec has been modified so that when this information is required,
+it is contained in the comment block.
+
+>6. there needs to be a convention for SFT filenames
+
+Agreed.  Suggestions?
+
+>Observations: this committee would like to explicitly note the 
+>following limitations of the specification:
+>
+>	- there is not provision for specifying how many SFTs are in
+>	  the file ... this requires that all headers be read in order
+>	  to determine the contents and also that there is no way to
+>	  detect "corruption" (or errors in translation) that drop
+>	  SFT blocks from the file
+
+It would be convenient to include this information in the SFT file
+name.  Then it could be easily read by software using the SFT, and
+could also be incorporated into the SFTvalidate code.
+
+>	- there is no ability to record SFTs of complex or heterodyned
+>	  data sets
+
+We were aware of this limitation.  It was discussed at length and is a
+deliberate choice.
+
+>	- future modifications to this spec will require evidence
+>	  that infrastructure changes to accommodate a new SFT format
+>	  will be significantly less than those require to convert to
+>	  using the frame spec
+
+Noted.
+
+Cheers,
+	Bruce Allen for the Pulsar Search Group.

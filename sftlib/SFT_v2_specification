@@ -87,9 +87,14 @@ apply to NULL bytes appearing in ASCII COMMENT, if n is non-zero:
 (1) There must be at least one NULL byte in the ASCII COMMENT
 (2) If a NULL byte appears in the ASCII COMMENT, all the following
     bytes in the ASCII COMMENT must also be NULL bytes.
-The reason for these two rules is so that the ASCII comment has
+The reason for these two rules is so that if the ASCII comment has
 nonzero length then it may always be treated as a C null-terminated
 string, with no information 'hidden' after the null byte.
+If the SFT comes from interferometer data, then the full channel name
+used will be contained in the comment block.  If a window function is
+used (see below), then the window name (along with parameters if the
+name is not sufficient) of the window function will also be contained
+in the comment block.
 
 The DATA region consists of N COMPLEX8 quantities.  Each COMPLEX8 is
 made of a 4-byte IEEE-754 float real part, followed by a 4-byte
@@ -118,12 +123,15 @@ gps_sec: Integer part of the GPS time in seconds of the first sample used to mak
 gps_nsec: GPS nanoseconds of the first sample used to make this SFT.  This
           must lie in the range from 0 to 10^9-1 inclusive.
  
-tbase:    The time length of the data set used to make this SFT.
+tbase:    The time length in seconds of the data set used to make this SFT.
 
     Note that if the sample interval is dt, and the number of
     time-domain samples is S, then tbase=S dt.  Note that if the data
     is produced with heterodyning, tbase still refers to the total
-    time length of the data set.
+    time length of the data set.  Note that the frequency spacing in
+    between samples (df, as defined in T010095-00) is 1.0/tbase.  If df
+    can not be exactly represented as an IEEE-754 double, then the closest
+    IEEE-754 double to 1.0/tbase will be the closest IEEE-754 double to df.
 
 first_frequency_index: This is the subscript of the first complex FFT
           value that appears

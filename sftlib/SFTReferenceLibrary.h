@@ -79,6 +79,8 @@ int ReadSFTData(FILE              *fp,       /* data file.  Position unchanged o
 #define SFTEWRITE            12
 #define SFTENULLPOINTER      13
 #define SFTENONE             14
+#define SFTEHIDDENCOMMENT    15
+#define SFTENONULLINCOMMENT  16
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */

@@ -34,6 +34,7 @@ SFTdumpall_SOURCES =      SFTReferenceLibrary.c \
 docsdir=$(docdir)
 
 docs_DATA       =      README \
-                       SFT_v2_specification
+                       SFT_v2_specification \
+                       SCCB_2004_09_09
 
 EXTRA_DIST      =      $(docs_DATA)

@@ -160,6 +160,10 @@ const char *SFTErrorMessage(int errorcode) {
     return "SFT library routine passed a null data pointer";
   case SFTENONE:
     return "SFT file empty (zero length)";
+  case SFTEHIDDENCOMMENT:
+    return "SFT comment contains data AFTER null character";
+  case SFTENONULLINCOMMENT:
+    return "SFT comment field is not null-terminated";
   }
   return "SFT Error code not recognized";
 }
@@ -341,6 +345,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     int total_length = header.comment_length + 2*sizeof(float)*header.nsamples;
     char block[BLOCKSIZE];
     fpos_t streamposition2;
+    int i, tocheck, foundhidden=0, comment_left = header.comment_length, foundnull=!comment_left;
 
     /* save stream position */
     if (fgetpos(fp, &streamposition2)) {
@@ -362,11 +367,34 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
       }      
       total_length -= toread;
       crc = crc64((unsigned char *)block, toread, crc);
+
+      /* check to see if comment contains NULL termination character
+	 and no hidden characters */
+      tocheck = (comment_left < toread) ? comment_left : toread;
+      for (i=0; i<tocheck; i++) {
+	if (!block[i])
+	  foundnull=1;
+	if (foundnull && block[i])
+	  foundhidden=1;
+      }
+      comment_left -= tocheck;
     }
      
     /* check that checksum is consistent */
     if (crc != crc64save) {
       retval=SFTEBADCRC64;
+      goto error;
+    }
+
+    /* check that comment has correct NULL termination */
+    if (!foundnull) {
+      retval=SFTENONULLINCOMMENT;
+      goto error;
+    }
+
+    /* check that comment has no hidden characters */
+    if (foundhidden) {
+      retval=SFTEHIDDENCOMMENT;
       goto error;
     }
 
@@ -379,15 +407,36 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
 
   /* if user has asked for comment, store it */
   if (comment && header.comment_length) {
+    int i;
+    
+    /* first allocate memory for storing the comment */
     if (!(mycomment=calloc(header.comment_length, 1))) {
       retval=SFTENOMEM;
       goto error;
     }
     
+    /* now read the comment into memory */
     if (header.comment_length != fread(mycomment, 1, header.comment_length, fp)) {
       free(mycomment);
       mycomment = NULL;
       retval=SFTEREAD;
+      goto error;
+    }
+    
+    /* check that the comment is null-terminated and contains no
+       messages 'hidden' after a NULL character */
+    retval=SFTENONULLINCOMMENT;
+    for (i=0; i<header.comment_length; i++) {
+      if (!mycomment[i])
+	retval=0;
+      if (!retval && mycomment[i]) {
+	retval=SFTEHIDDENCOMMENT;
+	break;
+      }
+    }  
+    if (retval) {
+      free(mycomment);
+      mycomment = NULL;
       goto error;
     }
   }
