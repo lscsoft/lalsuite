@@ -2,7 +2,7 @@
 # $Id$
 POWERSRCS = power.c power.h 
 if LALMETAIO
-LALMETAIOPROGRAMS = lalapps_snglBurstHistogram lalapps_burca lalapps_bread lalapps_binj lalapps_binj_find
+LALMETAIOPROGRAMS = lalapps_burca lalapps_bread lalapps_binj lalapps_binj_find
 else
 LALMETAIOPROGRAMS = 
 endif
@@ -20,7 +20,6 @@ if LALFRAME
 lalapps_power_SOURCES = $(POWERSRCS)
 endif
 if LALMETAIO
-lalapps_snglBurstHistogram_SOURCES = snglBurstHistogram.c
 lalapps_burca_SOURCES = burca.c
 lalapps_bread_SOURCES = bread.c
 lalapps_binj_SOURCES = binj.c
