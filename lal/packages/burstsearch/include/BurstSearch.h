@@ -6,6 +6,8 @@ $Id$
 #ifndef _BURSTSEARCH_H
 #define _BURSTSEARCH_H
 
+#include <lal/ExcessPower.h>
+
 #ifdef  __cplusplus
 extern "C" {
 #endif

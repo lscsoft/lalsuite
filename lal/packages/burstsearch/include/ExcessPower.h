@@ -40,6 +40,8 @@ NRCSID (EXCESSPOWERH, "$Id$");
 #define EXCESSPOWERH_MSGEDELF     "Inconsistent deltaF in spectrum and data"
 /******** </lalErrTable> ********/
 
+
+
 typedef struct
 tagTFTile
 {
@@ -93,9 +95,6 @@ tagComputeExcessPowerIn
   REAL8                            alphaDefault;                             
 }
 ComputeExcessPowerIn;
-
-
-
 
 
 void
@@ -176,7 +175,6 @@ PrintTFTileList1 (
                  TFTiling                           *tfTiling,
                  INT4                               maxTiles
                  );
-
 
 #ifdef  __cplusplus
 }

@@ -8,7 +8,7 @@ $Id$
 
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
-#include <lal/ExcessPower.h>
+#include <lal/EPSearch.h>
 #include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -32,7 +32,6 @@ NRCSID (EPDATAH, "$Id$");
 #define EPDATA_MSGENUMZ "Invalid number of points in segment"
 /******** </lalErrTable> ********/
 
-
 typedef struct
 tagEPDataSegment
 {
@@ -54,42 +53,6 @@ tagEPDataSegmentVector
   EPDataSegment                  *data;
 }
 EPDataSegmentVector;
-
-
-typedef struct
-tagEPInitParams
-{
-  UINT4                         numPoints;
-  UINT4                         numSegments;
-  UINT4                         segDutyCycle;
-}
-EPInitParams;
-
-
-typedef struct
-tagEPSearchParams
-{
-  BOOLEAN                       searchMaster;
-  BOOLEAN                       haveData;
-  UINT4                        *numSlaves;          
-  UINT4                         simType;
-  UINT4                         currentSegment;
-  INT4                          ntotT;
-  INT4                          numEvents;
-  UINT4                         ovrlap;
-  REAL8                         lambda;
-  REAL8                         alphaThreshold;
-  INT4                          events2Master;     /* Added Erik Kats */
-  CHAR                         *channelName;       /* Added Erik Kats */
-  EPInitParams                 *initParams;
-  EPDataSegmentVector          *epSegVec;
-  CreateTFTilingIn             *tfTilingInput;
-  TFTiling                     *tfTiling;
-  ComputeExcessPowerIn         *compEPInput;
-}
-EPSearchParams;
-
-
 
 void
 LALCreateEPDataSegmentVector (
