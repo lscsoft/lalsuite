@@ -602,7 +602,7 @@ for seg in l1_h1_h2_data:
   inca1.set_end(seg.end())
   inca1.set_ifo_a('L1')
   inca1.set_ifo_b('H1')
-  inca1.set_ifo_tag('L1H1')
+  inca1.set_ifo_tag('L1H1T')
   inca1.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca1.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca1.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
