@@ -2,7 +2,7 @@
  * 
  * File Name: LALXMGRInterface.c
  *
- * Author: Brady, P. R., and Brown, D. A.
+ * Author: Brady, P. R., Brown, D. A., and Owen, B. J.
  * 
  * Revision: $Id$
  * 
@@ -10,7 +10,7 @@
  */
 
 /******************************** <lalVerbatim file="LALXMGRInterfaceCV">
-Author: Brady, P. R., and Brown D. A.
+Author: Brady, P. R., Brown, D. A., and Owen, B. J.
 $Id$
 </lalVerbatim>
 
@@ -29,6 +29,7 @@ Functions for creating XMGR graphs from LAL structures and functions.
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/LALXMGRInterface.h>
+#include <lal/TwoDMesh.h>
 
 NRCSID (LALXMGRINTERFACEC, "$Id$");
 
@@ -314,3 +315,60 @@ LALXMGRGPSTimeToTitle(
   RETURN( status );
 }
 
+
+void LALXMGRPlotMesh( LALStatus          *status,
+                      TwoDMeshNode       *head,
+                      FILE               *fp,
+                      TwoDMeshParamStruc *mesh )
+{
+  INT4          i;
+  INT4          set = 0;
+  TwoDMeshNode *node;
+
+  INITSTATUS( status, "LALXMGRPlotMesh", LALXMGRINTERFACEC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( fp, status, LALXMGRINTERFACEH_ENULL, LALXMGRINTERFACEH_MSGENULL );
+  ASSERT( head, status, LALXMGRINTERFACEH_ENULL,
+          LALXMGRINTERFACEH_MSGENULL );
+
+  /* Plot mesh points. */
+  fprintf( fp, "@s%d symbol 8\n@s%d symbol size 0.33\n", set, set );
+  fprintf( fp, "@s%d line type 0\n", set );
+  fprintf( fp, "@target s%d\n@type xy\n", set );
+  for( node = head; node; node = node->next )
+  {
+    fprintf( fp, "%e %e\n", node->x, node->y );
+  }
+  set++;
+
+#if 1
+  /* Plot boundary. */
+  fprintf( fp, "@target s%d\n@type xy\n", set );
+  for( i = 0; i < 1000; i++ )
+  {
+    REAL4 x = mesh->domain[0] + i*(mesh->domain[1]-mesh->domain[0])/1000;
+    REAL4 y[2];
+    mesh->getRange( status->statusPtr, y, x, mesh->rangeParams );
+    fprintf( fp, "%e %e\n", x, y[1] );
+  }
+  for( i = 1000; i >= 0; i-- )
+  {
+    REAL4 x = mesh->domain[0] + i*(mesh->domain[1]-mesh->domain[0])/1000;
+    REAL4 y[2];
+    mesh->getRange( status->statusPtr, y, x, mesh->rangeParams );
+    fprintf( fp, "%e %e\n", x, y[0] );
+  }
+  set++;
+#endif
+
+#if 0
+  /* Plot ellipses if requested. */
+  for( node = head; node; node = node->next )
+  {
+  }
+#endif
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+} /* LALXMGRPlotMesh() */

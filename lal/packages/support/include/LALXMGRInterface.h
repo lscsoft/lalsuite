@@ -37,6 +37,7 @@ object.
 
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
+#include <lal/TwoDMesh.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -46,11 +47,9 @@ extern "C" {
 
 NRCSID (LALXMGRINTERFACEH, "$Id$");
 
-#if 0
-<lalLaTeX> 
+/* <lalLaTeX> 
 \newpage\subsection*{Error codes} 
-</lalLaTeX>
-#endif
+</lalLaTeX> */
 /* <lalErrTable> */
 #define LALXMGRINTERFACEH_ENULL 1
 #define LALXMGRINTERFACEH_ENNUL 2
@@ -74,11 +73,9 @@ NRCSID (LALXMGRINTERFACEH, "$Id$");
  */
 
 
-#if 0
-<lalLaTeX>
+/* <lalLaTeX>
 \subsection*{Types}
-</lalLaTeX>
-#endif
+</lalLaTeX> */
 
 typedef enum
 {
@@ -164,11 +161,9 @@ tagXMGRGraphVector
 }
 XMGRGraphVector;
 
-#if 0
-<lalLaTeX>
+/* <lalLaTeX>
 \vfill{\footnotesize\input{LALXMGRInterfaceHV}}
-</lalLaTeX> 
-#endif
+</lalLaTeX> */
 
 
 /*
@@ -215,11 +210,17 @@ LALXMGRGPSTimeToTitle(
     CHAR               *comment
     );
 
-#if 0
-<lalLaTeX>
+void
+LALXMGRPlotMesh(
+    LALStatus          *status,
+    TwoDMeshNode       *head,
+    FILE               *fp,
+    TwoDMeshParamStruc *mesh
+    );
+
+/* <lalLaTeX>
 \newpage\input{LALXMGRInterfaceC}
-</lalLaTeX> 
-#endif
+</lalLaTeX> */
 
 #ifdef  __cplusplus
 #pragma {
