@@ -6,44 +6,28 @@
 
 This section of \textsc{LALApps} contains programs that can be used to
 perform burst searches using the excess power algorithm.   
-
-The fundamental parameters of the algorithm are:
-\begin{itemize}
-\item Maximum duration of the signal
-\item Minimum duration of the signal
-\item Maximum freq. bandwidth allowed in one tile
-\item Minimum freq. bandwidth allowed in one tile
-\end{itemize}
-
-
-dt = sampling rate
-fN = 1/(2 * dt)
-
-lngth = number of points in the frequency domain w.r.t the frequency
-resolution of the worst time freq plane
-
-
-
-fseglength = delta freq for the time freq plane
-
-
 The Excess Power search method is motivated by the classical theory of
 signal detection in Gaussian noise.  The method is the optimal search
-strategy~\cite{Anderson:2000yy} having knowledge only of the time duration
+strategy having knowledge only of the time duration
 and frequency band of the expected signal,  but having no other
 information about the power distribution in advance of detection. 
 
-In its implementation for this search, Excess Power processed data at
-16384Hz in 1 second segments which overlapped each other by 0.5
-seconds.   The data was high-pass filtered using a 4th order
-Butterworth filter with attenuation of 0.1 at 120 Hz prior to being
-divided into 1 second segments.  Each segment is then windowed (using
+Suppose Excess Power processed data at 16384Hz in 1 second segments 
+which overlap each other by 0.5 seconds. The data is high-pass 
+filtered using a 
+Butterworth high pass filter.  Each segment is then windowed (using
 a Welch window) and transformed into the frequency domain 
 \begin{equation}
-\tilde{s}_k =  \sum_{j=0}^{N} s_j e^{-2 \pi i j k /N}
+\tilde{H}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_jh_j e^{-2 \pi i j k /N}
 \end{equation}
-where $N=16\, 384$ and $s_j$ is the filtered and windowed gravitational 
-wave channel.  The input to the Excess Power search code is the whitened 
+where $N=16\, 384$, $h_j$ is the filtered gravitational 
+wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
+function and $\sigma_w$ is given by 
+\begin{equation}
+{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
+\end{equation}
+
+ The input to the Excess Power search code is the whitened 
 frequency domain signal.  The whitened data are given by
 \begin{equation}
 \tilde{w}_k = \frac{ 2 \tilde{s}_k } {\sqrt{ P_k }}
