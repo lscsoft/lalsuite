@@ -47,6 +47,7 @@ void initUserVars (LALStatus *stat);
 REAL4 mymax (REAL4 x, REAL4 y);
 void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
 
+extern int vrbflg;
 
 /*----------------------------------------------------------------------*/
 static const LALStatus empty_status;
@@ -68,6 +69,7 @@ main(int argc, char *argv[])
   UINT4 i;
 
   lalDebugLevel = 0;
+  vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
