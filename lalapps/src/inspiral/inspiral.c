@@ -238,6 +238,10 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
       &status );
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
+  if ( frInCacheName )
+  {
+    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+  }
 
   if ( writeRawData )
   {
@@ -689,10 +693,12 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  LALFree( fqChanName );
-  LALFree( channelName );
   LALFree( rhosqStr );
   LALFree( chisqStr );
+  LALFree( calCacheName );
+  LALFree( frInCacheName );
+  LALFree( channelName );
+  LALFree( fqChanName );
   LALCheckMemoryLeaks();
   exit( 0 );
 }
