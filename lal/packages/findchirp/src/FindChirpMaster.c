@@ -26,11 +26,10 @@ LALFindChirpMaster (
   INT4                          myRank;
   UINT4                         i;
   UINT4                         numTmpltExch = params->numTmpltExch;
-  InspiralEvent                *thisEvent    = NULL;
-  InspiralEvent                *lastEvent    = NULL;
-  InspiralTemplate             *fineBank     = NULL;
-  InspiralTemplateNode         *thisTmplt    = NULL;
-  InspiralTemplateNode         *tmpltInsert  = NULL;
+  InspiralTemplate             *currentTmplt      = NULL;
+  InspiralTemplate             *fineTmplt         = NULL;
+  InspiralTemplateNode         *thisTmpltNode     = NULL;
+  InspiralTemplateNode         *insertTmpltNode   = NULL;
 
 
   INITSTATUS( status, "LALFindChirpMaster", INSPIRALMASTERC );
@@ -59,14 +58,22 @@ LALFindChirpMaster (
    */
 
 
-  if ( *(params->numSlaves) )
+  /* keep looping waiting for exchange requests from the slaves         */
+  /* we break out of this loop only if we recieve events of finished    */
+  /* messages from the slaves                                           */
+
+  while ( *(params->numSlaves) )
   {
     ExchParams *thisExch;
 
-waitForExch:
-
     thisExch = NULL;
 
+    /* break out of the loop if there are no slaves */
+    if ( ! *(params->numSlaves) )
+    {
+      break;
+    }
+    
     /* wait for a request from a slave */
     LALInitializeExchange( status->statusPtr, &thisExch, 
         NULL, &initExchParams );
@@ -86,56 +93,50 @@ waitForExch:
 
       case ExchInspiralTemplate:
 
-#if 0
-        fprintf( stderr, "master: ExchInspiralTemplate\n" );
-#endif
-
         /* if there are any templates left send them to the slave */
-        if ( params->tmpltCurrent )
+        if ( params->currentTmpltNode )
         {
-          UINT4                        tmpNumTmplts;
+          UINT4                        tmpNumTmplts = 0;
           InspiralTemplate            *tmpBankHead = NULL;
-          InspiralTemplateNode        *tmpTmpltCurrent;
+          InspiralTemplateNode        *tempCurrentTmpltNode;
 
-          /* count the number of templates to send */
-          for ( tmpTmpltCurrent = params->tmpltCurrent, tmpNumTmplts = 0; 
-              tmpTmpltCurrent && tmpNumTmplts < numTmpltExch;
-              tmpTmpltCurrent = tmpTmpltCurrent->next )
+          /* count the number of templates to send to the slave */
+          for ( tempCurrentTmpltNode = params->currentTmpltNode; 
+              tempCurrentTmpltNode && tmpNumTmplts < numTmpltExch;
+              tempCurrentTmpltNode = tempCurrentTmpltNode->next )
           { 
             ++tmpNumTmplts;
           }
 
-          /* tell the slave how many templates we have for it. actually */
-          /* it doesn't care about the number, as long as it is > 0     */
+          /* tell the slave how many templates we have for it   */
           LALExchangeUINT4( status->statusPtr, &tmpNumTmplts, thisExch );
           CHECKSTATUSPTR( status );
 
           /* allocate some memory for a temporary inspiral bank */
           tmpBankHead = (InspiralTemplate *) 
             LALCalloc( tmpNumTmplts, sizeof(InspiralTemplate) );
+          if ( ! tmpBankHead )
+            ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
 
-          /* copy the templates from the bank to the temporary storage */
-          /* and set the linked list pointers in the array             */
+          /* copy the templates from the bank to the temporary  */
+          /* template storage                                   */
           for ( i = 0; i < tmpNumTmplts; ++i )
           {
-            memcpy( tmpBankHead + i, params->tmpltCurrent->tmpltPtr,
+            memcpy( tmpBankHead + i, params->currentTmpltNode->tmpltPtr,
                 sizeof(InspiralTemplate) );
-            (tmpBankHead + i)->segmentIdVec = NULL;
+            
+            /* point the segmentIdVec at the address of the     */
+            /* id vector in the real bank                       */
+            (tmpBankHead + i)->segmentIdVec = 
+              params->currentTmpltNode->tmpltPtr->segmentIdVec;
 
-            LALI4CreateVector( status->statusPtr, 
-                &((tmpBankHead + i)->segmentIdVec),
-                params->tmpltCurrent->segmentIdVec->length );
-            CHECKSTATUSPTR( status );
-
-            memcpy( (tmpBankHead + i)->segmentIdVec->data,
-                params->tmpltCurrent->segmentIdVec->data,
-                params->tmpltCurrent->segmentIdVec->length *
-                sizeof(INT4) );
-
+            /* set the next pointer so the array is also a linked list */
             (tmpBankHead + i)->next = NULL;
             (tmpBankHead + i)->fine = NULL;
             if ( i ) (tmpBankHead + i - 1)->next = (tmpBankHead + i);
-            params->tmpltCurrent = params->tmpltCurrent->next;
+
+            /* increment the current template node pointer in the list */
+            params->currentTmpltNode = params->currentTmpltNode->next;
           }
 
           /* exchange the temporary template bank... */
@@ -143,12 +144,6 @@ waitForExch:
           CHECKSTATUSPTR( status );
           
           /* ...and destroy it */
-          for ( i = 0; i < tmpNumTmplts; ++i )
-          {
-            LALI4DestroyVector( status->statusPtr, 
-                &((tmpBankHead + i)->segmentIdVec) );
-            CHECKSTATUSPTR( status );
-          }          
           LALFree( tmpBankHead );
         }
         else /* no templates */
@@ -171,18 +166,12 @@ waitForExch:
 
       case ExchInspiralEvent:
 
-
         /* recieve a linked list of inspiral events from a slave */
         LALExchangeInspiralEventList( status->statusPtr, eventList, thisExch );
         CHECKSTATUSPTR( status );
 
-#if 0
-        fprintf( stdout, "master: ExchInspiralEvent from slave %d "
-            "list at %p template number %d\n", 
-            thisExch->partnerProcNum, *eventList, (*eventList)->tmplt.number );
-        fflush( stdout );
-#endif
 
+#if 0
         /*
          *
          * this is the master part of the heirarchical search
@@ -190,101 +179,82 @@ waitForExch:
          */
 
 
-        /* don't do a heriarical search if we just want the loudest event */
-        if ( ! (params->inspiralDebugFlag == 2) )
+        /* we are guaranteed that a the linked list of events will      */
+        /* come from only _one_ template and _one_ data segment         */
+        /* so we can just look at the first event in the list for       */
+        /* the information that we need (template id and segment id)    */
+
+        /* template node to insert additional nodes after */
+        insertTmpltNode = params->currentTmpltNode;
+
+        /* loop over the template bank looking for a template that      */
+        /* with the same id the id of the template in the retuened      */
+        /* event: this is ineffienct for large template banks and       */
+        /* should be optimised                                          */
+        for ( thisTmpltNode = params->tmpltNodeHead; thisTmpltNode; 
+            thisTmpltNode = thisTmpltNode->next )
         {
-          /* this is a dog: i should think of a better way to do this     */
-
-          /* we are guaranteed that a the linked list of events will      */
-          /* come from only _one_ template and _one_ data segment         */
-          /* so we can just look at the first event in the list for       */
-          /* the information that we need (template id and segment id)    */
-          thisEvent = *eventList;
-          tmpltInsert = params->tmpltCurrent;
-
-          /* look for a template that matches the template of the event */
-          for ( thisTmplt = params->tmpltHead; thisTmplt; 
-              thisTmplt = thisTmplt->next )
+          if ( (*eventList)->tmplt.number == thisTmpltNode->tmpltPtr->number )
           {
-            if ( thisEvent->tmplt.number == thisTmplt->tmpltPtr->number )
+            /* insert the fine bank into the list to filter */
+            for ( fineTmplt = thisTmpltNode->tmpltPtr->fine; fineTmplt;
+                fineTmplt = fineTmplt->next )
             {
-              /* insert the fine bank into the list to filter */
-              for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
-                  fineBank = fineBank->next )
+              INT4 *filterSegment = fineTmplt->segmentIdVec->data;
+
+              /* create a template node for this fine template */
+              LALFindChirpCreateTmpltNode( status->statusPtr, 
+                  fineTmplt, &insertTmpltNode );
+              CHECKSTATUSPTR( status );
+
+              /* set the id of the segment to filter against this template */
+              filterSegment[(*eventList)->segmentNumber] = 1;
+
+              /* increase the count of the total number of templates */
+              params->numTmpltsToFilter++;
+
+              /* clear the event list since this is not the lowest template */
+              while ( *eventList )
               {
-#if 0
-                fprintf( stdout, "inserting fine bank %p about %p\n",
-                    fineBank, tmpltInsert );
-                fflush( stdout );
-#endif
-
-                LALFindChirpCreateTmpltNode( status->statusPtr, 
-                    fineBank, &tmpltInsert );
-                CHECKSTATUSPTR( status );
-
-                /* set the id of the segment to filter against this template */
-                tmpltInsert->segmentIdVec->data[thisEvent->segmentNumber] = 1;
-
-                /* increase the count of the number of templates */
-                params->numTmplts++;
-#if 0
-                /* clear the event list since this is not the lowest template */
-                while ( *eventList )
-                {
-                  InspiralEvent *tmpEvent;
-                  tmpEvent = *eventList;
-                  *eventList = (*eventList)->next;
-                  LALFree (tmpEvent);
-                  tmpEvent = NULL;
-                }
-#endif
+                InspiralEvent *tmpEvent;
+                tmpEvent = *eventList;
+                *eventList = (*eventList)->next;
+                LALFree (tmpEvent);
+                tmpEvent = NULL;
               }
+
             }
+
+            /* break out of the for loop over the template bank */
+            break;
           }
         }
-        else if ( params->inspiralDebugFlag == 2 )
+#endif
+
+
+        break;
+
+
+        /*
+         *
+         * slave is returning number of templates filtered
+         *
+         */
+
+      case ExchNumTmpltsFiltered:
+
+
+        /* add the number of templates returned by the slave to the     */
+        /* total number that have been filtered and update the progress */
         {
-          /* look for the loudest event in the list of events returned */
+          UINT4 numTmpltsReturned = 0;
+          
+          LALExchangeUINT4( status->statusPtr, &numTmpltsReturned, 
+              thisExch );
+          CHECKSTATUSPTR( status );
 
-          thisEvent = *eventList;
-
-          while ( thisEvent )
-          {
-#if 0
-            fprintf( stderr, "search master: searching for loudest event...\n" );
-#endif
-
-            /* save a copy of the loudest event */
-            if ( thisEvent->snrsq > params->loudestEvent->snrsq )
-            {
-#if 0
-              fprintf( stderr, "search master: found a new loudest event!\n" );
-#endif
-              memcpy( params->loudestEvent, thisEvent, sizeof(InspiralEvent) );
-            }
-
-            /* free the events */
-            lastEvent = thisEvent;
-            thisEvent = thisEvent->next;
-            LALFree( lastEvent );
-            lastEvent = NULL;
-          }
-
-          /* make sure no events are returned to the wrapperAPI */
-          *eventList = NULL;
-
-
-          /* now finalize the exchange and go back to the wait for the */
-          /* next exchange request from a slave: oh this is so bad.... */
-          /* but is speeds up the code by an order of magnitude...     */
-          /* at the expense of a goto...                               */
-          LALFinalizeExchange (status->statusPtr, &thisExch);
-          CHECKSTATUSPTR(status);
-
-          goto waitForExch;
-
+          params->numTmpltsFiltered += numTmpltsReturned;
         }
-
 
         break;
 
@@ -297,10 +267,6 @@ waitForExch:
 
 
       case ExchFinished:
-
-#if 1
-        fprintf( stderr, "master: ExchInspiralFinished\n" );
-#endif
 
         /* decrement the number of active slaves */
         --*(params->numSlaves);
@@ -320,62 +286,32 @@ waitForExch:
 
     }
 
-    /* finish the exchange */
-    LALFinalizeExchange (status->statusPtr, &thisExch);
-    CHECKSTATUSPTR(status);
-
 
     /*
      *
-     * calaculate the progress information for wrapperAPI
+     * break out of loop if a slave returns events or filtered tmplts
      *
      */
 
 
-    /* if there are any remaining templates, calculate the fraction */
-    /* remaining by the progress through the template bank          */
-    if ( params->tmpltCurrent )
+    if ( thisExch->exchObjectType == ExchNumTmpltsFiltered ||
+        thisExch->exchObjectType == ExchInspiralEvent )
     {
-      /* this is arse */
-      INT4 numTotal = 0;
-      INT4 numDone  = 0;
-      InspiralTemplateNode *tmpltTotalPtr = params->tmpltHead;
-      InspiralTemplateNode *tmpltDonePtr  = params->tmpltHead;
-      
-      while( tmpltTotalPtr = tmpltTotalPtr->next ) 
-        ++numTotal;
-      while( (tmpltDonePtr = tmpltDonePtr->next) != params->tmpltCurrent ) 
-        ++numDone;
+      /* finish the exchange and return control to the wrapperAPI */
+      LALFinalizeExchange (status->statusPtr, &thisExch);
+      CHECKSTATUSPTR(status);
 
-      *(params->fracRemaining) = 1.0 - (REAL4) numDone / (REAL4) numTotal;
+      break;
     }
-    else /* we are all the way through the bank */
+    else
     {
-      *(params->fracRemaining) = 0.0;
+      /* just finish the exchange and loop again */
+      LALFinalizeExchange (status->statusPtr, &thisExch);
+      CHECKSTATUSPTR(status);
     }
 
-    /* we're not finished, as we need to wait for the slaves to report finished */
-    *(params->notFinished) = 1;
+  } /* end while( *(params->numSlave) ) */
 
-  }
-  else /* there are no active slaves */
-  {
-    /* tell the wrapperAPI that we are finished */
-    *(params->fracRemaining) = 0.0;
-    *(params->notFinished)   = 0;
-
-    if ( params->inspiralDebugFlag == 2 )
-    {
-      /* return the loudest event on the final return to the wrapperAPI */
-      *eventList = (InspiralEvent *) LALCalloc( 1, sizeof(InspiralEvent) );
-      memcpy( *eventList, params->loudestEvent, sizeof(InspiralEvent) );
-    }
-  }
-
-
-#if 0
-  fprintf( stderr, "master: returning to ApplySearch\n" );
-#endif
 
   /* normal exit */
   DETATCHSTATUSPTR (status);
