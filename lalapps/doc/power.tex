@@ -40,7 +40,9 @@ $\backslash$ \newline \hspace*{0.25in}
 \verb$--numpts$ \textsc{numpts} [\verb$--printSpectrum$] 
 \verb$--srate$ \textsc{srate} 
 $\backslash$ \newline \hspace*{0.25in}
+[\verb$--cluster$]
 [\verb$--noise$ \textsc{var}] [\verb$--seed$ \textsc{seed}] 
+$\backslash$ \newline \hspace*{0.25in}
 [\verb$--comment$ \textsc{comment}]
 
 \item[Description] 
@@ -174,6 +176,16 @@ than you might expect.   Since the data stream is high-pass filtered
 internally,   the code ignores the first $\textsc{olap}$ points and
 requires that there be an extra $\textsc{olap}$ points at the end to
 avoid data corruption.
+
+\item[\texttt{--cluster}] Apply a clustering algorithm to tiles
+identified by the excess power code.  The result is reduction of
+overlapping triggers to a single trigger which covers a square
+time-frequency volume which encompasses all overlapping trigger
+regions.   The signal-to-noise and the confidence associated with a
+clustered trigger belong to the most significant excess-power trigger
+in the cluster.  [This is a protoype option.  Its behavior is not
+robustly tested.  Treat with care and look at the code to insure
+understanding.]
 
 \item[\texttt{--comment} \textsc{comment}] A user defined comment
 string.  It should be less than 256 characters and should not contain
