@@ -217,7 +217,7 @@ void
 LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params)
 {
   UINT4 numSFTs;			/* number of SFTs */
-  UINT4 numSamples;			/* number of samples in each Tsft */
+  UINT4 numSamples;			/* number of time-samples in each Tsft */
   UINT4 iSFT;
   REAL8 Band, samples, f0, deltaF;
   RealFFTPlan *pfwd = NULL;
@@ -228,8 +228,11 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
   REAL8 duration, delay;
   UINT4 SFTlen;				/* number of samples in an SFT */
   UINT4 indexShift;
-  SFTtype *thisSFT;
+  UINT4 index0n;			/* first frequency-bin to use from noise-SFT */
+  SFTtype *thisSFT, *thisNoiseSFT;	/* SFT-pointers */
+  REAL4 renorm;				/* renormalization-factor of taking only part of an SFT */
   SFTVector *sftvect = NULL;		/* return value. For better readability */
+  UINT4 j;
 
 
   INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
@@ -321,6 +324,19 @@ LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries 
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       /* Now add the noise-SFTs if given */
+      if (params->noiseSFTs)
+	{
+	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
+	  index0n = (UINT4) ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
+	  /* The renormalization follows strictly makefakedata_v2, even if I admittedly
+	     don't quite understand this... */
+	  renorm = 1.0*SFTlen/(thisNoiseSFT->data->length);
+	  for (j=0; j < SFTlen; j++)
+	    {
+	      thisSFT->data->data[j].re += renorm * thisNoiseSFT->data->data[index0n + j].re;
+	      thisSFT->data->data[j].im += renorm * thisNoiseSFT->data->data[index0n + j].im;
+	    } /* for j < SFTlen */
+	}
 
     } /* for iSFT < numSFTs */ 
 
@@ -606,7 +622,8 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   FILE *fp;
   REAL4 rpw,ipw;
   INT4 i;
-  REAL8 freqBand;
+  REAL8 Tsft;
+  
 
   struct headertag {
     REAL8 endian;
@@ -630,14 +647,10 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   header.gps_sec = sft->epoch.gpsSeconds;
   header.gps_nsec = sft->epoch.gpsNanoSeconds;
 
-  freqBand = (sft->data->length -1 ) * sft->deltaF;
-  header.tbase = (REAL4) ( (sft->data->length - 1.0) / freqBand);
-  header.firstfreqindex = (INT4)(sft->f0 * header.tbase + 0.5);
-  header.nsamples=sft->data->length - 1;
-
-  printf ("\nwrite_SFT():\nfreqBand = %f\n", freqBand);
-  printf ("f0 = %f\ndf = %f\nnsamples = %d\n", sft->f0, sft->deltaF, header.nsamples);
-  printf ("Tsft = %f\n", header.tbase);  
+  Tsft = 1.0 / sft->deltaF;
+  header.tbase = Tsft;
+  header.firstfreqindex = (UINT4)( sft->f0 / sft->deltaF );
+  header.nsamples=sft->data->length - 1;		/* following makefakedata_v2, but WHY -1 ?? */
 
   /* write header */
   if (fwrite( (void*)&header, sizeof(header), 1, fp) != 1) {
@@ -670,19 +683,19 @@ REAL4 mymax (REAL4 x, REAL4 y)
   return (x > y ? x : y);
 }
 /* little debug-function: compare two sft's and print relative errors */
-REAL4
+void
 compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 {
   static LALStatus status;
-  UINT4 i, maxindex = 0;
-  REAL4 diffre, diffim, maxdiff = 0;
-  REAL4 re1, re2, im1, im2;
+  UINT4 i;
+  REAL4 errpow= 0, errph = 0;
+  REAL4 re1, re2, im1, im2, pow1, pow2, phase1, phase2;
   REAL8 Tdiff;
 
   if (sft1->data->length != sft2->data->length) 
     {
       printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->data->length, sft2->data->length);
-      return(-1);
+      return;
     }
   LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
   if ( Tdiff != 0.0 ) 
@@ -702,26 +715,21 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
       re2 = sft2->data->data[i].re;
       im2 = sft2->data->data[i].im;
 
-      diffre = fabs( re1 - re2 ) / mymax( fabs(re1), fabs(re2) );
-      diffim = fabs( im1 - im2 ) / mymax( fabs(im1), fabs(im2) );
-      
-      if (diffre > maxdiff) {
-	maxdiff = diffre;
-	maxindex = i;
-      }
-      if (diffim > maxdiff) {
-	maxdiff = diffim;
-	maxindex = i;
-      }
+      pow1 = sqrt(re1*re1 + im1*im1);
+      pow2 = sqrt(re2*re2 + im2*im2);
+
+      phase1 = atan2 (im1, re1);
+      phase2 = atan2 (im2, re2);
+
+      errpow = mymax (errpow, (pow1-pow2)/pow1 );
+      errph = mymax (errph, phase1 - phase2 );
+
     } /* for i */
 
-  printf ("maximal relative error: %e", maxdiff);
-  if (maxdiff > 0.0)
-    printf ("  in frequency-bin Nr %d\n", maxindex);
-  else
-    printf ("\n");
 
-  return (maxdiff);
+  printf ("maximal relative error in power: %e, max phaseerror: %e radians\n", errpow, errph);
+
+  return;
 
 } /* compare_SFTs() */
 
@@ -931,7 +939,6 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   freqBand = nsamples * df;
 
   fprintf (fp, xmgrHeader);
-  /*  fprintf (fp, "@title \"GW source signal\"\n"); */
   fprintf (fp, "@subtitle \"epoch = (%d s, %d ns), Tsft = %f\"\n", 
 	   sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds, Tsft);
 
@@ -1087,3 +1094,47 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
   RETURN (stat);
 
 } /* checkNoiseSFTs() */
+
+/* dump an SFT into a text-file */
+void 
+dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
+{
+  FILE *fp;
+
+  REAL4 valre, valim;
+  UINT4 i;
+  REAL8 Tsft, freqBand;
+  REAL8 f0, df, ff;
+  UINT4 nsamples;
+
+  INITSTATUS( stat, "dump_SFT", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  fp = fopen (fname, "w");
+
+  if( !fp ) {
+    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+  }
+
+
+  f0 = sft->f0;
+  df = sft->deltaF;
+  nsamples = sft->data->length;
+  Tsft = 1.0 / sft->deltaF;
+  freqBand = nsamples * df;
+
+  for (i=0; i < nsamples; i++)
+    {
+      ff = f0 + i*df;
+      valre = sft->data->data[i].re;
+      valim = sft->data->data[i].im;
+      fprintf(fp, "%f %e %e\n", ff, valre, valim);
+        
+    } /* for i < nsamples */
+  
+  fclose(fp);
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+  
+} /* write_SFT() */

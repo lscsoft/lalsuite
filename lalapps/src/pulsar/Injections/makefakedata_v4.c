@@ -282,13 +282,10 @@ REAL4 Tsft,Band,sigma;
 /* smallest frequency in the band Band */
 REAL8 fmin;
 /* How many SFTS we'll produce*/
-INT4 nTsft; 
+UINT4 nTsft; 
 
 /* Do you want noise ?*/
 INT2 inoise;
-
-/*SCALE factor*/
-REAL4 scale=1.E19;
 
 /* Our detector*/
 LALDetector Detector;
@@ -320,10 +317,16 @@ DetectorResponse cwDetector;
 COMPLEX8Vector *fvec = NULL;
 COMPLEX8Vector *fvecn = NULL;
 
+SFTVector *noiseSFTs = NULL;
+
 /*FFT plan*/
 RealFFTPlan *pfwd = NULL;
 
 INT4 lalDebugLevel=3;
+
+REAL4 scale = 1.0E19;		/* scale-factor for noise-SFTs: only for comparison with makefakedata_v2!! */
+
+#define SLOPPY_TIMING 0
 
 /* Prototypes for the functions defined in this file */
 int read_commandline_and_file(LALStatus *, int argc, char *argv[]);
@@ -337,14 +340,17 @@ int compute_SSBtimes(LALStatus *);
 int prepare_fvec(LALStatus *);
 int make_and_add_time_domain_noise(LALStatus *);
 int make_filelist(LALStatus *);
-int read_and_add_freq_domain_noise(LALStatus *, int iSFT);
+int add_freq_domain_noise(int iSFT);
 int add(LALStatus *);
 int write_SFTS(LALStatus *, int iSFT);
 int write_timeseries(LALStatus *, int iSFT);
 int freemem(LALStatus *);
 int window_data(LALStatus *);
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
-void correct_phase(LALStatus* status, REAL8 f0, COMPLEX8Vector *vec);
+int correct_phase(LALStatus* status);
+
+static INT4 myRound(REAL8 x);
+static int read_noiseSFTs (LALStatus* status);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 
@@ -379,13 +385,14 @@ void error(char *fmt, ...){
 int main(int argc,char *argv[]) {
   
   static LALStatus status;
-  int iSFT;
+  UINT4 iSFT;
   SpinOrbitCWParamStruc spinorbit;
   REAL4 dfdt;
-
+  CHAR fname[256];
   /* new stuff */
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
+  FILE *fp;
   
   programname=argv[0];
   
@@ -449,6 +456,9 @@ int main(int argc,char *argv[]) {
   if (prepare_fvec(&status))
     return 1;
   
+  if (sigma < 0 && read_noiseSFTs (&status) )
+    return 1;
+
   /* If option active, write amplitude-modulation info file*/
 #if(0)
   if (write_modulated_amplitudes_file(&status))
@@ -556,10 +566,8 @@ int main(int argc,char *argv[]) {
     else
       params.pulsar.spindown = NULL;
 
-    params.orbit = NULL;
-    /*    params.transferFunction = cwDetector.transfer; */
-    params.transferFunction = NULL;
-
+    params.orbit = NULL;		/* isolated pulsar */
+    params.transferFunction = NULL;    	/* use unit transfer-function */
     params.site = &(Detector);
     params.ephemerides = edat;
 
@@ -574,12 +582,16 @@ int main(int argc,char *argv[]) {
       LALDDestroyVector (&status, &(params.pulsar.spindown) );
 
     SUB (PrintR4TimeSeries (&status, Tseries, "test2.agr"), &status);
-
+    
+    fp = fopen ("Tseries.dat", "w");
+    write_timeSeriesR4 (fp, Tseries);
+    fclose(fp);
+    
     sftParams.Tsft = Tsft;
     sftParams.timestamps = LALCalloc(1, sizeof(LIGOTimeGPSVector));
     sftParams.timestamps->length = nTsft;
     sftParams.timestamps->data = timestamps;
-    sftParams.noiseSFTs = NULL;
+    sftParams.noiseSFTs = noiseSFTs;
 
     SUB ( LALSignalToSFTs (&status, &SFTs, Tseries, &sftParams), &status);
 
@@ -591,14 +603,12 @@ int main(int argc,char *argv[]) {
 
   /* This is the main loop that produces output data */
   for (iSFT=0;iSFT<nTsft;iSFT++){
-    INT4 shift;
 
     /* This sets the time at which the output is given...*/
     timeSeries->epoch=timestamps[iSFT];
-    
-    shift = (INT4)(2.0* Band* (timestamps[iSFT].gpsSeconds - timestamps[0].gpsSeconds));
 
-    timeSeries->data->data =  totalTimeSeries->data->data + shift;
+    /* produce a time series simulation of a CW signal */
+    SUB( LALSimulateCoherentGW(&status, timeSeries, &cgwOutput, &cwDetector), &status);
 
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
@@ -615,6 +625,13 @@ int main(int argc,char *argv[]) {
     
     /* Perform FFTW-LAL Fast Fourier Transform */
     SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
+#if 0
+    correct_phase(&status);
+#endif
+    /* if you want noise added in the FREQ domain only, read from files and add in */
+    if (sigma < 0.0 && add_freq_domain_noise(iSFT))
+      return 1;
+
 
     /*----------------------------------------------------------------------*/
     /* COMPARE this to "new" SFTs */
@@ -625,15 +642,25 @@ int main(int argc,char *argv[]) {
 	testSFT.f0 = fmin;
 	testSFT.deltaF = 1.0 / Tsft;
 	testSFT.data = fvec;
-	printf ("\ni = %d: ", iSFT);
+	printf ("i = %02d: ", iSFT);
 	compare_SFTs ( &testSFT, &(SFTs->data[iSFT]) );
+
+	sprintf (fname, "SFT_orig.%05d", iSFT);
+	write_SFT (&status, &(testSFT), fname);
+	strcat (fname, ".dat");
+	dump_SFT (&status, &testSFT, fname);
+
+	sprintf (fname, "SFT_new.%05d", iSFT);
+	write_SFT (&status, &(SFTs->data[iSFT]), fname);
+	strcat (fname, ".dat");
+	dump_SFT (&status, &(SFTs->data[iSFT]), fname);
+	
+	sprintf (fname, "Tseries%05d.dat", iSFT);
+	fp = fopen (fname, "w");
+	write_timeSeriesR4 (fp, timeSeries);
+	fclose (fp);
       }
     /*----------------------------------------------------------------------*/
-
-
-    /* if you want noise added in the FREQ domain only, read from files and add in */
-    if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
-      return 1;
       
     /* Write the SFT file in the file that is specified by the path
        name.  If no path name is set, this means don't output SFTs*/
@@ -679,7 +706,7 @@ int freemem(LALStatus* status)
   LALFree(cgwOutput.phi);
 
   LALSDestroyVector (status, &(totalTimeSeries->data) );
-  LALFree (timeSeries->data);
+  LALSDestroyVector (status, &(timeSeries->data) );
 
   LALFree(totalTimeSeries);
   LALFree(timeSeries);
@@ -709,8 +736,8 @@ int freemem(LALStatus* status)
   if (genTayParams.f)
     LALDDestroyVector( status, &(genTayParams.f) );
 
-  if (fvecn)
-    LALCDestroyVector(status, &fvecn);  
+  if (noiseSFTs)
+    LALDestroySFTVector (status, &noiseSFTs);
 
   if (earthdata) LALFree (earthdata);
   if (sundata) LALFree (sundata);
@@ -731,18 +758,36 @@ int set_default(LALStatus* status) {
   return 0;
 }
 
-#define oneBillion 1000000000
+
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin) {
   REAL8 doubleTime;
   LIGOTimeGPS ssb;
+
+  /* This was a mistake in the original makefakedata.  Fixed by Bruce
+     Allen on October 9, 2003.  Without the extra precision of a
+     double, too much significance is lost in computing SSB
+     timestamps. */  
+#if 0
+  REAL4 Ts=gpsin->gpsSeconds;
+  REAL4 Tns=gpsin->gpsNanoSeconds;
+#else
+  REAL8 Ts=gpsin->gpsSeconds;
+  REAL8 Tns=gpsin->gpsNanoSeconds;
+#endif
 
   LALBarycenterEarth(status, &earth, gpsin, edat);
   baryinput.tgps = *gpsin;
   LALBarycenter(status, &emit, &baryinput, &earth);
   
+  doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   LALFloatToGPS(status, &ssb, &doubleTime);
 
+#if SLOPPY_TIMING
+  *ssbout=ssb;
+#else  
   *ssbout = emit.te;
+#endif
+
   return;
 }
 
@@ -843,6 +888,8 @@ int prepare_baryinput(LALStatus* status)
 
   return 0;
 }
+
+
 
 /* prepares cwDetector */
 int prepare_cwDetector(LALStatus* status){
@@ -962,31 +1009,27 @@ int prepare_cwDetector(LALStatus* status){
 int prepare_timeSeries(LALStatus* status) 
 {
   REAL8 duration;
-  UINT4 len0;
 
   status->statusCode = 0;
-
-  timeSeries = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
-  timeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
 
   totalTimeSeries = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
   totalTimeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
 
-  timeSeries->data->length = Band*Tsft*2;
-
-  len0 = nTsft * Tsft * 2 * Band;
-
   LALDeltaFloatGPS (status, &duration, &(timestamps[nTsft-1]), &(timestamps[0]) );
   duration += Tsft;
   totalTimeSeries->data->length = duration * Band * 2.0;
-
   totalTimeSeries->data->data = (REAL4 *)LALMalloc(totalTimeSeries->data->length*sizeof(REAL4));
-
-  timeSeries->deltaT=Tsft/timeSeries->data->length;
-  totalTimeSeries->deltaT= timeSeries->deltaT;
-
-  timeSeries->f0=fmin;
+  totalTimeSeries->deltaT = duration / totalTimeSeries->data->length;
   totalTimeSeries->f0=fmin;
+
+  /* for comparision with "old" method */
+  timeSeries = (REAL4TimeSeries *)LALMalloc(sizeof(REAL4TimeSeries));
+  timeSeries->data = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  timeSeries->data->length = Band * Tsft * 2;
+  timeSeries->data->data = (REAL4 *)LALMalloc(timeSeries->data->length*sizeof(REAL4));
+  timeSeries->deltaT = Tsft / timeSeries->data->length;
+  timeSeries->f0=fmin;
+
 
   return 0;
 }
@@ -1066,7 +1109,8 @@ int make_and_add_time_domain_noise(LALStatus* status) {
 int read_timestamps(LALStatus* status,REAL8 startattime) {
   
   FILE *fp;
-  int i,r;
+  UINT4 i;
+  INT4 r;
 
   status->statusCode = 0;
  
@@ -1110,7 +1154,7 @@ int write_modulated_amplitudes_file(LALStatus* status){
   LIGOTimeGPS       gps;
   LALGPSandAcc      gpsandacc;
   char *filename="AmplMod.dat";
-  int i;
+  UINT4 i;
 
   
   if (!(fp=fopen(filename,"w"))) {
@@ -1152,6 +1196,12 @@ int make_filelist(LALStatus* status)
 
   status->statusCode = 0;
 
+  if (noisedir == NULL)
+    {
+      printf ("\nError: no noise-SFT directory specified!\n");
+      exit (-1);
+    }
+
   strcpy(command,noisedir);
   strcat(command,"*SFT*");
   
@@ -1180,14 +1230,35 @@ int make_filelist(LALStatus* status)
 
 
 
-int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
+int add_freq_domain_noise(int iSFT) {
 
   INT4 myRound(REAL8);
-
-  FILE *fp;
-  REAL4 norm;
-  size_t errorcode;
   UINT4 i;
+
+  /**********************/
+
+  fvecn = noiseSFTs->data[iSFT].data;
+
+  for (i = 0; i < fvec->length; ++i) {
+    fvec->data[i].re += fvecn->data[i].re;
+    fvec->data[i].im += fvecn->data[i].im;
+  }
+
+  return 0;
+}
+
+/* just a quick-and-dirty hack: read in all noise-SFTs into an SFTVector */
+/* result gets stored in global variable noiseSFTs */
+int read_noiseSFTs (LALStatus* status) 
+{
+  FILE *fp;
+  size_t errorcode;
+  UINT4 iSFT;
+  INT4 len2= timeSeries->data->length/2 + 1;
+  REAL8 deltaF;
+  UINT4 j;
+  REAL4 norm;
+
 
   struct headertag {
     REAL8 endian;
@@ -1200,73 +1271,75 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   /**********************/
 
+  LALCreateSFTVector (status, &noiseSFTs, nTsft, len2);
 
-  /* open FIRST file and get info from it*/
-  if (!(fp=fopen(filelist[iSFT],"r"))){
-    syserror("Unable to open the fisrt SFT file file %s\n", filelist[iSFT]);
-    return 1;
-  }
-  /* read in the header from the file */
-  errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
+  for (iSFT=0; iSFT < (UINT4)nTsft; iSFT++)
     {
-      error("No header in data file %s\n",filelist[iSFT]);
-      return 1;
-    }
+      /* open FIRST file and get info from it*/
+      if (!(fp=fopen(filelist[iSFT],"r"))){
+	syserror("Unable to open the fisrt SFT file file %s\n", filelist[iSFT]);
+	return 1;
+      }
+      /* read in the header from the file */
+      errorcode=fread((void*)&header,sizeof(header),1,fp);
+      if (errorcode!=1) 
+	{
+	  error("No header in data file %s\n",filelist[iSFT]);
+	  return 1;
+	}
 
-  /* check that data is correct endian order */
-  if (header.endian!=1.0)
-    {
-      error("First object in file %s is not (double)1.0!\n",filelist[iSFT]);
-      error("It could be a file format error (big/little\n");
-      error("endian) or the file might be corrupted\n\n");
-      return 2;
-    }
+      /* check that data is correct endian order */
+      if (header.endian!=1.0)
+	{
+	  error("First object in file %s is not (double)1.0!\n",filelist[iSFT]);
+	  error("It could be a file format error (big/little\n");
+	  error("endian) or the file might be corrupted\n\n");
+	  return 2;
+	}
+      
 
+      /* check frequency range */
+      if ((fmin*Tsft < header.firstfreqindex) ||
+	  ((fmin*Tsft+fvec->length-1) > header.firstfreqindex + header.nsamples)){
+	error("Frequency band of noise data out of range !\n");
+	return 1;
+      }
+      
+      /* seek to position */
+      if (0 != fseek(fp, myRound((fmin*Tsft - header.firstfreqindex) * 4.0 * 2.0), SEEK_CUR)){
+	syserror("file too short (could'n fssek to position\n");
+	return 1;
+      }
 
-  /* check frequency range */
-  if ((fmin*Tsft < header.firstfreqindex) ||
-      ((fmin*Tsft+fvec->length-1) > header.firstfreqindex + header.nsamples)){
-    error("Frequency band of noise data out of range !\n");
-    return 1;
-  }
+      fvecn = noiseSFTs->data[iSFT].data;
+      /* set header */
+      deltaF = 1.0 / header.tbase;
+      noiseSFTs->data[iSFT].epoch.gpsSeconds = header.gps_sec;
+      noiseSFTs->data[iSFT].epoch.gpsNanoSeconds = header.gps_nsec;
+      noiseSFTs->data[iSFT].f0 = fmin;
+      noiseSFTs->data[iSFT].deltaF = deltaF;
+      /* read the data */
+      if (1 != fread(fvecn->data,(fvecn->length)*2*4.0,1,fp)) {
+	syserror("Could not read the data \n");
+	return 1;
+      }
 
-  /* seek to position */
-  if (0 != fseek(fp, myRound((fmin*Tsft - header.firstfreqindex) * 4.0 * 2.0), SEEK_CUR)){
-    syserror("file too short (could'n fssek to position\n");
-    return 1;
-  }
+      fclose(fp);
 
+      /* rescale SFT-data by scale=1E19 for comparison with makefakedata_v2 */
+      norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
+      for (j=0; j < fvecn->length; j++)
+	{
+	  fvecn->data[j].re *= scale*norm;
+	  fvecn->data[j].im *= scale*norm;
+	}
 
-  /* calculate size of the data in bytes */
-  /* datasize = (f2ind - f1ind) * head.dsize * 2;*/
-
-  /* allocate storage space if needed */
-  if (!fvecn) {
-    INT4 len=timeSeries->data->length;
-    INT4 len2=len/2+1;
-    LALCCreateVector(status, &fvecn, (UINT4)len2);
-  }
-
-  /* read the data */
-  if (1 != fread(fvecn->data,(fvecn->length-1)*2*4.0,1,fp)) {
-      syserror("Could not read the data \n");
-    return 1;
-  }
-
-  fclose(fp);
-
-  norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
-
-  for (i = 0; i < fvec->length; ++i) {
-    fvec->data[i].re += scale*fvecn->data[i].re*norm;
-    fvec->data[i].im += scale*fvecn->data[i].im*norm;
-  }
-  
-  LALCDestroyVector (status, &fvecn);
+    } /* for i < nTsft */
 
   return 0;
-}
+
+} /* read_noiseSFTs() */
+
 
 
 /*-----------------------------------------------------------------*/
@@ -1810,29 +1883,31 @@ Timestamps:
 
 */
 
-void
-correct_phase(LALStatus* status, REAL8 f0, COMPLEX8Vector *vec) 
+int correct_phase(LALStatus* status) 
 {
   UINT4 i;
-  REAL8 cosx,sinx;
+  REAL4 cosx,sinx;
   COMPLEX8 fvec1;
+  LALTimeInterval deltaGPS;
   LIGOTimeGPS gps1,gps2;
   REAL8 deltaT;
 
   gps1=timeSeries->epoch;
   gps2=cwDetector.heterodyneEpoch;
 
-  LALDeltaFloatGPS(status, &deltaT, &gps1, &gps2);
-  deltaT *= LAL_TWOPI * f0; 
+  LALDeltaGPS(status,&deltaGPS,&gps1,&gps2);
 
-  cosx=cos(deltaT);
-  sinx=sin(deltaT);
+  LALIntervalToFloat(status,&deltaT,&deltaGPS);
 
+  deltaT *= LAL_TWOPI*timeSeries->f0; 
+
+  cosx = (REAL4) cos(deltaT);
+  sinx = (REAL4) sin(deltaT);
   for (i = 0; i < fvec->length; ++i){
-    fvec1 = vec->data[i];
-    vec->data[i].re = fvec1.re*cosx-fvec1.im*sinx;
-    vec->data[i].im = fvec1.im*cosx+fvec1.re*sinx;
+    fvec1=fvec->data[i];
+    fvec->data[i].re = fvec1.re*cosx - fvec1.im*sinx;
+    fvec->data[i].im = fvec1.im*cosx + fvec1.re*sinx;
   }
   
-  return;
+  return 0;
 }
