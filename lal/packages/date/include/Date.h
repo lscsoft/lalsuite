@@ -18,7 +18,7 @@ Provides routines for manipulating date and time information.
 \end{verbatim}
 
 This header covers routines for manipulating date and time
-information.  The various time systems are discussed in~cite{esaa:1992}.
+information.  The various time systems are discussed in~\cite{esaa:1992}.
 
 
 </lalLaTeX> */
@@ -139,7 +139,7 @@ LALUnixDate;
 
 This structure is the Unix-epoch analog of \texttt{LIGOTimeGPS}.  It
 store the number of seconds and nanoseconds elapsed since the Unix
-epoch (1970-Jan-01 00:00:00). The fileds are:
+epoch (1970-Jan-01 00:00:00). The fields are:
 
 \begin{description}
 \item[\texttt{INT4 unixSeconds}] The integral number of seconds
@@ -229,7 +229,7 @@ are:
 \item[\texttt{LALUnixDate unixDate}] Unix date in \texttt{struct tm}
   format 
 \item[\texttt{INT4 residualNanoSeconds}] Residual nanoseconds
-\item[\texttt{LALTimezone timezone} Timezone information] 
+\item[\texttt{LALTimezone timezone}] Timezone information
 \end{description}
 </lalLaTeX> */
 
@@ -306,24 +306,28 @@ LALPlaceAndDate;
  */
 
 /* <lalLaTeX>
-%\newpage\input{JulianC}
+\newpage\input{JulianC}
 </lalLaTeX> */
 
 void LALJulianDay(LALStatus     *status,
                   INT4          *jDay,
                   const LALDate *date);
 
-void LALModJulianDay(LALStatus*,
-                     REAL8*,
-                     const LALDate*);
+void LALModJulianDay (LALStatus     *status,
+                      REAL8         *modJDay,
+                      const LALDate *date);
 
-void LALJulianDate(LALStatus*,
-                   REAL8*,
-                   const LALDate*);
+void LALJulianDate (LALStatus     *status,
+                    REAL8         *jDateOut,
+                    const LALDate *date);
 
-void LALModJulianDate(LALStatus*,
-                      REAL8*,
-                      const LALDate*);
+void LALModJulianDate (LALStatus     *status,
+                       REAL8         *modJDate,
+                       const LALDate *date);
+
+/* <lalLaTeX>
+\newpage\input{UtoGPSC}
+</lalLaTeX> */
 
 void LALUtoGPS(LALStatus*,
                LIGOTimeGPS*,
@@ -333,33 +337,55 @@ void LALGPStoU(LALStatus*,
                LIGOTimeUnix*,
                const LIGOTimeGPS*);
 
-void LALUtime(LALStatus*,
-              LALDate*,
-              const LIGOTimeUnix*);
 
-void LALDateString(LALStatus*,
-                   CHARVector*,
-                   const LALDate*);
+/* <lalLaTeX>
+\newpage\input{UtimeC}
+</lalLaTeX> */
 
-void LALGMST1(LALStatus*,
-              REAL8*,
-              const LALDate*,
-              LALMSTUnits);
+void LALUtime ( LALStatus           *status,
+                LALDate             *utc,
+                const LIGOTimeUnix  *unixtime);
 
-void LALGPStoGMST1( LALStatus*,
-                    REAL8*,
-                    const LIGOTimeGPS*,
-                    LALMSTUnits);
+/* <lalLaTeX>
+\newpage\input{DateStringC}
+</lalLaTeX> */
 
-void LALLMST1(LALStatus*,
-              REAL8*,
-              const LALPlaceAndDate*,
-              LALMSTUnits);
+void LALDateString (LALStatus     *status,
+                    CHARVector    *timestamp,
+                    const LALDate *date);
 
-void LALGPStoLMST1( LALStatus*,
-                    REAL8*,
-                    const LALPlaceAndGPS*,
-                    LALMSTUnits);
+
+/* <lalLaTeX>
+\newpage\input{LMST1C}
+</lalLaTeX> */
+
+void LALGMST1 (LALStatus     *status,
+               REAL8         *p_gmst,     /* output - GMST1 */
+               const LALDate *p_date,     /* input  - date and time */
+               LALMSTUnits    outunits);   /* GMST1 units */
+
+void LALGPStoGMST1( LALStatus         *status,
+                    REAL8             *p_gmst,   /* output - GMST1 */
+                    const LIGOTimeGPS *p_gps,    /* input - GPS time */
+                    LALMSTUnits        outunits); /* GMST1 units */
+
+void LALLMST1 (LALStatus             *status,
+               REAL8                 *p_lmst,            /* output - LMST1 */
+               const LALPlaceAndDate *p_place_and_date,  /* input -
+                                                            location
+                                                            and date */ 
+               LALMSTUnits            outunits);         /* LMST1 units */
+
+void LALGPStoLMST1( LALStatus             *status,
+                    REAL8                 *p_lmst,      /* output - LMST1 */
+                    const LALPlaceAndGPS  *p_place_and_gps, /* input -
+                                                               location and
+                                                               GPS */  
+                    LALMSTUnits            outunits);       /* LMST1 units */
+
+/* <lalLaTeX>
+\newpage\input{SecsToLALDateC}
+</lalLaTeX> */
 
 void LALSecsToLALDate(LALStatus*,
                       LALDate*,

@@ -1,127 +1,147 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Julian.c 
- * 
- * Author: David Chin <dwchin@umich.edu>
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * JulianDay
- * ModJulianDay
- * JulianDate
- * ModJulianDate
- * 
- * SYNOPSIS 
- *     LALJulianDay(): Returns Julian Day Number for a given Gregorian date UTC
- *     LALModJulianDay(): Returns Modified Julian Day Number for given
- *                     Gregorian date UTC, i.e. Julian Day - 2400000.5
- *     LALJulianDate(): Returns Julian Date in decimal days
- *     LALModJulianDate(): Returns Modified Julian Date in decimal days
- *
- *
- * DESCRIPTION
- * LALJulianDay()
- *       Inputs:  LALDate *date  -- Gregorian date (UTC)
- *
- *       Outputs: INT4 *jDay     -- Julian Day number
- *
- * LALModJulianDay()
- *       Inputs:  LALDate *date   -- Gregorian date (UTC)
- *
- *       Outputs: REAL8 *modJDay  -- modified Julian day
- *
- * LALJulianDate()
- *       Inputs:  LALDate *date -- Gregorian date (UTC)
- *
- *       Outputs: REAL8 *jDate  -- Julian Date in decimal days
- *
- * LALModJulianDate()
- *       Inputs:  LALDate *date   -- Gregorian date (UTC)
- *
- *       Outputs: REAL8 *modJDate -- Modified Julian Date in decimal days 
- * 
- * DIAGNOSTICS 
- * (Abnormal termination conditions, error and warning codes summarized 
- * here. More complete descriptions are found in documentation.)
- *
- * CALLS
- * LALJulianDay(): (none)
- * LALModJulianDay(): LALJulianDay()
- * LALJulianDate(): LALJulianDay()
- * LALModJulianDate(): LALJulianDate()
- * 
- * NOTES
- * (Other notes)
- * See the _Explanatory_Supplement_to_the_Astronomical_Almanac_ for more
- * details.
- *
- * From Green's _Spherical_Astronomy_:
- * 
- *            Mean Julian Year == 365.25 days
- *
- *                Julian Epoch == 1 Jan 4713BCE, 12:00 GMT
- *                                i.e. 4713 BC Jan 01d.5 GMT
- *
- *  Fundamental Epoch: J2000.0 == 2000-01-01.5 TDB
- *
- *  Julian Date is time elapsed since Julian Epoch, measured in days and
- *  fractions of a day
- *  Complications: Tropical Year == 365.2422 days
- *                => Gregorian correction: 1582-10-5 through 1582-10-14
- *                                         were eliminated (10 days)
- *
- *                 Leap years: years ending with two zeroes (e.g. 1700,
- *                 1800) are leap only if divisible by 400. So, 400 civil
- *                 years contains (400 * 365.25) - 3 = 146097 days.
- *
- *  So, the Julian Date of J2000.0 == JD 2451545.0
- *
- *  and, Julian Epoch = J2000.0 + (JD - 2451545)/365.25
- *                      (i.e. no. of years elapsed since J2000.0)
- *
- *
- * One algorithm for computing the Julian day is from
- * Van Flandern, T.C., and Pulkkinen, K.F., Astrophysical Journal
- * Supplement Series, 41, 391-411, 1979 Nov.
- * based on a formula in _Explanatory_Supplement_to_the_Astronomical_Almanac_,
- * 1992, Chapter 12 where the algorithm is due to Fliegen and Van Flandern, "A
- * Machine Algorithm for the Processing of Calendar Dates", Communications
- * of the ACM, 11, 657 (1968), and "compactified" by Muller, P.M., and
- * Wimberly, R.N.
- *
- * jd = 367 * y - 7 * (y + (m + 9)/12)/4 - 3 * ((y + (m - 9)/7)/100 + 1)/4
- *      + 275 * m/9 + d + 1721029
- *
- * This is valid only for JD >= 0, i.e. after -4713 Nov 23 == 4712 BCE Nov 23
- *
- * A shorter formula from the same reference, but which only works for
- * dates since 1900-March
- *
- * jd = 367 * y - 7 * (y + (m + 9)/12)/4 + 275 * m/9 + d + 1721014
- *
- * We will use the one for dates > 1900-Mar since there is no LIGO data
- * before 1900-Mar.
- * 
- *----------------------------------------------------------------------- */
+/* <lalVerbatim file="JulianCV">
+Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+$Id$
+</lalVerbatim> */
+
+/* <lalLaTeX>
+\subsection{Module \texttt{Julian.c}}
+\label{ss:Julian.c}
+
+Converts between Gregorian date and Julian Days/Dates.
+
+
+\subsection*{Prototypes}
+\vspace{0.1in}
+\input{JulianCP}
+\index{\texttt{LALJulianDay()}}
+\index{\texttt{LALModJulianDay()}}
+\index{\texttt{LALJulianDate()}}
+\index{\texttt{LALModJulianDate()}}
+
+
+\subsubsection*{Description}
+
+These routines compute Julian Day, Modified Julian Day, Julian Date, and
+Modified Julian Date for a given Gregorian date and time UTC.  Julian Day
+and Modified Julian Day are integer number of days; Julian Date and
+Modified Julian Date are decimal number of days.
+
+\subsubsection*{Algorithms}
+
+See~\cite{esaa:1992} and~\cite{green:1985} for details. First, some
+definitions:  
+
+\begin{tabular}{rcl}
+  Mean Julian Year & = & 365.25 days \\
+  Julian Epoch     & = & 1 Jan 4713BCE, 12:00 GMT (4713 BC Jan 01d.5 GMT) \\
+  Fundamental Epoch J2000.0 & = & 2001-01-01.5 TDB
+\end{tabular}
+
+\emph{Julian Date} is the amount of time elapsed since the Julian
+Epoch, measured in days and fractions of a day.  There are a couple of
+complications arising from the length of a year: the \emph{Tropical
+Year} is 365.2422 days. First, the Gregorian correction where 10 days
+(1582-10-05 through 1582-10-14) were eliminated.  Second, leap years:
+years ending with two zeroes (\textit{e.g.} 1700, 1800) are leap only
+if divisible by 400; so, 400 civil years contain $(400 \times 365.25)
+- 3 = 146097$ days.  So, the Julian Date of J2000.0 is JD 2451545.0,
+and thus the Julian Epoch = J2000.0 + (JD - 2451545)/365.25,
+\textit{i.e.} number of years elapsed since J2000.0.
+
+One algorithm for computing the Julian Day is from~\cite{vfp:1979}
+based on a formula in~\cite{esaa:1992} where the algorithm is due
+to~\cite{fvf:1968} and ``compactified'' by P.~M. Muller and
+R.~N. Wimberly.  The formula is
+%
+\begin{displaymath}
+  jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 - 
+  3 \times ((y + (m - 9)/7)/100 + 1)/4
+        + 275 \times m/9 + d + 1721029
+\end{displaymath}
+%
+where $jd$ is the Julian day number, $y$ is the year, $m$ is the month
+(1-12), and $d$ is the day (1-31).  This formula is valid only for 
+$\mathrm{JD} \ge 0$, \textit{i.e.} after -4713 Nov 23 = 4712 BCE Nov 23.
+
+A shorter formula from the same reference, but which only works for
+dates since 1900-March is:
+%
+\begin{displaymath}
+  jd = 367 \times y - 7 \times (y + (m + 9)/12)/4 + 275 \times m/9 + 
+  d + 1721014
+\end{displaymath}
+%
+We will use this shorter formula since there is unlikely to be any
+analyzable data from before 1900-Mar.
+
+\subsubsection*{Uses}
+
+Suppose we would like to get the Julian Date for
+today.  The following program would accomplish this:
+
+\begin{verbatim}
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+
+INT4 debuglevel = 2;
+
+NRCSID (TESTJULIANDAYC, "Id");
+
+int
+main(int argc, char *argv[])
+{
+    time_t        now;
+    LALUnixDate  *ltime;
+    Status        status = {0};
+    LALDate       date;
+    REAL8         jDate;
+
+    INITSTATUS (&status, "TestJulianDay", TESTJULIANDAYC);
+
+    time(&now);
+    ltime = localtime(&now);
+
+    date.unixDate.tm_sec  = ltime->tm_sec;
+    date.unixDate.tm_min  = ltime->tm_min;
+    date.unixDate.tm_hour = ltime->tm_hour;
+    date.unixDate.tm_mday = ltime->tm_mday;
+    date.unixDate.tm_mon  = ltime->tm_mon;
+    date.unixDate.tm_year = ltime->tm_year;
+    date.unixDate.tm_wday = ltime->tm_wday;
+    date.unixDate.tm_yday = ltime->tm_yday;
+    date.unixDate.tm_isdst = ltime->tm_isdst;
+
+    JulianDate(&status, &jDate, &date);
+    printf("\tJulian Date                = %10.1f\n", jDate);
+
+    return 0;
+}
+
+
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+
+</lalLaTeX> */
+
+
 
 #include <lal/LALRCSID.h>
-
-NRCSID (JULIANC, "$Id$");
-
 #include <lal/Date.h>
 #include "date_value.h"
+
+NRCSID (JULIANC, "$Id$");
 
 /*
  * Compute Julian Day for given Gregorian date
  */
+/* <lalVerbatim file="JulianCP"> */
 void
 LALJulianDay (LALStatus     *status,
               INT4          *jDay,
               const LALDate *date)
-{
+{ /* </lalVerbatim> */
     INT4 y, m, d;
 
     INITSTATUS (status, "LALJulianDay", JULIANC);
@@ -136,7 +156,7 @@ LALJulianDay (LALStatus     *status,
      * Check pointer to output variable:
      */
     ASSERT (jDay != (INT4 *)NULL, status,
-DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Pull out Year, Month, Day, and convert from the
@@ -177,11 +197,12 @@ DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 /*
  * Compute Modified Julian Day for given Gregorian date
  */
+/* <lalVerbatim file="JulianCP"> */
 void
-LALModJulianDay (LALStatus        *status,
-              REAL8         *modJDay,
-              const LALDate *date)
-{
+LALModJulianDay (LALStatus     *status,
+                 REAL8         *modJDay,
+                 const LALDate *date)
+{ /* </lalVerbatim> */
     INT4 jd;
 
     INITSTATUS (status, "LALModJulianDay", JULIANC);
@@ -195,8 +216,8 @@ LALModJulianDay (LALStatus        *status,
     /*
      * Check pointer to output variable:
      */
-    ASSERT (modJDay   != (REAL8 *)NULL, status,
-DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+    ASSERT (modJDay != (REAL8 *)NULL, status,
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     LALJulianDay(status, &jd, date);
 
@@ -210,11 +231,12 @@ DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 /*
  * Compute Julian Date for given Gregorian date and UTC time
  */
+/* <lalVerbatim file="JulianCP"> */
 void
-LALJulianDate (LALStatus        *status,
-            REAL8         *jDateOut,
-            const LALDate *date)
-{
+LALJulianDate (LALStatus     *status,
+               REAL8         *jDateOut,
+               const LALDate *date)
+{ /* </lalVerbatim> */
     INT4  hr, min, sec;
     REAL8 rns;          /* residual nanoseconds */
     INT4  jday;
@@ -231,8 +253,8 @@ LALJulianDate (LALStatus        *status,
     /*
      * Check pointer to output variable:
      */
-    ASSERT (jDateOut != (REAL8 *)NULL, status,
-DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+    ASSERT (jDateOut != (REAL8 *)NULL, status, DATEH_ENULLOUTPUT,
+            DATEH_MSGENULLOUTPUT);
 
     /*
      * Extract Hour, Minute, Second, and residual nanoseconds
@@ -265,44 +287,45 @@ DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 /*
  * Compute Modified Julian Date for given Gregorian date and UTC time
  */
+/* <lalVerbatim file="JulianCP"> */
 void
 LALModJulianDate (LALStatus     *status,
                   REAL8         *modJDate,
                   const LALDate *date)
-{
-    INT4  hr, min, sec;
-    REAL8 jdate;
+{ /* </lalVerbatim> */
+  INT4  hr, min, sec;
+  REAL8 jdate;
 
-    INITSTATUS(status, "LALModJulianDate", JULIANC);
+  INITSTATUS(status, "LALModJulianDate", JULIANC);
 
-    /*
-     * Check pointer to input variable
-     */
-    ASSERT (date != (LALDate *)NULL, status,
-            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
+  /*
+   * Check pointer to input variable
+   */
+  ASSERT (date != (LALDate *)NULL, status,
+          DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
-    /*
-     * Check pointer to output variable:
-     */
-    ASSERT (modJDate != (REAL8 *)NULL, status,
-            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
+  /*
+   * Check pointer to output variable:
+   */
+  ASSERT (modJDate != (REAL8 *)NULL, status,
+          DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
-    /*
-     * Extract Hour, Minute, and Second
-     */
-    hr  = (date->unixDate).tm_hour;
-    min = (date->unixDate).tm_min;
-    sec = (date->unixDate).tm_sec;
+  /*
+   * Extract Hour, Minute, and Second
+   */
+  hr  = (date->unixDate).tm_hour;
+  min = (date->unixDate).tm_min;
+  sec = (date->unixDate).tm_sec;
 
-    /*
-     * Get Julian Date, and modify it
-     */
-    LALJulianDate(status, &jdate, date);
-    jdate -= MJDREF;
+  /*
+   * Get Julian Date, and modify it
+   */
+  LALJulianDate(status, &jdate, date);
+  jdate -= MJDREF;
     
-    *modJDate = jdate;
+  *modJDate = jdate;
 
-    RETURN (status);
+  RETURN (status);
 } /* END LALModJulianDate() */
 
 

@@ -1,13 +1,85 @@
+/* <lalVerbatim file="SecsToLALDateCV">
+Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+$Id$
+</lalVerbatim> */
+
+/* <lalLaTeX>
+
+\subsection{Module \texttt{SecsToLALDate.c}}
+\label{ss:SecsToLALDate.c}
+
+Converts time in seconds to time in an \texttt{LALDate} structure.
+
+\subsection*{Prototypes}
+\vspace{0.1in}
+
+\input{SecsToLALDateCP}
+\index{\texttt{LALSecsToLALDate()}}
+
+\subsubsection*{Description}
+
+This routine converts a time of day in decimal seconds since 0h (midnight)
+to an LALDate structure.  Of course, the date information is not present.
+
+
+\subsubsection*{Algorithms}
+
+\subsubsection*{Uses}
+
+A simple example:
+
+\begin{verbatim}
+#include <stdlib.h>
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+
+INT4 debuglevel = 2;
+
+NRCSID (TESTLMSTC, "Id");
+
+int
+main(int argc, char *argv[])
+{
+    LALDate date;
+    LALDate mstdate;
+    REAL8   gmstsecs;
+    CHAR    timestamp[64], tmpstr[64];
+    Status  status = {0};
+
+    
+    INITSTATUS(&status, "TestLMST", TESTLMSTC);
+
+    printf("TEST of GMST1 routine\n");
+    printf("=====================\n");
+
+    date.unixDate.tm_sec  = 0;
+    date.unixDate.tm_min  = 0;
+    date.unixDate.tm_hour = 0;
+    date.unixDate.tm_mday = 16;
+    date.unixDate.tm_mon  = 10;
+    date.unixDate.tm_year = 94;
+
+    GMST1(&status, &gmstsecs, &date, MST_SEC);
+    SecsToLALDate(&status, &mstdate, gmstsecs);
+    strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+    sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+    strcat(timestamp, tmpstr+1);
+    
+    printf("gmst = %s\n", timestamp);
+    printf("    expect: 03h 39m 20.6222s \n");
+
+    return(0);
+}
+
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+</lalLaTeX> */
+
+
 /*----------------------------------------------------------------------- 
  * 
- * File Name: SecsToLALDate.c 
- * 
- * Author: David Chin <dwchin@umich.edu>
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- *
  * SYNOPSIS
  *
  * LALSecsToLALDate(): Converts time in seconds to time in an LALDate
@@ -45,11 +117,13 @@ NRCSID (SECSTOLALDATEC, "$Id$");
 /*
  * Convert time in seconds to LALDate struct
  */
+
+/* <lalVerbatim file="SecsToLALDateCP"> */
 void
 LALSecsToLALDate(LALStatus  *status,
-              LALDate *date,
-              REAL8    seconds)
-{
+                 LALDate    *date,    /* output - date */
+                 REAL8       seconds) /* input - time in seconds since 0h */
+{ /* </lalVerbatim> */
     REAL8 hr, min, sec;
     REAL8 tmpsec;
     REAL8 dum;
