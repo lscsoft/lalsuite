@@ -435,7 +435,11 @@ static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 /*
  * Recursively cluster a linked list of SnglBurstTable events until the list
  * stops changing.  testfunc() should return 0 if the two given events are to
- * be clustered.
+ * be clustered.  If bailoutfunc() is provided (not NULL), then testfunc() will
+ * be used to sort the trigger list before each clustering pass and
+ * bailoutfunc() will be called to check for the option of terminating the
+ * inner loop early.  In the ideal case, use of bailoutfunc() converts this
+ * algorithm from O(n^3) to order O(n log n).
  */
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
@@ -453,6 +457,9 @@ XLALClusterSnglBurstTable (
 	do {
 		did_cluster = 0;
 
+		if(bailoutfunc)
+			XLALSortSnglBurst(list, testfunc);
+
 		for(a = *list; a; a = a->next)
 			for(prev = a, b = a->next; b; b = prev->next) {
 				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
@@ -460,8 +467,12 @@ XLALClusterSnglBurstTable (
 					prev->next = b->next;
 					LALFree(b);
 					did_cluster = 1;
-				} else
+				} else {
+					if(bailoutfunc)
+						if(bailoutfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b))
+							break;
 					prev = b;
+				}
 			}
 	} while(did_cluster);
 }
