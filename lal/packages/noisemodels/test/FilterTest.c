@@ -161,12 +161,6 @@ main (  int argc, char **argv )
        i++;       
      }
 
-
-   
-
-
-
-   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
    fprintf(stderr, "This test code does three things:\n");
    fprintf(stderr, "(a) Creates a filter bank at a certain minimal match\n");
    fprintf(stderr, "(b) Generates signals with random parmeters\n");

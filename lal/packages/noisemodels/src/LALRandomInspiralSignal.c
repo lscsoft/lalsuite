@@ -255,7 +255,18 @@ LALRandomInspiralSignal
 				   break;
 		   
 			   case psi0Andpsi3: 
-				   valid = 1;
+				   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+				   if (randIn->param.totalMass > 0.)
+				   {
+					   REAL8 fLR, fLSO, fend;
+					   epsilon1 = (float) random()/(float)RAND_MAX;
+					   fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+					   fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+					   fend = fLSO + (fLR - fLSO) * epsilon1;
+					   if (fend > randIn->param.tSampling/2. || fend < randIn->param.fLower) break;
+					   randIn->param.fendBCV = fend;
+					   valid = 1;
+				   }
 				   break;
 			   case t04: 
                            default:
