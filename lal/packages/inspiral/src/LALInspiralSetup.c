@@ -411,13 +411,15 @@ LALInspiralSetup (
    ak->ST[onePointFivePN] = ( 4.0 * LAL_PI ); 
    ak->ST[twoPN] =  ( (34103.0 + 122949.0*eta + 59472.0*eta*eta)/18144.0 );
    ak->ST[twoPointFivePN] = ( -(1.0/672.0) * LAL_PI * (4159.0 + 14532.0*eta) );
+   /* both ak->ST[6] and [7] are stored for the threePN contribution */
    ak->ST[threePN] = ( (16447322263.0/139708800.0)
 		- (1712.0/105.0)* ak->EulerC 
 		- (273811877.0/1088640.0)*eta - (88.0/3.0)*ak->thetahat*eta 
 		+ (541.0/806.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
 		+ (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
 		- (856.0/105.0)*log(16.0) );                          
-   ak->ST[7] = ( -(1712.0/315.0) );     
+   ak->ST[threePN+1] = ( -(1712.0/315.0) );     
+   /* sT[8] is the threePointFivePN contribution */
    ak->ST[8] = (LAL_PI/12096.0) * (-13245.0 + 661775.0*eta + 599156.0*eta*eta); 
    
 
