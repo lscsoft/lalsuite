@@ -130,7 +130,7 @@ NRCSID (LALDEMODH, "$Id$");
 /********************************************** </lalErrTable> */
 
 
-#define NTERM_COH_DIV_TWO 4 
+#define NTERM_COH_DIV_TWO 8
 #define SMALL	0.000000001
 #define SFTOVERLAP 0.05
 
