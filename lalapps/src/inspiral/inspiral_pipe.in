@@ -176,10 +176,14 @@ fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-if usertag:
-  dag.set_dag_file(basename + '.' + usertag + '.dag')
+if do_dax:
+  dagfilesuffix = '.dag'
 else:
-  dag.set_dag_file(basename + '.dag')
+  dagfilesuffix = '.dax'
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag + dagfilesuffix)
+else:
+  dag.set_dag_file(basename + dagfilesuffix)
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
