@@ -33,8 +33,6 @@
 #include <lal/DetectorSite.h>
 #include <lal/TwoInterfFindChirp.h>
 
-// #define CALCULATE_PSD
-
 static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {
   return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
@@ -76,13 +74,13 @@ static BOOLEAN          invertResponse       = 0;
 static INT4             numPoints            = 32768;
 static INT4             numSegments          = 1;
 static INT4             numTmplts            = 1;
-static INT4             numChisqBins         = 1;
+static INT4             numChisqBins         = 8;
 static INT4             srate                = 8192;
 static REAL4            sigmasq              = 64.0;
 static REAL4            sigmasq1             = 64.0;
 static REAL4            sigmasq2             = 64.0;
 static INT4             invSpecTrunc         = 0;
-static REAL4            fLow                 = 40.0;
+static REAL4            fLow                 = 150.0;
 static REAL4            rhosqThresh[2]       = {0.0, 0.0};
 static REAL4            chisqThresh[2]       = {0.010, 0.010};
 static REAL4            twoInterfRhosqThresh = 50.0;
@@ -380,16 +378,6 @@ main (int argc, char *argv[])
 	      dataSegVec[0].data[i].resp->data->data[k].re = 1.0;
 	      dataSegVec[0].data[i].resp->data->data[k].im = 0.0;
 	    }
-
-	  /* moved from 'abort' section */
-	  LALDestroyRandomParams (&status, &randParams[0]);
-	  TestStatus (&status, "0", 1);
-	  ClearStatus (&status);
-	  
-	  LALDestroyVector (&status, &noiseVec[0]);
-	  TestStatus (&status, "0", 1);
-	  ClearStatus (&status);
-	  
 	}
       else  if ( inputDataType == file )
 
@@ -443,8 +431,7 @@ main (int argc, char *argv[])
 	}
       
     }
-  
-  
+
   /*
    *
    * fill segments for DETECTORS 2
@@ -514,19 +501,9 @@ main (int argc, char *argv[])
 	      dataSegVec[1].data[i].resp->data->data[k].re = 1.0;
 	      dataSegVec[1].data[i].resp->data->data[k].im = 0.0;
 	    }
-
-	  /* moved from 'abort' section */
-	  LALDestroyRandomParams (&status, &randParams[1]);
-	  TestStatus (&status, "0", 1);
-	  ClearStatus (&status);
-	  
-	  LALDestroyVector (&status, &noiseVec[1]);
-	  TestStatus (&status, "0", 1);
-	  ClearStatus (&status);
-	
 	}
       else if ( inputDataType == file )
-
+	
 	/* this should eventually read in start epoch somehow */
 	{
 	  /* open the input files */
@@ -810,6 +787,14 @@ main (int argc, char *argv[])
   
   for (n= 0; n<2; ++n)
     {
+      LALDestroyRandomParams (&status, &randParams[n]);
+      TestStatus (&status, "0", 1);
+      ClearStatus (&status);
+      
+      LALDestroyVector (&status, &noiseVec[n]);
+      TestStatus (&status, "0", 1);
+      ClearStatus (&status);
+      
       LALTwoInterfFindChirpChisqVetoFinalize (&status, filterParams[n].chisqParams,
 					      numChisqBins);
       TestStatus (&status, "0", 1);
