@@ -37,7 +37,7 @@ NRCSID( INSPAWGFILEC, "$Id$" );
 #define INSPAWGFILEC_MSGEMEM   "Out of memory"
 
 /* Default parameter settings. */
-int lalDebugLevel = 0;
+int lalDebugLevel = LALINFO | LALNMEMDBG;
 #define EPOCH (0)
 #define DIST  (0.00002*LAL_MRSUN_SI )
 #define M1    (1.4)
@@ -52,8 +52,8 @@ int lalDebugLevel = 0;
 
 /* Global constants. */
 #define MSGLEN (256) /* maximum length of warning/info messages */
-#define FSTART (25.0) /* initial frequency of waveform */
-#define FSTOP  (2000.0) /* termination frequency of waveform */
+#define FSTART (40.0) /* initial frequency of waveform */
+#define FSTOP  (3000.0) /* termination frequency of waveform */
 #define DELTAT (0.00006103515625) /* sampling interval of amplitude and phase */
 
 /* Usage format string. */
@@ -531,10 +531,6 @@ main(int argc, char **argv)
 	     outfile );
       return INSPAWGFILEC_EFILE;
     }
-    epoch = 1000000000LL*(INT8)( output.epoch.gpsSeconds );
-    epoch += (INT8)( output.epoch.gpsNanoSeconds );
-    fprintf( fp, "# epoch = %Li\n", epoch );
-    fprintf( fp, "# deltaT = %23.16e\n", output.deltaT );
     for ( i = 0; i < output.data->length; i++ )
       fprintf( fp, "%e\n", output.data->data[i] );
     fclose( fp );
