@@ -44,6 +44,11 @@ number so it should not be used in any real analysis codes.
 
 \subsubsection*{Uses}
 
+\begin{verbatim}
+LALFopen()
+LALFclose()
+\end{verbatim}
+
 \subsubsection*{Notes}
 
 This function uses an internal static variable to keep track of file
@@ -66,10 +71,10 @@ imaginary part of the element.
 </lalLaTeX> */
 
 
-#include "LALStdlib.h"
-#include <stdio.h>
-#include "LALDatatypes.h"
-#include "PrintVector.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
+#include <lal/LALDatatypes.h>
+#include <lal/PrintVector.h>
 
 /* <lalVerbatim file="VectorFactoriesNRCSID"> */
 NRCSID( PRINTVECTORC, "$Id$" );

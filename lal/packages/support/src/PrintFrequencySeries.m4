@@ -40,6 +40,8 @@ LAL standards so it should not be used in any real analysis codes.
 \subsubsection*{Uses}
 
 \begin{verbatim}
+LALFopen()
+LALFclose()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALUnitAsString()
@@ -90,7 +92,7 @@ offset.
 
 
 #include <lal/LALStdlib.h>
-#include <stdio.h>
+#include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/PrintFTSeries.h>
 

@@ -21,8 +21,8 @@ file.
 
 \vfill{\footnotesize\input{PrintFTSeriesHV}}
 \newpage\input{PrintTimeSeriesC}
-\newpage\input{PrintFrequencySeriesC}
 \newpage\input{PrintFTSeriesTestC}
+\newpage\input{PrintFrequencySeriesC}
 
 </lalLaTeX> */
 
@@ -36,8 +36,7 @@ file.
 extern "C" {
 #endif
 
-
-NRCSID( PRINTVECTORH, "$Id$" );
+NRCSID( PRINTFTSERIESH, "$Id$" );
 
 void LALI2PrintTimeSeries( INT2TimeSeries *series , const CHAR *filename );
 void LALI4PrintTimeSeries( INT4TimeSeries *series , const CHAR *filename );

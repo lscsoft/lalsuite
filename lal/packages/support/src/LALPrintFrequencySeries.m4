@@ -32,12 +32,12 @@ ifelse(TYPECODE,`U8',`define(`ARG',`(REAL8) *data')')
 
 /* <lalVerbatim file="PrintFrequencySeriesCP"> */
 void FUNC ( STYPE *series, const CHAR *filename ) 
-{ /* </lalVerbatim> */
+ /* </lalVerbatim> */
+{
   REAL8 f;
   TYPE *data;
   FILE *fp;
-  TYPE *endOfSeq, *lastInBand;
-  INT4 halfLength;
+  UINT4 i;
   static LALStatus status;
   CHARVector *unitString;
 
@@ -46,13 +46,8 @@ void FUNC ( STYPE *series, const CHAR *filename )
   /* *(series->data) is a VTYPE */
   /* series->data->data is a pointer to TYPE */
 
-  /* Make a TYPE pointer which points to the first memory address not
-   * belonging to the sequence
-   */
-  endOfSeq = series->data->data + series->data->length;
-
   /* open output file */
-  fp=fopen(filename,"w");
+  fp=LALFopen(filename,"w");
   fprintf(fp,"%s\n",series->name);
   if (series->epoch.gpsSeconds && series->epoch.gpsNanoSeconds) {
     fprintf(fp,"Epoch is %d seconds, %d nanoseconds\n",
@@ -67,36 +62,14 @@ void FUNC ( STYPE *series, const CHAR *filename )
   fprintf(fp,"Units are (%s)\n",unitString->data);
   fprintf(fp,HEADER);
   LALCHARDestroyVector(&status, &unitString);
-  if (series->f0 == 0) {	
-    for ( f = 0, data = series->data->data;
-          data < endOfSeq;
-          f += series->deltaF, ++data )
-    {
-      fprintf(fp,FMT,f,ARG);
-    }	
-  }
-  else {
-    halfLength = series->data->length/2;   /* rounded down */
-  /* Make a TYPE pointer which points to the memory address of
-   * the highest frequency represented in the series
-   */
-    lastInBand = series->data->data + halfLength;
-    for ( f = series->f0, data = series->data->data;
-          data <= lastInBand;
-          f += series->deltaF, ++data )
-    {
-      fprintf(fp,FMT,f,ARG);
-    }	
-    for ( f = series->f0 - series->deltaF * halfLength,
-                data = endOfSeq - halfLength;
-          data < endOfSeq;
-          f += series->deltaF, ++data )
-    {
-      fprintf(fp,FMT,f,ARG);
-    }
+  for ( i = 0; i < series->data->length; ++i )
+  {
+    f = series->f0 + i * series->deltaF;
+    data = &(series->data->data[i]);
+    fprintf(fp,FMT,f,ARG);
   }
 
-  fclose(fp);
+  LALFclose(fp);
 
   return;
 }

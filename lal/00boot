@@ -9,6 +9,8 @@ cd packages/support/src
 m4 PrintVector.m4 > PrintVector.c
 m4 PrintTimeSeries.m4 > PrintTimeSeries.c
 m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c
+m4 ReadFrequencySeries.m4 > ReadFrequencySeries.c
+m4 ReadTimeSeries.m4 > ReadTimeSeries.c
 cd ../../..
 
 cd packages/factories/src

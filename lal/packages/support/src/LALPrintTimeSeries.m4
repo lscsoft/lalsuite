@@ -36,7 +36,7 @@ void FUNC ( STYPE *series, const CHAR *filename )
   REAL8 t;
   TYPE *data;
   FILE *fp;
-  TYPE *endOfSeq;
+  UINT4 i;
   static LALStatus status;
   CHARVector *unitString;
 
@@ -49,10 +49,8 @@ void FUNC ( STYPE *series, const CHAR *filename )
    * belonging to the sequence
    */
 
-  endOfSeq = series->data->data + series->data->length;
-
   /* open output file */
-  fp=fopen(filename,"w");
+  fp=LALFopen(filename,"w");
   fprintf(fp,"%s\n",series->name);
   if (series->f0) {
      fprintf(fp,"Heterodyned at %g Hz\n",series->f0);
@@ -68,15 +66,14 @@ void FUNC ( STYPE *series, const CHAR *filename )
   fprintf(fp,"Units are (%s)\n",unitString->data);
   fprintf(fp,HEADER);
   LALCHARDestroyVector(&status, &unitString);
-  for ( t = 0,
-        data = series->data->data;
-        data < endOfSeq;
-        t += series->deltaT, ++data )
+  for ( i = 0; i < series->data->length; ++i )
   {
+    t = i * series->deltaT;
+    data = &(series->data->data[i]);
     fprintf(fp,FMT,t,ARG);
   }	
 
-  fclose(fp);
+  LALFclose(fp);
 
   return;
 }

@@ -41,12 +41,12 @@ void FUNC ( VTYPE *vector )
 
   /* open output file */
   sprintf(fname,"TYPECODE" "PrintVector.%03d",filenum++);
-  fp=fopen(fname,"w");
+  fp=LALFopen(fname,"w");
 
   for (i=0;i<(int)vector->length;i++)
     fprintf(fp,FMT,i,ARG);
 
-  fclose(fp);
+  LALFclose(fp);
 
   return;
 }

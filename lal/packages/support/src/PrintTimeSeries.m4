@@ -40,6 +40,8 @@ so it should not be used in any real analysis codes.
 \subsubsection*{Uses}
 
 \begin{verbatim}
+LALFopen()
+LALFclose()
 LALCHARCreateVector()
 LALCHARDestroyVector()
 LALUnitAsString()
@@ -79,7 +81,7 @@ part of the value.
 
 
 #include <lal/LALStdlib.h>
-#include <stdio.h>
+#include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/PrintFTSeries.h>
 
@@ -94,7 +96,7 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 				"count^-32768/32767") };
 
 /* <lalVerbatim file="PrintTimeSeriesNRCSID"> */
-NRCSID( PRINTTIMESERIESC, "$Id$" );
+NRCSID( PRINTTIMESERIESC, "$Id: " );
 /* </lalVerbatim> */
 
 define(`TYPECODE',`Z')
@@ -135,3 +137,16 @@ include(`LALPrintTimeSeries.m4')
 
 define(`TYPECODE',`')
 include(`LALPrintTimeSeries.m4')
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -19,41 +19,69 @@ PrintFTSeriesTest
 \subsubsection*{Description}
 
 This program generates and prints a sequence of frequency and time
-series; the program itself always returns success, so the testing
-function is actually served by examinaton of the output files.
+series; the program only detects errors coming from other LAL
+functions, so more in-depth testing requires  examinaton of
+the output files.  (The program \texttt{ReadFTSeriesTest} also tests
+the routines in \texttt{PrintFrequencySeries.c} and
+\texttt{ReadFrequencySeries.c}.)
+
+\subsubsection*{Exit codes}
+\input{PrintFTSeriesTestCE}
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALSCreateVector()
+LALDCreateVector()
+LALCCreateVector()
+LALZCreateVector()
+LALSDestroyVector()
+LALDDestroyVector()
+LALCDestroyVector()
+LALZDestroyVector()
+LALSPrintFrequencySeries()
+LALDPrintFrequencySeries()
+LALCPrintFrequencySeries()
+LALZPrintFrequencySeries()
+LALSPrintTimeSeries()
+LALDPrintTimeSeries()
+LALCPrintTimeSeries()
+LALZPrintTimeSeries()
+LALCheckMemoryLeaks()
+LALNameLength
+lalDebugLevel
+lalDimensionlessUnit
+LALStatus
+\end{verbatim}
+
+\subsubsection*{Notes}
 
 The program as written generates and prints single and double
 precision real and complex time and frequency series.  The routines
-for integers are not tested (although the formats are the same as in
-the \verb+PrintVector+ module).
-
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Always returned.              \\
-\hline
-\end{tabular}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
+for integers are not tested.
 
 \vfill{\footnotesize\input{PrintFTSeriesTestCV}}
 
 </lalLaTeX> */
 
+
+
+/********************** <lalErrTable file="PrintFTSeriesTestCE"> */
+#define PRINTFTSERIESTESTC_ENOM 0
+#define PRINTFTSERIESTESTC_EFUN 1
+
+#define PRINTFTSERIESTESTC_MSGENOM "Nominal exit"
+#define PRINTFTSERIESTESTC_MSGEFUN "Error from LAL function"
+/********************** </lalErrTable> */
+
 #include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
 #include <math.h>
-#include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 
-NRCSID( PRINTVECTORTESTC, "$Id$" );
+NRCSID( PRINTFTSERIESTESTC, "$Id$" );
 
-INT4 lalDebugLevel = 3;
+INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {
@@ -94,9 +122,17 @@ int main( void )
   t10.gpsSeconds = 3600 * 24 * (22 * 365 + 8 * 366);
   t10.gpsNanoSeconds = 0;
 
+  fprintf(stderr,"Printing COMPLEX16TimeSeries to zTS.dat\n");
+
   zSequence = NULL;
 
   LALZCreateVector( &status, &zSequence, 8 );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
   for ( n=zSequence->length, z=zSequence->data; n > 0 ; --n, ++z ) {
     z->re = sinh(90.0*(4-n));
     z->im = - 1 / (1e-300 + z->re);
@@ -109,6 +145,14 @@ int main( void )
   zTimeSeries.data = zSequence;
 
   LALZPrintTimeSeries(&zTimeSeries, "zTS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing COMPLEX16FrequencySeries to zFS.dat\n");
 
   strncpy(zFrequencySeries.name,"Complex frequency series",LALNameLength);
   zFrequencySeries.sampleUnits = lalDimensionlessUnit; 
@@ -118,10 +162,32 @@ int main( void )
   zFrequencySeries.data = zSequence;
 
   LALZPrintFrequencySeries(&zFrequencySeries, "zFS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  LALZDestroyVector( &status, &zSequence );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
 
   cSequence = NULL;
 
+  fprintf(stderr,"Printing COMPLEX8TimeSeries to cTS.dat\n");
+
   LALCCreateVector( &status, &cSequence, 8 );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
   for ( n=cSequence->length, c=cSequence->data; n > 0 ; --n, ++c ) {
     c->re = sinh(9.0*(4-n));
     c->im = - 1 / (1e-30 + c->re);
@@ -134,6 +200,14 @@ int main( void )
   cTimeSeries.data = cSequence;
  
   LALCPrintTimeSeries(&cTimeSeries, "cTS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing COMPLEX8FrequencySeries to cFS.dat\n");
 
   strncpy(cFrequencySeries.name,"Complex frequency series",LALNameLength);
   cFrequencySeries.sampleUnits = lalDimensionlessUnit;
@@ -143,10 +217,24 @@ int main( void )
   cFrequencySeries.data = cSequence;
 
   LALCPrintFrequencySeries(&cFrequencySeries, "cFS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing REAL8TimeSeries to dTS.dat\n");
 
   dSequence = NULL;
 
   LALDCreateVector( &status, &dSequence, 8 );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
   for ( n=dSequence->length, d=dSequence->data; n > 0 ; --n, ++d ) {
     *d = sinh(90.0*(4-n));
   }
@@ -158,6 +246,15 @@ int main( void )
   dTimeSeries.data = dSequence;
 
   LALDPrintTimeSeries(&dTimeSeries, "dTS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing REAL8FrequencySeries to dFS.dat\n");
+
 /*    for ( n=dSequence->length, d=dSequence->data; n > 0 ; --n, ++d ) { */
 /*      *d = 1 / (1e-300 + *d); */
 /*    } */
@@ -171,30 +268,77 @@ int main( void )
   dFrequencySeries.epoch = t00;
   dFrequencySeries.data = dSequence;
   LALDPrintFrequencySeries(&dFrequencySeries, "dFS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  LALDDestroyVector( &status, &dSequence );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing REAL4TimeSeries to sFS.dat\n");
 
   sSequence = NULL;
 
   LALSCreateVector( &status, &sSequence, 8 );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
   for ( n=sSequence->length, s=sSequence->data; n > 0 ; --n, ++s ) {
     *s = sinh(9.0*(4-n));
   }
-  strncpy(sFrequencySeries.name,"Real frequency series",LALNameLength);
+  strncpy(sFrequencySeries.name,"Real time series",LALNameLength);
   sTimeSeries.sampleUnits = lalDimensionlessUnit;
   sTimeSeries.deltaT = 1.0/1024.0;
   sTimeSeries.f0 = 0;
   sTimeSeries.epoch = t10;
   sTimeSeries.data = sSequence;
   LALSPrintTimeSeries(&sTimeSeries, "sTS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing REAL4FrequencySeries to sFS.dat\n");
 
   for ( n=sSequence->length, s=sSequence->data; n > 0 ; --n, ++s ) {
     *s = 1 / (1e-30 + *s);
   }
+  strncpy(sFrequencySeries.name,"Real frequency series",LALNameLength);
   sFrequencySeries.sampleUnits = lalDimensionlessUnit;
   sFrequencySeries.f0 = 0;
   sFrequencySeries.deltaF = 128;
   sFrequencySeries.epoch = t10;
   sFrequencySeries.data = sSequence;
   LALSPrintFrequencySeries(&sFrequencySeries, "sFS.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  LALSDestroyVector( &status, &sSequence );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing heterodyned REAL8FrequencySeries to hFSe.dat\n");
 
   strncpy(cFrequencySeries.name,"Heterodyned frequency series",LALNameLength);
   cFrequencySeries.sampleUnits = lalDimensionlessUnit;
@@ -203,15 +347,36 @@ int main( void )
   cFrequencySeries.epoch = t00;
   cFrequencySeries.data = cSequence;
 
-  for (i=0; i<(int)cSequence->length; ++i) {
+  for (i=0; i<cSequence->length; ++i) {
     cSequence->data[i].re = 1.0*i;
     cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF * i;
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSe.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
 
   LALCDestroyVector( &status, &cSequence );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  fprintf(stderr,"Printing heterodyned REAL8FrequencySeries to hFSo.dat\n");
+
   LALCCreateVector( &status, &cSequence, 9 );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
 
   cFrequencySeries.sampleUnits = lalDimensionlessUnit;
   cFrequencySeries.f0 = 500.0;
@@ -219,12 +384,27 @@ int main( void )
   cFrequencySeries.epoch = t00;
   cFrequencySeries.data = cSequence;
 
-  for (i=0; i<(int)cSequence->length; ++i) {
+  for (i=0; i<cSequence->length; ++i) {
     cSequence->data[i].re = 1.0*i;
     cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF*i;
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSo.dat");
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+  LALCDestroyVector( &status, &cSequence );
+  if (status.statusCode != 0) 
+  {
+    fprintf(stderr,"[%i]: %s [PrintFTSeriesTest:%s]\n",status.statusCode,
+	    status.statusDescription, PRINTFTSERIESTESTC_MSGEFUN);
+    return PRINTFTSERIESTESTC_EFUN;
+  }
+
+  LALCheckMemoryLeaks();
 
   return 0;
 }

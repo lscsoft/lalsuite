@@ -1,13 +1,21 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = LALVersionTest LALMallocTest PrintVectorTest PrintFTSeriesTest
+check_PROGRAMS = LALVersionTest LALMallocTest PrintVectorTest\
+	         PrintFTSeriesTest ReadFTSeriesTest
 LALVersionTest_SOURCES = LALVersionTest.c
 LALVersionTest_LDADD = $(top_builddir)/lib/liblal.la
 LALMallocTest_SOURCES = LALMallocTest.c
 LALMallocTest_LDADD = $(top_builddir)/lib/liblal.la
+
 PrintVectorTest_SOURCES = PrintVectorTest.c
 PrintVectorTest_LDADD = $(top_builddir)/lib/liblal.la
+
 PrintFTSeriesTest_SOURCES = PrintFTSeriesTest.c
 PrintFTSeriesTest_LDADD = $(top_builddir)/lib/liblal.la
+
+ReadFTSeriesTest_SOURCES = ReadFTSeriesTest.c
+ReadFTSeriesTest_LDADD = $(top_builddir)/lib/liblal.la
+
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = LALVersionTest LALMallocTest PrintVectorTest
+TESTS = LALVersionTest LALMallocTest PrintVectorTest \
+        ReadFTSeriesTest PrintFTSeriesTest
 MOSTLYCLEANFILES = *.dat *PrintVector.00* *.out
