@@ -68,82 +68,64 @@ LALFindChirpBCVSpinTemplate (
     )
 /* </lalVerbatim> */
 {
-  UINT4        numPoints  = 0;
-  REAL4        deltaF     = 0.0;
-  COMPLEX8    *expPsi     = NULL;
-  REAL4       *xfac       = NULL;
-  REAL4        x1         = 0.0;  
-  REAL4        psi0       = 0.0;
-  REAL4        psi00      = 0.0;
-  REAL4        psi05      = 0.0;
-  REAL4        psi10      = 0.0;
-  REAL4        psi15      = 0.0;
-  REAL4        psi20      = 0.0;        
-  REAL4        fHi        = 0.0;  
-  INT4         k          = 0;
-  /*REAL4        factor;*/
-  INT4         kmin       = 0;     
-  INT4         kmax       = 0;    
- 
-  FILE        *fpTmpltIm      = NULL;
-  FILE        *fpTmpltRe      = NULL;
-  /* FILE      *fpTemplate     = NULL; */
-  FILE         *fpwtilde = NULL;
-  FILE         *fpA1 = NULL;
-  FILE         *fpA2 = NULL;
-  FILE         *fpA3 = NULL;
-    
-  
-  /*RealFFTPlan *prev           = NULL;
-  REAL4Vector *hVec           = NULL;
-  REAL4Vector *HVec           = NULL;
-  REAL4        invNumPoints;*/
-
-  int		doTest;
- 
-  REAL8                 *ampBCVSpin1;
-  REAL8                 *ampBCVSpin2;
-  COMPLEX8              *wtilde;
-  REAL8                 I = 0.0;
-  REAL8                 J = 0.0;
-  REAL8                 K = 0.0;
-  REAL8                 L = 0.0;
-  REAL8                 M = 0.0;
-  REAL4                 beta; /* Spin parameter */
+  UINT4        		numPoints        = 0;
+  REAL4        		deltaF           = 0.0;
+  COMPLEX8    	       *expPsi           = NULL;
+  REAL4       	       *xfac             = NULL;
+  REAL4        		x1               = 0.0;  
+  REAL4        		psi0             = 0.0;
+  REAL4        		psi00            = 0.0;
+  REAL4        		psi05            = 0.0;
+  REAL4        		psi10            = 0.0;
+  REAL4        		psi15            = 0.0;
+  REAL4        		psi20            = 0.0;        
+  REAL4       		fFinal           = 0.0;  
+  INT4      	        k                = 0;
+  INT4         		kmin             = 0;     
+  INT4         		kmax             = 0;    
+  REAL8                *ampBCVSpin1;
+  REAL8                *ampBCVSpin2;
+  COMPLEX8             *wtilde;
+  REAL8                 I                = 0.0;
+  REAL8                 J                = 0.0;
+  REAL8                 K                = 0.0;
+  REAL8                 L                = 0.0;
+  REAL8                 M                = 0.0;
+  REAL4                 beta; 
   REAL8                 rootI;
   REAL8                 denominator;
   REAL8                 rootDenominator;
   REAL8                 denominator1;
   REAL8                 numerator1;
-  REAL4                 normFac;
-  REAL4                 normFacSq;
-  REAL4                 Twoby3   = 2.0/3.0;
+  REAL4                 Twoby3           = 2.0/3.0;
   REAL8                 deltaTto2by3;
-  REAL8		*A1Vec = NULL;
-  REAL8		*A2Vec = NULL;
-  REAL8		*A3Vec = NULL;
-  REAL4			deltaT;  
+  REAL8                *A1Vec            = NULL;
+  REAL8                *A2Vec            = NULL;
+  REAL8                *A3Vec            = NULL;
+  REAL4                 deltaT;
   REAL4                 fLow;
-  REAL4			fFinal;
-  REAL4                 A1A1 = 0.0;
-  REAL4                 A2A2 = 0.0;
-  REAL4                 A3A3 = 0.0;
-  REAL4                 A1A2 = 0.0;
-  REAL4                 A1A3 = 0.0;
-  REAL4                 A2A3 = 0.0;
-	    
-
+  REAL4                 A1A1             = 0.0;
+  REAL4                 A2A2             = 0.0;
+  REAL4                 A3A3 		 = 0.0;
+  REAL4                 A1A2 		 = 0.0;
+  REAL4                 A1A3 		 = 0.0;
+  REAL4                 A2A3 		 = 0.0;
+  int		        doTest;
+  
+  FILE                 *fpTmpltIm  	 = NULL;
+  FILE                 *fpTmpltRe  	 = NULL;
+  FILE                 *fpwtilde   	 = NULL;
+  FILE                 *fpA1       	 = NULL;
+  FILE                 *fpA2       	 = NULL;
+  FILE                 *fpA3             = NULL;
+  
+  /*RealFFTPlan        *prev             = NULL;
+  REAL4Vector          *hVec             = NULL;
+  REAL4Vector          *HVec             = NULL;
+  REAL4                 invNumPoints;*/
   
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
-
- /*
-   *
-   * check that the arguments are reasonable
-   * same as Eirini's except for aproximant
-   *
-   */
-  
 
   /* check that the output structures exist */
   ASSERT( fcTmplt, status, 
@@ -172,13 +154,12 @@ LALFindChirpBCVSpinTemplate (
    * Choose level of output
    */
   
-  doTest = 1; /* Set to 1 for lots of output, useful for testing */
+  doTest = 0; /* Set to 1 for lots of output, useful for testing */
   
   if (doTest ==1)
   {	  
-  fpTmpltIm  =  fopen("tmpltIm.dat","w");
-  fpTmpltRe  =  fopen("tmpltRe.dat","w");
-  /* fpTemplate =  fopen("Template.dat","w"); */
+  fpTmpltIm        =  fopen("tmpltIm.dat","w");
+  fpTmpltRe        =  fopen("tmpltRe.dat","w");
   fpwtilde         = fopen ("wtilde.dat", "w");
   fpA1             = fopen ("A1.dat","w");
   fpA2             = fopen ("A2.dat","w");
@@ -191,11 +172,16 @@ LALFindChirpBCVSpinTemplate (
    *
    */
 
-
   /* set up pointers */
-  expPsi    = fcTmplt->data->data;
-  xfac      = params->xfacVec->data;
-  numPoints = fcTmplt->data->length;
+  expPsi      = fcTmplt->data->data;
+  numPoints   = fcTmplt->data->length;
+  xfac        = params->xfacVec->data;
+  xfac        = params->xfacVec->data;
+  
+  /* Reading in data needed to calculate moments */
+  wtilde      = fcDataParams->wtildeVec->data;
+  ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
+  ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
   
   /* store the waveform approximant */
   fcTmplt->approximant = BCVSpin;
@@ -210,25 +196,29 @@ LALFindChirpBCVSpinTemplate (
   psi15 = tmplt->psi3;            /* & which name convention to use?       */
   psi20 = 0.0; /*tmplt->psi4;*/
   /* XXX work needed here... */
-
-  /* parameters */
-  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
-
-  x1 = pow( deltaF, -1.0/3.0 );
-  fHi  = tmplt->fFinal;
   
+  /* parameters */
+  deltaT        = params->deltaT;
+  deltaTto2by3  = pow(deltaT, Twoby3);
+  deltaF        = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
+  x1            = pow( deltaF, -1.0/3.0 );
+  fLow          = params->fLow;
+  fFinal        = tmplt->fFinal;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
-  kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
+  kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
+  beta = tmplt->beta; 
 
   if (doTest ==1)
   {	  
-  	fprintf (stdout, "psi0    = %e \n", psi00);
-  	fprintf (stdout, "psi3    = %e \n", psi15);
-  	fprintf (stdout, "fHi     = %e \n", fHi);
-  	fprintf (stdout, "fLow    = %e \n", params->fLow);
-  	fprintf (stdout, "deltaF  = %e \n", deltaF);
-  	fprintf (stdout, "kmin    = %d \n", kmin);
-  	fprintf (stdout, "kmax    = %d \n", kmax);
+  	fprintf (stdout, "psi0      = %e \n", psi00);
+  	fprintf (stdout, "psi3      = %e \n", psi15);
+  	fprintf (stdout, "fFinal    = %e \n", fFinal);
+  	fprintf (stdout, "fLow      = %e \n", fLow);
+	fprintf (stdout, "numPoints = %d \n", numPoints);
+	fprintf (stdout, "deltaT    = %e \n", deltaT);
+	fprintf (stdout, "deltaF    = %e \n", deltaF);
+  	fprintf (stdout, "kmin      = %d \n", kmin);
+  	fprintf (stdout, "kmax      = %d \n", kmax);
   }
  
   /* compute psi0: used in range reduction */
@@ -348,43 +338,12 @@ LALSDestroyVector ( status->statusPtr, &hVec);
 LALSDestroyVector ( status->statusPtr, &HVec);
 */ 
 
- fprintf (stdout, "just before new stuff \n");
- fflush (stdout);
+  /*
+   *
+   * Calculating the amplitude vectors A1Vec, A2Vec, A3Vec
+   *
+   */
     
- wtilde      = fcDataParams->wtildeVec->data;
- ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
- ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
- 
- fprintf (stdout, "just after fcDataParamstuff \n");
- fflush (stdout);  
-   
- beta = 0.0;
-  
-  normFac       = 4./numPoints;
-  normFacSq     = pow(normFac, 2);
-  
- 
- deltaTto2by3 = pow(deltaT, Twoby3);
- deltaT  = params->deltaT;
- deltaF  =  1.0/((REAL4)numPoints * deltaT);
-  
- fLow   = params->fLow;
- fFinal = tmplt->fFinal;  
- 
-  kmin = fLow / deltaF > 1 ? fLow / deltaF : 1;
-  kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
-                                                                                                                            
-  if (doTest == 1)
-  {
-	  fprintf (stdout, "numPoints = %d\n", numPoints);
-          fprintf (stdout, "beta: %e \n", beta);
-          fprintf (stdout, "deltaT: %e \n", deltaT);
-	  fprintf (stdout, "deltaF %e\n", deltaF);
-          fprintf (stdout, "fLow %e\t kmin %d\n", fLow, kmin);
-          fprintf (stdout, "fFinal %e\t kmax %d\n", fFinal, kmax);
-	  fprintf (stdout, "normFac %e\n", normFac);									               fprintf (stdout, "normFacSq %e\n \n", normFacSq);
-  }
- 
   for ( k = kmin; k < kmax; ++k )
   {
           I += ampBCVSpin1[k] * ampBCVSpin1[k] * wtilde[k].re ;
@@ -438,7 +397,7 @@ LALSDestroyVector ( status->statusPtr, &HVec);
       	fprintf (stdout, "denominator     = %e \n", denominator);
 	fprintf (stdout, "rootDenominator = %e \n", rootDenominator);
 	fprintf (stdout, "denominator1    = %e \n", denominator1);
-	fprintf (stdout, "numerator1    = %e \n\n", numerator1);    
+	fprintf (stdout, "numerator1      = %e \n\n", numerator1);    
   }
 
   A1Vec = fcTmplt->A1BCVSpin->data;
