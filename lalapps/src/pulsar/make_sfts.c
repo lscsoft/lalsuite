@@ -78,7 +78,7 @@ void pout(char *fmt, ...){
   processid=getpid();
 
   /* not guaranteed null terminated! */
-  gethostname(hostsname, 255);
+  gethostname((char *)hostsname, (size_t)255);
   hostsname[255]='\0';
 
   /* printout process id and hostname into error message */
@@ -127,6 +127,165 @@ int getenvval(const char *valuename){
   return retval;
 }
 
+/* Compensate for timing glitches in S1 data.  Returns the number of
+   microseconds that has to be added to the time recorded in the frame
+   (LSC timestamp) to get the correct GPS time.  Thus a positive value
+   indicates that the first datum in a frame file was actually
+   recorded at a time later than the timestamp of the frame file.
+*/
+int deltatime(const char *instrument, int gpstime){
+  int (*data)[4];
+  int i;
+  
+  /* corrections for Livingston L1 during S1 */
+  int l1time[][4]={
+    {714177080, 714855840, -121, 678760},
+    {714855841, 715618813, -120, 762972},
+    /* array is null terminated */
+    {0,         0,           0,  0},
+  };
+  
+  /* corrections for Hanford H1 during S1 */
+  int h1time[][4]={
+    {714335520, 715618813, -95, 1283293},
+    /* array is null terminated */
+    {0,         0,           0,  0},
+  };
+  
+  /* corrections for Hanford H2 during S1, cut and paste from Table 1
+     of Szabi's report */
+  int h2time[][4]={
+    {714256920, 714407160,  5463, 150240},
+    {714407640, 714507180, -164, 99540},
+    {714507300, 714587880,  141, 80580},
+    {714697680, 714704820,  995, 7140},
+    {714705000, 714786780, -162, 81780},
+    {714786900, 715008660,  204, 221760},
+    {715008780, 715026480,  448, 17700},
+    {715026780, 715079460, -163, 52680},
+    {715079580, 715101120,  142, 21540},
+    {715101240, 715129260,  447, 28020},
+    {715129500, 715165740, -162, 36240},
+    {715166640, 715265820, -163, 99180},
+    {715266180, 715274580, -102, 8400},
+    {715274700, 715296960,  630, 22260},
+    {715297440, 715298280, -163, 840},
+    {715299420, 715305660, -163, 6240},
+    {715306920, 715545120, -163, 238200},
+    {715545240, 715556400,  814, 11160},
+    {715556640, 715594020, -163, 37380},
+    {715594140, 715618800,   81, 24660},
+    /* array is null terminated */
+    {0,         0,           0,  0},
+  };
+
+  /* select the correct instrument */
+  if (!strcmp(instrument,"H1"))
+    data=h1time;
+  else if (!strcmp(instrument,"H2"))
+    data=h2time;
+  else if (!strcmp(instrument,"L1"))
+    data=l1time;
+  else {
+    pout("Unrecognized detector: %s in deltatime(). Not H1, H2, or L1.\n",
+	 instrument);
+    exit(1);
+  }
+  
+  /* search along list to see if we find the correct time range */
+  for (i=0; data[i][0]; i++)
+    if (data[i][0]<=gpstime && gpstime<=data[i][1])
+      return data[i][2];
+  
+  /* we didn't find the time range, so return 0 */
+  return 0;
+}
+
+
+/* check a number of bounary values of the timing correction */
+void checktimingcorrections(){
+  
+  /* check a single value of the timing correction */
+  void checkone(int gpstime,const char *instrument){
+    printf("%s  time %d  correction %d\n", instrument, gpstime, deltatime(instrument, gpstime));
+    return;
+  }
+  
+  /* H1 checks */
+  checkone(10, "H1");
+  checkone(10000, "H1");
+  checkone(715618799, "H1");
+  printf("\n");
+
+  /* H2 checks */
+  checkone(0, "H2");    
+  checkone(10, "H2"); 
+  checkone(10000, "H2"); 
+  checkone(714256919, "H2");
+  checkone(714256920, "H2");
+  checkone(714256921, "H2");
+  checkone(714407159, "H2"); 
+  checkone(714407160, "H2");
+  checkone(715594139, "H2");
+  checkone(715594140, "H2"); 
+  checkone(715594141, "H2");
+  checkone(715618799, "H2"); 
+  checkone(715618800, "H2"); 
+  checkone(715618801, "H2"); 
+  exit(0);
+}
+
+
+/* Utility function for cyclically shifting an array "in place".
+   Written for clarity and simplicity, not for efficiency.
+   shift >= 0 :
+               data[0]  (moves to)    -> data[shift]
+               data[1]                -> data[shift+1]
+	       data[length-1-shift]   -> data[length-1]
+               data[length-1-shift+1] -> data[0]
+               data[length-1-shift+2] -> data[1]
+               ...
+   shift < 0 :
+               replace shift by length+shift and follow 
+	       the rules above.               ...
+ */
+void shifter(float *data, int length, int shift){
+  float *temp=NULL;
+  int delta=shift>=0?shift:length+shift;
+  int i;
+
+  /* if no shift is required, we are done */
+  if (shift==0)
+    return;
+
+  /* check that shift range seems reasonable */
+  if (delta<0 || delta>length/8){
+    pout("shifter(): shift amount %d seems too big/small for length %d array\n",
+	 shift, length);
+    exit(1);
+  }
+  
+  /* allocate memory */
+  if (!(temp=(float *)LALMalloc(sizeof(float)*length))){
+    pout("Unable to allocate %d bytes of memory in shifter\n",
+	 sizeof(float)*length);
+    exit(1);
+  }
+  
+  /* copy data */
+  memcpy(temp, data, sizeof(float)*length);
+
+  /* now do shift */  
+  for (i=0; i<length; i++)
+    data[(delta+i) % length]=temp[i];
+  
+  /* free memory and return */
+  LALFree(temp);
+
+  return;
+}
+
+
 int main(int argc,char *argv[]){
   static LALStatus status;
   UINT4 npts;
@@ -152,6 +311,10 @@ int main(int argc,char *argv[]){
   /* vector holding the frame data */
   FrVect *frvect;        
   
+#if (1)
+  checktimingcorrections();
+#endif
+
   printf("Normal startup\n");
   fflush(stdout);
   
@@ -325,9 +488,14 @@ int main(int argc,char *argv[]){
       chan.data->length = npts;
       
       /* copy data */
-      for (i=0;i<npts;i++)
+      for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
-      
+#if (0)
+	/* Normalize data according to the GEO SFT specifications */
+	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
+#endif
+      }
+
       /* free framevec -- no longer needed */
       FrVectFree(frvect); 
       frvect=NULL;
@@ -366,6 +534,46 @@ int main(int argc,char *argv[]){
 	return 7;
       }
       
+
+#if (1)
+      {
+	/* correct data for timing errors.  This is a bit of a hack.  We
+	   can do it either just before or just after the FFT. This is
+	   equivalent if the timing error equals an integer multiple of
+	   the sample time.  Otherwise the correct way to do it is by
+	   modifying the FFT output by multiplying by exp(2pi i f dt).
+	   Here, we take the easy route, which gets it right to
+	   sufficient accuracty (60 us) for our purposes.  Note that
+	   there are a number of approximations built in to either way
+	   of doing it, all of which boil down to: it works if the
+	   timing errors are very small compared to the SFT time.
+	   
+	   A positive value of deltatime() means that the correct time
+	   stamp for the first datum recorded in the frame is LATER than
+	   the frame time stamp.  A negative value of deltatime() means
+	   that the correct time stamp for the first datum recorded in
+	   the frame is EARLIER than the frame time stamp.
+	*/
+
+	/* number of bins to shift by */
+	int nshift, microsec;
+	double fshift;
+	
+	microsec=deltatime(argv[4], epoch.gpsSeconds);
+	fshift=1.e-6*microsec*SRATE;
+	
+	if (microsec){
+	  if (fshift>=0.0)
+	    nshift=(int)(fshift+0.5);
+	  else
+	    nshift=(int)(fshift-0.5);
+	  
+	  if (nshift)
+	    shifter(chan.data->data, npts, nshift);
+	}
+      }
+#endif
+
       /* take forward FFT */
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
