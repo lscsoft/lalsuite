@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 {
     static LALStatus         stat;
     FILE                     *fpin=NULL;
+    FILE                     *fpout=NULL;
     INT4                     fileCounter=0;
     BOOLEAN                  playground=TRUE;
     INT4                     sort=FALSE;
@@ -129,6 +130,11 @@ int main(int argc, char **argv)
     INT4                     minSnrFlag=0;
     REAL4                    minSnr=0.0;         
 
+    /*searchsummary info */
+    SearchSummaryTable      *searchSummary=NULL;
+    INT4                    timeAnalyzed=0;
+
+
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
 
     CHAR                     *outfileName=NULL;
@@ -164,7 +170,7 @@ int main(int argc, char **argv)
 	    {"min-snr",         required_argument,  0,  'l'},
 	    {"max-snr",         required_argument,  0,  'm'},
 	    {"trig-start-time", required_argument,  0,  'q'},
-	    {"trig-stop-time",   required_argument,  0,  'r'},
+	    {"trig-stop-time",  required_argument,  0,  'r'},
 	    {"noplayground",	no_argument,        0,	'n'},
 	    {"help",		no_argument,	    0,	'o'}, 
 	    {"sort",		no_argument,	    0,	'p'},
@@ -382,19 +388,48 @@ int main(int argc, char **argv)
         LALPrintError("Could not open input file\n");
     }
 
-    
-
     /*****************************************************************
      * loop over the xml files
      *****************************************************************/
     currentEvent = tmpEvent = burstEventList = NULL;
+    if (verbose_flag)
+      {
+	fpout = fopen("./EPjobstartstop.dat","a");
+	fprintf(fpout,"#This file contains the start & stop times of all jobs that succeded\n" );
+      }
     while ( getline(line, MAXSTR, fpin) ){
+
+      INT4 tmpStartTime=0,tmpEndTime=0;
+      INT4 remainder;
+
       fileCounter++;
       if (verbose_flag)
       {
-        fprintf(stderr,"WOrking on file %s\n", line);
+        fprintf(stderr,"Working on file %s\n", line);
       }
 
+      /*Read the searchsummary table */
+      SearchSummaryTableFromLIGOLw( &searchSummary, line);
+      tmpStartTime=searchSummary->out_start_time.gpsSeconds;
+      tmpEndTime=searchSummary->out_end_time.gpsSeconds;
+      /*write out the start and stop time */
+      if (verbose_flag)
+	{
+	  fprintf(fpout,"%d  %d  %d\n",tmpStartTime,tmpEndTime,tmpEndTime-tmpStartTime );
+	} 
+      /*total time analysed */
+      timeAnalyzed += (tmpEndTime-tmpStartTime);
+
+      while (searchSummary)
+	{
+	  SearchSummaryTable *thisEvent;
+	  thisEvent = searchSummary;
+	  searchSummary = searchSummary->next;
+	  LALFree( thisEvent );
+	}
+      searchSummary = NULL; 
+
+      /*read in the Sngl_Burst table */
       LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
             line), &stat);
 
@@ -416,6 +451,12 @@ int main(int argc, char **argv)
       tmpEvent = currentEvent->next;
     }
 
+    /* print out the total time analysed */
+      if (verbose_flag)
+	{
+	  fprintf(fpout,"%d\n",timeAnalyzed);
+	  fclose(fpout);
+	}
     /****************************************************************
      * do any requested cuts
      ***************************************************************/
