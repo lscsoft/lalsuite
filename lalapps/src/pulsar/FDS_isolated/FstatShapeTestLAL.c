@@ -342,12 +342,11 @@ showHelp( LALStatus *status,
   fprintf(stderr,"Example: ./FstatShapeTest -o <ObservedDataFile> -t <VetoDataFile>\n");
   fprintf(stderr,"Output from left to right:\n");
   fprintf(stderr,"(1) Frequency at which the maximum of F occurs\n");
-  fprintf(stderr,"(2) Frequency at which the minimum of the veto statistic occurs\n");
-  fprintf(stderr,"(3) Maximum of F in the cluster\n");
-  fprintf(stderr,"(4) Degrees of freedom\n");
-  fprintf(stderr,"(5) Veto statistic\n");
-  fprintf(stderr,"[(6) Chi-square Q probability (\"Significance\" of the data)]\n");
-  fprintf(stderr,"[(7) If 0, the observed signal is consistent with the veto signal, \n");
+  fprintf(stderr,"(2) Maximum of F in the cluster\n");
+  fprintf(stderr,"(3) Degrees of freedom\n");
+  fprintf(stderr,"(4) Veto statistic\n");
+  fprintf(stderr,"[(5) Chi-square Q probability (\"Significance\" of the data)]\n");
+  fprintf(stderr,"[(6) If 0, the observed signal is consistent with the veto signal, \n");
   fprintf(stderr,"with the significance level = %f.]\n", cla->sigLevel);
   exit(0);
 
@@ -383,6 +382,17 @@ ReadClusterInfo( LALStatus *status,
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
   ASSERT ( clustInfoPair != NULL, status, FSTATSHAPETESTC_ENONULL , FSTATSHAPETESTC_MSGENONULL );  
 
+
+
+  /* the expected header info in the FaFb file.*/
+  /* n
+   * fmax        Fmax
+   * startFreq   deltaFreq
+   * A           B          C
+   */
+
+
+
   /* Counts the number of points in the cluster */
   /* read the hader of the observed data*/
   fpobsv = fopen(cla->obsvdatafile,"r");
@@ -407,13 +417,6 @@ ReadClusterInfo( LALStatus *status,
     ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
   }
   fclose(fpobsv);
-
-
-  /* n
-   * fmax        Fmax
-   * startFreq   deltaFreq
-   * A           B          C
-   */
 
 
   /* read the hader of the test data*/
@@ -763,7 +766,7 @@ RearrangeData( LALStatus *status,
   if( startFreqO - startFreqT != errorTol ) {
     {REAL8 diffSFreq = fabs( startFreqO - startFreqT);
     REAL8 tmp = diffSFreq - myRound( diffSFreq / deltaFreqLCM ) * deltaFreqLCM;
-    if( tmp  > errorTol * diffSFreq ) {
+    if( fabs( tmp ) > errorTol * startFreqO ) {
       fprintf(stderr,"The starting frequency inconsistency\n");
     ABORT( status, FSTATSHAPETESTC_EODDDATA, FSTATSHAPETESTC_MSGEODDDATA );
     }
