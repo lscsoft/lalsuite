@@ -811,19 +811,9 @@ int main( int argc, char *argv[] ){
 	    this_mdcsim_burst->geocent_peak_time.gpsSeconds=gps[x];/* wrong value*/
 	    this_mdcsim_burst->geocent_peak_time.gpsNanoSeconds=0;/* wrong value*/
 	    this_mdcsim_burst->h_peak_time.gpsSeconds=gps[x];
-	    this_mdcsim_burst->h_peak_time.gpsNanoSeconds=tH[x];
-	    LAL_CALL( LALGPStoFloat( &status, &site_time, 
-			   &(this_mdcsim_burst->h_peak_time) ), &status );
-	    site_time += 0.5;
-	    LAL_CALL( LALFloatToGPS( &status, &(this_mdcsim_burst->h_peak_time),
-				     &site_time ), &status ); 
+	    this_mdcsim_burst->h_peak_time.gpsNanoSeconds=tH[x] + (0.5 * 1000000000LL) ; 
 	    this_mdcsim_burst->l_peak_time.gpsSeconds=gps[x];
-	    this_mdcsim_burst->l_peak_time.gpsNanoSeconds=tL[x];
-	    LAL_CALL( LALGPStoFloat( &status, &site_time, 
-			   &(this_mdcsim_burst->l_peak_time) ), &status );
-	    site_time += 0.5;
-	    LAL_CALL( LALFloatToGPS( &status, &(this_mdcsim_burst->l_peak_time),
-				     &site_time ), &status ); 
+	    this_mdcsim_burst->l_peak_time.gpsNanoSeconds=tL[x] + (0.5 * 1000000000LL) ;
 	    this_mdcsim_burst->longitude=phi[x];
 	    this_mdcsim_burst->latitude=theta[x];
 	    this_mdcsim_burst->polarization=psi[x];
