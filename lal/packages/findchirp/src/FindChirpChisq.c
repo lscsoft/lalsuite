@@ -115,9 +115,12 @@ LALFindChirpChisqVetoInit (
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
   ASSERT( ! params->qtildeBinVecBCV, status,
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( ! params->qtildeBinVecBCV, status,
-      FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
 
+  /* check that we are using a known approximant */
+  if ( params->approximant != TaylorF2 && params->approximant != BCV )
+  {
+    ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+  }
 
 
   /*
@@ -132,7 +135,6 @@ LALFindChirpChisqVetoInit (
     DETATCHSTATUSPTR( status );
     RETURN( status );
   }
-
 
 
   /*
@@ -168,7 +170,7 @@ LALFindChirpChisqVetoInit (
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
             &(params->plan) ), status );
       TRY( LALCDestroyVector( status->statusPtr,
-  	  &(params->qtildeBinVec) ), status );
+            &(params->qtildeBinVec) ), status );
     }
     ENDFAIL( status );
   }
@@ -180,11 +182,11 @@ LALFindChirpChisqVetoInit (
   if ( ! params->qBinVecPtr )
   {
     TRY( LALCDestroyVector( status->statusPtr, 
-           &(params->qtildeBinVec) ), status );
+          &(params->qtildeBinVec) ), status );
     if( params->qtildeBinVecBCV )
     {
       TRY( LALCDestroyVector( status->statusPtr,
-             &(params->qtildeBinVecBCV) ), status );
+            &(params->qtildeBinVecBCV) ), status );
     }
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(params->plan) ), status );
@@ -209,12 +211,11 @@ LALFindChirpChisqVetoInit (
         TRY( LALCDestroyVector( status->statusPtr,
               &(params->qtildeBinVecBCV) ), status );
       }
-        TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-              &(params->plan) ), status );
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+            &(params->plan) ), status );
     }
     ENDFAIL( status );
   }
-
 
   /* create additional numBins vectors for the BCV time domain data */
   if ( params->approximant == BCV )
@@ -224,15 +225,15 @@ LALFindChirpChisqVetoInit (
     if ( ! params->qBinVecPtrBCV )
     {
       TRY( LALCDestroyVector( status->statusPtr,
-             &(params->qtildeBinVec) ), status );	    
+            &(params->qtildeBinVec) ), status );
 
       if ( params->qtildeBinVecBCV )
       {
         TRY( LALCDestroyVector( status->statusPtr,
-               &(params->qtildeBinVecBCV) ), status );
+              &(params->qtildeBinVecBCV) ), status );
       }
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-             &(params->plan) ), status );
+            &(params->plan) ), status );
       ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
     }
 
@@ -255,13 +256,13 @@ LALFindChirpChisqVetoInit (
         LALFree( params->qBinVecPtr );
         TRY( LALCDestroyVector( status->statusPtr,
               &(params->qtildeBinVec) ), status );
-	if ( params->qtildeBinVecBCV )
-	{
+        if ( params->qtildeBinVecBCV )
+        {
           TRY( LALCDestroyVector( status->statusPtr,
                 &(params->qtildeBinVecBCV) ), status );
-	}
-	TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-            &(params->plan) ), status );
+        }
+        TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+              &(params->plan) ), status );
       }
       ENDFAIL( status );
     }
@@ -287,6 +288,12 @@ LALFindChirpChisqVetoFinalize (
 
   INITSTATUS( status, "FindChirpChisqVetoInit", FINDCHIRPCHISQC );
   ATTATCHSTATUSPTR( status );
+
+  /* check that we are using a known approximant */
+  if ( params->approximant != TaylorF2 && params->approximant != BCV )
+  {
+    ABORT( status, FINDCHIRPCHISQH_EUAPX, FINDCHIRPCHISQH_MSGEUAPX );
+  }
 
 
   /*
@@ -337,20 +344,24 @@ LALFindChirpChisqVetoFinalize (
     CHECKSTATUSPTR( status );
   }
 
-  for ( l = 0; l < numChisqBins; ++l )
-  {
-    LALCDestroyVector( status->statusPtr, (params->qBinVecPtrBCV + l) );
-    CHECKSTATUSPTR( status );
-  }
-
   LALFree( params->qBinVecPtr );
-  LALFree( params->qBinVecPtrBCV );
 
   LALCDestroyVector( status->statusPtr, &(params->qtildeBinVec) );
   CHECKSTATUSPTR( status );
-  LALCDestroyVector( status->statusPtr, &(params->qtildeBinVecBCV) );
-  CHECKSTATUSPTR( status );
 
+  if ( params->approximant == BCV )
+  {
+    for ( l = 0; l < numChisqBins; ++l )
+    {
+      LALCDestroyVector( status->statusPtr, (params->qBinVecPtrBCV + l) );
+      CHECKSTATUSPTR( status );
+    }
+
+    LALFree( params->qBinVecPtrBCV );
+
+    LALCDestroyVector( status->statusPtr, &(params->qtildeBinVecBCV) );
+    CHECKSTATUSPTR( status );
+  }
 
   /* destroy plan for chisq filter */
   LALDestroyComplexFFTPlan( status->statusPtr, &(params->plan) );
@@ -386,9 +397,6 @@ LALFindChirpChisqVeto (
   UINT4                *chisqBin;
   REAL4                 chisqNorm;
   REAL4                 rhosq;
-#if 0
-  REAL4                 mismatch;
-#endif
 
   COMPLEX8             *qtildeBin;
 
@@ -445,13 +453,11 @@ LALFindChirpChisqVeto (
   ASSERT( params->qtildeBinVec->length > 0, status, 
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
-#if 0
-  /* check that the bank match has been set */
-  if ( params->bankMatch < 0 || params->bankMatch >= 1 )
+  /* check that we are using the correct approximant */
+  if ( params->approximant != TaylorF2 )
   {
-    ABORT( status, FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+    ABORT( status, FINDCHIRPCHISQH_EIAPX, FINDCHIRPCHISQH_MSGEIAPX );
   }
-#endif
 
 
   /*
@@ -471,9 +477,6 @@ LALFindChirpChisqVeto (
   numChisqBins = numChisqPts - 1;
   chisqBin     = params->chisqBinVec->data;
   chisqNorm    = sqrt( params->norm );
-#if 0
-  mismatch     = 1.0 - params->bankMatch;
-#endif
 
   qtildeBin = params->qtildeBinVec->data;
 
@@ -522,15 +525,6 @@ LALFindChirpChisqVeto (
     }
   }
 
-#if 0
-  /* now modify the value to compute the new veto */
-  for ( j = 0; j < numPoints; ++j ) 
-  {
-    rhosq = params->norm * (q[j].re * q[j].re + q[j].im * q[j].im);
-    chisq[j] /= 1.0 + rhosq * mismatch * mismatch / (REAL4) numChisqBins;
-  }
-#endif
-
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -565,9 +559,6 @@ LALFindChirpBCVChisqVeto (
   UINT4                *chisqBinBCV;
   REAL4                 chisqNorm;
   REAL4                 rhosq;
-#if 0
-  REAL4                 mismatch;
-#endif
 
   COMPLEX8             *qtildeBin;
   COMPLEX8             *qtildeBinBCV;
@@ -604,7 +595,6 @@ LALFindChirpBCVChisqVeto (
   ASSERT( params->chisqBinVecBCV->length > 0, status,
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
-
   /* check that the fft plan exists */
   ASSERT( params->plan,status,FINDCHIRPCHISQH_ENULL,FINDCHIRPCHISQH_MSGENULL );
 
@@ -630,7 +620,6 @@ LALFindChirpBCVChisqVeto (
   ASSERT( inputBCV->qtildeVec->data, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
-
   /* check that the workspace vectors exist */
   ASSERT( params->qtildeBinVec, status,
       FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
@@ -645,13 +634,11 @@ LALFindChirpBCVChisqVeto (
   ASSERT( params->qtildeBinVecBCV->length > 0, status,
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
-#if 0
-  /* check that the bank match has been set */
-  if ( params->bankMatch < 0 || params->bankMatch >= 1 )
+  /* check that we are using the correct approximant */
+  if ( params->approximant != BCV )
   {
-    ABORT( status, FINDCHIRPCHISQH_EMTCH, FINDCHIRPCHISQH_MSGEMTCH );
+    ABORT( status, FINDCHIRPCHISQH_EIAPX, FINDCHIRPCHISQH_MSGEIAPX );
   }
-#endif
 
 
   /*
@@ -674,13 +661,9 @@ LALFindChirpBCVChisqVeto (
   chisqBin     = params->chisqBinVec->data;
   chisqBinBCV  = params->chisqBinVecBCV->data;
   chisqNorm    = params->norm ; /* norm squared */
-#if 0
-  mismatch     = 1.0 - params->bankMatch;
-#endif
 
-
-    qtildeBinBCV = params->qtildeBinVecBCV->data;
-    qtildeBin    = params->qtildeBinVec->data;
+  qtildeBinBCV = params->qtildeBinVecBCV->data;
+  qtildeBin    = params->qtildeBinVec->data;
 
 
   /* 
@@ -704,7 +687,7 @@ LALFindChirpBCVChisqVeto (
         params->qtildeBinVec, params->plan );
     CHECKSTATUSPTR( status );
     LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtrBCV[l],
-	params->qtildeBinVecBCV, params->plan );
+        params->qtildeBinVecBCV, params->plan );
     CHECKSTATUSPTR( status );
   }
 
@@ -726,9 +709,9 @@ LALFindChirpBCVChisqVeto (
       REAL4 Y1 = params->qBinVecPtr[l]->data[j].im;
 
       REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) * 
-		     ( X1 - q[j].re / (REAL4) (numChisqBins) ) + 
-	      	     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) * 
-		     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) ); 
+          ( X1 - q[j].re / (REAL4) (numChisqBins) ) + 
+          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) * 
+          ( Y1 - q[j].im / (REAL4) (numChisqBins) ) ); 
 
       chisq[j] += chisqNorm * mod1 ;
     }
@@ -743,23 +726,14 @@ LALFindChirpBCVChisqVeto (
       REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
 
       REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) * 
-		     ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
-		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) * 
-		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
+          ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
+          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) * 
+          ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
 
-      chisq[j] += chisqNorm * mod2 ;	    
+      chisq[j] += chisqNorm * mod2;
 
     }
   }
-
-#if 0
-  /* now modify the value to compute the new veto */
-  for ( j = 0; j < numPoints; ++j ) 
-  {
-    rhosq = params->norm * (q[j].re * q[j].re + q[j].im * q[j].im);
-    chisq[j] /= 1.0 + rhosq * mismatch * mismatch / (REAL4) numChisqBins;
-  }
-#endif
 
   /* normal exit */
   DETATCHSTATUSPTR( status );

@@ -57,13 +57,16 @@ NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 #define FINDCHIRPCHISQH_ENUMZ 3
 #define FINDCHIRPCHISQH_ECHIZ 4
 #define FINDCHIRPCHISQH_EALOC 5
-#define FINDCHIRPCHISQH_EMTCH 6
+#define FINDCHIRPCHISQH_EUAPX 6
+#define FINDCHIRPCHISQH_EIAPX 7
 #define FINDCHIRPCHISQH_MSGENULL "Null pointer"
 #define FINDCHIRPCHISQH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPCHISQH_MSGENUMZ "Number of points is zero or negative"
 #define FINDCHIRPCHISQH_MSGECHIZ "Number of chisq bins is zero or negative"
 #define FINDCHIRPCHISQH_MSGEALOC "Memory allocation error"
 #define FINDCHIRPCHISQH_MSGEMTCH "Invalid template bank match"
+#define FINDCHIRPCHISQH_MSGEUAPX "Unknown waveform approximant"
+#define FINDCHIRPCHISQH_MSGEIAPX "Incorrect waveform approximant"
 /* </lalErrTable> */
 
 #if 0
