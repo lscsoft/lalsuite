@@ -605,7 +605,7 @@ int main(int argc, char **argv)
      *  open xml file at inspiral table 
      **************************************************************/
     currentNumEvents = 
-      SnglInspiralTableFromLIGOLw( inspiralHandle, line, 0, -1 );
+      LALSnglInspiralTableFromLIGOLw( inspiralHandle, line, 0, -1 );
 
     if ( currentNumEvents < 0 )
     {
