@@ -32,10 +32,15 @@ Usage: lalapps_power_pipe [options]
 
   -d, --datafind           run LSCdataFind to create frame cache files
   -r, --power              run lalapps_power on the first IFO
+  -H, --ifo_h1             run on H1 
+  -K, --ifo_h2             run on H2
+  -L, --ifo_l              run on L1
 
   -c, --makeinjfiles       create the xml files with inj parameters
   -j, --injections         add simulated bursts
   -m, --mdcinjections      add mdc injections 
+
+  -b, --coincidence        do coincidence analysis
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -46,15 +51,19 @@ Usage: lalapps_power_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrcjmp:u:P:f:l:"
+shortop = "hvdrHKLcjmbp:u:P:f:l:"
 longop = [
   "help",
   "version",
   "datafind",
   "power",
+  "ifo_h1",
+  "ifo_h2",
+  "ifo_l1",
   "makeinjfiles",
   "injections",
   "mdcinjections",
+  "coincidence",
   "playground-only",
   "user-tag=",
   "priority=",
@@ -71,7 +80,11 @@ except getopt.GetoptError:
 config_file = None
 do_datafind = None
 do_power = None
+do_H1 = None
+do_H2 = None
+do_L1 = None
 do_makeinjfiles = None
+do_coincidence = None
 do_inj = None
 do_mdcinj = None
 usertag = None
@@ -91,12 +104,20 @@ for o, a in opts:
     do_datafind = 1
   elif o in ("-r", "--power"):
     do_power = 1
+  elif o in ("-H", "--ifo_H1"):
+    do_H1 = 1
+  elif o in ("-K", "--ifo_H2"):
+    do_H2 = 1
+  elif o in ("-L", "--ifo_L1"):
+    do_L1 = 1
   elif o in ("-c", "--makeinjfiles"):
     do_makeinjfiles = 1
   elif o in ("-j", "--injections"):
     do_inj = 1
   elif o in ("-m", "--mdcinjections"):
     do_mdcinj = 1
+  elif o in ("-b", "--coincidence"):
+    do_coincidence = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -131,6 +152,11 @@ except: pass
 #try and make a directory to store the mdccache files
 if do_mdcinj: 
   try: os.mkdir('mdccache')
+  except: pass
+
+#try and make a directory to store the coincidence outputs
+if do_coincidence: 
+  try: os.mkdir('coincident')
   except: pass
 
 # create the config parser object and read in the ini file
@@ -169,6 +195,7 @@ df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 inj_job = power.InjJob(cp)
 mdcinj_job = power.MdcDataFindJob(cp)
 pow_job = power.PowerJob(cp)
+burca_job = power.BurcaJob(cp)
 
 # set better submit file names than the default
 if usertag:
@@ -179,15 +206,18 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 inj_job.set_sub_file( basename + '.inj' + subsuffix )
 mdcinj_job.set_sub_file( basename + '.mdcinj' + subsuffix )
 pow_job.set_sub_file( basename + '.power' + subsuffix )
+burca_job.set_sub_file( basename + '.burca' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
   pow_job.add_opt('user-tag',usertag)
+  burca_job.add_opt('user-tag',usertag)
 
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
   pow_job.add_condor_cmd('priority',condor_prio)
+  burca_job.add_condor_cmd('priority',condor_prio)	
 
 # PRB -- This is where I have to leave Duncan behind and understand
 # what he's actually done ...... ;)
@@ -199,51 +229,87 @@ minduration = int(cp.get('segmentation', 'min-duration'))
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),minduration)
 
-# create the chunks from the science segments.  This is not needed for
-# power any more. 
-#data.make_chunks(length,overlap,playground_only,0,overlap/2)
-#data.make_chunks_from_unused(
-#  length,overlap/2,playground_only,overlap/2,0,overlap/2)
 
-# get the order of the ifos to filter
-ifo1 = cp.get('pipeline','ifo1')
-ifo1_snr = cp.get('pipeline','threshold')
-ifo1_calibration = cp.get('calibration','H1')
+#get the order of ifos to filter
+if do_H1:
+  ifo1 = cp.get('pipeline','ifo1')
+  ifo1_snr = cp.get('pipeline','thresholdifo1')
+  ifo1_calibration = cp.get('calibration','H1') 
+if do_H2:
+  ifo2 = cp.get('pipeline','ifo2')
+  ifo2_snr = cp.get('pipeline','thresholdifo2')
+  ifo2_calibration_1 = cp.get('calibration','H2-1')
+  ifo2_calibration_2 = cp.get('calibration','H2-2')
+  ifo2_cal_epoch = cp.get('calibration','H2-cal-epoch-boundary')
+if do_L1:
+  ifo3 = cp.get('pipeline','ifo3')
+  ifo3_snr = cp.get('pipeline','thresholdifo3')
+  ifo3_calibration = cp.get('calibration','L1')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
 first_df2 = None
+prev_mdcdf1 = None
+prev_mdcdf2 = None
+first_mdcdf2 = None
 
 # create a list to store the burst jobs
 burst_nodes = []
 
 for seg in data:
-  # find all the data
-  df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(seg.start() - pad)
-  df1.set_end(seg.end() + pad)
-  df1.set_observatory(ifo1[0])
-  if prev_df1: 
-    df1.add_parent(prev_df1)
+  ######### find all the data ##########
+  if do_H1 or do_H2: 
+    df1 = pipeline.LSCDataFindNode(df_job)
+    df1.set_start(seg.start() - pad)
+    df1.set_end(seg.end() + pad)
+    df1.set_observatory(ifo1[0])
+    if prev_df1: 
+      df1.add_parent(prev_df1)
 
-  if do_datafind:
-    dag.add_node(df1)
+    if do_datafind:
+      dag.add_node(df1)
 
-  prev_df1 = df1
+    prev_df1 = df1
+  
+  if do_L1:
+    df2 = pipeline.LSCDataFindNode(df_job)
+    df2.set_start(seg.start() - pad)
+    df2.set_end(seg.end() + pad)
+    df2.set_observatory(ifo3[0])
+    if prev_df2: 
+      df2.add_parent(prev_df2)
 
-  # find all the mdc data
-  mdcdf1 = power.MdcDataFindNode(mdcinj_job)
-  mdcdf1.set_start(seg.start() - pad)
-  mdcdf1.set_end(seg.end() + pad)
-  mdcdf1.set_observatory(ifo1[0])
+    if do_datafind:
+      dag.add_node(df2)
 
-  if do_datafind: 
-    mdcdf1.add_parent(df1)
-  if do_mdcinj:
-    dag.add_node(mdcdf1)
+    prev_df2 = df2
 
-  # set the injecton jobs
+  ####### find all the mdc data #########
+  if do_H1 or do_H2:
+    mdcdf1 = power.MdcDataFindNode(mdcinj_job)
+    mdcdf1.set_start(seg.start() - pad)
+    mdcdf1.set_end(seg.end() + pad)
+    mdcdf1.set_observatory(ifo1[0])
+
+    if do_datafind: 
+      mdcdf1.add_parent(df1)
+    if do_mdcinj:
+      dag.add_node(mdcdf1)
+
+  if do_L1:
+    mdcdf2 = power.MdcDataFindNode(mdcinj_job)
+    mdcdf2.set_start(seg.start() - pad)
+    mdcdf2.set_end(seg.end() + pad)
+    mdcdf2.set_observatory(ifo3[0])
+
+    if do_datafind: 
+      mdcdf2.add_parent(df2)
+    if do_mdcinj:
+      dag.add_node(mdcdf2)
+
+
+  ####### set the injecton jobs #########
   inj1 = power.InjNode(inj_job)
   inj1.set_start(seg.start())
   inj1.set_end(seg.end())
@@ -254,27 +320,115 @@ for seg in data:
   if do_makeinjfiles:
     dag.add_node(inj1)
 
-  # set the power jobs
-  pow1 = power.PowerNode(pow_job)
-  pow1.set_start(seg.start())
-  pow1.set_end(seg.end())
-  pow1.set_ifo(ifo1)
-  pow1.set_cache(df1.get_output())
-  if do_mdcinj:
-    pow1.set_mdccache(mdcdf1.get_output())
-  if do_inj: 
-    pow1.set_inj(inj1.get_output())
-    pow1.add_var_opt('calibration-cache',ifo1_calibration)
-  pow1.add_var_opt('threshold',ifo1_snr)
 
-  if do_datafind: 
-    pow1.add_parent(df1)
-  if do_mdcinj: 
-    pow1.add_parent(mdcdf1)
-  if do_makeinjfiles:
-    pow1.add_parent(inj1)	
-  if do_power: 
-    dag.add_node(pow1)
+  ####### set the power jobs ########
+  if do_H1:
+    pow1 = power.PowerNode(pow_job)
+    pow1.set_start(seg.start())
+    pow1.set_end(seg.end())
+    pow1.set_ifo(ifo1)
+    pow1.set_cache(df1.get_output())
+    if do_mdcinj:
+      pow1.set_mdccache(mdcdf1.get_output())
+    if do_inj: 
+      pow1.set_inj(inj1.get_output())
+      pow1.add_var_opt('calibration-cache',ifo1_calibration)
+    pow1.add_var_opt('threshold',ifo1_snr)
+
+    if do_datafind: 
+      pow1.add_parent(df1)
+    if do_mdcinj: 
+      pow1.add_parent(mdcdf1)
+    if do_makeinjfiles:
+      pow1.add_parent(inj1)	
+    if do_power: 
+      dag.add_node(pow1)
+
+  if do_H2:
+    pow2 = power.PowerNode(pow_job)
+    pow2.set_start(seg.start())
+    pow2.set_end(seg.end())
+    pow2.set_ifo(ifo2)
+    pow2.set_cache(df1.get_output())
+    if do_mdcinj:
+      pow2.set_mdccache(mdcdf1.get_output())
+    if do_inj: 
+      pow2.set_inj(inj1.get_output())
+      if seg.start() >= ifo2_cal_epoch: 
+        pow2.add_var_opt('calibration-cache',ifo2_calibration_2)
+      else:
+        pow2.add_var_opt('calibration-cache',ifo2_calibration_1)     
+    pow2.add_var_opt('threshold',ifo2_snr)
+
+    if do_datafind: 
+      pow2.add_parent(df1)
+    if do_mdcinj: 
+      pow2.add_parent(mdcdf1)
+    if do_makeinjfiles:
+      pow2.add_parent(inj1)	
+    if do_power: 
+      dag.add_node(pow2)
+
+  if do_L1:
+    pow3 = power.PowerNode(pow_job)
+    pow3.set_start(seg.start())
+    pow3.set_end(seg.end())
+    pow3.set_ifo(ifo3)
+    pow3.set_cache(df2.get_output())
+    if do_mdcinj:
+      pow3.set_mdccache(mdcdf2.get_output())
+    if do_inj: 
+      pow3.set_inj(inj1.get_output())
+      pow3.add_var_opt('calibration-cache',ifo3_calibration)
+    pow3.add_var_opt('threshold',ifo3_snr)
+
+    if do_datafind: 
+      pow3.add_parent(df2)
+    if do_mdcinj: 
+      pow3.add_parent(mdcdf2)
+    if do_makeinjfiles:
+      pow3.add_parent(inj1)	
+    if do_power: 
+      dag.add_node(pow3)
+
+  ########set the burca jobs ###########
+  if do_coincidence:
+    burca = power.BurcaNode(burca_job)
+    if do_H1 and do_L1:	
+      burca.set_ifoa(pow1.get_output())
+      burca.set_ifob(pow3.get_output()) 
+    if do_H2 and do_L1:	
+      burca.set_ifoa(pow2.get_output())
+      burca.set_ifob(pow3.get_output())
+    if do_H1 and do_H2:	
+      burca.set_ifoa(pow1.get_output())
+      burca.set_ifob(pow2.get_output())
+    burca.set_start(seg.start())
+    burca.set_end(seg.end())
+    burca.add_var_opt('outfile',burca.get_output())
+
+    if do_datafind: 
+      burca.add_parent(df1)
+      if do_L1:
+        burca.add_parent(df2)
+    if do_mdcinj: 
+      burca.add_parent(mdcdf1)
+      if do_L1:
+        burca.add_parent(mdcdf2)
+    if do_makeinjfiles:
+      burca.add_parent(inj1)	
+    if do_power:
+      if do_H1 and do_L1: 
+        burca.add_parent(pow1)
+        burca.add_parent(pow3)
+      if do_H2 and do_L1: 
+        burca.add_parent(pow2)
+        burca.add_parent(pow3)
+      if do_H1 and do_H2: 
+        burca.add_parent(pow1)
+        burca.add_parent(pow2)
+    dag.add_node(burca)
+          
 
 # write out the DAG
 dag.write_sub_files()
@@ -286,7 +440,7 @@ print "\n   condor_submit_dag", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
-
+ 
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
