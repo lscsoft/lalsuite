@@ -458,7 +458,7 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 	head = event;
 
 /* FIXME: don't check the first event again */
-	for(tmp = event; event; event = event->next) {
+	for(tmp = event; event; event = tmp->next) {
 		if(keep_this_event(event, options))
 			tmp = event;
 		else
