@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "SFTReferenceLibrary.h"
 #include "config.h"
 
@@ -28,7 +29,15 @@
 #define TABLELEN 256
 #define BLOCKSIZE 65536
 
-const char* ReferenceSFTLibraryVersion() {
+/* some local prototypes */
+unsigned long long crc64(unsigned char* data, unsigned int length, unsigned long long crc);
+int isbigendian(void);
+void swap2(char *location);
+void swap4(char *location);
+void swap8(char *location);
+int validate_sizes(void);
+
+const char* ReferenceSFTLibraryVersion(void) {
   return PACKAGE_VERSION;
 }
 
@@ -75,7 +84,7 @@ unsigned long long crc64(unsigned char* data,
 
 
 /* determine endian ordering at run time */
-int isbigendian(){
+int isbigendian(void){
   short i=0x0100;
   char *tmp=(char *)&i;
   return *tmp;
@@ -111,7 +120,7 @@ void swap8(char *location){
 /* this routine checks that the assumed sizes and structure packing
    conventions of this code are valid.  These checks could also be
    done at compile time with #error statements */
-int validate_sizes() {
+int validate_sizes(void) {
   if (
       sizeof(char) != 1      ||
       sizeof(int) != 4       ||
@@ -183,7 +192,9 @@ const char *SFTErrorMessage(int errorcode) {
   case SFTENSAMPLESNOTPOS:
     return "SFT number of data samples is not positive";
   case SFTEINSTRUMENTUNKNOWN:
-    return "SFT instrument (detector) not recognized";
+    return "Unknown SFT instrument (detector)";
+  case SFTEINSTRUMENTILLEGAL:
+    return "Illegal detector-entry: must be a capital letter followed by a digit";
   }
   return "SFT Error Code not recognized";
 }
@@ -197,6 +208,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
 	     double tbase,        /* time baseline of SFTs */
 	     int firstfreqindex,  /* index of first frequency bin included in data (0=DC)*/
 	     int nsamples,        /* number of frequency bins to include in SFT */
+	     const char *detector,/* channel-prefix defining detector */
 	     char *comment,       /* null-terminated comment string to include in SFT */
 	     float *data          /* points to nsamples x 2 x floats (Real/Imag)  */
 	     ) {
@@ -227,6 +239,12 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   if (nsamples<=0)
     return SFTENSAMPLESNOTPOS;
 
+  if (!validDetector (detector))
+    return SFTEINSTRUMENTILLEGAL;
+
+  if (!knownDetector(detector))
+    return SFTEINSTRUMENTUNKNOWN;
+
   /* comment length including null terminator to string must be an
      integer multiple of eight bytes. comment==NULL means 'no
      comment'  */
@@ -249,7 +267,10 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   header.firstfreqindex = firstfreqindex;
   header.nsamples       = nsamples;
   header.crc64          = 0;
-  header.padding        = 0;
+  header.detector[0]    = detector[0];
+  header.detector[1]    = detector[1];
+  header.padding[0]     = 0;
+  header.padding[1]     = 0;
   header.comment_length = comment_length+inc;
   
   /* compute CRC of header */
@@ -338,7 +359,6 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     swap4((char *)&header.firstfreqindex);
     swap4((char *)&header.nsamples);
     swap8((char *)&header.crc64);
-    swap4((char *)&header.padding);
     swap4((char *)&header.comment_length);
     swap = 1;
   }
@@ -347,7 +367,10 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   if (header.version == 1) {
     version = 1;
     header.crc64          = 0;
-    header.padding        = 0;
+    header.detector[0]    = 0;
+    header.detector[1]    = 0;
+    header.padding[0]     = 0;
+    header.padding[1]     = 0;
     header.comment_length = 0;
   }
   else if (header.version == 2)
@@ -451,6 +474,12 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     goto error;
   }
 
+  if (!validDetector (header.detector))
+    return SFTEINSTRUMENTILLEGAL;
+  
+  if (!knownDetector (header.detector))
+    return SFTEINSTRUMENTUNKNOWN;
+
   /* if user has asked for comment, store it */
   if (comment && header.comment_length) {
     int i;
@@ -501,16 +530,10 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   if (comment)
     /* note: mycomment may be NULL if there is NO comment */
     *comment=mycomment;
-  
-  info->version        = header.version;
-  info->gps_sec        = header.gps_sec;
-  info->gps_nsec       = header.gps_nsec;
-  info->tbase          = header.tbase;
-  info->firstfreqindex = header.firstfreqindex;
-  info->nsamples       = header.nsamples;
-  info->crc64          = header.crc64;
-  info->padding        = header.padding;
-  info->comment_length = header.comment_length;
+
+  /* return header-info */
+  memcpy(info, &header, sizeof(header));  
+
   return SFTNOERROR;
 }
 
@@ -613,10 +636,69 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
   /* Number of samples the same */
   if (headerone->nsamples != headertwo->nsamples)
     return SFTENSAMPLESCHANGES;
-  
-  /* REINHARD, PLEASE ADD IN A COMPARISON BLOCK THAT RETURNS
-     SFTEWRONGINSTRUMENT IF NEEDED */
+
+  /* check for identical detectors */
+  if ( (headerone->detector[0] != headertwo->detector[0]) || (headerone->detector[1] != headertwo->detector[1]) )
+    return SFTEINSTRUMENTCHANGES;
+
   return SFTNOERROR;
 }
 
+/* check that channel-prefix defining detector is valid.
+ * returns 1 if valid, 0 otherwise */
+int validDetector (const char *detector)
+{
+  if (!detector)
+    return 0;
 
+  if ( isupper(detector[0]) && isdigit(detector[1]) )
+    return 1;
+  else
+    return 0;
+} /* validDetector() */
+
+/* check that channel-prefix defines a 'known' detector. 
+ * The list of known detectors implemented here for now 
+ * follows the list in Appendix D of LIGO-T970130-F-E:
+ *
+ * returns 1 if known, 0 otherwise */
+int knownDetector (const char *detector)
+{
+  char buf[3];
+  int i;
+  const char *knownDetectors[] = {
+    "T1",	/* TAMA_300 */
+    "V1",	/* Virgo_CITF */
+    "V2",	/* Virgo (3km) */
+    "G1",	/* GEO_600 */
+    "H2",	/* LHO_2k */
+    "H1",	/* LHO_4k */
+    "L1",	/* LLO_4k */
+    "P1",	/* CIT_40 */
+    "A1",	/* ALLEGRO */
+    "O1",	/* AURIGA */
+    "E1",	/* EXPLORER */
+    "B1",	/* NIOBE */
+    "N1",	/* Nautilus */
+    "K1",	/* ACIGA */
+    NULL
+  };
+
+  if (!detector)
+    return 0;
+
+  buf[0] = detector[0];
+  buf[1] = detector[1];
+  buf[2] = 0;
+
+  i = 0;
+  while ( knownDetectors[i] )
+    {
+      if ( !strcmp (knownDetectors[i], buf) )
+	return 1;
+      i ++;
+    }
+  
+  return 0;
+
+} /* knownDetector() */
