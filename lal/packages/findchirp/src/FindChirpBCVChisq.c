@@ -49,7 +49,7 @@ LALCOMPLEX8VectorFFT()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{FindChirpChisqCV}}
+\vfill{\footnotesize\input{FindChirpBCVChisqCV}}
 </lalLaTeX>
 #endif
 
