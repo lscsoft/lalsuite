@@ -310,6 +310,13 @@ LALFindChirpBCVTemplate (
     FindChirpSPTmpltParams     *params
     );
 
+void
+LALFindChirpBCVSpinTemplate (
+    LALStatus                  *status,
+    FindChirpTemplate          *fcTmplt,
+    InspiralTemplate           *tmplt,
+    FindChirpSPTmpltParams     *params
+    );
 #ifdef  __cplusplus
 #pragma {
 }
