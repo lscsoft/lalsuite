@@ -64,7 +64,7 @@ main(int argc, char *argv[])
   LALStatus status = empty_status;	/* initialize status */
   SFTtype *sft = NULL;
   SFTHeader header;
-  REAL8 deltaF, fmin, fmax;
+  REAL8 deltaF, f_min, f_max;
   FILE *fp;
 
   lalDebugLevel = 3;
@@ -85,11 +85,11 @@ main(int argc, char *argv[])
   LAL_CALL (LALReadSFTheader (&status, &header, uvar_SFTfname), &status);
 
   deltaF = 1.0 / header.timeBase;
-  fmin = header.fminBinIndex * deltaF;
-  fmax = fmin + (header.length - 1) * deltaF;
+  f_min = header.fminBinIndex * deltaF;
+  f_max = f_min + (header.length - 1) * deltaF;
 
   /* read in the binary sft-file */
-  LAL_CALL (LALReadSFTfile (&status, &sft, fmin, fmax, uvar_SFTfname), &status);
+  LAL_CALL (LALReadSFTfile (&status, &sft, f_min, f_max, uvar_SFTfname), &status);
 
   /* now dump it into a text-file */
   if ( (fp = fopen (uvar_SFToutname, "w")) == NULL) 
