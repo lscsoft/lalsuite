@@ -104,7 +104,9 @@ void LALReadSFTheader (LALStatus  *status,
   
   /* opening the SFT binary file */
   fp = fopen( fname, "r");
-  ASSERT (fp, status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+  if (fp == NULL) {
+    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+  }
   
   /* read version-number */
   if  (fread (&version, sizeof(version), 1, fp) != 1) {
