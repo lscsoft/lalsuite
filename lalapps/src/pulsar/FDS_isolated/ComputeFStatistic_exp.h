@@ -80,8 +80,6 @@ typedef struct {
  * user-input variables, but also derived ones 
  */
 typedef struct {
-  UserInput userInput;
-
   CHAR EphemEarth[MAXFILENAMELENGTH];
   CHAR EphemSun[MAXFILENAMELENGTH];
   INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
