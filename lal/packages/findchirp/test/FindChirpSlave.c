@@ -9,12 +9,6 @@
  *-----------------------------------------------------------------------
  */
 
-#include <stdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/FindChirpExch.h>
-
-NRCSID (FINDCHIRPSLAVEC, "$Id$");
-
 /*
  *
  * removed test code until new engine is complete
