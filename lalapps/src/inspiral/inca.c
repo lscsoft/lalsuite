@@ -72,6 +72,8 @@ RCSID("$Id$");
 "  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)\n"\
 "  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger\n"\
 "  --dm mass                 mass coincidence window (default 0)\n"\
+"  --dpsi0 Dpsi0             psi0 coincidence window\n"\
+"  --dpsi3 Dpsi3             psi3 coincidence window\n"\
 "  --dt time                 time coincidence window (milliseconds)\n"\
 "\n"\
 "  --no-playground           do not select triggers from playground\n"\
@@ -207,6 +209,8 @@ int main( int argc, char *argv[] )
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
+
+  Approximant           approximant;          /* waveform approximant */
   
   INT4                  i, j;
 
@@ -223,9 +227,12 @@ int main( int argc, char *argv[] )
     {"epsilon",                 required_argument, 0,                'e'},
     {"triggered-bank",          required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'M'},
+    {"approximant",             required_argument, 0,                'A'},
     {"kappa",                   required_argument, 0,                'k'},
     {"ifo-b-snr-threshold",     required_argument, 0,                'S'},
     {"dm",                      required_argument, 0,                'm'},
+    {"dpsi0",                   required_argument, 0,                'p'},
+    {"dpsi3",                   required_argument, 0,                'P'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
     {"gps-end-time",            required_argument, 0,                'r'},
@@ -240,6 +247,7 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
   int c;
+  INT4 haveApprox = 0;
 
 
   /*
@@ -247,7 +255,6 @@ int main( int argc, char *argv[] )
    * initialize things
    *
    */
-
 
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "1" );
@@ -279,6 +286,9 @@ int main( int argc, char *argv[] )
   errorParams.epsilon = EPSILON;
   errorParams.kappa = KAPPA;
 
+  /* value of approximant */
+  errorParams.approximant = approximant;
+
   /* parse the arguments */
   while ( 1 )
   {
@@ -288,7 +298,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:m:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
+        "a:b:e:k:m:p:P:t:q:r:s:hz:Z:M:T:S:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -352,6 +362,28 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case 'A':
+        if ( ! strcmp( "TaylorF2", optarg ) )
+        {
+          approximant = TaylorF2;
+        }
+        else if ( ! strcmp( "BCV", optarg ) )
+        {
+          approximant = BCV;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either TaylorF2 or BCV)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveApprox = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+
       case 'S':
         /* set the snr threshold in ifo b.  Used when deciding if ifo b
 	 * could have seen the triggers. */
@@ -370,6 +402,18 @@ int main( int argc, char *argv[] )
       case 'm':
         /* mass errors allowed */
         errorParams.dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'p':
+        /* psi0 errors allowed */
+        errorParams.dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'P':
+        /* psi3 errors allowed */
+        errorParams.dpsi3 = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -753,7 +797,7 @@ int main( int argc, char *argv[] )
 	    }
           } /* close while ( thisSummValue ) */
 	}
-      } /* close if( useRangeCut ) */
+      } /* close if( numIFO == 2 ) */
 
       if ( vrbflg ) 
         fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
@@ -861,27 +905,67 @@ int main( int argc, char *argv[] )
     {
       eventHandle[i] = thisEvent;
     }
-    if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
-    qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
-        compareTmpltsByMass );
-    if ( vrbflg ) fprintf( stdout, "done\n" );
+    
+    if ( approximant == TaylorF2 )
+    {	    
+      if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
+      qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
+          compareTmpltsByMass );
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+    else if ( approximant == BCV )
+    { 
+      if ( vrbflg ) fprintf( stdout, "sorting events by psi... " );
+      qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
+          compareTmpltsByPsi );
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+    }
+    else
+    {
+      fprintf( stderr, "error: unknown waveform approximant for data\n" );
+      exit( 1 );
+    }
+
 
     /* create a linked list of sorted templates */
     coincidentEvents[0] = prevEvent = eventHandle[0];
     numTriggers[0] = 1;
     for ( i = 1; i < numEvents; ++i )
     {
-      if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
-          (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+      if ( approximant == TaylorF2 )
       {
-        /* discard the event as it is a duplicate */
-        LALFree( eventHandle[i] );
+        if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
+            (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+        {
+          /* discard the event as it is a duplicate */
+          LALFree( eventHandle[i] );
+        }
+        else
+        {
+          /* add the event to the linked list */
+          prevEvent = prevEvent->next = eventHandle[i];
+          ++numTriggers[0];
+        }
+      }
+      else if ( approximant == BCV )
+      {
+        if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
+            (prevEvent->psi3 == eventHandle[i]->psi3) )
+        {
+          /* discard the event as it is a duplicate */
+          LALFree( eventHandle[i] );
+        }
+        else
+        {
+          /* add the event to the linked list */
+          prevEvent = prevEvent->next = eventHandle[i];
+          ++numTriggers[0];
+        }
       }
       else
       {
-        /* add the event to the linked list */
-        prevEvent = prevEvent->next = eventHandle[i];
-        ++numTriggers[0];
+	fprintf( stderr, "error: unknown waveform approximant\n" );
+	exit( 1 );
       }
     }
     prevEvent->next = NULL;
@@ -1105,7 +1189,7 @@ int main( int argc, char *argv[] )
                 ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
 	    LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
-                currentTrigger[1], &errorParams ), &status );
+                  currentTrigger[1], &errorParams ), &status );
 	  }
 
 	  if ( errorParams.match )
