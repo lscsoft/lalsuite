@@ -288,8 +288,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
     BEGINFAIL( stat )
       TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
     ENDFAIL( stat );
+    /*
     LALLMST1( stat->statusPtr, &lmst, &date, detector->longitude,
 	      MST_RAD );
+     */
+    lmst = 0;
     BEGINFAIL( stat )
       TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
     ENDFAIL( stat );

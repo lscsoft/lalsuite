@@ -26,8 +26,8 @@
  *      Outputs: REAL8  *gmst      -- LALGMST1 in units requested
  *
  * LALLMST1():
- *      Inputs: LALDate *date      -- date-time to compute GMST1
- *              REAL8   longitude  -- longitude (in decimal degrees East)
+ *      Inputs: LALPlaceAndDate *place_and_date -- location and date-time
+ *                                                 to compute GMST1
  *              INT4    outunits   -- units requested:
  *                                    MST_SEC - seconds
  *                                    MST_HRS - hours
@@ -72,10 +72,10 @@ NRCSID (LMST1C, "$Id$");
  *  C Version
  */
 void
-LALGMST1 (LALStatus        *status,
-       REAL8         *gmst,
-       const LALDate *date,
-       INT4           outunits)
+LALGMST1 (LALStatus     *status,
+          REAL8         *gmst,
+          const LALDate *date,
+          INT4           outunits)
 {
     REAL8 jdate;
     REAL8 jd_hi, jd_lo;
@@ -153,24 +153,25 @@ LALGMST1 (LALStatus        *status,
 
 
 /*
- * Compute LALLMST1 in requested units given date-time, and longitude in degrees
+ * Compute LALLMST1 in requested units given date-time
  */
 void
-LALLMST1 (LALStatus        *status,
-       REAL8         *lmst,
-       const LALDate *date,
-       REAL8          longitude,
-       INT4           outunits)
+LALLMST1 (LALStatus             *status,
+          REAL8                 *lmst,
+          const LALPlaceAndDate *place_and_date,
+          INT4                   outunits)
 {
     REAL8 gmst;
 	REAL8 day = 0;
+    REAL8 longitude =
+        place_and_date->detector->frDetector.vertexLongitudeDegrees;
 
     INITSTATUS (status, "LALLMST1", LMST1C);
 
     /*
      * Check pointer to input variables
      */
-    ASSERT (date != (LALDate *)NULL, status,
+    ASSERT (place_and_date != (LALPlaceAndDate *)NULL, status,
             LMST1_ENULLINPUT, LMST1_MSGENULLINPUT);
 
     /*
@@ -184,7 +185,7 @@ LALLMST1 (LALStatus        *status,
      */
 
     /* get LALGMST1 in seconds */
-    LALGMST1(status, &gmst, date, outunits);
+    LALGMST1(status, &gmst, place_and_date->date, outunits);
 
     /* convert longitude to appropriate units of sidereal time */
     switch (outunits)

@@ -42,8 +42,11 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
 
+#include <lal/DetectorSite.h>
+
 #ifdef  __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 NRCSID (DATEH, "$Id$");
@@ -119,12 +122,17 @@ NRCSID (DATEH, "$Id$");
 #define SECSTOLALDATE_MSGENULLOUTPUT "Output is NULL"
 
     
-/* The standard Unix tm structure */
+/*
+ * The standard Unix tm structure
+ */
 typedef struct
 tm
 LALUnixDate;
 
-/* This time object is exactly like LIGOTimeGPS, except for the name */
+/*
+ * This time object is exactly like LIGOTimeGPS, except for the name.
+ * This measures the amount of time elapsed since the Unix time epoch
+ */
 typedef struct
 tagLIGOTimeUnix
 {
@@ -133,7 +141,21 @@ tagLIGOTimeUnix
 }
 LIGOTimeUnix;
 
-/* Encode timezone information */
+/*
+ * This time object is for time intervals, i.e. no reference epoch implied
+ */
+typedef struct
+tagLALTimeInterval
+{
+    INT4 seconds;
+    INT4 nanoSeconds;
+}
+LALTimeInterval;
+    
+
+/*
+ * Encode timezone information
+ */
 typedef struct
 tagLALTimezone
 {
@@ -142,7 +164,9 @@ tagLALTimezone
 }
 LALTimezone;    
 
-/* Date and time structure */
+/*
+ * Date and time structure
+ */
 typedef struct
 tagLALDate
 {
@@ -153,20 +177,74 @@ tagLALDate
 LALDate;
 
 /*
+ * Place and time structures
+ */
+/* First, with GPS */
+typedef struct
+tagLALPlaceAndGPS
+{
+    LALDetector *detector;   /* pointer to a detector */
+    LIGOTimeGPS *gps;        /* pointer to GPS time */
+}
+LALPlaceAndGPS;
+
+/* Second, with Date-Time */
+typedef struct
+tagLALPlaceAndDate
+{
+    LALDetector *detector;   /* pointer to a detector */
+    LALDate     *date;       /* pointer to a date */
+}
+LALPlaceAndDate;
+
+/*
  * 9. Functions Declarations (i.e., prototypes).
  */
-void LALJulianDay (LALStatus*, INT4*, const LALDate*);
-void LALModJulianDay(LALStatus*, REAL8*, const LALDate*);
-void LALJulianDate(LALStatus*, REAL8*, const LALDate*);
-void LALModJulianDate(LALStatus*, REAL8*, const LALDate*);
-void LALUtoGPS(LALStatus*, LIGOTimeGPS*, const LIGOTimeUnix*);
-void LALGPStoU(LALStatus*, LIGOTimeUnix*, const LIGOTimeGPS*);
-void LALUtime(LALStatus*, LALDate*, const LIGOTimeUnix*);
-void LALDateString(LALStatus*, CHARVector*, const LALDate*);
-void LALGMST1(LALStatus*, REAL8*, const LALDate*, INT4);
-void LALLMST1(LALStatus*, REAL8*, const LALDate*, REAL8, INT4);
-void LALSecsToLALDate(LALStatus*, LALDate*, REAL8);
+void LALJulianDay(LALStatus*,
+                  INT4*,
+                  const LALDate*);
 
+void LALModJulianDay(LALStatus*,
+                     REAL8*,
+                     const LALDate*);
+
+void LALJulianDate(LALStatus*,
+                   REAL8*,
+                   const LALDate*);
+
+void LALModJulianDate(LALStatus*,
+                      REAL8*,
+                      const LALDate*);
+
+void LALUtoGPS(LALStatus*,
+               LIGOTimeGPS*,
+               const LIGOTimeUnix*);
+
+void LALGPStoU(LALStatus*,
+               LIGOTimeUnix*,
+               const LIGOTimeGPS*);
+
+void LALUtime(LALStatus*,
+              LALDate*,
+              const LIGOTimeUnix*);
+
+void LALDateString(LALStatus*,
+                   CHARVector*,
+                   const LALDate*);
+
+void LALGMST1(LALStatus*,
+              REAL8*,
+              const LALDate*,
+              INT4);
+
+void LALLMST1(LALStatus*,
+              REAL8*,
+              const LALPlaceAndDate*,
+              INT4);
+
+void LALSecsToLALDate(LALStatus*,
+                      LALDate*,
+                      REAL8);
 
 #ifdef  __cplusplus
 }
