@@ -43,21 +43,19 @@ NRCSID (TSSEARCHH, "$Id$");
 /******** </lalErrTable> ********/
 
 
+  /* NOT USED ANYMORE
 typedef struct
 tagTSDataSegment
 {
   REAL4TimeSeries               *TSSearchData;
-  COMPLEX8TimeSeries            *TSSearchResponse;
-  REAL4TimeSeries               *TSSearchSpectrum;
-  UINT4                          SegNum; /*Segment Number*/
 }
-TSDataSegment;
+TSDataSegment;*/
 
 typedef struct 
 tagTSSegmentVector
 {
-  UINT4             length; /* Number of segments long */
-  TSDataSegment    *dataSeg; /* Structure for individual data segments */
+  UINT4               length;  /* Number of segments long */
+  REAL4TimeSeries    *dataSeg; /* Structure for individual data segments */
 }TSSegmentVector;
 
 typedef struct
@@ -67,8 +65,10 @@ tagTSSearchParams
   BOOLEAN                       haveData;
   UINT4                        *numSlaves;          
   LIGOTimeGPS                   GPSstart;
-  UINT4                         TimeLengthPoints;/*Each Data Seg Lengths*/
+  UINT4                         TimeLengthPoints; /* Product of NumSeg&SegLenthPoints*/
+  UINT4                         SegLengthPoints;/*Data Seg Length*/
   UINT4                         NumSeg;/* Number of segments length TLP */
+  UINT4                         SamplingRate;
   LIGOTimeGPS                   Tlength;/*Data set time length*/
   TimeFreqRepType               TransformType;
   INT4                          LineWidth;
@@ -82,7 +82,7 @@ tagTSSearchParams
   WindowType                    window; /*Window to use*/
   UINT4                         numEvents; /*Does map have features*/
   CHAR                         *channelName; /*Data Channel Name */
-  TSSegmentVector               dataSegVec; /*Vector of NumSeg of data */
+  TSSegmentVector              *dataSegVec; /*Vector of NumSeg of data */
   UINT4                         currentSeg; /*Denotes current chosen seg */
 }TSSearchParams;
 
