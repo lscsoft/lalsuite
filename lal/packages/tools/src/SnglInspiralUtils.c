@@ -81,7 +81,7 @@ LALSortSnglInspiral(
   }
   if ( ! numEvents )
   {
-    LALWarn( status, "No events in list to sort" );
+    LALWarning( status, "No events in list to sort" );
     RETURN( status );
   }
 
