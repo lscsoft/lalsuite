@@ -95,12 +95,14 @@ LALFindChirpBCVSpinData (
   REAL4                 partSum;
   REAL4                 Power  = 0.0 ;
   REAL4                 PowerBCV = 0.0 ;
- 
- 
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
 
+  FILE                 *fpdataVec;
+  FILE                 *fpspec;
+  FILE		       *fprespRe;
+  FILE                 *fprespIm;
 
 
   /*declaration*/
@@ -212,6 +214,16 @@ ASSERT( params->ampVecBCVSpin2, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data->chan->data" );
   
+  fpdataVec = fopen ("dataVec.dat","w");
+  fpspec    = fopen ("spec.dat","w");
+  fprespRe  = fopen ("respRe.dat","w");
+  fprespIm  = fopen ("respIm.dat","w");
+
+
+
+
+
+
  /*fprintf ( stdout, "just after assert statements of LALFindChirpBCVSpinData \n");*/
 
   /*
@@ -238,9 +250,13 @@ ASSERT( params->ampVecBCVSpin2, status,
 
  /*fprintf ( stdout, "just before loop over data segments in LALFindChirpBCVSpinData \n");*/
 
+fprintf (stdout, "dataSegVec->length %d\n", dataSegVec->length);
+
 
   for ( i = 0; i < dataSegVec->length; ++i )
   {
+
+
 
 /*fprintf ( stdout, "just inside loop over data segments in LALFindChirpBCVSpinData \n");*/
 
@@ -259,6 +275,8 @@ ASSERT( params->ampVecBCVSpin2, status,
     resp         = dataSeg->resp->data->data;
 
     outputData    = fcSeg->data->data->data;
+
+
 /*    outputDataBCV = fcSeg->dataBCV->data->data;*/
 
 /*fprintf ( stdout, "just after sep. dep. pointers in LALFindChirpBCVSpinData \n");*/
@@ -301,7 +319,7 @@ ASSERT( params->ampVecBCVSpin2, status,
         dataVec, params->fwdPlan );                             
     CHECKSTATUSPTR( status );*/                                   
 
-/*fprintf ( stdout, "just after FFT in LALFindChirpBCVSpinData \n");*/
+fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
 
 
   /* compute strain */
@@ -311,6 +329,11 @@ ASSERT( params->ampVecBCVSpin2, status,
     REAL4 q = outputData[k].im;
     REAL4 x = resp[k].re * params->dynRange;
     REAL4 y = resp[k].im * params->dynRange;
+
+   
+    fprintf (fprespRe, "%d\t%e\n",k,resp[k].re);
+    fprintf (fprespIm, "%d\t%e\n",k,resp[k].im);
+
 
     outputData[k].re =  p*x - q*y;
     outputData[k].im =  p*y + q*x;
@@ -333,9 +356,16 @@ ASSERT( params->ampVecBCVSpin2, status,
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
 
+    fprintf (stdout, "cut %d\n", cut);
+    fprintf (stdout, "params->wtildeVec->length %d\n", params->wtildeVec->length);
+
     /* compute inverse of S_v */
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
+    
+	 fprintf (fpspec, "%d\t%e\n",k,spec[k]);
+
+
       if ( spec[k] == 0 )
       {
         ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, FINDCHIRPBCVSPINH_MSGEDIVZ );
@@ -482,6 +512,11 @@ ASSERT( params->ampVecBCVSpin2, status,
 
   } /* end of loop over data segments */
  
+fclose(fprespRe);
+fclose(fprespIm);
+fclose(fpspec);
+fclose(fpdataVec);
+
   DETATCHSTATUSPTR( status );
   RETURN( status );
 
