@@ -57,7 +57,7 @@ RCSID("$Id$");
   LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
   LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
 
-/* window duration for psd estimation */
+/* window duration for PSD estimation */
 #define PSD_WINDOW_DURATION 4
 
 /* flags for getopt_long */
@@ -621,8 +621,8 @@ static REAL4FrequencySeries *inverse_noise(LALStatus *status,
 static REAL4FrequencySeries *optimal_filter(LALStatus *status,
     REAL4FrequencySeries *overlap,
     REAL4FrequencySeries *omega,
-    REAL4FrequencySeries *psdOne,
-    REAL4FrequencySeries *psdTwo,
+    REAL4FrequencySeries *psd_one,
+    REAL4FrequencySeries *psd_two,
     REAL4Window *window,
     REAL8 *sigma)
 {
@@ -644,8 +644,8 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   /* set inputs for normalisation */
   norm_input.overlapReductionFunction = overlap;
   norm_input.omegaGW = omega;
-  norm_input.inverseNoisePSD1 = psdOne;
-  norm_input.inverseNoisePSD2 = psdTwo;
+  norm_input.inverseNoisePSD1 = psd_one;
+  norm_input.inverseNoisePSD2 = psd_two;
 
   /* set normalisation output */
   norm_output.normalization = &norm_lambda;
@@ -661,14 +661,14 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "filter", \
-        psdOne->epoch, psdOne->f0, psdOne->deltaF, lalDimensionlessUnit, \
-        psdOne->data->length), status);
+        psd_one->epoch, psd_one->f0, psd_one->deltaF, lalDimensionlessUnit, \
+        psd_one->data->length), status);
 
   /* set input */
   input.overlapReductionFunction = overlap;
   input.omegaGW = omega;
-  input.calibratedInverseNoisePSD1 = psdOne;
-  input.calibratedInverseNoisePSD2 = psdTwo;
+  input.calibratedInverseNoisePSD1 = psd_one;
+  input.calibratedInverseNoisePSD2 = psd_two;
 
   /* generate optimal filter */
   LAL_CALL(LALStochasticOptimalFilterCal(status, series, &input, \
@@ -677,7 +677,7 @@ static REAL4FrequencySeries *optimal_filter(LALStatus *status,
   return(series);
 }
 
-/* wrapper function for estimating the psd */
+/* wrapper function for estimating the PSD */
 static REAL4FrequencySeries *estimate_psd(LALStatus *status,
     REAL4TimeSeries *series,
     REAL8 f0,
@@ -704,10 +704,10 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
         series->epoch, series->f0, deltaF, lalDimensionlessUnit, \
         psd_length), status);
 
-  /* create window for psd estimation */
+  /* create window for PSD estimation */
   window = XLALCreateHannREAL4Window(length);
 
-  /* create fft plan for psd estimation */
+  /* create fft plan for PSD estimation */
   plan = XLALCreateForwardREAL4FFTPlan(length, 0);
 
   /* set parameters */
@@ -716,7 +716,7 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   psd_params.method = useMean;
   psd_params.plan = plan;
 
-  /* esimate psd */
+  /* esimate PSD */
   LAL_CALL(LALREAL4AverageSpectrum(status, psd, series, &psd_params), status);
 
   /* destroy fft plan */
@@ -2070,11 +2070,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numFMax;
   REAL4FrequencySeries *psdOne = NULL;
   REAL4FrequencySeries *psdTwo = NULL;
-  REAL4Vector *calPsdOne, *calPsdTwo;
+  REAL4Vector *calPSDOne, *calPSDTwo;
 
   /* calibrated inverse noise*/
-  REAL4FrequencySeries *calInvPsdOne = NULL;
-  REAL4FrequencySeries *calInvPsdTwo = NULL;
+  REAL4FrequencySeries *calInvPSDOne = NULL;
+  REAL4FrequencySeries *calInvPSDTwo = NULL;
 
   /* overlap reduction function */
   REAL4FrequencySeries *overlap;
@@ -2239,8 +2239,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for calibrated PSDs */
-  calPsdOne = XLALCreateREAL4Vector(filterLength);
-  calPsdTwo = XLALCreateREAL4Vector(filterLength);
+  calPSDOne = XLALCreateREAL4Vector(filterLength);
+  calPSDTwo = XLALCreateREAL4Vector(filterLength);
 
   /* set length of response functions */
   respLength = (UINT4)(fMax / deltaF) + 1;
@@ -2254,8 +2254,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* initialize average PSDs */
     for (i = 0; i < filterLength; i++)
     {
-      calPsdOne->data[i] = 0;
-      calPsdTwo->data[i] = 0;
+      calPSDOne->data[i] = 0;
+      calPSDTwo->data[i] = 0;
     }
 
     /* loop over segments in the interval */
@@ -2312,14 +2312,14 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "Generating inverse noise...\n");
 
         /* compute inverse calibrate PSDs */
-        calInvPsdOne = inverse_noise(&status, psdOne, responseOne);
-        calInvPsdTwo = inverse_noise(&status, psdTwo, responseTwo);
+        calInvPSDOne = inverse_noise(&status, psdOne, responseOne);
+        calInvPSDTwo = inverse_noise(&status, psdTwo, responseTwo);
 
         /* sum over calibrated PSDs for average */
         for (i = 0; i < filterLength; i++)
         {
-          calPsdOne->data[i] += 1. / calInvPsdOne->data->data[i];
-          calPsdTwo->data[i] += 1. / calInvPsdTwo->data->data[i];
+          calPSDOne->data[i] += 1. / calInvPSDOne->data->data[i];
+          calPSDTwo->data[i] += 1. / calInvPSDTwo->data->data[i];
         }
       }
     }
@@ -2330,25 +2330,25 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* average */
       if (!middle_segment_flag)
       {
-        calPsdOne->data[i] /= (REAL4)(segsInInt - 1);
-        calPsdTwo->data[i] /= (REAL4)(segsInInt - 1);
+        calPSDOne->data[i] /= (REAL4)(segsInInt - 1);
+        calPSDTwo->data[i] /= (REAL4)(segsInInt - 1);
       }
       else
       {
-        calPsdOne->data[i] /= (REAL4)segsInInt;
-        calPsdTwo->data[i] /= (REAL4)segsInInt;
+        calPSDOne->data[i] /= (REAL4)segsInInt;
+        calPSDTwo->data[i] /= (REAL4)segsInInt;
       }
       /* take inverse */
-      calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
-      calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
+      calInvPSDOne->data->data[i] = 1. / calPSDOne->data[i];
+      calInvPSDTwo->data->data[i] = 1. / calPSDTwo->data[i];
     }
 
     if (vrbflg)
       fprintf(stdout, "Generating optimal filter...\n");
 
     /* build optimal filter */
-    optFilter = optimal_filter(&status, overlap, omegaGW, calInvPsdOne, \
-        calInvPsdTwo, dataWindow, &sigmaTheo);
+    optFilter = optimal_filter(&status, overlap, omegaGW, calInvPSDOne, \
+        calInvPSDTwo, dataWindow, &sigmaTheo);
 
     if (vrbflg)
     {
@@ -2434,13 +2434,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4TimeSeries(segmentTwo);
   XLALDestroyREAL4FrequencySeries(psdOne);
   XLALDestroyREAL4FrequencySeries(psdTwo);
-  XLALDestroyREAL4Vector(calPsdOne);
-  XLALDestroyREAL4Vector(calPsdTwo);
+  XLALDestroyREAL4Vector(calPSDOne);
+  XLALDestroyREAL4Vector(calPSDTwo);
   XLALDestroyCOMPLEX8FrequencySeries(responseOne);
   XLALDestroyCOMPLEX8FrequencySeries(responseTwo);
   XLALDestroyREAL4FrequencySeries(optFilter);
-  XLALDestroyREAL4FrequencySeries(calInvPsdOne);
-  XLALDestroyREAL4FrequencySeries(calInvPsdTwo);
+  XLALDestroyREAL4FrequencySeries(calInvPSDOne);
+  XLALDestroyREAL4FrequencySeries(calInvPSDTwo);
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
