@@ -156,6 +156,110 @@ by the playground analysis was $32 \pm XX$~$\mu$Hz.
 %without any significant bias leaking in from a large amplitude signal
 %or noise burst.
 
+\clearpage
+
+\subsection{Butterworth Filter used in Excess Power Search}
+
+The LIGO data, till science run S3, has been found to be very noisy 
+at frequencies lower than 100 Hz. This motivates us to implement a 
+Butterworth high pass filter in our search method to get rid off these 
+low frequency noise components. 
+
+Here we report on a set of tests that were performed to check the
+performance of our high pass filter.
+
+We decided to use simulated data: a $\delta$ function to perform the 
+tests. Figure~\ref{fig:checkbuttertimeseries} shows the time series before 
+and after the application of the high pass filter:
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{figures/checkbuttertimeseries}
+\caption{ Top panel: Time series before Butterworth and 
+Bottom panel: Time series after Butterworth} \label{fig:checkbuttertimeseries}
+\end{center}
+\end{figure}
+
+The parameters that were used to define the Butterworth filter are:
+
+\begin{tabular}{|l|l|r|} \hline
+  f2  & 120 Hz. \\ \hline
+  a2  & 0.1     \\ \hline
+  nMax  & 4     \\ \hline
+\end{tabular} \label{tab:butter}
+
+where :
+\begin{itemize}
+  \item f2 denotes the low frequency cut off 
+  \item a2 denotes the attenuation at f2. It gives a measure of power
+    that is allowed to pass at f2.
+  \item nMax denotes the filter order.
+\end{itemize}
+
+Then we looked at the frequency response of the filter: 
+Figure~\ref{fig:butterworthtest4}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.4\textwidth]{figures/butterworthtest4}
+\caption{Frequency response of the high pass filter} \label{fig:butterworthtest4} 
+\end{figure}
+
+The red dotted line shows the spectrum which was measured without
+the high pass filter while the blue line shows the spectrum after the data was 
+high passed. From Figure~\ref{fig:butterworthtest4} 
+it is evident that roughly all the frequency content below 100 Hz. is being
+blocked which is kind of what we want. 
+
+Now for these tests we had set the low frequency cutoff, \emph{flow}, at 130 Hz.
+Then according to the present implementation of the filter, \emph{f2} is 
+(\emph{flow}-10Hz.) which is 120 Hz. and attenuation(\emph{a2}) 
+at 120 Hz. is 0.1. We also expect that at \emph{flow}(130 Hz. in these tests) 
+the output power, with the filter, matches with the power at the same frequency 
+without the filter.
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/testattenuation4}
+\caption{Comparison of the spectra: Zoomed in} \label{fig:testattenuation4}
+\end{figure} 
+
+However from Figure~\ref{fig:testattenuation4} it is quite clear that though 
+the attenuation  at 120 Hz. is 0.1, as expected, the two spectra don't match 
+at 130 Hz.(low frequency cutoff). In fact the two spectra match at 210 Hz.
+
+To get rid off this feature we tested a Butterworth filter of 
+order(\emph{nMax}) 8 and attenuation(\emph{a2}) 0.9 at 120 Hz.: 
+Figure~\ref{fig:testattenuation8_9}
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/testattenuation8_9}
+\caption{Comparison of the spectra: Filter order 8 and attenuation 0.9}
+\label{fig:testattenuation8_9}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/testattenuation8_9zoomed}
+\caption{Comparison of the spectra: Zoomed in}\label{fig:testattenuation8_9zoomed}
+\end{figure}
+
+Now if one compares the spectra in Figure~\ref{fig:testattenuation8_9zoomed},
+the two meet exactly at 130 Hz. which is what we want. 
+
+The Figure~\ref{fig:butter894comptimeseries} shows the high passed time series 
+in the time domain:
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/butter894comptimeseries}
+\caption{Comparison of high passed time series: zoomed in} \label{fig:butter894comptimeseries}
+\end{figure}
+
+As a result we have decided to use a Butterworth filter with the following 
+set of parameters:
+
+\begin{tabular}{|l|l|r|} \hline
+  f2  & 120 Hz. \\ \hline
+  a2  & 0.9     \\ \hline
+  nMax  & 8     \\ \hline
+\end{tabular} \label{tab:butterfinal}
 
 \clearpage
 
