@@ -92,8 +92,6 @@ CHAR *frameCacheOne = NULL;
 CHAR *frameCacheTwo = NULL;
 CHAR *calCacheOne = NULL;
 CHAR *calCacheTwo = NULL;
-CHAR *channelOneTemp = NULL;
-CHAR *channelTwoTemp = NULL;
 CHAR *channelOne = NULL;
 CHAR *channelTwo = NULL;
 CHAR *ifoOne = NULL;
@@ -1183,6 +1181,10 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
   struct stat fileStatus;
+
+  /* tempory variables */
+  CHAR *channelOneTemp = NULL;
+  CHAR *channelTwoTemp = NULL;
 
   while(1)
   {
