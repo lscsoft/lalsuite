@@ -1,13 +1,26 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: FrameData.h
- *
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="FrameDataHV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\section{Header \texttt{FrameData.h}}
+\label{s:FrameData.h}
+
+Root finding routines.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/FrameData.h>
+\end{verbatim}
+
+\noindent Gets IFO\_DMRO data from frame files.
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #ifndef _FRAMEDATA_H
 #define _FRAMEDATA_H
@@ -21,27 +34,77 @@ extern "C" {
 
 NRCSID (FRAMEDATAH, "$Id$");
 
-#define FRAMEDATA_ENULL 1
-#define FRAMEDATA_ENNUL 2
-#define FRAMEDATA_EREAD 4
-#define FRAMEDATA_EOPEN 8
-#define FRAMEDATA_ENOSS 16
-#define FRAMEDATA_EDMRO 32
-#define FRAMEDATA_ELOCK 64
-#define FRAMEDATA_ELOHI 128
-#define FRAMEDATA_ESIZE 256
-#define FRAMEDATA_ESSSZ 512
+#if 0 /* autodoc block */
 
-#define FRAMEDATA_MSGENULL "Null pointer"
-#define FRAMEDATA_MSGENNUL "Non-null pointer"
-#define FRAMEDATA_MSGEREAD "Error reading frame directory"
-#define FRAMEDATA_MSGEOPEN "Error opening frame file"
-#define FRAMEDATA_MSGENOSS "No sweptsine calibration data in frame"
-#define FRAMEDATA_MSGEDMRO "No IFO_DMRO data in frame"
-#define FRAMEDATA_MSGELOCK "No IFO_Lock data in frame"
-#define FRAMEDATA_MSGELOHI "No locklo/lockhi data in frame"
-#define FRAMEDATA_MSGESIZE "Invalid vector length"
-#define FRAMEDATA_MSGESSSZ "Bad sweptsine calibration data"
+<lalLaTeX>
+\subsection*{Error conditions}
+\input{FrameDataHErrTab}
+</lalLaTeX>
+
+<lalErrTable file="FrameDataHErrTab">
+
+#endif /* autodoc block */
+
+#define FRAMEDATAH_ENULL 1
+#define FRAMEDATAH_ENNUL 2
+#define FRAMEDATAH_EREAD 4
+#define FRAMEDATAH_EOPEN 8
+#define FRAMEDATAH_ENOSS 16
+#define FRAMEDATAH_EDMRO 32
+#define FRAMEDATAH_ELOCK 64
+#define FRAMEDATAH_ELOHI 128
+#define FRAMEDATAH_ESIZE 256
+#define FRAMEDATAH_ESSSZ 512
+
+#define FRAMEDATAH_MSGENULL "Null pointer"
+#define FRAMEDATAH_MSGENNUL "Non-null pointer"
+#define FRAMEDATAH_MSGEREAD "Error reading frame directory"
+#define FRAMEDATAH_MSGEOPEN "Error opening frame file"
+#define FRAMEDATAH_MSGENOSS "No sweptsine calibration data in frame"
+#define FRAMEDATAH_MSGEDMRO "No IFO-DMRO data in frame"
+#define FRAMEDATAH_MSGELOCK "No IFO-Lock data in frame"
+#define FRAMEDATAH_MSGELOHI "No locklo/lockhi data in frame"
+#define FRAMEDATAH_MSGESIZE "Invalid vector length"
+#define FRAMEDATAH_MSGESSSZ "Bad sweptsine calibration data"
+
+#if 0 /* autodoc block */
+
+</lalErrTable>
+
+<lalLaTeX>
+
+\subsection*{Structures}
+
+\begin{verbatim}
+typedef struct
+tagFrameData
+{
+  INT4 inLock;
+  INT4 endOfData;
+  INT4 newLock;
+  INT4 newCalibration;
+  /* ... private data ... */
+}
+FrameData;
+\end{verbatim}
+
+This is the frame data parameter structure: think of it as something like a
+file pointer to the frame data.  The ``public'' fields are:
+
+\begin{description}
+\item[\texttt{inLock}] Boolean that user should set to non-zero if data that
+  is not ``in lock'' according to the IFO\_Lock channel is desired.
+\item[\texttt{endOfData}] Boolean that is non-zero if there is no more data.
+\item[\texttt{newLock}] Boolean that is non-zero if starting a new locked
+  section of data.
+\item[\texttt{newCalibration}] Boolean that is non-zero if new calibration data
+  is available.
+\end{description}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 typedef struct
 tagFrameData
@@ -86,6 +149,14 @@ tagFrameData
 }
 FrameData;
 
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{FrameDataC}
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 void
 LALInitializeFrameData (
     LALStatus     *status,
@@ -113,6 +184,13 @@ LALGetFrameDataResponse (
     FrameData               *frameData
     );
 
+#if 0 /* autodoc block */
+
+<lalLaTeX>
+\newpage\input{FrameDataTestC}
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #ifdef  __cplusplus
 }

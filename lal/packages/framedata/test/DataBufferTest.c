@@ -1,13 +1,52 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: DataBufferTest.c
- *
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0 /* autodoc block */
+
+<lalVerbatim file="DataBufferTestCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+
+\subsection{Program \texttt{DataBufferTest.c}}
+\label{ss:DataBufferTest.c}
+
+Tests the routines in \verb+DataBuffer.h+.
+
+\subsection*{Usage}
+\begin{verbatim}
+DataBufferTest [options]
+Options:
+  -h         print this message
+  -q         quiet: run silently
+  -v         verbose: print extra information
+  -d level   set lalDebugLevel to level
+  -o         output framedata to files
+  -f dir     set frame data path to dir
+\end{verbatim}
+
+Unless the \verb+-f+ option is used, the environment variable
+\verb+LAL_FRAME_PATH+ must be set to the directory containing the frame files.
+
+\subsubsection*{Description}
+\subsubsection*{Exit codes}
+\begin{tabular}{|c|l|}
+\hline
+ Code & Explanation                   \\
+\hline
+\tt 0 & Success, normal exit.         \\
+\tt 1 & Subroutine failed.            \\
+\tt77 & Ignored failure: {\tt LAL\_FRAME\_PATH} not set. \\
+\hline
+\end{tabular}
+
+\subsubsection*{Uses}
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{DataBufferTestCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <stdio.h>
 #include <string.h>

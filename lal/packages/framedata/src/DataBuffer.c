@@ -1,13 +1,106 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: DataBuffer.c
- *
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="DataBufferCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{DataBuffer.c}}
+\label{ss:DataBuffer.c}
+
+Routines for getting overlapping segments of data along with estimated spectra
+and calibration information.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{DataBufferCP}
+\index{\texttt{LALCreateDataBuffer()}}
+\index{\texttt{LALDestroyDataBuffer()}}
+\index{\texttt{LALGetData()}}
+
+\subsubsection*{Description}
+
+The routine \texttt{LALCreateDataBuffer()} sets up a buffer for holding
+(overlapping) segments of data.  The parameters for this routine are the
+number of spectra to average, the number of points in each segment, the type
+of window to use in computing the spectra, the forward real FFT plan, and the
+directory path of the frame data.  When the user is finished with a data
+buffer, it is to be destroyed using \texttt{LALDestroyDataBuffer()}.
+
+The routine \texttt{LALGetData()} acquires the next segment of data, its
+spectrum, and its response function, as well as sets flags indicating if the
+end of the data has been reached, if a new locked segment is being entered,
+and if the response function has been changed.  The data in the buffer is
+advanced by an amount \texttt{advance} specified as input.
+
+\subsubsection*{Operating Instructions}
+
+\begin{verbatim}
+const  UINT4                   numSpec     = 8;
+const  UINT4                   numPoints   = 1024;
+CHAR                           framePath[] = "/data/frames"
+static LALStatus               status;
+static DataBufferPar           params;
+static DataBuffer             *buffer;
+static DataSegment             segmnt;
+static INT2TimeSeries          dmro;
+static REAL4FrequencySeries    spec;
+static COMPLEX8FrequencySeries resp;
+
+params.numSpec    = numSpec;
+params.numPoints  = numPoints;
+params.windowType = Welch;
+params.framePath  = framePath;
+LALEstimateFwdRealFFTPlan( &status, &params.plan, numPoints );
+LALCreateDataBuffer( &status, &buffer, &params );
+LALI2CreateVector( &status, &dmro.data, numPoints );
+LALSCreateVector( &status, &spec.data, numPoints/2 + 1 );
+LALCCreateVector( &status, &resp.data, numPoints/2 + 1 );
+segmnt.data = &dmro;
+segmnt.spec = &spec;
+segmnt.resp = &resp;
+
+/* enter infinite loop */
+while ( 1 )
+{
+  /* get next data segment, overlapping by 1/4 of a segment */
+  LALGetData( &status, &segmnt, 3*numPoints/4, buffer );
+
+  /* break out of loop when end of data is reached */
+  if ( segmnt.endOfData )
+  {
+    break;
+  }
+
+  if ( segmnt.newLock )
+  {
+    /* new lock acquired */
+  }
+
+  if ( segmnt.newCal )
+  {
+    /* new calibration data */
+  }
+
+}
+
+LALCDestroyVector( &status, &resp.data );
+LALSDestroyVector( &status, &spec.data );
+LALI2DestroyVector( &status, &dmro.data );
+LALDestroyDataBuffer( &status, &buffer );
+LALDestroyFwdRealFFTPlan( &status, &params.plan );
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{DataBufferCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -129,13 +222,14 @@ FillAllDataBlocks (
 }
 
 
+/* <lalVerbatim file="DataBufferCP"> */
 void
 LALCreateDataBuffer (
     LALStatus         *status,
     DataBuffer    **buffer,
     DataBufferPar  *params
     )
-{
+{ /* </lalVerbatim> */
   SpectrumBufferPar      specpar;
   CreateVectorSequenceIn vseqin;
   INT4 block;
@@ -144,17 +238,17 @@ LALCreateDataBuffer (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (params, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+  ASSERT (buffer, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (params, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
 
   /* make sure that the buffer has not already been assigned */
-  ASSERT (*buffer == NULL, status, DATABUFFER_ENNUL, DATABUFFER_MSGENNUL);
+  ASSERT (*buffer == NULL, status, DATABUFFERH_ENNUL, DATABUFFERH_MSGENNUL);
 
   /* assign memory for buffer */
   *buffer = (DataBuffer *) LALMalloc (sizeof (DataBuffer));
 
   /* make sure that the allocation was successful */
-  ASSERT (*buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+  ASSERT (*buffer, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
 
   (*buffer)->blockArraySize = params->numSpec;
   vseqin.length             = params->numSpec + 1; /* extra swap space */
@@ -168,7 +262,7 @@ LALCreateDataBuffer (
   /* create block array */
   (*buffer)->blockArray = (DataBlock *)
     LALMalloc ((*buffer)->blockArraySize*sizeof(DataBlock));
-  ASSERT ((*buffer)->blockArray, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+  ASSERT ((*buffer)->blockArray, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
 
   for (block = 0; block < (*buffer)->blockArraySize; ++block)
   {
@@ -178,10 +272,10 @@ LALCreateDataBuffer (
     thisBlock->framedata = (INT2TimeSeries *)
       LALMalloc (sizeof (INT2TimeSeries));
     ASSERT (thisBlock->framedata, status,
-            DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+            DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
     thisBlock->framedata->data = (INT2Vector *)LALMalloc (sizeof(INT2Vector));
     ASSERT (thisBlock->framedata->data, status,
-            DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+            DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
     /* should create units vector ... */
     thisBlock->framedata->data->length = params->numPoints;
     thisBlock->framedata->data->data   = (*buffer)->dataBuffer->data +
@@ -222,20 +316,21 @@ LALCreateDataBuffer (
 }
 
 
+/* <lalVerbatim file="DataBufferCP"> */
 void
 LALDestroyDataBuffer (
     LALStatus      *status,
     DataBuffer **buffer
     )
-{
+{ /* </lalVerbatim> */
   INT4 block;
 
   INITSTATUS (status, "LALDestroyDataBuffer", DATABUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (*buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+  ASSERT (buffer, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (*buffer, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
 
   /* finalize frame data */
   LALFinalizeFrameData (status->statusPtr, &(*buffer)->frameData);
@@ -266,6 +361,7 @@ LALDestroyDataBuffer (
 }
 
 
+/* <lalVerbatim file="DataBufferCP"> */
 void
 LALGetData (
     LALStatus      *status,
@@ -273,7 +369,7 @@ LALGetData (
     INT4         advance,
     DataBuffer  *buffer
     )
-{
+{ /* </lalVerbatim> */
   INT4 numPoints;
   INT4 numBlocks;
 
@@ -281,34 +377,34 @@ LALGetData (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (output, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (buffer, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->data, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->spec, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->resp, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->data->data, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->spec->data, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
-  ASSERT (output->resp->data, status, DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+  ASSERT (output, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (buffer, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->data, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->spec, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->resp, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->data->data, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->spec->data, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
+  ASSERT (output->resp->data, status, DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
   ASSERT (output->data->data->data, status,
-          DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+          DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
   ASSERT (output->spec->data->data, status,
-          DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+          DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
   ASSERT (output->resp->data->data, status,
-          DATABUFFER_ENULL, DATABUFFER_MSGENULL);
+          DATABUFFERH_ENULL, DATABUFFERH_MSGENULL);
 
   /* check sizes ... */
   numPoints = output->data->data->length;
-  ASSERT (numPoints > 0, status, DATABUFFER_ESIZE, DATABUFFER_MSGESIZE);
+  ASSERT (numPoints > 0, status, DATABUFFERH_ESIZE, DATABUFFERH_MSGESIZE);
   ASSERT ((INT4)buffer->dataBuffer->vectorLength == numPoints, status,
-          DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
+          DATABUFFERH_ESZMM, DATABUFFERH_MSGESZMM);
   ASSERT ((INT4)output->resp->data->length == numPoints/2 + 1, status,
-          DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
+          DATABUFFERH_ESZMM, DATABUFFERH_MSGESZMM);
   ASSERT ((INT4)output->spec->data->length == numPoints/2 + 1, status,
-          DATABUFFER_ESZMM, DATABUFFER_MSGESZMM);
+          DATABUFFERH_ESZMM, DATABUFFERH_MSGESZMM);
 
   /* make sure advance is reasonable */
-  ASSERT (advance > 0, status, DATABUFFER_ESIZE, DATABUFFER_MSGESIZE);
-  ASSERT (advance < numPoints, status, DATABUFFER_ESIZE, DATABUFFER_MSGESIZE);
+  ASSERT (advance > 0, status, DATABUFFERH_ESIZE, DATABUFFERH_MSGESIZE);
+  ASSERT (advance < numPoints, status, DATABUFFERH_ESIZE, DATABUFFERH_MSGESIZE);
 
   if (buffer->endOfData) /* no more data: immediate exit */
   {

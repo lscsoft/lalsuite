@@ -1,13 +1,118 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: FrameData.c
- *
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="FrameDataCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{FrameData.c}}
+\label{ss:FrameData.c}
+
+Functions for reading frame data.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FrameDataCP}
+\index{\texttt{LALInitializeFrameData()}}
+\index{\texttt{LALFinalizeFrameData()}}
+\index{\texttt{LALGetFrameData()}}
+\index{\texttt{LALGetFrameDataResponse()}}
+
+\subsubsection*{Description}
+
+The routine \texttt{LALInitializeFrameData()} searches for frame files in a
+specified directory and performs the necessary preparation for reading these
+files.  When the user is finished reading frame data from the path, the
+routine \texttt{LALFinalizeFrameData()} should be called.
+
+The routine \texttt{LALGetFrameData()} gets the next frame IFO\_DMRO data while
+the routine \texttt{LALGetFrameDataResponse()} gets the current response
+function.  The routine \texttt{LALGetFrameDataResponse()} does a spline-fit to
+the sweptsine response of the instrument in order to get the response
+function.
+
+If the output time series has a \texttt{NULL} data field, then
+\texttt{LALGetFrameData()} enters seek mode in which no data is returned but
+the frame data is advanced the required amount.
+
+\subsubsection*{Operating Instructions}
+
+\begin{verbatim}
+const  UINT4                    numPoints = 1024;
+const  CHAR                    *framePath = "/data/frames";
+static Status                   status;
+static FrameData                frameData;
+static INT2TimeSeries           dmro;
+static COMPLEX8FrequencySeries  resp;
+
+LALI2CreateVector( &status, &dmro.data, numPoints );
+LALCCreateVector( &status, &resp.data, numPoints/2 + 1 );
+LALInitializeFrameData( &status, &frameData, framePath );
+
+/* infinite loop reading frame data */
+while ( 1 )
+{
+  LALGetFrameData( &status, &dmro, frameData );
+
+  /* break out of loop if end of data */
+  if ( frameData->endOfData )
+  {
+    break;
+  }
+
+  /* get response function if new calibration info */
+  if ( frameData->newCalibration )
+  {
+    LALGetFrameDataResponse( &status, &resp, frameData );
+  }
+
+  /* seek 3 minutes into each new locked section */
+  if ( frameData->newLock )
+  {
+    INT2TimeSeries seek;
+    INT2Vector     svec;
+
+    svec.length = 180/dmro.deltaT; /* 3 minutes */
+    svec.data   = NULL;            /* seek mode */
+    seek.data   = &svec;
+    LALGetFrameData( &status, &seek, frameData );
+
+    /* break out of loop if end of data */
+    if ( frameData->endOfData )
+    {
+      break;
+    }
+
+    /* get response function if new calibration info */
+    if ( frameData->newCalibration )
+    {
+      LALGetFrameDataResponse( &status, &resp, frameData );
+    }
+
+    /* go back to the beginning of the infinite loop */
+    continue;
+  }
+
+  /* do something with the data here */
+
+}
+
+LALFinalizeFrameData( &status, &frameData );
+LALCDestroyVector( &status, &resp.data );
+LALI2DestroyVector( &status, &dmro.data );
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{FrameDataCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -20,13 +125,14 @@
 
 NRCSID (FRAMEDATAC, "$Id$");
 
+/* <lalVerbatim file="FrameDataCP"> */
 void
 LALInitializeFrameData (
-    LALStatus     *status,
+    LALStatus  *status,
     FrameData **frameData,
     CHAR       *framePath
     )
-{
+{ /* </lalVerbatim> */
   const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F",
                                    "L-*.T", "C1-*[0-9]"};
   const INT4  numHeadNames      = 6;
@@ -41,13 +147,13 @@ LALInitializeFrameData (
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
-  ASSERT (framePath, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (!(*frameData), status, FRAMEDATA_ENNUL, FRAMEDATA_MSGENNUL);
+  ASSERT (framePath, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (!(*frameData), status, FRAMEDATAH_ENNUL, FRAMEDATAH_MSGENNUL);
 
   /* allocate memory */
   *frameData = LALCalloc (1, sizeof(FrameData));
-  ASSERT (*frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (*frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
 
   /* debuglevel zero: don't report errors */
   FrLibIni (NULL, stderr, 0);
@@ -78,13 +184,13 @@ LALInitializeFrameData (
     /* command to list frame files of current name type */
     nbytes = sprintf (command, "ls %s/%s 2>/dev/null",
                       framePath, headNames[nameType]);
-    ASSERT (nbytes > 0, status, FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+    ASSERT (nbytes > 0, status, FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
     ASSERT (nbytes < (INT4)sizeof(command), status,
-            FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+            FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
 
     /* fp is a stream containing the filenames */
     fp = popen (command, "r");
-    ASSERT (fp, status, FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+    ASSERT (fp, status, FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
 
     /* read the filenames into the stored filename list */
     numFiles = (*frameData)->numFiles;
@@ -96,7 +202,7 @@ LALInitializeFrameData (
       if (EOF == fscanf (fp, "%s\n", fileName))
         break;
       ASSERT ((INT4)strlen(fileName) < maxFileNameLength, status,
-              FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+              FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
       ++numFiles;
     }
     (*frameData)->numFiles = numFiles;
@@ -104,27 +210,28 @@ LALInitializeFrameData (
     pclose (fp);
   }
   ASSERT ((*frameData)->numFiles > 0, status,
-          FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+          FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
   ASSERT ((*frameData)->numFiles < maxNumFiles, status,
-          FRAMEDATA_EREAD, FRAMEDATA_MSGEREAD);
+          FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);  
 }
 
 
+/* <lalVerbatim file="FrameDataCP"> */
 void
 LALFinalizeFrameData (
-    LALStatus     *status,
+    LALStatus  *status,
     FrameData **frameData
     )
-{
+{ /* </lalVerbatim> */
   INITSTATUS (status, "LALFinalizeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure argument is reasonable */
-  ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (*frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (*frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
 
   /* free an existing frame */
   if ((*frameData)->frame)
@@ -153,7 +260,7 @@ LALFinalizeFrameData (
 
 static void
 GetNewFrame (
-    LALStatus    *status,
+    LALStatus *status,
     FrameData *frameData
     )
 {
@@ -162,7 +269,7 @@ GetNewFrame (
   INITSTATUS (status, "GetNewFrame", FRAMEDATAC);
 
   /* make sure argument is not NULL */
-  ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
 
   /* free an existing frame */
   if (frameData->frame)
@@ -193,7 +300,7 @@ GetNewFrame (
         FrStatDataFind (frame->detectProc, name, frame->GTimeS);
     }
     ASSERT (frameData->calibration, status,
-            FRAMEDATA_ENOSS, FRAMEDATA_MSGENOSS);
+            FRAMEDATAH_ENOSS, FRAMEDATAH_MSGENOSS);
 
     /* get new calibration time */
     newCalibTime = ((struct FrStatData *)(frameData->calibration))->timeStart;
@@ -211,7 +318,7 @@ GetNewFrame (
       char name[]="IFO_DMRO"; /* hack to get non-const string */
       frameData->dmro = dmro = FrAdcDataFind (frame, name);
     }
-    ASSERT (dmro, status, FRAMEDATA_EDMRO, FRAMEDATA_MSGEDMRO);
+    ASSERT (dmro, status, FRAMEDATAH_EDMRO, FRAMEDATAH_MSGEDMRO);
 
     frameData->numDmro = dmro->data->nData;
     frameData->curDmro = 0;
@@ -221,7 +328,7 @@ GetNewFrame (
       char name[]="IFO_Lock"; /* hack to get non-const string */
       frameData->lock = lock = FrAdcDataFind (frame, name);
     }
-    ASSERT (lock, status, FRAMEDATA_ELOCK, FRAMEDATA_MSGELOCK);
+    ASSERT (lock, status, FRAMEDATAH_ELOCK, FRAMEDATAH_MSGELOCK);
 
     frameData->numLock = lock->data->nData;
     frameData->curLock = 0;
@@ -236,7 +343,7 @@ GetNewFrame (
         FrStatDataFind (frame->detectProc, name, frame->GTimeS);
     }
     ASSERT (frameData->lockLowHigh, status,
-            FRAMEDATA_ELOHI, FRAMEDATA_MSGELOHI);
+            FRAMEDATAH_ELOHI, FRAMEDATAH_MSGELOHI);
 
     frameData->lockLow =
       ((struct FrStatData *)(frameData->lockLowHigh))->data->dataS[0];
@@ -280,13 +387,14 @@ GetNewFrame (
 }
 
 
+/* <lalVerbatim file="FrameDataCP"> */
 void
 LALGetFrameData (
-    LALStatus         *status,
+    LALStatus      *status,
     INT2TimeSeries *data,
     FrameData      *frameData
     )
-{
+{ /* </lalVerbatim> */
   INT4 seek       = 0;
   INT4 brokenLock = 0;
   INT4 numPoints;
@@ -296,11 +404,11 @@ LALGetFrameData (
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
-  ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (data->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (data->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
   numPoints = data->data->length;
-  ASSERT (numPoints, status, FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
+  ASSERT (numPoints, status, FRAMEDATAH_ESIZE, FRAMEDATAH_MSGESIZE);
 
   /* if data->data->data is NULL enter seek mode */
   if (data->data->data == NULL)
@@ -335,7 +443,7 @@ LALGetFrameData (
       fileName += frameData->fileNum*frameData->frameFileNames->vectorLength;
       frameData->frameFile = FrFileINew (fileName);
       ASSERT (frameData->frameFile, status,
-              FRAMEDATA_EOPEN, FRAMEDATA_MSGEOPEN);
+              FRAMEDATAH_EOPEN, FRAMEDATAH_MSGEOPEN);
       frameData->fileOpen = 1;
       ++frameData->fileNum;
     }
@@ -452,7 +560,7 @@ LALGetFrameData (
 
 static void
 SplineFit (
-    LALStatus      *status,
+    LALStatus   *status,
     REAL4Vector *yout,
     REAL4Vector *yinp,
     REAL4Vector *xinp
@@ -467,18 +575,18 @@ SplineFit (
 
   /* make sure arguments are reasonable */
 
-  ASSERT (yout, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (yout->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (yout->length > 2, status, FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
+  ASSERT (yout, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (yout->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (yout->length > 2, status, FRAMEDATAH_ESIZE, FRAMEDATAH_MSGESIZE);
 
-  ASSERT (yinp, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (yinp->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (yinp, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (yinp->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
   n = yinp->length;
-  ASSERT (n > 2, status, FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
+  ASSERT (n > 2, status, FRAMEDATAH_ESIZE, FRAMEDATAH_MSGESIZE);
 
-  ASSERT (xinp, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (xinp->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (xinp->length == n, status, FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
+  ASSERT (xinp, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (xinp->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (xinp->length == n, status, FRAMEDATAH_ESIZE, FRAMEDATAH_MSGESIZE);
 
   /* create temporary vector */
   LALCreateVector (status->statusPtr, &yppvec, n);
@@ -575,13 +683,14 @@ SplineFit (
 }
 
 
+/* <lalVerbatim file="FrameDataCP"> */
 void
 LALGetFrameDataResponse (
-    LALStatus                  *status,
+    LALStatus               *status,
     COMPLEX8FrequencySeries *response,
     FrameData               *frameData
     )
-{
+{ /* </lalVerbatim> */
   REAL4Vector *re = NULL;
   REAL4Vector *im = NULL;
   REAL4Vector  x;
@@ -600,12 +709,12 @@ LALGetFrameDataResponse (
   INITSTATUS (status, "LALGetFrameDataResponse", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT (frameData, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (response, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (response->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
-  ASSERT (response->data->data, status, FRAMEDATA_ENULL, FRAMEDATA_MSGENULL);
+  ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (response, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (response->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  ASSERT (response->data->data, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
   ASSERT (response->data->length > 2, status,
-          FRAMEDATA_ESIZE, FRAMEDATA_MSGESIZE);
+          FRAMEDATAH_ESIZE, FRAMEDATAH_MSGESIZE);
 
   fri = ((struct FrStatData *)(frameData->calibration))->data->dataF;
   n   = ((struct FrStatData *)(frameData->calibration))->data->nData;
@@ -613,7 +722,7 @@ LALGetFrameDataResponse (
   ssf = fri;
   ssr = ssf + ssn;
   ssi = ssr + ssn;
-  ASSERT (ssn > 2, status, FRAMEDATA_ESSSZ, FRAMEDATA_MSGESSSZ);
+  ASSERT (ssn > 2, status, FRAMEDATAH_ESSSZ, FRAMEDATAH_MSGESSSZ);
 
   LALCreateVector (status->statusPtr, &re, response->data->length);
   CHECKSTATUSPTR (status);

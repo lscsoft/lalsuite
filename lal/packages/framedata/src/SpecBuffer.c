@@ -1,13 +1,95 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: SpecBuffer.c
- *
- * Author: Creighton, J. D. E.
- * 
- * Revision: $Id$
- * 
- *-----------------------------------------------------------------------
- */
+#if 0  /* autodoc block */
+
+<lalVerbatim file="SpecBufferCV">
+$Id$
+</lalVerbatim>
+
+<lalLaTeX>
+\subsection{Module \texttt{SpecBuffer.c}}
+\label{ss:SpecBuffer.c}
+
+Functions for root finding.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\index{\texttt{LALComputeSpectrum()}}
+\index{\texttt{LALCreateSpectrumBuffer()}}
+\index{\texttt{LALDestroySpectrumBuffer()}}
+\index{\texttt{LALAddSpectrum()}}
+\index{\texttt{LALAverageSpectrum()}}
+
+\input{SpecBufferCP}
+
+\subsubsection*{Description}
+
+The routine \texttt{LALComputeSpectrum()} computes the spectrum of a
+\texttt{INT2TimeSeries} to produce an \texttt{REAL4FrequencySeries} power
+spectrum.  It requires parameters including the forward real FFT plan and an
+appropriate window.  This routine is used by the routine
+\texttt{LALAddSpectrum()}.
+
+The routine \texttt{LALCreateSpectrumBuffer()} creates a spectrum buffer.  This
+requires a parameter input that specifies the number of points in each time
+series that will be used to construct the spectra, the number of spectra to
+store, the window type to be used when constructing the spectra, and the real
+FFT plan to be used.  The spectrum buffer is destroyed using the routine
+\texttt{LALDestroySpectrumBuffer()}.
+
+The routine \texttt{LALAddSpectrum()} adds the spectrum of time series data to a
+spectrum buffer.  The routine \texttt{LALAverageSpectrum()} outputs the power
+spectrum frequency series consisting of the average of the (most recent)
+spectra that have been stored so far.
+
+\subsubsection*{Operating Instructions}
+
+\begin{verbatim}
+const  UINT4                 numSpec   = 8;
+const  UINT4                 numPoints = 1024;
+static LALStatus             status;
+static SpectrumBufferPar     buffPar;
+static SpectrumBuffer        buff;
+static INT2TimeSeries        data;
+static REAL4FrequencySeries  spec;
+
+UINT4 i;
+
+buffPar.numSpec    = numSpec;
+buffPar.numPoints  = numPoints;
+buffPar.windowType = Welch;
+LALEstimateFwdRealFFTPlan( &status, &buffPar.plan, numPoints );
+LALCreateSpectrumBuffer( &status, &buff, &buffPar );
+LALI2CreateVector( &status, &data.data, numPoints );
+LALSCreateVector( &status, &spec.data, numPoints/2 + 1 );
+
+for ( i = 0; i < numSpec; ++i )
+{
+
+  /* get data here; break out if end of data */
+
+  LALAddSpectrum (&status, buff, &data);
+}
+
+LALAverageSpectrum( &status, &spec, buff );
+
+/* do something with the spectrum */
+
+LALSDestroyVector( &status, &spec.data );
+LALI2DestroyVector( &status, &data.data );
+LALDestroySpectrumBuffer( &status, &buff );
+LALDestroyRealFFTPlan( &status, &buffPar.plan );
+\end{verbatim}
+
+\subsubsection*{Algorithm}
+
+\subsubsection*{Uses}
+
+\subsubsection*{Notes}
+\vfill{\footnotesize\input{SpecBufferCV}}
+
+</lalLaTeX>
+
+#endif /* autodoc block */
+
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -19,14 +101,15 @@
 
 NRCSID (SPECBUFFERC, "$Id$");
 
+/* <lalVerbatim file="SpecBufferCP"> */
 void
 LALComputeSpectrum (
-    LALStatus               *status,
+    LALStatus            *status,
     REAL4FrequencySeries *spectrum,
     INT2TimeSeries       *timeSeries,
     ComputeSpectrumPar   *parameters
     )
-{
+{ /* </lalVerbatim> */
   REAL4Vector *tmp = NULL;
   REAL4        fac;
   UINT4        i;
@@ -36,19 +119,19 @@ LALComputeSpectrum (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (spectrum, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (timeSeries, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (parameters, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (spectrum, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (timeSeries, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (parameters, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* make sure sizes are reasonable and agree */
   n = parameters->plan->size;
-  ASSERT (n > 0, status, SPECBUFFER_ESIZE, SPECBUFFER_MSGESIZE);
+  ASSERT (n > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
   ASSERT (timeSeries->data->length == n, status,
-          SPECBUFFER_ESZMM, SPECBUFFER_MSGESZMM);
+          SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
   ASSERT (spectrum->data->length == n/2 + 1, status,
-          SPECBUFFER_ESZMM, SPECBUFFER_MSGESZMM);
+          SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
   ASSERT (parameters->window->length == n, status,
-          SPECBUFFER_ESZMM, SPECBUFFER_MSGESZMM);
+          SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
 
   /* create temporary vector */
   LALCreateVector (status->statusPtr, &tmp, timeSeries->data->length);
@@ -58,8 +141,8 @@ LALComputeSpectrum (
   spectrum->f0    = timeSeries->f0;
 
   /* make sure that these do not divide by zero... */
-  ASSERT (timeSeries->deltaT, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
-  ASSERT (parameters->wss, status, SPECBUFFER_EZERO, SPECBUFFER_MSGEZERO);
+  ASSERT (timeSeries->deltaT, status, SPECBUFFERH_EZERO, SPECBUFFERH_MSGEZERO);
+  ASSERT (parameters->wss, status, SPECBUFFERH_EZERO, SPECBUFFERH_MSGEZERO);
   spectrum->deltaF = 1/(timeSeries->deltaT*timeSeries->data->length);
   fac              = sqrt( timeSeries->deltaT/parameters->wss );
 
@@ -80,13 +163,14 @@ LALComputeSpectrum (
 }
 
 
+/* <lalVerbatim file="SpecBufferCP"> */
 void
 LALCreateSpectrumBuffer (
-    LALStatus             *status,
+    LALStatus          *status,
     SpectrumBuffer    **buffer,
     SpectrumBufferPar  *params
     )
-{
+{ /* </lalVerbatim> */
   LALWindowParams winparams;
   INT4 specSize;
   INT4 spec;
@@ -95,16 +179,16 @@ LALCreateSpectrumBuffer (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (buffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (params, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (buffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (params, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* make sure that buffer does not exist */
-  ASSERT (*buffer == NULL, status, SPECBUFFER_ENNUL, SPECBUFFER_MSGENNUL);
+  ASSERT (*buffer == NULL, status, SPECBUFFERH_ENNUL, SPECBUFFERH_MSGENNUL);
   
   /* make sure that parameters are reasonable */
-  ASSERT (params->numSpec > 0, status, SPECBUFFER_ESIZE, SPECBUFFER_MSGESIZE);
-  ASSERT (params->numPoints > 0, status, SPECBUFFER_ESIZE, SPECBUFFER_MSGESIZE);
-  ASSERT (params->plan, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (params->numSpec > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
+  ASSERT (params->numPoints > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
+  ASSERT (params->plan, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   specSize = params->numPoints/2 + 1;
 
@@ -112,19 +196,19 @@ LALCreateSpectrumBuffer (
   *buffer = (SpectrumBuffer *) LALMalloc (sizeof (SpectrumBuffer));
 
   /* make sure that the allocation was successful */
-  ASSERT (*buffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (*buffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* assign memory for buffer fields */
   (*buffer)->numSpec    = params->numSpec;
   (*buffer)->specBuffer = (REAL4FrequencySeries *)
     LALMalloc (params->numSpec*sizeof(REAL4FrequencySeries));
 
-  ASSERT ((*buffer)->specBuffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT ((*buffer)->specBuffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   (*buffer)->specParams = (ComputeSpectrumPar *)
     LALMalloc (sizeof (ComputeSpectrumPar));
 
-  ASSERT ((*buffer)->specBuffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT ((*buffer)->specBuffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* allocate memory for spectra */
   for (spec = 0; spec < params->numSpec; ++spec)
@@ -162,20 +246,21 @@ LALCreateSpectrumBuffer (
 }
 
 
+/* <lalVerbatim file="SpecBufferCP"> */
 void
 LALDestroySpectrumBuffer (
-    LALStatus          *status,
+    LALStatus       *status,
     SpectrumBuffer **buffer
     )
-{
+{ /* </lalVerbatim> */
   INT4 spec;
 
   INITSTATUS (status, "LALDestroySpectrumBuffer", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (buffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (*buffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (buffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (*buffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* destroy spectra */
   for (spec = 0; spec < (*buffer)->numSpec; ++spec)
@@ -202,21 +287,22 @@ LALDestroySpectrumBuffer (
 }
 
 
+/* <lalVerbatim file="SpecBufferCP"> */
 void
 LALAddSpectrum (
-    LALStatus         *status,
+    LALStatus      *status,
     SpectrumBuffer *specBuffer,
     INT2TimeSeries *timeSeries
     )
-{
+{ /* </lalVerbatim> */
   INT4 whichSpec;
 
   INITSTATUS (status, "LALAddSpectrum", SPECBUFFERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (specBuffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (timeSeries, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (specBuffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (timeSeries, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
  
   /* the next spectrum to fill */
   whichSpec = specBuffer->specFilled % specBuffer->numSpec;
@@ -238,13 +324,14 @@ LALAddSpectrum (
 }
 
 
+/* <lalVerbatim file="SpecBufferCP"> */
 void
 LALAverageSpectrum (
-    LALStatus               *status,
+    LALStatus            *status,
     REAL4FrequencySeries *spectrum,
     SpectrumBuffer       *buffer
     )
-{
+{ /* </lalVerbatim> */
   UINT4 i;
   INT4  spec;
   INT4  nspec;
@@ -253,34 +340,34 @@ LALAverageSpectrum (
   INITSTATUS (status, "LALAverageSpectrum", SPECBUFFERC);
 
   /* make sure that arguments are not NULL */
-  ASSERT (spectrum, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (buffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (spectrum, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (buffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* make sure that fields are not NULL */
-  ASSERT (spectrum->data, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (spectrum->data->data, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (buffer->specBuffer, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
-  ASSERT (buffer->specParams, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+  ASSERT (spectrum->data, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (spectrum->data->data, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (buffer->specBuffer, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
+  ASSERT (buffer->specParams, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   if (buffer->specFilled > buffer->numSpec)
     nspec = buffer->numSpec;
   else
     nspec = buffer->specFilled;
 
-  ASSERT (nspec, status, SPECBUFFER_ENONE, SPECBUFFER_MSGENONE);
+  ASSERT (nspec, status, SPECBUFFERH_ENONE, SPECBUFFERH_MSGENONE);
   ASSERT (spectrum->data->length > 0, status,
-          SPECBUFFER_ESIZE, SPECBUFFER_MSGESIZE);
+          SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
 
   fac = 1/(REAL4)nspec;
   for (spec = 0; spec < nspec; ++spec)
   {
     REAL4FrequencySeries *thisSpec = buffer->specBuffer + spec;
     /* should check sample rates, f0, and average epochs ... */
-    ASSERT (thisSpec->data, status, SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+    ASSERT (thisSpec->data, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
     ASSERT (thisSpec->data->data, status,
-            SPECBUFFER_ENULL, SPECBUFFER_MSGENULL);
+            SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
     ASSERT (thisSpec->data->length == spectrum->data->length, status,
-            SPECBUFFER_ESZMM, SPECBUFFER_MSGESZMM);
+            SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
     for (i = 0; i < spectrum->data->length; ++i)
       if (spec == 0)
         spectrum->data->data[i]  = thisSpec->data->data[i];
