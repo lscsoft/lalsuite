@@ -413,7 +413,7 @@ typedef enum {
    SpinTaylor,
    FindChirpSP,
    GeneratePPN,
-   DTF1
+   BCVC
  } Approximant;
 /* </lalVerbatim>  */
 
