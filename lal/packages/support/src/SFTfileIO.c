@@ -130,6 +130,7 @@ static StringVector *find_files (const CHAR *fpattern);
 static void DestroyStringVector (StringVector *strings);
 static void LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
+static void SortStringVector (StringVector *strings);
 
 void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -788,6 +789,9 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
  * function to get a filelist from a directory, using a glob-like pattern.
  *
  * looks pretty ugly with all the #ifdefs for the Microsoft C compiler
+ *
+ * NOTE: the list of filenames is returned SORTED ALPHABETICALLY !
+ *
  *----------------------------------------------------------------------*/
 StringVector *
 find_files (const CHAR *globdir)
@@ -938,6 +942,9 @@ find_files (const CHAR *globdir)
   ret->length = numFiles;
   ret->data = filelist;
 
+  /* sort this alphabetically (in-place) */
+  SortStringVector (ret);
+
   return (ret);
 } /* find_files() */
 
@@ -954,6 +961,21 @@ DestroyStringVector (StringVector *strings)
   LALFree (strings);
 
 } /* DestroyStringVector () */
+
+static int mycomp (const void *p1, const void *p2)
+{
+  const CHAR *s1 = *( (const CHAR**)p1 );
+  const CHAR *s2 = *( (const CHAR**)p2 );
+  return (strcmp (s1, s2 ) );
+}
+
+/* sort string-vector alphabetically */
+void
+SortStringVector (StringVector *strings)
+{
+  qsort ( (void*)(strings->data), (size_t)(strings->length), sizeof(CHAR*), mycomp );
+} /* SortStringVector() */
+
 
 
 /***********************************************************************
