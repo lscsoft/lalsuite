@@ -1267,7 +1267,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			/* options that don't set a flag */
 			{"help", no_argument, 0, 'h'},
 			{"gps-start-time", required_argument, 0, 't'},
-			{"gps-stop-time", required_argument, 0, 'T'},
+			{"gps-end-time", required_argument, 0, 'T'},
 			{"segment-duration", required_argument, 0, 'l'},
 			{"resample-rate", required_argument, 0, 'a'},
 			{"f-min", required_argument, 0, 'f'},
@@ -1470,7 +1470,7 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --verbose                     verbose mode\n");
 	fprintf(stderr, " --debug-level LEVEL           set lalDebugLevel\n");
 	fprintf(stderr, " --gps-start-time SEC          GPS start time\n");
-	fprintf(stderr, " --gps-stop-time SEC           GPS stop time\n");
+	fprintf(stderr, " --gps-end-time SEC            GPS stop time\n");
 	fprintf(stderr, " --segment-duration SEC        segment duration\n");
 	fprintf(stderr, " --resample-rate F             resample rate\n");
 	fprintf(stderr, " --f-min F                     minimal frequency\n");
