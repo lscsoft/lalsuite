@@ -1,4 +1,5 @@
 dnl acinclude.m4
+dnl $Id$
 
 AC_DEFUN(LALAPPS_WITH_EXTRA_CPPFLAGS,
 [AC_ARG_WITH(

@@ -1,4 +1,5 @@
 dnl lal.m4
+dnl $Id$
 
 AC_DEFUN([LAL_WITH_GCC_FLAGS],
 [AC_ARG_WITH(

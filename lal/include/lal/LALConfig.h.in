@@ -1,4 +1,5 @@
 /* only include this file if LAL's config.h has not been included */
+/* $Id$ */
 #ifndef CONFIG_H__LAL
 
 #ifndef _LALCONFIG_H

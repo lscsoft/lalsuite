@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+# $Id$
 
 # Help message
 helpmsg="Usage $0 [options]
