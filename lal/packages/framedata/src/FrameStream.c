@@ -11,18 +11,16 @@
  *
  * \subsubsection*{Prototypes}
  * \input{FrameStreamCP}
- * \idx{FrOpen}
- * \idx{FrClose}
- * \idx{FrEnd}
- * \idx{FrNext}
- * \idx{FrRewind}
- * \idx{FrSeek}
- * \idx{FrTell}
- * \idx{FrGetPos}
- * \idx{FrSetPos}
- * \idx{FrGetINT2TimeSeries}
- * \idx{FrGetREAL4TimeSeries}
- * \idx{FrWriteREAL4TimeSeries}
+ * \idx{LALFrOpen}
+ * \idx{LALFrCacheOpen}
+ * \idx{LALFrClose}
+ * \idx{LALFrEnd}
+ * \idx{LALFrNext}
+ * \idx{LALFrRewind}
+ * \idx{LALFrSeek}
+ * \idx{LALFrTell}
+ * \idx{LALFrGetPos}
+ * \idx{LALFrSetPos}
  *
  * \subsubsection*{Description}
  *
@@ -40,8 +38,12 @@
  * routine uses the current director (\texttt{.}).  The head names specifies
  * which files are the wanted files in the specified directory.  Wildcards are
  * allowed.  For example, to get LLO frames only, the head names could be set
- * to \texttt{L-*.F}.  If the head name is \texttt{NULL}, the default value
- * \texttt{*.F} is used.
+ * to \texttt{L-*.gwf}.  If the head name is \texttt{NULL}, the default value
+ * \texttt{*.gwf} is used.  The routine \texttt{LALFrCacheOpen()} is like
+ * \texttt{LALFrOpen()} except that the list of frame files is taken from a
+ * frame file cache.  [In fact, \texttt{LALFrOpen()} simply uses
+ * \texttt{LALFrCacheGenerate()} and \texttt{LALFrCacheOpen()} to create the
+ * stream.]
  *
  * The routine \texttt{LALFrEnd()} determines if the end-of-frame-data flag for
  * the data stream has been set.
@@ -62,26 +64,6 @@
  * current frame stream position.  The frame stream can later be restored to
  * this position using \texttt{LALFrSetPos()}.
  *
- * The routines
- * \texttt{LALFrGet}$\langle\mbox{datatype}\rangle$\texttt{TimeSeries()}
- * search the frame for a specified channel.  If the time series supplied has
- * data storage allocated, then the specified amount of data is filled from
- * the frame stream.  If no space has been allocated (so that the data field
- * is \texttt{NULL}), then only the channel information is returned in the
- * time series (e.g., the start time of the next data and the time step size).
- *
- * The routines
- * \texttt{LALFrWrite}$\langle\mbox{datatype}\rangle$\texttt{TimeSeries()}
- * outputs a given time series as a new frame file with the filename
- * $\langle\mbox{prefix}\rangle$\texttt{-}$\langle\mbox{GPS-seconds}\rangle$%
- * \texttt{-}$\langle\mbox{number-of-frames}\rangle$\texttt{-}%
- * $\langle\mbox{seconds-per-frame}\rangle$\texttt{.F} (or
- * $\langle\mbox{prefix}\rangle$\texttt{-}$\langle\mbox{gpstime}\rangle$%
- * \texttt{.F} if there is only one one-second frame) where prefix is the
- * specified frame prefix, GPS-seconds is the start time of the data in
- * seconds since 0h UTC 6 Jan 1980 (GPS time origin), number-of-frames is the
- * specified number of frames in the file, and seconds-per-frame is the
- * computed seconds per frame in the file (given the amount of data for output).
  *
  * \vfill{\footnotesize\input{FrameStreamCV}}
  *
@@ -93,109 +75,159 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <fnmatch.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/Units.h>
+#include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
+#include <FrameStreamDef.h>
 
 NRCSID( FRAMESTREAMC, "$Id$" );
 
 
-#define SECNAN_TO_I8TIME( sec, nan ) \
-  ((INT8)1000000000*(INT8)(sec)+(INT8)(nan))
-/* Dangerous!!!: */
-#define EPOCH_TO_I8TIME( epoch ) \
-  SECNAN_TO_I8TIME( (epoch).gpsSeconds, (epoch).gpsNanoSeconds )
-#define SET_EPOCH( pepoch, i8time ) \
-  do { INT8 t=(i8time); LIGOTimeGPS *pe=(pepoch); \
-    pe->gpsSeconds=t/(INT8)1000000000; pe->gpsNanoSeconds=t%(INT8)1000000000; \
-  } while( 0 )
+/*
+ *
+ * These functions are for internal use.
+ *
+ */
 
 
-struct
-tagFrStream
+/* open a specified frame file URL for input */
+static struct FrFile *URLFrFileINew( FrFileInfo *file )
 {
-  CHAR          **filelist;
-  UINT4           filenum;
-  struct FrFile  *frfile;
-  UINT4           frnum;
-  struct FrameH  *frame;
-  LIGOTimeGPS     epoch;
-  INT4            end;
-  INT4            err;
-  INT4            gap;
-};
-
-
-static int strsort( const void *p1, const void *p2 )
-{
-  return strcmp( *((const char * const *)p1), *((const char * const *)p2) );
+  FrFile *frfile = NULL;
+  if ( file && file->url )
+  {
+    if ( ! strncmp( file->url, "file:/", 6 ) )
+    {
+      frfile = FrFileINew( file->url + 5 );
+    }
+    else
+    {
+      if ( lalDebugLevel & LALWARNING )
+      {
+        LALPrintError( "Warning: function %s, file %s, line %d, %s\n"
+            "        %s\n", "URLFrFileINew", __FILE__, __LINE__, FRAMESTREAMC,
+            "Unknown URL Type" );
+      }
+    }
+  }
+  return frfile;
 }
 
-static int list_files( char ***flist, const char *dirname, const char *pattern )
+/* compare frame file infos for sorting by time */
+static int FileListSortCompare( const void *p1, const void *p2 )
 {
-  DIR           *dir;
-  struct dirent *ent;
-  int            nfile;
-  size_t         dirnamelen;
+  const FrFileInfo *file1 = p1;
+  const FrFileInfo *file2 = p2;
+  int ans = 0;
+  if ( file1->t0 < file2->t0 )
+    ans = -1;
+  else if ( file1->t0 > file2->t0 )
+    ans = 1;
+  return ans;
+}
 
-  pattern = pattern ? pattern : "*";
-  dirname = dirname ? dirname : ".";
-  dirnamelen = strlen( dirname );
-  if ( ! ( dir = opendir( dirname ) ) )
-    return -1;
+/* compare frame file infos for selecting a time */
+static int FileListSelectCompare( const void *p1, const void *p2 )
+{
+  const FrFileInfo *key  = p1;
+  const FrFileInfo *file = p2;
+  int ans = 0;
+  if ( key->t0 < file->t0 )
+    ans = -1;
+  else if ( key->t0 > file->t0 + file->dt )
+    ans = 1;
+  return ans;
+}
 
-  nfile = 0;
-  while ( ( ent = readdir( dir ) ) )
-    if ( ! fnmatch( pattern, ent->d_name, 0 ) )
-    {
-      size_t size = strlen( ent->d_name ) + dirnamelen + 2;
-      struct stat buf;
-      char *fname;
-      fname = LALMalloc( size );
-      LALSnprintf( fname, size, "%s/%s", dirname, ent->d_name );
-      stat( fname, &buf );
-      if ( S_ISREG( buf.st_mode ) )
-        ++nfile;
-      LALFree( fname );
-    }
-
-  if ( ! nfile )
+/* destroy a frame file list */
+static void
+LALDestroyFrFileList(
+    LALStatus   *status,
+    FrFileInfo **list
+    )
+{
+  FrFileInfo *file;
+  INITSTATUS( status, "LALDestroyFrFileList", FRAMESTREAMC );  
+  file = *list;
+  while ( file->ind >= 0 && file->url )
   {
-    if ( closedir( dir ) )
-      return -1;
-    return 0;
+    LALFree( file->url );
+    ++file;
+  }
+  LALFree( *list );
+  *list = NULL;
+  RETURN( status );
+}
+
+/* create a frame file list from a cache */
+static void
+LALCreateFrFileList(
+    LALStatus   *status,
+    FrFileInfo **output,
+    FrCache     *cache
+    )
+{
+  FrFileInfo *list;
+  UINT4 i;
+  INITSTATUS( status, "LALCreateFrFileList", FRAMESTREAMC );  
+  ATTATCHSTATUSPTR( status );
+  list = *output = LALCalloc( cache->numFrameFiles + 1, sizeof( *list ) );
+  list[cache->numFrameFiles].ind = -1; /* indicates end */
+  for ( i = 0; i < cache->numFrameFiles; ++i )
+  {
+    FrStat *file = cache->frameFiles + i;
+    list[i].url = LALMalloc( strlen( file->url ) + 1 );
+    if ( ! list[i].url )
+    {
+      TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+    }
+    strcpy( list[i].url, file->url );
+    if ( file->startTime > 0 && file->duration > 0 )
+    {
+      list[i].t0 = file->startTime;
+      list[i].dt = file->duration;
+    }
+    else
+    {
+      struct FrFile *frfile;
+      struct FrameH *frame;
+      double startTime;
+      double endTime;
+      frfile = URLFrFileINew( list + i );
+      if ( ! frfile )
+      {
+        TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+        ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+      }
+      frame = FrameRead( frfile );
+      if ( ! frame )
+      {
+        TRY( LALDestroyFrFileList( status->statusPtr, output ), status );
+        ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+      }
+      list[i].t0 = frame->GTimeS;
+      do
+      {
+        endTime  = frame->GTimeS + 1e-9 * frame->GTimeN;
+        endTime += frame->dt;
+        FrameFree( frame );
+      }
+      while ( ( frame = FrameRead( frfile ) ) );
+      list[i].dt = ceil( endTime ) - list[i].t0;
+      FrFileIEnd( frfile );
+    }
   }
 
-  rewinddir( dir );
-  *flist = LALCalloc( nfile + 1, sizeof( **flist ) );
-  nfile = 0;
-  while ( ( ent = readdir( dir ) ) )
-    if ( ! fnmatch( pattern, ent->d_name, 0 ) )
-    {
-      size_t size = strlen( ent->d_name ) + dirnamelen + 2;
-      struct stat buf;
-      char *fname;
-      fname = LALMalloc( size );
-      LALSnprintf( fname, size, "%s/%s", dirname, ent->d_name );
-      stat( fname, &buf );
-      if ( S_ISREG( buf.st_mode ) )
-        (*flist)[nfile++] = fname;
-      else
-        LALFree( fname );
-    }
+  qsort( list, cache->numFrameFiles, sizeof( *list ), FileListSortCompare );
+  for ( i = 0; i < cache->numFrameFiles; ++i )
+    list[i].ind = i;
 
-  qsort( *flist, nfile, sizeof( **flist ), strsort );
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
 
-  if ( closedir( dir ) )
-    return -1;
-  return nfile;
-}  
 
 
 /*
@@ -207,6 +239,68 @@ static int list_files( char ***flist, const char *dirname, const char *pattern )
  */
 
 
+
+/* <lalVerbatim file="FrameStreamCP"> */
+void
+LALFrCacheOpen(
+    LALStatus  *status,
+    FrStream  **output,
+    FrCache    *cache
+    )
+{ /* </lalVerbatim> */
+  FrStream *stream;
+  UINT4 i;
+
+  INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );  
+  ATTATCHSTATUSPTR( status );
+  ASSERT( cache, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  ASSERT( ! *output, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
+
+  stream = *output = LALCalloc( 1, sizeof( **output ) );
+  if ( ! stream )
+  {
+    ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+  }
+
+  stream->numfiles = cache->numFrameFiles;
+  LALCreateFrFileList( status->statusPtr, &stream->filelist, cache );
+  BEGINFAIL( status )
+  {
+    LALFree( *output );
+    *output = NULL;
+  }
+  ENDFAIL( status );
+
+  FrLibIni( NULL, stderr, 0 );
+
+  stream->frfile = URLFrFileINew( stream->filelist );
+  if ( ! stream->frfile )
+  {
+    TRY( LALDestroyFrFileList( status->statusPtr, &stream->filelist ), status );
+    LALFree( *output );
+    *output = NULL;
+    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+  }
+
+  stream->frame = FrameRead( stream->frfile );
+  if ( ! stream->frame )
+  {
+    FrFileIEnd( stream->frfile );
+    TRY( LALDestroyFrFileList( status->statusPtr, &stream->filelist ), status );
+    LALFree( *output );
+    *output = NULL;
+    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
+  }
+
+  stream->epoch.gpsSeconds     = stream->frame->GTimeS;
+  stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+
 /* <lalVerbatim file="FrameStreamCP"> */
 void
 LALFrOpen(
@@ -216,58 +310,35 @@ LALFrOpen(
     const CHAR   *pattern
     )
 { /* </lalVerbatim> */
+  FrCache *cache = NULL;
+
   INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );  
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *stream, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
 
-  *stream = LALCalloc( 1, sizeof( **stream ) );
-  if ( ! *stream )
+  LALFrCacheGenerate( status->statusPtr, &cache, dirname, pattern );
+  CHECKSTATUSPTR( status );
+
+  LALFrCacheOpen( status->statusPtr, stream, cache );
+  BEGINFAIL( status )
   {
-    ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
+    TRY( LALDestroyFrCache( status->statusPtr, &cache ), status );
   }
+  ENDFAIL( status );
 
-  if ( 1 > list_files( &(*stream)->filelist, dirname,
-        pattern ? pattern : "*.F" ) )
+  LALDestroyFrCache( status->statusPtr, &cache );
+  BEGINFAIL( status )
   {
-    LALFree( *stream );
-    *stream = NULL;
-    ABORT( status, FRAMESTREAMH_EFILE, FRAMESTREAMH_MSGEFILE );
+    TRY( LALFrClose( status->statusPtr, stream ), status );
   }
-
-  FrLibIni( NULL, stderr, 0 );
-
-  (*stream)->frfile = FrFileINew( (*stream)->filelist[0] );
-  if ( ! (*stream)->frfile )
-  {
-    CHAR **tmp = (*stream)->filelist;
-    while ( *tmp )
-      LALFree( *tmp++ );
-    LALFree( (*stream)->filelist );
-    LALFree( *stream );
-    *stream = NULL;
-    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
-  }
-
-  (*stream)->frame = FrameRead( (*stream)->frfile );
-  if ( ! (*stream)->frame )
-  {
-    CHAR **tmp = (*stream)->filelist;
-    FrFileOEnd( (*stream)->frfile );
-    while ( *tmp )
-      LALFree( *tmp++ );
-    LALFree( (*stream)->filelist );
-    LALFree( *stream );
-    *stream = NULL;
-    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
-  }
-
-  (*stream)->epoch.gpsSeconds     = (*stream)->frame->GTimeS;
-  (*stream)->epoch.gpsNanoSeconds = (*stream)->frame->GTimeN;
+  ENDFAIL( status );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
 
 
 /* <lalVerbatim file="FrameStreamCP"> */
@@ -277,17 +348,13 @@ LALFrClose(
     FrStream  **stream
     )
 { /* </lalVerbatim> */
-  CHAR **tmp;
   INITSTATUS( status, "LALFrClose", FRAMESTREAMC );  
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   FrameFree( (*stream)->frame );
   FrFileIEnd( (*stream)->frfile );
-  tmp = (*stream)->filelist;
-  while ( *tmp )
-    LALFree( *tmp++ );
-  LALFree( (*stream)->filelist );
+  TRY( LALDestroyFrFileList( status->statusPtr, &(*stream)->filelist ), status );
   LALFree( *stream );
   *stream = NULL;
   DETATCHSTATUSPTR( status );
@@ -341,23 +408,21 @@ LALFrNext(
 
   FrameFree( stream->frame );
   stream->frame = FrameRead( stream->frfile );
-  ++stream->frnum;
 
   if ( ! stream->frame ) /* no more frames in file */
   {
-    FrFileOEnd( stream->frfile );
+    FrFileIEnd( stream->frfile );
     stream->frfile = NULL;
-    stream->frnum = 0;
     ++stream->filenum;
 
     /* no more frame files: close stream */
-    if ( ! stream->filelist[stream->filenum] )
+    if ( stream->filenum >= stream->numfiles )
     {
       stream->end = EOF;
       RETURN( status );
     }
 
-    stream->frfile = FrFileINew( stream->filelist[stream->filenum] );
+    stream->frfile = URLFrFileINew( stream->filelist + stream->filenum );
     if ( ! stream->frfile )
     {
       stream->err = FRAMESTREAMH_EOPEN; /* error: couldn't read frame file! */
@@ -403,14 +468,13 @@ LALFrRewind(
   }
   if ( stream->frfile )
   {
-    FrFileOEnd( stream->frfile );
+    FrFileIEnd( stream->frfile );
   }
   stream->filenum = 0;
-  stream->frnum   = 0;
   stream->end     = 0;
   stream->err     = 0;
   stream->gap     = 0;
-  stream->frfile  = FrFileINew( stream->filelist[0] );
+  stream->frfile  = URLFrFileINew( stream->filelist );
   if ( ! stream->frfile )
   {
     stream->err = FRAMESTREAMH_EOPEN; /* error: couldn't read frame file! */
@@ -437,56 +501,122 @@ LALFrSeek(
     FrStream    *stream
     )
 { /* </lalVerbatim> */
-  INT8 twant;
-  INT8 tstart;
+  FrFileInfo  key;
+  FrFileInfo *file;
+  INT4 overlap = 0;
+
   INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );  
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
-  twant  = EPOCH_TO_I8TIME( *epoch );
-  tstart = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
+  if ( stream->frame )
+  {
+    FrameFree( stream->frame );
+    stream->frame = NULL;
+  }
+  if ( stream->frfile )
+  {
+    FrFileIEnd( stream->frfile );
+    stream->frfile = NULL;
+  }
+  stream->end = 0;
+  stream->err = 0;
+  stream->gap = 0;
 
-  if ( twant < tstart )
+  file = stream->filelist;
+  if ( epoch->gpsSeconds < file->t0 )
   {
     TRY( LALFrRewind( status->statusPtr, stream ), status );
-    tstart = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-    if ( twant < tstart )
-    {
-      LALWarning( status, "Requested time before first frame." );
-      stream->gap = 1; /* requested time is just too early */
+    LALWarning( status, "Requested time before first frame." );
+    stream->gap = 1; /* requested time is just too early */
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+  }
+
+  file = stream->filelist + stream->numfiles - 1;
+  if ( epoch->gpsSeconds > file->t0 + file->dt )
+  {
+    LALWarning( status, "Requested time after last frame." );
+    stream->filenum = stream->numfiles;
+    stream->end = EOF;
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+  }
+
+  key.t0 = epoch->gpsSeconds;
+  file = bsearch( &key, stream->filelist, stream->numfiles,
+      sizeof( *stream->filelist ), FileListSelectCompare );
+  if ( file ) /* check for possible overlap */
+  {
+    FrFileInfo *file2;
+    file2 = stream->filelist + file->ind - 1;
+    if ( file->ind > 0 && epoch->gpsSeconds < file2->t0 + file2->dt )
+    { /* choose earlier file */
+      overlap = 1;
+      file = file2;
     }
-    else
+    file2 = stream->filelist + file->ind + 1;
+    if ( file->ind + 2 < (int)stream->numfiles && file2->t0 < epoch->gpsSeconds )
     {
-      TRY( LALFrSeek( status->statusPtr, epoch, stream ), status );
-      DETATCHSTATUSPTR( status );
-      RETURN( status );
+      overlap = 1;
     }
+  }
+  else /* no match found: must be in a gap */
+  {
+    UINT4 i;
+    stream->gap = 1;
+    LALWarning( status, "Requested time in gap in frame data." );
+    /* scan frame list in order to find earliest file after time requested */
+    for ( i = 0; i < stream->numfiles; ++i )
+    {
+      file = stream->filelist + i;
+      if ( file->t0 > epoch->gpsSeconds )
+        break;
+    }
+  }
+
+  stream->filenum = file->ind;
+  stream->frfile  = URLFrFileINew( stream->filelist + stream->filenum );
+  if ( ! stream->frfile )
+  {
+    stream->err = FRAMESTREAMH_EOPEN;
+    ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
+  }
+
+  if ( stream->gap ) /* just open first frame in file */
+  {
+    stream->frame = FrameRead( stream->frfile );
   }
   else
   {
-    INT8 tstop = tstart + (INT8)floor( 1e9 * stream->frame->dt );
-    while ( twant > tstop )
+    double twant = epoch->gpsSeconds + 1e-9 * epoch->gpsNanoSeconds;
+    stream->frame = FrameReadT( stream->frfile, twant );
+    if ( overlap && ! stream->frame ) /* could be in the other frame file */
     {
-      TRY( LALFrNext( status->statusPtr, stream ), status );
-      if ( stream->gap ) /* location may be in gap */
+      ++stream->filenum;
+      stream->frfile = URLFrFileINew( stream->filelist + stream->filenum );
+      if ( ! stream->frfile )
       {
-        tstart = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-        if ( twant > tstart ) /* location not in gap: clear gap code */
-        {
-          stream->gap = 0;
-        }
-        else
-        {
-          LALWarning( status, "Requested time in a gap in the frame data." );
-        }
+        stream->err = FRAMESTREAMH_EOPEN;
+        ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
       }
-      tstop  = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
-      tstop += (INT8)floor( 1e9 * stream->frame->dt );
+      stream->frame = FrameReadT( stream->frfile, twant );
     }
+    /* FIXME: probably can't handle gaps within a frame file */
+  }
+  if ( ! stream->frame )
+  {
+    stream->err = FRAMESTREAMH_EREAD;
+    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
   }
 
-  if ( ! stream->gap ) /* set current time to requested time */
+  if ( stream->gap )
+  {
+    stream->epoch.gpsSeconds     = stream->frame->GTimeS;
+    stream->epoch.gpsNanoSeconds = stream->frame->GTimeN;
+  }
+  else
   {
     stream->epoch = *epoch;
   }
@@ -525,7 +655,8 @@ LALFrGetPos(
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   position->epoch   = stream->epoch;
   position->filenum = stream->filenum;
-  position->frnum   = stream->frnum;
+  position->frame   = stream->frame->frame;
+  position->run     = stream->frame->run;
   RETURN( status );
 }
 
@@ -544,7 +675,8 @@ LALFrSetPos(
 
   stream->epoch = position->epoch;
   if ( stream->filenum == position->filenum
-      && stream->frnum == position->frnum )
+      && stream->frame->frame == position->frame
+      && stream->frame->run == position->run )
   {
     RETURN( status );
   }
@@ -556,492 +688,26 @@ LALFrSetPos(
   }
   if ( stream->frfile )
   {
-    FrFileOEnd( stream->frfile );
+    FrFileIEnd( stream->frfile );
     stream->frfile = NULL;
   }
   stream->filenum = position->filenum;
-  stream->frfile = FrFileINew( stream->filelist[stream->filenum] );
+  stream->frfile  = URLFrFileINew( stream->filelist + stream->filenum );
   if ( ! stream->frfile )
   {
     stream->err = FRAMESTREAMH_EOPEN;
     ABORT( status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN );
   }
 
-  for ( stream->frnum = 0; stream->frnum <= position->frnum; ++stream->frnum )
+  stream->frame = FrameReadN( stream->frfile, position->run, position->frame );
+  if ( ! stream->frame )
   {
-    stream->frame = FrameRead( stream->frfile );
-    if ( ! stream->frame )
-    {
-      stream->err = FRAMESTREAMH_EREAD;
-      ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
-    }
+    stream->err = FRAMESTREAMH_EREAD;
+    ABORT( status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD );
   }
-  stream->frnum = position->frnum;
 
   stream->end = 0;
   stream->err = 0;
   stream->gap = 0;
-  RETURN( status );
-}
-
-
-
-/*
- *
- * The following routines are designed to read and write time series data.
- *
- */
-
-
-/*
- *
- * Routine to load a FrVect associated with a given channel from a given frame.
- *
- */
-static struct FrVect *loadFrVect( struct FrameH *frame, char *name, int chtype )
-{
-  struct FrVect *vect = NULL;
-  if ( chtype == ProcDataChannel )
-  {
-    struct FrProcData *proc = FrProcDataFind( frame, name );
-    vect = proc ? proc->data : NULL;
-  }
-  else if ( chtype == ADCDataChannel )
-  {
-    struct FrAdcData *adc = FrAdcDataFind( frame, name );
-    vect = adc ? adc->data : NULL;
-  }
-  else if ( chtype == SimDataChannel )
-  {
-    struct FrSimData *sim = FrSimDataFind( frame, name );
-    vect = sim ? sim->data : NULL;
-  }
-  return vect;
-}
-
-
-/*
- *
- * Routine to make a 1D FrVect structure and attach it to a frame as the
- * appropriate channel type.
- *
- */
-static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
-    char *name, char *comment, char *unitx, char *unity, int datatype,
-    double rate, double fshift, double dx, unsigned int npts )
-{
-  struct FrVect *vect = FrVectNew1D( name, datatype, npts, dx, unitx, unity );
-  if ( ! vect ) return NULL;
-  if ( chtype == ProcDataChannel )
-  {
-    struct FrProcData *proc = calloc( 1, sizeof( *proc ) );
-    if ( ! proc )
-    {
-      FrVectFree( vect );
-      return NULL;
-    }
-    proc->classe = FrProcDataDef();
-    proc->sampleRate = rate;
-    proc->fShift = fshift;
-    proc->data = vect;
-    proc->next = frame->procData;
-    frame->procData = proc;
-    if ( ! FrStrCpy( &proc->name, name ) ) return NULL;
-    if ( ! FrStrCpy( &proc->comment, comment ) ) return NULL;
-  }
-  else if ( chtype == ADCDataChannel )
-  {
-    struct FrAdcData *adc = calloc( 1, sizeof( *adc ) );
-    struct FrRawData *raw = frame->rawData ? frame->rawData :
-      FrRawDataNew( frame );
-    if ( ! adc || ! raw )
-    {
-      FrVectFree( vect );
-      if ( adc ) free( adc );
-      return NULL;
-    }
-    adc->classe = FrAdcDataDef();
-    adc->sampleRate = rate;
-    adc->fShift = fshift;
-    adc->data = vect;
-    adc->next = raw->firstAdc;
-    raw->firstAdc = adc;
-    if ( ! FrStrCpy( &adc->name, name ) ) return NULL;
-    if ( ! FrStrCpy( &adc->comment, comment ) ) return NULL;
-    if ( ! FrStrCpy( &adc->units, unity ) ) return NULL;
-  }
-  else if ( chtype == SimDataChannel )
-  {
-    struct FrSimData *sim = calloc( 1, sizeof( *sim ) );
-    if ( ! sim )
-    {
-      FrVectFree( vect );
-      return NULL;
-    }
-    sim->classe = FrSimDataDef();
-    sim->sampleRate = rate;
-    sim->data = vect;
-    sim->next = frame->simData;
-    frame->simData = sim;
-    if ( ! FrStrCpy( &sim->name, name ) ) return NULL;
-    if ( ! FrStrCpy( &sim->comment, comment ) ) return NULL;
-  }
-  else
-  {
-    FrVectFree( vect );
-    return NULL;
-  }
-  return vect;
-}
-
-
-/* <lalVerbatim file="FrameStreamCP"> */
-void
-LALFrGetINT2TimeSeries(
-    LALStatus      *status,
-    INT2TimeSeries *series,
-    FrChanIn       *chanin,
-    FrStream       *stream
-    )
-{ /* </lalVerbatim> */
-  struct FrVect *vect;
-  UINT4  need;
-  UINT4  noff;
-  UINT4  ncpy;
-  INT2  *dest;
-  INT8   tnow;
-  INT8   tbeg;
-
-  INITSTATUS( status, "LALFrGetINT2ADC", FRAMESTREAMC );  
-  ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  if ( stream->err )
-  {
-    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
-  }
-  if ( stream->end )
-  {
-    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-  }
-
-  strncpy( series->name, chanin->name, sizeof( series->name ) );
-  vect = loadFrVect( stream->frame, series->name, chanin->type );
-  if ( ! vect || ! vect->data )
-  {
-    ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
-  }
-  if ( vect->type != FR_VECT_2S )
-  {
-    ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
-  }
-
-  tnow = EPOCH_TO_I8TIME( stream->epoch );
-  tbeg = SECNAN_TO_I8TIME( vect->GTimeS, vect->GTimeN );
-  if ( tnow < tbeg )
-  {
-    ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
-  }
-
-  SET_EPOCH( &series->epoch, tnow );
-  series->deltaT = vect->dx[0];
-  series->sampleUnits = lalADCCountUnit;
-
-  if ( ! series->data ) /* no data requested: return now */
-  {
-    RETURN( status );
-  }
-  ASSERT( series->data->data, status, FRAMESTREAMH_ENULL,
-      FRAMESTREAMH_MSGENULL );
-  ASSERT( series->data->length > 0, status, FRAMESTREAMH_ESIZE,
-      FRAMESTREAMH_MSGESIZE );
-
-  ATTATCHSTATUSPTR( status );
-
-  dest = series->data->data;
-  need = series->data->length;
-  noff = floor( 1e-9 * ( tnow - tbeg )
-      * ( vect->dx[0] ? 1.0 / vect->dx[0] : 0.0 ) );
-  if ( noff > vect->nData )
-  {
-    ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
-  }
-
-  /* number of points to copy */
-  ncpy = ( vect->nData - noff < need ) ? vect->nData - noff : need;
-  memcpy( dest, vect->dataS + noff, ncpy * sizeof( *series->data->data ) );
-  dest += ncpy;
-  need -= ncpy;
-
-  /* if still data remaining */
-  while ( need )
-  {
-    LALFrNext( status->statusPtr, stream );
-    BEGINFAIL( status )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-    }
-    ENDFAIL( status );
-    if ( stream->end )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-    }
-
-    /* load more data */
-    vect = loadFrVect( stream->frame, series->name, chanin->type );
-    if ( ! vect || ! vect->data )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
-    }
-    if ( vect->type != FR_VECT_2S )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
-    }
-
-    if ( stream->gap ) /* gap in data */
-    {
-      dest = series->data->data;
-      need = series->data->length;
-      series->epoch.gpsSeconds = vect->GTimeS;
-      series->epoch.gpsNanoSeconds = vect->GTimeN;
-    }
-
-    /* copy data */
-    ncpy = vect->nData < need ? vect->nData : need;
-    memcpy( dest, vect->dataS, ncpy * sizeof( *series->data->data ) );
-    dest += ncpy;
-    need -= ncpy;
-  }
-
-  /* update stream start time */
-  SET_EPOCH( &stream->epoch, EPOCH_TO_I8TIME( series->epoch )
-      + (INT8)floor( 1e9 * series->data->length * series->deltaT + 0.5 ) );
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="FrameStreamCP"> */
-void
-LALFrGetREAL4TimeSeries(
-    LALStatus       *status,
-    REAL4TimeSeries *series,
-    FrChanIn        *chanin,
-    FrStream        *stream
-    )
-{ /* </lalVerbatim> */
-  struct FrVect *vect;
-  UINT4  need;
-  UINT4  noff;
-  UINT4  ncpy;
-  REAL4 *dest;
-  INT8   tnow;
-  INT8   tbeg;
-
-  INITSTATUS( status, "LALFrGetREAL4ADC", FRAMESTREAMC );  
-  ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-
-  if ( stream->err )
-  {
-    ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
-  }
-  if ( stream->end )
-  {
-    ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-  }
-
-  strncpy( series->name, chanin->name, sizeof( series->name ) );
-  vect = loadFrVect( stream->frame, series->name, chanin->type );
-  if ( ! vect || ! vect->data )
-  {
-    ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
-  }
-  if ( vect->type != FR_VECT_4R )
-  {
-    ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
-  }
-
-  tnow = EPOCH_TO_I8TIME( stream->epoch );
-  tbeg = SECNAN_TO_I8TIME( vect->GTimeS, vect->GTimeN );
-  if ( tnow < tbeg )
-  {
-    ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
-  }
-
-  SET_EPOCH( &series->epoch, tnow );
-  series->deltaT = vect->dx[0];
-  series->sampleUnits = lalADCCountUnit;
-
-  if ( ! series->data ) /* no data requested: return now */
-  {
-    RETURN( status );
-  }
-  ASSERT( series->data->data, status, FRAMESTREAMH_ENULL,
-      FRAMESTREAMH_MSGENULL );
-  ASSERT( series->data->length > 0, status, FRAMESTREAMH_ESIZE,
-      FRAMESTREAMH_MSGESIZE );
-
-  ATTATCHSTATUSPTR( status );
-
-  dest = series->data->data;
-  need = series->data->length;
-  noff = floor( 1e-9 * ( tnow - tbeg )
-      * ( vect->dx[0] ? 1.0 / vect->dx[0] : 0.0 ) );
-  if ( noff > vect->nData )
-  {
-    ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
-  }
-
-  /* number of points to copy */
-  ncpy = ( vect->nData - noff < need ) ? vect->nData - noff : need;
-  memcpy( dest, vect->dataF + noff, ncpy * sizeof( *series->data->data ) );
-  dest += ncpy;
-  need -= ncpy;
-
-  /* if still data remaining */
-  while ( need )
-  {
-    LALFrNext( status->statusPtr, stream );
-    BEGINFAIL( status )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-    }
-    ENDFAIL( status );
-    if ( stream->end )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
-    }
-
-    /* load more data */
-    vect = loadFrVect( stream->frame, series->name, chanin->type );
-    if ( ! vect || ! vect->data )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_ECHAN, FRAMESTREAMH_MSGECHAN );
-    }
-    if ( vect->type != FR_VECT_4R )
-    {
-      memset( dest, 0, need * sizeof( *series->data->data ) );
-      ABORT( status, FRAMESTREAMH_ETYPE, FRAMESTREAMH_MSGETYPE );
-    }
-
-    if ( stream->gap ) /* gap in data */
-    {
-      dest = series->data->data;
-      need = series->data->length;
-      series->epoch.gpsSeconds = vect->GTimeS;
-      series->epoch.gpsNanoSeconds = vect->GTimeN;
-    }
-
-    /* copy data */
-    ncpy = vect->nData < need ? vect->nData : need;
-    memcpy( dest, vect->dataF, ncpy * sizeof( *series->data->data ) );
-    dest += ncpy;
-    need -= ncpy;
-  }
-
-  /* update stream start time */
-  SET_EPOCH( &stream->epoch, EPOCH_TO_I8TIME( series->epoch )
-      + (INT8)floor( 1e9 * series->data->length * series->deltaT + 0.5 ) );
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="FrameStreamCP"> */
-void
-LALFrWriteREAL4TimeSeries(
-    LALStatus       *status,
-    REAL4TimeSeries *series,
-    FrOutPar        *params
-    )
-{ /* </lalVerbatim> */
-  REAL4 duration;
-  REAL4 *data;
-  CHAR seconds[] = "s";
-  CHAR comment[] = "Created by LALFrWriteREAL4TimeSeries $Id$";
-  CHAR prefix[256];
-  CHAR fname[256];
-  CHAR units[LALUnitNameSize];
-  CHARVector vnits;
-  struct FrFile *frfile;
-  UINT4 nframes;
-  INT8 t;
-
-  INITSTATUS( status, "LALFrWriteREAL4TimeSeries", FRAMESTREAMC );  
-  ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  ATTATCHSTATUSPTR( status );
-
-  vnits.length = sizeof( units );
-  vnits.data = units;
-
-  strncpy( prefix, params->prefix ? params->prefix : "F", sizeof( prefix ) );
-  
-  TRY( LALUnitAsString( status->statusPtr, &vnits, &series->sampleUnits ),
-      status );
-
-  duration = series->deltaT * series->data->length;
-  if ( fabs( duration - 1.0 ) < series->deltaT && params->nframes == 1 )
-  {
-    /* within one sample of being a one-second frame and one frame per file */
-    sprintf( fname, "%s-%u.F", prefix, series->epoch.gpsSeconds );
-  }
-  else
-  {
-    sprintf( fname, "%s-%u-%u-%g.F", prefix, series->epoch.gpsSeconds,
-        params->nframes, duration / params->nframes );
-  }
-  frfile = FrFileONew( fname, 0 );
-
-  t = EPOCH_TO_I8TIME( series->epoch );
-  data = series->data->data;
-  nframes = params->nframes;
-  while ( nframes-- > 0 )
-  {
-    UINT4 ncpy;
-    struct FrameH *frame;
-    struct FrVect *vect;
-    if ( nframes )
-    {
-      ncpy = series->data->length / params->nframes;
-    }
-    else
-    {
-      ncpy = series->data->length - ( data - series->data->data );
-    }
-    frame = FrameHNew( prefix );
-    frame->run = params->run;
-    frame->frame = params->frame++;
-    frame->GTimeS = t / (INT8)1000000000;
-    frame->GTimeN = t % (INT8)1000000000;
-    frame->dt = ncpy * series->deltaT;
-    frame->localTime = 0;
-
-    /*** CHECK FSHIFT ***/
-    vect = makeFrVect1D( frame, params->type, series->name, comment, seconds,
-        units, FR_VECT_4R, series->deltaT ? 1.0 / series->deltaT : 0.0,
-        series->f0, series->deltaT, ncpy );
-    if ( ! vect )
-    {
-      ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
-    }
-    memcpy( vect->dataF, data, ncpy * sizeof( *series->data->data ) );
-
-    FrameWrite( frame, frfile );
-    data += ncpy;
-    t += 1e9 * ncpy * series->deltaT;
-  }
-
-  FrFileOEnd( frfile );
-
-  DETATCHSTATUSPTR( status );
   RETURN( status );
 }

@@ -17,9 +17,9 @@
  * \subsubsection*{Description}
  *
  * This program reads the channels \verb+H1:LSC-AS_Q+ from all the fake frames
- * \verb+F-*.F+ in the directory set in the environment \verb+LAL_FRAME_PATH+
- * (or the current directory if this environment is not set) and prints them
- * to files.
+ * \verb+F-TEST-*.gwf+ in the directory set in the environment
+ * \verb+LAL_FRAME_PATH+ * (or the current directory if this environment is not
+ * set) and prints them to files.
  *
  **** </lalLaTeX> */
 
@@ -39,17 +39,19 @@
 #define CHANNEL "H1:LSC-AS_Q"
 #endif
 
-INT4 lalDebugLevel = LALMEMDBG;
+INT4 lalDebugLevel = LALWARNING | LALINFO;
 
 int main( void )
 {
   static LALStatus status;
-  const unsigned int npts = 1048576;
+  const UINT4 npts = 1048576;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
   FrStream *stream = NULL;
-  REAL4TimeSeries chan;
-  char *dirname = getenv( "LAL_FRAME_PATH" );
-  int file = 0;
+  FrPos     frpos;
+  INT4TimeSeries chan;
+  LIGOTimeGPS epoch;
+  CHAR *dirname = getenv( "LAL_FRAME_PATH" );
+  INT4 file = 0;
 
   /* test files are version 4 frames */
   /* ignore this test if using earlier version of frame library */
@@ -57,30 +59,56 @@ int main( void )
     return 77;
 
   chan.data = NULL;
-  LALCreateVector( &status, &chan.data, npts );
+  LALI4CreateVector( &status, &chan.data, npts );
   TESTSTATUS( &status );
 
-  LALFrOpen( &status, &stream, dirname, "F-*.F" );
+  LALFrOpen( &status, &stream, dirname, "F-TEST-*.gwf" );
+  TESTSTATUS( &status );
+
+  /* seek to some initial time */
+  epoch.gpsSeconds     = 600000051;
+  epoch.gpsNanoSeconds = 123456789;
+  LALFrSeek( &status, &epoch, stream );
+  TESTSTATUS( &status );
+
+  /* save this position */
+  LALFrGetPos( &status, &frpos, stream );
   TESTSTATUS( &status );
 
   while ( 1 )
   {
-    char fname[256];
-    LALFrGetREAL4TimeSeries( &status, &chan, &chanin, stream );
+    LALTYPECODE typecode;
+    CHAR fname[256];
+    LALFrGetTimeSeriesType( &status, &typecode, &chanin, stream );
+    TESTSTATUS( &status );
+    if ( typecode != LAL_I4_TYPE_CODE )
+    {
+      fprintf( stderr, "Wrong data type!\n" );
+      return 1;
+    }
+    LALFrGetINT4TimeSeries( &status, &chan, &chanin, stream );
     if ( status.statusCode == FRAMESTREAMH_EDONE )
     {
       break;
     }
     TESTSTATUS( &status );
     sprintf( fname, CHANNEL ".%03d", file++ );
-    puts( fname );
-    LALSPrintTimeSeries( &chan, fname );
+    LALI4PrintTimeSeries( &chan, fname );
   }
+
+  /* go back to saved time */
+  LALFrSetPos( &status, &frpos, stream );
+  TESTSTATUS( &status );
+
+  LALFrGetINT4TimeSeries( &status, &chan, &chanin, stream );
+  TESTSTATUS( &status );
+
+  LALI4PrintTimeSeries( &chan, CHANNEL ".999" );
 
   LALFrClose( &status, &stream );
   TESTSTATUS( &status );
 
-  LALDestroyVector( &status, &chan.data );
+  LALI4DestroyVector( &status, &chan.data );
   TESTSTATUS( &status );
 
   LALCheckMemoryLeaks();

@@ -39,14 +39,16 @@ INT4 lalDebugLevel = LALMSGLVL3;
 
 int main( void )
 {
-  static LALStatus       status;
-  static REAL4TimeSeries series;
+  static LALStatus      status;
+  static INT4TimeSeries series;
   const UINT4   time = 60;          /* duration of frame file */
   const INT4    seed = 10;          /* random number seed     */
   const REAL4   rate = 16384;       /* sample rate (Hz)       */
   const UINT4   npts = time * rate; /* number of points       */
-  FrOutPar      opar = { "F", ADCDataChannel, 6, 0, 0 };
+  FrOutPar      opar = { "F", "TEST", ADCDataChannel, 6, 0, 0 };
   RandomParams *rpar = NULL;
+  UINT4 count = 0;
+  UINT4 i;
 
   /* initialize */
 
@@ -57,38 +59,71 @@ int main( void )
   series.epoch.gpsSeconds = 600000000;
   series.sampleUnits = lalADCCountUnit;
   series.deltaT = 1 / rate;
-  LALCreateVector( &status, &series.data, npts );
+  LALI4CreateVector( &status, &series.data, npts );
   TESTSTATUS( &status );
 
   /* generate first frame file worth of data and write it */
 
+  /*
   LALNormalDeviates( &status, series.data, rpar );
   TESTSTATUS( &status );
+  */
+  for ( i = 0; i < series.data->length; ++i )
+  {
+    INT8 ns;
+    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
+    ns += (INT8)series.epoch.gpsNanoSeconds;
+    ns += (INT8)( 1e9 * i * series.deltaT );
+    ns %= (INT8)1000000000;
+    series.data->data[i] = count++;
+  }
 
-  LALFrWriteREAL4TimeSeries( &status, &series, &opar );
+  LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
   /* generate second frame file worth of data and write it */
 
   series.epoch.gpsSeconds += time;
+  /*
   LALNormalDeviates( &status, series.data, rpar );
   TESTSTATUS( &status );
+  */
+  for ( i = 0; i < series.data->length; ++i )
+  {
+    INT8 ns;
+    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
+    ns += (INT8)series.epoch.gpsNanoSeconds;
+    ns += (INT8)( 1e9 * i * series.deltaT );
+    ns %= (INT8)1000000000;
+    series.data->data[i] = count++;
+  }
 
-  LALFrWriteREAL4TimeSeries( &status, &series, &opar );
+  LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
   /* generate third frame file worth of data and write it */
 
   series.epoch.gpsSeconds += time;
+  /*
   LALNormalDeviates( &status, series.data, rpar );
   TESTSTATUS( &status );
+  */
+  for ( i = 0; i < series.data->length; ++i )
+  {
+    INT8 ns;
+    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
+    ns += (INT8)series.epoch.gpsNanoSeconds;
+    ns += (INT8)( 1e9 * i * series.deltaT );
+    ns %= (INT8)1000000000;
+    series.data->data[i] = count++;
+  }
 
-  LALFrWriteREAL4TimeSeries( &status, &series, &opar );
+  LALFrWriteINT4TimeSeries( &status, &series, &opar );
   TESTSTATUS( &status );
 
   /* cleanup */
 
-  LALDestroyVector( &status, &series.data );
+  LALI4DestroyVector( &status, &series.data );
   TESTSTATUS( &status );
 
   LALDestroyRandomParams( &status, &rpar );

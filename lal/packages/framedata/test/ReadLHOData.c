@@ -45,11 +45,11 @@ int main( void )
   REAL4TimeSeries chan;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
   FrStream *stream = NULL;
-  FrOutPar  outpar = { CHANNEL, ADCDataChannel, 6, 0, 0 };
+  FrOutPar  outpar = { CHANNEL, "TEST", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
 
   /* open the frame stream */
-  LALFrOpen( &status, &stream, dirname, "H-*.F" );
+  LALFrOpen( &status, &stream, dirname, "H-*.gwf" );
   TESTSTATUS( &status );
 
   /* get channel info */
@@ -85,8 +85,10 @@ int main( void )
     if ( abs( texp - tact ) > tacc )
       puts( "Gap in frame data!" );
 
-    printf( "%s-%u-%u-%g.F\n", outpar.prefix, chan.epoch.gpsSeconds,
-        outpar.nframes, chan.data->length * chan.deltaT / outpar.nframes );    
+    printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
+        chan.epoch.gpsSeconds,
+        ceil( 1e-9 * chan.epoch.gpsNanoSeconds 
+          + chan.data->length * chan.deltaT ) );    
     LALFrWriteREAL4TimeSeries( &status, &chan, &outpar );
     TESTSTATUS( &status );
   }

@@ -93,7 +93,8 @@ tagFrPos
 {
   LIGOTimeGPS epoch;
   UINT4       filenum;
-  UINT4       frnum;
+  UINT4       frame;
+  UINT4       run;
 }
 FrPos;
 /**** </lalVerbatim> */
@@ -107,7 +108,9 @@ FrPos;
  *     was made.
  * \item[\texttt{filenum}] the file number of a list of frame files that was
  *     open when the record was made.
- * \item[\texttt{frnum}] the frame number of the frames within the open
+ * \item[\texttt{frame}] the frame number of the frames within the
+ *     frame file that was open when the record was made.
+ * \item[\texttt{run}] the run number of the frames within the
  *     frame file that was open when the record was made.
  * \end{description}
  *
@@ -149,7 +152,8 @@ FrChanIn;
 typedef struct
 tagFrOutPar
 {
-  const CHAR *prefix;
+  const CHAR *source;
+  const CHAR *description;
   ChannelType type;
   UINT4 nframes;
   UINT4 frame;
@@ -162,15 +166,23 @@ FrOutPar;
  * This structure specifies the parameters for output of data to a frame.
  * The fields are:
  * \begin{description}
- * \item[\texttt{prefix}] the prefix to attach to the output frame file name.
+ * \item[\texttt{source}] the source identifier to attach to the output
+ *   frame file name.
+ * \item[\texttt{description}] the description identifier to attach to the
+ *   output frame file name.
  * \item[\texttt{type}] the type of channel to create in the output frames.
  * \item[\texttt{nframes}] the number of frames to output in the frame file.
  * \item[\texttt{frame}] the number the first frame of output.
  * \item[\texttt{run}] the number this data run.
  * \end{description}
+ * The output frame file name will be
+ * $\langle\mbox{source}\rangle$\verb+-+$\langle\mbox{description}\rangle$%
+ * \verb+-+$\langle\mbox{GPS start time}\rangle$\verb+-+%
+ * $\langle\mbox{duration}\rangle$\verb+.gwf+.
  *
  * \vfill{\footnotesize\input{FrameStreamHV}}
  * \newpage\input{FrameStreamC}
+ * \newpage\input{FrameSeriesC}
  * \newpage\input{FrameStreamTestC}
  *
  **** </lalLaTeX> */

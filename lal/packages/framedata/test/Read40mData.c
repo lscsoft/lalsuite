@@ -50,7 +50,7 @@ int main( void )
   FrChanIn  dmroin = { CHANNEL, ADCDataChannel };
   FrChanIn  lockin = { "IFO_Lock", ADCDataChannel };
   FrStream *stream = NULL;
-  FrOutPar  outpar = { "C1:" CHANNEL, ADCDataChannel, 6, 0, 0 };
+  FrOutPar  outpar = { "C1:" CHANNEL, "REDUCED", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
   int  locklost = 1;
 
@@ -183,8 +183,10 @@ int main( void )
 
 
     /* copy data to tser and output it */
-    printf( "%s-%u-%u-%g.F\n", outpar.prefix, tser.epoch.gpsSeconds,
-        outpar.nframes, tser.data->length * tser.deltaT / outpar.nframes );    
+    printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
+        tser.epoch.gpsSeconds,
+        ceil( 1e-9 * tser.epoch.gpsNanoSeconds
+          + tser.data->length * tser.deltaT ) );    
     tser.epoch = dmro.epoch;
     for ( i = 0; i < tser.data->length; ++i )
     {

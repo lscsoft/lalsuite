@@ -46,7 +46,7 @@ int main( void )
   INT2TimeSeries  chan;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
   FrStream *stream = NULL;
-  FrOutPar  outpar = { "G:" CHANNEL, ADCDataChannel, 6, 0, 0 };
+  FrOutPar  outpar = { "G:" CHANNEL, "TEST", ADCDataChannel, 6, 0, 0 };
   char *dirname = getenv( "LAL_FRAME_PATH" );
 
   /* open the frame stream */
@@ -94,8 +94,10 @@ int main( void )
       puts( "Gap in frame data!" );
 
     tser.epoch = chan.epoch;
-    printf( "%s-%u-%u-%g.F\n", outpar.prefix, tser.epoch.gpsSeconds,
-        outpar.nframes, tser.data->length * tser.deltaT / outpar.nframes );
+    printf( "%s-%s-%d-%d.gwf\n", outpar.source, outpar.description,
+        tser.epoch.gpsSeconds,
+        ceil( 1e-9 * tser.epoch.gpsNanoSeconds
+          + tser.data->length * tser.deltaT ) );
     for ( i = 0; i < tser.data->length; ++i )
     {
       tser.data->data[i] = chan.data->data[i];
