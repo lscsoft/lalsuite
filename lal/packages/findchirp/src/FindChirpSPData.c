@@ -936,6 +936,7 @@ LALFindChirpBCVData (
 {
   UINT4                 i, k;
   UINT4                 cut;
+  CHAR                  infoMsg[512];
 
   REAL4                *w;
   REAL4                *amp;
@@ -1123,6 +1124,8 @@ LALFindChirpBCVData (
 
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
+    ASSERT( params->wtildeVec->length == fcSeg->dataBCV->data->length, status,
+        FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
 
     /* store the waveform approximant in the data segment */
     fcSeg->approximant = BCV;
@@ -1147,11 +1150,15 @@ LALFindChirpBCVData (
     {
       REAL4 p = outputData[k].re;
       REAL4 q = outputData[k].im;
+      REAL4 pBCV = outputDataBCV[k].re;
+      REAL4 qBCV = outputDataBCV[k].im;
       REAL4 x = resp[k].re * params->dynRange;
       REAL4 y = resp[k].im * params->dynRange;
 
       outputData[k].re =  p*x - q*y;
       outputData[k].im =  p*y + q*x;
+      outputDataBCV[k].re =  pBCV*x - qBCV*y;
+      outputDataBCV[k].im =  pBCV*y + qBCV*x;
     }
 
 
@@ -1165,6 +1172,9 @@ LALFindChirpBCVData (
     /* set low frequency cutoff inverse power spectrum */
     cut = params->fLow / dataSeg->spec->deltaF > 1 ?
       params->fLow / dataSeg->spec->deltaF : 1;
+    LALSnprintf( infoMsg, sizeof(infoMsg)/sizeof(*infoMsg),
+        "low frequency cut off index = %d\n", cut );
+    LALInfo( status, infoMsg );
 
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
@@ -1261,6 +1271,10 @@ LALFindChirpBCVData (
     fcSeg->segNorm = 0.0;
     Power    = 0.0;
     PowerBCV = 0.0;
+    I73 = 0.0;
+    I53 = 0.0;
+    I1 = 0.0;
+     
 
     for ( k = 0; k < cut; ++k )
     {
