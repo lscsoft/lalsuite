@@ -113,7 +113,7 @@ void LALComputeAM (LALStatus          *status,
 
   {
     /* Normalization factor */
-    REAL8 L = SQ(2.0/(REAL8)length);
+    REAL8 L = 2.0/(REAL8)length;
     
     /* Assign output values and normalise */
     coe->A = L*sumA2;
