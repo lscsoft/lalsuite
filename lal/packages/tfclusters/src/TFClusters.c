@@ -138,7 +138,7 @@ LALComputeSpectrogram (
 
   minF = (UINT4)floor(tspec->flow * tspec->deltaT);
 
-  ASSERT( tspec->freqBins + minF == NN/2 + 1,
+  ASSERT( tspec->freqBins + minF == NN/2,
 	  status, TFCLUSTERSH_EINCOMP, TFCLUSTERSH_MSGEINCOMP );
 
   /* copy tspec */
@@ -345,20 +345,27 @@ LALGetClusters (
 
   
   /* clean to minf and maxf */
-  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT > dir->maxf)
-    jmax = (dir->maxf - tpower->params->flow) * tpower->params->deltaT;
+  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= dir->maxf &&
+     dir->maxf >= tpower->params->flow) {
+    REAL8 tmp = (dir->maxf - tpower->params->flow) * tpower->params->deltaT;
+    if(tmp - floor(tmp) >= 0.5) jmax = (UINT4)ceil(tmp);
+    else jmax = (UINT4)floor(tmp);
+  }
   else
-    jmax=0;
+    jmax=-1U;
 
 
-  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT > dir->minf &&
-     dir->minf >= tpower->params->flow)
-    jmin = (dir->minf - tpower->params->flow) * tpower->params->deltaT;
+  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= dir->minf &&
+     dir->minf >= tpower->params->flow) {
+    REAL8 tmp = (dir->minf - tpower->params->flow) * tpower->params->deltaT;
+    if(tmp - floor(tmp) >= 0.5) jmin = (UINT4)ceil(tmp);
+    else jmin = (UINT4)floor(tmp);
+  }
   else
     jmin=0;
 
 
-  if(jmax>0)
+  if(jmin>0 || jmax!=-1U)
     {
       ts = NULL;
       tf=tt=NULL;
@@ -1412,9 +1419,9 @@ LALPlainSpectrogram(
 
 
   tspec->timeBins = (INT4)floor((double)tseries->data->length * tseries->deltaT / T);
-  tspec->freqBins = (INT4)ceil(T/(2.0*tseries->deltaT));
+  tspec->freqBins = (INT4)ceil(T/(2.0*tseries->deltaT)) - 1; /* do not include Nyquist */
   tspec->deltaT = T;
-  tspec->flow = 1.0/T;
+  tspec->flow = 1.0/T; /* do not include DC */
 
   /* Normal exit */
   DETATCHSTATUSPTR (status);
