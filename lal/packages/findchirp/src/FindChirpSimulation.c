@@ -157,6 +157,18 @@ LALFindChirpInjectSignals (
       *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
       LALWarning( status, "computing waveform for Livingston." );
       break;
+    case 'G':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+      LALWarning( status, "computing waveform for GEO600." );
+      break;
+    case 'T':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+      LALWarning( status, "computing waveform for TAMA300." );
+      break;
+    case 'V':
+      *(detector.site) = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+      LALWarning( status, "computing waveform for Virgo." );
+      break;
     default:
       LALFree( detector.site );
       detector.site = NULL;
