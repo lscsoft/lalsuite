@@ -167,7 +167,7 @@ int main( void )
   UINT4   j;
 
   fprintf(stderr,"Testing value of LALUnitTextSize ... ");
-  if ( LALSupportUnitTextSize != LALUnitTextSize ) 
+  if ( (int)LALSupportUnitTextSize != (int)LALUnitTextSize ) 
   {
     fprintf(stderr,"UnitTextSize mismatch: [ReadFTSeriesTest:%s]\n",
 	    READFTSERIESTESTC_MSGEFLS);
