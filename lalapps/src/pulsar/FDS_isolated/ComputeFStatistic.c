@@ -1,7 +1,7 @@
 /*********************************************************************************/
 /*                    F-statistic generation code for known pulsars              */
 /*                                                                               */
-/*			      Y. Ioth, M.A. Papa, X. Siemens                     */
+/*			      Y. Ioth, M.A. Papa, X. Siemens, R.Prix             */
 /*                                                                               */
 /*                 Albert Einstein Institute/UWM - started September 2002        */
 /*********************************************************************************/
@@ -12,6 +12,8 @@
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
+
+#include "ConfigFile.h"
 
 /* #define DEBG_FAFB                 */
 /* #define DEBG_ESTSIGPAR */
@@ -36,7 +38,6 @@ LALFstat Fstat;
 INT4 lalDebugLevel=0,i,a,d,s,irec;
 static LALStatus status;
 AMCoeffs amc;
-GlobalVariables GV;
 REAL8 MeanOneOverSh=0.0;
 REAL8 Alpha,Delta;
 Clusters HFLines, HPLines;
@@ -50,18 +51,47 @@ FILE *fpstat;
 REAL8 medianbias=1.0;
 
 DopplerScanState thisScan;
+ConfigVariables GV;
+UserInput userInput;
 
+/* local prototypes */
+void SetInputDefaults ( UserInput *input );
+INT2 ReadUserInput (int argc, char *argv[], UserInput *input);
+INT2 ReadCmdlineInput (int argc, char *argv[], UserInput *input);
+INT2 ReadCfgfileInput (UserInput *input, CHAR *cfgfile);
 
+INT2 SetGlobalVariables(ConfigVariables *cfg);
+INT4 ReadSFTData(void);
+INT4 CreateDemodParams(void);
+INT4 NormaliseSFTData(void);
+INT4 CreateDetector(LALDetector *Detector);
+INT4 AllocateMem(void);
+INT4 Freemem(void);
+
+INT4 EstimateSignalParameters(INT4 * maxIndex);
+INT4 EstimatePSDLines(void);
+INT4 EstimateFLines(void);
+INT4 writeFLines(INT4 *maxIndex);
+INT4 NormaliseSFTDataRngMdn(void);
+INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
+INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
+int compare(const void *ip, const void *jp);
+INT4 writeFaFb(INT4 *maxIndex);
+
+/*----------------------------------------------------------------------
+ * MAIN
+ *----------------------------------------------------------------------*/
 int main(int argc,char *argv[]) 
 {
-
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
   DopplerPosition dopplerpos;
   DopplerScanInit scanInit;
 
-  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+  SetInputDefaults ( &(userInput) ); 	/* provide all default-settings for input variables */
 
-  if (SetGlobalVariables(CommandLineArgs)) return 2;
+  if (ReadUserInput (argc,argv, &(userInput))) return 1;
+
+  if (SetGlobalVariables (&GV) ) return 2;
 
   if (AllocateMem()) return 3;
 
@@ -69,7 +99,7 @@ int main(int argc,char *argv[])
 
   /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
 #if 0
-  if (GV.noise!=1){
+  if (GV.SignalOnly!=1){
     if (EstimatePSDLines()) return 6;
   }
 #endif
@@ -91,49 +121,55 @@ int main(int argc,char *argv[])
   }
 #endif
 	
-  scanInit.dAlpha = GV.dAlpha;
-  scanInit.dDelta = GV.dDelta;
+  scanInit.dAlpha = userInput.dAlpha;
+  scanInit.dDelta = userInput.dDelta;
 
   /* use metric-grid? and if so, for what maximal mismatch? */
-  scanInit.useMetric = GV.useMetric;
-  scanInit.metricMismatch = GV.metricMismatch;
+  scanInit.useMetric = userInput.useMetric;
+  scanInit.metricMismatch = userInput.metricMismatch;
 
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
-  /*   scanInit.obsDuration = 36000; */
 
-  scanInit.fmax  = GV.Freq;
-  if (GV.FreqBand > 0) scanInit.fmax += GV.FreqBand;
+  /*  scanInit.obsDuration = 36000; */
+
+  scanInit.fmax  = userInput.Freq;
+  if (userInput.FreqBand > 0) scanInit.fmax += userInput.FreqBand;
   scanInit.Detector = GV.Detector;
 
-  /* parse (Alpha+AlphaBand, Delta+DeltaBand) into a sky-region string */
-  {
-    REAL8 a, d, Da, Dd;
-    REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
-    a = GV.Alpha;
-    d = GV.Delta;
-    Da = GV.AlphaBand + eps;
-    Dd = GV.DeltaBand + eps;
+  if (userInput.skyRegion)
+    {
+      scanInit.skyRegion = LALMalloc (strlen (userInput.skyRegion) + 1);
+      strcpy (scanInit.skyRegion, userInput.skyRegion);
+    }
+  else	 /* parse (Alpha+AlphaBand, Delta+DeltaBand) into a sky-region string */
+    {
+      REAL8 a, d, Da, Dd;
+      REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
+      a = userInput.Alpha;
+      d = userInput.Delta;
+      Da = userInput.AlphaBand + eps;
+      Dd = userInput.DeltaBand + eps;
 
-    scanInit.skyRegion = LALMalloc (512); /* should be enough for 4 points... */
-    sprintf (scanInit.skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-	     a, d, 
-	     a + Da, d, 
-	     a + Da, d + Dd,
-	     a, d + Dd );
-  }
+      scanInit.skyRegion = LALMalloc (512); /* should be enough for 4 points... */
+      sprintf (scanInit.skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+	      a, d, 
+	      a + Da, d, 
+	      a + Da, d + Dd,
+	      a, d + Dd );
+    }
 
   InitDopplerScan ( &status, &thisScan, scanInit);
-
+  
   LALFree (scanInit.skyRegion);
-
+  
   if (status.statusCode != 0)
     {
       REPORTSTATUS( &status );
       return (-1);
     }
   
-
+  
   while (1)
     {
       NextDopplerPos( &status, &dopplerpos, &thisScan );
@@ -143,7 +179,6 @@ int main(int argc,char *argv[])
 	  REPORTSTATUS( &status );
 	  return (-1);
 	}
-
       /* Have we scanned all DopplerPositions yet? */
       if (dopplerpos.finished)  
 	break;
@@ -152,11 +187,12 @@ int main(int argc,char *argv[])
       Alpha = dopplerpos.skypos.longitude;
       Delta = dopplerpos.skypos.latitude; 
       
+      
       if (CreateDemodParams()) return 6;
       /* loop over spin params */
       for(s=0;s<GV.SpinImax;s++)
 	{
-	  DemodParams->spinDwn[0]=GV.Spin+s*GV.dSpin;
+	  DemodParams->spinDwn[0]=userInput.Spin + s*userInput.dSpin;
 	  LALDemod (&status, &Fstat, SFTData, DemodParams);
 	  
 	  /*  This fills-in highFLines that are then used by discardFLines */
@@ -167,7 +203,7 @@ int main(int argc,char *argv[])
 #ifdef DEBG_MAIN
 	  for(i=0;i < GV.FreqImax ;i++)
 	    {
-	      /* medianbias is 1 if GV.noise=1 */ 
+	      /* medianbias is 1 if GV.SignalOnly=1 */ 
 	      fprintf(stdout,"%20.10f %e %20.17f %20.17f %20.17f\n",
 		      GV.Freq+i*GV.dFreq,  DemodParams->spinDwn[0],
 		      Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
@@ -187,11 +223,11 @@ int main(int argc,char *argv[])
 	    }
 	  }
 	  
-	  if( GV.EstimSigParam &&(highFLines !=NULL) && (highFLines->Nclusters >0))
+	  if( userInput.EstimSigParam &&(highFLines !=NULL) && (highFLines->Nclusters >0))
 	    if(writeFaFb(maxIndex)) return 255;
 	  
 	  
-	  if( GV.EstimSigParam &&(highFLines !=NULL) &&(highFLines->Nclusters >0)) {
+	  if( userInput.EstimSigParam &&(highFLines !=NULL) &&(highFLines->Nclusters >0)) {
 	    if (EstimateSignalParameters(maxIndex)) return 7;
 	  }
 	  
@@ -408,10 +444,10 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
       /* For the real data, we need to multiply long(2.0) */
       /* Because we use running median to estimate the S_h. */
-      /* if(GV.noise!=1) 
+      /* if(GV.SignalOnly!=1) 
 	h0mle=h0mle*sqrt(medianbias);
       */
-      /* medianbias is 1 when GV.noise==1 */
+      /* medianbias is 1 when GV.SignalOnly==1 */
       h0mle=h0mle*sqrt(medianbias);
 
 #ifdef DEBG_ESTSIGPAR
@@ -431,8 +467,8 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* because Phi0_PULGROUPDOC=2.0*Phi0_JKS */
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
-      /* medianbias is 1 if GV.noise==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", GV.Freq+irec*GV.dFreq,2.0*medianbias*Fstat.F[irec]);
+      /* medianbias is 1 if GV.SignalOnly==1 */
+      fprintf(fpMLEParam,"%16.8lf %22E", userInput.Freq + irec*userInput.dFreq, 2.0*medianbias*Fstat.F[irec]);
 
 
       fprintf(fpMLEParam,"  %10.6f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
@@ -465,14 +501,14 @@ int writeFaFb(INT4 *maxIndex)
   FILE * fp;
   REAL8 bias=1.0;
 
-  sprintf(noiseswitch,"%02d",GV.noise);
+  sprintf(noiseswitch,"%02d",userInput.SignalOnly);
   strcat(filebasename,noiseswitch);
 
   /*
-  if(GV.noise!=1) 
+  if(GV.SignalOnly!=1) 
     bias=sqrt(medianbias);
   */
-  /* medianbias=1 if GV.noise==1 */
+  /* medianbias=1 if GV.SignalOnly==1 */
   bias=sqrt(medianbias);
 
 
@@ -497,9 +533,9 @@ int writeFaFb(INT4 *maxIndex)
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-	    GV.Freq+maxIndex[irec]*GV.dFreq,
+	    userInput.Freq+maxIndex[irec]*userInput.dFreq,
 	    Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",GV.Freq+index*GV.dFreq,GV.dFreq);
+    fprintf(fp,"%22.12f %22.12f\n",userInput.Freq + index * userInput.dFreq, userInput.dFreq);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -549,7 +585,7 @@ int writeFaFb(INT4 *maxIndex)
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-	      GV.Freq+index*GV.dFreq,
+	      userInput.Freq+index*userInput.dFreq,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
 	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -650,14 +686,14 @@ int CreateDemodParams(void)
   DemodParams->spinDwnOrder=1;
   DemodParams->SFTno=GV.SFTno;
 
-  DemodParams->f0=GV.Freq;
+  DemodParams->f0=userInput.Freq;
   DemodParams->imax=GV.FreqImax;
-  DemodParams->df=GV.dFreq;
+  DemodParams->df=userInput.dFreq;
 
-  DemodParams->Dterms=GV.Dterms;
+  DemodParams->Dterms=userInput.Dterms;
   DemodParams->ifmin=GV.ifmin;
 
-  DemodParams->returnFaFb = GV.EstimSigParam;
+  DemodParams->returnFaFb = userInput.EstimSigParam;
 
   ComputeSky(&status,DemodParams->skyConst,0,csParams);        /* compute the */
 						               /* "sky-constants" A and B */
@@ -750,7 +786,7 @@ int writeFLines(INT4 *maxIndex){
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr=GV.Freq+imax*GV.dFreq;
+    fr=userInput.Freq + imax*userInput.dFreq;
 #ifdef FILE_FSTATS  
 /*    print the output */
   err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
@@ -796,7 +832,7 @@ int NormaliseSFTData(void)
       N=1.0/sqrt(2.0*(REAL8)SFTsqav);
 
       /* signal only case */  
-      if(GV.noise == 1)
+      if(userInput.SignalOnly == 1)
 	{
 	  B=(1.0*GV.nsamples)/(1.0*GV.tsft);
 	  deltaT=1.0/(2.0*B);
@@ -912,47 +948,49 @@ int ReadSFTData(void)
 
 /*******************************************************************************/
 
-INT4 SetGlobalVariables(struct CommandLineArgsTag CLA)
+INT2 
+SetGlobalVariables(ConfigVariables *cfg)
 {
 
-  CHAR command[256];
+  CHAR command[512];
+  CHAR tmp[50];
   FILE *fp;
   size_t errorcode;
   REAL8 df;                         /* freq resolution */
   INT4 fileno=0;   
   glob_t globbuf;
 
+  strcpy(cfg->EphemEarth,userInput.EphemDir);
+  strcat(cfg->EphemEarth,"/earth");
+  sprintf (tmp, "%02d", userInput.EphemYear);
+  strcat(cfg->EphemEarth, tmp);
+  strcat(cfg->EphemEarth,".dat");
 
-  strcpy(GV.EphemEarth,CLA.EphemDir);
-  strcat(GV.EphemEarth,"/earth");
-  strcat(GV.EphemEarth,CLA.EphemYear);
-  strcat(GV.EphemEarth,".dat");
-
-  strcpy(GV.EphemSun,CLA.EphemDir);
-  strcat(GV.EphemSun,"/sun");
-  strcat(GV.EphemSun,CLA.EphemYear);
-  strcat(GV.EphemSun,".dat");
+  strcpy(cfg->EphemSun,userInput.EphemDir);
+  strcat(cfg->EphemSun,"/sun");
+  strcat(cfg->EphemSun, tmp);
+  strcat(cfg->EphemSun,".dat");
 
   /* *** Make sure the e-files are really there *** */
-      fp=fopen(GV.EphemEarth,"r");
+      fp=fopen(cfg->EphemEarth,"r");
       if (fp==NULL) 
 	{
-	  fprintf(stderr,"Could not find %s\n",GV.EphemEarth);
+	  fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
 	  return 1;
 	}
       fclose(fp);
-      fp=fopen(GV.EphemSun,"r");
+      fp=fopen(cfg->EphemSun,"r");
       if (fp==NULL) 
 	{
-	  fprintf(stderr,"Could not find %s\n",GV.EphemSun);
+	  fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
 	  return 1;
 	}
       fclose(fp);
   /* ********************************************** */
 
-  strcpy(command,CLA.DataDir);
+  strcpy(command,userInput.DataDir);
   strcat(command,"/*");
-  strcat(command,CLA.BaseName);
+  strcat(command,userInput.BaseName);
   strcat(command,"*");
   
   globbuf.gl_offs = 1;
@@ -962,13 +1000,13 @@ INT4 SetGlobalVariables(struct CommandLineArgsTag CLA)
 
   if(globbuf.gl_pathc==0)
     {
-      fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",CLA.DataDir);
+      fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",userInput.DataDir);
       return 1;
     }
 
   while ((UINT4)fileno < globbuf.gl_pathc) 
     {
-      strcpy(GV.filelist[fileno],globbuf.gl_pathv[fileno]);
+      strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
       fileno++;
       if (fileno > MAXFILES)
 	{
@@ -978,113 +1016,89 @@ INT4 SetGlobalVariables(struct CommandLineArgsTag CLA)
     }
   globfree(&globbuf);
 
-  GV.SFTno=fileno; /* remember this is 1 more than the index value */
-
-  GV.IFO=CLA.IFO;
+  cfg->SFTno=fileno; /* remember this is 1 more than the index value */
 
   /* initialize detector */
-  if(GV.IFO == 0) GV.Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if(GV.IFO == 1) GV.Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(GV.IFO == 2) GV.Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(GV.IFO == 3)
+  if(userInput.IFO == 0) cfg->Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if(userInput.IFO == 1) cfg->Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if(userInput.IFO == 2) cfg->Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+  if(userInput.IFO == 3)
     {
-        if (CreateDetector(&(GV.Detector))) return 5;
+        if (CreateDetector(&(cfg->Detector))) return 5;
     }
 
 
   /* open FIRST file and get info from it*/
-  fp=fopen(GV.filelist[0],"r");
+  fp=fopen(cfg->filelist[0],"r");
   /* read in the header from the file */
   errorcode=fread((void*)&header,sizeof(header),1,fp);
   if (errorcode!=1) 
     {
-      fprintf(stderr,"No header in data file %s\n",GV.filelist[0]);
+      fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
       return 1;
     }
 
   /* check that data is correct endian order */
   if (header.endian!=1.0)
     {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[0]);
+      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
       fprintf(stderr,"It could be a file format error (big/little\n");
       fprintf(stderr,"endian) or the file might be corrupted\n\n");
       return 2;
     }
   fclose(fp);
 
-  GV.Ti=header.gps_sec;  /* INITIAL TIME */
+  cfg->Ti=header.gps_sec;  /* INITIAL TIME */
 
   /* open LAST file and get info from it*/
-  fp=fopen(GV.filelist[fileno-1],"r");
+  fp=fopen(cfg->filelist[fileno-1],"r");
   /* read in the header from the file */
   errorcode=fread((void*)&header,sizeof(header),1,fp);
   if (errorcode!=1) 
     {
-      fprintf(stderr,"No header in data file %s\n",GV.filelist[fileno-1]);
+      fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
       return 1;
     }
   /* check that data is correct endian order */
   if (header.endian!=1.0)
     {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno-1]);
+      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
       fprintf(stderr,"It could be a file format error (big/little\n");
       fprintf(stderr,"endian) or the file might be corrupted\n\n");
       return 2;
     }
   fclose(fp);
 
-  GV.Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
+  cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
 
-  GV.tsft=header.tbase;  /* Time baseline of SFTs */
+  cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
-  /* variables for starting demodulation frequency, band and resolution */
-  GV.Freq=CLA.Freq;
-  GV.FreqBand=CLA.FreqBand;
-  GV.dFreq=CLA.dFreq;
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( GV.dFreq == 0.0 ) GV.dFreq=1.0/(2.0*header.tbase*GV.SFTno);
-  GV.FreqImax=(int)(GV.FreqBand/GV.dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+  if( userInput.dFreq == 0.0 ) 
+    userInput.dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
+
+  cfg->FreqImax=(INT4)(userInput.FreqBand/userInput.dFreq+.5)+1;  /*Number of frequency values to calculate F for */
     
-  /* variables for starting spindown, band and resolution */
-  GV.Spin=CLA.Spin;
-  GV.SpinBand=CLA.SpinBand;
-  GV.dSpin=CLA.dSpin;
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( GV.dSpin == 0.0 ) GV.dSpin=1.0/(2.0*header.tbase*GV.SFTno*(GV.Tf-GV.Ti));
+  if( userInput.dSpin == 0.0 ) userInput.dSpin=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
 
-  GV.SpinImax=(int)(GV.SpinBand/GV.dSpin+.5)+1;  /*Number of frequency values to calculate F for */
+  cfg->SpinImax=(int)(userInput.SpinBand/userInput.dSpin+.5)+1;  /*Number of frequency values to calculate F for */
 
-  /* sky position, band and resolution */
-  GV.Alpha=CLA.Alpha;
-  GV.AlphaBand=CLA.AlphaBand;
-  GV.dAlpha=CLA.dAlpha;
-
-  GV.Delta=CLA.Delta;
-  GV.DeltaBand=CLA.DeltaBand;
-  GV.dDelta=CLA.dDelta;
-
-  GV.nsamples=header.nsamples;    /* # of freq. bins */
+  cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
   /* frequency resolution: used only for printing! */
   df=(1.0)/(1.0*header.tbase);
-  GV.df=df;
+  cfg->df=df;
 
-  GV.ifmax=ceil((1.0+DOPPLERMAX)*(GV.Freq+GV.FreqBand)*GV.tsft)+CLA.Dterms;
-  GV.ifmin=floor((1.0-DOPPLERMAX)*GV.Freq*GV.tsft)-CLA.Dterms;
-
-  GV.Dterms=CLA.Dterms;
-
-  GV.noise=CLA.noise;
-
-  GV.EstimSigParam=CLA.EstimSigParam;
-  GV.Fthreshold=CLA.Fthreshold;
+  cfg->ifmax=ceil((1.0+DOPPLERMAX)*(userInput.Freq+userInput.FreqBand)*cfg->tsft)+userInput.Dterms;
+  cfg->ifmin=floor((1.0-DOPPLERMAX)*userInput.Freq*cfg->tsft)-userInput.Dterms;
 
   /* allocate F-statistic arrays */
-  Fstat.F =(REAL8*)LALMalloc(GV.FreqImax*sizeof(REAL8));
-  if(GV.EstimSigParam) 
+  Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
+  if(userInput.EstimSigParam) 
     {
-      Fstat.Fa =(COMPLEX16*)LALMalloc(GV.FreqImax*sizeof(COMPLEX16));
-      Fstat.Fb =(COMPLEX16*)LALMalloc(GV.FreqImax*sizeof(COMPLEX16));
+      Fstat.Fa =(COMPLEX16*)LALMalloc(cfg->FreqImax*sizeof(COMPLEX16));
+      Fstat.Fb =(COMPLEX16*)LALMalloc(cfg->FreqImax*sizeof(COMPLEX16));
     } else {
       Fstat.Fa = NULL;
       Fstat.Fb = NULL;
@@ -1095,283 +1109,17 @@ INT4 SetGlobalVariables(struct CommandLineArgsTag CLA)
     fprintf(stdout,"\n");
     fprintf(stdout,"# SFT time baseline:                  %f min\n",header.tbase/60.0);
     fprintf(stdout,"# SFT freq resolution:                %f Hz\n",df);
-    fprintf(stdout,"# Starting search frequency:          %f Hz\n",GV.Freq);
-    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",GV.FreqBand);
-    fprintf(stdout,"# no of SFT in a DeFT:                %f\n",ceil((1.0*(GV.Tf - GV.Ti))/header.tbase));
-    fprintf(stdout,"# Actual # of SFTs:                   %d\n",GV.SFTno);
-    fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(GV.Tf - GV.Ti)/3600.0);
+    fprintf(stdout,"# Starting search frequency:          %f Hz\n",cfg->Freq);
+    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",cfg->FreqBand);
+    fprintf(stdout,"# no of SFT in a DeFT:                %f\n",ceil((1.0*(cfg->Tf - cfg->Ti))/header.tbase));
+    fprintf(stdout,"# Actual # of SFTs:                   %d\n",cfg->SFTno);
+    fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
 #endif
 
   return 0;  
 }
 
 /*******************************************************************************/
-
-INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
-{
-  INT4 c, errflg = 0;
-  INT4 option_index = 0;
-
-  /* ---------------------------------------------------------------------- */
-  /* Initialize default values */
-  CLA->Dterms=16;
-
-  CLA->Freq=0.0;
-  CLA->dFreq=0.0;
-  CLA->FreqBand=0.0;
-
-  CLA->Alpha=0.0;
-  CLA->AlphaBand=0.0;
-  CLA->Delta=0.0;
-  CLA->DeltaBand=0.0;
-  CLA->Spin=0.0;            
-  CLA->SpinBand=0.0;
-
-  /* these will not be used if the metric approach will be used: cmd-line option --use-mismatch -M */
-  CLA->dDelta=0.001;
-  CLA->dAlpha=0.001;
-  CLA->dSpin=0.0;
-
-  CLA->DataDir="";
-  CLA->EphemYear="";
-  CLA->EphemDir="";
-  CLA->IFO=-1;
-  CLA->noise=0;
-
-  CLA->EstimSigParam=0;
-  CLA->Fthreshold=10.0;
-  CLA->BaseName="SFT";
-
-  GV.useMetric = LAL_METRIC_NONE;
-  GV.metricMismatch = 0.02;
-  /* ---------------------------------------------------------------------- */
-
-  while (1)
-    {
-      static struct option long_options[] =
-	{
-	  {"Freq", 		required_argument, 0, 	'f'},
-	  {"FreqBand", 		required_argument, 0, 	'b'},
-	  {"dFreq", 		required_argument,0, 	'r'},
-	  {"Delta", 		required_argument, 0, 	'd'},
-	  {"dDelta", 		required_argument, 0, 	'g'},
-	  {"DeltaBand", 	required_argument, 0, 	'c'},
-	  {"Alpha", 		required_argument, 0, 	'a'},
-	  {"dAlpha", 		required_argument, 0, 	'l'},
-	  {"AlphaBand", 	required_argument, 0, 	'z'},
-	  {"Dterms", 		required_argument, 0, 	't'},
-	  {"EphemYear", 	required_argument, 0, 	'y'},
-	  {"EphemDir", 		required_argument, 0, 	'E'}, 
-	  {"DataDir", 		required_argument, 0, 	'D'},
-	  {"IFO", 		required_argument, 0, 	'I'},
-	  {"SignalOnly", 	no_argument, 0, 	'S'},
-	  {"Spin", 		required_argument, 0, 	's'},
-	  {"dSpin", 		required_argument, 0, 	'e'},
-	  {"SpinBand", 		required_argument, 0, 	'm'},
-	  {"EstimSigParam", 	no_argument, 0, 	'p'},
-	  {"BaseName",		required_argument,0, 	'i'},
-	  {"Fthreshold", 	required_argument, 0, 	'F'},
-	  {"useMetric", 	required_argument, 0, 	'M'},
-	  {"metricMismatch",	required_argument, 0, 	'X'},
-	  {"help", 		no_argument, 0, 	'h'},
-	  {"debug", 		required_argument, 0, 	'v'},
-	  {0, 0, 0, 0}
-	};
-
-      c = getopt_long(argc, argv, "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:pr:Ss:t:v:X:y:z:", long_options, &option_index);
-
-      if (c == -1) 
-	break;
-      
-      switch (c)
-	{
-	case 'f':
-	  /* first search frequency */
-	  CLA->Freq=atof(optarg);
-	  break;
-	case 'b':
-	  /* frequency band*/
-	  CLA->FreqBand=atof(optarg);
-	  break;
-	case 'r':
-	  /* frequency resolution */
-	  CLA->dFreq=atof(optarg);
-	  break;
-	case 'd':
-	  /* sky position delta -- latitude */
-	  CLA->Delta=atof(optarg);
-	  break;
-	case 'g':
-	  /* sky position delta resolution -- latitude */
-	  CLA->dDelta=atof(optarg);
-	  break;
-	case 'c':
-	  /* sky position delta band -- latitude */
-	  CLA->DeltaBand=atof(optarg);
-	  break;
-	case 'a':
-	  /* sky position alpha -- longitude */
-	  CLA->Alpha=atof(optarg);
-	  break;
-	case 'l':
-	  /* sky position alpha -- longitude */
-	  CLA->dAlpha=atof(optarg);
-	  break;
-	case 'z':
-	  /* sky position alpha -- longitude */
-	  CLA->AlphaBand=atof(optarg);
-	  break;
-	case 't':
-	  /* frequency bandwidth */
-	  CLA->Dterms=atof(optarg);
-	  break;
-	case 'y':
-	  /* observation year for e-files */
-	  CLA->EphemYear=optarg;
-	  break;
-	case 'E':
-	  /* e-file directory */
-	  CLA->EphemDir=optarg;
-	  break;
-	case 'D':
-	  /* SFT directory */
-	  CLA->DataDir=optarg;
-	  break;
-	case 'I':
-	  /* IFO number */
-	  CLA->IFO=atof(optarg);
-	  break;
-	case 'S':
-	  /* frequency bandwidth */
-	  CLA->noise=1;
-	  break;
-	case 's':
-	  /* Spin down order */
-	  CLA->Spin=atof(optarg);
-	  break;
-	case 'm':
-	  /* Spin down order */
-	  CLA->SpinBand=atof(optarg);
-	  break;
-	case 'p':
-	  /* Turn on estimating signal parameters via ML */
-	  CLA->EstimSigParam=1;
-	  break;
-	case 'F':
-	  /* Set the threshold for selection of F lines */
-	  CLA->Fthreshold=atof(optarg);
-	  break;
-	case 'e':
-	  /* Spin down order */
-	  CLA->dSpin=atof(optarg);
-	  break;
-	case 'M':
-	  /* use-metric */
-	  GV.useMetric = atoi (optarg);
-	  break;
-
-	case 'X':
-	  GV.metricMismatch = atof (optarg);
-	  break;
-	  
-	case 'v':
-	  lalDebugLevel = atoi (optarg);
-	  break;
-
-         case 'i':
-        /* Input Base Name */
-         CLA->BaseName=optarg;
-         break;
-	case 'h':
-	  /* print usage/help message */
-	  fprintf(stdout,"Arguments are (short alternative arguments in brackets):\n");
-	  fprintf(stdout,"\t --Freq(-f)\t\tFLOAT\tStarting search frequency in Hz (not set by default)\n");
-	  fprintf(stdout,"\t --FreqBand(-b)\t\tFLOAT\tDemodulation frequency band in Hz (set=0.0 by default)\n");
-	  fprintf(stdout,"\t --dFreq(-r)\t\tFLOAT\tDemodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default)\n");
-	  fprintf(stdout,"\t --Dterms(-t)\t\tINTEGER\tNumber of terms to keep in Dirichlet kernel sum (default 16)\n");
-	  fprintf(stdout,"\t --Alpha(-a)\t\tFLOAT\tSky position alpha (equatorial coordinates) in radians (default 0.0)\n");
-	  fprintf(stdout,"\t --AlphaBand(-z)\tFLOAT\tBand in alpha (equatorial coordinates) in radians (default 0.0)\n");
-	  fprintf(stdout,"\t --dAlpha(-l)\t\tFLOAT\tResolution in alpha (equatorial coordinates) in radians (default 0.001)\n");
-	  fprintf(stdout,"\t --Delta(-d)\t\tFLOAT\tSky position delta (equatorial coordinates) in radians (default 0.0)\n");
-	  fprintf(stdout,"\t --DeltaBand(-c)\tFLOAT\tBand in delta (equatorial coordinates) in radians (default 0.0)\n");
-	  fprintf(stdout,"\t --dDelta(-g)\t\tFLOAT\tResolution in delta (equatorial coordinates) in radians (default 0.001)\n");
-	  fprintf(stdout,"\t --DataDir(-D)\t\tSTRING\tDirectory where SFT's are located (not set by default) \n");
-	  fprintf(stdout,"\t --EphemDir(-E)\t\tSTRING\tDirectory where Ephemeris files are located (not set by default) \n");
-	  fprintf(stdout,"\t --EphemYear(-y)\tSTRING\tYear of ephemeris files to be used (not set by default) \n");
-	  fprintf(stdout,"\t --IFO(-I)\t\tSTRING\tDetector; must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar (not set by default) \n");
-	  fprintf(stdout,"\t --SignalOnly(-S)\t\tSignal only flag; (Default is signal+noise)\n");
-	  fprintf(stdout,"\t --Spin(-s)\t\tFLOAT\tStarting spindown parameter (default 0.0) \n");
-	  fprintf(stdout,"\t --SpinBand(-m)\t\tFLOAT\tSpindown band (default 0.0)\n");
-	  fprintf(stdout,"\t --dSpin(-e)\t\tFLOAT\tSpindown resolution (default 1/(2*Tobs*Tsft*Nsft)\n");
-	  fprintf(stdout,"\t --EstimSigParam(-p)\t\tdo Signal Parameter Estimation (Default: no signal parameter estimation)\n");
-	  fprintf(stdout,"\t --Fthreshold(-F)\tFLOAT\tSignal Set the threshold for selection of 2F (default 10.0\n");
-	  fprintf(stdout,"\t --BaseName(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n");
-	  fprintf(stdout,"\t --useMetric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n");
-	  fprintf(stdout,"\t --metricMismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n");
-	  fprintf(stdout,"\t --debug(-v)\t\tINT2\tSet lalDebugLevel (Default=0)\n");
-	  fprintf(stdout,"\t --help(-h)\t\t\tPrint this message.\n");
-	  exit(0);
-	  break;
-	default:
-	  /* unrecognized option */
-	  errflg++;
-	  fprintf(stderr,"Unrecognized option argument %c. Try ComputeFStatistic -h\n",c);
-	  exit(1);
-      break;
-	}
-    }
-
-  if(CLA->IFO == -1)
-    {
-      fprintf(stderr,"No IFO specified; input with -I option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      return 1;
-    }      
-  if(CLA->DataDir == "")
-    {
-      fprintf(stderr,"No SFT directory specified; input directory with -D option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      return 1;
-    }      
-  if(CLA->EphemDir == "")
-    {
-      fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      return 1;
-    }      
-  if(CLA->EphemYear == "")
-    {
-      fprintf(stderr,"No ephemeris year (earth??.dat, sun??.dat) directory specified; input year with -y option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      return 1;
-    }      
-  if(CLA->Freq == 0.0)
-    {
-      fprintf(stderr,"No search frequency specified; set with -f option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-     return 1;
-    }      
-  if(CLA->dDelta == 0.0)
-    {
-      fprintf(stderr,"Value of Delta resolution ( = 0.0) not allowed.\n");
-      return 1;
-    }      
-  if(CLA->dAlpha == 0.0)
-    {
-      fprintf(stderr,"Value of Alpha resolution ( = 0.0) not allowed.\n");
-      return 1;
-    }      
-
-  if(CLA->Alpha > LAL_TWOPI)
-    {
-      fprintf(stderr,"Value of Alpha > 2pi.\n");
-      return 1;
-    }
-
-
-
-  return errflg;
-}
 
 
 
@@ -1408,8 +1156,7 @@ int Freemem(void)
 
   INT4 k;
 
-  /*Free SFTData*/
-
+  /* Free SFTData */
   for (k=0;k<GV.SFTno;k++)
     {
       LALFree(SFTData[k]->fft->data->data);
@@ -1419,17 +1166,17 @@ int Freemem(void)
     }
   LALFree(SFTData);
 
-  /*Free timestamps*/
+  /* Free timestamps */
   LALFree(timestamps);
 
   LALFree(Fstat.F);
-  if(GV.EstimSigParam) 
+  if(userInput.EstimSigParam) 
     {
       LALFree(Fstat.Fa);
       LALFree(Fstat.Fb);
     }
 
-  /*Free DemodParams*/
+  /* Free DemodParams */
   LALSDestroyVector(&status, &(DemodParams->amcoe->a));
   LALSDestroyVector(&status, &(DemodParams->amcoe->b));
 
@@ -1437,22 +1184,18 @@ int Freemem(void)
   LALFree(DemodParams->spinDwn);
   LALFree(DemodParams);
 
+  /* Free config-Variables and userInput stuff */
+  if (userInput.skyRegion) LALFree (userInput.skyRegion);
+
   /* Free DopplerScan-stuff (grid) */
   FreeDopplerScan (&status, &thisScan);
 
+  /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
   if (highFLines->Iclust) LALFree(highFLines->Iclust);
   if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
-    
 
-  /*
-  if (highFLines != NULL){
-    free(highFLines->NclustPoints);
-    free(highFLines->Iclust);
-    free(highFLines->clusters);
-    free(highFLines);
-  }
-  */ /* Did not allocate memory for highFLines using malloc/calloc */ 
+  /* did we forget anything ? */
   LALCheckMemoryLeaks();
   
   return 0;
@@ -1542,7 +1285,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   for (ntop=0; ntop<ReturnMaxN; ntop++)
     if (Fstat.F[indexes[ntop]]>TwoFthr){
       err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-		  GV.Freq+indexes[ntop]*GV.dFreq,
+		  userInput.Freq+indexes[ntop]*userInput.dFreq,
 		  Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
       if (err<=0) {
 	fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
@@ -1707,8 +1450,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSD
      /*  PSD.txt file contains freq, PSD, noise floor   */
      for (i=0;i<nbins;i++){ 
-       REAL8 r0,r1,r2;
        REAL4 freq;
+       REAL8 r0,r1,r2;
        freq=(GV.ifmin+i)/GV.tsft;
        r0=Sp->data[i];
        r1=FloorSp->data[i];
@@ -1768,8 +1511,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSDLINES
    /*  PSDLines file contains: PSD, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
-     REAL8 r0,r1,r2;
      REAL4 freq;
+     REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
      freq=(GV.ifmin+SpLines->Iclust[i])/GV.tsft;
      r0=Sp->data[j];
@@ -1782,8 +1525,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSD   
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
-     REAL8 r0,r1,r2;
      REAL4 freq;
+     REAL8 r0,r1,r2;
      freq=(GV.ifmin+i)/GV.tsft;
      r0=Sp->data[i];
      r1=FloorSp->data[i];
@@ -1844,7 +1587,7 @@ INT4 EstimateFLines(void)
 
   nbins=(UINT4)nbins;
 
-  THR=GV.Fthreshold;
+  THR=userInput.Fthreshold;
 
 
   /* wings=windowSize/2; */
@@ -1852,7 +1595,7 @@ INT4 EstimateFLines(void)
   /*  with ~ 10 h observation time */
   /*  0.0001 = 0.0002/2 */
   /*  let me put 0.005 */
-  dmp=0.5+0.0002/GV.dFreq;
+  dmp=0.5+0.0002/userInput.dFreq;
   wings=dmp;
 
 
@@ -1909,7 +1652,7 @@ INT4 EstimateFLines(void)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=((GV.Freq/GV.dFreq)+0.5);
+  outliersInput->ifmin=((userInput.Freq/userInput.dFreq)+0.5);
   outliersInput->data = F1;
 
   ComputeOutliers(outliersInput, outliersParams, outliers);
@@ -1921,7 +1664,7 @@ INT4 EstimateFLines(void)
      for (i=0;i<nbins;i++){ 
        REAL4 freq;
        REAL8 r0,r1,r2;
-       freq=GV.Freq+i*GV.dFreq;
+       freq=userInput.Freq + i*userInput.dFreq;
        r0=F1->data[i];
        r1=FloorF1->data[i];
        fprintf(outfile,"%f %E %E\n",freq,r0,r1);
@@ -1987,10 +1730,10 @@ INT4 EstimateFLines(void)
 #ifdef FILE_FLINES  
    /*  FLines file contains: F, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
-     REAL8 r0,r1,r2;
      REAL4 freq;
+     REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
-     freq=(GV.Freq+SpLines->Iclust[i]*GV.dFreq);
+     freq=(userInput.Freq+SpLines->Iclust[i]*userInput.dFreq);
      r0=F1->data[j];
      r1=FloorF1->data[j];
      r2=SpLines->clusters[i]*FloorF1->data[j];
@@ -2000,9 +1743,9 @@ INT4 EstimateFLines(void)
 #ifdef FILE_FTXT   
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
-     REAL8 r0,r1,r2;
      REAL4 freq;
-     freq=GV.Freq+i*GV.dFreq;
+     REAL8 r0,r1,r2;
+     freq=userInput.Freq + i*userInput.dFreq;
      r0=F1->data[i];
      r1=FloorF1->data[i];
      fprintf(outfile,"%f %E %E\n",freq,r0,r1);
@@ -2053,9 +1796,9 @@ INT4 NormaliseSFTDataRngMdn(void)
      multiplied by F statistics.
   */
 
-  if (GV.noise != 1)
-    /*    MedianBias(&windowSize,&medianbias); */
+  if (userInput.SignalOnly != 1)
     RngMedBias (&status, &medianbias, windowSize);
+
 
   LALDCreateVector(&status, &Sp, (UINT4)nbins);
   LALDCreateVector(&status, &RngMdnSp, (UINT4)nbins);
@@ -2111,7 +1854,7 @@ INT4 NormaliseSFTDataRngMdn(void)
 	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
       }
       
-      if(GV.noise == 1){
+      if(userInput.SignalOnly == 1){
 	B=(1.0*GV.nsamples)/(1.0*GV.tsft);
 	deltaT=1.0/(2.0*B);
 	norm=deltaT/sqrt(GV.tsft);
@@ -2160,3 +1903,444 @@ INT4 NormaliseSFTDataRngMdn(void)
 }
 
 /*******************************************************************************/
+/*----------------------------------------------------------------------
+ * set all the default settings for the user-input variables 
+ *----------------------------------------------------------------------*/
+void
+SetInputDefaults ( UserInput *input )
+{
+
+  input->Dterms=16;
+
+  input->Freq=0.0;
+  input->dFreq=0.0;
+  input->FreqBand=0.0;
+
+  input->Alpha=0.0;
+  input->AlphaBand=0.0;
+  input->Delta=0.0;
+  input->DeltaBand=0.0;
+  input->Spin=0.0;            
+  input->SpinBand=0.0;
+
+  input->SignalOnly=0;
+
+  input->EstimSigParam=0;
+  input->Fthreshold=10.0;
+  strcpy (input->BaseName, "SFT");
+
+  /* defaults on metric tiling */
+  input->useMetric = LAL_METRIC_NONE;
+  input->metricMismatch = 0.02;
+
+  /* these are only used for non-metric tiling */
+  input->dDelta=0.001;
+  input->dAlpha=0.001;
+  input->dSpin=0.0;
+
+  /* the following values NEED to be specified by user. Set them to recognizable fail-defaults */
+  input->IFO = -1;
+  input->DataDir[0] = '\0';
+  input->EphemDir[0] = '\0';
+  input->BaseName[0] = '\0';
+  input->EphemYear = -1;
+
+
+  return;
+
+} /* SetInputDefaults() */
+
+/*----------------------------------------------------------------------
+ * Read User's input: first from config-file (if applicable), then cmd-line
+ *----------------------------------------------------------------------*/
+INT2 
+ReadUserInput (int argc, char *argv[], UserInput *input)
+{
+  INT2 i;
+  CHAR fname[MAXFILENAMELENGTH] = "";
+
+  /*----------------------------------------------------------------------
+   * pre-process command-line: we want config-file and debug-level 
+   */
+  for (i=1; i < argc; i++)
+    {
+      /* was a config-file specified ? */
+      if ( argv[i][0] == '@' )
+	{
+	  strncpy (fname, argv[i]+1, MAXFILENAMELENGTH);
+	  fname[MAXFILENAMELENGTH-1] = '\0'; /* terminate in case it was truncated */
+	}
+
+      /* check debug-level, so that config-file reading can use it */
+      if ( strncmp (argv[i], "-v", 2) == 0 )
+	{
+	  if (strlen(argv[i]) == 2) 
+	    {
+	      if (i+1<argc) lalDebugLevel = atoi (argv[i+1]);
+	    }
+	  else
+	    lalDebugLevel = atoi (argv[i]+2);
+	}
+
+    } /* for cmd-line */
+  /*----------------------------------------------------------------------*/
+
+  /* if config-file specified, read from that first */
+  if (fname[0] != '\0')
+    if ( ReadCfgfileInput (input, fname))
+      {
+	printf ("\nERROR reading config-file: %s\n", fname);
+	return 1;
+      }
+
+  /* now do proper cmdline parsing: overloads config-file settings */
+  if (ReadCmdlineInput (argc, argv, input))
+    return 1;
+
+
+  /* do some sanity checks on the user-input before we proceed */
+  if(input->IFO == -1)
+    {
+      fprintf(stderr,"No IFO specified; input with -I option.\n");
+      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
+      return 1;
+    }      
+  if(input->DataDir[0] == 0)
+    {
+      fprintf(stderr,"No SFT directory specified; input directory with -D option.\n");
+      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
+      return 1;
+    }      
+  if(input->EphemDir[0] == 0)
+    {
+      fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
+      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
+      return 1;
+    }      
+  if(input->EphemYear == -1)
+    {
+      fprintf(stderr,"No ephemeris year (earth??.dat, sun??.dat) directory specified; input year with -y option.\n");
+      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
+      return 1;
+    }      
+  if(input->Freq == 0.0)
+    {
+      fprintf(stderr,"No search frequency specified; set with -f option.\n");
+      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
+     return 1;
+    }      
+  if(input->dDelta == 0.0)
+    {
+      fprintf(stderr,"Value of Delta resolution ( = 0.0) not allowed.\n");
+      return 1;
+    }      
+  if(input->dAlpha == 0.0)
+    {
+      fprintf(stderr,"Value of Alpha resolution ( = 0.0) not allowed.\n");
+      return 1;
+    }      
+
+  /* don't allow negative bands (for safty in griding-routines) */
+  if ( (input->AlphaBand < 0) ||  (input->DeltaBand < 0) )
+    {
+      fprintf (stderr, "\nNegative value of sky-bands not allowed (alpha or delta)!\n");
+      return 1;
+    }
+
+  /* check consistency of bounds for the sky-region */
+  /*  FIXME: actually that's nonsense, as the region might stretch across this coordinate "cut" */
+  if ( (input->Alpha < 0) || (input->Alpha >= LAL_TWOPI) || (fabs(input->Delta) > LAL_PI_2) 
+       ||(input->Alpha + input->AlphaBand >= LAL_TWOPI) || (input->Delta + input->DeltaBand > LAL_PI_2) )
+    {
+      fprintf (stderr, "\nSorry, sky-region is not supposed to cross either 0-meridian or a pole!\n");
+      return 1;
+    }
+
+  return 0;
+  
+} /* ReadUserInput() */
+
+/*----------------------------------------------------------------------
+ * parse command-line into userInput structure
+ *----------------------------------------------------------------------*/
+INT2 
+ReadCmdlineInput (int argc, char *argv[], UserInput *input)
+{
+  INT2 errflg = 0;
+  INT4 c; 
+  INT4 option_index = 0;
+
+  const char *optstring = "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:pr:Ss:t:v:X:xy:z:";
+  struct option long_options[] =
+    {
+      {"Freq", 			required_argument, 0, 	'f'},
+      {"FreqBand", 		required_argument, 0, 	'b'},
+      {"dFreq", 		required_argument,0, 	'r'},
+      {"Delta", 		required_argument, 0, 	'd'},
+      {"dDelta", 		required_argument, 0, 	'g'},
+      {"DeltaBand", 		required_argument, 0, 	'c'},
+      {"Alpha", 		required_argument, 0, 	'a'},
+      {"dAlpha", 		required_argument, 0, 	'l'},
+      {"AlphaBand", 		required_argument, 0, 	'z'},
+      {"Dterms", 		required_argument, 0, 	't'},
+      {"EphemYear", 		required_argument, 0, 	'y'},
+      {"EphemDir", 		required_argument, 0, 	'E'}, 
+      {"DataDir", 		required_argument, 0, 	'D'},
+      {"IFO", 			required_argument, 0, 	'I'},
+      {"SignalOnly", 		no_argument, 0, 	'S'},
+      {"Spin", 			required_argument, 0, 	's'},
+      {"dSpin", 		required_argument, 0, 	'e'},
+      {"SpinBand", 		required_argument, 0, 	'm'},
+      {"EstimSigParam", 	no_argument, 0, 	'p'},
+      {"BaseName",		required_argument,0, 	'i'},
+      {"Fthreshold", 		required_argument, 0, 	'F'},
+      {"useMetric", 		required_argument, 0, 	'M'},
+      {"metricMismatch",	required_argument, 0, 	'X'},
+      {"help", 			no_argument, 0, 	'h'},
+      {0, 0, 0, 0}
+    };
+
+  const char *helpmsg = "Arguments are (short alternative arguments in brackets):\n"
+    "\t --Freq(-f)\t\tFLOAT\tStarting search frequency in Hz (not set by default)\n"
+    "\t --FreqBand(-b)\t\tFLOAT\tDemodulation frequency band in Hz (set=0.0 by default)\n"
+    "\t --dFreq(-r)\t\tFLOAT\tDemodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default)\n"
+    "\t --Dterms(-t)\t\tINTEGER\tNumber of terms to keep in Dirichlet kernel sum (default 16)\n"
+    "\t --Alpha(-a)\t\tFLOAT\tSky position alpha (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --AlphaBand(-z)\tFLOAT\tBand in alpha (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --dAlpha(-l)\t\tFLOAT\tResolution in alpha (equatorial coordinates) in radians (default 0.001)\n"
+    "\t --Delta(-d)\t\tFLOAT\tSky position delta (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --DeltaBand(-c)\tFLOAT\tBand in delta (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --dDelta(-g)\t\tFLOAT\tResolution in delta (equatorial coordinates) in radians (default 0.001)\n"
+    "\t --DataDir(-D)\t\tSTRING\tDirectory where SFT's are located (not set by default) \n"
+    "\t --EphemDir(-E)\t\tSTRING\tDirectory where Ephemeris files are located (not set by default) \n"
+    "\t --EphemYear(-y)\tSTRING\tYear of ephemeris files to be used (not set by default) \n"
+    "\t --IFO(-I)\t\tSTRING\tDetector; must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar (not set by default) \n"
+    "\t --SignalOnly(-S)\t\tSignal only flag; (Default is signal+noise)\n"
+    "\t --Spin(-s)\t\tFLOAT\tStarting spindown parameter (default 0.0) \n"
+    "\t --SpinBand(-m)\t\tFLOAT\tSpindown band (default 0.0)\n"
+    "\t --dSpin(-e)\t\tFLOAT\tSpindown resolution (default 1/(2*Tobs*Tsft*Nsft)\n"
+    "\t --EstimSigParam(-p)\t\tdo Signal Parameter Estimation (Default: no signal parameter estimation)\n"
+    "\t --Fthreshold(-F)\tFLOAT\tSignal Set the threshold for selection of 2F (default 10.0\n"
+    "\t --BaseName(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n"
+    "\t --useMetric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n"
+    "\t --metricMismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n"
+    "\t -v\t\t\tINT2\tSet lalDebugLevel (Default=0)\n"
+    "\t -C\t\t\tSTRING\tThe name of a config-file to read\n"
+    "\n\t --help(-h)\t\t\tPrint this message.\n\n"
+    "\t @FNAME\t\t\tRead settings from config-file FNAME\n\n";
+
+
+  while (1)
+    {
+      c = getopt_long(argc, argv, optstring, long_options, &option_index);
+
+      if (c == -1) 
+	break;
+      
+      switch (c)
+	{
+	case 'f':
+	  /* first search frequency */
+	  input->Freq=atof(optarg);
+	  break;
+	case 'b':
+	  /* frequency band*/
+	  input->FreqBand=atof(optarg);
+	  break;
+	case 'r':
+	  /* frequency resolution */
+	  input->dFreq=atof(optarg);
+	  break;
+	case 'd':
+	  /* sky position delta -- latitude */
+	  input->Delta=atof(optarg);
+	  break;
+	case 'g':
+	  /* sky position delta resolution -- latitude */
+	  input->dDelta=atof(optarg);
+	  break;
+	case 'c':
+	  /* sky position delta band -- latitude */
+	  input->DeltaBand=atof(optarg);
+	  break;
+	case 'a':
+	  /* sky position alpha -- longitude */
+	  input->Alpha=atof(optarg);
+	  break;
+	case 'l':
+	  /* sky position alpha -- longitude */
+	  input->dAlpha=atof(optarg);
+	  break;
+	case 'z':
+	  /* sky position alpha -- longitude */
+	  input->AlphaBand=atof(optarg);
+	  break;
+	case 't':
+	  /* frequency bandwidth */
+	  input->Dterms=atof(optarg);
+	  break;
+	case 'y':
+	  /* observation year for e-files */
+	  input->EphemYear = atoi (optarg);
+	  break;
+	case 'I':
+	  /* IFO number */
+	  input->IFO=atof(optarg);
+	  break;
+	case 'S':
+	  /* frequency bandwidth */
+	  input->SignalOnly = 1;
+	  break;
+	case 's':
+	  /* Spin down order */
+	  input->Spin=atof(optarg);
+	  break;
+	case 'm':
+	  /* Spin down order */
+	  input->SpinBand=atof(optarg);
+	  break;
+	case 'p':
+	  /* Turn on estimating signal parameters via ML */
+	  input->EstimSigParam=1;
+	  break;
+	case 'F':
+	  /* Set the threshold for selection of F lines */
+	  input->Fthreshold=atof(optarg);
+	  break;
+	case 'e':
+	  /* Spin down order */
+	  input->dSpin=atof(optarg);
+	  break;
+	case 'M':
+	  /* use-metric */
+	  input->useMetric = atoi (optarg);
+	  break;
+
+	case 'X':
+	  input->metricMismatch = atof (optarg);
+	  break;
+	  
+	case 'v':
+	  lalDebugLevel = atoi (optarg);
+	  break;
+
+	case 'E':
+	  /* e-file directory */
+	  if (strlen (optarg) > sizeof(input->EphemDir)-1)
+	    {
+	      LALPrintError ("Input string too long: -E %s\n ", optarg);
+	      exit(1);
+	    }
+	  strcpy (input->EphemDir, optarg);
+	  break;
+	case 'D':
+	  /* SFT directory */
+	  if (strlen (optarg) > sizeof(input->DataDir)-1)
+	    {
+	      LALPrintError ("Input string too long: -D %s\n ", optarg);
+	      exit(1);
+	    }
+	  strcpy (input->DataDir, optarg);
+	  break;
+	  
+	case 'i':
+	   /* Input Base Name */
+	   if (strlen (optarg) > sizeof(input->BaseName)-1)
+	     {
+	       LALPrintError ("Input string too long: -i %s\n ", optarg);
+	       exit(1);
+	     }
+	   strcpy (input->BaseName, optarg);
+	   break;
+	case 'h':
+	  /* print usage/help message */
+	  printf (helpmsg);
+	  exit(0);
+	  break;
+
+	default:
+	  /* unrecognized option */
+	  errflg++;
+	  fprintf(stderr,"Unrecognized option argument %c. Try ComputeFStatistic -h\n",c);
+	  exit(1);
+	  break;
+	}
+    }
+
+  return errflg;
+
+} /* ReadCmdlineInput() */
+
+/*----------------------------------------------------------------------
+ * Read config-variables from cfgfile and parse into input-structure
+ *
+ * an error is reported if the config-file reading fails, but the 
+ * individual variable-reads are treated as optional
+ *----------------------------------------------------------------------*/
+INT2 
+ReadCfgfileInput (UserInput *input, CHAR *cfgfile)
+{
+  LALConfigData *cfg = NULL;
+  CHARVector string;
+
+  LALLoadConfigFile (&status, &cfg, cfgfile);
+
+  if (status.statusCode != 0)
+    {
+      LALError (&status, "Error parsing config-file");
+      return 1;
+    }
+
+  LALReadConfigINT4Variable   (&status, &(input->Dterms), 	cfg, "Dterms" );
+  LALReadConfigINT4Variable   (&status, &(input->IFO), 		cfg, "IFO");
+  LALReadConfigBOOLVariable   (&status, &(input->SignalOnly), 	cfg, "SignalOnly");
+  LALReadConfigBOOLVariable   (&status, &(input->EstimSigParam),cfg, "EstimSigParam");
+  LALReadConfigREAL8Variable  (&status, &(input->Freq), 	cfg, "Freq");
+  LALReadConfigREAL8Variable  (&status, &(input->dFreq), 	cfg, "dFreq");
+  LALReadConfigREAL8Variable  (&status, &(input->FreqBand), 	cfg, "FreqBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Alpha), 	cfg, "Alpha");
+  LALReadConfigREAL8Variable  (&status, &(input->dAlpha), 	cfg, "dAlpha");
+  LALReadConfigREAL8Variable  (&status, &(input->AlphaBand), 	cfg, "AlphaBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Delta), 	cfg, "Delta");
+  LALReadConfigREAL8Variable  (&status, &(input->dDelta), 	cfg, "dDelta");
+  LALReadConfigREAL8Variable  (&status, &(input->DeltaBand), 	cfg, "DeltaBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Spin), 	cfg, "Spin");
+  LALReadConfigREAL8Variable  (&status, &(input->dSpin), 	cfg, "dSpin");
+  LALReadConfigREAL8Variable  (&status, &(input->SpinBand), 	cfg, "SpinBand");
+  LALReadConfigREAL8Variable  (&status, &(input->Fthreshold), 	cfg, "Fthreshold");
+
+  LALReadConfigINT2Variable   (&status, &(input->EphemYear), 	cfg, "EphemYear");
+
+  LALReadConfigINT2Variable   (&status, &(input->useMetric), 	cfg, "useMetric");	
+  LALReadConfigREAL8Variable  (&status, &(input->metricMismatch),cfg, "metricMismatch");	
+
+  /* reading of fixed-size array string is slightly more tricky */
+  string.length = sizeof (input->DataDir) - 1;
+  string.data = input->DataDir;
+  LALReadConfigSTRINGNVariable (&status, &string, 		cfg, "DataDir");
+
+  string.length = sizeof (input->EphemDir) - 1;
+  string.data = input->EphemDir;
+  LALReadConfigSTRINGNVariable (&status, &string, 		cfg, "EphemDir");
+
+  string.length = sizeof (input->BaseName) - 1;
+  string.data = input->BaseName;
+  LALReadConfigSTRINGNVariable (&status, &string,	 	cfg, "BaseName");
+
+  
+  LALReadConfigSTRINGVariable (&status, &(input->skyRegion), 	cfg, "skyRegion");
+  
+  /* ok, that should be it: check if there were more definitions we did not read */
+  LALCheckConfigReadComplete (&status, cfg, CONFIGFILE_ERROR);	/* let's be strict about this */
+
+  if (status.statusCode != 0) {
+    REPORTSTATUS (&status);
+    return 1;
+  }
+
+  LALDestroyConfigData (&status, &cfg);
+
+  return 0;
+
+} /* ReadCfgfileInput() */
+

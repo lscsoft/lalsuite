@@ -37,10 +37,16 @@ just the ones that the user requested.  The actual parameters that
 will be used are computed as exact integers, which correspond as closely as
 possible to the users request, but are not the same.  Don't use these variables! */
 
-struct CommandLineArgsTag {
+/* 
+ * this structure (formerly CommandLineArgs) hold ALL the input the user has requested 
+ * including from config-file
+ *
+ * NOTE: don't put anything else in here, as this will have to be recorded together with the results 
+ */
+typedef struct {
   INT4 Dterms ;
   INT4 IFO;
-  INT4 noise;
+  BOOLEAN SignalOnly;
   BOOLEAN EstimSigParam;
   REAL8 Freq;
   REAL8 dFreq;
@@ -55,50 +61,45 @@ struct CommandLineArgsTag {
   REAL8 dSpin;
   REAL8 SpinBand;
   REAL8 Fthreshold;
-  CHAR *DataDir;
-  CHAR *EphemDir;
-  CHAR *EphemYear;
-  CHAR *BaseName;
-} CommandLineArgs;
 
-typedef struct GlobalVariablesTag {
-  char EphemEarth[256];
-  char EphemSun[256];
-  REAL8 Freq;
-  REAL8 dFreq;
-  REAL8 FreqBand;
-  INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
-  REAL8 Alpha;
-  REAL8 dAlpha;
-  REAL8 AlphaBand;
-  REAL8 Delta;
-  REAL8 dDelta;
-  REAL8 DeltaBand;
-
-  REAL8 Spin;
-  REAL8 dSpin;
-  REAL8 SpinBand;
-  INT4 SpinImax;
-  INT4 ifmax;
-  INT4 ifmin;
-  INT4 Dterms;
-  REAL8 df;
-  REAL8 tsft;
-  INT4 SFTno;
-  INT4 noise;
-  INT4 nsamples;
-  INT4 Ti;        /* GPS seconds of first SFT */
-  INT4 Tf;        /* GPS seconds of last SFT */
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-  INT4 IFO;
-  BOOLEAN EstimSigParam;
-  REAL8 Fthreshold;
+  INT2 EphemYear;
+  CHAR DataDir[MAXFILENAMELENGTH];
+  CHAR EphemDir[MAXFILENAMELENGTH];
+  CHAR BaseName[MAXFILENAMELENGTH];
 
   INT2 useMetric;	/* use metric grid or "manual" stepping : 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;	/* maximum allowed mismatch for metric grid */
   BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
+  
+  CHAR *skyRegion;
+
+} UserInput;
+
+/* 
+ *this structure holds all configuration-settings for the code, including the 
+ * user-input variables, but also derived ones 
+ */
+typedef struct {
+  CHAR EphemEarth[MAXFILENAMELENGTH];
+  CHAR EphemSun[MAXFILENAMELENGTH];
+  INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
+
+  INT4 SpinImax;
+  INT4 ifmax;
+  INT4 ifmin;
+
+  REAL8 df;
+  REAL8 tsft;
+  INT4 SFTno;
+
+  INT4 nsamples;
+  INT4 Ti;        /* GPS seconds of first SFT */
+  INT4 Tf;        /* GPS seconds of last SFT */
+  CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
+
   LALDetector Detector;              /* Our detector*/
-} GlobalVariables;
+
+} ConfigVariables;
   
 struct headertag {
     REAL8 endian;
@@ -109,34 +110,3 @@ struct headertag {
     INT4  nsamples;
 } header;
   
-/* Function Prototypes */
-
-INT4 ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
-INT4 SetGlobalVariables(struct CommandLineArgsTag CLA);
-INT4 ReadSFTData(void);
-INT4 CreateDemodParams(void);
-INT4 NormaliseSFTData(void);
-INT4 CreateDetector(LALDetector *Detector);
-INT4 AllocateMem(void);
-INT4 Freemem(void);
-
-INT4 EstimateSignalParameters(INT4 * maxIndex);
-INT4 EstimatePSDLines(void);
-INT4 EstimateFLines(void);
-INT4 writeFLines(INT4 *maxIndex);
-INT4 NormaliseSFTDataRngMdn(void);
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
-INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
-int compare(const void *ip, const void *jp);
-INT4 MedianBias(INT2 * BlockSize, REAL8 * medianbias);
-INT4 writeFaFb(INT4 *maxIndex);
-
-
-
-
-
-
-
-
-
-
