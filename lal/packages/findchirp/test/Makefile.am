@@ -15,6 +15,8 @@ EXTRA_DIST      = NoTest FindChirpTmpltTest.c FindChirpSPTest.c
 #FindChirpTmpltTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 #FindChirpSPTest_SOURCES = FindChirpSPTest.c
 #FindChirpSPTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+# Remove the following line when the previous four are uncommented
+EXTRA_TEXSOURCES =  FindChirpTmpltTest.c FindChirpSPTest.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = FindChirpTmpltTest
