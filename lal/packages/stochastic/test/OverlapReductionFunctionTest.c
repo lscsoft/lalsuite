@@ -54,8 +54,8 @@ It then verifies that the correct frequency series are generated for
 some simple test cases:
 \begin{enumerate}
 \item co\"{\i}ncident, co\"aligned interferometers: $\gamma(f)=1$
-\item co\"aligned interferometers lying parallel to the $x$--$y$ plane
-separated only in $z$: $\gamma(f)=$
+% \item co\"aligned interferometers lying parallel to the $x$--$y$ plane
+% separated only in $z$: $\gamma(f)=$
 \item completely misaligned interferometers lying parallel to the
 $x$--$y$ plane separated only in $z$:  $\gamma(f)=0$.
 \end{enumerate}
@@ -428,14 +428,16 @@ int main( int argc, char *argv[] )
     if ( (overlap.data->data[i] - overlapVal) &&
          abs((overlap.data->data[i] - overlapVal) > OVERLAPREDUCTIONFUNCTIONTESTC_TOL ) )
     {
-      printf("  FAIL: Valid data test #3 (misaligned IFOs)\n");
+      printf("  FAIL: Valid data test #2 (misaligned IFOs)\n");
       return OVERLAPREDUCTIONFUNCTIONTESTC_EFLS;
     }
   }
-  printf("  PASS: Valid data test #3 (misaligned IFOs)\n");
+  printf("  PASS: Valid data test #2 (misaligned IFOs)\n");
 
   /* change parameters */
-  detectors.detectorTwo = crossOnZAxis;
+  /* 
+     detectors.detectorTwo = plusOnZAxis; 
+   */
 
   /* clean up valid data */
   LALSDestroyVector(&status, &(overlap.data));
