@@ -1,12 +1,12 @@
-#!/usr/bin/env python2.1
+#!/usr/bin/env python2.2
 """
-Monte Carlo driver of the FDS pipeline.
+Monte Carlo characterizer of the FDS pipeline.
 """
 
 # Import standard modules to the python path
 import string, os,sys, math, random, shutil, time, os.path
 # Python path which runs the Xavier's scripts
-pythonexe='/usr/bin/python2.1'
+pythonexe='/usr/bin/python2.2'
 
 # This and Xavier's scripts are not compatible with an older version python.... 
 if sys.version[:3] < '2.1':
@@ -50,6 +50,7 @@ def myrm(directory):
         __com='rm -rf '+directory+'/*'
         print 'running:', __com
         os.system(__com)
+        os.rmdir(directory)
     sys.stdout.flush()
     sys.stderr.flush()
 
@@ -63,10 +64,11 @@ print mc_id
 homedir='/home/yousuke/mchar_pipeline/'  #Where the result files should be copied to.
 parentdir='/scratch/tmp/yousuke'         #Central working dir on each node.
 codesdir=parentdir+'/codes'              #Where all the codes and timestamps shuld be.
-ephemerisdir=parentdir+'/ephemeris'      
-startingdir=parentdir+'/AllSky.'+mc_id   #Working dir. 
+ephemerisdir=parentdir+'/ephemeris'      #Where ephemeris files shuld be.
+startingdir=parentdir+'/AllSky.'+mc_id   #Working dir.
 
 myrm(startingdir)
+
 try: os.mkdir(startingdir)
 except OSError, err:
     import errno
@@ -125,7 +127,7 @@ paramsfile='allsky_pulsar_pipe_monte.ini'
 mcparamsfile='mcparams.'+mc_id
 resultsfile='results.'+mc_id
 fres=open(resultsfile,'a')
-Nmonte=20
+Nmonte=1
 random.seed(int(mc_id))
 monte_counter=0
 while monte_counter < Nmonte:
@@ -144,7 +146,7 @@ while monte_counter < Nmonte:
     phisignal  = random.uniform(  0.0,         2.0*math.pi )
     cosiota    = random.uniform( -1.0,         1.0 )
 # We use lalapps_Makefakedata in this script....
-    h0         = random.uniform(  4.0e-23,      4.0e-22 )
+    h0         = random.uniform(  6.0e-23,      4.0e-22 )
 
     aPlussignal = h0*(1.0+cosiota**2)/2.0
     aCrossignal = h0*cosiota
@@ -163,7 +165,7 @@ while monte_counter < Nmonte:
 ## for search scripts
     fband=0.1
     fstart=fsignal-fband/2.0
-    skyband=0.28
+    skyband=1.0
     randalpha=random.uniform(-0.01,0.01)
     randdelta=random.uniform(-0.01,0.01)
     if math.cos(dsignal)/skyband < 1.0/2.0/math.pi:
@@ -405,5 +407,6 @@ for ic in range(len(ifos)):
     myrm(sftdir[ic])
 os.chdir(homedir)    
 myrm(startingdir)
+os.system('rm -rf /scratch/tmp/yousuke/AllSky*')
 
 print time.strftime("%a, %d %b %Y %H:%M:%S +0000", time.localtime())
