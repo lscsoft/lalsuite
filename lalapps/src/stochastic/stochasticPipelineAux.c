@@ -68,11 +68,11 @@ void readDataPair(LALStatus *status,
 	REAL4TimeSeries dataStreamTwo;
 	ResampleTSParams resampleParams;
 	LIGOTimeGPS bufferStartTime;
-        UINT8 startTime;
+	UINT8 startTime;
 	INT4 buffer;
 	INT4 resampleRate;
 	INT4 sampleRate;
-     
+
 	/* read parameters */
 	startTime = params->startTime;
 	buffer = params->buffer;
@@ -163,8 +163,8 @@ void readDataPair(LALStatus *status,
 	strncpy(streamPair->streamTwo->name,dataStreamTwo.name, LALNameLength);
 	streamPair->streamOne->epoch.gpsSeconds = startTime;
 	streamPair->streamTwo->epoch.gpsSeconds = startTime;
-        streamPair->streamOne->epoch.gpsNanoSeconds = 0;
-	streamPair->streamTwo->epoch.gpsNanoSeconds = 0;        
+	streamPair->streamOne->epoch.gpsNanoSeconds = 0;
+	streamPair->streamTwo->epoch.gpsNanoSeconds = 0;
 	streamPair->streamOne->deltaT = 1./(REAL8)resampleRate;
 	streamPair->streamTwo->deltaT = 1./(REAL8)resampleRate;
 	streamPair->streamOne->f0 = 0;
@@ -222,7 +222,7 @@ void monteCarlo(LALStatus *status,
 	/* parameters for calibration */
 	CHAR *calCacheOne;
 	CHAR *calCacheTwo;
-	LIGOTimeGPS duration;  
+	LIGOTimeGPS duration;
 	const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
 	/* omegaGW parameters */
@@ -263,7 +263,7 @@ void monteCarlo(LALStatus *status,
 	length = lengthSegment * numSegment;
 	freqLength = lengthSegment / 2 + 1;
 	calibOffset =  lengthSegment / (2 * sampleRate);
-	deltaT = 1.0 / sampleRate; 
+	deltaT = 1.0 / sampleRate;
 	deltaF = 1.0 / (deltaT * lengthSegment);
 	calTime = startTime;
 
@@ -308,7 +308,7 @@ void monteCarlo(LALStatus *status,
 	/* response functions */
 	/* set metadata fields */
 	strncpy(responseOne.name,"responseOne", LALNameLength);
-	strncpy(responseTwo.name,"responseTwo", LALNameLength);    
+	strncpy(responseTwo.name,"responseTwo", LALNameLength);
 	responseOne.sampleUnits = countPerStrain;
 	responseTwo.sampleUnits = countPerStrain;
 	responseOne.epoch.gpsNanoSeconds = 0;
@@ -392,14 +392,14 @@ void monteCarlo(LALStatus *status,
 	MCoutput->SSimStochBG2->f0 = f0;
 	MCoutput->SSimStochBG1->deltaT = deltaT;
 	MCoutput->SSimStochBG2->deltaT = deltaT;
-	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime; 
+	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime;
 	MCoutput->SSimStochBG2->epoch.gpsSeconds = startTime;
 	MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
 	MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
 	MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
 	MCoutput->SSimStochBG2->sampleUnits = lalADCCountUnit;
 
-	/* clean up, and exit */  
+	/* clean up, and exit */
 	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
 	LALCDestroyVector(status->statusPtr, &(responseOne.data));
 	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
@@ -446,7 +446,7 @@ void monteCarloSplice(LALStatus *status,
 	/* parameters for calibration */
 	CHAR *calCacheOne;
 	CHAR *calCacheTwo;
-	LIGOTimeGPS duration;  
+	LIGOTimeGPS duration;
 	const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
 	/* omegaGW parameters */
@@ -496,7 +496,7 @@ void monteCarloSplice(LALStatus *status,
 	freqLength = (lengthSegment / 2) + 1;
 	calibOffset =  lengthSegment / (2 * sampleRate);
 	spliceOffset =  calibOffset;
-	deltaT = 1.0 / sampleRate; 
+	deltaT = 1.0 / sampleRate;
 	deltaF = 1.0 / (deltaT * lengthSegment);
 	calTime = startTime;
 
@@ -516,7 +516,7 @@ void monteCarloSplice(LALStatus *status,
 
 	/* allocate memory for longer data train */
 	longTrain1 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * numSegment);
-	for (i = 0; i < numSegment; i++) 
+	for (i = 0; i < numSegment; i++)
 	{
 		longTrain1[i] = NULL;
 		LALSCreateVector(status->statusPtr, &longTrain1[i], lengthSegment);
@@ -527,7 +527,7 @@ void monteCarloSplice(LALStatus *status,
 	}
 
 	longTrain2 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * numSegment);
-	for (i = 0; i<numSegment; i++) 
+	for (i = 0; i < numSegment; i++)
 	{
 		longTrain2[i] = NULL;
 		LALSCreateVector(status->statusPtr, &longTrain2[i], lengthSegment);
@@ -541,7 +541,7 @@ void monteCarloSplice(LALStatus *status,
 	/* allocate memory for shorter data train */
 	shortTrain1 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * \
 			(numSegmentSplice));
-	for(i = 0; i < numSegmentSplice; i++) 
+	for(i = 0; i < numSegmentSplice; i++)
 	{
 		shortTrain1[i] = NULL;
 		LALSCreateVector(status->statusPtr, &shortTrain1[i], lengthSegment);
@@ -552,11 +552,11 @@ void monteCarloSplice(LALStatus *status,
 	}
 	shortTrain2 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * \
 			(numSegmentSplice));
-	for(i = 0; i < numSegmentSplice; i++) 
+	for(i = 0; i < numSegmentSplice; i++)
 	{
 		shortTrain2[i] = NULL;
 		LALSCreateVector(status->statusPtr, &shortTrain2[i], lengthSegment);
-		for (k = 0;k < lengthSegment; k++)
+		for (k = 0; k < lengthSegment; k++)
 		{
 			shortTrain2[i]->data[k] = 0;
 		}
@@ -588,7 +588,7 @@ void monteCarloSplice(LALStatus *status,
 	/* response functions */
 	/* set metadata fields */
 	strncpy(responseOne.name, "responseOne", LALNameLength);
-	strncpy(responseTwo.name, "responseTwo", LALNameLength);    
+	strncpy(responseTwo.name, "responseTwo", LALNameLength);
 	responseOne.sampleUnits = countPerStrain;
 	responseTwo.sampleUnits = countPerStrain;
 	responseOne.epoch.gpsNanoSeconds = 0;
@@ -657,12 +657,12 @@ void monteCarloSplice(LALStatus *status,
 			longTrain1[m] = whitenedSSimStochBGOne.data;
 			longTrain2[m] = whitenedSSimStochBGTwo.data;
 		}
-		else 
+		else
 		{
 			m = (UINT4)((loop-1) / 2);
 			shortTrain1[m] = whitenedSSimStochBGOne.data;
 			shortTrain2[m] = whitenedSSimStochBGTwo.data;
-		} 
+		}
 
 		/* increase calibration time */
 		calTime = calTime + calibOffset;
@@ -675,22 +675,22 @@ void monteCarloSplice(LALStatus *status,
 			numSegmentSplice, spliceOffset);
 
 	/* assign parameters and data to output */
-	strncpy( MCoutput->SSimStochBG1->name, \
-			"Whitened-SimulatedSBOne", LALNameLength );
-	strncpy( MCoutput->SSimStochBG2->name, \
-			"Whitened-SimulatedSBTwo", LALNameLength );
+	strncpy(MCoutput->SSimStochBG1->name, "Whitened-SimulatedSBOne", \
+			LALNameLength);
+	strncpy(MCoutput->SSimStochBG2->name, "Whitened-SimulatedSBTwo", \
+			LALNameLength);
 	MCoutput->SSimStochBG1->f0 = f0;
 	MCoutput->SSimStochBG2->f0 = f0;
 	MCoutput->SSimStochBG1->deltaT = deltaT;
 	MCoutput->SSimStochBG2->deltaT = deltaT;
-	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime; 
+	MCoutput->SSimStochBG1->epoch.gpsSeconds = startTime;
 	MCoutput->SSimStochBG2->epoch.gpsSeconds = startTime;
 	MCoutput->SSimStochBG1->epoch.gpsNanoSeconds = 0;
 	MCoutput->SSimStochBG2->epoch.gpsNanoSeconds = 0;
 	MCoutput->SSimStochBG1->sampleUnits = lalADCCountUnit;
 	MCoutput->SSimStochBG2->sampleUnits = lalADCCountUnit;
 
-	/* clean up, and exit */  
+	/* clean up, and exit */
 	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
 	LALCDestroyVector(status->statusPtr, &(responseOne.data));
 	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
@@ -721,7 +721,7 @@ void SinusoidalSplice(REAL4Vector **longData,
 	UINT4 jMod;
 	REAL4 leftScale;
 	REAL4 rightScale;
-	REAL4 phase;     
+	REAL4 phase;
 
 	segLen = longData[0]->length;
 	nOutputPts = output->length;
@@ -732,13 +732,13 @@ void SinusoidalSplice(REAL4Vector **longData,
 	rightOverlap = segLen - leftOverlap;
 
 	/* leftOverlap and rightOverlap guaranteed to be non-zero by
-		 CheckArguments */
+	 * CheckArguments */
 	leftScale = LAL_PI / (2.0 * leftOverlap);
 	rightScale = LAL_PI / (2.0 * rightOverlap);
 
 	for (i = 0; i < offset; i++)
 	{
-		output->data[i] = longData[i/segLen]->data[i%segLen];
+		output->data[i] = longData[i / segLen]->data[i % segLen];
 	}
 
 	/* check to make sure this is correct later */
@@ -749,7 +749,7 @@ void SinusoidalSplice(REAL4Vector **longData,
 
 		/* splice from start to middle of shortData segment */
 		if (iMod < leftOverlap)
-		{ 
+		{
 			phase = iMod * leftScale;
 
 			output->data[i] = (longData[i/segLen]->data[iMod] * sin(phase)) + \
