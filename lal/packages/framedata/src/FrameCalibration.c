@@ -25,7 +25,7 @@
  * string specifies the detector (H1, H2, L1, etc.) for which the calibration
  * is required.  If the duration field is non-zero then the 
  * calibration will be averaged over the specified duration.  If the 
- * duration is set to zero, then the first calibration at or after
+ * duration is set to zero, then the first calibration at or before 
  * the start time is used.  The alpha and alphabeta fields of the structure are
  * required to be zero.  Certain fields of the output should be set before 
  * this routine is called.  In particular: 
