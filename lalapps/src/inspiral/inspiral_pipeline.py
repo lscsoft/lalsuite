@@ -31,6 +31,7 @@ class ScienceSegment:
     self.start = start
     self.end = end
     self.duration = duration
+    self.used = 0
     self.chunks = []
     self.segpad = segpad
     self.startpad = self.start - self.segpad
@@ -43,6 +44,7 @@ class ScienceSegment:
       self.chunks.append(InspiralChunk(start,start+length))
       start += seg_incr
       dur -= seg_incr
+    self.used = self.duration - dur
 
 class InspiralPipeline:
   """
@@ -87,8 +89,24 @@ class InspiralPipeline:
     for seg in self.segments:
       seg.createchunks(chunk_length,chunk_overlap)
 
+  def status(self):
+    log_fh = open( self.basename + '.pipeline.log', 'w' )
+    total_science_used = 0
+    total_science = 0
+    num_chunks = 0
+    for sciseg in self.segments:
+      total_science += sciseg.duration
+      total_science_used += sciseg.used
+      num_chunks += length(sciseg.chunks)
+    print >> log_fh, """\
+read %d science segments
+got %d seconds of science data of which %d seconds is usable
+created %d inspiral chunks for analysis
+""" % ( length(self.segments), total_science, total_science_used, num_chunks )
+    log_fh.close()
+
   def frcachesub(self):
-    sub_fh = open( self.basename + '.frcache.condor', 'w' )
+    sub_fh = open( self.basename + '.frcache.sub', 'w' )
     print >> sub_fh, """\
 universe = scheduler
 executable = %s
@@ -108,7 +126,7 @@ queue
 
   def banksub(self):
     boolargs = re.compile(r'(disable-high-pass|write-strain-spectrum|verbose)')
-    sub_fh = open( self.basename + '.tmpltbank.condor', 'w' )
+    sub_fh = open( self.basename + '.tmpltbank.sub', 'w' )
     print >> sub_fh, """\
 universe = %s
 executable = %s
@@ -133,7 +151,7 @@ queue""" % self.basename
 
   def inspiralsub(self):
     boolargs = re.compile(r'(disable-high-pass|enable-event-cluster|verbose|enable-output|disable-output)')
-    sub_fh = open( self.basename + '.inspiral.condor', 'w' )
+    sub_fh = open( self.basename + '.inspiral.sub', 'w' )
     print >> sub_fh, """\
 universe = %s
 executable = %s
