@@ -504,7 +504,7 @@ LALSignalToSFTs (LALStatus *stat,
 
   /* get some info about time-series */
   tStart = signal->epoch;					/* start-time of time-series */
-  duration = 1.0* signal->data->length * signal->deltaT;	/* total duration in seconds */
+  duration = (UINT4) (1.0* signal->data->length * signal->deltaT + 0.5); /* total duration in seconds (rounded up!) */
   /* get last possible start-time for an SFT */
   TRY ( LALAddFloatToGPS (stat->statusPtr, &tLast, &tStart, duration - params->Tsft), stat);
 
@@ -517,13 +517,14 @@ LALSignalToSFTs (LALStatus *stat,
 	ABORT (stat, GENERATEPULSARSIGNALH_EMEM, GENERATEPULSARSIGNALH_MSGEMEM);
       }
     }
-  else	/* if given, nothing to do */
-    timestamps = params->timestamps;
-
-  /* check that all timestamps lie within [tStart, tLast] */
-  if ( check_timestamp_bounds (timestamps, tStart, tLast) != 0) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
-  }
+  else	/* if given, use those, and check they are valid */
+    {
+      timestamps = params->timestamps;
+      /* check that all timestamps lie within [tStart, tLast] */
+      if ( check_timestamp_bounds (timestamps, tStart, tLast) != 0) {
+	ABORT (stat, GENERATEPULSARSIGNALH_ETIMEBOUND, GENERATEPULSARSIGNALH_MSGETIMEBOUND);
+      }
+    }
 
   /* prepare SFT-vector for return */
   numSFTs = timestamps->length;			/* number of SFTs to produce */
