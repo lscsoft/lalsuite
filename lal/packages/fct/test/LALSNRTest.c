@@ -36,7 +36,7 @@ const REAL8 NYQUIST = SRATE/2.0;  /* Hz */
 /*
   This is the length of the data cube in the dim0 direction.
 */
-const int data_length = TSERIES_LENGTH/2;
+enum { data_length = TSERIES_LENGTH/2 };
 
 /*
   This is the length of the data cube in the dim1 direction
@@ -47,11 +47,16 @@ const int dim1_data_length = 8;
 const int max_dim1_data_length = TSERIES_LENGTH/2;
 
 /* Parameters for setting up the fct plan */
-const int dimension_0_stride = 1;
+enum { dimension_0_stride = 1 };
 
 /* OFFSET from 0 and DELTA = Nyquist/data_length */
+/*
 const REAL8 OFFSET = 0.0;
 const REAL8 DELTA  = SRATE/((REAL8) TSERIES_LENGTH);
+*/
+#define OFFSET 0.0
+#define DELTA (SRATE/(REAL8)TSERIES_LENGTH)
+#define SDELTA (SRATE/(REAL4)TSERIES_LENGTH)
 
 LALFCTDataCube cube[NUM_DATA_CUBES];
 LALFCTSetDataCubesInput dataCubesIn;
@@ -224,7 +229,7 @@ void generateTimeDomainChirp(LALStatus* const status,
 static
 REAL4 maxPhi(LALFCTPhaseFn phi, const INT4 N)
 {
-    REAL4 max = -1.0e+99;
+    REAL4 max = -LAL_REAL4_MAX;
     INT4 k = 0;
   
     for (k = 0; k < N; ++k)
@@ -776,7 +781,7 @@ setupGlobals(LALStatus* const status)
 
     const LALFCTSetUnitsInput setUnitsIn = {
         OFFSET,
-        DELTA
+        SDELTA
     };
 
     UINT4 k = 0;
