@@ -794,14 +794,14 @@ LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
 
 } /* LALGetDebugLevel() */
 
-/** Return string recording the <em>complete</em> user-input.
+/** Return a log-string representing the <em>complete</em> user-input.
  * <em>NOTE:</em> we only record user-variables that have been set
  * by the user.
  * \param[out] **outstr	the string containing the user-input record.
  * \param[in] format	return as config-file or command-line
  */
 void
-LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format)
+LALUserVarGetLog (LALStatus *stat, CHAR **logstr,  UserVarLogFormat format)
 {
   LALUserVariable *ptr = NULL;
   CHAR *record = NULL;
@@ -809,11 +809,11 @@ LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format)
   CHAR *append;
   UINT4 len, appendlen;
 
-  INITSTATUS( stat, "LALUserVarGetRecord", USERINPUTC);
+  INITSTATUS( stat, "LALUserVarGetLog", USERINPUTC);
   ATTATCHSTATUSPTR(stat);
 
-  ASSERT (outstr, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
-  ASSERT (*outstr == NULL, stat, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
+  ASSERT (logstr, stat, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
+  ASSERT (*logstr == NULL, stat, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
 
   /* initialize return-string */
   record = LALMalloc (1);
@@ -836,10 +836,10 @@ LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format)
 
       switch (format)
 	{
-	case UVAR_RECFMT_CFGFILE:
+	case UVAR_LOGFMT_CFGFILE:
 	  sprintf (append, "%s = %s\n", ptr->name, valstr);
 	  break;
-	case UVAR_RECFMT_CMDLINE:
+	case UVAR_LOGFMT_CMDLINE:
 	  sprintf (append, " --%s=%s", ptr->name, valstr);
 	  break;
 	default:
@@ -858,12 +858,12 @@ LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format)
       LALFree (append);
     } /* while ptr->next */
   
-  *outstr = record;
+  *logstr = record;
 
   DETATCHSTATUSPTR(stat);
   RETURN (stat);
 
-} /* LALUserVarGetRecord() */
+} /* LALUserVarGetLog() */
 
 
 /* Return the value of the given UserVariable as a string.

@@ -117,14 +117,14 @@ typedef enum {
   UVAR_WAS_SET 		= (1<<7)/**< flag that this user-var has been set by user */
 } UserVarState;
 
-/** Format for UserVar-record: configFile- or cmdLine-style.
- * This determines the format of the string returned from LALUserVarGetRecord().
+/** Format for logging User-input: configFile- or cmdLine-style.
+ * This determines the format of the string returned from LALLogUserInput().
  */
 typedef enum {
-  UVAR_RECFMT_CFGFILE,	/**< return UserVars as a config-file */
-  UVAR_RECFMT_CMDLINE,	/**< return UserVars as a command-line */
-  UVAR_RECFMT_LAST
-} UserVarRecFormat;
+  UVAR_LOGFMT_CFGFILE,	/**< return UserVars as a config-file */
+  UVAR_LOGFMT_CMDLINE,	/**< return UserVars as a command-line */
+  UVAR_LOGFMT_LAST
+} UserVarLogFormat;
 
 /* Function prototypes */
 void LALRegisterREALUserVar(LALStatus *stat, 
@@ -167,7 +167,7 @@ void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring, const CHAR *progn
 void LALUserVarCheckRequired (LALStatus *stat);
 INT4 LALUserVarWasSet (void *cvar);
 void LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
-void LALUserVarGetRecord (LALStatus *stat, CHAR **outstr,  UserVarRecFormat format);
+void LALUserVarGetLog (LALStatus *stat, CHAR **logstr,  UserVarLogFormat format);
 
 #ifdef  __cplusplus
 }
