@@ -1483,7 +1483,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
-    
+
+    /* check that data is correct endian order and swap if needed */
     if (-1 == reverse_endian) {
       if (header.endian==1.0)
 	reverse_endian=0;
