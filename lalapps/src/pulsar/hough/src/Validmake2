@@ -1,0 +1,74 @@
+# ------------------------------------------------------------
+#
+# Makefile for  Validation1. and the like
+#
+# Alicia M. Sintes  06-2003
+#
+# $Id$
+#
+# -----------------------------------------------------------
+
+
+# -----------------------------------------------------------
+# your compiler
+CC = gcc
+
+#CC = gcc -DCHECKHOUGHINDEX
+
+# -----------------------------------------------------------
+# header file directory
+LAL_INCLUDE=/afs/aeiw/grawave/Linux/lal/correct/include/
+
+# -----------------------------------------------------------
+# libraries
+
+LAL_LIB = /afs/aeiw/grawave/Linux/lal/lib
+
+LLAL = lal
+LALSUP = lalsupport
+
+THELIBS = -L$(LAL_LIB) -l$(LLAL) -l$(LALSUP) -lm
+
+p=./timer/cycle_counter/Intel/GCC/
+m=../hough/objs_exe/
+
+# ----------------------------------------------------------
+# compiler options
+
+CFLAGS =  -Wall -g  -I$(LAL_INCLUDE) -I$p
+
+# -----------------------------------------------------------
+# default target
+all: Validtest2 Validtest2a Validtest2b
+
+# -----------------------------------------------------------
+#  produce object files
+
+Validation1.o: Validation1.c Validation1.h
+	$(CC) -c $(CFLAGS)  Validation1.c
+
+Validation2a.o: Validation2a.c Validation1.h
+	$(CC) -c $(CFLAGS)  Validation2a.c
+
+Validation2b.o: Validation2b.c Validation1.h
+	$(CC) -c $(CFLAGS)  Validation2b.c
+
+# -----------------------------------------------------------
+# link tests code
+# -----------------------------------------------------------
+
+Validtest2: SFTbin.o PeakSelect.o Velocity.o Validation1.o $m/ConstructPLUT.o $m/PatchGrid.o
+	$(CC) $(CFLAGS) -o $@ SFTbin.o PeakSelect.o Velocity.o Validation1.o $m/PatchGrid.o $m/ConstructPLUT.o $(THELIBS)
+
+Validtest2a: SFTbin.o PeakSelect.o Velocity.o Validation2a.o $m/ConstructPLUT.o $m/PatchGrid.o 
+	$(CC) $(CFLAGS) -o $@ SFTbin.o PeakSelect.o Velocity.o Validation2a.o $m/PatchGrid.o  $m/ConstructPLUT.o $(THELIBS)
+
+Validtest2b: SFTbin.o PeakSelect.o Velocity.o Validation2b.o  $m/PatchGrid.o $m/ConstructPLUT.o
+	$(CC) $(CFLAGS) -o $@ SFTbin.o PeakSelect.o Velocity.o Validation2b.o $m/PatchGrid.o  $m/ConstructPLUT.o $(THELIBS)
+
+# -----------------------------------------------------------
+# cleaning...
+clean:
+	rm -f  Validation1.o Validation2a.o Validation2b.o Validtest2 Validtest2a Validtest2b
+
+# -----------------------------------------------------------
