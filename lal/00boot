@@ -208,6 +208,7 @@ dnl Checks for library functions.
 AC_CHECK_FUNCS(getopt)
 AC_CHECK_FUNCS(getopt_long)
 AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(vsnprintf)
 AC_CHECK_FUNCS(putenv)
 
 dnl Add gcc specific flags --- must be done at end or tests will break!
