@@ -567,7 +567,24 @@ int main(int argc,char *argv[])
   loopcounter = 0;
   fstat_bytecounter = 0;
   checksum =0;
-  
+
+#ifdef RUN_POLKA
+  /* look for a Fstat file ending in "%DONE" and quit (boinc)main if found */
+  fpstat=fopen( Fstatsfilename,"r");
+  if(fpstat){
+    char done[6];
+    done[0] = '\0';
+    if(!fseek(fpstat,-6,SEEK_END))
+      if(fread(done,6,1,fpstat)==1)
+        if(strncmp(done,"%DONE")==0){
+          fclose(fpstat);
+          fprintf(stderr,"detected finished Fstat file - aborting Fstat run %d\n",cfsRunNo);
+          return(0);
+        }
+    fclose(fpstat);
+  }
+#endif /* RUN_POLKA */
+
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
     LAL_CALL (getCheckpointCounters( stat, &loopcounter, &checksum, &fstat_bytecounter, Fstatsfilename, ckp_fname ), stat); 
@@ -622,7 +639,8 @@ int main(int argc,char *argv[])
       if (uvar_doCheckpointing && fpstat)
         {
 #if USE_BOINC
-          if (boinc_time_to_checkpoint())
+          /* make sure the last checkpoint is written even if is not time_to_checkpoint */
+          if (boinc_time_to_checkpoint() || (loopcounter == thisScan.numGridPoints))
             {
 #endif
               FILE *fp;
