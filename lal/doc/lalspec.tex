@@ -645,9 +645,8 @@ tag<datatype>ArraySequence
 \noindent
 The discussion at the end of Section \ref{vectors}.
 
-\paragraph{The packing order or a VectorSequence of ArraySequence }
+\paragraph{The packing order of a VectorSequence or ArraySequence}~
 \label{packingorderAS} 
-\medskip
 
 \noindent A vector sequence {\tt v} stores a sequence of
 $M$={\tt v->length} vectors
@@ -683,7 +682,7 @@ definitions are in {\tt LALDatatypes.h}.
 
 \subsubsection{Time}
 
-\paragraph{Time stamps } 
+\paragraph{Time stamps }~
 
 There is a specific data structure to store GPS time. To indicate
 this, the time structure will have ``GPS" (or gps) in its name. 
@@ -710,8 +709,7 @@ LIGOTimeGPS gpsTimeList[10];	/* a list of 10 LIGOTimeGPS structures */
 \subsubsection{Sequences in time}
 
 
-\paragraph{{\texttt {TimeSeries}} } 
-\medskip
+\paragraph{{\texttt {TimeSeries}} }~
 
 The structure {\tt TimeSeries} is used to represent a sequence of samples
 taken at uniformly spaced intervals of time. A {\tt TimeSeries} object has
@@ -760,11 +758,11 @@ tag<datatype>TimeSeries
 \end{verbatim}}
 
 
-\subparagraph[LALUnit data type]{The {\texttt {name[]}} and {\texttt {LALUnit}} field 
-in structured data types }
+\subparagraph[LALUnit data type]{The {\texttt {name[]}} 
+and {\texttt {LALUnit}} field in structured data types }~
 \label{name}
-\medskip
 
+\noindent
 The {\tt name} field will be an array at most {\tt LALNameLength} characters long.
 {\tt LALNameLength} will be set in {\tt LALDatatypes.h}.  Currently, the value is
 set to 64, although we could make change it.  In previous versions (7
@@ -806,8 +804,7 @@ LALUnit;
 \end{verbatim}}
 
 
-\paragraph{{\texttt {SequenceOfTimeSeries}}  {\bf (Not Implemented yet.)} } 
-\medskip
+\paragraph{{\texttt {SequenceOfTimeSeries}}  {\bf (Not Implemented yet.)} }~
 
 The structure {\tt SequenceOfTimeSeries} is used to represent a sequence of
 time series, each of which starts at the same time, e.g. the two
@@ -868,11 +865,11 @@ tag<datatype>SequenceOfTimeSeries
 <datatype>TimeSeries;
 \end{verbatim}}
 
-\subparagraph{The packing order {\texttt {SequenceOfTimeSeries}} } 
+\subparagraph{The packing order of {\texttt {SequenceOfTimeSeries}} }~
 \label{packingorder}
-\medskip
 
 
+\noindent
 As an example of how the packing goes, consider two time series s0[t] and s1[t]:
 
 {\footnotesize
@@ -892,8 +889,7 @@ data->data[2047]   = s1[1023] ;
 \end{verbatim}}
 
 
-\paragraph{{\texttt {TimeVectorSeries}}  } 
-\medskip
+\paragraph{{\texttt {TimeVectorSeries}}  }~
 
 
 The structure {\tt TimeVectorSeries} is used to represent a sequence of
@@ -952,8 +948,7 @@ tag<datatype>TimeVectorSeries
 <datatype>TimeVectorSeries;
 \end{verbatim}}
 
-\paragraph{{\texttt {TimeArraySeries}} } 
-\medskip
+\paragraph{{\texttt {TimeArraySeries}} }~
 
 
 The structure {\tt TimeArraySeries} is used to represent a sequence of
@@ -1019,8 +1014,7 @@ tag<datatype>TimeArraySeries
 
 \subsubsection{Sequences in frequency}
 
-\paragraph{{\texttt {FrequencySeries}} } 
-\medskip
+\paragraph{{\texttt {FrequencySeries}} }~
 
 
 The structure {\tt FrequencySeries} is used to represent result of a Fourier
@@ -1095,8 +1089,7 @@ power-spectrum (one-sided real frequency series)
 \end{itemize}
 
 \paragraph{{\texttt {SequenceOfFrequencySeries}} {\bf (Not implemented
-yet.)} } 
-\medskip
+yet.)} }~
 
 
 The structure SequenceOfFrequencySeries is used to represent result of
@@ -1158,8 +1151,7 @@ tag<datatype>SequenceOfFrequencySeries
 \end{verbatim}}
 
 
-\paragraph{{\texttt {FrequencyVectorSeries}} } 
-\medskip
+\paragraph{{\texttt {FrequencyVectorSeries}} }~
 
 
 
@@ -1224,8 +1216,7 @@ tag<datatype>SequenceOfFrequencySeries
 <datatype>TimeSeries;
 \end{verbatim}}
 
-\paragraph{{\texttt {FrequencyArraySeries}} {\bf (Not yet implemented)} } 
-\medskip
+\paragraph{{\texttt {FrequencyArraySeries}} {\bf (Not yet implemented)} }~
 
 
 The structure FrequencyArraySeries is used to represent result of a
@@ -1336,8 +1327,7 @@ tag<datatype>TableSeries
 
 \subsubsection{{\texttt {TransferFunction}}}
 
-\paragraph{Frequency domain   {\bf (Not implemented yet.)} } 
-\medskip
+\paragraph{Frequency domain   {\bf (Not implemented yet.)} }~
 
 
 The structure {\tt FTransferFunction} is used to represent $H[s]$:
@@ -1373,8 +1363,7 @@ tag<datatype>FTransferFunction
 <datatype>FTransferFunction;
 \end{verbatim}}
 
-\paragraph{Zero, poles and gain representation } 
-\medskip
+\paragraph{Zero, poles and gain representation }~
 
 
 The structure {\tt ZPGFilter} is used to represent a transfer functions as a
