@@ -1302,6 +1302,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--inverse-spec-length must be specified\n" );
     exit( 1 );
   }
+  else if ( invSpecTrunc * sampleRate > numPoints )
+  {
+    fprintf( stderr, "--inverse-spec-length must be less than "
+        "--segment-length\n" );
+    exit( 1 );
+  }
+
   if ( ! haveDynRange )
   {
     fprintf( stderr, "--dynamic-range-exponent must be specified\n" );
