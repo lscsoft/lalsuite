@@ -547,9 +547,10 @@ void LALIntervalToFloat(LALStatus *status,
 /* <lalLaTeX>
 \newpage\input{GPStoINT8C}
 </lalLaTeX> */
-LIGOTimeGPS
+LIGOTimeGPS *
 XLALINT8toGPS ( 
-    INT8 input 
+    LIGOTimeGPS *output,
+    INT8 input
     );
 
 void
@@ -561,7 +562,7 @@ LALINT8toGPS (
 
 INT8
 XLALGPStoINT8 ( 
-    LIGOTimeGPS input 
+    LIGOTimeGPS *input 
     );
 
 void
@@ -606,9 +607,9 @@ LALCompareGPS (LALStatus *status,
                const LIGOTimeGPS *pGPS1, /* input: GPS1 */
                const LIGOTimeGPS *pGPS2); /* input: GPS2 */
 
-LIGOTimeGPS
+LIGOTimeGPS *
 XLALAddFloatToGPS(
-	LIGOTimeGPS gps,
+	LIGOTimeGPS *gps,
 	REAL8 deltaT
 );
 

@@ -52,17 +52,19 @@ nanoseconds, and the other, from \texttt{INT8} nanoseconds to
 NRCSID( GPSTOINT8C, "$Id$" );
 
 /* <lalVerbatim file="GPStoINT8CP"> */
-LIGOTimeGPS
+LIGOTimeGPS *
 XLALINT8toGPS ( 
-    INT8                input
-    )
+    LIGOTimeGPS *output,
+    INT8 input
+)
 /* </lalVerbatim> */
 {
-  LIGOTimeGPS output;
   INT8 s = input / LAL_INT8_C(1000000000);
   
-  output.gpsSeconds = (INT4)( s );
-  output.gpsNanoSeconds = (INT4)( input - LAL_INT8_C(1000000000)*s );
+  if(output) {
+    output->gpsSeconds = (INT4)( s );
+    output->gpsNanoSeconds = (INT4)( input - LAL_INT8_C(1000000000)*s );
+  }
 
   return( output );
 }
@@ -78,7 +80,7 @@ LALINT8toGPS (
 {
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
 
-  *output = XLALINT8toGPS( *input );
+  XLALINT8toGPS( output, *input );
 
   RETURN( status );
 }
@@ -87,12 +89,12 @@ LALINT8toGPS (
 /* <lalVerbatim file="GPStoINT8CP"> */
 INT8
 XLALGPStoINT8 ( 
-    LIGOTimeGPS         input 
-    )
+    LIGOTimeGPS *input
+)
 /* </lalVerbatim> */
 {
-  return( (INT8) input.gpsNanoSeconds 
-    + LAL_INT8_C(1000000000) * (INT8) input.gpsSeconds );
+  return( (INT8) input->gpsNanoSeconds 
+    + LAL_INT8_C(1000000000) * (INT8) input->gpsSeconds );
 }
 
 /*----------------------------------------------------------------------*/
@@ -107,7 +109,7 @@ LALGPStoINT8 (
 {
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
   
-  *output = XLALGPStoINT8( *input );
+  *output = XLALGPStoINT8( input );
 
   RETURN( status );
 }

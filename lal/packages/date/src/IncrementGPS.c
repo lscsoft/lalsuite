@@ -327,26 +327,30 @@ LALCompareGPS(LALStatus           *status,
 
 /* Increment a GPS time by a float-interval */
 /* <lalVerbatim file="IncrementGPSCP"> */
-LIGOTimeGPS XLALAddFloatToGPS(
-	LIGOTimeGPS gps,
+LIGOTimeGPS *
+XLALAddFloatToGPS(
+	LIGOTimeGPS *gps,
 	REAL8 deltaT
 )
 /*  </lalVerbatim> */
 {
   INT4 secs = deltaT;
 
-  gps.gpsSeconds += secs;
-  gps.gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
+  if(!gps)
+	  return(NULL);
 
-  if (gps.gpsNanoSeconds >= oneBillion)
+  gps->gpsSeconds += secs;
+  gps->gpsNanoSeconds += floor((deltaT - secs) * oneBillion  + 0.5);
+
+  if (gps->gpsNanoSeconds >= oneBillion)
     {
-      gps.gpsNanoSeconds -= oneBillion;
-      gps.gpsSeconds++;
+      gps->gpsNanoSeconds -= oneBillion;
+      gps->gpsSeconds++;
     }
-  else if (gps.gpsNanoSeconds < 0)
+  else if (gps->gpsNanoSeconds < 0)
     {
-      gps.gpsNanoSeconds += oneBillion;
-      gps.gpsSeconds--;
+      gps->gpsNanoSeconds += oneBillion;
+      gps->gpsSeconds--;
     }
 
   return(gps);
@@ -365,7 +369,8 @@ LALAddFloatToGPS(
 {
   INITSTATUS( status, "LALAddFloatToGPS", INCREMENTGPSC );
 
-  *outputGPS = XLALAddFloatToGPS(*startGPS, deltaT);
+  *outputGPS = *startGPS;
+  XLALAddFloatToGPS(outputGPS, deltaT);
 
   RETURN( status );
 

@@ -118,9 +118,11 @@ static SnglBurstTable *TFTileToBurstEvent(
 	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
 	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
 
-	event->start_time = XLALAddFloatToGPS(*epoch, tile->tstart * tile->deltaT);
+	event->start_time = *epoch;
+	XLALAddFloatToGPS(&event->start_time, tile->tstart * tile->deltaT);
 	event->duration = (tile->tend - tile->tstart + 1) * tile->deltaT;
-	event->peak_time = XLALAddFloatToGPS(event->start_time, 0.5 * event->duration);
+	event->peak_time = event->start_time;
+	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = (tile->fend - tile->fstart + 1) / tile->deltaT;
 	event->central_freq = params->tfTilingInput.flow + tile->fstart/tile->deltaT + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
