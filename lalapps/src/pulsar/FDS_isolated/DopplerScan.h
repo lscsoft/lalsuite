@@ -70,7 +70,7 @@ typedef struct {
   REAL8 dAlpha;		/* step-sizes for manual stepping */
   REAL8 dDelta;
   
-  INT2 useMetric;   	/* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
+  INT4 metricType;   	/* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;
   LIGOTimeGPS obsBegin; /* start-time of time-series */
   REAL8 obsDuration;	/* length of time-series in seconds */

@@ -102,7 +102,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
   scan->state = STATE_IDLE;  /* uninitialized */
 
   /* several functions here need that info, so the easiest is to make this global */
-  useMetric = init.useMetric;
+  useMetric = init.metricType;
 
   /* This traps coding errors in the calling routine. */
   ASSERT ( scan != NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
@@ -253,7 +253,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
       ABORT ( stat, DOPPLERSCANH_EMETRIC, DOPPLERSCANH_MSGEMETRIC);
       break;
 
-    } /* switch (useMetric) */
+    } /* switch (metric) */
 
   LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
       
