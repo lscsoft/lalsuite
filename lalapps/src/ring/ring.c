@@ -194,9 +194,11 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
           params->calibCache, params->dynRangeFac );
 
     /* condition the data: resample and highpass */
-    highpass_REAL4TimeSeries( channel, params->highpassFrequency );
     resample_REAL4TimeSeries( channel, params->sampleRate );
+    if ( params->writeProcessedData ) /* write processed data */
+      write_REAL4TimeSeries( channel );
 
+    highpass_REAL4TimeSeries( channel, params->highpassFrequency );
     if ( params->writeProcessedData ) /* write processed data */
       write_REAL4TimeSeries( channel );
   }
