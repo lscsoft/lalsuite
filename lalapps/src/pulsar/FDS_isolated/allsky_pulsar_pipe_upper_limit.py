@@ -791,7 +791,10 @@ while cont:
         sys.stdout.flush()
         os.system('rm -rf signal1 signal2')            
         print f0,alpha,delta,float(sF1), 2*float(sF1th), float(sF2), 2*float(sF2th),abs(float(sf1)-float(sf2)),h0,i+1,counter,float(counter)/float(i+1)
-        
+        print ' '
+        print 'Ninj,tolerance,dh0= ',Ninj,tol,dh0
+        print 'current confidence,target confidence: ',float(counter)/float(i+1),c0
+
       #end if Ifa <= fa  
     #end if injected signals are in coincidence  
     #increment i, independently of whether fa was big enough 
@@ -810,9 +813,9 @@ while cont:
    
   print 'confidence =',confidence  
   if abs(confidence-c0) < tol:
-    if Ninj < 3000:
-      Ninj=Ninj*10
-      tol=tol/math.sqrt(10.0)
+    if Ninj < 10000:
+      Ninj=Ninj*2
+      tol=tol/math.sqrt(2.0)
       cont=1
     else: cont=0
   if confidence > c0:
