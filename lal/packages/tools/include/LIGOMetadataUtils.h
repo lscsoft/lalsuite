@@ -200,6 +200,7 @@ tagInspiralAccuracyList
   INT4                      match;
   SnglInspiralParameterTest test;
   SnglInspiralAccuracy      ifoAccuracy[LAL_NUM_IFO];
+  INT8                      lightTravelTime[LAL_NUM_IFO][LAL_NUM_IFO];
 }
 InspiralAccuracyList;
 /*</lalVerbatim> */
@@ -270,6 +271,18 @@ SnglBurstAccuracy;
 int 
 XLALIFONumber( 
     const char *ifo 
+    );
+
+void 
+XLALReturnIFO( 
+    char                *ifo,
+    InterferometerNumber IFONumber 
+    );
+
+void
+XLALReturnDetector(
+    LALDetector           *det,
+    InterferometerNumber   IFONumber 
     );
 
 void
