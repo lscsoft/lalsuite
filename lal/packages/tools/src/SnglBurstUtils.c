@@ -222,9 +222,7 @@ LALCompareSnglBurst(
   fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
   fb2 = (bPtr->central_freq) + 0.5*(bPtr->bandwidth);
 
- 
-
-  if(((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
+   if(((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
      {
        if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
 	 {
@@ -344,13 +342,19 @@ LALClusterSnglBurstTable (
 
 		 if ( prevEvent->confidence > thisEvent->confidence )
 		   {
-		     prevEvent->confidence = thisEvent->confidence;
-		     prevEvent->peak_time = thisEvent->peak_time;		    
+		     prevEvent->confidence = thisEvent->confidence;		    
+		   }
+
+		 if ( prevEvent->amplitude < thisEvent->amplitude )
+		   {
+		     prevEvent->amplitude = thisEvent->amplitude;
+		     prevEvent->snr = thisEvent->snr;
+		     prevEvent->peak_time = thisEvent->peak_time;
 		   }
 
 		 /* otherwise just dump this event from cluster */
 		 for(j=1; j < i; j++)
-		   {
+		   {		   
 		     prevEvent = prevEvent->next;
 		   }
 		 prevEvent->next = thisEvent->next;
@@ -364,7 +368,7 @@ LALClusterSnglBurstTable (
 		 if ( i==1 )
 		   {
 		     n++;
-		   }
+		   } 
 	       }
 	   }
 	else 
