@@ -107,7 +107,7 @@ typedef COMPLEX8FrequencySeriesVector 	SFTVector;
   
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{PulsarDataTypesHV}}
-\newpage\input{PulsarDataTypesC}
+%%\newpage\input{PulsarDataTypesC}
 ******************************************************* </lalLaTeX> */
 
 
