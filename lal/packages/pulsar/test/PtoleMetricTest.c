@@ -171,7 +171,7 @@ int main( int argc, char *argv[] ) {
 
   if (test) {
     printf("\nTesting bad detector site...\n");
-    in.site.vertexLatitudeDegrees = 100;
+    in.site.vertexLatitudeRadians = 100 * LAL_PI / 180;
     LALPtoleMetric( &status, metric, &in );
   }
   /* Use GEO600 site. */
