@@ -223,7 +223,7 @@ REAL8
       inspiralParams.fCutoff     = INJECTINSPIRAL_FUPPER;
       inspiralParams.order       = order;
       inspiralParams.inclination = thisEvent->inclination ;
-      inspiralParams.massChoice=m1Andm2;
+     /* inspiralParams.massChoice=m1Andm2;*/
       inspiralParams.tSampling = 1./ (*buffer1);
       inspiralParams.OmegaS = omegas;
       inspiralParams.Theta  = theta;
@@ -244,7 +244,7 @@ REAL8
       inspiralParams.fCutoff     = INJECTINSPIRAL_FUPPER;
       inspiralParams.order       = order;
       inspiralParams.inclination = thisEvent->inclination ;
-      inspiralParams.massChoice  = m1Andm2;
+/*      inspiralParams.massChoice  = m1Andm2;*/
       inspiralParams.tSampling   = 1./ (*buffer1);
       inspiralParams.OmegaS      = omegas;
       inspiralParams.Theta       = theta;
