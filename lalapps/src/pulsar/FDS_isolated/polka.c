@@ -360,19 +360,35 @@ int main(int argc,char *argv[])
   fclose(fpOut);
 
   fprintf(stdout,"%%1\n");
-  for (i=0; i < CList1.length; i++)
-    {
-      if (CList1.Ctag[i]) fprintf(stdout,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);      
-    }
+  {
+    int k=-1;    
+    for (i=0; i < CList1.length; i++)
+      {
+	if (CList1.Ctag[i]) 
+	  {
+	    k++;
+	    fprintf(stdout,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
+	    CList1.CtagCounter[i]=k;
+	  }
+      }
+  }
   fprintf(stdout,"%%2\n");
-  for (i=0; i < CList2.length; i++)
-    {
-      if (CList2.Ctag[i]) fprintf(stdout,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);      
-    }
+  {
+    int k=-1;
+    for (i=0; i < CList2.length; i++)
+      {
+	if (CList2.Ctag[i]) 
+	  {
+	    k++;
+	    fprintf(stdout,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
+	    CList2.CtagCounter[i]=k;
+	  }    
+      }
+  }
   fprintf(stdout,"%%coincidences\n");
   for (i=0; i < numCoincidences; i++) 
     {
-      fprintf(stdout,"%d %d %le\n", CP[i].c1,CP[i].c2,CP[i].fa);
+      fprintf(stdout,"%d %d %le\n", CList1.CtagCounter[CP[i].c1],CList2.CtagCounter[CP[i].c2],CP[i].fa);
     }
 
 
