@@ -285,9 +285,10 @@ int main ( int argc, char *argv[] )
 
   if ( globFrameData )
   {
-    if ( vrbflg ) fprintf( stdout, 
-        "globbing for *.gwf frame files of type %s in current directory\n",
-        frInType );
+    CHAR ifoRegExPattern[6];
+
+    if ( vrbflg ) fprintf( stdout, "globbing for *.gwf frame files from %c "
+        "of type %s in current directory\n", fqChanName[0], frInType );
 
     frGlobCache = NULL;
 
@@ -305,6 +306,10 @@ int main ( int argc, char *argv[] )
     
     /* sieve out the requested data type */
     memset( &sieve, 0, sizeof(FrCacheSieve) );
+    LALSnprintf( ifoRegExPattern, 
+        sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*", 
+        fqChanName[0] );
+    sieve.srcRegEx = ifoRegExPattern;
     sieve.dscRegEx = frInType;
     LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
         &status );
