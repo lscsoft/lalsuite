@@ -206,13 +206,6 @@ LALFindChirpTDNormalize(
 
   INITSTATUS( status, "LALFindChirpTDNormalize", FINDCHIRPTDTEMPLATEC );
 
-  /* check that the parameter structure is set */
-  /* to the correct waveform approximant       */
-  ASSERT( params->approximant == TaylorT1 ||
-      params->approximant == TaylorT2 ||
-      params->approximant == TaylorT3 , status, 
-      FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
-
   /* check the required input exists */
   ASSERT( fcTmplt, status, 
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
@@ -232,6 +225,18 @@ LALFindChirpTDNormalize(
   ASSERT( params->tmpltPowerVec->data, status, 
       FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
+  /* check that the parameter structure is set to a time domain approximant */
+  switch ( params->approximant )
+  {
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+      break;
+    default:
+      ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
+      break;
+  }
+
   tmpltPower = params->tmpltPowerVec->data;
   wtilde     = params->wtildeVec->data;
   segNorm    = fcSeg->segNorm->data;
@@ -250,7 +255,6 @@ LALFindChirpTDNormalize(
     segNormSum += tmpltPower[k];
     segNorm[k] = segNormSum;
   }
-
 
   /* normal exit */
   RETURN( status );
