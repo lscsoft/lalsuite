@@ -188,7 +188,7 @@ void compute_skygrid(LALStatus * status, char * format_arg)
   /* first, the suffixes */
   if ((strncasecmp(args_info.format_arg, "am", LALNameLength) == 0) ||
       (strncasecmp(args_info.format_arg, "af", LALNameLength) == 0) ||
-      (strncasecmp(args_info.format_arg, "csv", LALNameLength) == 0))
+      (strncasecmp(args_info.format_arg, "al", LALNameLength) == 0))
     {
       (void)mystrlcpy(outfile_suffix, ".txt", LALNameLength);
     }
@@ -295,13 +295,14 @@ void compute_skygrid(LALStatus * status, char * format_arg)
         (void)mystrlcpy(ser_sum_file_name, sum_file_name, LALNameLength);
         (void)mystrlcpy(ser_relfreq_file_name, relfreq_file_name, LALNameLength);
 
-        if (!(strncasecmp(args_info.format_arg, "csv", LALNameLength) == 0))
-	    {
-              (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
-              (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
-              (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
-              (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
-	    }
+        /* al files have no format suffix */
+        if (!(strncasecmp(args_info.format_arg, "al", LALNameLength) == 0))
+	        {
+            (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
+            (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
+            (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
+            (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+	        }
 
         (void)strncat(ser_cross_file_name, outfile_suffix, LALNameLength);
         (void)strncat(ser_plus_file_name, outfile_suffix, LALNameLength);
@@ -361,6 +362,8 @@ void compute_skygrid(LALStatus * status, char * format_arg)
   skygrid_print(format_arg, &(gps_and_acc.gps), grid_cros_sq, cross_file_name, "w");
   skygrid_print(format_arg, &(gps_and_acc.gps), grid_plus_sq, plus_file_name, "w");
   skygrid_print(format_arg, &(gps_and_acc.gps), grid_sum_sq, sum_file_name, "w");
+  
+  LALCheckMemoryLeaks();
   
   return;
 }
@@ -451,16 +454,19 @@ void skygrid_print(const char * format,
     fmtcode = 1;
   else if (strncasecmp(format, "b", LALNameLength) == 0)
     fmtcode = 3;
-  else if (strncasecmp(format, "csv", LALNameLength) == 0)
+  else if (strncasecmp(format, "al", LALNameLength) == 0)
     fmtcode = 4;
   else 
     fmtcode = 0;
 
-  if(fmtcode==4)mode="a";
+  /* al files are in one big contiguous chunk, rather
+   * than separate files */
+  if (fmtcode == 4)
+    mode = "a";
 
   outfile = xfopen(filename, mode);
   
-  if (fmtcode == 0)
+  if (fmtcode == 0) /* am */
     {
       if (gps != (LIGOTimeGPS *)NULL)
         fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
@@ -472,19 +478,17 @@ void skygrid_print(const char * format,
           fprintf(outfile, "\n");
         }
     }
-  else if (fmtcode == 1)
+  else if (fmtcode == 1) /* af */
     {
-     if (gps != (LIGOTimeGPS *)NULL)
-            fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
+      if (gps != (LIGOTimeGPS *)NULL)
+        fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
         
-     const int tot = NUM_RA * NUM_DEC;
-     for (i = 0; i < tot; ++i)
-       {
+      const int tot = NUM_RA * NUM_DEC;
+      for (i = 0; i < tot; ++i)
         fprintf(outfile, "% 14.8e\t", input[i]); 
-       }
-     fprintf(outfile, "\n");
+      fprintf(outfile, "\n");
     }
-  else if (fmtcode == 3)
+  else if (fmtcode == 3) /* b */
     {
       /* no comments for binary output */
       const size_t num_el = NUM_DEC*NUM_RA;
@@ -497,17 +501,15 @@ void skygrid_print(const char * format,
       fwrite(&num_el, sizeof(INT4), 1, outfile);
       fwrite(input, sizeof(REAL4), num_el, outfile);
     }
-  else if (fmtcode == 4)
+  else if (fmtcode == 4) /* al */
     {
-     if (gps != (LIGOTimeGPS *)NULL)
-            fprintf(outfile, "%.9d", gps->gpsSeconds);
+      if (gps != (LIGOTimeGPS *)NULL)
+        fprintf(outfile, "%.9d", gps->gpsSeconds);
         
-     const int tot = NUM_RA * NUM_DEC;
-     for (i = 0; i < tot; ++i)
-       {
-        fprintf(outfile, " %14.8e", input[i]); 
-       }
-     fprintf(outfile, "\n");
+        const int tot = NUM_RA * NUM_DEC;
+        for (i = 0; i < tot; ++i)
+            fprintf(outfile, " %14.8e", input[i]); 
+        fprintf(outfile, "\n");
     }
 
   xfclose(outfile);
