@@ -16,7 +16,7 @@ for ``barycentering'' the measured astronomical time series.
 \subsection*{Synopsis}
 
 \begin{verbatim}
-#include "LALBarycenter.h"
+#include <lal/LALBarycenter.h>
 \end{verbatim}
 
 \noindent This header covers the routine
