@@ -56,6 +56,8 @@ LALHO()
 
 #include "./SFTbin.h"
 
+
+
 NRCSID (SFTBINC, "$Id$");
 
 /*
@@ -658,27 +660,30 @@ void  ReadLineInfo (LALStatus     *status,
 /* *******************************  <lalVerbatim file="SFTbinD"> */
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
-		       INT4               width,            
+		       INT4               width,       
+		       INT4               window,
 		       LineNoiseInfo      *lineInfo)
-{/*   *********************************************  </lalVerbatim> */
+{ /*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
-
+  
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k;
   INT4     leftWingBins, rightWingBins, length;
   REAL8    deltaF, f0, tBase;
-  REAL8    meanRe, meanIm, stdRe, stdIm, tempDataRe[20], tempDataIm[20];  
+  REAL8    meanRe, meanIm, stdRe, stdIm;
+  REAL8    *tempDataRe=NULL; 
+  REAL8    *tempDataIm=NULL;  
   REAL8    *lineFreq=NULL;
   REAL8    *leftWing=NULL;
   REAL8    *rightWing=NULL;
   COMPLEX8 *inData;
   const gsl_rng_type *t;
   gsl_rng  *r;  
-
-
+  
+  
   /* --------------------------------------------- */
   INITSTATUS (status, "CleanCOMPLEX8SFT", SFTBINC);
   ATTATCHSTATUSPTR (status);   
- 
+  
   /*   Make sure the arguments are not NULL: */ 
   ASSERT (sft,   status, SFTBINH_ENULL, SFTBINH_MSGENULL);
   inData = sft->data->data;
@@ -688,16 +693,17 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   ASSERT (lineInfo->lineFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
   ASSERT (lineInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
   ASSERT (lineInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
-  ASSERT (width >= 0, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (window > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (width >= 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
   length = sft->data->length;
   ASSERT (length > 0, status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
-
+  
   /* copy pointers from input */
   nLines = lineInfo->nLines;
   lineFreq = lineInfo->lineFreq;
   leftWing = lineInfo->leftWing;
   rightWing = lineInfo->rightWing;
-
+  
   deltaF = sft->deltaF;
   tBase = 1.0/deltaF;
   f0 = sft->f0;
@@ -709,19 +715,22 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   t = gsl_rng_default;
   r = gsl_rng_alloc(t);
 
+  tempDataRe = LALMalloc(2*window*sizeof(REAL8));
+  tempDataIm = LALMalloc(2*window*sizeof(REAL8));
+
   /* loop over the lines */
   for (count = 0; count < nLines; count++){
-
+    
     /* find frequency bins for line frequency and wings */
     lineBin = floor(tBase * lineFreq[count] + 0.5);
     leftWingBins = floor(tBase * leftWing[count]);
     rightWingBins = floor(tBase * rightWing[count]);
-
+    
     /* check that frequency is within band of sft and line is not too wide*/
     if ((lineBin >= minBin) && (lineBin <= maxBin) && (leftWingBins <= width) && (rightWingBins <= width)){
 
-      /* estimate the mean and std deviation of 10 bins each side */
-      for (k = 0; k < 10; k++){
+      /* estimate the mean and std deviation of "window" # of bins each side */
+      for (k = 0; k < window ; k++){
 	if (maxBin - lineBin - rightWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
 	else
@@ -735,52 +744,52 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	else 
 	  inData = sft->data->data;
 
-	tempDataRe[k+10] = inData->re;
-	tempDataIm[k+10] = inData->im;
-      }
-
-      meanRe = gsl_stats_mean(tempDataRe,1,20);
-      meanIm = gsl_stats_mean(tempDataIm,1,20);
-      stdRe = gsl_stats_sd(tempDataRe,1,20);
-      stdIm = gsl_stats_sd(tempDataIm,1,20);
-      
-      /* set sft value at central frequency to noise */
-      inData = sft->data->data + lineBin - minBin;
-      inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-      inData->im = gsl_ran_gaussian(r, stdIm) + meanIm;
-      
-      /* now go left and set the left wing to noise */
-      /* make sure that we are always within the sft band */
-      /* and set bins to zero only if Wing width is smaller than "width" */ 
-      if ((leftWingBins <= width)){
-	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
-	  if ( (lineBin - minBin - leftCount > 0)){
-	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
-	    inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-	    inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
-	  }
-	}
-      }
-
-      /* now go right making sure again to stay within the sft band */
-      if ((rightWingBins <= width )){
-	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
-	  if ( (maxBin - lineBin - rightCount > 0)){
-	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
-	    inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
-	    inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
-	  }
+	tempDataRe[k + window] = inData->re;
+	tempDataIm[k + window] = inData->im;
+    }
+    
+    meanRe = gsl_stats_mean(tempDataRe,1,20);
+    meanIm = gsl_stats_mean(tempDataIm,1,20);
+    stdRe = gsl_stats_sd(tempDataRe,1,20);
+    stdIm = gsl_stats_sd(tempDataIm,1,20);
+    
+    /* set sft value at central frequency to noise */
+    inData = sft->data->data + lineBin - minBin;
+    inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
+    inData->im = gsl_ran_gaussian(r, stdIm) + meanIm;
+    
+    /* now go left and set the left wing to noise */
+    /* make sure that we are always within the sft band */
+    /* and set bins to zero only if Wing width is smaller than "width" */ 
+    if ((leftWingBins <= width)){
+      for (leftCount = 0; leftCount < leftWingBins; leftCount++){
+	if ( (lineBin - minBin - leftCount > 0)){
+	  inData = sft->data->data + lineBin - minBin - leftCount - 1;
+	  inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
+	  inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
 	}
       }
     }
+    
+    /* now go right making sure again to stay within the sft band */
+    if ((rightWingBins <= width )){
+      for (rightCount = 0; rightCount < rightWingBins; rightCount++){
+	if ( (maxBin - lineBin - rightCount > 0)){
+	  inData = sft->data->data + lineBin - minBin + rightCount + 1;
+	  inData->re = gsl_ran_gaussian(r, stdRe) + meanRe;
+	  inData->im = gsl_ran_gaussian(r, stdRe) + meanIm;
+	}
+      }
+    }
+    }
   }
-
+  LALFree(tempDataRe);
+  LALFree(tempDataIm);
+  
   DETATCHSTATUSPTR (status);
   /* normal exit */
   RETURN (status);
 }
-
-
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */

@@ -57,8 +57,9 @@ INT4 lalDebugLevel=0;
 #define STARTFREQ 150.0
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
+#define WINDOWSIZE 100
 
-#define USAGE "Usage: %s \n [-d debuglevel] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
+#define USAGE "Usage: %s \n [-d debuglevel] \n [-w window size] \n [-H harmonics file name] \n [-i input sft dir]\n [-o output sft dir] \n [-f start frequency] \n [-b bandwidth] \n [-h print usage] \n"
 
 
 /* Usage format string. */
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]){
   CHAR *harmonicfname;        /* file with harmonics info */
   CHAR *inputSFTDir;    /* directory for unclean sfts */
   CHAR *outputSFTDir;   /* directory for cleaned sfts */
-  INT4 j, arg;                         /* Argument counter */
+  INT4 j, window, arg; 
   INT4 nLines, count1, nHarmonicSets;
   INT4 mObsCoh;  
   REAL8 fStart, fBand;
@@ -127,6 +128,7 @@ int main(int argc, char *argv[]){
   fBand = BANDFREQ;  
   inputSFTDir = INPUTSFTDIR;
   outputSFTDir = OUTPUTSFTDIR;
+  window = WINDOWSIZE;
 
   /********************************************************/  
   /* Parse argument list.  i stores the current position. */
@@ -182,6 +184,17 @@ int main(int argc, char *argv[]){
       if ( argc > arg + 1 ) {
         arg++;
         fStart = atof(argv[arg++]);
+      } else {
+        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
+        LALPrintError( USAGE, *argv );
+        return SFTCLEANC_EARG;
+      }
+    }  
+    /* parse start freq dir */
+    else if ( !strcmp( argv[arg], "-w" ) ) {
+      if ( argc > arg + 1 ) {
+        arg++;
+        window = atof(argv[arg++]);
       } else {
         ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
         LALPrintError( USAGE, *argv );
@@ -276,9 +289,10 @@ int main(int argc, char *argv[]){
     { 
       sft=NULL;
       SUB (LALReadSFTfile (&status, &sft, fStart, fStart + fBand, filelist[j]), &status);
+
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, sft, 2, &lines), &status);
+	SUB( CleanCOMPLEX8SFT( &status, sft, 2, window, &lines), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);

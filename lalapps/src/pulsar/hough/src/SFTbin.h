@@ -123,8 +123,7 @@ NRCSID (SFTBINH, "$Id$");
 /* ******************************************************
  * 8. Macros. But, note that macros are deprecated. 
  *    They could be moved to the modules where are needed 
- */
-  
+ */  
 
 /* *******************************************************
  * 9. Constant Declarations. (discouraged) 
@@ -252,6 +251,7 @@ void ReadLineInfo (LALStatus        *status,
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
 		       INT4               width,
+		       INT4               window,
 		       LineNoiseInfo      *lineInfo
 		       );
 
