@@ -292,7 +292,7 @@ static int contains_playground(INT4 gpsStart, INT4 gpsEnd)
 
 
 /*
- * Pick the best of two events.
+ * Pick the best of two triggers.
  */
 
 static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *a, SnglBurstTable *b, struct options_t options)
@@ -455,10 +455,6 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
 static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *triglist, SimBurstTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
 {
 	SnglBurstTable *event, *bestmatch;
-
-	*detinj = NULL;
-	*dettrig = NULL;
-	*ninjected = *ndetected = 0;
 
 	for(; injection; (*ninjected)++, injection = injection->next) {
 		if(options.verbose)
@@ -643,11 +639,14 @@ int main(int argc, char **argv)
 	INT8 timeAnalyzed;
 	SnglBurstTable *trigger_list = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
+	SnglBurstTable **dettrigaddpoint = &detectedTriggers;
 
 	/* injections */
-	INT4 ninjected, ndetected;
+	INT4 ninjected = 0;
+	INT4 ndetected = 0;
 	SimBurstTable *injection_list = NULL;
 	SimBurstTable *detectedInjections = NULL;
+	SimBurstTable **detinjaddpoint = &detectedInjections;
 
 	/* outputs */
 	MetadataTable myTable;
@@ -710,7 +709,11 @@ int main(int argc, char **argv)
 	 * triggers.
 	 */
 
-	find_injections(&stat, injection_list, trigger_list, &detectedInjections, &detectedTriggers, &ninjected, &ndetected, options);
+	find_injections(&stat, injection_list, trigger_list, detinjaddpoint, dettrigaddpoint, &ninjected, &ndetected, options);
+	while(*detinjaddpoint)
+		detinjaddpoint = &(*detinjaddpoint)->next;
+	while(*dettrigaddpoint)
+		dettrigaddpoint = &(*dettrigaddpoint)->next;
 
 	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
 	fprintf(stdout, "Total injections: %d\n", ninjected);
