@@ -318,21 +318,12 @@ LALUserVarReadCmdline (LALStatus *stat,
    */
   optind = 0; 	/* reset getopt(), getopt_long() */
 
-  /* not needed but good security anyway */
-  optarg=NULL;
-  opterr=0;
-  optopt=0;
-
   /* parse the command-line */
   while ( (c = getopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
       if (c == '?') {
-	CHAR *helpstring = NULL;
-	ATTATCHSTATUSPTR (stat);
-	TRY (LALUserVarHelpString (stat->statusPtr, &helpstring, argv[0]), stat);
-	printf ("\n%s\n", helpstring);
-	LALFree (helpstring);
-	helpstring=NULL;
+	LALPrintError ("\nERROR: unkown command-line option encountered\n");
+	LALPrintError ("see '%s --help' for usage-help\n\n", argv[0]);
 	ABORT (stat, USERINPUTH_EOPT, USERINPUTH_MSGEOPT);
       }
       if (c != 0) 	/* find short-option character */
