@@ -2,13 +2,8 @@
 #
 # $Id$
 #
-if MPI
 check_PROGRAMS  = FindChirpBCVSpinTest
 TESTS           = NoTest.sh
-else
-check_PROGRAMS  = FindChirpBCVSpinTest
-TESTS           = NoTest.sh
-endif
 
 EXTRA_DIST      = NoTest.sh FindChirpTmpltTest.c FindChirpSPTest.c TwoInterfFindChirpSPTest.c FindChirpBCVSpinTest.c
 
@@ -19,7 +14,7 @@ EXTRA_TEXSOURCES = NoTest.sh
 #FindChirpSPTest_SOURCES = FindChirpSPTest.c
 #FindChirpSPTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 FindChirpBCVSpinTest_SOURCES = FindChirpBCVSpinTest.c
-FindChirpBCVSpinTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = FindChirpTmpltTest
