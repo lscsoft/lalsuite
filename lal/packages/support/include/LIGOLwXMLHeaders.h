@@ -9,6 +9,8 @@
  *-----------------------------------------------------------------------
  */
 
+#include <lal/LALStdlib.h>
+
 #if 0
 <lalVerbatim file="LIGOLwXMLHeadersHV">
 Author: Brown, D. A.
