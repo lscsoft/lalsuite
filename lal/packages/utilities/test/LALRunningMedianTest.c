@@ -171,12 +171,10 @@ int compare_single( float x, float y )
 
 static int rngmed_sortindex(const void *elem1, const void *elem2){
   /*Used in running qsort*/
-  
-  struct rngmed_val_index *A, *B;
+
+  const struct rngmed_val_index *A = elem1;
+  const struct rngmed_val_index *B = elem2;
   double data1, data2;
-  
-  A=(struct rngmed_val_index *)elem1;
-  B=(struct rngmed_val_index *)elem2;
   
   data1=A->data;
   data2=B->data;
@@ -186,7 +184,6 @@ static int rngmed_sortindex(const void *elem1, const void *elem2){
     return 0;
   else
     return 1;
-  
 }
 
 

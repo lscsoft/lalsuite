@@ -75,11 +75,9 @@ struct rngmed_val_index4 {
 static int rngmed_sortindex8(const void *elem1, const void *elem2){
   /*Used in running qsort*/
   
-  struct rngmed_val_index8 *A, *B;
+  const struct rngmed_val_index8 *A = elem1;
+  const struct rngmed_val_index8 *B = elem2;
   REAL8 data1, data2;
-  
-  A=(struct rngmed_val_index8 *)elem1;
-  B=(struct rngmed_val_index8 *)elem2;
   
   data1=A->data;
   data2=B->data;
@@ -89,17 +87,14 @@ static int rngmed_sortindex8(const void *elem1, const void *elem2){
     return 0;
   else
     return 1;
-  
 }
 
 static int rngmed_sortindex4(const void *elem1, const void *elem2){
   /*Used in running qsort*/
   
-  struct rngmed_val_index4 *A, *B;
+  const struct rngmed_val_index4 *A = elem1;
+  const struct rngmed_val_index4 *B = elem2;
   REAL4 data1, data2;
-  
-  A=(struct rngmed_val_index4 *)elem1;
-  B=(struct rngmed_val_index4 *)elem2;
   
   data1=A->data;
   data2=B->data;
@@ -109,7 +104,6 @@ static int rngmed_sortindex4(const void *elem1, const void *elem2){
     return 0;
   else
     return 1;
-  
 }
 
 
