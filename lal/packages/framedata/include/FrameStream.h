@@ -24,6 +24,7 @@
  **** </lalLaTeX> */
 
 #include <lal/LALDatatypes.h>
+#include <lal/FrameCache.h>
 
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
