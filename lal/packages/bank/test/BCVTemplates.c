@@ -225,13 +225,13 @@ main(int argc, char **argv)
     
 		  
 	  matrix->data[0] = -metric.G01/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
+	  /sqrt(metric.g11);
+	  matrix->data[1] = -(metric.G00-metric.g00)/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
 	  /sqrt(metric.g00);
-	  matrix->data[1] = (metric.G00-metric.g00)/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
-	  /sqrt(metric.g00);
-	  matrix->data[2] = (metric.G11-metric.g11)/sqrt(pow(metric.G01,2.) + pow(metric.G11-metric.g11,2.))
+	  matrix->data[2] = -(metric.G11-metric.g11)/sqrt(pow(metric.G01,2.) + pow(metric.G11-metric.g11,2.))
 	  /sqrt(metric.g11);
 	  matrix->data[3] = -metric.G01/sqrt(pow(metric.G01,2.) + pow(metric.G00-metric.g00,2.))
-	  /sqrt(metric.g11);
+	  /sqrt(metric.g00);
 
 	  det = matrix->data[0]*matrix->data[3] - matrix->data[1]*matrix->data[2];
 
@@ -303,7 +303,10 @@ main(int argc, char **argv)
     flatmesh.matrix = matrix;
     flatmesh.matrixInv = matrixInv;
     flatmesh.controlPoints = corners;
+    /*
     flatmesh.intersection = LALRectIntersect;
+    */
+    flatmesh.intersection = NULL;
     SUB( LALSCreateVector( &status, &(flatmesh.xMin), dim ), &status );
     SUB( LALSCreateVector( &status, &(flatmesh.xMax), dim ), &status );
   
