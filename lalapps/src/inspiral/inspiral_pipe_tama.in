@@ -256,10 +256,6 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
       f.write('%s\n' % seg.get_dag_node().get_output_b())
   f.close()
   sire.add_var_opt('input',fname)
-  if playground_only:
-    sire.add_var_opt('playground-only',' ')
-  else:
-    sire.add_var_opt('all_data',' ')
   if inj_file:
     sire.set_inj_outputs(file_name,usertag,tama_output,cluster)
     sire.add_var_opt('injection-file',inj_file)
@@ -488,6 +484,23 @@ if inj_file:
   insp_job.add_opt('injection-file',inj_file)
   trig_insp_job.add_opt('injection-file',inj_file)
 
+# add the playground information to the inca and sire jobs
+if playground_only:
+  inca_job.add_opt('playground-only',' ')
+  s_inca_job.add_opt('playground-only',' ')
+  lt_inca_job.add_opt('playground-only',' ')
+  sire_job.add_opt('playground-only',' ')
+  sire_inj_job.add_opt('playground-only',' ')
+  sire_cl_inj_job.add_opt('playground-only',' ')
+else:
+  inca_job.add_opt('no-playground',' ')
+  s_inca_job.add_opt('no-playground',' ')
+  lt_inca_job.add_opt('no-playground',' ')
+  sire_job.add_opt('no-playground',' ')
+  sire_inj_job.add_opt('no-playground',' ')
+  sire_cl_inj_job.add_opt('no-playground',' ')
+
+  
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
