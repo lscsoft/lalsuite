@@ -32,23 +32,25 @@ Header file for GeneratePulsarSignal.
 /* extern "C" { */
 /* #endif */
 
-NRCSID( GENERATEPULSARSIGNALH, "$Id$");
+NRCSID( PULSARSIGNALH, "$Id$");
 
 /********************************************************** <lalLaTeX>
 \subsection*{Error codes}
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
-#define DOPPLERSCANH_ENULL 		1
-#define DOPPLERSCANH_ENONULL		2
-#define DOPPLERSCANH_EMEM		3
-#define DOPPLERSCANH_ESAMPLING		4
-#define DOPPLERSCANH_ESSBCONVERT	5
+#define PULSARSIGNALH_ENULL 		1
+#define PULSARSIGNALH_ENONULL		2
+#define PULSARSIGNALH_EMEM		3
+#define PULSARSIGNALH_ESAMPLING		4
+#define PULSARSIGNALH_ESSBCONVERT	5
+#define PULSARSIGNALH_ESYS		6
 
-#define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define DOPPLERSCANH_MSGENONULL		"Output pointer is not NULL"
-#define DOPPLERSCANH_MSGEMEM		"Out of memory"
-#define DOPPLERSCANH_MSGESAMPLING	"Waveform sampling interval too large."
-#define DOPPLERSCANH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
+#define PULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define PULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
+#define PULSARSIGNALH_MSGEMEM		"Out of memory"
+#define PULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
+#define PULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
+#define PULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
 
 /*************************************************** </lalErrTable> */
 
@@ -99,6 +101,8 @@ typedef struct {
 
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalParams *params);
+void LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname);
+void PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

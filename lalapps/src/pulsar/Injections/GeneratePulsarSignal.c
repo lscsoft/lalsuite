@@ -35,9 +35,11 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 /* prototypes for internal functions */
 static void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
 static void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, PulsarSignalParams *params);
+static void write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set);
+static void write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set);
 /*----------------------------------------------------------------------*/
 
-NRCSID( GENERATEPULSARSIGNAL, "$Id$");
+NRCSID( PULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
@@ -47,13 +49,14 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   static SpinOrbitCWParamStruc sourceParams;
   static CoherentGW sourceSignal;
   DetectorResponse detector;
+  UINT4 SSBduration;
   LIGOTimeGPS time = {0,0};
 
-  INITSTATUS( stat, "LALGeneratePulsarSignal", GENERATEPULSARSIGNAL );
+  INITSTATUS( stat, "LALGeneratePulsarSignal", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (signal != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT (signal->data == NULL, stat,  DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
+  ASSERT (signal != NULL, stat, PULSARSIGNALH_ENULL, PULSARSIGNALH_MSGENULL);
+  ASSERT (signal->data == NULL, stat,  PULSARSIGNALH_ENONULL,  PULSARSIGNALH_MSGENONULL);
 
   /*----------------------------------------------------------------------
    *
@@ -82,19 +85,23 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   else
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
-  /* start-time in GPS time */
-  sourceParams.epoch = params->startTimeGPS;
+  /* start-time in SSB time */
+  TRY (ConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
+  sourceParams.epoch = time;
+
   /* pulsar reference-time in SSB frame !*/
   if (params->pulsar.TRefSSB.gpsSeconds != 0)
     sourceParams.spinEpoch = params->pulsar.TRefSSB;
   else
-    {
-      TRY (ConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
-      sourceParams.spinEpoch = time;
-    }
+    sourceParams.spinEpoch = time;	/* use start-time */
+
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
-  sourceParams.length = (UINT4)( 1.0* params->duration / sourceParams.deltaT );
+  time = params->startTimeGPS;
+  time.gpsSeconds += params->duration;
+  TRY (ConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
+  SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds +2 ;
+  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
 
   /*
    * finally, call the function to generate the source waveform 
@@ -104,8 +111,11 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   if ( sourceParams.dfdt > 2.0 )  /* taken from makefakedata_v2 */
     {
       LALPrintError ("GenerateSpinOrbitCW() returned df*dt = %f > 2.0", sourceParams.dfdt);
-      ABORT (stat, DOPPLERSCANH_ESAMPLING, DOPPLERSCANH_MSGESAMPLING);
+      ABORT (stat, PULSARSIGNALH_ESAMPLING, PULSARSIGNALH_MSGESAMPLING);
     }
+
+  TRY (PrintGWSignal (stat->statusPtr, &sourceSignal, "signal2.agr"), stat);
+
   /*----------------------------------------------------------------------
    *
    * Now call the function to translate the source-signal into a (heterodyned)
@@ -123,11 +133,13 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   detector.heterodyneEpoch = time;
   
   /* ok, but we also need to prepare the output time-series */
-  signal->data = LALMalloc (sizeof signal->data);
+  signal->data = LALMalloc (sizeof(*(signal->data)));
   signal->data->length = (UINT4)( params->samplingRate * params->duration );
-  signal->data->data = LALMalloc ( signal->data->length );
+  signal->data->data = LALMalloc ( signal->data->length * (sizeof(*(signal->data->data))) );
   signal->deltaT = 1.0 / params->samplingRate;
   signal->f0 = params->fHeterodyne;
+  signal->epoch = params->startTimeGPS;
+
 
   printf ("\nLaenge time-series: %d samples\n", signal->data->length);
   
@@ -166,11 +178,11 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, PulsarS
   REAL8 Tns=GPSin.gpsNanoSeconds;
 
 
-  INITSTATUS( stat, "ConvertGPS2SSB", GENERATEPULSARSIGNAL );
+  INITSTATUS( stat, "ConvertGPS2SSB", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
-  ASSERT (SSBout != NULL, stat,  DOPPLERSCANH_ENULL,  DOPPLERSCANH_MSGENULL);
-  ASSERT (params != NULL, stat,  DOPPLERSCANH_ENULL,  DOPPLERSCANH_MSGENULL);
+  ASSERT (SSBout != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat,  PULSARSIGNALH_ENULL,  PULSARSIGNALH_MSGENULL);
 
   baryinput.tgps = GPSin;
   baryinput.site = *(params->site);
@@ -214,7 +226,7 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, PulsarS
   INT4 iterations, E9=1000000000;
   INT8 delta, guess;
 
-  INITSTATUS( stat, "ConvertSSB2GPS", GENERATEPULSARSIGNAL );
+  INITSTATUS( stat, "ConvertSSB2GPS", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
 
 
@@ -255,7 +267,7 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, PulsarS
 
   /* check for convergence of root finder */
   if (iterations == 100) {
-    ABORT ( stat, DOPPLERSCANH_ESSBCONVERT, DOPPLERSCANH_MSGESSBCONVERT);
+    ABORT ( stat, PULSARSIGNALH_ESSBCONVERT, PULSARSIGNALH_MSGESSBCONVERT);
   }
 
   /* Now that we've found the GPS time that corresponds to the given SSB time */
@@ -266,3 +278,146 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, PulsarS
   RETURN (stat);
 
 } /* ConvertSSB2GPS() */
+
+/*----------------------------------------------------------------------
+ * export a REAL4 time-series in an xmgrace graphics file 
+ *----------------------------------------------------------------------*/
+void
+LALPrintR4TimeSeries (LALStatus *stat, REAL4TimeSeries *series, const CHAR *fname)
+{
+  FILE *fp = NULL;
+  UINT4 set;
+  CHAR *xmgrHeader = 
+    "@version 50103\n"
+    "@xaxis label \"T (sec)\"\n"
+    "@yaxis label \"A\"\n";
+
+  /*
+    "@world xmin -0.1\n"
+    "@world xmax 6.4\n"
+    "@world ymin -3.2\n"
+    "@world ymax 3.2\n"
+  */
+  /*
+  CHAR           name[LALNameLength];
+  LIGOTimeGPS    epoch;
+  REAL8          deltaT;
+  REAL8          f0;
+  LALUnit        sampleUnits;
+  REAL4Sequence *data;
+  */
+
+  /* Set up shop. */
+  INITSTATUS( stat, "PrintR4TimeSeries", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  fp = fopen (fname, "w");
+
+  if( !fp ) {
+    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+  }
+  
+  fprintf (fp, xmgrHeader);
+  fprintf (fp, "@title \"REAL4 Time-Series: %s\"\n", series->name);
+  fprintf (fp, "@subtitle \"GPS-start: %f, f0 = %e\"\n", 
+	   1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds / 1.0e9, series->f0);
+
+  set = 0;
+
+  write_timeSeriesR4 (fp, series, set);
+      
+  fclose(fp);
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* PrintR4TimeSeries() */
+
+
+void
+PrintGWSignal (LALStatus *stat, CoherentGW *signal, const CHAR *fname)
+{
+  FILE *fp;
+  UINT4 set;
+  CHAR *xmgrHeader = 
+    "@version 50103\n"
+    "@xaxis label \"T (sec)\"\n"
+    "@yaxis label \"A\"\n";
+
+
+  INITSTATUS( stat, "PrintGWSignal", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  fp = fopen (fname, "w");
+
+  if( !fp ) {
+    ABORT (stat, PULSARSIGNALH_ESYS, PULSARSIGNALH_MSGESYS);
+  }
+
+  fprintf (fp, xmgrHeader);
+  fprintf (fp, "@title \"GW source signal\"\n");
+  fprintf (fp, "@subtitle \"position: (alpha,delta) = (%f, %f), psi = %f\"\n", 
+	   signal->position.longitude, signal->position.latitude, signal->psi);
+
+  set = 0;
+  write_timeSeriesR4 (fp, signal->f, set++);
+  write_timeSeriesR8 (fp, signal->phi, set++);
+
+  fclose (fp);
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* PrintGWSignal() */
+
+
+/* internal helper-function */
+void
+write_timeSeriesR4 (FILE *fp, REAL4TimeSeries *series, UINT4 set)
+{
+  REAL4 timestamp; 
+  UINT4 i;
+
+
+  if (series == NULL)
+    {
+      printf ("\nset %d is empty\n", set);
+      return; 
+    }
+
+  /* Print set header. */
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,0)\n", set );
+
+  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+
+  for( i = 0; i < series->data->length; i++)
+    {
+      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
+      timestamp += series->deltaT;
+    }
+
+  return;
+
+} /* write_timeSeriesR4() */
+
+void
+write_timeSeriesR8 (FILE *fp, REAL8TimeSeries *series, UINT4 set)
+{
+  REAL4 timestamp; 
+  UINT4 i;
+  /* Print set header. */
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,0)\n", set );
+
+  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
+
+  for( i = 0; i < series->data->length; i++)
+    {
+      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
+      timestamp += series->deltaT;
+    }
+
+  return;
+
+} /* write_timeSeriesR4() */

@@ -475,7 +475,9 @@ int main(int argc,char *argv[]) {
      the first timestamp, so that the interpolation table goes beyond the
      times that we need at the begining */
   spinorbit.epoch    = SSBfirst;
-  spinorbit.epoch.gpsSeconds -= 0.75*LTT;
+  /* RP: testing
+    spinorbit.epoch.gpsSeconds -= 0.75*LTT;
+  */
   
   /* Set the interpolation table length large enough that the
      interpolation table extends beyond the end time. */
@@ -528,10 +530,13 @@ int main(int argc,char *argv[]) {
     return 1;
   }
 
+  SUB (PrintGWSignal (&status, &cgwOutput, "signal1.agr"), &status);
+
   totalTimeSeries->epoch=timestamps[0];
 
   SUB( LALSimulateCoherentGW(&status, totalTimeSeries, &cgwOutput, &cwDetector), &status);
 
+  SUB ( LALPrintR4TimeSeries (&status, totalTimeSeries, "test1.agr"), &status);
 
   /*********************************************************************************
    * OK, now let's try to do the same with LALGeneratePulsarSignal() and compare 
@@ -556,11 +561,15 @@ int main(int argc,char *argv[]) {
 
     params.startTimeGPS = timestamps[0]; 
     params.duration = timestamps[nTsft-1].gpsSeconds - timestamps[0].gpsSeconds + Tsft;
-    params.samplingRate = 0.5 / Band;		
+    params.samplingRate = 2.0 * Band;		
     params.fHeterodyne = fmin;
 
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
+    SUB ( LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
+
+    LALFree (Tseries.data->data);
+    LALFree (Tseries.data);
 
   }
   /**********************************************************************************/
@@ -570,12 +579,21 @@ int main(int argc,char *argv[]) {
 
   /* This is the main loop that produces output data */
   for (iSFT=0;iSFT<nTsft;iSFT++){
+    CHAR name[256];
+    INT4 shift;
 
     /* This sets the time at which the output is given...*/
     timeSeries->epoch=timestamps[iSFT];
     
-    timeSeries->data->data =  totalTimeSeries->data->data + 
-      (INT4)(2.0* Band* (timestamps[iSFT].gpsSeconds - timestamps[0].gpsSeconds));
+    shift = (INT4)(2.0* Band* (timestamps[iSFT].gpsSeconds - timestamps[0].gpsSeconds));
+
+    timeSeries->data->data =  totalTimeSeries->data->data + shift;
+
+
+    printf ("i = %d: epoch = %d, sample-shift = %d\n", iSFT, timestamps[iSFT].gpsSeconds,  shift);
+
+    sprintf (name, "orig_%03d.agr", iSFT);
+    SUB ( LALPrintR4TimeSeries (&status, timeSeries, name), &status);
 
     /* Note that we DON'T update cwDetector Heterodyne Epoch. Teviet
     says: "You can set it to anything you like; it doesn't really
@@ -723,6 +741,9 @@ void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin)
   doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   LALFloatToGPS(status, &ssb, &doubleTime);
   
+  
+
+
   *ssbout=ssb;
   return;
 }
