@@ -1052,7 +1052,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
 "  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
 "  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
-"  --point-calibration          use the first point in the chunk to calibrate\n"\ 
+"  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
 "  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]\n"\
