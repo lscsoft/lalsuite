@@ -6,4 +6,5 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = CLRTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
 noinst_DATA = CLRindata.asc
+EXTRA_DIST = $(DATA)
 MOSTLYCLEANFILES = CLRoutdata.asc

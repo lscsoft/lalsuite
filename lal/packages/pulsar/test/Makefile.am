@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 check_PROGRAMS = StackMetricTest FlatMeshTest StreamInputTest ResampleTest LALDemodTest
 noinst_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat range_tauOverT-1e5_n-2.dat StreamInput.dat in.data
-EXTRA_DIST = StreamInput.h StreamVectorInput.c StreamVectorSequenceInput.c
+EXTRA_DIST = $(DATA) StreamInput.h StreamVectorInput.c StreamVectorSequenceInput.c
 MOSTLYCLEANFILES = times.blah
 StackMetricTest_SOURCES = StackMetricTest.c
 StackMetricTest_LDADD = $(top_builddir)/lib/liblal.la
