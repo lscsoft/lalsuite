@@ -17,11 +17,22 @@ LALDemodTest -i <input data file> [-g <gap>] [-m] [-n] [-o]
 
 \subsubsection*{Description}
 
-\noindent This routine performs tests on the routine \verb@LALDemod()@ as per LAL standards.  It is a lengthy code, in comparison with the demodulation routine itself. 
-In brief, this is an overview of the options: an input data file, specified on the command line with '\verb@-i@', contains parameters relevant to the search (search band, timescales, spindown parameters, sky positions, etc.), and is the only required command line argument.  A fake signal is then produced, which can be superimposed on noise using the '\verb@-n@' switch.  This signal can be modulated (by adding the '-m' switch on the command line), and one can simulate 'gaps' in the data by adding the '\verb@-g <gap>@' option, where \verb@<gap>@ refers to the integral number SFT timescales between adjacent timestamps.  Finally, to print output files containing the DeFT data, one uses the '\verb@-o@' option.  Please note that an example input file, \verb@in.data@, is included with this distribution.
+\noindent This routine performs tests on the routine \verb@LALDemod()@ as per
+LAL standards.  It is a lengthy code, in comparison with the demodulation
+routine itself.  In brief, this is an overview of the options: an input data
+file, specified on the command line with '\verb@-i@', contains parameters
+relevant to the search (search band, timescales, spindown parameters, sky
+    positions, etc.), and is the only required command line argument.  A fake
+signal is then produced, which can be superimposed on noise using the
+'\verb@-n@' switch.  This signal can be modulated (by adding the '-m' switch
+    on the command line), and one can simulate 'gaps' in the data by adding
+the '\verb@-g <gap>@' option, where \verb@<gap>@ refers to the integral number
+SFT timescales between adjacent timestamps.  Finally, to print output files
+containing the DeFT data, one uses the '\verb@-o@' option.  Please note that
+an example input file, \verb@in.data@, is included with this distribution.
 
-In more detail, let us begin with a discussion of the structure of the test code, which is composed of several modules. 
-\begin{itemize}
+In more detail, let us begin with a discussion of the structure of the test
+code, which is composed of several modules.  \begin{itemize}
 \item The first module reads in data from an input parameter data file.  The parameters must be listed in the input file in the following order, with the corresponding format:
 \begin{verbatim}
 total observation time -- float
@@ -49,35 +60,116 @@ template source declination (delta) -- float (value in DEGREES)
 \end{verbatim}
 
 
-\item The next module in this test code creates noise using LAL's \verb@LALNormalDeviates()@ routine.  By design, the noise is created in single precision.  This noise is added, datum-by-datum, to the time series created in the next module, after the amplitude of the time series has been changed by a factor of \verb@SNR@, which is specified in the input data file.
+\item The next module in this test code creates noise using LALs
+\verb@LALNormalDeviates()@ routine.  By design, the noise is created in single
+precision.  This noise is added, datum-by-datum, to the time series created in
+the next module, after the amplitude of the time series has been changed by a
+factor of \verb@SNR@, which is specified in the input data file.
 
-\item The next module to be invoked creates a time series that gets eventually FFT-ed and constitutes the SFT data to be input to the demodulation code.  This is the fake signal data set that we need to generate in order to test the demodulation code.  The fake signal data is characterized by an intrinsic frequency at the beginning of the observation plus some other source parameters.  The DeFT is produced in a band \verb@f0Band@ centered at this frequency.  The band, as explained above, is an input parameter. The width of this band (plus some extra width of $2\cdot 10^{-4}f0 $ Hz) determines the sampling frequency of the time series (Nyquist theorem).  In practice this would be the inverse FFT of a data set that has been band-passed around \verb@f0@ and then appropriately down-sampled (e.g. with a lock-in).  The normalization rule for FFT data is the following: if sinusoidal data over a time $T$ and with amplitude $A$ is FFT-ed, the sum of the square amplitude of the output of the FFT (power) is equal to ${A^2 T}$.  Thus, the power peak at the sinusoid's frequency should be expected to be $\sim$ $\frac{A^2}{2} T$, within a factor of 2.  The same normalization rule applies to the DeFT data.  Thus by piecing together $N$ SFTs we expect a DeFT power peak $\sim N$ higher than that of the SFTs - in the case of perfect signal-template match.
+\item The next module to be invoked creates a time series that gets eventually
+FFT-ed and constitutes the SFT data to be input to the demodulation code.
+This is the fake signal data set that we need to generate in order to test the
+demodulation code.  The fake signal data is characterized by an intrinsic
+frequency at the beginning of the observation plus some other source
+parameters.  The DeFT is produced in a band \verb@f0Band@ centered at this
+frequency.  The band, as explained above, is an input parameter. The width of
+this band (plus some extra width of $2\cdot 10^{-4}f0 $ Hz) determines the
+sampling frequency of the time series (Nyquist theorem).  In practice this
+would be the inverse FFT of a data set that has been band-passed around
+\verb@f0@ and then appropriately down-sampled (e.g. with a lock-in).  The
+normalization rule for FFT data is the following: if sinusoidal data over a
+time $T$ and with amplitude $A$ is FFT-ed, the sum of the square amplitude of
+the output of the FFT (power) is equal to ${A^2 T}$.  Thus, the power peak at
+the sinusoids frequency should be expected to be $\sim$ $\frac{A^2}{2} T$,
+within a factor of 2.  The same normalization rule applies to the DeFT data.
+Thus by piecing together $N$ SFTs we expect a DeFT power peak $\sim N$ higher
+than that of the SFTs - in the case of perfect signal-template match.
 
 
-Let us now spend a few words on the choice of the SFT time baseline.  Given an intrinsic search frequency one can compute the longest time baseline which is still compatible with the requirement that the instantaneous signal frequency during such time baseline does not shift by more than a frequency bin.  This is the default choice for the SFT length, having assumed that the modulation is due to the spin of the Earth and having taken 
-a simple epicyclic model to evaluate the magnitude of this effect. 
+Let us now spend a few words on the choice of the SFT time baseline.  Given an
+intrinsic search frequency one can compute the longest time baseline which is
+still compatible with the requirement that the instantaneous signal frequency
+during such time baseline does not shift by more than a frequency bin.  This
+is the default choice for the SFT length, having assumed that the modulation
+is due to the spin of the Earth and having taken a simple epicyclic model to
+evaluate the magnitude of this effect. 
 
 
-It is possible to choose a different time baseline by specifying a value for the variable \verb@gap@ other than 1.  Note that the SFT time baseline is approximated to the nearest value such that the number of SFT samples is a power of two.  This is also well documented in the code.  
+It is possible to choose a different time baseline by specifying a value for
+the variable \verb@gap@ other than 1.  Note that the SFT time baseline is
+approximated to the nearest value such that the number of SFT samples is a
+power of two.  This is also well documented in the code.  
 
 
-The set of SFTs does not necessarily come from contiguous data sets: a set of time stamps is created that defines the time of the first sample of each SFT data chunk.  The timestamps which are required in many parts of the code are generated in a small subroutine \verb@times()@.  This routine take as input the SFT timescale \verb@tSFT@, the number of SFTs which will be created, \verb@mObsSFT@, and a switch which lets the code know whether to make even timestamps, or timestamps with gaps (see below for more on this).  The subroutine then writes the times to the \verb@LIGOTimeGPS@ vector containing the timestamps for the entire test code, and returns this vector.  Note that each datum of the  \verb@LIGOTimeGPS@ vector is comprised of two fields; if accessing the $i^{th}$ datum, the seconds part of the timestamp vector \verb@ts@ is \verb@ts[i].gpsSeconds@ and the nanoseconds part is \verb@ts[i].gpsNanoSeconds@.  These are the fields which are written in this \verb@times()@.
+The set of SFTs does not necessarily come from contiguous data sets: a set of
+time stamps is created that defines the time of the first sample of each SFT
+data chunk.  The timestamps which are required in many parts of the code are
+generated in a small subroutine \verb@times()@.  This routine take as input
+the SFT timescale \verb@tSFT@, the number of SFTs which will be created,
+\verb@mObsSFT@, and a switch which lets the code know whether to make even
+timestamps, or timestamps with gaps (see below for more on this).  The
+subroutine then writes the times to the \verb@LIGOTimeGPS@ vector containing
+the timestamps for the entire test code, and returns this vector.  Note that
+each datum of the  \verb@LIGOTimeGPS@ vector is comprised of two fields; if
+accessing the $i^{th}$ datum, the seconds part of the timestamp vector
+\verb@ts@ is \verb@ts[i].gpsSeconds@ and the nanoseconds part is
+\verb@ts[i].gpsNanoSeconds@.  These are the fields which are written in this
+\verb@times()@.
 
 
-As an important side note, let us discuss the effect that a vector of timestamps with gaps has on the resulting transformed data.  Since each of the timestamps refers to the first datum of each SFT, the existence of the gaps means that instead of transforming a continuous set of data, we are reduced to transforming a piecewise continuous set.  Since we can envision these gaps as simply replacing real data with zeros, we correspondingly should see a power loss in the resulting FFTs signal bins and a broadening of the power spectrum.
-  Since real detectors will clearly have gaps in the data, this effect is obviously something we seek to minimize or eliminate if possible.  This work  continues to be under development.
+As an important side note, let us discuss the effect that a vector of
+timestamps with gaps has on the resulting transformed data.  Since each of the
+timestamps refers to the first datum of each SFT, the existence of the gaps
+means that instead of transforming a continuous set of data, we are reduced to
+transforming a piecewise continuous set.  Since we can envision these gaps as
+simply replacing real data with zeros, we correspondingly should see a power
+loss in the resulting FFTs signal bins and a broadening of the power spectrum.
+Since real detectors will clearly have gaps in the data, this effect is
+obviously something we seek to minimize or eliminate if possible.  This work
+continues to be under development.
 
 
-The total observation time determines how many SFTs and how many DeFTs are created.  The actual time baseline for both the DeFTs and the total observation time might differ from the ones defined in the input file, the reason being that they are rounded to the nearest multiple of the SFT time baseline.
+The total observation time determines how many SFTs and how many DeFTs are
+created.  The actual time baseline for both the DeFTs and the total
+observation time might differ from the ones defined in the input file, the
+reason being that they are rounded to the nearest multiple of the SFT time
+baseline.
 
-Finally note that use is made of an internal function named \verb@tdb()@ written by C. Cutler.  This function is a basic routine which simulates the modulation effects due to the Earth's motion.  Currently it uses an epicyclic motion model for the Earth spin and the Earth's orbital motion.  In time it will be replaced by a routine submitted to LAL by C. Cutler. This routine will compute at any given time the actual instantaneous position and velocity of a detector at any specified location of the Earth with respect to the SSB.
+Finally note that use is made of an internal function named \verb@tdb()@
+written by C. Cutler.  This function is a basic routine which simulates the
+modulation effects due to the Earths motion.  Currently it uses an epicyclic
+motion model for the Earth spin and the Earths orbital motion.  In time it
+will be replaced by a routine submitted to LAL by C. Cutler. This routine will
+compute at any given time the actual instantaneous position and velocity of a
+detector at any specified location of the Earth with respect to the SSB.
 
-\item Following the creation of a short chunk of time series data, an FFT is performed with the internal FFTW routines.  This outputs a frequency domain chunk which is placed into the \verb@SFTData@ array of structures.  This will contain all of the SFT data we need to demodulate, and in the future, will be the storage area for the real data.
+\item Following the creation of a short chunk of time series data, an FFT is
+performed with the internal FFTW routines.  This outputs a frequency domain
+chunk which is placed into the \verb@SFTData@ array of structures.  This will
+contain all of the SFT data we need to demodulate, and in the future, will be
+the storage area for the real data.
 
-\item The next module begins the demodulation process.  First, the parameters for the demodulation routine are assigned from values previously calculated in the test code.  Similarly, parameters for the \verb@ComputeSky()@ routine are assigned.  This routine computes the coefficients $A_{s\alpha}$ and $B_{s\alpha}$ (see section \ref{s:ComputeSky.h}) of the spindown parameters for the phase model we've assumed.  These coefficients are used within the \verb@LALDemod()@ routine itself. Since they only depend on the template sky position, in a search over many different spin-down parameters they are reused, thus one needs compute them only once.  Finally, at last, the demodulation routine itself is called, and, if the command line option '\verb@-o@' is used,  output are several data files containing demodulated data (these are by default named '\verb@xhat_#@').  The files have three columns: one for the frequency, and two for the real and imaginary parts of the data.
+\item The next module begins the demodulation process.  First, the parameters
+for the demodulation routine are assigned from values previously calculated in
+the test code.  Similarly, parameters for the \verb@ComputeSky()@ routine are
+assigned.  This routine computes the coefficients $A_{s\alpha}$ and
+$B_{s\alpha}$ (see section \ref{s:ComputeSky.h}) of the spindown parameters
+for the phase model weve assumed.  These coefficients are used within the
+\verb@LALDemod()@ routine itself. Since they only depend on the template sky
+position, in a search over many different spin-down parameters they are
+reused, thus one needs compute them only once.  Finally, at last, the
+demodulation routine itself is called, and, if the command line option
+'\verb@-o@' is used,  output are several data files containing demodulated
+data (these are by default named '\verb@xhat_#@').  The files have three
+columns: one for the frequency, and two for the real and imaginary parts of
+the data.
 
-\item There is an option within the code which allows one to print out SFT data, information about the peaks of the SFTs, and information about the DeFTs' peak position (whether they various DeFTs' maximal power peaks are in the same bins as all the others or not).  This option is available to those interested by uncommenting some code in this test suite.  The comments look like
-\begin{verbatim}
+\item There is an option within the code which allows one to print out SFT
+data, information about the peaks of the SFTs, and information about the
+DeFTs' peak position (whether they various DeFTs' maximal power peaks are in
+    the same bins as all the others or not).  This option is available to
+those interested by uncommenting some code in this test suite.  The comments
+look like \begin{verbatim}
 /*****
 *****
 	
@@ -86,7 +178,11 @@ Finally note that use is made of an internal function named \verb@tdb()@ written
 *****
 *****/
 \end{verbatim}
-Simply remove the necessary characters.  Note that in some places, the commentary should be commented out (so the code can compile!)  These snippets of code provide someone with the ability to see what the intermediate results of the test code look like.  Note also that some variables, when commented out, may appear as 'unused' in the compiler output.  Don't delete them!
+Simply remove the necessary characters.  Note that in some places, the
+commentary should be commented out (so the code can compile!)  These snippets
+of code provide someone with the ability to see what the intermediate results
+of the test code look like.  Note also that some variables, when commented
+out, may appear as unused in the compiler output.  Dont delete them!
 \end{itemize}
 
 
@@ -145,6 +241,8 @@ else (void)(0)
 #include <lal/LALDemod.h>
 
 NRCSID(LALDEMODTESTC, "$Id$");
+
+void tdb(REAL8 alpha, REAL8 delta, REAL8 t_GPS, REAL8 *T, REAL8 *Tdot, CHAR *sw) ;
 
 int lalDebugLevel =3;
 
