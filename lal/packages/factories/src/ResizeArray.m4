@@ -110,10 +110,6 @@ ATYPE * XFUNC ( ATYPE *array, UINT4Vector *dimLength )
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 {  /* </lalVerbatim> */
   ATYPE *tmparr = NULL;
-  UINT4 arrayDataSize = 1;
-  UINT4 numDims;
-  UINT4 dim;
-  TYPE * p; /* temporary pointer */
 
   INITSTATUS (status, "FUNC", ARRAYFACTORIESC);
 
