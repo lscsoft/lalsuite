@@ -153,9 +153,10 @@ The inspiral waveform parameter structure containing information about the
 	  If \texttt{ieta=0} $\eta$ will be set to zero, otherwise the appropriate
 	  value of $\eta$ from the given parameters will be used.
 	  
-  \item \texttt { level:} (introduced by Duncan Brown?)
-  \item \texttt { *segmentIdVec:} (introduced by Duncan Brown?)
-  \item \texttt { number:} (introduced by Duncan Brown?)
+  \item \texttt { level:} Flag used in heirarical serached to indicate if this is a coarse or a fine template
+  \item \texttt { *segmentIdVec:} Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search.
+  \item \texttt { number:} Unique ID number for this template needed for the LDAS implementation of the inspiral search.
+  \item \texttt { minMatch:} The minimal match specified by the user when the bank that contains this template was created.
   \item \texttt { nStartPad:} Number of leading elements in the template to be set to zero (input).
   \item \texttt { nEndPad:} Number of trailing bins to be set to zero, the 
   resulting waveform will have at least this many bins zero at the end, probably
@@ -394,6 +395,7 @@ tagInspiralTemplate
    INT4 number;
    INT4 nStartPad;
    INT4 nEndPad;
+   REAL4 minMatch;
    REAL8 mass1; 
    REAL8 mass2;
    REAL8 spin1[3];
