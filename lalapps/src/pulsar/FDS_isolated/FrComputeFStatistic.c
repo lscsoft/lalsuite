@@ -9,11 +9,13 @@
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
 #include <lalapps.h>
+#include <FrameL.h>
+#include <FrVect.h>
 
 #include "FrComputeFStatistic.h"
-#include "rngmed.h"
-#include "clusters.h"
-#include "DopplerScan.h"
+#include "../FDS_isolated/rngmed.h"
+#include "../FDS_isolated/clusters.h"
+#include "../FDS_isolated/DopplerScan.h"
 
 RCSID( "$Id$");
 
@@ -123,7 +125,8 @@ INT4 NormaliseSFTData(void);
 void initUserVars (LALStatus *stat);
 
 #define EPHEM_YEARS  "00-04"
-#define SFT_NAME  "SFT.gwf"
+#define SFT_FILE  "SFT.gwf"
+#define SFT_NAME  "SFT"
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -329,8 +332,8 @@ initUserVars (LALStatus *stat)
   uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_EphemYear, EPHEM_YEARS);
 
-  uvar_Name = LALCalloc (1, strlen(SFT_NAME)+1);
-  strcpy (uvar_Name, SFT_NAME);
+  uvar_Name = LALCalloc (1, strlen(SFT_FILE)+1);
+  strcpy (uvar_Name, SFT_FILE);
 
   uvar_SignalOnly = FALSE;
   uvar_EstimSigParam = FALSE;
@@ -1025,7 +1028,6 @@ INT4 ReadSFTFrame( void )
   FrFile *frfile;   /* frame file pointer */
   FrTOCts *ts;      /* table of contents structure pointer */
   FrProcData *proc; /* processed data pointer */
-  FrVect *vect;     /* generic frame vector pointer */
 
   /* Open the frame file and read its table of contents. */
   if ( !( frfile = FrFileINew( uvar_Name ) ) ) {
@@ -1039,11 +1041,11 @@ INT4 ReadSFTFrame( void )
     FrFileIEnd( frfile );
     return 2;
   }
-  t0 = 1000000000LL*frfile->toc->GTimesS[0] + frfile->toc->GTimeN[0];
+  t0 = 1000000000LL*frfile->toc->GTimeS[0] + frfile->toc->GTimeN[0];
 
   /* Count number of SFT proc datas in frame. */
   for ( i = 0, ts = frfile->toc->proc; ts; i++, ts = ts->next )
-    while ( ts && !strstr( ts->name, SFTNAME ) )
+    while ( ts && !strstr( ts->name, SFT_NAME ) )
       ts = ts->next;
   if ( i == 0 ) {
     fprintf( stderr, "Could not locate SFT channels in file %s\n",
@@ -1066,7 +1068,7 @@ INT4 ReadSFTFrame( void )
 
   /* Start reading SFT data into the arrays. */
   for ( i = 0, ts = frfile->toc->proc; ts; i++, ts = ts->next ) {
-    while ( ts && !strstr( ts->name, SFTNAME ) )
+    while ( ts && !strstr( ts->name, SFT_NAME ) )
       ts = ts->next;
 
     /* Read and check proc data. */
@@ -1077,7 +1079,7 @@ INT4 ReadSFTFrame( void )
       CLEANUP( i );
       return 5;
     }
-    if ( proc->type != 2 || proc->subType != 1 || proc->data->nDim != 1
+    if ( proc->type != 2 || proc->subType != 1 || proc->data->nDim != 1 ||
 	 ( proc->data->type != FR_VECT_8C &&
 	   proc->data->type != FR_VECT_16C ) ) {
       fprintf( stderr, "Wrong data type for SFT %i in file %s\n", i,
@@ -1113,7 +1115,7 @@ INT4 ReadSFTFrame( void )
 	    LALMalloc( sizeof(COMPLEX8FrequencySeries) ) ) ||
 	 !( SFTData[i]->fft->data = (COMPLEX8Vector *)
 	    LALMalloc( sizeof(COMPLEX8Vector) ) ) ||
-	 !( SFTData[fileno]->fft->data->data = (COMPLEX8 *)
+	 !( SFTData[i]->fft->data->data = (COMPLEX8 *)
 	    LALMalloc( proc->data->nData*sizeof(COMPLEX8) ) ) ) {
       fprintf( stderr, "Memory allocation error\n" );
       CLEANUP( i + 1 );
@@ -1122,11 +1124,11 @@ INT4 ReadSFTFrame( void )
 
     /* Fill data structure. */
     SFTData[i]->fft->epoch = timestamps[i];
-    SFTData[i]->fft->f0 = proc->data->startX;
-    SFTData[i]->fft->deltaF = proc->data->dx;
+    SFTData[i]->fft->f0 = proc->data->startX[0];
+    SFTData[i]->fft->deltaF = proc->data->dx[0];
     SFTData[i]->fft->data->length = proc->data->nData;
     if ( proc->data->type == FR_VECT_16C ) {
-      INT4 j; /* index over data elements */
+      UINT4 j; /* index over data elements */
       for ( j = 0; j < proc->data->nData; j++ ) {
 	SFTData[i]->fft->data->data[j].re = proc->data->dataD[2*j];
 	SFTData[i]->fft->data->data[j].im = proc->data->dataD[2*j+1];
@@ -1165,6 +1167,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 {
 
   FILE *fp;
+  INT4 i;                           /* index over SFTs */
   REAL8 df;                         /* freq resolution */
 
   INITSTATUS (status, "SetGlobalVariables", rcsid);
