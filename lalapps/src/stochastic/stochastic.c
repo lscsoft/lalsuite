@@ -113,7 +113,6 @@ INT4 resampleRate = -1;
 REAL8 deltaF = 0.25;
 
 /* data parameters */
-LIGOTimeGPS gpsStartTime;
 INT4 startTime = 0;
 INT4 endTime = 0;
 INT4 intervalDuration = -1;
@@ -187,6 +186,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* results parameters */
   REAL8 y, yOpt;
   REAL8 varTheo;
+
+  /* input data */
+  LIGOTimeGPS gpsStartTime;
+  LIGOTimeGPS gpsEndTime;
+  REAL4TimeSeries *seriesOne;
+  REAL4TimeSeries *seriesTwo;
 
   /* input data segment */
   INT4 numSegments;
@@ -372,6 +377,23 @@ INT4 main(INT4 argc, CHAR *argv[])
     segmentShift = segmentDuration / 2;
   else
     segmentShift = segmentDuration;
+
+  /* initialise gps time structures */
+  gpsStartTime.gpsSeconds = startTime;
+  gpsStartTime.gpsNanoSeconds = 0;
+  gpsEndTime.gpsSeconds = endTime;
+  gpsEndTime.gpsNanoSeconds = 0;
+
+  /* read data */
+  seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
+      gpsStartTime, gpsEndTime);
+  seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
+      gpsStartTime, gpsEndTime);
+
+  LALSPrintTimeSeries(seriesOne, "1.dat");
+  LALSPrintTimeSeries(seriesTwo, "2.dat");
+
+  exit(1);
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -2565,6 +2587,8 @@ static void parse_options(INT4 argc, CHAR *argv[])
       exit(1);
     }
   }
+  else
+    frameCacheTwo = frameCacheOne;
 
   /* calibration cache */
   if (strncmp(ifoOne, "G1", 2) != 0)
@@ -3001,33 +3025,33 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   CHAR *cacheFile,
   CHAR *channel,
   LIGOTimeGPS start,
-  size_t length)
+  LIGOTimeGPS end)
 {
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
   FrCache *frameCache = NULL;
-  LIGOTimeGPS end;
+  ResampleTSParams params;
 
-  /* set end time */
-  end.gpsSeconds = start.gpsSeconds + length;
-  end.gpsNanoSeconds = start.gpsNanoSeconds;
+  /* set resample parameters */
+  params.deltaT = 1./resampleRate;
+  params.filterType = defaultButterworth;
 
-  /* Open frame stream */
+  /* open frame stream */
   LAL_CALL(LALFrCacheImport(status, &frameCache, cacheFile), status);
   LAL_CALL(LALFrCacheOpen(status, &stream, frameCache), status);
   LAL_CALL(LALDestroyFrCache(status, &frameCache), status);
 
-  /* Turn on checking for missing data */
+  /* turn on checking for missing data */
   stream->mode = LAL_FR_VERBOSE_MODE;
 
-  /* Get the data */
+  /* get the data */
   if (strncmp(ifo, "G1", 2) == 0)
     series = get_geo_data(status, stream, channel, start, end);
   else
     series = get_ligo_data(status, stream, channel, start, end);
 
-  /* Check for missing data */
+  /* check for missing data */
   if (stream->state & LAL_FR_GAP)
   {
     fprintf(stderr, "Gap in data detected between GPS times %d s and %d s\n", \
@@ -3036,8 +3060,17 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     series = NULL;
   }
 
-  /* Clean up */
+  /* clean up */
   LAL_CALL(LALFrClose(status, &stream), status);
+
+  /* resample if required */
+  if (resampleRate != sampleRate)
+  {
+    if (vrbflg)
+      fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
+
+    LAL_CALL(LALResampleREAL4TimeSeries(status, series, &params), status);
+  }
 
   return(series);
 }
@@ -3070,6 +3103,9 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
   length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
   LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
 
+  if (vrbflg)
+    fprintf(stdout, "Reading channel %s...\n", channel);
+  
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
   LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channelIn, stream), status);
@@ -3109,9 +3145,15 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   length = DeltaGPStoFloat(status, &end, &start) / series->deltaT;
   LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
 
+  if (vrbflg)
+    fprintf(stdout, "Reading channel %s...\n", channel);
+
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
   LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channelIn, stream), status);
+
+  if (vrbflg)
+    fprintf(stdout, "High pass filtering GEO data...\n");
 
   /* high pass filter before casting to a REAL4 */
   highPassParam.nMax = geoHighPassOrder;
