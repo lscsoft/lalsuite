@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     /* does dash appear as separator in the right place */
     if (i<9){
       fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\ndoesn't have '-' separator in right place\n", 
-	      filenames[fileno], fileno, argv[2]);
+	      filenames[fileno], fileno+1, argv[2]);
       exit(1); 
     }
 
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
     /* check that duration is what's expected */
     if (deltat!=FRAMELEN){
             fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (!= FRAMELEN=%d)\n", 
-	      filenames[fileno], fileno, argv[2], deltat, FRAMELEN);
+	      filenames[fileno], fileno+1, argv[2], deltat, FRAMELEN);
       exit(1); 
     }
 
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   /* check that files names/times are properly ordered */
   for (i=0;i<fileno-1;i++){
     if (starttimes[i]>=starttimes[i+1]){
-      fprintf(stderr,"Problem with file time stamps at line %d %s %s\n",i,filenames[i],filenames[i+1]);
+      fprintf(stderr,"Problem with file time stamps at line %d %s %s\n",i+1,filenames[i],filenames[i+1]);
       return 1;
     }
   }
