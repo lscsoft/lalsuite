@@ -19,50 +19,20 @@
 
 #include <config.h>
 
-/* don't actually include sfftw.h or fftw.h because these are broken */
-#ifndef HAVE_SFFTW_H
-#ifndef HAVE_FFTW_H
-#error "don't have either sfftw.h or fftw.h"
-#endif
-#endif
-
-#ifdef LAL_PTHREAD_LOCK
-#include <pthread.h>
-static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+#ifdef HAVE_SFFTW_H
+#include <sfftw.h>
+#elif HAVE_FFTW_H
+#include <fftw.h>
 #else
-#define pthread_mutex_lock( pmut )
-#define pthread_mutex_unlock( pmut )
+#error "don't have either sfftw.h or fftw.h"
 #endif
 
 #include <lal/LALStdlib.h>  /* Include any required headers */
 #include <lal/LALConstants.h>
 #include <math.h>
 #include <lal/LALfct.h>
+#include <lal/FFTWMutex.h>
 #include <lal/AVFactories.h>
-
-
-/* here are the nearly equivalent fftw prototypes */
-#ifndef FFTW_H
-typedef REAL4 fftw_real;
-typedef COMPLEX8 fftw_complex;
-typedef void *fftw_plan;
-typedef void *( *fftw_malloc_type_function )( size_t );
-typedef void  ( *fftw_free_type_function )( void * );
-fftw_plan fftw_create_plan( int, int, int );
-void fftw_destroy_plan( fftw_plan );
-void fftw( fftw_plan, int, fftw_complex *, int, int, fftw_complex *, int, int );
-extern fftw_malloc_type_function fftw_malloc_hook;
-extern fftw_free_type_function fftw_free_hook;
-#define FFTW_ESTIMATE       (0)
-#define FFTW_MEASURE        (1)
-#define FFTW_OUT_OF_PLACE   (0)
-#define FFTW_IN_PLACE       (8)
-#define FFTW_USE_WISDOM    (16)
-#define FFTW_THREADSAFE   (128)
-#define FFTW_FORWARD       (-1)
-#define FFTW_BACKWARD       (1)
-#endif
-
 
 /* Define RCS ID string */
 NRCSID( LALFCTC, "$Id$" );
@@ -145,11 +115,11 @@ void LALfctInitialize(LALStatus *status,
   (*fctPlan)->phaseFuncForDim = \
     (LALFCT_FP *) LALCalloc( fctInitParams->numOfDims, \
 			     sizeof( LALFCT_FP ) );
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   (*fctPlan)->planForFFT = fftw_create_plan( fctInitParams->numOfDataPoints, \
 					     FFTW_FORWARD, FFTW_THREADSAFE | \
 					     FFTW_ESTIMATE | FFTW_IN_PLACE);
-  pthread_mutex_unlock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   (*fctPlan)->work = \
     (fftw_complex *) LALCalloc( fctInitParams->numOfDataPoints, \
@@ -177,9 +147,9 @@ void LALfctInitialize(LALStatus *status,
       LALFree( (*fctPlan)->phaseFuncForDim );
     }
     if ( (*fctPlan)->planForFFT != 0 ) {
-      pthread_mutex_lock( &mut );  
+      LAL_FFTW_PTHREAD_MUTEX_LOCK;
       fftw_destroy_plan( (*fctPlan)->planForFFT );
-      pthread_mutex_unlock( &mut );  
+      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
     }
     if ( (*fctPlan)->work != 0 ) {
       LALFree( (*fctPlan)->work );
@@ -350,7 +320,7 @@ void LALfctCalc( LALStatus *status,
      fctCalcOutput->outputData->data.  Remember: these columns correspond
      to the rows parallel to the K[0] axis. */
   fftw( fctCalcParams->fctPlan->planForFFT, fctGenRowIndexOutput.numOfRows, \
-	fctCalcOutput->outputData->data, 1, \
+	(fftw_complex *) fctCalcOutput->outputData->data, 1, \
 	fctCalcParams->fctPlan->lengthOfDim[0], \
 	fctCalcParams->fctPlan->work, 1, 0 );
   
@@ -589,9 +559,9 @@ void LALfctDestroyPlan( LALStatus *status,
       LALFree( (*fctPlan)->work );
     } 
     if ( (*fctPlan)->planForFFT != 0 ) {
-      pthread_mutex_lock( &mut );  
+      LAL_FFTW_PTHREAD_MUTEX_LOCK;
       fftw_destroy_plan( (*fctPlan)->planForFFT );
-      pthread_mutex_unlock( &mut );  
+      LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
     }
     if ((*fctPlan)->prePhaseArray != 0) {
       for (J = 1; J < (*fctPlan)->numOfDims; J++){

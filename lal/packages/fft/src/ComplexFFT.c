@@ -115,7 +115,6 @@ Ref.~\cite{fj:1998}.
 
 #include <config.h>
 
-/*
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
 #elif HAVE_FFTW_H
@@ -123,48 +122,11 @@ Ref.~\cite{fj:1998}.
 #else
 #error "don't have either sfftw.h or fftw.h"
 #endif
-*/
-
-/* don't actually include sfftw.h or fftw.h because these are broken */
-#ifndef HAVE_SFFTW_H
-#ifndef HAVE_FFTW_H
-#error "don't have either sfftw.h or fftw.h"
-#endif
-#endif
-
-#ifdef LAL_PTHREAD_LOCK
-#include <pthread.h>
-static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-#else
-#define pthread_mutex_lock( pmut )
-#define pthread_mutex_unlock( pmut )
-#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
-
-/* here are the nearly equivalent fftw prototypes */
-#ifndef FFTW_H
-typedef REAL4 fftw_real;
-typedef COMPLEX8 fftw_complex;
-typedef void *fftw_plan;
-typedef void *( *fftw_malloc_type_function )( size_t );
-typedef void  ( *fftw_free_type_function )( void * );
-fftw_plan fftw_create_plan( int, int, int );
-void fftw_destroy_plan( fftw_plan );
-void fftw_one( fftw_plan, fftw_complex *, fftw_complex * );
-extern fftw_malloc_type_function fftw_malloc_hook;
-extern fftw_free_type_function fftw_free_hook;
-#define FFTW_ESTIMATE       (0)
-#define FFTW_MEASURE        (1)
-#define FFTW_OUT_OF_PLACE   (0)
-#define FFTW_IN_PLACE       (8)
-#define FFTW_USE_WISDOM    (16)
-#define FFTW_THREADSAFE   (128)
-#define FFTW_FORWARD       (-1)
-#define FFTW_BACKWARD       (1)
-#endif
+#include <lal/FFTWMutex.h>
 
 NRCSID( COMPLEXFFTC, "$Id$" );
 
@@ -201,10 +163,10 @@ LALEstimateFwdComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   (*plan)->plan = (void *)
     fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_ESTIMATE );
-  pthread_mutex_unlock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -247,10 +209,10 @@ LALEstimateInvComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   (*plan)->plan = (void *)
     fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_ESTIMATE );
-  pthread_mutex_unlock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -293,10 +255,10 @@ LALMeasureFwdComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = 1;
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   (*plan)->plan = (void *)
     fftw_create_plan( size, 1, FFTW_THREADSAFE | FFTW_MEASURE );
-  pthread_mutex_unlock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -339,10 +301,10 @@ LALMeasureInvComplexFFTPlan (
   /* assign plan fields */
   (*plan)->size = size;
   (*plan)->sign = -1;
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   (*plan)->plan = (void *)
     fftw_create_plan( size, -1, FFTW_THREADSAFE | FFTW_MEASURE );
-  pthread_mutex_unlock( &mut );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 
   /* check that the plan is not NULL */
   if ( !(*plan)->plan )
@@ -375,9 +337,9 @@ LALDestroyComplexFFTPlan (
   ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
 
   /* destroy plan and set to NULL pointer */
-  pthread_mutex_lock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   fftw_destroy_plan( (fftw_plan)(*plan)->plan );
-  pthread_mutex_unlock( &mut );  
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
   LALFree( *plan );
   *plan = NULL;
 

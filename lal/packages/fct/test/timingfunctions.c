@@ -8,6 +8,9 @@
 /*includes for WallTimeVal()*/
 #include <sys/time.h>
 
+double UserTimeVal(void);
+double WallTimeVal(void);
+
 double UserTimeVal(void) {
   /*returns the user time difference in seconds between calls. 
     It should be used like this:
