@@ -159,10 +159,10 @@ LALBeginLIGOLwXMLTable (
       fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
       break;
     case multi_inspiral_table:
-      fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      fprintf( xml->fp, LIGOLW_XML_MULTI_INSPIRAL );
       break;
     case sim_inspiral_table:
-      fprintf( xml->fp, LIGOLW_XML_SNGL_INSPIRAL );
+      fprintf( xml->fp, LIGOLW_XML_SIM_INSPIRAL );
       break;
     case summ_value_table:
       fprintf( xml->fp, LIGOLW_XML_SUMM_VALUE );
@@ -397,8 +397,8 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
         fprintf( xml->fp, SIM_INSPIRAL_ROW,
-            tablePtr.simInspiralTable->end_time_geocent.gpsSeconds,
-            tablePtr.simInspiralTable->end_time_geocent.gpsNanoSeconds,
+            tablePtr.simInspiralTable->geocent_end_time.gpsSeconds,
+            tablePtr.simInspiralTable->geocent_end_time.gpsNanoSeconds,
             tablePtr.simInspiralTable->end_time_gmst,
             tablePtr.simInspiralTable->source,
             tablePtr.simInspiralTable->mtotal,

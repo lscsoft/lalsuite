@@ -376,7 +376,7 @@ typedef struct
 tagSimInspiralTable
 {
   struct tagSimInspiralTable *next;
-  LIGOTimeGPS    end_time_geocent;
+  LIGOTimeGPS    geocent_end_time;
   REAL4          end_time_gmst;
   CHAR           source[LIGOMETA_SOURCE_MAX];
   REAL4          mtotal;

@@ -286,8 +286,8 @@ extern "C" {
 #define LIGOLW_XML_SIM_INSPIRAL \
 "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:process_id\" Type=\"ilwd:char\"/>\n" \
-"      <Column Name=\"sim_inspiralgroup:sim_inspiral:end_time_geocent\" Type=\"int_4s\"/>\n" \
-"      <Column Name=\"sim_inspiralgroup:sim_inspiral:end_time_geocent_ns\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n" \
+"      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:end_time_gmst\" Type=\"real_4\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:source\" Type=\"lstring\"/>\n" \
 "      <Column Name=\"sim_inspiralgroup:sim_inspiral:mtotal\" Type=\"real_4\"/>\n" \
