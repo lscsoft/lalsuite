@@ -44,7 +44,14 @@ LALGetEarthTimes()
 
 \subsubsection*{Notes}
 
-Spindown not yet included.
+The analytic metric components were derived separately by the
+two authors and found to agree.  Also, the output of this function has
+been compared against that of the function combination (CoherentMetric
++ TDBaryPtolemaic), which is a non-analytic implementation of the
+Ptolemaic approximation, and found to agree up to the fourth
+significant figure or better.
+
+Spindown is not yet included.
 
 \vfill{\footnotesize\input{PtoleMetricCV}}
 
@@ -92,6 +99,33 @@ UINT2 dim;         /* Dimension of parameter space */
 PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
                                    /* and orbit at t_gps =0             */
 REAL8Vector *big_metric; /* 10-dim metric in (phi,f,a,d) for internal use */
+REAL8 T;  // Duration of observation
+REAL8 f; // Frequency;
+// Some useful short-hand notations involving the orbital phase:
+REAL8 D_p_o;
+REAL8 sin_p_o;
+REAL8 cos_p_o;
+REAL8 D_sin_p_o;
+REAL8 D_cos_p_o;
+REAL8 D_sin_2p_o;
+REAL8 D_cos_2p_o;
+// Some useful short-hand notations involving the spin phase:
+REAL8 D_p_s;
+REAL8 sin_p_s;
+REAL8 cos_p_s;
+REAL8 D_sin_p_s;
+REAL8 D_cos_p_s;
+REAL8 D_sin_2p_s;
+REAL8 D_cos_2p_s;
+// Some useful short-hand notations involving the spin and orbital phases:
+REAL8 D_sin_p_o_plus_s;
+REAL8 D_p_o_plus_s;
+REAL8 D_sin_p_o_minus_s;
+REAL8 D_p_o_minus_s;
+REAL8 D_cos_p_o_plus_s;
+REAL8 D_cos_p_o_minus_s;
+
+
 
 INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
 
@@ -165,10 +199,10 @@ omega_s = LAL_TWOPI / LAL_DAYSID_SI;
 omega_o = LAL_TWOPI / LAL_YRSID_SI;
 
 // Duration of observation
-REAL8 T = input->duration;
+T = input->duration;
 
 // Frequency:
-REAL8 f = input->maxFreq;
+f = input->maxFreq;
 
 // Source RA:
 sin_a  = sin(input->position.longitude);
@@ -188,32 +222,32 @@ phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
 
 
 // Quantities involving the orbital phase:
-phi_o_f = phi_o_i + omega_o*T;
-REAL8 D_p_o   = omega_o*T;
-REAL8 sin_p_o = sin(phi_o_f);
-REAL8 cos_p_o = cos(phi_o_f);
-REAL8 D_sin_p_o = sin(phi_o_f) - sin(phi_o_i);
-REAL8 D_cos_p_o = cos(phi_o_f) - cos(phi_o_i);
-REAL8 D_sin_2p_o = sin(2*phi_o_f) - sin(2*phi_o_i);
-REAL8 D_cos_2p_o = cos(2*phi_o_f) - cos(2*phi_o_i);
+phi_o_f   = phi_o_i + omega_o*T;
+D_p_o     = omega_o*T;
+sin_p_o   = sin(phi_o_f);
+cos_p_o   = cos(phi_o_f);
+D_sin_p_o = sin(phi_o_f) - sin(phi_o_i);
+D_cos_p_o = cos(phi_o_f) - cos(phi_o_i);
+D_sin_2p_o = sin(2*phi_o_f) - sin(2*phi_o_i);
+D_cos_2p_o = cos(2*phi_o_f) - cos(2*phi_o_i);
 
 // Quantities involving the spin phase:
-phi_s_f           = phi_s_i + omega_s*T;
-REAL8 D_p_s      = omega_s*T;
-REAL8 sin_p_s    = sin(phi_s_f);
-REAL8 cos_p_s    = cos(phi_s_f);
-REAL8 D_sin_p_s  = sin(phi_s_f) - sin(phi_s_i);
-REAL8 D_cos_p_s  = cos(phi_s_f) - cos(phi_s_i);
-REAL8 D_sin_2p_s = sin(2*phi_s_f) - sin(2*phi_s_i);
-REAL8 D_cos_2p_s = cos(2*phi_s_f) - cos(2*phi_s_i);
+phi_s_f    = phi_s_i + omega_s*T;
+D_p_s      = omega_s*T;
+sin_p_s    = sin(phi_s_f);
+cos_p_s    = cos(phi_s_f);
+D_sin_p_s  = sin(phi_s_f) - sin(phi_s_i);
+D_cos_p_s  = cos(phi_s_f) - cos(phi_s_i);
+D_sin_2p_s = sin(2*phi_s_f) - sin(2*phi_s_i);
+D_cos_2p_s = cos(2*phi_s_f) - cos(2*phi_s_i);
 
 // Some mixed quantities:
-REAL8 D_sin_p_o_plus_s  = sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i);
-REAL8 D_p_o_plus_s      = D_p_o + D_p_s;
-REAL8 D_sin_p_o_minus_s = sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i);
-REAL8 D_p_o_minus_s     = D_p_o - D_p_s;
-REAL8 D_cos_p_o_plus_s  = cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i);
-REAL8 D_cos_p_o_minus_s = cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i);
+D_sin_p_o_plus_s  = sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i);
+D_p_o_plus_s      = D_p_o + D_p_s;
+D_sin_p_o_minus_s = sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i);
+D_p_o_minus_s     = D_p_o - D_p_s;
+D_cos_p_o_plus_s  = cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i);
+D_cos_p_o_minus_s = cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i);
 
 // The A[i] quantities:
 A[1] = 
