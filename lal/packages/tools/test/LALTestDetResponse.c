@@ -41,6 +41,11 @@ LALComputeDetAMResponse()
 
 NRCSID( LALTESTDETRESPONSEC, "$Id$" );
 
+/*
+ * Make epsilon larger: GMST1 routine is only good to about 1.2e-5
+ */
+#define LALDR_REAL4_EPS 1.5e-05
+
 void TestOnePoint(LALStatus              *status,
                   INT4                   *retval,
                   const LALFrDetector    *p_frDetector,
@@ -77,7 +82,7 @@ int main(int argc, char *argv[])
     }
 
   if (verbose_p > 0)
-    printf("LAL_REAL4_EPS = %2.9e\n", LAL_REAL4_EPS);
+    printf("LALDR_REAL4_EPS = %2.9e\n", LALDR_REAL4_EPS);
 
   /* Set source coord system to equatorial */
   pulsar.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
@@ -922,7 +927,7 @@ void TestOnePoint(LALStatus              *status,
     {
       printf("expected: plus=%2.9e, cross=%2.9e  +/- %2.9e\n",
              p_expectedResponse->plus, p_expectedResponse->cross,
-             LAL_REAL4_EPS);
+             LALDR_REAL4_EPS);
       printf("computed: plus=%2.9e, cross=%2.9e\n",
              computedResponse.plus, computedResponse.cross);
       printf("diff.:    plus=%2.9e, cross=%2.9e\n",
@@ -931,9 +936,9 @@ void TestOnePoint(LALStatus              *status,
     }
   
   if ((REAL4)fabs((double)(computedResponse.plus - p_expectedResponse->plus))
-      > LAL_REAL4_EPS ||
+      > LALDR_REAL4_EPS ||
       (REAL4)fabs((double)(computedResponse.cross - p_expectedResponse->cross))
-      > LAL_REAL4_EPS)
+      > LALDR_REAL4_EPS)
     {
       *retval = 0;
     }
