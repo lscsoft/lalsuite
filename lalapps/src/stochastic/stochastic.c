@@ -172,7 +172,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segsInInt, numIntervals, segMiddle;
   INT4 segmentLength, segmentPadLength, intervalLength;
   INT4 segmentShift;
-  INT4 padData = 0;
+  INT4 padData;
   LIGOTimeGPS gpsStartPadTime, gpsCalibTime;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
@@ -325,12 +325,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* add a resample buffer, if required */
   if ((sampleRate != resampleRate) || (high_pass_flag))
-  {
     padData = 1;
-    startTime += padData;
-    endTime -= padData;
-    duration -= 2 * padData;
-  }
+  else
+    padData = 0;
 
   if (overlap_hann_flag)
     segmentShift = segmentDuration / 2;
@@ -344,14 +341,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsNanoSeconds = 0;
 
   /* read data */
-  /*
   seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
-      gpsStartTime, gpsEndTime);
+      gpsStartTime, gpsEndTime, padData);
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
-      gpsStartTime, gpsEndTime);
+      gpsStartTime, gpsEndTime, padData);
+
+  LALSPrintTimeSeries(seriesOne, "1.dat");
+  LALSPrintTimeSeries(seriesTwo, "2.dat");
 
   exit(1);
-  */
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -3135,13 +3133,23 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   CHAR *cacheFile,
   CHAR *channel,
   LIGOTimeGPS start,
-  LIGOTimeGPS end)
+  LIGOTimeGPS end,
+  INT4 buffer)
 {
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
   FrCache *frameCache = NULL;
   ResampleTSParams params;
+  size_t length = 0;
+
+  /* apply resample buffer */
+  if (buffer)
+  {
+    length = DeltaGPStoFloat(status, &end, &start) * resampleRate;
+    start.gpsSeconds -= buffer;
+    end.gpsSeconds += buffer;
+  }
 
   /* set resample parameters */
   params.deltaT = 1./resampleRate;
@@ -3181,6 +3189,11 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
 
     LAL_CALL(LALResampleREAL4TimeSeries(status, series, &params), status);
   }
+
+  /* remove resample buffer */
+  if (buffer)
+    LAL_CALL(LALShrinkREAL4TimeSeries(status, series, \
+          buffer * resampleRate, length), status);
 
   return(series);
 }
