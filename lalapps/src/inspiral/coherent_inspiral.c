@@ -27,7 +27,6 @@
 #include <math.h>
 
 #include <FrameL.h>
-
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -54,14 +53,11 @@
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
-
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/DetectorSite.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>
-
 #include <lal/CoherentInspiral.h>
-
 #include <lal/LALStatusMacros.h>
 
 RCSID( "$Id$" );
@@ -81,7 +77,6 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-double rint(double x);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
@@ -94,15 +89,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 /* input data parameters */
 
-CHAR  *chanNumber       = NULL;         /* name of data channel         */
-UINT4  numPoints         = -1;           /* points in a segment          */
-UINT4  numSegments       = 1;            /* number of segments           */
-INT4   sampleRate       = -1;           /* sample rate of filter data   */
-REAL4  fLow             = -1;           /* low frequency cutoff         */
+CHAR  *chanNumber       = NULL;          /* number of data channel       */
+UINT4  numPoints        = -1;            /* points in a segment          */
+INT4   sampleRate       = -1;            /* sample rate of filter data   */
+REAL4  fLow             = -1;            /* low frequency cutoff         */
 
 /* matched filter parameters */
 
-CHAR *bankFileName      = NULL;         /* name of input template bank  */
+CHAR *bankFileName      = NULL;          /* name of input template bank  */
 
 /*Coherent code specific inputs*/
 
@@ -112,35 +106,23 @@ char GEOfilename[256];
 char VIRGOfilename[256];
 char TAMAfilename[256];
 char H2filename[256];
-
-/*hard code the beam file names*/
-char H1Beam[256];
-char H2Beam[256];
-char L1Beam[256];
-char GEOBeam[256];
-char VIRGOBeam[256];
-char TAMABeam[256];
-
-UINT2 caseID[6] = {0,0,0,0,0,0}; /* H1 L G V T H2 */
+UINT2 caseID[6] = {0,0,0,0,0,0}; /* H1 L V G T H2 */
 
 INT4  verbose = 0;
 
-BOOLEAN          cohSNROut            = 0; /* default is not to write frame */
+UINT4            cohSNROut            = 0; /* default is not to write frame */
 CHAR             *cohSNROutFrame      = NULL;
-BOOLEAN          eventsOut            = 0;/* default is not to write events */
+UINT4            eventsOut            = 0;/* default is not to write events */
 CHAR             *eventsOutXML        = NULL;
 CHAR             outputPath[FILENAME_MAX];
-CHAR             framename[FILENAME_MAX];
-CHAR             xmlname[FILENAME_MAX];
-
 REAL4            cohSNRThresh         = -1;
-UINT4            maximizeOverChirp    = 0; /* default is no clustering */
+INT4             maximizeOverChirp    = 0; /* default is no clustering */
 
 
 int main( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             status   = blank_status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
@@ -162,35 +144,37 @@ int main( int argc, char *argv[] )
 
   FILE *filePtr[4];
 
-  INT4             numTmplts            = 1;
-  INT4  startTemplate     = 0;           
-  INT4  stopTemplate      = 1;      
+  CHAR             framename[FILENAME_MAX];
+  CHAR             xmlname[FILENAME_MAX];
 
-  UINT4            numBeamPoints        = 0;
+  INT4   numTmplts        = 0;       /* number of templates */
+  INT4   startTemplate    = 0;           
+  INT4   stopTemplate     = 1;
+  UINT4  numSegments      = 1;       /* number of segments */
+  UINT4  numBeamPoints    = 0;       /* number of sky position templates */
+
+  REAL4  m1               = 0;
+  REAL4  m2               = 0;
 
  /* counters and other variables */
   INT4                          i,j,k,l;
-  UINT4                         numDetectors=0;
+  UINT4                         numDetectors = 0;
   REAL4                         theta,phi,vPlus,vMinus;
-
-  UINT2Vector                  *detIDVec = NULL;
-  DetectorVector               *detectorVec = NULL;
 
   CoherentInspiralInitParams   *cohInspInitParams = NULL;
   CoherentInspiralFilterParams *cohInspFilterParams = NULL;
   CoherentInspiralFilterInput  *cohInspFilterInput = NULL;
   CoherentInspiralBeamVector   *cohInspBeamVec = NULL;
   CoherentInspiralCVector      *cohInspCVec = NULL;
-  CoherentInspiralEvent        *cohInspEvent = NULL;
-
+  MultiInspiralTable           *thisEvent = NULL;
+  MetadataTable                savedEvents;
   InspiralTemplate             *bankHead = NULL;
 
-  char namearray[6][256]  = {"0","0","0","0","0","0"}; /* input data frame files */
+  char namearray[6][256]  = {"0","0","0","0","0","0"}; /* input frame files */
   char namearray2[6][256] = {"0","0","0","0","0","0"}; /* beam files */
   char namearray3[6][256] = {"0","0","0","0","0","0"}; /* chan names */
 
   set_debug_level( "1" ); /* change with parse option */
-  /*memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );*/
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -220,7 +204,7 @@ int main( int argc, char *argv[] )
   }
   else if ( numTmplts == 0 )
   {
-    /* if there are no tmplts, store the time we would have analyzed and exit */
+    /* if there are no tmplts, exit */
       fprintf( stdout, "no templates found in template bank file: %s\n"
         "exiting without searching for events.\n", bankFileName ); 
 
@@ -235,14 +219,6 @@ int main( int argc, char *argv[] )
 
   if ( verbose ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
-  
-  REAL4 m1 = 0;
-  REAL4 m2 = 0;
-  m1 = bankHead->mass1;
-  m2 = bankHead->mass2;
-  /*free the template read from the bank */
-  LALFree( bankHead );
-  bankHead = NULL;
 
 /* read in the network detectors */
   for (l=0;l<6;l++)
@@ -268,7 +244,7 @@ int main( int argc, char *argv[] )
 
 
   if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 ) {
-    numBeamPoints = 2;
+    numBeamPoints = 100;
   }
 
 
@@ -285,16 +261,12 @@ int main( int argc, char *argv[] )
    *
    */
 
-  /*          cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams));*/
-
     if ( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
   {
     fprintf( stdout, "could not allocate memory for coherentInspiral init params\n" );
     goto cleanexit;
   }
 
-
-  
   cohInspInitParams->numDetectors            = numDetectors;
   cohInspInitParams->numSegments             = numSegments;
   cohInspInitParams->numPoints               = numPoints;
@@ -320,10 +292,11 @@ int main( int argc, char *argv[] )
    * information for calculating chirp time
    */
 
+  m1 = bankHead->mass1;
+  m2 = bankHead->mass2;
  
   cohInspFilterInput->tmplt = (InspiralTemplate *)
-    LALCalloc(1,sizeof(InspiralTemplate) );
-  memset( cohInspFilterInput->tmplt, 0, sizeof(InspiralTemplate) );
+     LALCalloc(1,sizeof(InspiralTemplate) );
   cohInspFilterInput->tmplt->mass1 = m1;
   cohInspFilterInput->tmplt->mass2 = m2;
   cohInspFilterInput->tmplt->totalMass = m1 + m2;
@@ -346,29 +319,23 @@ int main( int argc, char *argv[] )
   cohInspFilterParams->fLow                    = fLow;
   cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
   
-  detIDVec = cohInspFilterParams->detIDVec;
-
-
-/*assign detIDs to the coincident detectors in the network */
-  for ( i=0 ; i < 6 ; i++) {
-    detIDVec->data[i] = caseID[i];
+  for( i=0;i < 6; i++ ) {
+    cohInspFilterParams->detIDVec->data[i] = caseID[i];
   }
   
  /* create and fill the DetectorVector structure of detector IDs*/
   
-  detectorVec = cohInspFilterParams->detectorVec;
-  
+
   i=0;
   for ( j=0 ; j < 6 ; j++ ) {
     if ( caseID[j] ) { 
-      detectorVec->detector[i++] = lalCachedDetectors[j];
+      cohInspFilterParams->detectorVec->detector[i++] = lalCachedDetectors[j];
     }
   }
 
   if (caseID[5]) {
-    detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
+    cohInspFilterParams->detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
   }
-
 
 
   /* Note that some of the namearray3 elements will need to be changed */
@@ -422,49 +389,44 @@ int main( int argc, char *argv[] )
 
   /* Now read in the beam coefficients if necessary */
 
-  /* cohInspBeamVec = cohInspFilterInput->beamVec;*/
+  if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
+    {
+      cohInspBeamVec = cohInspFilterInput->beamVec;
 
- if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 ) {
-   cohInspBeamVec = cohInspFilterInput->beamVec;
-
-   l=0;
-  if( verbose ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
-  for ( j=0 ; j < 6 ; j++ ) {
-    if ( caseID[j] ) { 
-      filePtr[l] = fopen(namearray2[j], "r");
-      if(!filePtr[l])
-	{
-	  fprintf(stdout,"The file %s containing the coefficients could not be found - exiting...\n",namearray2[j]);
-	  goto cleanexit;
+      l=0;
+      if( verbose ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
+      for ( j=0 ; j < 6 ; j++ ) {
+	if ( caseID[j] ) { 
+	  filePtr[l] = fopen(namearray2[j], "r");
+	  if(!filePtr[l])
+	    {
+	      fprintf(stdout,"The file %s containing the coefficients could not be found - exiting...\n",namearray2[j]);
+	      goto cleanexit;
+	    }
+	  for ( k=0 ; k < (INT4) numBeamPoints ; k++)
+	    { 
+	      fprintf(stdout,"scanning a beam file...");
+	      fscanf(filePtr[l],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
+	      fprintf(stdout,"done\n");
+	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[0] = theta;
+	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[1] = phi;
+	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[2] = vPlus;
+	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[3] = vMinus;
+	    }
+	  fclose(filePtr[l++]);
 	}
-      for ( k=0 ; k < (INT4) numBeamPoints ; k++)
-	{ 
-	  fprintf(stdout,"scanning a beam file...");
-	  fscanf(filePtr[l],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
-	  fprintf(stdout,"done\n");
-	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[0] = theta;
-	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[1] = phi;
-	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[2] = vPlus;
-	  cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[3] = vMinus;
-	}
-      fclose(filePtr[l]);
-      l++;
+      } 
     }
-  } 
- }
 
- cohInspCVec = cohInspFilterInput->multiCData;
+  cohInspCVec = cohInspFilterInput->multiCData;
 
- /* TestStatus (&status, "0", 1);
-    ClearStatus (&status);*/
-
- if (verbose) {
+  if (verbose) {
    fprintf(stdout,"reading data from frames\n");
    fprintf(stdout,"namearray: %s\n %s\n %s\n %s\n %s\n %s\n",namearray[0],namearray[1],namearray[2],namearray[3],namearray[4],namearray[5]);
    fprintf(stdout,"namearray3: %s\n %s\n %s\n %s\n %s\n %s\n",namearray3[0],namearray3[1],namearray3[2],namearray3[3],namearray3[4],namearray3[5]);
- }
+  }
 
-   l=0;
+  l=0;
   for ( j=0 ; j < 6 ; j++ ) {
     if ( caseID[j] ) {
       if (verbose) fprintf(stdout,"opening C framefile %s\n",namearray[j]);
@@ -483,20 +445,16 @@ int main( int argc, char *argv[] )
       l++;
       TestStatus (&status, "0", 1);
       ClearStatus (&status);
-
     }
   }
 
   /*Do the filtering and output events */
-
-  cohInspEvent = NULL;
-
   if (verbose) fprintf(stdout,"filtering the data..\n");
   if ( maximizeOverChirp && verbose )
     {
       fprintf(stdout,"clustering events\n");
     }		       
-  LALCoherentInspiralFilterSegment (&status, &cohInspEvent, cohInspFilterInput, cohInspFilterParams); 
+  LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams); 
 
 
   if ( cohSNROut )
@@ -518,19 +476,21 @@ int main( int argc, char *argv[] )
       FrameWrite( outFrame, frOutFile);
       FrFileOEnd( frOutFile );
       if ( verbose ) fprintf(stdout, "done\n");
-      if ( !eventsOut )
+       if ( !eventsOut )
 	{
-	  while( cohInspEvent )
+	  while( thisEvent )
 	    {
-	      CoherentInspiralEvent *cohtmp = cohInspEvent;
-	      cohInspEvent = cohInspEvent->next;
-	      LALFree( cohtmp );
+	      MultiInspiralTable *tempEvent = thisEvent;
+	      thisEvent = thisEvent->next;
+	      LALFree( tempEvent );
 	    }
 	}
     }
 
   if ( eventsOut )
-    {
+    { 
+      savedEvents.multiInspiralTable = NULL; 
+      savedEvents.multiInspiralTable = thisEvent;
       memset( &results, 0, sizeof(LIGOLwXMLStream) );
       if ( outputPath[0] )
 	{
@@ -564,50 +524,19 @@ int main( int argc, char *argv[] )
 	  free( this_proc_param );
 	  }
 
-      /* The following should be incorporated into LIGOLwXML.c and associated headers */
-#define COHERENT_INSPIRAL_SUMMARY \
-"   <Table Name=\"coherent_inspiral:table\">\n" \
-"      <Column Name=\"coherent_inspiral:ifos\" Type=\"ilwd:char\"/>\n" \
-"      <Column Name=\"coherent_inspiral:eventId\" Type=\"UINT4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:timeIndex\" Type=\"UINT4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:mass1\" Type=\"REAL4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:mass2\" Type=\"REAL4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:cohSNR\" Type=\"REAL4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:theta\" Type=\"REAL4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:phi\" Type=\"REAL4\"/>\n" \
-"      <Column Name=\"coherent_inspiral:time\" Type=\"LIGOTimeGPS\"/>\n" \
-"      <Column Name=\"coherent_inspiral:end_time\" Type=\"LIGOTimeGPS\"/>\n" \
-"      <Stream Name=\"coherent_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n"
-
-
-      fprintf( results.fp, COHERENT_INSPIRAL_SUMMARY );
       if( verbose ) fprintf(stdout,"  event params table\n ");
 
-      /* If we have 3 different sites in network, need to include theta and phi in event table */
-      if( (numDetectors == 3 && !(caseID[0] && caseID[5])) || numDetectors == 4 )
-	{
 
-	  while( cohInspEvent )
-	    {   /* include theta and phi */
-	      CoherentInspiralEvent *cohtmp = cohInspEvent;
-	      fprintf(results.fp,"         %s,%d,%d,%e,%e,%e,%e,%e,%s,%s\n",cohInspEvent->ifos, cohInspEvent->eventId, cohInspEvent->timeIndex, cohInspEvent->mass1, cohInspEvent->mass2,cohInspEvent->cohSNR, cohInspEvent->theta, cohInspEvent->phi,"NULL","NULL");
-	      cohInspEvent = cohInspEvent->next;
-	      LALFree( cohtmp );
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
+      LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
+
+      while( savedEvents.multiInspiralTable )
+	    {  
+	      MultiInspiralTable *tempEvent = savedEvents.multiInspiralTable;
+	      savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
+	      LALFree( tempEvent );
 	    }
-
-	}
-      else
-	{
-	  while( cohInspEvent )
-	    {   /* print NA for theta and phi */
-	      CoherentInspiralEvent *cohtmp = cohInspEvent;
-	      fprintf(results.fp,"         %s,%d,%d,%e,%e,%e,%s,%s,%s,%s\n",cohInspEvent->ifos, cohInspEvent->eventId, cohInspEvent->timeIndex, cohInspEvent->mass1, cohInspEvent->mass2,cohInspEvent->cohSNR,"NA","NA","NULL","NULL");
-	      cohInspEvent = cohInspEvent->next;
-	      LALFree( cohtmp );
-	    }
-	}
-#undef COHERENT_INSPIRAL_SUMMARY
-
       /* close the output xml file */
       LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
       if ( verbose ) fprintf( stdout, "done. XML file closed\n" );
@@ -635,9 +564,8 @@ int main( int argc, char *argv[] )
   ClearStatus (&status);
 
  /* free the rest of the memory, check for memory leaks and exit */
- /* LALFree( bankHead );
-    bankHead = NULL;*/
-
+  LALFree( bankHead );
+  bankHead = NULL;
   if ( cohSNROutFrame ) free( cohSNROutFrame );
   if ( eventsOutXML ) free( eventsOutXML );
   free( bankFileName );
@@ -728,24 +656,26 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
           LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
-#define USAGE \
+#define USAGE1 \
 "lalapps_inspiral [options]\n\n"\
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --low-frequency-cutoff F     low f cutoff of previously filtered data\n"\
-"\n"\
+"\n"
+#define USAGE2 \
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --channel-number             the channel (segment) number\n"\
 "  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
 "  --segment-length N           set data segment length to N points\n"\
 "  --cohsnr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
-"\n"\
+"\n"
+#define USAGE3 \
 "  --write-events <filename(.xml)>    write events to specified xml file\n"\
 "  --write-cohsnr <filename(.gwf)>    write cohsnr to specified frame file\n"\
-"  --output-path                 the path to where the user wants to output file(s) written\n"\
+"  --output-path                write files here\n"\
 "  --H1-framefile               frame data for H1\n"\
 "  --H2-framefile               frame data for H2\n"\
 "  --L-framefile                frame data for L\n"\
@@ -859,8 +789,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   break;
 
 	 case 'd': /* set debuglevel */
-	   lalDebugLevel = atoi (optarg);
-	   ADD_PROCESS_PARAM( "int", "%d", lalDebugLevel );
+	   set_debug_level( optarg );
+	   ADD_PROCESS_PARAM( "string", "%s", optarg );
 	   break;
 
 	 case 'f': /* set fLow */
@@ -869,7 +799,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   break;
 
 	 case 'h':
-	   fprintf( stdout, USAGE );
+	   fprintf( stdout, USAGE1 );
+	   fprintf( stdout, USAGE2 );
+	   fprintf( stdout, USAGE3 );
 	   exit( 0 );
 	   break;
 
