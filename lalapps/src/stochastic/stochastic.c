@@ -1012,12 +1012,12 @@ static COMPLEX8FrequencySeries *construct_cc_spectrum(LALStatus *status,
 
 /* helper function to save out xml tables */
 static void save_xml_file(LALStatus *status,
+    LALLeapSecAccuracy accuracy,
     CHAR *output_path,
     CHAR *base_name,
     StochasticTable *stochtable)
 {
   /* variables */
-  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
   MetadataTable output_table;
   CHAR xml_file_name[FILENAME_MAX];
   LIGOLwXMLStream xml_stream;
@@ -2457,7 +2457,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* save out xml table */
-  save_xml_file(&status, outputPath, baseName, stochHead);
+  save_xml_file(&status, accuracy, outputPath, baseName, stochHead);
 
   /* cleanup */
   XLALDestroyREAL4TimeSeries(segmentOne);
