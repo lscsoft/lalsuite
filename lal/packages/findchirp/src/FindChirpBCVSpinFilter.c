@@ -101,9 +101,91 @@ LALFindChirpBCVSpinFilterSegment (
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
 
+
+  /*
+   *    
+   * check that the arguments are reasonable
+   * may need to remove asserts regarding chisq
+   *          
+   */
+
+  /* make sure the output handle exists, but points to a null pointer */
+  ASSERT( eventList, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( !*eventList, status, FINDCHIRPH_ENNUL, FINDCHIRPH_MSGENNUL );
+
+  /* make sure that the parameter structure exists */
+  ASSERT( params, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* check that the filter parameters are reasonable */
+  ASSERT( params->deltaT > 0, status,
+      FINDCHIRPH_EDTZO, FINDCHIRPH_MSGEDTZO );
+  ASSERT( params->rhosqThresh > 0, status,
+      FINDCHIRPH_ERHOT, FINDCHIRPH_MSGERHOT );
+  ASSERT( params->chisqThresh > 0, status,
+      FINDCHIRPH_ECHIT, FINDCHIRPH_MSGECHIT );
+
+  /* check that the fft plan exists */
+  ASSERT( params->invPlan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* check that the workspace vectors exist */
+  ASSERT(params->qVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVec->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+  ASSERT(params->qVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qVecBCV->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVecBCV->data,status, FINDCHIRPH_ENULL, 
+	  FINDCHIRPH_MSGENULL);
+  
+  /* check that the chisq parameter and input structures exist */
+  ASSERT( params->chisqParams, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->chisqInput,   status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( params->chisqInputBCV,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* if a rhosqVec vector has been created, check we can store data in it */
+  if ( params->rhosqVec )
+  {
+    ASSERT( params->rhosqVec->data->data, status,
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+    ASSERT( params->rhosqVec->data, status,
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  }
+
+  /* if a chisqVec vector has been created, check we can store data in it */
+  if ( params->chisqVec )
+  {
+    ASSERT( params->chisqVec->data, status,
+        FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  }
+
+  /* make sure that the input structure exists */
+  ASSERT( input, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* make sure that the input structure contains some input */
+  ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* make sure that the template and the segment are both BCV */
+  ASSERT( input->fcTmplt->approximant == BCVSpin, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+  ASSERT( input->segment->approximant == BCVSpin, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+
+
+
+
 /*declaration*/
 
-/*code*/
+/*
+ *
+ * code which prev. would be in data function
+ *
+ */
+
+
+
 
   amp        = inputParams->ampVec->data;
   ampBCV     = inputParams->ampVecBCV->data;
@@ -167,6 +249,18 @@ LALFindChirpBCVSpinFilterSegment (
    * imaginary parts? square and add to find SNR
    *
    */
+
+  /*
+   *
+   * code copied from BCV (non spin) filter code
+   *
+   */
+
+
+/*code*/
+
+
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
