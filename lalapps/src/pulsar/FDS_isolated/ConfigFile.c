@@ -498,7 +498,7 @@ void
 cleanConfig (CHARSequence *text)
 {
   size_t len;  /* comment length */
-  CHAR *ptr, *ptr2;
+  CHAR *ptr, *ptr2, *eol;
 
   /* clean out comments, by replacing them by '\n' */
   ptr = text->data;
@@ -528,11 +528,19 @@ cleanConfig (CHARSequence *text)
     {
       len = strspn (ptr, WHITESPACE); 
       if (len) memset ( (void*)ptr, '\n', len);
-      ptr = strchr (ptr, '\n') + 1; /* point to next line-start */
-      /* now clean away all trailing whitespace */
-      ptr2 = ptr - 2; 
+      eol = strchr (ptr, '\n'); /* point to end-of-line */
+      if (eol != NULL)
+	ptr = eol;
+      else
+	ptr = strchr (ptr, '\0'); /* or end of file */
+
+      /* clean away all trailing whitespace of last line*/
+      ptr2 = ptr - 1; 
       while ( *ptr2 == ' ' )
 	*ptr2-- = '\n';
+
+      /* step to next line */
+      ptr += 1;
     }
 
   return;
