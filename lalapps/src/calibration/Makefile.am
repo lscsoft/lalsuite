@@ -5,9 +5,7 @@ FRAMEPROGRAMS = lalapps_mkcalfac lalapps_mkcalref
 else
 FRAMEPROGRAMS = 
 endif
-bin_PROGRAMS = lalapps_ZPG2Transfer lalapps_BuildTransfer $(FRAMEPROGRAMS)
-lalapps_ZPG2Transfer_SOURCES = ZPG2Transfer.c
-lalapps_BuildTransfer_SOURCES = BuildTransfer.c
+bin_PROGRAMS = $(FRAMEPROGRAMS)
 if FRAME
 lalapps_mkcalfac_SOURCES = mkcalfac.c
 lalapps_mkcalref_SOURCES = mkcalref.c
