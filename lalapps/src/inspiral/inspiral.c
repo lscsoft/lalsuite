@@ -1617,7 +1617,7 @@ int main( int argc, char *argv[] )
       else if ( approximant == BCVSpin )
       {
         LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
-              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+	tmpltCurrent->tmpltPtr, fcTmpltParams, fcDataParams ), &status );
         fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
       }
       else
