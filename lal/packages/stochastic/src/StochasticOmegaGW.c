@@ -169,8 +169,8 @@ LALStochasticOmegaGW( LALStatus                         *status,
          STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
 
   fRef       = parameters->fRef;
-  /* check that the fRef value is greater than deltaF */
-  if (fRef <= deltaF)
+  /* check that the fRef value is positive */
+  if (fRef <= 0.0)
   {
     ABORT(status, STOCHASTICCROSSCORRELATIONH_EOORFREF,STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
@@ -234,8 +234,3 @@ LALStochasticOmegaGW( LALStatus                         *status,
   RETURN(status);
 
 };
-
-
-
-
-
