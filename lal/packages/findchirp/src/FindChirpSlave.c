@@ -57,7 +57,9 @@ CreateRandomPPNParamStruc (
   params->phi = 0.0;
   params->d = cannonDist * LAL_PC_SI;
   params->fStartIn = fmin;
-  params->fStopIn = 1.0 / 
+
+  /* fStopIn is negative to allow bypass of the bad pn waveform stop */
+  params->fStopIn = -1.0 / 
     (6.0 * sqrt(6.0) * LAL_PI * params->mTot * LAL_MTSUN_SI);
 
   /* ppn parameter */
@@ -126,7 +128,6 @@ OutputEventsMPI (
 {
   ExchParams     exchInspiralEvents;
   ExchParams    *thisExchPtr = NULL;
-  InspiralEvent *event;
 
   INITSTATUS( status, "OutputEventsMPI", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
@@ -198,7 +199,7 @@ LALFindChirpSlave (
     )
 {
   UINT4                         i, j, k;
-  UINT4                         simCount;
+  UINT4                         simCount = 0;
   INT4                         *filterSegment    = NULL;
   InspiralTemplate             *tmpltBankHead    = NULL;
   InspiralTemplate             *currentTmplt     = NULL;
@@ -344,7 +345,6 @@ LALFindChirpSlave (
       DataSegment    *currentDataSeg = dataSegVec->data;
 
       REAL4   dynRange   = params->dataParams->dynRange;
-      REAL4   dynRangeSq = dynRange * dynRange;
 
       REAL8   deltaT = currentDataSeg->chan->deltaT;
       REAL8   deltaF = currentDataSeg->spec->deltaF;
@@ -439,6 +439,8 @@ LALFindChirpSlave (
           fprintf( stdout, "fStart   = %e\n", ppnParams.fStart );
           fprintf( stdout, "fStop    = %e\n", ppnParams.fStop );
           fprintf( stdout, "length   = %d\n", ppnParams.length );
+          fprintf( stdout, "duration = %e\n", 
+              (REAL4) ppnParams.length * deltaT );
           fflush( stdout );
 #endif
 
@@ -465,7 +467,6 @@ LALFindChirpSlave (
               UINT4 jj = floor( x );
               REAL8 frac = x - jj;
               REAL8 p = frac*phiData[jj+1] + ( 1.0 - frac )*phiData[jj];
-              REAL8 f = frac*fData[jj+1] + ( 1.0 - frac )*fData[jj];
               REAL8 ap = frac*aData[2*jj+2] + ( 1.0 - frac )*aData[2*jj];
               REAL8 hp = ap * cos( p );
               data[jj + waveStart] = transfer * (REAL4) hp;
@@ -605,8 +606,6 @@ LALFindChirpSlave (
     for ( currentTmplt = tmpltBankHead; currentTmplt; 
         currentTmplt = currentTmplt->next )
     {
-      UINT4 insertedTemplates = 0;
-      
       /* set the template pointer the address of the current template */
       params->filterInput->tmplt = currentTmplt;
 
