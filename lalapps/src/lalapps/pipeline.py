@@ -732,7 +732,7 @@ class ScienceSegment:
     increment = length - overlap
     while time_left >= length:
       end = start + length
-      if (not play) or ( play and ( (end-sl) % 6370 < length + 600 ) ):
+      if (not play) or (play and ((end-sl-729273613) % 6370 < length + 600)):
         self.__chunks.append(AnalysisChunk(start,end))
       start += increment
       time_left -= increment
@@ -909,6 +909,6 @@ class ScienceData:
       if seg.unused() > min_length:
         start = seg.end() - length
         end = seg.end()
-        if (not play) or ( play and ( (end-sl) % 6370 < length + 600 ) ):
+        if (not play) or (play and ((end-sl-729273613) % 6370 < length + 600)):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
