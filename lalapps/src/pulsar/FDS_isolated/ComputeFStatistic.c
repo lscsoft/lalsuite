@@ -240,11 +240,19 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
     REPORTSTATUS(stat);
     boinc_finish( 12345+stat->statusCode );
   }
-  return stat->statusCode;
+  /* should this call boinc_finish too?? */
+  return 0;
 }
 #endif
 
-LALStatus *sig_stat=NULL;
+
+/* initialize status.  Note: for this to be thread safe, you MUST not
+   use *this* status structure for LAL functions that are called from
+   the graphics thread.  Of course there is probably no need to call
+   LAL functions from the graphics thread, so this should not be an
+   issue.
+*/
+LALStatus status = blank_status;
 
 /** 
  * MAIN function of ComputeFStatistic code.
@@ -257,7 +265,6 @@ int boincmain(int argc, char *argv[])
 int main(int argc,char *argv[]) 
 #endif
 {
-  LALStatus status = blank_status;	/* initialize status */
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
   CHAR Fstatsfilename[256]; 		/* Fstats file name*/
@@ -280,18 +287,6 @@ int main(int argc,char *argv[])
   /* set LAL error-handler */
 #if USE_BOINC
   lal_errhandler = BOINC_ERR_EXIT;
-
-  /* install signal handler for catching Segmentation violations,
-     floating point exceptions, Bus violations and Illegal instructions */
-  sig_stat=&status;
-  if (signal(SIGSEGV, sighandler)==SIG_IGN)
-    signal(SIGSEGV, SIG_IGN);
-  if (signal(SIGFPE, sighandler)==SIG_IGN)
-    signal(SIGFPE, SIG_IGN);
-  if (signal(SIGBUS, sighandler)==SIG_IGN)
-    signal(SIGBUS, SIG_IGN);
-  if (signal(SIGILL, sighandler)==SIG_IGN)
-    signal(SIGILL, SIG_IGN);
 #else
   lal_errhandler = LAL_ERR_EXIT;
 #endif
@@ -2577,6 +2572,18 @@ int main(int argc, char *argv[]){
   globargc=argc;
   globargv=argv;
 
+  /* install signal handler (for ALL threads) for catching
+     Segmentation violations, floating point exceptions, Bus
+     violations and Illegal instructions */
+  if (signal(SIGSEGV, sighandler)==SIG_IGN)
+    signal(SIGSEGV, SIG_IGN);
+  if (signal(SIGFPE, sighandler)==SIG_IGN)
+    signal(SIGFPE, SIG_IGN);
+  if (signal(SIGBUS, sighandler)==SIG_IGN)
+    signal(SIGBUS, SIG_IGN);
+  if (signal(SIGILL, sighandler)==SIG_IGN)
+    signal(SIGILL, SIG_IGN);
+
   /* boinc_init() needs to be run before any boinc_api functions are used */
 #if 0
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED | BOINC_DIAG_REDIRECTSTDERR | BOINC_DIAG_TRACETOSTDERR);
@@ -2609,25 +2616,29 @@ int main(int argc, char *argv[]){
 void sighandler(int sig){
   void *array[64];
   size_t size;
+  LALStatus *mystat=&status;
 
-  fprintf(stderr, "Application caught signal %d.\nStack Trace:\n", sig);
-  
-  while (sig_stat) {
-    fprintf(stderr, "%s at line %d of file %s\n", sig_stat->function, sig_stat->line, sig_stat->file);
-    if (!(sig_stat->statusPtr)) {
-      const char *p=sig_stat->statusDescription;
-      fprintf(stderr, "At lowest level status code = %d, description: %s\n", sig_stat->statusCode, p?p:"NO LAL ERROR REGISTERED");
+  fprintf(stderr, "Application caught signal %d\n", sig);
+  if (mystat)
+    fprintf(stderr, "Stack trace of LAL functions in worker thread:\n");
+  while (mystat) {
+    fprintf(stderr, "%s at line %d of file %s\n", mystat->function, mystat->line, mystat->file);
+    if (!(mystat->statusPtr)) {
+      const char *p=mystat->statusDescription;
+      fprintf(stderr, "At lowest level status code = %d, description: %s\n", mystat->statusCode, p?p:"NO LAL ERROR REGISTERED");
     }
-    sig_stat=sig_stat->statusPtr;
+    mystat=mystat->statusPtr;
   }
   
 #ifdef __GLIBC__
   /* now get TRUE stacktrace */
   size = backtrace (array, 64);
-  fprintf(stderr, "Obtained %zd stack frames.\n", size);
+  fprintf(stderr, "Obtained %zd stack frames for this thread.\n", size);
   fprintf(stderr, "Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n");
   backtrace_symbols_fd(array, size, fileno(stderr));
 #endif /* __GLIBC__ */
+  /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
+  sleep(5);
   boinc_finish(4321);
   return;
 }
