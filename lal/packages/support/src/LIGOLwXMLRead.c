@@ -45,7 +45,7 @@ files.
 \idx{SimInspiralTableFromLIGOLw()}
 \idx{SearchSummaryTableFromLIGOLw()}
 \idx{SummValueTableFromLIGOLw()}
-\idx{StochasticTableFromLIGOLw()}
+\idx{LALStochasticTableFromLIGOLw()}
 
     
 \subsubsection*{Description}
@@ -115,10 +115,11 @@ table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
 number of rows read in and \verb+sumHead+ provides a pointer to the head of a
 linked list of \verb+SummValueTable+s.
 
-The routine \verb+StochasticTableFromLIGOLw+ reads in a \verb+stochastic_tablee+
-table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-number of rows read in and \verb+stochHead+ provides a pointer to the head of a
-linked list of \verb+StochasticTable+s.
+The routine \verb+LALStochasticTableFromLIGOLw+ reads in a
+\verb+stochastic_table+ table from the LIGOLwXML file specified in
+\verb+fileName+.  It returns the number of rows read in and
+\verb+stochHead+ provides a pointer to the head of a linked list of
+\verb+StochasticTable+s.
 
 
 
@@ -1773,7 +1774,7 @@ SummValueTableFromLIGOLw (
 
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
-StochasticTableFromLIGOLw (
+LALStochasticTableFromLIGOLw (
     StochasticTable **stochHead,
     CHAR *fileName)
 /* </lalVerbatim> */
