@@ -1364,83 +1364,6 @@ power code search of the \texttt{REAL4} time series data.
 \subsection*{Structures}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{struct \texttt{EPDataSegment}}
-\idx[Type]{EPDataSegment}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\noindent A data segment consists of the time-series data,  a power
-spectral estimate,  a response function,  and the metadata that goes
-with it.
-
-\begin{description}
-\item[\texttt{REAL4TimeSeries              *data}] The data to be
-analyzed
-\item[\texttt{REAL4FrequencySeries         *spec}] The power spectral
-estimate used to whiten the data stream
-\item[\texttt{COMPLEX8FrequencySeries      *resp}] The frequency
-representation of the instrumental response
-\item[\texttt{INT4                          endOfData}] Flag to
-indicate there is no more data
-\item[\texttt{INT4                          newLock}] Flag to indicate
-new lock
-\item[\texttt{INT4                          newCal}] Flag to indicate
-new calibration
-\item[\texttt{INT4                          number}] Segment number
-\end{description}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{struct \texttt{EPDataSegmentVector}}
-\idx[Type]{EPDataSegmentVector}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\noindent A vector of data segments.
-
-\begin{description}
-\item[\texttt{UINT4                         length}] The number of
-elements in the vector
-\item[\texttt{EPDataSegment                  *data}] A pointer to the
-data segments.
-\end{description}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{enum \texttt{EPMethod}}
-\idx[enum]{EPMethod}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\noindent An enum which describes the method used to compute the power
-spectral estimate.
-
-\begin{verbatim}
-typedef enum
-{
-  useMean,
-  useMedian,
-  useUnity
-} EPMethod;
-
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{struct \texttt{EPInitParams}}
-\idx[Type]{EPInitParams}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\noindent Parameters needed to set up the search
-
-\begin{verbatim}
-typedef struct
-tagEPInitParams
-{
-  UINT4                         numPoints;
-  UINT4                         numSegments;
-  UINT4                         segDutyCycle;
-  EPMethod                      method;
-}
-EPInitParams;
-\end{verbatim}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{struct \texttt{EPSearchParams}}
 \idx[Type]{EPSearchParams}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1448,33 +1371,23 @@ EPInitParams;
 \noindent Parameters needed to set perform the search
 
 \begin{verbatim}
+typedef struct
 tagEPSearchParams
 {
-  BOOLEAN                       searchMaster;
-  BOOLEAN                       haveData;
-  UINT4                        *numSlaves;          
-  UINT4                         simType;
-  UINT4                         currentSegment;
-  INT4                          ntotT;
-  INT4                          numEvents;
-  UINT4                         ovrlap;
-  REAL8                         lambda;
-  REAL8                         alphaThreshold;
-  INT4                          events2Master;     /* Added Erik Kats */
-  CHAR                         *channelName;       /* Added Erik Kats */
-  EPInitParams                 *initParams;
-  EPDataSegmentVector          *epSegVec;
-  CreateTFTilingIn             *tfTilingInput;
-  TFTiling                     *tfTiling;
-  ComputeExcessPowerIn         *compEPInput;
-  LALWindowParams               winParams;
+        CHAR                  *channelName;
+        BOOLEAN                cluster;
+        BOOLEAN                printSpectrum;
+        INT4                   eventLimit;
+        UINT4                  windowLength;
+        UINT4                  windowShift;
+        REAL8                  alphaThreshold;
+        AvgSpecMethod          method;
+        CreateTFTilingIn      *tfTilingInput;
+        ComputeExcessPowerIn  *compEPInput;
+        WindowType             windowType;
 }
 EPSearchParams;
 \end{verbatim}
-
-
-
-
 
 
 \newpage
@@ -1490,12 +1403,8 @@ excess power code.
 \vspace{0.1in}
 \input{LALWeighTFTileListCP}
 \idx{LALWeighTFTileList()}
-\input{EPInitSearchCP}
-\idx{EPInitSearch()}
 \input{EPConditionDataCP}
 \idx{EPConditionData()}
-\input{EPFinalizeSearchCP}
-\idx{EPFinalizeSearch()}
 \input{EPSearchCP}
 \idx{EPSearch()}
 

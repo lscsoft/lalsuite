@@ -1,11 +1,17 @@
 dnl $Id$
 define(`SERIESTYPE',DATATYPE`TimeSeries')
+/* <lalLaTeX file="TimeSeriesDestroyP">
+\idx{`XLALDestroy'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesDestroyP"> */
 void `XLALDestroy'SERIESTYPE (
 	SERIESTYPE *series
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesDestroyP">
+\idx{`LALDestroy'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesDestroyP"> */
 void `LALDestroy'SERIESTYPE (
 	LALStatus *status,
@@ -13,6 +19,9 @@ void `LALDestroy'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesCreateP">
+\idx{`XLALCreate'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesCreateP"> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
 	CHAR *name,
@@ -24,6 +33,9 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesCreateP">
+\idx{`LALCreate'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesCreateP"> */
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
@@ -37,6 +49,9 @@ void `LALCreate'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesCutP">
+\idx{`XLALCut'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesCutP"> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
 	SERIESTYPE *series,
@@ -45,6 +60,9 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesCutP">
+\idx{`LALCut'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesCutP"> */
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
@@ -55,6 +73,9 @@ void `LALCut'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesShrinkP">
+\idx{`XLALShrink'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesShrinkP"> */
 size_t `XLALShrink'SERIESTYPE (
 	SERIESTYPE *series,
@@ -63,6 +84,9 @@ size_t `XLALShrink'SERIESTYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="TimeSeriesShrinkP">
+\idx{`LALShrink'SERIESTYPE ()}
+   </lalLaTeX> */
 /* <lalVerbatim file="TimeSeriesShrinkP"> */
 void `LALShrink'SERIESTYPE (
 	LALStatus *status,
