@@ -337,7 +337,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# mass2       = %-15.12f\n", params.mass2);
   printf("# fcutoff     = %-15.12f\n", params.fCutoff);
   printf("# fLower      = %-15.12f\n", params.fLower);
-  printf("# tsampling   = %-15.12f\n", params.tSampling);
+  printf("# tSampling   = %-15.12f\n", params.tSampling);
   printf("# distance    = %-15.12f\n", params.distance);
   printf("# startPhase  = %-15.12f\n", params.startPhase);
   printf("# startTime   = %-15.12f\n", params.startTime);
@@ -445,7 +445,7 @@ void LALInspiralITStructureHelp()
   fprintf(stderr,"--mass2       (in solar mass)\n");
   fprintf(stderr,"--fcutoff     \n");
   fprintf(stderr,"--fLower      \n");
-  fprintf(stderr,"--tsampling   \n");
+  fprintf(stderr,"--tSampling   \n");
   fprintf(stderr,"--distance    \n");
   fprintf(stderr,"--startPhase  \n");
   fprintf(stderr,"--startTime   \n");
