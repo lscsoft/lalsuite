@@ -293,4 +293,4 @@ for seg in data:
 
 sys.exit(0)
 
-# vim: et
+# vim: et syntax=python

@@ -225,7 +225,7 @@ for seg in data:
     stoch.set_calibration_one(ifo1,chunk.start())
     stoch.set_calibration_two(ifo2,chunk.start())
 
-    # add stochastic output file to stopp jobs
+    # add stochastic output file to stopp job
     stopp.add_var_arg(stoch.get_output())
     
     # add dependancy for stopp jobs on stochastic jobs
@@ -296,4 +296,4 @@ for seg in data:
 
 sys.exit(0)
 
-# vim: et
+# vim: et syntax=python
