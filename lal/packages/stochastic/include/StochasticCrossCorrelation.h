@@ -332,6 +332,62 @@ LALStochasticCrossCorrelationSpectrum(
 
   /*************************************************************
    *                                                           *
+   *       Structures and prototypes associated with           *
+   *          StochasticCrossCorrelationVariance.c             *
+   *                                                           *
+   *************************************************************/
+
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Structures and prototypes associated with 
+  \texttt{StochasticCrossCorrelationVariance.c}
+  (Sec.~\ref{stochastic:ss:StochasticCrossCorrelationVariance.c})}
+
+\subsubsection*{Prototypes}
+
+\idx{LALStochasticCrossCorrelationVariance()}
+\input{StochasticCrossCorrelationHPCV}
+
+\subsubsection*{\texttt{struct StochasticCrossCorrelationVarianceInput}}
+\idx[Type]{StochasticCrossCorrelationVarianceInput}
+
+\noindent Contains the input data needed by 
+\texttt{LALStochasticCrossCorrelationVariance()}
+to calculate the expected variance of the standard optimally-filtered
+cross-correlation statistic.  The fields are:
+
+\begin{description}
+\item[\texttt{REAL4FrequencySeries  *noisePSDOne}]
+Power spectral density of the noise in the first detector.
+
+\item[\texttt{REAL4FrequencySeries  *noisePSDTwo}]
+Power spectral density of the noise in the second detector.
+
+\item[\texttt{COMPLEX8FrequencySeries  *optimalFilter}]
+Optimal filter function in the frequency domain.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagStochasticCrossCorrelationVarianceInput {
+  REAL4FrequencySeries     *noisePSDOne;
+  REAL4FrequencySeries     *noisePSDTwo;
+  COMPLEX8FrequencySeries  *optimalFilter;
+} StochasticCrossCorrelationVarianceInput;
+
+/********** <lalVerbatim file="StochasticCrossCorrelationHPCV"> *********/
+
+void 
+LALStochasticCrossCorrelationVariance(
+            LALStatus                                      *status,
+            REAL4WithUnits                                 *output,
+            const StochasticCrossCorrelationVarianceInput  *input,
+            BOOLEAN                                         heterodyned);
+
+/********** </lalVerbatim> *********/
+
+  /*************************************************************
+   *                                                           *
    * Structures and prototypes associated with ZeroPadAndFFT.c *
    *                                                           *
    *************************************************************/
@@ -704,6 +760,7 @@ LALOverlapReductionFunction(
 \newpage\input{StochasticCrossCorrelationStatisticTestC}
 \newpage\input{StochasticHeterodynedCrossCorrelationStatisticTestC}
 \newpage\input{StochasticCrossCorrelationSpectrumTestC}
+\newpage\input{StochasticCrossCorrelationVarianceC}
 \newpage\input{ZeroPadAndFFTC}
 \newpage\input{SZeroPadAndFFTTestC}
 \newpage\input{CZeroPadAndFFTTestC}
