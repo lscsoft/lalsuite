@@ -96,7 +96,7 @@ main (  int argc, char **argv )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
 */
    REAL4Vector signal, correlation;
-   UINT4 numFcutTemplates=5, length=32768;
+   UINT4 length=32768;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
@@ -107,8 +107,14 @@ main (  int argc, char **argv )
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    static InspiralTemplateList *tmpltList=NULL;
    REAL4 freq;
+InspiralCoarseBankIn coarseIn;
 
-   numFcutTemplates  = 5;
+
+
+   coarseIn.numFcutTemplates  = 5;
+   coarseIn.LowGM = 3.;
+   coarseIn.HighGM = 6.;
+   
    randIn.useed = 128092;
    ntrials=2;
    randIn.mMin = 5.0;
@@ -137,7 +143,7 @@ main (  int argc, char **argv )
 	   else if (strcmp(argv[i],"-mMin")==0)
 		   randIn.mMin = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-numFcut")==0)
-		   numFcutTemplates = atof(argv[++i]); 
+		   coarseIn.numFcutTemplates = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-simType")==0)
 		   randIn.type = atoi(argv[++i]);
 	   else if (strcmp(argv[i],"-mMax")==0)
@@ -193,7 +199,7 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",randIn.param.alpha);
 		   fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", randIn.param.fLower);
 		   fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n", randIn.param.order);
-		   fprintf(stderr,"    -numFcut : number of layers in Fcut dimension (%7.2d)\n", numFcutTemplates);
+		   fprintf(stderr,"    -numFcut : number of layers in Fcut dimension (%7.2d)\n", coarseIn.numFcutTemplates);
 		   fprintf(stderr,"         -mm : minimal match for template bank    (%7.3f)\n", bankParams.minimalMatch);
 		   fprintf(stderr,"       -seed : seed for random generation         (%d)\n", randIn.useed);
 		   fprintf(stderr,"          -n : number of trials                   (%d)\n", ntrials);
@@ -298,7 +304,7 @@ main (  int argc, char **argv )
 	   tmpltList[i].params.approximant = BCV;
    }
 
-   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
+   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, coarseIn) ;
 
    if (nlist==0) exit(0);
 
