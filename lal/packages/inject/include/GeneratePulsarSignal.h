@@ -130,14 +130,6 @@ void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSe
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 
-/* interanl debug- und testing functions */
-void dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
-void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
-void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
-void PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
-void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
-void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
-
 
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}
