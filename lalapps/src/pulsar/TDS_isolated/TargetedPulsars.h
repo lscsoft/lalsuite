@@ -1,4 +1,4 @@
-$Id$
+
 // standard C headers
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +44,9 @@ INT4 lalDebugLevel = LALWARNING | LALINFO;
 #define ALPHAMAX 2.3  /* alpha calibration cut */
 #define ALPHAMIN 0.25
 
+
+#define S1_GPS_SECS 714150013.0
+#define S1_MJD 52494.625
 
 #define S2_GPS_SECS 729273613.0
 #define S2_MJD 52684.66666666665
