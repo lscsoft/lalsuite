@@ -85,6 +85,7 @@ NRCSID( CONFIGFILEH, "$Id$" );
 #define CONFIGFILEH_ESTRICT		7
 #define CONFIGFILEH_EUNKNOWN		8
 #define CONFIGFILEH_EMEM		9
+#define CONFIGFILEH_EOPT		10
 
 #define CONFIGFILEH_MSGENULL 		"Arguments contained an unexpected null pointer."
 #define CONFIGFILEH_MSGEFILE		"File error."
@@ -95,6 +96,7 @@ NRCSID( CONFIGFILEH, "$Id$" );
 #define CONFIGFILEH_MSGESTRICT		"Strictness parameter out of range"
 #define CONFIGFILEH_MSGEUNKNOWN		"Unknown config-file entry found"
 #define CONFIGFILEH_MSGEMEM		"Out of memory"
+#define CONFIGFILEH_MSGEOPT		"Unknown command-line option encountered"
 
 /*************************************************** </lalErrTable> */
 
@@ -182,6 +184,27 @@ typedef struct {
   BOOLEAN *wasRead;	/* keep track of successfully read lines for checking */
 } LALConfigData;
 
+
+typedef enum {
+  UVAR_BOOL,
+  UVAR_INT4,
+  UVAR_REAL8,
+  UVAR_CHAR
+} UserVarType;
+
+typedef struct {
+  const CHAR *name;	/* full name */
+  UserVarType type;	/* bool, int, float or char */
+  CHAR optchar;		/* cmd-line character */
+  const CHAR *help;
+  void *varp;		/* pointer to the actual C-variable */
+} UserVariable;
+
+
+#define regUserVar(name,type,option,help) { #name, type, option, help, &(uvar_ ## name) }
+
+
+
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{ConfigFileHV}}
 \newpage\input{ConfigFileC}
@@ -192,7 +215,6 @@ void LALLoadConfigFile (LALStatus *stat, LALConfigData **cfgdata, const CHAR *fn
 void LALDestroyConfigData (LALStatus *stat, LALConfigData **cfgdata);
 
 void LALReadConfigVariable (LALStatus *stat, void *varp, LALConfigData *cfgdata, LALConfigVar *param);
-
 void LALReadConfigBOOLVariable (LALStatus *stat, BOOLEAN *varp, LALConfigData *cfgdata, const CHAR *varName);
 void LALReadConfigINT2Variable (LALStatus *stat, INT2 *varp, LALConfigData *cfgdata, const CHAR *varName);
 void LALReadConfigINT4Variable (LALStatus *stat, INT4 *varp, LALConfigData *cfgdata, const CHAR *varName);
@@ -200,10 +222,14 @@ void LALReadConfigREAL4Variable (LALStatus *stat, REAL4 *varp, LALConfigData *cf
 void LALReadConfigREAL8Variable (LALStatus *stat, REAL8 *varp, LALConfigData *cfgdata, const CHAR *varName);
 void LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData *cfgdata, const CHAR *varName);
 void LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData *cfgdata, const CHAR *varName);
-
 void LALCheckConfigReadComplete (LALStatus *stat, LALConfigData *cfgdata, INT4 strictness);
 
-void testConfigFile(void);
+
+void ReadCmdlineInput (LALStatus *stat, int argc, char *argv[], UserVariable *uvars);
+void ReadCfgfileInput (LALStatus *stat, const CHAR *cfgfile, UserVariable *uvars );
+void FreeUserVars (LALStatus *stat, UserVariable *uvars);
+void GetUvarHelpString (LALStatus *stat, CHAR **helpstring, UserVariable *uvars);
+void ReadUserInput (LALStatus *stat, int argc, char *argv[], UserVariable *uvars);
 
 #ifdef  __cplusplus
 }
