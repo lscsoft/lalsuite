@@ -114,7 +114,10 @@ populate_process_table (
   {
     LALSnprintf( ptable->username, LIGOMETA_USERNAME_MAX - 1, "%d", userid );
   }
-  strncpy( ptable->username, pwent->pw_name, LIGOMETA_USERNAME_MAX - 1);
+  else
+  {
+    strncpy( ptable->username, pwent->pw_name, LIGOMETA_USERNAME_MAX - 1);
+  }
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
