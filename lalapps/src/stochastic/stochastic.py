@@ -60,6 +60,8 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__ifo_one = None
     self.__ifo_two = None
+    self.__f_min = None
+    self.__f_max = None
 
   def set_ifo_one(self, ifo):
     """
@@ -148,20 +150,36 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     Set the minimum frequency
     """
     self.add_var_opt('f-min',f_min)
+    self.__f_min = f_min
+
+  def get_f_min(self):
+    """
+    Return the minimum frequency
+    """
+    return self.__f_min
 
   def set_f_max(self,f_max):
     """
     Set the maximum frequency
     """
     self.add_var_opt('f-max',f_max)
+    self.__f_max = f_max
+
+  def get_f_max(self):
+    """
+    Return the maximum frequency
+    """
+    return self.__f_max
 
   def get_output(self):
     """
     Returns the file name of output from the stochastic code. This must be
     kept synchronized with the name of the output file in stochastic.c.
     """
-    if not self.get_start() or not self.get_end() or not self.get_ifo_one() or not self.get_ifo_two():
-      raise StochasticError, "Start time, end time, ifo one or ifo two has not been set"
+    if not self.get_start() or not self.get_end() or not \
+      self.get_ifo_one() or not self.get_ifo_two():
+        raise StochasticError, "Start time, end time, ifo one or ifo " \
+          "two has not been set"
     out = self.get_ifo_one() + self.get_ifo_two() + '-' "stochastic"
     out = out + '-' + str(self.get_start()) + '-' + str(self.get_end())
     out = out + '.xml'
