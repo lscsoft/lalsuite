@@ -6,6 +6,12 @@
 /*                 Albert Einstein Institute/UWM - October 2003                  */
 /*********************************************************************************/
 
+#include <config.h>
+#if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
+#include <stdio.h>
+int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
+#else
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -34,7 +40,7 @@
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include "filters.h"                      /* files that contains the filter coefficients */
+#include "filters-H1-S2.h"                      /* files that contains the filter coefficients */
 
 #define MAXLINERS 76800                   /* Max lines read in Freq Response files */
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
@@ -1393,3 +1399,4 @@ int FreeMem(void)
 }
 
 /*******************************************************************************/
+#endif
