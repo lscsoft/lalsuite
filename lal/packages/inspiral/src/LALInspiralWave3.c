@@ -630,11 +630,11 @@ LALInspiralWave3ForInjection (
   params->tC = count / params->tSampling ;
   params->nStartPad = count;
 
- LALSDestroyVector(status->statusPtr, &ff);
+  LALSDestroyVector(status->statusPtr, &ff);
   CHECKSTATUSPTR(status);
   LALSDestroyVector(status->statusPtr, &a);
   CHECKSTATUSPTR(status);
-  LALDDestroyVector(status->statusPtr, &phi);
+  LALDDestroyVector(status->statusPtr, &phiv);
   CHECKSTATUSPTR(status);
 
 
