@@ -129,11 +129,6 @@ typedef struct tagVelocityPar {
 } VelocityPar;
 
 
-typedef struct tagAvgVelPar {
-  LALDetector    detector;
-  EphemerisData  *edat;
-} AvgVelPar;
-
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
  */
@@ -141,10 +136,21 @@ void LALAvgDetectorVel(LALStatus    *status,
 		    REAL8        v[3], /* output vector representing average velocity */ 
 		    VelocityPar  *in); /* parameters required to calculate V */
 
+void LALAvgDetectorPos(LALStatus    *status,
+		    REAL8        x[3], /* output vector representing average position */ 
+		    VelocityPar  *in); /* parameters required to calculate position */
+
 void LALDetectorVel(LALStatus   *status, 
 		 REAL8       v[3],  /* output velocity vector */ 
 		 LIGOTimeGPS *time0, /* time at which velocity is calculated */
-		 AvgVelPar *in); /* detector for which velocity is calculated */
+		 LALDetector  detector, /* detector */
+		 EphemerisData *edat); 
+
+void LALDetectorPos(LALStatus   *status, 
+		 REAL8       x[3],  /* output position vector */ 
+		 LIGOTimeGPS *time0, /* time at which position is calculated */
+		 LALDetector  detector, /* detector*/
+		 EphemerisData *edat); 
 
 /* ****************************************************** */
 
@@ -153,3 +159,4 @@ void LALDetectorVel(LALStatus   *status,
 #endif
 
 #endif  /* end of double inclusion protection */
+
