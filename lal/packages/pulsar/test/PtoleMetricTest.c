@@ -23,7 +23,11 @@ unprojected metric, and $(\alpha, \delta, f_1, \ldots)$ for the metric with
 $f_0$ projected out.
 
 With no options, this program displays metric components for a single point
-in parameter space for two different integration times.
+in parameter space for the default integration time (see the \texttt{-t}
+option).
+
+The \texttt{-e} option causes the program to showcase error messages when
+given bad parameter values, etc.
 
 The \texttt{-p} option is provided for users who wish to view the
 power mismatch contours provided by the \texttt{-x} option (see below)
@@ -33,8 +37,9 @@ code to see the exact format.  The user should then write a small
 script to convert the data into the format appropriate to their
 favorite graphics package.
 
-The \texttt{-t} option causes the program to showcase error messages when
-given bad parameter values, etc.
+The \texttt{-t} option sets the duration of integration in seconds. The default
+is $10^5$ seconds, which is chosen because it is about one day but not an
+integer multiple of any astronomically important timescale.
 
 The \texttt{-x} option produces a graph of the 2\% power mismatch contours
 on the sky. Dimensions of the ellipses have been exaggerated by 10 for
@@ -95,7 +100,8 @@ complication to the tiling.
 
 NRCSID( PTOLEMETRICTESTC, "$Id" );
 
-#define NUM_SPINDOWN 0 /* Number of spindown parameters */
+#define DEFAULT_DURATION 1e5 /* seconds */
+#define NUM_SPINDOWN 0       /* Number of spindown parameters */
 #define SPOKES 30
 
 int lalDebugLevel = 0;
@@ -115,12 +121,18 @@ int main( int argc, char *argv[] ) {
   FILE            *fnongrace;       /* File contaning ellipse coordinates */
 
 
+  /* Default values. */
+  in.duration = DEFAULT_DURATION;
+
   /* Parse options. */
-  while ((opt = getopt( argc, argv, "txp" )) != -1) {
+  while ((opt = getopt( argc, argv, "et:xp" )) != -1) {
     switch (opt) {
-    case 't':
+    case 'e':
       test = 1;
       lalDebugLevel = 1;
+      break;
+    case 't':
+      in.duration = atof( optarg );
       break;
     case 'x':
       grace = 1;
@@ -169,12 +181,12 @@ int main( int argc, char *argv[] ) {
   in.epoch.gpsNanoSeconds = 0;
 
   if (test) {
+    REAL4 old_duration = in.duration;
     printf("\nTesting bad duration...\n");
     in.duration = -1;
     LALPtoleMetric( &status, metric, &in );
+    in.duration = old_duration;
   }
-  /* Good duration: typical first-stage coherent integration */
-  in.duration = 1e5;
 
   if (test) {
     printf("\nTesting bad maximum frequency...\n");
@@ -207,8 +219,7 @@ int main( int argc, char *argv[] ) {
   /* Print results if no options. */
   if (argc == 1) {
 
-    printf( "\nValid results for duration 1e5 seconds:\n" );
-    in.duration = 1e5;
+    printf( "\nValid results for duration %e seconds:\n", in.duration );
     LALPtoleMetric( &status, metric, &in );
     if( status.statusCode )
     {
@@ -235,6 +246,7 @@ int main( int argc, char *argv[] ) {
       printf( "\n" );
     }
 
+#if 0
     printf( "\nValid results for duration 1e7 seconds:\n" );
     in.duration = 1e7;
     LALPtoleMetric( &status, metric, &in );
@@ -262,6 +274,7 @@ int main( int argc, char *argv[] ) {
         printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
       printf( "\n" );
     }
+#endif
   } /* if (argc...) */
 
   /* Here is the code that uses xmgrace with the -x option, */
@@ -269,7 +282,6 @@ int main( int argc, char *argv[] ) {
   if (grace || nongrace) {
 
     /* Take care of preliminaries. */
-    in.duration = 1e5;
     if(grace)
       {
 	pvc = popen( "xmgrace -pipe", "w" );
@@ -317,10 +329,10 @@ int main( int argc, char *argv[] ) {
         gdd = metric->data[5];
         /* Semiminor axis from larger eigenvalue of metric. */
         smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smin = sqrt(.02/smin);
+        smin = sqrt(2*.02/smin);
         /* Semiminor axis from smaller eigenvalue of metric. */
         smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smaj = sqrt(.02/smaj);
+        smaj = sqrt(2*.02/smaj);
         /* Angle of semimajor axis with "horizontal" (equator). */
         angle = atan2( gad, .02/smaj/smaj-gdd );
         if (angle <= -LAL_PI_2) angle += LAL_PI;
