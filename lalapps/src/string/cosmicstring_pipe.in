@@ -120,10 +120,17 @@ if not log_path:
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
-try: os.mkdir('cache')
-except: pass
 try: os.mkdir('logs')
 except: pass
+
+if do_datafind:
+  try: os.mkdir('cache')
+  except: pass
+
+if do_string:
+  try: os.mkdir('triggers')
+  except: pass
+  
 if do_coincidence: 
   try: os.mkdir('coincidences')
   except: pass
@@ -251,6 +258,7 @@ for seg in data:
     string1.set_cache(df1.get_output())
     string1.add_var_opt('threshold',snr)
     string1.add_var_opt('trig-start-time',chunk.trig_start())
+    string1.add_var_opt('outfile',string1.get_output())
     if do_datafind: 
       string1.add_parent(df1)
     if do_string: 
@@ -264,6 +272,7 @@ for seg in data:
     string2.set_cache(df2.get_output())
     string2.add_var_opt('threshold',snr)
     string2.add_var_opt('trig-start-time',chunk.trig_start())
+    string2.add_var_opt('outfile',string2.get_output())
     if do_datafind: 
       string2.add_parent(df2)
     if do_string: 

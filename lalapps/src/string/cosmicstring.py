@@ -179,7 +179,7 @@ class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise StringError, "Start time, end time or ifo has not been set"
 
-    basename = self.get_ifo() + '-STRINGSEARCH'
+    basename = 'triggers/'+self.get_ifo() + '-STRINGSEARCH'
 
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
