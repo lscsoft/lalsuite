@@ -1568,11 +1568,12 @@ LALFindChirpBCVFilterSegment (
 	   thisEvent->impulse_time = thisEvent->end_time;
 
            /* copy the template into the event */
-	   /* temporarily just copy psi0, psi3 and Mchirp */
+	   /* temporarily just copy psi0, psi3, f_cut and Mchirp */
 	   thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
 	   thisEvent->psi3   = (REAL4) input->tmplt->psi3;
 	   thisEvent->mchirp = LAL_1_PI *
 		   pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
+	   thisEvent->f_cut  = (REAL4) input->tmplt->fFinal ;
 
            /* set the type of the template used in the analysis */
            LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
@@ -1665,11 +1666,12 @@ LALFindChirpBCVFilterSegment (
     thisEvent->impulse_time = thisEvent->end_time;
 
     /* copy the template into the event */
-    /* temporarily copy just psi0, psi3 and Mchirp */
+    /* temporarily copy just psi0, psi3, f_cut and Mchirp */
     thisEvent->psi0   = (REAL4) input->tmplt->psi0;   
     thisEvent->psi3   = (REAL4) input->tmplt->psi3;  
     thisEvent->mchirp = LAL_1_PI *
 	    pow( 3.0 / 128.0 / input->tmplt->psi0, 3.0/5.0 );
+    thisEvent->f_cut  = (REAL4) input->tmplt->fFinal;
 
 
     /* set the type of the template used in the analysis */
