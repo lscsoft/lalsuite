@@ -1447,7 +1447,7 @@ LALFindChirpBCVFilterSegment (
     {
       REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
       REAL4 modqsqBCV = qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ;
-      REAL4 ImProd = - 2.0 * ( q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
+      REAL4 ImProd = 2.0 * ( - q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
 
       REAL4 modqsq = ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
 		       0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) *
@@ -1464,7 +1464,7 @@ LALFindChirpBCVFilterSegment (
   {
      REAL4 modqsqSP  = q[j].re * q[j].re + q[j].im * q[j].im ;
      REAL4 modqsqBCV = qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im ;
-     REAL4 ImProd = - 2.0 * ( q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
+     REAL4 ImProd = 2.0 * ( - q[j].re * qBCV[j].im + qBCV[j].re * q[j].im ) ;
 
      REAL4 modqsq = ( 0.5 * sqrt( modqsqSP + modqsqBCV + ImProd ) +
                       0.5 * sqrt( modqsqSP + modqsqBCV - ImProd ) ) *
