@@ -38,6 +38,49 @@ xfclose(FILE * stream)
     return 0;
 }
 
+void *
+xcalloc(size_t nmemb, size_t size)
+{
+  void *p;
+  p = (void *)calloc(nmemb, size);
+
+  if (p == (void *)NULL)
+    {
+      perror("xcalloc: out of memory");
+      exit(EXIT_FAILURE);
+    }
+
+  return p;
+}
+
+void *
+xmalloc(size_t length)
+{
+  void *p;
+  p = (void *)malloc(length);
+
+  if (p == (void *)NULL)
+    {
+      perror("xmalloc: out of memory");
+      exit(EXIT_FAILURE);
+    }
+
+  return p;
+}
+
+void *
+xrealloc(void *p, size_t length)
+{
+  p = (void *)realloc(p, length);
+
+  if (p == (void *)NULL)
+    {
+      perror("xrealloc: out of memory");
+      exit(EXIT_FAILURE);
+    }
+
+  return p;
+}
 void
 print_source(const LALSource * source)
 {

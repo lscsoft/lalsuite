@@ -8,9 +8,12 @@
 /* macro for minimum of two arguments */
 #define DETRESPONSE_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-/* wrap fopen(3) and fclose(3) */
+/* wrap fopen(3) and allocation functions a la GNU */
 FILE *xfopen(const char *path, const char *mode);
-int   xfclose(FILE *stream);
+int xfclose(FILE * stream);
+void *xmalloc(size_t length);
+void *xrealloc(void *p, size_t length);
+void *xcalloc(size_t nmemb, size_t length);
 
 /* print detector parameters */
 void PrintLALDetector(LALDetector * const detector);

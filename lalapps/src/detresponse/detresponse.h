@@ -42,7 +42,9 @@ void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 
 void generate_timeseries_response(LALStatus * status);
-void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data);
+void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
+                     skygrid_t grid_cros_sq, skygrid_t grid_plus_sq,
+                     skygrid_t grid_sum_sq, skygrid_t grid_relfreq);
 
 /* globals */
 extern int lalDebugLevel;

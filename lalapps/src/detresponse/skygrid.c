@@ -32,19 +32,24 @@ static UINT4 grid_lim;
 static const double rad2deg = 180./LAL_PI;
 static UINT4Vector *skygrid_dims = NULL;
 
+static const size_t PathNameLength = 256;  /* this should be long enough for path names */
+
 
 void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
 {
   CHAR *lal_prefix = NULL;
-  CHAR  earthdat_path[LALNameLength];
-  CHAR  sundat_path[LALNameLength];
+  CHAR  earthdat_path[PathNameLength];
+  CHAR  sundat_path[PathNameLength];
   CHAR *share_path = "/share/lal/";
   CHAR *fn_earthdat = "/earth00-04.dat";
   CHAR *fn_sundat = "/sun00-04.dat";
   int i;
   
   for (i = 0; i < LALNameLength; ++i)
+  {
     earthdat_path[i] = '\0';
+    sundat_path[i] = '\0';
+  }
   
   lal_prefix = getenv("LAL");
   
@@ -106,18 +111,25 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
   
   if (lalDebugLevel > 3)
   {
+    printf("LALNameLength = %d\n", LALNameLength);
     printf("earthdat_path = %s\n", earthdat_path);
+    printf("strlen(earthdat_path) = %zd\n", strlen(earthdat_path));
     printf("sundat_path = %s\n", sundat_path);
+    printf("strlen(sundat_path) = %zd\n", strlen(sundat_path));
   }
   
-  (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, earthdat_path, LALNameLength);
-  (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, sundat_path, LALNameLength);
-  LALInitBarycenter(status, p_ephemeris_data);
+  p_ephemeris_data->ephiles.earthEphemeris = (char *)xcalloc(PathNameLength, sizeof(char));
+  p_ephemeris_data->ephiles.sunEphemeris = (char *)xcalloc(PathNameLength, sizeof(char));
   
+  (void)mystrlcpy(p_ephemeris_data->ephiles.earthEphemeris, earthdat_path, PathNameLength);
+  (void)mystrlcpy(p_ephemeris_data->ephiles.sunEphemeris, sundat_path, PathNameLength);
+  LALInitBarycenter(status, p_ephemeris_data);
 } /* END: init_ephemeris() */
 
 void cleanup_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
 {
+  free(p_ephemeris_data->ephiles.earthEphemeris);
+  free(p_ephemeris_data->ephiles.sunEphemeris); 
   LALFree(p_ephemeris_data->ephemE);
   LALFree(p_ephemeris_data->ephemS);
 } /* END: cleanup_ephemeris() */

@@ -154,7 +154,9 @@ static double relval(double ra, double dec, int i, int nrelvals)
  *   - want to not reach the poles in Dec
  *
  */
-void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
+void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,
+                     skygrid_t grid_cros_sq, skygrid_t grid_plus_sq,
+                     skygrid_t grid_sum_sq, skygrid_t grid_relfreq)
 {
   LALDetector             detector;
   LALFrDetector           fr_detector;
@@ -165,10 +167,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   LIGOTimeGPS             start_time;
   LALTimeInterval         time_interval;
   AvgVelPar               detectorvel_inputs;     /* yea yea I know */
-  skygrid_t               grid_cros_sq = NULL;  
-  skygrid_t               grid_plus_sq = NULL;
-  skygrid_t               grid_sum_sq = NULL;
-  skygrid_t               grid_relfreq = NULL;
+
   CHAR                    cross_file_name[LALNameLength];
   CHAR                    plus_file_name[LALNameLength];
   CHAR                    sum_file_name[LALNameLength];
@@ -187,9 +186,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   sum_file_name[0] = '\0';
   relfreq_file_name[0] = '\0';
   outfile_suffix[0] = '\0';
-
-  /* initialize skygrid_t stuff */
-  init_skygrid(status);
   
   /* useful numbers */
   num_ra = args_info.n_ra_arg;
@@ -205,25 +201,6 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
   cnt_offset = start_ra*count_dec + start_dec;
     
   Pi_num_ra = (REAL8)LAL_PI / (REAL8)num_ra;
-  
-  /* allocate skygrids */
-  (void *)alloc_skygrid(status, &grid_cros_sq);
-  (void *)alloc_skygrid(status, &grid_plus_sq);
-  (void *)alloc_skygrid(status, &grid_sum_sq);
-  (void *)alloc_skygrid(status, &grid_relfreq);
-  
-  if (lalDebugLevel)
-  {
-    printf("cnt_offset = %d\n", cnt_offset);
-    printf("grid_cros_sq->dimLength->data = %d x %d\n", 
-           grid_cros_sq->dimLength->data[0], grid_cros_sq->dimLength->data[1]);
-    printf("grid_plus_sq->dimLength->data = %d x %d\n", 
-           grid_plus_sq->dimLength->data[0], grid_plus_sq->dimLength->data[1]);
-    printf("grid_sum_sq->dimLength->data = %d x %d\n", 
-           grid_sum_sq->dimLength->data[0], grid_sum_sq->dimLength->data[1]);
-    printf("grid_relfreq->dimLength->data = %d x %d\n", 
-           grid_relfreq->dimLength->data[0], grid_relfreq->dimLength->data[1]);
-  }
   
   /* 
    * set up detector 
@@ -579,15 +556,7 @@ void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data)
     printf("grid_plus_sq->data = 0x%x\n", grid_plus_sq->data);
     printf("grid_sum_sq->data = 0x%x\n", grid_sum_sq->data);
     printf("grid_relfreq->data = 0x%x\n", grid_relfreq->data);
-
   }
-  
-  free_skygrid(status, &grid_cros_sq);
-  free_skygrid(status, &grid_plus_sq);
-  free_skygrid(status, &grid_sum_sq);
-  free_skygrid(status, &grid_relfreq);
-  
-  cleanup_skygrid(status);
   
   return;
 } /* END: compute_skygrid() */
