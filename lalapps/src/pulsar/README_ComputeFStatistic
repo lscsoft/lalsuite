@@ -21,5 +21,22 @@ The command-line arguments it takes are:
 
 All arguments not set by default need to be set by the user or the program will exit.
 To my knowledge the program will segfault only if the information in the ephemeris files
-is incorrect.  The ephemeris filenames (but not the path) are hardwired into the code and
-are currently earth02.dat and sun02.dat.
+is incorrect (this actually needs to be fixed.  The ephemeris filenames (but not the path) 
+are hardwired into the code and are currently earth02.dat and sun02.dat.
+
+Included in this directoty are also 10 60s SFTs starting at 714153733.  They are signal 
+only and span the 4Hz band 1008Hz-1012Hz. The signal is at a frequency of 1010.7Hz with 
+no spindown parameters, and alpha=delta=0, A_+=1, A_x=0, Psi=0, phi0=0. They are produced
+according to what the signal would look like from the GEO IFO.
+
+The command:
+
+./ComputeFStatistic -D ./ -f 1010.7 -I 0 -E ../ -n 1
+
+Should produces the output:
+ 
+     1010.7000000000    2.178901298971842
+
+(which is correct to about 0.3%)
+
+
