@@ -126,7 +126,7 @@ my $EPOCH = 729273613;
 #numpts = (number of points in first segment) + (number of points in each offset)(number of offsets)
 # Do not change this value
 # NUMPTS is dynamically set when needed
-##my $NUMPTS = $NPTS + ($NPTS - $OLAP)*($NSEG-1);
+my $NUMPTS = $NPTS + ($NPTS - $OLAP)*($NSEG-1) + 2*$OLAP;
 
 # If you want to create a file with the print spectrum, uncomment the line with "--printSpectrum"
 #	If you don't want the print spectrum output file, uncomment the line without "--printSpectrum"
@@ -220,6 +220,7 @@ sub f_writeCondorSubmitFileHeaders{
 	my $stmts = << "STATEMENTS";
 			Executable = /home/dsmackin/bin/lalapps_power
 			Getenv = True
+			universe=vannilla
 STATEMENTS
 
 	open ("CONDOR_SUB", ">$CONDOR_SUBMIT_FILE") or die "Couldn't open $CONDOR_SUBMIT_FILE.";

@@ -3,7 +3,7 @@
 use strict;
 #-----------------------------------------------------------------------------------
 #
-# testLALdataFind.pl - Program tests the speed of LALdataFind for different lengths of
+# powerTimeTrials.pl - Program tests the speed of LALdataFind for different lengths of
 # data
 #
 #
@@ -13,46 +13,33 @@ use strict;
 #-----------------------------------------------------------------------------------
 
 my $DATE = f_getDateYYMMDD();
-my $LOG_FILE = "/scratch/power/LALdataFind-TimeTrials-$DATE.log";
-my $DATA_FILE = "/scratch/power/LALdataFind-TimeTrials-$DATE.dat";
-
-my $NSEG = 127;
+my $LOG_FILE = "/scratch/power/Power-TimeTrials-$DATE.log";
+my $DATA_FILE = "/scratch/power/Power-TimeTrials-$DATE.dat";
+my $PLOT_FILE = "/home/dsmackin/public_html/plots/power_time_trials-$DATE.png";
 
 open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
 open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
-my @lengths = qw(500 1000 5000 10000 50000 100000);
+my @lengths = qw(256 512 1024 2048);
 
+my $cacheFileLength = 10000;
 
 my $startEpoch = 729273613;
+my $cacheFile = "/scratch/power/segment-" . $startEpoch . "-" . ($startEpoch + $cacheFileLength );
 
 foreach(@lengths){
 	my $lt = localtime();
 	print LOG ("Starting test of length $_ at $lt.\n");
 	print "Starting test of length $_ at at $lt.\n\n";
 	
-	my $cacheFile = "/scratch/power/segment-" . $startEpoch . "-" . ($startEpoch + $_);
-	my $outputFile = "/scratch/power/search_$startEpoch-" . ($startEpoch + $_) . ".xml";
-
-	my $cmd = "LALdataFind --lal-cache --instrument H --type RDS_R_L1  " .
-				" --start " . $startEpoch .
-				" --end " . ($startEpoch + $_) . " >$cacheFile";
-	print $cmd, "\n\n";
-	my $startTime = time();
-	system $cmd;
-	my $totalTime = time() - $startTime;
-	$lt = localtime();
-	
-	print LOG ("Completed test of length $_ at $lt.\n\n");
-	print "Completed test of length $_ at $lt.\n\n";
-	print "Length $_ took ", $totalTime, " seconds.\n";
-	print LOG "Length $_ took $totalTime seconds.\n\n";
-	print DATA "$_ $totalTime";
+	my $nseg = 2*$_ -1;
+	my $numpts = 16384 + (16384/2)*($nseg-1) + 2*$OLAP;
+	my $outputFile = "/scratch/power/search_$startEpoch-" . ($startEpoch + $cacheFileLength) ."-nseg_$nseg.xml";
 
 	#TIME RUNNING LALAPPS
-	$startTime = time();
-	$cmd = "lalapps_power --npts 16384   --nseg $NSEG " .
+	my $startTime = time();
+	my $cmd = "lalapps_power --npts 16384   --nseg $nseg " .
 				"--olap 8192   --olapfctr 3   --minfbin 2 " .
 				"--mintbin 2   --flow 60   --delf 1 " .
 				"--lngth 512   --nsigma 2   --alphdef 0.5 " .
@@ -61,20 +48,22 @@ foreach(@lengths){
 				"--framecache $cacheFile " .
 				"--simtype 0   --spectype useMedian   --window 2 " .
 				"--epoch $startEpoch 0 " .
-				"--numpts 1048576 " .
+				"--numpts  $numpts " .
 				"--outfile $outputFile";
 	print $cmd, "\n\n";
+	print LOG $cmd, "\n\n";
 	system $cmd;
-	$totalTime = time() - $startTime;
+	my $totalTime = time() - $startTime;
 	
-	print DATA " $totalTime\n";
+	print DATA "$_ $totalTime\n";
 }
 
 close LOG;
+close DATA;
 
 
 #PLOT THE RESULTS
-my $plotFile = "/scratch/power/plot.tmp";
+my $plotFile = "/scratch/power/power_plot.tmp";
 open PLOT_FILE, ">$plotFile";
 
 #make the xtics labels from the lengths values
@@ -89,14 +78,15 @@ print PLOT_FILE << "PLOT_COMMANDS";
 	set data style line
 	set size 1.5,1.5
 	set logscale x
+	set logscale y
 	set timestamp
-	set output "/home/dsmackin/public_html/plots/time_to_run_laldatafind.png"
-	set title "Cache File Time Lenght Optimization (first second in test $startEpoch; tested on Hydra)"
-	set xlabel "Number of Seconds in Cache File"
+	set output "$PLOT_FILE"
+	set title "lalapps_power Length Optimization (first second in test $startEpoch; tested on Hydra)"
+	set xlabel "Length of Run in Seconds"
 	set xtics ($xtics)
 	set ylabel "Time to Run"
 	set data style lp
-	plot "$DATA_FILE" using 1:2 t "LALdataFind", "$DATA_FILE" using 1:3 t "lalapps_power ($NSEG segments)"
+	plot "$DATA_FILE" using 1:2 t "lalapps_power (2*length -1  segments)"
 
 PLOT_COMMANDS
 

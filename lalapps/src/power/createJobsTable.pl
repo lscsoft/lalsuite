@@ -31,7 +31,7 @@ my $DATA_QUALITY_FILE = "/scratch/power/input/S2H1v02_segs-TEST.txt";
 my $PLAYGROUND_FILE  = "/scratch/power/input/s2-playground-TEST.txt";
 
 #path for CACHE_FILES
-my $CACHE_PATH = "/scratch/power";
+my $CACHE_PATH = "/scratch/power/cache";
 
 #OUTPUT FILES
 my $OUTPUT_PATH = "/scratch/power/tests";
