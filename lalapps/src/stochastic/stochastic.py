@@ -227,8 +227,8 @@ class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['stopp']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/stopp-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/stopp-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/stopp-$(cluster)-$(process).err')
     self.set_sub_file('stopp.sub')
 
 
