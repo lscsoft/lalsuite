@@ -108,6 +108,11 @@ static INT8 inspiral_end_time(const SnglInspiralTable *x)
 	return(XLALGPStoINT8(&x->end_time));
 }
 
+
+/* Global variable */
+
+INT8 inspenddt = 0;
+
 /*
  * Sort a list of SnglBurstTable events into increasing order according to the
  * supplied comparison function.
@@ -251,14 +256,13 @@ XLALCompareSnglBurstSnglInspiralByTime(
 /* </lalVerbatim> */
 {
 	INT8 burst_start, burst_end, inspiral_end;
-	INT8 epsilon = 1000000;    /*nanoseconds*/
 
 	burst_start = start_time(*a);
  	burst_end = end_time(*a);
 	inspiral_end = inspiral_end_time(*b);
  
-	if(inspiral_end < burst_start - epsilon)
-		return(1); /*the inspiral ends 10 msecs before the burst starts*/
+	if(inspiral_end < burst_start - inspenddt)
+		return(1); /*the inspiral ends inspenddt(eg 10 msec)s before the burst starts*/
 	if(inspiral_end > burst_end)
 		return(-1); /*the inspiral ends after the burst ends*/
 	return(0);  /*inspiral ends somewhere between 10msecs before the start of burst and the end of burst */ 
@@ -413,11 +417,13 @@ LALCompareSnglBurstSnglInspiral(
 	LALStatus *status,
 	const SnglBurstTable *a,
 	const SnglInspiralTable *b,
-	int *difference
+	int *difference,
+	INT8 deltaT
 )
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALCompareSnglBurstSnglInspiral", SNGLBURSTUTILSC);
+	inspenddt = deltaT;
 	*difference = XLALCompareSnglBurstSnglInspiral(&a, &b);
 	RETURN(status);
 }
