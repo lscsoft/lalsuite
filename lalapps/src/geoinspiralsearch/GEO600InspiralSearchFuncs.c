@@ -26,7 +26,7 @@ Author: Sathyaprakash, B.S.
 </lalLaTeX>  */
 
 #include <config.h>
-#if defined HAVE_GSL_GSL_FFT_REAL && defined HAVE_MYSQL_H
+#if defined HAVE_GSL_GSL_FFT_REAL_H && defined HAVE_MYSQL_H
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -38,7 +38,7 @@ Author: Sathyaprakash, B.S.
 #include <mysql.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <gsl_fft_real.h>
+#include <gsl/gsl_fft_real.h>
  
 #include "GEO600InspiralSearch.h"
 #include "GEO600FrameChannels.h"

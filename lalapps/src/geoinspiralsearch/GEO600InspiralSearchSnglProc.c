@@ -57,8 +57,7 @@ int main( void ) { return fputs( "disabled\n", stderr ), 77; }
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/Window.h>
-#include <lal/GEO600InspiralSearch.h>
-#include <lal/FrameRead.h>
+#include <GEO600InspiralSearch.h>
 #include <lal/AVFactories.h>
 #include <gsl/gsl_fft_real.h>
  

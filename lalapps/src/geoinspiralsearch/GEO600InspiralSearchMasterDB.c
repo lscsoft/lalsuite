@@ -90,6 +90,7 @@ WriteInspiralEvents
 /***************************** <lalErrTable file="GEO600InspiralSearchDoubleMasterDBCE"> */
 /***************************** </lalErrTable> */
 
+#include <config.h>
 #if defined HAVE_MPI_H && defined HAVE_GSL_GSL_FFT_REAL_H
 
 #include <lal/LALInspiralBank.h>
@@ -99,9 +100,8 @@ WriteInspiralEvents
 #include <lal/Comm.h>
 #include <mpi.h>
 #include <sys/stat.h>
-#include <lal/GEO600InspiralSearch.h>
-#include <lal/FrameRead.h>
-#include <gsl_fft_real.h>
+#include <GEO600InspiralSearch.h>
+#include <gsl/gsl_fft_real.h>
 
 #define maxNumEvents 100000
 #define WORKTAG 2
@@ -267,7 +267,7 @@ GEO600InspiralSearchDoubleMasterDB
     * Get the length of the longest template 
     */
 
-   LongestTemplateInBank(status->statusPtr, &dataSetLength, &coarseIn);
+   LALInspiralLongestTemplateInBank(status->statusPtr, &dataSetLength, &coarseIn);
    CHECKSTATUSPTR(status);
 
    /*
