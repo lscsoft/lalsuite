@@ -133,9 +133,8 @@ int main(int argc, char *argv[]){
   InspiralTemplate inspiralTemplate;
   INT2 printMoments = 0;
   InspiralMomentsEtc moments;
-  REAL4 F0 = 164.0; /* Roughly the minimum of the noise curve */
-                    /* This should be calculated */ 
-  REAL8 minfreq = 1;
+  REAL4 F0 = 0;
+  REAL4 noiseMin = 1;
   FILE *plot;
   plot = fopen("plot.dat", "w");  
  
@@ -146,14 +145,12 @@ int main(int argc, char *argv[]){
     }
 
   first = list;
- 
+
   /* Stuff for calculating the PSD and Noise Moments */
-  coarseIn.fLower = 30;
-  coarseIn.fUpper = 2000;
+  coarseIn.fLower = inspiralTemplate.fLower = 30;
+  coarseIn.fUpper = inspiralTemplate.fCutoff = 2000;
   coarseIn.iflso = 0;
-  inspiralTemplate.fLower = 30;
-  inspiralTemplate.fCutoff = 2000;
-                                                                                                                                                
+
  /* Parse options. */
   do{
     optflag++;  
@@ -176,7 +173,7 @@ int main(int argc, char *argv[]){
       default:
          coarseIn.mmCoarse = 0.1;
          coarseIn.mMin = 1.0;
-         coarseIn.MMax = 3.0;
+         coarseIn.MMax = 2*3.0;
          Math3DPlot = 0;
          printMoments = 0;
          break;
@@ -192,12 +189,14 @@ int main(int argc, char *argv[]){
   coarseIn.shf.data = psd;
   coarseIn.shf.deltaF = df;
   
-  for(loop = 0; loop < psd->length; loop++){
-    if ((psd->data[loop]) && (psd->data[loop] <= minfreq)){ 
+  for( loop = 0; loop < psd->length; loop++ )
+  {
+    if( psd->data[loop] > 0 && psd->data[loop] < noiseMin )
+    { 
       F0 = (REAL4) coarseIn.shf.deltaF * loop;
-      minfreq = psd->data[loop];
-      }
+      noiseMin = psd->data[loop];
     }
+  }
   printf("\nF0=%f\n",F0);
     
 
