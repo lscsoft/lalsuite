@@ -1,3 +1,4 @@
+
 /*
 <lalVerbatim file="SimulatePopcornCV">
 Author: Tania Regimbau
@@ -21,9 +22,11 @@ This routines  simulate stochastic backgrounds of astrophysical origin produced 
 \subsubsection*{Algorithm}
 
 The two unwhitened time series are produced according to the procedure discribed in Coward,Burman & Blair, 2002, MNRAS, 329.
- 1) the arrival time of the events is randomly selected assuming a Poisson statistic.
- 2) for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate. 
-3) the resulting signal is the sum of the individual strain amplitudes expressed in our frame.
+1) the arrival time of the events is randomly selected assuming a Poisson statistic.
+2) for each event, the distance z to the source is randomly selected. The probability distribution is given by normalizing the differential cosmic star formation rate. 
+3) for each event, the direction of arrival of the wave as well as the angle of polarization are randomly selected in order to compute the beam factors of the antenna.
+
+4) the resulting signal is the sum of the individual strain amplitudes expressed in our frame.
 
 The frequency domain strains $\widetilde{o}_{1}$ and $\widetilde{o}_{2} in the output of the two detectors are constructed as follow:
 \begin {equation}
@@ -43,12 +46,12 @@ LALForwardRealFFT()
 LALReverseRealFFT()
 LALOverlapReductionFunction()
 LALUniformDeviate()
+LALSRombergIntegrate()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
-The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with $\Omega_{matter}=1$, $\Omega_{vacuum}=0 and $h_{0}=0.5 but the code can be easily modified to take into account any cosmological model. 
-The same for the cosmic star formation rate (Madau \& Pozetti, 1999, MNRAS, 312, 9).
+The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with $\Omega_{matter}=0.3$, $\Omega_{vacuum}=0.7 and $h_{0}=0.7. The code can be easily adapted to any cosmological model. The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 522).
 
 </lalLaTeX> */
 
@@ -66,61 +69,142 @@ The same for the cosmic star formation rate (Madau \& Pozetti, 1999, MNRAS, 312,
 #include <lal/Units.h>
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
+#include <lal/Integrate.h>
 #include <lal/DetectorSite.h>
-
 #include "SimulatePopcorn.h"
 
+#define ho SIMULATEPOPCORN_ho 
+#define om SIMULATEPOPCORN_OMEGAMATTER
+#define ov SIMULATEPOPCORN_OMEGAVACUUM
 NRCSID (SIMULATEPOPCORNC, "$Id$");
 
 
 static void Rcfunc (REAL4 *Rc, REAL4 z);
-static void dVfunc (REAL4 *dV, REAL4 z);
-static void pzfunc (REAL4 *result, REAL4 z);
-static void dLfunc (REAL4 *result, REAL4 z);
+static void Ezfunc (REAL4 *result, REAL4 z);
+static void drfunc (LALStatus *s, REAL4 *dr, REAL4 z, void *p);
+static void rfunc (LALStatus *s, REAL4 *result, REAL4 z);
+static void dVfunc (LALStatus *s, REAL4 *result, REAL4 z);
+static void pzfunc (LALStatus *s, REAL4 *result, REAL4 z);
+static void dLfunc (LALStatus *s, REAL4 *result, REAL4 z);
+static void Fpfunc (REAL4 *result, REAL4 phi, REAL4 costeta, REAL4 psi);
+static void Fmfunc (REAL4 *result, REAL4 phi, REAL4 costeta, REAL4 psi);
+static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm);
+
 
 /*Madau cosmic star formation rate */
 static void Rcfunc (REAL4 *result, REAL4 z)
 {
+  /*model of 1999*/
+  /*
   *result = (0.23*exp(3.4*z)/(44.7+exp(3.8*z)));
+  */
+  /*model of 2001*/
+  *result = 0.15*(ho/0.65)/(1.+22.*exp(-3.4*z));
   return;
 }
 
-/*comovile volume element: flat Einstein de Sitter universe with omega_matter=1 */
-static void dVfunc (REAL4 *result, REAL4 z)
-{
-  REAL4 zplus;
-  zplus=1.+z;
-  *result=(1.-(1./sqrt(zplus)))*(1.-(1./sqrt(zplus)))/sqrt(zplus*zplus*zplus);
+static void Ezfunc (REAL4 *result, REAL4 z)
+ {  
+  *result=sqrt(om*(1.+z)*(1.+z)*(1.+z)+ov);
   return;
-}
+ }
+/*comovile volume element: flat Einstein de Sitter universe */
+
+/*the factor c/Ho is omitted*/
+static void drfunc (LALStatus *s, REAL4 *result, REAL4 z1, void *p)
+{
+  INITSTATUS (s, "drfunc", SIMULATEPOPCORNC);
+  ATTATCHSTATUSPTR (s);
+  *result=1./sqrt((1.+z1)*(1.+z1)*(1.+om*z1)-ov*z1*(2.+z1));
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
+ }
+
+static void rfunc (LALStatus *s, REAL4 *result, REAL4 z)
+{
+  SIntegrateIn  zint;
+  REAL4 r;
+  INITSTATUS (s, "rfunc", SIMULATEPOPCORNC);
+  ATTATCHSTATUSPTR (s);
+  
+  zint.function = drfunc;
+  zint.xmin     = 0;
+  zint.xmax     = z;
+  zint.type     = ClosedInterval;
+  LALSRombergIntegrate (s->statusPtr, &r, &zint, NULL); 
+  *result=r;
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
+ }
+
+/* the factor 4Pi(c/Ho) is omitted*/
+static void dVfunc (LALStatus *s, REAL4 *result, REAL4 z)
+{
+  REAL4 r,Ez;
+  INITSTATUS (s, "dVfunc", SIMULATEPOPCORNC);
+  ATTATCHSTATUSPTR (s);
+  rfunc(s->statusPtr,&r,z);
+  Ezfunc(&Ez,z);
+  *result=r*r/Ez;
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
+ }
 
 /*probability density of z */
 /*(dR/dz)/(Int[dR/dz,{z,0,5}]) where dR/dz = Rc*dV/(1+z) */
-
-static void  pzfunc (REAL4 *result, REAL4 z)
+/*the normalisation factor 12.25 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
+static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
   REAL4 dV, Rc;
-  dVfunc(&dV,z);
+  INITSTATUS (s, "pzfunc", SIMULATEPOPCORNC);
+  ATTATCHSTATUSPTR (s);
+  dVfunc(s->statusPtr,&dV,z);
   Rcfunc(&Rc,z);
-  *result=315.917*Rc*dV/(1.+z);
-  return;
+  *result=12.25*(0.7/ho)*Rc*dV/(1.+z);
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
 }
 
-/*distance luminosity: dL=(2c/Ho)(1+z)[1-(1+z)^-0.5] */
-static void  dLfunc (REAL4 *result, REAL4 z)
- {  
-   *result=12000.*(1.+z)*(1.-(1./sqrt(1.+z)));
-   return;
+/*distance luminosity: dL=(1+z)*r */
+static void  dLfunc (LALStatus *s, REAL4 *result, REAL4 z)
+ {
+  REAL4 r;  
+  INITSTATUS (s, "dLfunc", SIMULATEPOPCORNC);
+  ATTATCHSTATUSPTR (s);
+  rfunc(s->statusPtr,&r,z);
+  *result=4285.*(0.7/ho)*(1.+z)*r;
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
  }
 
+static void Fpfunc (REAL4 *result, REAL4 phi, REAL4 costeta, REAL4 psi)
+ {
+   *result=0.5*(1.+costeta*costeta)*cos(2.*phi)*cos(2.*psi)
+            -costeta*sin(2.*phi)*sin(2.*psi);
+ }
 
-  
+static void Fmfunc (REAL4 *result, REAL4 phi, REAL4 costeta, REAL4 psi)
+ {
+   *result=0.5*(1.+costeta*costeta)*cos(2.*phi)*sin(2.*psi)
+            +costeta*sin(2.*phi)*sin(2.*psi);
+ }
+
+static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
+ {
+   *result=sqrt(Fp*Fp+Fm*Fm);
+ }
+
 void
 LALSimPopcornTimeSeries (  LALStatus                *status,
-			   SimPopcornOutputStruc    *output,
-			   SimPopcornInputStruc     *input,
-			   SimPopcornParamsStruc     *params 
-			   )
+                           SimPopcornOutputStruc    *output,
+                           SimPopcornInputStruc     *input,
+                           SimPopcornParamsStruc     *params 
+                           )
 
    
 {
@@ -144,7 +228,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   /* source parameters*/  
   REAL4LALWform  *wformfunc;
   REAL4 wform, duration, lambda;
-
+  REAL4 Fp, Fm, Fscal, phi, psi,costeta, sgn;
 
   /* others */
   UINT4 UE = 10000000;
@@ -157,7 +241,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   
   /* random generator */
   RandomParams *randParams=NULL;
-  REAL4 alea1, alea2, reject;
+  REAL4 alea, alea1, alea2, reject;
   UINT4 seed;
  
   /* LAL structure needed as input/output for computing overlap 
@@ -244,7 +328,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   /* sample rate of the time series is non-zero */
   ASSERT(params->paramssrate > 0, status, 
         SIMULATEPOPCORNH_EBV,
-	SIMULATEPOPCORNH_MSGEBV);
+        SIMULATEPOPCORNH_MSGEBV);
     
   /** read input parameters **/
   
@@ -270,41 +354,41 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   if (input->wfilter0->data->length != Nfreq) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_EMMLEN,
-	   SIMULATEPOPCORNH_MSGEMMLEN);
+           SIMULATEPOPCORNH_EMMLEN,
+           SIMULATEPOPCORNH_MSGEMMLEN);
     }
   if (input->wfilter1->data->length != Nfreq) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_EMMLEN,
-	   SIMULATEPOPCORNH_MSGEMMLEN);
+           SIMULATEPOPCORNH_EMMLEN,
+           SIMULATEPOPCORNH_MSGEMMLEN);
     }
 
      
   if (input->wfilter0->f0 != f0) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_ENONNULLFMIN,
-	   SIMULATEPOPCORNH_MSGENONNULLFMIN);
+           SIMULATEPOPCORNH_ENONNULLFMIN,
+           SIMULATEPOPCORNH_MSGENONNULLFMIN);
     }
   if (input->wfilter1->f0 != f0) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_ENONNULLFMIN,
-	   SIMULATEPOPCORNH_MSGENONNULLFMIN);
+           SIMULATEPOPCORNH_ENONNULLFMIN,
+           SIMULATEPOPCORNH_MSGENONNULLFMIN);
     }
 
   if (input->wfilter0->deltaF != deltaf) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_EMMDELTA,
-	   SIMULATEPOPCORNH_MSGEMMDELTA);
+           SIMULATEPOPCORNH_EMMDELTA,
+           SIMULATEPOPCORNH_MSGEMMDELTA);
     }
   if (input->wfilter1->deltaF != deltaf) 
     {
       ABORT(status,
-	   SIMULATEPOPCORNH_EMMDELTA,
-	   SIMULATEPOPCORNH_MSGEMMDELTA);
+           SIMULATEPOPCORNH_EMMDELTA,
+           SIMULATEPOPCORNH_MSGEMMDELTA);
     }
   
   /*********** everything is O.K here  ***********/
@@ -338,7 +422,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
      do { 
      LALUniformDeviate( status->statusPtr, &alea1, randParams);
      LALUniformDeviate( status->statusPtr, &alea2, randParams);
-     pzfunc(&reject,5.*alea1);}
+     pzfunc(status->statusPtr,&reject,5.*alea1);}
      while (alea2>reject);
      z->data[i]=5.*alea1;  
    }   
@@ -358,9 +442,22 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
      while((tevent->data[sup]-t)<=0.5*duration){sup++;}
      for(k=inf;k<sup;k++)
        {
-	x=(t-tevent->data[k])/(z->data[k]+1.);
-        dLfunc(&dlum,z->data[k]);
+        x=(t-tevent->data[k])/(z->data[k]+1.);
+        dLfunc(status->statusPtr,&dlum,z->data[k]);
         wformfunc(&wform,x);
+        LALUniformDeviate(status->statusPtr,&alea,randParams);
+        phi=2.*LAL_PI*alea;
+        LALUniformDeviate(status->statusPtr,&alea,randParams);
+        psi=2.*LAL_PI*alea;
+        LALUniformDeviate(status->statusPtr,&alea,randParams);
+        if (alea<0.5){sgn=1.;}
+	 else{sgn=-1.;}
+        LALUniformDeviate(status->statusPtr,&alea,randParams);
+        costeta=sgn*alea;
+        Fpfunc(&Fp, phi, costeta, psi); 
+        Fmfunc(&Fm, phi, costeta, psi); 
+        Fscalfunc(&Fscal, Fp, Fm); 
+        wform=wform*Fscal;
         hvec[dataset]->data[j]=(wform/dlum)+hvec[dataset]->data[j];
        }
    }
@@ -379,8 +476,8 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
     if (fref < 0.) 
      {
       ABORT(status,
-	   SIMULATEPOPCORNH_EBV,
-	   SIMULATEPOPCORNH_MSGEBV);
+           SIMULATEPOPCORNH_EBV,
+           SIMULATEPOPCORNH_MSGEBV);
      }
      
      jref=fref*length;
@@ -398,7 +495,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
  
     for (detect=0;detect<2;detect++)
       for (j=0;j<Nfreq;j++) {
-	Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
+        Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
         Hvec[detect]->data[j].im= Hvec[detect]->data[j].im*norm;}
       
    
@@ -419,7 +516,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
        {
         resp0 = input->wfilter0->data->data[j];
         resp1 = input->wfilter1->data->data[j];
-	gamma=overlap.data->data[j]; 
+        gamma=overlap.data->data[j]; 
         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*gamma 
                      +sqrt(1-gamma*gamma)*Hvec[1]->data[j].re)*resp1.re;
         
@@ -482,5 +579,3 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   
 }
 
-
-  
