@@ -103,8 +103,8 @@ INT4 lalDebugLevel=7;
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATA "earth03.dat" 
-#define SUNDATA "sun03.dat" 
+#define EARTHDATA "earth00-04.dat" 
+#define SUNDATA "sun00-04.dat" 
 
 /* Usage format string.  */
 #define USAGE "Usage: %s [-d debuglevel] [-a accuracy]\n"
@@ -153,7 +153,9 @@ int main(int argc, char *argv[]){
   static LALStatus       status; 
   static VelocityPar     velPar;
   static REAL8           vel[3];
-  static  EphemerisData  *edat = NULL;
+  static REAL8           pos[3];
+  static EphemerisData  *edat = NULL;
+  LIGOTimeGPS   tGPS;   
   INT4   arg;                         /* Argument counter */
   REAL8  vTol=0.01 ;
   /* INT4   c, errflg=0;*/
@@ -219,12 +221,26 @@ int main(int argc, char *argv[]){
   /* fill in ephemeris data in velPar */
   velPar.edat = edat;
 
-  /*  for (i=0; i<1400; i++) */
+
+  tGPS.gpsSeconds = T0SEC;
+  tGPS.gpsNanoSeconds = T0NSEC;
+
+
+  SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
+
+  printf("Detector velocity at %ld = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+
+  SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status); 
+
+  printf("Detector position at %ld = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+
   SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
 
+  printf("Avg. detector velocity in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
 
-  printf("AvgDetectorVel= %g, %g, %g \n", vel[0],vel[1],vel[2]);
- 
+  SUB( LALAvgDetectorPos ( &status, vel, &velPar), &status );
+
+  printf("Avg. detector position in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
@@ -236,6 +252,8 @@ int main(int argc, char *argv[]){
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+
+
 
 
 
