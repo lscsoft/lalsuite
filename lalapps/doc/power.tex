@@ -455,7 +455,12 @@ Patrick Brady and Saikat Ray-Majumder
 [\verb$--time-step$ \textsc{tstep}]
 [\verb$--seed$ \textsc{seed}]
 [\verb$--waveform$ \textsc{wave}]
+[\verb$--coordinates$ \textsc{coordinates}]
 [\verb$--freq$ \textsc{freq}]
+[\verb$--flow$ \textsc{flow}]
+[\verb$--fhigh$ \textsc{fhigh}]
+[\verb$--deltaf$ \textsc{deltaf}]
+[\verb$--quality$ \textsc{quality}]
 [\verb$--tau$ \textsc{tau}]
 [\verb$--hpeak$ \textsc{hpeak}]
 [\verb$--usertag$ \textsc{tag}]
@@ -508,6 +513,24 @@ occour at \textsc{tstep}$/\pi$ second intervals. Defaults to $2630/\pi$.
 Optional. Seed the random number generator with the integer \textsc{seed}.
 Defaults to $1$.
 
+\item[\texttt{--coordinates} \textsc{coordinates}] 
+Optional.  The coordinate system to specify for the injections.  The
+default is \verb+EQUATORIAL+,   but another useful one is
+\verb+HORIZON+ to easily allow for injection from directly overhead.
+
+\item[\texttt{--flow} \textsc{flow}]
+Optional.  The code can generate injections at multiple frequencies.
+This option sets the first frequency used in that case.  Default value
+is 150 Hz.
+
+\item[\texttt{--fhigh} \textsc{fhigh}]
+Optional.  Only generate injections with frequencies below
+\textsc{fhigh}.  Default value is 1000 Hz.
+
+\item[\texttt{--deltaf} \textsc{deltaf}]
+Optional.  The linear spacing between frequencies used to make
+injections.  Default value is 0 Hz.
+
 \item[\texttt{--waveform} \textsc{wave}]
 Optional. The string \textsc{wave} will be written into the \texttt{waveform}
 column of the \texttt{sim\_burst} table output. This is used by the
@@ -517,6 +540,16 @@ data. Default is \texttt{SineGaussian}.
 \item[\texttt{--tau} \textsc{tau}]
 Optional.  The decay-time for sine-gaussian,  gaussian,  ringdown and
 ring-up waveforms.
+
+\item[\texttt{--quality} \textsc{quality}]
+Optional.  The quality factor for sine-gaussian,  gaussian,  ringdown and
+ring-up waveforms.    This option overrides the decay-time
+\textsc{TAU} and recalculates the duration for each waveform using the
+formula
+$$ 
+\tau = \frac{ \textsc{quality} }{ \sqrt{2} \pi f_0 }
+$$
+where $f_0$ is the frequency of the injection.
 
 \item[\texttt{--freq} \textsc{freq}]
 Optional.  The central frequency for sine-gaussian,  ringdown and
