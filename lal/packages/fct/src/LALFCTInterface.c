@@ -90,23 +90,23 @@ void LALCreateFCTPlan(LALStatus* const status,
 }
 
 void LALDestroyFCTPlan(LALStatus* const status,
-                       LALFCTPlan** plan)
+                       LALFCTPlan** plan_ptr)
 {
     INITSTATUS(status, "LALDestroyFCTPlan", LALFCTINTERFACEC);
 
-    ASSERT(*plan != 0, status,
+    ASSERT(*plan_ptr != 0, status,
            LALFCTINTERFACEH_ENULL, LALFCTINTERFACEH_MSGENULL);
 
-    fct_destroy_plan((*plan)->fctPlan, (*plan)->status);
+    fct_destroy_plan((*plan_ptr)->fctPlan, (*plan_ptr)->status);
 
-    ASSERT((*plan)->status->fct_errno == 0, status,
-         LALFCTINTERFACEH_EINTERNAL, fct_strerror((*plan)->status->fct_errno));
+    ASSERT((*plan_ptr)->status->fct_errno == 0, status,
+     LALFCTINTERFACEH_EINTERNAL, fct_strerror((*plan_ptr)->status->fct_errno));
 
-    LALFree((*plan)->status);
-    (*plan)->status = 0;
+    LALFree((*plan_ptr)->status);
+    (*plan_ptr)->status = 0;
 
-    LALFree(*plan);
-    *plan = 0;
+    LALFree(*plan_ptr);
+    *plan_ptr = 0;
 }
 
 void LALFCTSetUnits(LALStatus* const status,

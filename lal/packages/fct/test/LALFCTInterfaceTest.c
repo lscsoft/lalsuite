@@ -603,7 +603,7 @@ calculateFCTCubes(LALStatus* status, COMPLEX8Vector* fct_in)
     testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
     testprintf("    k1 = %5d (tau2 = %f)\n", k1_max, tau2_max);
 
-#if 0
+#ifdef USE_WRITE
     writefct((float*) fct_out->data,
 	     data_length, fct_out->length/data_length, "fct.out");
 #endif
@@ -738,7 +738,7 @@ calculateFCTCubes2(LALStatus* status, COMPLEX8Vector* fct_in)
     testprintf("    k  = %5d (tc   = %d)\n", k_max, k_max);
     testprintf("    k0 = %5d (tau0 = %f)\n", k0_max, tau0_max);
 
-#if 0
+#ifdef USE_WRITE
     writefct((float*) fct_out->data,
 	     data_length, fct_out->length/data_length, "fct.out");
 #endif
@@ -922,8 +922,14 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
     LALCCreateVector(status, &gtmp_out, data_length);
     LALCCreateVector(status, &gchirp, data_length);
 
-    /* Plan for doing the FFT of the tseries */
-    LALEstimateFwdComplexFFTPlan(status, &plan, gtmp_in->length);
+    /*
+      Plan for doing the FFT of the tseries. Note that this
+      is a "backward" plan in LAL convention - LAL and FCT
+      use the convention that a "forward" transform has a
+      factor of +1 in the exponent and a "backward" transform
+      has a -1.
+    */
+    LALEstimateInvComplexFFTPlan(status, &plan, gtmp_in->length);
     
     /* Set up the plan and output area */
     LALCreateFCTPlan(status, &fctPlan, &planIn);
@@ -991,6 +997,14 @@ main(int argc, char **argv)
     cleanup(status);
 
     LALFree(status);
+
+    /*
+      For some reason this tells me I have a memory leak.
+      I suspect it's in some part of the library...
+    */
+#if 0
+    LALCheckMemoryLeaks();
+#endif
 
     return 0;
 }
