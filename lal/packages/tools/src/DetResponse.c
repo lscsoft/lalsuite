@@ -66,19 +66,16 @@ NRCSID( DETRESPONSEC, "$Id$" );
 
 
 /* Matrix manipulation routines, and other stuff */
-/* #include "DR_Util.h" */
-
-
-
-/*
- * These are private utility functions for the DetResponse package: vector
- * and array manipulations, etc.
- * Author: David Chin <dwchin@umich.edu> +1-734-730-1274
- * $Id$
- */
-
 
 static const INT4 oneBillion = 1000000000;
+
+#define LALDR_MATRIXSIZE 3
+
+/* I love C, really I do.
+ * These typedefs are to get rid of type mismatch warnings. (Lint is our
+ * friend.)  */
+typedef REAL8 LALDR_3Vector[LALDR_MATRIXSIZE];
+typedef REAL8 LALDR_33Matrix[LALDR_MATRIXSIZE][LALDR_MATRIXSIZE];
 
 /*
  * Private functions
@@ -97,17 +94,28 @@ static REAL8 rad_to_deg(REAL8 radians)
 /* axis for LALDR_EulerRotation() */
 typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
 
+
+static void
+LALDR_Set3Vector(LALDR_3Vector * v,
+                 REAL8 v1, REAL8 v2, REAL8 v3)
+{
+  (*v)[0] = v1;
+  (*v)[1] = v2;
+  (*v)[2] = v3;
+}
+
 /*
  * Cross product of two 3-vectors:
  *    result = a x b
  */
 static void
-LALDR_CrossProd3Vector(REAL8 result[3], 
-                       const REAL8 a[3], const REAL8 b[3])
+LALDR_CrossProd3Vector(LALDR_3Vector * result,
+                       LALDR_3Vector * const a,
+                       LALDR_3Vector * const b)
 {
-  result[0] =  a[1]*b[2] - a[2]*b[1];
-  result[1] = -a[0]*b[2] + a[2]*b[0];
-  result[2] =  a[0]*b[1] - a[1]*b[0];
+  (*result)[0] =  (*a)[1]*(*b)[2] - (*a)[2]*(*b)[1];
+  (*result)[1] = -(*a)[0]*(*b)[2] + (*a)[2]*(*b)[0];
+  (*result)[2] =  (*a)[0]*(*b)[1] - (*a)[1]*(*b)[0];
 
   return;
 } /* END: LALDR_CrossProd3Vector() */
@@ -118,16 +126,34 @@ LALDR_CrossProd3Vector(REAL8 result[3],
  * Dot product of two 3-vectors
  */
 static REAL8
-LALDR_DotProd3Vector(REAL8 a[3], REAL8 b[3])
+LALDR_DotProd3Vector(LALDR_3Vector * const a,
+                     LALDR_3Vector * const b)
 {
   INT4 i;
   REAL8 result = 0.;
 
-  for (i = 0; i < 3; ++i)
-    result += a[i] * b[i];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    result += (*a)[i] * (*b)[i];
 
   return result;
 } /* END: LALDR_DotProd3Vector() */
+
+
+
+static void
+LALDR_OuterProd3Vector(LALDR_33Matrix * a,
+                       LALDR_3Vector * const u,
+                       LALDR_3Vector * const v)
+{
+  INT4 i;
+  INT4 j;
+
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*a)[i][j] = (*u)[i] * (*v)[j];
+
+  return;
+}
 
 
 
@@ -135,14 +161,14 @@ LALDR_DotProd3Vector(REAL8 a[3], REAL8 b[3])
  * Scalar product of two 3x3 matrices
  */
 static REAL8
-LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
+LALDR_DotProd33Matrix(LALDR_33Matrix * const a, LALDR_33Matrix * const b)
 {
   INT4 i, j;
   REAL8 result = 0.;
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      result += a[i][j] * b[i][j];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      result += (*a)[i][j] * (*b)[i][j];
 
   return result;
 } /* END: LALDR_DotProd33Matrix() */
@@ -154,16 +180,16 @@ LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
  * Sets all elements of a 3x3 matrix
  */
 static void 
-LALDR_Set33Matrix(REAL8 matrix[3][3],
+LALDR_Set33Matrix(LALDR_33Matrix * matrix,
                   REAL8 a11, REAL8 a12, REAL8 a13,
                   REAL8 a21, REAL8 a22, REAL8 a23,
                   REAL8 a31, REAL8 a32, REAL8 a33)
 {
-  matrix[0][0] = a11;  matrix[0][1] = a12;  matrix[0][2] = a13;
+  (*matrix)[0][0] = a11;  (*matrix)[0][1] = a12;  (*matrix)[0][2] = a13;
 
-  matrix[1][0] = a21;  matrix[1][1] = a22;  matrix[1][2] = a23;
+  (*matrix)[1][0] = a21;  (*matrix)[1][1] = a22;  (*matrix)[1][2] = a23;
 
-  matrix[2][0] = a31;  matrix[2][1] = a32;  matrix[2][2] = a33;
+  (*matrix)[2][0] = a31;  (*matrix)[2][1] = a32;  (*matrix)[2][2] = a33;
 
   return;
 } /* END: LALDR_Set33Matrix() */
@@ -174,13 +200,13 @@ LALDR_Set33Matrix(REAL8 matrix[3][3],
  * Copy matrix source to matrix target
  */
 static void
-LALDR_Copy33Matrix(REAL8 target[3][3], const REAL8 source[3][3])
+LALDR_Copy33Matrix(LALDR_33Matrix * target, LALDR_33Matrix * const source)
 {
   INT4 i, j;
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      target[i][j] = source[i][j];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*target)[i][j] = (*source)[i][j];
 
   return;
 } /* END: LALDR_Copy33Matrix() */
@@ -191,7 +217,7 @@ LALDR_Copy33Matrix(REAL8 target[3][3], const REAL8 source[3][3])
  * Zero matrix
  */
 static void
-LALDR_Zero33Matrix(REAL8 matrix[3][3])
+LALDR_Zero33Matrix(LALDR_33Matrix * matrix)
 {
   LALDR_Set33Matrix(matrix,
                     0., 0., 0.,
@@ -206,9 +232,9 @@ LALDR_Zero33Matrix(REAL8 matrix[3][3])
  * Matrix multiply
  */
 static void
-LALDR_Multiply33Matrix(REAL8 product[3][3],
-                       REAL8 matrixL[3][3],
-                       REAL8 matrixR[3][3])
+LALDR_Multiply33Matrix(LALDR_33Matrix * product,
+                       LALDR_33Matrix * const matrixL,
+                       LALDR_33Matrix * const matrixR)
 {
   /* loop counters */
   INT4 i, j, k;
@@ -224,10 +250,10 @@ LALDR_Multiply33Matrix(REAL8 product[3][3],
   /*
    * Multiply the matrices: matrixL * matrixR
    */
-  for (i = 0; i < 3; ++i)
-    for (k = 0; k < 3; ++k)
-      for (j = 0; j < 3; ++j)
-        product[i][k] += matrixL[i][j] * matrixR[j][k];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (k = 0; k < LALDR_MATRIXSIZE; ++k)
+      for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+        (*product)[i][k] += (*matrixL)[i][j] * (*matrixR)[j][k];
 
   return;
 }
@@ -238,15 +264,15 @@ LALDR_Multiply33Matrix(REAL8 product[3][3],
  * Scalar multiply
  */
 static void
-LALDR_ScalarMult33Matrix(REAL8 result[3][3],
+LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
                          REAL8 coefficient,
-                         const REAL8 matrix[3][3])
+                         LALDR_33Matrix * const  matrix)
 {
   INT4 i, j;
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      result[i][j] = coefficient * matrix[i][j];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*result)[i][j] = coefficient * (*matrix)[i][j];
 
   return;
 }
@@ -257,15 +283,15 @@ LALDR_ScalarMult33Matrix(REAL8 result[3][3],
  * Add matrix
  */
 static void
-LALDR_Add33Matrix(REAL8 result[3][3],
-                  const REAL8 matrix1[3][3],
-                  const REAL8 matrix2[3][3])
+LALDR_Add33Matrix(LALDR_33Matrix * result,
+                  LALDR_33Matrix * const matrix1,
+                  LALDR_33Matrix * const matrix2)
 {
   INT4 i, j;
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      result[i][j] = matrix1[i][j] + matrix2[i][j];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*result)[i][j] = (*matrix1)[i][j] + (*matrix2)[i][j];
 
   return;
 }
@@ -276,15 +302,15 @@ LALDR_Add33Matrix(REAL8 result[3][3],
  * Subtract matrices (M1 - M2)
  */
 static void
-LALDR_Subtract33Matrix(REAL8 result[3][3],
-                  const REAL8 matrix1[3][3],
-                  const REAL8 matrix2[3][3])
+LALDR_Subtract33Matrix(LALDR_33Matrix * result,
+                       LALDR_33Matrix * const matrix1,
+                       LALDR_33Matrix * const matrix2)
 {
   INT4 i, j;
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      result[i][j] = matrix1[i][j] - matrix2[i][j];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*result)[i][j] = (*matrix1)[i][j] - (*matrix2)[i][j];
 
   return;
 }
@@ -295,8 +321,8 @@ LALDR_Subtract33Matrix(REAL8 result[3][3],
  * Transpose matrix
  */
 static void
-LALDR_Transpose33Matrix(REAL8 transpose[3][3],
-                        REAL8 matrix[3][3])
+LALDR_Transpose33Matrix(LALDR_33Matrix * transpose,
+                        LALDR_33Matrix * const matrix)
 {
   INT4 i, j;
 
@@ -308,9 +334,9 @@ LALDR_Transpose33Matrix(REAL8 transpose[3][3],
                     0., 0., 0.,
                     0., 0., 0.);
 
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
-      transpose[i][j] = matrix[j][i];
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+      (*transpose)[i][j] = (*matrix)[j][i];
 
   return;
 }
@@ -321,14 +347,14 @@ LALDR_Transpose33Matrix(REAL8 transpose[3][3],
  * The L2 norm of a matrix
  */
 static REAL8
-LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
+LALDR_L2Norm33Matrix(LALDR_33Matrix * const matrix)
 {
     INT4   i, j;
     REAL8  l2norm = 0.;
 
-    for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
-            l2norm += matrix[i][j] * matrix[i][j];
+    for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+            l2norm += (*matrix)[i][j] * (*matrix)[i][j];
 
     l2norm = sqrt((double)l2norm);
 
@@ -342,14 +368,14 @@ LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
  * The RMS norm of a matrix: RMS sum of all elements.
  */
 static REAL8
-LALDR_RMSNorm33Matrix(const REAL8 matrix[3][3])
+LALDR_RMSNorm33Matrix(LALDR_33Matrix * const matrix)
 {
     INT4   i, j;
     REAL8  rmsnorm = 0.;
 
-    for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
-            rmsnorm += matrix[i][j] * matrix[i][j];
+    for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+            rmsnorm += (*matrix)[i][j] * (*matrix)[i][j];
 
     rmsnorm = sqrt((double)rmsnorm / 9.);
 
@@ -362,15 +388,15 @@ LALDR_RMSNorm33Matrix(const REAL8 matrix[3][3])
  * The "infinity" norm of a matrix: max over all elems
  */
 static REAL8
-LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
+LALDR_InfNorm33Matrix(LALDR_33Matrix * const matrix)
 {
     INT4 i, j;
     REAL8 infnorm = 0.;
 
-    for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
-            if (fabs((double)(matrix[i][j])) > infnorm)
-                infnorm = fabs(matrix[i][j]);
+    for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+            if (fabs((double)((*matrix)[i][j])) > infnorm)
+                infnorm = fabs((*matrix)[i][j]);
     
     return infnorm;
 }
@@ -380,13 +406,12 @@ LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
 /*
  * Print out matrix
  */
-#if 0
 static void
-LALDR_Print33Matrix(const REAL8 matrix[3][3],
-                    const CHAR *varname,
-                    UINT4       format,
-                    FILE *file,
-                    const CHAR *graph_title)
+LALDR_Print33Matrix(LALDR_33Matrix * const matrix,
+                    const CHAR  *varname,
+                    UINT4        format,
+                    FILE        *file,
+                    const CHAR  *graph_title)
 {
   /* counters */
   INT4 i, j;
@@ -400,10 +425,10 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
   if (format == 0)
     {
       fprintf(file, "%s:\n", varname);
-      for (i = 0; i < 3; ++i)
+      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
         {
-          for (j = 0; j < 3; ++j)
-            fprintf(file, "%20.14e\t", matrix[i][j]);
+          for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+            fprintf(file, "% 20.14e\t", (*matrix)[i][j]);
 
           fprintf(file, "\n");
         }
@@ -416,10 +441,10 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
   if (format == 1)
     {
       max = 0.;
-      for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
-          if (fabs(matrix[i][j]) > max)
-            max = fabs(matrix[i][j]);
+      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        for (j = 0; j < LALDR_MATRIXSIZE; ++j)
+          if (fabs((*matrix)[i][j]) > max)
+            max = fabs((*matrix)[i][j]);
 
 
       /* load linalg and plots packages for Maple; plot options */
@@ -433,16 +458,16 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
       fprintf(file, "%s := array(1 .. 3, 1 .. 3,[",
               varname);
 
-      for (i = 0; i < 3; ++i)
-        for (j = 0; j < 3; ++j)
+      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+        for (j = 0; j < LALDR_MATRIXSIZE; ++j)
           {
             /* last entry doesn't have trailing comma */
             if (i == 2 && j == 2)
               fprintf(file, "(3, 3)=%20.14e)",
-                      fabs(matrix[i][j]));
+                      fabs((*matrix)[i][j]));
             else
               fprintf(file, "(%d, %d)=%20.14e,",
-                      j, i, fabs(matrix[i][j]));
+                      j, i, fabs((*matrix)[i][j]));
           }
 
       fprintf(file, "]):\n");
@@ -453,7 +478,26 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
 
   return;
 }
-#endif
+
+
+
+static void
+LALDR_Print3Vector(LALDR_3Vector * const vector,
+                   const CHAR           *varname,
+                   FILE                 *file)
+{
+  /* counter */
+  INT4 i;
+
+  fprintf(file, "%s:\n", varname);
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+      fprintf(file, "% 20.14e\t", (*vector)[i]);
+
+  fprintf(file, "\n");
+  fflush(file);
+  return;
+}
+     
 
 
 
@@ -466,7 +510,7 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
  * theta in RADIANS
  */
 static void
-LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
+LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
                     REAL8        theta,
                     LALDR_Axis_t axis)
 {
@@ -505,12 +549,12 @@ LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
 
 
 
+#if 0
 /*
  * This computes the effective longitude and latitude of a detector, given
  * an LALDetector.  It stuffs its results in a SkyPosition structure in
  * RADIANS.
  */
-#if 0
 static void
 LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
 {
@@ -518,10 +562,10 @@ LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
     REAL8 theta_y, phi_y;
     REAL8 sinTheta;
 
-    REAL8 e_xarm[3];
-    REAL8 e_yarm[3];
+    LALDR_3Vector e_xarm;
+    LALDR_3Vector e_yarm;
 
-    REAL8 normal[3];
+    LALDR_3Vector normal;
 
     SkyPosition delta_loc;
 
@@ -601,7 +645,6 @@ LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
 #endif
 
 
-
 /*
  * Another way of computing detector response, making use
  * of the detector response tensor stored in LALDetector
@@ -622,12 +665,12 @@ LALComputeDetAMResponse( LALStatus             *status,
    * as stored in the LALDetector structure. */
 
   /* "unit" plus perturbation */
-  REAL8 e_plus[3][3];
-  REAL8 e_plus_E[3][3];
+  LALDR_33Matrix e_plus;
+  LALDR_33Matrix e_plus_E;
 
   /* "unit" cross perturbation */
-  REAL8 e_cros[3][3]; 
-  REAL8 e_cros_E[3][3];
+  LALDR_33Matrix e_cros; 
+  LALDR_33Matrix e_cros_E;
 
   /* Euler angles to transform from src to Earth-fixed */
   REAL8 psi;      /* orientation of src: ccw "N of W" */
@@ -636,16 +679,16 @@ LALComputeDetAMResponse( LALStatus             *status,
   REAL8 gmst;     /* GMST1, in RADIANS */
 
   /* Euler rotations to transfrom from src to Earth-fixed */
-  REAL8 r1[3][3];
-  REAL8 r2[3][3];
-  REAL8 r3[3][3];
-  REAL8 tmpmat[3][3];
-  REAL8 rtot[3][3];
-  REAL8 rtot_T[3][3];
+  LALDR_33Matrix r1;
+  LALDR_33Matrix r2;
+  LALDR_33Matrix r3;
+  LALDR_33Matrix tmpmat;
+  LALDR_33Matrix rtot;
+  LALDR_33Matrix rtot_T;
 
   /* Since LALDetector stores response in REAL4, and we do everything
    * here in REAL8, I need a temporary one to store response */
-  REAL8 response[3][3];
+  LALDR_33Matrix response;
   INT4 i, j;
 
    
@@ -662,7 +705,8 @@ LALComputeDetAMResponse( LALStatus             *status,
          DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
   /* source coordinates must be in equatorial system */
-  ASSERT(pDetAndSrc->pSource->equatorialCoords.system == COORDINATESYSTEM_EQUATORIAL, status,
+  ASSERT(pDetAndSrc->pSource->equatorialCoords.system ==
+         COORDINATESYSTEM_EQUATORIAL, status,
          DETRESPONSEH_ESRCNOTEQUATORIAL, DETRESPONSEH_MSGESRCNOTEQUATORIAL);
 
 
@@ -685,9 +729,10 @@ LALComputeDetAMResponse( LALStatus             *status,
   /* compute phi */
   TRY( LALGPStoGMST1(status->statusPtr, &gmst, pGPS, MST_RAD), status );
 
-  if (lalDebugLevel > 0)
+  if (lalDebugLevel > 4)
     {
-      sprintf(infostr, "gmst = %2.9e radians", gmst);
+      sprintf(infostr, "gps  = %9d:%9d\n", pGPS->gpsSeconds, pGPS->gpsNanoSeconds);
+      sprintf(infostr, "gmst = %g radians", gmst);
       LALInfo(status, infostr);
     }
    
@@ -705,6 +750,7 @@ LALComputeDetAMResponse( LALStatus             *status,
   LALDR_EulerRotation(r2, -theta, xAxis);
   LALDR_EulerRotation(r3, -phi,   zAxis);
 
+#ifdef DEBUG  
   if (lalDebugLevel >= 8)
     {
       sprintf(infostr,
@@ -731,6 +777,7 @@ LALComputeDetAMResponse( LALStatus             *status,
 
       LALInfo(status, infostr);
     }
+#endif  
 
   LALDR_Multiply33Matrix(tmpmat, r2, r1);
   LALDR_Multiply33Matrix(rtot, r3, tmpmat);
@@ -765,10 +812,11 @@ LALComputeDetAMResponse( LALStatus             *status,
    * Then, F_plus = det_response &. e_plus_E,
    *       F_cros = det_response &. e_cros_E
    */
-  for (i = 0; i < 3; ++i)
-    for (j = 0; j < 3; ++j)
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    for (j = 0; j < LALDR_MATRIXSIZE; ++j)
       response[i][j] = (REAL8)(pDetAndSrc->pDetector->response[i][j]);
 
+#ifdef DEBUG  
   if (lalDebugLevel >= 8)
     {
 
@@ -802,9 +850,13 @@ LALComputeDetAMResponse( LALStatus             *status,
 
       LALInfo(status, infostr);      
     }
+#endif  
 
   pResponse->plus  = (REAL4)LALDR_DotProd33Matrix(response, e_plus_E);
   pResponse->cross = (REAL4)LALDR_DotProd33Matrix(response, e_cros_E);
+  /* FIXME: scalar response not implemented, yet.  Will have to
+     read Waggoner's paper to do this. */
+  pResponse->scalar = 0.;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -958,6 +1010,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
       tmpgps = gps;
       
       TRY(LALIncrementGPS(status->statusPtr, &gps, &tmpgps, &dt), status);
+
     }
 
   DETATCHSTATUSPTR(status);
