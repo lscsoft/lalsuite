@@ -1,6 +1,6 @@
 /**** <lalVerbatim file="ComputeCalibrationFactorsTestCV">
  * Author: X. Siemens
- * $Id:
+ * $Id$
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
@@ -482,61 +482,61 @@ int ReadFiles(struct CommandLineArgsTag CLA)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->k == 0)
     {
       fprintf(stderr,"No value of the output matrix to x arm specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->CFile == "")
     {
       fprintf(stderr,"No sensing function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->RFile == "")
     {
       fprintf(stderr,"No response function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->AFile == "")
     {
       fprintf(stderr,"No actuation function file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->FrCacheFile=="")
     {
       fprintf(stderr,"No frame cache file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
   if(CLA->SegmentsFile=="")
     {
       fprintf(stderr,"No segments file specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
    if(CLA->exc_chan == "")
     {
       fprintf(stderr,"No excitation channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
    if(CLA->darm_chan == "")
     {
       fprintf(stderr,"No darm channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
    if(CLA->asq_chan == "")
     {
       fprintf(stderr,"No asq channel specified.\n");
       fprintf(stderr,"Try ./CCFDriver -h \n");
-      return 77;
+      exit( 77 );
     }      
  
 
