@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libstats.la
-libstats_la_SOURCES = LALMoment.c
+libstats_la_SOURCES = LALMoment.c LALCorrelation.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = LALMoment.c
 MOSTLYCLEANFILES = .dvi-dep
