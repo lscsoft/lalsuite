@@ -9,15 +9,6 @@ $Id$
 
 #include <lal/LALDatatypes.h>
 
-#define LAL_FAIL_ERR	1
-#define LAL_FAIL_MSG	"operation failed"
-#define LAL_NULL_ERR	2
-#define LAL_NULL_MSG	"unexpected NULL pointer"
-#define LAL_NOMEM_ERR	3
-#define LAL_NOMEM_MSG	"out of memory"
-#define LAL_RANGE_ERR	4
-#define LAL_RANGE_MSG	"parameter out of range"
-
 void XLALDestroyCOMPLEX8TimeSeries(
 	COMPLEX8TimeSeries *series
 );

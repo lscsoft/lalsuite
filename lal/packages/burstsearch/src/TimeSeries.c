@@ -2,6 +2,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStatusMacros.h>
+#include <lal/LALErrno.h>
 #include <lal/LALError.h>
 #include <lal/TimeSeries.h>
 
