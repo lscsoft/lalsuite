@@ -17,6 +17,7 @@ void
 LALFindChirpMaster (
     LALStatus                  *status, 
     InspiralEvent             **eventList,
+    UINT4                      *numEvents,
     FindChirpMasterParams      *params 
                )
 {
@@ -44,6 +45,9 @@ LALFindChirpMaster (
    *
    */
 
+
+  /* set the number of events found to zero */
+  *numEvents = 0;
 
   /* get my rank */
   MPI_Comm_rank( *(params->mpiComm), &myRank );
@@ -232,10 +236,17 @@ LALFindChirpMaster (
         /* total number that have been filtered and update the progress */
         {
           UINT4 numTmpltsReturned = 0;
+          UINT4 numEventsFound = 0;
           
           LALExchangeUINT4( status->statusPtr, &numTmpltsReturned, 
               thisExch );
           CHECKSTATUSPTR( status );
+
+          LALExchangeUINT4( status->statusPtr, &numEventsFound, 
+              thisExch );
+          CHECKSTATUSPTR( status );
+
+          *numEvents += numEventsFound;
 
           if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
           {

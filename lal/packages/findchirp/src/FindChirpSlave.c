@@ -161,6 +161,7 @@ static void
 ExchNumTmpltsFilteredMPI ( 
     LALStatus          *status,
     UINT4               numTmplts,
+    UINT4               numEvents,
     InitExchParams      initExchParams
     )
 {
@@ -182,6 +183,9 @@ ExchNumTmpltsFilteredMPI (
   LALExchangeUINT4( status->statusPtr, &numTmplts, thisExchPtr );
   CHECKSTATUSPTR( status );
 
+  LALExchangeUINT4( status->statusPtr, &numEvents, thisExchPtr );
+  CHECKSTATUSPTR( status );
+
   LALFinalizeExchange( status->statusPtr, &thisExchPtr );
   CHECKSTATUSPTR( status );
 
@@ -200,6 +204,7 @@ LALFindChirpSlave (
 {
   UINT4                         i, j, k;
   UINT4                         simCount = 0;
+  UINT4                         numEvents = 0;
   INT4                         *filterSegment    = NULL;
   InspiralTemplate             *tmpltBankHead    = NULL;
   InspiralTemplate             *currentTmplt     = NULL;
@@ -750,8 +755,13 @@ LALFindChirpSlave (
             
             if ( eventList )
             {
+              ++numEvents;
               /* set the event list handle to the lastEvent->next pointer */
-              while ( eventList->next ) eventList = eventList->next;
+              while ( eventList->next ) 
+              {
+                ++numEvents;
+                eventList = eventList->next;
+              }
 
               eventListHandle = &(eventList->next);
 
@@ -821,7 +831,7 @@ LALFindChirpSlave (
   /* master so that it can caluclate progress information for the     */
   /* wrapperAPI                                                       */
   ExchNumTmpltsFilteredMPI( status->statusPtr, numberOfTemplates, 
-      initExchParams );
+      numEvents, initExchParams );
   CHECKSTATUSPTR( status );
 
   /* normal exit */

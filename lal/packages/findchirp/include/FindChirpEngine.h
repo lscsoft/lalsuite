@@ -300,6 +300,7 @@ void
 LALFindChirpMaster (
     LALStatus                  *status, 
     InspiralEvent             **eventList,
+    UINT4                      *numEvents,
     FindChirpMasterParams      *params 
     );
 #endif /* LAL_MPI_ENABLED */
