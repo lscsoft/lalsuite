@@ -99,6 +99,8 @@ main (  int argc, char **argv )
    
    lalDebugLevel = 1; 
    quietFlag = 0;	
+	
+	/* ALL default Values here */
    approx = TaylorF2;
    tmplt = TaylorF2;
 
@@ -110,7 +112,7 @@ main (  int argc, char **argv )
    params.mass1 = 5.0;
    params.mass2 = 5.0;
    params.startTime=0.0; 
-   params.startPhase=0.88189; 
+   params.startPhase=0.8819; 
    params.nStartPad=1000;
    params.fCutoff = 1000.;
    params.tSampling = 2048.;
@@ -131,46 +133,46 @@ main (  int argc, char **argv )
    params.psi3 = tmpltParams.psi3;
    params.fFinal = tmpltParams.fFinal;
 
-
+   /* User parameters here */
    i=1;
    while(i < argc)
    {
-	   if (strcmp(argv[i],"-fl1")==0)
+	   if (strcmp(argv[i],"--fl1")==0)
 		   params.fLower      = atof(argv[++i]);
-	   else if (strcmp(argv[i],"-fl2")==0)
+	   else if (strcmp(argv[i],"--fl2")==0)
 		   tmpltParams.fLower = atof(argv[++i]);
-	   else if (strcmp(argv[i],"-order1")==0)
+	   else if (strcmp(argv[i],"--order1")==0)
 		   params.order = atoi(argv[++i]); 
-	   else if (strcmp(argv[i],"-order2")==0)
+	   else if (strcmp(argv[i],"--order2")==0)
 		   tmpltParams.order = atoi(argv[++i]);
-	   else if (strcmp(argv[i],"-zeta2")==0)
+	   else if (strcmp(argv[i],"--zeta2")==0)
 	     params.Zeta2 = atof(argv[++i]);
-	   else if  (strcmp(argv[i],"-sampling")==0)
+	   else if  (strcmp(argv[i],"--sampling")==0)
 	     {
 	       params.tSampling = atof(argv[++i]);
 	       tmpltParams.tSampling = params.tSampling;
 	     }
-	   else if (strcmp(argv[i],"-m1")==0)
+	   else if (strcmp(argv[i],"--m1")==0)
 		   params.mass1 = atof(argv[++i]); 
-	   else if (strcmp(argv[i],"-m2")==0)
+	   else if (strcmp(argv[i],"--m2")==0)
 		   params.mass2 = atof(argv[++i]); 
-	   else if (strcmp(argv[i],"-m3")==0)
+	   else if (strcmp(argv[i],"--m3")==0)
 		   tmpltParams.mass1 = atof(argv[++i]); 
-	   else if (strcmp(argv[i],"-m4")==0)
+	   else if (strcmp(argv[i],"--m4")==0)
 		   tmpltParams.mass2 = atof(argv[++i]); 
-	   else if (strcmp(argv[i],"-quiet")==0)
+	   else if (strcmp(argv[i],"--quiet")==0)
 		   quietFlag = 1;
-	   else if (strcmp(argv[i],"-opt")==0)
+	   else if (strcmp(argv[i],"--opt")==0)
 		   optFlag = 1;
-	   else if (strcmp(argv[i],"-alpha")==0)
+	   else if (strcmp(argv[i],"--alpha")==0)
 		   tmpltParams.alpha = atof(argv[++i]); 
-	   else if (strcmp(argv[i],"-psi0")==0)
+	   else if (strcmp(argv[i],"--psi0")==0)
 		   tmpltParams.psi0 = atof(argv[++i]);
-	   else if (strcmp(argv[i],"-psi3")==0)
+	   else if (strcmp(argv[i],"--psi3")==0)
 		   tmpltParams.psi3 = atof(argv[++i]);
-	   else if (strcmp(argv[i],"-fcut")==0)
+	   else if (strcmp(argv[i],"--fcut")==0)
 		   tmpltParams.fFinal = atof(argv[++i]);
-	   else if (strcmp(argv[i], "-approximant")==0 || (strcmp(argv[i], "-signal")==0))
+	   else if ((strcmp(argv[i], "--signal")==0))
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
 			   approx = 0;
@@ -194,7 +196,7 @@ main (  int argc, char **argv )
 			   approx = 9;
 		   params.approximant = approx;	
 	   }	
-	   else if (strcmp(argv[i], "-template")==0)
+	   else if (strcmp(argv[i], "--template")==0)
 	   {
 		   if (strcmp(argv[++i],"TaylorT1")==0)
 			   tmplt = 0;
@@ -222,22 +224,22 @@ main (  int argc, char **argv )
 	   {
 		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
 		   fprintf(stderr,"The options are (with default values in brackets)\n");
-		   fprintf(stderr,"      -quiet : if this flag is present, the output is restricted to the minimum\n");
-		   fprintf(stderr,"      -alpha : BCV amplitude correction paramseter (%7.2f)\n", params.alpha);
-		   fprintf(stderr,"     -signal : same as -approximant\n");
-		   fprintf(stderr,"   -template : Post-Newtonian model of template (BCV)\n");
-		   fprintf(stderr,"        -fl1 : lower frequency cutoff (%7.2f) Hz of signal\n", params.fLower);
-		   fprintf(stderr,"        -fl2 : lower frequency cutoff (%7.2f) Hz of template\n", params.fLower);
-		   fprintf(stderr,"      -Zeta2 : zeta2 for EOB 3pn (%7.2f)\n", params.Zeta2);
-		   fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", params.mass1);
-		   fprintf(stderr,"         -m2 : mass of companion (%7.2f) SolarMass\n", params.mass2);
-		   fprintf(stderr,"         -m3 : mass of primary (%7.2f) in template\n", tmpltParams.mass1);
-		   fprintf(stderr,"         -m4 : mass of companion (%7.2f) in template\n", tmpltParams.mass2);
-		   fprintf(stderr,"     -order1 : order of PN model (%7.2d) of signal\n", params.order);
-		   fprintf(stderr,"     -order2 : order of PN model (%7.2d) of template\n", params.order);
-		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", params.psi0);
-		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", params.psi3);
-		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fFinal);
+		   fprintf(stderr,"      --quiet : if this flag is present, the output is restricted to the minimum\n");
+		   fprintf(stderr,"      --alpha : BCV amplitude correction paramseter (%7.2f)\n", params.alpha);
+		   fprintf(stderr,"     --signal : same as -approximant\n");
+		   fprintf(stderr,"   --template : Post-Newtonian model of template (BCV)\n");
+		   fprintf(stderr,"        --fl1 : lower frequency cutoff (%7.2f) Hz of signal\n", params.fLower);
+		   fprintf(stderr,"        --fl2 : lower frequency cutoff (%7.2f) Hz of template\n", params.fLower);
+		   fprintf(stderr,"      --zeta2 : zeta2 for EOB 3pn (%7.2f)\n", params.Zeta2);
+		   fprintf(stderr,"         --m1 : mass of primary (%7.2f) SolarMass\n", params.mass1);
+		   fprintf(stderr,"         --m2 : mass of companion (%7.2f) SolarMass\n", params.mass2);
+		   fprintf(stderr,"         --m3 : mass of primary (%7.2f) in template\n", tmpltParams.mass1);
+		   fprintf(stderr,"         --m4 : mass of companion (%7.2f) in template\n", tmpltParams.mass2);
+		   fprintf(stderr,"     --order1 : order of PN model (%7.2d) of signal\n", params.order);
+		   fprintf(stderr,"     --order2 : order of PN model (%7.2d) of template\n", params.order);
+		   fprintf(stderr,"       --psi0 : Max value of psi0 (%7.2f)\n", params.psi0);
+		   fprintf(stderr,"       --psi3 : Min value of psi3 (%7.2f)\n", params.psi3);
+		   fprintf(stderr,"       --fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fFinal);
 		   return 1;	
 
 	   }
@@ -247,10 +249,10 @@ main (  int argc, char **argv )
 /*---------------------------------------------------------------------------*/
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
-   overlapin.nBegin = 0;
-   overlapin.nEnd = 0;
-   signal.length = 0.;
-   params.approximant = EOB;
+   overlapin.nBegin 	= 0;
+   overlapin.nEnd 		= 0;
+   signal.length 		= 0.;
+   params.approximant 	= EOB;  /*just for allocating memory */
    LAL_CALL(LALInspiralWaveLength (&status, &signal.length, params),&status);
    if (!quietFlag) fprintf(stdout, "#signal length = %d\n", signal.length);
 
@@ -294,6 +296,7 @@ main (  int argc, char **argv )
    normin.psd = shf.data;
    normin.df = params.tSampling / (REAL8)signal.length;
    normin.fCutoff = params.fFinal;
+
   /* normin.fLower = 0;*/
 /*      normin.fCutoff = params.tSampling / 2. -1;*/
    normin.samplingRate = params.tSampling;
@@ -319,6 +322,7 @@ main (  int argc, char **argv )
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
    for (i=0; (UINT4) i<correlation.length; i++) correlation.data[i] = 0.;
+  
    LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin),&status);
 
 
