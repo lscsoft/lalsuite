@@ -7,7 +7,7 @@ $Id$
 \subsection{Module \texttt{GeneratePulsarSignal}
 \label{ss:GeneratePulsarSignal.c}
 
-Module to generate subsequent sky-positions.
+Module to generate subsequent sky-position.
 
 \subsubsection*{Prototypes}
 \input{GeneratePulsarSignalCP}
@@ -36,8 +36,8 @@ This module generates a fake pulsar-signal, either for an isolated or a binary p
 
 /*----------------------------------------------------------------------*/
 /* prototypes for internal functions */
-static void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series, UINT4 set);
-static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series, UINT4 set);
+void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
+static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 /*----------------------------------------------------------------------*/
@@ -79,13 +79,14 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
    * First call GenerateSpinOrbitCW() to generate the source-signal
    *
    *----------------------------------------------------------------------*/
-  sourceParams.position.system = COORDINATESYSTEM_EQUATORIAL;
-  sourceParams.position = params->pulsar.position;
   sourceParams.psi = params->pulsar.psi;
   sourceParams.aPlus = params->pulsar.aPlus;
   sourceParams.aCross = params->pulsar.aCross;
   sourceParams.phi0 = params->pulsar.phi0;
   sourceParams.f0 = params->pulsar.f0;
+  /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi<=delta<=pi] */
+  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(sourceParams.position), &(params->pulsar.position)), stat);
+
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
      so we have to do that here: */
@@ -175,8 +176,6 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const Pulsar
   output->f0 = params->fHeterodyne;
   output->epoch = params->startTimeGPS;
 
-
-  printf ("\nLaenge time-series: %d samples\n", output->data->length);
   
   TRY ( LALSimulateCoherentGW (stat->statusPtr, output, &sourceSignal, &detector ), stat );
 
@@ -333,6 +332,7 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
   EarthState earth;
   EmissionTime emit;
   BarycenterInput baryinput;
+  SkyPosition tmp;
 
   INITSTATUS( stat, "ConvertGPS2SSB", PULSARSIGNALC );
   ATTATCHSTATUSPTR (stat);
@@ -348,11 +348,13 @@ ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const P
   if (params->pulsar.position.system != COORDINATESYSTEM_EQUATORIAL)
     {
       /* FIXME: do proper conversion or error-reporting */
-      printf ("\nARGH: non-equatorial coords not implemented here yet!\n");
+      printf ("\nARGH: non-equatorial coords not implemented here yet, sorry!\n");
       exit(-1);	/* suicide */
     }
-  baryinput.alpha = params->pulsar.position.longitude;
-  baryinput.delta = params->pulsar.position.latitude;
+
+  TRY( LALNormalizeSkyPosition (stat->statusPtr, &tmp, &(params->pulsar.position)), stat);
+  baryinput.alpha = tmp.longitude;
+  baryinput.delta = tmp.latitude;
   baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
 
   baryinput.tgps = GPSin;
@@ -441,7 +443,7 @@ ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS SSBin, const P
  * export a REAL4 time-series in an xmgrace graphics file 
  *----------------------------------------------------------------------*/
 void
-LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname)
+PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname)
 {
   FILE *fp = NULL;
   UINT4 set;
@@ -465,9 +467,12 @@ LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR
   fprintf (fp, "@subtitle \"GPS-start: %f, f0 = %e\"\n", 
 	   1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds / 1.0e9, series->f0);
 
+  /* Print set header. */
   set = 0;
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,0)\n", set );
 
-  write_timeSeriesR4 (fp, series, set);
+  write_timeSeriesR4 (fp, series);
       
   fclose(fp);
 
@@ -504,9 +509,18 @@ PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname)
   fprintf (fp, "@subtitle \"position: (alpha,delta) = (%f, %f), psi = %f\"\n", 
 	   signal->position.longitude, signal->position.latitude, signal->psi);
 
+
+  /* Print set header. */
   set = 0;
-  write_timeSeriesR4 (fp, signal->f, set++);
-  write_timeSeriesR8 (fp, signal->phi, set++);
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,0)\n", set );
+  write_timeSeriesR4 (fp, signal->f);
+
+  /* Print set header. */
+  set ++;
+  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
+  fprintf( fp, "@s%d color (0,0,0)\n", set );
+  write_timeSeriesR8 (fp, signal->phi);
 
   fclose (fp);
 
@@ -518,21 +532,16 @@ PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname)
 
 /* internal helper-function */
 void
-write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series, UINT4 set)
+write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
 {
   REAL8 timestamp; 
   UINT4 i;
 
-
   if (series == NULL)
     {
-      printf ("\nset %d is empty\n", set);
+      printf ("\nempty input!\n");
       return; 
     }
-
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,0)\n", set );
 
   timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
 
@@ -547,13 +556,10 @@ write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series, UINT4 set)
 } /* write_timeSeriesR4() */
 
 void
-write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series, UINT4 set)
+write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
 {
   REAL8 timestamp; 
   UINT4 i;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,0)\n", set );
 
   timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
 
@@ -635,29 +641,63 @@ write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   
 } /* write_SFT() */
 
+REAL4 mymax (REAL4 x, REAL4 y)
+{
+  return (x > y ? x : y);
+}
 /* little debug-function: compare two sft's and print relative errors */
-void
+REAL4
 compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 {
-  UINT4 i;
-  REAL4 maxdiff = 0;
+  static LALStatus status;
+  UINT4 i, maxindex = 0;
+  REAL4 diffre, diffim, maxdiff = 0;
+  REAL4 re1, re2, im1, im2;
+  REAL8 Tdiff;
 
   if (sft1->data->length != sft2->data->length) 
     {
       printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->data->length, sft2->data->length);
-      return;
+      return(-1);
     }
-#define MAX(x,y) (x > y ? x : y)
+  LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
+  if ( Tdiff != 0.0 ) 
+    printf ("epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", 
+	    sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
+
+  if ( sft1->f0 != sft2->f0)
+    printf ("fmin differ: %fHz vs %fHz\n", sft1->f0, sft2->f0);
+
+  if ( sft1->deltaF != sft2->deltaF )
+    printf ("deltaF differs: %fHz vs %fHz\n", sft1->deltaF, sft2->deltaF);
 
   for (i=0; i < sft1->data->length; i++)
     {
-      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data->data[i].re - sft2->data->data[i].re) 
-				     / (sft1->data->data[i].re + sft2->data->data[i].re) ) );
-      maxdiff = MAX ( maxdiff, abs ( 2.0*(sft1->data->data[i].im - sft2->data->data[i].im) 
-				     / (sft1->data->data[i].im + sft2->data->data[i].im) ) );
-    }
+      re1 = sft1->data->data[i].re;
+      im1 = sft1->data->data[i].im;
+      re2 = sft2->data->data[i].re;
+      im2 = sft2->data->data[i].im;
 
-  printf ("\ncompare_SFTs(): maximal relative difference: %f\n", maxdiff);
+      diffre = abs( re1 - re2 ) / mymax( abs(re1), abs(re2) );
+      diffim = abs( im1 - im2 ) / mymax( abs(im1), abs(im2) );
+      
+      if (diffre > maxdiff) {
+	maxdiff = diffre;
+	maxindex = i;
+      }
+      if (diffim > maxdiff) {
+	maxdiff = diffim;
+	maxindex = i;
+      }
+    } /* for i */
+
+  printf ("maximal relative error: %e", maxdiff);
+  if (maxdiff > 0.0)
+    printf ("  in frequency-bin Nr %d\n", maxindex);
+  else
+    printf ("\n");
+
+  return (maxdiff);
 
 } /* compare_SFTs() */
 
@@ -917,3 +957,67 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   RETURN (stat);
   
 } /* write_SFT() */
+
+/* if sky-position is not in "normal-range", normalize it correspondingly */
+/* based on Alicia's function with some additional "unwinding" added  */
+void
+LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn)
+{
+  SkyPosition tmp;	/* allow posOut == posIn */
+
+  INITSTATUS( stat, "NormalizeSkyPosition", PULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+  
+  ASSERT (posIn, stat, PULSARSIGNALH_ENULL ,  PULSARSIGNALH_MSGENULL );
+  ASSERT (posOut, stat, PULSARSIGNALH_ENULL ,  PULSARSIGNALH_MSGENULL );
+
+  tmp = *posIn;
+  
+  /* FIRST STEP: completely "unwind" positions, i.e. make sure that 
+   * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
+  /* normalize longitude */
+  while (tmp.longitude < 0)
+    tmp.longitude += LAL_TWOPI;
+  while (tmp.longitude >= LAL_TWOPI)
+    tmp.longitude -= LAL_TWOPI;
+
+  /* pre-normalize (unwind) latitude */
+  while (tmp.latitude <= -LAL_PI)
+    tmp.latitude += LAL_TWOPI;
+  while (tmp.latitude > LAL_TWOPI)
+    tmp.latitude -= LAL_TWOPI;
+
+  /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
+  /* this requires also a change in longitude by adding/subtracting PI */
+  if (tmp.latitude > LAL_PI_2)
+    {
+      tmp.latitude = LAL_PI - tmp.latitude;
+      if (tmp.longitude < LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  if (tmp.latitude < -LAL_PI_2)
+    {
+      tmp.latitude = -LAL_PI - tmp.latitude;
+      if (tmp.longitude <= LAL_PI)
+	{
+	  tmp.longitude += LAL_PI;
+	}
+      else
+	{
+	  tmp.longitude -= LAL_PI;
+	}
+    }
+
+  *posOut = tmp;
+
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+
+} /* LALNormalizeSkyPosition() */

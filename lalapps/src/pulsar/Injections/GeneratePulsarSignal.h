@@ -93,14 +93,13 @@ typedef struct {
   BinaryOrbitParams *orbit;	  /* and its binary orbit if applicable (NULL if not) */
   
   /* characterize the detector */
-  COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function */	
-  						/* --> FIXME do we need this? */
-  LALDetector *site;        		   	/* detector location and orientation */  
-  EphemerisData *ephemerides;  			/* Earth and Sun ephemerides */
+  COMPLEX8FrequencySeries *transferFunction;    /* frequency transfer function (NULL if not used) */	
+  LALDetector *site;				/* detector location and orientation */  
+  EphemerisData *ephemerides;			/* Earth and Sun ephemerides */
   
   /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /* start time of output time series */
-  UINT4 duration;           	/* length of time series in s*/
+  UINT4 duration;           	/* length of time series in seconds */
   REAL8 samplingRate;		/* sampling rate of time-series (= 2 * frequency-Band) */
   REAL8 fHeterodyne;		/* heterodyning frequency for output time-series */
 } PulsarSignalParams;
@@ -155,18 +154,19 @@ typedef struct {
 } SFTParams;
 
 
-
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
+void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn);
+
 void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
-void LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
+void PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void ConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
+REAL4 compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
 void LALCreateSFT (LALStatus *stat, SFTtype **outputSFT, UINT4 length);
 
 void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);

@@ -310,7 +310,6 @@ LIGOTimeGPS SSBfirst,SSBlast;
 REAL4TimeSeries *totalTimeSeries = NULL;
 /*Time series for every SFT*/
 REAL4TimeSeries *timeSeries = NULL;
-REAL4TimeSeries shortTseries;	/* for comparison */
 
 /* Signal parameters to generate signal at source */
 TaylorCWParamStruc genTayParams;
@@ -319,7 +318,6 @@ DetectorResponse cwDetector;
 
 /*This will hold the SFT*/
 COMPLEX8Vector *fvec = NULL;
-COMPLEX8Vector *fvec0, *fvec0c;		/* for comparison with original result */
 COMPLEX8Vector *fvecn = NULL;
 
 /*FFT plan*/
@@ -348,6 +346,7 @@ int window_data(LALStatus *);
 void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin);
 void correct_phase(LALStatus* status, REAL8 f0, COMPLEX8Vector *vec);
 
+extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 
 /* Like perror() but takes variable numbers of arguments and includes
    program name*/
@@ -383,13 +382,10 @@ int main(int argc,char *argv[]) {
   int iSFT;
   SpinOrbitCWParamStruc spinorbit;
   REAL4 dfdt;
-  UINT4 j;
 
   /* new stuff */
-  UINT4 i;
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
-
   
   programname=argv[0];
   
@@ -499,6 +495,8 @@ int main(int argc,char *argv[]) {
   spinorbit.phi0     = genTayParams.phi0;
   spinorbit.f0       = genTayParams.f0;
   spinorbit.position = genTayParams.position;
+  LALNormalizeSkyPosition (&status, &(spinorbit.position), &(spinorbit.position));
+
   spinorbit.psi      = genTayParams.psi;
   /* a copy of the pointer to fdot values */
   spinorbit.f        = genTayParams.f;
@@ -511,21 +509,6 @@ int main(int argc,char *argv[]) {
   
   /* this is how we select to just call LALGenerateTaylorCW */
   spinorbit.rPeriNorm = 0.0; 
-
-#if 0
-  /*  Reproduce the error that was in makefakedata_v2 until around Oct
-  7th 2003 when corrected by Bruce.  This should normally NOT be
-  enabled. */
-  error( 
-	  "WARNING: reproducing error from < Oct 7, 2003!\n"
-	  "This error can be seen in the time domain.  The first few\n"
-	  "seconds of output are zero.  This is because the interpolation\n"
-	  "table used within the code doesn't extend far enough to the\n"
-	  "past and future.\n"
-	  );
-  spinorbit.length=(LTT+Tsft+timestamps[nTsft-1].gpsSeconds-timestamps[0].gpsSeconds)/genTayParams.deltaT;
-  spinorbit.epoch =SSBfirst;
-#endif
   
   /* Now correct the pulsar parameters, if needed, for the Barycentric
      epoch for which they are defined  */
@@ -545,17 +528,15 @@ int main(int argc,char *argv[]) {
 
   SUB( LALSimulateCoherentGW(&status, totalTimeSeries, &cgwOutput, &cwDetector), &status);
 
-  SUB ( LALPrintR4TimeSeries (&status, totalTimeSeries, "test1.agr"), &status);
+  SUB ( PrintR4TimeSeries (&status, totalTimeSeries, "test1.agr"), &status);
 
   /*********************************************************************************
    * OK, now let's try to do the same with LALGeneratePulsarSignal() and compare 
    *********************************************************************************/
   {
     PulsarSignalParams params;
-    LIGOTimeGPS time1, time2;
 
     SFTParams sftParams;
-    CHAR fname[256];
 
     params.pulsar.TRefSSB = SSBpulsarparams;
     params.pulsar.position = genTayParams.position;
@@ -576,7 +557,9 @@ int main(int argc,char *argv[]) {
       params.pulsar.spindown = NULL;
 
     params.orbit = NULL;
-    params.transferFunction = cwDetector.transfer;
+    /*    params.transferFunction = cwDetector.transfer; */
+    params.transferFunction = NULL;
+
     params.site = &(Detector);
     params.ephemerides = edat;
 
@@ -585,21 +568,12 @@ int main(int argc,char *argv[]) {
     params.samplingRate = 2.0 * Band;		
     params.fHeterodyne = fmin;
 
-
-    compute_one_SSB(&status, &time1, &timestamps[0]);
-    ConvertGPS2SSB (&status, &time2, timestamps[0], &params);
-
-    printf ("\nDEBUG: difference SSB-time: %e s\n", 
-	    1.0*(time1.gpsSeconds - time2.gpsSeconds) 
-	    + (time1.gpsNanoSeconds - time2.gpsNanoSeconds)*1e-9 );
-
-
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
     if (params.pulsar.spindown)
       LALDDestroyVector (&status, &(params.pulsar.spindown) );
 
-    SUB (LALPrintR4TimeSeries (&status, Tseries, "test2.agr"), &status);
+    SUB (PrintR4TimeSeries (&status, Tseries, "test2.agr"), &status);
 
     sftParams.Tsft = Tsft;
     sftParams.timestamps = LALCalloc(1, sizeof(LIGOTimeGPSVector));
@@ -610,13 +584,6 @@ int main(int argc,char *argv[]) {
     SUB ( LALSignalToSFTs (&status, &SFTs, Tseries, &sftParams), &status);
 
     LALFree (sftParams.timestamps);
-
-    for (i=0; i < SFTs->length; i++) 
-      {
-	SFTtype *thisSFT = &(SFTs->data[i]);
-	sprintf (fname, "SFTnew-%05d.agr", i);
-	LALwriteSFTtoXMGR (&status, thisSFT, fname);
-      }
 
   }
   /**********************************************************************************/
@@ -633,19 +600,6 @@ int main(int argc,char *argv[]) {
 
     timeSeries->data->data =  totalTimeSeries->data->data + shift;
 
-    printf ("i = %d: epoch = %d, sample-shift = %d\n", iSFT, timestamps[iSFT].gpsSeconds,  shift);
-
-    /* Note that we DON'T update cwDetector Heterodyne Epoch. Teviet
-    says: "You can set it to anything you like; it doesn't really
-    matter as long as it's the same from one stretch of simulated data
-    to the next."  See above for more remarks about this. */
-
-
-    /* produce a time series simulation of a CW signal */
-    /* this is the "classic" way it was done in makefakedata_v2 */
-    shortTseries.epoch = timestamps[iSFT];
-    SUB( LALSimulateCoherentGW(&status, &shortTseries, &cgwOutput, &cwDetector), &status);
-
     /*if you want noise, make it and add to timeseries */
     if (sigma > 0.0 && make_and_add_time_domain_noise(&status))
       return 1;
@@ -661,41 +615,6 @@ int main(int argc,char *argv[]) {
     
     /* Perform FFTW-LAL Fast Fourier Transform */
     SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
-    
-    /* FFT the "classic" time-series stretch for comparison */
-    SUB(LALForwardRealFFT(&status, fvec0, shortTseries.data, pfwd), &status);
-    for (j=0; j < fvec0->length; j++)
-      fvec0c->data[j] = fvec0->data[j];
-    /* apply phase-correction */
-    correct_phase (&status, fmin, fvec0);
-      
-    /*----------------------------------------------------------------------*/
-    /* for comparison with GeneratePulsarSignal(): write SFT in xmgrace-file */
-    if (lalDebugLevel >= 3)
-      {
-	SFTtype thisSFT;
-	CHAR fname[256];
-	
-	/* first need to translate into SFTtype */
-	thisSFT.epoch = timestamps[iSFT];
-	thisSFT.f0 = fmin;
-	thisSFT.deltaF = 1.0 / Tsft;
-
-	thisSFT.data = fvec;	
-	sprintf (fname, "SFTrevised-%05d.agr", iSFT);
-	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
-	
-	thisSFT.data = fvec0;
-	sprintf (fname, "SFTorig0-%05d.agr", iSFT);
-	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
-
-	thisSFT.data = fvec0c;
-	sprintf (fname, "SFTorig0c-%05d.agr", iSFT);
-	LALwriteSFTtoXMGR (&status, &thisSFT, fname);
-	
-      }
-    /*----------------------------------------------------------------------*/
-
 
     /* if you want noise added in the FREQ domain only, read from files and add in */
     if (sigma < 0.0 && read_and_add_freq_domain_noise(&status, iSFT))
@@ -746,7 +665,6 @@ int freemem(LALStatus* status)
 
   LALSDestroyVector (status, &(totalTimeSeries->data) );
   LALFree (timeSeries->data);
-  LALDestroyVector (status, &(shortTseries.data));
 
   LALFree(totalTimeSeries);
   LALFree(timeSeries);
@@ -770,8 +688,6 @@ int freemem(LALStatus* status)
 
   /* Clean up FFTs of signal and of noise - each a complex8vector */
   LALCDestroyVector(status, &fvec);
-  LALCDestroyVector(status, &fvec0);
-  LALCDestroyVector(status, &fvec0c);
   if (pfwd)
     LALDestroyRealFFTPlan(status, &pfwd);
 
@@ -805,30 +721,11 @@ void compute_one_SSB(LALStatus* status, LIGOTimeGPS *ssbout, LIGOTimeGPS *gpsin)
   REAL8 doubleTime;
   LIGOTimeGPS ssb;
 
-  /* This was a mistake in the original makefakedata.  Fixed by Bruce
-     Allen on October 9, 2003.  Without the extra precision of a
-     double, too much significance is lost in computing SSB
-     timestamps. */  
-#if 0
-  REAL4 Ts=gpsin->gpsSeconds;
-  REAL4 Tns=gpsin->gpsNanoSeconds;
-#else
-  REAL8 Ts=gpsin->gpsSeconds;
-  REAL8 Tns=gpsin->gpsNanoSeconds;
-#endif
-
   LALBarycenterEarth(status, &earth, gpsin, edat);
   baryinput.tgps = *gpsin;
   LALBarycenter(status, &emit, &baryinput, &earth);
   
-  /* this is the old calculation: makes errors up to 100ns.
-     we just leave it here for comparison for now
-  */
-  doubleTime= emit.deltaT + Ts + Tns*1.E-9;
   LALFloatToGPS(status, &ssb, &doubleTime);
-  if (lalDebugLevel)
-    printf ("\nDiscrepancy in old GPS->SSB conversion: %d ns\n", 
-	    (emit.te.gpsSeconds - ssb.gpsSeconds)*oneBillion + (emit.te.gpsNanoSeconds - ssb.gpsNanoSeconds) );
 
   *ssbout = emit.te;
   return;
@@ -906,8 +803,9 @@ int window_data(LALStatus* status){
 
 /* Sets up edat and baryinput: reads ephemeris data files and fills-in
    baryinput fields */
-int prepare_baryinput(LALStatus* status){
-  
+int prepare_baryinput(LALStatus* status)
+{
+  SkyPosition tmp;
   /* Quantities computed for barycentering */
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = earthdata;
@@ -922,8 +820,10 @@ int prepare_baryinput(LALStatus* status){
   baryinput.site.location[0]=Detector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=Detector.location[1]/LAL_C_SI;
   baryinput.site.location[2]=Detector.location[2]/LAL_C_SI;
-  baryinput.alpha=genTayParams.position.longitude;
-  baryinput.delta=genTayParams.position.latitude;
+  tmp = genTayParams.position;
+  LALNormalizeSkyPosition (status, &tmp, &tmp);
+  baryinput.alpha = tmp.longitude;
+  baryinput.delta = tmp.latitude;
   baryinput.dInv=0.e0;
 
   return 0;
@@ -1065,8 +965,6 @@ int prepare_timeSeries(LALStatus* status)
   duration += Tsft;
   totalTimeSeries->data->length = duration * Band * 2.0;
 
-  printf ("\nlenth: %d vs %d\n", len0, totalTimeSeries->data->length);
-
   totalTimeSeries->data->data = (REAL4 *)LALMalloc(totalTimeSeries->data->length*sizeof(REAL4));
 
   timeSeries->deltaT=Tsft/timeSeries->data->length;
@@ -1074,11 +972,6 @@ int prepare_timeSeries(LALStatus* status)
 
   timeSeries->f0=fmin;
   totalTimeSeries->f0=fmin;
-
-
-  LALCreateVector (status, &(shortTseries.data), timeSeries->data->length);
-  shortTseries.deltaT = Tsft/timeSeries->data->length;
-  shortTseries.f0 = fmin;
 
   return 0;
 }
@@ -1092,8 +985,6 @@ int prepare_fvec(LALStatus* status) {
   
   /* Create vector to hold signal frequency series */
   LALCCreateVector(status, &fvec, (UINT4)len2);
-  LALCCreateVector(status, &fvec0, (UINT4)len2);
-  LALCCreateVector(status, &fvec0c, (UINT4)len2);
     
   /* Compute measured plan for FFTW */
   LALCreateForwardRealFFTPlan(status, &pfwd, (UINT4)len, 0);

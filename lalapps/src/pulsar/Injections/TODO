@@ -1,5 +1,6 @@
 TODO
 -----
+
 * check source-pos coordinates and "normalize" them if they 
    are 'non-canonical' -> mention in documentation 
 
@@ -25,3 +26,5 @@ done
 
 * turn timestamps completely into INT's for SFTs? (NO)
  
+* allow transfer-function==NULL -> use unit transfer in this case
+	-> NULL seems ok
