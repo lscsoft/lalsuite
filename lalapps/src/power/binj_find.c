@@ -34,6 +34,12 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
+/*
+ * =============================================================================
+ *                            Command Line Options
+ * =============================================================================
+ */
+
 struct options_t {
 	int verbose;
 
@@ -111,6 +117,13 @@ static void set_option_defaults(struct options_t *options)
 	options->minSnr = 0.0;
 }
 
+
+/*
+ * =============================================================================
+ *                        Miscellaneous Functions
+ * =============================================================================
+ */
+
 /*
  * Read a line of text from a file, striping the newline character if read.
  * Return an empty string on any error.
@@ -149,6 +162,12 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
+
+/*
+ * =============================================================================
+ *                             Injection Handling
+ * =============================================================================
+ */
 
 /*
  * Read injection data.
@@ -252,6 +271,12 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
 	return(head);
 }
 
+
+/*
+ * =============================================================================
+ *                              Trigger Handling
+ * =============================================================================
+ */
 
 /*
  * Determine the start and end times of an analysis from the search summary
@@ -406,7 +431,9 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 
 
 /*
- * Entry point.
+ * =============================================================================
+ *                                Entry Point
+ * =============================================================================
  */
 
 int main(int argc, char **argv)
@@ -451,9 +478,17 @@ int main(int argc, char **argv)
 	MetadataTable myTable;
 	LIGOLwXMLStream xmlStream;
 
-  /*******************************************************************
-   * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
-   *******************************************************************/
+	/*
+	 * Initialize things.
+	 */
+
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level("1");
+
+	/*
+	 * Parse arguments.
+	 */
+
 	set_option_defaults(&options);
 	int c;
 	while (1) {
@@ -499,17 +534,14 @@ int main(int argc, char **argv)
 			break;
 
 		case 'a':
-			/* create storage for the input file name */
 			inputFile = optarg;
 			break;
 
 		case 'b':
-			/* create storage for the injection file name */
 			injectionFile = optarg;
 			break;
 
 		case 'c':
-			/* create storage for the output file name */
 			injmadeFile = optarg;
 			break;
 
@@ -542,7 +574,6 @@ int main(int argc, char **argv)
 			break;
 
 		case 'j':
-			/* create storage for the output file name */
 			injFoundFile = optarg;
 			break;
 
@@ -558,7 +589,6 @@ int main(int argc, char **argv)
 
 
 		case 'q':
-			/* create storage for the output file name */
 			outSnglFile = optarg;
 			break;
 
@@ -579,40 +609,32 @@ int main(int argc, char **argv)
 		exit(BINJ_FIND_EARG);
 	}
 
-
-  /*******************************************************************
-   * initialize things
-   *******************************************************************/
-	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level("1");
-
-  /*******************************************************************
-   * Read and trim the injection list                                *
-   *******************************************************************/
+	/*
+	 * Read and trim the injection list.
+	 */
 
 	simBurstList = read_injection_list(&stat, injectionFile, gpsStartTime, gpsEndTime, options);
 	simBurstList = trim_injection_list(simBurstList, options);
 
-  /*****************************************************************
-   * Read the trigger list;  remove injections from the injection list that lie
-   * outside the time intervals that were actually analyzed according to the
-   * search summary tables.
-   *****************************************************************/
+	/*
+	 * Read the trigger list;  remove injections from the injection list
+	 * that lie outside the time intervals that were actually analyzed
+	 * according to the search summary tables.
+	 */
 
 	burstEventList = read_trigger_list(&stat, inputFile, &timeAnalyzed, &simBurstList, options);
 
-  /****************************************************************
-   * do any requested cuts and sort the remaining triggers
-   ***************************************************************/
+	/*
+	 * Do any requested cuts and sort the remaining triggers.
+	 */
 
 	burstEventList = trim_event_list(burstEventList, options);
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
-
-  /*****************************************************************
-   * For each injection, search the entire trigger list for the best match (if
-   * any).
-   *****************************************************************/
+	/*
+	 * For each injection, search the entire trigger list for the best
+	 * match (if any).
+	 */
 
 	ninjected = ndetected = 0;
 	for (injection = simBurstList; injection; injection = injection->next) {
@@ -656,14 +678,14 @@ int main(int argc, char **argv)
 	fprintf(stdout, "Detected %i injections out of %i made\n", ndetected, ninjected);
 	fprintf(stdout, "Efficiency is %f \n", ((REAL4) ndetected / (REAL4) ninjected));
 
-  /*****************************************************************
-   * open output xml file
-   *****************************************************************/
+	/*
+	 * Write output xml file.
+	 */
+
 	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
 	xmlStream.fp = NULL;
 
 	/* List of injections that were actually made */
-
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injmadeFile), &stat);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, sim_burst_table), &stat);
 	myTable.simBurstTable = simBurstList;
