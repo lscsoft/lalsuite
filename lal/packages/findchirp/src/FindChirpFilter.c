@@ -825,7 +825,7 @@ LALFindChirpFilterSegment (
 
           /* set the type of the template used in the analysis */
           LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-              "FindchirpSPtwoPN" );
+              "FindChirpSPtwoPN" );
 
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
@@ -922,7 +922,7 @@ LALFindChirpFilterSegment (
 
     /* set the type of the template used in the analysis */
     LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "FindchirpSPtwoPN" );
+        "FindChirpSPtwoPN" );
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
