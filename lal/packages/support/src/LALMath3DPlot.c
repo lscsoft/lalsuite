@@ -78,7 +78,6 @@ LALMath3DPlot( LALStatus *stat,
   FILE *nb; 				/* pointer to the notebook file */
   INT4 jflag = 0;			/* flag to justify the output data */
   Math3DPointList *list;		/* loop counter */
-  INT4 loop = 0;
   REAL4 PtSize = 0.02;
   INT4 counter = 0;
   REAL4 xmax, ymax, zmax; /* maximum values plotted */
@@ -86,11 +85,13 @@ LALMath3DPlot( LALStatus *stat,
   
   INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
 
-  if (!first)
+  if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);
+  }
 
-  if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL)
+  if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL) {
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
+  }
  
   if (!pointSize){
     if (!ntiles){
@@ -111,8 +112,9 @@ LALMath3DPlot( LALStatus *stat,
         printf("\nWARNING!!! The value of argument ntiles (%i) != the Math3DPointList length (%i)\n",
                *ntiles, counter);
       }  
-    if (*ntiles <=0) 
+    if (*ntiles <=0) {
       ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
+    }
     PtSize = 0.50*(1.0/(pow((*ntiles),0.333333)));
     if (*ntiles > 10000) 
       printf("\nWARNING!!! More than 10,000 tiles may crash Mathematica:)\n");
