@@ -13,6 +13,7 @@
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
+#include <lal/GenerateBurst.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/RingSearch.h>
@@ -23,6 +24,7 @@
 /* lal-metaio headers */
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 
 /* frame library headers */
 #include <FrameL.h>
@@ -63,7 +65,7 @@ int import_filter_params( char *fname );
 SearchSummaryTable *create_search_summary( LIGOTimeGPS *startepoch,
     REAL8 datadur, REAL8 segdur, UINT4 numseg, UINT4 nevents );
 ProcessTable *create_process_table( const char *ifo );
-REAL4TimeSeries *get_data( UINT4 segsz );
+REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo );
 COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo );
 int read_response( COMPLEX8FrequencySeries *series, const char *fname );
 FrameH *fr_add_proc_REAL4TimeSeries( FrameH *frame,
@@ -93,6 +95,7 @@ const char *frptrn  = "*.gwf";
 const char *frchan  = "H1:LSC-AS_Q";
 const char *rspfile = "response.asc";
 const char *outfile;
+char       *injfile;
 int outfmt = xml_format;
 double srate = -1;
 int bmin = -1;
@@ -112,7 +115,6 @@ FrameH *write_frame;
 const char *fpars;
 int         fargc = 1;
 char       *fargv[64];
-
 
 int main( int argc, char *argv[] )
 {
@@ -148,7 +150,7 @@ int main( int argc, char *argv[] )
   strncpy( params->ifoName, frchan, 2 );
 
   /* get data and response function; write to files if requested */
-  data.channel  = get_data( params->segmentSize );
+  data.channel  = get_data( params->segmentSize, params->ifoName );
   data.response = get_response( params->segmentSize, data.channel->deltaT,
       params->ifoName );
   data.spectrum = NULL;
@@ -512,6 +514,7 @@ int parse_options( int argc, char **argv )
     { "frame-path",              required_argument, 0, 'F' },
     { "bank-start-template",     required_argument, 0, 'i' },
     { "bank-end-template",       required_argument, 0, 'j' },
+    { "inject-file",             required_argument, 0, 'I' },
     { "output-file",             required_argument, 0, 'o' },
     { "output-format",           required_argument, 0, 'O' },
     { "response-file",           required_argument, 0, 'r' },
@@ -541,7 +544,7 @@ int parse_options( int argc, char **argv )
     /* nul terminate */
     { 0, 0, 0, 0 }
   };
-  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:o:O:r:s:U:w:z:Z:";
+  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:U:w:z:Z:";
 
   program  = argv[0];
   fargv[0] = my_strdup( program );
@@ -608,6 +611,9 @@ int parse_options( int argc, char **argv )
       case 'j': /* bank-end-template */
         bmax = atol( optarg );
         break;
+      case 'I': /* inject-file */
+        injfile = optarg;
+        break;
       case 'o': /* output-file */
         outfile = optarg;
         break;
@@ -631,7 +637,7 @@ int parse_options( int argc, char **argv )
         break;
       case 'Z': /* filter-something: put this in fargc */
         fargv[fargc++] = my_strdup(
-            strstr( "filter", long_options[option_index].name ) + 6 );
+            strstr( long_options[option_index].name, "filter" ) + 6 );
         fargv[fargc++] = my_strdup( optarg );
         break;
       case '?':
@@ -739,7 +745,7 @@ ProcessTable *create_process_table( const char *ifo )
 }
 
 static FrChanIn blank_chanin;
-REAL4TimeSeries *get_data( UINT4 segsz )
+REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
 {
   LALStatus  status = blank_status;
   FrChanIn   chanin = blank_chanin;
@@ -817,6 +823,31 @@ REAL4TimeSeries *get_data( UINT4 segsz )
   /* set epoch and duration to actual start time and duration */
   tstart   = channel->epoch;
   duration = channel->deltaT * channel->data->length;
+
+  /* inject a signal if required */
+  if ( injfile )
+  {
+    INT4 start = tstart.gpsSeconds;
+    INT4 stop  = start + (INT4)ceil( 1e-9 * tstart.gpsNanoSeconds + duration );
+    COMPLEX8FrequencySeries *response;
+    SimBurstTable *inj = NULL;
+    response = get_response( channel->data->length, channel->deltaT, ifo );
+    vrbmsg( "reading simulated-burst tables from file %s", injfile );
+    LAL_CALL( LALSimBurstTableFromLIGOLw( &status, &inj, injfile, start, stop ),
+        &status );
+    vrbmsg( "injecting signals into time series" );
+    LAL_CALL( LALBurstInjectSignals( &status, channel, inj, response ),
+        &status );
+    while ( inj ) /* free injection list */
+    {
+      SimBurstTable *next = inj->next;
+      LALFree( inj );
+      inj = next;
+    }
+    LAL_CALL( LALCDestroyVector( &status, &response->data ), &status );
+    free( response );
+  }
+
   /* resample frame data if required */
   if ( srate > 0 && srate * channel->deltaT < 1 )
   {
@@ -1073,6 +1104,7 @@ const char *usgfmt =
 "  --frame-path path\n\t\tpath to look for frame files [.]\n\n"
 "  --bank-start-template bmin\n\t\tfirst template of bank to use [0]\n\n"
 "  --bank-end-tempate bmax\n\t\tlast template of bank to use [last]\n\n"
+"  --inject-file injfile\n\t\tLIGOLw XML file containing injection parameters\n\n"
 "  --output-file outfile\n\t\tevent output file [IFO-RING-tstart-duration.xml]\n\n"
 "  --output-format format\n\t\tevent output file format (xml or ascii) [xml]\n\n"
 "  --sample-rate srate\n\t\tdesired sampling rate in Hz [raw rate]\n\n"
