@@ -15,6 +15,7 @@ accurate ephemeris-based data files of the Sun and Earth's motions.
 \vspace{0.1in}
 \input{DTEphemerisCP}
 \idx{LALDTEphemeris()}
+\idx{LALTEphemeris()}
 
 \subsubsection*{Description}
 
@@ -198,4 +199,73 @@ LALDTEphemeris( LALStatus             *status,
   /* Go home */
   DETATCHSTATUSPTR( status );
   RETURN( status );
+}
+
+/*Computes the barycentric time using Ephemeris data.*/
+
+/* <lalVerbatim file="DTEphemerisCP"> */
+void 
+LALTEphemeris( LALStatus   *status, 
+	       REAL8Vector *rv, 
+	       REAL8Vector *var, 
+	       PulsarTimesParamStruc *tev )
+{ /* </lalVerbatim>*/
+  LIGOTimeGPS tGPS; /* Input structure to BarycenterEarth() */
+  EphemerisData *eph; /* Input structure to BarycenterEarth() */
+  EarthState earth; /* Output structure of BarycenterEarth() */
+  BarycenterInput baryin; /* Input structure for Barycenter() */
+  EmissionTime emit; /*Output structure of Barycenter() */
+ 
+  INITSTATUS(status,"TEphemeris",DTEPHEMERISC);
+  ATTATCHSTATUSPTR( status );
+
+  /*Make sure that param structs and their fields exist. */
+  ASSERT(rv,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(rv->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(var,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(var->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(tev,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  /*Make sure that array sizes are consistent. */
+  ASSERT(rv->length==var->length+1,status,PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  ASSERT(var->length>2,status,PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  /*Make sure ephemeris and detector data have been passed. */
+  ASSERT(tev->ephemeris!=NULL,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(tev->site!= NULL,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+
+  /* set the GPS time */
+  tGPS.gpsSeconds=floor(var->data[0])+tev->epoch.gpsSeconds;
+  tGPS.gpsNanoSeconds=1e9*fmod(var->data[0],1.0)+tev->epoch.gpsNanoSeconds;
+
+  /* set the ephemeris data */
+  eph=tev->ephemeris;
+
+  /* journey to the center of the Earth */
+  TRY(LALBarycenterEarth(status->statusPtr,&earth,&tGPS,eph),status);
+
+  /* time delay for detector vertex */
+  baryin.tgps.gpsSeconds=tGPS.gpsSeconds;
+  baryin.tgps.gpsNanoSeconds=tGPS.gpsNanoSeconds;
+
+  /* set detector site */
+  baryin.site=*(tev->site);
+
+  /*divide by speed of light */
+  baryin.site.location[0]/=LAL_C_SI;
+  baryin.site.location[1]/=LAL_C_SI;
+  baryin.site.location[2]/=LAL_C_SI;
+
+  /* sky positions */
+  baryin.alpha=var->data[1];
+  baryin.delta=var->data[2];
+
+  /* set 1/distance to zero */
+  baryin.dInv=0.e0;
+
+  /* this gives emit the position, velocity, time etc */
+  TRY(LALBarycenter(status->statusPtr,&emit,&baryin,&earth),status);
+  
+  rv->data[0]=emit.te.gpsSeconds+1.0e-9*emit.te.gpsNanoSeconds;
+  rv->data[0]-=tev->epoch.gpsSeconds+1.0e-9*tev->epoch.gpsNanoSeconds;
+
+  RETURN(status);
 }
