@@ -19,6 +19,7 @@
 # 04/26/04 gam; change example jobs for intial entry into LALapps.
 # 09/03/04 gam; update examples to work with new test SFTS in LALapps.
 # 11/22/04 gam; if == 0 then set band_width = 1/sft_time
+# 12/06/04 gam; include defaults for parameters set in template_file; allow more parameters to be set in this file
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -194,6 +195,74 @@ if {$argc >= 14} {
         Exit 2;
   }
 } 
+
+# 12/06/04 gam; Set defaults for all values set in the template_file:
+set templateGPSEpochStartTime $start_time; # 12/06/04 gam; UINT4 GPS seconds at the detector giving SSB epoch reference time.
+set templateGPSEpochStartTimeNan 0;        # 12/06/04 gam; UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.
+
+set targetName "Unknown";
+
+set searchWeightFlag 0;
+
+set searchOrientationAngle 0.0;    
+set searchCosInclinationAngle 0.0; 
+
+set searchTestFlag 0;
+
+set templateFreq0 0.0;  
+
+set templateStartRA 0;
+set templateStopRA  0;
+set templateDeltaRA 0;
+set templateNumRA   0;
+
+set templateStartDec 0;
+set templateStopDec  0;
+set templateDeltaDec 0;
+set templateNumDec   0;
+
+set templateNumSpinDown 0; 
+
+set templateStartFDeriv1 0;
+set templateStopFDeriv1  0;
+set templateDeltaFDeriv1 0;
+set templateNumFDeriv1   0;
+
+set templateStartFDeriv2 0;
+set templateStopFDeriv2  0;
+set templateDeltaFDeriv2 0;
+set templateNumFDeriv2   0; 
+
+set templateStartFDeriv3 0;
+set templateStopFDeriv3  0;
+set templateDeltaFDeriv3 0;
+set templateNumFDeriv3   0; 
+
+set templateStartFDeriv4 0;
+set templateStopFDeriv4  0;
+set templateDeltaFDeriv4 0;
+set templateNumFDeriv4   0; 
+
+set templateStartFDeriv5 0;
+set templateStopFDeriv5  0;
+set templateDeltaFDeriv5 0;
+set templateNumFDeriv5   0; 
+
+set searchThresholdFlag  0;
+set searchThreshold1     0;
+set searchThreshold2     0;
+set searchThreshold3     0;
+set searchThreshold4     0;
+set searchThreshold5     0;
+set searchMaxWidthBins   0;
+
+set searchOutputSUMFlag  0;
+set searchOutputEventFlag 0;
+set searchKeepThisNumber  0;
+
+set searchNormalizationFlag 4;  # default is to use running median
+set searchRunningMedianBlockSize 50;
+set searchNormalizationParameter 0; # not used with running median
 
 source $template_file;
 

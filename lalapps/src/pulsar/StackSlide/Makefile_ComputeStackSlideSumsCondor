@@ -20,6 +20,7 @@ USR_LIB=/usr/lib
 #LRFFTW = rfftw
 #LFFTW = fftw
 LFFTW3F = fftw3f
+LFFTW3 = fftw3
 LLAL = lal
 LALS = lalsupport
 
@@ -28,7 +29,8 @@ CFLAGS =  -I$(LAL_INCLUDE) -I$(USR_INCLUDE)
 
 # linking options
 LDFLAGS =  -L$(LAL_LIB) -L$(USR_LIB)
-LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -lm
+#LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -lm
+LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -l$(LFFTW3) -lm
 
 # the object files
 OBJS = ComputeStackSlideSums.o DriveStackSlide.o StackSlide.o

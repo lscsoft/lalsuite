@@ -28,6 +28,8 @@
 # 05/05/04 gam; Change normalizationThreshold to normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean.
 # 07/09/04 gam; set normalizationParameter 0.0 below; this is now set using LALRngMedBias in the C code to correct bias in the median.
 # 10/28/04 gam; change unused windowFilterFlag to REAL8 orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle
+# 12/06/04 gam; add gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line;
+# 12/06/04 gam; change calibrationFlag to cosInclinationAngle
 
 if {[string range $IFONICKNAME 0 0] == "H"} {
     set IFOName "LHO";
@@ -43,9 +45,12 @@ if {$NUMSFTS < 1} {
 
 ###################### SET FILTER PARAMETERS #####################################
 
+set gpsEpochStartTime $templateGPSEpochStartTime; # 12/06/04 gam; UINT4 GPS seconds at the detector giving SSB epoch reference time.
+set gpsEpochStartTimeNan $templateGPSEpochStartTimeNan; # 12/06/04 gam; UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.
+
 set gpsStartTimeSec $ANALYSIS_START_TIME;  # GPS start time of data requested, seconds 
-set gpsStartTimeNan 0;                   # GPS start time of data requested, nanoseconds
-set sampleRate 4096;                     # Sample rate of time domain data
+# set gpsStartTimeNan 0;                   # 12/06/04 gam; # GPS start time of data requested, nanoseconds
+# set sampleRate 4096;                     # 12/06/04 gam; # Sample rate of time domain data
 set duration $SAMPLE_TIME;               # Duration in seconds that search code will run on.
 
 # NOTE THAT THIS JOB ASSUMES INPUT BLKS OF DATA ARE SFTs
@@ -124,11 +129,15 @@ set threshold4 $searchThreshold4;
 set threshold5 $searchThreshold5;
 set maxWidthBins $searchMaxWidthBins;  # 02/20/04 gam
 
-set calibrationFlag -1;    # -1 = BLKs aready calibrated; 0 = leave BLKs uncalibrated; 1 = calibrate BLKs
+# set calibrationFlag -1;    # 12/06/04 gam # -1 = BLKs aready calibrated; 0 = leave BLKs uncalibrated; 1 = calibrate BLKs
 
-set weightFlag 0;         # Flag that determines weighting of BLKs (e.g., with a,b or F_+, F_x) 
+set weightFlag $searchWeightFlag;         # Flag that determines weighting of BLKs (e.g., with a,b or F_+, F_x) 
 
-set orientationAngle  0.0;    # 10/28/04 gam; used to find F_+ and F_x with weightFlag or MC with fixed polarization angle
+set orientationAngle  $searchOrientationAngle;    # 10/28/04 gam; used to find F_+ and F_x with weightFlag or MC with fixed polarization angle
+set cosInclinationAngle $searchCosInclinationAngle
+
+set testFlag       $searchTestFlag;        # Flag > 0 if code is running in test mode.
+set normalizationParameter $searchRunningMedianBlockSize;
 
 #set windowFilterFlag   0;  # Flags and params that determine windowing of BLKs # 10/28/04 gam
 #set windowFilterParam1 0; # 03/03/04 gam
@@ -147,20 +156,15 @@ set doRunningMedian [expr $searchNormalizationFlag & 4]; # 04/14/04 gam;
 set useCutOff [expr $searchNormalizationFlag & 8]; # 05/05/04 gam;
 #puts "doRunningMedian = $doRunningMedian";
 if {$doRunningMedian > 0} {
-  set nBinsPerNRM 50; # 04/14/04 gam; This is the blocksize to use with the running median code.
-  #set normalizationParameter 0.723247152044847; # 05/05/04 gam; value is from Badri's table.
-  set normalizationParameter 0.0;  # 07/09/04 gam; value above is incorrect; this is now set using LALRngMedBias in the C code.
+  set nBinsPerNRM $searchRunningMedianBlockSize; # 04/14/04 gam; This is the blocksize to use with the running median code.
 } else {
   set nBinsPerNRM $nBinsPerBLK; # Number of input frequency bins in one NRM
-  if {$useCutOff > 0 } {
-    set normalizationParameter $searchNormalizationParameter; # 03/03/04 gam; # 05/05/04 gam; moved here from below.
-  } else {
-      set normalizationParameter 0; # 05/05/04 gam; not used so default to 0.
-  }
 }
+set normalizationParameter $searchNormalizationParameter; # 12/06/04 gam; # 03/03/04 gam; # 05/05/04 gam; moved here from below.
 #set normalizationThreshold $searchNormalizationThreshold; # 05/05/04 gam;
 
-set testFlag       0;        # Flag > 0 if code is running in test mode.
+# set testFlag       0;        # Flag > 0 if code is running in test mode.
+set testFlag $searchTestFlag;  # 12/06/04 gam; if flag > 0 code is running in test mode.
 
 set numSUMsPerCall 1;        # Number of SUMs to output each call to LALApplySearch.
 
@@ -222,4 +226,6 @@ set numFDeriv5   $templateNumFDeriv5;
 #set FILTERPARAMS "$gpsStartTimeSec $gpsStartTimeNan $sampleRate $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $threshold6 $calibrationFlag $weightFlag $windowFilterFlag $windowFilterParam1 $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5"; # 02/20/04 gam
 #set FILTERPARAMS "$gpsStartTimeSec $gpsStartTimeNan $sampleRate $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $calibrationFlag $weightFlag $windowFilterFlag $windowFilterParam1 $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5"; # 03/03/04 gam
 #set FILTERPARAMS "$gpsStartTimeSec $gpsStartTimeNan $sampleRate $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $calibrationFlag $weightFlag $windowFilterFlag $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationThreshold $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5"; # 05/05/04 gam
-set FILTERPARAMS "$gpsStartTimeSec $gpsStartTimeNan $sampleRate $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $calibrationFlag $weightFlag $orientationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";
+#set FILTERPARAMS "$gpsStartTimeSec $gpsStartTimeNan $sampleRate $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $calibrationFlag $weightFlag $orientationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";
+
+set FILTERPARAMS "$gpsEpochStartTime $gpsEpochStartTimeNan $gpsStartTimeSec $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $weightFlag $orientationAngle $cosInclinationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";

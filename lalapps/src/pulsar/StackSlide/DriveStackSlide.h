@@ -59,6 +59,9 @@
 /* 10/28/04 gam; if (params->weightFlag & 1) > 0 then use PowerFlux weights from running median. Must have (params->normalizationFlag & 4) > 0 */
 /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
 /* 11/01/04 gam; if (params->weightFlag & 8) > 0 rescale STKs with threshold5 to prevent dynamic range issues. */
+/* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
+/* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
+/* 12/06/04 gam; change calibrationFlag to cosInclinationAngle */
   
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -394,11 +397,12 @@ typedef struct tagStackSlideSearchParams {
   /* computed from these.                   */
   /*                                        */
   /******************************************/
-
+  
+  /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
+  UINT4   gpsEpochStartTimeSec;      /* GPS start time of data requested seconds */
+  UINT4   gpsEpochStartTimeNan;      /* GPS start time of data requested nanoseconds */
   UINT4   gpsStartTimeSec;           /* GPS start time of data requested seconds */
-  UINT4   gpsStartTimeNan;           /* GPS start time of data requested nanoseconds */
-  REAL8   sampleRate;                /* Sample rate of the time-domain data used to make the frequency-domain input data Blocks */
-    REAL8   deltaT;                    /* Time step size in seconds = 1.0/sampleRate */
+    UINT4   gpsStartTimeNan;         /* GPS start time of data requested nanoseconds; currently fixed as zero. */
   REAL8   duration;                  /* Total time being analyzed  */
 
   INT4    numBLKs;                   /* Number of input BLKs.  Not duration/tBLK if gaps are present */
@@ -457,12 +461,13 @@ typedef struct tagStackSlideSearchParams {
   REAL4   threshold5;                /* unused */
   INT4    maxWidthBins;              /* maximum width in bins */
 
-  INT2    calibrationFlag;           /* Flag that specifies what calibration to do; -1 means Blks are already calibrated, 0 means leave uncalibrated; 1 calibrate  */
+  /* INT2    calibrationFlag; */     /* 12/06/04 gam */ /* Flag that specifies what calibration to do; -1 means Blks are already calibrated, 0 means leave uncalibrated; 1 calibrate  */
 
   INT2    weightFlag;                /* Flag that specifies whether to weight BLKs or STKs with a(t) or b(t).  */
 
   REAL8   orientationAngle;          /* 10/28/04 gam; change unused params->windowFilterFlag to REAL8 params->orientationAngle used to find F_+ and F_x with weightFlag or MC with fixed polarization angle */
-  
+  REAL8   cosInclinationAngle;       /* 12/06/04 gam */
+          
   /* INT2    windowFilterFlag;       */   /* 10/28/04 gam */ /* Flag that specifies whether any filtering or windowing was done or should be done. (If < 0 then specifies what was done in the time domain) */
   /* REAL8   windowFilterParam1;     */   /* 03/03/04 gam */ /* 1st parameter to use in windowing or filtering */
   /* REAL8   windowFilterParam2;     */   /* 02/17/04 gam */ /* 2nd paramter to use in windowing or filtering */
@@ -547,7 +552,11 @@ typedef struct tagStackSlideSearchParams {
   /* START SECTION: other parameters        */
   /*                                        */
   /******************************************/
-
+  
+  /* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
+  REAL8   sampleRate;                /* Sample rate of the time-domain data used to make the frequency-domain input data Blocks */
+  REAL8   deltaT;                    /* Time step size in seconds = 1.0/sampleRate */
+  
   CHAR  *dsoName;         /* Name of this DSO */ /* 11/05/01 gam */
 
   /* Basic beowulf node descriptors */

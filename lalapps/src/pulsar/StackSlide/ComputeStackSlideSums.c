@@ -49,7 +49,10 @@
 /* 07/19/04 gam; if (params->testFlag & 4) > 0 use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs for Monte Carlo simulations */
 /* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time GPSin: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
 /* 08/02/04 gam; Set pSFTandSignalParams->resTrig = 0 to avoid serious bug in LALFastGeneratePulsarSFTs when using lookup tables (LUTs) for trig calls. */
-  
+/* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
+/* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */ 
+/* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -503,6 +506,10 @@ int SetGlobalVariables(StackSlideSearchParams *params)
   GV.tsft=header.tbase;  /* Time baseline of SFTs */
     
   GV.nsamples=header.nsamples;    /* # of freq. bins */
+  
+  /* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs */
+  params->sampleRate = 2.0*((REAL8)(header.nsamples))/header.tbase;
+  params->deltaT = 1.0/params->sampleRate;
 
   /* frequency resolution: used only for printing! */
   df=(1.0)/(1.0*header.tbase);
@@ -738,8 +745,8 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
   pPulsarSignalParams->fHeterodyne = params->f0BLK;  
   /* Find the time at the SSB that corresponds to the arrive time at the detector of first data requested. */
-  GPSin.gpsSeconds = (INT4)params->gpsStartTimeSec;     /* GPS start time of data requested seconds */
-  GPSin.gpsNanoSeconds = (INT4)params->gpsStartTimeNan; /* GPS start time of data requested nanoseconds */
+  GPSin.gpsSeconds = (INT4)params->gpsEpochStartTimeSec;     /* 12/06/04 gam; GPS epoch Sec that gives reference time in SSB */
+  GPSin.gpsNanoSeconds = (INT4)params->gpsEpochStartTimeNan; /* 12/06/04 gam; GPS epoch Nan that gives reference time in SSB */
   
   /* Allocate memory for SFTParams and initialize */
   pSFTParams = (SFTParams *)LALMalloc(sizeof(SFTParams));
@@ -908,22 +915,28 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
           params->finishSUMs = 1;  /* This is the last injection */
       }
 
-      /* get random value for psi */
-      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
-      #ifdef DEBUG_SETFIXED_RANDVAL
-         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
-      #endif
-      pPulsarSignalParams->pulsar.psi = (randval - 0.5) * ((REAL4)LAL_PI_2);
-      /* pPulsarSignalParams->pulsar.psi = 0.0; */
+      /* 12/06/04 gam */
+      if ( (params->testFlag & 8) > 0 ) {
+         pPulsarSignalParams->pulsar.psi = params->orientationAngle;
+         cosIota =params->cosInclinationAngle;
+      } else {
+         /* get random value for psi */
+         LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+         #ifdef DEBUG_SETFIXED_RANDVAL
+            randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+         #endif
+         pPulsarSignalParams->pulsar.psi = (randval - 0.5) * ((REAL4)LAL_PI_2);
+         /* pPulsarSignalParams->pulsar.psi = 0.0; */
     
-      /* get random value for cosIota */
-      LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
-      #ifdef DEBUG_SETFIXED_RANDVAL
-         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
-      #endif
-      cosIota = 2.0*((REAL8)randval) - 1.0;
-      /* cosIota = 1.0; */
-
+         /* get random value for cosIota */
+         LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+         #ifdef DEBUG_SETFIXED_RANDVAL
+            randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+         #endif
+         cosIota = 2.0*((REAL8)randval) - 1.0;
+         /* cosIota = 1.0; */
+      }
+      
       /* h_0 is fixed equal to params->threshold4 above; get A_+ and A_x from h_0 and random cosIota */
       pPulsarSignalParams->pulsar.aPlus = (REAL4)(0.5*h_0*(1.0 + cosIota*cosIota));
       pPulsarSignalParams->pulsar.aCross = (REAL4)(h_0*cosIota);
