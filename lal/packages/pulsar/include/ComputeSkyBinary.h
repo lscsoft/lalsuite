@@ -73,7 +73,7 @@ the phase terms described in Eq .\ref{taylor2} become (neglecting constants)
 \end{eqnarray}
 
 Note that the polynomial phase function is expressed as a function of the retarded time $t^{\prime}$ and subsequently
-the intrinsic frequency and it`s derivitives ($f_{i}$) are defined in the rest frame of the source. 
+the intrinsic frequency and it`s derivitives ($f_{i}$) are defined at the chosen inertial reference frame (SSB). 
 
 In order to calculate, for each value of $\alpha$, the quantities $\dot{t^{\prime}}_{\alpha}$ and
 $\Delta t^{\prime}_{\alpha}$, we must now look at the binary system in more detail.  At present
