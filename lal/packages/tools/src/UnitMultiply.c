@@ -92,6 +92,19 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
   return output;
 }
 
+
+LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
+{
+  static const char *func = "XLALUnitDivide";
+  /* invert unit2 and then multiply by unit1 ... use output as tmp var */
+  if ( ! XLALUnitInvert( output, unit2 ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  if ( ! XLALUnitMultiply( output, unit1, output ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return output;
+}
+
+
 /* <lalVerbatim file="UnitMultiplyCP"> */
 void 
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)

@@ -136,6 +136,18 @@ LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input )
 }
 
 
+LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
+{
+  static const char *func = "XLALUnitInvert";
+  RAT4 pow;
+  pow.numerator = -1;
+  pow.denominatorMinusOne = 0;
+  if ( ! XLALUnitRaiseRAT4( output, input, &pow ) )
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  return output;
+}
+
+
 /* <lalVerbatim file="UnitRaiseCP"> */
 void 
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)

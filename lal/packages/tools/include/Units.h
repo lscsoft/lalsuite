@@ -222,12 +222,15 @@ int XLALUnitNormalize( LALUnit *unit );
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 );
 LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1,
     const LALUnit *unit2 );
+LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1,
+    const LALUnit *unit2 );
 LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
     const RAT4 *power );
 LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
     INT2 power );
 LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input );
 LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
+LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input );
 
 
 /* LALUnitNormalize will reduce the rational powers in the basic unit
