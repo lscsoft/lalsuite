@@ -1,9 +1,9 @@
-/******************************** <lalVerbatim file="LALCoarseTestCV">
+/* <lalVerbatim file="LALCoarseTestCV">
 Author: Churches, D. K. and Sathyaprakash, B. S.
 $Id$
-********************************* </lalVerbatim> */
+</lalVerbatim> */
 
-/********************************************************** <lalLaTeX>
+/* <lalLaTeX>
 \subsection{Program \texttt{LALCoarseTest.c}}
 \label{ss:LALCoarseTest.c}
 
@@ -42,58 +42,49 @@ InspiralWave
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{LALCoarseTestCV}}
-******************************************************* </lalLaTeX> */
+</lalLaTeX> */
 
-
-/***************************** <lalErrTable file="LALCoarseTestCE"> */
-/***************************** </lalErrTable> */
-
-
-
-
+/* <lalErrTable file="LALCoarseTestCE"> */
+/* </lalErrTable> */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/LALNoiseModels.h>
 
 INT4 lalDebugLevel=1;
+
 /* Nlist = expected number of coarse grid templates; if not sufficient increase */
      
 int 
 main ( void )
 {
-   InspiralTemplateList *list;
-   InspiralTemplateList *list2;
+   InspiralTemplateList *list=NULL;
+   InspiralTemplateList *list2=NULL;
    static LALStatus status;
-   InspiralCoarseBankIn coarseIn;
-   InspiralFineBankIn   fineIn;
-   INT4 Nlist, Nlist2, i, j, nlist, flist;
+   static InspiralCoarseBankIn coarseIn;
+   static InspiralFineBankIn   fineIn;
+   static INT4 i, j, nlist, flist;
 
-
-   Nlist = 50000;
-/* Nlist2 = expected number of fine grid templates around a given coarse 
-grid point */
-   Nlist2 = 100;
-   list = (InspiralTemplateList *) LALMalloc(sizeof(InspiralTemplateList) * Nlist);
-   list2 = (InspiralTemplateList *) LALMalloc(sizeof(InspiralTemplateList) * Nlist2);
-   coarseIn.mMin = 1.0;
+   coarseIn.mMin = 2.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.80;
+   coarseIn.mmCoarse = 0.85;
    coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
-   coarseIn.tSampling = 4000.;
-   coarseIn.detector = ligo;
-   coarseIn.method = one;
+   coarseIn.tSampling = 4096.;
+   coarseIn.NoisePsd = LALLIGOIPsd;
    coarseIn.order = twoPN;
+   coarseIn.space = Tau0Tau2;
+   coarseIn.method = one;
    coarseIn.approximant = taylor;
    coarseIn.domain = TimeDomain;
-   coarseIn.space = Tau0Tau3;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
 
-   LALInspiralCreateCoarseBank(&status, list, &nlist, coarseIn);
+   LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
+
    fprintf(stderr, "nlist=%d\n",nlist);
    for (i=0; i<nlist; i++) {
       printf("%e %e %e %e %e %e %e\n", 
@@ -112,7 +103,7 @@ grid point */
   fineIn.coarseIn = coarseIn;
   for (j=0; j<nlist; j+=48) {
      fineIn.templateList = list[j];
-     LALInspiralCreateFineBank(&status, list2, &flist, fineIn);
+     LALInspiralCreateFineBank(&status, &list2, &flist, fineIn);
      fprintf(stderr, "flist=%d\n",flist);
       for (i=0; i<flist; i++) {
          printf("%e %e %e %e %e %e %e\n", 
@@ -125,6 +116,9 @@ grid point */
          list2[i].params.mass1); 
       }
    }
+   if (list!=NULL) LALFree(list);
+   if (list2!=NULL) LALFree(list2);
+   LALCheckMemoryLeaks();
 
    return(0);
 }

@@ -7,19 +7,23 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralSetParams.c}}
 
-Module to create a coarse grid of templates.
+A routine that fills an \texttt{InspiralTemplate} structure
+based on the values in the \texttt{InspiralCoarseBankIn} structure.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetParamsCP}
-\index{\texttt{LALInspiralSetParams()}}
+\index{\verb&LALInspiralSetParams()&}
 
 \subsubsection*{Description}
 
-This function takes as an input a structure of type \texttt{InspiralCoarseBankIn} and it fills up the
+This function takes as an input a structure of type 
+\texttt{InspiralCoarseBankIn} and it fills up the
 elements of a structure of type \texttt{InspiralTemplate}.
-The function sets the fields \texttt{massChoice}, \texttt{ieta}, \texttt{signalAmplitude},
-\texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff}, \texttt{method}, \texttt{order},
+The function sets the fields 
+\texttt{massChoice}, \texttt{ieta}, \texttt{signalAmplitude},
+\texttt{tSampling}, \texttt{fLower}, \texttt{fCutoff}, 
+\texttt{method}, \texttt{order},
 \texttt{approximant}, \texttt{domain}, \texttt{nStartPad}, \texttt{nEndPad}.
 
 \subsubsection*{Algorithm}
@@ -42,12 +46,18 @@ None
 NRCSID (LALINSPIRALSETPARAMSC, "Id: $");
 
 /*  <lalVerbatim file="LALInspiralSetParamsCP"> */
-void LALInspiralSetParams(LALStatus               *status, 
+
+void LALInspiralSetParams(LALStatus            *status, 
                           InspiralTemplate     *tempPars, 
                           InspiralCoarseBankIn coarseIn) 
 {  /*  </lalVerbatim>  */
 
    INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
+   ATTATCHSTATUSPTR(status);
+   ASSERT (tempPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (tempPars->massChoice >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (tempPars->massChoice <= 6, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
    switch (coarseIn.space) {
       case Tau0Tau2:
          tempPars->massChoice = t02;
@@ -55,10 +65,8 @@ void LALInspiralSetParams(LALStatus               *status,
       case Tau0Tau3:
          tempPars->massChoice = t03;
          break;
-      default:
-         fprintf(stderr, "InspiralSetParams: Invalid coordinate space choice\n");
-         exit(0);
    }
+
    tempPars->ieta = 1;
    tempPars->signalAmplitude = 1.;
    tempPars->tSampling = coarseIn.tSampling;
@@ -70,5 +78,7 @@ void LALInspiralSetParams(LALStatus               *status,
    tempPars->domain = coarseIn.domain;
    tempPars->nStartPad = 0;
    tempPars->nEndPad = 0;
+
+   DETATCHSTATUSPTR(status);
    RETURN(status);
 }

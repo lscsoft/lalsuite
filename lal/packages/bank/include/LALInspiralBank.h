@@ -48,9 +48,14 @@ NRCSID( LALINSPIRALBANKH, "$Id$" );
 /* <lalErrTable> */
 
 #define LALINSPIRALBANKH_ENULL 1
-#define LALINSPIRALBANKH_EDIV0 2
+#define LALINSPIRALBANKH_ECHOICE 2
+#define LALINSPIRALBANKH_EDIV0 4
+#define LALINSPIRALBANKH_ESIZE 8
 #define LALINSPIRALBANKH_MSGENULL "Arguments contained an unexpected null pointer"
+#define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALINSPIRALBANKH_MSGEDIV0 "Division by zero"
+#define LALINSPIRALBANKH_MSGESIZE "Invalid input range"
+
 
 /* </lalErrTable> */
 
@@ -89,9 +94,9 @@ tagInspiralMetric
    REAL8            g00;     /* 00-component of the diagonalised metric. */
    REAL8            g11;     /* 11-component of the diagonalised metric. */
    REAL8            theta;   /* Angle from t0 to x0 */
-   Detector         detector;/* detector for noise psd */ 
    CoordinateSpace space;    /* Coordinate space in which metric is computed */
    INT4 iflso;
+   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
 } 
 InspiralMetric;
 /* </lalVerbatim>  */
@@ -155,7 +160,7 @@ tagInspiralCoarseBankIn
   REAL8           fLower;         /* Lower frequency cutoff */
   REAL8           fUpper;         /* Upper frequency cutoff */
   REAL8           tSampling;      /* Sampling rate */
-  Detector        detector;       /* The detector */
+  void            (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
   Method          method;         /* Method of waveform generation */
   INT4            order;          /* Post-Newtonian order of the waveform */
   Approximant     approximant;    /* Approximant of the waveform */
@@ -176,7 +181,7 @@ InspiralCoarseBankIn;
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 xmin, xmax, ndx, norm;
-   Detector detector;
+   void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
 } InspiralMomentsIn;
 /* </lalVerbatim>  */
 
@@ -188,8 +193,9 @@ typedef struct {
 /*  <lalVerbatim file="LALInspiralBankHS"> */
 typedef struct {
    REAL8 ndx;
-   REAL8 (*NoisePsd)(REAL8 x);
+   void (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 x);
 } InspiralMomentsIntegrandIn;
+
 /* </lalVerbatim>  */
 
 /*  <lalLaTeX>
@@ -256,7 +262,7 @@ LALInspiralSetSearchLimits(
 void 
 LALInspiralCreateCoarseBank(
    LALStatus              *status,
-   InspiralTemplateList   *list,
+   InspiralTemplateList   **list,
    INT4                   *nlist,
    InspiralCoarseBankIn   bankIn
 );
@@ -268,7 +274,7 @@ LALInspiralCreateCoarseBank(
 void 
 LALInspiralCreateFineBank(
    LALStatus              *status,
-   InspiralTemplateList   *outlist,
+   InspiralTemplateList   **outlist,
    INT4                   *nlist,
    InspiralFineBankIn     fineIn
 );

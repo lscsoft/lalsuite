@@ -22,7 +22,7 @@ timestamp color 1
 timestamp rot 0
 timestamp font 4
 timestamp char size 1.000000
-timestamp def "Fri Dec 22 12:18:28 2000"
+timestamp def "Thu May 17 17:19:12 2001"
 with g0
 g0 on
 g0 label off
@@ -34,10 +34,10 @@ g0 fixedpoint type 0
 g0 fixedpoint xy 0.000000, 0.000000
 g0 fixedpoint format general general
 g0 fixedpoint prec 6, 6
-    world xmin 2
-    world xmax 6
-    world ymin 0.5
-    world ymax 1
+    world xmin 0
+    world xmax 15
+    world ymin 0
+    world ymax 1.5
     stack world 0, 0, 0, 0 tick 0, 0, 0, 0
     view xmin 0.150000
     view xmax 0.850000
@@ -48,9 +48,9 @@ g0 fixedpoint prec 6, 6
     title size 1.500000
     title color 1
     title linewidth 1
-    subtitle "Templates in the t0-t2 but created in t0-t3 space"
+    subtitle "Templates in the t0-t2 but created in t0-t3 space, mmin=2, Mmax=40."
     subtitle font 4
-    subtitle size 1.000000
+    subtitle size 0.720000
     subtitle color 1
     subtitle linewidth 1
     s0 symbol 0
@@ -129,7 +129,7 @@ g0 fixedpoint prec 6, 6
     s2 xyz 0.000000, 0.000000
     s2 comment "tmp1.dat"
     s3 symbol 2
-    s3 symbol size 0.290000
+    s3 symbol size 0.280000
     s3 symbol fill 1
     s3 symbol color 4
     s3 symbol linewidth 1
@@ -179,8 +179,8 @@ g0 fixedpoint prec 6, 6
     s4 xyz 0.000000, 0.000000
     s4 comment "tmp2.dat"
     xaxis  tick on
-    xaxis  tick major 1
-    xaxis  tick minor 0.5
+    xaxis  tick major 5
+    xaxis  tick minor 2.5
     xaxis  tick offsetx 0.000000
     xaxis  tick offsety 0.000000
     xaxis  label ""
@@ -233,8 +233,8 @@ g0 fixedpoint prec 6, 6
     xaxis  tick type auto
     xaxis  tick spec 0
     yaxis  tick on
-    yaxis  tick major 0.1
-    yaxis  tick minor 0.05
+    yaxis  tick major 0.5
+    yaxis  tick minor 0.25
     yaxis  tick offsetx 0.000000
     yaxis  tick offsety 0.000000
     yaxis  label ""
@@ -287,8 +287,8 @@ g0 fixedpoint prec 6, 6
     yaxis  tick type auto
     yaxis  tick spec 0
     zeroxaxis  tick on
-    zeroxaxis  tick major 1
-    zeroxaxis  tick minor 0.5
+    zeroxaxis  tick major 5
+    zeroxaxis  tick minor 2.5
     zeroxaxis  tick offsetx 0.000000
     zeroxaxis  tick offsety 0.000000
     zeroxaxis  label ""
@@ -341,8 +341,8 @@ g0 fixedpoint prec 6, 6
     zeroxaxis  tick type auto
     zeroxaxis  tick spec 0
     zeroyaxis  tick on
-    zeroyaxis  tick major 0.1
-    zeroyaxis  tick minor 0.05
+    zeroyaxis  tick major 0.5
+    zeroyaxis  tick minor 0.25
     zeroyaxis  tick offsetx 0.000000
     zeroyaxis  tick offsety 0.000000
     zeroyaxis  label ""
@@ -418,8 +418,8 @@ g0 fixedpoint prec 6, 6
     legend string 0 "m1=mMin"
     legend string 1 "m1+m2=MMax"
     legend string 2 "m1=m2"
-    legend string 3 "Coarse Grid templates (0.9)"
-    legend string 4 "Fine grid around selected points (0.95)"
+    legend string 3 "Coarse Grid templates (0.85)"
+    legend string 4 "Fine grid around selected points (0.97)"
     frame on
     frame type 0
     frame linestyle 1

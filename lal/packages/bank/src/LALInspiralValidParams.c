@@ -8,13 +8,15 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralValidParams.c}}
 
-Module which checks whether or not a pair of parameter values $\tau_{0}$ and $\tau_{3}$ correspond to
-physical values for the masses of the compact objects and their symmetric mass ratio $\eta$.
+Module which checks whether or not a pair of parameter 
+values $\tau_{0}$ and $\tau_{2(3)}$ correspond to
+physical values for the masses of a binary and 
+their symmetric mass ratio $\eta$.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralValidParamsCP}
-\index{\texttt{LALInspiralValidParams()}}
+\index{\verb&LALInspiralValidParams()&}
 
 \subsubsection*{Description}
 
@@ -137,20 +139,24 @@ m_{2} \geq \mathtt{mMin}
 NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralValidParamsCP">  */
+
 void LALInspiralValidParams(LALStatus            *status,
                             INT4                 *valid,
                             InspiralBankParams   bankParams, 
                             InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
-  InspiralTemplate Pars;
+  static InspiralTemplate Pars;
 
   INITSTATUS (status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC);
   ATTATCHSTATUSPTR(status);
+  ASSERT (bankParams.x0 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (bankParams.x1 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (coarseIn.fLower > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
   *valid = 0;
 
-/* First set the chirp times of the Pars structure to be that
-   given by bankParams chirp times */
+/* First set the chirp times of Pars to be as in bankParams */
   Pars.t0 = bankParams.x0;
   Pars.fLower = coarseIn.fLower;
   switch (coarseIn.space) {
@@ -165,18 +171,20 @@ void LALInspiralValidParams(LALStatus            *status,
    }
 
 /* Compute all the parameters, including masses, corresponding to (t0,t2/t3) */
-  LALInspiralParameterCalc(status->statusPtr, &Pars);
-  CHECKSTATUSPTR(status);
+
+  LALInspiralParameterCalc(status->statusPtr, &Pars); CHECKSTATUSPTR(status);
+
 /* If the masses are in the correct range accept as valid parameters */
 
-
-  if ( Pars.mass1 > coarseIn.mMin &&
-       Pars.mass2 > coarseIn.mMin &&
-       Pars.totalMass < coarseIn.MMax &&
-       Pars.eta < 0.25 && Pars.eta > coarseIn.etamin) {
+  if (Pars.mass1 > coarseIn.mMin &&
+      Pars.mass2 > coarseIn.mMin &&
+      Pars.totalMass < coarseIn.MMax &&
+      Pars.eta <= 0.25 && 
+      Pars.eta > coarseIn.etamin) 
+  {
        *valid = 1;
   }
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
 }

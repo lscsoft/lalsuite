@@ -8,18 +8,18 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralComputeMetric.c}}
 
-Module to compute the components of the metric which is used to describe distances on
-the signal manifold.
+Module to compute the components of the metric which is used 
+to describe distances on the signal manifold.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralComputeMetricCP}
-\index{\texttt{LALInspiralComputeMetric()}}
+\index{\verb&LALInspiralComputeMetric()&}
 
 \subsubsection*{Description}
 
-We calculate the components of the metric using the procedure outlined in Owen (1996),
-PRD 53, 6749.
+We calculate the components of the metric using the procedure outlined 
+in Owen \cite{Owen:96}. 
 This uses the moments of the noise curve,
 \begin{equation}
 I(q) \equiv s_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(xf_{0})}
@@ -242,8 +242,8 @@ LALFree
 
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
+#include <lal/LALNoiseModels.h>
 
-#define Dim 3
 /*
 *	Created: 7.9.96.
 *	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
@@ -264,79 +264,83 @@ LALFree
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
-void LALInspiralComputeMetric(LALStatus           *status,
-                              InspiralMetric      *metric,
-                              InspiralTemplate    params,
-                              INT4                pass)
+
+void LALInspiralComputeMetric(LALStatus        *status,
+                              InspiralMetric   *metric,
+                              InspiralTemplate params,
+                              INT4             pass)
 { /* </lalVerbatim> */
 
-   INT4 i;
+   INT4 i, Dim=3;
    REAL8 **trans, **mm3, **tm3;
    REAL8 t_0, t_2, t_3, t_4, s0, s2, s3, s4, tm11, tm12, tm22, m2;
    REAL8 t_02,t22,t32,t42,s02,s22,s32,s42,eta2,k0sq,k1sq,k2sq;
    REAL8 k0, k1, k2, k00, k01, k02, k11, k12, k22, flso;
    static REAL8 i7,j1,j4,j5,j6,j7,j8,j9,j10,j11,j12,j13,j14,j15,j17;
-   static REAL8 a1, a2, a3, f1, f2, c4, c0, c2, c3, f0, fr;
+   static REAL8 a1, a2, a3, f1, f2, c4, c0, c2, c3, fr;
    REAL8 bsq, rtbsqm4ac, totmass, eta, det;
    InspiralMomentsIn in;
 
    INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
    ATTATCHSTATUSPTR(status);
 
+   ASSERT (metric,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (params.totalMass > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params.eta > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params.eta <= 0.25, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params.fCutoff > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params.t0 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params.t2 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
    totmass = params.totalMass * LAL_MTSUN_SI;
    eta = params.eta;
    flso = 1/(LAL_PI * totmass * pow(6.,1.5));
 /* Arrays for the metric (mm3 -> m and eta, tm3->chirp times) and transformation   matrix */
    trans = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
+   ASSERT (trans,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    mm3 = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
+   ASSERT (mm3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    tm3 = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim);
+   ASSERT (tm3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   if (!trans || !mm3 || !tm3) {
+       LALFree(mm3);
+       LALFree(tm3);
+       LALFree(trans);
+       ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   }
    for (i=0; i<Dim; i++) {
       trans[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
+      ASSERT (trans[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
       mm3[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
+      ASSERT (mm3[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
       tm3[i] = (REAL8*) LALMalloc(sizeof(REAL8) * Dim);
+      ASSERT (tm3[i],  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+      if (!trans[i] || !mm3[i] || !tm3[i]) {
+          LALFree(mm3[i]);
+          LALFree(tm3[i]);
+          LALFree(trans[i]);
+          ABORT(status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+      }
    }
 /* If first time set all static variables and compute moments else go
    straight to the metric calculation */
    if (pass==1) {
-/* Choose the scaling frequency of the detector */
-   switch (metric->detector) {
-      case geo:
-         f0 = 150;
-         break;
-      case ligo:
-         f0 = 175;
-         break;
-      case tama:
-         f0 = 400;
-         break;
-      case virgo:
-         f0 = 500;
-         break;
-      default:
-         fprintf(stderr, "LALInspiralComputeMetric: Invalid detector\n");
-         exit(0);
-         break;
-   }
 /* The factor that converts chirp times from fLower to f0 and vice versa */
-   fr = params.fLower/f0;
+   fr = params.fLower;
 
    c0 = pow(fr,-8./3.);
    c2 = pow(fr,-6./3.);
    c3 = pow(fr,-5./3.);
-   f1 = 2.*LAL_PI*f0;
+   f1 = 2.*LAL_PI;
    f2 = f1*f1;
    c4 = 3.0586730/1.0160640;
    a1 = 924.0/743.0;
    a2 = 5.4290/(1.0080 * c4);
    a3 = 6.170/(1.440 * c4);
 
-   in.detector = metric->detector;
-   in.xmin = params.fLower/f0;
-   if (metric->iflso==0) {
-      in.xmax = params.fCutoff/f0;
-   } else {
-      in.xmax = flso/f0;
-   }
+   in.NoisePsd = metric->NoisePsd;
+   in.xmin = params.fLower;
+   in.xmax = params.fCutoff;
    in.norm = 1.;
 
 /* Normalised moments of the noise PSD from 1/3 to 17/3. */
@@ -358,7 +362,7 @@ void LALInspiralComputeMetric(LALStatus           *status,
    in.ndx = 17.0/3.0; LALInspiralMoments(status->statusPtr,&j17,in); CHECKSTATUSPTR(status);
    }
    
-/* Rescale the chirp times to begin from f0 */
+/* Rescale the chirp times to begin from f0=1Hz */
    t_0 = params.t0 * pow(fr,8./3.);
    t_2 = params.t2 * pow(fr,6./3.);
    t_3 = params.t3 * pow(fr,5./3.);
@@ -507,10 +511,13 @@ void LALInspiralComputeMetric(LALStatus           *status,
       fprintf(stderr, "det=%e g00=%e g11=%e theta=%e\n", det, metric->g00, metric->g11, metric->theta);
    }
 */
+   for (i=0; i<Dim; i++) {
+      LALFree(trans[i]);
+      LALFree(mm3[i]);
+      LALFree(tm3[i]);
+   }
 
    LALFree(mm3); LALFree(tm3); LALFree(trans);
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
-
-#undef Dim;

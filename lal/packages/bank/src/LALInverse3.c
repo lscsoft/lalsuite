@@ -13,7 +13,7 @@ Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInverse3CP}
-\index{\texttt{LALInverse3()}}
+\index{\verb&LALInverse3()&}
 
 \subsubsection*{Description}
 
@@ -32,14 +32,11 @@ LALDeterminant3
 \end{verbatim}
 
 \subsubsection*{Notes}
+Do not generalise to more than 3 dimensions.
 
 \vfill{\footnotesize\input{LALInverse3CV}}
 
 </lalLaTeX>  */
-
-
-
-
 
 #include <lal/LALInspiralBank.h>
 
@@ -47,9 +44,10 @@ NRCSID(LALINVERSE3C, "$Id$");
 #define Dim 3
 
 /*  <lalVerbatim file="LALInverse3CP"> */
+
 void LALInverse3(LALStatus *status, 
-                 REAL8 **inverse, 
-                 REAL8 **matrix) 
+                 REAL8     **inverse, 
+                 REAL8     **matrix) 
 { /* </lalVerbatim> */
 
    REAL8 epsilon[Dim][Dim][Dim] = {{
@@ -67,13 +65,13 @@ void LALInverse3(LALStatus *status,
 
    INITSTATUS(status, "LALInverse3", LALINVERSE3C);
    ATTATCHSTATUSPTR(status);
+   ASSERT (inverse,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (matrix,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
-   LALDeterminant3(status->statusPtr, &det, matrix);
-   CHECKSTATUSPTR(status);
-   if(det==0) {
-      fprintf(stderr, "LALInverse3.c: Singular matrix\n");
-      exit(0);
-   }
+   LALDeterminant3(status->statusPtr, &det, matrix); CHECKSTATUSPTR(status);
+
+   ASSERT (det!=0,  status, LALINSPIRALBANKH_EDIV0, LALINSPIRALBANKH_MSGEDIV0);
+
    for (i=0; i<Dim; i++) {
    for (j=0; j<Dim; j++) {
       x = 0;
@@ -82,9 +80,6 @@ void LALInverse3(LALStatus *status,
          x+=epsilon[j][a][p] * epsilon[i][b][q] * matrix[a][b] * matrix[p][q];
       }}}}
       inverse[i][j] = x/(2.*det);
-/*
-      fprintf(stderr, "In LALInverse3.c %d %d %e %e\n", i, j, matrix[i][j], inverse[i][j]);
-*/
    }}
    DETATCHSTATUSPTR(status);
    RETURN(status);

@@ -15,7 +15,7 @@ symmetric mass ratio) and the individual mass of the compact objects.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralComputeParamsCP}
-\index{\texttt{LALInspiralComputeParams()}}
+\index{\verb&LALInspiralComputeParams()&}
 
 \subsubsection*{Description}
 
@@ -114,20 +114,25 @@ LALInspiralParameterCalc
 NRCSID (LALINSPIRALCOMPUTEPARAMSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralComputeParamsCP"> */
-void 
-LALInspiralComputeParams(
-   LALStatus               *status,
-   InspiralTemplate     *pars, 
-   InspiralBankParams   bankParams,
-   InspiralCoarseBankIn coarseIn
-)
+
+void LALInspiralComputeParams(LALStatus            *status,
+                              InspiralTemplate     *pars, 
+                              InspiralBankParams   bankParams,
+                              InspiralCoarseBankIn coarseIn)
 { /*  </lalVerbatim>  */
 
 
   INITSTATUS (status, "LALInspiralComputeParams", LALINSPIRALCOMPUTEPARAMSC);
   ATTATCHSTATUSPTR(status);
+  ASSERT (pars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
   pars->fLower = coarseIn.fLower;
+
+  ASSERT (bankParams.x0 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (bankParams.x1 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (bankParams.x1 < bankParams.x0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+  ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
   switch (coarseIn.space) {
      case Tau0Tau2:

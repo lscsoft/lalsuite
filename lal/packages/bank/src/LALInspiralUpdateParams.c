@@ -7,21 +7,19 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralUpdateParams.c}}
 
-Module to update the parameters used in creating a coarse
-bank. While scanning the $x0$-direction after reaching the 
-boundary of the parameter space, we have to return to the 
-starting point of the same line and use the metric there
-to scan one step upwards in the direction of $x1.$ 
-to a {\it template list}.
-
+Module to update the parameters used in creating a coarse bank. 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
-\index{\texttt{LALInspiralUpdateParams()}}
+\index{\verb&LALInspiralUpdateParams()&}
 
 \subsubsection*{Description}
+While scanning the $\tau_0$-direction after reaching the 
+boundary of the parameter space, we have to return to the 
+starting point of the same line and use the metric there
+to increment one step upwards in the direction of $\tau_{2(3)}.$ 
+to a {\it template list}.
 
-Description info etc.
 
 \subsubsection*{Algorithm}
 
@@ -44,17 +42,22 @@ None.
 NRCSID (LALINSPIRALUPDATEPARAMSC, "Id: $");
 
 /*  <lalVerbatim file="LALInspiralUpdateParamsCP"> */
-void 
-LALInspiralUpdateParams(
-   LALStatus               *status,
-   InspiralBankParams   *bankParams,
-   InspiralMetric       metric,
-   REAL8                minimalmatch
-)
+void LALInspiralUpdateParams(LALStatus          *status,
+                             InspiralBankParams *bankParams,
+                             InspiralMetric     metric,
+                             REAL8              minimalmatch)
 {  /*  </lalVerbatim>  */
    REAL8 dx0, dx1, myphi, theta, fac;
 
    INITSTATUS (status, "LALInspiralUpdateParams", LALINSPIRALUPDATEPARAMSC);
+   ATTATCHSTATUSPTR(status);
+   ASSERT (bankParams,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (metric.g00 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric.g11 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (minimalmatch < 1., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (minimalmatch > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric.theta != LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric.theta != -LAL_PI_2, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
    dx0 = sqrt(2. * (1. - minimalmatch)/metric.g00 );
    dx1 = sqrt(2. * (1. - minimalmatch)/metric.g11 );
@@ -71,6 +74,7 @@ LALInspiralUpdateParams(
       bankParams->dx1 = dx0 * fac;
    }
 
-   RETURN (status);
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 
 }

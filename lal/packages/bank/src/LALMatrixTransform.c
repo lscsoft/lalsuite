@@ -6,18 +6,19 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALMatrixTransform.c}}
-
+A routine to transform a second rank tensor under a given transformation.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALMatrixTransformCP}
-\index{\texttt{LALMatrixTransform()}}
+\index{\verb&LALMatrixTransform()&}
 
 \subsubsection*{Description}
-
+Given the matrix of transformation in \texttt{data1} and a second rank tensor
+\texttt{data2}, this routine computes the transformed tensor in \texttt{data3}.
 
 \subsubsection*{Algorithm}
-
+$$ C_{ij} = A_{im} A_{jl}  B_{ml}.$$
 
 \subsubsection*{Uses}
 None.
@@ -32,7 +33,10 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
+NRCSID(LALMATRIXTRANSFORMC, "$Id$");
+
 /*  <lalVerbatim file="LALMatrixTransformCP"> */
+
 void LALMatrixTransform (LALStatus *status, 
                          INT4 n, 
                          REAL8 **data1, 
@@ -41,7 +45,12 @@ void LALMatrixTransform (LALStatus *status,
 { /* </lalVerbatim> */
 
    INT4 i, j, l, m;
-   status = NULL;
+
+   INITSTATUS(status, "LALMatrixTransform", LALMATRIXTRANSFORMC);
+   ATTATCHSTATUSPTR(status);
+   ASSERT (data1,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (data2,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (data3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
    for (i=0; i<n; i++) {
    for (j=0; j<n; j++) {
@@ -51,4 +60,6 @@ void LALMatrixTransform (LALStatus *status,
 	 data3[i][j] += data1[i][m]*data2[m][l]*data1[j][l];
       }}
    }}
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }

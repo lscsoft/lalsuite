@@ -12,7 +12,7 @@ Module to calculate the moment of the noise power spectral density.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralMomentsCP}
-\index{\texttt{LALInspiralMoments()}}
+\index{\verb&LALInspiralMoments()&}
 
 \subsubsection*{Description}
 
@@ -39,10 +39,6 @@ J(q) \equiv \frac{I(q)}{I(7)} \,.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALGEOPsd
-LALLIGOIPsd
-TAMAPsd
-VIRGOPsd
 LALInspiralMomentsIntegrand
 LALDRombergIntegrate
 \end{verbatim}
@@ -69,13 +65,13 @@ LALDRombergIntegrate
 
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
-void qromb (LALStatus *status, REAL8 *moment, DIntegrateIn *In, void *funcparams);
 
 NRCSID(LALINSPIRALMOMENTSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralMomentsCP"> */
-void LALInspiralMoments(LALStatus *status,
-                        REAL8 *moment,
+
+void LALInspiralMoments(LALStatus         *status,
+                        REAL8             *moment,
                         InspiralMomentsIn pars)
 { /* </lalVerbatim> */
 
@@ -86,35 +82,20 @@ void LALInspiralMoments(LALStatus *status,
    INITSTATUS (status, "LALInspiralMoments", LALINSPIRALMOMENTSC);
    ATTATCHSTATUSPTR(status);
    intIn.ndx = pars.ndx;
-   switch (pars.detector) {
-      case geo:
-         intIn.NoisePsd = &LALGEOPsd;
-         break;
-      case ligo:
-         intIn.NoisePsd = &LALLIGOIPsd;
-         break;
-      case tama:
-         intIn.NoisePsd = &LALTAMAPsd;
-         break;
-      case virgo:
-         intIn.NoisePsd = &LALVIRGOPsd;
-         break;
-   }
+
+   ASSERT (pars.NoisePsd, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+
+   intIn.NoisePsd = pars.NoisePsd;
    funcparams = (void *) &(intIn);
    In.function = LALInspiralMomentsIntegrand;
    In.xmin = pars.xmin;
    In.xmax = pars.xmax;
    In.type = ClosedInterval;
 
-/*   qromb (status->statusPtr, moment, &In, funcparams);
-*/
    LALDRombergIntegrate (status->statusPtr, moment, &In, funcparams);
+   CHECKSTATUSPTR(status);
 
    *moment /= pars.norm;
-/*
-   DRombergIntegrate (status->statusPtr, moment, &In, funcparams);
-   fprintf(stderr, "%e %e %e %e\n", pars.xmin, pars.xmax, 3*pars.q, *moment);
-*/
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }

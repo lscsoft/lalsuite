@@ -17,7 +17,7 @@ int main () {
 /**************************************************/
 /* Change the parameters of the search space here */
 /**************************************************/
-   mmin = 1.0;
+   mmin = 2.0;
    Mmax = 40.;
    mmin = log10(mmin);
    Mmax = log10(Mmax);

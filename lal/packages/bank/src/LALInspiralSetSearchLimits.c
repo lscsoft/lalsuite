@@ -3,7 +3,6 @@ Author: Churches, D. K.
 $Id$
 </lalVerbatim>  */
 
-
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralSetSearchLimits.c}}
@@ -18,7 +17,7 @@ $\tau_{3}=\tau_{3min}$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetSearchLimitsCP}
-\index{\texttt{LALInspiralSetSearchLimits()}}
+\index{\verb&LALInspiralSetSearchLimits()&}
 
 \subsubsection*{Description}
 
@@ -60,22 +59,34 @@ $\eta=\mathtt{ mMin(MMax-mMin)/MMax^{2} }$.
 NRCSID (LALINSPIRALSETSEARCHLIMITSC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralSetSearchLimitsCP">  */
+
 void LALInspiralSetSearchLimits (LALStatus               *status,
                                  InspiralBankParams   *bankParams,
                                  InspiralCoarseBankIn coarseIn)
 {  /*  </lalVerbatim>  */
 
 
-   InspiralTemplate Pars1, Pars2, Pars3;
+   static InspiralTemplate Pars1, Pars2, Pars3;
 
    INITSTATUS (status, "LALInspiralSetSearchLimits", LALINSPIRALSETSEARCHLIMITSC);
    ATTATCHSTATUSPTR(status);
+   ASSERT (bankParams,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.space <= 1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.mMin > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.MMax >= 2.*coarseIn.mMin, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.mmCoarse > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.mmCoarse < 1., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.fLower > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (coarseIn.tSampling > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+
 
 /* Initiate three parameter vectors consistent with the coarseIn structure */
 
    LALInspiralSetParams(status->statusPtr, &Pars1, coarseIn); CHECKSTATUSPTR(status);
    LALInspiralSetParams(status->statusPtr, &Pars2, coarseIn); CHECKSTATUSPTR(status);
    LALInspiralSetParams(status->statusPtr, &Pars3, coarseIn); CHECKSTATUSPTR(status);
+
    Pars1.massChoice = Pars2.massChoice = Pars3.massChoice = m1Andm2;
 
 /* Calculate the value of the parameters at the three corners of the search space */
@@ -99,20 +110,16 @@ void LALInspiralSetSearchLimits (LALStatus               *status,
    bankParams->x0 = bankParams->x0Min = Pars1.t0;
    bankParams->x0Max = Pars2.t0;
 
-  switch (coarseIn.space) {
-     case Tau0Tau2:
-        bankParams->x1 = bankParams->x1Min = Pars1.t2;
-        bankParams->x1Max = (Pars2.t2 > Pars3.t2) ? Pars2.t2 : Pars3.t2;
-        break;
-     case Tau0Tau3:
-        bankParams->x1 = bankParams->x1Min = Pars1.t3;
-        bankParams->x1Max = (Pars2.t3 > Pars3.t3) ? Pars2.t3 : Pars3.t3;
-        break;
-     default:
-        fprintf(stderr, "LALInspiralSetSearchLimits: Invalid coordinate choice\n");
-        exit(0);
-        break;
-  }
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
+   switch (coarseIn.space) {
+      case Tau0Tau2:
+         bankParams->x1 = bankParams->x1Min = Pars1.t2;
+         bankParams->x1Max = (Pars2.t2 > Pars3.t2) ? Pars2.t2 : Pars3.t2;
+         break;
+      case Tau0Tau3:
+         bankParams->x1 = bankParams->x1Min = Pars1.t3;
+         bankParams->x1Max = (Pars2.t3 > Pars3.t3) ? Pars2.t3 : Pars3.t3;
+         break;
+   }
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
 }

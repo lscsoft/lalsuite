@@ -1,2 +1,6 @@
 #
+make CoarseTest
+make ChirpSpace
+./CoarseTest > CoarseTest.out
+./ChirpSpace > ChirpSpace.out
 xmgr -par CoarseTest.par ChirpSpace.out CoarseTest.out
