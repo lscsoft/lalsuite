@@ -39,7 +39,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <math.h>
 #include <lal/BandPassTimeSeries.h>
 
-#include "filters.h"                      /* files that contains the filter coefficients */
+#include "filters-H1-S2.h"                 /* files that contains the filter coefficients */
 
 #define MAXLINERS 76800                   /* Max lines read in Freq Response files */
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
