@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libtfclusters.la
-libtfclusters_la_SOURCES = TFCThresholds.c TFClusters.c
+libtfclusters_la_SOURCES = TFCThresholds.c TFClusters.c TFCWavelet.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
