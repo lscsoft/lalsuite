@@ -65,6 +65,16 @@ NRCSID( STDBURSTSEARCHH, "$Id$" );
 #define STDBURSTSEARCHH_MSGENULLPI "Parameter is not of the right type, or null pointer"
 /*************************************************** </lalErrTable> */
 /* <lalVerbatim file="StdBurstSearchH"> */
+
+#define STDBURSTSEARCHSKIP_STARTTIME 1
+#define STDBURSTSEARCHSKIP_CENTRALFREQ 2
+#define STDBURSTSEARCHSKIP_DURATION 4
+#define STDBURSTSEARCHSKIP_BANDWIDTH 8
+#define STDBURSTSEARCHSKIP_AMPLITUDE 16
+#define STDBURSTSEARCHSKIP_CONFIDENCE 32
+#define STDBURSTSEARCHSKIP_SNR 128
+
+
 typedef struct tagBurstParameter {
   struct tagBurstParameter *next;
   CHAR *char_;
@@ -117,12 +127,15 @@ tagBurstOutputDataSegment
 BurstOutputDataSegment;
 /* </lalVerbatim> */
 
+
 /* <lalVerbatim file="StdBurstSearchH"> */
 typedef struct tagBurstOutputParameters {
 
   BurstOutputDataSegment *data;    /* input data and metadata */
 
   INT4 method; /* 0 for plain copy; 1 for standard */
+
+  UINT4 skip; /* estimation to skip */
 
 } BurstOutputParameters;
 /* </lalVerbatim> */

@@ -119,6 +119,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   Mdata.data = &input;
   oparams.data = &Mdata;
   oparams.method = 1;
+  oparams.skip = 0;
 
   LALBurstOutput(&status, &stdOutput, &output, &oparams);
   CHKST

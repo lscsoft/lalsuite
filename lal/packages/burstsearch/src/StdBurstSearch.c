@@ -174,6 +174,7 @@ Description of the function...
     REAL4         amplitude;
     REAL4         snr;
     REAL4         confidence;
+    REAL4 totalPower;
 
     SnglBurstTable *boutput, *input;
 
@@ -239,7 +240,7 @@ Description of the function...
 	/*****************************************************************/
 
 /******** <lalLaTeX file="StdBurstSearchC"> ********
-\item The code keeps a bank of statistics for the power in frequency bands, with one spectrogram for every burst duration (within an accuracy of 10 $\mu$s.
+\item The code keeps a bank of statistics for the power in frequency bands, with one spectrogram for every burst duration (within an accuracy of 10 $\mu$s). The spectrograms are constructed starting at the beginning of the analysis segment, and include the ETG trigger.
 ********* </lalLaTeX> ********/
 
 	/* scan to see if we have the stats for that duration */
@@ -328,12 +329,12 @@ The response function is resampled to the frequency resolution defined by the se
 	  Hvec->length = bptr->nTime / 2 + 1;
 
 /******** <lalLaTeX file="StdBurstSearchC"> ********
-The whole analysis segment is divided in non-overlapping subsegments which are windowed, FFTed, squared and normalized, multiplied by the response function.
+The whole analysis segment is divided in 50\%-overlapping subsegments which are windowed, FFTed, squared and normalized, multiplied by the response function.
 ********* </lalLaTeX> ********/
 
-	  for(k=0;k<data->data->data->vectorLength / bptr->nTime; k++) {
+	  for(k=0;k<2*data->data->data->vectorLength / bptr->nTime; k++) {
 
-	    memcpy(Dvec->data, data->data->data->data + k*bptr->nTime, Dvec->length * sizeof(REAL4));
+	    memcpy(Dvec->data, data->data->data->data + k*bptr->nTime/2, Dvec->length * sizeof(REAL4));
 
 	    /* apply window */
 	    for(l=0;l<bptr->nTime;l++) {
@@ -378,6 +379,11 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 
 	  }
 
+	} else {
+	  didel = (INT4)floor((REAL4)bptr->nTime - input->duration / data->data->deltaT);
+	  if(didel < 0) {
+	    didel = 0;
+	  }
 	}
 
 
@@ -414,6 +420,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	mlik = -1.0;
 	llikf = 0.0;
 	snr = 0.0;
+	totalPower = 0.0;
 
 	llo = (INT4)floor((input->central_freq - 0.5 * input->bandwidth) * data->data->deltaT * (REAL8)bptr->nTime);
 	if(llo < 0) {
@@ -471,6 +478,7 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	  */
 
 	  snr += Pmax / rp.P0 + rp.Q;
+	  totalPower += Pmax;
 
 	  {
 	    REAL8 ar = 2.0*sqrt(rp.P*rp.Q)/rp.P0;
@@ -501,10 +509,13 @@ The sum and sum-squared of the power in each frequency band are saved and used t
 	central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
 
 /******** <lalLaTeX file="StdBurstSearchC"> ********
-\item amplitude is set to sqrt(maximum of power over in-band frequency bins / Nyquist frequency).
-********* </lalLaTeX> ********/
-	/* set amplitude to sqrt(maximum of power); get strain per rtHz */
-	amplitude = sqrt(mlik * 2.0 * data->data->deltaT);
+\item amplitude is set to sqrt(total in-band power).
+********* </lalLaTeX> *******/
+
+	amplitude = sqrt(totalPower * 2.0 / bptr->nTime);
+
+/*set amplitude to sqrt(maximum of power); get strain per rtHz 
+  amplitude = sqrt(mlik * 2.0 * data->data->deltaT); */
 
 	/*****************************************************************/
 	/**                           bandwidth                         **/
@@ -955,13 +966,27 @@ The sum and sum-squared of the power in each frequency band are saved and used t
     if(!(boutput)) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 
     /* copy results in output event */
-    boutput->start_time = start_time;
-    boutput->duration = duration;
-    boutput->central_freq = central_freq;
-    boutput->bandwidth = bandwidth;
-    boutput->amplitude = amplitude;
-    boutput->snr = snr;
-    boutput->confidence = confidence;
+    if(!(params->skip & STDBURSTSEARCHSKIP_STARTTIME)) {
+      boutput->start_time = start_time;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_DURATION)) {
+      boutput->duration = duration;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_CENTRALFREQ)) {
+      boutput->central_freq = central_freq;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_BANDWIDTH)) {
+      boutput->bandwidth = bandwidth;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_AMPLITUDE)) {
+      boutput->amplitude = amplitude;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_SNR)) {
+      boutput->snr = snr;
+    }
+    if(!(params->skip & STDBURSTSEARCHSKIP_CONFIDENCE)) {
+      boutput->confidence = confidence;
+    }
 
     /*
     printf("%u:%u\t%g\t%g\t%g\t%g\n",start_time.gpsSeconds,start_time.gpsNanoSeconds, central_freq, confidence, snr, amplitude);
