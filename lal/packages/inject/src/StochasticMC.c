@@ -458,14 +458,12 @@ LALResponseConvert()
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
-#include "StochasticMC.h"
+#include <lal/StochasticMC.h>
 
 
 NRCSID(STOCHASTICMCC, "$Id$");
 
-
-/* int lalDebugLevel = LALINFO; */
-
+int verbose = 0;
 
 static void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vector *output, UINT4 nSpliceSegs, UINT4 offset);
 
@@ -1245,5 +1243,3 @@ void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vect
      output->data[i] = longData[i/segLen]->data[i%segLen];
 
 }
-
->>>>>>> 3.2
