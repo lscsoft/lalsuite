@@ -3,7 +3,8 @@ include-link:
 	@for file in $(HEADERS) ; do \
           sourcedir=`cd $(srcdir) && pwd`; \
           targetdir=`cd $(top_builddir)/include/lal && pwd`; \
-          if test ! -f $$targetdir/$$file ; then \
+          if test ! -r $$targetdir/$$file ; then \
+	    rm -f $$targetdir/$$file; \
             @LN_S@ $$sourcedir/$$file $$targetdir; \
             echo "@LN_S@ $$sourcedir/$$file $$targetdir"; \
           fi; \
