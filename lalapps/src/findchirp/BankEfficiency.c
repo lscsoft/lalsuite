@@ -111,7 +111,7 @@ NRCSID( BANKEFFICIENCYC, "$Id$");
 #define BANKEFFICIENCY_CHECK                    0
 
 
-#define DeltaT                                  256
+#define DeltaT                                  8
 
 
 typedef enum{
@@ -177,6 +177,7 @@ typedef struct
   double m1,m2, psi0,psi3;
   char *inputPSD;
   DetectorName NoiseModel;
+  char *filename;
 
 } OtherParamIn;
 
@@ -325,7 +326,7 @@ PrintBank(
 	  UINT4 signalLength);
 
 
-extern int lalDebugLevel=0;
+extern int lalDebugLevel=1;
 
 
 /* ===================================== THE MAIN PROGRAM ===================================================== */
@@ -453,10 +454,8 @@ main (int argc, char **argv )
       break;
     case REALPSD:
       /* Read psd dans le fichier InputPSD.dat */
-      /*      Finput = fopen("InputPSD.dat","r");*/
-      Finput = fopen("H1_a.dat","r");
 
-      
+      Finput = fopen(otherIn.filename,"r");
 
       for (i=0; i<(int)coarseIn.shf.data->length; i++)
 	{
@@ -473,10 +472,10 @@ main (int argc, char **argv )
       break;
     }
 
-     
+    /* 
    for (i=0; i<(int)coarseIn.shf.data->length; i++)
 	printf("%f %E\n", i*df, coarseIn.shf.data->data[i]);	   
-     
+     */
    
    for (i=0; i< (int)randIn.psd.length; i++)
      {
@@ -486,10 +485,8 @@ main (int argc, char **argv )
   
   
   /* --- And the bank of templates --- */
-  l =  coarseIn.numFcutTemplates;
-  /*   coarseIn.numFcutTemplates = 1;*/
+
   LALInspiralCreateCoarseBank(&status, &list, &nlist, coarseIn);
-  coarseIn.numFcutTemplates = l;
   if (nlist==0) exit(0);	
   
 
@@ -672,7 +669,7 @@ main (int argc, char **argv )
 	 }
      
        printf("#");
-       PrintResults(list[1].params, randIn.param,overlapout, list[1].params.fFinal, 1);
+       PrintResults(list[1].params, randIn.param,overlapoutmax,  list[1].params.fFinal, 1);
        j = nlist +1;
        if (otherIn.PrintOverlap)
 	 for (i=0; i<correlation.length; i++)
@@ -851,7 +848,7 @@ main (int argc, char **argv )
 		     
 		     LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 		     KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
-		     
+
 		   }
 		 
 		 
@@ -1123,9 +1120,9 @@ ParseParameters(int *argc,
 	}      
       else if ( strcmp(argv[i],"--mm")==0)	     {	  coarseIn->mmCoarse =atof(argv[++i]);	}
       else if ( strcmp(argv[i],"--numFcut")==0)      {	  coarseIn->numFcutTemplates = atoi(argv[++i]);	}
-      else if ( strcmp(argv[i],"-simType")==0)	     {	  randIn->type = atoi(argv[++i]);	}
-      else if ( strcmp(argv[i],"-sigAmp")==0)	     {	  randIn->SignalAmp = atof(argv[++i]);	}
-      else if ( strcmp(argv[i],"-NoiseAmp")==0)	     {	  randIn->NoiseAmp = atof(argv[++i]);	}
+      else if ( strcmp(argv[i],"--simType")==0)	     {	  randIn->type = atoi(argv[++i]);	}
+      else if ( strcmp(argv[i],"--sigAmp")==0)	     {	  randIn->SignalAmp = atof(argv[++i]);	}
+      else if ( strcmp(argv[i],"--NoiseAmp")==0)	     {	  randIn->NoiseAmp = atof(argv[++i]);	}
       else if ( strcmp(argv[i],"--alpha")==0)	     {	  coarseIn->alpha = atof(argv[++i]); 	  randIn->param.alpha = coarseIn->alpha;	}
       else if ( strcmp(argv[i],"--TemplateOrder")==0){     coarseIn->order = atoi(argv[++i]); 	}
       else if ( strcmp(argv[i],"--SignalOrder")==0)  {	  randIn->param.order = atoi(argv[++i]); 	}
@@ -1136,13 +1133,18 @@ ParseParameters(int *argc,
       else if ( strcmp(argv[i],"--noiseModel")==0) 
 	{
 	  i++;
+
 	  if (strcmp(argv[i], "LIGOI") == 0)       otherIn->NoiseModel = LIGOI;
 	  else if (strcmp(argv[i], "LIGOII") == 0) otherIn->NoiseModel = LIGOII;
 	  else if (strcmp(argv[i], "VIRGO") == 0)  otherIn->NoiseModel = VIRGO;
 	  else if (strcmp(argv[i], "TAMA") == 0)   otherIn->NoiseModel = TAMA;
 	  else if (strcmp(argv[i], "GEO") == 0)    otherIn->NoiseModel = GEO;
-	  else if (strcmp(argv[i], "REALPSD")==0)  otherIn->NoiseModel = REALPSD;
-      }
+	  else 
+	    {
+	      otherIn->NoiseModel = REALPSD;
+	      otherIn->filename= argv[i];
+	    }
+	}
 
       else if ( strcmp(argv[i],"--InQuadrature")==0)    { otherIn->overlapMethod = InQuadrature;}
       else if ( strcmp(argv[i],"--AmbiguityFunction")==0){otherIn->ambiguityFunction = 1;}
@@ -1453,10 +1455,10 @@ PrintResults(
 	    int layer)
 {
   
-  fprintf(stdout, "%e %e %e %e   ", bank.psi0, injected.psi0, bank.psi3, injected.psi3);
-  fprintf(stdout, "%e %e    %e %e   ", fendBCV, injected.fFinal, bank.totalMass, injected.totalMass);
-  fprintf(stdout, "%e %e    %e %e ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
-  fprintf(stdout, "%e %e   %d\n", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer);
+  fprintf(stdout, "%e %e %e %e   ", bank.psi0, injected.psi0,   bank.psi3,      injected.psi3);
+  fprintf(stdout, "%e %e %e %e   ", fendBCV,   injected.fFinal, bank.totalMass, injected.totalMass);
+  fprintf(stdout, "%e %e %e %e   ", injected.mass1, injected.mass2, overlapout.max, overlapout.phase);
+  fprintf(stdout, "%e %e %d %d\n ", overlapout.alpha, overlapout.alpha*pow(fendBCV,2./3.), layer, overlapout.bin);
 }
 
 
