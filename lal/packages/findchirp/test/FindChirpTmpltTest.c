@@ -25,7 +25,7 @@ void PrintInspiralBank (
     );
 
 int
-main (int argc, char *argv[])
+main ( void )
 {
   FILE                         *fp = NULL;
   static LALStatus              stat;
@@ -36,7 +36,7 @@ main (int argc, char *argv[])
   FindChirpCreateBankParams    *createBankParams;
 
   const UINT4                   numSegments = 7;
-  const UINT4                   numPts = 262145;
+  const UINT4                   numPts = 131073;
   UINT4                         k;
   
   /*
@@ -171,7 +171,6 @@ PrintInspiralBank (
     FILE                *fp
     )
 {
-  INT4                 i;
   InspiralTemplate    *current;
 
   INITSTATUS( status, "PrintInspiralBank", MAIN );

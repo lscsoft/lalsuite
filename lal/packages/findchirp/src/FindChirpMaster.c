@@ -26,10 +26,12 @@ LALFindChirpMaster (
   INT4                          myRank;
   UINT4                         i;
   UINT4                         numTmpltExch = params->numTmpltExch;
+#if 0
   InspiralTemplate             *currentTmplt      = NULL;
   InspiralTemplate             *fineTmplt         = NULL;
   InspiralTemplateNode         *thisTmpltNode     = NULL;
   InspiralTemplateNode         *insertTmpltNode   = NULL;
+#endif
 
 
   INITSTATUS( status, "LALFindChirpMaster", INSPIRALMASTERC );

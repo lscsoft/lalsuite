@@ -105,7 +105,6 @@ main (int argc, char *argv[])
   RandomParams                 *randParams = NULL;
 
   FindChirpFilterParams        *filterParams = NULL;
-  FindChirpChisqParams         *chisqParams  = NULL;
   FindChirpSPDataParams        *dataParams   = NULL;
   FindChirpSPTmpltParams       *tmpltParams  = NULL;
 
