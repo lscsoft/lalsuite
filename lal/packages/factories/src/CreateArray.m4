@@ -46,7 +46,10 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
   /* allocate memory for structure */
 
   *array = ( ATYPE * ) LALMalloc ( sizeof( ATYPE ) );
-  ASSERT (*array, status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC);
+  if ( NULL == *array )
+  {
+    ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
+  }
 
   (*array)->dimLength = NULL;
   (*array)->data      = NULL;

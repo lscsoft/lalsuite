@@ -44,8 +44,10 @@ void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
    */
 
   *vector = ( VTYPE * ) LALMalloc( sizeof( VTYPE ) );
-  ASSERT( *vector != NULL, status,
-          AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
+  if ( NULL == *vector )
+  {
+    ABORT( status, AVFACTORIESH_EMALLOC, AVFACTORIESH_MSGEMALLOC );
+  }
 
   (*vector)->length = 0;	/* length 0 until storage allocated */
   (*vector)->data   = NULL;	/* NULL data until allocated */

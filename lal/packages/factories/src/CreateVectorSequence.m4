@@ -55,8 +55,10 @@ void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
    */
 
   *vseq = ( STYPE * ) LALMalloc( sizeof( STYPE ) );
-  ASSERT (*vseq != NULL, status,
-          SEQFACTORIESH_EMALLOC, SEQFACTORIESH_MSGEMALLOC);
+  if ( NULL == *vseq )
+  {
+    ABORT( status, SEQFACTORIESH_EMALLOC, SEQFACTORIESH_MSGEMALLOC );
+  }
 
   (*vseq)->length = 0;	/* length 0 until storage allocated */
   (*vseq)->vectorLength = 0; /* vector length 0 until storage allocated */
