@@ -63,7 +63,7 @@ LALComputeFrequencySeries (
   freqSeries->deltaF = 1/((REAL8)(timeSeries->data->length)*timeSeries->deltaT); 
   /* compute normalization factor */
   ASSERT(dftParams->sumofsquares > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  fac = sqrt(n)*timeSeries->deltaT / sqrt( dftParams->sumofsquares);
+  fac = sqrt(n/dftParams->sumofsquares)*timeSeries->deltaT ;
 
   /* create temporary vector */
   LALCreateVector (status->statusPtr, &tmp, n);
