@@ -430,6 +430,8 @@ main(int argc, char **argv)
     if ( sourcefile ) {
       ok &= ( fscanf( fp, "%c %lli %f %f %f %f %f\n", &timeCode,
 		      &epoch, &m1, &m2, &dist, &inc, &phic ) == 7 );
+      fprintf(stderr, "%c %lli %f %f %f %f %f\n", timeCode,
+		      epoch, m1, m2, dist, inc, phic );  fflush(stderr);
       ppnParams.mTot = m1 + m2;
       ppnParams.eta = m1*m2/( ppnParams.mTot*ppnParams.mTot );
       ppnParams.d = dist*LAL_PC_SI*1000.0;

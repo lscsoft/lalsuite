@@ -1,5 +1,5 @@
 #define DELM 0.0001
-#define H1L1DISTANCE 0.018
+#define H1L1DISTANCE 0.020
 #define COINWINDOW 0.011
 
 #define MAXSTR       256

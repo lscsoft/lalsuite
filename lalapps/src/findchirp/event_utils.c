@@ -465,9 +465,21 @@ int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
             int jmin,jmax,j;
             jmin = (int)( 10 * ( (*thiswindow).start_time-(*dummyStart) ));
             jmax = (int)( 10 * ( (*thiswindow).end_time-(*dummyStart) ));
-            if (jmin < 0 || jmax > numPts) {
+            if (jmin < 0) {
                 fprintf(stderr,"Warning: analysis and veto times out of range\n");
-                jmin=jmax=0;
+                jmin=0;
+            }
+            if (jmax < 0) {
+                fprintf(stderr,"Warning: analysis and veto times out of range\n");
+                jmax=0;
+            }
+            if (jmin > numPts) {
+                fprintf(stderr,"Warning: analysis and veto times out of range\n");
+                jmin=numPts;
+            }
+            if (jmax > numPts) {
+                fprintf(stderr,"Warning: analysis and veto times out of range\n");
+                jmax=numPts;
             }
             for(j=jmin; j<jmax ; j++){ 
                 if ( (*coincident_times)[j] >= dummyMask ){

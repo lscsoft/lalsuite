@@ -342,8 +342,8 @@ int main(int argc, char **argv)
                     (*thisentry).threshold,
                     (*thisentry).minusdtime,
                     (*thisentry).plusdtime);
-            fprintf(fpout,"Time vetoed %f, %f%% \n----\n", timeVetoed, 100.0 * 
-                    timeVetoed/ifo[i].time_analyzed);
+            fprintf(fpout,"Time vetoed %f of %f, %f%% \n----\n", timeVetoed,
+                    ifo[i].time_analyzed , 100.0 * timeVetoed/ifo[i].time_analyzed);
             fflush(fpout);
             thisentry = (*thisentry).next_veto;
         }
@@ -513,22 +513,29 @@ int main(int argc, char **argv)
      * Determine coincident times and times analyzed
      *********************************************************/
     {
-        int   numPts= 10 * (int)(dummyEnd-dummyStart), prev_value;
+        int   count, numPts= 10 * (int)(dummyEnd-dummyStart), prev_value;
         FILE *tmpPtr;
+        double time_done=0.0;
 
         tmpPtr = fopen("coin.times","w");
-        time_analyzed=0;
-        prev_value = 0;
-        for(i=0;i<numPts;i++){
+        prev_value = coincident_times[0];
+        fprintf(tmpPtr,"%lf %i %lf\n",dummyStart,coincident_times[0],time_done);
+        for(i=1;i<numPts;i++){
             if ( coincident_times[i] != prev_value ){
-                fprintf(tmpPtr,"%lf %i\n",dummyStart+0.1*(double)(i-1),prev_value);
-                fprintf(tmpPtr,"%lf %i\n",dummyStart+0.1*(double)i,coincident_times[i]);
+                fprintf(tmpPtr,"%lf %i %lf\n",dummyStart+0.1*(double)(i-1),
+                        prev_value,time_done);
+                fprintf(tmpPtr,"%lf %i %lf\n",dummyStart+0.1*(double)i,
+                        coincident_times[i],time_done);
             }
             if ( coincident_times[i] > 0 ){
-                time_analyzed +=0.1;
+                count++;
             }
             prev_value = coincident_times[i];
         }
+        fprintf(tmpPtr,"%lf %i %lf\n",dummyStart+0.1*(double)(i-1),coincident_times[i-1],
+                time_done);
+        fclose(tmpPtr);
+        time_analyzed = 0.1*count;
     }
 
     fprintf(fpout,"ninject:=%i;\n", countsamples);
