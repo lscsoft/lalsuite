@@ -89,8 +89,8 @@ int read_freq_series( struct series *ser, const char *fname )
 #define R_CHANNEL "CAL-RESPONSE"
 #define USAGE( s ) do { \
   fprintf( stderr, "Usage: %s -run run -time gpssec -ifo 'H1'|'H2'|'L1'", s ); \
-  fprintf( stderr, " R-file C-file \n\t [ [ -ifo" );\
-  fprintf( stderr, " 'H1'|'H2'|'L1' R-file2 C-file2 ] ...]\n" ); \
+  fprintf( stderr, " -ver VXX R-file C-file \n\t [ [ -ifo" );\
+  fprintf( stderr, " 'H1'|'H2'|'L1' -ver VXX R-file2 C-file2 ] ...]\n" ); \
   fprintf( stderr, "Calibration files found at URL:\n" CALURL "\n" ); \
   exit( 1 ); } while ( 0 )
 
@@ -103,6 +103,7 @@ int main( int argc, char *argv[] )
   struct FrameH *frame  = NULL;
   const char *run = NULL;
   const char *ifo = NULL;
+  const char *ver = NULL;
   int sec = 0;
   int arg;
 
@@ -159,6 +160,15 @@ int main( int argc, char *argv[] )
       sprintf( Cname, "%s\\:" C_CHANNEL, ifo );
       sprintf( Cilwd, "%s-%s-" C_CHANNEL ".ilwd", run, ifo );
     }
+    else if ( strstr( argv[arg], "-ver" ) )
+    {
+      if ( ! run || ! ifo )
+      {
+        fprintf( stderr, "Error: run and/or ifo not specified\n" );
+        USAGE( argv[0] );
+      }
+      ver = argv[++arg];
+    }
     else if ( strstr( argv[arg], "-h" ) )
     {
       USAGE( argv[0] );
@@ -168,9 +178,9 @@ int main( int argc, char *argv[] )
       struct series R;
       struct series C;
       int code;
-      if ( ! ifo )
+      if ( ! ifo || ! run || ! ver )
       {
-        fprintf( stderr, "Error: ifo not specified\n" );
+        fprintf( stderr, "Error: ifo, run or version not specified\n" );
         USAGE( argv[0] );
       }
       if ( ! sec )
@@ -232,7 +242,8 @@ int main( int argc, char *argv[] )
       {
         char fname[256];
         int dt = (int)ceil( 1e-9 * R.tbeg.gpsNanoSeconds + 1.0 / R.step );
-        sprintf( fname, "%c-CAL_REF-%d-%d.gwf", *ifo, R.tbeg.gpsSeconds, dt );
+        sprintf( fname, "%c-CAL_REF_%s_%s-%d-%d.gwf", *ifo, ver, ifo, 
+            R.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
       /* don't mangle the channel names for frames */

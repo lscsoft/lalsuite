@@ -34,6 +34,9 @@ int read_time_series( struct series *aser, struct series *abser,
 
   fp = fopen( fname, "r" );
 
+  /* skip the first line as sensmon seems to bugger this up */
+  get_next_line( line, sizeof( line ), fp );
+
   get_next_line( line, sizeof( line ), fp );
   sscanf( line, "%d", &t0 );
   get_next_line( line, sizeof( line ), fp );
@@ -63,18 +66,22 @@ int read_time_series( struct series *aser, struct series *abser,
   aser->data  = calloc( 2 * n, sizeof( *aser->data  ) );
   abser->data = calloc( 2 * n, sizeof( *abser->data ) );
 
+  /* skip the first line as sensmon seems to bugger this up */
+  get_next_line( line, sizeof( line ), fp );
+
   while ( get_next_line( line, sizeof( line ), fp ) )
   {
     float a;
-    float ab;
+    float b;
     int t;
-    sscanf( line, "%d %f %f", &t, &ab, &a );
-    if ( ! isnan( a ) && ! isnan( ab ) )
+    /* sensemon format is: Time Range Line Alpha Beta */
+    sscanf( line, "%d %*f %*f %f %f", &t, &a, &b );
+    if ( ! isnan( a ) && ! isnan( b ) )
     {
       int i;
       i = ( t - t0 ) / dt;
       aser->data[2*i]  = a;
-      abser->data[2*i] = ab;
+      abser->data[2*i] = a * b;
     }
   }
 
@@ -85,8 +92,8 @@ int read_time_series( struct series *aser, struct series *abser,
 #define CALURL "http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html"
 
 #define USAGE( s ) do { \
-  fprintf( stderr, "Usage: %s -run run -ifo 'H1'|'H2'|'L1' file", s );\
-  fprintf( stderr, " [ [ -ifo 'H1'|'H2'|'L1' file2 ] ...]\n" ); \
+  fprintf( stderr, "Usage: %s -run run -ifo 'H1'|'H2'|'L1' -ver VXX file", s );\
+  fprintf( stderr, " [ [ -ifo 'H1'|'H2'|'L1' -ver VXX file2 ] ...]\n" ); \
   fprintf( stderr, "Calibration files found at URL:\n" CALURL "\n" ); \
   exit( 1 ); } while ( 0 )
 
@@ -102,6 +109,7 @@ int main( int argc, char *argv[] )
   struct FrFile *frfile = NULL;
   struct FrameH *frame  = NULL;
   const char *run = NULL;
+  const char *ver = NULL;
   const char *ifo = NULL;
   int arg;
 
@@ -144,6 +152,15 @@ int main( int argc, char *argv[] )
       sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
       sprintf( abilwd, "%s-%s-" AB_CHANNEL ".ilwd", run, ifo );
     }
+    else if ( strstr( argv[arg], "-ver" ) )
+    {
+      if ( ! run || ! ifo )
+      {
+        fprintf( stderr, "Error: run and/or ifo not specified\n" );
+        USAGE( argv[0] );
+      }
+      ver = argv[++arg];
+    }
     else if ( strstr( argv[arg], "-h" ) )
     {
       USAGE( argv[0] );
@@ -153,9 +170,9 @@ int main( int argc, char *argv[] )
       struct series a;
       struct series ab;
       int code;
-      if ( ! ifo )
+      if ( ! ifo || ! run || ! ver )
       {
-        fprintf( stderr, "Error: ifo not specified\n" );
+        fprintf( stderr, "Error: ifo, run or version not specified\n" );
         USAGE( argv[0] );
       }
       /* get a and ab data and metadata */
@@ -205,7 +222,8 @@ int main( int argc, char *argv[] )
       {
         char fname[256];
         int dt = (int)ceil( epoch_diff( &a.tend, &a.tbeg ) );
-        sprintf( fname, "%c-CAL_FAC-%d-%d.gwf", *ifo, a.tbeg.gpsSeconds, dt );
+        sprintf( fname, "%c-CAL_FAC_%s_%s-%d-%d.gwf", *ifo, ver, ifo, 
+            a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
       /* don't mangle the channel names for frames */
