@@ -35,9 +35,17 @@ lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_
 helpmsg="Usage $0 [options]
 Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
-  --help                print this message"
+  --help                        print this message"
 helpmsg="$helpmsg
-  --include-deps        pass option --include-deps to automake [no]"
+  --with-aclocal=ACLOCAL        use aclocal program ACLOCAL [aclocal]"
+helpmsg="$helpmsg
+  --with-automake=AUTOMAKE      use automake program AUTOMAKE [automake]"
+helpmsg="$helpmsg
+  --with-autoheader=AUTOHEADER  use autoheader program AUTOHEADER [autoheader]"
+helpmsg="$helpmsg
+  --with-autoconf=AUTOCONF      use autoconf program AUTOCONF [autoconf]"
+helpmsg="$helpmsg
+  --include-deps                pass option --include-deps to automake [no]"
 
 INCLUDEDEPS=""
 
@@ -51,10 +59,81 @@ while test $# -gt 0 ; do
   case $option in
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
     -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
+    -with-automake=* | --with-automake=* ) AUTOMAKE="$optarg";;
+    -with-aclocal=* | --with-aclocal=* ) ACLOCAL="$optarg";;
+    -with-autoconf=* | --with-autoconf=* ) AUTOCONF="$optarg";;
+    -with-autoheader=* | --with-autoheader=* ) AUTOHEADER="$optarg";;
     *) echo "unrecognized option $option"; exit 1;;
   esac
   shift
 done
+
+if test -z "$AUTOMAKE" ; then
+  for AUTOMAKE in automake automake-1.4 automake-1.5 automake ; do
+    case "`$AUTOMAKE --version 2>/dev/null`" in
+      *\ 1.4*) break;;
+      *\ 1.5*) break;;
+      *\ 1.6*) continue;;
+      *\ 1.7*) continue;;
+    esac
+  done
+fi
+
+if test -z "$ACLOCAL" ; then
+  for ACLOCAL in aclocal aclocal-1.4 aclocal-1.5 aclocal ; do
+    case "`$ACLOCAL --version 2>/dev/null`" in
+      *\ 1.4*) break;;
+      *\ 1.5*) break;;
+      *\ 1.6*) continue;;
+      *\ 1.7*) continue;;
+    esac
+  done
+fi
+
+AUTOMAKE="${AUTOMAKE:-automake}"
+ACLOCAL="${ACLOCAL:-aclocal}"
+AUTOCONF="${AUTOCONF:-autoconf}"
+AUTOHEADER="${AUTOHEADER:-autoheader}"
+automake_version="`$AUTOMAKE --version 2>/dev/null | sed -n '/automake/s/[^0-9.]*//p'`"
+aclocal_version="`$ACLOCAL --version 2>/dev/null | sed -n '/aclocal/s/[^0-9.]*//p'`"
+if test -z "$automake_version"; then
+  echo "Error: missing program automake"
+  exit 1
+fi
+case "$automake_version" in
+  1.6*)
+  echo "Warning: Using version 1.6 of aclocal/automake... this may cause build"
+  echo "         problems: If you modify any Makefile.am file you must re-run"
+  echo "         the top-level config.status before doing a make."
+  echo "         (Use automake-1.4 or automake-1.5 to avoid this problem.)"
+  ;;
+  1.7*)
+  echo "Warning: Using version 1.7 of aclocal/automake... this may not work!" 
+  echo "         (Try automake-1.4 or automake-1.5 if problems occur.)"
+  ;;
+esac
+if test -z "$aclocal_version"; then
+  echo "Error: missing program aclocal"
+  exit 1
+fi
+case "$aclocal_version" in
+  1.6*)
+  echo "Warning: Using version 1.6 of aclocal/automake... this may cause build"
+  echo "         problems: If you modify any Makefile.am file you must re-run"
+  echo "         the top-level config.status before doing a make."
+  echo "         (Use automake-1.4 or automake-1.5 to avoid this problem.)"
+  ;;
+  1.7*)
+  echo "Warning: Using version 1.7 of aclocal/automake... this may not work!" 
+  echo "         (Try automake-1.4 or automake-1.5 if problems occur.)"
+  ;;
+esac
+
+echo "Using:
+aclocal:        `which $ACLOCAL`
+automake:       `which $AUTOMAKE`
+autoheader:     `which $AUTOHEADER`
+autoconf:       `which $AUTOCONF`"
 
 
 ## Here is the stuff to make configure.in
@@ -91,9 +170,11 @@ LAL_WITH_GCC_FLAGS
 LAL_ENABLE_FFTW3
 LAL_ENABLE_FRAME
 LAL_ENABLE_MPI
+LAL_ENABLE_DATAFLOW
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
+AM_CONDITIONAL(METAIO, test x$dataflow = xtrue)
 
 LAL_ENABLE_DEBUG
 LAL_ENABLE_MACROS
@@ -161,6 +242,9 @@ else
   AC_CHECK_HEADERS(sfftw.h fftw.h, break)
   AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
 fi
+if test "${dataflow}" = "true"; then
+  AC_SEARCH_LIBS(MetaioOpen, metaio dataflow, , AC_MSG_ERROR(could not find the metaio/dataflow library))
+fi
 
 
 dnl Checks for header files.
@@ -172,6 +256,9 @@ AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
 AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE,1,
 [Define if gethostname prototype is in unistd.h]),
 AC_MSG_RESULT(no))
+if test "${dataflow}" = "true"; then
+  AC_CHECK_HEADERS(metaio.h, , AC_MSG_ERROR(could not find metaio.h))
+fi
 
 
 dnl AC_TRY_RUN needs to be done with libtool to avoid requirement of setting
@@ -380,7 +467,7 @@ cd ../../..
 
 ## Generate the Makefile.in's and the configure script
 
-aclocal
-autoheader
-automake $INCLUDEDEPS
-autoconf
+$ACLOCAL
+$AUTOHEADER
+$AUTOMAKE $INCLUDEDEPS
+$AUTOCONF
