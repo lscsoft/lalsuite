@@ -2939,7 +2939,7 @@ int main(int argc, char *argv[]){
 	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB);
 	  if(handle != NULL) {
         set_search_pos_hook      = dlsym(handle,"set_search_pos");
-        fraction_done_hook       = dlsym(handle,"fraction_done);
+        fraction_done_hook       = dlsym(handle,"fraction_done");
         boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
       }
   }
