@@ -42,6 +42,7 @@ float startFrequency = 0.0;     /* desired starting frequency for the narrow ban
 float bandwidth = 0.0;          /* width of the frequency band in the narrow band */
 int mergedSFT = 0;              /* flag for generating merged SFT instead of frame */
 float mysteryFactor = 1.0;      /* factor used to encrypt the data */
+int sloppyness = 0;             /* do index computations strictly (=0) or sloppyly (=1)*/
 
 int main ( int argc, char *argv[] )
 {
@@ -190,6 +191,10 @@ int main ( int argc, char *argv[] )
 "               secret factor that multiplies the data to make              \n"\
 "               it hard to infer strain values                              \n"\
 "                                                                           \n"\
+"       -s, --sloppy                                                        \n"\
+"               do computations of lower and upper frequency                \n"\
+"               indices sloppyly                                            \n"\
+"                                                                           \n"\
 "       -h, --help                                                          \n"\
 "               print this usage message                                    \n"\
 "                                                                           \n"\
@@ -214,11 +219,12 @@ int parse_command_line(int argc, char *argv[])
                 {"bandwidth",           required_argument, 0,   'b'},
                 {"mergedSFT",           no_argument,       0,   'm'},
 		{"mystery-factor",      required_argument, 0,   'y'},
+		{"sloppy",              no_argument, 0,   's'},
                 {"help",                 no_argument,       0,   'h'},
                 {0, 0, 0, 0}
         };
 
-        char *short_options = "i:o:f:b:y:hm";
+        char *short_options = "i:o:f:b:y:hms";
         int c;
 
         while ( 1 )
@@ -256,6 +262,12 @@ int parse_command_line(int argc, char *argv[])
                         case 'y':
                                 {
                                         mysteryFactor = atof(optarg);
+                                        break;
+                                }
+
+                        case 's':
+                                {
+				        sloppyness = 1;
                                         break;
                                 }
 
@@ -447,8 +459,14 @@ int read_sft( struct sftheader *header, float **dataF, const char *fname, float 
 
         /* compute the min and max index necessary to ensure fmin to fmin + deltaf
            is in extracted band */
-        fminindex = (int) floor(fmin * tbase);
-        fmaxindex = (int) ceil((fmin + deltaf) * tbase);
+	if (sloppyness)
+	  {
+	    fminindex = (int)(fmin*tbase+0.5);
+	    fmaxindex = (int)((fmin+deltaf)*tbase+0.5);
+	  }else{
+	    fminindex = (int) floor(fmin * tbase);
+	    fmaxindex = (int) ceil((fmin + deltaf) * tbase);
+	  }
 
         /* allocate data to store the narrow band complex series
            this needs to be freed by the caller */
