@@ -20,6 +20,25 @@ Header file for model noise generation codes.
 \noindent This header file covers routines that are used in 
 synthetic background noise  expected in various
 detectors and signals with random parameters in background noise.
+\texttt{InputMasses:}
+This structure is one of the members of the \texttt{InspiralTemplate} 
+structure. 
+
+\input{LALInputMassesH}
+
+A user can specify the parameters of a binary using any of the
+following combination of {\it masses:}
+\begin{itemize}
+\item \texttt{m1Andm2:} component masses
+\item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
+\item \texttt{totalMassAndMu:} total mass and reduced mass
+\item \texttt{t01:} unused; shouldn't be used.
+\item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
+\item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and 
+\item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
+\item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
+\end{itemize}
+
 
 </lalLaTeX> */
 
@@ -119,6 +138,26 @@ AddVectorsIn;
 \idx[Type]{AddVectorsIn} 
 </lalLaTeX>  */
 
+
+/* <lalVerbatim file="LALInputMassesH">  */
+typedef enum {
+   m1Andm2,
+   totalMassAndEta,
+   totalMassAndMu,
+   t01,
+   t02,
+   t03,
+   t04,
+   psi0Andpsi3
+ } InputMasses;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InputMasses}
+</lalLaTeX>  */
+
+
+
 /*  <lalVerbatim file="LALNoiseModelsHS"> */
 typedef struct 
 tagRandomInspiralSignalIn
@@ -135,7 +174,7 @@ tagRandomInspiralSignalIn
    REAL8 etaMin;     /* smallest value of the symmetric mass ratio */
    InspiralTemplate 
 	 param;      /* parameter stuct; user to specify certain params. */
-
+   InputMasses massChoice; /* enum used to specify parameter choice */
    REAL8Vector psd;  /* power spectral density used for coloring the noise */
    RealFFTPlan *fwdp;/* pre-computed fftw plan for forward fftw */
 
