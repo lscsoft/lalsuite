@@ -247,7 +247,7 @@ LALFindChirpInjectSignals (
     ppnParams.epoch.gpsSeconds     = 0;
     ppnParams.epoch.gpsNanoSeconds = 0;
 
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
         "Injected waveform parameters:\n"
         "ppnParams.mTot = %e\n"
         "ppnParams.eta = %e\n"
@@ -284,7 +284,7 @@ LALFindChirpInjectSignals (
 
     if ( ppnParams.dfdt > 2.0 ) 
     {
-      snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
           "Waveform sampling interval is too large:\n"
           "\tmaximum df*dt = %f", ppnParams.dfdt );
       LALInfo( status, warnMsg );
@@ -311,7 +311,7 @@ LALFindChirpInjectSignals (
           );
     }
 
-    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+    LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
         "Injected waveform timing:\n"
         "thisEvent->geocent_end_time.gpsSeconds = %d\n"
         "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
