@@ -248,9 +248,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL8 heteroFac, phi0;
 
   /* Variables required by the TCENTRE() macro, above. */
-  REAL4 realIndex;
+  REAL8 realIndex;
   INT4 intIndex;
-  REAL4 indexFrac;
+  REAL8 indexFrac;
 
   INITSTATUS( stat, "LALSimulateCoherentGW", SIMULATECOHERENTGWC );
   ATTATCHSTATUSPTR( stat );
