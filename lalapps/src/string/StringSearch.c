@@ -24,6 +24,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <glob.h>
 #include <errno.h>
 #include <getopt.h>
+#include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
@@ -54,8 +55,14 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 extern char *optarg;
 extern int optind, opterr, optopt;
 
+int snprintf(char *str, size_t size, const char *format, ...);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
+
+#define ADD_PROCESS_PARAM(type) \
+	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 #define SCALE 1e20
 #define MAXTEMPLATES 10000
@@ -76,6 +83,7 @@ struct CommandLineArgsTag {
   REAL4 flow;                 /* Low frequency cut-off */
   REAL4 fbanklow;             /* Template bank low frequency cut-off */
   char *FrCacheFile;          /* Frame cache file */
+  char *InjectionFile;        /* LIGO xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
   INT4 GPSStart;              /* GPS start time of segment to be analysed */
   INT4 GPSEnd;                /* GPS end time of segment to be analysed */
@@ -204,6 +212,23 @@ int main(int argc,char *argv[])
 }
 
 /************************************* MAIN PROGRAM ENDS *************************************/
+
+
+/*******************************************************************************/
+
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, 
+					      const char *type, const char *param, const char *value)
+{
+	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	(*proc_param)->next = NULL;
+	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
+	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
+	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
+	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
+
+	return(&(*proc_param)->next);
+}
+
 
 /*******************************************************************************/
 
@@ -711,10 +736,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 {
   INT4 c, errflg = 0;
   optarg = NULL;
+  ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
+  int option_index;
   
   /* Initialize default values */
   CLA->flow=0.0;
   CLA->FrCacheFile=NULL;
+  CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
@@ -726,62 +754,97 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->fakenoiseflag=0;
   
   /* Need to add long options */
+  struct option long_options[] = {
+    {"low-freq-cutoff",     required_argument, NULL,           'f'},
+    {"bank-low-freq-cutoff",        required_argument, NULL,   'b'},
+    {"threshold",           required_argument, NULL,           't'},
+    {"frame-cache",         required_argument, NULL,           'F'},
+    {"channel-name",        required_argument, NULL,           'C'},
+    {"gps-end-time",        required_argument, NULL,           'E'},
+    {"gps-start-time",      required_argument, NULL,           'S'},
+    {"injection-file",      required_argument, NULL,           'i'},
+    {"no-of-segments",      required_argument, NULL,           'N'},
+    {"settling-time",       required_argument, NULL,           'T'},
+    {"cusp-search",                no_argument, NULL,         'c' },
+    {"kink-search",                no_argument, NULL,         'k' },
+    {"fake-gaussian-noise",        no_argument, NULL,         'n' },
+    {NULL, 0, NULL, 0}
+  };
 
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:b:F:C:S:E:N:T:ckt:n"))!=-1))
-    switch (c) {
+  opterr = 1;	/* enable error messages */
+  optind = 0;	/* start scanning from argv[0] */
+  do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) 
+    {
     case 'f':
       /* low frequency cutoff */
       CLA->flow=atof(optarg);
+      ADD_PROCESS_PARAM("float");
       break;
     case 'b':
       /* low frequency cutoff */
       CLA->fbanklow=atof(optarg);
+      ADD_PROCESS_PARAM("float");
       break;
     case 't':
       /* low frequency cutoff */
       CLA->threshold=atof(optarg);
+      ADD_PROCESS_PARAM("float");
       break;
     case 'F':
       /* name of frame cache file */
       CLA->FrCacheFile=optarg;
+      ADD_PROCESS_PARAM("string");
       break;
     case 'C':
       /* name channel */
       CLA->ChannelName=optarg;
+      ADD_PROCESS_PARAM("string");
+      break;
+    case 'i':
+      /* name channel */
+      CLA->InjectionFile=optarg;
+      ADD_PROCESS_PARAM("string");
       break;
     case 'S':
       /* GPS start time of search */
        CLA->GPSStart=atof(optarg);
+      ADD_PROCESS_PARAM("int");
       break;
     case 'E':
        /* GPS end time time of search */
-     CLA->GPSEnd=atof(optarg);
+      CLA->GPSEnd=atof(optarg);
+      ADD_PROCESS_PARAM("int");
       break;
     case 'N':
        /* Number of segment to break-up search into */
       CLA->NoOfSegs=atof(optarg);
+      ADD_PROCESS_PARAM("int");
       break;
     case 'T':
       /* Half the number of seconds that are trown out at the start and at the end of a short chunk */
       CLA->TruncSecs=atof(optarg);
+      ADD_PROCESS_PARAM("int");
       break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
+      ADD_PROCESS_PARAM("string");
       break;
     case 'k':
       /* kink power law */
       CLA->power=-5.0/3.0;
+      ADD_PROCESS_PARAM("string");
       break;
     case 'n':
-      /* kink power law */
+      /* fake gaussian noise flag */
       CLA->fakenoiseflag=1;
+      ADD_PROCESS_PARAM("string");
       break;
     case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required. They are:\n");
+      fprintf(stdout,"All arguments are required except -n. One of -k or -c must be specified. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Low frequency cut-off.\n");
       fprintf(stdout,"\t-b\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t-t\tFLOAT\t SNR threshold.\n");
@@ -803,7 +866,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Unrecognized option argument %c\n",c);
       exit(1);
       break;
-    }
+    }while(c != -1);
 
   if(CLA->flow == 0.0)
     {
