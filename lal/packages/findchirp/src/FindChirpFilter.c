@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpFilter.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A., Modified by Messaritaki, E.
  * 
  * Revision: $Id$
  * 
@@ -1033,6 +1033,9 @@ LALFindChirpBCVFilterSegment (
   REAL4                 b1;                  
   REAL4                 a2;                  
 
+  FindChirpChisqInput  *chisqInput1;
+  FindChirpChisqInput  *chisqInput2;
+
   INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -1062,10 +1065,21 @@ LALFindChirpBCVFilterSegment (
   ASSERT( params->invPlan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the workspace vectors exist */
-  ASSERT( params->qVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->qtildeVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+#if 0
+  ASSERT(params->qVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT(params->qtildeVec->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+#endif
+  ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qVec1->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qtildeVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qtildeVec1->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+  ASSERT( qVec2, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qVec2->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qtildeVec2, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  ASSERT( qtildeVec2->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
+
 
   /* check that the chisq parameter and input structures exist */
   ASSERT( params->chisqParams, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -1138,7 +1152,7 @@ LALFindChirpBCVFilterSegment (
 
 
   {
-    /* calculate the length of the chirp */
+    /* calculate the length of the chirp, this part needs to be changed */
     REAL4 eta = input->tmplt->eta;
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
@@ -1363,19 +1377,25 @@ LALFindChirpBCVFilterSegment (
             params->chisqVec->length * sizeof(REAL4) );
 
         /* pointers to chisq input */
+#if 0
         params->chisqInput->qtildeVec = params->qtildeVec;
         params->chisqInput->qVec      = params->qVec;
-
+#endif
+	chisqInput1->qtildeVec = qtildeVec1;
+	chisqInput1->qVec = qVec1;
+	chisqInput2->qtildeVec = qtildeVec2;
+	chisqInput2->qVec = qVec2;
+	
         /* pointer to the chisq bin vector in the segment */
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-        params->chisqParams->norm        = norm;
+        params->chisqParams->norm        = normFFT;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
 
         /* compute the chisq threshold: this is slow! */
-        LALFindChirpChisqVeto( status->statusPtr, params->chisqVec,
-            params->chisqInput, params->chisqParams );
+        LALFindChirpBCVChisqVeto( status->statusPtr, params->chisqVec,
+            chisqInput1, chisqInput2, params->chisqParams );
         CHECKSTATUSPTR (status);
 
         haveChisq = 1;
@@ -1444,7 +1464,8 @@ LALFindChirpBCVFilterSegment (
 
            /* copy the template into the event */
 
-           /*thisEvent->mass1  = (REAL4) input->tmplt->mass1;
+#if 0      
+	   thisEvent->mass1  = (REAL4) input->tmplt->mass1;
            thisEvent->mass2  = (REAL4) input->tmplt->mass2;
            thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
            thisEvent->eta    = (REAL4) input->tmplt->eta;
@@ -1453,14 +1474,15 @@ LALFindChirpBCVFilterSegment (
            thisEvent->tau3   = (REAL4) input->tmplt->t3;
            thisEvent->tau4   = (REAL4) input->tmplt->t4;
            thisEvent->tau5   = (REAL4) input->tmplt->t5;
-           thisEvent->ttotal = (REAL4) input->tmplt->tC;*/  
-	   
+           thisEvent->ttotal = (REAL4) input->tmplt->tC;  
+#endif	   
+	   /* temporarily */
 	   thisEvent->tau0   = (REAL4) input->tmplt->psi0; 
 	   thisEvent->tau3   = (REAL4) input->tmplt->psi3;
 
            /* set the type of the template used in the analysis */
            LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-               "FindChirpSPtwoPN" );
+               "FindChirpBCV" );
 
            /* set snrsq, chisq, sigma and effDist for this event */
            if ( input->segment->chisqBinVec->length )
@@ -1479,12 +1501,14 @@ LALFindChirpBCVFilterSegment (
            }
 	   /* sigmasq and effD commented out                        */
 	   /* until we figure out the normalization                 */
-           /*thisEvent->sigmasq = norm * input->segment->segNorm *
+#if 0	   
+           thisEvent->sigmasq = norm * input->segment->segNorm *
                input->segment->segNorm * input->fcTmplt->tmpltNorm;
            thisEvent->eff_distance =
              (input->fcTmplt->tmpltNorm * input->segment->segNorm *
              input->segment->segNorm) / thisEvent->snr;
-           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );*/ 
+           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
+#endif	   
 
            thisEvent->snr *= (normFFT * normFFT);      
            thisEvent->snr = sqrt( thisEvent->snr );
@@ -1550,7 +1574,8 @@ LALFindChirpBCVFilterSegment (
 
     /* copy the template into the event */
 
-    /*thisEvent->mass1  = (REAL4) input->tmplt->mass1;
+#if 0    
+    thisEvent->mass1  = (REAL4) input->tmplt->mass1;
     thisEvent->mass2  = (REAL4) input->tmplt->mass2;
     thisEvent->mchirp = (REAL4) input->tmplt->chirpMass;
     thisEvent->eta    = (REAL4) input->tmplt->eta;
@@ -1559,15 +1584,16 @@ LALFindChirpBCVFilterSegment (
     thisEvent->tau3   = (REAL4) input->tmplt->t3;
     thisEvent->tau4   = (REAL4) input->tmplt->t4;
     thisEvent->tau5   = (REAL4) input->tmplt->t5;
-    thisEvent->ttotal = (REAL4) input->tmplt->tC; */   
-
+    thisEvent->ttotal = (REAL4) input->tmplt->tC;    
+#endif    
+    /* temporarily */
     thisEvent->tau0   = (REAL4) input->tmplt->psi0;   
     thisEvent->tau3   = (REAL4) input->tmplt->psi3;  
 
 
     /* set the type of the template used in the analysis */
     LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
-        "FindChirpSPtwoPN" );
+        "FindChirpBCV" );
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
@@ -1585,13 +1611,15 @@ LALFindChirpBCVFilterSegment (
       thisEvent->chisq_dof = 0;
     }
       /* sigmasq and effD commented out                 */
-      /* until we figure out the normalization                   */
-      /*thisEvent->sigmasq = norm * input->segment->segNorm *
+      /* until we figure out the normalization          */
+#if 0    
+      thisEvent->sigmasq = norm * input->segment->segNorm *
           input->segment->segNorm * input->fcTmplt->tmpltNorm;
       thisEvent->eff_distance =
         (input->fcTmplt->tmpltNorm * input->segment->segNorm *
          input->segment->segNorm) / thisEvent->snr;
-      thisEvent->eff_distance = sqrt( thisEvent->eff_distance ); */ 
+      thisEvent->eff_distance = sqrt( thisEvent->eff_distance ); 
+#endif      
 
       thisEvent->snr *= ( normFFT * normFFT ) ;   
       thisEvent->snr = sqrt( thisEvent->snr );
