@@ -882,7 +882,7 @@ int main( int argc, char *argv[] )
 		{
 		  /* catch an unknown ifo name among the input files */
 		  if ( vrbflg ) fprintf( stdout, 
-		      "Unknown interferometer %s\n, discarding", 
+		      "Unknown interferometer %s, discarding\n", 
 		      thisSummValue->ifo );
 		  tempSummValue = thisSummValue;
 		  thisSummValue = thisSummValue->next;
@@ -1002,10 +1002,19 @@ int main( int argc, char *argv[] )
     if ( ! inspiralEventList[j] )
     {
       /* no triggers in this ifo so no coincidences can be found */
-      if ( vrbflg )
-	fprintf( stdout, "No triggers read in for interferometer %d\n", j );
+     
+      fprintf( stdout, "No triggers read in for interferometer %d\n", j );
 
-      goto cleanexit;
+      if ( j && useRangeCut )
+      {
+	if (vrbflg)
+	  fprintf( stdout, "Still need to keep those triggers in ifo 0\n"
+	      "Which were too distant to be observable in ifo %d\n", j);
+      }
+      else
+      {
+	goto cleanexit;
+      }
     }
   }
 
