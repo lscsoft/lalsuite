@@ -73,6 +73,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_ESTOPPED       13
 #define LALINSPIRALH_EROOTINIT      14
 #define LALINSPIRALH_EFLOWER        15  
+#define LALINSPIRALH_EVECTOR        16
 
 
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -90,6 +91,7 @@ NRCSID( LALINSPIRALH, "$Id$" );
 #define LALINSPIRALH_MSGESTOPPED      "Waveform generation stopped"
 #define LALINSPIRALH_MSGEROOTINIT     "Can't find good bracket for BisectionFindRoot"
 #define LALINSPIRALH_MSGEFLOWER       "fLower too low in comparison to flso"
+#define LALINSPIRALH_MSGEVECTOR       "Attempting to write beyond the end of vector"
 
 /** ---------------------------------------------------------------------  </lalErrTable> */
 
