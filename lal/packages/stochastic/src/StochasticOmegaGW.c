@@ -233,4 +233,4 @@ LALStochasticOmegaGW( LALStatus                         *status,
   
   RETURN(status);
 
-};
+}
