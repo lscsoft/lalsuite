@@ -1,0 +1,198 @@
+\documentclass[]{ligodcc}
+
+%% use the following line for latex with dvips
+%\usepackage[dvips]{hyperref,color}
+\usepackage{hyperref,color}
+
+%\let\keepverbatim\verbatim
+%\def\verbatim{\color{blue}\keepverbatim}
+%\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+
+\setcounter{secnumdepth}{6}
+\setcounter{tocdepth}{6}
+\let\keepverbatim\verbatim
+\def\verbatim{\color{blue}\keepverbatim}
+\def\verb{\relax\ifmmode\hbox\else\leavevmode\null\fi
+  \bgroup
+    \color{blue}%
+    \verb@eol@error \let\do\@makeother \dospecials
+    \verbatim@font\@noligs
+    \@ifstar\@sverb\@verb}
+\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+
+%\def\tt{\ttfamily\color{blue}}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
+
+
+%% or use the following lines for pdflatex
+%\usepackage[pdftex]{hyperref,color}
+%\voffset=-1.5in
+
+%\def\tt{\ttfamily\color{blue}}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
+
+\ligodoc{T010050-00}{Z}
+\ligodocdist{LSC and LIGO \vspace{1.5in} \\
+This is an internal working note of the \\
+LIGO Laboratory and the \\
+LIGO Scientific Collaboration.}
+\title{ Operating Procedures for the LIGO/LSC  Software Change Control Board}
+\author{Alan Wiseman}
+\rcsid$Id$
+\begin{document}
+
+
+\maketitle
+
+\paragraph*{Charter of the Software Change Control Board (SCCB)\\}
+\begin{enumerate}
+\item
+\vskip -0.3in
+The purpose of the SCCB:
+
+The LIGO Lab and the LSC have adopted software specifications that are
+intended to foster widespread use and collaborative development of
+well-tested analysis packages.  In order to meet this goal, the
+software and software specifications must remain reasonably stable
+so the ground won't be shifting under the developers.  On the other
+hand, as real problems are identified, changes may need to be made.
+The charge to the SCCB is to strike a balance between stability and
+flexibility of the software. They should do this by adding order,
+common sense and some inertia to the change process.  The purpose of
+this charter is to lay out how the SCCB should operate.
+
+
+\item
+The software governed by the SCCB:
+
+The LSC Software Coordinator in conjunction with the LIGO Lab
+directorate will decide what is to be governed by the SCCB.  The list
+of items that are formally under the charge of the committee will be
+appended to this document.
+
+As a general rule, the initial drafting of software specifications
+should be done by working groups and not by the SCCB.  Only after the
+specifications have had some ``field testing'' should they be placed
+under the purview of the SCCB.
+
+\item
+Procedure for requesting a change:
+
+An individual or group should submit a written (email) request for
+software changes to the LSC Software Coordinator [currently
+agw@gravity.phys.uwm.edu].  In most cases, this should be a
+light-weight, one-page email. The request should include:
+
+   \begin{enumerate}
+   \item
+   \vskip -0.1in
+   a description of the change.
+   \item
+   the rationale behind the requested change, including the
+   (dis)advantages of (not) making the change.
+   \item
+   an estimate of the impact of the change on other systems and
+   software.
+   \item
+   a plan for implementing the change that addresses who will 
+   do the work.
+   \end{enumerate}
+
+\item
+The criterion for making a change:
+
+The change should be adopted if the benefits outweigh the costs of
+making the change.
+
+\item
+The SCCB decision process should include:
+\begin{enumerate}
+   \item
+   iteration with those requesting the changes.
+   \item
+   technical input from the Board itself, or others 
+   the Board feels should be consulted.
+   \item
+   an assessment of the impact of (not) making the change. 
+   \item
+   input from the Lab and the LSC hierarchy, as well as 
+   other projects (GEO, VIRGO, TAMA, etc.) that might be affected 
+   by the change. In particular, the SCCB will work with the Lab to honor 
+   agreements with other projects that pertain to jointly maintained
+   software specifications.
+   \item
+   input from the rank and file code developers that might be affected
+   by the change.
+   \item
+   the viability of the plan for implementing the change.
+   \item
+   common sense.
+\end{enumerate}
+
+The committee will try to reach a consensus on whether the change
+should be adopted.  In the absence of a clear consensus, the board
+will formally vote on the changes. The software coordinator will break
+tie votes.
+
+\item
+Responsibilities of the LSC Software Coordinator in the SCCB process:
+\begin{enumerate}
+   \item
+   Make sure that requested changes move through the process, i.e. 
+   pass the information to the committee, convene the meetings, etc..
+   \item
+   Set the pace and priorities for the decision process. Some changes are 
+   urgent, others are trivial, and still others things can (should) wait.
+   \item
+   Inform the Lab Directorate and the LSC  spokesperson what changes are 
+   before the committee. This is to insure they have an opportunity for 
+   input regarding scheduling and coordination with other projects.
+   \item 
+   Insure that the rank and file programmers are notified and have 
+   a chance to comment on significant changes.
+   \item
+   If the SCCB concludes that a change should be made, the Software
+   Coordinator will act on behalf of the LSC spokesperson and 
+   LSC Executive Committee to see that the change is carried out.
+\end{enumerate}
+  
+\end{enumerate}
+
+\paragraph*{SCCB Members: \\}
+
+The LSC Software Coordinator (in consultation with the LSC
+spokesperson) will appoint the members of the SCCB. Currently, they
+are:
+\begin{enumerate}
+\item
+\vskip -0.1in
+Stuart Anderson
+\item
+Jolien Creighton
+\item
+John Zweizig
+\end{enumerate}
+
+\paragraph*{Software specifications formally under the SCCB's purview
+(as of April 2001):\\}
+\begin{enumerate}
+\item
+\vskip -0.3in
+The LAL Spec. [Formally known as ``Numerical Algorithms Library
+Specification and Style Guide'', dcc number T990030. The most up-to-date
+version can always be found in the developers LAL CVS archive.]
+Significant changes to LAL Spec that are pending before the committee
+will be announced on the LAL developers email lists.
+\item
+The FRAME Spec. [Formally known as ``Specification of a Common Data
+Frame Format for Interferometric Gravitational Wave Detectors (IGWD)'',
+dcc T970130-D-E]. 
+\end{enumerate}
+
+\paragraph*{Maintaining this document:\\}
+The LSC Software Coordinator will maintain the LaTeX source for this
+document in the LAL code development archive.  The most up to date
+version can be found there.  A pdf version of this document will be
+kept in the LIGO document control center.
+
+\end{document}
