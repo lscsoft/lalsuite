@@ -244,6 +244,7 @@ tagEventIDColumn
   struct tagSimInspiralTable    *simInspiralTable;
   struct tagSimBurstTable       *simBurstTable;
   struct tagCoincInspiralTable  *coincInspiralTable;
+  struct tagInspiralTemplate    *inspiralTemplate;
 }
 EventIDColumn;
 /* </lalVerbatim> */
