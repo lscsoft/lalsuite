@@ -23,6 +23,9 @@
 /* LAL CVS Tag */
 #undef LAL_CVS_TAG
 
+/* LAL Install Prefix */
+#undef LAL_PREFIX
+
 /* The number of bytes in a double.  */
 #undef LAL_SIZEOF_DOUBLE
 

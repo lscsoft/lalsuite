@@ -32,14 +32,25 @@ path (beginning with a \verb+./+ or a \verb+../+), the directory
 that the file is in is obtained from the environment variable
 \verb+LAL_DATA_PATH+, which must be set at run-time.  (If the environment
 variable is not set, the default path is \verb+.+ --- i.e., the current
-directory.)  \verb+LAL_DATA_PATH+ should typically be set to
+directory.)
+
+\verb+LAL_DATA_PATH+ should typically be set to
 \verb+/usr/local/share/lal+, or wherever LAL data is installed in your system
 (which may be different if you used a \verb+--prefix+ argument when
 configuring LAL), but when the test suite is run with \verb+make check+, the
 variable \verb+LAL_DATA_PATH+ is set to the current source directory.  If the
 filename (including the directory path) is too long (more than 256
 characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
-\verb+errno+ to \verb+ENAMETOOLONG+.  It is strongly recommended that
+\verb+errno+ to \verb+ENAMETOOLONG+.
+
+\verb+LAL_DATA_PATH+ can be any colon-delimeted list of directories, which
+are searched in order (just like the \verb+PATH+ environment variable).
+An extra colon inserts the default data directory
+($\langle$prefix$\rangle$\verb+/share/lal+) into the search path at that
+point.  E.g., a leading/trailing colon will look for the default data
+directory at the start/end of the list of directories.
+
+It is strongly recommended that
 \verb+LALOpenDataFile()+ be used when writing test code.
 
 \vfill{\footnotesize\input{FileIOCV}}
@@ -53,11 +64,23 @@ characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 
+#define STR( x ) #x
+#define XSTR( x ) STR( x )
+#define INFOMSG( msg, file ) ( ( lalDebugLevel & LALINFO ) ? \
+    LALPrintError( "Info: function LALOpenDataFile, file " __FILE__ ", line " \
+      XSTR( __LINE__ ) ", $Id$\n\t%s %s\n", msg, file ) : 0 )
+#define ERRORMSG( file ) ( ( lalDebugLevel & LALERROR ) ? \
+    LALPrintError( "Info: function LALOpenDataFile, file " __FILE__ ", line " \
+      XSTR( __LINE__ ) ", $Id$\n\tCould not open data file %s\n", file ) : 0 )
+
+
 /* <lalVerbatim file="FileIOCP"> */
 FILE *
 LALOpenDataFile( const char *fname )
 { /* </lalVerbatim> */
+  FILE *fp;
   char *path;
+  char *p;
   char  fdata[265];
   int   n;
 
@@ -65,21 +88,65 @@ LALOpenDataFile( const char *fname )
     return NULL;
 
   if ( *fname == '/' ) /* absolute path is given */
-    return LALFopen( fname, "r" );
+  {
+    fp = LALFopen( fname, "r" );
+    if ( ! fp )
+      ERRORMSG( fname );
+    else
+      INFOMSG( "Opening data file", fname );
+    return fp;
+  }
 
   n = strlen( fname );
   if ( *fname == '.' && n > 0 && ( fname[1] == '/' || ( n > 1 && fname[1] == '.'
           && fname[2] == '/' ) ) ) /* specific path is given */
-    return LALFopen( fname, "r" );
-
-  path = getenv( "LAL_DATA_PATH" );
-
-  n = LALSnprintf( fdata, sizeof( fdata ), "%s/%s", path ? path : ".", fname );
-  if ( n > (int) sizeof( fdata ) ) /* data file name too long */
   {
-    errno = ENAMETOOLONG;
-    return NULL;
+    fp = LALFopen( fname, "r" );
+    if ( ! fp )
+      ERRORMSG( fname );
+    else
+      INFOMSG( "Opening data file", fname );
+    return fp;
   }
 
-  return LALFopen( fdata, "r" );
+  path = getenv( "LAL_DATA_PATH" );
+  if ( ! path || ! strlen( path ) ) /* path is NULL or empty */
+  {
+    fp = LALFopen( fname, "r" );
+    if ( ! fp )
+      ERRORMSG( fname );
+    else
+      INFOMSG( "Opening data file", fname );
+    return fp;
+  }
+
+  /* scan through all directories in colon-delmited list of directories */
+  do {
+    p = strchr( path, ':' ); /* look for additional directories */
+    if ( p ) /* there are more things in the list */
+      *p++ = 0; /* NUL-terminate current directory */
+    if ( ! strlen( path ) ) /* this directory is empty */
+      path = LAL_PREFIX "/share/lal"; /* default data directory */
+
+    n = LALSnprintf( fdata, sizeof(fdata), "%s/%s", path ? path : ".", fname );
+    if ( n > (int) sizeof( fdata ) ) /* data file name too long */
+    {
+      errno = ENAMETOOLONG;
+      return NULL;
+    }
+
+    INFOMSG( "Looking for file", fdata );
+    fp = LALFopen( fdata, "r" );
+    if ( fp ) /* we've found it! */
+    {
+      INFOMSG( "Opening data file", fdata );
+      return fp;
+    }
+
+    path = p;
+  }
+  while ( path );
+
+  ERRORMSG( fname );
+  return NULL;
 }

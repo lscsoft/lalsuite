@@ -192,6 +192,7 @@ AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Num
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
 AC_DEFINE_UNQUOTED(LAL_CVS_TAG, "$lal_cvs_tag", [LAL CVS Tag])
+AC_DEFINE_UNQUOTED(LAL_PREFIX, "$prefix", [LAL Install Prefix])
 
 LAL_WITH_CC
 LAL_WITH_MPICC
