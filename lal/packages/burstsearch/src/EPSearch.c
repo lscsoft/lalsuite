@@ -197,7 +197,6 @@ static void ComputeAverageSpectrum(
     CHECKSTATUSPTR (status);
     LALDestroyRealDFTParams (status->statusPtr, &dftparams);
     CHECKSTATUSPTR (status);
-fprintf(stderr, "here\n");
 
     DETATCHSTATUSPTR( status );
     RETURN( status );
@@ -215,7 +214,6 @@ EPSearch (
 /******** </lalVerbatim> ********/
 { 
     INT4                      i,j,freqcl;
-    REAL4                     redummy, imdummy;
     EPDataSegment            *segment;
     SnglBurstTable           *currentEvent     = NULL;
     SnglBurstTable           *prevEvent        = NULL;
@@ -289,15 +287,12 @@ EPSearch (
       }
 
       /* normalize the data stream so that rms of Re or Im is 1 */
-      redummy=imdummy=0.0;
       for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         REAL4 tmpVar;
         tmpVar = sqrt( 2.0 / AverageSpec[j] );
         fseries->data->data[j].re *= tmpVar;
         fseries->data->data[j].im *= tmpVar;
-        redummy += fseries->data->data[j].re * fseries->data->data[j].re;
-        imdummy += fseries->data->data[j].im * fseries->data->data[j].im;
       }
 
       /* write diagnostic info to disk */
