@@ -14,7 +14,6 @@ Converts between Gregorian date and Julian Days/Dates.
 \vspace{0.1in}
 \input{JulianCP}
 \index{\texttt{LALJulianDay()}}
-\index{\texttt{LALModJulianDay()}}
 \index{\texttt{LALJulianDate()}}
 \index{\texttt{LALModJulianDate()}}
 
@@ -162,14 +161,17 @@ LALJulianDay (LALStatus     *status,
      * Pull out Year, Month, Day, and convert from the
      * struct tm value ranges
      */
-    y = (date->unixDate).tm_year + 1900;
-    m = (date->unixDate).tm_mon + 1;
+    y = (INT4)((date->unixDate).tm_year) + 1900;
+    m = (INT4)((date->unixDate).tm_mon) + 1;
 
     /* Julian Day begins at noon, so fix day of month if necessary */
-    if ((date->unixDate).tm_hour < 12)
+    /* if ((date->unixDate).tm_hour < 12)
         d = (date->unixDate).tm_mday - 1;
-    else
-        d = (date->unixDate).tm_mday;
+        else */
+
+    d = (date->unixDate).tm_mday;
+
+
 
     /*
      * Check for legal input: Input date must be after 1900-Mar
@@ -191,40 +193,6 @@ LALJulianDay (LALStatus     *status,
 
     RETURN (status);
 } /* END LALJulianDay() */
-
-
-
-/*
- * Compute Modified Julian Day for given Gregorian date
- */
-/* <lalVerbatim file="JulianCP"> */
-void
-LALModJulianDay (LALStatus     *status,
-                 REAL8         *modJDay,
-                 const LALDate *date)
-{ /* </lalVerbatim> */
-    INT4 jd;
-
-    INITSTATUS (status, "LALModJulianDay", JULIANC);
-    
-    /*
-     * Check pointer to input variable
-     */
-    ASSERT (date != (LALDate *)NULL, status,
-            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
-
-    /*
-     * Check pointer to output variable:
-     */
-    ASSERT (modJDay != (REAL8 *)NULL, status,
-            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
-
-    LALJulianDay(status, &jd, date);
-
-    *modJDay = (REAL8)jd - MJDREF;
-
-    RETURN (status);
-} /* END LALModJulianDay() */
 
 
 
@@ -272,10 +240,10 @@ LALJulianDate (LALStatus     *status,
     /*
      * Convert to fractions of a day
      */
-    jdate  = (REAL8)jday + 0.5;
-    jdate += (REAL8)hr/24.;
-    jdate += (REAL8)min/1440.;
-    jdate += ((REAL8)sec + rns)/86400.;
+    jdate  = (REAL8)jday - (REAL8)0.5;
+    jdate += (REAL8)hr / (REAL8)24.;
+    jdate += (REAL8)min / (REAL8)1440.;
+    jdate += ((REAL8)sec + rns) / (REAL8)86400.;
 
     *jDateOut = jdate;
 

@@ -34,7 +34,7 @@
 #define J2000_0 2451545.0
 
 /* Reference Julian Day for Mean Julian Day/Date */
-#define MJDREF 2400000.5
+#define MJDREF  2400000.5
 
 /* Number of days per Julian century */
 #define JDAYS_PER_CENT 36525.0
@@ -70,13 +70,17 @@
 #define DEGS_PER_RAD (180./LAL_PI)
 
 
-/* Difference between Unix and GPS epochs (quoted from GRASP distribution) */
+/* Difference between Unix and GPS epochs */
 /* 
  * difference between Unix and GPS time 315964811 = 
  *     3600 sec/hour x 24 hours/day x (365 days/year x 8 years + 
  *     366 days/year x 2 years + 5 days) + 11 leap seconds 
+ * That's roughly speaking.  See docs on UtoGPS.c for exact value
+ * quoted from Explanatory Supplement to Astronomical Almanac.
  */
-#define UNIXGPS  315964811
+#define UNIXGPS           315964811
+#define UNIXGPS_SECS      315964810
+#define UNIXGPS_NANOSECS  999918000
 
 /* sidereal hours per mean solar hour (my jargon is probably faulty)
  * (See, _Spherical_Astronomy_, Green, Robin M., 1985, Cambridge;

@@ -155,53 +155,12 @@ LALTimeDelay( LALStatus                    *stat,
 
 
   /*
-   * compute the location vector of detector 1 
-   */
-  /* latitude of detector 1, in radians */
-  lat1 = p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
-  
-  /* longitude of detector 1, in radians */
-  lon1 = p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
-
-  cosLat1 = cos(lat1);
-  sinLat1 = sin(lat1);
-
-  /* local rad. of curv. at detector 1 */
-  R1  = a2 / sqrt(a2 * cosLat1 * cosLat1 +
-                  b2 * sinLat1 * sinLat1); 
-  Rh1 = R1 + p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexElevation;
-
-  detLoc1[0] = Rh1 * cosLat1 * cos(lon1);
-  detLoc1[1] = Rh1 * cosLat1 * sin(lon1);
-  detLoc1[2] = (b2 * R1 / a2) * sinLat1;
-
-  
-  /*
-   * compute the location vector of detector 2
-   */  
-  /* latitude of detector 2, in radians */
-  lat2 = p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI / (REAL8)180.;
-  
-  /* longitude of detector 2, in radians */
-  lon2 = p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI / (REAL8)180.;
-
-  cosLat2 = cos(lat2);
-  sinLat2 = sin(lat2);
-
-  /* local rad. of curv. at detector 2*/
-  R2  = a2 / sqrt(a2 * cosLat2 * cosLat2 +
-                  b2 * sinLat2 * sinLat2); 
-  Rh2 = R2 + p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexElevation;
-
-  detLoc2[0] = Rh2 * cosLat2 * cos(lon2);
-  detLoc2[1] = Rh2 * cosLat2 * sin(lon2);
-  detLoc2[2] = (b2 * R2 / a2) * sinLat2;
-
-  /*
    * displacement of detector 1 from detector 2
    */
   for (i = 0; i < 3; ++i)
-    deltaLoc[i] = detLoc1[i] - detLoc2[i];
+    deltaLoc[i] =
+      p_dets_time_and_source->p_det_and_time1->p_detector->location[i] -
+      p_dets_time_and_source->p_det_and_time2->p_detector->location[i];
 
   /*
    * Time difference: time taken for light to travel the intervening

@@ -38,7 +38,7 @@ void printone(Status *status, const LIGOTimeUnix *time1)
 
     INITSTATUS (status, "printone", TESTUTOGPSC);
 
-    CHARCreateVector(status, &utc, (UINT4)64);
+    LALCHARCreateVector(status, &utc, (UINT4)64);
 
     UtoGPS(status, &gpstime, time1);
 
@@ -182,9 +182,18 @@ LALUtime ( LALStatus           *status,
   /*
    * Check for valid input
    */
+  /*
   tmptime = unixtime->unixSeconds;
   ASSERT (tmptime >= 0 && tmptime <= maxtested, status,
           DATEH_ERANGE, DATEH_MSGERANGE);
+  */
+  if (unixtime->unixSeconds < 0 || unixtime->unixSeconds >= maxtested) {
+    fprintf(stderr, 
+            "WARNING: You may be missing leap seconds. Leap second data only available until 1999-Dec-25\n");
+  }
+
+            
+    
     
   /*
    * Check pointer to output variable.

@@ -247,21 +247,37 @@ LALGMST1 (LALStatus     *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Compute GMST1 for 0h UT1 on given date in seconds since J2000.0 
+   * Compute GMST1 for 0h UT1 on given date in seconds 
    */
   LALJulianDate(status, &jdate, p_date);
   jdate -= J2000_0;
   tmp    = (INT4)jdate;  /* get the integral part of jdate */
   jd_hi  = (REAL8)tmp;
-  jd_lo  = jdate - jd_hi;
+  jd_lo  = jdate - jd_hi;  /* the fractional part of jdate */
 
   tu     = jdate / JDAYS_PER_CENT;
   tu2    = tu * tu;
 
   jd_hi /= JDAYS_PER_CENT;
   jd_lo /= JDAYS_PER_CENT;
-    
-  st = a*tu2*tu + b*tu2 + c + d*jd_lo + e*jd_lo
+
+  /*
+   * The "raw" formula is:
+   *
+   *   st = 24110.54841 + 8640184.812866 * tu
+   *        + 0.093104 * tu^2 - 6.2e-6 * tu^3
+   *
+   *      = 24110.54841 + (d * tu) + (b * tu^2) + (a * tu^3)
+   *      = (c - 43200) + (d * tu) + (b * tu^2) + (a * tu^3)
+   *
+   * i.e. there seems to be a 43200 sec = 12 hr offset.
+   */
+
+  /* sidereal time in seconds */
+  st = a*tu2*tu
+    + b*tu2
+    + c
+    + d*jd_lo + e*jd_lo
     + d*jd_hi + e*jd_hi;
 
   *p_gmst = fmod(st, (REAL8)SECS_PER_DAY);

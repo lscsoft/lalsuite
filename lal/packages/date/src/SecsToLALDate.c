@@ -148,6 +148,18 @@ LALSecsToLALDate(LALStatus  *status,
     sec = fmod(min * (REAL8)SECS_PER_MIN, (REAL8)SECS_PER_MIN);
 
     /*
+     * Set the non-required fields to zero, to fix problem with
+     * strftime(3c) in DateString().
+     */
+    date->unixDate.tm_mday = 0;
+    date->unixDate.tm_mon  = 0;
+    date->unixDate.tm_year = 0;
+    date->unixDate.tm_wday = 0;
+    date->unixDate.tm_yday = 0;
+    date->unixDate.tm_isdst = 0;
+
+
+    /*
      * Set the LALDate structure. Only the time fields matter, of course.
      * Fractional seconds become "residual".
      */
@@ -155,6 +167,7 @@ LALSecsToLALDate(LALStatus  *status,
     date->unixDate.tm_min  = (INT4)min;
     date->unixDate.tm_sec  = (INT4)sec;
     date->residualNanoSeconds = modf(sec, &dum) * 1.e+09;
+
 
     RETURN (status);
 } /* END LALSecsToLALDate() */

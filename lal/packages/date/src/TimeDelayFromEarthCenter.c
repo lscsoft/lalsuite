@@ -1,14 +1,11 @@
-/*
-<lalVerbatim file="TimeDelayFromEarthCenterCV">
+/* <lalVerbatim file="TimeDelayFromEarthCenterCV">
 
 Author: David Chin <dwchin@umich.edu> +1-734-730-1274
 $Id$
 
-</lalVerbatim>
-*/
+</lalVerbatim> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsection{Module \texttt{TimeDelayFromEarthCenter.c}}
 \label{ss:TimeDelayFromEarthCenter.c}
@@ -50,8 +47,7 @@ make this approximation as this makes little difference.
 
 \vfill{\footnotesize\input{TimeDelayFromEarthCenterCV}}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -109,6 +105,7 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
 
   /* location vector for the detector in Earth-fixed frame */
   REAL8 detLoc[3];
+  REAL8 *p_detLoc;
 
 
   INITSTATUS( stat, "LALTimeDelayFromEarthCenter", TIMEDELAYFROMEARTHCENTERC );
@@ -150,25 +147,9 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
 
 
   /*
-   * compute the location vector of detector 1 
+   * location vector of detector 1 
    */
-  /* latitude of detector, in radians */
-  lat = p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
-  
-  /* longitude of detector, in radians */
-  lon = p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
-
-  cosLat = cos(lat);
-  sinLat = sin(lat);
-
-  /* local radius of curvature at detector */
-  R  = a2 / sqrt(a2 * cosLat * cosLat +
-                 b2 * sinLat * sinLat);
-  Rh = R + p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexElevation;
-
-  detLoc[0] = Rh * cosLat * cos(lon);
-  detLoc[1] = Rh * cosLat * sin(lon);
-  detLoc[2] = (b2 * R / a2) * sinLat;
+  p_detLoc = p_det_time_and_source->p_det_and_time->p_detector->location;
 
   /*
    * time difference: time taken for light to travel the distance
@@ -176,7 +157,7 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
    * See LALTimeDelay(), and put in Earth-center for detector 1 to see
    * how the -ve sign arises.
    */
-  *p_time_diff = -dotprod(ehat_src, detLoc) / LAL_C_SI;
+  *p_time_diff = -dotprod(ehat_src, p_detLoc) / LAL_C_SI;
 
   
   /*

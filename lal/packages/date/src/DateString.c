@@ -45,7 +45,7 @@ void printone(Status *status, const LIGOTimeUnix *time1)
 
     INITSTATUS (status, "printone", TESTUTOGPSC);
 
-    CHARCreateVector(status, &utc, (UINT4)64);
+    LALCHARCreateVector(status, &utc, (UINT4)64);
 
     UtoGPS(status, &gpstime, time1);
 
@@ -82,6 +82,12 @@ LALDateString (LALStatus     *status,
                CHARVector    *timestamp,
                const LALDate *date)
 { /* </lalVerbatim> */
+  char tmpmon[2];
+  char tmpmday[2];
+  char tmphour[2];
+  char tmpmin[2];
+  char tmpsec[2];
+  char tmpwday[3];
   
   INITSTATUS (status, "LALDateString", DATESTRINGC);
 
@@ -106,8 +112,78 @@ LALDateString (LALStatus     *status,
   /*
    * Use strftime (3) to form ISO8601-format time stamp, plus day name
    */
-  strftime(timestamp->data, timestamp->length,
+  /*
+    strftime(timestamp->data, timestamp->length,
            "%Y-%m-%d %H:%M:%S UTC %a", &(date->unixDate));
+  */
+
+
+  /*
+   * AVOID STRFTIME() since it causes seg faults on Solaris.  We give
+   * the locale-specific day name.
+   */
+  if (date->unixDate.tm_mon >= 9)
+    sprintf(tmpmon, "%2d", date->unixDate.tm_mon + 1);
+  else
+    sprintf(tmpmon, "0%1d", date->unixDate.tm_mon + 1);
+
+  if (date->unixDate.tm_mday >= 10)
+    sprintf(tmpmday, "%2d", date->unixDate.tm_mday);
+  else
+    sprintf(tmpmday, "0%1d", date->unixDate.tm_mday);
+
+  if (date->unixDate.tm_hour >= 10)
+    sprintf(tmphour, "%2d", date->unixDate.tm_hour);
+  else
+    sprintf(tmphour, "0%1d", date->unixDate.tm_hour);
+
+  if (date->unixDate.tm_min >= 10)
+    sprintf(tmpmin, "%2d", date->unixDate.tm_min);
+  else
+    sprintf(tmpmin, "0%1d", date->unixDate.tm_min);
+
+  if (date->unixDate.tm_sec >= 10)
+    sprintf(tmpsec, "%2d", date->unixDate.tm_sec);
+  else
+    sprintf(tmpsec, "0%1d", date->unixDate.tm_sec);
+
+  switch(date->unixDate.tm_wday) {
+  case 0:
+    sprintf(tmpwday, "Sun");
+    break;
+
+  case 1:
+    sprintf(tmpwday, "Mon");
+    break;
+
+  case 2:
+    sprintf(tmpwday, "Tue");
+    break;
+
+  case 3:
+    sprintf(tmpwday, "Wed");
+    break;
+
+  case 4:
+    sprintf(tmpwday, "Thu");
+    break;
+
+  case 5:
+    sprintf(tmpwday, "Fri");
+    break;
+
+  case 6:
+    sprintf(tmpwday, "Sat");
+    break;
+
+  default:
+    sprintf(tmpwday, "");
+    break;
+  }
+  
+  sprintf(timestamp->data, "%4d-%s-%s %s:%s:%s UTC %s",
+          date->unixDate.tm_year + 1900,
+          tmpmon, tmpmday, tmphour, tmpmin, tmpsec, tmpwday);
 
   RETURN (status);
 } /* END LALDateString() */
