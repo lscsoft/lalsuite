@@ -114,7 +114,6 @@ int main( int argc, char *argv[] )
   INT4  numTriggers = 0;
 
   SnglInspiralTable    *inspiralEventList=NULL;
-  SnglInspiralTable    *inputTriggerList;
   SnglInspiralTable    *currentTrigger = NULL;
 
   SearchSummvarsTable  *inputFiles = NULL;
@@ -617,25 +616,18 @@ int main( int argc, char *argv[] )
 
 
   /* keep only triggers from input ifo */
-  LAL_CALL( LALIfoScanSingleInspiral( &status, &inputTriggerList, 
-        inspiralEventList, inputIFO ), &status );
-  /* free the inspiralEventList */
-  while ( inspiralEventList )
-  {
-    currentTrigger = inspiralEventList;
-    inspiralEventList = inspiralEventList->next;
-    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
-  }
+  LAL_CALL( LALIfoCutSingleInspiral( &status, &inspiralEventList, inputIFO ), 
+      &status );
  
   /* time sort the triggers */
   if ( vrbflg ) fprintf( stdout, "Sorting triggers\n" );
-  LAL_CALL( LALSortSnglInspiral( &status, &inputTriggerList,
+  LAL_CALL( LALSortSnglInspiral( &status, &inspiralEventList,
         LALCompareSnglInspiralByTime ), &status );
 
   /* keep only triggers within the requested interval */
   if ( vrbflg ) fprintf( stdout, 
       "Discarding triggers outside requested interval\n" );
-  LAL_CALL( LALTimeCutSingleInspiral( &status, &inputTriggerList,
+  LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
         &startTimeGPS, &endTimeGPS), &status );
 
   /* keep play/non-play/all triggers */
@@ -645,10 +637,10 @@ int main( int argc, char *argv[] )
       "Keeping only non-playground triggers\n" );
   else if ( dataType == all_data && vrbflg ) fprintf( stdout, 
       "Keeping all triggers\n" );
-  LAL_CALL( LALPlayTestSingleInspiral( &status, &inputTriggerList,
+  LAL_CALL( LALPlayTestSingleInspiral( &status, &inspiralEventList,
         &dataType ), &status );
 
-  if( !inputTriggerList )
+  if( !inspiralEventList )
   {
     if ( vrbflg ) fprintf( stdout, 
         "No triggers remain after time and playground cuts.\n" );
@@ -656,11 +648,11 @@ int main( int argc, char *argv[] )
   }
   
   /* Generate the triggered bank */
-  LAL_CALL( LALCreateTrigBank( &status, &inputTriggerList, &test ), 
+  LAL_CALL( LALCreateTrigBank( &status, &inspiralEventList, &test ), 
       &status );
 
   /* count the number of triggers  */
-  for( currentTrigger = inputTriggerList, numTriggers = 0; currentTrigger; 
+  for( currentTrigger = inspiralEventList, numTriggers = 0; currentTrigger; 
       currentTrigger = currentTrigger->next, ++numTriggers)
   
   if ( vrbflg ) fprintf( stdout, "%d triggers to be written to trigbank.\n",
@@ -744,11 +736,11 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
   /* write the sngl_inspiral table */
-  if ( inputTriggerList )
+  if ( inspiralEventList )
   {
     LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
           sngl_inspiral_table), &status );
-    inspiralTable.snglInspiralTable = inputTriggerList;
+    inspiralTable.snglInspiralTable = inspiralEventList;
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
           sngl_inspiral_table), &status );
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
@@ -801,14 +793,6 @@ cleanexit:
     LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
   
-  while ( inputTriggerList )
-  {
-    currentTrigger = inspiralEventList;
-    inspiralEventList = inspiralEventList->next;
-    LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
-  }
-
-
   if ( userTag ) free( userTag );
   if ( ifoTag ) free( ifoTag );
 
