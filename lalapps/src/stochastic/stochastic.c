@@ -353,7 +353,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   segsInInt = intervalDuration / segmentDuration;
   numIntervals = (numSegments * segmentDuration) / intervalDuration;
   segMiddle = (segsInInt - 1) / 2;
-  segmentShift = segmentDuration;
 
   /* recentre */
   if (recentre_flag)
@@ -389,9 +388,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       gpsStartTime, gpsEndTime);
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime);
-
-  LALSPrintTimeSeries(seriesOne, "1.dat");
-  LALSPrintTimeSeries(seriesTwo, "2.dat");
 
   exit(1);
 
@@ -2588,7 +2584,11 @@ static void parse_options(INT4 argc, CHAR *argv[])
     }
   }
   else
+  {
+    /* if site ids are the same then the frames for the different
+     * detectors are in the same frame cache */
     frameCacheTwo = frameCacheOne;
+  }
 
   /* calibration cache */
   if (strncmp(ifoOne, "G1", 2) != 0)
