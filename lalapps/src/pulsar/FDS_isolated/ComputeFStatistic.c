@@ -271,7 +271,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
     use_boinc_filename0(Fmaxfilename);
 #endif /* USE_BOINC */
-    if (!(fpmax=fopen(Fmaxfilename,"w"))){
+    if (!(fpmax=fopen(Fmaxfilename,"wb"))){
       fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
       return 2;
     }
@@ -285,7 +285,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   use_boinc_filename0(Fstatsfilename);
 #endif /* USE_BOINC */
-  if (!(fpstat=fopen(Fstatsfilename,"w"))){
+  if (!(fpstat=fopen(Fstatsfilename,"wb"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
   }
@@ -332,7 +332,7 @@ int main(int argc,char *argv[])
    * we open and prepare the output-file here */
   if (uvar_outputFstat) 
     {
-      if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
+      if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
 	  return 1;
@@ -621,7 +621,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
   if (uvar_outputLabel)
     strcat(Paramfilename,uvar_outputLabel);
   
-  if(!(fpMLEParam=fopen(Paramfilename,"w"))) {
+  if(!(fpMLEParam=fopen(Paramfilename,"wb"))) {
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
     return 1;
   }
@@ -850,7 +850,7 @@ int writeFaFb(INT4 *maxIndex)
     strcpy(filename,FaFbfilename);
     strcat(filename,clusterno);
 
-    if((fp=fopen(filename,"w"))==NULL) {
+    if((fp=fopen(filename,"wb"))==NULL) {
       fprintf(stderr,"Unable to open a file %s\n",filename);
       return 1;
     }
@@ -1771,7 +1771,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
       strcat (fname, uvar_outputLabel);
     strcat (fname, ".log");
 
-    if ( (fplog = fopen(fname, "w" )) == NULL) {
+    if ( (fplog = fopen(fname, "wb" )) == NULL) {
       LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
       LALFree (fname);
       ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
@@ -2080,14 +2080,14 @@ INT4 EstimatePSDLines(LALStatus *status)
 
 #ifdef FILE_PSD
   /*  file contains freq, PSD, noise floor */
-  if(!(outfile=fopen("PSD.txt","w"))){
+  if(!(outfile=fopen("PSD.txt","wb"))){
     fprintf(stderr, "Cannot open PSD.txt file");
     return 1;
   } 
 #endif 
 #ifdef FILE_PSDLINES
   /*  file contains freq, PSD, noise floor,lines */
-  if(!(outfile1=fopen("PSDLines.txt","w"))){
+  if(!(outfile1=fopen("PSDLines.txt","wb"))){
     fprintf(stderr, "Cannot open PSD.txt file");
     return 1;
   }
@@ -2304,14 +2304,14 @@ INT4 EstimateFLines(LALStatus *status)
 
 #ifdef FILE_FTXT
   /*  file contains freq, PSD, noise floor */
-  if(!(outfile=fopen("F.txt","w"))){
+  if(!(outfile=fopen("F.txt","wb"))){
     fprintf(stderr, "Cannot open F.txt file\n");
     return 1;
   }
 #endif
   /*  file contanis freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
-  if(!(outfile1=fopen("FLines.txt","w"))){
+  if(!(outfile1=fopen("FLines.txt","wb"))){
     fprintf(stderr, "Cannot open FLines.txt file\n");
     return 1;
   }
@@ -2590,7 +2590,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
     } /* end loop over SFTs*/
 
 #ifdef FILE_SPRNG  
-  if(!(outfile=fopen("SpRng.txt","w"))){ 
+  if(!(outfile=fopen("SpRng.txt","wb"))){ 
     printf("Cannot open output file"); 
     return 1;
   } 
