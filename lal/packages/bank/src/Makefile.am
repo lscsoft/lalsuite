@@ -6,6 +6,7 @@ LALInspiralComputeMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\
 LALInspiralCreateFineBank.c\
+LALInspiralLongestTemplateInBank.c\
 LALInspiralMoments.c\
 LALInspiralMomentsIntegrand.c\
 LALInspiralNextTemplate.c\
