@@ -16,8 +16,7 @@ NRCSID (THRESHOLDSC, "$Id$");
 #include <lal/Thresholds.h>
 #include <lal/FindRoot.h>
 
-
-
+extern int lalDebugLevel;
 
 /*
  *
@@ -435,8 +434,8 @@ LALOneMinusChisqCdf (
    */
   if ( !( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
       *prob = 1.0/LAL_REAL8_MAX;
-      if(lalDebugLevel&LALWARNING)
-          LALPrintError("\tThe probability is: %e\n",*prob);
+      /* if(lalDebugLevel&LALWARNING)
+          LALPrintError("\tThe probability is: %e\n",*prob); */
   }
 
   RETURN (status);
