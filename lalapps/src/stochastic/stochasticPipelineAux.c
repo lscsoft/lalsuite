@@ -102,8 +102,10 @@ void readDataPair(LALStatus *status,
 	dataStreamTwo.data = NULL;
 	LALSCreateVector(status->statusPtr, &(dataStreamOne.data), \
 			sampleRate * (params->duration + (2 * buffer)));
+	CHECKSTATUSPTR( status );
 	LALSCreateVector(status->statusPtr, &(dataStreamTwo.data), \
 			sampleRate * (params->duration + (2 * buffer)));
+	CHECKSTATUSPTR( status );
 	memset(dataStreamOne.data->data, 0, \
 			dataStreamOne.data->length * sizeof(*dataStreamOne.data->data));
 	memset(dataStreamTwo.data->data, 0, \
@@ -111,37 +113,50 @@ void readDataPair(LALStatus *status,
 
 	/* open first frame cache */
 	LALFrCacheImport(status->statusPtr, &frCacheOne, params->dataCacheOne);
+	CHECKSTATUSPTR( status );
 	LALFrCacheOpen(status->statusPtr, &frStreamOne, frCacheOne);
+	CHECKSTATUSPTR( status );
 
 	/* read first channel */
 	LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
+	CHECKSTATUSPTR( status );
 	LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
 			&frChanInOne, frStreamOne);
+	CHECKSTATUSPTR( status );
 
-	if (strcmp(params->dataCacheOne, params->dataCacheTwo)== 0)
+	if (strcmp(params->dataCacheOne, params->dataCacheTwo) == 0)
 	{
 		/* read in second channel */
 		LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamOne);
+		CHECKSTATUSPTR( status );
 		LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&frChanInTwo, frStreamOne);
+		CHECKSTATUSPTR( status );
 
 		/* close frame cache */
 		LALFrClose(status->statusPtr, &frStreamOne);
+		CHECKSTATUSPTR( status );
 	}
 	else
 	{
 		/* close first frame cache */
 		LALFrClose(status->statusPtr, &frStreamOne);
+		CHECKSTATUSPTR( status );
 
 		/* open second frame cache and read in second channel */
 		LALFrCacheImport(status->statusPtr, &frCacheTwo, params->dataCacheTwo);
+		CHECKSTATUSPTR( status );
 		LALFrCacheOpen(status->statusPtr, &frStreamTwo, frCacheTwo);
+		CHECKSTATUSPTR( status );
 		LALFrSeek(status->statusPtr, &(bufferStartTime), frStreamTwo);
+		CHECKSTATUSPTR( status );
 		LALFrGetREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&frChanInTwo, frStreamTwo);
+		CHECKSTATUSPTR( status );
 
 		/* close second frame stream */
 		LALFrClose(status->statusPtr, &frStreamTwo);
+		CHECKSTATUSPTR( status );
 	}
 
 	/* resample */
@@ -154,8 +169,10 @@ void readDataPair(LALStatus *status,
 		/* resample */
 		LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
 				&resampleParams);
+		CHECKSTATUSPTR( status );
 		LALResampleREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
 				&resampleParams);
+		CHECKSTATUSPTR( status );
 	}
 
 	/* build output */
@@ -183,7 +200,9 @@ void readDataPair(LALStatus *status,
 
 	/* clean up */
 	LALSDestroyVector(status->statusPtr, &(dataStreamOne.data));
+	CHECKSTATUSPTR( status );
 	LALSDestroyVector(status->statusPtr, &(dataStreamTwo.data));
+	CHECKSTATUSPTR( status );
 
 	/* return status */
 	DETATCHSTATUSPTR( status );
@@ -276,11 +295,19 @@ void monteCarlo(LALStatus *status,
 	/* create vectors to store the simulated signal */
 
 	whitenedSSimStochBGOne.data = NULL;
+	whitenedSSimStochBGTwo.data = NULL;
 	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGOne.data), \
 			lengthSegment);
-	whitenedSSimStochBGTwo.data = NULL;
+	CHECKSTATUSPTR( status );
 	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGTwo.data), \
 			lengthSegment);
+	CHECKSTATUSPTR( status );
+	memset(whitenedSSimStochBGOne.data->data, 0, \
+			whitenedSSimStochBGOne.data->length * \
+			sizeof(*whitenedSSimStochBGOne.data->data));
+	memset(whitenedSSimStochBGTwo.data->data, 0, \
+			whitenedSSimStochBGTwo.data->length * \
+			sizeof(*whitenedSSimStochBGTwo.data->data));
 
 	/* define parameters for SimulateSB */
 	SBParams.length = lengthSegment;
@@ -301,9 +328,13 @@ void monteCarlo(LALStatus *status,
 	/* allocate memory */
 	omegaGW.data = NULL;
 	LALSCreateVector(status->statusPtr, &(omegaGW.data), freqLength);
+	CHECKSTATUSPTR( status );
+	memset(omegaGW.data->data, 0, \
+			omegaGW.data->length * sizeof(*omegaGW.data->data));
 
 	/* generate omegaGW */
 	LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
+	CHECKSTATUSPTR( status );
 
 	/* response functions */
 	/* set metadata fields */
@@ -322,7 +353,9 @@ void monteCarlo(LALStatus *status,
 	responseOne.data = NULL;
 	responseTwo.data = NULL;
 	LALCCreateVector(status->statusPtr, &(responseOne.data), freqLength);
+	CHECKSTATUSPTR( status );
 	LALCCreateVector(status->statusPtr, &(responseTwo.data), freqLength);
+	CHECKSTATUSPTR( status );
 	memset(responseOne.data->data, 0, \
 	       responseOne.data->length * sizeof(*responseOne.data->data));
 	memset(responseTwo.data->data, 0, \
@@ -346,8 +379,10 @@ void monteCarlo(LALStatus *status,
 		/* compute response function */
 		LALExtractFrameResponse(status->statusPtr, &responseOne, calCacheOne, \
 				ifoOne, &duration);
+		CHECKSTATUSPTR( status );
 		LALExtractFrameResponse(status->statusPtr, &responseTwo, calCacheTwo, \
 				ifoTwo, &duration);
+		CHECKSTATUSPTR( status );
 
 		/* force DC to be 0 and nyquist to be real */
 		responseOne.data->data[0].re = 0.;
@@ -369,6 +404,7 @@ void monteCarlo(LALStatus *status,
 		/* generate whitened simulated SB data */
 		LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, \
 				&SBParams);
+		CHECKSTATUSPTR( status );
 
 		/* get output */
 		for (i = 0; i < lengthSegment; i++)
@@ -384,10 +420,10 @@ void monteCarlo(LALStatus *status,
 	}
 
 	/* assign parameters and data to output */
-	strncpy( MCoutput->SSimStochBG1->name, \
-			"Whitened-SimulatedSBOne", LALNameLength );
-	strncpy( MCoutput->SSimStochBG2->name, \
-			"Whitened-SimulatedSBTwo", LALNameLength );
+	strncpy(MCoutput->SSimStochBG1->name, "Whitened-SimulatedSBOne", \
+			LALNameLength);
+	strncpy(MCoutput->SSimStochBG2->name, "Whitened-SimulatedSBTwo", \
+			LALNameLength );
 	MCoutput->SSimStochBG1->f0 = f0;
 	MCoutput->SSimStochBG2->f0 = f0;
 	MCoutput->SSimStochBG1->deltaT = deltaT;
@@ -401,10 +437,15 @@ void monteCarlo(LALStatus *status,
 
 	/* clean up, and exit */
 	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
+	CHECKSTATUSPTR( status );
 	LALCDestroyVector(status->statusPtr, &(responseOne.data));
+	CHECKSTATUSPTR( status );
 	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
+	CHECKSTATUSPTR( status );
 	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGOne.data));
+	CHECKSTATUSPTR( status );
 	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGTwo.data));
+	CHECKSTATUSPTR( status );
 
 	/* return status */
 	DETATCHSTATUSPTR(status);
@@ -473,8 +514,8 @@ void monteCarloSplice(LALStatus *status,
 	REAL4Vector **shortTrain2 = NULL;
 
 	/* initialize status pointer */
-	INITSTATUS(status, "monteCarloSplice", PIPELINEAUXC);
-	ATTATCHSTATUSPTR(status);
+	INITSTATUS( status, "monteCarloSplice", PIPELINEAUXC );
+	ATTATCHSTATUSPTR( status );
 
 	/* read parameters */
 	fRef = MCparams->fRef;
@@ -508,11 +549,19 @@ void monteCarloSplice(LALStatus *status,
 
 	/* create vectors to store the simulated signal */
 	whitenedSSimStochBGOne.data = NULL;
+	whitenedSSimStochBGTwo.data = NULL;
 	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGOne.data), \
 			lengthSegment);
-	whitenedSSimStochBGTwo.data = NULL;
+	CHECKSTATUSPTR( status );
 	LALSCreateVector(status->statusPtr, &(whitenedSSimStochBGTwo.data), \
 			lengthSegment);
+	CHECKSTATUSPTR( status );
+	memset(whitenedSSimStochBGOne.data->data, 0, \
+			whitenedSSimStochBGOne.data->length * \
+			sizeof(*whitenedSSimStochBGOne.data->data));
+	memset(whitenedSSimStochBGTwo.data->data, 0, \
+			whitenedSSimStochBGTwo.data->length * \
+			sizeof(*whitenedSSimStochBGTwo.data->data));
 
 	/* allocate memory for longer data train */
 	longTrain1 = (REAL4Vector**)LALMalloc(sizeof(REAL4Vector*) * numSegment);
@@ -520,6 +569,7 @@ void monteCarloSplice(LALStatus *status,
 	{
 		longTrain1[i] = NULL;
 		LALSCreateVector(status->statusPtr, &longTrain1[i], lengthSegment);
+		CHECKSTATUSPTR( status );
 		for (k = 0; k < lengthSegment; k++)
 		{
 			longTrain1[i]->data[k] = 0;
@@ -531,6 +581,7 @@ void monteCarloSplice(LALStatus *status,
 	{
 		longTrain2[i] = NULL;
 		LALSCreateVector(status->statusPtr, &longTrain2[i], lengthSegment);
+		CHECKSTATUSPTR( status );
 		for (k = 0; k < lengthSegment; k++)
 		{
 			longTrain2[i]->data[k] = 0;
@@ -545,6 +596,7 @@ void monteCarloSplice(LALStatus *status,
 	{
 		shortTrain1[i] = NULL;
 		LALSCreateVector(status->statusPtr, &shortTrain1[i], lengthSegment);
+		CHECKSTATUSPTR( status );
 		for (k = 0; k < lengthSegment; k++)
 		{
 			shortTrain1[i]->data[k] = 0;
@@ -556,6 +608,7 @@ void monteCarloSplice(LALStatus *status,
 	{
 		shortTrain2[i] = NULL;
 		LALSCreateVector(status->statusPtr, &shortTrain2[i], lengthSegment);
+		CHECKSTATUSPTR( status );
 		for (k = 0; k < lengthSegment; k++)
 		{
 			shortTrain2[i]->data[k] = 0;
@@ -581,9 +634,13 @@ void monteCarloSplice(LALStatus *status,
 	/* allocate memory */
 	omegaGW.data = NULL;
 	LALSCreateVector(status->statusPtr, &(omegaGW.data), freqLength);
+	CHECKSTATUSPTR( status );
+	memset(omegaGW.data->data, 0, \
+			omegaGW.data->length * sizeof(*omegaGW.data->data));
 
 	/* generate omegaGW */
 	LALStochasticOmegaGW(status->statusPtr, &omegaGW, &parametersOmega);
+	CHECKSTATUSPTR( status );
 
 	/* response functions */
 	/* set metadata fields */
@@ -602,7 +659,9 @@ void monteCarloSplice(LALStatus *status,
 	responseOne.data = NULL;
 	responseTwo.data = NULL;
 	LALCCreateVector(status->statusPtr, &(responseOne.data), freqLength);
+	CHECKSTATUSPTR( status );
 	LALCCreateVector(status->statusPtr, &(responseTwo.data), freqLength);
+	CHECKSTATUSPTR( status );
 	memset(responseOne.data->data, 0, \
 			responseOne.data->length * sizeof(*responseOne.data->data));
 	memset(responseTwo.data->data, 0, \
@@ -626,8 +685,10 @@ void monteCarloSplice(LALStatus *status,
 		/* compute response function */
 		LALExtractFrameResponse(status->statusPtr, &responseOne, calCacheOne, \
 				ifoOne, &duration);
+		CHECKSTATUSPTR( status );
 		LALExtractFrameResponse(status->statusPtr, &responseTwo, calCacheTwo, \
 				ifoTwo, &duration);
+		CHECKSTATUSPTR( status );
 
 		/* force DC to be 0 and nyquist to be real */
 		responseOne.data->data[0].re = 0.;
@@ -649,6 +710,7 @@ void monteCarloSplice(LALStatus *status,
 		/* generate whitened simulated SB data */
 		LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, \
 				&SBParams);
+		CHECKSTATUSPTR( status );
 		
 		/* store in the appropriate vector */
 		if (loop % 2 == 0)
@@ -692,10 +754,15 @@ void monteCarloSplice(LALStatus *status,
 
 	/* clean up, and exit */
 	LALSDestroyVector(status->statusPtr, &(omegaGW.data));
+	CHECKSTATUSPTR( status );
 	LALCDestroyVector(status->statusPtr, &(responseOne.data));
+	CHECKSTATUSPTR( status );
 	LALCDestroyVector(status->statusPtr, &(responseTwo.data));
+	CHECKSTATUSPTR( status );
 	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGOne.data));
+	CHECKSTATUSPTR( status );
 	LALSDestroyVector(status->statusPtr, &(whitenedSSimStochBGTwo.data));
+	CHECKSTATUSPTR( status );
 
 	/* return status */
 	DETATCHSTATUSPTR(status);
