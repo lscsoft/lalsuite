@@ -65,11 +65,14 @@ static struct {
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
-	size_t psdAverageLength;    /* number of samples to use for PSD    */
+	int FilterCorruption;       /* samples corrupted by conditioning   */
+	REAL4 noiseAmpl;            /* gain factor for white noise         */
+	size_t PSDAverageLength;    /* number of samples to use for PSD    */
+	INT4 seed;                  /* set non-zero to generate noise      */
+	INT4 verbose;
 } options;
 
 /* some global output flags */
-INT4 verbose;
 INT4 geodata;
 INT4 printData;
 INT4 whiteNoise;                    /* insertion of Gaussian white noise   */
@@ -83,8 +86,6 @@ CHAR ifo[3];                        /* two character interferometer        */
 CHAR comment[LIGOMETA_COMMENT_MAX]; /* string in output file name          */
 CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
-REAL4 noiseAmpl;                    /* gain factor for white noise         */
-INT4 seed;                          /* set non-zero to generate noise      */
 INT4 totalNumPoints;                /* total number of points to analyze   */
 UINT4 totalNumSegs;                 /* total number of segments to analyze */
 INT4 frameSampleRate;               /* sample rate of the frame data       */
@@ -102,12 +103,14 @@ REAL8 fcorner;                      /* corner frequency in Hz              */
 
 /* Fill an array with white noise */
 static void makeWhiteNoise(
-        LALStatus             *status,
-        REAL4TimeSeries       *series
+        LALStatus        *status,
+        REAL4TimeSeries  *series,
+	INT4              seed,
+	REAL4             amplitude
         )
 {
-    long   length  = series->data->length;
-    long   index   = 0;
+    long length = series->data->length;
+    long index = 0;
     static RandomParams *rparams = NULL;
 
     INITSTATUS (status, "makeWhiteNoise", POWERC);
@@ -122,10 +125,9 @@ static void makeWhiteNoise(
     CHECKSTATUSPTR (status);
 
     /* apply gain factor to noise in time series */
-    for (index = 0; index < length; index++)
-    {
+    for(index = 0; index < length; index++) {
         double sample = series->data->data[index];
-        sample *= noiseAmpl;
+        sample *= amplitude;
         series->data->data[index] = sample;
     }
 
@@ -248,14 +250,14 @@ int main( int argc, char *argv[])
     for(usedNumPoints = 0; (totalNumPoints - usedNumPoints) > (int) (2 * params->windowShift * (frameSampleRate / targetSampleRate)); usedNumPoints += numPoints - 2 * params->windowShift * (frameSampleRate / targetSampleRate)) {
 
       /* tell operator how we are doing */
-      if (verbose){
+      if(options.verbose) {
         fprintf(stdout,"%i points analysed && %i points left\n", usedNumPoints, totalNumPoints - usedNumPoints);
       }
 
       /* compute the number of points to use in this run */
       numPoints = min(options.maxSeriesLength, (totalNumPoints - usedNumPoints));
 
-      if(verbose) {
+      if(options.verbose) {
         fprintf(stdout,"reading %i points...\n", numPoints);
       }
 
@@ -360,11 +362,9 @@ int main( int argc, char *argv[])
       }
 
       /* populate time series with white noise if specified */
-      if (whiteNoise)
-      {
-        makeWhiteNoise(&stat, &series);
-        if (verbose )
-        {
+      if(whiteNoise) {
+        makeWhiteNoise(&stat, &series, options.seed, options.noiseAmpl);
+        if(options.verbose) {
           REAL4 norm=0;
           UINT4 j ;
           /* PRB - The normalization constant */
@@ -401,7 +401,7 @@ int main( int argc, char *argv[])
         strcpy( resp.name, channelIn.name );
 
         /* generate the response function for the current time */
-        if ( verbose ) 
+        if(options.verbose) 
           fprintf( stdout, "generating response at time %d sec %d ns\n",
               resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
 
@@ -437,13 +437,13 @@ int main( int argc, char *argv[])
         }
 
         /* read in list from file and make the injections */
-        if ( verbose )
+        if(options.verbose)
           fprintf(stdout, "Reading in SimBurst Table\n");
 
         LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile,
               startTime, stopTime), &stat );
 
-        if ( verbose )
+        if(options.verbose)
           fprintf(stdout, "Injecting signals into time series\n");
 
         LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, &resp ), 
@@ -457,7 +457,7 @@ int main( int argc, char *argv[])
           LALFree( thisEvent );
         }
 
-        if ( verbose )
+        if(options.verbose)
           fprintf(stdout, "Finished making the injections\n");
 
         /* write diagnostic info to disk */
@@ -471,7 +471,7 @@ int main( int argc, char *argv[])
       if(mdcCacheFile) {
         INT4 i;
 
-        if ( verbose )
+        if(options.verbose)
           fprintf(stdout, "Using MDC frames for injections\n");
 
         /*open mdc cache */
@@ -548,21 +548,21 @@ int main( int argc, char *argv[])
 		 * DO THE SEARCH                               *
 		 ***********************************************/
 
-		if (verbose)
+		if(options.verbose)
 			fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
 
-		if(options.psdAverageLength > series.data->length)
-			options.psdAverageLength = window_commensurate(series.data->length, params->windowLength, params->windowShift);
+		if(options.PSDAverageLength > series.data->length)
+			options.PSDAverageLength = window_commensurate(series.data->length, params->windowLength, params->windowShift);
 
-		for(start_sample = 0; start_sample + (params->windowLength - params->windowShift) < series.data->length; start_sample += options.psdAverageLength - (params->windowLength - params->windowShift)) {
+		for(start_sample = 0; start_sample + (params->windowLength - params->windowShift) < series.data->length; start_sample += options.PSDAverageLength - (params->windowLength - params->windowShift)) {
 			REAL4TimeSeries *interval;
 
-			if(start_sample + options.psdAverageLength > series.data->length)
-				start_sample = series.data->length - options.psdAverageLength;
+			if(start_sample + options.PSDAverageLength > series.data->length)
+				start_sample = series.data->length - options.PSDAverageLength;
 
-			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.psdAverageLength), &stat);
+			LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, options.PSDAverageLength), &stat);
 
-			if(verbose)
+			if(options.verbose)
 				fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
 
 			LAL_CALL(EPSearch(&stat, interval, params, EventAddPoint), &stat);
@@ -587,13 +587,7 @@ int main( int argc, char *argv[])
 	 * outer-most loop ends here
 	 *******************************************************************/
 
-	LALFree(cachefile); 
-	LALFree(calCacheFile);
-	LALFree(dirname); 
-	if(mdcparams) {
-		LALFree(mdcparams->channelName);
-		LALFree(mdcparams);
-	}
+	LALFree(mdcparams);
 
     /*******************************************************************
     * OUTPUT THE RESULTS 
@@ -679,7 +673,9 @@ int main( int argc, char *argv[])
 static void print_usage(char *program)
 {
 	fprintf(stderr,
-"Usage:  %s <options...>\n" \
+"Usage:  %s <option> [...]\n" \
+"The following options are recognized.  Options not surrounded in [] are\n" \
+"required.\n" \
 "	[--cluster]\n" \
 "	 --bandwidth <bandwidth>\n" \
 "	[--calibration-cache <cache file>]\n" \
@@ -687,6 +683,7 @@ static void print_usage(char *program)
 "	[--debug-level <level>]\n" \
 "	 --default-alpha <alpha>\n" \
 "	 --event-limit <count>\n" \
+"	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
 "	 --frame-sample-rate <Hz>\n" \
@@ -770,7 +767,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'Z':
-			arg_is_missing = !options.psdAverageLength;
+			arg_is_missing = !options.PSDAverageLength;
 			break;
 
 			case 'a':
@@ -783,6 +780,10 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 
 			case 'e':
 			arg_is_missing = !targetSampleRate;
+			break;
+
+			case 'i':
+			arg_is_missing = options.FilterCorruption < 0;
 			break;
 
 			default:
@@ -839,6 +840,7 @@ void initializeEPSearch(
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"default-alpha",       required_argument, NULL,           'E'},
 		{"event-limit",         required_argument, NULL,           'F'},
+		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
 		{"frame-sample-rate",   required_argument, NULL,           'I'},
@@ -867,7 +869,7 @@ void initializeEPSearch(
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
 		{"user-tag",            required_argument, NULL,           'h'},
-		{"verbose",             no_argument,       &verbose,       TRUE},
+		{"verbose",             no_argument,       &options.verbose, TRUE},
 		{"window",              required_argument, NULL,           'i'},
 		{"window-length",       required_argument, NULL,           'W'},
 		{"window-shift",        required_argument, NULL,           'd'},
@@ -904,6 +906,12 @@ void initializeEPSearch(
 	(*params)->tfTilingInput->maxTileBand = 64.0;
 	(*params)->windowShift = 0;
 
+	options.FilterCorruption = -1;
+	options.noiseAmpl = 1.0;
+	options.PSDAverageLength = 0;
+	options.seed = 1;
+	options.verbose = FALSE;
+
 	cachefile = NULL;
 	calCacheFile = NULL;
 	cluster = FALSE;
@@ -915,17 +923,13 @@ void initializeEPSearch(
 	injectionFile = NULL;
 	mdcCacheFile = NULL;
 	mdcparams = NULL;
-	noiseAmpl = 1.0;
 	printData = FALSE;
 	printSpectrum = FALSE;
-	options.psdAverageLength = 0;
 	resampFiltType = -1;
-	seed = 1;
 	sineBurst = FALSE;
 	targetSampleRate = 0;
 	totalNumPoints = 0;
 	totalNumSegs = 0;
-	verbose = FALSE;
 	whiteNoise = FALSE;
 
 	/*
@@ -944,24 +948,16 @@ void initializeEPSearch(
 		break;
 
 		case 'B':
-		calCacheFile = LALCalloc(strlen(optarg) + 1, sizeof(*calCacheFile));
-		if(calCacheFile) {
-			strcpy(calCacheFile, optarg);
-			ADD_PROCESS_PARAM("string", "%s", optarg);
-		}
+		calCacheFile = optarg;
+		ADD_PROCESS_PARAM("string", "%s", calCacheFile);
 		break;
 
 		case 'C':
-		(*params)->channelName = (CHAR *) LALMalloc(strlen(optarg) + 1);
-		if(!(*params)->channelName) {
-			print_alloc_fail(argv[0], "for (*params)->channelName");
-			exit(1);
-		}
-		strcpy((*params)->channelName, optarg);
+		(*params)->channelName = optarg;
 		channelIn.name = (*params)->channelName;
 		channelIn.type = ADCDataChannel;
 		memcpy(ifo, channelIn.name, sizeof(ifo) - 1);
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM("string", "%s", (*params)->channelName);
 		break;
 
 		case 'D':
@@ -990,19 +986,13 @@ void initializeEPSearch(
 		break;
 
 		case 'G':
-		cachefile = LALCalloc(strlen(optarg) + 1, sizeof(*cachefile));
-		if(cachefile) {
-			strcpy(cachefile, optarg);
-			ADD_PROCESS_PARAM("string", "%s", optarg);
-		}
+		cachefile = optarg;
+		ADD_PROCESS_PARAM("string", "%s", cachefile);
 		break;
 
 		case 'H':
-		dirname =  LALCalloc(strlen(optarg) + 1, sizeof(*dirname));
-		if(dirname) {
-			strcpy(dirname, optarg);
-			ADD_PROCESS_PARAM("string", "%s", optarg);
-		}
+		dirname =  optarg;
+		ADD_PROCESS_PARAM("string", "%s", optarg);
 		break;
 
 		case 'I':
@@ -1039,7 +1029,7 @@ void initializeEPSearch(
 		gpstmp = atol(optarg);
 		if(gpstmp < 0 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
-			print_bad_argument(argv[0], long_options[option_index].name, "GPS start time nanoseconds is negative");
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
 		gpsStopTimeNS += gpstmp;
@@ -1061,7 +1051,7 @@ void initializeEPSearch(
 		gpstmp = atol(optarg);
 		if(gpstmp < 0 || gpstmp > 999999999) {
 			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
-			print_bad_argument(argv[0], long_options[option_index].name, "GPS start time nanoseconds is negative");
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
 		gpsStartTimeNS += gpstmp;
@@ -1074,11 +1064,8 @@ void initializeEPSearch(
 		break;
 
 		case 'P':
-		injectionFile = LALCalloc(strlen(optarg) + 1, sizeof(*injectionFile));
-		if(injectionFile) {
-			strcpy(injectionFile, optarg);
-			ADD_PROCESS_PARAM("string", "%s", optarg);
-		}
+		injectionFile = optarg;
+		ADD_PROCESS_PARAM("string", "%s", injectionFile);
 		break;
 
 		case 'Q':
@@ -1092,11 +1079,8 @@ void initializeEPSearch(
 		break;
 
 		case 'R':
-		mdcCacheFile = LALCalloc(strlen(optarg) + 1, sizeof(*mdcCacheFile));
-		if(mdcCacheFile) {
-			strcpy(mdcCacheFile, optarg);
-			ADD_PROCESS_PARAM("string", "%s", optarg);
-		}
+		mdcCacheFile = optarg;
+		ADD_PROCESS_PARAM("string", "%s", mdcCacheFile);
 		break;
 
 		case 'S':
@@ -1105,15 +1089,10 @@ void initializeEPSearch(
 			print_alloc_fail(argv[0], "for mdcparams");
 			exit(1);
 		}
-		mdcparams->channelName = LALMalloc(strlen(optarg) + 1);
-		if(!mdcparams->channelName) {
-			print_alloc_fail(argv[0], "for mdcparams->channelName");
-			exit(1);
-		}
-		strcpy(mdcparams->channelName, optarg);
+		mdcparams->channelName = optarg;
 		mdcchannelIn.name = mdcparams->channelName;
 		mdcchannelIn.type = ADCDataChannel;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM("string", "%s", mdcparams->channelName);
 		break;
 
 		case 'T':
@@ -1137,14 +1116,14 @@ void initializeEPSearch(
 		break;
 
 		case 'V':
-		noiseAmpl = atof(optarg);
+		options.noiseAmpl = atof(optarg);
 		whiteNoise = TRUE;
-		if(noiseAmpl <= 0.0) {
-			sprintf(msg, "must be > 0 (%f specified)", noiseAmpl);
+		if(options.noiseAmpl <= 0.0) {
+			sprintf(msg, "must be > 0.0 (%f specified)", options.noiseAmpl);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("float", "%e", noiseAmpl);
+		ADD_PROCESS_PARAM("float", "%e", options.noiseAmpl);
 		break;
 
 		case 'W':
@@ -1183,8 +1162,8 @@ void initializeEPSearch(
 		break;
 
 		case 'Z':
-		options.psdAverageLength = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", options.psdAverageLength);
+		options.PSDAverageLength = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", options.PSDAverageLength);
 		break;
 
 		case 'a':
@@ -1211,13 +1190,13 @@ void initializeEPSearch(
 		break;
 
 		case 'c':
-		seed = atoi(optarg);
-		if(seed <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", seed);
+		options.seed = atoi(optarg);
+		if(options.seed <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", options.seed);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", seed);
+		ADD_PROCESS_PARAM("int", "%d", options.seed);
 		break;
 
 		case 'd':
@@ -1270,6 +1249,15 @@ void initializeEPSearch(
 		ADD_PROCESS_PARAM("int", "%d", (*params)->windowType);
 		break;
 
+		case 'j':
+		options.FilterCorruption = atoi(optarg);
+		if(options.FilterCorruption < 0) {
+			sprintf(msg, "must be > 0 (%d specified)", options.FilterCorruption);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			exit(1);
+		}
+		break;
+
 		/* option sets a flag */
 		case 0:
 		break;
@@ -1308,18 +1296,18 @@ void initializeEPSearch(
 	options.maxSeriesLength = (ram * 1024 * 1024) / (4 * sizeof(REAL4));
 
 	/*
+	 * Ensure PSDAverageLength is comensurate with the analysis window
+	 * length and shift.
+	 */
+
+	options.PSDAverageLength = window_commensurate(options.PSDAverageLength, (*params)->windowLength, (*params)->windowShift);
+
+	/*
 	 * Check for missing parameters
 	 */
 
 	if(!check_for_missing_parameters(&stat, argv[0], long_options, *params))
 		exit(1);
-
-	/*
-	 * Ensure psdAverageLength is comensurate with the analysis window
-	 * length and shift.
-	 */
-
-	options.psdAverageLength = window_commensurate(options.psdAverageLength, (*params)->windowLength, (*params)->windowShift);
 
 	/*
 	 * Miscellaneous chores.
@@ -1328,9 +1316,9 @@ void initializeEPSearch(
 	(*params)->cluster = cluster;
 	(*params)->printSpectrum = printSpectrum;
 
-	if(verbose) {
+	if(options.verbose) {
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples at a time\n", argv[0], options.maxSeriesLength);
-		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.psdAverageLength);
+		fprintf(stderr, "%s: using --psd-average-points %d\n", argv[0], options.PSDAverageLength);
 	}
 }
 
