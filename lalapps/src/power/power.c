@@ -1524,7 +1524,7 @@ int main( int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
