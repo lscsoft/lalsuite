@@ -493,7 +493,7 @@ LALFindChirpBCVTemplate (
     REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
           psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
-// work needed here ... check psi
+// work needed here... check psi
 
 
   /*
@@ -509,7 +509,7 @@ LALFindChirpBCVTemplate (
       REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;  // defining psi2 every time through the loop necessary?
-// work needed here ... check psi  
+// work needed here... check psi  
 
       /* range reduction of psi1 */
       while ( psi1 < -LAL_PI )
