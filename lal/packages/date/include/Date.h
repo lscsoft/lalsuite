@@ -73,20 +73,18 @@ NRCSID (DATEH, "$Id$");
 </lalLaTeX> */
 
 /* <lalErrTable> */
-#define DATEH_ENULLINPUT     1
-#define DATEH_ENULLOUTPUT    2
-#define DATEH_EDATETOOEARLY  3
-#define DATEH_ERANGEGPSTOUTC 4
-#define DATEH_ERANGEGPSABS   5
-#define DATEH_EBUFFTOOSMALL  6
-#define DATEH_EASCTIMEFAIL   7
-#define DATEH_EGPSDATETOOEARLY 8
+#define DATEH_ENULLINPUT       1
+#define DATEH_ENULLOUTPUT      2
+#define DATEH_EDATETOOEARLY    3
+#define DATEH_ERANGEGPSABS     4
+#define DATEH_EBUFFTOOSMALL    5
+#define DATEH_EASCTIMEFAIL     6
+#define DATEH_EGPSDATETOOEARLY 7
 
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
-#define DATEH_MSGERANGEGPSTOUTC "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2002-Mar-31 23:59:00 UTC (GPS 701654353)"
-#define DATEH_MSGERANGEGPSABS "Input time out of range: cannot convert times before 1972-Jan-01 00:00:00 UTC (GPS -252892800)"
+#define DATEH_MSGERANGEGPSABS "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2002-Mar-31 23:59:00 UTC (GPS 701654353)"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
 #define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00"

@@ -116,7 +116,7 @@ static const time_t leaps[]={
   ((2449534-2440587)*SECS_PER_DAY),
   ((2450083-2440587)*SECS_PER_DAY),
   ((2450630-2440587)*SECS_PER_DAY),
-  (70934340)
+  ((2451179-2440587)*SECS_PER_DAY),
 };
 
 /*
@@ -149,27 +149,59 @@ LALGPStoUTC (LALStatus                *status,
   ASSERT (p_gpsTime != (LIGOTimeGPS *)NULL, status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
+  ASSERT (p_gpsTime->gpsSeconds >= 0, status,
+          DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
+
   ASSERT (p_accuracy != (LALLeapSecAccuracy *)NULL, status,
           DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
   ASSERT (p_utcDate != (LALDate *)NULL, status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
-  if (p_gpsTime->gpsSeconds < 0)
-    LALWarning(status, "GPS seconds should be > 0");
-
   /* we use Unix epoch as our origin */
   unixTime = p_gpsTime->gpsSeconds + UNIXGPS;
 
   if (lalDebugLevel > 0)
     {
-      /* 1998-Dec-31 23:59:59 */
-      tmptime = (22*365 + 7*366 + 7*31 + 4*30 + 28)* SECS_PER_DAY + 24;
+      sprintf(infostr, "Max. tested GPS is %d\n", maxtestedGPS);
+      LALInfo(status, infostr);
+      
+      /* 1998-Dec-31 23:59:60 */
+      tmptime = (22*365 + 7*366)* SECS_PER_DAY + 23;
       gmtime_r(&tmptime, &tmputc);
 
-      sprintf(infostr, "tmputc = %s\n", asctime_r(&tmputc, tmpstamp));
+      asctime_r(&tmputc, tmpstamp);
+      sprintf(infostr, "tmputc = %s\n", tmpstamp);
       LALInfo(status, infostr);
     }
+
+  /*
+   * if GPS is later than maxtestedGPS
+   *    check accuracy param
+   *        if anal accuracy
+   *            die
+   *        else
+   *            print warning message
+   */
+  if (p_gpsTime->gpsSeconds > maxtestedGPS)
+    {
+      /* check accuracy param */
+      if (*p_accuracy == LALLEAPSEC_STRICT)
+        {
+          ABORT(status, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
+        }
+      else if (*p_accuracy == LALLEAPSEC_LOOSE)
+        {
+          LALWarning(status, "may be missing leap seconds");
+        }
+      else
+        {
+          LALWarning(status, "may be missing leap seconds");
+        }
+    }
+
+
+
   
   /* system gmtime does take leap seconds into account */
   if (tmputc.tm_sec == 60)
@@ -183,25 +215,6 @@ LALGPStoUTC (LALStatus                *status,
 
       /* NOTE: this will break if system gmtime() has taken leap seconds
        * into account in the past (i.e. before the test date */
-
-      /*
-       * if date is later
-       *    check accuracy param
-       *        if anal accuracy
-       *            die
-       *        else
-       *            print warning message
-       *
-       * // date is not later
-       * compute date struct
-       */
-
-      if (p_gpsTime->gpsSeconds > maxtestedGPS) { /* check accuracy param
-        */ if (*p_accuracy == LALLEAPSEC_STRICT) /* strict accuracy */ {
-        ABORT(status, DATEH_ERANGEGPSTOUTC, DATEH_MSGERANGEGPSTOUTC); }
-        else if (*p_accuracy == LALLEAPSEC_LOOSE) /* loose accuracy */ {
-        LALWarning(status, "may be missing leap seconds"); } else {
-        LALWarning(status, "may be missing leap seconds"); } }
 
       /* compute date struct */
       gmtime_r(&unixTime, &tmputc);
@@ -218,16 +231,21 @@ LALGPStoUTC (LALStatus                *status,
   else /* system gmtime() does NOT take leap secs into account */
     {
       LALInfo(status, "gmtime_r() does not figure in leap seconds");
-      
+
       /* fix up leap seconds */
       i       = 0;
       while (i < numleaps && leaps[i] + i - 1 < unixTime)
         ++i;
 
+      if (lalDebugLevel > 0)
+        sprintf(infostr, "unixTime = %ld; leaps[%d] = %ld", unixTime,
+                i, leaps[i]);
+      LALInfo(status, infostr);
+
       if (unixTime == (leaps[i] + i - 1))
         {
           unixTime -= i;
-          gmtime_r(&tmptime, &tmputc);
+          gmtime_r(&unixTime, &tmputc);
           p_utcDate->unixDate.tm_sec   = 60;
           p_utcDate->unixDate.tm_min   = tmputc.tm_min;
           p_utcDate->unixDate.tm_hour  = tmputc.tm_hour;
@@ -260,6 +278,10 @@ LALGPStoUTC (LALStatus                *status,
   RETURN (status);
 } /* END: LALGPStoUTC() */
 
+
+/*
+ * Returns no. of days in year of given date
+ */
 static int days_in_year(const LALDate *p_utcDate)
 {
   int year = p_utcDate->unixDate.tm_year + 1900;
@@ -280,9 +302,12 @@ static int days_in_year(const LALDate *p_utcDate)
   return 365;
 }
 
+/*
+ * Returns no. of days in month of given date
+ */
 static int days_in_month(const LALDate *p_utcDate)
 {
-  time_t month = p_utcDate->unixDate.tm_mon;
+  int month = p_utcDate->unixDate.tm_mon;
 
   switch (month) {
   case 0:
@@ -312,6 +337,9 @@ static int days_in_month(const LALDate *p_utcDate)
   return -1;
 }
 
+/*
+ * Struct for leap seconds
+ */
 typedef struct leap_sec
 {
   int    year;       /* year - 1900 */
@@ -320,6 +348,9 @@ typedef struct leap_sec
 }
 leap_sec_t;
 
+/*
+ * Table of leap seconds
+ */
 static leap_sec_t leap_sec_data[] =
   {
     {72, 6, 1},
@@ -353,7 +384,6 @@ LALUTCtoGPS (LALStatus                *status,
              const LALDate            *p_utcDate,
              const LALLeapSecAccuracy *p_accuracy)
 { /* </lalVerbatim> */
-  INT4 secs_gps;
   int ddays = 0;
   int dsecs = 0;
   LALDate tmpdate;
@@ -405,6 +435,45 @@ LALUTCtoGPS (LALStatus                *status,
 
   LALInfo(status, ">= 1980-01-06 only");
 
+  /*
+   * Check that time asked for is not after last known leap sec
+   * Use by: 2002-Mar-31 23:59:00
+   *
+   * if date is later
+   *    check accuracy param
+   *        if anal accuracy
+   *            die
+   *        else
+   *            print warning message
+   *
+   * // date is not later
+   * do the conversion
+   */
+  if (p_utcDate->unixDate.tm_year > 102 ||
+      (p_utcDate->unixDate.tm_year == 102 &&
+       (p_utcDate->unixDate.tm_mon > 2 ||
+        (p_utcDate->unixDate.tm_mon == 2 &&
+         p_utcDate->unixDate.tm_mday == 31 &&
+         p_utcDate->unixDate.tm_hour == 23 &&
+         p_utcDate->unixDate.tm_min  == 59 &&
+         p_utcDate->unixDate.tm_sec > 0))))
+    {
+      /* check accuracy param */
+      if (*p_accuracy == LALLEAPSEC_STRICT) /* strict accuracy */
+        {
+          ABORT(status, DATEH_ERANGEGPSABS, DATEH_MSGERANGEGPSABS);
+        }
+      else if (*p_accuracy == LALLEAPSEC_LOOSE)
+        {
+          LALWarning(status, "may be missing leap seconds");
+        }
+      else
+        {
+          LALWarning(status, "may be missing leap seconds");
+        }
+    }
+  
+  
   /* start counting from the origin */
   tmpdate.unixDate.tm_year = 80;
   tmpdate.unixDate.tm_mon  =  0;
