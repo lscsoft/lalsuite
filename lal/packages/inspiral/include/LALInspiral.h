@@ -1005,7 +1005,7 @@ void LALInspiralWave3Templates (
    InspiralTemplate *params);
 
 /*  <lalLaTeX>
-\newpage\input{LALInspiralSpinModulatedWaveC}
+%\newpage\input{LALInspiralSpinModulatedWaveC}
 </lalLaTeX>  */
 
 void 
@@ -1013,7 +1013,6 @@ LALInspiralSpinModulatedWave(
 		LALStatus        *status, 
 		REAL4Vector      *signal, 
 		InspiralTemplate *in);
-/*  </lalLaTeX> */
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralFrequency3C}
@@ -1125,7 +1124,7 @@ void LALRungeKutta4(
   rk4In *,
   void *);
 /*  <lalLaTeX>
-\newpage\input{LALStationaryPhaseApprox1C}
+%\newpage\input{LALStationaryPhaseApprox1C}
 </lalLaTeX>  */
 void 
 LALInspiralStationaryPhaseApprox1 (
@@ -1429,7 +1428,7 @@ void LALInspiralPhasing3_7PN (
    expnCoeffs *ak);
 
 /*  <lalLaTeX>
-\newpage\input{LALStationaryPhaseApprox2C}
+%\newpage\input{LALStationaryPhaseApprox2C}
 </lalLaTeX>  */
 void 
 LALInspiralStationaryPhaseApprox2 (

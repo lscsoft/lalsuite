@@ -464,7 +464,7 @@ LALStatsREAL4Vector
 
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralComputeChisq}
+\newpage\input{LALInspiralComputeChisqC}
 </lalLaTeX>  */
 
 void 
@@ -478,7 +478,7 @@ LALInspiralComputeChisq
 
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralComputeSNRIntegrand}
+\newpage\input{LALInspiralComputeSNRIntegrandC}
 </lalLaTeX>  */
 
 void 
