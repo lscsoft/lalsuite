@@ -136,7 +136,7 @@ CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 BOOLEAN uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
-
+BOOLEAN uvar_doCheckpointing;
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
@@ -389,7 +389,8 @@ int main(int argc,char *argv[])
   fstat_bytecounter = 0;
 
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
-  LAL_CALL (getCheckpointCounters( &status, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), &status); 
+  if (uvar_doCheckpointing)
+    LAL_CALL (getCheckpointCounters( &status, &loopcounter, &fstat_bytecounter, Fstatsfilename, ckp_fname ), &status); 
 
 
   /* allow for checkpointing: 
@@ -422,28 +423,30 @@ int main(int argc,char *argv[])
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
-
-      if (fpstat)
+      if (uvar_doCheckpointing && fpstat)
+	{
 #if USE_BOINC
-	if (boinc_time_to_checkpoint())
+	  if (boinc_time_to_checkpoint())
+	    {
 #endif
-	  {
-	    FILE *fp;
-	    fflush (fpstat);
-	    if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
-	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
-	      return COMPUTEFSTATC_ECHECKPOINT;
-	    }
-	    if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, fstat_bytecounter) < 0) {
-	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
-	      return COMPUTEFSTATC_ECHECKPOINT;
-	    }
-	    fclose (fp);
+	      FILE *fp;
+	      fflush (fpstat);
+	      if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
+		LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
+		return COMPUTEFSTATC_ECHECKPOINT;
+	      }
+	      if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, fstat_bytecounter) < 0) {
+		LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
+		return COMPUTEFSTATC_ECHECKPOINT;
+	      }
+	      fclose (fp);
 #if USE_BOINC
-	    boinc_checkpoint_completed();
+	      boinc_checkpoint_completed();
+	    } /* if boinc_time_to_checkpoint() */
 #endif
-	  } /* if fpstat */
+	} /* if doCheckpointing && fpstat */
       
+
       /* Show some progress */
 #if USE_BOINC
       {
@@ -628,7 +631,12 @@ initUserVars (LALStatus *stat)
 
   uvar_searchNeighbors = FALSE;
 
-
+  /* under BOINC, we do checkpointing by default, otherwise it's off by default */
+#if USE_BOINC
+  uvar_doCheckpointing = TRUE;
+#else
+  uvar_doCheckpointing = FALSE;
+#endif
 
   /* register all our user-variables */
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
@@ -664,7 +672,8 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
-  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
+  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine skyregion to neighboring points of original center.");
+  LALregBOOLUserVar(stat,	doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
