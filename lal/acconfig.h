@@ -1,3 +1,6 @@
+#ifndef CONFIG_H__LAL
+#define CONFIG_H__LAL
+@TOP@
 /* The number of bytes in a double.  */
 #undef LAL_SIZEOF_DOUBLE
 
@@ -15,3 +18,5 @@
 
 /* The number of bytes in a short.  */
 #undef LAL_SIZEOF_SHORT
+@BOTTOM@
+#endif /* CONFIG_H__LAL */

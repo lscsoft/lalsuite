@@ -2,8 +2,15 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(include/config.h.in)
 AM_INIT_AUTOMAKE(lal, 0.5)
 AM_CONFIG_HEADER(include/config.h include/lal/LALConfig.h)
-AC_DEFINE_UNQUOTED(LAL_VERSION, [$VERSION], [LAL Version])
+
+lal_version_major=`echo "$VERSION" | cut -d. -f1`
+lal_version_minor=`echo "$VERSION" | cut -d. -f2`
+lal_configure_date=`date -u +"%Y/%m/%e %T %Z"`
+AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
+AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
+AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
 AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
 
 AC_WITH_CC
 AC_WITH_MPICC

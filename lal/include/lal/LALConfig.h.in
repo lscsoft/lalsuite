@@ -1,11 +1,23 @@
+/* only include this file if LAL's config.h has not been included */
+#ifndef CONFIG_H__LAL
+
 #ifndef _LALCONFIG_H
 #define _LALCONFIG_H
 
 /* LAL Version */
 #undef LAL_VERSION
 
+/* LAL Version Major Number  */
+#undef LAL_VERSION_MAJOR
+
+/* LAL Version Minor Number  */
+#undef LAL_VERSION_MINOR
+
 /* LAL Configure Arguments */
 #undef LAL_CONFIGURE_ARGS
+
+/* LAL Configure Date */
+#undef LAL_CONFIGURE_DATE
 
 /* The number of bytes in a double.  */
 #undef LAL_SIZEOF_DOUBLE
@@ -32,3 +44,5 @@
 #undef NOLALMACROS
 
 #endif /* _LALCONFIG_H */
+
+#endif /* CONFIG_H__LAL */

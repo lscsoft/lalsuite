@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libsupport.la
-libsupport_la_SOURCES = LALMalloc.c LALError.c PrintVector.c \
+libsupport_la_SOURCES = LALVersion.c LALMalloc.c LALError.c PrintVector.c \
                         PrintFrequencySeries.c PrintTimeSeries.c
 MAINTAINERCLEANFILES = PrintVector.c \
                         PrintFrequencySeries.c PrintTimeSeries.c
