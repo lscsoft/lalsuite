@@ -2848,6 +2848,8 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
 #endif
 
 
+#define LD_SMALL	1.0e-9
+#define LD_LARGE        1.0e9
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params) 
@@ -2863,7 +2865,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8 *skyConst;	        /* vector of sky constants data */
   REAL8 *spinDwn;	        /* vector of spinDwn parameters (maybe a structure? */
   INT4	spOrder;	        /* maximum spinDwn order */
-  REAL8	x;		        /* local variable for holding x */
   REAL8	realXP, imagXP; 	/* temp variables used in computation of */
   REAL8	realP, imagP;	        /* real and imaginary parts of P, see CVS */
   INT4	nDeltaF;	        /* number of frequency bins per SFT band */
@@ -2878,7 +2879,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
   REAL8 FbSq;
   REAL8 FaFb;
   COMPLEX16 Fa, Fb;
-
+  UINT4 klim = 2*params->Dterms;
   REAL8 f;
 
   REAL8 A=params->amcoe->A,B=params->amcoe->B,C=params->amcoe->C,D=params->amcoe->D;
@@ -2942,6 +2943,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
 	REAL4 a = params->amcoe->a->data[alpha];
 	REAL4 b = params->amcoe->b->data[alpha];
+	REAL8 x, rem;
 
 	xTemp=f*skyConst[tempInt1[alpha]]+xSum[alpha];
 
@@ -2963,32 +2965,38 @@ void TestLALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *par
 	}
 		     
 	tempFreq=LAL_TWOPI*(tempFreq+params->Dterms-1);
-	k1=(INT4)xTemp-params->Dterms+1;
+	k1 = (INT4)xTemp-params->Dterms+1;
+
+	sftIndex = k1 - params->ifmin;
+
+	x = tempFreq;
+
 	/* Loop over terms in dirichlet Kernel */
-	for(k=0;k<2*params->Dterms;k++)
+	for(k=0; k < klim ; k++)
 	  {
-	    COMPLEX8 Xalpha_k;
-	    x=tempFreq-LAL_TWOPI*(REAL8)k;
-	    realP=tsin/x;
-	    imagP=tcos/x;
-
+	    COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+	    sftIndex ++;
 	    /* If x is small we need correct x->0 limit of Dirichlet kernel */
-	    if(fabs(x) < SMALL) 
+	    if(fabs(x) <  LD_SMALL) 
 	      {
-		realP=1.0;
-		imagP=0.0;
+		realXP += Xalpha_k.re;
+		imagXP += Xalpha_k.im;
 	      }	 
- 
-	    sftIndex=k1+k-params->ifmin;
+	    else
+	      {
+		realP = tsin / x;
+		imagP = tcos / x;
+		/* these four lines compute P*xtilde */
+		realXP += Xalpha_k.re * realP;
+		realXP -= Xalpha_k.im * imagP;
+		imagXP += Xalpha_k.re * imagP;
+		imagXP += Xalpha_k.im * realP;
+	      }
+	    
+	    x -= LAL_TWOPI;
 
-	    /* these four lines compute P*xtilde */
-	    Xalpha_k=Xalpha[sftIndex];
-	    realXP += Xalpha_k.re*realP;
-	    realXP -= Xalpha_k.im*imagP;
-	    imagXP += Xalpha_k.re*imagP;
-	    imagXP += Xalpha_k.im*realP;
-	  }
-      
+	  } /* for k < klim */
+	
 	y=-LAL_TWOPI*(f*skyConst[tempInt1[alpha]-1]+ySum[alpha]);
 
 	realQ = cos(y);
