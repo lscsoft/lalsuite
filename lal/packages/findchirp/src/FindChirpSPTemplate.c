@@ -378,7 +378,7 @@ LALFindChirpSPTemplate (
 
 
 
-/* <lalVerbatim file="FindChirpBCVTemplateCP"> */    // WORK IN PROGRESS 30/10 DW.....
+/* <lalVerbatim file="FindChirpBCVTemplateCP"> */
 void
 LALFindChirpBCVTemplate (
     LALStatus                  *status,
@@ -392,7 +392,7 @@ LALFindChirpBCVTemplate (
   REAL4        deltaF     = 0.0;
   REAL4        m          = 0.0;  
   REAL4        eta        = 0.0; 
-  REAL4        mu         = 0.0;  // now only used in normalisation
+  REAL4        mu         = 0.0;  /* now only used in normalisation */
   COMPLEX8    *expPsi     = NULL;
   REAL4       *xfac       = NULL;
   REAL4        x1         = 0.0;  
@@ -452,19 +452,19 @@ LALFindChirpBCVTemplate (
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
 
   /* parameters */
-  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); // not defined in tmplt
-  m      = tmplt->totalMass;  // correct?
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); /* not defined in tmplt */
+  m      = tmplt->totalMass;  /* correct? */
   eta    = tmplt->eta;        
-  mu     = tmplt->mu;         // now only used in normalisation
-// work needed here...
+  mu     = tmplt->mu;         /* now only used in normalisation */
+/* work needed here... */
 
   /* psi coefficients */
-  psi00 = tmplt->psi0;        // BCV only uses psi0, psi15:
-  psi05 = 0.0; //tmplt->psi1; // -> psi1,2,4 don't exist in tmplt 
-  psi10 = 0.0; //tmplt->psi2; // -> use if statements to define these?
-  psi15 = tmplt->psi3;        // & which name convention to use?
+  psi00 = tmplt->psi0;        /* BCV only uses psi0, psi15:            */
+  psi05 = 0.0; //tmplt->psi1; /* -> psi1,2,4 don't exist in tmplt      */
+  psi10 = 0.0; //tmplt->psi2; /* -> use if statements to define these? */
+  psi15 = tmplt->psi3;        /* & which name convention to use?       */
   psi20 = 0.0; //tmplt->psi4;
-// work needed here...
+/* work needed here... */
 
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
@@ -478,12 +478,12 @@ LALFindChirpBCVTemplate (
   
   fcTmplt->tmpltNorm *= distNorm * distNorm;
   
-  /* x1 */   // does this explanation suffice?
+  /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
-// work needed here ... check x1
+/* work needed here ... check x1 */
 
   /* frequency cutoffs */
-  fHi  = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
+  fHi  = tmplt->fendBCV;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
   
@@ -493,7 +493,7 @@ LALFindChirpBCVTemplate (
     REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
           psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
-// work needed here... check psi
+/* work needed here... check psi */
 
 
   /*
@@ -508,8 +508,8 @@ LALFindChirpBCVTemplate (
       REAL4 x    = x1 * xfac[k];
       REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
-      REAL4 psi2;  // defining psi2 every time through the loop necessary?
-// work needed here... check psi  
+      REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
+/* work needed here... check psi */  
 
       /* range reduction of psi1 */
       while ( psi1 < -LAL_PI )
@@ -526,7 +526,7 @@ LALFindChirpBCVTemplate (
       /* compute approximate sine and cosine of psi1 */
       expPsi[k].im = - sin(psi1);
       expPsi[k].re =   cos(psi1);
-// work needed here... expensive computation method
+/* work needed here... expensive computation method */
     }
 
   /* normal exit */
