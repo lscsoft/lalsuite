@@ -412,6 +412,9 @@ int main(int argc,char *argv[])
       LAL_CALL (LALUserVarReadCfgfile (stat, resfname), stat);
     else
       fprintf(stderr,"WARNING: Can't boinc-resolve config file \"%s\"\n", argv[0]+1);
+    /* skip past this file name, since we won't use/need it any more */
+    argv++;
+    argc--;
   }
 
   /* parse the rest of the command line */
