@@ -780,7 +780,10 @@ class ScienceSegment:
     segemnt = a tuple containing the (segment id, gps start time, gps end
     time, duration) of the segment.
     """
-    self.__segment = segment
+    self.__id = segment[0]
+    self.__start = segment[2]
+    self.__end = segment[2]
+    self.__dur = segment[3]
     self.__chunks = []
     self.__unused = self.dur()
     self.__ifo = None
@@ -860,41 +863,41 @@ class ScienceSegment:
     """
     Returns the ID of this ScienceSegment.
     """
-    return self.__segment[0]
+    return self.__id
     
   def start(self):
     """
     Returns the GPS start time of this ScienceSegment.
     """
-    return self.__segment[1]
+    return self.__start
 
   def end(self):
     """
     Returns the GPS end time of this ScienceSegment.
     """
-    return self.__segment[2]
+    return self.__end
 
   def set_start(self,t):
     """
     Override the GPS start time (and set the duration) of this ScienceSegment.
     t = new GPS start time.
     """
-    self.__segment[3] += self.__segment[1] - t
-    self.__segment[1] = t
+    self.__dur += self.__start - t
+    self.__start = t
 
   def set_end(self,t):
     """
     Override the GPS end time (and set the duration) of this ScienceSegment.
     t = new GPS end time.
     """
-    self.__segment[3] -= self.__segment[2] - t
-    self.__segment[2] = t
+    self.__dur -= self.__end - t
+    self.__end = t
 
   def dur(self):
     """
     Returns the length (duration) in seconds of this ScienceSegment.
     """
-    return self.__segment[3]
+    return self.__dur
 
 
 
