@@ -34,8 +34,8 @@
   /*SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ------------------- <lalLaTeX>
     \subsubsection{Description}
   * This program uses InspiralSpinBank() to generate a template bank from command line
-  * parameter input.  It also has the option to make a Mathematica notebook which will 
-  * plot the 3D template bank. 
+  * parameter input.  It also has the option to make a Mathematica notebook using 
+  * LALMath3DPlot() which will plot the 3D template bank. 
     </lalLaTeX>
     END SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ----------------------- */
   
@@ -43,9 +43,9 @@
     \subsubsection{Command line options}
     \begin{description}
     \item[-n] 
-  * Specifies the minimum smaller mass between 0 and 7.5 $M\odot$.
+  * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
     \item[-x]
-  * Specifies the maximum smaller mass between 0 and 7.5 $M\odot$.
+  * Specifies the maximum smaller mass between 0 and 5.0 $M\odot$.
     \item[-m] 
   * Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
   * it is best to pick a value $O[1]$ to save compiling time.
@@ -55,6 +55,20 @@
     </lalLaTeX>
     END SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" --------------------------- */
   
+  /*SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" ------------------------- <lalLaTeX>
+    \subsubsection{Notes}
+    \begin{itemize}
+  * \item The metric used in InspiralSpinBank() is only valid for binary systems with a
+  * total mass $<15M\odot$ where the minimum larger mass is at least twice the maximum
+  * smaller mass.  Choosing mass values that violate these conditions will cause an
+  * error message.
+  * \item It is unlikely that you will be able to run a Mathematica notebook that 
+  * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to 
+  * view a plot.
+    \end{itemize}
+    </lalLaTeX>
+    END - SUBSUBSECTION - NOTES - "InspiralSpinBankTest.c" --------------------------- */ 
+
   /*<lalLaTeX>
   \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
   </lalLaTeX>
