@@ -1,6 +1,6 @@
 /*
  * inspmultiawg.c
- * Author:  Fairhurst, S
+ * Author:  Creighton, T and Fairhurst, S
  * $Id$
  */
 
@@ -149,7 +149,8 @@ main(int argc, char **argv)
   REAL4 fstart = FSTART;      /* start frequency */
   INT4  fstopset = FALSE;     /* check whether end frequency specified */
   REAL4 fstop  = FSTOP;	      /* stop frequency */
-  INT4	xmloutput = FALSE;    
+  INT4	xmloutput = FALSE;  
+  LIGOTimeGPS inj_length; /* length of the injection */  
  
   /* File reading variables. */
   FILE		       *fp = NULL,*fq = NULL;  /* generic file pointer */
@@ -639,8 +640,12 @@ main(int argc, char **argv)
       /* add information about current event */
       LALSnprintf(currentSimEvent->waveform, sizeof(currentSimEvent->waveform),
 	  "GeneratePPNtwoPN");
-      currentSimEvent->geocent_end_time.gpsSeconds = epoch;
-      currentSimEvent->geocent_end_time.gpsNanoSeconds = 0;
+      
+      LALFloatToGPS( &stat, &inj_length, &(ppnParams.tc));
+      currentSimEvent->geocent_end_time.gpsSeconds = 
+	    epoch + inj_length.gpsSeconds;
+      currentSimEvent->geocent_end_time.gpsNanoSeconds = 
+	    inj_length.gpsNanoSeconds;
       currentSimEvent->h_end_time = currentSimEvent->l_end_time = 
 	    currentSimEvent->geocent_end_time;
       currentSimEvent->end_time_gmst = 0;
