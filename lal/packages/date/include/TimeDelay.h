@@ -67,9 +67,9 @@ structures, and a pointer to a \verb@SkyPosition@ structure.  The
 fields are:
 
 \begin{description}
-\item[\texttt{LALPlaceAndGPS *p_det_and_time1}] The first detector and GPS
-\item[\texttt{LALPlaceAndGPS *p_det_and_time2}] The second detector and GPS
-\item[\texttt{SkyPosition *p_source}] The source location (equatorial
+\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time1}] The first detector and GPS
+\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time2}] The second detector and GPS
+\item[\texttt{SkyPosition *p\_source}] The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
@@ -99,8 +99,8 @@ structure, and a pointer to a \verb@SkyPosition@ structure.  The
 fields are:
 
 \begin{description}
-\item[\texttt{LALPlaceAndGPS *p_det_and_time}] The detector and GPS
-\item[\texttt{SkyPosition *p_source}]  The source location (equatorial
+\item[\texttt{LALPlaceAndGPS *p\_det\_and\_time}] The detector and GPS
+\item[\texttt{SkyPosition *p\_source}]  The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
