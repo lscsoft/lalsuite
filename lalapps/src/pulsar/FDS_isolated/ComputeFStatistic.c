@@ -670,9 +670,9 @@ int main(int argc,char *argv[])
         /* update progress, the last % is reserved for polka in polka commandline runs */
         double local_fraction_done;
         if (cfsRunNo == 1)
-          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.9/2;
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2;
         else if (cfsRunNo == 2)
-          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.9/2+0.45;
+          local_fraction_done=(((double)loopcounter)/((double)thisScan.numGridPoints))*0.99/2+0.45;
         else
           local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
         if (local_fraction_done<0.0)

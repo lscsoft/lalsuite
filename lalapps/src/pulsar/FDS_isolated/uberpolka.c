@@ -126,7 +126,9 @@ int main(int argc,char *argv[])
 {
   UINT4 i;
   lalDebugLevel = 0;
-
+#if USE_BOINC
+  REAL8 local_fraction_done;
+#endif
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
 
@@ -203,11 +205,12 @@ int main(int argc,char *argv[])
                 }/* loop over frequencies */    
             } /* check that frequency lies between two input bounds */
 #if USE_BOINC
+          local_fraction_done = (double)CLength1 / (double)i *0.01 +0.99;
           /* update progress, the last % is reserved for polka */
-          boinc_fraction_done((double)CLength1 / (double)i *0.1 +0.9);
+          boinc_fraction_done(local_fraction_done);
           /* pass variable externally to graphics routines */
           if (fraction_done_hook != NULL)
-            *fraction_done_hook=(double)CLength1 / (double)i *0.1 +0.9;
+            *fraction_done_hook = local_fraction_done;
 #endif
         }/* loop over 1st candidate list */      
     }/* check that we have candidates in both files */
