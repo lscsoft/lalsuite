@@ -242,6 +242,7 @@ void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 int ReadBinaryTemplateBank(LALStatus *status);
 
 void NewLALDemod(LALStatus *stat, FStatisticBand **FBand, FFT **input, NewDemodPar *params); 
+void writeCOMPLEX16Vector(LALStatus *stat, COMPLEX16Vector *vect, const CHAR *fname);
 
 /*----------------------------------------------------------------------*/
 /* some local defines */
@@ -478,10 +479,21 @@ int main(int argc,char *argv[])
 
 	  LAL_CALL (NewLALDemod (&status, &FBand, SFTData , DemodParams), &status);
 
-	  /* FIXME: TMP testing Fa/Fb refining by interpolation */
+	  /* FIXME: TMP very specific testing Fa/Fb refining by interpolation */
 	  if (loopcounter == 0)
 	    {
-	      
+	      COMPLEX16Vector *FaRefined = NULL;
+
+	      if (uvar_overSampling == 1)
+		{
+		  LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_native.dat"), &status);
+		  LAL_CALL (refineCOMPLEX16Vector(&status, &FaRefined, FBand->Fa, 2*FBand->Fa->length), &status);
+		  LAL_CALL (writeCOMPLEX16Vector(&status, FaRefined, "Fa_refined.dat"), &status);
+		  LAL_CALL (LALZDestroyVector (&status, &FaRefined), &status);
+		}
+	      else if (uvar_overSampling == 2) {
+		LAL_CALL (writeCOMPLEX16Vector(&status, FBand->Fa, "Fa_oversampled_2.dat"), &status);
+	      }
 	    }
 
 	  /* FIXME: to keep cluster-stuff working, we provide the "translation" from FBand back into old Fstats-struct */
@@ -576,13 +588,9 @@ int main(int argc,char *argv[])
   fclose(fpstat);
 
   /* Free DopplerScan-stuff (grid) */
-  if (!uvar_binary) 
-    {
+  if (!uvar_binary)  {
       LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
-
-      if (GV.skyRegion)
-	LALFree ( GV.skyRegion );
-    }
+  }
 
 
   LAL_CALL ( Freemem(&status), &status);
@@ -1638,11 +1646,18 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 /** Free all globally allocated memory. */
 void Freemem(LALStatus *status) 
 {
+  UINT4 i;
 
   INITSTATUS (status, "Freemem", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);
+  /* Free SFT data */
+  TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);	 /* the new way*/
+  
+  for (i=0; i < GV.SFTno; i++)	/* the old way */
+    LALFree (SFTData[i]);
+  LALFree (SFTData);
+
 
   /* Free timestamps */
   LALFree(timestamps);
@@ -1659,6 +1674,7 @@ void Freemem(LALStatus *status)
       LALFree(DemodParams->spinDwn);
       LALFree(DemodParams);
     }
+
      
 
   if (uvar_binary) {
@@ -1669,8 +1685,7 @@ void Freemem(LALStatus *status)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  if (GV.skyRegion)
-    LALFree ( GV.skyRegion );
+  LALFree ( GV.skyRegion );
 
   /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
@@ -2368,3 +2383,30 @@ NewLALDemod(LALStatus *stat, FStatisticBand **FBand, FFT **input, NewDemodPar *p
 } /* NewLALDemod() */
 
 
+void
+writeCOMPLEX16Vector(LALStatus *stat, COMPLEX16Vector *vect, const CHAR *fname)
+{
+  FILE *fp;
+  UINT4 i;
+
+  INITSTATUS( stat, "LALDemod", rcsid);
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT (vect, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  if ( (fp = fopen(fname, "wb")) == NULL) 
+    {
+      LALPrintError ("Failed to open file '%f' for writing.\n", fname);
+      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    }
+
+  for (i=0; i < vect->length; i++)
+    fprintf (fp, "%d %g %g \n", i, vect->data[i].re, vect->data[i].im );
+
+  fclose (fp);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN( stat );
+
+} /* writeCOMPLEX16Vector() */
