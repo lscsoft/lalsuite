@@ -560,7 +560,8 @@ for i in range(len(data)):
       dag.add_node(inca)
 
 # write out the DAG
-dag.write_sub_files()
+if not do_dax:
+  dag.write_sub_files()
 
 if do_dax: 
     dag.write_dax()
