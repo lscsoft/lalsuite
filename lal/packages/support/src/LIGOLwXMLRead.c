@@ -578,7 +578,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"ttotal",                  -1, 22},
     {"psi0",                    -1, 23},
     {"psi3",                    -1, 24},
-    {"f_final",                 -1, 25},
+    {"f_final",                 -1, 25}, 
     {"snr",                     -1, 26},
     {"chisq",                   -1, 27},
     {"chisq_dof",               -1, 28},
@@ -1422,6 +1422,17 @@ SearchSummaryTableFromLIGOLw (
   return nrows;  
 }
 
+
+#define CLOBBER_VAL \
+    while ( *sumHead ); \
+    { \
+      thisValue = *sumHead; \
+      *sumHead = (*sumHead)->next; \
+      LALFree( thisValue ); \
+      thisValue = NULL; \
+    }
+
+
 /* <lalVerbatim file="LIGOLwXMLReadCP"> */
 int
 SummValueTableFromLIGOLw (
@@ -1432,6 +1443,8 @@ SummValueTableFromLIGOLw (
 {
   int                                   i, j, nrows;
   int                                   mioStatus;
+  SummValueTable			*thisValue = NULL;
+
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
   MetaTableDirectory tableDir[] =
@@ -1480,13 +1493,29 @@ SummValueTableFromLIGOLw (
     }
   }
 
-  /* allocate memory for the table */
-  *sumHead = (SummValueTable *) LALCalloc( 1, sizeof(SummValueTable) );
-
   /* loop over the rows in the file */
   i = nrows = 0;
   while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
   {
+    /* allocate memory for the table */
+    if ( ! *sumHead )
+    {
+      thisValue = *sumHead = (SummValueTable *) 
+	  LALCalloc( 1, sizeof(SummValueTable) );
+    }
+    else
+    {
+      thisValue = thisValue->next = (SummValueTable *) 
+          LALCalloc( 1, sizeof(SummValueTable) );
+    }
+    if ( ! thisValue )
+    {
+      fprintf( stderr, "could not allocate summ value\n" );
+      CLOBBER_VAL;
+      MetaioClose( env );
+      return -1;
+    }
+
     /* parse the rows into the SummValue structure */
     for ( j = 0; tableDir[j].name; ++j )
     {
@@ -1495,49 +1524,49 @@ SummValueTableFromLIGOLw (
 
       if ( tableDir[j].idx == 0 )
       {
-        LALSnprintf( (*sumHead)->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
+        LALSnprintf( thisValue->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 1 )
       {
-        (*sumHead)->start_time.gpsSeconds = i4colData;
+        thisValue->start_time.gpsSeconds = i4colData;
       }
       else if ( tableDir[j].idx == 2 )
       {
-        (*sumHead)->start_time.gpsNanoSeconds = i4colData;
+        thisValue->start_time.gpsNanoSeconds = i4colData;
       }
       else if ( tableDir[j].idx == 3 )
       {
-        (*sumHead)->end_time.gpsSeconds = i4colData;
+        thisValue->end_time.gpsSeconds = i4colData;
       }
       else if ( tableDir[j].idx == 4 )
       {
-        (*sumHead)->end_time.gpsNanoSeconds = i4colData;
+        thisValue->end_time.gpsNanoSeconds = i4colData;
       }
       else if ( tableDir[j].idx == 5 )
       {
-	LALSnprintf( (*sumHead)->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
+	LALSnprintf( thisValue->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR),
             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 6 )
       {
-	LALSnprintf( (*sumHead)->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
+	LALSnprintf( thisValue->name, LIGOMETA_SUMMVALUE_NAME_MAX * 
 	    sizeof(CHAR), "%s",
 	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else if ( tableDir[j].idx == 7 )
       {
-	(*sumHead)->value = r4colData;
+	thisValue->value = r4colData;
       }
       else if ( tableDir[j].idx == 8 )
       {
-        LALSnprintf( (*sumHead)->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
+        LALSnprintf( thisValue->comment, LIGOMETA_SUMMVALUE_NAME_MAX * 
 	    sizeof(CHAR), "%s",
 	    env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else
       {
-        LALFree( *sumHead );
+        CLOBBER_VAL;
         fprintf( stderr, "unknown column while parsing\n" );
         return -1;
       }
@@ -1550,7 +1579,7 @@ SummValueTableFromLIGOLw (
   if ( mioStatus == -1 )
   {
     fprintf( stderr, "error parsing after row %d\n", i );
-    LALFree( *sumHead );
+    CLOBBER_VAL;
     MetaioClose( env );
     return -1;
   }
@@ -1559,3 +1588,6 @@ SummValueTableFromLIGOLw (
   MetaioClose( env );
   return nrows;  
 }
+
+#undef CLOBBER_VAL
+
