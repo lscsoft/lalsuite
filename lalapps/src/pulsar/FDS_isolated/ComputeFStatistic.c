@@ -771,6 +771,10 @@ initUserVars (LALStatus *stat)
   strcpy(uvar_workingDir, ".");
 
   uvar_searchNeighbors = FALSE;
+  
+  /* if user does not set start/end times, use all SFTs */
+  uvar_startTime = -1.0e308;
+  uvar_endTime   =  1.0e308;
 
 /* some BOINC-defaults differ: checkpointing is ON, and we use experimental LALDemod() */
 #if USE_BOINC
@@ -823,8 +827,8 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,	doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
   LALregBOOLUserVar(stat,	expLALDemod, 	 0,  UVAR_OPTIONAL, "Use new experimental LALDemod-version.");
 
-  LALregREALUserVar(stat, 	startTime, 	 0,  UVAR_OPTIONAL, "Start-time of data to be analysed");
-  LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "End-time of data to be analysed");
+  LALregREALUserVar(stat, 	startTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
+  LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
 #if BOINC_COMPRESS
   LALregBOOLUserVar(stat,	useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
 #endif
@@ -1372,7 +1376,7 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
 /** Reads in data from SFT-files.
  *
  * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
- * or from merged SFTs in uvar_mergedSFTFile.
+ * or from merged SFTs in uvar_mergedSFTFile.  If user has specified --startTime or --endTime
  * The read SFT-data is stored in the global array \em SFTData and the timestamps 
  * of the SFTs are stored in the global array \em timestamps (both are allocated here).
  *
@@ -1393,8 +1397,10 @@ int ReadSFTData(void)
   if (uvar_mergedSFTFile)
     fp=fp_mergedSFT;
 
-  for (fileno=0;fileno<GV.SFTno;fileno++)
+  for (fileno=0;fileno<GV.SFTno; /* INCREMENT IN LOOP */ ) 
     {
+      REAL8 thisSFTtime;
+
       /* seek to fileno'th SFT k bytes in */
       if (uvar_mergedSFTFile){
 	if (fseek(fp,k,SEEK_SET)) {
@@ -1444,9 +1450,6 @@ int ReadSFTData(void)
 		  header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
 	  return 4;
 	}
-      /* Put time stamps from file into array */
-      timestamps[fileno].gpsSeconds = header.gps_sec;
-      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
 
       /* Move forward in file */
       offset=(GV.ifmin-header.firstfreqindex)*2*sizeof(REAL4);
@@ -1458,7 +1461,19 @@ int ReadSFTData(void)
 	  return 5;
 	}
 
-      /* Make data structures */
+
+      /* determine if THIS SFT is in the range of times of those which
+	 we need to use.  If so, read the data into arrays, else
+	 ignore it.  For my first CVS commit I will not indent this
+	 correctly so that the differences are obvious. A later commit
+	 will just clean up the indentation but make no changes to the
+	 actual non-whitespace code. */
+      thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
+      if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
+
+      /* Make data structures and put time stamps from file into array */
+      timestamps[fileno].gpsSeconds = header.gps_sec;
+      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
       ndeltaf=GV.ifmax-GV.ifmin+1;
       SFTData[fileno]=(FFT *)LALMalloc(sizeof(FFT));
       SFTData[fileno]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
@@ -1485,12 +1500,14 @@ int ReadSFTData(void)
       SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
       SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
       SFTData[fileno]->fft->data->length = ndeltaf;
+      fileno++;
+      }
 
-         if (uvar_mergedSFTFile)
-	   k+=sizeof(header)+header.nsamples*8;
-	 else
-	   fclose(fp);     /* close file */
-    
+      if (uvar_mergedSFTFile)
+	k+=sizeof(header)+header.nsamples*sizeof(COMPLEX8);
+      else
+	fclose(fp);     /* close file */
+      
     }
   return 0;  
 
@@ -1516,6 +1533,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   glob_t globbuf;
 #endif
   LIGOTimeGPS starttime;
+  INT4 last_time_used=0;
+  REAL8 thisSFTtime;
+  INT4 blockno=0;
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1523,6 +1543,13 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* ----------------------------------------------------------------------
    * do some sanity checks on the user-input before we proceed 
    */
+  if (!uvar_mergedSFTFile && (uvar_startTime>-1.0e308 || uvar_endTime<1.0e308)) {
+    LALPrintError ( "\nThe --startTime and --endTIme options may ONLY be used\n"
+		    "with merged SFT files, specified with the -B option.\n"
+		    "Try ./ComputeFStatistic -h \n\n");
+    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+  }
+  
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
       LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
@@ -1597,9 +1624,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   
 #if BOINC_COMPRESS
   /* logic: look for files 'earth.zip' and 'sun,zip'.  If found, use
-     boinc_resolve() to get the 'real' file name and then unzip */
-  if (uvar_useCompression)
-  {
+     boinc_resolve() to get the 'real' file name and then unzip.  If
+     not found, look for files named 'earth' and 'sun', use
+     boinc_resolve() to get the 'real' file names, and use those
+     instead.
+  */
+  if (uvar_useCompression) {
     char zippedname[256];
     int boinczipret;
     
@@ -1639,7 +1669,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       sprintf(cfg->EphemSun, "sun%s.dat",  uvar_ephemYear);
     }
 #endif /* !USE_BOINC */
-
+  
   if (uvar_mergedSFTFile) {
     long k=0;
 #if USE_BOINC
@@ -1659,7 +1689,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
-      sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
+      sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, ++blockno);
       if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc (1, strlen(tmp)+1)) == NULL) {
 	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
@@ -1689,12 +1719,19 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	starttime.gpsNanoSeconds = header.gps_nsec;
       }
       /* increment file no and pointer to the start of the next header */
-      fileno++;
+      thisSFTtime=(REAL8)header.gps_sec+(1.e-9)*(REAL8)header.gps_nsec;
+      if (uvar_startTime<=thisSFTtime && thisSFTtime<uvar_endTime) {
+	fileno++;
+	last_time_used=header.gps_sec;
+      }
+      else
+	LALFree(cfg->filelist[fileno]);
+
       k=header.nsamples*8;
       fseek(fp,k,SEEK_CUR);
     }
     /* save final time and time baseline */
-    cfg->Tf = (INT4)(header.gps_sec + header.tbase);  /* FINAL TIME */
+    cfg->Tf = (INT4)(last_time_used + header.tbase);  /* FINAL TIME */
     cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
     /* NOTE: we do NOT close fp here.  If we are using merged SFT file
@@ -2741,26 +2778,24 @@ char **globargv=NULL;
 
 void worker() {
   int retval=boincmain(globargc,globargv);
-
+  
 #if BOINC_COMPRESS
   /* compress the file if it exists */
-  if (uvar_useCompression && (retval==0) ) 
-    {
-      int boinczipret;
-      boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
-      if (boinczipret) {
-	fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
-	boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
-      }
-      if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
-	fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
-	boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
-      }
-    } /* if useCompression && ok */
+  if (uvar_useCompression && !retval) {
+    int boinczipret;
+    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
+    if (boinczipret) {
+      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
+    }
+    if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
+      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
+    }
+  } /* if useCompression && ok */
 #endif
   
   boinc_finish(retval);
-
   return;
 }
 
@@ -2879,16 +2914,14 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   UINT4 cksum;           /* as read for .ckp file */
   UINT4 computecksum;    /* as computed from contents of Fstats file */
   int i;
-  int savelaldebuglevel=lalDebugLevel;
-  
-  INITSTATUS( stat, "getChkptCounters", rcsid );
-
-  ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( ckp_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
 #if 0
+  int savelaldebuglevel=lalDebugLevel;
   lalDebugLevel=1;
 #endif
+ 
+  INITSTATUS( stat, "getChkptCounters", rcsid );
+  ASSERT ( fstat_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( ckp_fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   /* if anything goes wrong in here: start main-loop from beginning  */
   *loopcounter = 0;	
