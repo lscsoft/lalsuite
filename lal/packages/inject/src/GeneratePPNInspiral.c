@@ -119,11 +119,11 @@ We therefore bracket our value of $x_\mathrm{start}$ as follows: We
 start with an initial guess
 $x_\mathrm{guess}=(y_\mathrm{start}/C_j)^{1/(j+3)}$, or
 $0.39x_\mathrm{max}$, whichever is less.  If
-$y(x_\mathrm{guess})<y_\mathrm{start}$, we iteratively decrease $x$ by
-factors of 0.95 until $y(x)>y_\mathrm{start}$; this is guaranteed to
+$y(x_\mathrm{guess})>y_\mathrm{start}$, we iteratively decrease $x$ by
+factors of 0.95 until $y(x)<y_\mathrm{start}$; this is guaranteed to
 occur within a few iterations, since we are moving into a regime where
 the leading-order behaviour dominates more and more.  If
-$y(x_\mathrm{guess})>y_\mathrm{start}$, we iteratively increase $x$ by
+$y(x_\mathrm{guess})<y_\mathrm{start}$, we iteratively increase $x$ by
 factors of 1.05 until $y(x)>y_\mathrm{start}$, or until
 $x>x_\mathrm{max}$; this is also guaranteed to occur quickly because,
 in the worst case, it only takes about 20 iterations to step from
@@ -162,6 +162,15 @@ list of booleans indicating which terms are nonzero.  The latter
 allows the code to avoid lengthy floating-point operations (especially
 the logarithm in the post${}^{5/2}$-Newtonian phase term) when these
 are not required.
+
+When generating the waveform, we note that the sign of $\dot{f}$ is
+the same as the sign of $y'/x^2 = \sum (k+3)C_k x^k$, and use this
+series to test whether the frequency has stopped increasing.  (The
+reason is that for waveforms far from coalescence $f$ is nearly
+constant: numerical errors can cause positive \emph{and negative}
+fluctuations $\Delta f$ bewteen timesteps.  The analytic formulae for
+$\dot{f}$ or $y'$ are less susceptible to this.)  The coefficients
+$(k+3)C_k$ are also precomputed for added efficiency.
 
 \vspace{1ex}\noindent\textbf{Warnings and suggestions:}
 
@@ -251,11 +260,13 @@ NRCSID( GENERATEPPNINSPIRALC, "$Id$" );
    The following variables must be defined outside the macro, but are
    set inside it:
 
-   REAL4 x2, x3;  the square and cube of the input x */
+   REAL4 x2, x3, x4, x5;  the input x raised to power 2, 3, 4, and 5 */
 #define FREQ( f, x )                                                 \
 do {                                                                 \
   x2 = (x)*(x);                                                      \
   x3 = x2*(x);                                                       \
+  x4 = x3*(x);                                                       \
+  x5 = x4*(x);                                                       \
   (f) = 0;                                                           \
   if ( b0 )                                                          \
     (f) += c0;                                                       \
@@ -266,9 +277,9 @@ do {                                                                 \
   if ( b3 )                                                          \
     (f) += c3*x3;                                                    \
   if ( b4 )                                                          \
-    (f) += c4*x3*(x);                                                \
+    (f) += c4*x4;                                                    \
   if ( b5 )                                                          \
-    (f) += c5*x3*x2;                                                 \
+    (f) += c5*x5;                                                    \
   (f) *= x3;                                                         \
 } while (0)
 
@@ -340,6 +351,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   REAL4 c0, c1, c2, c3, c4, c5;   /* PN frequency coefficients */
   REAL4 c[MAXORDER];              /* vector of above coefficients */
   REAL4 d0, d1, d2, d3, d4, d5;   /* PN phase coefficients */
+  REAL4 e0, e1, e2, e3, e4, e5;   /* PN dy/dx coefficients */
   REAL4 p[MAXORDER];              /* PN parameter values */
   REAL4 mTot, mu;      /* total mass and reduced mass */
   REAL4 eta, etaInv;   /* mass ratio and its inverse */
@@ -359,7 +371,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   REAL4 x, xStart, xMax; /* x = t^(-1/8), and its maximum range */
   REAL4 y, yStart, yMax; /* normalized frequency and its range */
   REAL4 yOld, dyMax;     /* previous timestep y, and maximum y - yOld */
-  REAL4 x2, x3;          /* x^2 and x^3 */
+  REAL4 x2, x3, x4, x5;  /* x^2, x^3, x^4, and x^5 */
   REAL4 *a, *f; /* pointers to generated amplitude and frequency data */
   REAL8 *phi;   /* pointer to generated phase data */
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
@@ -443,49 +455,38 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   acFac *= 2.0*cosI;
 
   /* Compute PN expansion coefficients. */
-  if ( p[0] != 0.0 ) {
-    b0 = b[0] = 1;
-    c0 = c[0] = p[0];
-    d0 = p[0];
-  } else
-    b0 = b[0] = 0;
-  if ( p[1] != 0.0 ) {
-    b1 = b[1] = 1;
-    c1 = c[1] = p[1];
-    d1 = p[1]*5.0/4.0;
-  } else
-    b1 = b[1] = 0;
-  if ( p[2] != 0.0 ) {
-    b2 = b[2] = 1;
-    c2 = c[2] = p[2]*( 743.0/2688.0 + eta*11.0/32.0 );
-    d2 = p[2]*( 3715.0/8064.0 + eta*55.0/96.0 );
-  } else
-    b2 = b[2] = 0;
-  if ( p[3] != 0.0 ) {
-    b3 = b[3] = 1;
-    c3 = c[3] = -p[3]*( 3.0*LAL_PI/10.0 );
-    d3 = -p[3]*( 3.0*LAL_PI/4.0 );
-  } else
-    b3 = b[3] = 0;
-  if ( p[4] != 0.0 ) {
-    b4 = b[4] = 1;
-    c4 = c[4] = p[4]*( 1855099.0/14450688.0 + eta*56975.0/258048.0 +
-		       eta*eta*371.0/2048.0 );
-    d4 = p[4]*( 9275495.0/14450688.0 + eta*284875.0/258048.0 +
-		eta*eta*1855.0/2048.0 );
-  } else
-    b4 = b[4] = 0;
-  if ( p[5] != 0.0 ) {
-    b5 = b[5] = 1;
-    c5 = c[5] = -p[5]*( 7729.0/21504.0 + eta*3.0/256.0 )*LAL_PI;
-    d5 = -p[5]*( 38645.0/172032.0 + eta*15.0/2048.0 )*LAL_PI;
-  } else
-    b5 = b[5] = 0;
+  c0 = c[0] = p[0];
+  c1 = c[1] = p[1];
+  c2 = c[2] = p[2]*( 743.0/2688.0 + eta*11.0/32.0 );
+  c3 = c[3] = -p[3]*( 3.0*LAL_PI/10.0 );
+  c4 = c[4] = p[4]*( 1855099.0/14450688.0 + eta*56975.0/258048.0 +
+		     eta*eta*371.0/2048.0 );
+  c5 = c[5] = -p[5]*( 7729.0/21504.0 + eta*3.0/256.0 )*LAL_PI;
 
-  /* Find the leading-order frequency term.  Note: This will work even
-     if given negative (i.e. unphysical) values of eta. */
-  for ( j = 0; ( j < MAXORDER ) && ( ( b[j] == 0 ) ||
-				     ( c[j] == 0.0 ) ); j++ )
+  /* Compute expansion coefficients for series in phi and dy/dx. */
+  d0 = c0;
+  d1 = c1*5.0/4.0;
+  d2 = c2*5.0/3.0;
+  d3 = c3*5.0/2.0;
+  d4 = c4*5.0;
+  d5 = c5*5.0/8.0;
+  e0 = c0*3.0;
+  e1 = c1*4.0;
+  e2 = c2*5.0;
+  e3 = c3*6.0;
+  e4 = c4*7.0;
+  e5 = c5*8.0;
+
+  /* Use Boolean variables to exclude terms that are zero. */
+  b0 = b[0] = ( c0 == 0.0 ? 0 : 1 );
+  b1 = b[1] = ( c1 == 0.0 ? 0 : 1 );
+  b2 = b[2] = ( c2 == 0.0 ? 0 : 1 );
+  b3 = b[3] = ( c3 == 0.0 ? 0 : 1 );
+  b4 = b[4] = ( c4 == 0.0 ? 0 : 1 );
+  b5 = b[5] = ( c5 == 0.0 ? 0 : 1 );
+
+  /* Find the leading-order frequency term. */
+  for ( j = 0; ( j < MAXORDER ) && ( b[j] == 0 ); j++ )
     ;
   if ( j == MAXORDER ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EPBAD,
@@ -507,7 +508,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	    GENERATEPPNINSPIRALH_EFBAD, GENERATEPPNINSPIRALH_MSGEFBAD );
     yMax = fabs( params->fStopIn ) / fFac;
   }
-  if ( ( c[j]*fFac < 0.0 ) || ( yStart < 0.0 ) || (yMax < 0.0 ) ) {
+  if ( ( c[j]*fFac < 0.0 ) || ( yStart < 0.0 ) || ( yMax < 0.0 ) ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EPBAD,
 	   GENERATEPPNINSPIRALH_MSGEPBAD );
   }
@@ -533,7 +534,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	if ( x < xMax )
 	  xMax = x;
       }
-    if ( xStart < 0.39*xMax )
+    if ( xStart > 0.39*xMax )
       xStart = 0.39*xMax;
 
     /* If we are ignoring PN breakdown, adjust xMax (so that it won't
@@ -640,8 +641,9 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   x = xStart;
   while ( 1 ) {
     while ( n < nNext ) {
-      REAL4 f2a;
-      REAL4 phase = 0.0;
+      REAL4 f2a; /* value inside 2/3 power in amplitude functions */
+      REAL4 phase = 0.0; /* wave phase excluding overall constants */
+      REAL4 dydx2 = 0.0; /* dy/dx divided by x^2 */
 
       /* Check if we're still in a valid PN regime. */
       if ( x > xMax ) {
@@ -650,15 +652,29 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	goto terminate;
       }
 
-      /* Compute the frequency.  Note that this also computes the
-         global variables x2 and x3, which may be used later. */
+      /* Compute the normalized frequency.  This also computes the
+         variables x2, x3, x4, and x5, which are used later. */
       FREQ( y, x );
       if ( y > yMax ) {
 	params->termCode = GENERATEPPNINSPIRALH_EFSTOP;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
 	goto terminate;
       }
-      if ( y < yOld*ONEMINUSEPS ) {
+
+      /* Check that frequency is still increasing. */
+      if ( b0 )
+	dydx2 += e0;
+      if ( b1 )
+	dydx2 += e1*x;
+      if ( b2 )
+	dydx2 += e2*x2;
+      if ( b3 )
+	dydx2 += e3*x3;
+      if ( b4 )
+	dydx2 += e4*x4;
+      if ( b5 )
+	dydx2 += e5*x5;
+      if ( dydx2 < 0.0 ) {
 	params->termCode = GENERATEPPNINSPIRALH_EFNOTMON;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEFNOTMON;
 	goto terminate;
@@ -682,9 +698,9 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       if ( b3 )
 	phase += d3*x3;
       if ( b4 )
-	phase += d4*x3*x;
+	phase += d4*x4;
       if ( b5 )
-	phase += d5*log(t)*x3*x2;
+	phase += d5*log(t)*x5;
       phase *= t*x3*etaInv;
       *(phi++) = phiC - phase;
 
