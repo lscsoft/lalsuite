@@ -21,8 +21,7 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --outfile filename \
-    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] \
-    [--clusterchoice choicenumber] [--help]\n"
+    --injfile injectionfile [--noplayground] [--help]\n"
 
 #define BINJ_FIND_EARG   1
 #define BINJ_FIND_EROW   2
@@ -171,7 +170,7 @@ int main(int argc, char **argv)
 	    /* these options set a flag */
 	    {"verbose",         no_argument,	&verbose_flag, 1 },
  	    /* parameters which determine the output xml file */
-	    {"trigfile",	required_argument,  0,	'a'},
+	    {"input",    	required_argument,  0,	'a'},
 	    {"injfile",		required_argument,  0,	'b'},
 	    {"outfile",		required_argument,  0,	'c'},
 	    {"max-confidence",	required_argument,  0,	'd'},
@@ -518,10 +517,10 @@ int main(int argc, char **argv)
       currentSimBurst = currentSimBurst->next;
     }
 
-    fprintf(stdout,"Detected %i injections\n",ndetected);
-    fprintf(stdout,"%d seconds analyzed\n",timeAnalyzed);
-    fprintf(stdout,"%d hours analyzed\n",timeAnalyzed/3600);
-    fprintf(stdout,"%i injections made\n",(INT4)(LAL_PI*timeAnalyzed/400.0));
+    fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
+        timeAnalyzed/3600);
+    fprintf(stdout,"Detected %i injections out of %i made\n",ndetected,
+        (INT4)(LAL_PI*timeAnalyzed/400.0));
     fprintf(stdout,"Efficiency is %f \n", (REAL4)(400.0*
         (REAL4)(ndetected) / (REAL4)( timeAnalyzed ) / LAL_PI ) );
 
