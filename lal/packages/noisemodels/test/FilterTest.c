@@ -83,7 +83,7 @@ main ( void )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
    REAL4Vector signal, correlation;
         
-   RandomInspiralSignalIn randIn;
+   static RandomInspiralSignalIn randIn;
    InspiralWaveOverlapIn overlapin;
    InspiralWaveOverlapOut overlapout, overlapoutmax;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
