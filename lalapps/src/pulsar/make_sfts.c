@@ -87,7 +87,7 @@ RealFFTPlan *pfwd = NULL;
 #include <config.h>
 #include <unistd.h>
 #ifndef HAVE_GETHOSTNAME_PROTOTYPE
-int gethostname(char *name, size_t len);
+int gethostname(char *name, int len);
 #endif
 
 /* This is an error handler that prints a bit of extra info */
