@@ -74,6 +74,7 @@ main(int argc, char *argv[])
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   REAL8 relErr;
   UINT4 nlines1, nlines2;
+  BOOLEAN diff_found = 0;
   
   lalDebugLevel = 0;
 
@@ -104,21 +105,21 @@ main(int argc, char *argv[])
 #define DONE_MARKER "%DONE"
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("\nERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname1, DONE_MARKER);
-      exit(1);
+      LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname1, DONE_MARKER);
+      diff_found=1;
     }
 
   if ( strcmp(line2, DONE_MARKER ) )  
     {
-      LALPrintError ("\nERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname2, DONE_MARKER);
-      exit(1);
+      LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname2, DONE_MARKER);
+      diff_found=1;
     }
   
   if ( nlines1 != nlines2 )
     {
-      LALPrintError ("\nFstats files '%s' and '%s' have different length.\n", uvar_Fname1, uvar_Fname2);
+      LALPrintError ("Fstats files '%s' and '%s' have different length.\n", uvar_Fname1, uvar_Fname2);
       LALPrintError (" len1 = %d, len2 = %d\n\n", nlines1, nlines2);
-      exit(1);
+      diff_found=1;
     }
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
@@ -132,14 +133,14 @@ main(int argc, char *argv[])
 			" %" LAL_INT4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
 			&freq1, &a1, &d1, &N1, &mean1, &std1, &max1) ) 
 	{
-	  LALPrintError ("\nFailed to parse line %d in file '%s' \n", i+1, uvar_Fname1);
+	  LALPrintError ("Failed to parse line %d in file '%s' \n", i+1, uvar_Fname1);
 	  exit(-1);
 	}
       if ( 7 != sscanf (line2, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
 			" %" LAL_INT4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
 			&freq2, &a2, &d2, &N2, &mean2, &std2, &max2) ) 
 	{
-	  LALPrintError ("\nFailed to parse line %d in file '%s' \n", i+1, uvar_Fname2);
+	  LALPrintError ("Failed to parse line %d in file '%s' \n", i+1, uvar_Fname2);
 	  exit(-1);
 	}
 
@@ -147,38 +148,38 @@ main(int argc, char *argv[])
 
       if ( (relErr=relError( freq1, freq2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  exit (1);
+	  LALPrintError ("Relative frequency-error %g ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  diff_found=1;
 	} 
       if ( (relErr=relError( a1, a2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  exit (1);
+	  LALPrintError ("Relative error %g in alpha ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  diff_found=1;
 	} 
       if ( (relErr=relError( d1, d2)) > eps8 )
 	{
-	  LALPrintError ("\nRelative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
-	  exit (1);
+	  LALPrintError ("Relative error %g in delta ecceeds %g in line %d\n", relErr, eps8, i+1);
+	  diff_found=1;
 	} 
       if ( N1 != N2)
 	{
-	  LALPrintError ("\nDifferent cluster-sizes in line %d\n", i+1);
-	  exit (1);
+	  LALPrintError ("Different cluster-sizes in line %d\n", i+1);
+	  diff_found=1;
 	} 
       if ( (relErr=relError( mean1, mean2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  exit (1);
+	  LALPrintError ("Relative error %g in mean ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  diff_found=1;
 	}
       if ( (relErr=relError( std1, std2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  exit (1);
+	  LALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  diff_found=1;
 	}
       if ( (relErr=relError( max1, max2)) > eps4 )
 	{
-	  LALPrintError ("\nRelative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
-	  exit (1);
+	  LALPrintError ("Relative error %g in std-deviation ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  diff_found=1;
 	}
       
  
@@ -190,7 +191,7 @@ main(int argc, char *argv[])
 
   LALCheckMemoryLeaks(); 
 
-  return 0;
+  return diff_found;
 } /* main */
 
 
