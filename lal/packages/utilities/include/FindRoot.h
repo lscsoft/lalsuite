@@ -10,7 +10,7 @@
 #ifndef _FINDROOT_H
 #define _FINDROOT_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
 extern "C" {

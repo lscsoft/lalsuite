@@ -1,5 +1,5 @@
-#include "LALStdlib.h"
-#include "Date.h"
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
 
 INT4 lalDebugLevel = 2;
 

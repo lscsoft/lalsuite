@@ -11,7 +11,7 @@ Provides routines to report and handle errors.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALError.h"
+#include <lal/LALError.h>
 \end{verbatim}
 
 \noindent This header covers routines that print status messages, and
@@ -25,7 +25,7 @@ that allow functions to abort.
 #ifndef _LALERROR_H
 #define _LALERROR_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

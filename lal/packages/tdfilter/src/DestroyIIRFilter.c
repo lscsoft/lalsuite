@@ -37,9 +37,9 @@ void LALDDestroyVector()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "IIRFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/IIRFilter.h>
 
 NRCSID(DESTROYIIRFILTERC,"$Id$");
 

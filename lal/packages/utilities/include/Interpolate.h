@@ -10,7 +10,7 @@
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
 extern "C" {

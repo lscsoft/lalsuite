@@ -29,9 +29,9 @@
 
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "VectorOps.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/VectorOps.h>
 
 NRCSID(CVECTORABSC,"$Id$");
 

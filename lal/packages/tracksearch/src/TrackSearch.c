@@ -42,7 +42,7 @@
  */
 
 
-#include "TrackSearch.h"
+#include <lal/TrackSearch.h>
 
 NRCSID (TRACKSEARCHC, "$Id$");
 

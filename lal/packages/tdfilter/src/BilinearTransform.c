@@ -103,12 +103,12 @@ LALDHeapIndex()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "VectorOps.h"
-#include "Sort.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/VectorOps.h>
+#include <lal/Sort.h>
 #include <math.h>
-#include "ZPGFilter.h"
+#include <lal/ZPGFilter.h>
 
 NRCSID(BILINEARTRANSFORMC,"$Id$");
 

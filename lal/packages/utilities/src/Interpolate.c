@@ -9,8 +9,8 @@
 
 #include <math.h>
 #include <string.h>
-#include "LALStdlib.h"
-#include "Interpolate.h"
+#include <lal/LALStdlib.h>
+#include <lal/Interpolate.h>
 
 NRCSID (INTERPOLATEC, "$Id$");
 

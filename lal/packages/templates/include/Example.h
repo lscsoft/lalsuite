@@ -12,7 +12,7 @@
  * Example.h
  *
  * SYNOPSIS
- * #include "Example.h"
+ * #include <lal/Example.h>
  *
  * DESCRIPTION
  * Example header file prolog.
@@ -43,8 +43,8 @@
  */
 
 #include <stdlib.h>
-#include "LDAS_CONSTANTS.h"
-#include "LALRCSID.h"
+#include <lal/LDAS_CONSTANTS.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

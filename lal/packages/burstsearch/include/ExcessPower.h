@@ -12,7 +12,7 @@
  * ExcessPower.h
  *
  * SYNOPSIS
- * #include "ExcessPower.h"
+ * #include <lal/ExcessPower.h>
  *
  * DESCRIPTION
  * Error codes, typedefs, and protypes for the functions chisqCdf() and
@@ -28,10 +28,10 @@
 #define _EXCESSPOWER_H
 
 
-#include "LALStdlib.h"
-#include "LALDatatypes.h"
-#include "TFTransform.h"
-#include "LALRCSID.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALDatatypes.h>
+#include <lal/TFTransform.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

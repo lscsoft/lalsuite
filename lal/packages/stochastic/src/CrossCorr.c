@@ -45,10 +45,10 @@
 
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "RealFFT.h"
-#include "CrossCorr.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/CrossCorr.h>
 
 NRCSID (CROSSCORRC, "$Id$");
 

@@ -12,7 +12,7 @@
 #ifndef _FRAMEDATA_H
 #define _FRAMEDATA_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

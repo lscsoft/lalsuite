@@ -9,9 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALStdlib.h"
-#include "DataBuffer.h"
-#include "FindChirpExch.h"
+#include <lal/LALStdlib.h>
+#include <lal/DataBuffer.h>
+#include <lal/FindChirpExch.h>
 
 NRCSID (FINDCHIRPEXCHC, "$Id$");
 

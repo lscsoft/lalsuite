@@ -12,7 +12,7 @@ Provides routines to make and apply IIR filters.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "IIRFilter.h"
+#include <lal/IIRFilter.h>
 \end{verbatim}
 
 \noindent This header covers routines that create, destroy, and apply
@@ -87,8 +87,8 @@ routines never actually use this coefficient.
 #ifndef _IIRFILTER_H
 #define _IIRFILTER_H
 
-#include "LALStdlib.h"
-#include "ZPGFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/ZPGFilter.h>
 
 #ifdef __cplusplus
 extern "C" {

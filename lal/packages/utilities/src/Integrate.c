@@ -8,9 +8,9 @@
  */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "Integrate.h"
-#include "Interpolate.h"
+#include <lal/LALStdlib.h>
+#include <lal/Integrate.h>
+#include <lal/Interpolate.h>
 
 NRCSID (INTEGRATEC, "$Id$");
 

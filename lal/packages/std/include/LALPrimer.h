@@ -2,7 +2,7 @@
 #ifndef _LALPRIMER_H  /* Double-include protection. */
 #define _LALPRIMER_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

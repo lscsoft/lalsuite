@@ -35,7 +35,7 @@
  * 2. Source file version string (from CVS). Note the string name.
  */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (EXAMPLEC, "$Id$");
 
@@ -49,8 +49,8 @@ NRCSID (EXAMPLEC, "$Id$");
 
 #include <stdlib.h>
 #include <math.h>
-#include "LDASDCAPI.h"
-#include "Example.h"
+#include <lal/LDASDCAPI.h>
+#include <lal/Example.h>
 
 /* 
  * 4. Constants, enumerated types, structures, etc., used only internally;

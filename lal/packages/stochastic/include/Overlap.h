@@ -12,7 +12,7 @@
  * Overlap.h
  *
  * SYNOPSIS
- * #include "Overlap.h"
+ * #include <lal/Overlap.h>
  *
  * DESCRIPTION
  * Error codes, typedefs, and protypes for the function LALOverlap().
@@ -25,7 +25,7 @@
 #ifndef _OVERLAP_H
 #define _OVERLAP_H
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {

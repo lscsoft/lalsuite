@@ -56,12 +56,12 @@
  * 
  *----------------------------------------------------------------------- */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (LMST1C, "$Id$");
 
 #include <math.h>
-#include "Date.h"
+#include <lal/Date.h>
 #include "date_value.h"
 
 

@@ -41,10 +41,10 @@
  *------------------------------------------------------------------------
  */
 
-#include "LALStdlib.h"
-#include "LALConstants.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <math.h>
-#include "Dirichlet.h"
+#include <lal/Dirichlet.h>
 
 NRCSID (DIRICHLETC, "$Id$");
 

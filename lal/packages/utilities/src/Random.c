@@ -9,8 +9,8 @@
 
 #include <time.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "Random.h"
+#include <lal/LALStdlib.h>
+#include <lal/Random.h>
 
 NRCSID (RANDOMC, "$Id$");
 

@@ -12,7 +12,7 @@
  * SiteInfo.h
  *
  * SYNOPSIS
- * #include "SiteInfo.h"
+ * #include <lal/SiteInfo.h>
  *
  * DESCRIPTION
  * Site location and orientation information for the 5 major interferometers
@@ -24,6 +24,9 @@
  * REVISION HISTORY
  *
  * $Log$
+ * Revision 1.4  2000/11/09 23:37:20  jolien
+ * Support for LAM; Cleaned up LALConfig.h; Put headers in lal subdir.
+ *
  * Revision 1.3  2000/09/08 23:19:25  jolien
  * Changed LALDebugLevel to lalDebugLevel.
  *

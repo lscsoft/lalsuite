@@ -29,10 +29,10 @@
 
 #include <string.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "CrossCorr.h"
-#include "PrintVector.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/CrossCorr.h>
+#include <lal/PrintVector.h>
 
 NRCSID (CROSSCORRTESTC, "$Id$");
 

@@ -2,7 +2,7 @@
 #define _FINDCHIRPGLOBAL_H
 
 #ifndef _LALDATATYPES_H
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 #ifndef _LALDATATYPES_H
 #define _LALDATATYPES_H
 #endif

@@ -37,9 +37,9 @@ LALZDestroyVector()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "ZPGFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/ZPGFilter.h>
 
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 

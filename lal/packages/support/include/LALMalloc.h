@@ -11,7 +11,7 @@ Provides standard LAL memory allocation/deallocation routines.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALMalloc.h"
+#include <lal/LALMalloc.h>
 \end{verbatim}
 
 \noindent This header covers routines that replace the standard
@@ -32,7 +32,7 @@ standard C routines.
 #ifndef _LALMALLOC_H
 #define _LALMALLOC_H
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -77,9 +77,9 @@ LALI4DestroyVector()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "Sort.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/Sort.h>
 
 NRCSID(HEAPSORTC,"$Id$");
 

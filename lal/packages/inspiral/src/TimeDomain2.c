@@ -2,8 +2,8 @@
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
-#include "Inspiral.h"
-#include "LALStdlib.h"
+#include <lal/Inspiral.h>
+#include <lal/LALStdlib.h>
 
 NRCSID (TIMEDOMAIN2C, "$Id$");
 

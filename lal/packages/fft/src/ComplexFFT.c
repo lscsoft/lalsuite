@@ -27,7 +27,7 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALConfig.h"
+#include <config.h>
 
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
@@ -37,9 +37,9 @@
 #error "don't have either sfftw.h or fftw.h"
 #endif
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "ComplexFFT.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/ComplexFFT.h>
 
 NRCSID( COMPLEXFFTC, "$Id$" );
 

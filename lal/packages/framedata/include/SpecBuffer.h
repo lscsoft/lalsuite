@@ -12,9 +12,9 @@
 #ifndef _SPECBUFFER_H
 #define _SPECBUFFER_H
 
-#include "LALDatatypes.h"
-#include "RealFFT.h"
-#include "Window.h"
+#include <lal/LALDatatypes.h>
+#include <lal/RealFFT.h>
+#include <lal/Window.h>
 
 #ifdef  __cplusplus
 extern "C" {

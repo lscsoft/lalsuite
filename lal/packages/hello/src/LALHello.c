@@ -38,8 +38,8 @@ This is a sample function only.
 
 
 #include <stdio.h>
-#include "LALStdlib.h"
-#include "LALHello.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALHello.h>
 
 /* <lalVerbatim file="LALHelloNRCSID"> */
 NRCSID( LALHELLOC, "$Id$" );

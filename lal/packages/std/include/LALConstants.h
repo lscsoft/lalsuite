@@ -12,7 +12,7 @@ Provides standard numerical constants for LAL.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALConstants.h"
+#include <lal/LALConstants.h>
 \end{verbatim}
 
 \noindent This header defines a number of useful numerical constants
@@ -31,7 +31,7 @@ constants.
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -12,7 +12,7 @@ Provides routines to low- or high-pass filter a time series.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "BandPassTimeSeries.h"
+#include <lal/BandPassTimeSeries.h>
 \end{verbatim}
 
 \noindent This header covers routines that apply a time-domain low- or
@@ -24,9 +24,9 @@ Further documentation is given in the individual routines' modules.
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
 
-#include "LALStdlib.h"
-#include "IIRFilter.h"
-#include "ZPGFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/IIRFilter.h>
+#include <lal/ZPGFilter.h>
 
 #ifdef __cplusplus
 extern "C" {

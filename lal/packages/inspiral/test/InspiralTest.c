@@ -5,8 +5,8 @@
    April 5 , 00.
 */
 #include <stdio.h>
-#include "Inspiral.h"
-#include "LALStdlib.h"
+#include <lal/Inspiral.h>
+#include <lal/LALStdlib.h>
 
 INT4 lalDebugLevel=1;
 

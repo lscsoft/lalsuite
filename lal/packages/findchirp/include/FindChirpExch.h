@@ -12,9 +12,9 @@
 #ifndef _FINDCHIRPEXCH_H
 #define _FINDCHIRPEXCH_H
 
-#include "LALDatatypes.h"
-#include "Comm.h"
-#include "DataBuffer.h"
+#include <lal/LALDatatypes.h>
+#include <lal/Comm.h>
+#include <lal/DataBuffer.h>
 
 #ifdef  __cplusplus
 extern "C" {

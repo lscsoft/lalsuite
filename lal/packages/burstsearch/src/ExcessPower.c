@@ -27,7 +27,7 @@
  */
 
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 
 NRCSID (EXCESSPOWERC, "$Id$");
@@ -38,13 +38,13 @@ NRCSID (EXCESSPOWERC, "$Id$");
 #include <stdlib.h>
 #include <math.h>
 
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "SeqFactories.h"
-#include "RealFFT.h"
-#include "Thresholds.h"
-#include "ExcessPower.h"
-#include "Random.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/Thresholds.h>
+#include <lal/ExcessPower.h>
+#include <lal/Random.h>
 
 
 #define TRUE 1

@@ -1,6 +1,6 @@
-#include "LALStdlib.h"
-#include "Date.h"
-#include "AVFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/Date.h>
+#include <lal/AVFactories.h>
 
 /* $Id$ */
 

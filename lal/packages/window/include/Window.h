@@ -12,7 +12,7 @@
  * Window.h
  *
  * SYNOPSIS
- * #include "Window.h"
+ * #include <lal/Window.h>
  *
  * DESCRIPTION
  * Error codes, typedefs and prototypes required for use of the Window
@@ -26,7 +26,7 @@
 #ifndef _WINDOW_H
 #define _WINDOW_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

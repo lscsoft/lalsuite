@@ -12,7 +12,7 @@
  * Thresholds.h
  *
  * SYNOPSIS
- * #include "Thresholds.h"
+ * #include <lal/Thresholds.h>
  *
  * DESCRIPTION
  * Error codes, typedefs, and protypes for the functions related
@@ -30,9 +30,9 @@
 #define _THRESHOLDS_H
 
 
-#include "LALStdlib.h"
-#include "LALDatatypes.h"
-#include "LALRCSID.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

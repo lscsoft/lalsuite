@@ -12,7 +12,7 @@
  * VectorOps.h
  *
  * SYNOPSIS
- * #include "VectorOps.h"
+ * #include <lal/VectorOps.h>
  *
  * DESCRIPTION
  *
@@ -24,7 +24,7 @@
 #ifndef _VECTOROPS_H
 #define _VECTOROPS_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -18,7 +18,7 @@ CreateArray, LALDestroyVector and DestroyArray
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "AVFactories.h"
+#include <lal/AVFactories.h>
 \end{verbatim}
 
 </lalLaTeX> */
@@ -26,7 +26,7 @@ CreateArray, LALDestroyVector and DestroyArray
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

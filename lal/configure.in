@@ -1,7 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(include/LALConfigure.h.in)
+AC_INIT(include/config.h.in)
 AM_INIT_AUTOMAKE(lal, 0.5)
-AM_CONFIG_HEADER(include/LALConfigure.h)
+AM_CONFIG_HEADER(include/config.h include/lal/LALConfig.h)
+AC_DEFINE_UNQUOTED(LAL_VERSION, [$VERSION], [LAL Version])
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
 
 AC_WITH_CC
 AC_WITH_MPICC
@@ -60,12 +62,12 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(float)
-AC_CHECK_SIZEOF(double)
+LAL_CHECK_SIZEOF(short)
+LAL_CHECK_SIZEOF(int)
+LAL_CHECK_SIZEOF(long)
+LAL_CHECK_SIZEOF(long long)
+LAL_CHECK_SIZEOF(float)
+LAL_CHECK_SIZEOF(double)
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS(getopt)
@@ -79,6 +81,7 @@ AC_OUTPUT( Makefile                               \
            doc/laldoc/ldoc-pkg.sh                 \
            doc/autodoc/Makefile                   \
            include/Makefile                       \
+           include/lal/Makefile                   \
            lib/Makefile                           \
            packages/Makefile                      \
            packages/std/Makefile                  \

@@ -27,10 +27,10 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "RealFFT.h"
-#include "VectorOps.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/VectorOps.h>
 
 
 NRCSID (MAIN, "$Id$");

@@ -66,7 +66,7 @@ LALCHARDestroyVector()
 </lalLaTeX> */
 
 #ifndef _PRINTVECTOR_H
-#include "PrintVector.h"
+#include <lal/PrintVector.h>
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 #endif
@@ -80,14 +80,14 @@ LALCHARDestroyVector()
 #endif
 
 #ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H
 #define _LALSTDLIB_H
 #endif
 #endif
 
 #ifndef _AVFACTORIES_H
-#include "AVFactories.h"
+#include <lal/AVFactories.h>
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
 #endif

@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "LALConfig.h"
+#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -22,9 +22,9 @@
 #include <getopt.h>
 #endif
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "Interpolate.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/Interpolate.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

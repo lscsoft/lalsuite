@@ -28,8 +28,8 @@
  */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "VectorOps.h"
+#include <lal/LALStdlib.h>
+#include <lal/VectorOps.h>
 
 NRCSID (SSVECTORMULTIPLYC, "$Id$");
 

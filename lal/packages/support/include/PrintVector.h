@@ -12,7 +12,7 @@ This is a simple utility to print vectors into a file.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "PrintVector.h"
+#include <lal/PrintVector.h>
 \end{verbatim}
 
 \noindent Contains the prototypes for the
@@ -27,10 +27,10 @@ LAL$\langle\mbox{DT}\rangle$PrintVector functions
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 #ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H
 #define _LALSTDLIB_H
 #endif

@@ -46,8 +46,8 @@ returned through the function's return statement.
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "IIRFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/IIRFilter.h>
 
 NRCSID(IIRFILTERC,"$Id$");
 

@@ -14,8 +14,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "Comm.h"
-#include "LALStdlib.h"
+#include <lal/Comm.h>
+#include <lal/LALStdlib.h>
 
 NRCSID (COMMC, "$Id$");
 

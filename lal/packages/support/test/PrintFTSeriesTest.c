@@ -44,7 +44,7 @@ the \verb+PrintVector+ module).
 </lalLaTeX> */
 
 #ifndef _PRINTVECTOR_H
-#include "PrintFTSeries.h"
+#include <lal/PrintFTSeries.h>
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 #endif
@@ -65,14 +65,14 @@ the \verb+PrintVector+ module).
 #endif
 
 #ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H
 #define _LALSTDLIB_H
 #endif
 #endif
 
 #ifndef _AVFACTORIES_H
-#include "AVFactories.h"
+#include <lal/AVFactories.h>
 #ifndef _AVFACTORIES_H
 #define _AVFACTORIES_H
 #endif

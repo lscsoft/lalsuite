@@ -32,7 +32,7 @@
  *-----------------------------------------------------------------------
  */
 
-#include "TimeFreq.h"
+#include <lal/TimeFreq.h>
 
 NRCSID (DWINDOWC, "$Id$");
 

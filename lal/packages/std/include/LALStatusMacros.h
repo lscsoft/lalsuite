@@ -12,7 +12,7 @@ Provides macros for handling the LAL status structure.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALStatusMacros.h"
+#include <lal/LALStatusMacros.h>
 \end{verbatim}
 
 \noindent This header provides macros and functions for tracking and
@@ -635,18 +635,19 @@ package using the autodocumentation utilities, which the
 #ifndef _LALSTATUSMACROS_H
 #define _LALSTATUSMACROS_H
 
-#include "LALConfig.h"
-
-#ifdef STDC_HEADERS
-#include <string.h>
-#else
-#error "ERROR: non ansi standard headers"
+#include <lal/LALConfig.h>
+#ifdef NDEBUG 
+#ifndef LAL_NDEBUG
+#define LAL_NDEBUG
+#endif
 #endif
 
-#include "LALMalloc.h"
-#include "LALDatatypes.h"
-#include "LALError.h"
-#include "LALRCSID.h"
+#include <string.h>
+
+#include <lal/LALMalloc.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALError.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -726,7 +727,7 @@ extern int lalDebugLevel;
   }                                                                           \
   else
 
-#ifdef NDEBUG
+#ifdef LAL_NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
@@ -817,7 +818,7 @@ extern int lalDebugLevel;
 #define ABORT( statusptr, code, mesg ) \
   if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return
 
-#ifdef NDEBUG
+#ifdef LAL_NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \

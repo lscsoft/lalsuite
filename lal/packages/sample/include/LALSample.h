@@ -11,7 +11,7 @@ Example header for LAL.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALSample.h"
+#include <lal/LALSample.h>
 \end{verbatim}
 
 \noindent This header provides two trivial functions to divide real
@@ -23,7 +23,7 @@ standards for LAL headers.
 #ifndef _LALSAMPLE_H  /* Double-include protection. */
 #define _LALSAMPLE_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

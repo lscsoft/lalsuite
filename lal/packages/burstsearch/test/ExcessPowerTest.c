@@ -31,13 +31,13 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "RealFFT.h"
-#include "VectorOps.h"
-#include "Thresholds.h"
-#include "ExcessPower.h"
-#include "Random.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/VectorOps.h>
+#include <lal/Thresholds.h>
+#include <lal/ExcessPower.h>
+#include <lal/Random.h>
 
 
 #define _CODES(x) #x

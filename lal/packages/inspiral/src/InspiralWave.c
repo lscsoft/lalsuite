@@ -3,8 +3,8 @@
    March 08, 00.
 */
 
-#include "Inspiral.h"
-#include "LALStdlib.h"
+#include <lal/Inspiral.h>
+#include <lal/LALStdlib.h>
 
 NRCSID (INSPIRALWAVEC, "$Id$");
 

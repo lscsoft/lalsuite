@@ -10,8 +10,8 @@
  */
 
 #include <stdio.h>
-#include "LALStdlib.h"
-#include "FindChirpExch.h"
+#include <lal/LALStdlib.h>
+#include <lal/FindChirpExch.h>
 
 NRCSID (FINDCHIRPSLAVEC, "$Id$");
 

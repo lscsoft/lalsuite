@@ -39,8 +39,8 @@ routines neither use nor modify this data array.
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "IIRFilter.h"
+#include <lal/LALStdlib.h>
+#include <lal/IIRFilter.h>
 
 NRCSID(IIRFILTERVECTORRC,"$Id$");
 

@@ -14,7 +14,7 @@
  * TrackSearch.h
  *
  * SYNOPSIS
- * #include "TrackSearch.h"
+ * #include <lal/TrackSearch.h>
  *
  * DESCRIPTION
  * Defines Structures function prototypes and macros for use by the 
@@ -33,9 +33,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "TimeFreq.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/TimeFreq.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

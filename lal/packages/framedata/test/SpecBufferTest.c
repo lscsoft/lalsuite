@@ -13,7 +13,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "LALConfig.h"
+#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -23,10 +23,10 @@
 #include <getopt.h>
 #endif
 
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "FrameData.h"
-#include "SpecBuffer.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/FrameData.h>
+#include <lal/SpecBuffer.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

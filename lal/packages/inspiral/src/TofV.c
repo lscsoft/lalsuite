@@ -1,7 +1,7 @@
 #include <math.h>
-#include "LALStdlib.h"
-#include "Inspiral.h"
-#include "Integrate.h"
+#include <lal/LALStdlib.h>
+#include <lal/Inspiral.h>
+#include <lal/Integrate.h>
 
 NRCSID (TOFVC, "$Id$");
 

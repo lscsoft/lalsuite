@@ -55,11 +55,11 @@ LALButterworthREAL4TimeSeries()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #include <string.h>
 #include <stdlib.h>
-#include "AVFactories.h"
-#include "BandPassTimeSeries.h"
+#include <lal/AVFactories.h>
+#include <lal/BandPassTimeSeries.h>
 
 NRCSID(BANDPASSTESTC,"$Id$");
 

@@ -96,7 +96,7 @@ AC_DEFUN(AC_ENABLE_DEBUG,
         [  --enable-debug          include standard LAL debugging code [default=yes] ],
         [ case "${enableval}" in
             yes) ;;
-            no)  AC_DEFINE(NDEBUG, 1, Suppress debugging code) ;;
+            no)  AC_DEFINE(LAL_NDEBUG, 1, Suppress debugging code) ;;
             *) AC_MSG_ERROR(bad value for ${enableval} for --enable-debug) ;;
           esac
         ],)
@@ -243,6 +243,50 @@ AC_DEFUN(AC_CHECK_MPI,
     AC_MSG_RESULT(yes),
     AC_MSG_RESULT(no)
     AC_MSG_ERROR(mpi does not work))
+  AC_MSG_CHECKING(mpi type)
+  MPITYPE=
+  AC_TRY_COMPILE([
+    #include <mpi.h>
+    #ifndef LAM_MPI
+    #error "not LAM"
+    #endif], , [MPITYPE=LAM AC_MSG_RESULT(lam)],
+    AC_TRY_COMPILE([
+      #include <mpi.h>
+      #ifndef MPICH_NAME
+      #erro "not MPICH"
+      #endif], , [MPITYPE=MPICH AC_MSG_RESULT(mpich)],
+      AC_MSG_RESULT(couldn't determine)
+      AC_MSG_ERROR(mpi must be either lam or mpich)
+    )
+  )
+  AC_SUBST(MPITYPE)dnl
+])
+
+
+dnl This is AC_CHECK_SIZEOF but prepends LAL.
+
+AC_DEFUN(LAL_CHECK_SIZEOF,
+[changequote(<<, >>)dnl
+dnl The name to #define.
+define(<<LAL_TYPE_NAME>>, translit(lal_sizeof_$1, [a-z *], [A-Z_P]))dnl
+dnl The cache variable name.
+define(<<LAL_CV_NAME>>, translit(lal_cv_sizeof_$1, [ *], [_p]))dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(size of $1)
+AC_CACHE_VAL(LAL_CV_NAME,
+[AC_TRY_RUN([#include <stdio.h>
+main()
+{
+  FILE *f=fopen("conftestval", "w");
+  if (!f) exit(1);
+  fprintf(f, "%d\n", sizeof($1));
+  exit(0);
+}], LAL_CV_NAME=`cat conftestval`, LAL_CV_NAME=0, ifelse([$2], , , LAL_CV_NAME=$2))
+])dnl
+AC_MSG_RESULT($LAL_CV_NAME)
+AC_DEFINE_UNQUOTED(LAL_TYPE_NAME, $LAL_CV_NAME)
+undefine([LAL_TYPE_NAME])dnl
+undefine([LAL_CV_NAME])dnl
 ])
 
 

@@ -47,7 +47,7 @@ LALHello()
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "LALConfig.h"
+#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -57,8 +57,8 @@ LALHello()
 #include <getopt.h>
 #endif
 
-#include "LALStdlib.h"
-#include "LALHello.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALHello.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

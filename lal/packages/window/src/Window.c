@@ -28,9 +28,9 @@
  */
 
 #include <math.h>
-#include "LALConstants.h"
-#include "LALStdlib.h"
-#include "Window.h"
+#include <lal/LALConstants.h>
+#include <lal/LALStdlib.h>
+#include <lal/Window.h>
 
 NRCSID (WINDOW, "$Id$");
 

@@ -48,7 +48,7 @@ LALCheckMemoryLeaks()
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 int lalDebugLevel = 3;
 

@@ -5,7 +5,7 @@ $Id$
 
 /* Usage and description */
 
-#include "LALTemplate.h"  /* Include any required headers */
+#include <lal/LALTemplate.h>  /* Include any required headers */
 
 /* Define RCS ID string */
 NRCSID(LALTEMPLATETESTC,"$Id$");

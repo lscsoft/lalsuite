@@ -1,7 +1,7 @@
 /* <lalVerbatim> */
 #include <stdlib.h>
-#include "LALStdlib.h"
-#include "LALPrimer.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALPrimer.h>
 
 NRCSID( LALPRIMERTESTC, "$Id$" );
 

@@ -18,7 +18,7 @@ and DestroyVectorSequence.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "SeqFactories.h"
+#include <lal/SeqFactories.h>
 \end{verbatim}
 
 </lalLaTeX> */
@@ -26,8 +26,8 @@ and DestroyVectorSequence.
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
 
-#include "LALDatatypes.h"
-#include "AVFactories.h"
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -66,13 +66,13 @@ LALIIRFilterREAL4VectorR()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include "AVFactories.h"
-#include "IIRFilter.h"
-#include "ZPGFilter.h"
+#include <lal/AVFactories.h>
+#include <lal/IIRFilter.h>
+#include <lal/ZPGFilter.h>
 
 NRCSID(IIRFILTERTESTC,"$Id$");
 

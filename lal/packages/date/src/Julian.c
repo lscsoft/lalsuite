@@ -107,11 +107,11 @@
  * 
  *----------------------------------------------------------------------- */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (JULIANC, "$Id$");
 
-#include "Date.h"
+#include <lal/Date.h>
 #include "date_value.h"
 
 /*

@@ -31,12 +31,12 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #include <math.h>
 #include <string.h>
-#include "AVFactories.h"
-#include "PrintVector.h"
-#include "Overlap.h"
+#include <lal/AVFactories.h>
+#include <lal/PrintVector.h>
+#include <lal/Overlap.h>
 
 #define PRINT 1 /* set to 1 to write overlap reduction functions to files */ 
 INT4 lalDebugLevel = 2; /* set to 2 to get full status information for tests */

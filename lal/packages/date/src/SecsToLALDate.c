@@ -34,12 +34,12 @@
  * 
  *----------------------------------------------------------------------- */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (SECSTOLALDATEC, "$Id$");
 
 #include <math.h>
-#include "Date.h"
+#include <lal/Date.h>
 #include "date_value.h"
 
 /*

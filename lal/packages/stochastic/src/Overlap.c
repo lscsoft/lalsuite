@@ -49,10 +49,10 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALStdlib.h"
-#include "LALConstants.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <math.h>
-#include "Overlap.h"
+#include <lal/Overlap.h>
 
 NRCSID (OVERLAPC, "$Id$");
 

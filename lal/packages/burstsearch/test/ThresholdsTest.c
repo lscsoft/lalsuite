@@ -36,8 +36,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "LALStdlib.h"
-#include "Thresholds.h"
+#include <lal/LALStdlib.h>
+#include <lal/Thresholds.h>
 
 
 #define _CODES(x) #x

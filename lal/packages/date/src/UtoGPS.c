@@ -54,11 +54,11 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (UTOGPSC, "$Id$");
 
-#include "Date.h"
+#include <lal/Date.h>
 #include "date_value.h"
 
 

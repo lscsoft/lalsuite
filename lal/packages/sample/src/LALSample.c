@@ -35,8 +35,8 @@ nested function calls.
 
 ******************************************************* </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "LALSample.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALSample.h>
 
 NRCSID( LALSAMPLEC, "$Id$" );
 

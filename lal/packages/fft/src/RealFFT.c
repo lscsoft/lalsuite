@@ -27,7 +27,7 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALConfig.h"
+#include <config.h>
 
 #ifdef HAVE_SRFFTW_H
 #include <srfftw.h>
@@ -37,9 +37,9 @@
 #error "don't have either srfftw.h or rfftw.h"
 #endif
 
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "RealFFT.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
 
 NRCSID (REALFFTC, "$Id$");
 

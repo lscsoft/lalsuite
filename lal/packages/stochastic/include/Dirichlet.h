@@ -12,7 +12,7 @@
  * Dirichlet.h
  *
  * SYNOPSIS
- * #include "Dirichlet.h"
+ * #include <lal/Dirichlet.h>
  *
  * DESCRIPTION
  * Error codes, typedefs, and prototype for function LALDirichlet()
@@ -25,7 +25,7 @@
 #ifndef _DIRICHLET_H
 #define _DIRICHLET_H
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -28,7 +28,7 @@
  */
 
 
-#include "TimeFreq.h"
+#include <lal/TimeFreq.h>
 
 NRCSID (CREATETIMEFREQREPC, "$Id$");
 

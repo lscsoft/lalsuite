@@ -32,10 +32,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "LALDatatypes.h"
-#include "AVFactories.h"
-#include "Window.h"
-#include "PrintVector.h"
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <lal/Window.h>
+#include <lal/PrintVector.h>
 
 NRCSID (MAIN, "$Id$");
 

@@ -53,11 +53,11 @@ LALPrintError()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #include <stdlib.h>
-#include "AVFactories.h"
-#include "Random.h"
-#include "Sort.h"
+#include <lal/AVFactories.h>
+#include <lal/Random.h>
+#include <lal/Sort.h>
 
 NRCSID(SORTTESTC,"$Id$");
 

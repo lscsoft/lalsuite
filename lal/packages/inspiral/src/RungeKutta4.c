@@ -1,5 +1,5 @@
-#include "Inspiral.h"
-#include "LALStdlib.h"
+#include <lal/Inspiral.h>
+#include <lal/LALStdlib.h>
 
 NRCSID (RUNGEKUTTA4C, "$Id$");
 

@@ -29,17 +29,17 @@
  */
 
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 
 NRCSID (THRESHOLDSC, "$Id$");
 
 #include <stdlib.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "Thresholds.h"
-#include "FindRoot.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Thresholds.h>
+#include <lal/FindRoot.h>
 
 
 

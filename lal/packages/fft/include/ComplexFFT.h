@@ -12,7 +12,7 @@
  * ComplexFFT.h
  *
  * SYNOPSIS
- * #include "ComplexFFT.h"
+ * #include <lal/ComplexFFT.h>
  *
  * DESCRIPTION
  *
@@ -24,7 +24,7 @@
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

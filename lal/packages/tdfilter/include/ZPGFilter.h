@@ -12,7 +12,7 @@ Provides routines to manipulate ZPG filters.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "ZPGFilter.h"
+#include <lal/ZPGFilter.h>
 \end{verbatim}
 
 \noindent This header covers routines that create, destroy, and
@@ -60,7 +60,7 @@ variable is assumed.
 #ifndef _ZPGFILTER_H
 #define _ZPGFILTER_H
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -24,7 +24,7 @@
  *-----------------------------------------------------------------------
  */
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 
 NRCSID (TFTRANSFORMC, "$Id$");
@@ -34,11 +34,11 @@ NRCSID (TFTRANSFORMC, "$Id$");
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "RealFFT.h"
-#include "ComplexFFT.h"
-#include "TFTransform.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+#include <lal/TFTransform.h>
 
 
 

@@ -10,7 +10,7 @@
 #ifndef _RANDOM_H
 #define _RANDOM_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -13,7 +13,7 @@ file.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "PrintFTSeries.h"
+#include <lal/PrintFTSeries.h>
 \end{verbatim}
 
 \noindent Provides prototype information for the routines in 
@@ -29,10 +29,10 @@ file.
 #ifndef _PRINTFTSERIES_H
 #define _PRINTFTSERIES_H
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 #ifndef _LALSTDLIB_H
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H
 #define _LALSTDLIB_H
 #endif

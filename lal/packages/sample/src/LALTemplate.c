@@ -5,7 +5,7 @@ $Id$
 
 /* Documentation of the function(s) */
 
-#include "LALStdlib.h"  /* Include any required headers */
+#include <lal/LALStdlib.h>  /* Include any required headers */
 
 /* Define RCS ID string */
 NRCSID(LALTEMPLATEC,"$Id$");

@@ -8,9 +8,9 @@
  */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "FindRoot.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/FindRoot.h>
 
 NRCSID (FINDROOTC, "$Id$");
 

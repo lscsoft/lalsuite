@@ -12,7 +12,7 @@
  * Date.h
  *
  * SYNOPSIS
- * #include "Date.h"
+ * #include <lal/Date.h>
  *
  * DESCRIPTION
  * Data type definitions for date and time manipulation.
@@ -34,13 +34,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
-#include "LALConstants.h"
-#include "LALAtomicDatatypes.h"
-#include "LALDatatypes.h"
-#include "LALStatusMacros.h"
-#include "LALStdlib.h"
+#include <lal/LALConstants.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALStatusMacros.h>
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {

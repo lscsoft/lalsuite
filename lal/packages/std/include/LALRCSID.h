@@ -12,7 +12,7 @@ Provides macros for assigning an RCS ID string to a file.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 \end{verbatim}
 
 \noindent This header defines a pair of macros \verb@RCSID()@ and

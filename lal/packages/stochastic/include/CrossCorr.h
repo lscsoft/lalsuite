@@ -12,7 +12,7 @@
  * CrossCorr.h
  *
  * SYNOPSIS
- * #include "CcrossCorr.h"
+ * #include <lal/CcrossCorr.h>
  *
  * DESCRIPTION
  * Error codes, typedefs, and protypes for the function LALCrossCorr()
@@ -25,7 +25,7 @@
 #ifndef _CROSSCORR_H
 #define _CROSSCORR_H
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {

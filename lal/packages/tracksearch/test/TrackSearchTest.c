@@ -2,7 +2,7 @@
    Example program for the use of the the "TrackSearch() routine;
    */
 
-#include "TrackSearch.h"
+#include <lal/TrackSearch.h>
 
 NRCSID (TESTSTSC,"$Id$");
 

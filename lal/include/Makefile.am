@@ -1,4 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALConfigure.h
-EXTRA_DIST = LALConfigure.h.in
-MAINTAINERCLEANFILES = LALConfigure.h
+SUBDIRS = lal
+EXTRA_DIST = config.h.in
+DISTCLEANFILES = config.h

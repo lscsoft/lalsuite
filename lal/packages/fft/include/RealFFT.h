@@ -12,7 +12,7 @@
  * RealFFT.h
  *
  * SYNOPSIS
- * #include "RealFFT.h"
+ * #include <lal/RealFFT.h>
  *
  * DESCRIPTION
  *
@@ -24,7 +24,7 @@
 #ifndef _REALFFT_H
 #define _REALFFT_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -31,7 +31,7 @@
  *-----------------------------------------------------------------------
  */
 
-#include "TimeFreq.h"
+#include <lal/TimeFreq.h>
 
 /* well, better macros than these one are welcome! */
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))

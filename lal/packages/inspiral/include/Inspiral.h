@@ -11,8 +11,8 @@
 # include <math.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include "LALStdlib.h"
-# include "LALConstants.h"
+# include <lal/LALStdlib.h>
+# include <lal/LALConstants.h>
 
 #ifdef  __cplusplus
 extern "C" {

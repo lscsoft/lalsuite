@@ -85,11 +85,11 @@ LALDCreateVector()
 
 </lalLaTeX> */
 
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "AVFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
 #include <math.h>
-#include "IIRFilter.h"
+#include <lal/IIRFilter.h>
 
 NRCSID(CREATEIIRFILTERC,"$Id$");
 

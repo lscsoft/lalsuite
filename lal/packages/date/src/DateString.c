@@ -37,11 +37,11 @@
  * 
  *-----------------------------------------------------------------------
  */
-#include "LALRCSID.h"
+#include <lal/LALRCSID.h>
 
 NRCSID (DATESTRINGC, "$Id$");
 
-#include "Date.h"
+#include <lal/Date.h>
 
 
 void

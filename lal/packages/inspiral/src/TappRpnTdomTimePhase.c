@@ -31,8 +31,8 @@
 
 
 
-#include "LALStdlib.h"
-#include "Inspiral.h"
+#include <lal/LALStdlib.h>
+#include <lal/Inspiral.h>
 
 NRCSID (TAPPRPNTDOMTIMEPHASEC, "$Id$");
 

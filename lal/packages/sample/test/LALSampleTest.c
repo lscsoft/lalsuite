@@ -39,8 +39,8 @@ LALREAL8Divide()
 ******************************************************* </lalLaTeX> */
 
 #include <stdlib.h>
-#include "LALStdlib.h"
-#include "LALSample.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALSample.h>
 
 NRCSID( LALSAMPLETESTC, "$Id$" );
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "Date.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/Date.h>
 
 INT4 lalDebugLevel = 2;
 

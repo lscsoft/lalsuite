@@ -17,7 +17,7 @@ elements.
 
 \subsection{Synopsis}
 \begin{verbatim}
-#include "Sort.h"
+#include <lal/Sort.h>
 \end{verbatim}
 
 </lalLaTeX> */
@@ -25,7 +25,7 @@ elements.
 #ifndef _SORT_H
 #define _SORT_H
 
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "LALStdlib.h"
-#include "FindChirpExch.h"
+#include <lal/LALStdlib.h>
+#include <lal/FindChirpExch.h>
 
 NRCSID (FINDCHIRPMASTERC, "$Id$");
 

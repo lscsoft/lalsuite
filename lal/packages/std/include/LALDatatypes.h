@@ -12,7 +12,7 @@ Provides the basic LAL datatypes.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 \end{verbatim}
 
 \noindent This header defines the standard data types and data
@@ -35,8 +35,8 @@ following section.
 /* <lalLaTeX>
 \newpage\input{LALAtomicDatatypesH}
 </lalLaTeX> */
-#include "LALAtomicDatatypes.h"
-#include "LALRCSID.h"
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {

@@ -98,9 +98,9 @@ discussion in \verb+LALStatusMacros.h+ for more information about
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include "LALStdlib.h"
-#include "LALError.h"
-#include "LALMalloc.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/LALMalloc.h>
 #undef LALMalloc
 #undef LALFree
 #undef LALCalloc

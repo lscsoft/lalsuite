@@ -10,10 +10,10 @@
  */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "SpecBuffer.h"
-#include "DataBuffer.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/SpecBuffer.h>
+#include <lal/DataBuffer.h>
 
 NRCSID (DATABUFFERC, "$Id$");
 

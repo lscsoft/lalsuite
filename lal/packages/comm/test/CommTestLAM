@@ -1,0 +1,14 @@
+#!/bin/sh
+rm -f lamhosts
+rm -f CommTestSchema
+
+echo `hostname` >  lamhosts
+echo 'CommTestMain h' > CommTestSchema
+echo 'CommTestMain h' >> CommTestSchema
+echo 'CommTestMain h' >> CommTestSchema
+
+lamboot -v lamhosts
+
+mpirun -v CommTestSchema
+
+wipe -v lamhosts

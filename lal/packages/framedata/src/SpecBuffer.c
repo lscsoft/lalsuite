@@ -10,12 +10,12 @@
  */
 
 #include <math.h>
-#include "LALStdlib.h"
-#include "AVFactories.h"
-#include "RealFFT.h"
-#include "Window.h"
-#include "VectorOps.h"
-#include "SpecBuffer.h"
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/Window.h>
+#include <lal/VectorOps.h>
+#include <lal/SpecBuffer.h>
 
 NRCSID (SPECBUFFERC, "$Id$");
 

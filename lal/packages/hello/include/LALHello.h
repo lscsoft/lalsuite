@@ -11,7 +11,7 @@ Provides routines to print ``hello, LSC!''
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALHello.h"
+#include <lal/LALHello.h>
 \end{verbatim}
 
 \noindent This header covers the routine to print the greeting message.
@@ -22,7 +22,7 @@ Provides routines to print ``hello, LSC!''
 #ifndef _LALHELLO_H
 #define _LALHELLO_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
 extern "C" {

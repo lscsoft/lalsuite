@@ -26,7 +26,7 @@
  *----------------------------------------------------------------------- */
 
 
-#include "TimeFreq.h"
+#include <lal/TimeFreq.h>
 
 int lalDebugLevel=2;
 

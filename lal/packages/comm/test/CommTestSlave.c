@@ -10,8 +10,8 @@
  */
 
 #include <stdio.h>
-#include "LALStdlib.h"
-#include "Comm.h"
+#include <lal/LALStdlib.h>
+#include <lal/Comm.h>
 
 NRCSID (COMMTESTSLAVEC, "$Id$");
 

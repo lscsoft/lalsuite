@@ -12,7 +12,7 @@
  * TimeFreq.h
  *
  * SYNOPSIS
- * #include "TimeFreq.h"
+ * #include <lal/TimeFreq.h>
  *
  * DESCRIPTION 
  * Header file for the TFR package (computation of time-frequency
@@ -42,10 +42,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include "LALStdlib.h"
-#include "LALConstants.h"
-#include "RealFFT.h"
-#include "AVFactories.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/RealFFT.h>
+#include <lal/AVFactories.h>
 
 #ifdef  __cplusplus
 extern "C" {

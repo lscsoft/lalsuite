@@ -12,9 +12,9 @@
 #ifndef _COMM_H
 #define _COMM_H
 
-#include "LALDatatypes.h"
-#include "AVFactories.h"
-#include "mpi.h"
+#include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
+#include <mpi.h>
 
 #ifdef  __cplusplus
 extern "C" {

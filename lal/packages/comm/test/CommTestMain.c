@@ -10,9 +10,9 @@
  */
 
 #include <stdio.h>
-#include "mpi.h"
-#include "LALStdlib.h"
-#include "Comm.h"
+#include <mpi.h>
+#include <lal/LALStdlib.h>
+#include <lal/Comm.h>
 
 NRCSID (MAIN, "$Id$");
 

@@ -8,7 +8,7 @@ $Id$
 #ifndef _IIRFILTER_H    /* Protect against double-inclusion */
 #define _IIRFILTER_H
 
-#include "LALStdlib.h"  /* Include any other headers */
+#include <lal/LALStdlib.h>  /* Include any other headers */
 
 #ifdef __cplusplus
 extern "C" {            /* Protect against C++ name mangling */

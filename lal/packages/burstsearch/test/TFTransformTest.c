@@ -32,11 +32,11 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "LALStdlib.h"
-#include "SeqFactories.h"
-#include "VectorOps.h"
-#include "TFTransform.h"
-#include "PrintVector.h"
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/VectorOps.h>
+#include <lal/TFTransform.h>
+#include <lal/PrintVector.h>
 
 
 #define _CODES(x) #x

@@ -12,9 +12,9 @@
 #ifndef _DATABUFFER_H
 #define _DATABUFFER_H
 
-#include "LALDatatypes.h"
-#include "FrameData.h"
-#include "SpecBuffer.h"
+#include <lal/LALDatatypes.h>
+#include <lal/FrameData.h>
+#include <lal/SpecBuffer.h>
 
 #ifdef  __cplusplus
 extern "C" {

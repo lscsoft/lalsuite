@@ -12,7 +12,7 @@ Includes the standard LAL header files.
 
 \subsection*{Synopsis}
 \begin{verbatim}
-#include "LALStdlib.h"
+#include <lal/LALStdlib.h>
 \end{verbatim}
 
 \noindent This header is the overall header for the \verb@std@
@@ -28,9 +28,9 @@ most LAL functions, by including the following header files in the
 #define _LALSTDLIB_H
 
 /* <lalVerbatim> */
-#include "LALRCSID.h"
-#include "LALDatatypes.h"
-#include "LALStatusMacros.h"
+#include <lal/LALRCSID.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALStatusMacros.h>
 /* </lalVerbatim>
 <lalLaTeX>
 
@@ -42,7 +42,7 @@ for certain standard modules used by many LAL routines:
 </lalLaTeX>
 <lalVerbatim> */
 #include <stdio.h>
-#include "LALMalloc.h"
+#include <lal/LALMalloc.h>
 /* </lalVerbatim> 
 
 <lalLaTeX>

@@ -10,7 +10,7 @@
 #ifndef _INTEGRATE_H
 #define _INTEGRATE_H
 
-#include "LALDatatypes.h"
+#include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
 extern "C" {

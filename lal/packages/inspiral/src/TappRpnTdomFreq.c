@@ -34,9 +34,9 @@
 
 
 
-#include "LALStdlib.h"
-#include "Inspiral.h"
-#include "FindRoot.h"
+#include <lal/LALStdlib.h>
+#include <lal/Inspiral.h>
+#include <lal/FindRoot.h>
 
 
 

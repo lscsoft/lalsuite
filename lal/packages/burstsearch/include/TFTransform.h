@@ -12,7 +12,7 @@
  * TFTransform.h
  *
  * SYNOPSIS
- * #include "TFTransform.h"
+ * #include <lal/TFTransform.h>
  *
  * DESCRIPTION
  * Function to create a time frequency (TF) plane from a segment of data
@@ -30,12 +30,12 @@
 #define _TFTRANSFORM_H
 
 
-#include "LALStdlib.h"
-#include "LALDatatypes.h"
-#include "Window.h"
-#include "RealFFT.h"
-#include "ComplexFFT.h"
-#include "LALRCSID.h"
+#include <lal/LALStdlib.h>
+#include <lal/LALDatatypes.h>
+#include <lal/Window.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

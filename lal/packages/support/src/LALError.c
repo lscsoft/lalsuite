@@ -148,14 +148,15 @@ lalDebugLevel
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "LALMalloc.h"
-#include "LALError.h"
+#include <lal/LALMalloc.h>
+#include <lal/LALError.h>
+
 #undef LALError
 #undef LALWarning
 #undef LALInfo
 #undef LALTrace
 
-#ifdef NDEBUG
+#ifdef LAL_NDEBUG
 #define vfprintf( stream, fmt, ap ) 0
 #endif
 
@@ -163,6 +164,23 @@ NRCSID( LALERRORC, "$Id$" );
 
 extern int lalDebugLevel;
 
+#define STR( var ) #var
+#define XSTR( var ) STR( var )
+float
+LALVersion( FILE *fp )
+{
+  fp ? fputs( "LAL Version " XSTR( LAL_VERSION ) "\n", fp ) : 0 ;
+  return LAL_VERSION;
+}
+#undef XSTR
+#undef STR
+
+void
+LALConfigureArgs( FILE *fp )
+{
+  fp ? fputs( "LAL Configure Arguments " LAL_CONFIGURE_ARGS "\n", fp ) : 0 ;
+  return;
+}
 
 /* <lalVerbatim file="LALErrorCP"> */
 int
@@ -250,7 +268,7 @@ LALTrace( LALStatus *status, int exit )
 }
 
 
-#ifdef NDEBUG
+#ifdef LAL_NDEBUG
 
 #define LALError( statusptr, statement ) 0
 #define LALWarning( statusptr, warning ) 0
