@@ -28,59 +28,29 @@
  */
 
 #ifdef FFTW_PREFIX
-
-#ifndef RFFTW_H
 #include "srfftw.h"
-#ifndef RFFTW_H
-#define RFFTW_H
-#endif
-#endif
-
 #else /* not defined FFTW_PREFIX */
-
-#ifndef RFFTW_H
 #include "rfftw.h"
-#ifndef RFFTW_H
-#define RFFTW_H
-#endif
-#endif
-
 #endif /* FFTW_PREFIX */
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _SEQFACTORIES_H
 #include "SeqFactories.h"
-#ifndef _SEQFACTORIES_H
-#define _SEQFACTORIES_H
-#endif
-#endif
-
-#ifndef _REALFFT_H
 #include "RealFFT.h"
-#ifndef _REALFFT_H
-#define _REALFFT_H
-#endif
-#endif
 
 NRCSID (REALFFTC, "$Id$");
 
 /* tell FFTW to use LALMalloc and LALFree */
-#define FFTWHOOKS fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree;
+#define FFTWHOOKS \
+  do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
 
 void
 EstimateFwdRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "EstimateFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -90,12 +60,12 @@ EstimateFwdRealFFTPlan (
   /* make sure that the plan has not been previously defined */
   ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
 
+  /* make sure that the requested size is valid */
+  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
   ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-
-  /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -108,7 +78,12 @@ EstimateFwdRealFFTPlan (
         );
 
   /* check that the plan is not NULL */
-  ASSERT ((*plan)->plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+  }
 
   /* normal exit */
   RETURN (stat);
@@ -118,10 +93,10 @@ void
 EstimateInvRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "EstimateInvRealFFTPlan", REALFFTC);
  
   FFTWHOOKS;
 
@@ -131,12 +106,12 @@ EstimateInvRealFFTPlan (
   /* make sure that the plan has not been previously defined */
   ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
 
+  /* make sure that the requested size is valid */
+  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
   ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-
-  /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -149,7 +124,12 @@ EstimateInvRealFFTPlan (
         );
 
   /* check that the plan is not NULL */
-  ASSERT ((*plan)->plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+  }
 
   /* normal exit */
   RETURN (stat);
@@ -159,10 +139,10 @@ void
 MeasureFwdRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "MeasureFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -172,12 +152,12 @@ MeasureFwdRealFFTPlan (
   /* make sure that the plan has not been previously defined */
   ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
 
+  /* make sure that the requested size is valid */
+  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
   ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-
-  /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -190,7 +170,12 @@ MeasureFwdRealFFTPlan (
         );
 
   /* check that the plan is not NULL */
-  ASSERT ((*plan)->plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+  }
 
   /* normal exit */
   RETURN (stat);
@@ -200,10 +185,10 @@ void
 MeasureInvRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "MeasureInvRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -213,12 +198,12 @@ MeasureInvRealFFTPlan (
   /* make sure that the plan has not been previously defined */
   ASSERT (*plan == NULL, stat, REALFFT_ENNUL, REALFFT_MSGENNUL);
 
+  /* make sure that the requested size is valid */
+  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
+
   /* allocate memory */
   *plan = (RealFFTPlan *) LALMalloc (sizeof(RealFFTPlan));
   ASSERT (*plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
-
-  /* make sure that the requested size is valid */
-  ASSERT (size > 0, stat, REALFFT_ESIZE, REALFFT_MSGESIZE);
 
   /* assign plan fields */
   (*plan)->size = size;
@@ -231,7 +216,12 @@ MeasureInvRealFFTPlan (
         );
 
   /* check that the plan is not NULL */
-  ASSERT ((*plan)->plan, stat, REALFFT_ENULL, REALFFT_MSGENULL);
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( stat, REALFFT_ENULL, REALFFT_MSGENULL );
+  }
 
   /* normal exit */
   RETURN (stat);
@@ -243,7 +233,7 @@ DestroyRealFFTPlan (
     RealFFTPlan **plan
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "DestroyRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
 
@@ -271,7 +261,7 @@ REAL4VectorFFT (
     RealFFTPlan *plan
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "REAL4VectorFFT", REALFFTC);
 
   FFTWHOOKS;
 
@@ -311,7 +301,7 @@ REAL4VectorSequenceFFT (
     RealFFTPlan         *plan
     )
 {
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "REAL4VectorSequenceFFT", REALFFTC);
 
   FFTWHOOKS;
 
@@ -359,7 +349,7 @@ FwdRealFFT (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "FwdRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -428,7 +418,7 @@ InvRealFFT (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "InvRealFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -498,7 +488,7 @@ RealPowerSpectrum (
   INT4         n;
   INT4         k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "RealPowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -568,7 +558,7 @@ FwdRealSequenceFFT (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "FwdRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -651,7 +641,7 @@ InvRealSequenceFFT (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "InvRealSequenceFFT", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
@@ -737,7 +727,7 @@ RealSequencePowerSpectrum (
   INT4 j;
   INT4 k;
 
-  INITSTATUS (stat, REALFFTC);
+  INITSTATUS (stat, "RealSequencePowerSpectrum", REALFFTC);
   ATTATCHSTATUSPTR (stat);
 
   FFTWHOOKS;
