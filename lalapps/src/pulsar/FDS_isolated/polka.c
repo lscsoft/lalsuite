@@ -108,8 +108,12 @@ CandidateList CList1, CList2, CList3, CList4; /* treat up to 4 candidate files *
 
 CoincidentCandidate *CC;
 
+#ifndef FALSE
 #define FALSE (1==0)
+#endif
+#ifndef TRUE
 #define TRUE  (1==1)
+#endif
 
 #if USE_BOINC
 int polka(int argc,char *argv[])
