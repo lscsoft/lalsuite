@@ -6,11 +6,11 @@
 %  It will look into all the different patches
  
 % Remember to add the path where this file is located: 
-% addpath /scratch/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
+% addpath /local_data/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
 %   To run simply type AllSkyMax
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Directory = '/scratch/sintes/S2_clean/Driver_allsky/';
+Directory = '/local_data/badkri/Driver_allsky/';
 %Detector = 'L1';
 Detector = 'H1';
 DirName = '/skypatch_';
@@ -22,7 +22,6 @@ NspinValues = 11;
 
 
 Nbands = 199;
-%Nbands = 2;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,6 +63,7 @@ for filenumber = 0:Nbands; %the  current frequency band
 
      output=load(file);
      xMax = output(:,4);
+     clear output;
      Length = length(xMax);
      XX =  reshape(xMax, NspinValues, Length/NspinValues );
      maxi= max(XX);

@@ -24,13 +24,20 @@ upper = UL(:,5);
  
 Nbands =length(fmin);
 
+totalband = 0;
+
 for bn=1:Nbands
   plot( [fmin(bn) fmax(bn)], [upper(bn) upper(bn)]);
   hold on
+totalband(bn) = fmax(bn) - fmin(bn);
 end
+
+  sum(totalband) - 0.02*6*200
 
 plot((fmin+fmax)/2, upper, '+')
  grid
  xlabel ('Frequency [Hz]');
  ylabel ('h_0 95%');
- title('S2-L1: Preliminary Upper Limit')
+ titlestring = strcat('S2-', Detector);
+ titlestring = strcat(titlestring, ': Preliminary Upper Limit');
+ title(titlestring)

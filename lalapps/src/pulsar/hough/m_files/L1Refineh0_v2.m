@@ -5,8 +5,8 @@
 
 clear
 
-Detector = 'H1';
-fileinput = strcat(Detector,'kkoutput_veto');
+Detector = 'L1';
+fileinput = strcat(Detector,'kkoutput');
 fileoutput = strcat(Detector,'h0newband');
 fid = fopen(fileoutput, 'w');
 

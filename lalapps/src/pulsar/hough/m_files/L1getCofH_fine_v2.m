@@ -61,7 +61,7 @@ for bandnumber=0:Nbands-1
   MC_FreqVals = parvals(1:length(Ncount0(:,1)),2);
   clear parvals
 
-  vetoindices = find((mod(MC_FreqVals,1) > 0.02 & mod(MC_FreqVals,1) < 0.23) | (mod(MC_FreqVals,1) > 0.27 & mod(MC_FreqVals,1) < 0.48) | (mod(MC_FreqVals,1) > 0.52 &mod(MC_FreqVals,1) < 0.73) | (mod(MC_FreqVals,1) > 0.77 & mod(MC_FreqVals,1) < 0.98)); 
+  vetoindices = find((mod(MC_FreqVals,1) > 0.04 & mod(MC_FreqVals,1) < 0.21) | (mod(MC_FreqVals,1) > 0.29 & mod(MC_FreqVals,1) < 0.46) | (mod(MC_FreqVals,1) > 0.54 &mod(MC_FreqVals,1) < 0.71) | (mod(MC_FreqVals,1) > 0.79 & mod(MC_FreqVals,1) < 0.96)); 
   clear MC_FreqVals
 
   nMonteCarlos=length(vetoindices);

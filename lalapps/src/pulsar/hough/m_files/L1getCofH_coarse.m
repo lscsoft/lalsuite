@@ -11,12 +11,12 @@
 
 Detector = 'L1';
 
-fileoutput = strcat(Detector,'kkoutput_veto');
+fileoutput = strcat(Detector,'kkoutput');
 fid = fopen(fileoutput, 'w');
 
 % directory with results of driver
 Directory1 = '/local_data/badkri/S2-clean/Driver_allsky/';
-%file with driver output
+% file with driver output
 file = '/AllSkyMaxResults.mat';
 
 
@@ -56,7 +56,7 @@ for bandnumber = 1:Nbands; %the  current frequency band
    fmax = BandList(bandnumber, 2);
 
 % this is not very elegant but should work for now
-   indices = find (FreqValues >= fmin & FreqValues <=fmax & ((mod(FreqValues,1) > 0.02 & mod(FreqValues,1) < 0.23) | (mod(FreqValues,1) > 0.27 & mod(FreqValues,1) < 0.48) | (mod(FreqValues,1) > 0.52 &mod(FreqValues,1) < 0.73) | (mod(FreqValues,1) > 0.77 & mod(FreqValues,1) < 0.98) ));
+   indices = find (FreqValues >= fmin & FreqValues <=fmax & ((mod(FreqValues,1) > 0.04 & mod(FreqValues,1) < 0.21) | (mod(FreqValues,1) > 0.29 & mod(FreqValues,1) < 0.46) | (mod(FreqValues,1) > 0.54 &mod(FreqValues,1) < 0.71) | (mod(FreqValues,1) > 0.79 & mod(FreqValues,1) < 0.96) ));
    Nmax(bandnumber) = max( MaxValues(indices));
    bandnumber
 end
@@ -88,7 +88,7 @@ for bandnumber=0:Nbands-1
 
   clear parvals     
 
-  vetoindices = find((mod(MC_FreqVals,1) > 0.02 & mod(MC_FreqVals,1) < 0.23) | (mod(MC_FreqVals,1) > 0.27 & mod(MC_FreqVals,1) < 0.48) | (mod(MC_FreqVals,1) > 0.52 &mod(MC_FreqVals,1) < 0.73) | (mod(MC_FreqVals,1) > 0.77 & mod(MC_FreqVals,1) < 0.98)); 
+  vetoindices = find((mod(MC_FreqVals,1) > 0.04 & mod(MC_FreqVals,1) < 0.21) | (mod(MC_FreqVals,1) > 0.29 & mod(MC_FreqVals,1) < 0.46) | (mod(MC_FreqVals,1) > 0.54 &mod(MC_FreqVals,1) < 0.71) | (mod(MC_FreqVals,1) > 0.79 & mod(MC_FreqVals,1) < 0.96)); 
   
   clear MC_FreqVals
 
@@ -109,7 +109,7 @@ for bandnumber=0:Nbands-1
            BandList(bn,1),BandList(bn, 2), Nmax(bn), CH);
 end
 
- fclose(fid);
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fclose(fid);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
