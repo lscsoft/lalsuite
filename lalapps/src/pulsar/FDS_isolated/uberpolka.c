@@ -204,10 +204,10 @@ int main(int argc,char *argv[])
             } /* check that frequency lies between two input bounds */
 #if USE_BOINC
           /* update progress, the last % is reserved for polka */
-          boinc_fraction_done((double)CList1.length / (double)i *0.1 +0.9);
+          boinc_fraction_done((double)CLength1 / (double)i *0.1 +0.9);
           /* pass variable externally to graphics routines */
           if (fraction_done_hook != NULL)
-            *fraction_done_hook=(double)CList1.length / (double)i *0.1 +0.9;
+            *fraction_done_hook=(double)CLength1 / (double)i *0.1 +0.9;
 #endif
         }/* loop over 1st candidate list */      
     }/* check that we have candidates in both files */
