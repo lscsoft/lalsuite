@@ -1,6 +1,6 @@
 /*
- * stochasticPipeline.h - SGWB Standalone Analysis Pipeline
- *                      - header file
+ * stochastic.h - SGWB Standalone Analysis Pipeline
+ *              - header file
  *
  * Adam Mercer <ram@star.sr.bham.ac.uk>
  * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
