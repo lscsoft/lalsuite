@@ -721,10 +721,10 @@ LALCoincidenceWavelet(LALStatus *status,
 	    }
       
 	  /* set a partner pixel in second channel if zero */
-	  if(one->data->data[i]!=0 && two->data->data[i]==0) two->data->data[i] == 2*length;
+	  if(one->data->data[i]!=0 && two->data->data[i]==0) two->data->data[i] = 2*length;
       
 	  /* set a partner pixel in first channel if zero*/
-	  if(two->data->data[i]!=0 && one->data->data[i]==0) one->data->data[i] == 2*length;
+	  if(two->data->data[i]!=0 && one->data->data[i]==0) one->data->data[i] = 2*length;
 	  
 	}
       _putLayer(one, k, (*output)->one->wavelet);
