@@ -596,6 +596,12 @@ XLALCompareSnglBurstByTime(
 );
 
 int
+XLALCompareSnglBurstSnglInspiralByTime(
+	const SnglBurstTable * const *a,
+	const SnglInspiralTable * const *b
+);
+
+int
 XLALCompareSnglBurstByLowFreq(
 	const SnglBurstTable * const *a,
 	const SnglBurstTable * const *b
@@ -630,6 +636,20 @@ LALCompareSnglBurst(
 	LALStatus *status,
 	const SnglBurstTable *a,
 	const SnglBurstTable *b,
+	int *difference
+);
+
+int
+XLALCompareSnglBurstSnglInspiral(
+	const SnglBurstTable * const *a,
+	const SnglInspiralTable * const *b
+);
+
+void
+LALCompareSnglBurstSnglInspiral(
+	LALStatus *status,
+	const SnglBurstTable *a,
+	const SnglInspiralTable *b,
 	int *difference
 );
 
