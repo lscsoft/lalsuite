@@ -517,9 +517,9 @@ int main( int argc, char *argv[] )
   for ( inj = 0; inj < ninj; ++inj )
   {
     int elem;
-    long tsec = this_sim_insp->end_time_geocent.gpsSeconds = 
+    long tsec = this_sim_insp->geocent_end_time.gpsSeconds = 
       (long)( tlistelem->tinj / 1000000000LL );
-    long tnan = this_sim_insp->end_time_geocent.gpsNanoSeconds = 
+    long tnan = this_sim_insp->geocent_end_time.gpsNanoSeconds = 
       (long)( tlistelem->tinj % 1000000000LL );
     double gmst;
     double deffH;
@@ -542,16 +542,17 @@ int main( int argc, char *argv[] )
 
     this_sim_insp->mtotal = injPar[mTotElem];
     this_sim_insp->eta = injPar[etaElem];
-    this_sim_insp->distance = injPar[distElem];
+    this_sim_insp->distance = injPar[distElem] / MPC;
     this_sim_insp->longitude = injPar[lonElem];
     this_sim_insp->latitude = injPar[latElem];
     this_sim_insp->inclination = injPar[incElem];
     this_sim_insp->coa_phase = injPar[phiElem];
     this_sim_insp->polarization = injPar[psiElem];
 
-    this_sim_insp->eff_dist_h = deffH = eff_dist( nxH, nyH, injPar, gmst );
-    this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst );
-    fprintf( fplog, "\t%e\t%e\n", deffH / MPC, deffL / MPC );
+    deffH = eff_dist( nxH, nyH, injPar, gmst );
+    deffL = eff_dist( nxL, nyL, injPar, gmst );
+    fprintf( fplog, "\t%e\t%e\n", this_sim_insp->eff_dist_h = deffH / MPC, 
+        this_sim_insp->eff_dist_l = deffL / MPC );
     if ( inj < ninj - 1 )
     {
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
