@@ -87,4 +87,5 @@ AC_OUTPUT( 				\
 	src/inspiral/Makefile		\
 	src/zmsearch/Makefile		\
 	src/detresponse/Makefile	\
+	src/geoinspiralsearch/Makefile	\
 )
