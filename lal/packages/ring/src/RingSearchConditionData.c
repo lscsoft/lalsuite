@@ -277,7 +277,6 @@ LALRingSearchConditionData(
     INT8 tstart;        /* start time of the data (ns) */
     INT8 tinject;       /* start time of the ring (ns) */
     REAL8 dt;           /* time of ring after start of data (s) */
-    UINT4 i;
     
     tstart   = (INT8)1000000000 * (INT8)data->channel->epoch.gpsSeconds;
     tstart  += (INT8)data->channel->epoch.gpsNanoSeconds;

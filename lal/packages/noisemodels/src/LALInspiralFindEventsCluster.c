@@ -61,7 +61,7 @@ LALInspiralFindEventsCluster
    INT4 nEnd;
    INT4 numPoints;
    INT4 previous;
-   INT4 bin;
+   INT4 bin = 0;
 
    REAL8 eSec;
    REAL8 dt;
@@ -69,7 +69,7 @@ LALInspiralFindEventsCluster
    REAL8 f;
    REAL8 norm;
    REAL8 cmax;
-   REAL8 phase;
+   REAL8 phase = 0;
    REAL8 distanceNorm;
    REAL8 flso;
    REAL8 msevenby3;

@@ -461,7 +461,7 @@ LALTwoDColumn( LALStatus            *stat,
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
   REAL4 dx;             /* half-width of column */
-  REAL4 y0, y1;         /* temporary variables storing y-coordinates */
+  REAL4 myy0, myy1;         /* temporary variables storing y-coordinates */
   REAL4 centreRange[2]; /* centreline of column parameter space */
   REAL4 centreClip[2];  /* centre of clip boundary */
   REAL4 leftTiled[2];   /* left side of region tiled */
@@ -542,12 +542,12 @@ LALTwoDColumn( LALStatus            *stat,
     }
 
     /* Determine the region that we've covered. */
-    y0 = here->y + here->dy[0];
-    y1 = here->y - here->dy[1];
-    if ( leftTiled[0] > y1 )
-      leftTiled[0] = y1;
-    if ( rightTiled[0] > y0 )
-      rightTiled[0] = y0;
+    myy0 = here->y + here->dy[0];
+    myy1 = here->y - here->dy[1];
+    if ( leftTiled[0] > myy1 )
+      leftTiled[0] = myy1;
+    if ( rightTiled[0] > myy0 )
+      rightTiled[0] = myy0;
     leftTiled[1] = here->y - here->dy[0];
     rightTiled[1] = here->y + here->dy[1];
     position[1] = 0.5*leftTiled[1] + 0.5*rightTiled[1];
@@ -574,13 +574,13 @@ LALTwoDColumn( LALStatus            *stat,
 	  LALPrintError( "\r%16u", params->nOut );
 	}
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
-      y0 = here->dy[1] - here->next->dy[0];
-      y1 = here->next->dy[1] - here->dy[0];
-      if ( y0 > y1 )
-	y0 = y1;
-      if ( y0 <= 0.0 )
+      myy0 = here->dy[1] - here->next->dy[0];
+      myy1 = here->next->dy[1] - here->dy[0];
+      if ( myy0 > myy1 )
+	myy0 = myy1;
+      if ( myy0 <= 0.0 )
 	TOOWIDERETURN;
-      here->next->y = here->y + y0;
+      here->next->y = here->y + myy0;
       here = here->next;
       if ( here->y > centreRange[1] )
 	here->y = centreRange[1];
@@ -604,11 +604,11 @@ LALTwoDColumn( LALStatus            *stat,
      of the parameter space, and call LALTwoDColumn() recursively. */
 
   /* Check bottom corners. */
-  y0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
+  myy0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
 
   /* Bottom-left: */
   if ( ( ( column->leftClip[0] < leftTiled[0] ) ||
-	 ( centreClip[0] < y0 ) ) &&
+	 ( centreClip[0] < myy0 ) ) &&
        ( column->leftRange[0] < leftTiled[0] ) &&
        ( ( column->leftRange[1] > column->leftClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
@@ -620,9 +620,9 @@ LALTwoDColumn( LALStatus            *stat,
     memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
     memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
     if ( ( leftTiled[0] < column2.leftClip[1] ) &&
-	 ( y0 < column2.rightClip[1] ) ) {
+	 ( myy0 < column2.rightClip[1] ) ) {
       column2.leftClip[1] = leftTiled[0];
-      column2.rightClip[1] = y0;
+      column2.rightClip[1] = myy0;
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
@@ -640,7 +640,7 @@ LALTwoDColumn( LALStatus            *stat,
 
   /* Bottom-right: */
   if ( ( ( column->rightClip[0] < rightTiled[0] ) ||
-	 ( centreClip[0] < y0 ) ) &&
+	 ( centreClip[0] < myy0 ) ) &&
        ( column->rightRange[0] < rightTiled[0] ) &&
        ( ( column->rightRange[1] > column->rightClip[0] ) ||
 	 ( centreRange[1] > centreClip[0] ) ) ) {
@@ -652,9 +652,9 @@ LALTwoDColumn( LALStatus            *stat,
     memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
     memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
     if ( ( rightTiled[0] < column2.rightClip[1] ) &&
-	 ( y0 < column2.leftClip[1] ) ) {
+	 ( myy0 < column2.leftClip[1] ) ) {
       column2.rightClip[1] = rightTiled[0];
-      column2.leftClip[1] = y0;
+      column2.leftClip[1] = myy0;
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
@@ -672,11 +672,11 @@ LALTwoDColumn( LALStatus            *stat,
 
   /* Check top corners. */
   if ( tiled ) {
-    y0 = 0.5*leftTiled[1] + 0.5*rightTiled[1];
+    myy0 = 0.5*leftTiled[1] + 0.5*rightTiled[1];
 
     /* Top-left: */
     if ( ( ( column->leftClip[1] > leftTiled[1] ) ||
-	   ( centreClip[1] > y0 ) ) &&
+	   ( centreClip[1] > myy0 ) ) &&
 	 ( column->leftRange[1] > leftTiled[1] ) &&
 	 ( ( column->leftRange[0] < column->leftClip[1] ) ||
 	   ( centreRange[0] < centreClip[1] ) ) ) {
@@ -688,9 +688,9 @@ LALTwoDColumn( LALStatus            *stat,
       memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
       memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
       if ( ( leftTiled[1] > column2.leftClip[0] ) &&
-	   ( y0 > column2.rightClip[0] ) ) {
+	   ( myy0 > column2.rightClip[0] ) ) {
 	column2.leftClip[0] = leftTiled[1];
-	column2.rightClip[0] = y0;
+	column2.rightClip[0] = myy0;
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
@@ -708,7 +708,7 @@ LALTwoDColumn( LALStatus            *stat,
 
     /* Top-right: */
     if ( ( ( column->rightClip[1] > rightTiled[1] ) ||
-	   ( centreClip[1] > y0 ) ) &&
+	   ( centreClip[1] > myy0 ) ) &&
 	 ( column->rightRange[1] > rightTiled[1] ) &&
 	 ( ( column->rightRange[0] < column->rightClip[1] ) ||
 	   ( centreRange[0] < centreClip[1] ) ) ) {
@@ -720,9 +720,9 @@ LALTwoDColumn( LALStatus            *stat,
       memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
       memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
       if ( ( rightTiled[1] > column2.rightClip[0] ) &&
-	   ( y0 > column2.leftClip[0] ) ) {
+	   ( myy0 > column2.leftClip[0] ) ) {
 	column2.rightClip[0] = rightTiled[1];
-	column2.leftClip[0] = y0;
+	column2.leftClip[0] = myy0;
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )

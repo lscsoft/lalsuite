@@ -113,15 +113,15 @@ LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
   for(i=1;i<s;i++)
     for(j=1;j<=i;j++){
       INT4 i0 = (i*(i+1))>>1;
-      INT4 j0 = (j*(j+1))>>1;
+      INT4 myj0 = (j*(j+1))>>1;
       INT4 ij = i0+j;
       if(errors){
-	data[2*ij]-=data[2*i0]*data[2*j0]/data[0];
-	data[2*ij+1]+=data[2*i0+1]*fabs(data[2*j0]/data[0])
-	  + data[2*j0+1]*fabs(data[2*i0]/data[0])
-	  + data[1]*fabs(data[2*i0]/data[0])*fabs(data[2*j0]/data[0]);
+	data[2*ij]-=data[2*i0]*data[2*myj0]/data[0];
+	data[2*ij+1]+=data[2*i0+1]*fabs(data[2*myj0]/data[0])
+	  + data[2*myj0+1]*fabs(data[2*i0]/data[0])
+	  + data[1]*fabs(data[2*i0]/data[0])*fabs(data[2*myj0]/data[0]);
       } else
-	data[ij]-=data[i0]*data[j0]/data[0];
+	data[ij]-=data[i0]*data[myj0]/data[0];
     }
 
   /* Set all irrelevant metric coefficients to zero. */

@@ -35,8 +35,10 @@
 
 NRCSID( STRINGSEARCHCONDITIONDATAC, "$Id$" );
 
+/*
 static const CHAR ifoNames[][3] =
     { "H0", "H1", "H2", "L0", "L1", "P0", "P1", "P2" };
+    */
 
 /* <lalVerbatim file="StringSearchConditionDataCP"> */
 void

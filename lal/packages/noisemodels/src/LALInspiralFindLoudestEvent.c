@@ -212,6 +212,8 @@ LALInspiralFindLoudestEvent
 			   CHECKSTATUSPTR(status);
 		   }
 		   break;
+           default:
+                   ABORT( status, 9999, "Unknown case in switch." );
    }
    
    normin.psd = &(findeventsin->psd);

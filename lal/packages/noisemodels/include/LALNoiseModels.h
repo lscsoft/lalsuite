@@ -487,6 +487,8 @@ LALInspiralWaveOverlap
    InspiralWaveOverlapIn   *overlapin
    );
 
+void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
+
 /* <lalLaTeX>
 \newpage\input{LALInspiralFindEventsC}
 </lalLaTeX>  */

@@ -81,7 +81,7 @@ void LALStringSearchInit(
     )
 { /* </lalVerbatim> */
   StringSearchParams      *params;
-  StringTemplateBankInput  bankin;
+  /* StringTemplateBankInput  bankin; */
 
   INITSTATUS( status, "StringSearchInit", STRINGSEARCHINITC );
   ATTATCHSTATUSPTR( status );

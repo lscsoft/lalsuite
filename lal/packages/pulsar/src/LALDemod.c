@@ -87,7 +87,7 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
   REAL8 *sinVal,*cosVal;        /*LUT values computed by the routine do_trig_lut*/
   INT4  res;                    /*resolution of the argument of the trig functions: 2pi/res.*/
   INT4 *tempInt1;
-  INT4 index;
+  INT4 myindex;
   REAL8 FaSq;
   REAL8 FbSq;
   REAL8 FaFb;
@@ -164,13 +164,13 @@ void LALDemod(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 	      
 	/* find correct index into LUT -- pick closest point */
 	tempFreq=xTemp-(INT4)xTemp;
-	index=(INT4)(tempFreq*res+0.5);
+	myindex=(INT4)(tempFreq*res+0.5);
 	      
 	{
-	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)index/(REAL8)res);
+	  REAL8 d=LAL_TWOPI*(tempFreq-(REAL8)myindex/(REAL8)res);
 	  REAL8 d2=0.5*d*d;
-	  REAL8 ts=sinVal[index];
-	  REAL8 tc=cosVal[index];
+	  REAL8 ts=sinVal[myindex];
+	  REAL8 tc=cosVal[myindex];
 		
 	  tsin=ts+d*tc-d2*ts;
 	  tcos=tc-d*ts-d2*tc-1.0;

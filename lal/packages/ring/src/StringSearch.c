@@ -99,7 +99,7 @@ LALStringSearch(
     {
       INT8        lastTimeNS = -1e11; /* before any likely time */
       INT8        gapTimeNS;
-      LALUnitPair unitPair;
+      /* LALUnitPair unitPair; */
       UINT4 j;
       UINT4 n;
       
