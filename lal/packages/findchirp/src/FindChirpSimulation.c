@@ -282,13 +282,39 @@ LALFindChirpInjectSignals (
     /* clear the waveform structure */
     memset( &waveform, 0, sizeof(CoherentGW) );
 
-    /* generate the waveform for injection */
-    LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
-#if 0
-    /* create the waveform using the new function from inject */
-    LALGenerateInspiral( status->statusPtr, &waveform, thisEvent, &ppnParams );
-#endif
-    CHECKSTATUSPTR( status );
+    if ( !strncmp("GeneratePPN",thisEvent->waveform,11))
+    {
+      /* generate the waveform for injection */
+      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+          "Injecting waveform using LALGeneratePPNInspiral\n");
+      LALInfo( status, warnMsg );
+      LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
+      CHECKSTATUSPTR( status );
+    }
+    else if ( !strncmp("EOB",thisEvent->waveform,3) ||
+              !strncmp("PadeT1",thisEvent->waveform,6) ||
+              !strncmp("TaylorT1",thisEvent->waveform,8) ||
+              !strncmp("TaylorT2",thisEvent->waveform,8) ||
+              !strncmp("TaylorT3",thisEvent->waveform,8) ||
+              !strncmp("SpinTaylor",thisEvent->waveform,10) )
+    {
+      /* create the waveform using the new function from inject */
+      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+          "Injecting waveform using LALGenerateInspiral\n");
+      LALInfo( status, warnMsg );
+      LALGenerateInspiral(status->statusPtr, &waveform, thisEvent, &ppnParams );
+      CHECKSTATUSPTR( status );
+    }
+    else
+    {
+      LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+          "Unknown waveform requested for injection; using 
+          LALGeneratePPNInspiral to inject it...\n");
+      LALInfo( status, warnMsg );
+      LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
+      CHECKSTATUSPTR( status );
+    }
+
     LALInfo( status, ppnParams.termDescription );
 
     if ( ppnParams.dfdt > 2.0 ) 
