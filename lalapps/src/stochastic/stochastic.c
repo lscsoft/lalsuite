@@ -552,16 +552,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* allocate memory for reduced frequency band response functions */
-	responseOne.data = NULL;
-	responseTwo.data = NULL;
-	LAL_CALL( LALCCreateVector(&status, &(responseOne.data), filterLength), \
-			&status );
-	LAL_CALL( LALCCreateVector(&status, &(responseTwo.data), filterLength), \
-			&status );
-	memset(responseOne.data->data, 0, \
-			responseOne.data->length * sizeof(*responseOne.data->data));
-	memset(responseTwo.data->data, 0, \
-			responseTwo.data->length * sizeof(*responseTwo.data->data));
+	responseOne.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+	responseTwo.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+	responseOne.data->length = filterLength;
+	responseTwo.data->length = filterLength;
 
 	/* set metadata fields for inverse noise structures */
 	strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
@@ -1108,13 +1102,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* reduce to the optimal filter frequency range */
-		responseOne.epoch = gpsCalTime;
-		responseTwo.epoch = gpsCalTime;
-		for (i = 0; i < filterLength; i++)
-		{
-			responseOne.data->data[i] = responseTempOne.data->data[i + numFMin];
-			responseTwo.data->data[i] = responseTempTwo.data->data[i + numFMin];
-		}
+		responseOne.data->data = responseTempOne.data->data + numFMin;
+		responseTwo.data->data = responseTempTwo.data->data + numFMin;
 
 		/* output the results */
 		if (verbose_flag)
@@ -1228,10 +1217,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
 	LALFree(psdOne.data);
 	LALFree(psdTwo.data);
-	LAL_CALL( LALCDestroyVector(&status, &(responseOne.data)), &status );
-	LAL_CALL( LALCDestroyVector(&status, &(responseTwo.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTempOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTempTwo.data)), &status );
+	LALFree(responseOne.data);
+	LALFree(responseTwo.data);
 	LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDOne.data)), &status );
