@@ -120,7 +120,7 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_PRINTRESULTXML		0				/* print the template bank		*/
 #define BANKEFFICIENCY_PRINTRESULT_FILEXML	"BE_Result.xml"			/* print the result (xml file)  	*/
 
-
+#define BANKEFFICIENCY_PRINTPROTOTYPE		0				/* print the overlap of the templates	*/
 #define BANKEFFICIENCY_PRINTBANKOVERLAP		0				/* print the overlap of the templates	*/
 
 #define BANKEFFICIENCY_PRINTPSD                 0				/* print psd used in <x|x>      	*/
@@ -130,6 +130,8 @@ RCSID(  "$Id$");
 #define BANKEFFICIENCY_CHECK                    0				/* Just check that SNR=1 for identical parameters */
 #define BANKEFFICIENCY_RANDOMINJECTION		1				/* Type of injection: random  ?		*/		
 #define BANKEFFICIENCY_REGULARINJECTION		0				/* Type of injection: regular ?		*/		
+
+#define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"			/* print the result (xml file)  	*/
 
 
 /* --- temporary flag for the sampling of real psd --- */
@@ -188,7 +190,7 @@ typedef struct{
   INT4 PrintBank;			/* print bank of templates 		*/
   INT4 PrintBankXml;			/* print bank of templates 		*/
   INT4 PrintResultXml;			/* print bank of templates 		*/
-
+  INT4 PrintPrototype;
   INT4 PrintPsd;                        /* print the psd used in <x|x>          */
 
   INT4 PrintTemplate;  
@@ -418,7 +420,11 @@ BEPrintResultsXml(InspiralCoarseBankIn   coarseIn,
 		  OtherParamIn           otherIn, 
 		  ResultIn inject
 		  );
-
+void 
+BEPrintProtoXml(InspiralCoarseBankIn   coarseIn,
+		  RandomInspiralSignalIn randIn,
+		  OtherParamIn           otherIn
+		);
 /* 
  * ==================== THE MAIN PROGRAM ==================== 
  * */
@@ -512,7 +518,12 @@ main (INT4 argc, CHAR **argv )
 		 		randIn,
 				otherIn);					/* Check validity of some variables. 	*/
 
-  
+
+
+  if (otherIn.PrintPrototype){
+    BEPrintProtoXml(coarseIn, randIn, otherIn);    
+    exit(0);
+  }
   
   /* --- Estimate size of the signal --- */
   randIn.param.massChoice 	= m1Andm2;					/* Only to compute the length of "signal"*/ 
@@ -760,10 +771,9 @@ main (INT4 argc, CHAR **argv )
   else{										 /* --- the real code is here --- */
     /* --- The main loop --- */
 
-	if (otherIn.PrintBankOverlap){	
-		Foutput = fopen("FF.sr4","w");
-		fclose(Foutput); 
-	}	
+	Foutput = fopen("FF.sr4","w");
+	fclose(Foutput); 
+	
     while (++ntrials <= otherIn.ntrials) 
       {
         randIn.param.approximant    	= otherIn.signal;  			/* The waveform parameter for injection */
@@ -1136,6 +1146,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->PrintBank    	= BANKEFFICIENCY_PRINTBANK;
   otherIn->PrintBankXml    	= BANKEFFICIENCY_PRINTBANKXML;
   otherIn->PrintResultXml    	= BANKEFFICIENCY_PRINTRESULTXML;
+  otherIn->PrintPrototype    	= BANKEFFICIENCY_PRINTPROTOTYPE;
 
   otherIn->PrintBankOverlap	= BANKEFFICIENCY_PRINTBANKOVERLAP;
   otherIn->PrintTemplate	= BANKEFFICIENCY_PRINTTEMPLATE; 
@@ -1207,7 +1218,7 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],	"--noise-amplitude")	==0)	     
     	      randIn->NoiseAmp = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--alpha-bank")	==0)	     
-    	      coarseIn->alpha = atof(argv[++i]);	
+    	      coarseIn->alpha = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--alpha-signal")==0)	     
     	      randIn->param.alpha = atof(argv[++i]);
       else if ( strcmp(argv[i],	"--freq-moment-bank")	==0)	     
@@ -1247,6 +1258,7 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],"--print-bank")		==0) 	 otherIn->PrintBank		= 1;
       else if ( strcmp(argv[i],"--print-bank-xml")	==0) 	 otherIn->PrintBankXml	        = 1;
       else if ( strcmp(argv[i],"--print-result-xml")	==0) 	 otherIn->PrintResultXml        = 1;
+      else if ( strcmp(argv[i],"--print-prototype")	==0) 	 otherIn->PrintPrototype        = 1;
 
 
 
@@ -2427,7 +2439,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 }
 
 
-
+/* xml file for the standalone code */
 void 
 BEPrintResultsXml(InspiralCoarseBankIn   coarseIn,
 		  RandomInspiralSignalIn randIn,
@@ -2614,5 +2626,93 @@ BEPrintResultsXml(InspiralCoarseBankIn   coarseIn,
 
   
   /* close the output xml file */
+
+}
+
+
+/* print prototype for condor code (option --print-result-prototype)*/
+void 
+BEPrintProtoXml(InspiralCoarseBankIn   coarseIn,
+		  RandomInspiralSignalIn randIn,
+		  OtherParamIn           otherIn
+		  )
+{
+#define MAXIFO 2
+
+  LALStatus             status = blank_status;
+
+
+  MetadataTable         templateBank;
+  CHAR  ifo[3];                           /* two character ifo code       */
+  LIGOLwXMLStream       xmlStream;
+  CHAR  fname[256];
+  LIGOTimeGPS gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
+  LIGOTimeGPS gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
+  LALLeapSecAccuracy    accuracy = 1;
+  CHAR  comment[LIGOMETA_COMMENT_MAX];
+  CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
+
+  MetadataTable         processParamsTable;
+  ProcessParamsTable   *this_proc_param = NULL;
+
+  LALSnprintf( fname, sizeof(fname), BANKEFFICIENCY_PRINTPROTO_FILEXML ,
+	       ifo, gpsStartTime.gpsSeconds,
+	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+
+
+
+
+    strncpy( ifoName[0], "no", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX * sizeof(CHAR) );
+    memset( ifo, 0, sizeof(ifo) );
+    memcpy( ifo, "MC", sizeof(ifo) - 1 );
+    
+    
+    
+    /* -- we start to fill the xml file here --- */
+    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname), &status );
+    
+    
+    /* create the process and process params tables */
+    templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->start_time),
+			      &accuracy ), &status );
+    LAL_CALL( populate_process_table( &status, templateBank.processTable, 
+				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+    this_proc_param = processParamsTable.processParamsTable = 
+      (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
+    
+    BEFillProc(this_proc_param, coarseIn, randIn, otherIn);
+    
+    memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
+    
+    
+    
+    /* write process table */
+    LALSnprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+		 ifoName[0], ifoName[1] );
+    LAL_CALL( LALGPSTimeNow ( &status, &(templateBank.processTable->end_time),
+			      &accuracy ), &status );
+    
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+	      &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
+				      process_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    
+    /* write process params table */
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+				      process_params_table ), &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+				      process_params_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    
+    /* finally write sngl inspiral table */
+    
+     
+      fclose( xmlStream.fp );
+      xmlStream.fp = NULL;
+
 
 }
