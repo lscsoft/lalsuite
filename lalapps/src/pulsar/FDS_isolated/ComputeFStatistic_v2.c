@@ -7,18 +7,19 @@
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
+#include <lalapps.h>
+
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
-#include <lalapps.h>
+
 #include <lal/ComputeSkyBinary.h>
+
 #include <lal/PulsarDataTypes.h>
 
-#ifndef NOGLOB
-#include <glob.h>
-#endif
+#include <lal/SFTfileIO.h>
 
 #include "rngmed.h"
 #include "clusters.h"
@@ -37,42 +38,27 @@ RCSID( "$Id$");
 #define MAXFILES 40000         /* Maximum # of files in a directory  */
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a SFT filename */
 
-/* The command line arguments are not the actual search parameters that will be used, 
-just the ones that the user requested.  The actual parameters that
-will be used are computed as exact integers, which correspond as closely as
-possible to the users request, but are not the same.  Don't use these variables! */
-
-
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
   CHAR EphemEarth[MAXFILENAMELENGTH];	/**< filename of earth-ephemeris data */
   CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
-  INT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
-  INT4 SpinImax;		/**< number of spindown-bins to compute F for */
-  INT4 ifmax;			/**< highest frequency-bin needed in calculation */
-  INT4 ifmin;			/**< lowest frequency-bin needed */
+  UINT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
+  UINT4 SpinImax;		/**< number of spindown-bins to compute F for */
+  UINT4 ifmax;			/**< highest frequency-bin needed in calculation */
+  UINT4 ifmin;			/**< lowest frequency-bin needed */
   REAL8 dFreq;			/**< frequency resolution */
-  REAL8 tsft;			/**< length of an SFT in seconds */
-  INT4 SFTno;			/**< number of SFTs in input */
-  INT4 nsamples;		/**< number of frequency-bins in an SFT */
-  INT4 Ti;	        	/**< GPS seconds of start of observation */
-  INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
+  LIGOTimeGPS Tstart;		/**< start time of observation */
+  REAL8 tSFT;			/**< length of an SFT in seconds */
+  REAL8 tObs;			/**< total observation time in seconds */
+  UINT4 SFTno;			/**< number of SFTs in input */
+  UINT4 nsamples;		/**< number of frequency-bins in an SFT */
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH]; /**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
 } ConfigVariables;
-  
-struct headertag {
-    REAL8 endian;
-    INT4  gps_sec;
-    INT4  gps_nsec;
-    REAL8 tbase;
-    INT4  firstfreqindex;
-    INT4  nsamples;
-} header;
 
 /* BINARY-MOD - structure to store a single binary signal template */  
 typedef struct BinaryTemplatetag {             
@@ -106,10 +92,7 @@ typedef struct BinaryTemplateBanktag {
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 
-
-/*----------------------------------------------------------------------*/
 /* USE_BOINC should be set to 1 to be run under BOINC */
-
 #ifndef USE_BOINC
 #define USE_BOINC 0
 #endif
@@ -185,9 +168,9 @@ BOOLEAN uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
 
 /*----------------------------------------------------------------------*/
-/* some other global variables */
-
-FFT **SFTData=NULL; 		/**< SFT Data for LALDemod */
+/* some other global variables (FIXME) */
+FFT **SFTData=NULL; 		/**< SFT Data for LALDemod (FIXME: to be removed) */
+SFTVector *SFTvect = NULL;	/**< holds the SFT-data to analyze */
 DemodPar *DemodParams  = NULL;	/**< Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;	/**< Time stamps from SFT data */
 LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
@@ -209,7 +192,6 @@ Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
 
 REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
 
-FILE *fp_mergedSFT;		/**< input-file containing merged SFTs */
 FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
 FILE *fpstat;			/**< output-file: F-statistic candidates and cluster-information */
 
@@ -242,7 +224,6 @@ int ReadBinaryTemplateBank(LALStatus *status);
 /* some local defines */
 
 #define EPHEM_YEARS  "00-04"
-#define SFT_BNAME  "SFT"
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -276,11 +257,8 @@ int main(int argc,char *argv[])
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
   SkyPosition thisPoint;
-  LIGOTimeGPS t0, t1;
-  REAL8 duration;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
-  SFTVector *SFTvect = NULL;		/**< holds the SFT-data to analyze */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -320,13 +298,6 @@ int main(int argc,char *argv[])
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  /* work in progress 
-  LAL_CALL ( LALReadSFTfiles (&status, &SFTData, fMin, fMax, const CHAR *globdir), &status);
-  */
-
-  /* read in SFT-data */
-  if (ReadSFTData()) return 4;
-
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
@@ -344,8 +315,8 @@ int main(int argc,char *argv[])
 
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
-  if ( LALUserVarWasSet(&uvar_outputLabel) )
-    strcat(Fstatsfilename,uvar_outputLabel);
+  if ( uvar_outputLabel )
+    strcat(Fstatsfilename, uvar_outputLabel);
 #if USE_BOINC
   use_boinc_filename0(Fstatsfilename);
 #endif /* USE_BOINC */
@@ -362,13 +333,9 @@ int main(int argc,char *argv[])
     scanInit.gridType = uvar_gridType;
     scanInit.metricType = uvar_metricType;
     scanInit.metricMismatch = uvar_metricMismatch;
-    t0 = SFTData[0]->fft->epoch;
-    t1 = SFTData[GV.SFTno-1]->fft->epoch;
-    scanInit.obsBegin = t0;
-    LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
-    scanInit.obsDuration = duration + GV.tsft;
-    scanInit.fmax  = uvar_Freq;
-    if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
+    scanInit.obsBegin = GV.Tstart;
+    scanInit.obsDuration = GV.tObs;
+    scanInit.fmax  = uvar_Freq + uvar_FreqBand;
     scanInit.Detector = &GV.Detector;
     scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
     scanInit.skyRegion = GV.skyRegion;
@@ -500,15 +467,15 @@ int main(int argc,char *argv[])
 	  printf("doing createbinarydemodparams\n");
 
 	}  /* if (uvar_binary) */
-
+      
       /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  /* BINARY-MOD - only deal with spin down for isolated at this stage */
-	  if (!uvar_binary) DemodParams->spinDwn[0]=uvar_f1dot + spdwn*uvar_df1dot;
-	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
+	  if (!uvar_binary) 
+	    DemodParams->spinDwn[0]=uvar_f1dot + spdwn*uvar_df1dot;
 
-	  LAL_CALL ( LALDemod(&status, &Fstat, SFTData, DemodParams), &status);
+	  LAL_CALL (LALDemod (&status, &Fstat, SFTData , DemodParams), &status);
 
 	  /*  This fills-in highFLines */
 	  if (GV.FreqImax > 5) {
@@ -643,9 +610,6 @@ initUserVars (LALStatus *stat)
   uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_EphemYear, EPHEM_YEARS);
 
-  uvar_BaseName	= LALCalloc (1, strlen(SFT_BNAME)+1);
-  strcpy (uvar_BaseName, SFT_BNAME);
-
 #define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
   uvar_EphemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
   strcpy (uvar_EphemDir, DEFAULT_EPHEMDIR);
@@ -683,7 +647,7 @@ initUserVars (LALStatus *stat)
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*tSFT*Nsft)");
   LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
@@ -701,7 +665,7 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
   LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*tSFT*Nsft)");
   LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
   LALregINTUserVar(stat, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
@@ -754,7 +718,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
     fprintf(stderr,"Error in EstimateSignalParameters: unable to open the file");
 
 
-  norm=2.0*sqrt(GV.tsft)/(GV.tsft*GV.SFTno);
+  norm=2.0*sqrt(GV.tSFT)/(GV.tSFT*GV.SFTno);
 
 
   for(jrec=0;jrec < highFLines->Nclusters ;jrec++)
@@ -1014,7 +978,7 @@ void CreateDemodParams (LALStatus *status)
      { 
        REAL8 teemp=0.0;
        TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
-       teemp += 0.5*GV.tsft;
+       teemp += 0.5*GV.tSFT;
        TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
      }
    
@@ -1025,7 +989,7 @@ void CreateDemodParams (LALStatus *status)
   csParams->tGPS=timestamps;  
   csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
   csParams->mObsSFT=GV.SFTno;     /* Changed this from GV.mobssft !!!!!! */
-  csParams->tSFT=GV.tsft;
+  csParams->tSFT=GV.tSFT;
   csParams->edat = GV.edat;
   csParams->baryinput=&baryinput;
   csParams->spinDwnOrder=1;
@@ -1115,7 +1079,7 @@ void CreateBinaryDemodParams (LALStatus *status)
      { 
        REAL8 teemp=0.0;
        TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
-       teemp += 0.5*GV.tsft;
+       teemp += 0.5*GV.tSFT;
        TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
      }
    
@@ -1126,7 +1090,7 @@ void CreateBinaryDemodParams (LALStatus *status)
   csbParams->tGPS=timestamps;  
   csbParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
   csbParams->mObsSFT=GV.SFTno;     /* Changed this from GV.mobssft !!!!!! */
-  csbParams->tSFT=GV.tsft;
+  csbParams->tSFT=GV.tSFT;
   csbParams->edat = GV.edat;
   csbParams->baryinput=&baryinput;
   csbParams->spinDwnOrder=0;    /* need to set up an input variable for this */
@@ -1243,173 +1207,6 @@ int writeFLines(INT4 *maxIndex){
   return 0;
 }
 
-/** [OBSOLETE] Normalize SFTs using the mean.
- * This function is obsolete, as we use the running-median now. 
- * This function has been  replaced by NormaliseSFTDataRngMdn().
- */
-int NormaliseSFTData(void)
-{
-  INT4 k,j;                         	/* loop indices */
-  INT4 nbins=GV.ifmax-GV.ifmin+1;   	/* Number of points in SFT's */
-  REAL8 SFTsqav;           		/* Average of Square of SFT */
-  REAL8 B;                        	/* SFT Bandwidth */
-  REAL8 deltaT,N;
-  REAL8 MeanOneOverSh=0.0;
-
-  /* loop over each SFTs */
-  for (k=0;k<GV.SFTno;k++)         
-    {
-      
-      SFTsqav=0.0;
-      /* loop over SFT data to estimate noise */
-      for (j=0;j<nbins;j++)               
-	  {
-	    SFTsqav=SFTsqav+
-	      SFTData[k]->fft->data->data[j].re * SFTData[k]->fft->data->data[j].re+
-	      SFTData[k]->fft->data->data[j].im * SFTData[k]->fft->data->data[j].im;
-	  }
-      SFTsqav=SFTsqav/(1.0*nbins);              /* Actual average of Square of SFT */
-      MeanOneOverSh=2.0*GV.nsamples*GV.nsamples/(SFTsqav*GV.tsft)+MeanOneOverSh;      
-
-      N=1.0/sqrt(2.0*(REAL8)SFTsqav);
-
-      /* signal only case */  
-      if(uvar_SignalOnly == 1)
-	{
-	  B=(1.0*GV.nsamples)/(1.0*GV.tsft);
-	  deltaT=1.0/(2.0*B);
-	  N=deltaT/sqrt(GV.tsft);
-	}
-
-      /* loop over SFT data to Normalise it*/
-      for (j=0;j<nbins;j++)               
-	{
-	  SFTData[k]->fft->data->data[j].re = N*SFTData[k]->fft->data->data[j].re; 
-	  SFTData[k]->fft->data->data[j].im = N*SFTData[k]->fft->data->data[j].im;
-	}
-    } 
-	
-   MeanOneOverSh=MeanOneOverSh/(1.0*GV.SFTno); 
-  return 0;
-}
-
-/** Reads in data from SFT-files.
- *
- * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
- * or from merged SFTs in uvar_mergedSFTFile.
- * The read SFT-data is stored in the global array \em SFTData and the timestamps 
- * of the SFTs are stored in the global array \em timestamps (both are allocated here).
- *
- * NOTE: this function is obsolete and should be replaced by the use of the SFT-IO lib in LAL.
- */
-int ReadSFTData(void)
-{
-  INT4 fileno=0,offset;
-  FILE *fp;
-  size_t errorcode;
-  UINT4 ndeltaf;
-  INT4 k=0;
-
-  SFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
-  timestamps=(LIGOTimeGPS *)LALMalloc(GV.SFTno*sizeof(LIGOTimeGPS));
-  
-  /* if using a merged SFT file, it's already open */
-  if (uvar_mergedSFTFile)
-    fp=fp_mergedSFT;
-
-  for (fileno=0;fileno<GV.SFTno;fileno++)
-    {
-      /* seek to fileno'th SFT k bytes in */
-      if (uvar_mergedSFTFile){
-	if (fseek(fp,k,SEEK_SET)) {
-	  fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
-	  return 1;
-	}
-      }
-      else {
-	if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
-	  fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
-	  return 1;
-	}
-      }
-
-      /* Read in the header from the file */
-      errorcode=fread((void*)&header,sizeof(header),1,fp);
-      if (errorcode!=1) 
-	{
-	  fprintf(stderr,"No header in data file %s\n",GV.filelist[fileno]);
-	  return 1;
-	}
-
-      /* Check that data is correct endian order */
-      if (header.endian!=1.0)
-	{
-	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
-	  fprintf(stderr,"It could be a file format error (big/little\n");
-	  fprintf(stderr,"endian) or the file might be corrupted\n\n");
-	  return 2;
-	}
-    
-      /* Check that the time base is positive */
-      if (header.tbase<=0.0)
-	{
-	  fprintf(stderr,"Timebase %f from data file %s non-positive!\n",
-		  header.tbase,GV.filelist[fileno]);
-	  return 3;
-	}
-        
-      /* Check that are frequency bins needed are in data set */
-      if (GV.ifmin<header.firstfreqindex || 
-	  GV.ifmax>header.firstfreqindex+header.nsamples) 
-	{
-	  fprintf(stderr,"Freq index range %d->%d not in %d to %d (file %s)\n",
-		GV.ifmin,GV.ifmax,header.firstfreqindex,
-		  header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
-	  return 4;
-	}
-      /* Put time stamps from file into array */
-      timestamps[fileno].gpsSeconds = header.gps_sec;
-      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
-
-      /* Move forward in file */
-      offset=(GV.ifmin-header.firstfreqindex)*2*sizeof(REAL4);
-      errorcode=fseek(fp,offset,SEEK_CUR);
-      if (errorcode) 
-	{
-	  perror(GV.filelist[fileno]);
-	  fprintf(stderr,"Can't get to offset %d in file %s\n",offset,GV.filelist[fileno]);
-	  return 5;
-	}
-
-      /* Make data structures */
-      ndeltaf=GV.ifmax-GV.ifmin+1;
-      SFTData[fileno]=(FFT *)LALMalloc(sizeof(FFT));
-      SFTData[fileno]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
-      SFTData[fileno]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
-      SFTData[fileno]->fft->data->data=(COMPLEX8 *)LALMalloc(ndeltaf*sizeof(COMPLEX8));
-
-      /* Fill in actual SFT data, and housekeeping */
-      errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
-      if (errorcode!=ndeltaf){
-	perror(GV.filelist[fileno]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
-	return 6;
-      }
-      SFTData[fileno]->fft->epoch=timestamps[fileno];
-      SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
-      SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
-      SFTData[fileno]->fft->data->length = ndeltaf;
-
-         if (uvar_mergedSFTFile)
-	   k+=sizeof(header)+header.nsamples*8;
-	 else
-	   fclose(fp);     /* close file */
-    
-    }
-  return 0;  
-
-} /* ReadSFTData() */
-
 /** Do some basic initializations of the F-statistic code before starting the main-loop.
  * Things we do in this function: 
  * \li check consistency of user-input
@@ -1421,15 +1218,7 @@ int ReadSFTData(void)
 void
 InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
-
-  CHAR command[512];
-  FILE *fp;
-  size_t errorcode;
-  INT4 fileno=0;   
-#ifndef NOGLOB
-  glob_t globbuf;
-#endif
-  LIGOTimeGPS starttime;
+  UINT4 i;
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1473,19 +1262,94 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     }
 
   /* set the current working directory */
-#ifndef _MSC_VER
   if(chdir(uvar_workingDir) != 0)
-#else
-  if(_chdir(uvar_workingDir) != 0)
-#endif
     {
       fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
+  /*----------------------------------------------------------------------
+   * load SFT data-files
+   */
+  /* min and max frequency index to read */
+  {
+    REAL8 f0, f1;
+    CHAR *fpattern = NULL;
+    UINT4 len = 0;
+
+    f0 = (1.0 - uvar_dopplermax) * uvar_Freq;	/* lower physical frequency bound */
+    f1 = (1.0 + uvar_dopplermax) * (uvar_Freq + uvar_FreqBand); /* upper physical bound */
+
+    if (uvar_DataDir) 
+      len = strlen(uvar_DataDir);
+    else
+      len = 1;	/* '.' */
+    if (uvar_BaseName) 
+      len += strlen(uvar_BaseName);
+
+    len += 10;	/* to allow for '/' and '*' to be inserted */
+
+    if ( (fpattern = LALCalloc(1, len)) == NULL)
+      {
+	LALPrintError ("\nOut of memory !\n");
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+
+    if (uvar_DataDir)
+      strcpy (fpattern, uvar_DataDir);
+    else
+      strcpy (fpattern, ".");
+
+    strcat (fpattern, "/*");
+
+    if (uvar_BaseName)
+      {
+	strcat (fpattern, uvar_BaseName);
+	strcat (fpattern, "*");
+      }
+
+    TRY ( LALReadSFTfiles(status->statusPtr, &SFTvect, f0, f1, uvar_Dterms, fpattern), status);
+    LALFree (fpattern);
+
+  } /* SFT-loading */
+
+  /* deduce search-parameters determined by input-data */
+  cfg->tSFT = 1.0 / SFTvect->data[0].deltaF;
+  cfg->SFTno = SFTvect->length;
+  cfg->nsamples = SFTvect->data[0].data->length;
+  cfg->ifmin = (INT4)(SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
+  cfg->ifmax = cfg->ifmin + cfg->nsamples - 1;
+
+  /* extract timestamps-vector from SFT-data */
+  /* and prepare SFT-data in FFT-struct to feed it into LALDemod() (FIXME)*/
+  if ( (timestamps = LALCalloc(1, cfg->SFTno * sizeof(LIGOTimeGPS))) == NULL) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  if ( (SFTData = LALCalloc(1, cfg->SFTno * sizeof(FFT*))) == NULL) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+
+
+  for (i=0; i < cfg->SFTno; i++)
+    {
+      timestamps[i] = SFTvect->data[i].epoch;
+      SFTData[i] = LALCalloc(1, sizeof(FFT));
+      SFTData[i]->fft = &(SFTvect->data[i]);
+    }
+
+
+  /* figure out total observation time */
+  {
+    LIGOTimeGPS t0, t1;
+    t0 = SFTvect->data[0].epoch;
+    t1 = SFTvect->data[cfg->SFTno-1].epoch;
+    TRY (LALDeltaFloatGPS (status->statusPtr, &(cfg->tObs), &t1, &t0), status);
+    cfg->tObs += cfg->tSFT;
+    cfg->Tstart = t0;
+  }
 
   /*----------------------------------------------------------------------
-   * set up and check ephemeris-file locations, and SFT input data
+   * set up and check ephemeris-file locations
    */
 
 #if USE_BOINC
@@ -1505,143 +1369,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       sprintf(cfg->EphemSun, "sun%s.dat",  uvar_EphemYear);
     }
 #endif /* !USE_BOINC */
-
-  if (uvar_mergedSFTFile) {
-    long k=0;
-#if USE_BOINC
-    use_boinc_filename1(&(uvar_mergedSFTFile));
-#endif
-    if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"rb"))){
-      fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-    
-    while (fread((void*)&header,sizeof(header),1,fp) == 1) {
-      char tmp[256];
-      /* check that we've still got space for more data */
-      if (fileno >= MAXFILES) {
-	fprintf(stderr,"Too many SFT's in merged file! Exiting... \n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-      
-      /* store a "file name" composed of merged name + block number */
-      sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
-      strcpy(cfg->filelist[fileno],tmp);
-      
-      /* check that data is correct endian order */
-      if (header.endian!=1.0) {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-      
-      /* if this is the first SFT, save initial time */
-      if (fileno==0) {
-	cfg->Ti=header.gps_sec;
-	starttime.gpsSeconds = header.gps_sec;
-	starttime.gpsNanoSeconds = header.gps_nsec;
-      }
-      /* increment file no and pointer to the start of the next header */
-      fileno++;
-      k=header.nsamples*8;
-      fseek(fp,k,SEEK_CUR);
-    }
-    /* save final time and time baseline */
-    cfg->Tf = header.gps_sec + header.tbase;  /* FINAL TIME */
-    cfg->tsft=header.tbase;  /* Time baseline of SFTs */
-    
-    /* NOTE: we do NOT close fp here.  If we are using merged SFT file
-       for data, we keep it open because we'll need it again in
-       ReadSFTData().
-    */
-    
-  }  /* if mergedSFTFile */
-  else {
-
-    strcpy(command, uvar_DataDir);
-    strcat(command,"/*");
-    
-    strcat(command, uvar_BaseName);
-    strcat(command,"*");
-    
-#ifndef NOGLOB
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
-    
-    /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-    
-    if(globbuf.gl_pathc==0)
-      {
-	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-    
-    while ((UINT4)fileno < globbuf.gl_pathc) 
-      {
-	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
-	fileno++;
-	if (fileno > MAXFILES)
-	  {
-	    LALPrintError ("\nToo many files in directory! Exiting... \n\n");
-	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	  }
-      }
-    globfree(&globbuf);
-#endif
-  }
-  cfg->SFTno=fileno; /* remember this is 1 more than the index value */
-
-  if (!uvar_mergedSFTFile) {
-    /* open FIRST file and get info from it*/
-    fp=fopen(cfg->filelist[0],"rb");
-    /* read in the header from the file */
-    errorcode=fread((void*)&header,sizeof(header),1,fp);
-    if (errorcode!=1) 
-      {
-	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-    
-    /* check that data is correct endian order */
-    if (header.endian!=1.0)
-      {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-    fclose(fp);
-    
-    /* INITIAL TIME */
-    starttime.gpsSeconds = header.gps_sec;
-    starttime.gpsNanoSeconds = header.gps_nsec;
-    cfg->Ti = header.gps_sec; 
-    
-    /* open LAST file and get info from it*/
-    fp=fopen(cfg->filelist[fileno-1],"rb");
-    /* read in the header from the file */
-    errorcode=fread((void*)&header,sizeof(header),1,fp);
-    if (errorcode!=1) 
-      {
-	fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-    /* check that data is correct endian order */
-    if (header.endian!=1.0)
-      {
-	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
-	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-      }
-    fclose(fp);
-
-    /* FINAL TIME */
-    cfg->Tf=header.gps_sec+header.tbase;  
-    /* Time baseline of SFTs */
-    cfg->tsft=header.tbase;  
-  }
 
   /*----------------------------------------------------------------------
    * initialize detector 
@@ -1675,21 +1402,18 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    {
      /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
      if( !LALUserVarWasSet (&uvar_dFreq) ) 
-       cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
+       cfg->dFreq=1.0/(2.0 * cfg->tObs);	/* FIXME */
      else
        cfg->dFreq = uvar_dFreq;
-     
+
      cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
-     
-     /* if user has not input spin down increment then set it to some value */
-     if( !LALUserVarWasSet (&uvar_df1dot) ) 
-       uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf - cfg->Ti));
+
    }
  if (uvar_binary)  /* BINARY-MOD - Just a safety thing, setting default df=1/5T and df1dot=0.0 */
    {
      /* if user has not input demodulation frequency resolution; set to 1/5*Tobs */
      if( !LALUserVarWasSet (&uvar_dFreq) ) 
-       cfg->dFreq=1.0/(5.0*header.tbase*cfg->SFTno);
+       cfg->dFreq=1.0/(5.0 * cfg->tObs);
      else
        cfg->dFreq = uvar_dFreq;
      
@@ -1706,13 +1430,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   else
     cfg->SpinImax = 0;
 
-  cfg->nsamples=header.nsamples;    /* # of freq. bins */
-
-  cfg->ifmax=ceil((1.0+uvar_dopplermax)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
-  cfg->ifmin=floor((1.0-uvar_dopplermax)*uvar_Freq*cfg->tsft)-uvar_Dterms;
-
   /* allocate F-statistic arrays */
-  Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
+  Fstat.F =(REAL8*)LALCalloc(1, cfg->FreqImax*sizeof(REAL8));
   if(uvar_EstimSigParam) 
     {
       Fstat.Fa =(COMPLEX16*)LALMalloc(cfg->FreqImax*sizeof(COMPLEX16));
@@ -1813,7 +1532,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
 
-    TRY (LALLeapSecs (status->statusPtr, &leap, &starttime, &formatAndAcc), status);
+    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->Tstart), &formatAndAcc), status);
     cfg->edat->leap = leap;
 
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
@@ -1951,20 +1670,10 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 void Freemem(LALStatus *status) 
 {
 
-  INT4 k;
-
   INITSTATUS (status, "Freemem", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /* Free SFTData */
-  for (k=0;k<GV.SFTno;k++)
-    {
-      LALFree(SFTData[k]->fft->data->data);
-      LALFree(SFTData[k]->fft->data);
-      LALFree(SFTData[k]->fft);
-      LALFree(SFTData[k]);
-    }
-  LALFree(SFTData);
+  TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);
 
   /* Free timestamps */
   LALFree(timestamps);
@@ -2369,8 +2078,8 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* loop over SFT data to estimate noise */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
+	xre=SFTvect->data[i].data->data[j].re;
+	xim=SFTvect->data[i].data->data[j].im;
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
       
@@ -2397,9 +2106,9 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       }
       
       if(uvar_SignalOnly == 1){
-	B=(1.0*GV.nsamples)/(1.0*GV.tsft);
+	B=(1.0*GV.nsamples)/(1.0*GV.tSFT);
 	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(GV.tsft);
+	norm=deltaT/sqrt(GV.tSFT);
 	for (lpc=0;lpc<nbins;lpc++){
 	  N[lpc]=norm;
 	}
@@ -2409,12 +2118,12 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
       for (j=0;j<nbins;j++){
-	xre=SFTData[i]->fft->data->data[j].re;
-	xim=SFTData[i]->fft->data->data[j].im;
+	xre=SFTvect->data[i].data->data[j].re;
+	xim=SFTvect->data[i].data->data[j].im;
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	SFTData[i]->fft->data->data[j].re = xreNorm;    
-	SFTData[i]->fft->data->data[j].im = ximNorm;
+	SFTvect->data[i].data->data[j].re = xreNorm;    
+	SFTvect->data[i].data->data[j].im = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
@@ -2514,7 +2223,7 @@ int ReadBinaryTemplateBank(LALStatus *status)
     printf("In BinaryTemplate file %s : header value of Tspan < 0.0\n",filename);
     return 1;
   }
-    if ((BinaryBank->BTBTobsStart.gpsSeconds!=GV.Ti)||(BinaryBank->BTBTobsStart.gpsNanoSeconds!=0)) {
+    if ((BinaryBank->BTBTobsStart.gpsSeconds!=GV.Tstart.gpsSeconds)||(BinaryBank->BTBTobsStart.gpsNanoSeconds!=0)) {
       printf("In BinaryTemplate file %s : header value of Tstart != Tstart of data\n",filename);
       return 1;
     }
