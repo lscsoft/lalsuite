@@ -236,14 +236,11 @@ NRCSID( SKYCOORDINATESH, "$Id$" );
 
 \subsection*{Types}
 
-\begin{verbatim}
-CoordinateSystem
-\end{verbatim}
-\index{\texttt{SkyPosition}}
+\subsubsection*{Enumeration \texttt{CoordinateSystem}}
+\index{\texttt{CoordinateSystem}}
 
-\noindent This enumerated type is used to identify data as being in
-one of the coordinate systems discussed above.  The allowed values
-are:
+This enumerated type is used to identify data as being in one of the
+coordinate systems discussed above.  The allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
@@ -269,16 +266,14 @@ typedef enum {
 
 /********************************************************** <lalLaTeX>
 
-\begin{verbatim}
-SkyPosition
-\end{verbatim}
+\subsubsection*{Structure \texttt{SkyPosition}}
 \index{\texttt{SkyPosition}}
 
-\noindent This structure stores the two spherical coordinates of a sky
-position; i.e.\ a generic latitude and longitude.  The structure is
-not defined specific to a particular coordinate system, but maintains
-a tag indicating which coordinate system it is expressed in.  The
-fields are:
+This structure stores the two spherical coordinates of a sky position;
+i.e.\ a generic latitude and longitude.  The structure is not defined
+specific to a particular coordinate system, but maintains a tag
+indicating which coordinate system it is expressed in.  The fields
+are:
 
 \begin{description}
 \item[\texttt{REAL8 longitude}] The longitudinal coordinate, as
@@ -301,14 +296,12 @@ typedef struct tagSkyPosition {
 
 /********************************************************** <lalLaTeX>
 
-\begin{verbatim}
-EarthPosition
-\end{verbatim}
+\subsubsection*{Structure \texttt{EarthPosition}}
 \index{\texttt{EarthPosition}}
 
-\noindent This structure stores the location of a point on (or near)
-the surface of the Earth in both geodetic and geocentric coordinates,
-as described in \verb@TerrestrialCoordinates.c@.  The fields are:
+This structure stores the location of a point on (or near) the surface
+of the Earth in both geodetic and geocentric coordinates, as described
+in \verb@TerrestrialCoordinates.c@.  The fields are:
 
 \begin{description}
 \item[\texttt{SkyPosition geodetic}] The geographic coordinates of the

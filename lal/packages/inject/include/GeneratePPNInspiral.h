@@ -133,9 +133,12 @@ h_\times(t) & = & A_+(t)\sin\phi(t) \; .
 #define _GENERATEPPNINSPIRAL_H
 
 #include <lal/LALStdlib.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/Random.h>
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID( GENERATEPPNINSPIRALH, "$Id$" );
@@ -186,18 +189,28 @@ For the sake of LAL namespace conventions, these termination codes are
 #define GENERATEPPNINSPIRALH_MSGERTOOSMALL "Orbital radius too small for PN approximation"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-PPNParamStruc
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{PPNParamStruc}}
 \index{\texttt{PPNParamStruc}}
 
-\noindent This structure stores the parameters for constructing a
-restricted post${}^2$-Newtonian waveform.  It is divided into two
-parts: the parameters used as input to the waveform generator, and
-parameters set by the generator to evaluate its success.
+This structure stores the parameters for constructing a restricted
+post${}^2$-Newtonian waveform.  It is divided into three parts:
+parameters passed along to the output structure but not used by
+waveform generator, parameters used as input to the waveform
+generator, and parameters set by the generator to evaluate its
+success.
 
-\paragraph{Input fields:}
+\bigskip\noindent\textit{Passed fields:}
+\begin{description}
+\item[\texttt{REAL8 ra, dec}] The right ascension and declination of
+the source, in radians.
+
+\item[\texttt{REAL4 psi}] The polarization angle of the source, in
+radians.
+\end{description}
+
+\medskip\noindent\textit{Input fields:}
 \begin{description}
 \item[\texttt{REAL4 mTot}] The total mass $m_\mathrm{tot}=m_1+m_2$ of
 the binary system, in solar masses.
@@ -232,7 +245,7 @@ type of post-Newtonian expansion.  If \verb@ppn=NULL@, a ``normal''
 generated waveform.  If zero, the waveforms can be arbitrarily long.
 \end{description}
 
-\paragraph{Output fields:}
+\medskip\noindent\textit{Output fields:}
 \begin{description}
 \item[\texttt{REAL4 dfdt}] The maximum value of $\Delta f\Delta t$
 encountered over any timestep $\Delta t$ used in generating the
@@ -256,6 +269,10 @@ description (above).
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagPPNParamStruc {
+  /* Passed parameters. */
+  REAL8 ra, dec;    /* right ascension and declination (radians) */
+  REAL4 psi;        /* polarization angle (radians) */
+
   /* Input parameters. */
   REAL4 mTot;       /* total system mass (Msun) */
   REAL4 eta;        /* mass ratio */
@@ -276,16 +293,13 @@ typedef struct tagPPNParamStruc {
   const CHAR *termDescription; /* description of termination code */
 } PPNParamStruc;
 
-
 /********************************************************** <lalLaTeX>
-\bigskip
-\begin{verbatim}
-GalacticInspiralParamStruc
-\end{verbatim}
+
+\subsubsection*{Structure \texttt{GalacticInspiralParamStruc}}
 \index{\texttt{GalacticInspiralParamStruc}}
 
-\noindent This structure stores the position and mass parameters of a
-galactic inspiral event.  The fields are:
+This structure stores the position and mass parameters of a galactic
+inspiral event.  The fields are:
 
 \begin{description}
 \item[\texttt{REAL4 rho}] The distance of the binary system from the
@@ -295,8 +309,9 @@ Galactic axis, in kpc.
 plane, in kpc.
 
 \item[\texttt{REAL4 lGal}] The Galactocentric Galactic longitude of
-the system, in radians.  See~\verb@SkyCoordinates.h@ for the
-definition of this quantity.
+the system (i.e.\ the Galactic longitude of the direction \emph{from
+the Galactic centre} through the system), in radians.
+See~\verb@SkyCoordinates.h@ for the definition of this quantity.
 
 \item[\texttt{REAL4 m1, m2}] The masses of the binary components, in
 solar masses.
@@ -328,10 +343,20 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 			PPNParamStruc *params );
 
 /* <lalLaTeX>
+\newpage\input{GetInspiralParamsC}
+</lalLaTeX> */
+void
+LALGetInspiralParams( LALStatus                  *stat,
+		      PPNParamStruc              *output,
+		      GalacticInspiralParamStruc *input,
+		      RandomParams               *params );
+
+/* <lalLaTeX>
 %\newpage\input{GeneratePPNInspiralTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 

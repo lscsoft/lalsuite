@@ -31,21 +31,22 @@ Because the geographic coordinate system is not fixed, one must also
 specify the time of the transformation in \verb@*gpsTime@.
 
 The function \verb@LALSystemToHorizon()@ transforms coordinates from
-an arbitrary coordinate to a horizon coordinate system, reading
-coordinates in the first system from \verb@*input@ and storing the
-horizon coordinates in \verb@*output@, as above.  The parameter
-\verb@*zenith@ specifies the direction of the vertical axis \emph{in
-the original coordinate system}; the routine checks to see that
-\verb@input->system@ and \verb@zenith->system@ agree.  Normally this
-routine is used to convert from \emph{geographic} latitude and
-longitude to a horizon system, in which case \verb@*zenith@ simply
-stores the geographic (geodetic) coordinates of the observer.
+either celestial equatorial coordinates or geographic coordinates to a
+horizon coordinate system, reading coordinates in the first system
+from \verb@*input@ and storing the horizon coordinates in
+\verb@*output@, as above.  The parameter \verb@*zenith@ specifies the
+direction of the vertical axis \emph{in the original coordinate
+system}; the routine checks to see that \verb@input->system@ and
+\verb@zenith->system@ agree.  Normally this routine is used to convert
+from \emph{geographic} latitude and longitude to a horizon system, in
+which case \verb@*zenith@ simply stores the geographic (geodetic)
+coordinates of the observer.
 
 The function \verb@LALHorizonToSystem()@ does the reverse of the
-above, transforming coordinates from horizon coordinates to an
-arbitrary coordinate system specified by \verb@zenith->system@; the
-value of \verb@output->system@ is set to agree with
-\verb@zenith->system@.
+above, transforming coordinates from horizon coordinates to either
+equatorial or geographic coordinates as specified by
+\verb@zenith->system@; the value of \verb@output->system@ is set to
+agree with \verb@zenith->system@.
 
 Although it is conventional to specify an observation location by its
 \emph{geodetic} coordinates, some routines may provide or require
@@ -297,9 +298,7 @@ the geoid.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-/* Hack until date header is installed first...
-#include <lal/Date.h>
-*/
+/*#include <lal/Date.h>*/
 #include "Date.h"
 #include <lal/Sort.h>
 #include <lal/SkyCoordinates.h>
@@ -407,6 +406,10 @@ LALSystemToHorizon( LALStatus   *stat,
   if ( input->system != zenith->system ) {
     ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
   }
+  if ( ( zenith->system != COORDINATESYSTEM_EQUATORIAL ) &&
+       ( zenith->system != COORDINATESYSTEM_GEOGRAPHIC ) ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
 
   /* Compute intermediates. */
   h = zenith->longitude - input->longitude;
@@ -456,6 +459,10 @@ LALHorizonToSystem( LALStatus   *stat,
 
   /* Make sure we're given the right coordinate system. */
   if ( input->system != COORDINATESYSTEM_HORIZON ) {
+    ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+  }
+  if ( ( zenith->system != COORDINATESYSTEM_EQUATORIAL ) &&
+       ( zenith->system != COORDINATESYSTEM_GEOGRAPHIC ) ) {
     ABORT( stat, SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
   }
 
