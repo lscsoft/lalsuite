@@ -91,7 +91,7 @@ int main (void) {
    static LALStatus status;
    static InspiralTemplate params;
    static REAL8 dt;
-   UINT4 n, i;
+   UINT4 n;
 
    params.OmegaS = 0.;
    params.Theta = 0.;

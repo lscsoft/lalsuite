@@ -1,11 +1,11 @@
-/*  <lalVerbatim file="LALInspiralTestOneCV">
+/*  <lalVerbatim file="LALGenerateInspiralWaveformCV">
 Author: Sathyaprakash, B. S., Cokelaer T.
 $Id$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
 
-\subsection{Test program \texttt{LALInspiralTestOne.c}}
+\subsection{Test program \texttt{LALGenerateInspiralWaveform.c}}
 Test routine for wave generation codes. 
 
 To get some help just type the name of the executable and the option --h
@@ -13,31 +13,31 @@ To get some help just type the name of the executable and the option --h
 Basically, you can provide all the arguments from the InspiralTemplate structure such as
 --approximant, --order ....
 
-\vfill{\footnotesize\input{LALInspiralTestOneCV}}
+\vfill{\footnotesize\input{LALGenerateInspiralWaveformCV}}
 
 </lalLaTeX> */
 
 
-#define LALINSPIRALTESTONEC_ENORM 0
-#define LALINSPIRALTESTONEC_ESUB  1
-#define LALINSPIRALTESTONEC_EARG  2
-#define LALINSPIRALTESTONEC_EVAL  3
-#define LALINSPIRALTESTONEC_EFILE 4
-#define LALINSPIRALTESTONEC_EMEM  5
+#define LALGENERATEINSPIRALWAVEFORMC_ENORM 0
+#define LALGENERATEINSPIRALWAVEFORMC_ESUB  1
+#define LALGENERATEINSPIRALWAVEFORMC_EARG  2
+#define LALGENERATEINSPIRALWAVEFORMC_EVAL  3
+#define LALGENERATEINSPIRALWAVEFORMC_EFILE 4
+#define LALGENERATEINSPIRALWAVEFORMC_EMEM  5
 
-#define LALINSPIRALTESTONEC_MSGENORM "Normal exit"
-#define LALINSPIRALTESTONEC_MSGESUB  "Subroutine failed"
-#define LALINSPIRALTESTONEC_MSGEARG  "Error parsing arguments"
-#define LALINSPIRALTESTONEC_MSGEVAL  "Input argument out of valid range"
-#define LALINSPIRALTESTONEC_MSGEFILE "Could not open file"
-#define LALINSPIRALTESTONEC_MSGEMEM  "Out of memory"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGENORM "Normal exit"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGESUB  "Subroutine failed"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGEARG  "Error parsing arguments"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGEVAL  "Input argument out of valid range"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGEFILE "Could not open file"
+#define LALGENERATEINSPIRALWAVEFORMC_MSGEMEM  "Out of memory"
 
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 
-NRCSID( LALINSPIRALTESTONEC, "$Id$" );
+NRCSID( LALGENERATEINSPIRALWAVEFORMC, "$Id$" );
 
 INT4 lalDebugLevel=7;
 #define ERROR( code, msg, statement )                                \
@@ -46,7 +46,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, LALINSPIRALTESTONEC, statement ? statement :  \
+		 __LINE__, LALGENERATEINSPIRALWAVEFORMC, statement ? statement :  \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)
@@ -57,7 +57,7 @@ if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
   LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", program, __FILE__, __LINE__,        \
-		 LALINSPIRALTESTONEC, (statement) );                         \
+		 LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
 }                                                                    \
 while (0)
 
@@ -67,7 +67,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", program, __FILE__, __LINE__,        \
-		 LALINSPIRALTESTONEC, (statement) );                         \
+		 LALGENERATEINSPIRALWAVEFORMC, (statement) );                         \
 }                                                                    \
 while (0)
 
@@ -75,9 +75,9 @@ while (0)
 do                                                                   \
 if ( (func), (statusptr)->statusCode )                               \
 {                                                                    \
-  ERROR( LALINSPIRALTESTONEC_ESUB, LALINSPIRALTESTONEC_MSGESUB,                      \
+  ERROR( LALGENERATEINSPIRALWAVEFORMC_ESUB, LALGENERATEINSPIRALWAVEFORMC_MSGESUB,                      \
          "Function call \"" #func "\" failed:" );                    \
-  exit( LALINSPIRALTESTONEC_ESUB );                                          \
+  exit( LALGENERATEINSPIRALWAVEFORMC_ESUB );                                          \
 }                                                                    \
 while (0)
 
@@ -89,7 +89,7 @@ char *program;
 
 void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) ;
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
-void LALInspiralTestOneHelp(void);
+void LALGenerateInspiralWaveformHelp(void);
 
 
 
@@ -231,15 +231,15 @@ ParseParameters(	UINT4 			argc,
 	otherIn->PrintParameters = 1;
       }
       else if( strcmp(argv[i],	"--h") 	== 0 ) {
-	LALInspiralTestOneHelp(); }
+	LALGenerateInspiralWaveformHelp(); }
       else if( strcmp(argv[i],"-h") 	== 0 ) {
-	LALInspiralTestOneHelp();
+	LALGenerateInspiralWaveformHelp();
       }
       else if( strcmp(argv[i],"-help") 	== 0 ) {
-	LALInspiralTestOneHelp();
+	LALGenerateInspiralWaveformHelp();
       } 
       else if( strcmp(argv[i],"--help")	== 0 ) {
-	LALInspiralTestOneHelp();
+	LALGenerateInspiralWaveformHelp();
       }
       
       i++;
@@ -249,10 +249,10 @@ ParseParameters(	UINT4 			argc,
 
 
 
-void LALInspiralTestOneHelp(void)
+void LALGenerateInspiralWaveformHelp(void)
 {
 
-  fprintf(stderr,"LALInspiralTestOne Help\n");
+  fprintf(stderr,"LALGenerateInspiralWaveform Help\n");
   fprintf(stderr, "-----------------------------------------------\n");
   fprintf(stderr, "--h for help\n");
   fprintf(stderr, "--verbose to print Inspiral Template parameters\n");

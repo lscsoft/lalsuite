@@ -95,7 +95,7 @@ int main (void) {
    static InspiralTemplate params;
    static REAL8 dt, mass1Sq, mass2Sq, spin1Frac, spin2Frac, spin1Theta, spin1Phi, spin2Theta, spin2Phi;
    static REAL8 dTheta, dPhi;
-   UINT4 n, i, count=0;
+   UINT4 n,  count=0;
 
    dTheta = LAL_PI_2/1.9;
    dPhi = LAL_TWOPI/1.9;

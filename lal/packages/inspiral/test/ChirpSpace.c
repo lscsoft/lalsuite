@@ -50,8 +50,8 @@ int main ( void ) {
     i.e. total mass of the body given by MMax
    */
    type = 0;
-   mmin = 1.0;
-   mmax = 3.;
+   mmin = 3.0;
+   mmax = 30.;
    Mmax = mmax*2.;
    /*
     Don't change anything below: 
@@ -61,7 +61,7 @@ int main ( void ) {
    Mmax = log10(Mmax);
 
    p.ieta=1; 
-   p.fLower=100.0; 
+   p.fLower=20.0; 
    p.order = twoPN;
 
    totalMmax = pow(10.,Mmax);

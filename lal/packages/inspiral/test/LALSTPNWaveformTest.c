@@ -30,7 +30,7 @@ Just change the InspiralTemplate strcuture parameters in the c file.
 NRCSID( LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
 
 
-int main(int argc, char **argv) {
+int main() {
     static LALStatus 	mystatus;
     CoherentGW 		thewaveform;
     InspiralTemplate 	parameters;
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 	phi 	= thewaveform.phi->data->data[i];
 	shift 	= thewaveform.shift->data->data[i];
 
-	fprintf(outputfile,"%le\t%le\t%le\n",
+	fprintf(outputfile,"%e\t%e\t%e\n",
 		i*dt,
 		a1*cos(shift)*cos(phi) - a2*sin(shift)*sin(phi),
 		a1*sin(shift)*cos(phi) + a2*cos(shift)*sin(phi));
