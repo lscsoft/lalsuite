@@ -159,6 +159,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4TimeSeries segmentTwoC;
 
   /* data structures for PSDs */
+  PSDEstimatorInput psdInputOne;
+  PSDEstimatorInput psdInputTwo;
+  PSDEstimatorParams psdParamsOne;
+  PSDEstimatorParams psdParamsTwo;
   INT4 overlapPSDLength;
   INT4 psdTempLength;
   INT4 windowPSDLength;
@@ -190,15 +194,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
-  /* calibrated and half calibrated inverse noise data structures */
+  /* inverse noise data structures */
   REAL4FrequencySeries calInvPSDOne;
   REAL4FrequencySeries calInvPSDTwo;
-  COMPLEX8FrequencySeries halfCalPSDOne;
-  COMPLEX8FrequencySeries halfCalPSDTwo;
-
-  /* units for inverse noise */
   LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
-  LALUnit halfCalPSDUnit = {18,{0,0,0,0,0,-1,-1},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
   REAL4TimeSeries dataWindow;
@@ -234,12 +233,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticOmegaGWParameters omegaGWParams;
   REAL4FrequencySeries omegaGW;
 
-  /* structures for LALInverseNoise */
-  StochasticInverseNoiseInput inverseNoiseInOne;
-  StochasticInverseNoiseInput inverseNoiseInTwo;
-  StochasticInverseNoiseOutput inverseNoiseOutOne;
-  StochasticInverseNoiseOutput inverseNoiseOutTwo;
-
   /* structures for optimal filter normalisation */
   StochasticOptimalFilterNormalizationInput normInput;
   StochasticOptimalFilterNormalizationOutput normOutput;
@@ -249,11 +242,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 lambda;
 
   /* structures for optimal filter */
-  COMPLEX8FrequencySeries optFilter;
-  StochasticOptimalFilterInput optFilterIn;
+  REAL4FrequencySeries optFilter;
+  StochasticOptimalFilterCalInput optFilterIn;
 
   /* structures for CC spectrum and CC statistics */
-  StochasticCrossCorrelationInput ccIn;
+  StochasticCrossCorrelationCalInput ccIn;
   BOOLEAN epochsMatch = 1;
   REAL4WithUnits ccStat;
   COMPLEX8FrequencySeries ccSpectrum;
@@ -628,14 +621,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   calInvPSDTwo.deltaF = deltaF;
   calInvPSDOne.f0 = fMin;
   calInvPSDTwo.f0 = fMin;
-  strncpy(halfCalPSDOne.name, "halfCalPSDOne", LALNameLength);
-  strncpy(halfCalPSDTwo.name, "halfCalPSDTwo", LALNameLength);
-  halfCalPSDOne.deltaF = deltaF;
-  halfCalPSDTwo.deltaF = deltaF;
-  halfCalPSDOne.f0 = fMin;
-  halfCalPSDTwo.f0 = fMin;
-  halfCalPSDOne.sampleUnits = halfCalPSDUnit;
-  halfCalPSDTwo.sampleUnits = halfCalPSDUnit;
 
   if (vrbflg)
   {
@@ -653,28 +638,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       calInvPSDOne.data->length * sizeof(*calInvPSDOne.data->data));
   memset(calInvPSDTwo.data->data, 0, \
       calInvPSDTwo.data->length * sizeof(*calInvPSDTwo.data->data));
-  halfCalPSDOne.data = NULL;
-  halfCalPSDTwo.data = NULL;
-  LAL_CALL( LALCCreateVector(&status, &(halfCalPSDOne.data), filterLength), \
-      &status );
-  LAL_CALL( LALCCreateVector(&status, &(halfCalPSDTwo.data), filterLength), \
-      &status );
-  memset(halfCalPSDOne.data->data, 0, \
-      halfCalPSDOne.data->length * sizeof(*halfCalPSDOne.data->data));
-  memset(halfCalPSDTwo.data->data, 0, \
-      halfCalPSDTwo.data->length * sizeof(*halfCalPSDTwo.data->data));
-
-  /* set inverse noise inputs */
-  inverseNoiseInOne.unCalibratedNoisePSD = &psdOne;
-  inverseNoiseInOne.responseFunction = &responseOneB;
-  inverseNoiseInTwo.unCalibratedNoisePSD = &psdTwo;
-  inverseNoiseInTwo.responseFunction = &responseTwoB;
-
-  /* set inverse noise outputs */
-  inverseNoiseOutOne.calibratedInverseNoisePSD = &calInvPSDOne;
-  inverseNoiseOutOne.halfCalibratedInverseNoisePSD = &halfCalPSDOne;
-  inverseNoiseOutTwo.calibratedInverseNoisePSD = &calInvPSDTwo;
-  inverseNoiseOutTwo.halfCalibratedInverseNoisePSD = &halfCalPSDTwo;
 
   /* set window parameters for segment data streams */
   strncpy(dataWindow.name, "dataWindow", LALNameLength);
@@ -1002,7 +965,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* allocate memory for optimal filter */
   optFilter.data = NULL;
-  LAL_CALL( LALCCreateVector(&status, &(optFilter.data), filterLength), \
+  LAL_CALL( LALCreateVector(&status, &(optFilter.data), filterLength), \
       &status );
   memset(optFilter.data->data, 0, \
       optFilter.data->length * sizeof(*optFilter.data->data));
@@ -1010,8 +973,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set optimal filter inputs */
   optFilterIn.overlapReductionFunction = &overlap;
   optFilterIn.omegaGW = &omegaGW;
-  optFilterIn.halfCalibratedInverseNoisePSD1 = &halfCalPSDOne;
-  optFilterIn.halfCalibratedInverseNoisePSD2 = &halfCalPSDTwo;
+  optFilterIn.calibratedInverseNoisePSD1 = &calInvPSDOne;
+  optFilterIn.calibratedInverseNoisePSD2 = &calInvPSDTwo;
 
   /* set metadata fields for CC spectrum */
   strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
@@ -1028,6 +991,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set CC inputs */
   ccIn.hBarTildeOne = &hBarTildeOne;
   ccIn.hBarTildeTwo = &hBarTildeTwo;
+  ccIn.responseFunctionOne = &responseOneB;
+  ccIn.responseFunctionTwo = &responseTwoB;
   ccIn.optimalFilter = &optFilter;
 
   if (vrbflg)
@@ -1157,33 +1122,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     if (vrbflg)
     {
-      fprintf(stdout, "Estimating PSDs...\n");
-    }
-
-    /* compute uncalibrated PSDs */
-    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempOne, &intervalOne, \
-          &psdParams), &status );
-    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &intervalTwo, \
-          &psdParams), &status );
-
-    if (vrbflg)
-    {
-      fprintf(stdout, "Getting appropriate frequency band for PSDs...\n");
-    }
-
-    /* reduce to the optimal filter frequency range */
-    psdOne.data->data = psdTempOne.data->data + numFMin;
-    psdTwo.data->data = psdTempTwo.data->data + numFMin;
-
-    /* output the results */
-    if (debug_flag)
-    {
-      LALSPrintFrequencySeries(&psdOne, "psd1.dat");
-      LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
-    }
-
-    if (vrbflg)
-    {
       fprintf(stdout, "Generating response functions...\n");
     }
 
@@ -1246,22 +1184,40 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     if (vrbflg)
     {
-      fprintf(stdout, "Generating inverse noise...\n");
+      fprintf(stdout, "Estimating PSDs...\n");
     }
 
-    /* compute inverse calibrate and half calibrated PSDs */
-    LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutOne, \
-          &inverseNoiseInOne), &status );
-    LAL_CALL( LALStochasticInverseNoise(&status, &inverseNoiseOutTwo, \
-          &inverseNoiseInTwo), &status );
+    /* set psd inputs */
+    psdInputOne.segmentA = &segmentOneA;
+    psdInputOne.segmentC = &segmentOneC;
+    psdInputOne.responseA = &responseOneA;
+    psdInputOne.responseC = &responseOneC;
+    psdInputTwo.segmentA = &segmentTwoA;
+    psdInputTwo.segmentC = &segmentTwoC;
+    psdInputTwo.responseA = &responseTwoA;
+    psdInputTwo.responseC = &responseTwoC;
+    psdParamsOne.psdTempLength = psdTempLength;
+    psdParamsOne.psdUnits = psdUnits;
+    psdParamsOne.filterLength = filterLength;
+    psdParamsOne.psdParams = &psdParams;
+    psdParamsOne.numFMin = numFMin;
+    psdParamsTwo.psdTempLength = psdTempLength;
+    psdParamsTwo.psdUnits = psdUnits;
+    psdParamsTwo.filterLength = filterLength;
+    psdParamsTwo.psdParams = &psdParams;
+    psdParamsTwo.numFMin = numFMin;
 
-    /* save */
+    /* estimate psds */
+    LAL_CALL( psdEstimator(&status, calInvPSDOne, psdInputOne, \
+          psdParamsOne), &status );
+    LAL_CALL( psdEstimator(&status, calInvPSDTwo, psdInputTwo, \
+          psdParamsTwo), &status );
+
+    /* output the results */
     if (debug_flag)
     {
       LALSPrintFrequencySeries(&calInvPSDOne, "inPSD1.dat");
       LALSPrintFrequencySeries(&calInvPSDTwo, "inPSD2.dat");
-      LALCPrintFrequencySeries(&halfCalPSDOne, "hInPSD1.dat");
-      LALCPrintFrequencySeries(&halfCalPSDTwo, "hInPSD2.dat");
     }
 
     if (vrbflg)
@@ -1291,27 +1247,27 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* build optimal filter */
     optFilter.epoch = gpsSegmentAStart;
-    LAL_CALL( LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, \
-          &normLambda), &status );
+    LAL_CALL( LALStochasticOptimalFilterCal(&status, &optFilter, \
+          &optFilterIn, &normLambda), &status );
 
     /* save */
     if (debug_flag)
     {
-      LALCPrintFrequencySeries(&optFilter, "optFilter.dat");
+      LALPrintFrequencySeries(&optFilter, "optFilter.dat");
     }
-
-    if (vrbflg)
-    {
-      fprintf(stdout, "Generating cross correlation spectrum...\n");
-    }
-
-    /* cc spectrum */
-    LAL_CALL( LALStochasticCrossCorrelationSpectrum(&status, &ccSpectrum, \
-          &ccIn, epochsMatch), &status );
 
     /* save */
     if (debug_flag)
     {
+      if (vrbflg)
+      {
+        fprintf(stdout, "Generating cross correlation spectrum...\n");
+      }
+
+      /* cc spectrum */
+      LAL_CALL( LALStochasticCrossCorrelationSpectrumCal(&status, \
+            &ccSpectrum, &ccIn, epochsMatch), &status );
+
       LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
     }
 
@@ -1321,8 +1277,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* cc statistic */
-    LAL_CALL( LALStochasticCrossCorrelationStatistic(&status, &ccStat, &ccIn, \
-          epochsMatch), &status );
+    LAL_CALL( LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
+          &ccIn, epochsMatch), &status );
 
     y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
 
@@ -1369,8 +1325,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoC.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDOne.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDTwo.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(omegaGW.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(dataWindow.data)), &status );
@@ -2298,6 +2252,100 @@ static void readDataPair(LALStatus *status,
   LALSDestroyVector(status->statusPtr, &(dataStreamOne.data));
   CHECKSTATUSPTR( status );
   LALSDestroyVector(status->statusPtr, &(dataStreamTwo.data));
+  CHECKSTATUSPTR( status );
+
+  /* return status */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+/* function to estimate the psd */
+static void psdEstimator(LALStatus *status,
+    REAL4FrequencySeries output,
+    PSDEstimatorInput input,
+    PSDEstimatorParams params)
+{
+  /* counters */
+  INT4 i;
+
+  /* psd data structures */
+  REAL4FrequencySeries psdTempA;
+  REAL4FrequencySeries psdTempC;
+  REAL4FrequencySeries psdA;
+  REAL4FrequencySeries psdC;
+
+  /* initialise status pointer */
+  INITSTATUS( status, "psdEstimator", STOCHASTICDEVC );
+  ATTATCHSTATUSPTR( status );
+
+  /* set psd metadata fields */
+  strncpy(psdTempA.name, "psdTempA", LALNameLength);
+  strncpy(psdTempC.name, "psdTempC", LALNameLength);
+  psdTempA.sampleUnits = params.psdUnits;
+  psdTempC.sampleUnits = params.psdUnits;
+  psdTempA.deltaF = deltaF;
+  psdTempC.deltaF = deltaF;
+  psdTempA.f0 = 0;
+  psdTempC.f0 = 0;
+
+  /* allocate memory for psd data structures */
+  psdTempA.data = NULL;
+  psdTempC.data = NULL;
+  LALCreateVector(status->statusPtr, &(psdTempA.data), params.psdTempLength);
+  CHECKSTATUSPTR( status );
+  memset(psdTempA.data->data, 0, \
+      psdTempA.data->length * sizeof(*psdTempA.data->data));
+  LALCreateVector(status->statusPtr, &(psdTempC.data), params.psdTempLength);
+  CHECKSTATUSPTR( status );
+  memset(psdTempC.data->data, 0, \
+      psdTempC.data->length * sizeof(&psdTempC.data->data));
+
+  /* set reduced frequency band psd metadata */
+  strncpy(psdA.name, "psdA", LALNameLength);
+  strncpy(psdC.name, "psdC", LALNameLength);
+  psdA.sampleUnits = params.psdUnits;
+  psdC.sampleUnits = params.psdUnits;
+  psdA.deltaF = deltaF;
+  psdC.deltaF = deltaF;
+  psdA.f0 = fMin;
+  psdC.f0 = fMin;
+
+  /* allocate memory for reduced band psd data structures */
+  psdA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  psdC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  psdA.data->length = params.filterLength;
+  psdC.data->length = params.filterLength;
+
+  /* compute uncalibrated PSDs */
+  LALREAL4AverageSpectrum(status->statusPtr, &psdTempA, input.segmentA, \
+        params.psdParams);
+  CHECKSTATUSPTR( status );
+  LALREAL4AverageSpectrum(status->statusPtr, &psdTempC, input.segmentC, \
+        params.psdParams);
+  CHECKSTATUSPTR( status );
+
+  /* reduce to the optimal filter frequency range */
+  psdA.data->data = psdTempA.data->data + params.numFMin;
+  psdC.data->data = psdTempC.data->data + params.numFMin;
+
+  for (i = 0; i < params.filterLength; i++)
+  {
+    /* compute inverse calibrated psds */
+    psdA.data->data[i] = (pow(input.responseA->data->data[i].re, 2) + \
+        pow(input.responseA->data->data[i].im, 2)) / psdA.data->data[i];
+    psdC.data->data[i] = (pow(input.responseC->data->data[i].re, 2) + \
+        pow(input.responseC->data->data[i].im, 2)) / psdC.data->data[i];
+
+    /* average calibrated psds */
+    output.data->data[i] = (psdA.data->data[i] + psdC.data->data[i]) / 2.0;
+  }
+
+  /* clean up */
+  LALFree(psdA.data);
+  LALFree(psdC.data);
+  LALDestroyVector(status->statusPtr, &(psdTempA.data));
+  CHECKSTATUSPTR( status );
+  LALDestroyVector(status->statusPtr, &(psdTempC.data));
   CHECKSTATUSPTR( status );
 
   /* return status */

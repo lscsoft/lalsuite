@@ -37,9 +37,26 @@ typedef struct tagReadDataPairParams {
 	INT4 resampleRate;
 } ReadDataPairParams;
 
+typedef struct tagPSDEstimatorInput {
+	REAL4TimeSeries *segmentA;
+	REAL4TimeSeries *segmentC;
+	COMPLEX8FrequencySeries *responseA;
+	COMPLEX8FrequencySeries *responseC;
+} PSDEstimatorInput;
+
+typedef struct tagPSDEstimatorParams {
+	INT4 psdTempLength;
+	LALUnit psdUnits;
+	INT4 filterLength;
+	INT4 numFMin;
+	AverageSpectrumParams *psdParams;
+} PSDEstimatorParams;
+
 static void parseOptions(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
+static void psdEstimator(LALStatus *status, REAL4FrequencySeries output,
+    PSDEstimatorInput input, PSDEstimatorParams params);
 
 #ifdef  __cplusplus
 }
