@@ -1258,9 +1258,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	       fprintf( stdout, "compute end response function at GPS %d... \n",gpsCalibTime.gpsSeconds);
              }
 
+           calfacts.ifo = ifo1;
            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                               &calfacts), &status );
-       
+           calfacts.ifo = ifo2;
            LAL_CALL( LALExtractFrameResponse( &status, &responseTemp2, calCache2,
                                               &calfacts), &status );
                 
@@ -1296,9 +1297,10 @@ INT4 main(INT4 argc, CHAR *argv[])
                   
 	     LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
 	     LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
-	 
+	     calfacts.ifo = ifo1;
              LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1,
                        &calfacts), &status );
+             calfacts.ifo = ifo2;
              LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2,
                        &calfacts), &status );
 	 
