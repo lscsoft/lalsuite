@@ -187,9 +187,16 @@ static REAL4TimeSeries darm;
 static REAL4TimeSeries asq;
 static REAL4TimeSeries exc;
 
+static REAL4TimeSeries gain;
+static REAL4TimeSeries icm;
+
+
 static FrChanIn chanin_darm;
 static FrChanIn chanin_asq;
 static FrChanIn chanin_exc;
+
+static FrChanIn chanin_gain;
+static FrChanIn chanin_icm;
 
 CalFactors factors;
 UpdateFactorsParams params;
@@ -197,6 +204,9 @@ UpdateFactorsParams params;
 REAL4Vector *asqwin=NULL,*excwin=NULL,*darmwin=NULL;  /* windows */
 
 LALWindowParams winparams;
+
+REAL4 g,i,magexc,magasq,magdarm;
+
 
 COMPLEX16 be;
 INT4 k,m;
@@ -209,9 +219,15 @@ FILE *fpAlpha=NULL;
   chanin_darm.type = ADCDataChannel;
   chanin_exc.type  = ADCDataChannel;
 
+  chanin_gain.type = ADCDataChannel;
+  chanin_icm.type  = ADCDataChannel;
+
   chanin_asq.name  = CLA.asq_chan;
   chanin_darm.name = CLA.darm_chan;
   chanin_exc.name  = CLA.exc_chan; 
+
+  chanin_gain.name = "L1:LSC-DARM_GAIN";
+  chanin_icm.name  = "L1:LSC-ICMTRX_01";
 
   /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
 
@@ -230,6 +246,15 @@ FILE *fpAlpha=NULL;
   LALFrGetREAL4TimeSeries(&status,&exc,&chanin_exc,framestream);
   TESTSTATUS( &status );
 
+/*   LALFrSetPos(&status,&pos1,framestream); */
+/*   TESTSTATUS( &status ); */
+/*   LALFrGetREAL4TimeSeries(&status,&gain,&chanin_gain,framestream); */
+/*   TESTSTATUS( &status ); */
+/*   LALFrSetPos(&status,&pos1,framestream); */
+/*   TESTSTATUS( &status ); */
+/*   LALFrGetREAL4TimeSeries(&status,&icm,&chanin_icm,framestream); */
+/*   TESTSTATUS( &status ); */
+
   /* Allocate space for data vectors */
   LALCreateVector(&status,&asq.data,(UINT4)(CLA.t/asq.deltaT +0.5));
   TESTSTATUS( &status );
@@ -237,6 +262,11 @@ FILE *fpAlpha=NULL;
   TESTSTATUS( &status );
   LALCreateVector(&status,&exc.data,(UINT4)(CLA.t/exc.deltaT +0.5));
   TESTSTATUS( &status );
+
+/*   LALCreateVector(&status,&gain.data,(UINT4)(CLA.t/gain.deltaT +0.5)); */
+/*   TESTSTATUS( &status ); */
+/*   LALCreateVector(&status,&icm.data,(UINT4)(CLA.t/icm.deltaT +0.5)); */
+/*   TESTSTATUS( &status ); */
 
   /* Create Window vectors */
   LALCreateVector(&status,&asqwin,(UINT4)(CLA.t/asq.deltaT +0.5));
@@ -297,6 +327,16 @@ FILE *fpAlpha=NULL;
       LALFrGetREAL4TimeSeries(&status,&exc,&chanin_exc,framestream);
       TESTSTATUS( &status );
 
+/*       LALFrSetPos(&status,&pos1,framestream); */
+/*       TESTSTATUS( &status ); */
+/*       LALFrGetREAL4TimeSeries(&status,&gain,&chanin_gain,framestream); */
+/*       TESTSTATUS( &status ); */
+
+/*       LALFrSetPos(&status,&pos1,framestream); */
+/*       TESTSTATUS( &status ); */
+/*       LALFrGetREAL4TimeSeries(&status,&icm,&chanin_icm,framestream); */
+/*       TESTSTATUS( &status ); */
+
       /* Window the data */
       for(k=0;k<(INT4)(CLA.t/asq.deltaT +0.5);k++)
 	{
@@ -310,6 +350,18 @@ FILE *fpAlpha=NULL;
 	{
 	  exc.data->data[k] *= 2.0*excwin->data[k];
 	}
+      
+      /* Average gain and icm channels */
+      g=0.0;
+/*       for(k=0;k<(INT4)(CLA.t/gain.deltaT +0.5);k++) */
+/* 	{ */
+/* 	  g += gain.data->data[k]/((INT4)(CLA.t/gain.deltaT+0.5)); */
+/* 	} */
+      i=0.0;
+/*       for(k=0;k<(INT4)(CLA.t/icm.deltaT +0.5);k++) */
+/* 	{ */
+/* 	  i += icm.data->data[k]/((INT4)(CLA.t/icm.deltaT +0.5)); */
+/* 	} */
 
       /* set params to call LALComputeCalibrationFactors */
       params.darmCtrl = &darm;
@@ -327,8 +379,13 @@ FILE *fpAlpha=NULL;
 
       cdiv(&be,&factors.alphabeta,&factors.alpha);
 
-      fprintf(fpAlpha,"%18.9Lf %f %f %f %f %f %f\n",
-	      gtime,factors.alpha.re,factors.alpha.im,be.re,be.im,factors.alphabeta.re,factors.alphabeta.im);
+      magexc=sqrt(factors.exc.re*factors.exc.re+factors.exc.im*factors.exc.im)*2/CLA.t;
+      magasq=sqrt(factors.asq.re*factors.asq.re+factors.asq.im*factors.asq.im)*2/CLA.t;
+      magdarm=sqrt(factors.darm.re*factors.darm.re+factors.darm.im*factors.darm.im)*2/CLA.t;
+
+      fprintf(fpAlpha,"%18.9Lf %f %f %f %f %f %f %f %f %f %f \n",
+	      gtime,factors.alpha.re,factors.alpha.im,be.re,be.im,
+	      factors.alphabeta.re,factors.alphabeta.im,g*i,magexc,magasq,magdarm);
 
       gtime += CLA.t;	
       localgpsepoch.gpsSeconds = (INT4)gtime;
