@@ -347,9 +347,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALSPrintTimeSeries(seriesOne, "1.dat");
   LALSPrintTimeSeries(seriesTwo, "2.dat");
 
-  /* initialize gps time structure */
-  gpsStartTime.gpsSeconds = startTime;
-  gpsStartTime.gpsNanoSeconds = 0;
+  /* initialize calibration gps time structure */
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0;
 
