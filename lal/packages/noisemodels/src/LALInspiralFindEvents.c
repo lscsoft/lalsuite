@@ -59,9 +59,9 @@ LALInspiralFindEvents (
    filter1.length = filter2.length = findeventsin->signal.length;
 
    ASSERT (findeventsin->nEnd > 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-   ASSERT (findeventsin->nEnd < output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+   ASSERT (findeventsin->nEnd < (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
    ASSERT (findeventsin->nBegin > 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-   ASSERT (findeventsin->nBegin < output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+   ASSERT (findeventsin->nBegin < (INT4)output1.length,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
 
 
    if (!(output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length))) {

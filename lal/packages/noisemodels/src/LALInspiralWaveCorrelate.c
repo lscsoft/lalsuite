@@ -60,7 +60,9 @@ LALInspiralWaveCorrelate (
 
   buff.length = corrin.signal1.length;
   if (! (buff.data = (REAL4*) LALMalloc(sizeof(REAL4)*buff.length))) 
+  {
      ABORT(status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+  }
 
   nby2 = n/2;
   for (i=1; i<nby2; i++) {

@@ -71,7 +71,7 @@ int
 main ( void ) 
 {
    static LALStatus status;
-   INT4 i, j;
+   INT4 i;
    REAL8 dt, df, t0;
    REAL4Vector signal, correlation;
    RandomInspiralSignalIn randIn;
@@ -82,15 +82,18 @@ main ( void )
 /*---------------------------------------------------------------------------*/
 
    fprintf(stderr, "This test code does the following things:\n");
-   fprintf(stderr, "(a) generates a signal and computes its correlation
-    with two orthogonal templates with same parameter values as the signal\n");
-   fprintf(stderr, "(b) generates noise expected in an interferometer and 
-    computes its correlation with two arbitrary orthogonal templates \n");
-   fprintf(stderr, "(c) generates signal + noise expected in an interferometer 
-    and computes its correlation with two orthogonal templates with same 
-    parametter values as the signal\n");
-   fprintf(stderr, "All correlations are written in RandomSignal.out in a
-format suitable for display with xmgr/xgrace\n\n");
+   fprintf(stderr, "(a) generates a signal and computes its correlation\n");
+   fprintf(stderr, "  with two orthogonal templates with same parameter \n");
+   fprintf(stderr, "  values as the signal\n");
+   fprintf(stderr, "(b) generates noise expected in an interferometer and\n");
+   fprintf(stderr, "  computes its correlation with two arbitrary \n");
+   fprintf(stderr, "  orthogonal templates \n");
+   fprintf(stderr, "(c) generates signal + noise expected in an \n");
+   fprintf(stderr, "  interferometer and computes its correlation \n");
+   fprintf(stderr, "  with two orthogonal templates with same\n");
+   fprintf(stderr, "  parametter values as the signal\n");
+   fprintf(stderr, "All correlations are written in RandomSignal.out in a\n");
+   fprintf(stderr, "format suitable for display with xmgr/xgrace\n");
 
    overlapin.nBegin = 0;
    overlapin.nEnd = 0;

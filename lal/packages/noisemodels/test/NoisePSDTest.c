@@ -34,9 +34,10 @@ int main ()
    INT4 i;
    FILE *NoisePsdFile;
 
-   fprintf(stderr, "This test code computes the amplitude spectrum of 
-    GEO, LIGO, TAMA and VIRGO and writes them in NoisePSDTest.out in a
-    format suitable for display with xmgr/xgrace\n");
+   fprintf(stderr, "This test code computes the amplitude spectrum \n");
+   fprintf(stderr, "of GEO, LIGO, TAMA and VIRGO and writes them in \n");
+   fprintf(stderr, "NoisePSDTest.out in a format suitable for \n");
+   fprintf(stderr, "display with xmgr/xgrace\n");
 
    if ( (NoisePsdFile = fopen("NoisePSDTest.out", "w")) == NULL) 
    {

@@ -93,8 +93,9 @@ main ()
    fprintf(stderr, "This test code does three things:\n");
    fprintf(stderr, "(a) Creates a filter bank at a certain minimal match\n");
    fprintf(stderr, "(b) Generates signals with random parmeters\n");
-   fprintf(stderr, "(c) Filters each of these signals with the a subset of 
-    templates close to the random signal and reports the best SNR achived\n");
+   fprintf(stderr, "(c) Filters each of these signals with the a \n");
+   fprintf(stderr, "subset of templates close to the random signal \n");
+   fprintf(stderr, "and reports the best SNR achived\n");
    fprintf(stderr, "Results of the run are written in FilterTest.out\n");
 
    overlapin.nBegin = 0;
@@ -104,8 +105,8 @@ main ()
 /*---------------------------------------------------------------------------*/
    coarseIn.mMin = 4.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.80;
-   coarseIn.mmFine = 0.97;
+   coarseIn.mmCoarse = 0.9;
+   coarseIn.mmFine = 0.95;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 1000;
    coarseIn.iflso = 0;
@@ -141,7 +142,7 @@ main ()
    randIn.param.nStartPad=2000;
 
    fprintf(FilterTest, "#type SignalAmp NoiseAmp startTime startPhase startpad\n");
-   fprintf(FilterTest, "%#d %e %e %e %e %d\n",
+   fprintf(FilterTest, "#%d %e %e %e %e %d\n",
       randIn.type,
       randIn.SignalAmp,
       randIn.NoiseAmp,
