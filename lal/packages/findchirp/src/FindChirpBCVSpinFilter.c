@@ -213,18 +213,18 @@ LALFindChirpBCVSpinFilterSegment (
      
   if (doTest ==1)
   {	  
-  	fpStrain1Re      = fopen("Strain1Re.dat","w");
-  	fpStrain1Im      = fopen("Strain1Im.dat","w");
-  	fpqtilde         = fopen ("qtilde.dat","w");
+  	fpStrain1Re      = fopen ("Strain1Re.dat","w");
+  	fpStrain1Im      = fopen ("Strain1Im.dat","w");
+  	fpqtilde         = fopen ("qtildeBCVSpin.dat","w");
   	fpqtildeBCVSpin1 = fopen ("qtildeBCVSpin1.dat","w");
   	fpqtildeBCVSpin2 = fopen ("qtildeBCVSpin2.dat","w");
- 	fpq              = fopen ("q.dat","w");
+ 	fpq              = fopen ("qBCVSpin.dat","w");
   	fpqBCVSpin1      = fopen ("qBCVSpin1.dat","w");
   	fpqBCVSpin2      = fopen ("qBCVSpin2.dat","w");
-	fpRho            = fopen ("rho.dat", "w");
-        fpalphaSumSq     = fopen("alphaSumSq.dat","w");
+	fpRho            = fopen ("rhoBCVSpin.dat", "w");
+        fpalphaSumSq     = fopen ("alphaSumSq.dat","w");
         fpRecon          = fopen ("Recon.dat", "w");
-  	fpRho1           = fopen ("rho1.dat", "w");
+  	fpRho1           = fopen ("rho1BCVSpin.dat", "w");
   }	
   
   /* template and data */
@@ -351,8 +351,8 @@ LALFindChirpBCVSpinFilterSegment (
     	REAL4 x =  tmpltSignal[k].re;
     	REAL4 y =  0. - tmpltSignal[k].im;     
  
-    	qtilde[k].re        = r * x + s * y ;
-    	qtilde[k].im        = s * x - r * y ;
+    	qtilde[k].re        = r * x - s * y ;
+    	qtilde[k].im        = s * x + r * y ;
    
       	qtilde[k].re *= wtilde[k].re;
       	qtilde[k].im *= wtilde[k].re; 
