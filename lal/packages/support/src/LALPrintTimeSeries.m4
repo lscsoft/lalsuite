@@ -21,7 +21,7 @@ ifelse(TYPECODE,`S',`define(`FMT',`"%g\t%g\n"')')
 ifelse(TYPECODE,`I8',`define(`FMT',`"%g\t%0.0f\n"')')
 ifelse(TYPECODE,`U8',`define(`FMT',`"%g\t%0.0f\n"')')
 ifelse(TYPECODE,`',`define(`FMT',`"%g\t%f\n"')')
-define(`HEADER',`"# Seconds since epoch\tValue\n"');
+define(`HEADER',`"# Seconds since epoch\tValue\n"')
 ifelse(TYPECODE,`Z',`define(`HEADER',`"# Seconds since epoch\tRe(Value)\tIm(Value)\n"')')
 ifelse(TYPECODE,`C',`define(`HEADER',`"# Seconds since epoch\tRe(Value)\tIm(Value)\n"')')
 define(`ARG',`*data')
