@@ -70,6 +70,11 @@ RCSID( "$Id$" );
 #define CANDLE_MASS2 1.4
 #define CANDLE_RHOSQ 64.0
 
+#ifdef LALAPPS_CONDOR
+void init_image_with_file_name( char *ckpt_file_name );
+void ckpt_and_exit()
+#endif
+
 
 /*
  *
@@ -80,6 +85,9 @@ RCSID( "$Id$" );
 
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
+
+/* checkpointing */
+INT4 dataCheckpoint = 0;                /* condor checkpoint after data */
 
 /* input data parameters */
 INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
@@ -826,6 +834,28 @@ int main( int argc, char *argv[] )
   LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
+
+
+  /*
+   *
+   * we have all the input data that we need, so checkpoint if requested
+   *
+   */
+
+
+  if ( dataCheckpoint )
+  {
+#ifdef LALAPPS_CONDOR
+    LALSnprintf( fname, sizeof(fname)/sizeof(*fname), "%s.ckpt" );
+    if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
+    init_image_with_file_name( fname );
+    ckpt_and_exit();
+#else
+    fprintf( stderr, "--data-checkpoint cannot be used unless "
+        "lalapps is condor compiled\n" );
+    exit( 1 );
+#endif
+  }
 
 
   /* 
@@ -1934,6 +1964,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
 "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
 "\n"\
+"  --data-checkpoint            checkpoint and exit after data is read in\n"\
+"\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-filter-data          write data that is passed to filter to a frame\n"\
 "  --write-response             write the computed response function to a frame\n"\
@@ -1955,6 +1987,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-output",          no_argument,       &enableOutput,     0 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
+    {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
