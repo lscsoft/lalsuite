@@ -68,8 +68,8 @@ int main(int argc, char *argv[]){
   static HoughPulsarTemplate  pulsarTemplate;
   SFTVector  *inputSFTs  = NULL;  
   EphemerisData   *edat = NULL;
-  CHAR  *earthEphemeris = NULL; 
-  CHAR  *sunEphemeris = NULL;
+  CHAR  *uvar_earthEphemeris = NULL; 
+  CHAR  *uvar_sunEphemeris = NULL;
   REAL8 *alphaVec=NULL;
   REAL8 *deltaVec=NULL;
   REAL8 *freqVec=NULL;
@@ -77,47 +77,38 @@ int main(int argc, char *argv[]){
   static REAL8PeriodoPSD   periPSD;
   static UCHARPeakGram     pg1;
   UINT4  msp; /*number of spin-down parameters */
-  INT4   ifo;
-  CHAR   *SFTdir = NULL; /* the directory where the SFT  could be */
-  CHAR   *fnameOut = NULL;               /* The output prefix filename */
-  CHAR   *fnameIn = NULL;  
+  INT4   uvar_ifo;
+  CHAR   *uvar_SFTdir = NULL; /* the directory where the SFT  could be */
+  CHAR   *uvar_fnameOut = NULL;               /* The output prefix filename */
+  CHAR   *uvar_fnameIn = NULL;  
   UINT4  numberCount, index;
   UINT8  nTemplates;   
   UINT4   mObsCoh, nfSizeCylinder;
-  REAL8  peakThreshold, normalizeThr;
+  REAL8  uvar_peakThreshold, normalizeThr;
   REAL8  fmin, fmax, fWings, timeBase;
-  UINT2  blocksRngMed;
+  INT4  uvar_blocksRngMed;
   REAL8  threshold;
   UINT4  sftlength; 
   INT4   sftFminBin;
   UINT4 loopId, tempLoopId;
   FILE  *fpOut = NULL;
-  
-
   BOOLEAN uvar_help;
-  INT4 uvar_ifo;
-  CHAR *uvar_earthEphemeris;
-  CHAR *uvar_sunEphemeris;
-  CHAR *uvar_SFTdir;
-  CHAR *uvar_fnameIn;
-  CHAR *uvar_fnameOut;
-  REAL8 uvar_peakThreshold;
-  INT4 uvar_blocksRngMed;
-
+  CHAR *fnameLog=NULL;
+  FILE *fpLog = NULL;
+  CHAR *logstr=NULL;
 
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
   
   lalDebugLevel = 0;
-
-  SUB( LALGetDebugLevel( &status, argc, argv, 'v'), &status);
+  /* LALDebigLevel must be called before anything else */
+  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   msp = 1; /*only one spin-down */
   nfSizeCylinder = NFSIZE;
  
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
-  
   uvar_ifo = IFO;
   if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -125,20 +116,31 @@ int main(int argc, char *argv[]){
  
   uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
-  uvar_earthEphemeris = EARTHEPHEMERIS;
-  uvar_sunEphemeris = SUNEPHEMERIS;
-  uvar_SFTdir = SFTDIRECTORY;
-  uvar_fnameOut = VALIDATEOUT;
-  uvar_fnameIn = VALIDATEIN;
+
+  uvar_earthEphemeris = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+
+  uvar_sunEphemeris = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+
+  uvar_SFTdir = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_SFTdir,SFTDIRECTORY);
+
+  uvar_fnameOut = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_fnameOut,VALIDATEOUT);
+
+  uvar_fnameIn = (CHAR *)LALMalloc(1024*sizeof(CHAR));
+  strcpy(uvar_fnameIn,VALIDATEIN);
+
   uvar_blocksRngMed = BLOCKSRNGMED;
   SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
 
   /* register user input variables */
   SUB( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
-  SUB( LALRegisterINTUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector", &uvar_ifo ), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_REQUIRED, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_REQUIRED, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "SFTdir", 'D', UVAR_REQUIRED, "SFT Directory", &uvar_SFTdir), &status);
+  SUB( LALRegisterINTUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "SFTdir", 'D', UVAR_OPTIONAL, "SFT Directory", &uvar_SFTdir), &status);
   SUB( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
   SUB( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
   SUB( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -146,134 +148,49 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+
+  /* set value of bias which might have been changed from default */  
+  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
+  
   /* exit if help was required */
   if (uvar_help)
-    exit(0);
-
-  /*****************************************************************/
-  /*    Parse argument list.  i stores the current position.       */
-  /*****************************************************************/
-  {  
-    INT4  arg;        /* Argument counter */
-
-    arg = 1;
-    while ( arg < argc ) {
-      /* Parse debuglevel option. */
-      if ( !strcmp( argv[arg], "-d" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  lalDebugLevel = atoi( argv[arg++] );
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse interferometer option. */
-      else if ( !strcmp( argv[arg], "-i" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  ifo = atoi( argv[arg++] );
-	  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-	  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-	  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of earth  ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-E" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  earthEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of sun ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-S" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  sunEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-       /* Parse directory SFT path  option. */
-      else if ( !strcmp( argv[arg], "-D" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  SFTdir = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse input template file option. */
-      else if ( !strcmp( argv[arg], "-T" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  fnameIn = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse output file option. */
-      else if ( !strcmp( argv[arg], "-o" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  fnameOut = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse peak threshold option. */
-      else if ( !strcmp( argv[arg], "-t" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  peakThreshold = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse Running median window size. */
-      else if ( !strcmp( argv[arg], "-w" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  blocksRngMed = atoi( argv[arg++] );
-          SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status );	  
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Unrecognized option. */
-      else {
-	ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	LALPrintError( USAGE, *argv );
-	return DRIVEHOUGHCOLOR_EARG;
-      }
-    } /* End of argument parsing loop. */
+    exit(0); 
+ 
+  /* open log file for writing */
+  fnameLog = LALCalloc( (strlen(uvar_fnameOut) + strlen(".log") + 10),1);
+  strcpy(fnameLog,uvar_fnameOut);
+  strcat(fnameLog,".log");
+  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
+    LALFree(fnameLog);
+    exit(1);
   }
-  /******************************************************************/
+  
+  /* get the log string */
+  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
+  fprintf( fpLog, "## LOG FILE FOR MCInjectValidate\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
+
+  /* append an ident-string defining the exact CVS-version of the code used */
+  {
+    CHAR command[1024] = "";
+    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fpLog, "# -----------------------------------------\n");
+    fclose (fpLog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+    LALFree(fnameLog);
+  }
 
   /* open output file for writing */
-  fpOut= fopen(fnameOut, "w");
+  fpOut= fopen(uvar_fnameOut, "w");
   setlinebuf(fpOut);  /* line buffered on */  
 
 
@@ -286,10 +203,10 @@ int main(int argc, char *argv[]){
     REAL8  temp1, temp2, temp3, temp4, temp5;
     UINT8  templateCounter; 
     
-    fpIn = fopen(fnameIn, "r");
+    fpIn = fopen(uvar_fnameIn, "r");
     if ( !fpIn )
       {
-	fprintf(stderr, "Unable to fine file %s\n", fnameIn);
+	fprintf(stderr, "Unable to fine file %s\n", uvar_fnameIn);
 	return DRIVEHOUGHCOLOR_EFILE;
       }
 
@@ -336,13 +253,15 @@ int main(int argc, char *argv[]){
   fmax += fWings; 
   
   /* create pattern to look for in SFT directory */   
-  strcat(SFTdir, "/*SFT*.*");
+  strcat(uvar_SFTdir, "/*SFT*.*");
    
   /* now read all the sfts */
-  SUB (LALReadSFTfiles (&status, &inputSFTs, fmin, fmax, nfSizeCylinder + blocksRngMed, SFTdir), &status);
+  SUB (LALReadSFTfiles (&status, &inputSFTs, fmin, fmax, nfSizeCylinder + uvar_blocksRngMed, uvar_SFTdir), &status);
   mObsCoh = inputSFTs->length; 
   sftlength = inputSFTs->data->data->length;
-  sftFminBin = floor( (inputSFTs->data->f0)/(inputSFTs->data->deltaF) + 0.5);
+  timeBase = 1.0/inputSFTs->data->deltaF;
+  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+
   
   /* ****************************************************************/
   /* setting timestamps vector */
@@ -386,8 +305,8 @@ int main(int argc, char *argv[]){
   /*   setting of ephemeris info */ 
   /******************************************************************/ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = earthEphemeris;
-  (*edat).ephiles.sunEphemeris = sunEphemeris;
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
   /******************************************************************/
   /* compute detector velocity for those time stamps  
@@ -450,7 +369,7 @@ int main(int argc, char *argv[]){
   periPSD.psd.data = NULL;
   periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
   
-  threshold = peakThreshold/normalizeThr; 
+  threshold = uvar_peakThreshold/normalizeThr; 
   
   pg1.length = sftlength;
   pg1.data = NULL;
@@ -518,8 +437,11 @@ int main(int argc, char *argv[]){
       SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
       
       /* calculate psd using running median */
-      SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &blocksRngMed), &status );	
-      
+      {
+	UINT2 ublkRngMed;
+	ublkRngMed = uvar_blocksRngMed;
+	SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &ublkRngMed), &status );	
+      }
       /* select sft bins to get peakgrams using threshold */
       SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
       
@@ -549,6 +471,11 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
+
+  LALFree(alphaVec);
+  LALFree(deltaVec);
+  LALFree(freqVec);
+  LALFree(spndnVec);
   
 
   LALFree(periPSD.periodogram.data);
@@ -568,6 +495,8 @@ int main(int argc, char *argv[]){
   LALFree(edat);
   
   SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
+
+  SUB (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks();
   
