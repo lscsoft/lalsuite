@@ -1,0 +1,175 @@
+\section{Program \texttt{lalapps\_bbhinj}}
+\label{program:lalapps-bbhinj}
+\idx[Program]{lalapps\_bbhinj}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_bbhinj$ --- produces inspiral injection data files.
+
+\item[Synopsis]
+\verb$lalapps_bbhinj$ \newline
+%
+[\texttt{--help}]\newline
+[\texttt{--verbose}]\newline
+%
+[\texttt{--gps-start-time} \textsc{tstart}]\newline 
+[\texttt{--gps-end-time} \textsc{tend}]\newline
+%
+[\texttt{--time-step} \textsc{tstep}] \newline
+[\texttt{--time-interval} \textsc{tinterval}]\newline
+%
+[\texttt{--seed} \textsc{seed}]\newline
+[\texttt{--usertag} \textsc{tag}]\newline
+%
+[\texttt{--min-mass} \textsc{mmin}] \newline
+[\texttt{--max-mass} \textsc{mmax}] \newline
+%
+[\texttt{--min-distance} \textsc{dmin}] \newline
+[\texttt{--max-distance} \textsc{dmax}] \newline
+%
+[\texttt{--m-distr} \textsc{mdistr}] \newline
+[\texttt{--d-distr} \textsc{ddistr}] \newline
+%
+[\texttt{--waveform} \textsc{wvf}] \newline
+%
+
+
+\item[Description] 
+\verb$lalapps_bbhinj$
+generates a number of inspiral  parameters suitable  for using in a Monte
+Carlo injection to test the efficiency of an inspiral search.  The  various
+parameters (detailed  below)  are randomly chosen and are appropriate for
+a population of binaries that extends over all space between
+the minimum and maximum distances specified.
+Despite its name, it can be used for BNS and for BBH parameter generation.
+
+The output of this program  is  a  list  of  the  injected events,  starting
+at  the specified start time and ending at the specified end time.  One 
+injection with random inspiral parameters will be made every specified time
+step, and will be randomly placed within the specified time interval.  
+The output is written to a file name in the standard inspiral pipeline format:
+\begin{center}
+\begin{verbatim}
+HL-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+\end{verbatim}
+\end{center}
+where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
+\verb$SEED$ is the  value  of  the random number seed chosen and 
+\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
+the file covers. The file is in the standard LIGO lightweight XML format
+containing a \texttt{sim\_inspiral} table that describes the injections.
+In addition, an ASCII log file called \verb$injlog.txt$ is also written.
+If a \texttt{--user-tag} is not specified on the command line, the
+\texttt{\_USERTAG} part of the filename will be omitted.
+
+The GEO, TAMA and VIRGO end times and effective distances are currently
+not being populated.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--help}] Print a help message.
+
+\item[\texttt{--gps-start-time} \textsc{tstart}]
+Optional.  Start time of the injection data to be created. Defaults to the
+start of S2, Feb 14 2003 16:00:00 UTC (GPS time 729273613)
+
+\item[\texttt{--gps-end-time} \textsc{tend}]
+Optional. End time of the injection data to be created. Defaults to the end of
+S2, Apr 14 2003 15:00:00 UTC (GPS time 734367613).
+
+\item[\texttt{--time-step} \textsc{tstep}]
+Optional. Sets the time step interval between injections. The injections will
+occur with an average spacing of \textsc{tstep} seconds. Defaults to 
+$2630/\pi$.
+
+\item[\texttt{--time-interval} \textsc{tinterval}]
+Optional. Sets the time interval during which an injection can occur. 
+Injections are uniformly distributed over the interval.  Setting \textsc{tstep}
+to $6370$ and \textsc{tinterval} to 600 guarantees there will be one injection
+into each playground segment and they will be randomly distributed within the
+playground times.
+
+\item[\texttt{--seed} \textsc{seed}]
+Optional. Seed the random number generator with the integer \textsc{seed}.
+Defaults to $1$.
+
+\item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
+job to be \textsc{string}. May also be specified on the command line as 
+\texttt{-userTag} for LIGO database compatibility.
+
+\item[\texttt{--min-mass} \textsc{mmin}] Optional. The minimum component 
+mass of the binary. If not specified, it is automatically set to 3 
+$M_\odot$.
+
+\item[\texttt{--max-mass} \textsc{mmax}] Optional. The maximum component 
+mass of the binary. If not specified, it is automatically set to 20 
+$M_\odot$.
+
+\item[\texttt{--min-distance} \textsc{dmin}] Optional. The minimum distance
+(in kpc) from the earth of the signals. If not specified, it is automatically 
+set to 1 kpc.
+
+\item[\texttt{--max-distance} \textsc{dmax}] Optional. The maximum distance
+(in kpc) from the earth of the signals. If not specified, it is automatically 
+set to 20 Mpc (20000 kpc).
+
+\item[\texttt{--m-distr} \textsc{mdistr}] Optional. It lets the user specify
+the mass distribution of the population. The choices are:
+ \begin{itemize} 
+ \item \textsc{mdistr} = 0 the distribution is uniform over total mass
+ (DEFAULT VALUE)
+ \item \textsc{mdistr} = 1 the distribution is uniform over mass1 and
+    over mass2
+ \end{itemize}
+
+\item[\texttt{--d-distr} \textsc{ddistr}] Optional. It lets the used
+specify the distance distribution of the population. The choices are:
+ \begin{itemize} 
+ \item \textsc{ddistr} = 0 uniform-distance distribution
+ (DEFAULT VALUE)
+ \item \textsc{ddistr} = 1 uniform $\log$(distance) distribution
+ \item \textsc{ddistr} = 2 uniform volume distribution
+ \end{itemize}
+
+\item[\texttt{--waveform} \textsc{wvf}] Optional. Sets the waveforms to 
+be injected to \textsc{wvf}. The \textsc{wvf} consists of two parts,
+which are specified as one word. The first part is one of:
+  \begin{itemize}
+  \item EOB
+  \item PadeT1
+  \item TaylorT1
+  \item TaylorT3
+  \item GeneratePPN
+  \end{itemize}
+The second part is one of:
+  \begin{itemize}
+  \item newtonian
+  \item onePN
+  \item onePointFivePN
+  \item twoPN (ONLY CHOICE if GeneratePPN is used before!)
+  \item twoPointFivePN
+  \item threePN
+  \end{itemize}
+If nothing is specified, the default value is EOBtwoPN. It should be noted 
+that if GeneratePPNtwoPN is used as the waveform, the code used to
+perform the injections is different than otherwise. For GeneratePPNtwoPN, the
+older injection code (that does only standard post-Newtonian injections) is
+used. That is the recommended approximant for the case of binary neutron
+star injections.
+
+\end{entry}
+
+\item[Example:] 
+The following command will produce an injection file for a population 
+of binary black holes of total mass between 6 and 20 $M_\odot$ (component
+mass between 3 and 10 $M_\odot$), with uniform-distance distribution
+between 100 kpc and 3 Mpc. Since no mass-distribution is specified, the 
+mass-distribution will be uniform over total mass (default value).
+\begin{verbatim}
+lalapps_bbhinj --min-mass 3.0 --max-mass 10.0 --min-distance 100 
+--max-distance 3000 --d-distr 0 --waveform PadeT1twoPN
+\end{verbatim}
+
+\item[Author]
+Jolien Creighton, Patrick Brady, Duncan Brown and Eirini Messaritaki
+\end{entry}
