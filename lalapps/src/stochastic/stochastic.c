@@ -270,7 +270,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    {fprintf(stdout, "Calculating number of segments...\n");}
 
   /* get number of segments */
-  numSegments = (INT4)floor((stopTime - startTime) / segmentDuration );
+  numSegments = (INT4)((stopTime - startTime) / segmentDuration );
   segmentShift = segmentDuration;
 
   if (overlap_hann_flag)
@@ -1567,6 +1567,8 @@ void displayUsage(INT4 exitcode)
   exit(exitcode);
 }
 
+
+
 /* function to read data in frames */
 void readDataPair(LALStatus *status,
 		  StreamPair *streamPair,
@@ -1595,7 +1597,7 @@ void readDataPair(LALStatus *status,
   sampleRate = params->sampleRate;
 
   /* initialise status pointer */
-  INITSTATUS( status, "readDataPair", STOCHASTICC );
+  INITSTATUS( status, "readDataPair",COHERENCEC );
   ATTATCHSTATUSPTR( status );
 
   /* buffer start time */
@@ -1618,10 +1620,10 @@ void readDataPair(LALStatus *status,
   dataStream1.data = dataStream2.data = NULL;
   LALSCreateVector( status->statusPtr, &(dataStream1.data),
                     sampleRate * (params->duration + (2 * buffer)));
-	
+  CHECKSTATUSPTR (status);	
   LALSCreateVector( status->statusPtr, &(dataStream2.data), 
                     sampleRate * (params->duration + (2 * buffer)));
-	
+  CHECKSTATUSPTR (status);	
   memset( dataStream1.data->data, 0, 
           dataStream1.data->length * sizeof(*dataStream1.data->data));
   memset( dataStream2.data->data, 0, 
@@ -1632,16 +1634,19 @@ void readDataPair(LALStatus *status,
 
   /* open first frame cache */
   LALFrCacheImport(status->statusPtr, &frCache1, params->frameCache1);
+  CHECKSTATUSPTR (status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
+  CHECKSTATUSPTR (status);
 	
   if (verbose_flag)
    { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
 
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+  CHECKSTATUSPTR (status);
   LALFrGetREAL4TimeSeries(status->statusPtr,
                           &dataStream1,&frChanIn1, frStream1);
-
+  CHECKSTATUSPTR (status);
   if (strcmp(params->frameCache1, params->frameCache2) == 0)
    {
     if (verbose_flag)
@@ -1651,15 +1656,18 @@ void readDataPair(LALStatus *status,
 
   /* read in second channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
+  CHECKSTATUSPTR (status);
 	    
   LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, 
                           &frChanIn2, frStream1);
+  CHECKSTATUSPTR (status);
 		
   if (verbose_flag)
    { fprintf(stdout, "Closing frame cache...\n");}
 
   /* close frame cache */
   LALFrClose(status->statusPtr, &frStream1);
+  CHECKSTATUSPTR (status);
 		
    }
   else
@@ -1669,26 +1677,30 @@ void readDataPair(LALStatus *status,
 
     /* close first frame cache */
     LALFrClose(status->statusPtr, &frStream1);
+    CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Opening second frame cache...\n");}
 
     /* open second frame cache and read in second channel */
     LALFrCacheImport(status->statusPtr, &frCache2, params->frameCache2);
+    CHECKSTATUSPTR (status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
+    CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
-		
+    CHECKSTATUSPTR (status);		
     LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2,
                             &frChanIn2, frStream2);
-		
+    CHECKSTATUSPTR (status);	
     if (verbose_flag)
      { fprintf(stdout, "Closing second frame cache...\n");}
 
     /* close second frame stream */
     LALFrClose(status->statusPtr, &frStream2);
+    CHECKSTATUSPTR (status);
 		
    }
 
@@ -1704,7 +1716,9 @@ void readDataPair(LALStatus *status,
 
    /* resample */
    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream1,&resampleParams);
+   CHECKSTATUSPTR (status);
    LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2,&resampleParams);
+   CHECKSTATUSPTR (status);
 		
   }
 
@@ -1732,10 +1746,13 @@ void readDataPair(LALStatus *status,
 
  /* clean up */
  LALSDestroyVector(status->statusPtr, &(dataStream1.data));
+ CHECKSTATUSPTR (status);
  LALSDestroyVector(status->statusPtr, &(dataStream2.data));
+ CHECKSTATUSPTR (status);
 	
  /* return status */
  DETATCHSTATUSPTR( status );
  RETURN( status );
 }
+
 
