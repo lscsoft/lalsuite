@@ -52,6 +52,7 @@
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
 #include <lal/FindChirpBCV.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
@@ -1470,7 +1471,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
       &status );
   fcFilterParams->deltaT = 1.0 / (REAL4) sampleRate;
-  fcFilterParams->computeNegFreq = 0;
   fcFilterParams->chisqParams->approximant = approximant;
 
   /* set up parameters for the filter output veto */
@@ -1582,29 +1582,41 @@ int main( int argc, char *argv[] )
      */
 
 
-    if ( approximant == TaylorF2 )
+    switch ( approximant )
     {
-      if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for SP\n" );
-      LAL_CALL( LALFindChirpSPData( &status, fcSegVec, dataSegVec, 
-            fcDataParams ), &status );
-    }
-    else if ( approximant == BCV )
-    {
-      if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCV\n" );
-      LAL_CALL( LALFindChirpBCVData( &status, fcSegVec, dataSegVec, 
-            fcDataParams ), &status );
-    }
-    else if ( approximant == BCVSpin )
-    {
-      if ( vrbflg ) fprintf( stdout, 
-          "findchirp conditioning data for BCVSpin\n" );
-      LAL_CALL( LALFindChirpBCVSpinData( &status, fcSegVec, dataSegVec, 
-            fcDataParams ), &status );
-    }
-    else
-    {
-      fprintf( stderr, "error: unknown waveform approximant for data\n" );
-      exit( 1 );
+      case TaylorT1:
+      case TaylorT2:
+      case TaylorT3:
+        if ( vrbflg ) 
+          fprintf( stdout, "findchirp conditioning data for TD\n" );
+        LAL_CALL( LALFindChirpTDData( &status, fcSegVec, dataSegVec, 
+              fcDataParams ), &status );
+        break;
+
+      case TaylorF2:
+        if ( vrbflg ) 
+          fprintf( stdout, "findchirp conditioning data for SP\n" );
+        LAL_CALL( LALFindChirpSPData( &status, fcSegVec, dataSegVec, 
+              fcDataParams ), &status );
+        break;
+
+      case BCV:
+        if ( vrbflg ) 
+          fprintf( stdout, "findchirp conditioning data for BCV\n" );
+        LAL_CALL( LALFindChirpBCVData( &status, fcSegVec, dataSegVec, 
+              fcDataParams ), &status );
+        break;
+
+      case BCVSpin:
+        if ( vrbflg ) 
+          fprintf( stdout, "findchirp conditioning data for BCVSpin\n" );
+        LAL_CALL( LALFindChirpBCVSpinData( &status, fcSegVec, dataSegVec, 
+              fcDataParams ), &status );
+        break;
+      default:
+        fprintf( stderr, "error: unknown waveform approximant for data\n" );
+        exit( 1 );
+        break;
     }
 
     if ( bankSim )
@@ -1730,28 +1742,35 @@ int main( int argc, char *argv[] )
         tmpltCurrent = tmpltCurrent->next, inserted = 0 )
     {
       /*  generate template */
-      if ( approximant == TaylorF2 )
+      switch ( approximant )
       {
-        LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
-              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-      }
-      else if ( approximant == BCV )
-      {
-        LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
-              tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-      }
-      else if ( approximant == BCVSpin )
-      {
-        LAL_CALL( LALFindChirpBCVSpinTemplate( &status, fcFilterInput->fcTmplt,
-              tmpltCurrent->tmpltPtr, fcTmpltParams, fcDataParams ), &status );
-        fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
-      }
-      else
-      {
-        fprintf( stderr, "error: unknown waveform approximant for template\n" );
-        exit( 1 );
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+          LAL_CALL( LALFindChirpTDTemplate( &status, fcFilterInput->fcTmplt, 
+                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+          break;
+
+        case TaylorF2:
+          LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
+                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+          break;
+
+        case BCV:
+          LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
+                tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+          break;
+
+        case BCVSpin:
+          LAL_CALL( LALFindChirpBCVSpinTemplate( &status, 
+                fcFilterInput->fcTmplt, tmpltCurrent->tmpltPtr, 
+                fcTmpltParams, fcDataParams ), &status );
+          break;
+
+        default:
+          fprintf( stderr, "error: unknown waveform template approximant \n" );
+          exit( 1 );
+          break;
       }
 
       /* loop over data segments */
@@ -1786,31 +1805,43 @@ int main( int argc, char *argv[] )
               fcSegVec->data[i].number,  fcSegVec->length,
               fcSegStartTimeNS, fcSegEndTimeNS,
               tmpltCurrent->tmpltPtr->number, numTmplts,
-              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
+              fcFilterInput->fcTmplt->tmplt.mass1, 
+              fcFilterInput->fcTmplt->tmplt.mass2 );
 
           fcFilterInput->segment = fcSegVec->data + i;
 
-          if ( approximant == TaylorF2 )
+          /* decide which filtering routine to use */
+          switch ( approximant )
           {
-            LAL_CALL( LALFindChirpFilterSegment( &status, 
-                  &eventList, fcFilterInput, fcFilterParams ), &status ); 
-          }
-          else if ( approximant == BCV )
-          {
-            LAL_CALL( LALFindChirpBCVFilterSegment( &status,
-                  &eventList, fcFilterInput, fcFilterParams ), &status );
-          }
-          else if ( approximant == BCVSpin )
-          {
-            LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
-                  &eventList, fcFilterInput, fcFilterParams, fcDataParams 
-                  ), &status );
-          } 
-          else
-          {
-            fprintf( stderr, 
-                "error: unknown waveform approximant for filter\n" );
-            exit( 1 );
+            case TaylorT1:
+            case TaylorT2:
+            case TaylorT3:
+              /* construct normalization for time domain templates... */
+              LAL_CALL( LALFindChirpTDNormalize( &status, 
+                    fcFilterInput->fcTmplt, fcFilterInput->segment, 
+                    fcDataParams ), &status );
+              /* ...and fall through to FindChirpFilterSegment() */
+            case TaylorF2:
+              LAL_CALL( LALFindChirpFilterSegment( &status, 
+                    &eventList, fcFilterInput, fcFilterParams ), &status ); 
+              break;
+              
+            case BCV:
+              LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+                    &eventList, fcFilterInput, fcFilterParams ), &status );
+              break;
+              
+            case BCVSpin:
+              LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
+                    &eventList, fcFilterInput, fcFilterParams, fcDataParams 
+                    ), &status );
+              break;
+
+            default:
+              fprintf( stderr, 
+                  "error: unknown waveform approximant for filter\n" );
+              exit( 1 );
+              break;
           }
 
           if ( writeRhosq )
@@ -1864,8 +1895,10 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf( stdout, 
               "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
               fcSegVec->data[i].number,
-              fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2,
-              fcFilterInput->tmplt->psi0, fcFilterInput->tmplt->psi3 );
+              fcFilterInput->fcTmplt->tmplt.mass1, 
+              fcFilterInput->fcTmplt->tmplt.mass2,
+              fcFilterInput->fcTmplt->tmplt.psi0, 
+              fcFilterInput->fcTmplt->tmplt.psi3 );
 
           if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
           {
@@ -1942,6 +1975,19 @@ int main( int argc, char *argv[] )
         } /* end if up a level */
 
       } /* end loop over data segments */
+
+      /* delete the chisq bins for time domain templates */
+      switch ( approximant )
+      {
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+          /* the chisq bins need to be re-comuted for the next template */
+          if ( fcFilterParams->chisqParams->chisqBinVec->data )
+            LALFree( fcFilterParams->chisqParams->chisqBinVec->data );
+        default:
+          break;
+      }
 
     } /* end loop over linked list */
 
@@ -2167,41 +2213,42 @@ int main( int argc, char *argv[] )
   }
 
   /* write the summ_value table with the standard candle distance */
-  if ( approximant == TaylorF2 && ! bankSim )
+  if ( ! bankSim )
   {
-    if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
-    ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
-        candle.effDistance, 0);
-  }
-  else if ( approximant == BCV && ! bankSim )
-  {
-    if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
-    ADD_SUMM_VALUE( "inspiral_effective_distance", "5.0_5.0_8",
-        candle.effDistance, 0);
-  }
-  if ( !bankSim )
-  {
-    /* store calibration information */
-    ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
-    ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
-    if (injectionFile) 
+    if ( approximant == TaylorT2 )
     {
-      ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
-      ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+      if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
+      ADD_SUMM_VALUE( "inspiral_effective_distance", "1.4_1.4_8", 
+          candle.effDistance, 0);
     }
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
-          summ_value_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+    else if ( approximant == BCV )
+    {
+      if ( vrbflg ) fprintf( stdout, "  summ_value table...\n" );
+      ADD_SUMM_VALUE( "inspiral_effective_distance", "5.0_5.0_8",
+          candle.effDistance, 0);
+    }
+  }
+
+  /* store calibration information */
+  ADD_SUMM_VALUE( "calibration alpha", "analysis", alpha, 0 );
+  ADD_SUMM_VALUE( "calibration alphabeta", "analysis", alphabeta, 0 );
+  if (injectionFile) 
+  {
+    ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
+    ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+  }
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
+      &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
+        summ_value_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
 
-    while ( summvalue.summValueTable )
-    {
-      this_summ_value = summvalue.summValueTable;
-      summvalue.summValueTable = summvalue.summValueTable->next;
-      LALFree( this_summ_value );
-    }
+  while ( summvalue.summValueTable )
+  {
+    this_summ_value = summvalue.summValueTable;
+    summvalue.summValueTable = summvalue.summValueTable->next;
+    LALFree( this_summ_value );
   }
 
   /* free the search summary table */
@@ -2977,7 +3024,19 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'F':
-        if ( ! strcmp( "TaylorF2", optarg ) )
+        if ( ! strcmp( "TaylorT1", optarg ) )
+        {
+          approximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", optarg ) )
+        {
+          approximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", optarg ) )
+        {
+          approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorF2", optarg ) )
         {
           approximant = TaylorF2;
         }
