@@ -1,9 +1,15 @@
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <lal/LALStdlib.h>
+#include "metaio.h"
+#include "event_utils.h"
 #include "trump.h"
 
 #define OVRLAP 32.0
 
-INT4 lalDebugLevel = LALMSGLVL3;
+INT4 lalDebugLevel = LALNDEBUG;
 
 static int getline(char *line, int max, FILE *fpin)
 {
@@ -32,7 +38,7 @@ int main(int argc, char **argv)
     FILE  *fp = NULL;                      /* generic file pointer                 */
     FILE  *fpout = NULL;                      /* generic file pointer                 */
     char   vetoline[1024];
-    int    i,pass=0,coincidence_flag=0;
+    int    i,pass=0;
     vetoParams *veto_entry=NULL, *thisentry=NULL, *preventry=NULL;
     candParams candidates;
     char  *vcol[128],*eventfile[32];
@@ -40,7 +46,7 @@ int main(int argc, char **argv)
     double timeVetoed=0.0;
     candEvent *eventhead=NULL, *thisCEvent=NULL;
     candEvent *Ieventhead=NULL, *thisIEvent=NULL;
-    float time_analyzed, coincidence_window=0.01, safety=0.0;
+    float time_analyzed, safety=0.0;
     int **triggerHistogram, **injectHistogram, numbins=40;
 
     /*******************************************************************
@@ -109,30 +115,12 @@ int main(int argc, char **argv)
                 return RESPONSEC_EARG;
             }
         }
-        /*********************************************************
-        * Set-up for coincidences
-        *********************************************************/
-        else if ( !strcmp( argv[arg], "--coincidence" ) ) {
-            if ( argc > arg + 2 ) {
-                arg++;
-                eventfile[0] = argv[arg++];
-                eventfile[1] = argv[arg++];
-                coincidence_window = atof(argv[arg++]);
-                coincidence_flag=1;
-                fprintf(stderr,"Doing coincidence, all other options ignored\n");
-            }else{
-                fprintf(stderr,  USAGE, *argv );
-                return RESPONSEC_EARG;
-            }
-        }
         /* Check for unrecognized options. */
         else if ( argv[arg][0] == '-' ) {
             fprintf(stderr,  USAGE, *argv );
             return RESPONSEC_EARG;
         }
     } /* End of argument parsing loop. */
-
-
 
 
     /****************************************************************
@@ -143,119 +131,11 @@ int main(int argc, char **argv)
         return RESPONSEC_EFILE;
     }
 
-
-    /****************************************************************
-     * If we're doing a coincidence analysis,  this is the code that
-     * does it ....... it uses the output of running the code to
-     * determine which events survive veto,  but only looks at events
-     * which are present ......
-     ****************************************************************/
-    if (coincidence_flag){
-        FILE *fpevent[32];
-        candEvent *cevents[32], myevent;
-        int dummyI;
-
-        fprintf(fpout,"Doing coincidence analysis\n"); fflush(fpout);
-
-        /************************************************************
-        * First we open the files containing the events from each
-        * instrument.   These files have a format int, time, snr,
-        * chisq ........
-        ************************************************************/
-        for(i=0;i<2;i++){
-            if ( ( fpevent[i] = fopen( eventfile[i], "r" ) ) == NULL ) {
-                fprintf(stderr,  "Error opening file %s\n", eventfile[i] );
-                return RESPONSEC_EFILE;
-            }
-        }
-
-        /************************************************************
-        * Get the events from the first file and construct a list of
-        * events .....
-        ************************************************************/
-        cevents[0]=NULL;
-        while ( getline(vetoline, MAXSTR, fpevent[0]) ){
-            /* skip lines containing "#" */
-            if ( !(strstr(vetoline, "#")) ) {
-                if ( cevents[0] == NULL){
-                    /* Allocate head of list first time */
-                    thisCEvent = cevents[0] = (candEvent *)malloc(sizeof(candEvent));
-                    (*thisCEvent).next_event = NULL;
-                }
-                else 
-                {
-                    /* Otherwise allocate next node */
-                    (*thisCEvent).next_event = 
-                        (candEvent *)malloc(sizeof(candEvent));
-                    thisCEvent = (*thisCEvent).next_event;
-                    (*thisCEvent).next_event = NULL;
-                }
-                /**************************************************
-                * Note the formating of the data ............
-                **************************************************/
-                sscanf(vetoline,"%i %lf %f %f\n",
-                        &dummyI,
-                        &((*thisCEvent).time),
-                        &((*thisCEvent).snr),
-                        &((*thisCEvent).chisq));
-            }
-        }
-
-
-        /************************************************************
-         * Get the events from the second file and find coincidences
-         * with the original list .....
-         ************************************************************/
-        while ( getline(vetoline, MAXSTR, fpevent[1]) ){
-                 sscanf(vetoline,"%i %lf %f %f\n",
-                         &dummyI,
-                         &(myevent.time),
-                         &(myevent.snr),
-                         &(myevent.chisq));
-                 thisCEvent = cevents[0];
-                 while ( thisCEvent != NULL ){
-                     /***********************************************
-                      * If there is a coincidence,  then we print out
-                      * the event information ......
-                      ***********************************************/
-                     if ( myevent.time > (*thisCEvent).time - coincidence_window &&
-                             myevent.time < (*thisCEvent).time + coincidence_window){
-                         fprintf(stdout,"%f %f %f %f %f %f\n",
-                                (*thisCEvent).time, (*thisCEvent).snr, 
-                                (*thisCEvent).chisq, myevent.time, 
-                                myevent.snr, myevent.chisq);
-                     }
-                     thisCEvent = (*thisCEvent).next_event;
-                 }
-        }
-      
-        /***********************************************************
-         * Close the files
-         ***********************************************************/
-        for(i=0;i<2;i++){
-            fclose(fpevent[i]);
-        }
-        fclose(fpout);
-
-        /*************************************************************
-         * This code is not tested as of 28 oct 2002
-         ************************************************************/
-        thisCEvent=cevents[0];
-        while (thisCEvent != NULL){
-           candEvent *nextEvent;
-
-           nextEvent=(*thisCEvent).next_event;
-           free(thisCEvent);
-           thisCEvent=nextEvent;
-        }
-        exit(0);
-    }
-    
     /****************************************************************
      * First read determine the total time analyzed
      ****************************************************************/
     if ( ( fp = fopen( timefile, "r" ) ) == NULL ) {
-                fprintf(stderr,  "Error opening timefile\n" );
+        fprintf(stderr,  "Error opening timefile\n" );
         return RESPONSEC_EFILE;
     }
 
@@ -455,7 +335,8 @@ int main(int argc, char **argv)
     /******************************************************************** 
     * Read in list of candidate events and apply vetoes to them.
     ********************************************************************/
-    buildEventList( &eventhead, vwindows, candidates, TRIGGERS);
+    fprintf(fpout,"# Building a list of triggers\n"); fflush(fpout);
+    buildEventList( &eventhead, vwindows, candidates, TRIGGERS, 1);
     triggerHistogram = calloc( numbins, sizeof(int*) );
     for ( i = 0; i < numbins; ++i )
     {
@@ -476,8 +357,9 @@ int main(int argc, char **argv)
     thisCEvent = eventhead;
     while ((thisCEvent) != NULL){
         i++;
-        fprintf(fp,"%i %f %f %f\n",i,(*thisCEvent).time,
-                (*thisCEvent).snr,(*thisCEvent).chisq);
+        fprintf(fp,"%i %f %f %f %f\n",i,(*thisCEvent).time,
+                (*thisCEvent).snr,(*thisCEvent).chisq,
+                (*thisCEvent).eff_distance,(*thisCEvent).mchirp);
         thisCEvent = (*thisCEvent).next_event;
     }
     fclose(fp);
@@ -486,7 +368,8 @@ int main(int argc, char **argv)
     /******************************************************************** 
     * Read in list of injection events and apply vetoes to them.
     ********************************************************************/
-    buildEventList( &Ieventhead, vwindows, candidates, INJECTIONS);
+    fprintf(fpout,"# Building a list of injection triggers\n"); fflush(fpout);
+    buildEventList( &Ieventhead, vwindows, candidates, INJECTIONS, 1);
     injectHistogram = calloc( numbins, sizeof(int*) );
     for ( i = 0; i < numbins; ++i )
     {
@@ -507,8 +390,9 @@ int main(int argc, char **argv)
     thisIEvent = Ieventhead;
     while ((thisIEvent) != NULL){
         i++;
-        fprintf(fp,"%i %f %f %f\n",i,(*thisIEvent).time,
-                (*thisIEvent).snr,(*thisIEvent).chisq);
+        fprintf(fp,"%i %f %f %f %f %f\n",i,(*thisIEvent).time,
+                (*thisIEvent).snr,(*thisIEvent).chisq,
+                (*thisIEvent).eff_distance,(*thisIEvent).mchirp);
         thisIEvent = (*thisIEvent).next_event;
     }
     fclose(fp);
@@ -524,6 +408,7 @@ int main(int argc, char **argv)
     /******************************************************** 
     * Count the number of injections that survive
     ********************************************************/
+    fprintf(fpout,"# Determining the number of injections that were made\n"); fflush(fpout);
     countsamples=0;
     while ( getline(vetoline, MAXSTR, fp) ){
         double injtimeS,injtimeNS;
@@ -564,8 +449,9 @@ int main(int argc, char **argv)
             countsamples, time_analyzed-timeVetoed);
 
     fprintf(fpout,"ninject:=%i;\n", countsamples);
-    fprintf(fpout,"T:=%1.2f sec = %1.2f hr\n", (time_analyzed - timeVetoed),
+    fprintf(fpout,"T = %1.2f sec = %1.2f hr\n", (time_analyzed - timeVetoed),
             (time_analyzed - timeVetoed)/3600.0);
+    fprintf(fpout,"# Finished\n");
     fflush(fpout);
     
     fclose(fpout);

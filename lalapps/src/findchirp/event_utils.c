@@ -1,4 +1,30 @@
-#include "trump.h"
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lal/Thresholds.h>
+#include "metaio.h"
+#include "event_utils.h"
+
+
+/*******************************************************************
+ *
+ * This file provides the following functions:
+ *      int buildVetoTimes( vetoParams *thisentry)
+ *      int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry)
+ *      int buildEventList( candEvent **eventhead, timeWindow *vwindows, 
+ *                      candParams candidates, int injectflag, int maxflag)
+ *      int build2DHistogram(candEvent *eventhead, const char *outputfile,
+ *                       int **histogram, int numbins, float minsnr, 
+ *                       float maxchisq)
+ *      
+ *
+ *
+ *******************************************************************/
+
+
+
+
 
 /*******************************************************************
 * Function builds a set of times that are vetoed according to the
@@ -165,12 +191,12 @@ int resolveVetoTimes( timeWindow **vwindows, vetoParams *thisentry)
 * rules in candParams.
 *******************************************************************/
 int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams candidates,
-        int injectflag)
+        int injectflag, int maxflag)
 {
-    int status,iVetoS,iVetoNS,iVetoSNR,iCandCHISQ,pass,first=1,timeBase=0;
-    int crossingflag=0;
+    int status,iVetoS,iVetoNS,iVetoSNR,iCandCHISQ,iCandEDIST,iCandMCHIRP;
+    int pass,first=1,timeBase=0, crossingflag=0;
     timeWindow *thiswindow=NULL;
-    double tVtemp,snrVtemp,chiVtemp;
+    double tVtemp,snrVtemp,chiVtemp,edistVtemp,lastVtemp,mchirpVtemp;
     struct MetaioParseEnvironment candParseEnv;
     const MetaioParseEnv candEnv = &candParseEnv;
     vetoParams *thisentry=NULL;
@@ -206,6 +232,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
     }
     iVetoSNR = MetaioFindColumn( candEnv, "SNR");
     iCandCHISQ = MetaioFindColumn( candEnv, "CHISQ");
+    iCandEDIST = MetaioFindColumn( candEnv, "EFF_DISTANCE");
+    iCandMCHIRP = MetaioFindColumn( candEnv, "MCHIRP");
 
     /* Read in the veto data and construct a list of veto times */
     first = 1;
@@ -225,6 +253,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
 
         snrVtemp = candEnv->ligo_lw.table.elt[iVetoSNR].data.real_4;  
         chiVtemp = candEnv->ligo_lw.table.elt[iCandCHISQ].data.real_4;  
+        edistVtemp = candEnv->ligo_lw.table.elt[iCandEDIST].data.real_4;  
+        mchirpVtemp = candEnv->ligo_lw.table.elt[iCandMCHIRP].data.real_4;  
         /* Store the time of the candidate event */
         tVtemp = (double) ( candEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
             + 1.0e-9 * (double) candEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
@@ -233,18 +263,18 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
         if ( snrVtemp > candidates.snr_threshold
                 && chiVtemp < candidates.chi_threshold ){
 
-                /* Loop over the time windows for each veto */
-                thiswindow = vwindows;
-                while ( thiswindow != NULL ){
-                    /* Is the candidate in one of the vetoed list of times? */
-                    if ( tVtemp > (*thiswindow).start_time &&
-                            tVtemp < (*thiswindow).end_time ){
-                        /* this candidate is vetoed */
-                        pass = 0;
-                        break;
-                    }
-                    thiswindow = (*thiswindow).next_time_window;
+            /* Loop over the time windows for each veto */
+            thiswindow = vwindows;
+            while ( thiswindow != NULL ){
+                /* Is the candidate in one of the vetoed list of times? */
+                if ( tVtemp > (*thiswindow).start_time &&
+                        tVtemp < (*thiswindow).end_time ){
+                    /* this candidate is vetoed */
+                    pass = 0;
+                    break;
                 }
+                thiswindow = (*thiswindow).next_time_window;
+            }
 
             if ( pass ){
                 /* Must treat the first veto event difficult */
@@ -253,33 +283,42 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).time = tVtemp;
                     (*thisCEvent).snr = snrVtemp;
                     (*thisCEvent).chisq = chiVtemp;
+                    (*thisCEvent).eff_distance = edistVtemp;
+                    (*thisCEvent).mchirp = mchirpVtemp;
+                    (*thisCEvent).significance = 0;
+                    (*thisCEvent).candidate = 0;
                     first = 0;
-                    crossingflag = 1;
                 }
                 /* If this event is within last veto window,  update veto times */
-                else if ( tVtemp <= ((*thisCEvent).time + candidates.dtime) ){
-                    if ( (*thisCEvent).snr < snrVtemp && (*thisCEvent).chisq > chiVtemp){
+                else if ( tVtemp <= (lastVtemp + candidates.dtime) && maxflag){
+                    if ( (*thisCEvent).snr < snrVtemp 
+                            /* && (*thisCEvent).chisq > chiVtemp */
+                       ){
                         (*thisCEvent).time = tVtemp;
                         (*thisCEvent).snr = snrVtemp;
                         (*thisCEvent).chisq = chiVtemp;
+                        (*thisCEvent).eff_distance = edistVtemp;
+                        (*thisCEvent).mchirp = mchirpVtemp;
+                        (*thisCEvent).significance = 0;
+                    (*thisCEvent).candidate = 0;
                     }
                 }
                 /* Otherwise allocate next node and update veto window */
-                else if ( crossingflag == 0 )
+                else
                 {
                     (*thisCEvent).next_event = (candEvent *)malloc(sizeof(candEvent)); 
                     thisCEvent = (*thisCEvent).next_event;
                     (*thisCEvent).time = tVtemp;
                     (*thisCEvent).snr = snrVtemp;
                     (*thisCEvent).chisq = chiVtemp;
+                    (*thisCEvent).eff_distance = edistVtemp;
+                    (*thisCEvent).mchirp = mchirpVtemp;
+                    (*thisCEvent).significance = 0;
+                    (*thisCEvent).candidate = 0;
                     (*thisCEvent).next_event = NULL;
-                    crossingflag=1;
                 }
+                lastVtemp = tVtemp; 
             }
-        }
-        else
-        {
-            crossingflag=0;
         }
     }
 
@@ -288,13 +327,195 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
     return 0;
 }
 
+
+/*******************************************************************
+ * Build an array giving data quality information for use in
+ * coincidence studies
+ *******************************************************************/
+int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
+        double *dummyStart, double *dummyEnd)
+{
+    int ifoMask[1024],dummyMask=1,maskMax=0;
+    int i,j,numPts;
+    timeWindow *thiswindow=NULL;
+
+    (*dummyEnd)   = ifo[0].end_time;
+    (*dummyStart) = ifo[0].start_time;
+    for ( i=0 ; i<numIFO ; i++ ){
+        ifoMask[i] = dummyMask;
+        dummyMask *= 2;
+        maskMax += ifoMask[i];
+        if ((*dummyStart) > ifo[i].start_time )
+            (*dummyStart) = ifo[i].start_time;
+        if ( (*dummyEnd) < ifo[i].end_time )
+            (*dummyEnd) = ifo[i].end_time;
+    }
+
+    /* Sampling rate is 10 Hz */
+    numPts = 10 * (int)((*dummyEnd)-(*dummyStart));
+    (*coincident_times) = (int *)calloc( numPts, sizeof(int));
+
+    for ( i=0 ; i<numIFO ; i++ ){
+        dummyMask = ifoMask[i];
+        thiswindow = ifo[i].awindows;
+        while (thiswindow != NULL){
+            int jmin,jmax,j;
+            jmin = (int)( 10 * ( (*thiswindow).start_time-(*dummyStart) ));
+            jmax = (int)( 10 * ( (*thiswindow).end_time-(*dummyStart) ));
+            for(j=jmin; j<jmax ; j++) 
+                (*coincident_times)[j]+=dummyMask;
+            thiswindow =  (*thiswindow).next_time_window;
+        }
+        thiswindow = ifo[i].vwindows;
+        while (thiswindow != NULL){
+            int jmin,jmax,j;
+            jmin = (int)( 10 * ( (*thiswindow).start_time-(*dummyStart) ));
+            jmax = (int)( 10 * ( (*thiswindow).end_time-(*dummyStart) ));
+            for(j=jmin; j<jmax ; j++){ 
+                if ( (*coincident_times)[j] >= dummyMask ){
+                    (*coincident_times)[j] -= dummyMask;
+                }
+            }
+            thiswindow =  (*thiswindow).next_time_window;
+        }
+    }
+    return dummyStart;
+}
+
+/*******************************************************************
+* Function builds multiple inspiral event lists using coincidence.  It
+* is not general purpose,  but tuned to S1 analysis.  This needs to be
+* fixed.  TODO
+*******************************************************************/
+int cpySnglToMultiInspiral(multiInspiral *thisMEvent, candEvent *myevent, int ifo)
+{
+
+    thisMEvent->snr[ifo]=myevent->snr;
+    thisMEvent->time[ifo]=myevent->time;
+    thisMEvent->effDistance[ifo]=myevent->eff_distance;
+    thisMEvent->mchirp[ifo]=myevent->mchirp;
+
+    return 0;
+}
+
+int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
+        snglIFO *ifo, int numIFO, int injectflag, double dummyStart)
+{
+    float coincidence_window = 0.025;
+    float delm = 0.010;
+    float distance = 0.030;
+    int i, numEvents=0, first=1,dummyMask;
+    candEvent *thisCEvent=NULL, *myevent=NULL;
+    multiInspiral *thisMEvent;
+
+    /* deteremine coincidences according to our rule */
+    for ( i=1 ; i<numIFO ; i++ ){
+        myevent = (injectflag) ? ifo[0].Ieventhead : ifo[0].eventhead;
+        while ( myevent != NULL ){
+            if ( (*myevent).eff_distance < distance &&
+                    coincident_times[(int)( 10 * ((*myevent).time - dummyStart))] == 3 ){
+                thisCEvent = (injectflag) ? ifo[i].Ieventhead : ifo[i].eventhead;
+                while ( thisCEvent != NULL && (*myevent).significance == 0){
+                    if ( (*myevent).time > (*thisCEvent).time - coincidence_window &&
+                            (*myevent).time < (*thisCEvent).time + coincidence_window){
+                        if ((*myevent).mchirp > (*thisCEvent).mchirp - delm &&
+                                (*myevent).mchirp < (*thisCEvent).mchirp + delm){
+                            numEvents++;
+                            thisMEvent = (multiInspiral *)malloc(sizeof(multiInspiral));
+                            thisMEvent->next_event = NULL;
+                            if (first){
+                                (*multInspEv) = thisMEvent; first=0;
+                            }
+                            cpySnglToMultiInspiral(thisMEvent,myevent,0);
+                            cpySnglToMultiInspiral(thisMEvent,thisCEvent,i);
+                            thisMEvent=thisMEvent->next_event;
+                            (*thisCEvent).significance = (*myevent).significance = 3;
+                        }
+                    }    
+                    thisCEvent = (*thisCEvent).next_event;
+                }
+            } 
+            else if ( coincident_times[(int)(10 * ((*myevent).time - dummyStart))] == 3 ){
+                (*myevent).significance = 3;
+            }
+            myevent = (*myevent).next_event;
+        }
+    }
+
+    /* Identify singles in each of the insterferometers */
+    dummyMask=1;
+    for ( i=0 ; i<numIFO ; i++ ){
+        thisCEvent = (injectflag) ? ifo[i].Ieventhead : ifo[i].eventhead;
+        while ( thisCEvent != NULL ) {
+            if ( coincident_times[(int)(10 * ((*thisCEvent).time - dummyStart))] == dummyMask ){
+                (*thisCEvent).significance = dummyMask;
+            }
+            thisCEvent = (*thisCEvent).next_event;
+        }
+        dummyMask *= 2;
+    }
+
+    return numEvents;
+}
+
+/*******************************************************************
+ * Print out the events which have been flagged as significant
+ ******************************************************************/
+int printInspiralEvents(FILE *fpout, snglIFO *ifo, int significance, int injectflag) 
+{
+    double tmpTime;
+    float  time_interval;
+    int    i;
+    candEvent *dumEvent=NULL,*myevent=NULL;
+
+    myevent = (injectflag) ? ifo->Ieventhead : ifo->eventhead;
+    while ( myevent != NULL && (*myevent).significance != significance ) {
+        myevent = (*myevent).next_event;
+    }
+
+    if ( myevent == NULL )  return 0;
+
+    time_interval=ifo->candidates.dtime;
+    dumEvent = myevent;
+    tmpTime = (*dumEvent).time;
+    myevent = (*myevent).next_event;
+    i=1;
+    while ( myevent != NULL ){
+        if ( (*myevent).significance == significance ){
+            if ( (*myevent).time <= (tmpTime + time_interval) ){
+                if ( (*myevent).snr > (*dumEvent).snr ){
+                    dumEvent = myevent;
+                }
+            } else {
+                fprintf(fpout,"%i %f %f %f %f %f\n",i, (*dumEvent).time,
+                        (*dumEvent).snr,(*dumEvent).chisq,
+                        (*dumEvent).eff_distance,(*dumEvent).mchirp);
+                (*dumEvent).candidate = 1;
+                dumEvent = myevent;
+                i++;
+            }
+            tmpTime = (*myevent).time;
+        }
+        myevent = (*myevent).next_event;
+    }
+    fprintf(fpout,"%i %f %f %f %f %f\n",i, (*dumEvent).time,
+            (*dumEvent).snr,(*dumEvent).chisq,
+            (*dumEvent).eff_distance,(*dumEvent).mchirp);
+    (*dumEvent).candidate = 1;
+
+    return 0;
+}
+
+
+
+
 /*******************************************************************
 * Function builds a 2 dimensional histogram based on the event list
 * passed into it.
 *******************************************************************/
 int build2DHistogram(candEvent *eventhead, const char *outputfile,
-        int **histogram, int numbins, float minsnr, float maxchisq){
-    
+        int **histogram, int numbins, float minsnr, float maxchisq)
+{
     FILE *fpout;
     float *snrbin, *chisqbin, snrdiv, chisqdiv;
     float maxsnr=minsnr+10.0, minchisq=0.0;
