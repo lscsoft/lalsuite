@@ -74,7 +74,7 @@ static int verbose_flag = 0;
 static int test_flag = 0;
 static int post_analysis_flag = 0;
 static int condor_flag = 0;
-
+static int recenter_flag = 0;
 
 /* parameters for the stochastic search */
 
@@ -299,10 +299,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   segmentShift = segmentDuration;
 
   /* recenter */
-  durationEff = (INT4)((duration - 2* padData) / segmentDuration ) * segmentDuration;
-  extrasec = duration - durationEff;
-  startTime = startTime + (INT4)(extrasec/2);
-  stopTime = startTime + durationEff; 
+  if (recenter_flag)
+   {
+    durationEff = (INT4)((duration - 2* padData) / segmentDuration ) * segmentDuration;
+    extrasec = duration - durationEff;
+    startTime = startTime + (INT4)(extrasec/2);
+    stopTime = startTime + durationEff; 
+   }
 
   if (verbose_flag)
     {fprintf(stdout, "%d\n",numIntervals);}
@@ -1712,6 +1715,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &verbose_flag, 1},
       {"test", no_argument, &test_flag, 1},
       {"condor", no_argument, &condor_flag,1},
+      {"recenter", no_argument, &recenter_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
@@ -1987,6 +1991,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -h                    print this message\n");
   fprintf(stderr, " -V                    display version\n");
   fprintf(stderr, " --verbose             verbose mode\n");
+  fprintf(stderr, " --recenter            recenter jobs\n");
   fprintf(stderr, " --post-analysis       post analysis\n");
   fprintf(stderr, " -z                    set lalDebugLevel\n");
   fprintf(stderr, " -t                    GPS start time\n");
@@ -2096,6 +2101,9 @@ void readDataPair(LALStatus *status,
   CHECKSTATUSPTR (status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
   CHECKSTATUSPTR (status);
+  /* the code fails if the data path is missing in the cache file*/
+  LALFrSetMode( status->statusPtr, 0, frStream1 );
+  CHECKSTATUSPTR (status);
 	
   if (verbose_flag)
    { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn1.name);}
@@ -2144,6 +2152,9 @@ void readDataPair(LALStatus *status,
     LALFrCacheImport(status->statusPtr, &frCache2, params->frameCache2);
     CHECKSTATUSPTR (status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
+    CHECKSTATUSPTR (status);
+    /* the code fails if the data path is missing in the cache file*/
+    LALFrSetMode( status->statusPtr, 0, frStream2 );
     CHECKSTATUSPTR (status);
     if (verbose_flag)
      { fprintf(stdout, "Reading in channel \"%s\"...\n", frChanIn2.name);}
