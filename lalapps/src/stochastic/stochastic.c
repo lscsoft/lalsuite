@@ -278,7 +278,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* error handler */
   status.statusPtr = NULL;
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "33" );
 
   /* parse command line options */
   parseOptions(argc, argv);
