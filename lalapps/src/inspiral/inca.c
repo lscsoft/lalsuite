@@ -85,9 +85,9 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-  INT4  writeUniqTrigs = 0;
-  INT4  usePlayground = 1;
-  INT4  verbose = 0;
+  extern int vrbflg;
+  static INT4  writeUniqTrigs = 0;
+  static INT4  usePlayground = 1;
   INT4  startCoincidence = -1;
   INT4  endCoincidence = -1;
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
@@ -123,7 +123,7 @@ int main( int argc, char *argv[] )
   /* getopt arguments */
   struct option long_options[] =
   {
-    {"verbose",                 no_argument,       &verbose,          1 },
+    {"verbose",                 no_argument,       &vrbflg,           1 },
     {"no-playground",           no_argument,       &usePlayground,    0 },
     {"playground-only",         no_argument,       &usePlayground,    1 },
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
@@ -426,14 +426,14 @@ int main( int argc, char *argv[] )
       SnglInspiralTable *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
 
-      if ( verbose ) fprintf( stdout, 
+      if ( vrbflg ) fprintf( stdout, 
           "reading search_summary table from file: %s\n", argv[i] );
 
       haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
       
       if ( haveSearchSum < 1 || ! inputSummary )
       {
-        if ( verbose ) 
+        if ( vrbflg ) 
           fprintf( stdout, "no valid search_summary table, continuing\n" );
       }
       else
@@ -454,7 +454,7 @@ int main( int argc, char *argv[] )
         inputSummary = NULL;
       }
 
-      if ( verbose ) 
+      if ( vrbflg ) 
         fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
 
       numTriggers = 
@@ -470,7 +470,7 @@ int main( int argc, char *argv[] )
       {
         INT4 knownIFO = 0;
 
-        if ( verbose ) 
+        if ( vrbflg ) 
           fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
             numTriggers, argv[i], inputData->ifo );
 
@@ -497,7 +497,7 @@ int main( int argc, char *argv[] )
               currentTrigger[j] = currentTrigger[j]->next;
             }
 
-            if ( verbose ) fprintf( stdout, "added triggers to list\n" );
+            if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
             break;
           }
         }
@@ -512,7 +512,7 @@ int main( int argc, char *argv[] )
       }
       else
       {
-        if ( verbose ) 
+        if ( vrbflg ) 
           fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
       }
     }
@@ -543,7 +543,7 @@ int main( int argc, char *argv[] )
 
   for ( j = 0; j < MAXIFO; ++j )
   {
-    if ( verbose ) fprintf( stdout, "Sorting triggers from ifo %d\n", j );
+    if ( vrbflg ) fprintf( stdout, "Sorting triggers from ifo %d\n", j );
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList[j]),
           LALCompareSnglInspiralByTime ), &status );
   }
@@ -556,7 +556,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( verbose ) fprintf( stdout, "Moving to first trigger in window\n" );
+  if ( vrbflg ) fprintf( stdout, "Moving to first trigger in window\n" );
 
   for ( j = 0; j < MAXIFO; ++j )
   {
@@ -583,12 +583,12 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( verbose ) fprintf( stdout, "start loop over ifo A\n" );
+  if ( vrbflg ) fprintf( stdout, "start loop over ifo A\n" );
 
   while ( (currentTrigger[0] ) && 
       (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
   {
-    if ( verbose ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
+    if ( vrbflg ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
         currentTrigger[0]->end_time.gpsSeconds, 
         ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
 
@@ -597,7 +597,7 @@ int main( int argc, char *argv[] )
 
     LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
 
-    if ( verbose )
+    if ( vrbflg )
     {
       if ( isPlay )
       {
@@ -629,7 +629,7 @@ int main( int argc, char *argv[] )
     /* not using playground and the trigger is not in the playground...     */
     if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
     {
-      if ( verbose ) 
+      if ( vrbflg ) 
         fprintf( stdout, "  start loop over IFO B trigger at %d + %10.10f\n",
             currentTrigger[1]->end_time.gpsSeconds, 
             ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
@@ -650,7 +650,7 @@ int main( int argc, char *argv[] )
         else
         {
           /* call the LAL function which compares events parameters */
-          if ( verbose ) 
+          if ( vrbflg ) 
             fprintf( stdout, "    comparing IFO B trigger at %d + %10.10f\n",
                 currentTrigger[1]->end_time.gpsSeconds, 
                 ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
@@ -662,7 +662,7 @@ int main( int argc, char *argv[] )
         if ( errorParams.match )
         {
           /* store this event for output */
-          if ( verbose )
+          if ( vrbflg )
             fprintf( stdout, "    >>> found coincidence <<<\n" );
 
           for ( j = 0; j < MAXIFO; ++j )
@@ -727,7 +727,7 @@ cleanexit:
   searchsumm.searchSummaryTable->out_end_time.gpsSeconds = endCoincidence;
   searchsumm.searchSummaryTable->nnodes = 1;
 
-  if ( verbose ) fprintf( stdout, "writing output file... " );
+  if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
   for ( j = 0; j < MAXIFO; ++j )
   {
@@ -786,7 +786,7 @@ cleanexit:
     LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
   }
 
-  if ( verbose ) fprintf( stdout, "done\n" );
+  if ( vrbflg ) fprintf( stdout, "done\n" );
 
 
   /*
@@ -796,7 +796,7 @@ cleanexit:
    */
 
 
-  if ( verbose ) fprintf( stdout, "freeing memory... " );
+  if ( vrbflg ) fprintf( stdout, "freeing memory... " );
 
   free( proctable.processTable );
   free( searchsumm.searchSummaryTable );
@@ -828,7 +828,7 @@ cleanexit:
 
   if ( userTag ) free( userTag );
 
-  if ( verbose ) fprintf( stdout, "done\n" );
+  if ( vrbflg ) fprintf( stdout, "done\n" );
 
   LALCheckMemoryLeaks();
 
