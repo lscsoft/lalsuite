@@ -45,6 +45,7 @@ ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h cluster
 
 ## some optional BOINC-related stuff follows here:
 EXTRA_PROGRAMS = cfsBOINC
-cfsBOINC_SOURCES = $(CFSsources) screensaver/src/starlist.C screensaver/src/starsphere.C screensaver/src/user_text.C
-cfsBOINC_LDFLAGS =  -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -static -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut
+cfsBOINC_SOURCES = $(CFSsources) screensaver/src/starlist.C screensaver/src/starsphere.C screensaver/src/user_text.C screensaver/src/pulsar_list.C screensaver/src/search_info.C
+cfsBOINC_LDFLAGS =  -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -static -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
+
 cfsBOINC_CPPFLAGS = -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC ##-DNO_BOINC_GRAPHICS
