@@ -160,6 +160,17 @@ data.make_short_chunks_from_unused(min_length)
 ifo1 = cp.get('detectors','detector-one')
 ifo2 = cp.get('detectors','detector-two')
 
+# get the min/max frequency
+f_min = float(cp.get('frequency','f-min'))
+f_max = float(cp.get('frequency','f-max'))
+
+# get the band over which to loop
+f_band = float(cp.get('frequency','f-band'))
+
+# check that f_band is an integer multiple of f_max - f_min
+if (((f_max - f_min)/f_band) - (int(f_max - f_min)/int(f_band))) != 0:
+  sys.exit("f-band must be a mutliple of f_max - f_max")
+
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
 
