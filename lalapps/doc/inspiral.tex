@@ -390,7 +390,7 @@ time for which an injection should be constructed.  Default is
 between injections is $\textsc{timestep}/\pi$ seconds.   Default is the fixed
 interval $2630 / \pi$ seconds between injections.
 
-\item[\textsc{--seed} \textsc{seed}] The seed used to initialize the
+\item[\texttt{--seed} \textsc{seed}] The seed used to initialize the
 random number generator.
 \end{entry}
 
@@ -398,6 +398,75 @@ random number generator.
 
 \item[Author] 
 Jolien Creighton (Duncan Brown and Patrick Brady)
+\end{entry}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% PROGRAM:   snglInspiralReader
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\subsection{Program \texttt{lalapps\_snglInspiralReader}}
+\label{program:lalapps-snglInspiralReader}
+\idx[Program]{lalapps\_snglInspiralReader}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_snglInspiralReader$ --- manipulates LIGO lightweight XML
+files of inspiral triggers allowing cuts and clustering.
+
+\item[Synopsis]
+\verb$lalapps_snglInspiralReader$ 
+\verb$--input$ \textsc{infile} \verb$--outfile$ \textsc{outfile}     
+[\verb$--snrstar$ \textsc{snrstar}] [\verb$--noplayground$] 
+[\verb$--sort$] [\verb$--cluster$ \textsc{msec}] [\verb$--help$]
+
+\item[Description] 
+\verb$lalapps_snglInspiralReader$ processes triggers from the inspiral
+search code.   The \textsc{infile} should contain a list of the XML
+files containing the triggers;  the format is one filename per line.
+The default behavior outputs triggers during playground
+times to the file \textsc{outfile};  to obtain all triggers,  use the 
+\verb$--noplayground$ flag.    To apply a cut on SNR,  use the flag 
+\verb$--snrstar$ \textsc{snrstar}:  only triggers with $\texttt{SNR} 
+> \textsc{snrstar}$ will be recorded.    Events can also be clustered
+within \textsc{msec} msec,   in which case the \verb$--sort$ flag is
+recommended unless you are certain that the triggers are time-ordered.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\texttt{--input} \textsc{infile}] Required.  A file containing a
+list of LIGO lightweight XML files with triggers to be processed.  The
+format of \textsc{infile} is one file name per line.
+
+\item[\texttt{--outfile} \textsc{outfile}] Required.  Name of the file
+to be used for output.  The output format is LIGO lightweight XML with
+only a \texttt{sngl\_inspiral} table.
+
+\item[\texttt{--snrstar} \textsc{snrstar}] Optional.  A threshold cut
+on signal-to-noise.  Only triggers with $\textsc{snr} > \textsc{snrstar}$
+are recorded in the output file.
+
+\item[\texttt{--noplayground}] Optional.  Record all triggers.  The
+default behaviour returns only those triggers which lie in the
+playground data set.  
+
+\item[\texttt{--sort}] Optional.   Sort the triggers in time (before
+clustering).  
+
+\item[\texttt{--cluster} \textsc{msec}] Optional.  Cluster triggers
+within \textsc{msec} msec window.   The clustering algorithm
+identifies the first trigger in a cluster,  then displaces it if its
+\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
+
+\item[\texttt{--help}] Optional.  Print a help message.
+\end{entry}
+
+\item[Example]
+
+\item[Author] 
+Patrick Brady
 \end{entry}
 \clearpage
 
