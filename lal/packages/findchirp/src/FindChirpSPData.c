@@ -9,6 +9,30 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0 
+<lalVerbatim file="FindChirpSPDataCV">
+Author: Brown, D. A.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpSPData.c}}
+\label{ss:FindChirpSPData.c}
+
+Provides functions to compute, create and destroy storage for  
+the template independent part of the filter algorithm.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpSPDataCP}
+
+\input{FindChirpSPDataCDoc}
+
+\vfill{\footnotesize\input{FindChirpSPDataCV}}
+
+</lalLaTeX> 
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/DataBuffer.h>
@@ -19,12 +43,14 @@
 
 NRCSID (FINDCHIRPSPDATAC, "$Id$");
 
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPDataInit (
     LALStatus                  *status,
     FindChirpSPDataParams     **output,
     FindChirpInitParams        *params
     )
+/* </lalVerbatim> */
 {
   FindChirpSPDataParams        *dataParamPtr;
   REAL4                        *amp;
@@ -101,8 +127,8 @@ LALFindChirpSPDataInit (
 
 
   /* foward fft plan */
-  LALEstimateFwdRealFFTPlan (status->statusPtr, &dataParamPtr->fwdPlan, 
-        params->numPoints);
+  LALCreateForwardRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan, 
+        params->numPoints, 0 );
   BEGINFAIL( status )
   {
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
@@ -113,8 +139,8 @@ LALFindChirpSPDataInit (
   ENDFAIL( status );
 
   /* inverse fft plan */
-  LALEstimateInvRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan, 
-        params->numPoints );
+  LALCreateReverseRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan, 
+        params->numPoints, 0 );
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
@@ -196,11 +222,13 @@ LALFindChirpSPDataInit (
 
 
 
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPDataFinalize (
     LALStatus                  *status,
     FindChirpSPDataParams     **output
     )
+/* </lalVerbatim> */
 {
   FindChirpSPDataParams        *dataParamPtr;
 
@@ -276,7 +304,7 @@ LALFindChirpSPDataFinalize (
 }
 
 
-
+/* <lalVerbatim file="FindChirpSPDataCP"> */
 void
 LALFindChirpSPData (
     LALStatus                  *status,
@@ -284,6 +312,7 @@ LALFindChirpSPData (
     DataSegmentVector          *dataSegVec,
     FindChirpSPDataParams      *params
     )
+/* </lalVerbatim> */
 {
   UINT4                 i, j, k; 
   UINT4                 cut;
@@ -453,7 +482,7 @@ LALFindChirpSPData (
       v[j] = (REAL4) data[j];
     }
 
-    LALFwdRealFFT( status->statusPtr, fcSeg->data->data, 
+    LALForwardRealFFT( status->statusPtr, fcSeg->data->data, 
         params->vVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
 

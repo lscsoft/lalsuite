@@ -72,8 +72,8 @@ LALFindChirpChisqVetoInit (
 
 
   /* create plan for chisq filter */
-  LALEstimateInvComplexFFTPlan( status->statusPtr, 
-      &(params->plan), numPoints );
+  LALCreateReverseComplexFFTPlan( status->statusPtr, 
+      &(params->plan), numPoints, 0 );
   CHECKSTATUSPTR( status );
 
   /* create one vector for the fourier domain data */

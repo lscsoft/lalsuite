@@ -19,9 +19,35 @@ $Id$
 <lalLaTeX>
 
 \section{Header \texttt{FindChirpSP.h}}
-\label{s:FindChirp.h}
+\label{s:FindChirpSP.h}
 
-Provides routines to creates stationary phase binary inspiral chirps.
+Provides routines to filter IFO data for binary inspiral chirps generated
+using the stationary phase approximation. 
+\subsection*{Synopsis}
+\begin{verbatim}
+#include "FindChirpSP.h"
+\end{verbatim}
+
+\noindent This header provides routines necessary to filter IFO 
+data contained in a \verb|DataSegment| structure for binary inspiral 
+chirps generated using the stationary phase approximation. 
+
+In order to increase efficency, the filtering algorithm is divided 
+into three parts:
+\begin{itemize}
+\item Those that are independent of the template and need to be calculated
+      once per data segment.
+
+\item Those that need to be done once per template.
+
+\item Those that need to be done once for each data segment for each
+      template.
+\end{itemize}
+The template independent functions are contained in the module
+\verb|FindChirpSPData.c| and template dependent functions are in
+the module \verb|FindChirpSPTemplate.c|.
+
+\input{FindChirpSPHDoc}
 
 </lalLaTeX>
 #endif
@@ -64,6 +90,8 @@ extern "C" {
 #define FINDCHIRPSPH_MSGEFLOW "Low frequency cutoff is negative"
 #define FINDCHIRPSPH_MSGEDYNR "Dynamic range scaling is zero or negative"
 /* </lalErrTable> */
+
+
 
 typedef struct
 tagFindChirpSPDataParams
@@ -140,5 +168,12 @@ LALFindChirpSPTemplateFinalize (
 #ifdef  __cplusplus
 }
 #endif
+
+/*
+<lalLaTeX>
+\vfill{\footnotesize\input{FindChirpSPHV}}
+\newpage\input{FindChirpSPDataC}
+</lalLaTeX> 
+*/
 
 #endif /* _FINDCHIRPSPH_H */

@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = findchirp.tex
+DOCSOURCEFILES = findchirp.tex FindChirpSPHDoc.tex FindChirpSPDataCDoc.tex
 MOSTLYCLEANFILES = .dvi-dep
 CLEANFILES = main.dvi main.pdf main.ps
 EXTRA_DIST = $(DOCSOURCEFILES)

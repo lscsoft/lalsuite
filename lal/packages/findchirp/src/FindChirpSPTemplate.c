@@ -292,20 +292,23 @@ LALFindChirpSPTemplate (
     {
       psi1 = -LAL_PI - psi1;
       psi2 = psi1 * psi1;
-      expPsi[k].im = psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
       expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
     }
     else if ( psi1 > LAL_PI/2 )
     {
       psi1 = LAL_PI - psi1;
       psi2 = psi1 * psi1;
-      expPsi[k].im = psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
       expPsi[k].re = -1 - psi2 * ( c2 + psi2 * c4 );
     }
     else
     {
       psi2 = psi1 * psi1;
-      expPsi[k].im = psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
+      /* XXX minus sign added because of new sign convention for fft */
+      expPsi[k].im = - psi1 * ( 1 + psi2 * ( s2 + psi2 * s4 ) );
       expPsi[k].re = 1 + psi2 * ( c2 + psi2 * c4 );
     }
 

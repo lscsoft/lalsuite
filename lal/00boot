@@ -16,8 +16,7 @@ version=0.8
 lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch tfclusters slopefilters"
 
 # Packages compiled only with --enable-mpi
-#lal_pkg_list_mpi="comm findchirp"
-lal_pkg_list_mpi="comm"
+lal_pkg_list_mpi="comm findchirp"
 
 # Packages compiled only with --enable-frame
 lal_pkg_list_frame="framedata"
@@ -26,7 +25,7 @@ lal_pkg_list_frame="framedata"
 lal_pkg_list_frame_mpi=""
 
 # Packages that are omitted
-lal_pkg_list_omit="timefreq findchirp"
+lal_pkg_list_omit="timefreq"
 
 ## Do not edit below here!
 
