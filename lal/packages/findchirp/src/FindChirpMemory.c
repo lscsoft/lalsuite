@@ -679,6 +679,7 @@ LALDestroyFindChirpSegmentVector (
     if ( segPtr[i].chisqBinVec->data )
     {
       LALFree( segPtr[i].chisqBinVec->data );
+      segPtr[i].chisqBinVec->data = NULL;
     }
     LALFree( segPtr[i].chisqBinVec );
 
