@@ -14,6 +14,8 @@
 #include <lal/LALInitBarycenter.h>
 #include <lalapps.h>
 #include <lal/ComputeSkyBinary.h>
+#include <lal/PulsarDataTypes.h>
+
 #ifndef NOGLOB
 #include <glob.h>
 #endif
@@ -104,24 +106,6 @@ typedef struct BinaryTemplateBanktag {
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 
-/*
-#define NEARESTGRIDPOINTS_ON
-#define DEBG_FAFB                
-#define DEBG_ESTSIGPAR
-#define DEBG_SGV 
-*/
-
-/* If FILE_FILENAME is defined, then print the corresponding file  */
-#define FILE_FSTATS
-#define FILE_FMAX
-
-/*
-#define FILE_FLINES
-#define FILE_FTXT 
-#define FILE_PSD 
-#define FILE_PSDLINES 
-#define FILE_SPRNG 
-*/
 
 /*----------------------------------------------------------------------*/
 /* USE_BOINC should be set to 1 to be run under BOINC */
@@ -252,7 +236,6 @@ INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
-INT4 EstimatePSDLines(LALStatus *status);
 void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
 int ReadBinaryTemplateBank(LALStatus *status);
 /*----------------------------------------------------------------------*/
@@ -297,7 +280,7 @@ int main(int argc,char *argv[])
   REAL8 duration;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
-
+  SFTVector *SFTvect = NULL;		/**< holds the SFT-data to analyze */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -337,20 +320,16 @@ int main(int argc,char *argv[])
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
+  /* work in progress 
+  LAL_CALL ( LALReadSFTfiles (&status, &SFTData, fMin, fMax, const CHAR *globdir), &status);
+  */
+
   /* read in SFT-data */
   if (ReadSFTData()) return 4;
-
-#if 0
-  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
-  if (GV.SignalOnly!=1){
-    if (EstimatePSDLines()) return 6;
-  }
-#endif
 
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
-#ifdef FILE_FMAX  
   /*   open file */
   strcpy(Fmaxfilename,"Fmax");
   if (uvar_outputLabel)
@@ -362,8 +341,7 @@ int main(int argc,char *argv[])
     fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
     return 2;
   }
-#endif
-#ifdef FILE_FSTATS  
+
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
   if ( LALUserVarWasSet(&uvar_outputLabel) )
@@ -375,9 +353,6 @@ int main(int argc,char *argv[])
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
   }
-#endif
-  
-
 
   if (!uvar_binary) {
     if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
@@ -612,12 +587,8 @@ int main(int argc,char *argv[])
 
   if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
 
-#ifdef FILE_FMAX  
   fclose(fpmax);
-#endif
-#ifdef FILE_FSTATS  
   fclose(fpstat);
-#endif
 
   /* Free DopplerScan-stuff (grid) */
   if (!uvar_binary) 
@@ -774,13 +745,6 @@ int EstimateSignalParameters(INT4 * maxIndex)
   REAL8 norm;
   FILE * fpMLEParam;
   CHAR Paramfilename[256];
-  
-
-#ifdef DEBG_ESTSIGPAR
-  REAL8 Ftest;
-  REAL8 A2test,A3test,A4test;
-#endif
-
 
   strcpy(Paramfilename,"ParamMLE");
   if (uvar_outputLabel)
@@ -864,79 +828,6 @@ int EstimateSignalParameters(INT4 * maxIndex)
 	}
       }
 
-
-#ifdef DEBG_ESTSIGPAR
-      /* Reconstruct A1,A2,A3,A4. Compare them with the original values. */
-
-      A1test=h0mle*(0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		    -mu_mle*sin(2.0*psi_mle)*sin(2.0*Phi0_mle));
-      A2test=h0mle*(0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*cos(2.0*Phi0_mle)
-		    +mu_mle*cos(2.0*psi_mle)*sin(2.0*Phi0_mle));
-      A3test=h0mle*(-0.5*(1+mu_mle*mu_mle)*cos(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		    -mu_mle*sin(2.0*psi_mle)*cos(2.0*Phi0_mle));
-      A4test=h0mle*(-0.5*(1+mu_mle*mu_mle)*sin(2.0*psi_mle)*sin(2.0*Phi0_mle)
-		    +mu_mle*cos(2.0*psi_mle)*cos(2.0*Phi0_mle));
-
-
-      fprintf(stderr,"LALDemod_Estimate output: "
-              "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f\n"
-	      ,A1,A2,A3,A4);
-      fprintf(stderr,"Reconstructed from MLE: "
-              "A1=%20.15f A2=%20.15f A3=%20.15f A4=%20.15f !!!!\n\n",
-	      A1test,A2test,A3test,A4test);
-      fflush(stderr);
-
-
-      if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A1\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
-	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
-		fabs(A1-A1test)/fabs(A1));
-	exit(1);
-      }
-      if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A2\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
-	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
-		fabs(A2-A2test)/fabs(A2));
-	exit(1);
-      }
-      if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A3\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
-	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
-		fabs(A3-A3test)/fabs(A3));
-	exit(1);
-      }
-      if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
-	fprintf(stderr,"Something is wrong with Estimate A4\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
-	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
-		fabs(A4-A4test)/fabs(A4));
-	exit(1);
-      }
-
-      
-      /* Reconstruct F. Compare it with the original value. */
-      Ftest=(A*(A1*A1+A3*A3)+B*(A2*A2+A4*A4)+2.0*C*(A1*A2+A3*A4))/
-	4.0*4.0/GV.SFTno;
-
-
-      if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
-	fprintf(stderr,"Something is wrong with Estimate in F\n");
-	fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-		irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
-	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
-		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
-	exit(1);
-      }
-#endif
-
-
       /* normalization */
       h0mle=h0mle*norm;
 
@@ -948,19 +839,6 @@ int EstimateSignalParameters(INT4 * maxIndex)
       */
       /* medianbias is 1 when GV.SignalOnly==1 */
       h0mle=h0mle*sqrt(medianbias);
-
-#ifdef DEBG_ESTSIGPAR
-      {double hp,hc,ds;
-      hp=(1.0+mu_mle*mu_mle)*h0mle/2.0;
-      hc=mu_mle*h0mle;
-      ds=GV.SFTno*GV.tsft/2.0*(hp*hp*((A+B)/2.0+(A-B)/2.0*cos(4.0*psi_mle)
-				   +C*sin(4.0*psi_mle))
-			    +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
-				    -C*sin(4.0*psi_mle)));
-      fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-	      A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
-      }
-#endif
 
       /* Note that we print out MLE of 2.0*Phi0_JKS */
       /* because Phi0_PULGROUPDOC=2.0*Phi0_JKS */
@@ -1070,18 +948,6 @@ int writeFaFb(INT4 *maxIndex)
       index=highFLines->Iclust[krec];
       krec++;
 
-#ifdef DEBG_FAFB
-      fprintf(fp,"%22.16f %22.16f "
-                 "%E %20.17f %20.17f "
-                 "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-	      uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
-	      DemodParams->spinDwn[0], Alpha, Delta,
-	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
-	      Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
-	      amc.A,amc.B,amc.C);
-#else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
 	      uvar_Freq+index*GV.dFreq,
@@ -1090,8 +956,6 @@ int writeFaFb(INT4 *maxIndex)
 	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fb[index].im/sqrt(GV.SFTno)*bias,
 	      Fstat.F[index]*bias*bias);
-#endif
-
 
     }
     fclose(fp);
@@ -1355,7 +1219,6 @@ int writeFLines(INT4 *maxIndex){
     var=var/N;
     std=sqrt(var);
     fr=uvar_Freq + imax*GV.dFreq;
-#ifdef FILE_FSTATS  
 /*    print the output */
     if (!uvar_binary)
       {
@@ -1374,7 +1237,6 @@ int writeFLines(INT4 *maxIndex){
     fprintf(stderr,"writeFLines couldn't print to Fstas!\n");
     return 4;
   }
-#endif
 
   }/*  end i loop over different clusters */
 
@@ -1982,18 +1844,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   
   }/* end: init AM- and demod-params */
 
-  /* Tell the user what we have arrived at */
-#ifdef DEBG_SGV
-    fprintf(stdout,"\n");
-    fprintf(stdout,"# SFT time baseline:                  %f min\n",header.tbase/60.0);
-    fprintf(stdout,"# SFT freq resolution:                %f Hz\n",df);
-    fprintf(stdout,"# Starting search frequency:          %f Hz\n",uvar_Freq);
-    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
-    fprintf(stdout,"# no of SFT in a DeFT:                %f\n",ceil((1.0*(cfg->Tf - cfg->Ti))/header.tbase));
-    fprintf(stdout,"# Actual # of SFTs:                   %d\n",cfg->SFTno);
-    fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
-#endif
-
     DETATCHSTATUSPTR (status);
     RETURN (status);
 
@@ -2246,7 +2096,6 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 /*    Normalize */
   TwoFthr*=0.5/log2;
 
-#ifdef FILE_FMAX  
   if (!uvar_binary) 
     {
       /*    print out the top ones */
@@ -2286,11 +2135,6 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 	  break;
     }
 
-
-
-
-#endif
-
   /*  find out how many points have been set to zero (N) */
   N=0;
   if (highFLines) {
@@ -2321,257 +2165,21 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     if (Fstat.F[indexes[i]]<=TwoFthr)
       break;
 
-#ifdef FILE_FMAX_DEBG    
-/*    print the output */
-  if (!uvar_binary) { 
-  err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",uvar_Freq,
-	      Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
-  }
-  if (uvar_binary) {
-    err=fprintf(fpmax,"%10.5f %10.8f %10.8f %10.8f %10.8f %d %d %10.8f %10.8f %d %10.5f %10.5f %10.5f\n",
-		uvar_Freq,Alpha, Delta,thisBinaryTemplate.SMaxis,thisBinaryTemplate.Period,
-		thisBinaryTemplate.TperiSSB.gpsSeconds,thisBinaryTemplate.TperiSSB.gpsNanoSeconds,
-		thisBinaryTemplate.Eccentricity,thisBinaryTemplate.ArgPeri, 
-		GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
-  }
-#endif
   LALFree(indexes);
-#ifdef FILE_FMAX_DEBG    
+
   if (err<=0) {
     fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
     return 4;
   }
-#endif
 
   return 0;
 }
-
-/*******************************************************************************/
-/** Find outliers/clusters in the PSD [OBSOLETE?].
- * Does not seem to be used currently.
- */
-INT4 EstimatePSDLines(LALStatus *status)
-{
-#ifdef FILE_PSD
-  FILE *outfile;
-#endif
-#ifdef FILE_PSDLINES
-  FILE *outfile1;
-#endif
-  INT4 i,j,Ntot;                         /* loop indices */
-  INT4 nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
-  REAL8Vector *Sp=NULL; 
-  REAL8Vector *FloorSp=NULL;                        /* Square of SFT */
-  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
-  REAL4 THR=10000.0;
-  
-  REAL4 xre,xim;
-
-  OutliersInput  *outliersInput;
-  OutliersParams *outliersParams;
-  Outliers       *outliers;
-  ClustersInput  *clustersInput;
-  ClustersParams *SpClParams;
-  Clusters       *SpLines=highSpLines;
-    
-  INT2 smallBlock=3;
-  INT4 wings;
-
-  nbins=(UINT4)nbins;
-  wings=windowSize/2;
-
-#ifdef FILE_PSD
-  /*  file contains freq, PSD, noise floor */
-  if(!(outfile=fopen("PSD.txt","w"))){
-    printf("Cannot open PSD.txt file");
-    return 1;
-  } 
-#endif 
-#ifdef FILE_PSDLINES
-  /*  file contains freq, PSD, noise floor,lines */
-  if(!(outfile1=fopen("PSDLines.txt","w"))){
-    printf("Cannot open PSD.txt file");
-    return 1;
-  }
-#endif
-
-  /* Allocate memory for input & output */
-  /* if (!(Sp = (double *) calloc(nbins,sizeof(double)))){ */
-  /*   printf("Memory allocation failure"); */
-  /*   return 0; */
-  /* } */
-  
-  LALDCreateVector(status, &Sp, nbins);
-  LALDCreateVector(status, &FloorSp, nbins);
-  
-  
-  /* loop over each SFTs */
-  for (i=0;i<GV.SFTno;i++){
-    
-    /* loop over SFT data to estimate noise */
-    for (j=0;j<nbins;j++){
-      xre=SFTData[i]->fft->data->data[j].re;
-      xim=SFTData[i]->fft->data->data[j].im;
-      Sp->data[j]=Sp->data[j]+(REAL8)(xre*xre+xim*xim);
-    }
-  }/*end loop over SFTs*/
-  
-  /*Average Sp*/
-  for (j=0;j<nbins;j++){
-    Sp->data[j]=Sp->data[j]/GV.SFTno;
-  }
-  Sp->length=nbins;
-  FloorSp->length=nbins;
-
-  printf("got to here\n");
-  printf("windowsize is %d\n",windowSize);
-
-  j=EstimateFloor(Sp, windowSize, FloorSp);
- 
-  printf("after estimatefllor\n");
-
-  if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
-    fprintf(stderr,"Memory allocation failure for SpOutliers\n");
-    return 1;
-  }
-  outliers->Noutliers=0;
-
-  if (!(outliersParams=(OutliersParams *)LALMalloc(sizeof(OutliersParams)))){
-    fprintf(stderr,"Memory allocation failure for OutliersParams\n");
-    return 1;
-  }
-  if (!(outliersInput=(OutliersInput *)LALMalloc(sizeof(OutliersInput)))){
-    fprintf(stderr,"Memory allocation failure for OutliersParams\n");
-    return 1;
-  }
-  
-  outliersParams->Thr=THR;
-  outliersParams->Floor = FloorSp;
-  outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=GV.ifmin;
-  outliersInput->data = Sp;
-
-  ComputeOutliers(outliersInput, outliersParams, outliers);
-
-   if (outliers->Noutliers == 0){
-
-#ifdef FILE_PSD
-     /*  PSD.txt file contains freq, PSD, noise floor   */
-     for (i=0;i<nbins;i++){ 
-       REAL4 freq;
-       REAL8 r0,r1;
-       freq=(GV.ifmin+i)/GV.tsft;
-       r0=Sp->data[i];
-       r1=FloorSp->data[i];
-       fprintf(outfile,"%f %E %E\n",freq,r0,r1);
-     }
-#endif
-
-#ifdef FILE_PSD     
-     fclose(outfile);
-#endif
-#ifdef FILE_PSDLINES
-     fclose(outfile1);
-#endif
-
-     LALFree(outliers->ratio);
-     LALFree(outliers);
-     LALFree(outliersParams);
-     LALFree(outliersInput);
-     LALDDestroyVector(status,&Sp);
-     LALDDestroyVector(status,&FloorSp);
-
-     return 0;
-
-   }
-  
-   if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
-     printf("Memory allocation failure for SpClusterParams");
-     return 1;
-   }
-
-   if (!(clustersInput=(ClustersInput *)LALMalloc(sizeof(ClustersInput)))){ 
-     printf("Memory allocation failure for SpClusters");
-     return 1;
-   }
-      
-   SpClParams->wings=wings;
-   SpClParams->smallBlock=smallBlock;
-   
-   clustersInput->outliersInput = outliersInput;
-   clustersInput->outliersParams= outliersParams;
-   clustersInput->outliers      = outliers;     
-   
-   j=DetectClusters(clustersInput, SpClParams, SpLines);
-   if (j!=0){
-     printf("DetectClusters problem");
-     return 1;
-   }
-      
-   /*  sum of points in all lines */
-   Ntot=0;
-   for (i=0;i<SpLines->Nclusters;i++){ 
-     Ntot=Ntot+SpLines->NclustPoints[i];
-   }
-   
-#ifdef FILE_PSDLINES
-   /*  PSDLines file contains: PSD, noise floor and lines. */
-   for (i=0;i<Ntot;i++){ 
-     REAL4 freq;
-     REAL8 r0,r1,r2;
-     j=SpLines->Iclust[i];
-     freq=(GV.ifmin+SpLines->Iclust[i])/GV.tsft;
-     r0=Sp->data[j];
-     r1=FloorSp->data[j];
-     r2=SpLines->clusters[i]*FloorSp->data[j];
-     fprintf(outfile1,"%f %E %E %E\n",freq,r0,r1,r2);
-   }
-#endif
-
-#ifdef FILE_PSD   
-   /*  PSD.txt file contains freq, PSD, noise floor   */
-   for (i=0;i<nbins;i++){ 
-     REAL4 freq;
-     REAL8 r0,r1;
-     freq=(GV.ifmin+i)/GV.tsft;
-     r0=Sp->data[i];
-     r1=FloorSp->data[i];
-     fprintf(outfile,"%f %E %E\n",freq,r0,r1);
-   }
-#endif
-
-#ifdef FILE_PSD   
-   fclose(outfile);
-#endif
-#ifdef FILE_PSDLINES
-   fclose(outfile1);
-#endif
-
-   LALFree(outliers->ratio);
-   LALFree(outliers->outlierIndexes);
-   LALFree(outliers);
-   LALFree(outliersParams);
-   LALFree(outliersInput);
-   LALDDestroyVector(status,&Sp);
-   LALDDestroyVector(status,&FloorSp);
-   LALFree(SpClParams);
-   LALFree(clustersInput);
-
-   return 0;
-
-} /* EstimatePSDLines() */
 
 /*******************************************************************************/
 /** Find outliers/clusters in the F-statistic array over frequency.
  */
 INT4 EstimateFLines(LALStatus *status)
 {
-#ifdef FILE_FTXT  
-  FILE *outfile;
-#endif
-#ifdef FILE_FLINES  
-  FILE *outfile1;
-#endif
   INT4 i,j,Ntot;                         /* loop indices */
   INT4 nbins=GV.FreqImax;                /* Number of points in F */
   REAL8Vector *F1=NULL; 
@@ -2612,22 +2220,6 @@ INT4 EstimateFLines(LALStatus *status)
     /* printf("Had to change windowSize for running median in F floor estimate\n"); */
   }
 
-#ifdef FILE_FTXT
-  /*  file contains freq, PSD, noise floor */
-  if(!(outfile=fopen("F.txt","w"))){
-    printf("Cannot open F.txt file\n");
-    return 1;
-  }
-#endif
-#ifdef FILE_FLINES  
-  /*  file contains freq, PSD, noise floor,lines */
-  if(!(outfile1=fopen("FLines.txt","w"))){
-    printf("Cannot open FLines.txt file\n");
-    return 1;
-  }
-#endif
-
-
   LALDCreateVector(status, &F1, nbins);
   LALDCreateVector(status, &FloorF1, nbins);
     
@@ -2667,43 +2259,6 @@ INT4 EstimateFLines(LALStatus *status)
 
    if (outliers->Noutliers == 0){
 
-#ifdef FILE_FTXT
-     if (!uvar_binary) {
-       /*  F.txt file contains freq, F, noise floor of F   */
-       for (i=0;i<nbins;i++){ 
-	 REAL4 freq;
-	 REAL8 r0,r1;
-	 freq=uvar_Freq + i*GV.dFreq;
-	 r0=F1->data[i];
-	 r1=FloorF1->data[i];
-	 fprintf(outfile,"%12.17f %E %E\n",freq,r0,r1);
-       }
-     }
-     if (uvar_binary) {
-       /*  F.txt file contains freq, F, noise floor of F   */
-       for (i=0;i<nbins;i++){ 
-	 REAL4 freq;
-	 REAL8 r0,r1;
-	 freq=uvar_Freq + i*GV.dFreq;
-	 r0=F1->data[i];
-	 r1=FloorF1->data[i];
-	 fprintf(outfile1,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E\n",freq, \
-		 thisBinaryTemplate.ProjSMaxis, \
-		 thisBinaryTemplate.Period, \
-		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
-		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
-		 thisBinaryTemplate.Eccentricity, \
-		 thisBinaryTemplate.ArgPeri,r0,r1);
-       }
-     }
-#endif     
-
-#ifdef FILE_FTXT
-     fclose(outfile);
-#endif
-#ifdef FILE_FLINES  
-     fclose(outfile1);
-#endif 
      LALFree(outliers->ratio);
      LALFree(outliers);
      LALFree(outliersParams);
@@ -2751,84 +2306,6 @@ INT4 EstimateFLines(LALStatus *status)
    for (i=0;i<SpLines->Nclusters;i++){ 
      Ntot=Ntot+SpLines->NclustPoints[i];
    }
-   
-
-
-#ifdef FILE_FLINES
-   if (!uvar_binary)   /* BINARY-MOD - Need to select isolated or binary output */
-     {
-       /*  FLines file contains: F, noise floor and lines. */
-       for (i=0;i<Ntot;i++){ 
-	 REAL4 freq;
-	 REAL8 r0,r1,r2;
-	 j=SpLines->Iclust[i];
-	 freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
-	 r0=F1->data[j];
-	 r1=FloorF1->data[j];
-	 r2=SpLines->clusters[i]*FloorF1->data[j];
-	 fprintf(outfile1,"%f %12.12f %12.12f %E %E %E\n",freq,Alpha,Delta,r0,r1,r2);
-       }
-     }
-   if (uvar_binary)
-     {
-       /*  FLines file contains: F, noise floor and lines. */
-       for (i=0;i<Ntot;i++){ 
-	 REAL4 freq;
-	 REAL8 r0,r1,r2;
-	 j=SpLines->Iclust[i];
-	 freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
-	 r0=F1->data[j];
-	 r1=FloorF1->data[j];
-	 r2=SpLines->clusters[i]*FloorF1->data[j];
-	 fprintf(outfile1,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E %E\n",freq, \
-		 thisBinaryTemplate.ProjSMaxis, \
-		 thisBinaryTemplate.Period, \
-		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
-		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
-		 thisBinaryTemplate.Eccentricity, \
-		 thisBinaryTemplate.ArgPeri,r0,r1,r2);
-       }
-     }
-#endif
-#ifdef FILE_FTXT   
-   if (!uvar_binary) /* BINARY-MOD - Need to select isolated or binary output */
-     {
-       /*  PSD.txt file contains freq, PSD, noise floor   */
-       for (i=0;i<nbins;i++){ 
-	 REAL8 freq;
-	 REAL8 r0,r1;
-	 freq=uvar_Freq + (REAL8)i*GV.dFreq;
-	 r0=F1->data[i];
-	 r1=FloorF1->data[i];
-	 fprintf(outfile,"%20.17f %E %E\n",freq,r0,r1);
-       }
-     }
-   if (uvar_binary) 
-     {
-       /*  PSD.txt file contains freq, PSD, noise floor   */
-       for (i=0;i<nbins;i++){ 
-	 REAL8 freq;
-	 REAL8 r0,r1;
-	 freq=uvar_Freq + (REAL8)i*GV.dFreq;
-	 r0=F1->data[i];
-	 r1=FloorF1->data[i];
-	 fprintf(outfile,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E\n",freq, \
-		 thisBinaryTemplate.ProjSMaxis, \
-		 thisBinaryTemplate.Period, \
-		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
-		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
-		 thisBinaryTemplate.Eccentricity, \
-		 thisBinaryTemplate.ArgPeri,r0,r1);
-       }
-     }
-#endif   
-
-#ifdef FILE_FTXT
-   fclose(outfile);
-#endif
-#ifdef FILE_FLINES  
-   fclose(outfile1);
-#endif   
 
    LALFree(outliers->ratio);
    LALFree(outliers->outlierIndexes);
@@ -2849,9 +2326,6 @@ INT4 EstimateFLines(LALStatus *status)
  */
 INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 {
-#ifdef FILE_SPRNG  
-  FILE *outfile;
-#endif
   INT4 i,j,m,lpc,il;                         /* loop indices */
   INT4 Ntot,nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
@@ -2883,13 +2357,6 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
     printf("Memory allocation failure of Sp1");
     return 0;
   }
-
-   /*
-   if( nbins < windowSize ) {
-     fprintf( stderr, "The frequency band has too small bins compared to the now hard-coded window size (= %d) used in EstimateFloor().\n", windowSize );
-     exit(1);
-   }
-   */
 
   /* loop over each SFTs */
   for (i=0;i<GV.SFTno;i++)         
@@ -2953,22 +2420,6 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
     } /* end loop over SFTs*/
 
-#ifdef FILE_SPRNG  
-  if(!(outfile=fopen("SpRng.txt","w"))){ 
-    printf("Cannot open output file"); 
-    return 1;
-  } 
-
-
-  for (j=0;j<nbins;j++){
-    Sp1[j]=2.0*Sp1[j]/(1.0*GV.SFTno);
-    fprintf(outfile,"%f %E \n",(GV.ifmin+j)/GV.tsft,Sp1[j]); 
-  }
-  
-  fclose(outfile);
-#endif
-
-  
   LALFree(N);
   LALFree(Sp1);
   LALDDestroyVector(status, &RngMdnSp);
