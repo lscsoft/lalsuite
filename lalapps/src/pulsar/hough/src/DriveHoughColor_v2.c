@@ -131,30 +131,23 @@ int main(int argc, char *argv[]){
   HoughStats      stats;
 
   /* ------------------------------------------------------- */
-  CHAR   *earthEphemeris = NULL; 
-  CHAR   *sunEphemeris = NULL;
 
-  INT4   ifo;
+
   CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
-  CHAR   *sftDir = NULL; /* the directory where the SFT  could be */
-  CHAR   *fnameOut = NULL;               /* The output prefix filename */
-  CHAR   *fbasenameOut = NULL;
   CHAR   *fnameVelocity = NULL;
   CHAR   *fnameTime = NULL;
 
-  CHAR   *skyfile=NULL;
   REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; /* skypatch info */
   INT4   nSkyPatches, skyCounter; 
 
 
-  REAL8  houghFalseAlarm;
   INT4   houghThreshold;
   UINT4  mObsCoh;
   INT4   nfSizeCylinder,iHmap;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   INT8   fBin;
-  REAL8  f0, fSearchBand, alpha, delta, timeBase, deltaF;
-  REAL8  peakThreshold, normalizeThr;
+  REAL8  alpha, delta, timeBase, deltaF;
+  REAL8  normalizeThr;
   REAL8  patchSizeX, patchSizeY;
   UINT2  xSide, ySide;
   UINT2  maxNBins, maxNBorders;
@@ -162,7 +155,9 @@ int main(int argc, char *argv[]){
   REAL8  f1jump;
   
   FILE   *fp1 = NULL;
-
+  FILE   *fpLog=NULL;
+  CHAR   *fnameLog=NULL;
+  CHAR   *logstr=NULL;
   CHAR   filehisto[256];
   CHAR   filestats[256];
 
@@ -176,7 +171,6 @@ int main(int argc, char *argv[]){
   CHAR fileTemplates[256];
 #endif
 
-  UINT2  blocksRngMed;
 
 #ifdef TIMING
   unsigned long long start, stop;
@@ -197,8 +191,6 @@ int main(int argc, char *argv[]){
   CHAR *uvar_fnameOut=NULL;
   CHAR *uvar_fbasenameOut=NULL;
   CHAR *uvar_skyfile=NULL;
-  CHAR *uvar_fnameVelocity=NULL;
-  CHAR *uvar_fnameTime=NULL;
   
   /******************************************************************/
   /*    Set up the default parameters.      */
@@ -231,208 +223,76 @@ int main(int argc, char *argv[]){
   uvar_fbasenameOut = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_fbasenameOut,BASENAMEOUT);
 
-  uvar_fnameVelocity = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_fnameVelocity,FILEVELOCITY);
-
-  uvar_fnameTime = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_fnameTime,FILETIME);
-
   uvar_skyfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_skyfile,SKYFILE);
 
+  /* register user input variables */
+  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
+  SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
+  SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
+  SUB( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
+  SUB( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
+  SUB( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
+  SUB( LALRegisterREALUserVar(   &status, "houghFalseAlarm", 'a', UVAR_OPTIONAL, "Hough false alarm",             &uvar_houghFalseAlarm), &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                 &uvar_sftDir),          &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "fnameOut",        'o', UVAR_OPTIONAL, "Output directory",              &uvar_fnameOut),        &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "fbasenameOut",    'B', UVAR_OPTIONAL, "Output file basename",          &uvar_fbasenameOut),    &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "skyfile",         'P', UVAR_OPTIONAL, "Input skypatch file",           &uvar_skyfile),         &status);
 
-  ifo = IFO;
+  /* read all command line variables */
+  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+
+  /* set value of bias which might have been changed from default */  
+  SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   
-  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
+  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+  /* exit if help was required */
+  if (uvar_help)
+    exit(0); 
  
-  f0 =  F0;
-  fSearchBand = FBAND;
-  peakThreshold = THRESHOLD;
-  nfSizeCylinder = NFSIZE;
-
-  houghFalseAlarm = FALSEALARM;
-  skyfile = SKYFILE; 
-  earthEphemeris = EARTHEPHEMERIS;
-  sunEphemeris = SUNEPHEMERIS;
-  
-  sftDir = SFTDIRECTORY;
-  fnameOut = DIROUT;
-  fbasenameOut = BASENAMEOUT; 
-
-  fnameVelocity=FILEVELOCITY;
-  fnameTime = FILETIME; 
-  blocksRngMed = BLOCKSRNGMED;
-  SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status );
-  
-  /*****************************************************************/
-  /*    Parse argument list.  i stores the current position.       */
-  /*****************************************************************/
-  {  
-    INT4  arg;        /* Argument counter */
-
-    arg = 1;
-    while ( arg < argc ) {
-      /* Parse debuglevel option. */
-      if ( !strcmp( argv[arg], "-d" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  lalDebugLevel = atoi( argv[arg++] );
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse interferometer option. */
-      else if ( !strcmp( argv[arg], "-i" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  ifo = atoi( argv[arg++] );
-	  if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-	  if (ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-	  if (ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of earth  ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-E" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  earthEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of sun ephemeris data option. */
-      else if ( !strcmp( argv[arg], "-S" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  sunEphemeris = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-       /* Parse directory SFT path  option. */
-      else if ( !strcmp( argv[arg], "-D" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  sftDir = argv[arg++];
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse output file prefix option. */
-      else if ( !strcmp( argv[arg], "-o" ) ) {
-	if ( argc > arg + 2 ) {
-	  arg++;
-	  fnameOut = argv[arg++];
-          fbasenameOut = argv[arg++]; 
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-       /* Parse filename of Velocity.Data file corresponding to the SFTs. */
-      else if ( !strcmp( argv[arg], "-V" ) ) {
-        if ( argc > arg + 1 ) {
-          arg++;
-          fnameVelocity = argv[arg++];
-        } else {
-          ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-          LALPrintError( USAGE, *argv );
-          return DRIVEHOUGHCOLOR_EARG;
-        }
-      }
-      /* Parse frequency option. */
-      else if ( !strcmp( argv[arg], "-f" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  f0 = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse search frequency band option. */
-      else if ( !strcmp( argv[arg], "-b" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  fSearchBand = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse peak threshold option. */
-      else if ( !strcmp( argv[arg], "-t" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  peakThreshold = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-     /* Parse Hough False alarm option. */
-      else if ( !strcmp( argv[arg], "-a" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  houghFalseAlarm = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-     /* Parse Running median window size. */
-      else if ( !strcmp( argv[arg], "-w" ) ) {
-	if ( argc > arg + 1 ) {
-	  arg++;
-	  blocksRngMed = atoi( argv[arg++] );
-          SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status );	  
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse filename of Velocity.Data file corresponding to the SFTs. */
-      else if ( !strcmp( argv[arg], "-P" ) ) {
-        if ( argc > arg + 1 ) {
-          arg++;
-          skyfile = argv[arg++];
-        } else {
-          ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-          LALPrintError( USAGE, *argv );
-          return DRIVEHOUGHCOLOR_EARG;
-        }
-      }
-      /* Unrecognized option. */
-      else {
-	ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	LALPrintError( USAGE, *argv );
-	return DRIVEHOUGHCOLOR_EARG;
-      }
-    } /* End of argument parsing loop. */
+  /* open log file for writing */
+  fnameLog = LALCalloc( (strlen(uvar_fnameOut) + strlen(".log") + 10),1);
+  strcpy(fnameLog,uvar_fnameOut);
+  strcat(fnameLog,".log");
+  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
+    LALFree(fnameLog);
+    exit(1);
   }
+  
+  /* get the log string */
+  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+
+  fprintf( fpLog, "## LOG FILE FOR MCInjectValidate\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
+
+  /* append an ident-string defining the exact CVS-version of the code used */
+  {
+    CHAR command[1024] = "";
+    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fpLog, "# -----------------------------------------\n");
+    fclose (fpLog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+    LALFree(fnameLog);
+  }
+
+
+
   /******************************************************************/
 
-  if ( f0 < 0 ) {
+  if ( uvar_f0 < 0 ) {
     ERROR( DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD, "freq<0:" );
     LALPrintError( USAGE, *argv  );
     return DRIVEHOUGHCOLOR_EBAD;
@@ -448,10 +308,10 @@ int main(int argc, char *argv[]){
      INT4   r;
      REAL8  temp1, temp2, temp3, temp4;
 
-     fpsky = fopen(skyfile, "r");
+     fpsky = fopen(uvar_skyfile, "r");
      if ( !fpsky )
        {
-	 fprintf(stderr, "Unable to fine file %s\n", skyfile);
+	 fprintf(stderr, "Unable to fine file %s\n", uvar_skyfile);
 	 return DRIVEHOUGHCOLOR_EFILE;
        }
 
@@ -489,7 +349,7 @@ int main(int argc, char *argv[]){
     glob_t   globbuf;
     UINT4    j;
      
-    strcpy(command, sftDir);
+    strcpy(command, uvar_sftDir);
     strcat(command, "/*SFT*.*");
     
     globbuf.gl_offs = 1;
@@ -497,7 +357,7 @@ int main(int argc, char *argv[]){
     
     if(globbuf.gl_pathc==0)
       {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", sftDir);
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_sftDir);
 	return 1;  /* stop the program */
       }
     
@@ -524,19 +384,19 @@ int main(int argc, char *argv[]){
   {
     REAL8  alphaPeak, meanN, sigmaN, erfcInv;
     
-    alphaPeak = exp(- peakThreshold);
+    alphaPeak = exp(- uvar_peakThreshold);
     
     meanN = mObsCoh* alphaPeak;
     sigmaN = sqrt(meanN *(1.0 - alphaPeak));
-    /* this should be  erfcInv =erfcinv(2.0 *houghFalseAlarm) */
+    /* this should be  erfcInv =erfcinv(2.0 *uvar_houghFalseAlarm) */
     /* the function used is basically the inverse of the CDF for the 
        Gaussian distribution with unit variance and
        erfcinv(x) = gsl_cdf_ugaussian_Qinv (0.5*x)/sqrt(2) */
     /* First check that false alarm is within bounds 
        and set it to something reasonable if not */
-    if ( (houghFalseAlarm > 0.999)&&(houghFalseAlarm < 0.0) ) 
-      houghFalseAlarm =  FALSEALARM;
-    erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
+    if ( (uvar_houghFalseAlarm > 0.999)&&(uvar_houghFalseAlarm < 0.0) ) 
+      uvar_houghFalseAlarm =  FALSEALARM;
+    erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);    
     houghThreshold = meanN + sigmaN*sqrt(2.0)*erfcInv;    
   }
 
@@ -584,9 +444,9 @@ int main(int argc, char *argv[]){
     /* bandwith to be read should account for Doppler effects and 
        possible spin-down-up */
 
-    f0Bin = f0*timeBase;     /* initial frequency to be analyzed */
+    f0Bin = uvar_f0*timeBase;     /* initial frequency to be analyzed */
 
-    length =  fSearchBand*timeBase; 
+    length =  uvar_fSearchBand*timeBase; 
     fLastBin = f0Bin+length;   /* final frequency to be analyzed */
 
     fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder;
@@ -616,22 +476,17 @@ int main(int argc, char *argv[]){
     for (j=0; j < mObsCoh; j++){
       fname = filelist[j];
       SUB( ReadCOMPLEX8SFTbinData1( &status, &sft, fname ), &status );
+
       SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft), &status );
   
-      /* for color noise */    
-/*
- *       SUB( Periodo2PSDrng( &status, 
- * 	  &periPSD.psd, &periPSD.periodogram, &blocksRngMed), &status );
- */
-      SUB( LALPeriodo2PSDrng( &status, 
-	  &periPSD.psd, &periPSD.periodogram, &blocksRngMed), &status );
-	  
-      threshold = peakThreshold/normalizeThr;  
+      SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );
+
+      threshold = uvar_peakThreshold/normalizeThr;  
             
       SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status);
 /*
  *       SUB( LALComputeMeanPower ( &status, &mean, &peri),  &status );      
- *       threshold = peakThreshold*mean;
+ *       threshold = uvar_peakThreshold*mean;
  *       SUB( LALSelectPeakWhiteNoise(&status, &pg1, &threshold, &peri), &status);
  */
 
@@ -680,8 +535,8 @@ int main(int argc, char *argv[]){
 
     /*  ephemeris info */
     edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-   (*edat).ephiles.earthEphemeris = earthEphemeris;
-   (*edat).ephiles.sunEphemeris = sunEphemeris;
+   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
 
     /* Leap seconds for the start time of the run */
     SUB( LALLeapSecs(&status, &tmpLeap, &(timeV.time[0]), &lsfas), &status);
@@ -785,8 +640,8 @@ int main(int argc, char *argv[]){
       /* opening the output statistic, and event files */
       /******************************************************************/  
       
-      /* create the directory name fnameOut/skypatch_$j */
-      strcpy(  filestats, fnameOut);
+      /* create the directory name uvar_fnameOut/skypatch_$j */
+      strcpy(  filestats, uvar_fnameOut);
       strcat( filestats, "skypatch_");
       {
 	CHAR tempstr[16];
@@ -810,7 +665,7 @@ int main(int argc, char *argv[]){
       }
 
       /* create the base filenames for the stats, histo and event files and template files*/
-      strcat( filestats, fbasenameOut);
+      strcat( filestats, uvar_fbasenameOut);
       strcpy(filehisto, filestats);
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
@@ -1025,7 +880,7 @@ int main(int argc, char *argv[]){
 	  /* ********************* print results *********************** */
 	  
 #ifdef PRINTMAPS
-	  if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
+	  if( PrintHmap2m_file( &ht, uvar_fnameOut, iHmap ) ) return 5;
 #endif 
 	  
 
@@ -1076,7 +931,7 @@ int main(int argc, char *argv[]){
 	      /* ***** print results *********************** */
 	      
 #ifdef PRINTMAPS
-	      if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
+	      if( PrintHmap2m_file( &ht, uvar_fnameOut, iHmap ) ) return 5;
 #endif
 	      
 	      fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
