@@ -1110,7 +1110,6 @@ LALFindChirpBCVFilterSegment (
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
-  UINT4                 kendBCV, kTop;        
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
@@ -1288,10 +1287,9 @@ LALFindChirpBCVFilterSegment (
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
     REAL4 psi3 = input->tmplt->psi3;                        
-    /*replaced fendBCV by fFinal (thomas janvier 2003)*/
-    REAL4 fendBCV = input->tmplt->fFinal;                  
-    /* k that corresponds to fendBCV  */
-    UINT4 kendBCV = floor( numPoints * deltaT * fendBCV );  
+    REAL4 fFinal = input->tmplt->fFinal;                  
+    /* k that corresponds to fFinal, currently not used      */
+    /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
     /* BCV normalization parameters */
     REAL4 a1 = input->segment->a1;
     REAL4 b1 = input->segment->b1;  
@@ -1346,8 +1344,7 @@ LALFindChirpBCVFilterSegment (
   memset( qtildeBCV, 0, numPoints * sizeof(COMPLEX8) );
 
   /* qtilde positive frequency, not DC or nyquist */
-  kTop = ( (numPoints/2) < kendBCV ? numPoints/2 : kendBCV );
-  for ( k = 1; k < kTop; ++k )
+  for ( k = 1; k < numPoints/2; ++k )
   {
     REAL4 r    = inputData[k].re;
     REAL4 s    = 0.0 - inputData[k].im;    /* note complex conjugate */
@@ -1365,7 +1362,6 @@ LALFindChirpBCVFilterSegment (
   /* qtilde negative frequency only: not DC or nyquist */
   if ( params->computeNegFreq )
   {
-    kTop = ( (numPoints-1) < kendBCV ? (numPoints-1) : kendBCV );	  
     for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
     {
       REAL4 r = inputData[k].re;
