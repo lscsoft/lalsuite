@@ -1464,13 +1464,13 @@ int main( int argc, char *argv[] )
         fcInitParams ), &status );
 
   fcDataParams->dynRange = fcTmpltParams->dynRange = dynRange;
-  fcDataParams->deltaT = fcTmpltParams->deltaT = 1.0 / (REAL4) sampleRate;
+  fcTmpltParams->deltaT = chan.deltaT;
   fcTmpltParams->fLow = fLow;
 
   /* initialize findchirp filter functions */
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
       &status );
-  fcFilterParams->deltaT = 1.0 / (REAL4) sampleRate;
+  fcFilterParams->deltaT = chan.deltaT;
   fcFilterParams->chisqParams->approximant = approximant;
 
   /* set up parameters for the filter output veto */
