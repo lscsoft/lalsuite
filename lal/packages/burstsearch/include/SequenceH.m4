@@ -33,7 +33,7 @@ void `LALCut'SEQUENCETYPE (
 	size_t length
 );
 
-void *`XLALShrink'SEQUENCETYPE (
+size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
 	size_t length

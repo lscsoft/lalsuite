@@ -8,5 +8,8 @@ dvi-local: .dvi-dep
 @DVIMKFILE@
 
 Sequence.m4 : SequenceH.m4
+	touch $@
+TimeSeries.m4 : TimeSeriesH.m4
+	touch $@
 %.h : %.m4
 	cd $(srcdir) && m4 $< >$@
