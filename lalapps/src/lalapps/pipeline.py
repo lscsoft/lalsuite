@@ -1032,7 +1032,7 @@ class ScienceData:
         i2 += 1
         if i2 < length2:
           start2 = other[i2].start()
-          stop= other[i2].end()
+          stop2 = other[i2].end()
         elif i2 == length2:
           break
 
@@ -1099,7 +1099,7 @@ class ScienceData:
     for seg in self:
       start = seg.start()
       stop = seg.end()
-      id = self.id()
+      id = seg.id()
       if start > stop:
         # disconnected, so flush out the existing segment (if any)
         if ostop >= 0:
