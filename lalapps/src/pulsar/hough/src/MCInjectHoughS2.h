@@ -199,7 +199,8 @@ void ComputeFoft(LALStatus   *status,
                  REAL8Vector          *foft,
                  HoughTemplate        *pulsarTemplate,
                  REAL8Vector          *timeDiffV,
-                 REAL8Cart3CoorVector *velV);
+                 REAL8Cart3CoorVector *velV,
+		 REAL8                timeBase);
 
 /* ****************************************************** */
 

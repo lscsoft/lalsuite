@@ -419,16 +419,16 @@ int main(int argc, char *argv[]){
     for (k=0; k<nh0; ++k){ fprintf(fpH0, "%g \n",  h0V.data[k] ); }  
     fclose(fpH0);
     
-/*
- *     for (k=0; k<nh0; ++k){
- *       sprintf(filename, "%s_%03d.m",fnameOut, k); 
- *       fp[k] = fopen(filename, "w");
- *       setlinebuf(fp[k]);  
- *       fprintf(fp[k], " h0 = %g; \n",  h0V.data[k] );
- *       fprintf(fp[k], " Ncount= [ \n" );
- *     } 
- */
-
+    /*
+     *     for (k=0; k<nh0; ++k){
+     *       sprintf(filename, "%s_%03d.m",fnameOut, k); 
+     *       fp[k] = fopen(filename, "w");
+     *       setlinebuf(fp[k]);  
+     *       fprintf(fp[k], " h0 = %g; \n",  h0V.data[k] );
+     *       fprintf(fp[k], " Ncount= [ \n" );
+     *     } 
+     */
+    
   }
   
   /******************************************************************/
@@ -762,7 +762,7 @@ int main(int argc, char *argv[]){
     /* ****************************************************************/   
 
     /* the geometrically nearest template */
-    SUB( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV), &status);
+    SUB( ComputeFoft(&status, &foft,&pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
     
     /* for all the 16 near templates */
     {
@@ -777,7 +777,7 @@ int main(int argc, char *argv[]){
 	    pulsarTemplate.latitude = closeTemplates.skytemp[k].delta;
 	    pulsarTemplate.longitude = closeTemplates.skytemp[k].alpha;
             SUB( ComputeFoft(&status, &(foftV[itemplate]),
-	                   &pulsarTemplate,&timeDiffV,&velV), &status);
+	                   &pulsarTemplate,&timeDiffV,&velV, timeBase), &status);
             ++itemplate;
 	  }
 	}
@@ -1144,10 +1144,12 @@ void ComputeFoft(LALStatus   *status,
 		 REAL8Vector          *foft,
                  HoughTemplate        *pulsarTemplate,
 		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV){
+		 REAL8Cart3CoorVector *velV,
+                 REAL8                 timeBase){
   
   INT4   mObsCoh;
   REAL8   f0new, vcProdn, timeDiffN;
+  INT4    f0newBin;
   REAL8   sourceDelta, sourceAlpha, cosDelta;
   INT4    j,i, nspin, factorialN; 
   REAL8Cart3Coor  sourceLocation;
@@ -1190,7 +1192,8 @@ void ComputeFoft(LALStatus   *status,
       f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
       timeDiffN *= timeDiffN;
     }
-    foft->data[j] = f0new * (1.0 +vcProdn);
+    f0newBin = floor( f0new * timeBase + 0.5);
+    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
   }    
     
   DETATCHSTATUSPTR (status);
