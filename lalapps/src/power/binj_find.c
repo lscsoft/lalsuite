@@ -209,42 +209,6 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
  */
 
 /*
- * Read injection data.
- *
- * The input file should contain a list of injection XML files, one file name
- * per line.
- */
-
-static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, struct options_t options)
-{
-	FILE *infile;
-	char line[MAXSTR];
-	SimBurstTable *list = NULL;
-	SimBurstTable **addpoint = &list;
-
-	if (options.verbose)
-		fprintf(stderr, "Reading in SimBurst Table\n");
-
-	if (!(infile = fopen(filename, "r")))
-		LALPrintError("Could not open input file\n");
-
-	while (getline(line, MAXSTR, infile)) {
-		if (options.verbose)
-			fprintf(stderr, "Working on file %s\n", line);
-
-		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
-
-		while (*addpoint)
-			addpoint = &(*addpoint)->next;
-	}
-
-	fclose(infile);
-
-	return(list);
-}
-
-
-/*
  * Trim a SimBurstTable.
  */
 
@@ -284,6 +248,42 @@ static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct optio
 	}
 
 	return(head);
+}
+
+
+/*
+ * Read injection data.
+ *
+ * The input file should contain a list of injection XML files, one file name
+ * per line.
+ */
+
+static SimBurstTable *read_injection_list(LALStatus *stat, char *filename, INT4 start_time, INT4 end_time, struct options_t options)
+{
+	FILE *infile;
+	char line[MAXSTR];
+	SimBurstTable *list = NULL;
+	SimBurstTable **addpoint = &list;
+
+	if (options.verbose)
+		fprintf(stderr, "Reading in SimBurst Table\n");
+
+	if (!(infile = fopen(filename, "r")))
+		LALPrintError("Could not open input file\n");
+
+	while (getline(line, MAXSTR, infile)) {
+		if (options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		LAL_CALL(LALSimBurstTableFromLIGOLw(stat, addpoint, line, start_time, end_time), stat);
+
+		while (*addpoint)
+			addpoint = &(*addpoint)->next;
+	}
+
+	fclose(infile);
+
+	return(list);
 }
 
 
@@ -353,57 +353,6 @@ static INT4 read_search_summary_start_end(char *filename, INT4 *start, INT4 *end
 
 
 /*
- * Read trigger list, and generate a new injection list from the injections
- * that occur in the data that was analyzed.
- */
-
-static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
-{
-	FILE *infile;
-	char line[MAXSTR];
-	SnglBurstTable *list = NULL;
-	SnglBurstTable **eventaddpoint = &list;
-	SimBurstTable *newinjection = NULL;
-	SimBurstTable **injectionaddpoint = &newinjection;
-	INT4 start, end;
-
-	if(!(infile = fopen(filename, "r")))
-		LALPrintError("Could not open input file\n");
-
-	*timeAnalyzed = 0;
-	while(getline(line, MAXSTR, infile)) {
-		if(options.verbose)
-			fprintf(stderr, "Working on file %s\n", line);
-
-		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
-
-		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
-		while(*injectionaddpoint)
-			injectionaddpoint = &(*injectionaddpoint)->next;
-
-		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
-		while(*eventaddpoint)
-			eventaddpoint = &(*eventaddpoint)->next;
-	}
-
-	/*
-	 * FIXME: LAL's memory management blows.  On Saikat's S3 injections,
-	 * this loop takes about .25 seconds PER ITERATION!
-	while(*injection) {
-		SimBurstTable *tmp = *injection;
-		*injection = (*injection)->next;
-		LALFree(tmp);
-	}
-	*injection = newinjection;
-	*/
-
-	fclose(infile);
-
-	return(list);
-}
-
-
-/*
  * Trim a SnglBurstTable
  */
 
@@ -469,6 +418,59 @@ static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t o
 	}
 
 	return(head);
+}
+
+
+/*
+ * Read trigger list, and generate a new injection list from the injections
+ * that occur in the data that was analyzed.  We also trim out unwanted
+ * triggers as we go to try to control memory usage.
+ */
+
+static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *timeAnalyzed, SimBurstTable **injection, struct options_t options)
+{
+	FILE *infile;
+	char line[MAXSTR];
+	SnglBurstTable *list = NULL;
+	SnglBurstTable **eventaddpoint = &list;
+	SimBurstTable *newinjection = NULL;
+	SimBurstTable **injectionaddpoint = &newinjection;
+	INT4 start, end;
+
+	if(!(infile = fopen(filename, "r")))
+		LALPrintError("Could not open input file\n");
+
+	*timeAnalyzed = 0;
+	while(getline(line, MAXSTR, infile)) {
+		if(options.verbose)
+			fprintf(stderr, "Working on file %s\n", line);
+
+		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
+
+		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
+		while(*injectionaddpoint)
+			injectionaddpoint = &(*injectionaddpoint)->next;
+
+		LAL_CALL(LALSnglBurstTableFromLIGOLw(stat, eventaddpoint, line), stat);
+		*eventaddpoint = trim_event_list(*eventaddpoint, options);
+		while(*eventaddpoint)
+			eventaddpoint = &(*eventaddpoint)->next;
+	}
+
+	/*
+	 * FIXME: LAL's memory management blows.  On Saikat's S3 injections,
+	 * this loop takes about .25 seconds PER ITERATION!
+	while(*injection) {
+		SimBurstTable *tmp = *injection;
+		*injection = (*injection)->next;
+		LALFree(tmp);
+	}
+	*injection = newinjection;
+	*/
+
+	fclose(infile);
+
+	return(list);
 }
 
 
@@ -668,18 +670,10 @@ int main(int argc, char **argv)
 	/*
 	 * Read the trigger list;  remove injections from the injection list
 	 * that lie outside the time intervals that were actually analyzed
-	 * according to the search summary tables.
+	 * according to the search summary tables.  Sort the trigger list too.
 	 */
 
 	burstEventList = read_trigger_list(&stat, inputFile, &timeAnalyzed, &simBurstList, options);
-
-	/*
-	 * Do any requested cuts and sort the remaining triggers.
-	 */
-
-	if(options.verbose)
-		fprintf(stderr, "Culling triggers...\n");
-	burstEventList = trim_event_list(burstEventList, options);
 	if(options.verbose)
 		fprintf(stderr, "Sorting triggers...\n");
 	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
