@@ -520,7 +520,7 @@ LALCreateFindChirpSegmentVector (
     CHECKSTATUSPTR (status);
 
 
-    if ( params->approximant == BCV || params->approximant == BCVSpin )
+    if ( params->approximant == BCV )
     {
       segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
         LALCalloc( 1, sizeof(COMPLEX8FrequencySeries));
