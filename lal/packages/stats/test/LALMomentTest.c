@@ -273,7 +273,7 @@ int main( int argc, char *argv[] )
 		}
 	}
 
-	/*  Data set to equal distribution from 20 to -20
+	/*  Data set to equal distribution from 20 to -20  */
 	for ( iterator = 0;  iterator < length;  iterator++ )
 	{
 		data[iterator] = ((REAL8)(20 - iterator));
