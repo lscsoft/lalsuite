@@ -1064,10 +1064,6 @@ SimInspiralTableFromLIGOLw (
           return -1;
         }
 
-        thisSim->geocent_end_time.gpsSeconds = geo_time;
-        thisSim->geocent_end_time.gpsNanoSeconds = 
-          env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
-
         /* parse the row into the SimInspiralTable structure */
 	for ( j = 0; tableDir[j].name; ++j )
 	{
