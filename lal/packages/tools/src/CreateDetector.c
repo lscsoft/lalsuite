@@ -236,8 +236,7 @@ standard output.  These are supposed to be removed once it's been tested.
 #include <string.h>
 #include <lal/DetectorSite.h>
 
-NRCSID( CREATEDETECTORC, "$Id: CreateDetector.c,v 1.10 2001/05/16 00:50:35 rosa
- Exp $" );
+NRCSID( CREATEDETECTORC, "$Id$" );
 
 
 /**************************************** <lalLaTeX file="CreateDetectorCT">
