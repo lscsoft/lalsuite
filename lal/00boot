@@ -12,7 +12,7 @@ version=2.0
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters waveburst"
+lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters waveburst block"
 
 # Packages compiled only with --enable-mpi
 lal_pkg_list_mpi="comm"
