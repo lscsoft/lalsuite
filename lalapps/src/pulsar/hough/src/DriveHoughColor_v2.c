@@ -41,11 +41,11 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-D directory] \n\
         Directory where the input SFT data are located. \n\
 	If not set, the program will look into ./data1\n\
- [-o outfile-basename] \n\
+ [-o outdir basefilename] \n\
         This is a string that prefixes some output filenames.\n\
-        It might contain a path. Filenames are formed by \n\
-        appending .<number> histo events and stats\n\
- 	If not set, the program will write into ./outHM1/HM.<number>\n\
+        The results will be written to outdir/skypatch_<number>/basefilename_stats or
+        outdir/skypatch_<number>/basefilename_histo
+ 	If not set, the program will write into ./outHM1/skypatch_<number>/HM\n\
  [-V time-velocity data file]\n\
         This is a string of the output time-velocity data file.\n\
         It might contain a path.\n\
