@@ -142,7 +142,11 @@ LALPercentileWavelet( LALStatus *status,
   _whiteAlone(input->in, &(*output)->out->medians, 
 	      &(*output)->out->norm50, (*output)->out->nsubintervals, input->offsetSec);
 
-  _waveFilter(&input->in, (*output)->out, input->offsetSec, input->extradeep);
+  if(input->wavefilter==1)
+    {
+      _waveFilter(&input->in, (*output)->out, input->offsetSec, input->extradeep, 
+		  input->wf_LPFilterLength,input->wf_HPFilterLength);
+    }
 
   in.w=input->in;
   in.offsetSec=input->offsetSec;

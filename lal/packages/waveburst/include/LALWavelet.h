@@ -274,15 +274,12 @@ tagClusterWavelet
   Wavelet *wavelet;
   Wavelet *original;
 
-  /*REAL4FrequencySeries *psd;*/
-
   UINT4 nsubintervals;
   REAL4 *medians;
   REAL4 *norm50;
 
   REAL4 *norm10L;
   REAL4 *norm10R;
-  /*  REAL4 *avgPSD;*/
 
   REAL4 *Rij;
   UINT4 nalpha;
@@ -311,14 +308,19 @@ tagClusterWavelet
   REAL4 *power;
   REAL4 *confidence;
   REAL4 *maxAmplitude;
+
   REAL8 *relativeStartTime;
   REAL8 *relativeStopTime;
   REAL8 *duration;
   LIGOTimeGPS *absoluteStartTime;
   LIGOTimeGPS *absoluteStopTime;
+  REAL8 *centralTime;
+
   REAL4 *startFrequency;
   REAL4 *stopFrequency;
+  REAL4 *centralFrequency;
   REAL4 *bandwidth;
+
   REAL4 *noise_rms;
   BOOLEAN noise_rms_flag;
 
@@ -478,6 +480,9 @@ tagInputPercentileWavelet
   INT4 nsubintervals;
   UINT4 offsetSec;
   UINT4 extradeep;
+  INT4 wavefilter;
+  UINT4 wf_LPFilterLength;
+  UINT4 wf_HPFilterLength;
 }
 InputPercentileWavelet;
 

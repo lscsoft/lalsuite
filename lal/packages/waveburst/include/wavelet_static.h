@@ -42,7 +42,8 @@ static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50,
 static void _whiteAlone(Wavelet *wavelet,
                         REAL4 **median,
                         REAL4 **norm50, UINT4 k, UINT4 offset);
-static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep);
+static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep,
+			UINT4 wf_LPFilterLength, UINT4 wf_HPFilterLength);
 static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset);
 static void _createClusterWavelet(ClusterWavelet **w);
 static double _setMask(ClusterWavelet *wavelet, int nc, BOOLEAN aura);
@@ -1212,6 +1213,24 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 	}
      }
   
+   if(right->centralTime!=NULL)
+     {
+       (*left)->centralTime=(REAL8*)LALCalloc(right->clusterCount,sizeof(REAL8));
+       for(i=0;i<right->clusterCount;i++)
+	 {
+	   (*left)->centralTime[i]=right->centralTime[i];
+	 }
+     }
+
+   if(right->centralFrequency!=NULL)
+     {
+       (*left)->centralFrequency=(REAL4*)LALCalloc(right->clusterCount,sizeof(REAL4));
+       for(i=0;i<right->clusterCount;i++)
+         {
+           (*left)->centralFrequency[i]=right->centralFrequency[i];
+         }
+     }
+                                                                                                                                                                                                                                                        
    if(right->duration!=NULL)
     {
       (*left)->duration=(REAL8*)LALCalloc(right->clusterCount,sizeof(REAL8));
@@ -2424,7 +2443,8 @@ static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50,
 }
 
 
-static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep)
+static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 extradeep,
+			UINT4 wf_LPFilterLength, UINT4 wf_HPFilterLength)
 {
   static LALStatus status;
   Inputt2wWavelet in1;
@@ -2436,6 +2456,11 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
   REAL4 norm;
   REAL4TimeSeries *a;
   UINT4 split;
+  UINT4 oldLPFilterLength=(*in)->LPFilterLength;
+  UINT4 oldHPFilterLength=(*in)->HPFilterLength;
+
+  (*in)->LPFilterLength=wf_LPFilterLength;
+  (*in)->HPFilterLength=wf_HPFilterLength;
 
   in1.w=*in;
   in1.ldeep=extradeep;
@@ -2448,13 +2473,14 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
 
   for(i=0;i<M;i++)
     {
+      /*      printf("%6d ",i);*/
       _getLayer(&a, i, out1->w);
       rms[i]=_computeRMS(a,offset);
-      /*      printf("rms[%d]=%f\n",i,rms[i]);*/
       for(j=0;j<a->data->length;j++)
 	{
 	  a->data->data[j]/=rms[i];
 	}
+
       _putLayer(a, i, out1->w);
       _freeREAL4TimeSeries(&a);
     }
@@ -2473,7 +2499,7 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
 	  norm+=1/pow(rms[i*split+j],2);
 	}
       norm=sqrt(split/norm);
-      /*      printf("-->norm[%d]=%f\n",i,norm);fflush(stdout);*/
+
       for(j=0;j<w->nsubintervals;j++)
 	{
 	  w->norm50[i*w->nsubintervals+j]*=norm;
@@ -2487,6 +2513,8 @@ static void _waveFilter(Wavelet **in, ClusterWavelet *w, UINT4 offset, UINT4 ext
   _freeWavelet(&out2->w);
   LALFree(out1);
   LALFree(out2);
+  (*in)->LPFilterLength=oldLPFilterLength;
+  (*in)->HPFilterLength=oldHPFilterLength;                                                                                                                            
 }
 
 static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset)
@@ -2497,29 +2525,24 @@ static REAL4 _computeRMS(REAL4TimeSeries *a, UINT4 offset)
   UINT4 m=a->data->length-2*noffset;
   UINT4 mL, mR;
   UINT4 i;
+  REAL4 median;
 
   aptr=(REAL4**)LALCalloc(m,sizeof(REAL4*));
   for(i=0;i<m;i++)
     {
       aptr[i]=a->data->data+i+noffset;
     }
-  /*
-  printf("_computeRMS: after aptr init m=%d noffset=%d\n",m,noffset);fflush(stdout);
-  */
   qsort(aptr, m, sizeof(REAL4*),_compare);
-  /*
-  printf("_computeRMS: after qsort\n");fflush(stdout);
-  */
   mL=0.1565*m+0.5;
   mR=m-mL;
   result=(*(aptr[mR]) - *(aptr[mL]))/2.;
+  median=*aptr[m/2];
+
   /*
-  printf("_computeRMS: after result\n");fflush(stdout);
+  printf("rms=%f median=%f\n", result, median);
   */
+
   LALFree(aptr);
-  /*
-  printf("_computeRMS: after LALFree\n");fflush(stdout);
-  */
   return result;
 }
 
@@ -2736,6 +2759,16 @@ static void _clusterProperties(ClusterWavelet *w)
       LALFree(w->relativeStopTime);
       w->relativeStopTime=NULL;
     }
+  if(w->centralTime!=NULL)
+    {
+      LALFree(w->centralTime);
+      w->centralTime=NULL;
+    }
+  if(w->centralFrequency!=NULL)
+    {
+      LALFree(w->centralFrequency);
+      w->centralFrequency=NULL;
+    }                                                                                                                           
   if(w->duration!=NULL)  
     {
       LALFree(w->duration);
@@ -2798,6 +2831,8 @@ static void _clusterProperties(ClusterWavelet *w)
   w->maxAmplitude=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->relativeStartTime=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
   w->relativeStopTime=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
+  w->centralTime=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
+  w->centralFrequency=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->absoluteStartTime=(LIGOTimeGPS*)LALCalloc(w->clusterCount,sizeof(LIGOTimeGPS));
   w->absoluteStopTime=(LIGOTimeGPS*)LALCalloc(w->clusterCount,sizeof(LIGOTimeGPS));
   w->duration=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
@@ -2809,8 +2844,7 @@ static void _clusterProperties(ClusterWavelet *w)
 
   for(i=0;i<w->clusterCount;i++)
     {
-      /*      if(w->sCuts[i]) continue;*/
-
+      REAL8 weight=0.0;
       w->coreSize[i]=0;
       w->correlation[i]=0.0;
       w->likelihood[i]=0.0;
@@ -2819,6 +2853,8 @@ static void _clusterProperties(ClusterWavelet *w)
       w->maxAmplitude[i]=0.0;
       w->relativeStartTime[i]=N*delta_t;
       w->relativeStopTime[i]=0.0;
+      w->centralTime[i]=0.0;
+      w->centralFrequency[i]=0.0;
       w->startFrequency[i]=((REAL4)w->wavelet->data->data->length)/((REAL4)2.0);
       w->stopFrequency[i]=0.0;
 
@@ -2864,8 +2900,10 @@ static void _clusterProperties(ClusterWavelet *w)
 		  w->relativeStopTime[i]=x;
 		  w->blobs[i].stop_time_indx=t;
 		}
-
+	      w->centralTime[i]+=x*a*a;
+	      weight+=a*a;
 	      x=delta_f*f*ff;
+	      w->centralFrequency[i]+=x*a*a;
 	      if(x<w->startFrequency[i]) 
 		{
 		  w->startFrequency[i]=x;
@@ -2877,6 +2915,26 @@ static void _clusterProperties(ClusterWavelet *w)
 		  w->blobs[i].stop_freq_indx=f*ff;
 		}
 	    }
+	}
+
+      if(weight>0)
+	{
+	  w->centralTime[i]/=weight;
+	  w->centralFrequency[i]/=weight;
+	  /*
+	  printf("ct=%e cf=%e\n",w->centralTime[i],w->centralFrequency[i]);
+	  */
+	  w->centralTime[i]+=delta_t/2;
+	  w->centralFrequency[i]+=delta_f*ff/2;
+	  /*
+	  printf("ctd=%e cfd=%e\n",w->centralTime[i],w->centralFrequency[i]);
+	  */
+	  w->centralTime[i]+=_secNanToDouble(w->wavelet->data->epoch.gpsSeconds,
+					     w->wavelet->data->epoch.gpsNanoSeconds);
+	  /*
+	  printf("ctda=%e\n",w->centralTime[i]);
+	  fflush(stdout);
+	  */
 	}
 
       w->blobs[i].time_width = w->blobs[i].stop_time_indx - 
@@ -3005,6 +3063,8 @@ static void _createClusterWavelet(ClusterWavelet **w)
   (*w)->maxAmplitude=NULL;
   (*w)->relativeStartTime=NULL;
   (*w)->relativeStopTime=NULL;
+  (*w)->centralTime=NULL;
+  (*w)->centralFrequency=NULL;
   (*w)->duration=NULL;
   (*w)->absoluteStartTime=NULL;
   (*w)->absoluteStopTime=NULL;
@@ -3204,6 +3264,17 @@ static void _freeClusterWavelet(ClusterWavelet **w)
 	  /*printf("_freeClusterWavelet 20\n");fflush(stdout);*/
 	  (*w)->relativeStopTime=NULL;
 	}
+      if((*w)->centralTime!=NULL)
+	{
+	  LALFree((*w)->centralTime);
+	  (*w)->centralTime;
+	}
+      if((*w)->centralFrequency!=NULL)
+        {
+          LALFree((*w)->centralFrequency);
+          (*w)->centralFrequency;
+        }
+                                                                                                                            
       if((*w)->duration!=NULL)
 	{
 	  /*printf("_freeClusterWavelet 21-1\n");fflush(stdout);*/
@@ -4264,7 +4335,6 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   output->w->delta_t=input->another->delta_t;
   output->w->delta_f=input->another->delta_f;
   output->w->noise_rms_flag=input->another->noise_rms_flag;
-
   output->w->coreSize=NULL;
   output->w->correlation=NULL;
   output->w->likelihood=NULL;
@@ -4273,6 +4343,8 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   output->w->maxAmplitude=NULL;
   output->w->relativeStartTime=NULL;
   output->w->relativeStopTime=NULL;
+  output->w->centralTime=NULL;
+  output->w->centralFrequency=NULL;
   output->w->duration=NULL;
   output->w->absoluteStartTime=NULL;
   output->w->absoluteStopTime=NULL;
