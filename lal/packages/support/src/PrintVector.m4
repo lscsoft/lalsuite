@@ -15,18 +15,18 @@ use in non-production and test code only.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PrintVectorCP}
-\index{\verb&LALZPrintVector()&}
-\index{\verb&LALCPrintVector()&}
-\index{\verb&LALDPrintVector()&}
-\index{\verb&LALSPrintVector()&}
-\index{\verb&LALI2PrintVector()&}
-\index{\verb&LALI4PrintVector()&}
-\index{\verb&LALI8PrintVector()&}
-\index{\verb&LALU2PrintVector()&}
-\index{\verb&LALU4PrintVector()&}
-\index{\verb&LALU8PrintVector()&}
-\index{\verb&LALCHARPrintVector()&}
-\index{\verb&LALPrintVector()&}
+\index{\texttt{LALZPrintVector()}}
+\index{\texttt{LALCPrintVector()}}
+\index{\texttt{LALDPrintVector()}}
+\index{\texttt{LALSPrintVector()}}
+\index{\texttt{LALI2PrintVector()}}
+\index{\texttt{LALI4PrintVector()}}
+\index{\texttt{LALI8PrintVector()}}
+\index{\texttt{LALU2PrintVector()}}
+\index{\texttt{LALU4PrintVector()}}
+\index{\texttt{LALU8PrintVector()}}
+\index{\texttt{LALCHARPrintVector()}}
+\index{\texttt{LALPrintVector()}}
 
 \subsubsection*{Description}
 

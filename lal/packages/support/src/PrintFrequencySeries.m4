@@ -15,17 +15,17 @@ file.  For use in non-production and test code only.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{PrintFrequencySeriesCP}
-\index{\verb&LALZPrintFrequencySeries()&}
-\index{\verb&LALCPrintFrequencySeries()&}
-\index{\verb&LALDPrintFrequencySeries()&}
-\index{\verb&LALSPrintFrequencySeries()&}
-\index{\verb&LALI2PrintFrequencySeries()&}
-\index{\verb&LALI4PrintFrequencySeries()&}
-\index{\verb&LALI8PrintFrequencySeries()&}
-\index{\verb&LALU2PrintFrequencySeries()&}
-\index{\verb&LALU4PrintFrequencySeries()&}
-\index{\verb&LALU8PrintFrequencySeries()&}
-\index{\verb&LALPrintFrequencySeries()&}
+\index{\texttt{LALZPrintFrequencySeries()}}
+\index{\texttt{LALCPrintFrequencySeries()}}
+\index{\texttt{LALDPrintFrequencySeries()}}
+\index{\texttt{LALSPrintFrequencySeries()}}
+\index{\texttt{LALI2PrintFrequencySeries()}}
+\index{\texttt{LALI4PrintFrequencySeries()}}
+\index{\texttt{LALI8PrintFrequencySeries()}}
+\index{\texttt{LALU2PrintFrequencySeries()}}
+\index{\texttt{LALU4PrintFrequencySeries()}}
+\index{\texttt{LALU8PrintFrequencySeries()}}
+\index{\texttt{LALPrintFrequencySeries()}}
 
 \subsubsection*{Description}
 
