@@ -81,16 +81,24 @@ each non-null entry in the coinc inspiral and the single.  This is done using
 coincident with the single, the \texttt{accuracyParams.match} is set to 1,
 otherwise to 0.
 
-\texttt{LALExtractCoincSngls()} extracts the information from a linked list of
-\texttt{coincInspiralTable}s and returns it as a linked list of
+\texttt{LALExtractSnglInspiralFromCoinc()} extracts the information from a
+linked list of \texttt{coincInspiralTable}s and returns it as a linked list of
 \texttt{snglInspiralTable}s.  Thus, the output \texttt{snglPtr} is a pointer to
 a linked list of single inspiral tables.  That list contains only single
 inspirals which are found in coincidence.  In order to preserve the coincidence
 information, we assign to each coincident event an integer value.  This is
 stored in the \texttt{UINT4 id} field of the \texttt{eventIDColumn} of each
-single inspiral which forms part of the coincidence.  We do not assign multiple
-\texttt{id} values to a given single inspiral table, but instead make multiple
-copies of the table, each with a unique \texttt{id}.  
+single inspiral which forms part of the coincidence.  The \texttt{id} is set
+equal to $10^{9} \times$ \texttt{gpsStartTime} $+ 10^{5} \times$
+\texttt{slideNum} $+$ event number. We do not assign multiple \texttt{id}
+values to a given single inspiral table, but instead make multiple copies of
+the table, each with a unique \texttt{id}.  
+
+\texttt{LALCoincCutSnglInspiral()} extracts all single inspirals from a
+specific ifo which are in coinc inspirals.  The output \texttt{snglPtr} is a
+pointer to a linked list of single inspiral tables.  That list contains only
+single inspirals from the specified \texttt{ifo} which are found in
+coincidence. 
 
 
 \subsubsection*{Algorithm}
@@ -424,11 +432,12 @@ LALSnglInspiralCoincTest(
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
-LALExtractCoincSngls(
+LALExtractSnglInspiralFromCoinc(
     LALStatus                  *status,
     SnglInspiralTable         **snglPtr,
     CoincInspiralTable         *coincInspiral,
-    LIGOTimeGPS                *gpsStartTime
+    LIGOTimeGPS                *gpsStartTime,
+    INT4                        slideNum
     )
 /* </lalVerbatim> */
 {
@@ -485,8 +494,17 @@ LALExtractCoincSngls(
         
         /* create an eventId and populate the id */
         eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
-        eventId->id = LAL_INT8_C(1000000000) * (INT8) gpsStartTime->gpsSeconds 
-          + (INT8) eventNum;        
+        eventId->id = LAL_INT8_C(1000000000) * (INT8) gpsStartTime->gpsSeconds
+          + (INT8) eventNum;
+        
+        if ( slideNum < 0 )
+        {
+          eventId->id += LAL_INT8_C(100000)* (-1 *slideNum + 5000);
+        }
+        else 
+        {
+          eventId->id += LAL_INT8_C(100000) * slideNum;
+        }
         thisSngl->event_id = eventId;
         eventId->snglInspiralTable = thisSngl;
       }
@@ -499,3 +517,83 @@ LALExtractCoincSngls(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALCoincCutSnglInspiral(
+    LALStatus                  *status,
+    SnglInspiralTable         **eventHead
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable  *eventList = NULL;
+  SnglInspiralTable  *prevEvent = NULL;
+  SnglInspiralTable  *thisEvent = NULL;
+
+  INITSTATUS( status, "LALCoincCutSnglInspiral", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* check that eventHead is non-null */
+  ASSERT( eventHead, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+ 
+
+  /* Scan through a linked list of sngl_inspiral tables and return a
+     pointer to the head of a linked list of tables for a specific IFO */
+
+  thisEvent = *eventHead;
+  
+  while ( thisEvent )
+  {
+    INT4           keepEvent = 0;
+    EventIDColumn *eventID   = NULL;
+
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    if ( tmpEvent->event_id )
+    {
+      for( eventID = tmpEvent->event_id; tmpEvent; tmpEvent = tmpEvent->next )
+      {
+        /* there is an eventID, check if there's a coinc inspiral */
+        eventID = tmpEvent->event_id;
+      
+        if ( eventID->coincInspiralTable )
+        {
+          keepEvent = 1;
+          break;
+        }
+      
+        eventID = eventID->next;
+      }
+    }
+     
+    if ( keepEvent )
+    {
+      /* event is in a coinc so keep it */
+      if ( ! eventList  )
+      {
+        eventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this trigger since it's not in a coinc */
+      LALFreeSnglInspiral ( status->statusPtr, &tmpEvent );
+    }
+  }
+
+  *eventHead = eventList; 
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}  
+
