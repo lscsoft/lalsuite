@@ -112,7 +112,7 @@ Contents:
 
             --enable-frame
             --enable-mpi
-            --enable-shared
+            --disable-shared
             --disable-static
             --disable-debug
             --disable-macros
@@ -126,13 +126,12 @@ Contents:
             need to include --with-mpicc=/path/of/mpicc to specify the program
             mpicc if it is not in your path.
 
-          * The --enable-shared argument is used if you want to produce a
-            shared-object library (liblal.so rather than liblal.a).  This
-            option is only available for certain compilers/systems.  If you do
-            make a shared-object library, you'll also want to have
-            shared-object versions of fftw (libsfftw.so & libsrfftw.so or
-            libfftw.so & librfftw.so), and of the frame library (libFrame.so)
-            and the MPI library (libmpi.so) if you are enabling these too.
+          * The --diable-shared argument is used if you don't want to produce a
+            shared-object library (liblal.so).  If you do make a shared-object
+            library (default), you'll also want to have shared-object versions
+            of fftw (libsfftw.so & libsrfftw.so or libfftw.so & librfftw.so),
+            and of the frame library (libFrame.so) and the MPI library
+            (libmpi.so) if you are enabling these too.
 
           * The --disable-static prevents the construction of a static library
             (liblal.a) in addition to the shared-object library.
