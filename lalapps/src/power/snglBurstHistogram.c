@@ -69,8 +69,11 @@ int main(int argc, char **argv)
 
     INT4                      iTriggerConfidence=0;
     INT4                      iTriggerFreq=0;
+    INT4                      iTriggerBand=0;
+    INT4                      i;
     REAL4                     tmpConfidence=0.0;
     REAL4                     tmpFreq=0.0;
+    REAL4                     bandwidth=0.0;
 
     INT4                      nFreqBins=0;
     INT8                      *freqHistData=NULL;
@@ -195,6 +198,7 @@ int main(int argc, char **argv)
         /* Locate the relevant columns */
         iTriggerConfidence = MetaioFindColumn( triggerEnv, "CONFIDENCE");
         iTriggerFreq       = MetaioFindColumn( triggerEnv, "CENTRAL_FREQ" );
+        iTriggerBand       = MetaioFindColumn( triggerEnv, "BANDWIDTH" );
 
         /* Loop over the triggers */
         memset(tmpHistData, 0, nFreqBins*sizeof(INT8));
@@ -212,14 +216,22 @@ int main(int argc, char **argv)
             }
 
             /* get the confidence from the table */
-            tmpConfidence = triggerEnv->ligo_lw.table.elt[iTriggerConfidence].data.real_4;  
-            tmpFreq       = triggerEnv->ligo_lw.table.elt[iTriggerFreq].data.real_4;  
+            tmpConfidence = 
+                triggerEnv->ligo_lw.table.elt[iTriggerConfidence].data.real_4;  
+            tmpFreq       = 
+                triggerEnv->ligo_lw.table.elt[iTriggerFreq].data.real_4;  
+            bandwidth       = 
+                triggerEnv->ligo_lw.table.elt[iTriggerBand].data.real_4;  
 
             /* require the confidence to exceed threshold */
             if ( tmpConfidence < logThreshold ){
                 if (freqHistogram){
-                    freqHistData[(INT4)(tmpFreq/df)] += 1;
-                    tmpHistData[(INT4)(tmpFreq/df)] += 1;
+                    i=(INT4)((tmpFreq-fstart-0.5*bandwidth)/df);
+                    while (i<(INT4)((tmpFreq-fstart+0.5*bandwidth)/df)){
+                        freqHistData[i] += 1;
+                        tmpHistData[i] += 1;
+                        i++;
+                    }
                 }
             }
         }
@@ -228,10 +240,10 @@ int main(int argc, char **argv)
          *******************************************************************/
         if (freqHistogram){
             FILE *fpFreqHist=NULL;
-            INT4 i;
             fpFreqHist = fopen("freq-hist.txt","w");
             for(i=0;i<nFreqBins;i++){
-                fprintf(fpFreqHist,"%f %i\n",fstart+i*df,freqHistData[i]);
+                fprintf(fpFreqHist,"%f %i\n",fstart+i*df,
+                        freqHistData[i]);
             }
             fclose(fpFreqHist);
         }
@@ -241,9 +253,9 @@ int main(int argc, char **argv)
          *******************************************************************/
         if (tfHistogram){
             INT4 i;
-            fprintf(fpTFHist,"%i ",fileCounter);
             for(i=0;i<nFreqBins;i++){
-                fprintf(fpTFHist,"%i ",tmpHistData[i]);
+                fprintf(fpTFHist,"%i %f %i\n",fileCounter,
+                        fstart+ i*df, tmpHistData[i]);
             }
             fprintf(fpTFHist,"\n");
         }
