@@ -1007,7 +1007,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			}
 
 			/* multiply by scale factor and inject into real data */
-			for (i = 0; i < streamLength ; i++)
+			for (i = 0; i < segmentLength ; i++)
 			{
 				segmentOne.data->data[i] = segmentOne.data->data[i] + \
 					(scaleFactor * SimStochBGOne.data->data[i]);
