@@ -42,6 +42,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
+#include <lal/Date.h>
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
@@ -55,6 +56,15 @@ extern int optind, opterr, optopt;
 
 #define SCALE 1e20
 #define MAXTEMPLATES 10000
+
+NRCSID( STRINGSEARCHC, "StringSearch $Id$");
+RCSID( "StringSearch $Id$");
+
+#define PROGRAM_NAME "StringSearch"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+
 
 /***************************************************************************/
 
@@ -108,7 +118,12 @@ StringTemplate strtemplate[MAXTEMPLATES];
 
 int NTemplates;
 
+LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
+
 SnglBurstTable *events=NULL;
+MetadataTable  *procTable=NULL;
+MetadataTable  *procparams=NULL;
+MetadataTable  *searchsumm=NULL;
 
 int Nevents=0;
 
@@ -154,6 +169,12 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
+
+ /* create the process and process params tables */
+/*  procTable->processTable = LALCalloc(1, sizeof(ProcessTable)); */
+/*  LALGPSTimeNow(&status, procTable->processTable->start_time, &accuracy); */
+/*  populate_process_table(&stat, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE); */
+/*  procparams.processParamsTable = NULL; */
 
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
  
