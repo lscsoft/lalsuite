@@ -92,7 +92,7 @@ INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 30;
 CHAR frameCache1[100] = "H-729332040.cache";
-CHAR frameCache2[100] = "H-729332040.cache";
+CHAR frameCache2[100] = "L-729332040.cache";
 CHAR calCache1[100] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
 CHAR calCache2[100] = "calibration/L1-CAL-V03-729273600-734367600.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
@@ -104,7 +104,7 @@ INT4 site2 = 1;
 
 /* frequency band */
 INT4 fMin = 50;
-INT4 fMax = 300;
+INT4 fMax = 250;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -1050,7 +1050,7 @@ INT4 main(INT4 argc, CHAR *argv[])
          {
           fprintf(stdout, "request GPS time %d\n",gpsCalibTime.gpsSeconds );
          }
-     
+        memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
         calfacts.ifo = ifo1;        
         LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
                                            &calfacts), &status );
@@ -1058,8 +1058,8 @@ INT4 main(INT4 argc, CHAR *argv[])
        /* exit loop if calibration not found */
         if ((status.statusCode !=0)||(responseTemp1.data==NULL))
          { break;}     
-                       
-         calfacts.ifo = ifo2; 
+
+        memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );                      calfacts.ifo = ifo2; 
         LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calCache2,
                  &calfacts), &status );
                 
@@ -1100,13 +1100,17 @@ INT4 main(INT4 argc, CHAR *argv[])
                   
 	 LAL_CALL( LALResponseConvert(&status, &MCresponse1, &responseTemp1), &status );
 	 LAL_CALL( LALResponseConvert(&status, &MCresponse2, &responseTemp2), &status );
+
+         /*
+         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
 	 calfacts.ifo = ifo1;
          LAL_CALL( LALExtractFrameResponse(&status, &MCresponse1, calCache1,
                    &calfacts), &status );
+         memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
          calfacts.ifo = ifo2;
          LAL_CALL( LALExtractFrameResponse(&status, &MCresponse2, calCache2,
                    &calfacts), &status );
-	 
+	 */
 
          /* force DC to be 0 and nyquist to be real */
          MCresponse1.data->data[0].re = MCresponse2.data->data[0].re = 0.;
