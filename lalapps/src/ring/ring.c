@@ -167,6 +167,7 @@ int main( int argc, char *argv[] )
 
   /* parse options */
   parse_options( argc, argv );
+  if (geo_data) {strain_data = 1;}
 
   /* echo command if verbose */
   if ( vrbflg )
@@ -968,17 +969,12 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
       
        /* cast the GEO data to REAL4 in the channel time series       */
        /* which already has the correct amount of memory allocated */
+       channel->deltaT         = geoChannel->deltaT;
        for ( j = 0 ; j < npts ; ++j )
         {
          channel->data->data[j] = (REAL4) (geoChannel->data->data[j]);
          }
        
-        /* re-copy the data paramaters from the GEO channel to input data channel */
-        LALSnprintf( channel->name, LALNameLength * sizeof(CHAR), "%s", geoChannel->name );
-        channel->epoch          = geoChannel->epoch;
-        channel->deltaT         = geoChannel->deltaT;
-        channel->f0             = geoChannel->f0;
-        channel->sampleUnits    = geoChannel->sampleUnits;
        
        /* free the REAL8 GEO input data */
        LAL_CALL( LALDDestroyVector( &status, &geoChannel->data ), &status );
