@@ -676,6 +676,20 @@ LALCompareSimBurstAndSnglBurst(
 	int *match
 );
 
+int
+XLALCompareSimInspiralAndSnglBurst(
+	const SimInspiralTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+void
+LALCompareSimInspiralAndSnglBurst(
+	LALStatus *status,
+	const SimInspiralTable *a,
+	const SnglBurstTable *b,
+	int *match
+);
+
 void
 XLALClusterSnglBurstTable(
 	SnglBurstTable  **list,
