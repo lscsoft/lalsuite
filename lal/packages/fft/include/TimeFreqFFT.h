@@ -174,16 +174,16 @@ LALDestroyRealDFTParams (
 void
 LALTimeFreqRealFFT(
     LALStatus               *status,
-    COMPLEX8FrequencySeries *freq,
-    REAL4TimeSeries         *time,
+    COMPLEX8FrequencySeries *fser,
+    REAL4TimeSeries         *tser,
     RealFFTPlan             *plan
     );
 
 void
 LALFreqTimeRealFFT(
     LALStatus               *status,
-    REAL4TimeSeries         *time,
-    COMPLEX8FrequencySeries *freq,
+    REAL4TimeSeries         *tser,
+    COMPLEX8FrequencySeries *fser,
     RealFFTPlan             *plan
     );
 
@@ -207,16 +207,16 @@ LALREAL4AverageSpectrum (
 void
 LALTimeFreqComplexFFT(
     LALStatus               *status,
-    COMPLEX8FrequencySeries *freq,
-    COMPLEX8TimeSeries      *time,
+    COMPLEX8FrequencySeries *fser,
+    COMPLEX8TimeSeries      *tser,
     ComplexFFTPlan          *plan
     );
 
 void
 LALFreqTimeComplexFFT(
     LALStatus               *status,
-    COMPLEX8TimeSeries      *time,
-    COMPLEX8FrequencySeries *freq,
+    COMPLEX8TimeSeries      *tser,
+    COMPLEX8FrequencySeries *fser,
     ComplexFFTPlan          *plan
     );
 
