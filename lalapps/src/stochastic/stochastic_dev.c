@@ -202,8 +202,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* inverse noise data structures */
-  REAL4FrequencySeries calInvPSDOne;
-  REAL4FrequencySeries calInvPSDTwo;
+  REAL4FrequencySeries *calInvPSDOne;
+  REAL4FrequencySeries *calInvPSDTwo;
   LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
@@ -558,32 +558,17 @@ INT4 main(INT4 argc, CHAR *argv[])
   responseTwoB.data->length = filterLength;
   responseTwoC.data->length = filterLength;
 
-  /* set metadata fields for inverse noise structures */
-  strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
-  strncpy(calInvPSDTwo.name, "calInvPSDTwo", LALNameLength);
-  calInvPSDOne.sampleUnits = calPSDUnit;
-  calInvPSDTwo.sampleUnits = calPSDUnit;
-  calInvPSDOne.deltaF = deltaF;
-  calInvPSDTwo.deltaF = deltaF;
-  calInvPSDOne.f0 = fMin;
-  calInvPSDTwo.f0 = fMin;
-
   if (vrbflg)
   {
     fprintf(stdout, "Allocating memory for inverse noise...\n");
   }
 
-  /* allocate memory for inverse noise */
-  calInvPSDOne.data = NULL;
-  calInvPSDTwo.data = NULL;
-  LAL_CALL(LALCreateVector(&status, &(calInvPSDOne.data), filterLength), \
-      &status);
-  LAL_CALL(LALCreateVector(&status, &(calInvPSDTwo.data), filterLength), \
-      &status);
-  memset(calInvPSDOne.data->data, 0, \
-      calInvPSDOne.data->length * sizeof(*calInvPSDOne.data->data));
-  memset(calInvPSDTwo.data->data, 0, \
-      calInvPSDTwo.data->length * sizeof(*calInvPSDTwo.data->data));
+	LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPSDOne, \
+				"calInvPSDOne", gpsStartTime, fMin, deltaF, calPSDUnit, \
+				filterLength), &status);
+	LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPSDTwo, \
+				"calInvPSDTwo", gpsStartTime, fMin, deltaF, calPSDUnit, \
+				filterLength), &status);
 
   /* set window parameters for segment data streams */
   strncpy(dataWindow.name, "dataWindow", LALNameLength);
@@ -892,8 +877,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set normalisation input */
   normInput.overlapReductionFunction = &overlap;
   normInput.omegaGW = &omegaGW;
-  normInput.inverseNoisePSD1 = &calInvPSDOne;
-  normInput.inverseNoisePSD2 = &calInvPSDTwo;
+  normInput.inverseNoisePSD1 = calInvPSDOne;
+  normInput.inverseNoisePSD2 = calInvPSDTwo;
 
   /* set normalisation output */
   normOutput.normalization = &normLambda;
@@ -919,8 +904,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set optimal filter inputs */
   optFilterIn.overlapReductionFunction = &overlap;
   optFilterIn.omegaGW = &omegaGW;
-  optFilterIn.calibratedInverseNoisePSD1 = &calInvPSDOne;
-  optFilterIn.calibratedInverseNoisePSD2 = &calInvPSDTwo;
+  optFilterIn.calibratedInverseNoisePSD1 = calInvPSDOne;
+  optFilterIn.calibratedInverseNoisePSD2 = calInvPSDTwo;
 
   /* set metadata fields for CC spectrum */
   strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
@@ -1166,8 +1151,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* set epoch */
-    calInvPSDOne.epoch = segmentOneB.epoch;
-    calInvPSDTwo.epoch = segmentOneB.epoch;
+    calInvPSDOne->epoch = segmentOneB.epoch;
+    calInvPSDTwo->epoch = segmentOneB.epoch;
 
     /* estimate psds */
     LAL_CALL(psdEstimator(&status, calInvPSDOne, psdInputOne, \
@@ -1180,10 +1165,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       LALSnprintf(debugFilename, LALNameLength, "%d-inPDS1.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALSPrintFrequencySeries(&calInvPSDOne, debugFilename);
+      LALSPrintFrequencySeries(calInvPSDOne, debugFilename);
       LALSnprintf(debugFilename, LALNameLength, "%d-inPDS2.dat", \
           gpsSegmentBStart.gpsSeconds);
-      LALSPrintFrequencySeries(&calInvPSDTwo, debugFilename);
+      LALSPrintFrequencySeries(calInvPSDTwo, debugFilename);
     }
 
     if (vrbflg)
@@ -1291,8 +1276,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoA), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoB), &status);
   LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&status, respTempTwoC), &status);
-  LAL_CALL(LALDestroyVector(&status, &(calInvPSDOne.data)), &status);
-  LAL_CALL(LALDestroyVector(&status, &(calInvPSDTwo.data)), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPSDOne), &status);
+  LAL_CALL(LALDestroyREAL4FrequencySeries(&status, calInvPSDTwo), &status);
   LAL_CALL(LALDestroyVector(&status, &(overlap.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(omegaGW.data)), &status);
   LAL_CALL(LALDestroyVector(&status, &(dataWindow.data)), &status);
@@ -2270,7 +2255,7 @@ static void readDataPair(LALStatus *status,
 
 /* function to estimate the psd */
 static void psdEstimator(LALStatus *status,
-    REAL4FrequencySeries output,
+    REAL4FrequencySeries *output,
     PSDEstimatorInput input,
     PSDEstimatorParams params)
 {
@@ -2326,7 +2311,7 @@ static void psdEstimator(LALStatus *status,
         pow(input.responseC->data->data[i].im, 2)) / psdC.data->data[i];
 
     /* average calibrated psds */
-    output.data->data[i] = (psdA.data->data[i] + psdC.data->data[i]) / 2.0;
+    output->data->data[i] = (psdA.data->data[i] + psdC.data->data[i]) / 2.0;
   }
 
   /* clean up */
