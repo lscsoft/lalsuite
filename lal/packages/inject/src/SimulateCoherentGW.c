@@ -30,10 +30,10 @@ The fields \verb@output->epoch@, \verb@output->deltaT@, and
 period and sampling rate for which the response is required.  If
 \verb@output->f0@ is nonzero, idealized heterodyning is performed (an
 amount $2\pi f_0(t-t_0)$ is subtracted from the phase before computing
-the sinusoid, where $t_0$ is the start of the series).  For the input
-signal, \verb@signal->h@ is ignored, and the signal is treated as zero
-at any time for which either \verb@signal->a@ or \verb@signal->phi@ is
-not defined.
+the sinusoid, where $t_0$ is the heterodyning epoch defined in
+\verb@detector@).  For the input signal, \verb@signal->h@ is ignored,
+and the signal is treated as zero at any time for which either
+\verb@signal->a@ or \verb@signal->phi@ is not defined.
 
 This routine will convert \verb@signal->position@ to equatorial
 coordinates, if necessary.
@@ -212,8 +212,10 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL8 f0;
   REAL8 phiFac, fFac;
 
-  /* Heterodyning phase factor LAL_TWOPI*output->f0*output->deltaT. */
-  REAL8 heteroFac;
+  /* Heterodyning phase factor LAL_TWOPI*output->f0*output->deltaT,
+     and phase offset at the start of the series
+     LAL_TWOPI*output->f0*(time offset). */
+  REAL8 heteroFac, phi0;
 
   /* Variables required by the TCENTRE() macro, above. */
   REAL4 realIndex;
@@ -306,6 +308,15 @@ LALSimulateCoherentGW( LALStatus        *stat,
   phiFac = fFac / ( LAL_TWOPI*signal->phi->deltaT );
   f0 = detector->transfer->f0/detector->transfer->deltaF;
   heteroFac = LAL_TWOPI*output->f0*output->deltaT;
+  phi0 = (REAL8)( output->epoch.gpsSeconds -
+		  detector->heterodyneEpoch.gpsSeconds );
+  phi0 += 0.000000001*(REAL8)( output->epoch.gpsNanoSeconds -
+			       detector->heterodyneEpoch.gpsNanoSeconds );
+  phi0 *= LAL_TWOPI*output->f0;
+  if ( phi0 > 1.0/LAL_REAL8_EPS ) {
+    LALWarning( stat, "REAL8 arithmetic is not sufficient to maintain"
+		" heterodyne phase to within a radian." );
+  }
 
   /* Check units on input, and set units on output. */
   {
@@ -855,7 +866,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
     }
     a1 *= aTrans;
     a2 *= aTrans;
-    phi += phiTrans - heteroFac*i;
+    phi += phiTrans - heteroFac*i - phi0;
 
     /* Compute components of output. */
     oPlus = a1*cos( shift )*cos( phi ) - a2*sin( shift )*sin( phi );

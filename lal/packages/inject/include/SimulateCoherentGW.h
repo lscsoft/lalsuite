@@ -336,7 +336,7 @@ are:
 frequency-dependent transfer function of the interferometer, in ADC
 counts per unit strain amplitude at any given frequency.
 
-\item[\texttt{LALDetector *detector}] A structure storing site and
+\item[\texttt{LALDetector *site}] A structure storing site and
 polarization information, used to compute the polarization response
 and the propagation delay.  If absent, the response will be computed
 to the plus mode waveform with no time delay.
@@ -346,14 +346,23 @@ positions, velocities, and accelerations of the Earth and Sun centres
 of mass, used to compute the propagation delay to the solar system
 barycentre.  If absent, the propagation delay will be computed to the
 Earth centre (rather than a true barycentre).
+
+\item[\texttt{LIGOTimeGPS heterodyneEpoch}] A reference time for
+heterodyned detector output time series, where the phase of the mixing
+signal is zero.  This parameter is only used when generating detector
+output time series with nonzero heterodyne frequency \verb@f0@.
+(Note: This should really be a parameter stored in the
+\verb@TimeSeries@ structure along with \verb@f0@, but it isn't, so we
+have to add it here.)
 \end{description}
 
 ******************************************************* </lalLaTeX> */
 
 typedef struct tagDetectorResponse {
   COMPLEX8FrequencySeries *transfer; /* frequency transfer function */
-  LALDetector *site;          /* detector location and orientation */
-  EphemerisData *ephemerides; /* Earth and Sun ephemerides */
+  LALDetector *site;           /* detector location and orientation */
+  EphemerisData *ephemerides;  /* Earth and Sun ephemerides */
+  LIGOTimeGPS heterodyneEpoch; /* reference time for heterodyning */
 } DetectorResponse;
 
 
