@@ -241,6 +241,29 @@ RingSearchInput;
  *   to use as filters.
  * \end{description}
  *
+ * \subsubsection*{Type \texttt{AvgSpecParams}}
+ * \idx[Type]{AvgSpecParams}
+ *
+ **** </lalLaTeX> */
+/**** <lalVerbatim> */
+typedef struct
+tagAvgSpecParams
+{
+  UINT4        segsize;
+  RealFFTPlan *fwdplan;
+}
+AvgSpecParams;
+/**** </lalVerbatim> */
+/**** <lalLaTeX>
+ *
+ * This structure contains parameters for routines that compute average
+ * power spectra.  The fields are:
+ *
+ * \begin{description}
+ * \item[\texttt{segsize}] The size of each segment of data.
+ * \item[\texttt{fwdplan}] Forward real FFT plan for that segment size.
+ * \end{description}
+ *
  **** </lalLaTeX> */
 
 void LALRingSearchInit(
@@ -269,6 +292,14 @@ LALRingSearch(
     RingEventList    **output,
     RingSearchInput   *input,
     RingSearchParams  *params
+    );
+
+void
+LALMedianSpectrum(
+    LALStatus            *status,
+    REAL4FrequencySeries *output,
+    REAL4TimeSeries      *input,
+    AvgSpecParams        *params
     );
 
 /**** <lalLaTeX>
