@@ -1850,41 +1850,41 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"test", no_argument, &test_flag, 1},
       {"recenter", no_argument, &recenter_flag,1},
       /* options that don't set a flag */
-      {"help", no_argument, 0, 'h'},
-      {"gps-start-time", required_argument, 0, 't'},
-      {"gps-end-time", required_argument, 0, 'T'},
-      {"interval-duration", required_argument, 0, 'L'},
-      {"segment-duration", required_argument, 0, 'l'},
-      {"sample-rate", required_argument, 0, 'A'},
-      {"resample-rate", required_argument, 0, 'a'},
-      {"f-min", required_argument, 0, 'f'},
-      {"f-max", required_argument, 0, 'F'},
-      {"hann-duration", required_argument, 0, 'w'},
+      {"help", no_argument, 0, 'a'},
+      {"gps-start-time", required_argument, 0, 'b'},
+      {"gps-end-time", required_argument, 0, 'c'},
+      {"interval-duration", required_argument, 0, 'd'},
+      {"segment-duration", required_argument, 0, 'e'},
+      {"sample-rate", required_argument, 0, 'f'},
+      {"resample-rate", required_argument, 0, 'g'},
+      {"f-min", required_argument, 0, 'h'},
+      {"f-max", required_argument, 0, 'i'},
+      {"hann-duration", required_argument, 0, 'j'},
       {"hpf-frequency", required_argument, 0, 'k'},
-      {"hpf-attenuation", required_argument, 0, 'p'},
-      {"hpf-order", required_argument, 0, 'P'},
-      {"geo-hpf-frequency", required_argument, 0, 'K'},
-      {"geo-hpf-attenuation", required_argument, 0, 'q'},
-      {"geo-hpf-order", required_argument, 0, 'Q'},
-      {"ifo-one", required_argument, 0, 'i'},
-      {"ifo-two", required_argument, 0, 'I'},
-      {"channel-one", required_argument, 0, 'y'},
-      {"channel-two", required_argument, 0, 'Y'},
-      {"frame-cache-one", required_argument, 0, 'd'},
-      {"frame-cache-two", required_argument, 0, 'D'},
-      {"calibration-cache-one", required_argument, 0, 'r'},
-      {"calibration-cache-two", required_argument, 0, 'R'},
-      {"calibration-offset", required_argument, 0, 'c'},
-      {"mask-bin", required_argument, 0, 'b'},
-      {"scale-factor", required_argument, 0, 'o'},
-      {"seed", required_argument, 0, 'g'},
-      {"trials", required_argument, 0, 'N'},
-      {"output-dir", required_argument, 0, 'S'},
-      {"test-interval", required_argument, 0, 'U'},
-      {"test-segment", required_argument, 0, 'V'},
-      {"test-trial", required_argument, 0, 'W'},
-      {"debug-level", required_argument, 0, 'z'},
-      {"version", no_argument, 0, 'v'},
+      {"hpf-attenuation", required_argument, 0, 'l'},
+      {"hpf-order", required_argument, 0, 'm'},
+      {"geo-hpf-frequency", required_argument, 0, 'n'},
+      {"geo-hpf-attenuation", required_argument, 0, 'o'},
+      {"geo-hpf-order", required_argument, 0, 'p'},
+      {"ifo-one", required_argument, 0, 'q'},
+      {"ifo-two", required_argument, 0, 'r'},
+      {"channel-one", required_argument, 0, 's'},
+      {"channel-two", required_argument, 0, 't'},
+      {"frame-cache-one", required_argument, 0, 'u'},
+      {"frame-cache-two", required_argument, 0, 'v'},
+      {"calibration-cache-one", required_argument, 0, 'w'},
+      {"calibration-cache-two", required_argument, 0, 'x'},
+      {"calibration-offset", required_argument, 0, 'y'},
+      {"mask-bin", required_argument, 0, 'z'},
+      {"scale-factor", required_argument, 0, 'A'},
+      {"seed", required_argument, 0, 'B'},
+      {"trials", required_argument, 0, 'C'},
+      {"output-dir", required_argument, 0, 'D'},
+      {"test-interval", required_argument, 0, 'E'},
+      {"test-segment", required_argument, 0, 'F'},
+      {"test-trial", required_argument, 0, 'G'},
+      {"debug-level", required_argument, 0, 'H'},
+      {"version", no_argument, 0, 'I'},
       {0, 0, 0, 0}
     };
 
@@ -1914,13 +1914,13 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         printf ("\n");
         break;
 
-      case 'h':
-        /* HELP!!! */
+      case 'a':
+        /* help */
         fprintf(stdout, USAGE);
         exit(0);
         break;
 
-      case 't':
+      case 'b':
         /* start time */
         startTime = atoi(optarg);
 
@@ -1944,8 +1944,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'T':
-        /* stop time */
+      case 'c':
+        /* end time */
         endTime = atoi(optarg);
 
         /* check */
@@ -1968,7 +1968,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'L':
+      case 'd':
         /* interval duration */
         intervalDuration = atoi(optarg);
 
@@ -1983,7 +1983,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'l':
+      case 'e':
         /* segment duration */
         segmentDuration = atoi(optarg);
 
@@ -1998,7 +1998,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'A':
+      case 'f':
         /* sample rate */
         sampleRate = atoi(optarg);
 
@@ -2014,7 +2014,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'a':
+      case 'g':
         /* resampling */
         resampleRate = atoi(optarg);
 
@@ -2030,7 +2030,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'f':
+      case 'h':
         /* minimal frequency */
         fMin = atoi(optarg);
 
@@ -2045,7 +2045,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'F':
+      case 'i':
         /* maximal frequency */
         fMax = atoi(optarg);
 
@@ -2060,7 +2060,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'w':
+      case 'j':
         /* hann window duration */
         hannDuration = atoi(optarg);
 
@@ -2091,7 +2091,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'p':
+      case 'l':
         /* high pass filter attenuation  */
         highPassAtten = atof(optarg);
 
@@ -2107,7 +2107,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'P':
+      case 'm':
         /* high pass filter order  */
         highPassOrder = atoi(optarg);
 
@@ -2123,7 +2123,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'K':
+      case 'n':
         /* GEO high pass knee filter frequency */
         geoHighPassFreq = atof(optarg);
 
@@ -2139,7 +2139,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'q':
+      case 'o':
         /*GEO high pass filter attenuation */
         geoHighPassAtten = atof(optarg);
 
@@ -2155,7 +2155,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'Q':
+      case 'p':
         /* GEO high pass filter order */
         geoHighPassOrder = atoi(optarg);
 
@@ -2171,7 +2171,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'i':
+      case 'q':
         /* ifo for first stream */
         optarg_len = strlen(optarg) + 1;
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2202,7 +2202,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'I':
+      case 'r':
         /* ifo for second stream */
         optarg_len = strlen(optarg) + 1;
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2233,7 +2233,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'y':
+      case 's':
         /* channel one */
         optarg_len = strlen(optarg) + 4;
         channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2241,7 +2241,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(channelOneTemp, optarg, optarg_len);
         break;
 
-      case 'Y':
+      case 't':
         /* channel two */
         optarg_len = strlen(optarg) + 4;
         channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2249,7 +2249,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         strncpy(channelTwoTemp, optarg, optarg_len);
         break;
 
-      case 'd':
+      case 'u':
         /* data cache one */
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2266,7 +2266,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'D':
+      case 'v':
         /* data cache two */
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2283,7 +2283,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'r':
+      case 'w':
         /* calibration cache one */
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2300,7 +2300,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'R':
+      case 'x':
         /* calibration cache two */
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2317,12 +2317,12 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'c':
+      case 'y':
         /* calibration time offset */
         calibOffset = atoi(optarg);
         break;
 
-      case 'b':
+      case 'z':
         /* number of bins to mask for frequency mask */
         maskBin = atoi(optarg);
 
@@ -2337,17 +2337,17 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'o':
+      case 'A':
         /* scale factor */
         scaleFactor = atof(optarg);
         break;
 
-      case 'g':
+      case 'B':
         /* seed */
         seed = atoi(optarg);
         break;
 
-      case 'N':
+      case 'C':
         /* number of trials */
         NLoop = atoi(optarg);
 
@@ -2362,7 +2362,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'S':
+      case 'D':
         /* directory for output files */
         optarg_len = strlen(optarg) + 1;
         outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
@@ -2379,7 +2379,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'U':
+      case 'E':
         /* interval number for test */
         testInter = atoi(optarg);
 
@@ -2394,7 +2394,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'V':
+      case 'F':
         /* segment number for test */
         testSeg = atoi(optarg);
 
@@ -2409,7 +2409,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'W':
+      case 'G':
         /* trial  number for test */
         testTrial = atoi(optarg);
 
@@ -2424,12 +2424,12 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'z':
+      case 'H':
         /* set debug level */
         set_debug_level( optarg );
         break;
 
-      case 'v':
+      case 'I':
         /* display version info and exit */
         fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
         exit(0);
