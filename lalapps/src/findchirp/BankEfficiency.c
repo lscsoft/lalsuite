@@ -839,6 +839,8 @@ main (int argc, char **argv )
 		   {
 		     /* SHOULD be replace by flso of the template in the bank*/
 		     fendBCV   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
+		     if (fendBCV > randIn.param.tSampling/2 ) 
+			     fendBCV = randIn.param.tSampling/2. - 1;
 		     
 		     overlapin.param.fFinal  = fendBCV;
 		     overlapin.param.fCutoff = fendBCV;
@@ -1077,7 +1079,6 @@ ParseParameters(int *argc,
       else if ( strcmp(argv[i],"--sampling") ==0) {	  
 	coarseIn->tSampling  = atof(argv[++i]);  
 	randIn->param.tSampling  = atof(argv[i]);  
-
 	randIn->param.fCutoff = coarseIn->tSampling/2-1;
 
       }      
