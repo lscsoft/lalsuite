@@ -62,11 +62,6 @@ int main( void )
     [--comment comment] [--framecache filename] [--printSpectrum] \
     [--verbose] [--dbglevel lalDebugLevel] [--help]\n"
 
-#define RESPONSE_REGEX "CAL-RESPONSE"
-#define CAV_GAIN_REGEX "CAL-CAV_GAIN"
-#define CAV_FAC_REGEX "CAL-CAV_FAC"
-#define OLOOP_FAC_REGEX "CAL-OLOOP_FAC"
-
 /* Fill an array with white noise */
 static void makeWhiteNoise(
         LALStatus             *status,
@@ -106,6 +101,7 @@ static void makeWhiteNoise(
 
 /* some global output flags */
 INT4               verbose       = FALSE;
+INT4               cluster       = FALSE;
 INT4               printSpectrum = FALSE;
 INT4               printData     = FALSE;
 INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
@@ -124,6 +120,9 @@ INT8       gpsStartTimeNS = 0;      /* gps start time in nsec             */
 LIGOTimeGPS   epoch;                /* gps start time                     */
 INT4       sampleRate    = 2048;    /* sample rate in Hz                  */
 
+/* data conditioning parameters */
+CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
+
 
 
 int main( int argc, char *argv[])
@@ -138,8 +137,11 @@ int main( int argc, char *argv[])
     FrStream             *stream        = NULL;
     FrCache              *frameCache    = NULL;
     CHAR                  fname[256];
-    REAL4TimeSeries       series;
     BOOLEAN               epochSet      = FALSE;
+
+    /* data storage */
+    REAL4TimeSeries            series;
+    COMPLEX8FrequencySeries    resp;
 
     /* Burst events */
     SnglBurstTable      *burstEvent    = NULL;
@@ -158,6 +160,9 @@ int main( int argc, char *argv[])
     REAL4                 sineOffset    = 1.0;     /* sin-burst center in time series */
     REAL4                 sineAmpl      = 1.0;     /* peak amplitude of sine burst    */
     REAL4                 sineWidth     = 1.0;     /* width (in sigmas) of sine burst */
+
+    /* units and other things */
+    const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
     
     /* Must allocate memory for the argv in dso code */
@@ -212,10 +217,9 @@ int main( int argc, char *argv[])
    
     params = (EPSearchParams *) searchParams;
     params->printSpectrum = printSpectrum;
+    params->cluster = cluster;
     
 
-
-    
     /*******************************************************************
     * GET AND CONDITION THE DATA                                       *
     *******************************************************************/
@@ -276,8 +280,28 @@ int main( int argc, char *argv[])
     
     /* write diagnostic info to disk */
     if ( printData ){
-        LALPrintTimeSeries( &series, "./timeseries.dat" );
+      LALPrintTimeSeries( &series, "./timeseries.dat" );
     }
+
+    /* create storage for the response function */
+    memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+    if ( calCacheFile )
+    {
+      LAL_CALL( LALCCreateVector( &stat, &(resp.data), numPoints / 2 + 1 ), 
+          &stat );
+
+      /* set the parameters of the response to match the data */
+      resp.epoch = epoch;
+      resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
+      resp.sampleUnits = strainPerCount;
+      strcpy( resp.name, channelIn.name );
+
+      /* generate the response function for the current time */
+      if ( verbose ) fprintf( stdout, "generating response at time %d sec %d ns\n",
+          resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
+      LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo ),
+          &stat );
+    } 
 
     /* Finally call condition data */
     LAL_CALL( EPConditionData( &stat, &series, searchParams), &stat);
@@ -396,14 +420,19 @@ int main( int argc, char *argv[])
     /* close the xml stream */
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
+
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
-    
     LAL_CALL( LALSDestroyVector( &stat, &(series.data) ), &stat);
     LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
-    LALFree( cachefile );
-    LALFree( dirname );
+    if ( calCacheFile )
+    {
+      LAL_CALL( LALCDestroyVector( &stat, &(resp.data) ), &stat);
+    }
+    if ( cachefile ) LALFree( cachefile ); 
+    if ( dirname ) LALFree( dirname ); 
+
     LALCheckMemoryLeaks();
 
     return 0;
@@ -438,6 +467,7 @@ int initializeEPSearch(
     {
         /* these options set a flag */
         {"verbose",                 no_argument,       &verbose,           TRUE },
+        {"cluster",                 no_argument,       &cluster,           TRUE },
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
         {"channel",                 required_argument, 0,                 'b'}, 
