@@ -342,7 +342,7 @@ omegaofr3PN (
    REAL8 u, u2, u3, a4, a4p4eta, a4peta2, eta, NA, DA, A, dA;
    REAL8   omegaS;
 
-//include a status here ?
+   /*include a status here ?*/
    pr3In *ak;
    ak = (pr3In *) params;
    omegaS = ak->omegaS;
