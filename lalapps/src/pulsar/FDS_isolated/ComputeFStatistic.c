@@ -6,6 +6,7 @@
 /*                 Albert Einstein Institute/UWM - started September 2002        */
 /*********************************************************************************/
 #include <lal/LALDemod.h>
+#include <lal/RngMedBias.h>
 
 #include "ComputeFStatistic.h"
 #include "rngmed.h"
@@ -38,7 +39,7 @@ AMCoeffs amc;
 GlobalVariables GV;
 REAL8 MeanOneOverSh=0.0;
 REAL8 Alpha,Delta;
-Clusters HFLines={0}, HPLines={0};
+Clusters HFLines, HPLines;
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
 /* #ifdef FILE_FMAX     */
 FILE *fpmax;
