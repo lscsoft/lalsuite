@@ -265,6 +265,10 @@ class CondorDAGNode:
       raise CondorDAGNodeError, "A DAG node must correspond to a Condor DAG job"
     self.__name = None
     self.__job = job
+    self.__pre_script = None
+    self.__pre_script_args = []
+    self.__post_script = None
+    self.__post_script_args = []
     self.__opts = {}
     self.__args = []
     self.__retry = 0
@@ -281,6 +285,36 @@ class CondorDAGNode:
     """
     return self.__job
   
+  def set_pre_script(self,script):
+    """
+    Sets the name of the pre script that is executed before the DAG node is
+    run.
+    script = path to script
+    """
+    self.__pre_script = script
+
+  def add_pre_script_arg(self,arg):
+    """
+    Adds an argument to the pre script that is executed before the DAG node is
+    run.
+    """
+    self.__pre_script_args.append(arg)
+
+  def set_post_script(self,script):
+    """
+    Sets the name of the post script that is executed before the DAG node is
+    run.
+    script = path to script
+    """
+    self.__post_script = script
+
+  def add_post_script_arg(self,arg):
+    """
+    Adds an argument to the post script that is executed before the DAG node is
+    run.
+    """
+    self.__post_script_args.append(arg)
+
   def set_name(self):
     """
     Generate a unique name for this node in the DAG.
@@ -348,6 +382,24 @@ class CondorDAGNode:
     """
     for parent in self.__parents:
       fh.write( 'PARENT ' + parent + ' CHILD ' + str(self) + '\n' )
+
+  def write_pre_script(self,fh):
+    """
+    Write the pre script for the job, if there is one
+    fh = descriptor of open DAG file.
+    """
+    if self.__pre_script:
+      fh.write( 'SCRIPT PRE ' + str(self) + ' ' + self.__pre_script + ' ' +
+        ' '.join(self.__pre_script_args) + '\n' )
+
+  def write_post_script(self,fh):
+    """
+    Write the post script for the job, if there is one
+    fh = descriptor of open DAG file.
+    """
+    if self.__post_script:
+      fh.write( 'SCRIPT POST ' + str(self) + ' ' + self.__post_script + ' ' +
+        ' '.join(self.__post_script_args) + '\n' )
 
   def set_log_file(self,log):
     """
@@ -427,8 +479,9 @@ class CondorDAG:
       raise CondorDAGError, "Cannot open file " + self.__dag_file_path
     for node in self.__nodes:
       node.write_job(dagfile)
-    for node in self.__nodes:
       node.write_vars(dagfile)
+      node.write_pre_script(dagfile)
+      node.write_post_script(dagfile)
     for node in self.__nodes:
       node.write_parents(dagfile)
     dagfile.close()
