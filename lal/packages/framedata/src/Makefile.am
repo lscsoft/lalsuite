@@ -7,17 +7,15 @@ if FRAME
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = $(FRAMEDATASOURCES) FrameSeries.c
 liblalframe_la_LIBADD = $(FRAME_LIBS)
-INCLUDES = $(FRAME_CFLAGS)
 EXTRA_TEXSOURCES =
 else
 EXTRA_TEXSOURCES = $(FRAMEDATASOURCES) FrameSeries.c
-INCLUDES =
 endif
 
 EXTRA_DIST = $(FRAMEDATASOURCES) $(OLDFRAMEDATASOURCES) \
         FrameSeries.c FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
 
-INCLUDES += -I$(top_builddir)/include -I$(srcdir)/../include
+INCLUDES = $(FRAME_CFLAGS) -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrameSeries.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
