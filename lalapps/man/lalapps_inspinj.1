@@ -1,137 +1,81 @@
 .TH LALAPPS_INSPINJ 1 "7 May 2002" LALApps LALApps
 .SH NAME
-lalapps_inspinj - produces inspiral injection ILWD files
+lalapps_inspinj - produces inspiral injection ILWD and LIGOLw files
 
 .SH SYNOPSIS
 .B lalapps_inspinj
-.RB [ \-h ]
-.RB [ \-V ]
-.RB [ \-v ]
-.RB [ \-d 
-.IR dbglvl ] 
-.RB [ \-m 
-.IR mmin\-mmax ] 
-.RB [ \-r 
-.IR range ] 
-.RB [ \-s 
-.IR seed ] 
-.RB [ \-t 
-.IR tstart\-tend ] 
-.RB [ \-u 
-.IR tstep ] 
+.RB [ \-\-help ]
+.RB \-\-seed
+.IR seed
+.RB \-\-gps\-start\-time
+.IR tstart
+.RB \-\-gps\-end\-time 
+.IR tend
+.RB \-\-time\-step
+.IR tstep
+.RB [ \-\-datafile
+.IR file ] 
 
 .SH DESCRIPTION
 .PP
-\fIlalapps_inspinj\fP produces two files, injepochs.ilwd and injparams.ilwd,
-that contain, respectively, the GPS times suitable for inspiral injections, and
-the intrinsic inspiral signal parameters to be used for those injections.
+\fIlalapps_inspinj\fP generates a number of inspiral parameters suitable
+for using in a Monte Carlo injection to test the efficiency of a inspiral
+search.  The various parameters (detailed below) are randomly chosen and
+are appropriate for a particular population of binary neutron stars whose
+spatial distribution includes the Milky Way and a number of extragalactic
+objects that are input in a datafile.  The possible mass pairs for the
+binary neutron star companions are also specified in a (different) datafile.
 
-The data files are in ILWD format.  The file injepochs.ilwd contains a sequence
-of integer pairs representing the injection GPS time in seconds and residual
-nano-seconds.  The file injparams.ilwd contains the intrinsic binary parameters
-for each injection, which is a sequence of eight real numbers representing
-(in order) (1) the total mass of the binary system (in solar masses), (2) the
-dimensionless reduced mass -- reduced mass per unit total mass -- in the range
-from 0 (extreme mass ratio) to 0.25 (equal masses), (3) the distance to the
-system in meters, (4) the inclination of the binary system orbit to the plane
-of the sky in radians, (5) the colaescence phase in radians, (6) the longitude
-to the direction of the source in radians, (7) the latitude to the direction of
-the source in radians, (8) and the polarization angle of the source in radians.
+The output of this program is a list of the injected events, starting at
+the specified start time, ending at the specified end time, and containing
+one set of random inspiral parameters every specified time step.  The output
+is written to a file called injections\-X.xml, where X is the value of the
+random number seed chosen, which is a LIGOLw format file.  In addition, an
+ascii log file called injlog.txt.
+
+\fIlalapps_inspinj\fP also produces two ILWD-format files,
+injepochs.ilwd and injparams.ilwd, that contain, respectively, the GPS times
+suitable for inspiral injections, and the intrinsic inspiral signal parameters
+to be used for those injections.
+
+The file injepochs.ilwd contains a sequence of integer pairs representing the
+injection GPS time in seconds and residual nano-seconds.  The file
+injparams.ilwd contains the intrinsic binary parameters for each injection,
+which is a sequence of eight real numbers representing (in order) (1) the total
+mass of the binary system (in solar masses), (2) the dimensionless reduced mass
+-- reduced mass per unit total mass -- in the range from 0 (extreme mass ratio)
+to 0.25 (equal masses), (3) the distance to the system in meters, (4) the
+inclination of the binary system orbit to the plane of the sky in radians, (5)
+the colaescence phase in radians, (6) the longitude to the direction of the
+source in radians, (7) the latitude to the direction of the source in radians,
+(8) and the polarization angle of the source in radians.
 
 .SH OPTIONS
 .TP
-.BI \-h
+\fB\-\-help\fR, \fB\-h\fR
 Print a help message.
 .TP
-.BI \-V
-Print the version information.
+\fB\-\-seed\fR=\fIseed\fR, \fB\-s\fR \fIseed\fR
+Sets the random number generator seed.
 .TP
-.BI \-v
-Verbose output.
+\fB\-\-gps\-start\-time\fR=\fItstart\fR, \fB\-a\fR \fItstart\fR
+Sets the start time in GPS seconds.
 .TP
-.BI \-d " dbglvl"
-Set LAL debug level to \fIdbglvl\fP.
+\fB\-\-gps\-stop\-time\fR=\fItstop\fR, \fB\-b\fR \fItstop\fR
+Sets the stop time in GPS seconds.
 .TP
-.BI \-m " mmin\-mmax"
-Set minimum and maximum of the range of masses for the binary companions
-(in solar masses).  (Default is 1.3\-1.5.)
+\fB\-\-time\-step\fR=\fItstep\fR, \fB\-t\fR \fItstep\fR
+Sets the time step interval in seconds.
 .TP
-.BI \-r " range"
-Set the maximum distance range for the binary system (in kpc).
-(Default is 1.0.)
-.TP
-.BI \-s " seed"
-Set the random number generator seed.  (Default of 0 gets the seed from the
-system clock.)
-.TP
-.BI \-t " tstart-tend"
-Set the time interval for injection times (in GPS seconds).
-(Default is 600000000\-600010240.)
-.TP
-.BI \-u " tstep"
-Set the mean time step size in seconds for uniform time steps if positive
-or Poisson time steps if negative.
-(Default is 100/pi = 31.8309886183791.)
-
-.SH DEBUG LEVELS
-The LAL debug level can be specified as an integer or as a string of flags:
-.RS
-.TP
-.B NDEBUG
-No debugging information is printed and memory debugging code is disabled.
-.TP
-.B ERROR
-Error messages are printed.
-.TP
-.B WARNING
-Warning messages are printed.
-.TP
-.B INFO
-Information messages are printed.
-.TP
-.B TRACE
-Function call tracing messages are printed.
-.TP
-.B MEMINFO
-Memory allocation information messages are printed.
-.TP
-.B MEMDBG
-Debugging of memory allocation routines is enabled but no messages are printed.
-.RE
-.PP
-
-The following composite levels are available:
-.RS
-.TP
-.B MSGLVL1
-Equivalent to
-.B ERROR
-.TP
-.B MSGLVL2
-Equivalent to
-.B ERROR | WARNING
-.TP
-.B MSGLVL3
-Equivalent to
-.B ERROR | WARNING | INFO
-.TP
-.B ALLDBG
-All debugging messages are printed.
-.RE
-.PP
-
-For example, the command
-.PP
-.RS
-lalapps_inspinj -d "ERROR | INFO"
-.RE
-.PP
-will set the debug level so that error and information messages are printed.
+\fB\-\-datafile\fR=\fIfile\fR, \fB\-f\fR \fIfile\fR
+Specifies the source datafile listing the various sources in the population.
+(Default is inspsrcs.dat).
 
 .SH ENVIRONMENT
 .TP
-.BR LAL_DEBUG_LEVEL
-Default LAL debug level to use.
+.BR LALAPPS_DATA_PATH
+Directory to look for required data file BNSMasses.dat and the default
+data file inspsrcs.dat.
 
 .SH AUTHOR
-Jolien Creighton
+Jolien Creighton, Patrick Brady
