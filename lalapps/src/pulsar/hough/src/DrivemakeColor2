@@ -1,0 +1,80 @@
+# ------------------------------------------------------------
+#
+# Makefile for  DriveHoughColor. and the like
+#
+# Alicia M. Sintes  07-2003
+# Modified : Badri Krishnan, 5 Mar 2004
+# $Id$
+#
+# -----------------------------------------------------------
+
+# -----------------------------------------------------------
+# your compiler
+CC = gcc
+
+#CC = gcc -DTIMING
+#CC = gcc -DPRINTHOUGH
+#CC = gcc -DTIMING -DPRINTHOUGH
+#CC = gcc -DCHECKHOUGHINDEX
+# -----------------------------------------------------------
+# header file directory
+LAL_INCLUDE=/afs/aeiw/grawave/Linux/lal/correct/include/
+
+# -----------------------------------------------------------
+# libraries
+
+LAL_LIB = /afs/aeiw/grawave/Linux/lal/lib
+
+LLAL = lal
+LALSUP = lalsupport
+
+THELIBS = -l$(LALSUP) -l$(LLAL) -lm -L$(LAL_LIB)
+
+p=./timer/cycle_counter/Intel/GCC/
+m=../hough/objs_exe/
+
+# ----------------------------------------------------------
+# compiler options
+
+CFLAGS =  -O2 -static -I$(LAL_INCLUDE) -I$p
+#CFLAGS =  -Wall -g -static -I$(LAL_INCLUDE) -I$p
+# -----------------------------------------------------------
+# default target
+all: DriveHoughColor DriveHoughColor_velo
+
+# -----------------------------------------------------------
+#  produce object files
+
+DriveHoughColor.o: DriveHoughColor.c DriveHoughColor.h
+	$(CC) -c $(CFLAGS) DriveHoughColor.c
+
+DriveHoughColor_velo.o: DriveHoughColor_velo.c DriveHoughColor.h
+	$(CC) -c $(CFLAGS) DriveHoughColor_velo.c
+
+# -----------------------------------------------------------
+# link tests code
+# -----------------------------------------------------------
+
+DriveHoughColor:  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor.o 
+	$(CC) $(CFLAGS) -o $@  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor.o $(THELIBS)
+
+DriveHoughColor_velo:  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor_velo.o  
+	$(CC) $(CFLAGS) -o $@  rngmed.o SFTbin.o PeakSelect.o DriveHoughColor_velo.o $(THELIBS)
+
+
+# -----------------------------------------------------------
+# cleaning...
+clean:
+	rm -f DriveHoughColor.o DriveHoughColor DriveHoughColor_velo.o DriveHoughColor_velo
+
+
+
+
+
+
+
+
+
+
+
+
