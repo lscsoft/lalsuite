@@ -31,7 +31,8 @@ NAME
 SYNOPSIS
         QueryMetadataLFN --calibration=NAME --instrument=NAME
                 --gps-start-time=GPS --gps-end-time=GPS
-                --calibration-version=NAME [ --output=FILE ]
+                --calibration-version=NAME --data-quality=NUM
+                [ --output=FILE ]
 
         QueryMetadataLFN --version
 
@@ -40,12 +41,15 @@ SYNOPSIS
 DESCRIPTION
         Query a Globus Metadata Catalog Service (MCS) to obtain
         the list of logical filenames (LFNs) described by
-        the calibration, instrument, GPS start and end time, and
-        calibration version given as inputs. Write the list of
-        LFNs to stdout or to a file.
+        the calibration, instrument, GPS start and end time, 
+        calibration version, and data quality version given as 
+        inputs. Write the list of LFNs to stdout or to a file.
 
         -c, --calibration
                 calibration tag for the data in the files
+
+        -q, --data-quality
+                data quality version number for the SFTs
 
         -i, --instrument
                 instrument or observatory that generated the data
@@ -74,7 +78,7 @@ EXAMPLE
 
 $ QueryMetadataLFN --calibration=Funky --instrument=H1 
         --gps-start-time=729277151 --gps-end-time=729278951 
-        --calibration-version=3
+        --calibration-version=3 --data-quality=5
 
 """
 
@@ -84,6 +88,7 @@ $ QueryMetadataLFN --calibration=Funky --instrument=H1
 longopt = [
         "calibration=",
         "instrument=",
+        "data-quality=",
         "gps-start-time=",
         "gps-end-time=",
         "calibration-version=",
@@ -92,7 +97,7 @@ longopt = [
         "help"
         ]
 
-shortopt = "c:i:s:e:v:Vho:"
+shortopt = "c:i:s:e:q:v:Vho:"
 
 
 try:
@@ -104,6 +109,7 @@ except getopt.GetoptError:
 
 # set default values
 calibration = None
+data_quality = None
 instrument = None
 gpsStart = None
 gpsEnd = None
@@ -117,6 +123,8 @@ for o, a in opts:
                 sys.exit(0)
         elif o in ("-c", "--calibration"):
                 calibration = a
+        elif o in ("-q", "--data-quality"):
+                data_quality = a
         elif o in ("-i", "--instrument"):
                 instrument = a
         elif o in ("-s", "--gps-start-time"):
@@ -137,6 +145,10 @@ if not calibration:
         print >>sys.stderr, "Calibration must be specified"
         print >>sys.stderr, "Use --help for usage"
         sys.exit(1)
+
+if not data_quality:
+        print >>sys.stderr, "Data quality version number must be specified"
+        print >>sys.stderr, "Use --help for usage"
 
 if not instrument:
         print >>sys.stderr, "Instrument must be specified"
@@ -229,13 +241,14 @@ try:
 
         template = """\
 calibration&string&=&%s
+dataQuality&integer&=&%s
 instrument&string&=&%s
 gpsStart&integer&<=&%s
 gpsEnd&integer&>=&%s
 version&integer&=&%s
 """
 
-        text = template % (calibration, instrument, gpsEnd, gpsStart, calversion)
+        text = template % (calibration, data_quality, instrument, gpsEnd, gpsStart, calversion)
 
         f.write(text)
 
@@ -255,9 +268,12 @@ largebuf = 1024*1024
 job = popen2.Popen3(cmd, capturestderr, largebuf)
 
 ret = job.poll()
+outputList = []
 
 while ret == -1:
         time.sleep(1)
+        output = job.fromchild.readlines()
+        outputList.extend(output)
         ret = job.poll()
 
 if ret != 0:
@@ -267,7 +283,8 @@ if ret != 0:
                 print >>sys.stderr, s
         sys.exit(1)
 
-outputList = job.fromchild.readlines()
+output = job.fromchild.readlines()
+outputList.extend(output)
 
 # the last line is a summary we can delete
 del outputList[-1]
