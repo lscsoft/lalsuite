@@ -93,7 +93,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
   ASSERT ( theScan != NULL, status, NEARESTGRIDPOINTSH_ENONULL , NEARESTGRIDPOINTSH_MSGENONULL );  
 
 
-  TRY( InitDopplerScan ( status->statusPtr, theScan, scanInit ), status );
+  TRY( InitDopplerScan ( status->statusPtr, theScan, &scanInit ), status );
 
   test = ( (INT4) theScan->numGridPoints ) - targetNumGridPoints;
 
@@ -134,7 +134,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 	TRY( FreeDopplerScan ( status->statusPtr, theScan ), status );
       ENDFAIL( status );
       TRY( FreeDopplerScan ( status->statusPtr, theScan ), status );
-      TRY( InitDopplerScan ( status->statusPtr, theScan, scanInit), status );
+      TRY( InitDopplerScan ( status->statusPtr, theScan, &scanInit), status );
       test = theScan->numGridPoints - targetNumGridPoints;
       trialCounter++;
     }
