@@ -515,18 +515,10 @@ LALFindChirpSPData (
     /* set inverse power spectrum to zero */
     memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
 
-    /* compute inverse power spectrum above fLow */
+    /* compute inverse of S_v */
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
-      REAL4 respRe = resp[k].re * params->dynRange;
-      REAL4 respIm = resp[k].im * params->dynRange;
-      REAL4 modsqResp = respRe * respRe + respIm * respIm;
-      wtilde[k].re = spec[k] * modsqResp;
-    }
-
-    for ( k = cut; k < params->wtildeVec->length; ++k )
-    {
-      wtilde[k].re = 1.0 / wtilde[k].re;
+      wtilde[k].re = 1.0 / spec[k];
     }
 
 
@@ -539,9 +531,6 @@ LALFindChirpSPData (
 
     if ( params->invSpecTrunc )
     {
-      fprintf( stdout, "tuncating invSpec... ");
-      fflush( stdout );
-
       /* compute square root of inverse power spectrum */
       for ( k = cut; k < params->wtildeVec->length; ++k )
       {
@@ -576,8 +565,22 @@ LALFindChirpSPData (
           wtilde[k].im = 0.0;
         }
       }
-      fprintf( stdout, "done\n");
-      fflush( stdout );
+
+      /* set nyquist and dc to zero */
+      wtilde[params->wtildeVec->length - 1].re = 0.0;
+      wtilde[0].re                             = 0.0;
+    }
+
+    /* set inverse power spectrum below cut to zero */
+    memset( wtilde, 0, cut * sizeof(COMPLEX8) );
+
+    /* convert from S_v to S_h */
+    for ( k = cut; k < params->wtildeVec->length; ++k )
+    {
+      REAL4 respRe = resp[k].re * params->dynRange;
+      REAL4 respIm = resp[k].im * params->dynRange;
+      REAL4 invmodsqResp = 1.0 / (respRe * respRe + respIm * respIm);
+      wtilde[k].re *= invmodsqResp;
     }
 
 
