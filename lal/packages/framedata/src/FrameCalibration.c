@@ -336,9 +336,6 @@ LALExtractFrameResponse(
       }
       ENDFAIL( status );
 
-      LALCPrintTimeSeries ( &a, "a.txt" );
-      LALCPrintTimeSeries ( &ab, "ab.txt" );
-
       break;
     }
     else
