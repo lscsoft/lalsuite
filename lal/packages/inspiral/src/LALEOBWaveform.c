@@ -593,7 +593,7 @@ LALEOBWaveform (
 
 
    ASSERT(ak.totalmass/LAL_MTSUN_SI > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+/*   ASSERT(ak.totalmass/LAL_MTSUN_SI < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
 
 /* Allocate all the memory required to dummy and then point the various
    arrays to dummy - this makes it easier to handle memory failures */
