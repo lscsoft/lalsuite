@@ -20,22 +20,22 @@ endif
 else
 bin_PROGRAMS = 
 endif
-bin_SCRIPTS = lalapps_inspiral_pipe_s2
+bin_SCRIPTS = lalapps_inspiral_pipe
 
 pythonlibdir = ${prefix}/lib/python
 pythonlib_SCRIPTS = inspiral.py
 
-lalapps_inspiral_pipe_s2: inspiral_pipe_s2.in
-	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_s2.in > lalapps_inspiral_pipe_s2 
+lalapps_inspiral_pipe: inspiral_pipe.in
+	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe.in > lalapps_inspiral_pipe 
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
-             inspiral_pipe_s2.in
+             inspiral_pipe.in
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = lalapps_inspiral_pipe_s2
+CLEANFILES = lalapps_inspiral_pipe
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
