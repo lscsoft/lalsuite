@@ -452,6 +452,20 @@ LALFrWriteREAL8TimeSeries(
     FrOutPar        *params
     );
 
+void
+LALFrWriteCOMPLEX8TimeSeries(
+    LALStatus          *status,
+    COMPLEX8TimeSeries *series,
+    FrOutPar           *params
+    );
+
+void
+LALFrWriteCOMPLEX16TimeSeries(
+    LALStatus           *status,
+    COMPLEX16TimeSeries *series,
+    FrOutPar            *params
+    );
+
 #ifdef __cplusplus
 #pragma {
 }
