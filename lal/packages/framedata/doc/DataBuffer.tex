@@ -1,0 +1,210 @@
+\documentclass{article}
+\begin{document}
+\section{DataBuffer}
+
+\subsection{Purpose}
+
+Gets segments of IFO\_DMRO data along with its (averaged over several
+segments) power spectrum and response function.
+
+\subsection{Synopsis}
+
+\begin{verbatim}
+typedef struct
+tagDataBuffer
+{
+  /* ... */
+}
+DataBuffer;
+
+typedef struct
+tagDataBufferPar
+{
+  INT4         numSpec;
+  INT4         numPoints;
+  WindowType   windowType;
+  RealFFTPlan *plan;
+  CHAR        *framePath;
+}
+DataBufferPar;
+
+typedef struct
+tagDataSegment
+{
+  INT2TimeSeries          *data;
+  REAL4FrequencySeries    *spec;
+  COMPLEX8FrequencySeries *resp;
+  INT4                     endOfData;
+  INT4                     newLock;
+  INT4                     newCal;
+  INT4                     number;
+}
+DataSegment;
+
+
+void
+CreateDataBuffer (
+    Status         *status,
+    DataBuffer    **buffer,
+    DataBufferPar  *params
+    );
+
+void
+DestroyDataBuffer (
+    Status      *status,
+    DataBuffer **buffer
+    );
+
+void
+GetData (
+    Status      *status,
+    DataSegment *output,
+    INT4         advance,
+    DataBuffer  *buffer
+    );
+\end{verbatim}
+
+\subsection{Description}
+
+The routine \texttt{CreateDataBuffer()} sets up a buffer for holding
+(overlapping) segments of data.  The parameters for this routine are the
+number of spectra to average, the number of points in each segment, the type
+of window to use in computing the spectra, the forward real FFT plan, and the
+directory path of the frame data.  When the user is finished with a data
+buffer, it is to be destroyed using \texttt{DestroyDataBuffer()}.
+
+The routine \texttt{GetData()} acquires the next segment of data, its
+spectrum, and its response function, as well as sets flags indicating if the
+end of the data has been reached, if a new locked segment is being entered,
+and if the response function has been changed.  The data in the buffer is
+advanced by an amount \texttt{advance} specified as input.
+
+\subsection{Operating Instructions}
+
+\begin{verbatim}
+const  INT4                    numSpec   = 8;
+const  INT4                    numPoints = 1024;
+const  CHAR                   *framePath = "/data/frames"
+static Status                  status;
+static DataBufferPar           params;
+static DataBuffer             *buffer;
+static DataSegment             segmnt;
+static INT2TimeSeries          dmro;
+static REAL4FrequencySeries    spec;
+static COMPLEX8FrequencySeries resp;
+
+params.numSpec    = numSpec;
+params.numPoints  = numPoints;
+params.windowType = Welch;
+params.framePath  = framePath;
+EstimateFwdRealFFTPlan (&status, &params.plan, numPoints);
+CreateDataBuffer       (&status, &buffer, &params);
+I2CreateVector         (&status, &dmro.data, numPoints);
+SCreateVector          (&status, &spec.data, numPoints/2 + 1);
+CCreateVector          (&status, &resp.data, numPoints/2 + 1);
+segmnt.data = &dmro;
+segmnt.spec = &spec;
+segmnt.resp = &resp;
+
+/* enter infinite loop */
+while (1)
+{
+  /* get next data segment, overlapping by 1/4 of a segment */
+  GetData (&status, &segmnt, 3*numPoints/4, buffer);
+
+  /* break out of loop when end of data is reached */
+  if (segmnt.endOfData)
+  {
+    break;
+  }
+
+  if (segmnt.newLock)
+  {
+    /* new lock acquired */
+  }
+
+  if (segmnt.newCal)
+  {
+    /* new calibration data */
+  }
+
+}
+
+CDestroyVector        (&status, &resp.data);
+SDestroyVector        (&status, &spec.data);
+I2DestroyVector       (&status, &dmro.data);
+DestroyDataBuffer     (&status, &buffer);
+DestroyFwdRealFFTPlan (&status, &params.plan);
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{params} is a parameter structure for creating the data buffer.
+It contains the number of segments to hold in the buffer, the number of points
+in each segment, the window type to use for computing power spectra, the plan
+for forward real FFTs, and the directory path of the frame data.
+\item \texttt{buffer} is the data buffer structure.  This is created by
+\texttt{CreateDataBuffer()} and destroyed by \texttt{DestroyDataBuffer()}.
+\item \texttt{segmnt} is the segment of data containing the data, its power
+spectrum, and its response function, as well as flags indicating end of data,
+new lock, and new calibration, and the data segment number.
+\item \texttt{advance} is the number of points to advance the buffer after the
+data has been returned (indicates how much overlap there will be between the
+segments).
+\end{itemize}
+
+
+\subsubsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+DATABUFFER\_ENULL 1 & Null pointer & \\
+DATABUFFER\_ENNUL 2 & Non-null pointer & \\
+DATABUFFER\_ESIZE 4 & Invalid input size & \\
+DATABUFFER\_ESZMM 8 & Size mismatch & \\
+\hline
+\end{tabular}
+\caption{Error conditions for DataBuffer functions}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The program \texttt{DataBuffer} reads and (optionally) outputs frame data
+using these routines.  The environment variable \texttt{LAL\_FRAME\_PATH}
+should be set to the directory path containing the frame data.  The option
+\texttt{-h} gives a list of options.
+
+\subsection{Uses}
+
+\begin{itemize}
+\item\texttt{InitializeFrameData()}
+\item\texttt{FinalizeFrameData()}
+\item\texttt{GetFrameData()}
+\item\texttt{GetFrameDataResponse()}
+\item\texttt{CreateSpectrumBuffer()}
+\item\texttt{DestroySpectrumBuffer()}
+\item\texttt{AddSpectrum()}
+\item\texttt{AverageSpectrum()}
+\item\texttt{I2CreateVectorSequence()}
+\item\texttt{I2DestroyVectorSequence()}
+\end{itemize}
+
+\subsection{Notes}
+
+\subsection{References}
+
+\end{document}

@@ -1,0 +1,7 @@
+## Process this file with automake to produce Makefile.in
+pkginclude_HEADERS = Example.h
+
+all-local: $(top_srcdir)/include/Example.h
+
+$(top_srcdir)/include/Example.h: Example.h
+	cp -f Example.h $(top_srcdir)/include

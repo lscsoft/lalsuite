@@ -1,0 +1,193 @@
+\documentclass{article}
+\begin{document}
+\section{SpecBuffer}
+
+\subsection{Purpose}
+
+Generates and stores a buffer of spectra and returns an average spectrum.
+
+\subsection{Synopsis}
+
+\begin{verbatim}
+typedef struct
+tagComputeSpectrumPar
+{
+  WindowType   windowType;
+  REAL4Vector *window;
+  REAL4        wss;
+  RealFFTPlan *plan;
+}
+ComputeSpectrumPar;
+typedef struct
+
+tagSpectrumBufferPar
+{
+  INT4         numSpec;
+  INT4         numPoints;
+  WindowType   windowType;
+  RealFFTPlan *plan;
+}
+SpectrumBufferPar;
+
+typedef struct
+tagSpectrumBuffer
+{
+  /* ... */
+}
+SpectrumBuffer;
+
+
+void
+ComputeSpectrum (
+    Status               *status,
+    REAL4FrequencySeries *spectrum,
+    INT2TimeSeries       *timeSeries,
+    ComputeSpectrumPar   *parameters
+    );
+
+void
+CreateSpectrumBuffer (
+    Status             *status,
+    SpectrumBuffer    **buffer,
+    SpectrumBufferPar  *params
+    );
+
+void
+DestroySpectrumBuffer (
+    Status          *status,
+    SpectrumBuffer **buffer
+    );
+
+void
+AddSpectrum (
+    Status         *status,
+    SpectrumBuffer *specBuffer,
+    INT2TimeSeries *timeSeries
+    );
+
+void
+AverageSpectrum (
+    Status               *status,
+    REAL4FrequencySeries *spectrum,
+    SpectrumBuffer       *buffer
+    );
+\end{verbatim}
+
+\subsection{Description}
+
+The routine \texttt{ComputeSpectrum()} computes the spectrum of a
+\texttt{INT2TimeSeries} to produce an \texttt{REAL4FrequencySeries} power
+spectrum.  It requires parameters including the forward real FFT plan and an
+appropriate window.  This routine is used by the routine
+\texttt{AddSpectrum()}.
+
+The routine \texttt{CreateSpectrumBuffer()} creates a spectrum buffer.  This
+requires a parameter input that specifies the number of points in each time
+series that will be used to construct the spectra, the number of spectra to
+store, the window type to be used when constructing the spectra, and the real
+FFT plan to be used.  The spectrum buffer is destroyed using the routine
+\texttt{DestroySpectrumBuffer()}.
+
+The routine \texttt{AddSpectrum()} adds the spectrum of time series data to a
+spectrum buffer.  The routine \texttt{AverageSpectrum()} outputs the power
+spectrum frequency series consisting of the average of the (most recent)
+spectra that have been stored so far.
+
+\subsection{Operating Instructions}
+
+\begin{verbatim}
+const  INT4                  numSpec   = 8;
+const  INT4                  numPoints = 1024;
+static Status                status;
+static SpectrumBufferPar     buffPar;
+static SpectrumBuffer        buff;
+static INT2TimeSeries        data;
+static REAL4FrequencySeries  spec;
+
+INT i;
+
+buffPar.numSpec    = numSpec;
+buffPar.numPoints  = numPoints;
+buffPar.windowType = Welch;
+EstimateFwdRealFFTPlan (&status, &buffPar.plan, numPoints);
+CreateSpectrumBuffer   (&status, &buff, &buffPar);
+I2CreateVector         (&status, &data.data, numPoints);
+SCreateVector          (&status, &spec.data, numPoints/2 + 1);
+
+for (i = 0; i < numSpec; ++i)
+{
+
+  /* get data here; break out if end of data */
+
+  AddSpectrum (&status, buff, &data);
+}
+
+AverageSpectrum (&status, &spec, buff);
+
+SDestroyVector        (&status, &spec.data);
+I2DestroyVector       (&status, &data.data);
+DestroySpectrumBuffer (&status, &buff);
+DestroyRealFFTPlan    (&status, &buffPar.plan);
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{buffPar} are the parameters required for creating the spectrum
+buffer.
+\item \texttt{buff} is the spectrum buffer.
+\item \texttt{data} is the data time series.
+\item \texttt{spec} is the power spectrum frequency series.
+\end{itemize}
+
+\subsubsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+SPECBUFFER\_ENULL 1  & Null pointer & \\
+SPECBUFFER\_ENNUL 2  & Non-null pointer & \\
+SPECBUFFER\_ESIZE 4  & Invalid input size & \\
+SPECBUFFER\_ESZMM 8  & Size mismatch & \\
+SPECBUFFER\_EZERO 16 & Zero divide & \\
+SPECBUFFER\_ENONE 32 & No stored spectra & \\
+\hline
+\end{tabular}
+\caption{Error conditions for SpecBuffer functions}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The program \texttt{SpecBufferTest} reads and (optionally) outputs frame data
+and computes an average spectrum using these routines.  The environment
+variable \texttt{LAL\_FRAME\_PATH} should be set to the directory path
+containing the frame data.  The option \texttt{-h} gives a list of options.
+
+\subsection{Uses}
+
+\begin{itemize}
+\item\texttt{CreateVector()}
+\item\texttt{RealPowerSpectrum()}
+\item\texttt{DestroyVector()}
+\item\texttt{Window()}
+\end{itemize}
+
+\subsection{Notes}
+
+\subsection{References}
+
+\end{document}
+
+

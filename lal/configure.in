@@ -1,0 +1,146 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(include/README)
+AM_INIT_AUTOMAKE(lal, 0.2-beta)
+
+dnl Arguments.
+AC_ARG_ENABLE(frame,
+  [  --enable-frame          compile code that requires Frame library],
+  [case "${enableval}" in
+    yes) frame=true ;;
+    no)  frame=false ;;
+    *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+  esac], [frame=false])
+AM_CONDITIONAL(FRAME, test x$frame = xtrue)
+
+AC_ARG_ENABLE(mpi,
+  [  --enable-mpi            compile code that requires MPI],
+  [case "${enableval}" in
+    yes) mpi=true ;;
+    no)  mpi=false ;;
+    *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
+  esac], [mpi=false])
+AM_CONDITIONAL(MPI, test x$mpi = xtrue)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+if test "$GCC" = yes; then
+  CFLAGS="$CFLAGS -Wall"
+fi
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_RANLIB
+AC_CHECK_PROG(LATEX, latex, latex)
+AC_CHECK_PROGS(MPICC, mpicc hcc, $CC)
+
+dnl Checks for libraries.
+AC_CHECK_LIB(m, main)
+AC_LIB_FFTW
+AC_LIB_RFFTW
+AC_FFTW_WORKS
+if test "${frame}" = "true"; then
+        AC_CHECK_LIB(Frame, FrLibIni, ,
+          [AC_MSG_ERROR(couldn't find Frame library for --enable-frame)] , )
+        AC_MSG_CHECKING([whether Frame library version >= 3.85])
+        AC_TRY_RUN([#include "FrameL.h"
+          int main() { return FRAMELIB_VERSION < 3.85 ? 1 : 0 ; }],
+          AC_MSG_RESULT(yes),
+          [AC_MSG_RESULT(no),
+            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 3.85)])
+fi
+
+MPILIBS=""
+if test "${mpi}" = "true"; then
+        save_CC="$CC"
+        CC="$MPICC"
+        if test -z "$MPILIBS"; then
+                AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])
+        fi
+        if test -z "$MPILIBS"; then
+                AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
+        fi
+        if test -z "$MPILIBS"; then
+                AC_MSG_ERROR(couldn't find mpi library for --enable-mpi)
+        else
+                AC_MSG_CHECKING(whether mpi works)
+                AC_TRY_LINK([#include <mpi.h>
+                        ], MPI_Finalize();,
+                        AC_MSG_RESULT(yes),
+                        AC_MSG_RESULT(no)
+                        AC_MSG_ERROR(mpi does not work))
+        fi
+        CC="$save_CC"
+fi
+AC_SUBST(MPILIBS)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+
+dnl Checks for library functions.
+
+AC_OUTPUT( Makefile                               \
+           packages/Makefile                      \
+           packages/std/Makefile                  \
+           packages/std/doc/Makefile              \
+           packages/std/include/Makefile          \
+           packages/support/Makefile              \
+           packages/support/doc/Makefile          \
+           packages/support/include/Makefile      \
+           packages/support/src/Makefile          \
+           packages/support/test/Makefile         \
+           packages/hello/Makefile                \
+           packages/hello/doc/Makefile            \
+           packages/hello/include/Makefile        \
+           packages/hello/src/Makefile            \
+           packages/hello/test/Makefile           \
+           packages/factories/Makefile            \
+           packages/factories/doc/Makefile        \
+           packages/factories/include/Makefile    \
+           packages/factories/src/Makefile        \
+           packages/factories/test/Makefile       \
+           packages/vectorops/Makefile            \
+           packages/vectorops/doc/Makefile        \
+           packages/vectorops/include/Makefile    \
+           packages/vectorops/src/Makefile        \
+           packages/vectorops/test/Makefile       \
+           packages/utilities/Makefile            \
+           packages/utilities/doc/Makefile        \
+           packages/utilities/include/Makefile    \
+           packages/utilities/src/Makefile        \
+           packages/utilities/test/Makefile       \
+           packages/window/Makefile               \
+           packages/window/doc/Makefile           \
+           packages/window/include/Makefile       \
+           packages/window/src/Makefile           \
+           packages/window/test/Makefile          \
+           packages/fft/Makefile                  \
+           packages/fft/doc/Makefile              \
+           packages/fft/include/Makefile          \
+           packages/fft/src/Makefile              \
+           packages/fft/test/Makefile             \
+           packages/stochastic/Makefile           \
+           packages/stochastic/doc/Makefile       \
+           packages/stochastic/include/Makefile   \
+           packages/stochastic/src/Makefile       \
+           packages/stochastic/test/Makefile      \
+           packages/framedata/Makefile            \
+           packages/framedata/doc/Makefile        \
+           packages/framedata/include/Makefile    \
+           packages/framedata/src/Makefile        \
+           packages/framedata/test/Makefile       \
+           packages/comm/Makefile                 \
+           packages/comm/doc/Makefile             \
+           packages/comm/include/Makefile         \
+           packages/comm/src/Makefile             \
+           packages/comm/test/Makefile            \
+           packages/findchirp/Makefile            \
+           packages/findchirp/doc/Makefile        \
+           packages/findchirp/include/Makefile    \
+           packages/findchirp/src/Makefile        \
+           packages/findchirp/test/Makefile       \
+         )
+

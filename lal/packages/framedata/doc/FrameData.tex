@@ -1,0 +1,205 @@
+\documentclass{article}
+\begin{document}
+\section{FrameData}
+
+\subsection{Purpose}
+
+Gets IFO\_DMRO data from frame files.
+
+\subsection{Synopsis}
+
+\begin{verbatim}
+typedef struct
+tagFrameData
+{
+  INT4 inLock;
+  INT4 endOfData;
+  INT4 newLock;
+  INT4 newCalibration;
+  /* ... */
+}
+FrameData;
+
+
+void InitializeFrameData (
+    Status     *status,
+    FrameData **frameData,
+    CHAR       *framePath
+    );
+
+void
+FinalizeFrameData (
+    Status     *status,
+    FrameData **frameData
+    );
+
+void
+GetFrameData (
+    Status         *status,
+    INT2TimeSeries *data,
+    FrameData      *frameData
+    );
+
+void
+GetFrameDataResponse (
+    Status                  *status,
+    COMPLEX8FrequencySeries *response,
+    FrameData               *frameData
+    );
+\end{verbatim}
+
+\subsection{Description}
+
+These routines provide a simple interface with IFO\_DMRO data stored in frame
+files.
+
+The routine \texttt{InitializeFrameData()} searches for frame files in a
+specified directory and performs the necessary preparation for reading these
+files.  When the user is finished reading frame data from the path, the
+routine \texttt{FinalizeFrameData()} should be called.
+
+The routine \texttt{GetFrameData()} gets the next frame IFO\_DMRO data while
+the routine \texttt{GetFrameDataResponse()} gets the current response
+function.
+
+\subsection{Operating Instructions}
+
+\begin{verbatim}
+const  INT4                     numPoints = 1024;
+const  CHAR                    *framePath = "/data/frames"
+static Status                   status;
+static FrameData                frameData;
+static INT2TimeSeries           dmro;
+static COMPLEX8FrequencySeries  resp;
+
+I2CreateVector      (&status, &dmro.data, numPoints);
+CCreateVector       (&status, &resp.data, numPoints/2 + 1);
+InitializeFrameData (&status, &frameData, framePath);
+
+/* infinite loop reading frame data */
+while (1)
+{
+  GetFrameData (&status, &dmro, frameData);
+
+  /* break out of loop if end of data */
+  if (frameData->endOfData)
+  {
+    break;
+  }
+
+  /* get response function if new calibration info */
+  if (frameData->newCalibration)
+  {
+    GetFrameDataResponse (&status, &resp, frameData);
+  }
+
+  /* seek 3 minutes into each new locked section */
+  if (frameData->newLock)
+  {
+    INT2TimeSeries seek;
+    INT2Vector     svec;
+
+    svec.length = 180/dmro.deltaT; /* 3 minutes */
+    svec.data   = NULL;            /* seek mode */
+    seek.data   = &svec;
+    GetFrameData (&status, &seek, frameData);
+
+    /* break out of loop if end of data */
+    if (frameData->endOfData)
+    {
+      break;
+    }
+
+    /* get response function if new calibration info */
+    if (frameData->newCalibration)
+    {
+      GetFrameDataResponse (&status, &resp, frameData);
+    }
+
+    /* go back to the beginning of the infinite loop */
+    continue;
+  }
+
+}
+
+FinalizeFrameData (&status, &frameData);
+CDestroyVector    (&status, &resp.data);
+I2DestroyVector   (&status, &dmro.data);
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{framePath} is a character string representing the frame data
+directory path.
+\item \texttt{frameData} is a pointer to the frame data parameter structure
+initialized using \texttt{InitializeFrameData()}.  It should be set to NULL
+before initialization.  \verb+frameData->endOfData+ indicates if
+the end of frame data has been reached; \verb+frameData->newCalibration+
+indicates if the calibration information has been updated since the last call;
+\verb+frameData->newLock+ indicates that a new locked section of data has
+been entered.  (The routine \texttt{GetFrameData()} only returns data from
+locked sections unless \verb+frameData->inLock+ is set non-zero.)
+\item \texttt{dmro} is the IFO\_DMRO time series data acquired by
+\texttt{GetFrameData()}.  If \verb+dmro.data->data+ is NULL,
+\texttt{GetFrameData()} enters seek mode.
+\item \texttt{resp} is the response frequency series for the IFO\_DMRO data.
+It is acquired by the routine \texttt{GetFrameDataResponse()}.  The routine
+\texttt{GetFrameDataResponse()} does a spline-fit to the sweptsine response of
+the instrument in order to get the response function.
+\end{itemize}
+
+\subsubsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+FRAMEDATA\_ENULL 1    &  Null pointer & \\
+FRAMEDATA\_ENNUL 2    &  Non-null pointer & \\
+FRAMEDATA\_EREAD 4    &  Error reading frame directory & \\
+FRAMEDATA\_EOPEN 8    &  Error opening frame file & \\
+FRAMEDATA\_ENOSS 16   &  No sweptsine calibration data in frame & \\
+FRAMEDATA\_EDMRO 32   &  No IFO\_DMRO data in frame & \\
+FRAMEDATA\_ELOCK 64   &  No IFO\_Lock data in frame & \\
+FRAMEDATA\_ELOHI 128  &  No locklo/lockhi data in frame & \\
+FRAMEDATA\_ESIZE 256  &  Invalid vector length & \\
+FRAMEDATA\_ESSSZ 512  &  Bad sweptsine calibration data & \\
+\hline
+\end{tabular}
+\caption{Error conditions for FrameData functions}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The program \texttt{FrameDataTest} reads and (optionally) outputs frame data
+using these routines.  The environment variable \texttt{LAL\_FRAME\_PATH}
+should be set to the directory path containing the frame data.  The option
+\texttt{-h} gives a list of options.
+
+\subsection{Uses}
+
+These routines use the FrameL library and the following LAL routines:
+\begin{itemize}
+\item\texttt{CHARCreateVectorSequence()}
+\item\texttt{CHARDestroyVectorSequence()}
+\item\texttt{CreateVector()}
+\item\texttt{DestroyVector()}
+\end{itemize}
+
+\subsection{Notes}
+
+\subsection{References}
+
+\end{document}

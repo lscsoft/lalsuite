@@ -1,0 +1,164 @@
+NOTE:  You must install the package FFTW (Fastest Fourier Transform in the
+West) before installing this package.
+
+0.  Install FFTW and (optionally) the FrameL library and MPI:
+
+    You can obtain FFTW from http://www.fftw.org
+    When configuring, you must use the --enable-float option.
+
+    You can obtain FrameL from http://wwwlapp.in2p3.fr/virgo/FrameL
+
+    You can obtain the MPICH implementation of MPI from
+    http://www-unix.mcs.anl.gov/mpi/mpich
+    (this is the implementation that I have used in testing the LAL routines).
+
+    0.1.  To install FFTW on your system use the commands:
+
+          ./configure --enable-float
+          make
+          make install
+
+          (you must be superuser).
+
+    0.2.  If you are installing FFTW in your personal account:
+
+          ./configure --prefix=/home/alice --enable-float
+          make
+          make install
+
+          Then you must set a few environment variables before continuing.
+          If you are using sh (or bash):
+
+          LIBRARY_PATH=/home/alice/lib
+          CFLAGS=-I/home/alice/include
+
+          If you are using csh (or tcsh):
+
+          setenv LIBRARY_PATH /home/alice/lib
+          setenv CFLAGS -I/home/alice/include
+
+    0.3.  To install the FrameL library (optional) go to the mgr directory of
+          the frame library directory structure and run the compilation script
+          makecc.  If you install the FrameL in a non-standard location, you
+          will need to set the LIBRARY_PATH and CFLAGS variables so that the
+          library and include files are accessible (as above).
+
+    0.4.  Install the MPICH implementation of MPI (optional).  Then set the
+          environment variable MPICC to the name of the MPI C-compiler (which
+          is probably a shell script).  For example, if you are using sh:
+
+          MPICC=mpicc
+
+          or if you are using csh:
+
+          setenv MPICC mpicc
+
+          Troubles may arise if you compile LAL with gcc but the MPICC script
+          uses some other cc.  In this case, edit the file mpicc to use gcc
+          rather than cc.
+
+          Also, make sure that mpirun will work.  This means that you have to
+          be able to type
+
+          rsh <hostname>
+
+          (where <hostname> is the name of your computer) and be logged-in
+          without typing a password!  This may require you to add a line in
+          a file called .rhosts (in your home directory).  For example,
+          for mpirun to work on the machine einstein.institute.edu, the file
+          /home/alice/.rhosts must include the line
+
+          einstein.institute.edu alice
+
+          Also, the file .rhosts must have read-write privilege by user only.
+          To be sure, type
+
+          chmod go-rwx /home/alice/.rhosts
+
+          You (Alice) should then be able to type
+
+          rsh einstein.institute.edu
+
+          and be logged in (without entering a password).
+
+
+1.  Install the LAL package.
+
+    1.1.  If you are installing LAL on the system, use the commands:
+
+          ./configure [--enable-frame] [--enable-mpi]
+          make
+          make install
+
+          The --enable-frame argument is only used if you have the FrameL
+          library installed and you want to include code that uses this
+          library.
+
+          The --enable-mpi argument is only used if you have MPI and want
+          to run the code that runs on multiple processors.
+
+          Optionally you can also type
+
+          make check
+          make dvi
+
+          to run a suite of test programs and to latex the documentation files
+          to produce dvi files.  If you want to test the code that reads frame
+          files, type
+
+          LAL_FRAME_PATH=<framedata path>
+
+          if you are using sh (or bash) or
+
+          setenv LAL_FRAME_PATH <framedata path>
+
+          if you are using csh (or tcsh), and then run make check.
+
+    1.2.  If you are installing LAL on your personal account, use:
+
+          ./configure --prefix=/home/alice [--enable-frame] [--enable-mpi]
+          make
+          make install
+
+          The --enable-frame argument is only used if you have the FrameL
+          library installed and you want to include code that uses this
+          library.
+
+          The --enable-mpi argument is only used if you have MPI and want
+          to run the code that runs on multiple processors.
+
+          Optionally you can also type
+
+          make check
+          make dvi
+
+          to run a suite of test programs and to latex the documentation files
+          to produce dvi files.  If you want to test the code that reads frame
+          files, type
+
+          LAL_FRAME_PATH=<framedata path>
+
+          if you are using sh (or bash) or
+
+          setenv LAL_FRAME_PATH <framedata path>
+
+          if you are using csh (or tcsh), and then run make check.
+
+-------------------------------------------------------------------------------
+
+
+System-specific installation instructions:
+
+
+SGI running IRIX 6.5.3 with gcc:
+
+Include the flag -n32 the list of compiler flags in the environment CFLAGS.
+Make sure that the compiler used is gcc by setting the environment CC to gcc.
+
+-------------------------------------------------------------------------------
+
+
+Troubleshooting:
+
+* If you need to re-run configure after it has failed while checking for a
+  working FFTW, FrameL, or MPI, make sure to remove the file config.cache.

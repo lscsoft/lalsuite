@@ -1,0 +1,92 @@
+\documentclass{article}
+\begin{document}
+
+\section{LALHello}
+
+\subsection{Purpose}
+
+A simple example routine: prints ``hello, LSC!''
+
+\subsection{Synopsis}
+
+\begin{verbatim}
+void LALHello (Status *status, const CHAR *fileName);
+\end{verbatim}
+
+\subsection{Description}
+
+The routine \texttt{LALHello()} prints the message ``hello, LSC!'' to the file
+specified by \texttt{fileName}, or to \texttt{stdout} if this is NULL.  (The
+actual printing is handled by a subroutine \texttt{LALPrintMessage()}, which
+is static to the file \texttt{LALHello.c}.)
+
+\subsection{Operating Instructions}
+
+\begin{verbatim}
+static Status  status;
+
+/* print to file myfile */
+LALHello (&status, "myfile");
+
+/* print to stdout */
+LALHello (&status, NULL);
+\end{verbatim}
+
+
+\subsubsection{Arguments}
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{fileName} is a character string representing the file name to
+which the message will be printed.
+\end{itemize}
+
+
+\subsubsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+\verb+LALHELLO_EOPEN  1+ & Could not open file &
+File could not be opened---it may be write-protected\\
+\verb+LALHELLO_EWRITE 2+ & Error in writing to file &
+An error occurred while printing to the file\\
+\verb+LALHELLO_ECLOSE 4+ & Error in closing file &
+An error occurred while closeing the file\\
+\verb+LALHELLO_EFLUSH 8+ & Error in flushing stdout &
+An error occurred in trying to flush stdout\\
+\hline
+\end{tabular}
+\caption{Error conditions for the LALHello() function}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The program \texttt{LALHelloTest} tests the routine \texttt{LALHello()} by
+first printing the message to \texttt{stdout} and then by trying to print the
+message to a write-protected file \texttt{protected}.  The second attempt
+should fail.
+
+\subsection{Uses}
+
+\begin{itemize}
+\item\texttt{LALFopen()}
+\item\texttt{LALFclose()}
+\end{itemize}
+
+\subsection{Notes}
+
+\subsection{References}
+
+\end{document}

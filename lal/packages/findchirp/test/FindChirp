@@ -1,0 +1,11 @@
+#!/bin/sh
+if test -d "$LAL_FRAME_PATH"; then
+        rm -f machines
+        echo `hostname` >  machines
+        echo `hostname` >> machines
+        echo `hostname` >> machines
+        mpirun -np 3 -machinefile machines FindChirpMain
+else
+        echo "Warning: LAL_FRAME_PATH is not set"
+        exit 77
+fi

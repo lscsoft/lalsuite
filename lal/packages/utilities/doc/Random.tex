@@ -1,0 +1,111 @@
+\documentclass{article}
+\begin{document}
+
+\section{Random}
+
+Generates random numbers.
+
+\subsection{Synopsis}
+\begin{verbatim}
+#include "Random.h"
+
+void CreateRandomParams  (Status *status, RandomParams **params, INT4 seed);
+void DestroyRandomParams (Status *status, RandomParams **params);
+
+void UniformDeviate (Status *status, REAL4       *deviate,  RandomParams *params);
+void NormalDeviates (Status *status, REAL4Vector *deviates, RandomParams *params);
+\end{verbatim}
+
+\subsection{Description}
+
+The routines \verb+CreateRandomParams()+ and \verb+DestroyRandomParams+ create
+and destroy a parameter structure for the generation of random variables.  The
+creation routine requires a random number seed \verb+seed+.  If the seed is
+zero then a seed is generated using the current time.
+
+The routine \verb+UniformDeviate()+ returns a single random deviate
+distributed uniformly between zero and unity.  
+
+The routine \verb+NormalDeviates()+ fills a vector with normal (Gaussian)
+deviates with zero mean and unit variance.
+
+\subsection{Operating Instructions}
+
+\begin{verbatim}
+static Status        status;
+static RandomParams *params;
+static REAL4Vector  *vector;
+
+INT4 seed = 0;
+INT4 i;
+
+CreateVector       (&status, &vector, 9999);
+CreateRandomParams (&status, &params, seed);
+
+/* fill vector with uniform deviates */
+for (i = 0; i < vector->length; ++i)
+{
+  UniformDeviate (&status, vector->data + i, params);
+}
+
+/* fill vector with normal deviates */
+NormalDeviates (&status, vector, params);
+
+DestroyRandomParams (&status, &params);
+DestroyVector       (&status, &vector);
+\end{verbatim}
+
+\begin{itemize}
+\item\verb+status+ is a universal status structure.  Its contents are
+assigned by the functions.
+\item\verb+params+ is a parameter structure holding current random number
+generation seeds.
+\item\verb+seed+ is an initialization seed; set to zero to take the seed from
+the current time.
+\item\verb+vector+ is a real vector that will be filled with random numbers.
+\end{itemize}
+
+\subsubsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+\verb+RANDOM_ENULL 1+ & Null pointer & \\
+\verb+RANDOM_ENNUL 2+ & Non-null pointer & \\
+\verb+RANDOM_ESIZE 4+ & Invalid size & \\
+\hline
+\end{tabular}
+\caption{Error conditions for all Random functions}\label{tbl:CV}
+\end{table}
+
+\subsection{Algorithms}
+
+This is an implementation of the random number generators \verb+ran1+ and
+\verb+gasdev+ described in Numerical Recipes~\cite{ptvf:1992}.
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The program \verb+RandomTest+ generates output files containing uniform
+deviates and normal deviates.
+
+\subsection{Uses}
+
+\subsection{Notes}
+
+\subsection{References}
+\begin{thebibliography}{0}
+\bibitem{ptvf:1992}
+  W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, England, 1992).
+\end{thebibliography}
+
+\end{document}

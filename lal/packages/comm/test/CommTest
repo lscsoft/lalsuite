@@ -1,0 +1,6 @@
+#!/bin/sh
+rm -f machines
+echo `hostname` >  machines
+echo `hostname` >> machines
+echo `hostname` >> machines
+mpirun -np 3 -machinefile machines CommTestMain

@@ -1,0 +1,302 @@
+\documentclass{article}
+\begin{document}
+
+\section{FindChirpExch}
+
+Data communication routines for the FindChirp program.
+
+\subsection{Synopsis}
+
+Types:
+\begin{verbatim}
+typedef enum
+{
+  ExchDataSegment,
+  ExchInspiralBankIn,
+  ExchInspiralTemplate,
+  ExchInspiralEvent,
+  ExchFinished
+}
+ExchObjectType;
+
+typedef struct
+tagExchParams
+{
+  ExchObjectType exchObjectType;
+  INT4           send;
+  INT4           numObjects;
+  INT4           partnerProcNum;
+}
+ExchParams;
+
+typedef struct tagDataSegment DataSegment;
+typedef struct tagInspiralTemplate InspiralTemplate;
+typedef struct tagInspiralBankIn InspiralBankIn;
+typedef struct tagInspiralEvent InspiralEvent;
+\end{verbatim}
+
+Routines:
+\begin{verbatim}
+void InitializeExchange (Status *status, ExchParams **exchParOut, ExchParams  *exchParInp, INT4 myProcNum);
+void FinalizeExchange   (Status *status, ExchParams **exchParams);
+
+void ExchangeDataSegment      (Status *status, DataSegment      *segment, ExchParams *exchParams);
+void ExchangeInspiralBankIn   (Status *status, InspiralBankIn   *bankIn,  ExchParams *exchParams);
+void ExchangeInspiralTemplate (Status *status, InspiralTemplate *tmplt,   ExchParams *exchParams);
+void ExchangeInspiralEvent    (Status *status, InspiralEvent    *event,   ExchParams *exchParams);
+\end{verbatim}
+
+\subsection{Description}
+
+An exchange of data, templates, etc., is initiated with a call to
+\verb+InitializeExchange()+, which initializes the exchange parameters that
+will be used during the subsequent data exchange.  Both partners to the
+exchange will call \verb+InitializeExchange()+, but only one partner, process
+A, will specify the nature of the exchange.  Process A does this by describing
+the exchange in an input exchange parameter structure (which is copied to the
+output exchange parameter structure for process A in the routine
+\verb+InitializeExchange()+), while process B, the partner, passes \verb+NULL+
+as the input parameter structure indicating that B is expecting to be told the
+nature of the exchange.
+
+The exchange nature is specified in the \verb+ExchParams+ structure.  This
+structure, which is set by process A, describes the types of objects to be
+exchanged, the number of such objects, whether the process expects to send or
+receive these objects, and the partner process number.  After the call to
+\verb+InitializeExchange()+, the output parameter structure is set in both
+process A and process B with reciprocal information.  That is, process A has
+the same output exchange parameters as it input, while process B's output
+parameters specify that B is to send if A was to receive (and vice-versa), and
+contains A's process number as the partner process number.  The type of object
+and number of objects is the same.
+
+To terminate a given exchange, both A and B call \verb+FinalizeExchange()+.
+This routine performs a handshake and then destroys the exchange parameter
+structure.
+
+The routines \verb+ExchangeDataSegment()+, \verb+ExchangeInspiralBankIn()+,
+\verb+ExchangeInspiralTemplate()+, and \verb+ExchangeInspiralEvent()+
+exchanges a data segment, an inspiral template bank input structure, an
+inspiral template, and an inspiral event respectively.  The both partners in
+the exchange call these routines in the same manner.  If there are multiple
+objects to be exchanged, the loop over these objects must be done explicity
+(i.e., these routines must be called the appropriate number of times).
+
+
+\subsection{Operating Instructions}
+
+The following is an example of a slave-driven (i.e., the slave is always
+process ``A'') program:
+
+File \verb+Main.c+
+\begin{verbatim}
+#include <stdlib.h>
+#include "mpi.h"
+#include "LALStdlib.h"
+#include "FindChirpExch.h"
+
+void Master (MPIId id);
+void Slave  (MPIId id);
+
+int main (int argc, char *argv[])
+{
+  static Status status;
+  MPIId         id;
+
+  /* initialize mpi */
+
+  MPI_Init (&argc, &argv);
+  MPI_Comm_size (MPI_COMM_WORLD, &id.numProcs);
+  MPI_Comm_rank (MPI_COMM_WORLD, &id.myId);
+  MPI_Get_processor_name (id.procName, &id.nameLen);
+
+  /* startup master or slave */
+
+  if (id.myId == 0)
+  {
+    Master (id);
+  }
+  else
+  {
+    Slave (id);
+  }
+
+  /* finalize mpi and exit */
+
+  MPI_Finalize ();
+  return 0;
+}
+\end{verbatim}
+
+File \verb+Master.c+:
+\begin{verbatim}
+#include <stdlib.h>
+#include "LALStdlib.h"
+#include "FindChirpExch.h"
+
+void Master (MPIId id)
+{
+  static Status status;
+  DataSegment   segment[8];
+  InspiralEvent event[16];
+  INT4          numProcs = id.numProcs;
+
+  while (numProcs > 1)
+  {
+    ExchParams *thisExch = NULL;
+    INT4        i;
+
+    /* master expects to be told the nature of the exchange */
+    InitializeExchange (&status, &thisExch, NULL, id.myId);
+
+    /* handle exchange type */
+    switch (thisExch->exchObjectType)
+    {
+      /* Master requested to send data segments */
+      case ExchDataSegment:
+
+        assert (thisExch->send = 1);
+        assert (thisExch->numObjects == sizeof(segment)/sizeof(DataSegment));
+        for (i = 0; i < thisExch->numObjects; ++i)
+        {
+          /* get the data segment here... */
+
+          ExchangeDataSegment (&status, segment + i, thisExch);
+        }
+
+      /* Master expects to receive events */
+      case ExchInspiralEvent:
+
+        assert (thisExch->send = 0);
+        assert (thisExch->numObjects <= sizeof(event)/sizeof(InspiralEvent));
+        for (i = 0; i < thisExch->numObjects; ++i)
+        {
+          ExchangeInspiralEvent (&status, event + i, thisExch);
+
+          /* do something with the event... */
+        }
+        break;
+
+      /* Slave is telling master that it is done */
+      case ExchFinished:
+
+        --numProcs;
+        break;
+
+      /* This should not happen */
+      default:
+
+        abort ();
+    }
+
+    FinalizeExchange (&status, &thisExch);
+
+  }
+
+  return;
+}
+\end{verbatim}
+
+File \verb+Slave.c+:
+\begin{verbatim}
+#include <stdlib.h>
+#include "LALStdlib.h"
+#include "FindChirpExch.h"
+
+void Slave (MPIId id)
+{
+  static Status  status;
+  ExchParams     exchDataSegments;
+  ExchParams     exchInspiralEvents;
+  ExchParams     exchFinished;
+  ExchParams    *thisExch = NULL;
+  DataSegment    segment[8];
+  InspiralEvent  event[16];
+  INT4           numProcs = id.numProcs;
+  INT4           i;
+
+  /* Set up exchange parameters */
+
+  /* master (proc 0) will send data segments */
+  exchDataSegments.exchObjectType   = ExchDataSegment;
+  exchDataSegments.send             = 0;
+  exchDataSegments.numObjects       = sizeof(segment)/sizeof(DataSegment);
+  exchDataSegments.partnerProcNum   = 0;
+
+  /* master (proc 0) will receive 3 events */
+  exchInspiralEvents.exchObjectType = ExchInspiralEvent;
+  exchInspiralEvents.send           = 1;
+  exchInspiralEvents.numObjects     = 3;
+  exchInspiralEvents.partnerProcNum = 0;
+
+  /* master (proc 0) will be told that the slave is done */
+  exchFinished.exchObjectType       = ExchFinished;
+  exchFinished.send                 = 0;
+  exchFinished.numObjects           = 0;
+  exchFinished.partnerProcNum       = 0;
+
+  /* Exchange data: slave receives from master */
+
+  InitializeExchange (&status, &thisExch, &exchDataSegments, id.myId);
+  for (i = 0; i < thisExch->numObjects; ++i)
+  {
+    ExchangeDataSegment (&status, segment + i, thisExch);
+  }
+  FinalizeExchange (&status, &thisExch);
+
+  /* Do something with the data...                   */
+  /* Find inspiral events and store in event list... */
+
+  /* Exchange events: slave sends to master */
+
+  InitializeExchange (&status, &thisExch, &exchInspiralEvents, id.myId);
+  for (i = 0; i < thisExch->numObjects; ++i)
+  {
+    ExchangeDataSegment (&status, event + i, thisExch);
+  }
+  FinalizeExchange (&status, &thisExch);
+
+  /* Tell master that this slave is done */
+  InitializeExchange (&status, &thisExch, &exchFinished, id.myId);
+  FinalizeExchange (&status, &thisExch);
+
+  return;
+}
+\end{verbatim}
+
+\subsection{Options}
+
+\subsubsection{Error conditions}
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+\verb+FINDCHIRPEXCH_ENULL 1+ & Null pointer \\
+\verb+FINDCHIRPEXCH_ENNUL 2+ & Non-null pointer \\
+\verb+FINDCHIRPEXCH_ENOBJ 4+ & Invalid number of objects \\
+\verb+FINDCHIRPEXCH_EHAND 8+ & Wrong handshake \\
+\hline
+\end{tabular}
+\caption{Error conditions for all FindChirpExch functions}\label{tbl:CV}
+\end{table}
+
+
+\subsection{Algorithms}
+
+\subsection{Accuracy}
+
+\subsection{Tests}
+
+The script \verb+FindChirp+ executes a MPI program that uses these routines.
+
+\subsection{Uses}
+
+\subsection{Notes}
+
+\subsection{References}
+
+\end{document}

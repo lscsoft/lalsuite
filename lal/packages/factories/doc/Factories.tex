@@ -1,0 +1,207 @@
+% This file is meant to be included in another 
+\documentclass{article}
+\providecommand{\ttm}{\tt}
+\begin{document}
+\section{CreateVector, CreateArray, DestroyVector, DestroyArray}
+
+\subsection{Purpose}
+
+Create and destroy vector and array structures. 
+
+\subsection{Synopsis}
+
+% Syntax: argument definitions, calling signature
+
+\begin{verbatim}
+#include "ligo_datatypes.h"
+#include "avFactories.h"
+
+INT_4U_vector *i4uvector;
+REAL_4_vector *svector;
+REAL_4_array  *sarray;
+
+INT_4U I4UCreateVector(Status *, INT_4U_vector **i4uvector, INT_4U length);
+INT_4U CreateVector(Status *, REAL_4_vector **svector, INT_4U length);
+INT_4U CreateArray(Status *, REAL_4_array **sarray, INT_4U_vector *i4uvector);
+
+INT_4U sCreateVector(Status *, REAL_4_vector **svector, INT_4U length);
+INT_4U sCreateArray(Status *, REAL_4_array **sarray, INT_4U_vector *i4uvector);
+
+INT_4U DestroyI4UVector(Status *, INT_4U_vector **i4uvector);
+INT_4U DestroyVector(Status *, REAL_4_vector **svector);
+INT_4U DestroyArray(Status *, REAL_4_array **sarray);
+
+INT_4U sDestroyVector(Status *, REAL_4_vector **svector);
+INT_4U sDestroyArray(Status *, REAL_4_array **sarray);
+
+\end{verbatim}
+
+\subsection{Description}
+
+The {\tt CreateVector\/} family of functions create a
+$<$data\_type$>$\_vector of the appropriate length and return a pointer
+to the structure. 
+
+The {\tt DestroyVector\/} family of functions return storage allocated
+by {\tt CreateVector\/} the system. 
+
+{\tt CreateVector, CreateArray, DestroyVector, and DestroyArray\/} all
+return their universal status code. 
+
+\subsection{Operating Instructions}
+
+% Detailed usage 
+
+\begin{verbatim}
+Status status; 
+REAL_4_vector *vector;
+INT_4U length;
+
+vector = NULL;
+status =  CreateVector ( &status, &vector, length);
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+% Describe meaning of each argument
+
+\begin{itemize}
+\item {\tt status\/} is a universal status strucure. Its contents are 
+assigned by {\tt CreateVector}.
+\item {\tt vector\/} is a pointer $<$data\_type$>$. If non-NULL it is
+assumed to point to a legitimate object, which is an error
+condition. On a normal return it points to the assigned storage; on an
+error return it points to NULL. 
+\item {\tt length\/} is a positive integer indicating the length of
+the $<$data\_type$>$\_vector that {\tt CreateVector} is to create. 
+\end{itemize}
+
+\subsubsection{Options}
+
+None. 
+
+\subsubsection{Error conditions}
+
+% What constitutes an error condition? What do the error codes mean?
+
+{\tt CreateVector, CreateArray, DestroyVector, and DestroyArray\/} all
+set the universal status structure on return. In addition, they also 
+pass their status code as a return value. Non-zero status codes
+indicate an error condition. Error conditions are described in the
+tables \ref{tbl:CV}, \ref{tbl:CA}, \ref{tbl:DV}, \ref{tbl:DA}. 
+
+\begin{table}
+\begin{tabular}{|r|l|r|}\hline
+status&status&Description\\
+code&description&\\\hline
+ELENGTH&Illegal length&vector length must be positive\\
+EVPTR&vector $==$ NULL&\\
+EUPTR&$*$vector $==$ NULL&\\
+EMALLOC&Malloc failure&self-explanatory\\
+\hline
+\end{tabular}
+\caption{Error conditions for all variants of CreateVector}\label{tbl:CV}
+\end{table}
+                                
+\begin{table}
+\begin{tabular}{|r|l|r|}\hline
+status&status&Description\\
+code&description&\\\hline
+ELENGTH&Illegal length&vector length must be positive\\
+EVPTR&vector $==$ NULL&\\
+EUPTR&$*$vector $==$ NULL&\\
+EMALLOC&Malloc failure&self-explanatory\\
+EDIMS&Illegal number of dimensions&Number of dimensions must be
+positive\\
+EDIMPTR&\\
+\hline
+\end{tabular}
+\caption{Error conditions for all variants of CreateArray}\label{tbl:CA}
+\end{table}
+                                
+\begin{table}
+\begin{tabular}{|r|l|r|}\hline
+status&status&Description\\
+code&description&\\\hline
+EVPTR&vector $==$ NULL&vector doesn't point to legitimate storage\\
+EUPTR&$*$vector $==$ NULL&nothing to free\\
+EDPTR&$(*$vector$)->$data $==$ NULL&all legal vectors have non-NULL data\\
+\hline
+\end{tabular}
+\caption{Error conditions for all variants of DestroyVector}\label{tbl:DV}
+\end{table}
+                                
+\begin{table}
+\begin{tabular}{|r|l|r|}\hline
+status&status&Description\\
+code&description&\\\hline
+1&input array points to NULL&can't destroy an array that doesn't
+exist\\
+2&data member points to NULL&all correct vectors have non-null data\\
+3&dimensions member points to NULL&all correct arrays have non-null
+dimension field\\
+4&LIGOFree Failure&self-explanatory\\
+\hline
+\end{tabular}
+\caption{Error conditions for all variants of DestroyArray}\label{tbl:DA}
+\end{table}
+                                
+\subsection{Algorithms}
+
+Not applicable.
+
+% Describe algorithm by which work is done
+
+\subsection{Accuracy}
+
+% For numerical routines address issues related to accuracy:
+% approximations, argument ranges, etc.
+
+Not applicable.
+
+\subsection{Tests}
+
+% Describe the tests that are part of the test suite
+
+The test programs {\ttm $<$data\_type$>$CreateVectorTest\/} exercise
+the procedure {\ttm $<$data\_type$>$CreateVector\/} in the following
+manner: 
+\begin{itemize}
+\item Error return tests
+\begin{itemize}
+\item Zero sequence length.\footnote{Negative sequence length is
+formally an error; however, this condition can't be caught.}
+\item {\tt vector $==$ NULL\/} on call.
+\item {\ttm *vector $!=$ NULL\/} on call ({\em i.e.,} vector already
+points to a structure).
+\end{itemize}
+\item Return value equal to status.statusCode.
+\item Storage allocated and length correctly set when calling
+arguments are legitimate. 
+\end{itemize}
+
+In addition the test routine prints the status\_description field after
+every call to the procedure being tested. 
+
+Need still to test that malloc failures are correctly flagged and
+reported. This requires messing with LLAL\_Malloc.
+
+\subsection{Uses}
+
+% What LLAL, other routines does this one call?
+
+{\tt LLAL\_Malloc, LLAL\_Free, InitStatus}
+
+\subsection{Notes}
+
+\subsection{References}
+
+% Any references for algorithms, tests, etc.
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
