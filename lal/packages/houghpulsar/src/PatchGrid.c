@@ -119,7 +119,6 @@ y-direction.
 </lalLaTeX> */
 
 
-
 #include <lal/LUT.h>
 
 
@@ -265,6 +264,7 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
   UINT2   maxDopplerBin;  
   UINT2   maxSide;    /* number of pixels in the y direction */
   
+  UINT2   maxNBins1,maxNBins2; 
   UINT2   maxNBins;    /* maximum number of bins affecting the patch. For
                                memory allocation */
   REAL8   patchSizeX;  /* size of sky patch projected */
@@ -273,7 +273,7 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
   REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHComputeSizePar", PATCHGRIDC);
+  INITSTATUS (status, "LALHOUGHComputeNDSizePar", PATCHGRIDC);
   ATTATCHSTATUSPTR (status); 
 
   /*   Make sure the arguments are not NULL: */ 
@@ -325,8 +325,14 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
 
   /* the max number of bins that can fit in the full sky  */
   maxDopplerBin = floor( f0Bin * vTotC +0.5);
+  maxNBins1 = 1+ 2* maxDopplerBin;
+
+  /* estimate of the max number of bins that can fit in the patch
+  (over-estimated) as the max number of bins that can fit in the diagonal 
+  and a bit more 1.41->1.5  */
+  maxNBins2 = ceil( (1.5* maxSide)/pixelFactor);
   
-  maxNBins = out->maxNBins = 1+ 2* maxDopplerBin;
+  maxNBins = out->maxNBins = MIN( maxNBins1 , maxNBins2 );
 
   /* maximum number of borders affecting the patch +1. Each Bin has up to 4
   borders, but they are common (they share 2 with the next bin). Depending on
