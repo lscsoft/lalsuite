@@ -88,8 +88,8 @@ void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
-    COMPLEX8FrequencySeries    *resp,
-    InspiralInjection          *events
+    InspiralInjection          *events,
+    COMPLEX8FrequencySeries    *resp
     )
 {
   UINT4                 k;
