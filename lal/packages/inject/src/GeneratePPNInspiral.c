@@ -238,6 +238,7 @@ NRCSID( GENERATEPPNINSPIRALC, "$Id$" );
 #define BUFFSIZE 1024     /* Number of timesteps buffered */
 #define ACCURACY (1.0e-6) /* Accuracy of root finder */
 #define TWOTHIRDS (0.6666666667) /* 2/3 */
+#define ONEMINUSEPS (0.99999)    /* Something close to 1 */
 
 /* A macro to computing the (normalized) frequency.  It appears in
    many places, including in the main loop, and I don't want the
@@ -657,7 +658,7 @@ LALGeneratePPNInspiral( LALStatus     *stat,
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
 	goto terminate;
       }
-      if ( y < yOld ) {
+      if ( y < yOld*ONEMINUSEPS ) {
 	params->termCode = GENERATEPPNINSPIRALH_EFNOTMON;
 	params->termDescription = GENERATEPPNINSPIRALH_MSGEFNOTMON;
 	goto terminate;
