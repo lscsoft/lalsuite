@@ -2812,15 +2812,21 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, long *bytecounter, co
     goto exit;
   }
   
+  flen = ftell(fp);
+
+#ifdef USE_BOINC
+  fprintf(stderr,"Resuming computation at %d/%ld/%ld\n", lcount, bcount, flen);
+#endif
+
   /* is bytecounter consistent with length of this file? */
-  if ( bcount > (flen = ftell(fp))) {
+  if ( bcount > flen) {
     if (lalDebugLevel) 
       LALPrintError ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
     goto exit;
   }
   
   if (lalDebugLevel) LALPrintError ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
-  
+
   *loopcounter = lcount;
   *bytecounter = bcount;
   
