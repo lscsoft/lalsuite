@@ -106,6 +106,8 @@ INT4               printSpectrum = FALSE;
 INT4               printData     = FALSE;
 INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
 INT4               sineBurst     = FALSE;   /* insertion of shaped sine burst  */
+INT4               injFlag       = FALSE;
+INT4               calFlag       = FALSE;
 
 /* global variables */
 FrChanIn   channelIn;               /* channnel information               */
@@ -160,9 +162,6 @@ int main( int argc, char *argv[])
     ProcessParamsTable   *this_proc_param;
     LIGOLwXMLStream      xmlStream;
 
-    /*  used in injections */
-    COMPLEX8FrequencySeries     *injRespPtr;    
- 
     /* units and other things */
     const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
@@ -280,7 +279,8 @@ int main( int argc, char *argv[])
       strcpy( resp.name, channelIn.name );
 
       /* generate the response function for the current time */
-      if ( verbose ) fprintf( stdout, "generating response at time %d sec %d ns\n",
+      if ( verbose ) 
+        fprintf( stdout, "generating response at time %d sec %d ns\n",
           resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
       LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo ),
           &stat );
@@ -289,26 +289,40 @@ int main( int argc, char *argv[])
     /*****************************************************************
      * Add injections into the time series:  UNTESTED
      *****************************************************************/
-    if( sineBurst )
+    if( injFlag )
     {
       SimBurstTable *injections = NULL;
 
-       injections =  (SimBurstTable *)LALMalloc( sizeof(SimBurstTable) );
-    
-      /* Fill in the injection structure */
-      injections->geocent_peak_time.gpsSeconds = 723345762;
-      injections->geocent_peak_time.gpsNanoSeconds = 0;
-      injections->longitude                      = 50.0;
-      injections->latitude                       = 50.0;
-      injections->hrss                           = sineAmpl;
-      injections->freq                           = sineFreq;
-      injections->tau                            = sineWidth;
-      injections->next                           = NULL;
-      /* Inject */
+      if ( !calFlag )
+      {
+        fprintf(stderr, "Must supply calibration information for injectoins\n");
+        exit(1);
+      }
 
-      injRespPtr = &resp;
-      LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, injRespPtr ), 
+      if ( verbose )
+        fprintf(stdout, "Injecting signals into time series\n");
+
+      /* read in list from file and make the injections */
+      LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile ),
+          &stat );
+      LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, &resp ), 
           &stat ); 
+
+      while (injections)
+      {
+        SimBurstTable *thisEvent;
+        thisEvent = injections;
+        injections = injections->next;
+        LALFree( thisEvent );
+      }
+
+      if ( verbose )
+        fprintf(stdout, "Finished making the injections\n");
+
+      /* write diagnostic info to disk */
+      if ( printData ){
+        LALPrintTimeSeries( &series, "./injections.dat" );
+      }
     }
 
     /* Finally call condition data */
@@ -372,7 +386,7 @@ int main( int argc, char *argv[])
     *******************************************************************/
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     snprintf( fname, sizeof(fname), "%s-%s-POWER-%d-%d.xml",
-            site, comment, epoch.gpsSeconds, (INT4)(series.deltaT * numPoints));
+            ifo, comment, epoch.gpsSeconds, (INT4)(series.deltaT * numPoints));
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, fname), &stat);
 
 
@@ -511,6 +525,7 @@ int initializeEPSearch(
 	{"sinAmpl",                 required_argument, 0,                 'G'},
 	{"sinWidth",                required_argument, 0,                 'H'},
         {"calcache",                required_argument, 0,                 'I'},
+        {"injfile",                 required_argument, 0,                 'J'},
         /* output options */
         {"printData",               no_argument,       &printData,         1 },
         {"printSpectrum",           no_argument,       &printData,         1 },
@@ -570,7 +585,7 @@ int initializeEPSearch(
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:",
+                "a:b:c:d:e:f:g:i:h:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:A:E:B:C:D:F:G:H:I:J:",
                 long_options, &option_index );
 
         /* detect the end of the options */
@@ -1090,6 +1105,7 @@ int initializeEPSearch(
                 len = strlen( optarg ) + 1;
                 calCacheFile = (CHAR *) calloc( len, sizeof(CHAR));
                 memcpy( calCacheFile, optarg, len );
+                calFlag = TRUE;
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
                 break;
 
@@ -1098,6 +1114,7 @@ int initializeEPSearch(
                 len = strlen( optarg ) + 1;
                 injectionFile = (CHAR *) calloc( len, sizeof(CHAR));
                 memcpy( injectionFile, optarg, len );
+                injFlag = TRUE;
                 ADD_PROCESS_PARAM( "string", "%s", optarg );
                 break;
 

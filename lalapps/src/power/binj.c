@@ -216,6 +216,7 @@ int main( int argc, char *argv[] ){
   REAL4  hpeak=1.0e-20;
 
   /* site end time */
+  CHAR                  coordinates[LIGOMETA_COORDINATES_MAX];
   LALPlaceAndGPS       *place_and_gps;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
   LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -250,6 +251,7 @@ int main( int argc, char *argv[] ){
     {"tau",                     required_argument, 0,                'x'},
     {"freq",                    required_argument, 0,                'y'},
     {"hpeak",                   required_argument, 0,                'z'},
+    {"coordinates",             required_argument, 0,                'c'},
     {"user-tag",                required_argument, 0,                'Z'},
     {0, 0, 0, 0}
   };
@@ -270,8 +272,11 @@ int main( int argc, char *argv[] ){
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
 
-  /* clear the waveform field */
+  /* clear the waveform field and set the coordinates */
   memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
+  memset( coordinates, 0, LIGOMETA_COORDINATES_MAX * sizeof(CHAR) );
+  LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
+            "EQUATORIAL" );
 
   /* parse the arguments */
   while ( 1 )
@@ -282,7 +287,7 @@ int main( int argc, char *argv[] ){
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:t:s:w:x:y:z:Z:", long_options, &option_index );
+        "ha:b:t:s:w:x:y:z:c:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -372,7 +377,9 @@ int main( int argc, char *argv[] ){
         LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg );
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
+        break;
 
+        
       case 'x':
         {
           tau = atof( optarg );
@@ -392,6 +399,12 @@ int main( int argc, char *argv[] ){
           hpeak = atof( optarg );
           this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", hpeak );
         }
+        break;
+
+      case 'c':
+        LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), "%s",
+            optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
         break;
 
       case 'Z':
@@ -496,6 +509,8 @@ int main( int argc, char *argv[] ){
         sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     this_sim_burst->longitude = 0.0;
     this_sim_burst->latitude = 90.0;
+    memcpy( this_sim_burst->coordinates, coordinates, 
+        sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
     this_sim_burst->polarization = 0.0;
     this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
     this_sim_burst->hpeak = hpeak;

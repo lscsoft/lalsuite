@@ -6,6 +6,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/BurstSearch.h>
 #include <lalapps.h>
