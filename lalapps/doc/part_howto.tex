@@ -11,50 +11,130 @@ We describe the installation of \lal\ and \lalapps\ for use in
 gravitational-wave data analysis.   These packages are under active
 development at the present time and the latest functionality is
 available only from CVS.   These instructions assume a standard
-RedHat installation including development tools.   
+Red Hat 7.3 or 9 installation including development tools.   
 
 \subsection{Installation of required development tools}
 
-A useful installation of \lal\ and \lalapps\ requires \textsc{fftw},
-the \textsc{frame} and \textsc{metaio} libraries.   Pre-compiled
-versions of these libraries are available as RPM's from
+A useful installation of \lal\ and \lalapps\ requires \textsc{fftw3},
+the \textsc{frame}, \textsc{metaio} and \textsc{gsl} libraries.   Pre-compiled
+versions of these libraries are available as binary RPMs for Red Hat 7.3 and
+Red Hat 9. If you do not know know what distribution of Red Hat you are
+running, this can be obtained by looking at the contents of the file 
 \begin{verbatim}
-http://www.lsc-group.phys.uwm.edu/lal/rpms/
+/etc/issue
 \end{verbatim}
-The binary versions
+On a Red Hat 7.3 system this file will contain the line
 \begin{verbatim}
-fftw-2.1.3-2lal.i386.rpm   28-Aug-2003 17:35   810k  
-frame-6.08-1lal.i386.rpm   28-Aug-2003 17:35   464k  
-metaio-4.13-1lal.i386.rpm  28-Aug-2003 17:35    24k  
-stow-1.3.3-1lal.i386.rpm   29-Aug-2003 12:27    29k 
+Red Hat Linux release 7.3 (Valhalla)
 \end{verbatim}
-are compiled on RedHat7.3 and RedHat 9.0 architecture,  but should work on other
-versions of RedHat.   Download the RPM's,  log in as root on your
-computer,  then type
+and on a Red Hat 9 system it will contain the line
 \begin{verbatim}
-rpm -Uvh fftw-2.1.3-2lal.i386.rpm
-rpm -Uvh frame-6.08-1lal.i386.rpm
-rpm -Uvh metaio-4.13-1lal.i386.rpm
-rpm -Uvh stow-1.3.3-1lal.i386.rpm
+Red Hat Linux release 9 (Shrike)
+\end{verbatim}
+To install the required development tools from binary RPMs, follow section
+\ref{ss:rh73} if you have a Red Hat 7.3 machine and section \ref{ss:rh9} if
+you have a Red Hat 9 machine. If your machine has a different type of Linux
+installed, you may try obtaining the source RPMs and building them manually as
+described in section \ref{ss:srpm} .
+
+\subsection{Red Hat 7.3 Binary RPM Installation}
+\label{ss:rh73}
+
+The binary RPMs for Red Hat 7.3 are located at
+\begin{verbatim}
+http://www.lsc-group.phys.uwm.edu/lal/rpms/redhat-7/
+\end{verbatim}
+You will need to download and install the following files from this directory
+\begin{verbatim}
+fftw-3.0.1-2.i386.rpm
+frame-6.12-1.i386.rpm
+gsl-1.1.1-1.i386.rpm
+gsl-devel-1.1.1-1.i386.rpm
+metaio-5.4-1.i386.rpm
+\end{verbatim}
+You may also download the following \emph{optional} RPMs 
+\begin{verbatim}
+frame-matlab-6.12-1.i386.rpm
+metaio-matlab-5.4-1.i386.rpm
+\end{verbatim}
+if you would like to use some additional Matlab only functionality provided,
+however these are \emph{not required} to build and install \lal or \lalapps.
+Download the RPM's, log in as root on your computer, then type
+\begin{verbatim}
+rpm -Uvh fftw-3.0.1-2.i386.rpm
+rpm -Uvh frame-6.12-1.i386.rpm
+rpm -Uvh gsl-1.1.1-1.i386.rpm
+rpm -Uvh gsl-devel-1.1.1-1.i386.rpm
+rpm -Uvh metaio-5.4-1.i386.rpm
+\end{verbatim}
+If you downloaded the optional Matlab RPMs, then type
+\begin{verbatim}
+rpm -Uvh frame-matlab-6.12-1.i386.rpm
+rpm -Uvh metaio-matlab-5.4-1.i386.rpm
+\end{verbatim}
+Watch for error messages.  If everything installs correctly,  skip to
+Sec.~\ref{ss:config},  otherwise skip to section~\ref{ss:srpm}.
+
+\subsection{Red Hat 9 Binary RPM Installation}
+\label{ss:rh9}
+
+The binary RPMs for Red Hat 9 are located at
+\begin{verbatim}
+http://www.lsc-group.phys.uwm.edu/lal/rpms/redhat-9/
+\end{verbatim}
+You will need to download and install the following files from this directory
+\begin{verbatim}
+fftw-3.0.1-3.i386.rpm
+frame-6.12-2.i386.rpm
+gsl-1.1.1-5.i386.rpm
+gsl-devel-1.1.1-5.i386.rpm
+metaio-5.4-2.i386.rpm
+\end{verbatim}
+You may also download the following \emph{optional} RPMs 
+\begin{verbatim}
+frame-matlab-6.12-2.i386.rpm
+metaio-matlab-5.4-2.i386.rpm
+\end{verbatim}
+if you would like to use some additional Matlab only functionality provided,
+however these are \emph{not required} to build and install \lal or \lalapps.
+Download the RPM's, log in as root on your computer, then type
+\begin{verbatim}
+rpm -Uvh fftw-3.0.1-3.i386.rpm
+rpm -Uvh frame-6.12-2.i386.rpm
+rpm -Uvh gsl-1.1.1-5.i386.rpm
+rpm -Uvh gsl-devel-1.1.1-5.i386.rpm
+rpm -Uvh metaio-5.4-2.i386.rpm
+\end{verbatim}
+If you downloaded the optional Matlab RPMs, then type
+\begin{verbatim}
+rpm -Uvh frame-matlab-6.12-1.i386.rpm
+rpm -Uvh metaio-matlab-5.4-1.i386.rpm
 \end{verbatim}
 Watch for error messages.   If everything installs correctly,  skip to
-Sec.~\ref{ss:config},  otherwise continue through the following steps.  
+Sec.~\ref{ss:config}, otherwise skip to section~\ref{ss:srpm}.
+
+\subsection{Installing from Source RPMs}
+\label{ss:srpm}
 
 If the binary RPM's do not work for some reason or your particular O/S
 is not supported,   the source RPM's are also available at the LAL web
-site.   Download
+at
 \begin{verbatim}
-fftw-2.1.3-2lal.src.rpm   28-Aug-2003 17:35   810k  
-frame-6.08-1lal.src.rpm   28-Aug-2003 17:35   464k  
-metaio-4.13-1lal.src.rpm  28-Aug-2003 17:35    24k  
-stow-1.3.3-1lal.src.rpm   29-Aug-2003 12:27   139k 
+http://www.lsc-group.phys.uwm.edu/lal/rpms/source/
+\end{verbatim}
+Download the files
+\begin{verbatim}
+fftw-3.0.1-3.src.rpm
+frame-6.12-2.src.rpm
+gsl-1.1.1-5.src.rpm
+metaio-5.4-2.src.rpm
 \end{verbatim}
 to your computer.  As root,   type
 \begin{verbatim}
-rpm -Uvh fftw-2.1.3-2lal.src.rpm
-rpm -Uvh frame-6.08-1lal.src.rpm
-rpm -Uvh metaio-4.13-1lal.src.rpm
-rpm -Uvh stow-1.3.3-1lal.src.rpm
+rpm -Uvh fftw-3.0.1-3.src.rpm
+rpm -Uvh frame-6.12-2.src.rpm
+rpm -Uvh gsl-1.1.1-5.src.rpm
+rpm -Uvh metaio-5.4-2.src.rpm
 \end{verbatim}
 Watch for errors.  If this fails,  there is a major problem:  e-mail
 \verb+lal-discuss@gravity.phys.uwm.edu+.    If it succeeds,  as root
@@ -63,14 +143,16 @@ cd /usr/src/redhat/SPECS
 rpm -bb fftw.spec
 rpm -bb frame.spec
 rpm -bb metaio.spec
-rpm -bb stow.spec
+rpm -bb gsl.spec
 cd /usr/src/redhat/RPMS/i386
-rpm -Uvh fftw-2.1.3-2lal.i386.rpm
-rpm -Uvh frame-6.08-1lal.i386.rpm
-rpm -Uvh metaio-4.13-1lal.i386.rpm
-rpm -Uvh stow-1.3.3-1lal.i386.rpm
+rpm -Uvh fftw-3.0.1-3.i386.rpm
+rpm -Uvh frame-6.12-2.i386.rpm
+rpm -Uvh gsl-1.1.1-5.i386.rpm
+rpm -Uvh gsl-devel-1.1.1-5.i386.rpm
+rpm -Uvh metaio-5.4-2.i386.rpm
 \end{verbatim}
-If there are problems, try the following:
+The Matlab add-ons for frame and metaio will not be available if you build the
+RPMs from source.  If the all the above fails, then try the following:
 \begin{enumerate}
    \item Later versions of the RPM software require \verb+rpm -bb+ to be 
       replaced by \verb+rpmbuild -bb+. 
@@ -82,10 +164,11 @@ If there are problems, try the following:
       \verb+make install+\\
       where \textit{package} is the package for which \verb+rpmbuild -bb+ 
       did not work. The \textit{package-dir} that belongs to 
-      \textit{package} should be obvious with the exception of frame, for
-      which it is \verb+v6r08+. You do not need to do \verb+rpm -Uvh+ 
+      \textit{package} should be obvious. You do not need to do \verb+rpm -Uvh+ 
       \textit{ package.i386.rpm} for packages installed in this way (this
-      binary rpm should not even exist).
+      binary rpm should not even exist).\\
+      For fftw the you should use use the flag \texttt{--enable-float}
+      when you run \texttt{configure}.
    \item If none of this works, e-mail\verb+lal-discuss@gravity.phys.uwm.edu+.   
 \end{enumerate}
 If it succeeds,  then you can go ahead to the next stage.   
@@ -116,22 +199,21 @@ the following lines to your \texttt{.bash\_profile} file
 \begin{verbatim}
 export LALPREFIX=${HOME}      # <---- Change this as appropriate
 export PATH=${LALPREFIX}/bin:${PATH}
-export LALCVS=":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal"
+export LALCVS=":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft"
+export MATLABPREFIX=/usr/share/matlab:${MATLABPREFIX}
 \end{verbatim}
 If you are using \texttt{csh} or a derivative,  add the following lines to
 your \texttt{.cshrc} file
 \begin{verbatim}
 setenv LALPREFIX $HOME
 setenv PATH $LALPREFIX/bin:$PATH
-setenv LALCVS ":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal"
+setenv LALCVS ":pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft"
+setenv MATLABPREFIX /usr/share/matlab:${MATLABPREFIX}
 \end{verbatim}
 These enviromnent variables must be set before running anything,
 so it is a good idea to log out and log back in again before
-continuing.   \textbf{Note:} With libtool version 1.4.2, or greater, there is
-no need to have the \verb+LD_LIBRARY_PATH+ environment variable set. Library
-paths are hard coded into the libraries using the \texttt{-rpath}
-compiler option. This is the correct way to do this,  using
-\verb+LD_LIBRARY_PATH+ is incorrect.  
+continuing. You may delete the line that sets the variable 
+\texttt{MATLABPREFIX} if you have not installed the optional matlab RPMs.
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,7 +250,9 @@ to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
 current development version.  If you want to check out a released
 version, replace the \verb+HEAD+ tag by \verb+release-X-Y+ where
 \verb+X+ and \verb+Y+ are integers which identify the release version
-number as \verb+X.Y+.
+number as \verb+X.Y+. You may also replace \verb+HEAD+ by a specific tag name,
+for example if you want to download the \verb+iulgroup_20040219+ tagged
+version.
 \begin{verbatim}
 cvs -d $LALCVS checkout -rHEAD lal
 \end{verbatim}
@@ -186,11 +270,28 @@ cd $LALPREFIX/src/lal
 make
 make check
 make dvi
-make install prefix=$LALPREFIX/stow_pkgs/lal-howto
-cd $LALPREFIX/stow_pkgs
-stow lal-howto
+make install
 \end{verbatim}
 This completes the installation and testing of LAL.  
+
+Note that if you have version 6.1 of the Intel Math Kernel Library (MKL)
+installed on your system, you may enable it by adding the arguments:
+\begin{verbatim}
+--enable-intelfft=yes --with-extra-cppflags=-I/opt/intel/mkl61/include \
+--with-extra-ldflags=-L/opt/intel/mkl61/lib/32
+\end{verbatim}
+to the LAL configure (after \texttt{--with-extra-cflags=-g}), assuming that
+you have installed MKL in the default location, which is
+\texttt{/opt/intel/mkl61}.
+
+If you wish to run your LALApps executable under the condor standard universe
+against a build of LAL that uses the Intel Math Kernel Library you should
+specifiy
+\begin{verbatim}
+--enable-intelfft=condor
+\end{verbatim}
+instead of \texttt{--enable-intelfft=yes} on the command line.
+
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -216,11 +317,14 @@ to the \texttt{-r} option in the commands below.   The HEAD tag checks out the
 current development version.  If you want to check out a released
 version, replace the \verb+HEAD+ tag by \verb+release-X-Y+ where
 \verb+X+ and \verb+Y+ are integers which identify the release version
-number as \verb+X.Y+.
+number as \verb+X.Y+. You may also replace \verb+HEAD+ by a specific tag name,
+for example if you want to download the \verb+iulgroup_20040226+ tagged
+version.
 \begin{verbatim}
 cvs -d $LALCVS checkout -rHEAD lalapps
 \end{verbatim}
-You have now obtained the latest development version of LALApps.
+You have now obtained the latest development version of LALApps if you used
+\verb+HEAD+ or the specified tagged version.
 
 \subsubsection{Build and Install}
 To build and install the LALApps suite, 
@@ -236,17 +340,15 @@ cd $LALPREFIX/src/lalapps
 make
 make check
 make dvi
-make install prefix=$LALPREFIX/stow_pkgs/lalapps-howto
-cd $LALPREFIX/stow_pkgs
-stow lalapps-howto
+make install
 \end{verbatim}
 This completes the installation and testing of LALApps.  
 
-Note f you are building lalapps on a machine with Condor installed and wish to
-run in the standard universe, append the option \texttt{--enable-condor} to
-the configure for lalapps before you type make. The lalapps executables will
-then be linked with \texttt{condor\_compile} and checkpointing will be
-available.
+Note that if you are building lalapps on a machine with Condor installed and
+wish to run in the standard universe, append the option
+\texttt{--enable-condor} to the configure for lalapps before you type make.
+The lalapps executables will then be linked with \texttt{condor\_compile} and
+checkpointing will be available.
 
 \color{black}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,9 +360,18 @@ Since \lal\ and \lalapps\ are constantly being improved,  you will
 eventually want to update the versions you have installed.   These
 instructions give you come guidance on the process.   As you become a
 more expereienced developer,  you will develop your own tricks for
-making this more efficient.    To do a complete update:
+making this more efficient.    To do a complete update to the head of
+the CVS:
 \begin{enumerate}
-\item Update the source code on your computer
+\item Remove the currently installed versions:
+\begin{verbatim}
+cd $LALPREFIX/src/lal
+make uninstall
+cd $LALPREFIX/src/lalapps
+make uninstall
+\end{verbatim}
+
+\item Update the source code on your computer:
 \begin{verbatim}
 cd $LALPREFIX/src/lal
 make cvs-clean
@@ -270,20 +381,8 @@ make cvs-clean
 cvs update -Ad
 \end{verbatim}
 
-\item Remove the old versions
-\begin{verbatim}
-cd $LALPREFIX/stow_pkgs
-stow --delete lal-howto
-stow --delete lalapps-howto
-\end{verbatim}
-
 \item Repeat the \textbf{Build and Install} instructions for \lal\ and then
-\lalapps,  but \textbf{change the prefix argument} to \verb+make install+.   
-For example,   if you compiled on 28 August 2003,  you might want to use
-\begin{verbatim}
-make install prefix=$LALPREFIX/stow_pkgs/lalapps-030828
-cd $LALPREFIX/stow_pkgs
-stow lalapps-030828
-\end{verbatim}
-
+\lalapps.
 \end{enumerate}
+To avoid conflicts it is important to \texttt{make uninstall} \emph{before}
+updating the the source code from CVS.
