@@ -2420,17 +2420,29 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   while( Fstat.F[ic] <= 0.5 * Fstat.F[indexes[0]] ) {
     ic++;
   } 
-  if( ic==0 ) {fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");}
-  leftEdgeTwoF = Fstat.F[ic];
-  leftEdgeFreq = uvar_Freq+ic*GV.dFreq;
+  if( ic==0 ) {
+    fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
+    leftEdgeTwoF = Fstat.F[ic];
+    leftEdgeFreq = uvar_Freq+ic*GV.dFreq;
+  } else {/* shift slightly downwards to cover the half-maximum point, if possible */
+    leftEdgeTwoF = Fstat.F[ic-1];
+    leftEdgeFreq = uvar_Freq+(ic-1)*GV.dFreq;
+  }
+
 
   ic=GV.FreqImax-1;
   while( Fstat.F[ic] <= 0.5 * Fstat.F[indexes[0]] ) {
     ic--;
   } 
-  if( ic==GV.FreqImax-1 ) {fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");}
-  rightEdgeTwoF = Fstat.F[ic];
-  rightEdgeFreq = uvar_Freq+ic*GV.dFreq;
+  if( ic==GV.FreqImax-1 ) {
+    fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
+    rightEdgeTwoF = Fstat.F[ic];
+    rightEdgeFreq = uvar_Freq+ic*GV.dFreq;
+  } else { /* shift slightly upwards to cover the half-maximum point, if possible */
+    rightEdgeTwoF = Fstat.F[ic+1];
+    rightEdgeFreq = uvar_Freq+(ic+1)*GV.dFreq;
+  }
+
   maximumTwoF= Fstat.F[indexes[0]];
   outlierFWHM = rightEdgeFreq - leftEdgeFreq;
   fprintf(stdout,"%15.9f %22.6f %15.9f %22.6f %22.6f %15.9f\n",leftEdgeFreq,leftEdgeTwoF,rightEdgeFreq,rightEdgeTwoF,maximumTwoF,outlierFWHM);
