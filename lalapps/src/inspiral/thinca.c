@@ -2,7 +2,7 @@
  * 
  * File Name: thinca.c
  *
- * Author: Brady, P. R., Brown, D. A. and Fairhurst, S.
+ * Author: Fairhurst, S.
  * 
  * Revision: $Id$
  * 
@@ -33,7 +33,7 @@ RCSID("$Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "inca"
+#define PROGRAM_NAME "thinca"
 
 #define INCA_EARG   1
 #define INCA_EROW   2
@@ -44,41 +44,10 @@ RCSID("$Id$");
 #define INCA_MSGEFILE  "Could not open file"
 
 #define MAXIFO 4
+#define NUMIFO 7
 
-/* Usage format string. */
-#define USAGE \
-  "Usage: %s [options] [LIGOLW XML input files]\n\n"\
-"  --help                    display this message\n"\
-"  --verbose                 print progress information\n"\
-"  --version                 print version information and exit\n"\
-"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING         set the process_params usertag to STRING\n"\
-"  --comment STRING          set the process table comment to STRING\n"\
-"\n"\
-"  --gps-start-time SEC      GPS second of data start time\n"\
-"  --gps-end-time SEC        GPS second of data end time\n"\
-"\n"\
-"  --g1-triggers             input triggers from G1\n"\
-"  --h1-triggers             input triggers from H1\n"\
-"  --h2-triggers             input triggers from H2\n"\
-"  --l1-triggers             input triggers from L1\n"\
-"  --t1-triggers             input triggers from T1\n"\
-"  --v1-triggers             input triggers from V1\n"\
-"\n"\
-"  --parameter-test TEST    set the desired parameters to test coincidence\n"\
-"                           for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
-"  --dm Dm                   mass coincidence window (default 0)\n"\
-"  --dpsi0 Dpsi0             psi0 coincidence window\n"\
-"  --dpsi3 Dpsi3             psi3 coincidence window\n"\
-"  --dmchirp Dmchirp         mchirp coincidence window\n"\
-"  --deta  Deta              eta coincidence window\n"\
-"  --dt Dt                   time coincidence window (milliseconds)\n"\
-"\n"\
-"  --data-type DATA_TYPE     specify the data type, must be one of\n"\
-"                            (playground_only|exclude_play|all_data)\n"\
-"\n"\
-"[LIGOLW XML input files] list of the input trigger files.\n"\
-"\n"
+#define KAPPA 1000
+#define EPSILON 2
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -90,12 +59,54 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-int g1_trig = 0;
-int h1_trig = 0;
-int h2_trig = 0;
-int l1_trig = 0;
-int t1_trig = 0;
-int v1_trig = 0;
+int haveTrig[NUMIFO];
+int checkTimes = 0;
+
+
+/*
+ * 
+ * USAGE
+ *
+ */
+static void print_usage(char *program)
+{
+  fprintf(stderr,
+      "Usage:  %s [options] [LIGOLW XML input files]\n" \
+      "The following options are recognized.  Options not surrounded in [] are\n" \
+      "required.\n" \
+      "  [--help]                      display this message\n"\
+      "  [--verbose]                   print progress information\n"\
+      "  [--version]                   print version information and exit\n"\
+      "  [--debug-level]   level       set the LAL debug level to LEVEL\n"\
+      "  [--user-tag]      usertag     set the process_params usertag\n"\
+      "  [--comment]       string      set the process table comment to STRING\n"\
+      "\n"\
+      "   --gps-start-time start_time  GPS second of data start time\n"\
+      "   --gps-end-time   end_time    GPS second of data end time\n"\
+      "  [--check-times]               Check that all times were analyzed\n"\   
+      "\n"\
+      "  [--g1-triggers]               input triggers from G1\n"\
+      "  [--h1-triggers]               input triggers from H1\n"\
+      "  [--h2-triggers]               input triggers from H2\n"\
+      "  [--l1-triggers]               input triggers from L1\n"\
+      "  [--t1-triggers]               input triggers from T1\n"\
+      "  [--v1-triggers]               input triggers from V1\n"\
+      "\n"\
+      "   --parameter-test test        set parameters with which to test coincidence:\n"\
+      "                                (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
+      "  [--dm Dm]                     mass coincidence window (default 0)\n"\
+      "  [--dpsi0] Dpsi0               psi0 coincidence window\n"\
+      "  [--dpsi3] Dpsi3               psi3 coincidence window\n"\
+      "  [--dmchirp] Dmchirp           mchirp coincidence window\n"\
+      "  [--deta]  Deta                eta coincidence window\n"\
+      "   --dt Dt                      time coincidence window (milliseconds)\n"\
+      "\n"\
+      "   --data-type DATA_TYPE        specify the data type, must be one of\n"\
+      "                                (playground_only|exclude_play|all_data)\n"\
+      "\n"\
+      "[LIGOLW XML input files] list of the input trigger files.\n"\
+      "\n", program);
+}
 
 
 int main( int argc, char *argv[] )
@@ -111,29 +122,26 @@ int main( int argc, char *argv[] )
   INT4  endCoincidence = -1;
   LIGOTimeGPS endCoinc = {0,0};
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
+  CHAR  ifos[LIGOMETA_IFOS_MAX];
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
 
-  INT8  currentTriggerNS[MAXIFO];
-  INT4  haveCoinc[MAXIFO];
-  INT4  numIFO;
-  INT4  numTriggers = 0;
-  INT4  inStartTime = -1;
-  INT4  inEndTime = -1;
-
-  INT8  maxTC = 0;
+  UINT4  numIFO = 0;
+  UINT4  numTrigIFO = 0;
+  UINT4  numTriggers = 0;
+  UINT4  numCoinc = 0;
+  UINT4  numTrigs[NUMIFO];
 
   SnglInspiralTable    *inspiralEventList = NULL;
   SnglInspiralTable    *thisInspiralTrigger = NULL;
-  SnglInspiralTable    *currentTrigger[MAXIFO];
-  CoincInspiralTable   *currentCoincCand[MAXIFO];
-  INT4  haveTest = 0;
-  INT4  haveDataType = 0;
+  SnglInspiralTable    *snglOutput;
+
+  EventIDColumn        *eventId;
 
   CoincInspiralTable   *coincInspiralList = NULL;
-  CoincInspiralTable   *prevCoincInspiral = NULL;
+  CoincInspiralTable   *thisCoinc = NULL;
 
   SnglInspiralAccuracy  errorParams;
 
@@ -149,24 +157,34 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable   searchSummvarsTable;
-  MetadataTable   summValueTable;
+  MetadataTable         searchSummvarsTable;
+  MetadataTable         summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
 
-  INT4                  i;
+  UINT4                  j;
+  INT4                   i;
+
+  const CHAR                   ifoList[NUMIFO][LIGOMETA_IFO_MAX] = 
+                                   {"??","G1", "H1", "H2", "L1", "T1", "V1"};
+  const CHAR                  *ifoArg[NUMIFO] = 
+                                   {"??","g1-triggers", "h1-triggers", 
+                                         "h2-triggers", "l1-triggers", 
+                                         "t1-triggers", "v1-triggers"};
+
 
   /* getopt arguments */
   struct option long_options[] =
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
-    {"g1-triggers",             no_argument,       &g1_trig,          1 },
-    {"h1-triggers",             no_argument,       &h1_trig,          1 },
-    {"h2-triggers",             no_argument,       &h2_trig,          1 },
-    {"l1-triggers",             no_argument,       &l1_trig,          1 },
-    {"t1-triggers",             no_argument,       &t1_trig,          1 },
-    {"v1-triggers",             no_argument,       &v1_trig,          1 },
+    {"g1-triggers",             no_argument,       &(haveTrig[g1]),   1 },
+    {"h1-triggers",             no_argument,       &(haveTrig[h1]),   1 },
+    {"h2-triggers",             no_argument,       &(haveTrig[h2]),   1 },
+    {"l1-triggers",             no_argument,       &(haveTrig[l1]),   1 },
+    {"t1-triggers",             no_argument,       &(haveTrig[t1]),   1 },
+    {"v1-triggers",             no_argument,       &(haveTrig[v1]),   1 },
+    {"check-times",             no_argument,       &checkTimes,       1 },
     {"parameter-test",          required_argument, 0,                'A'},
     {"dm",                      required_argument, 0,                'm'},
     {"dpsi0",                   required_argument, 0,                'p'},
@@ -213,11 +231,11 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
 
   memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
-  memset( currentTrigger, 0, MAXIFO * sizeof(SnglInspiralTable *) );
-  memset( currentCoincCand, 0, MAXIFO * sizeof(CoincInspiralTable *) );
-  memset( currentTriggerNS, 0, MAXIFO * sizeof(INT8) );
-  memset( haveCoinc, 0, MAXIFO * sizeof(INT4) );
-
+  /* XXX set kappa and epsilon to default values of 0.5, 10000 to effectively
+   * disable the effective distance cut XXX*/
+  errorParams.kappa = KAPPA;
+  errorParams.epsilon = EPSILON;
+  
   /* parse the arguments */
   while ( 1 )
   {
@@ -274,7 +292,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-        haveTest = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -311,7 +328,6 @@ int main( int argc, char *argv[] )
       case 't':
         /* time coincidence window, argument is in milliseconds */
         errorParams.dt = atof(optarg) * 1000000LL;
-        maxTC = errorParams.dt; 
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -402,14 +418,13 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-        haveDataType = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
 
       case 'h':
         /* help message */
-        fprintf( stderr, USAGE , argv[0]);
+        print_usage(argv[0]);
         exit( 1 );
         break;
 
@@ -437,26 +452,34 @@ int main( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
-            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+        fprintf( stdout, "Inspiral Coincidence\n" 
+            "Steve Fairhurst\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
         break;
 
       case '?':
-        fprintf( stderr, USAGE , argv[0]);
+        print_usage(argv[0]);
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
-        fprintf( stderr, USAGE, argv[0] );
+        print_usage(argv[0]);
         exit( 1 );
     }
   }
 
-  /* check the values of the arguments */
+  /*
+   *
+   * check the values of the arguments
+   *
+   */
+
+
+  /* Start and End times  */
+
   if ( startCoincidence < 0 )
   {
     fprintf( stderr, "Error: --gps-start-time must be specified\n" );
@@ -473,57 +496,52 @@ int main( int argc, char *argv[] )
   startCoinc.gpsSeconds = startCoincidence;
   endCoinc.gpsSeconds = endCoincidence;
 
-  if ( ! haveTest )
+
+  /* Parameter Test */
+  if ( errorParams.test == no_test )
   {
     fprintf( stderr, "Error: --parameter-test must be specified\n" );
     exit( 1 );
   }
 
 
-  if ( ! haveDataType )
+  /* Data Type */
+  if ( dataType == unspecified_data_type )
   {
     fprintf( stderr, "Error: --data-type must be specified\n");
     exit(1);
   }
 
-  if ( ! maxTC )
+
+  /* Time coincidence window, dt */
+  if ( ! errorParams.dt )
   {
     fprintf( stderr, "Error: --dt must be specified\n");
     exit(1);
   }
 
-  numIFO = 0;
-  if ( g1_trig )
+  /* Store the IFOs we expect triggers from */
+  for( j=1; j< NUMIFO; j++)
   {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "G1" ); 
-    numIFO++;
-  }
-  if ( h1_trig )
-  {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "H1" ); 
-    numIFO++;
-  }
-  if ( h2_trig )
-  {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "H2" ); 
-    numIFO++;
-  }
-  if ( l1_trig )
-  {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "L1" ); 
-    numIFO++;
-  }
-  if ( t1_trig )
-  {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "T1" ); 
-    numIFO++;
-  }
-  if ( v1_trig )
-  {
-    LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, "V1" ); 
-    numIFO++;
+    if ( haveTrig[j] )
+    {
+      /* write ifo name in ifoName list */
+      LALSnprintf( ifoName[numIFO], LIGOMETA_IFO_MAX, ifoList[j] );
+      numIFO++;
+
+      /* store the argument in the process_params table */
+      this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+        calloc( 1, sizeof(ProcessParamsTable) );
+      LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+          "%s", PROGRAM_NAME );
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", 
+          ifoArg[j]);
+      LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+      LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    }
   }
 
+  
   /* check that we have at least two IFOs specified, or can't do coincidence */
   if ( numIFO < 2 )
   {
@@ -532,6 +550,29 @@ int main( int argc, char *argv[] )
     exit ( 1 );
   }
 
+  if ( numIFO > 2 )
+  {
+    fprintf( stdout, 
+        "At present, only two IFO coincidence code is available.\n"
+        "Will find all double coincidences in %d IFO time.\n",
+        numIFO);
+  }
+  
+  /* set ifos to be the alphabetical list of the ifos with triggers */
+  if( numIFO == 2 )
+  {
+    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s", ifoName[0], ifoName[1] );
+  }
+  else if ( numIFO == 3 )
+  {
+    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s", ifoName[0], ifoName[1],
+        ifoName[2] );
+  }
+  else if ( numIFO == 4 )
+  {
+    LALSnprintf( ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s", ifoName[0], ifoName[1],
+        ifoName[2], ifoName[3]);
+  }
 
   /* fill the comment, if a user has specified one, or leave it blank */
   if ( ! *comment )
@@ -547,6 +588,26 @@ int main( int argc, char *argv[] )
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
+
+
+  /* store the check-times in the process_params table */
+  if ( checkTimes )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--check-times", 
+        ifoArg[j]);
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
+  /* delete the first, empty process_params entry */
+  this_proc_param = processParamsTable.processParamsTable;
+  processParamsTable.processParamsTable = 
+    processParamsTable.processParamsTable->next;
+  free( this_proc_param );
 
   /*
    *
@@ -710,18 +771,22 @@ int main( int argc, char *argv[] )
 
   /* check that we have read in data for all the requested times
      in all the requested instruments */
-  /* for ( j = 0; j < numIFO ; ++j )
-     {
+  if ( checkTimes )
+  {
+    if ( vrbflg ) fprintf( stdout, 
+        "Checking that we have data for all times from all IFOs\n");
+    for ( j = 0; j < numIFO ; ++j )
+    {
+      LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
+            ifoName[j], &startCoinc, &endCoinc ), &status);
+    }
+  }
 
-     LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
-     ifoName[j], &startCoinc, &endCoinc ), &status);
-     }
-   */
   if ( ! inspiralEventList )
   {
     /* no triggers, so no coincidences can be found */
     if ( vrbflg ) fprintf( stdout,
-        "No triggers read in so no coincidences can befound\n" );
+        "No triggers read in so no coincidences can be found\n" );
 
     goto cleanexit;
   }
@@ -750,11 +815,51 @@ int main( int argc, char *argv[] )
 
   /* scroll to the end of the linked list of triggers, counting triggers */
   thisInspiralTrigger = inspiralEventList;
-  for (numTriggers = 0 ; thisInspiralTrigger->next; ++numTriggers,
+  for (numTriggers = 0 ; thisInspiralTrigger; ++numTriggers,
       thisInspiralTrigger = thisInspiralTrigger->next );
   if ( vrbflg ) fprintf( stdout, 
       "%d remaining triggers after time and data type cut.\n", numTriggers );
 
+
+  if ( ! inspiralEventList )
+  {
+    /* no triggers remaining, so no coincidences can be found */
+    if ( vrbflg ) fprintf( stdout,
+        "No triggers remain after time/playground cuts\n"
+        "No coincidences can be found\n" );
+
+    goto cleanexit;
+  }
+
+  /* count the number of triggers for each IFO */
+  for( j = 1; j <7; j++)
+  {
+    LALIfoCountSingleInspiral(&status, &numTrigs[j], inspiralEventList, j);
+    if ( vrbflg ) fprintf( stdout, 
+        "Have %d triggers from %s.\n", numTrigs[j], ifoList[j] );
+    if ( numTrigs[j] && !haveTrig[j] )
+    {
+      fprintf( stderr, "Read in triggers from %s, none expected.\n",
+          ifoList[j]);
+    }
+    if ( haveTrig[j] && numTrigs[j] )
+    {
+      ++numTrigIFO;
+    }
+  }
+
+  if ( !numTrigIFO )
+  {
+    if ( vrbflg ) fprintf( stdout, "Have no triggers from any IFOs\n"
+        "Cannot be coincidences, so exiting without looking.\n");
+    goto cleanexit;
+  }
+  else if ( numTrigIFO==1 )
+  {
+    if ( vrbflg ) fprintf( stdout, "Have triggers from only one IFO\n"
+        "Cannot be coincidences, so exiting without looking.\n");
+    goto cleanexit;
+  }
 
   /* 
    *  
@@ -766,6 +871,15 @@ int main( int argc, char *argv[] )
         inspiralEventList, &errorParams ), &status); 
 
 
+  /* count the coincs */
+  if( coincInspiralList )
+  {  
+    for (numCoinc = 1, thisCoinc = coincInspiralList; 
+        thisCoinc->next; ++numCoinc, thisCoinc = thisCoinc->next );
+  }
+
+  if ( vrbflg ) fprintf( stdout,
+      "%d coincident triggers found.\n", numCoinc);
 
 
   /*
@@ -775,18 +889,18 @@ int main( int argc, char *argv[] )
    */
 
 
+  /* since we don't yet write coinc inspiral tables, we must make a list of
+   * sngl_inspiral tables with the eventId's appropriately poplulated */
+  LAL_CALL( LALExtractCoincSngls( &status, &snglOutput, coincInspiralList, 
+        &startCoinc), &status );
+
+
 cleanexit:
 
-  /* search summary entries: nevents is from primary ifo */
-  if ( inStartTime > 0 && inEndTime > 0 )
-  {
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = inStartTime;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = inEndTime;
-  }
-  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-    inStartTime > startCoincidence ? inStartTime : startCoincidence;
-  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-    inEndTime < endCoincidence ? inEndTime : endCoincidence;
+  searchsumm.searchSummaryTable->in_start_time = startCoinc;
+  searchsumm.searchSummaryTable->in_end_time = endCoinc;
+  searchsumm.searchSummaryTable->out_start_time = startCoinc;
+  searchsumm.searchSummaryTable->out_end_time = endCoinc;
   searchsumm.searchSummaryTable->nnodes = 1;
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
@@ -794,15 +908,14 @@ cleanexit:
   if ( userTag )
   {
     LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA_%s-%d-%d.xml", 
-        ifoName[0], userTag, startCoincidence, 
-        endCoincidence - startCoincidence );
+        ifos, userTag, startCoincidence, endCoincidence - startCoincidence );
   }
   else
   {
-    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifoName[0],
+    LALSnprintf( fileName, FILENAME_MAX, "%s-THINCA-%d-%d.xml", ifos,
         startCoincidence, endCoincidence - startCoincidence );
   }
-  searchsumm.searchSummaryTable->nevents = numTriggers;
+  searchsumm.searchSummaryTable->nevents = numCoinc;
 
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), 
@@ -810,8 +923,7 @@ cleanexit:
 
   /* write process table */
 
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
-      ifoName[0], ifoName[1] );
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, ifos );
 
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
@@ -829,6 +941,8 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
   /* write search_summary table */
+  LALSnprintf( searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, ifos );
+
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
         search_summary_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
@@ -851,12 +965,15 @@ cleanexit:
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
   /* write the sngl_inspiral table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-        sngl_inspiral_table), &status );
-  inspiralTable.snglInspiralTable = inspiralEventList;
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
-        sngl_inspiral_table), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+  if( snglOutput )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
+          sngl_inspiral_table), &status );
+    inspiralTable.snglInspiralTable = snglOutput;
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
+          sngl_inspiral_table), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+  }
 
   LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
 
@@ -889,6 +1006,13 @@ cleanexit:
     LALFree( thisInputFile );
   }
 
+  while ( searchSummList )
+  {
+    thisSearchSumm = searchSummList;
+    searchSummList = searchSummList->next;
+    LALFree( thisSearchSumm );
+  }
+
   while ( summValueList )
   {
     thisSummValue = summValueList;
@@ -896,18 +1020,40 @@ cleanexit:
     LALFree( thisSummValue );
   }
 
+  /* free the snglInspirals */
   while ( inspiralEventList )
   {
     thisInspiralTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
+    while ( thisInspiralTrigger->event_id )
+    {
+      /* free any associated event_id's */
+      eventId = thisInspiralTrigger->event_id;
+      thisInspiralTrigger->event_id = thisInspiralTrigger->event_id->next;
+      LALFree( eventId );
+    }
+    LALFree( thisInspiralTrigger );
+  }
+
+  while ( snglOutput )
+  {
+    thisInspiralTrigger = snglOutput;
+    snglOutput = snglOutput->next;
+    while ( thisInspiralTrigger->event_id )
+    {
+      /* free any associated event_id's */
+      eventId = thisInspiralTrigger->event_id;
+      thisInspiralTrigger->event_id = thisInspiralTrigger->event_id->next;
+      LALFree( eventId );
+    }
     LALFree( thisInspiralTrigger );
   }
 
   while ( coincInspiralList )
   {
-    prevCoincInspiral = coincInspiralList;
+    thisCoinc = coincInspiralList;
     coincInspiralList = coincInspiralList->next;
-    LALFree( prevCoincInspiral );
+    LALFree( thisCoinc );
   }
 
 
