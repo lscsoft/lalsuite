@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 if FRAME
-FRAMESRCS = series.c series.h
+FRAMESRCS = series.c series.h lalappsfrutils.c lalappsfrutils.h
 else
 FRAMESRCS = 
 endif
