@@ -135,7 +135,7 @@ static int FileListSelectCompare( const void *p1, const void *p2 )
   int ans = 0;
   if ( key->t0 < file->t0 )
     ans = -1;
-  else if ( key->t0 > file->t0 + file->dt )
+  else if ( key->t0 >= file->t0 + file->dt )
     ans = 1;
   return ans;
 }

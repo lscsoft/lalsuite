@@ -30,6 +30,7 @@ FUNC (
   TYPE 		*dest;
   INT8		 tnow;
   INT8		 tbeg;
+  INT8           tend;
   REAL8          rate;
 
   INITSTATUS( status, "FUNC", FRAMESERIESC );  
@@ -160,6 +161,19 @@ FUNC (
    * nearest nanosecond */
   SET_EPOCH( &stream->epoch, EPOCH_TO_I8TIME( series->epoch )
       + (INT8)floor( 1e9 * series->data->length * series->deltaT + 0.5 ) );
+
+  /* check to see that we are still within current frame */
+  tend  = SECNAN_TO_I8TIME( stream->frame->GTimeS, stream->frame->GTimeN );
+  tend += (INT8)floor( 1e9 * stream->frame->dt );
+  if ( tend <= EPOCH_TO_I8TIME( stream->epoch ) )
+  {
+    LIGOTimeGPS keep;
+    keep = stream->epoch;
+    /* advance a frame */
+    /* failure is benign, so we return results */
+    TRY( LALFrNext( status->statusPtr, stream ), status );
+    stream->epoch = keep;
+  }
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
