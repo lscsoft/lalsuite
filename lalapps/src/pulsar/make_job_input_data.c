@@ -16,7 +16,7 @@
 #define FILENAMEMAX 128
 
 /* Number of nodes on cluster (approximate number of jobs desired) */
-#define NODES 296
+#define NODES 10
 
 /* If nonzero, you want to have a fixed number of segments per job */
 #define SEGSPERJOB 0

@@ -40,6 +40,7 @@
 
 /* should we print the first 50 elements of various series */
 /* #define PRINT50 */
+#define PRINT50 0
 
 /* should we use doubles for the time-domain filtering */
 #define TDDOUBLE 1
@@ -57,10 +58,13 @@
 #define HIGHFREQ 0
 
 /* check of insensitivity to LSB of gravity-wave channel */
-#define QUANTIZATION_TEST 1
+#define QUANTIZATION_TEST 0
 
 /* track memory usage under linux */
 #define TRACKMEMUSE 1
+
+/* make calibrated SFTs starting with calibrated data */
+#define USETDCALDATA 1
 
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
@@ -81,7 +85,7 @@ struct headertag {
 #define DF    (2000.0)
 
 /* maximum number of start times from input file */
-#define MAXSTART 1000
+#define MAXSTART 10000
 
 /* This will hold the SFT and PLAN */
 COMPLEX8Vector *fvec = NULL;
@@ -341,7 +345,16 @@ void print50(float *array, char *name){
   int i;
   printf("\n%s\n", name);
   for (i=0; i<50; i++)
-    printf("%02d %f\n", i, array[i+176]);
+    printf("%02d %e\n", i, array[i+176]);
+  fflush(stdout);
+  return;
+}
+
+void print50double(double *array, char *name){
+  int i;
+  printf("\n%s\n", name);
+  for (i=0; i<50; i++)
+    printf("%02d %e\n", i, array[i+176]);
   fflush(stdout);
   return;
 }
@@ -453,8 +466,13 @@ int main(int argc,char *argv[]){
   }
   
   /* construct channel name */
+
+#if USETDCALDATA
+  sprintf(chname,"%s:Calibrated-Strain",argv[4]);
+#else
   sprintf(chname,"%s:LSC-AS_Q",argv[4]);
-  
+#endif
+
   { /* read start times values and how many of them there are */
     char timelist[256];
     INT4 tbasei;
@@ -585,8 +603,13 @@ int main(int argc,char *argv[]){
     
     /* read in correct data */
     errno=0;
+
+#if USETDCALDATA
+    frvect = FrFileIGetVProc(frfile, chname, epoch.gpsSeconds, tbase, 0);
+#else 
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
- 
+#endif
+
 #if TRACKMEMUSE
     printf("[After Fr]   Memory usage at iteration %d is:\n", count);
     printmemuse();
@@ -626,11 +649,19 @@ int main(int argc,char *argv[]){
     }
     
     /* Check that data type is correct */
+
+#if USETDCALDATA
+    if (frvect->type != FR_VECT_8R){
+      pout( "Wrong data type (notFR_VECT_8R) found in frame!\n" );
+      return(5);
+    }
+#else
     if (frvect->type != FR_VECT_4R){
       pout( "Wrong data type (notFR_VECT_4R) found in frame!\n" );
       return(5);
     }
-    
+#endif
+
     /* check for gaps */
     if (frvect->next){
       pout( "%s data between times %d and %d had a gap\n",argv[4], epoch.gpsSeconds,epoch.gpsSeconds+tbase);
@@ -647,10 +678,18 @@ int main(int argc,char *argv[]){
       int k;  
       
 #if PRINT50
+#if USETDCALDATA
+      print50double(frvect->dataD, "DOUBLE_PRECISION_FRAMEDATA");
+#else
       print50(frvect->dataF, "FRAMEDATA");
+#endif
 #endif
       
       /* create structure to store channel data  */
+      /* NOTE: if we are using time-domain calibrated data, then we
+	 are going to convert a double-precision quantity to a
+	 single-precision one here */
+
       chan.data = NULL;
       LALSCreateVector(&status, &chan.data, npts);
       TESTSTATUS(&status);
@@ -667,7 +706,8 @@ int main(int argc,char *argv[]){
       
       /* copy data */
       for (i=0;i<npts;i++){
-	chan.data->data[i]=frvect->dataF[i];
+	chan.data->data[i]=frvect->dataD[i];
+
 #if QUANTIZATION_TEST
 	{
 	  /* Note -- this mask MAY depend on big versus little endian.
