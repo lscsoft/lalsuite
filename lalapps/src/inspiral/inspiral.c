@@ -10,7 +10,6 @@
  */
 
 #include <config.h>
-#include "inspiral.h"
 #ifndef HAVE_GETOPT_H
 #include <stdio.h>
 int main( void )
@@ -20,41 +19,7 @@ int main( void )
 }
 #else
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <getopt.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <regex.h>
-#include <time.h>
-
-#include <lalapps.h>
-#include <processtable.h>
-
-#include <lal/LALConfig.h>
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALError.h>
-#include <lal/LALDatatypes.h>
-#include <lal/AVFactories.h>
-#include <lal/LALConstants.h>
-#include <lal/FrameStream.h>
-#include <lal/Window.h>
-#include <lal/TimeFreqFFT.h>
-#include <lal/IIRFilter.h>
-#include <lal/BandPassTimeSeries.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/Date.h>
-#include <lal/Units.h>
-#include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpChisq.h>
-#include <lal/FindChirpEngine.h>
-
+#include "inspiral.h"
 #include "ligolwbank.h"
 
 RCSID( "$Id$" );
@@ -62,10 +27,6 @@ RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
-
-int snprintf(char *str, size_t size, const  char  *format, ...);
-char *strsep(char **stringp, const char *delim);
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 
 /*
@@ -79,9 +40,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 extern int vrbflg;                      /* verbocity of lal function    */
 
 /* input data parameters */
-UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time    */
-UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time      */
+UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
+LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
+UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time ns   */
+LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
+INT4  safety = -1;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
+CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
 INT4  ovrlap            = -1;           /* overlap between segments     */
@@ -98,6 +63,7 @@ REAL4  fLow             = -1;           /* low frequency cutoff         */
 INT4   specType         = -1;           /* use median or mean psd       */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
+CHAR  *calibrationCache = NULL;         /* location of calibration data */
 
 /* matched filter parameters */
 INT4  startTemplate     = -1;           /* index of first template      */
@@ -128,8 +94,13 @@ int main( int argc, char *argv[] )
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
   /* frame input data */
-  FrStream     *frStream      = NULL;
-  FrChanIn     frChan;
+  FrCache      *frInCache = NULL;
+  FrStream     *frStream = NULL;
+  FrChanIn      frChan;
+
+  /* frame output data */
+  struct FrFile *frOutFile = NULL;
+  struct FrameH *outFrame  = NULL;
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
@@ -168,10 +139,9 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream       results;
 
   /* counters and other variables */
-  UINT4 i, j, k;
+  UINT4 i, k;
   INT4  inserted;
   INT4  currentLevel;
-
 
 
   /*
@@ -225,7 +195,7 @@ int main( int argc, char *argv[] )
   fcInitParams->numPoints      = numPoints;
   fcInitParams->numSegments    = numSegments;
   fcInitParams->numChisqBins   = numChisqBins;
-  fcInitParams->createRhosqVec = writeRhosq;
+  fcInitParams->createRhosqVec = writeRhosq + writeChisq;
   fcInitParams->ovrlap         = ovrlap;
 
 
@@ -248,15 +218,22 @@ int main( int argc, char *argv[] )
       &status );
 
   /* set the time series parameters of the input data */
-  LAL_CALL( LALINT8toGPS( &status, &(chan.epoch), &gpsStartTimeNS ), 
-      &status );
+  chan.epoch = gpsStartTime;
   memcpy( &(spec.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
   memcpy( &(resp.epoch), &(chan.epoch), sizeof(LIGOTimeGPS) );
   chan.deltaT = 1.0 / (REAL8) sampleRate;
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* read the data channel time series from frames */
-  LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+  if ( frInCacheName )
+  {
+    LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), &status );
+    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+  }
+  else
+  {
+    LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
+  }
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
   frChan.type = ADCDataChannel;
@@ -266,18 +243,7 @@ int main( int argc, char *argv[] )
 
   if ( writeRawData )
   {
-    FILE *rawFP = NULL;
-    if ( ! (rawFP = fopen( RAWDATA_FILE, "w" )) )
-    {
-      perror( "cannot open " RAWDATA_FILE " for writing" );
-      exit( 1 );
-    }
-    for ( j = 0; j < chan.data->length; ++j )
-    {
-      fprintf( rawFP, "%e\t%e\n", (REAL8) j * chan.deltaT, 
-          chan.data->data[j] );
-    }
-    fclose( rawFP );
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "INPUT" );
   }
 
   /* create the data segment vector */
@@ -364,6 +330,9 @@ int main( int argc, char *argv[] )
   }
    
   wpars.type = Hann;
+  wpars.length = numPoints;
+  avgSpecParams.overlap = numPoints / 2;
+
   LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
         &wpars ), &status );
   LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
@@ -374,18 +343,9 @@ int main( int argc, char *argv[] )
   /* write the spectrum data to a file */
   if ( writeSpectrum )
   {
-    FILE *specFP = NULL;
-    if ( ! (specFP = fopen( SPECTRUM_FILE, "w" )) )
-    {
-      perror( "cannot open " SPECTRUM_FILE " for writing" );
-      exit( 1 );
-    }
-    for ( k = 0; k < spec.data->length; ++k )
-    {
-      fprintf( specFP, "%e\t%e\n", (REAL8) k * spec.deltaF, 
-          spec.data->data[k] );
-    }
-    fclose( specFP );
+    strcpy( spec.name, chan.name );
+    outFrame = fr_add_proc_REAL4FrequencySeries( outFrame, 
+        &spec, "ct/sqrtHz", "PSD" );
   }
 
   /* set the parameters of the response to match the data and spectrum */
@@ -403,18 +363,9 @@ int main( int argc, char *argv[] )
   /* write the calibration data to a file */
   if ( writeResponse )
   {
-    FILE *respFP = NULL;
-    if ( ! (respFP = fopen( RESPONSE_FILE, "w" )) )
-    {
-      perror( "cannot open " RESPONSE_FILE " for writing" );
-      exit( 1 );
-    }
-    for ( k = 0; k < resp.data->length; ++k )
-    {
-      fprintf( respFP, "%e\t%e\t%e\n", (REAL8) k * resp.deltaF, 
-          resp.data->data[k].re, resp.data->data[k].im );
-    }
-    fclose( respFP );
+    strcpy( resp.name, chan.name );
+    outFrame = fr_add_proc_COMPLEX8FrequencySeries( outFrame, 
+        &resp, "strain/ct", "RESPONSE" );
   }
 
   /*
@@ -579,6 +530,7 @@ int main( int argc, char *argv[] )
 
   } /* end loop over linked list */
 
+
   /*
    *
    * write the filter data to disk as text files
@@ -588,35 +540,18 @@ int main( int argc, char *argv[] )
 
   if ( writeRhosq )
   {
-    FILE *rhosqFP = NULL;
-    if ( ! (rhosqFP = fopen( RHOSQ_FILE, "w" )) )
-    {
-      perror( "cannot open " RHOSQ_FILE " for writing" );
-      exit( 1 );
-    }
-    for ( j = 0; j < fcFilterParams->rhosqVec->data->length ; ++j )
-    {
-      fprintf( rhosqFP, "%e\t%e\n", 
-          (REAL8) j * fcFilterParams->rhosqVec->deltaT, 
-          fcFilterParams->rhosqVec->data->data[j] );
-    }
-    fclose( rhosqFP );
+    strcpy( fcFilterParams->rhosqVec->name, chan.name );
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        fcFilterParams->rhosqVec, "none", "SNRSQ" );
   }
 
   if ( writeChisq )
   {
-    FILE *chisqFP = NULL;
-    if ( ! (chisqFP = fopen( CHISQ_FILE, "w" )) )
-    {
-      perror( "cannot open " CHISQ_FILE " for writing" );
-      exit( 1 );
-    }
-    for ( j = 0; j < fcFilterParams->chisqVec->length ; ++j )
-    {
-      fprintf( chisqFP, "%e\t%e\n", 
-          (REAL8) j * chan.deltaT, fcFilterParams->chisqVec->data[j] );
-    }
-    fclose( chisqFP );
+    REAL4TimeSeries chisqts;
+    memcpy( &chisqts, fcFilterParams->rhosqVec, sizeof(REAL4TimeSeries) );
+    chisqts.data = fcFilterParams->chisqVec;
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+        &chisqts, "none", "CHISQ" );
   }
 
 
@@ -685,6 +620,20 @@ int main( int argc, char *argv[] )
    * write the result results to disk
    *
    */
+
+
+  /* write the output frame */
+  if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
+      writeRhosq || writeChisq )
+  {
+    char fname[256];
+    snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
+        site, gpsStartTime.gpsSeconds,
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    frOutFile = FrFileONew( fname, 0 );
+    FrameWrite( outFrame, frOutFile );
+    FrFileOEnd( frOutFile );
+  }
 
 
   /* open the output xml file */
@@ -770,10 +719,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"start-template",          required_argument, 0,                'm'},
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
+    {"calibration",             required_argument, 0,                'p'},
     {"rhosq-thresholds",        required_argument, 0,                'q'},
     {"chisq-thresholds",        required_argument, 0,                'r'},
     {"comment",                 required_argument, 0,                's'},
     {"enable-high-pass",        required_argument, 0,                't'},
+    {"frame-cache",             required_argument, 0,                'u'},
     {"debug-level",             required_argument, 0,                'z'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
@@ -787,6 +738,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   int c;
   INT4 haveDynRange = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+  LALStatus             status = blank_status;
 
 
   /*
@@ -802,7 +754,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:q:r:s:t:z:", 
+        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1057,6 +1009,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "int", "%d", numChisqBins );
         break;
 
+      case 'p':
+        {
+          /* create storage for the calibration frame cache name */
+          size_t ccnamelen = strlen(optarg) + 1;
+          calibrationCache = (CHAR *) LALCalloc( ccnamelen, sizeof(CHAR));
+          memcpy( calibrationCache, optarg, ccnamelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
+
       case 'q':
         {
           size_t rhosqlen = strlen( optarg );
@@ -1101,6 +1063,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%e", highPassFreq );
+        break;
+
+      case 'u':
+        {
+          /* create storage for the input frame cache name */
+          size_t frcnamelen = strlen(optarg) + 1;
+          frInCacheName = (CHAR *) LALCalloc( frcnamelen, sizeof(CHAR) );
+          memcpy( frInCacheName, optarg, frcnamelen );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
         break;
 
       case 'z':
@@ -1202,17 +1174,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--gps-start-time must be specified\n" );
     exit( 1 );
   }
+  LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ), 
+      &status );
   if ( ! gpsEndTimeNS )
   {
     fprintf( stderr, "--gps-end-time must be specified\n" );
     exit( 1 );
   }
-
+  LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ), 
+      &status );
   if ( gpsEndTimeNS <= gpsStartTimeNS )
   {
     fprintf( stderr, "invalid gps time range: "
-        "start time: %lld, end time %lld\n",
-        gpsStartTimeNS / 1000000000LL, gpsEndTimeNS / 1000000000LL );
+        "start time: %d, end time %d\n",
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
     exit( 1 );
   }
 
@@ -1237,6 +1212,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( sampleRate < 0 )
   {
     fprintf( stderr, "--sample-rate must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check calibration has been given */
+  if ( ! calibrationCache )
+  {
+    fprintf( stderr, "--calibration must be specified\n" );
     exit( 1 );
   }
 
@@ -1314,6 +1296,81 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   return 0;
+}
+
+FrameH *fr_add_proc_REAL4TimeSeries ( 
+    FrameH                     *frame, 
+    REAL4TimeSeries            *chan,
+    const char                 *unit,
+    const char                 *suffix
+    )
+{
+  char          chname[256];
+  struct        series fdata;
+
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    fdata.name = chname;
+    fdata.tbeg = chan->epoch;
+    memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
+    epoch_add( &fdata.tend, &(chan->epoch), 
+        chan->deltaT * (REAL8) chan->data->length );
+    fdata.dom = Time;
+    fdata.type = FR_VECT_4R;
+    fdata.step = (float) chan->deltaT;
+    fdata.unit = unit;
+    fdata.size = (size_t) chan->data->length;
+    fdata.data = (float *) chan->data->data;
+    return fr_add_proc_data( frame, &fdata );
+}
+
+FrameH *fr_add_proc_REAL4FrequencySeries ( 
+    FrameH                     *frame, 
+    REAL4FrequencySeries       *chan,
+    const char                 *unit,
+    const char                 *suffix
+    )
+{
+  char          chname[256];
+  struct        series fdata;
+
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    fdata.name = chname;
+    fdata.tbeg = chan->epoch;
+    memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
+    epoch_add( &fdata.tend, &chan->epoch, 
+        (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
+    fdata.dom = Freq;
+    fdata.type = FR_VECT_4R;
+    fdata.step = (float) chan->deltaF;
+    fdata.unit = unit;
+    fdata.size = (size_t) chan->data->length;
+    fdata.data = (float *) chan->data->data;
+    return fr_add_proc_data( frame, &fdata );
+}
+
+FrameH *fr_add_proc_COMPLEX8FrequencySeries ( 
+    FrameH                        *frame, 
+    COMPLEX8FrequencySeries       *chan,
+    const char                    *unit,
+    const char                    *suffix
+    )
+{
+  char          chname[256];
+  struct        series fdata;
+
+  snprintf( chname, sizeof(chname), "%s_%s", chan->name, suffix );
+    fdata.name = chname;
+    fdata.tbeg = chan->epoch;
+    memset( &fdata.tend, 0, sizeof(LIGOTimeGPS) );
+    epoch_add( &fdata.tend, &chan->epoch, 
+        (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
+    fdata.dom = Freq;
+    fdata.type = FR_VECT_8C;
+    fdata.step = (float) chan->deltaF;
+    fdata.unit = unit;
+    fdata.size = (size_t) chan->data->length;
+    fdata.data = (float *) chan->data->data;
+    return fr_add_proc_data( frame, &fdata );
 }
 
 #undef ADD_PROCESS_PARAM
