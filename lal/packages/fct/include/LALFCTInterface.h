@@ -113,6 +113,18 @@ tagLALCreateFCTPlanInput
 LALCreateFCTPlanInput;
 
 /*
+  Input structure for LALFCTSetOversamplingFactor
+  
+*/
+typedef struct
+tagLALFCTSetOversamplingFactorInput
+{
+    INT4 ofac;
+    INT4 dim;
+}
+LALFCTSetOversamplingFactorInput;
+
+/*
   Structure to hold information about the limits of a "data cube",
   that is, a parallelpiped (not necessarily cubic!) in N dimensions.
   The bounds for dimension i are given by start_locations[i] and
@@ -201,6 +213,16 @@ void LALCreateFCTPlan(LALStatus* const status,
 extern
 void LALDestroyFCTPlan(LALStatus* const status,
 		       LALFCTPlan** plan);
+
+/*
+  Set the oversampling factor for each phase function
+
+  If this function is not called, the default oversampling factor is 1.
+*/
+extern
+void LALFCTSetOversamplingFactor(LALStatus* const status,
+			      const LALFCTSetOversamplingFactorInput* const in,
+			      LALFCTPlan* const plan);
 
 /*
   Set the units for the plan.
