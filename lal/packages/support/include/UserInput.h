@@ -83,16 +83,16 @@ regBOOLUserVar(stat,   binaryoutput,	'b', UVAR_OPTIONAL, "Output time-domain dat
 regINTUserVar(stat,    nTsft,		'N', UVAR_REQUIRED, "Number of SFTs nTsft");
 </lalVerbatim> */
 
-#define regREALUserVar(stat,name,option,flag,help) \
+#define LALregREALUserVar(stat,name,option,flag,help) \
 TRY(LALRegisterREALUserVar((stat)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), stat)
 
-#define regINTUserVar(stat,name,option,flag,help) \
+#define LALregINTUserVar(stat,name,option,flag,help) \
 TRY(LALRegisterINTUserVar((stat)->statusPtr, #name, option,flag, help,&(uvar_ ## name)), stat)
 
-#define regBOOLUserVar(stat,name,option,flag,help) \
+#define LALregBOOLUserVar(stat,name,option,flag,help) \
 TRY(LALRegisterBOOLUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
 
-#define regSTRINGUserVar(stat,name,option,flag,help) \
+#define LALregSTRINGUserVar(stat,name,option,flag,help) \
 TRY(LALRegisterSTRINGUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
 
 /********************************************************** <lalLaTeX>
@@ -150,8 +150,8 @@ void LALUserVarReadCfgfile (LALStatus *stat, const CHAR *cfgfile);
 
 void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring, const CHAR *progname);
 void LALUserVarCheckRequired (LALStatus *stat);
-INT4 UVARwasSet (void *cvar);
-void UVARgetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
+INT4 LALUserVarWasSet (void *cvar);
+void LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
 
 #ifdef  __cplusplus
 }

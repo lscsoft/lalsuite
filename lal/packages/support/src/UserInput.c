@@ -672,7 +672,7 @@ LALUserVarReadAllInput (LALStatus *stat, int argc, char *argv[])
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="UserInputCP"> */
 INT4
-UVARwasSet (void *cvar)
+LALUserVarWasSet (void *cvar)
 { /* </lalVerbatim> */
 
   LALUserVariable *ptr;
@@ -695,7 +695,7 @@ UVARwasSet (void *cvar)
   /* we found it: has it been set by user? */
   return (ptr->state & UVAR_WAS_SET);
 
-} /* UVARwasSet() */
+} /* LALUserVarWasSet() */
 
 /*----------------------------------------------------------------------
  * check that all required user-variables have been set successfully
@@ -725,7 +725,7 @@ LALUserVarCheckRequired (LALStatus *stat)
  * treat the delicate setting of lalDebuglevel
  *----------------------------------------------------------------------*/
 void
-UVARgetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
+LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
 {
   static const char *help = "set lalDebugLevel";
   static INT4 defaultDebugLevel;
@@ -772,4 +772,4 @@ UVARgetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar)
 
   RETURN (stat);
 
-} /* UVARgetDebugLevel() */
+} /* LALGetDebugLevel() */
