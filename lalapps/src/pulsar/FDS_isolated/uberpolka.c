@@ -608,7 +608,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     {
       char newline='\0';
 
-      if (line1[strlen(line1)] != '\n') {
+      if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
 	fprintf(stderr,
 		"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
 		i+1, fname, line1);
