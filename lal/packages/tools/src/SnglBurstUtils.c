@@ -39,12 +39,15 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \idx{XLALSortSnglBurst()}
 \idx{XLALCompareSnglBurstByStartTime()}
 \idx{XLALCompareSnglBurstByTime()}
+\idx{XLALCompareSnglBurstSnglInspiralByTime()}
 \idx{XLALCompareSnglBurstByLowFreq()}
 \idx{XLALCompareSnglBurstByFreq()}
 \idx{XLALCompareSnglBurstByStartTimeAndLowFreq()}
 \idx{XLALCompareSnglBurstByPeakTimeAndFreq()}
 \idx{LALCompareSnglBurst()}
 \idx{XLALCompareSnglBurst()}
+\idx{LALCompareSnglBurstSnglInspiral()}
+\idx{XLALCompareSnglBurstSnglInspiral()}
 \idx{LALCompareSimBurstAndSnglBurst()}
 \idx{XLALCompareSimBurstAndSnglBurst()}
 \idx{LALClusterSnglBurstTable()}
@@ -100,6 +103,10 @@ static REAL4 hi_freq(const SnglBurstTable *x)
 	return(x->central_freq + x->bandwidth / 2);
 }
 
+static INT8 inspiral_end_time(const SnglInspiralTable *x)
+{
+	return(XLALGPStoINT8(&x->end_time));
+}
 
 /*
  * Sort a list of SnglBurstTable events into increasing order according to the
@@ -230,6 +237,33 @@ XLALCompareSnglBurstByTime(
 	return(0);	/* a and b's intervals are continuous */
 }
 
+/*
+ * Compare the end time of a SnglInspiral event with the start time  
+ * of a SnglBurst event.
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstSnglInspiralByTime(
+	const SnglBurstTable * const *a,
+	const SnglInspiralTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 burst_start, burst_end, inspiral_end;
+	INT8 epsilon = 1000000;    /*nanoseconds*/
+
+	burst_start = start_time(*a);
+ 	burst_end = end_time(*a);
+	inspiral_end = inspiral_end_time(*b);
+ 
+	if(inspiral_end < burst_start - epsilon)
+		return(1); /*the inspiral ends 10 msecs before the burst starts*/
+	if(inspiral_end > burst_end)
+		return(-1); /*the inspiral ends after the burst ends*/
+	return(0);  /*inspiral ends somewhere between 10msecs before the start of burst and the end of burst */ 
+}
+
 
 /*
  * Compare the low frequency limits of two SnglBurstTable events.
@@ -239,8 +273,7 @@ XLALCompareSnglBurstByTime(
 int
 XLALCompareSnglBurstByLowFreq(
 	const SnglBurstTable * const *a,
-	const SnglBurstTable * const *b
-)
+	const SnglBurstTable * const *b)
 /* </lalVerbatim> */
 {
 	REAL4 flowa, flowb;
@@ -351,6 +384,41 @@ LALCompareSnglBurst(
 {
 	INITSTATUS (status, "LALCompareSnglBurst", SNGLBURSTUTILSC);
 	*difference = XLALCompareSnglBurst(&a, &b);
+	RETURN(status);
+}
+
+
+/*
+ * Check to see if a burst event and an isnpiral event are coincident.
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstSnglInspiral(
+	const SnglBurstTable * const *a,
+	const SnglInspiralTable * const *b
+)
+/* </lalVerbatim> */
+{
+	int result;
+
+	result = XLALCompareSnglBurstSnglInspiralByTime(a, b);
+   
+	return(result);
+}
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+LALCompareSnglBurstSnglInspiral(
+	LALStatus *status,
+	const SnglBurstTable *a,
+	const SnglInspiralTable *b,
+	int *difference
+)
+/* </lalVerbatim> */
+{
+	INITSTATUS (status, "LALCompareSnglBurstSnglInspiral", SNGLBURSTUTILSC);
+	*difference = XLALCompareSnglBurstSnglInspiral(&a, &b);
 	RETURN(status);
 }
 
