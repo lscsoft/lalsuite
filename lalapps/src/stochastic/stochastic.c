@@ -490,8 +490,8 @@ static void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
 
   /* set frame filename */
   LALSnprintf(source, sizeof(source), "%s%s", ifo_one, ifo_two);
-  LALSnprintf(fname, sizeof(fname), "%s-ccSpectra-%d-%d.gwf", source, \
-      epoch.gpsSeconds, duration);
+  LALSnprintf(fname, sizeof(fname), "%s-%s-%d-%d.gwf", source, \
+      frame_type, epoch.gpsSeconds, duration);
 
   /* setup frame file */
   frfile = FrFileONew(fname, 0);
@@ -2007,13 +2007,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get xml file name */
   if (userTag)
   {
-    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic_%s_%d-%d", \
-        ifoOne, ifoTwo, userTag, startTime, endTime);
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-STOCHASTIC_%s_%d-%d", \
+        ifoOne, ifoTwo, userTag, startTime, (endTime - startTime));
   }
   else
   {
-    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
-        ifoOne, ifoTwo, startTime, endTime);
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-STOCHASTIC-%d-%d", \
+        ifoOne, ifoTwo, startTime, (endTime - startTime));
   }
 
   /* get number of segments */

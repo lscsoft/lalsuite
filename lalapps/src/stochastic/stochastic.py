@@ -209,18 +209,18 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
         raise StochasticError, "Start time, end time, ifo one or ifo " \
           "two has not been set"
 
-    basename = self.get_ifo_one() + self.get_ifo_two() + '-' + 'stochastic'
+    basename = self.get_ifo_one() + self.get_ifo_two() + '-' + 'STOCHASTIC'
 
     if self.__usertag:
       basename += '_' + self.__usertag
 
     if self.__output_dir:
       filename = self.__output_dir + '/' + basename + '-' + \
-                 str(self.get_start()) + '-' + str(self.get_end()) + \
-                 '.xml'
+                 str(self.get_start()) + '-' + \
+                 str(self.get_end() - self.get_start()) + '.xml'
     else:
       filename = basename + '-' + str(self.get_start()) + '-' + \
-                 str(self.get_end()) + '.xml'
+                 str(self.get_end() - self.get_start()) + '.xml'
 
     return filename
 
