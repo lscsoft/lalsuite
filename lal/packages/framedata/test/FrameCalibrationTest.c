@@ -17,17 +17,17 @@
  *
  * \subsubsection*{Description}
  *
- * For each GPS time in the array \verb+calTimes+, this program attemps to
- * generate a calibration updated to that time. It attemps to read a frame
- * cahce file names \verb+L-CAL-gpstime.catalog+, where \verb+gpstime+ is 
- * obtained from the array \verb+catalogTime+. Even elements of the arrau
- * \verb+calTimes+ use the first element of the array \verb+catalogTime+
- * and odd elements the second. This is done to allow the developer to test a
- * range of GPS times and catalogs quickly.
+ * For each GPS time in the array \verb+calTime+, this program attemps to
+ * generate a calibration for that time. It reads a frame cahce file
+ * named \verb+L-CAL-gpstimerange.catalog+, where \verb+gpstimerange+ is
+ * obtained from the array \verb+cacheTime+. Even elements of the array
+ * \verb+calTime+ use the first element of the array \verb+cacheTime+ and odd
+ * elements the second. This is done to allow the developer to test a range of
+ * GPS times and catalogs quickly.
  *
  * The GPS times for which calibrations are attempted are 714313260,
  * 729925000, 714962262, 729925450 and 800000000. The catalog times are
- * 715388533 and 729907747.
+ * 714240000-715609980 and 729925200-729928800.
  *
  * Since this test requires LIGO science data, the required calibration 
  * frame files are not distributed with LAL, however they can be obtained 
@@ -38,9 +38,10 @@
  * L-CAL_REF-729907747-64.gwf
  * L-SenseMonitor_L1_M-729925200-3600.gwf
  * \end{verbatim}
+ * In order to run the test, these files should be placed under the framedata
+ * test directory before running make check.
  * 
- * Standard error codes from the calibration function are checked for and
- * handled, and if an updated response is generated it is written to a file.
+ * If the required calibration data is missing, then the test is not executed.
  * 
  **** </lalLaTeX> */
 
@@ -60,16 +61,16 @@
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 
 #define CHANNEL "L1:LSC-AS_Q"
-#define CAL_CATALOG "L-CAL-%d.catalog"
+#define CAL_CATALOG "L-CAL-%s.cache"
 
-INT4 lalDebugLevel = LALWARNING | LALINFO;
+INT4 lalDebugLevel =  LALINFO;
 
 int main( void )
 {
   UINT4 i;
 
-  INT4  calTime[] = { 714313260, 729925000, 714962262, 729925450, 800000000 };
-  INT4  catalogTime[] = { 715388533, 729907747 };
+  INT4  calTime[] = { 714241541, 729925000, 714962262, 729925450, 800000000 };
+  CHAR  cacheTime[][21] = { "714240000-715609980", "729925200-729928800" };
 
   static LALStatus      status;
   const CHAR            calCacheName[LALNameLength];
@@ -100,38 +101,32 @@ int main( void )
   {
     /* set the time of the calibration and the frame cahche file to use */
     LALSnprintf( calCacheName, LALNameLength * sizeof(CHAR), CAL_CATALOG,
-        catalogTime[i % 2] );
+        cacheTime[i % 2] );
     response.epoch.gpsSeconds = calTime[i];
-    fprintf( stdout, "Getting calibration for GPS time %d from catalog %s\n", 
+    fprintf( stdout, "Getting calibration for GPS time %d from cache file %s\n",
         response.epoch.gpsSeconds, calCacheName );
     fflush( stdout );
 
     /* create the response function */
     LALExtractFrameResponse( &status, &response, calCacheName, ifo );
-    if ( status.statusCode == FRAMECALIBRATIONH_EMCHE )
+    if ( status.statusCode == FRAMECALIBRATIONH_EOREF )
     {
-      LALPrintError( "No calibration cache file available\n" );
+      LALPrintError( "%s\n", status.statusDescription );
       return 77;
     }
-    else if ( status.statusCode == FRAMECALIBRATIONH_ECREF )
+    else if ( status.statusCode == FRAMECALIBRATIONH_ECREF ||
+        status.statusCode == FRAMECALIBRATIONH_ECFAC )
     {
-      LALPrintError( "Calibration NOT generated: %s\n", 
-          status.statusDescription );
-    }
-    else if ( status.statusCode == FRAMECALIBRATIONH_ECFAC )
-    {
-      LALPrintError( "Calibration NOT updated: %s\n", 
-          status.statusDescription );
+      LALPrintError( " %s\n", status.statusDescription );
     }
     else if ( status.statusCode == -1 && status.statusPtr &&
         ( status.statusPtr->statusCode == CALIBRATIONH_ETIME ||
           status.statusPtr->statusCode == CALIBRATIONH_EZERO ||
           status.statusPtr->statusCode == FRAMESTREAMH_EDONE ) )
     {
-      LALPrintError( "Calibration NOT updated: %s\n", 
-          status.statusPtr->statusDescription );
+      LALPrintError( "%s\n", status.statusPtr->statusDescription );
       LALFree( status.statusPtr );
-      memset( &status, 0, sizeof( status ) );
+      status.statusPtr = NULL;
     }
     else
     {
