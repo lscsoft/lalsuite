@@ -52,18 +52,17 @@ cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/starlist.C screensaver/src/starsphere.C \
 	screensaver/src/user_text.C screensaver/src/pulsar_list.C \
 	screensaver/src/search_info.C
-cfsBOINC_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC 
+cfsBOINC_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC 
 cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -static \
 	-L$(HOME_BOINC)/lib -lboinc -lboinc_api -lboinc_graphics_api \
-	-L$(HOME_OPENGL)/lib -L/usr/X11R6/lib -lboincglut -lglut -lGL -lGLU -lXmu  
+	-L$(HOME_OPENGL)/lib -L/usr/X11R6/lib -lboincglut -lGL -lGLU -lXmu  
 
-## Bruce: these don't seem to be needed explicitly for me? are they for you?
-## -L/usr/X11R6/lib -lGL -lGLU  -lX11 -lXext -ldl -lglut  -lm -lpthread -lXi -lXmu
-
+# non-graphic version
 cfsBOINCnographics_SOURCES = cfsBOINC.cc $(CFSsources)
-cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC -DNO_BOINC_GRAPHICS
-cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -static -lboinc -lboinc_api 
+cfsBOINCnographics_CPPFLAGS = $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC \
+	-DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINCnographics_LDFLAGS = $(AM_LDFLAGS) -L$(HOME_BOINC)/lib -all-static -lboinc -lboinc_api 
 
-## trick make into using c++ for ComputeFStatistic.c (for boinc-includes):
+## trick automake into using g++ for ComputeFStatistic.c (for boinc-includes to work):
 cfsBOINC.cc: ComputeFStatistic.c
 	ln -s ComputeFStatistic.c cfsBOINC.cc
