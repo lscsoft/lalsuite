@@ -540,7 +540,7 @@ int main( int argc, char **argv )
   /*------ Open the files and read up to the beginning of each Stream ------*/
 
   /*-- Open file of candidate events --*/
-  status = MetaioOpen( candEnv, candFile );
+  status = MetaioOpenTable( candEnv, candFile, "sngl_inspiral" );
   if ( status != 0 ) {
 
     /*-- Failed to open this file as a LIGO_LW file --*/
@@ -598,7 +598,7 @@ int main( int argc, char **argv )
     /*-- Initialize some structure elements--*/
     vFile->env = &(vFile->parseEnv);
 
-    status = MetaioOpen( vFile->env, vFile->filename );
+    status = MetaioOpenTable( vFile->env, vFile->filename, "gds_trigger" );
     if ( status != 0 ) {
       /*-- Failed to open this file as a LIGO_LW file --*/
       MetaioAbort( vFile->env );
