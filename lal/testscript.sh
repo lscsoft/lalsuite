@@ -1,25 +1,40 @@
 #!/bin/sh
 
+# How to fail
+fail () {
+  echo "!!! `date`: Failed.  Consult file `basename $LOG`."
+  exit 1;
+}
+
 # Help message
 helpmsg="Usage $0 [options]
 Options: [defaults in brackets after description]"
 helpmsg="$helpmsg
   --help                print this message"
 helpmsg="$helpmsg
+  --fresh               fresh start and stop [no]"
+helpmsg="$helpmsg
+  --include-deps        pass option --include-deps to automake on 00boot [no]"
+helpmsg="$helpmsg
   --use-tar=TAR         use the program TAR [tar]"
 helpmsg="$helpmsg
   --use-make=MAKE       use the program MAKE [make]"
 helpmsg="$helpmsg
-  --prefix=PREFIX       set prefix to PREFIX [/tmp]"
+  --prefix=PREFIX       set prefix to PREFIX [/tmp/`logname`]"
 helpmsg="$helpmsg
   --config-args=ARGS    configure with arguments ARGS
                         [\"--enable-frame --enable-mpi --with-gcc-flags\"]"
+helpmsg="$helpmsg
+  --extra-config-args=ARGS configure with extra arguments ARGS [none]"
 
 # Setable variables
+
+FRESH="no"
 TAR="tar"
 MAKE="make"
-PREFIX="/tmp"
+PREFIX="/tmp/`logname`"
 CONFIGARGS="--with-gcc-flags --enable-frame --enable-mpi"
+INCLUDEDEPS=""
 
 # Process args
 while test $# -gt 0 ; do
@@ -30,10 +45,13 @@ while test $# -gt 0 ; do
   esac
   case $option in
     -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -f | -fresh | --fresh ) FRESH="yes";;
+    -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
     -use-tar=* | --use-tar=* ) TAR="$optarg";;
     -use-make=* | --use-make=* ) MAKE="$optarg";;
     -prefix=* | --prefix=* ) PREFIX="$optarg";;
     -config-args=* | --config-args=* ) CONFIGARGS="$optarg";;
+    -extra-config-args=* | --extra-config-args=* ) CONFIGARGS="$CONFIGARGS $optarg";;
     *) echo "unrecognized option $option"; exit 1;;
   esac
   shift
@@ -51,63 +69,64 @@ lalver="$lal-$ver"
 echo ">>> Testing $lalver [sending output to file `basename $LOG`]"
 
 test -f $LOG && rm -f $LOG
-
-MESSAGE=">>> `date`: Start fresh"
-echo "$MESSAGE" > $LOG
-echo "$MESSAGE"
-
 test -d $lalver               && rm -rf $lalver 
 test -f $PREFIX/lib/lib$lal.* && rm -f  $PREFIX/lib/lib$lal.*
 test -d $PREFIX/include/$lal  && rm -rf $PREFIX/include/$lal
 test -d $PREFIX/doc/$lalver   && rm -rf $PREFIX/doc/$lalver
 
-if test -f Makefile ; then
-  $MAKE cvs-clean >> $LOG 2>&1 || exit 1
+if test -f Makefile -a "x$FRESH" = "xyes" ; then
+  MESSAGE=">>> `date`: Start fresh"
+  echo "$MESSAGE" > $LOG
+  echo "$MESSAGE"
+  $MAKE cvs-clean >> $LOG 2>&1 || fail
 fi
 
 MESSAGE=">>> `date`: Make distribution"
 echo "$MESSAGE" >> $LOG
 echo "$MESSAGE"
 
-./00boot >> $LOG 2>&1 || exit 1
-./configure >> $LOG 2>&1 || exit 1
-$MAKE dist >> $LOG 2>&1 || exit 1
+./00boot $INCLUDEDEPS >> $LOG 2>&1 || fail
+./configure >> $LOG 2>&1 || fail
+$MAKE dist >> $LOG 2>&1 || fail
 tarfile="$lalver.tar.gz"
-test -f $tarfile || exit 1
-$TAR zxvf $tarfile >> $LOG 2>&1 || exit 1
+test -f $tarfile || fail
+$TAR zxvf $tarfile >> $LOG 2>&1 || fail
 rm -f $tarfile
-test -d $lalver || exit 1
-cd $lalver || exit 1
-mkdir tmp || exit 1
-cd tmp || exit 1
+test -d $lalver || fail
+cd $lalver || fail
+mkdir tmp || fail
+cd tmp || fail
 
 MESSAGE=">>> `date`: Test build"
 echo "$MESSAGE" >> $LOG
 echo "$MESSAGE"
 
-../configure --prefix=$PREFIX $CONFIGARGS >> $LOG 2>&1 || exit 1
-$MAKE >> $LOG 2>&1 || exit 1
-$MAKE check >> $LOG 2>&1 || exit 1
-$MAKE dvi >> $LOG 2>&1 || exit 1
-$MAKE install >> $LOG 2>&1 || exit 1
-test -f $PREFIX/include/$lal/LALStdlib.h || exit 1
-test -f $PREFIX/lib/lib$lal.a || exit 1
-test -f $PREFIX/lib/lib$lal.so || exit 1
-$MAKE uninstall >> $LOG 2>&1 || exit 1
-test ! -f $PREFIX/include/$lal/LALStdlib.h || exit 1
-test ! -f $PREFIX/lib/lib$lal.a || exit 1
-test ! -f $PREFIX/lib/lib$lal.so || exit 1
-$MAKE distclean >> $LOG 2>&1 || exit 1
+../configure --prefix=$PREFIX $CONFIGARGS >> $LOG 2>&1 || fail
+$MAKE >> $LOG 2>&1 || fail
+$MAKE check >> $LOG 2>&1 || fail
+$MAKE dvi >> $LOG 2>&1 || fail
+$MAKE install >> $LOG 2>&1 || fail
+test -f $PREFIX/include/$lal/LALStdlib.h || fail
+test -f $PREFIX/lib/lib$lal.a || fail
+test -f $PREFIX/lib/lib$lal.so || fail
+$MAKE uninstall >> $LOG 2>&1 || fail
+test ! -f $PREFIX/include/$lal/LALStdlib.h || fail
+test ! -f $PREFIX/lib/lib$lal.a || fail
+test ! -f $PREFIX/lib/lib$lal.so || fail
+$MAKE distclean >> $LOG 2>&1 || fail
 
 MESSAGE=">>> `date`: Cleanup"
 echo "$MESSAGE" >> $LOG
 echo "$MESSAGE"
 
-cd .. || exit 1
-rm -rf tmp || exit 1
-cd .. || exit 1
-rm -rf $lalver || exit 1
-$MAKE cvs-clean >> $LOG 2>&1 || exit 1
+cd .. || fail
+rm -rf tmp || fail
+cd .. || fail
+rm -rf $lalver || fail
+
+if test "x$FRESH" = "xyes" ; then
+  $MAKE cvs-clean >> $LOG 2>&1 || fail
+fi
 
 MESSAGE=">>> `date`: Finished"
 echo "$MESSAGE" >> $LOG

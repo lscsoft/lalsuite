@@ -5,6 +5,32 @@
 ##
 ## This script is not to be included in the distribution.
 
+# Help message
+helpmsg="Usage $0 [options]
+Options: [defaults in brackets after description]"
+helpmsg="$helpmsg
+  --help                print this message"
+helpmsg="$helpmsg
+  --include-deps        pass option --include-deps to automake [no]"
+
+INCLUDEDEPS=""
+
+# Process args
+while test $# -gt 0 ; do
+  option=$1
+  case "$option" in
+    -*=*) optarg=`echo "$option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) optarg= ;;
+  esac
+  case $option in
+    -h | -help | --help ) echo "$helpmsg"; exit 0;;
+    -include-deps | --include-deps ) INCLUDEDEPS=" --include-deps";;
+    *) echo "unrecognized option $option"; exit 1;;
+  esac
+  shift
+done
+
+
 cd packages/support/src
 m4 PrintVector.m4 > PrintVector.c
 m4 PrintTimeSeries.m4 > PrintTimeSeries.c
@@ -27,5 +53,5 @@ cd ../../..
 
 aclocal
 autoheader
-automake
+automake $INCLUDEDEPS
 autoconf
