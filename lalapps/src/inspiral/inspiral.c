@@ -2000,8 +2000,8 @@ int main( int argc, char *argv[] )
             &status );
 
         if ( trigTimeNS &&
-            (trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
-            (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS)) )
+            ((trigStartTimeNS && (trigTimeNS < trigStartTimeNS)) ||
+            (trigEndTimeNS && (trigTimeNS >= trigEndTimeNS))) )
         {
           /* throw this trigger away */
           SnglInspiralTable *tmpEvent = event;
