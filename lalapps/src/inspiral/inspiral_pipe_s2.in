@@ -702,6 +702,7 @@ for seg in h2_data:
         insp.set_start(chunk.start())
         insp.set_end(chunk.end())
         insp.set_ifo('H2')
+        insp.calibration()
         insp.set_ifo_tag('L1H1')
         insp.add_var_opt('snr-threshold',h2_snr)
         insp.add_var_opt('chisq-threshold',h2_chisq)
