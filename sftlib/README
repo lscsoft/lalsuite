@@ -1,6 +1,12 @@
 Here is a short how-to on this reference SFT version 2 library.
 $Id$
 
+LATEST CODE/DOCUMENTATION VERSION
+---------------------------------
+May be obtained from CVS using module 'sftlib' from:
+:pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft 
+
+
 TO BUILD/INSTALL
 ----------------
 If working from CVS, run ./autogen.sh to make a configure script, then
