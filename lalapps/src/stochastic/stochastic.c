@@ -912,7 +912,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* user tag */
         optarg_len = strlen(optarg) + 1;
         userTag = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(userTag, optarg, optarg_len);
+        memcpy(userTag, optarg, optarg_len);
 
         /* add to process_params table */
         this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
@@ -943,7 +943,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* directory for output files */
         optarg_len = strlen(optarg) + 1;
         outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(outputFilePath, optarg, optarg_len);
+        memcpy(outputFilePath, optarg, optarg_len);
         if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1025,7 +1025,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         break;
 
       case 'k':
-        /* resampe rate */
+        /* resample rate */
         resampleRate = atoi(optarg);
         if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
         {
@@ -1083,7 +1083,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* ifo for first stream */
         optarg_len = strlen(optarg) + 1;
         ifoOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(ifoOne, optarg, optarg_len);
+        memcpy(ifoOne, optarg, optarg_len);
 
         /* set site id for ifo one */
         if (strncmp(ifoOne, "H1", 2) == 0)
@@ -1106,7 +1106,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* ifo for second stream */
         optarg_len = strlen(optarg) + 1;
         ifoTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(ifoTwo, optarg, optarg_len);
+        memcpy(ifoTwo, optarg, optarg_len);
 
         /* set site id for ifo two */
         if (strncmp(ifoTwo, "H1", 2) == 0)
@@ -1130,7 +1130,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 4;
         channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(channelOneTemp, optarg, optarg_len);
+        memcpy(channelOneTemp, optarg, optarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelOneTemp);
         break;
 
@@ -1139,7 +1139,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 4;
         channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(channelTwoTemp, optarg, optarg_len);
+        memcpy(channelTwoTemp, optarg, optarg_len);
         ADD_PROCESS_PARAM("string", "%s", channelTwoTemp);
         break;
 
@@ -1147,7 +1147,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* frame cache one */
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(frameCacheOne, optarg, optarg_len);
+        memcpy(frameCacheOne, optarg, optarg_len);
         if ((stat(frameCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1162,7 +1162,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* frame cache two */
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(frameCacheTwo, optarg, optarg_len);
+        memcpy(frameCacheTwo, optarg, optarg_len);
         if ((stat(frameCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1177,7 +1177,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* calibration cache one */
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(calCacheOne, optarg, optarg_len);
+        memcpy(calCacheOne, optarg, optarg_len);
         if ((stat(calCacheOne, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
@@ -1192,7 +1192,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         /* calibration cache two */
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(calCacheTwo, optarg, optarg_len);
+        memcpy(calCacheTwo, optarg, optarg_len);
         if ((stat(calCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
