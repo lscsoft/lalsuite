@@ -812,7 +812,7 @@ LALCOMPLEX8AverageSpectrum (
         fftIm1 = fSegment[1]->data[k].im;
         fSeries->data->data[k].re += fftRe0 * fftRe1 + fftIm0 * fftIm1;
         fSeries->data->data[k].im += - fftIm0 * fftRe1 + fftRe0 * fftIm1;
-        //fSeries->data->data[k].im +=1.;
+       
       }
 
       /* halve the DC and Nyquist components to be consistent with T010095 */
