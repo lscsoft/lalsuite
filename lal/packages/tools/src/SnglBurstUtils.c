@@ -27,8 +27,6 @@ $Id$
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
-#define NANOSEC  LAL_INT8_C(1000000000)
-
 #if 0
 <lalLaTeX>
 \subsection{Module \texttt{SnglBurstUtils.c}}
@@ -294,8 +292,8 @@ LALCompareSnglBurst(
   LALGPStoINT8( status->statusPtr, &ta1, &(aPtr->start_time) );
   LALGPStoINT8( status->statusPtr, &tb1, &(bPtr->start_time) );
 
-  ta2 = ta1 + ( NANOSEC * aPtr->duration );
-  tb2 = tb1 + ( NANOSEC * bPtr->duration );
+  ta2 = ta1 + ( 1e9 * aPtr->duration );
+  tb2 = tb1 + ( 1e9 * bPtr->duration );
   fa1 = (aPtr->central_freq) - 0.5*(aPtr->bandwidth);
   fa2 = (aPtr->central_freq) + 0.5*(aPtr->bandwidth);
   fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
@@ -334,7 +332,7 @@ LALCompareSimBurstAndSnglBurst(
   LALGPStoINT8(status->statusPtr, &tb1, &bPtr->start_time);
 
   fa = aPtr->freq;
-  tb2 = tb1 + NANOSEC * bPtr->duration;
+  tb2 = tb1 + 1e9 * bPtr->duration;
   fb1 = bPtr->central_freq - 0.5 * bPtr->bandwidth;
   fb2 = bPtr->central_freq + 0.5 * bPtr->bandwidth;
 
