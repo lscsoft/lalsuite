@@ -88,11 +88,6 @@ void LALInspiralSetParams(LALStatus            *status,
    tempPars->spin2[0] = tempPars->spin2[1] = tempPars->spin2[2] = 0.;
    tempPars->inclination = 0.;
    tempPars->eccentricity = 0.;
-   tempPars->rInitial = 0.;
-   tempPars->vInitial = 0.;
-   tempPars->rFinal = 0.;
-   tempPars->vFinal = 0.;
-   tempPars->rLightRing = 0.;
 
    DETATCHSTATUSPTR(status);
    RETURN(status);

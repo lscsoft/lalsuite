@@ -201,7 +201,7 @@ InspiralWaveOverlapIn;
 typedef struct
 tagInspiralWaveOverlapOut 
 {
-   REAL8 max, phase;
+   REAL8 max, phase, alpha;
    INT4 bin;
 } 
 InspiralWaveOverlapOut; 
