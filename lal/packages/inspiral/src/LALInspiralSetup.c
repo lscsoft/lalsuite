@@ -14,115 +14,27 @@ waveform generation.
 \vspace{0.1in}
 \input{LALInspiralSetupCP}
 \idx{LALInspiralSetup()}
+\begin{itemize}
+\item {\tt ak:} Output containing PN expansion coefficients of various physical
+quantities such as energy, flux, frequency, phase and timing.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
-Module to generate all the coefficiants needed in the Taylor and Pade expansions of the energy and
-flux functions $E^{\prime}(v)$ and $\mathcal{F}(v)$. 
-These are used to solve the gravitational wave phasing formula,
-
-\begin{eqnarray}
-t(v) & = & t_{0} - m \int_{v_{0}}^{v} \,
-\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_{0} - 2 \int_{v_{0}}^{v}  v^3 \,
-\frac{E'(v)}{{\cal F}(v)} \, dv,
-\end{eqnarray}
-
-where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW
-frequency, and
-$m$ is the total mass of the binary.
-
-The expressions for $E^{\prime}(v)$ and $\mathcal{F}(v)$ may be written either in the form of a
-Taylor
-expansion or a P--Approximant expansion.
-The Taylor expansion is only known up to second post--Newtonian order,
-
-\begin{equation}
-E^{\prime}(v) = - \eta v \left[1 - \frac{1}{6} (9+\eta) v^{2} -\frac{3}{8}(27-19 \eta +
-\frac{\eta^{2}}{3}) v^{4} \right]
-\end{equation}
-
-The $n$--PN expression includes terms up to and including $v^{2n}$.
- 
-The P--Approximant expansion for $E^{\prime}(v)$ is given by
-
-\begin{equation}
-E^{\prime}_{P_{n}}(v) =\frac{\eta v}{\left[ 1 + E_{P_{n}} (x) \right] \sqrt{1 + e_{P_{n}} (x)}}
-\frac{d e_{P_{n}} (x)}{dx}
-\end{equation}
-where
-\begin{equation}
-E_{P_{n}} (x) = \left[ 1 + 2 \eta ( \sqrt{1 + e_{P_{n}} (x)} -1) \right]^{1/2} -1
-\end{equation}
-and
-\begin{equation}
-e_{P_{2n}} (x) = -x P^{m}_{m + \epsilon} \left[ \sum^{n}_{k=0} a_{k} x^{k} \right]
-\end{equation}
-where $x=v^{2}$, and $ P^{m}_{m + \epsilon} \left[ \sum^{n}_{k=0} a_{k} x^{k} \right]$ is the Pade
-Approximant of the Taylor series $\sum^{n}_{k=0} a_{k} x^{k}$.
-An example of this is
-\begin{equation}
-e_{P_{4}}(x) = \frac{-x c_{0}}{1 + \frac{c_{1}x}{1 + c_{2}x}} = \frac{-c_{0} x (1 + c_{2}x)}
-               {1 + (c_{1} + c_{2}) x}
-\end{equation}
-
-
-The Taylor series expansion of the flux function in the $\eta \neq 0$ case is known up to order
-$v^{5}$,
-\begin{equation}
-\mathcal{F}(v) = \frac{32}{5} \eta^{2} v^{10} \left[ \sum^{5}_{k=0} A_{k} v^{k} \right]
-\end{equation}
-where
-\begin{equation}
-A_{0} = 1
-\end{equation}
-\begin{equation}
-A_{1} = 0
-\end{equation}
-\begin{equation}
-A_{2} = - = \frac{1247}{336} - \frac{35}{12} \eta
-\end{equation}
-\begin{equation}
-A_{3} = 4 \pi
-\end{equation}
-\begin{equation}
-A_{4} = - \frac{44711}{9072} + \frac{9271}{504} \eta + \frac{65}{18} \eta^{2}
-\end{equation}
-\begin{equation}
-A_{5} = - \left( \frac{8191}{672} + \frac{535}{24} \eta \right) \pi
-\end{equation}
-If we now introduce the following "factored" flux function
-\begin{equation}
-f(v) = \left( 1 - \frac{v}{v_{pole} (\eta) } \right) \,\,  \mathcal{F}(v)
-\end{equation}
-which we write using Pade Approximants,
-\begin{equation}
-f_{P_{n}} (v) = \frac{32}{5} \eta^{2} v^{10} P^{m}_{m+\epsilon} \left[ \sum^{5}_{k=0} f_{k} v^{k}
-\right]
-\end{equation}
-where the coefficients $f_{k}$ are defined in terms if the original coefficients $A_{k}$ of the
-Taylor
-series, $f_{k}=A_{k} - F_{k-1}/v_{pole}$.
-Then we re--arrange to define a new $\mathcal{F}(v)$ given by
-\begin{equation}
-\mathcal{F}_{P_{n}}(v) = \frac{1}{\left( 1 - \frac{v}{v^{P_{n}}_{pole}(\eta)} \right)} \,\,
-f_{P_{n}}(v)
-\end{equation}
-where $v^{P_{n}}_{pole}$ denotes the pole velocity defined by the $v^{n}$ approximant of $e(x)$.
- 
-This module sets up all the coefficients so that they may be used by the function
-\texttt{ChooseModel} to define the energy and flux functions.
+Module to generate all the coefficiants needed in the Taylor and Pade expressions 
+for the energy and flux functions $E^{\prime}(v)$ and $\mathcal{F}(v)$. 
+These are used to solve the gravitational wave phasing formula.
+The coefficients are used by the function \texttt{LALInspiralChooseModel} to define 
+the energy and flux functions by accessing the structure {\tt ak} and are tabulated
+in the two Tables \ref{table:energy} and \ref{table:flux}.
 
 \subsubsection*{Algorithm}
-
-
+None.
 \subsubsection*{Uses}
 None.
-
 \subsubsection*{Notes}
-
 \vfill{\footnotesize\input{LALInspiralSetupCV}}
-
 </lalLaTeX>  */
 
 
@@ -137,9 +49,12 @@ NRCSID (LALINSPIRALSETUPC, "$Id$");
 
 
 /*  <lalVerbatim file="LALInspiralSetupCP"> */
-void LALInspiralSetup (LALStatus *status,
-                       expnCoeffs *ak,
-                       InspiralTemplate *params) 
+void 
+LALInspiralSetup (
+   LALStatus        *status,
+   expnCoeffs       *ak,
+   InspiralTemplate *params
+   ) 
 {  /* </lalVerbatim>  */
    
    INT4 ieta;

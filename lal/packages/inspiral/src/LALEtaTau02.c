@@ -6,6 +6,13 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALEtaTau02.c}}
+Given $\tau_0$ and $\tau_2$ compute the mass ratio $\eta.$
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALEtaTau02CP}
+\idx{LALEtaTau02()}
+
+\subsubsection*{Description}
 Given $\tau_0$ and $\tau_2$ one can determine $\eta$ by solving 
 \begin{equation}
 -\eta^{2/5} \tau_2 + A_2 \left ( \frac {\tau_0}{A_0} \right )^{3/5}  
@@ -16,27 +23,21 @@ $B_2 = 4620/3715.$
 This function returns the LHS of the above
 equation in \texttt{x} for a given \texttt{eta}.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALEtaTau02CP}
-\idx{LALEtaTau02()}
-
-\subsubsection*{Description}
-None.
-
 \subsubsection*{Algorithm}
 None.
 
 \subsubsection*{Uses}
 None.
+
 \subsubsection*{Notes}
 The {\tt void pointer} {\tt *p} should point to a {\tt struct}
-of type {\tt EtaTau02In:}
+of type {\tt EtaTau02In:}\\[10pt]
+{\tt 
+void *p;\\
+EtaTau02In q;\\[5pt]
 
-{\tt void *p;\\
-    EtaTau02In q;\\
-    ---fill in the elements of q ---\\
-    p = (void *) \&q;\\
+$\ldots$\\
+p = (void *) \&q;\\
 }
 
 </lalLaTeX> */
@@ -46,10 +47,13 @@ of type {\tt EtaTau02In:}
 
 NRCSID (LALETATAU02C, "$Id$");
 /*  <lalVerbatim file="LALEtaTau02CP"> */
-void LALEtaTau02(LALStatus *status, 
-                 REAL8 *x, 
-                 REAL8 eta, 
-                 void *p) 
+void 
+LALEtaTau02(
+   LALStatus *status, 
+   REAL8     *x, 
+   REAL8     eta, 
+   void      *p
+   ) 
 { /* </lalVerbatim> */
    EtaTau02In *q;
 

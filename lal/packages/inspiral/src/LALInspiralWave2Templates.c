@@ -15,6 +15,11 @@ phase difference of $\pi/2.$
 \vspace{0.1in}
 \input{LALInspiralWave2TemplatesCP}
 \index{\verb&LALInspiralWave2Templates()&}
+\begin{itemize}
+\item {\tt output1:} Output containing the 0-phase inspiral waveform.
+\item {\tt output2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -36,11 +41,13 @@ NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave2TemplatesCP"> */
 
-void LALInspiralWave2Templates(
-  LALStatus *status, 
-  REAL4Vector *output1, 
-  REAL4Vector *output2, 
-  InspiralTemplate *params)
+void 
+LALInspiralWave2Templates(
+   LALStatus        *status, 
+   REAL4Vector      *output1, 
+   REAL4Vector      *output2, 
+   InspiralTemplate *params
+   )
 
 { /* </lalVerbatim>  */
 

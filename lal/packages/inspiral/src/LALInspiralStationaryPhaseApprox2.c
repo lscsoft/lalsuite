@@ -13,97 +13,26 @@
  * \subsubsection*{Prototypes}
  * \input{LALInspiralStationaryPhaseApprox2CP}
  * \idx{LALInspiralStationaryPhaseApprox2()}
+ * \begin{itemize}
+ * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt params:} Input containing binary chirp parameters.
+ * \end{itemize}
  *
  * \subsubsection*{Description}
  *
  * %% A description of the data analysis task performed by this function;
  * %% this is the main place to document the module.
-Consider a gravitational wave (GW) signal of the form,
-\begin {equation}
-h(t)=2a(t)\cos\phi(t)= a(t) \left [ e^{-i \phi(t)} + e^{i \phi(t)} \right ],
-\end {equation}
-where $\phi(t)$ is the phasing formula, either specified as an explicit
-function of time or given implicitly by a set of differential equations
-\cite{dis3}.  The quantity $2\pi F(t) = {d\phi(t)}/{dt}$ defines the instantaneous
-GW frequency $F(t)$, and is assumed to be
-continuously increasing. (We assume $F(t)>0$.)
- Now the Fourier transform $\tilde h(f)$ of $h(t)$ is defined as
-\begin {equation}
-\tilde{h}(f) \equiv \int_{-\infty}^{\infty} dt e^{2\pi ift} h(t)
-            = \int_{-\infty}^{\infty}\,dt\, a(t) 
-              \left[ e^{2\pi i f t - \phi(t)}  +  e^{2\pi ift +\phi(t)}\right ].
-\end {equation}
-The above transform can be computed in the stationary
-phase approximation (SPA). For positive frequencies only the first term
-on the right  contributes and yields the following {\it usual} SPA:
-\begin {equation}
-\tilde{h}^{\rm uspa}(f)= \frac {a(t_f)} {\sqrt {\dot{F}(t_f)}}
-e^{ i\left[ \psi_f(t_f) -\pi/4\right]},\ \ 
-\psi_f(t) \equiv  2 \pi f t -\phi(t), 
-\label{eq:inspiralspa1}
-\end {equation}
-and $t_f$ is the saddle point defined by solving for $t$, $ d \psi_f(t)/d t = 0$,
-i.e. the time $t_f$ when the GW frequency $F(t)$ becomes equal to the 
-Fourier variable $f$. In the adiabatic approximation where 
-the value of $t_f$ is given by the following integral:
-\begin{equation}
-t_f = t_{\rm ref} + m \int_{v_f}^{v_{\rm ref}} \frac{E'(v)}{{\cal F}(v)} dv,
-\phi (v) = \phi_{\rm ref} + 2 \int_v^{v_{\rm ref}} dv v^3 \, \frac{E'(v)}{{\cal F}(v)},
-\label{eq:InspiralTimeAndPhaseFuncs}
-\end{equation}
-where $v_{\rm ref}$ is a fiducial reference point that sets the origin of
-time, $v_f \equiv (\pi m f)^{1/3},$ $E'(v)\equiv dE/dv$ is the derivative of
-the binding energy of the system and ${\cal F}(v)$ is the gravitational wave
-flux. 
-Using $t_f$ and $\phi(t_f)$ in the above equation and 
-using it in the expression for $\psi_f(t)$ we find
-\begin{equation}
- \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 2\int_{v_f}^{v_{\rm ref}} 
-(v_f^3 - v^3)
-\frac{E'(v)}{{\cal {\cal F}}(v)} dv .
-\label{eq:InspiralFourierPhase}
-\end{equation}
-This is the general form of the stationary phase approximation which
-can be applied to {\it all} time-domain signals, including the P-approximant
-and effective one-body waveforms. In some cases the Fourier domain phasing
-can be worked out explicitly, which we now give:
-
-Using PN expansions of energy and flux but
-re-expanding the ratio $E'(v)/{\cal F}(v)$ in Eq.~(\ref{eq:InspiralFourierPhase}) one
-can solve the integral explicitly. This leads to the following
-explicit, Taylor-like, Fourier domain phasing formula:
-\begin{equation}
- \psi_f(t_f) = 2 \pi f t_{\rm ref} - \phi_{\rm ref} + 
- \psi_N \sum_{k=0}^5 {\psi}_k (\pi m f)^{(k-5)/3} 
-\label{eq:InspiralFourierPhase:f2}
-\end{equation}
-where the coefficients ${\psi}_k$ up to 2.5 post-Newtonian approximation are given by:
-$$\psi_N =  \frac{3}{128\eta},\ \ \ \psi_0 = 1,\ \ \ \psi_1 = 0,\ \ \   
-\psi_2 =  \frac{5}{9} \left ( \frac{743}{84} + 11\eta\right ),\ \ \ 
-\psi_3 =  -16\pi,$$
-$$\psi_4 =  \frac{9275495}{7225344}+\frac{284875\eta}{129024 } + \frac{1855\eta^2}{1024},$$
-$$\psi_5 =  \frac{5}{3} \left ( \frac{7729}{252} + \eta \right ) \pi +
-   \frac{8}{3} \left ( \frac{38645}{672} + \frac{15}{8} \eta \right ) 
-	\ln \left ( \frac{v}{v_{\rm ref}} \right )\pi.$$
-Eq.~(\ref{eq:InspiralFourierPhase:f2}) is (one of) the  standardly used frequency-domain phasing formulas.
-This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation2()}
-
-Alternatively, substituting (without doing any re-expansion or re-summation) 
-for the energy and flux functions their PN expansions
-or the P-approximants of energy and flux functions 
-and solving the integral in Eq.~(\ref{eq:InspiralFourierPhase}) numerically
-one obtains the T-approximant SPA or P-approximant SPA, respectively.
-However, just as in the time-domain, the frequency-domain phasing is 
-most efficiently computed by a pair of coupled, non-linear, ODE's:
-\begin{equation}
-\frac{d\psi}{df} - 2\pi t = 0, \ \ \ \
-\frac{dt}{df} + \frac{\pi m^2}{3v^2} \frac{E'(f)}{{\cal F}(f)} = 0,
-\label {eq:frequencyDomainODE}
-\end{equation}
-rather  than by numerically computing the integral in  
-Eqs.~(\ref{eq:InspiralFourierPhase}).
-This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation1()}
-
+ * Computes the Fourier transform of the chirp signal in the stationary 
+ * phase approximation and returns the real and imagninary parts of the 
+ * Fourier domain signal in the convention of fftw. For a signal vector 
+ * of length {\tt n=signal->length} ({\tt n} even):
+ * \begin{itemize}
+ * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
+ * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
+ * \end{itemize}
  *
  * \subsubsection*{Algorithm}
  *
@@ -117,11 +46,9 @@ This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation1()}
  * Morever the reference points are chosen so that on inverse Fourier transforming
  * the time-domain will 
  * \begin{itemize}
- * \item be padded with zeroes in the first {\tt nStartPad} bins,
- * \item begin with a phase shift of {\tt nStartPhase} radians,
- * \item have an amplitude of $Nv_0^2$ at time $t_0$ (=0 when nStartPad=0)
-	 where $v_0$ is the PN expansion parameter and $N$ is the number of 
-	 data points.
+ * \item be padded with zeroes in the first {\tt params->nStartPad} bins,
+ * \item begin with a phase shift of {\tt params->nStartPhase} radians,
+ * \item have an amplitude of ${\tt n} v^2.$ 
  * \end{itemize}
  * \subsubsection*{Uses}
  *
@@ -130,31 +57,14 @@ This is what is implimented in {\tt LALInspiralStationaryPhaseApproximation1()}
  * None
  * \end{verbatim}
  * \subsubsection*{Notes}
-   The derivative of the frequency that occurs in the
-   amplitude of the Fourier transform, namely
-   $1/\sqrt{\dot{F}(t)},$ in Eq.~(\ref{eq:inspiralspa1}), 
-   is computed using
-   \begin{eqnarray}
-   \dot{F(t)} & = & \frac{dF}{dt} \\
-              & = & \frac{dF}{dv}\frac{dv}{dE}\frac{dE}{dt}\\
-              & = & \frac{3v^2}{\pi m}\frac{{-\cal F}(v)}{E'(v)},
-   \end{eqnarray}
-   where we have used the fact that the gravitational wave flux
-   is related to the binding energy $E$ via energy balance equation
-   ${\cal F} = -dE/dt$ and $F=v^3/m.$
-   At the Newtonian order $E=-\eta m v^2/2,$ and ${\cal F} = 32\eta^2 v^{10}/5,$
-   giving $\dot{F}(t(v)) = \frac{96\eta}{5\pi m^2} v^{11}.$ Taking
-   $2a(t(v)) = v^2$ (i.e., $h(t) = v^2 \cos (\phi(t)),$ this gives, the 
-   total amplitude of the Fourier transform to be 
-   $$\frac{a(t(v))}{\sqrt{\dot{F}(t(v))}} =  \sqrt{\frac{5\pi m^2}{384\eta}} v_f^{-7/2}.$$
-   This is the amplitude used in most of literature. However, including the
-   full PN expansion of $1/\sqrt{\dot{F}(t)},$ gives a better agreement 
-   (Damour, Iyer, Sathyaprakash, PRD 62, 084036 (2000)) between
-   the time-domain and Fourier domains signals and this code therefore uses the full
-   PN expansion.
-     
  *
  * %% Any relevant notes.
+ *
+ * If it is required to compare the output of this module with a time domain
+ * signal one should use an inverse Fourier transform routine that packs data
+ * in the same way as fftw. Moreover, one should divide the resulting inverse
+ * Fourier transform by a factor ${\tt n}/2$ to be consistent with the 
+ * amplitude used in time-domain signal models.
  *
  * \vfill{\footnotesize\input{LALInspiralStationaryPhaseApprox2CV}}
  *
@@ -174,11 +84,11 @@ NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX2C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralStationaryPhaseApprox2CP"> */
 void 
-LALInspiralStationaryPhaseApprox2 
-(
- LALStatus *status,
- REAL4Vector *signal,
- InspiralTemplate *params) 
+LALInspiralStationaryPhaseApprox2 (
+   LALStatus        *status,
+   REAL4Vector      *signal,
+   InspiralTemplate *params
+   ) 
 { /* </lalVerbatim>  */
    REAL8 Oneby3, h1, h2, pimmc, f, v, df, shft, phi, amp0, amp, psif, psi;
    INT4 n, nby2, i, f0, fn;

@@ -1,4 +1,4 @@
-/*  <lalVerbatim file="LALInspiralTestCV">
+/*  <lalVerbatim file="LALInspiralTestOneCV">
 Author: Sathyaprakash, B. S.
 $Id$
 </lalVerbatim>  */
@@ -6,45 +6,12 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralTest.c}}
-Test routine for wave generation codes. First set the 
-\texttt{InspiralTemplate} structure (example given below). Call the function
-\begin{verbatim}
-LALInspiralWaveLength (&status, &n, params)
-\end{verbatim}
-to measure the length of the array required which will be returned in 
-\texttt{n}. Then call the function 
-\begin{verbatim}
-LALInspiralWave (&status, &signal, &params)
-\end{verbatim}
-to generate the wave, which will be returned in \texttt{signal}.
-Example values of the parameters that can be set (with options in 
-brackets):
+Test routine for wave generation codes. Exactly as in
+{\tt LALInspiralTest} except that this code tests only 
+one function as chosen by the user in {\tt Approximant}
+and {\tt Order}.
 
-\begin{verbatim}
-   params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
-   params.mass1=1.4;       (masses of the component stars in solar masses) 
-   params.mass2=1.4; 
-   params.startTime=0.0;   (defined so that the instantaneous GW frequency 
-                            is params.fLower at params.startTime)
-   params.startPhase=0.0;  (0 to $\pi/2$)
-   params.fLower=40.0;     (in Hz)
-   params.fCutoff=1000.0;  (in Hz)
-   params.tSampling=4000.; (in Hz; should be larger than $2\times \rm fCutoff$
-                            or $2\times f_{\rm lso}$, whichever is smaller)
-   params.signalAmplitude=1.0; 
-   params.nStartPad=0;     (number of leading zero bins)
-   params.nEndPad=0;       (number of trailing zero bins)
-   params.approximant=TaylorT1; (approximant in the convention of DIS 2001; 
-                            TaylorT1, PadeT1=ODE solver, 
-                            TaylorT2=implicit phasing formula solved in quadrature, 
-                            TaylorT3=explicit time-domain phasing)
-                            EOB=effective-one-body approach
-   params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN, 
-                            twoAndHalfPN, threePN, threeAndHalfPN)
-   params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu) 
-\end{verbatim}
-
-\vfill{\footnotesize\input{LALInspiralTestCV}}
+\vfill{\footnotesize\input{LALInspiralTestOneCV}}
 
 </lalLaTeX> */
 

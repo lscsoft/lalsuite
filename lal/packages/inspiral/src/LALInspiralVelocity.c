@@ -7,8 +7,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralVelocity.c}}
 
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ which corresponds to a time $t$ for in
-inspiralling binary system.
+The function \texttt{LALInspiralVelocity} calculates the velocity $v$ which corresponds to a time $t$ in
+the inspiralling binary system.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -17,17 +17,12 @@ inspiralling binary system.
 
 \subsubsection*{Description}
 
-The function \texttt{LALInspiralVelocity} calculates the velocity $v$ which corresponds to a time $t$ for in
-inspiralling binary system.
-
-It does this using the following equation, which is one of the pair which constitute the gravitational wave
-phasing formula,
-
+The function \texttt{LALInspiralVelocity} calculates the velocity $v$ corresponding to a time $t$ 
+in the evolution of an inspiralling binary system.  It does this by iteratively solving
 \begin{equation}
 t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{tofv}
 \end{equation}
-
 \texttt{LALInspiralVelocity} calculates $v$, given $t(v)$, 
 $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 
@@ -52,9 +47,12 @@ $t_{0}$, $m$, $v_{0}$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.
 NRCSID (LALINSPIRALVELOCITYC, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralVelocityCP"> */
-void LALInspiralVelocity(LALStatus *status,
-		         REAL8 *v,
-		         TofVIn *ak)
+void 
+LALInspiralVelocity(
+   LALStatus *status,
+   REAL8     *v,
+   TofVIn    *ak
+   )
 { /* </lalVerbatim>  */
 
   DFindRootIn rootIn;

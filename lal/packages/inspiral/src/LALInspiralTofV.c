@@ -7,11 +7,12 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralTofV.c}}
 
-Module which calculates the quantity which we denote tofv, which is given by the following
-equation
+This module outputs 
 \begin{equation}
-\mathrm{tofv} = t(v) - t_{0} + m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
+{\tt tofv} = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
 \end{equation}
+where the constants $t,$ $t_0,$ $v_0,$ and functions in the integrand 
+$E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -44,10 +45,13 @@ equation
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralTofVCP"> */
-void LALInspiralTofV (LALStatus *status,
-	      REAL8 *tofv,
-	      REAL8 v,
-	      void *params)
+void 
+LALInspiralTofV (
+   LALStatus *status,
+   REAL8 *tofv,
+   REAL8 v,
+   void *params
+   )
 { /* </lalVerbatim>  */
 
    void *funcParams;

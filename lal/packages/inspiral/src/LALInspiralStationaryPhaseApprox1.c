@@ -5,18 +5,27 @@
 /**** <lalLaTeX>
  *
  * \subsection{Module \texttt{LALInspiralStationaryPhaseApprox1.c}}
- * This module computes the usual stationary phase approximation to the
- * Fourier transform of a chirp waveform.
+ * This module computes the stationary phase approximation to the
+ * Fourier transform of a chirp waveform by solving the ODEs in
+ * Equation (\ref{eq:frequencyDomainODE}).
  * %% A one-line description of the function(s) defined in this module.
  *
  * \subsubsection*{Prototypes}
  * \input{LALInspiralStationaryPhaseApprox1CP}
  * \idx{LALInspiralStationaryPhaseApprox1()}
+ * \begin{itemize}
+ * \item {\tt signal:} Output containing the inspiral waveform.
+ * \item {\tt params:} Input containing binary chirp parameters.
+ * \end{itemize}
  *
  * \subsubsection*{Description}
  *
  * %% A description of the data analysis task performed by this function;
  * %% this is the main place to document the module.
+ * This module generates the Fourier domain waveform that is analogous of
+ * the time-domain approximant {\tt TaylorT1.} Instead of re-expanding the
+ * the energy and flux functions they are kept in tact and the equations
+ * are solved numerically.
  *
  * \subsubsection*{Algorithm}
  *
@@ -26,11 +35,24 @@
  *
  * %% List of any external functions called by this function.
  * \begin{verbatim}
- * None
+   LALInspiralSetup 
+   LALInspiralChooseModel
+   LALDRombergIntegrate 
  * \end{verbatim}
  * \subsubsection*{Notes}
  *
  * %% Any relevant notes.
+ * The code returns the Fourier transform packed in the same way as fftw
+ * would for the Fourier transform of a real vector.  For a signal vector 
+ * of length {\tt n=signal->length} ({\tt n} even):
+ * \begin{itemize}
+ * \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+ * \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+ * \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+ * the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
+ * the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
+ * \end{itemize}
+ *
  *
  * \vfill{\footnotesize\input{LALInspiralStationaryPhaseApprox1CV}}
  *
@@ -40,22 +62,25 @@
 #include <lal/Integrate.h>
 
 /* a local function to compute the phase of the Fourier transform */
-void LALPsiOfT(
+void 
+LALPsiOfT (
    LALStatus *stauts, 
-   REAL8 *psioft, 
-   REAL8 v, 
-   void *param
-);
+   REAL8     *psioft, 
+   REAL8      v, 
+   void      *param
+   );
 
 NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
 
 /* This is the main function to compute the stationary phase approximation */
 
 /*  <lalVerbatim file="LALInspiralStationaryPhaseApprox1CP"> */
-void LALInspiralStationaryPhaseApprox1 (
-   LALStatus *status, 
-   REAL4Vector *signal,
-   InspiralTemplate *params) 
+void 
+LALInspiralStationaryPhaseApprox1 (
+   LALStatus        *status, 
+   REAL4Vector      *signal,
+   InspiralTemplate *params
+   ) 
 { /* </lalVerbatim>  */
    REAL8 t, pimmc, f0, fn, f, v, df, shft, phi, amp0, amp, psif, psi, sign;
    INT4 n, i, nby2;
@@ -172,12 +197,14 @@ void LALInspiralStationaryPhaseApprox1 (
    RETURN(status);
 }
 
-void LALPsiOfT(
+void 
+LALPsiOfT(
    LALStatus *status, 
-   REAL8 *psioft, 
-   REAL8 v, 
-   void *param
-) {
+   REAL8     *psioft, 
+   REAL8      v, 
+   void      *param
+   ) 
+{
    REAL8 vf, dE, F;
    TofVIntegrandIn *par;
 

@@ -13,6 +13,10 @@ Module to generate effective-one-body waveforms.
 \vspace{0.1in}
 \input{LALEOBWaveformCP}
 \index{\verb&LALEOBWaveform()&}
+\begin{itemize}
+\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -42,9 +46,12 @@ NRCSID (LALEOBWAVEFORMC, "$Id$");
 
 /*  <lalVerbatim file="LALEOBWaveformCP"> */
 
-void LALEOBWaveform (LALStatus *status,
-                     REAL4Vector *signal,
-                     InspiralTemplate *params) 
+void 
+LALEOBWaveform (
+   LALStatus        *status,
+   REAL4Vector      *signal,
+   InspiralTemplate *params
+   ) 
 { /* </lalVerbatim> */
 
    INT4 count, nn=4;

@@ -8,111 +8,70 @@ $Id$
 \subsection{Module \texttt{LALInspiralChooseModel.c}}
 
 Module to set the pointers to the required energy and flux functions.
-
+Normally, a user is not required to call this function to generate a waveform.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralChooseModelCP}
 \index{\verb&LALInspiralChooseModel()&}
+\begin{itemize}
+\item {\tt f:} Output containing the pointers to the appropriate
+energy, flux, frequency, timing and phasing functions.
+\item {\tt ak:} Output containing the PN expnasion coefficients.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
+This module gives the post-Newtonian expansions and/or P-approximants 
+to the energy, its derivative and gravitational-wave flux functions. More
+specifically, the {\tt static REAL8} functions below give Taylor expansions 
+of $dE/dv,$ and ${\cal F}(v),$ P-approximants of $e(v),$ $dE/dv$ 
+(derived from $e(v)$) and ${\cal F}(v).$ 
 
-Module to set the pointers to the required energy and flux functions $E^{\prime}(v)$ and $\mathcal{F}(v)$.
-These are used to solve the gravitational wave phasing formula,
-
-\begin{eqnarray}
-t(v) & = & t_{0} - m \int_{v_{0}}^{v} \,
-\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_{0} - 2 \int_{v_{0}}^{v}  v^3 \,
-\frac{E'(v)}{{\cal F}(v)} \, dv,
-\end{eqnarray}
-
-where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW frequency, and
-$m$ is the total mass of the binary.
-
-The expressions for $E^{\prime}(v)$ and $\mathcal{F}(v)$ may be written either in the form of a Taylor
-expansion or a P--Approximant expansion.
-The Taylor expansion is only known up to second post--Newtonian order,
-
+{\tt LALInspiralChooseModel}
+is used to set pointers to the required energy and flux functions 
+$E^{\prime}_T(v),$ $\mathcal{F}_T(v),$ $E^{\prime}_P(v)$ and $\mathcal{F}_P(v),$
+in {\tt expnFunc,} as also the GW phasing and frequency fucntions used in 
+the various approximants to generate the waveform.
+More specifically pointers are set to the following functions in the structure
+{\tt expnFunc}:
+\begin{itemize}
+  \item {\tt EnergyFunction *dEnergy}
+  \item {\tt FluxFunction *flux}
+  \item {\tt InspiralTiming2 *timing2}
+  \item {\tt InspiralPhasing2 *phasing2}
+  \item {\tt InspiralPhasing3 *phasing3}
+  \item {\tt InspiralFrequency3 *frequency3}
+\end{itemize}
+{\tt LALInspiralChooseModel} also outputs in {\tt ak} the 
+last stable orbit (LSO) velocity $v_{\rm LSO}$ (as {\tt ak->vn})
+defined by the equation $E'(v_{\rm LSO})=0,$
+the values of the GW frequency $f_{\rm LSO}=v_{\rm LSO}^3/(\pi m)$ 
+(as {\tt ak->fn}) and time (as {\tt ak->tn}) elapsed from {\tt params->fLower} 
+to smaller of {\tt fCutOff} and {\tt ak->fn} by evaluating the integral
 \begin{equation}
-E^{\prime}(v) = - \eta v \left[1 - \frac{1}{6} (9+\eta) v^{2} -\frac{3}{8}(27-19 \eta +
-\frac{\eta^{2}}{3}) v^{4} \right]
+t_n = t_{0} - m \int^{v_n}_{v_0} \frac{E^{\prime}(v)}{\mathcal{F}(v)} \, dv\,,
 \end{equation}
-
-The $n$--PN expression includes terms up to and including $v^{2n}$.
-
-The P--Approximant expansion for $E^{\prime}(v)$ is given by
-
-\begin{equation}
-E^{\prime}_{P_{n}}(v) =\frac{\eta v}{\left[ 1 + E_{P_{n}} (x) \right] \sqrt{1 + e_{P_{n}} (x)}} 
-\frac{d e_{P_{n}} (x)}{dx}
-\end{equation}
-where
-\begin{equation}
-E_{P_{n}} (x) = \left[ 1 + 2 \eta ( \sqrt{1 + e_{P_{n}} (x)} -1) \right]^{1/2} -1
-\end{equation}
-and
-\begin{equation}
-e_{P_{2n}} (x) = -x P^{m}_{m + \epsilon} \left[ \sum^{n}_{k=0} a_{k} x^{k} \right]
-\end{equation}
-where $x=v^{2}$, and $ P^{m}_{m + \epsilon} \left[ \sum^{n}_{k=0} a_{k} x^{k} \right]$ is the Pade 
-Approximant of the Taylor series $\sum^{n}_{k=0} a_{k} x^{k}$.
-An example of this is
-\begin{equation}
-e_{P_{4}}(x) = \frac{-x c_{0}}{1 + \frac{c_{1}x}{1 + c_{2}x}} = \frac{-c_{0} x (1 + c_{2}x)}
-               {1 + (c_{1} + c_{2}) x}
-\end{equation}
-
-The Taylor series expansion of the flux function in the $\eta \neq 0$ case is known up to order $v^{5}$,
-\begin{equation}
-\mathcal{F}(v) = \frac{32}{5} \eta^{2} v^{10} \left[ \sum^{5}_{k=0} A_{k} v^{k} \right]
-\end{equation} 
-where
-\begin{equation}
-A_{0} = 1
-\end{equation}
-\begin{equation}
-A_{1} = 0
-\end{equation}
-\begin{equation}
-A_{2} = - = \frac{1247}{336} - \frac{35}{12} \eta
-\end{equation}
-\begin{equation}
-A_{3} = 4 \pi
-\end{equation}
-\begin{equation}
-A_{4} = - \frac{44711}{9072} + \frac{9271}{504} \eta + \frac{65}{18} \eta^{2}
-\end{equation}
-\begin{equation}
-A_{5} = - \left( \frac{8191}{672} + \frac{535}{24} \eta \right) \pi
-\end{equation}
-If we now introduce the following "factored" flux function
-\begin{equation}
-f(v) = \left( 1 - \frac{v}{v_{pole} (\eta) } \right) \,\,  \mathcal{F}(v)
-\end{equation}
-which we write using Pade Approximants,
-\begin{equation}
-f_{P_{n}} (v) = \frac{32}{5} \eta^{2} v^{10} P^{m}_{m+\epsilon} \left[ \sum^{5}_{k=0} f_{k} v^{k}
-\right]
-\end{equation}
-where the coefficients $f_{k}$ are defined in terms if the original coefficients $A_{k}$ of the Taylor 
-series, $f_{k}=A_{k} - F_{k-1}/v_{pole}$.
-Then we re--arrange to define a new $\mathcal{F}(v)$ given by
-\begin{equation}
-\mathcal{F}_{P_{n}}(v) = \frac{1}{\left( 1 - \frac{v}{v^{P_{n}}_{pole}(\eta)} \right)} \,\, f_{P_{n}}(v)
-\end{equation}
-where $v^{P_{n}}_{pole}$ denotes the pole velocity defined by the $v^{n}$ approximant of $e(x)$.
-
-This module defines all the energy and flux functions in terms of the coefficients which need to have been
-previously defined by the function \texttt{InspiralSetup}.
+where $t_{0}$ (usually equal to zero) is the user specified starting 
+time for the waveform when the wave frequency reaches {\tt params->fLower}
+and $v_{0}= (\pi m f)^{1/3}$ (with $f={\tt params->fLower}$) is the  velocity 
+at time $t_{0}.$  Note that $E'(v)$ and ${\cal F}(v)$ are defined in
+{\tt f->dEnergy} and {\tt f->flux.} 
 
 \subsubsection*{Algorithm}
-
+Numerical integration is used to compute {\tt ak->tn.}
 \subsubsection*{Uses}
-None.
+LALInspiralTofV
 
 \subsubsection*{Notes}
-See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
-The Pade Approximant for the 1PN expansion is undefined, and so cannot be used.
+\begin{itemize}
+\item See Damour, Iyer and Sathyaprakash, PRD 57, 885, 1998 for further details.
+Damour, Iyer and Sathyaprakash, PRD 63, 044023, 2001 is a resource paper that
+summarizes how to generate waveforms in different approximations to the dynamics
+of a compact binary under radiation reaction.
+\item The Pade Approximant for the 1PN expansion is undefined as also
+EOB at orders less than 2PN. BCV is independent of the PN order.
+Spinning waveforms are only defined at the highest PN order.
+\end{itemize}
 
 
 \vfill{\footnotesize\input{LALInspiralChooseModelCV}}
@@ -453,10 +412,11 @@ static REAL8 Fp7(REAL8 v, expnCoeffs *ak)
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 void 
 LALInspiralChooseModel(
-   LALStatus *status,
-   expnFunc *f,
-   expnCoeffs *ak,
-   InspiralTemplate *params)
+   LALStatus        *status,
+   expnFunc         *f,
+   expnCoeffs       *ak,
+   InspiralTemplate *params
+   )
 { /* </lalVerbatim>  */
 
    REAL8 vn, vlso;
@@ -499,9 +459,6 @@ LALInspiralChooseModel(
          case PadeT1:
          case PadeF1:
          case EOB:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -528,9 +485,6 @@ LALInspiralChooseModel(
          case PadeT1:
          case PadeF1:
          case EOB:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -561,9 +515,6 @@ LALInspiralChooseModel(
             break;
          case PadeF1:
          case EOB:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -598,9 +549,6 @@ LALInspiralChooseModel(
             f->flux = Fp4;
             break;
          case PadeF1:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:
@@ -635,9 +583,6 @@ LALInspiralChooseModel(
             f->flux = Fp5;
             break;
          case PadeF1:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
       }
@@ -670,9 +615,6 @@ LALInspiralChooseModel(
             f->flux = Fp6;
             break;
          case PadeF1:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
       }
@@ -701,9 +643,6 @@ LALInspiralChooseModel(
             f->flux = Fp7;
             break;
          case PadeF1:
-         case DJS:
-         case INSPA:
-         case IRSPA:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
          default:

@@ -23,8 +23,9 @@ The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3
 
 \subsubsection*{Uses}
 
-This function calls the function which represents $E^{\prime}(v)$ and $\mathcal{F}(v)$. The pointer to each
-of these functions is set by a call to the function \texttt{ChooseModel}.
+This function calls {\tt dEnergy} and {\tt flux} functions that are defined in the 
+{\tt expnFunc} structure  and represent $E^{\prime}(v)$ and $\mathcal{F}(v)$, respectively,
+and pointed to the appropriate PN functions with a call to \texttt{LALInspiralChooseModel.}
 
 \subsubsection*{Notes}
 
@@ -50,10 +51,13 @@ of these functions is set by a call to the function \texttt{ChooseModel}.
 NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralPhiofVIntegrandCP"> */
-void LALInspiralPhiofVIntegrand (LALStatus *status,
-		         REAL8 *integrand,
-		         REAL8 v,
-		         void *params)
+void 
+LALInspiralPhiofVIntegrand (
+   LALStatus  *status,
+   REAL8      *integrand,
+   REAL8       v,
+   void       *params
+   )
 { /* </lalVerbatim>  */
 
   PhiofVIntegrandIn *in;

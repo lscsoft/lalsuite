@@ -6,7 +6,9 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralPhasing1.c}}
-
+This module is used to set the phase of the waveform so that
+it is equal to the user specified phase $\phi_0$ when the `velocity' of the
+system is equal to $v.$ 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -15,23 +17,22 @@ $Id$
 
 \subsubsection*{Description}
 
-The function \texttt{LALInspiralPhasing1} calculates the phase $\phi(v)$ of a gravitational wave from an
-inspiralling binary system.
-
-It does this using the following equation, which is one of the pair which constitute the gravitational wave
-phasing formula,
-
+The function \texttt{LALInspiralPhasing1} calculates the phase $\phi(v)$ using
+the phasing formula,
 \begin{equation}
 \phi(v) =  \phi_{0} - 2 \int_{v_{0}}^{v} v^{3} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 \label{phiofv}
 \end{equation}
-
-\texttt{LALInspiralPhasing1} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,  $v$, $E^{\prime}(v)$ and
-$\mathcal{F}(v)$.
-
+\texttt{LALInspiralPhasing1} calculates $\phi(v)$, given $\phi_{0}$, $v_{0}$,  
+$v$, $E^{\prime}(v)$ and $\mathcal{F}(v)$.  The user can specify the phase to
+be of a particular value at an arbitrary point on the waveform when the
+post-Newtonian evolution variable $v$ reaches a specific value. Choosing
+$v=v_0,$ the initial velocity, means that the initial phase of the wave is $\phi_0;$
+Choosing $v=v_{\rm lso}$ means that the phase at the last stable orbit is $\phi_0$ and
+so on. 
 
 \subsubsection*{Algorithm}
-
+Numerical integration.
 
 \subsubsection*{Uses}
 
@@ -51,10 +52,13 @@ $\mathcal{F}(v)$.
 NRCSID (LALINSPIRALPHASING1C, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralPhasing1CP"> */
-void LALInspiralPhasing1 (LALStatus *status,
-	               REAL8 *phiofv,
-	               REAL8 v,
-	               void *params)
+void 
+LALInspiralPhasing1 (
+   LALStatus *status,
+   REAL8     *phiofv,
+   REAL8     v,
+   void      *params
+   )
 { /* </lalVerbatim>  */
 
    void *funcParams;

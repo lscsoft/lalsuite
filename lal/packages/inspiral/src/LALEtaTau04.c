@@ -6,6 +6,13 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALEtaTau04.c}}
+Given $\tau_0$ and $\tau_4$ solve for the mass ratio $\eta.$
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{LALEtaTau04CP}
+\idx{LALEtaTau04()}
+
+\subsubsection*{Description}
 Given $\tau_0$ and $\tau_4$ one can determine $\eta$ by solving 
 \begin{equation}
 -\eta^{4/5} \tau_4 + A_4 \left ( \frac {\tau_0}{A_0} \right )^{1/5}  
@@ -18,13 +25,6 @@ $B_4 = 5429 \times 1016064 /(1008 \times 3058673),$ and $C_4 = 617 \times
 This function returns the LHS of the above
 equation in \texttt{x} for a given \texttt{eta}.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALEtaTau04CP}
-\idx{LALEtaTau04()}
-
-\subsubsection*{Description}
-None.
 
 \subsubsection*{Algorithm}
 None.
@@ -32,26 +32,28 @@ None.
 \subsubsection*{Uses}
 None.
 
-\subsubsection*{Uses}
-None.
+\subsubsection*{Notes}
 The {\tt void pointer} {\tt *p} should point to a {\tt struct}
-of type {\tt EtaTau04In}
-
-{texttt void *p;\\
-    EtaTau04In q;\\
-    ---fill in the elements of q ---\\
-    p = (void *) \&q;\\
-    }
+of type {\tt EtaTau04In}\\[10pt]
+{\tt 
+void *p;\\
+EtaTau04In q;\\[5pt]
+$\ldots$\\
+p = (void *) \&q;\\
+}
 </lalLaTeX> */
 
 #include <lal/LALInspiral.h>
 
 NRCSID (LALETATAU04C, "$Id$");
 /*  <lalVerbatim file="LALEtaTau04CP"> */
-void LALEtaTau04(LALStatus *status, 
-                 REAL8 *x, 
-                 REAL8 eta, 
-                 void *p) 
+void 
+LALEtaTau04(
+   LALStatus *status, 
+   REAL8     *x, 
+   REAL8     eta, 
+   void      *p
+   ) 
 { /* </lalVerbatim> */
    EtaTau04In *q;
    INITSTATUS(status, "LALEtaTau04", LALETATAU04C);

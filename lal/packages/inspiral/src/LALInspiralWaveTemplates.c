@@ -6,29 +6,36 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralWaveTemplates.c}}
-This is exactly the same as \texttt{LALInspiralWave1,} except that
+This is exactly the same as \texttt{LALInspiralWave,} except that
 it generates two templates one for which the starting phase is 
-\texttt{params.startPhase} and the other for which the phase is
-\texttt{params.startPhase+$\pi/2$}.
+\texttt{params.startPhase} and a second for which the starting phase is
+\texttt{params.startPhase + $\pi/2$}.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveTemplatesCP}
 \idx{LALInspiralWaveTemplates()}
+\begin{itemize}
+\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
+{\tt *signla1} contains `0-phase' inspiral template and {\tt *signal2} contains 
+a signal that is $\pi/2$ out of phase with respect to {\tt *signal1.}
+Currently, a template pair is generated only for the following {\tt approximants:}
+{\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB.}
 
 \subsubsection*{Algorithm}
 
 
 \subsubsection*{Uses}
-Depending on the user inputs one of the following functions is called:
-
-\texttt{LALInspiralWave1Templates}
-\texttt{LALInspiralWave2Templates}
-\texttt{LALInspiralWave3Templates}
+Depending on the user inputs one of the following functions is called:\\
+\texttt{LALInspiralWave1Templates\\}
+\texttt{LALInspiralWave2Templates\\}
+\texttt{LALInspiralWave3Templates\\}
 \texttt{LALEOBWaveformTemplates}
-\texttt{LALDJSWaveformTemplates}
 
 \subsubsection*{Notes}
 
@@ -42,10 +49,13 @@ Depending on the user inputs one of the following functions is called:
 NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveTemplatesCP"> */
-void LALInspiralWaveTemplates(LALStatus *status,
-		     REAL4Vector *signal1,
-		     REAL4Vector *signal2,
-		     InspiralTemplate *params)
+void 
+LALInspiralWaveTemplates(
+   LALStatus        *status,
+   REAL4Vector      *signal1,
+   REAL4Vector      *signal2,
+   InspiralTemplate *params
+   )
 { /* </lalVerbatim>  */
 
    INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
@@ -87,9 +97,8 @@ void LALInspiralWaveTemplates(LALStatus *status,
       case TaylorF1:
       case TaylorF2:
       case PadeF1:
-      case INSPA:
-      case IRSPA:
-      case DJS:
+      case BCV:
+      case SpinTaylorT3:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
       break;
    }

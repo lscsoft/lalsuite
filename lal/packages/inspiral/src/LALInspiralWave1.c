@@ -7,90 +7,27 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralWave1.c}}
 
-The code \texttt{LALInspiralWave1.c} generates an inspiral waveform corresponding to the 
+The code \texttt{LALInspiralWave1} generates an time-domain inspiral waveform corresponding to the 
 \texttt{approximant} \texttt{TaylorT1} and \texttt{PadeT1} as outlined in the
-documentation for the function \texttt{InspiralWave}. 
+documentation for the function \texttt{LALInspiralWave}. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWave1CP}
 \index{\verb&LALInspiralWave1()&}
+\begin{itemize}
+\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
 This function is called if the user has specified the \texttt{enum} \texttt{approximant} to be
 either \texttt{TaylorT1} or \texttt{PadeT1}.
 
-This means that the the gravitational wave phasing
-formula is solved as follows. The formula is
- 
-\begin{eqnarray}
-t(v) & = & t_{0} - m \int_{v_{0}}^{v} \,
-\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_{0} - 2 \int_{v_{0}}^{v}  v^3 \,
-\frac{E'(v)}{{\cal F}(v)} \, dv,
-\label{TimeDomain2PhasingFormula}
-\end{eqnarray}
- 
-where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW frequency, and
-$m$ is the total mass of the binary.
- 
-The variable $t$ is in our hands, and the phasing formula is solved by finding the value of $v$ (for a
-given $t$) which satisfies the first of the equations in Eq. (\ref{TimeDomain2PhasingFormula}). This value of $v$ is
-then substituted into the second equation to yield $\phi(t)$.
- 
-Method \texttt{one} leaves  $E^{\prime}(v)/\mathcal{F}(v)$ as a series in terms of ascending powers of $x$
-and integrate the equations numerically. This numerical integration is done by replacing the integrals by a
-pair of first order coupled differential equations, as follows.
- 
-Instead of writing the first of the equations in Eq. (\ref{TimeDomain2PhasingFormula}), we may write
- 
-\begin{equation}
-\frac{dt(v)}{dv} = -m \frac{E^{\prime}(v)}{\mathcal{F}(v)} \,\,,
-\end{equation}
- 
-therefore
- 
-\begin{equation}
-\frac{dv}{dt} = - \frac{\mathcal{F}(v)}{m E^{\prime}(v)} \,\,.
-\label{TimeDomain2Ode1}
-\end{equation}           
- 
-Instead of the second equation in Eq. (\ref{TimeDomain2PhasingFormula}) we may write
- 
-\begin{equation}
-\frac{d \phi (t)}{dt} = 2 \pi F(t)
-\end{equation}
- 
-where
- 
-\begin{equation}
-F = \frac{v^{3}}{\pi m} \,\,,
-\end{equation}
- 
-therefore
- 
-\begin{equation}
-\frac{d \phi(t)}{dt} = \frac{2v^{3}}{m}
-\label{TimeDomain2Ode2}
-\end{equation}
- 
-So Eq. (\ref{TimeDomain2Ode1}) and Eq. (\ref{TimeDomain2Ode2}) are our coupled first order differential equations to solve. This
-we do using a fourth--order Runge--Kutta algorithm.
- 
- 
- 
-Inside the input structure of type \texttt{InspiralTemplate}, the parameter \texttt{order}, which is of type \texttt{enum Order}, lets the user choose to which order of
-post--Newtonian expansion they would like to go. The parameter \texttt{domain}, which is of type
-\texttt{enum Domain}, lets the user to choose to generate the waveform in the time or frequency domain. The
-user has have the additional choice of specifying the form of the expansion which defines
-$E^{\prime}(v)/\mathcal{F}(v)$. This ratio can be expressed in the form of a \emph{Taylor series}
-(T--Approximants) or by using \emph{P--Approximants}. This choice is handled by the parameter
-\texttt{approximant}, which is of type \texttt{enum Approximant}. 
-
 \subsubsection*{Algorithm}
-This code uses a fourth--order Runge--Kutta algorithm to solve the integrals as a pair of coupled
-first--order differential equations.
+This code uses a fourth-order Runge-Kutta algorithm to solve the ODEs 
+in Equation (\ref{eq:ode2}).
 
 \subsubsection*{Uses}
 
@@ -118,9 +55,12 @@ first--order differential equations.
 NRCSID (LALINSPIRALWAVE1C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave1CP"> */
-void LALInspiralWave1(LALStatus *status,
-		    REAL4Vector *signal,
-		    InspiralTemplate *params)
+void 
+LALInspiralWave1(
+   LALStatus        *status,
+   REAL4Vector      *signal,
+   InspiralTemplate *params
+   )
  { /* </lalVerbatim>  */
 
    INT4 n=2, count;

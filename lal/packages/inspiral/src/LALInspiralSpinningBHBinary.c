@@ -15,6 +15,10 @@ Kidder, Will and Wiseman Phys. Rev. D. 47, 4183 (1993), Blanchet et al. Phys. Re
 \vspace{0.1in}
 \input{LALInspiralSpinningBHBinaryCP}
 \index{\verb&LALInspiralSpinningBHBinary()&}
+\begin{itemize}
+\item {\tt signal:} Output containing the spin modulated inspiral waveform.
+\item {\tt in:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -66,9 +70,10 @@ NRCSID (LALINSPIRALSPINNINGBHBINARYC, "$Id$");
 /*  <lalVerbatim file="LALInspiralSpinningBHBinaryCP"> */
 void 
 LALInspiralSpinModulatedWave(
-		LALStatus        *status, 
-		REAL4Vector      *signal, 
-		InspiralTemplate *in)
+   LALStatus        *status, 
+   REAL4Vector      *signal, 
+   InspiralTemplate *in
+   )
 { /* </lalVerbatim> */
 
 

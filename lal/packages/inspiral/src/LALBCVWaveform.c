@@ -7,16 +7,20 @@
  *
  * \subsection{Module \texttt{LALBCVWaveform.c}}
  *
- * This module contains a single function {\it LALBCVWaveform.}
+ * This module contains a single function {\tt LALBCVWaveform.}
  * \subsubsection*{Prototypesc}
  * \input{LALBCVWaveformCP}
  * \idx{LALLALBCVWaveform()}
+\begin{itemize}
+\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
  * 
  * \subsubsection*{Description}
  * 
  * This module can be used to generate {\it detection template family}
- * of Buonanno, Chen and Vallisneri (Phys. Rev. D Phys.Rev. D67 (2003) 024016). 
- * The only function needed is {\it LALBCVWaveform.}
+ * of Buonanno, Chen and Vallisneri \cite{BCV03}.
+ * The only function needed is {\tt LALBCVWaveform.}
  * 
  * \subsubsection*{Algorithm}
  * 
@@ -43,10 +47,12 @@ NRCSID (LALBCVWAVEFORMC, "$Id$");
 
 
 /*  <lalVerbatim file="LALBCVWaveformCP"> */
-void LALBCVWaveform(
-		LALStatus *status, 
-		REAL4Vector *signal, 
-		InspiralTemplate *params)
+void 
+LALBCVWaveform(
+   LALStatus        *status, 
+   REAL4Vector      *signal, 
+   InspiralTemplate *params
+   )
  { /* </lalVerbatim>  */
 
   REAL8 f, df;

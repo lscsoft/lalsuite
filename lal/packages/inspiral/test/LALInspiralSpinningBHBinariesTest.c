@@ -1,47 +1,65 @@
-/*  <lalVerbatim file="LALInspiralTestCV">
+/*  <lalVerbatim file="LALInspiralSpinningBHBinariesTestCV">
 Author: Sathyaprakash, B. S.
 $Id$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
 
-\subsection{Module \texttt{LALInspiralTest.c}}
-Test routine for wave generation codes. First set the 
-\texttt{InspiralTemplate} structure (example given below). Call the function
-\begin{verbatim}
-LALInspiralWaveLength (&status, &n, params)
-\end{verbatim}
-to measure the length of the array required which will be returned in 
-\texttt{n}. Then call the function 
-\begin{verbatim}
-LALInspiralWave (&status, &signal, &params)
-\end{verbatim}
+\subsection{Module \texttt{LALInspiralSpinningBHBinariesTest.c}}
+Test routine for spin-modulted inspiral waveform generation code. First set the 
+\texttt{InspiralTemplate} structure (example given below). Then call the function\\
+\texttt{
+	LALInspiralWaveLength (\&status, \&n, params)
+	}\\
+to measure the length {\tt n} of the array required. Then call the function \\
+\texttt{
+	LALInspiralWave(\&status, signal1, params);
+	}\\
 to generate the wave, which will be returned in \texttt{signal}.
 Example values of the parameters that can be set (with options in 
 brackets):
 
 \begin{verbatim}
+   params.OmegaS = 0.;     (Unknown 3PN parameter in energy shown to be zero by DJS)
    params.ieta=1;          (1 for comparable masses model, 0 for test mass model)
    params.mass1=1.4;       (masses of the component stars in solar masses) 
    params.mass2=1.4; 
-   params.startTime=0.0;   (defined so that the instantaneous GW frequency 
+   params.startTime=0.0;   (in sec. Defined so that the instantaneous GW frequency 
                             is params.fLower at params.startTime)
-   params.startPhase=0.0;  (0 to $\pi/2$)
+   params.startPhase=0.0;  (0 to LAL_PI_2)
    params.fLower=40.0;     (in Hz)
    params.fCutoff=1000.0;  (in Hz)
-   params.tSampling=4000.; (in Hz; should be larger than $2\times \rm fCutoff$
-                            or $2\times f_{\rm lso}$, whichever is smaller)
+   params.tSampling=4000.; (in Hz; should be larger than 2*fCutoff or 2*flso, 
+                            whichever is smaller)
    params.signalAmplitude=1.0; 
    params.nStartPad=0;     (number of leading zero bins)
    params.nEndPad=0;       (number of trailing zero bins)
-   params.approximant=TaylorT1; (approximant in the convention of DIS 2001; 
-                            TaylorT1, PadeT1=ODE solver, 
-                            TaylorT2=implicit phasing formula solved in quadrature, 
-                            TaylorT3=explicit time-domain phasing)
-                            EOB=effective-one-body approach
+   params.approximant=SpinTaylorT3; 
    params.order=twoPN;     (also newtonian, onePN, oneAndHalfPN, twoPN, 
                             twoAndHalfPN, threePN, threeAndHalfPN)
    params.massChoice=m1Andm2; (also t0t2, t0t3, t0t4, totalMassAndEta,totalMassAndMu) 
+   params.Theta = 0.;
+   params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI; (distance in sec)
+   params.sourceTheta = LAL_PI/6.L;   (Source co-latitute)
+   params.sourcePhi = LAL_PI/6.L;   (Source azimuth)
+
+   mass1Sq = pow(params.mass1*LAL_MTSUN_SI,2.L); (mass of the 1st body in sec.)
+   mass2Sq = pow(params.mass2*LAL_MTSUN_SI,2.L); (mass of the 2nd body in sec.)
+   spin1Frac = 0.9;        (spin of body 1 in units of its mass)
+   spin2Frac = 0.3;        (spin of body 2 in units of its mass)
+
+   params.orbitTheta0 = LAL_PI_2/3.; (initial co-latitute orientation of the orbit)
+   params.orbitPhi0 = LAL_PI/6.; (initial azimuth orientation of the orbit)
+
+   (spin of body 1)
+   params.spin1[0] =  mass1Sq * spin1Frac * sin(spin1Theta) * cos(spin1Phi);  
+   params.spin1[1] =  mass1Sq * spin1Frac * sin(spin1Theta) * sin(spin1Phi);
+   params.spin1[2] =  mass1Sq * spin1Frac * cos(spin1Theta);
+
+   (spin of body 2)
+   params.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);  
+   params.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
+   params.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
 \end{verbatim}
 
 \vfill{\footnotesize\input{LALInspiralTestCV}}

@@ -41,10 +41,13 @@ None.
 NRCSID (LALRUNGEKUTTA4C, "$Id$");
 
 /*  <lalVerbatim file="LALRungeKutta4CP"> */
-void LALRungeKutta4(LALStatus *status,
-	            REAL8Vector *yout,
-	            rk4In *input,
-	            void *params)
+void 
+LALRungeKutta4(
+   LALStatus   *status,
+   REAL8Vector *yout,
+   rk4In       *input,
+   void        *params
+   )
 { /* </lalVerbatim>  */
 
    INT4 i;

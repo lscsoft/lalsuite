@@ -7,8 +7,8 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralTiming2.c}}
 
-Module to calculate the LHS of Eq.(4) in the documentation for
-\texttt{LALInspiralTiming2}.
+Module used in solving the timing and phasing functions in quadrature for the
+{\tt Approximant TaylorT2}.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -17,62 +17,23 @@ Module to calculate the LHS of Eq.(4) in the documentation for
 
 \subsubsection*{Description}
 
-The module \texttt{LALInspiralTiming2} calculates the quantity which we 
-may call toff, which is given by the following equation:
-
-\begin{eqnarray}
-\mathrm{toff} = t - t_{a}  &  - \tau_{0} 
-                \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] -
-                \tau_{2} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
-                & + \tau_{3} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - 
-               \tau_{4} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]  \,.
-\label{toff}
-\end{eqnarray}
-
-The terms in this equation are defined as follows: The parameter $t$ 
-represents time, $\tau_{0}$ is the Newtonian chirp time, $\tau_{2}$ is the first
-post--Newtonian chirp time, and so on for $\tau_{3}$ and $\tau_{4}$. 
-The parameter $f$ is the instantaneous frequency of the gravitational wave, 
-and $f_{a}$ is the value of this frequency when the wave enters the lower end of
-the detectors' bandwidth. Here we will neglect the $t_{a}$ term, which is the 
-instant at which the wave enters the lower end of the detectors bandwidth, 
-and which can be defined alsewhere. If we define
+Given $t$ and $v$ this module computes the quantity
 \begin{equation}
-\tau_{c} = \tau_{0} + \tau_{2} - \tau_{3} + \tau_{4}
+{\tt tofv} = t - t_C - t_N(v) \sum t_k v^k,
 \end{equation}
-then Eq.(\ref{toff}) becomes
-\begin{eqnarray}
-\mathrm{toff} &  = & t - t_{a}  - \tau_{0} + \tau_{0}
-\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{2} +
-\tau_{2} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
-      & + & \tau_{3} - \tau_{3} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{4} +
-\tau_{4} \left( \frac{f}{f_{a}} \right)^{-4/3}
-\end{eqnarray}
-i.e.\
-\begin{eqnarray}
-\mathrm{toff} &  = &  t - t_{a}  + \tau_{0} \left( \frac{f}{f_{a}} \right)^{-8/3} + 
-\tau_{2} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
-   & - & \tau_{3} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{4} \left( \frac{f}{f_{a}}
-\right)^{-4/3} - \tau_{c}
-\label{toff2}
-\end{eqnarray}
-
+where the coefficients $t_k$ and the Newtonian value $t_N$ are all defined
+in Table~\ref{table:flux}.
 
 \subsubsection*{Algorithm}
+None
 
 
 \subsubsection*{Uses}
+None
 
 \subsubsection*{Notes}
+None
 
-All frequencies are expressed in units of fs, the frequency of the
-waveform when it first enters the detectable part of the detector's
-bandwidth.  For a fuller description of how this function is used in 
-the generation of an inspiral waveform, see the
-documentation for the function \texttt{LALInspiralWave2}.
-The nomenclature adopted is the same as that used in 
-Sathyaprakash, PRD, 50, R7111, 1994, which may be
-consulted for further details.
 
 \vfill{\footnotesize\input{LALInspiralTiming2CV}}
 
@@ -84,10 +45,13 @@ consulted for further details.
 NRCSID (LALINSPIRALTIMING2C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_0PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_0PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -115,10 +79,13 @@ void LALInspiralTiming2_0PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_2PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_2PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -149,10 +116,13 @@ void LALInspiralTiming2_2PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_3PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_3PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -184,10 +154,13 @@ void LALInspiralTiming2_3PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_4PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_4PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -221,10 +194,13 @@ void LALInspiralTiming2_4PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_5PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_5PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -260,10 +236,13 @@ void LALInspiralTiming2_5PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_6PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_6PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
@@ -301,10 +280,13 @@ void LALInspiralTiming2_6PN (LALStatus *status,
   RETURN(status);
 }
 /*  <lalVerbatim file="LALInspiralTiming2CP"> */   
-void LALInspiralTiming2_7PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void 
+LALInspiralTiming2_7PN (
+   LALStatus *status,
+   REAL8     *toff,
+   REAL8      f,
+   void      *params
+   ) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;

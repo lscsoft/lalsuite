@@ -78,45 +78,25 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 \begin{enumerate} 
 
-\item \texttt{EtaTau02In, EtaTau04In:}
-These are the input structures needed in solving for the mass
-ratio $\eta$ given the chirptimes $\tau_0$ and $\tau_2,$ or
-to solve for $\eta$ given the chirptimes $\tau_0$ and $\tau_4.$
-
-\input{LALEtaTau0Tau2InH}
-
-Here, \texttt{t2}~$ = \tau_2,$ \texttt{A2}~$ = A_2 ({\tau_0}/{A_0})^{3/5},$  and 
-\texttt{B2}~$=B_2$, 
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ $A_2 = 3715 / [64512 (\pi f_s)^2],$
-$B_2 = 4620/3715.$  
-
-Similarly, \texttt{t4}~$ = \tau_4,$ \texttt{A4}~$ = A_4 ({\tau_0}/{A_0})^{1/5},$  
-\texttt{B4}~$=B_4$ and \texttt{C4}~$=C_4,$ where 
-where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ 
-$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],$
-$B_4 = 5429 \times 1016064 /(1008 \times 3058673),$ and $C_4 = 617 \times
-1016064/(144 \times 3058673).$
-
 \item \texttt{InputMasses:}
 This structure is one of the members of the \texttt{InspiralTemplate} 
 structure. 
 
 \input{LALInputMassesH}
 
-A user can specify the parameters of a binary using any two of the
-following combination of masses
+A user can specify the parameters of a binary using any of the
+following combination of {\it masses:}
 \begin{itemize}
 \item \texttt{m1Andm2:} component masses
 \item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
 \item \texttt{totalMassAndMu:} total mass and reduced mass
 \item \texttt{t01:} unused; shouldn't be used.
-\item \texttt{t02:} chirp times $\tau_0$ and $\tau_2$
-\item \texttt{t03:} chirp times $\tau_0$ and $\tau_3$, and 
-\item \texttt{t04:} chirp times $\tau_0$ and $\tau_4$
+\item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
+\item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and 
+\item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
 \end{itemize}
 
-
-\item \texttt{InputMasses:}
+\item \texttt{Order:}
 Enum that tells which post-Newtonian order is being used.
 \input{LALInspiralOrderH}
 \begin{itemize}
@@ -137,31 +117,28 @@ generation codes use a specific
 value of those parameters while generating the wave.
 
 
-\item \texttt{Approximant:}
+\item \texttt{Approximant:} Enum that specifies the PN approximant to
+be used in computing the waveform.
 \input{LALInspiralApproximantH}
 \begin{itemize}
 \item \texttt{TaylorT1:} Time domain Taylor approximant in which 
 	the energy and flux are both kept as Taylor expansions
 	and a first order ordinary differential equation is solved
-	for the GW phase as a function of $t.$
+	for the GW phase as a function of $t.$ Outputs a time-domain wave.
 \item \texttt{TaylorT2:} Time domain Taylor approximant in which 
 	the phase evolution $\varphi(t)$ is obtained by iteratively 
-	solving post-Newtonian expansions $\varphi(v)$ and $t(v).$
+	solving post-Newtonian expansions $\varphi(v)$ and $t(v).$ Outputs a time-domain wave.
 \item \texttt{TaylorT3:} Time domain Taylor approximant in which 
-phase is explicitly given as a function of time.
-\item \texttt{TaylorF1:} The standard stationary phase approximation.
-\item \texttt{TaylorF2:} The stationary phase approximation that
+phase is explicitly given as a function of time. Outputs a time-domain wave.
+\item \texttt{TaylorF1:} The stationary phase approximation that
 correctly represents, in the Fourier domain, the waveform given 
-by \texttt{TaylorT1} approximant (see Damour, Iyer, Sathyaprakash,
-		Phys. Rev. D . 63, 44023 (2001) for details).
-\item \texttt{PadeT1:} Time-domain P-approximant.
+by \texttt{TaylorT1} approximant (see Ref. \cite{dis2} for details). Outputs a frequency-domain wave.
+\item \texttt{TaylorF2:} The standard stationary phase approximation. Outputs a frequency-domain wave.
+\item \texttt{PadeT1:} Time-domain P-approximant. Outputs a time-domain wave.
 \item \texttt{PadeF1:} Frequency-domain P-approximant (not yet implemented).
-\item \texttt{EOB:} Effective one-body waveform 
+\item \texttt{EOB:} Effective one-body waveform  Outputs a time-domain wave.
 \item \texttt{BCV:} Detection template family of Buonanno, Chen and 
-                    Vallisneri (PRD 59, 084006 (1999)).
-\item \texttt{DJS:} Effective one-body waveform to 3.5 PN order 
-\item \texttt{INSPA:} Improved stationary phase approximation (not implemented yet)
-\item \texttt{IRSPA:} Improved relativistic stationary phase approximation (not implemented yet)
+                    Vallisneri \cite{BCV03}. Outputs a frequency-domain wave.
 \end{itemize}
 
 
@@ -242,27 +219,46 @@ The inspiral waveform parameter structure containing information about the
 \end{itemize}
 
 \item \texttt{InspiralACSTParams:}
-\input{LALInspiralACSTParamsH} 
-This is a structure needed to solve the differential equation
+This structure is needed to solve the differential equation
 	giving the evolution of the orbital angular momentum and the
 	spin angular momenta in the case of spinning black hole binaries.
+\input{LALInspiralACSTParamsH} 
 \begin{itemize}
   \item	\texttt {v:} parameter of 'integration': v=sqrt(M/r) 
-  \item {magS1:} The constant spin magnitude of the primary.
-  \item {magS2:} The constant spin magnitude of the secondary.
-  \item {NCap[3]:} Source direction (unit vector) in detector coordinate system.
-  \item {spin1[3]:} Spin of the larger body.
-  \item {M:} Total mass of the binary (in seconds).
-  \item {fourM1Plus:} = $(4 m_1+3 m_2)/(2 m_1 M^3)$ (all masses expressed in seconds).
-  \item {fourM2Plus:} = $(4 m_2+3 m_1)/(2 m_2 M^3)$ (all masses expressed in seconds).
-  \item {oneBy2Mcube:} = $1/(2 M^3)$
-  \item {threeBy2Mcube:}  = $3/(2 M^3)$
-  \item {thirtytwoBy5etc:}=  $(32/5) \eta^2 M$
+  \item {\tt magS1:} The constant spin magnitude of the primary.
+  \item {\tt magS2:} The constant spin magnitude of the secondary.
+  \item {\tt NCap[3]:} Source direction (unit vector) in detector coordinate system.
+  \item {\tt spin1[3]:} Spin of the larger body.
+  \item {\tt M:} Total mass of the binary (in seconds).
+  \item {\tt fourM1Plus:} = $(4 m_1+3 m_2)/(2 m_1 M^3)$ (all masses expressed in seconds).
+  \item {\tt fourM2Plus:} = $(4 m_2+3 m_1)/(2 m_2 M^3)$ (all masses expressed in seconds).
+  \item {\tt oneBy2Mcube:} = $1/(2 M^3)$
+  \item {\tt threeBy2Mcube:}  = $3/(2 M^3)$
+  \item {\tt thirtytwoBy5etc:}=  $(32/5) \eta^2 M$
 \end{itemize}
 
+\item \texttt{EtaTau02In, EtaTau04In:}
+These are the input structures needed to solve for the mass
+ratio $\eta$ given the chirptimes $(\tau_0,\, \tau_2)$ or
+$(\tau_0, \, \tau_4).$
+
+\input{LALEtaTau0Tau2InH}
+
+Here, \texttt{t2}~$ = \tau_2,$ \texttt{A2}~$ = A_2 ({\tau_0}/{A_0})^{3/5},$  and 
+\texttt{B2}~$=B_2$, 
+where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ $A_2 = 3715 / [64512 (\pi f_s)^2],$
+$B_2 = 4620/3715.$  
+
+Similarly, \texttt{t4}~$ = \tau_4,$ \texttt{A4}~$ = A_4 ({\tau_0}/{A_0})^{1/5},$  
+\texttt{B4}~$=B_4$ and \texttt{C4}~$=C_4,$ where 
+where $A_0 = 5/[256 (\pi f_{s} )^{8/3}],$ 
+$A_4 = 5 \times 3058673/ [128 \times 1016064  (\pi f_s)^{4/3}],$
+$B_4 = 5429 \times 1016064 /(1008 \times 3058673),$ and $C_4 = 617 \times
+1016064/(144 \times 3058673).$
+
 \item \texttt{InspiralToffInput:}
-\input{LALInspiralToffInputH} 
 This is a structure needed by the inner workings of the inspiral wave generation code.
+\input{LALInspiralToffInputH} 
 
 
 \item \texttt{expnCoeffs:}
@@ -279,14 +275,30 @@ This structure contains various post-Newtonian and P-approximant expansion
 	choices made by the user.
 \input{LALEnergyAndFluxFunctionsH}
 
-\item \texttt{expnFunc:} Structure to hold all the pointer to generic
+\item \texttt{expnFunc:} Structure to hold the pointers to the generic
        	functions defined above.
 \input{LALexpnFuncH}
 
-\item {Misc structures:} 
-The rest of the structures below define other structures needed by wave
-generation codes. (Will produce a documentation some day so that future code
-maintainers can understand what precisely has been done.)
+\item \texttt{TofVIn {\rm and} TofVIntegrandIn:} Structures needed to 
+	compute the time elapsed
+	from/to the starting epoch of the waveform when the velocity 
+	parameter was $v_0,$ to/from the current epoch when velocity 
+	parameter is $v.$
+\input{LALInspiralTofVH}
+
+\item {\tt InspiralPhaseIn {\rm and} PhiofVIntegrandIn:} Structures used 
+	to compute the phase of the signal from the `beginning', when the
+	veolcity parameter is $v_0,$ to a time when the velocity parameter 
+	has evolved to a user input value $v.$
+\input{LALInspiralPhaseH}
+
+\item {\tt InspiralDerivativesIn:} Structure used as an input to compute
+	the derivatives needed in solving the phasing formula when the
+	{\tt approximant} is {\tt TaylorT1, TaylorP1} or {\tt EOB.}
+\input{LALInspiralDerivativesH}
+
+\item {\tt rk4In:} Structure used as an input to Runge-Kutta solver.
+\input{LALInspiralRungeKuttaH}
 
 \end{enumerate}
 </lalLaTeX>  */
@@ -323,13 +335,13 @@ tagEtaTau04In
 
 /* <lalVerbatim file="LALInputMassesH">  */
 typedef enum {
-  m1Andm2,
-  totalMassAndEta,
-  totalMassAndMu,
-  t01,
-  t02,
-  t03,
-  t04
+   m1Andm2,
+   totalMassAndEta,
+   totalMassAndMu,
+   t01,
+   t02,
+   t03,
+   t04
  } InputMasses;
 /* </lalVerbatim>  */
 
@@ -339,14 +351,14 @@ typedef enum {
 
 /* <lalVerbatim file="LALInspiralOrderH">  */
 typedef enum {
-  newtonian,
-  oneHalfPN,
-  onePN,
-  onePointFivePN,
-  twoPN,
-  twoPointFivePN,
-  threePN,
-  threePointFivePN
+   newtonian,
+   oneHalfPN,
+   onePN,
+   onePointFivePN,
+   twoPN,
+   twoPointFivePN,
+   threePN,
+   threePointFivePN
  } Order;
 /* </lalVerbatim>  */
 
@@ -358,19 +370,16 @@ typedef enum {
 
 /* <lalVerbatim file="LALInspiralApproximantH">  */
 typedef enum {
-  TaylorT1,
-  TaylorT2,
-  TaylorT3,
-  TaylorF1,
-  TaylorF2,
-  PadeT1,
-  PadeF1,
-  EOB,
-  BCV,
-  DJS,
-  INSPA,
-  IRSPA,
-  SpinTaylorT3
+   TaylorT1,
+   TaylorT2,
+   TaylorT3,
+   TaylorF1,
+   TaylorF2,
+   PadeT1,
+   PadeF1,
+   EOB,
+   BCV,
+   SpinTaylorT3
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -379,58 +388,57 @@ typedef enum {
 typedef struct
 tagInspiralTemplate
 {
-  INT4 ieta;
-  INT4 level;
-  INT4Vector *segmentIdVec;
-  INT4 number;
-  INT4 nStartPad;
-  INT4 nEndPad;
-  REAL8 mass1; 
-  REAL8 mass2;
-  REAL8 spin1[3];
-  REAL8 spin2[3];
-  REAL8 sourceTheta;
-  REAL8 sourcePhi;
-  REAL8 orbitTheta0;
-  REAL8 orbitPhi0;
-  REAL8 distance; 
-  REAL8 inclination;
-  REAL8 eccentricity;
-  REAL8 totalMass; 
-  REAL8 chirpMass; 
-  REAL8 psi0;
-  REAL8 psi3;
-  REAL8 fendBCV;
-  REAL8 alpha;
-  REAL8 t0; 
-  REAL8 t2; 
-  REAL8 t3; 
-  REAL8 t4; 
-  REAL8 t5; 
-  REAL8 tC; 
-  REAL8 mu; 
-  REAL8 eta;
-  REAL8 fLower;
-  REAL8 fCutoff;
-  REAL8 tSampling;
-  REAL8 startPhase;
-  REAL8 startTime;
-  REAL8 signalAmplitude;
-  REAL8 rInitial;
-  REAL8 vInitial;
-  REAL8 rFinal;
-  REAL8 vFinal;
-  REAL8 fFinal;
-  REAL8 rLightRing;
-  REAL8 OmegaS;
-  REAL8 Theta;
-  InputMasses massChoice;
-  Order order;
-  Approximant approximant;
-  struct tagInspiralTemplate *next;
-  struct tagInspiralTemplate *fine;
- }
- InspiralTemplate;
+   INT4 ieta;
+   INT4 level;
+   INT4Vector *segmentIdVec;
+   INT4 number;
+   INT4 nStartPad;
+   INT4 nEndPad;
+   REAL8 mass1; 
+   REAL8 mass2;
+   REAL8 spin1[3];
+   REAL8 spin2[3];
+   REAL8 sourceTheta;
+   REAL8 sourcePhi;
+   REAL8 orbitTheta0;
+   REAL8 orbitPhi0;
+   REAL8 distance; 
+   REAL8 inclination;
+   REAL8 eccentricity;
+   REAL8 totalMass; 
+   REAL8 chirpMass; 
+   REAL8 psi0;
+   REAL8 psi3;
+   REAL8 fendBCV;
+   REAL8 alpha;
+   REAL8 t0; 
+   REAL8 t2; 
+   REAL8 t3; 
+   REAL8 t4; 
+   REAL8 t5; 
+   REAL8 tC; 
+   REAL8 mu; 
+   REAL8 eta;
+   REAL8 fLower;
+   REAL8 fCutoff;
+   REAL8 tSampling;
+   REAL8 startPhase;
+   REAL8 startTime;
+   REAL8 signalAmplitude;
+   REAL8 rInitial;
+   REAL8 vInitial;
+   REAL8 rFinal;
+   REAL8 vFinal;
+   REAL8 fFinal;
+   REAL8 rLightRing;
+   REAL8 OmegaS;
+   REAL8 Theta;
+   InputMasses massChoice;
+   Order order;
+   Approximant approximant;
+   struct tagInspiralTemplate *next;
+   struct tagInspiralTemplate *fine;
+ } InspiralTemplate;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -441,19 +449,18 @@ tagInspiralTemplate
 typedef struct
 tagInspiralToffInput
 {
-  REAL8 tN;
-  REAL8 t2;
-  REAL8 t3;
-  REAL8 t4;
-  REAL8 t5;
-  REAL8 t6;
-  REAL8 t7;
-  REAL8 tl6;
-  REAL8 piM;
-  REAL8 tc;
-  REAL8 t;
- }
-InspiralToffInput;
+   REAL8 tN;
+   REAL8 t2;
+   REAL8 t3;
+   REAL8 t4;
+   REAL8 t5;
+   REAL8 t6;
+   REAL8 t7;
+   REAL8 tl6;
+   REAL8 piM;
+   REAL8 tc;
+   REAL8 t;
+ } InspiralToffInput;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -464,18 +471,18 @@ InspiralToffInput;
 typedef struct
 tagInspiralACSTParams
 {
-	REAL8 v;               
-	REAL8 magS1;           
-	REAL8 magS2;
-	REAL8 NCap[3];         
-	REAL8 spin1[3];         
-	REAL8 M;               
-	REAL8 fourM1Plus;      
-	REAL8 fourM2Plus;      
-	REAL8 oneBy2Mcube;     
-	REAL8 threeBy2Mcube;   
-	REAL8 thirtytwoBy5etc;  
-} InspiralACSTParams;
+   REAL8 v;               
+   REAL8 magS1;           
+   REAL8 magS2;
+   REAL8 NCap[3];         
+   REAL8 spin1[3];         
+   REAL8 M;               
+   REAL8 fourM1Plus;      
+   REAL8 fourM2Plus;      
+   REAL8 oneBy2Mcube;     
+   REAL8 threeBy2Mcube;   
+   REAL8 thirtytwoBy5etc;  
+}  InspiralACSTParams;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -484,52 +491,53 @@ tagInspiralACSTParams
 
 
 /* <lalVerbatim file="LALExpnCoeffsH">  */
-typedef struct {
+typedef struct 
+tagexpnCoeffs {
    int ieta;
    /* coefficients in the Taylor expansion of new energy function*/
-   double eTaN, eTa1, eTa2, eTa3;
+   REAL8 eTaN, eTa1, eTa2, eTa3;
    /* coefficients in the Pade expression of new energy function*/
-   double ePaN, ePa1, ePa2, ePa3;
+   REAL8 ePaN, ePa1, ePa2, ePa3;
    /* coefficients in the Taylor expansion of usual energy function*/
-   double ETaN, ETa1, ETa2, ETa3;
+   REAL8 ETaN, ETa1, ETa2, ETa3;
    /* coefficients in the Taylor expansion of the derivative of the 
     usual energy function*/
-   double dETaN, dETa1, dETa2, dETa3;
+   REAL8 dETaN, dETa1, dETa2, dETa3;
 
    /* Taylor expansion coefficients of energy flux*/
-   double FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTl6;
+   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTl6;
    /* Taylor expansion coefficients of factored flux*/
-   double fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7;
+   REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7;
    /* Coefficients of the corresponding P-approximant*/
-   double fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7;
+   REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7;
 
    /* Taylor expansion coefficents in t(v)*/
-   double tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6; 
+   REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6; 
    /* Taylor expansion coefficents in phi(v)*/
-   double pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6; 
+   REAL8 pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6; 
    /* Taylor expansion coefficents in phi(t)*/
-   double ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6; 
+   REAL8 ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6; 
    /* Taylor expansion coefficents in f(t)*/
-   double ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
+   REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
    /* Taylor expansion coefficents in psi(f) in the Fourier phase*/
-   double pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5; 
+   REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5; 
 
    /* sampling rate and interval*/
-   double samplingrate, samplinginterval;
+   REAL8 samplingrate, samplinginterval;
    /* symmetric mass ratio, total mass, component masses*/
-   double eta, totalmass, m1, m2;
+   REAL8 eta, totalmass, m1, m2;
    /* unknown 3PN parameters, euler constant*/
-   double lambda, theta, EulerC, omegaS;
+   REAL8 lambda, theta, EulerC, omegaS;
 
    /* initial and final values of frequency, time, velocity; lso
     values of velocity and frequency; final phase.*/
-   double f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
+   REAL8 f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
 
    /* last stable orbit and pole defined by various Taylor and P-approximants*/
-   double vlsoT0, vlsoT2, vlsoT4, vlsoT6;
-   double vlsoP0, vlsoP2, vlsoP4, vlsoP6;
-   double vpoleP4, vpoleP6;
-} expnCoeffs;
+   REAL8 vlsoT0, vlsoT2, vlsoT4, vlsoT6;
+   REAL8 vlsoP0, vlsoP2, vlsoP4, vlsoP6;
+   REAL8 vpoleP4, vpoleP6;
+}  expnCoeffs;
 
 /* </lalVerbatim>  */
 
@@ -539,12 +547,12 @@ typedef struct {
 
 /* <lalVerbatim file="LALEnergyAndFluxFunctionsH"> */
 
-typedef double EnergyFunction(
-   double v, 
+typedef REAL8 EnergyFunction(
+   REAL8 v, 
    expnCoeffs *ak);
 
-typedef double FluxFunction(
-   double v, 
+typedef REAL8 FluxFunction(
+   REAL8 v, 
    expnCoeffs *ak);
 
 typedef void (TestFunction)(
@@ -582,87 +590,32 @@ typedef void (InspiralTiming2) (
 typedef struct
 tagexpnFunc
 {
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  InspiralTiming2 *timing2;
-  InspiralPhasing2 *phasing2;
-  InspiralPhasing3 *phasing3;
-  InspiralFrequency3 *frequency3;
-}
-expnFunc;
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   InspiralTiming2 *timing2;
+   InspiralPhasing2 *phasing2;
+   InspiralPhasing3 *phasing3;
+   InspiralFrequency3 *frequency3;
+} expnFunc;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
 \idx[Type]{expnFunc}
 </lalLaTeX>  */
 
-
-/* <lalVerbatim file="LALInspiralHS">  */
-typedef struct
-tagTofVIntegrandIn
-{
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  expnCoeffs *coeffs;
-}
-TofVIntegrandIn;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{TofVIntegrandIn}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralHS">  */
-typedef struct
-tagInspiralDerivativesIn
-{
-  REAL8 totalmass;
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  expnCoeffs *coeffs;
-}
-InspiralDerivativesIn;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{InspiralDerivativesIn}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralHS">  */
-typedef struct
-tagrk4In
-{
-  TestFunction *function;
-  REAL8 x;
-  REAL8Vector *y;
-  REAL8Vector *dydx;
-  REAL8Vector *yt;
-  REAL8Vector *dym;
-  REAL8Vector *dyt;
-  REAL8 h;
-  INT4 n;
-}
-rk4In;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\index{\texttt{rk4In}}
-</lalLaTeX>  */
-
-/* <lalVerbatim file="LALInspiralHS">  */
+/* <lalVerbatim file="LALInspiralTofVH">  */
 typedef struct
 tagTofVIn
 {
-  REAL8 t;
-  REAL8 v0;
-  REAL8 t0;
-  REAL8 vlso;
-  REAL8 totalmass;
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  expnCoeffs *coeffs;
-}
-TofVIn;
+   REAL8 t;
+   REAL8 v0;
+   REAL8 t0;
+   REAL8 vlso;
+   REAL8 totalmass;
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   expnCoeffs *coeffs;
+} TofVIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -670,17 +623,66 @@ TofVIn;
 </lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALInspiralHS">  */
+/* <lalVerbatim file="LALInspiralTofVH">  */
+typedef struct
+tagTofVIntegrandIn
+{
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   expnCoeffs *coeffs;
+} TofVIntegrandIn;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{TofVIntegrandIn}
+</lalLaTeX>  */
+
+/* <lalVerbatim file="LALInspiralDerivativesH">  */
+typedef struct
+tagInspiralDerivativesIn
+{
+   REAL8 totalmass;
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   expnCoeffs *coeffs;
+} InspiralDerivativesIn;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InspiralDerivativesIn}
+</lalLaTeX>  */
+
+/* <lalVerbatim file="LALInspiralRungeKuttaH">  */
+typedef struct
+tagrk4In
+{
+   TestFunction *function;
+   REAL8 x;
+   REAL8Vector *y;
+   REAL8Vector *dydx;
+   REAL8Vector *yt;
+   REAL8Vector *dym;
+   REAL8Vector *dyt;
+   REAL8 h;
+   INT4 n;
+} rk4In;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\index{\texttt{rk4In}}
+</lalLaTeX>  */
+
+
+/* <lalVerbatim file="LALInspiralPhaseH">  */
 typedef struct
 tagInspiralPhaseIn
 {
-  REAL8 v0;
-  REAL8 phi0;
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  expnCoeffs *coeffs;
-}
-InspiralPhaseIn;
+   REAL8 v0;
+   REAL8 phi0;
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   expnCoeffs *coeffs;
+} InspiralPhaseIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -688,15 +690,14 @@ InspiralPhaseIn;
 </lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALInspiralHS">  */
+/* <lalVerbatim file="LALInspiralPhaseH">  */
 typedef struct
 tagPhiofVIntegrandIn
 {
-  EnergyFunction *dEnergy;
-  FluxFunction *flux;
-  expnCoeffs *coeffs;
-}
-PhiofVIntegrandIn;
+   EnergyFunction *dEnergy;
+   FluxFunction *flux;
+   expnCoeffs *coeffs;
+}  PhiofVIntegrandIn;
 /* </lalVerbatim>  */
 
 /* <lalLaTeX>
@@ -710,127 +711,49 @@ PhiofVIntegrandIn;
 /* Function prototypes */
 
 /*  <lalLaTeX>
-\newpage\input{LALInspiralChooseModelC}
-</lalLaTeX>  */
-
-void LALInspiralChooseModel(
-   LALStatus *status,
-   expnFunc *func,
-   expnCoeffs *ak,
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALEtaTau02C}
-</lalLaTeX>  */
-
-void LALEtaTau02(
-   LALStatus *status,
-   REAL8 *x,
-   REAL8 eta, 
-   void  *in);
-
-/* <lalLaTeX>
-\newpage\input{LALEtaTau04C}
-</lalLaTeX>  */
-
-void LALEtaTau04(
-   LALStatus *status,
-   REAL8 *x,
-   REAL8 eta, 
-   void  *in);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralDerivativesC}
-</lalLaTeX>  */
-
-void LALInspiralDerivatives (
-   REAL8Vector *vec1,
-   REAL8Vector *vec2,
-   void *params);
-
-/*  <lalLaTeX>
 \newpage\input{LALInspiralParameterCalcC}
 </lalLaTeX>  */
 
 void LALInspiralParameterCalc (
-   LALStatus *status,
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing1C}
-</lalLaTeX>  */
-
-void LALInspiralPhasing1 (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 v,
-   void *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSetupC}
-</lalLaTeX>  */
-
-void LALInspiralSetup (
-   LALStatus *status,
-   expnCoeffs *ak,
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralVelocityC}
-</lalLaTeX>  */
-
-void LALInspiralVelocity (
-   LALStatus *status,
-   REAL8 *v,
-   TofVIn *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWaveC}
-</lalLaTeX>  */
-
-void LALInspiralWave(
-   LALStatus *status,
-   REAL4Vector *signal,
-   InspiralTemplate *params);
+     LALStatus *status,
+     InspiralTemplate *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveLengthC}
 </lalLaTeX>  */
 
 void LALInspiralWaveLength (
-   LALStatus *status,
-   UINT4 *n,
-   InspiralTemplate params);
+     LALStatus *status,
+     UINT4 *n,
+     InspiralTemplate params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWaveC}
+</lalLaTeX>  */
+
+void LALInspiralWave(
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWaveTemplatesC}
 </lalLaTeX>  */
 
 void LALInspiralWaveTemplates(
-   LALStatus *status,
-   REAL4Vector *filter1,
-   REAL4Vector *filter2,
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhiofVIntegrandC}
-</lalLaTeX>  */
-
-void LALInspiralPhiofVIntegrand (
-   LALStatus *status,
-   REAL8 *,
-   REAL8,
-   void *);
-
+     LALStatus *status,
+     REAL4Vector *filter1,
+     REAL4Vector *filter2,
+     InspiralTemplate *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralWave1C}
 </lalLaTeX>  */
 
 void LALInspiralWave1(
-   LALStatus *status,
-   REAL4Vector *signal,
-   InspiralTemplate *params);
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
 
 
 /*  <lalLaTeX>
@@ -838,20 +761,294 @@ void LALInspiralWave1(
 </lalLaTeX>  */
 
 void LALInspiralWave1Templates(
-   LALStatus *status,
-   REAL4Vector *signal1,
-   REAL4Vector *signal2,
-   InspiralTemplate *params);
+     LALStatus *status,
+     REAL4Vector *signal1,
+     REAL4Vector *signal2,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave2C}
+</lalLaTeX>  */
+
+void LALInspiralWave2(
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave2TemplatesC}
+</lalLaTeX>  */
+
+void LALInspiralWave2Templates (
+     LALStatus *status,
+     REAL4Vector *signal1, 
+     REAL4Vector *signal2, 
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave3C}
+</lalLaTeX>  */
+
+void LALInspiralWave3 (
+     LALStatus *status,
+     REAL4Vector *signal, 
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralWave3TemplatesC}
+</lalLaTeX>  */
+
+void LALInspiralWave3Templates (
+     LALStatus *status,
+     REAL4Vector *signal1, 
+     REAL4Vector *signal2, 
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralStationaryPhaseApprox1C}
+</lalLaTeX>  */
+void LALInspiralStationaryPhaseApprox1 (
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralStationaryPhaseApprox2C}
+</lalLaTeX>  */
+void LALInspiralStationaryPhaseApprox2 (
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALEOBWaveformC}
+</lalLaTeX>  */
+
+void LALEOBWaveform(
+     LALStatus *status,
+     REAL4Vector *signal,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALEOBWaveformTemplatesC}
+</lalLaTeX>  */
+
+void LALEOBWaveformTemplates(
+     LALStatus *status,
+     REAL4Vector *signal1,
+     REAL4Vector *signal2,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALBCVWaveformC}
+</lalLaTeX>  */
+
+void LALBCVWaveform(
+     LALStatus *status,
+     REAL4Vector *signal, 
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralSpinningBHBinaryC}
+</lalLaTeX>  */
+
+void LALInspiralSpinModulatedWave(
+     LALStatus        *status, 
+     REAL4Vector      *signal, 
+     InspiralTemplate *in);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralChooseModelC}
+</lalLaTeX>  */
+
+void LALInspiralChooseModel(
+     LALStatus *status,
+     expnFunc *func,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralSetupC}
+</lalLaTeX>  */
+
+void LALInspiralSetup (
+     LALStatus *status,
+     expnCoeffs *ak,
+     InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALEtaTau02C}
+</lalLaTeX>  */
+
+void LALEtaTau02(
+     LALStatus *status,
+     REAL8 *x,
+     REAL8 eta, 
+     void  *in);
+
+/* <lalLaTeX>
+\newpage\input{LALEtaTau04C}
+</lalLaTeX>  */
+
+void LALEtaTau04(
+     LALStatus *status,
+     REAL8 *x,
+     REAL8 eta, 
+     void  *in);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralDerivativesC}
+</lalLaTeX>  */
+
+void LALInspiralDerivatives (
+     REAL8Vector *vec1,
+     REAL8Vector *vec2,
+     void *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralVelocityC}
+</lalLaTeX>  */
+
+void LALInspiralVelocity (
+     LALStatus *status,
+     REAL8 *v,
+     TofVIn *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhasing1C}
+</lalLaTeX>  */
+
+void LALInspiralPhasing1 (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 v,
+     void *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhiofVIntegrandC}
+</lalLaTeX>  */
+
+void LALInspiralPhiofVIntegrand (
+     LALStatus *status,
+     REAL8 *,
+     REAL8,
+     void *);
+
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhasing2C}
+</lalLaTeX>  */
+
+void LALInspiralPhasing2_0PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing2_1PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing2_2PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+  
+void LALInspiralPhasing2_3PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing2_4PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing2_5PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+  
+void LALInspiralPhasing2_6PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing2_7PN (
+     LALStatus *status,
+     REAL8 *phase, 
+     REAL8 v,
+     expnCoeffs *ak);
+
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralPhasing3C}
+</lalLaTeX>  */
+
+void LALInspiralPhasing3_0PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+  
+void LALInspiralPhasing3_1PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_2PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_3PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_4PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_5PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_6PN (
+     LALStatus *,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALInspiralPhasing3_7PN (
+     LALStatus *status,
+     REAL8 *phase,
+     REAL8 td,
+     expnCoeffs *ak);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTofVC}
 </lalLaTeX>  */
 
 void LALInspiralTofV (
-   LALStatus *,
-   REAL8 *,
-   REAL8,
-   void *);
+     LALStatus *,
+     REAL8 *,
+     REAL8,
+     void *);
 
 
 /*  <lalLaTeX>
@@ -859,564 +1056,163 @@ void LALInspiralTofV (
 </lalLaTeX>  */
 
 void LALInspiralTofVIntegrand (
-   LALStatus *status,
-   REAL8 *,
-   REAL8,
-   void *);
-
-void LALPrintTimeseries(
-   int n,
-   double *signal,
-   double dt,
-   double t0);
-
-/*  <lalLaTeX>
-\newpage\input{LALRungeKutta4C}
-</lalLaTeX>  */
-
-void LALRungeKutta4(
-  LALStatus *,
-  REAL8Vector *,
-  rk4In *,
-  void *);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2C}
-</lalLaTeX>  */
-
-void LALInspiralWave2(
-  LALStatus *status,
-  REAL4Vector *signal,
-  InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2TemplatesC}
-</lalLaTeX>  */
-
-void LALInspiralWave2Templates (
-  LALStatus *status,
-  REAL4Vector *signal1, 
-  REAL4Vector *signal2, 
-  InspiralTemplate *params);
+     LALStatus *status,
+     REAL8 *,
+     REAL8,
+     void *);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTiming2C}
 </lalLaTeX>  */
 
 void LALInspiralTiming2_0PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 void LALInspiralTiming2_1PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 void LALInspiralTiming2_2PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 void LALInspiralTiming2_3PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 void LALInspiralTiming2_4PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 
 void LALInspiralTiming2_5PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
+  
 void LALInspiralTiming2_6PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 void LALInspiralTiming2_7PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing3C}
-</lalLaTeX>  */
-
-void LALInspiralPhasing2_0PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_1PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_2PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_3PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_4PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_5PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_6PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_7PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3C}
-</lalLaTeX>  */
-
-void LALInspiralWave3 (
-   LALStatus *status,
-   REAL4Vector *signal, 
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3TemplatesC}
-</lalLaTeX>  */
-
-void LALInspiralWave3Templates (
-   LALStatus *status,
-   REAL4Vector *signal1, 
-   REAL4Vector *signal2, 
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralSpinningBHBinaryC}
-</lalLaTeX>  */
-
-void 
-LALInspiralSpinModulatedWave(
-		LALStatus        *status, 
-		REAL4Vector      *signal, 
-		InspiralTemplate *in);
-
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing3C}
-</lalLaTeX>  */
-
-void LALInspiralPhasing3_0PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_1PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_2PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_3PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_4PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_5PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_6PN (
-   LALStatus *,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_7PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALRungeKutta4(
-  LALStatus *,
-  REAL8Vector *,
-  rk4In *,
-  void *);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralStationaryPhaseApprox1C}
-</lalLaTeX>  */
-void 
-LALInspiralStationaryPhaseApprox1 (
-   LALStatus *status,
-   REAL4Vector *signal,
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALBCVWaveformC}
-</lalLaTeX>  */
-
-void LALBCVWaveform(
-		    LALStatus *status,
-		    REAL4Vector *signal, 
-		    InspiralTemplate *params
-		    );
-
-/*  <lalLaTeX>
-\newpage\input{LALEOBWaveformC}
-</lalLaTeX>  */
-
-void LALEOBWaveform(
-	LALStatus *status,
-	REAL4Vector *signal,
-	InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALEOBWaveformTemplatesC}
-</lalLaTeX>  */
-
-void LALEOBWaveformTemplates(
-	LALStatus *status,
-	REAL4Vector *signal1,
-	REAL4Vector *signal2,
-	InspiralTemplate *params);
-
-void LALHCapDerivatives(
-	REAL8Vector *values,
-	REAL8Vector *dvalues,
-	void *funcParams);
-
-void LALprInit(
-	REAL8 *pr,
-	REAL8 r,
-	InspiralDerivativesIn *ak);
-
-void LALpphiInit(
-	REAL8 *phase,
-	REAL8 r,
-	REAL8 eta);
-
-void LALlightRingRadius(
-	LALStatus *status,
-	REAL8 *x,
-	REAL8 r,
-	void *params);
-
-void LALrOfOmega(
-	LALStatus *status,
-	REAL8 *x,
-	REAL8 r,
-	void *params);
-
-
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2C}
-</lalLaTeX>  */
-
-void LALInspiralWave2(
-  LALStatus *status,
-  REAL4Vector *signal,
-  InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave2TemplatesC}
-</lalLaTeX>  */
-
-void LALInspiralWave2Templates (
-  LALStatus *status,
-  REAL4Vector *signal1, 
-  REAL4Vector *signal2, 
-  InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralTiming2C}
-</lalLaTeX>  */
-
-void LALInspiralTiming2_0PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_1PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_2PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_3PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_4PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-
-void LALInspiralTiming2_5PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_6PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-void LALInspiralTiming2_7PN (
-   LALStatus *,
-   REAL8 *toff,
-   REAL8 f,
-   void *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing3C}
-</lalLaTeX>  */
-
-void LALInspiralPhasing2_0PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_1PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_2PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_3PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_4PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_5PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_6PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing2_7PN (
-   LALStatus *status,
-   REAL8 *phase, 
-   REAL8 v,
-   expnCoeffs *ak);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3C}
-</lalLaTeX>  */
-
-void LALInspiralWave3 (
-   LALStatus *status,
-   REAL4Vector *signal, 
-   InspiralTemplate *params);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralWave3TemplatesC}
-</lalLaTeX>  */
-
-void LALInspiralWave3Templates (
-   LALStatus *status,
-   REAL4Vector *signal1, 
-   REAL4Vector *signal2, 
-   InspiralTemplate *params);
+     LALStatus *,
+     REAL8 *toff,
+     REAL8 f,
+     void *params);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralFrequency3C}
 </lalLaTeX>  */
 
 void LALInspiralFrequency3_0PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_1PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_2PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_3PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_4PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_5PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_6PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
 
 void LALInspiralFrequency3_7PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak);
+     LALStatus *status,
+     REAL8 *frequency,
+     REAL8 td,
+     expnCoeffs *ak);
+
+void LALHCapDerivatives(
+     REAL8Vector *values,
+     REAL8Vector *dvalues,
+     void *funcParams);
+
+void LALprInit(
+     REAL8 *pr,
+     REAL8 r,
+     InspiralDerivativesIn *ak);
+
+void LALpphiInit(
+     REAL8 *phase,
+     REAL8 r,
+     REAL8 eta);
+
+void LALlightRingRadius(
+     LALStatus *status,
+     REAL8 *x,
+     REAL8 r,
+     void *params);
+
+void LALrOfOmega(
+     LALStatus *status,
+     REAL8 *x,
+     REAL8 r,
+     void *params);
 
 /*  <lalLaTeX>
-\newpage\input{LALInspiralPhasing3C}
+\newpage\input{LALRungeKutta4C}
 </lalLaTeX>  */
 
-void LALInspiralPhasing3_0PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_1PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_2PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_3PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_4PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_5PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_6PN (
-   LALStatus *,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-void LALInspiralPhasing3_7PN (
-   LALStatus *status,
-   REAL8 *phase,
-   REAL8 td,
-   expnCoeffs *ak);
-
-/*  <lalLaTeX>
-\newpage\input{LALInspiralStationaryPhaseApprox2C}
-</lalLaTeX>  */
-void 
-LALInspiralStationaryPhaseApprox2 (
-   LALStatus *status,
-   REAL4Vector *signal,
-   InspiralTemplate *params);
+void LALRungeKutta4(
+     LALStatus *,
+     REAL8Vector *,
+     rk4In *,
+     void *);
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTestC}
+</lalLaTeX>  */
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralTestOneC}
+</lalLaTeX>  */
+
+/*  <lalLaTeX>
+\newpage\input{LALInspiralSpinningBHBinariesTestC}
 </lalLaTeX>  */
 
 #ifdef  __cplusplus

@@ -7,97 +7,83 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralWave.c}}
 
-Interface routine needed to generate a T- or a P-approximant.
+Interface routine needed to generate all waveforms in this module. To generate a waveform 
+a user is noramlly required to (a) choose the binary parameters, starting frequency, number of
+bins of leading and trailing zero-padding, etc., in the structure {\tt InspiralTemplate params}
+and (b) call the following three functions in the order given:
+{\tt LALInspiralParameterCalc,} {\tt LALInspiralWaveLength,} and {\tt LALInspiralWave.} 
+Either a time- or a frequency-domain signal is returned depending upon the 
+{\tt approximant} requested (see Notes below).
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralWaveCP}
 \idx{LALInspiralWave()}
+\begin{itemize}
+\item {\tt signal:} Output containing the inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
 The code \texttt{LALInspiralWave} is the user interface to the inspiral codes. It takes from the user all
-the physical parameters which specify the binary, and calls the relevent code generation function.
-We have plans to produce eleven different approximants of which six are fully implemented. 
-Each approximant can be generated at seven different post-Newtonian orders, from Newtonian to 3.5 PN
-order.  The approximant and the order are set up the enums \texttt{Approximant} and \texttt{Order,}
+the physical parameters which specify the binary, and calls the relevent wave generation function.
+Currently nine different approximants are fully implemented. These are {\tt TaylorT1, TaylorT2,
+TaylorT3, TaylorF1, TaylorF2, PadeT1, EOB, BCV, SpinTaylorT3.}
+{\tt Taylor} approximants can all be generated at seven different post-Newtonian orders, 
+from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher, 
+{\tt EOB} at orders 2 and higher. {\tt SpinTaylorT3} is implemented only at 2PN order
+by solving the evolution equations for the spin and orbital angular momenta and a
+time-domain phasing formula. Finally, PN order is undefined for {\tt BCV.} 
+The approximant and the order are set up the enums \texttt{Approximant} and \texttt{Order,}
 respectively.
 
-The choices available represent the following possibilities.
- 
-Theoretical calculations have given us post-Newtonian expansions (i.e.\ a series in terms of ascending
-powers of $x\equiv v^{2}$) of an energy function $E(x=v^2)$ and a GW luminosity function $\mathcal{F}(v)$.
-Then there is the gravitational wave phasing formula at the restricted post-Newtonian approximation:
-\begin{eqnarray}
-t(v) & = & t_{\rm ref} + m \int_v^{v_{\rm ref}} \,
-\frac{E'(v)}{{\cal F}(v)} \, dv, \nonumber \\
-\phi (v) & = & \phi_{\rm ref} + 2 \int_v^{v_{\rm ref}}  v^3 \,
-\frac{E'(v)}{{\cal F}(v)} \, dv,
-\label{InspiralWavePhasingFormula}
-\end{eqnarray}
-where $v=(\pi m F)^{1/3}$ is an invariantly defined velocity, $F$ is the instantaneous GW frequency, and
-$m$ is the total mass of the binary.
- 
-The variable $t$ is in our hands, and the phasing formula is solved by finding the value of $v$ (for a
-given $t$) which satisfies the first of the equations in Eq. (\ref{InspiralWavePhasingFormula}). This value of $v$ is
-then substituted into the second equation to yield $\phi(t)$.
- 
-There are basically three ways of solving the problem:
+The waveforms are all terminated one bin before the last stable orbit is reached.
+The last stable orbit corresponding to a given {\tt Approximant} and {\tt Order} is
+defined as follows: For all {\tt Taylor} approximants at orders 0PN, 1PN and 1.5PN 
+$v_{\rm lso}^2=1/6,$ and at 2PN, 2.5PN, 3PN and 3.5PN 
+$v_{\rm lso}^2 = x^{\rm lso}_{T_4},$ where $x^{\rm lso}_{T_4}$ is 
+defined in Table \ref{table:energy}.  In the case of {\tt Pade} approximant
+at 1.5PN order $v_{\rm lso}^2=1/6,$ and at orders 2PN, 2.5PN, 3PN and 3.5PN
+$v_{\rm lso}^2 = x^{\rm lso}_{P_4},$ where $x^{\rm lso}_{P_4}$ is 
+defined in Table \ref{table:energy}. In the case of {\tt EOB} approximant,
+defined only at orders greater than 2PN, the plunge waveform is 
+terminated at the light-ring orbit defined by Equation~(\ref{eq:LightRing}).
 
-\begin{enumerate}
-\item Leave  $E^{\prime}(v)/\mathcal{F}(v)$ as it is and integrate the equations numerically. This
-corresponds to \texttt{TaylorT1} and \texttt{PadeT1} approximants in the enum \texttt{Approximant}.
- 
-\item Re-expand $E^{\prime}(v)/\mathcal{F}(v)$ in which case the integrals can be done analytically to
-obtain a {\it parametric} representation of the phasing formula in terms of
-polynomial expressions in the auxiliary variable $v$
-\begin {eqnarray}
-\phi^{(2)}(v)&=& \phi_{\rm ref} +
-\phi^v_N (v)\sum_{k=0}^{n} \hat{\phi}^v_k v^k, \nonumber\\
-t^{(2)}(v)&=& t_{\rm ref} +t^v_N(v) \sum_{k=0}^{n} \hat{t}^v_k v^k,
-\label{InspiralWavePhase2}
-\end {eqnarray}
-This corresponds to approximant \texttt{TaylorT2} in the enum \texttt{Approximant}.
- 
-\item The second of the polynomials in Eq.~(\ref{InspiralWavePhase2}) can
-be inverted and the resulting polynomial for $v$ in terms of
-$t$ can be substituted in $\phi^{(2)}(v)$ to arrive at an explicit  time-domain
-phasing formula
-\begin{equation}
-\phi^{(3)}(t)=\phi_{\rm ref}+\phi_N^t \sum_{k=0}^{n}
-\hat{\phi}^t_k\theta^k
-\end{equation}
-\begin{equation}
-F^{(3)}(t)= F_N^t \sum_{k=0}^{n} \hat{F}^t_k \theta^k,
-\end{equation}         
-where \\$\theta=[\eta (t_{\rm ref}-t)/(5m)]^{-1/8}$, \\
-$F \equiv d \phi/ 2 \pi dt =v^3/(\pi m)$ is the instantaneous GW frequency.
-This corresponds to method \texttt{TaylorT3} in the enum \texttt{approximant} above.
-\end{enumerate}
-
-Approximants \texttt{EOB} and \texttt{DJS} correspond to effective one-body approach
-where a set of four ordinary differential equations are solved by making an anzatz for the
-radiation reaction force. The four ODEs correspond to the evolution of the radial and angular
-coordinates and the corresponding momenta.
-
-See the test code in this module for an example of how to generate a waveform.
-
-The parameter \texttt{Order}, which is of type \texttt{enum Order}, lets the user choose to which order of
-post-Newtonian expansion they would like to go.
+See the test codes for examples of how to generate different approximations.
 
 \subsubsection*{Algorithm}
-
+Simple use of {\tt switch} statement to access different PN approximations.
 
 \subsubsection*{Uses}
-Depending on the user inputs one of the following functions is called:
-
-\texttt{LALInspiralWave1}
-\texttt{LALInspiralWave2}
-\texttt{LALInspiralWave3}
-\texttt{LALEOBWaveform}
+Depending on the user inputs one of the following functions is called:\\
+\texttt{LALInspiralWave1\\}
+\texttt{LALInspiralWave2\\}
+\texttt{LALInspiralWave3\\}
+\texttt{LALInspiralStationaryPhaseApprox1\\}
+\texttt{LALInspiralStationaryPhaseApprox2\\}
+\texttt{LALEOBWaveform\\}
+\texttt{LALBCVWaveform\\}
+\texttt{LALInspiralSpinModulatedWave\\}
 
 \subsubsection*{Notes}
 
+\begin{itemize}
+    \item A time-domain waveform is returned when the {\tt approximant} is one of
+        {\tt TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, SpinTaylorT3}
+    \item A frequency-domain waveform is returned when the {\tt approximant} is one of
+        {\tt TaylorF1, TaylorF2, BCV}. 
+         In these cases the code returns the real and imagninary parts of the 
+         Fourier domain signal in the convention of fftw. For a signal vector 
+         of length {\tt n=signal->length} ({\tt n} even):
+     \begin{itemize}
+         \item {\tt signal->data[0]} is the {\it real} 0th frequency component of the Fourier transform.
+         \item {\tt signal->data[n/2]} is the {\it real} Nyquist frequency component of the Fourier transform.
+         \item {\tt signal->data[k]} and {\tt signal->data[n-k],} for {\tt k=1,\ldots, n/2-1,} are
+             the real and imaginary parts of the Fourier transform at a frequency $k\Delta f=k/T,$ $T$ being
+             the duration of the signal and $\Delta f=1/T$ is the frequency resolution.
+     \end{itemize}
+\end{itemize}
 \vfill{\footnotesize\input{LALInspiralWaveCV}}
 
 </lalLaTeX>  */
@@ -108,9 +94,12 @@ Depending on the user inputs one of the following functions is called:
 NRCSID (LALINSPIRALWAVEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveCP"> */
-void LALInspiralWave(LALStatus *status,
-		     REAL4Vector *signal,
-		     InspiralTemplate *params)
+void 
+LALInspiralWave(
+   LALStatus        *status,
+   REAL4Vector      *signal,
+   InspiralTemplate *params
+   )
 { /* </lalVerbatim>  */
 
    INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
@@ -159,9 +148,6 @@ void LALInspiralWave(LALStatus *status,
            CHECKSTATUSPTR(status);
 	   break;
       case PadeF1:
-      case INSPA:
-      case IRSPA:
-      case DJS:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 	   break;
       case SpinTaylorT3:

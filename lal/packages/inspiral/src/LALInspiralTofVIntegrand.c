@@ -38,7 +38,7 @@ $m$ is the total mass of the binary.
 \subsubsection*{Uses}
 
 This function calls the function which represents $E^{\prime}(v)$ and $\mathcal{F}(v)$. The pointer to each
-of these functions is set by a call to the function \texttt{CHooseModel}.
+of these functions is set by a call to the function \texttt{LALInspiralChooseModel}.
  
 \subsubsection*{Notes}
 
@@ -53,10 +53,13 @@ of these functions is set by a call to the function \texttt{CHooseModel}.
 NRCSID (LALINSPIRALTOFVINTEGRANDC, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralTofVIntegrandCP"> */
-void LALInspiralTofVIntegrand (LALStatus *status,
-		       REAL8 *integrand,
-		       REAL8 v,
-		       void *params)
+void 
+LALInspiralTofVIntegrand (
+   LALStatus *status,
+   REAL8     *integrand,
+   REAL8      v,
+   void      *params
+   )
 { /* </lalVerbatim>  */
 
    TofVIntegrandIn *ak;

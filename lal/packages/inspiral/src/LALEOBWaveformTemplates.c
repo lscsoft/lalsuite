@@ -15,6 +15,11 @@ on how these waveforms are generated).
 \vspace{0.1in}
 \input{LALEOBWaveformTemplatesCP}
 \index{\verb&LALEOBWaveformTemplates()&}
+\begin{itemize}
+\item {\tt signal1:} Output containing the 0-phase inspiral waveform.
+\item {\tt signal2:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt params:} Input containing binary chirp parameters.
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -44,10 +49,13 @@ NRCSID (LALEOBWAVEFORMTEMPLATESC, "$Id$");
 
 /*  <lalVerbatim file="LALEOBWaveformTemplatesCP"> */
 
-void LALEOBWaveformTemplates (LALStatus *status,
-                     REAL4Vector *signal1,
-                     REAL4Vector *signal2,
-                     InspiralTemplate *params) 
+void 
+LALEOBWaveformTemplates (
+   LALStatus        *status,
+   REAL4Vector      *signal1,
+   REAL4Vector      *signal2,
+   InspiralTemplate *params
+   ) 
 { /* </lalVerbatim> */
 
    INT4 count, nn=4;

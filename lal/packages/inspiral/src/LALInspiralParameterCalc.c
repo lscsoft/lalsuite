@@ -6,7 +6,8 @@ $Id$
 /*  <lalLaTeX>
 
 \subsection{Module \texttt{LALInspiralParameterCalc.c}}
-
+Given a pair of masses (or other equivalent parameters) compute
+related chirp parameters.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -14,52 +15,87 @@ $Id$
 \idx{LALInspiralParameterCalc()}
 \begin{itemize}
 \item\texttt{params:} Input/Output, given a pair of binary parameters and a lower
-frequency cutoff, other equivalent parameters are filled by this structure
+frequency cutoff, other equivalent parameters are computed by this function.
 \end{itemize}
 
 \subsubsection*{Description}
 
-The code \texttt{LALInspiralParameterCalc.c} takes as its input one pair of parameters which may be chosen
-from the following set: $(m_{1}, m_{2}, m, \eta, \mu, \tau_0, \tau_2, \tau_3, \tau_4)$, 
-where $m_{1}$ and $m_{2}$ are the masses of
-the two compact objects, $m=m_{1}+m_{2}$ is their combined mass, $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$ is the
-symmetric mass ratio, and $\mu=m_{1}m_{2}/(m_{1}+m_{2})$ is the reduced mass. $\tau$'s are the chirptimes
-defined below. The pairs that can be specified are: $(m_1,m_2)$, $(m, \eta),$, $(m, \mu),$
-$(\tau_0, \tau_2),$ $(\tau_0, \tau_3),$ and $(\tau_0, \tau_4).$ The enum \texttt{massChoice} should
-be propertly set to reflect which choice has been made; otherwise an error condition will occur and
+The code takes as its input {\tt params->fLower} in Hz and
+a pair of masses (in units of $M_\odot$) or chirptimes (in seconds measured from {\tt params->fLower})
+and computes all the other {\em mass} parameters in the {\tt params} structure. 
+Users choice of input pair of {\em masses} should be specified by appropriately setting 
+the variable {\tt params->massChoice} as described in the Table below:
+\begin{table}[h]
+\begin{center}
+\caption{For a given {\tt params->massChoice} in column 1 the user should specify the
+parameters as in column 2, in units as in column 3. Column 4 gives the conventional meaning
+of the parameters. Chirp times are measured from a lower frequency cutoff given
+in {\tt params->fLower.}}
+\begin{tabular}{cccc}
+\hline
+{\tt params->massChoice} & User should set & in units & which means \\
+\hline
+{\tt m1Andm2}         & ({\tt mass1, mass2})   & $(M_\odot, M_\odot)$          & $(m_1,m_2)$ \\ 
+{\tt totalMassAndEta} & ({\tt totalmass, eta}) & $(M_\odot, 0 < \eta \le 1/4)$ & $(m, \eta)$\\
+{\tt totalMassAndMu}  & ({\tt totalmass, mu})  & $(M_\odot, M_\odot)$          & $(m, \mu)$ \\ 
+{\tt t02}             & ({\tt t0, t2})         & (sec, sec) & $(\tau_0, \tau_2)$ \\
+{\tt t03}             & ({\tt t0, t3})         & (sec, sec) & $(\tau_0, \tau_3)$ \\
+{\tt t04}             & ({\tt t0, t4})         & (sec, sec) & $(\tau_0, \tau_4)$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+If \texttt{massChoice} is not set properly an error condition will occur and
 the function is aborted with a return value 999.
-
-Whichever pair of parameters is given to the function as an input, the function calculates the rest.
-Apart from the various masses the function
-also calculates the Newtonian chirp time $\tau_{0}$, the one PN chirp time
-$\tau_{2}$, the 1.5 PN chirp time $\tau_{3}$, the 2 PN chirptime $\tau_{4},$ the 2.5 PN chirptime $\tau_{5},$ 
-total chirp time $\tau_C,$ and the chirp
-mass $\mathcal{M}$ which is defined as $\mathcal{M}=(\mu^{3} m^{2})^{1/5}$.
-
-The chirp times are related to the masses of the stars and $f_{a}$ in the following way:
+In the above list $m_{1}$ and $m_{2}$ are the masses of
+the two compact objects, $m=m_{1}+m_{2}$ is the total 
+mass, $\eta=m_{1}m_{2}/(m_{1}+m_{2})^{2}$ is the
+symmetric mass ratio, $\mu=m_{1}m_{2}/(m_{1}+m_{2})$ is 
+the reduced mass and $\tau$'s are the chirptimes
+defined in terms of $f_{a}$={\tt fLower} by:
 \begin{eqnarray}
-\tau_{0} & = & \frac{5}{256} \eta^{-1} m^{-5/3} (\pi f_{a})^{-8/3} \nonumber \\
-\tau_{2} & = & \frac{3715+4620 \eta}{64512 \eta m (\pi f_{a})^{2}} \nonumber \\
-\tau_{3} & = & \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\ 
-\tau_{4} & = & \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
-\frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right] \nonumber \\
-\tau_5 & = & \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right )\nonumber \\ 
-\tau_C & = & \tau_0 + \tau_2 - \tau_3 + \tau_4 - \tau_5.
+\tau_{0} = \frac{5}{256 \eta m^{5/3} (\pi f_{a})^{8/3}}, \ \ \ 
+\tau_{2} = \frac{(3715 + 4620 \eta)}{64512 \eta m (\pi f_{a})^{2}}, \ \ \ 
+\tau_{3} = \frac{\pi}{8 \eta m^{2/3} (\pi f_{a})^{5/3}}\nonumber \\ 
+\tau_{4} = \frac{5}{128 \eta m^{1/3} (\pi f_{a})^{4/3}} \left[ \frac{3058673}{1016064} +
+\frac{5429}{1008} \eta + \frac{617}{144} \eta^{2} \right],\ \ \ 
+\tau_5 = \frac {5}{256\eta f_a}  \left (\frac {7729}{252} + \eta \right ).
 \end{eqnarray}
-These formulas show that an additional parameter $f_{a}$ is needed. This is the frequency at which the
-detectors' noise curve rises steeply (the seismic limit), the variable \texttt{fLower} in the 
-\texttt{params} structure.
+%% Beyond 2.5 PN order, chirp times do not have an 
+%% explicit expression in terms of the masses and $f_a.$
+Whichever pair of parameters is given to the function as an input, the function 
+calculates the rest.  Apart from the various masses and chirptimes the function
+also calculates the chirp mass $\mathcal{M}=(\mu^{3} m^{2})^{1/5}$ and 
+the total chirp time $\tau_C$ consistent with the approximation chosen: 
+\begin{table}[h]
+\begin{center}
+\caption{$t_C$ will be set according to the PN order chosen in {\tt params->approximant.}}
+\begin{tabular}{cccccc}
+\hline
+& {\tt Newtonian} & {\tt onePN} & {\tt onePointFivePN} & {\tt twoPN} & {\tt twoPointFivePN}\\
+\hline
+  $\tau_C$
+& $\tau_0$ 
+& $\tau_0 + \tau_2$ 
+& $\tau_0 + \tau_2-\tau_3$ 
+& $\tau_0 + \tau_2-\tau_3 + \tau_4$ 
+& $\tau_0 + \tau_2-\tau_3 + \tau_4 - \tau_5$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
 \subsubsection*{Algorithm}
-
+Root finding by bisection method is used to solve for mass ratio $\eta$ when
+chirptimes $(\tau_0,\, \tau_2)$ or $(\tau_0,\, \tau_4)$ is input. 
 
 \subsubsection*{Uses}
+When appropriate this function calls:\\
 \texttt{
-%% \begin{verbatim}
-LALEtaTau04
-LALDBisectionFindRoot
-LALEtaTau02
-%% \end{verbatim}
+LALDBisectionFindRoot\\
+LALEtaTau02\\
+LALEtaTau04\\
 }
 
 \subsubsection*{Notes}
@@ -78,8 +114,9 @@ NRCSID (LALINSPIRALPARAMETERCALCC, "$Id$");
 /*  <lalVerbatim file="LALInspiralParameterCalcCP"> */
 void 
 LALInspiralParameterCalc (
-   LALStatus *status, 
-   InspiralTemplate *params)
+   LALStatus        *status, 
+   InspiralTemplate *params
+   )
 { /* </lalVerbatim> */
 
    REAL8 m1, m2, totalMass, eta, mu, piFl, etamin, tiny, ieta;

@@ -9,55 +9,28 @@ $Id$
 \subsection{Module \texttt{LALInspiralFrequency3.c}}
 
 The code \texttt{LALInspiralFrequency3.c} calculates the frequency the 
-waveform from an inspiralling binary system as a function of time up to second 
+waveform from an inspiralling binary system as a function of time up to 3.5 
 post-Nowtonian order.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralFrequency3CP}
 \index{\verb&LALInspiralFrequency3()&}
+\begin{itemize}
+\item {\tt frequency:} Output containing the inspiral waveform.
+\item {\tt td:} Input containing PN expansion coefficients $F_k$ (cf. Table \ref{table:flux})
+of frequency as a function of time.  
+\item {\tt ak:} Input containing all PN expansion coefficients.
+\end{itemize}
 
 \subsubsection*{Description}
 
-The code \texttt{LALInspiralFrequency3.c} calculates the frequency 
-the waveform from an inspiralling binary system as a function of time up to 
-second post-Nowtonian order. The method used is as follows.
-
-
-The frequency of a gravitational wave is related to the parameter $x$, which 
-is defined as
+This module computes the instantaneous frequency of an inspiral wave using
 \begin{equation}
-x(t) \equiv \left( \frac{Gm \omega(t)}{c^{3}_{0}} \right)^{2/3}
+F(t) = F_N(\theta) \sum F_k \theta^k,
 \end{equation}
-in the following way
-\begin{equation}
-f_{GW}(t) = \frac{c^{3}_{0}}{G m \pi} \, x(t)^{3/2} \,\,.
-\label{fofx}
-\end{equation}
-Now, $x(t)$ is given by
-\begin{eqnarray}
-x(t) & =  &  \frac{\Theta^{-1/4}}{4} \left\{  1 + \left(\frac{743}{4032} + 
-          \frac{11}{48} \eta \right) \Theta^{-1/4} - 
-          \frac{\pi}{5} \Theta^{-3/8} \right. \nonumber \\
-     &  + & \left. \left( \frac{19583}{254016} + \frac{24401}{193536} \eta + 
-            \frac{31}{288} \eta^{2} \right) \Theta^{-1/2} \right\}
-\label{xoft}
-\end{eqnarray}
-
-All of these equations have included explicitly their dependence upon $G$ 
-and $c$.  The code uses units where $G=c=1$.  Alternatively, one can work 
-in terms of $f_{GW}(t)$ itself rather than first calculating $x(t)$ and then
-finding $f_{GW}(t)$ from that. An equivalent expression derived in this way is
-\begin{eqnarray}
-\omega (t) & =  & \frac{c_{0}^{3}}{8 G m} \left\{ \Theta^{-3/8} + 
-                  \left( \frac{743}{2688} + \frac{11}{32} \eta \right) \Theta^{-5/8} - 
-                  \frac{3 \pi}{10} \Theta^{-3/4} \right. \nonumber \\
-            & \times  & \left. \left( \frac{1\,855\,099}{14\,450\,688} + 
-              \frac{56\,975}{258\,048} \eta + \frac{371}{2048} \eta^{2} \right) \Theta^{-7/8} \right\}
-\end{eqnarray}
-where $\omega$ here is the \emph{orbital} frequency $\omega_{orb}$. 
-Then one simply uses $f_{GW}=2f_{orb}$ and $f_{orb}=\omega_{orb}/2 \pi$, 
-and so $f_{GW}=\omega_{orb}/ \pi$.
+where the expansion coefficients $F_k,$ Newtonian value $F_N$ and the
+time-variable $\theta$ are defined in Table \ref{table:flux}.
 
 \subsubsection*{Algorithm}
 
@@ -66,7 +39,10 @@ and so $f_{GW}=\omega_{orb}/ \pi$.
 None.
 
 \subsubsection*{Notes}
-See Blanchett, Iyer, Will and Wiseman, CQG, 13, 575, 1996 for further details.
+The frequency evolution defined by post-Newtonian expansion is not monotonic.
+Indeed, the equations become highly inaccurate close to the last stable orbit (lso)
+and breakdown at or slightly after lso, and the frequency begins to decrease at later times.
+It turns out that the evolution is monotonic at least up to lso.
 
 \vfill{\footnotesize\input{LALInspiralFrequency3CV}}
 
@@ -79,11 +55,13 @@ NRCSID (LALINSPIRALFREQUENCY3C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_0PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak) 
+void 
+LALInspiralFrequency3_0PN (
+   LALStatus  *status,
+   REAL8      *frequency,
+   REAL8      td,
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta3;
@@ -104,11 +82,13 @@ void LALInspiralFrequency3_0PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_2PN (
+void 
+LALInspiralFrequency3_2PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3;
@@ -132,11 +112,13 @@ void LALInspiralFrequency3_2PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_3PN (
+void 
+LALInspiralFrequency3_3PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3;
@@ -159,11 +141,13 @@ void LALInspiralFrequency3_3PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_4PN (
+void 
+LALInspiralFrequency3_4PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4;
@@ -188,11 +172,13 @@ void LALInspiralFrequency3_4PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_5PN (
+void 
+LALInspiralFrequency3_5PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5;
@@ -219,11 +205,13 @@ void LALInspiralFrequency3_5PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_6PN (
+void 
+LALInspiralFrequency3_6PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6;
@@ -252,11 +240,13 @@ void LALInspiralFrequency3_6PN (
 
 /*  <lalVerbatim file="LALInspiralFrequency3CP"> */
 
-void LALInspiralFrequency3_7PN (
+void 
+LALInspiralFrequency3_7PN (
    LALStatus *status,
    REAL8 *frequency,
    REAL8 td,
-   expnCoeffs *ak) 
+   expnCoeffs *ak
+   ) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta3,theta4,theta5,theta6,theta7;

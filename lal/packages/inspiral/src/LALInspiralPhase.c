@@ -51,10 +51,13 @@ $\mathcal{F}(v)$.
 NRCSID (LALINSPIRALPHASEC, "$Id$"); 
 
 /*  <lalVerbatim file="LALInspiralPhaseCP"> */
-void LALInspiralPhase (LALStatus *status,
-	               REAL8 *phiofv,
-	               REAL8 v,
-	               void *params)
+void 
+LALInspiralPhase (
+   LALStatus *status,
+   REAL8     *phiofv,
+   REAL8     v,
+   void      *params
+   )
 { /* </lalVerbatim>  */
 
    void *funcParams;
