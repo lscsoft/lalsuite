@@ -102,7 +102,6 @@ REAL4 fRef = 100.0;
 REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
-BOOLEAN splice = 0;
 REAL4 scaleFactor = 1;
 INT4 seed;
 
@@ -127,20 +126,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* results parameters */
 	REAL8 y;
-	REAL8 yWhitenedSum = 0.;
 	REAL8 varTheo;
-	REAL8 inVarTheo;
-	REAL8 inVarTheoSum = 0.;
-	REAL8 pointEstimate;
-	REAL8 errorBar;
 
-	/* input data streams */
+	/* input data segment */
 	INT4 numSegments;
-	INT4 streamLength;
+	INT4 segmentLength;
 	ReadDataPairParams streamParams;
 	StreamPair streamPair;
-	REAL4TimeSeries streamOne;
-	REAL4TimeSeries streamTwo;
+	REAL4TimeSeries segmentOne;
+	REAL4TimeSeries segmentTwo;
 
 	/* simulated signal structures */
 	SSSimStochBGOutput MCoutput;
@@ -151,12 +145,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* simulated output structures */
 	REAL4TimeSeries SimStochBGOne;
 	REAL4TimeSeries SimStochBGTwo;
-
-	/* data structures for segments */
-	INT4 segmentLength;
-	REAL4TimeSeries segmentOne;
-	REAL4TimeSeries segmentTwo;
-
+    
 	/* data structures for PSDs */
 	INT4 overlapPSDLength;
 	INT4 psdTempLength;
@@ -269,43 +258,46 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* get number of segments */
-	streamDuration = stopTime - startTime;
+	streamDuration = ((stopTime - startTime) / segmentDuration ) * segmentDuration;
 	numSegments = streamDuration / segmentDuration;
 
-	/* get stream duration and length */
-	streamLength = streamDuration * resampleRate;
+	/* get number of segments */
+	numSegments = streamDuration / segmentDuration;
 
-	/* set metadata fields for data streams */
-	strncpy(streamOne.name, "streamOne", LALNameLength);
-	strncpy(streamTwo.name, "streamTwo", LALNameLength);
-	streamOne.sampleUnits = lalADCCountUnit;
-	streamTwo.sampleUnits = lalADCCountUnit;
-	streamOne.epoch = gpsStartTime;
-	streamTwo.epoch = gpsStartTime;
-	streamOne.deltaT = 1./(REAL8)resampleRate;
-	streamTwo.deltaT = 1./(REAL8)resampleRate;
-	streamOne.f0 = 0;
-	streamTwo.f0 = 0;
+        /* set length for data segments */
+	segmentLength = segmentDuration * resampleRate;
+
+	/* set metadata fields for data segments */
+	strncpy(segmentOne.name, "segmentOne", LALNameLength);
+	strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
+	segmentOne.sampleUnits = lalADCCountUnit;
+	segmentTwo.sampleUnits = lalADCCountUnit;
+	segmentOne.epoch = gpsStartTime;
+	segmentTwo.epoch = gpsStartTime;
+	segmentOne.deltaT = 1./(REAL8)resampleRate;
+	segmentTwo.deltaT = 1./(REAL8)resampleRate;
+	segmentOne.f0 = 0;
+	segmentTwo.f0 = 0;
 
 	if (verbose_flag)
 	{
-		fprintf(stdout, "Allocating memory for data streams...\n");
+		fprintf(stdout, "Allocating memory for data segments...\n");
 	}
 
-	/* allocate memory for data streams */
-	streamOne.data = NULL;
-	streamTwo.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(streamOne.data), streamLength), \
+	/* allocate memory for data segments */
+	segmentOne.data = NULL;
+	segmentTwo.data = NULL;
+	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
 			&status );
-	LAL_CALL( LALSCreateVector(&status, &(streamTwo.data), streamLength), \
+	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
 			&status );
-	memset(streamOne.data->data, 0, \
-			streamOne.data->length * sizeof(*streamOne.data->data));
-	memset(streamTwo.data->data, 0, \
-			streamTwo.data->length * sizeof(*streamTwo.data->data));
+	memset(segmentOne.data->data, 0, \
+			segmentOne.data->length * sizeof(*segmentOne.data->data));
+	memset(segmentTwo.data->data, 0, \
+			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
 
-	/* set stream input parameters */
-	streamParams.duration = streamDuration;
+	/* set segment input parameters */
+	streamParams.duration = segmentDuration;
 	streamParams.frameCacheOne = frameCacheOne;
 	streamParams.frameCacheTwo = frameCacheTwo;
 	streamParams.ifoOne = ifoOne;
@@ -318,8 +310,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	streamParams.resampleRate = resampleRate;
 
 	/* set stream data structures */
-	streamPair.streamOne = &streamOne;
-	streamPair.streamTwo = &streamTwo;
+	streamPair.streamOne = &segmentOne;
+	streamPair.streamTwo = &segmentTwo;
 
 	if (inject_flag)
 	{
@@ -372,37 +364,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		MCoutput.SSimStochBG2 = &SimStochBGTwo;
 	}
 
-	/* set length for data segments */
-	segmentLength = segmentDuration * resampleRate;
-
-	/* set metadata fields for data segments */
-	strncpy(segmentOne.name, "segmentOne", LALNameLength);
-	strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
-	segmentOne.sampleUnits = streamOne.sampleUnits;
-	segmentTwo.sampleUnits = streamTwo.sampleUnits;
-	segmentOne.epoch = gpsStartTime;
-	segmentTwo.epoch = gpsStartTime;
-	segmentOne.deltaT = 1./(REAL8)resampleRate;
-	segmentTwo.deltaT = 1./(REAL8)resampleRate;
-	segmentOne.f0 = 0;
-	segmentTwo.f0 = 0;
-
-	if (verbose_flag)
-	{
-		fprintf(stdout, "Allocating memory for data segments...\n");
-	}
-
-	/* allocate memory for data segments */
-	segmentOne.data = NULL;
-	segmentTwo.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
-			&status );
-	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
-			&status );
-	memset(segmentOne.data->data, 0, \
-			segmentOne.data->length * sizeof(*segmentOne.data->data));
-	memset(segmentTwo.data->data, 0, \
-			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
+	
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -938,37 +900,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 	ccIn.hBarTildeTwo = &hBarTildeTwo;
 	ccIn.optimalFilter = &optFilter;
 
-	/*
-	 ** read data, downsample and eventually inject simulated signal **
-	 */
-
-	if (verbose_flag)
-	{
-		fprintf(stdout, "Reading data...\n");
-	}
-
-	/* read data */
-	readDataPair(&status, &streamPair, &streamParams);
-
-	/* save */
-	if (verbose_flag)
-	{
-		LALSPrintTimeSeries(&streamOne, "stream1.dat");
-		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
-	}
-
-
+	
 	/*
 	 ** loop over segments **
 	 */
 
-	if (verbose_flag)
+        if (verbose_flag)
 	{
 		fprintf(stdout, "Looping over %d segments...\n", numSegments);
 	}
-
+        
+        lal_errhandler = LAL_ERR_RTRN;
 	for (segLoop = 0; segLoop < numSegments; segLoop++)
 	{
+                                
 		/* define segment epoch */
 		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentDuration);
 		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
@@ -980,24 +925,83 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "Performing search on segment %d of %d...\n", \
 					segLoop + 1, numSegments);
 		}
+                
+                /* compute response function */
+		responseTempOne.epoch = gpsCalTime;
+		responseTempTwo.epoch = gpsCalTime;
+                
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
+					ifoOne, &duration), &status );
 
-		/* build small segment */
-		for (i = 0; i < segmentLength ; i++)
+		if (status.statusCode !=0)
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }               
+               
+		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
+					ifoTwo, &duration), &status );
+                if (status.statusCode !=0)
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
+		
+		if (verbose_flag)
 		{
-			segmentOne.data->data[i] = streamOne.data->data[i + \
-				(segLoop * segmentLength)];
-			segmentTwo.data->data[i] = streamTwo.data->data[i + \
-				(segLoop * segmentLength)];
+			fprintf(stdout, "Getting appropriate frequencresponse " \
+					"functions...\n");
 		}
 
+        	/* read data and downsample */
+        	if (verbose_flag)
+        	{
+        		fprintf(stdout, "Reading data...\n");
+        	}
+
+        	/* read data */
+                streamParams.startTime = gpsStartTime.gpsSeconds;
+        	LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+                if (status.statusCode !=0)
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
+               
+        	/* save */
+        	if (verbose_flag)
+        	{
+        		LALSPrintTimeSeries(&segmentOne, "segment1.dat");
+         		LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
+        	}
+		
 		/* simulate signal */
 		if (inject_flag)
 		{
+		        /* set parameters for monte carlo */
 			MCparams.startTime = gpsStartTime.gpsSeconds;
 			seed = (INT4)(time(NULL));
 			MCparams.seed = seed;
+
 			/* perform monte carlo */
-			monteCarlo(&status, &MCoutput, &MCinput, &MCparams);	
+			LAL_CALL(monteCarlo(&status, &MCoutput, &MCinput, &MCparams), &status);	                        
+                        if (status.statusCode !=0)
+		         {
+		          clear_status(&status);
+                          if (segLoop < (numSegments - 1))
+		           continue; 
+                          else
+		           break;   
+	        	}
 
 			/* output the results */
 			if (verbose_flag)
@@ -1016,18 +1020,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 			}
 		}
 
-
+         
 		/* output the results */
 		if (verbose_flag)
 		{
 			LALSPrintTimeSeries(&segmentOne, "segment1.dat");
 			LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
 		}
-
-		if (verbose_flag)
-		{
-			fprintf(stdout, "Zero padding data...\n");
-		}
+                
 
 		/* zero pad and fft */
 		LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
@@ -1077,19 +1077,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 			fprintf(stdout, "Generating response functions...\n");
 		}
 
-		/* compute response function */
-		responseTempOne.epoch = gpsCalTime;
-		responseTempTwo.epoch = gpsCalTime;
-		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-					ifoOne, &duration), &status );
-		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo, &duration), &status );
-
-		if (verbose_flag)
-		{
-			fprintf(stdout, "Getting appropriate frequency band for response " \
-					"functions...\n");
-		}
+		
 
 		/* reduce to the optimal filter frequency range */
 		responseOne.epoch = gpsCalTime;
@@ -1139,8 +1127,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 				pow(10.,normLambda.units.powerOfTen));
 		varTheo = (REAL8)(segmentDuration * normSigma.value * \
 				pow(10.,normSigma.units.powerOfTen));
-		inVarTheo = 1./varTheo;
-		inVarTheoSum = inVarTheoSum + inVarTheo;
+		
 
 		/* save */
 		if (verbose_flag)
@@ -1190,28 +1177,33 @@ INT4 main(INT4 argc, CHAR *argv[])
 					epochsMatch), &status );
 
 		y = (REAL8)(ccStat.value * pow(10.,ccStat.units.powerOfTen));
-		yWhitenedSum += y * inVarTheo;
 
 		if (verbose_flag)
 		{
 			fprintf(stdout, "y = %f\n\n", y);
 		}
 
+                if (status.statusCode !=0)
+		  {
+		    clear_status(&status);
+                    if (segLoop < (numSegments - 1))
+		     continue; 
+                    else
+		     break;   
+		  }
+
 		/* output to file */
-		fprintf(out, "%e %e\n", sqrt(varTheo), y);
+                out = fopen(outputFilename, "a");
+	       	fprintf(out, "%e %e\n", varTheo, y);
+                fclose(out);
 	}
 
-	/* compute point estimate, error bar and report results */
-	errorBar = sqrt(1./inVarTheoSum) / (REAL8)segmentDuration;
-	pointEstimate = yWhitenedSum / (inVarTheoSum * (REAL8)segmentDuration);
-	fprintf(stdout, "error bar = %f s\n", errorBar);
-	fprintf(stdout, "h_0^2 omega = %f\n\n", pointEstimate);
+        lal_errhandler = LAL_ERR_EXIT;
 
 	/* cleanup */
+
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status );
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
-	LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(segmentOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(segmentTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
@@ -1250,6 +1242,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	return 0;
 }
+
 
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
