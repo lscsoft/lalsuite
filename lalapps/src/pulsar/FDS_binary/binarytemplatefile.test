@@ -4,21 +4,30 @@ Search_Tobs_start_GPS_sec				731195939
 Search_Tobs_start_GPS_nanosec				0
 Search_number_of_filters				4
 Search_template_mismatch				0.1
-Source_projected_orbital_semi_major_axis_MIN_sec	1.2
-Source_projected_orbital_semi_major_axis_MAX_sec	1.4
-Source_SSB_periapse_passage_MIN_GPS_sec			731163027
+Search_detector    					LLO
+Search_right_ascension    				0.0
+Search_declination  					0.0
+Source_projected_orbital_semi_major_axis_CENTER_sec	1.0
+Source_projected_orbital_semi_major_axis_MIN_sec	0.9
+Source_projected_orbital_semi_major_axis_MAX_sec	1.1
+Source_SSB_periapse_passage_CENTER_GPS_sec		731063300
+Source_SSB_periapse_passage_CENTER_GPS_nanosec 		0
+Source_SSB_periapse_passage_MIN_GPS_sec			731063000
 Source_SSB_periapse_passage_MIN_GPS_nanosec		0
-Source_SSB_periapse_passage_MAX_GPS_sec			731163627
+Source_SSB_periapse_passage_MAX_GPS_sec			731063600
 Source_SSB_periapse_passage_MAX_GPS_nanosec		0
 Source_orbital_eccentricity_MIN				0.0
 Source_orbital_eccentricity_MAX				0.0
 Source_argument_of_periapse_MIN_rad			0.0
 Source_argument_of_periapse_MAX_rad			0.0
-Source_orbital_period_MIN_sec				68023.84
-Source_orbital_period_MAX_sec				68023.84
+Source_orbital_period_MIN_sec				60000.0
+Source_orbital_period_MAX_sec				60000.0
+Search_XY_metric_XX_element				1.0
+Search_XY_metric_XY_element				1.0
+Search_XY_metric_YY_element				1.0
 Search_template_generation_version			v1
 
-1.2	68023.84	731163027	0	0.0	0.0
-1.2	68023.84	731163627	0	0.0	0.0
-1.4	68023.84	731163027	0	0.0	0.0
-1.4	68023.84	731163627	0	0.0	0.0	
+0.9	68000.0		731063000	0	0.0	0.0
+0.9	68000.0		731063600	0	0.0	0.0
+1.1	68000.0		731063000	0	0.0	0.0
+1.1	68000.0		731063600	0	0.0	0.0	
