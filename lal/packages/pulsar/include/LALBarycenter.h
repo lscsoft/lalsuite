@@ -201,7 +201,6 @@ detector position at $t_a$ (GPS), in ICRS J2000 coords. Units = sec.
 
 \item[\texttt{  REAL8 vDetector[3]}] Cartesian coords (0=x,1=y,2=z) of 
 detector velocity at $t_a$ (GPS), in ICRS J2000 coords. Dimensionless. 
-}
 \end{description}
 </lalLaTeX> */
 
