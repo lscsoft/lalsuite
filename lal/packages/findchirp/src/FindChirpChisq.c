@@ -159,16 +159,19 @@ LALFindChirpChisqVetoInit (
 
 
   /* create one vector for the additional BCV fourier domain data */
-  LALCCreateVector( status->statusPtr,
-      &(params->qtildeBinVecBCV), numPoints );
-  BEGINFAIL( status )
+  if ( params->approximant == BCV)
   {
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-          &(params->plan) ), status );
-    TRY( LALCDestroyVector( status->statusPtr,
-	  &(params->qtildeBinVec) ), status );
+    LALCCreateVector( status->statusPtr,
+        &(params->qtildeBinVecBCV), numPoints );
+    BEGINFAIL( status )
+    {
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(params->plan) ), status );
+      TRY( LALCDestroyVector( status->statusPtr,
+  	  &(params->qtildeBinVec) ), status );
+    }
+    ENDFAIL( status );
   }
-  ENDFAIL( status );
 
 
   /* create numBins vectors for the time domain data */
@@ -178,8 +181,11 @@ LALFindChirpChisqVetoInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, 
            &(params->qtildeBinVec) ), status );
-    TRY( LALCDestroyVector( status->statusPtr,
-           &(params->qtildeBinVecBCV) ), status );
+    if( params->qtildeBinVecBCV )
+    {
+      TRY( LALCDestroyVector( status->statusPtr,
+             &(params->qtildeBinVecBCV) ), status );
+    }
     TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
           &(params->plan) ), status );
     ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
@@ -198,53 +204,67 @@ LALFindChirpChisqVetoInit (
       LALFree( params->qBinVecPtr );
       TRY( LALCDestroyVector( status->statusPtr, 
             &(params->qtildeBinVec) ), status );
-      TRY( LALCDestroyVector( status->statusPtr,
-            &(params->qtildeBinVecBCV) ), status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-            &(params->plan) ), status );
+      if (params->qtildeBinVecBCV)
+      {
+        TRY( LALCDestroyVector( status->statusPtr,
+              &(params->qtildeBinVecBCV) ), status );
+      }
+        TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+              &(params->plan) ), status );
     }
     ENDFAIL( status );
   }
 
 
   /* create additional numBins vectors for the BCV time domain data */
-  params->qBinVecPtrBCV = (COMPLEX8Vector **)
-    LALCalloc( 1, numChisqBins * sizeof(COMPLEX8Vector*) );
-  if ( ! params->qBinVecPtrBCV )
+  if ( params->approximant == BCV )
   {
-    TRY( LALCDestroyVector( status->statusPtr,
-           &(params->qtildeBinVec) ), status );	    
-    TRY( LALCDestroyVector( status->statusPtr,
-           &(params->qtildeBinVecBCV) ), status );
-    TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-           &(params->plan) ), status );
-    ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
-  }
-
-  for ( l = 0; l < numChisqBins; ++l )
-  {
-    LALCCreateVector( status->statusPtr, params->qBinVecPtrBCV + l, numPoints );
-    BEGINFAIL( status )
+    params->qBinVecPtrBCV = (COMPLEX8Vector **)
+      LALCalloc( 1, numChisqBins * sizeof(COMPLEX8Vector*) );
+    if ( ! params->qBinVecPtrBCV )
     {
-      for ( m = 0; m < l ; ++m )
+      TRY( LALCDestroyVector( status->statusPtr,
+             &(params->qtildeBinVec) ), status );	    
+
+      if ( params->qtildeBinVecBCV )
       {
         TRY( LALCDestroyVector( status->statusPtr,
-              params->qBinVecPtrBCV + m ), status );
+               &(params->qtildeBinVecBCV) ), status );
       }
-      for ( m = 0; m < l ; ++m )
-      {
-        TRY( LALCDestroyVector( status->statusPtr,
-              params->qBinVecPtr + m ), status );
-      }
-      LALFree( params->qBinVecPtrBCV );
-      TRY( LALCDestroyVector( status->statusPtr,
-            &(params->qtildeBinVec) ), status );
-      TRY( LALCDestroyVector( status->statusPtr,
-            &(params->qtildeBinVecBCV) ), status );
       TRY( LALDestroyComplexFFTPlan( status->statusPtr,
-            &(params->plan) ), status );
+             &(params->plan) ), status );
+      ABORT( status, FINDCHIRPCHISQH_EALOC, FINDCHIRPCHISQH_MSGEALOC );
     }
-    ENDFAIL( status );
+
+    for ( l = 0; l < numChisqBins; ++l )
+    {
+      LALCCreateVector(status->statusPtr,params->qBinVecPtrBCV + l, numPoints );
+      BEGINFAIL( status )
+      {
+        for ( m = 0; m < l ; ++m )
+        {
+          TRY( LALCDestroyVector( status->statusPtr,
+                params->qBinVecPtrBCV + m ), status );
+        }
+        LALFree( params->qBinVecPtrBCV );
+        for ( m = 0; m < l ; ++m )
+        {
+          TRY( LALCDestroyVector( status->statusPtr,
+                params->qBinVecPtr + m ), status );
+        }
+        LALFree( params->qBinVecPtr );
+        TRY( LALCDestroyVector( status->statusPtr,
+              &(params->qtildeBinVec) ), status );
+	if ( params->qtildeBinVecBCV )
+	{
+          TRY( LALCDestroyVector( status->statusPtr,
+                &(params->qtildeBinVecBCV) ), status );
+	}
+	TRY( LALDestroyComplexFFTPlan( status->statusPtr,
+            &(params->plan) ), status );
+      }
+      ENDFAIL( status );
+    }
   }
 
   /* normal exit */
@@ -649,11 +669,11 @@ LALFindChirpBCVChisqVeto (
   qtilde       = input->qtildeVec->data;
   qtildeBCV    = inputBCV->qtildeVec->data;
 
-  numChisqPts  = params->chisqBinVec->length;
-  numChisqBins = numChisqPts - 1;
+  numChisqPts     = params->chisqBinVec->length;
+  numChisqBins    = numChisqPts - 1;
   chisqBin     = params->chisqBinVec->data;
   chisqBinBCV  = params->chisqBinVecBCV->data;
-  chisqNorm    = sqrt( params->norm );
+  chisqNorm    = params->norm ; /* norm squared */
 #if 0
   mismatch     = 1.0 - params->bankMatch;
 #endif
@@ -704,29 +724,30 @@ LALFindChirpBCVChisqVeto (
     {
       REAL4 X1 = params->qBinVecPtr[l]->data[j].re;  
       REAL4 Y1 = params->qBinVecPtr[l]->data[j].im;
-      REAL4 X2 = params->qBinVecPtrBCV[l]->data[j].re; 
-      REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
-
-#if 0
-      REAL4 deltaXl = chisqNorm * Xl -
-        (chisqNorm * q[j].re / (REAL4) (numChisqBins));
-      REAL4 deltaYl = chisqNorm * Yl -
-        (chisqNorm * q[j].im / (REAL4) (numChisqBins));
-
-      chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
-#endif
 
       REAL4 mod1 = ( ( X1 - q[j].re / (REAL4) (numChisqBins) ) * 
 		     ( X1 - q[j].re / (REAL4) (numChisqBins) ) + 
 	      	     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) * 
 		     ( Y1 - q[j].im / (REAL4) (numChisqBins) ) ); 
 
+      chisq[j] += chisqNorm * mod1 ;
+    }
+  }  
+
+  for ( j = 0; j < numPoints; ++j )
+  {
+    for ( l = 0; l < numChisqBins; ++l )
+    {
+
+      REAL4 X2 = params->qBinVecPtrBCV[l]->data[j].re;
+      REAL4 Y2 = params->qBinVecPtrBCV[l]->data[j].im;
+
       REAL4 mod2 = ( ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) * 
 		     ( X2 - qBCV[j].re / (REAL4) (numChisqBins) ) +
 		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) * 
 		     ( Y2 - qBCV[j].im / (REAL4) (numChisqBins) ) );
 
-      chisq[j] += ( chisqNorm * chisqNorm * ( mod1 + mod2 ) ) ;	    
+      chisq[j] += chisqNorm * mod2 ;	    
 
     }
   }
