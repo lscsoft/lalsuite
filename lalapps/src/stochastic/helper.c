@@ -40,7 +40,6 @@ NRCSID(HELPERC, "$Id$");
 RCSID("$Id$");
 
 /* external variables */
-extern INT4 sampleRate;
 extern INT4 resampleRate;
 extern REAL4 geoHighPassFreq;
 extern INT4  geoHighPassOrder;
@@ -61,12 +60,13 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
   FrStream *stream = NULL;
   FrCache *frameCache = NULL;
   ResampleTSParams params;
+  size_t difference;
   size_t length;
 
-  /* calculate number of data points */
-  length = delta_gps_to_float(status, end, start) * resampleRate;
+  /* calculate time difference */
+  difference = delta_gps_to_float(status, end, start);
 
-  /* apply resample buffer */
+  /* apply resample buffer if required */
   if (buffer)
   {
     start.gpsSeconds -= buffer;
@@ -74,9 +74,7 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
   }
 
   /* set resample parameters */
-  params.deltaT = 1./resampleRate;
-  params.filterType = defaultButterworth;
-
+ 
   if (vrbflg)
     fprintf(stdout, "Opening frame cache \"%s\"...\n", cacheFile);
 
@@ -107,19 +105,28 @@ REAL4TimeSeries *get_time_series(LALStatus *status,
   LAL_CALL(LALFrClose(status, &stream), status);
 
   /* resample if required */
-  if (resampleRate != sampleRate)
+  if (resampleRate)
   {
     if (vrbflg)
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
 
+    /* set resample parameters */
+    params.deltaT = 1./resampleRate;
+    params.filterType = defaultButterworth;
+
+    /* resample */
     LAL_CALL(LALResampleREAL4TimeSeries(status, series, &params), status);
   }
 
   /* remove resample buffer */
   if (buffer)
   {
+    /* calculate required length */
+    length = difference / series->deltaT;
+
+    /* remove resample buffer */
     LAL_CALL(LALShrinkREAL4TimeSeries(status, series, \
-          buffer * resampleRate, length), status);
+          buffer / series->deltaT, length), status);
   }
 
   return(series);
