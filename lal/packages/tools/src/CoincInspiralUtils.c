@@ -124,6 +124,7 @@ LALCreateTwoIFOCoincList(
   CoincInspiralTable           *coincHead = NULL;
   CoincInspiralTable           *thisCoinc = NULL;
   INT4                          numEvents = 0;
+  INT4                          ifoNumber;
   INT8                          maxTimeDiff = 0;
 
   INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALUTILSC );
@@ -138,10 +139,18 @@ LALCreateTwoIFOCoincList(
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
 
   
-  /* calculate the maximum time delay */
-  /* XXX hardwire to 50 ms for now XXX */
-  maxTimeDiff = 50000000;
+  /* calculate the maximum time delay 
+   * set it equal to 2 * worst IFO timing accuracy plus
+   * light travel time for earth's diameter 
+   * (detectors can't be further apart than this) */
   
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    maxTimeDiff = (maxTimeDiff > accuracyParams->ifoAccuracy[ifoNumber].dt) ?
+      maxTimeDiff : accuracyParams->ifoAccuracy[ifoNumber].dt;
+  }
+  maxTimeDiff *= 2;    
+  maxTimeDiff += (INT8) ( 1e9 * 2 * LAL_REARTH_SI / LAL_C_SI );
   
   for ( currentTrigger[0] = snglInput; currentTrigger[0]->next;
       currentTrigger[0] = currentTrigger[0]->next)

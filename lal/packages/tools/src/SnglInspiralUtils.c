@@ -470,7 +470,7 @@ LALCompareInspirals (
   REAL4   dmass1, dmass2;
   REAL4   dmchirp, deta;
   REAL4   dpsi0, dpsi3;
-  InterferometerNumber ifoa,  ifob;
+  InterferometerNumber ifoaNum,  ifobNum;
   SnglInspiralAccuracy aAcc, bAcc;
 
   INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
@@ -492,20 +492,21 @@ LALCompareInspirals (
     goto exit;
   }
 
-  ifoa = XLALIFONumber( aPtr->ifo );
-  ifob = XLALIFONumber( bPtr->ifo );
+  ifoaNum = XLALIFONumber( aPtr->ifo );
+  ifobNum = XLALIFONumber( bPtr->ifo );
   
   LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
   LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
-  aAcc = params->ifoAccuracy[ifoa];
-  bAcc = params->ifoAccuracy[ifob];
+  aAcc = params->ifoAccuracy[ifoaNum];
+  bAcc = params->ifoAccuracy[ifobNum];
 
   
 
   /* XXX Need to add light travel time between sites XXX */
-  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt) )
+  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt)
+      + params->lightTravelTime[ifoaNum][ifobNum])
   {
     LALInfo( status, "Triggers pass time coincidence test");
     params->match = 1;
