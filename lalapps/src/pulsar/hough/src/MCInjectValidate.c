@@ -41,12 +41,14 @@ Input shoud be from
 
 #include "./MCInjectComputeHough.h" /* proper path*/
 
+#define VALIDATEOUT "./validate.asc"
+#define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
 
 /******************************************************
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (MCINJECTCOMPUTEHOUGHC, "$Id$");
+NRCSID (MCINJECTVALIDATEC, "$Id$");
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
@@ -58,14 +60,10 @@ int main(int argc, char *argv[]){
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
   static REAL8Vector          foft;
-  static REAL8Vector          h0V;
- 
-  static HoughInjectParams    injectPar;
-  static PulsarData           pulsarInject;
   static HoughPulsarTemplate  pulsarTemplate;
 
-  SFTVector    *inputSFTs  = NULL;  
-  SFTtype  *sft;  
+  SFTVector  *inputSFTs  = NULL;  
+
   EphemerisData   *edat = NULL;
   CHAR  *earthEphemeris = NULL; 
   CHAR  *sunEphemeris = NULL;
@@ -80,26 +78,23 @@ int main(int argc, char *argv[]){
     
   UINT4  msp; /*number of spin-down parameters */
   INT4   ifo;
-  CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
+
+  
   
   CHAR   *SFTdir = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
   CHAR   *fnameIn = NULL;  
   UINT4  numberCount, index;
   UINT8  nTemplates;   
-  INT4   mObsCoh, nfSizeCylinder;
+  UINT4   mObsCoh, nfSizeCylinder;
   
   REAL8  peakThreshold, normalizeThr;
-  REAL8  fmin, fmax, fWings, timeBase, deltaF, alpha, delta;
+  REAL8  fmin, fmax, fWings, timeBase;
   UINT2  blocksRngMed;
   REAL8  threshold;
 
   UINT4  sftlength; 
-  INT4   sftHeaderlength;
-  REAL4  sftRenorm; 
   INT4   sftFminBin;
-      
-
   UINT4 loopId, tempLoopId;
   
   FILE  *fpOut = NULL;
@@ -126,7 +121,8 @@ int main(int argc, char *argv[]){
   sunEphemeris = SUNEPHEMERIS;
   
   SFTdir = SFTDIRECTORY;
-  fnameOut = FILEOUT;
+  fnameOut = VALIDATEOUT;
+  fnameIn = VALIDATEIN;
   blocksRngMed = BLOCKSRNGMED;
   SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status ); 
 
@@ -291,7 +287,7 @@ int main(int argc, char *argv[]){
     
     for (templateCounter = 0; templateCounter < nTemplates; templateCounter++)
       {
-	r=fscanf(fpIn,"%lf%lf%lf%lf\n", &temp1, alphaVec + templateCounter, deltaVec + templateCounter, 
+	r=fscanf(fpIn,"%lf%lf%lf%lf%lf\n", &temp1, alphaVec + templateCounter, deltaVec + templateCounter, 
 		 freqVec + templateCounter,  spndnVec + templateCounter);
       }     
     fclose(fpIn);      
@@ -319,7 +315,7 @@ int main(int argc, char *argv[]){
   strcat(SFTdir, "/*SFT*.*");
    
   /* now read all the sfts */
-  SUB (LALReadSFTfiles (&status, inputSFTs, fmin, fmax, nfSizeCylinder + blocksRngMed, SFTdir), &status);
+  SUB (LALReadSFTfiles (&status, &inputSFTs, fmin, fmax, nfSizeCylinder + blocksRngMed, SFTdir), &status);
   mObsCoh = inputSFTs->length; 
   sftlength = inputSFTs->data->data->length;
   sftFminBin = floor( (inputSFTs->data->f0)/(inputSFTs->data->deltaF) + 0.5);
@@ -332,7 +328,7 @@ int main(int argc, char *argv[]){
   timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
   
   { 
-    INT4    j; 
+    UINT4    j; 
     for (j=0; j < mObsCoh; j++){
       timeV.data[j].gpsSeconds = inputSFTs->data->epoch.gpsSeconds;
       timeV.data[j].gpsNanoSeconds = inputSFTs->data->epoch.gpsNanoSeconds;
@@ -348,7 +344,7 @@ int main(int argc, char *argv[]){
   
   {   
     REAL8   t0, ts, tn;
-    INT4   j; 
+    UINT4   j; 
 
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
@@ -456,7 +452,8 @@ int main(int argc, char *argv[]){
     {
       REAL8   f0new, vcProdn, timeDiffN;
       REAL8   sourceDelta, sourceAlpha, cosDelta;
-      INT4   j,i, nspin, factorialN; 
+      UINT4   j;
+      INT4    i, nspin, factorialN; 
       REAL8Cart3Coor       sourceLocation;
       
       sourceDelta = pulsarTemplate.latitude;
@@ -494,7 +491,7 @@ int main(int argc, char *argv[]){
     for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
       
       /* calculate the periodogram */
-      SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId), &status );	
+      SUB( SFT2Periodogram(&status, &periPSD.periodogram, inputSFTs->data + tempLoopId ), &status );	
       
       /* calculate psd using running median */
       SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &blocksRngMed), &status );	
