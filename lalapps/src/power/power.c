@@ -989,7 +989,7 @@ static REAL4TimeSeries *get_geo_data(
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
-		fprintf(stderr, "get_geo_data(): reading %u samples at GPS time %u.%09u s\n", geo->data->length, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_geo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", geo->data->length, geo->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
 
 	/* high pass filter before casting REAL8 to REAL4 */
