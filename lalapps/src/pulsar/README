@@ -157,6 +157,10 @@ INPUTS: S2-H1.60 (list of segment start times/lengths)
         S2.LHO.*.sorted (list of Frame files/locations on system)
 OUTPUTS: jobtimes.*, jobdata.*.ffl, joberror.* files
 
+NOTE: a script that does the same job (make_job_input_data.sh) by calling LSCdataFind
+has been written by David Hammer and is now checked into CVS.  It will be documented
+after some polishing.
+
 ================================================================================
 
 STEP 3:
