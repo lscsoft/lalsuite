@@ -61,8 +61,10 @@ RCSID( "$Id$");
 /* for getpid() */
 #include <sys/types.h>
 #include <unistd.h>
+#define fopen boinc_fopen
 int boincmain(int argc, char *argv[]);
 typedef int bool;
+FILE *boinc_fopen(const char *path, const char *mode);
 extern int boinc_init(bool standalone);
 extern int boinc_finish(int);
 extern int boinc_resolve_filename(const char*, char*, int len);
@@ -241,8 +243,12 @@ int main(int argc,char *argv[])
   if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
 
+  /* This is dangerous for BOINC since it calls system() and makes
+     assumptions that might not be true */
+#if !USE_BOINC
   /* keep a log-file recording all relevant parameters of this search-run */
   LAL_CALL (WriteFStatLog (&status, argv), &status);
+#endif /* !USE_BOINC */
 
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
