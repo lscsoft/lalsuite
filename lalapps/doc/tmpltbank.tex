@@ -8,57 +8,144 @@
 
 \item[Synopsis]
 \begin{verbatim}
-  --help                       display this message
-  --verbose                    print progress information
-  --debug-level LEVEL          set the LAL debug level to LEVEL
-  --user-tag STRING            set the process_params usertag to STRING
-  --comment STRING             set the process table comment to STRING
 
-  --gps-start-time SEC         GPS second of data start time
-  --gps-end-time SEC           GPS second of data end time
-  --pad-data T                 pad the data start and end time by T seconds
+--help                       	--verbose                   
+--version                 	--debug-level LEVEL      
+--user-tag STRING       	--comment STRING       
+--gps-start-time SEC  		--gps-end-time SEC  
+--pad-data T     		--glob-frame-data         
+--frame-type TAG         	--frame-cache          
+--calibration-cache FILE     	--channel-name CHAN          
+--calibrated-data TYPE     	--geo-high-pass-freq F   
+--geo-high-pass-order O      	--geo-high-pass-atten A  
+--sample-rate F              	--resample-filter TYPE      	
+--disable-high-pass       	--enable-high-pass F         
+--high-pass-order O          	--high-pass-attenuation A   
+--spectrum-type TYPE       	--segment-length N      
+--number-of-segments N       	--standard-candle           
+--candle-snr SNR           	--candle-mass1 M             
+--candle-mass2 M            	--low-frequency-cutoff F     
+--high-frequency-cutoff F  	--minimum-mass MASS        
+--maximum-mass MASS          	--minimum-psi0 PSI0          
+--maximum-psi0 PSI0          	--minimum-psi3 PSI3          
+--maximum-psi3 PSI3         	--maximum-fcut-tmplts N    
+--alpha ALPHA             	--minimal-match M       
+--order ORDER          		--approximant APPROX          
+--space SPACE                	--write-raw-data           
+--write-response           	--dynamic-range-exponent X  
 
-  --frame-cache                obtain frame data from LAL frame cache FILE
-  --calibration-cache FILE     obtain calibration from LAL frame cache FILE
-  --channel-name CHAN          read data from interferometer channel CHAN
-
-  --sample-rate F              filter data at F Hz, downsampling if necessary
-  --resample-filter TYPE       set resample filter to TYPE [ldas|butterworth]
-
-  --disable-high-pass          turn off the IIR highpass filter
-  --enable-high-pass F         high pass data above F Hz using an IIR filter
-  --spectrum-type TYPE         use PSD estimator TYPE [mean|median]
-
-  --segment-length N           set data segment length to N points
-  --number-of-segments N       set number of data segments to N
-
-  --low-frequency-cutoff F     do not filter below F Hz
-  --high-frequency-cutoff F    upper frequency cutoff in Hz
-
-  --minimum-mass MASS          set minimum component mass of bank to MASS
-  --maximum-mass MASS          set maximum component mass of bank to MASS
-  --minimal-match M            generate bank with minimal match M
-
-  --order ORDER                set post-Newtonian order of the waveform to ORDER
-                                 (newtonian|oneHalfPN|onePN|onePointFivePN|
-                                 twoPN|twoPointFive|threePN|threePointFivePN)
-  --approximant APPROX         set approximant of the waveform to APPROX
-                                 (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|
-                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3)
-  --space SPACE                grid up template bank with mass parameters SPACE
-                                 (Tau0Tau2|Tau0Tau3)
-
-  --write-raw-data             write raw data to a frame file
-  --write-response             write the computed response function to a frame
-  --write-spectrum             write the uncalibrated psd to a frame
-  --write-strain-spectrum      write the calibrated strain psd to a text file
 \end{verbatim}
+\end{entry}
+The following command line arguments are available when running tmpltbank.c
+\begin{entry}
+\item[\texttt{--help}] display the help message which gives brief explanations
+of the command arguments.  
+\item[\option{--verbose}] print progress information as the code executes.
+\item[\option{--version}] print version information and exit without running 
+the tmpltbank code. 
+\item[\option{--debug-level LEVEL}] Sets the LAL debug level to \parm{level}.  
+1 and 33 are the commonest choices for this code.  Debug level 1 is used for 
+developing code because it enables memory and error checking.  Since memory 
+checking is slow the correct choice for production code is 33.  
+See the LAL documentation for more information.  
+\item[\option{--user-tag STRING}] Set the user tag to the string \texttt{STRING}.  
+This string must not contain spaces or dashes (``-'').  This string will appear 
+in the name of the file to which output information is written, and is recorded 
+in the various XML tables within the file.
+\item[\option{--comment STRING}] set the process table comment to STRING.
+\item[\option{--gps-start-time SEC}] Set the integer part of the GPS time from 
+which you wish to begin reading data.
+\item[\option{--gps-end-time SEC}] Set the integar part of the GPS time you want
+to stop reading data. 
+\item[\option{--pad-data T}] This flag specifies an amount of time to add to 
+the beginning and end of the input time series data.  Padding the data is 
+necessary because resampling and filtering corrupts these portions. 
+8 seconds is the accepted choice for this paramenter.  See LAL documentation 
+for a description of resampling and high pass filtering.  
+\item[\option{--glob-frame-data}] This option along with \texttt{--frame-type}
+can be used instead of \texttt{--frame-cache} to read data stored locally in 
+the working directory.  It finds files of the specified frame type with a *.gwf 
+extension. 
+\item[\option{--frame-cache}] This option is used instead of 
+\texttt{--glob-frame-data} to read frame data from a frame cache file. 
+\item[\option{--calibration-cache FILE}] obtain calibration from LAL frame 
+cache FILE
+\item[\option{--channel-name CHAN}] read data from interferometer channel CHAN
+\item[\option{--calibrated-data TYPE}] calibrated data of TYPE real_4 or real_8
+
+\item[\option{--geo-high-pass-freq F}] This sets the high pass filter frequency
+for GEO data above F Hz using an IIR filter.
+\item[\option{--geo-high-pass-order O}] set the order of the GEO high pass 
+filter to O
+\item[\option{--geo-high-pass-atten A}] set the attenuation of the high pass 
+filter to A
+\item[\option{--sample-rate F}] Specifies the sampling frequency at which you
+want to filter the data downsampling if necessary.
+\item[\option{--resample-filter TYPE}] set resample filter to TYPE [ldas|butterworth]
+\item[\option{--disable-high-pass}] turn off the IIR highpass filter.  This is an 
+optimistc option.  Someday the data will be so good we won't need high pass filtering!  
+\item[\option{--enable-high-pass F}] high pass data above F Hz using an IIR filter
+\item[\option{--high-pass-order O}] set the order of the high pass filter to O
+\item[\option{--high-pass-attenuation}] A set the attenuation of the high pass filter to A
+\item[\option{--spectrum-type TYPE}] use PSD estimator TYPE [mean|median]
+\item[\option{--dynamic-range-exponent X}] set dynamic range scaling to 2^X
+\item[\option{--segment-length N}] set data segment length to N points
+\item[\option{--number-of-segments N] set number of data segments to N
+
+\item[\option{--standard-candle}] compute a standard candle from the PSD
+\item[\option{--candle-snr SNR}] signal-to-noise ratio of standard candle
+\item[\option{--candle-mass1 M}] mass of first component in candle binary
+\item[\option{--candle-mass2 M}] mass of second component in candle binary
+
+\item[\option{--low-frequency-cutoff F}] do not filter below F Hz
+\item[\option{--high-frequency-cutoff F}] upper frequency cutoff in Hz
+\item[\option{--minimum-mass MASS}] set minimum component mass of bank to MASS
+\item[\option{--maximum-mass MASS}] set maximum component mass of bank to MASS
+\item[\option{--minimum-psi0 PSI0}] set minimum range of BCV parameter psi0 to PSI0
+\item[\option{--maximum-psi0 PSI0}] set maximum range of BCV parameter psi0 to PSI0
+\item[\option{--minimum-psi3 PSI3}] set minimum range of BCV parameter psi3 to PSI3
+\item[\option{--maximum-psi3 PSI3}] set maximum range of BCV parameter psi3 to PSI3
+\item[\option{-maximum-fcut-tmplts N}] maximum number of tmplts in fcut direction is N
+\item[\option{--alpha ALPHA}] set BCV amplitude correction to ALPHA
+\item[\option{--minimal-match M}] The minimal match M between templates in the 
+bank and all possible signals in the parameter space. 
+\item[\option{--order ORDER}] This sets the post-Newtonian order of the waveform to
+ORDER.  The options are (newtonian|oneHalfPN|onePN|onePointFivePN|twoPN|
+twoPointFive|threePN|threePointFivePN)
+\item[\option{--approximant APPROX}] Sets the approximant of the waveform to APPROX
+The options are (TaylorT1|TaylorT2|TaylorT3|TaylorF1|TaylorF2|PadeT1|PadeT2|EOB|BCV
+|SpinTaylorT3|BCVSpin)
+\item[\option{--space SPACE}] In order to make the template bank coordinates nice
+and friendly these parameters are used instead of masses.  The options are
+(Tau0Tau2|Tau0Tau3|Psi0Psi3).  Tau coordinates are in terms of the chirptimes and
+Psi coordinates are for BCV searches.
+\item[\option{--write-raw-data}] write raw data to a frame file
+\item[\option{--write-response}] write the computed response function to a frame
+\item[\option{--write-spectrum}] write the uncalibrated psd to a frame
+\item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
+
+\end{entry}
 
 \item[Description] 
 \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
-template banks for LIGO data with the LAL bank package.  The code generates a
-calibrated power spectrum at the specified time for the requested channel and
-uses this to compute the template bank.  See the LAL bank package
+template banks for LIGO or GEO data with the LAL bank package.  The code 
+generates a calibrated power spectrum at the specified time for the 
+requested channel and uses this to compute the template bank.  
+
+The number of templates and the
+values of the bank parameters in the bank also depend on the minimal
+match, the
+minimum and maximum values of mass1 and mass2 (for the BNS search) or the
+minimum and maximum values of psi0, psi3, the bank-alpha and the number of
+fcut values (for the BCV search), which are all command-line arguments.
+Other necessary pieces of information are the approximant and its order and
+the space that the template bank will be laid on. The output of the code is
+an xml file and the bank is contained in a \verb$sngl_inspiral$ table. The code has
+also the capability of outputing the raw data, the response function and the
+calibrated and unclibrated power spectra to frame files.
+
+
+See the LAL bank package
 documentation for detailed information on the algorithms used to generate the
 banks.
 
