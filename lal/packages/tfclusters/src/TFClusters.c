@@ -458,7 +458,7 @@ LALGetClusters (
 \idx{LALGetClusters()}
 
 \subsubsection*{Description}
-First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}. 
+First, this function transforms \texttt{*tpower} into a binary map, by applying the frequency dependent thresholds \texttt{dir->rho} on the power in the spectrogram. Only frequencies up to \texttt{dir->maxf} are retained. A recursive function is then called to identify the clusters on a `nearest neighbours' basis (i.e., pixels touching by one `edge'). Only clusters with power strictly between \texttt{dir->minf} and \texttt{dir->maxf} are kept (if \texttt{dir->maxf} is negative, only clusters with at least some power between \texttt{dir->minf} and \texttt{dir->maxf} are kept). Clusters larger or equal to \texttt{dir->sigma} are sent to \texttt{*clist}. The remaining clusters are grouped in pairs. Whenever a pair pass the distance thresholds defined by \texttt{dir->s1}, \texttt{dir->s2} and \texttt{dir->d}, the two clusters are fused and are added as a single cluster to \texttt{*clist}. 
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -498,6 +498,8 @@ LALGetClusters (
   REAL8 *rho = dir->rho;
   REAL8 **tP;
   CList tlist;
+  CHAR strictFCut = 1;
+  REAL8 minf, maxf;
 
   INITSTATUS (status, "LALGetClusters", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
@@ -513,8 +515,11 @@ LALGetClusters (
 
   ASSERT ( dir->rho, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( dir->maxf > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+
+  /*
   ASSERT ( dir->minf >= 0, status, TFCLUSTERSH_EPOS, TFCLUSTERSH_MSGEPOS);
   ASSERT ( dir->minf <= dir->maxf, status, TFCLUSTERSH_EIARG, TFCLUSTERSH_MSGEIARG );
+  */
 
   if(dir->sigma > 1) {
     ASSERT ( dir->s1, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
@@ -580,9 +585,19 @@ LALGetClusters (
 
   
   /* clean to minf and maxf */
-  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= dir->maxf &&
-     dir->maxf >= tpower->params->flow) {
-    REAL8 tmp = (dir->maxf - tpower->params->flow) * tpower->params->deltaT;
+  if(dir->maxf < 0.0) {
+    strictFCut = 0;
+    maxf = -1.0*dir->maxf;
+    minf = -1.0*dir->minf;
+  } else {
+    strictFCut = 1;
+    maxf = dir->maxf;
+    minf = dir->minf;
+  }
+
+  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= maxf &&
+     maxf >= tpower->params->flow) {
+    REAL8 tmp = (maxf - tpower->params->flow) * tpower->params->deltaT;
     if(tmp - floor(tmp) >= 0.5) jmax = (UINT4)ceil(tmp);
     else jmax = (UINT4)floor(tmp);
   }
@@ -590,9 +605,9 @@ LALGetClusters (
     jmax=-1U;
 
 
-  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= dir->minf &&
-     dir->minf >= tpower->params->flow) {
-    REAL8 tmp = (dir->minf - tpower->params->flow) * tpower->params->deltaT;
+  if(tpower->params->flow + (double)tpower->params->freqBins / tpower->params->deltaT >= minf &&
+     minf >= tpower->params->flow) {
+    REAL8 tmp = (minf - tpower->params->flow) * tpower->params->deltaT;
     if(tmp - floor(tmp) >= 0.5) jmin = (UINT4)ceil(tmp);
     else jmin = (UINT4)floor(tmp);
   }
@@ -611,12 +626,26 @@ LALGetClusters (
       nt=0;
 
       for(i=0;i<tlist.nclusters;i++)
-	{for(j=0;j<tlist.sizes[i];j++)
-	  if(tlist.f[i][j] > jmax ||
-	     tlist.f[i][j] < jmin)
-	    break;
+	{
+	  BOOLEAN keepIt = strictFCut;
 
-	if(j >= tlist.sizes[i]) /* keep it */
+	  for(j=0;j<tlist.sizes[i];j++) {
+	    if(strictFCut && (
+			      tlist.f[i][j] > jmax ||
+			      tlist.f[i][j] < jmin)) {
+	      keepIt = 0;
+	      break;
+	    }
+
+	    if(!strictFCut && (
+			       tlist.f[i][j] <= jmax &&
+			       tlist.f[i][j] >= jmin)) {
+	      keepIt = 1;
+	      break;
+	    }
+	  }
+
+	 if(keepIt) /* keep it */
 	  {
 	    nt++;
 	    ts=(UINT4 *)LALRealloc(ts, nt*sizeof(UINT4));
@@ -1060,7 +1089,9 @@ LALClustersPowerThreshold (
 
 
   ASSERT ( dir->rho, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
+  /*
   ASSERT ( dir->maxf > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  */
   if(dir->sigma > 1) {
     ASSERT ( dir->s1, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
     ASSERT ( dir->s2, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
@@ -1847,7 +1878,9 @@ LALFillCListDir (
 
   ASSERT ( cldir, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( cldir->freqBins > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  /*
   ASSERT ( cldir->maxf > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
+  */
   ASSERT ( cldir->sigma > 0, status, TFCLUSTERSH_ESTRICTPOS, TFCLUSTERSH_MSGESTRICTPOS);
   ASSERT ( rho >= 0, status, TFCLUSTERSH_EPOS, TFCLUSTERSH_MSGEPOS);
 
