@@ -1,12 +1,10 @@
 /*-----------------------------------------------------------------------
 
- *
-
  * File Name: skynet.c
 
  *
 
- * Author: Essinger-Hileman, Tom
+ * Authors: Essinger-Hileman, T. and Owen, B.
 
  *
 
@@ -24,6 +22,8 @@
 #include <strings.h>
 #include <stdio.h>
 
+#include <lalapps.h>
+
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALConfig.h>
@@ -36,32 +36,27 @@
 #include <lal/TwoDMesh.h>
 
 
-
-NRCSID( SKYNETC, "$$" );
+RCSID( "$Id" );
 
 
 /* Limits of sky search  */
 REAL4 ra_min  = 0.0;
-REAL4 ra_max  = LAL_PI_2;
+REAL4 ra_max  = LAL_TWOPI*0.999; /* BEN: need to fix this */
 REAL4 dec_min = 0.0;
 REAL4 dec_max = LAL_PI_2;
-
 REAL4 MAX_NODES = 1e6; /* limit on number of nodes for TwoDMesh  */
+
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
-
-
 
 char *optarg = NULL; /* option argument for getopt_long() */
 
 
 int main( int argc, char *argv[] )
-
 {
 
-  static LALStatus stat;  /* status structure */
-  FILE *fp;               /* where to write the output */
+  LALStatus stat = blank_status;  /* status structure */
 
   /* Define option input variables */
   char metric_code[]   = "ptolemetric";  /* choice of LAL metric code
@@ -78,8 +73,7 @@ int main( int argc, char *argv[] )
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
-  int debug_level      = 0;          /* LAL debug level */
-  REAL4 duration       = 1e5;        /* duration of integration (seconds) */
+  REAL4 duration       = 1.8e5;      /* duration of integration (seconds) */
   REAL4 min_spindown   = 1e10;       /* minimum spindown age (seconds) */
   int spindown_order   = 1;          /* minimum spindown order */
   REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
@@ -89,8 +83,11 @@ int main( int argc, char *argv[] )
   TwoDMeshNode *firstNode;
   static TwoDMeshParamStruc mesh;
   static PtoleMetricIn search;
+  TwoDMeshNode *node;
 
-
+  /* other useful variables */
+  FILE *fp;                       /* where to write the output */
+  REAL4 f1;
   int option_index = 0; /* getopt_long option index */
   int opt; /* Argument for switch statement with getopt_long */
 
@@ -120,6 +117,11 @@ int main( int argc, char *argv[] )
   char geo[]         = "geo";
   char tama[]        = "tama";
 
+
+  /* Set up. */
+  lal_errhandler = LAL_ERR_EXIT;
+
+  /* Parse command-line options. */
   while( (opt = getopt_long( argc, argv, "a:bcdefghjk", long_options, &option_index )) != -1 )
   {
     
@@ -173,7 +175,7 @@ int main( int argc, char *argv[] )
 
     case 4:
       {
-	debug_level = atoi( optarg );
+	set_debug_level( optarg );
 	break;
       }
 
@@ -216,7 +218,6 @@ int main( int argc, char *argv[] )
   printf("\nmetric_code is %s\n", metric_code);
   printf("integration start is %d seconds\n", begin); 
   printf("detector is %s\n", detector); 
-  printf("LAL debug level is set to %d\n", debug_level); 
   printf("Integration duration is %f seconds\n", duration); 
   printf("Minimum spindown age is %f seconds\n", min_spindown); 
   printf("spindown order is %d\n", spindown_order); 
@@ -224,7 +225,7 @@ int main( int argc, char *argv[] )
   printf("Maximum frequency of integration is %f Hz\n\n", max_frequency);
 
 
- /* Set the mesh input parameters. */
+  /* Set TwoDMesh input parameters. */
   mesh.mThresh = mismatch;
   mesh.nIn = MAX_NODES;
   mesh.getRange = getRange;
@@ -235,10 +236,8 @@ int main( int argc, char *argv[] )
   mesh.rangeParams = (void *) &search;
   
 
-  /* Set detector location */
+  /* Set PtoleMetric input parameters. */
   search.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
-
-  /* Ptolemetric constants */
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
   search.spindown = NULL;
   search.epoch.gpsSeconds = begin;
@@ -246,18 +245,15 @@ int main( int argc, char *argv[] )
   search.duration = duration;
   search.maxFreq = max_frequency;
 
-  /* Create mesh */
+  /* Create 2D mesh. */
   firstNode = NULL;
-  LALCreateTwoDMesh( &stat, &firstNode, &mesh );
-  if( stat.statusCode )
-    return stat.statusCode;
+  LAL_CALL( LALCreateTwoDMesh( &stat, &firstNode, &mesh ), &stat );
   printf( "created %d nodes\n", mesh.nOut );
   if( mesh.nOut == MAX_NODES )
     printf( "This overflowed your limit. Try a smaller search.\n" );
 
 
   /* Write what we've got to file mesh.dat, if required */
-  TwoDMeshNode *node;
   fp = fopen( "mesh.dat", "w" );
 
   for( node = firstNode; node; node = node->next )
@@ -301,7 +297,7 @@ void getMetric( LALStatus *stat,
   Ppatch = params;
 
   /* set up shop  */
-  INITSTATUS( stat, "getMetric", SKYNETC );
+  INITSTATUS( stat, "getMetric", rcsid );
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
   
