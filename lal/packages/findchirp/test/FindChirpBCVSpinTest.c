@@ -73,6 +73,11 @@ static REAL4            chisqThresh     = 0.001;
 static REAL4            mass            = 1.4;
 static REAL4            dynRange        = 0.0; /* default = 1.0; */
 
+static REAL4            psi0            = 205008;
+static REAL4            psi3            = -1619;
+static REAL4            beta            = 0.0;
+static REAL4            fFinal          = 1000.0;
+
 static INT4		loopCount       = 0;
 
 
@@ -125,8 +130,7 @@ main (int argc, char *argv[])
   InspiralTemplate             *tmplt = NULL;
   InspiralEvent                *event = NULL;
 
-
-
+  
   /*
    *
    * parse options, allocate memory, init params and set values
@@ -141,7 +145,7 @@ main (int argc, char *argv[])
   {
     numSegments = 1; 
     numTmplts = 1;
-    fpRhosq = fopen ("rhosq.dat", "w");
+    fpRhosq = fopen ("rhosqBCVSpin.dat", "w");
   }
 
   initParams = (FindChirpInitParams *) LALMalloc (sizeof(FindChirpInitParams));
@@ -240,8 +244,14 @@ main (int argc, char *argv[])
   fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
- fprintf( stdout, "        numSegments = %d\n\n", numSegments );
- fprintf( stdout, "        dataSegVec->length = %d\n\n",dataSegVec->length );
+ fprintf( stdout, "         numSegments = %d\n\n", numSegments );
+ fprintf( stdout, "  dataSegVec->length = %d\n\n",dataSegVec->length );
+ fprintf( stdout, "                psi0 = %e\n", psi0 );
+ fprintf( stdout, "                psi3 = %e\n", psi3 );
+ fprintf( stdout, "                beta = %e\n", beta );
+ fprintf( stdout, "              fFinal = %e\n", fFinal );
+ 
+ 
 
 
 
@@ -432,10 +442,16 @@ main (int argc, char *argv[])
   filterParams->computeNegFreq    = 0;
   filterParams->maximiseOverChirp = 1;
 
-  for ( l = 0; l < numTmplts; ++l, mass +=0.01 )
+
+ /* for (psi0Count = 944060; psi0Count < 944081; psi0Count += 10)
   {
-
-
+  for ( betaCount = 0.; betaCount < 3.; betaCount +=2 )
+  {
+  for (psi3Count = 2000; psi3Count < 4001; psi3Count += 1000)
+  { 
+	  
+     fprintf (stdout, "psi0Count = %d\n", psi0Count);*/
+	  
     /*
      *
      * generate stationary phase template
@@ -454,14 +470,14 @@ main (int argc, char *argv[])
       tmplt->eta       = tmplt->mu / tmplt->totalMass;
       tmplt->approximant = BCVSpin;
       
-      tmplt->fFinal 	= 1800;
-      tmplt->psi0       = 944071;
-      tmplt->psi3       = -2982;
-      tmplt->beta       = 0; 	
+      tmplt->fFinal 	= fFinal;
+      tmplt->psi0       = psi0;
+      tmplt->psi3       = psi3;
+      tmplt->beta       = beta;
       
       tmpltParams->fLow  = fLow;
       tmpltParams->deltaT = deltaT;
-}
+    }
 
     LALFindChirpBCVSpinTemplate (&status, filterInput->fcTmplt, tmplt, tmpltParams, dataParams);
     TestStatus (&status, "0", 1);
@@ -517,7 +533,9 @@ main (int argc, char *argv[])
 
 loopCount = loopCount + 1;
 
-  } /* end loop over templates */
+ /* } /* end loop over templates */
+ /* }
+  }  */
 
  fprintf (stdout, "just after end of loop over templates \n" );
  fprintf (stdout, "no of templates: %d  \n", loopCount );
@@ -715,6 +733,11 @@ Usage (
   fprintf (stderr, "    -b numChisqBins   number of bins for chi squared test [8]\n");
   fprintf (stderr, "    -t rhosqThresh    signal to noise squared threshold [100.0]\n");
   fprintf (stderr, "    -c chisqThresh    chi squared threshold [0.0001]\n");
+  fprintf (stderr, "  Template Parameters:\n");
+  fprintf (stderr, "    -Psi0 psi0        psi0 value for template\n"); 
+  fprintf (stderr, "    -Psi3 psi3        psi3 value for template\n");
+  fprintf (stderr, "    -Beta beta        beta value for template\n");
+  fprintf (stderr, "    -F    fFinal      fFinal value for template\n");
 
 
   exit (exitcode);
@@ -731,7 +754,7 @@ ParseOptions (
   {
     int c = -1;
 
-    c = getopt (argc, argv, "Vhd:""n:""s:""y:""r:""v:""i:""f:""R:""t:""b:""m:""N:""c:""oI:");
+    c = getopt (argc, argv, "Vhd:""n:""s:""y:""r:""v:""i:""f:""R:""t:""b:""m:""N:""c:""P:""Q:""B:""F:""oI:");
     if (c == -1)
     {
       break;
@@ -783,6 +806,18 @@ ParseOptions (
         break;
       case 'v': /* set variance */
         sigmasq = (float) atof (optarg);
+        break;
+      case 'P': /* set psi0 */
+         psi0 = (REAL4) atof (optarg);
+        break;
+      case 'Q': /* set psi3 */
+         psi3 = (REAL4) atof (optarg);
+        break;
+      case 'B': /* set beta */
+         beta = (REAL4) atof (optarg);
+        break;
+      case 'F': /* set fFinal */
+         fFinal = (REAL4) atof (optarg);
         break;
       case 'I': /* input data */
         switch (*optarg)
