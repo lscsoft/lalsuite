@@ -111,7 +111,7 @@ typedef enum
   summ_value_table,
   sim_inst_params_table,
   coinc_inspiral_table,
-	stochastic_table
+  stochastic_table
 }
 MetadataTableType;
 /*</lalVerbatim> */
@@ -592,15 +592,15 @@ Document table.
 typedef struct
 tagStochasticTable
 {
-	struct tagStochasticTable *next;
-	CHAR          ifo_one[LIGOMETA_IFO_MAX];
-	CHAR          ifo_two[LIGOMETA_IFO_MAX];
-	CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
-	CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
-	LIGOTimeGPS   start_time;
-	LIGOTimeGPS   duration;
-	REAL8         cc_stat;
-	REAL8         cc_sigma;
+  struct tagStochasticTable *next;
+  CHAR          ifo_one[LIGOMETA_IFO_MAX];
+  CHAR          ifo_two[LIGOMETA_IFO_MAX];
+  CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
+  CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
+  LIGOTimeGPS   start_time;
+  LIGOTimeGPS   duration;
+  REAL8         cc_stat;
+  REAL8         cc_sigma;
 }
 StochasticTable;
 /* </lalVerbatim> */
@@ -629,7 +629,7 @@ tagMetadataTable
   SnglTransdataTable    *snglTransdataTable;
   SummValueTable        *summValueTable;
   SimInstParamsTable    *simInstParamsTable;
-	StochasticTable       *stochasticTable;
+  StochasticTable       *stochasticTable;
 }
 MetadataTable;
 /* </lalVerbatim> */
