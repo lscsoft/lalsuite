@@ -756,37 +756,45 @@ int correct_phase(LALStatus* status, int iSFT) {
  * screwed up by the heterodyning procedure.", according to Xavier.
  *
  * This makes the resulting F stat values different from the correct 
- * ones by 400,000% in the worst case I have seen.  
+ * ones by 20,000% in the worst case I have seen.  
  *
  * The correct_phase() solves this problem as far as F stat 
  * values are concerned. 
  *
  * Detail of validation:
- * Performing 64,000 MC experiments over differnt signal parameters 
+ * Performing 60,000 MC experiments over differnt signal parameters 
  * (alpha,delta,phi0,psi,cosiota,fsignal, starting_frequency_in_In.data) 
  * for 10 hours-worth observation time with gaps for LLO, the resulting 
- * F stat values differ from the correct ones by up to 0.1% and for 99% 
- * of the time of the experiments less than 0.03%. 
+ * F stat values differ from the correct ones by up to 0.01% and for 99% 
+ * of the time of the experiments less than 0.003%. 
  *
- * When there is no gap, the differences are less than 0.03% among 60,000 MCs. 
+ * When there is no gap, the differences are less than 0.004% 
+ * among 60,000 MCs. 
  * Differences between with this routine and without this routine are at most 
- * 3e-7% out of 124,000 MCs. 
+ * 6e-7% out of 120,000 MCs. 
  * Yousuke 24 Mar 2004.
  *
  */
 int correct_phase(LALStatus* status) {
 
   int i;
-  REAL8 cosx,sinx,x;
+  REAL8 cosx,sinx;
   COMPLEX8 fvec1;
+  LALTimeInterval deltaGPS;
+  LIGOTimeGPS gps1,gps2;
+  REAL8 deltaT;
 
-  x = (REAL8)(timeSeries->epoch.gpsSeconds-cwDetector.heterodyneEpoch.gpsSeconds);
-  x += 0.000000001 * (REAL8)( timeSeries->epoch.gpsNanoSeconds-cwDetector.heterodyneEpoch.gpsNanoSeconds );
+  gps1=timeSeries->epoch;
+  gps2=cwDetector.heterodyneEpoch;
 
-  x *= LAL_TWOPI*timeSeries->f0; 
+  LALDeltaGPS(status,&deltaGPS,&gps1,&gps2);
 
-  cosx=cos(x);
-  sinx=sin(x);
+  LALIntervalToFloat(status,&deltaT,&deltaGPS);
+
+  deltaT *= LAL_TWOPI*timeSeries->f0; 
+
+  cosx=cos(deltaT);
+  sinx=sin(deltaT);
   for (i = 0; i < fvec->length; ++i){
     fvec1=fvec->data[i];
     fvec->data[i].re=fvec1.re*cosx-fvec1.im*sinx;
