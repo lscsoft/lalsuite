@@ -5,7 +5,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 AM_LDFLAGS = $(top_builddir)/src/lalapps/liblalapps.la
 
 if FRAME
-FRAMEPROGRAMS = lalapps_FrComputeFStatistic
+##FRAMEPROGRAMS = lalapps_FrComputeFStatistic
+FRAMEPROGRAMS = 
 else
 FRAMEPROGRAMS = 
 endif
@@ -53,7 +54,7 @@ cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/user_text.C screensaver/src/pulsar_list.C \
 	screensaver/src/search_info.C
 cfsBOINC_CPPFLAGS = -Wall $(AM_CPPFLAGS) -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include/BOINC -DUSE_BOINC -D_REENTRANT
-cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -all-static \
+cfsBOINC_LDFLAGS =  $(AM_LDFLAGS) -static \
 	-L$(HOME_BOINC)/lib -lboinc -lboinc_api -lboinc_graphics_api \
 	-L$(HOME_OPENGL)/lib -L$(HOME_X11) -lboincglut -lpthread -lGL -lGLU -lXmu -lX11 -lXext -ldl -lm -lpthread -lXi -lXmu -lX11
 
