@@ -144,26 +144,11 @@ LALFindChirpSPDataInit (
   }
   ENDFAIL( status );
 
-  /* workspace vector v */
-  LALCreateVector( status->statusPtr, &dataParamPtr->vVec, 
-      params->numPoints );
-  BEGINFAIL( status )
-  {
-    TRY( LALDestroyRealFFTPlan (status->statusPtr, &dataParamPtr->invPlan ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
-
-    LALFree( dataParamPtr );
-    *output = NULL;
-  }
-  ENDFAIL( status );
-
   /* workspace vector w: time domain */
   LALCreateVector( status->statusPtr, &dataParamPtr->wVec, 
       params->numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->vVec ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
@@ -179,7 +164,6 @@ LALFindChirpSPDataInit (
   BEGINFAIL( status )
   {
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->vVec ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
@@ -197,7 +181,6 @@ LALFindChirpSPDataInit (
   {
     TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->vVec ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
@@ -257,9 +240,6 @@ LALFindChirpSPDataFinalize (
   LALDestroyRealFFTPlan (status->statusPtr, &dataParamPtr->invPlan);
   CHECKSTATUSPTR (status);
 
-  LALDestroyVector (status->statusPtr, &dataParamPtr->vVec);
-  CHECKSTATUSPTR (status);
-
   LALDestroyVector (status->statusPtr, &dataParamPtr->wVec);
   CHECKSTATUSPTR (status);
 
@@ -316,6 +296,7 @@ LALFindChirpSPData (
   COMPLEX8             *wtilde;
   REAL4                *tmpltPower;
   
+  REAL4Vector          *dataVec;
   REAL4                *data;
   REAL4                *spec;
   COMPLEX8             *resp;
@@ -365,11 +346,6 @@ LALFindChirpSPData (
   ASSERT( params->ampVec, status, 
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( params->ampVec->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-
-  ASSERT( params->vVec, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( params->vVec->data, status, 
       FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   ASSERT( params->wVec, status, 
@@ -423,7 +399,6 @@ LALFindChirpSPData (
    */
 
 
-  v          = params->vVec->data;
   w          = params->wVec->data;
   amp        = params->ampVec->data;
   wtilde     = params->wtildeVec->data;
@@ -451,7 +426,7 @@ LALFindChirpSPData (
     dataSeg      = &(dataSegVec->data[i]);
     fcSeg        = &(fcSegVec->data[i]);
 
-    data         = dataSeg->chan->data->data;
+    dataVec      = dataSeg->chan->data;
     spec         = dataSeg->spec->data->data;
     resp         = dataSeg->resp->data->data;
 
@@ -478,14 +453,8 @@ LALFindChirpSPData (
      */
 
 
-    /* fft the IFO data */
-    for ( j = 0; j < params->vVec->length; ++j )
-    {
-      v[j] = (REAL4) data[j];
-    }
-
     LALForwardRealFFT( status->statusPtr, fcSeg->data->data, 
-        params->vVec, params->fwdPlan );
+        dataVec, params->fwdPlan );
     CHECKSTATUSPTR( status );
 
     /* compute strain */
@@ -499,34 +468,6 @@ LALFindChirpSPData (
       outputData[k].re =  p*x - q*y;
       outputData[k].im =  p*y + q*x;
     }
-
-#if 0
-    /* write out strain amplitude spectral density */
-    {
-      UINT4 kk;
-      FILE *fp;
-      REAL8 modr, asd;
-
-      umask( 002 );
-
-      if ( ! (fp = fopen( "/home/duncan/incomming/asd.dat", "w" )) )
-      {
-        ABORT( status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-      }
-
-      for ( kk = 0; kk < fcSeg->data->data->length; ++kk )
-      {
-        modr = sqrt( resp[kk].re * resp[kk].re + resp[kk].im * resp[kk].im );
-        asd = modr * spec[kk];
-
-        fprintf( fp, "%e\t%e\t%e\t%e\n", 
-            (REAL4) kk / ( (REAL4) fcSeg->data->data->length * params->deltaT ),
-            modr, spec[kk], asd );
-      }
-
-      fclose( fp );
-    }
-#endif
 
 
     /*
@@ -546,6 +487,10 @@ LALFindChirpSPData (
     /* compute inverse of S_v */
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
+      if ( spec[k] == 0 )
+      {
+        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+      }
       wtilde[k].re = 1.0 / spec[k];
     }
 
@@ -607,7 +552,13 @@ LALFindChirpSPData (
     {
       REAL4 respRe = resp[k].re * params->dynRange;
       REAL4 respIm = resp[k].im * params->dynRange;
-      REAL4 invmodsqResp = 1.0 / (respRe * respRe + respIm * respIm);
+      REAL4 modsqResp = (respRe * respRe + respIm * respIm);
+      REAL4 invmodsqResp;
+      if ( modsqResp == 0 )
+      {
+        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+      }
+      invmodsqResp = 1.0 / modsqResp;
       wtilde[k].re *= invmodsqResp;
     }
 

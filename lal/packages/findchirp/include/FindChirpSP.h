@@ -66,6 +66,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_EFLOW 8
 #define FINDCHIRPSPH_EDYNR 9
 #define FINDCHIRPSPH_EISTN 10
+#define FINDCHIRPSPH_EDIVZ 11
 #define FINDCHIRPSPH_MSGENULL "Null pointer"
 #define FINDCHIRPSPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPSPH_MSGEALOC "Memory allocation error"
@@ -76,6 +77,7 @@ NRCSID (FINDCHIRPSPH, "$Id$");
 #define FINDCHIRPSPH_MSGEFLOW "Low frequency cutoff is negative"
 #define FINDCHIRPSPH_MSGEDYNR "Dynamic range scaling is zero or negative"
 #define FINDCHIRPSPH_MSGEISTN "Truncation of inverse power spectrum is negative"
+#define FINDCHIRPSPH_MSGEDIVZ "Attempting to divide by zero"
 /* </lalErrTable> */
 
 
@@ -93,7 +95,6 @@ tagFindChirpSPDataParams
   REAL4Vector                  *ampVec;
   RealFFTPlan                  *fwdPlan;
   RealFFTPlan                  *invPlan;
-  REAL4Vector                  *vVec;
   REAL4Vector                  *wVec;
   COMPLEX8Vector               *wtildeVec;
   REAL4Vector                  *tmpltPowerVec;
