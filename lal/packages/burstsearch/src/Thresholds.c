@@ -433,7 +433,7 @@ LALOneMinusChisqCdf (
    *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
    */
   if ( !( (*prob > 0.0) && (*prob < 1.0) && ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
-      *prob = 1.0/LAL_REAL8_MAX;
+      *prob = LAL_REAL8_MIN;
       /* if(lalDebugLevel&LALWARNING)
           LALPrintError("\tThe probability is: %e\n",*prob); */
   }
