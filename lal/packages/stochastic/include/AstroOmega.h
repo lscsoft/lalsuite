@@ -75,7 +75,7 @@ tagAstroOmegaParams
    void                           *extraparams;  
  }
 AstroOmegaParams;
-
+\end{verbatim}
 
 
 \vfill{\footnotesize\input{AstroOmegaHV}}
