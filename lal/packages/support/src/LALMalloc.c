@@ -202,6 +202,7 @@ static size_t lalMallocTotal = 0;
 static int    lalMallocCount = 0;
 extern int    lalDebugLevel;
 
+#if 0
 static int CheckAllocList( void )
 {
   int    count = 0;
@@ -215,6 +216,7 @@ static int CheckAllocList( void )
   }
   return count == lalMallocCount && total == lalMallocTotal;
 }
+#endif
 
 static void *PadAlloc( size_t *p, size_t n, int keep, const char *func )
 {
