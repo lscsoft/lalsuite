@@ -14,6 +14,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_polka lalapps_FstatShapeTestLAL compareFstats ComputeFStatistic_v2 \
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh
 
+EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
+
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
@@ -42,4 +44,3 @@ compareFstats_SOURCES = compareFstats.c
 
 ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
-
