@@ -92,23 +92,22 @@ INT4 siteOne;
 INT4 siteTwo;
 
 /* frequency band */
-INT4 fMin = 50;
-INT4 fMax = 300;
+INT4 fMin = -1;
+INT4 fMax = -1;
 
 /* high pass filtering parameters */
-REAL4 highPassFreq = 40;
-REAL4 highPassAt = 0.707;
-INT4 highPassOrder = 6;
+REAL4 highPassFreq = -1;
+REAL4 highPassAtten = -1;
+INT4 highPassOrder = -1;
 
 /* omegaGW parameters */
-REAL4 alpha = 0.0;
-REAL4 fRef = 100.0;
-REAL4 omegaRef = 1.;
+REAL4 alpha = 0;
+REAL4 fRef = 100;
+REAL4 omegaRef = 1;
 
-/* misc parameters */
-INT4 hannDuration = 60;
-INT4 padData;
-INT4 maskBin = 0;
+/* windowing parameters */
+INT4 hannDuration = -1;
+INT4 maskBin = -1;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
@@ -132,7 +131,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsSegmentStart;
 
-  /* input data streams */
+  /* input data structures */
+  INT4 padData;
   INT4 numSegments;
   INT4 streamLength;
   ReadDataPairParams streamParams;
@@ -625,7 +625,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     highPassParam.nMax = highPassOrder;
     highPassParam.f2 = highPassFreq;
-    highPassParam.a2 = highPassAt;
+    highPassParam.a2 = highPassAtten;
   }
 
   /* zeropad lengths */
@@ -1222,7 +1222,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --mask-bin N                  number of bins to mask\n"\
   " --overlap-hann                overlaping hann windows\n"\
   " --hann-duration N             hann duration\n"\
-  " --high-pass-filter            perform high pass filtering\n"
+  " --high-pass-filter            apply high pass filtering\n"\
+  " --hpf-frequency N             high pass filter knee frequency\n"\
+  " --hpf-attenuation N           high pass filter attenuation\n"\
+  " --hpf-order N                 high pass filter order\n"
 
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
@@ -1256,6 +1259,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"calibration-cache-one", required_argument, 0, 'r'},
       {"calibration-cache-two", required_argument, 0, 'R'},
       {"debug-level", required_argument, 0, 'z'},
+      {"hpf-frequency", required_argument, 0, 'k'},
+      {"hpf-attenuation", required_argument, 0, 'p'},
+      {"hpf-order", required_argument, 0, 'P'},
       {"version", no_argument, 0, 'V'},
       {0, 0, 0, 0}
     };
@@ -1264,7 +1270,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:z:V", \
+    c = getopt_long(argc, argv, "ht:T:l:a:f:F:w:i:I:d:D:r:R:z:k:p:P:V", \
         long_options, &option_index);
 
     if (c == -1)
@@ -1550,6 +1556,54 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
+      case 'k':
+        /* high pass filter knee frequency */
+        highPassFreq = atof(optarg);
+
+        /* check */
+        if (highPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument tp --%s:\n" \
+              "High pass filter knee frequency is less than 0 Hz: "\
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassFreq);
+          exit(1);
+        }
+
+        break;
+
+      case 'p':
+        /* high pass filter attenuation */
+        highPassAtten = atof(optarg);
+
+        /* check */
+        if ((highPassAtten < 0.0) || (highPassAtten > 1.0))
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassAtten);
+          exit(1);
+        }
+        
+        break;
+
+      case 'P':
+        /* high pass filter order */
+        highPassOrder = atoi(optarg);
+
+        /* check */
+        if (highPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass filter order must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name,
+              highPassOrder);
+          exit(1);
+        }
+
+        break;
+
       case 'V':
         /* display version info and exit */
         fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
@@ -1577,6 +1631,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
   }
 
   /* check for required arguments */
+
   /* start time */
   if (startTime == 0)
   {
@@ -1681,6 +1736,27 @@ void parseOptions(INT4 argc, CHAR *argv[])
       exit(1);
     }
   }
+
+  /* high pass filter */
+  if (high_pass_flag)
+  {
+    if (highPassFreq == -1)
+    {
+      fprintf(stderr, "--hpf-frequency must be specified\n");
+      exit(1);
+    }
+    if (highPassAtten == -1)
+    {
+      fprintf(stderr, "--hpf-attenuation must be specified\n");
+      exit(1);
+    }
+    if (highPassOrder == -1)
+    {
+      fprintf(stderr, "--hpf-order must be specified\n");
+      exit(1);
+    }
+  }
+      
 
   /* check for sensible arguments */
 
