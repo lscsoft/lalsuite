@@ -89,7 +89,7 @@ char *program;
 
 void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0) ;
 void LALInspiralTestOneHelp();
-void ParseParameters(UINT4 *argc, CHAR **argv, OtherParamIn *otherIn);
+void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 
 
 
@@ -100,7 +100,6 @@ int main (int argc , char **argv) {
   static LALStatus status;
   InspiralTemplate params; /* the parameters */
   REAL8 dt;                /* some sampling */
-
   UINT4 n, i;
 
   RealFFTPlan *revp =NULL;
@@ -117,44 +116,52 @@ int main (int argc , char **argv) {
   /* ---  we start real computation here --- */
 
   otherIn.PrintParameters = 0; /* by default we don't print the parameters */
-  ParseParameters(&argc, argv, &otherIn);/*let's parse user parameters     */
+  ParseParameters(argc, argv, &otherIn);/*let's parse user parameters     */
 
 
 
   SUB( LALInspiralITStructureSetDefault(&status, &params),
-       &status); /*  */
+       &status); /*  */ 
+  
   SUB( LALInspiralITStructureParseParameters(&status, argc, argv, &params), 
        &status);/*parse user inspiral template parameters */
 
-
   SUB( LALInspiralParameterCalc(&status, &params), 
        &status);
+
+
+  /*  params.signalAmplitude = 4. * LAL_C_SI/(LAL_PC_SI * 1e6 *params.distance )
+    * pow(LAL_MTSUN_SI,5./3.)
+    * pow(params.totalMass ,5./3.)
+    * params.eta;
+    */
 
   if (otherIn.PrintParameters)
     SUB( LALInspiralITStructurePrint(&status, params), 
 	 &status); 
      
   /* force those parameters */
-  params.massChoice = m1Andm2;
-  params.distance   = 1.e8 * LAL_PC_SI/LAL_C_SI;
   params.ieta       = 0;  /* is it 1 or 0 ?*/
 
   dt = 1./params.tSampling;
   
   SUB(  LALInspiralWaveLength(&status, &n, params), &status);
   SUB(  LALInspiralParameterCalc(&status, &params), &status);
-
+  
 
   
   if (otherIn.PrintParameters)
     {
-      fprintf(stderr, "Testing Inspiral Signal Generation Codes:\n");
-      fprintf(stderr, "Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);
+      fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
+      fprintf(stderr, "#Signal length=%d, t0=%e, t2=%e, \n", n, params.t0, params.t2);  
+      fprintf(stderr,"#size in bins %d\n",n);
+      fprintf(stderr,"#size in seconds %lf\n",params.tC);
+
     }
   
-  SUB( LALCreateVector(&status, &signal1, n), &status);
-  SUB( LALCreateVector(&status, &signal2, n), &status);
-       
+  SUB( LALSCreateVector(&status, &(signal1), n), &status);
+  SUB( LALSCreateVector(&status, &(signal2), n), &status);
+     
 
   /* */
   
@@ -176,14 +183,16 @@ int main (int argc , char **argv) {
     Signal1->data[0].im = 0.;
     Signal1->data[n/2].re = 0.;
     Signal1->data[n/2].im = 0.;
-    
+
     SUB( LALReverseRealFFT(&status, signal2, Signal1, revp), &status);
     SUB( LALCDestroyVector (&status, &Signal1), &status);
     printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
-    
-    SUB( LALREAL4VectorFFT(&status, signal2, signal1, revp), &status);
     SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
+
+    /*    SUB( LALREAL4VectorFFT(&status, signal2, signal1, revp), &status);
+
     printf_timeseries(signal2->length, signal2->data, dt, params.startTime);
+    */
     break;
   case SpinTaylorT3:
   case TaylorT1:
@@ -191,7 +200,8 @@ int main (int argc , char **argv) {
   case TaylorT3:
   case EOB:
   case PadeT1:
-    LALInspiralWave(&status, signal2, &params);
+    SUB(LALInspiralWave(&status, signal2, &params), &status);
+
     printf_timeseries(signal2->length, signal2->data, dt, params.startTime);        
     break;
   case PadeF1:
@@ -201,9 +211,9 @@ int main (int argc , char **argv) {
 	    break;
   }
      
+  SUB( LALSDestroyVector(&status, &signal2), &status);
+  SUB( LALSDestroyVector(&status, &signal1), &status);
   
-  LALDestroyVector(&status, &signal2);
-  LALDestroyVector(&status, &signal1);
   LALCheckMemoryLeaks();
   return 0;
 }
@@ -213,13 +223,13 @@ int main (int argc , char **argv) {
 
 
 void 
-ParseParameters(	UINT4 			*argc, 
+ParseParameters(	UINT4 			argc, 
 			CHAR 			**argv,
 			OtherParamIn    	*otherIn)
 {
   INT4 		i = 1;
   
-  while(i < *argc)
+  while(i < argc)
     {
       if ( strcmp(argv[i],	"--verbose") 	== 0 ) {
 	otherIn->PrintParameters = 1;
@@ -265,9 +275,12 @@ void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0)
   outfile1=fopen("wave1.dat","a");
 
   do 
-     fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
+     fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
   while (n-++i); 
 
   fprintf(outfile1,"&\n");
   fclose(outfile1);
 }
+
+
+
