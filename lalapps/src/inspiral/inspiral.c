@@ -108,6 +108,7 @@ INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 CHAR  *calCacheName     = NULL;         /* location of calibration data */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
+int   injectOverhead	= 0;		/* inject h+ into detector	*/
 
 /* matched filter parameters */
 CHAR *bankFileName      = NULL;         /* name of input template bank  */
@@ -581,10 +582,20 @@ int main( int argc, char *argv[] )
     }
 
     /* inject the signals, preserving the channel name (Tev mangles it) */
-    strcpy( tmpChName, chan.name );
+    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+
+    /* if injectOverhead option, then set chan.name to "ZENITH".  
+     * This causes no detector site to be found in the injection code so
+     * that the injection is done directly overhead (i.e. with a response 
+     * function of F+ = 1; Fx = 0) */
+    if ( injectOverhead )
+    {
+      LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+    }
+    
     LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
           injRespPtr ), &status );
-    strcpy( chan.name, tmpChName );
+    LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
     if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
         numInjections, injectionFile, chan.name );
@@ -1358,6 +1369,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
 "\n"\
+"  --inject-overhead            inject signals from overhead detector\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --minimal-match M            override bank minimal match with M (sets delta)\n"\
 "  --start-template N           start filtering at template number N in bank\n"\
@@ -1409,6 +1421,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"enable-output",           no_argument,       &enableOutput,     1 },
     {"disable-output",          no_argument,       &enableOutput,     0 },
     {"disable-high-pass",       no_argument,       &highPass,         0 },
+    {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2091,6 +2104,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
+  /* check inject-overhead option */
+  if ( injectOverhead )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--inject-overhead" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
 
   /*
    *
