@@ -141,6 +141,7 @@ float test_inject_phase;
 float geoHighPassFreq = 70.;
 float geoHighPassOrder = 8;
 float geoHighPassAtten = 0.1;
+float geoDynamicRange = 65.;
 
 const char *fpars;
 int         fargc = 1;
@@ -622,6 +623,7 @@ int parse_options( int argc, char **argv )
     { "geo-high-pass-freq",      required_argument, 0, 'G' },
     { "geo-high-pass-order",     required_argument, 0, 'H' },
     { "geo-high-pass-atten",     required_argument, 0, 'P' },
+    { "geo-dyn_range",           required_argument, 0, 'e' },
     /* these options are for writing output */
     { "write-format", required_argument, 0, 'w' },
     { "write-raw-data",         no_argument, &write_raw_data,         1 },
@@ -639,7 +641,7 @@ int parse_options( int argc, char **argv )
     /* nul terminate */
     { 0, 0, 0, 0 }
   };
-  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:T:U:w:z:Z:G:H:P";
+  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:T:U:w:z:Z:G:H:P:e";
 
   program  = argv[0];
   fargv[0] = my_strdup( program );
@@ -760,6 +762,9 @@ int parse_options( int argc, char **argv )
        case 'P': /* geo high pass filter attenuation  */
 	  geoHighPassAtten = atof(optarg);
 	  break;
+      case 'e': /* geo dynamic range  */
+        geoDynamicRange = atof(optarg);
+        break;
 
       case '?':
         exit( 1 );
@@ -971,7 +976,7 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
        /* which already has the correct amount of memory allocated */
        for ( j = 0 ; j < npts ; ++j )
         {
-         channel->data->data[j] = (REAL4) (geoChannel->data->data[j]);
+         channel->data->data[j] = geoDynamicRange * (REAL4) (geoChannel->data->data[j]);
          }
        /* re-copy the data paramaters from the GEO channel to input data channel */
        LALSnprintf( channel->name, LALNameLength * sizeof(CHAR), "%s", geoChannel->name );
