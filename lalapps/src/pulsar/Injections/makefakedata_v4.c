@@ -144,7 +144,7 @@ main(int argc, char *argv[])
   /* ------------------------------ 
    * read user-input and set up shop
    *------------------------------*/
-  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'v'), &status);
+  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
 
   LAL_CALL (InitMakefakedata (&status, &GV, argc, argv), &status);
 
@@ -279,8 +279,8 @@ InitMakefakedata (LALStatus *stat,
     exit (0);
 
   /* check more complex input-dependencies */
-  if ( (!UVARwasSet(&uvar_timestampsFile) && !UVARwasSet(&uvar_startTime))
-       || (UVARwasSet(&uvar_timestampsFile) && UVARwasSet(&uvar_startTime)) )
+  if ( (!LALUserVarWasSet(&uvar_timestampsFile) && !LALUserVarWasSet(&uvar_startTime))
+       || (LALUserVarWasSet(&uvar_timestampsFile) && LALUserVarWasSet(&uvar_startTime)) )
     {
       LALPrintError ("Please specify either timestampsFile or startTime !\n");
       ABORT (stat, MAKEFAKEDATAC_ENOARG, MAKEFAKEDATAC_MSGENOARG);
@@ -346,7 +346,7 @@ InitMakefakedata (LALStatus *stat,
 
 
   /* get observation start-time */
-  if (UVARwasSet (&uvar_startTime)) {
+  if (LALUserVarWasSet (&uvar_startTime)) {
     TRY ( LALFloatToGPS (stat->statusPtr, &(GV->startTime), &uvar_startTime), stat);
   }
   else
@@ -373,7 +373,7 @@ InitMakefakedata (LALStatus *stat,
   GV->edat = edat;
 
   /* if ref-time was given */
-  if (UVARwasSet(&uvar_refTime)) {
+  if (LALUserVarWasSet(&uvar_refTime)) {
     TRY ( LALFloatToGPS (stat->statusPtr, &(GV->refTime), &uvar_refTime), stat);
   }
   else	/* otherwise set to 0, so startTime->SSB will be used */
@@ -389,11 +389,11 @@ InitMakefakedata (LALStatus *stat,
 
   /* if any orbital parameters specified, we need all of them ! */
   {
-    BOOLEAN set1 = UVARwasSet(&uvar_orbitRefTime);
-    BOOLEAN set2 = UVARwasSet(&uvar_orbitOmega);
-    BOOLEAN set3 = UVARwasSet(&uvar_orbitRPeriNorm);
-    BOOLEAN set4 = UVARwasSet(&uvar_orbitEccent);
-    BOOLEAN set5 = UVARwasSet(&uvar_orbitAngSpeed);
+    BOOLEAN set1 = LALUserVarWasSet(&uvar_orbitRefTime);
+    BOOLEAN set2 = LALUserVarWasSet(&uvar_orbitOmega);
+    BOOLEAN set3 = LALUserVarWasSet(&uvar_orbitRPeriNorm);
+    BOOLEAN set4 = LALUserVarWasSet(&uvar_orbitEccent);
+    BOOLEAN set5 = LALUserVarWasSet(&uvar_orbitAngSpeed);
     if (set1 || set2 || set3 || set4 || set5)
     {
       if (! (set1 && set2 && set3 && set4 && set5) ) {
@@ -461,40 +461,40 @@ initUserVars (LALStatus *stat)
 
   /* now register all our user-variable */
 
-  regSTRINGUserVar(stat, outSFTbname,	'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
-  regSTRINGUserVar(stat, outTDDFile,	't', UVAR_OPTIONAL, "Filename for output time-series");
-  regSTRINGUserVar(stat, detector,     	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
-  regREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
-  regREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
-  regSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
-  regSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  regSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with noise-SFTs");
-  regSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
-  regREALUserVar(stat,   Tsft, 		 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
-  regINTUserVar(stat,    nTsft,		 0 , UVAR_REQUIRED, "Number of SFTs nTsft");
-  regREALUserVar(stat,   fmin,		 0 , UVAR_REQUIRED, "lowest frequency in output SFT");
-  regREALUserVar(stat,   Band,		 0 , UVAR_REQUIRED, "bandwidth of output SFT");
-  regREALUserVar(stat,   sigma,		 0 , UVAR_OPTIONAL, "noise variance sigma");
-  regREALUserVar(stat,   aPlus,		 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
-  regREALUserVar(stat,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
-  regREALUserVar(stat,   psi,  		 0 , UVAR_REQUIRED, "Polarization angle psi");
-  regREALUserVar(stat,   phi0,		 0 , UVAR_REQUIRED, "Initial phase phi");
-  regREALUserVar(stat,   f0,  		 0 , UVAR_REQUIRED, "Pulsar frequency f0 at tRef");
-  regREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
-  regREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
-  regREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
-  regREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
-  regREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
-
+  LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
+  LALregSTRINGUserVar(stat, outTDDFile,	't', UVAR_OPTIONAL, "Filename for output time-series");
+  LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
+  LALregREALUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Detector GPS time to start data");
+  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Reference time tRef (in SSB) at which pulsar is defined");
+  LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
+  LALregSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(stat, noiseDir,	'D', UVAR_OPTIONAL, "Directory with noise-SFTs");
+  LALregSTRINGUserVar(stat, timestampsFile, 0 , UVAR_OPTIONAL, "Timestamps file");
+  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "SFT time baseline Tsft");
+  LALregINTUserVar(stat,    nTsft,	 0 , UVAR_REQUIRED, "Number of SFTs nTsft");
+  LALregREALUserVar(stat,   fmin,	 0 , UVAR_REQUIRED, "lowest frequency in output SFT");
+  LALregREALUserVar(stat,   Band,	 0 , UVAR_REQUIRED, "bandwidth of output SFT");
+  LALregREALUserVar(stat,   sigma,	 0 , UVAR_OPTIONAL, "noise variance sigma");
+  LALregREALUserVar(stat,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
+  LALregREALUserVar(stat,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
+  LALregREALUserVar(stat,   psi,  	 0 , UVAR_REQUIRED, "Polarization angle psi");
+  LALregREALUserVar(stat,   phi0,	 0 , UVAR_REQUIRED, "Initial phase phi");
+  LALregREALUserVar(stat,   f0,  	 0 , UVAR_REQUIRED, "Pulsar frequency f0 at tRef");
+  LALregREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
+  LALregREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
+  LALregREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
+  LALregREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
+  LALregREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
+  
   /* the orbital parameters */
-  regREALUserVar(stat, 	orbitRefTime, 	 0 , UVAR_OPTIONAL, "Reference time for orbital parameters (in SSB)");
-  regREALUserVar(stat,  orbitOmega,      0 , UVAR_OPTIONAL, "argument of periapsis (radians)");
-  regREALUserVar(stat, 	orbitRPeriNorm,  0 , UVAR_OPTIONAL, "projected, normalized periapsis (s) ");
-  regREALUserVar(stat, 	orbitEccent,	 0 , UVAR_OPTIONAL, "orbital eccentricity");
-  regREALUserVar(stat,  orbitAngSpeed,   0 , UVAR_OPTIONAL, "angular speed at periapsis (Hz)");
-
-  regBOOLUserVar(stat,   help,		'h', UVAR_HELP    , "Print this help/usage message");
-
+  LALregREALUserVar(stat,   orbitRefTime, 0 , UVAR_OPTIONAL, "Reference time for orbital parameters (in SSB)");
+  LALregREALUserVar(stat,   orbitOmega,   0 , UVAR_OPTIONAL, "argument of periapsis (radians)");
+  LALregREALUserVar(stat,   orbitRPeriNorm,0 , UVAR_OPTIONAL, "projected, normalized periapsis (s) ");
+  LALregREALUserVar(stat,   orbitEccent,   0 , UVAR_OPTIONAL, "orbital eccentricity");
+  LALregREALUserVar(stat,   orbitAngSpeed, 0 , UVAR_OPTIONAL, "angular speed at periapsis (Hz)");
+  
+  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP    , "Print this help/usage message");
+  
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 

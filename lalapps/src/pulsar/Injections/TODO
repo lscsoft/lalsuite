@@ -1,5 +1,6 @@
 TODO (makefakedatata_v4)
 -------------------------
+* add possibility of generating Gaussian noise to add to signal
 
 * allow binary-orbit input (should be trivial)
 

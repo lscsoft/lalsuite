@@ -124,10 +124,10 @@ initUserVars (LALStatus *stat)
 
   /* now register all our user-variable */
 
-  regSTRINGUserVar(stat, SFTfname,	'i', UVAR_REQUIRED, "Path and filename for binary SFTs-file");
-  regSTRINGUserVar(stat, SFToutname,	'o', UVAR_REQUIRED, "Path and filename for output SFT text-file");
-  regINTUserVar(stat,    debug,		'v', UVAR_OPTIONAL, "set debug-level");
-  regBOOLUserVar(stat,   help,		'h', UVAR_HELP, "Print this help/usage message");
+  LALregSTRINGUserVar(stat, SFTfname,	'i', UVAR_REQUIRED, "Path and filename for binary SFTs-file");
+  LALregSTRINGUserVar(stat, SFToutname,	'o', UVAR_REQUIRED, "Path and filename for output SFT text-file");
+  LALregINTUserVar(stat,    debug,	'v', UVAR_OPTIONAL, "set debug-level");
+  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);

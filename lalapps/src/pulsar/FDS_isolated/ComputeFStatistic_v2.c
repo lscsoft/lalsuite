@@ -422,34 +422,34 @@ initUserVars (LALStatus *stat)
 
   /* register all our user-variables */
  
-  regINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
-  regREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  regREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  regREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
-  regREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  regSTRINGUserVar(stat,DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
-  regSTRINGUserVar(stat,BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  regSTRINGUserVar(stat,EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
-  regSTRINGUserVar(stat,EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  regINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
-  regBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  regREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  regREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  regREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
-  regBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  regREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic, 2 = Ptole-numeric");
-  regREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  regINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
-  regBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
-  regSTRINGUserVar(stat,skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
-  regSTRINGUserVar(stat,outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-
+  LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic, 2 = Ptole-numeric");
+  LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
+  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
+  LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* initUserVars() */

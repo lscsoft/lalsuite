@@ -129,6 +129,8 @@ void initUserVars (LALStatus *stat);
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+extern int vrbflg;
+
 /*----------------------------------------------------------------------
  * MAIN
  *----------------------------------------------------------------------*/
@@ -145,11 +147,13 @@ int main(int argc,char *argv[])
   REAL8 duration;
   LALStatus status = blank_status;	/* initialize status */
 
+  vrbflg = 1;
+
   /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
+  lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (UVARgetDebugLevel (&status, argc, argv, 'v'), &status);
+  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
   LAL_CALL (initUserVars (&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
@@ -186,7 +190,7 @@ int main(int argc,char *argv[])
 #ifdef FILE_FSTATS  
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
-  if ( UVARwasSet(&uvar_outputLabel) )
+  if ( LALUserVarWasSet(&uvar_outputLabel) )
     strcat(Fstatsfilename,uvar_outputLabel);
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
@@ -346,33 +350,33 @@ initUserVars (LALStatus *stat)
 
   /* register all our user-variables */
  
-  regINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
-  regREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  regREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  regREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
-  regREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  regREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  regSTRINGUserVar(stat,DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
-  regSTRINGUserVar(stat,BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  regSTRINGUserVar(stat,EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
-  regSTRINGUserVar(stat,EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  regINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
-  regBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  regREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  regREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  regREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
-  regBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  regREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  regINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic,\n\
+  LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic,\n\
                                     2 = Ptole-numeric 3=exact, 4=pseudo-isotropic");
-  regREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  regBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
-  regSTRINGUserVar(stat,skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
-  regSTRINGUserVar(stat,outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
+  LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1258,16 +1262,16 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( !UVARwasSet(&uvar_dFreq) ) 
+  if( !LALUserVarWasSet(&uvar_dFreq) ) 
     uvar_dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
 
   cfg->FreqImax=(INT4)(uvar_FreqBand/uvar_dFreq+.5)+1;  /*Number of frequency values to calculate F for */
     
   /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( !UVARwasSet (&uvar_df1dot) ) 
+  if( !LALUserVarWasSet (&uvar_df1dot) ) 
     uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
 
-  if (UVARwasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
+  if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
     cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
   else
     cfg->SpinImax = 0;
@@ -1293,15 +1297,15 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     }
 
   /* safety-check: only allow EITHER of skyRegion OR (Alpha,AlphaBand, Delta, DeltaBand) */
-  if ( !UVARwasSet(&uvar_skyRegion) && (!UVARwasSet(&uvar_Alpha)||!UVARwasSet(&uvar_Delta)) ) 
+  if ( !LALUserVarWasSet(&uvar_skyRegion) && (!LALUserVarWasSet(&uvar_Alpha)||!LALUserVarWasSet(&uvar_Delta)) ) 
     {
       LALPrintError ("Either (Alpha,Delta) or a skyRegion have to be specified!\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   /* now check that only one of those two has been given! ;) */
-  if ( UVARwasSet(&uvar_skyRegion) 
-       && (UVARwasSet(&uvar_Alpha)||UVARwasSet(&uvar_Delta)
-	   ||UVARwasSet(&uvar_AlphaBand)||UVARwasSet(&uvar_DeltaBand)) ) 
+  if ( LALUserVarWasSet(&uvar_skyRegion) 
+       && (LALUserVarWasSet(&uvar_Alpha)||LALUserVarWasSet(&uvar_Delta)
+	   ||LALUserVarWasSet(&uvar_AlphaBand)||LALUserVarWasSet(&uvar_DeltaBand)) ) 
     {
       LALPrintError ("ATTENTION: you can only specify *either* (Alpha,Delta,AlphaBand,DeltaBand) *or* skyRegion !\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
