@@ -401,6 +401,7 @@ void FindNumberHarmonics (LALStatus           *status,
   FILE *fp = NULL;
   CHAR  dump[128];
   INT4  harmonicCount, r; 
+  REAL8 temp1, temp2, temp3, temp4;   
 
   INITSTATUS (status, "FindNumberHarmonics", SFTBINC);
   ATTATCHSTATUSPTR (status);
@@ -419,7 +420,7 @@ void FindNumberHarmonics (LALStatus           *status,
     r=fscanf(fp,"%lf%lf%lf%lf%s\n", &temp1, &temp2, &temp3, &temp4, dump);
     /* make sure the line has the right number of entries or is EOF */
     ASSERT( (r==5)||(r==EOF), status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
-    if (r==5) lineCount++;
+    if (r==5) harmonicCount++;
   } while ( r != EOF);
 
   harmonicInfo->nLines = harmonicCount;
@@ -465,8 +466,8 @@ void  ReadHarmonicsInfo (LALStatus          *status,
   ASSERT (fp, status, SFTBINH_EFILE,  SFTBINH_MSGEFILE);
 
   nLines = lineInfo->nLines;
-  lineFreq = lineInfo->lineFreq;
-  gapFreq = lineInfo->garFreq;
+  startFreq = lineInfo->startFreq;
+  gapFreq = lineInfo->gapFreq;
   leftWing = lineInfo->leftWing;
   rightWing = lineInfo->rightWing;
 
