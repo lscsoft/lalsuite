@@ -58,6 +58,7 @@
 
 RCSID( "$Id$" );
 
+#define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -1280,6 +1281,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "lalapps_inspiral [options]\n\n"\
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
+"  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --user-tag STRING            set the process_params usertag to STRING\n"\
 "  --comment STRING             set the process table comment to STRING\n"\
@@ -1383,6 +1385,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
+    {"version",                 no_argument,       0,                'V'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -1934,6 +1937,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
+        break;
+
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "LIGO/LSC Standalone Inspiral Search Engine\n" 
+            "Duncan Brown <duncan@gravity.phys.uwm.edu>\n"
+            "CVS Version: " CVS_ID_STRING "\n" );
+        exit( 0 );
         break;
 
       case '?':
