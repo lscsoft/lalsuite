@@ -308,13 +308,23 @@ static SnglBurstTable *select_event(LALStatus *stat, SimBurstTable *injection, S
 	if(options.best_peaktime) {
 		INT8 injtime, atime, btime;
 
-		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_peak_time), stat);
-		LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
-		LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
+	if(! strcmp("ZENITH",injection->coordinates))
+		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->geocent_peak_time), stat);
+	else {
+		if(! strcmp("H1", a->ifo))
+			LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
+	  	else if(! strcmp("H2", a->ifo))
+			LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->h_peak_time), stat);
+	  	else if(! strcmp("L1", a->ifo))
+	    		LAL_CALL(LALGPStoINT8(stat, &injtime, &injection->l_peak_time), stat);
+	}	
 
-		return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
+	LAL_CALL(LALGPStoINT8(stat, &atime, &a->peak_time), stat);
+	LAL_CALL(LALGPStoINT8(stat, &btime, &b->peak_time), stat);
+
+	return(llabs(atime - injtime) < llabs(btime - injtime) ? a : b);
 	}
-
+	
 	return(NULL);
 }
 
@@ -340,7 +350,7 @@ static int keep_this_injection(SimBurstTable *injection, struct options_t option
 		return(FALSE);
 	if(options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
 		return(FALSE);
-	if(options.playground && !contains_playground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
+	if(options.playground && !contains_playground(injection->geocent_peak_time.gpsSeconds, injection->geocent_peak_time.gpsSeconds))
 		return(FALSE);
 
 	return(TRUE);
@@ -426,7 +436,7 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
 	INT8 peaktime;
 
 	for(; injection; injection = injection->next) {
-		LAL_CALL(LALGPStoINT8(stat, &peaktime, &injection->l_peak_time), stat);
+		LAL_CALL(LALGPStoINT8(stat, &peaktime, &injection->geocent_peak_time), stat);
 		if((start < peaktime) && (peaktime < end)) {
 			*addpoint = LALMalloc(sizeof(**addpoint));
 			**addpoint = *injection;
