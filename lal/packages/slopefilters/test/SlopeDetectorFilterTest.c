@@ -166,6 +166,15 @@ int main( int argc, char *argv[] )
   }
   input->length += (UINT4)SLOPEDETECTORFILTERTESTC_REDUCELENGTH ;
 
+  /*******  TEST THAT THE NUMBER OF TAPS IS NOT ZERO  *******/
+
+  LALSlopeDetectorFilter(&status, output, input, 0);
+  if( (status.statusCode != SLOPEDETECTORFILTERH_EDIVBYZERO) ||
+      strcmp(status.statusDescription, SLOPEDETECTORFILTERH_MSGEDIVBYZERO)) {
+    printf("Error trap for division by zero failed\n");
+    return SLOPEDETECTORFILTERTESTC_EFLS;
+  }
+
   /*******  TEST RESPONSE TO VALID DATA  ************/
 
   LALSlopeDetectorFilter(&status, output, input, ntaps);
