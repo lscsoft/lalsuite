@@ -94,6 +94,7 @@ static REAL8 rad_to_deg(REAL8 radians)
 /* axis for LALDR_EulerRotation() */
 typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
 
+/* This #if is so I can hide this block in Emacs's hide-ifdef-mode */
 #if 1
 static void
 LALDR_Set3Vector(LALDR_3Vector * v,
@@ -266,7 +267,7 @@ LALDR_Multiply33Matrix(LALDR_33Matrix * product,
 static void
 LALDR_ScalarMult33Matrix(LALDR_33Matrix * result,
                          REAL8 coefficient,
-                         LALDR_33Matrix *  matrix)
+                         LALDR_33Matrix * matrix)
 {
   INT4 i, j;
 
@@ -546,6 +547,8 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
   return;
 }
 #endif
+
+
 
 
 
@@ -715,11 +718,11 @@ LALComputeDetAMResponse( LALStatus             *status,
   /*
    * Initialize e_plus and e_cros (in the obvious frame)
    */
-  LALDR_Set33Matrix(e_plus, 1.,  0., 0.,
+  LALDR_Set33Matrix(&e_plus, 1.,  0., 0.,
                     0., -1., 0.,
                     0.,  0., 0.);
 
-  LALDR_Set33Matrix(e_cros, 0., 1., 0.,
+  LALDR_Set33Matrix(&e_cros, 0., 1., 0.,
                     1., 0., 0.,
                     0., 0., 0.);
 
@@ -752,9 +755,9 @@ LALComputeDetAMResponse( LALStatus             *status,
   psi = pDetAndSrc->pSource->orientation;
 
   /* Now, form the Euler rotations, and compute total rotation */
-  LALDR_EulerRotation(r1, -psi,   zAxis);
-  LALDR_EulerRotation(r2, -theta, xAxis);
-  LALDR_EulerRotation(r3, -phi,   zAxis);
+  LALDR_EulerRotation(&r1, -psi,   zAxis);
+  LALDR_EulerRotation(&r2, -theta, xAxis);
+  LALDR_EulerRotation(&r3, -phi,   zAxis);
 
 #ifdef DEBUG  
   if (lalDebugLevel >= 8)
@@ -785,8 +788,8 @@ LALComputeDetAMResponse( LALStatus             *status,
     }
 #endif  
 
-  LALDR_Multiply33Matrix(tmpmat, r2, r1);
-  LALDR_Multiply33Matrix(rtot, r3, tmpmat);
+  LALDR_Multiply33Matrix(&tmpmat, &r2, &r1);
+  LALDR_Multiply33Matrix(&rtot, &r3, &tmpmat);
 
   if (lalDebugLevel >= 8)
     {
@@ -806,13 +809,13 @@ LALComputeDetAMResponse( LALStatus             *status,
    *    e_plus_Earth = rtot &* e_plus &* transpose(rtot)
    *    e_cros_Earth = rtot &* e_cros &* transpose(rtot)
    */
-  LALDR_Transpose33Matrix(rtot_T, rtot);
-  LALDR_Multiply33Matrix(tmpmat, e_plus, rtot_T);
-  LALDR_Multiply33Matrix(e_plus_E, rtot, tmpmat);
+  LALDR_Transpose33Matrix(&rtot_T, &rtot);
+  LALDR_Multiply33Matrix(&tmpmat, &e_plus, &rtot_T);
+  LALDR_Multiply33Matrix(&e_plus_E, &rtot, &tmpmat);
 
-  LALDR_Transpose33Matrix(rtot_T, rtot);
-  LALDR_Multiply33Matrix(tmpmat, e_cros, rtot_T);
-  LALDR_Multiply33Matrix(e_cros_E, rtot, tmpmat);
+  LALDR_Transpose33Matrix(&rtot_T, &rtot);
+  LALDR_Multiply33Matrix(&tmpmat, &e_cros, &rtot_T);
+  LALDR_Multiply33Matrix(&e_cros_E, &rtot, &tmpmat);
 
   /*
    * Then, F_plus = det_response &. e_plus_E,
@@ -858,8 +861,8 @@ LALComputeDetAMResponse( LALStatus             *status,
     }
 #endif  
 
-  pResponse->plus  = (REAL4)LALDR_DotProd33Matrix(response, e_plus_E);
-  pResponse->cross = (REAL4)LALDR_DotProd33Matrix(response, e_cros_E);
+  pResponse->plus  = (REAL4)LALDR_DotProd33Matrix(&response, &e_plus_E);
+  pResponse->cross = (REAL4)LALDR_DotProd33Matrix(&response, &e_cros_E);
   /* FIXME: scalar response not implemented, yet.  Will have to
      read Waggoner's paper to do this. */
   pResponse->scalar = 0.;

@@ -908,7 +908,7 @@ int main(int argc, char *argv[])
   frdet.xArmAltitudeRadians    = 0.;
   frdet.yArmAltitudeRadians    = 0.;
   frdet.xArmAzimuthRadians     = deg_to_rad(90.);
-  frdet.yArmAzimuthRadians     = deg_to_rad(180.);
+  frdet.yArmAzimuthRadians     = deg_to_rad(0.);
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
