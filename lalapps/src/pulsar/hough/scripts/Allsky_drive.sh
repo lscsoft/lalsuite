@@ -40,12 +40,14 @@ echo job $1 running as process $process owned by $iam on `hostname`
 
 # choose detector
 # L is L1 and H is H1
-#det=L1
-det=H1
+det=L1
+#det=H1
 #det=H2
 
-mkdir -p $workdir/$det
-sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Calv5DQ30MinSFTs
+
+sftdir=/scratch/tmp/badkri/${det}sfts
+#sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Calv5DQ30MinSFTs
+
 # the detector option in the hough driver is a number
 # 2 is L1 and 3 is H1 or H2
 if [ $det = L1 ]; then
@@ -58,21 +60,29 @@ if [ $det = H2 ]; then
     detnum=3
 fi
 
+# temporary scratch directory where we work in
+tempoutdir=/scratch/tmp/$iam/$1.run
+
 # set a trap so if the job ends some cleanup is done
-trap "/bin/rm -rf /scratch/tmp/$iam/$1.run; exit 0" 0 1 2 9 15
+trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 
 # make the temporary directory where we work 
-mkdir -p /scratch/tmp/$iam/$1.run
-cd /scratch/tmp/$iam/$1.run
+mkdir -p $tempoutdir
+
+# make the temporary output directory
+mkdir -p $tempoutdir/$det
+
+# change to temporary working dir
+cd $tempoutdir
 
 # -----------------------------------
 # copy files from some central place
 # -----------------------------------
 
-cp -f $workdir/sun00-04.dat .
-cp -f $workdir/earth00-04.dat .
-cp -f $workdir/DriveHough_v3 .
-cp -f $workdir/skypatchfile .
+rsync -a $workdir/sun00-04.dat .
+rsync -a $workdir/earth00-04.dat .
+rsync -a $workdir/DriveHough_v3 .
+rsync -a $workdir/skypatchfile .
 echo finished copying stuff
 
 # choose start of freq band to be analyzed
@@ -82,7 +92,14 @@ startfreq=200.0
 freq=`add $1 $startfreq` 
 echo frequency analysed is 1Hz band starting from $freq
 
-./DriveHough_v3 -d 0 -i ${detnum} -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $workdir/$det -B freq_$1_ -P ./skypatchfile -f $freq -b 1.0
+# now run the driver
+./DriveHough_v3 -d 0 -i ${detnum} -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $tempoutdir/$det -B freq_${freq}_ -P ./skypatchfile -f $freq -b 1.0
 
 echo finished running driver
+
+# now copy the results to the home directory
+mkdir -p $workdir/$det
+rsync -a $tempoutdir/$det $workdir
+
+echo done!  
 
