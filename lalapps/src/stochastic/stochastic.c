@@ -1896,8 +1896,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long(argc, argv, \
-        "ht:T:L:l:A:a:f:F:w:k:p:P:K:q:Q:i:I:y:Y:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v", \
-        long_options, &option_index);
+        "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
+        "A:B:C:D:E:F:G:H:IJ:K:L:", long_options, &option_index);
 
     if (c == -1)
     {
