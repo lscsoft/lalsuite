@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALTestDetResponse0CV">
    $Id$
-   </lalVerbatim
+   </lalVerbatim>
 */
 
 /*
@@ -41,6 +41,8 @@ LALComputeDetAMResponse()
 #include <lal/DetectorSite.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
+
+#include <lal/PrintFTSeries.h>
 
 NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
@@ -196,8 +198,8 @@ int main(int argc, char *argv[])
     
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
-  time_info.deltaT               = 20.5;
-  time_info.nSample              = 13;
+  time_info.deltaT               = 64;
+  time_info.nSample              = 4096;
 
   LALComputeDetAMResponseSeries(&status,
                                 &am_response_series,
@@ -211,7 +213,7 @@ int main(int argc, char *argv[])
               __LINE__, LALTESTDETRESPONSE0C);
       return status.statusCode;
     }
-  
+
   if (lalDebugLevel > 0)
     {
       printf("Done computing AM response vectors\n");
@@ -222,6 +224,13 @@ int main(int argc, char *argv[])
              am_response_series.pCross->data->length);
       printf("am_response_series.pScalar->data->length = %d\n",
              am_response_series.pScalar->data->length);
+
+      printf("TimeSeries data written to files plus_series.txt, ");
+      printf("cross_series.txt, and scalar_series.txt\n");
+
+      LALSPrintTimeSeries(am_response_series.pPlus, "plus_series.txt");
+      LALSPrintTimeSeries(am_response_series.pCross, "cross_series.txt");
+      LALSPrintTimeSeries(am_response_series.pScalar, "scalar_series.txt");
     }
 
   if (lalDebugLevel >= 8)
