@@ -769,8 +769,8 @@ int main( int argc, char *argv[] ){
 	rewind(fp);
 
 	gps = cc = (int*)malloc(n*sizeof(int));
-	tH = dd = (int*)malloc(n*sizeof(int));
-	tL = ee = (int*)malloc(n*sizeof(int));
+	tL = dd = (int*)malloc(n*sizeof(int));
+	tH = ee = (int*)malloc(n*sizeof(int));
 	tauHL = ff = (int*)malloc(n*sizeof(int));
 	fHp = gg = (float*)malloc(n*sizeof(float));
 	fHx = hh = (float*)malloc(n*sizeof(float));
@@ -808,6 +808,8 @@ int main( int argc, char *argv[] ){
 	/*create the corresponding simburst table */
 	for(x=0;x<n;x++)
 	  {
+	    this_mdcsim_burst->geocent_peak_time.gpsSeconds=gps[x];/* wrong value*/
+	    this_mdcsim_burst->geocent_peak_time.gpsNanoSeconds=0;/* wrong value*/
 	    this_mdcsim_burst->h_peak_time.gpsSeconds=gps[x];
 	    this_mdcsim_burst->h_peak_time.gpsNanoSeconds=tH[x];
 	    LAL_CALL( LALGPStoFloat( &status, &site_time, 
