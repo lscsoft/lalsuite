@@ -114,6 +114,8 @@ static SnglBurstTable *TFTileToBurstEvent(
 )
 {
 	SnglBurstTable *event = LALMalloc(sizeof(*event));
+	if(!event)
+		return(NULL);
 
 	event->next = NULL;
 	strncpy(event->ifo, params->channelName, 2);
@@ -149,7 +151,8 @@ static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **a
 	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
 		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
-		addpoint = &(*addpoint)->next;
+		if(*addpoint)
+			addpoint = &(*addpoint)->next;
 	}
 
 	return(addpoint);
