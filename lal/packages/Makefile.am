@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 
 SUBDIRS = std support sample hello factories vectorops utilities date tdfilter \
-          window fft timefreq stochastic inspiral framedata comm findchirp \
-          burstsearch tracksearch
+          window fft timefreq clremoval stochastic inspiral framedata comm     \
+          findchirp burstsearch tracksearch
 
 EXTRA_DIST = \
         $(srcdir)/templates/Makefile.am.example \

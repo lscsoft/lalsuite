@@ -154,6 +154,11 @@ AC_OUTPUT( Makefile                               \
            packages/timefreq/include/Makefile     \
            packages/timefreq/src/Makefile         \
            packages/timefreq/test/Makefile        \
+           packages/clremoval/Makefile            \
+           packages/clremoval/doc/Makefile        \
+           packages/clremoval/include/Makefile    \
+           packages/clremoval/src/Makefile        \
+           packages/clremoval/test/Makefile       \
            packages/stochastic/Makefile           \
            packages/stochastic/doc/Makefile       \
            packages/stochastic/include/Makefile   \
