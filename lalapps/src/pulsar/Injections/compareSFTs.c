@@ -43,11 +43,12 @@ RCSID ("$Id");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define mymax(a,b) ( (a>b) ? a:b )
 /* local prototypes */
 /* Prototypes for the functions defined in this file */
 void initUserVars (LALStatus *stat);
-REAL4 mymax (REAL4 x, REAL4 y);
-void compare_SFTs (const SFTtype *sft1, const SFTtype *sft2);
+REAL4 getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2);
+REAL4 getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2);
 void scalarProductSFT (LALStatus *stat, REAL4 *scalar, const SFTtype *sft1, const SFTtype *sft2);
 void scalarProductSFTVector (LALStatus *stat, REAL4 *scalar, const SFTVector *sftvect1, const SFTVector *sftvect2);
 void subtractSFTVectors (LALStatus *stat, SFTVector **ret, const SFTVector *sftvect1, const SFTVector *sftvect2);
@@ -95,50 +96,72 @@ main(int argc, char *argv[])
   LAL_CALL (LALReadSFTfiles (&status, &SFTs1, 0, 0, 0, uvar_sftBname1), &status);
   LAL_CALL (LALReadSFTfiles (&status, &SFTs2, 0, 0, 0, uvar_sftBname2), &status);
 
+  /* ---------- do some sanity checks of consistency of SFTs ----------*/
   if (SFTs1->length != SFTs2->length) {
     LALPrintError ("Warning: number of SFTs differ for SFTbname1 and SFTbname2!\n");
+    exit(1);
   }
-
-#if 0 
-  /* OBSOLETE STUFF */
-  printf ("\n******************** OLD METHOD ********************\n");
-
-  printf ("\nCompareSFTs: Legend: 'max' := maxERR / max, 'mean' := meanERR / mean \n");
-  for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
+  for (i=0; i < SFTs1->length; i++)
     {
-      printf ("i=%02d: ", i);
-      compare_SFTs ( &(SFTs1->data[i]), &(SFTs2->data[i]) );
-    }
-  printf ("\n******************** NEW METHOD ********************\n");
-#endif
+      REAL8 Tdiff;
+      SFTtype *sft1, *sft2;
+      sft1 = &(SFTs1->data[i]);
+      sft2 = &(SFTs2->data[i]);
 
+      if (sft1->data->length != sft2->data->length) 
+	{
+	  LALPrintError ("\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length);
+	  exit(1);
+	}
+      LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
+      if ( Tdiff != 0.0 ) 
+	LALPrintError ("WARNING SFT %d: epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", i,
+		       sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
+      
+      if ( sft1->f0 != sft2->f0)
+	{
+	  LALPrintError ("ERROR SFT %d: fmin differ: %fHz vs %fHz\n", i, sft1->f0, sft2->f0);
+	  exit(1);
+	}
 
+      if ( sft1->deltaF != sft2->deltaF )
+	{
+	  LALPrintError ("ERROR SFT %d: deltaF differs: %fHz vs %fHz\n", i, sft1->deltaF, sft2->deltaF);
+	  exit(1);
+	}
+    } /* for i < numSFTs */
+  
+  /*---------- now do some actual comparisons ----------*/
   LAL_CALL (subtractSFTVectors (&status, &diffs, SFTs1, SFTs2), &status);
 
   if ( uvar_verbose)
     {
-      for (i=0; i < mymax(SFTs1->length, SFTs2->length); i++)
+      for (i=0; i < SFTs1->length; i++)
 	{
-	  REAL4 d1, d2, d3;
+	  SFTtype *sft1 = &(SFTs1->data[i]);
+	  SFTtype *sft2 = &(SFTs2->data[i]);
+	  
+	  REAL4 d1, d2, d3, d4;
 	  REAL4 scalar, norm1, norm2, normdiff;
 	  printf ("i=%02d: ", i);
-	  LAL_CALL( scalarProductSFT(&status, &norm1, &(SFTs1->data[i]), &(SFTs1->data[i]) ), &status);
+	  LAL_CALL( scalarProductSFT(&status, &norm1, sft1, sft1 ), &status);
 	  norm1 = sqrt(norm1);
-	  LAL_CALL( scalarProductSFT(&status, &norm2, &(SFTs2->data[i]), &(SFTs2->data[i]) ), &status);
+	  LAL_CALL( scalarProductSFT(&status, &norm2, sft2, sft2 ), &status);
 	  norm2 = sqrt(norm2);
-	  LAL_CALL( scalarProductSFT(&status, &scalar, &(SFTs1->data[i]), &(SFTs2->data[i]) ), &status);
+	  LAL_CALL( scalarProductSFT(&status, &scalar, sft1, sft2 ), &status);
 	  
 	  LAL_CALL( scalarProductSFT(&status, &normdiff, &(diffs->data[i]), &(diffs->data[i]) ), &status);
 	  
 	  d1 = (norm1 - norm2)/norm1;
 	  d2 = 1.0 - scalar / (norm1*norm2);
 	  d3 = normdiff / (norm1*norm1 + norm2*norm2 );
-	  
-	  printf (" (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2)) = %10.3e\n", d1, d2, d3);
+	  d4 = getMaxErrSFT (sft1, sft2);
+	  printf (" (|x|-|y|)/|x| = %10.3e, 1 - x.y/(|x| |y|) = %10.3e, |x - y|^2/(|x|^2+|y|^2)) = %10.3e, maxErr =%10.3e\n", 
+		  d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
 
-  /* COMBINED measures */
+  /* ---------- COMBINED measures ---------- */
   {
     REAL4 ret;
     REAL8 norm1, norm2, normdiff, scalar;
@@ -205,88 +228,49 @@ initUserVars (LALStatus *stat)
 
 } /* initUserVars() */
 
-
-REAL4 mymax (REAL4 x, REAL4 y)
+/* for two SFTs: get maximal value of |X_k - Y_k|^2 / max(|X_k|^2,|Y_k|^2) */
+REAL4 
+getMaxErrSFT (const SFTtype *sft1, const SFTtype *sft2)
 {
-  return (x > y ? x : y);
-}
-/* little debug-function: compare two sft's and print relative errors */
-void
-compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
-{
-  static LALStatus status;
   UINT4 i;
-  REAL4 errpow= 0, errph = 0;
-  REAL4 meanerr = 0, meanph = 0;
-  REAL4 re1, re2, im1, im2, pow1, pow2, phase1, phase2;
-  REAL8 Tdiff, tmp;
-  INT4 ind_pow = 0, ind_phase = 0;
-  REAL4 mean = 0, sftmax=0;
+  REAL8 maxDiff, maxAmpl;
+  REAL4 maxErr;
 
-  if (sft1->data->length != sft2->data->length) 
-    {
-      LALPrintError ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->data->length, sft2->data->length);
-      return;
-    }
-  LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
-  if ( Tdiff != 0.0 ) 
-    LALPrintError ("epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", 
-	    sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
-
-  if ( sft1->f0 != sft2->f0)
-    LALPrintError ("fmin differ: %fHz vs %fHz\n", sft1->f0, sft2->f0);
-
-  if ( sft1->deltaF != sft2->deltaF )
-    LALPrintError ("deltaF differs: %fHz vs %fHz\n", sft1->deltaF, sft2->deltaF);
-
+  maxDiff = 0;
+  maxAmpl = 0;
   for (i=0; i < sft1->data->length; i++)
     {
+      REAL8 diff, A1, A2, Ampl;
+      REAL8 re1, re2, im1, im2;
       re1 = sft1->data->data[i].re;
       im1 = sft1->data->data[i].im;
       re2 = sft2->data->data[i].re;
       im2 = sft2->data->data[i].im;
 
-      pow1 = sqrt(re1*re1 + im1*im1);
-      pow2 = sqrt(re2*re2 + im2*im2);
+      diff = (re1 - re2)*(re1 - re2) + (im1 - im2)*(im1 - im2);
+      A1 = re1*re1 + im1*im1;
+      A2 = re2*re2 + im2*im2;
+      Ampl = mymax(A1, A2);
 
-      mean += pow1;
-      sftmax = mymax (pow1, sftmax);
-
-      phase1 = atan2 (im1, re1);
-      phase2 = atan2 (im2, re2);
-      /* error in power */
-      tmp = fabs(pow1-pow2);
-      meanerr += tmp;
-      if (tmp > errpow) 
-	{
-	  errpow = tmp;
-	  ind_pow = i;
-	}
-      /* error in phase */
-      tmp = fabs(phase1 - phase2);
-      if (tmp > LAL_PI)
-	tmp = LAL_TWOPI - tmp;
-
-      meanph += tmp;
-      if (tmp > errph)
-	{
-	  errph = tmp;
-	  ind_phase = i;
-	}
+      maxDiff = mymax(maxDiff, diff);
+      maxAmpl = mymax(maxAmpl, Ampl);
 
     } /* for i */
 
-  mean /= sft1->data->length;
-  meanerr /= sft1->data->length;
-  meanph /= sft1->data->length;
+  maxErr = maxDiff / maxAmpl;
 
-  printf ("POWER: max = %e @ %6.2fHz  mean = %e, PHASE: max = %e @ %6.2fHz, mean = %e \n", 
-	  errpow/sftmax, sft1->f0 + ind_pow * sft1->deltaF, meanerr/mean, 
-	  (REAL4)(errph), sft2->f0 + ind_phase * sft1->deltaF, (REAL4)(meanph));
+  return(maxErr);
 
-  return;
+} /* getMaxErrSFT() */
 
-} /* compare_SFTs() */
+REAL4
+getMaxErrSFTVector (const SFTVector *sftvect1, const SFTVector *sftvect2)
+{
+  UINT4 i;
+  
+
+} /* getMaxErrSFTVector() */
+
 
 /*--------------------------------------------------
  * implements a straightforward L2 scalar product of 
