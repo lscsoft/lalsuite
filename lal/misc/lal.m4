@@ -7,7 +7,7 @@ AC_DEFUN([LAL_WITH_GCC_FLAGS],
         [  --with-gcc-flags        turn on strict gcc warning flags],
         [ if test -n "${with_gcc_flags}"
           then
-            lal_gcc_flags="-g3 -O4 -ansi -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -D__NO_STRING_INLINES"
+            lal_gcc_flags="-g3 -O4 -ansi -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Waggregate-return -fno-common -Wnested-externs -D__NO_STRING_INLINES -Wno-long-long"
           else
             lal_gcc_flags=""
           fi

@@ -206,6 +206,8 @@ LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LAL_ENABLE_NIGHTLY
 
+AC_PREFIX_DEFAULT([/opt/lscsoft/lal])
+
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
 lal_configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
