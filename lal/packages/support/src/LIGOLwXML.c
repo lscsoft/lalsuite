@@ -522,6 +522,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->source,
               tablePtr.simInspiralTable->mass1,
               tablePtr.simInspiralTable->mass2,
+              tablePtr.simInspiralTable->mchirp,
               tablePtr.simInspiralTable->eta,
               tablePtr.simInspiralTable->distance,
               tablePtr.simInspiralTable->longitude,
@@ -549,8 +550,6 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simInspiralTable->phi0,
               tablePtr.simInspiralTable->f_lower,
               tablePtr.simInspiralTable->f_final, 
-              /*here, I haven't used f_final as in sngl_inspiral as requested by the iul group */
-              tablePtr.simInspiralTable->mchirp,
               tablePtr.simInspiralTable->eff_dist_h,
               tablePtr.simInspiralTable->eff_dist_l,
               tablePtr.simInspiralTable->eff_dist_g,
