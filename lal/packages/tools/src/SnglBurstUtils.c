@@ -37,8 +37,11 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \vspace{0.1in}
 \input{SnglBurstUtilsCP}
 \idx{LALSortSnglBurst()}
-\idx{LALCompareSnglBurstByMass()}
-\idx{LALCompareSnglBurstByTime()}
+\idx{XLALSortSnglBurst()}
+\idx{LALCompareSnglBurst()}
+\idx{XLALCompareSnglBurstByLowFreq()}
+\idx{XLALCompareSnglBurstByStartTime()}
+\idx{XLALCompareSnglBurstByStartTimeAndLowFreq()}
 
 \subsubsection*{Description}
 
@@ -60,9 +63,37 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 </lalLaTeX>
 #endif
 
-/* cluster events a and b, storing result in a */
 
-void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
+/*
+ * A few quickies for convenience.
+ */
+
+static INT8 start_time(const SnglBurstTable *x)
+{
+	return(XLALGPStoINT8(&x->start_time));
+}
+
+static INT8 end_time(const SnglBurstTable *x)
+{
+	return(start_time(x) + 1e9 * x->duration);
+}
+
+static REAL4 lo_freq(const SnglBurstTable *x)
+{
+	return(x->central_freq - x->bandwidth / 2);
+}
+
+static REAL4 hi_freq(const SnglBurstTable *x)
+{
+	return(x->central_freq + x->bandwidth / 2);
+}
+
+
+/*
+ * cluster events a and b, storing result in a
+ */
+
+static void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 {
 	REAL4 f_lo, f_hi;
 	INT8 ta_start, ta_end, tb_start, tb_end;
@@ -70,12 +101,12 @@ void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 	/* the cluster's frequency band is the smallest band containing the
 	 * bands of the two original events */
 
-	f_lo = a->central_freq - a->bandwidth / 2;
-	f_hi = a->central_freq + a->bandwidth / 2;
-	if(b->central_freq - b->bandwidth / 2 < f_lo)
-		f_lo = b->central_freq - b->bandwidth / 2;
-	if(b->central_freq + b->bandwidth / 2 > f_hi)
-		f_hi = b->central_freq + b->bandwidth / 2;
+	f_lo = lo_freq(a);
+	f_hi = hi_freq(a);
+	if(lo_freq(b) < f_lo)
+		f_lo = lo_freq(b);
+	if(hi_freq(b) > f_hi)
+		f_hi = hi_freq(b);
 
 	a->central_freq = (f_hi + f_lo) / 2;
 	a->bandwidth = f_hi - f_lo;
@@ -83,18 +114,17 @@ void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 	/* the cluster's time interval is the smallest interval containing the
 	 * intervals of the two original events */
 
-	ta_start = XLALGPStoINT8(&a->start_time);
-	tb_start = XLALGPStoINT8(&b->start_time);
-	ta_end = ta_start + 1e9 * a->duration;
-	tb_end = tb_start + 1e9 * b->duration;
+	ta_start = start_time(a);
+	tb_start = start_time(b);
+	ta_end = end_time(a);
+	tb_end = end_time(b);
 	if(tb_start < ta_start) {
 		a->start_time = b->start_time;
 		ta_start = tb_start;
 	}
 	if(tb_end > ta_end)
-		a->duration = (tb_end - ta_start) / 1e9;
-	else
-		a->duration = (ta_end - ta_start) / 1e9;
+		ta_end = tb_end;
+	a->duration = (ta_end - ta_start) / 1e9;
 
 	/* the amplitude, SNR, confidence, and peak time of the cluster are
 	 * those of the loudest of the two events */
@@ -111,18 +141,15 @@ static int ModifiedforClustering(SnglBurstTable *prevEvent, SnglBurstTable *this
 {
 	REAL4 fa1, fa2, fb1, fb2;
 	REAL8 deltaT;
-	REAL8 epsilon = 1e-8;	/* seconds */
+	const REAL8 epsilon = 1e-8;	/* seconds */
 
-	/* compute difference in peak times */
 	deltaT = XLALDeltaFloatGPS(&prevEvent->peak_time, &thisEvent->peak_time);
 
-	/* compute the start and stop frequencies of the prevEvent */
-	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
-	fa2 = fa1 + prevEvent->bandwidth;
+	fa1 = lo_freq(prevEvent);
+	fa2 = hi_freq(prevEvent);
 
-	/* compute the start and stop frequencies of the thisEvent */
-	fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
-	fb2 = fb1 + thisEvent->bandwidth;
+	fb1 = lo_freq(thisEvent);
+	fb2 = hi_freq(thisEvent);
 
 	if((fabs(deltaT) < epsilon) &&
 	   ( (fb1 >= fa1 && fb1 <= fa2) ||
@@ -136,136 +163,116 @@ static int ModifiedforClustering(SnglBurstTable *prevEvent, SnglBurstTable *this
 }
 
 
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+XLALSortSnglBurst(
+	SnglBurstTable **head,
+	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+)
+/* </lalVerbatim> */
+{
+	INT4 i;
+	INT4 length;
+	SnglBurstTable *event;
+	SnglBurstTable **array;
+
+	/* empty list --> no-op */
+	if(!head || !*head)
+		return;
+
+	/* count the number of events in the list */
+	for(length = 0, event = *head; event; event = event->next)
+		length++;
+
+	/* construct an array of pointers into the list */
+	array = LALCalloc(length, sizeof(*array));
+	for(i = 0, event = *head; event; event = event->next)
+		array[i++] = event;
+
+	/* sort the array using the specified function */
+	qsort(array, length, sizeof(*array), (int(*)(const void *, const void *)) comparefunc);
+
+	/* re-link the list according to the sorted array */
+	for(i = 0; i < length; i++, head = &(*head)->next)
+		*head = array[i];
+	*head = NULL;
+
+	/* free the array */
+	LALFree(array);
+}
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALSortSnglBurst(
-    LALStatus          *status,
-    SnglBurstTable **eventHead,
-    int(*comparfunc)    (const void *, const void *)
-    )
+	LALStatus *status,
+	SnglBurstTable **head,
+	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+)
 /* </lalVerbatim> */
 {
-  INT4                  i;
-  INT4                  numEvents = 0;
-  SnglBurstTable    *thisEvent = NULL;
-  SnglBurstTable   **eventHandle = NULL;
-
-  INITSTATUS( status, "LALSortSnglBurst", SNGLBURSTUTILSC );
-
-  /* count the number of events in the linked list */
-  for ( thisEvent = *eventHead; thisEvent; thisEvent = thisEvent->next )
-  {
-    ++numEvents;
-  }
-  if ( ! numEvents )
-  {
-    LALWarning( status, "No events in list to sort" );
-    RETURN( status );
-  }
-
-  /* allocate memory for an array of pts to sort and populate array */
-  eventHandle = (SnglBurstTable **) 
-    LALCalloc( numEvents, sizeof(SnglBurstTable *) );
-  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
-      ++i, thisEvent = thisEvent->next )
-  {
-    eventHandle[i] = thisEvent;
-  }
-
-  /* qsort the array using the specified function */
-  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
-  
-  /* re-link the linked list in the right order */
-  thisEvent = *eventHead = eventHandle[0];
-  for ( i = 1; i < numEvents; ++i )
-  {
-    thisEvent = thisEvent->next = eventHandle[i];
-  }
-  thisEvent->next = NULL;
-
-  /* free the internal memory */
-  LALFree( eventHandle );
-
-  RETURN( status );
-}
-
-
-
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
-int
-LALCompareSnglBurstByTime(
-    const void *a,
-    const void *b
-    )
-/* </lalVerbatim> */
-{
-  LALStatus     status;
-  SnglBurstTable *aPtr = *((SnglBurstTable **)a);
-  SnglBurstTable *bPtr = *((SnglBurstTable **)b);
-  INT8 ta, tb;
-
-  memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->start_time) );
-
-  if ( ta > tb )
-  {
-    return 1;
-  }
-  else if ( ta < tb )
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
+	INITSTATUS(status, "LALSortSnglBurst", SNGLBURSTUTILSC);
+	XLALSortSnglBurst(head, comparefunc);
+	RETURN(status);
 }
 
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
-LALCompareSnglBurstByTimeAndFreq(
-    const void *a,
-    const void *b
-    )
+XLALCompareSnglBurstByStartTime(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+)
 /* </lalVerbatim> */
 {
-  LALStatus     status;
-  SnglBurstTable *aPtr = *((SnglBurstTable **)a);
-  SnglBurstTable *bPtr = *((SnglBurstTable **)b);
-  INT8 ta, tb;
-  REAL4 flowa, flowb;
+	INT8 ta, tb;
 
-  memset( &status, 0, sizeof(LALStatus) );
-  LALGPStoINT8( &status, &ta, &(aPtr->start_time) );
-  LALGPStoINT8( &status, &tb, &(bPtr->start_time) );
+	ta = start_time(*a);
+	tb = start_time(*b);
 
-  flowa = aPtr->central_freq - 0.5 * aPtr->bandwidth;
-  flowb = bPtr->central_freq - 0.5 * bPtr->bandwidth;
+	if(ta > tb)
+		return(1);
+	else if(ta < tb)
+		return(-1);
+	return(0);
+}
 
-  if ( ta > tb )
-  {
-    return 1;
-  }
-  else if ( ta == tb && flowa > flowb )
-  {
-    return 1;
-  }
-  else if ( ta < tb )
-  {
-    return -1;
-  }
-  else if ( ta == tb && flowa < flowb )
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstByLowFreq(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+)
+/* </lalVerbatim> */
+{
+	REAL4 flowa, flowb;
+
+	flowa = lo_freq(*a);
+	flowb = lo_freq(*b);
+
+	if(flowa > flowb)
+		return(1);
+	else if(flowa < flowb)
+		return(-1);
+	return(0);
+}
+
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurstByStartTimeAndLowFreq(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+)
+/* </lalVerbatim> */
+{
+	int result;
+
+	result = XLALCompareSnglBurstByStartTime(a, b);
+	if(result)
+		return(result);
+	return(XLALCompareSnglBurstByLowFreq(a, b));
 }
 
 

@@ -388,23 +388,35 @@ LALPopulateSimInspiralSiteInfo(
 
 
 void
+XLALSortSnglBurst(
+	SnglBurstTable **head,
+	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+);
+
+void
 LALSortSnglBurst(
-    LALStatus          *status,
-    SnglBurstTable **eventHead,
-    int(*comparfunc)    (const void *, const void *)
-    );
+	LALStatus *status,
+	SnglBurstTable **head,
+	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+);
 
 int
-LALCompareSnglBurstByTime(
-    const void *a,
-    const void *b
-    );
+XLALCompareSnglBurstByStartTime(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+);
 
 int
-LALCompareSnglBurstByTimeAndFreq(
-    const void *a,
-    const void *b
-    );
+XLALCompareSnglBurstByLowFreq(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+);
+
+int
+XLALCompareSnglBurstByStartTimeAndLowFreq(
+	const SnglBurstTable **a,
+	const SnglBurstTable **b
+);
 
 void
 LALCompareSnglBurst(
