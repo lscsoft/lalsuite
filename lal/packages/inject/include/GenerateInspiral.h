@@ -40,13 +40,9 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 /* <lalErrTable> */
 #define GENERATEINSPIRALH_ENORM 	0
 #define GENERATEINSPIRALH_ENULL  	1
-#define GENERATEINSPIRALH_EAPPROX       2
 
 #define GENERATEINSPIRALH_MSGENORM 	"Normal exit"
 #define GENERATEINSPIRALH_MSGENULL  	"Null pointer"
-#define GENERATEINSPIRALH_MSGEAPPROX    "non valid Approximant; must be TaylorT1, TaylorT2 \
-                                         TaylorT3, EOB, PadeT1 or GeneratePPN; case dependant."
-
 /* </lalErrTable> */
 
 
@@ -122,6 +118,8 @@ void LALGenerateInspiralPopulateInspiral(LALStatus             *status,
 
 void LALGenerateInspiralPopulateInspiralSpin(LALStatus             *status,
 					     InspiralTemplate      *inspiralParams);
+
+
 #ifdef  __cplusplus
 #pragma {
 }
