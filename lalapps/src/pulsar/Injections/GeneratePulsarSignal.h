@@ -76,7 +76,7 @@ typedef struct {
   REAL4 aPlus, aCross;    /* polarization amplitudes at TRef */
   REAL8 phi0;             /* initial phase (radians) at TRef */
   REAL8 f0;               /* initial frequency (Hz) at TRef */
-  REAL8Vector *f;         /* f0-normalized Taylor parameters at TRef */
+  REAL8Vector *spindown;  /* frequency spindowns at TRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
 typedef struct {
@@ -106,9 +106,10 @@ typedef struct {
 } PulsarSignalParams;
 
 /* we need a type for a vector of timestamps */
+/* FIXME: move type into LAL */
 typedef struct {
-  UINT4 length;
-  LIGOTimeGPS *data;
+  UINT4 	length;
+  LIGOTimeGPS 	*data;
 } LIGOTimeGPSVector;
 
 
@@ -123,14 +124,17 @@ typedef struct {
  * } 
  * COMPLEX8FrequencySeries; 
  */
-typedef COMPLEX8FrequencySeries SFTtype;	/* for the lazy */
 
-/* we need a "Vector"-type of SFTs  */
+/* we need a "Vector"-type of frequency-series  */
+/* FIXME: move type into LAL */
 typedef struct {
-  UINT4 	numSFTs;	/* number of SFTs */
-  SFTtype 	*SFTlist;	/* array of SFTs */
-} SFTVector;
+  UINT4 			length;		/* number of frequency-series */
+  COMPLEX8FrequencySeries 	*data;		/* array of frequency-series */
+} COMPLEX8FrequencySeriesVector;
 
+/* for the lazy */
+typedef COMPLEX8FrequencySeries 	SFTtype;	
+typedef COMPLEX8FrequencySeriesVector 	SFTVector;
 
 /* this is the current SFT-header in the file-format for storing SFTs
   struct headertag {
@@ -143,7 +147,7 @@ typedef struct {
   } header;
 */
 
-
+/* parameter-struct for LALSignalToSFTs() */
 typedef struct {
   REAL8 Tsft;				/* length of an SFT in seconds */
   LIGOTimeGPSVector *timestamps;	/* timestamps to use for SFT's (can be NULL) */
@@ -157,6 +161,7 @@ void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, const Pu
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
 void write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
+void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 void LALPrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname);
 void PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname);
 void ConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
