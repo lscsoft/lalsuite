@@ -923,8 +923,8 @@ EPFinalizeSearch(
   }
   params = (EPSearchParams *) *searchParams;
 
-  /* destroy memory for conditioned segments */
-  LALDestroyEPDataSegmentVector(status->statusPtr, &(params->epSegVec));
+  /* destroy memory for conditioned segments [ Now moved inside the power code]*/
+  /* LALDestroyEPDataSegmentVector(status->statusPtr, &(params->epSegVec));*/
   
   if ( params->searchMaster )
   {
