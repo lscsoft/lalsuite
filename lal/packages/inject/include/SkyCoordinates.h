@@ -21,18 +21,31 @@ Most of these routines are discussed in Sec.~5.1
 of~\cite{Lang_K:1998}; we reproduce here some of the essential
 elements of this discussion.
 
+%\begin{wrapfigure}{r}{0.55\textwidth}
+\begin{figure}[bp]
+\begin{center}
+\resizebox{0.5\textwidth}{!}{\includegraphics{inject_lat_long}} \\
+\parbox{0.5\textwidth}{\caption{\label{fig:lat-long} Definition of the
+latitude $\phi$ and longitude $\lambda$ of a point $P$, in an
+arbitrary coordinate system specified by an origin $O$ and axes $z$
+and $x$, as shown.  These routines generally assume a fixed $O$, so
+the distance coordinate $r$ is not transformed.  (Caution: The
+characters $\phi$ and $\lambda$ do not seem to print in hardcopy.)}}
+\end{center}
+%\end{wrapfigure}
+\end{figure}
 A general spatial coordinate system is defined by six parameters:
 three positions specifying the location of the origin, and three
 angles specifying the orientations of the coordinate axes.  In
 astronomy it is normally assumed that the centre of the coordinate
 system is the centre of the Earth (geocentric coordinates).  Once the
 origin has been specified, the orientation is fixed by defining one
-direction as the \emph{north pole} or $z$-axis (two degrees of
-freedom), and another orthogonal direction as the \emph{reference
-meridian} or $x$-axis (one degree of freedom).  A $y$-axis can also be
-defined such that $x$, $y$, and $z$ form an orthogonal right-handed
-coordinate system; however, in astronomy it is more conventional to
-use spherical coordinates, defined as follows:
+direction as the \emph{pole} or $z$-axis (two degrees of freedom), and
+another orthogonal direction as the \emph{reference meridian} or
+$x$-axis (one degree of freedom).  A $y$-axis can also be defined such
+that $x$, $y$, and $z$ form an orthogonal right-handed coordinate
+system; however, in astronomy it is more conventional to use spherical
+coordinates, defined as follows:
 
 For any given point, define a plane (called its meridian) containing
 both the $z$-axis and the point in question.  The \emph{longitude} is
@@ -50,29 +63,20 @@ typically given in the range $[-\pi/2,\pi/2]$~radians; a point with
 latitude $\pm\pi/2$~radians has arbitrary (undefined) longitude.
 Distance should always be positive.  This convention is shown in
 Fig.~\ref{fig:lat-long}.
-\begin{figure}
-\centerline{\resizebox{0.8\textwidth}{!}{%
-\includegraphics{inject_lat_long}}}
-\caption{\label{fig:lat-long} Definition of latitude $\beta$ and
-longitude $\lambda$ for a point $P$ in an arbitrary coordinate system.
-The point $O$ is the origin of the coordinate system, with $z$ and $x$
-axes as shown.  Both $\beta$ and $\lambda$ are drawn in the positive
-sense.  The distance $r$ to the point is not used by any of the
-routines under this header, since the origin of the coordinate system
-is taken to be fixed.}
-\end{figure}
 
 In the routines in this module, we do not perform transformations
 between coordinate systems having different origins.  By default, all
-coordinates are assumed to be \emph{geogentric} (having their origin
-at the centre of the Earth), unless otherwise specified.  Other common
-specifications for the coordinate origin are \emph{heliocentric}
+coordinates are assumed to be centred on the observer; however, one
+may also consider coordinate systems that are \emph{geogentric}
+(having their origin at the centre of the Earth), \emph{heliocentric}
 (origin at the centre of the Sun), \emph{barycentric} (origin at the
 centre of mass of the solar system), and \emph{Galactocentric} (origin
 at the centre of our Galaxy).  Since we ignore translations in the
 coordinate origin, distances remain unchanged, so these routines only
-consider transformations in latitude and longitude.  These are
-generically stored in the \verb@SkyPosition@ structure, defined below.
+consider transformations in latitude and longitude.  To put it another
+way, these routines transform \emph{directions} in space, not
+\emph{positions} in space.  These directions are generically stored in
+the \verb@SkyPosition@ structure, defined below.
 
 The coordinate systems that we consider are defined as follows:
 
@@ -95,6 +99,19 @@ Greenwich, UK.  Note that we adopt a longitude convention that is
 opposite to that in~\cite{Lang_K:1998}, in that our geographic
 longitudes increase \emph{eastward} like the rest of our longitudinal
 coordinates.
+
+Geographic latitude and longitude are often referred to simply as
+latitude and longitude, and are represented in~\cite{Lang_K:1998} by
+the symbols $\lambda$ and $\phi$, as in Fig.~\ref{fig:lat-long}.
+However, we emphasize once again that geodetic latitude and longitude
+as defined above refer to directions in space, not to locations on the
+Earth's surface.  This can lead to some confusion.  The
+\emph{geodetic} latitude and longitude of a point on the Earth's
+surface are the latitude and longitude of its vertical direction,
+while the \emph{geocentric} latitude and longitude of the point are
+the latitude and longitude of the line from the geometric centre of
+the Earth through that point.  These are not necessarily the same, due
+to the Earth's ellipticity.
 
 \paragraph{Equatorial coordinates:} The $z$-axis is defined as for
 geographic coordinates, above; the plane orthogonal to this passing
@@ -198,7 +215,7 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 			 SkyPosition *position );
 
 /* <lalLaTeX>
-%\newpage\input{TerrestrialCoordinatesC}
+\newpage\input{TerrestrialCoordinatesC}
 </lalLaTeX> */
 void
 LALGeographicToEquatorial( LALStatus   *stat,
@@ -212,13 +229,13 @@ LALEquatorialToGeographic( LALStatus   *stat,
 
 void
 LALGeographicToHorizon( LALStatus   *stat,
-			SkyPosition *position );
-  /* plus some site parameter */
+			SkyPosition *position,
+			SkyPosition *zenith );
 
 void
 LALHorizonToGeographic( LALStatus   *stat,
-			SkyPosition *position );
-  /* plus some site parameter */
+			SkyPosition *position,
+			SkyPosition *zenith );
 
 /* <lalLaTeX>
 %\newpage\input{SkyCoordinatesTestC}

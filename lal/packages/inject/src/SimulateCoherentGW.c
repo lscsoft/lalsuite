@@ -276,7 +276,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   gpsTime.gpsSeconds = output->epoch.gpsSeconds;
   gpsTime.gpsNanoSeconds = output->epoch.gpsNanoSeconds;
   for ( i = 0; i < (INT4)( in.length ); i++ ) {
-    LIGOTimeUnix unixTime; /* GPS time at current point */
+    LIGOTimeUnix unixTime; /* Unix time at current point */
     LALDate date;          /* LALDate time at current point */
     REAL8 lmst;            /* siderial time at current point (radians) */
 
