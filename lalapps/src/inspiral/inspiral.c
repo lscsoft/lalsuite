@@ -118,6 +118,7 @@ INT4  numChisqBins      = -1;           /* number of chisq bins         */
 REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
 INT4  eventCluster      = -1;           /* perform chirplen clustering  */
+Approximant approximant;                /* waveform approximant         */
 
 /* output parameters */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
@@ -753,6 +754,7 @@ int main( int argc, char *argv[] )
   fcInitParams->numChisqBins   = numChisqBins;
   fcInitParams->createRhosqVec = writeRhosq;
   fcInitParams->ovrlap         = ovrlap;
+  fcInitParams->approximant    = approximant;
 
   /* create the data segment vector */
   memset( &spec, 0, sizeof(REAL4FrequencySeries) );
@@ -864,9 +866,23 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( vrbflg ) fprintf( stdout, "findchirp conditioning data\n" );
-  LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
-      &status );
+  if ( approximant == TaylorF2 )
+  {
+    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for SP\n" );
+    LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
+        &status );
+  }
+  else if ( approximant == BCV )
+  {
+    if ( vrbflg ) fprintf( stdout, "findchirp conditioning data for BCV\n" );
+    LAL_CALL( LALFindChirpBCVData (&status, fcSegVec, dataSegVec, fcDataParams),
+        &status );
+  }
+  else
+  {
+    fprintf( stderr, "error: unknown waveform approximant for data\n" );
+    exit( 1 );
+  }
 
   /* compute the standard candle */
   {
@@ -913,9 +929,23 @@ int main( int argc, char *argv[] )
       tmpltCurrent = tmpltCurrent->next, inserted = 0 )
   {
     /*  generate template */
-    LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
-          tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
-    fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+    if ( approximant == TaylorF2 )
+    {
+      LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
+            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+    }
+    else if ( approximant == BCV )
+    {
+      LAL_CALL( LALFindChirpBCVTemplate( &status, fcFilterInput->fcTmplt, 
+            tmpltCurrent->tmpltPtr, fcTmpltParams ), &status );
+      fcFilterInput->tmplt = tmpltCurrent->tmpltPtr;
+    }
+    else
+    {
+      fprintf( stderr, "error: unknown waveform approximant for template\n" );
+      exit( 1 );
+    }
 
     /* loop over data segments */
     for ( i = 0; i < fcSegVec->length ; ++i )
@@ -952,8 +982,22 @@ int main( int argc, char *argv[] )
             fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
         fcFilterInput->segment = fcSegVec->data + i;
-        LAL_CALL( LALFindChirpFilterSegment( &status, 
-              &eventList, fcFilterInput, fcFilterParams ), &status );
+
+        if ( approximant == TaylorF2 )
+        {
+          LAL_CALL( LALFindChirpFilterSegment( &status, 
+                &eventList, fcFilterInput, fcFilterParams ), &status );
+        }
+        else if ( approximant == BCV )
+        {
+          LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+                &eventList, fcFilterInput, fcFilterParams ), &status );
+        }
+        else
+        {
+          fprintf( stderr, "error: unknown waveform approximant for filter\n" );
+          exit( 1 );
+        }
 
         if ( writeRhosq )
         {
@@ -993,9 +1037,11 @@ int main( int argc, char *argv[] )
       /*  test if filter returned any events */
       if ( eventList )
       {
-        if ( vrbflg ) fprintf( stdout, "segment %d rang template %e,%e\n",
+        if ( vrbflg ) fprintf( stdout, 
+            "segment %d rang template [m (%e,%e)] [psi (%e,%e)]\n",
             fcSegVec->data[i].number,
-            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
+            fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2,
+            fcFilterInput->tmplt->psi0, fcFilterInput->tmplt->psi3 );
 
         if ( tmpltCurrent->tmpltPtr->fine != NULL && inserted == 0 )
         {
@@ -1390,6 +1436,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --inverse-spec-length T      set length of inverse spectrum to T seconds\n"\
 "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
 "\n"\
+"  --approximant APPROX         set approximant of the waveform to APPROX\n"\
+"                                 (TaylorF2|BCV)\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
@@ -1444,6 +1492,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"stop-template",           required_argument, 0,                'n'},
     {"chisq-bins",              required_argument, 0,                'o'},
     {"calibration-cache",       required_argument, 0,                'p'},
+    {"approximant",             required_argument, 0,                'F'},
     {"snr-threshold",           required_argument, 0,                'q'},
     {"chisq-threshold",         required_argument, 0,                'r'},
     {"resample-filter",         required_argument, 0,                'R'},
@@ -1470,6 +1519,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   };
   int c;
   INT4 haveDynRange = 0;
+  INT4 haveApprox = 0;
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   LALStatus             status = blank_status;
 
@@ -1488,7 +1538,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:R:s:t:u:v:w:x:z:Z:", 
+        "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:F:q:r:R:s:t:u:v:w:x:z:Z:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1871,6 +1921,27 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         optarg_len = strlen( optarg ) + 1;
         calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
         memcpy( calCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'F':
+        if ( ! strcmp( "TaylorF2", optarg ) )
+        {
+          approximant = TaylorF2;
+        }
+        else if ( ! strcmp( "BCV", optarg ) )
+        {
+          approximant = BCV;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either TaylorF2 or BCV)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveApprox = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -2263,6 +2334,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( ! haveDynRange )
   {
     fprintf( stderr, "--dynamic-range-exponent must be specified\n" );
+    exit( 1 );
+  }
+  if ( ! haveApprox )
+  {
+    fprintf( stderr, "--approximant must be specified\n" );
     exit( 1 );
   }
 
