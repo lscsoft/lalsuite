@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
       int startat;
       
       /* Segment that the job should start with */
-      startat=(totalsegs*jobno)/(NODES-1);
+      startat=(totalsegs*jobno)/NODES;
       
       if (
 #if (SEGSPERJOB)
