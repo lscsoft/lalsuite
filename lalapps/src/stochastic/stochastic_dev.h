@@ -49,6 +49,7 @@ typedef struct tagPSDEstimatorParams {
 	INT4 filterLength;
 	INT4 numFMin;
 	AverageSpectrumParams *psdParams;
+  LIGOTimeGPS gpsStartTime;
 } PSDEstimatorParams;
 
 static void parseOptions(INT4 argc, CHAR *argv[]);

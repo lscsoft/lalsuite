@@ -177,8 +177,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 numFMax;
   LALWindowParams psdWindowParams;
   AverageSpectrumParams psdParams;
-  /*LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};*/
-
+ 
   /* response functions */
   COMPLEX8FrequencySeries *respTempOneA;
   COMPLEX8FrequencySeries *respTempOneB;
@@ -1009,7 +1008,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* set epoch */
     calInvPSDOne->epoch = segmentOneB->epoch;
-    calInvPSDTwo->epoch = segmentOneB->epoch;
+    calInvPSDTwo->epoch = segmentTwoB->epoch;
+    psdEstParams.gpsStartTime = segmentOneB->epoch;
+    psdEstParams.gpsStartTime = segmentTwoB->epoch;
 
     /* estimate psds */
     LAL_CALL(psdEstimator(&status, calInvPSDOne, psdInputOne, \
@@ -2110,63 +2111,70 @@ static void psdEstimator(LALStatus *status,
   INT4 i;
 
   /* psd data structures */
-  REAL4FrequencySeries psdTempA;
-  REAL4FrequencySeries psdTempC;
-  REAL4FrequencySeries psdA;
-  REAL4FrequencySeries psdC;
+  REAL4FrequencySeries *psdTempA;
+  REAL4FrequencySeries *psdTempC;
+  REAL4FrequencySeries *psdA;
+  REAL4FrequencySeries *psdC;
+
+  /* units */
+  LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* initialise status pointer */
   INITSTATUS( status, "psdEstimator", STOCHASTICDEVC );
   ATTATCHSTATUSPTR( status );
 
   /* allocate memory for psd data structures */
-  psdTempA.data = NULL;
-  psdTempC.data = NULL;
-  LALCreateVector(status->statusPtr, &(psdTempA.data), params.psdTempLength);
+  LALCreateREAL4FrequencySeries(status->statusPtr, &psdTempA, "psdTempA", \
+      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
   CHECKSTATUSPTR( status );
-  memset(psdTempA.data->data, 0, \
-      psdTempA.data->length * sizeof(*psdTempA.data->data));
-  LALCreateVector(status->statusPtr, &(psdTempC.data), params.psdTempLength);
+  LALCreateREAL4FrequencySeries(status->statusPtr, &psdTempC, "psdTempC", \
+      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
   CHECKSTATUSPTR( status );
-  memset(psdTempC.data->data, 0, \
-      psdTempC.data->length * sizeof(&psdTempC.data->data));
 
   /* allocate memory for reduced band psd data structures */
-  psdA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  psdC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  psdA.data->length = params.filterLength;
-  psdC.data->length = params.filterLength;
+  LALCreateREAL4FrequencySeries(status->statusPtr, &psdA, "psdA", \
+      params.gpsStartTime, 0, deltaF, psdUnits, params.filterLength);
+  CHECKSTATUSPTR( status );
+  LALCreateREAL4FrequencySeries(status->statusPtr, &psdC, "psdC", \
+      params.gpsStartTime, 0, deltaF, psdUnits, params.filterLength);
+  CHECKSTATUSPTR( status );
 
   /* compute uncalibrated PSDs */
-  LALREAL4AverageSpectrum(status->statusPtr, &psdTempA, input.segmentA, \
+  LALREAL4AverageSpectrum(status->statusPtr, psdTempA, input.segmentA, \
       params.psdParams);
   CHECKSTATUSPTR( status );
-  LALREAL4AverageSpectrum(status->statusPtr, &psdTempC, input.segmentC, \
+  LALREAL4AverageSpectrum(status->statusPtr, psdTempC, input.segmentC, \
       params.psdParams);
   CHECKSTATUSPTR( status );
 
   /* reduce to the optimal filter frequency range */
-  psdA.data->data = psdTempA.data->data + params.numFMin;
-  psdC.data->data = psdTempC.data->data + params.numFMin;
+  LALCutREAL4FrequencySeries(status->statusPtr, &psdA, psdTempA, \
+      params.numFMin, params.filterLength);
+  CHECKSTATUSPTR( status );
+  LALCutREAL4FrequencySeries(status->statusPtr, &psdC, psdTempC, \
+      params.numFMin, params.filterLength);
+  CHECKSTATUSPTR( status );
 
   for (i = 0; i < params.filterLength; i++)
   {
     /* compute inverse calibrated psds */
-    psdA.data->data[i] = (pow(input.responseA->data->data[i].re, 2) + \
-        pow(input.responseA->data->data[i].im, 2)) / psdA.data->data[i];
-    psdC.data->data[i] = (pow(input.responseC->data->data[i].re, 2) + \
-        pow(input.responseC->data->data[i].im, 2)) / psdC.data->data[i];
+    psdA->data->data[i] = (pow(input.responseA->data->data[i].re, 2) + \
+        pow(input.responseA->data->data[i].im, 2)) / psdA->data->data[i];
+    psdC->data->data[i] = (pow(input.responseC->data->data[i].re, 2) + \
+        pow(input.responseC->data->data[i].im, 2)) / psdC->data->data[i];
 
     /* average calibrated psds */
-    output->data->data[i] = (psdA.data->data[i] + psdC.data->data[i]) / 2.0;
+    output->data->data[i] = (psdA->data->data[i] + psdC->data->data[i]) / 2.0;
   }
 
   /* clean up */
-  LALFree(psdA.data);
-  LALFree(psdC.data);
-  LALDestroyVector(status->statusPtr, &(psdTempA.data));
+  LALDestroyREAL4FrequencySeries(status->statusPtr, psdA);
   CHECKSTATUSPTR( status );
-  LALDestroyVector(status->statusPtr, &(psdTempC.data));
+  LALDestroyREAL4FrequencySeries(status->statusPtr, psdC);
+  CHECKSTATUSPTR( status );
+  LALDestroyREAL4FrequencySeries(status->statusPtr, psdTempA);
+  CHECKSTATUSPTR( status );
+  LALDestroyREAL4FrequencySeries(status->statusPtr, psdTempC);
   CHECKSTATUSPTR( status );
 
   /* return status */
