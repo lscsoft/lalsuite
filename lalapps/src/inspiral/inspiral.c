@@ -475,7 +475,7 @@ int main( int argc, char *argv[] )
   /* override the minimal match of the bank if specified on the command line */
   if ( minimalMatch >= 0 )
   {
-    if ( vrbflg )
+    if ( vrbflg && bankHead )
     {
       fprintf( stdout, "Overriding bank minimal match:\n   value in bank = %e,"
           " new value = %e\n", bankHead->minMatch, minimalMatch );
