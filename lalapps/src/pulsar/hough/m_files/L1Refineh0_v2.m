@@ -5,15 +5,20 @@
 
 clear
 
-Detector = 'L1';
-fileinput = strcat(Detector,'kkoutput');
-fileoutput = strcat(Detector,'h0newband');
+Detector = 'H1';
+fileinput = strcat(Detector,'kkoutput_veto');
+fileoutput = strcat(Detector,'h0newband_veto');
 fid = fopen(fileoutput, 'w');
 
 
 %original h0 values all the same
 
-h0val=load('/scratch/sintes/S2_clean/MC_allsky/L1_coarse/MC_L1_0_h0');
+
+h0file = strcat('/local_data/badkri/S2-clean/MC_allsky/', Detector);
+h0file = strcat(h0file, '_coarse/MC_');
+h0file = strcat(h0file, Detector);
+h0file = strcat(h0file, '_0_h0');
+h0val=load( h0file );
 
 CofH = load(fileinput);
 kk =size(CofH);
@@ -36,8 +41,7 @@ for j=1:nbands
    large = find(Ch0 > 0.955);
    h0max = h0val(large(1));
   end
-   fprintf(fid,'%d %d %d %d %d %d\n', j-1, fmin(j), fmax(j), ...
-           Nmax(j), h0min, h0max );
+   fprintf(fid,'%d %d\n', h0min, h0max );
 end
 
 fclose(fid);
