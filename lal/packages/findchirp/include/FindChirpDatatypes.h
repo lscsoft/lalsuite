@@ -254,6 +254,14 @@ tagFindChirpTemplate
 {
   COMPLEX8Vector               *data;
   REAL4                         tmpltNorm;
+  REAL8                         momentI;
+  REAL8                         momentJ;
+  REAL8                         momentK;
+  REAL8                         rootMomentI;
+  REAL8                         numFactor;  
+  REAL8                         numFactor1;
+  REAL8                         numFactor2;
+  REAL8                         numFactor3;  
   Approximant                   approximant;
   REAL8Vector                  *A1BCVSpin;
   REAL8Vector                  *A2BCVSpin;
