@@ -496,6 +496,18 @@ containing a \texttt{sim\_burst} table that describes the injections.
 This table is described in the LAL \texttt{tools} package under
 \texttt{LIGOMetadataTables.h} header.  
 
+The output is also written to an ascii file named in the following way:
+\begin{center}
+\begin{verbatim}
+HLT-INJECTIONS_USERTAG_SEED-GPSSTART-DURATION.xml
+\end{verbatim}
+\end{center}
+where \verb$USERTAG$ is \textsc{tag} as specfied on the command line, 
+\verb$SEED$ is the  value  of  the random number seed chosen and 
+\verb$GPSSTART$ and \verb$DURATION$ describes the GPS time interval that
+the file covers. The file is in the format agreed to for LIGO-TAMA
+simulations.  
+
 If a \texttt{--user-tag} is not specified on the command line, the
 \texttt{\_USERTAG} part of the filename will be omitted.
 
