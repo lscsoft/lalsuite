@@ -480,10 +480,10 @@ void skygrid_print(const char * format,
     }
   else if (fmtcode == 1) /* af */
     {
+      const int tot = NUM_RA * NUM_DEC;
       if (gps != (LIGOTimeGPS *)NULL)
         fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
         
-      const int tot = NUM_RA * NUM_DEC;
       for (i = 0; i < tot; ++i)
         fprintf(outfile, "% 14.8e\t", input[i]); 
       fprintf(outfile, "\n");
@@ -503,10 +503,10 @@ void skygrid_print(const char * format,
     }
   else if (fmtcode == 4) /* al */
     {
+      const int tot = NUM_RA * NUM_DEC;
       if (gps != (LIGOTimeGPS *)NULL)
         fprintf(outfile, "%.9d", gps->gpsSeconds);
         
-        const int tot = NUM_RA * NUM_DEC;
         for (i = 0; i < tot; ++i)
             fprintf(outfile, " %14.8e", input[i]); 
         fprintf(outfile, "\n");
