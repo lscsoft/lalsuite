@@ -34,9 +34,6 @@
  *
  * The tiling is done with a body-centered cubic lattice.
  *
- * At the end it copies the linked list into the inspiral package's array
- * format.
- *
  * \subsubsection*{Uses}
  *
  * \begin{verbatim}
@@ -202,7 +199,38 @@ LALInspiralSpinBankMetric(
 } /* LALInspiralSpinBankMetric */
 
 
-/* LALINSPIRALSPINBANK() --------------------------------------------------- */
+/* Allocate a template at these coordinate values. */
+/* Does no error checking, so check immediately after calling. */
+static void
+allocate(
+    REAL4               x,
+    REAL4               y,
+    REAL4               z,
+    REAL4               f0,
+    SnglInspiralTable **tmplt,
+    INT4               *ntiles )
+{
+  REAL4 mass, eta, m1, m2;
+
+  *tmplt = (*tmplt)->next = (SnglInspiralTable *) LALCalloc( 1,
+           sizeof(SnglInspiralTable) );
+
+  mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
+  eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
+  m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
+  m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
+
+  (*tmplt)->mass1 = m1;
+  (*tmplt)->mass2 = m2;
+  (*tmplt)->eta = eta;
+  (*tmplt)->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
+  (*tmplt)->psi0 = x*pow(f0,5./3);
+  (*tmplt)->psi3 = y*pow(f0,2./3);
+  (*tmplt)->beta = z*pow(f0,2./3);
+  ++(*ntiles);
+} /* allocate() */
+
+
 /* <lalVerbatim file="InspiralSpinBankCP"> */
 void
 LALInspiralSpinBank(
@@ -227,13 +255,8 @@ LALInspiralSpinBank(
   REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
   REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
   REAL4 theta;               		/* angle of rotation for xp and yp */
-  REAL4 m1 = 0.;               		/* greater binary component mass */
   REAL4 m1Min, m1Max;       		/* range of m1 to search */
-  REAL4 m2 = 0.;              		/* lesser binary component mass */
   REAL4 m2Min, m2Max;        		/* range of m2 to search */
-  REAL4 mass;            		/* total mass of binary */
-  REAL4 eta = 0.;             		/* symmetric mass ratio of binary */
-  REAL4 betaMax;             		/* maximum spin parameter of binary */
   REAL4 f0 = -1;  			/* frequency of minimum of noise curve */
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
@@ -306,7 +329,7 @@ LALInspiralSpinBank(
   BEGINFAIL(status)
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt, ntiles);
   ENDFAIL(status);
-                                                                                                                                              
+
   /* Find eigenvalues and eigenvectors of metric. */
   eigenval = NULL;
   LALSCreateVector( status->statusPtr, &eigenval, 3 );
@@ -358,72 +381,46 @@ LALInspiralSpinBank(
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
     ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
   }
-  
   *ntiles = 0;
 
   /* This loop generates the template bank. */
-  for (zp = 0; zp <= zp1; zp += dzp){
+  for (zp = 0; zp <= zp1; zp += dzp)
+  {
     bccFlag++;
-    for (yp = 0; yp<= yp1; yp += dyp){
-      for (xp = 0; xp <= xp1; xp += dxp){
+    for (yp = 0; yp<= yp1; yp += dyp)
+    {
+      for (xp = 0; xp <= xp1; xp += dxp)
+      {
         /* Calculate Coordinate values at this point */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(0, yp0, xp, dxp, yp, dyp, bccFlag, theta);
         z = calculateZ(0, zp, dzp);
-        /* Test to see if the point is in the search region */
+        /* If the point is in the target region, allocate a template. */
         if( test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0) )
         {
-          tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                  sizeof(SnglInspiralTable) );
-          /* check to see if calloc worked */
-          if (!tmplt){
+          allocate( x, y, z, f0, &tmplt, ntiles );
+          if( tmplt == NULL )
+          {
             cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
             ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
           }
-          /* Mark that one a keeper and increase the number of tiles */
-          mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-          eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-          m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-          m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-          tmplt->mass1 = m1;
-          tmplt->mass2 = m2;
-          tmplt->eta = eta;
-          tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-          tmplt->psi0 = x;
-          tmplt->psi3 = y;
-          tmplt->beta = z;
-          ++(*ntiles);
         }
-
-        /* CHECK BEHIND ------------------------------------------------------------- */
+        
         /* Test a spot dx behind */
         x = calculateX(-1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         if(!test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
           x = calculateX(-0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dx behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
-            if (!tmplt){
+            allocate( x, y, z, f0, &tmplt, ntiles );
+            if( tmplt == NULL )
+            {
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-              }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-            tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
+            }
           }
         }
+
         /* Test a spot dy behind */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(-1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
@@ -431,27 +428,14 @@ LALInspiralSpinBank(
           y = calculateY(-0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dy behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
+            allocate( x, y, z, f0, &tmplt, ntiles );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-            tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
           }
         }
+
         /* Test a spot dz behind */
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
         z = calculateZ(-1, zp, dzp);
@@ -459,28 +443,14 @@ LALInspiralSpinBank(
           z = calculateZ(-0.5, zp, dzp);
           /*  if its not in the range check 1/2 dz behind. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
+            allocate( x, y, z, f0, &tmplt, ntiles );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
- 
-            tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
           }
         }
-        /* CHECK AHEAD -------------------------------------------------------------- */ 
+
         /* Test a spot dx ahead */
         x = calculateX(1, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
@@ -490,27 +460,14 @@ LALInspiralSpinBank(
           x = calculateX(0.5, xp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dx. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
+            allocate( x, y, z, f0, &tmplt, ntiles );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-	    tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
           }
         }
+
         /* Test a spot dy ahead */
         x = calculateX(0, xp0, xp, dxp, yp, dyp, bccFlag, theta);
         y = calculateY(1, yp0, xp, dxp, yp, dyp, bccFlag, theta);
@@ -518,27 +475,14 @@ LALInspiralSpinBank(
           y = calculateY(0.5, yp0, xp, dxp, yp, dyp, bccFlag, theta);
           /* If its not in the range check 1/2 dy. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
+            allocate( x, y, z, f0, &tmplt, ntiles );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-            tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
           }
         }
+
         /* Test a spot dz ahead */
         y = calculateY(0, yp0, xp, dxp, yp, dyp, (bccFlag+1), theta);
         z = calculateZ(1, zp, dzp);
@@ -546,39 +490,20 @@ LALInspiralSpinBank(
           z = calculateZ(0.5, zp, dzp);
           /*  if its not in the range check 1/2 dz. */
           if (test(x,y,z,m1Min,m1Max,m2Min,m2Max,f0)){
-            tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1,
-                    sizeof(SnglInspiralTable) );
+            allocate( x, y, z, f0, &tmplt, ntiles );
             if (!tmplt){
               cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
               ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
               }
-            mass = -y/x / (16.0*LAL_PI*LAL_PI*f0);
-            eta = 16.0457 * pow( -x*x/y/y/y/y/y, 0.3333333 );
-            m1 = 0.5*mass* (1 + sqrt(1 - 4*eta));
-            m2 = 0.5*mass* (1 - sqrt(1 - 4*eta));
-
-            tmplt->mass1 = m1;
-            tmplt->mass2 = m2;
-            tmplt->eta = eta;
-            tmplt->mchirp = pow(m1*m2,0.6)/pow(m1+m2,0.2);
-            tmplt->psi0 = x;
-            tmplt->psi3 = y;
-            tmplt->beta = z;
-            ++(*ntiles);
           }
         }
       } /* for (zp...) */
     } /* for (yp...) */
   } /* for (zp...) */
 
-  
-
-
-
   /* Trim the first template, which was left blank. */
   tmplt = (*tiles)->next;
   LALFree( *tiles );
-  /* BEN: error check here */
   *tiles = tmplt;
 
   /* What if no templates were allocated? ABORT */
