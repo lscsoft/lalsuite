@@ -340,6 +340,8 @@ int main( int argc, char *argv[])
     memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
     if ( calCacheFile )
     {
+      INT4 i;
+
       LAL_CALL( LALCCreateVector( &stat, &(resp.data), numPoints / 2 + 1 ), 
           &stat );
 
@@ -353,8 +355,18 @@ int main( int argc, char *argv[])
       if ( verbose ) 
         fprintf( stdout, "generating response at time %d sec %d ns\n",
           resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
-      LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo, 
-	    &duration ), &stat );
+
+      /* getting the response is handled differently for geo */
+      if(geodata){
+        for(i=0;i<numPoints / 2 + 1;i++){
+          resp.data->data[i].re = 1.0;
+          resp.data->data[i].im = 0.0;
+        }
+      }
+      else{
+        LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo, 
+              &duration ), &stat );
+      }
     } 
 
     /*****************************************************************
