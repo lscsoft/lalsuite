@@ -433,6 +433,10 @@ initUserVars (LALStatus *stat)
   uvar_BaseName	= LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
 
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+  uvar_EphemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar_EphemDir, DEFAULT_EPHEMDIR);
+
   uvar_SignalOnly = FALSE;
   uvar_EstimSigParam = FALSE;
  
@@ -469,7 +473,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used with BOINC"); 
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
@@ -1240,26 +1244,21 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
 #if USE_BOINC
   strcat(cfg->EphemEarth,"earth");
-#else 
-  strcpy(cfg->EphemEarth,uvar_EphemDir);
-  strcat(cfg->EphemEarth,"/earth");
-#endif /* USE_BOINC */
-  strcat(cfg->EphemEarth, uvar_EphemYear);
-  strcat(cfg->EphemEarth,".dat");
-
-#if USE_BOINC
   strcat(cfg->EphemSun,"sun");
-#else 
-  strcpy(cfg->EphemSun,uvar_EphemDir);
-  strcat(cfg->EphemSun,"/sun");
-#endif /* USE_BOINC */
-  strcat(cfg->EphemSun, uvar_EphemYear);
-  strcat(cfg->EphemSun,".dat");
-
-#if USE_BOINC
   use_boinc_filename0(cfg->EphemEarth);
   use_boinc_filename0(cfg->EphemSun);
-#endif
+#else 
+  if (LALUserVarWasSet (&uvar_EphemDir) )
+    {
+      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_EphemDir, uvar_EphemYear);
+      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_EphemDir, uvar_EphemYear);
+    }
+  else
+    {
+      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_EphemYear);
+      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_EphemYear);
+    }
+#endif /* !USE_BOINC */
 
   if (uvar_mergedSFTFile) {
     long k=0;
@@ -1550,7 +1549,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
   }
   /*------------------------------------------------------------*/
-
 
   /* Tell the user what we have arrived at */
 #ifdef DEBG_SGV
