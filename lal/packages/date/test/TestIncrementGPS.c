@@ -455,7 +455,7 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
 
   if (verbose_p)
     {
-      printf("got_gps: %9d:%09d\n", incremented_gps.gpsSeconds,
+      printf("got_gps:      %9d:%09d\n", incremented_gps.gpsSeconds,
              incremented_gps.gpsNanoSeconds);
     }
   
@@ -497,7 +497,7 @@ static BOOLEAN decrement_gps_ok(LALStatus *status,
 
   if (verbose_p)
     {
-      printf("got_gps: %9d:%09d\n", decremented_gps.gpsSeconds,
+      printf("got_gps:      %9d:%09d\n", decremented_gps.gpsSeconds,
              decremented_gps.gpsNanoSeconds);
     }
 
