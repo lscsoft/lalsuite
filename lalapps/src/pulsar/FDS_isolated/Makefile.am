@@ -6,7 +6,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 
 if FRAME
-FRAMEPROGRAMS = lalapps_FrComputeFStatistic
+#FRAMEPROGRAMS = lalapps_FrComputeFStatistic
+FRAMEPROGRAMS = 
 else
 FRAMEPROGRAMS = 
 endif
