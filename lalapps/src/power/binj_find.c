@@ -348,6 +348,12 @@ static SimBurstTable *free_this_injection(SimBurstTable *injection)
 	return(next);
 }
 
+static void free_injections(SimBurstTable *list)
+{
+	while(list)
+		list = free_this_injection(list);
+}
+
 static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct options_t options)
 {
 	SimBurstTable *head;
@@ -425,6 +431,70 @@ static SimBurstTable **extract_injections(LALStatus *stat, SimBurstTable **addpo
 	}
 
 	return(addpoint);
+}
+
+
+/*
+ * =============================================================================
+ *                             Injection Finding
+ * =============================================================================
+ */
+
+/*
+ * For each injection in the list point to by injection, the triggers in the
+ * list pointed to by triglist are searched for the best match (if any).
+ * 
+ * When this exits, the pointer whose address was passed as detinj will be
+ * pointing to the head of a list of injections that were found.  Likewise, the
+ * pointer whose address was passed as dettrig will point to the list of
+ * matching triggers.
+ */
+
+static void find_injections(LALStatus *stat, SimBurstTable *injection, SnglBurstTable *triglist, SimBurstTable **detinj, SnglBurstTable **dettrig, int *ninjected, int *ndetected, struct options_t options)
+{
+	SnglBurstTable *event, *bestmatch;
+
+	*detinj = NULL;
+	*dettrig = NULL;
+	*ninjected = *ndetected = 0;
+
+	for(; injection; (*ninjected)++, injection = injection->next) {
+		if(options.verbose)
+			fprintf(stderr, "Searching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
+
+		bestmatch = NULL;
+		for(event = triglist; event; event = event->next) {
+			SnglBurstAccuracy accParams;
+
+			/* if the injection's centre frequency and peak time
+			 * don't lie within the trigger's time-frequency
+			 * volume, move to next event */
+			LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, &accParams), stat);
+			if(!accParams.match)
+				continue;
+
+			/* compare this trigger to the best so far */
+			bestmatch = select_event(stat, injection, bestmatch, event, options);
+		}
+
+		/* if we didn't detect a matching event, continue to next
+		 * injection */
+		if(!bestmatch)
+			continue;
+		(*ndetected)++;
+
+		/* record the detected injection */
+		*detinj = LALMalloc(sizeof(**detinj));
+		**detinj = *injection;
+		detinj = &(*detinj)->next;
+		*detinj = NULL;
+
+		/* record the matching trigger */
+		*dettrig = LALMalloc(sizeof(**dettrig));
+		**dettrig = *bestmatch;
+		dettrig = &(*dettrig)->next;
+		*dettrig = NULL;
+	}
 }
 
 
@@ -511,11 +581,17 @@ static int keep_this_event(SnglBurstTable *event, struct options_t options)
 	return(TRUE);
 }
 
-static SnglBurstTable *free_this_event(SnglBurstTable * event)
+static SnglBurstTable *free_this_event(SnglBurstTable *event)
 {
 	SnglBurstTable *next = event ? event->next : NULL;
 	LALFree(event);
 	return(next);
+}
+
+static void free_events(SnglBurstTable *list)
+{
+	while(list)
+		list = free_this_event(list);
 }
 
 static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
@@ -574,15 +650,7 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT8 *
 			eventaddpoint = &(*eventaddpoint)->next;
 	}
 
-	/*
-	 * FIXME: LAL's memory management blows.  On Saikat's S3 injections,
-	 * this loop takes about .25 seconds PER ITERATION!  (KCC)
-	while(*injection) {
-		SimBurstTable *tmp = *injection;
-		*injection = (*injection)->next;
-		LALFree(tmp);
-	}
-	*/
+	free_injections(*injection);
 	*injection = newinjection;
 
 	fclose(infile);
@@ -608,16 +676,12 @@ int main(int argc, char **argv)
 	static struct options_t options;
 
 	/* triggers */
-	SnglBurstTable *event, *bestmatch;
 	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
-	SnglBurstTable **detTriggersAddPoint = &detectedTriggers;
 
 	/* injections */
-	SimBurstTable *injection;
 	SimBurstTable *simBurstList = NULL;
 	SimBurstTable *detectedInjections = NULL;
-	SimBurstTable **detInjectionsAddPoint = &detectedInjections;
 
 	/* Table outputs */
 	MetadataTable myTable;
@@ -628,7 +692,7 @@ int main(int argc, char **argv)
 	 */
 
 	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level("1");
+	set_debug_level("35");
 	set_option_defaults(&options);
 	parse_command_line(argc, argv, &options);
 
@@ -647,48 +711,11 @@ int main(int argc, char **argv)
 	burstEventList = read_trigger_list(&stat, options.inputFile, &timeAnalyzed, &simBurstList, options);
 
 	/*
-	 * For each injection, search the trigger list for the best match (if
-	 * any).
+	 * Construct a list of detected injections, and a list of the matching
+	 * triggers.
 	 */
 
-	ninjected = ndetected = 0;
-	for (injection = simBurstList; injection; ninjected++, injection = injection->next) {
-		if(options.verbose)
-			fprintf(stderr, "Searching for injection at time %d.%09d s\n", injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsNanoSeconds);
-
-		bestmatch = NULL;
-		for (event = burstEventList; event; event = event->next) {
-			SnglBurstAccuracy accParams;
-
-			/* if the injection's centre frequency and peak time
-			 * don't lie within the trigger's time-frequency
-			 * volume, move to next event */
-			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, injection, event, &accParams), &stat);
-			if (!accParams.match)
-				continue;
-
-			/* compare this trigger to the best so far */
-			bestmatch = select_event(&stat, injection, bestmatch, event, options);
-		}
-
-		/* if we didn't detect a matching event, continue to next
-		 * injection */
-		if(!bestmatch)
-			continue;
-		ndetected++;
-
-		/* record the detected injection */
-		*detInjectionsAddPoint = LALMalloc(sizeof(**detInjectionsAddPoint));
-		**detInjectionsAddPoint = *injection;
-		detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
-		*detInjectionsAddPoint = NULL;
-
-		/* record the matching trigger */
-		*detTriggersAddPoint = LALMalloc(sizeof(**detTriggersAddPoint));
-		**detTriggersAddPoint = *bestmatch;
-		detTriggersAddPoint = &(*detTriggersAddPoint)->next;
-		*detTriggersAddPoint = NULL;
-	}
+	find_injections(&stat, simBurstList, burstEventList, &detectedInjections, &detectedTriggers, &ninjected, &ndetected, options);
 
 	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
 	fprintf(stdout, "Total injections: %d\n", ninjected);
