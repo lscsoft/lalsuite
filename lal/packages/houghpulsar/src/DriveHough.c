@@ -236,7 +236,7 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
   /* Make sure initial breakLine is in [0,nfSize)  */
   ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-  ASSERT ( breakLine >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+
   /* -------------------------------------------   */
 
   /* Updating the space of PHMD increasing frequency */ 
@@ -276,7 +276,7 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
   UINT4    k,breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
-  UINT8    fBinMin;   /* minimum frequency bin */ 
+  
   UINT8    fBin;      /* present frequency bin */
   REAL8    deltaF;    /* frequency resolution */
 
@@ -317,7 +317,7 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 
   /* Make sure initial breakLine is in [0,nfSize)  */
   ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-  ASSERT ( breakLine >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  
   /* -------------------------------------------   */
 
   /* Updating the space of PHMD decreasing frequency */ 
@@ -363,7 +363,7 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* present minimum frequency bin */ 
-  UINT8    fBin;      /* present frequency bin */
+  INT8     fBin;      /* present frequency bin */
   UINT2    xSide,ySide;
  
   HOUGHMapDeriv hd; /* the Hough map derivative */
@@ -411,7 +411,7 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,
   
   /* Make sure initial breakLine is in [0,nfSize)  */
   ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-  ASSERT ( breakLine >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  
   /* -------------------------------------------   */
   
   /* Initializing  hd map and memory allocation */
