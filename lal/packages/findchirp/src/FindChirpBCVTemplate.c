@@ -154,13 +154,12 @@ LALFindChirpBCVTemplate (
   /* parameters */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
   /* m and mu MUST BE in units of Msun for the calculation of tmpltNorm */
-  /* XXX SHOULD m and eta be divided by LAL_MTSUN_SI? XXX */
-  m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );
-  eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );       
-  mu     = eta * m;
+  m    = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 ) /  LAL_MTSUN_SI;
+  eta  = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) ) /LAL_MTSUN_SI;       
+  mu   = eta * m;
 
-  /* defining chirp mass; not necessary */
-  /* chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00)); */
+  /* removed definition of chirp mass; not necessary in this function */
+  /* chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));  */
 
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
