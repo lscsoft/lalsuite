@@ -523,11 +523,20 @@ LALREAL4AverageSpectrum (
   fSeries->epoch = tSeries->epoch;
   fSeries->f0 = tSeries->f0;
   fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries->deltaT );
+  /* THIS IS WRONG: GIVES SQUARE-ROOT OF CORRECT UNITS */
+  /*
   pair.unitOne = &(tSeries->sampleUnits);
   pair.unitTwo = &lalHertzUnit;
   LALUnitRaise( status->statusPtr, &unit, pair.unitTwo, &negRootTwo );
   CHECKSTATUSPTR( status );
   pair.unitTwo = &unit;
+  */
+  pair.unitOne = &(tSeries->sampleUnits);
+  pair.unitTwo = &(tSeries->sampleUnits);
+  LALUnitMultiply( status->statusPtr, &unit, &pair );
+  CHECKSTATUSPTR( status );
+  pair.unitOne = &unit;
+  pair.unitTwo = &lalSecondUnit;
   LALUnitMultiply( status->statusPtr, &(fSeries->sampleUnits), &pair );
   CHECKSTATUSPTR( status );
 
