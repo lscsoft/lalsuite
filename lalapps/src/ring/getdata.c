@@ -249,6 +249,7 @@ REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
 int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 {
   LALStatus status = blank_status;
+  char name[LALNameLength];
   if ( sampleRate > 0.0 && sampleRate * series->deltaT < 1.0 )
   {
     ResampleTSParams resamplepar;
@@ -259,8 +260,9 @@ int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
         sampleRate );
     LAL_CALL( LALResampleREAL4TimeSeries( &status, series, &resamplepar ),
         &status );
+    strncpy( name, series->name, LALNameLength * sizeof(char) );
     LALSnprintf( series->name, sizeof( series->name ),
-        "%s_RSMPL", series->name );
+        "%s_RSMPL", name );
   }
   return 0;
 }
@@ -270,6 +272,7 @@ int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
 {
   LALStatus status = blank_status;
+  char name[LALNameLength];
   PassBandParamStruc highpasspar;
   if ( frequency > 0.0 )
   {
@@ -281,8 +284,9 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
     verbose( "highpass filtering data at %g Hz\n", frequency );
     LAL_CALL( LALDButterworthREAL4TimeSeries( &status, series, &highpasspar ),
         &status );
+    strncpy( name, series->name, LALNameLength * sizeof(char) );
     LALSnprintf( series->name, sizeof( series->name ),
-        "%s_HPFLTR", series->name );
+        "%s_HPFLTR", name );
   }
   return 0;
 }
@@ -292,6 +296,7 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
 int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
 {
   LALStatus status = blank_status;
+  char name[LALNameLength];
   PassBandParamStruc highpasspar;
   if ( frequency > 0.0 )
   {
@@ -303,8 +308,9 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
     verbose( "highpass filtering data at %g Hz\n", frequency );
     LAL_CALL( LALButterworthREAL8TimeSeries( &status, series, &highpasspar ),
         &status );
+    strncpy( name, series->name, LALNameLength * sizeof(char) );
     LALSnprintf( series->name, sizeof( series->name ),
-        "%s_HPFLTR", series->name );
+        "%s_HPFLTR", name );
   }
   return 0;
 }

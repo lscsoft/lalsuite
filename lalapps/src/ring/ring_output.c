@@ -350,27 +350,32 @@ static int generate_file_name( char *fname, size_t size,
     const char *sname, int t, int dt )
 {
   char *c;
+  char *tmp_name;
 
-  strncpy( fname, sname, size - 1 );
-  fname[size-1] = 0;
+  tmp_name = (char *) LALCalloc( size, sizeof(char) );
+
+  strncpy( tmp_name, sname, size - 1 );
+  tmp_name[size-1] = 0;
 
   /* slashes are not allowed */
-  if ( strchr( fname, '/' ) )
-    error( "slashes are not allowed in output file name %s\n", fname );
+  if ( strchr( tmp_name, '/' ) )
+    error( "slashes are not allowed in output file name %s\n", tmp_name );
 
   /* convert hyphens to underscores */
-  while ( ( c = strchr( fname, '-' ) ) )
+  while ( ( c = strchr( tmp_name, '-' ) ) )
     *c = '_';
 
   /* convert colons to hypens */
-  while ( ( c = strchr( fname, ':' ) ) )
+  while ( ( c = strchr( tmp_name, ':' ) ) )
     *c = '-';
 
   /* convert spaces to underscores */
-  while ( ( c = strchr( fname, ' ' ) ) )
+  while ( ( c = strchr( tmp_name, ' ' ) ) )
     *c = '_';
 
-  LALSnprintf( fname, size, "%s-%d-%d.dat", fname, t, dt );
+  LALSnprintf( fname, size, "%s-%d-%d.dat", tmp_name, t, dt );
+
+  LALFree( tmp_name );
 
   return 0;
 }

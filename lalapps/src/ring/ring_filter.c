@@ -88,7 +88,7 @@ SnglBurstTable * ring_filter(
     UINT4 numEvents = 0;
     REAL8 sigma;
     
-    verbose( "creating template %d", tmplt );
+    verbose( "creating template %d\n", tmplt );
 
     /* make template and fft it */
     XLALComputeRingTemplate( &signal, thisTmplt );
@@ -103,7 +103,7 @@ SnglBurstTable * ring_filter(
     /* loop over segments */
     for ( sgmnt = 0; sgmnt < segments->numSgmnt; ++sgmnt )
     {
-      verbose( "filtering segment %d against template %d", sgmnt, tmplt );
+      verbose( "  filtering segment %d against template %d\n", sgmnt, tmplt );
 
       /* filter the segment with the template */
       filter_segment_template( &result, &rtilde, &stilde,

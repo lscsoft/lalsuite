@@ -297,6 +297,9 @@ static RingTemplateBank *ring_get_bank( struct ring_params *params )
       write_bank( bank );
   }
 
+  if ( bank )
+    verbose( "number of templates in bank = %d\n", bank->numTmplt );
+
   return bank;
 }
 

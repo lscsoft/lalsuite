@@ -84,6 +84,7 @@ int invert_spectrum(
   UINT4 segmentLength;
   UINT4 segmentStride;
   UINT4 truncateLength;
+  char name[LALNameLength];
 
   segmentDuration = 1.0/spectrum->deltaF;
   segmentLength = floor( segmentDuration * dataSampleRate + 0.5 );
@@ -99,8 +100,9 @@ int invert_spectrum(
   XLALREAL4SpectrumInvertTruncate( spectrum, lowCutoffFrequency,
       segmentLength, truncateLength, fwdPlan, revPlan );
 
+  strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
   LALSnprintf( spectrum->name, sizeof( spectrum->name ),
-      "%s_INV", spectrum->name );
+      "%s_INV", name );
 
   return 0;
 }
@@ -116,6 +118,7 @@ int calibrate_spectrum(
 {
   UINT4 cut;
   UINT4 k;
+  char name[LALNameLength];
 
   if ( response )
   {
@@ -148,8 +151,9 @@ int calibrate_spectrum(
       XLALUnitDivide( &spectrum->sampleUnits, &spectrum->sampleUnits,
           &response->sampleUnits );
     }
+  strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
     LALSnprintf( spectrum->name, sizeof( spectrum->name ),
-        "%s_CAL", spectrum->name );
+        "%s_CAL", name );
   }
 
   return 0;
