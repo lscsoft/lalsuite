@@ -41,7 +41,7 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_REGGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps);
   
-  print_gridding(&g, (char *)NULL);
+  print_gridding(&g, "reg_dec_reg_ra.dat");
   
   cleanup_gridding(&s, &g);
   
@@ -92,7 +92,7 @@ main(int argc, char **argv)
   
   printf("\n*   *   *   *   *   *   *   *   *   *\n");
 
-  printf("RUN 5 - irregular gridding\n");
+  printf("RUN 5 - regular Dec, variable RA\n");
   
   init_gridding(&g);
   
@@ -101,11 +101,28 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps);
   
-  print_gridding(&g, (char *)NULL);
+  print_gridding(&g, "reg_dec_var_ra.dat");
   
   cleanup_gridding(&s, &g);
   
+  printf("\n*   *   *   *   *   *   *   *   *   *\n");
+
+  printf("RUN 6 - irregular Dec, variable RA\n");
   
+  init_gridding(&g);
+  
+  num_ra = 24;
+  num_dec = 11;
+  make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
+                num_dec, DETRESP_IRRGRID, &ephem, &gps);
+  
+  print_gridding(&g, "irr_dec_var_ra.dat");
+  
+  cleanup_gridding(&s, &g);
+  
+  /*
+   * Housekeeping
+   */
   cleanup_ephemeris(&s, &ephem);
 
   LALCheckMemoryLeaks();
