@@ -72,7 +72,7 @@ Adam Mercer
 \label{program:lalapps-stochastic}
 \idx[Program]{lalapps\_stochastic}
 
-% this documentation is correct as of CVS Revision 1.117
+% this documentation is correct as of CVS Revision 1.118
 
 \begin{entry}
 \item[Name]
@@ -109,7 +109,7 @@ Adam Mercer
 \option{--hpf-frequency} \parm{N} \newline \hspace*{0.5in}
 \option{--hpf-attenuation} \parm{N} \newline \hspace*{0.5in}
 \option{--hpf-order} \parm{N} \newline \hspace*{0.5in}
-\option{--recenter} \newline \hspace*{0.5in}
+\option{--recentre} \newline \hspace*{0.5in}
 \option{--post-analysis} \newline \hspace*{0.5in}
 \option{--middle-segment} \newline \hspace*{0.5in}
 \option{--inject} \newline \hspace*{0.5in}
@@ -127,6 +127,102 @@ Adam Mercer
 
 \item[Description] \prog{lalapps\_stochastic} runs the standalone
 stochastic analysis code.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}]
+Display usage information
+\item[\option{--version}]
+Display version information
+\item[\option{--verbose}]
+Run in verbose mode, code display set by set progress information
+\item[\option{--debug-level} \parm{N}]
+Sets the LAL Debug Level to \parm{N}
+\item[\option{--gps-start-time} \parm{N}]
+Sets the GPS time from which data should be read to \parm{N}
+\item[\option{--gps-end-time} \parm{N}]
+Sets the GPS time to which data should be read to \parm{N}
+\item[\option{--interval-duration} \parm{N}]
+Sets the interval duration to \parm{N}
+\item[\option{--segment-duration} \parm{N}]
+Sets the segment duration to \parm{N}
+\item[\option{--sample-rate} \parm{N}]
+Sets the sample rate of the input data to \parm{N}
+\item[\option{--resample-rate} \parm{N}]
+Sets the resample rate to \parm{N}
+\item[\option{--f-min} \parm{N}]
+Sets the minimum frequency of the search band to \parm{N}
+\item[\option{--f-max} \parm{N}]
+Sets the maximum frequency of the search band to \parm{N}
+\item[\option{--ifo-one} \parm{IFO}]
+Sets the IFO for the first stream to be \parm{IFO}, currently supported
+IFO's are H1, H2, L1 and G1
+\item[\option{--ifo-two} \parm{IFO}]
+Sets the IFO for the second stream to be \parm{IFO}, currently supported
+IFO's are H1, H2, L1 and G1
+\item[\option{--channel-one} \parm{CHANNEL}]
+Sets the channel for the first stream to be \parm{CHANNEL}
+\item[\option{--channel-two} \parm{CHANNEL}]
+Sets the channel for the second stream to be \parm{CHANNEL}
+\item[\option{--frame-cache-one} \parm{FILE}]
+Sets the frame cache file for the first stream to be \parm{FILE}
+\item[\option{--frame-cache-two} \parm{FILE}]
+Sets the frame cache file for the second stream to be \parm{FILE}
+\item[\option{--calibration-cache-one} \parm{FILE}]
+Sets the calibration cache file for the first stream to be \parm{FILE}
+\item[\option{--calibration-cache-two} \parm{FILE}]
+Sets the calibration cache file for the second stream to be \parm{FILE}
+\item[\option{--calibration-offset} \parm{N}]
+Sets the calibration offset to \parm{N}
+\item[\option{--apply-mask}]
+Apply frequency masking
+\item[\option{--mask-bin} \parm{N}]
+Set the number of bins to mask per frequency to \parm{N}
+\item[\option{--overlap-hann}]
+Use overlapping Hann windows for data segments
+\item[\option{--hann-duration} \parm{N}]
+Set the Hann duration of the data segment window to \parm{N}, 0 for
+Rectangular windowing, 1 for Tukey windowing and 60 for Hann windowing
+\item[\option{--high-pass-filter}]
+Apply a high pass filter to the input data
+\item[\option{--hpf-frequency} \parm{N}]
+Set the knee frequency of the high pass filter to \parm{N}
+\item[\option{--hpf-attenuation} \parm{N}]
+Set the attenuation coefficent for the high pass filter to \parm{N}
+\item[\option{--hpf-order} \parm{N}]
+Sets the high pass filter order to \parm{N}
+\item[\option{--recentre}]
+Centre the data
+\item[\option{--post-analysis}]
+Perform post analysis
+\item[\option{--middle-segment}]
+Include the middle segment in the power spectra estimation
+\item[\option{--inject}]
+Perform signal injection
+\item[\option{--scale-factor} \parm{N}]
+Set the scale factor for injections to \parm{N}
+\item[\option{--seed} \parm{N}]
+Set the random seed for injections to \parm{N}
+\item[\option{--trials} \parm{N}]
+Set the number of trials for injections to \parm{N}
+\item[\option{--output-dir} \parm{DIR}]
+Set the output directory for search results to \parm{DIR}
+\item[\option{--test}]
+Save out intermediate products
+\item[\option{--test-interval} \parm{N}]
+Save out interval \parm{N}
+\item[\option{--test-segment} \parm{N}]
+Save out segment \parm{N}
+\item[\option{--test-trial} \parm{N}]
+Save out trial \parm{N}
+\item[\option{--geo-hpf-frequency} \parm{N}]
+Set the knee frequency for the GEO high pass filter to \parm{N}
+\item[\option{--geo-hpf-attenuation} \parm{N}]
+Set the attenuation coefficient for the GEO high pass filter to \parm{N}
+\item[\option{--geo-hpf-order} \parm{N}]
+Set the GEO high pass filter order to \parm{N}
+
+\end{entry}
 
 \item[Author] 
 Adam Mercer, Tania Regimbau
