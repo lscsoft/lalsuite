@@ -89,7 +89,9 @@ LALFindChirpBCVSpinTemplate (
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
  
-  FILE        *fpTmplt      =  NULL;
+FILE        *fpTmpltIm      =  NULL;
+FILE        *fpTmpltRe      =  NULL;
+
  
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -137,8 +139,8 @@ LALFindChirpBCVSpinTemplate (
   xfac      = params->xfacVec->data;
   numPoints = fcTmplt->data->length;
 
-fprintf (stdout, "expPsi    = %e \n", expPsi);
-fprintf (stdout, "xfac      = %e \n", xfac);
+/*fprintf (stdout, "expPsi    = %e \n", expPsi);
+fprintf (stdout, "xfac      = %e \n", xfac);*/
 fprintf (stdout, "numPoints = %d \n", numPoints);
 
 
@@ -170,8 +172,8 @@ fprintf (stdout, "psi15 = %e \n", psi15);
   /* defns checked against Bank documentation */
 
 fprintf (stdout, "m     = %e \n", m);
-fprintf (stdout, "eta   = %e \n", eta);
-fprintf (stdout, "mu    = %e \n", mu);
+/*fprintf (stdout, "eta   = %e \n", eta);
+fprintf (stdout, "mu    = %e \n", mu);*/
 
 
   /* defining chirp mass (to the power of 5/3 => rename) */
@@ -245,9 +247,11 @@ fprintf (stdout, "psi0 = %e \n", psi0);
    *
    */
 
-fprintf (stdout, "just before loop in template code \n");
+/*fprintf (stdout, "just before loop in template code \n");*/
 
-fpTmplt  =  fopen("tmplt.dat","w");
+fpTmpltIm  =  fopen("tmpltIm.dat","w");
+fpTmpltRe  =  fopen("tmpltRe.dat","w");
+
 
   for ( k = kmin; k < kmax ; ++k )
     {
@@ -282,18 +286,22 @@ fpTmplt  =  fopen("tmplt.dat","w");
       expPsi[k].im =   sin(psi1);
       expPsi[k].re =   cos(psi1);
 
-	fprintf (fpTmplt, "%d\t%e\t%e\n",k, expPsi[k].im, expPsi[k].re);
+	fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
+        fprintf (fpTmpltRe, "%d\t%e\n",k, expPsi[k].re);
+
 
       /* XXX work needed here... expensive computation method */
 
-fprintf (stdout, "expPsi[k].im = %e \n", expPsi[k].im);
-fprintf (stdout, "expPsi[k].re = %e \n", expPsi[k].re);
+/*fprintf (stdout, "expPsi[k].im = %e \n", expPsi[k].im);
+fprintf (stdout, "expPsi[k].re = %e \n", expPsi[k].re);*/
 
 
 
     }
 
-fclose (fpTmplt);
+fclose (fpTmpltIm);
+fclose (fpTmpltRe);
+
   /*code*/
 
   DETATCHSTATUSPTR( status );

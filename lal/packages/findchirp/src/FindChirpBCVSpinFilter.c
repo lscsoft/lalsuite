@@ -128,6 +128,27 @@ LALFindChirpBCVSpinFilterSegment (
 
   REAL4			rhosq;
 
+  REAL4 		rho;
+  REAL4                 invMaxRho;
+
+  REAL4			maxRho;
+  UINT4			maxRhoCount;
+
+  REAL4   		alpha1;
+  REAL4                 alpha2;
+  REAL4                 alpha3;
+  REAL4                 alpha4;
+  REAL4                 alpha5;
+  REAL4                 alpha6;
+  REAL4			wvff;
+  REAL4                 wvft;              /*params used to produce BCVSpin waveform */	
+  
+  FILE     		*fpRho =  NULL;
+  FILE			*fpWvfIm =  NULL;
+  FILE			*fpWvfRe =  NULL;
+
+
+
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -205,13 +226,18 @@ LALFindChirpBCVSpinFilterSegment (
   ASSERT( input->segment->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
 
-fprintf (stdout, "after asserts in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "after asserts in FindChirpBCVSpinFilter \n");*/
 
 /*
 *
 *check sense of this later
 *
 */
+
+fpRho   = fopen ("rho.dat", "w");
+fpWvfIm = fopen ("wvfIm.dat", "w");
+fpWvfRe = fopen ("wvfRe.dat", "w");
+
 
 for (i = 0; i < dataSegVec->length; ++i)
 {
@@ -258,14 +284,14 @@ fcSeg = & (fcSegVec->data[i]);
   ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
 
-fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter \n");*/
 
   
   wtilde     = fcDataParams->wtildeVec->data;
 
-fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");
+/*fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");*/
 
-fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);
+/*fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);*/
 
 Beta = 0.1;
 
@@ -292,13 +318,13 @@ fprintf (stdout, "Beta: %e \n", Beta);
   L *= 2;
   M *= 2;
 
-fprintf (stdout, "I = %e \n", I); 
+/*fprintf (stdout, "I = %e \n", I); 
 fprintf (stdout, "J = %e \n", J);
 fprintf (stdout, "K = %e \n", K);
 fprintf (stdout, "L = %e \n", L);
-fprintf (stdout, "M = %e \n", M);
+fprintf (stdout, "M = %e \n", M);*/
 
-fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");*/
 
 
   /* Expensive or well used quantities calc before loop */
@@ -312,10 +338,10 @@ fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");
 	- I * (pow(L,2) + pow(M,2)) 
 	+ 2*J*K*L );
 
-fprintf (stdout, "rootI           = %e \n", rootI);
+/*fprintf (stdout, "rootI           = %e \n", rootI);
 fprintf (stdout, "denominator     = %e \n", denominator);
 fprintf (stdout, "rootDenominator = %e \n", rootDenominator);
-fprintf (stdout, "denominator1    = %e \n", denominator1);
+fprintf (stdout, "denominator1    = %e \n", denominator1);*/
 
 
  
@@ -342,14 +368,14 @@ fprintf (stdout, "denominator1    = %e \n", denominator1);
    */
 
 
-fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");*/
 
 
   memset( qtilde,         0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin2, 0, numPoints * sizeof(COMPLEX8) );
 
-fprintf (stdout, "numPoints = %d \n", numPoints);
+/*fprintf (stdout, "numPoints = %d \n", numPoints);*/
 
 
   /* qtilde positive frequency, not DC or nyquist */
@@ -365,12 +391,12 @@ fprintf (stdout, "numPoints = %d \n", numPoints);
     qtilde[k].re        = r * x - s * y ;
     qtilde[k].im        = r * y + s * x ;
 
-fprintf (stdout, "loop         = %d \n", k);
+/*fprintf (stdout, "loop         = %d \n", k);
 fprintf (stdout, "x            = %e \n", x);
 fprintf (stdout, "y            = %e \n", y);
 
 fprintf (stdout, "qtilde[k].re = %e \n", qtilde[k].re);
-fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);
+fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);*/
     
 
     qtildeBCVSpin1[k] = qtilde[k];
@@ -387,9 +413,9 @@ fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
 
-fprintf (stdout, "qtilde[k].re         = %e \n", qtilde[k].re);
+/*fprintf (stdout, "qtilde[k].re         = %e \n", qtilde[k].re);
 fprintf (stdout, "qtildeBCVSpin1[k].re = %e \n", qtildeBCVSpin1[k].re);
-fprintf (stdout, "qtildeBCVSpin2[k].re = %e \n", qtildeBCVSpin2[k].re);
+fprintf (stdout, "qtildeBCVSpin2[k].re = %e \n", qtildeBCVSpin2[k].re);*/
 
 
 
@@ -405,14 +431,14 @@ fprintf (stdout, "qtildeBCVSpin2[k].re = %e \n", qtildeBCVSpin2[k].re);
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
 
-fprintf (stdout, "qtilde[k].im         = %e \n", qtilde[k].im);
+/*fprintf (stdout, "qtilde[k].im         = %e \n", qtilde[k].im);
 fprintf (stdout, "qtildeBCVSpin1[k].im = %e \n", qtildeBCVSpin1[k].im);
-fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);
+fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);*/
 
 
   }
 
-fprintf (stdout, "just after +ve  freq loop \n");
+/*fprintf (stdout, "just after +ve  freq loop \n");*/
 
   /* qtilde negative frequency only: not DC or nyquist */
   if ( params->computeNegFreq )
@@ -460,7 +486,7 @@ fprintf (stdout, "just after +ve  freq loop \n");
     }
    }
  
-fprintf (stdout, "after qtilde calc. in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "after qtilde calc. in FindChirpBCVSpinFilter \n");*/
 
 
    /* 
@@ -481,13 +507,13 @@ fprintf (stdout, "after qtilde calc. in FindChirpBCVSpinFilter \n");
 		   params->qtildeVecBCVSpin2, params->invPlan );
 		   CHECKSTATUSPTR( status );
 
-fprintf (stdout, "after FFT calc. in FindChirpBCVSpinFilter \n");
+/*fprintf (stdout, "after FFT calc. in FindChirpBCVSpinFilter \n");
 
 fprintf (stdout, "length of q            = %d \n", params->qVec->length);
 fprintf (stdout, "length of qVecBCVSpin1 = %d \n", params->qVecBCVSpin1->length);
-fprintf (stdout, "length of qVecBCVSpin2 = %d \n", params->qVecBCVSpin2->length);
+fprintf (stdout, "length of qVecBCVSpin2 = %d \n", params->qVecBCVSpin2->length);*/
 
- for ( j = 0; j < numPoints; ++j)
+/* for ( j = 0; j < numPoints; ++j)
        {
 fprintf (stdout, "q[j]            = %e \n", q[j]);
 fprintf (stdout, "qBCVSpin1[j]    = %e \n", qBCVSpin1[j]);
@@ -500,11 +526,7 @@ fprintf (stdout, "qBCVSpin2[j].re    = %e \n", qBCVSpin2[j].re);
 fprintf (stdout, "q[j].im            = %e \n", q[j].im);
 fprintf (stdout, "qBCVSpin1[j].im    = %e \n", qBCVSpin1[j].im);
 fprintf (stdout, "qBCVSpin2[j].im    = %e \n", qBCVSpin2[j].im);
-
-
-
-
-}
+       }*/
 
    /* 
     *
@@ -518,23 +540,118 @@ fprintf (stdout, "qBCVSpin2[j].im    = %e \n", qBCVSpin2[j].im);
 
 memset (params->rhosqVec->data->data, 0, numPoints * sizeof (REAL4) );
 
+maxRho = 0;
+maxRhoCount = 0;
+
    for ( j = 0; j < numPoints; ++j)
        {
+
+
    rhosq   = q[j].re * q[j].re + q[j].im * q[j].im; 
    rhosq  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
-   rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im; 
-fprintf (stdout, "rhosq            = %e \n", rhosq);
+   rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im;
+ 
+   /* Inverse FFT normalisation, division by numPoints squared */
+
+   rhosq  = rhosq / pow(numPoints,2);
+
+/*fprintf (stdout, "rhosq            = %e \n", rhosq);*/
 
 
    params->rhosqVec->data->data[j] = rhosq;  /*copied from Eirini's code */
 
-fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );
+/*fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );*/
 
-   } 
+   rho    = pow(rhosq, 0.5);
+   
+fprintf (fpRho, "%d\t%e\n", j, rho);
 
-/*code*/
+   /* finding max value of rho in time */
+if (rho > maxRho)
+	{
+	maxRho = rho;
+        maxRhoCount = j;
+	}
+
+fprintf (stdout, "maxRho       = %e \n", maxRho);
+fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);
+ 
+
+       } 
+
+ invMaxRho = 1 / maxRho;
+                                                                                                                             
+/* calc alpha values in time domain */
+                                                                                                                             
+   alpha1 = q[maxRhoCount].re * invMaxRho;
+   alpha2 = q[maxRhoCount].im * invMaxRho;
+   alpha3 = qBCVSpin1[maxRhoCount].re * invMaxRho;
+   alpha4 = qBCVSpin1[maxRhoCount].im * invMaxRho;
+   alpha5 = qBCVSpin2[maxRhoCount].re * invMaxRho;
+   alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;
+
+fprintf (stdout, "alpha1       = %e \n", alpha1);
+fprintf (stdout, "alpha2       = %e \n", alpha2);
+fprintf (stdout, "alpha3       = %e \n", alpha3);
+fprintf (stdout, "alpha4       = %e \n", alpha4);
+fprintf (stdout, "alpha5       = %e \n", alpha5);
+fprintf (stdout, "alpha6       = %e \n", alpha6);
 
 
+
+                                                                                                                  
+ /*calc freq domain waveform, store in qtilde[k]  */
+
+  for ( k = 1; k < numPoints/2; ++k )
+  {                                                                                                                          
+    REAL4 x = tmpltSignal[k].re;
+    REAL4 y = tmpltSignal[k].im;
+                                                                                                                             
+                                                                                                                             
+    qtilde[k].re         = (alpha1 * x - alpha2 * y) * amp[k]/ rootI ;
+    qtilde[k].re        += (alpha3 * x - alpha4 * y) 
+				*  amp[k]/(rootDenominator * rootI)
+				* (I * cos(Beta * ampBCVSpin2[k]) -  J) ;
+    qtilde[k].re        += (alpha5 * x - alpha6 * y) 
+				* (amp[k]/denominator1)
+				*  (sin(Beta * ampBCVSpin2[k])
+            - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+            + ( (J*L - K*M + 0.5*I*K) / denominator ) ) ;     
+
+
+    qtilde[k].im         = (alpha1 * y + alpha2 * x) * amp[k]/ rootI ;
+    qtilde[k].im        += (alpha3 * y + alpha4 * x)
+                                *  amp[k]/(rootDenominator * rootI)
+                                * (I * cos(Beta * ampBCVSpin2[k]) -  J) ;
+    qtilde[k].im        += (alpha5 * y + alpha6 * x)
+                                * (amp[k]/denominator1)
+                                *  (sin(Beta * ampBCVSpin2[k])
+            - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
+            + ( (J*L - K*M + 0.5*I*K) / denominator ) ) ;
+
+  }
+
+/* inverse FFT to find time domain waveform, store in qVec */
+
+LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
+                   params->qtildeVec, params->invPlan );
+   CHECKSTATUSPTR( status );
+
+for ( j = 0; j < numPoints; ++j)
+       {
+/*	fprintf (stdout, "q[j]            = %e \n", q[j]);
+	fprintf (stdout, "q[j].re         = %e \n", q[j].re);
+	fprintf (stdout, "q[j].im         = %e \n", q[j].im);*/
+
+	fprintf (fpWvfIm, "%d\t%e\n", j, q[j].im);
+        fprintf (fpWvfRe, "%d\t%e\n", j, q[j].re);
+
+
+       }
+
+fclose (fpRho);
+fclose (fpWvfIm);
+fclose (fpWvfRe);
 
 
   DETATCHSTATUSPTR( status );
