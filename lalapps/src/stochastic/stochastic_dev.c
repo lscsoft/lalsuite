@@ -79,6 +79,7 @@ REAL8 deltaF;
 UINT8 startTime = 0;
 UINT8 endTime = 0;
 INT4 streamDuration;
+INT4 intervalDuration;
 INT4 segmentDuration = -1;
 CHAR *frameCacheOne = NULL;
 CHAR *frameCacheTwo = NULL;
@@ -127,16 +128,23 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* time variables */
   LIGOTimeGPS gpsStartTime;
+  LIGOTimeGPS gpsIntervalStart;
   LIGOTimeGPS gpsSegmentStart;
 
   /* input data structures */
   INT4 padData;
-  INT4 numSegments;
   INT4 streamLength;
   ReadDataPairParams streamParams;
   StreamPair streamPair;
   REAL4TimeSeries streamOne;
   REAL4TimeSeries streamTwo;
+
+  /* data structures for intevals */
+  INT4 numIntervals;
+  INT4 intervalLength;
+  INT4 intervalShift;
+  REAL4TimeSeries intervalOne;
+  REAL4TimeSeries intervalTwo;
 
   /* data structures for segments */
   INT4 segmentLength;
@@ -260,23 +268,23 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (vrbflg)
   {
-    fprintf(stdout, "Calculating number of segments...\n");
+    fprintf(stdout, "Calculating number of intervals...\n");
   }
 
-  /* get number of segments */
+  /* get number of intervals */
   streamDuration = endTime - startTime;
   if (overlap_hann_flag)
   {
-    numSegments = (2 * numSegments) - 1;
-    segmentShift = segmentDuration / 2;
+    numIntervals = (2 * (streamDuration / intervalDuration)) - 1;
+    intervalShift = segmentDuration / 2;
   }
   else
   {
-    numSegments = streamDuration / segmentDuration;
-    segmentShift = segmentDuration;
+    numIntervals = streamDuration / intervalDuration;
+    intervalShift = segmentDuration;
   }
 
-  /* get stream duration and length */
+  /* get stream length */
   streamLength = streamDuration * resampleRate;
 
   /* set metadata fields for data streams */
@@ -325,6 +333,30 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamPair.streamOne = &streamOne;
   streamPair.streamTwo = &streamTwo;
 
+  /* set length for data intervals */
+  intervalLength = intervalDuration * resampleRate;
+
+  /* set metadata fields for data intervals */
+  strncpy(intervalOne.name, "intervalOne", LALNameLength);
+  strncpy(intervalTwo.name, "intervalTwo", LALNameLength);
+  intervalOne.sampleUnits = streamOne.sampleUnits;
+  intervalTwo.sampleUnits = streamOne.sampleUnits;
+  intervalOne.deltaT = 1./(REAL8)resampleRate;
+  intervalTwo.deltaT = 1./(REAL8)resampleRate;
+  intervalOne.f0 = 0;
+  intervalTwo.f0 = 0;
+
+  if (vrbflg)
+  {
+    fprintf(stdout, "Allocating memory for data intervals...\n");
+  }
+
+  /* allocate memory for data intervals */
+  intervalOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  intervalTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  intervalOne.data->length = intervalLength;
+  intervalTwo.data->length = intervalLength;
+
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
 
@@ -346,8 +378,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* allocate memory for data segments */
   segmentOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
   segmentTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentOne.data->length = segmentDuration * resampleRate;
-  segmentTwo.data->length = segmentDuration * resampleRate;
+  segmentOne.data->length = segmentLength;
+  segmentTwo.data->length = segmentLength;
 
   /* set PSD window length */
   windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -896,10 +928,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   ccIn.hBarTildeTwo = &hBarTildeTwo;
   ccIn.optimalFilter = &optFilter;
 
-  /*
-   ** read data, downsample and eventually inject simulated signal **
-   */
-
   if (vrbflg)
   {
     fprintf(stdout, "Reading data...\n");
@@ -940,33 +968,48 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (vrbflg)
   {
-    fprintf(stdout, "Looping over %d segments...\n", numSegments);
+    fprintf(stdout, "Looping over %d intervals...\n", numIntervals);
   }
 
-  /* loop over segments */
-  for (j = 0; j < numSegments; j++)
+  /* loop over intervals */
+  for (j = 0; j < numIntervals; j++)
   {
+    /* define interval epoch */
+    gpsIntervalStart.gpsSeconds = startTime + (j * intervalShift);
+    gpsIntervalStart.gpsNanoSeconds = 0;
+    intervalOne.epoch = gpsIntervalStart;
+    intervalTwo.epoch = gpsIntervalStart;
+
     /* define segment epoch */
-    gpsSegmentStart.gpsSeconds = startTime + (j * segmentShift);
+    gpsSegmentStart.gpsSeconds = startTime + (j * segmentShift) + \
+      segmentDuration;
     gpsSegmentStart.gpsNanoSeconds = 0;
     segmentOne.epoch = gpsSegmentStart;
     segmentTwo.epoch = gpsSegmentStart;
 
     if (vrbflg)
     {
-      fprintf(stdout, "Performing search on segment %d of %d...\n", \
-          j + 1, numSegments);
+      fprintf(stdout, "Performing search on interval %d of %d...\n", \
+          j + 1, numIntervals);
     }
 
-    /* build small segment */
-    segmentOne.data->data = streamOne.data->data + (j * \
-        segmentShift * resampleRate);
-    segmentTwo.data->data = streamTwo.data->data + (j * \
-        segmentShift * resampleRate);
+    /* build interval */
+    intervalOne.data->data = streamOne.data->data + (j * \
+        intervalShift * resampleRate);
+    intervalTwo.data->data = streamTwo.data->data + (j * \
+        intervalShift * resampleRate);
+
+    /* build segment */
+    segmentOne.data->data = streamOne.data->data + \
+      (resampleRate * ((j * intervalShift) + segmentDuration));
+    segmentTwo.data->data = streamTwo.data->data + \
+      (resampleRate * ((j * intervalShift) + segmentDuration));
 
     /* output the results */
     if (vrbflg)
     {
+      LALSPrintTimeSeries(&intervalOne, "interval1.dat");
+      LALSPrintTimeSeries(&intervalTwo, "interval2.dat");
       LALSPrintTimeSeries(&segmentOne, "segment1.dat");
       LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
     }
@@ -995,9 +1038,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* compute uncalibrated PSDs */
-    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempOne, &segmentOne, \
+    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempOne, &intervalOne, \
           &specparPSD), &status );
-    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &segmentTwo, \
+    LAL_CALL( LALREAL4AverageSpectrum(&status, &psdTempTwo, &intervalTwo, \
           &specparPSD), &status );
 
     if (vrbflg)
@@ -1152,6 +1195,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
   LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
+  LALFree(intervalOne.data);
+  LALFree(intervalTwo.data);
   LALFree(segmentOne.data);
   LALFree(segmentTwo.data);
   LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
@@ -1362,14 +1407,14 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'l':
         /* segment duration */
         segmentDuration = atoi(optarg);
+        intervalDuration = 3 * segmentDuration;
 
         /* check */
         if (segmentDuration <= 0)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Segment duration must be greater than 0: " \
-              "(%d specified)\n", long_options[option_index].name, \
-              segmentDuration);
+              "Segment duration must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, segmentDuration);
           exit(1);
         }
 
@@ -1790,7 +1835,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
       exit(1);
     }
   }
-      
 
   /* check for sensible arguments */
 
