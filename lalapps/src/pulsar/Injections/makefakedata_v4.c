@@ -144,7 +144,7 @@ LALCheckMemoryLeaks()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 
-#include "GeneratePulsarSignal.h"
+#include <lal/GeneratePulsarSignal.h>
 
 NRCSID (MAKEFAKEDATAC, "$Id$");
 
