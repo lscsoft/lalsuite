@@ -3700,8 +3700,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
         sftIndex = k1 - params->ifmin;
 
-	if(sftIndex < 0 || sftIndex > GV.ifmax-GV.ifmin){
-	      fprintf(stderr,"ERROR! sftIndex = %d < 0 or > N-1 in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+	if(sftIndex < 0){
+	      fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
 		      sftIndex, alpha, k, xTemp, params->Dterms, params->ifmin);
 	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
@@ -3774,6 +3774,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           } /* if x cannot be close to 0 */
         
 
+	if(sftIndex-1 > GV.ifmax-GV.ifmin){
+	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k, xTemp, params->Dterms, params->ifmin);
+	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	}
+
+
+
         /* implementation of amplitude demodulation */
         {
           REAL8 realQXP = realXP*realQ-imagXP*imagQ;
@@ -3783,7 +3791,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
           Fb.re += b*realQXP;
           Fb.im += b*imagQXP;
         }
-    }      
+      }      
 
     FaSq = Fa.re*Fa.re+Fa.im*Fa.im;
     FbSq = Fb.re*Fb.re+Fb.im*Fb.im;
