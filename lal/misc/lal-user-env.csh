@@ -43,5 +43,5 @@ if ( "${LAL_PREFIX}" != "" ) then
   setenv PATH ${LAL_LOCATION}/bin:${PATH}
   setenv LD_LIBRARY_PATH ${LAL_LOCATION}/lib:${LD_LIBRARY_PATH}
   setenv MANPATH ${LAL_LOCATION}/man:${MANPATH}
-  setenv PKG_CONFIG_PATH ${LAL_LOCATION}/pkgconfig:${MANPATH}
+  setenv PKG_CONFIG_PATH ${LAL_LOCATION}/pkgconfig:${PKG_CONFIG_PATH}
 endif
