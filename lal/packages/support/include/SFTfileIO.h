@@ -132,7 +132,13 @@ void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname)
 void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
 void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
-void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fMin, REAL8 fMax, UINT4 wingBins, const CHAR *glob);
+
+void LALReadSFTfiles (LALStatus *status,
+		      SFTVector **sftvect, 
+		      REAL8 fMin, 
+		      REAL8 fMax, 
+		      UINT4 wingBins, 
+		      const CHAR *fpattern);
 
 void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format);
 
