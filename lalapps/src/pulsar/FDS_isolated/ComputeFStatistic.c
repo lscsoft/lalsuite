@@ -10,13 +10,15 @@
 #include <lal/RngMedBias.h>
 #include <lalapps.h>
 
+
 #include "ComputeFStatistic.h"
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
 
-RCSID( "$Id$");
 
+
+RCSID( "$Id$");
 
 /* BOINC should be set to 1 to be run under BOINC */
 #ifndef USE_BOINC
@@ -38,7 +40,11 @@ void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
 #endif /* USE_BOINC */
 
+
 /*
+#define NEARESTGRIDPOINTS_ON
+
+
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
 #define DEBG_SGV 
@@ -104,6 +110,7 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
+BOOLEAN uvar_searchNeighbors;
 
 /* try this */
 BOOLEAN uvar_openDX;
@@ -163,6 +170,7 @@ void initUserVars (LALStatus *stat);
 
 extern int vrbflg;
 
+
 /*----------------------------------------------------------------------
  * MAIN
  *----------------------------------------------------------------------*/
@@ -173,13 +181,22 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
-  INT4 s;
+  INT4 ic,s;
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut=NULL;
   UINT4 counter;
   LALStatus status = blank_status;	/* initialize status */
+
+
+/*----------------------------------------------------------------------
+ * Helper function (Yousuke): 
+ * Refine the skyRegion to search only at neighboring grid points of the 
+ * center of the original skyRegion. 
+ *----------------------------------------------------------------------*/
+  void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -273,15 +290,28 @@ int main(int argc,char *argv[])
   scanInit.skyRegion = GV.skyRegion;
   scanInit.skyGridFile = uvar_skyGridFile;
 
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status);
-  if (lalDebugLevel) LALPrintError ("done.\n");
 
+
+  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+/*----------------------------------------------------------------------
+ * Helper function (Yousuke): 
+ * Refine the skyRegion to search only at neighboring grid points of the 
+ * center of the original skyRegion. 
+ *----------------------------------------------------------------------*/
+  if ( uvar_searchNeighbors ) {
+    LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
+  } else {
+    LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+  }
+  /*----------------------------------------------------------------------*/
+  if (lalDebugLevel) LALPrintError ("done.\n");
   if ( uvar_outputSkyGrid ) {
     LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
     LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
     LALPrintError (" done.\n\n");
   }
+
+
   
   if (uvar_outputFstat) 
     {
@@ -314,6 +344,7 @@ int main(int argc,char *argv[])
       
     } /* if outputFstat */
 
+
   if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
 
   counter = 0;
@@ -329,7 +360,6 @@ int main(int argc,char *argv[])
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
-      
       
       LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
@@ -354,6 +384,9 @@ int main(int argc,char *argv[])
 		}
 
 	    } /* if outputFstat */
+
+
+
 	  
 	  /*  This fills-in highFLines  */
 	  if (highFLines != NULL && highFLines->Nclusters > 0){
@@ -472,6 +505,10 @@ initUserVars (LALStatus *stat)
   uvar_workingDir = LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
+  uvar_searchNeighbors = FALSE;
+
+
+
   /* register all our user-variables */
  
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
@@ -508,6 +545,10 @@ initUserVars (LALStatus *stat)
 
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
+
+  LALregBOOLUserVar(stat,	searchNeighbors,	 	 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
+
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -2312,8 +2353,14 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
     printf("Memory allocation failure");
     return 0;
   }
-   
-  
+
+   /*
+   if( nbins < windowSize ) {
+     fprintf( stderr, "The frequency band has too small bins compared to the now hard-coded window size (= %d) used in EstimateFloor().\n", windowSize );
+     exit(1);
+   }
+   */
+
   /* loop over each SFTs */
   for (i=0;i<GV.SFTno;i++)         
     {
@@ -2332,7 +2379,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* Compute running median */
       EstimateFloor(Sp, windowSize, RngMdnSp);
-      
+
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */
       Ntot=0;
