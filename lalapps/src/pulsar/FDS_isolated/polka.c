@@ -116,6 +116,7 @@ CoincidentCandidate *CC;
 #define TRUE  (1==1)
 #endif
 
+/* main() mapped to polka() if using boinc */
 #if USE_BOINC
 int polka(int argc,char *argv[])
 #else
@@ -127,7 +128,7 @@ int main(int argc,char *argv[])
   UINT4 i;
   UINT4 numCoincidences = 0;
   FILE *fpOut;
-  BOOLEAN haveFile3 =  FALSE;
+  BOOLEAN haveFile3 = FALSE;
   BOOLEAN haveFile4 = FALSE;
 
   lalDebugLevel = 1;
@@ -303,7 +304,21 @@ int main(int argc,char *argv[])
   qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCCfa);
 
   /* open and write the file */
+#if USE_BOINC
+  {
+    char resolved_name[512];
+    if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_name, sizeof(resolved_name))) {
+      fprintf(stderr,
+              "Can't resolve file \"%s\"\n"
+              "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+              PolkaCommandLineArgs.OutputFile);
+      boinc_finish(2);
+    }
+    fpOut=fopen(resolved_name,"w"); 	 
+  }
+#else
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
+#endif
   for (i=0; i < numCoincidences; i++) 
     {
       UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
