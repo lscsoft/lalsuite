@@ -1219,7 +1219,7 @@ int main( int argc, char *argv[])
 	/* determine the input time series overlap correction */
 	/* LAL spec makes us pass a pointer... sigh */
 	{
-	REAL8 overlap = (REAL8) options.windowLength / 2.0 / targetSampleRate;
+	REAL8 overlap = (REAL8) params.windowLength / 2.0 / targetSampleRate;
 	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
 	if(options.verbose)
 		fprintf(stderr, "time series overlap correction is %u.%09u s\n", overlapCorrection.seconds, overlapCorrection.nanoSeconds);
