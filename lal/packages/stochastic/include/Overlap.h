@@ -20,15 +20,6 @@
  * DIAGNOSTICS
  *
  *-----------------------------------------------------------------------
- *
- * REVISION HISTORY
- *
- * $Log$
- * Revision 1.2  2000/02/26 21:19:42  jolien
- * Overlap modified; Dirichlet added.
- *
- *
- *-----------------------------------------------------------------------
  */
 
 #ifndef _OVERLAP_H
@@ -41,7 +32,7 @@
 #endif
 #endif
 
-static volatile const char *OVERLAPH = "$Id$";
+NRCSID (OVERLAPH, "$Id$");
 
 #define OVERLAP_ENULLIP    1
 #define OVERLAP_ESITE      2

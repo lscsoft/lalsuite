@@ -20,15 +20,6 @@
  * DIAGNOSTICS
  *
  *-----------------------------------------------------------------------
- *
- * REVISION HISTORY
- *
- * $Log$
- * Revision 1.1  2000/02/26 21:19:41  jolien
- * Overlap modified; Dirichlet added.
- *
- *
- *-----------------------------------------------------------------------
  */
 
 #ifndef _DIRICHLET_H
@@ -41,7 +32,7 @@
 #endif
 #endif
 
-static volatile const char *DIRICHLETH = "$Id$";
+NRCSID (DIRICHLETH, "$Id$");
 
 #define DIRICHLET_ENULLIP     1
 #define DIRICHLET_ENVALUE     2

@@ -28,15 +28,6 @@
  * 
  * NOTES
  *
- *----------------------------------------------------------------------- 
- * 
- * REVISION HISTORY 
- * 
- * $Log$
- * Revision 1.1  2000/02/26 21:19:57  jolien
- * Overlap modified; Dirichlet added.
- *
- * 
  *-----------------------------------------------------------------------
  */
 
@@ -86,7 +77,7 @@ INT4 debuglevel = 2; /* set to 2 to get full status information for tests */
 
 int check ( Status*, INT4, CHAR* );
 
-static volatile const CHAR MAIN[] = "$ID: DirichletTest.c$";
+NRCSID (MAIN, "$ID: DirichletTest.c$");
 
 int 
 main()

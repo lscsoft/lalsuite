@@ -38,19 +38,8 @@
  *
  * NOTES
  *
- *-----------------------------------------------------------------------
- *
- * REVISION HISTORY
- *
- * $Log$
- * Revision 1.1  2000/02/26 21:19:49  jolien
- * Overlap modified; Dirichlet added.
- *
- *
  *------------------------------------------------------------------------
  */
-
-static volatile const char *DIRICHLETC = "$Id$";
 
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
@@ -79,6 +68,8 @@ static volatile const char *DIRICHLETC = "$Id$";
 #define _DIRICHLET_H
 #endif
 #endif
+
+NRCSID (DIRICHLETC, "$Id$");
 
 void 
 Dirichlet(Status*              pstatus, 

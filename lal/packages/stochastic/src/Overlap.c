@@ -46,19 +46,8 @@
  * 
  * NOTES
  * 
- *----------------------------------------------------------------------- 
- * 
- * REVISION HISTORY 
- * 
- * $Log$
- * Revision 1.2  2000/02/26 21:19:50  jolien
- * Overlap modified; Dirichlet added.
- *
- * 
  *-----------------------------------------------------------------------
  */
-
-static volatile const char *OVERLAPC = "$Id$";
 
 #ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
@@ -80,6 +69,8 @@ static volatile const char *OVERLAPC = "$Id$";
 #define _OVERLAP_H
 #endif
 #endif
+
+NRCSID (OVERLAPC, "$Id$");
 
 static void
 GetSiteParameters ( SiteParameters*, IFOsite );
