@@ -766,12 +766,16 @@ static COMPLEX8FrequencySeries *ligo_response(LALStatus *status,
     REAL8 f0,
     REAL8 deltaF,
     LALUnit units,
-    INT4 length)
+    INT4 length,
+    INT4 offset)
 {
   /* variables */
   COMPLEX8FrequencySeries *response;
   FrCache *cache = NULL;
   CalibrationUpdateParams calib_params;
+
+  /* apply offset to epoch */
+  epoch.gpsSeconds += offset;
 
   /* allocate memory */
   memset(&calib_params, 0, sizeof(CalibrationUpdateParams));
@@ -807,7 +811,8 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
     REAL8 f0,
     REAL8 deltaF,
     LALUnit units,
-    INT4 length)
+    INT4 length,
+    INT4 offset)
 {
   /* variables */
   COMPLEX8FrequencySeries *response = NULL;
@@ -821,7 +826,7 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   {
     /* generate response function for LIGO */
     response = ligo_response(status, ifo, cache_file, epoch, f0, deltaF, \
-        units, length);
+        units, length, offset);
   }
 
   return(response);
@@ -2050,7 +2055,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 segmentLength;
   INT4 segmentShift;
   INT4 padData;
-  LIGOTimeGPS gpsCalibTime;
   REAL4TimeSeries *segmentOne = NULL;
   REAL4TimeSeries *segmentTwo = NULL;
 
@@ -2265,10 +2269,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
             (REAL8)((j * segmentShift) + (k * segmentDuration))), &status);
 
-      /* get calibration epoch */
-      LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
-            (REAL8)calibOffset), &status);
-
       /* is this the analysis segment? */
       if (k == segMiddle)
         gpsAnalysisTime = gpsSegStartTime;
@@ -2287,9 +2287,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* compute response */
       responseOne = generate_response(&status, ifoOne, calCacheOne, \
-          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+          gpsSegStartTime, fMin, deltaF, countPerAttoStrain, filterLength, \
+          calibOffset);
       responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-          gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+          gpsSegStartTime, fMin, deltaF, countPerAttoStrain, filterLength, \
+          calibOffset);
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
@@ -2373,15 +2375,13 @@ INT4 main(INT4 argc, CHAR *argv[])
     if (vrbflg)
       fprintf(stdout, "Calculating cross correlation spectrum...\n");
 
-    /* get calibration epoch */
-    LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsAnalysisTime, \
-          (REAL8)calibOffset), &status);
-
     /* get response functions for analysis segments */
     responseOne = generate_response(&status, ifoOne, calCacheOne, \
-        gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength, \
+        calibOffset);
     responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
-        gpsCalibTime, fMin, deltaF, countPerAttoStrain, filterLength);
+        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength, \
+        calibOffset);
 
     /* calculate cc spectrum */
     ccSpectrum = cc_spectrum(&status, zeroPadOne, zeroPadTwo, \
